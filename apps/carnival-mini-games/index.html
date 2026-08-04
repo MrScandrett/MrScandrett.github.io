@@ -1,0 +1,1932 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Carnival Mini Games</title><style>:root{color-scheme:light;--ink:#172033;--red:#d84032;--gold:#ffc44d;--blue:#2377d1;--green:#2f9b5b;--shadow:rgba(23, 32, 51, 0.18)}*{box-sizing:border-box}body,html{height:100%}body{margin:0;height:100dvh;min-height:100vh;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:linear-gradient(90deg,rgba(216,64,50,.12) 0 10%,transparent 10% 20%) 0 0/120px 100%,linear-gradient(180deg,#9bd7ff 0,#e9f8ff 44%,#fff3cf 44%,#ffe4a1 100%);overflow:hidden}.game-shell{height:100%;min-height:0;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto}header{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;padding:12px clamp(12px,3vw,30px) 6px}h1{margin:0;font-size:clamp(1.45rem, 3.7vw, 2.75rem);line-height:1;letter-spacing:0}.student{display:block;margin-top:5px;font-size:clamp(.85rem, 1.7vw, 1.02rem);font-weight:700;color:#7b2a20}.scorebar{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:7px;min-width:min(510px,48vw)}.pill{min-width:88px;padding:8px 10px;border:2px solid rgba(23,32,51,.16);border-radius:8px;background:rgba(255,255,255,.84);box-shadow:0 8px 18px var(--shadow);font-size:.82rem;font-weight:800;text-align:center}.pill strong{display:block;margin-top:2px;font-size:1.25rem;line-height:1}nav{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;padding:0 12px 7px}main{position:relative;display:grid;place-items:center;min-height:0;overflow:hidden;padding:0 clamp(10px,2vw,24px) 6px}.stage{position:relative;width:min(100%,1200px);height:auto;aspect-ratio:12/7;min-width:0;min-height:0}canvas{display:block;width:100%;height:100%;border:4px solid #6d3520;border-radius:8px;background:#fff1c8;box-shadow:0 14px 32px rgba(56,28,16,.22);touch-action:none;cursor:grab}canvas:active{cursor:grabbing}.message{position:absolute;left:50%;top:14px;width:min(730px,calc(100% - 34px));transform:translateX(-50%);padding:9px 13px;border:3px solid rgba(23,32,51,.18);border-radius:8px;background:rgba(255,255,255,.9);box-shadow:0 10px 22px var(--shadow);font-size:clamp(.9rem, 1.8vw, 1.08rem);font-weight:800;text-align:center;pointer-events:none}footer{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;padding:6px 14px 10px}button{min-height:38px;padding:8px 13px;border:0;border-radius:8px;background:var(--blue);color:#fff;font:800 0.92rem Arial,Helvetica,sans-serif;box-shadow:0 6px 0 #14508f,0 11px 17px var(--shadow);cursor:pointer}button:active{transform:translateY(3px);box-shadow:0 3px 0 #14508f,0 7px 12px var(--shadow)}button[aria-pressed=true]{background:var(--red);box-shadow:0 6px 0 #92271f,0 11px 17px var(--shadow)}.secondary{background:var(--green);box-shadow:0 6px 0 #1d693d,0 11px 17px var(--shadow)}@media (max-width:760px){header{grid-template-columns:1fr;gap:7px;padding:8px 9px 5px}h1{font-size:clamp(1.2rem, 6.2vw, 1.8rem)}.student{font-size:.78rem}.scorebar{min-width:0;justify-content:stretch;gap:5px}.pill{flex:1 1 68px;min-width:0;padding:5px 4px;font-size:.7rem}.pill strong{font-size:.98rem}footer,nav{gap:6px;padding-left:8px;padding-right:8px}button{flex:1 1 104px;min-height:34px;padding:6px 8px;font-size:.78rem}main{padding:0 7px 5px}.stage{width:100%}.message{top:8px;width:calc(100% - 20px);padding:6px 8px;font-size:.76rem}}</style></head><body><div class="game-shell"><header><div><h1 id="gameTitle">Jack's Ring Toss</h1><span class="student" id="gameSubtitle">Six rings. Bottle points. Stuffed animal bonus prizes.</span></div><div class="scorebar" aria-live="polite"><div class="pill"><span id="label1">Score</span><strong id="value1">0</strong></div><div class="pill"><span id="label2">Rings</span><strong id="value2">6</strong></div><div class="pill"><span id="label3">Round</span><strong id="value3">1</strong></div><div class="pill"><span id="label4">Best</span><strong id="value4">0</strong></div></div></header><nav aria-label="Carnival games"><button id="ringMode" type="button" aria-pressed="true">Ring Toss</button> <button id="wheelMode" type="button" aria-pressed="false">Prize Wheel</button> <button id="slingMode" type="button" aria-pressed="false">Ball Slingshot</button> <button id="strongMode" type="button" aria-pressed="false">Strongman</button> <button id="ferrisMode" type="button" aria-pressed="false">Ferris Wheel</button> <button id="elephantMode" type="button" aria-pressed="false">Elephant Ride</button></nav><main><div class="stage"><canvas id="game" width="1200" height="700" aria-label="Carnival mini game canvas"></canvas><div class="message" id="message">Pull the ring back, aim, and let go. Land around bottles or stuffed animals!</div></div></main><footer><button id="primaryAction" type="button">New Round</button> <button id="secondaryAction" class="secondary" type="button">Helper Mode: On</button></footer></div><script>const canvas = document.getElementById('game');
+    const stage = document.querySelector('.stage');
+    const ctx = canvas.getContext('2d');
+    const titleEl = document.getElementById('gameTitle');
+    const subtitleEl = document.getElementById('gameSubtitle');
+    const messageEl = document.getElementById('message');
+    const primaryAction = document.getElementById('primaryAction');
+    const secondaryAction = document.getElementById('secondaryAction');
+    const modeButtons = {
+      ring: document.getElementById('ringMode'),
+      wheel: document.getElementById('wheelMode'),
+      sling: document.getElementById('slingMode'),
+      strong: document.getElementById('strongMode'),
+      ferris: document.getElementById('ferrisMode'),
+      elephant: document.getElementById('elephantMode')
+    };
+    const labels = [
+      document.getElementById('label1'),
+      document.getElementById('label2'),
+      document.getElementById('label3'),
+      document.getElementById('label4')
+    ];
+    const values = [
+      document.getElementById('value1'),
+      document.getElementById('value2'),
+      document.getElementById('value3'),
+      document.getElementById('value4')
+    ];
+
+    const W = 1200;
+    const H = 700;
+    const gravity = 0.255;
+    const friction = 0.982;
+    const launchPower = 0.175;
+    const slingPower = 0.19;
+    const ringMaxPull = 215;
+    const slingMaxPull = 205;
+    const ringLaunch = { x: 170, y: 575 };
+    const slingLaunch = { x: 145, y: 545 };
+    const ringRadius = 34;
+    const ballRadius = 20;
+
+    let mode = 'ring';
+    let helperMode = true;
+    let isDragging = false;
+    let dragPoint = { ...ringLaunch };
+    let lastTime = performance.now();
+    let particles = [];
+
+    const ring = {
+      score: 0,
+      ringsLeft: 6,
+      round: 1,
+      best: Number(localStorage.getItem('jack-ring-toss-best') || 0),
+      current: makeRing(),
+      settled: [],
+      targets: [
+        { kind: 'bottle', name: 'Blue Bottle', x: 690, y: 440, radius: 25, points: 10, color: '#4ca3ff', hit: false },
+        { kind: 'bottle', name: 'Red Bottle', x: 805, y: 410, radius: 25, points: 15, color: '#ff5a4d', hit: false },
+        { kind: 'bottle', name: 'Green Bottle', x: 925, y: 440, radius: 25, points: 10, color: '#42b96f', hit: false },
+        { kind: 'bottle', name: 'Gold Bottle', x: 1030, y: 402, radius: 25, points: 20, color: '#ffc33d', hit: false },
+        { kind: 'animal', name: 'Bear Buddy', x: 650, y: 535, radius: 34, points: 25, color: '#b47745', hit: false },
+        { kind: 'animal', name: 'Kitty Prize', x: 850, y: 525, radius: 34, points: 30, color: '#9b8fe8', hit: false },
+        { kind: 'animal', name: 'Dino Pal', x: 1040, y: 530, radius: 34, points: 25, color: '#59b861', hit: false }
+      ]
+    };
+
+    const wheel = {
+      credits: 0,
+      spins: 0,
+      best: Number(localStorage.getItem('carnival-wheel-best') || 0),
+      angle: -Math.PI / 2,
+      velocity: 0,
+      spinning: false,
+      lastPrize: 'Ready',
+      segments: [
+        { label: 'Jackpot', points: 100, color: '#ffc44d' },
+        { label: '+10', points: 10, color: '#4ca3ff' },
+        { label: 'Try Again', points: 0, color: '#f47c57' },
+        { label: '+25', points: 25, color: '#59b861' },
+        { label: 'Mystery', points: 40, color: '#9b8fe8' },
+        { label: '+5', points: 5, color: '#ffe66b' },
+        { label: 'Bonus', points: 50, color: '#ff5a4d' },
+        { label: '+15', points: 15, color: '#72d6d1' }
+      ]
+    };
+
+    const sling = {
+      score: 0,
+      ballsLeft: 5,
+      round: 1,
+      best: Number(localStorage.getItem('carnival-sling-best') || 0),
+      ball: makeBall(),
+      pins: [],
+      cleared: false
+    };
+
+    const strong = {
+      score: 0,
+      swingsLeft: 5,
+      round: 1,
+      best: Number(localStorage.getItem('carnival-strong-best') || 0),
+      meter: 0,
+      meterDirection: 1,
+      sweetSpot: 0.5,
+      combo: 0,
+      striker: 0,
+      strikerVelocity: 0,
+      hammerAngle: -0.42,
+      hammerVelocity: 0,
+      bellFlash: 0,
+      shake: 0,
+      lastPower: 'Ready'
+    };
+
+    const ferris = {
+      angle: 0,
+      riding: false,
+      rides: 0,
+      fireworks: true,
+      fireworkTimer: 20,
+      lightPhase: 0
+    };
+
+    const elephant = {
+      angle: 0,
+      riding: false,
+      rides: 0,
+      speed: 0,
+      selected: 0,
+      lightPhase: 0
+    };
+
+    fitStage();
+    resetPins();
+    switchMode('ring');
+    requestAnimationFrame(loop);
+
+    window.addEventListener('resize', fitStage);
+    if ('ResizeObserver' in window) {
+      new ResizeObserver(fitStage).observe(stage.parentElement);
+    }
+
+    modeButtons.ring.addEventListener('click', () => switchMode('ring'));
+    modeButtons.wheel.addEventListener('click', () => switchMode('wheel'));
+    modeButtons.sling.addEventListener('click', () => switchMode('sling'));
+    modeButtons.strong.addEventListener('click', () => switchMode('strong'));
+    modeButtons.ferris.addEventListener('click', () => switchMode('ferris'));
+    modeButtons.elephant.addEventListener('click', () => switchMode('elephant'));
+    primaryAction.addEventListener('click', handlePrimary);
+    secondaryAction.addEventListener('click', handleSecondary);
+    canvas.addEventListener('mousedown', startDrag);
+    canvas.addEventListener('mousemove', moveDrag);
+    window.addEventListener('mouseup', endDrag);
+    canvas.addEventListener('touchstart', startDrag, { passive: false });
+    canvas.addEventListener('touchmove', moveDrag, { passive: false });
+    canvas.addEventListener('touchend', endDrag, { passive: false });
+
+    function fitStage() {
+      const rect = stage.parentElement.getBoundingClientRect();
+      const availableWidth = Math.max(260, rect.width);
+      const availableHeight = Math.max(220, rect.height);
+      const aspect = W / H;
+      let width = Math.min(availableWidth, availableHeight * aspect);
+      let height = width / aspect;
+      if (height > availableHeight) {
+        height = availableHeight;
+        width = height * aspect;
+      }
+      stage.style.width = `${Math.floor(width)}px`;
+      stage.style.height = `${Math.floor(height)}px`;
+    }
+
+    function switchMode(nextMode) {
+      mode = nextMode;
+      isDragging = false;
+      particles = [];
+      for (const key of Object.keys(modeButtons)) {
+        modeButtons[key].setAttribute('aria-pressed', key === mode ? 'true' : 'false');
+      }
+
+      if (mode === 'ring') {
+        titleEl.textContent = "Jack's Ring Toss";
+        subtitleEl.textContent = 'Six rings. Bottle points. Stuffed animal bonus prizes.';
+        primaryAction.textContent = 'New Round';
+        secondaryAction.textContent = `Helper Mode: ${helperMode ? 'On' : 'Off'}`;
+        setMessage('Drag forward toward the targets or pull back like a slingshot. The dotted path shows the toss.');
+      } else if (mode === 'wheel') {
+        titleEl.textContent = 'Prize Wheel';
+        subtitleEl.textContent = 'Spin for Jackpot, Bonus, Mystery, and prize points.';
+        primaryAction.textContent = 'Spin Wheel';
+        secondaryAction.textContent = 'Reset Wheel';
+        setMessage('Press Spin Wheel or drag the wheel to send it flying around.');
+      } else if (mode === 'sling') {
+        titleEl.textContent = 'Ball Slingshot';
+        subtitleEl.textContent = 'Launch balls to knock down the pyramid of carnival pins.';
+        primaryAction.textContent = 'Reset Pins';
+        secondaryAction.textContent = `Helper Mode: ${helperMode ? 'On' : 'Off'}`;
+        setMessage('Pull the ball back and release. Use the trajectory line to aim at the pyramid.');
+      } else if (mode === 'strong') {
+        titleEl.textContent = 'Strongman Hammer';
+        subtitleEl.textContent = 'Charge the hammer, hit the sweet spot, and ring the bell.';
+        primaryAction.textContent = 'Swing Hammer';
+        secondaryAction.textContent = 'Reset Strongman';
+        setMessage('Press Swing Hammer when the pointer lines up with the glowing sweet spot.');
+      } else if (mode === 'ferris') {
+        titleEl.textContent = 'Starlight Ferris Wheel';
+        subtitleEl.textContent = 'Climb aboard for flashing lights and a sky full of fireworks.';
+        primaryAction.textContent = ferris.riding ? 'Stop Ride' : 'Ride Ferris Wheel';
+        secondaryAction.textContent = `Fireworks: ${ferris.fireworks ? 'On' : 'Off'}`;
+        setMessage('Press Ride Ferris Wheel and watch your gold gondola travel around the wheel!');
+      } else {
+        titleEl.textContent = 'Flying Elephant Ride';
+        subtitleEl.textContent = 'Pick an elephant and soar around the carnival.';
+        primaryAction.textContent = elephant.riding ? 'Stop Ride' : 'Ride Elephants';
+        secondaryAction.textContent = 'Choose Elephant';
+        setMessage('Choose your elephant, then start the ride. Your elephant has the golden saddle!');
+      }
+      updateHud();
+    }
+
+    function setMessage(text) {
+      messageEl.textContent = text;
+    }
+
+    function handlePrimary() {
+      if (mode === 'ring') resetRingRound(true);
+      if (mode === 'wheel') spinWheel();
+      if (mode === 'sling') resetSlingRound(true);
+      if (mode === 'strong') swingHammer();
+      if (mode === 'ferris') toggleFerrisRide();
+      if (mode === 'elephant') toggleElephantRide();
+    }
+
+    function handleSecondary() {
+      if (mode === 'wheel') {
+        wheel.credits = 0;
+        wheel.spins = 0;
+        wheel.lastPrize = 'Ready';
+        wheel.velocity = 0;
+        wheel.spinning = false;
+        setMessage('Prize Wheel reset. Go for the Jackpot!');
+      } else if (mode === 'strong') {
+        resetStrongman(true);
+      } else if (mode === 'ferris') {
+        ferris.fireworks = !ferris.fireworks;
+        secondaryAction.textContent = `Fireworks: ${ferris.fireworks ? 'On' : 'Off'}`;
+        setMessage(ferris.fireworks ? 'Fireworks are ready for the ride!' : 'Fireworks paused. Enjoy the flashing wheel lights!');
+      } else if (mode === 'elephant') {
+        elephant.selected = (elephant.selected + 1) % 6;
+        setMessage(`Elephant ${elephant.selected + 1} is yours — look for the golden saddle!`);
+      } else {
+        helperMode = !helperMode;
+        secondaryAction.textContent = `Helper Mode: ${helperMode ? 'On' : 'Off'}`;
+        setMessage(helperMode ? 'Helper Mode gives the aiming a little extra forgiveness.' : 'Helper Mode is off. Precision mode!');
+      }
+      updateHud();
+    }
+
+    function updateHud() {
+      if (mode === 'ring') {
+        setHud(['Score', 'Rings', 'Round', 'Best'], [ring.score, ring.ringsLeft, ring.round, ring.best]);
+      } else if (mode === 'wheel') {
+        setHud(['Credits', 'Spins', 'Prize', 'Best'], [wheel.credits, wheel.spins, wheel.lastPrize, wheel.best]);
+      } else if (mode === 'sling') {
+        const standing = sling.pins.filter((pin) => !pin.down).length;
+        setHud(['Score', 'Balls', 'Pins', 'Best'], [sling.score, sling.ballsLeft, standing, sling.best]);
+      } else if (mode === 'strong') {
+        setHud(['Score', 'Swings', 'Power', 'Combo'], [strong.score, strong.swingsLeft, strong.lastPower, `x${strong.combo}`]);
+      } else if (mode === 'ferris') {
+        setHud(['Ride', 'Trips', 'Lights', 'Fireworks'], [ferris.riding ? 'Moving' : 'Ready', ferris.rides, 'Flashing', ferris.fireworks ? 'On' : 'Off']);
+      } else {
+        setHud(['Ride', 'Trips', 'Elephant', 'Height'], [elephant.riding ? 'Flying' : 'Ready', elephant.rides, elephant.selected + 1, elephant.riding ? 'High' : 'Ground']);
+      }
+    }
+
+    function setHud(nextLabels, nextValues) {
+      nextLabels.forEach((label, index) => {
+        labels[index].textContent = label;
+        values[index].textContent = nextValues[index];
+      });
+    }
+
+    function loop(now) {
+      const dt = Math.min(2, (now - lastTime) / 16.67);
+      lastTime = now;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    function update(dt) {
+      if (mode === 'ring') updateRing(dt);
+      if (mode === 'wheel') updateWheel(dt);
+      if (mode === 'sling') updateSling(dt);
+      if (mode === 'strong') updateStrongman(dt);
+      if (mode === 'ferris') updateFerris(dt);
+      if (mode === 'elephant') updateElephant(dt);
+      updateParticles(dt);
+    }
+
+    function pointerPosition(event) {
+      const rect = canvas.getBoundingClientRect();
+      const source = event.touches ? event.touches[0] : event;
+      return {
+        x: (source.clientX - rect.left) * (W / rect.width),
+        y: (source.clientY - rect.top) * (H / rect.height)
+      };
+    }
+
+    function startDrag(event) {
+      const pos = pointerPosition(event);
+      if (mode === 'wheel') {
+        event.preventDefault();
+        isDragging = true;
+        dragPoint = pos;
+        wheel.velocity = 0;
+        setMessage('Release for a big spin!');
+        return;
+      }
+
+      if (mode === 'strong') {
+        event.preventDefault();
+        swingHammer();
+        return;
+      }
+
+      if (mode === 'ferris') {
+        event.preventDefault();
+        toggleFerrisRide();
+        return;
+      }
+
+      if (mode === 'elephant') {
+        event.preventDefault();
+        toggleElephantRide();
+        return;
+      }
+
+      const launcher = mode === 'ring' ? ringLaunch : slingLaunch;
+      const itemReady = mode === 'ring' ? !ring.current.thrown && ring.ringsLeft > 0 : !sling.ball.thrown && sling.ballsLeft > 0;
+      if (!itemReady || distance(pos, launcher) > 155) return;
+      event.preventDefault();
+      isDragging = true;
+      dragPoint = pos;
+      if (mode === 'ring') {
+        ring.current.x = ringLaunch.x;
+        ring.current.y = ringLaunch.y;
+      } else {
+        sling.ball.x = pos.x;
+        sling.ball.y = pos.y;
+      }
+    }
+
+    function moveDrag(event) {
+      if (!isDragging) return;
+      event.preventDefault();
+      const pos = pointerPosition(event);
+
+      if (mode === 'wheel') {
+        const center = { x: W / 2, y: H / 2 + 20 };
+        const oldAngle = Math.atan2(dragPoint.y - center.y, dragPoint.x - center.x);
+        const newAngle = Math.atan2(pos.y - center.y, pos.x - center.x);
+        wheel.angle += angleDelta(newAngle, oldAngle);
+        wheel.velocity = angleDelta(newAngle, oldAngle) * 1.6;
+        dragPoint = pos;
+        return;
+      }
+
+      const launcher = mode === 'ring' ? ringLaunch : slingLaunch;
+      const maxPull = mode === 'ring' ? ringMaxPull : slingMaxPull;
+      const dx = pos.x - launcher.x;
+      const dy = pos.y - launcher.y;
+      const amount = Math.min(maxPull, Math.hypot(dx, dy));
+      const angle = Math.atan2(dy, dx);
+      dragPoint = {
+        x: launcher.x + Math.cos(angle) * amount,
+        y: launcher.y + Math.sin(angle) * amount
+      };
+
+      if (mode === 'ring') {
+        const forwardAim = dragPoint.x > ringLaunch.x + 24;
+        ring.current.x = forwardAim ? ringLaunch.x : dragPoint.x;
+        ring.current.y = forwardAim ? ringLaunch.y : dragPoint.y;
+      } else {
+        sling.ball.x = dragPoint.x;
+        sling.ball.y = dragPoint.y;
+      }
+    }
+
+    function endDrag(event) {
+      if (!isDragging) return;
+      event.preventDefault();
+      isDragging = false;
+
+      if (mode === 'wheel') {
+        wheel.velocity += 0.42 + Math.random() * 0.18;
+        wheel.spinning = true;
+        wheel.lastPrize = 'Spinning';
+        updateHud();
+        return;
+      }
+
+      const launcher = mode === 'ring' ? ringLaunch : slingLaunch;
+      const boost = helperMode ? 1.1 : 1;
+
+      if (mode === 'ring') {
+        const throwVector = getRingThrowVector();
+        const guided = helperMode ? predictGuidedRingVelocity(throwVector.dx, throwVector.dy, boost) : null;
+        ring.current.x = ringLaunch.x;
+        ring.current.y = ringLaunch.y;
+        ring.current.vx = guided && Number.isFinite(guided.vx) ? guided.vx : throwVector.dx * launchPower * boost;
+        ring.current.vy = guided && Number.isFinite(guided.vy) ? guided.vy : throwVector.dy * launchPower * boost;
+        ring.current.thrown = true;
+        ring.current.trail = [];
+        ring.ringsLeft--;
+        playTone(420, 0.06, 'triangle');
+        setMessage('Nice toss!');
+      } else {
+        const dx = launcher.x - dragPoint.x;
+        const dy = launcher.y - dragPoint.y;
+        sling.ball.vx = dx * slingPower * boost;
+        sling.ball.vy = dy * slingPower * boost;
+        sling.ball.thrown = true;
+        sling.ball.trail = [];
+        sling.ballsLeft--;
+        playTone(360, 0.06, 'triangle');
+        setMessage('Good launch! Knock down those pins.');
+      }
+      updateHud();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      drawBackdrop();
+      if (mode === 'ring') drawRingGame();
+      if (mode === 'wheel') drawWheelGame();
+      if (mode === 'sling') drawSlingGame();
+      if (mode === 'strong') drawStrongmanGame();
+      if (mode === 'ferris') drawFerrisRide();
+      if (mode === 'elephant') drawElephantRide();
+      drawParticles();
+    }
+
+    function drawBackdrop() {
+      const ground = ctx.createLinearGradient(0, 375, 0, H);
+      ground.addColorStop(0, '#ffdf7d');
+      ground.addColorStop(1, '#d68c42');
+      ctx.fillStyle = ground;
+      ctx.fillRect(0, 360, W, H - 360);
+
+      ctx.fillStyle = '#f9c451';
+      ctx.fillRect(0, 330, W, 54);
+      ctx.fillStyle = '#bd3b2d';
+      for (let x = 0; x < W; x += 96) {
+        ctx.beginPath();
+        ctx.moveTo(x, 330);
+        ctx.lineTo(x + 48, 384);
+        ctx.lineTo(x + 96, 330);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      ctx.fillStyle = 'rgba(88, 48, 20, 0.16)';
+      ctx.beginPath();
+      ctx.ellipse(820, 625, 390, 50, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function makeRing() {
+      return { x: ringLaunch.x, y: ringLaunch.y, vx: 0, vy: 0, scale: 1, thrown: false, scored: false, trail: [] };
+    }
+
+    function updateRing(dt) {
+      const current = ring.current;
+      if (!current.thrown) return;
+      current.previousX = current.x;
+      current.previousY = current.y;
+      current.vy += gravity * dt;
+      current.vx *= Math.pow(friction, dt);
+      current.vy *= Math.pow(friction, dt);
+      current.x += current.vx * dt;
+      current.y += current.vy * dt;
+      current.scale = clamp(0.68 + current.y / 950, 0.75, 1.16);
+      current.trail.push({ x: current.x, y: current.y, scale: current.scale });
+      if (current.trail.length > 7) current.trail.shift();
+
+      const flightTarget = chooseRingTarget(current, true);
+      if (flightTarget && !current.scored) {
+        settleRing(flightTarget);
+        return;
+      }
+
+      const landed = current.y > 625 || current.x > W + 80 || current.x < -80 || speed(current) < 0.35 && current.y > 430;
+      if (landed && !current.scored) settleRing();
+    }
+
+    function settleRing(target = chooseRingTarget(ring.current, false)) {
+      const current = ring.current;
+      current.scored = true;
+      current.thrown = false;
+      current.vx = 0;
+      current.vy = 0;
+
+      if (target) {
+        target.hit = true;
+        current.x = target.x;
+        current.y = targetLandingY(target);
+        current.scale = target.kind === 'bottle' ? 0.92 : 1.03;
+        ring.score += target.points;
+        burst(target.x, target.y - 30, target.color);
+        playWinSound();
+        setMessage(`${target.name}! +${target.points} points`);
+      } else {
+        current.y = Math.min(632, current.y);
+        playTone(180, 0.08, 'sine');
+        setMessage(ring.ringsLeft > 0 ? 'So close. Watch for the glowing target while aiming!' : 'Round over. Press New Round to play again!');
+      }
+
+      ring.settled.push({ ...current, target });
+      if (ring.score > ring.best) {
+        ring.best = ring.score;
+        localStorage.setItem('jack-ring-toss-best', ring.best);
+      }
+      updateHud();
+
+      setTimeout(() => {
+        if (mode !== 'ring') return;
+        if (ring.ringsLeft > 0) ring.current = makeRing();
+        else finishRingRound();
+      }, 650);
+    }
+
+    function chooseRingTarget(testRing, usePath) {
+      let bestTarget = null;
+      let bestDistance = Infinity;
+
+      for (const target of ring.targets) {
+        if (target.hit) continue;
+        const targetY = targetLandingY(target);
+        const directDistance = Math.hypot(testRing.x - target.x, testRing.y - targetY);
+        const pathDistance = usePath && testRing.previousX !== undefined
+          ? segmentDistance(testRing.previousX, testRing.previousY, testRing.x, testRing.y, target.x, targetY)
+          : directDistance;
+        const d = Math.min(directDistance, pathDistance);
+        const hitRange = ringHitRange(target, testRing.scale);
+        if (d < hitRange && d < bestDistance) {
+          bestTarget = target;
+          bestDistance = d;
+        }
+      }
+      return bestTarget;
+    }
+
+    function ringHitRange(target, scale) {
+      const helper = helperMode ? 48 : 14;
+      const baseRange = target.kind === 'bottle' ? 46 : 60;
+      return baseRange + ringRadius * scale * 0.46 + helper;
+    }
+
+    function predictGuidedRingVelocity(dx, dy, boost) {
+      const startVx = dx * launchPower * boost;
+      const startVy = dy * launchPower * boost;
+      const first = simulateRingShot(startVx, startVy);
+      if (first.target) return null;
+
+      let best = { ...first, vx: startVx, vy: startVy };
+      const speedNow = Math.hypot(startVx, startVy);
+      const angleNow = Math.atan2(startVy, startVx);
+      for (let angleOffset = -0.28; angleOffset <= 0.28; angleOffset += 0.035) {
+        for (let scale = 0.82; scale <= 1.22; scale += 0.04) {
+          const testSpeed = speedNow * scale;
+          const vx = Math.cos(angleNow + angleOffset) * testSpeed;
+          const vy = Math.sin(angleNow + angleOffset) * testSpeed;
+          const result = simulateRingShot(vx, vy);
+          if (result.distance < best.distance) best = { ...result, vx, vy };
+          if (result.target) return { vx, vy };
+        }
+      }
+
+      return best.distance < 135 && Number.isFinite(best.vx) && Number.isFinite(best.vy)
+        ? { vx: best.vx, vy: best.vy }
+        : null;
+    }
+
+    function simulateRingShot(vx, vy) {
+      let x = ringLaunch.x;
+      let y = ringLaunch.y;
+      let previousX = x;
+      let previousY = y;
+      let bestTarget = null;
+      let bestDistance = Infinity;
+
+      for (let i = 0; i < 150; i++) {
+        previousX = x;
+        previousY = y;
+        vy += gravity;
+        vx *= friction;
+        vy *= friction;
+        x += vx;
+        y += vy;
+        const scale = clamp(0.68 + y / 950, 0.75, 1.16);
+
+        for (const target of ring.targets) {
+          if (target.hit) continue;
+          const targetY = targetLandingY(target);
+          const d = segmentDistance(previousX, previousY, x, y, target.x, targetY);
+          if (d < bestDistance) {
+            bestDistance = d;
+            bestTarget = target;
+          }
+          if (d < ringHitRange(target, scale)) return { target, distance: d };
+        }
+        if (y > 625 || x > W + 80 || x < -80) break;
+      }
+
+      return { target: null, nearest: bestTarget, distance: bestDistance };
+    }
+
+    function targetLandingY(target) {
+      return target.kind === 'bottle' ? target.y - 42 : target.y - 8;
+    }
+
+    function finishRingRound() {
+      ring.current = makeRing();
+      const rank = ring.score >= 100 ? 'Grand Prize Champion' : ring.score >= 65 ? 'Prize Table Star' : ring.score >= 35 ? 'Bottle Bouncer' : 'Practice Toss Hero';
+      setMessage(`Ring Toss complete: ${rank}! Score ${ring.score}.`);
+      if (ring.score >= 65) burst(W / 2, 150, '#ffc44d', 70);
+    }
+
+    function resetRingRound(nextRound) {
+      if (nextRound) ring.round++;
+      ring.score = 0;
+      ring.ringsLeft = 6;
+      ring.current = makeRing();
+      ring.settled = [];
+      for (const target of ring.targets) target.hit = false;
+      updateHud();
+      setMessage('Drag forward toward the targets or pull back like a slingshot. The dotted path shows the toss.');
+    }
+
+    function drawRingGame() {
+      drawBoothSign('RING TOSS', 'Bottles and tiny prize friends');
+      drawRingCounter();
+      for (const target of ring.targets) if (target.kind === 'bottle') drawBottle(target);
+      for (const target of ring.targets) if (target.kind === 'animal') drawAnimal(target);
+      for (const settled of ring.settled) drawRing(settled, settled.target ? '#ffe45f' : '#f7f0df');
+      drawLauncher(ringLaunch, 'TOSS');
+      if (!ring.current.thrown || isDragging) drawRingAim();
+      if (ring.current.thrown) drawTrail(ring.current, drawRing, '#fff8b8');
+      if (ring.ringsLeft > 0 || ring.current.thrown) drawRing(ring.current, '#fff15b');
+    }
+
+    function drawRingCounter() {
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,0.82)';
+      roundRect(72, 164, 210, 58, 8);
+      ctx.fill();
+      ctx.strokeStyle = '#7a351f';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      for (let i = 0; i < 6; i++) {
+        ctx.globalAlpha = i < ring.ringsLeft ? 1 : 0.25;
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = '#cb2720';
+        ctx.beginPath();
+        ctx.ellipse(102 + i * 30, 193, 11, 6, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawRingAim() {
+      if (!isDragging || mode !== 'ring') {
+        drawReadyCircle(ringLaunch);
+        return;
+      }
+      drawPullLine(ringLaunch, dragPoint);
+      const throwVector = getRingThrowVector();
+      const guidePoint = {
+        x: ringLaunch.x - throwVector.dx,
+        y: ringLaunch.y - throwVector.dy
+      };
+      const predictedTarget = drawTrajectory(ringLaunch, guidePoint, launchPower, gravity, (point) => chooseRingTarget(point, true));
+      if (predictedTarget) drawTargetLock(predictedTarget);
+    }
+
+    function getRingThrowVector() {
+      const forwardX = dragPoint.x - ringLaunch.x;
+      const forwardY = dragPoint.y - ringLaunch.y;
+      const usingForwardAim = forwardX > 24;
+
+      if (usingForwardAim) {
+        const lift = clamp(forwardX / ringMaxPull, 0, 1) * 48;
+        return {
+          dx: forwardX,
+          dy: forwardY - lift
+        };
+      }
+
+      return {
+        dx: ringLaunch.x - dragPoint.x,
+        dy: ringLaunch.y - dragPoint.y
+      };
+    }
+
+    function drawWheelGame() {
+      drawBoothSign('PRIZE WHEEL', 'Spin for Jackpot and bonus points');
+      const center = { x: W / 2, y: H / 2 + 25 };
+      const radius = 210;
+      const slice = Math.PI * 2 / wheel.segments.length;
+
+      ctx.save();
+      ctx.translate(center.x, center.y);
+      ctx.rotate(wheel.angle);
+      wheel.segments.forEach((segment, index) => {
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, radius, index * slice, (index + 1) * slice);
+        ctx.closePath();
+        ctx.fillStyle = segment.color;
+        ctx.fill();
+        ctx.strokeStyle = '#fff9e9';
+        ctx.lineWidth = 5;
+        ctx.stroke();
+
+        ctx.save();
+        ctx.rotate(index * slice + slice / 2);
+        ctx.translate(radius * 0.62, 0);
+        ctx.rotate(Math.PI / 2);
+        ctx.fillStyle = '#172033';
+        ctx.font = segment.label === 'Jackpot' ? '900 25px Arial' : '900 22px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(segment.label, 0, 8);
+        ctx.restore();
+      });
+      ctx.beginPath();
+      ctx.arc(0, 0, 58, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff7e8';
+      ctx.fill();
+      ctx.strokeStyle = '#7a351f';
+      ctx.lineWidth = 8;
+      ctx.stroke();
+      ctx.fillStyle = '#d84032';
+      ctx.font = '900 24px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('SPIN', 0, 8);
+      ctx.restore();
+
+      ctx.fillStyle = '#172033';
+      ctx.beginPath();
+      ctx.moveTo(center.x, center.y - radius - 36);
+      ctx.lineTo(center.x - 28, center.y - radius + 16);
+      ctx.lineTo(center.x + 28, center.y - radius + 16);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.82)';
+      roundRect(405, 585, 390, 58, 8);
+      ctx.fill();
+      ctx.fillStyle = '#172033';
+      ctx.font = '900 26px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(`Last prize: ${wheel.lastPrize}`, 600, 622);
+    }
+
+    function spinWheel() {
+      if (wheel.spinning) return;
+      wheel.velocity = 0.62 + Math.random() * 0.42;
+      wheel.spinning = true;
+      wheel.spins++;
+      wheel.lastPrize = 'Spinning';
+      playTone(520, 0.05, 'triangle');
+      setMessage('Round and round it goes!');
+      updateHud();
+    }
+
+    function updateWheel(dt) {
+      if (!wheel.spinning) return;
+      wheel.angle += wheel.velocity * dt;
+      wheel.velocity *= Math.pow(0.982, dt);
+      if (Math.random() < 0.08 * dt) playTone(240 + Math.random() * 120, 0.018, 'square');
+      if (wheel.velocity < 0.0045) {
+        wheel.velocity = 0;
+        wheel.spinning = false;
+        awardWheelPrize();
+      }
+    }
+
+    function awardWheelPrize() {
+      const slice = Math.PI * 2 / wheel.segments.length;
+      const pointerAngle = -Math.PI / 2;
+      const normalized = positiveModulo(pointerAngle - wheel.angle, Math.PI * 2);
+      const index = Math.floor(normalized / slice) % wheel.segments.length;
+      const prize = wheel.segments[index];
+      wheel.credits += prize.points;
+      wheel.lastPrize = prize.label;
+      if (wheel.credits > wheel.best) {
+        wheel.best = wheel.credits;
+        localStorage.setItem('carnival-wheel-best', wheel.best);
+      }
+      burst(W / 2, 165, prize.color, prize.points >= 50 ? 70 : 34);
+      playWinSound();
+      setMessage(prize.points ? `${prize.label}! +${prize.points} credits` : 'Try Again! Spin for the Jackpot.');
+      updateHud();
+    }
+
+    function swingHammer() {
+      if (strong.swingsLeft <= 0) {
+        setMessage('Strongman round over. Press Reset Strongman to play again.');
+        return;
+      }
+
+      const distanceFromSweetSpot = Math.abs(strong.meter - strong.sweetSpot);
+      const timing = clamp(1 - distanceFromSweetSpot / 0.5, 0, 1);
+      const centerBonus = clamp(1 - Math.abs(strong.meter - 0.5) * 1.25, 0.25, 1);
+      const power = clamp(Math.round(10 + timing * 82 + centerBonus * 8), 5, 100);
+      const rank = getStrongmanRank(power);
+      strong.combo = power >= 80 ? strong.combo + 1 : 0;
+      const comboBonus = strong.combo > 1 ? (strong.combo - 1) * 10 : 0;
+      const points = power >= 98 ? 150 + comboBonus : Math.round(power + comboBonus);
+      strong.swingsLeft--;
+      strong.score += points;
+      strong.lastPower = rank.label;
+      strong.striker = 0;
+      strong.strikerVelocity = 0.015 + power * 0.024;
+      strong.hammerVelocity = 0.45 + power * 0.008;
+      strong.shake = Math.max(strong.shake, power >= 80 ? 22 : 10);
+
+      if (strong.score > strong.best) {
+        strong.best = strong.score;
+        localStorage.setItem('carnival-strong-best', strong.best);
+      }
+
+      if (power >= 98) {
+        strong.bellFlash = 70;
+        strong.shake = 36;
+        burst(600, 135, '#ffc44d', 90);
+        playWinSound();
+        setMessage(`BELL RINGER! ${rank.label} hit for ${points} points!`);
+      } else if (power >= 75) {
+        burst(600, 240, '#ff5a4d', 36);
+        playTone(520, 0.07, 'triangle');
+        setMessage(`${rank.label}! ${points} points${comboBonus ? ` with combo +${comboBonus}` : ''}.`);
+      } else if (power >= 45) {
+        playTone(340, 0.06, 'triangle');
+        setMessage(`${rank.label}. ${points} points.`);
+      } else {
+        playTone(180, 0.07, 'sine');
+        setMessage(`${rank.label}. Hit the glowing sweet spot for more power.`);
+      }
+
+      strong.sweetSpot = 0.24 + Math.random() * 0.52;
+
+      if (strong.swingsLeft === 0 && power < 98) {
+        setTimeout(() => {
+          if (mode === 'strong') setMessage(`Strongman round over. Score ${strong.score}. Press Reset Strongman to play again.`);
+        }, 850);
+      }
+      updateHud();
+    }
+
+    function getStrongmanRank(power) {
+      if (power >= 98) return { label: 'Bell Ringer', color: '#ffc44d' };
+      if (power >= 86) return { label: 'Thunder Hit', color: '#d84032' };
+      if (power >= 68) return { label: 'Mighty Swing', color: '#2f9b5b' };
+      if (power >= 42) return { label: 'Solid Hit', color: '#2377d1' };
+      return { label: 'Warm Up', color: '#9b8fe8' };
+    }
+
+    function resetStrongman(nextRound) {
+      if (nextRound) strong.round++;
+      strong.score = 0;
+      strong.swingsLeft = 5;
+      strong.combo = 0;
+      strong.sweetSpot = 0.5;
+      strong.striker = 0;
+      strong.strikerVelocity = 0;
+      strong.hammerAngle = -0.42;
+      strong.hammerVelocity = 0;
+      strong.bellFlash = 0;
+      strong.shake = 0;
+      strong.lastPower = 'Ready';
+      updateHud();
+      setMessage('Press Swing Hammer when the pointer lines up with the glowing sweet spot.');
+    }
+
+    function updateStrongman(dt) {
+      const meterSpeed = 0.014 + strong.round * 0.0015;
+      strong.meter += strong.meterDirection * meterSpeed * dt;
+      if (strong.meter >= 1) {
+        strong.meter = 1;
+        strong.meterDirection = -1;
+      }
+      if (strong.meter <= 0) {
+        strong.meter = 0;
+        strong.meterDirection = 1;
+      }
+
+      if (strong.strikerVelocity !== 0 || strong.striker > 0) {
+        strong.striker += strong.strikerVelocity * dt;
+        strong.strikerVelocity -= 0.026 * dt;
+        if (strong.striker >= 1) {
+          strong.striker = 1;
+          strong.strikerVelocity = -0.2;
+          strong.bellFlash = 70;
+          strong.shake = 40;
+          burst(600, 135, '#ffc44d', 60);
+        }
+        if (strong.striker <= 0) {
+          strong.striker = 0;
+          strong.strikerVelocity = 0;
+        }
+      }
+
+      if (strong.hammerVelocity !== 0) {
+        strong.hammerAngle += strong.hammerVelocity * dt;
+        strong.hammerVelocity -= 0.04 * dt;
+        if (strong.hammerAngle > 0.72) {
+          strong.hammerAngle = 0.72;
+          strong.hammerVelocity = -0.28;
+        }
+        if (strong.hammerAngle < -0.42) {
+          strong.hammerAngle = -0.42;
+          strong.hammerVelocity = 0;
+        }
+      }
+
+      if (strong.bellFlash > 0) strong.bellFlash -= dt;
+      if (strong.shake > 0) strong.shake -= dt;
+    }
+
+    function drawStrongmanGame() {
+      drawBoothSign('STRONGMAN HAMMER', 'Hit the red zone to ring the bell');
+      drawStrongmanScorePanel();
+      drawStrongmanTower();
+      drawStrongmanMeter();
+      drawHammerPad();
+    }
+
+    function drawStrongmanScorePanel() {
+      ctx.save();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.84)';
+      roundRect(792, 170, 260, 118, 8);
+      ctx.fill();
+      ctx.strokeStyle = '#7a351f';
+      ctx.lineWidth = 5;
+      ctx.stroke();
+      ctx.fillStyle = '#172033';
+      ctx.font = '900 20px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('Best', 857, 210);
+      ctx.fillText('Combo', 987, 210);
+      ctx.font = '900 34px Arial';
+      ctx.fillText(strong.best, 857, 252);
+      ctx.fillText(`x${strong.combo}`, 987, 252);
+      ctx.restore();
+    }
+
+    function drawStrongmanTower() {
+      const towerX = 600;
+      const towerTop = 150;
+      const towerBottom = 575;
+      const towerHeight = towerBottom - towerTop;
+      const strikerY = towerBottom - strong.striker * towerHeight;
+      const shakeX = strong.shake > 0 ? Math.sin(performance.now() / 30) * Math.min(8, strong.shake * 0.3) : 0;
+
+      ctx.save();
+      ctx.translate(shakeX, 0);
+      ctx.fillStyle = '#7a351f';
+      roundRect(towerX - 88, towerTop - 8, 176, towerHeight + 34, 8);
+      ctx.fill();
+      ctx.fillStyle = '#fff6d8';
+      roundRect(towerX - 52, towerTop + 18, 104, towerHeight - 8, 8);
+      ctx.fill();
+
+      for (let i = 0; i <= 10; i++) {
+        const y = towerBottom - i * towerHeight / 10;
+        ctx.strokeStyle = i >= 8 ? '#d84032' : i >= 5 ? '#ffc44d' : '#2377d1';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(towerX - 48, y);
+        ctx.lineTo(towerX + 48, y);
+        ctx.stroke();
+        ctx.fillStyle = '#172033';
+        ctx.font = '900 14px Arial';
+        ctx.textAlign = 'right';
+        ctx.fillText(i * 10, towerX - 58, y + 5);
+      }
+
+      ctx.fillStyle = 'rgba(216, 64, 50, 0.18)';
+      roundRect(towerX - 44, towerTop + 18, 88, towerHeight * 0.18, 8);
+      ctx.fill();
+
+      ctx.fillStyle = strong.bellFlash > 0 ? '#fff15b' : '#ffc44d';
+      ctx.beginPath();
+      ctx.arc(towerX, towerTop - 36, 42 + Math.max(0, strong.bellFlash) * 0.04, Math.PI, 0);
+      ctx.lineTo(towerX + 42, towerTop - 25);
+      ctx.lineTo(towerX - 42, towerTop - 25);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#7a351f';
+      ctx.lineWidth = 6;
+      ctx.stroke();
+
+      ctx.fillStyle = '#d84032';
+      roundRect(towerX - 58, strikerY - 14, 116, 28, 8);
+      ctx.fill();
+      ctx.strokeStyle = '#172033';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      ctx.fillStyle = '#fff7e8';
+      ctx.font = '900 16px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('STRIKER', towerX, strikerY + 6);
+      ctx.restore();
+    }
+
+    function drawStrongmanMeter() {
+      const x = 160;
+      const y = 555;
+      const width = 300;
+      const height = 34;
+      const pointerX = x + strong.meter * width;
+      const sweetX = x + strong.sweetSpot * width;
+
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,0.86)';
+      roundRect(x - 20, y - 68, width + 40, 112, 8);
+      ctx.fill();
+      ctx.strokeStyle = '#7a351f';
+      ctx.lineWidth = 5;
+      ctx.stroke();
+
+      ctx.fillStyle = '#2377d1';
+      roundRect(x, y, width * 0.34, height, 8);
+      ctx.fill();
+      ctx.fillStyle = '#ffc44d';
+      ctx.fillRect(x + width * 0.34, y, width * 0.18, height);
+      ctx.fillRect(x + width * 0.48, y, width * 0.18, height);
+      ctx.fillStyle = '#d84032';
+      ctx.fillRect(sweetX - width * 0.055, y - 5, width * 0.11, height + 10);
+      ctx.fillStyle = '#2377d1';
+      roundRect(x + width * 0.66, y, width * 0.34, height, 8);
+      ctx.fill();
+      ctx.strokeStyle = '#172033';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(x, y, width, height);
+
+      ctx.strokeStyle = '#fff15b';
+      ctx.lineWidth = 5;
+      ctx.setLineDash([8, 7]);
+      ctx.strokeRect(sweetX - width * 0.065, y - 9, width * 0.13, height + 18);
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = '#172033';
+      ctx.beginPath();
+      ctx.moveTo(pointerX, y - 16);
+      ctx.lineTo(pointerX - 14, y - 38);
+      ctx.lineTo(pointerX + 14, y - 38);
+      ctx.closePath();
+      ctx.fill();
+      ctx.font = '900 23px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('POWER', x + width / 2, y - 45);
+      ctx.font = '800 15px Arial';
+      ctx.fillText('Sweet spot moves after every swing', x + width / 2, y + 63);
+      ctx.restore();
+    }
+
+    function drawHammerPad() {
+      ctx.save();
+      ctx.translate(900, 545);
+      ctx.fillStyle = '#7a351f';
+      roundRect(-105, 34, 210, 34, 8);
+      ctx.fill();
+      ctx.fillStyle = '#d84032';
+      ctx.beginPath();
+      ctx.ellipse(0, 24, 82, 24, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#172033';
+      ctx.lineWidth = 5;
+      ctx.stroke();
+
+      ctx.rotate(strong.hammerAngle);
+      ctx.fillStyle = '#8c4a25';
+      roundRect(-155, -10, 170, 20, 8);
+      ctx.fill();
+      ctx.fillStyle = '#444b59';
+      roundRect(0, -35, 74, 70, 8);
+      ctx.fill();
+      ctx.fillStyle = '#d9dde7';
+      roundRect(10, -25, 18, 50, 5);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function makeBall() {
+      return { x: slingLaunch.x, y: slingLaunch.y, vx: 0, vy: 0, thrown: false, settled: false, trail: [] };
+    }
+
+    function resetPins() {
+      sling.pins = [];
+      const startX = 760;
+      const startY = 505;
+      const spacingX = 58;
+      const spacingY = 58;
+      let id = 0;
+      for (let row = 0; row < 5; row++) {
+        for (let col = 0; col <= row; col++) {
+          sling.pins.push({
+            id: id++,
+            x: startX + (col - row / 2) * spacingX,
+            y: startY - (4 - row) * spacingY,
+            vx: 0,
+            vy: 0,
+            radius: 19,
+            down: false,
+            color: ['#4ca3ff', '#ff5a4d', '#42b96f', '#ffc33d', '#9b8fe8'][row % 5]
+          });
+        }
+      }
+    }
+
+    function resetSlingRound(nextRound) {
+      if (nextRound) sling.round++;
+      sling.score = 0;
+      sling.ballsLeft = 5;
+      sling.ball = makeBall();
+      sling.cleared = false;
+      resetPins();
+      updateHud();
+      setMessage('Pull the ball back and release. Use the trajectory line to aim at the pyramid.');
+    }
+
+    function updateSling(dt) {
+      const ball = sling.ball;
+      if (ball.thrown) {
+        ball.previousX = ball.x;
+        ball.previousY = ball.y;
+        ball.vy += 0.36 * dt;
+        ball.vx *= Math.pow(0.992, dt);
+        ball.vy *= Math.pow(0.992, dt);
+        ball.x += ball.vx * dt;
+        ball.y += ball.vy * dt;
+        ball.trail.push({ x: ball.x, y: ball.y });
+        if (ball.trail.length > 10) ball.trail.shift();
+
+        if (ball.y > 615) {
+          ball.y = 615;
+          ball.vy *= -0.46;
+          ball.vx *= 0.72;
+          if (Math.abs(ball.vy) < 1.4 && Math.abs(ball.vx) < 1) finishBall();
+        }
+        if (ball.x > W + 80 || ball.x < -80 || ball.y > H + 80) finishBall();
+      }
+
+      for (const pin of sling.pins) {
+        const active = pin.down || Math.abs(pin.vx) + Math.abs(pin.vy) > 0.05;
+        if (!active) continue;
+        pin.vy += 0.18 * dt;
+        pin.vx *= Math.pow(0.985, dt);
+        pin.vy *= Math.pow(0.985, dt);
+        pin.x += pin.vx * dt;
+        pin.y += pin.vy * dt;
+
+        if (pin.y > 610) {
+          pin.y = 610;
+          pin.vy *= -0.28;
+          pin.vx *= 0.7;
+        }
+        if (Math.abs(pin.vx) + Math.abs(pin.vy) > 2.2 || pin.y > 575 || pin.x < 560 || pin.x > 990) {
+          markPinDown(pin);
+        }
+      }
+
+      if (ball.thrown) {
+        for (const pin of sling.pins) resolveBallPin(ball, pin);
+      }
+      for (let i = 0; i < sling.pins.length; i++) {
+        for (let j = i + 1; j < sling.pins.length; j++) resolvePinPin(sling.pins[i], sling.pins[j]);
+      }
+    }
+
+    function resolveBallPin(ball, pin) {
+      if (pin.down) return;
+      const minDist = ballRadius + pin.radius;
+      const closest = ball.previousX === undefined
+        ? { x: ball.x, y: ball.y }
+        : closestPointOnSegment(ball.previousX, ball.previousY, ball.x, ball.y, pin.x, pin.y);
+      const dx = pin.x - closest.x;
+      const dy = pin.y - closest.y;
+      const d = Math.hypot(dx, dy);
+      if (d <= 0 || d >= minDist + (helperMode ? 10 : 2)) return;
+      const nx = dx / d;
+      const ny = dy / d;
+      const overlap = Math.max(1, minDist - d);
+      ball.x -= nx * overlap * 0.35;
+      ball.y -= ny * overlap * 0.35;
+      pin.x += nx * overlap * 0.65;
+      pin.y += ny * overlap * 0.65;
+      const rel = (ball.vx - pin.vx) * nx + (ball.vy - pin.vy) * ny;
+      const impulse = Math.max(1.2, rel * 1.08);
+      ball.vx -= nx * impulse * 0.55;
+      ball.vy -= ny * impulse * 0.55;
+      pin.vx += nx * impulse * 1.65;
+      pin.vy += ny * impulse * 1.65;
+      markPinDown(pin);
+      burst(pin.x, pin.y, pin.color, 18);
+      playTone(220 + Math.random() * 120, 0.04, 'square');
+    }
+
+    function resolvePinPin(a, b) {
+      if (a.down && b.down) return;
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const minDist = a.radius + b.radius;
+      const d = Math.hypot(dx, dy);
+      if (d <= 0 || d >= minDist) return;
+      const nx = dx / d;
+      const ny = dy / d;
+      const overlap = minDist - d;
+      a.x -= nx * overlap * 0.5;
+      a.y -= ny * overlap * 0.5;
+      b.x += nx * overlap * 0.5;
+      b.y += ny * overlap * 0.5;
+      const rel = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny;
+      const impulse = rel * 0.45;
+      a.vx -= nx * impulse;
+      a.vy -= ny * impulse;
+      b.vx += nx * impulse;
+      b.vy += ny * impulse;
+      if (Math.abs(a.vx) + Math.abs(a.vy) > 1.4) markPinDown(a);
+      if (Math.abs(b.vx) + Math.abs(b.vy) > 1.4) markPinDown(b);
+    }
+
+    function markPinDown(pin) {
+      if (pin.down) return;
+      pin.down = true;
+      sling.score += 10;
+      if (sling.score > sling.best) {
+        sling.best = sling.score;
+        localStorage.setItem('carnival-sling-best', sling.best);
+      }
+      updateHud();
+      if (!sling.cleared && sling.pins.every((nextPin) => nextPin.down)) {
+        sling.cleared = true;
+        sling.score += 50;
+        if (sling.score > sling.best) {
+          sling.best = sling.score;
+          localStorage.setItem('carnival-sling-best', sling.best);
+        }
+        updateHud();
+        setMessage('Pyramid cleared! Jackpot launch!');
+        burst(W / 2, 170, '#ffc44d', 80);
+        playWinSound();
+      }
+    }
+
+    function finishBall() {
+      if (!sling.ball.thrown) return;
+      sling.ball.thrown = false;
+      sling.ball = makeBall();
+      const standing = sling.pins.filter((pin) => !pin.down).length;
+      if (standing === 0) setMessage('All pins down! Reset Pins for the next player.');
+      else if (sling.ballsLeft > 0) setMessage(`${standing} pins left. Line up the next launch.`);
+      else setMessage(`Round over. Score ${sling.score}. Press Reset Pins to play again.`);
+      updateHud();
+    }
+
+    function drawSlingGame() {
+      drawBoothSign('BALL SLINGSHOT', 'Bring down the pyramid of pins');
+      drawBallCounter();
+      drawLauncher(slingLaunch, 'BALL');
+      drawPinPlatform();
+      for (const pin of sling.pins) drawPin(pin);
+      if (!sling.ball.thrown || isDragging) drawSlingAim();
+      if (sling.ball.thrown) drawTrail(sling.ball, drawBall, 'rgba(255, 255, 255, 0.5)');
+      if (sling.ballsLeft > 0 || sling.ball.thrown) drawBall(sling.ball);
+    }
+
+    function drawBallCounter() {
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,0.82)';
+      roundRect(70, 160, 190, 58, 8);
+      ctx.fill();
+      ctx.strokeStyle = '#7a351f';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      for (let i = 0; i < 5; i++) {
+        ctx.globalAlpha = i < sling.ballsLeft ? 1 : 0.25;
+        ctx.fillStyle = '#d84032';
+        ctx.beginPath();
+        ctx.arc(102 + i * 33, 190, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.45)';
+        ctx.beginPath();
+        ctx.arc(98 + i * 33, 186, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawSlingAim() {
+      if (!isDragging || mode !== 'sling') {
+        drawReadyCircle(slingLaunch);
+        return;
+      }
+      drawPullLine(slingLaunch, dragPoint);
+      const predictedPin = drawTrajectory(slingLaunch, dragPoint, slingPower, 0.36, (point) => chooseSlingPin(point, true), 0.992);
+      if (predictedPin) drawPinLock(predictedPin);
+    }
+
+    function chooseSlingPin(point, usePath) {
+      let bestPin = null;
+      let bestDistance = Infinity;
+      const helper = helperMode ? 28 : 10;
+
+      for (const pin of sling.pins) {
+        if (pin.down) continue;
+        const directDistance = Math.hypot(point.x - pin.x, point.y - pin.y);
+        const pathDistance = usePath && point.previousX !== undefined
+          ? segmentDistance(point.previousX, point.previousY, point.x, point.y, pin.x, pin.y)
+          : directDistance;
+        const d = Math.min(directDistance, pathDistance);
+        if (d < ballRadius + pin.radius + helper && d < bestDistance) {
+          bestPin = pin;
+          bestDistance = d;
+        }
+      }
+
+      return bestPin;
+    }
+
+    function drawPinLock(pin) {
+      ctx.save();
+      ctx.translate(pin.x, pin.y);
+      ctx.strokeStyle = '#fff15b';
+      ctx.lineWidth = 7;
+      ctx.setLineDash([10, 7]);
+      ctx.beginPath();
+      ctx.arc(0, 0, pin.radius + 17, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawPinPlatform() {
+      ctx.fillStyle = '#7a351f';
+      roundRect(590, 628, 410, 24, 8);
+      ctx.fill();
+    }
+
+    function drawPin(pin) {
+      ctx.save();
+      ctx.translate(pin.x, pin.y);
+      ctx.rotate(pin.down ? pin.vx * 0.05 : 0);
+      ctx.globalAlpha = pin.down ? 0.62 : 1;
+      ctx.fillStyle = pin.color;
+      roundRect(-15, -34, 30, 68, 12);
+      ctx.fill();
+      ctx.fillStyle = '#fff7e8';
+      roundRect(-11, -8, 22, 24, 7);
+      ctx.fill();
+      ctx.strokeStyle = '#172033';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawBall(ball) {
+      ctx.save();
+      ctx.translate(ball.x, ball.y);
+      ctx.fillStyle = '#d84032';
+      ctx.beginPath();
+      ctx.arc(0, 0, ballRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.42)';
+      ctx.beginPath();
+      ctx.arc(-7, -8, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawBoothSign(text, subtext) {
+      ctx.save();
+      ctx.translate(430, 64);
+      ctx.fillStyle = '#fff6d8';
+      roundRect(0, 0, 540, 88, 8);
+      ctx.fill();
+      ctx.strokeStyle = '#7a351f';
+      ctx.lineWidth = 6;
+      ctx.stroke();
+      ctx.fillStyle = '#d84032';
+      ctx.font = '900 34px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(text, 270, 51);
+      ctx.fillStyle = '#2377d1';
+      ctx.font = '800 17px Arial';
+      ctx.fillText(subtext, 270, 75);
+      ctx.restore();
+    }
+
+    function drawBottle(t) {
+      ctx.save();
+      ctx.translate(t.x, t.y);
+      ctx.globalAlpha = t.hit ? 0.45 : 1;
+      ctx.fillStyle = 'rgba(23, 32, 51, 0.14)';
+      ctx.beginPath();
+      ctx.ellipse(0, 83, 45, 12, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = t.color;
+      roundRect(-25, -30, 50, 110, 13);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      roundRect(-16, -13, 32, 44, 8);
+      ctx.fill();
+      ctx.fillStyle = shade(t.color, -18);
+      roundRect(-13, -79, 26, 58, 9);
+      ctx.fill();
+      ctx.fillStyle = '#f5fbff';
+      roundRect(-17, -91, 34, 16, 5);
+      ctx.fill();
+      ctx.strokeStyle = '#172033';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(-12, -4, 24, 25);
+      ctx.fillStyle = '#172033';
+      ctx.font = '900 18px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(t.points, 0, 17);
+      ctx.restore();
+    }
+
+    function drawAnimal(t) {
+      ctx.save();
+      ctx.translate(t.x, t.y);
+      ctx.globalAlpha = t.hit ? 0.45 : 1;
+      ctx.fillStyle = 'rgba(23, 32, 51, 0.14)';
+      ctx.beginPath();
+      ctx.ellipse(0, 62, 52, 13, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = t.color;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 44, 48, 0, 0, Math.PI * 2);
+      ctx.fill();
+      if (t.name.includes('Bear')) {
+        circle(-27, -35, 17, t.color);
+        circle(27, -35, 17, t.color);
+        circle(-14, -5, 5, '#172033');
+        circle(14, -5, 5, '#172033');
+        circle(0, 12, 10, '#fff1c8');
+      } else if (t.name.includes('Kitty')) {
+        triangle(-34, -28, -18, -65, 0, -25, t.color);
+        triangle(34, -28, 18, -65, 0, -25, t.color);
+        circle(-14, -5, 5, '#172033');
+        circle(14, -5, 5, '#172033');
+        triangle(-5, 10, 5, 10, 0, 17, '#172033');
+      } else {
+        triangle(-34, -28, -20, -58, -2, -24, t.color);
+        circle(-14, -4, 5, '#172033');
+        circle(14, -4, 5, '#172033');
+        for (let i = -2; i <= 2; i++) triangle(i * 11 - 4, -45, i * 11 + 4, -45, i * 11, -62, '#ffe66b');
+      }
+      ctx.fillStyle = '#fff9e9';
+      roundRect(-24, 25, 48, 21, 8);
+      ctx.fill();
+      ctx.fillStyle = '#172033';
+      ctx.font = '900 17px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(t.points, 0, 42);
+      ctx.restore();
+    }
+
+    function drawLauncher(launcher, label) {
+      ctx.save();
+      ctx.fillStyle = '#7a351f';
+      ctx.fillRect(launcher.x - 8, launcher.y + 16, 16, 78);
+      ctx.beginPath();
+      ctx.arc(launcher.x, launcher.y, 29, 0, Math.PI * 2);
+      ctx.fillStyle = '#e95535';
+      ctx.fill();
+      ctx.strokeStyle = '#fff3bf';
+      ctx.lineWidth = 5;
+      ctx.stroke();
+      ctx.fillStyle = '#172033';
+      ctx.font = '900 16px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(label, launcher.x, launcher.y + 6);
+      ctx.restore();
+    }
+
+    function drawReadyCircle(point) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(23, 32, 51, 0.24)';
+      ctx.setLineDash([8, 10]);
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 86, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawPullLine(launcher, point) {
+      ctx.save();
+      ctx.strokeStyle = '#172033';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(launcher.x, launcher.y);
+      ctx.lineTo(point.x, point.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawTrajectory(launcher, point, power, nextGravity, targetPicker, nextFriction = friction) {
+      const dx = launcher.x - point.x;
+      const dy = launcher.y - point.y;
+      const boost = helperMode ? 1.1 : 1;
+      let px = launcher.x;
+      let py = launcher.y;
+      let vx = dx * power * boost;
+      let vy = dy * power * boost;
+      let predictedTarget = null;
+      const guidePoints = [];
+
+      ctx.save();
+      ctx.strokeStyle = 'rgba(35, 119, 209, 0.55)';
+      ctx.setLineDash([12, 12]);
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      for (let i = 0; i < 82; i++) {
+        const previousX = px;
+        const previousY = py;
+        vy += nextGravity;
+        vx *= nextFriction;
+        vy *= nextFriction;
+        px += vx;
+        py += vy;
+        if (targetPicker && !predictedTarget) {
+          predictedTarget = targetPicker({
+            x: px,
+            y: py,
+            previousX,
+            previousY,
+            scale: clamp(0.68 + py / 950, 0.75, 1.16)
+          });
+        }
+        if (i % 4 === 0) ctx.lineTo(px, py);
+        if (i % 8 === 0) guidePoints.push({ x: px, y: py, life: i / 82 });
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+      for (const guidePoint of guidePoints) {
+        ctx.globalAlpha = 0.85 - guidePoint.life * 0.5;
+        ctx.fillStyle = '#2377d1';
+        ctx.beginPath();
+        ctx.arc(guidePoint.x, guidePoint.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = '#fff15b';
+      ctx.strokeStyle = '#172033';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(px, py, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+      return predictedTarget;
+    }
+
+    function drawTargetLock(target) {
+      ctx.save();
+      ctx.translate(target.x, targetLandingY(target));
+      ctx.scale(1, 0.46);
+      ctx.strokeStyle = '#fff15b';
+      ctx.lineWidth = 8;
+      ctx.setLineDash([14, 8]);
+      ctx.beginPath();
+      ctx.arc(0, 0, target.kind === 'bottle' ? 46 : 58, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawTrail(item, drawer, color) {
+      item.trail.forEach((point, index) => {
+        ctx.save();
+        ctx.globalAlpha = index / item.trail.length * 0.28;
+        if (drawer === drawRing) drawer({ ...point, scale: point.scale || 1 }, color);
+        else drawer(point);
+        ctx.restore();
+      });
+    }
+
+    function drawRing(testRing, color) {
+      ctx.save();
+      ctx.translate(testRing.x, testRing.y);
+      ctx.scale(testRing.scale || 1, (testRing.scale || 1) * 0.46);
+      ctx.lineWidth = 16;
+      ctx.strokeStyle = '#cb2720';
+      ctx.beginPath();
+      ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.lineWidth = 8;
+      ctx.strokeStyle = color;
+      ctx.beginPath();
+      ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function toggleFerrisRide() {
+      ferris.riding = !ferris.riding;
+      if (ferris.riding) {
+        ferris.rides++;
+        ferris.fireworkTimer = 4;
+        playWinSound();
+        setMessage('You are aboard the golden gondola — up, up, and away!');
+      } else {
+        setMessage('The Ferris wheel stopped safely at the platform. Ride again anytime!');
+      }
+      primaryAction.textContent = ferris.riding ? 'Stop Ride' : 'Ride Ferris Wheel';
+      updateHud();
+    }
+
+    function updateFerris(dt) {
+      ferris.lightPhase += 0.12 * dt;
+      if (ferris.riding) ferris.angle += 0.0075 * dt;
+      if (ferris.riding && ferris.fireworks) {
+        ferris.fireworkTimer -= dt;
+        if (ferris.fireworkTimer <= 0) {
+          const colors = ['#ff4d6d', '#ffe45e', '#64d8ff', '#b388ff', '#6dff9b'];
+          burst(140 + Math.random() * 920, 100 + Math.random() * 190, colors[Math.floor(Math.random() * colors.length)], 22);
+          ferris.fireworkTimer = 24 + Math.random() * 28;
+          playTone(190 + Math.random() * 100, 0.04, 'sine');
+        }
+      }
+    }
+
+    function drawFerrisRide() {
+      ctx.fillStyle = 'rgba(20, 25, 75, 0.82)';
+      ctx.fillRect(0, 0, W, 360);
+      for (let i = 0; i < 55; i++) {
+        const x = (i * 223) % W;
+        const y = 45 + (i * 83) % 255;
+        circle(x, y, 1.5 + (i % 3), i % 2 ? '#fff6b0' : '#bde8ff');
+      }
+
+      const cx = 600;
+      const cy = 350;
+      const radius = 235;
+      ctx.lineCap = 'round';
+      ctx.lineWidth = 17;
+      ctx.strokeStyle = '#343a60';
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(410, 645);
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(790, 645);
+      ctx.stroke();
+      ctx.lineWidth = 10;
+      ctx.strokeStyle = '#f2cf57';
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.stroke();
+
+      for (let i = 0; i < 12; i++) {
+        const a = ferris.angle + i * Math.PI * 2 / 12;
+        const x = cx + Math.cos(a) * radius;
+        const y = cy + Math.sin(a) * radius;
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#8bbff1';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        const flash = Math.sin(ferris.lightPhase + i * 1.7) > 0;
+        circle(x, y, 10, flash ? '#fff36b' : '#ff4d79');
+        drawGondola(x, y + 15, i === 9);
+      }
+      circle(cx, cy, 35, '#e74c4c');
+      circle(cx, cy, 17, '#ffe45e');
+      for (let i = 0; i < 24; i++) {
+        const a = i * Math.PI * 2 / 24;
+        const r = radius + 3;
+        circle(cx + Math.cos(a) * r, cy + Math.sin(a) * r, 5,
+          Math.sin(ferris.lightPhase * 1.4 + i) > 0 ? '#54f4ff' : '#ffdf48');
+      }
+      ctx.fillStyle = '#814622';
+      ctx.fillRect(330, 635, 540, 30);
+      drawBoothSign(ferris.riding ? 'YOU ARE RIDING!' : 'STARLIGHT WHEEL', ferris.riding ? 'Golden gondola' : 'All aboard');
+    }
+
+    function drawGondola(x, y, isRider) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.fillStyle = isRider ? '#ffc928' : '#e94f55';
+      roundRect(-31, 0, 62, 38, 10);
+      ctx.fill();
+      ctx.strokeStyle = '#542f45';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-24, 0); ctx.lineTo(-16, -25); ctx.lineTo(16, -25); ctx.lineTo(24, 0);
+      ctx.stroke();
+      if (isRider) {
+        circle(0, 3, 9, '#ffd2aa');
+        ctx.fillStyle = '#2377d1';
+        ctx.fillRect(-10, 12, 20, 18);
+      }
+      ctx.restore();
+    }
+
+    function toggleElephantRide() {
+      elephant.riding = !elephant.riding;
+      if (elephant.riding) {
+        elephant.rides++;
+        playWinSound();
+        setMessage('Your elephant is flying! Tap the ride or press Stop when you are ready to land.');
+      } else {
+        setMessage('A gentle landing! Choose another elephant or ride again.');
+      }
+      primaryAction.textContent = elephant.riding ? 'Stop Ride' : 'Ride Elephants';
+      updateHud();
+    }
+
+    function updateElephant(dt) {
+      elephant.lightPhase += 0.1 * dt;
+      const target = elephant.riding ? 0.012 : 0;
+      elephant.speed += (target - elephant.speed) * 0.025 * dt;
+      elephant.angle += elephant.speed * dt;
+    }
+
+    function drawElephantRide() {
+      ctx.fillStyle = 'rgba(104, 199, 255, 0.35)';
+      ctx.fillRect(0, 0, W, 360);
+      const cx = 600;
+      const cy = 390;
+      ctx.fillStyle = '#6a397c';
+      ctx.fillRect(570, 280, 60, 330);
+      ctx.fillStyle = '#e64d62';
+      ctx.beginPath();
+      ctx.moveTo(455, 300); ctx.quadraticCurveTo(600, 175, 745, 300); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#ffd449';
+      ctx.fillRect(470, 295, 260, 22);
+      circle(cx, 280, 32, '#ffd449');
+      circle(cx, 280, 15, '#e64d62');
+
+      for (let i = 0; i < 6; i++) {
+        const a = elephant.angle + i * Math.PI * 2 / 6;
+        const depth = Math.sin(a);
+        const x = cx + Math.cos(a) * 330;
+        const lift = elephant.riding ? 55 + 55 * Math.sin(a * 2 + elephant.angle * 2) : 0;
+        const y = cy + depth * 90 - lift;
+        ctx.strokeStyle = '#eee4c8';
+        ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.moveTo(cx, 300); ctx.lineTo(x, y - 20); ctx.stroke();
+        drawFlyingElephant(x, y, a, i === elephant.selected);
+      }
+      ctx.fillStyle = '#9e4a2e';
+      ctx.beginPath(); ctx.ellipse(cx, 625, 265, 35, 0, 0, Math.PI * 2); ctx.fill();
+      for (let i = 0; i < 18; i++) {
+        circle(360 + i * 28, 618, 6, Math.sin(elephant.lightPhase + i) > 0 ? '#fff36b' : '#52e1ff');
+      }
+      drawBoothSign(elephant.riding ? 'YOU ARE FLYING!' : 'FLYING ELEPHANTS', `Elephant ${elephant.selected + 1}`);
+    }
+
+    function drawFlyingElephant(x, y, angle, isRider) {
+      ctx.save();
+      ctx.translate(x, y);
+      const facing = Math.cos(angle) >= 0 ? 1 : -1;
+      ctx.scale(facing, 1);
+      const color = isRider ? '#8b7cf6' : ['#71c7ec', '#f28bb5', '#65c889', '#f29e4c'][Math.abs(Math.round(angle * 10)) % 4];
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.ellipse(0, 0, 62, 37, 0, 0, Math.PI * 2); ctx.fill();
+      circle(48, -18, 31, color);
+      ctx.strokeStyle = color; ctx.lineWidth = 18; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(65, -8); ctx.quadraticCurveTo(88, 10, 78, 35); ctx.stroke();
+      ctx.fillStyle = shade(color, -25);
+      ctx.beginPath(); ctx.ellipse(27, -21, 25, 34, -0.4, 0, Math.PI * 2); ctx.fill();
+      circle(57, -25, 4, '#172033');
+      ctx.fillStyle = isRider ? '#ffd43b' : '#d84032';
+      roundRect(-25, -35, 47, 19, 5); ctx.fill();
+      if (isRider) {
+        circle(-2, -48, 9, '#ffd2aa');
+        ctx.fillStyle = '#2377d1'; ctx.fillRect(-11, -39, 18, 17);
+      }
+      ctx.restore();
+    }
+
+    function updateParticles(dt) {
+      particles = particles.filter((p) => p.life > 0);
+      for (const p of particles) {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 0.12 * dt;
+        p.life -= dt;
+      }
+    }
+
+    function drawParticles() {
+      for (const p of particles) {
+        ctx.save();
+        ctx.globalAlpha = clamp(p.life / 55, 0, 1);
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.life);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-5, -5, 10, 10);
+        ctx.restore();
+      }
+    }
+
+    function burst(x, y, color, count = 34) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const power = 2 + Math.random() * 6;
+        particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * power,
+          vy: Math.sin(angle) * power - 2,
+          life: 35 + Math.random() * 30,
+          color: Math.random() > 0.35 ? color : ['#d84032', '#2377d1', '#2f9b5b', '#ffc44d'][Math.floor(Math.random() * 4)]
+        });
+      }
+    }
+
+    function roundRect(x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    function circle(x, y, radius, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function triangle(x1, y1, x2, y2, x3, y3, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.lineTo(x3, y3);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function distance(a, b) {
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+
+    function segmentDistance(x1, y1, x2, y2, px, py) {
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const lengthSq = dx * dx + dy * dy;
+      if (lengthSq === 0) return Math.hypot(px - x1, py - y1);
+      const t = clamp(((px - x1) * dx + (py - y1) * dy) / lengthSq, 0, 1);
+      const closestX = x1 + t * dx;
+      const closestY = y1 + t * dy;
+      return Math.hypot(px - closestX, py - closestY);
+    }
+
+    function closestPointOnSegment(x1, y1, x2, y2, px, py) {
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const lengthSq = dx * dx + dy * dy;
+      if (lengthSq === 0) return { x: x1, y: y1 };
+      const t = clamp(((px - x1) * dx + (py - y1) * dy) / lengthSq, 0, 1);
+      return {
+        x: x1 + t * dx,
+        y: y1 + t * dy
+      };
+    }
+
+    function speed(item) {
+      return Math.hypot(item.vx, item.vy);
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function positiveModulo(value, mod) {
+      return ((value % mod) + mod) % mod;
+    }
+
+    function angleDelta(a, b) {
+      return Math.atan2(Math.sin(a - b), Math.cos(a - b));
+    }
+
+    function shade(hex, amount) {
+      const raw = hex.replace('#', '');
+      const num = parseInt(raw, 16);
+      const r = clamp((num >> 16) + amount, 0, 255);
+      const g = clamp(((num >> 8) & 255) + amount, 0, 255);
+      const b = clamp((num & 255) + amount, 0, 255);
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    function playTone(frequency, duration, type) {
+      try {
+        const audio = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audio.createOscillator();
+        const gain = audio.createGain();
+        osc.type = type;
+        osc.frequency.value = frequency;
+        gain.gain.setValueAtTime(0.045, audio.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audio.destination);
+        osc.start();
+        osc.stop(audio.currentTime + duration);
+      } catch (error) {
+        return false;
+      }
+      return true;
+    }
+
+    function playWinSound() {
+      playTone(520, 0.07, 'triangle');
+      setTimeout(() => playTone(700, 0.07, 'triangle'), 65);
+    }</script></body></html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Dino Jump - High Score Edition</title><style>body{margin:0;display:flex;justify-content:center;align-items:center;height:100vh;background:#1a1a1a;font-family:'Courier New',Courier,monospace;overflow:hidden}canvas{background:#fff;border:4px solid #333;box-shadow:0 10px 30px rgba(0,0,0,.5);border-radius:8px}#ui{position:absolute;top:30px;color:#fff;text-align:center;pointer-events:none;width:100%}.score-box{display:inline-block;margin:0 20px}.label{font-size:14px;opacity:.8;text-transform:uppercase}.value{font-size:32px;font-weight:700;display:block}</style></head><body><div id="ui"><div class="score-box"><span class="label">Score</span> <span id="score" class="value">0</span></div><div class="score-box"><span class="label">Best</span> <span id="best" class="value">0</span></div></div><canvas id="gameCanvas"></canvas><script>const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreVal = document.getElementById('score');
+    const bestVal = document.getElementById('best');
+
+    canvas.width = 800;
+    canvas.height = 250;
+    
+    let score = 0;
+    // Load high score from localStorage, or set to 0 if it doesn't exist yet
+    let highScore = localStorage.getItem('dinoHighScore') || 0;
+    bestVal.innerText = highScore;
+
+    let gameActive = true;
+
+    const player = {
+        x: 50, y: 180, w: 40, h: 40, dy: 0,
+        jumpForce: 13, gravity: 0.7, grounded: false
+    };
+
+    const obstacles = [];
+    let spawnTimer = 0;
+
+    function spawnObstacle() {
+        obstacles.push({
+            x: canvas.width,
+            y: 190,
+            w: 25,
+            h: 30 + Math.random() * 30,
+            speed: 6 + (score / 1000)
+        });
+    }
+
+    function update() {
+        if (!gameActive) return;
+
+        player.dy += player.gravity;
+        player.y += player.dy;
+
+        if (player.y + player.h > canvas.height - 30) {
+            player.y = canvas.height - 30 - player.h;
+            player.dy = 0;
+            player.grounded = true;
+        }
+
+        spawnTimer++;
+        if (spawnTimer > 80) {
+            spawnObstacle();
+            spawnTimer = 0;
+        }
+
+        obstacles.forEach((obs, index) => {
+            obs.x -= obs.speed;
+            if (player.x < obs.x + obs.w && player.x + player.w > obs.x &&
+                player.y < obs.y + obs.h && player.y + player.h > obs.y) {
+                gameOver();
+            }
+            if (obs.x + obs.w < 0) obstacles.splice(index, 1);
+        });
+
+        score++;
+        scoreVal.innerText = Math.floor(score / 10);
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Floor line
+        ctx.strokeStyle = "#333";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height - 30);
+        ctx.lineTo(canvas.width, canvas.height - 30);
+        ctx.stroke();
+
+        // Player (Blue)
+        ctx.fillStyle = "#00a8ff";
+        ctx.fillRect(player.x, player.y, player.w, player.h);
+
+        // Obstacles (Red)
+        ctx.fillStyle = "#ff4757";
+        obstacles.forEach(obs => ctx.fillRect(obs.x, obs.y, obs.w, obs.h));
+
+        if (!gameActive) {
+            ctx.fillStyle = "rgba(0,0,0,0.7)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "white";
+            ctx.font = "bold 24px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText("CRASHED!", canvas.width/2, canvas.height/2 - 10);
+            ctx.font = "18px Arial";
+            ctx.fillText("Press SPACE to try again", canvas.width/2, canvas.height/2 + 30);
+        }
+
+        requestAnimationFrame(() => {
+            update();
+            draw();
+        });
+    }
+
+    function gameOver() {
+        gameActive = false;
+        let finalScore = Math.floor(score / 10);
+        
+        // Check if we beat the high score
+        if (finalScore > highScore) {
+            highScore = finalScore;
+            // SAVE to local storage
+            localStorage.setItem('dinoHighScore', highScore);
+            bestVal.innerText = highScore;
+        }
+    }
+
+    function reset() {
+        score = 0;
+        obstacles.length = 0;
+        gameActive = true;
+        player.y = 180;
+        spawnTimer = 0;
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+            if (!gameActive) reset();
+            else if (player.grounded) {
+                player.dy = -player.jumpForce;
+                player.grounded = false;
+            }
+        }
+    });
+
+    draw();</script></body></html>

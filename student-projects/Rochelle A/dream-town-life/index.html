@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mochi Town Life</title>
+    <style>
+      :root {
+        --pink: #ff7fbf;
+        --sky: #8fdcff;
+        --mint: #bff3d2;
+        --peach: #ffd39b;
+        --purple: #c7b2ff;
+        --text: #3f3152;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-width: 0;
+        overflow-x: hidden;
+        font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+        background-image: linear-gradient(135deg, rgba(255,244,250,.96) 0%, rgba(237,250,255,.95) 45%, rgba(246,255,231,.96) 100%), url("assets/kenney-patterns/PNG/Default/pattern_27.png");
+        background-size: auto, 180px 180px;
+        background-blend-mode: normal, soft-light;
+        color: var(--text);
+      }
+
+      .app { width: 100%; max-width: 1500px; margin: 0 auto; padding: 18px; }
+      .topbar {
+        display: flex; justify-content: space-between; align-items: center; gap: 12px;
+        background: linear-gradient(135deg, #fff5ff 0%, #f7feff 100%); border-radius: 28px; padding: 16px 20px;
+        box-shadow: 0 16px 34px rgba(80, 46, 100, 0.16); margin-bottom: 16px; border: 3px solid #ffd8ef;
+      }
+      .topbar h1 { margin: 0; font-size: 2rem; color: #a448a5; text-shadow: 1px 1px 0 #fff; }
+      .tiny { font-size: 0.9rem; color: #7e6e91; }
+      .stats { display: flex; flex-wrap: wrap; gap: 8px; }
+      .pill {
+        padding: 8px 12px; border-radius: 999px; background: linear-gradient(135deg, var(--pink), #ffe1ef);
+        font-weight: 700; box-shadow: inset 0 -2px 0 rgba(0,0,0,.07);
+      }
+
+      .layout { display: grid; grid-template-columns: 300px minmax(0, 1fr) 320px; gap: 16px; }
+      .layout > * { min-width: 0; }
+      .panel {
+        background-color: rgba(255,255,255,0.93); background-image: url("assets/kenney-patterns/PNG/Default/pattern_51.png"); background-size: 120px; background-blend-mode: soft-light;
+        border-radius: 24px; box-shadow: 0 14px 30px rgba(80,46,100,0.14);
+        padding: 16px; border: 2px solid #ffe0f2;
+      }
+      .panel h2, .panel h3 { margin-top: 0; color: #8f4fba; }
+
+      .form-grid { display: grid; gap: 10px; }
+      label { display: grid; gap: 6px; font-weight: 700; }
+      input, select, button, textarea {
+        font: inherit; border: 2px solid #f4d8f9; border-radius: 12px; padding: 10px 12px;
+      }
+      textarea { resize: vertical; min-height: 72px; }
+      button {
+        cursor: pointer; font-weight: 700; color: #314a59; background: linear-gradient(135deg, var(--sky), #dff8ff);
+        box-shadow: 0 10px 18px rgba(90, 129, 158, 0.18);
+      }
+      button:hover { transform: translateY(-1px); }
+      .button-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+      .actions button { background: linear-gradient(135deg, var(--mint), #f0fff6); }
+      .actions .accent { background: linear-gradient(135deg, var(--peach), #fff3da); }
+
+      .scene {
+        min-height: 690px; border-radius: 30px; padding: 18px; overflow: hidden;
+        background: linear-gradient(135deg, #c7f3ff 0%, #fff5b8 45%, #ffdce8 100%);
+        box-shadow: inset 0 0 0 6px rgba(255,255,255,.58), 0 18px 42px rgba(70,46,90,.18);
+        position: relative;
+      }
+      .scene-toolbar {
+        position: absolute; top: 14px; left: 14px; right: 14px; z-index: 20;
+        display: flex; justify-content: space-between; align-items: center; gap: 10px;
+        pointer-events: none;
+      }
+      .scene-toolbar > * { pointer-events: auto; }
+      .place-title {
+        padding: 9px 14px; border-radius: 999px; background: rgba(255,255,255,.92);
+        box-shadow: 0 8px 18px rgba(80,46,100,.16); font-weight: 800; color: #8f4fba;
+      }
+      .back-town { display: none; background: linear-gradient(135deg, #fff, #e9f8ff); }
+      .scene.interior-mode .back-town { display: inline-block; }
+      .scene.interior-mode > .world { transform: none; }
+      .interior {
+        position: absolute; inset: 0; overflow: hidden; border-radius: 24px;
+        background: linear-gradient(180deg, #fff8ef 0 68%, #e6c8ad 68% 100%);
+        border: 5px solid rgba(255,255,255,.7); box-shadow: inset 0 0 0 4px rgba(110,88,150,.1);
+      }
+      .interior::before {
+        content: ""; position: absolute; left: 0; right: 0; top: 68%; height: 5px;
+        background: rgba(128,83,80,.18);
+      }
+      .interior-decoration {
+        position: absolute; display: grid; place-items: center; border: 3px solid rgba(255,255,255,.7);
+        box-shadow: 0 12px 22px rgba(80,46,100,.14); font-size: 2.2rem;
+      }
+      .interior-decoration.main { left: 12%; bottom: 12%; width: 170px; height: 105px; border-radius: 20px; background: #fff; }
+      .interior-decoration.side { right: 10%; bottom: 14%; width: 130px; height: 90px; border-radius: 20px; background: #fff; }
+      .interior-decoration.wall { left: 38%; top: 13%; width: 180px; height: 110px; border-radius: 18px; background: #eaf8ff; }
+      .interior-item {
+        position: absolute; width: 56px; height: 56px; display: grid; place-items: center;
+        border-radius: 18px; background: rgba(255,255,255,.85); font-size: 1.5rem; box-shadow: 0 10px 18px rgba(72,38,108,.12);
+      }
+      .interior-item.mall-shelf { left: 10%; top: 30%; background: #fdf0ff; }
+      .interior-item.mall-display { left: 24%; top: 16%; background: #fff3fb; }
+      .interior-item.mall-cashier { left: 14%; top: 52%; background: #e2d1ff; }
+      .interior-item.salon-chair { left: 16%; top: 32%; background: #ffe9f1; }
+      .interior-item.salon-mirror { left: 26%; top: 14%; background: #fff7f9; }
+      .interior-item.salon-scissors { left: 23%; top: 54%; background: #ffeff4; }
+      .interior-item.makeup-mirror { left: 20%; top: 30%; background: #fff6f7; }
+      .interior-item.makeup-palette { left: 14%; top: 18%; background: #ffe9f4; }
+      .interior-item.makeup-shelf { left: 25%; top: 50%; background: #ffe7f1; }
+      .interior-item.clothes-rack { right: 18%; top: 30%; background: #f3f0ff; }
+      .interior-item.clothes-mannequin { right: 12%; top: 16%; background: #fcf7ff; }
+      .interior-item.clothes-hat { right: 16%; top: 52%; background: #f7f0ff; }
+      .interior-item.hair-dryer { right: 16%; top: 32%; background: #fff3e9; }
+      .interior-item.hair-station { right: 8%; top: 18%; background: #fff7f2; }
+      .interior-item.hair-cape { right: 14%; top: 54%; background: #fff0e6; }
+      .interior-item.school-desk { left: 24%; top: 32%; background: #fff9e8; }
+      .interior-item.school-board { left: 16%; top: 18%; background: #f9f3e9; }
+      .interior-item.school-locker { left: 32%; top: 52%; background: #fffce9; }
+      .interior-item.school-project { left: 10%; top: 52%; background: #f9f7ec; }
+      .interior .resident-token { z-index: 5; }
+      .empty-place {
+        position: absolute; left: 50%; top: 48%; transform: translate(-50%,-50%);
+        padding: 16px 20px; border-radius: 18px; background: rgba(255,255,255,.9); text-align: center;
+      }
+      .scene::before {
+        content: "✨✨✨"; position: absolute; top: 12px; right: 16px; font-size: 1.1rem; opacity: 0.9;
+      }
+      .scene > .world { min-height: 654px; }
+      .world {
+        position: relative; height: 100%; transform: rotateX(58deg) rotateZ(-6deg); transform-style: preserve-3d;
+      }
+      .island {
+        position: absolute; inset: 0; border-radius: 24px; background: linear-gradient(135deg, #f8fefc 0%, #fff7db 100%);
+        border: 5px solid rgba(255,255,255,.6); box-shadow: inset 0 0 0 4px rgba(110,88,150,.12);
+      }
+      .building {
+        position: absolute; border-radius: 20px; border: 3px solid rgba(255,255,255,.6); box-shadow: 0 12px 24px rgba(0,0,0,.15);
+        padding: 10px; text-align: center; font-weight: 800; cursor: pointer; transition: transform 0.18s ease;
+      }
+      .building:hover { transform: scale(1.03); }
+      .building.beach { left: 5%; top: 6%; width: 165px; height: 120px; background: linear-gradient(135deg, #cfefff 0%, #8ddfff 100%); }
+      .building.mall { right: 5%; top: 6%; width: 165px; height: 120px; background: linear-gradient(135deg, #f7d7ff 0%, #d7c7ff 100%); }
+      .building.salon { left: 8%; bottom: 8%; width: 165px; height: 120px; background: linear-gradient(135deg, #ffe2c4 0%, #ffc9d8 100%); }
+      .building.school { right: 10%; bottom: 18%; width: 165px; height: 120px; background: linear-gradient(135deg, #fff8be 0%, #ffd78d 100%); }
+      .building.hospital { right: 30%; bottom: 6%; width: 165px; height: 120px; background: linear-gradient(135deg, #dff8e8 0%, #bce6d4 100%); }
+      .building.home { left: 34%; top: 36%; width: 180px; height: 132px; background: linear-gradient(135deg, #ffe8f4 0%, #fff4e0 100%); }
+      .building .icon { font-size: 1.8rem; margin-bottom: 6px; }
+      .resident-token {
+        position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 6px;
+        border: none; background: transparent; padding: 0; cursor: grab; perspective: 500px;
+        transition: left 2.8s ease-in-out, top 2.8s ease-in-out;
+      }
+      .resident-token::after { content:""; position:absolute; left:50%; bottom:28px; width:58px; height:17px; transform:translateX(-50%); border-radius:50%; background:rgba(40,61,45,.2); filter:blur(4px); z-index:-2; animation:shadowPhysics 1.15s ease-in-out infinite; }
+      @keyframes shadowPhysics { 50% { width:43px; opacity:.55; transform:translateX(-50%) scaleY(.72); } }
+      .resident-token:active { cursor: grabbing; }
+      .resident-token.selected .avatar-bubble { box-shadow: 0 0 0 4px rgba(255,140,188,.32), 0 0 22px rgba(255,140,188,.25); }
+      .resident-token.selected .avatar-bubble { box-shadow: 0 0 0 4px rgba(255,140,188,.32); }
+      .avatar-bubble {
+        width: 82px; height: 82px; border-radius: 24px; background: rgba(255,255,255,.95); box-shadow: 0 14px 24px rgba(0,0,0,.16);
+        display: grid; place-items: center; position: relative; border: 3px solid rgba(255,255,255,.7);
+        animation: pieceWalk 1.15s ease-in-out infinite; transform-style: preserve-3d;
+      }
+      @keyframes pieceWalk {
+        0%,100% { transform: translateY(0) rotateY(-7deg) rotateZ(-1deg); }
+        50% { transform: translateY(-7px) rotateY(7deg) rotateZ(1deg); }
+      }
+      .avatar-bubble .hair { position: absolute; top: 8px; width: 44px; height: 30px; border-radius: 22px 22px 16px 16px; background: var(--hair-color, #8b5e3c); }
+      .avatar-bubble .hair.short { width: 40px; height: 22px; border-radius: 18px 18px 14px 14px; }
+      .avatar-bubble .bear-headband {
+        position: absolute; top: 2px; width: 44px; height: 16px; border-radius: 999px;
+        background: linear-gradient(135deg, #8a4f2d 0%, #5f2f18 100%);
+        box-shadow: inset 0 -3px 0 rgba(255,255,255,.2), 0 4px 8px rgba(0,0,0,.16);
+        z-index: 5;
+      }
+      .avatar-bubble .bear-headband::before,
+      .avatar-bubble .bear-headband::after {
+        content: ""; position: absolute; top: -4px; width: 10px; height: 12px; border-radius: 50% 50% 40% 40%;
+        background: inherit;
+      }
+      .avatar-bubble .bear-headband::before { left: 4px; transform: rotate(-20deg); }
+      .avatar-bubble .bear-headband::after { right: 4px; transform: rotate(20deg); }
+      .avatar-bubble .hair.long { width: 48px; height: 33px; border-radius: 24px 24px 12px 12px; }
+      .avatar-bubble .hair.pigtails { width: 52px; height: 28px; border-radius: 20px 20px 16px 16px; }
+      .avatar-bubble .hair.pigtails::before,
+      .avatar-bubble .hair.pigtails::after { content: ""; position: absolute; width: 13px; height: 13px; border-radius: 50%; background: inherit; top: 18px; }
+      .avatar-bubble .hair.pigtails::before { left: -8px; }
+      .avatar-bubble .hair.pigtails::after { right: -8px; }
+      .avatar-bubble .hair.bob { width: 50px; height: 26px; border-radius: 24px 24px 14px 14px; }
+      .avatar-bubble .hair.ponytail { width: 39px; height: 26px; border-radius: 20px 20px 16px 16px; }
+      .avatar-bubble .hair.ponytail::after { content: ""; position: absolute; width: 12px; height: 22px; border-radius: 10px; background: inherit; top: 20px; right: -6px; transform: rotate(10deg); }
+      .avatar-bubble .hair.curly { width: 48px; height: 34px; border-radius: 50%; }
+      .avatar-bubble .hair.curly::before,
+      .avatar-bubble .hair.curly::after { content: ""; position: absolute; width: 10px; height: 10px; border-radius: 50%; background: inherit; top: 0; }
+      .avatar-bubble .hair.curly::before { left: 4px; }
+      .avatar-bubble .hair.curly::after { right: 4px; }
+      .avatar-bubble .hair.braid { width: 42px; height: 33px; border-radius: 18px 18px 14px 14px; background: linear-gradient(135deg, rgba(255,255,255,.18), rgba(0,0,0,.12)), var(--hair-color, #8b5e3c); background-blend-mode: overlay; }
+      .avatar-bubble .hair.wavy { width: 46px; height: 32px; border-radius: 24px; box-shadow: inset 0 2px 0 rgba(255,255,255,.16); }
+      .avatar-bubble .hair[ class*="wolf-cut" ], .avatar-bubble .hair.wolf-cut { width: 46px; height: 34px; border-radius: 22px 22px 12px 12px; background: linear-gradient(180deg, var(--hair-color, #8b5e3c) 0 60%, rgba(255,255,255,.12) 60% 100%); clip-path: polygon(0 0, 100% 0, 100% 62%, 88% 70%, 74% 58%, 62% 72%, 48% 58%, 36% 72%, 22% 58%, 0 72%);
+      }
+      .avatar-bubble .hair.jagged-long { width: 48px; height: 38px; border-radius: 24px 24px 10px 10px; background: var(--hair-color, #8b5e3c); box-shadow: inset 0 1px 0 rgba(255,255,255,.22); clip-path: polygon(0 0, 100% 0, 100% 65%, 88% 80%, 72% 68%, 60% 84%, 46% 65%, 34% 80%, 18% 68%, 0 82%);
+      }
+      .avatar-bubble .hair.jagged-short { width: 44px; height: 26px; border-radius: 18px 18px 10px 10px; background: var(--hair-color, #8b5e3c); box-shadow: inset 0 1px 0 rgba(255,255,255,.22); clip-path: polygon(0 0, 100% 0, 100% 70%, 85% 82%, 70% 72%, 58% 85%, 42% 70%, 28% 82%, 12% 72%, 0 85%);
+      }
+      .avatar-bubble .hair.choppy-bob { width: 50px; height: 28px; border-radius: 22px 22px 12px 12px; background: var(--hair-color, #8b5e3c); box-shadow: inset 0 1px 0 rgba(255,255,255,.18); clip-path: polygon(0 0, 100% 0, 100% 65%, 88% 76%, 76% 65%, 64% 78%, 52% 64%, 40% 78%, 28% 64%, 16% 78%, 0 65%);
+      }
+      .avatar-bubble .hair.layered-bob { width: 50px; height: 30px; border-radius: 24px 24px 14px 14px; background: linear-gradient(180deg, rgba(255,255,255,.08) 0 35%, var(--hair-color, #8b5e3c) 35% 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.22); }
+      .avatar-bubble .face { width: 38px; height: 34px; border-radius: 18px; background: #ffd8bf; position: absolute; top: 28px; }
+      .face-feature { position: absolute; display: block; pointer-events: none; }
+      .face-feature.eyelashes {
+        top: 7px; width: 10px; height: 9px;
+        border: none; pointer-events: none;
+      }
+      .face-feature.eyelashes.left { left: 3px; }
+      .face-feature.eyelashes.right { right: 3px; }
+      .face-feature.eyelashes::before,
+      .face-feature.eyelashes::after {
+        content: ""; position: absolute; left: 0; top: 0; width: 100%; height: 100%; border-top: 2px solid #6d473d; border-radius: 50%;
+      }
+      .face-feature.eyelashes::before { transform: rotate(-10deg); }
+      .face-feature.eyelashes::after { transform: rotate(10deg); }
+      .eye { top: 11px; width: 5px; height: 6px; border-radius: 50%; background: #423548; }
+      .eye.left { left: 9px; } .eye.right { right: 9px; }
+      .eye.wide { width: 8px; height: 7px; top: 10px; }
+      .eye.sparkle { width: 7px; height: 7px; box-shadow: inset 1px 1px 0 rgba(255,255,255,.75); }
+      .eye.anime { width: 9px; height: 10px; top: 9px; border-radius: 50%; background: radial-gradient(circle at 40% 30%, rgba(255,255,255,.95) 12%, transparent 18%), radial-gradient(circle at 55% 55%, rgba(255,255,255,.6) 14%, transparent 20%), var(--eye-color, #423548); box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
+      .eye.anime::before { content: ""; position: absolute; left: 50%; top: 48%; width: 3px; height: 3px; transform: translate(-50%, -50%); border-radius: 50%; background: rgba(0,0,0,.2); }
+      .eye.sleepy { width: 8px; height: 2px; top: 13px; border-radius: 4px; }
+      .eye.star { width: 6px; height: 6px; background: linear-gradient(135deg, var(--eye-color, #423548) 0 25%, transparent 25% 50%, var(--eye-color, #423548) 50% 75%, transparent 75% 100%); border-radius: 20%; }
+      .eye.classic { width: 5px; height: 6px; }
+      .face-feature.eye.female-eye::after { content: ""; position: absolute; left: 0; top: -4px; width: 100%; height: 6px; border-radius: 6px; background: #423548; }
+      .nose { left: 50%; top: 16px; width: 3px; height: 4px; transform: translateX(-50%); border-radius: 50%; background: #d89e88; }
+      .nose.tiny { width: 2px; height: 3px; }
+      .nose.round { width: 4px; height: 3px; border-radius: 50%; }
+      .nose.long { width: 2px; height: 5px; top: 14px; }
+      .mouth { left: 50%; top: 21px; width: 10px; height: 4px; transform: translateX(-50%); border-bottom: 2px solid #a95870; border-radius: 0 0 10px 10px; transition: height .08s, background .08s; }
+      .mouth.grin { width: 12px; height: 4px; border-bottom: 2px solid #a95870; border-radius: 0 0 8px 8px; }
+      .mouth.pout { width: 8px; height: 5px; border-radius: 0 0 6px 6px; background: #a95870; border: none; }
+      .mouth.surprised { width: 6px; height: 6px; border-radius: 50%; background: #a95870; border: none; top: 20px; }
+      .mouth.cute { width: 12px; height: 5px; top: 21px; border-radius: 0 0 8px 8px; background: linear-gradient(180deg, transparent 50%, #a95870 50%); border: none; }
+      .mouth.sleepy { width: 10px; height: 2px; top: 22px; border-radius: 3px; background: #a95870; border: none; }
+      .avatar-bubble .outfit { position: absolute; bottom: 7px; width: 45px; height: 34px; border-radius: 14px 14px 10px 10px; box-shadow: inset 7px 3px 8px rgba(255,255,255,.35), inset -6px -4px 7px rgba(54,37,69,.16); background: var(--outfit-color, #ff8fb0); }
+      .avatar-bubble .outfit.hoodie { border-radius: 18px 18px 10px 10px; }
+      .avatar-bubble.full-body { height: 118px; width: 56px; }
+      .avatar-bubble.full-body .face { top: 24px; }
+      .avatar-bubble.full-body .hair { top: 6px; width: 48px; height: 30px; }
+      .avatar-bubble.full-body .neck { position: absolute; top: 44px; left: 50%; width: 18px; height: 10px; transform: translateX(-50%); background: #f7c4a4; border-radius: 9px; }
+      .avatar-bubble.full-body .body { position: absolute; top: 56px; left: 50%; width: 34px; height: 48px; transform: translateX(-50%); background: #f7c4a4; border-radius: 18px; }
+      .avatar-bubble.full-body .lap { position: absolute; top: 92px; left: 50%; width: 34px; height: 16px; transform: translateX(-50%); background: rgba(0,0,0,.06); border-radius: 50% / 24%; }
+      .avatar-bubble.full-body .arm { position: absolute; top: 62px; width: 8px; height: 28px; background: #f7c4a4; border-radius: 8px; }
+      .avatar-bubble.full-body .arm.left { left: 2px; transform: rotate(14deg); }
+      .avatar-bubble.full-body .arm.right { right: 2px; transform: rotate(-14deg); }
+      .avatar-bubble.full-body .leg { position: absolute; top: 106px; width: 8px; height: 26px; background: #f7c4a4; border-radius: 8px; }
+      .avatar-bubble.full-body .leg.left { left: 14px; }
+      .avatar-bubble.full-body .leg.right { right: 14px; }
+      .avatar-bubble.full-body .outfit { top: 64px; bottom: auto; width: 34px; height: 38px; border-radius: 16px; }
+      .avatar-bubble.full-body .piece-hands,
+      .avatar-bubble.full-body .piece-feet { display: none; }
+      .avatar-bubble.full-body .accessory { top: 8px; }
+      .avatar-bubble.full-body .accessory.lollipop::after { top: 26px; }
+      .avatar-bubble .accessory.lollipop { font-size: 1.05rem; top: 4px; }
+      .avatar-bubble .accessory.lollipop::after { content: ""; position: absolute; left: calc(50% + 6px); top: 20px; width: 2px; height: 14px; background: #d1a47f; border-radius: 2px; }
+      .avatar-bubble .outfit.hoodie::before { content: ""; position: absolute; left: 50%; top: -6px; width: 36px; height: 18px; transform: translateX(-50%); border-radius: 50%; background: rgba(255,255,255,.25); }
+      .avatar-bubble .outfit.sweater { box-shadow: inset 8px 4px 9px rgba(255,255,255,.35), inset -5px -4px 8px rgba(42,30,63,.14); }
+      .avatar-bubble .outfit.princess { height: 38px; border-radius: 16px 16px 8px 8px; }
+      .avatar-bubble .outfit.sporty { width: 48px; height: 34px; border-radius: 16px; }
+      .avatar-bubble .outfit.denim-jacket { background: linear-gradient(145deg, rgba(255,255,255,.2), var(--outfit-color, #ff8fb0)); border-radius: 18px 18px 10px 10px; }
+      .avatar-bubble .outfit.kimono { width: 48px; height: 36px; border-radius: 18px 18px 14px 14px; }
+      .avatar-bubble .outfit.party-dress { width: 52px; height: 36px; border-radius: 18px 18px 12px 12px; box-shadow: inset 6px 4px 8px rgba(255,255,255,.4), inset -5px -3px 7px rgba(42,30,63,.12); }
+      .brow { top: 6px; width: 9px; height: 2px; border-radius: 3px; background: #76504a; }
+      .brow.left { left: 6px; transform: rotate(-5deg); } .brow.right { right: 6px; transform: rotate(5deg); }
+      .nose { left: 50%; top: 14px; width: 3px; height: 4px; transform: translateX(-50%); border-radius: 50%; background: #d89e88; }
+      .mouth { left: 50%; top: 21px; width: 10px; height: 4px; transform: translateX(-50%); border-bottom: 2px solid #a95870; border-radius: 0 0 10px 10px; transition: height .08s, background .08s; }
+      .face.wink .eye.right { height: 2px; top: 13px; border-radius: 3px; }
+      .face.cute .eye { width: 7px; height: 8px; top: 9px; box-shadow: inset 2px 2px 0 rgba(255,255,255,.8); }
+      .face.shy .brow.left { transform: rotate(12deg); } .face.shy .brow.right { transform: rotate(-12deg); }
+      .face.shy .mouth { width: 7px; border-radius: 50%; }
+      .resident-token.speaking .mouth { height: 8px; background: #8d405a; border: 0; border-radius: 50%; animation: mouthTalk .16s steps(2) infinite; }
+      @keyframes mouthTalk { 50% { height: 3px; width: 8px; } }
+      .avatar-bubble .outfit { position: absolute; bottom: 7px; width: 45px; height: 34px; border-radius: 14px 14px 10px 10px; box-shadow: inset 7px 3px 8px rgba(255,255,255,.35), inset -6px -4px 7px rgba(54,37,69,.16); }
+      .avatar-bubble .accessory { position: absolute; top: 8px; font-size: 1rem; }
+      .piece-hands { position: absolute; left: 2px; right: 2px; bottom: 19px; display: flex; justify-content: space-between; z-index: 4; }
+      .piece-hand { width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 28%,#ffe8d8,#efbfa6); box-shadow: 0 3px 4px rgba(74,43,51,.2); }
+      .piece-feet { position: absolute; left: 9px; right: 9px; bottom: -7px; display: flex; justify-content: space-between; z-index: -1; }
+      .piece-foot { width: 23px; height: 14px; border-radius: 5px 8px 4px 4px; background: linear-gradient(145deg,#fff,#ad8fbb); box-shadow: inset -4px -3px 4px rgba(62,38,72,.15), 0 5px 5px rgba(42,28,54,.24); }
+      .resident-token.state-sitting .avatar-bubble { animation: sitBounce 1.8s ease-in-out infinite; transform-origin: bottom center; }
+      .resident-token.state-chatting .piece-hand:first-child { animation: waveHand .55s ease-in-out infinite alternate; transform-origin: bottom right; }
+      .resident-token.state-inspecting .avatar-bubble { animation: inspectLean 1.4s ease-in-out infinite; }
+      .resident-token.idle-roll .avatar-bubble { animation: floorRoll 2.8s ease-in-out infinite; }
+      .resident-token.idle-pace .avatar-bubble { animation: paceLoop 2.4s ease-in-out infinite; }
+      @keyframes sitBounce { 0%,100% { transform: translateY(7px) scaleY(.9); } 50% { transform: translateY(4px) scaleY(.92); } }
+      @keyframes waveHand { to { transform: translateY(-12px) rotate(-35deg); } }
+      @keyframes inspectLean { 0%,100% { transform: rotateY(-12deg) rotateZ(-3deg); } 50% { transform: rotateY(18deg) rotateZ(4deg); } }
+      @keyframes floorRoll { 0%,100% { transform: translateX(-12px) rotate(-82deg); } 50% { transform: translateX(12px) rotate(82deg); } }
+      @keyframes paceLoop { 0%,100% { transform: translateX(-13px) rotateY(-12deg); } 50% { transform: translateX(13px) rotateY(12deg); } }
+      .task-dot { position: absolute; right: -8px; top: 13px; z-index: 6; display: grid; place-items: center; width: 29px; height: 29px; border-radius: 50%; background: white; box-shadow: 0 5px 12px rgba(64,38,73,.25); font-size: 15px; }
+      .speech-bubble {
+        max-width: 150px; padding: 8px 10px; background: white; border-radius: 14px; box-shadow: 0 10px 18px rgba(0,0,0,.12);
+        font-size: 0.8rem; color: #5e4d73; text-align: center; border: 2px solid #f0d7f7;
+      }
+      .speech-bubble::before { content: "💗"; margin-right: 4px; }
+      .resident-chip {
+        display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 6px 8px; margin: 4px 0;
+        background: rgba(255,255,255,.86); box-shadow: 0 8px 14px rgba(0,0,0,.08); cursor: pointer;
+      }
+      .resident-chip.selected { outline: 3px solid #ff8cbc; }
+      .furniture-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+      .furni { background: rgba(255,255,255,.8); border-radius: 999px; padding: 5px 8px; font-size: 0.92rem; }
+      .message-box {
+        margin-top: 10px; padding: 10px 12px; border-radius: 14px; background: #fff8dc; border: 2px dashed #efb4d9; min-height: 58px;
+      }
+      .list { display: flex; flex-direction: column; gap: 8px; }
+      .card { padding: 10px; border-radius: 12px; background: #fdf4ff; border: 1px solid #f0d7f7; }
+      .friend-meter { display: flex; gap: 3px; margin-top: 6px; }
+      .heart { color: #ff7eb1; }
+      .heart.gray { color: #d7cce2; }
+      .story-item { padding: 8px 10px; border-radius: 12px; background: #f8fcff; border: 1px solid #dceeff; margin-bottom: 8px; }
+      .request-badge { margin-top: 7px; padding: 7px 9px; border-radius: 10px; background: #fff0c7; border: 1px solid #f2cf76; font-size: .84rem; }
+      .sim-status { margin: 10px 0; padding: 9px 11px; border-radius: 12px; background: #eefaff; color: #596c83; font-size: .86rem; }
+      .character-inspector {
+        position: absolute; z-index: 18; right: 18px; top: 70px; width: min(270px, calc(100% - 36px));
+        padding: 12px 14px; border-radius: 18px; background: rgba(255,255,255,.94);
+        border: 2px solid rgba(255,216,239,.95); box-shadow: 0 12px 28px rgba(63,49,82,.2);
+        backdrop-filter: blur(8px); pointer-events: none;
+      }
+      .character-inspector .inspector-name { color: #934ca6; font-size: 1.05rem; font-weight: 900; margin-bottom: 5px; }
+      .character-inspector .inspector-row { margin-top: 5px; font-size: .82rem; line-height: 1.3; }
+      .character-inspector .inspector-label { color: #9b6aa4; font-weight: 800; }
+      .custom-look { margin-top: 6px; font-size: 0.9rem; color: #7a628b; }
+      .mini-avatar { display: inline-block; margin-right: 6px; font-size: 1.1rem; }
+      .preview-card {
+        margin-top: 12px; padding: 12px; border-radius: 18px; background: linear-gradient(135deg, #fff7ff 0%, #f2fcff 100%);
+        border: 2px solid #f0d7f7; box-shadow: inset 0 0 0 3px rgba(255,255,255,.5);
+      }
+      .preview-card strong { color: #a24da1; }
+      .relationship-pill {
+        display: inline-block; margin-top: 6px; padding: 4px 8px; border-radius: 999px; background: #fff4fb; border: 1px solid #ffd1e9; font-size: 0.82rem; color: #9a4c8b;
+      }
+      .cozy-video {
+        margin-top: 12px; border-radius: 18px; overflow: hidden; border: 3px solid #ffd8ef;
+        box-shadow: 0 12px 24px rgba(80,46,100,.12);
+      }
+      .cozy-video video {
+        width: 100%; height: 140px; object-fit: cover; display: block; background: #000;
+      }
+      .tiny-note {
+        margin-top: 6px; font-size: 0.85rem; color: #7e6e91;
+      }
+      .voice-studio { margin-top:12px; padding:12px; border-radius:18px; background:rgba(244,249,255,.9); border:2px solid #dcecff; }
+      .voice-studio h3 { margin:0 0 9px; }
+      .voice-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+      .voice-grid label { font-size:.78rem; }
+      .voice-grid input[type="range"] { width:100%; padding:3px; accent-color:#9d69d2; }
+      .voice-grid .wide { grid-column:1 / -1; }
+
+      @media (max-width: 1100px) {
+        .layout { grid-template-columns: 1fr; }
+        .scene { min-height: 720px; }
+      }
+
+      /* Open-world visual engine */
+      .layout { grid-template-columns: 270px minmax(620px, 1fr) 290px; }
+      .scene {
+        height: 780px; min-height: 780px; padding: 18px;
+        background: linear-gradient(180deg, #82d9ff 0%, #d9f5ff 34%, #efffcf 100%);
+        border: 1px solid rgba(255,255,255,.8);
+      }
+      .scene > .world {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        position: relative;
+      }
+      .scene > .world > .world {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .world { transform: none; perspective: 1000px; }
+      .island {
+        overflow: hidden; border-radius: 28px;
+        background:
+          radial-gradient(circle at 15% 18%, rgba(255,255,255,.28) 0 3%, transparent 3.2%),
+          linear-gradient(145deg, #8fde80 0%, #b8eb8d 48%, #78cf78 100%);
+        border: 8px solid #dff9ff;
+        box-shadow: inset 0 0 45px rgba(41,112,64,.18), 0 20px 45px rgba(35,85,108,.24);
+      }
+      .island::after {
+        content: ""; position: absolute; inset: 0; pointer-events: none;
+        background: linear-gradient(115deg, rgba(255,255,255,.16), transparent 38% 70%, rgba(31,103,68,.08));
+      }
+      .road { position: absolute; z-index: 1; background: #f7dfb5; border: 4px solid rgba(204,169,116,.45); box-shadow: inset 0 0 0 3px rgba(255,255,255,.28); }
+      .road.main { left: 47%; top: -3%; width: 11%; height: 106%; }
+      .road.cross { left: -3%; top: 46%; width: 106%; height: 11%; }
+      .road.loop { left: 23%; top: 24%; width: 54%; height: 52%; border-radius: 38%; background: transparent; border: 22px solid #f7dfb5; box-shadow: 0 0 0 4px rgba(204,169,116,.42), inset 0 0 0 4px rgba(204,169,116,.42); }
+      .pond { position: absolute; z-index: 0; left: 3%; top: 32%; width: 20%; height: 24%; border-radius: 48% 52% 46% 54%; background: radial-gradient(circle at 35% 30%, #d6fbff, #64cae9 65%, #3da9d0); border: 7px solid #d7efaa; box-shadow: inset 0 8px 16px rgba(255,255,255,.35); }
+      .district-label { position: absolute; z-index: 3; padding: 4px 9px; border-radius: 999px; background: rgba(255,255,255,.78); color: #6a6b65; font-size: .72rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; box-shadow: 0 5px 10px rgba(49,79,56,.1); }
+      .district-label.north { left: 43%; top: 3%; }
+      .district-label.south { left: 43%; bottom: 3%; }
+      .scenery { position: absolute; z-index: 2; filter: drop-shadow(0 8px 5px rgba(37,93,54,.22)); user-select: none; pointer-events: none; }
+      .tree { font-size: 2.5rem; }
+      .flower { font-size: 1.35rem; }
+      .bench { font-size: 2rem; }
+      .building {
+        z-index: 4; display: flex; flex-direction: column; justify-content: center; align-items: center;
+        border: 5px solid rgba(255,255,255,.78); border-radius: 18px 18px 24px 24px;
+        box-shadow: 0 13px 0 rgba(99,74,92,.13), 0 20px 26px rgba(48,84,65,.22);
+        transition: transform .18s ease, filter .18s ease; overflow: visible;
+      }
+      .building::before {
+        content: ""; position: absolute; left: -8px; right: -8px; top: -18px; height: 35px;
+        border-radius: 22px 22px 8px 8px; background: inherit; filter: brightness(.92);
+        border: 4px solid rgba(255,255,255,.72); z-index: -1;
+      }
+      .building::after { content: ""; width: 28px; height: 37px; position: absolute; bottom: -2px; border-radius: 10px 10px 0 0; background: rgba(114,72,83,.32); border: 3px solid rgba(255,255,255,.55); }
+      .building:hover { transform: translateY(-7px) scale(1.04); filter: saturate(1.1); }
+      .building .icon { font-size: 2.35rem; filter: drop-shadow(0 4px 1px rgba(255,255,255,.55)); }
+      .building.beach { left: 3%; top: 8%; width: 145px; height: 105px; }
+      .building.mall { right: 3%; top: 8%; width: 150px; height: 108px; }
+      .building.salon { left: 5%; bottom: 7%; width: 145px; height: 105px; }
+      .building.school { right: 5%; bottom: 14%; width: 150px; height: 108px; }
+      .building.hospital { right: 27%; bottom: 4%; width: 145px; height: 103px; }
+      .building.home { left: 38%; top: 37%; width: 165px; height: 115px; }
+      .resident-token { z-index: 9; }
+      .avatar-bubble {
+        width: 68px; height: 88px; border-radius: 30px 30px 22px 22px;
+        background: linear-gradient(145deg,rgba(255,255,255,.32),rgba(91,59,109,.08)); border: 0;
+        box-shadow: inset 9px 5px 12px rgba(255,255,255,.42), inset -8px -6px 10px rgba(64,40,77,.12), 0 13px 12px rgba(37,67,47,.23);
+      }
+      .avatar-bubble .face { top: 23px; width: 42px; height: 39px; z-index: 2; border: 2px solid rgba(137,83,69,.12); }
+      .avatar-bubble .face::before, .avatar-bubble .face::after { content: none; }
+      .avatar-bubble .hair { top: 10px; width: 48px; height: 31px; z-index: 3; border-radius: 24px 24px 13px 13px; }
+      .avatar-bubble .outfit { bottom: 0; width: 55px; height: 36px; border-radius: 17px 17px 10px 10px; border: 3px solid rgba(255,255,255,.55); }
+      .avatar-bubble .accessory { top: 3px; right: 2px; z-index: 4; }
+      .speech-bubble { font-weight: 700; background: rgba(255,255,255,.94); }
+      .scene.evening { background: linear-gradient(180deg,#7067aa 0%,#c58cb6 35%,#ffcf9f 100%); }
+      .scene.night { background: radial-gradient(circle at 75% 10%,#fffbd1 0 3%,transparent 3.3%), linear-gradient(180deg,#17244f,#384c82 48%,#738c91); }
+      .scene.night .island { filter: brightness(.78) saturate(.85); }
+      .scene.night .resident-token, .scene.night .scene-toolbar { filter: none; }
+      .island::after {
+        background-image: linear-gradient(115deg, rgba(255,255,255,.25), transparent 38% 70%, rgba(31,103,68,.13)), url("assets/kenney-patterns/PNG/Default/pattern_27.png");
+        background-size: auto, 170px 170px; background-blend-mode: normal, soft-light; opacity: .24;
+      }
+      .road { background-color:#f7dfb5; background-image:linear-gradient(rgba(247,223,181,.84),rgba(247,223,181,.84)),url("assets/kenney-patterns/PNG/Default/pattern_20.png"); background-size:auto,80px 80px; background-blend-mode:normal,multiply; }
+      .building::before { background-image:url("assets/kenney-patterns/PNG/Default/pattern_51.png"); background-size:55px 55px; background-blend-mode:soft-light; }
+      .interior::after { content:""; position:absolute; z-index:0; left:0; right:0; bottom:0; height:32%; background:url("assets/kenney-patterns/PNG/Default/pattern_20.png") center/95px 95px; opacity:.07; pointer-events:none; }
+      .pond::after { content:""; position:absolute; inset:12%; border:3px solid rgba(255,255,255,.45); border-radius:50%; animation:pondRipple 2.8s ease-out infinite; }
+      @keyframes pondRipple { from { transform:scale(.25); opacity:.75; } to { transform:scale(1.15); opacity:0; } }
+      .ambient-particle { position:absolute; z-index:8; top:-8%; font-size:1rem; pointer-events:none; filter:drop-shadow(0 4px 3px rgba(50,75,44,.2)); animation:leafFall var(--fall-time,8s) linear infinite; animation-delay:var(--fall-delay,0s); }
+      @keyframes leafFall { 0% { transform:translate3d(0,-20px,0) rotate(0); opacity:0; } 12% { opacity:.8; } 55% { transform:translate3d(25px,380px,0) rotate(210deg); } 100% { transform:translate3d(-18px,790px,0) rotate(430deg); opacity:0; } }
+      .asset-credit { margin:14px auto 2px; text-align:center; color:#806f91; font-size:.72rem; }
+      .asset-credit a { color:#8f4fba; }
+
+      @media (max-width: 1180px) {
+        .layout { grid-template-columns: 1fr; }
+        .scene { height: 720px; min-height: 720px; }
+        .panel { width: 100%; }
+      }
+      @media (max-width: 700px) {
+        .app { padding: 10px; }
+        .topbar { align-items: flex-start; flex-direction: column; border-radius: 20px; padding: 14px; }
+        .topbar h1 { font-size: 1.55rem; }
+        .stats { width: 100%; }
+        .pill { flex: 1 1 auto; text-align: center; font-size: .82rem; }
+        .panel { padding: 12px; border-radius: 18px; }
+        .scene { height: 620px; min-height: 620px; padding: 8px; border-radius: 20px; }
+        .scene-toolbar { top: 10px; left: 10px; right: 10px; }
+        .place-title { font-size: .8rem; padding: 7px 10px; }
+        .character-inspector { right: 10px; top: 58px; width: 220px; padding: 9px 11px; }
+        .character-inspector .inspector-row { font-size: .75rem; }
+        .building { transform: scale(.82); transform-origin: center; }
+        .building:hover { transform: translateY(-4px) scale(.86); }
+        .button-row > button { flex: 1 1 130px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div>
+          <h1>🌸 Dream Town Life</h1>
+          <div class="tiny">A bright 3D-style life sim with cozy homes, sweet friendships, and lots of adorable town adventures.</div>
+        </div>
+        <div class="stats">
+          <div class="pill" id="coinCount">🪙 Coins: 0</div>
+          <div class="pill" id="residentCount">🏡 Residents: 0</div>
+          <div class="pill" id="moodLabel">💖 Mood: Happy</div>
+        </div>
+      </header>
+
+      <div class="layout">
+        <section class="panel">
+          <h2>✨ Create a Character</h2>
+          <div class="form-grid">
+            <label>Name<input id="nameInput" placeholder="Mina" /></label>
+            <label>Favorite Color<input id="colorInput" type="color" value="#ff8fb0" /></label>
+            <label>Personality<select id="personalityInput">
+              <option value="kind">Kind</option>
+              <option value="silly">Silly</option>
+              <option value="brave">Brave</option>
+              <option value="calm">Calm</option>
+            </select></label>
+            <label>Style<select id="styleInput">
+              <option value="☁️">Cloudy Cutie</option>
+              <option value="🧁">Cupcake Cutie</option>
+              <option value="🌈">Rainbow Cutie</option>
+              <option value="🍡">Candy Cutie</option>
+            </select></label>
+            <label>Gender<select id="genderInput">
+              <option value="female">Girl</option>
+              <option value="male">Boy</option>
+              <option value="nonbinary">Nonbinary</option>
+            </select></label>
+            <label>Birthday<input id="birthdayInput" type="date" value="2014-07-23" /></label>
+            <button id="createResidentBtn">Create New Resident</button>
+          </div>
+          <div class="message-box" id="creatorMessage">Welcome to Dream Town! Make your first resident and start the cozy adventure.</div>
+
+          <h3>� Your Name & Island</h3>
+          <div class="form-grid">
+            <label>Your Name<input id="playerNameInput" placeholder="Your name" /></label>
+            <label>Nickname for You<input id="playerNicknameInput" placeholder="What should the town call you?" /></label>
+            <label>Island Name<input id="islandNameInput" placeholder="Name your island" /></label>
+            <button id="identityBtn">Save Your Story</button>
+          </div>
+          <div class="message-box" id="identityMessage">You can name yourself and your island so the whole town feels personal.</div>
+
+          <h3>�🎨 Customize the Look</h3>
+          <div class="tiny-note">Tip: Tap <strong>W</strong> to jump here and update avatar style faster.</div>
+          <div class="form-grid" id="avatarCustomizationSection">
+            <label>New Name<input id="renameInput" placeholder="Type a new name" /></label>
+            <label>Face Style<select id="faceStyleInput">
+              <option value="smile">Smile</option>
+              <option value="wink">Wink</option>
+              <option value="cute">Cute</option>
+              <option value="shy">Shy</option>
+            </select></label>
+            <label>Gender<select id="genderCustomizeInput">
+              <option value="female">Girl</option>
+              <option value="male">Boy</option>
+              <option value="nonbinary">Nonbinary</option>
+            </select></label>
+            <label>Birthday<input id="birthdayCustomizeInput" type="date" /></label>
+            <label>Hair Color<input id="hairColorInput" type="color" value="#8b5e3c" /></label>
+            <label>Outfit Color<input id="outfitColorInput" type="color" value="#ff8fb0" /></label>
+            <label>Accessory<select id="accessoryInput">
+              <option value="🌟 Star">🌟 Star</option>
+              <option value="🎀 Bow">🎀 Bow</option>
+              <option value="🪩 Disco Ball">🪩 Disco Ball</option>
+              <option value="🍭 Lollipop">🍭 Lollipop</option>
+              <option value="🧡 Charm">🧡 Charm</option>
+            </select></label>
+            <label><input id="fullBodyInput" type="checkbox" /> Show full body avatar</label>
+            <label>Hair Style<select id="hairStyleInput">
+              <option value="short">Short</option>
+              <option value="long">Long</option>
+              <option value="pigtails">Pigtails</option>
+              <option value="bob">Bob</option>
+              <option value="curly">Curly</option>
+              <option value="braid">Braid</option>
+              <option value="ponytail">Ponytail</option>
+              <option value="wavy">Wavy</option>
+              <option value="wolf-cut">Wolf Cut</option>
+              <option value="jagged-long">Jagged Long</option>
+              <option value="jagged-short">Jagged Short</option>
+              <option value="choppy-bob">Choppy Bob</option>
+              <option value="layered-bob">Layered Bob</option>
+            </select></label>
+            <label>Clothes Style<select id="clothesStyleInput">
+              <option value="cute dress">Cute Dress</option>
+              <option value="hoodie">Hoodie</option>
+              <option value="sweater">Sweater</option>
+              <option value="princess">Princess</option>
+              <option value="sporty">Sporty</option>
+              <option value="denim jacket">Denim Jacket</option>
+              <option value="kimono">Kimono</option>
+              <option value="party dress">Party Dress</option>
+            </select></label>
+            <label>Eye Style<select id="eyeStyleInput">
+              <option value="wide">Wide</option>
+              <option value="sparkle">Sparkle</option>
+              <option value="sleepy">Sleepy</option>
+              <option value="star">Star</option>
+              <option value="classic">Classic</option>
+            </select></label>
+            <label>Mouth Style<select id="mouthStyleInput">
+              <option value="smile">Smile</option>
+              <option value="grin">Grin</option>
+              <option value="pout">Pout</option>
+              <option value="surprised">Surprised</option>
+              <option value="cute">Cute</option>
+              <option value="sleepy">Sleepy</option>
+            </select></label>
+            <label>Nose Style<select id="noseStyleInput">
+              <option value="button">Button</option>
+              <option value="tiny">Tiny</option>
+              <option value="round">Round</option>
+              <option value="long">Long</option>
+            </select></label>
+          </div>
+          <h3>💄 Glam Studio</h3>
+          <div class="form-grid" id="glamStudioSection">
+            <label>Makeup Style<select id="makeupStyleInput">
+              <option value="natural">Natural</option>
+              <option value="sparkly">Sparkly</option>
+              <option value="rosy">Rosy</option>
+              <option value="bold">Bold</option>
+            </select></label>
+            <label>Hair Accessory<select id="hairAccessoryInput">
+              <option value="none">None</option>
+              <option value="bow">Bow</option>
+              <option value="flower">Flower</option>
+              <option value="star clip">Star Clip</option>
+              <option value="headband">Headband</option>
+            </select></label>
+          </div>
+          <h3>🎨 Hair Design Studio</h3>
+          <div class="tiny-note">Tip: Tap <strong>K</strong> to go to the Hair Design Studio and draw extra hair styles.</div>
+          <div class="form-grid" id="hairDesignSection">
+            <label>Hair Design<select id="hairDesignStyleInput">
+              <option value="wild doodle">Wild Doodle</option>
+              <option value="soft waves">Soft Waves</option>
+              <option value="super spikes">Super Spikes</option>
+              <option value="braided art">Braided Art</option>
+              <option value="fantasy curl">Fantasy Curl</option>
+            </select></label>
+            <label>Hair Texture<select id="hairTextureInput">
+              <option value="smooth">Smooth</option>
+              <option value="fuzzy">Fuzzy</option>
+              <option value="shaggy">Shaggy</option>
+              <option value="shiny">Shiny</option>
+            </select></label>
+            <label>Stripe Color<input id="hairStripeColorInput" type="color" value="#ffd7ff" /></label>
+            <label>Hair Sketch<textarea id="hairSketchInput" rows="3" placeholder="Describe the lines, braids, or curls"></textarea></label>
+          </div>
+          <div class="button-row">
+            <button id="customizeBtn">Customize Selected Resident</button>
+          </div>
+          <div class="message-box" id="customizeMessage">Pick a resident and give them a cute new style.</div>
+          <div class="preview-card" id="previewCard">Choose a resident to see their look preview here.</div>
+
+          <div class="voice-studio" id="voiceStudio">
+            <h3>🎙️ Character Voice Studio</h3>
+            <div class="voice-grid">
+              <label>Pitch<input id="voicePitchInput" type="range" min="0.6" max="1.8" step="0.05" value="1.1" /></label>
+              <label>Accent<select id="voiceAccentInput"><option value="en-US">US English</option><option value="en-GB">British English</option><option value="en-AU">Australian English</option><option value="en-IN">Indian English</option></select></label>
+              <label>Speed<input id="voiceSpeedInput" type="range" min="0.65" max="1.5" step="0.05" value="0.95" /></label>
+              <label>Energy<input id="voiceEnergyInput" type="range" min="0.35" max="1" step="0.05" value="0.85" /></label>
+              <label class="wide">Intonation<input id="voiceIntonationInput" type="range" min="0" max="1" step="0.05" value="0.65" /></label>
+              <label class="wide">Name Pronunciation<input id="pronunciationInput" placeholder="Example: Luweegi" /></label>
+            </div>
+            <button id="saveVoiceBtn" style="margin-top:9px;width:100%;">Save & Test Voice</button>
+          </div>
+
+          <label>Say Something<input id="speechInput" placeholder="Tell the town how you feel!" /></label>
+          <div class="button-row">
+            <button id="speakBtn">💬 Make them say it</button>
+            <button id="feelingBtn" class="accent">💭 Share a Thought</button>
+          </div>
+        </section>
+
+        <section class="panel" style="padding: 10px;">
+          <div class="scene" id="scene">
+            <div class="scene-toolbar">
+              <button class="back-town" id="backTownBtn">← Back to Town</button>
+              <div class="place-title" id="placeTitle">🌸 Town Map</div>
+            </div>
+            <div class="character-inspector" id="characterInspector">Click a character to peek at their thoughts.</div>
+            <div class="world" id="world"></div>
+          </div>
+        </section>
+
+        <section class="panel actions">
+          <h2>🎮 Town Actions</h2>
+          <div class="button-row">
+            <button id="hangBtn">🫶 Hang Out</button>
+            <button id="giftBtn">🎁 Give Gift</button>
+            <button id="wishBtn">🪄 Make a Wish</button>
+          </div>
+          <div class="button-row">
+            <button id="happyBtn">😊 Happy</button>
+            <button id="sleepBtn">😴 Sleepy</button>
+            <button id="curiousBtn">🤔 Curious</button>
+          </div>
+          <div class="button-row">
+            <button id="schoolBtn">🏫 School</button>
+            <button id="gymBtn">💪 Gym</button>
+            <button id="workBtn">🧺 Work</button>
+          </div>
+          <div class="button-row">
+            <button id="beachBtn">🌊 Beach</button>
+            <button id="mallBtn">🛍️ Mall</button>
+            <button id="salonBtn">✂️ Hair Salon</button>
+          </div>
+          <div class="button-row">
+            <button id="makeupBtn">💄 Makeup Store</button>
+            <button id="clothesBtn">👗 Clothes Store</button>
+            <button id="hairShopBtn">🎀 Hair Shop</button>
+          </div>
+          <div class="button-row">
+            <button id="hospitalBtn">🏥 Hospital</button>
+            <button id="homeBtn">🏡 Go Home</button>
+          </div>
+          <div class="button-row">
+            <button id="roommateBtn">🛏️ Add Roommate</button>
+            <button id="furnitureBtn">🪑 Add Furniture</button>
+            <button id="tripBtn" class="accent">✈️ Take a Trip</button>
+            <button id="photoBtn">📸 Take a Photo</button>
+          </div>
+          <div class="button-row">
+            <button id="musicBtn">🎵 Perform Music</button>
+            <button id="giftYouBtn">🎁 Bring You a Souvenir</button>
+            <button id="dreamBtn">🌙 Tell a Dream</button>
+            <button id="outfitHuntBtn">🧢 Find Quirky Clothes</button>
+            <button id="voiceBtn">🔊 Character Voices: On</button>
+            <button id="gossipBtn">🗣️ Share Town News</button>
+          </div>
+          <label style="margin-top:10px;">Furniture Type<select id="furnitureInput">
+            <option value="🪑 Chair">🪑 Chair</option>
+            <option value="🛏️ Bed">🛏️ Bed</option>
+            <option value="📚 Shelf">📚 Shelf</option>
+            <option value="🪴 Plant">🪴 Plant</option>
+          </select></label>
+          <div class="message-box" id="actionMessage">Choose a resident, then try a cozy action. This town loves kindness and good vibes.</div>
+          <div class="sim-status" id="simStatus">The residents are deciding what to do...</div>
+          <button id="helpBtn" class="accent">✨ Help With Current Request</button>
+
+          <h3>🌟 Resident List</h3>
+          <div class="list" id="residentList"></div>
+        </section>
+      </div>
+      <footer class="asset-credit">Pattern textures by <a href="https://kenney.nl/assets/pattern-pack" target="_blank" rel="noopener">Kenney</a> · CC0 1.0</footer>
+    </div>
+
+    <script>
+      const STORAGE_KEY = "dream-town-life-v4";
+      const personalityText = { kind: "kind-hearted", silly: "playful", brave: "brave", calm: "gentle" };
+      const moodNames = { happy: "happy", sleepy: "sleepy", curious: "curious", joyful: "joyful", adventurous: "adventurous", excited: "excited", gentle: "gentle" };
+      const moodEmoji = { happy: "😊", sleepy: "😴", curious: "🤔", joyful: "🥰", adventurous: "😄", excited: "🤩", gentle: "☺️" };
+      const activityEmoji = { sleeping: "💤", studying: "📚", exercising: "🏃", exploring: "🧭", "meeting friends": "💬", unwinding: "🫖", relaxing: "🌸", "looking for a snack": "🍪", "performing music": "🎵", "remembering a bizarre dream": "🌙", "modeling a quirky outfit": "🧢" };
+      const clone = (value) => JSON.parse(JSON.stringify(value));
+      const personalityProfiles = {
+        kind:  { social: 5, activity: 2, order: 4, humor: 2, favoritePlaces: ["home", "hospital", "school"] },
+        silly: { social: 4, activity: 4, order: 1, humor: 5, favoritePlaces: ["mall", "beach", "gym"] },
+        brave: { social: 3, activity: 5, order: 3, humor: 3, favoritePlaces: ["gym", "work", "beach"] },
+        calm:  { social: 2, activity: 1, order: 5, humor: 1, favoritePlaces: ["home", "school", "salon"] }
+      };
+      const needLabels = { hunger: "something tasty to eat", social: "someone to talk to", fun: "something fun to do", rest: "a little rest" };
+      const behaviorPaths = {
+        home: [[34,42],[42,47],[49,42],[43,55]],
+        beach: [[10,18],[16,23],[20,16],[14,29]],
+        mall: [[78,17],[85,23],[76,29],[88,16]],
+        salon: [[12,78],[19,72],[23,82],[16,87]],
+        school: [[76,66],[85,70],[79,79],[88,61]],
+        hospital: [[55,80],[63,77],[67,86],[58,88]],
+        work: [[35,55],[43,58],[47,66],[38,69]],
+        gym: [[64,42],[72,45],[68,54],[77,50]]
+      };
+
+      const initialState = {
+        playerName: "You",
+        playerNickname: "Friend",
+        islandName: "Dream Island",
+        coins: 70,
+        residents: [
+          { id: 1, name: "Momo", color: "#ff8fb0", personality: "kind", style: "☁️", mood: "happy", location: "home", energy: 8, relationships: {}, gender: "female", birthday: "2014-05-12", hairColor: "#8b5e3c", outfitColor: "#ff8fb0", accessory: "🌟 Star", hairStyle: "long", clothesStyle: "cute dress", faceStyle: "smile", eyeStyle: "wide", eyeColor: "#4d7df2", mouthStyle: "smile", noseStyle: "button", makeupStyle: "natural", hairAccessory: "bow", speech: "", houseId: 1, position: { left: "34%", top: "42%" } },
+          { id: 2, name: "Piko", color: "#78c6ff", personality: "silly", style: "🧁", mood: "curious", location: "home", energy: 7, relationships: {}, gender: "male", birthday: "2013-10-03", hairColor: "#6b4f2f", outfitColor: "#78c6ff", accessory: "🎀 Bow", hairStyle: "short", clothesStyle: "hoodie", faceStyle: "wink", eyeStyle: "classic", eyeColor: "#7cc5ff", mouthStyle: "grin", noseStyle: "button", makeupStyle: "natural", hairAccessory: "none", speech: "", houseId: 2, position: { left: "58%", top: "42%" } }
+        ],
+        houses: [
+          { id: 1, name: "Momo's Home", residents: [1], furniture: ["🪑 Chair", "🪴 Plant"] },
+          { id: 2, name: "Piko's Home", residents: [2], furniture: ["🛏️ Bed"] }
+        ],
+        selectedResidentId: 1,
+        voiceEnabled: true,
+        wardrobe: ["striped raincoat", "starry pajamas"],
+        story: [
+          "Momo and Piko live in a bright little town with lots of happy places.",
+          "The town always feels extra sweet when someone shares a kind thought."
+        ]
+      };
+
+      let state = loadState();
+      state.lastSimulation = state.lastSimulation || Date.now();
+      state.residents.forEach(ensureResidentSimulationData);
+      let nextId = Math.max(0, ...state.residents.map((resident) => Number(resident.id) || 0)) + 1;
+      let currentView = "town";
+
+      const worldEl = document.getElementById("world");
+      const sceneEl = document.getElementById("scene");
+      const placeTitleEl = document.getElementById("placeTitle");
+      const coinCountEl = document.getElementById("coinCount");
+      const residentCountEl = document.getElementById("residentCount");
+      const moodLabelEl = document.getElementById("moodLabel");
+      const creatorMessageEl = document.getElementById("creatorMessage");
+      const actionMessageEl = document.getElementById("actionMessage");
+      const customizeMessageEl = document.getElementById("customizeMessage");
+      const identityMessageEl = document.getElementById("identityMessage");
+      const previewCardEl = document.getElementById("previewCard");
+      const residentListEl = document.getElementById("residentList");
+      const simStatusEl = document.getElementById("simStatus");
+      const characterInspectorEl = document.getElementById("characterInspector");
+
+      function ensureResidentSimulationData(resident) {
+        resident.needs = { hunger: 7, social: 7, fun: 7, rest: 7, ...(resident.needs || {}) };
+        resident.activity = resident.activity || "relaxing";
+        resident.nextTask = resident.nextTask || "find a cozy place to explore";
+        resident.thought = resident.thought || "I wonder what everyone is doing today?";
+        resident.emotion = resident.emotion || resident.mood || "happy";
+        resident.taskEndsAt = resident.taskEndsAt || Date.now() + 15000;
+        resident.quirk = resident.quirk || ["collects shiny buttons", "names every houseplant", "laughs at serious hats", "is suspicious of spoons"][Number(resident.id) % 4];
+        resident.pathIndex = Number.isFinite(resident.pathIndex) ? resident.pathIndex : Number(resident.id) % 4;
+        resident.behaviorState = resident.behaviorState || "state-walking";
+        resident.interactionTarget = resident.interactionTarget || "the town path";
+        resident.request = resident.request || null;
+      }
+
+      function lowestNeed(resident) {
+        return Object.entries(resident.needs).sort((a, b) => a[1] - b[1])[0];
+      }
+
+      function compatibility(a, b) {
+        const pa = personalityProfiles[a.personality] || personalityProfiles.kind;
+        const pb = personalityProfiles[b.personality] || personalityProfiles.kind;
+        const distance = Math.abs(pa.social - pb.social) + Math.abs(pa.activity - pb.activity) + Math.abs(pa.order - pb.order) + Math.abs(pa.humor - pb.humor);
+        const sharedPlace = pa.favoritePlaces.some((place) => pb.favoritePlaces.includes(place)) ? 2 : 0;
+        return Math.max(1, Math.min(10, 10 - Math.round(distance / 3) + sharedPlace));
+      }
+
+      function chooseAutonomousActivity(resident, hour) {
+        const profile = personalityProfiles[resident.personality] || personalityProfiles.kind;
+        if (hour < 7 || hour >= 22 || resident.needs.rest <= 2) return { place: "home", activity: "sleeping", mood: "sleepy" };
+        if (resident.needs.hunger <= 2) return { place: "home", activity: "looking for a snack", mood: "curious" };
+        if (hour >= 8 && hour < 12) return { place: profile.order >= 4 ? "school" : "gym", activity: profile.order >= 4 ? "studying" : "exercising", mood: "curious" };
+        if (hour >= 12 && hour < 17 && profile.activity >= 3) return { place: profile.favoritePlaces[Math.floor(Math.random() * profile.favoritePlaces.length)], activity: "exploring", mood: "adventurous" };
+        if (hour >= 17 && hour < 20) return { place: profile.social >= 4 ? "mall" : "home", activity: profile.social >= 4 ? "meeting friends" : "unwinding", mood: "happy" };
+        return { place: profile.favoritePlaces[Math.floor(Math.random() * profile.favoritePlaces.length)], activity: "relaxing", mood: "gentle" };
+      }
+
+      function describeThought(resident) {
+        const [need, value] = lowestNeed(resident);
+        if (value <= 3) return `I should find ${needLabels[need]} soon.`;
+        const thoughts = {
+          kind: ["Maybe I can brighten someone's day.", "I hope everybody feels included."],
+          silly: ["What if I make everyone giggle?", "Today needs a tiny bit of mischief!"],
+          brave: ["I am ready to try something new.", "Adventure is probably around the corner!"],
+          calm: ["This is a lovely moment to slow down.", "I want to find a peaceful little spot."]
+        };
+        const options = thoughts[resident.personality] || thoughts.kind;
+        return options[Math.floor(Math.random() * options.length)];
+      }
+
+      function getHomePositionForResident(resident) {
+        const house = state.houses.find((item) => item.id === resident.houseId) || state.houses.find((item) => item.residents.includes(resident.id));
+        const houseIndex = state.houses.findIndex((item) => item.id === house?.id);
+        const homePositions = [
+          { left: "34%", top: "42%" },
+          { left: "58%", top: "42%" },
+          { left: "36%", top: "64%" },
+          { left: "62%", top: "64%" }
+        ];
+        return homePositions[Math.abs(houseIndex) % homePositions.length] || homePositions[0];
+      }
+
+      function advanceBehaviorPath(resident) {
+        if (resident.location === "home") {
+          resident.autoPosition = getHomePositionForResident(resident);
+          resident.behaviorState = "state-sitting";
+          resident.interactionTarget = "their cozy home";
+          return;
+        }
+
+        const path = behaviorPaths[resident.location] || behaviorPaths.home;
+        resident.pathIndex = (resident.pathIndex + 1) % path.length;
+        const [x, y] = path[resident.pathIndex];
+        resident.autoPosition = { left: `${x}%`, top: `${y}%` };
+        const publicStates = ["state-walking", "state-sitting", "state-chatting", "state-inspecting"];
+        resident.behaviorState = publicStates[Math.floor(Math.random() * publicStates.length)];
+        const targets = {
+          "state-inspecting": "a curious public object",
+          "state-sitting": "the nearest park bench",
+          "state-chatting": "a neighbor passing by",
+          "state-walking": "the next marked grid point"
+        };
+        resident.interactionTarget = targets[resident.behaviorState] || "the surroundings";
+      }
+
+      function simulationStep(announce = true) {
+        const hour = new Date().getHours();
+        state.residents.forEach((resident) => {
+          ensureResidentSimulationData(resident);
+          const profile = personalityProfiles[resident.personality] || personalityProfiles.kind;
+          const drainingNeed = profile.social >= 4 ? (Math.random() < .5 ? "social" : "hunger") : (profile.activity >= 4 ? "rest" : "fun");
+          resident.needs[drainingNeed] = Math.max(0, resident.needs[drainingNeed] - 1);
+          resident.needs.hunger = Math.max(0, resident.needs.hunger - (Math.random() < .35 ? 1 : 0));
+          const [need, value] = lowestNeed(resident);
+          if (value <= 3 && !resident.request) {
+            resident.request = need;
+            resident.speech = `Could you help me with ${needLabels[need]}?`;
+          }
+          const decision = chooseAutonomousActivity(resident, hour);
+          const followingDecision = chooseAutonomousActivity(resident, (hour + 1) % 24);
+          resident.location = decision.place;
+          resident.position = null;
+          advanceBehaviorPath(resident);
+          resident.activity = decision.activity;
+          resident.mood = decision.mood;
+          resident.emotion = decision.mood;
+          resident.nextTask = `${followingDecision.activity} at ${followingDecision.place}`;
+          resident.thought = describeThought(resident);
+          resident.taskEndsAt = Date.now() + 8000 + Math.floor(Math.random() * 7000);
+          if (!resident.request) resident.speech = `${activityEmoji[resident.activity] || "✨"} ${resident.activity}`;
+        });
+
+        const socialResidents = state.residents.filter((resident) => resident.needs.social <= 5);
+        if (socialResidents.length > 1) {
+          const a = socialResidents[Math.floor(Math.random() * socialResidents.length)];
+          const options = socialResidents.filter((resident) => resident.id !== a.id);
+          const b = options[Math.floor(Math.random() * options.length)];
+          const score = compatibility(a, b);
+          if (Math.random() * 10 < score) {
+            updateFriendship(a, b, 1);
+            a.behaviorState = "state-chatting";
+            b.behaviorState = "state-chatting";
+            a.needs.social = Math.min(10, a.needs.social + 2);
+            b.needs.social = Math.min(10, b.needs.social + 2);
+            if (announce) addStory(`${a.name} and ${b.name} met up on their own and had a ${score >= 8 ? "wonderful" : "nice"} time.`);
+          }
+        }
+        state.residents.forEach((resident) => {
+          if (isBirthdayToday(resident.birthday)) {
+            const todayKey = `${new Date().getFullYear()}-${new Date().getMonth()}-${new Date().getDate()}`;
+            if (resident.birthdayLastCelebrated !== todayKey) {
+              resident.birthdayLastCelebrated = todayKey;
+              resident.mood = "joyful";
+              resident.speech = `🎂 Happy birthday!`;
+              addStory(`${resident.name} is celebrating their birthday today!`);
+            }
+          }
+        });
+        if (announce && state.residents.length && Math.random() < .35) {
+          const star = state.residents[Math.floor(Math.random() * state.residents.length)];
+          const microEvents = [
+            `${star.name} started a town meeting about a mysteriously missing sock.`,
+            `${star.name} declared the nearest bench an official snack headquarters.`,
+            `${star.name} taught a houseplant a brand-new dance move.`,
+            `${star.name} wore a saucepan as a hat and called it high fashion.`,
+            `${star.name} organized a tiny parade for absolutely no reason.`
+          ];
+          addStory(microEvents[Math.floor(Math.random() * microEvents.length)]);
+        }
+        state.lastSimulation = Date.now();
+        saveState();
+        render();
+      }
+
+      function helpCurrentRequest() {
+        const resident = getResident(state.selectedResidentId);
+        if (!resident) return;
+        ensureResidentSimulationData(resident);
+        if (!resident.request) { setMessage(`${resident.name} does not need help right now.`, "warning"); return; }
+        const need = resident.request;
+        resident.needs[need] = 10;
+        resident.request = null;
+        resident.mood = "joyful";
+        resident.speech = `Thank you, ${state.playerNickname}!`;
+        state.coins += 5;
+        addStory(`You helped ${resident.name} with ${needLabels[need]} and earned 5 coins.`);
+        setMessage(`${resident.name} feels much better! You earned 5 coins.`, "success");
+        saveState(); render();
+      }
+
+      function loadState() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return clone(initialState);
+        try {
+          const parsed = JSON.parse(saved);
+          return { ...clone(initialState), ...parsed, residents: parsed.residents || clone(initialState).residents, houses: parsed.houses || clone(initialState).houses, story: parsed.story || clone(initialState).story };
+        } catch {
+          return clone(initialState);
+        }
+      }
+
+      function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+      function speakCharacter(text, residentId = state.selectedResidentId) {
+        if (!state.voiceEnabled || !text || !("speechSynthesis" in window)) return;
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = .95;
+        utterance.pitch = 1.15;
+        const setSpeaking = (active) => document.querySelectorAll(`[data-resident-id="${residentId}"]`).forEach((token) => token.classList.toggle("speaking", active));
+        utterance.onstart = () => setSpeaking(true);
+        utterance.onboundary = () => setSpeaking(true);
+        utterance.onend = () => setSpeaking(false);
+        utterance.onerror = () => setSpeaking(false);
+        window.speechSynthesis.speak(utterance);
+      }
+      function getResident(id) { return state.residents.find((resident) => resident.id === id); }
+      function getAge(birthday) {
+        if (!birthday) return null;
+        const today = new Date();
+        const birth = new Date(birthday);
+        if (Number.isNaN(birth.getTime())) return null;
+        let age = today.getFullYear() - birth.getFullYear();
+        const monthDiff = today.getMonth() - birth.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age--;
+        return Math.max(0, age);
+      }
+      function isBirthdayToday(birthday) {
+        if (!birthday) return false;
+        const today = new Date();
+        const birth = new Date(birthday);
+        return today.getMonth() === birth.getMonth() && today.getDate() === birth.getDate();
+      }
+      function getGenderDefaults(gender) {
+        if (gender === "female") return { hairColor: "#d974ab", outfitColor: "#ffb4d1" };
+        if (gender === "male") return { hairColor: "#3f6fb0", outfitColor: "#5aa7ff" };
+        return { hairColor: "#7f5e8a", outfitColor: "#8bd7c3" };
+      }
+      function normalizeStyleClass(value) {
+        return String(value || "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)/g, "") || "default";
+      }
+      function getResidentAvatarHtml(resident) {
+        const hairClass = normalizeStyleClass(resident.hairStyle || "long");
+        const faceClass = normalizeStyleClass(resident.faceStyle || "smile");
+        const eyeClass = normalizeStyleClass(resident.eyeStyle || "wide");
+        const mouthClass = normalizeStyleClass(resident.mouthStyle || "smile");
+        const noseClass = normalizeStyleClass(resident.noseStyle || "button");
+        const outfitClass = normalizeStyleClass(resident.clothesStyle || "cute dress");
+        const genderEye = resident.gender === "female" ? "female-eye" : "";
+        const eyeColor = resident.eyeColor || "#423548";
+        const fullBodyClass = resident.fullBody === false ? "" : "full-body";
+        const lollipopAccessory = resident.accessory === "🍭 Lollipop" ? "lollipop" : "";
+        const bearHeadband = resident.hairAccessory === "headband" ? '<div class="bear-headband"></div>' : "";
+        return `
+          <div class="avatar-bubble ${fullBodyClass}">
+            <div class="hair ${hairClass}" style="--hair-color:${resident.hairColor || "#8b5e3c"}"></div>
+            ${bearHeadband}
+            <div class="face ${faceClass}">
+              <span class="face-feature brow left"></span>
+              <span class="face-feature brow right"></span>
+              <span class="face-feature eyelashes left"></span>
+              <span class="face-feature eyelashes right"></span>
+              <span class="face-feature eye left ${eyeClass} ${genderEye}" style="--eye-color:${eyeColor}"></span>
+              <span class="face-feature eye right ${eyeClass} ${genderEye}" style="--eye-color:${eyeColor}"></span>
+              <span class="face-feature nose ${noseClass}"></span>
+              <span class="face-feature mouth ${mouthClass}"></span>
+            </div>
+            <div class="neck"></div>
+            <div class="body"></div>
+            <div class="lap"></div>
+            <div class="arm left"></div>
+            <div class="arm right"></div>
+            <div class="leg left"></div>
+            <div class="leg right"></div>
+            <div class="outfit ${outfitClass}" style="--outfit-color:${resident.outfitColor || "#ff8fb0"}"></div>
+            <div class="accessory ${lollipopAccessory}">${resident.accessory || "🌟"}</div>
+            <div class="task-dot">${activityEmoji[resident.activity] || "✨"}</div>
+            <div class="piece-hands"><span class="piece-hand"></span><span class="piece-hand"></span></div>
+            <div class="piece-feet"><span class="piece-foot"></span><span class="piece-foot"></span></div>
+          </div>
+        `;
+      }
+      function getHouseForResident(residentId) { return state.houses.find((house) => house.residents.includes(residentId)); }
+      function setMessage(text, kind = "info") {
+        actionMessageEl.textContent = text;
+        actionMessageEl.style.background = kind === "success" ? "#eafedc" : kind === "warning" ? "#fff2cc" : "#fff8dc";
+      }
+      function addStory(text) { state.story.unshift(text); state.story = state.story.slice(0, 6); }
+      function getFriendship(a, b) { if (!a.relationships[b.id]) a.relationships[b.id] = 0; return a.relationships[b.id]; }
+      function updateFriendship(a, b, amount) {
+        if (!a.relationships[b.id]) a.relationships[b.id] = 0;
+        a.relationships[b.id] = Math.max(0, Math.min(10, a.relationships[b.id] + amount));
+        if (!b.relationships[a.id]) b.relationships[a.id] = 0;
+        b.relationships[a.id] = Math.max(0, Math.min(10, b.relationships[a.id] + amount));
+      }
+      function updatePreview(resident) {
+        const age = getAge(resident.birthday);
+        const ageText = age !== null ? ` · Age ${age}` : "";
+        previewCardEl.innerHTML = `<strong>${resident.name}</strong><div class="tiny">${personalityText[resident.personality]} · ${resident.style} · ${resident.gender}${ageText}</div><div class="custom-look">${moodEmoji[resident.emotion] || "💖"} Feeling ${resident.emotion} · Now ${resident.activity}</div><div class="custom-look">💭 ${resident.thought}</div><div class="custom-look">⏭️ Next: ${resident.nextTask}</div><div class="custom-look">🎂 Birthday: ${resident.birthday || "Unknown"}</div>`;
+      }
+      function updateCharacterInspector(resident) {
+        const age = getAge(resident.birthday);
+        const ageText = age !== null ? `Age ${age}` : "Age unknown";
+        const birthdayText = resident.birthday ? `Birthday: ${resident.birthday}` : "Birthday not set";
+        const birthdayNote = isBirthdayToday(resident.birthday) ? "🎉 It's their birthday today!" : "";
+        characterInspectorEl.innerHTML = `<div class="inspector-name">${moodEmoji[resident.emotion] || "💖"} ${resident.name}</div><div class="inspector-row"><span class="inspector-label">Gender:</span> ${resident.gender}</div><div class="inspector-row"><span class="inspector-label">${ageText}</span></div><div class="inspector-row"><span class="inspector-label">${birthdayText}</span></div><div class="inspector-row"><span class="inspector-label">Doing:</span> ${resident.activity} at ${resident.location}</div><div class="inspector-row"><span class="inspector-label">Interacting with:</span> ${resident.interactionTarget}</div><div class="inspector-row"><span class="inspector-label">Thinking:</span> “${resident.thought}”</div><div class="inspector-row"><span class="inspector-label">Feeling:</span> ${resident.emotion}</div><div class="inspector-row"><span class="inspector-label">Up next:</span> ${resident.nextTask}</div><div class="inspector-row">${birthdayNote}</div>`;
+      }
+      function getRelationshipLabel(a, b) {
+        const value = getFriendship(a, b);
+        if (value >= 9) return "Best buddies";
+        if (value >= 7) return "Close friends";
+        if (value >= 4) return "Friendly";
+        return "Still getting acquainted";
+      }
+      function getPositionForLocation(resident) {
+        if (resident.location === "custom" && resident.position) return resident.position;
+        if (resident.location === "home") return getHomePositionForResident(resident);
+        if (resident.autoPosition) return resident.autoPosition;
+        if (resident.location === "beach") return { left: "12%", top: "14%" };
+        if (resident.location === "mall") return { left: "78%", top: "16%" };
+        if (resident.location === "salon") return { left: "15%", top: "78%" };
+        if (resident.location === "school") return { left: "74%", top: "68%" };
+        if (resident.location === "hospital") return { left: "56%", top: "80%" };
+        if (resident.location === "work") return { left: "36%", top: "58%" };
+        if (resident.location === "gym") return { left: "67%", top: "43%" };
+        return { left: "50%", top: "50%" };
+      }
+
+      const placeDetails = {
+        beach: { title: "🌊 Sunny Beach", main: "🏖️", side: "🍹", wall: "☀️", background: "linear-gradient(180deg,#bdeeff 0 56%,#ffe8a8 56% 100%)" },
+        mall: { title: "🛍️ Dream Mall", main: "🛋️", side: "🛍️", wall: "🌈", background: "linear-gradient(180deg,#f9e8ff 0 68%,#eadcf7 68% 100%)", extras: [
+          { cls: "mall-shelf", label: "🛍️" },
+          { cls: "mall-display", label: "🎁" },
+          { cls: "mall-cashier", label: "💳" }
+        ] },
+        salon: { title: "✂️ Hair Salon", main: "💺", side: "🧴", wall: "🪞", background: "linear-gradient(180deg,#ffe8f2 0 68%,#f4cfdb 68% 100%)", extras: [
+          { cls: "salon-chair", label: "💺" },
+          { cls: "salon-mirror", label: "🪞" },
+          { cls: "salon-scissors", label: "✂️" }
+        ] },
+        makeup: { title: "💄 Makeup Store", main: "💋", side: "🛍️", wall: "✨", background: "linear-gradient(180deg,#ffe2f7 0 68%,#ffcded 68% 100%)", extras: [
+          { cls: "makeup-mirror", label: "🪞" },
+          { cls: "makeup-palette", label: "💄" },
+          { cls: "makeup-shelf", label: "✨" }
+        ] },
+        clothes: { title: "👗 Clothes Store", main: "🧵", side: "🛍️", wall: "👠", background: "linear-gradient(180deg,#f7f1ff 0 68%,#d9c8ff 68% 100%)", extras: [
+          { cls: "clothes-rack", label: "👗" },
+          { cls: "clothes-mannequin", label: "🕴️" },
+          { cls: "clothes-hat", label: "👒" }
+        ] },
+        hair: { title: "🎀 Hair Shop", main: "💇", side: "🪄", wall: "🌸", background: "linear-gradient(180deg,#fff0d9 0 68%,#ffd8c2 68% 100%)", extras: [
+          { cls: "hair-dryer", label: "💨" },
+          { cls: "hair-station", label: "🪞" },
+          { cls: "hair-cape", label: "🧣" }
+        ] },
+        school: { title: "🏫 School", main: "🪑", side: "📚", wall: "📝", background: "linear-gradient(180deg,#fff9d9 0 68%,#dfc79d 68% 100%)", extras: [
+          { cls: "school-desk", label: "📝" },
+          { cls: "school-board", label: "📚" },
+          { cls: "school-locker", label: "🎒" },
+          { cls: "school-project", label: "🔬" }
+        ] },
+        hospital: { title: "🏥 Hospital", main: "🛏️", side: "🩺", wall: "❤️", background: "linear-gradient(180deg,#e9fff5 0 68%,#cfe8dc 68% 100%)" },
+        home: { title: "🏡 Cozy Home", main: "🛋️", side: "🪴", wall: "🖼️", background: "linear-gradient(180deg,#fff3e7 0 68%,#dfbea2 68% 100%)" },
+        gym: { title: "💪 Town Gym", main: "🏋️", side: "🧃", wall: "🥇", background: "linear-gradient(180deg,#e8f3ff 0 68%,#b8c9d9 68% 100%)" },
+        work: { title: "🧺 Town Workshop", main: "🪑", side: "🧰", wall: "📋", background: "linear-gradient(180deg,#f4edff 0 68%,#cfc1df 68% 100%)" }
+      };
+
+      function createResidentToken(resident, position, inside = false) {
+        ensureResidentSimulationData(resident);
+        const token = document.createElement("button");
+        token.className = `resident-token ${resident.behaviorState} ${resident.id === state.selectedResidentId ? "selected" : ""}`;
+        token.setAttribute("data-resident-id", resident.id);
+        token.style.left = position.left;
+        token.style.top = position.top;
+        token.innerHTML = getResidentAvatarHtml(resident) + `
+          <div class="speech-bubble">${resident.speech || `${resident.name} is ${resident.mood}`}</div>`;
+        token.addEventListener("click", (event) => {
+          event.stopPropagation();
+          state.selectedResidentId = resident.id;
+          setMessage(`${resident.name} is ready for the next adventure.`, "success");
+          speakCharacter(`${resident.name} is feeling ${resident.emotion}. ${resident.thought} Next, ${resident.nextTask}.`);
+          saveState(); render();
+        });
+        if (inside) token.style.cursor = "pointer";
+        return token;
+      }
+
+      function renderInterior(place) {
+        const details = placeDetails[place] || { title: place, main: "🛋️", side: "🪴", wall: "✨", background: "linear-gradient(180deg,#fff8ef 0 68%,#e6c8ad 68% 100%)" };
+        sceneEl.classList.add("interior-mode");
+        placeTitleEl.textContent = details.title;
+        worldEl.innerHTML = "";
+        const room = document.createElement("div");
+        room.className = "interior";
+        room.style.background = details.background;
+        room.innerHTML = `<div class="interior-decoration main">${details.main}</div><div class="interior-decoration side">${details.side}</div><div class="interior-decoration wall">${details.wall}</div>`;
+        if (details.extras) {
+          details.extras.forEach((extra) => {
+            const tile = document.createElement("div");
+            tile.className = `interior-item ${extra.cls}`;
+            tile.textContent = extra.label;
+            room.appendChild(tile);
+          });
+        }
+        const visitors = state.residents.filter((resident) => resident.location === place);
+        if (!visitors.length) room.insertAdjacentHTML("beforeend", '<div class="empty-place">Nobody is here yet.<br><span class="tiny">Send a resident here from the town actions.</span></div>');
+        visitors.forEach((resident, index) => {
+          const spots = [{left:"34%",top:"57%"},{left:"55%",top:"58%"},{left:"45%",top:"77%"},{left:"72%",top:"72%"},{left:"23%",top:"78%"}];
+          room.appendChild(createResidentToken(resident, spots[index % spots.length], true));
+        });
+        worldEl.appendChild(room);
+      }
+
+      function render() {
+        const currentHour = new Date().getHours();
+        sceneEl.classList.toggle("evening", currentHour >= 17 && currentHour < 21);
+        sceneEl.classList.toggle("night", currentHour >= 21 || currentHour < 6);
+        coinCountEl.textContent = `🪙 Coins: ${state.coins}`;
+        residentCountEl.textContent = `🏡 Residents: ${state.residents.length}`;
+        document.getElementById("voiceBtn").textContent = `🔊 Character Voices: ${state.voiceEnabled ? "On" : "Off"}`;
+        document.querySelector("h1").textContent = `🌸 ${state.islandName}`;
+        const selectedResident = getResident(state.selectedResidentId);
+        if (selectedResident) {
+          ensureResidentSimulationData(selectedResident);
+          moodLabelEl.textContent = `💖 Mood: ${moodNames[selectedResident.mood] || selectedResident.mood}`;
+          updatePreview(selectedResident);
+          updateCharacterInspector(selectedResident);
+          const [lowest, amount] = lowestNeed(selectedResident);
+          simStatusEl.textContent = selectedResident.request
+            ? `${selectedResident.name} needs ${needLabels[selectedResident.request]}. Help them to earn coins!`
+            : `${selectedResident.name} is ${selectedResident.activity} at ${selectedResident.location}. Lowest need: ${lowest} ${amount}/10.`;
+        }
+
+        if (currentView !== "town") { renderInterior(currentView); return; }
+        sceneEl.classList.remove("interior-mode");
+        placeTitleEl.textContent = "🌸 Town Map";
+        worldEl.innerHTML = "";
+        const world = document.createElement("div");
+        world.className = "world";
+
+        const island = document.createElement("div");
+        island.className = "island";
+        island.innerHTML = `
+          <span class="ambient-particle" style="left:8%;--fall-time:9s;--fall-delay:-2s">🍃</span>
+          <span class="ambient-particle" style="left:24%;--fall-time:11s;--fall-delay:-7s">🌸</span>
+          <span class="ambient-particle" style="left:43%;--fall-time:8s;--fall-delay:-4s">🍃</span>
+          <span class="ambient-particle" style="left:61%;--fall-time:12s;--fall-delay:-9s">🌼</span>
+          <span class="ambient-particle" style="left:79%;--fall-time:10s;--fall-delay:-5s">🍂</span>
+          <span class="ambient-particle" style="left:92%;--fall-time:13s;--fall-delay:-1s">🍃</span>
+          <div class="road main"></div><div class="road cross"></div><div class="road loop"></div>
+          <div class="pond"></div>
+          <div class="district-label north">North Village</div><div class="district-label south">Garden District</div>
+          <div class="scenery tree" style="left:24%;top:8%">🌳</div>
+          <div class="scenery tree" style="left:29%;top:14%">🌲</div>
+          <div class="scenery tree" style="right:25%;top:16%">🌳</div>
+          <div class="scenery tree" style="left:25%;bottom:9%">🌲</div>
+          <div class="scenery tree" style="right:20%;bottom:31%">🌳</div>
+          <div class="scenery flower" style="left:20%;bottom:31%">🌷</div>
+          <div class="scenery flower" style="right:31%;top:24%">🌼</div>
+          <div class="scenery flower" style="left:31%;top:31%">🌸</div>
+          <div class="scenery bench" style="left:25%;top:49%">🪑</div>
+          <div class="building beach" data-place="beach"><div class="icon">🌊</div><div>Beach</div></div>
+          <div class="building mall" data-place="mall"><div class="icon">🛍️</div><div>Mall</div></div>
+          <div class="building salon" data-place="salon"><div class="icon">✂️</div><div>Hair Salon</div></div>
+          <div class="building makeup" data-place="makeup"><div class="icon">💄</div><div>Makeup</div></div>
+          <div class="building clothes" data-place="clothes"><div class="icon">👗</div><div>Clothes</div></div>
+          <div class="building hair" data-place="hair"><div class="icon">🎀</div><div>Hair Shop</div></div>
+          <div class="building school" data-place="school"><div class="icon">🏫</div><div>School</div></div>
+          <div class="building hospital" data-place="hospital"><div class="icon">🏥</div><div>Hospital</div></div>
+          <div class="building home" data-place="home"><div class="icon">🏡</div><div>Neighborhood</div></div>
+        `;
+        island.querySelectorAll(".building").forEach((building) => {
+          building.addEventListener("click", () => visitPlace(building.getAttribute("data-place")));
+        });
+        world.appendChild(island);
+
+        state.houses.forEach((house, index) => {
+          const houseCard = document.createElement("button");
+          houseCard.className = `resident-token ${house.id === getHouseForResident(state.selectedResidentId)?.id ? "selected" : ""}`;
+          houseCard.style.left = index % 2 === 0 ? "34%" : "62%";
+          houseCard.style.top = index < 2 ? "42%" : "64%";
+          const resident = getResident(house.residents[0]);
+          houseCard.innerHTML = getResidentAvatarHtml(resident || { hairColor: "#8b5e3c", outfitColor: "#ff8fb0", hairStyle: "long", faceStyle: "smile", eyeStyle: "wide", mouthStyle: "smile", noseStyle: "button", clothesStyle: "cute dress", accessory: "🌟" }) + `
+            <div class="speech-bubble">${house.name}</div>
+          `;
+          houseCard.addEventListener("click", () => {
+            state.selectedResidentId = house.residents[0] || state.selectedResidentId;
+            setMessage(`${house.name} is waiting for a cute visit.`, "success");
+            saveState();
+            render();
+          });
+          world.appendChild(houseCard);
+        });
+
+        state.residents.forEach((resident) => {
+          ensureResidentSimulationData(resident);
+          const position = getPositionForLocation(resident);
+          const token = document.createElement("button");
+          token.className = `resident-token ${resident.behaviorState} ${resident.id === state.selectedResidentId ? "selected" : ""}`;
+          token.style.left = position.left;
+          token.style.top = position.top;
+          token.setAttribute("data-resident-id", resident.id);
+          token.innerHTML = getResidentAvatarHtml(resident) + `
+            <div class="speech-bubble">${resident.speech || `${resident.name} is ${resident.activity}`}</div>
+          `;
+
+          token.addEventListener("click", (event) => {
+            event.stopPropagation();
+            state.selectedResidentId = resident.id;
+            setMessage(`${moodEmoji[resident.emotion] || "💖"} ${resident.name} is ${resident.activity}. Next: ${resident.nextTask}`, "success");
+            speakCharacter(`${resident.name} is ${resident.activity}. ${resident.thought} Next, ${resident.nextTask}.`);
+            saveState();
+            render();
+          });
+
+          token.addEventListener("pointerdown", (event) => {
+            if (event.button !== 0) return;
+            state.selectedResidentId = resident.id;
+            token.setPointerCapture(event.pointerId);
+            token.dataset.dragging = "true";
+            const rect = worldEl.getBoundingClientRect();
+            const offsetX = event.clientX - rect.left - parseFloat(token.style.left);
+            const offsetY = event.clientY - rect.top - parseFloat(token.style.top);
+            token.dataset.offsetX = offsetX;
+            token.dataset.offsetY = offsetY;
+            setMessage(`${resident.name} is ready to be moved around town.`, "success");
+          });
+
+          token.addEventListener("pointermove", (event) => {
+            if (token.dataset.dragging !== "true") return;
+            const rect = worldEl.getBoundingClientRect();
+            const x = ((event.clientX - rect.left - Number(token.dataset.offsetX)) / rect.width) * 100;
+            const y = ((event.clientY - rect.top - Number(token.dataset.offsetY)) / rect.height) * 100;
+            const clampedX = Math.max(8, Math.min(92, x));
+            const clampedY = Math.max(10, Math.min(90, y));
+            token.style.left = `${clampedX}%`;
+            token.style.top = `${clampedY}%`;
+          });
+
+          const releaseMove = (event) => {
+            if (token.dataset.dragging !== "true") return;
+            token.dataset.dragging = "false";
+            const rect = worldEl.getBoundingClientRect();
+            const x = ((event.clientX - rect.left - Number(token.dataset.offsetX)) / rect.width) * 100;
+            const y = ((event.clientY - rect.top - Number(token.dataset.offsetY)) / rect.height) * 100;
+            const clampedX = Math.max(8, Math.min(92, x));
+            const clampedY = Math.max(10, Math.min(90, y));
+            resident.location = "custom";
+            resident.mood = "happy";
+            resident.speech = `${resident.name} moved to a new spot!`;
+            resident.position = { left: `${clampedX}%`, top: `${clampedY}%` };
+            token.style.left = `${clampedX}%`;
+            token.style.top = `${clampedY}%`;
+            setMessage(`${resident.name} moved to a new sweet spot.`, "success");
+            saveState();
+            render();
+          };
+
+          token.addEventListener("pointerup", releaseMove);
+          token.addEventListener("pointercancel", releaseMove);
+          token.addEventListener("pointerleave", (event) => {
+            if (token.dataset.dragging === "true") {
+              releaseMove(event);
+            }
+          });
+
+          world.appendChild(token);
+        });
+
+        worldEl.appendChild(world);
+
+        residentListEl.innerHTML = "";
+        const list = document.createElement("div");
+        list.className = "list";
+        state.residents.forEach((resident) => {
+          ensureResidentSimulationData(resident);
+          const card = document.createElement("div");
+          card.className = "card";
+          const friendship = state.residents.filter((r) => r.id !== resident.id).map((r) => {
+            const value = getFriendship(resident, r);
+            return Array.from({ length: 5 }, (_, index) => `<span class="heart ${index < value ? "" : "gray"}">♥</span>`).join("");
+          }).join("  ");
+          const relation = state.residents.filter((r) => r.id !== resident.id).map((r) => `<div class="relationship-pill">${r.name}: ${getRelationshipLabel(resident, r)}</div>`).join("");
+          const age = getAge(resident.birthday);
+          const ageLabel = age !== null ? ` · Age ${age}` : "";
+          card.innerHTML = `<strong>${resident.name}</strong> · ${personalityText[resident.personality]} · ${resident.gender}${ageLabel}<div class="tiny">${resident.location} · energy ${resident.energy}</div><div class="custom-look"><span class="mini-avatar">👧</span>Hair ${resident.hairColor || "#8b5e3c"} · Outfit ${resident.outfitColor || "#ff8fb0"} · ${resident.accessory || "🌟 Star"}</div><div class="custom-look">🎂 ${resident.birthday || "Birthday unknown"}</div><div class="friend-meter">${friendship}</div>${relation}`;
+          const needsSummary = document.createElement("div");
+          needsSummary.className = "tiny";
+          needsSummary.textContent = `Food ${resident.needs.hunger}/10 · Social ${resident.needs.social}/10 · Fun ${resident.needs.fun}/10 · Rest ${resident.needs.rest}/10`;
+          card.appendChild(needsSummary);
+          if (resident.request) {
+            const requestBadge = document.createElement("div");
+            requestBadge.className = "request-badge";
+            requestBadge.textContent = `Request: ${needLabels[resident.request]}`;
+            card.appendChild(requestBadge);
+          }
+          list.appendChild(card);
+        });
+        residentListEl.appendChild(list);
+
+        const storyPanel = document.createElement("div");
+        storyPanel.style.marginTop = "12px";
+        storyPanel.innerHTML = "<h3>📝 Town Story</h3>";
+        state.story.forEach((item) => {
+          const row = document.createElement("div");
+          row.className = "story-item";
+          row.textContent = item;
+          storyPanel.appendChild(row);
+        });
+        residentListEl.appendChild(storyPanel);
+      }
+
+      function createResident() {
+        const name = document.getElementById("nameInput").value.trim() || `Resident ${nextId}`;
+        const color = document.getElementById("colorInput").value;
+        const personality = document.getElementById("personalityInput").value;
+        const style = document.getElementById("styleInput").value;
+        const newHouse = { id: Date.now(), name: `${name}'s Home`, residents: [], furniture: ["🪑 Chair"] };
+        const gender = document.getElementById("genderInput").value;
+        const birthday = document.getElementById("birthdayInput").value || "2014-07-23";
+        const defaults = getGenderDefaults(gender);
+        const accessoryDefault = gender === "male" ? "🍭 Lollipop" : "🌟 Star";
+        const resident = { id: nextId++, name, color, personality, style, mood: "happy", location: "home", energy: 8, relationships: {}, gender, birthday, hairColor: defaults.hairColor, outfitColor: defaults.outfitColor, accessory: accessoryDefault, hairStyle: "long", clothesStyle: "cute dress", faceStyle: "smile", eyeStyle: "wide", eyeColor: "#4d7df2", mouthStyle: "smile", noseStyle: "button", makeupStyle: "natural", hairAccessory: "none", hairDesignStyle: "wild doodle", hairTexture: "smooth", hairStripeColor: "#ffd7ff", hairSketch: "", fullBody: false, speech: "", houseId: newHouse.id, position: { left: "34%", top: "42%" } };
+        newHouse.residents.push(resident.id);
+        state.houses.push(newHouse);
+        state.residents.push(resident);
+        state.selectedResidentId = resident.id;
+        state.coins += 8;
+        creatorMessageEl.textContent = `${name} moved into town with a sparkling new home!`;
+        addStory(`${name} just moved in and is ready to meet everybody.`);
+        setMessage(`${name} is ready to make friends and start a cozy routine.`, "success");
+        saveState();
+        render();
+      }
+
+      function customizeSelectedResident() {
+        const resident = getResident(state.selectedResidentId);
+        if (!resident) return;
+        const newName = document.getElementById("renameInput").value.trim();
+        if (newName) resident.name = newName;
+        resident.gender = document.getElementById("genderCustomizeInput").value;
+        resident.birthday = document.getElementById("birthdayCustomizeInput").value || resident.birthday;
+        resident.faceStyle = document.getElementById("faceStyleInput").value;
+        resident.hairColor = document.getElementById("hairColorInput").value;
+        resident.outfitColor = document.getElementById("outfitColorInput").value;
+        resident.accessory = document.getElementById("accessoryInput").value;
+        resident.hairStyle = document.getElementById("hairStyleInput").value;
+        resident.clothesStyle = document.getElementById("clothesStyleInput").value;
+        resident.eyeStyle = document.getElementById("eyeStyleInput").value;
+        resident.eyeColor = document.getElementById("eyeColorInput").value;
+        resident.fullBody = document.getElementById("fullBodyInput").checked;
+        resident.mouthStyle = document.getElementById("mouthStyleInput").value;
+        resident.noseStyle = document.getElementById("noseStyleInput").value;
+        resident.makeupStyle = document.getElementById("makeupStyleInput").value;
+        resident.hairAccessory = document.getElementById("hairAccessoryInput").value;
+        resident.hairDesignStyle = document.getElementById("hairDesignStyleInput").value;
+        resident.hairTexture = document.getElementById("hairTextureInput").value;
+        resident.hairStripeColor = document.getElementById("hairStripeColorInput").value;
+        resident.hairSketch = document.getElementById("hairSketchInput").value.trim();
+        resident.mood = "happy";
+        customizeMessageEl.textContent = `${resident.name} now has a fresh new look!`;
+        setMessage(`${resident.name} is styling up and looking extra cute.`, "success");
+        saveState();
+        render();
+      }
+
+      function saveIdentity() {
+        const playerName = document.getElementById("playerNameInput").value.trim();
+        const playerNickname = document.getElementById("playerNicknameInput").value.trim();
+        const islandName = document.getElementById("islandNameInput").value.trim();
+        if (playerName) state.playerName = playerName;
+        if (playerNickname) state.playerNickname = playerNickname;
+        if (islandName) state.islandName = islandName;
+        state.story.unshift(`${state.playerName} is now known as ${state.playerNickname} on ${state.islandName}.`);
+        identityMessageEl.textContent = `${state.playerName} is now called ${state.playerNickname} on ${state.islandName}.`;
+        setMessage(`The town now calls you ${state.playerNickname}.`, "success");
+        saveState();
+        render();
+      }
+
+      function speak() {
+        const resident = getResident(state.selectedResidentId);
+        if (!resident) return;
+        const text = document.getElementById("speechInput").value.trim() || `${resident.name} says hello!`;
+        resident.speech = text;
+        addStory(`${resident.name} said: ${text}`);
+        setMessage(`${resident.name} shared: “${text}”`, "success");
+        speakCharacter(text);
+        saveState();
+        render();
+      }
+
+      function shareFeeling() {
+        const resident = getResident(state.selectedResidentId);
+        if (!resident) return;
+        const thought = document.getElementById("speechInput").value.trim() || resident.thought;
+        resident.speech = thought;
+        resident.thought = thought;
+        addStory(`${resident.name} shared a thought with the community: ${thought}`);
+        setMessage(`${resident.name} shared an idea with the whole town.`, "success");
+        speakCharacter(thought);
+        saveState();
+        render();
+      }
+
+      function visitPlace(place) {
+        const resident = getResident(state.selectedResidentId);
+        if (!resident) return;
+        resident.location = place;
+        resident.position = null;
+        resident.mood = place === "school" ? "curious" : place === "hospital" ? "gentle" : place === "salon" ? "happy" : place === "beach" ? "joyful" : place === "mall" ? "excited" : "happy";
+        addStory(`${resident.name} visited ${place}.`);
+        setMessage(`${resident.name} is now at ${place}.`, "success");
+        currentView = place;
+        saveState();
+        render();
+      }
+
+      function hangOut() { const resident = getResident(state.selectedResidentId); if (!resident) return; const others = state.residents.filter((r) => r.id !== resident.id); if (!others.length) { setMessage("Invite another resident first so they can hang out.", "warning"); return; } const buddy = others[Math.floor(Math.random() * others.length)]; updateFriendship(resident, buddy, 1); resident.mood = "joyful"; buddy.mood = "happy"; resident.speech = `${resident.name} says: Let's hang out!`; addStory(`${resident.name} and ${buddy.name} shared a giggle and a snack.`); setMessage(`${resident.name} hung out with ${buddy.name} and their friendship grew!`, "success"); saveState(); render(); }
+      function giveGift() { const resident = getResident(state.selectedResidentId); if (!resident) return; const gifts = ["a tiny star sticker", "a warm scarf", "a cookie box", "a rainbow pencil"]; const gift = gifts[Math.floor(Math.random() * gifts.length)]; resident.mood = "happy"; resident.speech = `${resident.name} says: I brought ${gift}!`; addStory(`${resident.name} gave ${gift} to a friend.`); setMessage(`${resident.name} gave a sweet gift and everyone smiled.`, "success"); saveState(); render(); }
+      function makeWish() { const resident = getResident(state.selectedResidentId); if (!resident) return; state.coins += 6; resident.mood = "joyful"; resident.speech = `${resident.name} says: I wish for more sparkle!`; addStory(`${resident.name} made a wish at the well.`); setMessage(`${resident.name} wished for more sparkle and got 6 coins!`, "success"); saveState(); render(); }
+      function setMood(mood) { const resident = getResident(state.selectedResidentId); if (!resident) return; resident.mood = mood; resident.speech = `${resident.name} says: I feel ${mood}.`; addStory(`${resident.name} is feeling ${mood}.`); setMessage(`${resident.name} changed their mood to ${mood}.`, "success"); saveState(); render(); }
+      function goToSchool() { visitPlace("school"); }
+      function goToGym() { visitPlace("gym"); }
+      function goToWork() { visitPlace("work"); }
+      function goToHome() { visitPlace("home"); }
+      function goToBeach() { visitPlace("beach"); }
+      function goToMall() { visitPlace("mall"); }
+      function goToSalon() { visitPlace("salon"); }
+      function goToMakeup() { visitPlace("makeup"); }
+      function goToClothes() { visitPlace("clothes"); }
+      function goToHair() { visitPlace("hair"); }
+      function goToHospital() { visitPlace("hospital"); }
+      function addRoommate() { const resident = getResident(state.selectedResidentId); if (!resident) return; const house = getHouseForResident(resident.id); const newResident = { id: nextId++, name: `Roomie ${nextId - 2}`, color: `#${Math.floor(Math.random()*0xffffff).toString(16).padStart(6, "0")}`, personality: ["kind", "silly", "calm", "brave"][Math.floor(Math.random()*4)], style: ["☁️", "🧁", "🌈", "🍡"][Math.floor(Math.random()*4)], mood: "happy", location: "home", energy: 7, relationships: {}, hairColor: `#${Math.floor(Math.random()*0xffffff).toString(16).padStart(6, "0")}`, outfitColor: `#${Math.floor(Math.random()*0xffffff).toString(16).padStart(6, "0")}`, accessory: "🪩 Disco Ball", speech: "", houseId: house.id, faceStyle: "cute" }; house.residents.push(newResident.id); state.residents.push(newResident); addStory(`${newResident.name} moved in as a roommate.`); setMessage(`${newResident.name} moved in and the house feels extra cozy.`, "success"); saveState(); render(); }
+      function addFurniture() { const resident = getResident(state.selectedResidentId); if (!resident) return; const house = getHouseForResident(resident.id); if (!house) { setMessage("Create a home first, then decorate it.", "warning"); return; } house.furniture.push(document.getElementById("furnitureInput").value); addStory(`${resident.name} added a new piece of furniture.`); setMessage(`${resident.name} decorated their home with a new cozy item.`, "success"); saveState(); render(); }
+      function takeTrip() { const resident = getResident(state.selectedResidentId); if (!resident) return; if (state.coins < 20) { setMessage("You need 20 coins for a trip around the world.", "warning"); return; } state.coins -= 20; const destinations = ["Tokyo", "Paris", "Hawaii", "Miyazaki", "Alaska"]; const destination = destinations[Math.floor(Math.random() * destinations.length)]; resident.location = destination; resident.mood = "adventurous"; resident.speech = `${resident.name} says: I am off on an adventure!`; addStory(`${resident.name} traveled to ${destination}.`); setMessage(`${resident.name} took a big trip and came home smiling.`, "success"); saveState(); render(); }
+      function takePhoto() { const resident = getResident(state.selectedResidentId); if (!resident) return; resident.speech = `${resident.name} says: Cheese!`; addStory(`${resident.name} took a cute photo with you.`); setMessage(`${resident.name} snapped a sweet picture for the scrapbook.`, "success"); saveState(); render(); }
+      function bringSouvenir() { const resident = getResident(state.selectedResidentId); if (!resident) return; const souvenirs = ["a tiny shell", "a googly-eyed pencil", "a star keychain", "a fluffy ribbon"]; const gift = souvenirs[Math.floor(Math.random() * souvenirs.length)]; resident.speech = `${resident.name} says: I brought you ${gift}!`; addStory(`${resident.name} brought you ${gift}.`); setMessage(`${resident.name} brought you a fun souvenir.`, "success"); saveState(); render(); }
+      function performMusic() { const resident = getResident(state.selectedResidentId); if (!resident) return; const songs = ["The Ballad of the Missing Sock", "Three Frogs on a Skateboard", "Homework Blues in C Major", "The Very Polite Robot"]; const song = songs[Math.floor(Math.random()*songs.length)]; resident.activity = "performing music"; resident.mood = "excited"; resident.emotion = "excited"; resident.speech = `🎵 ${song}!`; resident.thought = "I hope everybody joins the rhythm!"; state.coins += 3; addStory(`${resident.name} performed “${song}” and the town used pencils as drumsticks.`); setMessage(`${resident.name} performed a quirky song and earned 3 coins.`, "success"); speakCharacter(`Now performing: ${song}. La la la!`); saveState(); render(); }
+      function tellDream() { const resident = getResident(state.selectedResidentId); if (!resident) return; const dreams = ["the school bus grew wings and delivered everyone to the moon", "a goldfish became principal for a day", "all the lockers started telling excellent jokes", "a tiny cloud followed everyone around giving high fives"]; const dream = dreams[Math.floor(Math.random()*dreams.length)]; resident.activity = "remembering a bizarre dream"; resident.emotion = "curious"; resident.thought = `Last night, ${dream}.`; resident.speech = `🌙 ${resident.thought}`; addStory(`${resident.name} dreamed that ${dream}.`); setMessage(`${resident.name} added a wonderfully strange dream to the town story.`, "success"); speakCharacter(resident.thought); saveState(); render(); }
+      function findQuirkyOutfit() { const resident = getResident(state.selectedResidentId); if (!resident) return; const finds = [{name:"banana-print raincoat",color:"#ffd84d",icon:"🍌"},{name:"galaxy pajamas",color:"#7158c9",icon:"🌌"},{name:"frog detective coat",color:"#71c985",icon:"🐸"},{name:"traffic-cone hat",color:"#ff8a36",icon:"🚧"}]; const find = finds[Math.floor(Math.random()*finds.length)]; state.wardrobe = state.wardrobe || []; if (!state.wardrobe.includes(find.name)) state.wardrobe.push(find.name); resident.clothesStyle = find.name; resident.outfitColor = find.color; resident.accessory = find.icon; resident.activity = "modeling a quirky outfit"; addStory(`${resident.name} discovered a ${find.name} for the community wardrobe.`); setMessage(`New clothing collected: ${find.name}!`, "success"); saveState(); render(); }
+      function toggleVoices() { state.voiceEnabled = !state.voiceEnabled; document.getElementById("voiceBtn").textContent = `🔊 Character Voices: ${state.voiceEnabled ? "On" : "Off"}`; if (!state.voiceEnabled && "speechSynthesis" in window) window.speechSynthesis.cancel(); saveState(); }
+
+      document.getElementById("createResidentBtn").addEventListener("click", createResident);
+      document.getElementById("identityBtn").addEventListener("click", saveIdentity);
+      document.getElementById("customizeBtn").addEventListener("click", customizeSelectedResident);
+      document.getElementById("speakBtn").addEventListener("click", speak);
+      document.getElementById("feelingBtn").addEventListener("click", shareFeeling);
+      document.getElementById("hangBtn").addEventListener("click", hangOut);
+      document.getElementById("giftBtn").addEventListener("click", giveGift);
+      document.getElementById("wishBtn").addEventListener("click", makeWish);
+      document.getElementById("happyBtn").addEventListener("click", () => setMood("happy"));
+      document.getElementById("sleepBtn").addEventListener("click", () => setMood("sleepy"));
+      document.getElementById("curiousBtn").addEventListener("click", () => setMood("curious"));
+      document.getElementById("schoolBtn").addEventListener("click", goToSchool);
+      document.getElementById("gymBtn").addEventListener("click", goToGym);
+      document.getElementById("workBtn").addEventListener("click", goToWork);
+      document.getElementById("beachBtn").addEventListener("click", goToBeach);
+      document.getElementById("mallBtn").addEventListener("click", goToMall);
+      document.getElementById("salonBtn").addEventListener("click", goToSalon);
+      document.getElementById("makeupBtn").addEventListener("click", goToMakeup);
+      document.getElementById("clothesBtn").addEventListener("click", goToClothes);
+      document.getElementById("hairShopBtn").addEventListener("click", goToHair);
+      document.getElementById("hospitalBtn").addEventListener("click", goToHospital);
+      document.getElementById("homeBtn").addEventListener("click", goToHome);
+      document.getElementById("roommateBtn").addEventListener("click", addRoommate);
+      document.getElementById("furnitureBtn").addEventListener("click", addFurniture);
+      document.getElementById("tripBtn").addEventListener("click", takeTrip);
+      document.getElementById("photoBtn").addEventListener("click", takePhoto);
+      document.getElementById("musicBtn").addEventListener("click", performMusic);
+      document.getElementById("giftYouBtn").addEventListener("click", bringSouvenir);
+      document.getElementById("dreamBtn").addEventListener("click", tellDream);
+      document.getElementById("outfitHuntBtn").addEventListener("click", findQuirkyOutfit);
+      document.getElementById("voiceBtn").addEventListener("click", toggleVoices);
+      document.getElementById("helpBtn").addEventListener("click", helpCurrentRequest);
+      document.getElementById("backTownBtn").addEventListener("click", () => { currentView = "town"; render(); });
+      document.addEventListener("keydown", (event) => {
+        if (event.key.toLowerCase() === "w") {
+          const customSection = document.getElementById("avatarCustomizationSection");
+          if (customSection) {
+            customSection.scrollIntoView({ behavior: "smooth", block: "center" });
+            document.getElementById("hairStyleInput").focus();
+            setMessage("Jumped to avatar customization!", "success");
+          }
+        }
+        if (event.key.toLowerCase() === "r") {
+          const glamSection = document.getElementById("glamStudioSection");
+          if (glamSection) {
+            glamSection.scrollIntoView({ behavior: "smooth", block: "center" });
+            document.getElementById("makeupStyleInput").focus();
+            setMessage("Welcome to the Glam Studio!", "success");
+          }
+        }
+        if (event.key.toLowerCase() === "k") {
+          const hairSection = document.getElementById("hairDesignSection");
+          if (hairSection) {
+            hairSection.scrollIntoView({ behavior: "smooth", block: "center" });
+            document.getElementById("hairDesignStyleInput").focus();
+            setMessage("Ready to draw more hair styles!", "success");
+          }
+        }
+      });
+      if (Date.now() - state.lastSimulation > 8000) simulationStep(false);
+      else render();
+      setInterval(() => simulationStep(true), 9000);
+    </script>
+  </body>
+</html>

@@ -17,7 +17,8 @@ const STAGING = path.join(os.tmpdir(), `mrscandrett-dist-${Date.now()}`);
 // Dev-only / non-published directories. Everything else ships to Pages.
 const EXCLUDE_DIRS = new Set([
   "node_modules", ".git", ".github", "dist", "screenshots", "test-results",
-  "tmp", ".claude", ".vscode", "portal/uploads", "portal/work", "portal/data",
+  "tmp", ".claude", ".vscode", "student-projects-review",
+  "portal/uploads", "portal/work", "portal/data",
 ]);
 
 async function copySite() {
