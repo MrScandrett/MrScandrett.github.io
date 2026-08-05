@@ -13,6 +13,16 @@ const FILTER_KEYS = ["category", "tech", "difficulty", "year", "term", "type", "
 
 // Fixed display order for the cohort picker (School Year before Camp), not alphabetical.
 const COHORT_ORDER = ["25-26 School Year", "2026 Summer Camp"];
+const FILTER_LABELS = {
+  category: "Collection",
+  tech: "Tech",
+  difficulty: "Level",
+  year: "Year",
+  term: "Term",
+  type: "Team",
+  program: "Program",
+  cohort: "Class",
+};
 
 function blankState() {
   return {
@@ -123,6 +133,8 @@ function init() {
     filterToggle: document.getElementById("filter-toggle"),
     filterPanel: document.getElementById("filter-panel"),
     groups: document.getElementById("filter-groups"),
+    activeSummary: document.getElementById("active-filter-summary"),
+    categoryPresets: [...document.querySelectorAll("[data-category-preset]")],
     grid: document.getElementById("browse-grid"),
     count: document.getElementById("result-count"),
     empty: document.getElementById("browse-empty"),
@@ -144,7 +156,7 @@ function init() {
       const isOpen = !dom.filterPanel.hidden;
       dom.filterPanel.hidden = isOpen;
       dom.filterToggle.setAttribute("aria-expanded", isOpen ? "false" : "true");
-      dom.filterToggle.textContent = isOpen ? "Filters \u25be" : "Filters \u25b4";
+      dom.filterToggle.textContent = isOpen ? "More filters \u25be" : "More filters \u25b4";
     });
   }
 
@@ -159,6 +171,7 @@ function init() {
       const cardsById = new Map();
       projects.forEach((project) => {
         const card = createProjectCard(project, { showFeatured: true });
+        card.classList.add("is-visible");
         cardsById.set(project.id, card);
         dom.grid.appendChild(card);
       });
@@ -218,6 +231,98 @@ function init() {
         });
       }
 
+      function categoryPresetValues(button) {
+        return new Set(
+          (button.dataset.categoryPreset || "")
+            .split(",")
+            .map((value) => value.trim())
+            .filter(Boolean)
+        );
+      }
+
+      function setsMatch(left, right) {
+        return left.size === right.size && [...left].every((value) => right.has(value));
+      }
+
+      function updateCategoryPresets() {
+        dom.categoryPresets.forEach((button) => {
+          const selected = setsMatch(state.category, categoryPresetValues(button));
+          button.setAttribute("aria-pressed", selected ? "true" : "false");
+        });
+      }
+
+      function advancedFilterCount() {
+        return FILTER_KEYS.filter((key) => key !== "category").reduce((sum, key) => sum + state[key].size, 0);
+      }
+
+      function hasCustomState() {
+        return Boolean(state.q) || state.sort !== "newest" || FILTER_KEYS.some((key) => state[key].size > 0);
+      }
+
+      function updateFilterToggle() {
+        if (!dom.filterToggle || !dom.filterPanel) return;
+        const count = advancedFilterCount();
+        const direction = dom.filterPanel.hidden ? "\u25be" : "\u25b4";
+        dom.filterToggle.textContent = `More filters${count ? ` (${count})` : ""} ${direction}`;
+      }
+
+      function renderActiveSummary() {
+        if (!dom.activeSummary) return;
+        dom.activeSummary.innerHTML = "";
+
+        const label = document.createElement("span");
+        label.className = "active-filter-label";
+        label.textContent = "Active:";
+        dom.activeSummary.appendChild(label);
+
+        if (state.q) {
+          const searchTag = document.createElement("button");
+          searchTag.type = "button";
+          searchTag.className = "active-filter-tag";
+          searchTag.textContent = `Search: “${state.q}” ×`;
+          searchTag.setAttribute("aria-label", `Remove search for ${state.q}`);
+          searchTag.addEventListener("click", () => {
+            state.q = "";
+            apply();
+            dom.search.focus();
+          });
+          dom.activeSummary.appendChild(searchTag);
+        }
+
+        if (state.category.size > 0) {
+          const matchingPreset = dom.categoryPresets.find((button) => setsMatch(state.category, categoryPresetValues(button)));
+          const categoryTag = document.createElement("button");
+          categoryTag.type = "button";
+          categoryTag.className = "active-filter-tag";
+          const categoryLabel = matchingPreset?.querySelector("strong")?.textContent || [...state.category].join(", ");
+          categoryTag.textContent = `Collection: ${categoryLabel} ×`;
+          categoryTag.setAttribute("aria-label", `Remove collection filter ${categoryLabel}`);
+          categoryTag.addEventListener("click", () => {
+            state.category.clear();
+            apply();
+          });
+          dom.activeSummary.appendChild(categoryTag);
+        }
+
+        FILTER_KEYS.filter((key) => key !== "category").forEach((key) => {
+          state[key].forEach((value) => {
+            const tag = document.createElement("button");
+            tag.type = "button";
+            tag.className = "active-filter-tag";
+            tag.textContent = `${FILTER_LABELS[key]}: ${value} ×`;
+            tag.setAttribute("aria-label", `Remove ${FILTER_LABELS[key]} filter ${value}`);
+            tag.addEventListener("click", () => {
+              state[key].delete(value);
+              apply();
+            });
+            dom.activeSummary.appendChild(tag);
+          });
+        });
+
+        const hasTags = dom.activeSummary.querySelector(".active-filter-tag");
+        dom.activeSummary.hidden = !hasTags;
+      }
+
       function apply() {
         updateControlsFromState(state, dom);
         const filteredSorted = filterAndSort(projects, state);
@@ -254,7 +359,19 @@ function init() {
 
         writeStateToQuery(state);
         updateChipsFromState();
+        updateCategoryPresets();
+        renderActiveSummary();
+        updateFilterToggle();
+        dom.clear.disabled = !hasCustomState();
       }
+
+      dom.categoryPresets.forEach((button) => {
+        button.addEventListener("click", () => {
+          state.category.clear();
+          categoryPresetValues(button).forEach((value) => state.category.add(value));
+          apply();
+        });
+      });
 
       dom.search.addEventListener("input", () => {
         state.q = dom.search.value.trim();
@@ -275,6 +392,11 @@ function init() {
         });
         apply();
       });
+
+      if (advancedFilterCount() > 0 && dom.filterPanel && dom.filterToggle) {
+        dom.filterPanel.hidden = false;
+        dom.filterToggle.setAttribute("aria-expanded", "true");
+      }
 
       apply();
     })

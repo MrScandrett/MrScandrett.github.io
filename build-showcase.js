@@ -1887,9 +1887,13 @@ async function processModelProject(source, slug) {
   const modelFileName = path.basename(source.filePath);
   const modelFormat = source.format === "obj" ? "obj" : "stl";
   const modelRelPath = `./assets/models/${encodeURIComponent(modelFileName)}`;
-  const studentLabel = source.student || "Student";
+  const override = readManifestOverrides()[slug] || {};
+  const studentLabel = override.student || source.student || "Student";
   const gradeLabel = source.grade || "";
-  const title = source.title || displayTitleFromFileName(modelFileName) || "3D Model";
+  const overrideTitle = typeof override.name === "string"
+    ? override.name.replace(/\s*\(3D Model\)\s*$/i, "").trim()
+    : "";
+  const title = overrideTitle || source.title || displayTitleFromFileName(modelFileName) || "3D Model";
 
   await fs.rm(outputDir, { recursive: true, force: true });
   const modelsOutDir = path.join(outputDir, "assets", "models");
@@ -2008,7 +2012,9 @@ async function processModelProject(source, slug) {
   await fs.writeFile(path.join(outputDir, "assets", "thumb.svg"), thumbSvg, "utf8");
 
   // Prefer a real screenshot from showcase thumbs folder over the auto-generated SVG
-  const showcaseThumb = await findShowcaseThumb(slug, studentLabel);
+  // Use the source credit for fuzzy thumbnail matching. A curated credit can match an
+  // unrelated project by the same student; an exact slug match still works either way.
+  const showcaseThumb = await findShowcaseThumb(slug, source.student);
   return {
     name: `${title} (3D Model)`,
     slug,
@@ -2028,15 +2034,26 @@ async function processModelProject(source, slug) {
 // which would otherwise silently reset hand-curated display names/categories/tags/thumbnails
 // (set via manual manifest edits, not through the portal) back to generic auto-derived values.
 // data/manifest-overrides.json holds those curated fields per slug so they survive rebuilds.
-function applyManifestOverrides(manifest) {
-  if (!exists(MANIFEST_OVERRIDES_PATH)) return;
-  let overrides;
+let manifestOverridesCache;
+
+function readManifestOverrides() {
+  if (manifestOverridesCache) return manifestOverridesCache;
+  if (!exists(MANIFEST_OVERRIDES_PATH)) {
+    manifestOverridesCache = {};
+    return manifestOverridesCache;
+  }
+
   try {
-    overrides = JSON.parse(fssync.readFileSync(MANIFEST_OVERRIDES_PATH, "utf8"));
+    manifestOverridesCache = JSON.parse(fssync.readFileSync(MANIFEST_OVERRIDES_PATH, "utf8"));
   } catch (error) {
     logStep(`Skipping manifest overrides because ${MANIFEST_OVERRIDES_PATH} could not be read: ${error.message}`);
-    return;
+    manifestOverridesCache = {};
   }
+  return manifestOverridesCache;
+}
+
+function applyManifestOverrides(manifest) {
+  const overrides = readManifestOverrides();
   for (const item of manifest) {
     if (item && overrides[item.slug]) Object.assign(item, overrides[item.slug]);
   }

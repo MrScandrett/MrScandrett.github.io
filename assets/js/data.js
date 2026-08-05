@@ -131,7 +131,7 @@ function normalizeManifestApps(payload) {
         program,
         cohort,
         category,
-        type: "Solo",
+        type: item.type && String(item.type).trim() ? String(item.type).trim() : "Solo",
         jam: false,
         difficulty,
         tech,
