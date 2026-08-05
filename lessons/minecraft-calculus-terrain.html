@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Minecraft Calculus: Terrain &amp; Water Flow · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="See the calculus hiding inside Minecraft: build procedural mountains from stacked wave functions, read slope as a derivative, and watch water flow downhill by following the steepest gradient." />
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --mc-bg: #0a1710;
+      --mc-panel: #0e2016;
+      --mc-card: #12281c;
+      --mc-line: rgba(139, 214, 120, 0.2);
+      --mc-ink: #eafff0;
+      --mc-muted: #b9d7c2;
+      --mc-green: #7ee081;
+      --mc-leaf: #a6e35a;
+      --mc-water: #5ec8f2;
+      --mc-sand: #e8c374;
+      --mc-stone: #9aa6a3;
+      --mc-brown: #c98a4b;
+      --mc-purple: #b98bff;
+      --mc-red: #ff8a7a;
+      --ll-panel-w: 350px;
+      --ll-panel-bg: #0a1a12;
+      --ll-panel-border: rgba(126, 224, 129, 0.18);
+      --ll-tab-active-bg: rgba(126, 224, 129, 0.13);
+      --ll-tab-active: #7ee081;
+    }
+
+    [data-accent] { --accent: var(--mc-green); --accent-soft: rgba(126,224,129,.1); }
+    [data-accent="blue"]   { --accent: var(--mc-water);  --accent-soft: rgba(94,200,242,.12); }
+    [data-accent="purple"] { --accent: var(--mc-purple); --accent-soft: rgba(185,139,255,.12); }
+    [data-accent="sand"]   { --accent: var(--mc-sand);   --accent-soft: rgba(232,195,116,.12); }
+    [data-accent="green"]  { --accent: var(--mc-green);  --accent-soft: rgba(126,224,129,.12); }
+    [data-accent="red"]    { --accent: var(--mc-red);    --accent-soft: rgba(255,138,122,.12); }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--mc-ink); background: var(--mc-bg); font-family: var(--font-sans); }
+    button, input { font: inherit; }
+    .mc-topbar { min-height: 54px; background: rgba(6, 14, 9, 0.96); border-bottom: 1px solid var(--mc-line); }
+    .mc-topbar-inner { width: min(1180px, calc(100% - 2rem)); min-height: 54px; margin: auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .mc-topbar a { color: var(--mc-green); text-decoration: none; font-size: 0.82rem; font-weight: 800; }
+    .mc-topbar span { font-weight: 900; text-align: center; }
+    .mc-main {
+      position: relative; min-height: 100%; padding: clamp(1rem, 3vw, 2.3rem);
+      background:
+        radial-gradient(circle at 8% 0%, rgba(94,200,242,.14), transparent 30rem),
+        radial-gradient(circle at 94% 8%, rgba(126,224,129,.13), transparent 28rem),
+        radial-gradient(circle at 50% 90%, rgba(232,195,116,.08), transparent 32rem),
+        linear-gradient(180deg, #0a1710, #0b1e14);
+    }
+    .mc-wrap { position: relative; z-index: 1; width: min(980px, 100%); margin: auto; }
+    .hero {
+      position: relative; overflow: hidden; padding: clamp(1.2rem, 4vw, 2.2rem);
+      border: 1px solid var(--mc-line); border-radius: 24px;
+      background: linear-gradient(135deg, rgba(94,200,242,.14), rgba(126,224,129,.07) 45%, rgba(232,195,116,.08));
+      background-size: 220% 220%; animation: hero-glow 10s ease infinite;
+      box-shadow: 0 24px 60px rgba(0,0,0,.28), inset 0 0 0 1px rgba(255,255,255,.02);
+    }
+    @keyframes hero-glow { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+    .eyebrow { margin: 0 0 .55rem; color: var(--mc-green); font-size: .72rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+    h1 {
+      margin: 0; font-size: clamp(1.7rem, 4.6vw, 3.2rem); line-height: 1.05; letter-spacing: -.03em;
+      background: linear-gradient(100deg, var(--mc-green), var(--mc-water) 45%, var(--mc-sand) 80%);
+      background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent;
+      animation: title-shimmer 7s linear infinite;
+    }
+    @keyframes title-shimmer { to { background-position: 200% center; } }
+    .hero > p:not(.eyebrow) { max-width: 760px; margin: .8rem 0 0; color: var(--mc-muted); line-height: 1.65; }
+    .promise {
+      display: inline-flex; align-items: center; gap: .45rem; margin-top: 1rem; padding: .5rem .75rem; border-radius: 999px;
+      color: #eafff5; background: rgba(126,224,129,.12); border: 1px solid rgba(126,224,129,.32); font-size: .78rem; font-weight: 800;
+      animation: promise-pulse 2.6s ease-in-out infinite;
+    }
+    @keyframes promise-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(126,224,129,.28); } 50% { box-shadow: 0 0 0 6px rgba(126,224,129,0); } }
+    .schedule { display: grid; grid-template-columns: repeat(4, 1fr); gap: .7rem; margin: 1rem 0 1.3rem; }
+    .time-card { padding: .85rem; border-radius: 14px; background: rgba(14,32,22,.85); border: 1px solid rgba(255,255,255,.08); border-bottom: 3px solid var(--tc-accent, var(--mc-water)); transition: transform .18s; }
+    .time-card:hover { transform: translateY(-3px); }
+    .time-card:nth-child(1) { --tc-accent: var(--mc-water); }
+    .time-card:nth-child(2) { --tc-accent: var(--mc-purple); }
+    .time-card:nth-child(3) { --tc-accent: var(--mc-sand); }
+    .time-card:nth-child(4) { --tc-accent: var(--mc-green); }
+    .time-card strong { display: block; color: var(--mc-sand); font-size: .78rem; }
+    .time-card span { display: block; margin-top: .25rem; color: var(--mc-muted); font-size: .72rem; line-height: 1.4; }
+    .mission {
+      position: relative; margin-top: 1.3rem; padding: clamp(1rem, 3vw, 1.5rem);
+      border: 1px solid rgba(255,255,255,.09); border-top: 3px solid var(--accent, var(--mc-green));
+      border-radius: 18px; background: radial-gradient(circle at 100% 0%, var(--accent-soft, transparent), transparent 55%), rgba(12,32,21,.9);
+      box-shadow: 0 18px 46px rgba(0,0,0,.28); animation: mission-in .5s ease both;
+    }
+    @keyframes mission-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+    .mission-head { display: flex; align-items: flex-start; gap: .85rem; margin-bottom: 1rem; }
+    .mission-num { flex: 0 0 2.3rem; height: 2.3rem; display: grid; place-items: center; border-radius: 12px; color: #052219; background: var(--accent, var(--mc-green)); font-weight: 1000; box-shadow: 0 0 0 4px var(--accent-soft, transparent), 0 6px 16px rgba(0,0,0,.3); }
+    .mission h2 { margin: 0; font-size: 1.25rem; background: linear-gradient(90deg, var(--mc-ink), var(--accent, var(--mc-green))); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .mission-head p { margin: .25rem 0 0; color: var(--mc-muted); font-size: .84rem; line-height: 1.5; }
+    .definition-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; }
+    .definition { padding: .9rem; border-radius: 13px; background: var(--mc-card); border: 1px solid rgba(255,255,255,.08); transition: transform .18s, border-color .18s; }
+    .definition:hover { transform: translateY(-2px); border-color: var(--accent, var(--mc-water)); }
+    .definition strong { display: block; margin-bottom: .3rem; }
+    .definition p { margin: 0; color: var(--mc-muted); font-size: .78rem; line-height: 1.55; }
+    .feedback { min-height: 2.4rem; margin-top: .75rem; padding: .65rem .8rem; border-radius: 10px; color: var(--mc-muted); background: rgba(0,0,0,.18); font-size: .78rem; line-height: 1.45; }
+    label { display: block; color: var(--mc-muted); font-size: .72rem; font-weight: 800; }
+    .btn { min-height: 42px; padding: .6rem .9rem; border: 0; border-radius: 10px; color: #052219; background: linear-gradient(135deg, var(--mc-green), var(--mc-water)); font-weight: 900; cursor: pointer; transition: transform .15s, box-shadow .15s; box-shadow: 0 6px 18px rgba(126,224,129,.18); }
+    .btn:hover, .btn:focus-visible { filter: brightness(1.08); outline: 2px solid white; outline-offset: 2px; transform: translateY(-2px); box-shadow: 0 10px 24px rgba(126,224,129,.3); }
+    .btn:active { transform: translateY(0) scale(.98); }
+    .btn.secondary { color: var(--mc-ink); background: linear-gradient(135deg, rgba(94,200,242,.18), rgba(185,139,255,.14)); border: 1px solid rgba(94,200,242,.3); box-shadow: none; }
+    .panel-card { margin-bottom: .8rem; padding: .9rem; border-radius: 12px; background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.08); }
+    .panel-card h3 { margin: 0 0 .45rem; color: var(--mc-green); font-size: .78rem; }
+    .panel-card p, .panel-card li { color: var(--mc-muted); font-size: .75rem; line-height: 1.55; }
+    .panel-card ul, .panel-card ol { margin: .4rem 0 0; padding-left: 1.15rem; }
+    .ll-open-btn { color: var(--mc-green); }
+
+    .history-note { margin: .9rem 0 0; padding: .75rem .9rem; border-radius: 12px; background: rgba(232,195,116,.06); border: 1px solid rgba(232,195,116,.18); color: var(--mc-muted); font-size: .78rem; line-height: 1.6; }
+    .history-note strong { color: var(--mc-sand); }
+    .history-files { margin: .9rem 0 0; border-radius: 13px; border: 1px solid rgba(232,195,116,.22); background: rgba(232,195,116,.04); overflow: hidden; }
+    .history-files summary { list-style: none; cursor: pointer; padding: .7rem .9rem; display: flex; align-items: center; gap: .5rem; font-weight: 800; font-size: .78rem; color: var(--mc-sand); }
+    .history-files summary::-webkit-details-marker { display: none; }
+    .history-files summary::before { content: "▸"; transition: transform .15s; }
+    .history-files[open] summary::before { transform: rotate(90deg); }
+    .history-entries { padding: 0 .9rem .9rem; display: grid; gap: .6rem; }
+    .history-entry { padding-left: .8rem; border-left: 2px solid rgba(232,195,116,.35); }
+    .history-entry b { display: block; color: var(--mc-ink); font-size: .78rem; }
+    .history-entry span { display: block; margin-top: .15rem; color: var(--mc-muted); font-size: .76rem; line-height: 1.6; }
+
+    /* Wave-stacking lab */
+    .wave-lab { display: grid; grid-template-columns: 1fr 260px; gap: 1rem; margin-top: 1rem; align-items: start; }
+    .wave-canvas-wrap { border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); background: #071008; }
+    canvas { display: block; width: 100%; height: auto; touch-action: none; }
+    .wave-controls { display: grid; gap: .8rem; }
+    .slider-row { padding: .7rem; border-radius: 12px; background: var(--mc-card); border: 1px solid rgba(255,255,255,.08); }
+    .slider-row label { display: flex; justify-content: space-between; color: var(--mc-muted); font-size: .72rem; font-weight: 800; }
+    .slider-row output { color: var(--mc-sand); }
+    .slider-row input[type="range"] { width: 100%; margin-top: .5rem; accent-color: var(--mc-green); }
+    .octave-readout { padding: .7rem; border-radius: 12px; background: rgba(126,224,129,.06); border: 1px solid rgba(126,224,129,.18); font-size: .74rem; color: var(--mc-muted); line-height: 1.55; }
+    .octave-readout strong { color: var(--mc-green); }
+
+    /* Terrain + gradient lab */
+    .terrain-lab { display: grid; grid-template-columns: 1fr 260px; gap: 1rem; margin-top: 1rem; align-items: start; }
+    .terrain-readout { padding: .8rem; border-radius: 12px; background: var(--mc-card); border: 1px solid rgba(255,255,255,.08); font-size: .78rem; color: var(--mc-muted); line-height: 1.6; }
+    .terrain-readout strong { color: var(--mc-water); }
+    .terrain-readout .math { font: 700 .82rem ui-monospace, monospace; color: var(--mc-sand); display: block; margin-top: .3rem; }
+    .btn-row { display: flex; gap: .5rem; flex-wrap: wrap; }
+
+    /* Water lab */
+    .water-lab { display: grid; grid-template-columns: 1fr 260px; gap: 1rem; margin-top: 1rem; align-items: start; }
+    .water-readout { padding: .8rem; border-radius: 12px; background: var(--mc-card); border: 1px solid rgba(255,255,255,.08); font-size: .78rem; color: var(--mc-muted); line-height: 1.6; min-height: 3rem; }
+    .water-readout strong { color: var(--mc-water); }
+    .droplet-count { padding: .6rem .8rem; border-radius: 10px; background: rgba(94,200,242,.08); border: 1px solid rgba(94,200,242,.22); font-size: .76rem; color: var(--mc-muted); }
+    .droplet-count strong { color: var(--mc-water); }
+
+    .related-labs { margin-top: 1.4rem; }
+    .related-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .8rem; }
+    .related-card { display: block; padding: .9rem 1rem; border-radius: 14px; background: var(--mc-card); border: 1px solid rgba(255,255,255,.08); text-decoration: none; color: inherit; transition: transform .18s, border-color .18s, box-shadow .18s; }
+    .related-card:nth-child(1) { --rc-accent: var(--mc-purple); }
+    .related-card:nth-child(2) { --rc-accent: var(--mc-sand); }
+    .related-card:nth-child(3) { --rc-accent: var(--mc-green); }
+    .related-card:nth-child(4) { --rc-accent: var(--mc-water); }
+    .related-card:hover, .related-card:focus-visible { border-color: var(--rc-accent, var(--mc-water)); transform: translateY(-3px) scale(1.01); box-shadow: 0 14px 30px rgba(0,0,0,.28); }
+    .related-card .tag { color: var(--rc-accent, var(--mc-water)); font-size: .67rem; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
+    .related-card h3 { margin: .3rem 0 .25rem; font-size: .92rem; color: var(--mc-ink); }
+    .related-card p { margin: 0; color: var(--mc-muted); font-size: .76rem; line-height: 1.5; }
+
+    @media (max-width: 760px) {
+      .schedule, .definition-grid { grid-template-columns: 1fr 1fr; }
+      .wave-lab, .terrain-lab, .water-lab, .related-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .schedule, .definition-grid { grid-template-columns: 1fr; }
+      .mc-topbar span { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to lesson</a>
+<div class="ll-viewport ll-dark">
+  <nav class="mc-topbar ll-topbar" aria-label="Lesson navigation">
+    <div class="mc-topbar-inner">
+      <a href="../steam-lessons.html">← Mathematics</a>
+      <span>⛏️ Minecraft Calculus</span>
+      <a href="../index.html">ClassroomOS</a>
+    </div>
+  </nav>
+
+  <div class="ll-stage" id="main-content">
+    <main class="ll-sim mc-main">
+      <div class="mc-wrap">
+        <header class="hero">
+          <p class="eyebrow">Ages 12–17 · 60-minute interactive lesson</p>
+          <h1>The calculus hiding inside every Minecraft mountain</h1>
+          <p>Every time Minecraft generates a new world, it is quietly running calculus: stacking wave functions to sculpt terrain, measuring slope with a derivative, and moving water downhill by following the steepest gradient. Build all three yourself.</p>
+          <div class="promise"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 2 4 5v6c0 5.1 3.4 9.8 8 11 4.6-1.2 8-5.9 8-11V5l-8-3Zm-1.1 14.1-3.5-3.5 1.4-1.4 2.1 2.1 4.7-4.7L17 10l-6.1 6.1Z" /></svg> Big idea: a "height function" f(x, y) plus its derivative (the slope) can generate an entire landscape and decide exactly where water goes.</div>
+        </header>
+
+        <div class="schedule" aria-label="Lesson schedule">
+          <div class="time-card"><strong>10 minutes</strong><span>Terrain is a function</span></div>
+          <div class="time-card"><strong>15 minutes</strong><span>Stacking waves into mountains</span></div>
+          <div class="time-card"><strong>15 minutes</strong><span>Slope, gradient &amp; the derivative</span></div>
+          <div class="time-card"><strong>20 minutes</strong><span>Water flow &amp; steepest descent</span></div>
+        </div>
+
+        <section class="mission" data-accent="blue" aria-labelledby="mission-1-title">
+          <div class="mission-head"><span class="mission-num">1</span><div><h2 id="mission-1-title">Terrain is a function</h2><p>Minecraft never stores every mountain by hand. It evaluates a math function at every (x, z) column and turns the output into a height.</p></div></div>
+          <div class="definition-grid">
+            <article class="definition"><strong>📈 f(x, y)</strong><p>A function of two inputs (position east/west and north/south) that outputs one number: the ground height at that spot.</p></article>
+            <article class="definition"><strong>🌊 Continuous</strong><p>Real terrain has no sudden jumps between neighboring columns — the height function has to change smoothly, the same way a calculus function must be continuous to have a derivative.</p></article>
+            <article class="definition"><strong>🎲 Deterministic randomness</strong><p>The "randomness" in a Minecraft world is actually a fixed function of the seed and coordinates — plug in the same numbers and you always get the same mountain.</p></article>
+          </div>
+          <p class="password-note" style="color:var(--mc-sand);font-size:.78rem;line-height:1.5;margin-top:.8rem;">Think of it like a giant spreadsheet: column A is x, column B is y (called z in-game), and column C is a formula that computes height from A and B. Missions 2–4 build that formula from scratch.</p>
+          <details class="history-files">
+            <summary>📜 History Files: from graph paper to procedural worlds</summary>
+            <div class="history-entries">
+              <div class="history-entry"><b>1687 · Newton &amp; Leibniz formalize calculus</b><span>Calculus gave mathematicians tools to describe smoothly changing quantities — exactly the kind of continuous surface a landscape is — and to find the rate of change (the derivative) at any point.</span></div>
+              <div class="history-entry"><b>1983 · Ken Perlin's noise function</b><span>Working on visual effects for the movie Tron, Ken Perlin invented "Perlin noise" — a fast way to compute a smooth, natural-looking random function of position. It won a Technical Achievement Academy Award and now runs inside almost every procedural landscape, including Minecraft's.</span></div>
+              <div class="history-entry"><b>2009 · Minecraft's first terrain generator</b><span>Minecraft layers several noise functions at different frequencies (an "octave" stack, Mission 2) to get both huge mountain ranges and small bumpy detail from the same underlying math.</span></div>
+            </div>
+          </details>
+        </section>
+
+        <section class="mission" data-accent="purple" aria-labelledby="mission-2-title">
+          <div class="mission-head"><span class="mission-num">2</span><div><h2 id="mission-2-title">Stacking waves into mountains</h2><p>A single sine wave looks like ripples, not mountains. Add several waves of different frequency and height together — "octaves" — and you get a believable landscape profile.</p></div></div>
+          <p class="history-note"><strong>The formula:</strong> <span class="math" style="font:700 .85rem ui-monospace,monospace;color:var(--mc-sand);">height(x) = Σ amplitude<sub>i</sub> · sin(frequency<sub>i</sub> · x + phase<sub>i</sub>)</span> — this sum-of-waves idea is the same one behind Fourier series (see the related lab below). Each new octave roughly doubles the frequency and halves the amplitude, adding fine detail without erasing the big shape.</p>
+          <div class="wave-lab">
+            <div class="wave-canvas-wrap"><canvas id="wave-canvas" width="680" height="260" role="img" aria-label="Cross-section of terrain built from stacked sine waves"></canvas></div>
+            <div class="wave-controls">
+              <div class="slider-row">
+                <label for="octave-slider">Octaves (waves stacked) <output id="octave-value">1</output></label>
+                <input type="range" id="octave-slider" min="1" max="6" step="1" value="1" />
+              </div>
+              <div class="slider-row">
+                <label for="roughness-slider">Roughness (how fast amplitude shrinks) <output id="roughness-value">0.5</output></label>
+                <input type="range" id="roughness-slider" min="0.2" max="0.8" step="0.05" value="0.5" />
+              </div>
+              <button class="btn secondary" id="wave-reseed" type="button">🎲 New random seed</button>
+              <div class="octave-readout" id="octave-readout">One octave = one gentle wave. Slide up to see mountains gain sharp ridges and small bumps at the same time.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="mission" data-accent="sand" aria-labelledby="mission-3-title">
+          <div class="mission-head"><span class="mission-num">3</span><div><h2 id="mission-3-title">Slope, gradient &amp; the derivative</h2><p>The steepness of a hill at any point is literally the derivative of the height function. In two dimensions, the full "which way is steepest" answer is called the gradient.</p></div></div>
+          <div class="definition-grid">
+            <article class="definition"><strong>📐 Derivative</strong><p>df/dx tells you the slope of a 1D curve at a point — rise over run as the run shrinks toward zero.</p></article>
+            <article class="definition"><strong>🧭 Gradient (∇f)</strong><p>For a hill f(x, y), the gradient is a vector pointing in the direction of steepest <em>uphill</em> climb, with a length equal to how steep that climb is.</p></article>
+            <article class="definition"><strong>🔻 Steepest descent</strong><p>Walking in the exact opposite direction of the gradient, −∇f, is the fastest way <em>downhill</em> — precisely how water finds its path in Mission 4.</p></article>
+          </div>
+          <p class="password-note" style="color:var(--mc-sand);font-size:.78rem;line-height:1.5;margin:.8rem 0;">Hover or tap anywhere on the terrain map below. The computer can't take a perfect symbolic derivative of noisy terrain, so it does what engineers do in practice: a <strong>finite-difference approximation</strong>, nudging x and y by a tiny step h and measuring how much height changes — <span class="math" style="font:700 .8rem ui-monospace,monospace;color:var(--mc-sand);">∂f/∂x ≈ (f(x+h,y) − f(x,y)) / h</span>.</p>
+          <div class="terrain-lab">
+            <div class="wave-canvas-wrap"><canvas id="terrain-canvas" width="500" height="500" role="img" aria-label="Top-down terrain heightmap with a gradient arrow"></canvas></div>
+            <div class="wave-controls">
+              <div class="terrain-readout" id="terrain-readout">
+                Move your pointer over the map to sample the height function at that (x, y).
+                <span class="math" id="terrain-math">f(x, y) = ?</span>
+              </div>
+              <div class="btn-row">
+                <button class="btn secondary" id="terrain-reseed" type="button">🎲 New terrain</button>
+              </div>
+              <div class="octave-readout">The yellow arrow is −∇f: the direction a marble (or a drop of water) would start rolling if placed at your cursor. Longer arrow = steeper slope = faster acceleration downhill.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="mission" data-accent="blue" aria-labelledby="mission-4-title">
+          <div class="mission-head"><span class="mission-num">4</span><div><h2 id="mission-4-title">Water flow &amp; steepest descent</h2><p>Minecraft's water doesn't know any physics — it just repeatedly asks "which neighboring block is lower?" and flows there. That greedy rule is steepest descent in disguise.</p></div></div>
+          <p class="history-note"><strong>Real-world version:</strong> gravity accelerates real water down the true gradient continuously, but the "always move toward the locally lowest spot" rule is such a good approximation that it is also how erosion-simulation software and machine-learning training (gradient descent) both work — same math, three very different uses.</p>
+          <div class="water-lab">
+            <div class="wave-canvas-wrap"><canvas id="water-canvas" width="500" height="500" role="img" aria-label="Terrain map where you can drop water and watch it flow downhill"></canvas></div>
+            <div class="wave-controls">
+              <div class="water-readout" id="water-readout">Click anywhere on the terrain to drop water. It will step toward the steepest downhill neighbor until it reaches a local minimum (a lake bed) or the edge of the map.</div>
+              <div class="droplet-count">Droplets placed: <strong id="droplet-count">0</strong> · Pooled in a basin: <strong id="pooled-count">0</strong></div>
+              <div class="btn-row">
+                <button class="btn secondary" id="water-clear" type="button">🧹 Clear water</button>
+                <button class="btn secondary" id="water-reseed" type="button">🎲 New terrain</button>
+              </div>
+            </div>
+          </div>
+          <details class="history-files">
+            <summary>📜 History Files: gradient descent beyond water</summary>
+            <div class="history-entries">
+              <div class="history-entry"><b>Erosion algorithms</b><span>Game and film studios simulate millions of virtual raindrops using this exact steepest-descent rule to carve realistic river valleys into procedural terrain before an artist ever touches it.</span></div>
+              <div class="history-entry"><b>Training neural networks</b><span>"Gradient descent," the core algorithm that trains most modern AI, takes tiny steps in the direction of −∇(error) — mathematically the same move as a droplet rolling downhill toward a valley, except the "landscape" is a model's error instead of elevation.</span></div>
+            </div>
+          </details>
+        </section>
+
+        <section class="mission related-labs" data-accent="purple" aria-labelledby="related-title">
+          <div class="mission-head"><span class="mission-num">🔗</span><div><h2 id="related-title">Keep Exploring: Related STEAM Labs</h2><p>Waves, gradients, and simulated physics show up across math, science, and engineering. These labs go deeper into the ideas behind today's terrain.</p></div></div>
+          <div class="related-grid">
+            <a class="related-card" href="fourier-series.html">
+              <span class="tag">Mathematics · Waves &amp; Signals</span>
+              <h3>Fourier Series &amp; Transform</h3>
+              <p>The same "stack simple waves to build something complex" trick from Mission 2, formalized: any periodic shape can be built from enough sine waves.</p>
+            </a>
+            <a class="related-card" href="graphing-calculator.html">
+              <span class="tag">Mathematics · Functions</span>
+              <h3>Graphing Calculator</h3>
+              <p>Practice reading slope and shape straight off a function's graph — the 1D warm-up for the 2D terrain and gradient work in Missions 3–4.</p>
+            </a>
+            <a class="related-card" href="a-star-pathfinding.html">
+              <span class="tag">AI Origins · Search</span>
+              <h3>Rescue Grid: The A* Mission</h3>
+              <p>Steepest descent always moves toward the best-looking next step, which can get stuck. A* is a smarter search that still finds the truly best path.</p>
+            </a>
+            <a class="related-card" href="pid-control.html">
+              <span class="tag">Engineering · Feedback &amp; Control</span>
+              <h3>PID Control &amp; Feedback Loops</h3>
+              <p>Another place derivatives drive real-time behavior: a PID controller reacts to the rate of change of error to keep a drone stable in the air.</p>
+            </a>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <aside class="ll-panel" aria-hidden="false" aria-label="Lesson guide">
+      <div class="ll-panel-head">
+        <div class="ll-tabs" role="tablist" aria-label="Lesson guide tabs">
+          <button class="ll-tab" role="tab" aria-selected="true" data-pane="pane-plan">Plan</button>
+          <button class="ll-tab" role="tab" aria-selected="false" data-pane="pane-teacher">Teacher</button>
+          <button class="ll-tab" role="tab" aria-selected="false" data-pane="pane-exit">Exit ticket</button>
+        </div>
+        <button class="ll-panel-close" type="button" aria-label="Close lesson guide">×</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="pane-plan">
+          <div class="panel-card"><h3>Goal</h3><p>Students describe terrain as a function of two variables, build a height profile by summing waves, interpret slope as a derivative and gradient, and connect steepest-descent water flow to gradient-based algorithms elsewhere in computing.</p></div>
+          <div class="panel-card"><h3>Materials</h3><ul><li>One device per pair or group</li><li>Projector for whole-class discussion</li><li>Optional: graphing calculator or graph paper for the 1D warm-up</li></ul></div>
+          <div class="panel-card"><h3>60-minute flow</h3><ol><li>Terrain is a function — 10 min</li><li>Stacking waves into mountains — 15 min</li><li>Slope, gradient &amp; the derivative — 15 min</li><li>Water flow &amp; steepest descent — 20 min</li></ol></div>
+        </div>
+        <div class="ll-pane" id="pane-teacher">
+          <div class="panel-card"><h3>Prerequisite check</h3><p>Students should already be comfortable with slope as rise-over-run and reading a function graph (see the Graphing Calculator lab) before this lesson's jump to two variables.</p></div>
+          <div class="panel-card"><h3>Where the real math is simplified</h3><p>Minecraft actually uses 3D Perlin/simplex noise, not literal stacked sine waves, but the sum-of-frequencies structure (an "octave stack" or fractal Brownian motion) is mathematically the same idea and much easier to compute by hand or read as a formula.</p></div>
+          <div class="panel-card"><h3>Common misconception</h3><p>Students often think the gradient arrow points downhill. Clarify: ∇f points uphill (direction of increase); water and marbles move along −∇f.</p></div>
+        </div>
+        <div class="ll-pane" id="pane-exit">
+          <div class="panel-card"><h3>Answer aloud or on paper</h3><ol><li>What are the inputs and output of a Minecraft-style terrain function?</li><li>Why does adding more octaves add detail without erasing the big mountains?</li><li>What does the gradient of a height function tell you, and which direction does it point?</li><li>How is "water flows to the lowest neighbor" related to a derivative?</li></ol></div>
+          <div class="panel-card"><h3>Expected ideas</h3><p>Inputs x and y (position); output is height. Higher octaves are higher-frequency, lower-amplitude waves layered on top, so they add small ripples without changing the overall shape. The gradient points in the steepest uphill direction and its size is the steepness; water follows the opposite direction, −∇f, which is the calculus meaning of "downhill fastest."</p></div>
+        </div>
+      </div>
+    </aside>
+    <button class="ll-open-btn" type="button" aria-label="Open lesson guide">⋮</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ---- Shared value-noise generator (deterministic, seeded) ----
+  function makeRng(seed) {
+    let s = seed >>> 0;
+    return () => {
+      s ^= s << 13; s >>>= 0;
+      s ^= s >>> 17;
+      s ^= s << 5; s >>>= 0;
+      return (s >>> 0) / 4294967296;
+    };
+  }
+
+  function makeLattice1D(size, seed) {
+    const rng = makeRng(seed);
+    const vals = new Array(size + 1);
+    for (let i = 0; i <= size; i += 1) vals[i] = rng() * 2 - 1;
+    return vals;
+  }
+
+  function smooth(t) { return t * t * (3 - 2 * t); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  function noise1D(lattice, x) {
+    const i0 = Math.floor(x);
+    const t = smooth(x - i0);
+    const i1 = i0 + 1;
+    const a = lattice[((i0 % (lattice.length - 1)) + (lattice.length - 1)) % (lattice.length - 1)];
+    const b = lattice[((i1 % (lattice.length - 1)) + (lattice.length - 1)) % (lattice.length - 1)];
+    return lerp(a, b, t);
+  }
+
+  function makeLattice2D(size, seed) {
+    const rng = makeRng(seed);
+    const vals = [];
+    for (let y = 0; y <= size; y += 1) {
+      const row = new Array(size + 1);
+      for (let x = 0; x <= size; x += 1) row[x] = rng() * 2 - 1;
+      vals.push(row);
+    }
+    return vals;
+  }
+
+  function noise2D(lattice, x, y) {
+    const size = lattice.length - 1;
+    const x0 = Math.floor(x), y0 = Math.floor(y);
+    const tx = smooth(x - x0), ty = smooth(y - y0);
+    const wrap = (v) => ((v % size) + size) % size;
+    const g = (xx, yy) => lattice[wrap(yy)][wrap(xx)];
+    const n00 = g(x0, y0), n10 = g(x0 + 1, y0), n01 = g(x0, y0 + 1), n11 = g(x0 + 1, y0 + 1);
+    return lerp(lerp(n00, n10, tx), lerp(n01, n11, tx), ty);
+  }
+
+  function fbm2D(lattices, x, y, octaves, roughness) {
+    let total = 0, amp = 1, freq = 1, norm = 0;
+    for (let i = 0; i < octaves; i += 1) {
+      total += amp * noise2D(lattices[i], x * freq, y * freq);
+      norm += amp;
+      amp *= roughness;
+      freq *= 2;
+    }
+    return total / norm;
+  }
+
+  // ==================== MISSION 2: Wave-stacking cross-section ====================
+  (() => {
+    const canvas = document.getElementById('wave-canvas');
+    const ctx = canvas.getContext('2d');
+    const octaveSlider = document.getElementById('octave-slider');
+    const roughnessSlider = document.getElementById('roughness-slider');
+    const octaveValue = document.getElementById('octave-value');
+    const roughnessValue = document.getElementById('roughness-value');
+    const readout = document.getElementById('octave-readout');
+    const W = canvas.width, H = canvas.height;
+    const NUM_LATTICES = 6;
+    let seed = 1337;
+    let lattices1D = [];
+    const buildLattices = () => {
+      lattices1D = [];
+      for (let i = 0; i < NUM_LATTICES; i += 1) lattices1D.push(makeLattice1D(64, seed + i * 97));
+    };
+    buildLattices();
+
+    const colors = ['#5ec8f2', '#b98bff', '#e8c374', '#ff8a7a', '#a6e35a', '#eafff0'];
+
+    const draw = () => {
+      const octaves = parseInt(octaveSlider.value, 10);
+      const roughness = parseFloat(roughnessSlider.value);
+      octaveValue.textContent = octaves;
+      roughnessValue.textContent = roughness.toFixed(2);
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = '#071008';
+      ctx.fillRect(0, 0, W, H);
+
+      const samples = 260;
+      const heights = new Array(samples);
+      let amp = 1, freq = 1, norm = 0;
+      // draw faint individual octaves first
+      for (let o = 0; o < octaves; o += 1) {
+        ctx.beginPath();
+        for (let i = 0; i < samples; i += 1) {
+          const x = i / samples * 8;
+          const v = noise1D(lattices1D[o], x * freq) * amp;
+          const px = i / samples * W;
+          const py = H / 2 - v * 60;
+          if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.strokeStyle = colors[o % colors.length];
+        ctx.globalAlpha = 0.35;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        amp *= roughness;
+        freq *= 2;
+      }
+      ctx.globalAlpha = 1;
+
+      // combined sum
+      amp = 1; freq = 1; norm = 0;
+      for (let o = 0; o < octaves; o += 1) { norm += amp; amp *= roughness; }
+      for (let i = 0; i < samples; i += 1) {
+        const x = i / samples * 8;
+        let total = 0, a = 1, f = 1;
+        for (let o = 0; o < octaves; o += 1) {
+          total += noise1D(lattices1D[o], x * f) * a;
+          a *= roughness; f *= 2;
+        }
+        heights[i] = total / norm;
+      }
+      ctx.beginPath();
+      ctx.moveTo(0, H);
+      for (let i = 0; i < samples; i += 1) {
+        const px = i / samples * W;
+        const py = H / 2 - heights[i] * 90;
+        ctx.lineTo(px, py);
+      }
+      ctx.lineTo(W, H);
+      ctx.closePath();
+      const grad = ctx.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, 'rgba(126,224,129,.5)');
+      grad.addColorStop(1, 'rgba(126,224,129,.05)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.strokeStyle = '#7ee081';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      for (let i = 0; i < samples; i += 1) {
+        const px = i / samples * W;
+        const py = H / 2 - heights[i] * 90;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+
+      readout.innerHTML = octaves === 1
+        ? '<strong>1 octave:</strong> a single smooth wave — realistic frequency, but no fine detail.'
+        : `<strong>${octaves} octaves:</strong> waves 2, 3, 4… run at double the frequency and ${(roughness * 100).toFixed(0)}% of the amplitude of the one before, so each new layer adds smaller bumps without changing the big shape underneath.`;
+    };
+
+    octaveSlider.addEventListener('input', draw);
+    roughnessSlider.addEventListener('input', draw);
+    document.getElementById('wave-reseed').addEventListener('click', () => {
+      seed = Math.floor(Math.random() * 1e6);
+      buildLattices();
+      draw();
+    });
+    draw();
+  })();
+
+  // ==================== MISSION 3: Terrain heightmap + gradient ====================
+  const terrainState = { seed: 2024, lattices: [], grid: 64, octaves: 4, roughness: 0.5 };
+  function buildTerrainLattices(state) {
+    state.lattices = [];
+    for (let i = 0; i < 5; i += 1) state.lattices.push(makeLattice2D(16, state.seed + i * 131));
+  }
+  buildTerrainLattices(terrainState);
+
+  function heightAt(state, x, y) {
+    // x, y in [0, gridScale)
+    return fbm2D(state.lattices, x, y, state.octaves, state.roughness);
+  }
+
+  function renderHeightmap(ctx, state, W, H, res) {
+    const scale = 4; // how many noise units the canvas spans
+    const img = ctx.createImageData(res, res);
+    const heights = new Float32Array(res * res);
+    let minH = Infinity, maxH = -Infinity;
+    for (let j = 0; j < res; j += 1) {
+      for (let i = 0; i < res; i += 1) {
+        const h = heightAt(state, (i / res) * scale, (j / res) * scale);
+        heights[j * res + i] = h;
+        if (h < minH) minH = h;
+        if (h > maxH) maxH = h;
+      }
+    }
+    for (let j = 0; j < res; j += 1) {
+      for (let i = 0; i < res; i += 1) {
+        const h = (heights[j * res + i] - minH) / (maxH - minH || 1);
+        const idx = (j * res + i) * 4;
+        let r, g, b;
+        if (h < 0.35) { // water/sand low ground
+          const t = h / 0.35;
+          r = lerp(30, 232, t); g = lerp(70, 195, t); b = lerp(110, 116, t);
+        } else if (h < 0.75) { // grass
+          const t = (h - 0.35) / 0.4;
+          r = lerp(90, 60, t); g = lerp(180, 140, t); b = lerp(90, 60, t);
+        } else { // stone/snow peaks
+          const t = (h - 0.75) / 0.25;
+          r = lerp(140, 240, t); g = lerp(150, 245, t); b = lerp(150, 250, t);
+        }
+        img.data[idx] = r; img.data[idx + 1] = g; img.data[idx + 2] = b; img.data[idx + 3] = 255;
+      }
+    }
+    const off = document.createElement('canvas');
+    off.width = res; off.height = res;
+    off.getContext('2d').putImageData(img, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(off, 0, 0, res, res, 0, 0, W, H);
+    return { minH, maxH, scale };
+  }
+
+  (() => {
+    const canvas = document.getElementById('terrain-canvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height, res = 130;
+    const readout = document.getElementById('terrain-readout');
+    const mathEl = document.getElementById('terrain-math');
+    let mapInfo = null;
+
+    const redraw = () => { mapInfo = renderHeightmap(ctx, terrainState, W, H, res); };
+    redraw();
+
+    const toNoiseCoords = (px, py) => {
+      const scale = mapInfo.scale;
+      return { x: (px / W) * scale, y: (py / H) * scale };
+    };
+
+    const showGradient = (clientX, clientY) => {
+      const rect = canvas.getBoundingClientRect();
+      const px = (clientX - rect.left) / rect.width * W;
+      const py = (clientY - rect.top) / rect.height * H;
+      const { x, y } = toNoiseCoords(px, py);
+      const h = 0.02;
+      const f = heightAt(terrainState, x, y);
+      const fx1 = heightAt(terrainState, x + h, y);
+      const fy1 = heightAt(terrainState, x, y + h);
+      const dfdx = (fx1 - f) / h;
+      const dfdy = (fy1 - f) / h;
+      const mag = Math.sqrt(dfdx * dfdx + dfdy * dfdy) || 1e-6;
+      const arrowLen = Math.min(60, mag * 260);
+      const dirX = dfdx / mag, dirY = dfdy / mag;
+
+      redraw();
+      // point marker
+      ctx.beginPath();
+      ctx.arc(px, py, 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#eafff0';
+      ctx.fill();
+      ctx.strokeStyle = '#0a1710';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      // gradient arrow (uphill, dirX/dirY) drawn in gold; steepest descent is the opposite
+      const ex = px + dirX * arrowLen;
+      const ey = py + dirY * arrowLen;
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(ex, ey);
+      ctx.strokeStyle = '#e8c374';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      const angle = Math.atan2(ey - py, ex - px);
+      ctx.beginPath();
+      ctx.moveTo(ex, ey);
+      ctx.lineTo(ex - 10 * Math.cos(angle - 0.4), ey - 10 * Math.sin(angle - 0.4));
+      ctx.lineTo(ex - 10 * Math.cos(angle + 0.4), ey - 10 * Math.sin(angle + 0.4));
+      ctx.closePath();
+      ctx.fillStyle = '#e8c374';
+      ctx.fill();
+
+      readout.innerHTML = `Height at this point: <strong>${f.toFixed(3)}</strong> · slope magnitude |∇f| ≈ <strong>${mag.toFixed(3)}</strong><span class="math" id="terrain-math">∂f/∂x ≈ ${dfdx.toFixed(3)}, ∂f/∂y ≈ ${dfdy.toFixed(3)} — gold arrow = ∇f (uphill)</span>`;
+    };
+
+    canvas.addEventListener('mousemove', (e) => showGradient(e.clientX, e.clientY));
+    canvas.addEventListener('touchmove', (e) => {
+      if (e.touches[0]) { showGradient(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }
+    }, { passive: false });
+    canvas.addEventListener('mouseleave', redraw);
+
+    document.getElementById('terrain-reseed').addEventListener('click', () => {
+      terrainState.seed = Math.floor(Math.random() * 1e6);
+      buildTerrainLattices(terrainState);
+      redraw();
+      readout.innerHTML = 'New terrain generated. Move your pointer over the map to sample the height function again.<span class="math" id="terrain-math">f(x, y) = ?</span>';
+    });
+  })();
+
+  // ==================== MISSION 4: Water flow via steepest descent ====================
+  (() => {
+    const waterState = { seed: 555, lattices: [], octaves: 4, roughness: 0.5 };
+    buildTerrainLattices(waterState);
+    const canvas = document.getElementById('water-canvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height, res = 130;
+    let mapInfo = null;
+    let droplets = 0, pooled = 0;
+    const trails = []; // arrays of {px,py}
+
+    const redraw = () => {
+      mapInfo = renderHeightmap(ctx, waterState, W, H, res);
+      trails.forEach((trail) => {
+        ctx.beginPath();
+        trail.points.forEach((p, i) => { if (i === 0) ctx.moveTo(p.px, p.py); else ctx.lineTo(p.px, p.py); });
+        ctx.strokeStyle = 'rgba(94,200,242,.85)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        const last = trail.points[trail.points.length - 1];
+        ctx.beginPath();
+        ctx.arc(last.px, last.py, trail.pooled ? 6 : 4, 0, Math.PI * 2);
+        ctx.fillStyle = trail.pooled ? '#5ec8f2' : '#eafff0';
+        ctx.fill();
+      });
+    };
+    redraw();
+
+    document.getElementById('water-clear').addEventListener('click', () => {
+      trails.length = 0; droplets = 0; pooled = 0;
+      document.getElementById('droplet-count').textContent = '0';
+      document.getElementById('pooled-count').textContent = '0';
+      document.getElementById('water-readout').textContent = 'Click anywhere on the terrain to drop water. It will step toward the steepest downhill neighbor until it reaches a local minimum (a lake bed) or the edge of the map.';
+      redraw();
+    });
+    document.getElementById('water-reseed').addEventListener('click', () => {
+      waterState.seed = Math.floor(Math.random() * 1e6);
+      buildTerrainLattices(waterState);
+      trails.length = 0; droplets = 0; pooled = 0;
+      document.getElementById('droplet-count').textContent = '0';
+      document.getElementById('pooled-count').textContent = '0';
+      redraw();
+    });
+
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const px = (e.clientX - rect.left) / rect.width * W;
+      const py = (e.clientY - rect.top) / rect.height * H;
+      const scale = mapInfo.scale;
+      let x = px / W * scale;
+      let y = py / H * scale;
+      const points = [{ px, py }];
+      const step = 0.03;
+      const h = 0.02;
+      let exitReason = 'stuck';
+      for (let i = 0; i < 400; i += 1) {
+        const f = heightAt(waterState, x, y);
+        const fx1 = heightAt(waterState, x + h, y);
+        const fy1 = heightAt(waterState, x, y + h);
+        const dfdx = (fx1 - f) / h;
+        const dfdy = (fy1 - f) / h;
+        const mag = Math.sqrt(dfdx * dfdx + dfdy * dfdy);
+        if (mag < 0.03) { exitReason = 'pooled'; break; }
+        x -= (dfdx / mag) * step;
+        y -= (dfdy / mag) * step;
+        if (x < 0 || x >= scale || y < 0 || y >= scale) { exitReason = 'edge'; break; }
+        points.push({ px: (x / scale) * W, py: (y / scale) * H });
+      }
+      const isPooled = exitReason === 'pooled';
+      droplets += 1;
+      if (isPooled) pooled += 1;
+      trails.push({ points, pooled: isPooled });
+      document.getElementById('droplet-count').textContent = droplets;
+      document.getElementById('pooled-count').textContent = pooled;
+      const messages = {
+        pooled: `Droplet ${droplets}: rolled downhill in <strong>${points.length}</strong> steps and settled — the slope near this point dropped below our threshold, meaning it found a local minimum (a basin).`,
+        edge: `Droplet ${droplets}: rolled downhill in <strong>${points.length}</strong> steps and ran off the edge of the map, still following −∇f the entire way.`,
+        stuck: `Droplet ${droplets}: rolled for <strong>${points.length}</strong> steps in a very shallow, nearly-flat dip — it kept nudging back and forth without ever fully settling, a reminder that steepest descent can wobble where the slope is almost zero.`
+      };
+      document.getElementById('water-readout').innerHTML = messages[exitReason];
+      redraw();
+    });
+  })();
+})();
+</script>
+<script src="../assets/js/classroom-animations.js"></script>
+<script src="../assets/js/lesson-layout.js"></script>
+<script src="../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
