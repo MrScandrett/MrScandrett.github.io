@@ -24,14 +24,24 @@ Then visit `http://localhost:5173`.
 - `2`: Excavator terrain blast
 - `3`: Bulwark terrain raise
 - Mouse wheel: cycle powers
+- Click the power cards or use `1` / `2` / `3`: select a power
+- `P` or the pause button: pause / resume
 
 ## Match Rules
 
 - Two teams, four mechs per side.
+- You begin as Team Alpha's lead mech; control transfers to the next surviving ally when your mech is destroyed.
 - Team colors and AI difficulty are selected before each match.
 - Maps generate as solid destructible terrain without tunnels or chambers.
 - Each round ends when a team reaches the score target, eliminates the other side, or time expires.
 - The match is best of three rounds.
+
+## Polish Pass
+
+- Cached terrain collision data keeps destructible-terrain physics responsive.
+- Real-time round timing remains accurate when rendering slows down.
+- Combat feedback includes a custom reticle, camera shake, damage vignette, announcements, and a selectable power dock.
+- The setup screen and HUD adapt to desktop and mobile viewports and honor reduced-motion preferences.
 
 ## Art Assets
 

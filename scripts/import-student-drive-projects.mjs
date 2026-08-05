@@ -47,7 +47,7 @@ const imports = [
     ],
   },
   { source: "Zspace1/eason", target: "Eason/interactive-virtual-fishtank" },
-  { source: "Zspace1/sharks n minnows", target: "Anonymous Student/Red Shark Escape" },
+  { source: "Zspace1/sharks n minnows", target: "Ivan/Red Shark Escape" },
   { source: "Zspace2/ivan", target: "Ivan/farmland-fury" },
   { source: "Zspace2/moriah", target: "Moriah/3d-speedway" },
   { source: "Zspace3/gio", target: "Gio/dino-jump", exclude: ["index copy.html"] },

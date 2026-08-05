@@ -1,5 +1,37 @@
 const SCROLL_AMOUNT = 320;
 
+let modelPreviewObserver = null;
+
+function is3DModelProject(project) {
+  const tags = (project.tags || []).map((value) => String(value).toLowerCase());
+  const tech = (project.tech || []).map((value) => String(value).toLowerCase());
+  const isModel = tags.includes("3d-model")
+    || tags.includes("model")
+    || tech.some((value) => ["stl", "obj", "tinkercad"].includes(value));
+  return project.category === "3D" && isModel && Boolean(project.appUrl);
+}
+
+function observeModelPreview(frame) {
+  if (!("IntersectionObserver" in window)) {
+    frame.src = frame.dataset.src;
+    return;
+  }
+
+  if (!modelPreviewObserver) {
+    modelPreviewObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const preview = entry.target;
+        if (preview.closest(".project-card")?.hidden) return;
+        preview.src = preview.dataset.src;
+        observer.unobserve(preview);
+      });
+    }, { rootMargin: "300px 0px" });
+  }
+
+  modelPreviewObserver.observe(frame);
+}
+
 export function setActiveNav() {
   const current = window.location.pathname.split("/").pop() || "index.html";
   const links = document.querySelectorAll(".site-nav a[data-page]");
@@ -82,6 +114,22 @@ export function createProjectCard(project, options = {}) {
   image.src = project.thumbnail;
   image.alt = `${project.title} thumbnail`;
   thumb.appendChild(image);
+
+  if (is3DModelProject(project)) {
+    const preview = document.createElement("iframe");
+    preview.className = "card-model-preview";
+    preview.dataset.src = project.appUrl;
+    preview.title = `${project.title} 3D model preview`;
+    preview.tabIndex = -1;
+    preview.setAttribute("aria-hidden", "true");
+    preview.setAttribute("loading", "lazy");
+    preview.addEventListener("load", () => {
+      if (preview.hasAttribute("src")) preview.classList.add("is-loaded");
+    });
+    thumb.classList.add("has-model-preview");
+    thumb.appendChild(preview);
+    observeModelPreview(preview);
+  }
 
   // Add type badge overlay
   const typeBadge = document.createElement("div");

@@ -3,16 +3,21 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Mechaterra is a fast, destructible-terrain mech battle.">
     <title>Mechaterra</title>
-    <link rel="stylesheet" href="src/styles.css?v=4">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+    <link rel="stylesheet" href="src/styles.css?v=5">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   </head>
   <body>
     <main class="shell">
       <section id="setup" class="setup-panel">
         <div class="brand">
-          <span>Mechaterra</span>
-          <strong>3D terrain warfare</strong>
+          <div>
+            <span>Mechaterra</span>
+            <p>Break the ground. Outfly the opposition. Own the horizon.</p>
+          </div>
+          <strong>Destructible terrain warfare</strong>
         </div>
 
         <div class="setup-grid">
@@ -33,15 +38,23 @@
             </select>
           </label>
           <label>
-            Score Target
-            <input id="scoreTarget" type="number" min="3" max="20" value="7">
+            Eliminations to win
+            <input id="scoreTarget" type="number" min="1" max="4" value="4">
           </label>
         </div>
 
-        <button id="startButton" class="primary-button">Start Match</button>
+        <button id="startButton" class="primary-button">Deploy squad</button>
+        <p class="setup-note">You command Team Alpha's lead mech. When it falls, control transfers to the next surviving unit.</p>
       </section>
 
-      <canvas id="game" width="1280" height="720"></canvas>
+      <canvas id="game" width="1280" height="720" aria-label="Mechaterra game battlefield"></canvas>
+
+      <section id="announcement" class="announcement hidden" aria-live="polite">
+        <span id="announcementKicker">Round 1</span>
+        <strong id="announcementTitle">Deploy!</strong>
+      </section>
+
+      <button id="pauseButton" class="icon-button" type="button" aria-label="Pause game" title="Pause game (P)">Ⅱ</button>
 
       <section class="moves-panel" aria-label="Controls">
         <div><kbd>A</kbd><kbd>D</kbd><span>Stride</span></div>
@@ -49,6 +62,13 @@
         <div><kbd>Shift</kbd><span>Jet glide</span></div>
         <div><kbd>Mouse</kbd><span>Aim / fire</span></div>
         <div><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><span>Powers</span></div>
+        <div><kbd>P</kbd><span>Pause</span></div>
+      </section>
+
+      <section class="weapon-dock" aria-label="Power selection">
+        <button class="weapon active" data-weapon="0" type="button"><kbd>1</kbd><span><strong>Grav Well</strong><small>Explosive orb</small></span></button>
+        <button class="weapon" data-weapon="1" type="button"><kbd>2</kbd><span><strong>Excavator</strong><small>Carve terrain</small></span></button>
+        <button class="weapon" data-weapon="2" type="button"><kbd>3</kbd><span><strong>Bulwark</strong><small>Raise cover</small></span></button>
       </section>
 
       <section class="hud">
@@ -59,6 +79,10 @@
         <div>
           <span id="statusLabel">Configure match</span>
           <strong id="weaponLabel">Grav Well</strong>
+        </div>
+        <div class="clock">
+          <span>Time</span>
+          <strong id="timeLabel">3:00</strong>
         </div>
         <div class="meter">
           <span>Core</span>
@@ -71,6 +95,6 @@
       </section>
     </main>
 
-    <script type="module" src="src/game.js?v=4"></script>
+    <script type="module" src="src/game.js?v=5"></script>
   </body>
 </html>
