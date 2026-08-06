@@ -1934,9 +1934,10 @@
         <div>
           <p class="gc-action-row-label">Quick Plot</p>
           <div class="gc-action-input">
-            <input id="gc-hero-input" type="text" placeholder="Type an equation like x^2, 2x+1, or sin(x)" autocomplete="off" spellcheck="false" />
+            <input id="gc-hero-input" class="gc-eq-input" type="text" placeholder="Type an equation like x^2, 2x+1, or sin(x)" autocomplete="off" spellcheck="false" />
             <button class="gc-add-btn" id="gc-hero-plot-btn" type="button">Plot</button>
           </div>
+          <div class="gc-parse-error" id="gc-parse-error" aria-live="polite"></div>
         </div>
         <div>
           <p class="gc-action-row-label">Presets</p>
@@ -3634,15 +3635,19 @@
 
     function showError(msg) {
       const el = document.getElementById('gc-parse-error');
-      const inp = document.getElementById('gc-eq-input');
-      if (el)  el.textContent = msg;
-      if (inp) inp.classList.add('is-error');
+      if (el) el.textContent = msg;
+      ['gc-hero-input', 'gc-panel-eq-input'].forEach(id => {
+        const inp = document.getElementById(id);
+        if (inp) inp.classList.add('is-error');
+      });
     }
     function clearError() {
       const el = document.getElementById('gc-parse-error');
-      const inp = document.getElementById('gc-eq-input');
-      if (el)  el.textContent = '';
-      if (inp) inp.classList.remove('is-error');
+      if (el) el.textContent = '';
+      ['gc-hero-input', 'gc-panel-eq-input'].forEach(id => {
+        const inp = document.getElementById(id);
+        if (inp) inp.classList.remove('is-error');
+      });
     }
 
     /* ─── UI events ─────────────────────────────────────── */
@@ -4407,6 +4412,7 @@
       if (e.key !== 'Enter') return;
       heroPlotBtn?.click();
     });
+    heroInput?.addEventListener('input', clearError);
 
     document.querySelectorAll('[data-hero-preset]').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -4672,6 +4678,13 @@
       });
       panelInput.addEventListener('keydown', function (e) {
         if (e.key === 'Enter') panelAddBtn.click();
+      });
+    }
+    if (panelInput) {
+      panelInput.addEventListener('input', function () {
+        panelInput.classList.remove('is-error');
+        var errEl = document.getElementById('gc-parse-error');
+        if (errEl) errEl.textContent = '';
       });
     }
 

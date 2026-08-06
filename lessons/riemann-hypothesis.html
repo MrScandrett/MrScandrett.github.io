@@ -290,11 +290,17 @@
       display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
       margin: 0.5rem 0;
     }
-    .rh-wave-ctrl-row label { font-size: 0.84rem; font-weight: 700; color: #0ea5e9; }
+    .rh-wave-ctrl-row label { font-size: 0.84rem; font-weight: 700; color: #0369a1; }
+    [data-lighting="night"] .rh-wave-ctrl-row label,
+    [data-theme="vaporwave"] .rh-wave-ctrl-row label,
+    [data-theme="bark"] .rh-wave-ctrl-row label { color: #38bdf8; }
     .rh-wave-ctrl-row .rh-range { max-width: 200px; background: rgba(14,165,233,0.18); }
     .rh-wave-ctrl-row .rh-range::-webkit-slider-thumb { background: #0ea5e9;
       box-shadow: 0 2px 8px rgba(14,165,233,0.4); }
-    #rh-wave-count-val { font-weight: 900; color: #0ea5e9; margin-left: 0.3rem; }
+    #rh-wave-count-val { font-weight: 900; color: #0369a1; margin-left: 0.3rem; }
+    [data-lighting="night"] #rh-wave-count-val,
+    [data-theme="vaporwave"] #rh-wave-count-val,
+    [data-theme="bark"] #rh-wave-count-val { color: #38bdf8; }
 
     /* ── Steps list ─────────────────────────────────────── */
     .rh-steps { list-style: none; padding: 0; margin: 0.75rem 0; display: flex; flex-direction: column; gap: 0.7rem; }
@@ -687,7 +693,7 @@
           <div>
             <div class="rh-ctrl-label">Imaginary value t</div>
             <div class="rh-ctrl-val" id="rh-t-display">s = ½ + 14.1i</div>
-            <input type="range" class="rh-range" id="rh-t-slider" min="0" max="52" value="14" step="0.1" aria-label="Imaginary part t" />
+            <input type="range" class="rh-range" id="rh-t-slider" min="0" max="52" value="14.1" step="0.1" aria-label="Imaginary part t" />
           </div>
           <label class="rh-toggle-row">
             <input type="checkbox" id="rh-off-line" />
@@ -925,7 +931,7 @@
             <span>Imaginary value <strong>t</strong></span>
             <span class="ll-val" id="rh-panel-t-display">14.1</span>
           </div>
-          <input type="range" id="rh-panel-t-slider" min="0" max="52" value="14" step="0.1"
+          <input type="range" id="rh-panel-t-slider" min="0" max="52" value="14.1" step="0.1"
             style="width:100%;accent-color:#7c3aed;" aria-label="Imaginary part t" />
           <div class="ll-param-ends"><span>0</span><span>52</span></div>
         </div>
@@ -940,9 +946,9 @@
         <div class="ll-param">
           <div class="ll-param-label">
             <span>Zeros used</span>
-            <span class="ll-val" id="rh-panel-wave-val">3</span>
+            <span class="ll-val" id="rh-panel-wave-val">1</span>
           </div>
-          <input type="range" id="rh-panel-wave-slider" min="1" max="10" value="3"
+          <input type="range" id="rh-panel-wave-slider" min="1" max="10" value="1"
             style="width:100%;accent-color:#0ea5e9;" aria-label="Number of zeros" />
           <div class="ll-param-ends"><span>1</span><span>10</span></div>
         </div>
@@ -1019,7 +1025,7 @@
       }
 
       function draw(t, offLine) {
-        const dark = document.documentElement.dataset.theme === 'night';
+        const dark = document.documentElement.dataset.lighting === 'night';
         const W = canvas.width, H = canvas.height;
 
         const BG        = dark ? '#1c1c1e' : '#f6f4fb';
@@ -1170,7 +1176,7 @@
 
       /* Redraw on theme change */
       const obs = new MutationObserver(update);
-      obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+      obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-lighting'] });
 
       update();
     })();
@@ -1189,7 +1195,7 @@
       const colors = ['#7c3aed','#0ea5e9','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16','#ec4899'];
 
       function drawWaves(n) {
-        const dark = document.documentElement.dataset.theme === 'night';
+        const dark = document.documentElement.dataset.lighting === 'night';
         const W = canvas.width, H = canvas.height;
         const MID = H / 2;
         const AMP = H / 4;
@@ -1256,7 +1262,7 @@
       slider.addEventListener('input', update);
 
       const obs = new MutationObserver(update);
-      obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+      obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-lighting'] });
 
       update();
     })();

@@ -450,7 +450,11 @@
       svg.appendChild(meanLine);
       svg.appendChild(medianLine);
 
-      var dotEls = [];
+      var dotEls = values.map(function (v, idx) {
+        var circle = el('circle', { class: 'mmm-dot', r: 8, cx: toScreenX(v), cy: axisY + 24, 'data-index': idx });
+        svg.appendChild(circle);
+        return circle;
+      });
 
       function fmt(n) {
         if (Math.abs(n - Math.round(n)) < 1e-9) return String(Math.round(n));
@@ -475,18 +479,7 @@
       }
 
       function render() {
-        // rebuild dots
-        dotEls.forEach(function (d) { svg.removeChild(d); });
-        dotEls = [];
-        values.forEach(function (v, idx) {
-          var cy = axisY + 22 + (idx % 3) * 0; // stack minimally, offset if same value
-        });
-        // stack overlapping dots vertically by value
-        var stacks = {};
-        values.forEach(function (v) {
-          var key = fmt(v);
-          stacks[key] = (stacks[key] || 0);
-        });
+        // reposition dots, stacking overlapping values vertically
         var seen = {};
         values.forEach(function (v, idx) {
           var key = fmt(v);
@@ -494,9 +487,8 @@
           var row = seen[key];
           seen[key] += 1;
           var cy = axisY + 24 + row * 20;
-          var circle = el('circle', { class: 'mmm-dot', r: 8, cx: toScreenX(v), cy: cy, 'data-index': idx });
-          svg.appendChild(circle);
-          dotEls.push(circle);
+          dotEls[idx].setAttribute('cx', toScreenX(v));
+          dotEls[idx].setAttribute('cy', cy);
         });
 
         var sum = values.reduce(function (a, b) { return a + b; }, 0);
@@ -515,8 +507,6 @@
         var medianX = toScreenX(median);
         medianLine.setAttribute('x1', medianX);
         medianLine.setAttribute('x2', medianX);
-
-        attachDragHandlers();
       }
 
       function screenXFromEvent(evt) {
@@ -540,7 +530,6 @@
           function end() { dragging = false; }
           circle.addEventListener('mousedown', start);
           circle.addEventListener('touchstart', start, { passive: false });
-          circle.addEventListener('mousemove', function () {});
           window.addEventListener('mousemove', move);
           window.addEventListener('touchmove', move, { passive: false });
           window.addEventListener('mouseup', end);
@@ -548,6 +537,7 @@
         });
       }
 
+      attachDragHandlers();
       render();
 
       document.getElementById('mmm-reset').addEventListener('click', function () {
