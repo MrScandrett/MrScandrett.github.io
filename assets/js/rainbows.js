@@ -61,26 +61,24 @@ function buildDiagramOverlay(svg) {
     overlay.setAttribute('class', 'diagram-overlay');
     const kind = svg.dataset.stepDiagram || svg.dataset.diagram;
 
-    const colors = getColorSpectrum();
-    const redAngle = computeRainbowAngle(colors[0].n, 1).toFixed(1);
-    const violetAngle = computeRainbowAngle(colors[6].n, 1).toFixed(1);
-    const secondaryRed = computeRainbowAngle(colors[0].n, 2).toFixed(1);
-    const secondaryViolet = computeRainbowAngle(colors[6].n, 2).toFixed(1);
-
-    const configs = {
-        '1': { path: `M 32 35 Q 56 58 80 90`, angle: { x: 115, y: 86, text: 'Entry refraction' }, labels: [{ x: 20, y: 18, text: 'Sunlight' }, { x: 100, y: 150, text: 'Water droplet' }] },
-        '2': { path: `M 100 65 Q 116 95 126 130`, angle: { x: 126, y: 78, text: 'Red bends ~12°, violet ~14°' }, labels: [{ x: 137, y: 115, text: 'Red ray' }, { x: 130, y: 148, text: 'Violet bends more' }] },
-        '3': { path: `M 100 65 L 125 125 L 95 150`, angle: { x: 132, y: 112, text: 'Internal reflection' }, labels: [{ x: 132, y: 138, text: 'Bounce point' }] },
-        '4': { path: `M 80 70 Q 96 56 110 47`, angle: { x: 163, y: 18, text: `${redAngle}° red` }, labels: [{ x: 150, y: 24, text: 'Primary rainbow' }, { x: 144, y: 140, text: `${violetAngle}° violet` }] },
-        geometry: { path: `M 260 50 Q 168 125 100 140`, angle: { x: 76, y: 181, text: `${redAngle}° to your eye` }, labels: [{ x: 229, y: 44, text: 'Sun behind you' }, { x: 103, y: 64, text: 'Primary arc' }] },
-        double: { path: `M 360 40 Q 250 112 180 80`, angle: { x: 103, y: 137, text: `${redAngle}° primary` }, labels: [{ x: 146, y: 171, text: `${secondaryRed}° secondary` }, { x: 78, y: 111, text: 'Brighter primary' }] }
+    // Each diagram already carries its own permanent labels drawn in the HTML.
+    // This overlay only adds a traveling dashed line that animates the light's
+    // path through the drop when "Show Light Path" is triggered—no extra text,
+    // so nothing here can collide with the static labels underneath.
+    const paths = {
+        '1': `M 32 35 Q 56 58 80 90`,
+        '2': `M 100 65 Q 116 95 126 130`,
+        '3': `M 100 65 L 125 125 L 95 150`,
+        '4': `M 15 55 L 52 75 L 95 107 L 205 102`,
+        geometry: `M 150 225 L 150 75`,
+        double: `M 200 235 L 200 95`
     };
 
-    const config = configs[kind];
-    if (!config) return;
+    const d = paths[kind];
+    if (!d) return;
 
     const path = document.createElementNS(SVG_NS, 'path');
-    path.setAttribute('d', config.path);
+    path.setAttribute('d', d);
     path.setAttribute('fill', 'none');
     path.setAttribute('stroke', '#ffffff');
     path.setAttribute('stroke-width', '4');
@@ -88,22 +86,6 @@ function buildDiagramOverlay(svg) {
     path.setAttribute('stroke-dasharray', '12 8');
     path.setAttribute('class', 'diagram-overlay-path');
     overlay.appendChild(path);
-
-    const angle = document.createElementNS(SVG_NS, 'text');
-    angle.setAttribute('x', config.angle.x);
-    angle.setAttribute('y', config.angle.y);
-    angle.setAttribute('class', 'diagram-angle diagram-label');
-    angle.textContent = config.angle.text;
-    overlay.appendChild(angle);
-
-    config.labels.forEach((item) => {
-        const text = document.createElementNS(SVG_NS, 'text');
-        text.setAttribute('x', item.x);
-        text.setAttribute('y', item.y);
-        text.setAttribute('class', 'diagram-label');
-        text.textContent = item.text;
-        overlay.appendChild(text);
-    });
 
     const frame = document.createElementNS(SVG_NS, 'rect');
     frame.setAttribute('x', 4);
@@ -273,21 +255,29 @@ function initSimulation() {
         const primaryRadius = 100 + ((55 - state.sunHeight) * 0.7);
         const secondaryRadius = 155 + ((55 - state.sunHeight) * 0.7);
 
-        dom.primaryBow.setAttribute('d', arcPath(centerX, centerY, primaryRadius, 222, 318));
-        dom.secondaryBow.setAttribute('d', arcPath(centerX, centerY, secondaryRadius, 220, 320));
+        // Arcs sweep the region overhead (0deg = straight up in polarToCartesian's
+        // convention), not off to the side—that mismatch used to send most of the
+        // bow past the left edge of the canvas, leaving only two disconnected
+        // color fragments visible.
+        dom.primaryBow.setAttribute('d', arcPath(centerX, centerY, primaryRadius, -58, 58));
+        dom.secondaryBow.setAttribute('d', arcPath(centerX, centerY, secondaryRadius, -62, 62));
         dom.secondaryBow.style.display = state.showDouble ? 'inline' : 'none';
 
         if (dom.darkBand) {
             const darkStart = 100 + ((55 - state.sunHeight) * 0.7);
             const darkEnd = 155 + ((55 - state.sunHeight) * 0.7);
-            dom.darkBand.setAttribute('d', arcPath(centerX, centerY, darkStart, 222, 318));
+            dom.darkBand.setAttribute('d', arcPath(centerX, centerY, darkStart, -58, 58));
             dom.darkBand.style.display = 'inline';
         }
 
-        dom.primaryLabel.setAttribute('x', `${centerX + primaryRadius - 14}`);
-        dom.primaryLabel.setAttribute('y', `${centerY - primaryRadius + 8}`);
-        dom.secondaryLabel.setAttribute('x', `${centerX + secondaryRadius - 18}`);
-        dom.secondaryLabel.setAttribute('y', `${centerY - secondaryRadius + 18}`);
+        // Place labels on the arc itself, at 45deg (upper-right), using the same
+        // polar convention as arcPath so they land on the stroke at any radius.
+        const primaryLabelPoint = polarToCartesian(centerX, centerY, primaryRadius, 45);
+        const secondaryLabelPoint = polarToCartesian(centerX, centerY, secondaryRadius, 50);
+        dom.primaryLabel.setAttribute('x', `${primaryLabelPoint.x + 6}`);
+        dom.primaryLabel.setAttribute('y', `${primaryLabelPoint.y}`);
+        dom.secondaryLabel.setAttribute('x', `${secondaryLabelPoint.x + 6}`);
+        dom.secondaryLabel.setAttribute('y', `${secondaryLabelPoint.y}`);
         dom.secondaryLabel.style.display = state.showDouble && state.showLabels ? 'inline' : 'none';
 
         const labelDisplay = state.showLabels ? 'inline' : 'none';
@@ -297,10 +287,12 @@ function initSimulation() {
 
         dom.rainLabel.setAttribute('x', '348');
         dom.rainLabel.setAttribute('y', '300');
-        dom.anglePrimary.setAttribute('x', `${centerX + 52}`);
-        dom.anglePrimary.setAttribute('y', `${centerY - 98}`);
-        dom.angleSecondary.setAttribute('x', `${centerX + 65}`);
-        dom.angleSecondary.setAttribute('y', `${centerY - 133}`);
+        const anglePrimaryPoint = polarToCartesian(centerX, centerY, primaryRadius, 20);
+        const angleSecondaryPoint = polarToCartesian(centerX, centerY, secondaryRadius, 20);
+        dom.anglePrimary.setAttribute('x', `${anglePrimaryPoint.x + 4}`);
+        dom.anglePrimary.setAttribute('y', `${anglePrimaryPoint.y}`);
+        dom.angleSecondary.setAttribute('x', `${angleSecondaryPoint.x + 4}`);
+        dom.angleSecondary.setAttribute('y', `${angleSecondaryPoint.y}`);
         dom.angleSecondary.style.display = state.showLabels && state.showDouble ? 'inline' : 'none';
 
         const primaryRed = primaryAngles[0].angle.toFixed(1);
