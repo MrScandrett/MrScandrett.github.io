@@ -257,132 +257,85 @@
       min-height: 360px;
       border-radius: 24px;
       background:
-        radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.78), transparent 24%),
+        radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.6), transparent 40%),
         linear-gradient(180deg, rgba(19, 72, 42, 0.08), rgba(19, 72, 42, 0.03));
       position: relative;
       overflow: hidden;
       isolation: isolate;
+      padding: 0.6rem;
     }
 
-    .cell-shell,
-    .cell-core,
-    .cell-organelle,
-    .cell-vacuole,
-    .cell-flagellum,
-    .cell-wall {
+    .cell-diagram {
       position: absolute;
-      border-radius: 50%;
-    }
-
-    .cell-shell {
-      inset: 16% 14%;
-      background: radial-gradient(circle at 36% 34%, rgba(185, 243, 209, 0.94), rgba(78, 184, 122, 0.94));
-      box-shadow: inset 0 0 0 10px rgba(255, 255, 255, 0.24);
-      border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-      animation: membrane-breathe 7s ease-in-out infinite;
-    }
-
-    .cell-shell.is-plant {
-      border-radius: 28px;
-      inset: 13% 12%;
-      background: linear-gradient(145deg, rgba(198, 239, 160, 0.95), rgba(92, 181, 95, 0.95));
-      animation: none;
-    }
-
-    .cell-shell.is-bacteria {
-      inset: 32% 18%;
-      border-radius: 999px;
-      background: linear-gradient(145deg, rgba(147, 239, 181, 0.96), rgba(40, 159, 111, 0.96));
-      animation: none;
-    }
-
-    .cell-core {
-      inset: 35% 36%;
-      background: radial-gradient(circle at 30% 30%, rgba(255, 247, 214, 0.95), rgba(241, 188, 74, 0.96));
-      box-shadow: 0 12px 24px rgba(129, 88, 12, 0.15);
-      animation: organelle-drift 6.4s ease-in-out infinite;
-      cursor: pointer;
-    }
-
-    .cell-core.is-hidden {
-      display: none;
-    }
-
-    .cell-organelle {
-      background: rgba(255, 255, 255, 0.82);
-      box-shadow: 0 6px 12px rgba(20, 60, 40, 0.08);
-      backdrop-filter: blur(4px);
-      animation: organelle-drift 5.8s ease-in-out infinite;
-      cursor: pointer;
-      transition: transform 0.22s ease, box-shadow 0.22s ease, outline-color 0.22s ease;
-      outline: 2px solid transparent;
-      z-index: 2;
-    }
-
-    .cell-organelle.one { width: 42px; height: 22px; top: 28%; left: 26%; }
-    .cell-organelle.two { width: 32px; height: 32px; top: 54%; left: 30%; background: rgba(152, 228, 244, 0.92); }
-    .cell-organelle.three { width: 38px; height: 18px; top: 58%; right: 26%; background: rgba(255, 219, 164, 0.92); }
-    .cell-organelle.four { width: 26px; height: 26px; top: 26%; right: 28%; background: rgba(237, 197, 255, 0.9); }
-    .cell-organelle.two { animation-delay: -1.2s; }
-    .cell-organelle.three { animation-delay: -2.1s; }
-    .cell-organelle.four { animation-delay: -3.2s; }
-
-    .cell-vacuole {
-      width: 120px;
-      height: 120px;
-      top: 30%;
-      left: 29%;
-      background: radial-gradient(circle at 30% 30%, rgba(225, 247, 255, 0.82), rgba(138, 206, 233, 0.78));
-      border: 2px solid rgba(255, 255, 255, 0.45);
-      display: none;
-      backdrop-filter: blur(4px);
-      animation: organelle-drift 7.1s ease-in-out infinite;
-      cursor: pointer;
-    }
-
-    .cell-wall {
-      inset: 10% 10%;
-      border-radius: 32px;
-      border: 8px solid rgba(48, 117, 34, 0.6);
-      display: none;
-    }
-
-    .cell-flagellum {
-      width: 150px;
-      height: 16px;
-      top: 48%;
-      right: -74px;
-      border-radius: 999px;
-      background: linear-gradient(90deg, rgba(52, 164, 116, 0.92), rgba(52, 164, 116, 0.02));
-      transform: rotate(-8deg);
-      display: none;
-    }
-
-    .cell-label {
-      position: absolute;
-      padding: 0.34rem 0.55rem;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.88);
-      border: 1px solid rgba(26, 127, 75, 0.12);
-      font-size: 0.72rem;
-      font-weight: 800;
-      color: #29513d;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transform: scale(0.97);
       pointer-events: none;
+      transition: opacity 0.35s ease, transform 0.35s ease;
     }
 
-    .cell-label.nucleus { top: 22%; left: 50%; transform: translateX(-50%); }
-    .cell-label.wall { top: 8%; left: 14%; display: none; }
-    .cell-label.dna { top: 22%; left: 18%; display: none; }
-    .cell-label.tail { top: 55%; right: 5%; display: none; }
-
-    .cytoplasm-particle {
-      position: absolute;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.26);
-      pointer-events: none;
-      animation: cytoplasm-float 8s ease-in-out infinite;
-      z-index: 1;
+    .cell-diagram.is-active {
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: auto;
     }
+
+    .cell-diagram text {
+      font-family: var(--font-sans, sans-serif);
+      font-size: 10px;
+      font-weight: 700;
+      fill: #1c4430;
+      paint-order: stroke;
+      stroke: rgba(255, 255, 255, 0.85);
+      stroke-width: 3px;
+      stroke-linejoin: round;
+    }
+
+    .organelle-shape {
+      cursor: pointer;
+      transform-box: fill-box;
+      transform-origin: center;
+      transition: transform 0.2s ease, filter 0.2s ease;
+    }
+
+    .organelle-shape:hover,
+    .organelle-shape.is-linked {
+      transform: scale(1.07);
+      filter: drop-shadow(0 4px 8px rgba(20, 60, 40, 0.4));
+    }
+
+    /* bacterial cell */
+    .bacteria-wall { fill: rgba(64, 168, 110, 0.92); stroke: rgba(24, 96, 58, 0.85); stroke-width: 5; }
+    .bacteria-membrane { fill: rgba(198, 240, 214, 0.85); stroke: rgba(38, 120, 74, 0.5); stroke-width: 2; }
+    .bacteria-flagellum { stroke: rgba(38, 120, 74, 0.78); stroke-width: 5; stroke-linecap: round; fill: none; }
+    .bacteria-pilus { stroke: rgba(38, 120, 74, 0.55); stroke-width: 2.5; stroke-linecap: round; }
+    .bacteria-nucleoid { fill: rgba(241, 188, 74, 0.88); stroke: rgba(158, 108, 20, 0.55); stroke-width: 2; }
+    .bacteria-plasmid { stroke: rgba(158, 108, 20, 0.75); stroke-width: 3; fill: none; }
+    .bacteria-ribosomes circle { fill: rgba(93, 63, 140, 0.78); }
+
+    /* animal cell */
+    .animal-membrane { fill: rgba(158, 224, 196, 0.5); stroke: rgba(45, 140, 100, 0.55); stroke-width: 3; }
+    .nucleus-envelope-outer { fill: rgba(255, 224, 150, 0.35); stroke: rgba(158, 108, 20, 0.55); stroke-width: 3; }
+    .nucleus-envelope-inner { fill: rgba(255, 247, 214, 0.92); stroke: rgba(158, 108, 20, 0.32); stroke-width: 1.5; stroke-dasharray: 2 3; }
+    .nucleolus { fill: rgba(190, 120, 20, 0.8); }
+    .mito-body { fill: rgba(226, 120, 96, 0.88); stroke: rgba(150, 60, 40, 0.6); stroke-width: 2; }
+    .mito-crista { fill: none; stroke: rgba(150, 60, 40, 0.55); stroke-width: 2; }
+    .er-membrane { stroke: rgba(90, 130, 200, 0.65); stroke-width: 2.5; fill: none; }
+    .golgi-stack { fill: none; stroke: rgba(210, 150, 60, 0.75); stroke-width: 3; stroke-linecap: round; }
+    .golgi-vesicle { fill: rgba(210, 150, 60, 0.6); }
+    .lysosome { fill: rgba(210, 90, 130, 0.65); }
+    .centriole { stroke: rgba(90, 90, 90, 0.6); stroke-width: 3; }
+
+    /* plant cell */
+    .plant-wall-shape { fill: rgba(150, 205, 110, 0.35); stroke: rgba(60, 120, 40, 0.8); stroke-width: 6; }
+    .plant-membrane { fill: rgba(210, 240, 190, 0.4); stroke: rgba(60, 120, 40, 0.35); stroke-width: 2; }
+    .vacuole-shape { fill: rgba(160, 215, 235, 0.5); stroke: rgba(70, 150, 180, 0.55); stroke-width: 2.5; }
+    .chloroplast-shape { fill: rgba(90, 165, 80, 0.88); stroke: rgba(40, 100, 40, 0.6); stroke-width: 2; }
+    .thylakoid { stroke: rgba(30, 80, 30, 0.55); stroke-width: 1.4; }
+
+    .ribosome-dot { fill: rgba(93, 63, 140, 0.72); }
 
     .cell-focus-ring {
       position: absolute;
@@ -606,74 +559,40 @@
         rgba(232, 247, 235, 0.9);
     }
 
-    .specimen-cell {
+    .specimen-diagram {
       position: absolute;
-      border: 2px solid rgba(28, 120, 72, 0.28);
-      background: rgba(126, 211, 151, 0.42);
-      box-shadow: inset 0 0 18px rgba(255, 255, 255, 0.38);
-      transition: border-radius 0.45s ease, transform 0.45s ease, background 0.45s ease;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transform: scale(0.96);
+      transition: opacity 0.4s ease, transform 0.4s ease;
     }
 
-    .specimen-cell::after {
-      content: "";
-      position: absolute;
-      width: 24%;
-      height: 24%;
-      top: 37%;
-      left: 38%;
-      border-radius: 50%;
-      background: rgba(241, 190, 74, 0.82);
-      box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.2);
+    .specimen-diagram.is-active {
+      opacity: 1;
+      transform: scale(1);
     }
 
-    .specimen-cell.one { width: 32%; height: 25%; top: 18%; left: 16%; border-radius: 28px; }
-    .specimen-cell.two { width: 28%; height: 30%; top: 20%; right: 15%; border-radius: 30px; }
-    .specimen-cell.three { width: 34%; height: 26%; bottom: 18%; left: 22%; border-radius: 26px; }
-    .specimen-cell.four { width: 24%; height: 24%; right: 21%; bottom: 23%; border-radius: 24px; }
+    .specimen-wall { fill: rgba(190, 230, 160, 0.5); stroke: rgba(45, 110, 35, 0.78); stroke-width: 3; }
+    .specimen-nucleus { fill: rgba(255, 224, 150, 0.9); stroke: rgba(158, 108, 20, 0.55); stroke-width: 1.5; }
+    .specimen-nucleolus { fill: rgba(190, 120, 20, 0.85); }
+    .specimen-chloroplast { fill: rgba(90, 165, 80, 0.88); stroke: rgba(40, 100, 40, 0.6); stroke-width: 1.4; }
+    .specimen-thylakoid { stroke: rgba(30, 80, 30, 0.55); stroke-width: 1; }
+    .specimen-blob { fill: rgba(150, 220, 200, 0.42); stroke: rgba(40, 140, 105, 0.55); stroke-width: 2.5; }
+    .specimen-rod { fill: rgba(77, 186, 135, 0.78); stroke: rgba(25, 126, 79, 0.55); stroke-width: 1.5; }
+    .specimen-coccus { fill: rgba(93, 170, 130, 0.82); stroke: rgba(25, 126, 79, 0.5); stroke-width: 1.2; }
+    .specimen-hair { fill: rgba(190, 230, 160, 0.45); stroke: rgba(45, 110, 35, 0.65); stroke-width: 2.5; }
 
-    .specimen-layer.is-animal .specimen-cell {
-      border-radius: 57% 43% 49% 51% / 48% 57% 43% 52%;
-      background: rgba(135, 215, 195, 0.42);
-      border-color: rgba(31, 127, 105, 0.28);
-    }
-
-    .specimen-layer.is-bacteria .specimen-cell {
-      width: 24%;
-      height: 9%;
-      border-radius: 999px;
-      background: rgba(77, 186, 135, 0.55);
-      border-color: rgba(25, 126, 79, 0.32);
-    }
-
-    .specimen-layer.is-bacteria .specimen-cell::after {
-      width: 46%;
-      height: 18%;
-      top: 41%;
-      left: 28%;
-      border-radius: 999px;
-      background: rgba(36, 120, 81, 0.4);
-      box-shadow: none;
-    }
-
-    .specimen-layer.is-bacteria .specimen-cell.one { top: 24%; left: 18%; transform: rotate(16deg); }
-    .specimen-layer.is-bacteria .specimen-cell.two { top: 38%; right: 18%; transform: rotate(-22deg); }
-    .specimen-layer.is-bacteria .specimen-cell.three { bottom: 30%; left: 28%; transform: rotate(-10deg); }
-    .specimen-layer.is-bacteria .specimen-cell.four { right: 22%; bottom: 20%; transform: rotate(28deg); }
-
-    .specimen-layer.is-root .specimen-cell {
-      border-radius: 16px;
-      background: rgba(170, 221, 130, 0.42);
-    }
-
-    .specimen-layer.is-root .specimen-cell::before {
-      content: "";
-      position: absolute;
-      width: 56%;
-      height: 12%;
-      right: -42%;
-      top: 42%;
-      border-radius: 999px;
-      background: rgba(66, 145, 56, 0.38);
+    .specimen-diagram text {
+      font-family: var(--font-sans, sans-serif);
+      font-size: 8px;
+      font-weight: 700;
+      fill: #1c4430;
+      paint-order: stroke;
+      stroke: rgba(255, 255, 255, 0.85);
+      stroke-width: 2.5px;
+      stroke-linejoin: round;
     }
 
     .microscope-readout {
@@ -932,36 +851,11 @@
       min-height: 220px;
     }
 
-    .cell-visual--morph .cell-shell {
-      transition: inset 0.9s ease, border-radius 0.9s ease, clip-path 0.9s ease, transform 0.9s ease, box-shadow 0.9s ease;
-    }
-
-    .cell-visual--morph .cell-core {
-      transition: opacity 0.8s ease, transform 0.8s ease;
-    }
-
-    .cell-visual--morph.is-neuron .cell-shell {
-      inset: 17% 18%;
-      clip-path: polygon(50% 0%, 63% 26%, 86% 18%, 74% 40%, 100% 48%, 76% 57%, 88% 82%, 58% 70%, 50% 100%, 42% 70%, 12% 82%, 24% 57%, 0% 48%, 26% 40%, 14% 18%, 37% 26%);
-      border-radius: 0;
-      box-shadow: inset 0 0 0 8px rgba(255, 255, 255, 0.18);
-    }
-
-    .cell-visual--morph.is-rbc .cell-shell {
-      inset: 22% 24%;
-      border-radius: 50%;
-      clip-path: none;
-      box-shadow:
-        inset 0 0 0 12px rgba(255, 255, 255, 0.18),
-        inset 0 0 38px rgba(90, 20, 20, 0.22);
-      transform: scaleY(0.78);
-      background: radial-gradient(circle at 50% 48%, rgba(255, 196, 196, 0.58) 0 24%, rgba(218, 84, 84, 0.9) 52%, rgba(167, 36, 36, 0.95) 100%);
-    }
-
-    .cell-visual--morph.is-rbc .cell-core {
-      opacity: 0;
-      transform: scale(0);
-    }
+    .neuron-soma { fill: rgba(158, 224, 196, 0.6); stroke: rgba(45, 140, 100, 0.6); stroke-width: 3; }
+    .neuron-fiber { stroke: rgba(45, 140, 100, 0.7); stroke-width: 3; stroke-linecap: round; fill: none; }
+    .neuron-axon { stroke: rgba(45, 140, 100, 0.7); stroke-width: 4; stroke-linecap: round; fill: none; }
+    .myelin { fill: rgba(230, 240, 250, 0.85); stroke: rgba(90, 130, 200, 0.55); stroke-width: 1.5; }
+    .rbc-body { stroke: rgba(122, 31, 24, 0.85); stroke-width: 3; }
 
     .morph-copy {
       display: grid;
@@ -978,28 +872,6 @@
       color: #486653;
       font-size: 0.88rem;
       line-height: 1.6;
-    }
-
-    @keyframes organelle-drift {
-      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-      33% { transform: translate3d(4px, -5px, 0) scale(1.03); }
-      66% { transform: translate3d(-3px, 5px, 0) scale(0.98); }
-    }
-
-    @keyframes cytoplasm-float {
-      0%, 100% { transform: translate3d(0, 0, 0); opacity: 0.18; }
-      50% { transform: translate3d(8px, -10px, 0); opacity: 0.38; }
-    }
-
-    @keyframes membrane-breathe {
-      0%, 100% {
-        border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-        transform: scale(1);
-      }
-      50% {
-        border-radius: 52% 48% 38% 62% / 52% 42% 58% 48%;
-        transform: scale(1.01);
-      }
     }
 
     .pathway-links {
@@ -1172,19 +1044,121 @@
               <div class="focus-top">
                 <div class="cell-visual" aria-hidden="true">
                   <div class="cell-focus-ring"></div>
-                  <div class="cell-wall"></div>
-                  <div class="cell-shell"></div>
-                  <div class="cell-core" data-organelle="nucleus"></div>
-                  <div class="cell-vacuole" data-organelle="vacuole"></div>
-                  <div class="cell-organelle one" data-organelle="ribosomes"></div>
-                  <div class="cell-organelle two" data-organelle="mitochondria"></div>
-                  <div class="cell-organelle three" data-organelle="chloroplasts"></div>
-                  <div class="cell-organelle four" data-organelle="cell-wall"></div>
-                  <div class="cell-flagellum"></div>
-                  <div class="cell-label nucleus">Nucleus</div>
-                  <div class="cell-label wall">Cell wall</div>
-                  <div class="cell-label dna">DNA region</div>
-                  <div class="cell-label tail">Flagellum</div>
+
+                  <svg class="cell-diagram" data-cell-diagram="bacteria" viewBox="0 0 420 300" preserveAspectRatio="xMidYMid meet">
+                    <path class="organelle-shape bacteria-flagellum" data-organelle="flagellum" d="M338,150 C365,138 378,162 402,150 C384,170 402,180 418,168"/>
+                    <line class="bacteria-pilus" x1="322" y1="108" x2="356" y2="86"/>
+                    <line class="bacteria-pilus" x1="322" y1="192" x2="352" y2="210"/>
+                    <rect class="organelle-shape bacteria-wall" data-organelle="cell-wall" x="60" y="80" width="280" height="140" rx="70"/>
+                    <rect class="bacteria-membrane" x="74" y="94" width="252" height="112" rx="56"/>
+                    <path class="organelle-shape bacteria-nucleoid" data-organelle="nucleoid" d="M138,150 C116,128 150,106 182,118 C214,100 246,124 222,150 C248,168 218,196 186,182 C158,204 122,180 138,150 Z"/>
+                    <circle class="organelle-shape bacteria-plasmid" data-organelle="nucleoid" cx="262" cy="182" r="15"/>
+                    <g class="organelle-shape bacteria-ribosomes" data-organelle="ribosomes">
+                      <circle cx="108" cy="112" r="3"/>
+                      <circle cx="122" cy="196" r="3"/>
+                      <circle cx="98" cy="160" r="3"/>
+                      <circle cx="270" cy="118" r="3"/>
+                      <circle cx="286" cy="150" r="3"/>
+                      <circle cx="252" cy="98" r="3"/>
+                      <circle cx="140" cy="90" r="3"/>
+                      <circle cx="200" cy="200" r="3"/>
+                    </g>
+                    <text x="130" y="76">Cell wall</text>
+                    <text x="150" y="228">Nucleoid (DNA)</text>
+                    <text x="360" y="130">Flagellum</text>
+                  </svg>
+
+                  <svg class="cell-diagram" data-cell-diagram="animal" viewBox="0 0 400 320" preserveAspectRatio="xMidYMid meet">
+                    <path class="animal-membrane" d="M60,168 C52,96 128,42 200,46 C272,34 352,82 344,166 C350,240 274,288 200,282 C118,292 58,238 60,168 Z"/>
+                    <path class="er-membrane" d="M110,120 C92,110 92,90 110,82 C90,74 92,54 112,46 C94,38 96,20 116,14"/>
+                    <g class="organelle-shape" data-organelle="ribosomes">
+                      <circle class="ribosome-dot" cx="106" cy="118" r="3"/>
+                      <circle class="ribosome-dot" cx="90" cy="98" r="3"/>
+                      <circle class="ribosome-dot" cx="108" cy="80" r="3"/>
+                      <circle class="ribosome-dot" cx="92" cy="60" r="3"/>
+                      <circle class="ribosome-dot" cx="112" cy="42" r="3"/>
+                      <circle class="ribosome-dot" cx="255" cy="245" r="3"/>
+                      <circle class="ribosome-dot" cx="275" cy="255" r="3"/>
+                      <circle class="ribosome-dot" cx="90" cy="230" r="3"/>
+                    </g>
+                    <g class="organelle-shape" data-organelle="mitochondria">
+                      <path class="mito-body" d="M280,86 C312,74 334,96 328,118 C340,140 312,158 288,146 C266,152 258,118 280,86 Z"/>
+                      <path class="mito-crista" d="M282,98 C294,104 300,116 292,128"/>
+                      <path class="mito-crista" d="M292,92 C304,98 312,112 302,124"/>
+                    </g>
+                    <g class="organelle-shape" data-organelle="mitochondria">
+                      <path class="mito-body" d="M96,216 C74,206 72,228 86,240 C74,258 96,274 116,262 C132,272 142,246 122,232 C134,214 112,200 96,216 Z"/>
+                      <path class="mito-crista" d="M92,220 C102,228 102,240 92,248"/>
+                      <path class="mito-crista" d="M104,216 C114,224 114,238 104,248"/>
+                    </g>
+                    <g class="golgi">
+                      <path class="golgi-stack" d="M232,222 C252,216 272,222 288,216"/>
+                      <path class="golgi-stack" d="M238,230 C256,225 274,230 286,225"/>
+                      <path class="golgi-stack" d="M244,238 C258,234 272,238 282,234"/>
+                      <circle class="golgi-vesicle" cx="296" cy="212" r="4"/>
+                      <circle class="golgi-vesicle" cx="222" cy="244" r="4"/>
+                    </g>
+                    <circle class="lysosome" cx="150" cy="250" r="7"/>
+                    <circle class="lysosome" cx="310" cy="180" r="6"/>
+                    <line class="centriole" x1="220" y1="200" x2="234" y2="212"/>
+                    <line class="centriole" x1="228" y1="192" x2="240" y2="206"/>
+                    <g class="organelle-shape" data-organelle="nucleus">
+                      <circle class="nucleus-envelope-outer" cx="195" cy="152" r="58"/>
+                      <circle class="nucleus-envelope-inner" cx="195" cy="152" r="49"/>
+                      <circle class="nucleolus" cx="212" cy="140" r="15"/>
+                    </g>
+                    <text x="150" y="86">Rough ER</text>
+                    <text x="270" y="76">Mitochondrion</text>
+                    <text x="150" y="150">Nucleus</text>
+                    <text x="230" y="256">Golgi apparatus</text>
+                  </svg>
+
+                  <svg class="cell-diagram" data-cell-diagram="plant" viewBox="0 0 400 320" preserveAspectRatio="xMidYMid meet">
+                    <rect class="organelle-shape plant-wall-shape" data-organelle="cell-wall" x="40" y="30" width="320" height="260" rx="16"/>
+                    <rect class="plant-membrane" x="56" y="46" width="288" height="228" rx="10"/>
+                    <rect class="organelle-shape vacuole-shape" data-organelle="vacuole" x="130" y="96" width="210" height="164" rx="26"/>
+                    <g class="organelle-shape" data-organelle="nucleus">
+                      <circle class="nucleus-envelope-outer" cx="92" cy="88" r="36"/>
+                      <circle class="nucleus-envelope-inner" cx="92" cy="88" r="30"/>
+                      <circle class="nucleolus" cx="102" cy="80" r="9"/>
+                    </g>
+                    <g class="organelle-shape" data-organelle="mitochondria">
+                      <path class="mito-body" d="M84,220 C64,212 62,232 74,244 C64,258 84,272 100,262 C114,270 122,248 106,236 C116,220 98,208 84,220 Z"/>
+                      <path class="mito-crista" d="M80,224 C88,230 88,240 80,248"/>
+                    </g>
+                    <g class="organelle-shape" data-organelle="chloroplasts">
+                      <ellipse class="chloroplast-shape" cx="88" cy="150" rx="26" ry="16"/>
+                      <line class="thylakoid" x1="70" y1="146" x2="106" y2="146"/>
+                      <line class="thylakoid" x1="70" y1="150" x2="106" y2="150"/>
+                      <line class="thylakoid" x1="70" y1="154" x2="106" y2="154"/>
+                    </g>
+                    <g class="organelle-shape" data-organelle="chloroplasts">
+                      <ellipse class="chloroplast-shape" cx="80" cy="248" rx="24" ry="15" transform="rotate(-18 80 248)"/>
+                      <line class="thylakoid" x1="64" y1="245" x2="96" y2="245" transform="rotate(-18 80 248)"/>
+                      <line class="thylakoid" x1="64" y1="249" x2="96" y2="249" transform="rotate(-18 80 248)"/>
+                    </g>
+                    <g class="organelle-shape" data-organelle="chloroplasts">
+                      <ellipse class="chloroplast-shape" cx="320" cy="90" rx="24" ry="15" transform="rotate(14 320 90)"/>
+                      <line class="thylakoid" x1="304" y1="87" x2="336" y2="87" transform="rotate(14 320 90)"/>
+                      <line class="thylakoid" x1="304" y1="91" x2="336" y2="91" transform="rotate(14 320 90)"/>
+                    </g>
+                    <g class="organelle-shape" data-organelle="chloroplasts">
+                      <ellipse class="chloroplast-shape" cx="322" cy="240" rx="24" ry="15" transform="rotate(-10 322 240)"/>
+                      <line class="thylakoid" x1="306" y1="237" x2="338" y2="237" transform="rotate(-10 322 240)"/>
+                      <line class="thylakoid" x1="306" y1="241" x2="338" y2="241" transform="rotate(-10 322 240)"/>
+                    </g>
+                    <g class="organelle-shape" data-organelle="ribosomes">
+                      <circle class="ribosome-dot" cx="66" cy="60" r="3"/>
+                      <circle class="ribosome-dot" cx="330" cy="140" r="3"/>
+                      <circle class="ribosome-dot" cx="70" cy="190" r="3"/>
+                      <circle class="ribosome-dot" cx="320" cy="190" r="3"/>
+                    </g>
+                    <text x="130" y="42">Cell wall</text>
+                    <text x="180" y="120">Central vacuole</text>
+                    <text x="60" y="70">Nucleus</text>
+                    <text x="286" y="66">Chloroplast</text>
+                  </svg>
+
                   <div class="cell-inspector" id="cell-inspector" aria-live="polite">
                     <strong id="cell-inspector-title">Organelle Inspector</strong>
                     <span id="cell-inspector-copy">Select a structure to see its job inside the cell.</span>
@@ -1321,12 +1295,42 @@
               </div>
               <div class="morph-stage">
                 <div class="cell-visual cell-visual--morph" id="morph-visual" aria-hidden="true">
-                  <div class="cell-shell"></div>
-                  <div class="cell-core"></div>
-                  <div class="cell-organelle one"></div>
-                  <div class="cell-organelle two"></div>
-                  <div class="cell-organelle three"></div>
-                  <div class="cell-organelle four"></div>
+                  <svg class="cell-diagram" data-morph-diagram="animal" viewBox="0 0 400 260" preserveAspectRatio="xMidYMid meet">
+                    <path class="animal-membrane" d="M50,138 C44,76 118,32 190,36 C258,26 330,68 324,136 C330,200 262,242 190,236 C116,246 52,198 50,138 Z"/>
+                    <circle class="nucleus-envelope-outer" cx="180" cy="126" r="46"/>
+                    <circle class="nucleus-envelope-inner" cx="180" cy="126" r="38"/>
+                    <circle class="nucleolus" cx="194" cy="116" r="12"/>
+                    <path class="mito-body" d="M262,80 C288,70 306,88 300,106 C310,124 288,138 268,128 C250,134 244,106 262,80 Z"/>
+                    <circle class="ribosome-dot" cx="90" cy="90" r="3"/>
+                    <circle class="ribosome-dot" cx="100" cy="180" r="3"/>
+                    <circle class="ribosome-dot" cx="270" cy="190" r="3"/>
+                  </svg>
+                  <svg class="cell-diagram" data-morph-diagram="neuron" viewBox="0 0 400 260" preserveAspectRatio="xMidYMid meet">
+                    <path class="neuron-soma" d="M150,110 C140,80 170,58 200,64 C226,52 252,74 246,100 C266,110 260,142 234,146 C240,172 208,188 188,166 C162,182 138,160 150,134 C128,124 134,98 150,110 Z"/>
+                    <circle class="nucleus-envelope-inner" cx="195" cy="116" r="24"/>
+                    <path class="neuron-fiber" d="M160,88 C144,74 130,78 116,64"/>
+                    <path class="neuron-fiber" d="M160,88 C150,68 156,52 144,40"/>
+                    <path class="neuron-fiber" d="M232,80 C248,64 242,48 258,36"/>
+                    <path class="neuron-fiber" d="M232,80 C252,72 262,58 278,52"/>
+                    <path class="neuron-axon" d="M240,150 C282,166 322,154 362,176"/>
+                    <ellipse class="myelin" cx="272" cy="162" rx="14" ry="8"/>
+                    <ellipse class="myelin" cx="302" cy="159" rx="14" ry="8"/>
+                    <ellipse class="myelin" cx="332" cy="168" rx="14" ry="8"/>
+                    <path class="neuron-fiber" d="M362,176 C372,182 380,176 390,184"/>
+                    <path class="neuron-fiber" d="M362,176 C374,190 374,200 384,208"/>
+                    <path class="neuron-fiber" d="M362,176 C366,192 358,202 366,212"/>
+                  </svg>
+                  <svg class="cell-diagram" data-morph-diagram="red-blood-cell" viewBox="0 0 400 260" preserveAspectRatio="xMidYMid meet">
+                    <defs>
+                      <radialGradient id="rbcGradient" cx="50%" cy="50%" r="65%">
+                        <stop offset="0%" stop-color="#f2a9a0"/>
+                        <stop offset="35%" stop-color="#e2685a"/>
+                        <stop offset="70%" stop-color="#c23f34"/>
+                        <stop offset="100%" stop-color="#9c2a22"/>
+                      </radialGradient>
+                    </defs>
+                    <ellipse cx="200" cy="130" rx="120" ry="85" fill="url(#rbcGradient)" class="rbc-body"/>
+                  </svg>
                 </div>
                 <div class="morph-copy">
                   <h3 id="morph-title">Generic Animal Cell</h3>
@@ -1343,10 +1347,68 @@
           <div class="evidence-lab">
             <div class="microscope-stage" aria-label="Microscope view of the selected cell sample">
               <div class="specimen-layer" id="specimen-layer">
-                <div class="specimen-cell one"></div>
-                <div class="specimen-cell two"></div>
-                <div class="specimen-cell three"></div>
-                <div class="specimen-cell four"></div>
+                <svg class="specimen-diagram" data-specimen="pond-leaf" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet">
+                  <rect class="specimen-wall" x="8" y="8" width="138" height="138" rx="16"/>
+                  <rect class="specimen-wall" x="154" y="8" width="138" height="138" rx="16"/>
+                  <rect class="specimen-wall" x="8" y="154" width="138" height="138" rx="16"/>
+                  <rect class="specimen-wall" x="154" y="154" width="138" height="138" rx="16"/>
+                  <circle class="specimen-nucleus" cx="50" cy="50" r="16"/>
+                  <circle class="specimen-nucleus" cx="230" cy="45" r="15"/>
+                  <circle class="specimen-nucleus" cx="45" cy="225" r="15"/>
+                  <circle class="specimen-nucleus" cx="225" cy="200" r="16"/>
+                  <ellipse class="specimen-chloroplast" cx="100" cy="110" rx="14" ry="8"/>
+                  <ellipse class="specimen-chloroplast" cx="40" cy="112" rx="11" ry="7"/>
+                  <ellipse class="specimen-chloroplast" cx="190" cy="100" rx="13" ry="8"/>
+                  <ellipse class="specimen-chloroplast" cx="252" cy="118" rx="12" ry="7"/>
+                  <ellipse class="specimen-chloroplast" cx="100" cy="190" rx="13" ry="8"/>
+                  <ellipse class="specimen-chloroplast" cx="62" cy="252" rx="12" ry="7"/>
+                  <ellipse class="specimen-chloroplast" cx="180" cy="248" rx="13" ry="8"/>
+                  <ellipse class="specimen-chloroplast" cx="250" cy="182" rx="12" ry="7"/>
+                </svg>
+                <svg class="specimen-diagram" data-specimen="cheek-swab" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet">
+                  <path class="specimen-blob" d="M40,110 C34,70 90,40 140,44 C190,36 240,66 236,108 C240,150 194,180 140,176 C88,184 42,150 40,110 Z"/>
+                  <path class="specimen-blob" d="M160,150 C154,118 200,94 240,98 C280,92 318,116 314,150 C318,184 280,208 240,204 C198,210 162,182 160,150 Z"/>
+                  <path class="specimen-blob" d="M70,210 C64,182 106,162 140,166 C176,160 208,182 204,210 C208,238 176,258 140,254 C104,260 72,238 70,210 Z"/>
+                  <circle class="nucleus-envelope-outer" cx="130" cy="105" r="26"/>
+                  <circle class="nucleus-envelope-inner" cx="130" cy="105" r="21"/>
+                  <circle class="nucleolus" cx="140" cy="98" r="7"/>
+                  <circle class="nucleus-envelope-outer" cx="235" cy="148" r="24"/>
+                  <circle class="nucleus-envelope-inner" cx="235" cy="148" r="20"/>
+                  <circle class="nucleolus" cx="244" cy="142" r="6"/>
+                  <circle class="nucleus-envelope-outer" cx="138" cy="208" r="22"/>
+                  <circle class="nucleus-envelope-inner" cx="138" cy="208" r="18"/>
+                  <circle class="nucleolus" cx="146" cy="202" r="6"/>
+                </svg>
+                <svg class="specimen-diagram" data-specimen="yogurt-culture" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet">
+                  <defs>
+                    <g id="specimen-rod-unit"><rect class="specimen-rod" x="-7" y="-17" width="14" height="34" rx="7"/></g>
+                    <g id="specimen-coccus-unit"><circle class="specimen-coccus" r="9"/></g>
+                  </defs>
+                  <use href="#specimen-rod-unit" transform="translate(80,90) rotate(20)"/>
+                  <use href="#specimen-rod-unit" transform="translate(80,122) rotate(12)"/>
+                  <use href="#specimen-rod-unit" transform="translate(76,154) rotate(24)"/>
+                  <use href="#specimen-rod-unit" transform="translate(200,60) rotate(-10)"/>
+                  <use href="#specimen-rod-unit" transform="translate(204,92) rotate(-16)"/>
+                  <use href="#specimen-rod-unit" transform="translate(200,124) rotate(-4)"/>
+                  <use href="#specimen-rod-unit" transform="translate(140,225) rotate(64)"/>
+                  <use href="#specimen-rod-unit" transform="translate(235,205) rotate(102)"/>
+                  <use href="#specimen-coccus-unit" transform="translate(60,222)"/>
+                  <use href="#specimen-coccus-unit" transform="translate(76,226)"/>
+                  <use href="#specimen-coccus-unit" transform="translate(92,224)"/>
+                  <use href="#specimen-coccus-unit" transform="translate(108,228)"/>
+                  <use href="#specimen-coccus-unit" transform="translate(178,152)"/>
+                  <use href="#specimen-coccus-unit" transform="translate(194,150)"/>
+                  <use href="#specimen-coccus-unit" transform="translate(210,154)"/>
+                </svg>
+                <svg class="specimen-diagram" data-specimen="root-hair" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet">
+                  <rect class="specimen-wall" x="10" y="90" width="90" height="120" rx="14"/>
+                  <rect class="specimen-wall" x="104" y="90" width="90" height="120" rx="14"/>
+                  <rect class="specimen-wall" x="198" y="90" width="90" height="120" rx="14"/>
+                  <circle class="specimen-nucleus" cx="55" cy="150" r="15"/>
+                  <circle class="specimen-nucleus" cx="149" cy="150" r="15"/>
+                  <path class="specimen-hair" d="M282,110 C300,105 315,115 325,135 C335,155 338,180 330,200 C326,210 318,214 312,206 C318,188 316,168 306,150 C298,135 288,122 282,110 Z"/>
+                  <circle class="specimen-nucleus" cx="318" cy="188" r="10"/>
+                </svg>
               </div>
               <div class="microscope-readout">
                 <strong id="sample-readout-title">Pond Leaf Scrape</strong>
@@ -1512,37 +1574,23 @@
     const CELL_DATA = {
       bacteria: {
         title: "Bacterial Cell",
-        description: "Bacteria are prokaryotes. They do not have a nucleus, and their DNA is found in a nucleoid region. Even though they are small, they can carry out all the functions of life.",
+        description: "Bacteria are prokaryotes. They do not have a nucleus, and their DNA is loosely coiled in a nucleoid region. Even though they are small, they can carry out all the functions of life.",
         type: "Prokaryotic",
-        structures: "Cell membrane, cytoplasm, ribosomes, DNA, often a cell wall, sometimes a flagellum.",
+        structures: "Cell wall, cell membrane, cytoplasm, ribosomes, a nucleoid region of DNA, often a plasmid, sometimes a flagellum.",
         organism: "Bacteria and archaea.",
         idea: "Simple does not mean weak. These cells are efficient survival machines.",
-        shellClass: "is-bacteria",
-        showCore: false,
-        showWall: false,
-        showVacuole: false,
-        showFlagellum: true,
-        labelNucleus: false,
-        labelWall: false,
-        labelDna: true,
-        labelTail: true
+        diagram: "bacteria",
+        defaultOrganelle: "ribosomes"
       },
       animal: {
         title: "Animal Cell",
         description: "Animal cells are eukaryotic. They have a nucleus and many organelles, but no rigid cell wall. That flexibility allows animal cells to specialize into many forms such as neurons, muscle cells, and blood cells.",
         type: "Eukaryotic",
-        structures: "Nucleus, mitochondria, ribosomes, cell membrane, cytoplasm, many organelles.",
+        structures: "Nucleus, mitochondria, rough ER with ribosomes, Golgi apparatus, lysosomes, cell membrane, cytoplasm.",
         organism: "Animals, including humans.",
         idea: "These cells are versatile. Their flexible membranes support many specialized jobs.",
-        shellClass: "",
-        showCore: true,
-        showWall: false,
-        showVacuole: false,
-        showFlagellum: false,
-        labelNucleus: true,
-        labelWall: false,
-        labelDna: false,
-        labelTail: false
+        diagram: "animal",
+        defaultOrganelle: "nucleus"
       },
       plant: {
         title: "Plant Cell",
@@ -1551,40 +1599,24 @@
         structures: "Nucleus, chloroplasts, cell wall, cell membrane, large central vacuole, mitochondria.",
         organism: "Plants and many algae.",
         idea: "Plant cells are built for support, storage, and photosynthesis.",
-        shellClass: "is-plant",
-        showCore: true,
-        showWall: true,
-        showVacuole: true,
-        showFlagellum: false,
-        labelNucleus: true,
-        labelWall: true,
-        labelDna: false,
-        labelTail: false
+        diagram: "plant",
+        defaultOrganelle: "vacuole"
       }
     };
 
     const compareButtons = Array.from(document.querySelectorAll(".compare-btn"));
-    const visual = document.querySelector(".cell-visual");
-    const shell = document.querySelector(".cell-shell");
-    const core = document.querySelector(".cell-core");
-    const vacuole = document.querySelector(".cell-vacuole");
-    const wall = document.querySelector(".cell-wall");
-    const flagellum = document.querySelector(".cell-flagellum");
-    const nucleusLabel = document.querySelector(".cell-label.nucleus");
-    const wallLabel = document.querySelector(".cell-label.wall");
-    const dnaLabel = document.querySelector(".cell-label.dna");
-    const tailLabel = document.querySelector(".cell-label.tail");
+    const cellDiagrams = Array.from(document.querySelectorAll(".focus-panel .cell-diagram"));
     const inspector = document.getElementById("cell-inspector");
     const inspectorTitle = document.getElementById("cell-inspector-title");
     const inspectorCopy = document.getElementById("cell-inspector-copy");
     const organelleCards = Array.from(document.querySelectorAll(".organelle-card"));
-    const organelleNodes = Array.from(document.querySelectorAll(".cell-core, .cell-organelle, .cell-vacuole"));
+    const organelleNodes = Array.from(document.querySelectorAll(".focus-panel .organelle-shape[data-organelle]"));
     const morphButtons = Array.from(document.querySelectorAll(".morph-btn"));
-    const morphVisual = document.getElementById("morph-visual");
+    const morphDiagrams = Array.from(document.querySelectorAll(".morph-stage .cell-diagram"));
     const morphTitle = document.getElementById("morph-title");
     const morphCopy = document.getElementById("morph-copy");
     const sampleButtons = Array.from(document.querySelectorAll(".sample-btn"));
-    const specimenLayer = document.getElementById("specimen-layer");
+    const specimenDiagrams = Array.from(document.querySelectorAll(".specimen-diagram"));
     const sampleReadoutTitle = document.getElementById("sample-readout-title");
     const sampleReadoutCopy = document.getElementById("sample-readout-copy");
     const clueList = document.getElementById("clue-list");
@@ -1615,7 +1647,15 @@
       },
       "cell-wall": {
         title: "Cell Wall",
-        copy: "Provides protection and support outside the cell membrane, helping the cell keep its shape."
+        copy: "A rigid layer outside the cell membrane that protects the cell and helps it keep its shape. Found in plants and in many bacteria (but never in animal cells)."
+      },
+      nucleoid: {
+        title: "Nucleoid",
+        copy: "The region where a bacterium's circular DNA is loosely coiled. It has no surrounding membrane, which is exactly why bacteria are called prokaryotes."
+      },
+      flagellum: {
+        title: "Flagellum",
+        copy: "A whip-like tail that rotates like a propeller, letting the bacterium swim toward food or away from danger."
       }
     };
 
@@ -1638,7 +1678,7 @@
       "pond-leaf": {
         title: "Pond Leaf Scrape",
         copy: "Boxy cells with walls and green chloroplasts point toward a plant cell.",
-        specimenClass: "",
+        specimen: "pond-leaf",
         verdict: "Verdict: Plant Cell",
         verdictCopy: "The cell wall, chloroplast evidence, and boxy shape all support a plant-cell classification.",
         clues: ["Box-like outline", "Rigid cell wall visible", "Green chloroplast structures", "Nucleus present"],
@@ -1647,7 +1687,7 @@
       "cheek-swab": {
         title: "Cheek Swab",
         copy: "Rounded, flexible cells with nuclei and no cell wall fit the animal-cell pattern.",
-        specimenClass: "is-animal",
+        specimen: "cheek-swab",
         verdict: "Verdict: Animal Cell",
         verdictCopy: "A nucleus is present, but there is no rigid wall or chloroplast evidence, so animal cell is the strongest match.",
         clues: ["Nucleus present", "Flexible membrane", "No cell wall", "No chloroplasts"],
@@ -1655,40 +1695,23 @@
       },
       "yogurt-culture": {
         title: "Yogurt Culture",
-        copy: "Tiny rod-shaped cells with DNA regions but no nuclei point toward bacteria.",
-        specimenClass: "is-bacteria",
+        copy: "Rod-shaped cells and short chains of round cells, both with DNA regions but no nuclei, point toward bacteria.",
+        specimen: "yogurt-culture",
         verdict: "Verdict: Bacterial Cell",
-        verdictCopy: "The small rod shapes and lack of a nucleus are the key clues for a prokaryotic bacterial cell.",
-        clues: ["No nucleus", "Very small cells", "Rod-shaped bodies", "DNA region instead of nucleus"],
+        verdictCopy: "The rod and chain shapes and lack of a nucleus are the key clues for prokaryotic bacterial cells (a Lactobacillus and Streptococcus pair, typical of yogurt).",
+        clues: ["No nucleus", "Very small cells", "Rod-shaped and round bodies", "DNA region instead of nucleus"],
         confidence: { Bacteria: 96, Animal: 12, Plant: 6 }
       },
       "root-hair": {
         title: "Root Hair Cell",
-        copy: "A plant cell with a long extension is specialized for absorbing water and minerals.",
-        specimenClass: "is-root",
+        copy: "A plant cell with a long extension is specialized for absorbing water and minerals. Underground root cells have no chloroplasts since they get no sunlight.",
+        specimen: "root-hair",
         verdict: "Verdict: Specialized Plant Cell",
-        verdictCopy: "The cell wall says plant, while the long extension shows specialization for absorption.",
-        clues: ["Cell wall visible", "Large surface-area extension", "Nucleus present", "Specialized absorption job"],
+        verdictCopy: "The cell wall says plant, the long extension shows specialization for absorption, and the missing chloroplasts fit a cell that lives underground.",
+        clues: ["Cell wall visible", "Large surface-area extension", "Nucleus present near the tip", "No chloroplasts (no sunlight underground)"],
         confidence: { Plant: 90, Animal: 22, Bacteria: 9 }
       }
     };
-
-    function buildCytoplasmParticles(count = 34) {
-      if (!visual) return;
-      visual.querySelectorAll(".cytoplasm-particle").forEach(node => node.remove());
-      for (let i = 0; i < count; i += 1) {
-        const particle = document.createElement("span");
-        const size = (Math.random() * 4 + 2).toFixed(1);
-        particle.className = "cytoplasm-particle";
-        particle.style.width = `${size}px`;
-        particle.style.height = `${size}px`;
-        particle.style.left = `${Math.random() * 100}%`;
-        particle.style.top = `${Math.random() * 100}%`;
-        particle.style.animationDelay = `${(Math.random() * 6).toFixed(2)}s`;
-        particle.style.animationDuration = `${(6 + Math.random() * 4).toFixed(2)}s`;
-        visual.prepend(particle);
-      }
-    }
 
     function setInspector(organelleKey) {
       const data = ORGANELLE_INFO[organelleKey];
@@ -1703,30 +1726,22 @@
         card.classList.toggle("is-linked", card.dataset.organelle === organelleKey);
       });
       organelleNodes.forEach((node) => {
-        const active = node.dataset.organelle === organelleKey;
-        node.style.outlineColor = active ? "rgba(26, 127, 75, 0.46)" : "transparent";
-        node.style.boxShadow = active
-          ? "0 0 0 6px rgba(26, 127, 75, 0.14), 0 14px 28px rgba(20, 60, 40, 0.12)"
-          : "";
-        node.style.transform = active ? "scale(1.08)" : "";
+        node.classList.toggle("is-linked", node.dataset.organelle === organelleKey);
       });
     }
 
     function resetLinkedOrganelle() {
       organelleCards.forEach((card) => card.classList.remove("is-linked"));
-      organelleNodes.forEach((node) => {
-        node.style.outlineColor = "transparent";
-        node.style.boxShadow = "";
-        node.style.transform = "";
-      });
+      organelleNodes.forEach((node) => node.classList.remove("is-linked"));
     }
 
     function renderSample(sampleKey) {
       const data = SAMPLE_DATA[sampleKey];
-      if (!data || !specimenLayer || !clueList || !confidenceBars) return;
+      if (!data || !clueList || !confidenceBars) return;
 
-      specimenLayer.className = "specimen-layer";
-      if (data.specimenClass) specimenLayer.classList.add(data.specimenClass);
+      specimenDiagrams.forEach((svg) => {
+        svg.classList.toggle("is-active", svg.dataset.specimen === data.specimen);
+      });
       sampleReadoutTitle.textContent = data.title;
       sampleReadoutCopy.textContent = data.copy;
       verdictTitle.textContent = data.verdict;
@@ -1769,10 +1784,10 @@
     }
 
     function renderMorph(type) {
-      if (!morphVisual || !morphTitle || !morphCopy) return;
-      morphVisual.classList.remove("is-neuron", "is-rbc");
-      if (type === "neuron") morphVisual.classList.add("is-neuron");
-      if (type === "red-blood-cell") morphVisual.classList.add("is-rbc");
+      if (!morphTitle || !morphCopy) return;
+      morphDiagrams.forEach((svg) => {
+        svg.classList.toggle("is-active", svg.dataset.morphDiagram === type);
+      });
       morphTitle.textContent = MORPH_DATA[type].title;
       morphCopy.textContent = MORPH_DATA[type].copy;
       morphButtons.forEach((button) => {
@@ -1789,16 +1804,9 @@
       document.getElementById("focus-organism").textContent = data.organism;
       document.getElementById("focus-idea").textContent = data.idea;
 
-      shell.className = "cell-shell";
-      if (data.shellClass) shell.classList.add(data.shellClass);
-      core.classList.toggle("is-hidden", !data.showCore);
-      vacuole.style.display = data.showVacuole ? "block" : "none";
-      wall.style.display = data.showWall ? "block" : "none";
-      flagellum.style.display = data.showFlagellum ? "block" : "none";
-      nucleusLabel.style.display = data.labelNucleus ? "inline-flex" : "none";
-      wallLabel.style.display = data.labelWall ? "inline-flex" : "none";
-      dnaLabel.style.display = data.labelDna ? "inline-flex" : "none";
-      tailLabel.style.display = data.labelTail ? "inline-flex" : "none";
+      cellDiagrams.forEach((svg) => {
+        svg.classList.toggle("is-active", svg.dataset.cellDiagram === data.diagram);
+      });
 
       compareButtons.forEach((button) => {
         const active = button.dataset.cell === cellKey;
@@ -1806,8 +1814,7 @@
       });
 
       resetLinkedOrganelle();
-      buildCytoplasmParticles(cellKey === "bacteria" ? 22 : cellKey === "plant" ? 40 : 34);
-      setInspector(cellKey === "bacteria" ? "ribosomes" : data.showVacuole ? "vacuole" : "nucleus");
+      setInspector(data.defaultOrganelle);
     }
 
     compareButtons.forEach((button) => {
