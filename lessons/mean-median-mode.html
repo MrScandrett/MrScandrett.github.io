@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mean, Median &amp; Mode · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Mathematics lesson on mean, median, and mode with a draggable dot-plot dataset, worked examples, guided practice, and an interactive answer checker." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 304px; --ll-accent: #db2777; --ll-tab-active: #db2777; --ll-tab-active-bg: rgba(219,39,119,0.12); }
+    .mmm-page { padding-bottom: 3.5rem; }
+    .mmm-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .mmm-hero h1 { max-width: 28ch; margin: 0; font-size: clamp(1.55rem, 3.5vw, 2.35rem); }
+    .mmm-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.55rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .mmm-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45; }
+    .mmm-lede { max-width: 70ch; margin: 0.7rem 0 0; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+    [data-lighting="night"] .mmm-lede,
+    [data-theme="vaporwave"] .mmm-lede,
+    [data-theme="bark"] .mmm-lede { color: rgba(245,245,247,0.72); }
+
+    .mmm-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--card-accent, #db2777);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.4rem;
+      margin-bottom: 1rem;
+    }
+    [data-lighting="night"] .mmm-card,
+    [data-theme="vaporwave"] .mmm-card,
+    [data-theme="bark"] .mmm-card { background: var(--white, #2c2c2e); }
+    .mmm-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .mmm-card h3 { margin: 0.95rem 0 0.35rem; font-size: 1rem; letter-spacing: -0.01em; }
+    .mmm-card p { margin: 0 0 0.62rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .mmm-card p:last-child { margin-bottom: 0; }
+    [data-lighting="night"] .mmm-card p,
+    [data-theme="vaporwave"] .mmm-card p,
+    [data-theme="bark"] .mmm-card p { color: rgba(245,245,247,0.72); }
+
+    .mmm-rule {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.8rem;
+      margin-top: 0.85rem;
+    }
+    .mmm-rule-box {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 10px;
+      padding: 0.85rem;
+      background: rgba(0,0,0,0.03);
+    }
+    [data-lighting="night"] .mmm-rule-box,
+    [data-theme="vaporwave"] .mmm-rule-box,
+    [data-theme="bark"] .mmm-rule-box { background: rgba(255,255,255,0.04); }
+    .mmm-rule-box strong { display: block; margin-bottom: 0.25rem; font-size: 0.86rem; }
+    .mmm-rule-box span { color: var(--text-muted, #64748b); font-size: 0.8rem; line-height: 1.5; display: block; }
+
+    .mmm-example {
+      margin-top: 0.85rem;
+      border: 1px solid rgba(219,39,119,0.22);
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(219,39,119,0.045);
+    }
+    .mmm-example-row {
+      display: grid;
+      grid-template-columns: 1.15fr 2fr;
+      gap: 1rem;
+      padding: 0.72rem 0.9rem;
+      border-bottom: 1px solid rgba(219,39,119,0.16);
+      align-items: start;
+    }
+    .mmm-example-row:last-child { border-bottom: 0; }
+    .mmm-math {
+      font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text, #1d1d1f);
+      letter-spacing: 0;
+    }
+    .mmm-note { color: var(--text-secondary, #3f4f65); font-size: 0.82rem; line-height: 1.5; }
+    [data-lighting="night"] .mmm-note,
+    [data-theme="vaporwave"] .mmm-note,
+    [data-theme="bark"] .mmm-note { color: rgba(245,245,247,0.72); }
+
+    .mmm-workspace {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 12px;
+      padding: 1rem;
+      background: rgba(0,0,0,0.03);
+      margin-top: 0.85rem;
+    }
+    [data-lighting="night"] .mmm-workspace,
+    [data-theme="vaporwave"] .mmm-workspace,
+    [data-theme="bark"] .mmm-workspace { background: rgba(255,255,255,0.04); }
+    .mmm-plot { width: 100%; height: auto; touch-action: none; user-select: none; }
+    .mmm-plot .axis-line { stroke: var(--text-muted, #64748b); stroke-width: 1.5; }
+    .mmm-plot .tick-line { stroke: var(--line, #d2d2d7); stroke-width: 1; }
+    [data-lighting="night"] .mmm-plot .tick-line,
+    [data-theme="vaporwave"] .mmm-plot .tick-line,
+    [data-theme="bark"] .mmm-plot .tick-line { stroke: rgba(255,255,255,0.14); }
+    .mmm-plot .tick-label { font: 600 11px var(--font-sans); fill: var(--text-muted, #64748b); }
+    .mmm-plot .mmm-dot { fill: #db2777; stroke: #fff; stroke-width: 2; cursor: grab; }
+    .mmm-plot .mmm-dot:active { cursor: grabbing; }
+    .mmm-plot .mmm-mean-line { stroke: #16a34a; stroke-width: 2; stroke-dasharray: 5 4; }
+    .mmm-plot .mmm-median-line { stroke: #0ea5e9; stroke-width: 2; stroke-dasharray: 2 3; }
+    [data-lighting="night"] .mmm-plot .mmm-dot,
+    [data-theme="vaporwave"] .mmm-plot .mmm-dot,
+    [data-theme="bark"] .mmm-plot .mmm-dot { stroke: #1c1c1e; }
+    .mmm-legend { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.6rem; font-size: 0.78rem; color: var(--text-muted, #64748b); }
+    .mmm-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+    .mmm-legend .swatch { width: 16px; height: 3px; display: inline-block; }
+    .mmm-readout {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+      margin-top: 0.85rem;
+    }
+    .mmm-readout-item {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 9px;
+      padding: 0.55rem 0.65rem;
+      background: rgba(219,39,119,0.06);
+      text-align: center;
+    }
+    [data-lighting="night"] .mmm-readout-item,
+    [data-theme="vaporwave"] .mmm-readout-item,
+    [data-theme="bark"] .mmm-readout-item { background: rgba(255,255,255,0.045); }
+    .mmm-readout-item span { display: block; font-size: 0.72rem; color: var(--text-muted, #64748b); margin-bottom: 0.15rem; }
+    .mmm-readout-item strong { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 1.1rem; }
+    .mmm-tools { display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.8rem; flex-wrap: wrap; }
+    .mmm-tool-btn {
+      border: 1.5px solid var(--line, #d2d2d7);
+      border-radius: 8px;
+      padding: 0.45rem 0.75rem;
+      background: var(--white, #fff);
+      color: var(--text, #1d1d1f);
+      font: 700 0.8rem var(--font-sans);
+      cursor: pointer;
+    }
+    [data-lighting="night"] .mmm-tool-btn,
+    [data-theme="vaporwave"] .mmm-tool-btn,
+    [data-theme="bark"] .mmm-tool-btn { background: rgba(255,255,255,0.04); }
+    .mmm-tool-btn:hover { border-color: #db2777; }
+
+    .mmm-activity {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 260px;
+      gap: 1rem;
+      align-items: start;
+      margin-top: 0.85rem;
+    }
+    .mmm-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; }
+    .mmm-choice {
+      border: 1.5px solid var(--line, #d2d2d7);
+      border-radius: 9px;
+      padding: 0.62rem 0.7rem;
+      background: var(--white, #fff);
+      color: var(--text, #1d1d1f);
+      font: 700 0.9rem var(--font-sans);
+      cursor: pointer;
+      text-align: left;
+    }
+    [data-lighting="night"] .mmm-choice,
+    [data-theme="vaporwave"] .mmm-choice,
+    [data-theme="bark"] .mmm-choice { background: rgba(255,255,255,0.04); }
+    .mmm-choice:hover, .mmm-choice:focus { border-color: #db2777; outline: none; }
+    .mmm-choice.correct { border-color: #16a34a; background: rgba(22,163,74,0.12); }
+    .mmm-choice.wrong { border-color: #dc2626; background: rgba(220,38,38,0.1); }
+    .mmm-question { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.7rem; }
+    .mmm-feedback {
+      min-height: 2.2rem;
+      margin-top: 0.8rem;
+      color: var(--text-secondary, #3f4f65);
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+    [data-lighting="night"] .mmm-feedback,
+    [data-theme="vaporwave"] .mmm-feedback,
+    [data-theme="bark"] .mmm-feedback { color: rgba(245,245,247,0.72); }
+    .mmm-side { display: grid; gap: 0.7rem; }
+    .mmm-score {
+      border-radius: 12px;
+      border: 1px solid rgba(219,39,119,0.22);
+      background: rgba(219,39,119,0.08);
+      padding: 0.9rem;
+    }
+    .mmm-score strong { display: block; font-size: 1.55rem; line-height: 1; }
+    .mmm-score span { color: var(--text-muted, #64748b); font-size: 0.8rem; }
+    .mmm-next {
+      border: 0;
+      border-radius: 9px;
+      padding: 0.68rem 0.8rem;
+      background: #db2777;
+      color: #fff;
+      font: 800 0.86rem var(--font-sans);
+      cursor: pointer;
+    }
+    .mmm-next:hover { filter: brightness(0.96); }
+
+    .mmm-practice { display: grid; gap: 0.72rem; margin-top: 0.85rem; }
+    .mmm-practice-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 0.55rem;
+      align-items: center;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 10px;
+      padding: 0.75rem;
+      background: rgba(0,0,0,0.03);
+    }
+    [data-lighting="night"] .mmm-practice-item,
+    [data-theme="vaporwave"] .mmm-practice-item,
+    [data-theme="bark"] .mmm-practice-item { background: rgba(255,255,255,0.04); }
+    .mmm-practice-item input {
+      width: 82px;
+      border: 1.5px solid var(--line, #d2d2d7);
+      border-radius: 8px;
+      padding: 0.42rem 0.55rem;
+      background: var(--white, #fff);
+      color: var(--text, #1d1d1f);
+      font: 700 0.88rem var(--font-sans);
+    }
+    [data-lighting="night"] .mmm-practice-item input,
+    [data-theme="vaporwave"] .mmm-practice-item input,
+    [data-theme="bark"] .mmm-practice-item input { background: rgba(255,255,255,0.04); }
+    .mmm-check {
+      border: 0;
+      border-radius: 8px;
+      padding: 0.47rem 0.7rem;
+      background: #334155;
+      color: #fff;
+      font: 800 0.8rem var(--font-sans);
+      cursor: pointer;
+    }
+    .mmm-mini-feedback { min-width: 7ch; font-size: 0.8rem; font-weight: 800; }
+    .mmm-mini-feedback.ok { color: #16a34a; }
+    .mmm-mini-feedback.no { color: #dc2626; }
+
+    .mmm-exit ul { margin: 0.65rem 0 0; padding-left: 1.15rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    [data-lighting="night"] .mmm-exit ul,
+    [data-theme="vaporwave"] .mmm-exit ul,
+    [data-theme="bark"] .mmm-exit ul { color: rgba(245,245,247,0.72); }
+
+    @media (max-width: 900px) {
+      .mmm-activity { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .mmm-rule, .mmm-options, .mmm-readout { grid-template-columns: 1fr; }
+      .mmm-example-row, .mmm-practice-item { grid-template-columns: 1fr; }
+      .mmm-practice-item input { width: 100%; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../paths.html">Paths</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Apps</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="mmm-page">
+        <section class="hero mmm-hero">
+          <p class="eyebrow">Mathematics · Lesson 11</p>
+          <h1>Mean, Median &amp; Mode</h1>
+          <div class="mmm-hero-meta">
+            <span>Mean = the average</span><span class="dot"></span>
+            <span>Median = the middle value</span><span class="dot"></span>
+            <span>Mode = the most frequent value</span>
+          </div>
+          <p class="mmm-lede">Mean, median, and mode all try to describe a "typical" value in a dataset, but they respond very differently to outliers. In this lesson, students drag dots on a number line and watch all three measures recompute live, including a demo of how one extreme value skews the mean but barely touches the median.</p>
+        </section>
+
+        <section class="mmm-card" style="--card-accent:#db2777;">
+          <h2>Learning Target</h2>
+          <p><strong>I can calculate the mean, median, and mode of a dataset and explain how outliers affect each one.</strong></p>
+          <p>By the end of the lesson, students should be able to compute all three measures of center, and explain why the median is more resistant to outliers than the mean.</p>
+        </section>
+
+        <section class="mmm-card" style="--card-accent:#be185d;">
+          <h2>Three Measures of Center</h2>
+          <p>Each measure summarizes a dataset differently, and each can tell a different story about the same numbers.</p>
+          <div class="mmm-rule">
+            <div class="mmm-rule-box"><strong>Mean</strong><span>Add every value, then divide by how many values there are. Sensitive to outliers.</span></div>
+            <div class="mmm-rule-box"><strong>Median</strong><span>Sort the values and find the middle one (or average the two middle values). Resistant to outliers.</span></div>
+            <div class="mmm-rule-box"><strong>Mode</strong><span>The value that appears most often. A dataset can have one mode, several, or none.</span></div>
+          </div>
+        </section>
+
+        <section class="mmm-card" style="--card-accent:#7c3aed;">
+          <h2>Worked Example</h2>
+          <p>Find the mean, median, and mode of the dataset <span class="mmm-math">4, 7, 7, 9, 3</span>.</p>
+          <div class="mmm-example">
+            <div class="mmm-example-row"><div class="mmm-math">Mean = (4+7+7+9+3) / 5</div><div class="mmm-note">Add all five values, then divide by 5.</div></div>
+            <div class="mmm-example-row"><div class="mmm-math">Mean = 30 / 5 = 6</div><div class="mmm-note">The average of the five values is 6.</div></div>
+            <div class="mmm-example-row"><div class="mmm-math">Sorted: 3, 4, 7, 7, 9</div><div class="mmm-note">Arrange the values from least to greatest to find the median.</div></div>
+            <div class="mmm-example-row"><div class="mmm-math">Median = 7</div><div class="mmm-note">With five values, the middle (3rd) value is the median.</div></div>
+            <div class="mmm-example-row"><div class="mmm-math">Mode = 7</div><div class="mmm-note">7 appears twice, more than any other value.</div></div>
+          </div>
+        </section>
+
+        <section class="mmm-card" style="--card-accent:#0ea5e9;">
+          <h2>Drag the Dots</h2>
+          <p>Drag any dot along the number line. Watch how the mean (green) and median (blue) lines respond &mdash; especially when you drag one dot far to one side.</p>
+          <div class="mmm-workspace">
+            <svg class="mmm-plot" id="mmm-plot" viewBox="0 0 400 140" xmlns="http://www.w3.org/2000/svg"></svg>
+            <div class="mmm-legend">
+              <span><span class="swatch" style="background:#16a34a;"></span>Mean</span>
+              <span><span class="swatch" style="background:#0ea5e9;"></span>Median</span>
+            </div>
+            <div class="mmm-readout">
+              <div class="mmm-readout-item"><span>Mean</span><strong id="mmm-mean">6</strong></div>
+              <div class="mmm-readout-item"><span>Median</span><strong id="mmm-median">6</strong></div>
+              <div class="mmm-readout-item"><span>Mode</span><strong id="mmm-mode">&mdash;</strong></div>
+            </div>
+            <div class="mmm-tools">
+              <button class="mmm-tool-btn" type="button" id="mmm-reset">Reset Dataset</button>
+              <button class="mmm-tool-btn" type="button" id="mmm-outlier">Add Outlier Demo</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="mmm-card" style="--card-accent:#16a34a;">
+          <h2>Interactive Check</h2>
+          <p>Answer each question about mean, median, and mode. Use the feedback to catch mistakes.</p>
+          <div class="mmm-activity">
+            <div class="mmm-workspace">
+              <div class="mmm-question" id="mmm-question">What is the mean of 2, 4, 6, 8?</div>
+              <div class="mmm-options" id="mmm-options"></div>
+              <div class="mmm-feedback" id="mmm-feedback" aria-live="polite">Add the values, then divide by how many there are.</div>
+            </div>
+            <div class="mmm-side">
+              <div class="mmm-score"><strong id="mmm-score">0/0</strong><span>correct this round</span></div>
+              <button class="mmm-next" type="button" id="mmm-next">Next Question</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="mmm-card" style="--card-accent:#f59e0b;">
+          <h2>Guided Practice</h2>
+          <p>Find the requested measure for each dataset. Type the numeric value only.</p>
+          <div class="mmm-practice">
+            <div class="mmm-practice-item" data-answer="5"><span class="mmm-math">Mean of 1, 3, 5, 7, 9</span><input type="number" aria-label="Mean of 1, 3, 5, 7, 9" /><button class="mmm-check" type="button">Check</button><span class="mmm-mini-feedback"></span></div>
+            <div class="mmm-practice-item" data-answer="6"><span class="mmm-math">Median of 2, 6, 9, 12, 3</span><input type="number" aria-label="Median of 2, 6, 9, 12, 3" /><button class="mmm-check" type="button">Check</button><span class="mmm-mini-feedback"></span></div>
+            <div class="mmm-practice-item" data-answer="8"><span class="mmm-math">Mode of 8, 3, 8, 5, 8, 1</span><input type="number" aria-label="Mode of 8, 3, 8, 5, 8, 1" /><button class="mmm-check" type="button">Check</button><span class="mmm-mini-feedback"></span></div>
+            <div class="mmm-practice-item" data-answer="5.5"><span class="mmm-math">Median of 2, 4, 7, 9</span><input type="number" step="any" aria-label="Median of 2, 4, 7, 9" /><button class="mmm-check" type="button">Check</button><span class="mmm-mini-feedback"></span></div>
+          </div>
+        </section>
+
+        <section class="mmm-card mmm-exit" style="--card-accent:#dc2626;">
+          <h2>Exit Ticket</h2>
+          <p>Students answer these in complete sentences or with shown work.</p>
+          <ul>
+            <li>A team's scores are 10, 12, 11, 9, 58. Why is the median a better description of a "typical" score than the mean here?</li>
+            <li>Create a dataset of five numbers where the mean, median, and mode are all different.</li>
+            <li>Explain, in your own words, why the mean changes a lot when you add an outlier but the median usually does not.</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+
+    <aside class="ll-panel" aria-label="Lesson panel">
+      <div class="ll-panel-inner">
+        <div class="ll-tabs" role="tablist" aria-label="Mean median mode panel tabs">
+          <button class="ll-tab active" type="button" data-ll-tab="guide">Guide</button>
+          <button class="ll-tab" type="button" data-ll-tab="controls">Teacher</button>
+        </div>
+        <div class="ll-pane active" data-ll-panel="guide">
+          <span class="ll-label">Definitions</span>
+          <div class="ll-info"><strong>Mean</strong> sum of values divided by the count.</div>
+          <div class="ll-info"><strong>Median</strong> the middle value in sorted order.</div>
+          <div class="ll-info"><strong>Mode</strong> the most frequent value.</div>
+          <span class="ll-label">Common Trap</span>
+          <div class="ll-info"><strong>Outliers</strong> pull the mean toward them but barely move the median &mdash; that's why income and home-price data usually report medians.</div>
+        </div>
+        <div class="ll-pane" data-ll-panel="controls">
+          <span class="ll-label">Lesson Flow</span>
+          <div class="ll-info"><strong>Warm-up</strong> Ask students to guess the "average" test score from a list you read aloud.</div>
+          <div class="ll-info"><strong>Mini lesson</strong> Model finding all three measures for a small dataset.</div>
+          <div class="ll-info"><strong>Practice</strong> Use "Add Outlier Demo" to show how much the mean shifts vs. the median.</div>
+          <div class="ll-info"><strong>Check</strong> Use the exit ticket to confirm students can justify which measure to use.</div>
+        </div>
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+  </div>
+</div>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">Lessons</a></p>
+  </footer>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+    (function () {
+      // ---- Draggable dot plot ----
+      var svg = document.getElementById('mmm-plot');
+      var W = 400, H = 140;
+      var MIN = 0, MAX = 20;
+      var padX = 24;
+      var axisY = 40;
+
+      function toScreenX(v) { return padX + (v - MIN) / (MAX - MIN) * (W - padX * 2); }
+      function toValue(sx) { return MIN + (sx - padX) / (W - padX * 2) * (MAX - MIN); }
+
+      var values = [3, 4, 6, 7, 9];
+      var svgns = 'http://www.w3.org/2000/svg';
+      function el(tag, attrs) {
+        var node = document.createElementNS(svgns, tag);
+        for (var key in attrs) node.setAttribute(key, attrs[key]);
+        return node;
+      }
+
+      svg.innerHTML = '';
+      svg.appendChild(el('line', { class: 'axis-line', x1: padX, y1: axisY, x2: W - padX, y2: axisY }));
+      for (var t = MIN; t <= MAX; t += 2) {
+        var sx = toScreenX(t);
+        svg.appendChild(el('line', { class: 'tick-line', x1: sx, y1: axisY - 5, x2: sx, y2: axisY + 5 }));
+        var label = el('text', { class: 'tick-label', x: sx, y: axisY + 20, 'text-anchor': 'middle' });
+        label.textContent = t;
+        svg.appendChild(label);
+      }
+      var meanLine = el('line', { class: 'mmm-mean-line', x1: 0, y1: 5, x2: 0, y2: axisY - 8 });
+      var medianLine = el('line', { class: 'mmm-median-line', x1: 0, y1: 5, x2: 0, y2: axisY - 8 });
+      svg.appendChild(meanLine);
+      svg.appendChild(medianLine);
+
+      var dotEls = [];
+
+      function fmt(n) {
+        if (Math.abs(n - Math.round(n)) < 1e-9) return String(Math.round(n));
+        return n.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+      }
+
+      var meanEl = document.getElementById('mmm-mean');
+      var medianEl = document.getElementById('mmm-median');
+      var modeEl = document.getElementById('mmm-mode');
+
+      function computeMode(vals) {
+        var counts = {};
+        vals.forEach(function (v) {
+          var key = fmt(v);
+          counts[key] = (counts[key] || 0) + 1;
+        });
+        var max = 0;
+        for (var k in counts) if (counts[k] > max) max = counts[k];
+        if (max <= 1) return '—';
+        var modes = Object.keys(counts).filter(function (k) { return counts[k] === max; });
+        return modes.join(', ');
+      }
+
+      function render() {
+        // rebuild dots
+        dotEls.forEach(function (d) { svg.removeChild(d); });
+        dotEls = [];
+        values.forEach(function (v, idx) {
+          var cy = axisY + 22 + (idx % 3) * 0; // stack minimally, offset if same value
+        });
+        // stack overlapping dots vertically by value
+        var stacks = {};
+        values.forEach(function (v) {
+          var key = fmt(v);
+          stacks[key] = (stacks[key] || 0);
+        });
+        var seen = {};
+        values.forEach(function (v, idx) {
+          var key = fmt(v);
+          seen[key] = (seen[key] || 0);
+          var row = seen[key];
+          seen[key] += 1;
+          var cy = axisY + 24 + row * 20;
+          var circle = el('circle', { class: 'mmm-dot', r: 8, cx: toScreenX(v), cy: cy, 'data-index': idx });
+          svg.appendChild(circle);
+          dotEls.push(circle);
+        });
+
+        var sum = values.reduce(function (a, b) { return a + b; }, 0);
+        var mean = sum / values.length;
+        var sorted = values.slice().sort(function (a, b) { return a - b; });
+        var mid = Math.floor(sorted.length / 2);
+        var median = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+
+        meanEl.textContent = fmt(mean);
+        medianEl.textContent = fmt(median);
+        modeEl.textContent = computeMode(values);
+
+        var meanX = toScreenX(mean);
+        meanLine.setAttribute('x1', meanX);
+        meanLine.setAttribute('x2', meanX);
+        var medianX = toScreenX(median);
+        medianLine.setAttribute('x1', medianX);
+        medianLine.setAttribute('x2', medianX);
+
+        attachDragHandlers();
+      }
+
+      function screenXFromEvent(evt) {
+        var rect = svg.getBoundingClientRect();
+        var clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+        return (clientX - rect.left) * (W / rect.width);
+      }
+
+      function attachDragHandlers() {
+        dotEls.forEach(function (circle) {
+          var idx = Number(circle.getAttribute('data-index'));
+          var dragging = false;
+          function start(evt) { dragging = true; evt.preventDefault(); }
+          function move(evt) {
+            if (!dragging) return;
+            var sx = screenXFromEvent(evt);
+            var v = Math.max(MIN, Math.min(MAX, Math.round(toValue(sx))));
+            values[idx] = v;
+            render();
+          }
+          function end() { dragging = false; }
+          circle.addEventListener('mousedown', start);
+          circle.addEventListener('touchstart', start, { passive: false });
+          circle.addEventListener('mousemove', function () {});
+          window.addEventListener('mousemove', move);
+          window.addEventListener('touchmove', move, { passive: false });
+          window.addEventListener('mouseup', end);
+          window.addEventListener('touchend', end);
+        });
+      }
+
+      render();
+
+      document.getElementById('mmm-reset').addEventListener('click', function () {
+        values = [3, 4, 6, 7, 9];
+        render();
+      });
+      document.getElementById('mmm-outlier').addEventListener('click', function () {
+        values = [3, 4, 6, 7, 20];
+        render();
+      });
+
+      // ---- Interactive Check ----
+      var questions = [
+        { q: 'What is the mean of 2, 4, 6, 8?', answer: 5, choices: [5, 6, 4, 20], feedback: 'Sum = 20, divided by 4 values gives a mean of 5.' },
+        { q: 'What is the median of 1, 3, 3, 9, 12?', answer: 3, choices: [3, 9, 5.6, 6], feedback: 'Sorted, the middle (3rd) value out of five is 3.' },
+        { q: 'What is the mode of 5, 5, 7, 8, 8, 8?', answer: 8, choices: [5, 7, 8, 6.8], feedback: '8 appears three times, more often than any other value.' },
+        { q: 'A dataset is 4, 5, 6, 7, 40. Which measure best describes a "typical" value?', answer: 'Median', choices: ['Mean', 'Median', 'Mode', 'None of them'], feedback: 'The outlier 40 pulls the mean way up, so the median (6) better represents a typical value.' },
+        { q: 'What is the median of 10, 20, 30, 40?', answer: 25, choices: [25, 30, 20, 15], feedback: 'With an even count, average the two middle values: (20 + 30) / 2 = 25.' }
+      ];
+
+      var questionEl = document.getElementById('mmm-question');
+      var options = document.getElementById('mmm-options');
+      var feedback = document.getElementById('mmm-feedback');
+      var score = document.getElementById('mmm-score');
+      var next = document.getElementById('mmm-next');
+      var qIndex = 0;
+      var correct = 0;
+      var attempted = 0;
+      var locked = false;
+
+      function renderQuestion() {
+        var item = questions[qIndex % questions.length];
+        locked = false;
+        questionEl.textContent = item.q;
+        options.innerHTML = '';
+        feedback.textContent = 'Think about how each measure is calculated.';
+        item.choices.forEach(function (choice) {
+          var button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'mmm-choice';
+          button.textContent = choice;
+          button.addEventListener('click', function () {
+            if (locked) return;
+            locked = true;
+            attempted += 1;
+            if (choice === item.answer) {
+              correct += 1;
+              button.classList.add('correct');
+              feedback.textContent = 'Correct. ' + item.feedback;
+            } else {
+              button.classList.add('wrong');
+              Array.prototype.forEach.call(options.children, function (option) {
+                if (String(option.textContent) === String(item.answer)) option.classList.add('correct');
+              });
+              feedback.textContent = 'Not quite. ' + item.feedback;
+            }
+            score.textContent = correct + '/' + attempted;
+          });
+          options.appendChild(button);
+        });
+        score.textContent = correct + '/' + attempted;
+      }
+
+      next.addEventListener('click', function () {
+        qIndex += 1;
+        renderQuestion();
+      });
+      renderQuestion();
+
+      document.querySelectorAll('.mmm-practice-item').forEach(function (item) {
+        var input = item.querySelector('input');
+        var button = item.querySelector('.mmm-check');
+        var feedbackNode = item.querySelector('.mmm-mini-feedback');
+        button.addEventListener('click', function () {
+          var expected = Number(item.getAttribute('data-answer'));
+          var actual = Number(input.value);
+          feedbackNode.className = 'mmm-mini-feedback';
+          if (Math.abs(actual - expected) < 1e-6) {
+            feedbackNode.textContent = 'Correct';
+            feedbackNode.classList.add('ok');
+          } else {
+            feedbackNode.textContent = 'Try again';
+            feedbackNode.classList.add('no');
+          }
+        });
+        input.addEventListener('keydown', function (event) {
+          if (event.key === 'Enter') button.click();
+        });
+      });
+    })();
+  </script>
+  <script src="../assets/js/classroom-animations.js"></script>
+  <script src="../assets/js/lesson-layout.js"></script>
+<script src="../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

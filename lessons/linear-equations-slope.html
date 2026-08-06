@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Linear Equations &amp; Slope · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Mathematics lesson on linear equations and slope with a draggable coordinate plane, worked examples, guided practice, and an interactive answer checker." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 304px; --ll-accent: #6366f1; --ll-tab-active: #6366f1; --ll-tab-active-bg: rgba(99,102,241,0.12); }
+    .lin-page { padding-bottom: 3.5rem; }
+    .lin-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .lin-hero h1 { max-width: 28ch; margin: 0; font-size: clamp(1.55rem, 3.5vw, 2.35rem); }
+    .lin-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.55rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .lin-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45; }
+    .lin-lede { max-width: 70ch; margin: 0.7rem 0 0; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+    [data-lighting="night"] .lin-lede,
+    [data-theme="vaporwave"] .lin-lede,
+    [data-theme="bark"] .lin-lede { color: rgba(245,245,247,0.72); }
+
+    .lin-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--card-accent, #6366f1);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.4rem;
+      margin-bottom: 1rem;
+    }
+    [data-lighting="night"] .lin-card,
+    [data-theme="vaporwave"] .lin-card,
+    [data-theme="bark"] .lin-card { background: var(--white, #2c2c2e); }
+    .lin-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .lin-card h3 { margin: 0.95rem 0 0.35rem; font-size: 1rem; letter-spacing: -0.01em; }
+    .lin-card p { margin: 0 0 0.62rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .lin-card p:last-child { margin-bottom: 0; }
+    [data-lighting="night"] .lin-card p,
+    [data-theme="vaporwave"] .lin-card p,
+    [data-theme="bark"] .lin-card p { color: rgba(245,245,247,0.72); }
+
+    .lin-rule {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.8rem;
+      margin-top: 0.85rem;
+    }
+    .lin-rule-box {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 10px;
+      padding: 0.85rem;
+      background: rgba(0,0,0,0.03);
+    }
+    [data-lighting="night"] .lin-rule-box,
+    [data-theme="vaporwave"] .lin-rule-box,
+    [data-theme="bark"] .lin-rule-box { background: rgba(255,255,255,0.04); }
+    .lin-rule-box strong { display: block; margin-bottom: 0.25rem; font-size: 0.86rem; }
+    .lin-rule-box span { color: var(--text-muted, #64748b); font-size: 0.8rem; line-height: 1.5; display: block; }
+
+    .lin-example {
+      margin-top: 0.85rem;
+      border: 1px solid rgba(99,102,241,0.22);
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(99,102,241,0.045);
+    }
+    .lin-example-row {
+      display: grid;
+      grid-template-columns: 1.15fr 2fr;
+      gap: 1rem;
+      padding: 0.72rem 0.9rem;
+      border-bottom: 1px solid rgba(99,102,241,0.16);
+      align-items: start;
+    }
+    .lin-example-row:last-child { border-bottom: 0; }
+    .lin-math {
+      font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text, #1d1d1f);
+      letter-spacing: 0;
+    }
+    .lin-note { color: var(--text-secondary, #3f4f65); font-size: 0.82rem; line-height: 1.5; }
+    [data-lighting="night"] .lin-note,
+    [data-theme="vaporwave"] .lin-note,
+    [data-theme="bark"] .lin-note { color: rgba(245,245,247,0.72); }
+
+    .lin-plane-wrap {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 260px;
+      gap: 1rem;
+      align-items: start;
+      margin-top: 0.85rem;
+    }
+    .lin-workspace {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 12px;
+      padding: 0.8rem;
+      background: rgba(0,0,0,0.03);
+    }
+    [data-lighting="night"] .lin-workspace,
+    [data-theme="vaporwave"] .lin-workspace,
+    [data-theme="bark"] .lin-workspace { background: rgba(255,255,255,0.04); }
+    .lin-plane { width: 100%; height: auto; touch-action: none; user-select: none; }
+    .lin-plane .grid-line { stroke: var(--line, #d2d2d7); stroke-width: 1; }
+    [data-lighting="night"] .lin-plane .grid-line,
+    [data-theme="vaporwave"] .lin-plane .grid-line,
+    [data-theme="bark"] .lin-plane .grid-line { stroke: rgba(255,255,255,0.14); }
+    .lin-plane .axis-line { stroke: var(--text-muted, #64748b); stroke-width: 1.5; }
+    .lin-plane .lin-segment { stroke: #6366f1; stroke-width: 3; }
+    .lin-plane .lin-point { fill: #6366f1; stroke: #fff; stroke-width: 2; cursor: grab; }
+    .lin-plane .lin-point:active { cursor: grabbing; }
+    [data-lighting="night"] .lin-plane .lin-point,
+    [data-theme="vaporwave"] .lin-plane .lin-point,
+    [data-theme="bark"] .lin-plane .lin-point { stroke: #1c1c1e; }
+    .lin-readout {
+      display: grid;
+      gap: 0.55rem;
+      margin-top: 0.7rem;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .lin-readout-item {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 9px;
+      padding: 0.55rem 0.65rem;
+      background: rgba(99,102,241,0.06);
+      text-align: center;
+    }
+    [data-lighting="night"] .lin-readout-item,
+    [data-theme="vaporwave"] .lin-readout-item,
+    [data-theme="bark"] .lin-readout-item { background: rgba(255,255,255,0.045); }
+    .lin-readout-item span { display: block; font-size: 0.72rem; color: var(--text-muted, #64748b); margin-bottom: 0.15rem; }
+    .lin-readout-item strong { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 1rem; }
+
+    .lin-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; }
+    .lin-choice {
+      border: 1.5px solid var(--line, #d2d2d7);
+      border-radius: 9px;
+      padding: 0.62rem 0.7rem;
+      background: var(--white, #fff);
+      color: var(--text, #1d1d1f);
+      font: 700 0.9rem var(--font-sans);
+      cursor: pointer;
+      text-align: left;
+    }
+    [data-lighting="night"] .lin-choice,
+    [data-theme="vaporwave"] .lin-choice,
+    [data-theme="bark"] .lin-choice { background: rgba(255,255,255,0.04); }
+    .lin-choice:hover, .lin-choice:focus { border-color: #6366f1; outline: none; }
+    .lin-choice.correct { border-color: #16a34a; background: rgba(22,163,74,0.12); }
+    .lin-choice.wrong { border-color: #dc2626; background: rgba(220,38,38,0.1); }
+    .lin-question { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.7rem; }
+    .lin-feedback {
+      min-height: 2.2rem;
+      margin-top: 0.8rem;
+      color: var(--text-secondary, #3f4f65);
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+    [data-lighting="night"] .lin-feedback,
+    [data-theme="vaporwave"] .lin-feedback,
+    [data-theme="bark"] .lin-feedback { color: rgba(245,245,247,0.72); }
+    .lin-side { display: grid; gap: 0.7rem; }
+    .lin-score {
+      border-radius: 12px;
+      border: 1px solid rgba(99,102,241,0.22);
+      background: rgba(99,102,241,0.08);
+      padding: 0.9rem;
+    }
+    .lin-score strong { display: block; font-size: 1.55rem; line-height: 1; }
+    .lin-score span { color: var(--text-muted, #64748b); font-size: 0.8rem; }
+    .lin-next {
+      border: 0;
+      border-radius: 9px;
+      padding: 0.68rem 0.8rem;
+      background: #6366f1;
+      color: #fff;
+      font: 800 0.86rem var(--font-sans);
+      cursor: pointer;
+    }
+    .lin-next:hover { filter: brightness(0.96); }
+
+    .lin-practice { display: grid; gap: 0.72rem; margin-top: 0.85rem; }
+    .lin-practice-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 0.55rem;
+      align-items: center;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 10px;
+      padding: 0.75rem;
+      background: rgba(0,0,0,0.03);
+    }
+    [data-lighting="night"] .lin-practice-item,
+    [data-theme="vaporwave"] .lin-practice-item,
+    [data-theme="bark"] .lin-practice-item { background: rgba(255,255,255,0.04); }
+    .lin-practice-item input {
+      width: 82px;
+      border: 1.5px solid var(--line, #d2d2d7);
+      border-radius: 8px;
+      padding: 0.42rem 0.55rem;
+      background: var(--white, #fff);
+      color: var(--text, #1d1d1f);
+      font: 700 0.88rem var(--font-sans);
+    }
+    [data-lighting="night"] .lin-practice-item input,
+    [data-theme="vaporwave"] .lin-practice-item input,
+    [data-theme="bark"] .lin-practice-item input { background: rgba(255,255,255,0.04); }
+    .lin-check {
+      border: 0;
+      border-radius: 8px;
+      padding: 0.47rem 0.7rem;
+      background: #334155;
+      color: #fff;
+      font: 800 0.8rem var(--font-sans);
+      cursor: pointer;
+    }
+    .lin-mini-feedback { min-width: 7ch; font-size: 0.8rem; font-weight: 800; }
+    .lin-mini-feedback.ok { color: #16a34a; }
+    .lin-mini-feedback.no { color: #dc2626; }
+
+    .lin-exit ul { margin: 0.65rem 0 0; padding-left: 1.15rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    [data-lighting="night"] .lin-exit ul,
+    [data-theme="vaporwave"] .lin-exit ul,
+    [data-theme="bark"] .lin-exit ul { color: rgba(245,245,247,0.72); }
+
+    @media (max-width: 900px) {
+      .lin-plane-wrap { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .lin-rule, .lin-options, .lin-readout { grid-template-columns: 1fr; }
+      .lin-example-row, .lin-practice-item { grid-template-columns: 1fr; }
+      .lin-practice-item input { width: 100%; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../paths.html">Paths</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Apps</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="lin-page">
+        <section class="hero lin-hero">
+          <p class="eyebrow">Mathematics · Lesson 09</p>
+          <h1>Linear Equations &amp; Slope</h1>
+          <div class="lin-hero-meta">
+            <span>Slope as rise over run</span><span class="dot"></span>
+            <span>Slope-intercept form</span><span class="dot"></span>
+            <span>Reading a line from two points</span>
+          </div>
+          <p class="lin-lede">Every straight line has a steepness and a starting height. In this lesson, students drag two points on a coordinate plane to see slope and the y-intercept update live, then practice writing and reading equations in <span class="lin-math">y = mx + b</span> form.</p>
+        </section>
+
+        <section class="lin-card" style="--card-accent:#6366f1;">
+          <h2>Learning Target</h2>
+          <p><strong>I can find the slope and equation of a line from two points and explain what each part means.</strong></p>
+          <p>By the end of the lesson, students should be able to compute slope as <span class="lin-math">rise / run</span>, identify the y-intercept from a graph or table, and write the resulting equation in slope-intercept form.</p>
+        </section>
+
+        <section class="lin-card" style="--card-accent:#4f46e5;">
+          <h2>Slope-Intercept Form</h2>
+          <p>A line can always be written as <span class="lin-math">y = mx + b</span>, where <span class="lin-math">m</span> is the slope and <span class="lin-math">b</span> is the y-intercept &mdash; the value of y when x is 0.</p>
+          <div class="lin-rule">
+            <div class="lin-rule-box"><strong>Slope (m)</strong><span>How steep the line is. Slope = rise / run = (change in y) / (change in x) between any two points on the line.</span></div>
+            <div class="lin-rule-box"><strong>Y-intercept (b)</strong><span>Where the line crosses the y-axis. It is the starting value before x changes anything.</span></div>
+          </div>
+        </section>
+
+        <section class="lin-card" style="--card-accent:#7c3aed;">
+          <h2>Worked Example</h2>
+          <p>Find the equation of the line through <span class="lin-math">(1, 2)</span> and <span class="lin-math">(4, 8)</span>.</p>
+          <div class="lin-example">
+            <div class="lin-example-row"><div class="lin-math">m = (8 - 2) / (4 - 1)</div><div class="lin-note">Slope is change in y over change in x between the two points.</div></div>
+            <div class="lin-example-row"><div class="lin-math">m = 6 / 3 = 2</div><div class="lin-note">The line rises 2 units for every 1 unit it runs right.</div></div>
+            <div class="lin-example-row"><div class="lin-math">2 = 2(1) + b</div><div class="lin-note">Substitute one point and the slope into y = mx + b to solve for b.</div></div>
+            <div class="lin-example-row"><div class="lin-math">b = 0</div><div class="lin-note">Solve: 2 = 2 + b, so b = 0.</div></div>
+            <div class="lin-example-row"><div class="lin-math">y = 2x</div><div class="lin-note">Final equation in slope-intercept form.</div></div>
+          </div>
+        </section>
+
+        <section class="lin-card" style="--card-accent:#0ea5e9;">
+          <h2>Drag the Points</h2>
+          <p>Drag the two dots to reshape the line. Slope, rise/run, and the equation update as you move.</p>
+          <div class="lin-plane-wrap">
+            <div class="lin-workspace">
+              <svg class="lin-plane" id="lin-plane" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg"></svg>
+              <div class="lin-readout">
+                <div class="lin-readout-item"><span>Rise / Run</span><strong id="lin-rise-run">6 / 3</strong></div>
+                <div class="lin-readout-item"><span>Slope (m)</span><strong id="lin-slope">2</strong></div>
+                <div class="lin-readout-item"><span>Equation</span><strong id="lin-equation">y = 2x</strong></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="lin-card" style="--card-accent:#16a34a;">
+          <h2>Interactive Check</h2>
+          <p>Answer each slope and intercept question. Use the feedback to catch mistakes.</p>
+          <div class="lin-plane-wrap">
+            <div class="lin-workspace">
+              <div class="lin-question" id="lin-question">What is the slope of the line through (0, 1) and (2, 5)?</div>
+              <div class="lin-options" id="lin-options"></div>
+              <div class="lin-feedback" id="lin-feedback" aria-live="polite">Compute rise over run between the two points.</div>
+            </div>
+            <div class="lin-side">
+              <div class="lin-score"><strong id="lin-score">0/0</strong><span>correct this round</span></div>
+              <button class="lin-next" type="button" id="lin-next">Next Question</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="lin-card" style="--card-accent:#f59e0b;">
+          <h2>Guided Practice</h2>
+          <p>Find the slope for each pair of points. Type the numeric value only.</p>
+          <div class="lin-practice">
+            <div class="lin-practice-item" data-answer="3"><span class="lin-math">(0, 0) and (2, 6)</span><input type="number" aria-label="Slope for points 0,0 and 2,6" /><button class="lin-check" type="button">Check</button><span class="lin-mini-feedback"></span></div>
+            <div class="lin-practice-item" data-answer="-2"><span class="lin-math">(1, 5) and (3, 1)</span><input type="number" aria-label="Slope for points 1,5 and 3,1" /><button class="lin-check" type="button">Check</button><span class="lin-mini-feedback"></span></div>
+            <div class="lin-practice-item" data-answer="0.5"><span class="lin-math">(0, 1) and (4, 3)</span><input type="number" step="any" aria-label="Slope for points 0,1 and 4,3" /><button class="lin-check" type="button">Check</button><span class="lin-mini-feedback"></span></div>
+            <div class="lin-practice-item" data-answer="4"><span class="lin-math">y-intercept of y = 3x + 4</span><input type="number" aria-label="Y intercept of y equals 3x plus 4" /><button class="lin-check" type="button">Check</button><span class="lin-mini-feedback"></span></div>
+          </div>
+        </section>
+
+        <section class="lin-card lin-exit" style="--card-accent:#dc2626;">
+          <h2>Exit Ticket</h2>
+          <p>Students answer these in complete sentences or with shown work.</p>
+          <ul>
+            <li>What does it mean for a line to have a negative slope? Sketch an example.</li>
+            <li>Write the equation of a line that passes through the origin with slope 5.</li>
+            <li>Explain the difference between the slope and the y-intercept in your own words.</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+
+    <aside class="ll-panel" aria-label="Lesson panel">
+      <div class="ll-panel-inner">
+        <div class="ll-tabs" role="tablist" aria-label="Linear equations panel tabs">
+          <button class="ll-tab active" type="button" data-ll-tab="guide">Guide</button>
+          <button class="ll-tab" type="button" data-ll-tab="controls">Teacher</button>
+        </div>
+        <div class="ll-pane active" data-ll-panel="guide">
+          <span class="ll-label">Slope-Intercept Form</span>
+          <div class="ll-info"><strong>y = mx + b</strong> m is the slope, b is the y-intercept.</div>
+          <div class="ll-info"><strong>Slope</strong> rise over run between any two points on the line.</div>
+          <span class="ll-label">Common Trap</span>
+          <div class="ll-info"><strong>Negative slope</strong> The line falls left to right; run stays positive, rise becomes negative.</div>
+        </div>
+        <div class="ll-pane" data-ll-panel="controls">
+          <span class="ll-label">Lesson Flow</span>
+          <div class="ll-info"><strong>Warm-up</strong> Ask students to describe what "steep" means for a hill vs. a line.</div>
+          <div class="ll-info"><strong>Mini lesson</strong> Model computing slope from two labeled points.</div>
+          <div class="ll-info"><strong>Practice</strong> Have students drag the points to hit target slopes you call out.</div>
+          <div class="ll-info"><strong>Check</strong> Use the exit ticket to confirm students can separate slope from intercept.</div>
+        </div>
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+  </div>
+</div>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">Lessons</a></p>
+  </footer>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+    (function () {
+      // ---- Draggable coordinate plane ----
+      var svg = document.getElementById('lin-plane');
+      var SIZE = 400;
+      var RANGE = 10; // graph coords from -10 to 10
+      var SCALE = SIZE / (RANGE * 2);
+
+      function gx(px) { return (px - RANGE) * -1 === 0 ? px : px; }
+      function toScreenX(x) { return SIZE / 2 + x * SCALE; }
+      function toScreenY(y) { return SIZE / 2 - y * SCALE; }
+      function toGraphX(sx) { return Math.round((sx - SIZE / 2) / SCALE); }
+      function toGraphY(sy) { return Math.round((SIZE / 2 - sy) / SCALE); }
+
+      var points = [ { x: -3, y: -4 }, { x: 3, y: 8 } ];
+
+      var svgns = 'http://www.w3.org/2000/svg';
+      function el(tag, attrs) {
+        var node = document.createElementNS(svgns, tag);
+        for (var key in attrs) node.setAttribute(key, attrs[key]);
+        return node;
+      }
+
+      var gridGroup = el('g', {});
+      svg.appendChild(gridGroup);
+      for (var i = -RANGE; i <= RANGE; i++) {
+        gridGroup.appendChild(el('line', { class: 'grid-line', x1: toScreenX(i), y1: 0, x2: toScreenX(i), y2: SIZE }));
+        gridGroup.appendChild(el('line', { class: 'grid-line', x1: 0, y1: toScreenY(i), x2: SIZE, y2: toScreenY(i) }));
+      }
+      gridGroup.appendChild(el('line', { class: 'axis-line', x1: 0, y1: toScreenY(0), x2: SIZE, y2: toScreenY(0) }));
+      gridGroup.appendChild(el('line', { class: 'axis-line', x1: toScreenX(0), y1: 0, x2: toScreenX(0), y2: SIZE }));
+
+      var segment = el('line', { class: 'lin-segment' });
+      svg.appendChild(segment);
+
+      var pointEls = points.map(function (p, idx) {
+        var circle = el('circle', { class: 'lin-point', r: 9, cx: toScreenX(p.x), cy: toScreenY(p.y) });
+        svg.appendChild(circle);
+        return circle;
+      });
+
+      var riseRunEl = document.getElementById('lin-rise-run');
+      var slopeEl = document.getElementById('lin-slope');
+      var equationEl = document.getElementById('lin-equation');
+
+      function fmt(n) {
+        if (Math.abs(n - Math.round(n)) < 1e-9) return String(Math.round(n));
+        return n.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+      }
+
+      function render() {
+        var p1 = points[0], p2 = points[1];
+        pointEls[0].setAttribute('cx', toScreenX(p1.x));
+        pointEls[0].setAttribute('cy', toScreenY(p1.y));
+        pointEls[1].setAttribute('cx', toScreenX(p2.x));
+        pointEls[1].setAttribute('cy', toScreenY(p2.y));
+
+        var extended1x = -RANGE, extended2x = RANGE;
+        var dx = p2.x - p1.x;
+        var dy = p2.y - p1.y;
+        if (dx === 0) {
+          segment.setAttribute('x1', toScreenX(p1.x));
+          segment.setAttribute('y1', 0);
+          segment.setAttribute('x2', toScreenX(p1.x));
+          segment.setAttribute('y2', SIZE);
+          riseRunEl.textContent = fmt(dy) + ' / 0';
+          slopeEl.textContent = 'undefined';
+          equationEl.textContent = 'x = ' + fmt(p1.x);
+          return;
+        }
+        var m = dy / dx;
+        var b = p1.y - m * p1.x;
+        var y1 = m * extended1x + b;
+        var y2 = m * extended2x + b;
+        segment.setAttribute('x1', toScreenX(extended1x));
+        segment.setAttribute('y1', toScreenY(y1));
+        segment.setAttribute('x2', toScreenX(extended2x));
+        segment.setAttribute('y2', toScreenY(y2));
+
+        riseRunEl.textContent = fmt(dy) + ' / ' + fmt(dx);
+        slopeEl.textContent = fmt(m);
+        var bText = b === 0 ? '' : (b > 0 ? ' + ' + fmt(b) : ' - ' + fmt(Math.abs(b)));
+        var mText = Math.abs(m) === 1 ? (m < 0 ? '-x' : 'x') : fmt(m) + 'x';
+        equationEl.textContent = 'y = ' + mText + bText;
+      }
+
+      function screenPointFromEvent(evt) {
+        var rect = svg.getBoundingClientRect();
+        var clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+        var clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+        var sx = (clientX - rect.left) * (SIZE / rect.width);
+        var sy = (clientY - rect.top) * (SIZE / rect.height);
+        return { x: sx, y: sy };
+      }
+
+      pointEls.forEach(function (circle, idx) {
+        var dragging = false;
+        function start(evt) { dragging = true; evt.preventDefault(); }
+        function move(evt) {
+          if (!dragging) return;
+          var sp = screenPointFromEvent(evt);
+          var gxv = Math.max(-RANGE, Math.min(RANGE, toGraphX(sp.x)));
+          var gyv = Math.max(-RANGE, Math.min(RANGE, toGraphY(sp.y)));
+          var other = points[1 - idx];
+          if (gxv === other.x && gyv === other.y) return;
+          points[idx] = { x: gxv, y: gyv };
+          render();
+        }
+        function end() { dragging = false; }
+        circle.addEventListener('mousedown', start);
+        circle.addEventListener('touchstart', start, { passive: false });
+        window.addEventListener('mousemove', move);
+        window.addEventListener('touchmove', move, { passive: false });
+        window.addEventListener('mouseup', end);
+        window.addEventListener('touchend', end);
+      });
+
+      render();
+
+      // ---- Interactive Check ----
+      var questions = [
+        { q: 'What is the slope of the line through (0, 1) and (2, 5)?', answer: 2, choices: [2, 4, 0.5, -2], feedback: 'Slope = (5 - 1) / (2 - 0) = 4 / 2 = 2.' },
+        { q: 'What is the slope of the line through (1, 6) and (4, 0)?', answer: -2, choices: [2, -2, -3, 3], feedback: 'Slope = (0 - 6) / (4 - 1) = -6 / 3 = -2.' },
+        { q: 'What is the y-intercept of y = 4x - 7?', answer: -7, choices: [4, -7, 7, -4], feedback: 'In y = mx + b, b is the y-intercept, which is -7 here.' },
+        { q: 'A line passes through (0, 3) and (2, 3). What is its slope?', answer: 0, choices: [0, 1, 3, 'undefined'], feedback: 'The y-values do not change, so rise = 0, and slope = 0 / run = 0.' },
+        { q: 'What is the slope of the line through (2, 2) and (2, 9)?', answer: 'undefined', choices: [0, 1, 7, 'undefined'], feedback: 'The x-values are the same, so run = 0, making the slope undefined (a vertical line).' }
+      ];
+
+      var questionEl = document.getElementById('lin-question');
+      var options = document.getElementById('lin-options');
+      var feedback = document.getElementById('lin-feedback');
+      var score = document.getElementById('lin-score');
+      var next = document.getElementById('lin-next');
+      var qIndex = 0;
+      var correct = 0;
+      var attempted = 0;
+      var locked = false;
+
+      function renderQuestion() {
+        var item = questions[qIndex % questions.length];
+        locked = false;
+        questionEl.textContent = item.q;
+        options.innerHTML = '';
+        feedback.textContent = 'Compute rise over run between the two points.';
+        item.choices.forEach(function (choice) {
+          var button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'lin-choice';
+          button.textContent = choice;
+          button.addEventListener('click', function () {
+            if (locked) return;
+            locked = true;
+            attempted += 1;
+            if (choice === item.answer) {
+              correct += 1;
+              button.classList.add('correct');
+              feedback.textContent = 'Correct. ' + item.feedback;
+            } else {
+              button.classList.add('wrong');
+              Array.prototype.forEach.call(options.children, function (option) {
+                if (String(option.textContent) === String(item.answer)) option.classList.add('correct');
+              });
+              feedback.textContent = 'Not quite. ' + item.feedback;
+            }
+            score.textContent = correct + '/' + attempted;
+          });
+          options.appendChild(button);
+        });
+        score.textContent = correct + '/' + attempted;
+      }
+
+      next.addEventListener('click', function () {
+        qIndex += 1;
+        renderQuestion();
+      });
+      renderQuestion();
+
+      document.querySelectorAll('.lin-practice-item').forEach(function (item) {
+        var input = item.querySelector('input');
+        var button = item.querySelector('.lin-check');
+        var feedbackNode = item.querySelector('.lin-mini-feedback');
+        button.addEventListener('click', function () {
+          var expected = Number(item.getAttribute('data-answer'));
+          var actual = Number(input.value);
+          feedbackNode.className = 'lin-mini-feedback';
+          if (Math.abs(actual - expected) < 1e-6) {
+            feedbackNode.textContent = 'Correct';
+            feedbackNode.classList.add('ok');
+          } else {
+            feedbackNode.textContent = 'Try again';
+            feedbackNode.classList.add('no');
+          }
+        });
+        input.addEventListener('keydown', function (event) {
+          if (event.key === 'Enter') button.click();
+        });
+      });
+    })();
+  </script>
+  <script src="../assets/js/classroom-animations.js"></script>
+  <script src="../assets/js/lesson-layout.js"></script>
+<script src="../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

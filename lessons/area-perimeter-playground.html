@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Area &amp; Perimeter Playground · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Mathematics lesson on area and perimeter with a clickable grid builder, worked examples, guided practice, and an interactive answer checker." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 304px; --ll-accent: #ea580c; --ll-tab-active: #ea580c; --ll-tab-active-bg: rgba(234,88,12,0.12); }
+    .arp-page { padding-bottom: 3.5rem; }
+    .arp-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .arp-hero h1 { max-width: 28ch; margin: 0; font-size: clamp(1.55rem, 3.5vw, 2.35rem); }
+    .arp-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.55rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .arp-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45; }
+    .arp-lede { max-width: 70ch; margin: 0.7rem 0 0; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+    [data-lighting="night"] .arp-lede,
+    [data-theme="vaporwave"] .arp-lede,
+    [data-theme="bark"] .arp-lede { color: rgba(245,245,247,0.72); }
+
+    .arp-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--card-accent, #ea580c);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.4rem;
+      margin-bottom: 1rem;
+    }
+    [data-lighting="night"] .arp-card,
+    [data-theme="vaporwave"] .arp-card,
+    [data-theme="bark"] .arp-card { background: var(--white, #2c2c2e); }
+    .arp-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .arp-card h3 { margin: 0.95rem 0 0.35rem; font-size: 1rem; letter-spacing: -0.01em; }
+    .arp-card p { margin: 0 0 0.62rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .arp-card p:last-child { margin-bottom: 0; }
+    [data-lighting="night"] .arp-card p,
+    [data-theme="vaporwave"] .arp-card p,
+    [data-theme="bark"] .arp-card p { color: rgba(245,245,247,0.72); }
+
+    .arp-rule {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.8rem;
+      margin-top: 0.85rem;
+    }
+    .arp-rule-box {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 10px;
+      padding: 0.85rem;
+      background: rgba(0,0,0,0.03);
+    }
+    [data-lighting="night"] .arp-rule-box,
+    [data-theme="vaporwave"] .arp-rule-box,
+    [data-theme="bark"] .arp-rule-box { background: rgba(255,255,255,0.04); }
+    .arp-rule-box strong { display: block; margin-bottom: 0.25rem; font-size: 0.86rem; }
+    .arp-rule-box span { color: var(--text-muted, #64748b); font-size: 0.8rem; line-height: 1.5; display: block; }
+
+    .arp-example {
+      margin-top: 0.85rem;
+      border: 1px solid rgba(234,88,12,0.22);
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(234,88,12,0.045);
+    }
+    .arp-example-row {
+      display: grid;
+      grid-template-columns: 1.15fr 2fr;
+      gap: 1rem;
+      padding: 0.72rem 0.9rem;
+      border-bottom: 1px solid rgba(234,88,12,0.16);
+      align-items: start;
+    }
+    .arp-example-row:last-child { border-bottom: 0; }
+    .arp-math {
+      font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text, #1d1d1f);
+      letter-spacing: 0;
+    }
+    .arp-note { color: var(--text-secondary, #3f4f65); font-size: 0.82rem; line-height: 1.5; }
+    [data-lighting="night"] .arp-note,
+    [data-theme="vaporwave"] .arp-note,
+    [data-theme="bark"] .arp-note { color: rgba(245,245,247,0.72); }
+
+    .arp-activity {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 260px;
+      gap: 1rem;
+      align-items: start;
+      margin-top: 0.85rem;
+    }
+    .arp-workspace {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 12px;
+      padding: 1rem;
+      background: rgba(0,0,0,0.03);
+    }
+    [data-lighting="night"] .arp-workspace,
+    [data-theme="vaporwave"] .arp-workspace,
+    [data-theme="bark"] .arp-workspace { background: rgba(255,255,255,0.04); }
+    .arp-grid {
+      display: grid;
+      grid-template-columns: repeat(10, minmax(0, 1fr));
+      gap: 2px;
+      max-width: 380px;
+      margin: 0 auto 0.9rem;
+      aspect-ratio: 1;
+      user-select: none;
+      touch-action: none;
+    }
+    .arp-cell {
+      background: rgba(0,0,0,0.045);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 2px;
+      cursor: pointer;
+    }
+    [data-lighting="night"] .arp-cell,
+    [data-theme="vaporwave"] .arp-cell,
+    [data-theme="bark"] .arp-cell { background: rgba(255,255,255,0.035); border-color: rgba(255,255,255,0.14); }
+    .arp-cell.on { background: #ea580c; border-color: #ea580c; }
+    .arp-readout {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+    .arp-readout-item {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 9px;
+      padding: 0.55rem 0.65rem;
+      background: rgba(234,88,12,0.06);
+      text-align: center;
+    }
+    [data-lighting="night"] .arp-readout-item,
+    [data-theme="vaporwave"] .arp-readout-item,
+    [data-theme="bark"] .arp-readout-item { background: rgba(255,255,255,0.045); }
+    .arp-readout-item span { display: block; font-size: 0.72rem; color: var(--text-muted, #64748b); margin-bottom: 0.15rem; }
+    .arp-readout-item strong { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 1.15rem; }
+    .arp-tools { display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.8rem; flex-wrap: wrap; }
+    .arp-tool-btn {
+      border: 1.5px solid var(--line, #d2d2d7);
+      border-radius: 8px;
+      padding: 0.45rem 0.75rem;
+      background: var(--white, #fff);
+      color: var(--text, #1d1d1f);
+      font: 700 0.8rem var(--font-sans);
+      cursor: pointer;
+    }
+    [data-lighting="night"] .arp-tool-btn,
+    [data-theme="vaporwave"] .arp-tool-btn,
+    [data-theme="bark"] .arp-tool-btn { background: rgba(255,255,255,0.04); }
+    .arp-tool-btn:hover { border-color: #ea580c; }
+    .arp-challenge {
+      margin-top: 0.85rem;
+      border: 1px solid rgba(234,88,12,0.25);
+      border-radius: 10px;
+      padding: 0.8rem;
+      background: rgba(234,88,12,0.05);
+      font-size: 0.86rem;
+    }
+    [data-lighting="night"] .arp-challenge,
+    [data-theme="vaporwave"] .arp-challenge,
+    [data-theme="bark"] .arp-challenge { background: rgba(255,255,255,0.04); }
+    .arp-challenge strong { display: block; margin-bottom: 0.3rem; }
+
+    .arp-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; }
+    .arp-choice {
+      border: 1.5px solid var(--line, #d2d2d7);
+      border-radius: 9px;
+      padding: 0.62rem 0.7rem;
+      background: var(--white, #fff);
+      color: var(--text, #1d1d1f);
+      font: 700 0.9rem var(--font-sans);
+      cursor: pointer;
+      text-align: left;
+    }
+    [data-lighting="night"] .arp-choice,
+    [data-theme="vaporwave"] .arp-choice,
+    [data-theme="bark"] .arp-choice { background: rgba(255,255,255,0.04); }
+    .arp-choice:hover, .arp-choice:focus { border-color: #ea580c; outline: none; }
+    .arp-choice.correct { border-color: #16a34a; background: rgba(22,163,74,0.12); }
+    .arp-choice.wrong { border-color: #dc2626; background: rgba(220,38,38,0.1); }
+    .arp-question { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.7rem; }
+    .arp-feedback {
+      min-height: 2.2rem;
+      margin-top: 0.8rem;
+      color: var(--text-secondary, #3f4f65);
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+    [data-lighting="night"] .arp-feedback,
+    [data-theme="vaporwave"] .arp-feedback,
+    [data-theme="bark"] .arp-feedback { color: rgba(245,245,247,0.72); }
+    .arp-side { display: grid; gap: 0.7rem; }
+    .arp-score {
+      border-radius: 12px;
+      border: 1px solid rgba(234,88,12,0.22);
+      background: rgba(234,88,12,0.08);
+      padding: 0.9rem;
+    }
+    .arp-score strong { display: block; font-size: 1.55rem; line-height: 1; }
+    .arp-score span { color: var(--text-muted, #64748b); font-size: 0.8rem; }
+    .arp-next {
+      border: 0;
+      border-radius: 9px;
+      padding: 0.68rem 0.8rem;
+      background: #ea580c;
+      color: #fff;
+      font: 800 0.86rem var(--font-sans);
+      cursor: pointer;
+    }
+    .arp-next:hover { filter: brightness(0.96); }
+
+    .arp-practice { display: grid; gap: 0.72rem; margin-top: 0.85rem; }
+    .arp-practice-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 0.55rem;
+      align-items: center;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 10px;
+      padding: 0.75rem;
+      background: rgba(0,0,0,0.03);
+    }
+    [data-lighting="night"] .arp-practice-item,
+    [data-theme="vaporwave"] .arp-practice-item,
+    [data-theme="bark"] .arp-practice-item { background: rgba(255,255,255,0.04); }
+    .arp-practice-item input {
+      width: 82px;
+      border: 1.5px solid var(--line, #d2d2d7);
+      border-radius: 8px;
+      padding: 0.42rem 0.55rem;
+      background: var(--white, #fff);
+      color: var(--text, #1d1d1f);
+      font: 700 0.88rem var(--font-sans);
+    }
+    [data-lighting="night"] .arp-practice-item input,
+    [data-theme="vaporwave"] .arp-practice-item input,
+    [data-theme="bark"] .arp-practice-item input { background: rgba(255,255,255,0.04); }
+    .arp-check {
+      border: 0;
+      border-radius: 8px;
+      padding: 0.47rem 0.7rem;
+      background: #334155;
+      color: #fff;
+      font: 800 0.8rem var(--font-sans);
+      cursor: pointer;
+    }
+    .arp-mini-feedback { min-width: 7ch; font-size: 0.8rem; font-weight: 800; }
+    .arp-mini-feedback.ok { color: #16a34a; }
+    .arp-mini-feedback.no { color: #dc2626; }
+
+    .arp-exit ul { margin: 0.65rem 0 0; padding-left: 1.15rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    [data-lighting="night"] .arp-exit ul,
+    [data-theme="vaporwave"] .arp-exit ul,
+    [data-theme="bark"] .arp-exit ul { color: rgba(245,245,247,0.72); }
+
+    @media (max-width: 900px) {
+      .arp-activity { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .arp-rule, .arp-options, .arp-readout { grid-template-columns: 1fr; }
+      .arp-example-row, .arp-practice-item { grid-template-columns: 1fr; }
+      .arp-practice-item input { width: 100%; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../paths.html">Paths</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Apps</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="arp-page">
+        <section class="hero arp-hero">
+          <p class="eyebrow">Mathematics · Lesson 10</p>
+          <h1>Area &amp; Perimeter Playground</h1>
+          <div class="arp-hero-meta">
+            <span>Area = space inside a shape</span><span class="dot"></span>
+            <span>Perimeter = distance around a shape</span><span class="dot"></span>
+            <span>Same perimeter, different area</span>
+          </div>
+          <p class="arp-lede">Area and perimeter measure two different things about the same shape. In this lesson, students click cells on a grid to build shapes and watch area and perimeter update instantly, then take on a challenge to build shapes with equal perimeter but different area.</p>
+        </section>
+
+        <section class="arp-card" style="--card-accent:#ea580c;">
+          <h2>Learning Target</h2>
+          <p><strong>I can find the area and perimeter of a shape built from grid squares and explain what each measures.</strong></p>
+          <p>By the end of the lesson, students should be able to count filled squares to find area, count outer edges to find perimeter, and explain why two shapes can share a perimeter but have very different areas.</p>
+        </section>
+
+        <section class="arp-card" style="--card-accent:#c2410c;">
+          <h2>Area vs. Perimeter</h2>
+          <p>Area measures how much surface a shape covers. Perimeter measures the distance around its outside edge.</p>
+          <div class="arp-rule">
+            <div class="arp-rule-box"><strong>Area</strong><span>Count the unit squares that make up the shape. For a rectangle, area = length &times; width.</span></div>
+            <div class="arp-rule-box"><strong>Perimeter</strong><span>Count every outer edge of the shape. For a rectangle, perimeter = 2 &times; (length + width).</span></div>
+          </div>
+        </section>
+
+        <section class="arp-card" style="--card-accent:#7c3aed;">
+          <h2>Worked Example</h2>
+          <p>Find the area and perimeter of a rectangle that is 4 units long and 3 units wide.</p>
+          <div class="arp-example">
+            <div class="arp-example-row"><div class="arp-math">Area = 4 &times; 3</div><div class="arp-note">Multiply length by width to count the squares inside.</div></div>
+            <div class="arp-example-row"><div class="arp-math">Area = 12 square units</div><div class="arp-note">Twelve unit squares fit inside the rectangle.</div></div>
+            <div class="arp-example-row"><div class="arp-math">Perimeter = 2 &times; (4 + 3)</div><div class="arp-note">Add length and width, then double it for all four sides.</div></div>
+            <div class="arp-example-row"><div class="arp-math">Perimeter = 14 units</div><div class="arp-note">Walking all the way around the rectangle covers 14 units.</div></div>
+          </div>
+        </section>
+
+        <section class="arp-card" style="--card-accent:#0ea5e9;">
+          <h2>Build a Shape</h2>
+          <p>Click cells to toggle them on or off. Area and perimeter update live below the grid.</p>
+          <div class="arp-workspace">
+            <div class="arp-grid" id="arp-grid"></div>
+            <div class="arp-readout">
+              <div class="arp-readout-item"><span>Cells On</span><strong id="arp-cells">0</strong></div>
+              <div class="arp-readout-item"><span>Area</span><strong id="arp-area">0 sq units</strong></div>
+              <div class="arp-readout-item"><span>Perimeter</span><strong id="arp-perimeter">0 units</strong></div>
+            </div>
+            <div class="arp-tools">
+              <button class="arp-tool-btn" type="button" id="arp-clear">Clear Grid</button>
+              <button class="arp-tool-btn" type="button" id="arp-rect-3x4">Fill 3&times;4 Rectangle</button>
+            </div>
+            <div class="arp-challenge">
+              <strong>Challenge</strong>
+              Build a shape with a perimeter of exactly 16 units. Then clear it and build a second, differently-shaped one that also has a perimeter of 16 units. Compare the two areas &mdash; are they the same?
+            </div>
+          </div>
+        </section>
+
+        <section class="arp-card" style="--card-accent:#16a34a;">
+          <h2>Interactive Check</h2>
+          <p>Answer each area and perimeter question. Use the feedback to catch mistakes.</p>
+          <div class="arp-activity">
+            <div class="arp-workspace">
+              <div class="arp-question" id="arp-question">A rectangle is 5 units by 2 units. What is its area?</div>
+              <div class="arp-options" id="arp-options"></div>
+              <div class="arp-feedback" id="arp-feedback" aria-live="polite">Area = length &times; width.</div>
+            </div>
+            <div class="arp-side">
+              <div class="arp-score"><strong id="arp-score">0/0</strong><span>correct this round</span></div>
+              <button class="arp-next" type="button" id="arp-next">Next Question</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="arp-card" style="--card-accent:#f59e0b;">
+          <h2>Guided Practice</h2>
+          <p>Find the requested value for each rectangle. Type the numeric value only.</p>
+          <div class="arp-practice">
+            <div class="arp-practice-item" data-answer="24"><span class="arp-math">Area of a 6 &times; 4 rectangle</span><input type="number" aria-label="Area of a 6 by 4 rectangle" /><button class="arp-check" type="button">Check</button><span class="arp-mini-feedback"></span></div>
+            <div class="arp-practice-item" data-answer="20"><span class="arp-math">Perimeter of a 6 &times; 4 rectangle</span><input type="number" aria-label="Perimeter of a 6 by 4 rectangle" /><button class="arp-check" type="button">Check</button><span class="arp-mini-feedback"></span></div>
+            <div class="arp-practice-item" data-answer="9"><span class="arp-math">Side length of a square with perimeter 36</span><input type="number" aria-label="Side length of a square with perimeter 36" /><button class="arp-check" type="button">Check</button><span class="arp-mini-feedback"></span></div>
+            <div class="arp-practice-item" data-answer="7"><span class="arp-math">Width of a rectangle with area 21 and length 3</span><input type="number" aria-label="Width of a rectangle with area 21 and length 3" /><button class="arp-check" type="button">Check</button><span class="arp-mini-feedback"></span></div>
+          </div>
+        </section>
+
+        <section class="arp-card arp-exit" style="--card-accent:#dc2626;">
+          <h2>Exit Ticket</h2>
+          <p>Students answer these in complete sentences or with shown work.</p>
+          <ul>
+            <li>Build two shapes with the same perimeter but different areas. Sketch both and label the area of each.</li>
+            <li>A garden is 8 feet by 3 feet. How much fencing is needed to go around it, and how much ground does it cover?</li>
+            <li>Explain, in your own words, the difference between area and perimeter.</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+
+    <aside class="ll-panel" aria-label="Lesson panel">
+      <div class="ll-panel-inner">
+        <div class="ll-tabs" role="tablist" aria-label="Area and perimeter panel tabs">
+          <button class="ll-tab active" type="button" data-ll-tab="guide">Guide</button>
+          <button class="ll-tab" type="button" data-ll-tab="controls">Teacher</button>
+        </div>
+        <div class="ll-pane active" data-ll-panel="guide">
+          <span class="ll-label">Formulas</span>
+          <div class="ll-info"><strong>Area</strong> length &times; width, measured in square units.</div>
+          <div class="ll-info"><strong>Perimeter</strong> 2 &times; (length + width), measured in units.</div>
+          <span class="ll-label">Common Trap</span>
+          <div class="ll-info"><strong>Same perimeter</strong> does not guarantee the same area &mdash; a long thin rectangle can have far less area than a square with the same perimeter.</div>
+        </div>
+        <div class="ll-pane" data-ll-panel="controls">
+          <span class="ll-label">Lesson Flow</span>
+          <div class="ll-info"><strong>Warm-up</strong> Ask students which takes longer: walking around a room or covering its floor with tiles.</div>
+          <div class="ll-info"><strong>Mini lesson</strong> Model counting squares for area and edges for perimeter on the grid.</div>
+          <div class="ll-info"><strong>Practice</strong> Have students race to build a shape matching a target perimeter.</div>
+          <div class="ll-info"><strong>Check</strong> Use the exit ticket to confirm students separate the two ideas.</div>
+        </div>
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+  </div>
+</div>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">Lessons</a></p>
+  </footer>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+    (function () {
+      // ---- Grid builder ----
+      var SIZE = 10;
+      var grid = document.getElementById('arp-grid');
+      var state = [];
+      for (var r = 0; r < SIZE; r++) {
+        state.push(new Array(SIZE).fill(false));
+      }
+      var cellEls = [];
+      for (var row = 0; row < SIZE; row++) {
+        var rowEls = [];
+        for (var col = 0; col < SIZE; col++) {
+          var cell = document.createElement('div');
+          cell.className = 'arp-cell';
+          cell.dataset.row = row;
+          cell.dataset.col = col;
+          cell.addEventListener('click', (function (r, c) {
+            return function () {
+              state[r][c] = !state[r][c];
+              updateGrid();
+            };
+          })(row, col));
+          grid.appendChild(cell);
+          rowEls.push(cell);
+        }
+        cellEls.push(rowEls);
+      }
+
+      var cellsEl = document.getElementById('arp-cells');
+      var areaEl = document.getElementById('arp-area');
+      var perimeterEl = document.getElementById('arp-perimeter');
+
+      function updateGrid() {
+        var count = 0;
+        var perimeter = 0;
+        for (var r = 0; r < SIZE; r++) {
+          for (var c = 0; c < SIZE; c++) {
+            cellEls[r][c].classList.toggle('on', state[r][c]);
+            if (!state[r][c]) continue;
+            count += 1;
+            var neighbors = [
+              [r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]
+            ];
+            neighbors.forEach(function (n) {
+              var nr = n[0], nc = n[1];
+              var filled = nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE && state[nr][nc];
+              if (!filled) perimeter += 1;
+            });
+          }
+        }
+        cellsEl.textContent = count;
+        areaEl.textContent = count + ' sq units';
+        perimeterEl.textContent = perimeter + ' units';
+      }
+
+      document.getElementById('arp-clear').addEventListener('click', function () {
+        for (var r = 0; r < SIZE; r++) for (var c = 0; c < SIZE; c++) state[r][c] = false;
+        updateGrid();
+      });
+      document.getElementById('arp-rect-3x4').addEventListener('click', function () {
+        for (var r = 0; r < SIZE; r++) for (var c = 0; c < SIZE; c++) state[r][c] = false;
+        for (var r2 = 2; r2 < 5; r2++) for (var c2 = 2; c2 < 6; c2++) state[r2][c2] = true;
+        updateGrid();
+      });
+      updateGrid();
+
+      // ---- Interactive Check ----
+      var questions = [
+        { q: 'A rectangle is 5 units by 2 units. What is its area?', answer: 10, choices: [10, 14, 7, 12], feedback: 'Area = length x width = 5 x 2 = 10 square units.' },
+        { q: 'A rectangle is 5 units by 2 units. What is its perimeter?', answer: 14, choices: [10, 14, 7, 20], feedback: 'Perimeter = 2 x (5 + 2) = 2 x 7 = 14 units.' },
+        { q: 'A square has a side length of 6. What is its area?', answer: 36, choices: [24, 12, 36, 18], feedback: 'A square\'s area is side x side = 6 x 6 = 36.' },
+        { q: 'A square has a side length of 6. What is its perimeter?', answer: 24, choices: [36, 24, 12, 30], feedback: 'A square\'s perimeter is 4 x side = 4 x 6 = 24.' },
+        { q: 'Two rectangles both have a perimeter of 20. Rectangle A is 8 x 2 and Rectangle B is 5 x 5. Which has more area?', answer: 'Rectangle B', choices: ['Rectangle A', 'Rectangle B', 'They are equal', 'Cannot tell'], feedback: 'Rectangle A has area 16; Rectangle B (a square) has area 25. Equal perimeter does not mean equal area.' }
+      ];
+
+      var questionEl = document.getElementById('arp-question');
+      var options = document.getElementById('arp-options');
+      var feedback = document.getElementById('arp-feedback');
+      var score = document.getElementById('arp-score');
+      var next = document.getElementById('arp-next');
+      var qIndex = 0;
+      var correct = 0;
+      var attempted = 0;
+      var locked = false;
+
+      function renderQuestion() {
+        var item = questions[qIndex % questions.length];
+        locked = false;
+        questionEl.textContent = item.q;
+        options.innerHTML = '';
+        feedback.textContent = 'Think about what area and perimeter each measure.';
+        item.choices.forEach(function (choice) {
+          var button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'arp-choice';
+          button.textContent = choice;
+          button.addEventListener('click', function () {
+            if (locked) return;
+            locked = true;
+            attempted += 1;
+            if (choice === item.answer) {
+              correct += 1;
+              button.classList.add('correct');
+              feedback.textContent = 'Correct. ' + item.feedback;
+            } else {
+              button.classList.add('wrong');
+              Array.prototype.forEach.call(options.children, function (option) {
+                if (String(option.textContent) === String(item.answer)) option.classList.add('correct');
+              });
+              feedback.textContent = 'Not quite. ' + item.feedback;
+            }
+            score.textContent = correct + '/' + attempted;
+          });
+          options.appendChild(button);
+        });
+        score.textContent = correct + '/' + attempted;
+      }
+
+      next.addEventListener('click', function () {
+        qIndex += 1;
+        renderQuestion();
+      });
+      renderQuestion();
+
+      document.querySelectorAll('.arp-practice-item').forEach(function (item) {
+        var input = item.querySelector('input');
+        var button = item.querySelector('.arp-check');
+        var feedbackNode = item.querySelector('.arp-mini-feedback');
+        button.addEventListener('click', function () {
+          var expected = Number(item.getAttribute('data-answer'));
+          var actual = Number(input.value);
+          feedbackNode.className = 'arp-mini-feedback';
+          if (actual === expected) {
+            feedbackNode.textContent = 'Correct';
+            feedbackNode.classList.add('ok');
+          } else {
+            feedbackNode.textContent = 'Try again';
+            feedbackNode.classList.add('no');
+          }
+        });
+        input.addEventListener('keydown', function (event) {
+          if (event.key === 'Enter') button.click();
+        });
+      });
+    })();
+  </script>
+  <script src="../assets/js/classroom-animations.js"></script>
+  <script src="../assets/js/lesson-layout.js"></script>
+<script src="../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
