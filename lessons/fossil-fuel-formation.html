@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fossil Fuels: How Coal, Oil &amp; Natural Gas Form · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="An interactive STEAM lesson on how coal, oil, and natural gas form: coalification from peat to anthracite, the kerogen-to-petroleum process, the oil and gas windows, and why these fuels are non-renewable on human timescales." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg:#0c0e10; --panel:rgba(20,24,28,.9); --panel2:#14181c;
+      --line:rgba(148,163,184,.18); --line2:rgba(148,163,184,.36);
+      --text:#f1f5f9; --muted:rgba(241,245,249,.72); --dim:rgba(241,245,249,.46);
+      --coal:#c89a4a; --oil:#4ade80; --gas:#38bdf8; --amber:#f2b84b; --radius:10px;
+    }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; color:var(--text); font-family:var(--font-sans); background:
+      radial-gradient(circle at 8% 6%,rgba(200,154,74,.1),transparent 30%),
+      radial-gradient(circle at 90% 32%,rgba(56,189,248,.08),transparent 28%),
+      linear-gradient(rgba(148,163,184,.02) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(148,163,184,.015) 1px,transparent 1px),#0c0e10;
+      background-size:auto,auto,40px 40px,40px 40px; min-height:100vh; }
+    button,select { font:inherit; }
+    .topbar { position:sticky; top:0; z-index:20; border-bottom:1px solid var(--line); background:rgba(12,14,16,.9); backdrop-filter:blur(16px); }
+    .topbar-inner { width:min(1180px,calc(100% - 2rem)); min-height:56px; margin:auto; display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+    .topbar a { color:#e2c98a; text-decoration:none; font-size:.82rem; font-weight:700; }
+    .nav { display:flex; gap:.2rem; overflow:auto; }
+    .nav a { padding:.4rem .55rem; color:var(--dim); white-space:nowrap; }
+    .nav a:hover,.nav a:focus-visible { color:var(--text); }
+    .badge { padding:.34rem .62rem; border:1px solid var(--line2); border-radius:999px; color:#e2c98a; background:rgba(200,154,74,.09); font-size:.68rem; font-weight:800; letter-spacing:.07em; text-transform:uppercase; white-space:nowrap; }
+    .shell { width:min(1180px,calc(100% - 2rem)); margin:auto; padding:1rem 0 4rem; display:grid; gap:1rem; }
+    .hero { display:grid; grid-template-columns:1.1fr .9fr; gap:1rem; align-items:stretch; }
+    .hero-copy,.card,.lab { border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); box-shadow:0 22px 60px rgba(0,0,0,.32); }
+    .hero-copy { padding:clamp(1.4rem,4vw,2.6rem); display:flex; flex-direction:column; justify-content:center; }
+    .eyebrow,.kicker { margin:0 0 .5rem; color:var(--coal); font-size:.7rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+    h1 { margin:0 0 .8rem; font-size:clamp(2.3rem,5.6vw,4.3rem); line-height:.96; letter-spacing:-.04em; }
+    h1 em { color:var(--coal); font-style:normal; }
+    .lede { color:var(--muted); max-width:60ch; margin:0 0 1.1rem; line-height:1.72; }
+    .meta { display:flex; flex-wrap:wrap; gap:.4rem; }
+    .hero-art { min-height:340px; position:relative; overflow:hidden; padding:1.1rem; display:flex; flex-direction:column; justify-content:center; gap:.6rem; background:
+      radial-gradient(ellipse at 60% 20%,rgba(74,222,128,.1),transparent 45%),
+      linear-gradient(160deg,rgba(20,24,28,.85),rgba(6,8,9,.96) 60%),var(--panel2);
+      border-color:rgba(148,163,184,.24); }
+    .hero-stat { display:flex; align-items:baseline; gap:.6rem; padding:.75rem .9rem; border:1px solid var(--line); border-radius:8px; background:rgba(0,0,0,.2); }
+    .hero-stat b { font:800 1.35rem "JetBrains Mono",monospace; color:var(--coal); min-width:7ch; }
+    .hero-stat span { color:var(--muted); font-size:.82rem; line-height:1.5; }
+    .card { padding:clamp(1.15rem,2.7vw,1.8rem); scroll-margin-top:70px; }
+    .card h2,.lab h2 { margin:0 0 .75rem; font-size:clamp(1.25rem,3vw,1.8rem); letter-spacing:-.035em; }
+    .card h3 { margin:.3rem 0 .35rem; color:#e2c98a; font-size:1rem; }
+    .card p,.card li,.lab p { color:var(--muted); font-size:.9rem; line-height:1.7; }
+    .three { display:grid; gap:1rem; grid-template-columns:repeat(3,1fr); }
+    .fact { padding:1rem; border:1px solid var(--line); border-radius:var(--radius); background:rgba(200,154,74,.04); }
+    .fact-number { display:block; margin-bottom:.25rem; color:var(--coal); font:700 1.5rem "JetBrains Mono",monospace; }
+    .fact p { margin:0; }
+    .callout { margin-top:1rem; padding:.9rem 1rem; border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; background:rgba(242,184,75,.08); }
+    .callout strong { color:#fde68a; }
+    .debate { margin-top:1rem; padding:.9rem 1rem; border-left:4px solid var(--gas); border-radius:0 var(--radius) var(--radius) 0; background:rgba(56,189,248,.08); }
+    .debate strong { color:#7dd3fc; }
+
+    /* Textbook figures */
+    .fig { margin:1.3rem 0 0; }
+    .fig-frame { padding:1rem; border:1px solid var(--line); border-radius:var(--radius); background:#0a0c0e; overflow-x:auto; }
+    .fig-frame svg { display:block; width:100%; min-width:560px; height:auto; }
+    .fig figcaption { margin-top:.55rem; color:var(--dim); font-size:.78rem; line-height:1.6; }
+    .fig figcaption strong { color:var(--coal); }
+
+    /* Coalification stage strip */
+    .stage-strip { display:grid; grid-template-columns:repeat(4,1fr); gap:.6rem; margin-top:.3rem; }
+    .stage { padding:.9rem; border:1px solid var(--line); border-radius:9px; background:rgba(0,0,0,.18); text-align:center; }
+    .stage-swatch { width:100%; height:44px; border-radius:6px; margin-bottom:.55rem; }
+    .stage.peat .stage-swatch { background:linear-gradient(180deg,#7c6a3d,#4c4022); }
+    .stage.lignite .stage-swatch { background:linear-gradient(180deg,#5c4526,#3a2a16); }
+    .stage.bituminous .stage-swatch { background:linear-gradient(180deg,#2e2419,#191410); }
+    .stage.anthracite .stage-swatch { background:linear-gradient(180deg,#14100d,#050403); box-shadow:inset 0 0 12px rgba(255,255,255,.08); }
+    .stage b { display:block; font-size:.84rem; color:var(--text); }
+    .stage small { display:block; margin-top:.3rem; color:var(--dim); font-size:.68rem; line-height:1.5; }
+
+    /* Oil/gas window bar */
+    .window-bar { position:relative; height:64px; margin-top:.3rem; border-radius:8px; overflow:hidden; display:flex; }
+    .window-seg { position:relative; display:flex; align-items:center; justify-content:center; color:#04140d; font:800 .68rem "JetBrains Mono",monospace; text-transform:uppercase; letter-spacing:.04em; }
+    .window-seg.immature { flex:1.2; background:#475569; color:#e2e8f0; }
+    .window-seg.oil { flex:2; background:linear-gradient(90deg,#4ade80,#22c55e); }
+    .window-seg.gas { flex:1.6; background:linear-gradient(90deg,#38bdf8,#0ea5e9); }
+    .window-seg.over { flex:1; background:#1e293b; color:#94a3b8; }
+    .window-labels { display:flex; margin-top:.4rem; font-size:.66rem; color:var(--dim); }
+    .window-labels span { flex:1; text-align:center; }
+
+    /* Comparison table */
+    .fuel-table { width:100%; min-width:620px; border-collapse:collapse; font-size:.82rem; }
+    .fuel-table th,.fuel-table td { padding:.55rem .7rem; border:1px solid var(--line); text-align:left; }
+    .fuel-table th { color:var(--coal); font-size:.68rem; letter-spacing:.05em; text-transform:uppercase; background:rgba(200,154,74,.08); }
+    .fuel-table td { color:var(--muted); }
+    .fuel-table td:first-child { color:var(--text); font-weight:700; }
+
+    /* Quiz */
+    .quiz { display:grid; gap:.7rem; margin-top:.6rem; }
+    .q { padding:.85rem; border:1px solid var(--line); border-radius:9px; }
+    .q label { display:block; margin-bottom:.5rem; color:#e2c98a; font-size:.86rem; font-weight:700; }
+    .q select { width:100%; padding:.5rem .6rem; border:1px solid var(--line2); border-radius:8px; color:var(--text); background:#14181c; }
+    .check-btn { margin-top:.3rem; min-height:42px; padding:0 1rem; border:0; border-radius:8px; color:#1c1108; background:var(--coal); font-weight:800; cursor:pointer; }
+    .feedback { min-height:1.4rem; margin-top:.6rem; font-size:.85rem; font-weight:700; }
+    .feedback.correct { color:#86efac; }
+    .feedback.try { color:#fde68a; }
+
+    .source-shelf { display:grid; grid-template-columns:repeat(3,1fr); gap:.65rem; margin-top:1rem; }
+    .source-card { display:flex; flex-direction:column; gap:.4rem; min-height:120px; padding:.85rem; border:1px solid var(--line); border-radius:8px; color:var(--text); background:rgba(255,255,255,.02); text-decoration:none; transition:transform .16s,border-color .16s; }
+    .source-card:hover { transform:translateY(-2px); border-color:var(--line2); }
+    .source-type { color:#7dd3fc; font:700 .59rem "JetBrains Mono",monospace; letter-spacing:.09em; text-transform:uppercase; }
+    .source-card b { font-size:.82rem; }
+    .source-card span:last-child { margin-top:auto; color:var(--dim); font-size:.69rem; line-height:1.5; }
+
+    .steam-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:.55rem; }
+    .steam-item { padding:.8rem; border-top:3px solid var(--coal); border-radius:6px; background:rgba(255,255,255,.03); }
+    .steam-item:nth-child(2) { border-color:var(--oil); }.steam-item:nth-child(3) { border-color:var(--gas); }.steam-item:nth-child(4) { border-color:var(--amber); }.steam-item:nth-child(5) { border-color:#a78bfa; }
+    .steam-item b { display:block; margin-bottom:.3rem; font-size:.78rem; }.steam-item p { margin:0; font-size:.75rem; }
+
+    .footer { padding:2rem 1rem; text-align:center; color:var(--dim); font-size:.78rem; }
+    .footer a { color:#e2c98a; text-decoration:none; }
+
+    @media (max-width:900px) {
+      .nav { display:none; }
+      .hero { grid-template-columns:1fr; }
+      .three,.stage-strip { grid-template-columns:1fr 1fr; }
+      .steam-grid,.source-shelf { grid-template-columns:1fr 1fr; }
+    }
+    @media (max-width:540px) {
+      .three,.stage-strip,.steam-grid,.source-shelf { grid-template-columns:1fr; }
+      .topbar .badge { display:none; }
+      .window-labels span { font-size:.58rem; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="../steam-lessons.html">← Lessons</a>
+      <nav class="nav" aria-label="Lesson sections">
+        <a href="#coal">Coal</a><a href="#petroleum">Oil &amp; Gas</a><a href="#compare">Compare</a><a href="#quiz">Check Yourself</a><a href="#sources">Sources</a>
+      </nav>
+      <span class="badge">Earth Science · Grades 6–10</span>
+    </div>
+  </header>
+
+  <main class="shell" id="main-content">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Earth Science · Geologic Time · Energy</p>
+        <h1>How coal, oil &amp; <em>natural gas</em> form</h1>
+        <p class="lede">All three fossil fuels start the same way: dead organic matter buried faster than it can fully decay. From there, heat, pressure, and time — and which organisms did the burying — split the story into three very different fuels, formed hundreds of millions of years apart.</p>
+        <div class="meta"><span class="badge">30–45 minutes</span><span class="badge">Interactive diagrams</span><span class="badge">Companion to Evolution of Wood</span></div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="hero-stat"><b>~359–299 Mya</b><span>Most coal forms from land plants buried in Carboniferous swamps.</span></div>
+        <div class="hero-stat"><b>~252–66 Mya</b><span>Most oil and natural gas source rock forms later, in the Mesozoic, from marine plankton.</span></div>
+        <div class="hero-stat"><b>Millions of yrs</b><span>The timescale these fuels form on — much slower than we use them.</span></div>
+      </div>
+    </section>
+
+    <p class="card" style="padding:.9rem 1.2rem; font-size:.85rem;">This lesson builds on <a href="evolution-of-wood.html" style="color:#7dd3fc;">The Evolution of Wood</a>, which covers how lignin evolved and why Carboniferous swamp forests left behind so much undecayed plant material in the first place.</p>
+
+    <section class="card" id="intro">
+      <p class="kicker">The one idea underneath all three fuels</p>
+      <h2>Burial beats decay</h2>
+      <p>Left alone, dead organisms are recycled by decomposers within years to centuries, and their carbon returns to the atmosphere. Fossil fuels form in the rare situations where organic matter is buried quickly — in a swamp, a lake bed, or an oxygen-poor seafloor — before decomposers can finish that job. Sealed away from oxygen, the leftover carbon slowly transforms under heat and pressure instead.</p>
+      <div class="three">
+        <div class="fact"><span class="fact-number">1</span><h3>Produce</h3><p>Living organisms (plants or plankton) build organic carbon from sunlight and CO₂.</p></div>
+        <div class="fact"><span class="fact-number">2</span><h3>Bury</h3><p>They die and are buried quickly in low-oxygen sediment before fully decaying.</p></div>
+        <div class="fact"><span class="fact-number">3</span><h3>Cook</h3><p>Heat and pressure from burial slowly convert that carbon into coal, oil, or gas.</p></div>
+      </div>
+    </section>
+
+    <section class="card" id="coal">
+      <p class="kicker">From land plants</p>
+      <h2>Coal: a four-stage squeeze</h2>
+      <p>Coal forms from land plants — mosses, ferns, and trees — buried in swampy, low-oxygen wetlands. As layers of sediment pile on top, rising heat and pressure drive off water and volatile compounds in a process called coalification, concentrating the carbon that's left behind.</p>
+      <div class="fig">
+        <div class="fig-frame">
+          <div class="stage-strip">
+            <div class="stage peat"><div class="stage-swatch"></div><b>Peat</b><small>Partly decayed plant matter, &gt;50% water, ~50–60% carbon</small></div>
+            <div class="stage lignite"><div class="stage-swatch"></div><b>Lignite</b><small>"Brown coal," soft, ~60–70% carbon, still crumbly</small></div>
+            <div class="stage bituminous"><div class="stage-swatch"></div><b>Bituminous</b><small>Dense, dark, ~75–85% carbon — the most commonly mined coal</small></div>
+            <div class="stage anthracite"><div class="stage-swatch"></div><b>Anthracite</b><small>Hardest, shiniest, ~90%+ carbon, burns hottest and cleanest</small></div>
+          </div>
+        </div>
+        <figcaption><strong>Figure 2.1</strong> — Coalification: as burial depth, heat, and pressure increase from left to right, water and volatile gases are driven out and the remaining material becomes more carbon-rich, harder, and more energy-dense.</figcaption>
+      </div>
+      <div class="callout"><strong>Why Carboniferous coal is so abundant:</strong> Vast tropical swamp forests, wet and low in oxygen, buried enormous volumes of woody plant debris. Whether that debris also resisted decay because lignin-eating fungi hadn't evolved yet is a genuinely contested question among scientists — see <a href="evolution-of-wood.html#gap" style="color:#fde68a;">The Evolution of Wood</a> for both sides of that debate.</div>
+    </section>
+
+    <section class="card" id="petroleum">
+      <p class="kicker">From marine microorganisms</p>
+      <h2>Oil &amp; natural gas: cooked kerogen</h2>
+      <p>Oil and natural gas mostly come from a very different source: marine algae and plankton, not land plants. When they die, their remains settle into oxygen-poor mud on lake or ocean floors and mix with fine sediment. Buried deeper over millions of years, that organic-rich mud turns into a waxy solid called kerogen — the raw material for petroleum. As kerogen is buried deeper and gets hotter, it "cracks" into different products depending on temperature.</p>
+      <div class="fig">
+        <div class="fig-frame">
+          <div class="window-bar" role="img" aria-label="As kerogen is buried deeper and gets hotter, it produces first oil, then natural gas, then becomes overcooked and unproductive">
+            <div class="window-seg immature">Immature kerogen</div>
+            <div class="window-seg oil">Oil window<br>~60–160°C</div>
+            <div class="window-seg gas">Gas window<br>~150–225°C</div>
+            <div class="window-seg over">Overcooked</div>
+          </div>
+          <div class="window-labels"><span>Shallow, cool</span><span>Produces liquid oil</span><span>Produces natural gas</span><span>Deep, hot — carbon left as graphite</span></div>
+        </div>
+        <figcaption><strong>Figure 2.2</strong> — The "oil window" and "gas window" describe the temperature ranges (driven by burial depth) where kerogen breaks down into liquid petroleum versus natural gas. Too shallow and the kerogen hasn't cooked enough; too deep and it overcooks past usable hydrocarbons.</figcaption>
+      </div>
+      <p>Once formed, oil and gas are less dense than the surrounding rock and can migrate upward through porous rock until they hit an impermeable layer, where they pool into a reservoir — the deposits companies drill into.</p>
+    </section>
+
+    <section class="card" id="compare">
+      <p class="kicker">Side by side</p>
+      <h2>Three fuels, three origins</h2>
+      <div class="fig">
+        <div class="fig-frame" style="overflow-x:auto;">
+          <table class="fuel-table" aria-label="Comparison of coal, oil, and natural gas formation">
+            <thead>
+              <tr><th>Fuel</th><th>Source material</th><th>Main formation era</th><th>Formation process</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Coal</td><td>Land plants (mosses, ferns, trees)</td><td>Mostly Carboniferous, ~359–299 Mya</td><td>Coalification: peat → lignite → bituminous → anthracite</td></tr>
+              <tr><td>Oil</td><td>Marine algae &amp; plankton</td><td>Mostly Mesozoic, ~252–66 Mya</td><td>Burial → kerogen → "oil window" heating (~60–160°C)</td></tr>
+              <tr><td>Natural gas</td><td>Marine plankton, or over-heated oil/coal</td><td>Mostly Mesozoic, ~252–66 Mya, or deeper burial of coal/oil</td><td>Burial → kerogen → "gas window" heating (~150–225°C)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <figcaption><strong>Table 2.1</strong> — Natural gas can form directly from marine kerogen, or as a byproduct when coal or oil is buried even deeper and heated further.</figcaption>
+      </div>
+      <div class="debate"><strong>Common myth, corrected:</strong> Oil does not come from dinosaurs. Dinosaurs were far too rare, and too recent relative to most oil-forming rock, to be a meaningful source. The overwhelming majority of petroleum's original carbon came from microscopic marine life.</div>
+    </section>
+
+    <section class="card" id="quiz">
+      <p class="kicker">Check yourself</p>
+      <h2>Quick knowledge check</h2>
+      <div class="quiz">
+        <div class="q">
+          <label for="fq1">1. What do coal, oil, and natural gas all require in order to form?</label>
+          <select id="fq1">
+            <option value="">Choose an answer</option>
+            <option value="volcano">Nearby volcanic eruptions</option>
+            <option value="burial">Organic matter buried faster than it can fully decay</option>
+            <option value="ice">Long-term freezing in glacial ice</option>
+          </select>
+        </div>
+        <div class="q">
+          <label for="fq2">2. What is the primary source material for most oil and natural gas?</label>
+          <select id="fq2">
+            <option value="">Choose an answer</option>
+            <option value="dinosaurs">Dinosaur remains</option>
+            <option value="trees">Buried forests</option>
+            <option value="plankton">Marine algae and plankton</option>
+          </select>
+        </div>
+        <div class="q">
+          <label for="fq3">3. Which coal type has the highest carbon content and formed under the most heat and pressure?</label>
+          <select id="fq3">
+            <option value="">Choose an answer</option>
+            <option value="peat">Peat</option>
+            <option value="lignite">Lignite</option>
+            <option value="anthracite">Anthracite</option>
+          </select>
+        </div>
+        <button class="check-btn" id="checkAnswers" type="button">Check answers</button>
+        <div class="feedback" id="quizFeedback" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="card" id="sources">
+      <p class="kicker">Go deeper</p>
+      <h2>Explore the sources</h2>
+      <div class="source-shelf">
+        <a class="source-card" href="https://www.chevron.com/newsroom/2024/q4/explainer-where-do-oil-and-gas-come-from" target="_blank" rel="noopener noreferrer"><span class="source-type">Explainer ↗</span><b>Where Do Oil and Gas Come From?</b><span>A plain-language explainer on marine-source petroleum formation.</span></a>
+        <a class="source-card" href="https://education.nationalgeographic.org/resource/petroleum/" target="_blank" rel="noopener noreferrer"><span class="source-type">Reference ↗</span><b>Petroleum</b><span>National Geographic Education overview of oil formation and use.</span></a>
+        <a class="source-card" href="https://www.eia.gov/energyexplained/coal/" target="_blank" rel="noopener noreferrer"><span class="source-type">Government data ↗</span><b>U.S. Energy Information Administration: Coal</b><span>Official explainer on coal types, formation, and use.</span></a>
+      </div>
+    </section>
+
+    <section class="card">
+      <p class="kicker">Why this is STEAM</p>
+      <h2>One process, five ways of thinking</h2>
+      <div class="steam-grid">
+        <div class="steam-item"><b>Science</b><p>Trace organic chemistry, heat, pressure, and geologic time.</p></div>
+        <div class="steam-item"><b>Technology</b><p>Seismic surveys and drilling locate buried reservoirs.</p></div>
+        <div class="steam-item"><b>Engineering</b><p>Extraction, refining, and pipeline systems move fuel to market.</p></div>
+        <div class="steam-item"><b>Art</b><p>Illustrate a cross-section of buried rock layers and reservoirs.</p></div>
+        <div class="steam-item"><b>Math</b><p>Compare formation timescales to how quickly reserves are consumed.</p></div>
+      </div>
+    </section>
+  </main>
+  <footer class="footer"><a href="../steam-lessons.html">← Return to STEAM Lessons</a> · Millions of years to form, decades to burn.</footer>
+
+  <script>
+    (function () {
+      document.getElementById("checkAnswers").addEventListener("click", function () {
+        var score = 0;
+        if (document.getElementById("fq1").value === "burial") score += 1;
+        if (document.getElementById("fq2").value === "plankton") score += 1;
+        if (document.getElementById("fq3").value === "anthracite") score += 1;
+        var feedback = document.getElementById("quizFeedback");
+        feedback.className = "feedback " + (score === 3 ? "correct" : "try");
+        feedback.textContent = score === 3
+          ? "Correct! Burial beats decay, petroleum comes from marine microorganisms, and anthracite is the most heavily transformed coal."
+          : score + "/3 correct. Revisit the coalification and oil/gas window diagrams, then try again.";
+      });
+    }());
+  </script>
+</body>
+</html>

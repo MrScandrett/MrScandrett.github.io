@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Evolution of Wood · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="An interactive STEAM lesson on the evolution of wood: how lignin evolved for water transport before height, how Archaeopteris built the first forests, and why a 100-million-year gap before wood-decaying fungi created Earth's coal beds." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg:#160f09; --panel:rgba(38,26,16,.9); --panel2:#1c130c;
+      --line:rgba(214,158,79,.18); --line2:rgba(214,158,79,.38);
+      --text:#f8f0e3; --muted:rgba(248,240,227,.72); --dim:rgba(248,240,227,.46);
+      --wood:#d69e4f; --moss:#7cae51; --fungus:#e0704f; --amber:#f2b84b; --radius:10px;
+    }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; color:var(--text); font-family:var(--font-sans); background:
+      radial-gradient(circle at 8% 6%,rgba(214,158,79,.12),transparent 30%),
+      radial-gradient(circle at 90% 32%,rgba(124,174,81,.08),transparent 28%),
+      linear-gradient(rgba(214,158,79,.02) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(214,158,79,.015) 1px,transparent 1px),#160f09;
+      background-size:auto,auto,40px 40px,40px 40px; min-height:100vh; }
+    button,select { font:inherit; }
+    .topbar { position:sticky; top:0; z-index:20; border-bottom:1px solid var(--line); background:rgba(22,15,9,.9); backdrop-filter:blur(16px); }
+    .topbar-inner { width:min(1180px,calc(100% - 2rem)); min-height:56px; margin:auto; display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+    .topbar a { color:#f3d9ab; text-decoration:none; font-size:.82rem; font-weight:700; }
+    .nav { display:flex; gap:.2rem; overflow:auto; }
+    .nav a { padding:.4rem .55rem; color:var(--dim); white-space:nowrap; }
+    .nav a:hover,.nav a:focus-visible { color:var(--text); }
+    .badge { padding:.34rem .62rem; border:1px solid var(--line2); border-radius:999px; color:#f3d9ab; background:rgba(214,158,79,.09); font-size:.68rem; font-weight:800; letter-spacing:.07em; text-transform:uppercase; white-space:nowrap; }
+    .shell { width:min(1180px,calc(100% - 2rem)); margin:auto; padding:1rem 0 4rem; display:grid; gap:1rem; }
+    .hero { display:grid; grid-template-columns:1.1fr .9fr; gap:1rem; align-items:stretch; }
+    .hero-copy,.card,.timeline-card,.lab { border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); box-shadow:0 22px 60px rgba(0,0,0,.32); }
+    .hero-copy { padding:clamp(1.4rem,4vw,2.6rem); display:flex; flex-direction:column; justify-content:center; }
+    .eyebrow,.kicker { margin:0 0 .5rem; color:var(--wood); font-size:.7rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+    h1 { margin:0 0 .8rem; font-size:clamp(2.4rem,6vw,4.6rem); line-height:.94; letter-spacing:-.045em; }
+    h1 em { color:var(--wood); font-style:normal; }
+    .lede { color:var(--muted); max-width:60ch; margin:0 0 1.1rem; line-height:1.72; }
+    .meta { display:flex; flex-wrap:wrap; gap:.4rem; }
+    .hero-art { min-height:340px; position:relative; overflow:hidden; padding:1.1rem; display:flex; flex-direction:column; justify-content:center; gap:.6rem; background:
+      radial-gradient(ellipse at 60% 20%,rgba(224,112,79,.14),transparent 45%),
+      linear-gradient(160deg,rgba(28,19,12,.85),rgba(10,7,4,.96) 60%),var(--panel2);
+      border-color:rgba(214,158,79,.28); }
+    .hero-stat { display:flex; align-items:baseline; gap:.6rem; padding:.75rem .9rem; border:1px solid var(--line); border-radius:8px; background:rgba(0,0,0,.2); }
+    .hero-stat b { font:800 1.5rem "JetBrains Mono",monospace; color:var(--wood); min-width:6.5ch; }
+    .hero-stat span { color:var(--muted); font-size:.82rem; line-height:1.5; }
+    .card { padding:clamp(1.15rem,2.7vw,1.8rem); scroll-margin-top:70px; }
+    .card h2,.lab h2,.timeline-card h2 { margin:0 0 .75rem; font-size:clamp(1.25rem,3vw,1.8rem); letter-spacing:-.035em; }
+    .card h3 { margin:.3rem 0 .35rem; color:#f3d9ab; font-size:1rem; }
+    .card p,.card li,.lab p { color:var(--muted); font-size:.9rem; line-height:1.7; }
+    .two,.three { display:grid; gap:1rem; }
+    .two { grid-template-columns:repeat(2,1fr); } .three { grid-template-columns:repeat(3,1fr); }
+    .fact { padding:1rem; border:1px solid var(--line); border-radius:var(--radius); background:rgba(214,158,79,.04); }
+    .fact-number { display:block; margin-bottom:.25rem; color:var(--wood); font:700 1.6rem "JetBrains Mono",monospace; }
+    .fact p { margin:0; }
+    .callout { margin-top:1rem; padding:.9rem 1rem; border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; background:rgba(242,184,75,.08); }
+    .callout strong { color:#fde68a; }
+    .debate { margin-top:1rem; padding:.9rem 1rem; border-left:4px solid #38bdf8; border-radius:0 var(--radius) var(--radius) 0; background:rgba(56,189,248,.08); }
+    .debate strong { color:#7dd3fc; }
+
+    /* Textbook figures */
+    .fig { margin:1.3rem 0 0; }
+    .fig-frame { padding:1rem; border:1px solid var(--line); border-radius:var(--radius); background:#100a05; overflow-x:auto; }
+    .fig-frame svg { display:block; width:100%; min-width:480px; height:auto; }
+    .fig figcaption { margin-top:.55rem; color:var(--dim); font-size:.78rem; line-height:1.6; }
+    .fig figcaption strong { color:var(--wood); }
+    .fig-wide .fig-frame svg { min-width:640px; }
+
+    /* Geologic strip */
+    .era-strip { margin-top:.4rem; }
+    .era-track { position:relative; display:grid; grid-template-columns:12fr 8fr 6fr 30fr 22fr; border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+    .era-block { position:relative; padding:.9rem .6rem; text-align:center; border-right:1px solid rgba(0,0,0,.35); }
+    .era-block:last-child { border-right:0; }
+    .era-block b { display:block; font-size:.76rem; color:#0f0a05; }
+    .era-block small { display:block; margin-top:.2rem; color:rgba(15,10,5,.75); font-size:.62rem; font-weight:700; }
+    .era-block.devonian { background:var(--moss); }
+    .era-block.carboniferous { background:var(--wood); }
+    .era-block.permian { background:var(--fungus); }
+    .era-block.mesozoic { background:#38bdf8; }
+    .era-block.cenozoic { background:#a78bfa; }
+    .era-marker { position:absolute; top:100%; margin-top:.4rem; padding:.24rem .5rem; border-radius:999px; background:#0f0a05; color:var(--text); font:700 .58rem "JetBrains Mono",monospace; white-space:nowrap; transform:translateX(-50%); }
+    .era-marker::before { content:""; position:absolute; left:50%; bottom:100%; width:1px; height:8px; background:#0f0a05; transform:translateX(-50%); }
+    .era-markers { position:relative; height:2.6rem; }
+
+    /* Timeline */
+    .timeline-card { padding:clamp(1.1rem,2.7vw,1.8rem); scroll-margin-top:70px; }
+    .timeline-lede { color:var(--muted); font-size:.9rem; line-height:1.7; margin:0 0 1.1rem; max-width:70ch; }
+    .timeline-track { position:relative; display:grid; grid-template-columns:repeat(5,1fr); gap:.6rem; padding-top:1.6rem; }
+    .timeline-track::before { content:""; position:absolute; top:.55rem; left:2%; right:2%; height:3px; background:linear-gradient(90deg,var(--moss),var(--wood) 55%,var(--fungus)); border-radius:3px; }
+    .tl-node { position:relative; display:flex; flex-direction:column; align-items:center; gap:.5rem; padding:0; border:0; background:transparent; color:var(--dim); cursor:pointer; text-align:center; }
+    .tl-dot { width:16px; height:16px; border-radius:50%; border:3px solid var(--panel2); background:#4b3a26; box-shadow:0 0 0 2px var(--line2); transition:transform .16s,background .16s,box-shadow .16s; }
+    .tl-node b { font-size:.72rem; color:var(--muted); line-height:1.35; }
+    .tl-node small { font:700 .62rem "JetBrains Mono",monospace; color:var(--dim); letter-spacing:.04em; }
+    .tl-node:hover .tl-dot { transform:scale(1.15); }
+    .tl-node.active .tl-dot { background:var(--wood); box-shadow:0 0 0 4px rgba(214,158,79,.28), 0 0 16px rgba(214,158,79,.5); }
+    .tl-node.active b { color:#fff; }
+    .tl-readout { min-height:9.5rem; margin-top:1.3rem; padding:1.1rem 1.2rem; border-top:1px solid var(--line); }
+    .tl-readout .tl-tag { display:inline-block; margin-bottom:.5rem; padding:.24rem .55rem; border-radius:999px; color:#0f0a05; background:var(--wood); font:800 .62rem "JetBrains Mono",monospace; letter-spacing:.05em; text-transform:uppercase; }
+    .tl-readout h3 { margin:0 0 .4rem; font-size:1.15rem; color:var(--text); }
+    .tl-readout p { margin:0; color:var(--muted); font-size:.88rem; line-height:1.72; max-width:74ch; }
+
+    /* No-rot gap visual */
+    .gap-visual { display:grid; grid-template-columns:1fr 1fr; gap:0; margin-top:1rem; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
+    .gap-col { padding:1.1rem; }
+    .gap-col.before { background:linear-gradient(180deg,rgba(224,112,79,.1),transparent); border-right:1px solid var(--line); }
+    .gap-col.after { background:linear-gradient(180deg,rgba(124,174,81,.1),transparent); }
+    .gap-col b { display:block; margin-bottom:.4rem; color:var(--amber); font:700 .68rem "JetBrains Mono",monospace; letter-spacing:.07em; text-transform:uppercase; }
+    .gap-col p { margin:0; font-size:.85rem; }
+
+    /* Fuel comparison */
+    .fuel-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1rem; }
+    .fuel { padding:1.1rem; border:1px solid var(--line); border-radius:var(--radius); background:rgba(0,0,0,.18); }
+    .fuel-tag { display:inline-block; margin-bottom:.5rem; padding:.24rem .55rem; border-radius:999px; font:800 .6rem "JetBrains Mono",monospace; letter-spacing:.05em; text-transform:uppercase; }
+    .fuel.coal .fuel-tag { color:#1c1108; background:var(--wood); }
+    .fuel.oil .fuel-tag { color:#04231a; background:#38bdf8; }
+    .fuel h3 { margin:0 0 .4rem; color:var(--text); }
+    .fuel p { margin:.3rem 0 0; font-size:.85rem; }
+    .fuel-table { width:100%; min-width:560px; border-collapse:collapse; font-size:.82rem; }
+    .fuel-table th,.fuel-table td { padding:.55rem .7rem; border:1px solid var(--line); text-align:left; }
+    .fuel-table th { color:var(--wood); font-size:.68rem; letter-spacing:.05em; text-transform:uppercase; background:rgba(214,158,79,.08); }
+    .fuel-table td { color:var(--muted); }
+    .fuel-table td:first-child { color:var(--text); font-weight:700; }
+
+    /* Quiz */
+    .quiz { display:grid; gap:.7rem; margin-top:.6rem; }
+    .q { padding:.85rem; border:1px solid var(--line); border-radius:9px; }
+    .q label { display:block; margin-bottom:.5rem; color:#f3d9ab; font-size:.86rem; font-weight:700; }
+    .q select { width:100%; padding:.5rem .6rem; border:1px solid var(--line2); border-radius:8px; color:var(--text); background:#1c130c; }
+    .check-btn { margin-top:.3rem; min-height:42px; padding:0 1rem; border:0; border-radius:8px; color:#1c1108; background:var(--wood); font-weight:800; cursor:pointer; }
+    .feedback { min-height:1.4rem; margin-top:.6rem; font-size:.85rem; font-weight:700; }
+    .feedback.correct { color:#bef264; }
+    .feedback.try { color:#fde68a; }
+
+    .source-shelf { display:grid; grid-template-columns:repeat(3,1fr); gap:.65rem; margin-top:1rem; }
+    .source-card { display:flex; flex-direction:column; gap:.4rem; min-height:120px; padding:.85rem; border:1px solid var(--line); border-radius:8px; color:var(--text); background:rgba(255,255,255,.02); text-decoration:none; transition:transform .16s,border-color .16s; }
+    .source-card:hover { transform:translateY(-2px); border-color:var(--line2); }
+    .source-type { color:#7dd3fc; font:700 .59rem "JetBrains Mono",monospace; letter-spacing:.09em; text-transform:uppercase; }
+    .source-card b { font-size:.82rem; }
+    .source-card span:last-child { margin-top:auto; color:var(--dim); font-size:.69rem; line-height:1.5; }
+
+    .steam-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:.55rem; }
+    .steam-item { padding:.8rem; border-top:3px solid var(--wood); border-radius:6px; background:rgba(255,255,255,.03); }
+    .steam-item:nth-child(2) { border-color:var(--moss); }.steam-item:nth-child(3) { border-color:var(--fungus); }.steam-item:nth-child(4) { border-color:var(--amber); }.steam-item:nth-child(5) { border-color:#a78bfa; }
+    .steam-item b { display:block; margin-bottom:.3rem; font-size:.78rem; }.steam-item p { margin:0; font-size:.75rem; }
+
+    .footer { padding:2rem 1rem; text-align:center; color:var(--dim); font-size:.78rem; }
+    .footer a { color:#f3d9ab; text-decoration:none; }
+
+    @media (max-width:900px) {
+      .nav { display:none; }
+      .hero,.two,.gap-visual,.fuel-grid { grid-template-columns:1fr; }
+      .timeline-track { grid-template-columns:repeat(3,1fr); row-gap:1.4rem; }
+      .timeline-track::before { display:none; }
+      .three,.steam-grid,.source-shelf { grid-template-columns:1fr 1fr; }
+    }
+    @media (max-width:540px) {
+      .three,.steam-grid,.source-shelf { grid-template-columns:1fr; }
+      .timeline-track { grid-template-columns:1fr 1fr; }
+      .topbar .badge { display:none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="../steam-lessons.html">← Lessons</a>
+      <nav class="nav" aria-label="Lesson sections">
+        <a href="#timeline">Timeline</a><a href="#gap">The No-Rot Gap</a><a href="#fuels">Fossil Fuels</a><a href="#quiz">Check Yourself</a><a href="#launchpad">Explore More</a>
+      </nav>
+      <span class="badge">Life Sciences · Grades 6–10</span>
+    </div>
+  </header>
+
+  <main class="shell" id="main-content">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Evolutionary Biology · Deep Time · Earth Systems</p>
+        <h1>The evolution of <em>wood</em></h1>
+        <p class="lede">Wood is not just "trees being tall." It evolved roughly 400 million years ago in small, ankle-high plants — not to hold anything up, but to move water. Height came later. And once lignin existed, something even stranger happened: for nearly 100 million years, almost nothing on Earth could break it down.</p>
+        <div class="meta"><span class="badge">35–50 minutes</span><span class="badge">Interactive timeline</span><span class="badge">Connects to coal &amp; fossil fuels</span></div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="hero-stat"><b>~407 Mya</b><span>The oldest confirmed woody fossil, <em>Armoricaphyton</em>, is built for water transport, not height.</span></div>
+        <div class="hero-stat"><b>~393 Mya</b><span><em>Archaeopteris</em> repurposes woody tissue for structural support, forming Earth's first true forests.</span></div>
+        <div class="hero-stat"><b>~100 My</b><span>Proposed gap between wood evolving and fungi gaining the enzymes to fully rot it — a hypothesis, not settled fact.</span></div>
+      </div>
+    </section>
+
+    <section class="card" id="intro">
+      <p class="kicker">Start with the surprising part</p>
+      <h2>Wood didn't evolve to make trees tall</h2>
+      <p>It's tempting to assume wood evolved so plants could grow tall and out-compete each other for sunlight. Fossil evidence points to a different story. The oldest confirmed woody plant, <em>Armoricaphyton chateaupannense</em> (~407 million years old, from what is now France), was a small plant with narrow woody stems — no taller than its herbaceous neighbors. Researchers who scanned its stems concluded that its wood mainly improved water transport, likely a response to falling atmospheric CO₂, which forced plants to keep their pores open longer and lose more water. Height, and the towering trunks we associate with "wood," came later, as other plant lineages co-opted the same tissue for structural support.</p>
+      <div class="three">
+        <div class="fact"><span class="fact-number">407</span><h3>Million years ago</h3><p>Age of the oldest confirmed woody fossil, found in Early Devonian rock in France.</p></div>
+        <div class="fact"><span class="fact-number">H₂O</span><h3>First job: plumbing</h3><p>Lignin stiffens vascular tissue so it resists collapsing while pulling water upward under tension.</p></div>
+        <div class="fact"><span class="fact-number">2nd</span><h3>Second job: support</h3><p>Structural height was a later, separate evolutionary innovation built on the same material.</p></div>
+      </div>
+
+      <figure class="fig">
+        <div class="fig-frame">
+          <svg viewBox="0 0 600 260" role="img" aria-labelledby="figTitle1 figDesc1">
+            <title id="figTitle1">Cross section of a young woody stem</title>
+            <desc id="figDesc1">Concentric rings from outside to inside: bark, phloem, vascular cambium, xylem (with lignin-reinforced cell walls), and pith at the center.</desc>
+            <circle cx="130" cy="130" r="112" fill="#3a2412" stroke="#8a6a3c" stroke-width="2"/>
+            <circle cx="130" cy="130" r="96" fill="#5a3a1e" stroke="#8a6a3c" stroke-width="1.5"/>
+            <circle cx="130" cy="130" r="86" fill="#8a6530" stroke="#c8963f" stroke-width="1.5"/>
+            <circle cx="130" cy="130" r="70" fill="#d69e4f" stroke="#f2c877" stroke-width="1.5"/>
+            <circle cx="130" cy="130" r="28" fill="#e8d5a8" stroke="#c8963f" stroke-width="1.5"/>
+            <g stroke="#a9740f" stroke-width="1" opacity=".55">
+              <line x1="130" y1="130" x2="130" y2="18"/>
+              <line x1="130" y1="130" x2="220" y2="65"/>
+              <line x1="130" y1="130" x2="238" y2="150"/>
+              <line x1="130" y1="130" x2="185" y2="230"/>
+              <line x1="130" y1="130" x2="70" y2="230"/>
+              <line x1="130" y1="130" x2="22" y2="150"/>
+              <line x1="130" y1="130" x2="40" y2="65"/>
+            </g>
+            <g fill="none" stroke="#f8f0e3" stroke-width="1.4">
+              <line x1="290" y1="24" x2="248" y2="34"/>
+              <line x1="290" y1="70" x2="222" y2="60"/>
+              <line x1="290" y1="112" x2="200" y2="100"/>
+              <line x1="290" y1="160" x2="180" y2="145"/>
+              <line x1="290" y1="228" x2="130" y2="155"/>
+            </g>
+            <g font-family="Inter,sans-serif" font-size="15" fill="#f8f0e3">
+              <text x="296" y="28">Bark — protective outer layer</text>
+              <text x="296" y="74">Phloem — carries sugars down</text>
+              <text x="296" y="116">Vascular cambium — growth ring</text>
+              <text x="296" y="164">Xylem — lignin-reinforced water pipes</text>
+              <text x="296" y="232">Pith — soft central tissue</text>
+            </g>
+          </svg>
+        </div>
+        <figcaption><strong>Figure 1.1</strong> — In a woody stem, lignin is concentrated in the xylem's cell walls. It stiffens the water-conducting tissue so it can pull water upward under tension without collapsing — the original evolutionary job of wood.</figcaption>
+      </figure>
+    </section>
+
+    <section class="timeline-card" id="timeline">
+      <p class="kicker">Interactive · Click each marker</p>
+      <h2>400 million years, five milestones</h2>
+      <p class="timeline-lede">Wood's story runs from a small plumbing upgrade to the formation of Earth's coal beds. Select a point on the timeline to read what happened and why it mattered.</p>
+
+      <figure class="fig fig-wide era-strip">
+        <div class="fig-frame">
+          <div class="era-track" role="img" aria-label="Geologic periods from the Devonian to today, showing when wood, forests, and lignin-eating fungi appear">
+            <div class="era-block devonian"><b>Devonian</b><small>419–359 Mya</small></div>
+            <div class="era-block carboniferous"><b>Carboniferous</b><small>359–299 Mya</small></div>
+            <div class="era-block permian"><b>Permian</b><small>299–252 Mya</small></div>
+            <div class="era-block mesozoic"><b>Mesozoic</b><small>252–66 Mya</small></div>
+            <div class="era-block cenozoic"><b>Cenozoic</b><small>66 Mya–today</small></div>
+          </div>
+          <div class="era-markers">
+            <span class="era-marker" style="left:10%">Wood ~407 Mya</span>
+            <span class="era-marker" style="left:19%">Forests ~393 Mya</span>
+            <span class="era-marker" style="left:38%">Coal swamps</span>
+            <span class="era-marker" style="left:60%">Fungi debated ~290 Mya</span>
+            <span class="era-marker" style="left:88%">Oil &amp; gas source rock</span>
+          </div>
+        </div>
+        <figcaption><strong>Figure 1.2</strong> — A geologic time strip is not drawn to a linear scale of years — it's divided by major boundaries in the rock and fossil record. Wood and the first forests appear inside the Devonian; the Carboniferous coal swamps and the debated fungal "gap" straddle the Carboniferous–Permian boundary; most of today's oil and gas source rock formed much later, in the Mesozoic.</figcaption>
+      </figure>
+
+      <div class="timeline-track" id="timelineTrack" role="tablist" aria-label="Evolution of wood timeline"></div>
+      <div class="tl-readout" id="tlReadout"></div>
+    </section>
+
+    <section class="card" id="gap">
+      <p class="kicker">A contested part of the story</p>
+      <h2>Did fungi really take 100 million years to catch up?</h2>
+      <p>Fungi as a kingdom are ancient — likely well over 500 million years old, possibly over a billion by some molecular-clock estimates, long before wood evolved. A widely repeated explanation for the Carboniferous coal boom says that existing fungi could only digest sugars and starches, not tough, irregular lignin, so dead wood piled up largely undecayed for tens of millions of years until white-rot fungi evolved lignin-degrading enzymes.</p>
+      <div class="gap-visual">
+        <div class="gap-col before">
+          <b>The "No-Rot" Hypothesis (2012)</b>
+          <p>A genomic study proposed that white-rot fungi evolved lignin peroxidase enzymes around 290 million years ago, and tied that timing to the end of major coal formation — implying a ~100-million-year lag between wood and the fungi that could fully break it down.</p>
+        </div>
+        <div class="gap-col after">
+          <b>The Counter-Evidence (2016)</b>
+          <p>A later study (Nelsen et al., published in <em>PNAS</em>) argued lignin-degrading fungi likely existed earlier than that, and that wet, low-oxygen burial conditions and the tectonic position of tropical swamps mattered more to coal formation than any single fungal innovation.</p>
+        </div>
+      </div>
+      <div class="debate"><strong>Where this stands:</strong> Scientists agree wood, coal swamps, and eventually powerful lignin-degrading fungi are all real. What's still debated is how much of the Carboniferous coal boom is explained by an evolutionary lag in fungi versus by climate and burial conditions. Treat "fungi hadn't evolved yet" as one contested hypothesis, not a settled fact.</div>
+    </section>
+
+    <section class="card" id="fuels">
+      <p class="kicker">Common misconception, checked</p>
+      <h2>Do all fossil fuels come from that gap?</h2>
+      <p>Most coal burned today does trace back to Carboniferous swamp forests. Oil and natural gas do not — they mostly formed later, from an entirely different kind of source material.</p>
+      <div class="fuel-grid">
+        <div class="fuel coal">
+          <span class="fuel-tag">Coal</span>
+          <h3>Yes — largely from land plants</h3>
+          <p>Formed largely during the Carboniferous period (~359–299 Mya) from lignin-rich trees and swamp vegetation buried in wet, low-oxygen sediment before it could fully decay.</p>
+        </div>
+        <div class="fuel oil">
+          <span class="fuel-tag">Oil &amp; natural gas</span>
+          <h3>No — a different source entirely</h3>
+          <p>Most of today's oil and gas reserves formed from marine algae and plankton buried in oxygen-poor ocean basins, largely during the Mesozoic era (~252–66 Mya) — tens of millions of years after the Carboniferous coal swamps.</p>
+        </div>
+      </div>
+
+      <div class="fig">
+        <div class="fig-frame" style="overflow-x:auto;">
+          <table class="fuel-table" aria-label="Comparison of coal, oil, and natural gas origins">
+            <thead>
+              <tr><th>Fuel</th><th>Source material</th><th>Main formation era</th><th>Key condition</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Coal</td><td>Land plants (trees, ferns, swamp vegetation)</td><td>Carboniferous, ~359–299 Mya</td><td>Burial in wet, low-oxygen swamps</td></tr>
+              <tr><td>Oil</td><td>Marine algae &amp; plankton</td><td>Mostly Mesozoic, ~252–66 Mya</td><td>Burial in anoxic seafloor sediment, moderate heat</td></tr>
+              <tr><td>Natural gas</td><td>Marine plankton or buried plant material</td><td>Mostly Mesozoic, ~252–66 Mya</td><td>Same burial process, but more heat and pressure than oil</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <figcaption><strong>Table 1.1</strong> — All three fossil fuels form the same basic way — dead organic matter buried faster than it can decay, then transformed by heat and pressure — but from different source material at different times.</figcaption>
+      </div>
+
+      <div class="callout"><strong>Go deeper:</strong> Coal, oil, and natural gas formation is its own multi-stage story — peat to lignite to anthracite, and kerogen to the "oil window" to the "gas window." That's covered in a dedicated lesson: <a href="fossil-fuel-formation.html" style="color:#7dd3fc;">Fossil Fuels: How Coal, Oil &amp; Natural Gas Form →</a></div>
+    </section>
+
+    <section class="card" id="quiz">
+      <p class="kicker">Check yourself</p>
+      <h2>Quick knowledge check</h2>
+      <div class="quiz">
+        <div class="q">
+          <label for="wq1">1. What was wood's original evolutionary function?</label>
+          <select id="wq1">
+            <option value="">Choose an answer</option>
+            <option value="height">Growing tall to reach sunlight</option>
+            <option value="water">Reinforcing tissue for water transport</option>
+            <option value="defense">Defending against herbivores</option>
+          </select>
+        </div>
+        <div class="q">
+          <label for="wq2">2. Which statement about the Carboniferous coal boom is most accurate?</label>
+          <select id="wq2">
+            <option value="">Choose an answer</option>
+            <option value="settled">Scientists agree it was caused entirely by a lack of lignin-eating fungi</option>
+            <option value="nofungi">No fungi of any kind existed during the Carboniferous</option>
+            <option value="debated">Scientists debate how much is explained by a fungal lag versus burial and climate conditions</option>
+          </select>
+        </div>
+        <div class="q">
+          <label for="wq3">3. Which fossil fuel formed from that undecayed wood?</label>
+          <select id="wq3">
+            <option value="">Choose an answer</option>
+            <option value="coal">Coal</option>
+            <option value="oil">Oil</option>
+            <option value="gas">Natural gas</option>
+          </select>
+        </div>
+        <button class="check-btn" id="checkAnswers" type="button">Check answers</button>
+        <div class="feedback" id="quizFeedback" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="card" id="launchpad">
+      <p class="kicker">Go deeper</p>
+      <h2>Explore the sources</h2>
+      <div class="source-shelf">
+        <a class="source-card" href="https://www.americanscientist.org/article/an-unexpected-debut-for-wood" target="_blank" rel="noopener noreferrer"><span class="source-type">Magazine ↗</span><b>An Unexpected Debut for Wood</b><span>American Scientist on the water-transport hypothesis for wood's origin.</span></a>
+        <a class="source-card" href="https://www.binghamton.edu/news/story/2210/modern-trees-emerged-earlier-than-previously-believed-new-research-reveals" target="_blank" rel="noopener noreferrer"><span class="source-type">Research news ↗</span><b>The 385-Million-Year-Old Forest</b><span>Binghamton University coverage of the Cairo, New York fossil forest site.</span></a>
+        <a class="source-card" href="https://www.pnas.org/doi/10.1073/pnas.1517943113" target="_blank" rel="noopener noreferrer"><span class="source-type">Journal (PNAS) ↗</span><b>Delayed Fungal Evolution Did Not Cause the Paleozoic Coal Peak</b><span>Nelsen et al.'s 2016 challenge to the "fungi were late" hypothesis.</span></a>
+        <a class="source-card" href="https://www.sciencedaily.com/releases/2012/06/120628181721.htm" target="_blank" rel="noopener noreferrer"><span class="source-type">Research news ↗</span><b>How an Ancestral Fungus May Have Influenced Coal Formation</b><span>Coverage of the original 2012 genomic study proposing the fungal lag.</span></a>
+        <a class="source-card" href="https://en.wikipedia.org/wiki/Armoricaphyton" target="_blank" rel="noopener noreferrer"><span class="source-type">Reference ↗</span><b>Armoricaphyton</b><span>Background on the oldest confirmed woody plant fossil.</span></a>
+        <a class="source-card" href="https://www.chevron.com/newsroom/2024/q4/explainer-where-do-oil-and-gas-come-from" target="_blank" rel="noopener noreferrer"><span class="source-type">Explainer ↗</span><b>Where Do Oil and Gas Come From?</b><span>A plain-language explainer on marine-source petroleum formation.</span></a>
+      </div>
+      <p style="color:var(--dim); font-size:.72rem; margin-top:.8rem;">This lesson presents the fungal-lag idea as a debated hypothesis, not settled fact, per the ongoing scientific discussion between the sources above.</p>
+    </section>
+
+    <section class="card">
+      <p class="kicker">Why this is STEAM</p>
+      <h2>One material, five ways of thinking</h2>
+      <div class="steam-grid">
+        <div class="steam-item"><b>Science</b><p>Trace plant anatomy, enzymes, and geologic time.</p></div>
+        <div class="steam-item"><b>Technology</b><p>Lignin chemistry informs biofuels and biodegradable materials today.</p></div>
+        <div class="steam-item"><b>Engineering</b><p>Wood's cellular structure inspired lightweight, strong composite design.</p></div>
+        <div class="steam-item"><b>Art</b><p>Illustrate a Devonian landscape before and after the first forests.</p></div>
+        <div class="steam-item"><b>Math</b><p>Compare million-year timescales and layered sediment accumulation rates.</p></div>
+      </div>
+    </section>
+  </main>
+  <footer class="footer"><a href="../steam-lessons.html">← Return to STEAM Lessons</a> · Wood is a 400-million-year-old plumbing solution that became a forest.</footer>
+
+  <script>
+    (function () {
+      var milestones = [
+        {
+          key: "water",
+          short: "Wood evolves",
+          tag: "~407 Mya · Early Devonian",
+          era: "407",
+          title: "Wood evolves — for water, not height",
+          text: "The oldest confirmed woody plant, Armoricaphyton chateaupannense, has narrow woody stems but no real height advantage over its herbaceous neighbors. Scans of its tissue show its structure prioritized water conduction, likely because falling atmospheric CO2 forced plants to keep their pores open longer and lose more water."
+        },
+        {
+          key: "trees",
+          short: "First forests",
+          tag: "~393–359 Mya · Middle–Late Devonian",
+          era: "385",
+          title: "Archaeopteris builds the first forests",
+          text: "Archaeopteris, a tree-sized progymnosperm, co-opts existing woody tissue for structural support instead of just plumbing. It comes to dominate Late Devonian landscapes, forming Earth's first true forests before going extinct near the Devonian–Carboniferous boundary."
+        },
+        {
+          key: "gap",
+          short: "Coal swamps",
+          tag: "~359–299 Mya · Carboniferous",
+          era: "330",
+          title: "Coal swamps accumulate at record scale",
+          text: "Tropical swamp forests bury enormous volumes of plant debris in wet, low-oxygen sediment, which is the main reason so little of it decays. This period produces most of the coal in use today."
+        },
+        {
+          key: "fungi",
+          short: "Fungi debate",
+          tag: "~290 Mya · Permian (debated)",
+          era: "290",
+          title: "Did fungi finally learn to eat lignin?",
+          text: "A 2012 genomic study proposed that white-rot fungi evolved lignin-degrading peroxidase enzymes around this time, and linked that to the end of major coal formation. Later research (Nelsen et al., 2016) challenged the idea, arguing some fungi could likely break down lignin earlier, and that wet burial conditions and tectonics mattered more than any single fungal innovation. Scientists still debate how much either factor explains the coal record."
+        },
+        {
+          key: "today",
+          short: "Fast decay",
+          tag: "Today",
+          era: "0",
+          title: "Decomposition, restored",
+          text: "Modern wood-decay fungi (white-rot and brown-rot) recycle dead wood on a scale of years to decades, not tens of millions of years. Whatever combination of causes ended the Carboniferous coal boom, today's fast decomposition is the normal state of Earth's carbon cycle."
+        }
+      ];
+
+      var track = document.getElementById("timelineTrack");
+      var readout = document.getElementById("tlReadout");
+
+      milestones.forEach(function (m) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "tl-node";
+        btn.setAttribute("role", "tab");
+        btn.dataset.key = m.key;
+        btn.innerHTML = '<span class="tl-dot" aria-hidden="true"></span><b>' + m.short + "</b><small>" + m.tag.split(" · ")[0] + "</small>";
+        btn.addEventListener("click", function () { setMilestone(m.key); });
+        track.appendChild(btn);
+      });
+
+      function setMilestone(key) {
+        var m = milestones.find(function (item) { return item.key === key; });
+        readout.innerHTML =
+          '<span class="tl-tag">' + m.tag + '</span>' +
+          "<h3>" + m.title + "</h3>" +
+          "<p>" + m.text + "</p>";
+        document.querySelectorAll(".tl-node").forEach(function (node) {
+          node.classList.toggle("active", node.dataset.key === key);
+        });
+      }
+
+      setMilestone("water");
+
+      document.getElementById("checkAnswers").addEventListener("click", function () {
+        var score = 0;
+        if (document.getElementById("wq1").value === "water") score += 1;
+        if (document.getElementById("wq2").value === "debated") score += 1;
+        if (document.getElementById("wq3").value === "coal") score += 1;
+        var feedback = document.getElementById("quizFeedback");
+        feedback.className = "feedback " + (score === 3 ? "correct" : "try");
+        feedback.textContent = score === 3
+          ? "Correct! Wood began as plumbing, the Carboniferous coal boom's exact cause is still debated by scientists, and coal is the fuel that formed from it."
+          : score + "/3 correct. Revisit the timeline and the fossil fuel comparison, then try again.";
+      });
+    }());
+  </script>
+</body>
+</html>
