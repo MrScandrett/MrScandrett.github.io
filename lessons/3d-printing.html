@@ -100,6 +100,12 @@
     .p3d-block h3 { margin: 0 0 0.4rem; font-size: 0.95rem; font-weight: 800; color: #8a2900; }
     .p3d-block p  { margin: 0; font-size: 0.86rem; line-height: 1.55; color: #3a2a1a; }
     .p3d-icon     { font-size: 1.4rem; margin-bottom: 0.4rem; display: block; }
+    .p3d-block-img-wrap {
+      border-radius: 10px; overflow: hidden; margin: -0.2rem -0.2rem 0.7rem;
+      background: #fff; border: 1px solid rgba(255,107,53,0.14);
+      aspect-ratio: 16 / 9;
+    }
+    .p3d-block-img-wrap img { display: block; width: 100%; height: 100%; object-fit: contain; }
 
     /* ── vocab flip cards ── */
     .p3d-flip-grid { --p3d-flip-height: 210px; }
@@ -595,6 +601,7 @@
       <p class="p3d-label" style="color:#ffb88c">02 — Interactive Slicer Simulator</p>
       <h2>Adjust Settings — See the Effect Live</h2>
       <p>Move the sliders to change key settings. The cross-section preview updates in real time to show layer count, infill pattern, wall count, and supports. The quality score and warnings update as you go.</p>
+      <p style="font-size:0.82rem; color:rgba(255,200,160,0.8); margin:-0.6rem 0 1rem; line-height:1.6;">Modeled on the classroom <strong style="color:#ffb88c">MakerBot SKETCH Large</strong> — the ranges below match its real limits: 220 × 200 × 250 mm enclosed build volume, fixed 0.4 mm nozzle, 100–400 micron layer resolution, 150 mm/s max feed rate, and a closed material system limited to PLA / Tough PLA.</p>
 
       <div class="p3d-sim-layout">
         <!-- Controls -->
@@ -606,21 +613,19 @@
             <div style="position: relative;">
               <select id="mat-select">
                 <option value="pla">PLA</option>
-                <option value="petg">PETG</option>
-                <option value="abs">ABS</option>
-                <option value="tpu">TPU (Flexible)</option>
-                <option value="asa">ASA</option>
+                <option value="toughpla">Tough PLA</option>
               </select>
               <span aria-hidden="true" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: rgba(255,200,160,0.7); font-size: 0.7rem;">▼</span>
             </div>
+            <div style="font-size:0.66rem; color:rgba(255,200,160,0.5); margin-top:3px;">SKETCH Large's Smart Extruder+ only accepts these two — no open-material swaps.</div>
           </div>
 
           <div class="p3d-control-row">
-            <label for="tmp-slider">Nozzle Temp <span id="tmp-val">210 °C</span></label>
-            <input type="range" id="tmp-slider" min="170" max="310" step="5" value="210" />
+            <label for="tmp-slider">Nozzle Temp <span id="tmp-val">215 °C</span></label>
+            <input type="range" id="tmp-slider" min="190" max="260" step="5" value="215" />
             <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: rgba(255,200,160,0.5); margin-top: 2px;">
-              <span>170°C</span>
-              <span>310°C</span>
+              <span>190°C</span>
+              <span>260°C</span>
             </div>
           </div>
 
@@ -629,9 +634,9 @@
           <!-- Slicing Geometry -->
           <div class="p3d-control-row">
             <label for="lh-slider">Layer Height <span id="lh-val">0.20 mm</span></label>
-            <input type="range" id="lh-slider" min="0.05" max="0.40" step="0.05" value="0.20" />
+            <input type="range" id="lh-slider" min="0.10" max="0.40" step="0.05" value="0.20" />
             <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: rgba(255,200,160,0.5); margin-top: 2px;">
-              <span>0.05 (Fine)</span>
+              <span>0.10 (Fine)</span>
               <span>0.40 (Draft)</span>
             </div>
           </div>
@@ -672,10 +677,10 @@
           <!-- Kinematics -->
           <div class="p3d-control-row">
             <label for="spd-slider">Print Speed <span id="spd-val">50 mm/s</span></label>
-            <input type="range" id="spd-slider" min="10" max="300" step="10" value="50" />
+            <input type="range" id="spd-slider" min="10" max="150" step="10" value="50" />
             <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: rgba(255,200,160,0.5); margin-top: 2px;">
               <span>10</span>
-              <span>300 mm/s</span>
+              <span>150 mm/s (SKETCH max)</span>
             </div>
           </div>
 
@@ -754,46 +759,55 @@
 
       <div class="p3d-grid">
         <div class="p3d-block">
+          <div class="p3d-block-img-wrap"><img src="../assets/images/diagrams/3d-printing/layer-height.svg" alt="Diagram comparing a fine 0.10 mm layer stack with a smooth surface against a coarse 0.30 mm layer stack with visible ridges" loading="lazy" /></div>
           <span class="p3d-icon">📏</span>
           <h3>Layer Height</h3>
           <p>Controls how thick each slice is. <strong>Thinner layers</strong> (0.05–0.12 mm) = smoother surfaces, finer details, longer print time. <strong>Thicker layers</strong> (0.24–0.40 mm) = faster prints, stronger Z-adhesion, visible ridges. For most prints, <strong>0.2 mm</strong> is the best balance. A rule of thumb: layer height should be no more than 75% of the nozzle diameter.</p>
         </div>
         <div class="p3d-block">
+          <div class="p3d-block-img-wrap"><img src="../assets/images/diagrams/3d-printing/infill.svg" alt="Diagram of three infill densities: 15% sparse grid, 50% grid, and 100% solid" loading="lazy" /></div>
           <span class="p3d-icon">🕸️</span>
           <h3>Infill Density &amp; Pattern</h3>
           <p>Infill is the internal structure that fills the model. <strong>0%</strong> = hollow (vases, decorative). <strong>10–20%</strong> = light prints, enough for most decorative parts. <strong>40–60%</strong> = functional parts with moderate load. <strong>80–100%</strong> = maximum strength but wastes filament — walls often contribute more strength than infill beyond 60%. Common patterns: <em>Grid</em>, <em>Gyroid</em> (isotropic strength), <em>Lightning</em> (minimal but fast).</p>
         </div>
         <div class="p3d-block">
+          <div class="p3d-block-img-wrap"><img src="../assets/images/diagrams/3d-printing/walls.svg" alt="Diagram comparing a thin 2-wall shell against a thick 5-wall shell around the same square cross-section" loading="lazy" /></div>
           <span class="p3d-icon">🧱</span>
           <h3>Wall Count (Perimeters)</h3>
           <p>The number of shells that form the outer surface of the print. <strong>2 walls</strong> = fast, thin, fragile. <strong>3–4 walls</strong> = standard for functional parts. <strong>5+ walls</strong> = very strong, less infill needed, excellent for mechanical parts. Wall thickness = wall count × nozzle diameter (0.4 mm nozzle × 3 walls = 1.2 mm shell).</p>
         </div>
         <div class="p3d-block">
+          <div class="p3d-block-img-wrap"><img src="../assets/images/diagrams/3d-printing/temperature.svg" alt="Diagram of filament feeding through a 210°C heater block and melting into a droplet at the nozzle tip, next to a thermometer scale of common print temperatures" loading="lazy" /></div>
           <span class="p3d-icon">🌡️</span>
           <h3>Print Temperature</h3>
           <p>Higher temperature = better layer adhesion, less risk of clogs, slightly more stringing. Lower temperature = less stringing, better detail on bridges but possible delamination. Always stay within the filament manufacturer's range. <strong>PLA:</strong> 195–220 °C. <strong>PETG:</strong> 230–250 °C. <strong>ABS:</strong> 230–250 °C. <strong>TPU:</strong> 220–240 °C.</p>
         </div>
         <div class="p3d-block">
+          <div class="p3d-block-img-wrap"><img src="../assets/images/diagrams/3d-printing/speed.svg" alt="Diagram comparing a clean straight wall printed at 40 mm/s against a wobbly, ringing wall printed at 200 mm/s" loading="lazy" /></div>
           <span class="p3d-icon">⚡</span>
           <h3>Print Speed</h3>
           <p>How fast the printhead moves in mm/s. Faster = shorter print time but more vibration artefacts, reduced layer adhesion, and possible missed steps on overhangs. Slower = higher quality. Outer walls are usually printed slower than infill (e.g., infill 80 mm/s, outer walls 40 mm/s). Modern machines with input shaping (Klipper, Bambu) can handle 200–600 mm/s reliably.</p>
         </div>
         <div class="p3d-block">
+          <div class="p3d-block-img-wrap"><img src="../assets/images/diagrams/3d-printing/supports.svg" alt="Diagram comparing a lattice of normal vertical supports under an overhang against branching tree supports" loading="lazy" /></div>
           <span class="p3d-icon">🏔️</span>
           <h3>Supports</h3>
           <p>3D printers can't print in mid-air — overhangs beyond ~45° need supports beneath them. <em>Normal supports</em> grow from the build plate up. <em>Everywhere supports</em> also grow from the model. <em>Tree supports</em> branch from below and use less material. Supports must be removed after printing, so minimise them by rotating the model so overhangs face down or eliminating them through design.</p>
         </div>
         <div class="p3d-block">
+          <div class="p3d-block-img-wrap"><img src="../assets/images/diagrams/3d-printing/bed-adhesion.svg" alt="Diagram comparing a skirt, a brim, and a raft as three bed-adhesion aids of increasing coverage" loading="lazy" /></div>
           <span class="p3d-icon">🏠</span>
           <h3>Bed Adhesion</h3>
           <p><em>Skirt:</em> a ring around the print to prime the nozzle — no adhesion. <em>Brim:</em> extra lines attached to the first layer edge — great for tall narrow parts. <em>Raft:</em> a full base platform the print sits on — used for very warpy materials (ABS, ASA) or complex first-layer geometries. Most PLA prints need only a skirt or no adhesion aid.</p>
         </div>
         <div class="p3d-block">
+          <div class="p3d-block-img-wrap"><img src="../assets/images/diagrams/3d-printing/retraction.svg" alt="Diagram of a nozzle with filament held forward while printing, next to the same nozzle with filament pulled back before a travel move" loading="lazy" /></div>
           <span class="p3d-icon">🔙</span>
           <h3>Retraction</h3>
           <p>When the nozzle travels over empty space, it pulls the filament back slightly to prevent stringing. <strong>Direct drive:</strong> 0.5–2 mm retraction. <strong>Bowden:</strong> 4–7 mm. Too much retraction can grind or jam the filament; too little leaves threads between parts. Higher temperature = worse stringing = needs more retraction.</p>
         </div>
         <div class="p3d-block">
+          <div class="p3d-block-img-wrap"><img src="../assets/images/diagrams/3d-printing/bed-temperature.svg" alt="Diagram of a part staying flat on a heated 60°C bed compared to the same part's corners lifting on a cold bed" loading="lazy" /></div>
           <span class="p3d-icon">🛌</span>
           <h3>Bed Temperature</h3>
           <p>Keeps the first layer warm to prevent warping. <strong>PLA:</strong> 55–65 °C. <strong>PETG:</strong> 70–85 °C. <strong>ABS/ASA:</strong> 90–110 °C (needs enclosure). <strong>TPU:</strong> 40–60 °C. No heated bed = PLA only and small prints. Mismatched bed temp is the #1 cause of prints popping off mid-print.</p>
@@ -1079,7 +1093,7 @@
 
         <div class="p3d-fail-card">
           <div class="p3d-fail-img-wrap">
-            <img src="../assets/images/failures/spaghetti.jpg" alt="Reference illustration of 3D print spaghetti failure: tangled filament strands from a detached print" onerror="this.style.display='none'" />
+            <img src="../assets/images/failures/spaghetti.svg" alt="Diagram of 3D print spaghetti failure: a detached part knocked over with tangled filament strands looping above the build plate" onerror="this.style.display='none'" onload="this.nextElementSibling.style.display='none'" />
             <div class="p3d-fail-placeholder">
               <span class="p3d-fail-placeholder-icon">🍝</span>
               <span>Spaghetti failure — tangled strands<br>from a detached print</span>
@@ -1100,7 +1114,7 @@
 
         <div class="p3d-fail-card">
           <div class="p3d-fail-img-wrap">
-            <img loading="lazy" decoding="async" src="../assets/images/failures/stringing.jpg" alt="Reference illustration of filament stringing: thin cobweb threads between printed towers" onerror="this.style.display='none'" />
+            <img loading="lazy" decoding="async" src="../assets/images/failures/stringing.svg" alt="Diagram of filament stringing: thin cobweb threads spanning the gap between two printed towers where the nozzle travelled" onerror="this.style.display='none'" onload="this.nextElementSibling.style.display='none'" />
             <div class="p3d-fail-placeholder">
               <span class="p3d-fail-placeholder-icon">🧵</span>
               <span>Stringing — thin plastic threads<br>spanning open gaps</span>
@@ -1121,7 +1135,7 @@
 
         <div class="p3d-fail-card">
           <div class="p3d-fail-img-wrap">
-            <img loading="lazy" decoding="async" src="../assets/images/failures/warping.jpg" alt="Reference illustration of 3D print warping: corners of a flat print curling up off the print bed" onerror="this.style.display='none'" />
+            <img loading="lazy" decoding="async" src="../assets/images/failures/warping.png" alt="Diagram of bed-adhesion aids that prevent warping: adequate surface material, glue or tape, a sacrificial brim, and a sacrificial raft" onerror="this.style.display='none'" onload="this.nextElementSibling.style.display='none'" />
             <div class="p3d-fail-placeholder">
               <span class="p3d-fail-placeholder-icon">🏔️</span>
               <span>Warping — corners curling<br>up off the print bed</span>
@@ -1137,12 +1151,13 @@
               <span class="p3d-fail-section-lbl fix">Fix</span>
               <p>Raise bed temperature. Add a wide brim. Use an enclosure (critical for ABS/ASA). Apply Magigoo, glue stick, or hairspray to the bed. Remove draughts near the printer.</p>
             </div>
+            <p style="margin:0.3rem 0 0; font-size:0.68rem; color:#a8968a;">Diagram: STEMFIE.org, <a href="https://commons.wikimedia.org/wiki/File:3D_printing_calibration_3D_printer_build_plate_adhesion.svg" style="color:inherit;">CC BY-SA 4.0</a></p>
           </div>
         </div>
 
         <div class="p3d-fail-card">
           <div class="p3d-fail-img-wrap">
-            <img loading="lazy" decoding="async" src="../assets/images/failures/under-extrusion.jpg" alt="Reference illustration of under-extrusion: gaps and missing lines visible on a 3D printed surface" onerror="this.style.display='none'" />
+            <img loading="lazy" decoding="async" src="../assets/images/failures/under-extrusion.svg" alt="Diagram comparing a correctly extruded wall with solid lines against an under-extruded wall showing gaps and missing wall segments" onerror="this.style.display='none'" onload="this.nextElementSibling.style.display='none'" />
             <div class="p3d-fail-placeholder">
               <span class="p3d-fail-placeholder-icon">🕳️</span>
               <span>Under-extrusion — visible gaps<br>and missing wall segments</span>
@@ -1163,7 +1178,7 @@
 
         <div class="p3d-fail-card">
           <div class="p3d-fail-img-wrap">
-            <img loading="lazy" decoding="async" src="../assets/images/failures/blobs.jpg" alt="Reference illustration of blobs and zits on a 3D printed surface: small raised bumps at layer start points" onerror="this.style.display='none'" />
+            <img loading="lazy" decoding="async" src="../assets/images/failures/blobs.svg" alt="Diagram of blobs and zits: raised bumps stacking up the aligned seam point of a cylindrical wall, one per layer" onerror="this.style.display='none'" onload="this.nextElementSibling.style.display='none'" />
             <div class="p3d-fail-placeholder">
               <span class="p3d-fail-placeholder-icon">🍄</span>
               <span>Blobs &amp; zits — raised bumps<br>at layer seam points</span>
@@ -1184,7 +1199,7 @@
 
         <div class="p3d-fail-card">
           <div class="p3d-fail-img-wrap">
-            <img loading="lazy" decoding="async" src="../assets/images/failures/pillowing.jpg" alt="Reference illustration of pillowing: bumpy, uneven top surface on a 3D print with infill showing through" onerror="this.style.display='none'" />
+            <img loading="lazy" decoding="async" src="../assets/images/failures/pillowing.svg" alt="Diagram of pillowing: a top skin sagging and bubbling between sparse infill supports below it" onerror="this.style.display='none'" onload="this.nextElementSibling.style.display='none'" />
             <div class="p3d-fail-placeholder">
               <span class="p3d-fail-placeholder-icon">📦</span>
               <span>Pillowing — bumpy top surface<br>with infill holes showing through</span>
@@ -1205,7 +1220,7 @@
 
         <div class="p3d-fail-card">
           <div class="p3d-fail-img-wrap">
-            <img loading="lazy" decoding="async" src="../assets/images/failures/banding.jpg" alt="Reference illustration of layer banding: horizontal ripple lines visible on the side of a 3D print" onerror="this.style.display='none'" />
+            <img loading="lazy" decoding="async" src="../assets/images/failures/banding.png" alt="Diagram of a printer's belt loop under correct tension versus a slack, wobbling belt that causes ringing and banding on the printed part" onerror="this.style.display='none'" onload="this.nextElementSibling.style.display='none'" />
             <div class="p3d-fail-placeholder">
               <span class="p3d-fail-placeholder-icon">🌊</span>
               <span>Banding — regular horizontal<br>ripple lines on the wall surface</span>
@@ -1221,12 +1236,13 @@
               <span class="p3d-fail-section-lbl fix">Fix</span>
               <p>Tighten XY belts. Enable input shaping (Klipper) or reduce speed. Check and replace a bent lead screw or Z-coupling. Inspect the feeder gear for wear and grinding.</p>
             </div>
+            <p style="margin:0.3rem 0 0; font-size:0.68rem; color:#a8968a;">Diagram: STEMFIE.org, <a href="https://commons.wikimedia.org/wiki/File:3D_printing_calibration_%E2%80%93_3D_printer_belt_tension_and_backlash.svg" style="color:inherit;">CC BY-SA 4.0</a></p>
           </div>
         </div>
 
         <div class="p3d-fail-card">
           <div class="p3d-fail-img-wrap">
-            <img loading="lazy" decoding="async" src="../assets/images/failures/delamination.jpg" alt="Reference illustration of layer delamination: visible crack between layers on a 3D printed part" onerror="this.style.display='none'" />
+            <img loading="lazy" decoding="async" src="../assets/images/failures/delamination.svg" alt="Diagram of layer delamination: a cracked seam between two layers in a cross-section of a printed wall" onerror="this.style.display='none'" onload="this.nextElementSibling.style.display='none'" />
             <div class="p3d-fail-placeholder">
               <span class="p3d-fail-placeholder-icon">🧱</span>
               <span>Delamination — visible crack<br>or split between layer lines</span>
@@ -1332,12 +1348,11 @@
     var currentLayer = 150;
 
     var MAT = {
-      pla:  { name:'PLA',  tmp:[195,220], bed:[55,65],   enclosure:false, stringy:false },
-      petg: { name:'PETG', tmp:[230,250], bed:[70,85],   enclosure:false, stringy:true  },
-      abs:  { name:'ABS',  tmp:[230,250], bed:[100,110], enclosure:true,  stringy:false },
-      tpu:  { name:'TPU',  tmp:[220,240], bed:[40,60],   enclosure:false, stringy:true,  slow:true },
-      asa:  { name:'ASA',  tmp:[240,260], bed:[90,110],  enclosure:true,  stringy:false },
+      pla:      { name:'PLA',       tmp:[200,225], bed:[45,60], enclosure:true, stringy:false },
+      toughpla: { name:'Tough PLA', tmp:[225,245], bed:[50,65], enclosure:true, stringy:false },
     };
+    var BUILD_VOL = { x: 220, y: 200, z: 250 }; // MakerBot SKETCH Large, mm
+    var MAX_SPEED = 150; // mm/s, SKETCH Large feed-rate ceiling
 
     function getS() {
       return {
@@ -1401,8 +1416,8 @@
 
     function calcQuality(s) {
       var q = 100;
-      q -= (s.lh - 0.05) / 0.35 * 38;          // coarser layers = lower quality
-      q -= Math.max(0, (s.spd - 60) / 240) * 22; // high speed = artefacts
+      q -= (s.lh - 0.10) / 0.30 * 38;           // coarser layers = lower quality
+      q -= Math.max(0, (s.spd - 60) / 90) * 22; // high speed = artefacts (scaled to 150 mm/s ceiling)
       q += Math.min(s.walls - 2, 4) * 3;         // more walls = better
       q += Math.min(s.inf / 100, 0.6) * 7;       // more infill = slightly better
       return Math.max(0, Math.min(100, Math.round(q)));
@@ -1412,9 +1427,8 @@
       var warns = [], m = MAT[s.mat];
       if (s.tmp < m.tmp[0]) warns.push({ text:'⚠ Temp too low for ' + m.name + ' (min ' + m.tmp[0] + ' °C)', cls:'danger' });
       if (s.tmp > m.tmp[1]) warns.push({ text:'⚠ Temp too high — may degrade or jam ' + m.name, cls:'danger' });
-      if (s.mat === 'tpu' && s.spd > 35) warns.push({ text:'⚠ TPU needs ≤35 mm/s — high speed causes jams', cls:'danger' });
-      if (m.enclosure) warns.push({ text:'🏠 ' + m.name + ' requires an enclosure to prevent warping', cls:'' });
-      if (m.stringy && s.tmp > m.tmp[1] - 5) warns.push({ text:'🧵 ' + m.name + ' strings at high temp — reduce by 5 °C', cls:'' });
+      if (m.enclosure) warns.push({ text:'🏠 SKETCH Large\'s built-in enclosure keeps ' + m.name + ' from warping', cls:'ok' });
+      if (s.spd >= MAX_SPEED) warns.push({ text:'⚠ At the SKETCH Large\'s 150 mm/s ceiling — quality drops fast near max speed', cls:'' });
       if (s.lh > 0.30) warns.push({ text:'⚠ Layer height >0.30 mm — fine features may show gaps', cls:'' });
       if (s.lh > 0.35) warns.push({ text:'⚠ Layer height >75% of nozzle — poor inter-layer adhesion risk', cls:'danger' });
       if (s.inf === 0 && s.walls < 4) warns.push({ text:'⚠ 0% infill + <4 walls — top surface will sag through', cls:'danger' });
@@ -1468,12 +1482,16 @@
       }).join('');
     }
 
-  var is3DView = false;
-  var viewAngle = 0;
+  var is3DView = true;
+  var viewAngle = 0.5;
+  var elevAngle = 0.523; // 30°, matches the original fixed iso pitch
   var isDragging = false;
-  var lastMouseX = 0;
+  var hasDragged = false;
+  var lastMouseX = 0, lastMouseY = 0;
   var viewToggle = document.getElementById('view-toggle');
   var canvasEl = document.getElementById('p3d-canvas');
+  if (viewToggle) viewToggle.textContent = '2D View';
+  if (canvasEl) canvasEl.style.cursor = 'grab';
 
   if (viewToggle) {
     viewToggle.addEventListener('click', function() {
@@ -1487,22 +1505,37 @@
   if (canvasEl) {
     canvasEl.addEventListener('mousedown', function(e) {
       if (!is3DView) return;
-      isDragging = true;
-      lastMouseX = e.clientX;
+      isDragging = true; hasDragged = true;
+      lastMouseX = e.clientX; lastMouseY = e.clientY;
       canvasEl.style.cursor = 'grabbing';
     });
+    canvasEl.addEventListener('touchstart', function(e) {
+      if (!is3DView || !e.touches.length) return;
+      isDragging = true; hasDragged = true;
+      lastMouseX = e.touches[0].clientX; lastMouseY = e.touches[0].clientY;
+    }, { passive: true });
     window.addEventListener('mousemove', function(e) {
       if (!isDragging || !is3DView) return;
-      var dx = e.clientX - lastMouseX;
-      // Limit rotation to ~45 degrees to preserve the painter's algorithm depth sorting
-      viewAngle = Math.max(-0.8, Math.min(0.8, viewAngle - dx * 0.01));
-      lastMouseX = e.clientX;
+      var dx = e.clientX - lastMouseX, dy = e.clientY - lastMouseY;
+      // Free 360° orbit — the renderer picks whichever two side faces are camera-facing each frame
+      viewAngle = viewAngle - dx * 0.012;
+      elevAngle = Math.max(0.12, Math.min(1.1, elevAngle - dy * 0.006));
+      lastMouseX = e.clientX; lastMouseY = e.clientY;
       refresh();
     });
+    window.addEventListener('touchmove', function(e) {
+      if (!isDragging || !is3DView || !e.touches.length) return;
+      var dx = e.touches[0].clientX - lastMouseX, dy = e.touches[0].clientY - lastMouseY;
+      viewAngle = viewAngle - dx * 0.012;
+      elevAngle = Math.max(0.12, Math.min(1.1, elevAngle - dy * 0.006));
+      lastMouseX = e.touches[0].clientX; lastMouseY = e.touches[0].clientY;
+      refresh();
+    }, { passive: true });
     window.addEventListener('mouseup', function() {
       if (isDragging && is3DView) canvasEl.style.cursor = 'grab';
       isDragging = false;
     });
+    window.addEventListener('touchend', function() { isDragging = false; });
   }
 
   function drawSim3D(s, layerIdx, totalLayers) {
@@ -1510,16 +1543,17 @@
     ctx.fillStyle = '#0e0700';
     ctx.fillRect(0, 0, W, H);
 
-    var cx = W / 2, cy = H * 0.78, scale = 3.5;
+    var cx = W / 2, cy = H * 0.72, scale = 3.5;
+    var cosE = Math.cos(elevAngle), sinE = Math.sin(elevAngle);
     var isoX = function(x, y, z) {
       var rx = x * Math.cos(viewAngle) - y * Math.sin(viewAngle);
       var ry = x * Math.sin(viewAngle) + y * Math.cos(viewAngle);
-      return cx + (rx - ry) * Math.cos(0.523) * scale;
+      return cx + (rx - ry) * cosE * scale;
     };
     var isoY = function(x, y, z) {
       var rx = x * Math.cos(viewAngle) - y * Math.sin(viewAngle);
       var ry = x * Math.sin(viewAngle) + y * Math.cos(viewAngle);
-      return cy + (rx + ry) * Math.sin(0.523) * scale - z * scale;
+      return cy + (rx + ry) * sinE * scale - z * scale;
     };
 
     function drawPoly(pts, fill, stroke) {
@@ -1531,13 +1565,40 @@
       if (stroke) { ctx.lineWidth = 1; ctx.strokeStyle = stroke; ctx.stroke(); }
     }
 
+    // which two of the four side faces are camera-facing at the current orbit angle —
+    // lets the box be rotated freely instead of clamped to one hardcoded pair of faces
+    function rotN(nx, ny) {
+      return { x: nx * Math.cos(viewAngle) - ny * Math.sin(viewAngle),
+               y: nx * Math.sin(viewAngle) + ny * Math.cos(viewAngle) };
+    }
+    var faceNS = rotN(0, -1).x + rotN(0, -1).y > 0 ? -1 : 1; // -1 = y=-bw face, 1 = y=+bw face
+    var faceEW = rotN(-1, 0).x + rotN(-1, 0).y > 0 ? -1 : 1; // -1 = x=-bw face, 1 = x=+bw face
+
     drawPoly([[-40, -40, 0], [40, -40, 0], [40, 40, 0], [-40, 40, 0]], 'rgba(255,255,255,0.03)', 'rgba(255,255,255,0.15)');
 
     var curH = layerIdx * s.lh;
     if (curH > 0) {
       var bw = 20;
-      drawPoly([[-bw, -bw, 0], [-bw, bw, 0], [-bw, bw, curH], [-bw, -bw, curH]], 'rgba(200,80,40,0.9)', 'rgba(255,107,53,0.5)');
-      drawPoly([[-bw, bw, 0], [bw, bw, 0], [bw, bw, curH], [-bw, bw, curH]], 'rgba(255,107,53,0.8)', 'rgba(255,107,53,0.5)');
+      var faceA = [[bw * faceEW, -bw, 0], [bw * faceEW, bw, 0], [bw * faceEW, bw, curH], [bw * faceEW, -bw, curH]];
+      var faceB = [[-bw, bw * faceNS, 0], [bw, bw * faceNS, 0], [bw, bw * faceNS, curH], [-bw, bw * faceNS, curH]];
+      drawPoly(faceA, 'rgba(200,80,40,0.92)', 'rgba(255,107,53,0.5)');
+      drawPoly(faceB, 'rgba(255,107,53,0.8)', 'rgba(255,107,53,0.5)');
+
+      // layer-line banding on both visible walls so it reads as printed layers, not a solid block
+      var bandStep = Math.max(s.lh, (curH / 90)); // thin out bands on tall/fine prints so lines don't smear
+      ctx.lineWidth = 1;
+      for (var lz = bandStep; lz < curH; lz += bandStep) {
+        ctx.strokeStyle = 'rgba(20,8,0,0.22)';
+        ctx.beginPath();
+        ctx.moveTo(isoX(bw * faceEW, -bw, lz), isoY(bw * faceEW, -bw, lz));
+        ctx.lineTo(isoX(bw * faceEW, bw, lz), isoY(bw * faceEW, bw, lz));
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(isoX(-bw, bw * faceNS, lz), isoY(-bw, bw * faceNS, lz));
+        ctx.lineTo(isoX(bw, bw * faceNS, lz), isoY(bw, bw * faceNS, lz));
+        ctx.stroke();
+      }
+
       drawPoly([[-bw, -bw, curH], [bw, -bw, curH], [bw, bw, curH], [-bw, bw, curH]], 'rgba(255,107,53,1)', null);
       var iw = bw - (s.walls * 0.4);
       if (iw > 0) {
@@ -1560,6 +1621,13 @@
          drawPoly([[sx-sw, sy+sw, 0], [sx+sw, sy+sw, 0], [sx+sw, sy+sw, supH], [sx-sw, sy+sw, supH]], 'rgba(0,200,255,0.15)', 'rgba(0,200,255,0.4)');
          drawPoly([[sx-sw, sy-sw, supH], [sx+sw, sy-sw, supH], [sx+sw, sy+sw, supH], [sx-sw, sy+sw, supH]], 'rgba(0,200,255,0.3)', 'rgba(0,200,255,0.5)');
       }
+    }
+
+    // drag hint, fades once the user has actually rotated the model
+    if (!hasDragged) {
+      ctx.fillStyle = 'rgba(255,200,160,0.55)';
+      ctx.font = '600 10.5px system-ui'; ctx.textAlign = 'center';
+      ctx.fillText('🖱 drag to orbit & tilt', W / 2, H - 10);
     }
   }
 
