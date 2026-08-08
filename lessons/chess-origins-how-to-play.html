@@ -118,22 +118,60 @@
 
     /* ── Board ───────────────────────────────────────────────── */
     .ch-board-wrap { display: grid; gap: 0.65rem; justify-items: center; }
-    .ch-board {
+
+    .ch-board-frame { display: grid; gap: 0.3rem; justify-items: center; width: 100%; }
+    .ch-board-files {
+      display: grid;
+      grid-template-columns: 22px repeat(8, 1fr);
       width: min(100%, 520px);
+      font-size: 0.66rem;
+      font-weight: 800;
+      color: #7a8699;
+      letter-spacing: 0.04em;
+      font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+    }
+    .ch-board-files span { text-align: center; }
+    .ch-board-files span:first-child { visibility: hidden; }
+    .ch-board-row {
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr);
+      width: min(100%, 520px);
+      align-items: stretch;
+    }
+    .ch-board-ranks {
+      display: grid;
+      grid-template-rows: repeat(8, 1fr);
+      font-size: 0.66rem;
+      font-weight: 800;
+      color: #7a8699;
+      font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+    }
+    .ch-board-ranks span { display: flex; align-items: center; justify-content: center; }
+
+    .ch-board-stack {
+      position: relative;
+      width: 100%;
+      border-radius: 12px;
+      padding: 7px;
+      background: linear-gradient(155deg, #2a1c12, #4b3324 55%, #2a1c12);
+      box-shadow: 0 20px 44px rgba(24,33,47,0.26), inset 0 0 0 1px rgba(255,255,255,0.07);
+    }
+    .ch-board {
+      width: 100%;
       aspect-ratio: 1 / 1;
       display: grid;
       grid-template-columns: repeat(8, 1fr);
-      border: 7px solid #4b3324;
-      border-radius: 8px;
-      box-shadow: 0 18px 40px rgba(24,33,47,0.22);
+      grid-template-rows: repeat(8, 1fr);
+      border-radius: 6px;
       overflow: hidden;
-      background: #4b3324;
     }
     .ch-square {
       border: 0;
       display: grid;
       place-items: center;
+      overflow: hidden;
       font-size: clamp(1.1rem, 5vw, 2.7rem);
+      line-height: 1;
       color: #101827;
       position: relative;
       cursor: pointer;
@@ -162,12 +200,29 @@
     .ch-square.light:hover:not(.origin) { background: #e8d0a8; }
     .ch-square.dark:hover:not(.origin)  { background: #a07850; }
 
+    .ch-status-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      width: min(100%, 520px);
+      padding: 0.55rem 0.85rem;
+      border-radius: 10px;
+      background: #f7fafc;
+      border: 1px solid #e3eaf1;
+    }
+    .ch-status-dot {
+      flex: none;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #0d9488;
+      box-shadow: 0 0 0 4px rgba(13,148,136,0.16);
+    }
     .ch-caption {
       margin: 0;
       color: #56657a;
-      font-size: 0.88rem;
-      text-align: center;
-      max-width: 520px;
+      font-size: 0.86rem;
+      text-align: left;
       line-height: 1.55;
     }
 
@@ -203,9 +258,16 @@
       background: #ccfbf1;
       border-color: #0d9488;
       color: #134e4a;
+      box-shadow: 0 0 0 3px rgba(13,148,136,0.14);
     }
     .ch-piece-btn span { font-size: 1.5rem; line-height: 1; }
-    .ch-piece-btn small { font-size: 0.7rem; font-weight: 700; }
+    .ch-piece-btn small {
+      font-size: 0.64rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+    }
 
     .ch-reset-btn {
       width: 100%;
@@ -216,30 +278,41 @@
       min-height: 40px;
       color: #18212f;
       font: inherit;
-      font-weight: 700;
-      font-size: 0.85rem;
+      font-weight: 800;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
       cursor: pointer;
       transition: border-color 150ms, background 150ms;
     }
     .ch-reset-btn:hover { border-color: #0f766e; background: #f0fdfa; }
 
-    /* ── Move count badge ────────────────────────────────────── */
-    .ch-move-stat {
-      display: flex;
+    /* ── Stat readout (analysis-HUD style) ──────────────────── */
+    .ch-readout {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
       gap: 0.5rem;
-      margin-top: 0.6rem;
-      flex-wrap: wrap;
+      margin-top: 0.7rem;
+      padding: 0.75rem 0.8rem;
+      border-radius: 12px;
+      background: linear-gradient(155deg, #0f2924, #123b34 60%, #0f2924);
+      box-shadow: inset 0 0 0 1px rgba(45,212,191,0.2), 0 10px 24px rgba(15,41,36,0.22);
     }
-    .ch-stat {
-      flex: 1;
-      background: rgba(13,148,136,0.07);
-      border: 1px solid rgba(13,148,136,0.2);
-      border-radius: 8px;
-      padding: 0.45rem 0.6rem;
-      text-align: center;
+    .ch-readout-item { display: grid; gap: 0.15rem; text-align: center; }
+    .ch-readout-n {
+      font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #5eead4;
+      font-variant-numeric: tabular-nums;
     }
-    .ch-stat-n { display: block; font-size: 1.15rem; font-weight: 800; color: #0f766e; font-variant-numeric: tabular-nums; }
-    .ch-stat-l { display: block; font-size: 0.67rem; color: #56657a; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.1rem; }
+    .ch-readout-l {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(204,251,241,0.68);
+    }
 
     /* ── Rules grid ──────────────────────────────────────────── */
     .ch-rules-grid {
@@ -247,6 +320,105 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 1rem;
     }
+
+    /* ── Famous openings ─────────────────────────────────────── */
+    .ch-opening-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 0.75rem;
+    }
+    .ch-opening {
+      border: 1px solid #e3eaf1;
+      border-radius: 12px;
+      padding: 0.85rem 0.9rem;
+      background: rgba(180,83,9,0.045);
+    }
+    .ch-opening strong { display: block; font-size: 0.88rem; margin-bottom: 0.2rem; color: #92400e; }
+    .ch-opening code {
+      display: block;
+      font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+      font-size: 0.72rem;
+      color: #78716c;
+      margin-bottom: 0.4rem;
+    }
+    .ch-opening small { display: block; color: #56657a; font-size: 0.78rem; line-height: 1.55; }
+
+    /* ── Blundering ───────────────────────────────────────────── */
+    .ch-blunder-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+      gap: 1rem;
+      margin-top: 0.75rem;
+    }
+    .ch-blunder-types {
+      margin: 0.5rem 0 0;
+      padding-left: 1.1rem;
+      color: var(--text-secondary, #3f4f65);
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+    .ch-blunder-types li { margin-bottom: 0.3rem; }
+    .ch-cct-list { display: grid; gap: 0.6rem; margin-top: 0.5rem; }
+    .ch-cct-step {
+      border: 1px solid #e3eaf1;
+      border-radius: 12px;
+      padding: 0.75rem 0.85rem;
+      background: rgba(220,38,38,0.04);
+    }
+    .ch-cct-step strong { display: block; font-size: 0.82rem; color: #b91c1c; margin-bottom: 0.2rem; }
+    .ch-cct-step p { margin: 0; font-size: 0.8rem; color: var(--text-secondary, #3f4f65); line-height: 1.55; }
+
+    /* ── World championship history ─────────────────────────── */
+    .ch-era-list {
+      margin: 0.5rem 0 0;
+      padding-left: 1.1rem;
+      color: var(--text-secondary, #3f4f65);
+      font-size: 0.87rem;
+      line-height: 1.65;
+    }
+    .ch-era-list li { margin-bottom: 0.4rem; }
+
+    /* ── Current championship spotlight ─────────────────────── */
+    .ch-champ-card {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 1rem;
+      align-items: center;
+      margin-top: 0.85rem;
+      padding: 1rem 1.1rem;
+      border-radius: 14px;
+      background: linear-gradient(155deg, rgba(161,98,7,0.09), rgba(161,98,7,0.02));
+      border: 1px solid rgba(161,98,7,0.24);
+    }
+    .ch-champ-side { text-align: center; }
+    .ch-champ-role {
+      display: block;
+      font-size: 0.66rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #a16207;
+      margin-bottom: 0.3rem;
+    }
+    .ch-champ-name { display: block; font-size: 1.05rem; font-weight: 800; color: #18212f; }
+    .ch-champ-sub { display: block; font-size: 0.78rem; color: #56657a; margin-top: 0.2rem; line-height: 1.5; }
+    .ch-champ-vs {
+      font-weight: 900;
+      color: #a16207;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+    }
+    .ch-champ-meta {
+      grid-column: 1 / -1;
+      margin-top: 0.65rem;
+      padding-top: 0.65rem;
+      border-top: 1px dashed rgba(161,98,7,0.32);
+      text-align: center;
+      font-size: 0.82rem;
+      color: #56657a;
+    }
+    .ch-champ-meta a { color: #a16207; }
 
     /* ── History grid ────────────────────────────────────────── */
     .ch-history-grid {
@@ -312,12 +484,15 @@
     @media (max-width: 860px) {
       .ch-intro-grid, .ch-lab-grid { grid-template-columns: 1fr; }
       .ch-history-grid { grid-template-columns: repeat(2, 1fr); }
-      .ch-rules-grid, .ch-special-grid { grid-template-columns: repeat(2, 1fr); }
+      .ch-rules-grid, .ch-special-grid, .ch-opening-grid { grid-template-columns: repeat(2, 1fr); }
+      .ch-blunder-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 520px) {
       .ch-piece-grid { grid-template-columns: repeat(2, 1fr); }
-      .ch-rules-grid, .ch-special-grid { grid-template-columns: 1fr; }
+      .ch-rules-grid, .ch-special-grid, .ch-opening-grid { grid-template-columns: 1fr; }
       .ch-history-grid { grid-template-columns: 1fr; }
+      .ch-champ-card { grid-template-columns: 1fr; text-align: center; }
+      .ch-champ-vs { padding: 0.1rem 0; }
     }
   </style>
 </head>
@@ -398,8 +573,23 @@
 
             <div class="ch-lab-grid" style="margin-top:0.9rem;">
               <div class="ch-board-wrap">
-                <div class="ch-board" id="ch-board" role="grid" aria-label="Interactive chess movement board"></div>
-                <p class="ch-caption" id="ch-caption">The queen combines rook and bishop: any number of squares straight or diagonal.</p>
+                <div class="ch-board-frame">
+                  <div class="ch-board-files" aria-hidden="true">
+                    <span></span><span>a</span><span>b</span><span>c</span><span>d</span><span>e</span><span>f</span><span>g</span><span>h</span>
+                  </div>
+                  <div class="ch-board-row">
+                    <div class="ch-board-ranks" aria-hidden="true">
+                      <span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span>
+                    </div>
+                    <div class="ch-board-stack">
+                      <div class="ch-board" id="ch-board" role="grid" aria-label="Interactive chess movement board"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="ch-status-bar">
+                  <span class="ch-status-dot" aria-hidden="true"></span>
+                  <p class="ch-caption" id="ch-caption">The queen combines rook and bishop: any number of squares straight or diagonal.</p>
+                </div>
               </div>
 
               <aside>
@@ -413,14 +603,14 @@
                   <button class="ch-piece-btn" type="button" data-piece="pawn"   aria-pressed="false"><span>♙</span><small>Pawn</small></button>
                 </div>
 
-                <div class="ch-move-stat">
-                  <div class="ch-stat">
-                    <span class="ch-stat-n" id="ch-move-count">—</span>
-                    <span class="ch-stat-l">Reachable Squares</span>
+                <div class="ch-readout">
+                  <div class="ch-readout-item">
+                    <span class="ch-readout-n" id="ch-move-count">—</span>
+                    <span class="ch-readout-l">Reachable</span>
                   </div>
-                  <div class="ch-stat">
-                    <span class="ch-stat-n" id="ch-capture-count">—</span>
-                    <span class="ch-stat-l">Capture Squares</span>
+                  <div class="ch-readout-item">
+                    <span class="ch-readout-n" id="ch-capture-count">—</span>
+                    <span class="ch-readout-l">Capturable</span>
                   </div>
                 </div>
 
@@ -472,6 +662,124 @@
               <div class="ch-special">
                 <strong>Promotion</strong>
                 <small>When a pawn reaches the far edge of the board it becomes any piece the player chooses — almost always a queen. Promotion is a powerful threat that shapes endgame strategy.</small>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── Famous Openings ───────────────────────────── -->
+          <section class="ch-card" style="--ch-accent:#b45309; margin-top:0.15rem;">
+            <span class="ch-section-label">Opening Theory</span>
+            <h2>Six Famous Openings</h2>
+            <p>The first few moves set the whole game's character. These openings have been studied for over a century and still appear at the top level today.</p>
+            <div class="ch-opening-grid">
+              <div class="ch-opening">
+                <strong>Italian Game</strong>
+                <code>1. e4 e5 2. Nf3 Nc6 3. Bc4</code>
+                <small>One of the oldest recorded openings. White's bishop aims straight at f7, the weakest square in Black's camp, and both sides develop quickly.</small>
+              </div>
+              <div class="ch-opening">
+                <strong>Ruy Lopez (Spanish)</strong>
+                <code>1. e4 e5 2. Nf3 Nc6 3. Bb5</code>
+                <small>The most deeply analyzed opening in chess history, named for a 16th-century Spanish priest. White pressures the knight that defends Black's e5 pawn.</small>
+              </div>
+              <div class="ch-opening">
+                <strong>Sicilian Defense</strong>
+                <code>1. e4 c5</code>
+                <small>Black's most popular reply to 1.e4 at every serious level. It creates an unbalanced, asymmetrical fight instead of a mirrored center.</small>
+              </div>
+              <div class="ch-opening">
+                <strong>French Defense</strong>
+                <code>1. e4 e6</code>
+                <small>Black builds a solid pawn chain and accepts a slightly cramped position early in exchange for a structure that is very hard to attack.</small>
+              </div>
+              <div class="ch-opening">
+                <strong>Queen's Gambit</strong>
+                <code>1. d4 d5 2. c4</code>
+                <small>White offers a wing pawn to pull Black's d-pawn out of the center. Black almost never keeps the free pawn — it's rarely a gambit in practice.</small>
+              </div>
+              <div class="ch-opening">
+                <strong>King's Indian Defense</strong>
+                <code>1. d4 Nf6 2. c4 g6</code>
+                <small>Black lets White build a big pawn center, then counterattacks it later with pawn breaks and a fianchettoed bishop on g7.</small>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── Blundering ─────────────────────────────────── -->
+          <section class="ch-card" style="--ch-accent:#dc2626; margin-top:0.15rem;">
+            <span class="ch-section-label">Skill Building</span>
+            <h2>What Is a Blunder — and How to Avoid One</h2>
+            <div class="ch-blunder-grid">
+              <div>
+                <h3 style="margin-top:0;">What Counts as a Blunder</h3>
+                <p>A blunder is a move that throws away a large amount of material, the game, or a winning position — much worse than a normal inaccuracy. Even world champions blunder under pressure. Common types include:</p>
+                <ul class="ch-blunder-types">
+                  <li><strong>Hanging a piece:</strong> moving to, or leaving a piece on, a square an enemy piece can simply capture for free.</li>
+                  <li><strong>Missing a tactic:</strong> walking into a fork, pin, or skewer that wins material.</li>
+                  <li><strong>Ignoring a threat:</strong> making your own plan while the opponent's last move set up checkmate or a winning capture.</li>
+                  <li><strong>The overloaded defender:</strong> moving a piece that was the only thing guarding something else.</li>
+                </ul>
+              </div>
+              <div>
+                <h3 style="margin-top:0;">The CCT Habit</h3>
+                <p>Before playing any move, scan for Checks, Captures, and Threats — yours and your opponent's. This one habit prevents most blunders.</p>
+                <div class="ch-cct-list">
+                  <div class="ch-cct-step">
+                    <strong>1 · Checks</strong>
+                    <p>Can either king be put in check right now, by either side?</p>
+                  </div>
+                  <div class="ch-cct-step">
+                    <strong>2 · Captures</strong>
+                    <p>What can be captured on the board — including the piece you're about to move?</p>
+                  </div>
+                  <div class="ch-cct-step">
+                    <strong>3 · Threats</strong>
+                    <p>What did your opponent's last move threaten? Answer that before starting your own plan.</p>
+                  </div>
+                </div>
+                <p style="margin-top:0.65rem;">Slow down in time pressure and after your opponent's move especially — that is when most blunders happen.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── World Championship History ────────────────── -->
+          <section class="ch-card" style="--ch-accent:#4338ca; margin-top:0.15rem;">
+            <span class="ch-section-label">Championship History</span>
+            <h2>World Championship Eras</h2>
+            <p>An unbroken lineage of champions stretches back to 1886 — one of the longest continuous title lines in any sport or game.</p>
+            <ul class="ch-era-list">
+              <li><strong>1886 — Wilhelm Steinitz:</strong> Becomes the first officially recognized World Champion, holding the title for eight years.</li>
+              <li><strong>1894–1921 — Emanuel Lasker:</strong> Holds the title for 27 years, the longest reign of any World Champion.</li>
+              <li><strong>1927 — Alexander Alekhine:</strong> Defeats José Raúl Capablanca in a marathon 34-game match in Buenos Aires.</li>
+              <li><strong>1948 — Mikhail Botvinnik:</strong> Wins a tournament to fill the title after Alekhine's death, opening decades of Soviet dominance.</li>
+              <li><strong>1972 — Bobby Fischer:</strong> Defeats Boris Spassky in Reykjavik — the Cold War "Match of the Century" — ending 24 years of Soviet control of the title.</li>
+              <li><strong>1985 — Garry Kasparov:</strong> Becomes champion at 22 after a legendary rivalry with Anatoly Karpov, then the youngest champion ever.</li>
+              <li><strong>2013 — Magnus Carlsen:</strong> Defeats Viswanathan Anand and begins a decade of dominance, later becoming the highest-rated player in history.</li>
+              <li><strong>2023 — Ding Liren:</strong> Wins the title after Carlsen declines to defend it, defeating Ian Nepomniachtchi in tiebreaks.</li>
+              <li><strong>2024 — Gukesh Dommaraju:</strong> Defeats Ding Liren at age 18, becoming the youngest undisputed World Champion in history.</li>
+            </ul>
+          </section>
+
+          <!-- ── Current World Championship ────────────────── -->
+          <section class="ch-card" style="--ch-accent:#a16207; margin-top:0.15rem;">
+            <span class="ch-section-label">Right Now</span>
+            <h2>The Current World Championship</h2>
+            <p>As of August 2026, the World Championship title and the next challenge to it look like this:</p>
+            <div class="ch-champ-card">
+              <div class="ch-champ-side">
+                <span class="ch-champ-role">Defending Champion</span>
+                <span class="ch-champ-name">Gukesh Dommaraju</span>
+                <span class="ch-champ-sub">India · Won the title in 2024</span>
+              </div>
+              <div class="ch-champ-vs">VS</div>
+              <div class="ch-champ-side">
+                <span class="ch-champ-role">Challenger</span>
+                <span class="ch-champ-name">Javokhir Sindarov</span>
+                <span class="ch-champ-sub">Uzbekistan · 2026 Candidates winner</span>
+              </div>
+              <div class="ch-champ-meta">
+                Their match is scheduled for <strong>November 25 – December 15, 2026</strong> in Geneva, Switzerland.
+                Source: <a href="https://en.wikipedia.org/wiki/World_Chess_Championship_2026" target="_blank" rel="noopener">Wikipedia, World Chess Championship 2026</a>.
               </div>
             </div>
           </section>
@@ -578,6 +886,8 @@
             <div class="ll-info"><strong>Promotion</strong>A pawn reaching the far rank may become any piece — almost always a queen.</div>
             <div class="ll-info"><strong>En passant</strong>A special pawn capture available immediately after an opponent's two-square pawn advance.</div>
             <div class="ll-info"><strong>Pin</strong>A piece that cannot move without exposing a more valuable piece behind it to attack.</div>
+            <div class="ll-info"><strong>Blunder</strong>A serious mistake that loses significant material, checkmate, or a winning position — the biggest category of avoidable loss.</div>
+            <div class="ll-info"><strong>Opening</strong>The first phase of the game, roughly the first ten to fifteen moves, focused on development and center control.</div>
           </div>
 
           <div class="ll-pane" id="ch-pane-tips">
