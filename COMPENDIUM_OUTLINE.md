@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 158 public lessons and classifies 11 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 166 public lessons and classifies 11 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -15,7 +15,7 @@ This metadata-only draft organizes 158 public lessons and classifies 11 supporti
 
 # Volume I — Mathematical Thinking, Measurement & Astronomy
 
-Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 29 lessons
+Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 34 lessons
 
 ## Mathematics & Quantitative Reasoning (MAT)
 
@@ -26,25 +26,30 @@ Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 29 lesson
 - **MAT-03** — Clocks & Telling Time
 - **MAT-04** — PEMDAS & Order of Operations
 - **MAT-05** — Proportional Reasoning
+- **MAT-06** — Touch it. See it. Solve it.
 
 ### Geometry, Graphs & Spatial Reasoning
 
-- **MAT-06** — Graphing Calculator
-- **MAT-07** — Pythagoras & Triangles
-- **MAT-08** — Pi & Circles
-- **MAT-09** — The Math of the Rubik's Cube
+- **MAT-07** — Graphing Calculator
+- **MAT-08** — Pythagoras & Triangles
+- **MAT-09** — Pi & Circles
+- **MAT-10** — The Math of the Rubik's Cube
+- **MAT-11** — Linear Equations & Slope
+- **MAT-12** — Area & Perimeter Playground
+- **MAT-13** — Minecraft Calculus: Terrain & Water Flow
 
 ### Chance, Patterns & Sequences
 
-- **MAT-10** — Probability Simulator
-- **MAT-11** — Pachinko Probability Lab
-- **MAT-12** — Fibonacci Sequence
+- **MAT-14** — Probability Simulator
+- **MAT-15** — Pachinko Probability Lab
+- **MAT-16** — Fibonacci Sequence
+- **MAT-17** — Mean, Median & Mode
 
 ### Advanced Patterns & Open Questions
 
-- **MAT-13** — Completing the Square
-- **MAT-14** — Fourier Series & Transform — _also indexed in Audio, Lighting & Production Technology_
-- **MAT-15** — Riemann Hypothesis
+- **MAT-18** — Completing the Square
+- **MAT-19** — Fourier Series & Transform — _also indexed in Audio, Lighting & Production Technology_
+- **MAT-20** — Riemann Hypothesis
 
 ## Astronomy & Space Science (COS)
 
@@ -127,7 +132,7 @@ Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 42 l
 ### People Who Changed Physics
 
 - **PHY-33** — Nikola Tesla
-- **PHY-34** — Marie Curie — _also indexed in Chemistry & Materials_
+- **PHY-34** — Marie Curie — _also indexed in Chemistry & Chemical Systems_
 - **PHY-35** — Albert Einstein: Reimagining Space, Time & Light
 
 ## Chemistry & Chemical Systems (CHE)
@@ -147,7 +152,7 @@ Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 42 l
 
 # Volume III — Living Systems, Earth & Environment
 
-Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 20 lessons
+Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 22 lessons
 
 ## Biology & Life Science (BIO)
 
@@ -169,6 +174,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 - **BIO-09** — Life Invented the Animal
 - **BIO-10** — The K-Pg Extinction
+- **BIO-11** — The Evolution of Wood
 
 ## Earth & Environmental Science (EAR)
 
@@ -179,14 +185,15 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 - **EAR-03** — Pangaea & Continental Drift
 - **EAR-04** — Volcano Simulator
 - **EAR-05** — Structural Geology: 3D Subsurface Modeler
+- **EAR-06** — Fossil Fuels: How Coal, Oil & Natural Gas Form
 
 ### Planetary Systems & Observation
 
-- **EAR-06** — Ocean Zones & Deep-Sea Life
-- **EAR-07** — Climate Modeling Simulator
-- **EAR-08** — Seasons and the Heavens
-- **EAR-09** — Measuring the Earth
-- **EAR-10** — Rainbows
+- **EAR-07** — Ocean Zones & Deep-Sea Life
+- **EAR-08** — Climate Modeling Simulator
+- **EAR-09** — Seasons and the Heavens
+- **EAR-10** — Measuring the Earth
+- **EAR-11** — Rainbows
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
@@ -242,7 +249,7 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 - **TEC-02** — Live Audio Signal Chain — _also indexed in Engineering Systems & Electronics_
 - **TEC-03** — EQ: Find the Problem Frequency
 - **TEC-04** — Room Acoustics & Reverb Lab
-- **TEC-05** — Cymatics: The Geometry of Sound — _also indexed in Physics & Applied Mechanics_
+- **TEC-05** — Cymatics: The Geometry of Sound — _also indexed in Physics & Physical Systems_
 
 ### Stage & Visual Production Systems
 
@@ -250,7 +257,7 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 
 # Volume V — Computer Science, AI & Interactive Media
 
-Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 27 lessons
+Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 28 lessons
 
 ## Computer Science & Artificial Intelligence (CSC)
 
@@ -259,33 +266,34 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 - **CSC-01** — Ada Lovelace — The First Programmer
 - **CSC-02** — Before Computers: Myths, Logic, and AI Imagination
 - **CSC-03** — 🏠 Build Your Student Page
-- **CSC-04** — Blocks World Parser
-- **CSC-05** — N-gram Text Predictor
+- **CSC-04** — Ethical Hacking & Cyber Safety
+- **CSC-05** — Blocks World Parser
+- **CSC-06** — N-gram Text Predictor
 
 ### Algorithms, Structures & Search
 
-- **CSC-06** — Sorting Algorithms
-- **CSC-07** — State Machines
-- **CSC-08** — A* Pathfinding Agent
-- **CSC-09** — Minimum Spanning Tree
-- **CSC-10** — Cryptography & The Enigma
+- **CSC-07** — Sorting Algorithms
+- **CSC-08** — State Machines
+- **CSC-09** — A* Pathfinding Agent
+- **CSC-10** — Minimum Spanning Tree
+- **CSC-11** — Cryptography & The Enigma
 
 ### Simulation & Generative Systems
 
-- **CSC-11** — Life Lab: The Game of Life
-- **CSC-12** — Perlin Noise
-- **CSC-13** — CGI Water: From Physics to Pixels
+- **CSC-12** — Life Lab: The Game of Life
+- **CSC-13** — Perlin Noise
+- **CSC-14** — CGI Water: From Physics to Pixels
 
 ### Artificial Intelligence & Machine Reasoning
 
-- **CSC-14** — Alan Turing and The Turing Test
-- **CSC-15** — AI Origins: ELIZA Chatbot
-- **CSC-16** — Rule Engine Expert System
-- **CSC-17** — Perceptron Lab
-- **CSC-18** — Chess: Origins and How to Play
-- **CSC-19** — 1v1 Game AI: Minimax
-- **CSC-20** — AI Chess Through History
-- **CSC-21** — Deep Blue to AlphaGo: The Go Challenge
+- **CSC-15** — Alan Turing and The Turing Test
+- **CSC-16** — AI Origins: ELIZA Chatbot
+- **CSC-17** — Rule Engine Expert System
+- **CSC-18** — Perceptron Lab
+- **CSC-19** — Chess: Origins and How to Play
+- **CSC-20** — 1v1 Game AI: Minimax
+- **CSC-21** — AI Chess Through History
+- **CSC-22** — Deep Blue to AlphaGo: The Go Challenge
 
 ## Game Design & Development (GAM)
 
