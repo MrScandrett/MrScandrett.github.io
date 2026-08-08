@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>DNA &amp; Heredity · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
-  <meta name="description" content="Life Sciences Lesson 02 — explore DNA, genes, alleles, replication, and Punnett squares to understand how traits pass from parent to offspring." />
+  <meta name="description" content="Life Sciences Lesson 02 — explore DNA, genes, alleles, replication, and Punnett squares, with the real history of how Mendel, Franklin, and Watson &amp; Crick figured it all out." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -348,20 +348,234 @@
       margin-bottom: 0.35rem;
     }
 
-    .dna-plant-svg {
-      width: 100%;
-      height: auto;
-      display: block;
+    .dna-plant-stage-wrap {
+      position: relative;
       margin-top: 0.8rem;
+      border-radius: 18px;
+      overflow: hidden;
+      aspect-ratio: 4 / 5;
+      background:
+        radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.5), transparent 60%),
+        linear-gradient(180deg, rgba(228, 240, 255, 0.9) 0%, rgba(211, 231, 250, 0.95) 82%, rgba(180, 158, 120, 0.4) 82%, rgba(140, 112, 76, 0.55) 100%);
+      box-shadow: 0 10px 28px rgba(30, 58, 105, 0.16);
     }
 
-    .dna-plant-stage {
-      transform-origin: center 320px;
-      transition: transform 0.28s ease;
+    .dna-plant-rig {
+      --stem-off: 100;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
     }
 
-    .dna-seed {
-      transition: fill 0.24s ease, filter 0.24s ease;
+    .dna-plant-rig .pg-stem {
+      fill: none;
+      stroke-linecap: round;
+      stroke-dasharray: 100;
+      stroke-dashoffset: 100;
+      transition: stroke-dashoffset 1.15s cubic-bezier(0.22, 0.9, 0.32, 1);
+    }
+
+    .dna-plant-rig .pg-stem-base {
+      stroke: url(#dnaStemGradV2);
+      stroke-width: 9;
+    }
+
+    .dna-plant-rig .pg-stem-hl {
+      stroke: #cdeeb0;
+      stroke-opacity: 0.55;
+      stroke-width: 2.5;
+    }
+
+    .dna-plant-rig.is-growing .pg-stem {
+      stroke-dashoffset: var(--stem-off);
+    }
+
+    .pg-leaf {
+      opacity: 0;
+      transform: scale(0.2) rotate(-6deg);
+      transform-box: fill-box;
+      transform-origin: 0% 100%;
+      transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .dna-plant-rig.is-growing .pg-leaf {
+      opacity: 1;
+      transform: scale(1) rotate(0deg);
+    }
+
+    .pg-leaf-0 { transition-delay: 0.32s; }
+    .pg-leaf-1 { transition-delay: 0.46s; }
+    .pg-leaf-2 { transition-delay: 0.62s; }
+    .pg-leaf-3 { transition-delay: 0.78s; }
+    .pg-leaf-4 { transition-delay: 0.94s; }
+
+    .dna-plant-rig.is-dwarf .pg-leaf-2,
+    .dna-plant-rig.is-dwarf .pg-leaf-3,
+    .dna-plant-rig.is-dwarf .pg-leaf-4 {
+      display: none;
+    }
+
+    .pg-pod-group {
+      opacity: 0;
+      transform: scale(0.25);
+      transform-box: fill-box;
+      transform-origin: 50% 0%;
+      transition: opacity 0.45s ease 1.08s, transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) 1.08s;
+    }
+
+    .dna-plant-rig.is-growing .pg-pod-group {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .dna-plant-rig:not(.is-dwarf) .pg-pod-dwarf,
+    .dna-plant-rig.is-dwarf .pg-pod-tall,
+    .dna-plant-rig:not(.is-dwarf) .pg-pedicel-dwarf,
+    .dna-plant-rig.is-dwarf .pg-pedicel-tall {
+      display: none;
+    }
+
+    .pg-pedicel {
+      fill: none;
+      stroke: #3f8f4f;
+      stroke-width: 2;
+      stroke-linecap: round;
+      opacity: 0;
+      transition: opacity 0.4s ease 1s;
+    }
+
+    .dna-plant-rig.is-growing .pg-pedicel {
+      opacity: 1;
+    }
+
+    .pg-pod {
+      fill: url(#podGreenPattern);
+      stroke: #2b6b3f;
+      stroke-width: 0.6;
+      stroke-opacity: 0.3;
+    }
+
+    .dna-plant-rig.is-yellow .pg-pod {
+      fill: url(#podYellowPattern);
+      stroke: #a87400;
+      stroke-opacity: 0.25;
+    }
+
+    .dna-plant-rig.is-green .pg-pod {
+      fill: url(#podGreenPattern);
+    }
+
+    .pg-ground-shadow {
+      opacity: 0.5;
+      transition: opacity 0.6s ease;
+    }
+
+    .dna-plant-sprout {
+      position: absolute;
+      left: 50%;
+      bottom: 12%;
+      transform: translate(-50%, 0);
+      opacity: 1;
+      transition: opacity 0.35s ease 0.15s;
+      pointer-events: none;
+    }
+
+    .dna-plant-rig.is-growing ~ .dna-plant-sprout,
+    .dna-plant-stage-wrap.is-grown .dna-plant-sprout {
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .dna-plant-sprout svg {
+      width: 30px;
+      height: 30px;
+      display: block;
+      animation: dnaSproutSway 1.6s ease-in-out infinite;
+      transform-origin: bottom center;
+    }
+
+    @keyframes dnaSproutSway {
+      0%, 100% { transform: rotate(-4deg); }
+      50% { transform: rotate(4deg); }
+    }
+
+    .dna-plant-photo-badge {
+      position: absolute;
+      right: 0.7rem;
+      bottom: 0.7rem;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 6px 16px rgba(20, 40, 80, 0.3);
+      opacity: 0;
+      transform: scale(0.5);
+      transition: opacity 0.4s ease 1.5s, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 1.5s;
+      cursor: pointer;
+      z-index: 3;
+      background: #fff;
+    }
+
+    .dna-plant-stage-wrap.is-grown .dna-plant-photo-badge {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .dna-plant-photo-badge img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .dna-plant-photo-cap {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      margin: 0;
+      padding: 0.5rem 0.75rem;
+      background: linear-gradient(0deg, rgba(8, 16, 30, 0.5), rgba(8, 16, 30, 0));
+      color: #1f3e67;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      z-index: 2;
+    }
+
+    .dna-plant-regrow-btn {
+      margin-top: 0.6rem;
+      width: 100%;
+      padding: 0.55rem 0.8rem;
+      border-radius: 14px;
+      border: 1px solid rgba(38, 107, 191, 0.2);
+      background: rgba(255, 255, 255, 0.7);
+      color: #1f3e67;
+      font: 700 0.82rem "IBM Plex Mono", monospace;
+      cursor: pointer;
+      transition: background 0.14s ease, transform 0.12s ease;
+    }
+
+    .dna-plant-regrow-btn:hover {
+      background: rgba(59, 127, 232, 0.12);
+      transform: translateY(-1px);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .dna-plant-rig .pg-stem,
+      .pg-leaf,
+      .pg-pod-group,
+      .pg-pod,
+      .pg-pedicel,
+      .dna-plant-sprout,
+      .dna-plant-photo-badge {
+        transition: none;
+      }
+      .dna-plant-sprout svg {
+        animation: none;
+      }
     }
 
     .dna-readout {
@@ -456,6 +670,173 @@
     .dna-list {
       margin: 0.8rem 0 0;
       padding-left: 1.1rem;
+    }
+
+    /* ── Discovery Timeline (real-photo plates) ────── */
+    .dna-history {
+      display: grid;
+      gap: 0.9rem;
+      margin-top: 1rem;
+    }
+
+    .dna-history-item {
+      display: grid;
+      grid-template-columns: 100px 1fr;
+      gap: 1rem;
+      align-items: center;
+      padding: 0.9rem;
+      border-radius: 20px;
+      border: 1px solid rgba(38, 107, 191, 0.1);
+      background: rgba(255, 255, 255, 0.62);
+      backdrop-filter: blur(10px);
+    }
+
+    .dna-history-item.dual {
+      grid-template-columns: auto 1fr;
+    }
+
+    .dna-history-photos {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .dna-history-photo {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      overflow: hidden;
+      flex-shrink: 0;
+      box-shadow: 0 3px 10px rgba(30, 58, 105, 0.2);
+    }
+
+    .dna-history-photo.square {
+      border-radius: 16px;
+    }
+
+    .dna-history-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .dna-history-year {
+      display: inline-block;
+      font: 800 0.68rem "IBM Plex Mono", monospace;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #286fb8;
+    }
+
+    .dna-history-body h3 {
+      margin: 0.3rem 0 0.35rem;
+      font-size: 1.02rem;
+      color: #1f3e67;
+      letter-spacing: -0.02em;
+    }
+
+    .dna-history-body p {
+      margin: 0;
+    }
+
+    .dna-zoomable {
+      cursor: zoom-in;
+    }
+
+    .dna-credits {
+      margin-top: 0.7rem;
+      font-size: 0.72rem;
+      color: #5f7896;
+      line-height: 1.9;
+    }
+
+    .dna-credits a {
+      color: #286fb8;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .dna-credits a:hover {
+      text-decoration: underline;
+    }
+
+    .dna-lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(1rem, 5vw, 4rem);
+      background: rgba(8, 16, 30, 0.82);
+      backdrop-filter: blur(6px);
+    }
+
+    .dna-lightbox.open {
+      display: flex;
+    }
+
+    .dna-lightbox-frame {
+      position: relative;
+      max-width: min(900px, 92vw);
+      max-height: 88vh;
+      background: #fff;
+      border-radius: 16px;
+      padding: 0.9rem;
+      box-shadow: 0 30px 80px rgba(6, 18, 40, 0.5);
+    }
+
+    .dna-lightbox-frame img {
+      display: block;
+      max-width: 100%;
+      max-height: calc(88vh - 4.5rem);
+      width: auto;
+      height: auto;
+      margin: auto;
+      border-radius: 8px;
+    }
+
+    .dna-lightbox-cap {
+      margin-top: 0.6rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: #5f7896;
+    }
+
+    .dna-lightbox-close {
+      position: absolute;
+      top: -14px;
+      right: -14px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid rgba(38, 107, 191, 0.2);
+      background: #fff;
+      color: #1f3e67;
+      font-size: 1.1rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(20, 40, 80, 0.3);
+    }
+
+    .dna-lightbox-close:hover {
+      background: #eef5ff;
+    }
+
+    @media (max-width: 640px) {
+      .dna-history-item,
+      .dna-history-item.dual {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+
+      .dna-history-photos {
+        justify-content: center;
+      }
+
+      .dna-history-photo {
+        margin: auto;
+      }
     }
 
     /* ── Replication Lab ───────────────────────────── */
@@ -1111,6 +1492,7 @@
         <span>Alleles</span>
         <span>Replication</span>
         <span>Punnett squares</span>
+        <span>History of discovery</span>
       </div>
       <div class="dna-mission-strip" aria-label="Lesson mission">
         <div class="dna-mission-card">
@@ -1183,6 +1565,46 @@
           <span>Genotype vs phenotype</span>
         </div>
       </article>
+    </section>
+
+    <section class="dna-card">
+      <p class="dna-kicker">Discovery</p>
+      <h2>How we found out DNA carries heredity</h2>
+      <p>None of this was obvious. It took nearly a century — and several scientists building on each other's evidence — to go from "traits run in families" to "here is the molecule, and here is exactly how it copies itself."</p>
+      <div class="dna-history">
+        <div class="dna-history-item dual">
+          <div class="dna-history-photos">
+            <div class="dna-history-photo"><img src="../assets/images/dna-heredity/mendel-portrait.webp" alt="Photographic portrait of Gregor Mendel" width="700" height="700" loading="lazy" decoding="async" class="dna-zoomable" /></div>
+            <div class="dna-history-photo square"><img src="../assets/images/dna-heredity/mendel-pea-plants.webp" alt="Illustration comparing tall and dwarf pea plants from Mendel's inheritance experiments" width="700" height="700" loading="lazy" decoding="async" class="dna-zoomable" /></div>
+          </div>
+          <div class="dna-history-body"><span class="dna-history-year">1856 – 1863</span><h3>Mendel counts 29,000 pea plants</h3><p>In the monastery garden at Brno, Gregor Mendel bred generation after generation of pea plants and tracked seven traits — including height and seed color — with careful counts instead of casual observation. The ratios he found (like the 3:1 split you can reproduce in the Punnett lab below) led him to propose that invisible "factors," passed one from each parent, controlled each trait. Nobody called them genes yet, and almost nobody read his paper for 35 years.</p></div>
+        </div>
+
+        <div class="dna-history-item">
+          <div class="dna-history-photo square"><img src="../assets/images/dna-heredity/rosalind-franklin.webp" alt="Photograph of Rosalind Franklin working with a microscope, 1955" width="700" height="700" loading="lazy" decoding="async" class="dna-zoomable" /></div>
+          <div class="dna-history-body"><span class="dna-history-year">1952</span><h3>Franklin photographs the helix</h3><p>At King's College London, Rosalind Franklin and PhD student Raymond Gosling used X-ray crystallography to photograph strands of DNA. Her sharpest image, "Photo 51," showed a clear X-shaped pattern — strong evidence of a helical structure, precise enough to calculate the width of the molecule and the spacing between its coils.</p></div>
+        </div>
+
+        <div class="dna-history-item">
+          <div class="dna-history-photo square"><img src="../assets/images/dna-heredity/watson-crick-model.webp" alt="Photograph of the reconstructed Watson and Crick DNA double helix model" width="700" height="700" loading="lazy" decoding="async" class="dna-zoomable" /></div>
+          <div class="dna-history-body"><span class="dna-history-year">1953</span><h3>Watson and Crick build the model</h3><p>At Cambridge, James Watson and Francis Crick combined base-pairing chemistry with Franklin's unpublished X-ray data — shown to them without her knowledge — to build a physical model of the double helix. Their one-page paper in <em>Nature</em> made the now-famous understatement that the structure "immediately suggests a possible copying mechanism." Franklin's own analysis, published independently the same month, provided the experimental confirmation.</p></div>
+        </div>
+
+        <div class="dna-history-item">
+          <div class="dna-history-photo square"><img src="../assets/images/dna-heredity/genome-era-dna.webp" alt="Illustration of the DNA double helix structure by the National Human Genome Research Institute" width="700" height="700" loading="lazy" decoding="async" class="dna-zoomable" /></div>
+          <div class="dna-history-body"><span class="dna-history-year">2003</span><h3>The Human Genome Project finishes reading the code</h3><p>Fifty years after the double helix was modeled, an international public research team completed the Human Genome Project, sequencing nearly all 3 billion base pairs of human DNA. Mendel's "factors" and Watson, Crick, and Franklin's helix became a complete, searchable map — the foundation for modern genetic medicine.</p></div>
+        </div>
+      </div>
+      <p class="dna-credits">
+        <a href="https://commons.wikimedia.org/wiki/File:Gregor_Mendel_portrait.jpg" target="_blank" rel="noopener">Gregor Mendel portrait</a> (public domain) ·
+        <a href="https://commons.wikimedia.org/wiki/File:Fairbanks_-_Mendel_Tall_and_Dwarf_Pea_Plants.jpg" target="_blank" rel="noopener">Tall and dwarf pea plants</a> (Daniel J. Fairbanks, CC BY 4.0) ·
+        <a href="https://commons.wikimedia.org/wiki/File:Rosalind_Franklin.jpg" target="_blank" rel="noopener">Rosalind Franklin, 1955</a> (MRC Laboratory of Molecular Biology, CC BY-SA 4.0) ·
+        <a href="https://commons.wikimedia.org/wiki/File:DNA_Model_Crick-Watson.jpg" target="_blank" rel="noopener">Watson–Crick DNA model</a> (public domain) ·
+        <a href="https://commons.wikimedia.org/wiki/File:DNA_Double_Helix_by_NHGRI.jpg" target="_blank" rel="noopener">DNA double helix</a> (NHGRI, public domain) ·
+        <a href="https://commons.wikimedia.org/wiki/File:Goya_yellow_split_peas.jpg" target="_blank" rel="noopener">Yellow split peas</a> (Mx. Granger, CC0) ·
+        <a href="https://commons.wikimedia.org/wiki/File:Peas_in_pods_-_Studio.jpg" target="_blank" rel="noopener">Peas in pods</a> (Bill Ebbesen, CC BY-SA 3.0) ·
+        <a href="https://commons.wikimedia.org/wiki/File:Leaves_of_Pisum_sativum_(2).JPG" target="_blank" rel="noopener">Pea leaves</a> (Chmee2, CC BY 3.0), all via Wikimedia Commons.
+      </p>
     </section>
 
     <section class="dna-card">
@@ -1538,30 +1960,85 @@
           <p class="dna-kicker">Phenotype Visualizer</p>
           <h3>Virtual Pea Plant</h3>
           <p id="dna-plant-summary">Select an offspring genotype to see how the inherited letters show up in the plant.</p>
-          <svg class="dna-plant-svg" id="visual-plant" viewBox="0 0 280 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pea plant phenotype visualizer">
-            <defs>
-              <linearGradient id="dnaLeafGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stop-color="#59c172" />
-                <stop offset="100%" stop-color="#2e8b57" />
-              </linearGradient>
-              <linearGradient id="dnaStemGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stop-color="#71c75e" />
-                <stop offset="100%" stop-color="#2f8e3f" />
-              </linearGradient>
-            </defs>
-            <rect x="84" y="315" width="112" height="26" rx="10" fill="#8a6b4a" opacity="0.18"/>
-            <path d="M72 314 C122 290, 162 290, 212 314" fill="#7ab85d" opacity="0.42"/>
-            <g class="dna-plant-stage" id="dna-plant-stage">
-              <rect id="dna-stem" x="134" y="110" width="12" height="190" rx="8" fill="url(#dnaStemGrad)"/>
-              <path d="M139 160 C100 148, 92 128, 102 112 C124 114, 136 132, 139 160Z" fill="url(#dnaLeafGrad)"/>
-              <path d="M141 200 C176 188, 194 166, 184 148 C160 152, 145 172, 141 200Z" fill="url(#dnaLeafGrad)"/>
-              <path d="M139 238 C105 230, 95 214, 101 196 C122 198, 136 214, 139 238Z" fill="url(#dnaLeafGrad)"/>
-              <path d="M141 268 C170 258, 188 238, 182 220 C158 224, 146 242, 141 268Z" fill="url(#dnaLeafGrad)"/>
-              <circle class="dna-seed" id="dna-seed-1" cx="112" cy="104" r="16" fill="#ffd54f"/>
-              <circle class="dna-seed" id="dna-seed-2" cx="140" cy="88" r="18" fill="#ffd54f"/>
-              <circle class="dna-seed" id="dna-seed-3" cx="168" cy="104" r="16" fill="#ffd54f"/>
-            </g>
-          </svg>
+          <div class="dna-plant-stage-wrap" id="dna-plant-stage-wrap">
+            <svg class="dna-plant-rig" id="dna-plant-rig" viewBox="0 0 280 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated pea plant growth visualizer">
+              <defs>
+                <linearGradient id="dnaStemGradV2" x1="0%" y1="100%" x2="0%" y2="0%">
+                  <stop offset="0%" stop-color="#2f8e3f" />
+                  <stop offset="100%" stop-color="#71c75e" />
+                </linearGradient>
+                <path id="pgLeafShape" d="M0,0 C-28,-6 -42,-25 -37,-46 C-18,-44 -3,-25 0,0 Z" />
+                <path id="pgPodShape" d="M0,0 C9,3 12,13 11,25 C10,35 7,43 0,46 C-7,43 -10,35 -11,25 C-12,13 -9,3 0,0 Z" />
+                <pattern id="leafPattern" patternContentUnits="objectBoundingBox" width="1" height="1">
+                  <image href="../assets/images/dna-heredity/leaf-texture.webp" x="0" y="0" width="1" height="1" preserveAspectRatio="xMidYMid slice" />
+                </pattern>
+                <pattern id="podYellowPattern" patternContentUnits="objectBoundingBox" width="1" height="1">
+                  <image href="../assets/images/dna-heredity/pea-yellow-seeds.webp" x="0" y="0" width="1" height="1" preserveAspectRatio="xMidYMid slice" />
+                </pattern>
+                <pattern id="podGreenPattern" patternContentUnits="objectBoundingBox" width="1" height="1">
+                  <image href="../assets/images/dna-heredity/pod-green-texture.webp" x="0" y="0" width="1" height="1" preserveAspectRatio="xMidYMid slice" />
+                </pattern>
+              </defs>
+
+              <ellipse class="pg-ground-shadow" cx="140" cy="352" rx="72" ry="11" fill="#4a3421" />
+
+              <path class="pg-stem pg-stem-base" pathLength="100" d="M140,368 C138,300 142,232 139,160 C137,138 141,120 140,110" />
+              <path class="pg-stem pg-stem-hl" pathLength="100" d="M142,368 C140,300 144,232 141,160 C139,138 143,120 142,110" />
+
+              <g transform="translate(140,332)">
+                <g class="pg-leaf pg-leaf-0">
+                  <use href="#pgLeafShape" fill="url(#leafPattern)" stroke="#2b6b3f" stroke-width="0.6" stroke-opacity="0.35" transform="scale(-1,1) rotate(-18)" />
+                </g>
+              </g>
+              <g transform="translate(139,296)">
+                <g class="pg-leaf pg-leaf-1">
+                  <use href="#pgLeafShape" fill="url(#leafPattern)" stroke="#2b6b3f" stroke-width="0.6" stroke-opacity="0.35" transform="rotate(-18)" />
+                </g>
+              </g>
+              <g transform="translate(141,256)">
+                <g class="pg-leaf pg-leaf-2">
+                  <use href="#pgLeafShape" fill="url(#leafPattern)" stroke="#2b6b3f" stroke-width="0.6" stroke-opacity="0.35" transform="scale(-1,1) rotate(-14)" />
+                </g>
+              </g>
+              <g transform="translate(139,214)">
+                <g class="pg-leaf pg-leaf-3">
+                  <use href="#pgLeafShape" fill="url(#leafPattern)" stroke="#2b6b3f" stroke-width="0.6" stroke-opacity="0.35" transform="rotate(-14)" />
+                </g>
+              </g>
+              <g transform="translate(140,172)">
+                <g class="pg-leaf pg-leaf-4">
+                  <use href="#pgLeafShape" fill="url(#leafPattern)" stroke="#2b6b3f" stroke-width="0.6" stroke-opacity="0.35" transform="scale(-1,1) rotate(-16)" />
+                </g>
+              </g>
+
+              <path class="pg-pedicel pg-pedicel-tall" d="M140,226 C165,228 184,230 197,232" />
+              <g transform="translate(199,233)">
+                <g class="pg-pod-group pg-pod-tall">
+                  <use href="#pgPodShape" class="pg-pod" transform="rotate(-14)" />
+                  <use href="#pgPodShape" class="pg-pod" transform="translate(15,9) rotate(10) scale(0.82)" />
+                </g>
+              </g>
+              <path class="pg-pedicel pg-pedicel-dwarf" d="M139,297 C165,299 184,301 197,303" />
+              <g transform="translate(199,304)">
+                <g class="pg-pod-group pg-pod-dwarf">
+                  <use href="#pgPodShape" class="pg-pod" transform="rotate(-14)" />
+                  <use href="#pgPodShape" class="pg-pod" transform="translate(15,9) rotate(10) scale(0.82)" />
+                </g>
+              </g>
+            </svg>
+            <div class="dna-plant-sprout" aria-hidden="true">
+              <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 38 L20 20" stroke="#3f8f4f" stroke-width="3" stroke-linecap="round" fill="none" />
+                <path d="M20 24 C10 24, 6 16, 9 8 C17 9, 21 17, 20 24Z" fill="#59c172" />
+                <path d="M20 20 C30 20, 34 12, 31 5 C23 6, 19 13, 20 20Z" fill="#48b25f" />
+              </svg>
+            </div>
+            <button type="button" class="dna-plant-photo-badge" id="dna-plant-photo-badge" aria-label="View the real photo this animation is based on">
+              <img id="dna-plant-photo" src="" alt="" loading="lazy" decoding="async" class="dna-zoomable" />
+            </button>
+            <p class="dna-plant-photo-cap" id="dna-plant-photo-cap">Select an offspring to begin growing.</p>
+          </div>
+          <button type="button" class="dna-plant-regrow-btn" id="dna-plant-regrow-btn">Watch it grow again</button>
           <div class="dna-readout">
             <div>
               <strong>Selected genotype</strong>
@@ -1611,9 +2088,18 @@
         <li>What is the difference between a gene, an allele, and a trait?</li>
         <li>Why is a Punnett square a probability model instead of a guarantee?</li>
         <li>What are some examples where environment changes how a trait appears?</li>
+        <li>Rosalind Franklin's X-ray data was shown to Watson and Crick without her permission, and only Watson, Crick, and Wilkins won the 1962 Nobel Prize (Franklin had died in 1958, and the prize is not awarded posthumously). Why does it matter who gets credited for a scientific discovery?</li>
       </ul>
     </section>
   </main>
+
+  <div class="dna-lightbox" id="dnaLightbox" role="dialog" aria-modal="true" aria-label="Enlarged photo">
+    <div class="dna-lightbox-frame">
+      <button type="button" class="dna-lightbox-close" id="dnaLightboxClose" aria-label="Close enlarged photo">✕</button>
+      <img id="dnaLightboxImg" src="" alt="" />
+      <p class="dna-lightbox-cap" id="dnaLightboxCap"></p>
+    </div>
+  </div>
 
   <footer class="site-footer">
     <p><a href="../steam-lessons.html#module-lifesci">Back to Life Sciences</a></p>
@@ -1648,7 +2134,11 @@
       const trialResults = document.getElementById("trial-results");
       const trialNote = document.getElementById("trial-note");
       const plantSummary = document.getElementById("dna-plant-summary");
-      const plantStage = document.getElementById("dna-plant-stage");
+      const plantStageWrap = document.getElementById("dna-plant-stage-wrap");
+      const plantRig = document.getElementById("dna-plant-rig");
+      const plantPhoto = document.getElementById("dna-plant-photo");
+      const plantPhotoCap = document.getElementById("dna-plant-photo-cap");
+      const plantRegrowBtn = document.getElementById("dna-plant-regrow-btn");
       const selectedGenotype = document.getElementById("dna-selected-genotype");
       const selectedPhenotype = document.getElementById("dna-selected-phenotype");
       const selectedNote = document.getElementById("dna-selected-note");
@@ -1658,11 +2148,33 @@
       const repFeedback = document.getElementById("rep-feedback");
       const repCheckBtn = document.getElementById("rep-check-btn");
       const repResetBtn = document.getElementById("rep-reset-btn");
-      const seeds = [
-        document.getElementById("dna-seed-1"),
-        document.getElementById("dna-seed-2"),
-        document.getElementById("dna-seed-3")
-      ];
+
+      const PLANT_PHOTOS = {
+        height: {
+          dominant: {
+            src: "../assets/images/dna-heredity/pea-tall.webp",
+            alt: "Botanical illustration of a tall pea plant with a single long climbing stem",
+            caption: "Tall pea plant (T_ genotype)"
+          },
+          recessive: {
+            src: "../assets/images/dna-heredity/pea-dwarf.webp",
+            alt: "Botanical illustration of a dwarf pea plant with a short, compact, bushy stem",
+            caption: "Dwarf pea plant (tt genotype)"
+          }
+        },
+        color: {
+          dominant: {
+            src: "../assets/images/dna-heredity/pea-yellow-seeds.webp",
+            alt: "Photograph of yellow split pea seeds",
+            caption: "Yellow pea seeds (Y_ genotype)"
+          },
+          recessive: {
+            src: "../assets/images/dna-heredity/pea-green-seeds.webp",
+            alt: "Photograph of green pea seeds inside open pods",
+            caption: "Green pea seeds (yy genotype)"
+          }
+        }
+      };
 
       const labState = {
         trait: "height",
@@ -1773,30 +2285,67 @@
         return genotype.includes(trait.dominant) ? trait.domName : trait.recName;
       }
 
+      const STEM_OFFSET_FULL = 0;
+      const STEM_OFFSET_DWARF = 58;
+      const GROWTH_DURATION_MS = 1350;
+
+      let plantGrowSeq = 0;
+      let plantLastState = null;
+
+      function growPlant(traitKey, genotype, isDominant, photo) {
+        const seq = ++plantGrowSeq;
+
+        // Reset to the ungrown state and force layout so re-selecting the
+        // same phenotype still replays the full animation from a seed.
+        plantStageWrap.classList.remove("is-grown");
+        plantRig.classList.remove("is-growing");
+        plantRig.classList.toggle("is-dwarf", traitKey === "height" && !isDominant);
+        plantRig.classList.toggle("is-yellow", traitKey === "color" && isDominant);
+        plantRig.classList.toggle("is-green", traitKey === "color" && !isDominant);
+        plantRig.style.setProperty("--stem-off", traitKey === "height" && !isDominant ? STEM_OFFSET_DWARF : STEM_OFFSET_FULL);
+        plantPhotoCap.textContent = "Growing …";
+        void plantStageWrap.offsetWidth;
+
+        requestAnimationFrame(function () {
+          if (seq !== plantGrowSeq) return;
+          plantRig.classList.add("is-growing");
+        });
+
+        setTimeout(function () {
+          if (seq !== plantGrowSeq) return;
+          plantPhoto.src = photo.src;
+          plantPhoto.alt = photo.alt;
+          plantPhotoCap.textContent = photo.caption;
+          plantStageWrap.classList.add("is-grown");
+        }, GROWTH_DURATION_MS);
+      }
+
       function updatePlant(traitKey, genotype) {
         const isDominant = genotype.includes(GENETIC_ENGINE.traits[traitKey].dominant);
+        const photo = PLANT_PHOTOS[traitKey][isDominant ? "dominant" : "recessive"];
+        plantLastState = { traitKey: traitKey, genotype: genotype, isDominant: isDominant, photo: photo };
+
+        growPlant(traitKey, genotype, isDominant, photo);
+
         if (traitKey === "height") {
-          plantStage.style.transform = isDominant ? "scaleY(1.08)" : "scaleY(0.72)";
-          seeds.forEach(function (seed) {
-            seed.setAttribute("fill", "#ffd54f");
-          });
           selectedPhenotype.textContent = isDominant ? "Tall plant" : "Short plant";
           selectedNote.textContent = isDominant
             ? "One dominant T allele is enough to build the tall-stem phenotype."
             : "Only tt removes the dominant instruction, so the plant stays short.";
         } else {
-          plantStage.style.transform = "scaleY(1)";
-          seeds.forEach(function (seed) {
-            seed.setAttribute("fill", isDominant ? "#ffd54f" : "#75b64a");
-          });
           selectedPhenotype.textContent = isDominant ? "Yellow seeds" : "Green seeds";
           selectedNote.textContent = isDominant
             ? "At least one Y allele makes the seeds yellow."
             : "Only yy leaves the recessive green seed color visible.";
         }
         selectedGenotype.textContent = genotype;
-        plantSummary.textContent = "Selected offspring " + genotype + " shows the " + phenotypeFor(traitKey, genotype).toLowerCase() + " phenotype.";
+        plantSummary.textContent = "Growing offspring " + genotype + " — based on the cross, it will become the " + phenotypeFor(traitKey, genotype).toLowerCase() + " phenotype.";
       }
+
+      plantRegrowBtn.addEventListener("click", function () {
+        if (!plantLastState) return;
+        growPlant(plantLastState.traitKey, plantLastState.genotype, plantLastState.isDominant, plantLastState.photo);
+      });
 
       function renderProbabilityCards(outcomes) {
         const total = outcomes.length;
@@ -2156,6 +2705,40 @@
 
       renderReplicationLab();
       updateLabForTrait("height");
+    })();
+  </script>
+  <script>
+    (function () {
+      const lightbox = document.getElementById("dnaLightbox");
+      const lbImg = document.getElementById("dnaLightboxImg");
+      const lbCap = document.getElementById("dnaLightboxCap");
+      const lbClose = document.getElementById("dnaLightboxClose");
+      let lastFocused = null;
+
+      function open(img) {
+        lastFocused = document.activeElement;
+        lbImg.src = img.currentSrc || img.src;
+        lbImg.alt = img.alt || "";
+        lbCap.textContent = img.alt || "";
+        lightbox.classList.add("open");
+        lbClose.focus();
+      }
+
+      function close() {
+        lightbox.classList.remove("open");
+        lbImg.src = "";
+        if (lastFocused) lastFocused.focus();
+      }
+
+      document.addEventListener("click", function (event) {
+        const img = event.target.closest(".dna-zoomable");
+        if (img) { open(img); return; }
+        if (event.target === lightbox || event.target === lbClose) close();
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && lightbox.classList.contains("open")) close();
+      });
     })();
   </script>
   <script src="../assets/js/classroom-animations.js"></script>

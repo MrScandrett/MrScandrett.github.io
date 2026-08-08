@@ -11,6 +11,34 @@
   <style>
     body { background: #000; color: #e0e8ff; margin: 0; overflow-x: hidden; }
 
+    /* ── Ambient starfield behind the whole page ── */
+    .pbd-bg-stars {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background-image:
+        radial-gradient(1px 1px at 8% 12%, rgba(220,230,255,0.9), transparent),
+        radial-gradient(1px 1px at 22% 68%, rgba(200,215,255,0.7), transparent),
+        radial-gradient(1.5px 1.5px at 37% 24%, rgba(230,240,255,0.85), transparent),
+        radial-gradient(1px 1px at 54% 82%, rgba(190,210,255,0.6), transparent),
+        radial-gradient(1px 1px at 66% 14%, rgba(220,230,255,0.8), transparent),
+        radial-gradient(1.5px 1.5px at 78% 55%, rgba(200,220,255,0.7), transparent),
+        radial-gradient(1px 1px at 91% 33%, rgba(230,240,255,0.9), transparent),
+        radial-gradient(1px 1px at 12% 90%, rgba(190,205,255,0.55), transparent),
+        radial-gradient(1px 1px at 46% 47%, rgba(210,225,255,0.65), transparent),
+        radial-gradient(1.5px 1.5px at 85% 78%, rgba(220,235,255,0.75), transparent);
+      background-repeat: repeat;
+      background-size: 700px 700px;
+      animation: pbd-stars-drift 240s linear infinite;
+      opacity: 0.55;
+    }
+    @keyframes pbd-stars-drift {
+      from { background-position: 0 0; }
+      to   { background-position: -700px 1400px; }
+    }
+    .ll-viewport, .pbd-story { position: relative; z-index: 1; }
+
     .pbd-topbar {
       position: sticky;
       top: 0;
@@ -18,7 +46,12 @@
       backdrop-filter: blur(12px) saturate(160%);
       background: rgba(2, 4, 18, 0.88);
       border-bottom: 1px solid rgba(80, 100, 200, 0.25);
+      transition: opacity 1.4s ease;
     }
+    .ll-panel { transition: opacity 1.4s ease; }
+    .pbd-immersive .pbd-topbar { opacity: 0.22; }
+    .pbd-immersive .ll-panel:not(:hover) { opacity: 0.3; }
+    .pbd-immersive .pbd-hero { opacity: 0.35; }
     .pbd-topbar-inner {
       width: min(1180px, calc(100% - 2rem));
       margin: 0 auto;
@@ -46,6 +79,7 @@
       padding: 3rem 1.5rem 1.5rem;
       max-width: 680px;
       margin: 0 auto;
+      transition: opacity 1.4s ease;
     }
     .pbd-hero h1 {
       font-size: clamp(1.6rem, 4vw, 2.6rem);
@@ -170,6 +204,17 @@
       font-weight: 600;
       text-align: right;
       letter-spacing: 0.02em;
+    }
+    .pbd-context {
+      max-width: 1000px;
+      margin: 0.35rem auto 0;
+      padding: 0 1rem;
+      text-align: center;
+      font-size: 0.8rem;
+      font-style: italic;
+      color: rgba(150, 180, 240, 0.6);
+      min-height: 1.2rem;
+      transition: opacity 0.6s ease;
     }
 
     .pbd-journey-btn {
@@ -420,7 +465,8 @@
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to content</a>
-<div class="ll-viewport ll-dark">
+<div class="pbd-bg-stars" aria-hidden="true"></div>
+<div class="ll-viewport ll-dark" id="pbd-viewport">
 
   <nav class="pbd-topbar ll-topbar" aria-label="Page navigation">
     <div class="pbd-topbar-inner">
@@ -435,7 +481,7 @@
 
       <div class="pbd-hero ll-hero">
         <h1>Pale Blue Dot</h1>
-        <p>Zoom from Earth's surface to the edge of the observable universe. At Voyager 1's distance, Earth disappears — a pale blue dot suspended in a sunbeam. Press <strong>Start Journey</strong> and watch it happen.</p>
+        <p>Start at your desk. Zoom out through your classroom, your school, your town, your country — off the Earth entirely, past every planet, until home is a single pale blue dot suspended in a sunbeam. Press <strong>Start Journey</strong> and hold on.</p>
       </div>
 
       <div class="pbd-canvas-wrap" id="pbd-wrap">
@@ -448,6 +494,7 @@
         <span class="pbd-scale-value" id="pbd-scale-value">—</span>
         <span class="pbd-milestone" id="pbd-milestone"></span>
       </div>
+      <p class="pbd-context" id="pbd-context"></p>
 
       <div class="pbd-speech-reveal" id="pbd-speech-reveal" aria-live="polite">
         <p class="pbd-speech-line bright" id="pbd-sl-1">"Look again at that dot. That's here. That's home. That's us."</p>
@@ -473,7 +520,7 @@
           <span class="ll-label">Zoom Level</span>
           <div class="pbd-slider-wrap" style="flex-direction:column;gap:0.5rem;">
             <div style="display:flex;justify-content:space-between;font-size:0.68rem;color:#4060a0;">
-              <span>Earth surface</span><span>Observable Universe</span>
+              <span>Your Desk</span><span>Observable Universe</span>
             </div>
             <input type="range" id="pbd-slider" min="0" max="100" value="0" step="0.1" aria-label="Zoom level" style="width:100%;" />
           </div>
@@ -600,6 +647,7 @@
     const wrap = document.getElementById('pbd-wrap');
     const modelLayer = document.getElementById('pbd-planet-layer');
     const journeyBtn = document.getElementById('pbd-journey-btn');
+    const viewportEl = document.getElementById('pbd-viewport');
 
     // ── Scale map: slider 0→100 maps logarithmically to meters across viewport ──
     // 0   = 10 m  (human scale)
@@ -664,17 +712,43 @@
       { name: 'Andromeda',        dist: 2.4e22,      r: 4.7e20,       color: '#a080ff', effects: { glow: true, haloColor: 0xb194ff, haloOpacity: 0.1 } },
     ];
 
-    // Milestones shown in readout
+    // Milestones shown in readout, each with a relatable fact for the context line.
+    // 0–24 is the human-scale intro (desk → classroom → … → continent);
+    // 24+ hands off to the existing solar-system / universe sequence unchanged.
+    const INTRO_END = 24;
     const MILESTONES = [
-      { from: 0,  to: 5,   label: 'Earth surface' },
-      { from: 5,  to: 15,  label: 'Earth & Moon system' },
-      { from: 15, to: 28,  label: 'Inner Solar System' },
-      { from: 28, to: 42,  label: 'Outer Solar System' },
-      { from: 42, to: 52,  label: '📸 Voyager 1 — The Pale Blue Dot' },
-      { from: 52, to: 65,  label: 'Beyond our Solar System' },
-      { from: 65, to: 78,  label: 'The Milky Way' },
-      { from: 78, to: 90,  label: 'Local Group of Galaxies' },
-      { from: 90, to: 100, label: 'The Observable Universe' },
+      { from: 0,    to: 2.7,  label: 'Your Desk',
+        fact: 'This is the exact spot the whole universe is about to zoom out from.' },
+      { from: 2.7,  to: 5.3,  label: 'Your Classroom',
+        fact: 'Thirty desks like yours, in one room.' },
+      { from: 5.3,  to: 8.0,  label: 'Your School',
+        fact: 'Hundreds of desks like yours, under one roof.' },
+      { from: 8.0,  to: 10.7, label: 'Your Neighborhood',
+        fact: 'Your school is one building among thousands of homes.' },
+      { from: 10.7, to: 13.3, label: 'Your Town',
+        fact: 'Everyone you\'ll meet this year lives somewhere inside this view.' },
+      { from: 13.3, to: 16.0, label: 'Your City',
+        fact: 'Tens of thousands of desks like yours are out there right now.' },
+      { from: 16.0, to: 18.7, label: 'Your State',
+        fact: 'Your entire city just shrank to a single point of light.' },
+      { from: 18.7, to: 21.3, label: 'Your Country',
+        fact: 'Your state is now just one shape among fifty.' },
+      { from: 21.3, to: 24.0, label: 'Your Continent',
+        fact: 'Your whole country is now a sliver of coastline.' },
+      { from: 24,   to: 30,   label: 'Earth — Seen From Space',
+        fact: 'This is the entire world. Every desk, every classroom, everyone you know.' },
+      { from: 30,   to: 42,   label: 'Leaving the Solar System',
+        fact: 'Voyager 1 needed 12 years of travel to reach this far.' },
+      { from: 42,   to: 52,   label: '📸 Voyager 1 — The Pale Blue Dot',
+        fact: 'This is where Carl Sagan asked NASA to turn the camera around.' },
+      { from: 52,   to: 65,   label: 'Beyond our Solar System',
+        fact: 'Earth is already gone from view. Everyone you know just vanished.' },
+      { from: 65,   to: 78,   label: 'The Milky Way',
+        fact: 'Our Sun is one of roughly 200 billion stars in this galaxy alone.' },
+      { from: 78,   to: 90,   label: 'Local Group of Galaxies',
+        fact: 'Andromeda, our nearest large neighbor, is 2.5 million light-years away.' },
+      { from: 90,   to: 100,  label: 'The Observable Universe',
+        fact: 'This is the edge of what light has had time to reach us from — ever.' },
     ];
 
     // ── Star field (generated once) ──
@@ -688,6 +762,80 @@
         a: Math.random() * 0.6 + 0.2,
         twinkle: Math.random() * Math.PI * 2,
       });
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // Intro sequence: desk → classroom → school → neighborhood → town
+    // → city → state → country → continent → Earth from space.
+    // Covers slider 0–INTRO_END; everything after hands off to the
+    // existing solar-system / universe scene, untouched below.
+    // Each stage is a hand-authored SVG illustration (assets/images/
+    // pale-blue-dot/), preloaded once and drawn onto the canvas.
+    // ══════════════════════════════════════════════════════════════
+    function withZoom(ctx, W, H, scale, fn) {
+      ctx.save();
+      ctx.translate(W / 2, H / 2);
+      ctx.scale(scale, scale);
+      ctx.translate(-W / 2, -H / 2);
+      fn();
+      ctx.restore();
+    }
+
+    const INTRO_STAGE_FILES = [
+      ['Your Desk',         'scene-desk.svg'],
+      ['Your Classroom',    'scene-classroom.svg'],
+      ['Your School',       'scene-school.svg'],
+      ['Your Neighborhood', 'scene-neighborhood.svg'],
+      ['Your Town',         'scene-town.svg'],
+      ['Your City',         'scene-city.svg'],
+      ['Your State',        'scene-state.svg'],
+      ['Your Country',      'scene-country.svg'],
+      ['Your Continent',    'scene-continent.svg'],
+    ];
+    const INTRO_STAGES = INTRO_STAGE_FILES.map(([name, file]) => {
+      const img = new Image();
+      img.src = `../assets/images/pale-blue-dot/${file}`;
+      return { name, img, bg: '#0a0e18' };
+    });
+
+    function drawIntroScene(ctx, W, H, s) {
+      const n = INTRO_STAGES.length;
+      const segLen = INTRO_END / n;
+      const idxRaw = s / segLen;
+      const idx = Math.max(0, Math.min(n - 1, Math.floor(idxRaw)));
+      const f = Math.max(0, Math.min(1, idxRaw - idx));
+      const stage = INTRO_STAGES[idx];
+
+      ctx.fillStyle = stage.bg;
+      ctx.fillRect(0, 0, W, H);
+      const zoomScale = 1.5 - 0.5 * f;
+      if (stage.img.complete && stage.img.naturalWidth) {
+        withZoom(ctx, W, H, zoomScale, () => ctx.drawImage(stage.img, 0, 0, W, H));
+      }
+
+      if (f > 0.7 && idx < n - 1) {
+        const next = INTRO_STAGES[idx + 1];
+        const t = (f - 0.7) / 0.3;
+        if (next.img.complete && next.img.naturalWidth) {
+          ctx.save();
+          ctx.globalAlpha = t;
+          withZoom(ctx, W, H, 1.5, () => ctx.drawImage(next.img, 0, 0, W, H));
+          ctx.restore();
+        }
+      }
+
+      // "You are here" marker — shrinks continuously across the whole intro,
+      // the same physical point the entire zoom-out pivots around.
+      const sNorm = Math.max(0, Math.min(1, s / INTRO_END));
+      const r = 13 - sNorm * 10;
+      const cx = W / 2, cy = H / 2;
+      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 2.4);
+      glow.addColorStop(0, 'rgba(255,214,120,0.5)');
+      glow.addColorStop(1, 'rgba(255,214,120,0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath(); ctx.arc(cx, cy, r * 2.4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,224,150,0.95)';
+      ctx.beginPath(); ctx.arc(cx, cy, Math.max(1.5, r), 0, Math.PI * 2); ctx.fill();
     }
 
     let modelSystem = null;
@@ -1199,6 +1347,20 @@
       const s   = parseFloat(slider.value);
       const viewM = sliderToMeters(s); // meters across canvas width
 
+      frame++;
+
+      // ── Scale helpers (needed by both the intro and the space scene) ──
+      const scale = W / viewM; // px per meter
+      function xFor(distM) { return W / 2 + (distM * scale); }
+      function rFor(radiusM) { return Math.max(radiusM * scale, 1.5); }
+      const modelLayouts = [];
+      const priorityObjects = new Set(['Earth', 'Sun', 'Moon', 'Jupiter', 'Saturn']);
+
+      if (s < INTRO_END) {
+        // ── Human-scale intro: desk → classroom → … → continent ──
+        drawIntroScene(ctx, W, H, s);
+        if (modelSystem) modelSystem.sync([], s);
+      } else {
       // ── Background ──
       const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
       bgGrad.addColorStop(0, '#000008');
@@ -1207,7 +1369,6 @@
       ctx.fillRect(0, 0, W, H);
 
       // ── Stars ──
-      frame++;
       const zoomEffect = s * 0.01;
       STARS.forEach(st => {
         const offsetX = ((st.x - 0.5) * zoomEffect * st.z) * W * 0.085;
@@ -1221,14 +1382,6 @@
         ctx.fillStyle = `rgba(200, 215, 255, ${st.a * twinkle})`;
         ctx.fill();
       });
-
-      // ── Scale helpers ──
-      const scale = W / viewM; // px per meter
-
-      function xFor(distM) { return W / 2 + (distM * scale); }
-      function rFor(radiusM) { return Math.max(radiusM * scale, 1.5); }
-      const modelLayouts = [];
-      const priorityObjects = new Set(['Earth', 'Sun', 'Moon', 'Jupiter', 'Saturn']);
 
       // ── Sunbeam with diffraction (Voyager-scale, slider ~38–60) ──
       // The real Pale Blue Dot photo shows scattered light bands from Voyager's
@@ -1441,6 +1594,7 @@
       }
 
       if (modelSystem) modelSystem.sync(modelLayouts, s);
+      } // end else (space scene)
 
       // ── Scale bar ──
       const barM   = viewM / 8;
@@ -1468,6 +1622,12 @@
       if (panelScale) panelScale.textContent = formatDistance(viewM) + ' across';
       const panelMs = document.getElementById('pbd-milestone-panel');
       if (panelMs) panelMs.textContent = ms ? ms.label : '';
+      const contextEl = document.getElementById('pbd-context');
+      if (contextEl) contextEl.textContent = ms && ms.fact ? ms.fact : '';
+
+      // Immersive mode: fade the interface chrome once Earth vanishes and the
+      // pale blue dot moment begins, so nothing competes with it on screen.
+      if (viewportEl) viewportEl.classList.toggle('pbd-immersive', s >= 46);
 
       // ── Speech reveals — only once we're past all planets.
       // At slider 54+ every planet is a sub-pixel dot; the canvas is just
