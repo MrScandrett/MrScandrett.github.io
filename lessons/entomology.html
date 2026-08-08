@@ -21,6 +21,7 @@
       --line:rgba(163,230,53,.16); --line2:rgba(163,230,53,.34);
       --text:#f1f7e9; --muted:rgba(235,247,225,.7); --dim:rgba(235,247,225,.45);
       --lime:#a3e635; --amber:#fbbf24; --cyan:#22d3ee; --pink:#fb7185; --radius:10px;
+      --paper:#efe6d0; --paper2:#e2d3ac; --ink:#2c2014; --ink-soft:#5a4a30;
     }
     * { box-sizing:border-box; }
     html { scroll-behavior:smooth; }
@@ -74,6 +75,48 @@
     .fact p { margin:0; }
     .callout { margin-top:1rem; padding:.9rem 1rem; border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; background:rgba(251,191,36,.07); }
     .callout strong { color:#fde68a; }
+    /* Textbook plate styling — real specimen photos and history portraits */
+    .plate { background:radial-gradient(ellipse at 30% 20%,#f5eeda,var(--paper) 55%,var(--paper2) 100%); border:1px solid rgba(44,32,20,.35); box-shadow:inset 0 0 0 1px rgba(255,252,240,.5),inset 0 0 34px rgba(44,32,20,.16); position:relative; }
+    .plate::before { content:""; position:absolute; inset:6px; border:1px solid rgba(44,32,20,.28); pointer-events:none; z-index:2; }
+    .plate::after { content:""; position:absolute; inset:0; pointer-events:none; z-index:1; filter:url(#paperGrain); opacity:.5; mix-blend-mode:multiply; }
+    .icon-plate { background:radial-gradient(ellipse at 30% 20%,#f5eeda,var(--paper) 55%,var(--paper2) 100%); border:1px solid rgba(44,32,20,.35); box-shadow:inset 0 0 10px rgba(44,32,20,.18); }
+    .specimen-icon { display:grid; place-items:center; width:42px; height:42px; border-radius:50%; overflow:hidden; }
+    .specimen-icon img { width:100%; height:100%; object-fit:cover; filter:sepia(.1) contrast(1.03); }
+    .mystery-icon-frame,.timeline-portrait-frame { width:100%; height:100%; border-radius:6px; overflow:hidden; box-shadow:0 3px 10px rgba(44,32,20,.3),inset 0 0 0 3px #fffaf0; }
+    .mystery-icon-frame img,.timeline-portrait img { width:100%; height:100%; object-fit:cover; display:block; filter:sepia(.1) contrast(1.03); }
+    .fig-caption { margin-top:.5rem; text-align:center; font:600 .7rem "Source Serif 4",Georgia,serif; font-style:italic; color:var(--ink-soft); }
+    .specimen-sheet { display:grid; grid-template-columns:1fr 1.3fr; gap:1.2rem; align-items:center; margin-top:1rem; }
+    .specimen-sheet img { width:100%; height:auto; display:block; border-radius:4px; }
+    .specimen-sheet .plate { padding:.7rem; }
+
+    /* Zoomable specimen photos */
+    .zoomable { cursor:zoom-in; }
+    .lightbox { position:fixed; inset:0; z-index:100; display:none; align-items:center; justify-content:center; padding:clamp(1rem,5vw,4rem); background:rgba(4,7,10,.88); backdrop-filter:blur(6px); }
+    .lightbox.open { display:flex; }
+    .lightbox-frame { position:relative; max-width:min(900px,92vw); max-height:88vh; background:radial-gradient(ellipse at 30% 20%,#f5eeda,var(--paper) 55%,var(--paper2) 100%); border:1px solid rgba(44,32,20,.4); border-radius:6px; padding:.9rem; box-shadow:0 30px 80px rgba(0,0,0,.5); }
+    .lightbox-frame img { display:block; max-width:100%; max-height:calc(88vh - 4.5rem); width:auto; height:auto; margin:auto; border-radius:3px; }
+    .lightbox-cap { margin-top:.6rem; text-align:center; font:600 .78rem "Source Serif 4",Georgia,serif; font-style:italic; color:var(--ink-soft); }
+    .lightbox-close { position:absolute; top:-14px; right:-14px; width:34px; height:34px; border-radius:50%; border:1px solid rgba(44,32,20,.4); background:#efe6d0; color:var(--ink); font-size:1.1rem; font-weight:800; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,.35); }
+    .lightbox-close:hover { background:#fff8e8; }
+
+    /* History timeline */
+    .timeline { display:grid; gap:.8rem; margin-top:1rem; }
+    .timeline-item { display:grid; grid-template-columns:100px 1fr; gap:1rem; align-items:start; padding:.9rem; border:1px solid var(--line); border-radius:var(--radius); background:#08130c; }
+    .timeline-item.dual { grid-template-columns:auto 1fr; }
+    .timeline-photos { display:flex; gap:.5rem; }
+    .timeline-portrait { width:100px; height:100px; flex:none; border-radius:50%; padding:5px; background:radial-gradient(ellipse at 30% 20%,#f5eeda,var(--paper) 55%,var(--paper2) 100%); border:1px solid rgba(44,32,20,.35); box-shadow:0 3px 10px rgba(0,0,0,.28); }
+    .timeline-portrait-frame { border-radius:50%; }
+    .timeline-portrait.square { border-radius:8px; }
+    .timeline-portrait.square .timeline-portrait-frame { border-radius:5px; }
+    .timeline-year { color:var(--lime); font:700 .68rem "JetBrains Mono",monospace; letter-spacing:.08em; text-transform:uppercase; }
+    .timeline-body h3 { margin:.25rem 0 .4rem; color:var(--text); font-size:1.05rem; }
+    .timeline-body p { margin:0; }
+
+    /* Credits */
+    .credits { margin-top:1rem; padding-top:.9rem; border-top:1px solid var(--line); font-size:.72rem; color:var(--dim); line-height:1.9; }
+    .credits a { color:#d9f99d; text-decoration:none; }
+    .credits a:hover { text-decoration:underline; }
+
     .anatomy { display:grid; grid-template-columns:minmax(280px,1fr) 1fr; gap:1.2rem; align-items:center; }
     .diagram { padding:1rem; border:1px solid var(--line); border-radius:var(--radius); background:#08130c; }
     .diagram svg { display:block; width:100%; height:auto; }
@@ -110,11 +153,10 @@
     .specimen-btn { width:100%; display:grid; grid-template-columns:44px 1fr; align-items:center; gap:.65rem; padding:.6rem; border:1px solid transparent; border-radius:8px; color:var(--muted); background:transparent; text-align:left; cursor:pointer; }
     .specimen-btn:hover { background:rgba(255,255,255,.04); }
     .specimen-btn.active { color:var(--text); border-color:var(--line2); background:rgba(163,230,53,.08); }
-    .specimen-icon { display:grid; place-items:center; width:42px; height:42px; border-radius:50%; background:#122117; font-size:1.45rem; }
     .specimen-btn b { display:block; font-size:.8rem; } .specimen-btn small { color:var(--dim); }
     .key-panel { padding:clamp(1rem,3vw,1.5rem); }
     .mystery { display:grid; grid-template-columns:140px 1fr; gap:1rem; align-items:center; }
-    .mystery-icon { display:grid; place-items:center; height:140px; border:1px solid var(--line); border-radius:var(--radius); background:radial-gradient(circle,rgba(163,230,53,.14),transparent 60%),#08130c; font-size:4.8rem; }
+    .mystery-icon { padding:8px; height:140px; border-radius:var(--radius); }
     .trait-list { display:flex; flex-wrap:wrap; gap:.4rem; margin:.7rem 0; }
     .trait { padding:.28rem .5rem; border:1px solid rgba(34,211,238,.25); border-radius:999px; color:#a5f3fc; background:rgba(34,211,238,.06); font-size:.7rem; }
     .answer-row { display:flex; gap:.55rem; flex-wrap:wrap; margin-top:1rem; }
@@ -160,18 +202,26 @@
     .steam-item b { display:block; margin-bottom:.3rem; font-size:.78rem; }.steam-item p { margin:0; font-size:.75rem; }
     .footer { padding:2rem 1rem; text-align:center; color:var(--dim); font-size:.78rem; }
     .footer a { color:#d9f99d; text-decoration:none; }
-    @media (max-width:800px) { .nav{display:none}.hero,.anatomy{grid-template-columns:1fr}.hero{min-height:0}.hero-art{min-height:330px}.three{grid-template-columns:1fr 1fr}.field-grid,.steam-grid{grid-template-columns:1fr 1fr}.lab-body{grid-template-columns:1fr}.specimen-list{grid-template-columns:repeat(3,1fr);border-right:0;border-bottom:1px solid var(--line)}.specimen-btn{grid-template-columns:1fr;text-align:center}.specimen-icon{margin:auto}.launchpad{grid-template-columns:1fr}.mission-tabs{grid-template-columns:repeat(3,1fr)}.mission-tab{grid-template-columns:1fr;text-align:center}.source-shelf{grid-template-columns:1fr 1fr} }
+    @media (max-width:800px) { .nav{display:none}.hero,.anatomy{grid-template-columns:1fr}.hero{min-height:0}.hero-art{min-height:330px}.three{grid-template-columns:1fr 1fr}.field-grid,.steam-grid{grid-template-columns:1fr 1fr}.lab-body{grid-template-columns:1fr}.specimen-list{grid-template-columns:repeat(3,1fr);border-right:0;border-bottom:1px solid var(--line)}.specimen-btn{grid-template-columns:1fr;text-align:center}.specimen-icon{margin:auto}.launchpad{grid-template-columns:1fr}.mission-tabs{grid-template-columns:repeat(3,1fr)}.mission-tab{grid-template-columns:1fr;text-align:center}.source-shelf{grid-template-columns:1fr 1fr}.specimen-sheet{grid-template-columns:1fr}.timeline-item{grid-template-columns:1fr;text-align:center}.timeline-portrait{margin:auto}.timeline-item.dual{grid-template-columns:1fr}.timeline-photos{justify-content:center} }
     @media (max-width:540px) { .two,.three,.cycles,.field-grid,.steam-grid,.source-shelf{grid-template-columns:1fr}.mystery{grid-template-columns:1fr}.mystery-icon{height:110px}.specimen-list{grid-template-columns:repeat(2,1fr)}.topbar .badge{display:none}.mission-tabs{display:flex;overflow-x:auto;padding-bottom:.2rem}.mission-tab{min-width:120px}.cycle-head{flex-wrap:wrap}.cycle-foot{grid-template-columns:1fr}.cycle-track{min-width:700px} }
     @media (prefers-reduced-motion:reduce) { html{scroll-behavior:auto}.live-indicator::before{animation:none} }
   </style>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
+  <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+    <defs>
+      <filter id="paperGrain" x="-20%" y="-20%" width="140%" height="140%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" stitchTiles="stitch" result="noise"/>
+        <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0.17  0 0 0 0 0.13  0 0 0 0 0.08  0 0 0 0.55 0"/>
+      </filter>
+    </defs>
+  </svg>
   <header class="topbar">
     <div class="topbar-inner">
       <a href="../steam-lessons.html">← Lessons</a>
       <nav class="nav" aria-label="Lesson sections">
-        <a href="#anatomy">Anatomy</a><a href="#diversity">Diversity</a><a href="#life-cycle">Life Cycles</a><a href="#lab">ID Lab</a><a href="#launchpad">Launchpad</a><a href="#fieldwork">Fieldwork</a>
+        <a href="#anatomy">Anatomy</a><a href="#diversity">Diversity</a><a href="#history">History</a><a href="#life-cycle">Life Cycles</a><a href="#lab">ID Lab</a><a href="#launchpad">Launchpad</a><a href="#fieldwork">Fieldwork</a>
       </nav>
       <span class="badge">Life Sciences · Grades 4–8</span>
     </div>
@@ -205,6 +255,33 @@
         <div class="fact"><span class="fact-number">1</span><h3>Pair of antennae</h3><p>These sensory organs detect chemicals, touch, vibration, and more.</p></div>
       </div>
       <div class="callout"><strong>Words matter:</strong> In everyday speech, “bug” can mean any small crawling animal. In science, insects are one class within the arthropods—and a <em>true bug</em> is specifically an insect in the order Hemiptera, such as a cicada, aphid, or stink bug.</div>
+    </section>
+
+    <section class="card" id="history">
+      <p class="kicker">How we learned to see the small</p><h2>A Brief History of Entomology</h2>
+      <p>Insects were mostly ignored by early science—too small, too numerous, seemingly beneath notice. It took centuries of patient, obsessive observers to prove otherwise.</p>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-portrait"><div class="timeline-portrait-frame"><img src="../assets/images/entomology/swammerdam.webp" alt="Portrait of Jan Swammerdam" width="700" height="700" loading="lazy" decoding="async" class="zoomable" /></div></div>
+          <div class="timeline-body"><span class="timeline-year">1660s</span><h3>Swammerdam dissects the impossible</h3><p>Jan Swammerdam used a self-built microscope to dissect insects smaller than a grain of rice, and was the first to show that a caterpillar, pupa, and butterfly are the same animal in three bodies—not three separate creatures, as many still believed.</p></div>
+        </div>
+        <div class="timeline-item dual">
+          <div class="timeline-photos">
+            <div class="timeline-portrait"><div class="timeline-portrait-frame"><img src="../assets/images/entomology/merian.webp" alt="Portrait of Maria Sibylla Merian" width="700" height="700" loading="lazy" decoding="async" class="zoomable" /></div></div>
+            <div class="timeline-portrait square"><div class="timeline-portrait-frame"><img src="../assets/images/entomology/merianplate.webp" alt="Maria Sibylla Merian's 1705 illustration of a banana plant with a moth and caterpillar life stages" width="700" height="700" loading="lazy" decoding="async" class="zoomable" /></div></div>
+          </div>
+          <div class="timeline-body"><span class="timeline-year">1699 – 1705</span><h3>Merian paints insects as they live</h3><p>At 52, Maria Sibylla Merian sailed to the Dutch colony of Surinam to observe insects in their actual habitat instead of as dead, pinned specimens. Her book paired each insect with the exact plant it fed on and every stage of its life cycle—inventing the field of ecological illustration in the process.</p></div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-portrait"><div class="timeline-portrait-frame"><img src="../assets/images/entomology/reaumur.webp" alt="Engraved portrait of René Antoine Ferchault de Réaumur" width="700" height="700" loading="lazy" decoding="async" class="zoomable" /></div></div>
+          <div class="timeline-body"><span class="timeline-year">1730s</span><h3>Réaumur builds a library of insect lives</h3><p>René Antoine Ferchault de Réaumur spent decades rearing insects in captivity just to record what they did all day—six illustrated volumes of behavior, feeding, and life cycles that made careful, repeated observation the standard for studying living insects.</p></div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-portrait"><div class="timeline-portrait-frame"><img src="../assets/images/entomology/fabre.webp" alt="Portrait of Jean-Henri Fabre" width="700" height="700" loading="lazy" decoding="async" class="zoomable" /></div></div>
+          <div class="timeline-body"><span class="timeline-year">1879 – 1907</span><h3>Fabre watches, and keeps watching</h3><p>Jean-Henri Fabre, a poor schoolteacher with no laboratory, spent his life in a small French garden watching wasps, beetles, and crickets behave in the wild rather than under a pin. His ten-volume <em>Souvenirs Entomologiques</em> earned him the nickname "the insects' Homer" and helped found modern behavioral entomology.</p></div>
+        </div>
+      </div>
+      <div class="callout"><strong>The pattern across all four:</strong> every leap in entomology came from someone willing to look closer and longer than anyone had before—exactly what the ID Lab further down this page asks you to practice.</div>
     </section>
 
     <section class="card" id="anatomy">
@@ -319,9 +396,31 @@
       <div class="steam-grid">
         <div class="steam-item"><b>Science</b><p>Observe anatomy, behavior, ecology, and life cycles.</p></div><div class="steam-item"><b>Technology</b><p>Use macro photos, sensors, and citizen-science databases.</p></div><div class="steam-item"><b>Engineering</b><p>Study wings, joints, hives, webs, and swarm robotics.</p></div><div class="steam-item"><b>Art</b><p>Make accurate scientific illustrations and nature journals.</p></div><div class="steam-item"><b>Math</b><p>Count populations, compare ratios, and graph biodiversity.</p></div>
       </div>
+      <div class="credits">
+        <strong style="color:var(--muted)">Photo credits:</strong>
+        <a href="https://commons.wikimedia.org/wiki/File:2_especies_de_Coccinellidae_(16116203510).jpg" target="_blank" rel="noopener">Beetle</a> (CC BY-SA 2.0) ·
+        <a href="https://commons.wikimedia.org/wiki/File:The_Garden_Spider_-_Flickr_-_Lenny_K_Photography.jpg" target="_blank" rel="noopener">Spider</a> (Lenny K Photography, CC BY 2.0) ·
+        <a href="https://commons.wikimedia.org/wiki/File:Eastern_Black_Carpenter_Ant_(Camponotus_pennsylvanicus)_-_Guelph,_Ontario_2017-04-09_(02).jpg" target="_blank" rel="noopener">Ant</a> (Ryan Hodnett, CC BY-SA 4.0) ·
+        <a href="https://commons.wikimedia.org/wiki/File:%D0%9C%D0%BE%D0%BA%D1%80%D0%B8%D1%86%D0%B0-%D0%B1%D1%80%D0%BE%D0%BD%D0%B5%D0%BD%D0%BE%D1%81%D0%B5%D1%86_%D0%BE%D0%B1%D1%8B%D0%BA%D0%BD%D0%BE%D0%B2%D0%B5%D0%BD%D0%BD%D0%B0%D1%8F_-_Armadillidium_vulgare_-_(Common)_pill-bug,_(Common)_pill_woodlouse,_Roly-poly,_Doodle_bug,_or_Carpenter_(34075599542).jpg" target="_blank" rel="noopener">Pill bug</a> (CC BY-SA 2.0) ·
+        <a href="https://commons.wikimedia.org/wiki/File:Giant_Centipede_(Scolopendra_supspinipes)_(7131135653).jpg" target="_blank" rel="noopener">Centipede</a> (CC BY-SA 2.0) ·
+        <a href="https://commons.wikimedia.org/wiki/File:Monarch_Butterfly_Danaus_plexippus_Male_Wing_2800px.jpg" target="_blank" rel="noopener">Monarch butterfly</a> (Derek Ramsey, GFDL 1.2) ·
+        <a href="https://commons.wikimedia.org/wiki/File:Jan_Swammerdam.jpg" target="_blank" rel="noopener">Swammerdam</a> (public domain) ·
+        <a href="https://commons.wikimedia.org/wiki/File:Maria_Sibylla_Merian_(1647%E2%80%931717).jpg" target="_blank" rel="noopener">Merian portrait</a> (CC BY-SA 4.0) ·
+        <a href="https://commons.wikimedia.org/wiki/File:Maria_Sibylla_Merian_Banana_Flower_and_Fruit,_from_Metamorphosis_insectorum_Surinamensium_1705.jpg" target="_blank" rel="noopener">Merian's banana plate</a> (1705, public domain) ·
+        <a href="https://commons.wikimedia.org/wiki/File:Portret_van_Ren%C3%A9-Antoine_Ferchault_de_R%C3%A9aumur,_RP-P-1910-6521.jpg" target="_blank" rel="noopener">Réaumur</a> (Rijksmuseum, CC0) ·
+        <a href="https://commons.wikimedia.org/wiki/File:PortraitJeanHenriFabre-513.jpg" target="_blank" rel="noopener">Fabre</a> (CC BY-SA 4.0), all via Wikimedia Commons.
+      </div>
     </section>
   </main>
   <footer class="footer"><a href="../steam-lessons.html">← Return to STEAM Lessons</a> · Observe closely. Classify carefully. Protect living things.</footer>
+
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Enlarged specimen photo">
+    <div class="lightbox-frame">
+      <button type="button" class="lightbox-close" id="lightboxClose" aria-label="Close enlarged photo">✕</button>
+      <img id="lightboxImg" src="" alt="" />
+      <p class="lightbox-cap" id="lightboxCap"></p>
+    </div>
+  </div>
 
   <script type="module">
     import * as THREE from 'three';
@@ -625,17 +724,18 @@
   <script>
     (() => {
       const specimens = [
-        { id:'A', icon:'🐞', label:'spotted shell', traits:['6 legs','3 body regions','1 pair of antennae','hardened forewings'], clue:'The wings and all six legs attach to the thorax.', answer:'insect', why:'It has the insect blueprint: six legs, three body regions, and one pair of antennae. It is a beetle.' },
-        { id:'B', icon:'🕷️', label:'silent hunter', traits:['8 legs','2 main body regions','no antennae','spinnerets'], clue:'Its first pair of walking legs is not an antenna.', answer:'arachnid', why:'Eight legs, two main body regions, and no antennae identify an arachnid. This one is a spider.' },
-        { id:'C', icon:'🐜', label:'colony worker', traits:['6 legs','3 body regions','elbowed antennae','narrow waist'], clue:'Workers communicate with chemicals and touch.', answer:'insect', why:'Six legs and three body regions make this ant an insect.' },
-        { id:'D', icon:'🦠', label:'garden roller', traits:['14 legs','segmented plates','2 pairs of antennae','breathes with gill-like structures'], clue:'It is more closely related to crabs than to insects.', answer:'crustacean', why:'A pill bug is a land-dwelling crustacean, not an insect.' },
-        { id:'E', icon:'🐛', label:'many-legged hunter', traits:['many segments','1 pair of legs per segment','1 pair of antennae','venom claws'], clue:'Its long body repeats a segment pattern.', answer:'myriapod', why:'This centipede belongs to the many-legged arthropod group Myriapoda.' },
-        { id:'F', icon:'🦋', label:'scaled-wing visitor', traits:['6 legs','3 body regions','2 pairs of wings','coiled proboscis'], clue:'It develops through egg, larva, pupa, and adult.', answer:'insect', why:'This butterfly has all the insect traits and undergoes complete metamorphosis.' }
+        { id:'A', photo:'beetle', label:'spotted shell', traits:['6 legs','3 body regions','1 pair of antennae','hardened forewings'], clue:'The wings and all six legs attach to the thorax.', answer:'insect', why:'It has the insect blueprint: six legs, three body regions, and one pair of antennae. It is a beetle.' },
+        { id:'B', photo:'spider', label:'silent hunter', traits:['8 legs','2 main body regions','no antennae','spinnerets'], clue:'Its first pair of walking legs is not an antenna.', answer:'arachnid', why:'Eight legs, two main body regions, and no antennae identify an arachnid. This one is a spider.' },
+        { id:'C', photo:'ant', label:'colony worker', traits:['6 legs','3 body regions','elbowed antennae','narrow waist'], clue:'Workers communicate with chemicals and touch.', answer:'insect', why:'Six legs and three body regions make this ant an insect.' },
+        { id:'D', photo:'pillbug', label:'garden roller', traits:['14 legs','segmented plates','2 pairs of antennae','breathes with gill-like structures'], clue:'It is more closely related to crabs than to insects.', answer:'crustacean', why:'A pill bug is a land-dwelling crustacean, not an insect.' },
+        { id:'E', photo:'centipede', label:'many-legged hunter', traits:['many segments','1 pair of legs per segment','1 pair of antennae','venom claws'], clue:'Its long body repeats a segment pattern.', answer:'myriapod', why:'This centipede belongs to the many-legged arthropod group Myriapoda.' },
+        { id:'F', photo:'butterfly', label:'scaled-wing visitor', traits:['6 legs','3 body regions','2 pairs of wings','coiled proboscis'], clue:'It develops through egg, larva, pupa, and adult.', answer:'insect', why:'This butterfly has all the insect traits and undergoes complete metamorphosis.' }
       ];
+      const imgBase = '../assets/images/entomology/';
       const list=document.getElementById('specimenList'), icon=document.getElementById('mysteryIcon'), name=document.getElementById('mysteryName'), traits=document.getElementById('traits'), clue=document.getElementById('clue'), select=document.getElementById('classification'), feedback=document.getElementById('feedback'), score=document.getElementById('score');
       let current=0; const solved=new Set();
-      specimens.forEach((s,i)=>{ const b=document.createElement('button'); b.type='button'; b.className='specimen-btn'; b.setAttribute('role','tab'); b.innerHTML=`<span class="specimen-icon" aria-hidden="true">${s.icon}</span><span><b>Specimen ${s.id}</b><small>${s.label}</small></span>`; b.addEventListener('click',()=>show(i)); list.appendChild(b); });
-      function show(i){ current=i; const s=specimens[i]; [...list.children].forEach((b,n)=>{b.classList.toggle('active',n===i);b.setAttribute('aria-selected',n===i?'true':'false')}); icon.textContent=s.icon; name.textContent=`Mystery specimen ${s.id}`; traits.innerHTML=s.traits.map(t=>`<span class="trait">${t}</span>`).join(''); clue.textContent=s.clue; select.value=''; feedback.className='feedback'; feedback.textContent=solved.has(i)?s.why:'Tip: begin with the number of legs and body regions.'; }
+      specimens.forEach((s,i)=>{ const b=document.createElement('button'); b.type='button'; b.className='specimen-btn'; b.setAttribute('role','tab'); b.innerHTML=`<span class="specimen-icon icon-plate" aria-hidden="true"><img src="${imgBase}${s.photo}.webp" alt="" width="700" height="700" loading="lazy" decoding="async" /></span><span><b>Specimen ${s.id}</b><small>${s.label}</small></span>`; b.addEventListener('click',()=>show(i)); list.appendChild(b); });
+      function show(i){ current=i; const s=specimens[i]; [...list.children].forEach((b,n)=>{b.classList.toggle('active',n===i);b.setAttribute('aria-selected',n===i?'true':'false')}); icon.className='mystery-icon icon-plate'; icon.innerHTML=`<div class="mystery-icon-frame"><img src="${imgBase}${s.photo}.webp" alt="Photograph of mystery specimen ${s.id}" width="700" height="700" loading="lazy" decoding="async" class="zoomable" /></div>`; name.textContent=`Mystery specimen ${s.id}`; traits.innerHTML=s.traits.map(t=>`<span class="trait">${t}</span>`).join(''); clue.textContent=s.clue; select.value=''; feedback.className='feedback'; feedback.textContent=solved.has(i)?s.why:'Tip: begin with the number of legs and body regions.'; }
       document.getElementById('checkAnswer').addEventListener('click',()=>{ const s=specimens[current]; if(!select.value){feedback.className='feedback try';feedback.textContent='Choose a classification first, then check the evidence.';return} if(select.value===s.answer){solved.add(current);feedback.className='feedback correct';feedback.textContent=`Correct. ${s.why}`;score.textContent=`${solved.size} of ${specimens.length} identified`;}else{feedback.className='feedback try';feedback.textContent='Not yet. Recheck the leg count, number of body regions, and antennae.';} });
       document.getElementById('nextSpecimen').addEventListener('click',()=>show((current+1)%specimens.length)); show(0);
     })();
@@ -681,6 +781,30 @@
       }
       tabs.forEach(tab=>tab.addEventListener('click',()=>showMission(tab.dataset.mission)));
       showMission('identify');
+    })();
+
+    (() => {
+      const lightbox = document.getElementById('lightbox'), lbImg = document.getElementById('lightboxImg'), lbCap = document.getElementById('lightboxCap');
+      let lastFocused = null;
+      function open(img) {
+        lastFocused = document.activeElement;
+        lbImg.src = img.currentSrc || img.src;
+        lbImg.alt = img.alt || '';
+        lbCap.textContent = img.alt || '';
+        lightbox.classList.add('open');
+        document.getElementById('lightboxClose').focus();
+      }
+      function close() {
+        lightbox.classList.remove('open');
+        lbImg.src = '';
+        if (lastFocused) lastFocused.focus();
+      }
+      document.addEventListener('click', e => {
+        const img = e.target.closest('.zoomable');
+        if (img) { open(img); return; }
+        if (e.target === lightbox || e.target.id === 'lightboxClose') close();
+      });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape' && lightbox.classList.contains('open')) close(); });
     })();
   </script>
 <script src="../assets/js/lesson-print-button.js"></script>
