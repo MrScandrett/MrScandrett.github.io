@@ -95,6 +95,58 @@
       font-size: 0.9rem;
     }
 
+    .about-jump {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: -0.3rem 0 0.25rem;
+      padding: 0.75rem;
+      border: 1px solid var(--line-soft);
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--surface-1) 88%, transparent);
+    }
+    .about-jump a {
+      padding: 0.45rem 0.7rem;
+      border-radius: 999px;
+      background: var(--surface-1);
+      border: 1px solid var(--line-soft);
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .copyright-more {
+      min-height: 42px;
+      margin: 0.25rem 0 1rem;
+      padding: 0.55rem 0.85rem;
+      border: 1px solid var(--line-soft);
+      border-radius: 10px;
+      background: var(--surface-1);
+      color: var(--text-strong);
+      font: 700 0.84rem var(--font-sans);
+      cursor: pointer;
+    }
+    .copyright-block.is-collapsed .copyright-item:nth-of-type(n+4) { display: none; }
+    .about-directory {
+      border: 1px solid var(--line-soft);
+      border-radius: 16px;
+      background: color-mix(in srgb, var(--surface-1) 88%, transparent);
+      overflow: hidden;
+    }
+    .about-directory > summary {
+      min-height: 54px;
+      padding: 0.9rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      cursor: pointer;
+      font-weight: 750;
+      color: var(--text-strong);
+    }
+    .about-directory > summary::after { content: '＋'; color: var(--accent); }
+    .about-directory[open] > summary::after { content: '−'; }
+    .about-directory .about-grid { padding: 0 1rem 1rem; }
+
     @media (max-width: 620px) {
       .github-lesson-grid { grid-template-columns: 1fr; }
     }
@@ -135,8 +187,16 @@
       </div>
     </section>
 
+    <nav class="about-jump" aria-label="About page sections">
+      <a href="#overview">Overview</a>
+      <a href="#publishing">Publishing flow</a>
+      <a href="#open-web">How it is built</a>
+      <a href="#policies">Use &amp; copyright</a>
+      <a href="#public-rules">Public-site rules</a>
+    </nav>
+
     <!-- ══ What + Site Map ══════════════════════════ -->
-    <section class="detail-layout">
+    <section class="detail-layout" id="overview">
       <article class="detail-main card-shell card-shell--border">
         <h2>What ClassroomOS Does</h2>
         <p>The homepage acts as a classroom launchpad. From one page, students can open interactive STEAM lessons, browse published student projects, launch classroom tools, access the Library, watch curated class videos, download project files, and explore special spaces like Music Lab.</p>
@@ -162,6 +222,8 @@
     </section>
 
     <!-- ══ About Cards ════════════════════════════════ -->
+    <details class="about-directory">
+      <summary>Explore every ClassroomOS area</summary>
     <section class="about-grid" aria-label="Key areas of the site">
 
       <article class="about-card card-shell card-shell--border reveal">
@@ -221,9 +283,10 @@
       </article>
 
     </section>
+    </details>
 
     <!-- ══ Publishing Flow ════════════════════════════ -->
-    <section class="detail-main card-shell card-shell--border">
+    <section class="detail-main card-shell card-shell--border" id="publishing">
       <h2>How Student Work Reaches the Showcase</h2>
       <div class="about-flow" aria-label="Publishing flow">
         <div class="about-step card-shell card-shell--border reveal">
@@ -246,7 +309,7 @@
     </section>
 
     <!-- ══ GitHub as a Lesson ════════════════════════ -->
-    <section class="detail-main card-shell card-shell--border">
+    <section class="detail-main card-shell card-shell--border" id="open-web">
       <h2>The Site Itself Is a STEAM Lesson</h2>
       <p class="github-lesson-intro">ClassroomOS is built entirely with HTML, CSS, and JavaScript and deployed for free on GitHub Pages. That is not a workaround — it is the lesson. Every student who uses this site is seeing the output of the same tools they are learning to use. The goal is for students to leave class knowing they can build and publish their own website the same way.</p>
       <div class="github-lesson-grid">
@@ -275,10 +338,11 @@
     </section>
 
     <!-- ══ Copyright & Educational Use ══════════════ -->
-    <section class="detail-layout">
-      <div class="copyright-block">
+    <section class="detail-layout" id="policies">
+      <div class="copyright-block is-collapsed" id="copyright-details">
         <h2>⚖️ Copyright &amp; Educational Use</h2>
         <p>ClassroomOS is an educational platform operated by a classroom teacher for the purpose of teaching STEAM concepts to students. All content hosted here — videos, resources, linked materials, and student work — is used strictly for non-commercial, educational purposes. No content on this site is monetized, sold, or used for any commercial gain.</p>
+        <button class="copyright-more" id="copyright-more" type="button" aria-expanded="false">Show complete source and usage details</button>
 
         <div class="copyright-item">
           <span class="copyright-icon">🚀</span>
@@ -357,7 +421,7 @@
     </section>
 
     <!-- ══ Public-Site Rules ══════════════════════════ -->
-    <section class="detail-layout">
+    <section class="detail-layout" id="public-rules">
       <article class="detail-main">
         <h2>Public-Site Rules</h2>
         <ul class="about-list">
@@ -395,6 +459,19 @@
       var y = new Date().getFullYear();
       document.querySelectorAll('#current-year, #footer-year').forEach(function (el) {
         el.textContent = y;
+      });
+    }());
+  </script>
+  <script>
+    (function () {
+      var button = document.getElementById('copyright-more');
+      var block = document.getElementById('copyright-details');
+      if (!button || !block) return;
+      button.addEventListener('click', function () {
+        var expanded = button.getAttribute('aria-expanded') === 'true';
+        button.setAttribute('aria-expanded', String(!expanded));
+        block.classList.toggle('is-collapsed', expanded);
+        button.textContent = expanded ? 'Show complete source and usage details' : 'Hide detailed source and usage notes';
       });
     }());
   </script>

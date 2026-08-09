@@ -120,6 +120,14 @@
       border: 2px solid rgba(74, 222, 128, 0.3);
       background: #f0fdf4;
     }
+    .crispr-grna-panel select {
+      min-height: 42px; padding: 0.55rem 0.7rem; border: 1px solid #9bc5aa;
+      border-radius: 10px; background: #fff; color: #254d36; font: inherit;
+    }
+    .crispr-learning-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .crispr-learning-grid h2 { margin-top: 0; font-size: 1.05rem; color: #24553a; }
+    .crispr-learning-grid p, .crispr-learning-grid li { color: #3d6651; line-height: 1.6; }
+    @media (max-width: 700px) { .crispr-learning-grid { grid-template-columns: 1fr; } }
 
     /* ── Step Cards ── */
     .crispr-steps {
@@ -244,10 +252,17 @@
   <div class="crispr-card">
     <p class="crispr-eyebrow">Design Your Guide RNA</p>
     <div class="crispr-grna-panel">
-      <input type="text" id="grnaInput" maxlength="20" placeholder="Enter 20-base guide sequence (A, T, C, G)..." />
-      <button id="cutBtn" style="padding:0.6rem 1.4rem; border-radius:10px; background:#16a34a; color:#fff; font-weight:700; border:none; cursor:pointer;">
+      <label for="geneSelect" style="font-weight:700;color:#24553a;">Target gene</label>
+      <select id="geneSelect">
+        <option value="luxA">luxA · bioluminescence</option>
+        <option value="ampR">ampR · antibiotic resistance</option>
+      </select>
+      <label class="sr-only" for="grnaInput">Twenty-base guide RNA sequence</label>
+      <input type="text" id="grnaInput" maxlength="20" aria-describedby="targetHint" placeholder="Enter 20-base guide sequence (A, T, C, G)..." />
+      <button id="cutBtn" style="padding:0.6rem 1.4rem; border-radius:10px; background:#087a32; color:#fff; font-weight:700; border:none; cursor:pointer;">
         Cut DNA
       </button>
+      <button id="resetBtn" style="padding:0.6rem 1rem; border-radius:10px; background:#e8f5e9; color:#24553a; font-weight:700; border:1px solid #9bc5aa; cursor:pointer;">Reset</button>
     </div>
     <p style="margin:0.6rem 0 0; font-size:0.85rem; color:#6b8f7a;">
       Your guide RNA must match a sequence adjacent to a PAM site (NGG) to cut successfully.
@@ -295,6 +310,33 @@
       <button id="ampBtn" style="padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #4a8c64; background: #e8f5e9; cursor: pointer; font-weight: 700; color: #1a2b3e; transition: all 0.2s;">Add Ampicillin</button>
     </div>
   </div>
+
+  <section class="crispr-learning-grid" aria-label="CRISPR learning guide">
+    <article class="crispr-card">
+      <p class="crispr-eyebrow">Evidence Check</p>
+      <h2>Predict, test, explain</h2>
+      <ol>
+        <li>Predict what the UV and ampicillin tests should show before editing.</li>
+        <li>Make one successful edit and record the evidence in the petri dish.</li>
+        <li>Explain how the guide sequence and PAM site together determine where Cas9 can act.</li>
+      </ol>
+    </article>
+    <article class="crispr-card">
+      <p class="crispr-eyebrow">Model Boundary</p>
+      <h2>What this simulation leaves out</h2>
+      <p>This is a conceptual classroom model, not a laboratory design tool. Real gene editing requires delivery into cells, controls, sequencing to confirm outcomes, screening for unintended edits, biosafety review, and careful statistical analysis.</p>
+    </article>
+    <article class="crispr-card">
+      <p class="crispr-eyebrow">Ethics Discussion</p>
+      <h2>Should every possible edit be made?</h2>
+      <p>Compare an edit that treats a serious disease with an edit intended to enhance a trait. Who bears the risks? Who gives consent? Who gets access? What evidence should be required before a human trial?</p>
+    </article>
+    <article class="crispr-card">
+      <p class="crispr-eyebrow">Exit Ticket</p>
+      <h2>Explain specificity</h2>
+      <p>Use <strong>guide RNA</strong>, <strong>complementary base pairing</strong>, <strong>PAM</strong>, and <strong>off-target</strong> in a four-sentence explanation of how CRISPR finds a target and why mistakes remain possible.</p>
+    </article>
+  </section>
 
 </div><!-- /.crispr-shell -->
 
@@ -370,6 +412,8 @@
     }
     viewer.innerHTML = html;
   }
+
+  geneSelect.dispatchEvent(new Event('change'));
 
   input.addEventListener('input', (e) => {
     e.target.value = e.target.value.toUpperCase().replace(/[^ATCG]/g, '');

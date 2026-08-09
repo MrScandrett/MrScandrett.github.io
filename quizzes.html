@@ -124,6 +124,65 @@
       color: #666;
       margin: 0;
     }
+
+    .quiz-intro {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .quiz-intro h2 { margin: 0 0 0.25rem; }
+    .quiz-intro p { margin: 0; color: var(--text-muted); }
+    .quiz-count { flex: 0 0 auto; font: 700 0.75rem var(--font-mono); }
+    .quiz-card { background: transparent; }
+    .quiz-card button { font: inherit; }
+
+    .quiz-dialog {
+      width: min(680px, calc(100% - 2rem));
+      max-height: min(820px, calc(100dvh - 2rem));
+      padding: 0;
+      border: 0;
+      border-radius: 22px;
+      color: var(--text-main);
+      background: var(--surface, #fff);
+      box-shadow: 0 28px 80px rgba(17, 24, 39, 0.28);
+    }
+    .quiz-dialog::backdrop { background: rgba(12, 20, 34, 0.68); backdrop-filter: blur(5px); }
+    .quiz-dialog-shell { padding: clamp(1.1rem, 4vw, 2rem); }
+    .quiz-dialog-head { display: flex; justify-content: space-between; gap: 1rem; align-items: start; }
+    .quiz-dialog-head h2 { margin: 0.2rem 0 0.3rem; }
+    .quiz-dialog-head p { margin: 0; color: var(--text-muted); }
+    .quiz-close {
+      min-width: 44px; min-height: 44px; border: 1px solid rgba(0,0,0,.12);
+      border-radius: 999px; background: transparent; color: inherit; cursor: pointer;
+    }
+    .quiz-progress { height: 7px; margin: 1.25rem 0; border-radius: 999px; background: rgba(124,58,237,.12); overflow: hidden; }
+    .quiz-progress span { display: block; width: 0; height: 100%; background: #7c3aed; transition: width .2s ease; }
+    .quiz-question-count { font: 700 .72rem var(--font-mono); color: #7c3aed; text-transform: uppercase; letter-spacing: .08em; }
+    .quiz-question { margin: .35rem 0 1rem; font-size: clamp(1.15rem, 3vw, 1.45rem); }
+    .quiz-options { display: grid; gap: .65rem; }
+    .quiz-option {
+      width: 100%; padding: .85rem 1rem; border: 1px solid rgba(0,0,0,.12);
+      border-radius: 12px; background: rgba(255,255,255,.7); color: inherit;
+      text-align: left; cursor: pointer; font: inherit; font-weight: 650;
+    }
+    .quiz-option:hover, .quiz-option:focus-visible { border-color: #7c3aed; outline: 3px solid rgba(124,58,237,.15); }
+    .quiz-option.is-correct { border-color: #15803d; background: #dcfce7; color: #14532d; }
+    .quiz-option.is-wrong { border-color: #b91c1c; background: #fee2e2; color: #7f1d1d; }
+    .quiz-feedback { min-height: 3.2rem; margin: 1rem 0 0; color: var(--text-muted); line-height: 1.5; }
+    .quiz-next, .quiz-restart {
+      min-height: 44px; padding: .7rem 1.1rem; border: 0; border-radius: 10px;
+      background: #7c3aed; color: white; font: 700 .9rem var(--font-sans); cursor: pointer;
+    }
+    .quiz-next[hidden] { display: none; }
+    .quiz-result { text-align: center; padding: 1rem 0 .25rem; }
+    .quiz-result-score { margin: .4rem 0; font-size: clamp(3rem, 14vw, 5.5rem); font-weight: 850; letter-spacing: -.06em; color: #7c3aed; }
+
+    @media (max-width: 580px) {
+      .quiz-intro { align-items: start; flex-direction: column; }
+      .quiz-dialog { width: calc(100% - 1rem); max-height: calc(100dvh - 1rem); }
+    }
   </style>
   <link rel="stylesheet" href="assets/css/liquid-woodland.css" />
   <script src="assets/js/theme-lighting.js"></script>
@@ -156,6 +215,14 @@
     </section>
 
     <section class="section">
+      <div class="quiz-intro">
+        <div>
+          <p class="eyebrow">Choose a quick check</p>
+          <h2>Practice by subject</h2>
+          <p>Five questions each. Answers include immediate explanations, and no login is required.</p>
+        </div>
+        <span class="quiz-count" id="quiz-count">5 quiz options</span>
+      </div>
       <div class="quiz-grid" id="quiz-grid" aria-live="polite">
         <a href="https://docs.google.com/forms/d/e/1FAIpQLSdZX1jWfNXojkK0IMhAKbIg6t9Evp3JaX6DkPz-i9UmL-LpxQ/viewform" target="_blank" rel="noreferrer noopener" class="quiz-card reveal">
           <div class="quiz-inner">
@@ -176,6 +243,21 @@
     </section>
   </main>
 
+  <dialog class="quiz-dialog" id="quiz-dialog" aria-labelledby="quiz-dialog-title">
+    <div class="quiz-dialog-shell">
+      <div class="quiz-dialog-head">
+        <div>
+          <p class="eyebrow" id="quiz-dialog-subject">Quick check</p>
+          <h2 id="quiz-dialog-title">Quiz</h2>
+          <p id="quiz-dialog-description"></p>
+        </div>
+        <button class="quiz-close" id="quiz-close" type="button" aria-label="Close quiz">✕</button>
+      </div>
+      <div class="quiz-progress" aria-hidden="true"><span id="quiz-progress-bar"></span></div>
+      <div id="quiz-stage" aria-live="polite"></div>
+    </div>
+  </dialog>
+
   <footer class="site-footer">
     <p>Mr. Scandrett's ClassroomOS &mdash; <a href="https://github.com/MrScandrett" target="_blank" rel="noreferrer noopener">GitHub</a></p>
   </footer>
@@ -183,19 +265,121 @@
   <script src="assets/js/reveal.js"></script>
   <script src="assets/js/nav-mobile.js"></script>
   <script>
-    // Placeholder for future quiz data structure
-    // const QUIZZES = [
-    //   {
-    //     id: 'quiz-1',
-    //     title: 'Quiz Title',
-    //     description: 'Brief description of the quiz',
-    //     category: 'Category',
-    //     questions: 10,
-    //     difficulty: 'Medium'
-    //   }
-    // ];
+    const QUIZZES = [
+      {
+        id: 'forces', icon: '⚙️', subject: 'Physics', title: 'Forces & Energy',
+        description: 'Motion, forces, work, and energy transformations.', color: '#0f766e',
+        questions: [
+          ['Which unit measures force?', ['Joule', 'Newton', 'Watt', 'Meter'], 1, 'A newton (N) is the SI unit of force.'],
+          ['When an object moves faster, what happens to its kinetic energy?', ['It decreases', 'It stays fixed', 'It increases', 'It becomes potential energy'], 2, 'Kinetic energy increases with the square of speed.'],
+          ['A book resting on a shelf stores which kind of energy?', ['Chemical', 'Gravitational potential', 'Sound', 'Nuclear'], 1, 'Its height gives it gravitational potential energy.'],
+          ['If forces on an object are balanced, its motion…', ['must speed up', 'must stop', 'does not change', 'must turn'], 2, 'Balanced forces produce zero net force, so velocity does not change.'],
+          ['Which simple machine is a ramp?', ['Pulley', 'Lever', 'Inclined plane', 'Wheel and axle'], 2, 'A ramp is an inclined plane that trades distance for reduced force.']
+        ]
+      },
+      {
+        id: 'space', icon: '🪐', subject: 'Space Science', title: 'Earth & Space',
+        description: 'Orbits, seasons, light, and our place in the cosmos.', color: '#4338ca',
+        questions: [
+          ['What causes Earth’s seasons?', ['Changing distance from the Sun', 'Earth’s axial tilt', 'The Moon’s orbit', 'Ocean currents'], 1, 'Earth’s tilt changes sunlight angle and day length through the year.'],
+          ['A light-year measures…', ['time', 'brightness', 'distance', 'mass'], 2, 'A light-year is the distance light travels in one year.'],
+          ['What keeps planets in orbit?', ['Magnetism', 'Gravity', 'Air pressure', 'Solar wind'], 1, 'Gravity continually bends a planet’s forward motion into an orbit.'],
+          ['The Moon shines because it…', ['makes its own light', 'reflects sunlight', 'reflects city lights', 'is made of fire'], 1, 'Moonlight is reflected sunlight.'],
+          ['Which planet is famous for its large ring system?', ['Mars', 'Venus', 'Saturn', 'Mercury'], 2, 'All giant planets have rings, but Saturn’s are the most prominent.']
+        ]
+      },
+      {
+        id: 'coding', icon: '💻', subject: 'Computer Science', title: 'Coding Foundations',
+        description: 'Algorithms, variables, loops, and debugging.', color: '#0369a1',
+        questions: [
+          ['An ordered set of steps for solving a problem is an…', ['algorithm', 'animation', 'argument', 'array'], 0, 'An algorithm is a precise sequence of steps.'],
+          ['What does a variable do?', ['Repeats code forever', 'Stores a value', 'Draws a pixel', 'Fixes every bug'], 1, 'A variable gives a value a name so a program can use and change it.'],
+          ['Which structure repeats instructions?', ['Comment', 'Loop', 'String', 'Event'], 1, 'Loops repeat a block of instructions.'],
+          ['Debugging means…', ['adding random code', 'finding and fixing problems', 'deleting the program', 'making text bold'], 1, 'Debugging is the process of locating, understanding, and correcting problems.'],
+          ['A condition such as “if score > 10” produces…', ['a decision', 'a sound wave', 'a file name', 'a color'], 0, 'Conditions let programs choose what to do based on true-or-false tests.']
+        ]
+      },
+      {
+        id: 'life', icon: '🧬', subject: 'Life Science', title: 'Cells & Heredity',
+        description: 'Cells, DNA, ecosystems, and living systems.', color: '#15803d',
+        questions: [
+          ['What carries hereditary information in most organisms?', ['ATP', 'DNA', 'Water', 'Glucose'], 1, 'DNA stores biological instructions that can be passed to offspring.'],
+          ['Which structure controls what enters and leaves a cell?', ['Cell membrane', 'Nucleus', 'Ribosome', 'Chromosome'], 0, 'The cell membrane forms a selective boundary around the cell.'],
+          ['Plants capture light energy through…', ['respiration', 'fermentation', 'photosynthesis', 'digestion'], 2, 'Photosynthesis converts light energy into stored chemical energy.'],
+          ['A group of interacting organisms and their environment is an…', ['element', 'ecosystem', 'organelle', 'atom'], 1, 'An ecosystem includes organisms plus the nonliving environment.'],
+          ['Which molecule is the cell’s immediate energy currency?', ['ATP', 'DNA', 'Cellulose', 'Oxygen'], 0, 'ATP transfers usable energy for cellular work.']
+        ]
+      }
+    ];
 
-    // TODO: Implement interactive quiz rendering and logic
+    const grid = document.getElementById('quiz-grid');
+    const dialog = document.getElementById('quiz-dialog');
+    const stage = document.getElementById('quiz-stage');
+    const progress = document.getElementById('quiz-progress-bar');
+    let activeQuiz = null;
+    let questionIndex = 0;
+    let score = 0;
+
+    QUIZZES.forEach((quiz) => {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'quiz-card reveal';
+      card.innerHTML = `<span class="quiz-inner"><span class="quiz-icon-wrap" style="background:${quiz.color}"><span aria-hidden="true" style="font-size:1.5rem">${quiz.icon}</span></span><span class="quiz-title">${quiz.title}</span><span class="quiz-description">${quiz.description}</span><span class="quiz-meta"><span class="quiz-badge">${quiz.subject}</span><span class="quiz-badge">5 questions</span></span></span>`;
+      card.addEventListener('click', () => openQuiz(quiz));
+      grid.appendChild(card);
+    });
+
+    function openQuiz(quiz) {
+      activeQuiz = quiz; questionIndex = 0; score = 0;
+      document.getElementById('quiz-dialog-subject').textContent = quiz.subject;
+      document.getElementById('quiz-dialog-title').textContent = quiz.title;
+      document.getElementById('quiz-dialog-description').textContent = quiz.description;
+      renderQuestion();
+      dialog.showModal();
+    }
+
+    function renderQuestion() {
+      const item = activeQuiz.questions[questionIndex];
+      progress.style.width = `${(questionIndex / activeQuiz.questions.length) * 100}%`;
+      stage.innerHTML = `<p class="quiz-question-count">Question ${questionIndex + 1} of ${activeQuiz.questions.length}</p><h3 class="quiz-question">${item[0]}</h3><div class="quiz-options"></div><p class="quiz-feedback" id="quiz-feedback">Choose the best answer.</p><button class="quiz-next" id="quiz-next" type="button" hidden>${questionIndex === activeQuiz.questions.length - 1 ? 'See result' : 'Next question'} →</button>`;
+      const options = stage.querySelector('.quiz-options');
+      item[1].forEach((answer, index) => {
+        const button = document.createElement('button');
+        button.type = 'button'; button.className = 'quiz-option'; button.textContent = answer;
+        button.addEventListener('click', () => answerQuestion(index));
+        options.appendChild(button);
+      });
+      document.getElementById('quiz-next').addEventListener('click', () => {
+        questionIndex += 1;
+        questionIndex < activeQuiz.questions.length ? renderQuestion() : renderResult();
+      });
+    }
+
+    function answerQuestion(selected) {
+      const item = activeQuiz.questions[questionIndex];
+      const buttons = [...stage.querySelectorAll('.quiz-option')];
+      if (buttons.some((button) => button.disabled)) return;
+      buttons.forEach((button, index) => {
+        button.disabled = true;
+        if (index === item[2]) button.classList.add('is-correct');
+        if (index === selected && selected !== item[2]) button.classList.add('is-wrong');
+      });
+      if (selected === item[2]) score += 1;
+      document.getElementById('quiz-feedback').textContent = `${selected === item[2] ? 'Correct. ' : 'Not quite. '}${item[3]}`;
+      document.getElementById('quiz-next').hidden = false;
+      document.getElementById('quiz-next').focus();
+    }
+
+    function renderResult() {
+      progress.style.width = '100%';
+      const percent = Math.round((score / activeQuiz.questions.length) * 100);
+      const message = percent === 100 ? 'Excellent work—you explained the whole set.' : percent >= 80 ? 'Strong understanding. Review the one idea that surprised you.' : 'Good practice. Revisit the related lessons, then try again.';
+      stage.innerHTML = `<div class="quiz-result"><p class="eyebrow">Quiz complete</p><div class="quiz-result-score">${score}/${activeQuiz.questions.length}</div><h3>${message}</h3><p>You scored ${percent}% on ${activeQuiz.title}.</p><button class="quiz-restart" type="button">Try this quiz again</button></div>`;
+      stage.querySelector('.quiz-restart').addEventListener('click', () => openQuiz(activeQuiz));
+    }
+
+    document.getElementById('quiz-close').addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
   </script>
 </body>
 </html>

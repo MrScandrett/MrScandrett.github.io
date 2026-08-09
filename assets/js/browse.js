@@ -138,6 +138,8 @@ function init() {
     grid: document.getElementById("browse-grid"),
     count: document.getElementById("result-count"),
     empty: document.getElementById("browse-empty"),
+    moreWrap: document.getElementById("showcase-more-wrap"),
+    more: document.getElementById("showcase-more"),
   };
 
   if (!dom.grid) return;
@@ -169,6 +171,8 @@ function init() {
       dom.grid.innerHTML = "";
       dom.grid.setAttribute("aria-busy", "false");
       const cardsById = new Map();
+      const PAGE_SIZE = 12;
+      let visibleLimit = PAGE_SIZE;
       projects.forEach((project) => {
         const card = createProjectCard(project, { showFeatured: true });
         card.classList.add("is-visible");
@@ -216,7 +220,7 @@ function init() {
           onToggle: (value, enabled) => {
             if (enabled) state[cfg.key].add(value);
             else state[cfg.key].delete(value);
-            apply();
+            apply(true);
           }
         });
       });
@@ -283,7 +287,7 @@ function init() {
           searchTag.setAttribute("aria-label", `Remove search for ${state.q}`);
           searchTag.addEventListener("click", () => {
             state.q = "";
-            apply();
+            apply(true);
             dom.search.focus();
           });
           dom.activeSummary.appendChild(searchTag);
@@ -299,7 +303,7 @@ function init() {
           categoryTag.setAttribute("aria-label", `Remove collection filter ${categoryLabel}`);
           categoryTag.addEventListener("click", () => {
             state.category.clear();
-            apply();
+            apply(true);
           });
           dom.activeSummary.appendChild(categoryTag);
         }
@@ -313,7 +317,7 @@ function init() {
             tag.setAttribute("aria-label", `Remove ${FILTER_LABELS[key]} filter ${value}`);
             tag.addEventListener("click", () => {
               state[key].delete(value);
-              apply();
+              apply(true);
             });
             dom.activeSummary.appendChild(tag);
           });
@@ -323,14 +327,16 @@ function init() {
         dom.activeSummary.hidden = !hasTags;
       }
 
-      function apply() {
+      function apply(resetLimit = false) {
+        if (resetLimit) visibleLimit = PAGE_SIZE;
         updateControlsFromState(state, dom);
         const filteredSorted = filterAndSort(projects, state);
-        const visibleIds = new Set(filteredSorted.map((project) => project.id));
+        const displayedProjects = filteredSorted.slice(0, visibleLimit);
+        const visibleIds = new Set(displayedProjects.map((project) => project.id));
 
         const frag = document.createDocumentFragment();
 
-        filteredSorted.forEach((project) => {
+        displayedProjects.forEach((project) => {
           const card = cardsById.get(project.id);
           if (!card) return;
           card.hidden = false;
@@ -349,7 +355,15 @@ function init() {
 
         dom.grid.appendChild(frag);
 
-        dom.count.textContent = `${filteredSorted.length} project${filteredSorted.length === 1 ? "" : "s"}`;
+        dom.count.textContent = filteredSorted.length > visibleLimit
+          ? `Showing ${displayedProjects.length} of ${filteredSorted.length} projects`
+          : `${filteredSorted.length} project${filteredSorted.length === 1 ? "" : "s"}`;
+
+        if (dom.moreWrap && dom.more) {
+          const remaining = Math.max(0, filteredSorted.length - displayedProjects.length);
+          dom.moreWrap.hidden = remaining === 0;
+          dom.more.textContent = `Show ${Math.min(PAGE_SIZE, remaining)} more project${Math.min(PAGE_SIZE, remaining) === 1 ? "" : "s"}`;
+        }
 
         if (filteredSorted.length === 0) {
           dom.empty.hidden = false;
@@ -369,18 +383,18 @@ function init() {
         button.addEventListener("click", () => {
           state.category.clear();
           categoryPresetValues(button).forEach((value) => state.category.add(value));
-          apply();
+          apply(true);
         });
       });
 
       dom.search.addEventListener("input", () => {
         state.q = dom.search.value.trim();
-        apply();
+        apply(true);
       });
 
       dom.sort.addEventListener("change", () => {
         state.sort = dom.sort.value;
-        apply();
+        apply(true);
       });
 
       dom.clear.addEventListener("click", () => {
@@ -390,15 +404,24 @@ function init() {
         FILTER_KEYS.forEach((key) => {
           state[key].clear();
         });
-        apply();
+        apply(true);
       });
+
+      if (dom.more) {
+        dom.more.addEventListener("click", () => {
+          visibleLimit += PAGE_SIZE;
+          apply(false);
+          const firstNewCard = dom.grid.querySelector(`.project-card:nth-child(${Math.max(1, visibleLimit - PAGE_SIZE + 1)})`);
+          if (firstNewCard) firstNewCard.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+      }
 
       if (advancedFilterCount() > 0 && dom.filterPanel && dom.filterToggle) {
         dom.filterPanel.hidden = false;
         dom.filterToggle.setAttribute("aria-expanded", "true");
       }
 
-      apply();
+      apply(true);
     })
     .catch((error) => {
       dom.grid.innerHTML = "";

@@ -260,6 +260,20 @@
       50%      { transform: translateX(18px) rotate(4deg); }
     }
     #load-text { color: #7dd3fc; font-size: 1.05rem; font-weight: 700; }
+    #load-detail { max-width: 34rem; padding: 0 1.25rem; color: #7da4c5; font-size: 0.82rem; line-height: 1.5; text-align: center; }
+    #load-retry {
+      min-height: 42px; padding: 0.6rem 1rem; border-radius: 9px;
+      border: 1px solid rgba(125,211,252,.4); background: rgba(125,211,252,.12);
+      color: #bae6fd; font: 800 .82rem inherit; cursor: pointer;
+    }
+    #load-retry[hidden] { display: none; }
+    #loading.load-error #load-fish { animation: none; }
+    #loading.load-error #load-text { color: #fca5a5; }
+    .visually-hidden {
+      position: absolute !important; width: 1px !important; height: 1px !important;
+      padding: 0 !important; margin: -1px !important; overflow: hidden !important;
+      clip: rect(0,0,0,0) !important; white-space: nowrap !important; border: 0 !important;
+    }
 
     /* ── Music Player Row ── */
     #music-row {
@@ -337,40 +351,73 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
   <script>
-    firebase.initializeApp({
-      apiKey: "AIzaSyD5_i08If4CWXvTzr3nhdh3rQiZHybSDsU",
-      authDomain: "steamaqaurium.firebaseapp.com",
-      databaseURL: "https://steamaqaurium-default-rtdb.firebaseio.com",
-      projectId: "steamaqaurium",
-      storageBucket: "steamaqaurium.firebasestorage.app",
-      messagingSenderId: "966555196100",
-      appId: "1:966555196100:web:e0243f586e9cf14f9f4791"
-    });
-    window.__db = firebase.database();
+    try {
+      if (!window.firebase) throw new Error('The live fish service did not load.');
+      firebase.initializeApp({
+        apiKey: "AIzaSyD5_i08If4CWXvTzr3nhdh3rQiZHybSDsU",
+        authDomain: "steamaqaurium.firebaseapp.com",
+        databaseURL: "https://steamaqaurium-default-rtdb.firebaseio.com",
+        projectId: "steamaqaurium",
+        storageBucket: "steamaqaurium.firebasestorage.app",
+        messagingSenderId: "966555196100",
+        appId: "1:966555196100:web:e0243f586e9cf14f9f4791"
+      });
+      window.__db = firebase.database();
+    } catch (error) {
+      window.__tankBootstrapError = error;
+    }
   </script>
 </head>
 <body>
 
 <!-- Loading screen -->
-<div id="loading">
-  <div id="load-fish">🐠</div>
+<div id="loading" role="status" aria-live="polite">
+  <div id="load-fish" aria-hidden="true">🐠</div>
   <div id="load-text">Setting up the fish tank…</div>
+  <div id="load-detail">Loading the 3D aquarium and connecting to the class fish list.</div>
+  <button id="load-retry" type="button" hidden>Try again</button>
+  <noscript>This aquarium requires JavaScript. <a href="index.html">Return to ClassroomOS</a>.</noscript>
 </div>
+
+<script>
+  (function () {
+    var timer = setTimeout(function () {
+      var loading = document.getElementById('loading');
+      if (!loading || loading.classList.contains('gone')) return;
+      document.getElementById('load-text').textContent = 'The tank is taking longer than expected.';
+      document.getElementById('load-detail').textContent = 'Check your connection, then retry. The rest of ClassroomOS is still available.';
+      document.getElementById('load-retry').hidden = false;
+    }, 12000);
+    window.__clearTankLoadTimer = function () { clearTimeout(timer); };
+    window.showTankLoadError = function (message) {
+      var loading = document.getElementById('loading');
+      if (!loading) return;
+      loading.classList.add('load-error');
+      document.getElementById('load-fish').textContent = '🐟';
+      document.getElementById('load-text').textContent = 'The fish tank could not start.';
+      document.getElementById('load-detail').textContent = message || 'The 3D or live-data service is unavailable right now.';
+      document.getElementById('load-retry').hidden = false;
+    };
+    document.getElementById('load-retry').addEventListener('click', function () { location.reload(); });
+  }());
+</script>
 
 <!-- Top bar -->
-<div id="topbar">
-  <div id="topbar-title">🐠 Class Fish Tank</div>
-  <div id="topbar-actions">
+<header id="topbar">
+  <h1 id="topbar-title">🐠 Class Fish Tank</h1>
+  <nav id="topbar-actions" aria-label="Fish tank controls">
     <a class="top-btn" href="index.html">🏠 Home</a>
     <a class="top-btn" href="fish-upload.html">🐠 Add Fish</a>
-    <button class="top-btn" onclick="toggleSystems()">📊 Systems</button>
-    <button class="top-btn" id="fsBtn" onclick="toggleFS()">⛶ Fullscreen</button>
-  </div>
-</div>
+    <button class="top-btn" type="button" onclick="toggleSystems()">📊 Systems</button>
+    <button class="top-btn" type="button" id="fsBtn" onclick="toggleFS()">⛶ Fullscreen</button>
+  </nav>
+</header>
 
 <!-- 3D canvas -->
+<main id="tank-experience" aria-labelledby="topbar-title">
+<p class="visually-hidden" id="tank-description">An interactive 3D classroom aquarium. Use the controls to feed the fish, clean the tank, inspect aquarium systems, or add a class fish.</p>
 <div id="canvas-wrap">
-  <canvas id="tank-canvas"></canvas>
+  <canvas id="tank-canvas" aria-label="Interactive 3D class aquarium" aria-describedby="tank-description"></canvas>
   <div id="label-layer"></div>
 </div>
 
@@ -415,6 +462,7 @@
     </div>
   </div>
 </div>
+</main>
 
 <!-- Aquarium Systems Panel -->
 <div id="systems-panel">
@@ -2396,6 +2444,8 @@ const DEFAULTS = [
 ];
 
 async function main() {
+  if (window.__tankBootstrapError) throw window.__tankBootstrapError;
+  if (!window.__db) throw new Error('The live fish list is unavailable.');
   initScene();
   buildEnvironment();
   animate();
@@ -2425,6 +2475,7 @@ async function main() {
   await Promise.all(spawns);
 
   updateCount();
+  window.__clearTankLoadTimer?.();
   $loading.classList.add('gone');
   setTimeout(() => $loading.remove(), 800);
 
@@ -2442,7 +2493,10 @@ async function main() {
   fishRef.on('child_removed', snap => removeFishVisually(snap.key));
 }
 
-main();
+main().catch(error => {
+  console.error('Fish tank startup failed:', error);
+  window.showTankLoadError?.('The aquarium could not connect or this device could not start the 3D scene. You can retry or return Home.');
+});
 </script>
 </body>
 </html>

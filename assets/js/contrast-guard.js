@@ -170,6 +170,7 @@
   }
 
   function inspect(element) {
+    if (element.closest("[data-contrast-guard-skip]")) return;
     if (element.matches("#step-1 svg text, #curved svg text, #double svg text, .bb-anatomy-svg > text, #eg-gauge-value, .ml-waveform-btn:first-child")) return;
     var style = getComputedStyle(element);
     if (!isVisible(element, style)) return;

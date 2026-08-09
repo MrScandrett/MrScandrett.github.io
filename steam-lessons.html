@@ -72,6 +72,11 @@
         </div>
       </div>
       <p id="search-status" class="search-status" aria-live="polite" aria-atomic="true"></p>
+      <div class="lesson-availability" role="group" aria-label="Lesson availability">
+        <button class="lesson-availability-btn is-active" id="show-live-lessons" type="button" aria-pressed="true">✓ Available now</button>
+        <button class="lesson-availability-btn" id="show-planned-lessons" type="button" aria-pressed="false">＋ Include planned lessons</button>
+        <span id="lesson-availability-status" aria-live="polite">Roadmap cards are hidden.</span>
+      </div>
     </section>
 
     <style>
@@ -237,6 +242,33 @@
         border-bottom-left-radius: 0;
         border-bottom-right-radius: 0;
       }
+
+      .lesson-availability {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+      }
+      .lesson-availability-btn {
+        min-height: 38px;
+        padding: 0.5rem 0.8rem;
+        border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--surface) 88%, transparent);
+        color: var(--text-main);
+        font: 700 0.78rem var(--font-sans);
+        cursor: pointer;
+      }
+      .lesson-availability-btn.is-active {
+        background: var(--accent);
+        color: white;
+      }
+      #lesson-availability-status {
+        color: var(--text-muted);
+        font-size: 0.78rem;
+      }
+      body:not(.show-planned-lessons) .tile-coming-soon { display: none !important; }
 
       .search-icon {
         position: absolute;
@@ -3483,7 +3515,7 @@
       'lessons/stage-lighting-design-lab.html': 'assets/thumbs/LED7ColorFlash.jpg',
       'lessons/maglev-train.html': 'assets/thumbs/maglev-train.jpg',
       'lessons/cad-camera-controls.html': 'assets/thumbs/tinkercad-thumb.svg',
-      'lessons/3d-printing.html': 'assets/images/failures/spaghetti.jpg',
+      'lessons/3d-printing.html': 'assets/images/failures/spaghetti.svg',
       'lessons/point-wave.html': 'assets/thumbs/chladni.jpg',
       'lessons/physics-of-music.html': 'assets/thumbs/music-lab-thumb.png',
       'lessons/digital-signal-processing.html': 'assets/thumbs/BIGSOUNDANDSMALLSOUNDMODULE.jpg',
@@ -3780,6 +3812,32 @@
     });
 
   })();
+  </script>
+
+  <script>
+    (function () {
+      var liveButton = document.getElementById('show-live-lessons');
+      var plannedButton = document.getElementById('show-planned-lessons');
+      var status = document.getElementById('lesson-availability-status');
+      if (!liveButton || !plannedButton) return;
+
+      function setPlannedVisible(show) {
+        document.body.classList.toggle('show-planned-lessons', show);
+        liveButton.classList.toggle('is-active', !show);
+        plannedButton.classList.toggle('is-active', show);
+        liveButton.setAttribute('aria-pressed', String(!show));
+        plannedButton.setAttribute('aria-pressed', String(show));
+        status.textContent = show ? 'Available lessons and roadmap cards are shown.' : 'Roadmap cards are hidden.';
+        document.querySelectorAll('.module-banner[aria-expanded="true"]').forEach(function (banner) {
+          var drawer = banner.nextElementSibling;
+          if (drawer) drawer.style.maxHeight = drawer.scrollHeight + 'px';
+        });
+      }
+
+      liveButton.addEventListener('click', function () { setPlannedVisible(false); });
+      plannedButton.addEventListener('click', function () { setPlannedVisible(true); });
+      setPlannedVisible(false);
+    })();
   </script>
 
   <script>
