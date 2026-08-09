@@ -13,21 +13,42 @@
   <style>
     .cl-page { padding-bottom: 0; }
     .ll-viewport { --ll-panel-w: 300px; }
-    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
-    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .cl-hero { position: relative; overflow: hidden; padding: 1.6rem clamp(1rem,4vw,2.2rem); margin-bottom: 1rem; text-align: left; border: 1px solid rgba(16,185,129,.22); border-radius: 24px; background: linear-gradient(135deg,rgba(16,185,129,.13),rgba(59,130,246,.08) 55%,rgba(139,92,246,.12)); }
+    .cl-hero::after { content: "🎮"; position: absolute; right: clamp(1rem,5vw,3rem); top: 50%; transform: translateY(-50%) rotate(8deg); font-size: clamp(4.5rem,12vw,8rem); opacity: .13; filter: drop-shadow(0 10px 16px rgba(15,23,42,.2)); pointer-events: none; }
+    .cl-hero h1 { position: relative; z-index: 1; max-width: 22ch; margin: .15rem 0 0; font-size: clamp(1.9rem,4.6vw,3rem); line-height: 1.08; }
+    .cl-hero .eyebrow { display: inline-flex; margin: 0; padding: .28rem .65rem; border-radius: 999px; background: rgba(16,185,129,.15); color: #047857; font-weight: 800; }
     .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
     .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
-    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+    .cl-lede { position: relative; z-index: 1; margin: 0.75rem 0 0; max-width: 58ch; color: var(--text-secondary, #3f4f65); font-size: 1.02rem; line-height: 1.65; }
     [data-lighting="night"] .cl-lede,
     [data-theme="vaporwave"] .cl-lede,
     [data-theme="bark"] .cl-lede { color: rgba(245,245,247,0.7); }
 
     :root { --acc: #10b981; --acc-soft: rgba(16,185,129,0.1); --acc-border: rgba(16,185,129,0.3); }
 
-    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent, var(--acc)); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
-    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
-    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
-    .cl-card p  { margin: 0 0 0.6rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .lesson-path { display: flex; gap: .45rem; margin: 0 0 1.1rem; padding: .35rem; overflow-x: auto; scrollbar-width: thin; border: 1px solid var(--line,#d2d2d7); border-radius: 14px; background: rgba(255,255,255,.72); }
+    .lesson-path a { flex: 1 0 auto; min-width: max-content; padding: .55rem .7rem; border-radius: 10px; color: var(--text-secondary,#3f4f65); font-size: .78rem; font-weight: 700; text-align: center; text-decoration: none; transition: background .18s, transform .18s; }
+    .lesson-path a:hover, .lesson-path a:focus-visible { background: var(--acc-soft); color: #047857; transform: translateY(-1px); }
+    [data-lighting="night"] .lesson-path, [data-theme="vaporwave"] .lesson-path, [data-theme="bark"] .lesson-path { background: rgba(255,255,255,.05); }
+
+    .mission { display: grid; grid-template-columns: auto 1fr; gap: .2rem .85rem; align-items: center; margin: .95rem 0 0; padding: .8rem 1rem; max-width: 58ch; border-radius: 14px; background: rgba(255,255,255,.7); }
+    .mission-icon { grid-row: 1 / 3; font-size: 1.65rem; }
+    .mission strong { font-size: .84rem; text-transform: uppercase; letter-spacing: .06em; }
+    .mission span:last-child { color: var(--text-secondary,#3f4f65); font-size: .9rem; }
+
+    .section-kicker { display: inline-flex; align-items: center; justify-content: center; min-width: 2rem; height: 2rem; margin-right: .45rem; border-radius: 10px; background: var(--acc-soft); color: #047857; font-size: .82rem; font-weight: 800; vertical-align: .14rem; }
+    .quick-pick { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .8rem; margin: .9rem 0 0; }
+    .pick { display: grid; grid-template-columns: auto 1fr; gap: .15rem .65rem; align-items: center; padding: .9rem; border-radius: 14px; }
+    .pick span { grid-row: 1 / 3; font-size: 1.6rem; }
+    .pick strong { font-size: .95rem; }
+    .pick small { color: var(--text-secondary,#3f4f65); font-size: .82rem; line-height: 1.45; }
+    .pick.kaplay { background: rgba(16,185,129,.1); border: 1px solid rgba(16,185,129,.25); }
+    .pick.phaser { background: rgba(139,92,246,.09); border: 1px solid rgba(139,92,246,.22); }
+
+    .cl-card { position: relative; background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-top: 4px solid var(--card-accent, var(--acc)); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: clamp(1.15rem,3vw,1.65rem); margin-bottom: 1.15rem; scroll-margin-top: 1rem; }
+    .cl-card h2 { margin: 0 0 0.65rem; font-size: clamp(1.25rem,3vw,1.55rem); letter-spacing: -0.025em; }
+    .cl-card h3 { margin: 1rem 0 0.35rem; font-size: 1.05rem; }
+    .cl-card p  { margin: 0 0 0.7rem; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.7; }
     .cl-card p:last-child { margin-bottom: 0; }
     [data-lighting="night"] .cl-card,
     [data-theme="vaporwave"] .cl-card,
@@ -41,18 +62,19 @@
     .engine-card { border-radius: 14px; padding: 1rem 1.1rem; border: 2px solid; }
     .engine-card.kaplay { border-color: rgba(16,185,129,0.45); background: rgba(16,185,129,0.06); }
     .engine-card.phaser { border-color: rgba(139,92,246,0.45); background: rgba(139,92,246,0.06); }
-    .engine-card h3 { margin: 0 0 0.6rem; font-size: 1rem; }
+    .engine-card h3 { margin: 0 0 0.6rem; font-size: 1.08rem; }
     .engine-card h3 .badge { font-size: 0.67rem; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 999px; margin-left: 0.4rem; vertical-align: middle; }
     .engine-card.kaplay h3 .badge { background: rgba(16,185,129,0.2); color: #059669; }
     .engine-card.phaser h3 .badge { background: rgba(139,92,246,0.2); color: #7c3aed; }
-    .engine-card ul { margin: 0; padding-left: 1.1rem; font-size: 0.83rem; color: var(--text-secondary, #3f4f65); line-height: 1.7; }
+    .engine-card ul { margin: 0; padding-left: 1.1rem; font-size: 0.9rem; color: var(--text-secondary, #3f4f65); line-height: 1.65; }
     [data-lighting="night"] .engine-card ul,
     [data-theme="vaporwave"] .engine-card ul,
     [data-theme="bark"] .engine-card ul { color: rgba(245,245,247,0.72); }
     @media (max-width:600px) { .engine-cols { grid-template-columns: 1fr; } }
 
     /* Compare table */
-    .compare-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; margin: 0.8rem 0; }
+    .table-wrap { overflow-x: auto; margin: .8rem 0; border: 1px solid var(--line,#d2d2d7); border-radius: 12px; }
+    .compare-table { width: 100%; min-width: 460px; border-collapse: collapse; font-size: 0.88rem; margin: 0; }
     .compare-table th { text-align: left; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted, #64748b); border-bottom: 1px solid var(--line,#d2d2d7); padding: 0.5rem 0.5rem; }
     .compare-table td { padding: 0.55rem 0.5rem; border-bottom: 1px solid rgba(0,0,0,0.05); color: var(--text-secondary, #3f4f65); vertical-align: top; }
     .compare-table tr:last-child td { border-bottom: none; }
@@ -68,9 +90,8 @@
 
     /* Code tabs */
     .code-tabs { display: flex; gap: 0; border-radius: 10px 10px 0 0; overflow: hidden; }
-    .code-tab { padding: 0.4rem 1rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: none; font-family: inherit; transition: background 0.18s; }
-    .code-tab.kaplay-tab { background: rgba(16,185,129,0.9); color: #fff; }
-    .code-tab.phaser-tab { background: #1e293b; color: var(--text-muted, #64748b); }
+    .code-tab { min-height: 44px; padding: 0.55rem 1rem; font-size: 0.86rem; font-weight: 700; cursor: pointer; border: none; font-family: inherit; transition: background 0.18s; }
+    .code-tab.kaplay-tab, .code-tab.phaser-tab { background: #e2e8f0; color: #475569; }
     .code-tab.active.phaser-tab { background: rgba(139,92,246,0.9); color: #fff; }
     .code-tab.active.kaplay-tab { background: rgba(16,185,129,0.9); color: #fff; }
     .code-block { background: #0f172a; border-radius: 0 12px 12px 12px; padding: 0.9rem 1.1rem; overflow-x: auto; }
@@ -85,7 +106,7 @@
 
     /* Concept list */
     .concept-list { margin: 0.6rem 0; padding: 0; list-style: none; }
-    .concept-list li { font-size: 0.86rem; color: var(--text-secondary, #3f4f65); line-height: 1.55; padding: 0.4rem 0 0.4rem 1.3rem; position: relative; border-bottom: 1px solid rgba(0,0,0,0.04); }
+    .concept-list li { font-size: 0.94rem; color: var(--text-secondary, #3f4f65); line-height: 1.55; padding: 0.55rem 0 0.55rem 1.4rem; position: relative; border-bottom: 1px solid rgba(0,0,0,0.04); }
     .concept-list li:last-child { border-bottom: none; }
     .concept-list li::before { content: "▸"; position: absolute; left: 0; color: var(--acc); font-size: 0.75rem; top: 0.5rem; }
     [data-lighting="night"] .concept-list li,
@@ -116,6 +137,27 @@
     .decision-row:last-child { border-bottom: none; }
     .decision-row .cond { color: var(--text-muted, #64748b); flex: 1; }
     .decision-row .choice { font-weight: 700; color: var(--text,#1d1d1f); }
+
+    .word-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .7rem; margin-top: .8rem; }
+    .word-card { padding: .9rem; border: 1px solid var(--line,#d2d2d7); border-radius: 13px; background: rgba(59,130,246,.035); }
+    .word-card strong { display: block; margin-bottom: .2rem; color: var(--text,#1d1d1f); }
+    .word-card span { color: var(--text-secondary,#3f4f65); font-size: .9rem; line-height: 1.55; }
+
+    .try-it { display: grid; grid-template-columns: auto 1fr; gap: .2rem .75rem; align-items: start; margin-top: .9rem; padding: 1rem; border: 2px dashed rgba(245,158,11,.45); border-radius: 14px; background: rgba(245,158,11,.07); }
+    .try-it .icon { grid-row: 1 / 3; font-size: 1.5rem; }
+    .try-it strong { font-size: .92rem; }
+    .try-it span:last-child { color: var(--text-secondary,#3f4f65); font-size: .9rem; line-height: 1.55; }
+
+    @media (max-width: 600px) {
+      .cl-hero::after { top: 1rem; transform: none; font-size: 4.5rem; }
+      .cl-hero-meta { display: none; }
+      .quick-pick, .word-grid { grid-template-columns: 1fr; }
+      .mission { background: rgba(255,255,255,.58); }
+      .lifecycle { display: grid; grid-template-columns: 1fr; }
+      .lc-arrow { justify-content: center; transform: rotate(90deg); }
+      .decision-row { align-items: flex-start; flex-direction: column; gap: .15rem; }
+      .decision-row .choice { padding-left: .2rem; }
+    }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -145,7 +187,7 @@
 
         <section class="hero cl-hero">
           <p class="eyebrow">Game Design &amp; Development · Lesson 4</p>
-          <h1>2D Game Engines: Kaplay &amp; Phaser</h1>
+          <h1>Build 2D Games Faster</h1>
           <div class="cl-hero-meta">
             <span>Game Engines</span><span class="dot"></span>
             <span>Kaplay</span><span class="dot"></span>
@@ -154,62 +196,80 @@
             <span>Scenes</span><span class="dot"></span>
             <span>Physics</span>
           </div>
-          <p class="cl-lede">Building from scratch teaches you the fundamentals — but a game engine handles the repetitive plumbing so you can focus on what matters: game design. Learn what engines do, compare Kaplay and Phaser, and understand which to reach for and when.</p>
+          <p class="cl-lede">A game engine takes care of the repetitive code so you can spend more time making your game fun. Meet two browser-based engines—<strong>Kaplay</strong> and <strong>Phaser</strong>—and decide which one fits your project.</p>
+          <div class="mission">
+            <span class="mission-icon" aria-hidden="true">🏁</span>
+            <strong>Your mission</strong>
+            <span>Pick the best engine for a game idea and explain why.</span>
+          </div>
+        </section>
+
+        <nav class="lesson-path" aria-label="Jump to a lesson section">
+          <a href="#quick-answer">Quick answer</a>
+          <a href="#engine-tools">Engine tools</a>
+          <a href="#compare">Compare</a>
+          <a href="#scenes">Scenes</a>
+          <a href="#code">Code</a>
+          <a href="#vocabulary">Key words</a>
+          <a href="#choose">Choose</a>
+        </nav>
+
+        <section class="cl-card" id="quick-answer" style="--card-accent:#f59e0b;">
+          <h2><span class="section-kicker">0</span>The quick answer</h2>
+          <p>If you are making your first JavaScript game, start with <strong>Kaplay</strong>. If you need bigger levels, maps, or more advanced tools, try <strong>Phaser</strong>.</p>
+          <div class="quick-pick">
+            <div class="pick kaplay"><span aria-hidden="true">🌱</span><strong>Kaplay = easier start</strong><small>Shorter code and quick prototypes</small></div>
+            <div class="pick phaser"><span aria-hidden="true">🧰</span><strong>Phaser = more tools</strong><small>More setup, but room to build bigger</small></div>
+          </div>
         </section>
 
         <!-- What is an engine -->
-        <section class="cl-card">
-          <h2>What Does a Game Engine Do?</h2>
-          <p>A game engine is a <strong>library of pre-built tools</strong> for common game development tasks. Instead of writing the game loop, sprite management, physics, collision, audio, and input handling from scratch every time, you use the engine's systems.</p>
+        <section class="cl-card" id="engine-tools">
+          <h2><span class="section-kicker">1</span>What does a game engine do?</h2>
+          <p>Think of a game engine as a <strong>toolbox for making games</strong>. It gives you ready-made code for jobs that almost every game needs.</p>
 
           <ul class="concept-list">
-            <li><strong>Scene Management</strong> — organize game states (menu, level 1, game over) as separate scenes with clean transitions</li>
-            <li><strong>Sprite System</strong> — load PNG images, cut sprite sheets, animate frames automatically</li>
-            <li><strong>Physics Engine</strong> — realistic gravity, velocity, bounce, and AABB/circle collision baked in</li>
-            <li><strong>Input System</strong> — clean API for keyboard, mouse, touch, and gamepad — no raw event listeners</li>
-            <li><strong>Audio Manager</strong> — play, loop, stop, and volume-control sound effects and music</li>
-            <li><strong>Asset Loader</strong> — preload images and sounds before the game starts so nothing is missing mid-game</li>
-            <li><strong>Camera System</strong> — follow the player, shake on impact, zoom in and out</li>
+            <li><strong>Scenes</strong> — switch between a menu, a level, and a game-over screen</li>
+            <li><strong>Sprites</strong> — show and animate characters, enemies, and items</li>
+            <li><strong>Physics</strong> — add gravity, speed, bouncing, and collisions</li>
+            <li><strong>Controls</strong> — read the keyboard, mouse, touchscreen, or gamepad</li>
+            <li><strong>Sound</strong> — play music and sound effects</li>
+            <li><strong>Loading</strong> — prepare images and sounds before the game begins</li>
+            <li><strong>Camera</strong> — follow the player, zoom, or shake after a big hit</li>
           </ul>
 
           <div class="callout green">
-            <strong>From Scratch vs Engine:</strong> Writing from scratch teaches you <em>how</em> things work. Using an engine lets you build <em>bigger</em> things faster. Both skills matter. During a Game Jam, use an engine — there's no time to rebuild physics from scratch.
+            <strong>Remember:</strong> Coding from scratch helps you learn how games work. An engine helps you make a bigger game faster. Both are useful skills.
           </div>
         </section>
 
         <!-- Engine overview -->
-        <section class="cl-card">
-          <h2>Kaplay vs Phaser 3</h2>
-          <p>These are the two most popular JavaScript 2D game engines for classroom use. Both are free, open-source, and run in any browser without installation.</p>
+        <section class="cl-card" id="compare" style="--card-accent:#8b5cf6;">
+          <h2><span class="section-kicker">2</span>Meet Kaplay and Phaser</h2>
+          <p>Both engines are free and work in a web browser. They can make the same kinds of 2D games, but they feel different to use.</p>
 
           <div class="engine-cols">
             <div class="engine-card kaplay">
               <h3>Kaplay <span class="badge">Beginner Friendly</span></h3>
               <ul>
-                <li>Successor to KaboomJS — fun, fast API</li>
-                <li>Very readable code — game objects in one line</li>
-                <li>Component-based: add gravity, sprite, collision as "tags"</li>
-                <li>Built-in platformer physics</li>
-                <li>Great for jams, prototypes, classroom projects</li>
-                <li>Active community, good docs</li>
-                <li>CDN install: one script tag and you're coding</li>
+                <li>Short, readable code</li>
+                <li>Add abilities like gravity as building blocks</li>
+                <li>Great for platformers and small arcade games</li>
+                <li>Fast setup for class projects and game jams</li>
               </ul>
             </div>
             <div class="engine-card phaser">
-              <h3>Phaser 3 <span class="badge">Industry Standard</span></h3>
+              <h3>Phaser 3 <span class="badge">More Powerful</span></h3>
               <ul>
-                <li>Most widely used 2D JS engine in the world</li>
-                <li>Scene lifecycle: preload → create → update</li>
-                <li>Arcade Physics, Matter.js, Impact physics options</li>
-                <li>Tiled map editor support built-in</li>
-                <li>Tweens, particles, tilemaps, cameras</li>
-                <li>Excellent for shipping real games</li>
-                <li>Steeper learning curve — more powerful</li>
+                <li>Uses an organized scene system</li>
+                <li>Includes several physics choices</li>
+                <li>Strong tools for maps, effects, and cameras</li>
+                <li>Better for larger, more detailed games</li>
               </ul>
             </div>
           </div>
 
-          <table class="compare-table">
+          <div class="table-wrap"><table class="compare-table">
             <thead><tr><th>Feature</th><th>Kaplay</th><th>Phaser 3</th></tr></thead>
             <tbody>
               <tr><td>Setup time</td><td><span class="check">⚡ 1 line</span></td><td><span class="warn">⏱ 10 min</span></td></tr>
@@ -218,47 +278,48 @@
               <tr><td>Documentation</td><td><span class="check">✓ Good</span></td><td><span class="check">✓ Excellent</span></td></tr>
               <tr><td>Community size</td><td><span class="warn">⚠ Medium</span></td><td><span class="check">✓ Large</span></td></tr>
               <tr><td>Game Jam speed</td><td><span class="check">✓ Best</span></td><td><span class="warn">⚠ Good</span></td></tr>
-              <tr><td>Ship quality</td><td><span class="warn">⚠ Good</span></td><td><span class="check">✓ Professional</span></td></tr>
+              <tr><td>Large projects</td><td><span class="warn">⚠ Good</span></td><td><span class="check">✓ Best</span></td></tr>
             </tbody>
-          </table>
+          </table></div>
         </section>
 
         <!-- Scene lifecycle -->
-        <section class="cl-card">
-          <h2>The Scene Lifecycle</h2>
-          <p>Both engines organize game logic into <strong>scenes</strong> — discrete states of the game (main menu, gameplay, game over). Phaser uses a strict three-phase lifecycle:</p>
+        <section class="cl-card" id="scenes" style="--card-accent:#f97316;">
+          <h2><span class="section-kicker">3</span>How a scene starts and runs</h2>
+          <p>A <strong>scene</strong> is one part of a game, such as the menu, a level, or the game-over screen. Phaser runs each scene in three steps:</p>
 
           <div class="lifecycle">
             <div class="lc-box preload">
               <strong>preload()</strong>
-              <small>Load assets<br>(images, audio)<br>before play</small>
+              <small>Get images and<br>sounds ready</small>
             </div>
             <div class="lc-arrow">→</div>
             <div class="lc-box create">
               <strong>create()</strong>
-              <small>Build the scene:<br>spawn player,<br>set up world</small>
+              <small>Build the level<br>and add the player</small>
             </div>
             <div class="lc-arrow">→</div>
             <div class="lc-box update">
               <strong>update()</strong>
-              <small>Called every<br>frame — move,<br>collide, check</small>
+              <small>Repeat: move and<br>check collisions</small>
             </div>
           </div>
 
-          <p>Kaplay is looser — you define a scene as a function and use <code>add()</code> calls to create objects. The engine runs its own loop internally.</p>
+          <p>Kaplay does these jobs too, but hides more of the setup. You create a scene, use <code>add()</code> to place objects, and Kaplay keeps the game running.</p>
+          <div class="try-it"><span class="icon" aria-hidden="true">💭</span><strong>Quick check</strong><span>Which step repeats many times each second? Answer: <code>update()</code>.</span></div>
         </section>
 
         <!-- Code comparison -->
-        <section class="cl-card">
-          <h2>Code Comparison — Moving a Player</h2>
-          <p>The same feature — a player square that moves with arrow keys — in both engines:</p>
+        <section class="cl-card" id="code" style="--card-accent:#3b82f6;">
+          <h2><span class="section-kicker">4</span>Compare the code</h2>
+          <p>Both examples make a square player that moves with the arrow keys. Switch tabs and look for what is the same and what is different.</p>
 
           <div style="margin-top:0.7rem;">
-            <div class="code-tabs">
-              <button class="code-tab kaplay-tab active" onclick="switchTab('kaplay')">Kaplay</button>
-              <button class="code-tab phaser-tab" onclick="switchTab('phaser')">Phaser 3</button>
+            <div class="code-tabs" role="tablist" aria-label="Game engine code examples">
+              <button id="kaplay-tab" class="code-tab kaplay-tab active" type="button" role="tab" aria-selected="true" aria-controls="kaplay-code" onclick="switchTab('kaplay')">Kaplay</button>
+              <button id="phaser-tab" class="code-tab phaser-tab" type="button" role="tab" aria-selected="false" aria-controls="phaser-code" onclick="switchTab('phaser')">Phaser 3</button>
             </div>
-            <div id="kaplay-code" class="code-pane active">
+            <div id="kaplay-code" class="code-pane active" role="tabpanel" aria-labelledby="kaplay-tab">
               <div class="code-block">
                 <pre><span class="cm">// Kaplay — minimal setup, very readable</span>
 <span class="fn">kaplay</span>();
@@ -283,7 +344,7 @@
 <span class="fn">go</span>(<span class="str">"game"</span>);</pre>
               </div>
             </div>
-            <div id="phaser-code" class="code-pane">
+            <div id="phaser-code" class="code-pane" role="tabpanel" aria-labelledby="phaser-tab" hidden>
               <div class="code-block">
                 <pre><span class="cm">// Phaser 3 — explicit scene class, more structured</span>
 <span class="kw">class</span> <span class="fn">GameScene</span> extends Phaser.Scene {
@@ -316,47 +377,44 @@
               </div>
             </div>
           </div>
+          <div class="try-it"><span class="icon" aria-hidden="true">🔎</span><strong>Code detective</strong><span>Find the starting position <code>(200, 200)</code> and movement speed <code>200</code> in both examples. Which version is easier for you to read?</span></div>
         </section>
 
         <!-- Core concepts -->
-        <section class="cl-card">
-          <h2>Core Concepts in Any 2D Engine</h2>
-          <h3>Sprites &amp; Sprite Sheets</h3>
-          <p>A <strong>sprite</strong> is a 2D image used for a game character or object. A <strong>sprite sheet</strong> packs many animation frames into a single image file. The engine extracts each frame by its pixel coordinates.</p>
-
-          <h3>Tilemaps</h3>
-          <p>A <strong>tilemap</strong> is a grid of small tile images used to build levels. You design levels in a free tool called <strong>Tiled</strong> and export JSON data that Phaser (or Kaplay) can load and render efficiently — thousands of tiles drawn in milliseconds.</p>
-
-          <h3>Physics Groups &amp; Overlap</h3>
-          <p>Engines let you create <strong>groups</strong> of objects (e.g., all enemies) and then run collision checks against the whole group in one line — much more efficient than looping yourself.</p>
-
-          <h3>Tweens &amp; Easing</h3>
-          <p>A <strong>tween</strong> animates a value over time — move an object from X to Y, fade it in, scale it up. Combined with <strong>easing functions</strong> (ease-in, bounce), this makes games feel polished with very little code.</p>
+        <section class="cl-card" id="vocabulary" style="--card-accent:#06b6d4;">
+          <h2><span class="section-kicker">5</span>Four key words</h2>
+          <div class="word-grid">
+            <div class="word-card"><strong>🧍 Sprite</strong><span>A 2D picture used for a player, enemy, coin, or other game object.</span></div>
+            <div class="word-card"><strong>🎞️ Sprite sheet</strong><span>Many animation pictures packed into one image, like frames in a flipbook.</span></div>
+            <div class="word-card"><strong>🧱 Tilemap</strong><span>A level built from a grid of small reusable pictures called tiles.</span></div>
+            <div class="word-card"><strong>✨ Tween</strong><span>A smooth change over time, such as moving, fading, growing, or bouncing.</span></div>
+          </div>
+          <div class="try-it"><span class="icon" aria-hidden="true">🎯</span><strong>Try an example</strong><span>A coin slowly fades away after you collect it. That fade is a <strong>tween</strong>.</span></div>
         </section>
 
         <!-- Decision guide -->
-        <section class="cl-card">
-          <h2>Which Engine Should You Use?</h2>
+        <section class="cl-card" id="choose">
+          <h2><span class="section-kicker">6</span>Choose your engine</h2>
           <div class="decision">
             <h3>Choose based on your situation:</h3>
             <div class="decision-row"><span class="cond">First time building a game</span><span class="choice">→ Kaplay</span></div>
             <div class="decision-row"><span class="cond">Game Jam with 5-day limit</span><span class="choice">→ Kaplay</span></div>
             <div class="decision-row"><span class="cond">Platformer with levels and maps</span><span class="choice">→ Phaser 3</span></div>
             <div class="decision-row"><span class="cond">Want to build a portfolio piece</span><span class="choice">→ Phaser 3</span></div>
-            <div class="decision-row"><span class="cond">Learning game dev concepts</span><span class="choice">→ From Scratch first</span></div>
-            <div class="decision-row"><span class="cond">Teaching K-5 students</span><span class="choice">→ Kaplay or Scratch.mit.edu</span></div>
-            <div class="decision-row"><span class="cond">3D game with a real engine</span><span class="choice">→ Godot (see next lesson)</span></div>
+            <div class="decision-row"><span class="cond">Learning how game loops work</span><span class="choice">→ Build from scratch first</span></div>
+            <div class="decision-row"><span class="cond">3D game idea</span><span class="choice">→ Use a 3D engine instead</span></div>
           </div>
           <div class="callout green" style="margin-top:0.7rem;">
-            <strong>One-day builds:</strong> Whichever engine you pick, start from a <a href="game-design-thinking.html" style="color:var(--acc);">tiny-loop archetype</a> — Catch, Dodge, Clicker, Maze, and Pong all fit comfortably in under 50 lines of Kaplay. Don't design a new genre and learn a new engine on the same day.
+            <strong>Smart first project:</strong> Start small. Catch, Dodge, Clicker, Maze, and Pong are all good choices. Get one fun action working before adding more features.
           </div>
+          <div class="try-it"><span class="icon" aria-hidden="true">🏆</span><strong>Exit ticket</strong><span>Your idea is a five-level platformer with a map and camera effects. Which engine would you choose, and what evidence from this page supports your choice?</span></div>
         </section>
 
       </main>
     </div><!-- /.ll-sim -->
 
     <!-- Side panel -->
-    <aside class="ll-panel" aria-label="Guide panel">
+    <aside class="ll-panel" aria-label="Guide panel" aria-hidden="false">
       <div class="ll-panel-head">
         <div class="ll-tabs">
           <button class="ll-tab" aria-selected="true" data-pane="pane-guide">Guide</button>
@@ -368,11 +426,11 @@
         <div class="ll-pane ll-active" id="pane-guide">
           <p class="ll-pane-title">Learning Goals</p>
           <ul class="ll-guide-list">
-            <li>List 5 things a game engine provides</li>
-            <li>Compare Kaplay and Phaser across 3 dimensions</li>
-            <li>Explain the Phaser scene lifecycle: preload/create/update</li>
-            <li>Describe what a sprite sheet and tilemap are</li>
-            <li>Choose the right engine for a given scenario</li>
+            <li>Explain what a game engine does</li>
+            <li>Compare Kaplay and Phaser</li>
+            <li>Put preload, create, and update in order</li>
+            <li>Use four important game-design words</li>
+            <li>Choose an engine for a game idea</li>
           </ul>
           <p class="ll-pane-title" style="margin-top:1rem;">Getting Kaplay</p>
           <p style="font-size:0.82rem;color: var(--text-muted, #64748b);line-height:1.55;">Add one script tag to your HTML — no install needed:<br><code style="font-size:0.74rem;word-break:break-all;">&lt;script src="https://unpkg.com/kaplay@3001/dist/kaplay.js"&gt;&lt;/script&gt;</code></p>
@@ -402,17 +460,37 @@
         </div>
       </div>
     </aside>
-    <button class="ll-open-btn" aria-label="Open panel">&#x22EE;</button>
+    <button class="ll-open-btn" aria-label="Open guide panel" aria-expanded="true">&#x22EE;</button>
   </div><!-- /.ll-stage -->
 </div><!-- /.ll-viewport -->
 
 <script>
   function switchTab(engine) {
-    document.querySelectorAll('.code-pane').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.code-tab').forEach(t => t.classList.remove('active'));
-    document.getElementById(engine + '-code').classList.add('active');
-    document.querySelector('.' + engine + '-tab').classList.add('active');
+    document.querySelectorAll('.code-pane').forEach(p => {
+      p.classList.remove('active');
+      p.hidden = true;
+    });
+    document.querySelectorAll('.code-tab').forEach(t => {
+      t.classList.remove('active');
+      t.setAttribute('aria-selected', 'false');
+    });
+    const pane = document.getElementById(engine + '-code');
+    const tab = document.querySelector('.' + engine + '-tab');
+    pane.classList.add('active');
+    pane.hidden = false;
+    tab.classList.add('active');
+    tab.setAttribute('aria-selected', 'true');
   }
+
+  document.querySelectorAll('.code-tab').forEach((tab, index, tabs) => {
+    tab.addEventListener('keydown', event => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      event.preventDefault();
+      const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : (index - 1 + tabs.length) % tabs.length;
+      tabs[next].focus();
+      tabs[next].click();
+    });
+  });
 
   document.querySelectorAll('.ll-tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -425,8 +503,20 @@
   const openBtn = document.querySelector('.ll-open-btn');
   const closeBtn = document.querySelector('.ll-panel-close');
   const panel = document.querySelector('.ll-panel');
-  if (openBtn) openBtn.addEventListener('click', () => panel.classList.add('ll-panel--open'));
-  if (closeBtn) closeBtn.addEventListener('click', () => panel.classList.remove('ll-panel--open'));
+  const setPanelOpen = isOpen => {
+    panel.setAttribute('aria-hidden', String(!isOpen));
+    openBtn?.setAttribute('aria-expanded', String(isOpen));
+    closeBtn?.setAttribute('aria-label', isOpen ? 'Close guide panel' : 'Open guide panel');
+  };
+  if (window.matchMedia('(max-width: 680px)').matches) setPanelOpen(false);
+  if (openBtn) openBtn.addEventListener('click', () => setPanelOpen(true));
+  if (closeBtn) closeBtn.addEventListener('click', event => {
+    event.stopPropagation();
+    setPanelOpen(panel.getAttribute('aria-hidden') === 'true');
+  });
+  document.querySelector('.ll-panel-head')?.addEventListener('click', () => {
+    if (window.matchMedia('(max-width: 680px)').matches && panel.getAttribute('aria-hidden') === 'true') setPanelOpen(true);
+  });
 </script>
 <script src="../assets/js/reveal.js"></script>
 <script src="../assets/js/nav-mobile.js"></script>
