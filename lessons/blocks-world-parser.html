@@ -37,22 +37,78 @@
           <section class="hero">
             <p class="eyebrow">AI Origins · Lesson 10</p>
             <h1>Blocks World Parser</h1>
-            <p>Parse structured commands and execute actions in a toy symbolic world inspired by SHRDLU.</p>
+            <p>Teach a robot to move four blocks. You choose a simple command, and the robot checks whether the move is safe before it acts.</p>
+            <div class="bw-hero-route" aria-label="Lesson roadmap">
+              <span><b>1</b> Look</span>
+              <i aria-hidden="true">→</i>
+              <span><b>2</b> Choose a move</span>
+              <i aria-hidden="true">→</i>
+              <span><b>3</b> Watch what happens</span>
+            </div>
+          </section>
+
+          <section class="section bw-hook" aria-labelledby="bw-hook-title">
+            <article class="bw-parsing-preface" aria-labelledby="bw-parse-preface-title">
+              <div class="bw-preface-copy">
+                <p class="eyebrow">Before we begin</p>
+                <h2 id="bw-parse-preface-title">What is parsing?</h2>
+                <p><strong>Parsing means breaking a message into parts so a computer can understand what each part does.</strong></p>
+                <p>It is like sorting the words into labeled boxes. The computer looks for an <em>action</em>, the <em>thing</em> to use, and the <em>place</em> where it should go.</p>
+              </div>
+              <div class="bw-parse-example" aria-label="The command Move A to the table split into three labeled parts">
+                <p class="bw-example-sentence">“Move A to the table.”</p>
+                <div class="bw-word-parts">
+                  <span class="bw-word-action"><small>Action</small><strong>Move</strong></span>
+                  <span class="bw-word-object"><small>Thing</small><strong>A</strong></span>
+                  <span class="bw-word-place"><small>Place</small><strong>the table</strong></span>
+                </div>
+                <p class="bw-example-result"><span aria-hidden="true">✓</span> Now the robot knows what to do.</p>
+              </div>
+            </article>
+
+            <div class="section-head">
+              <p class="eyebrow">First, know this</p>
+              <h2 id="bw-hook-title">The robot follows three simple steps</h2>
+              <p>It reads your command, checks that no block is in the way, and then makes the move.</p>
+            </div>
+
+            <div class="bw-pipeline" aria-label="Command processing pipeline">
+              <article class="bw-pipe-step bw-pipe-command">
+                <span class="bw-pipe-number">01</span>
+                <div><small>Read</small><strong>You say: “Move A to the table.”</strong></div>
+              </article>
+              <span class="bw-pipe-arrow" aria-hidden="true">→</span>
+              <article class="bw-pipe-step bw-pipe-check">
+                <span class="bw-pipe-number">02</span>
+                <div><small>Check</small><strong>Is anything sitting on A?</strong></div>
+              </article>
+              <span class="bw-pipe-arrow" aria-hidden="true">→</span>
+              <article class="bw-pipe-step bw-pipe-state">
+                <span class="bw-pipe-number">03</span>
+                <div><small>Move</small><strong>Nothing is in the way, so A moves.</strong></div>
+              </article>
+            </div>
+
+            <div class="bw-one-word">
+              <span aria-hidden="true">💡</span>
+              <p><strong>One word to know: clear.</strong> A block is <em>clear</em> when nothing is sitting on top of it. Only clear blocks can move.</p>
+            </div>
           </section>
 
           <section class="section" id="blocks-live">
             <div class="section-head">
-              <h2>Live Blocks World Lab</h2>
-              <p>Type symbolic commands, watch the world update, and inspect each precondition + state transition.</p>
+              <p class="eyebrow">Now you try</p>
+              <h2>Help the robot rebuild its blocks</h2>
+              <p>Look at the picture first. A is sitting on B, and D is sitting on C. The glowing blocks are ready to move.</p>
             </div>
 
             <article class="card bw-lab">
               <div class="bw-grid">
                 <section class="card bw-panel bw-console" aria-labelledby="bw-console-title" data-ll-panel="controls">
                   <div class="bw-panel-head">
-                    <h3 id="bw-console-title">Command Console</h3>
+                    <h3 id="bw-console-title">Tell the robot what to do</h3>
                     <details class="bw-help">
-                      <summary>Help</summary>
+                      <summary>Commands you can use</summary>
                       <ul>
                         <li><code>move X onto Y</code></li>
                         <li><code>move X to table</code></li>
@@ -66,7 +122,7 @@
 
                   <form id="bw-form" class="bw-input-row" autocomplete="off">
                     <label class="sr-only" for="bw-command">Blocks World command</label>
-                    <input id="bw-command" type="text" placeholder="Try: move A onto B" aria-label="Type a blocks world command" required />
+                    <input id="bw-command" type="text" placeholder="Try: move A to table" aria-label="Type a blocks world command" required />
                     <button id="bw-run" type="submit">Run</button>
                   </form>
 
@@ -79,8 +135,26 @@
                     <button type="button" data-example="show state">show state</button>
                   </div>
 
-                  <p id="bw-output" class="bw-output" aria-live="polite">Try: <code>move A onto B</code></p>
-                  <ol id="bw-log" class="bw-log" aria-label="Action log"></ol>
+                  <p id="bw-output" class="bw-output" aria-live="polite">Ready! Start with Step 1 below.</p>
+
+                  <details class="bw-trace" aria-labelledby="bw-trace-title">
+                    <summary>See how the computer read your command</summary>
+                    <div class="bw-trace-head">
+                      <h4 id="bw-trace-title">Computer check</h4>
+                      <span id="bw-trace-status" class="bw-trace-status is-idle">Waiting</span>
+                    </div>
+                    <div class="bw-trace-grid">
+                      <p><span>You typed</span><strong id="bw-trace-input">—</strong></p>
+                      <p><span>It understood</span><strong id="bw-trace-intent">—</strong></p>
+                      <p><span>Blocks used</span><strong id="bw-trace-objects">—</strong></p>
+                      <p><span>Result</span><strong id="bw-trace-decision">Run a command</strong></p>
+                    </div>
+                  </details>
+
+                  <details class="bw-log-details">
+                    <summary>See every tiny step</summary>
+                    <ol id="bw-log" class="bw-log" aria-label="Action log"></ol>
+                  </details>
                 </section>
 
                 <section class="card bw-panel bw-world-panel" aria-labelledby="bw-world-title">
@@ -93,64 +167,94 @@
                     <div id="bw-world" class="bw-world" role="img" aria-label="Blocks world table and stacks"></div>
                   </div>
 
-                  <section class="bw-state">
-                    <h4>State</h4>
+                  <details class="bw-state">
+                    <summary>See the robot's memory</summary>
                     <pre id="bw-state-text"></pre>
-                  </section>
+                  </details>
                 </section>
+              </div>
+            </article>
+
+            <article class="card bw-mission" aria-labelledby="bw-mission-title">
+              <div class="bw-mission-copy">
+                <p class="eyebrow">Your goal</p>
+                <h3 id="bw-mission-title">Make these two towers</h3>
+                <p>The robot will show you one move at a time.</p>
+                <div class="bw-target" aria-label="Target arrangement: D on B and C on A">
+                  <div class="bw-target-stack"><span>D</span><span>B</span></div>
+                  <div class="bw-target-stack"><span>C</span><span>A</span></div>
+                  <div class="bw-target-table"></div>
+                </div>
+              </div>
+              <div class="bw-coach">
+                <div id="bw-progress" class="bw-progress" aria-label="Mission progress: step 1 of 3">
+                  <span class="is-current">1</span><span>2</span><span>3</span>
+                </div>
+                <p id="bw-coach-step" class="bw-coach-step">Step 1 of 3</p>
+                <h4 id="bw-coach-title">First, move A out of the way</h4>
+                <p id="bw-coach-why">A must move so B has an open top.</p>
+                <div id="bw-command-preview" class="bw-command-preview" aria-label="Command: move A to the table">
+                  <span>Move</span><strong>A</strong><span>to the table</span>
+                </div>
+                <button id="bw-guided-run" type="button" class="bw-guided-run" data-command="move A to table">
+                  <span aria-hidden="true">▶</span> Run this move
+                </button>
+                <p id="bw-mission-feedback" class="bw-mission-feedback" aria-live="polite">Press the green button.</p>
               </div>
             </article>
           </section>
 
-          <section class="section">
-            <details class="card bw-about" data-ll-panel="guide">
-              <summary>About this lab</summary>
-              <div class="bw-about-grid">
-                <article>
-                  <h3>Learning Goals</h3>
-                  <ul class="rhythm">
-                    <li><span>Goal 1</span><strong>Map language commands to world actions</strong></li>
-                    <li><span>Goal 2</span><strong>Represent world state with objects and relations</strong></li>
-                    <li><span>Goal 3</span><strong>Validate preconditions before each action</strong></li>
-                    <li><span>Goal 4</span><strong>Explain symbol grounding limits in toy worlds</strong></li>
-                  </ul>
-                </article>
-
-                <article>
-                  <h3>Build Tasks</h3>
-                  <ul class="rhythm">
-                    <li><span>Task 1</span><strong>Implement parser patterns for core commands</strong></li>
-                    <li><span>Task 2</span><strong>Create state update functions for move stack and clear</strong></li>
-                    <li><span>Task 3</span><strong>Return readable error messages for invalid commands</strong></li>
-                    <li><span>Task 4</span><strong>Log state transitions after each step</strong></li>
-                  </ul>
-                </article>
-              </div>
-            </details>
-          </section>
-
           <section class="section" aria-labelledby="bw-practice-title">
             <div class="section-head">
-              <p class="eyebrow">Explain the intelligence</p>
-              <h2 id="bw-practice-title">Practice &amp; Exit Ticket</h2>
-              <p>The parser succeeds because its language and world are deliberately small. Test the boundary between following rules and understanding meaning.</p>
+              <p class="eyebrow">After the mission</p>
+              <h2 id="bw-practice-title">What did the robot learn?</h2>
+              <p>The robot did not guess. It followed the exact rules we gave it.</p>
             </div>
             <div class="bw-about-grid">
               <article class="card bw-about">
-                <h3>Three-command challenge</h3>
-                <ol>
-                  <li>Make an invalid move and record the failed precondition.</li>
-                  <li>Use a valid command to make that precondition true.</li>
-                  <li>Repeat the original command and compare the two state logs.</li>
-                </ol>
+                <h3>Try one experiment</h3>
+                <p>Reset the world. Try to move <strong>B</strong> to the table. The robot will say no because A is in the way. Move A first, then try B again.</p>
               </article>
               <article class="card bw-about">
-                <h3>Parser vs. meaning</h3>
-                <p>Try a reasonable sentence the parser does not recognize, such as <code>put the red block beside A</code>. Explain why a person understands it but this system does not. What new symbols, relations, and rules would be required?</p>
+                <h3>Tell a partner</h3>
+                <p>Finish this sentence: <strong>“Before the robot moves a block, it must…”</strong></p>
               </article>
-              <article class="card bw-about">
-                <h3>Exit ticket</h3>
-                <p>In your own words, define <strong>world state</strong>, <strong>precondition</strong>, and <strong>state transition</strong>. Then give one reason success in Blocks World is not proof of general intelligence.</p>
+            </div>
+          </section>
+
+          <section class="section" aria-labelledby="bw-check-title">
+            <div class="section-head">
+              <p class="eyebrow">Quick check</p>
+              <h2 id="bw-check-title">Three easy questions</h2>
+              <p>Choose an answer and get help right away.</p>
+            </div>
+            <div class="bw-check-grid">
+              <article class="card bw-check" data-answer="b">
+                <p class="bw-check-label">Question 1</p>
+                <h3>What does “clear” mean?</h3>
+                <label><input type="radio" name="bw-q1" value="a" /> The block is clean.</label>
+                <label><input type="radio" name="bw-q1" value="b" /> Nothing is on top of the block.</label>
+                <label><input type="radio" name="bw-q1" value="c" /> The block is invisible.</label>
+                <button type="button" class="bw-check-answer">Check answer</button>
+                <p class="bw-check-feedback" aria-live="polite"></p>
+              </article>
+              <article class="card bw-check" data-answer="c">
+                <p class="bw-check-label">Question 2</p>
+                <h3>What does the robot do before it moves?</h3>
+                <label><input type="radio" name="bw-q2" value="a" /> Closes its eyes.</label>
+                <label><input type="radio" name="bw-q2" value="b" /> Picks a random block.</label>
+                <label><input type="radio" name="bw-q2" value="c" /> Checks that nothing is in the way.</label>
+                <button type="button" class="bw-check-answer">Check answer</button>
+                <p class="bw-check-feedback" aria-live="polite"></p>
+              </article>
+              <article class="card bw-check" data-answer="a">
+                <p class="bw-check-label">Question 3</p>
+                <h3>Why must our commands be exact?</h3>
+                <label><input type="radio" name="bw-q3" value="a" /> The robot only knows the commands we taught it.</label>
+                <label><input type="radio" name="bw-q3" value="b" /> The blocks cannot hear us.</label>
+                <label><input type="radio" name="bw-q3" value="c" /> Every command is wrong.</label>
+                <button type="button" class="bw-check-answer">Check answer</button>
+                <p class="bw-check-feedback" aria-live="polite"></p>
               </article>
             </div>
           </section>

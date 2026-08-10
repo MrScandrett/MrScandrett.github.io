@@ -7,8 +7,25 @@
   const stateTextEl = document.getElementById("bw-state-text");
   const resetBtn = document.getElementById("bw-reset");
   const examplesWrap = document.querySelector(".bw-examples");
+  const traceInputEl = document.getElementById("bw-trace-input");
+  const traceIntentEl = document.getElementById("bw-trace-intent");
+  const traceObjectsEl = document.getElementById("bw-trace-objects");
+  const traceDecisionEl = document.getElementById("bw-trace-decision");
+  const traceStatusEl = document.getElementById("bw-trace-status");
+  const guidedRunBtn = document.getElementById("bw-guided-run");
+  const missionFeedbackEl = document.getElementById("bw-mission-feedback");
+  const progressEl = document.getElementById("bw-progress");
+  const coachStepEl = document.getElementById("bw-coach-step");
+  const coachTitleEl = document.getElementById("bw-coach-title");
+  const coachWhyEl = document.getElementById("bw-coach-why");
+  const commandPreviewEl = document.getElementById("bw-command-preview");
 
-  const required = [form, commandInput, outputEl, logEl, worldEl, stateTextEl, resetBtn, examplesWrap];
+  const required = [
+    form, commandInput, outputEl, logEl, worldEl, stateTextEl, resetBtn, examplesWrap,
+    traceInputEl, traceIntentEl, traceObjectsEl, traceDecisionEl, traceStatusEl,
+    guidedRunBtn, missionFeedbackEl, progressEl, coachStepEl, coachTitleEl,
+    coachWhyEl, commandPreviewEl
+  ];
   if (required.some((node) => !node)) {
     throw new Error("Blocks World lab failed to initialize. Missing required DOM nodes.");
   }
@@ -72,7 +89,9 @@
     renderWorld();
     renderStateText();
     logEl.innerHTML = "";
-    setOutput("World reset. Try: move A onto B", "success");
+    resetTrace();
+    updateMission();
+    setOutput("Ready! Start with Step 1 below.", "success");
   }
 
   function predicateLines() {
@@ -140,6 +159,7 @@
         const blockEl = document.createElement("div");
         blockEl.className = "bw-block";
         blockEl.textContent = block;
+        blockEl.dataset.block = block;
         if (state.clear.has(block)) {
           blockEl.classList.add("is-clear");
         }
@@ -155,6 +175,7 @@
       const holdBlock = document.createElement("div");
       holdBlock.className = "bw-block is-clear";
       holdBlock.textContent = state.holding;
+      holdBlock.dataset.block = state.holding;
       holdStack.appendChild(holdBlock);
       stacksWrap.appendChild(holdStack);
     }
@@ -163,6 +184,111 @@
     table.className = "bw-table";
 
     worldEl.append(hand, stacksWrap, table);
+    const stackDescription = stacks.map((stack) => stack.join(" on ")).join("; ");
+    worldEl.setAttribute(
+      "aria-label",
+      `Blocks world. ${stackDescription || "No blocks on the table"}. ${hand.textContent}.`
+    );
+  }
+
+  function resetTrace() {
+    traceInputEl.textContent = "—";
+    traceIntentEl.textContent = "—";
+    traceObjectsEl.textContent = "—";
+    traceDecisionEl.textContent = "Run a command";
+    traceStatusEl.textContent = "Waiting";
+    traceStatusEl.className = "bw-trace-status is-idle";
+  }
+
+  function updateTrace(rawInput, parsed, result) {
+    const friendlyIntents = {
+      move_onto: "move a block on top of another",
+      move_table: "move a block to the table",
+      unstack_from: "take one block off another",
+      clear: "remove blocks from the top",
+      show_state: "show the robot's memory"
+    };
+    traceInputEl.textContent = rawInput || "—";
+    traceIntentEl.textContent = parsed.error ? "I don't know that command" : friendlyIntents[parsed.intent];
+    traceObjectsEl.textContent = parsed.error
+      ? "—"
+      : [parsed.x, parsed.y].filter(Boolean).join(", ") || "none";
+    traceDecisionEl.textContent = parsed.error
+      ? "The robot needs a command it knows"
+      : result.ok
+        ? "The way is clear, so the block moved"
+        : "Something is in the way, so nothing moved";
+    traceStatusEl.textContent = parsed.error || !result.ok ? "Not moved" : "Moved";
+    traceStatusEl.className = `bw-trace-status ${parsed.error || !result.ok ? "is-error" : "is-success"}`;
+  }
+
+  function updateMission() {
+    const completed = [
+      state.on.get("A") === "table",
+      state.on.get("D") === "B",
+      state.on.get("C") === "A"
+    ];
+    const missionSteps = [
+      {
+        command: "move A to table",
+        title: "First, move A out of the way",
+        why: "A must move so B has an open top.",
+        words: ["Move", "A", "to the table"]
+      },
+      {
+        command: "move D onto B",
+        title: "Now build the first tower",
+        why: "B is open, so D can sit on top of it.",
+        words: ["Move", "D", "on top of B"]
+      },
+      {
+        command: "move C onto A",
+        title: "Finish the second tower",
+        why: "C and A are both open and ready.",
+        words: ["Move", "C", "on top of A"]
+      }
+    ];
+    const completedCount = completed.findIndex((done) => !done);
+    const nextIndex = completedCount === -1 ? missionSteps.length : completedCount;
+    const dots = Array.from(progressEl.children);
+
+    dots.forEach((dot, index) => {
+      dot.classList.toggle("is-complete", index < nextIndex);
+      dot.classList.toggle("is-current", index === nextIndex);
+      dot.textContent = index < nextIndex ? "✓" : String(index + 1);
+    });
+
+    if (nextIndex === missionSteps.length) {
+      coachStepEl.textContent = "Mission complete";
+      coachTitleEl.textContent = "Both towers match!";
+      coachWhyEl.textContent = "You gave the robot three commands in the right order.";
+      commandPreviewEl.innerHTML = "<strong>Great job!</strong>";
+      commandPreviewEl.setAttribute("aria-label", "Mission complete");
+      guidedRunBtn.disabled = true;
+      guidedRunBtn.innerHTML = "<span aria-hidden='true'>✓</span> Finished";
+      missionFeedbackEl.classList.add("is-complete");
+      missionFeedbackEl.textContent = "You did it!";
+      progressEl.setAttribute("aria-label", "Mission progress: complete");
+      return;
+    }
+
+    const next = missionSteps[nextIndex];
+    coachStepEl.textContent = `Step ${nextIndex + 1} of ${missionSteps.length}`;
+    coachTitleEl.textContent = next.title;
+    coachWhyEl.textContent = next.why;
+    commandPreviewEl.innerHTML = "";
+    next.words.forEach((word, index) => {
+      const part = document.createElement(index === 1 ? "strong" : "span");
+      part.textContent = word;
+      commandPreviewEl.appendChild(part);
+    });
+    commandPreviewEl.setAttribute("aria-label", `Command: ${next.words.join(" ")}`);
+    guidedRunBtn.dataset.command = next.command;
+    guidedRunBtn.disabled = false;
+    guidedRunBtn.innerHTML = "<span aria-hidden='true'>▶</span> Run this move";
+    missionFeedbackEl.classList.remove("is-complete");
+    missionFeedbackEl.textContent = nextIndex === 0 ? "Press the green button." : "Nice! The next move is ready.";
+    progressEl.setAttribute("aria-label", `Mission progress: step ${nextIndex + 1} of ${missionSteps.length}`);
   }
 
   function setOutput(message, kind) {
@@ -508,6 +634,7 @@
       const steps = ["Parser failed to match a supported grammar.", parsed.error];
       appendLog(rawInput, steps, "error");
       setOutput(parsed.error, "error");
+      updateTrace(rawInput, parsed, { ok: false });
       return;
     }
 
@@ -515,6 +642,21 @@
     deriveState();
     renderWorld();
     renderStateText();
+    if (result.ok && parsed.x) {
+      const movedBlock = worldEl.querySelector(`[data-block="${parsed.x}"]`);
+      if (movedBlock && typeof movedBlock.animate === "function") {
+        movedBlock.animate(
+          [
+            { transform: "translateY(-12px) scale(1.06)", offset: 0 },
+            { transform: "translateY(2px) scale(1)", offset: 0.75 },
+            { transform: "translateY(0) scale(1)", offset: 1 }
+          ],
+          { duration: 480, easing: "ease-out" }
+        );
+      }
+    }
+    updateMission();
+    updateTrace(rawInput, parsed, result);
 
     appendLog(parsed.raw, result.steps, result.ok ? "success" : "error");
     setOutput(result.message, result.ok ? "success" : "error");
@@ -540,6 +682,36 @@
     const cmd = btn.getAttribute("data-example") || "";
     commandInput.value = cmd;
     commandInput.focus();
+  });
+
+  guidedRunBtn.addEventListener("click", () => {
+    if (guidedRunBtn.disabled) return;
+    const command = guidedRunBtn.dataset.command || "";
+    commandInput.value = command;
+    runCommand(command);
+    commandInput.focus();
+  });
+
+  document.querySelectorAll(".bw-check").forEach((card) => {
+    const checkButton = card.querySelector(".bw-check-answer");
+    const feedback = card.querySelector(".bw-check-feedback");
+    checkButton.addEventListener("click", () => {
+      const selected = card.querySelector("input[type='radio']:checked");
+      if (!selected) {
+        feedback.textContent = "Choose an answer first.";
+        feedback.className = "bw-check-feedback is-error";
+        return;
+      }
+
+      const correct = selected.value === card.dataset.answer;
+      const explanations = {
+        "bw-q1": "A clear block has nothing sitting on top of it, so it is ready to move.",
+        "bw-q2": "The robot checks for a block in the way before it tries to move anything.",
+        "bw-q3": "The robot follows a small list of commands. It cannot guess what a new command means."
+      };
+      feedback.textContent = `${correct ? "Correct. " : "Not yet. "}${explanations[selected.name]}`;
+      feedback.className = `bw-check-feedback ${correct ? "is-correct" : "is-error"}`;
+    });
   });
 
   resetWorld();

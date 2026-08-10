@@ -26,6 +26,7 @@ const shelfSectionIds = {
   "visual-design": "module-art",
   "language-literature": "module-language",
   "complex-systems-humanities": "module-systems",
+  "bible-studies": "module-bible",
 };
 
 const errors = [];

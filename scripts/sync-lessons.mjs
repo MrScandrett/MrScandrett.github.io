@@ -150,6 +150,7 @@ const BANNER_TO_MODULE = {
   "Visual Perception & Design":         "Visual Perception & Design",
   "Language & Literature":              "Language & Literature",
   "Complex Systems & Humanities":       "Complex Systems & Humanities",
+  "Bible Story, Theology & Christian Formation": "Bible Studies",
 };
 
 const steamPath = path.join(ROOT, "steam-lessons.html");
@@ -204,6 +205,7 @@ if (FIX) {
     "Visual Perception & Design":         "🎨",
     "Language & Literature":              "📚",
     "Complex Systems & Humanities":       "🌐",
+    "Bible Studies":                      "✦",
   };
 
   // Build new lesson entries — one per unique url for primary module,
