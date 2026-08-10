@@ -356,19 +356,18 @@
   Classical Mechanics · Momentum
 </footer>
 
+<script src="../assets/js/sim-kit.js"></script>
 <script>
 /* ── SIM 1: Collision Lab ────────────────────────── */
 (function () {
   const cv = document.getElementById('collCanvas');
-  const ctx = cv.getContext('2d');
+  const cv2d = SimKit.canvas2d(cv, { dpr: false, height: 260 });
+  const ctx = cv2d.ctx;
   const ids = { m1:'m1Sl', v1:'v1Sl', m2:'m2Sl', v2:'v2Sl' };
   const lbl = { m1:'m1Label', v1:'v1Label', m2:'m2Label', v2:'v2Label' };
 
-  let state = null, animFrame = null;
+  let state = null;
   let sparks = [];
-
-  function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 260; }
-  resize(); window.addEventListener('resize', resize);
 
   function getParams() {
     return {
@@ -460,8 +459,8 @@
   }
 
   function draw() {
-    if (!state) { requestAnimationFrame(draw); return; }
-    const W = cv.width, H = cv.height, s = state;
+    if (!state) return;
+    const W = cv2d.width, H = cv2d.height, s = state;
     ctx.clearRect(0, 0, W, H);
 
     // Ground
@@ -515,9 +514,8 @@
       ctx.fillText(body.m + 'kg', body.x, cy); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
     });
 
-    requestAnimationFrame(draw);
   }
-  draw();
+  SimKit.loop(draw);
 })();
 </script>
 <script src="../assets/js/lesson-print-button.js"></script>

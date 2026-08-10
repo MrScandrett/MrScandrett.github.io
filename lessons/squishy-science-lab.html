@@ -754,6 +754,7 @@
   </div>
 
   <script src="../assets/vendor/matter-js/matter.min.js"></script>
+  <script src="../assets/js/sim-kit.js"></script>
   <script>
     (function () {
       const presets = {
@@ -828,7 +829,8 @@
       const squeezeButton = document.getElementById('squeeze-button');
       const canvas = document.getElementById('soft-body-canvas');
       const canvasBox = canvas.parentElement;
-      const ctx = canvas.getContext('2d');
+      const cv2d = SimKit.canvas2d(canvas, { box: canvasBox, dpr: 2 });
+      const ctx = cv2d.ctx;
       const sliders = {
         softness: document.getElementById('softness'),
         rebound: document.getElementById('rebound'),
@@ -855,13 +857,12 @@
       const runner = Runner.create();
       engine.gravity.y = 0.85;
 
-      let width = 420;
-      let height = 300;
+      let width = cv2d.width;
+      let height = cv2d.height;
       let softBody = null;
       let pressPlate = null;
       let activePreset = presets.cloud;
       let activeColors = activePreset.colors;
-      let animationFrame = null;
 
       const mouse = Mouse.create(canvas);
       const mouseConstraint = MouseConstraint.create(engine, {
@@ -890,15 +891,9 @@
       }
 
       function resizeCanvas() {
-        const rect = canvasBox.getBoundingClientRect();
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        width = Math.max(320, Math.floor(rect.width));
-        height = Math.max(250, Math.floor(rect.height));
-        canvas.width = Math.floor(width * dpr);
-        canvas.height = Math.floor(height * dpr);
-        canvas.style.width = width + 'px';
-        canvas.style.height = height + 'px';
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        cv2d.resize();
+        width = Math.max(320, cv2d.width);
+        height = Math.max(250, cv2d.height);
       }
 
       function makeWorld() {
@@ -1082,7 +1077,6 @@
           });
         }
 
-        animationFrame = window.requestAnimationFrame(render);
       }
 
       function roundRect(context, x, y, rectWidth, rectHeight, radius) {
@@ -1163,12 +1157,12 @@
       resizeCanvas();
       makeWorld();
       Runner.run(runner, engine);
-      render();
+      const renderLoop = SimKit.loop(render);
       applyPreset('cloud');
 
       window.addEventListener('pagehide', function () {
         Runner.stop(runner);
-        if (animationFrame) window.cancelAnimationFrame(animationFrame);
+        renderLoop.stop();
       });
     })();
   </script>

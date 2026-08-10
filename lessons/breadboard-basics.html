@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="../assets/css/electricity-path.css" />
   <link rel="stylesheet" href="../assets/css/circuit-playground.css" />
   <link rel="stylesheet" href="../assets/css/circuit-playground-snap.css" />
+  <script type="module" src="../assets/js/vendor/model-viewer.min.js"></script>
   <style>
     /* ── Page wrapper ──────────────────────────────────── */
     .bb-page { padding-bottom: 3.5rem; }
@@ -86,18 +87,197 @@
     }
     .bb-callout strong { display: block; margin-bottom: 0.25rem; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #6e6e73); }
 
-    /* ── Anatomy diagram ────────────────────────────────── */
-    .bb-anatomy-wrap {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      margin: 0.75rem 0;
+    /* ── 3D anatomy model ───────────────────────────────── */
+    .bb-model-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(230px, 0.7fr);
+      gap: 1rem;
+      align-items: stretch;
+      margin-top: 1rem;
     }
-    .bb-anatomy-svg {
-      display: block;
-      min-width: 540px;
+    .bb-model-stage {
+      position: relative;
+      min-height: 430px;
+      overflow: hidden;
+      border: 1px solid #cbd5e1;
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at 50% 35%, rgba(255,255,255,.96), rgba(226,232,240,.65) 50%, rgba(203,213,225,.7)),
+        linear-gradient(145deg, #f8fafc, #dbe4ef);
+    }
+    .bb-model-viewer {
       width: 100%;
-      max-width: 700px;
-      height: auto;
+      height: 430px;
+      display: block;
+      --poster-color: transparent;
+      --progress-bar-color: #2563eb;
+    }
+    .bb-model-viewer:not(:defined) .bb-model-fallback { display: grid; }
+    .bb-model-fallback {
+      display: none;
+      position: absolute;
+      inset: 0;
+      place-items: center;
+      padding: 2rem;
+      text-align: center;
+      color: #475569;
+    }
+    .bb-model-badge {
+      position: absolute;
+      top: 0.75rem;
+      left: 0.75rem;
+      z-index: 2;
+      padding: 0.38rem 0.65rem;
+      border-radius: 999px;
+      background: rgba(15,23,42,.84);
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+    .bb-hotspot {
+      border: 0;
+      border-radius: 999px;
+      background: #0f172a;
+      color: #fff;
+      box-shadow: 0 3px 12px rgba(15,23,42,.3);
+      padding: .34rem .55rem;
+      font: 700 .7rem/1.2 Inter, sans-serif;
+      cursor: pointer;
+      pointer-events: auto;
+      white-space: nowrap;
+      transition: transform .18s ease, background .18s ease;
+    }
+    .bb-hotspot:hover,
+    .bb-hotspot:focus-visible { background: #2563eb; transform: scale(1.06); }
+    .bb-model-controls {
+      position: absolute;
+      z-index: 2;
+      left: 50%;
+      bottom: .75rem;
+      display: flex;
+      gap: .3rem;
+      padding: .3rem;
+      border: 1px solid rgba(148,163,184,.55);
+      border-radius: 10px;
+      background: rgba(255,255,255,.9);
+      box-shadow: 0 5px 16px rgba(15,23,42,.13);
+      transform: translateX(-50%);
+      backdrop-filter: blur(8px);
+    }
+    .bb-view-btn {
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: #475569;
+      cursor: pointer;
+      padding: .48rem .68rem;
+      font: 700 .76rem/1 Inter, sans-serif;
+      white-space: nowrap;
+    }
+    .bb-view-btn:hover { background: #e2e8f0; color: #0f172a; }
+    .bb-view-btn.is-active { background: #2563eb; color: #fff; }
+    .bb-drag-hint {
+      position: absolute;
+      z-index: 2;
+      top: .85rem;
+      right: .85rem;
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+      color: #475569;
+      font-size: .7rem;
+      font-weight: 700;
+      pointer-events: none;
+    }
+    .bb-drag-hint::before { content: "↔"; font-size: 1rem; }
+    .bb-model-guide {
+      display: flex;
+      flex-direction: column;
+      gap: .6rem;
+    }
+    .bb-model-rule {
+      flex: 1;
+      border: 1px solid #dbe2ea;
+      border-radius: 12px;
+      background: #f8fafc;
+      padding: .8rem .9rem;
+      font-size: .84rem;
+      line-height: 1.5;
+      color: inherit;
+      text-align: left;
+    }
+    button.bb-model-rule {
+      appearance: none;
+      width: 100%;
+      cursor: pointer;
+      font-family: inherit;
+      transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+    }
+    button.bb-model-rule:hover { border-color: var(--rule-color); transform: translateY(-1px); }
+    button.bb-model-rule:focus-visible { outline: 3px solid color-mix(in srgb, var(--rule-color), transparent 65%); outline-offset: 2px; }
+    button.bb-model-rule.is-active {
+      border-color: var(--rule-color);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--rule-color), transparent 82%);
+    }
+    button.bb-model-rule.is-explored::after {
+      content: "Explored ✓";
+      display: block;
+      width: max-content;
+      margin-top: .45rem;
+      color: #15803d;
+      font-size: .7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .bb-model-rule span {
+      display: inline-grid;
+      width: 1.45rem;
+      height: 1.45rem;
+      margin-right: .35rem;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--rule-color, #2563eb);
+      color: #fff;
+      font-size: .72rem;
+      font-weight: 800;
+    }
+    .bb-model-rule strong { color: #0f172a; }
+    .bb-one-rule {
+      grid-column: 1 / -1;
+      border-radius: 12px;
+      background: #0f172a;
+      color: #f8fafc;
+      padding: .85rem 1rem;
+      font-size: .9rem;
+      line-height: 1.55;
+      text-align: center;
+    }
+    .bb-one-rule strong { color: #fbbf24; }
+    .bb-model-feedback {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: .75rem 1rem;
+      align-items: center;
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      background: #eff6ff;
+      padding: .8rem 1rem;
+    }
+    .bb-model-feedback h3 { margin: 0 0 .15rem; color: #1e3a8a; font-size: .92rem; }
+    .bb-model-feedback p { margin: 0; color: #475569; font-size: .82rem; line-height: 1.5; }
+    .bb-model-progress {
+      padding: .35rem .6rem;
+      border-radius: 999px;
+      background: #dbeafe;
+      color: #1d4ed8;
+      font-size: .72rem;
+      font-weight: 800;
+      white-space: nowrap;
     }
 
     /* ── Connection rule table ──────────────────────────── */
@@ -688,6 +868,21 @@
     [data-lighting="night"] .bb-option,
     [data-theme="vaporwave"] .bb-option,
     [data-theme="bark"] .bb-option { background: #2c2c2e; border-color: #3a3a3c; color: #f5f5f7; }
+    [data-lighting="night"] .bb-model-rule,
+    [data-theme="vaporwave"] .bb-model-rule,
+    [data-theme="bark"] .bb-model-rule { background: #242b36; border-color: #3a4554; }
+    [data-lighting="night"] .bb-model-rule strong,
+    [data-theme="vaporwave"] .bb-model-rule strong,
+    [data-theme="bark"] .bb-model-rule strong { color: #f8fafc; }
+    [data-lighting="night"] .bb-model-feedback,
+    [data-theme="vaporwave"] .bb-model-feedback,
+    [data-theme="bark"] .bb-model-feedback { background: #172033; border-color: #334b78; }
+    [data-lighting="night"] .bb-model-feedback h3,
+    [data-theme="vaporwave"] .bb-model-feedback h3,
+    [data-theme="bark"] .bb-model-feedback h3 { color: #bfdbfe; }
+    [data-lighting="night"] .bb-model-feedback p,
+    [data-theme="vaporwave"] .bb-model-feedback p,
+    [data-theme="bark"] .bb-model-feedback p { color: #cbd5e1; }
 
     /* ── LED glow animation ─────────────────────────────── */
     @keyframes bb-led-glow {
@@ -707,6 +902,11 @@
         flex-direction: column;
         align-items: flex-start;
       }
+      .bb-model-layout { grid-template-columns: 1fr; }
+      .bb-model-stage, .bb-model-viewer { min-height: 360px; height: 360px; }
+      .bb-drag-hint { display: none; }
+      .bb-model-feedback { grid-template-columns: 1fr; }
+      .bb-model-progress { width: max-content; }
     }
 
     /* ── Layout overrides ─────────────────────────────── */
@@ -773,44 +973,56 @@
 
     <!-- ── Anatomy ──────────────────────────────────────── -->
     <section class="bb-card" style="--bb-accent:#34c759;">
-      <h2>Anatomy of a Breadboard</h2>
-      <p>A standard half-size breadboard has four main regions. Every hole in the same region is connected in a predictable way — that pattern is what makes the breadboard useful.</p>
+      <h2>See the Hidden Connections in 3D</h2>
+      <p>The plastic top is lifted in this cutaway so you can see the gold metal clips underneath. Drag to rotate, scroll or pinch to zoom, then use the view buttons to compare the top with the hidden underside.</p>
 
-      <div class="bb-anatomy-wrap">
-        <!-- SVG anatomy diagram -->
-        <svg class="bb-anatomy-svg" viewBox="0 0 700 310" xmlns="http://www.w3.org/2000/svg" aria-label="Breadboard anatomy diagram">
-          <!-- Board body -->
-          <rect x="10" y="10" width="680" height="290" rx="14" fill="#e8e8d0" stroke="#b8b8a0" stroke-width="2"/>
+      <div class="bb-model-layout">
+        <div class="bb-model-stage">
+          <span class="bb-model-badge">Interactive exploded view</span>
+          <span class="bb-drag-hint">Drag to rotate · pinch to zoom</span>
+          <model-viewer
+            id="bb-model"
+            class="bb-model-viewer"
+            src="../assets/models/breadboard-cutaway.glb"
+            alt="Exploded 3D model of a solderless breadboard with its plastic shell raised above the hidden gold metal connection strips"
+            camera-controls
+            touch-action="pan-y"
+            interaction-prompt="auto"
+            interpolation-decay="100"
+            shadow-intensity="1"
+            shadow-softness=".8"
+            environment-image="neutral"
+            exposure="1.05"
+            camera-orbit="35deg 58deg 16m"
+            min-camera-orbit="auto 15deg 10m"
+            max-camera-orbit="auto 165deg 23m"
+            camera-target="0m .65m 0m">
+            <button class="bb-hotspot" slot="hotspot-rail" data-rule="rail" data-position="-4.5 1.82 3.35" data-normal="0 1 0" aria-label="Explore the long power rail">Long power rail</button>
+            <button class="bb-hotspot" slot="hotspot-five" data-rule="five" data-position="2.5 .35 1.85" data-normal="0 1 0" aria-label="Explore a five-hole group">5-hole group</button>
+            <button class="bb-hotspot" slot="hotspot-gap" data-rule="gap" data-position="0 1.82 0" data-normal="0 1 0" aria-label="Explore the center gap">Center gap</button>
+            <div class="bb-model-fallback">Loading the interactive breadboard model…</div>
+          </model-viewer>
+          <div class="bb-model-controls" role="group" aria-label="Choose a breadboard model view">
+            <button class="bb-view-btn is-active" type="button" aria-pressed="true" data-view="cutaway" data-orbit="35deg 58deg 16m">Cutaway</button>
+            <button class="bb-view-btn" type="button" aria-pressed="false" data-view="top" data-orbit="0deg 2deg 17m">Top</button>
+            <button class="bb-view-btn" type="button" aria-pressed="false" data-view="underneath" data-orbit="25deg 138deg 17m">Underneath</button>
+          </div>
+        </div>
 
-          <!-- Top power rail + -->
-          <rect x="30" y="25" width="640" height="28" rx="6" fill="#ffecec" stroke="#ff3b30" stroke-width="1.5"/>
-          <text x="42" y="43" font-family="Inter,sans-serif" font-size="11" font-weight="700" fill="#ff3b30">+  POWER RAIL (V+) — all holes in this row are connected to each other</text>
+        <div class="bb-model-guide" aria-label="Three breadboard connection rules">
+          <button class="bb-model-rule" type="button" data-rule="rail" style="--rule-color:#ef4444;"><span>1</span><strong>Power rails run lengthwise.</strong><br>Every hole along one red or blue line shares the same long metal strip.</button>
+          <button class="bb-model-rule" type="button" data-rule="five" style="--rule-color:#16a34a;"><span>2</span><strong>Main holes connect in groups of five.</strong><br>One short gold clip joins five holes in a column—not the whole row.</button>
+          <button class="bb-model-rule" type="button" data-rule="gap" style="--rule-color:#f59e0b;"><span>3</span><strong>The center gap breaks the connection.</strong><br>The five holes above it and the five below it are separate groups.</button>
+        </div>
 
-          <!-- Top power rail - -->
-          <rect x="30" y="57" width="640" height="28" rx="6" fill="#ecf0ff" stroke="#007aff" stroke-width="1.5"/>
-          <text x="42" y="75" font-family="Inter,sans-serif" font-size="11" font-weight="700" fill="#007aff">−  GROUND RAIL (GND) — all holes in this row are connected to each other</text>
-
-          <!-- Top tie-point section label -->
-          <rect x="30" y="94" width="640" height="80" rx="6" fill="#f0ffe8" stroke="#34c759" stroke-width="1.5"/>
-          <text x="42" y="112" font-family="Inter,sans-serif" font-size="11" font-weight="700" fill="#34c759">TIE-POINT ROWS a – e</text>
-          <text x="42" y="128" font-family="Inter,sans-serif" font-size="10" fill="#2d6a3f">Each column (1, 2, 3…) connects rows a through e together.</text>
-          <text x="42" y="143" font-family="Inter,sans-serif" font-size="10" fill="#2d6a3f">Holes in the SAME column but DIFFERENT rows a–e share one electrical node.</text>
-          <text x="42" y="158" font-family="Inter,sans-serif" font-size="10" fill="#2d6a3f">Example: (col 5, row a), (col 5, row b), (col 5, row c), (col 5, row d), (col 5, row e) are ALL the same node.</text>
-
-          <!-- DIP notch / center gap label -->
-          <rect x="30" y="182" width="640" height="24" rx="6" fill="#fff8e6" stroke="#ff9500" stroke-width="1.5"/>
-          <text x="42" y="198" font-family="Inter,sans-serif" font-size="11" font-weight="700" fill="#ff9500">CENTER GAP (DIP NOTCH) — no connections cross this gap. ICs straddle it.</text>
-
-          <!-- Bottom tie-point section label -->
-          <rect x="30" y="214" width="640" height="56" rx="6" fill="#f0ffe8" stroke="#34c759" stroke-width="1.5"/>
-          <text x="42" y="232" font-family="Inter,sans-serif" font-size="11" font-weight="700" fill="#34c759">TIE-POINT ROWS f – j</text>
-          <text x="42" y="248" font-family="Inter,sans-serif" font-size="10" fill="#2d6a3f">Same rule as above — each column connects rows f through j together.</text>
-          <text x="42" y="263" font-family="Inter,sans-serif" font-size="10" fill="#2d6a3f">The top half (a–e) and bottom half (f–j) are NOT connected to each other within the same column.</text>
-
-          <!-- Bottom power rails -->
-          <rect x="30" y="278" width="640" height="18" rx="5" fill="#ffecec" stroke="#ff3b30" stroke-width="1"/>
-          <text x="42" y="290" font-family="Inter,sans-serif" font-size="10" font-weight="700" fill="#ff3b30">+  Bottom power rail (mirrors the top)</text>
-        </svg>
+        <div class="bb-model-feedback" aria-live="polite">
+          <div>
+            <h3 id="bb-model-feedback-title">Start with the cutaway</h3>
+            <p id="bb-model-feedback-text">Click a numbered rule or a label on the model. The camera will move to the best view and explain what to notice.</p>
+          </div>
+          <span class="bb-model-progress" id="bb-model-progress">0 of 3 ideas explored</span>
+        </div>
+        <div class="bb-one-rule"><strong>One rule to remember:</strong> holes connect only when the same gold strip touches them underneath.</div>
       </div>
     </section>
 
@@ -2057,6 +2269,100 @@
     if (chalCanvas) {
       loadChallenge(1);
     }
+
+    /* ═══════════════════════════════════════════════════════
+       3D BREADBOARD VIEW PRESETS
+    ═══════════════════════════════════════════════════════ */
+    const breadboardModel = document.getElementById('bb-model');
+    const modelViewButtons = document.querySelectorAll('.bb-view-btn');
+    const modelRuleButtons = document.querySelectorAll('.bb-model-rule[data-rule]');
+    const modelFeedbackTitle = document.getElementById('bb-model-feedback-title');
+    const modelFeedbackText = document.getElementById('bb-model-feedback-text');
+    const modelProgress = document.getElementById('bb-model-progress');
+    const exploredRules = new Set();
+    const modelViews = {
+      cutaway: {
+        title: 'Cutaway view: match holes to clips',
+        text: 'The raised plastic shell lets you trace each dark socket straight down to the gold strip that grips it.'
+      },
+      top: {
+        title: 'Top view: where components are placed',
+        text: 'From above you see the layout printed on a real board. Rotate back to the cutaway whenever you need to check what connects underneath.'
+      },
+      underneath: {
+        title: 'Underside view: the hidden circuit map',
+        text: 'Long gold strips distribute power. Short gold strips join groups of five. Empty space at the center keeps the two halves separate.'
+      }
+    };
+    const modelRules = {
+      rail: {
+        orbit: '18deg 112deg 15m',
+        view: 'underneath',
+        title: 'Power rail: one long connection',
+        text: 'Follow one gold strip from left to right. Every socket directly above that strip is electrically connected—even when the holes are far apart.'
+      },
+      five: {
+        orbit: '325deg 66deg 14m',
+        view: 'cutaway',
+        title: 'Tie points: one group of five',
+        text: 'This short gold clip sits below five sockets in one column. A lead in any one of those five can connect to a lead in any of the other four.'
+      },
+      gap: {
+        orbit: '0deg 24deg 15m',
+        view: 'top',
+        title: 'Center gap: a deliberate break',
+        text: 'No metal crosses the trench. A chip straddles it so pins on opposite sides do not accidentally share the same connection.'
+      }
+    };
+
+    function setModelCamera(orbit, viewName) {
+      if (breadboardModel) breadboardModel.setAttribute('camera-orbit', orbit);
+      modelViewButtons.forEach(function (button) {
+        const isActive = button.dataset.view === viewName;
+        button.classList.toggle('is-active', isActive);
+        button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+    }
+
+    function activateModelRule(ruleName) {
+      const rule = modelRules[ruleName];
+      if (!rule) return;
+      setModelCamera(rule.orbit, rule.view);
+      exploredRules.add(ruleName);
+      modelRuleButtons.forEach(function (button) {
+        const isCurrent = button.dataset.rule === ruleName;
+        button.classList.toggle('is-active', isCurrent);
+        button.setAttribute('aria-pressed', isCurrent ? 'true' : 'false');
+        if (exploredRules.has(button.dataset.rule)) button.classList.add('is-explored');
+      });
+      if (modelFeedbackTitle) modelFeedbackTitle.textContent = rule.title;
+      if (modelFeedbackText) modelFeedbackText.textContent = rule.text;
+      if (modelProgress) {
+        modelProgress.textContent = exploredRules.size === 3
+          ? 'All 3 ideas explored ✓'
+          : `${exploredRules.size} of 3 ideas explored`;
+      }
+    }
+
+    modelViewButtons.forEach(function (button) {
+      button.addEventListener('click', function () {
+        setModelCamera(button.dataset.orbit, button.dataset.view);
+        modelRuleButtons.forEach(function (ruleButton) {
+          ruleButton.classList.remove('is-active');
+          ruleButton.setAttribute('aria-pressed', 'false');
+        });
+        const view = modelViews[button.dataset.view];
+        if (view && modelFeedbackTitle) modelFeedbackTitle.textContent = view.title;
+        if (view && modelFeedbackText) modelFeedbackText.textContent = view.text;
+      });
+    });
+    modelRuleButtons.forEach(function (button) {
+      button.setAttribute('aria-pressed', 'false');
+      button.addEventListener('click', function () { activateModelRule(button.dataset.rule); });
+    });
+    document.querySelectorAll('.bb-hotspot[data-rule]').forEach(function (button) {
+      button.addEventListener('click', function () { activateModelRule(button.dataset.rule); });
+    });
 
     /* ═══════════════════════════════════════════════════════
        QUICK CHECK QUIZ

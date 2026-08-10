@@ -54,6 +54,29 @@ Project metadata (display name, student, tags, thumbnail) comes from
 - `npm run check:themes` — theme contrast
 - `npm run a11y` — pa11y-ci
 
+## Shared sim helpers
+
+New lesson sims should reach for these instead of hand-rolling canvas/Three/Matter
+boilerplate (and instead of pulling Three.js from yet another CDN version — lessons
+have accumulated r128, r134, and three different 0.16x pins alongside the vendored
+copy):
+
+- `<script src="../assets/js/sim-kit.js"></script>` — `SimKit.canvas2d(canvas, opts)`
+  for DPR-aware canvas sizing/resize, `SimKit.loop(fn)` for a rAF loop that pauses
+  when the tab is hidden, `SimKit.theme.colors()` / `SimKit.theme.onChange(cb)` for
+  reading the site's `--bg`/`--text`/`--accent` CSS custom properties instead of
+  branching on `dataset.theme` by hand.
+- `assets/vendor/three-bundle.min.js` (rebuild with `npm run build:three`, source in
+  `scripts/three-bundle-entry.js`) — the single pinned Three.js build (matches the
+  `three` devDependency used by `scripts/build-breadboard-model.mjs`), plus
+  `OrbitControls`/`OBJLoader`/`GLTFLoader`/`DRACOLoader`. Pair with
+  `assets/js/sim-kit-three.mjs`'s `createScene(canvas, { THREE, ... })` for
+  renderer/camera/resize setup. See `lessons/cad-camera-controls.html` for a worked
+  example.
+
+Existing lessons on other Three.js versions or hand-rolled canvas loops don't need to
+be migrated proactively — migrate opportunistically when touching that lesson anyway.
+
 ## Verifying game/app changes
 
 Dev server: `node serve-local.js`. Playwright is a devDependency but only the full
