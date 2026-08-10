@@ -5,536 +5,546 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Completing the Square · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
-  <meta name="description" content="Mathematics lesson on solving quadratics by completing the square, with a visual square model, worked example, and interactive practice." />
+  <meta name="description" content="See why completing the square works, explore the geometry, and practice solving quadratic equations with immediate feedback." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
-    .ll-viewport { --ll-panel-w: 308px; --ll-accent: #10b981; --ll-tab-active: #10b981; --ll-tab-active-bg: rgba(16,185,129,0.12); }
-    .cts-page { padding-bottom: 3.5rem; }
-    .cts-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
-    .cts-hero h1 { max-width: 28ch; margin: 0; font-size: clamp(1.55rem, 3.5vw, 2.35rem); }
-    .cts-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.55rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
-    .cts-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45; }
-    .cts-lede { max-width: 72ch; margin: 0.7rem 0 0; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
-    [data-lighting="night"] .cts-lede,
-    [data-theme="vaporwave"] .cts-lede,
-    [data-theme="bark"] .cts-lede { color: rgba(245,245,247,0.72); }
+    .ll-viewport {
+      --ll-panel-w: 310px;
+      --ll-accent: #7c3aed;
+      --ll-tab-active: #7c3aed;
+      --ll-tab-active-bg: rgba(124,58,237,.12);
+    }
+    .cts-page {
+      --ink: var(--text, #172033);
+      --muted: var(--text-secondary, #526077);
+      --soft: var(--text-muted, #718096);
+      --paper: var(--white, #fff);
+      --rule: var(--line, #d9dee8);
+      --violet: #7c3aed;
+      --blue: #2563eb;
+      --teal: #0f9f8f;
+      --amber: #f59e0b;
+      --rose: #e11d48;
+      padding-bottom: 3.5rem;
+      color: var(--ink);
+    }
+    .cts-page *, .cts-page *::before, .cts-page *::after { box-sizing: border-box; }
+    .cts-math { font-family: "IBM Plex Mono", ui-monospace, monospace; font-weight: 700; letter-spacing: -.025em; }
 
-    .cts-card {
-      background: var(--white, #fff);
-      border: 1px solid var(--line, #d2d2d7);
-      border-left: 3.5px solid var(--card-accent, #10b981);
-      border-radius: var(--radius, 18px);
-      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
-      padding: 1.2rem 1.4rem;
-      margin-bottom: 1rem;
-    }
-    [data-lighting="night"] .cts-card,
-    [data-theme="vaporwave"] .cts-card,
-    [data-theme="bark"] .cts-card { background: var(--white, #2c2c2e); }
-    .cts-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
-    .cts-card h3 { margin: 0.95rem 0 0.35rem; font-size: 1rem; letter-spacing: -0.01em; }
-    .cts-card p { margin: 0 0 0.62rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
-    .cts-card p:last-child { margin-bottom: 0; }
-    [data-lighting="night"] .cts-card p,
-    [data-theme="vaporwave"] .cts-card p,
-    [data-theme="bark"] .cts-card p { color: rgba(245,245,247,0.72); }
-
-    .cts-math {
-      font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-weight: 700;
-      letter-spacing: 0;
-      color: var(--text, #1d1d1f);
-    }
-    .cts-display {
-      margin: 0.85rem 0;
-      padding: 1rem;
-      border: 1px solid rgba(16,185,129,0.24);
-      border-radius: 12px;
-      background: rgba(16,185,129,0.065);
-      text-align: center;
-      font-size: clamp(1.1rem, 3vw, 1.55rem);
-    }
-    [data-lighting="night"] .cts-display,
-    [data-theme="vaporwave"] .cts-display,
-    [data-theme="bark"] .cts-display { background: rgba(16,185,129,0.09); }
-
-    .cts-steps {
-      display: grid;
-      gap: 0.65rem;
-      margin-top: 0.85rem;
-    }
-    .cts-step {
-      display: grid;
-      grid-template-columns: auto minmax(0, 1fr);
-      gap: 0.75rem;
-      align-items: start;
-      border: 1px solid var(--line, #d2d2d7);
-      border-radius: 10px;
-      padding: 0.78rem 0.86rem;
-      background: rgba(0,0,0,0.03);
-    }
-    [data-lighting="night"] .cts-step,
-    [data-theme="vaporwave"] .cts-step,
-    [data-theme="bark"] .cts-step { background: rgba(255,255,255,0.04); }
-    .cts-step-num {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--step-color, #10b981);
-      color: #fff;
-      font-weight: 900;
-      font-size: 0.8rem;
-    }
-    .cts-step strong { display: block; font-size: 0.88rem; margin-bottom: 0.18rem; }
-    .cts-step small { display: block; color: var(--text-muted, #64748b); font-size: 0.8rem; line-height: 1.5; }
-
-    .cts-visual-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 270px;
-      gap: 1rem;
-      align-items: center;
-      margin-top: 0.85rem;
-    }
-    .cts-square {
-      width: min(100%, 270px);
-      aspect-ratio: 1;
-      display: grid;
-      grid-template-columns: 1fr 0.42fr;
-      grid-template-rows: 1fr 0.42fr;
-      border: 2px solid #065f46;
-      border-radius: 12px;
+    .cts-hero {
+      position: relative;
       overflow: hidden;
-      background: #ecfdf5;
-      justify-self: center;
-    }
-    .cts-piece {
-      display: flex;
+      min-height: 390px;
+      margin: .35rem 0 1.15rem;
+      padding: clamp(1.4rem, 4vw, 3.2rem);
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(280px, .92fr);
       align-items: center;
-      justify-content: center;
-      border: 1px solid rgba(6,95,70,0.32);
-      color: #064e3b;
-      font: 800 1rem "IBM Plex Mono", monospace;
-      text-align: center;
+      gap: clamp(1.5rem, 4vw, 3rem);
+      border: 1px solid rgba(124,58,237,.2);
+      border-radius: 28px;
+      background:
+        radial-gradient(circle at 88% 18%, rgba(245,158,11,.2), transparent 25%),
+        radial-gradient(circle at 10% 90%, rgba(37,99,235,.17), transparent 28%),
+        linear-gradient(135deg, rgba(124,58,237,.11), rgba(255,255,255,.72) 52%, rgba(15,159,143,.1));
+      box-shadow: 0 22px 60px rgba(48,31,89,.12);
     }
-    .cts-piece.main { background: rgba(16,185,129,0.18); font-size: 1.35rem; }
-    .cts-piece.strip { background: rgba(14,165,233,0.17); }
-    .cts-piece.corner { background: rgba(245,158,11,0.24); }
-    .cts-callout {
-      border: 1px solid rgba(245,158,11,0.32);
-      border-radius: 12px;
-      padding: 0.85rem;
-      background: rgba(245,158,11,0.08);
+    .cts-hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: .22;
+      background-image: linear-gradient(rgba(124,58,237,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(124,58,237,.18) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: linear-gradient(90deg, transparent 35%, #000);
     }
-    .cts-callout strong { display: block; font-size: 0.88rem; margin-bottom: 0.25rem; }
-    .cts-callout span { color: var(--text-muted, #64748b); font-size: 0.82rem; line-height: 1.5; display: block; }
+    [data-lighting="night"] .cts-hero,
+    [data-theme="vaporwave"] .cts-hero,
+    [data-theme="bark"] .cts-hero { background: radial-gradient(circle at 88% 18%, rgba(245,158,11,.16), transparent 25%), linear-gradient(135deg, rgba(124,58,237,.2), rgba(15,23,42,.68)); }
+    .cts-hero-copy, .cts-hero-demo { position: relative; z-index: 1; }
+    .cts-kicker { margin: 0 0 .7rem; color: var(--violet); font-size: .74rem; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; }
+    .cts-hero h1 { max-width: 12ch; margin: 0; font-size: clamp(2.35rem, 6vw, 4.85rem); line-height: .94; letter-spacing: -.065em; }
+    .cts-hero h1 span { display: block; color: var(--violet); }
+    .cts-lede { max-width: 57ch; margin: 1.1rem 0 0; color: var(--muted); font-size: clamp(.95rem, 1.5vw, 1.08rem); line-height: 1.68; }
+    .cts-hero-tags { display: flex; flex-wrap: wrap; gap: .48rem; margin-top: 1.2rem; }
+    .cts-pill { padding: .38rem .68rem; border: 1px solid rgba(124,58,237,.2); border-radius: 999px; background: rgba(255,255,255,.58); color: var(--muted); font-size: .73rem; font-weight: 800; }
+    [data-lighting="night"] .cts-pill, [data-theme="vaporwave"] .cts-pill, [data-theme="bark"] .cts-pill { background: rgba(255,255,255,.07); }
+    .cts-hero-demo { display: grid; justify-items: center; gap: .95rem; }
+    .cts-mini-square { width: min(100%, 290px); aspect-ratio: 1; display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: 2fr 1fr; filter: drop-shadow(0 18px 22px rgba(35,24,71,.18)); transform: rotate(2deg); }
+    .cts-tile { display: grid; place-items: center; border: 2px solid rgba(255,255,255,.8); color: #fff; font: 800 clamp(.7rem, 2vw, 1.08rem) "IBM Plex Mono", monospace; text-align: center; }
+    .cts-tile:first-child { border-radius: 18px 0 0 0; background: #6d28d9; font-size: clamp(1.2rem, 3vw, 2rem); }
+    .cts-tile:nth-child(2), .cts-tile:nth-child(3) { background: #2563eb; }
+    .cts-tile:nth-child(3) { border-radius: 0 0 0 18px; }
+    .cts-tile:last-child { border-radius: 0 0 18px 0; background: #f59e0b; color: #3d2900; }
+    .cts-hero-equation { padding: .68rem .9rem; border-radius: 12px; background: rgba(255,255,255,.76); box-shadow: 0 8px 24px rgba(35,24,71,.1); font-size: clamp(.82rem, 2vw, 1.04rem); }
+    [data-lighting="night"] .cts-hero-equation, [data-theme="vaporwave"] .cts-hero-equation, [data-theme="bark"] .cts-hero-equation { background: rgba(10,15,28,.76); }
 
-    .cts-example {
-      margin-top: 0.85rem;
-      border: 1px solid rgba(16,185,129,0.24);
-      border-radius: 12px;
-      overflow: hidden;
-      background: rgba(16,185,129,0.045);
-    }
-    .cts-example-row {
-      display: grid;
-      grid-template-columns: 1.1fr 2fr;
-      gap: 1rem;
-      padding: 0.72rem 0.9rem;
-      border-bottom: 1px solid rgba(16,185,129,0.16);
-      align-items: start;
-    }
-    .cts-example-row:last-child { border-bottom: 0; }
-    .cts-note { color: var(--text-secondary, #3f4f65); font-size: 0.82rem; line-height: 1.5; }
-    [data-lighting="night"] .cts-note,
-    [data-theme="vaporwave"] .cts-note,
-    [data-theme="bark"] .cts-note { color: rgba(245,245,247,0.72); }
+    .cts-route { display: grid; grid-template-columns: repeat(4, 1fr); gap: .55rem; margin: 0 0 1.15rem; }
+    .cts-route a { min-height: 62px; display: flex; align-items: center; gap: .65rem; padding: .72rem .8rem; border: 1px solid var(--rule); border-radius: 14px; background: var(--paper); color: var(--ink); text-decoration: none; font-size: .78rem; font-weight: 800; transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+    .cts-route a:hover, .cts-route a:focus-visible { transform: translateY(-2px); border-color: var(--violet); box-shadow: 0 10px 24px rgba(35,24,71,.09); outline: none; }
+    .cts-route b { display: grid; place-items: center; flex: 0 0 28px; width: 28px; height: 28px; border-radius: 9px; background: rgba(124,58,237,.1); color: var(--violet); }
 
-    .cts-activity {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 250px;
-      gap: 1rem;
-      align-items: start;
-      margin-top: 0.85rem;
-    }
-    .cts-workspace {
-      min-height: 250px;
-      border: 1px solid var(--line, #d2d2d7);
-      border-radius: 12px;
-      padding: 1rem;
-      background: rgba(0,0,0,0.03);
-    }
-    [data-lighting="night"] .cts-workspace,
-    [data-theme="vaporwave"] .cts-workspace,
-    [data-theme="bark"] .cts-workspace { background: rgba(255,255,255,0.04); }
-    .cts-problem { font-size: clamp(1.15rem, 3vw, 1.6rem); margin-bottom: 0.75rem; }
-    .cts-answer-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.55rem;
-    }
-    .cts-choice {
-      border: 1.5px solid var(--line, #d2d2d7);
-      border-radius: 9px;
-      padding: 0.62rem 0.7rem;
-      background: var(--white, #fff);
-      color: var(--text, #1d1d1f);
-      font: 700 0.86rem "IBM Plex Mono", monospace;
-      cursor: pointer;
-      text-align: left;
-    }
-    [data-lighting="night"] .cts-choice,
-    [data-theme="vaporwave"] .cts-choice,
-    [data-theme="bark"] .cts-choice { background: rgba(255,255,255,0.04); }
-    .cts-choice:hover, .cts-choice:focus { border-color: #10b981; outline: none; }
-    .cts-choice.correct { border-color: #16a34a; background: rgba(22,163,74,0.12); }
-    .cts-choice.wrong { border-color: #dc2626; background: rgba(220,38,38,0.1); }
-    .cts-feedback {
-      min-height: 2.35rem;
-      margin-top: 0.8rem;
-      color: var(--text-secondary, #3f4f65);
-      font-size: 0.86rem;
-      line-height: 1.5;
-    }
-    [data-lighting="night"] .cts-feedback,
-    [data-theme="vaporwave"] .cts-feedback,
-    [data-theme="bark"] .cts-feedback { color: rgba(245,245,247,0.72); }
-    .cts-side { display: grid; gap: 0.7rem; }
-    .cts-score {
-      border-radius: 12px;
-      border: 1px solid rgba(16,185,129,0.24);
-      background: rgba(16,185,129,0.08);
-      padding: 0.9rem;
-    }
-    .cts-score strong { display: block; font-size: 1.55rem; line-height: 1; }
-    .cts-score span { color: var(--text-muted, #64748b); font-size: 0.8rem; }
-    .cts-next {
-      border: 0;
-      border-radius: 9px;
-      padding: 0.68rem 0.8rem;
-      background: #10b981;
-      color: #fff;
-      font: 800 0.86rem var(--font-sans);
-      cursor: pointer;
-    }
-    .cts-next:hover { filter: brightness(0.96); }
+    .cts-card { margin-bottom: 1.15rem; padding: clamp(1.15rem, 3vw, 1.7rem); border: 1px solid var(--rule); border-radius: 22px; background: var(--paper); box-shadow: 0 13px 36px rgba(31,42,68,.07); }
+    .cts-section-head { display: flex; align-items: start; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+    .cts-overline { display: block; margin-bottom: .28rem; color: var(--section-color, var(--violet)); font-size: .69rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+    .cts-card h2 { margin: 0; font-size: clamp(1.25rem, 2.4vw, 1.65rem); letter-spacing: -.035em; }
+    .cts-card p { margin: .5rem 0 0; color: var(--muted); font-size: .9rem; line-height: 1.65; }
+    .cts-section-number { color: rgba(124,58,237,.15); font: 900 2.5rem/1 "IBM Plex Mono", monospace; }
 
-    .cts-practice { display: grid; gap: 0.72rem; margin-top: 0.85rem; }
-    .cts-practice-item {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto auto;
-      gap: 0.55rem;
-      align-items: center;
-      border: 1px solid var(--line, #d2d2d7);
-      border-radius: 10px;
-      padding: 0.75rem;
-      background: rgba(0,0,0,0.03);
-    }
-    [data-lighting="night"] .cts-practice-item,
-    [data-theme="vaporwave"] .cts-practice-item,
-    [data-theme="bark"] .cts-practice-item { background: rgba(255,255,255,0.04); }
-    .cts-practice-item input {
-      width: 90px;
-      border: 1.5px solid var(--line, #d2d2d7);
-      border-radius: 8px;
-      padding: 0.42rem 0.55rem;
-      background: var(--white, #fff);
-      color: var(--text, #1d1d1f);
-      font: 700 0.88rem var(--font-sans);
-    }
-    [data-lighting="night"] .cts-practice-item input,
-    [data-theme="vaporwave"] .cts-practice-item input,
-    [data-theme="bark"] .cts-practice-item input { background: rgba(255,255,255,0.04); }
-    .cts-check {
-      border: 0;
-      border-radius: 8px;
-      padding: 0.47rem 0.7rem;
-      background: #334155;
-      color: #fff;
-      font: 800 0.8rem var(--font-sans);
-      cursor: pointer;
-    }
-    .cts-mini-feedback { min-width: 7ch; font-size: 0.8rem; font-weight: 800; }
-    .cts-mini-feedback.ok { color: #16a34a; }
-    .cts-mini-feedback.no { color: #dc2626; }
-    .cts-links { margin: 0.65rem 0 0; padding-left: 1.15rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
-    [data-lighting="night"] .cts-links,
-    [data-theme="vaporwave"] .cts-links,
-    [data-theme="bark"] .cts-links { color: rgba(245,245,247,0.72); }
+    .cts-explorer { display: grid; grid-template-columns: minmax(270px, .9fr) minmax(0, 1.1fr); gap: clamp(1rem, 3vw, 2rem); align-items: center; }
+    .cts-builder-wrap { display: grid; place-items: center; min-height: 330px; padding: 1.25rem; border-radius: 18px; background: linear-gradient(145deg, rgba(124,58,237,.07), rgba(37,99,235,.04)); }
+    .cts-builder { --strip: 28%; width: min(100%, 300px); aspect-ratio: 1; display: grid; grid-template-columns: minmax(0, 1fr) var(--strip); grid-template-rows: minmax(0, 1fr) var(--strip); transition: grid-template-columns .25s ease, grid-template-rows .25s ease; }
+    .cts-builder > div { display: grid; place-items: center; overflow: hidden; border: 2px solid var(--paper); color: #fff; font: 800 .88rem "IBM Plex Mono", monospace; }
+    .cts-builder .base { border-radius: 15px 0 0 0; background: #6d28d9; font-size: 1.4rem; }
+    .cts-builder .strip { background: #2563eb; }
+    .cts-builder .strip.bottom { border-radius: 0 0 0 15px; }
+    .cts-builder .corner { position: relative; border-radius: 0 0 15px 0; background: repeating-linear-gradient(135deg, #f59e0b 0 8px, #fbbf24 8px 16px); color: #3d2900; }
+    .cts-builder .corner::after { content: "missing corner"; position: absolute; inset: auto 4px 4px; font: 700 .54rem Inter, sans-serif; text-align: center; }
+    .cts-controls { display: grid; gap: .9rem; }
+    .cts-slider-box { padding: 1rem; border: 1px solid var(--rule); border-radius: 16px; background: rgba(124,58,237,.04); }
+    .cts-slider-top { display: flex; justify-content: space-between; align-items: baseline; gap: .8rem; margin-bottom: .7rem; }
+    .cts-slider-top label { font-size: .82rem; font-weight: 800; }
+    .cts-slider-value { color: var(--violet); font: 900 1.45rem "IBM Plex Mono", monospace; }
+    .cts-slider-box input { width: 100%; accent-color: var(--violet); }
+    .cts-range-labels { display: flex; justify-content: space-between; color: var(--soft); font-size: .68rem; }
+    .cts-live-equations { display: grid; gap: .55rem; }
+    .cts-equation-line { display: grid; grid-template-columns: 98px minmax(0, 1fr); align-items: center; gap: .7rem; padding: .7rem .8rem; border: 1px solid var(--rule); border-radius: 12px; }
+    .cts-equation-line span:first-child { color: var(--soft); font-size: .7rem; font-weight: 800; text-transform: uppercase; }
+    .cts-equation-line output { overflow-wrap: anywhere; font-size: clamp(.82rem, 2vw, 1rem); }
+    .cts-insight { padding: .85rem 1rem; border-left: 4px solid var(--amber); border-radius: 0 12px 12px 0; background: rgba(245,158,11,.09); color: var(--muted); font-size: .82rem; line-height: 1.55; }
 
-    @media (max-width: 860px) {
-      .cts-visual-grid, .cts-activity { grid-template-columns: 1fr; }
-      .cts-side { grid-template-columns: 1fr 1fr; }
+    .cts-method { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .65rem; counter-reset: method; }
+    .cts-method article { position: relative; min-height: 180px; padding: 1rem .85rem; border: 1px solid var(--rule); border-radius: 15px; background: linear-gradient(180deg, rgba(124,58,237,.045), transparent); counter-increment: method; }
+    .cts-method article::before { content: counter(method); display: grid; place-items: center; width: 32px; height: 32px; margin-bottom: .8rem; border-radius: 10px; background: var(--step-color, var(--violet)); color: #fff; font: 900 .8rem "IBM Plex Mono", monospace; }
+    .cts-method article:not(:last-child)::after { content: "→"; position: absolute; z-index: 1; top: 18px; right: -.48rem; color: var(--soft); font-weight: 900; }
+    .cts-method h3 { margin: 0 0 .4rem; font-size: .88rem; }
+    .cts-method p { margin: 0; font-size: .77rem; line-height: 1.5; }
+    .cts-rule { margin-top: 1rem; padding: .9rem 1rem; border-radius: 14px; background: #20163b; color: #fff; text-align: center; font-size: clamp(.86rem, 2vw, 1.08rem); }
+
+    .cts-worked { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 1rem; }
+    .cts-worked-main { min-height: 270px; padding: 1.1rem; border: 1px solid rgba(37,99,235,.2); border-radius: 16px; background: rgba(37,99,235,.045); }
+    .cts-worked-problem { margin-bottom: 1rem; font-size: clamp(1.05rem, 3vw, 1.35rem); }
+    .cts-worked-list { display: grid; gap: .52rem; }
+    .cts-worked-step { display: grid; grid-template-columns: minmax(0, 1fr) 1.25fr; gap: 1rem; align-items: center; padding: .72rem .8rem; border-radius: 11px; background: var(--paper); opacity: 0; transform: translateY(6px); transition: opacity .25s ease, transform .25s ease; }
+    .cts-worked-step.revealed { opacity: 1; transform: none; }
+    .cts-worked-note { color: var(--soft); font-size: .75rem; line-height: 1.42; }
+    .cts-worked-side { display: grid; align-content: start; gap: .7rem; }
+    .cts-progress-label { color: var(--soft); font-size: .72rem; font-weight: 800; text-transform: uppercase; }
+    .cts-progress { height: 7px; overflow: hidden; border-radius: 99px; background: rgba(37,99,235,.12); }
+    .cts-progress > span { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--blue); transition: width .25s ease; }
+    .cts-button-row { display: grid; grid-template-columns: 1fr 1fr; gap: .55rem; }
+    .cts-btn { min-height: 42px; padding: .65rem .8rem; border: 1px solid var(--rule); border-radius: 10px; background: var(--paper); color: var(--ink); font: 800 .78rem Inter, sans-serif; cursor: pointer; }
+    .cts-btn:hover, .cts-btn:focus-visible { border-color: var(--violet); outline: none; }
+    .cts-btn.primary { border-color: var(--violet); background: var(--violet); color: #fff; }
+    .cts-btn:disabled { cursor: default; opacity: .45; }
+
+    .cts-practice-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(250px, .9fr); gap: 1rem; }
+    .cts-quiz { padding: 1.15rem; border: 1px solid var(--rule); border-radius: 17px; background: linear-gradient(145deg, rgba(15,159,143,.07), transparent); }
+    .cts-quiz-top { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: .85rem; }
+    .cts-quiz-label { color: var(--teal); font-size: .7rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+    .cts-streak { color: var(--soft); font-size: .74rem; font-weight: 800; }
+    .cts-question { min-height: 46px; margin-bottom: .75rem; font-size: clamp(1.02rem, 3vw, 1.3rem); }
+    .cts-choices { display: grid; grid-template-columns: 1fr 1fr; gap: .55rem; }
+    .cts-choice { min-height: 48px; padding: .7rem; border: 1.5px solid var(--rule); border-radius: 11px; background: var(--paper); color: var(--ink); font: 700 .84rem "IBM Plex Mono", monospace; cursor: pointer; text-align: left; }
+    .cts-choice:hover, .cts-choice:focus-visible { border-color: var(--teal); outline: none; }
+    .cts-choice.correct { border-color: #16a34a; background: rgba(22,163,74,.12); }
+    .cts-choice.wrong { border-color: #dc2626; background: rgba(220,38,38,.1); }
+    .cts-choice:disabled { cursor: default; }
+    .cts-feedback { min-height: 48px; margin-top: .72rem; padding: .65rem .75rem; border-radius: 10px; background: rgba(0,0,0,.035); color: var(--muted); font-size: .8rem; line-height: 1.5; }
+    [data-lighting="night"] .cts-feedback, [data-theme="vaporwave"] .cts-feedback, [data-theme="bark"] .cts-feedback { background: rgba(255,255,255,.045); }
+    .cts-quiz-actions { display: flex; justify-content: space-between; align-items: center; gap: .7rem; margin-top: .75rem; }
+    .cts-score { font: 800 .78rem "IBM Plex Mono", monospace; }
+    .cts-solve { padding: 1.15rem; border: 1px solid var(--rule); border-radius: 17px; }
+    .cts-solve h3 { margin: 0 0 .3rem; font-size: 1rem; }
+    .cts-solve > p { margin: 0 0 .8rem; font-size: .78rem; }
+    .cts-solve-line { display: grid; grid-template-columns: minmax(0, 1fr) 92px; gap: .55rem; align-items: center; margin-bottom: .58rem; }
+    .cts-solve-line label { color: var(--muted); font-size: .76rem; line-height: 1.4; }
+    .cts-input { width: 100%; padding: .55rem .6rem; border: 1.5px solid var(--rule); border-radius: 9px; background: var(--paper); color: var(--ink); font: 700 .85rem "IBM Plex Mono", monospace; }
+    .cts-input:focus { border-color: var(--violet); outline: 3px solid rgba(124,58,237,.12); }
+    .cts-solve-result { min-height: 28px; margin-top: .65rem; color: var(--muted); font-size: .78rem; line-height: 1.45; }
+
+    .cts-connections { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; }
+    .cts-connection { padding: 1rem; border: 1px solid var(--rule); border-radius: 15px; }
+    .cts-connection .icon { display: grid; place-items: center; width: 36px; height: 36px; margin-bottom: .65rem; border-radius: 11px; background: rgba(124,58,237,.1); color: var(--violet); font-size: 1.05rem; }
+    .cts-connection h3 { margin: 0 0 .3rem; font-size: .9rem; }
+    .cts-connection p { margin: 0; font-size: .78rem; }
+    .cts-exit { margin-top: 1rem; padding: 1rem; border: 1px dashed rgba(225,29,72,.45); border-radius: 14px; background: rgba(225,29,72,.045); }
+    .cts-exit strong { display: block; margin-bottom: .35rem; color: var(--rose); font-size: .76rem; letter-spacing: .08em; text-transform: uppercase; }
+    .cts-exit p { margin: 0; }
+    .cts-links { margin: .7rem 0 0; padding-left: 1.15rem; color: var(--muted); font-size: .8rem; line-height: 1.7; }
+
+    @media (max-width: 980px) {
+      .cts-method { grid-template-columns: repeat(3, 1fr); }
+      .cts-method article::after { display: none; }
     }
-    @media (max-width: 640px) {
-      .cts-example-row, .cts-practice-item, .cts-answer-grid, .cts-side { grid-template-columns: 1fr; }
-      .cts-practice-item input { width: 100%; }
+    @media (max-width: 800px) {
+      .cts-hero, .cts-explorer, .cts-worked, .cts-practice-grid { grid-template-columns: 1fr; }
+      .cts-hero { min-height: auto; }
+      .cts-hero h1 { max-width: 15ch; }
+      .cts-mini-square { width: min(72vw, 260px); }
+      .cts-route { grid-template-columns: 1fr 1fr; }
+      .cts-worked-side { grid-template-columns: 1fr auto; align-items: center; }
+      .cts-button-row { min-width: 220px; }
+    }
+    @media (max-width: 560px) {
+      .cts-hero { padding: 1.2rem; border-radius: 20px; }
+      .cts-route, .cts-method, .cts-connections { grid-template-columns: 1fr; }
+      .cts-route a { min-height: 50px; }
+      .cts-builder-wrap { min-height: 285px; padding: .8rem; }
+      .cts-worked-step { grid-template-columns: 1fr; gap: .28rem; }
+      .cts-worked-side { grid-template-columns: 1fr; }
+      .cts-choices { grid-template-columns: 1fr; }
+      .cts-equation-line { grid-template-columns: 1fr; gap: .25rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .cts-page *, .cts-page *::before, .cts-page *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+    @media print {
+      .cts-route, .cts-worked-side, .cts-quiz-actions { display: none !important; }
+      .cts-hero { min-height: 0; grid-template-columns: 1fr 230px; box-shadow: none; }
+      .cts-card { break-inside: avoid; box-shadow: none; }
+      .cts-worked-step { opacity: 1 !important; transform: none !important; }
     }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
-<div class="ll-viewport">
-  <header class="site-header">
-    <div class="nav-wrap">
-      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
-      <nav class="site-nav" aria-label="Primary">
-        <ul>
-          <li><a href="../index.html">Home</a></li>
-          <li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li>
-          <li><a href="../paths.html">Paths</a></li>
-          <li><a href="../showcase.html">Showcase</a></li>
-          <li><a href="../applications.html">Apps</a></li>
-          <li><a href="../recipe-book.html">Library</a></li>
-          <li><a href="../about.html">About</a></li>
-        </ul>
-      </nav>
-    </div>
-  </header>
-
-  <div class="ll-stage">
-    <div class="ll-sim">
-      <main id="main-content" class="cts-page">
-        <section class="hero cts-hero">
-          <p class="eyebrow">Mathematics · Lesson 09</p>
-          <h1>Completing the Square</h1>
-          <div class="cts-hero-meta">
-            <span>Quadratics</span><span class="dot"></span>
-            <span>Perfect squares</span><span class="dot"></span>
-            <span>Vertex form</span><span class="dot"></span>
-            <span>Quadratic formula foundation</span>
-          </div>
-          <p class="cts-lede">Completing the square turns a quadratic into a perfect square so it becomes easier to solve. The whole move comes from one identity: make the expression match <span class="cts-math">(x + p)<sup>2</sup> = x<sup>2</sup> + 2px + p<sup>2</sup></span>.</p>
-        </section>
-
-        <section class="cts-card" style="--card-accent:#10b981;">
-          <h2>Learning Target</h2>
-          <p><strong>I can solve a quadratic equation by completing the square.</strong></p>
-          <p>Students should be able to explain why the added term is <span class="cts-math">(b/2)<sup>2</sup></span>, keep both sides balanced, and connect the finished square to vertex form.</p>
-        </section>
-
-        <section class="cts-card" style="--card-accent:#059669;">
-          <h2>Core Idea</h2>
-          <p>The goal is to force the left side into a perfect square. If the expression starts as <span class="cts-math">x<sup>2</sup> + bx</span>, then half of <span class="cts-math">b</span> becomes the side extension, and its square becomes the missing corner.</p>
-          <div class="cts-display cts-math">x<sup>2</sup> + bx + (b/2)<sup>2</sup> = (x + b/2)<sup>2</sup></div>
-        </section>
-
-        <section class="cts-card" style="--card-accent:#f59e0b;">
-          <h2>What Is Happening Geometrically?</h2>
-          <div class="cts-visual-grid">
-            <div>
-              <p>Imagine <span class="cts-math">x<sup>2</sup></span> as a square. Split the <span class="cts-math">bx</span> rectangle into two equal strips, each with width <span class="cts-math">b/2</span>. Those strips almost make a bigger square, but one corner is missing.</p>
-              <div class="cts-callout"><strong>The missing corner</strong><span>That corner has side length <span class="cts-math">b/2</span>, so its area is <span class="cts-math">(b/2)<sup>2</sup></span>. Add it to both sides to keep the equation balanced.</span></div>
-            </div>
-            <div class="cts-square" aria-label="A square model showing x squared, two b over 2 strips, and a missing corner">
-              <div class="cts-piece main">x<sup>2</sup></div>
-              <div class="cts-piece strip">bx/2</div>
-              <div class="cts-piece strip">bx/2</div>
-              <div class="cts-piece corner">(b/2)<sup>2</sup></div>
-            </div>
-          </div>
-        </section>
-
-        <section class="cts-card" style="--card-accent:#2563eb;">
-          <h2>Standard Steps</h2>
-          <p>Start with <span class="cts-math">ax<sup>2</sup> + bx + c = 0</span>. If <span class="cts-math">a</span> is not 1, divide every term by <span class="cts-math">a</span> first.</p>
-          <div class="cts-steps">
-            <div class="cts-step" style="--step-color:#2563eb;"><span class="cts-step-num">1</span><div><strong>Make the leading coefficient 1</strong><small>Divide through by <span class="cts-math">a</span> when the equation starts with <span class="cts-math">ax<sup>2</sup></span>.</small></div></div>
-            <div class="cts-step" style="--step-color:#7c3aed;"><span class="cts-step-num">2</span><div><strong>Move the constant</strong><small>Rewrite as <span class="cts-math">x<sup>2</sup> + bx = -c</span>.</small></div></div>
-            <div class="cts-step" style="--step-color:#0891b2;"><span class="cts-step-num">3</span><div><strong>Complete the square</strong><small>Take half of <span class="cts-math">b</span>, square it, and add that value to both sides.</small></div></div>
-            <div class="cts-step" style="--step-color:#0f766e;"><span class="cts-step-num">4</span><div><strong>Factor the left side</strong><small>It becomes <span class="cts-math">(x + b/2)<sup>2</sup></span>.</small></div></div>
-            <div class="cts-step" style="--step-color:#ca8a04;"><span class="cts-step-num">5</span><div><strong>Solve</strong><small>Take the square root of both sides, then isolate <span class="cts-math">x</span>.</small></div></div>
-          </div>
-        </section>
-
-        <section class="cts-card" style="--card-accent:#7c3aed;">
-          <h2>Worked Example</h2>
-          <p>Solve <span class="cts-math">x<sup>2</sup> + 4x + 1 = 0</span>.</p>
-          <div class="cts-example">
-            <div class="cts-example-row"><div class="cts-math">x<sup>2</sup> + 4x = -1</div><div class="cts-note">Move the constant to the right side.</div></div>
-            <div class="cts-example-row"><div class="cts-math">(4/2)<sup>2</sup> = 2<sup>2</sup> = 4</div><div class="cts-note">Take half of 4, then square it.</div></div>
-            <div class="cts-example-row"><div class="cts-math">x<sup>2</sup> + 4x + 4 = -1 + 4</div><div class="cts-note">Add 4 to both sides so the equation stays balanced.</div></div>
-            <div class="cts-example-row"><div class="cts-math">(x + 2)<sup>2</sup> = 3</div><div class="cts-note">The left side is now a perfect square.</div></div>
-            <div class="cts-example-row"><div class="cts-math">x + 2 = &plusmn;&radic;3</div><div class="cts-note">Take the square root of both sides.</div></div>
-            <div class="cts-example-row"><div class="cts-math">x = -2 &plusmn; &radic;3</div><div class="cts-note">Subtract 2 to isolate <span class="cts-math">x</span>.</div></div>
-          </div>
-        </section>
-
-        <section class="cts-card" style="--card-accent:#16a34a;">
-          <h2>Interactive Check</h2>
-          <p>Choose the value that must be added to both sides to complete the square.</p>
-          <div class="cts-activity">
-            <div class="cts-workspace">
-              <div class="cts-problem cts-math" id="cts-problem">x<sup>2</sup> + 6x = 5</div>
-              <div class="cts-answer-grid" id="cts-options"></div>
-              <div class="cts-feedback" id="cts-feedback" aria-live="polite">Take half of the x coefficient, then square it.</div>
-            </div>
-            <div class="cts-side">
-              <div class="cts-score"><strong id="cts-score">0/0</strong><span>correct this round</span></div>
-              <button class="cts-next" type="button" id="cts-next">Next Problem</button>
-            </div>
-          </div>
-        </section>
-
-        <section class="cts-card" style="--card-accent:#f97316;">
-          <h2>Guided Practice</h2>
-          <p>Type the missing number that completes the square.</p>
-          <div class="cts-practice">
-            <div class="cts-practice-item" data-answer="16"><span class="cts-math">x<sup>2</sup> + 8x + ___ = (x + 4)<sup>2</sup></span><input type="number" aria-label="Missing number for x squared plus 8x" /><button class="cts-check" type="button">Check</button><span class="cts-mini-feedback"></span></div>
-            <div class="cts-practice-item" data-answer="25"><span class="cts-math">x<sup>2</sup> - 10x + ___ = (x - 5)<sup>2</sup></span><input type="number" aria-label="Missing number for x squared minus 10x" /><button class="cts-check" type="button">Check</button><span class="cts-mini-feedback"></span></div>
-            <div class="cts-practice-item" data-answer="9"><span class="cts-math">x<sup>2</sup> + 6x + ___ = (x + 3)<sup>2</sup></span><input type="number" aria-label="Missing number for x squared plus 6x" /><button class="cts-check" type="button">Check</button><span class="cts-mini-feedback"></span></div>
-            <div class="cts-practice-item" data-answer="1"><span class="cts-math">x<sup>2</sup> - 2x + ___ = (x - 1)<sup>2</sup></span><input type="number" aria-label="Missing number for x squared minus 2x" /><button class="cts-check" type="button">Check</button><span class="cts-mini-feedback"></span></div>
-          </div>
-        </section>
-
-        <section class="cts-card" style="--card-accent:#dc2626;">
-          <h2>Why It Matters</h2>
-          <p>Completing the square is more than a trick. It gives vertex form for graphing, explains where the quadratic formula comes from, and still works when a quadratic does not factor cleanly.</p>
-          <h3>Exit Ticket</h3>
-          <p>Students answer these with shown work.</p>
-          <ul class="cts-links">
-            <li>Solve <span class="cts-math">x<sup>2</sup> + 2x - 8 = 0</span> by completing the square.</li>
-            <li>Explain why the number added to both sides is based on half of <span class="cts-math">b</span>.</li>
-            <li>How does <span class="cts-math">(x + 2)<sup>2</sup> = 3</span> reveal the vertex of <span class="cts-math">x<sup>2</sup> + 4x + 1</span>?</li>
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li>
+            <li><a href="../paths.html">Paths</a></li>
+            <li><a href="../showcase.html">Showcase</a></li>
+            <li><a href="../applications.html">Apps</a></li>
+            <li><a href="../recipe-book.html">Library</a></li>
+            <li><a href="../about.html">About</a></li>
           </ul>
-        </section>
-
-        <section class="cts-card" style="--card-accent:#64748b;">
-          <h2>References</h2>
-          <ul class="cts-links">
-            <li><a href="https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86%3Aquadratic-functions-equations/x2f8bb11595b61c86%3Amore-on-completing-square/a/solving-quadratic-equations-by-completing-the-square">Khan Academy: Solving quadratics by completing the square</a></li>
-            <li><a href="https://www.mathsisfun.com/algebra/completing-square.html">Math is Fun: Completing the Square</a></li>
-            <li><a href="https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86%3Aquadratic-functions-equations/x2f8bb11595b61c86%3Amore-on-completing-square/a/completing-the-square-review">Khan Academy: Completing the square review</a></li>
-            <li><a href="https://en.wikipedia.org/wiki/Completing_the_square">Wikipedia: Completing the square</a></li>
-          </ul>
-        </section>
-      </main>
-    </div>
-
-    <aside class="ll-panel" aria-label="Lesson panel">
-      <div class="ll-panel-inner">
-        <div class="ll-tabs" role="tablist" aria-label="Completing the square panel tabs">
-          <button class="ll-tab active" type="button" data-ll-tab="guide">Guide</button>
-          <button class="ll-tab" type="button" data-ll-tab="controls">Teacher</button>
-        </div>
-        <div class="ll-pane active" data-ll-panel="guide">
-          <span class="ll-label">Key Move</span>
-          <div class="ll-info"><strong>Half, then square</strong> For <span class="cts-math">x<sup>2</sup> + bx</span>, add <span class="cts-math">(b/2)<sup>2</sup></span>.</div>
-          <div class="ll-info"><strong>Balance</strong> Whatever gets added to one side must be added to the other side.</div>
-          <span class="ll-label">Memory Hook</span>
-          <div class="ll-info"><strong>Missing corner</strong> Two half-strips around <span class="cts-math">x<sup>2</sup></span> need one corner to become a complete square.</div>
-        </div>
-        <div class="ll-pane" data-ll-panel="controls">
-          <span class="ll-label">Lesson Flow</span>
-          <div class="ll-info"><strong>Warm-up</strong> Expand <span class="cts-math">(x + 3)<sup>2</sup></span> and identify where the 6x and 9 come from.</div>
-          <div class="ll-info"><strong>Mini lesson</strong> Build the square model before using the procedure.</div>
-          <div class="ll-info"><strong>Practice</strong> Require the half-and-square number before students solve.</div>
-          <div class="ll-info"><strong>Check</strong> Listen for balance language: add the same value to both sides.</div>
-        </div>
+        </nav>
       </div>
-    </aside>
+    </header>
 
-    <button class="ll-open-btn" aria-label="Open panel">
-      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
-    </button>
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="cts-page">
+          <section class="cts-hero" aria-labelledby="page-title">
+            <div class="cts-hero-copy">
+              <p class="cts-kicker">Mathematics · Quadratics</p>
+              <h1 id="page-title">Complete the <span>picture.</span></h1>
+              <p class="cts-lede">Completing the square is not a mysterious algebra trick. You are literally adding the one missing corner that turns a quadratic into a square you can solve.</p>
+              <div class="cts-hero-tags" aria-label="Lesson topics">
+                <span class="cts-pill">Visual model</span>
+                <span class="cts-pill">Vertex form</span>
+                <span class="cts-pill">Guided practice</span>
+              </div>
+            </div>
+            <div class="cts-hero-demo" aria-hidden="true">
+              <div class="cts-mini-square">
+                <div class="cts-tile">x²</div><div class="cts-tile">3x</div>
+                <div class="cts-tile">3x</div><div class="cts-tile">9</div>
+              </div>
+              <div class="cts-hero-equation cts-math">x² + 6x + 9 = (x + 3)²</div>
+            </div>
+          </section>
+
+          <nav class="cts-route" aria-label="Lesson sections">
+            <a href="#explore"><b>1</b> See the geometry</a>
+            <a href="#method"><b>2</b> Learn the move</a>
+            <a href="#example"><b>3</b> Watch it work</a>
+            <a href="#practice"><b>4</b> Try it yourself</a>
+          </nav>
+
+          <section class="cts-card" id="explore" style="--section-color:var(--violet)">
+            <div class="cts-section-head">
+              <div><span class="cts-overline">Explore</span><h2>Build the missing corner</h2><p>Change the coefficient of <span class="cts-math">x</span>. Watch the strips and corner change together.</p></div>
+              <span class="cts-section-number" aria-hidden="true">01</span>
+            </div>
+            <div class="cts-explorer">
+              <div class="cts-builder-wrap">
+                <div class="cts-builder" id="cts-builder" aria-label="Area model for x squared plus 6x plus 9">
+                  <div class="base">x²</div>
+                  <div class="strip" id="cts-strip-a">3x</div>
+                  <div class="strip bottom" id="cts-strip-b">3x</div>
+                  <div class="corner" id="cts-corner">9</div>
+                </div>
+              </div>
+              <div class="cts-controls">
+                <div class="cts-slider-box">
+                  <div class="cts-slider-top"><label for="cts-b">Coefficient <span class="cts-math">b</span></label><output class="cts-slider-value" id="cts-b-value" for="cts-b">6</output></div>
+                  <input id="cts-b" type="range" min="-12" max="12" step="2" value="6" aria-describedby="cts-b-help" />
+                  <div class="cts-range-labels" aria-hidden="true"><span>−12</span><span>0</span><span>12</span></div>
+                  <p id="cts-b-help">Each blue strip gets half of <span class="cts-math">b</span>.</p>
+                </div>
+                <div class="cts-live-equations" aria-live="polite">
+                  <div class="cts-equation-line"><span>Start</span><output class="cts-math" id="cts-start">x² + 6x</output></div>
+                  <div class="cts-equation-line"><span>Half, square</span><output class="cts-math" id="cts-half">(6 ÷ 2)² = 9</output></div>
+                  <div class="cts-equation-line"><span>Complete</span><output class="cts-math" id="cts-complete">x² + 6x + 9 = (x + 3)²</output></div>
+                </div>
+                <div class="cts-insight"><strong>Why half?</strong> The <span class="cts-math">bx</span> area is split into two equal strips. Their shared width is <span class="cts-math">b/2</span>, so the corner has area <span class="cts-math">(b/2)²</span>.</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="cts-card" id="method" style="--section-color:var(--blue)">
+            <div class="cts-section-head">
+              <div><span class="cts-overline">The method</span><h2>Five moves, one goal</h2><p>Turn the left side into a perfect-square expression, then solve.</p></div>
+              <span class="cts-section-number" aria-hidden="true">02</span>
+            </div>
+            <div class="cts-method">
+              <article style="--step-color:#7c3aed"><h3>Make <span class="cts-math">a = 1</span></h3><p>If needed, divide every term by the coefficient of <span class="cts-math">x²</span>.</p></article>
+              <article style="--step-color:#2563eb"><h3>Move the constant</h3><p>Put the <span class="cts-math">x²</span> and <span class="cts-math">x</span> terms together on the left.</p></article>
+              <article style="--step-color:#0f9f8f"><h3>Half, then square</h3><p>Calculate <span class="cts-math">(b/2)²</span>. Add it to both sides.</p></article>
+              <article style="--step-color:#f59e0b"><h3>Factor the square</h3><p>Rewrite the left side as <span class="cts-math">(x + b/2)²</span>.</p></article>
+              <article style="--step-color:#e11d48"><h3>Use both roots</h3><p>Square root both sides. Remember the <span class="cts-math">±</span>, then isolate <span class="cts-math">x</span>.</p></article>
+            </div>
+            <div class="cts-rule cts-math">x² + bx + (b/2)² = (x + b/2)²</div>
+          </section>
+
+          <section class="cts-card" id="example" style="--section-color:var(--amber)">
+            <div class="cts-section-head">
+              <div><span class="cts-overline">Worked example</span><h2>Reveal the reasoning</h2><p>Solve <span class="cts-math">x² + 4x + 1 = 0</span>. Predict each next line before revealing it.</p></div>
+              <span class="cts-section-number" aria-hidden="true">03</span>
+            </div>
+            <div class="cts-worked">
+              <div class="cts-worked-main">
+                <div class="cts-worked-problem cts-math">x² + 4x + 1 = 0</div>
+                <div class="cts-worked-list" id="cts-worked-list">
+                  <div class="cts-worked-step" data-step="1"><span class="cts-math">x² + 4x = −1</span><span class="cts-worked-note">Move 1 to the right side.</span></div>
+                  <div class="cts-worked-step" data-step="2"><span class="cts-math">(4 ÷ 2)² = 4</span><span class="cts-worked-note">Half the x coefficient, then square it.</span></div>
+                  <div class="cts-worked-step" data-step="3"><span class="cts-math">x² + 4x + 4 = −1 + 4</span><span class="cts-worked-note">Add the same value to both sides.</span></div>
+                  <div class="cts-worked-step" data-step="4"><span class="cts-math">(x + 2)² = 3</span><span class="cts-worked-note">The left side is now a perfect square.</span></div>
+                  <div class="cts-worked-step" data-step="5"><span class="cts-math">x = −2 ± √3</span><span class="cts-worked-note">Square root, include both signs, then subtract 2.</span></div>
+                </div>
+              </div>
+              <div class="cts-worked-side">
+                <div>
+                  <div class="cts-progress-label" id="cts-progress-label">Ready to begin</div>
+                  <div class="cts-progress" aria-hidden="true"><span id="cts-progress-bar"></span></div>
+                </div>
+                <div class="cts-button-row">
+                  <button class="cts-btn" id="cts-prev" type="button" disabled>Back</button>
+                  <button class="cts-btn primary" id="cts-reveal" type="button">Reveal step 1</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="cts-card" id="practice" style="--section-color:var(--teal)">
+            <div class="cts-section-head">
+              <div><span class="cts-overline">Practice studio</span><h2>Build it, then solve it</h2><p>First sharpen the key move. Then finish a full equation without answer choices.</p></div>
+              <span class="cts-section-number" aria-hidden="true">04</span>
+            </div>
+            <div class="cts-practice-grid">
+              <div class="cts-quiz">
+                <div class="cts-quiz-top"><span class="cts-quiz-label">Quick rounds</span><span class="cts-streak" id="cts-streak">Streak: 0</span></div>
+                <div class="cts-question cts-math" id="cts-question">x² + 8x + ___ = (x + 4)²</div>
+                <div class="cts-choices" id="cts-choices"></div>
+                <div class="cts-feedback" id="cts-feedback" role="status" aria-live="polite">What number fills the missing corner?</div>
+                <div class="cts-quiz-actions"><span class="cts-score" id="cts-score">0 correct · 0 tried</span><button class="cts-btn primary" id="cts-next" type="button">Next round</button></div>
+              </div>
+              <form class="cts-solve" id="cts-solve" novalidate>
+                <h3>Full solve</h3>
+                <p>Solve <span class="cts-math">x² + 6x − 7 = 0</span> by completing the square.</p>
+                <div class="cts-solve-line"><label for="solve-move">Move −7: <span class="cts-math">x² + 6x =</span></label><input class="cts-input" id="solve-move" type="number" inputmode="decimal" /></div>
+                <div class="cts-solve-line"><label for="solve-add">Number added to both sides</label><input class="cts-input" id="solve-add" type="number" inputmode="decimal" /></div>
+                <div class="cts-solve-line"><label for="solve-right">After factoring: <span class="cts-math">(x + 3)² =</span></label><input class="cts-input" id="solve-right" type="number" inputmode="decimal" /></div>
+                <div class="cts-solve-line"><label for="solve-root-a">Smaller solution</label><input class="cts-input" id="solve-root-a" type="number" inputmode="decimal" /></div>
+                <div class="cts-solve-line"><label for="solve-root-b">Larger solution</label><input class="cts-input" id="solve-root-b" type="number" inputmode="decimal" /></div>
+                <button class="cts-btn primary" type="submit">Check my work</button>
+                <div class="cts-solve-result" id="cts-solve-result" role="status" aria-live="polite"></div>
+              </form>
+            </div>
+          </section>
+
+          <section class="cts-card" style="--section-color:var(--rose)">
+            <div class="cts-section-head">
+              <div><span class="cts-overline">Connect</span><h2>Why this move matters</h2></div>
+              <span class="cts-section-number" aria-hidden="true">05</span>
+            </div>
+            <div class="cts-connections">
+              <article class="cts-connection"><span class="icon" aria-hidden="true">⌁</span><h3>Vertex form</h3><p>Rewriting as <span class="cts-math">a(x − h)² + k</span> makes the vertex <span class="cts-math">(h, k)</span> visible.</p></article>
+              <article class="cts-connection"><span class="icon" aria-hidden="true">±</span><h3>Quadratic formula</h3><p>The quadratic formula is the general equation <span class="cts-math">ax² + bx + c = 0</span> completed as a square.</p></article>
+              <article class="cts-connection"><span class="icon" aria-hidden="true">∩</span><h3>Graphing</h3><p>The completed form reveals the parabola's horizontal shift, vertical shift, and line of symmetry.</p></article>
+            </div>
+            <div class="cts-exit"><strong>Exit ticket</strong><p>Solve <span class="cts-math">x² − 10x + 21 = 0</span> by completing the square. Then explain—in one sentence—why you added 25.</p></div>
+            <details>
+              <summary style="margin-top:1rem;cursor:pointer;font-weight:800;font-size:.82rem">References and further practice</summary>
+              <ul class="cts-links">
+                <li><a href="https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86%3Aquadratic-functions-equations/x2f8bb11595b61c86%3Amore-on-completing-square/a/solving-quadratic-equations-by-completing-the-square">Khan Academy: Solving quadratics by completing the square</a></li>
+                <li><a href="https://www.mathsisfun.com/algebra/completing-square.html">Math is Fun: Completing the Square</a></li>
+              </ul>
+            </details>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-label="Lesson panel">
+        <div class="ll-panel-inner">
+          <div class="ll-tabs" role="tablist" aria-label="Completing the square panel tabs">
+            <button class="ll-tab active" type="button" data-ll-tab="guide">Guide</button>
+            <button class="ll-tab" type="button" data-ll-tab="controls">Teacher</button>
+          </div>
+          <div class="ll-pane active" data-ll-panel="guide">
+            <span class="ll-label">Key move</span>
+            <div class="ll-info"><strong>Half, then square</strong> For <span class="cts-math">x² + bx</span>, add <span class="cts-math">(b/2)²</span>.</div>
+            <div class="ll-info"><strong>Keep balance</strong> Add the missing corner to both sides of the equation.</div>
+            <span class="ll-label">Watch for</span>
+            <div class="ll-info"><strong>The ± sign</strong> Taking a square root produces a positive and a negative root.</div>
+          </div>
+          <div class="ll-pane" data-ll-panel="controls">
+            <span class="ll-label">Suggested flow · 35 min</span>
+            <div class="ll-info"><strong>5 min · Notice</strong> Ask what is missing from the hero square.</div>
+            <div class="ll-info"><strong>8 min · Explore</strong> Change <span class="cts-math">b</span> and predict the corner.</div>
+            <div class="ll-info"><strong>10 min · Model</strong> Reveal the worked example one line at a time.</div>
+            <div class="ll-info"><strong>12 min · Practice</strong> Complete quick rounds, full solve, and exit ticket.</div>
+          </div>
+        </div>
+      </aside>
+
+      <button class="ll-open-btn" aria-label="Open panel"><span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span></button>
+    </div>
   </div>
-</div>
 
-  <footer class="site-footer">
-    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">Lessons</a></p>
-  </footer>
+  <footer class="site-footer"><p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">Lessons</a></p></footer>
 
   <script src="../assets/js/nav-mobile.js"></script>
   <script>
     (function () {
-      const problems = [
-        { html: 'x<sup>2</sup> + 6x = 5', answer: '9', choices: ['3', '6', '9', '36'], feedback: 'Half of 6 is 3, and 3 squared is 9.' },
-        { html: 'x<sup>2</sup> - 8x = 7', answer: '16', choices: ['4', '8', '16', '64'], feedback: 'Half of -8 is -4, and (-4) squared is 16.' },
-        { html: 'x<sup>2</sup> + 10x = -2', answer: '25', choices: ['5', '10', '20', '25'], feedback: 'Half of 10 is 5, and 5 squared is 25.' },
-        { html: 'x<sup>2</sup> - 4x = 12', answer: '4', choices: ['-2', '2', '4', '8'], feedback: 'Half of -4 is -2, and (-2) squared is 4.' },
-        { html: 'x<sup>2</sup> + 12x = 1', answer: '36', choices: ['6', '12', '24', '36'], feedback: 'Half of 12 is 6, and 6 squared is 36.' }
+      'use strict';
+
+      var coefficient = document.getElementById('cts-b');
+      var bValue = document.getElementById('cts-b-value');
+      var builder = document.getElementById('cts-builder');
+      var stripA = document.getElementById('cts-strip-a');
+      var stripB = document.getElementById('cts-strip-b');
+      var corner = document.getElementById('cts-corner');
+      var start = document.getElementById('cts-start');
+      var halfLine = document.getElementById('cts-half');
+      var complete = document.getElementById('cts-complete');
+
+      function signedTerm(number, suffix) {
+        if (number === 0) return '';
+        return (number > 0 ? ' + ' : ' − ') + Math.abs(number) + suffix;
+      }
+
+      function updateBuilder() {
+        var b = Number(coefficient.value);
+        var half = b / 2;
+        var added = half * half;
+        var stripSize = 18 + (Math.abs(b) / 12) * 22;
+        bValue.value = String(b).replace('-', '−');
+        bValue.textContent = String(b).replace('-', '−');
+        builder.style.setProperty('--strip', stripSize + '%');
+        stripA.textContent = half === 0 ? '0' : String(half).replace('-', '−') + 'x';
+        stripB.textContent = stripA.textContent;
+        corner.textContent = String(added);
+        builder.setAttribute('aria-label', 'Area model for x squared ' + (b < 0 ? 'minus ' : 'plus ') + Math.abs(b) + 'x plus ' + added);
+        start.textContent = 'x²' + signedTerm(b, 'x');
+        halfLine.textContent = '(' + String(b).replace('-', '−') + ' ÷ 2)² = ' + added;
+        complete.textContent = 'x²' + signedTerm(b, 'x') + ' + ' + added + ' = (x' + signedTerm(half, '') + ')²';
+      }
+      coefficient.addEventListener('input', updateBuilder);
+      updateBuilder();
+
+      var revealed = 0;
+      var workedSteps = Array.prototype.slice.call(document.querySelectorAll('.cts-worked-step'));
+      var prevButton = document.getElementById('cts-prev');
+      var revealButton = document.getElementById('cts-reveal');
+      var progressLabel = document.getElementById('cts-progress-label');
+      var progressBar = document.getElementById('cts-progress-bar');
+
+      function renderWorked() {
+        workedSteps.forEach(function (step, index) { step.classList.toggle('revealed', index < revealed); });
+        progressBar.style.width = (revealed / workedSteps.length * 100) + '%';
+        progressLabel.textContent = revealed === 0 ? 'Ready to begin' : (revealed === workedSteps.length ? 'Solution complete' : revealed + ' of ' + workedSteps.length + ' steps');
+        prevButton.disabled = revealed === 0;
+        revealButton.textContent = revealed === workedSteps.length ? 'Start over' : 'Reveal step ' + (revealed + 1);
+      }
+      revealButton.addEventListener('click', function () { revealed = revealed === workedSteps.length ? 0 : revealed + 1; renderWorked(); });
+      prevButton.addEventListener('click', function () { revealed = Math.max(0, revealed - 1); renderWorked(); });
+      renderWorked();
+
+      var rounds = [
+        { q: 'x² + 8x + ___ = (x + 4)²', a: '16', choices: ['4', '8', '16', '64'], why: 'Half of 8 is 4; 4² = 16.' },
+        { q: 'x² − 10x + ___ = (x − 5)²', a: '25', choices: ['−5', '5', '20', '25'], why: 'Half of −10 is −5; (−5)² = 25.' },
+        { q: 'x² + 14x + ___ = (x + 7)²', a: '49', choices: ['7', '28', '49', '196'], why: 'Half of 14 is 7; 7² = 49.' },
+        { q: 'x² − 6x + ___ = (x − 3)²', a: '9', choices: ['−3', '3', '6', '9'], why: 'Half of −6 is −3; (−3)² = 9.' },
+        { q: 'x² + 3x + ___ = (x + 3/2)²', a: '9/4', choices: ['3/2', '3', '9/4', '9'], why: 'Half of 3 is 3/2; (3/2)² = 9/4.' }
       ];
+      var roundIndex = 0;
+      var correctCount = 0;
+      var triedCount = 0;
+      var streak = 0;
+      var answered = false;
+      var question = document.getElementById('cts-question');
+      var choices = document.getElementById('cts-choices');
+      var feedback = document.getElementById('cts-feedback');
+      var score = document.getElementById('cts-score');
+      var streakNode = document.getElementById('cts-streak');
+      var nextButton = document.getElementById('cts-next');
 
-      const problem = document.getElementById('cts-problem');
-      const options = document.getElementById('cts-options');
-      const feedback = document.getElementById('cts-feedback');
-      const score = document.getElementById('cts-score');
-      const next = document.getElementById('cts-next');
-      let index = 0;
-      let correct = 0;
-      let attempted = 0;
-      let locked = false;
-
-      function renderProblem() {
-        const item = problems[index % problems.length];
-        locked = false;
-        problem.innerHTML = item.html;
-        options.innerHTML = '';
-        feedback.textContent = 'Take half of the x coefficient, then square it.';
+      function renderRound() {
+        var item = rounds[roundIndex % rounds.length];
+        answered = false;
+        question.textContent = item.q;
+        feedback.textContent = 'What number fills the missing corner?';
+        choices.innerHTML = '';
         item.choices.forEach(function (choice) {
-          const button = document.createElement('button');
+          var button = document.createElement('button');
           button.type = 'button';
           button.className = 'cts-choice';
           button.textContent = choice;
           button.addEventListener('click', function () {
-            if (locked) return;
-            locked = true;
-            attempted += 1;
-            if (choice === item.answer) {
-              correct += 1;
-              button.classList.add('correct');
-              feedback.textContent = 'Correct. ' + item.feedback;
-            } else {
-              button.classList.add('wrong');
-              Array.prototype.forEach.call(options.children, function (option) {
-                if (option.textContent === item.answer) option.classList.add('correct');
-              });
-              feedback.textContent = 'Not quite. ' + item.feedback;
-            }
-            score.textContent = correct + '/' + attempted;
+            if (answered) return;
+            answered = true;
+            triedCount += 1;
+            var right = choice === item.a;
+            if (right) { correctCount += 1; streak += 1; button.classList.add('correct'); feedback.textContent = 'Exactly. ' + item.why; }
+            else { streak = 0; button.classList.add('wrong'); feedback.textContent = 'Not yet. ' + item.why; }
+            Array.prototype.forEach.call(choices.children, function (option) { option.disabled = true; if (option.textContent === item.a) option.classList.add('correct'); });
+            score.textContent = correctCount + ' correct · ' + triedCount + ' tried';
+            streakNode.textContent = 'Streak: ' + streak;
           });
-          options.appendChild(button);
+          choices.appendChild(button);
         });
-        score.textContent = correct + '/' + attempted;
       }
+      nextButton.addEventListener('click', function () { roundIndex += 1; renderRound(); });
+      renderRound();
 
-      next.addEventListener('click', function () {
-        index += 1;
-        renderProblem();
-      });
-      renderProblem();
-
-      document.querySelectorAll('.cts-practice-item').forEach(function (item) {
-        const input = item.querySelector('input');
-        const button = item.querySelector('.cts-check');
-        const feedbackNode = item.querySelector('.cts-mini-feedback');
-        button.addEventListener('click', function () {
-          const expected = Number(item.getAttribute('data-answer'));
-          const actual = Number(input.value);
-          feedbackNode.className = 'cts-mini-feedback';
-          if (actual === expected) {
-            feedbackNode.textContent = 'Correct';
-            feedbackNode.classList.add('ok');
-          } else {
-            feedbackNode.textContent = 'Try again';
-            feedbackNode.classList.add('no');
-          }
+      var solveForm = document.getElementById('cts-solve');
+      var solveResult = document.getElementById('cts-solve-result');
+      solveForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        var expected = [7, 9, 16, -7, 1];
+        var inputs = Array.prototype.slice.call(solveForm.querySelectorAll('input'));
+        var firstWrong = -1;
+        inputs.forEach(function (input, index) {
+          var correct = input.value.trim() !== '' && Number(input.value) === expected[index];
+          input.style.borderColor = correct ? '#16a34a' : '#dc2626';
+          input.setAttribute('aria-invalid', correct ? 'false' : 'true');
+          if (!correct && firstWrong < 0) firstWrong = index;
         });
-        input.addEventListener('keydown', function (event) {
-          if (event.key === 'Enter') button.click();
-        });
+        if (firstWrong < 0) {
+          solveResult.textContent = 'Complete! (x + 3)² = 16, so x = −3 ± 4: x = −7 or x = 1.';
+        } else {
+          var hints = ['Move −7 across the equals sign.', 'Half of 6 is 3. Now square it.', 'Add your missing-corner value to 7.', 'Take the negative square-root branch.', 'Take the positive square-root branch.'];
+          solveResult.textContent = 'Check the highlighted step. Hint: ' + hints[firstWrong];
+          inputs[firstWrong].focus();
+        }
       });
     })();
   </script>
   <script src="../assets/js/classroom-animations.js"></script>
   <script src="../assets/js/lesson-layout.js"></script>
-<script src="../assets/js/lesson-print-button.js"></script>
+  <script src="../assets/js/lesson-print-button.js"></script>
 </body>
 </html>
