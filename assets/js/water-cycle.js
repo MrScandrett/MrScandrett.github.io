@@ -30,7 +30,11 @@ function initStageSelector() {
 
     function activate(index, focus = false) {
         activeIndex = (index + stageData.length) % stageData.length;
-        buttons.forEach((button, buttonIndex) => button.classList.toggle('active', buttonIndex === activeIndex));
+        buttons.forEach((button, buttonIndex) => {
+            const isActive = buttonIndex === activeIndex;
+            button.classList.toggle('active', isActive);
+            button.setAttribute('aria-pressed', String(isActive));
+        });
         explanations.forEach((explanation, expIndex) => {
             explanation.style.display = expIndex === activeIndex ? 'block' : 'none';
         });
@@ -58,12 +62,45 @@ function initStageSelector() {
 
 function initCycleHero(stageController) {
     const canvas = document.getElementById('cycle-hero-canvas');
+    const referenceDiagram = document.getElementById('cycle-reference-diagram');
     const playPauseBtn = document.getElementById('cycle-play-pause-btn');
     const prevBtn = document.getElementById('cycle-prev-btn');
     const nextBtn = document.getElementById('cycle-next-btn');
     const stageReadout = document.getElementById('cycle-stage-readout');
     const stateReadout = document.getElementById('cycle-state-readout');
     const tempReadout = document.getElementById('cycle-temp-readout');
+    if (!canvas && referenceDiagram) {
+        let activeIndex = stageController.getActiveIndex();
+        let playing = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        function updateReadouts(index) {
+            activeIndex = (index + 6) % 6;
+            const active = stageController.getStageData(activeIndex);
+            stageReadout.textContent = active.name;
+            stateReadout.textContent = active.state;
+            tempReadout.textContent = active.temp;
+            referenceDiagram.dataset.stage = active.name.toLowerCase();
+        }
+
+        function setStage(index) {
+            stageController.activate((index + 6) % 6);
+        }
+
+        playPauseBtn?.addEventListener('click', () => {
+            playing = !playing;
+            playPauseBtn.textContent = playing ? 'Pause Loop' : 'Resume Loop';
+        });
+        prevBtn?.addEventListener('click', () => setStage(activeIndex - 1));
+        nextBtn?.addEventListener('click', () => setStage(activeIndex + 1));
+        document.addEventListener('watercycle:stagechange', (event) => updateReadouts(event.detail.index));
+
+        updateReadouts(activeIndex);
+        if (!playing && playPauseBtn) playPauseBtn.textContent = 'Resume Loop';
+        window.setInterval(() => {
+            if (playing) setStage(activeIndex + 1);
+        }, 3000);
+        return;
+    }
     if (!canvas) return;
 
     const stageNodes = [
@@ -76,7 +113,7 @@ function initCycleHero(stageController) {
     ];
 
     let activeIndex = 0;
-    let playing = true;
+    let playing = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let loopId = null;
     let particle = null;
 
@@ -138,7 +175,6 @@ function initCycleHero(stageController) {
         activeIndex = (index + stageNodes.length) % stageNodes.length;
         stageController.activate(activeIndex);
         if (animate) animateBetweenStages(previous, activeIndex);
-        render();
     }
 
     function startLoop() {
@@ -162,6 +198,7 @@ function initCycleHero(stageController) {
     });
 
     render();
+    if (!playing && playPauseBtn) playPauseBtn.textContent = 'Resume Loop';
     startLoop();
 }
 
@@ -248,7 +285,7 @@ function animateMolecules() {
         });
         requestAnimationFrame(tick);
     }
-    tick();
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) tick();
 }
 
 function initDistributionChart() {
@@ -280,12 +317,28 @@ function initDistributionChart() {
             const sweep = (slice.value / 100) * Math.PI * 2;
             const endAngle = startAngle + sweep;
             const path = describeArcSlice(cx, cy, radius, startAngle, endAngle);
-            const node = svg('path', { d: path, fill: slice.color, class: 'distribution-chart-slice' });
-            node.addEventListener('mouseenter', () => {
-                tooltip.textContent = `${slice.label}: ${slice.value}${zoomFreshwater ? '% of freshwater' : "% of Earth's water"}`;
+            const node = svg('path', {
+                d: path,
+                fill: slice.color,
+                class: 'distribution-chart-slice',
+                tabindex: 0,
+                role: 'button',
+                'aria-label': `${slice.label}: ${slice.value}${zoomFreshwater ? '% of freshwater' : "% of Earth's water"}`
             });
-            node.addEventListener('click', () => {
+            const showSliceDetails = () => {
+                tooltip.textContent = `${slice.label}: ${slice.value}${zoomFreshwater ? '% of freshwater' : "% of Earth's water"}`;
+            };
+            const openSliceSection = () => {
                 document.querySelector(slice.target)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            };
+            node.addEventListener('mouseenter', showSliceDetails);
+            node.addEventListener('focus', showSliceDetails);
+            node.addEventListener('click', openSliceSection);
+            node.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    openSliceSection();
+                }
             });
             canvas.appendChild(node);
 
@@ -343,7 +396,7 @@ function initSimulation(stageController) {
         temperature: 24,
         humidity: 55,
         season: 'Summer',
-        playing: true
+        playing: !window.matchMedia('(prefers-reduced-motion: reduce)').matches
     };
     const el = {
         sun: document.getElementById('sun-strength-slider'),
@@ -437,15 +490,16 @@ function initSimulation(stageController) {
         state.temperature = 24;
         state.humidity = 55;
         state.season = 'Summer';
-        state.playing = true;
+        state.playing = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         el.sun.value = '65';
         el.temp.value = '24';
         el.humidity.value = '55';
         el.season.value = 'Summer';
-        el.toggle.textContent = 'Pause Cycle';
+        el.toggle.textContent = state.playing ? 'Pause Cycle' : 'Resume Cycle';
         render();
     });
 
+    if (!state.playing && el.toggle) el.toggle.textContent = 'Resume Cycle';
     tick();
 }
 
@@ -527,18 +581,30 @@ function initUsgsDiagram() {
         applyTransform();
     }
 
+    const fullResolutionBtn = document.getElementById('usgs-load-full-btn');
+
     function loadFullResolution(lang) {
         const target = DIAGRAM_SOURCES[lang];
+        loading.textContent = 'Loading high-resolution diagram…';
         loading.hidden = false;
+        if (fullResolutionBtn) {
+            fullResolutionBtn.disabled = true;
+            fullResolutionBtn.textContent = 'Loading…';
+        }
         const probe = new Image();
         probe.onload = () => {
             img.src = target.src;
             img.alt = target.alt;
             state.loadedFull = true;
             loading.hidden = true;
+            if (fullResolutionBtn) fullResolutionBtn.textContent = 'Full Resolution Loaded';
         };
         probe.onerror = () => {
             loading.textContent = 'Could not load the high-resolution diagram. Check your connection and try again.';
+            if (fullResolutionBtn) {
+                fullResolutionBtn.disabled = false;
+                fullResolutionBtn.textContent = 'Try Full Resolution Again';
+            }
         };
         probe.src = target.src;
     }
@@ -547,16 +613,14 @@ function initUsgsDiagram() {
     document.getElementById('usgs-zoom-out-btn')?.addEventListener('click', () => setZoom(state.zoom - ZOOM_STEP));
     document.getElementById('usgs-zoom-reset-btn')?.addEventListener('click', resetView);
 
-    document.getElementById('usgs-load-full-btn')?.addEventListener('click', (event) => {
+    fullResolutionBtn?.addEventListener('click', () => {
         loadFullResolution(state.lang);
-        event.target.disabled = true;
-        event.target.textContent = 'Loading…';
     });
 
     document.getElementById('usgs-lang-toggle-btn')?.addEventListener('click', (event) => {
         state.lang = state.lang === 'en' ? 'es' : 'en';
         event.target.textContent = state.lang === 'en' ? 'Español' : 'English';
-        if (state.loadedFull) loadFullResolution(state.lang);
+        loadFullResolution(state.lang);
     });
 
     const descriptionBtn = document.getElementById('usgs-description-btn');
@@ -681,6 +745,7 @@ function initQuiz() {
         options.className = 'answer-options';
         const feedback = document.createElement('p');
         feedback.className = 'distribution-tooltip';
+        feedback.setAttribute('aria-live', 'polite');
         feedback.hidden = true;
         answers.forEach((answer, index) => {
             const button = document.createElement('button');
@@ -784,11 +849,23 @@ function initContentsToggle() {
             toc.classList.remove('is-open');
         });
     });
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape' || !toc.classList.contains('is-open')) return;
+        toggle.setAttribute('aria-expanded', 'false');
+        toc.classList.remove('is-open');
+        toggle.focus();
+    });
+    document.addEventListener('pointerdown', (event) => {
+        if (!toc.classList.contains('is-open') || toc.contains(event.target) || toggle.contains(event.target)) return;
+        toggle.setAttribute('aria-expanded', 'false');
+        toc.classList.remove('is-open');
+    });
 }
 
 function initKeyboardNavigation() {
     document.addEventListener('keydown', (event) => {
         if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+        if (event.target.closest('input, select, textarea, button, a')) return;
         const buttons = Array.from(document.querySelectorAll('.stage-btn'));
         const activeIndex = buttons.findIndex((button) => button.classList.contains('active'));
         if (activeIndex === -1) return;

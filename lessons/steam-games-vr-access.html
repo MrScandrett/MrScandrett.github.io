@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Steam &amp; VR Launch Protocol · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="A student guide to using the STEAM Lab's Steam accounts courteously, entering Offline Mode, connecting Meta Quest through Steam Link, and choosing approved educational VR experiences." />
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      --sp-ink: #081521;
+      --sp-panel: #0d2030;
+      --sp-panel-2: #123049;
+      --sp-blue: #66c0f4;
+      --sp-green: #71e5a1;
+      --sp-amber: #ffb454;
+      --sp-red: #ff7c78;
+      --sp-paper: #f5fbff;
+      --sp-muted: #a8bdca;
+      --sp-line: rgba(145, 204, 236, 0.22);
+      --sp-radius: 18px;
+    }
+
+    html { scroll-behavior: smooth; }
+    body.theme-steam {
+      margin: 0;
+      color: var(--text-primary, #1d1d1f);
+      background:
+        radial-gradient(900px 480px at 92% -4%, rgba(102, 192, 244, 0.16), transparent 60%),
+        var(--surface-page, #f5f5f7);
+    }
+    .sp-shell { width: min(1120px, calc(100% - 2rem)); margin: 0 auto; }
+    .sp-main { padding: 1.4rem 0 4rem; }
+
+    .sp-topline {
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      margin-bottom: 1rem; color: var(--text-muted, #64748b); font-size: 0.8rem;
+    }
+    .sp-back { color: var(--accent, #0071e3); font-weight: 800; text-decoration: none; }
+    .sp-back:hover { text-decoration: underline; }
+
+    .sp-hero {
+      position: relative; overflow: hidden; isolation: isolate;
+      border-radius: 28px; padding: clamp(1.5rem, 5vw, 3.5rem);
+      color: var(--sp-paper); background: var(--sp-ink);
+      box-shadow: 0 24px 70px rgba(8, 21, 33, 0.2);
+    }
+    .sp-hero::after {
+      content: ""; position: absolute; z-index: -1; width: 440px; height: 440px;
+      right: -140px; top: -170px; border-radius: 50%;
+      border: 70px solid rgba(102, 192, 244, 0.08);
+      box-shadow: 0 0 0 52px rgba(113, 229, 161, 0.035);
+    }
+    .sp-kicker, .sp-label {
+      margin: 0 0 0.7rem; font: 800 0.72rem/1.2 var(--font-mono, monospace);
+      letter-spacing: 0.13em; text-transform: uppercase;
+    }
+    .sp-kicker { color: var(--sp-blue); }
+    .sp-hero h1 {
+      max-width: 760px; margin: 0; font: 800 clamp(2.25rem, 7vw, 5.2rem)/0.94 var(--font-display, sans-serif);
+      letter-spacing: -0.065em; text-wrap: balance;
+    }
+    .sp-hero-lede { max-width: 650px; margin: 1.2rem 0 0; color: #c9dbe5; font-size: clamp(0.98rem, 2vw, 1.14rem); line-height: 1.65; }
+    .sp-rule {
+      display: grid; grid-template-columns: auto 1fr; gap: 0.8rem; align-items: center;
+      max-width: 720px; margin-top: 1.6rem; padding: 0.9rem 1rem;
+      border: 1px solid rgba(113, 229, 161, 0.34); border-radius: 14px;
+      background: rgba(113, 229, 161, 0.08);
+    }
+    .sp-rule-icon { color: var(--sp-green); font: 900 1.25rem/1 var(--font-mono, monospace); }
+    .sp-rule p { margin: 0; color: #e9f8ef; font-size: 0.9rem; line-height: 1.5; }
+
+    .sp-jump {
+      display: flex; gap: 0.5rem; overflow-x: auto; padding: 0.85rem 0 0.15rem;
+      scrollbar-width: thin;
+    }
+    .sp-jump a {
+      flex: 0 0 auto; padding: 0.55rem 0.8rem; border-radius: 999px;
+      border: 1px solid var(--border-default, #d2d2d7); background: var(--surface-panel, #fff);
+      color: var(--text-secondary, #434349); text-decoration: none; font-size: 0.76rem; font-weight: 800;
+    }
+    .sp-jump a:hover, .sp-jump a:focus-visible { border-color: var(--accent, #0071e3); color: var(--accent, #0071e3); }
+
+    .sp-section { margin-top: 1.25rem; }
+    .sp-section-head { display: grid; grid-template-columns: auto 1fr; gap: 0.85rem; align-items: start; margin-bottom: 0.8rem; }
+    .sp-section-no {
+      min-width: 2.65rem; padding-top: 0.22rem; color: var(--accent, #0071e3);
+      font: 800 0.78rem/1 var(--font-mono, monospace); letter-spacing: 0.08em;
+    }
+    .sp-section h2 { margin: 0; font-size: clamp(1.35rem, 3vw, 2rem); letter-spacing: -0.035em; }
+    .sp-section-head p { margin: 0.35rem 0 0; color: var(--text-secondary, #434349); line-height: 1.6; font-size: 0.9rem; }
+    .sp-card {
+      border: 1px solid var(--border-default, #d2d2d7); border-radius: var(--sp-radius);
+      background: var(--surface-panel, #fff); box-shadow: 0 14px 34px rgba(8, 21, 33, 0.06);
+    }
+
+    /* Station selector */
+    .sp-station-console { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.65fr); overflow: hidden; }
+    .sp-station-picker { padding: 1.35rem; }
+    .sp-label { color: var(--text-muted, #64748b); }
+    .sp-station-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.65rem; }
+    .sp-station-btn {
+      appearance: none; min-height: 72px; padding: 0.8rem; text-align: left; cursor: pointer;
+      border: 1px solid var(--border-default, #d2d2d7); border-radius: 12px;
+      color: var(--text-primary, #1d1d1f); background: var(--surface-elevated, #fff); font: inherit;
+      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+    }
+    .sp-station-btn:hover { transform: translateY(-2px); border-color: var(--sp-blue); }
+    .sp-station-btn[aria-pressed="true"] { border-color: var(--sp-blue); background: rgba(102, 192, 244, 0.11); box-shadow: inset 3px 0 var(--sp-blue); }
+    .sp-station-btn strong { display: block; font-size: 0.9rem; }
+    .sp-station-btn span { display: block; margin-top: 0.18rem; color: var(--text-muted, #64748b); font-size: 0.74rem; }
+    .sp-account-readout {
+      display: flex; flex-direction: column; justify-content: center; min-height: 230px; padding: 1.4rem;
+      color: var(--sp-paper); background: linear-gradient(145deg, var(--sp-panel-2), var(--sp-ink));
+    }
+    .sp-account-readout .sp-label { color: var(--sp-blue); }
+    .sp-account-name { margin: 0; overflow-wrap: anywhere; font: 800 clamp(1.15rem, 3vw, 1.7rem)/1.2 var(--font-mono, monospace); }
+    .sp-account-note { margin: 0.75rem 0 0; color: var(--sp-muted); font-size: 0.8rem; line-height: 1.55; }
+    .sp-status { display: inline-flex; align-items: center; gap: 0.45rem; margin-top: 1rem; color: var(--sp-green); font: 800 0.72rem/1.2 var(--font-mono, monospace); text-transform: uppercase; letter-spacing: 0.06em; }
+    .sp-status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 4px rgba(113,229,161,0.12); }
+
+    .sp-callout { padding: 1rem 1.1rem; border-left: 4px solid var(--sp-amber); border-radius: 12px; background: rgba(255, 180, 84, 0.1); color: var(--text-secondary, #434349); font-size: 0.86rem; line-height: 1.6; }
+    .sp-callout strong { color: var(--text-primary, #1d1d1f); }
+    .sp-callout.is-green { border-left-color: var(--sp-green); background: rgba(113, 229, 161, 0.1); }
+    .sp-callout.is-red { border-left-color: var(--sp-red); background: rgba(255, 124, 120, 0.1); }
+
+    /* Sequential launch cards */
+    .sp-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.7rem; }
+    .sp-step { position: relative; padding: 1rem; }
+    .sp-step-id { color: var(--accent, #0071e3); font: 900 0.72rem/1 var(--font-mono, monospace); }
+    .sp-step h3 { margin: 0.65rem 0 0.35rem; font-size: 0.98rem; }
+    .sp-step p { margin: 0; color: var(--text-secondary, #434349); font-size: 0.79rem; line-height: 1.55; }
+    .sp-step:not(:last-child)::after {
+      content: "›"; position: absolute; z-index: 2; right: -0.58rem; top: 50%; transform: translateY(-50%);
+      display: grid; place-items: center; width: 1.1rem; height: 1.1rem; border-radius: 50%;
+      color: var(--accent, #0071e3); background: var(--surface-page, #f5f5f7); font-weight: 900;
+    }
+
+    /* Online/offline decision */
+    .sp-decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+    .sp-mode { overflow: hidden; }
+    .sp-mode-top { padding: 1rem 1.15rem; color: var(--sp-paper); background: var(--sp-panel); }
+    .sp-mode.is-offline .sp-mode-top { box-shadow: inset 5px 0 var(--sp-green); }
+    .sp-mode.is-online .sp-mode-top { box-shadow: inset 5px 0 var(--sp-blue); }
+    .sp-mode-top span { color: var(--sp-muted); font: 800 0.68rem/1.2 var(--font-mono, monospace); letter-spacing: 0.08em; text-transform: uppercase; }
+    .sp-mode-top h3 { margin: 0.3rem 0 0; color: #fff; font-size: 1.1rem; }
+    .sp-mode-body { padding: 1rem 1.15rem; }
+    .sp-mode-body p { margin: 0; color: var(--text-secondary, #434349); font-size: 0.84rem; line-height: 1.6; }
+    .sp-mini-steps { margin: 0.7rem 0 0; padding-left: 1.2rem; color: var(--text-secondary, #434349); font-size: 0.82rem; line-height: 1.6; }
+    .sp-mini-steps li + li { margin-top: 0.32rem; }
+
+    /* Steam Link rail */
+    .sp-vr-panel { padding: clamp(1.2rem, 4vw, 2rem); color: var(--sp-paper); background: var(--sp-ink); }
+    .sp-vr-panel h3 { margin: 0; color: #fff; font-size: 1.2rem; }
+    .sp-vr-panel > p { max-width: 760px; margin: 0.45rem 0 0; color: var(--sp-muted); font-size: 0.86rem; line-height: 1.6; }
+    .sp-network {
+      display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; gap: 0.7rem;
+      margin: 1.35rem 0; padding: 1rem; border: 1px solid var(--sp-line); border-radius: 14px; background: rgba(255,255,255,0.025);
+    }
+    .sp-node { min-height: 84px; padding: 0.85rem; border: 1px solid var(--sp-line); border-radius: 12px; background: var(--sp-panel); }
+    .sp-node span { display: block; color: var(--sp-green); font: 800 0.66rem/1.2 var(--font-mono, monospace); text-transform: uppercase; letter-spacing: 0.08em; }
+    .sp-node strong { display: block; margin-top: 0.35rem; font-size: 0.88rem; }
+    .sp-node small { display: block; margin-top: 0.18rem; color: var(--sp-muted); font-size: 0.7rem; line-height: 1.4; }
+    .sp-link-line { width: 42px; height: 2px; background: var(--sp-blue); box-shadow: 0 0 12px rgba(102,192,244,0.7); }
+    .sp-link-line.is-wifi { background: repeating-linear-gradient(90deg, var(--sp-blue) 0 6px, transparent 6px 10px); }
+    .sp-vr-steps { counter-reset: vrstep; display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.7rem; margin-top: 1rem; }
+    .sp-vr-step { counter-increment: vrstep; display: grid; grid-template-columns: auto 1fr; gap: 0.65rem; padding: 0.8rem; border: 1px solid var(--sp-line); border-radius: 12px; }
+    .sp-vr-step::before { content: counter(vrstep); display: grid; place-items: center; width: 1.7rem; height: 1.7rem; border-radius: 50%; color: var(--sp-ink); background: var(--sp-blue); font: 900 0.72rem/1 var(--font-mono, monospace); }
+    .sp-vr-step p { margin: 0; color: #d6e5ed; font-size: 0.8rem; line-height: 1.5; }
+    .sp-vr-step strong { color: #fff; }
+
+    /* Approved library */
+    .sp-library { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+    .sp-app { padding: 1rem; }
+    .sp-app-tag { display: inline-block; padding: 0.24rem 0.48rem; border-radius: 5px; color: #075d34; background: rgba(113,229,161,0.2); font: 900 0.65rem/1 var(--font-mono, monospace); letter-spacing: 0.05em; text-transform: uppercase; }
+    .sp-app h3 { margin: 0.65rem 0 0.3rem; font-size: 1rem; }
+    .sp-app p { margin: 0; color: var(--text-secondary, #434349); font-size: 0.8rem; line-height: 1.55; }
+    .sp-app.is-primary { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 1rem; border-color: rgba(102,192,244,0.55); }
+    .sp-app.is-primary .sp-app-tag { color: #07527b; background: rgba(102,192,244,0.2); }
+    .sp-approved-mark { color: #087343; font: 900 clamp(1.2rem, 3vw, 1.7rem)/1 var(--font-mono, monospace); white-space: nowrap; }
+
+    .sp-courtesy { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+    .sp-courtesy-item { padding: 1rem; }
+    .sp-courtesy-icon { color: var(--accent, #0071e3); font: 900 1rem/1 var(--font-mono, monospace); }
+    .sp-courtesy-item h3 { margin: 0.55rem 0 0.3rem; font-size: 0.95rem; }
+    .sp-courtesy-item p { margin: 0; color: var(--text-secondary, #434349); font-size: 0.79rem; line-height: 1.55; }
+
+    details.sp-card { padding: 0; }
+    details.sp-card + details.sp-card { margin-top: 0.55rem; }
+    details summary { list-style: none; padding: 0.95rem 1rem; cursor: pointer; font-weight: 800; font-size: 0.87rem; }
+    details summary::-webkit-details-marker { display: none; }
+    details summary::after { content: "+"; float: right; color: var(--accent, #0071e3); font: 900 1rem/1 var(--font-mono, monospace); }
+    details[open] summary::after { content: "−"; }
+    .sp-detail-body { padding: 0 1rem 1rem; color: var(--text-secondary, #434349); font-size: 0.82rem; line-height: 1.6; }
+
+    .sp-final {
+      display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center;
+      margin-top: 1.3rem; padding: 1.25rem; border-radius: var(--sp-radius); color: var(--sp-paper); background: var(--sp-panel);
+    }
+    .sp-final h2 { margin: 0; color: #fff; font-size: 1.2rem; }
+    .sp-final p { margin: 0.35rem 0 0; color: var(--sp-muted); font-size: 0.82rem; line-height: 1.55; }
+    .sp-final-badge { color: var(--sp-green); font: 900 0.76rem/1.3 var(--font-mono, monospace); letter-spacing: 0.08em; text-transform: uppercase; text-align: right; }
+    .sp-sources { margin: 1rem 0 0; color: var(--text-muted, #64748b); font-size: 0.72rem; line-height: 1.55; }
+    .sp-sources a { color: inherit; }
+
+    .sp-station-btn:focus-visible, .sp-jump a:focus-visible, details summary:focus-visible, .sp-back:focus-visible {
+      outline: 3px solid var(--focus-ring, rgba(0,113,227,.34)); outline-offset: 3px;
+    }
+    @media (max-width: 800px) {
+      .sp-station-console, .sp-decision-grid { grid-template-columns: 1fr; }
+      .sp-steps, .sp-courtesy { grid-template-columns: repeat(2, 1fr); }
+      .sp-step:nth-child(2)::after { display: none; }
+      .sp-account-readout { min-height: 160px; }
+    }
+    @media (max-width: 620px) {
+      .sp-shell { width: min(100% - 1rem, 1120px); }
+      .sp-main { padding-top: 0.65rem; }
+      .sp-hero { border-radius: 20px; padding: 1.35rem 1.1rem; }
+      .sp-hero h1 { font-size: clamp(2rem, 14vw, 3.5rem); }
+      .sp-topline span { display: none; }
+      .sp-station-grid, .sp-steps, .sp-library, .sp-courtesy, .sp-vr-steps { grid-template-columns: 1fr; }
+      .sp-app.is-primary { grid-column: auto; grid-template-columns: 1fr; }
+      .sp-step::after { display: none; }
+      .sp-network { grid-template-columns: 1fr; }
+      .sp-link-line { width: 2px; height: 28px; margin: 0 auto; }
+      .sp-link-line.is-wifi { background: repeating-linear-gradient(180deg, var(--sp-blue) 0 6px, transparent 6px 10px); }
+      .sp-final { grid-template-columns: 1fr; }
+      .sp-final-badge { text-align: left; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .sp-station-btn { transition: none; }
+      .sp-station-btn:hover { transform: none; }
+    }
+    @media print {
+      .site-header, .sp-jump, .sp-topline, .lesson-print-button { display: none !important; }
+      .sp-main { padding: 0; }
+      .sp-hero, .sp-vr-panel, .sp-final, .sp-account-readout, .sp-mode-top { color: #111 !important; background: #fff !important; box-shadow: none; }
+      .sp-card, .sp-hero { break-inside: avoid; box-shadow: none; }
+      .sp-hero-lede, .sp-rule p, .sp-vr-panel > p, .sp-node small, .sp-vr-step p, .sp-final p { color: #333 !important; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../paths.html">Paths</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Apps</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="sp-main">
+    <div class="sp-shell">
+      <div class="sp-topline">
+        <a class="sp-back" href="../steam-lessons.html#module-cs">← Computer Science</a>
+        <span>STEAM Lab equipment guide · Grades 6–12</span>
+      </div>
+
+      <section class="sp-hero" aria-labelledby="page-title">
+        <p class="sp-kicker">Classroom launch protocol // Steam + Meta Quest</p>
+        <h1 id="page-title">Play smart.<br />Leave access open.</h1>
+        <p class="sp-hero-lede">The lab’s games are shared tools. Use the account assigned to your computer, protect other students’ access, and help the next person get farther than they could alone.</p>
+        <div class="sp-rule">
+          <span class="sp-rule-icon" aria-hidden="true">↳</span>
+          <p><strong>The courtesy rule:</strong> When you finish a non-VR game that someone else may want to play, put Steam in <strong>Offline Mode</strong>. Steam Link VR is the exception—it must stay connected while streaming.</p>
+        </div>
+      </section>
+
+      <nav class="sp-jump" aria-label="On this page">
+        <a href="#station">My account</a>
+        <a href="#launch">Launch a game</a>
+        <a href="#offline">Offline courtesy</a>
+        <a href="#vr">Steam Link VR</a>
+        <a href="#approved">Allowed in Quest</a>
+        <a href="#help">Help each other</a>
+      </nav>
+
+      <section class="sp-section reveal" id="station">
+        <div class="sp-section-head">
+          <span class="sp-section-no">01 /</span>
+          <div><h2>Use the account assigned to your station</h2><p>The accounts should already be signed in. Choose your computer to confirm what you should see—never swap accounts, sign out, or change a password.</p></div>
+        </div>
+        <div class="sp-card sp-station-console">
+          <div class="sp-station-picker">
+            <p class="sp-label">Select this computer</p>
+            <div class="sp-station-grid" role="group" aria-label="Computer stations">
+              <button class="sp-station-btn" type="button" aria-pressed="true" data-account="championrobotics1" data-note="Dedicated to Alienware 1. Leave this account signed in on this computer."><strong>Alienware 1</strong><span>Gaming station</span></button>
+              <button class="sp-station-btn" type="button" aria-pressed="false" data-account="championrobotics2" data-note="Dedicated to Alienware 2. Leave this account signed in on this computer."><strong>Alienware 2</strong><span>Gaming station</span></button>
+              <button class="sp-station-btn" type="button" aria-pressed="false" data-account="championrobotics3" data-note="Dedicated to Alienware 3. Leave this account signed in on this computer."><strong>Alienware 3</strong><span>Gaming station</span></button>
+              <button class="sp-station-btn" type="button" aria-pressed="false" data-account="championrobotics4" data-note="Shared by every zSpace computer. Coordinate before launching the same title on another zSpace."><strong>Any zSpace</strong><span>Shared account group</span></button>
+            </div>
+          </div>
+          <div class="sp-account-readout" aria-live="polite">
+            <p class="sp-label">Expected Steam account</p>
+            <p class="sp-account-name" id="account-name">championrobotics1</p>
+            <p class="sp-account-note" id="account-note">Dedicated to Alienware 1. Leave this account signed in on this computer.</p>
+            <span class="sp-status">Account mapping confirmed</span>
+          </div>
+        </div>
+        <div class="sp-callout is-red" style="margin-top:.75rem"><strong>Stop and ask:</strong> If Steam is signed out, shows a different account, requests a password/code, or asks to purchase something, do not try to fix the account yourself. Ask Mr. Scandrett.</div>
+      </section>
+
+      <section class="sp-section reveal" id="launch">
+        <div class="sp-section-head">
+          <span class="sp-section-no">02 /</span>
+          <div><h2>Run the four-step launch check</h2><p>Thirty seconds of coordination can prevent a lost save, a locked game, or a classmate being bumped out.</p></div>
+        </div>
+        <div class="sp-steps">
+          <article class="sp-card sp-step"><span class="sp-step-id">CHECK</span><h3>Ask who is playing</h3><p>Check whether another student is using—or waiting for—the same game or shared zSpace account.</p></article>
+          <article class="sp-card sp-step"><span class="sp-step-id">CHOOSE</span><h3>Open an allowed title</h3><p>Use installed library games. Do not buy, download, uninstall, mod, or change account settings without permission.</p></article>
+          <article class="sp-card sp-step"><span class="sp-step-id">PLAY</span><h3>Protect the setup</h3><p>Keep food and drinks away. Use clean hands, wrist straps for VR, and classroom-appropriate names and chat.</p></article>
+          <article class="sp-card sp-step"><span class="sp-step-id">HAND OFF</span><h3>Save, close, communicate</h3><p>Exit the game normally, tell the next student what changed, and follow the online/offline decision below.</p></article>
+        </div>
+      </section>
+
+      <section class="sp-section reveal" id="offline">
+        <div class="sp-section-head">
+          <span class="sp-section-no">03 /</span>
+          <div><h2>Make the right connection decision</h2><p>Offline Mode is a courtesy tool for ordinary PC play. VR streaming needs the network path to remain active.</p></div>
+        </div>
+        <div class="sp-decision-grid">
+          <article class="sp-card sp-mode is-offline">
+            <div class="sp-mode-top"><span>Ordinary PC game</span><h3>Finish online → leave Steam offline</h3></div>
+            <div class="sp-mode-body">
+              <p>Use this after a non-VR game when another student may need to use the same title or shared access.</p>
+              <ol class="sp-mini-steps">
+                <li>Save, then close the game completely.</li>
+                <li>In Steam, open <strong>Steam → Go Offline…</strong></li>
+                <li>Choose <strong>Enter Offline Mode</strong> and let Steam restart.</li>
+                <li>Leave the assigned account signed in.</li>
+              </ol>
+            </div>
+          </article>
+          <article class="sp-card sp-mode is-online">
+            <div class="sp-mode-top"><span>Steam Link / PC VR</span><h3>Stay connected while playing</h3></div>
+            <div class="sp-mode-body">
+              <p>Steam Link sends the VR picture and sound from the PC to the headset and sends controller movement back. Disconnecting breaks that stream.</p>
+              <ol class="sp-mini-steps">
+                <li>Keep the PC, Steam, SteamVR, router, and Quest connected.</li>
+                <li>Do not enter Offline Mode during a VR session.</li>
+                <li>When finished, exit the VR game and SteamVR normally.</li>
+                <li>Then free the station for the next student.</li>
+              </ol>
+            </div>
+          </article>
+        </div>
+        <div class="sp-callout" style="margin-top:.75rem"><strong>Offline Mode has limits:</strong> A game normally needs to be installed, fully updated, and launched online once. Games with required online services or outside launchers may not work offline. If Steam says it cannot start offline, reconnect only with teacher permission.</div>
+      </section>
+
+      <section class="sp-section reveal" id="vr">
+        <div class="sp-section-head">
+          <span class="sp-section-no">04 /</span>
+          <div><h2>Connect Meta Quest with Steam Link</h2><p>Prepare the physical play space before the software. A clear boundary and a spotter matter more than launching quickly.</p></div>
+        </div>
+        <div class="sp-card sp-vr-panel">
+          <h3>The streaming path</h3>
+          <p>The gaming PC does the heavy rendering. A wired PC connection and a strong 5 GHz Wi-Fi connection to the Quest reduce lag and keep controls responsive.</p>
+          <div class="sp-network" aria-label="Steam Link network: gaming PC to router by Ethernet, then router to Meta Quest by 5 gigahertz Wi-Fi">
+            <div class="sp-node"><span>Host</span><strong>Gaming PC</strong><small>Steam + SteamVR open</small></div>
+            <span class="sp-link-line" aria-hidden="true"></span>
+            <div class="sp-node"><span>Network</span><strong>Lab router</strong><small>PC wired by Ethernet</small></div>
+            <span class="sp-link-line is-wifi" aria-hidden="true"></span>
+            <div class="sp-node"><span>Display + input</span><strong>Meta Quest</strong><small>Connected on 5 GHz Wi-Fi</small></div>
+          </div>
+          <div class="sp-vr-steps">
+            <div class="sp-vr-step"><p><strong>Clear the area.</strong> Move chairs, bags, tools, and cords outside the play zone. Put on both wrist straps.</p></div>
+            <div class="sp-vr-step"><p><strong>Prepare the PC.</strong> Confirm the assigned account, connect online, and open Steam. Launch SteamVR if it is not already running.</p></div>
+            <div class="sp-vr-step"><p><strong>Open Steam Link.</strong> On Quest, launch the Steam Link app. The PC and headset should be on the same lab network.</p></div>
+            <div class="sp-vr-step"><p><strong>Pair the computer.</strong> Select the correct PC. If a PIN appears, enter it on the PC only when Mr. Scandrett approves.</p></div>
+            <div class="sp-vr-step"><p><strong>Start the stream.</strong> Choose <em>Start Playing</em>, wait for SteamVR Home, then launch an approved title from the library.</p></div>
+            <div class="sp-vr-step"><p><strong>End cleanly.</strong> Exit the title, close SteamVR, return the headset and controllers, and report low batteries or tracking trouble.</p></div>
+          </div>
+        </div>
+        <div class="sp-callout is-green" style="margin-top:.75rem"><strong>VR safety:</strong> Stop immediately if you feel dizzy, nauseated, overheated, or unsteady. Remove the headset slowly, sit down, and tell an adult. Never run, jump, or walk outside the boundary.</div>
+      </section>
+
+      <section class="sp-section reveal" id="approved">
+        <div class="sp-section-head">
+          <span class="sp-section-no">05 /</span>
+          <div><h2>Choose an approved learning experience</h2><p>“Educational” means the experience lets you design, investigate, model, observe, or practice a STEAM idea—not simply that it happens inside a headset.</p></div>
+        </div>
+        <div class="sp-library">
+          <article class="sp-card sp-app is-primary">
+            <div><span class="sp-app-tag">Steam Link</span><h3>Games already available in the Steam Link library</h3><p>The installed, visible classroom library is approved. Stay within that library and do not browse the store, purchase content, install mods, or change community/account settings.</p></div>
+            <span class="sp-approved-mark">APPROVED ✓</span>
+          </article>
+          <article class="sp-card sp-app"><span class="sp-app-tag">3D design</span><h3>Gravity Sketch</h3><p>Sketch, model, inspect scale, and communicate product or environment ideas directly in three dimensions.</p></article>
+          <article class="sp-card sp-app"><span class="sp-app-tag">Art + geometry</span><h3>Open Brush</h3><p>Create spatial drawings and sculptures while exploring line, volume, color, animation, and composition.</p></article>
+          <article class="sp-card sp-app"><span class="sp-app-tag">Space science</span><h3>Mission: ISS</h3><p>Explore an International Space Station simulation and investigate microgravity, engineering, and astronaut work.</p></article>
+          <article class="sp-card sp-app"><span class="sp-app-tag">Astronomy</span><h3>Titans of Space PLUS</h3><p>Compare planets and stars at understandable scales while touring the structure of the Solar System.</p></article>
+        </div>
+        <div class="sp-callout is-red" style="margin-top:.75rem"><strong>Ask first for anything else:</strong> Native Quest games not listed here, social or public multiplayer spaces, voice chat with strangers, user-generated worlds, web browsing, downloads, purchases, account changes, or casting/recording other students all require teacher permission.</div>
+      </section>
+
+      <section class="sp-section reveal" id="help">
+        <div class="sp-section-head">
+          <span class="sp-section-no">06 /</span>
+          <div><h2>Leave the lab better than you found it</h2><p>Technical skill includes helping the people around you—not taking over their controller.</p></div>
+        </div>
+        <div class="sp-courtesy">
+          <article class="sp-card sp-courtesy-item"><span class="sp-courtesy-icon">01</span><h3>Coach, don’t grab</h3><p>Explain one step, point to the control, and let the other student perform it. Help with both technology and game progress.</p></article>
+          <article class="sp-card sp-courtesy-item"><span class="sp-courtesy-icon">02</span><h3>Share discoveries</h3><p>Tell the next player about useful controls, solved problems, saved work, and anything that still needs attention.</p></article>
+          <article class="sp-card sp-courtesy-item"><span class="sp-courtesy-icon">03</span><h3>Reset the station</h3><p>Close games, return controllers, route straps and cables safely, and report damage, low batteries, or account prompts.</p></article>
+        </div>
+      </section>
+
+      <section class="sp-section reveal" aria-labelledby="trouble-title">
+        <div class="sp-section-head">
+          <span class="sp-section-no">07 /</span>
+          <div><h2 id="trouble-title">Quick troubleshooting</h2><p>Use the smallest safe fix. Account, purchase, network-security, and installation problems belong to the teacher.</p></div>
+        </div>
+        <details class="sp-card"><summary>Steam Link cannot find the PC</summary><div class="sp-detail-body">Confirm the PC is awake, Steam is open and online, SteamVR is installed, and the Quest is on the same lab Wi-Fi. Do not change router or firewall settings. If it still does not appear, ask for help.</div></details>
+        <details class="sp-card"><summary>The VR image lags, blurs, or freezes</summary><div class="sp-detail-body">Pause the session. Move within the approved play area, make sure the PC’s Ethernet cable is connected, close the VR game normally, and retry once. Do not unplug networking equipment.</div></details>
+        <details class="sp-card"><summary>A game will not start in Offline Mode</summary><div class="sp-detail-body">That title may need an update, a first online launch, an external account, or a continuous connection. Do not sign out or enter credentials. Ask before taking Steam back online.</div></details>
+        <details class="sp-card"><summary>Someone else needs the same game</summary><div class="sp-detail-body">Save and exit normally. For a non-VR session, enter Steam’s Offline Mode when the title supports it. Tell the other student the station is ready. If the game still reports that its license is in use, wait and ask Mr. Scandrett—do not force-close another session.</div></details>
+      </section>
+
+      <section class="sp-final">
+        <div><h2>The real achievement is a clean handoff.</h2><p>Correct account. Approved title. Safe play space. Saved progress. Appropriate connection mode. Equipment returned. Next student helped.</p></div>
+        <span class="sp-final-badge">Protocol complete<br />Ready for launch</span>
+      </section>
+
+      <p class="sp-sources">Setup details follow Valve’s official <a href="https://store.steampowered.com/remoteplay/" target="_blank" rel="noopener">Steam Remote Play requirements</a> and <a href="https://help.steampowered.com/en/faqs/view/0E18-319B-E34B-B2C8" target="_blank" rel="noopener">Offline Mode guide</a>. Classroom rules on this page take priority.</p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">Lessons</a></p>
+  </footer>
+
+  <script>
+    const stationButtons = document.querySelectorAll('.sp-station-btn');
+    const accountName = document.getElementById('account-name');
+    const accountNote = document.getElementById('account-note');
+
+    stationButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        stationButtons.forEach((item) => item.setAttribute('aria-pressed', 'false'));
+        button.setAttribute('aria-pressed', 'true');
+        accountName.textContent = button.dataset.account;
+        accountNote.textContent = button.dataset.note;
+      });
+    });
+  </script>
+  <script src="../assets/js/reveal.js"></script>
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script src="../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

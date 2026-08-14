@@ -25,6 +25,7 @@ const sectionIds = {
   "visual-design": "module-art",
   "language-literature": "module-language",
   "complex-systems-humanities": "module-systems",
+  "bible-studies": "module-bible",
 };
 
 const icons = ["📐", "⚛️", "🌿", "🛠️", "💻", "📚"];
@@ -85,6 +86,10 @@ const modulePresentations = {
     subtitle: "Ideas, civilizations, institutions, markets, media, and shared resources viewed as connected human systems",
     level: "K–12 Progression · Social Studies & Systems Thinking",
   },
+  "bible-studies": {
+    subtitle: "Scripture, history, geography, theology, and Christian formation explored as one connected story",
+    level: "K–12 Progression · Bible Studies",
+  },
 };
 const moduleBlocks = extractModuleBlocks(source);
 const expectedIds = plan.volumes.flatMap((volume) => volume.modules.map((module) => sectionIds[module.id]));
@@ -101,16 +106,19 @@ const orderedRegion = plan.volumes.map((volume, volumeIndex) => {
   const controlledModuleIds = volume.modules.map((module) => sectionIds[module.id]).join(" ");
   const moduleLinks = volume.modules.map((module) =>
     `<a href="#${sectionIds[module.id]}">${escapeHtml(module.title)}</a>`).join("\n          ");
+  const volumeSummary = volume.id === "living-earth"
+    ? `${lessons.length} lessons · ${volume.modules.length} modules · one connected system from cells to climate`
+    : `${lessons.length} lessons · ${volume.modules.length} ${volume.modules.length === 1 ? "module" : "modules"} · organized from foundations toward application`;
   const divider = `
     <section class="compendium-volume-divider" id="volume-${volume.number}" data-compendium-volume="${volume.number}" style="--volume-accent:${volume.theme.accent};--volume-secondary:${volume.theme.secondary};" aria-labelledby="volume-${volume.number}-title">
       <div class="compendium-volume-icon" aria-hidden="true">${icons[volumeIndex]}</div>
       <div class="compendium-volume-copy">
         <span class="compendium-volume-eyebrow">Volume ${roman(volume.number)} · ${escapeHtml(volume.theme.name)}</span>
         <h2 id="volume-${volume.number}-title">${escapeHtml(volume.title)}</h2>
-        <p>${lessons.length} lessons · ${volume.modules.length} ${volume.modules.length === 1 ? "module" : "modules"} · organized from foundations toward application</p>
+        <p>${volumeSummary}</p>
         <nav aria-label="Modules in Volume ${roman(volume.number)}">
           ${moduleLinks}
-        </nav>
+        </nav>${buildVolumeFeature(volume)}
       </div>
       <button type="button" class="compendium-volume-toggle" data-volume-toggle="${volume.number}" aria-expanded="true" aria-controls="${controlledModuleIds}">
         <span class="compendium-volume-toggle-label">Collapse volume</span>
@@ -202,6 +210,30 @@ function shortTitle(title) {
     .replace("Engineering, Fabrication & Technical Production", "Engineering & Design")
     .replace("Computer Science, AI & Interactive Media", "Computing & AI")
     .replace("Visual Design, Communication & Human Systems", "Arts & Society");
+}
+
+function buildVolumeFeature(volume) {
+  if (volume.id !== "living-earth") return "";
+
+  const stops = [
+    ["Cell", "Microscopic", "lessons/types-of-cells.html"],
+    ["Heredity", "Generations", "lessons/dna-heredity.html"],
+    ["Biodiversity", "Tree of life", "lessons/life-sciences/animalia/index.html"],
+    ["Deep time", "541 million years", "lessons/cambrian-explosion.html"],
+    ["Earth cycles", "Water · rock · carbon", "lessons/water-cycle.html"],
+    ["Climate", "Planetary feedback", "lessons/climate-simulator.html"],
+  ];
+  const links = stops.map(([label, scale, href], index) =>
+    `<a href="${href}" style="--transect-step:${index}" aria-label="${escapeHtml(label)}: ${escapeHtml(scale)}"><span>${escapeHtml(label)}</span><small>${escapeHtml(scale)}</small></a>`
+  ).join("\n            ");
+
+  return `
+        <div class="living-systems-transect" aria-label="Explore living Earth from cells to planetary climate">
+          <span class="living-systems-transect-label">Change the scale</span>
+          <div class="living-systems-transect-track">
+            ${links}
+          </div>
+        </div>`;
 }
 
 function roman(value) {
