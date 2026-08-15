@@ -10,35 +10,69 @@ const displays = Object.fromEntries(
 );
 const pet = document.getElementById('pet-character');
 const message = document.getElementById('message');
+const effect = document.getElementById('effect');
 let hatched = false;
+let effectTimer;
 
 function clamp(value) {
     return Math.max(0, Math.min(10, value));
+}
+
+function updateMeters() {
+    ['hunger', 'sleepiness', 'boredom'].forEach((name) => {
+        const card = document.querySelector(`[data-stat="${name}"]`);
+        card.querySelector('.meter i').style.width = `${stats[name] * 10}%`;
+        card.classList.toggle('warning', stats[name] >= 7);
+        card.classList.toggle('danger', stats[name] >= 9);
+    });
 }
 
 function render(nextMessage = '') {
     Object.entries(stats).forEach(([name, value]) => {
         displays[name].textContent = value;
     });
+    updateMeters();
+
     if (!hatched) {
-        pet.textContent = '🥚';
         message.textContent = 'Choose an activity to hatch your pet!';
         return;
     }
+
+    pet.classList.add('hatched');
     const highestNeed = Math.max(stats.hunger, stats.sleepiness, stats.boredom);
-    pet.textContent = highestNeed >= 9 ? '😿' : highestNeed >= 7 ? '🐱' : '😸';
-    message.textContent = nextMessage || (highestNeed >= 9 ? 'Your pet needs some care.' : 'Your pet is happy!');
+    pet.classList.toggle('sad', highestNeed >= 9);
+    pet.classList.toggle('tired', stats.sleepiness >= 8 && highestNeed < 9);
+    message.textContent = nextMessage || (highestNeed >= 9
+        ? 'Oh no! Luna needs a little extra care.'
+        : highestNeed >= 7
+            ? 'Luna could use some attention.'
+            : 'Luna is happy and sparkling!');
 }
 
-function care(kind, text) {
+function showEffect(icon) {
+    window.clearTimeout(effectTimer);
+    effect.textContent = `${icon} ✦ ${icon}`;
+    effect.classList.remove('pop');
+    void effect.offsetWidth;
+    effect.classList.add('pop');
+    effectTimer = window.setTimeout(() => effect.classList.remove('pop'), 1000);
+}
+
+function care(kind, text, icon) {
+    const firstHatch = !hatched;
     hatched = true;
     stats[kind] = clamp(stats[kind] - 3);
-    render(text);
+    pet.classList.remove('care');
+    void pet.offsetWidth;
+    pet.classList.add('care');
+    showEffect(firstHatch ? '✨' : icon);
+    render(firstHatch ? 'You hatched Luna! She already loves you.' : text);
+    window.setTimeout(() => pet.classList.remove('care'), 600);
 }
 
-document.getElementById('feed-btn').addEventListener('click', () => care('hunger', 'Yum! That hit the spot.'));
-document.getElementById('sleep-btn').addEventListener('click', () => care('sleepiness', 'A cozy nap restored your pet.'));
-document.getElementById('play-btn').addEventListener('click', () => care('boredom', 'Playtime made your pet smile!'));
+document.getElementById('feed-btn').addEventListener('click', () => care('hunger', 'Berry delicious! Luna is full and happy.', '🍓'));
+document.getElementById('sleep-btn').addEventListener('click', () => care('sleepiness', 'A moonlit catnap made Luna cozy.', '💤'));
+document.getElementById('play-btn').addEventListener('click', () => care('boredom', 'That was pawsitively fun!', '⭐'));
 
 window.setInterval(() => {
     if (!hatched) return;

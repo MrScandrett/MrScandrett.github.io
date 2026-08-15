@@ -4,7 +4,13 @@ A self-contained, original creature-evolution game inspired by playful ecosystem
 
 ## Play
 
-Run the included `start-game.ps1`, then open `http://localhost:8080`. The local server is required because the Three.js renderer uses standard JavaScript modules.
+From this folder, start a local server and open the address it prints. For example:
+
+```bash
+python3 -m http.server 8080
+```
+
+Then visit `http://localhost:8080`. A local server is required because the Three.js renderer uses standard JavaScript modules.
 
 1. Pick one of four worlds.
 2. Build a creature within the 100-point gene budget.
@@ -12,7 +18,7 @@ Run the included `start-game.ps1`, then open `http://localhost:8080`. The local 
 4. Press **E** to collect bones, **F** to befriend nearby creatures, or **Space** to attack.
 5. Gather enough bones to unlock a permanent evolution, then continue into harder evolution cycles.
 
-The game saves no data; **New World** starts a fresh expedition.
+The game saves no data; **New World** starts a fresh expedition. Press **Escape** at any time during play to pause or resume.
 
 ## Open-source engine
 

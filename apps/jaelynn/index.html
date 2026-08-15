@@ -1,183 +1,189 @@
-<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Tune Master</title><style>body{font-family:Arial;text-align:center;background:linear-gradient(120deg,#ff9ad5,#a78bfa);color:#fff}button{padding:10px 15px;margin:5px;border:none;border-radius:10px;cursor:pointer}.instrument{display:none;margin-top:30px}.active{display:block}.piano{display:flex;justify-content:center;flex-wrap:wrap;max-width:500px;margin:auto}.key{width:60px;height:200px;background:#fff;border:1px solid #000;cursor:pointer;display:flex;align-items:flex-end;justify-content:center;font-weight:700;color:#000}.string{width:400px;height:20px;background:silver;margin:10px auto;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;border-radius:10px}.flute{display:flex;justify-content:center;gap:15px;margin-top:20px;flex-wrap:wrap}.hole{width:50px;height:50px;background:#000;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}.screen{display:none}.show{display:block}.stats{margin-top:10px;font-size:18px}</style></head><body><h1>🎵 Tune Master</h1><button onclick="showScreen('game')">Game</button> <button onclick="showScreen('shop')">Shop</button><div class="stats"><div id="score">Coins: 0</div><div id="level">Level: 1</div><div id="combo">Combo: 0</div></div><button onclick="playTune()">🎧 Listen</button><h3 id="tune"></h3><div id="game" class="screen show"><div><button onclick="switchInstrument('piano')">🎹 Piano</button> <button onclick="switchInstrument('guitar')">🎸 Guitar</button> <button onclick="switchInstrument('flute')">🪈 Flute</button></div><div id="piano" class="instrument active"><div class="piano"><div class="key" onclick="play('C')">C</div><div class="key" onclick="play('D')">D</div><div class="key" onclick="play('E')">E</div><div class="key" onclick="play('F')">F</div><div class="key" onclick="play('G')">G</div><div class="key" onclick="play('A')">A</div><div class="key" onclick="play('B')">B</div></div></div><div id="guitar" class="instrument"><div class="string" onclick="play('C')">C</div><div class="string" onclick="play('D')">D</div><div class="string" onclick="play('E')">E</div><div class="string" onclick="play('F')">F</div><div class="string" onclick="play('G')">G</div><div class="string" onclick="play('A')">A</div><div class="string" onclick="play('B')">B</div></div><div id="flute" class="instrument"><div class="flute"><div class="hole" onclick="play('C')">C</div><div class="hole" onclick="play('D')">D</div><div class="hole" onclick="play('E')">E</div><div class="hole" onclick="play('F')">F</div><div class="hole" onclick="play('G')">G</div><div class="hole" onclick="play('A')">A</div><div class="hole" onclick="play('B')">B</div></div></div></div><div id="shop" class="screen"><h2>🛍 Shop</h2><p>Pink Piano Skin - 50 coins</p><button onclick="buy('pink')">Buy</button><p>Gold Piano Skin - 100 coins</p><button onclick="buy('gold')">Buy</button></div><script>let notes=["C","D","E","F","G","A","B"];
-
-let tune=[];
-let input=[];
-
-let coins=0;
-let level=1;
-let combo=0;
-
-let instrument="piano";
-
-function newTune(){
-
-input=[];
-
-let length=3+level;
-
-tune=[];
-
-for(let i=0;i<length;i++){
-tune.push(notes[Math.floor(Math.random()*notes.length)]);
-}
-
-document.getElementById("tune").innerText="Play: "+tune.join(" ");
-}
-
-function playTune(){
-
-let delay=0;
-
-tune.forEach(note=>{
-
-setTimeout(()=>{
-
-playSound(note);
-
-},delay);
-
-delay+=600;
-
-});
-
-}
-
-function showScreen(screen){
-
-document.querySelectorAll(".screen")
-.forEach(s=>s.classList.remove("show"));
-
-document.getElementById(screen).classList.add("show");
-
-}
-
-function switchInstrument(inst){
-
-instrument=inst;
-
-document.querySelectorAll(".instrument")
-.forEach(i=>i.classList.remove("active"));
-
-document.getElementById(inst).classList.add("active");
-
-}
-
-function play(note){
-
-playSound(note);
-
-input.push(note);
-
-check();
-
-}
-
-function playSound(note){
-
-let context=new (window.AudioContext||window.webkitAudioContext)();
-let osc=context.createOscillator();
-let gain=context.createGain();
-
-if(instrument==="piano") osc.type="square";
-if(instrument==="guitar") osc.type="triangle";
-if(instrument==="flute") osc.type="sine";
-
-let freq={
-C:261,
-D:294,
-E:329,
-F:349,
-G:392,
-A:440,
-B:494
-};
-
-osc.frequency.value=freq[note];
-
-osc.connect(gain);
-gain.connect(context.destination);
-
-osc.start();
-
-gain.gain.setValueAtTime(0.3,context.currentTime);
-gain.gain.exponentialRampToValueAtTime(0.001,context.currentTime+0.8);
-
-osc.stop(context.currentTime+0.8);
-
-}
-
-function check(){
-
-for(let i=0;i<input.length;i++){
-
-if(input[i]!==tune[i]){
-
-alert("Wrong tune!");
-
-combo=0;
-
-updateStats();
-
-input=[];
-
-return;
-
-}
-
-}
-
-if(input.length===tune.length){
-
-combo++;
-
-let reward=20+(combo*5);
-
-coins+=reward;
-
-if(combo%3===0){
-level++;
-}
-
-updateStats();
-
-alert("Correct! +" + reward + " coins");
-
-newTune();
-
-}
-
-}
-
-function updateStats(){
-
-document.getElementById("score").innerText="Coins: "+coins;
-document.getElementById("level").innerText="Level: "+level;
-document.getElementById("combo").innerText="Combo: "+combo;
-
-}
-
-function buy(item){
-
-if(item==="pink" && coins>=50){
-
-coins-=50;
-
-document.querySelectorAll(".key")
-.forEach(k=>k.style.background="#ffb6d9");
-
-}
-
-if(item==="gold" && coins>=100){
-
-coins-=100;
-
-document.querySelectorAll(".key")
-.forEach(k=>k.style.background="gold");
-
-}
-
-updateStats();
-
-}
-
-newTune();</script></body></html>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Jam Lab — Learn by Playing</title><style>@import url(https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@600;700&display=swap);:root{--ink:#f6f4ff;--muted:#aaa6bc;--panel:#171522;--panel-2:#211e30;--line:#343044;--purple:#9b7bff;--purple-2:#7251e8;--mint:#61e8b2;--orange:#ffad66;--pink:#ff6fae;--danger:#ff6b76}*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:"DM Sans",sans-serif;color:var(--ink);background:radial-gradient(circle at 12% 8%,rgba(155,123,255,.18),transparent 26rem),radial-gradient(circle at 88% 78%,rgba(97,232,178,.1),transparent 28rem),#0d0c13}button{font:inherit}.app{width:min(1180px,calc(100% - 32px));margin:auto;padding:28px 0 48px}header{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:28px}.brand{display:flex;align-items:center;gap:12px}.logo{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:24px;background:linear-gradient(135deg,var(--purple),var(--pink));box-shadow:0 10px 28px rgba(155,123,255,.28)}h1,h2,h3,p{margin:0}h1{font:700 25px/1 "Space Grotesk",sans-serif;letter-spacing:-.7px}.brand small{color:var(--muted);display:block;margin-top:5px}.stats{display:flex;gap:10px}.stat{min-width:94px;padding:10px 15px;text-align:center;border:1px solid var(--line);border-radius:13px;background:rgba(23,21,34,.8)}.stat b{display:block;font-size:19px}.stat span{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px}.instrument-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.tab{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;padding:13px;color:var(--muted);border:1px solid var(--line);border-radius:14px;background:var(--panel);cursor:pointer;transition:.18s ease}.tab:hover{color:#fff;border-color:#575168;transform:translateY(-1px)}.tab.active{color:#fff;border-color:var(--purple);background:linear-gradient(180deg,#2a2441,#211c35);box-shadow:inset 0 -2px var(--purple)}.tab .emoji{font-size:22px}.game-shell{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px}.card{border:1px solid var(--line);border-radius:20px;background:rgba(23,21,34,.96);box-shadow:0 18px 50px rgba(0,0,0,.2)}.stage{min-height:590px;overflow:hidden}.stage-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:25px 26px 18px}.eyebrow{margin-bottom:6px;color:var(--mint);font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase}.stage h2{font:700 25px/1.2 "Space Grotesk",sans-serif}.stage-copy{color:var(--muted);margin-top:7px;font-size:14px}.listen{flex:none;padding:10px 15px;color:#fff;border:1px solid #4e4861;border-radius:12px;background:var(--panel-2);cursor:pointer}.listen:hover{border-color:var(--purple)}.challenge{padding:0 26px 22px}.sequence{display:flex;justify-content:center;align-items:center;gap:9px;min-height:67px;padding:12px;border-radius:15px;background:#100f18;border:1px solid #2d293a;overflow-x:auto}.note-chip{flex:0 0 auto;min-width:43px;height:43px;padding:0 10px;display:grid;place-items:center;border:1px solid #423d52;border-radius:11px;color:#c9c5d5;background:#242130;font-weight:800;font-size:13px;transition:.18s}.note-chip.current{color:#17121f;border-color:var(--orange);background:var(--orange);box-shadow:0 0 0 5px rgba(255,173,102,.12);transform:translateY(-2px)}.note-chip.done{color:#0e211a;border-color:var(--mint);background:var(--mint)}.note-chip.wrong{color:#fff;border-color:var(--danger);background:var(--danger);animation:shake .25s}.feedback{height:29px;margin-top:12px;color:var(--muted);text-align:center;font-size:14px}.feedback.good{color:var(--mint)}.feedback.bad{color:var(--danger)}.feedback.pop{animation:pop .3s ease}.instrument-area{display:none;min-height:380px;padding:12px 24px 30px}.instrument-area.active{display:flex;flex-direction:column;justify-content:center}.piano-wrap{width:min(100%,690px);margin:auto;padding:28px 20px 18px;border-radius:19px;background:linear-gradient(#2c2937,#181620);box-shadow:inset 0 2px #484353,0 18px 30px rgba(0,0,0,.35)}.piano-label{display:flex;justify-content:space-between;color:#827d8f;font-size:10px;letter-spacing:2px;margin-bottom:13px}.keys{position:relative;display:flex;height:220px;user-select:none}.pkey{position:relative;flex:1;display:flex;align-items:flex-end;justify-content:center;padding-bottom:14px;border:1px solid #bdbac5;border-radius:0 0 7px 7px;color:#302d38;background:linear-gradient(90deg,#e5e4e9,#fff 18%,#f4f3f6 86%,#d1cfd7);cursor:pointer;font-weight:800;z-index:1}.pkey+.pkey{border-left:0}.pkey.black{position:absolute;top:0;width:8.5%;height:63%;padding-bottom:10px;color:#b9b5c2;border:0;border-radius:0 0 6px 6px;background:linear-gradient(90deg,#100f15,#35313f 60%,#121117);box-shadow:0 5px 7px rgba(0,0,0,.55);z-index:3}.pkey span{font-size:10px;opacity:.65}.pkey.playing,.pkey:active{background:linear-gradient(#bba9ff,var(--purple));transform:translateY(3px)}.pkey.black.playing,.pkey.black:active{background:linear-gradient(#a589ff,#6042c4)}.bk1{left:10.1%}.bk2{left:24.4%}.bk3{left:53%}.bk4{left:67.3%}.bk5{left:81.6%}.trombone{width:min(100%,700px);margin:auto;text-align:center}.brass{position:relative;height:170px;margin-bottom:22px;border-radius:20px;cursor:pointer;outline:0}.brass:focus-visible,.brass:hover{background:rgba(255,173,102,.045);box-shadow:0 0 0 2px rgba(255,173,102,.24)}.brass::after{content:"CLICK TO PLAY";position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);color:#81798d;font-size:10px;font-weight:800;letter-spacing:1.4px}.bell{position:absolute;left:2%;top:21px;width:125px;height:125px;border-radius:65% 15% 15% 65%;background:linear-gradient(130deg,#fff0a6,#d99122 47%,#ffd971 70%,#9f5d13);clip-path:polygon(0 8%,100% 35%,100% 65%,0 92%)}.brace{position:absolute;left:105px;right:55px;top:70px;height:46px;border:10px solid #d8992b;border-radius:24px}.slide-visual{position:absolute;left:180px;top:85px;width:calc(25% + var(--slide,0) * .55%);height:54px;border:6px solid #f4bd50;border-left:0;border-radius:0 27px 27px 0;transition:width .08s linear}.mouthpiece{position:absolute;right:20px;top:63px;width:70px;height:14px;background:linear-gradient(#ffe08c,#bd781a);border-radius:7px}.slide-track{width:90%;margin:auto}input[type=range]{width:100%;accent-color:var(--orange);cursor:ew-resize}.positions{display:flex;justify-content:space-between;padding:0 2px;color:var(--muted);font-size:11px}.blow{margin-top:24px;padding:13px 32px;color:#241506;border:0;border-radius:999px;background:var(--orange);box-shadow:0 8px 24px rgba(255,173,102,.2);cursor:pointer;font-weight:800}.blow.playing,.blow:active{transform:scale(.96);box-shadow:0 0 0 8px rgba(255,173,102,.13)}.position-readout{margin-top:10px;color:var(--muted);font-size:13px}.flute-board{text-align:center}.flute-body{position:relative;display:flex;align-items:center;justify-content:center;width:min(100%,650px);height:105px;margin:20px auto 30px;border-radius:52px 18px 18px 52px;background:linear-gradient(#f5f8fa 4%,#8e9ca6 20%,#e9edf0 47%,#7d8a94 75%,#dce3e7);box-shadow:0 10px 25px rgba(0,0,0,.35)}.flute-body::after{content:"";position:absolute;left:35px;width:45px;height:45px;border:7px solid #71808a;border-radius:50%;background:#1d1b25}.holes{display:flex;gap:clamp(12px,4vw,36px);margin-left:80px}.hole{width:45px;height:45px;padding:0;color:var(--muted);border:6px solid #aab5bc;border-radius:50%;background:#15131c;box-shadow:0 2px 5px rgba(0,0,0,.5),inset 0 0 0 2px #43404d;cursor:pointer;font-size:11px;font-weight:800}.hole.closed{color:#241c0d;background:#e7bd59;border-color:#fff0a4;box-shadow:0 0 0 4px rgba(255,224,129,.14)}.flute-help{color:var(--muted);font-size:13px}.fingering-target{margin-top:8px;color:var(--orange);font-weight:700}.drum-kit{position:relative;width:min(100%,650px);height:315px;margin:auto;user-select:none}.drum{position:absolute;display:grid;place-items:center;color:#fff;border:7px solid #b6afc5;background:radial-gradient(circle at 35% 25%,#5c566b,#24212e 65%);box-shadow:0 13px 20px rgba(0,0,0,.4),inset 0 0 0 4px #373342;cursor:pointer;font-weight:800;transition:.08s}.drum small{display:block;color:#bab5c6;font-size:10px}.drum.playing,.drum:active{transform:scale(.94);filter:brightness(1.5);box-shadow:0 0 0 8px rgba(155,123,255,.17)}.kick{left:37%;bottom:5px;width:180px;height:180px;border-radius:50%;border-color:var(--purple)}.snare{left:10%;bottom:38px;width:150px;height:105px;border-radius:50%;border-color:#d8d4e0}.tom{right:8%;bottom:65px;width:145px;height:105px;border-radius:50%;border-color:var(--pink)}.hat{left:3%;top:20px;width:170px;height:48px;border-radius:50%;border-color:#ffd36f;background:radial-gradient(ellipse,#ffe99a,#ba761d);color:#3a250c}.crash{right:2%;top:12px;width:190px;height:55px;border-radius:50%;border-color:#ffd36f;background:radial-gradient(ellipse,#ffe99a,#ba761d);color:#3a250c}.side{padding:22px;height:fit-content}.side h3{font:700 17px "Space Grotesk",sans-serif}.lesson{margin-top:15px;padding:16px;border-radius:14px;background:var(--panel-2);border:1px solid var(--line)}.lesson-icon{font-size:28px;margin-bottom:9px}.lesson p{color:var(--muted);margin-top:6px;line-height:1.45;font-size:13px}.keys-help{margin-top:18px}.shortcut{display:flex;justify-content:space-between;align-items:center;padding:10px 0;color:var(--muted);font-size:13px;border-bottom:1px solid #2b2836}kbd{min-width:30px;padding:4px 7px;color:#fff;text-align:center;border:1px solid #504a60;border-bottom-width:3px;border-radius:6px;background:#292633;font:700 11px "DM Sans"}.progress-title{display:flex;justify-content:space-between;margin-top:22px;color:var(--muted);font-size:12px}.progress{height:8px;margin-top:8px;border-radius:4px;background:#2a2734;overflow:hidden}.progress div{width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--purple),var(--mint));transition:width .3s}.new-round{width:100%;margin-top:19px;padding:12px;color:#fff;border:0;border-radius:11px;background:var(--purple-2);cursor:pointer;font-weight:800}.new-round:hover{background:var(--purple)}.pulse-ring{animation:pulse 1s infinite}@keyframes pulse{50%{box-shadow:0 0 0 10px rgba(255,173,102,0)}}@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}@keyframes pop{50%{transform:scale(1.05)}}@media (max-width:850px){.game-shell{grid-template-columns:1fr}.side{display:grid;grid-template-columns:1fr 1fr;gap:14px 20px}.new-round,.side>h3{grid-column:1/-1}.keys-help,.lesson{margin-top:0}}@media (max-width:620px){.app{width:min(100% - 20px,1180px);padding-top:16px}header{align-items:flex-start}.brand small{display:none}.stats{gap:5px}.stat{min-width:59px;padding:8px 7px}.instrument-tabs{grid-template-columns:repeat(2,1fr)}.stage-head{padding:20px 18px 14px}.challenge{padding:0 14px 16px}.instrument-area{padding:8px 10px 24px;min-height:345px}.keys{height:170px}.piano-wrap{padding:20px 10px 12px}.pkey{font-size:11px}.brass{transform:scale(.82);margin-left:-45px;margin-right:-45px}.holes{gap:8px;margin-left:70px}.hole{width:34px;height:34px;border-width:4px}.drum-kit{transform:scale(.8);margin-left:-12%;width:125%}.side{grid-template-columns:1fr}.new-round,.side>h3{grid-column:auto}}</style></head><body><main class="app"><header><div class="brand"><div class="logo">♫</div><div><h1>Jam Lab</h1><small>Learn instruments by actually playing them</small></div></div><div class="stats"><div class="stat"><b id="score">0</b><span>Score</span></div><div class="stat"><b id="streak">0</b><span>Streak</span></div><div class="stat"><b id="level">1</b><span>Level</span></div></div></header><nav class="instrument-tabs" aria-label="Choose an instrument"><button class="tab active" data-instrument="piano"><span class="emoji">🎹</span>Piano</button> <button class="tab" data-instrument="trombone"><span class="emoji">🎺</span>Trombone</button> <button class="tab" data-instrument="flute"><span class="emoji">🪈</span>Flute</button> <button class="tab" data-instrument="drums"><span class="emoji">🥁</span>Drums</button></nav><div class="game-shell"><section class="card stage"><div class="stage-head"><div><div class="eyebrow" id="modeLabel">Melody training</div><h2 id="missionTitle">Play the phrase</h2><p class="stage-copy" id="missionCopy">Follow the glowing notes from left to right.</p></div><button class="listen" id="listenBtn">▶ Hear it</button></div><div class="challenge"><div class="sequence" id="sequence"></div><div class="feedback" id="feedback">Your first note is highlighted.</div></div><div class="instrument-area active" id="piano"><div class="piano-wrap"><div class="piano-label"><span>JAM LAB</span><span>88-ish KEYS</span></div><div class="keys"><button class="pkey" data-note="C4">C<br><span>A</span></button> <button class="pkey" data-note="D4">D<br><span>S</span></button> <button class="pkey" data-note="E4">E<br><span>D</span></button> <button class="pkey" data-note="F4">F<br><span>F</span></button> <button class="pkey" data-note="G4">G<br><span>G</span></button> <button class="pkey" data-note="A4">A<br><span>H</span></button> <button class="pkey" data-note="B4">B<br><span>J</span></button> <button class="pkey black bk1" data-note="Cs4">C♯<br><span>W</span></button> <button class="pkey black bk2" data-note="Ds4">D♯<br><span>E</span></button> <button class="pkey black bk3" data-note="Fs4">F♯<br><span>T</span></button> <button class="pkey black bk4" data-note="Gs4">G♯<br><span>Y</span></button> <button class="pkey black bk5" data-note="As4">A♯<br><span>U</span></button></div></div></div><div class="instrument-area" id="trombone"><div class="trombone"><div class="brass" id="tromboneBody" role="button" tabindex="0" aria-label="Play the trombone's selected note"><div class="bell"></div><div class="brace"></div><div class="slide-visual"></div><div class="mouthpiece"></div></div><div class="slide-track"><input id="slide" type="range" min="1" max="7" value="1" step="1" aria-label="Trombone slide position"><div class="positions"><span>1st</span><span>2nd</span><span>3rd</span><span>4th</span><span>5th</span><span>6th</span><span>7th</span></div></div><button class="blow" id="tromboneBlow">Click to play note</button><div class="position-readout" id="positionReadout">1st position · B♭</div></div></div><div class="instrument-area" id="flute"><div class="flute-board"><div class="flute-body"><div class="holes" id="fluteHoles"><button class="hole" data-hole="0">1</button><button class="hole" data-hole="1">2</button><button class="hole" data-hole="2">3</button> <button class="hole" data-hole="3">4</button><button class="hole" data-hole="4">5</button><button class="hole" data-hole="5">6</button></div></div><p class="flute-help">Toggle the finger holes, then blow the note.</p><div class="fingering-target" id="fingeringTarget"></div><button class="blow" id="fluteBlow">Press Space to breathe</button></div></div><div class="instrument-area" id="drums"><div class="drum-kit"><button class="drum hat" data-drum="Hat">HI-HAT <small>F</small></button> <button class="drum crash" data-drum="Crash">CRASH <small>J</small></button> <button class="drum snare" data-drum="Snare">SNARE <small>G</small></button> <button class="drum kick" data-drum="Kick">KICK <small>Space</small></button> <button class="drum tom" data-drum="Tom">TOM <small>H</small></button></div></div></section><aside class="card side"><h3>Studio coach</h3><div class="lesson"><div class="lesson-icon" id="lessonIcon">🎼</div><b id="lessonTitle">One note at a time</b><p id="lessonText">A piano makes sound when a hammer strikes a string. Try both white and black keys.</p></div><div class="keys-help" id="keysHelp"></div><div><div class="progress-title"><span>Round progress</span><b id="progressText">0 / 4</b></div><div class="progress"><div id="progressBar"></div></div></div><button class="new-round" id="newRound">↻ New challenge</button></aside></div></main><script>const INSTRUMENTS = {
+      piano: {
+        notes: ['C4','D4','E4','F4','G4','A4','B4','Cs4','Ds4','Fs4','Gs4','As4'],
+        icon:'🎼', mode:'Melody training', title:'Play the phrase', copy:'Follow the glowing notes from left to right.',
+        lesson:'A piano makes sound when a felt hammer strikes a string. Black keys play sharps.',
+        help:[['White keys','A–J'],['Black keys','W E T Y U'],['Replay phrase','R']]
+      },
+      trombone: {
+        notes:['Bb3','A3','Ab3','G3','Gb3','F3','E3'], icon:'〰️', mode:'Slide control', title:'Find the slide positions',
+        copy:'Scroll to move the slide, then click the trombone to play.', lesson:'A longer tube makes a lower pitch. Scroll down to extend the slide and lower each note.',
+        help:[['Move slide','Scroll'],['Play note','Click'],['Fine control','← →']]
+      },
+      flute: {
+        notes:['B4','A4','G4','F4','E4','D4','C4'], icon:'🫁', mode:'Fingering practice', title:'Finger each note',
+        copy:'Use number keys to cover holes, then press Space to breathe.', lesson:'Covering more holes lengthens the vibrating air column, producing lower notes.',
+        help:[['Toggle holes','1–6'],['Blow note','Space'],['Replay phrase','R']]
+      },
+      drums: {
+        notes:['Kick','Snare','Hat','Tom','Crash'], icon:'🥁', mode:'Rhythm training', title:'Copy the groove',
+        copy:'Repeat the drum pattern in order.', lesson:'The kick anchors the beat, the snare adds the backbeat, and cymbals divide time.',
+        help:[['Hat / Snare','F / G'],['Tom / Crash','H / J'],['Kick','Space']]
+      }
+    };
+
+    const FREQ = {C4:261.63,Cs4:277.18,D4:293.66,Ds4:311.13,E4:329.63,F4:349.23,Fs4:369.99,G4:392,Gs4:415.3,A4:440,As4:466.16,B4:493.88,Bb3:233.08,A3:220,Ab3:207.65,G3:196,Gb3:185,F3:174.61,E3:164.81};
+    const FLUTE_PATTERNS = {B4:'100000',A4:'110000',G4:'111000',F4:'111100',E4:'111110',D4:'111111',C4:'011111'};
+    const SLIDE_NOTES = ['Bb3','A3','Ab3','G3','Gb3','F3','E3'];
+    const DISPLAY = {Cs4:'C♯',Ds4:'D♯',Fs4:'F♯',Gs4:'G♯',As4:'A♯',Bb3:'B♭',Ab3:'A♭',Gb3:'G♭'};
+    const keyMap = {a:'C4',s:'D4',d:'E4',f:'F4',g:'G4',h:'A4',j:'B4',w:'Cs4',e:'Ds4',t:'Fs4',y:'Gs4',u:'As4'};
+    const drumKeys = {f:'Hat',g:'Snare',h:'Tom',j:'Crash',' ':'Kick'};
+
+    let audio, instrument='piano', sequence=[], step=0, score=0, streak=0, level=1, locked=false, fluteState=[0,0,0,0,0,0];
+    const $ = s => document.querySelector(s);
+    const $$ = s => [...document.querySelectorAll(s)];
+    const pretty = note => DISPLAY[note] || note.replace(/[0-9]/g,'');
+
+    function audioContext(){ if(!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); if(audio.state==='suspended') audio.resume(); return audio; }
+
+    function tone(note, type=instrument, duration=.55, when=0){
+      const ctx=audioContext(), start=ctx.currentTime+when;
+      if(type==='drums') return drumSound(note, when);
+      const osc=ctx.createOscillator(), gain=ctx.createGain(), filter=ctx.createBiquadFilter();
+      osc.frequency.value=FREQ[note] || 440;
+      if(type==='piano'){
+        osc.type='triangle'; filter.type='lowpass'; filter.frequency.setValueAtTime(2800,start); filter.frequency.exponentialRampToValueAtTime(700,start+duration);
+        gain.gain.setValueAtTime(.001,start); gain.gain.exponentialRampToValueAtTime(.45,start+.012); gain.gain.exponentialRampToValueAtTime(.001,start+duration);
+      } else if(type==='trombone'){
+        osc.type='sawtooth'; filter.type='lowpass'; filter.frequency.value=850;
+        gain.gain.setValueAtTime(.001,start); gain.gain.linearRampToValueAtTime(.22,start+.08); gain.gain.exponentialRampToValueAtTime(.001,start+duration);
+        osc.frequency.setValueAtTime(FREQ[note]*.98,start); osc.frequency.linearRampToValueAtTime(FREQ[note],start+.1);
+      } else {
+        osc.type='sine'; filter.type='lowpass'; filter.frequency.value=3800;
+        gain.gain.setValueAtTime(.001,start); gain.gain.linearRampToValueAtTime(.28,start+.07); gain.gain.exponentialRampToValueAtTime(.001,start+duration);
+      }
+      osc.connect(filter); filter.connect(gain); gain.connect(ctx.destination); osc.start(start); osc.stop(start+duration+.04);
+    }
+
+    function drumSound(kind, when=0){
+      const ctx=audioContext(), t=ctx.currentTime+when;
+      if(kind==='Kick'){
+        const o=ctx.createOscillator(), g=ctx.createGain(); o.frequency.setValueAtTime(150,t); o.frequency.exponentialRampToValueAtTime(45,t+.35); g.gain.setValueAtTime(.8,t); g.gain.exponentialRampToValueAtTime(.001,t+.4); o.connect(g);g.connect(ctx.destination);o.start(t);o.stop(t+.42);
+      } else {
+        const len=ctx.sampleRate*(kind==='Crash'?.7:.2), buffer=ctx.createBuffer(1,len,ctx.sampleRate), data=buffer.getChannelData(0);
+        for(let i=0;i<len;i++) data[i]=Math.random()*2-1;
+        const src=ctx.createBufferSource(), filter=ctx.createBiquadFilter(), g=ctx.createGain(); src.buffer=buffer;
+        filter.type=kind==='Tom'?'lowpass':'highpass'; filter.frequency.value=kind==='Tom'?500:(kind==='Snare'?1300:5000);
+        g.gain.setValueAtTime(kind==='Crash'?.35:.45,t); g.gain.exponentialRampToValueAtTime(.001,t+(kind==='Crash'?.65:.18));
+        src.connect(filter);filter.connect(g);g.connect(ctx.destination);src.start(t);
+      }
+    }
+
+    function flash(selector){ const el=$(selector); if(!el)return; el.classList.add('playing'); setTimeout(()=>el.classList.remove('playing'),140); }
+
+    function makeSequence(){
+      const pool=INSTRUMENTS[instrument].notes;
+      const length=Math.min(3+level,8);
+      sequence=Array.from({length},()=>pool[Math.floor(Math.random()*pool.length)]);
+      step=0; locked=false; renderSequence(); updateProgress();
+      feedback('Your first '+(instrument==='drums'?'beat':'note')+' is highlighted.');
+      if(instrument==='flute') updateFingeringHint();
+    }
+
+    function renderSequence(wrong=false){
+      $('#sequence').innerHTML=sequence.map((n,i)=>`<div class="note-chip ${i<step?'done':i===step?(wrong?'wrong':'current'):''}">${pretty(n)}</div>`).join('');
+    }
+
+    function attempt(note){
+      if(locked || !sequence.length) return;
+      if(note===sequence[step]){
+        step++; score += 10 + streak*2; streak++; feedback('Nice! '+pretty(note)+' was right.','good'); renderSequence(); updateStats(); updateProgress();
+        if(instrument==='flute') updateFingeringHint();
+        if(step===sequence.length) completeRound();
+      } else {
+        streak=0; score=Math.max(0,score-3); feedback(`That was ${pretty(note)} — aim for ${pretty(sequence[step])}.`,'bad'); renderSequence(true); updateStats(); setTimeout(()=>renderSequence(),320);
+      }
+    }
+
+    function completeRound(){
+      locked=true; const bonus=50*level; score+=bonus; level=Math.min(8,level+1); updateStats();
+      feedback(`Phrase complete! +${bonus} bonus points ✨`,'good');
+      $$('.note-chip').forEach(n=>n.classList.add('done'));
+      setTimeout(makeSequence,1300);
+    }
+
+    function feedback(text,kind=''){ const el=$('#feedback'); el.textContent=text; el.className='feedback '+kind; void el.offsetWidth; el.classList.add('pop'); }
+    function updateStats(){ $('#score').textContent=score.toLocaleString(); $('#streak').textContent=streak; $('#level').textContent=level; }
+    function updateProgress(){ const pct=sequence.length?step/sequence.length*100:0; $('#progressBar').style.width=pct+'%'; $('#progressText').textContent=`${step} / ${sequence.length}`; }
+
+    function switchInstrument(name){
+      instrument=name;
+      $$('.tab').forEach(t=>t.classList.toggle('active',t.dataset.instrument===name));
+      $$('.instrument-area').forEach(a=>a.classList.toggle('active',a.id===name));
+      const info=INSTRUMENTS[name]; $('#modeLabel').textContent=info.mode; $('#missionTitle').textContent=info.title; $('#missionCopy').textContent=info.copy;
+      $('#lessonIcon').textContent=info.icon; $('#lessonTitle').textContent=name[0].toUpperCase()+name.slice(1)+' technique'; $('#lessonText').textContent=info.lesson;
+      $('#keysHelp').innerHTML=info.help.map(([a,b])=>`<div class="shortcut"><span>${a}</span><kbd>${b}</kbd></div>`).join('');
+      makeSequence();
+    }
+
+    function playPiano(note){ tone(note,'piano'); flash(`[data-note="${note}"]`); attempt(note); }
+    $$('.pkey').forEach(k=>k.addEventListener('pointerdown',()=>playPiano(k.dataset.note)));
+
+    function slideNote(){ return SLIDE_NOTES[Number($('#slide').value)-1]; }
+    $('#slide').addEventListener('input',e=>{
+      const pos=Number(e.target.value); document.documentElement.style.setProperty('--slide',(pos-1)*10);
+      $('#positionReadout').textContent=`${ordinal(pos)} position · ${pretty(slideNote())}`;
+    });
+    function moveSlide(amount){
+      const slide=$('#slide');
+      slide.value=Math.max(1,Math.min(7,Number(slide.value)+amount));
+      slide.dispatchEvent(new Event('input'));
+    }
+    let wheelDistance=0;
+    $('#trombone').addEventListener('wheel',e=>{
+      if(instrument!=='trombone') return;
+      e.preventDefault();
+      wheelDistance += e.deltaY || e.deltaX;
+      if(Math.abs(wheelDistance)>=24){
+        moveSlide(wheelDistance>0?1:-1);
+        wheelDistance=0;
+      }
+    },{passive:false});
+    function ordinal(n){ return n+(n===1?'st':n===2?'nd':n===3?'rd':'th'); }
+    function blowTrombone(){ const n=slideNote(); tone(n,'trombone'); flash('#tromboneBlow'); attempt(n); }
+    $('#tromboneBlow').addEventListener('pointerdown',blowTrombone);
+    $('#tromboneBody').addEventListener('pointerdown',blowTrombone);
+
+    $$('.hole').forEach(h=>h.addEventListener('click',()=>{
+      const i=Number(h.dataset.hole); fluteState[i]=fluteState[i]?0:1; h.classList.toggle('closed',!!fluteState[i]);
+    }));
+    function fluteNote(){ const pattern=fluteState.join(''); return Object.keys(FLUTE_PATTERNS).find(n=>FLUTE_PATTERNS[n]===pattern); }
+    function blowFlute(){ const n=fluteNote(); flash('#fluteBlow'); if(n){tone(n,'flute');attempt(n);} else feedback('That fingering is not in this lesson yet. Check the hint.','bad'); }
+    $('#fluteBlow').addEventListener('pointerdown',blowFlute);
+    function updateFingeringHint(){ if(step>=sequence.length)return; const pattern=FLUTE_PATTERNS[sequence[step]]; $('#fingeringTarget').textContent=`For ${pretty(sequence[step])}: cover holes ${[...pattern].map((x,i)=>x==='1'?i+1:null).filter(Boolean).join(', ') || 'none'}`; }
+
+    function hitDrum(kind){ drumSound(kind); flash(`[data-drum="${kind}"]`); attempt(kind); }
+    $$('[data-drum]').forEach(d=>d.addEventListener('pointerdown',()=>hitDrum(d.dataset.drum)));
+
+    function demo(){
+      if(locked)return; locked=true; $('#listenBtn').textContent='♫ Listening…';
+      sequence.forEach((n,i)=>{
+        setTimeout(()=>{
+          tone(n,instrument,.42);
+          const chip=$$('.note-chip')[i]; if(chip){chip.classList.add('current');setTimeout(()=>chip.classList.remove('current'),330);}
+          if(instrument==='piano') flash(`[data-note="${n}"]`);
+          if(instrument==='drums') flash(`[data-drum="${n}"]`);
+        },i*520);
+      });
+      setTimeout(()=>{locked=false;renderSequence();$('#listenBtn').textContent='▶ Hear it';},sequence.length*520+150);
+    }
+
+    $('#listenBtn').addEventListener('click',demo); $('#newRound').addEventListener('click',makeSequence);
+    $$('.tab').forEach(t=>t.addEventListener('click',()=>switchInstrument(t.dataset.instrument)));
+    document.addEventListener('keydown',e=>{
+      if(e.repeat || ['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+      const key=e.key.toLowerCase();
+      if(key==='r'){demo();return;}
+      if(instrument==='piano' && keyMap[key]) playPiano(keyMap[key]);
+      if(instrument==='drums' && drumKeys[key]){e.preventDefault();hitDrum(drumKeys[key]);}
+      if(instrument==='trombone'){
+        if(key==='arrowleft'||key==='arrowright'){e.preventDefault();moveSlide(key==='arrowright'?1:-1);}
+        if(key==='enter' && document.activeElement.id==='tromboneBody'){e.preventDefault();blowTrombone();}
+      }
+      if(instrument==='flute'){
+        if(/^[1-6]$/.test(key)) $(`[data-hole="${Number(key)-1}"]`).click();
+        if(key===' '){e.preventDefault();blowFlute();}
+      }
+    });
+
+    switchInstrument('piano');</script></body></html>

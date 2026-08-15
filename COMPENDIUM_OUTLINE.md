@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 166 public lessons and classifies 11 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 182 public lessons and classifies 11 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -158,21 +158,21 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 ### Cells, Heredity & Life as Information
 
-- **BIO-01** — Types of Cells
-- **BIO-02** — DNA & Heredity
+- **BIO-01** — Types of Cells — _also indexed in Chemistry & Chemical Systems_
+- **BIO-02** — DNA & Heredity — _also indexed in Chemistry & Chemical Systems_
 - **BIO-03** — Amino Acids & Proteins
 - **BIO-04** — CRISPR & Synthetic Biology Lab
 
 ### Diversity, Classification & Adaptation
 
-- **BIO-05** — Animalia: Kingdom Classification
+- **BIO-05** — Classifying Life: Taxonomy of Every Kingdom — _also indexed in Chemistry & Chemical Systems_
 - **BIO-06** — Entomology: The Science of Insects
 - **BIO-07** — Axolotls & Neoteny
 - **BIO-08** — Slime Molds: Swarm Intelligence Without a Brain
 
 ### Evolution & Deep Time
 
-- **BIO-09** — Life Invented the Animal
+- **BIO-09** — Life Invented the Animal — _also indexed in Chemistry & Chemical Systems_
 - **BIO-10** — The K-Pg Extinction
 - **BIO-11** — The Evolution of Wood
 
@@ -180,7 +180,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 ### Earth Materials & Cycles
 
-- **EAR-01** — Water Cycle
+- **EAR-01** — Water Cycle — _also indexed in Chemistry & Chemical Systems_
 - **EAR-02** — The Rock Cycle
 - **EAR-03** — Pangaea & Continental Drift
 - **EAR-04** — Volcano Simulator
@@ -190,14 +190,14 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 ### Planetary Systems & Observation
 
 - **EAR-07** — Ocean Zones & Deep-Sea Life
-- **EAR-08** — Climate Modeling Simulator
+- **EAR-08** — Climate Modeling Simulator — _also indexed in Chemistry & Chemical Systems_
 - **EAR-09** — Seasons and the Heavens
 - **EAR-10** — Measuring the Earth
 - **EAR-11** — Rainbows
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 26 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 28 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
@@ -220,6 +220,7 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 ### Structural Design Projects
 
 - **ENG-11** — Bridge Over Troubled Water
+- **ENG-12** — Biomimicry: Engineering Nature's Genius
 
 ## Design, Materials & Fabrication (FAB)
 
@@ -240,6 +241,7 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 
 - **FAB-08** — Virtual Reality — How It Works & How to Build It
 - **FAB-09** — XR: Extended Reality — OpenXR & WebXR
+- **FAB-10** — Steam & VR Launch Protocol — _also indexed in Computer Science & Artificial Intelligence_
 
 ## Audio, Lighting & Production Technology (TEC)
 
@@ -302,7 +304,7 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 - **GAM-01** — What Makes a Game?
 - **GAM-02** — Build Your Game-Dev Base
 - **GAM-03** — From Scratch: Build a Browser Game
-- **GAM-04** — 2D Game Engines: Kaplay & Phaser
+- **GAM-04** — Build 2D Games Faster
 - **GAM-05** — 🐍 Python & Pygame: The Game Loop
 
 ### Game Jam Project
@@ -311,7 +313,7 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 14 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 28 lessons
 
 ## Visual Art & Design (DES)
 
@@ -347,6 +349,25 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 
 - **SYS-07** — Social Media Algorithms
 - **SYS-08** — The 10-80-10 Productivity Process
+
+## Bible Story, Theology & Christian Formation (BIB)
+
+### Bible Foundations & Pathway
+
+- **BIB-01** — Bible Foundations & Pathway
+- **BIB-02** — The World of the Bible
+- **BIB-03** — How the Bible Reached Us
+- **BIB-04** — The Tabernacle
+- **BIB-05** — The Temple & God's Presence
+- **BIB-06** — Kingdoms, Prophets & Exile
+- **BIB-07** — The Feasts of Israel
+- **BIB-08** — The World of Jesus
+- **BIB-09** — Jesus' Parables Lab
+- **BIB-10** — Holy Week: The Final Days of Jesus
+- **BIB-11** — Acts: Jerusalem to the Nations
+- **BIB-12** — Paul's Missionary Journeys
+- **BIB-13** — Proverbs: Wisdom Decision Lab
+- **BIB-14** — The Sermon on the Mount
 
 # Supporting Pages
 

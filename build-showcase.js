@@ -541,7 +541,7 @@ async function minifyCssFile(sourcePath, destinationPath) {
 
 async function optimizeImagesToWebp(assetsDir) {
   if (!exists(assetsDir)) return [];
-  const { imagemin, imageminWebp } = await loadImageTools();
+  const sharp = await loadImageTools();
 
   const converted = [];
   const stack = [assetsDir];
@@ -561,13 +561,8 @@ async function optimizeImagesToWebp(assetsDir) {
       if (!IMAGE_EXTENSIONS.has(ext)) continue;
 
       try {
-        const inputBuffer = await fs.readFile(fullPath);
-        const outputBuffer = await imagemin.buffer(inputBuffer, {
-          plugins: [imageminWebp({ quality: 80 })]
-        });
-
         const outputPath = fullPath.replace(new RegExp(`${ext}$`, "i"), ".webp");
-        await fs.writeFile(outputPath, outputBuffer);
+        await sharp(fullPath).webp({ quality: 80 }).toFile(outputPath);
         converted.push(outputPath);
       } catch (error) {
         logStep(`Image optimization skipped for ${fullPath}: ${error.message}`);
@@ -580,10 +575,7 @@ async function optimizeImagesToWebp(assetsDir) {
 
 async function loadImageTools() {
   if (imageToolsPromise) return imageToolsPromise;
-  imageToolsPromise = Promise.all([import("imagemin"), import("imagemin-webp")]).then(([imageminMod, webpMod]) => ({
-    imagemin: imageminMod.default || imageminMod,
-    imageminWebp: webpMod.default || webpMod
-  }));
+  imageToolsPromise = import("sharp").then((sharpModule) => sharpModule.default || sharpModule);
   return imageToolsPromise;
 }
 

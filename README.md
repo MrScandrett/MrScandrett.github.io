@@ -1,114 +1,90 @@
 # Mr. Scandrett's ClassroomOS
 
-Open GitHub Pages showcase + local publish portal.
+A static STEAM learning platform, lesson library, application directory, and
+student showcase published from `main` with GitHub Pages.
 
-## What changed
-
-- No student/sample names are preloaded.
-- `data/projects.json` starts empty.
-- Project uploads + publishing are handled by `portal/server.js`.
-
-## ClassroomOS (GitHub Pages)
-
-Static pages:
-- `index.html`
-- `showcase.html`
-- `project.html?id=<id>`
-- `students.html`
-- `about.html`
-
-Data source:
-- `data/projects.json`
-
-### Run locally
+## Run locally
 
 ```bash
-cd /Users/User/Documents/GitHubTutorialSTEAM
+npm ci
 node serve-local.js
 ```
 
-Open:
-- `http://localhost:8080/index.html`
+Open <http://localhost:8080/>.
 
-## Student upload build pipeline (Web + Scratch + 3D + Pivot)
+## Repository map
 
-Place student files under `student-projects/`:
+- `lessons/` — interactive lesson pages
+- `data/lessons.json` — lesson catalog metadata
+- `student-projects/` — canonical student project sources
+- `apps/` — generated showcase output
+- `assets/` — shared styles, scripts, images, models, video, and data
+- `scripts/` — build, synchronization, and verification tools
+- `portal/` — local-only publishing portal
 
-- Web app: `student-projects/<StudentName>/<ProjectFolder>/index.html`
-- Scratch: `student-projects/<StudentName>/<ProjectName>.sb3`
-- 3D model: `student-projects/<StudentName>/<Grade>/<ModelName>.stl` or `.obj` (optional `.mtl` in same folder)
-- Pivot animation: `student-projects/<StudentName>/<ProjectName>.piv` (or `.stk`)
+## Student showcase pipeline
 
-For browser playback of Pivot animations, add an exported preview file in the same folder with the same base filename:
+`apps/` is generated output. Never make a lasting fix directly in an app
+directory: the next build deletes it and rebuilds from `student-projects/`.
 
-- `<ProjectName>.webm` (recommended), `.mp4`, `.gif`, or `.mov`
+Add web apps under:
 
-Then build:
+```text
+student-projects/<Student>/<Project>/index.html
+```
+
+Scratch, STL/OBJ, and Pivot files are also supported. Build every showcase
+project from its canonical source with:
 
 ```bash
-cd /Users/evanscandrett/Documents/GitHubTutorialSTEAM
-npm ci
-npm run build
+npm run build -- --strict
 ```
 
-Output:
+The build writes app bundles under `apps/<slug>/` and regenerates
+`apps/manifest.json`. Display metadata and thumbnails can be customized in
+`data/manifest-overrides.json`.
 
-- Built apps in `apps/<slug>/`
-- Showcase manifest in `apps/manifest.json`
-- STL/OBJ models auto-render in a shared interactive viewer with camera presets,
-  orbit/zoom/pan, projection and grid controls, fullscreen, touch support, and
-  accessible status messages. See [MODEL_PROJECTS.md](MODEL_PROJECTS.md) for the
-  rules used by Isaiah's example and every future model.
-
-## Portal backend (local-only by default)
+## Quality checks
 
 ```bash
-cd /Users/User/Documents/GitHubTutorialSTEAM
-
-export GITHUB_OWNER="MrScandrett"
-export REPO_PREFIX="student-showcase-"
-export PORT="8787"
-
-node /Users/User/Documents/GitHubTutorialSTEAM/portal/server.js
+npm run quality
+npm run a11y
+npm run check:theme-readability
 ```
 
-Open:
-- `http://localhost:8787/dashboard`
+`npm run quality` verifies local references, asset signatures, theme tokens,
+lesson print controls, compendium coverage, and interactive student games.
+The accessibility and full theme-readability sweeps launch a local Chromium
+browser and take longer.
 
-Teacher-local flow:
-1. Open the dashboard.
-2. Upload a project ZIP.
-3. Portal publishes to GitHub Pages and appends project to `data/projects.json`.
+The accessibility runner audits every URL in `.pa11yci.json` with isolated
+browser workers, reduced-motion emulation, and a no-WebGL audit mode so GPU-heavy
+lessons cannot stall the rest of the sweep. It writes the complete machine-readable
+result to `reports/accessibility/latest.json` and compares violations with
+`data/a11y-baseline.json`; technical failures and any issue above the checked-in
+baseline fail the command. For a quick source-page check, run:
 
-## Add project manually (optional)
-
-Edit `data/projects.json` and add an object matching schema:
-
-```json
-{
-  "id": "unique-slug",
-  "title": "Project Title",
-  "student": "team-01",
-  "year": 2026,
-  "term": "Q3",
-  "program": "Microschool",
-  "category": "Games",
-  "type": "Solo",
-  "jam": false,
-  "difficulty": "Beginner",
-  "tech": ["VS Code"],
-  "tags": ["puzzle"],
-  "thumbnail": "assets/thumbs/unique-slug.svg",
-  "hero": "assets/heroes/unique-slug.svg",
-  "short_description": "Short hook.",
-  "long_description": "Longer description.",
-  "links": {
-    "repo": "https://github.com/...",
-    "play": "https://...",
-    "video": ""
-  },
-  "gallery": [],
-  "featured": false,
-  "date_added": "2026-02-23"
-}
+```bash
+npm run a11y:page -- ohms-law
 ```
+
+Only refresh the ratchet after reviewing and accepting the complete report:
+
+```bash
+npm run a11y:update-baseline
+```
+
+## Release build
+
+```bash
+npm run build:dist
+npm run check:dist
+```
+
+The release builder creates a minified `dist/`, generates `sitemap.xml` and
+`robots.txt`, and excludes canonical student sources, local portal code, build
+scripts, and internal documentation. `check:dist` enforces that public/private
+boundary and the artifact-size budget.
+
+GitHub Actions performs a strict full showcase rebuild, runs the quality gate,
+builds `dist/`, validates it, and then deploys the artifact to Pages.

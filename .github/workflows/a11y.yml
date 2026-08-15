@@ -21,7 +21,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Install dependencies
         run: npm ci
@@ -35,34 +35,26 @@ jobs:
       - name: Run pa11y accessibility audit
         id: audit
         run: |
-          npx pa11y-ci --config .pa11yci.json --reporter json > pa11y-report.json 2>&1 || echo "VIOLATIONS_FOUND=true" >> $GITHUB_ENV
+          npm run a11y
 
       - name: Upload accessibility report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: accessibility-report-${{ github.sha }}
-          path: pa11y-report.json
+          path: reports/accessibility/latest.json
           retention-days: 30
 
       - name: Summarise violations
         if: always()
         run: |
           echo "## Accessibility Audit Results" >> $GITHUB_STEP_SUMMARY
-          if [ -f pa11y-report.json ]; then
+          if [ -f reports/accessibility/latest.json ]; then
             node -e "
-              const r = require('./pa11y-report.json');
-              const total = Object.values(r.results || {}).reduce((s, arr) => s + arr.length, 0);
-              const pages = Object.keys(r.results || {}).length;
-              console.log(\`Audited \${pages} pages — \${total} issue(s) found.\`);
-              if (total > 0) {
-                Object.entries(r.results || {}).forEach(([url, issues]) => {
-                  if (issues.length) {
-                    console.log(\`\\n### \${url} (\${issues.length} issue(s))\`);
-                    issues.slice(0, 5).forEach(i => console.log(\`- \${i.code}: \${i.message.slice(0,120)}\`));
-                    if (issues.length > 5) console.log(\`  ...and \${issues.length - 5} more\`);
-                  }
-                });
-              }
+              const r = require('./reports/accessibility/latest.json');
+              const s = r.summary;
+              console.log(\`Audited \${s.completed} pages — \${s.cleanPages} clean, \${s.issueCount} issue(s), \${s.technicalFailures} technical failure(s).\`);
+              Object.entries(r.groupedRootCauses || {}).forEach(([name, group]) =>
+                console.log(\`- \${name}: \${group.count} issue(s) across \${group.pages.length} page(s)\`));
             " >> $GITHUB_STEP_SUMMARY
           fi

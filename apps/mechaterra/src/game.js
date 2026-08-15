@@ -12,6 +12,12 @@ const statusLabel = document.querySelector("#statusLabel");
 const weaponLabel = document.querySelector("#weaponLabel");
 const healthFill = document.querySelector("#healthFill");
 const fuelFill = document.querySelector("#fuelFill");
+const timeLabel = document.querySelector("#timeLabel");
+const pauseButton = document.querySelector("#pauseButton");
+const announcement = document.querySelector("#announcement");
+const announcementKicker = document.querySelector("#announcementKicker");
+const announcementTitle = document.querySelector("#announcementTitle");
+const weaponButtons = [...document.querySelectorAll(".weapon")];
 
 const MatterLib = window.Matter;
 if (!MatterLib) {
@@ -47,6 +53,7 @@ const pointer = { x: 0, y: 0, down: false };
 let engine;
 let terrainCanvas;
 let terrainCtx;
+let terrainPixels;
 let terrainDepthCanvas;
 let terrainBodies = [];
 let terrainHeights = [];
@@ -57,11 +64,15 @@ let particles = [];
 let camera = { x: 0, y: 0 };
 let selectedWeapon = 0;
 let running = false;
+let paused = false;
 let lastTime = 0;
 let match;
 let mechSprites;
 let mechAnimationAtlas;
 let sceneTransition = 0;
+let cameraShake = 0;
+let damageFlash = 0;
+let announcementVersion = 0;
 
 const difficultyMap = {
   easy: { aim: 0.55, fireDelay: 1500, aggression: 0.5, evade: 0.25, jet: 0.35 },
@@ -77,13 +88,49 @@ function resize() {
   canvas.width = Math.floor(window.innerWidth * scale);
   canvas.height = Math.floor(window.innerHeight * scale);
   ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  if (pointer.x === 0 && pointer.y === 0) {
+    pointer.x = window.innerWidth / 2;
+    pointer.y = window.innerHeight / 2;
+  }
+}
+
+function showAnnouncement(kicker, title, duration = 1200) {
+  const version = ++announcementVersion;
+  announcementKicker.textContent = kicker;
+  announcementTitle.textContent = title;
+  announcement.classList.remove("hidden");
+  window.setTimeout(() => {
+    if (version === announcementVersion) announcement.classList.add("hidden");
+  }, duration);
+}
+
+function selectWeapon(index) {
+  selectedWeapon = (index + weapons.length) % weapons.length;
+  weaponLabel.textContent = weapons[selectedWeapon];
+  weaponButtons.forEach((button, buttonIndex) => button.classList.toggle("active", buttonIndex === selectedWeapon));
+}
+
+function togglePause() {
+  if (!running) return;
+  paused = !paused;
+  pointer.down = false;
+  pauseButton.textContent = paused ? "▶" : "Ⅱ";
+  pauseButton.setAttribute("aria-label", paused ? "Resume game" : "Pause game");
+  statusLabel.textContent = paused ? "Battle paused" : "Round live";
+  if (paused) showAnnouncement("Systems on hold", "Paused", 60 * 60 * 1000);
+  else {
+    announcementVersion += 1;
+    announcement.classList.add("hidden");
+    lastTime = performance.now();
+  }
 }
 
 function startMatch() {
+  const requestedTarget = Number(scoreTargetInput.value);
   match = {
     colors: [teamAColorInput.value, teamBColorInput.value],
     difficulty: difficultyMap[difficultyInput.value],
-    target: Number(scoreTargetInput.value),
+    target: Math.max(1, Math.min(mechsPerTeam, Number.isFinite(requestedTarget) ? requestedTarget : mechsPerTeam)),
     round: 1,
     roundWins: [0, 0],
     scores: [0, 0],
@@ -91,6 +138,9 @@ function startMatch() {
     finished: false
   };
   setup.classList.add("hidden");
+  paused = false;
+  pauseButton.textContent = "Ⅱ";
+  pauseButton.setAttribute("aria-label", "Pause game");
   startRound();
 }
 
@@ -111,6 +161,10 @@ function startRound() {
   lastTime = performance.now();
   statusLabel.textContent = "Round live";
   sceneTransition = 1;
+  cameraShake = 0;
+  damageFlash = 0;
+  updateHud();
+  showAnnouncement(`Round ${match.round}`, "Deploy!", 1200);
   requestAnimationFrame(update);
 }
 
@@ -139,6 +193,10 @@ function createTerrain() {
   terrainCtx.lineTo(worldWidth, worldHeight);
   terrainCtx.closePath();
   terrainCtx.fill();
+
+  // Cache alpha once and use direct array lookups for collision. Calling
+  // getImageData for every individual terrain probe stalls the game badly.
+  syncTerrainPixels();
 
   for (let i = 0; i < 46000; i++) {
     const x = Math.random() * worldWidth;
@@ -254,10 +312,19 @@ function spawnMechs() {
 
 function update(time) {
   if (!running) return;
-  const dt = Math.min((time - lastTime) / 1000, 0.033);
+  if (paused) {
+    lastTime = time;
+    render();
+    requestAnimationFrame(update);
+    return;
+  }
+  const realDt = Math.min((time - lastTime) / 1000, 0.25);
+  const dt = Math.min(realDt, 0.033);
   lastTime = time;
-  match.timeLeft -= dt;
-  sceneTransition = Math.max(0, sceneTransition - dt * 0.72);
+  match.timeLeft -= realDt;
+  sceneTransition = Math.max(0, sceneTransition - realDt * 0.9);
+  cameraShake = Math.max(0, cameraShake - realDt * 18);
+  damageFlash = Math.max(0, damageFlash - realDt * 2.8);
 
   handlePlayer(dt);
   handleAI(dt);
@@ -272,6 +339,7 @@ function update(time) {
   cleanupDead();
   updateRoundState();
   updateCamera(dt);
+  updateHud();
   render();
   requestAnimationFrame(update);
 }
@@ -481,6 +549,7 @@ function updateParticles(dt) {
 }
 
 function blast(x, y, radius, force, team) {
+  cameraShake = Math.max(cameraShake, radius / 22);
   for (const mech of mechs) {
     if (!mech.alive || mech.team === team) continue;
     const offset = Vector.sub(mech.body.position, { x, y });
@@ -489,6 +558,7 @@ function blast(x, y, radius, force, team) {
       const amount = (1 - distance / radius);
       Body.applyForce(mech.body, mech.body.position, Vector.mult(Vector.normalise(offset), force * amount));
       mech.health -= amount * 38;
+      if (mech.isPlayer) damageFlash = Math.max(damageFlash, amount * 0.68);
       if (mech.health <= 0) killMech(mech, team);
     }
   }
@@ -496,11 +566,22 @@ function blast(x, y, radius, force, team) {
 
 function killMech(mech, scoringTeam) {
   if (!mech.alive) return;
+  const wasPlayer = mech.isPlayer;
   mech.alive = false;
+  mech.isPlayer = false;
   match.scores[scoringTeam] += 1;
   World.remove(engine.world, mech.body);
   impacts.push({ x: mech.body.position.x, y: mech.body.position.y, r: 20, life: 0.8 });
   spawnExplosion(mech.body.position.x, mech.body.position.y);
+  cameraShake = Math.max(cameraShake, 16);
+
+  if (wasPlayer) {
+    const replacement = mechs.find((candidate) => candidate.alive && candidate.team === 0);
+    if (replacement) {
+      replacement.isPlayer = true;
+      showAnnouncement("Mech lost", `Control: ${replacement.name}`, 1100);
+    }
+  }
 }
 
 function cleanupDead() {
@@ -527,17 +608,27 @@ function updateRoundState() {
     if (match.roundWins[winner] >= 2) {
       running = false;
       statusLabel.textContent = `Team ${winner + 1} wins match`;
+      showAnnouncement("Match complete", winner === 0 ? "Alpha victorious" : "Vector victorious", 2400);
       setup.classList.remove("hidden");
-      startButton.textContent = "Restart Match";
+      startButton.textContent = "Deploy again";
     } else {
       match.round += 1;
       statusLabel.textContent = `Team ${winner + 1} wins round`;
+      showAnnouncement(`Team ${winner + 1}`, "Round secured", 1250);
       setTimeout(startRound, 1400);
       running = false;
     }
   }
   roundLabel.textContent = `Round ${match.round} | ${match.roundWins[0]}-${match.roundWins[1]}`;
   scoreLabel.textContent = `${match.scores[0]} - ${match.scores[1]}`;
+}
+
+function updateHud() {
+  const secondsLeft = Math.max(0, Math.ceil(match.timeLeft));
+  timeLabel.textContent = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
+  timeLabel.classList.toggle("danger", secondsLeft <= 15);
+  weaponLabel.textContent = weapons[selectedWeapon];
+  weaponButtons.forEach((button, index) => button.classList.toggle("active", index === selectedWeapon));
 }
 
 function updateCamera(dt) {
@@ -558,7 +649,9 @@ function render() {
   ctx.fillRect(0, 0, width, height);
   drawSky(width, height);
   ctx.save();
-  ctx.translate(-camera.x, -camera.y);
+  const shakeX = cameraShake > 0 ? (Math.random() - 0.5) * cameraShake : 0;
+  const shakeY = cameraShake > 0 ? (Math.random() - 0.5) * cameraShake * 0.65 : 0;
+  ctx.translate(-camera.x + shakeX, -camera.y + shakeY);
   drawTerrainDepth();
   drawTerrain();
   for (const projectile of projectiles) drawProjectile(projectile);
@@ -566,7 +659,38 @@ function render() {
   for (const mech of mechs) if (mech.alive) drawMech(mech);
   for (const impact of impacts) drawImpact(impact);
   ctx.restore();
+  drawCombatOverlay(width, height);
   drawSceneTransition(width, height);
+}
+
+function drawCombatOverlay(width, height) {
+  if (!running) return;
+  const pulse = 1 + Math.sin(performance.now() * 0.008) * 0.08;
+  ctx.save();
+  ctx.translate(pointer.x, pointer.y);
+  ctx.strokeStyle = "rgba(241, 226, 173, 0.9)";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(0, 0, 10 * pulse, 0, Math.PI * 2);
+  ctx.moveTo(-18, 0); ctx.lineTo(-7, 0);
+  ctx.moveTo(18, 0); ctx.lineTo(7, 0);
+  ctx.moveTo(0, -18); ctx.lineTo(0, -7);
+  ctx.moveTo(0, 18); ctx.lineTo(0, 7);
+  ctx.stroke();
+  ctx.restore();
+
+  if (damageFlash > 0) {
+    const vignette = ctx.createRadialGradient(width / 2, height / 2, height * 0.18, width / 2, height / 2, height * 0.78);
+    vignette.addColorStop(0, "rgba(170, 28, 18, 0)");
+    vignette.addColorStop(1, `rgba(170, 28, 18, ${damageFlash})`);
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, width, height);
+  }
+
+  if (paused) {
+    ctx.fillStyle = "rgba(3, 5, 4, 0.7)";
+    ctx.fillRect(0, 0, width, height);
+  }
 }
 
 function drawSky(width, height) {
@@ -1003,9 +1127,6 @@ function drawSceneTransition(width, height) {
   ctx.rect(0, 0, width, height);
   ctx.arc(focusX, focusY, Math.max(1, radius), 0, Math.PI * 2, true);
   ctx.fill("evenodd");
-  ctx.globalAlpha = sceneTransition * 0.55;
-  ctx.fillStyle = "#d9e7bc";
-  for (let y = 0; y < height; y += 8) ctx.fillRect(0, y, width, 2);
   ctx.restore();
 }
 
@@ -1028,6 +1149,7 @@ function carveTerrain(x, y, radius) {
     terrainCtx.fill();
   }
   terrainCtx.restore();
+  syncTerrainPixels();
   stainTerrainEdge(x, y, radius);
   refreshHeightsAround(x, radius + 80);
 }
@@ -1045,6 +1167,7 @@ function raiseTerrain(x, y, radius) {
   terrainCtx.closePath();
   terrainCtx.fill();
   terrainCtx.restore();
+  syncTerrainPixels();
   stainTerrainEdge(x, y, radius);
   refreshHeightsAround(x, radius + 80);
 }
@@ -1159,9 +1282,15 @@ function sampleTerrainHeight(x) {
   return terrainHeights[i] || worldHeight;
 }
 
+function syncTerrainPixels() {
+  terrainPixels = terrainCtx.getImageData(0, 0, worldWidth, worldHeight).data;
+}
+
 function isTerrainPixel(x, y) {
   if (x < 0 || y < 0 || x >= worldWidth || y >= worldHeight) return false;
-  return terrainCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data[3] > 10;
+  if (!terrainPixels) return false;
+  const index = (Math.floor(y) * worldWidth + Math.floor(x)) * 4 + 3;
+  return terrainPixels[index] > 10;
 }
 
 function isGrounded(body) {
@@ -1258,9 +1387,10 @@ window.addEventListener("resize", resize);
 window.addEventListener("keydown", (event) => {
   keys.add(event.key.toLowerCase());
   if (["a", "d", "w", " ", "arrowleft", "arrowright"].includes(event.key.toLowerCase())) event.preventDefault();
-  if (event.key === "1") selectedWeapon = 0;
-  if (event.key === "2") selectedWeapon = 1;
-  if (event.key === "3") selectedWeapon = 2;
+  if (event.key === "1") selectWeapon(0);
+  if (event.key === "2") selectWeapon(1);
+  if (event.key === "3") selectWeapon(2);
+  if (event.key.toLowerCase() === "p" && !event.repeat) togglePause();
 });
 window.addEventListener("keyup", (event) => {
   keys.delete(event.key.toLowerCase());
@@ -1271,14 +1401,19 @@ canvas.addEventListener("pointermove", (event) => {
   pointer.y = event.clientY;
 });
 canvas.addEventListener("pointerdown", () => {
-  pointer.down = true;
+  if (!paused) pointer.down = true;
 });
 window.addEventListener("pointerup", () => {
   pointer.down = false;
 });
 canvas.addEventListener("wheel", (event) => {
-  selectedWeapon = (selectedWeapon + (event.deltaY > 0 ? 1 : weapons.length - 1)) % weapons.length;
+  event.preventDefault();
+  selectWeapon(selectedWeapon + (event.deltaY > 0 ? 1 : -1));
+}, { passive: false });
+weaponButtons.forEach((button) => {
+  button.addEventListener("click", () => selectWeapon(Number(button.dataset.weapon)));
 });
+pauseButton.addEventListener("click", togglePause);
 startButton.addEventListener("click", () => {
   startMatch();
 });

@@ -17,9 +17,23 @@ const STAGING = path.join(os.tmpdir(), `mrscandrett-dist-${Date.now()}`);
 // Dev-only / non-published directories. Everything else ships to Pages.
 const EXCLUDE_DIRS = new Set([
   "node_modules", ".git", ".github", "dist", "screenshots", "test-results",
-  "tmp", ".claude", ".vscode", "student-projects-review",
-  "portal/uploads", "portal/work", "portal/data",
+  "tmp", ".claude", ".vscode", "student-projects", "student-projects-review",
+  "portal", "scripts",
 ]);
+
+// The repository root also contains authoring tools and internal documentation.
+// Keep public HTML, PDFs, and the standalone Music Lab bundle, but do not ship
+// implementation details that cannot be used by the static site.
+const PUBLIC_ROOT_SCRIPTS = new Set(["music-lab.js"]);
+
+function isPrivateRootFile(relativePath) {
+  if (relativePath.includes(path.sep)) return false;
+  const extension = path.extname(relativePath).toLowerCase();
+  if (relativePath.startsWith(".")) return true;
+  if ([".md", ".json", ".csv"].includes(extension)) return true;
+  if (extension === ".js" && !PUBLIC_ROOT_SCRIPTS.has(relativePath)) return true;
+  return false;
+}
 
 async function copySite() {
   await rm(STAGING, { recursive: true, force: true });
@@ -29,6 +43,7 @@ async function copySite() {
     filter: (src) => {
       const rel = path.relative(ROOT, src);
       if (rel === "") return true;
+      if (isPrivateRootFile(rel)) return false;
       const posixRel = rel.split(path.sep).join("/");
       for (const excluded of EXCLUDE_DIRS) {
         if (posixRel === excluded || posixRel.startsWith(`${excluded}/`)) return false;
@@ -45,6 +60,46 @@ async function copySite() {
     await cp(STAGING, DIST, { recursive: true });
     await rm(STAGING, { recursive: true, force: true });
   }
+}
+
+const SITE_ORIGIN = "https://mrscandrett.github.io";
+const PUBLIC_ROOT_PAGES = [
+  "", "about.html", "applications.html", "class-downloads.html", "music-lab.html",
+  "paths.html", "project.html", "quizzes.html", "recipe-book.html", "showcase.html",
+  "steam-lessons.html", "video-library.html",
+];
+
+function escapeXml(value) {
+  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+}
+
+async function writeDiscoveryFiles() {
+  const lessonData = JSON.parse(await readFile(path.join(ROOT, "data", "lessons.json"), "utf8"));
+  const appData = JSON.parse(await readFile(path.join(ROOT, "apps", "manifest.json"), "utf8"));
+  const lessonUrls = (lessonData.lessons || [])
+    .filter((lesson) => lesson.status === "live" && lesson.url)
+    .map((lesson) => lesson.url);
+  const appUrls = (appData.projects || appData || [])
+    .map((project) => project.links?.play || project.url || (project.slug ? `apps/${project.slug}/` : ""))
+    .filter((url) => url && !/^https?:\/\//i.test(url))
+    .map((url) => url.replace(/^\.\//, "").replace(/^\//, ""));
+  const urls = [...new Set([...PUBLIC_ROOT_PAGES, ...lessonUrls, ...appUrls])]
+    .map((relativeUrl) => `${SITE_ORIGIN}/${relativeUrl}`)
+    .sort();
+  const sitemap = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ...urls.map((url) => `  <url><loc>${escapeXml(url)}</loc></url>`),
+    "</urlset>",
+    "",
+  ].join("\n");
+  await writeFile(path.join(DIST, "sitemap.xml"), sitemap, "utf8");
+  await writeFile(
+    path.join(DIST, "robots.txt"),
+    `User-agent: *\nAllow: /\nSitemap: ${SITE_ORIGIN}/sitemap.xml\n`,
+    "utf8",
+  );
+  console.log(`Discovery: sitemap.xml with ${urls.length} public URLs + robots.txt`);
 }
 
 async function walk(dir, extension, files = []) {
@@ -147,6 +202,7 @@ async function main() {
   await minifyCssFiles();
   await minifyJsFiles();
   await minifyHtmlFiles();
+  await writeDiscoveryFiles();
   console.log("dist/ ready.");
 }
 

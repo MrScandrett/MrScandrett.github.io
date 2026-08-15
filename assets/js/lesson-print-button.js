@@ -4,6 +4,96 @@
   var script = document.currentScript;
   var styleId = 'lesson-print-button-styles';
 
+  function ensureContrastGuard() {
+    if (window.ClassroomOSContrastGuard || document.querySelector('script[data-classroomos-contrast-guard="true"]')) return;
+    var guard = document.createElement('script');
+    guard.src = script && script.src ? new URL('contrast-guard.js', script.src).href : '/assets/js/contrast-guard.js';
+    guard.defer = true;
+    guard.dataset.classroomosContrastGuard = 'true';
+    document.head.appendChild(guard);
+  }
+
+  function cleanText(value) {
+    return String(value || '').replace(/\s+/g, ' ').trim().slice(0, 220);
+  }
+
+  function hasAccessibleName(control) {
+    return Boolean(
+      cleanText(control.getAttribute('aria-label')) ||
+      cleanText(control.getAttribute('aria-labelledby')) ||
+      cleanText(control.getAttribute('title')) ||
+      (control.labels && control.labels.length)
+    );
+  }
+
+  function textWithoutControls(element) {
+    if (!element) return '';
+    var copy = element.cloneNode(true);
+    copy.querySelectorAll('input, select, textarea, button, output, script, style').forEach(function (node) {
+      node.remove();
+    });
+    return cleanText(copy.textContent);
+  }
+
+  function tableControlName(control) {
+    var cell = control.closest('td, th');
+    var row = control.closest('tr');
+    var table = control.closest('table');
+    if (!cell || !row || !table) return '';
+
+    var cells = Array.prototype.slice.call(row.children);
+    var column = cells.indexOf(cell);
+    var headerRow = table.querySelector('thead tr, tr');
+    var header = headerRow && headerRow.children[column];
+    var rowContext = cells.slice(0, Math.max(1, column)).map(textWithoutControls).filter(Boolean).join(', ');
+    return cleanText([rowContext, textWithoutControls(header)].filter(Boolean).join(' — '));
+  }
+
+  function nearbyControlName(control) {
+    var tableName = tableControlName(control);
+    if (tableName) return tableName;
+
+    var parent = control.parentElement;
+    for (var depth = 0; parent && depth < 4; depth += 1, parent = parent.parentElement) {
+      var label = parent.querySelector(':scope > label, :scope > [class*="label"], :scope > dt');
+      var labelText = textWithoutControls(label);
+      if (labelText) return labelText;
+    }
+
+    var question = control.closest('[class*="question"], [class*="problem"], [class*="practice"], [class*="challenge"], li');
+    if (question) {
+      var prompt = question.querySelector('p, h3, h4, legend');
+      var promptText = textWithoutControls(prompt);
+      if (promptText) return promptText;
+    }
+
+    var placeholder = cleanText(control.getAttribute('placeholder'));
+    var rawId = cleanText(control.name || control.id);
+    var readableId = rawId
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/[-_]+/g, ' ')
+      .replace(/\b(ans|answer)\b/gi, 'answer')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return cleanText([readableId, placeholder].filter(Boolean).join(' — ')) || 'Interactive lesson control';
+  }
+
+  function enhanceLessonAccessibility(root) {
+    var scope = root && root.querySelectorAll ? root : document;
+    scope.querySelectorAll('input:not([type="hidden"]), select, textarea').forEach(function (control) {
+      if (!hasAccessibleName(control)) control.setAttribute('aria-label', nearbyControlName(control));
+    });
+
+    scope.querySelectorAll('canvas').forEach(function (canvas) {
+      if (canvas.hasAttribute('aria-label') || canvas.hasAttribute('aria-labelledby') || canvas.getAttribute('aria-hidden') === 'true') return;
+      var region = canvas.closest('section, article, [class*="card"], [class*="panel"], main');
+      var heading = region && region.querySelector('h1, h2, h3, h4');
+      var subject = textWithoutControls(heading) || cleanText(document.querySelector('h1')?.textContent) || 'lesson';
+      canvas.setAttribute('role', 'img');
+      canvas.setAttribute('aria-label', 'Interactive visualization for ' + subject + '. Use the nearby controls and text explanation to explore the same concept.');
+    });
+  }
+
   if (script && !document.getElementById(styleId)) {
     var stylesheet = document.createElement('link');
     stylesheet.id = styleId;
@@ -11,6 +101,7 @@
     stylesheet.href = new URL('../css/components/lesson-print-button.css', script.src).href;
     document.head.appendChild(stylesheet);
   }
+  ensureContrastGuard();
 
   function createActions() {
     var wrapper = document.createElement('div');
@@ -77,6 +168,7 @@
   }
 
   function placeButton() {
+    enhanceLessonAccessibility(document);
     if (document.querySelector('.lesson-print-actions')) return;
 
     var navHost =
@@ -109,4 +201,13 @@
   } else {
     placeButton();
   }
+
+  var accessibilityObserver = new MutationObserver(function (records) {
+    records.forEach(function (record) {
+      record.addedNodes.forEach(function (node) {
+        if (node.nodeType === 1) enhanceLessonAccessibility(node);
+      });
+    });
+  });
+  accessibilityObserver.observe(document.documentElement, { childList: true, subtree: true });
 }());
