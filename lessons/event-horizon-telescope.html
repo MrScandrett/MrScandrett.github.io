@@ -9,14 +9,11 @@
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../assets/css/classroom-animations.css" />
-  <link rel="stylesheet" href="./eht/eht-ui.css" />
   <link rel="stylesheet" href="../assets/css/lessons/event-horizon-telescope.css" />
   <script src="../assets/js/classroom-animations.js"></script>
-  <script src="./eht/eht-ui.js"></script>
-  <script src="./eht/eht-interactivity.js"></script>
 </head>
 <body>
-<div class="ll-viewport ll-dark">
+<div class="ll-viewport ll-dark" data-movement="listen">
   <a class="skip-link" href="#main-content">Skip to content</a>
   <nav class="eht-topbar ll-topbar" aria-label="Page navigation">
     <div class="eht-topbar-inner">
@@ -30,8 +27,13 @@
     <div class="ll-sim">
 
       <header class="eht-hero ll-hero">
+        <p class="eht-eyebrow">A five-movement observing score · 1.3 mm radio light · M87*</p>
         <h1>Event Horizon Telescope</h1>
-        <p>The Event Horizon Telescope is an international collaboration that linked radio observatories across Earth, produced the 2019 image of M87*, and later revealed Sagittarius A* in 2022. This lesson models the big idea: more synchronized stations, longer baselines, sharper detail.</p>
+        <p class="eht-essential"><strong>Essential question:</strong> How can telescopes separated by thousands of kilometers work together to resolve something no single dish can see?</p>
+        <div class="eht-movement-now" aria-live="polite">
+          <span id="movementNumber">I</span>
+          <p><strong id="movementTitle">Listen</strong><span id="movementPrompt">Begin with one station. It can record a changing radio signal, but it cannot measure the source’s spatial structure alone.</span></p>
+        </div>
       </header>
 
       <main id="main-content" class="eht-wrap">
@@ -43,7 +45,8 @@
             <span class="eht-note-badge" id="mapNote">Eight observatories act like one Earth-size instrument.</span>
           </div>
 
-          <svg id="ehtMap" viewBox="0 0 1000 520" aria-label="Map of participating Event Horizon Telescope observatories">
+          <svg id="ehtMap" viewBox="0 0 1000 520" aria-label="Realistic world map showing participating Event Horizon Telescope observatories">
+            <image class="eht-natural-earth-map" href="../assets/images/lessons/eht-world-map.svg" x="0" y="0" width="1000" height="520" preserveAspectRatio="none"></image>
             <g class="map-grid" aria-hidden="true">
               <line x1="0" y1="130" x2="1000" y2="130"></line>
               <line x1="0" y1="260" x2="1000" y2="260"></line>
@@ -69,98 +72,162 @@
             <g id="stationLayer"></g>
           </svg>
 
-          <div class="eht-map-hint">Toggle stations to change the baselines. Longer, synchronized baselines mean finer resolution.</div>
+          <div class="eht-map-key">
+            <span><i class="eht-key-anchor"></i> fixed station coordinate</span>
+            <span><i class="eht-key-leader"></i> label offset for readability</span>
+          </div>
+
+          <div class="eht-map-hint">Natural Earth geography · station locations are approximate · each line joins one telescope pair</div>
         </div>
 
         <div class="eht-image-panel">
           <div class="eht-image-head">
-            <span class="eht-badge">Reconstruction Preview</span>
-            <span class="eht-note-badge" id="imageNote">This is a classroom model of how the ring sharpens as the array improves.</span>
+            <span class="eht-badge">Real M87* reference → classroom reconstruction</span>
+            <span class="eht-note-badge" id="imageNote">More varied baselines reduce blur and directional artifacts.</span>
           </div>
-          <canvas id="reconstructionCanvas"></canvas>
-          <div class="eht-image-hint">This is not a visible-light snapshot. It is a radio reconstruction built from correlated data.</div>
+          <canvas id="reconstructionCanvas" aria-label="Classroom reconstruction derived from the real 2019 EHT image of M87 star, with simplified blur and artifacts controlled by the selected telescope array"></canvas>
+          <div class="eht-image-hint">Real 2019 M87* morphology; simplified array-dependent degradation. Orange shows radio intensity, not visible color.</div>
         </div>
       </div>
 
+      <section class="eht-uv-figure" aria-labelledby="eht-uv-title">
+        <div class="eht-uv-copy">
+          <p class="eht-uv-kicker">How radio measurements become image evidence</p>
+          <h2 id="eht-uv-title">u–v coverage</h2>
+          <p>This is <strong>not another map of Earth or the sky</strong>. It is a standard radio-astronomy graph showing which sizes and directions of structure the selected baselines measure.</p>
+          <ul>
+            <li><strong>Each colored curve</strong> comes from one telescope pair as Earth rotates during an eight-hour observation.</li>
+            <li><strong>Distance from the center</strong> represents spatial frequency. Farther out means sensitivity to finer angular detail.</li>
+            <li><strong>Direction around the center</strong> represents the orientation of the measured structure.</li>
+            <li><strong>Mirrored curves</strong> are the expected conjugate measurements for a real-valued sky brightness image.</li>
+          </ul>
+          <p class="eht-uv-caution"><strong>Important:</strong> one long curve does not make a complete picture. Reliable reconstruction needs coverage at many distances and directions.</p>
+        </div>
+        <figure class="eht-uv-plot">
+          <canvas id="coverageCanvas" aria-label="Simplified u-v coverage plot for the selected telescope baselines"></canvas>
+          <figcaption>Projected baselines for M87* at declination +12.4°, modeled from hour angle −4 h to +4 h. Axes are millions of wavelengths (Mλ) at 1.3 mm. Classroom simplification: spherical Earth; station altitude and observing gaps are omitted.</figcaption>
+        </figure>
+      </section>
+
       <div class="eht-stage-footer" id="eht-stage-title">
-        The real Event Horizon Telescope used very-long-baseline interferometry. Each observatory recorded radio data with extremely precise timing, then the signals were combined later to act like a telescope nearly as wide as Earth.
+        Observe the causal chain: station pairs create baselines → baselines sample spatial frequencies → synchronized recordings can be correlated → algorithms reconstruct an image from incomplete data.
       </div>
     </section>
 
       </main>
     </div><!-- .ll-sim -->
 
-    <aside class="ll-panel" aria-hidden="false">
+    <aside class="ll-panel" aria-hidden="false" aria-label="Five-movement lesson score">
       <div class="ll-panel-head">
-        <div class="ll-tabs">
-          <button class="ll-tab" aria-selected="true"  data-pane="eht-params">Controls</button>
-          <button class="ll-tab" aria-selected="false" data-pane="eht-guide">About</button>
+        <div class="ll-tabs eht-score-tabs" aria-label="Lesson movements">
+          <button class="ll-tab" aria-selected="true" data-pane="eht-listen" data-movement="listen"><small>I</small>Listen</button>
+          <button class="ll-tab" aria-selected="false" data-pane="eht-connect" data-movement="connect"><small>II</small>Connect</button>
+          <button class="ll-tab" aria-selected="false" data-pane="eht-accumulate" data-movement="accumulate"><small>III</small>Accumulate</button>
+          <button class="ll-tab" aria-selected="false" data-pane="eht-resolve" data-movement="resolve"><small>IV</small>Resolve</button>
+          <button class="ll-tab" aria-selected="false" data-pane="eht-reflect" data-movement="reflect"><small>V</small>Reflect</button>
         </div>
         <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
       </div>
       <div class="ll-panel-body">
 
-        <div class="ll-pane ll-active" id="eht-params">
-          <span class="ll-label">Build the Array</span>
-          <div class="eht-control-row">
-            <button type="button" id="selectAllButton">Select all</button>
-            <button type="button" id="clearButton">Clear</button>
-            <button type="button" class="eht-sync-button is-on" id="syncButton">Clock sync ON</button>
-          </div>
-
-          <div class="eht-readout-grid" style="margin-top:0.85rem;">
-            <div class="eht-readout-card">
-              <span>Active Stations</span>
-              <strong id="activeCount">8 of 8</strong>
-            </div>
-            <div class="eht-readout-card">
-              <span>Longest Baseline</span>
-              <strong id="baselineValue">13,000 km</strong>
-            </div>
-            <div class="eht-readout-card">
-              <span>Image Quality</span>
-              <strong id="qualityValue">Ring emerging</strong>
-            </div>
-            <div class="eht-readout-card">
-              <span>Sync Status</span>
-              <strong id="syncValue">Correlated</strong>
-            </div>
-          </div>
-
-          <div class="eht-alert safe" id="alertBar" style="margin-top:0.85rem;">
-            With all eight synchronized stations, the array reaches Earth-size class resolution and the ring structure becomes much clearer.
-          </div>
-
-          <hr class="ll-hr" />
-          <span class="ll-label">Participating Telescopes</span>
-          <p class="eht-panel-note">Click a station to toggle it</p>
-          <div class="eht-station-list" id="stationList"></div>
+        <div class="eht-live-readout" aria-label="Current observing state">
+          <div><span>Stations</span><strong id="activeCount">1 of 8</strong></div>
+          <div><span>Baselines</span><strong id="baselineCount">0 pairs</strong></div>
+          <div><span>Longest</span><strong id="baselineValue">Not formed yet</strong></div>
+          <div><span>Resolution</span><strong id="resolutionValue">Not available</strong></div>
         </div>
 
-        <div class="ll-pane" id="eht-guide">
-          <div class="ll-info">
-            <strong>Very-long-baseline interferometry</strong>
-            The EHT did not build a literal giant dish. It combined observations from telescopes spread across Earth so the array behaved like a much larger instrument. This technique works because radio waves can be recorded and compared later, unlike visible light.
+        <div class="eht-alert" id="alertBar" role="status" aria-live="polite">
+          <strong class="eht-status-title" id="statusTitle">One station can record, but not compare.</strong>
+          <span class="eht-status-why" id="statusWhy">A baseline needs two recording locations. With only one station, there is no second signal for a spatial comparison.</span>
+          <span class="eht-status-next" id="statusNext"><b>Next:</b> Connect a second station to create the first baseline.</span>
+        </div>
+
+        <div class="ll-pane ll-active" id="eht-listen">
+          <p class="eht-movement-label">Movement I · Listen</p>
+          <h2>One station hears change over time.</h2>
+          <p>ALMA records the strength and phase of 1.3 mm radio waves arriving from M87*. Its hydrogen-maser clock gives every measurement an extremely precise time.</p>
+          <div class="eht-concept-primer">
+            <strong>Why is that not already an image?</strong>
+            <p>An image describes how brightness varies across different positions on the sky. One station records one combined signal from its direction toward M87*. By itself, it has no separated viewpoint to compare, so it cannot determine the source’s small-scale spatial structure.</p>
           </div>
           <div class="ll-info">
-            <strong>Schwarzschild physics & the photon ring</strong>
-            The reconstruction uses real Schwarzschild metric calculations to model how gravity bends light near the black hole. The bright ring you see is light from hot material orbiting at the photon sphere, located 1.48 times the event horizon radius. This is the glow from matter spiraling into the black hole.
+            <strong>What is real at this stage</strong>
+            The radio signal and its timestamp are real data. The orange ring is not yet available from one station; it must be reconstructed from comparisons across an array.
+          </div>
+          <button type="button" class="eht-next-movement" data-next-pane="eht-connect">Connect a second station <span aria-hidden="true">→</span></button>
+        </div>
+
+        <div class="ll-pane" id="eht-connect">
+          <p class="eht-movement-label">Movement II · Connect</p>
+          <h2>Relationship creates the first spatial evidence.</h2>
+          <div class="eht-concept-primer">
+            <strong>Why exactly two stations?</strong>
+            <p>A baseline is the separation vector between a pair of telescopes. The correlator compares how the same radio wave arrives at ALMA and APEX. Differences in timing and phase provide one measurement of the source’s spatial structure. One station has nothing separated to compare with.</p>
+          </div>
+          <div class="eht-control-row">
+            <button type="button" id="chilePresetButton">Replay the Chile pair</button>
+            <button type="button" class="eht-sync-button is-on" id="syncButton">Clock sync ON</button>
           </div>
           <div class="ll-info">
-            <strong>Accretion disk models & black-body radiation</strong>
-            Real black holes are surrounded by different disk types. A thin disk (Shakura–Sunyaev) orbits close and hot; a thick torus (ADAF) extends further and cooler; a slim disk occurs in super-Eddington accretion. Colors are based on black-body radiation: hotter material (blue-white) orbits closer, cooler material (orange-red) is further out. The lesson switches models as array quality improves.
+            <strong>Why clock synchronization matters</strong>
+            At 230 GHz, the radio wave oscillates about 230 billion times per second. Hydrogen-maser clocks let the correlator align recordings made thousands of kilometers apart. Turn synchronization off: the map still has a geometric baseline, but its signal phases can no longer be compared reliably.
           </div>
           <div class="ll-info">
-            <strong>Relativistic jets</strong>
-            Magnetic fields threading the accretion disk can launch jets of plasma at near-light speed perpendicular to the disk. These jets are visible at high array resolution as blue columns of light shooting from the black hole's poles. Jets are powered by the Blandford–Znajek mechanism and carry away rotational energy.
+            <strong>Why one baseline is still insufficient</strong>
+            This pair measures structure at one projected length and direction at each moment. Many different source shapes could match that limited evidence, so a complete-looking ring would be poorly constrained.
+          </div>
+          <button type="button" class="eht-next-movement" data-next-pane="eht-accumulate">Let the evidence accumulate <span aria-hidden="true">→</span></button>
+        </div>
+
+        <div class="ll-pane" id="eht-accumulate">
+          <p class="eht-movement-label">Movement III · Accumulate</p>
+          <h2>Earth turns the array through new viewpoints.</h2>
+          <p>As Earth rotates, every station pair changes its projected orientation toward M87*. Each pair therefore traces a curve in the u–v plot instead of contributing one ordinary image pixel.</p>
+          <div class="eht-control-row">
+            <button type="button" id="widePresetButton">Add Hawaii</button>
+            <button type="button" id="selectAllButton">Use the full 2017 array</button>
+            <button type="button" id="clearButton">Clear the array</button>
+          </div>
+          <details class="eht-terms">
+            <summary>Explain the four readouts</summary>
+            <dl>
+              <dt>Station</dt><dd>One physical observatory recording the source.</dd>
+              <dt>Baseline</dt><dd>The separation vector between two stations. With <em>n</em> stations, the number of pairs is <em>n(n−1)÷2</em>.</dd>
+              <dt>Longest baseline</dt><dd>The greatest separation in the selected array. At the same wavelength, a longer baseline can distinguish smaller angles.</dd>
+              <dt>Nominal resolution</dt><dd>An estimate of the smallest angular detail supported by wavelength ÷ baseline. It does not guarantee a complete image; coverage and clean data still matter.</dd>
+            </dl>
+          </details>
+
+          <div class="eht-investigation">
+            <strong>Three-run investigation</strong>
+            <ol>
+              <li>Return to <b>Connect</b> for the Chile pair. Record its baseline count, span, and image shape.</li>
+              <li>Select <b>Add Hawaii</b>. What improves: detail, coverage, or both?</li>
+              <li>Select <b>the full 2017 array</b>. Explain why more directions constrain the ring more reliably.</li>
+            </ol>
+          </div>
+          <hr class="ll-hr" />
+          <span class="ll-label">Participating Telescopes</span>
+          <p class="eht-panel-note">Toggle stations and watch both the geographic baselines and u–v tracks change.</p>
+          <div class="eht-station-list" id="stationList"></div>
+          <button type="button" class="eht-next-movement" data-next-pane="eht-resolve">Resolve an image <span aria-hidden="true">→</span></button>
+        </div>
+
+        <div class="ll-pane" id="eht-resolve">
+          <p class="eht-movement-label">Movement IV · Resolve</p>
+          <h2>An image emerges from incomplete measurements.</h2>
+          <div class="ll-info">
+            <strong>What reconstruction means</strong>
+            The measurements are sparse, so independent imaging teams used multiple algorithms and tests. The published ring was a result supported across those methods—not a camera exposure and not a simulation simply chosen to match a prediction.
           </div>
           <div class="ll-info">
-            <strong>Atomic clocks and correlation</strong>
-            Each site timestamped its data using atomic clocks accurate to nanoseconds. Later, specialized computers called correlators aligned those recordings so the wave patterns could be combined instead of becoming meaningless noise. Without this synchronization, no image is possible.
+            <strong>What the orange means</strong>
+            The EHT detects radio intensity. The familiar orange palette is a display choice used to make brightness visible; it is not the object’s visible color and not a black-body temperature map.
           </div>
           <div class="ll-info">
             <strong>What the image shows</strong>
-            The famous ring is glowing material orbiting the black hole. The darker center is the shadow region—the dark silhouette of the event horizon itself, where gravity is so strong that even light cannot escape. The asymmetry you see is from Doppler shift: material approaching us is brighter.
+            Hot plasma around M87* emits radio waves. Strong gravity bends those rays, producing a bright ring around a central brightness depression called the black-hole shadow. The shadow is larger than the event horizon; the image does not show the horizon’s surface.
           </div>
           <div class="ll-info">
             <strong>Why the first image mattered</strong>
@@ -168,18 +235,38 @@
               <img src="../assets/thumbs/m87-blackhole.jpg" alt="The real 2019 Event Horizon Telescope image of the M87 black hole, showing a glowing orange ring around a dark shadow" style="width:100%;display:block;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.25);" />
               <figcaption style="font-size:0.72rem;color: var(--text-muted, #64748b);margin-top:0.35rem;">The real 2019 image of M87*. CC BY 4.0, © EHT Collaboration.</figcaption>
             </figure>
-            The 2019 image of M87* and 2022 image of Sagittarius A* provided direct visual evidence of black hole-scale structure and proved that a global collaboration could use Earth itself as a telescope platform. It matched predictions from Einstein's general relativity.
-          </div>
-          <div class="ll-info">
-            <strong>Key concepts</strong>
-            <strong style="display:block;margin-top:0.4rem;">Angular resolution</strong> is limited by wavelength and baseline length. Longer baselines resolve finer detail. Radio waves are much longer than visible light, so you need Earth-size baselines to see a black hole shadow.
-            <strong style="display:block;margin-top:0.4rem;">Clock synchronization</strong> is absolutely critical. If stations aren't locked to the same time reference, the phase information is lost and no image can be reconstructed.
-            <strong style="display:block;margin-top:0.4rem;">Photon bending</strong> happens because spacetime is curved by the black hole's mass. Light doesn't bend uniformly—it bends most sharply near the event horizon.
-            <strong style="display:block;margin-top:0.4rem;">Black-body spectrum</strong> tells us the disk temperature from color. Hotter material emits in blue-white; cooler material glows orange-red. This matches real observations of M87* and Sagittarius A*.
+            The 2019 M87* result resolved horizon-scale structure and found a ring size consistent with general relativity. A separate 2022 result imaged Sagittarius A*, the black hole at the center of the Milky Way.
           </div>
           <div class="ll-info">
             <strong class="eht-attribution-label">Attribution</strong>
-            This lesson's physics combines insights from <a href="https://github.com/oseiskar/black-hole" target="_blank" rel="noopener noreferrer" class="eht-attribution-link">oseiskar/black-hole</a> (Schwarzschild ray-tracing) and <a href="https://github.com/Adriwin06/black-hole" target="_blank" rel="noopener noreferrer" class="eht-attribution-link">Adriwin06/black-hole</a> (accretion models, tone-mapping, jets). The real EHT collaboration includes hundreds of scientists from institutions worldwide. Learn more at <a href="https://eventhorizontelescope.org/" target="_blank" rel="noopener noreferrer" class="eht-attribution-link">eventhorizontelescope.org</a>.
+            Classroom reconstruction model. Read the <a href="https://eventhorizontelescope.org/" target="_blank" rel="noopener noreferrer" class="eht-attribution-link">Event Horizon Telescope collaboration</a> overview and image releases for the real observations. M87* image: CC BY 4.0, EHT Collaboration. World geography is derived from <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener noreferrer" class="eht-attribution-link">Natural Earth 1:110m</a>, public domain; station markers use approximate coordinates on an equirectangular classroom map.
+          </div>
+          <button type="button" class="eht-next-movement" data-next-pane="eht-reflect">Reflect on the evidence <span aria-hidden="true">→</span></button>
+        </div>
+
+        <div class="ll-pane" id="eht-reflect">
+          <p class="eht-movement-label">Movement V · Reflect</p>
+          <h2>Explain how relationships became an image.</h2>
+          <div class="eht-check-card">
+            <span class="ll-label">Quick check</span>
+            <fieldset>
+              <legend>Why does adding a distant station help?</legend>
+              <label><input type="radio" name="eht-q1" value="a"> It changes the black hole’s accretion disk.</label>
+              <label><input type="radio" name="eht-q1" value="b"> It adds longer and differently oriented baselines.</label>
+              <label><input type="radio" name="eht-q1" value="c"> It turns radio waves into visible light.</label>
+            </fieldset>
+            <fieldset>
+              <legend>What does the orange color represent?</legend>
+              <label><input type="radio" name="eht-q2" value="a"> A display palette for radio intensity.</label>
+              <label><input type="radio" name="eht-q2" value="b"> The visible color of the event horizon.</label>
+              <label><input type="radio" name="eht-q2" value="c"> A direct temperature reading.</label>
+            </fieldset>
+            <button type="button" class="eht-check-button" id="checkUnderstandingButton">Check answers</button>
+            <p class="eht-check-feedback" id="checkFeedback" aria-live="polite"></p>
+          </div>
+          <div class="ll-info">
+            <strong>Exit ticket</strong>
+            Use the words <em>baseline</em>, <em>synchronization</em>, and <em>reconstruction</em> to explain how separated radio telescopes produced one image.
           </div>
         </div>
 
@@ -204,8 +291,8 @@
         region: 'Chile',
         lat: -23.03,
         lon: -67.76,
-        labelDx: -16,
-        labelDy: -14
+        labelDx: -32,
+        labelDy: -24
       },
       {
         id: 'apex',
@@ -214,8 +301,8 @@
         region: 'Chile',
         lat: -23.0,
         lon: -67.72,
-        labelDx: 22,
-        labelDy: 14
+        labelDx: 32,
+        labelDy: 26
       },
       {
         id: 'iram',
@@ -234,8 +321,8 @@
         region: 'Hawaii',
         lat: 19.82,
         lon: -155.47,
-        labelDx: -18,
-        labelDy: -16
+        labelDx: -30,
+        labelDy: -22
       },
       {
         id: 'lmt',
@@ -254,8 +341,8 @@
         region: 'Hawaii',
         lat: 19.83,
         lon: -155.42,
-        labelDx: 22,
-        labelDy: 14
+        labelDx: 32,
+        labelDy: 24
       },
       {
         id: 'spt',
@@ -280,27 +367,76 @@
     ];
 
     const state = {
-      active: new Set(stations.map((station) => station.id)),
-      synced: true
+      active: new Set(['alma']),
+      synced: true,
+      movement: 'listen'
+    };
+
+    const movementConfigurations = {
+      listen: {
+        number: 'I',
+        title: 'Listen',
+        prompt: 'Begin with one station. It can record a changing radio signal, but it cannot measure the source’s spatial structure alone.',
+        stations: ['alma']
+      },
+      connect: {
+        number: 'II',
+        title: 'Connect',
+        prompt: 'A second synchronized station creates the first baseline: one spatial comparison, but not yet a complete image.',
+        stations: ['alma', 'apex']
+      },
+      accumulate: {
+        number: 'III',
+        title: 'Accumulate',
+        prompt: 'Add distance, direction, and Earth’s rotation. The u–v traces show which spatial information the array actually samples.',
+        stations: ['alma', 'apex', 'jcmt', 'sma']
+      },
+      resolve: {
+        number: 'IV',
+        title: 'Resolve',
+        prompt: 'Use the full 2017 array. Algorithms combine incomplete measurements into a tested reconstruction of M87*.',
+        stations: stations.map((station) => station.id)
+      },
+      reflect: {
+        number: 'V',
+        title: 'Reflect',
+        prompt: 'Explain the chain: synchronized station pairs create baselines, baselines sample structure, and reconstruction organizes the evidence.',
+        stations: stations.map((station) => station.id)
+      }
     };
 
     const baselineLayer = document.getElementById('baselineLayer');
     const stationLayer = document.getElementById('stationLayer');
     const stationList = document.getElementById('stationList');
+    const chilePresetButton = document.getElementById('chilePresetButton');
+    const widePresetButton = document.getElementById('widePresetButton');
     const selectAllButton = document.getElementById('selectAllButton');
     const clearButton = document.getElementById('clearButton');
     const syncButton = document.getElementById('syncButton');
 
     const activeCount = document.getElementById('activeCount');
+    const baselineCount = document.getElementById('baselineCount');
     const baselineValue = document.getElementById('baselineValue');
-    const qualityValue = document.getElementById('qualityValue');
-    const syncValue = document.getElementById('syncValue');
+    const resolutionValue = document.getElementById('resolutionValue');
     const alertBar = document.getElementById('alertBar');
+    const statusTitle = document.getElementById('statusTitle');
+    const statusWhy = document.getElementById('statusWhy');
+    const statusNext = document.getElementById('statusNext');
     const mapNote = document.getElementById('mapNote');
     const imageNote = document.getElementById('imageNote');
+    const viewport = document.querySelector('.ll-viewport');
+    const movementNumber = document.getElementById('movementNumber');
+    const movementTitle = document.getElementById('movementTitle');
+    const movementPrompt = document.getElementById('movementPrompt');
 
     const canvas = document.getElementById('reconstructionCanvas');
     const ctx = canvas.getContext('2d');
+    const m87ReferenceImage = new Image();
+    m87ReferenceImage.decoding = 'async';
+    m87ReferenceImage.addEventListener('load', () => renderImage());
+    m87ReferenceImage.src = '../assets/thumbs/m87-blackhole.jpg';
+    const coverageCanvas = document.getElementById('coverageCanvas');
+    const coverageCtx = coverageCanvas.getContext('2d');
     const stationButtons = new Map();
 
     function project(lon, lat) {
@@ -326,57 +462,119 @@
       return stations.filter((station) => state.active.has(station.id));
     }
 
+    const observingWavelengthMeters = 1.3e-3;
+    const m87DeclinationRadians = 12.39 * Math.PI / 180;
+
+    function stationEcef(station) {
+      const earthRadiusMeters = 6371000;
+      const latitude = station.lat * Math.PI / 180;
+      const longitude = station.lon * Math.PI / 180;
+      return {
+        x: earthRadiusMeters * Math.cos(latitude) * Math.cos(longitude),
+        y: earthRadiusMeters * Math.cos(latitude) * Math.sin(longitude),
+        z: earthRadiusMeters * Math.sin(latitude)
+      };
+    }
+
+    function projectBaselineUv(pair, hourAngleRadians) {
+      const from = stationEcef(pair.from);
+      const to = stationEcef(pair.to);
+      const bx = to.x - from.x;
+      const by = to.y - from.y;
+      const bz = to.z - from.z;
+      const sinH = Math.sin(hourAngleRadians);
+      const cosH = Math.cos(hourAngleRadians);
+      const sinD = Math.sin(m87DeclinationRadians);
+      const cosD = Math.cos(m87DeclinationRadians);
+      return {
+        u: (sinH * bx + cosH * by) / observingWavelengthMeters / 1e6,
+        v: (-sinD * cosH * bx + sinD * sinH * by + cosD * bz) / observingWavelengthMeters / 1e6
+      };
+    }
+
     function calculateMetrics() {
       const activeStations = getActiveStations();
-
-      if (!state.synced || activeStations.length < 2) {
-        return {
-          count: activeStations.length,
-          longestBaseline: 0,
-          qualityScore: activeStations.length < 2 ? 0.06 : 0.1,
-          qualityLabel: activeStations.length < 2 ? 'No array yet' : 'Unsynced recordings',
-          syncLabel: state.synced ? 'Waiting for more dishes' : 'Uncorrelated',
-          alertClass: activeStations.length < 2 ? 'warn' : 'danger',
-          alertText: activeStations.length < 2
-            ? 'At least two stations are needed before the array can form a useful baseline.'
-            : 'Clock sync is OFF, so the data cannot be combined into one image even if many stations are active.'
-        };
-      }
-
       let longestBaseline = 0;
+      let baselinePairs = 0;
+      const vectors = [];
       activeStations.forEach((station, index) => {
         for (let i = index + 1; i < activeStations.length; i += 1) {
-          longestBaseline = Math.max(longestBaseline, haversineKm(station, activeStations[i]));
+          const other = activeStations[i];
+          const distance = haversineKm(station, other);
+          longestBaseline = Math.max(longestBaseline, distance);
+          baselinePairs += 1;
+          vectors.push({
+            from: station,
+            to: other,
+            distance
+          });
         }
       });
 
-      const coverage = activeStations.length / stations.length;
-      const baselineFactor = Math.min(1, longestBaseline / 14000);
-      const qualityScore = Math.min(1, 0.14 + coverage * 0.46 + baselineFactor * 0.4);
+      const pairCoverage = baselinePairs / 28;
+      const spanFactor = Math.min(1, longestBaseline / 13000);
+      const directionBins = new Set(vectors.map((vector) => {
+        const uv = projectBaselineUv(vector, 0);
+        const angle = (Math.atan2(uv.v, uv.u) * 180 / Math.PI + 180) % 180;
+        return Math.floor(angle / 22.5);
+      })).size;
+      const directionCoverage = directionBins / 8;
+      const qualityScore = state.synced && baselinePairs
+        ? Math.min(1, 0.08 + pairCoverage * 0.48 + spanFactor * 0.24 + directionCoverage * 0.2)
+        : 0;
+      const resolutionMicroarcsec = longestBaseline
+        ? (1.3e-3 / (longestBaseline * 1000)) * 206265e6
+        : null;
 
-      let qualityLabel = 'Very blurry';
       let alertClass = 'warn';
-      let alertText = 'The array is working, but with limited station coverage the black hole ring is still only partially resolved.';
+      let statusTitleText = 'No stations are selected.';
+      let statusWhyText = 'A station is a real observatory that records radio waves from M87*. With no selected station, the model has no recording to compare or reconstruct.';
+      let statusNextText = 'Next: select one station and watch the station count change.';
 
-      if (qualityScore >= 0.78) {
-        qualityLabel = 'First image territory';
+      if (activeStations.length === 1) {
+        statusTitleText = 'One station gives one recording, but it cannot create a baseline.';
+        statusWhyText = 'A baseline belongs to a pair of telescopes. The EHT measures how the same radio wave differs between two separated locations. With only one location, there is no second recording to compare, so there are zero baselines and no spatial-structure sample.';
+        statusNextText = 'Next: select a second station. A line will join the pair and the baseline count will become one.';
+      } else if (!state.synced && baselinePairs) {
+        alertClass = 'danger';
+        statusTitleText = 'The stations are selected, but their recordings cannot be combined.';
+        statusWhyText = 'Radio waves at 230 GHz oscillate about 230 billion times each second. Hydrogen-maser clocks timestamp each recording precisely enough for a correlator to align the wave patterns. When clock sync is off, the relative timing—and therefore the phase comparison—is lost.';
+        statusNextText = 'Next: switch clock sync on. The dashed red baselines will become solid blue and a stable reconstruction can return.';
+      } else if (baselinePairs === 1 && longestBaseline < 100) {
+        statusTitleText = 'Two nearby stations create one short baseline.';
+        statusWhyText = `ALMA and APEX are about ${Math.round(longestBaseline)} km apart. Their two recordings can now be correlated, but one short baseline samples only one broad scale and direction. It cannot resolve the roughly 40-microarcsecond ring by itself.`;
+        statusNextText = 'Next: add Hawaii. The much longer lines support finer angular detail, while the extra pair directions add new structural information.';
+      } else if (qualityScore >= 0.78) {
         alertClass = 'safe';
-        alertText = 'With many synchronized, widely separated dishes, the array reaches Earth-size class resolution and the ring structure becomes much more distinct.';
+        statusTitleText = 'The full array has both long baselines and varied coverage.';
+        statusWhyText = `${activeStations.length} stations create ${baselinePairs} comparisons because n(n−1)÷2 = ${activeStations.length}×${activeStations.length - 1}÷2. Long baselines support fine detail; different directions constrain the shape from multiple angles.`;
+        statusNextText = 'Notice: the coverage plot is fuller and the fixed ring is reconstructed with less blur and fewer directional streaks.';
       } else if (qualityScore >= 0.58) {
-        qualityLabel = 'Ring emerging';
-        alertText = 'The bright ring begins to stand out because the array now spans much of Earth with several strong baselines.';
+        statusTitleText = 'The array can see finer detail, but its coverage still has gaps.';
+        statusWhyText = `The longest selected pair spans about ${Math.round(longestBaseline).toLocaleString()} km, improving nominal resolution. However, ${baselinePairs} baselines do not yet sample enough different directions to constrain every part of the image equally.`;
+        statusNextText = 'Next: add stations in new geographic regions. Compare the coverage plot, not only the longest-baseline number.';
       } else if (qualityScore >= 0.36) {
-        qualityLabel = 'Low resolution';
+        statusTitleText = 'A long baseline improves resolution, but one direction is not a complete image.';
+        statusWhyText = 'A widely separated pair can distinguish small angular scales along its sampled direction. It still leaves most spatial frequencies unmeasured, so many different source shapes could fit that limited evidence.';
+        statusNextText = 'Next: add stations at different longitudes and latitudes so the array samples more directions and distances.';
+      } else if (baselinePairs) {
+        statusTitleText = 'The first baseline is working, but the evidence is sparse.';
+        statusWhyText = 'The correlator can compare this pair, producing one spatial-frequency sample and its mirrored counterpart. A reconstruction needs many scales and directions to distinguish a ring from other possible shapes.';
+        statusNextText = 'Next: add a distant station, then inspect how both the baseline count and coverage plot change.';
       }
 
       return {
         count: activeStations.length,
+        baselinePairs,
         longestBaseline,
+        vectors,
+        directionCoverage,
+        resolutionMicroarcsec,
         qualityScore,
-        qualityLabel,
-        syncLabel: 'Correlated',
         alertClass,
-        alertText
+        statusTitleText,
+        statusWhyText,
+        statusNextText
       };
     }
 
@@ -388,6 +586,7 @@
         button.type = 'button';
         button.className = 'eht-station-button';
         button.innerHTML = `<strong>${station.name}</strong><small>${station.region}</small>`;
+        button.setAttribute('aria-pressed', 'true');
         button.addEventListener('click', () => {
           if (state.active.has(station.id)) {
             state.active.delete(station.id);
@@ -407,7 +606,7 @@
 
       const activeStations = getActiveStations();
 
-      if (state.synced && activeStations.length >= 2) {
+      if (activeStations.length >= 2) {
         activeStations.forEach((station, index) => {
           const from = project(station.lon, station.lat);
           for (let i = index + 1; i < activeStations.length; i += 1) {
@@ -418,7 +617,7 @@
             line.setAttribute('y1', from.y);
             line.setAttribute('x2', to.x);
             line.setAttribute('y2', to.y);
-            line.setAttribute('class', 'baseline-line');
+            line.setAttribute('class', state.synced ? 'baseline-line' : 'baseline-line is-unsynced');
             baselineLayer.appendChild(line);
           }
         });
@@ -429,12 +628,30 @@
         const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         const active = state.active.has(station.id);
 
+        const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+        title.textContent = `${station.name}, ${station.region}: ${Math.abs(station.lat).toFixed(2)}° ${station.lat >= 0 ? 'N' : 'S'}, ${Math.abs(station.lon).toFixed(2)}° ${station.lon >= 0 ? 'E' : 'W'}`;
+        group.setAttribute('role', 'img');
+        group.setAttribute('aria-label', title.textContent);
+
+        const halo = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        halo.setAttribute('cx', point.x);
+        halo.setAttribute('cy', point.y);
+        halo.setAttribute('r', '12');
+        halo.setAttribute('class', active ? 'station-halo is-active' : 'station-halo');
+
+        const leader = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        leader.setAttribute('x1', point.x);
+        leader.setAttribute('y1', point.y);
+        leader.setAttribute('x2', point.x + station.labelDx * 0.72);
+        leader.setAttribute('y2', point.y + station.labelDy * 0.72);
+        leader.setAttribute('class', active ? 'station-leader is-active' : 'station-leader');
+
         const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         circle.setAttribute('cx', point.x);
         circle.setAttribute('cy', point.y);
-        circle.setAttribute('r', active ? '7.5' : '4.6');
+        circle.setAttribute('r', '5');
         circle.setAttribute('fill', active ? '#8ad7ff' : 'rgba(168,188,220,0.35)');
-        circle.setAttribute('class', active ? 'station-dot animate-pulse-glow' : 'station-dot');
+        circle.setAttribute('class', active ? 'station-dot is-active' : 'station-dot');
 
         const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         label.setAttribute('x', point.x + station.labelDx);
@@ -443,10 +660,15 @@
         label.setAttribute('fill', active ? '#ecf6ff' : 'rgba(210,220,234,0.42)');
         label.textContent = station.short;
 
+        group.appendChild(title);
+        group.appendChild(halo);
+        group.appendChild(leader);
         group.appendChild(circle);
         group.appendChild(label);
         stationLayer.appendChild(group);
       });
+
+      drawCoveragePlot(calculateMetrics());
     }
 
     function resizeCanvas() {
@@ -455,6 +677,7 @@
       canvas.width = Math.round(rect.width * dpr);
       canvas.height = Math.round(rect.height * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawCoveragePlot(calculateMetrics());
       renderImage();
     }
 
@@ -470,269 +693,243 @@
       }
     }
 
-    // Black-body radiation curve (Planck spectrum lookup)
-    // Maps temperature in Kelvin to RGB color
-    function temperatureToColor(tempKelvin) {
-      tempKelvin = Math.max(3000, Math.min(30000, tempKelvin));
-      const t = (tempKelvin - 3000) / 27000;
-      let r, g, b;
-      if (t < 0.3) {
-        r = 1;
-        g = Math.sqrt(t / 0.3) * 0.4;
-        b = 0;
-      } else if (t < 0.6) {
-        const s = (t - 0.3) / 0.3;
-        r = 1;
-        g = 0.4 + s * 0.6;
-        b = 0;
-      } else if (t < 0.8) {
-        const s = (t - 0.6) / 0.2;
-        r = 1;
-        g = 1;
-        b = s * 0.3;
-      } else {
-        const s = (t - 0.8) / 0.2;
-        r = 1;
-        g = 1;
-        b = 0.3 + s * 0.7;
-      }
-      return { r, g, b };
-    }
+    function drawCoveragePlot(metrics) {
+      const rect = coverageCanvas.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      coverageCanvas.width = Math.round(rect.width * dpr);
+      coverageCanvas.height = Math.round(rect.height * dpr);
+      coverageCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    function getDiskProfile(quality, modelType) {
-      const profile = { radii: [], temps: [], densities: [] };
-      if (modelType === 'adaf') {
-        const steps = Math.round(40 + quality * 40);
-        for (let i = 0; i < steps; i++) {
-          const r = 2 + (i / steps) * 18;
-          const T = 5000 + (1 - Math.exp(-r / 8)) * 8000;
-          const density = Math.exp(-r / 12) * (1 + 0.3 * Math.sin(i * 0.5));
-          profile.radii.push(r);
-          profile.temps.push(T);
-          profile.densities.push(density);
+      const width = rect.width;
+      const height = rect.height;
+      const margin = { left: 52, right: 22, top: 20, bottom: 46 };
+      const plotWidth = Math.max(1, width - margin.left - margin.right);
+      const plotHeight = Math.max(1, height - margin.top - margin.bottom);
+      coverageCtx.clearRect(0, 0, width, height);
+      coverageCtx.fillStyle = '#030813';
+      coverageCtx.fillRect(0, 0, width, height);
+
+      const tracks = metrics.vectors.map((pair) => {
+        const points = [];
+        for (let step = 0; step <= 80; step += 1) {
+          const hours = -4 + step / 80 * 8;
+          points.push(projectBaselineUv(pair, hours * 15 * Math.PI / 180));
         }
-      } else if (modelType === 'slim') {
-        const steps = Math.round(35 + quality * 35);
-        for (let i = 0; i < steps; i++) {
-          const r = 1.8 + (i / steps) * 12;
-          const T = 8000 + (1 - Math.exp(-r / 4)) * 15000;
-          const density = Math.exp(-r / 6) * (1 + 0.4 * Math.cos(i * 0.6));
-          profile.radii.push(r);
-          profile.temps.push(T);
-          profile.densities.push(density);
-        }
-      } else {
-        const steps = Math.round(45 + quality * 45);
-        for (let i = 0; i < steps; i++) {
-          const r = 1.5 + (i / steps) * 20;
-          const T = 9000 + (1 - Math.exp(-r / 6)) * 10000;
-          const density = Math.exp(-r / 8) * (1 + 0.2 * Math.sin(i * 0.4));
-          profile.radii.push(r);
-          profile.temps.push(T);
-          profile.densities.push(density);
+        return points;
+      });
+      const values = tracks.flatMap((track) => track.flatMap((point) => [Math.abs(point.u), Math.abs(point.v)]));
+      const rawMax = Math.max(1000, ...values);
+      const tickStep = rawMax > 8000 ? 2500 : rawMax > 4000 ? 2000 : rawMax > 2000 ? 1000 : 500;
+      const axisMax = Math.ceil(rawMax / tickStep) * tickStep;
+      const xFor = (u) => margin.left + (u + axisMax) / (axisMax * 2) * plotWidth;
+      const yFor = (v) => margin.top + (axisMax - v) / (axisMax * 2) * plotHeight;
+
+      coverageCtx.font = '10px ui-monospace, SFMono-Regular, Menlo, monospace';
+      coverageCtx.textAlign = 'center';
+      coverageCtx.textBaseline = 'top';
+      for (let value = -axisMax; value <= axisMax; value += tickStep) {
+        const x = xFor(value);
+        const y = yFor(value);
+        coverageCtx.strokeStyle = value === 0 ? 'rgba(220, 235, 255, 0.34)' : 'rgba(138, 215, 255, 0.1)';
+        coverageCtx.lineWidth = value === 0 ? 1.2 : 1;
+        coverageCtx.beginPath();
+        coverageCtx.moveTo(x, margin.top);
+        coverageCtx.lineTo(x, margin.top + plotHeight);
+        coverageCtx.moveTo(margin.left, y);
+        coverageCtx.lineTo(margin.left + plotWidth, y);
+        coverageCtx.stroke();
+
+        coverageCtx.fillStyle = 'rgba(205, 220, 242, 0.58)';
+        coverageCtx.fillText(String(value), x, margin.top + plotHeight + 8);
+        if (value !== -axisMax) {
+          coverageCtx.save();
+          coverageCtx.textAlign = 'right';
+          coverageCtx.textBaseline = 'middle';
+          coverageCtx.fillText(String(value), margin.left - 8, y);
+          coverageCtx.restore();
         }
       }
-      return profile;
+
+      coverageCtx.fillStyle = 'rgba(225, 235, 255, 0.78)';
+      coverageCtx.font = '700 11px ui-monospace, SFMono-Regular, Menlo, monospace';
+      coverageCtx.textAlign = 'right';
+      coverageCtx.fillText('u (Mλ) →', margin.left + plotWidth, height - 14);
+      coverageCtx.save();
+      coverageCtx.translate(14, margin.top);
+      coverageCtx.rotate(-Math.PI / 2);
+      coverageCtx.textAlign = 'right';
+      coverageCtx.fillText('v (Mλ) →', 0, 0);
+      coverageCtx.restore();
+
+      if (!tracks.length) {
+        coverageCtx.fillStyle = 'rgba(213, 230, 255, 0.68)';
+        coverageCtx.font = '700 13px system-ui, sans-serif';
+        coverageCtx.textAlign = 'center';
+        coverageCtx.textBaseline = 'middle';
+        coverageCtx.fillText('Select two stations to create the first u–v track.', margin.left + plotWidth / 2, margin.top + plotHeight / 2);
+        return;
+      }
+
+      const colors = ['#8ad7ff', '#f6c86a', '#c99cff', '#75e0b5', '#ff9e83', '#a8c7ff', '#f2a7d8', '#d7e678'];
+      coverageCtx.lineWidth = 1.35;
+      coverageCtx.lineJoin = 'round';
+      coverageCtx.lineCap = 'round';
+      tracks.forEach((track, index) => {
+        coverageCtx.strokeStyle = state.synced ? colors[index % colors.length] : 'rgba(255, 126, 126, 0.44)';
+        coverageCtx.globalAlpha = state.synced ? 0.72 : 0.48;
+        for (const sign of [-1, 1]) {
+          coverageCtx.beginPath();
+          track.forEach((point, pointIndex) => {
+            const x = xFor(point.u * sign);
+            const y = yFor(point.v * sign);
+            if (pointIndex === 0) coverageCtx.moveTo(x, y);
+            else coverageCtx.lineTo(x, y);
+          });
+          coverageCtx.stroke();
+        }
+      });
+      coverageCtx.globalAlpha = 1;
+
+      coverageCtx.fillStyle = '#ffffff';
+      coverageCtx.beginPath();
+      coverageCtx.arc(xFor(0), yFor(0), 2.2, 0, Math.PI * 2);
+      coverageCtx.fill();
+
+      if (!state.synced) {
+        coverageCtx.fillStyle = 'rgba(31, 7, 10, 0.88)';
+        coverageCtx.fillRect(margin.left + 12, margin.top + plotHeight / 2 - 24, plotWidth - 24, 48);
+        coverageCtx.fillStyle = '#ffabab';
+        coverageCtx.font = '700 12px system-ui, sans-serif';
+        coverageCtx.textAlign = 'center';
+        coverageCtx.textBaseline = 'middle';
+        coverageCtx.fillText('Geometry exists, but these tracks cannot be measured without synchronized timing.', margin.left + plotWidth / 2, margin.top + plotHeight / 2);
+      }
     }
 
-    function toneMap(r, g, b, exposure) {
-      const tonemapFunc = (x) => {
-        const a = 2.51, b_tm = 0.03, c = 2.43, d = 0.59, e = 0.14;
-        return Math.max(0, Math.min(1, (x * (a * x + b_tm)) / (x * (c * x + d) + e)));
+    function drawFixedSource(targetCtx, width, height) {
+      if (m87ReferenceImage.complete && m87ReferenceImage.naturalWidth) {
+        const side = Math.min(width, height) * 0.98;
+        const x = (width - side) / 2;
+        const y = (height - side) / 2;
+        targetCtx.drawImage(m87ReferenceImage, x, y, side, side);
+        return;
+      }
+
+      // A soft fallback is shown only while the licensed EHT reference loads.
+      const cx = width * 0.52;
+      const cy = height * 0.5;
+      const radius = Math.min(width, height) * 0.23;
+
+      const glow = targetCtx.createRadialGradient(cx, cy, radius * 0.35, cx, cy, radius * 1.65);
+      glow.addColorStop(0, 'rgba(255, 126, 34, 0)');
+      glow.addColorStop(0.58, 'rgba(255, 101, 20, 0.12)');
+      glow.addColorStop(1, 'rgba(255, 101, 20, 0)');
+      targetCtx.fillStyle = glow;
+      targetCtx.fillRect(0, 0, width, height);
+
+      targetCtx.save();
+      targetCtx.filter = 'blur(5px)';
+      for (let i = 0; i < 240; i += 1) {
+        const angle = i / 240 * Math.PI * 2;
+        const lowerBrightness = 0.42 + 0.58 * ((Math.sin(angle) + 1) / 2);
+        const ripple = 1 + 0.055 * Math.sin(i * 0.61) + 0.025 * Math.cos(i * 1.73);
+        const x = cx + Math.cos(angle) * radius * 1.04 * ripple;
+        const y = cy + Math.sin(angle) * radius * 0.83 * ripple;
+        targetCtx.fillStyle = `rgba(255, ${Math.round(92 + lowerBrightness * 112)}, ${Math.round(22 + lowerBrightness * 50)}, ${0.28 + lowerBrightness * 0.62})`;
+        targetCtx.beginPath();
+        targetCtx.arc(x, y, radius * (0.055 + lowerBrightness * 0.035), 0, Math.PI * 2);
+        targetCtx.fill();
+      }
+      targetCtx.restore();
+
+      targetCtx.fillStyle = '#02040a';
+      targetCtx.beginPath();
+      targetCtx.ellipse(cx, cy, radius * 0.56, radius * 0.47, -0.08, 0, Math.PI * 2);
+      targetCtx.fill();
+    }
+
+    function drawUncorrelated(width, height) {
+      let seed = 17;
+      const random = () => {
+        seed = (seed * 9301 + 49297) % 233280;
+        return seed / 233280;
       };
-      return {
-        r: tonemapFunc(r * exposure),
-        g: tonemapFunc(g * exposure),
-        b: tonemapFunc(b * exposure)
-      };
-    }
-
-    function renderDiskWithModel(cx, cy, ringRadius, metrics, diskModel) {
-      const diskProfile = getDiskProfile(metrics.qualityScore, diskModel);
-      ctx.save();
-      for (let i = 0; i < diskProfile.radii.length; i++) {
-        const r = diskProfile.radii[i];
-        const radiusPixels = (r / 3.5) * ringRadius;
-        const temp = diskProfile.temps[i];
-        const density = diskProfile.densities[i] * metrics.qualityScore;
-        const color = temperatureToColor(temp);
-        const toneMapped = toneMap(color.r, color.g, color.b, 0.8 * density);
-        ctx.strokeStyle = `rgba(${Math.round(toneMapped.r * 255)}, ${Math.round(toneMapped.g * 255)}, ${Math.round(toneMapped.b * 255)}, ${density * 0.7})`;
-        ctx.lineWidth = Math.max(2, ringRadius * 0.04 * density);
-        ctx.beginPath();
-        ctx.ellipse(cx, cy, radiusPixels * 1.05, radiusPixels * 0.9, -0.25, 0, Math.PI * 2);
-        ctx.stroke();
+      const image = ctx.createImageData(Math.ceil(width / 5), Math.ceil(height / 5));
+      for (let i = 0; i < image.data.length; i += 4) {
+        const value = Math.round(18 + random() * 92);
+        image.data[i] = value;
+        image.data[i + 1] = Math.round(value * 0.62);
+        image.data[i + 2] = Math.round(value * 0.5);
+        image.data[i + 3] = 180;
       }
-      ctx.restore();
-    }
-
-    function renderJet(cx, cy, ringRadius, metrics) {
-      if (metrics.qualityScore < 0.65) return;
-      ctx.save();
-      const jetIntensity = (metrics.qualityScore - 0.65) / 0.35;
-      for (const side of [-1, 1]) {
-        const jetBaseX = cx;
-        const jetBaseY = cy - ringRadius * 0.6 * side;
-        ctx.fillStyle = `rgba(${Math.round(100 + jetIntensity * 155)}, ${Math.round(150 + jetIntensity * 100)}, 255, ${jetIntensity * 0.4})`;
-        for (let i = 0; i < 5; i++) {
-          const y = jetBaseY + (i * ringRadius * 0.15 * side);
-          const width = ringRadius * 0.06 * (1 - i * 0.15) * jetIntensity;
-          ctx.beginPath();
-          ctx.ellipse(jetBaseX, y, width, width * 0.3, 0, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-      ctx.restore();
-    }
-
-    // Schwarzschild metric photon ring profile (adapted from oseiskar/black-hole physics)
-    // The photon sphere exists at r = 3M (or 1.5 in normalized units)
-    // Light can orbit at this distance, creating the bright photon ring we observe
-    function computePhotonRingProfile(resolution) {
-      const profile = new Float32Array(resolution);
-      // Gaussian profile centered at photon sphere with realistic width
-      const center = resolution * 0.42;
-      const sigma = resolution * 0.08;
-
-      for (let i = 0; i < resolution; i += 1) {
-        const delta = i - center;
-        profile[i] = Math.exp(-(delta * delta) / (2 * sigma * sigma));
-      }
-      return profile;
+      const noiseCanvas = document.createElement('canvas');
+      noiseCanvas.width = image.width;
+      noiseCanvas.height = image.height;
+      noiseCanvas.getContext('2d').putImageData(image, 0, 0);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(noiseCanvas, 0, 0, width, height);
+      ctx.imageSmoothingEnabled = true;
     }
 
     function renderImage() {
       const width = canvas.getBoundingClientRect().width;
       const height = canvas.getBoundingClientRect().height;
       if (!width || !height) return;
-
       const metrics = calculateMetrics();
-      ctx.clearRect(0, 0, width, height);
 
-      const background = ctx.createRadialGradient(width * 0.5, height * 0.3, 10, width * 0.5, height * 0.5, Math.max(width, height) * 0.7);
-      background.addColorStop(0, '#0f1420');
-      background.addColorStop(1, '#050811');
+      ctx.clearRect(0, 0, width, height);
+      const background = ctx.createRadialGradient(width * 0.5, height * 0.35, 10, width * 0.5, height * 0.5, Math.max(width, height) * 0.72);
+      background.addColorStop(0, '#111520');
+      background.addColorStop(1, '#02040a');
       ctx.fillStyle = background;
       ctx.fillRect(0, 0, width, height);
+      if (!state.synced && metrics.baselinePairs) {
+        drawUncorrelated(width, height);
+      } else if (!metrics.baselinePairs) {
+        ctx.fillStyle = 'rgba(213, 230, 255, 0.62)';
+        ctx.font = '700 15px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Select at least two stations', width / 2, height / 2);
+        ctx.textAlign = 'left';
+      } else {
+        const source = document.createElement('canvas');
+        source.width = Math.max(1, Math.round(width));
+        source.height = Math.max(1, Math.round(height));
+        drawFixedSource(source.getContext('2d'), width, height);
 
-      drawStars(width, height);
+        const blur = 0.5 + (1 - metrics.qualityScore) * 18;
+        const ghost = (1 - metrics.directionCoverage) * 16;
+        const artifactStrength = 1 - metrics.qualityScore;
+        if (artifactStrength > 0.08) {
+          ctx.save();
+          ctx.globalAlpha = artifactStrength * 0.28;
+          ctx.filter = `blur(${blur + 6}px)`;
+          ctx.drawImage(source, -ghost, 0, width, height);
+          ctx.drawImage(source, ghost, 0, width, height);
+          ctx.restore();
+        }
 
-      const cx = width * 0.52;
-      const cy = height * 0.53;
-      const shadowRadius = Math.min(width, height) * 0.16; // Schwarzschild shadow radius
-      const ringRadius = shadowRadius * 1.48; // Photon ring ~1.48x larger (real Schwarzschild geometry)
+        ctx.save();
+        ctx.globalAlpha = 0.78 + metrics.qualityScore * 0.22;
+        ctx.filter = `blur(${blur}px)`;
+        ctx.drawImage(source, 0, 0, width, height);
+        ctx.restore();
 
-      // Render resolution improves with array quality
-      const resolution = Math.round(180 + metrics.qualityScore * 180);
-      const photonProfile = computePhotonRingProfile(resolution);
-
-      // Accretion disk (multiple models: thin, ADAF torus, slim disk)
-      if (metrics.qualityScore > 0.28) {
-        // Select disk model based on quality (in real lesson, this could be a control)
-        const diskModel = metrics.qualityScore > 0.7 ? 'thin' : (metrics.qualityScore > 0.5 ? 'adaf' : 'thin');
-        renderDiskWithModel(cx, cy, ringRadius, metrics, diskModel);
-      }
-
-      // Photon ring: bright ring from light orbiting at the photon sphere
-      ctx.save();
-      const ringBlur = Math.max(2, 16 - metrics.qualityScore * 12);
-      ctx.filter = `blur(${ringBlur}px)`;
-
-      for (let i = 0; i < resolution; i += 1) {
-        const angle = (i / resolution) * Math.PI * 2;
-        const intensity = photonProfile[i] * metrics.qualityScore;
-
-        // Main photon ring (brighter for better arrays)
-        ctx.strokeStyle = `rgba(255, 200, 100, ${intensity * 0.9})`;
-        ctx.lineWidth = Math.max(8, 28 - metrics.qualityScore * 18);
-        ctx.beginPath();
-        ctx.ellipse(cx, cy, ringRadius * 1.05, ringRadius * 0.92, -0.25, angle, angle + 0.04);
-        ctx.stroke();
-
-        // Secondary brightness layer (appears as array improves)
-        if (metrics.qualityScore > 0.62) {
-          ctx.strokeStyle = `rgba(255, 230, 150, ${intensity * 0.5})`;
-          ctx.lineWidth = Math.max(4, 14 - metrics.qualityScore * 10);
-          ctx.beginPath();
-          ctx.ellipse(cx, cy, ringRadius * 0.98, ringRadius * 0.86, -0.25, angle - 0.02, angle + 0.06);
-          ctx.stroke();
+        if (metrics.directionCoverage < 0.75) {
+          ctx.save();
+          ctx.strokeStyle = `rgba(255, 168, 96, ${0.2 * (1 - metrics.directionCoverage)})`;
+          ctx.lineWidth = 1;
+          for (let y = 36; y < height - 28; y += 13) {
+            ctx.beginPath();
+            ctx.moveTo(width * 0.18, y);
+            ctx.lineTo(width * 0.86, y + ghost * 0.28);
+            ctx.stroke();
+          }
+          ctx.restore();
         }
       }
-      ctx.restore();
 
-      // Doppler shift asymmetry: one side brighter from approaching material
-      if (metrics.qualityScore > 0.52) {
-        ctx.save();
-        const doppler = ctx.createLinearGradient(cx - ringRadius * 1.2, cy, cx + ringRadius * 1.2, cy);
-        doppler.addColorStop(0, 'rgba(255, 150, 80, 0)');
-        doppler.addColorStop(0.35, 'rgba(255, 180, 100, 0.04)');
-        doppler.addColorStop(0.5, 'rgba(255, 200, 120, 0.06)');
-        doppler.addColorStop(0.65, 'rgba(255, 140, 70, 0.02)');
-        doppler.addColorStop(1, 'rgba(255, 100, 50, 0)');
-        ctx.fillStyle = doppler;
-        ctx.beginPath();
-        ctx.ellipse(cx, cy, ringRadius * 1.1, ringRadius * 0.95, -0.25, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      }
-
-      // Event horizon shadow (the dark region at the center)
-      ctx.beginPath();
-      ctx.fillStyle = '#050811';
-      ctx.arc(cx, cy, shadowRadius * 0.95, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Add subtle texture detail when resolution is high enough
-      if (metrics.qualityScore > 0.45) {
-        ctx.save();
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-        for (let i = 0; i < 25; i += 1) {
-          const angle = Math.random() * Math.PI * 2;
-          const dist = Math.random() * shadowRadius * 0.9;
-          const x = cx + Math.cos(angle) * dist;
-          const y = cy + Math.sin(angle) * dist;
-          ctx.beginPath();
-          ctx.arc(x, y, Math.random() * 2 + 1, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        ctx.restore();
-      }
-
-      // Uncorrelated data artifacts (when sync is OFF)
-      if (!state.synced) {
-        ctx.save();
-        ctx.strokeStyle = 'rgba(255, 100, 100, 0.34)';
-        ctx.lineWidth = 2;
-        for (let i = 0; i < 18; i += 1) {
-          ctx.beginPath();
-          ctx.moveTo(width * 0.24, 40 + i * 18);
-          ctx.lineTo(width * 0.82, 46 + i * 18);
-          ctx.stroke();
-        }
-        ctx.restore();
-      } else if (metrics.qualityScore < 0.52) {
-        // Low-resolution diffraction pattern (Airy disk rings)
-        ctx.save();
-        ctx.strokeStyle = 'rgba(255, 236, 190, 0.08)';
-        ctx.lineWidth = 1;
-        for (let i = 1; i < 6; i += 1) {
-          ctx.beginPath();
-          ctx.arc(cx, cy, shadowRadius * 0.2 + i * ringRadius * 0.15, 0, Math.PI * 2);
-          ctx.stroke();
-        }
-        ctx.restore();
-      }
-
-      // Relativistic jets (visible at high quality)
-      renderJet(cx, cy, ringRadius, metrics);
-
-      // Attribution and informational labels
-      ctx.fillStyle = 'rgba(217, 230, 255, 0.7)';
-      ctx.font = '700 14px system-ui, sans-serif';
-      ctx.fillText('EHT Reconstruction (Schwarzschild physics)', 18, height - 44);
-      ctx.fillStyle = 'rgba(180, 201, 228, 0.54)';
-      ctx.font = '12px system-ui, sans-serif';
-      ctx.fillText('Inspired by oseiskar/black-hole & Adriwin06/black-hole. Disk model and jets added.', 18, height - 24);
     }
 
     function renderReadout() {
@@ -742,27 +939,33 @@
         : 'Not formed yet';
 
       activeCount.textContent = `${metrics.count} of ${stations.length}`;
+      baselineCount.textContent = `${metrics.baselinePairs} pair${metrics.baselinePairs === 1 ? '' : 's'}`;
       baselineValue.textContent = baselineText;
-      qualityValue.textContent = metrics.qualityLabel;
-      syncValue.textContent = metrics.syncLabel;
+      resolutionValue.textContent = metrics.resolutionMicroarcsec
+        ? `≈ ${Math.round(metrics.resolutionMicroarcsec)} μas`
+        : 'Not available';
 
       alertBar.className = `eht-alert ${metrics.alertClass}`;
-      alertBar.textContent = metrics.alertText;
+      statusTitle.textContent = metrics.statusTitleText;
+      statusWhy.textContent = metrics.statusWhyText;
+      statusNext.innerHTML = `<b>${metrics.statusNextText.startsWith('Notice:') ? 'Notice:' : 'Next:'}</b> ${metrics.statusNextText.replace(/^(Notice|Next):\s*/, '')}`;
 
       mapNote.textContent = state.synced
-        ? 'Signals can be combined because the clocks are synchronized.'
-        : 'Stations are active, but the clocks are not synchronized.';
+        ? `${metrics.baselinePairs} correlated sample pair${metrics.baselinePairs === 1 ? '' : 's'} shown.`
+        : 'Timing is disabled; the baseline geometry remains, but the recordings cannot be correlated.';
 
       imageNote.textContent = state.synced
-        ? 'This classroom model sharpens as coverage and baseline length increase.'
-        : 'Without synchronization, the recordings cannot reconstruct a clean ring.';
+        ? 'The source is fixed; only sampling and reconstruction quality change.'
+        : 'Without shared timing, no stable reconstruction can be formed.';
 
       syncButton.classList.toggle('is-on', state.synced);
       syncButton.textContent = state.synced ? 'Clock sync ON' : 'Clock sync OFF';
+      syncButton.setAttribute('aria-pressed', String(state.synced));
 
       stations.forEach((station) => {
         const button = stationButtons.get(station.id);
         button.classList.toggle('is-active', state.active.has(station.id));
+        button.setAttribute('aria-pressed', String(state.active.has(station.id)));
       });
     }
 
@@ -772,8 +975,45 @@
       renderImage();
     }
 
+    function enterMovement(movement) {
+      const configuration = movementConfigurations[movement];
+      if (!configuration) return;
+      state.movement = movement;
+      state.active = new Set(configuration.stations);
+      state.synced = true;
+      viewport.dataset.movement = movement;
+      movementNumber.textContent = configuration.number;
+      movementTitle.textContent = configuration.title;
+      movementPrompt.textContent = configuration.prompt;
+      renderAll();
+      resizeCanvas();
+    }
+
+    document.querySelectorAll('.eht-score-tabs .ll-tab').forEach((tab) => {
+      tab.addEventListener('click', () => enterMovement(tab.dataset.movement));
+    });
+
+    document.querySelectorAll('[data-next-pane]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const target = document.querySelector(`.ll-tab[data-pane="${button.dataset.nextPane}"]`);
+        if (target) target.click();
+      });
+    });
+
     selectAllButton.addEventListener('click', () => {
       state.active = new Set(stations.map((station) => station.id));
+      renderAll();
+    });
+
+    chilePresetButton.addEventListener('click', () => {
+      state.active = new Set(['alma', 'apex']);
+      state.synced = true;
+      renderAll();
+    });
+
+    widePresetButton.addEventListener('click', () => {
+      state.active = new Set(['alma', 'apex', 'jcmt', 'sma']);
+      state.synced = true;
       renderAll();
     });
 
@@ -787,14 +1027,39 @@
       renderAll();
     });
 
+    document.getElementById('checkUnderstandingButton').addEventListener('click', () => {
+      const first = document.querySelector('input[name="eht-q1"]:checked');
+      const second = document.querySelector('input[name="eht-q2"]:checked');
+      const feedback = document.getElementById('checkFeedback');
+      if (!first || !second) {
+        feedback.textContent = 'Choose one answer for each question.';
+        feedback.className = 'eht-check-feedback is-try';
+        return;
+      }
+      if (first.value === 'b' && second.value === 'a') {
+        feedback.textContent = 'Correct. Baseline geometry changes the sampled information; orange visualizes radio intensity.';
+        feedback.className = 'eht-check-feedback is-correct';
+      } else {
+        feedback.textContent = 'Try again. The source does not change when a station is added, and EHT records radio—not visible—light.';
+        feedback.className = 'eht-check-feedback is-try';
+      }
+    });
+
     window.addEventListener('resize', resizeCanvas);
 
     renderStationList();
-    renderAll();
+    enterMovement('listen');
     resizeCanvas();
   </script>
 
   <script src="../assets/js/lesson-layout.js"></script>
+  <script>
+    const openMovementScore = () => {
+      if (window.matchMedia('(min-width: 681px)').matches) window.LessonLayout.openPanel(true);
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', openMovementScore);
+    else openMovementScore();
+  </script>
 <script src="../assets/js/lesson-print-button.js"></script>
 </body>
 </html>

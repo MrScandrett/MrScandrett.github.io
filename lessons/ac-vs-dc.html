@@ -14,10 +14,12 @@
   <style>
     html:has(.acd-page),html:has(.acd-page) body { height:auto; min-height:100%; overflow-y:auto; overflow-x:hidden; }
     .ll-viewport:has(.acd-page) { height:auto; min-height:100dvh; overflow:visible; }
-    :root { --acd-blue:#0284c7; --acd-orange:#ea580c; --acd-purple:#7c3aed; --acd-green:#15803d; }
+    :root { --acd-blue:#0284c7; --acd-orange:#ea580c; --acd-purple:#7c3aed; --acd-green:#15803d; --acd-ink:#07111f; --acd-grid:#18324c; }
+    html { scroll-behavior:smooth; }
     .acd-page { box-sizing:border-box; width:min(100%,1120px); margin:0 auto; padding:1rem clamp(1rem,3vw,1.6rem) 1.5rem; }
     .acd-hero,.acd-card { border:1px solid var(--line,#d2d2d7); border-radius:18px; background:var(--white,#fff); box-shadow:var(--shadow,0 12px 34px rgba(0,0,0,.08)); }
-    .acd-hero { position:relative; overflow:hidden; padding:clamp(1.2rem,4vw,2rem); margin-bottom:1rem; background:radial-gradient(circle at 92% 10%,rgba(124,58,237,.18),transparent 32%),linear-gradient(135deg,rgba(2,132,199,.12),rgba(234,88,12,.08)); }
+    .acd-hero { position:relative; overflow:hidden; padding:clamp(1.2rem,4vw,2rem); margin-bottom:1rem; border-top:5px solid transparent; background:linear-gradient(var(--white,#fff),var(--white,#fff)) padding-box,linear-gradient(90deg,var(--acd-blue) 0 50%,var(--acd-orange) 50%) border-box; }
+    .acd-hero::before { content:''; position:absolute; inset:0; background:radial-gradient(circle at 92% 10%,rgba(124,58,237,.17),transparent 32%),linear-gradient(135deg,rgba(2,132,199,.11),rgba(234,88,12,.08)); pointer-events:none; }
     .acd-hero::after { content:'∿  ⎓'; position:absolute; right:clamp(1rem,5vw,3rem); bottom:-.35rem; color:rgba(2,132,199,.12); font-size:clamp(4rem,11vw,8rem); font-weight:900; letter-spacing:.08em; pointer-events:none; }
     .acd-hero > * { position:relative; z-index:1; }
     .acd-hero-grid { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(260px,.85fr); gap:1.25rem; align-items:center; }
@@ -26,16 +28,26 @@
     .acd-lede { max-width:68ch; margin:.7rem 0 0; color:#475569; line-height:1.65; }
     .acd-pills { display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.85rem; }
     .acd-pill { padding:.25rem .55rem; border:1px solid rgba(2,132,199,.28); border-radius:999px; background:rgba(255,255,255,.65); color:#075985; font-size:.72rem; font-weight:700; }
-    .acd-hero-visual { padding:.9rem; border:1px solid rgba(2,132,199,.22); border-radius:16px; background:rgba(255,255,255,.72); backdrop-filter:blur(10px); }
+    .acd-hero-visual { padding:.9rem; border:1px solid rgba(2,132,199,.24); border-radius:16px; background:rgba(255,255,255,.82); box-shadow:inset 0 0 0 4px rgba(255,255,255,.45),0 18px 45px rgba(15,23,42,.10); backdrop-filter:blur(10px); }
     .acd-mini-scope { display:block; width:100%; height:auto; color:var(--acd-blue); }
     .acd-mini-scope .dc-line { color:var(--acd-orange); }
+    .acd-mini-scope .signal-trace { stroke-dasharray:16 7; animation:acd-signal-flow 2.8s linear infinite; }
     .acd-hero-key { display:grid; grid-template-columns:1fr 1fr; gap:.5rem; margin-top:.65rem; }
     .acd-hero-key span { padding:.55rem; border-radius:10px; background:rgba(2,132,199,.08); color:#075985; font-size:.7rem; font-weight:800; text-align:center; }
     .acd-hero-key span:last-child { background:rgba(234,88,12,.08); color:#9a3412; }
-    .acd-jump { display:flex; gap:.35rem; overflow-x:auto; margin:0 0 1rem; padding:.5rem; border:1px solid var(--line,#d2d2d7); border-radius:14px; background:var(--white,#fff); box-shadow:0 7px 22px rgba(15,23,42,.06); scrollbar-width:thin; }
+    .acd-signal-strip { position:relative; z-index:1; display:grid; grid-template-columns:repeat(3,1fr); gap:1px; overflow:hidden; margin-top:1.25rem; border:1px solid rgba(15,23,42,.12); border-radius:13px; background:rgba(15,23,42,.12); }
+    .acd-signal-fact { min-width:0; padding:.7rem .8rem; background:rgba(255,255,255,.78); color:#334155; font-size:.75rem; line-height:1.45; }
+    .acd-signal-fact span { display:block; margin-bottom:.14rem; color:#64748b; font-size:.62rem; font-weight:850; letter-spacing:.09em; text-transform:uppercase; }
+    .acd-signal-fact strong { color:var(--acd-ink); }
+    .acd-jump { --acd-progress:0; position:sticky; z-index:25; top:.5rem; display:flex; gap:.35rem; overflow-x:auto; margin:0 0 1rem; padding:.5rem .5rem .62rem; border:1px solid var(--line,#d2d2d7); border-radius:14px; background:color-mix(in srgb,var(--white,#fff) 88%,transparent); box-shadow:0 10px 30px rgba(15,23,42,.10); backdrop-filter:blur(16px); scrollbar-width:thin; }
+    .acd-jump::before,.acd-jump::after { content:''; position:absolute; right:.55rem; bottom:.24rem; left:.55rem; height:2px; border-radius:99px; pointer-events:none; }
+    .acd-jump::before { background:rgba(100,116,139,.16); }
+    .acd-jump::after { background:linear-gradient(90deg,var(--acd-blue),var(--acd-purple),var(--acd-orange)); transform:scaleX(var(--acd-progress)); transform-origin:left center; transition:transform .15s linear; }
     .acd-jump a { flex:0 0 auto; padding:.48rem .7rem; border-radius:9px; color:#475569; font-size:.73rem; font-weight:750; text-decoration:none; }
-    .acd-jump a:hover,.acd-jump a:focus-visible { background:rgba(2,132,199,.09); color:#075985; }
+    .acd-jump a:hover,.acd-jump a:focus-visible,.acd-jump a.is-active { background:rgba(2,132,199,.10); color:#075985; }
+    .acd-jump a.is-active { box-shadow:inset 0 0 0 1px rgba(2,132,199,.18); }
     .acd-card { padding:clamp(1rem,3vw,1.45rem); margin-bottom:1rem; }
+    .acd-card[id],#acd-circuit-lab { scroll-margin-top:5.2rem; }
     .acd-card h2 { margin:0 0 .45rem; font-size:clamp(1.2rem,3vw,1.55rem); }
     .acd-card > p { color:#475569; font-size:.9rem; line-height:1.65; }
     .acd-grid-2,.acd-grid-3 { display:grid; gap:.8rem; }
@@ -55,7 +67,8 @@
     .acd-table th,.acd-table td { padding:.65rem; border-bottom:1px solid var(--line,#d2d2d7); text-align:left; vertical-align:top; }
     .acd-table th { color:#334155; font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; }
     .acd-lab { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(220px,.5fr); gap:1rem; }
-    .acd-scope { width:100%; height:300px; display:block; border:1px solid #1e3a5f; border-radius:14px; background:#07111f; }
+    .acd-scope-wrap { min-width:0; height:300px; }
+    .acd-scope { box-sizing:border-box; width:100%; height:100%; display:block; border:1px solid #294966; border-radius:14px; background:var(--acd-ink); box-shadow:inset 0 0 35px rgba(2,132,199,.08),0 12px 28px rgba(7,17,31,.15); }
     .acd-controls { display:grid; gap:.65rem; align-content:start; }
     .acd-control { padding:.7rem; border:1px solid var(--line,#d2d2d7); border-radius:12px; }
     .acd-control label { display:flex; justify-content:space-between; gap:.5rem; margin-bottom:.35rem; font-size:.78rem; font-weight:700; }
@@ -135,13 +148,15 @@
     .acd-glossary details { padding:.7rem .8rem; border:1px solid var(--line,#d2d2d7); border-radius:11px; }
     .acd-glossary summary { cursor:pointer; font-size:.8rem; font-weight:800; }
     .acd-glossary p { margin:.45rem 0 0; color:#64748b; font-size:.75rem; line-height:1.5; }
+    .acd-page button:focus-visible,.acd-page a:focus-visible,.acd-page select:focus-visible,.acd-page input:focus-visible,.acd-page summary:focus-visible { outline:3px solid color-mix(in srgb,var(--acd-blue) 55%,white); outline-offset:3px; }
+    @keyframes acd-signal-flow { to { stroke-dashoffset:-46; } }
     [data-lighting="night"] .acd-lede,[data-lighting="night"] .acd-card > p,[data-lighting="night"] .acd-type p,[data-lighting="night"] .acd-type li,[data-lighting="night"] .acd-callout,
     [data-theme="vaporwave"] .acd-lede,[data-theme="vaporwave"] .acd-card > p,[data-theme="vaporwave"] .acd-type p,[data-theme="vaporwave"] .acd-type li,[data-theme="vaporwave"] .acd-callout,
     [data-theme="bark"] .acd-lede,[data-theme="bark"] .acd-card > p,[data-theme="bark"] .acd-type p,[data-theme="bark"] .acd-type li,[data-theme="bark"] .acd-callout { color:rgba(245,245,247,.72); }
-    @media (prefers-reduced-motion:reduce) { .acd-electron { transition:none!important; } }
+    @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } .acd-electron { transition:none!important; } .acd-mini-scope .signal-trace { animation:none; } }
     @media (max-width:900px) { .acd-targets { grid-template-columns:repeat(2,1fr); } .acd-journey { grid-template-columns:repeat(3,1fr); } .acd-stage::after { display:none; } }
-    @media (max-width:760px) { .acd-hero-grid,.acd-lab,.acd-grid-3,.acd-transformer { grid-template-columns:1fr; } .acd-hero::after { display:none; } .acd-calc { grid-template-columns:repeat(2,1fr); } .acd-equations,.acd-sort-grid { grid-template-columns:1fr; } }
-    @media (max-width:560px) { .acd-grid-2,.acd-results,.acd-targets,.acd-glossary { grid-template-columns:1fr; } .acd-scope { height:240px; } .acd-journey { grid-template-columns:1fr 1fr; } .acd-cycle-caption { grid-template-columns:1fr 1fr; } }
+    @media (max-width:760px) { .acd-hero-grid,.acd-lab,.acd-grid-3,.acd-transformer { grid-template-columns:1fr; } .acd-hero::after { display:none; } .acd-calc { grid-template-columns:repeat(2,1fr); } .acd-equations,.acd-sort-grid { grid-template-columns:1fr; } .acd-signal-strip { grid-template-columns:1fr; } }
+    @media (max-width:560px) { .acd-grid-2,.acd-results,.acd-targets,.acd-glossary { grid-template-columns:1fr; } .acd-scope-wrap { height:240px; } .acd-journey { grid-template-columns:1fr 1fr; } .acd-cycle-caption { grid-template-columns:1fr 1fr; } }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -171,13 +186,18 @@
             <svg class="acd-mini-scope" viewBox="0 0 420 190" role="img" aria-labelledby="acd-hero-wave-title">
               <title id="acd-hero-wave-title">AC sine wave crossing zero and DC line remaining positive</title>
               <g stroke="currentColor" stroke-opacity=".12"><path d="M10 30H410M10 70H410M10 110H410M10 150H410M60 10V175M140 10V175M220 10V175M300 10V175M380 10V175"/></g>
-              <path d="M10 92C43 22 77 22 110 92S177 162 210 92 277 22 310 92 377 162 410 92" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
-              <path class="dc-line" d="M10 48H410" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+              <path class="signal-trace" d="M10 92C43 22 77 22 110 92S177 162 210 92 277 22 310 92 377 162 410 92" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+              <path class="dc-line signal-trace" d="M10 48H410" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
               <path d="M10 92H410" fill="none" stroke="#64748b" stroke-dasharray="5 6"/>
               <text x="18" y="38" fill="#9a3412" font-size="14" font-weight="800">DC</text><text x="18" y="118" fill="#075985" font-size="14" font-weight="800">AC</text><text x="362" y="107" fill="#64748b" font-size="11">0 V</text>
             </svg>
             <div class="acd-hero-key"><span>AC crosses zero</span><span>DC keeps polarity</span></div>
           </div>
+        </div>
+        <div class="acd-signal-strip" aria-label="AC and DC in three facts">
+          <div class="acd-signal-fact"><span>Direction</span><strong>AC reverses.</strong> DC keeps one net direction.</div>
+          <div class="acd-signal-fact"><span>Where you meet it</span><strong>Outlets supply AC.</strong> Batteries and electronics use DC.</div>
+          <div class="acd-signal-fact"><span>Modern reality</span><strong>We need both.</strong> Converters connect today’s power systems.</div>
         </div>
       </section>
 
@@ -210,7 +230,7 @@
         <h2>Interactive waveform lab</h2>
         <p>Switch sources and adjust voltage and frequency. The graph shows instantaneous voltage versus time; conventional current in a resistive load follows the same shape.</p>
         <div class="acd-lab">
-          <canvas id="acd-scope" class="acd-scope" role="img" aria-label="Voltage waveform graph"></canvas>
+          <div class="acd-scope-wrap"><canvas id="acd-scope" class="acd-scope" role="img" aria-label="Voltage waveform graph"></canvas></div>
           <div class="acd-controls">
             <div class="acd-toggle" aria-label="Current type"><button type="button" class="active" data-kind="ac">AC ∿</button><button type="button" data-kind="dc">DC ⎓</button></div>
             <div class="acd-control"><label for="acd-voltage">Voltage <output id="acd-voltage-out">120 V RMS</output></label><input id="acd-voltage" type="range" min="1" max="240" value="120" /></div>
@@ -364,23 +384,23 @@
   </div>
 
   <script src="../assets/js/nav-mobile.js"></script>
+  <script src="../assets/js/sim-kit.js"></script>
   <script>
   (function(){
     'use strict';
-    var kind='ac', phase=0, paused=false, gridOn=true, lastTime=0;
+    var kind='ac', phase=0, paused=false, gridOn=true;
     var reduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var canvas=document.getElementById('acd-scope'),ctx=canvas.getContext('2d');
+    var canvas=document.getElementById('acd-scope'),scope=SimKit.canvas2d(canvas,{box:canvas.parentElement,dpr:2}),ctx=scope.ctx;
     var voltage=document.getElementById('acd-voltage'),frequency=document.getElementById('acd-frequency');
-    function fit(){var dpr=Math.min(window.devicePixelRatio||1,2),r=canvas.getBoundingClientRect();canvas.width=Math.round(r.width*dpr);canvas.height=Math.round(r.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
     var wire=document.getElementById('acd-wire'),electrons=[];
     for(var e=0;e<9;e++){var dot=document.createElement('span');dot.className='acd-electron';dot.setAttribute('aria-hidden','true');wire.appendChild(dot);electrons.push(dot);}
     function updateMotion(t){var direction=document.getElementById('acd-direction'),f=+frequency.value,time=t/1000;electrons.forEach(function(dot,i){var base=7+i*10.7,pos;if(kind==='ac'){pos=base+Math.sin(time*Math.PI*2*Math.min(f/15,4)+i*.08)*3.5;}else{pos=7+((base+time*3)%88);}dot.style.left=pos+'%';});if(kind==='ac'){var forward=Math.cos(time*Math.PI*2*Math.min(f/15,4))>=0;direction.textContent='Electron drift '+(forward?'← toward source':'toward load →')+' · then reverses';}else{direction.textContent='Electron drift ← in one net direction';}}
-    function draw(now){var w=canvas.clientWidth,h=canvas.clientHeight;ctx.clearRect(0,0,w,h);if(gridOn){ctx.strokeStyle='rgba(125,211,252,.13)';ctx.lineWidth=1;for(var x=0;x<=w;x+=w/10){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}for(var y=0;y<=h;y+=h/8){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}}ctx.strokeStyle='rgba(226,232,240,.45)';ctx.beginPath();ctx.moveTo(0,h/2);ctx.lineTo(w,h/2);ctx.stroke();var amp=Math.min(h*.38,(+voltage.value/240)*h*.38),cycles=kind==='ac'?Math.max(1,Math.min(6,+frequency.value/30)):0;ctx.strokeStyle=kind==='ac'?'#38bdf8':'#fb923c';ctx.lineWidth=3;ctx.beginPath();for(var px=0;px<=w;px++){var yy=kind==='ac'?h/2-Math.sin((px/w)*Math.PI*2*cycles+phase)*amp:h/2-amp;px?ctx.lineTo(px,yy):ctx.moveTo(px,yy)}ctx.stroke();ctx.fillStyle='#cbd5e1';ctx.font='12px system-ui';ctx.fillText(kind==='ac'?'alternating voltage · '+frequency.value+' Hz':'steady direct voltage · 0 Hz',12,20);ctx.fillText('0 V',8,h/2-7);if(!paused&&!reduceMotion){var dt=lastTime?Math.min(50,now-lastTime):16;phase+=(kind==='ac'?(+frequency.value/60)*dt*.0018:0);updateMotion(now);}lastTime=now;requestAnimationFrame(draw)}
+    function draw(dt,now){var w=scope.width,h=scope.height;ctx.clearRect(0,0,w,h);if(gridOn){ctx.strokeStyle='rgba(125,211,252,.13)';ctx.lineWidth=1;for(var x=0;x<=w;x+=w/10){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}for(var y=0;y<=h;y+=h/8){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}}ctx.strokeStyle='rgba(226,232,240,.45)';ctx.beginPath();ctx.moveTo(0,h/2);ctx.lineTo(w,h/2);ctx.stroke();var amp=Math.min(h*.38,(+voltage.value/240)*h*.38),cycles=kind==='ac'?Math.max(1,Math.min(6,+frequency.value/30)):0;ctx.strokeStyle=kind==='ac'?'#38bdf8':'#fb923c';ctx.lineWidth=3;ctx.beginPath();for(var px=0;px<=w;px++){var yy=kind==='ac'?h/2-Math.sin((px/w)*Math.PI*2*cycles+phase)*amp:h/2-amp;px?ctx.lineTo(px,yy):ctx.moveTo(px,yy)}ctx.stroke();ctx.fillStyle='#cbd5e1';ctx.font='12px system-ui';ctx.fillText(kind==='ac'?'alternating voltage · '+frequency.value+' Hz':'steady direct voltage · 0 Hz',12,20);ctx.fillText('0 V',8,h/2-7);if(!paused&&!reduceMotion){phase+=(kind==='ac'?(+frequency.value/60)*dt*1.8:0);updateMotion(now);}}
     function update(){var v=+voltage.value,f=+frequency.value;document.getElementById('acd-voltage-out').textContent=v+(kind==='ac'?' V RMS':' V');document.getElementById('acd-frequency-out').textContent=f+' Hz';document.getElementById('acd-frequency-control').style.opacity=kind==='ac'?'1':'.45';frequency.disabled=kind!=='ac';document.getElementById('acd-readout').innerHTML=kind==='ac'?'<strong>Peak voltage: '+(v*Math.sqrt(2)).toFixed(1)+' V</strong><br>One cycle lasts '+(1000/f).toFixed(2)+' ms. The waveform crosses zero '+(f*2)+' times each second.':'<strong>Polarity stays fixed</strong><br>Frequency is 0 Hz. A steady '+v+' V source graphs as a horizontal line.';if(reduceMotion)updateMotion(0)}
     document.querySelectorAll('.acd-toggle button').forEach(function(b){b.setAttribute('aria-pressed',b.classList.contains('active')?'true':'false');b.addEventListener('click',function(){kind=b.dataset.kind;document.querySelectorAll('.acd-toggle button').forEach(function(x){var active=x===b;x.classList.toggle('active',active);x.setAttribute('aria-pressed',active?'true':'false')});update()})});
     document.getElementById('acd-pause').addEventListener('click',function(){paused=!paused;this.setAttribute('aria-pressed',paused?'true':'false');this.textContent=paused?'Resume trace':'Pause trace';});
     document.getElementById('acd-grid-toggle').addEventListener('click',function(){gridOn=!gridOn;this.setAttribute('aria-pressed',gridOn?'true':'false');this.textContent=gridOn?'Grid on':'Grid off';});
-    voltage.addEventListener('input',update);frequency.addEventListener('input',update);window.addEventListener('resize',fit);fit();update();requestAnimationFrame(draw);
+    voltage.addEventListener('input',update);frequency.addEventListener('input',update);update();SimKit.loop(draw);
     var calcInputs=['acd-power','acd-resistance','acd-vlow','acd-vhigh'].map(function(id){return document.getElementById(id)});
     function calculate(){var p=Math.max(0,+calcInputs[0].value)*1000,r=Math.max(0,+calcInputs[1].value),vl=Math.max(.001,+calcInputs[2].value)*1000,vh=Math.max(.001,+calcInputs[3].value)*1000,il=p/vl,ih=p/vh,ll=il*il*r,lh=ih*ih*r,s=ll?100*(1-lh/ll):0;document.getElementById('acd-ilow').textContent=il.toLocaleString(undefined,{maximumFractionDigits:1})+' A';document.getElementById('acd-ihigh').textContent=ih.toLocaleString(undefined,{maximumFractionDigits:1})+' A';document.getElementById('acd-saving').textContent=s.toFixed(1)+'%'}
     calcInputs.forEach(function(i){i.addEventListener('input',calculate)});calculate();
@@ -393,6 +413,9 @@
     function quizScore(){var checked=questions.filter(function(q){return q.dataset.checked==='true'}),correct=checked.filter(function(q){return q.dataset.correct==='true'}).length;document.getElementById('acd-quiz-score').textContent='Score: '+correct+' / '+questions.length+' · '+checked.length+' checked';}
     questions.forEach(function(q){q.querySelector('.acd-check').addEventListener('click',function(){var selected=q.querySelector('select').value,f=q.querySelector('.acd-feedback');if(!selected){f.className='acd-feedback no';f.textContent='Choose an answer first.';return;}var ok=selected===q.dataset.answer;q.dataset.checked='true';q.dataset.correct=ok?'true':'false';f.className='acd-feedback '+(ok?'ok':'no');f.textContent=(ok?'Correct. ':'Not yet. ')+q.dataset.explain;quizScore()})});
     document.getElementById('acd-quiz-reset').addEventListener('click',function(){questions.forEach(function(q){q.querySelector('select').value='';q.querySelector('.acd-feedback').className='acd-feedback';q.querySelector('.acd-feedback').textContent='';delete q.dataset.checked;delete q.dataset.correct;});quizScore();questions[0].querySelector('select').focus();});quizScore();
+    var jump=document.querySelector('.acd-jump'),jumpLinks=Array.from(jump.querySelectorAll('a'));
+    function updateLessonNav(){var scrollTop=window.scrollY||document.documentElement.scrollTop,maxScroll=Math.max(1,document.documentElement.scrollHeight-window.innerHeight);jump.style.setProperty('--acd-progress',Math.min(1,scrollTop/maxScroll).toFixed(3));var marker=scrollTop+window.innerHeight*.3,active=jumpLinks[0];jumpLinks.forEach(function(link){var target=document.querySelector(link.getAttribute('href'));if(target&&target.offsetTop<=marker)active=link;});jumpLinks.forEach(function(link){var on=link===active;link.classList.toggle('is-active',on);if(on)link.setAttribute('aria-current','location');else link.removeAttribute('aria-current');});}
+    window.addEventListener('scroll',updateLessonNav,{passive:true});window.addEventListener('resize',updateLessonNav);updateLessonNav();
   })();
   </script>
   <script src="../assets/js/circuit-playground.js"></script>
