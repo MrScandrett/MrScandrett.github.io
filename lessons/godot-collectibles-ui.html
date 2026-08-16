@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Collectibles, Signals &amp; UI · Godot Pathway</title>
+  <meta name="description" content="Code a collectible, run it in an endless-runner sandbox, and connect it to inventory, storage, building, and shop UI.">
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/classroom-home.css"><link rel="stylesheet" href="../assets/css/lessons/godot-pathway.css"><link rel="stylesheet" href="../assets/css/lessons/godot-collectibles-lab.css">
+</head>
+<body class="theme-liquid-woodland theme-steam"><a class="skip-link" href="#main-content">Skip to content</a>
+<header class="gd-course-top"><div><a href="godot-pathway.html">← Pathway</a><span>Lesson 4 · Collectibles, Signals &amp; UI</span><a href="godot-enemies-ai.html">Next lesson →</a></div></header>
+<main id="main-content" class="gd-course">
+  <section class="gd-lesson-hero gd-collect-hero">
+    <div><p class="gd-eyebrow">Lesson 04 · 75 minutes · Playable systems lab</p><h1 class="gd-title">Code it. Drop it. Collect it.</h1><p class="gd-lede">Create your own pickup, load its GDScript-style properties into a live lane runner, then decide whether the item belongs in a HUD, inventory, shop, storage chest, or build recipe.</p><div class="gd-meta"><span>AREA3D</span><span>SIGNALS</span><span>ITEM DATA</span><span>INVENTORY UI</span><span>CRAFTING</span></div></div>
+    <div class="gd-hero-loop" aria-label="The game loop: code, spawn, collect, use"><span>CODE</span><i>→</i><span>SPAWN</span><i>→</i><span>COLLECT</span><i>→</i><span>USE</span></div>
+  </section>
+  <nav class="gd-nav"><a href="godot-player-camera.html">← 03 Player &amp; Camera</a><a href="godot-enemies-ai.html">05 Enemies &amp; AI →</a></nav>
+
+  <section class="gd-runner-lab" aria-labelledby="runner-lab-title" data-runner-lab>
+    <header class="gd-lab-titlebar"><div><span class="gd-live-dot"></span><b>Signal Run workshop</b></div><p>Student sandbox · changes stay in this browser</p></header>
+    <section class="gd-asset-forge" data-asset-forge aria-labelledby="asset-forge-title">
+      <header class="gd-forge-heading">
+        <div><span>01 / MODEL</span><h2 id="asset-forge-title">Shape the collectible first</h2><p>Choose a visual dimension, combine simple geometry, mold its proportions, and give the surface a material. Drag the 3D preview to inspect it.</p></div>
+        <div class="gd-dimension-switch" role="group" aria-label="Visual dimension">
+          <button type="button" data-dimension="2d">2D</button><button type="button" data-dimension="2.5d" class="is-active">2.5D</button><button type="button" data-dimension="3d">3D</button>
+        </div>
+      </header>
+      <div class="gd-forge-grid">
+        <aside class="gd-forge-tools" aria-label="Geometry controls">
+          <fieldset><legend>Base shape</legend><div class="gd-shape-grid">
+            <button type="button" data-shape="sphere"><i>●</i>Orb</button><button type="button" data-shape="cube"><i>■</i>Cube</button><button type="button" data-shape="crystal" class="is-active"><i>◆</i>Crystal</button><button type="button" data-shape="capsule"><i>⬭</i>Capsule</button><button type="button" data-shape="ring"><i>○</i>Ring</button>
+          </div></fieldset>
+          <fieldset><legend>Add a detail</legend><select data-detail aria-label="Detail shape"><option value="none">No detail</option><option value="halo">Orbiting halo</option><option value="core">Inner core</option><option value="fins">Side fins</option></select></fieldset>
+          <fieldset><legend>Preset world</legend><div class="gd-world-list"><button type="button" data-world="skyway" class="is-active"><b>Skyway</b><small>Bright runner lanes</small></button><button type="button" data-world="ruins"><b>Temple ruins</b><small>Stone paths + vines</small></button><button type="button" data-world="neon"><b>Neon grid</b><small>Arcade night course</small></button></div></fieldset>
+        </aside>
+        <div class="gd-forge-view">
+          <div class="gd-view-label"><span data-view-mode>2.5D ISOMETRIC</span><small data-view-hint>Drag to orbit · scroll to zoom</small></div>
+          <canvas data-model-canvas aria-label="Interactive collectible model preview"></canvas>
+          <div class="gd-axis-cue" aria-hidden="true"><i class="x">X</i><i class="y">Y</i><i class="z">Z</i></div>
+        </div>
+        <aside class="gd-forge-inspector" aria-label="Mold and material controls">
+          <fieldset><legend>Mold</legend>
+            <label>Width <output data-output="width">1.00</output><input type="range" min=".45" max="1.8" step=".05" value="1" data-mold="width"></label>
+            <label>Height <output data-output="height">1.20</output><input type="range" min=".45" max="2" step=".05" value="1.2" data-mold="height"></label>
+            <label>Depth <output data-output="depth">0.65</output><input type="range" min=".1" max="1.6" step=".05" value=".65" data-mold="depth"></label>
+            <label>Twist <output data-output="twist">15°</output><input type="range" min="-90" max="90" step="5" value="15" data-mold="twist"></label>
+          </fieldset>
+          <fieldset><legend>Surface</legend>
+            <div class="gd-color-row" aria-label="Material color"><button type="button" data-color="#69e6ff" class="is-active" style="--swatch:#69e6ff" aria-label="Cyan"></button><button type="button" data-color="#ffd166" style="--swatch:#ffd166" aria-label="Gold"></button><button type="button" data-color="#c58cff" style="--swatch:#c58cff" aria-label="Violet"></button><button type="button" data-color="#ff7d73" style="--swatch:#ff7d73" aria-label="Coral"></button><input type="color" value="#69e6ff" data-custom-color aria-label="Custom material color"></div>
+            <label>Texture<select data-texture><option value="smooth">Smooth</option><option value="stripes">Signal stripes</option><option value="grid">Tech grid</option><option value="stone">Speckled stone</option></select></label>
+            <label>Roughness <output data-output="roughness">0.35</output><input type="range" min="0" max="1" step=".05" value=".35" data-material="roughness"></label>
+            <label class="gd-toggle-line"><input type="checkbox" data-material="glow" checked> Emissive glow</label>
+          </fieldset>
+          <button type="button" class="gd-deploy-model" data-deploy-model>Deploy to preset world →</button>
+          <p class="gd-deploy-status" data-deploy-status role="status">Model preview is ready.</p>
+        </aside>
+      </div>
+    </section>
+    <div class="gd-lab-grid">
+      <section class="gd-script-bay" aria-labelledby="runner-lab-title">
+        <div class="gd-pane-heading"><div><span>02 / CODE</span><h2 id="runner-lab-title">Give it game data</h2></div><button type="button" class="gd-lab-quiet" data-reset-code>Reset code</button></div>
+        <p class="gd-pane-help">The model is appearance. These exported values give the object an identity and tell the game what collection means.</p>
+        <label class="gd-code-label" for="collectible-code">energy_cell.gd</label>
+        <textarea id="collectible-code" class="gd-code-editor" data-collectible-code spellcheck="false" aria-describedby="code-feedback">extends Area3D
+
+signal collected(item_id: String, value: int)
+
+@export var item_id := "energy_cell"
+@export var display_name := "Energy Cell"
+@export var value := 2
+@export var color := "#69e6ff"
+@export var shape := "diamond"
+
+func collect() -> void:
+    collected.emit(item_id, value)
+    queue_free()</textarea>
+        <div class="gd-code-actions"><button type="button" class="gd-run-code" data-run-code><span>▶</span> Update game data</button><span id="code-feedback" class="gd-code-feedback" data-code-feedback role="status">Starter data is ready.</span></div>
+        <div class="gd-quick-remix" aria-label="Quick collectible examples"><span>Try a remix</span><button type="button" data-preset="coin">Coin</button><button type="button" data-preset="crystal">Crystal</button><button type="button" data-preset="key">Key</button></div>
+      </section>
+      <section class="gd-game-bay" aria-label="Live preset game environment">
+        <div class="gd-game-hud"><div><small>DISTANCE</small><strong data-distance>000 m</strong></div><div><small>COLLECTED</small><strong data-run-count>0</strong></div><button type="button" data-toggle-inventory aria-expanded="false" aria-controls="runner-inventory">Pack <span data-pack-count>0</span></button></div>
+        <div class="gd-canvas-wrap"><canvas data-runner-canvas aria-label="Three-lane runner. Use left and right controls to collect objects." role="img"></canvas><div class="gd-game-message" data-game-message aria-live="polite">Move into a lane and collect your item.</div></div>
+        <div class="gd-run-controls" aria-label="Runner controls"><button type="button" data-move="left" aria-label="Move left">← <span>Left</span></button><button type="button" data-pause-game aria-pressed="false"><span data-pause-label>Pause</span></button><button type="button" data-move="right" aria-label="Move right"><span>Right</span> →</button></div>
+        <p class="gd-key-hint"><kbd>A</kbd> <kbd>←</kbd> and <kbd>D</kbd> <kbd>→</kbd> move · deployed models spawn repeatedly</p>
+      </section>
+    </div>
+    <section class="gd-system-bay" id="runner-inventory" data-inventory-panel aria-labelledby="system-bay-title">
+      <div class="gd-system-intro"><span>03 / CONNECT</span><h2 id="system-bay-title">Make the pickup matter</h2><p>The runner emits one event. Each UI view listens to the same inventory data and gives it a different job.</p></div>
+      <div class="gd-system-workbench"><div class="gd-system-tabs" role="tablist" aria-label="Item system views"><button type="button" role="tab" aria-selected="true" data-system-tab="inventory">Inventory</button><button type="button" role="tab" aria-selected="false" data-system-tab="build">Build</button><button type="button" role="tab" aria-selected="false" data-system-tab="shop">Shop</button><button type="button" role="tab" aria-selected="false" data-system-tab="storage">Storage</button></div><div class="gd-system-view" data-system-view tabindex="0"></div></div>
+    </section>
+    <footer class="gd-event-trace" aria-live="polite"><span>SIGNAL TRACE</span><code data-event-trace>waiting for body_entered…</code></footer>
+  </section>
+
+  <section class="gd-section"><div class="gd-section-mark">02 / BUILD</div><div><p class="gd-kicker">Build it in Godot</p><h2>Turn the sandbox idea into a reusable scene.</h2><div class="gd-build-columns"><div class="gd-mini-tree"><b>collectible.tscn</b><span>Collectible · Area3D</span><span>MeshInstance3D</span><span>CollisionShape3D</span><span>PointLight3D</span></div><ol class="gd-steps"><li><b>Create the trigger.</b>Use an <code>Area3D</code> root and match its collision mask to Player.</li><li><b>Expose item data.</b>Add an ID and value so one script can power many pickup scenes.</li><li><b>Save and instance.</b>Place copies across three readable lanes.</li><li><b>Test the event.</b>The pickup reports what happened; another system owns the result.</li></ol></div></div></section>
+
+  <section class="gd-section"><div class="gd-section-mark">03 / SIGNAL</div><div><p class="gd-kicker">One event, many listeners</p><h2>Collectibles report. Systems decide.</h2>
+    <div class="gd-code"><div class="gd-code-head"><span>collectible.gd</span><button class="gd-copy" type="button">Copy</button></div><pre><code><span class="k">extends</span> Area3D
+<span class="k">signal</span> collected(item_id: String, value: int)
+<span class="k">@export var</span> item_id := <span class="s">"energy_cell"</span>
+<span class="k">@export var</span> value := <span class="n">1</span>
+
+<span class="k">func</span> _ready() -> void:
+    body_entered.connect(_on_body_entered)
+
+<span class="k">func</span> _on_body_entered(body: Node3D) -> void:
+    <span class="k">if</span> body.is_in_group(<span class="s">"player"</span>):
+        collected.emit(item_id, value)
+        queue_free()</code></pre></div>
+    <div class="gd-flow-line" aria-label="The collectible signal flows to inventory and then to interface views"><span>Collectible</span><i>collected(id, value)</i><span>Inventory data</span><i>changed</i><span>HUD · Shop · Storage</span></div><div class="gd-callout"><strong>Important:</strong> A shop does not count pickups, and a collectible does not draw inventory slots. Both depend on the inventory data between them.</div>
+  </div></section>
+
+  <section class="gd-section"><div class="gd-section-mark">04 / DATA</div><div><p class="gd-kicker">Inventory before interface</p><h2>Store facts once, redraw any UI.</h2>
+    <div class="gd-code"><div class="gd-code-head"><span>inventory.gd · Autoload</span><button class="gd-copy" type="button">Copy</button></div><pre><code><span class="k">extends</span> Node
+<span class="k">signal</span> changed(items: Dictionary)
+<span class="k">var</span> items: Dictionary = {}
+
+<span class="k">func</span> add_item(item_id: String, amount: int = <span class="n">1</span>) -> void:
+    items[item_id] = items.get(item_id, <span class="n">0</span>) + amount
+    changed.emit(items)
+
+<span class="k">func</span> spend(item_id: String, amount: int) -> bool:
+    <span class="k">if</span> items.get(item_id, <span class="n">0</span>) &lt; amount:
+        <span class="k">return false</span>
+    items[item_id] -= amount
+    changed.emit(items)
+    <span class="k">return true</span></code></pre></div>
+    <div class="gd-card-grid"><article class="gd-card"><h3>Inventory</h3><p>Shows what the player carries and how many of each item exist.</p></article><article class="gd-card"><h3>Build menu</h3><p>Checks a recipe, spends materials once, then creates an object.</p></article><article class="gd-card"><h3>Shop</h3><p>Trades one resource for another and explains why a purchase is locked.</p></article><article class="gd-card"><h3>Storage</h3><p>Moves quantities between two data containers without duplicating items.</p></article></div>
+  </div></section>
+
+  <section class="gd-section"><div class="gd-section-mark">05 / REMIX</div><div><p class="gd-kicker">Student build sprint</p><h2>Choose one complete item loop.</h2>
+    <div class="gd-remix-grid"><article><span>A</span><h3>Runner boost</h3><p>Collect batteries, show a three-charge meter, and spend one charge for a speed boost.</p></article><article><span>B</span><h3>Base builder</h3><p>Collect scrap, display a recipe, and spend three scrap to place one barricade.</p></article><article><span>C</span><h3>Key shop</h3><p>Collect coins, buy a key, and show the key in a non-stackable inventory slot.</p></article><article><span>D</span><h3>Storage run</h3><p>Collect supplies, move them into a chest, and prevent negative or duplicated quantities.</p></article></div>
+    <div class="gd-savepoint"><div><b>Duplicate the project as <code>SignalRun_04_Items</code>.</b><span>Your restore point must demonstrate collect → store → display → spend or transfer.</span></div></div>
+  </div></section>
+
+  <section class="gd-section"><div class="gd-section-mark">06 / CHECK</div><div><p class="gd-kicker">Definition of done</p><h2>Your item loop works when…</h2>
+    <div class="gd-checklist"><label><input type="checkbox">One saved scene creates every copy of the collectible.</label><label><input type="checkbox">Only Player can trigger collection, and each pickup triggers once.</label><label><input type="checkbox">Inventory data changes before the HUD redraws.</label><label><input type="checkbox">A shop, recipe, or storage action cannot duplicate or overspend items.</label></div><p data-check-status>0/4 checked</p>
+    <div class="gd-practice" data-question data-correct="Correct. Inventory owns quantities, while every interface listens and redraws." data-retry="Look for the one place that every UI view reads from."><strong>Where should the true item quantity live?</strong><div class="gd-practice-options"><button data-answer="wrong">Inside every inventory slot</button><button data-answer="correct">In the inventory data model</button><button data-answer="wrong">Inside the collectible mesh</button></div><p class="gd-practice-result" aria-live="polite"></p></div>
+    <p class="gd-evidence"><strong>Evidence:</strong> Record a 20-second test showing the quantity rise after collection and fall after building, buying, or storing.</p><div class="gd-complete"><div><h3>Lesson 4 complete</h3><p>Your collectible now feeds a real game system.</p></div><button class="gd-button" data-complete-lesson="4">Mark lesson complete</button></div>
+  </div></section>
+</main>
+<script src="../assets/js/sim-kit.js"></script><script src="../assets/js/lessons/godot-pathway.js"></script><script src="../assets/js/lessons/godot-collectibles-lab.js"></script><script type="module" src="../assets/js/lessons/godot-collectible-forge.mjs"></script><script src="../assets/js/lesson-print-button.js"></script>
+</body></html>

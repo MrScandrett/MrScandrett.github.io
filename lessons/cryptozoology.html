@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cryptozoology: From Footprints to Facts · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="An interactive STEAM lesson about cryptozoology, evidence quality, animal discovery, camera traps, environmental DNA, and scientific claim testing." />
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --night:#081315; --night-2:#0d1d1e; --panel:#102526; --panel-2:#142d2d;
+      --paper:#d8d0b7; --ink:#162524; --mist:#bfd0c8; --muted:#91aaa2;
+      --signal:#ffcb45; --signal-2:#ffe6a3; --cyan:#76e6cf; --red:#ee5149;
+      --dex-red:#d92e35; --dex-dark:#8f1724; --dex-blue:#73dbef; --screen:#b9d8b1;
+      --line:rgba(167,205,192,.18); --radius:12px;
+      --font-sans:"Inter",system-ui,sans-serif;
+    }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; min-height:100vh; color:#edf4ef; font-family:var(--font-sans); background:
+      radial-gradient(circle at 12% 7%,rgba(217,46,53,.18),transparent 30%),
+      linear-gradient(rgba(168,205,193,.025) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(168,205,193,.02) 1px,transparent 1px),var(--night);
+      background-size:auto,36px 36px,36px 36px; }
+    button,select { font:inherit; }
+    a { color:var(--signal-2); }
+    .topbar { position:sticky; top:0; z-index:30; border-bottom:1px solid var(--line); background:rgba(8,19,21,.92); backdrop-filter:blur(18px); }
+    .topbar-inner { width:min(1180px,calc(100% - 2rem)); min-height:56px; margin:auto; display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+    .topbar a { color:#dcf3e9; text-decoration:none; font-size:.8rem; font-weight:800; }
+    .nav { display:flex; gap:.2rem; overflow:auto; }
+    .nav a { padding:.45rem .55rem; color:var(--muted); white-space:nowrap; }
+    .nav a:hover,.nav a:focus-visible { color:white; }
+    .badge { display:inline-flex; align-items:center; min-height:30px; padding:.28rem .62rem; border:1px solid rgba(239,159,69,.35); border-radius:999px; color:var(--signal-2); background:rgba(239,159,69,.08); font:700 .64rem "IBM Plex Mono",monospace; letter-spacing:.06em; text-transform:uppercase; }
+    .shell { width:min(1180px,calc(100% - 2rem)); margin:auto; padding:1rem 0 4rem; display:grid; gap:1rem; }
+    .hero,.card,.lab { border:1px solid var(--line); border-radius:var(--radius); background:rgba(16,37,38,.9); box-shadow:0 22px 60px rgba(0,0,0,.28); }
+    .hero { min-height:min(560px,calc(100vh - 88px)); display:grid; grid-template-columns:1fr 1fr; overflow:hidden; border-color:rgba(255,203,69,.28); background:linear-gradient(135deg,#b81f2d 0 49.8%,#8f1724 50% 51%,#102526 51.2%); }
+    .hero-copy { padding:clamp(1.5rem,4vw,3.6rem); display:flex; flex-direction:column; justify-content:center; }
+    .eyebrow,.kicker { margin:0 0 .55rem; color:var(--signal); font:700 .7rem "IBM Plex Mono",monospace; letter-spacing:.12em; text-transform:uppercase; }
+    h1,h2,h3 { font-family:"Barlow Condensed",Impact,sans-serif; }
+    h1 { max-width:700px; margin:0 0 1rem; font-size:clamp(3.4rem,8vw,7rem); line-height:.79; letter-spacing:-.035em; text-transform:uppercase; }
+    h1 span { display:block; color:var(--signal); }
+    .lede { max-width:62ch; margin:0 0 1.2rem; color:var(--mist); font-size:clamp(.94rem,1.5vw,1.05rem); line-height:1.72; }
+    .meta { display:flex; flex-wrap:wrap; gap:.45rem; }
+    .hero-station { min-height:480px; position:relative; overflow:hidden; margin:2.2rem 2.2rem 2.2rem .6rem; border:12px solid #e2e5dd; border-bottom-width:38px; border-radius:18px 18px 42px 18px; box-shadow:0 0 0 8px #64121c,0 18px 40px rgba(0,0,0,.34),inset 0 0 32px rgba(0,0,0,.55); background:
+      repeating-radial-gradient(circle at 50% 50%,transparent 0 58px,rgba(102,213,202,.12) 59px 60px),
+      linear-gradient(rgba(102,213,202,.06) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(102,213,202,.06) 1px,transparent 1px),#0a1819; background-size:auto,30px 30px,30px 30px; }
+    .scanner { position:absolute; inset:8%; border:1px solid rgba(102,213,202,.25); border-radius:50%; }
+    .scanner::before,.scanner::after { content:""; position:absolute; background:rgba(102,213,202,.25); }
+    .scanner::before { left:50%; top:0; bottom:0; width:1px; }
+    .scanner::after { top:50%; left:0; right:0; height:1px; }
+    .sweep { position:absolute; inset:0; border-radius:50%; background:conic-gradient(from -28deg,transparent 0 330deg,rgba(102,213,202,.03) 340deg,rgba(102,213,202,.28)); animation:sweep 5s linear infinite; }
+    .trace { position:absolute; inset:14%; display:grid; place-items:center; }
+    .trace svg { width:72%; max-height:78%; color:#dce8d7; filter:drop-shadow(0 0 18px rgba(239,159,69,.18)); opacity:.9; }
+    .blip { position:absolute; width:9px; height:9px; border:2px solid var(--signal); border-radius:50%; box-shadow:0 0 16px var(--signal); animation:blip 2.4s ease-out infinite; }
+    .blip.one { left:25%; top:28%; }.blip.two { right:22%; bottom:31%; animation-delay:1.2s; }
+    .station-label { position:absolute; left:1rem; bottom:1rem; max-width:calc(100% - 2rem); padding:.62rem .72rem; border:1px solid rgba(118,230,207,.35); border-radius:7px; color:#d8fff1; background:rgba(8,19,21,.88); font:600 .65rem/1.5 "IBM Plex Mono",monospace; letter-spacing:.04em; text-transform:uppercase; }
+    .dex-lights { position:absolute; z-index:4; top:-2rem; left:-.1rem; display:flex; align-items:center; gap:.5rem; }
+    .dex-light { width:13px; height:13px; border:2px solid rgba(255,255,255,.72); border-radius:50%; box-shadow:inset 0 0 7px rgba(0,0,0,.5); }
+    .dex-light.main { width:34px; height:34px; background:var(--dex-blue); box-shadow:0 0 0 5px #edf1ec,0 0 0 8px #64121c,inset 5px 5px 0 rgba(255,255,255,.35); }
+    .dex-light.red { background:#ff5d5d; }.dex-light.yellow { background:#ffd447; }.dex-light.green { background:#6de88f; }
+    .speaker { position:absolute; z-index:4; right:1.1rem; bottom:-1.8rem; display:grid; grid-template-columns:repeat(5,5px); gap:5px; }
+    .speaker i { width:5px; height:5px; border-radius:50%; background:#5a6260; box-shadow:inset 0 1px 1px #181b1b; }
+    @keyframes sweep { to { transform:rotate(360deg); } }
+    @keyframes blip { 0%{transform:scale(.4);opacity:0} 25%{opacity:1} 100%{transform:scale(2.8);opacity:0} }
+    .card { padding:clamp(1.2rem,3vw,2rem); scroll-margin-top:70px; }
+    .card h2,.lab h2 { margin:0 0 .7rem; font-size:clamp(1.8rem,4vw,2.8rem); line-height:1; letter-spacing:-.02em; text-transform:uppercase; }
+    .card h3 { margin:.2rem 0 .35rem; color:#f3f5ec; font-size:1.25rem; letter-spacing:.01em; }
+    .card p,.card li,.lab p { color:var(--mist); font-size:.9rem; line-height:1.7; }
+    .split,.three,.four { display:grid; gap:1rem; }
+    .split { grid-template-columns:1fr 1fr; }.three { grid-template-columns:repeat(3,1fr); }.four { grid-template-columns:repeat(4,1fr); }
+    .definition { min-height:100%; padding:1.1rem; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.025); }
+    .definition.science { border-top:4px solid var(--cyan); }.definition.caution { border-top:4px solid var(--signal); }
+    .definition p { margin:.3rem 0 0; }
+    .rule { margin-top:1rem; padding:.9rem 1rem; border-left:4px solid var(--signal); border-radius:0 8px 8px 0; color:#f6e7cc; background:rgba(239,159,69,.08); line-height:1.65; }
+    .rule strong { color:var(--signal-2); }
+    .timeline { display:grid; grid-template-columns:repeat(3,1fr); gap:.8rem; margin-top:1rem; }
+    .discovery { position:relative; overflow:hidden; min-height:230px; padding:1rem; border:1px solid var(--line); border-radius:10px; background:#0b1b1c; }
+    .discovery::after { content:attr(data-year); position:absolute; right:-.05em; bottom:-.18em; color:rgba(102,213,202,.07); font:800 5.5rem "Barlow Condensed",sans-serif; }
+    .discovery .year { color:var(--cyan); font:700 .7rem "IBM Plex Mono",monospace; letter-spacing:.1em; }
+    .discovery h3 { position:relative; z-index:1; margin:.55rem 0 .3rem; }
+    .discovery p { position:relative; z-index:1; margin:0; font-size:.8rem; }
+    .evidence-ladder { display:grid; gap:.55rem; margin-top:1rem; }
+    .rung { display:grid; grid-template-columns:90px 1fr auto; align-items:center; gap:.85rem; padding:.75rem .9rem; border:1px solid var(--line); border-radius:9px; background:#0b1b1c; }
+    .rung b { color:var(--signal-2); font:700 .67rem "IBM Plex Mono",monospace; text-transform:uppercase; }
+    .rung p { margin:0; font-size:.8rem; }
+    .strength { display:flex; gap:3px; }
+    .strength i { width:9px; height:18px; border-radius:2px; background:rgba(255,255,255,.08); }
+    .strength i.on { background:var(--cyan); }
+    .lab { overflow:hidden; scroll-margin-top:70px; border:8px solid var(--dex-red); border-bottom-color:var(--dex-dark); border-radius:18px 18px 34px 18px; box-shadow:0 0 0 2px #65121c,0 24px 60px rgba(0,0,0,.35); }
+    .lab-head { padding:1.3rem clamp(1rem,3vw,1.7rem) 1rem; border-bottom:4px solid #76141f; background:linear-gradient(110deg,#c62431,#981a28); }
+    .lab-head p { max-width:75ch; margin:0; }
+    .case-tabs { display:flex; gap:.45rem; padding:.7rem; overflow:auto; border-bottom:1px solid var(--line); background:#6f1420; }
+    .case-tab { min-height:42px; padding:.45rem .72rem; border:1px solid transparent; border-radius:7px; color:var(--muted); background:transparent; font:700 .68rem "IBM Plex Mono",monospace; white-space:nowrap; cursor:pointer; }
+    .case-tab:hover { color:#fff; background:rgba(255,255,255,.04); }
+    .case-tab.active { color:#10211d; border-color:var(--screen); background:var(--screen); box-shadow:inset 0 0 0 2px rgba(255,255,255,.35); }
+    .case-grid { display:grid; grid-template-columns:240px minmax(0,1fr) 290px; min-height:500px; }
+    .case-id { padding:1rem; border-right:1px solid rgba(21,48,42,.28); color:#162722; background:linear-gradient(135deg,#c9dfc0,#a9c6a6); box-shadow:inset 0 0 32px rgba(31,69,57,.18); }
+    .case-number { color:#8b1a26; font:700 .65rem "IBM Plex Mono",monospace; letter-spacing:.1em; text-transform:uppercase; }
+    .case-id h3 { margin:.35rem 0 .2rem; font-size:1.65rem; line-height:1; text-transform:uppercase; }
+    .region { margin:0 0 .8rem; color:#45645a; font:.65rem "IBM Plex Mono",monospace; }
+    .silhouette { min-height:190px; display:grid; place-items:center; margin:.7rem 0; border:3px solid #294f46; border-radius:8px 8px 22px 8px; color:#153b34; background:repeating-linear-gradient(0deg,rgba(35,84,70,.08) 0 1px,transparent 1px 4px),radial-gradient(circle,#cfe7c7,#a8c5a5); box-shadow:inset 0 0 28px rgba(32,77,64,.18); }
+    .silhouette svg { width:82%; max-height:170px; color:#214b42; }
+    .case-status { padding:.55rem .65rem; border:1px solid rgba(29,71,60,.3); border-radius:7px; color:#24473e; background:rgba(255,255,255,.25); font-size:.75rem; line-height:1.55; }
+    .evidence-panel { padding:1rem; }
+    .panel-label { margin:0 0 .65rem; color:var(--cyan); font:700 .66rem "IBM Plex Mono",monospace; letter-spacing:.09em; text-transform:uppercase; }
+    .evidence-list { display:grid; gap:.55rem; }
+    .evidence-card { width:100%; display:grid; grid-template-columns:34px 1fr auto; gap:.65rem; align-items:center; padding:.72rem; border:1px solid var(--line); border-radius:8px; color:var(--mist); background:rgba(255,255,255,.022); text-align:left; cursor:pointer; }
+    .evidence-card:hover,.evidence-card:focus-visible { border-color:rgba(102,213,202,.5); }
+    .evidence-card.revealed { background:rgba(102,213,202,.06); }
+    .evidence-icon { display:grid; place-items:center; width:32px; height:32px; border-radius:50%; color:#132322; background:var(--cyan); font-weight:900; }
+    .evidence-card b { display:block; color:#ecf4ef; font-size:.78rem; }.evidence-card small { display:block; margin-top:.15rem; color:var(--muted); line-height:1.45; }
+    .evidence-card .quality { color:var(--signal-2); font:600 .58rem "IBM Plex Mono",monospace; text-transform:uppercase; }
+    .hidden-detail { display:none!important; }.revealed .hidden-detail { display:block!important; }.revealed .prompt { display:none!important; }
+    .verdict-panel { padding:1rem; border-left:1px solid var(--line); background:rgba(0,0,0,.12); }
+    .signal-meter { margin:.5rem 0 1rem; }
+    .meter-track { height:9px; overflow:hidden; border-radius:5px; background:rgba(255,255,255,.08); }
+    .meter-fill { width:0; height:100%; background:linear-gradient(90deg,var(--red),var(--signal),var(--cyan)); transition:width .45s ease; }
+    .meter-labels { display:flex; justify-content:space-between; margin-top:.35rem; color:var(--muted); font:500 .55rem "IBM Plex Mono",monospace; text-transform:uppercase; }
+    .verdict-options { display:grid; gap:.4rem; }
+    .verdict-btn { min-height:42px; padding:.55rem .65rem; border:1px solid var(--line); border-radius:7px; color:var(--mist); background:#102526; text-align:left; font-size:.75rem; font-weight:700; cursor:pointer; }
+    .verdict-btn:hover { border-color:rgba(239,159,69,.5); }.verdict-btn.selected { color:#201a12; border-color:var(--signal-2); background:var(--signal-2); }
+    .check-verdict { width:100%; min-height:44px; margin-top:.7rem; border:0; border-radius:7px; color:#122020; background:var(--cyan); font-weight:900; cursor:pointer; }
+    .feedback { min-height:76px; margin:.7rem 0 0; padding:.65rem; border:1px solid var(--line); border-radius:7px; color:var(--muted); background:rgba(255,255,255,.025); font-size:.75rem; line-height:1.55; }
+    .feedback.correct { color:#d8fff5; border-color:rgba(102,213,202,.5); }.feedback.try { color:#ffe2b7; border-color:rgba(239,159,69,.5); }
+    .tools { display:grid; grid-template-columns:repeat(4,1fr); gap:.75rem; margin-top:1rem; }
+    .tool { padding:1rem; border:1px solid var(--line); border-radius:9px; background:#0b1b1c; }
+    .tool-icon { display:grid; place-items:center; width:38px; height:38px; margin-bottom:.7rem; border-radius:8px; color:#132322; background:var(--cyan); font-weight:900; }
+    .tool p { margin:.3rem 0 0; font-size:.78rem; }
+    .mission { display:grid; grid-template-columns:1.2fr .8fr; gap:1rem; margin-top:1rem; }
+    .planner { padding:1rem; border:1px solid var(--line); border-radius:9px; background:#0b1b1c; }
+    .planner label { display:block; margin:.7rem 0 .25rem; color:var(--signal-2); font:600 .65rem "IBM Plex Mono",monospace; text-transform:uppercase; }
+    .planner select { width:100%; min-height:42px; padding:0 .6rem; border:1px solid var(--line); border-radius:7px; color:#edf4ef; background:#112829; }
+    .plan-output { min-height:100%; padding:1rem; border:1px solid rgba(239,159,69,.3); border-radius:9px; color:#e9ebdf; background:rgba(239,159,69,.055); }
+    .plan-output h3 { color:var(--signal-2); }.plan-output p { margin:.4rem 0; font-size:.8rem; }
+    .ethics li { margin-bottom:.45rem; }
+    .exit-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:.7rem; margin-top:1rem; }
+    .exit-q { padding:1rem; border:1px solid var(--line); border-radius:9px; background:#0b1b1c; }
+    .exit-q b { color:var(--signal-2); }.exit-q p { margin:.35rem 0 0; font-size:.8rem; }
+    .sources { margin-top:1rem; padding-top:1rem; border-top:1px solid var(--line); color:var(--muted); font-size:.72rem; line-height:1.8; }
+    .sources a { text-decoration:none; }
+    /* Global Cryptidex */
+    .dex-archive { overflow:hidden; padding:0; }
+    .archive-head { padding:clamp(1.2rem,3vw,2rem); border-bottom:1px solid var(--line); background:linear-gradient(115deg,rgba(217,46,53,.14),transparent 58%); }
+    .archive-head p:last-child { max-width:78ch; margin-bottom:0; }
+    .archive-controls { display:grid; grid-template-columns:1fr 270px; gap:.7rem; padding:.75rem; border-bottom:1px solid var(--line); background:#0b1b1c; }
+    .archive-search { min-height:44px; padding:0 .85rem; border:1px solid var(--line); border-radius:8px; color:#edf4ef; background:#112829; }
+    .archive-count { display:flex; align-items:center; justify-content:center; border:1px solid rgba(118,230,207,.25); border-radius:8px; color:var(--cyan); background:rgba(118,230,207,.05); font:700 .67rem "IBM Plex Mono",monospace; letter-spacing:.07em; text-transform:uppercase; }
+    .map-console { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr); border-bottom:1px solid var(--line); background:linear-gradient(135deg,#b9d8b1,#8fb39b); color:#163b34; }
+    .world-map { min-height:360px; padding:1rem; border-right:5px solid #8f1724; position:relative; background:repeating-linear-gradient(0deg,rgba(21,61,52,.07) 0 1px,transparent 1px 5px); }
+    .world-map svg { display:block; width:100%; height:auto; max-height:390px; }
+    .map-ocean { fill:#82aaa2; stroke:#28594f; stroke-width:2; }
+    .map-region { fill:#d9e6cb; stroke:#28594f; stroke-width:2; cursor:pointer; transition:fill .16s,transform .16s; transform-box:fill-box; transform-origin:center; }
+    .map-region:hover,.map-region:focus-visible { fill:#ffcb45; outline:none; transform:scale(1.025); }
+    .map-region.active { fill:#d92e35; stroke:#721620; }
+    .map-label { fill:#173f36; font:700 13px "IBM Plex Mono",monospace; pointer-events:none; text-anchor:middle; paint-order:stroke; stroke:#d8e4cd; stroke-width:3px; stroke-linejoin:round; }
+    .map-region.active + .map-label { fill:#fff; stroke:#8f1724; }
+    .map-pulse { fill:#ffcb45; stroke:#8f1724; stroke-width:2; pointer-events:none; transform-box:fill-box; transform-origin:center; animation:mapPing 2.2s ease-in-out infinite; }
+    @keyframes mapPing { 50% { transform:scale(1.65); opacity:.45; } }
+    .map-sidebar { padding:1rem; background:linear-gradient(150deg,#b91f2d,#8e1723); color:#fff7e8; }
+    .map-sidebar h3 { margin:.2rem 0 .45rem; font-size:1.65rem; text-transform:uppercase; }
+    .map-sidebar p { margin:.2rem 0 1rem; color:#ffe0c5; font-size:.78rem; }
+    .region-buttons { display:grid; grid-template-columns:1fr 1fr; gap:.42rem; }
+    .region-btn { min-height:42px; padding:.45rem .55rem; border:1px solid rgba(255,255,255,.2); border-radius:7px; color:#fff1dc; background:rgba(0,0,0,.12); text-align:left; font:700 .62rem "IBM Plex Mono",monospace; cursor:pointer; }
+    .region-btn:hover,.region-btn.active { color:#17231f; border-color:#ffdf87; background:#ffcb45; }
+    .type-filters { display:flex; gap:.42rem; flex-wrap:wrap; padding:.7rem; border-bottom:1px solid var(--line); background:#102526; }
+    .type-btn { min-height:36px; padding:.35rem .62rem; border:1px solid var(--line); border-radius:999px; color:var(--muted); background:transparent; font-size:.68rem; font-weight:800; cursor:pointer; }
+    .type-btn.active { color:#17231f; border-color:var(--cyan); background:var(--cyan); }
+    .archive-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.7rem; padding:.8rem; background:#081617; }
+    .dex-entry { min-width:0; overflow:hidden; border:1px solid var(--line); border-radius:9px 9px 18px 9px; background:#102526; box-shadow:0 8px 20px rgba(0,0,0,.18); transition:transform .16s,border-color .16s; }
+    .dex-entry:hover { transform:translateY(-3px); border-color:rgba(255,203,69,.5); }
+    .entry-art { aspect-ratio:1; position:relative; background-repeat:no-repeat; background-color:#b9d8b1; border-bottom:4px solid #8f1724; }
+    .entry-art::after { content:""; position:absolute; inset:0; background:linear-gradient(135deg,transparent 58%,rgba(8,22,23,.28)); pointer-events:none; }
+    .atlas-1 { background-image:url('../assets/images/cryptozoology/cryptidex-atlas-01.webp'); background-size:400% 300%; }
+    .atlas-2 { background-image:url('../assets/images/cryptozoology/cryptidex-atlas-02.webp'); background-size:400% 300%; }
+    .atlas-3 { background-image:url('../assets/images/cryptozoology/cryptidex-atlas-03.webp'); background-size:400% 300%; }
+    .atlas-4 { background-image:url('../assets/images/cryptozoology/cryptidex-atlas-04.webp'); background-size:400% 300%; }
+    .atlas-grootslang { background-image:url('../assets/images/cryptozoology/cryptidex-grootslang.webp'); background-size:cover; background-position:center; }
+    .p-0 { background-position:0 0 }.p-1 { background-position:33.333% 0 }.p-2 { background-position:66.667% 0 }.p-3 { background-position:100% 0 }
+    .p-4 { background-position:0 50% }.p-5 { background-position:33.333% 50% }.p-6 { background-position:66.667% 50% }.p-7 { background-position:100% 50% }
+    .p-8 { background-position:0 100% }.p-9 { background-position:33.333% 100% }.p-10 { background-position:66.667% 100% }.p-11 { background-position:100% 100% }
+    .entry-num { position:absolute; z-index:2; top:.45rem; left:.45rem; padding:.25rem .4rem; border-radius:5px; color:#eafff7; background:rgba(8,22,23,.78); font:700 .57rem "IBM Plex Mono",monospace; }
+    .entry-body { padding:.75rem; }
+    .entry-top { display:flex; justify-content:space-between; gap:.45rem; align-items:start; }
+    .entry-body h3 { margin:0; font-size:1.15rem; line-height:1; text-transform:uppercase; overflow-wrap:anywhere; }
+    .entry-region { margin:.3rem 0 .55rem!important; color:var(--muted)!important; font:600 .59rem "IBM Plex Mono",monospace!important; text-transform:uppercase; }
+    .entry-body p:last-child { margin:0; font-size:.73rem; line-height:1.5; }
+    .entry-type { flex:none; padding:.2rem .35rem; border:1px solid currentColor; border-radius:999px; font:700 .5rem "IBM Plex Mono",monospace; text-transform:uppercase; }
+    .entry-type.reported { color:#ffcd68; }.entry-type.folklore { color:#9ee9de; }.entry-type.documented { color:#9ce7a9; }.entry-type.internet { color:#f39ac4; }.entry-type.explained { color:#a8b7ff; }
+    .archive-empty { display:none; padding:2rem; color:var(--muted); text-align:center; }
+    .archive-empty.show { display:block; }
+    .culture-note { margin:.8rem; padding:.8rem 1rem; border-left:4px solid var(--signal); border-radius:0 8px 8px 0; color:#f7e8d0; background:rgba(239,159,69,.07); font-size:.78rem; line-height:1.65; }
+    .footer { padding:2rem 1rem; color:var(--muted); text-align:center; font-size:.75rem; }
+    :focus-visible { outline:2px solid var(--signal-2); outline-offset:3px; }
+    @media (max-width:930px) { .hero{grid-template-columns:1fr;background:linear-gradient(160deg,#b81f2d 0 40%,#8f1724 40.2% 41.2%,#102526 41.4%)}.hero-station{min-height:390px;margin:1.2rem 2.2rem 2.8rem;border-left-width:12px;border-top-width:12px}.case-grid{grid-template-columns:210px 1fr}.verdict-panel{grid-column:1/-1;border-left:0;border-top:1px solid var(--line)}.verdict-options{grid-template-columns:repeat(2,1fr)}.tools{grid-template-columns:repeat(2,1fr)}.archive-grid{grid-template-columns:repeat(3,1fr)}.map-console{grid-template-columns:1fr}.world-map{border-right:0;border-bottom:5px solid #8f1724} }
+    @media (max-width:700px) { .nav{display:none}.split,.three,.four,.timeline,.mission,.exit-grid{grid-template-columns:1fr}.case-grid{grid-template-columns:1fr}.case-id{border-right:0;border-bottom:1px solid var(--line)}.silhouette{min-height:145px}.verdict-options{grid-template-columns:1fr}.rung{grid-template-columns:1fr}.strength{order:3}.topbar .badge{display:none}.archive-grid{grid-template-columns:repeat(2,1fr)}.archive-controls{grid-template-columns:1fr}.archive-count{min-height:40px}.world-map{min-height:0}.map-label{font-size:10px} }
+    @media (max-width:480px) { .tools{grid-template-columns:1fr}.hero-copy{padding:1.35rem}h1{font-size:3.2rem}.shell{width:min(100% - 1rem,1180px)}.archive-grid{grid-template-columns:1fr}.region-buttons{grid-template-columns:1fr 1fr} }
+    @media (prefers-reduced-motion:reduce) { html{scroll-behavior:auto}.sweep,.blip,.map-pulse{animation:none}.meter-fill{transition:none} }
+    @media print { .topbar,.case-tabs,.check-verdict,.verdict-options{display:none!important}.hero{min-height:auto}.hero-station{min-height:260px}.case-grid{display:block}.evidence-card .hidden-detail{display:block!important}.evidence-card .prompt{display:none!important}.card,.hero,.lab{box-shadow:none;break-inside:avoid}.shell{width:100%} }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="../steam-lessons.html">← Lessons</a>
+      <nav class="nav" aria-label="Lesson sections"><a href="#meaning">Meaning</a><a href="#discoveries">Discoveries</a><a href="#archive">World Archive</a><a href="#evidence">Evidence</a><a href="#lab">Case Lab</a><a href="#expedition">Expedition</a><a href="#ethics">Ethics</a></nav>
+      <span class="badge">Cryptidex · Grades 6–10</span>
+    </div>
+  </header>
+
+  <main class="shell" id="main-content">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Cryptidex field guide · Entry database online</p>
+        <h1>Real-life <span>Cryptidex</span></h1>
+        <p class="lede">Cryptozoology begins with reported animals—creatures known from stories, sightings, tracks, or blurry images. Science asks the next question: <strong>what evidence would let anyone test the claim?</strong></p>
+        <div class="meta"><span class="badge">50–70 minutes</span><span class="badge">Interactive case lab</span><span class="badge">No belief required</span></div>
+      </div>
+      <div class="hero-station" aria-label="Animated field-station scanner showing an unidentified animal silhouette">
+        <div class="dex-lights" aria-hidden="true"><span class="dex-light main"></span><span class="dex-light red"></span><span class="dex-light yellow"></span><span class="dex-light green"></span></div>
+        <div class="scanner"><div class="sweep"></div><span class="blip one"></span><span class="blip two"></span></div>
+        <div class="trace" aria-hidden="true">
+          <svg viewBox="0 0 520 330" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M91 236c19-49 53-79 104-87 27-5 55-1 77 8 34-36 66-55 99-55 20 0 38 7 55 19l-21 21c26 13 41 33 45 59-35-8-65-2-91 17-17 13-38 23-65 30-54 13-109 15-165 5z"/>
+            <path d="M178 250l-18 48m181-66 20 54M214 150c-4-26 4-48 24-67m36 72c4-31 17-58 39-81M111 231c-24 4-43 18-56 41"/>
+            <path d="M403 143l35-13-15 34m-67-38c-1-18 5-34 17-48"/>
+          </svg>
+        </div>
+        <div class="station-label">Field signal 04 · Visual trace only · Identity unverified · Continue sampling</div>
+        <div class="speaker" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      </div>
+    </section>
+
+    <section class="card" id="meaning">
+      <p class="kicker">Begin with the boundary</p><h2>Curiosity is the start—not the conclusion</h2>
+      <div class="split">
+        <div class="definition science"><h3>Cryptozoology</h3><p>The search for animals reported in folklore, testimony, or incomplete evidence but not accepted as established species. It is generally considered a <strong>pseudoscience</strong> when claims avoid testing, ignore disconfirming evidence, or rely on stories alone.</p></div>
+        <div class="definition caution"><h3>Zoology</h3><p>The scientific study of animals. Zoologists use documented specimens, repeatable observations, anatomy, genetics, ecology, and peer review. Unknown species are real possibilities—but each claim must earn acceptance with evidence.</p></div>
+      </div>
+      <div class="rule"><strong>Keep two ideas at once:</strong> “We have not proved this animal exists” is not the same as “we proved it cannot exist.” The most scientific answer is sometimes <em>not enough evidence yet</em>.</div>
+    </section>
+
+    <section class="card" id="discoveries">
+      <p class="kicker">Famous surprises, properly framed</p><h2>Unknown to science did not mean unknown to people</h2>
+      <p>Animals can be rare, nocturnal, deep-sea, or restricted to remote habitat. When science formally documents one, local and Indigenous knowledge may have described it long before museums did. Discovery is often recognition—not the first human encounter.</p>
+      <div class="timeline">
+        <article class="discovery" data-year="1938"><span class="year">Documented 1938</span><h3>Coelacanth</h3><p>Known from fossils and thought extinct, a living coelacanth reached a South African museum in 1938. A preserved body made anatomy and identification independently testable.</p></article>
+        <article class="discovery" data-year="1901"><span class="year">Described 1901</span><h3>Okapi</h3><p>Scientists described the okapi after examining skins and skulls from central Africa. Local communities already knew the forest animal; the scientific name was new, not the animal.</p></article>
+        <article class="discovery" data-year="2004"><span class="year">Filmed alive 2004</span><h3>Giant squid</h3><p>Physical remains had established giant squid for centuries. Images of a living animal came much later—showing that confirmation and direct observation are different milestones.</p></article>
+      </div>
+    </section>
+
+    <section class="card dex-archive" id="archive">
+      <div class="archive-head">
+        <p class="kicker">Global index · 40+ entries</p><h2>Cryptidex world archive</h2>
+        <p>Click a map region, search by name, or filter by origin. This archive places reported animals beside folklore, playful internet fiction, and explained phenomena so you can compare how stories are made—without pretending they are the same kind of claim. The examples are age-appropriate and non-graphic.</p>
+      </div>
+      <div class="archive-controls">
+        <label class="sr-only" for="archiveSearch">Search the Cryptidex</label>
+        <input class="archive-search" id="archiveSearch" type="search" placeholder="Search Bigfoot, kappa, the Bloop…" autocomplete="off" />
+        <div class="archive-count" id="archiveCount" aria-live="polite">Loading entries…</div>
+      </div>
+      <div class="map-console">
+        <div class="world-map">
+          <svg viewBox="0 0 900 440" role="img" aria-labelledby="mapTitle mapDesc">
+            <title id="mapTitle">Interactive world map of Cryptidex regions</title>
+            <desc id="mapDesc">Choose North America, Latin America, Europe, Africa, Asia, or Oceania to filter the archive.</desc>
+            <rect class="map-ocean" x="4" y="4" width="892" height="432" rx="18" />
+            <g class="map-region" data-region="north-america" role="button" tabindex="0" aria-label="Filter North America"><path d="M70 91 124 43l99 3 74 49 20 58-45 43-56 10-24 55-44-21-18-54-49-27z"/></g><text class="map-label" x="190" y="128">N. AMERICA</text>
+            <g class="map-region" data-region="latin-america" role="button" tabindex="0" aria-label="Filter Latin America"><path d="m226 230 56 9 45 45-15 62-37 71-32-34 1-61-31-48z"/></g><text class="map-label" x="270" y="301">LATIN AMERICA</text>
+            <g class="map-region" data-region="europe" role="button" tabindex="0" aria-label="Filter Europe"><path d="m401 105 47-29 66 17 18 39-43 27-66-5-32-23z"/></g><text class="map-label" x="463" y="120">EUROPE</text>
+            <g class="map-region" data-region="africa" role="button" tabindex="0" aria-label="Filter Africa"><path d="m417 169 77-13 55 46-25 103-49 47-43-64-35-52z"/></g><text class="map-label" x="470" y="235">AFRICA</text>
+            <g class="map-region" data-region="asia" role="button" tabindex="0" aria-label="Filter Asia"><path d="m526 85 91-41 146 33 65 70-57 48-80-16-54 46-77-38-23-49z"/></g><text class="map-label" x="667" y="126">ASIA</text>
+            <g class="map-region" data-region="oceania" role="button" tabindex="0" aria-label="Filter Oceania"><path d="m700 287 50-34 72 20 29 57-62 41-78-28-27-31z"/></g><text class="map-label" x="770" y="312">OCEANIA</text>
+            <circle class="map-pulse" cx="455" cy="385" r="7" />
+          </svg>
+        </div>
+        <aside class="map-sidebar">
+          <p class="panel-label">Location filter</p><h3 id="regionTitle">Whole world</h3><p id="regionDescription">Every archive layer, from field reports to born-online fiction.</p>
+          <div class="region-buttons" id="regionButtons">
+            <button class="region-btn active" type="button" data-region="all">◎ All regions</button><button class="region-btn" type="button" data-region="north-america">North America</button>
+            <button class="region-btn" type="button" data-region="latin-america">Latin America</button><button class="region-btn" type="button" data-region="europe">Europe</button>
+            <button class="region-btn" type="button" data-region="africa">Africa</button><button class="region-btn" type="button" data-region="asia">Asia + Japan</button>
+            <button class="region-btn" type="button" data-region="oceania">Oceania</button><button class="region-btn" type="button" data-region="internet">Internet culture</button>
+          </div>
+        </aside>
+      </div>
+      <div class="type-filters" id="typeFilters" aria-label="Filter by entry type">
+        <button class="type-btn active" type="button" data-type="all">All origins</button><button class="type-btn" type="button" data-type="reported">Reported animals</button><button class="type-btn" type="button" data-type="folklore">Traditional folklore</button><button class="type-btn" type="button" data-type="documented">Documented animals</button><button class="type-btn" type="button" data-type="explained">Explained phenomena</button><button class="type-btn" type="button" data-type="internet">Playful internet fiction</button>
+      </div>
+      <div class="culture-note"><strong>Read the label before the legend:</strong> yōkai are Japanese folkloric beings and phenomena, not simply Japanese “cryptids.” Likewise, Indigenous and living cultural traditions deserve their own context. The archive marks those entries as folklore instead of treating community belief as zoological evidence.</div>
+      <div class="archive-grid" id="archiveGrid"></div>
+      <div class="archive-empty" id="archiveEmpty">No entries match those filters. Try another region or clear the search.</div>
+    </section>
+
+    <section class="card" id="evidence">
+      <p class="kicker">The evidence ladder</p><h2>Extraordinary is not a type of evidence</h2>
+      <p>Ask whether evidence is direct, diagnostic, repeatable, and protected against contamination or mistaken identity. Multiple weak clues do not automatically combine into one strong result.</p>
+      <div class="evidence-ladder">
+        <div class="rung"><b>Level 1</b><p><strong>Story or memory:</strong> useful for generating a search location, but memory changes and perception is limited.</p><span class="strength" aria-label="one of five strength"><i class="on"></i><i></i><i></i><i></i><i></i></span></div>
+        <div class="rung"><b>Level 2</b><p><strong>Track, sound, or single image:</strong> testable if metadata and scale exist, but often compatible with known animals.</p><span class="strength" aria-label="two of five strength"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+        <div class="rung"><b>Level 3</b><p><strong>Independent sensor records:</strong> repeated camera, acoustic, thermal, or sonar detections from calibrated devices.</p><span class="strength" aria-label="three of five strength"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+        <div class="rung"><b>Level 4</b><p><strong>Genetic or anatomical sample:</strong> useful when chain of custody, contamination controls, and comparisons are documented.</p><span class="strength" aria-label="four of five strength"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></div>
+        <div class="rung"><b>Level 5</b><p><strong>Replicated convergence:</strong> independent teams connect a specimen, DNA, diagnostic images, and an ecological population.</p><span class="strength" aria-label="five of five strength"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></div>
+      </div>
+    </section>
+
+    <section class="lab" id="lab">
+      <div class="lab-head"><p class="kicker">Cryptidex index · Interactive investigation</p><h2>Scan the real-life entries</h2><p>Open every evidence packet, judge the quality of the signal, then give the claim its most defensible status. Your job is not to prove or debunk—it is to match confidence to evidence.</p></div>
+      <div class="case-tabs" id="caseTabs" role="tablist" aria-label="Mystery animal cases"></div>
+      <div class="case-grid">
+        <aside class="case-id"><span class="case-number" id="caseNumber"></span><h3 id="caseName"></h3><p class="region" id="caseRegion"></p><div class="silhouette" id="caseSilhouette" aria-hidden="true"></div><div class="case-status" id="caseClaim"></div></aside>
+        <div class="evidence-panel"><p class="panel-label">Tap to declassify each packet</p><div class="evidence-list" id="evidenceList"></div></div>
+        <aside class="verdict-panel"><p class="panel-label">Signal strength</p><div class="signal-meter"><div class="meter-track"><div class="meter-fill" id="meterFill"></div></div><div class="meter-labels"><span>anecdote</span><span>converging evidence</span></div></div><p class="panel-label">Your scientific verdict</p><div class="verdict-options" id="verdictOptions"></div><button class="check-verdict" id="checkVerdict" type="button">Check verdict</button><div class="feedback" id="feedback" role="status">Reveal the packets before choosing a verdict.</div></aside>
+      </div>
+    </section>
+
+    <section class="card" id="expedition">
+      <p class="kicker">Technology makes hidden animals detectable</p><h2>Build a low-impact search</h2>
+      <div class="tools">
+        <div class="tool"><span class="tool-icon">IR</span><h3>Camera traps</h3><p>Motion and heat trigger a timestamped image without a person standing nearby.</p></div>
+        <div class="tool"><span class="tool-icon">DNA</span><h3>Environmental DNA</h3><p>Water, soil, or air can carry genetic traces shed by organisms. Controls help catch contamination.</p></div>
+        <div class="tool"><span class="tool-icon">dB</span><h3>Acoustic sensors</h3><p>Long recordings can reveal calls, but analysts must compare them with known species and noise.</p></div>
+        <div class="tool"><span class="tool-icon">GIS</span><h3>Habitat models</h3><p>Maps test whether food, cover, breeding habitat, and a viable population could exist together.</p></div>
+      </div>
+      <div class="mission">
+        <div class="planner"><h3>Expedition planner</h3><p>Choose a habitat and primary tool. The plan should make both detections and non-detections meaningful.</p><label for="habitat">Habitat</label><select id="habitat"><option value="forest">Dense temperate forest</option><option value="lake">Deep freshwater lake</option><option value="ocean">Deep ocean slope</option><option value="wetland">Remote wetland</option></select><label for="tool">Primary tool</label><select id="tool"><option value="camera">Camera traps</option><option value="edna">Environmental DNA</option><option value="audio">Acoustic recorders</option><option value="sonar">Sonar survey</option></select></div>
+        <div class="plan-output" id="planOutput" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="card ethics" id="ethics">
+      <p class="kicker">The human side of field science</p><h2>Search without causing harm</h2>
+      <div class="split">
+        <ul><li><strong>Ask permission.</strong> Research on private, protected, or Indigenous land requires consent and partnership.</li><li><strong>Credit knowledge holders.</strong> Community knowledge is not a clue to extract without context or attribution.</li><li><strong>Protect locations.</strong> Publicizing a rare animal can invite disturbance, poaching, or habitat damage.</li></ul>
+        <ul><li><strong>Do not bait recklessly.</strong> Food can change animal behavior, spread disease, and attract conflict.</li><li><strong>Report uncertainty.</strong> Label estimates, assumptions, and failed tests as clearly as exciting results.</li><li><strong>Value the habitat.</strong> A search that finds no mystery animal can still document biodiversity worth protecting.</li></ul>
+      </div>
+    </section>
+
+    <section class="card">
+      <p class="kicker">Exit ticket</p><h2>Can you think like a field zoologist?</h2>
+      <div class="exit-grid"><div class="exit-q"><b>01 · Define</b><p>How is a reported cryptid different from a scientifically established species?</p></div><div class="exit-q"><b>02 · Compare</b><p>Why is a clear photograph usually stronger than a sighting story but weaker than a documented specimen?</p></div><div class="exit-q"><b>03 · Design</b><p>Name one control you would add to an eDNA or camera-trap study.</p></div><div class="exit-q"><b>04 · Reflect</b><p>What could a “failed” cryptid expedition still teach us about an ecosystem?</p></div></div>
+      <div class="sources"><strong>Research launchpad:</strong> <a href="https://ocean.si.edu/ocean-life/fish/coelacanth" target="_blank" rel="noopener noreferrer">Smithsonian Ocean: Coelacanth ↗</a> · <a href="https://www.usgs.gov/science/science-topics/edna" target="_blank" rel="noopener noreferrer">USGS: Environmental DNA ↗</a> · <a href="https://www.si.edu/spotlight/buginfo/camera-traps" target="_blank" rel="noopener noreferrer">Smithsonian: Camera Traps ↗</a>. Use these as starting sources and follow their references.</div>
+    </section>
+  </main>
+
+  <footer class="footer">STEAM Lab · Curiosity with calibrated confidence</footer>
+
+  <script>
+    (() => {
+      const entries = [
+        ['Bigfoot','north-america','reported','Pacific Northwest, U.S. & Canada','A large hair-covered humanoid reported in forests; no diagnostic body or DNA has established a species.','1-0'],
+        ['Mothman','north-america','folklore','Point Pleasant, West Virginia','A winged red-eyed figure rooted in 1966–67 reports and later books, festivals, films, and local identity.','1-1'],
+        ['Jersey Devil','north-america','folklore','New Jersey Pine Barrens','A long-running regional legend often depicted with hooves, wings, and a horse-like head.','2-0'],
+        ['Fresno Nightcrawler','north-america','internet','California internet video','A pair of pale walking shapes popularized by low-resolution footage and paranormal television.','2-1'],
+        ['Flatwoods Monster','north-america','folklore','West Virginia','A 1952 sighting became an iconic spade-headed monster image; proposed explanations include an owl and meteor.','3-6'],
+        ['Loveland Frog','north-america','folklore','Loveland, Ohio','Ohio stories describe upright frog-like beings; a later police encounter was identified as a tailless iguana.','3-10'],
+        ['Champ','north-america','reported','Lake Champlain','A lake-monster tradition spanning New York, Vermont, and Québec, supported mainly by sightings and ambiguous images.','3-4'],
+        ['Thunderbird reports','north-america','folklore','North American regional traditions','Giant-bird reports overlap with diverse Indigenous traditions that should not be collapsed into one zoological claim.','4-7'],
+
+        ['Chupacabra','latin-america','reported','Puerto Rico & the Americas','The goat-sucker story surged in Puerto Rico in the 1990s; many photographed “chupacabras” are canids with mange.','1-3'],
+        ['Mapinguari','latin-america','folklore','Amazon Basin','A powerful forest being in Amazonian traditions, later reframed by some outsiders as a surviving giant ground sloth.','2-6'],
+        ['Yacumama','latin-america','folklore','Amazonian waterways','A “mother of the water” represented as an immense serpent in stories from the western Amazon.','2-7'],
+        ['Nahuelito','latin-america','reported','Nahuel Huapi Lake, Argentina','Patagonian lake-monster reports often use a long-necked silhouette similar to modern Nessie imagery.','3-5'],
+        ['El Cuero','latin-america','folklore','Chile & Patagonia','A hide-like aquatic being from Chilean and Mapuche-linked storytelling; cultural context varies by source.','4-0'],
+        ['Mono Grande','latin-america','reported','South American forests','Reports and sensational photographs of a giant ape-like primate have not produced a verified specimen.','3-0'],
+
+        ['Loch Ness Monster','europe','reported','Scotland','Nessie became a global icon through eyewitness reports, sonar claims, tourism, and famous—but disputed—photographs.','1-2'],
+        ['Kraken','europe','folklore','North Atlantic & Norse tradition','A legendary immense sea creature, probably shaped partly by encounters with real large cephalopods.','3-11'],
+        ['Beast of Gévaudan','europe','folklore','France','A series of real animal attacks in the 1760s produced a lasting legend; wolves or wolf-like canids remain leading explanations.','4-6'],
+        ['Tatzelwurm','europe','folklore','European Alps','An Alpine creature usually drawn as a short serpent with cat-like features and two forelegs.','2-3'],
+        ['Black Shuck','europe','folklore','East Anglia, England','A spectral black dog tradition that belongs to folklore rather than zoological field reporting.','2-2'],
+        ['Owlman','europe','folklore','Cornwall, England','A modern winged humanoid legend associated with 1970s reports near Mawnan church.','3-3'],
+        ['Dobhar-chú','europe','folklore','Ireland','An Irish water-hound tradition sometimes described as an enormous, dangerous otter.','4-1'],
+
+        ['Mokele-mbembe','africa','reported','Congo Basin','Expedition stories describe a large long-necked swamp animal, but no diagnostic evidence confirms one.','2-4'],
+        ['Coelacanth','africa','documented','Western Indian Ocean','A real deep-water fish lineage documented from a preserved 1938 specimen and many later observations.','1-9'],
+        ['Kongamato','africa','reported','Central & Southern Africa','A flying-creature report often illustrated like a pterosaur; stories were heavily filtered through colonial retellings.','2-5'],
+        ['Nandi Bear','africa','reported','East Africa','Colonial-era accounts describe a large carnivore; suggested identities include hyenas or other known mammals.','1-7'],
+        ['Grootslang','africa','folklore','South Africa','A legendary cave-dwelling serpent-elephant hybrid associated with deep pools, gems, and hidden places.','grootslang-0'],
+        ['Dingonek','africa','reported','East African waterways','An early twentieth-century traveler’s account of an armored aquatic animal never produced a specimen.','3-7'],
+
+        ['Kappa','asia','folklore','Japan','A famous water yōkai with a dish-like head. It is a folkloric being, not a proposed undiscovered amphibian.','1-4'],
+        ['Tsuchinoko','asia','folklore','Japan','A thick-bodied snake-like yōkai and modern local legend that also inspires “wanted” hunts and pop culture.','1-5'],
+        ['Tengu','asia','folklore','Japan','Mountain yōkai with complex religious and folkloric histories, commonly depicted with red faces, long noses, or bird traits.','2-8'],
+        ['Akkorokamui','asia','folklore','Ainu tradition, Hokkaidō','A giant octopus-like being associated with the sea. It should be approached through Ainu cultural context.','2-9'],
+        ['Giant squid','asia','documented','First live images near Japan','Physical remains established the animal long before researchers photographed a living giant squid in its habitat.','1-6'],
+        ['Nue','asia','folklore','Japan','A composite yōkai from classical literature, assembled from multiple animal traits and linked with ominous events.','3-8'],
+        ['Hibagon','asia','reported','Hiroshima Prefecture, Japan','A shaggy humanoid from 1970s reports that became a regional mascot and media figure.','3-1'],
+        ['Yeren','asia','reported','Central China','A “wild man” tradition and modern reports investigated without producing a confirmed unknown primate.','3-2'],
+        ['Orang Pendek','asia','reported','Sumatra, Indonesia','A small upright forest hominid reported in local accounts and expeditions, but not zoologically established.','4-8'],
+
+        ['Bunyip','oceania','folklore','Australian Aboriginal traditions','An English umbrella name applied to varied Aboriginal water-being traditions; local nation and story matter.','4-2'],
+        ['Yowie','oceania','reported','Australia','An Australian hairy-hominid legend combining recent reports, media, and older stories that require careful sourcing.','2-10'],
+        ['Thylacine','oceania','documented','Tasmania','A scientifically documented marsupial predator now classified as extinct; modern survival reports remain unconfirmed.','1-8'],
+        ['Waitoreke','oceania','reported','New Zealand','Reports of an otter-like animal are intriguing because New Zealand has no known native land mammals of that kind.','4-3'],
+        ['Moa survival claims','oceania','reported','New Zealand','Moa are documented extinct birds; recent survival stories have not produced verified feathers, DNA, or bodies.','4-4'],
+
+        ['El Gran Majá','internet','internet','Borisao Blois animation','A fictional six-eyed leviathan created for internet animation and often paired with a monster version of the Bloop.','1-10'],
+        ['The Bloop','internet','explained','South Pacific hydrophone signal, 1997','A real recorded ultra-low-frequency sound later matched to icequakes—not evidence of a giant organism.','2-11'],
+        ['Tung Tung Tung Sahur','internet','internet','Indonesia-origin viral meme, 2025','An AI-generated wooden character credited to @noxaasht, drawing its name from the Indonesian sahur wake-up tradition.','1-11'],
+        ['Tralalero Tralala','internet','internet','Italian brainrot meme, 2025','A surreal three-legged shark in sneakers from the AI “Italian brainrot” wave; included as internet culture, not zoology.','4-5'],
+        ['Bombardiro Crocodilo','internet','internet','Italian brainrot meme, 2025','A fictional crocodile-aircraft hybrid from the same surreal viral AI meme genre.','3-9'],
+        ['Bloop monster','internet','internet','Internet leviathan fiction','A giant-creature interpretation of the Bloop invented after the sound became famous; distinct from the explained real signal.','4-9']
+      ].map((e,index)=>({number:String(index+1).padStart(3,'0'),name:e[0],region:e[1],type:e[2],place:e[3],description:e[4],art:e[5]}));
+      const typeLabels={reported:'Reported',folklore:'Folklore',documented:'Documented',internet:'Fiction',explained:'Explained'};
+      const regionInfo={all:['Whole world','Every archive layer, from field reports to playful born-online fiction.'],'north-america':['North America','Forest giants, lake monsters, winged omens, and modern regional legends.'],'latin-america':['Latin America','Amazonian traditions, lake reports, and the modern chupacabra phenomenon.'],europe:['Europe','Sea monsters, spectral animals, Alpine creatures, and historical wildlife accounts.'],africa:['Africa','Reports and traditions often distorted by colonial-era retellings—read claims critically.'],asia:['Asia + Japan','Reported wild people alongside yōkai, Ainu tradition, and regional popular culture.'],oceania:['Oceania','Australian and Aotearoa New Zealand reports, with living traditions kept in context.'],internet:['Internet culture','Playful fiction, explainable phenomena, animation, and surreal viral memes.']};
+      const grid=document.getElementById('archiveGrid'),count=document.getElementById('archiveCount'),empty=document.getElementById('archiveEmpty'),search=document.getElementById('archiveSearch');
+      const regionButtons=[...document.querySelectorAll('[data-region]')],typeButtons=[...document.querySelectorAll('.type-btn')];
+      let activeRegion='all',activeType='all';
+      function render(){
+        const query=search.value.trim().toLowerCase();
+        const visible=entries.filter(e=>(activeRegion==='all'||e.region===activeRegion)&&(activeType==='all'||e.type===activeType)&&(!query||`${e.name} ${e.place} ${e.description}`.toLowerCase().includes(query)));
+        grid.innerHTML=visible.map(e=>{const [atlas,pos]=e.art.split('-');return `<article class="dex-entry"><div class="entry-art atlas-${atlas} p-${pos}" role="img" aria-label="Original field-guide depiction of ${e.name}"><span class="entry-num">ENTRY ${e.number}</span></div><div class="entry-body"><div class="entry-top"><h3>${e.name}</h3><span class="entry-type ${e.type}">${typeLabels[e.type]}</span></div><p class="entry-region">${e.place}</p><p>${e.description}</p></div></article>`;}).join('');
+        count.textContent=`${visible.length} of ${entries.length} entries`;empty.classList.toggle('show',visible.length===0);
+      }
+      function setRegion(region){activeRegion=region;regionButtons.forEach(b=>b.classList.toggle('active',b.dataset.region===region));document.getElementById('regionTitle').textContent=regionInfo[region][0];document.getElementById('regionDescription').textContent=regionInfo[region][1];render();}
+      regionButtons.forEach(b=>{const activate=()=>setRegion(b.dataset.region);b.addEventListener('click',activate);if(b.matches('g'))b.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate();}});});
+      typeButtons.forEach(b=>b.addEventListener('click',()=>{activeType=b.dataset.type;typeButtons.forEach(x=>x.classList.toggle('active',x===b));render();}));
+      search.addEventListener('input',render);render();
+    })();
+
+    (() => {
+      const icons = {
+        fish:'<svg viewBox="0 0 240 150" fill="none" stroke="currentColor" stroke-width="7"><path d="M28 76c42-52 108-60 155-20l33-26-8 46 8 44-34-24c-49 37-112 27-154-20z"/><circle cx="154" cy="62" r="4" fill="currentColor"/><path d="M76 49 91 20l25 30m-48 48 23 28 16-29M36 75h102"/></svg>',
+        plesiosaur:'<svg viewBox="0 0 240 150" fill="none" stroke="currentColor" stroke-width="7"><path d="M29 103c42-28 80-35 112-21 17-8 27-26 30-55 2-17 11-23 26-17 14 6 16 16 7 29-8 12-15 26-18 43 15 2 28 10 39 24-45 17-85 17-119 1-23 15-49 17-77 7z"/><circle cx="193" cy="23" r="3" fill="currentColor"/></svg>',
+        wolf:'<svg viewBox="0 0 240 150" fill="none" stroke="currentColor" stroke-width="7"><path d="M30 102c18-24 44-37 79-38 21 0 39 5 55 15l21-28 5 32 23 13-27 13-17-7-16 14H83l-18-12-35 8z"/><path d="m85 105-9 34m69-35 12 34m-122-38L13 74m148 3 13-34 14 10"/></svg>',
+        ape:'<svg viewBox="0 0 240 170" fill="none" stroke="currentColor" stroke-width="7"><circle cx="122" cy="39" r="24"/><path d="M93 68c-25 23-33 53-24 91m82-91c27 24 35 54 25 91M98 62c-8 35-5 66 9 93m37-93c8 35 5 66-9 93M79 89l-39 46m122-45 39 45"/></svg>'
+      };
+      const cases = [
+        {id:'CZ-01',name:'Coelacanth',region:'Western Indian Ocean · 1938',icon:'fish',claim:'Claim: a lineage known only from ancient fossils was still alive.',score:100,answer:'confirmed',why:'Confirmed species. A preserved body allowed anatomical study; later specimens, observations, and genetics independently converged.',evidence:[['Museum specimen','A whole animal was preserved and examined by specialists.','Direct'],['Diagnostic anatomy','Lobed fins and other features matched the fossil lineage.','Specific'],['Independent records','Later captures and submersible sightings repeated the observation.','Replicated'],['Genetic evidence','Tissue samples support two living species of Latimeria.','Testable']]},
+        {id:'CZ-02',name:'Loch Ness monster',region:'Scotland · Modern reports',icon:'plesiosaur',claim:'Claim: an unknown large aquatic animal lives as a breeding population in Loch Ness.',score:24,answer:'unsupported',why:'Unsupported by current evidence. Many observations have ordinary alternatives, and surveys have not produced diagnostic physical evidence for a large unknown vertebrate.',evidence:[['Eyewitness reports','Descriptions vary and often come from long distance or rough water.','Anecdotal'],['Famous photographs','Several are ambiguous, altered, or have known alternative explanations.','Low detail'],['Sonar contacts','Occasional returns are not anatomically diagnostic and can have physical causes.','Ambiguous'],['Population problem','A long-lived species would need enough animals, food, and reproduction to persist.','Ecological test']]},
+        {id:'CZ-03',name:'Thylacine survival',region:'Tasmania · After 1936',icon:'wolf',claim:'Claim: a small thylacine population survived after the last confirmed captive animal died.',score:46,answer:'unresolved',why:'Unresolved reports, not confirmed survival. Extinction makes the claim biologically plausible in principle, but no recent specimen, validated DNA, or diagnostic image establishes a living population.',evidence:[['Past existence','Specimens, films, and records establish that thylacines recently lived.','Certain'],['Habitat remaining','Some remote habitat could conceal rare animals.','Plausible'],['Later sightings','Reports continue, but none independently identifies a thylacine.','Anecdotal'],['Modern surveys','Searches have not returned a diagnostic body, DNA result, or image.','Negative result']]},
+        {id:'CZ-04',name:'Bigfoot',region:'North America · Modern reports',icon:'ape',claim:'Claim: an undiscovered breeding population of large, upright apes lives across North America.',score:16,answer:'unsupported',why:'Unsupported by current evidence. Stories and ambiguous tracks can motivate questions, but they do not outweigh missing diagnostic remains, genetics, repeatable imagery, and ecological traces.',evidence:[['Eyewitness reports','Many reports exist, but testimony alone cannot identify a new species.','Anecdotal'],['Footprint casts','Some show interesting shapes; others are hoaxes or lack a secure origin.','Uncontrolled'],['Hair samples','Tested samples have generally matched known animals or lacked useful DNA.','Non-diagnostic'],['Population traces','A breeding population should leave bodies, DNA, feeding signs, and repeated sensor records.','Missing']]}
+      ];
+      const verdicts=[['confirmed','Confirmed species'],['credible','Credible lead'],['unresolved','Unresolved report'],['unsupported','Unsupported claim']];
+      const tabs=document.getElementById('caseTabs'), evidenceList=document.getElementById('evidenceList'), verdictOptions=document.getElementById('verdictOptions');
+      let current=0,selected='',revealed=new Set();
+      cases.forEach((c,i)=>{const button=document.createElement('button');button.type='button';button.className='case-tab';button.setAttribute('role','tab');button.textContent=`${c.id} · ${c.name}`;button.addEventListener('click',()=>show(i));tabs.appendChild(button);});
+      verdicts.forEach(([value,label])=>{const button=document.createElement('button');button.type='button';button.className='verdict-btn';button.dataset.value=value;button.textContent=label;button.addEventListener('click',()=>{selected=value;[...verdictOptions.children].forEach(b=>b.classList.toggle('selected',b===button));});verdictOptions.appendChild(button);});
+      function show(index){current=index;selected='';revealed=new Set();const c=cases[index];[...tabs.children].forEach((b,i)=>{b.classList.toggle('active',i===index);b.setAttribute('aria-selected',i===index?'true':'false')});document.getElementById('caseNumber').textContent=`Case file ${c.id}`;document.getElementById('caseName').textContent=c.name;document.getElementById('caseRegion').textContent=c.region;document.getElementById('caseClaim').textContent=c.claim;document.getElementById('caseSilhouette').innerHTML=icons[c.icon];document.getElementById('meterFill').style.width='0';document.getElementById('feedback').className='feedback';document.getElementById('feedback').textContent='Reveal the packets before choosing a verdict.';[...verdictOptions.children].forEach(b=>b.classList.remove('selected'));evidenceList.innerHTML='';c.evidence.forEach((e,i)=>{const b=document.createElement('button');b.type='button';b.className='evidence-card';b.innerHTML=`<span class="evidence-icon">${i+1}</span><span><b>${e[0]}</b><small class="prompt">Tap to inspect</small><small class="hidden-detail">${e[1]}</small></span><span class="quality hidden-detail">${e[2]}</span>`;b.addEventListener('click',()=>{b.classList.add('revealed');revealed.add(i);document.getElementById('meterFill').style.width=`${c.score*(revealed.size/c.evidence.length)}%`;});evidenceList.appendChild(b);});}
+      document.getElementById('checkVerdict').addEventListener('click',()=>{const feedback=document.getElementById('feedback'),c=cases[current];if(revealed.size<c.evidence.length){feedback.className='feedback try';feedback.textContent=`Open all ${c.evidence.length} packets before deciding.`;return}if(!selected){feedback.className='feedback try';feedback.textContent='Choose the status best supported by the evidence.';return}if(selected===c.answer){feedback.className='feedback correct';feedback.textContent=`Well calibrated. ${c.why}`;}else{feedback.className='feedback try';feedback.textContent=`Reconsider the difference between possibility and confirmation. ${c.why}`;}});
+      show(0);
+    })();
+
+    (()=>{
+      const habitat=document.getElementById('habitat'),tool=document.getElementById('tool'),output=document.getElementById('planOutput');
+      const habitats={forest:['a 10 × 10 km sampling grid','animal trails, water crossings, and ridge lines'],lake:['shore, open water, and depth zones','seasonal turnover, boat traffic, and known fish'],ocean:['transects across the continental slope','depth, pressure, current, and bycatch records'],wetland:['repeatable stations above the flood line','water level, temperature, and seasonal access']};
+      const tools={camera:['paired cameras with scale markers','empty frames, known-animal images, timestamps, and device uptime'],edna:['sterile replicate samples','field blanks, lab blanks, reference sequences, and repeat sampling'],audio:['synchronized recorders','known calls, weather noise, equipment noise, and independent listeners'],sonar:['calibrated transects at fixed speed','known targets, bottom structure, repeat passes, and blind review']};
+      function render(){const h=habitats[habitat.value],t=tools[tool.value];output.innerHTML=`<p class="panel-label">Draft protocol</p><h3>${tool.options[tool.selectedIndex].text} in a ${habitat.options[habitat.selectedIndex].text.toLowerCase()}</h3><p><strong>Layout:</strong> Use ${h[0]} and sample ${h[1]}.</p><p><strong>Method:</strong> Deploy ${t[0]} on a fixed schedule.</p><p><strong>Controls:</strong> Record ${t[1]}.</p><p><strong>Success rule:</strong> Decide in advance what combination of independent evidence would justify a follow-up—and publish non-detections too.</p>`;}
+      habitat.addEventListener('change',render);tool.addEventListener('change',render);render();
+    })();
+  </script>
+  <script src="../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

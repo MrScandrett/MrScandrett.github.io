@@ -7,7 +7,7 @@
   <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
   <meta
     name="description"
-    content="Electronics lesson covering a beginner sensor modules kit, what each module does, safety notes, and how to sort the kit by function."
+    content="Explore hardware sensor modules, analog and digital signals, I²C and SPI, voltage compatibility, calibration, filtering, accuracy, and sensor labs."
   />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -1113,6 +1113,65 @@
                 <small>Use the IR receiver and emitter modules to explore line-of-sight communication.</small>
               </div>
             </div>
+          </section>
+
+          <section class="sm-card" style="--sm-accent:#ff9500;">
+            <h2>From Physical Change to Digital Data</h2>
+            <p>A sensor is a measurement chain. A <strong>transducer</strong> responds to a physical quantity, conditioning circuitry turns that response into a usable electrical signal, and the controller converts the signal into data. Your code then calibrates, filters, and interprets that data. A module's output is not automatically the same thing as the real-world quantity.</p>
+            <table class="sm-table" aria-label="Sensor signal types and connection requirements">
+              <thead><tr><th>Signal Type</th><th>What the Controller Receives</th><th>What to Check</th></tr></thead>
+              <tbody>
+                <tr><td>Digital state</td><td>HIGH or LOW</td><td>Logic voltage, active-high/active-low behavior, pull-up or pull-down</td></tr>
+                <tr><td>Analog voltage</td><td>A range sampled by an ADC</td><td>Maximum input voltage, ADC reference, resolution, source impedance</td></tr>
+                <tr><td>Pulse / timing</td><td>Pulse width, frequency, or counted edges</td><td>Timer range, edge polarity, timeout, electrical level</td></tr>
+                <tr><td>I²C</td><td>Addressed bytes on SDA and SCL</td><td>Address conflicts, pull-ups, bus voltage, library/register map</td></tr>
+                <tr><td>SPI</td><td>Clocked bytes on shared data lines</td><td>Chip-select pin, voltage, clock mode, maximum clock rate</td></tr>
+                <tr><td>One-wire / custom</td><td>Protocol-specific timed data</td><td>Required pull-up, timing, cable length, compatible library</td></tr>
+              </tbody>
+            </table>
+            <div class="sm-callout warn"><strong>Voltage compatibility comes before code.</strong> A 5 V module output can exceed a 3.3 V controller input rating even when both boards power up correctly. Check supply voltage, logic-high thresholds, and absolute maximum input voltage in both datasheets. Use a divider or proper level shifter when required.</div>
+            <h3>Resolution, Accuracy, Precision, and Range</h3>
+            <div class="sm-overview-grid">
+              <div class="sm-overview-card"><strong>Range</strong><small>The lowest to highest quantity the sensor can measure without saturating or leaving its specified behavior.</small></div>
+              <div class="sm-overview-card"><strong>Resolution</strong><small>The smallest change the complete system can represent. A 10-bit ADC provides 1,024 codes, but noise may hide the smallest steps.</small></div>
+              <div class="sm-overview-card"><strong>Accuracy</strong><small>How close a reading is to the true value after considering offset, gain error, environment, and calibration.</small></div>
+              <div class="sm-overview-card"><strong>Precision</strong><small>How closely repeated readings agree. A sensor can be precise but consistently wrong.</small></div>
+              <div class="sm-overview-card"><strong>Response time</strong><small>How quickly the reading follows a real change. Fast sampling cannot make a physically slow sensor respond faster.</small></div>
+              <div class="sm-overview-card"><strong>Drift and hysteresis</strong><small>Readings may change with time or depend on whether the measured value approached from above or below.</small></div>
+            </div>
+            <h3>Calibration and Filtering Workflow</h3>
+            <ol class="sm-list">
+              <li><strong>Read the datasheet:</strong> identify pins, operating voltage, output type, range, accuracy, timing, and environmental limits.</li>
+              <li><strong>Establish references:</strong> collect readings at two or more known conditions, including the part of the range your project will actually use.</li>
+              <li><strong>Graph raw data:</strong> keep raw readings and units. Look for offset, nonlinearity, saturation, outliers, and warm-up behavior.</li>
+              <li><strong>Fit a conversion:</strong> turn ADC codes or timing into meaningful units. Do not claim more decimal places than the sensor accuracy supports.</li>
+              <li><strong>Filter deliberately:</strong> a moving average reduces random noise but adds delay. A median filter rejects occasional spikes. Filtering cannot repair poor wiring or an overloaded sensor.</li>
+              <li><strong>Validate separately:</strong> test at conditions not used to create the calibration, then report error and uncertainty.</li>
+            </ol>
+          </section>
+
+          <section class="sm-card" style="--sm-accent:#34c759;">
+            <h2>Sensor Lab: Build an Evidence-Based System</h2>
+            <p>Choose one module and produce a measurement system another student can verify. The engineering work is the evidence, not merely a serial monitor that prints changing numbers.</p>
+            <table class="sm-table" aria-label="Sensor investigation requirements">
+              <thead><tr><th>Stage</th><th>Required Evidence</th></tr></thead>
+              <tbody>
+                <tr><td>Plan</td><td>Measured quantity, usable range, pinout, voltage levels, signal type, and safety constraints</td></tr>
+                <tr><td>Wire</td><td>Labeled schematic or connection table with a shared reference ground where required</td></tr>
+                <tr><td>Acquire</td><td>Timestamped raw readings at a stated sample rate, including a timeout or missing-data behavior</td></tr>
+                <tr><td>Calibrate</td><td>Known references, conversion method, units, and limits of the calibration</td></tr>
+                <tr><td>Test</td><td>Repeated trials, a graph, and an error or variability calculation</td></tr>
+                <tr><td>Respond</td><td>An LED, buzzer, display, motor, or logged event driven by a justified threshold or control rule</td></tr>
+                <tr><td>Reflect</td><td>One false reading or failure mode and a specific hardware or software improvement</td></tr>
+              </tbody>
+            </table>
+            <div class="sm-project-grid">
+              <div class="sm-project-card"><strong>Ultrasonic distance</strong><small>Compare measurements against a ruler at several distances. Investigate angle, soft surfaces, minimum range, and timeout behavior.</small></div>
+              <div class="sm-project-card"><strong>Light sensing</strong><small>Record raw analog values under controlled light levels. Test shielding, sensor angle, threshold hysteresis, and averaging.</small></div>
+              <div class="sm-project-card"><strong>Temperature logging</strong><small>Compare against a reference thermometer after settling. Separate resolution, repeatability, response time, and absolute error.</small></div>
+              <div class="sm-project-card"><strong>Motion or vibration</strong><small>Measure idle noise first, then define an event threshold that rejects false triggers. Report both missed events and false positives.</small></div>
+            </div>
+            <div class="sm-callout info"><strong>Threshold hysteresis:</strong> use different turn-on and turn-off values when readings hover near a boundary. For example, turn a fan on above 28 °C and off below 26 °C. This prevents rapid chatter.</div>
           </section>
 
           <section class="sm-card" style="--sm-accent:#5856d6;">

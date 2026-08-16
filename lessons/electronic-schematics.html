@@ -7,7 +7,7 @@
   <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
   <meta
     name="description"
-    content="Learn how to read electronic schematics — the universal language of circuit design. Covers all major symbols, how to trace current flow, and how to decode a real circuit diagram."
+    content="Read electronic schematics by tracing power, signals, controls, net labels, reference designators, functional blocks, and measurement points."
   />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -1470,6 +1470,34 @@
               <text x="272" y="179" font-size="9" fill="#415266" font-family="Inter,sans-serif">pressed, base current flows → Q1 turns on →</text>
               <text x="272" y="193" font-size="9" fill="#415266" font-family="Inter,sans-serif">collector-emitter path closes → LED lights up.</text>
             </svg>
+          </section>
+
+          <section class="sm-card" style="--sm-accent:#30b0c7;">
+            <h2>Read Schematics Like a Hardware Debugger</h2>
+            <p>A schematic communicates electrical relationships, not physical placement. Professional reading goes beyond naming symbols: divide the drawing into functional blocks, connect every reference designator to a real part, and predict what each important node should measure.</p>
+            <table class="sm-table" aria-label="Schematic information layers">
+              <thead><tr><th>Layer</th><th>Question to Ask</th><th>Evidence on the Drawing</th></tr></thead>
+              <tbody>
+                <tr><td>Power</td><td>Where does energy enter, and at what voltage?</td><td>Connectors, rails, regulators, decoupling capacitors, ground</td></tr>
+                <tr><td>Signal</td><td>What information flows from input to output?</td><td>Named nets, arrows, buses, analog nodes, clock/data lines</td></tr>
+                <tr><td>Control</td><td>What turns each block on or changes its behavior?</td><td>Enable, reset, gate, base, select, and feedback connections</td></tr>
+                <tr><td>Protection</td><td>What limits damage when something goes wrong?</td><td>Fuses, series resistors, reverse-polarity diodes, clamps</td></tr>
+                <tr><td>Test</td><td>Where can expected values be verified?</td><td>Test points, connector pins, labeled nodes, stated waveforms</td></tr>
+              </tbody>
+            </table>
+            <h3>Reference Designators and the Bill of Materials</h3>
+            <p>Letters identify component families—<code>R</code> for resistor, <code>C</code> for capacitor, <code>D</code> for diode, <code>Q</code> for transistor, <code>U</code> for integrated circuit, <code>SW</code> for switch, and <code>J</code> for connector. The number makes each part unique. <code>R7</code> on the schematic must match R7 on the board layout and in the bill of materials.</p>
+            <div class="sm-callout info"><strong>Hidden connections:</strong> repeated net labels mean electrical connection even when no line joins them. Repeated ground symbols normally share a reference node, but labels such as AGND, DGND, or chassis ground may be kept separate and joined only at a planned point.</div>
+            <h3>Create a Measurement Map</h3>
+            <ol class="sm-list">
+              <li>Mark the ground reference and every supply rail. Write the expected DC voltage beside each one.</li>
+              <li>Split the circuit into input, processing, driver, output, and power blocks.</li>
+              <li>Choose a test point at each block boundary and predict its idle and active state.</li>
+              <li>Check the datasheet pinout for every IC or transistor; never infer it from package shape alone.</li>
+              <li>With power off, inspect orientation and continuity. With power on, verify rails before chasing signals.</li>
+              <li>If one node is wrong, compare the last known-good node with the first bad node. The fault usually lies between them.</li>
+            </ol>
+            <div class="sm-callout warn"><strong>Trace complete loops.</strong> Conventional current can branch and return through a shared ground network. Do not assume the page's left-to-right layout is the physical current direction.</div>
           </section>
 
           <!-- ── Common Mistakes ── -->

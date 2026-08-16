@@ -1,0 +1,799 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Internet of Things · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="An interactive lesson on how IoT devices sense, connect, and act — plus a closing look at the monetization, social media, and AI of things." />
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --iot-bg: #061419;
+      --iot-panel: #0b232b;
+      --iot-card: #0e2b34;
+      --iot-line: rgba(92, 225, 230, 0.18);
+      --iot-ink: #eafdfd;
+      --iot-muted: #a9c9cd;
+      --iot-cyan: #5ce1e6;
+      --iot-blue: #6ea8ff;
+      --iot-amber: #ffb454;
+      --iot-purple: #b98bff;
+      --iot-red: #ff7b86;
+      --iot-green: #69efb5;
+      --ll-panel-w: 350px;
+      --ll-panel-bg: #071a20;
+      --ll-panel-border: rgba(92, 225, 230, 0.18);
+      --ll-tab-active-bg: rgba(92, 225, 230, 0.13);
+      --ll-tab-active: #5ce1e6;
+    }
+
+    [data-accent] { --accent: var(--iot-cyan); --accent-soft: rgba(92,225,230,.1); }
+    [data-accent="blue"]   { --accent: var(--iot-blue);   --accent-soft: rgba(110,168,255,.12); }
+    [data-accent="purple"] { --accent: var(--iot-purple); --accent-soft: rgba(185,139,255,.12); }
+    [data-accent="green"]  { --accent: var(--iot-green);  --accent-soft: rgba(105,239,181,.12); }
+    [data-accent="red"]    { --accent: var(--iot-red);    --accent-soft: rgba(255,123,134,.12); }
+    [data-accent="amber"]  { --accent: var(--iot-amber);  --accent-soft: rgba(255,180,84,.12); }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--iot-ink); background: var(--iot-bg); font-family: var(--font-sans); }
+    button, input, select, textarea { font: inherit; }
+    .iot-topbar { min-height: 54px; background: rgba(5, 15, 19, 0.96); border-bottom: 1px solid var(--iot-line); }
+    .iot-topbar-inner { width: min(1180px, calc(100% - 2rem)); min-height: 54px; margin: auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .iot-topbar a { color: var(--iot-cyan); text-decoration: none; font-size: .82rem; font-weight: 800; }
+    .iot-topbar span { font-weight: 900; text-align: center; }
+    .iot-main {
+      position: relative; min-height: 100%; padding: clamp(1rem, 3vw, 2.3rem);
+      background:
+        radial-gradient(circle at 8% 0%, rgba(92,225,230,.14), transparent 30rem),
+        radial-gradient(circle at 94% 8%, rgba(110,168,255,.12), transparent 28rem),
+        radial-gradient(circle at 50% 92%, rgba(255,180,84,.08), transparent 32rem),
+        linear-gradient(180deg, #061419, #071c22);
+    }
+    .iot-main::before {
+      content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        radial-gradient(2px 2px at 14% 20%, rgba(92,225,230,.5), transparent),
+        radial-gradient(2px 2px at 80% 16%, rgba(110,168,255,.45), transparent),
+        radial-gradient(2px 2px at 30% 70%, rgba(255,180,84,.4), transparent),
+        radial-gradient(2px 2px at 66% 80%, rgba(185,139,255,.45), transparent),
+        radial-gradient(2px 2px at 92% 54%, rgba(105,239,181,.4), transparent);
+      background-size: 100% 100%;
+      animation: drift 18s ease-in-out infinite alternate;
+      opacity: .7;
+    }
+    @keyframes drift { from { transform: translateY(0) translateX(0); } to { transform: translateY(-16px) translateX(10px); } }
+    .iot-wrap { position: relative; z-index: 1; width: min(980px, 100%); margin: auto; }
+    .hero { position: relative; overflow: hidden; padding: clamp(1.2rem, 4vw, 2.2rem); border: 1px solid var(--iot-line); border-radius: 24px; background: linear-gradient(135deg, rgba(110,168,255,.14), rgba(92,225,230,.07) 45%, rgba(255,180,84,.08)); background-size: 220% 220%; animation: hero-glow 10s ease infinite; box-shadow: 0 24px 60px rgba(0,0,0,.28), inset 0 0 0 1px rgba(255,255,255,.02); }
+    @keyframes hero-glow { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+    .eyebrow { margin: 0 0 .55rem; color: var(--iot-cyan); font-size: .72rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(1.7rem, 4.6vw, 3.1rem); line-height: 1.06; letter-spacing: -.03em; background: linear-gradient(100deg, var(--iot-cyan), var(--iot-blue) 45%, var(--iot-purple) 75%, var(--iot-amber)); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent; animation: title-shimmer 7s linear infinite; }
+    @keyframes title-shimmer { to { background-position: 200% center; } }
+    .hero > p:not(.eyebrow) { max-width: 760px; margin: .8rem 0 0; color: var(--iot-muted); line-height: 1.65; }
+    .promise { display: inline-flex; align-items: center; gap: .45rem; margin-top: 1rem; padding: .5rem .75rem; border-radius: 999px; color: #eafdf6; background: rgba(105,239,181,.12); border: 1px solid rgba(105,239,181,.32); font-size: .78rem; font-weight: 800; animation: promise-pulse 2.6s ease-in-out infinite; }
+    @keyframes promise-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(105,239,181,.28); } 50% { box-shadow: 0 0 0 6px rgba(105,239,181,0); } }
+    .schedule { display: grid; grid-template-columns: repeat(5, 1fr); gap: .6rem; margin: 1rem 0 1.3rem; }
+    .time-card { padding: .8rem .6rem; border-radius: 14px; background: rgba(14,43,52,.85); border: 1px solid rgba(255,255,255,.08); border-bottom: 3px solid var(--tc-accent, var(--iot-cyan)); transition: transform .18s; }
+    .time-card:hover { transform: translateY(-3px); }
+    .time-card:nth-child(1) { --tc-accent: var(--iot-blue); }
+    .time-card:nth-child(2) { --tc-accent: var(--iot-purple); }
+    .time-card:nth-child(3) { --tc-accent: var(--iot-green); }
+    .time-card:nth-child(4) { --tc-accent: var(--iot-red); }
+    .time-card:nth-child(5) { --tc-accent: var(--iot-amber); }
+    .time-card strong { display: block; color: var(--iot-amber); font-size: .76rem; }
+    .time-card span { display: block; margin-top: .25rem; color: var(--iot-muted); font-size: .7rem; line-height: 1.4; }
+
+    .mission { position: relative; margin-top: 1.3rem; padding: clamp(1rem, 3vw, 1.5rem); border: 1px solid rgba(255,255,255,.09); border-top: 3px solid var(--accent, var(--iot-cyan)); border-radius: 18px; background: radial-gradient(circle at 100% 0%, var(--accent-soft, transparent), transparent 55%), rgba(11,35,43,.9); box-shadow: 0 18px 46px rgba(0,0,0,.28); animation: mission-in .5s ease both; }
+    @keyframes mission-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+    .mission-head { display: flex; align-items: flex-start; gap: .85rem; margin-bottom: 1rem; }
+    .mission-num { flex: 0 0 2.3rem; height: 2.3rem; display: grid; place-items: center; border-radius: 12px; color: #052219; background: var(--accent, var(--iot-cyan)); font-weight: 1000; box-shadow: 0 0 0 4px var(--accent-soft, transparent), 0 6px 16px rgba(0,0,0,.3); }
+    .mission h2 { margin: 0; font-size: 1.22rem; background: linear-gradient(90deg, var(--iot-ink), var(--accent, var(--iot-cyan))); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .mission-head p { margin: .25rem 0 0; color: var(--iot-muted); font-size: .84rem; line-height: 1.5; }
+    .feedback { min-height: 2.4rem; margin-top: .75rem; padding: .65rem .8rem; border-radius: 10px; color: var(--iot-muted); background: rgba(0,0,0,.18); font-size: .78rem; line-height: 1.5; }
+    .btn { min-height: 42px; padding: .6rem .9rem; border: 0; border-radius: 10px; color: #052219; background: linear-gradient(135deg, var(--iot-cyan), var(--iot-blue)); font-weight: 900; cursor: pointer; transition: transform .15s, box-shadow .15s; box-shadow: 0 6px 18px rgba(92,225,230,.18); }
+    .btn:hover, .btn:focus-visible { filter: brightness(1.08); outline: 2px solid white; outline-offset: 2px; transform: translateY(-2px); box-shadow: 0 10px 24px rgba(92,225,230,.3); }
+    .btn:active { transform: translateY(0) scale(.98); }
+    .btn.secondary { color: var(--iot-ink); background: linear-gradient(135deg, rgba(92,225,230,.18), rgba(185,139,255,.14)); border: 1px solid rgba(92,225,230,.3); box-shadow: none; }
+    .history-note { margin: .9rem 0 0; padding: .75rem .9rem; border-radius: 12px; background: rgba(255,180,84,.06); border: 1px solid rgba(255,180,84,.18); color: var(--iot-muted); font-size: .78rem; line-height: 1.6; }
+    .history-note strong { color: var(--iot-amber); }
+    .history-files { margin: .9rem 0 0; border-radius: 13px; border: 1px solid rgba(255,180,84,.22); background: rgba(255,180,84,.04); overflow: hidden; }
+    .history-files summary { list-style: none; cursor: pointer; padding: .7rem .9rem; display: flex; align-items: center; gap: .5rem; font-weight: 800; font-size: .78rem; color: var(--iot-amber); }
+    .history-files summary::-webkit-details-marker { display: none; }
+    .history-files summary::before { content: "▸"; transition: transform .15s; }
+    .history-files[open] summary::before { transform: rotate(90deg); }
+    .history-entries { padding: 0 .9rem .9rem; display: grid; gap: .6rem; }
+    .history-entry { padding-left: .8rem; border-left: 2px solid rgba(255,180,84,.35); }
+    .history-entry b { display: block; color: var(--iot-ink); font-size: .78rem; }
+    .history-entry span { display: block; margin-top: .15rem; color: var(--iot-muted); font-size: .76rem; line-height: 1.6; }
+
+    /* Mission 1: pipeline */
+    .pipeline { display: flex; flex-wrap: wrap; gap: .5rem; align-items: stretch; margin-top: .3rem; }
+    .pipeline-stage { flex: 1 1 140px; position: relative; padding: .8rem .7rem; border-radius: 13px; background: var(--iot-card); border: 1px solid rgba(255,255,255,.08); color: inherit; text-align: center; cursor: pointer; transition: transform .18s, border-color .18s, box-shadow .18s; }
+    .pipeline-stage:hover, .pipeline-stage:focus-visible { border-color: var(--iot-cyan); transform: translateY(-3px); outline: none; box-shadow: 0 10px 24px rgba(92,225,230,.15); }
+    .pipeline-stage.is-visited { border-color: var(--iot-green); background: rgba(105,239,181,.08); }
+    .pipeline-stage.is-active { box-shadow: 0 0 0 3px var(--iot-cyan), 0 10px 26px rgba(92,225,230,.3); }
+    .pipeline-stage .stage-icon { display: block; font-size: 1.5rem; margin-bottom: .3rem; }
+    .pipeline-stage strong { display: block; font-size: .78rem; }
+    .pipeline-arrow { flex: 0 0 auto; display: grid; place-items: center; color: var(--iot-muted); font-size: 1.1rem; opacity: .6; }
+    .pipeline-progress { margin-top: .6rem; color: var(--iot-muted); font-size: .72rem; }
+    .latency-log { margin-top: .7rem; padding: .7rem .8rem; border-radius: 10px; background: rgba(0,0,0,.22); font: .74rem/1.7 ui-monospace, monospace; color: var(--iot-cyan); min-height: 1.4rem; overflow-wrap: anywhere; }
+
+    /* Mission 2: smart home */
+    .device-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .7rem; margin-top: .3rem; }
+    .device-card { padding: .85rem .9rem; border-radius: 13px; background: var(--iot-card); border: 1px solid rgba(255,255,255,.08); border-left: 3px solid var(--dv-accent, var(--iot-purple)); transition: box-shadow .18s; }
+    .device-card:nth-child(1) { --dv-accent: var(--iot-amber); }
+    .device-card:nth-child(2) { --dv-accent: var(--iot-blue); }
+    .device-card:nth-child(3) { --dv-accent: var(--iot-red); }
+    .device-card:nth-child(4) { --dv-accent: var(--iot-green); }
+    .device-card.is-on { box-shadow: 0 0 0 2px var(--dv-accent, var(--iot-purple)) inset; }
+    .device-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+    .device-head span.dv-icon { font-size: 1.3rem; }
+    .device-name { display: block; margin: .3rem 0 .15rem; font-size: .85rem; font-weight: 800; }
+    .device-state { display: block; color: var(--iot-muted); font-size: .72rem; }
+    .switch { position: relative; display: inline-block; width: 42px; height: 24px; flex: 0 0 auto; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .switch-track { position: absolute; inset: 0; border-radius: 999px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.16); transition: background .18s; cursor: pointer; }
+    .switch-track::before { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .18s; }
+    .switch input:checked + .switch-track { background: var(--dv-accent, var(--iot-green)); }
+    .switch input:checked + .switch-track::before { transform: translateX(18px); }
+    .switch input:focus-visible + .switch-track { outline: 2px solid var(--iot-cyan); outline-offset: 2px; }
+    .automation-box { margin-top: 1rem; padding: .9rem; border-radius: 13px; background: rgba(185,139,255,.06); border: 1px solid rgba(185,139,255,.22); }
+    .automation-box label { display: flex; align-items: center; gap: .55rem; font-size: .82rem; font-weight: 700; cursor: pointer; }
+    .automation-box p { margin: .5rem 0 0; color: var(--iot-muted); font-size: .76rem; line-height: 1.55; }
+    .network-log { margin-top: .8rem; padding: .7rem .8rem; height: 148px; overflow-y: auto; border-radius: 10px; background: rgba(0,0,0,.28); border: 1px solid rgba(255,255,255,.08); font: .72rem/1.6 ui-monospace, monospace; color: var(--iot-green); }
+    .network-log div { color: var(--iot-muted); }
+    .network-log div.log-cloud { color: var(--iot-blue); }
+    .network-log div.log-action { color: var(--iot-green); }
+    .log-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .7rem; }
+
+    /* Mission 3: protocols */
+    .protocol-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: .8rem; margin-top: .3rem; }
+    .protocol-card { padding: .9rem 1rem; border-radius: 14px; background: var(--iot-card); border: 1px solid rgba(255,255,255,.08); transition: border-color .18s, transform .18s; }
+    .protocol-card.is-recommended { border-color: var(--iot-green); box-shadow: 0 0 0 2px rgba(105,239,181,.2); }
+    .protocol-card h3 { margin: 0 0 .5rem; font-size: .92rem; color: var(--iot-cyan); }
+    .meter-row { display: grid; grid-template-columns: 70px 1fr; gap: .5rem; align-items: center; margin-bottom: .4rem; }
+    .meter-row span:first-child { color: var(--iot-muted); font-size: .68rem; }
+    .meter { height: 8px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,.08); }
+    .meter span { display: block; height: 100%; border-radius: 999px; }
+    .scenario-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .6rem; margin-top: 1rem; }
+    .scenario { text-align: left; color: inherit; cursor: pointer; padding: .75rem .85rem; border-radius: 12px; background: var(--iot-card); border: 1px solid rgba(255,255,255,.08); transition: transform .18s, border-color .18s; }
+    .scenario:hover, .scenario:focus-visible { border-color: var(--iot-green); outline: none; transform: translateY(-2px); }
+    .scenario.is-revealed { border-color: var(--iot-green); background: rgba(105,239,181,.08); }
+    .scenario b { display: block; margin-bottom: .25rem; font-size: .82rem; }
+    .scenario p { margin: 0; color: var(--iot-muted); font-size: .76rem; line-height: 1.5; }
+
+    /* Mission 4: security */
+    .clue-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: .5rem; margin: .8rem 0; }
+    .clue { width: 100%; padding: .55rem .65rem; text-align: left; border-radius: 8px; border: 1px solid rgba(255,255,255,.1); color: var(--iot-muted); background: rgba(0,0,0,.16); cursor: pointer; font-size: .74rem; transition: transform .15s, border-color .15s; }
+    .clue:hover { border-color: var(--iot-red); transform: translateX(2px); }
+    .clue.is-found { color: #fff0f1; border-color: var(--iot-red); background: rgba(255,123,134,.14); }
+    .botnet-box { margin-top: 1rem; padding: .9rem; border-radius: 13px; background: rgba(255,123,134,.06); border: 1px solid rgba(255,123,134,.22); text-align: center; }
+    .botnet-count { font: 900 2rem ui-monospace, monospace; color: var(--iot-red); }
+    .botnet-box small { display: block; margin-top: .3rem; color: var(--iot-muted); }
+    .three-rules { display: grid; grid-template-columns: repeat(3,1fr); gap: .7rem; margin-top: 1rem; }
+    .big-rule { padding: .9rem; border-radius: 13px; background: rgba(105,239,181,.07); border: 1px solid rgba(105,239,181,.16); font-size: .78rem; line-height: 1.5; }
+    .big-rule strong { color: var(--iot-green); }
+
+    /* Closing panel: X of Things */
+    .closing-panel { margin-top: 1.5rem; padding: clamp(1.1rem, 3.4vw, 1.8rem); border-radius: 22px; border: 1px solid rgba(255,180,84,.28); background: linear-gradient(160deg, rgba(255,123,134,.08), rgba(255,180,84,.06) 50%, rgba(185,139,255,.06)); box-shadow: 0 22px 50px rgba(0,0,0,.3); }
+    .closing-eyebrow { margin: 0 0 .4rem; color: var(--iot-amber); font-size: .72rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+    .closing-panel h2 { margin: 0 0 .5rem; font-size: 1.4rem; }
+    .closing-panel > p { margin: 0 0 1.1rem; color: var(--iot-muted); font-size: .88rem; line-height: 1.65; max-width: 72ch; }
+    .xthings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: .9rem; }
+    .xthing-card { padding: 1rem 1.05rem; border-radius: 16px; background: rgba(7,26,32,.7); border: 1px solid rgba(255,255,255,.1); border-top: 3px solid var(--xt-accent, var(--iot-cyan)); }
+    .xthing-card:nth-child(1) { --xt-accent: var(--iot-amber); }
+    .xthing-card:nth-child(2) { --xt-accent: var(--iot-blue); }
+    .xthing-card:nth-child(3) { --xt-accent: var(--iot-purple); }
+    .xthing-card .xt-icon { font-size: 1.5rem; }
+    .xthing-card h3 { margin: .4rem 0 .35rem; font-size: 1rem; }
+    .xthing-card p { margin: 0 0 .55rem; color: var(--iot-muted); font-size: .8rem; line-height: 1.58; }
+    .xthing-card details { margin-top: .3rem; }
+    .xthing-card summary { cursor: pointer; color: var(--xt-accent, var(--iot-cyan)); font-size: .74rem; font-weight: 800; list-style: none; }
+    .xthing-card summary::-webkit-details-marker { display: none; }
+    .xthing-card summary::before { content: "▸ "; }
+    .xthing-card details[open] summary::before { content: "▾ "; }
+    .xthing-examples { margin: .5rem 0 0; padding-left: 1.1rem; color: var(--iot-muted); font-size: .76rem; line-height: 1.6; }
+    .reflection-box { margin-top: 1.1rem; padding: .95rem 1rem; border-radius: 14px; background: rgba(0,0,0,.2); border: 1px dashed rgba(255,180,84,.35); }
+    .reflection-box label { display: block; margin-bottom: .5rem; font-size: .82rem; font-weight: 700; color: var(--iot-ink); }
+    .reflection-box textarea { width: 100%; min-height: 84px; padding: .65rem .75rem; border-radius: 10px; border: 1px solid rgba(255,255,255,.15); background: #06121b; color: #fff; resize: vertical; }
+    .reflection-box textarea:focus { outline: none; border-color: var(--iot-amber); box-shadow: 0 0 0 3px rgba(255,180,84,.15); }
+    .reflection-box small { display: block; margin-top: .45rem; color: var(--iot-muted); font-size: .72rem; }
+
+    .related-labs { margin-top: 1.4rem; }
+    .related-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .8rem; }
+    .related-card { display: block; padding: .9rem 1rem; border-radius: 14px; background: var(--iot-card); border: 1px solid rgba(255,255,255,.08); text-decoration: none; color: inherit; transition: transform .18s, border-color .18s, box-shadow .18s; }
+    .related-card:nth-child(1) { --rc-accent: var(--iot-green); }
+    .related-card:nth-child(2) { --rc-accent: var(--iot-red); }
+    .related-card:nth-child(3) { --rc-accent: var(--iot-purple); }
+    .related-card:nth-child(4) { --rc-accent: var(--iot-blue); }
+    .related-card:hover, .related-card:focus-visible { border-color: var(--rc-accent, var(--iot-cyan)); transform: translateY(-3px) scale(1.01); box-shadow: 0 14px 30px rgba(0,0,0,.28); }
+    .related-card .tag { color: var(--rc-accent, var(--iot-cyan)); font-size: .67rem; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
+    .related-card h3 { margin: .3rem 0 .25rem; font-size: .92rem; color: var(--iot-ink); }
+    .related-card p { margin: 0; color: var(--iot-muted); font-size: .76rem; line-height: 1.5; }
+
+    .panel-card { margin-bottom: .8rem; padding: .9rem; border-radius: 12px; background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.08); }
+    .panel-card h3 { margin: 0 0 .45rem; color: var(--iot-cyan); font-size: .78rem; }
+    .panel-card p, .panel-card li { color: var(--iot-muted); font-size: .75rem; line-height: 1.55; }
+    .panel-card ul, .panel-card ol { margin: .4rem 0 0; padding-left: 1.15rem; }
+    .ll-open-btn { color: var(--iot-cyan); }
+
+    /* 2026 visual refresh: a bright network field notebook */
+    :root {
+      color-scheme: light;
+      --iot-bg: #dfeae5;
+      --iot-panel: #f5f8f4;
+      --iot-card: #f8faf6;
+      --iot-line: rgba(14, 74, 76, .18);
+      --iot-ink: #173335;
+      --iot-muted: #526d6c;
+      --iot-cyan: #08787b;
+      --iot-blue: #397594;
+      --iot-amber: #c7652f;
+      --iot-purple: #74589c;
+      --iot-red: #bf4552;
+      --iot-green: #23785c;
+      --ll-panel-bg: #f3f7f2;
+      --ll-panel-border: rgba(14, 74, 76, .18);
+      --ll-tab-active-bg: #d9e9e3;
+      --ll-tab-active: #075f63;
+    }
+    body { background: var(--iot-bg); }
+    .iot-topbar {
+      min-height: 62px;
+      background: rgba(246, 249, 245, .94);
+      border-bottom-color: rgba(14, 74, 76, .2);
+      box-shadow: 0 1px 0 rgba(255,255,255,.9);
+      backdrop-filter: blur(14px);
+    }
+    .iot-topbar-inner { min-height: 62px; }
+    .iot-topbar a { color: #09666a; letter-spacing: .02em; }
+    .iot-topbar span { color: var(--iot-ink); font: 800 .82rem/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+    .iot-main {
+      padding: clamp(1rem, 3vw, 2.6rem);
+      background-color: var(--iot-bg);
+      background-image:
+        linear-gradient(rgba(7, 95, 99, .075) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(7, 95, 99, .075) 1px, transparent 1px),
+        radial-gradient(circle at 12% 2%, rgba(255,255,255,.95), transparent 27rem),
+        radial-gradient(circle at 92% 18%, rgba(247, 184, 88, .16), transparent 25rem);
+      background-size: 28px 28px, 28px 28px, auto, auto;
+    }
+    .iot-main::before { display: none; }
+    .iot-wrap { width: min(1040px, 100%); }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.14fr) minmax(300px, .86fr);
+      align-items: center;
+      gap: clamp(1.4rem, 4vw, 3rem);
+      min-height: 470px;
+      padding: clamp(1.5rem, 4vw, 3.2rem);
+      border: 1px solid rgba(14, 74, 76, .2);
+      border-radius: 10px;
+      background: rgba(248, 250, 246, .9);
+      box-shadow: 10px 12px 0 rgba(8, 92, 94, .12), 0 28px 70px rgba(31, 73, 69, .12);
+      animation: none;
+    }
+    .hero::after {
+      content: "FIELD NOTE  /  04";
+      position: absolute;
+      top: 1rem;
+      right: 1.1rem;
+      color: rgba(23, 51, 53, .46);
+      font: 700 .62rem/1 var(--font-mono);
+      letter-spacing: .13em;
+    }
+    .hero-copy { position: relative; z-index: 2; }
+    .eyebrow { color: var(--iot-amber); font-family: var(--font-mono); letter-spacing: .14em; }
+    h1 {
+      max-width: 12ch;
+      color: var(--iot-ink);
+      background: none;
+      font-family: var(--font-display);
+      font-size: clamp(2.35rem, 5.5vw, 4.6rem);
+      font-weight: 900;
+      line-height: .93;
+      letter-spacing: -.065em;
+      animation: none;
+    }
+    h1 .signal-word { color: var(--iot-cyan); }
+    .hero-copy > p:not(.eyebrow) { max-width: 59ch; margin-top: 1.15rem; color: var(--iot-muted); font-size: .95rem; line-height: 1.65; }
+    .promise { border-radius: 4px; color: #164b3e; background: #dbece2; border-color: rgba(35,120,92,.28); box-shadow: none; animation: none; }
+    .hero-network { position: relative; min-height: 330px; isolation: isolate; }
+    .network-orbit { position: absolute; inset: 10% 3%; width: 94%; height: 80%; overflow: visible; }
+    .network-orbit path { fill: none; stroke: rgba(8,120,123,.28); stroke-width: 1.8; stroke-dasharray: 4 7; }
+    .network-orbit path.live { stroke: var(--iot-amber); stroke-width: 2.5; stroke-dasharray: 3 12; animation: packet-route 2.4s linear infinite; }
+    @keyframes packet-route { to { stroke-dashoffset: -60; } }
+    .network-node {
+      position: absolute; display: grid; place-items: center; width: 66px; height: 66px;
+      border: 1px solid rgba(14,74,76,.22); border-radius: 50%; color: var(--iot-ink); background: #f9fbf7;
+      box-shadow: 0 10px 24px rgba(19,70,67,.13), inset 0 0 0 6px #e7f1ed; font-size: 1.65rem;
+    }
+    .network-node b { position: absolute; top: calc(100% + .35rem); font: 800 .62rem/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+    .network-node.hub { left: 50%; top: 50%; width: 98px; height: 98px; transform: translate(-50%,-50%); color: white; background: var(--iot-cyan); border: 0; box-shadow: 0 0 0 12px rgba(8,120,123,.1), 0 18px 35px rgba(8,80,82,.22); font-size: 2.15rem; }
+    .network-node.hub b { color: var(--iot-ink); }
+    .network-node.sensor { left: 2%; top: 10%; }
+    .network-node.light { right: 1%; top: 5%; }
+    .network-node.lock { left: 3%; bottom: 6%; }
+    .network-node.phone { right: 0; bottom: 4%; }
+    .packet-dot { position: absolute; width: 11px; height: 11px; border-radius: 50%; background: var(--iot-amber); box-shadow: 0 0 0 5px rgba(199,101,47,.15); animation: packet-pulse 1.7s ease-in-out infinite; }
+    .packet-dot.one { left: 27%; top: 27%; }
+    .packet-dot.two { right: 25%; bottom: 25%; animation-delay: -.8s; }
+    @keyframes packet-pulse { 0%,100% { transform: scale(.75); opacity: .45; } 50% { transform: scale(1.2); opacity: 1; } }
+    .network-caption { position: absolute; left: 50%; bottom: -4px; transform: translateX(-50%); margin: 0; color: var(--iot-muted); font: 600 .62rem/1.5 var(--font-mono); letter-spacing: .04em; white-space: nowrap; }
+    .schedule { gap: .7rem; margin: 1.5rem 0; }
+    .time-card { border: 1px solid rgba(14,74,76,.17); border-bottom-width: 4px; border-radius: 6px; background: rgba(248,250,246,.82); box-shadow: 0 6px 16px rgba(31,73,69,.07); }
+    .time-card strong { color: var(--tc-accent, var(--iot-cyan)); font-family: var(--font-mono); }
+    .mission, .closing-panel { border: 1px solid rgba(14,74,76,.18); border-top: 5px solid var(--accent, var(--iot-cyan)); border-radius: 8px; background: rgba(248,250,246,.9); box-shadow: 7px 8px 0 rgba(20,85,82,.08), 0 18px 44px rgba(31,73,69,.09); }
+    .mission-num { border-radius: 50%; color: white; box-shadow: 0 0 0 5px var(--accent-soft, transparent); }
+    .mission h2 { color: var(--iot-ink); background: none; font-size: 1.4rem; }
+    .pipeline-stage, .device-card, .protocol-card, .scenario, .related-card, .xthing-card { border-color: rgba(14,74,76,.16); border-radius: 6px; background: rgba(255,255,255,.72); }
+    .feedback, .latency-log, .network-log, .reflection-box { background: #e5eeea; border-color: rgba(14,74,76,.15); }
+    .feedback { color: var(--iot-muted); }
+    .latency-log { color: #08666a; }
+    .network-log { color: var(--iot-green); }
+    .btn { border-radius: 5px; color: white; background: var(--iot-cyan); box-shadow: 4px 4px 0 rgba(8,74,76,.18); }
+    .btn.secondary { color: #075d60; background: #e0eeea; border-color: rgba(8,120,123,.28); }
+    .automation-box, .history-note, .history-files, .botnet-box, .big-rule { background: rgba(255,255,255,.55); }
+    .closing-panel { border-top-color: var(--iot-amber); background: #f6f3e9; }
+    .xthing-card { background: rgba(255,255,255,.62); }
+    .reflection-box textarea { color: var(--iot-ink); background: white; border-color: rgba(14,74,76,.2); }
+    .panel-card { background: rgba(255,255,255,.55); border-color: rgba(14,74,76,.14); }
+    .panel-card h3 { color: var(--iot-cyan); }
+    .ll-panel, .ll-panel-head { color: var(--iot-ink); }
+    .ll-open-btn { color: white; background: var(--iot-cyan); }
+
+    @media (max-width: 820px) {
+      .hero { grid-template-columns: 1fr; }
+      .hero-network { min-height: 300px; }
+      .schedule { grid-template-columns: repeat(3, 1fr); }
+      .device-grid, .protocol-grid { grid-template-columns: repeat(2, 1fr); }
+      .related-grid { grid-template-columns: 1fr; }
+      .three-rules, .clue-list, .scenario-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      .hero { min-height: 0; padding: 1.35rem; }
+      .hero::after { display: none; }
+      .hero-network { min-height: 270px; transform: scale(.92); margin: -1rem; }
+      h1 { font-size: clamp(2.35rem, 14vw, 3.4rem); }
+      .schedule { grid-template-columns: 1fr 1fr; }
+      .device-grid, .protocol-grid { grid-template-columns: 1fr; }
+      .pipeline { flex-direction: column; }
+      .pipeline-arrow { transform: rotate(90deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+    @media print {
+      .mission, .closing-panel { break-inside: avoid; }
+      .hero h1, .hero > p, .promise { color: #18313b !important; }
+      .network-log, .msg-actions, .ll-panel, .ll-open-btn { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to lesson</a>
+<div class="ll-viewport">
+  <nav class="iot-topbar ll-topbar" aria-label="Lesson navigation">
+    <div class="iot-topbar-inner">
+      <a href="../steam-lessons.html#module-engineering">← Engineering</a>
+      <span>📡 The Internet of Things</span>
+      <a href="../index.html">ClassroomOS</a>
+    </div>
+  </nav>
+
+  <div class="ll-stage" id="main-content">
+    <main class="ll-sim iot-main">
+      <div class="iot-wrap">
+        <header class="hero">
+          <div class="hero-copy">
+            <p class="eyebrow">Ages 10–14 · 55-minute interactive lesson</p>
+            <h1>Wire the physical world into the <span class="signal-word">network.</span></h1>
+            <p>The Internet of Things (IoT) is the idea that ordinary objects — thermostats, doorbells, sneakers, tractors, even toothbrushes — can sense the world, talk to the internet, and act on what they learn. Trace the pipeline from sensor to cloud, build a tiny smart home, choose the right wireless protocol, and see what happens when "smart" devices ship with weak security.</p>
+            <div class="promise"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 2 4 5v6c0 5.1 3.4 9.8 8 11 4.6-1.2 8-5.9 8-11V5l-8-3Zm-1.1 14.1-3.5-3.5 1.4-1.4 2.1 2.1 4.7-4.7L17 10l-6.1 6.1Z" /></svg> Every "smart" device is really five ordinary parts working together — nothing about it is magic.</div>
+          </div>
+          <div class="hero-network" aria-label="Diagram showing smart devices connected through a cloud hub">
+            <svg class="network-orbit" viewBox="0 0 360 280" preserveAspectRatio="none" aria-hidden="true">
+              <path d="M47 45 Q108 77 180 140" />
+              <path class="live" d="M313 43 Q251 77 180 140" />
+              <path class="live" d="M48 237 Q115 204 180 140" />
+              <path d="M312 237 Q246 206 180 140" />
+            </svg>
+            <span class="network-node sensor" aria-hidden="true">🌡️<b>Sense</b></span>
+            <span class="network-node light" aria-hidden="true">💡<b>Act</b></span>
+            <span class="network-node lock" aria-hidden="true">🔒<b>Secure</b></span>
+            <span class="network-node phone" aria-hidden="true">📱<b>Control</b></span>
+            <span class="network-node hub" aria-hidden="true">☁️<b>Cloud hub</b></span>
+            <span class="packet-dot one" aria-hidden="true"></span>
+            <span class="packet-dot two" aria-hidden="true"></span>
+            <p class="network-caption">SENSOR → SIGNAL → DECISION → ACTION</p>
+          </div>
+        </header>
+
+        <div class="schedule" aria-label="Lesson schedule">
+          <div class="time-card"><strong>10 min</strong><span>The IoT Pipeline</span></div>
+          <div class="time-card"><strong>15 min</strong><span>Build a Smart Home</span></div>
+          <div class="time-card"><strong>10 min</strong><span>Choosing a Connection</span></div>
+          <div class="time-card"><strong>10 min</strong><span>When Smart Gets Hacked</span></div>
+          <div class="time-card"><strong>10 min</strong><span>Beyond the "Internet"</span></div>
+        </div>
+
+        <section class="mission" data-accent="blue" aria-labelledby="mission-1-title">
+          <div class="mission-head"><span class="mission-num">1</span><div><h2 id="mission-1-title">How an IoT Device Thinks</h2><p>Every connected device — no matter how simple or expensive — moves data through the same five stages. Click each one to learn its job.</p></div></div>
+          <div class="pipeline" id="pipeline" role="list" aria-label="IoT data pipeline stages">
+            <button class="pipeline-stage" type="button" data-stage="sensor" role="listitem"><span class="stage-icon">📟</span><strong>Sensor</strong></button>
+            <span class="pipeline-arrow" aria-hidden="true">→</span>
+            <button class="pipeline-stage" type="button" data-stage="mcu" role="listitem"><span class="stage-icon">🧠</span><strong>Microcontroller</strong></button>
+            <span class="pipeline-arrow" aria-hidden="true">→</span>
+            <button class="pipeline-stage" type="button" data-stage="network" role="listitem"><span class="stage-icon">📡</span><strong>Network</strong></button>
+            <span class="pipeline-arrow" aria-hidden="true">→</span>
+            <button class="pipeline-stage" type="button" data-stage="cloud" role="listitem"><span class="stage-icon">☁️</span><strong>Cloud</strong></button>
+            <span class="pipeline-arrow" aria-hidden="true">→</span>
+            <button class="pipeline-stage" type="button" data-stage="app" role="listitem"><span class="stage-icon">📱</span><strong>App / User</strong></button>
+          </div>
+          <p class="pipeline-progress" id="pipeline-progress">0 of 5 stages explored</p>
+          <div class="feedback" id="pipeline-feedback" aria-live="polite">Click a stage to learn what it does — then use the button below to watch a reading travel the whole loop.</div>
+          <p class="log-actions" style="margin-top:.8rem;"><button class="btn secondary" type="button" id="run-loop">▶ Run the loop: send one temperature reading</button></p>
+          <div class="latency-log" id="latency-log" aria-live="polite">Ready.</div>
+          <details class="history-files">
+            <summary>📜 History Files: from vending machines to 50 billion devices</summary>
+            <div class="history-entries">
+              <div class="history-entry"><b>1982 · The internet-connected Coke machine</b><span>Grad students at Carnegie Mellon wired a vending machine to the early internet so they could check from their desks whether a soda was cold before walking over — often cited as the first "smart" internet-connected object.</span></div>
+              <div class="history-entry"><b>1999 · The term "Internet of Things"</b><span>Technologist Kevin Ashton coined the phrase while pitching RFID tags to Procter &amp; Gamble, arguing computers should gather their own data from the physical world instead of waiting for humans to type it in.</span></div>
+              <div class="history-entry"><b>Today · Tens of billions of devices</b><span>Sensors now sit in shipping containers, cow collars, running shoes, streetlights, and hospital beds — most of them running the exact same five-stage pipeline you just explored.</span></div>
+            </div>
+          </details>
+        </section>
+
+        <section class="mission" data-accent="purple" aria-labelledby="mission-2-title">
+          <div class="mission-head"><span class="mission-num">2</span><div><h2 id="mission-2-title">Build a Smart Home</h2><p>Flip switches on four devices and watch the network log. Then turn on an automation rule to see what makes a device "smart" instead of just "connected."</p></div></div>
+          <div class="device-grid" id="device-grid">
+            <div class="device-card" data-device="thermostat">
+              <div class="device-head"><span class="dv-icon">🌡️</span><label class="switch"><input type="checkbox" data-device-toggle="thermostat" /><span class="switch-track"></span></label></div>
+              <span class="device-name">Smart Thermostat</span>
+              <span class="device-state" data-state>Idle</span>
+            </div>
+            <div class="device-card" data-device="lock">
+              <div class="device-head"><span class="dv-icon">🔒</span><label class="switch"><input type="checkbox" data-device-toggle="lock" /><span class="switch-track"></span></label></div>
+              <span class="device-name">Smart Lock</span>
+              <span class="device-state" data-state>Locked</span>
+            </div>
+            <div class="device-card" data-device="camera">
+              <div class="device-head"><span class="dv-icon">📷</span><label class="switch"><input type="checkbox" data-device-toggle="camera" /><span class="switch-track"></span></label></div>
+              <span class="device-name">Security Camera</span>
+              <span class="device-state" data-state>Standby</span>
+            </div>
+            <div class="device-card" data-device="light">
+              <div class="device-head"><span class="dv-icon">💡</span><label class="switch"><input type="checkbox" data-device-toggle="light" /><span class="switch-track"></span></label></div>
+              <span class="device-name">Porch Light</span>
+              <span class="device-state" data-state>Off</span>
+            </div>
+          </div>
+          <div class="automation-box">
+            <label><input type="checkbox" id="automation-toggle" /> Automation rule: <strong>IF</strong> motion is detected <strong>THEN</strong> turn on the porch light</label>
+            <p>This is the whole idea of a "smart" home in one sentence — sensors trigger rules, and rules trigger actions, all without a person tapping anything.</p>
+          </div>
+          <div class="log-actions">
+            <button class="btn secondary" type="button" id="motion-trigger">🚶 Simulate: motion detected at the front door</button>
+            <button class="btn secondary" type="button" id="clear-log">Clear log</button>
+          </div>
+          <div class="network-log" id="network-log" aria-live="polite">Toggle a device or trigger motion to see data move.</div>
+        </section>
+
+        <section class="mission" data-accent="green" aria-labelledby="mission-3-title">
+          <div class="mission-head"><span class="mission-num">3</span><div><h2 id="mission-3-title">Choosing a Connection</h2><p>Not every device should use Wi-Fi. Engineers trade off range, battery life, and speed depending on the job. Compare four common IoT protocols.</p></div></div>
+          <div class="protocol-grid">
+            <article class="protocol-card">
+              <h3>📶 Wi-Fi</h3>
+              <div class="meter-row"><span>Range</span><div class="meter"><span style="width:35%;background:var(--iot-blue);"></span></div></div>
+              <div class="meter-row"><span>Battery</span><div class="meter"><span style="width:20%;background:var(--iot-red);"></span></div></div>
+              <div class="meter-row"><span>Speed</span><div class="meter"><span style="width:95%;background:var(--iot-green);"></span></div></div>
+              <p style="margin:.5rem 0 0;color:var(--iot-muted);font-size:.74rem;">Fast and easy, but drains batteries quickly. Best for plugged-in devices like cameras and speakers.</p>
+            </article>
+            <article class="protocol-card">
+              <h3>🔵 Bluetooth</h3>
+              <div class="meter-row"><span>Range</span><div class="meter"><span style="width:15%;background:var(--iot-blue);"></span></div></div>
+              <div class="meter-row"><span>Battery</span><div class="meter"><span style="width:60%;background:var(--iot-amber);"></span></div></div>
+              <div class="meter-row"><span>Speed</span><div class="meter"><span style="width:70%;background:var(--iot-green);"></span></div></div>
+              <p style="margin:.5rem 0 0;color:var(--iot-muted);font-size:.74rem;">Short range, low power, decent speed — perfect for devices worn on or near your body.</p>
+            </article>
+            <article class="protocol-card">
+              <h3>🕸️ Zigbee / Z-Wave</h3>
+              <div class="meter-row"><span>Range</span><div class="meter"><span style="width:40%;background:var(--iot-blue);"></span></div></div>
+              <div class="meter-row"><span>Battery</span><div class="meter"><span style="width:90%;background:var(--iot-green);"></span></div></div>
+              <div class="meter-row"><span>Speed</span><div class="meter"><span style="width:25%;background:var(--iot-red);"></span></div></div>
+              <p style="margin:.5rem 0 0;color:var(--iot-muted);font-size:.74rem;">Devices relay each other's signals to extend range, and can run on a coin battery for years.</p>
+            </article>
+            <article class="protocol-card">
+              <h3>🛰️ LoRaWAN / Cellular</h3>
+              <div class="meter-row"><span>Range</span><div class="meter"><span style="width:98%;background:var(--iot-blue);"></span></div></div>
+              <div class="meter-row"><span>Battery</span><div class="meter"><span style="width:75%;background:var(--iot-green);"></span></div></div>
+              <div class="meter-row"><span>Speed</span><div class="meter"><span style="width:10%;background:var(--iot-red);"></span></div></div>
+              <p style="margin:.5rem 0 0;color:var(--iot-muted);font-size:.74rem;">Miles of range with tiny bandwidth — great for a handful of numbers from a remote field, not video.</p>
+            </article>
+          </div>
+          <p class="password-note" style="margin:1rem 0 .3rem;color:var(--iot-muted);font-size:.8rem;">Tap a scenario below to reveal the best-fit protocol and why.</p>
+          <div class="scenario-grid" id="protocol-scenarios">
+            <button class="scenario" data-protocol="Bluetooth" data-reason="Wireless earbuds live inches from your phone and need to sip battery for hours of playback — Bluetooth's short range doesn't matter, and it's efficient enough to last all day."><b>🎧 Wireless earbuds</b><p>Streams audio a few inches from your phone all day.</p></button>
+            <button class="scenario" data-protocol="LoRaWAN / Cellular" data-reason="A soil sensor five miles from the barn has no Wi-Fi router nearby. LoRaWAN or a cellular IoT chip can send a tiny reading that far on very little power."><b>🌾 Farm soil sensor</b><p>Reports moisture from a field five miles from the barn.</p></button>
+            <button class="scenario" data-protocol="Zigbee / Z-Wave" data-reason="A battery-powered bulb that needs to last years without a recharge — and works alongside dozens of other sensors relaying signals through the house — is exactly what Zigbee/Z-Wave mesh networks were built for."><b>💡 Battery smart bulb</b><p>Should run for years on one coin battery.</p></button>
+            <button class="scenario" data-protocol="Wi-Fi" data-reason="Streaming live 1080p video needs real bandwidth, and a plugged-in doorbell camera doesn't need to worry about battery life — a job for fast, power-hungry Wi-Fi."><b>📹 Video doorbell</b><p>Streams live HD video and is plugged into power.</p></button>
+          </div>
+          <div class="feedback" id="protocol-feedback" aria-live="polite">Choose a scenario to see the engineering trade-off in action.</div>
+        </section>
+
+        <section class="mission" data-accent="red" aria-labelledby="mission-4-title">
+          <div class="mission-head"><span class="mission-num">4</span><div><h2 id="mission-4-title">When "Smart" Gets Hacked</h2><p>A device is only as trustworthy as its weakest setting. Find the red flags that let attackers take over IoT devices by the thousands.</p></div></div>
+          <div class="history-note"><strong>Real history:</strong> In 2016, the Mirai botnet scanned the internet for cameras and routers still using their factory-default usernames and passwords — things like "admin/admin." It silently took over hundreds of thousands of devices and used them together to knock major websites offline.</div>
+          <p class="password-note" style="margin:.9rem 0 .3rem;color:var(--iot-muted);font-size:.8rem;">Tap every setting below that made those devices easy to hijack.</p>
+          <div class="clue-list" id="security-clues">
+            <button class="clue">Ships with a default password like "admin"</button>
+            <button class="clue">Never receives security updates</button>
+            <button class="clue">Exposed directly to the open internet</button>
+            <button class="clue">No encryption on its data</button>
+          </div>
+          <div class="feedback" id="clue-feedback" aria-live="polite">0 of 4 red flags found.</div>
+          <div class="botnet-box">
+            <div class="botnet-count" id="botnet-count">0</div>
+            <p style="margin:.3rem 0 0;color:var(--iot-muted);font-size:.78rem;">devices infected</p>
+            <p style="margin:.6rem 0 0;"><button class="btn secondary" type="button" id="botnet-scan">🔍 Scan the internet for weak devices</button></p>
+            <small id="botnet-note">Each scan doubles the count — this is roughly how fast a worm like Mirai actually spread.</small>
+          </div>
+          <div class="three-rules">
+            <div class="big-rule"><strong>1. Change the default password.</strong><br />The very first thing to do with any new smart device.</div>
+            <div class="big-rule"><strong>2. Keep firmware updated.</strong><br />Updates patch the exact holes attackers scan for.</div>
+            <div class="big-rule"><strong>3. Don't expose it directly.</strong><br />Keep smart devices on a separate guest network when possible.</div>
+          </div>
+        </section>
+
+        <section class="closing-panel" aria-labelledby="closing-title">
+          <p class="closing-eyebrow">Field Report · Beyond Connectivity</p>
+          <h2 id="closing-title">It's not just the "internet" of things anymore.</h2>
+          <p>Early IoT devices just moved sensor readings to an app. Today's devices do a lot more with that connection — and it's worth asking who benefits each time a "dumb" object gets smart.</p>
+          <div class="xthings-grid">
+            <article class="xthing-card">
+              <span class="xt-icon">💰</span>
+              <h3>The Monetization of Things</h3>
+              <p>Many "smart" devices are sold near cost — or even at a loss — because the real business is the data they collect, or a subscription required to keep basic features working.</p>
+              <details>
+                <summary>See real examples</summary>
+                <ul class="xthing-examples">
+                  <li>A robot vacuum maps your home's floor plan, then that map can be sold to furniture and advertising companies.</li>
+                  <li>Some printers refuse to print with off-brand ink, or push a monthly "ink subscription."</li>
+                  <li>Connected cars can log driving habits and sell that data to insurance companies.</li>
+                </ul>
+              </details>
+            </article>
+            <article class="xthing-card">
+              <span class="xt-icon">📣</span>
+              <h3>The Social Media of Things</h3>
+              <p>Devices increasingly share, broadcast, and gamify what they sense — turning private data into a public feed, leaderboard, or neighborhood alert.</p>
+              <details>
+                <summary>See real examples</summary>
+                <ul class="xthing-examples">
+                  <li>Fitness trackers post workouts to public leaderboards and friend feeds by default.</li>
+                  <li>Smart doorbells can share clips to neighborhood safety apps — sometimes without a warrant needed.</li>
+                  <li>A fitness app's public activity heatmap once accidentally revealed the locations and layouts of secret military bases.</li>
+                </ul>
+              </details>
+            </article>
+            <article class="xthing-card">
+              <span class="xt-icon">🤖</span>
+              <h3>The AI of Things</h3>
+              <p>Devices no longer just report numbers — onboard AI now predicts, recognizes, and decides, often without asking permission for each individual choice.</p>
+              <details>
+                <summary>See real examples</summary>
+                <ul class="xthing-examples">
+                  <li>A basic thermostat cycling heat on and off around a set temperature isn't AI — that's the same simple feedback loop as homeostasis. A <em>learning</em> thermostat like the Nest is different: it logs your manual adjustments and motion-sensor activity for about a week, then uses that pattern to predict and pre-adjust your schedule on its own.</li>
+                  <li>Doorbell cameras use facial recognition to flag "familiar" versus "unfamiliar" visitors.</li>
+                  <li>Factory sensors predict when a machine will fail days before it actually breaks down.</li>
+                </ul>
+              </details>
+            </article>
+          </div>
+          <div class="reflection-box">
+            <label for="reflection-input">Design challenge: imagine a smart water bottle that tracks how much you drink.</label>
+            <textarea id="reflection-input" placeholder="What data would it collect? Who might want to buy or use that data? What could go wrong if it leaked or got hacked?"></textarea>
+            <small>This is a discussion prompt only — nothing you type here is saved or sent anywhere.</small>
+          </div>
+        </section>
+
+        <section class="mission related-labs" data-accent="amber" aria-labelledby="related-title">
+          <div class="mission-head"><span class="mission-num">🔗</span><div><h2 id="related-title">Keep Exploring: Related STEAM Labs</h2><p>Sensors, security, and automation show up across engineering and computer science. These labs go deeper into the pieces you just used.</p></div></div>
+          <div class="related-grid">
+            <a class="related-card" href="sensor-modules.html">
+              <span class="tag">Engineering · Sensors</span>
+              <h3>Sensor Modules Kit</h3>
+              <p>Meet the physical sensors — ultrasonic, PIR, temperature, and more — that sit at the start of every IoT pipeline.</p>
+            </a>
+            <a class="related-card" href="ethical-hacking-cyber-safety.html">
+              <span class="tag">Computer Science · Cyber Safety</span>
+              <h3>Ethical Hacking &amp; Cyber Safety</h3>
+              <p>Practice the same password-strength and phishing-spotting skills that keep smart-home accounts safe from attackers.</p>
+            </a>
+            <a class="related-card" href="pid-control.html">
+              <span class="tag">Engineering · Feedback Loops</span>
+              <h3>PID Control &amp; Feedback Loops</h3>
+              <p>An automation rule is a simple feedback loop. See how real controllers use sensor data to make constant, precise adjustments.</p>
+            </a>
+            <a class="related-card" href="ai-concepts-foundations.html">
+              <span class="tag">AI Origins · Foundations</span>
+              <h3>AI Concepts &amp; Foundations</h3>
+              <p>Go deeper into the "AI of Things": how prediction, pattern recognition, and learning actually work under the hood.</p>
+            </a>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <aside class="ll-panel" aria-hidden="false" aria-label="Lesson guide">
+      <div class="ll-panel-head">
+        <div class="ll-tabs" role="tablist" aria-label="Lesson guide tabs">
+          <button class="ll-tab" role="tab" aria-selected="true" data-pane="pane-plan">Plan</button>
+          <button class="ll-tab" role="tab" aria-selected="false" data-pane="pane-teacher">Teacher</button>
+          <button class="ll-tab" role="tab" aria-selected="false" data-pane="pane-exit">Exit ticket</button>
+        </div>
+        <button class="ll-panel-close" type="button" aria-label="Close lesson guide">×</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="pane-plan">
+          <div class="panel-card"><h3>Goal</h3><p>Students trace the sensor-to-cloud pipeline, build a rule-based automation, compare wireless protocols by trade-off, spot insecure IoT defaults, and critique the business models behind "smart" devices.</p></div>
+          <div class="panel-card"><h3>Materials</h3><ul><li>One device per pair or group</li><li>Projector for whole-class discussion</li><li>Optional: a real smart-home device to pass around</li></ul></div>
+          <div class="panel-card"><h3>55-minute flow</h3><ol><li>The IoT Pipeline — 10 min</li><li>Build a Smart Home — 15 min</li><li>Choosing a Connection — 10 min</li><li>When Smart Gets Hacked — 10 min</li><li>Beyond the "Internet" discussion — 10 min</li></ol></div>
+        </div>
+        <div class="ll-pane" id="pane-teacher">
+          <div class="panel-card"><h3>No real devices needed</h3><p>Everything in this lesson runs as a simulation in the browser — no student needs to connect to a real network, camera, or account.</p></div>
+          <div class="panel-card"><h3>Facilitating the closing panel</h3><p>The three "X of Things" cards are meant to spark debate, not deliver a verdict. Push students past "companies are bad" toward specific trade-offs: what convenience did the user get in exchange for their data?</p></div>
+          <div class="panel-card"><h3>Extension</h3><p>Have students research one real device's privacy policy and identify which of the three closing categories it fits.</p></div>
+        </div>
+        <div class="ll-pane" id="pane-exit">
+          <div class="panel-card"><h3>Answer aloud or on paper</h3><ol><li>Name the five stages a temperature reading travels through in an IoT device.</li><li>Write one IF/THEN automation rule for a device in your own home.</li><li>Why might a farm sensor use LoRaWAN instead of Wi-Fi?</li><li>Name one setting that made Mirai-style attacks possible.</li><li>Give one real example each of the monetization, social media, and AI of things.</li></ol></div>
+          <div class="panel-card"><h3>Expected ideas</h3><p>Sensor → microcontroller → network → cloud → app; a plausible IF/THEN rule; long range and low power over speed; default password, no updates, or open internet exposure; any concrete example matching each category.</p></div>
+        </div>
+      </div>
+    </aside>
+    <button class="ll-open-btn" type="button" aria-label="Open lesson guide">⋮</button>
+  </div>
+</div>
+
+<script>
+  (() => {
+    // Mission 1: pipeline
+    const stageInfo = {
+      sensor: 'A sensor measures something physical — temperature, motion, light, moisture — and turns it into an electrical signal.',
+      mcu: 'A tiny microcontroller reads that signal, converts it to a number, and packages it into a small message.',
+      network: 'The message travels over Wi-Fi, Bluetooth, or another wireless protocol to a router or gateway.',
+      cloud: 'A cloud server stores the reading, checks it against any automation rules, and decides if anything should happen.',
+      app: 'Your phone app receives an update or notification — or the cloud sends a command straight back to another device.'
+    };
+    const visited = new Set();
+    const pipelineFeedback = document.getElementById('pipeline-feedback');
+    const pipelineProgress = document.getElementById('pipeline-progress');
+    document.querySelectorAll('.pipeline-stage').forEach((stage) => {
+      stage.addEventListener('click', () => {
+        const key = stage.dataset.stage;
+        stage.classList.add('is-visited');
+        visited.add(key);
+        pipelineFeedback.textContent = stageInfo[key];
+        pipelineProgress.textContent = `${visited.size} of 5 stages explored`;
+      });
+    });
+
+    const latencyLog = document.getElementById('latency-log');
+    const stageOrder = ['sensor', 'mcu', 'network', 'cloud', 'app'];
+    const stageDelays = { sensor: 5, mcu: 2, network: 20, cloud: 15, app: 300 };
+    document.getElementById('run-loop').addEventListener('click', () => {
+      document.querySelectorAll('.pipeline-stage').forEach((s) => s.classList.remove('is-active'));
+      latencyLog.textContent = 'Sending...';
+      let total = 0;
+      let i = 0;
+      const step = () => {
+        if (i > 0) {
+          const prev = document.querySelector(`.pipeline-stage[data-stage="${stageOrder[i - 1]}"]`);
+          if (prev) prev.classList.remove('is-active');
+        }
+        if (i >= stageOrder.length) {
+          latencyLog.textContent += `\nDone! Total round trip: ~${total} ms — faster than a single blink of your eye.`;
+          return;
+        }
+        const key = stageOrder[i];
+        const el = document.querySelector(`.pipeline-stage[data-stage="${key}"]`);
+        el.classList.add('is-visited', 'is-active');
+        visited.add(key);
+        pipelineProgress.textContent = `${visited.size} of 5 stages explored`;
+        total += stageDelays[key];
+        latencyLog.textContent = `${key.toUpperCase()}: +${stageDelays[key]} ms (running total ${total} ms)`;
+        i += 1;
+        setTimeout(step, 450);
+      };
+      step();
+    });
+
+    // Mission 2: smart home
+    const deviceLabels = {
+      thermostat: { on: 'Reading 71°F, sending updates every 5 min', off: 'Idle' },
+      lock: { on: 'Unlocked', off: 'Locked' },
+      camera: { on: 'Recording &amp; streaming', off: 'Standby' },
+      light: { on: 'On', off: 'Off' }
+    };
+    const netLog = document.getElementById('network-log');
+    let netLogStarted = false;
+    const logLine = (text, cls) => {
+      if (!netLogStarted) { netLog.textContent = ''; netLogStarted = true; }
+      const line = document.createElement('div');
+      if (cls) line.className = cls;
+      line.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+      netLog.appendChild(line);
+      netLog.scrollTop = netLog.scrollHeight;
+    };
+    document.querySelectorAll('[data-device-toggle]').forEach((toggle) => {
+      toggle.addEventListener('change', () => {
+        const device = toggle.dataset.deviceToggle;
+        const card = document.querySelector(`.device-card[data-device="${device}"]`);
+        const isOn = toggle.checked;
+        card.classList.toggle('is-on', isOn);
+        card.querySelector('[data-state]').textContent = isOn ? deviceLabels[device].on.replace('&amp;', '&') : deviceLabels[device].off;
+        logLine(`${device} → sent state "${isOn ? 'on' : 'off'}" to cloud`, 'log-cloud');
+      });
+    });
+    document.getElementById('clear-log').addEventListener('click', () => { netLog.textContent = ''; });
+    document.getElementById('motion-trigger').addEventListener('click', () => {
+      logLine('motion sensor → detected movement, sent event to cloud', 'log-cloud');
+      const automationOn = document.getElementById('automation-toggle').checked;
+      if (automationOn) {
+        logLine('cloud rule engine → matched rule: motion → porch light ON', 'log-cloud');
+        const lightToggle = document.querySelector('[data-device-toggle="light"]');
+        lightToggle.checked = true;
+        lightToggle.dispatchEvent(new Event('change'));
+        logLine('porch light → turned ON automatically', 'log-action');
+      } else {
+        logLine('cloud rule engine → no automation rule matched, nothing happens', null);
+      }
+    });
+
+    // Mission 3: protocol scenarios
+    const protocolFeedback = document.getElementById('protocol-feedback');
+    document.querySelectorAll('#protocol-scenarios .scenario').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#protocol-scenarios .scenario').forEach((b) => b.classList.remove('is-revealed'));
+        btn.classList.add('is-revealed');
+        protocolFeedback.textContent = `Best fit: ${btn.dataset.protocol}. ${btn.dataset.reason}`;
+      });
+    });
+
+    // Mission 4: security clues + botnet counter
+    let cluesFound = 0;
+    const clueFeedback = document.getElementById('clue-feedback');
+    document.querySelectorAll('#security-clues .clue').forEach((clue) => {
+      clue.addEventListener('click', () => {
+        if (!clue.classList.contains('is-found')) {
+          clue.classList.add('is-found');
+          clue.textContent = '✓ ' + clue.textContent;
+          cluesFound += 1;
+        }
+        clueFeedback.textContent = cluesFound === 4
+          ? 'All 4 found — every one of these was true of the devices Mirai took over in 2016.'
+          : `${cluesFound} of 4 red flags found.`;
+      });
+    });
+
+    let botnetCount = 0;
+    let botnetScans = 0;
+    const botnetCountEl = document.getElementById('botnet-count');
+    const botnetNote = document.getElementById('botnet-note');
+    document.getElementById('botnet-scan').addEventListener('click', () => {
+      botnetScans += 1;
+      botnetCount = botnetScans === 1 ? 12 : botnetCount * 2;
+      botnetCountEl.textContent = botnetCount.toLocaleString();
+      if (botnetScans >= 8) {
+        botnetNote.textContent = 'This is why the real Mirai botnet reached over 600,000 devices in weeks — exponential growth is fast.';
+      }
+    });
+  })();
+</script>
+<script src="../assets/js/classroom-animations.js"></script>
+<script src="../assets/js/lesson-layout.js"></script>
+<script src="../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

@@ -8,7 +8,7 @@
   <meta name="description" content="Mathematics Lesson 01 — discover the history of numbers, integers, fractions, primes, factors, multiples, modular arithmetic, and why dividing by zero breaks everything." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=STIX+Two+Text:ital,wght@0,500;0,600;0,700;1,500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
@@ -1533,10 +1533,625 @@
       transition: width 0.4s ease;
     }
 
+    /* ── Proof Studio ── */
+    .num-proof-studio {
+      overflow: hidden;
+      border: 0;
+      border-left: 0;
+      padding: 0;
+      color: #f8fafc;
+      background: #111c33;
+      box-shadow: 0 18px 42px rgba(17,28,51,0.2);
+    }
+    .num-proof-studio::after {
+      content: "∴";
+      position: absolute;
+      right: -0.08em;
+      top: -0.36em;
+      color: rgba(255,184,77,0.08);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(10rem,24vw,20rem);
+      font-weight: 700;
+      line-height: 1;
+      pointer-events: none;
+    }
+    .num-proof-head {
+      position: relative;
+      z-index: 1;
+      padding: 1.45rem 1.5rem 0.9rem;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+    }
+    .num-proof-kicker,
+    .num-source-kicker {
+      display: block;
+      margin-bottom: 0.35rem;
+      color: #ffb84d;
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+    .num-proof-studio h2 { margin-bottom: 0.4rem; color: #fff; font-size: clamp(1.35rem,3vw,1.8rem); }
+    .num-proof-studio .num-proof-lede { max-width: 72ch; margin: 0; color: rgba(248,250,252,0.72); font-size: 0.88rem; }
+    .num-proof-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 1px;
+      background: rgba(255,255,255,0.12);
+    }
+    .num-proof {
+      min-width: 0;
+      background: #111c33;
+    }
+    .num-proof summary {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 1.15rem;
+      cursor: pointer;
+      list-style: none;
+    }
+    .num-proof summary::-webkit-details-marker { display: none; }
+    .num-proof summary::after { content: "+"; color: #ffb84d; font: 800 1.25rem/1 "IBM Plex Mono", monospace; }
+    .num-proof[open] summary::after { content: "−"; }
+    .num-proof-index {
+      display: grid;
+      width: 2rem;
+      height: 2rem;
+      place-items: center;
+      border: 1px solid rgba(255,184,77,0.6);
+      border-radius: 50%;
+      color: #ffb84d;
+      font: 800 0.72rem/1 "IBM Plex Mono", monospace;
+    }
+    .num-proof-title { color: #fff; font-size: 0.92rem; font-weight: 800; }
+    .num-proof-title small { display: block; margin-top: 0.14rem; color: rgba(248,250,252,0.5); font-size: 0.68rem; font-weight: 600; }
+    .num-proof-body { padding: 0 1.15rem 1.15rem; }
+    .num-proof-visual {
+      width: 100%;
+      height: auto;
+      max-height: 190px;
+      margin-bottom: 0.8rem;
+      border-radius: 10px;
+      background: #0a1224;
+    }
+    .num-proof-steps { display: grid; gap: 0.55rem; margin: 0; padding: 0; list-style: none; counter-reset: proofstep; }
+    .num-proof-steps li {
+      display: grid;
+      grid-template-columns: 1.4rem 1fr;
+      gap: 0.55rem;
+      color: rgba(248,250,252,0.75);
+      font-size: 0.78rem;
+      line-height: 1.55;
+      counter-increment: proofstep;
+    }
+    .num-proof-steps li::before {
+      content: counter(proofstep);
+      color: #ffb84d;
+      font: 800 0.68rem/1.5 "IBM Plex Mono", monospace;
+    }
+    .num-proof-conclusion {
+      margin-top: 0.75rem;
+      padding: 0.65rem 0.75rem;
+      border-left: 3px solid #50d5a0;
+      background: rgba(80,213,160,0.08);
+      color: #dffbef;
+      font-size: 0.78rem;
+      line-height: 1.55;
+    }
+    .num-proof-cite {
+      display: inline-flex;
+      margin-top: 0.75rem;
+      color: #ffcb7d;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
+    /* ── Open textbook shelf ── */
+    .num-source-shelf { border-left-color: #2f80ed; }
+    .num-source-shelf > p { max-width: 76ch; }
+    .num-source-kicker { color: #1d5fa9; }
+    .num-source-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 0.75rem;
+      margin-top: 0.9rem;
+    }
+    .num-source-card {
+      display: grid;
+      grid-template-columns: 3.2rem 1fr;
+      gap: 0.8rem;
+      min-width: 0;
+      padding: 0.85rem;
+      border: 1px solid var(--line,#d2d2d7);
+      border-radius: 12px;
+      color: inherit;
+      background: rgba(47,128,237,0.035);
+      text-decoration: none;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+    .num-source-card:hover { transform: translateY(-2px); border-color: #2f80ed; background: rgba(47,128,237,0.08); }
+    .num-source-card:focus-visible { outline: 3px solid rgba(47,128,237,0.42); outline-offset: 3px; }
+    .num-source-icon {
+      display: grid;
+      width: 3.2rem;
+      height: 3.8rem;
+      place-items: center;
+      border-radius: 4px 9px 9px 4px;
+      color: #fff;
+      background: #2f80ed;
+      box-shadow: inset 5px 0 rgba(0,0,0,0.12);
+      font: 800 0.68rem/1.15 "IBM Plex Mono", monospace;
+      text-align: center;
+    }
+    .num-source-card:nth-child(2) .num-source-icon { background: #7b61a8; }
+    .num-source-card:nth-child(3) .num-source-icon { background: #00866a; }
+    .num-source-card:nth-child(4) .num-source-icon { background: #9b4f31; }
+    .num-source-title { display: block; margin-bottom: 0.18rem; font-size: 0.84rem; font-weight: 850; }
+    .num-source-desc { display: block; color: var(--text-secondary,#3f4f65); font-size: 0.74rem; line-height: 1.45; }
+    .num-source-license {
+      display: inline-block;
+      margin-top: 0.45rem;
+      color: #1d5fa9;
+      font: 800 0.62rem/1 "IBM Plex Mono", monospace;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .num-source-note { margin-top: 0.8rem !important; color: var(--text-muted,#64748b) !important; font-size: 0.72rem !important; }
+    [data-lighting="night"] .num-source-card,
+    [data-theme="vaporwave"] .num-source-card,
+    [data-theme="bark"] .num-source-card { background: rgba(47,128,237,0.07); }
+    [data-lighting="night"] .num-source-desc,
+    [data-theme="vaporwave"] .num-source-desc,
+    [data-theme="bark"] .num-source-desc { color: rgba(245,245,247,0.68); }
+    [data-lighting="night"] .num-source-kicker,
+    [data-theme="vaporwave"] .num-source-kicker,
+    [data-theme="bark"] .num-source-kicker,
+    [data-lighting="night"] .num-source-license,
+    [data-theme="vaporwave"] .num-source-license,
+    [data-theme="bark"] .num-source-license { color: #73b4ff; }
+
     @media (max-width: 600px) {
       .num-type-grid { grid-template-columns: 1fr; }
       .num-mod-controls,
-      .num-mod-stage { grid-template-columns: 1fr; }
+      .num-mod-stage,
+      .num-proof-grid,
+      .num-source-grid { grid-template-columns: 1fr; }
+      .num-proof-head { padding-inline: 1rem; }
+      .num-proof summary { padding-inline: 0.9rem; }
+      .num-proof-body { padding-inline: 0.9rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .num-source-card { transition: none; }
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       Mathematical notebook visual system
+       ═══════════════════════════════════════════════════════ */
+    .ll-viewport {
+      --math-paper: #f3f7f5;
+      --math-sheet: #fcfdfb;
+      --math-ink: #102a43;
+      --math-blue: #205c8f;
+      --math-blue-soft: rgba(32,92,143,0.09);
+      --math-grid: rgba(65,125,148,0.13);
+      --math-gold: #d49a25;
+      --math-red: #b9473c;
+      --math-rule: rgba(16,42,67,0.18);
+      --ll-accent: var(--math-blue);
+      --ll-tab-active: var(--math-blue);
+      --ll-tab-active-bg: var(--math-blue-soft);
+      font-family: "IBM Plex Sans", system-ui, sans-serif;
+    }
+    [data-lighting="night"] .ll-viewport,
+    [data-theme="vaporwave"] .ll-viewport,
+    [data-theme="bark"] .ll-viewport {
+      --math-paper: #0c1722;
+      --math-sheet: #122231;
+      --math-ink: #edf5f7;
+      --math-blue: #70b7e8;
+      --math-blue-soft: rgba(112,183,232,0.12);
+      --math-grid: rgba(112,183,232,0.09);
+      --math-gold: #f0bd55;
+      --math-red: #f07b72;
+      --math-rule: rgba(219,239,245,0.18);
+    }
+    .ll-sim {
+      background-color: var(--math-paper);
+      background-image:
+        linear-gradient(var(--math-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--math-grid) 1px, transparent 1px),
+        linear-gradient(rgba(65,125,148,0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(65,125,148,0.055) 1px, transparent 1px);
+      background-size: 80px 80px, 80px 80px, 16px 16px, 16px 16px;
+      background-position: -1px -1px;
+    }
+    .site-header {
+      border-bottom: 1px solid var(--math-rule);
+      background: color-mix(in srgb, var(--math-sheet) 94%, transparent);
+      box-shadow: none;
+    }
+    .site-header .brand {
+      color: var(--math-ink);
+      font-family: "STIX Two Text", Georgia, serif;
+      font-weight: 650;
+      letter-spacing: -0.015em;
+    }
+    .site-nav a {
+      border-radius: 2px 7px 2px 7px;
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.02em;
+    }
+    .num-page {
+      width: min(1040px, calc(100% - 2.2rem));
+      padding-top: 1.4rem;
+      counter-reset: num-section;
+      color: var(--math-ink);
+    }
+
+    /* Hero as a formula page rather than a generic centered banner */
+    .num-hero {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(220px,320px);
+      grid-template-rows: auto auto auto auto;
+      align-items: center;
+      gap: 0.35rem 2rem;
+      margin-bottom: 1.25rem;
+      padding: clamp(1.4rem,3.5vw,2.5rem);
+      border: 1px solid var(--math-rule);
+      border-top: 5px solid var(--math-blue);
+      border-radius: 2px 16px 2px 16px;
+      background: color-mix(in srgb, var(--math-sheet) 94%, transparent);
+      box-shadow: 8px 8px 0 rgba(32,92,143,0.08);
+      text-align: left;
+    }
+    .num-hero > :not(.num-hero-formula) { grid-column: 1; }
+    .num-hero .eyebrow {
+      color: var(--math-blue);
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+    .num-hero h1 {
+      max-width: none;
+      margin: 0.12rem 0 0.25rem;
+      color: var(--math-ink);
+      font-family: "STIX Two Text", Georgia, serif;
+      font-size: clamp(2.6rem,6vw,5.4rem);
+      font-weight: 600;
+      line-height: 0.95;
+      letter-spacing: -0.055em;
+    }
+    .num-hero h1::after {
+      content: ".";
+      color: var(--math-red);
+    }
+    .num-hero-meta {
+      justify-content: flex-start;
+      margin: 0.45rem 0 0;
+      color: var(--math-blue);
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.67rem;
+      font-weight: 600;
+      line-height: 1.45;
+    }
+    .num-hero-meta .dot { width: 4px; height: 4px; border-radius: 0; transform: rotate(45deg); }
+    .num-lede,
+    [data-lighting="night"] .num-lede,
+    [data-theme="vaporwave"] .num-lede,
+    [data-theme="bark"] .num-lede {
+      margin: 0.5rem 0 0;
+      color: color-mix(in srgb, var(--math-ink) 76%, transparent);
+      font-family: "STIX Two Text", Georgia, serif;
+      font-size: 1.02rem;
+      line-height: 1.6;
+    }
+    .num-hero-formula {
+      grid-column: 2;
+      grid-row: 1 / -1;
+      align-self: stretch;
+      display: grid;
+      align-content: center;
+      min-height: 230px;
+      padding: 1.2rem;
+      border: 1px solid var(--math-rule);
+      background:
+        linear-gradient(135deg, var(--math-blue-soft), transparent 65%),
+        var(--math-sheet);
+      box-shadow: inset 5px 0 0 var(--math-gold);
+    }
+    .num-hero-formula strong {
+      display: block;
+      color: var(--math-ink);
+      font-family: "STIX Two Text", Georgia, serif;
+      font-size: clamp(2rem,4vw,3.25rem);
+      font-weight: 600;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    .num-hero-formula span {
+      display: block;
+      margin-top: 0.8rem;
+      color: var(--math-blue);
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .num-hero-formula small {
+      display: block;
+      margin-top: 0.55rem;
+      color: color-mix(in srgb, var(--math-ink) 65%, transparent);
+      font-size: 0.72rem;
+      line-height: 1.5;
+    }
+
+    /* Numbered sheets: section order encodes the learning sequence */
+    .num-page > .num-card { counter-increment: num-section; }
+    .num-card {
+      margin-bottom: 1.2rem;
+      padding: clamp(1.1rem,2.3vw,1.65rem);
+      border: 1px solid var(--math-rule);
+      border-left: 4px solid var(--math-blue);
+      border-radius: 2px 14px 2px 14px;
+      background: color-mix(in srgb, var(--math-sheet) 96%, transparent);
+      box-shadow: 6px 6px 0 rgba(32,92,143,0.065);
+    }
+    .num-card h2 {
+      margin-bottom: 0.65rem;
+      color: var(--math-ink);
+      font-family: "STIX Two Text", Georgia, serif;
+      font-size: clamp(1.45rem,3vw,2rem);
+      font-weight: 650;
+      line-height: 1.1;
+      letter-spacing: -0.025em;
+    }
+    .num-page > .num-card > h2::before,
+    .num-page > .num-card > .num-proof-head h2::before {
+      content: counter(num-section, decimal-leading-zero) " / ";
+      color: var(--math-red);
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.65em;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      vertical-align: 0.12em;
+    }
+    .num-card h3 {
+      margin-top: 1.15rem;
+      color: var(--math-ink);
+      font-family: "STIX Two Text", Georgia, serif;
+      font-size: 1.12rem;
+      font-weight: 650;
+      letter-spacing: -0.01em;
+    }
+    .num-card p,
+    [data-lighting="night"] .num-card p,
+    [data-theme="vaporwave"] .num-card p,
+    [data-theme="bark"] .num-card p {
+      color: color-mix(in srgb, var(--math-ink) 77%, transparent);
+      font-size: 0.9rem;
+      line-height: 1.68;
+    }
+    .num-data { font-variant-numeric: tabular-nums lining-nums; }
+
+    /* Mathematical controls and worked-example surfaces */
+    .num-type-grid { gap: 0.65rem; }
+    .num-type-card,
+    .num-mini-control,
+    .num-mod-control,
+    .num-problem,
+    .num-source-card {
+      border-color: var(--math-rule);
+      border-radius: 3px 9px 3px 9px;
+      background: var(--math-blue-soft);
+      box-shadow: none;
+    }
+    .num-type-card:hover,
+    .num-type-card.active { border-color: var(--math-blue); background: color-mix(in srgb, var(--math-blue-soft) 82%, var(--math-sheet)); }
+    .num-type-name,
+    .num-source-title { color: var(--math-ink); font-family: "STIX Two Text", Georgia, serif; font-size: 1rem; font-weight: 650; }
+    .num-type-example { color: var(--math-blue); font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 1rem; }
+    .num-type-detail,
+    .num-prime-info,
+    .num-factor-result,
+    .num-zero-display,
+    .num-score-bar {
+      border-color: var(--math-rule);
+      border-radius: 3px 10px 3px 10px;
+      background: var(--math-blue-soft);
+    }
+    .num-count-lab,
+    .num-fraction-lab,
+    .num-decimal-lab,
+    .num-ratio-lab {
+      border-color: var(--math-rule);
+      border-radius: 2px 12px 2px 12px;
+      box-shadow: none;
+    }
+    .num-count-lab-head,
+    .num-fraction-head,
+    .num-decimal-head,
+    .num-ratio-head {
+      position: relative;
+      border-bottom: 1px solid var(--math-rule);
+      background-color: var(--math-blue-soft);
+      background-image:
+        linear-gradient(var(--math-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--math-grid) 1px, transparent 1px);
+      background-size: 16px 16px;
+    }
+    .num-count-lab-kicker,
+    .num-fraction-kicker,
+    .num-decimal-kicker,
+    .num-ratio-kicker,
+    .num-proof-kicker,
+    .num-source-kicker,
+    .num-count-label,
+    .num-mod-label {
+      color: var(--math-blue);
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      letter-spacing: 0.1em;
+    }
+    .num-count-lab-title,
+    .num-fraction-big,
+    .num-decimal-big,
+    .num-ratio-big,
+    .num-count-big {
+      font-family: "STIX Two Text", Georgia, serif;
+    }
+    .num-count-toolbar { border-right-color: var(--math-rule); background: color-mix(in srgb, var(--math-sheet) 92%, transparent); }
+    .num-count-stage,
+    .num-fraction-stage,
+    .num-decimal-stage,
+    .num-ratio-stage,
+    .num-line-frame {
+      border-color: var(--math-rule);
+      border-radius: 3px 10px 3px 10px;
+      background:
+        linear-gradient(var(--math-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--math-grid) 1px, transparent 1px),
+        var(--math-sheet);
+      background-size: 20px 20px;
+    }
+    .num-chip-btn,
+    .num-btn,
+    .num-check {
+      border-radius: 3px 8px 3px 8px;
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.02em;
+    }
+    .num-btn,
+    .num-check { background: var(--math-blue); }
+    .num-btn:hover,
+    .num-check:hover { filter: brightness(0.92); transform: translateY(-1px); }
+    .num-btn.secondary { color: var(--math-blue); border-color: var(--math-blue); background: transparent; }
+    .num-chip-btn.active { color: #fff; border-color: var(--math-blue); background: var(--math-blue); box-shadow: none; }
+    .num-factor-input,
+    .num-ans,
+    .num-mini-control input[type="number"] {
+      border-color: var(--math-rule);
+      border-radius: 3px 8px 3px 8px;
+      color: var(--math-ink);
+      background: var(--math-sheet);
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+    }
+    input[type="range"] { accent-color: var(--math-blue) !important; }
+
+    /* Timeline becomes a measured proof-of-development line */
+    .num-timeline::before { width: 1px; background: var(--math-blue); opacity: 0.45; }
+    .num-timeline li::before {
+      border-radius: 1px;
+      border-color: var(--math-sheet);
+      background: var(--math-blue);
+      box-shadow: 0 0 0 2px var(--math-blue);
+      transform: rotate(45deg);
+    }
+    .num-tl-year,
+    .num-tl-tag { color: var(--math-blue); font-family: "IBM Plex Mono", ui-monospace, monospace; }
+    .num-tl-tag { border-radius: 2px; background: var(--math-blue-soft); }
+    .num-timeline li:hover .num-tl-tag { background: var(--math-blue); }
+    .num-tl-thumb { border-radius: 2px 8px 2px 8px; border-color: var(--math-rule); }
+    .num-tl-thumb img { border-radius: 2px 8px 2px 8px; }
+
+    /* Notes, primes, and diagrams */
+    .num-callout {
+      position: relative;
+      border-width: 1px 1px 1px 4px;
+      border-radius: 2px 9px 2px 9px;
+      background: var(--math-blue-soft);
+    }
+    .num-callout-icon {
+      display: grid;
+      width: 2rem;
+      height: 2rem;
+      place-items: center;
+      border: 1px solid var(--math-rule);
+      border-radius: 50%;
+      background: var(--math-sheet);
+      font-size: 0.95rem;
+    }
+    .num-prime-grid { gap: 4px; max-width: 480px; }
+    .num-prime-cell { border-radius: 2px; font-family: "IBM Plex Mono", ui-monospace, monospace; }
+    .num-prime-cell.is-prime:not(.is-crossed) { color: #fff; background: var(--math-blue); }
+    .num-prime-cell.selected { outline-color: var(--math-red); }
+    .num-chip { border-radius: 2px 7px 2px 7px; color: var(--math-blue); background: var(--math-blue-soft); }
+    .num-mod-controls { gap: 1px; border: 1px solid var(--math-rule); background: var(--math-rule); }
+    .num-mod-control { border: 0; border-radius: 0; background: var(--math-sheet); }
+    .num-mod-value,
+    .num-mod-equation,
+    .num-line-pill { color: var(--math-blue); }
+    .num-mod-canvas-wrap { border-radius: 2px 10px 2px 10px; }
+    .num-line-pill { border-radius: 2px 7px 2px 7px; background: var(--math-blue-soft); }
+    .num-zero-result { color: var(--math-red); }
+    .num-zero-fill { border-radius: 0; background: linear-gradient(90deg,var(--math-gold),var(--math-red)); }
+
+    /* Proof spread and sources use the same drafting vocabulary */
+    .num-proof-studio {
+      border: 1px solid rgba(112,183,232,0.32);
+      border-left: 4px solid var(--math-gold);
+      border-radius: 2px 14px 2px 14px;
+      background-color: #0d2438;
+      background-image:
+        linear-gradient(rgba(112,183,232,0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(112,183,232,0.07) 1px, transparent 1px);
+      background-size: 20px 20px;
+      box-shadow: 6px 6px 0 rgba(13,36,56,0.18);
+    }
+    .num-proof-studio h2 { color: #fff; }
+    .num-proof-studio .num-proof-kicker,
+    .num-proof-studio .num-proof-head h2::before { color: var(--math-gold); }
+    .num-proof,
+    .num-proof-grid { background: rgba(13,36,56,0.94); }
+    .num-proof-head h2 { font-family: "STIX Two Text", Georgia, serif; }
+    .num-proof-index { border-radius: 2px; }
+    .num-proof-title { font-family: "STIX Two Text", Georgia, serif; font-size: 1rem; font-weight: 600; }
+    .num-proof-visual { border: 1px solid rgba(112,183,232,0.2); border-radius: 2px 8px 2px 8px; }
+    .num-proof-conclusion { border-left-color: var(--math-gold); border-radius: 0 6px 6px 0; }
+    .num-source-shelf { border-left-color: var(--math-gold); }
+    .num-source-icon { border-radius: 2px 8px 2px 8px; background: var(--math-blue) !important; }
+    .num-source-card:hover { border-color: var(--math-blue); background: var(--math-blue-soft); }
+    .num-source-license { color: var(--math-blue); }
+
+    /* Right panel reads as a reference margin */
+    .ll-panel { background: var(--math-sheet); border-left-color: var(--math-rule); }
+    .ll-panel-head { border-bottom-color: var(--math-rule); }
+    .ll-tab { border-radius: 2px 7px 2px 7px; font-family: "IBM Plex Mono", ui-monospace, monospace; }
+    .ll-label { color: var(--math-blue); font-family: "IBM Plex Mono", ui-monospace, monospace; opacity: 1; }
+    .ll-info { border-color: var(--math-rule); border-radius: 2px 8px 2px 8px; background: var(--math-blue-soft); }
+    .ll-info strong { color: var(--math-ink); font-family: "STIX Two Text", Georgia, serif; font-size: 0.92rem; }
+    .num-page button:focus-visible,
+    .num-page input:focus-visible,
+    .num-page summary:focus-visible,
+    .num-page a:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--math-gold) 72%, white);
+      outline-offset: 3px;
+    }
+
+    @media (max-width: 760px) {
+      .num-page { width: min(100% - 1rem,1040px); }
+      .num-hero { grid-template-columns: 1fr; padding: 1.25rem; }
+      .num-hero > :not(.num-hero-formula),
+      .num-hero-formula { grid-column: 1; }
+      .num-hero-formula { grid-row: auto; min-height: 0; margin-top: 0.65rem; }
+      .num-hero-formula strong { white-space: normal; }
+      .num-card { padding: 1rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .num-btn:hover,
+      .num-check:hover { transform: none; }
     }
   </style>
 </head>
@@ -1576,16 +2191,23 @@
         <span class="dot"></span>
         <span>Primes &amp; Factors</span>
         <span class="dot"></span>
+        <span>Visual Proofs</span>
+        <span class="dot"></span>
         <span>Clock Math</span>
         <span class="dot"></span>
         <span>Why ÷ 0 Breaks Everything</span>
       </div>
-      <p class="num-lede">Before algebra, geometry, or calculus — there were numbers. Humans have been counting, trading, and building with numbers for over 30,000 years. This lesson traces that story, introduces the different <em>kinds</em> of numbers, and shows why one forbidden operation would make all of mathematics collapse.</p>
+      <p class="num-lede">Before algebra, geometry, or calculus — there were numbers. Humans have been counting, trading, and building with numbers for over 30,000 years. This lesson traces that story, introduces the different <em>kinds</em> of numbers, and uses visual proofs to show why the rules work.</p>
+      <div class="num-hero-formula" aria-label="The natural numbers are contained in the integers, which are contained in the rational numbers, which are contained in the real numbers">
+        <strong>ℕ ⊂ ℤ ⊂ ℚ ⊂ ℝ</strong>
+        <span>One expanding universe</span>
+        <small>Counting numbers sit inside integers; integers sit inside rational numbers; rational and irrational numbers together form the real line.</small>
+      </div>
     </section>
 
     <!-- ── 1. History ── -->
     <section class="num-card" style="--card-accent:#ff9500;">
-      <h2>📜 Where Numbers Come From</h2>
+      <h2>Where Numbers Come From</h2>
       <p>Numbers weren't invented all at once. They evolved over thousands of years, each civilisation adding another piece. Here are the biggest milestones:</p>
 
       <ul class="num-timeline">
@@ -1715,7 +2337,7 @@
 
     <!-- ── 2. Number Zoo ── -->
     <section class="num-card" style="--card-accent:#ff9500;">
-      <h2>🔢 The Number Zoo</h2>
+      <h2>The Number System</h2>
       <p>Not all numbers are the same type. Mathematics organises them into families — and knowing which family a number belongs to tells you a lot about how it behaves. Click any card to learn more.</p>
 
       <div class="num-type-grid">
@@ -1959,7 +2581,7 @@
 
     <!-- ── 3. Primes ── -->
     <section class="num-card" style="--card-accent:#ff9500;">
-      <h2>⭐ Prime Numbers</h2>
+      <h2>Prime Numbers</h2>
       <p>A <strong>prime number</strong> is a whole number greater than 1 that can only be divided evenly by <strong>1 and itself</strong>. That makes primes the "atoms" of mathematics — every other whole number is built from primes multiplied together.</p>
 
       <div class="num-callout orange">
@@ -2005,7 +2627,7 @@
 
     <!-- ── 4. Factors & Multiples ── -->
     <section class="num-card" style="--card-accent:#ff9500;">
-      <h2>✖️ Factors &amp; Multiples</h2>
+      <h2>Factors &amp; Multiples</h2>
       <p>Two sides of the same coin. Understanding them makes fractions, algebra, and even music theory much easier.</p>
 
       <div class="num-type-grid" style="margin:0.75rem 0;">
@@ -2038,9 +2660,155 @@
       </div>
     </section>
 
-    <!-- ── 5. Modular arithmetic ── -->
+    <!-- ── 5. Proof Studio ── -->
+    <section class="num-card num-proof-studio" aria-labelledby="num-proof-title">
+      <div class="num-proof-head">
+        <span class="num-proof-kicker">Open-textbook proof studio</span>
+        <h2 id="num-proof-title">Don’t just trust the rule. See why it must be true.</h2>
+        <p class="num-proof-lede">A proof is a chain in which every link can be checked. Open each argument, follow the picture, and look for the moment where the opposite claim becomes impossible.</p>
+      </div>
+
+      <div class="num-proof-grid">
+        <details class="num-proof" open>
+          <summary>
+            <span class="num-proof-index">P1</span>
+            <span class="num-proof-title">Primes never run out<small>Euclid’s contradiction, rebuilt visually</small></span>
+          </summary>
+          <div class="num-proof-body">
+            <svg class="num-proof-visual" viewBox="0 0 520 190" role="img" aria-labelledby="prime-proof-title prime-proof-desc">
+              <title id="prime-proof-title">A new number built from a supposedly complete list of primes</title>
+              <desc id="prime-proof-desc">The primes 2, 3, 5, and 7 are multiplied and one is added to make 211. Division by every listed prime leaves remainder one.</desc>
+              <rect width="520" height="190" rx="12" fill="#0a1224"/>
+              <g fill="#ffb84d" font-family="IBM Plex Mono, monospace" font-size="23" font-weight="700" text-anchor="middle">
+                <circle cx="54" cy="54" r="27" fill="#192b4f" stroke="#ffb84d"/><text x="54" y="62">2</text>
+                <circle cx="129" cy="54" r="27" fill="#192b4f" stroke="#ffb84d"/><text x="129" y="62">3</text>
+                <circle cx="204" cy="54" r="27" fill="#192b4f" stroke="#ffb84d"/><text x="204" y="62">5</text>
+                <circle cx="279" cy="54" r="27" fill="#192b4f" stroke="#ffb84d"/><text x="279" y="62">7</text>
+              </g>
+              <path d="M54 94H310" stroke="#59739e" stroke-width="2" stroke-dasharray="5 5"/>
+              <text x="52" y="122" fill="#91a6c7" font-family="IBM Plex Mono, monospace" font-size="15">2 × 3 × 5 × 7</text>
+              <path d="M224 116h45" stroke="#91a6c7" stroke-width="2" marker-end="url(#primeArrow)"/>
+              <defs><marker id="primeArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#91a6c7"/></marker></defs>
+              <rect x="282" y="94" width="198" height="58" rx="10" fill="#123b36" stroke="#50d5a0"/>
+              <text x="381" y="119" fill="#fff" font-family="IBM Plex Mono, monospace" font-size="20" font-weight="700" text-anchor="middle">+ 1 = 211</text>
+              <text x="381" y="140" fill="#88e9c1" font-family="Inter, sans-serif" font-size="12" text-anchor="middle">remainder 1 every time</text>
+              <text x="260" y="178" fill="#91a6c7" font-family="Inter, sans-serif" font-size="12" text-anchor="middle">The “complete” list cannot be complete.</text>
+            </svg>
+            <ol class="num-proof-steps">
+              <li>Suppose there are only finitely many primes. Put every one of them in a list.</li>
+              <li>Multiply the whole list and add 1: <span class="num-data">N = p₁ × p₂ × … × pₙ + 1</span>.</li>
+              <li>Dividing <span class="num-data">N</span> by any listed prime leaves remainder 1, so none of those primes divides it.</li>
+              <li>But every integer greater than 1 has a prime factor. That factor is missing from the supposedly complete list.</li>
+            </ol>
+            <div class="num-proof-conclusion"><strong>Therefore:</strong> no finite list can contain every prime. There are infinitely many primes. <em>N itself does not have to be prime</em>; it only needs a new prime factor.</div>
+            <a class="num-proof-cite" href="https://math.libretexts.org/Bookshelves/Combinatorics_and_Discrete_Mathematics/Elementary_Number_Theory_%28Raji%29/02%3A_Prime_Numbers/2.02%3A_The_Infinitude_of_Primes" target="_blank" rel="noopener">Open textbook source: LibreTexts, The Infinitude of Primes ↗</a>
+          </div>
+        </details>
+
+        <details class="num-proof">
+          <summary>
+            <span class="num-proof-index">P2</span>
+            <span class="num-proof-title">√2 cannot be a fraction<small>A parity contradiction</small></span>
+          </summary>
+          <div class="num-proof-body">
+            <svg class="num-proof-visual" viewBox="0 0 520 190" role="img" aria-labelledby="sqrt-proof-title sqrt-proof-desc">
+              <title id="sqrt-proof-title">A unit square whose diagonal has length square root of two</title>
+              <desc id="sqrt-proof-desc">A square with side lengths one has a diagonal labeled square root of two. An algebra trail shows that assuming the diagonal is a reduced fraction forces both numerator and denominator to be even.</desc>
+              <rect width="520" height="190" rx="12" fill="#0a1224"/>
+              <rect x="34" y="26" width="132" height="132" fill="#152746" stroke="#91a6c7" stroke-width="2"/>
+              <path d="M34 158L166 26" stroke="#ffb84d" stroke-width="4"/>
+              <text x="94" y="88" fill="#ffcf87" font-family="IBM Plex Mono, monospace" font-size="18" transform="rotate(-45 94 88)">√2</text>
+              <text x="100" y="179" fill="#91a6c7" font-family="IBM Plex Mono, monospace" font-size="14" text-anchor="middle">1</text>
+              <text x="18" y="96" fill="#91a6c7" font-family="IBM Plex Mono, monospace" font-size="14" text-anchor="middle">1</text>
+              <g font-family="IBM Plex Mono, monospace" font-size="16" text-anchor="middle">
+                <rect x="211" y="26" width="270" height="34" rx="7" fill="#192b4f"/><text x="346" y="49" fill="#fff">√2 = a/b  (lowest terms)</text>
+                <path d="M346 65v18" stroke="#59739e" stroke-width="2"/>
+                <rect x="211" y="84" width="270" height="34" rx="7" fill="#192b4f"/><text x="346" y="107" fill="#fff">a² = 2b²  →  a is even</text>
+                <path d="M346 123v18" stroke="#59739e" stroke-width="2"/>
+                <rect x="211" y="142" width="270" height="34" rx="7" fill="#3a1e30" stroke="#ff6b7a"/><text x="346" y="165" fill="#ffc0c7">then b is even too — contradiction</text>
+              </g>
+            </svg>
+            <ol class="num-proof-steps">
+              <li>Assume <span class="num-data">√2 = a/b</span>, where <span class="num-data">a/b</span> is already reduced to lowest terms.</li>
+              <li>Square both sides: <span class="num-data">a² = 2b²</span>. So <span class="num-data">a²</span> is even, which means <span class="num-data">a</span> is even.</li>
+              <li>Write <span class="num-data">a = 2k</span>. Substitution gives <span class="num-data">4k² = 2b²</span>, so <span class="num-data">b² = 2k²</span>. Therefore <span class="num-data">b</span> is even too.</li>
+              <li>If both are even, the fraction was not in lowest terms. That contradicts the starting assumption.</li>
+            </ol>
+            <div class="num-proof-conclusion"><strong>Therefore:</strong> √2 cannot equal a ratio of integers. It is irrational.</div>
+            <a class="num-proof-cite" href="https://openstax.org/books/prealgebra-2e/pages/7-1-rational-and-irrational-numbers" target="_blank" rel="noopener">Open textbook connection: OpenStax, Rational and Irrational Numbers ↗</a>
+          </div>
+        </details>
+
+        <details class="num-proof">
+          <summary>
+            <span class="num-proof-index">P3</span>
+            <span class="num-proof-title">Repeating decimals are rational<small>Shift, subtract, reveal the fraction</small></span>
+          </summary>
+          <div class="num-proof-body">
+            <svg class="num-proof-visual" viewBox="0 0 520 190" role="img" aria-labelledby="repeat-proof-title repeat-proof-desc">
+              <title id="repeat-proof-title">Converting repeating decimal 0.2727 to a fraction</title>
+              <desc id="repeat-proof-desc">The equation x equals 0.2727 repeating is multiplied by one hundred and subtracted from the original to leave 99x equals 27.</desc>
+              <rect width="520" height="190" rx="12" fill="#0a1224"/>
+              <g font-family="IBM Plex Mono, monospace" font-size="22">
+                <text x="54" y="49" fill="#91a6c7">x</text><text x="105" y="49" fill="#91a6c7">=</text><text x="154" y="49" fill="#fff">0.</text><text x="184" y="49" fill="#ffb84d">272727…</text>
+                <text x="27" y="91" fill="#91a6c7">100x</text><text x="105" y="91" fill="#91a6c7">=</text><text x="154" y="91" fill="#fff">27.</text><text x="196" y="91" fill="#ffb84d">272727…</text>
+                <path d="M34 110H390" stroke="#59739e" stroke-width="2"/>
+                <text x="42" y="141" fill="#50d5a0">99x</text><text x="105" y="141" fill="#91a6c7">=</text><text x="154" y="141" fill="#50d5a0">27</text>
+              </g>
+              <rect x="351" y="122" width="136" height="48" rx="9" fill="#123b36" stroke="#50d5a0"/>
+              <text x="419" y="152" fill="#dffbef" font-family="IBM Plex Mono, monospace" font-size="20" font-weight="700" text-anchor="middle">x = 3/11</text>
+            </svg>
+            <ol class="num-proof-steps">
+              <li>Let <span class="num-data">x = 0.272727…</span>. The repeating block has two digits.</li>
+              <li>Multiply by <span class="num-data">100</span> to shift one complete block: <span class="num-data">100x = 27.272727…</span>.</li>
+              <li>Subtract the original equation. The infinite tails match exactly and disappear: <span class="num-data">99x = 27</span>.</li>
+              <li>Divide: <span class="num-data">x = 27/99 = 3/11</span>.</li>
+            </ol>
+            <div class="num-proof-conclusion"><strong>Therefore:</strong> a repeating decimal can be written as a fraction, so it is rational. The same shift-and-subtract idea works for any repeating block.</div>
+            <a class="num-proof-cite" href="https://openstax.org/books/prealgebra-2e/pages/7-1-rational-and-irrational-numbers" target="_blank" rel="noopener">Open textbook source: OpenStax, Rational and Irrational Numbers ↗</a>
+          </div>
+        </details>
+
+        <details class="num-proof">
+          <summary>
+            <span class="num-proof-index">P4</span>
+            <span class="num-proof-title">Why the denominator cannot be zero<small>Division must undo multiplication</small></span>
+          </summary>
+          <div class="num-proof-body">
+            <svg class="num-proof-visual" viewBox="0 0 520 190" role="img" aria-labelledby="zero-proof-title zero-proof-desc">
+              <title id="zero-proof-title">Division by zero fails its multiplication check</title>
+              <desc id="zero-proof-desc">Ten divided by two gives five because two times five returns ten. Ten divided by zero has no answer because zero times any proposed answer remains zero. Zero divided by zero has too many possible answers.</desc>
+              <rect width="520" height="190" rx="12" fill="#0a1224"/>
+              <g font-family="IBM Plex Mono, monospace" text-anchor="middle">
+                <rect x="24" y="24" width="145" height="142" rx="12" fill="#123b36" stroke="#50d5a0"/>
+                <text x="96" y="59" fill="#88e9c1" font-size="15">10 ÷ 2 = 5</text>
+                <text x="96" y="97" fill="#fff" font-size="22">2 × 5 = 10</text>
+                <text x="96" y="135" fill="#88e9c1" font-size="13">one answer ✓</text>
+                <rect x="187" y="24" width="145" height="142" rx="12" fill="#3a1e30" stroke="#ff6b7a"/>
+                <text x="259" y="59" fill="#ffc0c7" font-size="15">10 ÷ 0 = ?</text>
+                <text x="259" y="97" fill="#fff" font-size="20">0 × ? = 10</text>
+                <text x="259" y="135" fill="#ffc0c7" font-size="13">no answer ✕</text>
+                <rect x="350" y="24" width="145" height="142" rx="12" fill="#3a2d18" stroke="#ffb84d"/>
+                <text x="422" y="59" fill="#ffcf87" font-size="15">0 ÷ 0 = ?</text>
+                <text x="422" y="97" fill="#fff" font-size="20">0 × ? = 0</text>
+                <text x="422" y="135" fill="#ffcf87" font-size="13">every answer ✕</text>
+              </g>
+            </svg>
+            <ol class="num-proof-steps">
+              <li><span class="num-data">a ÷ b = q</span> must mean <span class="num-data">b × q = a</span>. Multiplication checks the quotient.</li>
+              <li>For <span class="num-data">10 ÷ 0</span>, we would need a number <span class="num-data">q</span> with <span class="num-data">0 × q = 10</span>. No such number exists.</li>
+              <li>For <span class="num-data">0 ÷ 0</span>, every number passes because <span class="num-data">0 × q = 0</span> for all <span class="num-data">q</span>. Division requires one determined answer, not every answer.</li>
+            </ol>
+            <div class="num-proof-conclusion"><strong>Therefore:</strong> division by zero is undefined: nonzero ÷ 0 has no solution, while 0 ÷ 0 is indeterminate because it cannot select a unique solution.</div>
+            <a class="num-proof-cite" href="https://openstax.org/books/prealgebra/pages/4-1-visualize-fractions" target="_blank" rel="noopener">Open textbook connection: OpenStax, Visualize Fractions ↗</a>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- ── 6. Modular arithmetic ── -->
     <section class="num-card" style="--card-accent:#ff9500;">
-      <h2>🌀 Modular Arithmetic — Pattern Math</h2>
+      <h2>Modular Arithmetic — Pattern Math</h2>
       <p>Clock math is just the beginning. When a number wraps around a circle and gets multiplied again and again, modular arithmetic turns into geometry. The result is string art made from pure remainders.</p>
 
       <div class="num-callout orange">
@@ -2111,7 +2879,7 @@
     </section>
 
     <section class="num-card" style="--card-accent:#ff9500;">
-      <h2>🔎 The Infinite Zoom Number Line</h2>
+      <h2>The Infinite Zoom Number Line</h2>
       <p>Between 0 and 1 there is no “next” fraction. Zoom in and the line keeps revealing new rational waypoints: halves, quarters, eighths, sixteenths. Density is the point.</p>
 
       <div class="num-line-wrap">
@@ -2132,11 +2900,11 @@
       </div>
     </section>
 
-    <!-- ── 6. Division by zero ── -->
+    <!-- ── 8. Division by zero ── -->
     <section class="num-card" style="--card-accent:#ff3b30;">
-      <h2>💥 Why It All Matters: Division by Zero</h2>
+      <h2>Why Division by Zero Is Undefined</h2>
       <p>Every rule in mathematics exists for a reason — and nowhere is this clearer than the rule you've probably heard since primary school: <strong>you cannot divide by zero.</strong></p>
-      <p>Division asks: <em>"How many times does this number fit into that one?"</em> So <strong>10 ÷ 2 = 5</strong> means "2 fits into 10 exactly 5 times." Now ask: <em>how many times does <strong>0</strong> fit into 10?</em> Zero fits in infinitely many times — and infinity isn't a number, it's a concept. The question has no meaningful answer.</p>
+      <p>Division asks for the number that reverses a multiplication. So <strong>10 ÷ 2 = 5</strong> because <strong>2 × 5 = 10</strong>. But <strong>10 ÷ 0</strong> would require some answer <em>q</em> for which <strong>0 × q = 10</strong>. Every product with zero is zero, so that answer does not exist.</p>
 
       <h3>Watch What Happens</h3>
       <p>Drag the divisor toward zero. Watch the result grow without bound.</p>
@@ -2157,20 +2925,67 @@
       <div class="num-callout red" style="margin-top:0.8rem;">
         <span class="num-callout-icon">⚠️</span>
         <div class="num-callout-text">
-          <strong>If division by zero were allowed, all of mathematics would collapse.</strong> Since 0 × a = 0 × b = 0 for any a and b, dividing both sides by zero would "prove" that a = b for <em>all</em> numbers. We could "prove" 1 = 2, or that 5 = 1,000,000. Every equation would be meaningless.
+          <strong>Why cancellation stops at zero:</strong> Since 0 × a = 0 × b for any a and b, cancelling the zero would falsely imply that a = b for <em>all</em> numbers. The cancellation rule requires a nonzero factor; allowing zero would erase the information that distinguishes one number from another.
         </div>
       </div>
       <div class="num-callout blue">
-        <span class="num-callout-icon">⚓</span>
+        <span class="num-callout-icon">💻</span>
         <div class="num-callout-text">
-          <strong>Real-world cost:</strong> In 1997, the USS Yorktown — a US Navy cruiser — was dead in the water for nearly 3 hours because a crew member entered zero into a database field. A divide-by-zero error cascaded through the ship's software and crashed the entire propulsion control system.
+          <strong>Programming connection:</strong> Software checks a denominator before dividing. A safe program handles <span class="num-data">b === 0</span> as a separate case instead of inventing a quotient. That guard prevents invalid values from spreading through later calculations.
         </div>
       </div>
     </section>
 
-    <!-- ── 7. Practice ── -->
+    <!-- ── 9. Open textbook shelf ── -->
+    <section class="num-card num-source-shelf" aria-labelledby="num-source-title">
+      <span class="num-source-kicker">Read, inspect, reuse</span>
+      <h2 id="num-source-title">Open Textbook Shelf</h2>
+      <p>These free chapters support the definitions, visual models, and proofs in this lesson. Follow a cover to see the original diagrams, worked examples, exercises, author credits, and full license information.</p>
+
+      <div class="num-source-grid">
+        <a class="num-source-card" href="https://openstax.org/books/prealgebra-2e/pages/4-1-visualize-fractions" target="_blank" rel="noopener">
+          <span class="num-source-icon" aria-hidden="true">OPEN<br>STAX</span>
+          <span>
+            <span class="num-source-title">Visualize Fractions</span>
+            <span class="num-source-desc">Fraction circles, fraction bars, equivalent fractions, mixed numbers, and points on a number line.</span>
+            <span class="num-source-license">CC BY-NC-SA 4.0 · Prealgebra 2e</span>
+          </span>
+        </a>
+
+        <a class="num-source-card" href="https://openstax.org/books/prealgebra-2e/pages/7-1-rational-and-irrational-numbers" target="_blank" rel="noopener">
+          <span class="num-source-icon" aria-hidden="true">OPEN<br>STAX</span>
+          <span>
+            <span class="num-source-title">Rational &amp; Irrational Numbers</span>
+            <span class="num-source-desc">A full map of counting, whole, integer, rational, irrational, and real number families.</span>
+            <span class="num-source-license">CC BY-NC-SA 4.0 · Prealgebra 2e</span>
+          </span>
+        </a>
+
+        <a class="num-source-card" href="https://openstax.org/books/prealgebra-2e/pages/2-4-find-multiples-and-factors" target="_blank" rel="noopener">
+          <span class="num-source-icon" aria-hidden="true">OPEN<br>STAX</span>
+          <span>
+            <span class="num-source-title">Multiples, Factors &amp; Primes</span>
+            <span class="num-source-desc">Factor tables, divisibility tests, prime/composite visuals, and worked classification examples.</span>
+            <span class="num-source-license">CC BY-NC-SA 4.0 · Prealgebra 2e</span>
+          </span>
+        </a>
+
+        <a class="num-source-card" href="https://math.libretexts.org/Bookshelves/Combinatorics_and_Discrete_Mathematics/Elementary_Number_Theory_%28Raji%29/02%3A_Prime_Numbers/2.02%3A_The_Infinitude_of_Primes" target="_blank" rel="noopener">
+          <span class="num-source-icon" aria-hidden="true">LIBRE<br>TEXTS</span>
+          <span>
+            <span class="num-source-title">The Infinitude of Primes</span>
+            <span class="num-source-desc">An open number-theory text presenting Euclid’s argument that any finite list of primes misses one.</span>
+            <span class="num-source-license">Open textbook · license at source</span>
+          </span>
+        </a>
+      </div>
+
+      <p class="num-source-note"><strong>Attribution note:</strong> Proof wording and SVG diagrams on this page are original classroom reconstructions informed by the linked sources; they are not copied textbook figures. OpenStax attribution: Marecek, Anthony-Smith, and Mathis, <em>Prealgebra 2e</em>, OpenStax (2020). License details are published in the book’s <a href="https://openstax.org/books/prealgebra-2e/pages/preface" target="_blank" rel="noopener">preface</a>.</p>
+    </section>
+
+    <!-- ── 10. Practice ── -->
     <section class="num-card" style="--card-accent:#ff9500;">
-      <h2>✏️ Practice Problems</h2>
+      <h2>Practice Problems</h2>
       <div id="num-score-bar" class="num-score-bar">
         <span class="num-score-label">Score</span>
         <span id="num-score-val" class="num-score-val">0 / 5</span>

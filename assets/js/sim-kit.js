@@ -67,7 +67,7 @@
     var box = opts.box || canvas.parentElement;
     var maxDpr = opts.dpr === false || opts.dpr === 0 ? 0 : (opts.dpr || 2);
     var fixedHeight = opts.height;
-    var ctx = canvas.getContext('2d');
+    var ctx = canvas.getContext('2d', opts.contextAttributes || undefined);
     var width = 0;
     var height = 0;
 

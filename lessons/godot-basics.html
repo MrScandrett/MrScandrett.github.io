@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Godot Basics: Your First 3D Room · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="A beginner-friendly introduction to Godot 4. Learn the editor, nodes, scenes, signals, GDScript, input, collisions, and build a tiny controllable 3D room." />
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../assets/css/lessons/godot-basics.css" />
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="godot-topbar ll-topbar">
+      <div class="godot-topbar-inner">
+        <a href="godot-pathway.html">← Godot Pathway</a>
+        <span>Godot Basics · Lesson 5</span>
+        <a href="../class-downloads.html">Get Godot</a>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="godot-shell">
+          <section class="godot-hero">
+            <div class="hero-copy">
+              <p class="eyebrow">Game Design &amp; Development · 50–70 minutes · Grades 9–12</p>
+              <h1>Think in <span>scenes.</span><br />Build with nodes.</h1>
+              <p class="hero-lede">Godot is a free, open-source game engine. In this lesson, you will learn its visual language and build a tiny 3D room with a player you can move.</p>
+              <div class="hero-actions">
+                <a class="primary-action" href="#launch">Start the lesson</a>
+                <a class="secondary-action" href="../class-downloads.html">Download Godot 4</a>
+              </div>
+              <p class="hero-note"><strong>Finish line:</strong> a lit 3D room, a player with collisions, and four-direction movement.</p>
+            </div>
+
+            <div class="scene-blueprint" aria-label="Example Godot scene tree">
+              <div class="blueprint-bar"><span></span><span></span><span></span><b>main.tscn</b></div>
+              <div class="tree-line root-node" data-node="node3d"><i>3D</i><strong>Main</strong><small>Node3D</small></div>
+              <div class="tree-branch">
+                <button class="tree-line" type="button" data-node="player"><i>◆</i><strong>Player</strong><small>CharacterBody3D</small></button>
+                <div class="tree-branch">
+                  <button class="tree-line" type="button" data-node="mesh"><i>◫</i><strong>Mesh</strong><small>MeshInstance3D</small></button>
+                  <button class="tree-line" type="button" data-node="collision"><i>⬡</i><strong>Collision</strong><small>CollisionShape3D</small></button>
+                </div>
+                <button class="tree-line" type="button" data-node="floor"><i>▰</i><strong>Floor</strong><small>StaticBody3D</small></button>
+                <button class="tree-line" type="button" data-node="camera"><i>◉</i><strong>Camera</strong><small>Camera3D</small></button>
+                <button class="tree-line" type="button" data-node="light"><i>☀</i><strong>Sun</strong><small>DirectionalLight3D</small></button>
+              </div>
+              <p id="nodeReadout" aria-live="polite"><strong>Main:</strong> the root node that holds the whole room together.</p>
+            </div>
+          </section>
+
+          <nav class="lesson-track" aria-label="Lesson sections">
+            <a href="#launch"><b>01</b> Launch</a>
+            <a href="#editor"><b>02</b> Editor</a>
+            <a href="#model"><b>03</b> Mental model</a>
+            <a href="#build"><b>04</b> Build</a>
+            <a href="#script"><b>05</b> Script</a>
+            <a href="#play"><b>06</b> Play</a>
+            <a href="#check"><b>07</b> Check</a>
+          </nav>
+
+          <section class="lesson-section" id="launch">
+            <div class="section-label"><span>01</span><p>Launch</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Before you build</p>
+              <h2>Create a clean Godot 4 project.</h2>
+              <div class="step-grid three">
+                <article class="step-card"><span>1</span><h3>Open Godot</h3><p>Launch the editor, then choose <strong>Create</strong>.</p></article>
+                <article class="step-card"><span>2</span><h3>Name it</h3><p>Use <code>First3DRoom</code> and choose an easy-to-find folder.</p></article>
+                <article class="step-card"><span>3</span><h3>Choose Compatibility</h3><p>It works on more classroom computers and is required for a future web export.</p></article>
+              </div>
+              <div class="teacher-check"><strong>Checkpoint</strong><span>You should see an empty editor with <em>Scene</em> on the left, a 3D viewport in the center, <em>Inspector</em> on the right, and <em>FileSystem</em> at the bottom.</span></div>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="editor">
+            <div class="section-label"><span>02</span><p>Editor</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Four places, four jobs</p>
+              <h2>Read the editor like a workspace.</h2>
+              <div class="editor-map">
+                <button type="button" class="editor-zone scene-zone is-active" data-panel="scene"><b>Scene</b><small>What exists</small></button>
+                <button type="button" class="editor-zone viewport-zone" data-panel="viewport"><b>3D Viewport</b><small>Where it exists</small></button>
+                <button type="button" class="editor-zone inspector-zone" data-panel="inspector"><b>Inspector</b><small>How it behaves</small></button>
+                <button type="button" class="editor-zone filesystem-zone" data-panel="filesystem"><b>FileSystem</b><small>What is saved</small></button>
+              </div>
+              <div class="editor-explain" id="editorExplain" aria-live="polite"><strong>Scene dock</strong><span>A family tree of every node in the current scene. Parent-child relationships matter.</span></div>
+              <p class="micro-task"><strong>Try it:</strong> click each editor area above. Then say its job without looking.</p>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="model">
+            <div class="section-label"><span>03</span><p>Mental model</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Godot's grammar</p>
+              <h2>Nodes are parts. Scenes are reusable assemblies.</h2>
+              <div class="grammar-grid">
+                <article><div class="grammar-icon">●</div><h3>Node</h3><p>One object with one main job: camera, light, sound, shape, timer, or script.</p><code>Camera3D</code></article>
+                <article><div class="grammar-icon">⌘</div><h3>Scene</h3><p>A saved tree of nodes. A player, level, menu, or enemy can each be a scene.</p><code>player.tscn</code></article>
+                <article><div class="grammar-icon">↗</div><h3>Signal</h3><p>A message a node emits when something happens. Other nodes can listen and react.</p><code>button.pressed</code></article>
+                <article><div class="grammar-icon">{ }</div><h3>Script</h3><p>Instructions attached to a node. Godot's beginner-friendly language is GDScript.</p><code>player.gd</code></article>
+              </div>
+              <div class="analogy"><b>LEGO is close—but not perfect.</b><p>A node is like one specialized brick. A scene is a saved model. A script tells a brick how to act. A signal lets one part announce, “Something happened!”</p></div>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="build">
+            <div class="section-label"><span>04</span><p>Build</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Hands on</p>
+              <h2>Assemble your first 3D room.</h2>
+              <ol class="build-list">
+                <li><div><b>Create the root</b><p>Choose <strong>3D Scene</strong>. Rename the root <code>Main</code>, then save it as <code>main.tscn</code>.</p></div><span>Node3D</span></li>
+                <li><div><b>Add a floor</b><p>Add <strong>StaticBody3D</strong>. Give it a <strong>MeshInstance3D</strong> with a BoxMesh and a <strong>CollisionShape3D</strong> with a BoxShape3D. Scale it wide and flat.</p></div><span>Doesn't move</span></li>
+                <li><div><b>Add the player</b><p>Add <strong>CharacterBody3D</strong>, rename it <code>Player</code>, then add a MeshInstance3D and CollisionShape3D beneath it. Move Player above the floor.</p></div><span>Moves by code</span></li>
+                <li><div><b>Light the room</b><p>Add <strong>DirectionalLight3D</strong>. Rotate it until you can see shadows and shape.</p></div><span>Makes form visible</span></li>
+                <li><div><b>Frame the action</b><p>Add <strong>Camera3D</strong>. Move it back and up, angle it toward the room, and make sure <strong>Current</strong> is enabled.</p></div><span>What the player sees</span></li>
+              </ol>
+              <details class="rescue"><summary>Nothing appears when you press Play?</summary><ul><li>Confirm Camera3D is marked <strong>Current</strong>.</li><li>Check that the camera points toward the floor and player.</li><li>Make sure your MeshInstance3D nodes have an actual mesh assigned.</li><li>When asked for a main scene, choose <code>main.tscn</code>.</li></ul></details>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="script">
+            <div class="section-label"><span>05</span><p>Script</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Make it move</p>
+              <h2>Map intentions, then write movement.</h2>
+              <p>Open <strong>Project → Project Settings → Input Map</strong>. Add four actions and bind the keys shown. Action names keep your code readable and make gamepads easier to add later.</p>
+              <div class="input-map" aria-label="Input actions and keys">
+                <span><kbd>W</kbd><code>move_forward</code></span><span><kbd>S</kbd><code>move_back</code></span><span><kbd>A</kbd><code>move_left</code></span><span><kbd>D</kbd><code>move_right</code></span>
+              </div>
+              <p>Attach a new script named <code>player.gd</code> to the Player node. Replace its contents with:</p>
+              <div class="code-window">
+                <div class="code-title"><span>player.gd</span><button type="button" id="copyCode">Copy code</button></div>
+                <pre><code id="movementCode"><span class="kw">extends</span> CharacterBody3D
+
+<span class="kw">@export var</span> speed := <span class="num">5.0</span>
+
+<span class="kw">func</span> <span class="fn">_physics_process</span>(delta):
+    <span class="kw">var</span> input := Input.get_vector(
+        <span class="str">"move_left"</span>, <span class="str">"move_right"</span>,
+        <span class="str">"move_forward"</span>, <span class="str">"move_back"</span>
+    )
+    <span class="kw">var</span> direction := Vector3(input.x, <span class="num">0</span>, input.y)
+
+    velocity.x = direction.x * speed
+    velocity.z = direction.z * speed
+
+    <span class="kw">if not</span> is_on_floor():
+        velocity.y -= <span class="num">9.8</span> * delta
+
+    move_and_slide()</code></pre>
+              </div>
+              <div class="code-reading">
+                <button type="button" data-line="input" class="is-active">Input</button><button type="button" data-line="vector">Direction</button><button type="button" data-line="velocity">Velocity</button><button type="button" data-line="gravity">Gravity</button><button type="button" data-line="move">Move</button>
+                <p id="codeExplain"><strong>Input.get_vector()</strong> combines four named actions into one 2D direction. Pressing opposite keys cancels out.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="play">
+            <div class="section-label"><span>06</span><p>Play</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Test the idea here</p>
+              <h2>Use WASD to cross the room.</h2>
+              <div class="movement-lab">
+                <div class="lab-stage" id="labStage" tabindex="0" aria-label="Movement practice. Use W A S D or the arrow buttons to move the player to the goal.">
+                  <div class="grid-floor"></div><div class="lab-goal" aria-hidden="true">GOAL</div><div class="lab-player" id="labPlayer" aria-hidden="true"><span></span></div>
+                  <p id="labStatus" aria-live="polite">Click the room, then use WASD.</p>
+                </div>
+                <div class="lab-controls" aria-label="Movement controls"><span></span><button type="button" data-move="up">W</button><span></span><button type="button" data-move="left">A</button><button type="button" data-move="down">S</button><button type="button" data-move="right">D</button><button type="button" id="resetLab">Reset</button></div>
+              </div>
+              <div class="debug-grid">
+                <article><b>Player falls forever</b><p>The floor or player is missing a CollisionShape3D, or the shapes do not touch.</p></article>
+                <article><b>Keys do nothing</b><p>Check Input Map spelling. Action names must exactly match the strings in the script.</p></article>
+                <article><b>Player passes through floor</b><p>Make sure the floor's collision shape is a child of StaticBody3D.</p></article>
+                <article><b>Red error appears</b><p>Read the first red line in the Debugger. It usually points closest to the cause.</p></article>
+              </div>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="check">
+            <div class="section-label"><span>07</span><p>Check</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Exit ticket</p>
+              <h2>Can you think like Godot?</h2>
+              <div class="quiz" id="quiz">
+                <fieldset><legend>1. Which node should represent a player moved by your script?</legend><label><input type="radio" name="q1" value="wrong" /> StaticBody3D</label><label><input type="radio" name="q1" value="correct" /> CharacterBody3D</label><label><input type="radio" name="q1" value="wrong" /> DirectionalLight3D</label></fieldset>
+                <fieldset><legend>2. What is a scene?</legend><label><input type="radio" name="q2" value="wrong" /> Only a level</label><label><input type="radio" name="q2" value="correct" /> A saved tree of nodes</label><label><input type="radio" name="q2" value="wrong" /> A line of GDScript</label></fieldset>
+                <fieldset><legend>3. Why use Input Map actions?</legend><label><input type="radio" name="q3" value="correct" /> They separate intentions from specific keys</label><label><input type="radio" name="q3" value="wrong" /> They add lighting</label><label><input type="radio" name="q3" value="wrong" /> They create collision shapes</label></fieldset>
+                <button type="button" id="checkQuiz">Check my answers</button><p id="quizResult" aria-live="polite"></p>
+              </div>
+              <div class="teacher-check"><strong>Save point</strong><span>Duplicate the project folder as <code>SignalRun_01_Basics</code>. Open the copy once and verify the room, player movement, camera, lighting, and collisions still work.</span></div>
+              <div class="finish-line">
+                <div><p class="section-kicker">You now have the foundation</p><h3>Remix your room.</h3><p>Change the player mesh, add obstacles, adjust the speed, or turn the room into a tiny maze. Keep one change at a time, press Play, and observe.</p></div>
+                <div class="finish-actions"><button type="button" class="primary-action" id="completeIntro">Mark Lesson 1 complete</button><a href="godot-gdscript.html">Continue to GDScript →</a><a href="https://docs.godotengine.org/en/stable/getting_started/step_by_step/" target="_blank" rel="noreferrer noopener">Official guide ↗</a></div>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-label="Lesson guide" aria-hidden="false">
+        <div class="ll-panel-head"><div class="ll-tabs"><button class="ll-tab" aria-selected="true" data-pane="pane-guide">Guide</button><button class="ll-tab" aria-selected="false" data-pane="pane-vocab">Vocab</button></div><button class="ll-panel-close" aria-label="Close guide panel">&#x2715;</button></div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="pane-guide">
+            <p class="ll-pane-title">Learning goals</p><ul class="ll-guide-list"><li>Navigate the four main editor areas</li><li>Explain nodes, scenes, scripts, and signals</li><li>Build a lit 3D scene with collisions</li><li>Create named input actions</li><li>Move a CharacterBody3D with GDScript</li></ul>
+            <p class="ll-pane-title panel-gap">Materials</p><ul class="ll-guide-list"><li>Godot 4 editor</li><li>Keyboard and mouse</li><li>No account required</li></ul>
+            <p class="ll-pane-title panel-gap">Save habit</p><p class="panel-copy">Press <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>S</kbd> after every successful change.</p>
+          </div>
+          <div class="ll-pane" id="pane-vocab">
+            <p class="ll-pane-title">Key vocabulary</p><dl class="vocab-list"><dt>Node</dt><dd>One object with one main job.</dd><dt>Scene</dt><dd>A saved tree of nodes that can be reused.</dd><dt>Root</dt><dd>The top node in a scene.</dd><dt>Child</dt><dd>A node nested beneath another node.</dd><dt>Instance</dt><dd>A reusable copy of a saved scene.</dd><dt>Signal</dt><dd>A message emitted when an event happens.</dd><dt>GDScript</dt><dd>Godot's built-in scripting language.</dd><dt>Collision shape</dt><dd>An invisible boundary used by physics.</dd></dl>
+          </div>
+        </div>
+      </aside>
+      <button class="ll-open-btn" aria-label="Open lesson guide" aria-expanded="true">&#x22EE;</button>
+    </div>
+  </div>
+
+  <script src="../assets/js/lessons/godot-basics.js"></script>
+  <script src="../assets/js/reveal.js"></script>
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script src="../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

@@ -257,12 +257,42 @@
       min-height: 360px;
       border-radius: 24px;
       background:
-        radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.6), transparent 40%),
-        linear-gradient(180deg, rgba(19, 72, 42, 0.08), rgba(19, 72, 42, 0.03));
+        radial-gradient(circle at 28% 24%, rgba(173, 255, 221, 0.2), transparent 24%),
+        radial-gradient(circle at 66% 58%, rgba(19, 110, 105, 0.32), transparent 42%),
+        linear-gradient(145deg, #082e35 0%, #0b4647 48%, #071f2b 100%);
       position: relative;
       overflow: hidden;
       isolation: isolate;
       padding: 0.6rem;
+      box-shadow:
+        inset 0 0 0 1px rgba(220, 255, 239, 0.16),
+        inset 0 0 68px rgba(0, 10, 18, 0.56),
+        0 16px 35px rgba(7, 47, 49, 0.16);
+    }
+
+    .cell-visual::before,
+    .cell-visual::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .cell-visual::before {
+      z-index: 1;
+      opacity: 0.42;
+      background:
+        radial-gradient(circle at 16% 76%, rgba(163, 235, 190, 0.22) 0 1px, transparent 2px),
+        radial-gradient(circle at 72% 17%, rgba(202, 255, 226, 0.18) 0 1px, transparent 2px),
+        radial-gradient(circle at 83% 67%, rgba(140, 231, 202, 0.14) 0 1.5px, transparent 2.5px);
+      background-size: 29px 31px, 43px 47px, 61px 59px;
+      mix-blend-mode: screen;
+    }
+
+    .cell-visual::after {
+      z-index: 3;
+      border-radius: inherit;
+      box-shadow: inset 0 0 62px 20px rgba(0, 12, 20, 0.4);
     }
 
     .cell-diagram {
@@ -273,7 +303,8 @@
       opacity: 0;
       transform: scale(0.97);
       pointer-events: none;
-      transition: opacity 0.35s ease, transform 0.35s ease;
+      transition: opacity 0.45s ease, transform 0.45s cubic-bezier(.2,.8,.2,1);
+      z-index: 2;
     }
 
     .cell-diagram.is-active {
@@ -282,14 +313,24 @@
       pointer-events: auto;
     }
 
+    .focus-panel .cell-diagram.is-active,
+    .morph-stage .cell-diagram.is-active {
+      animation: cell-drift 7s ease-in-out infinite;
+    }
+
+    @keyframes cell-drift {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(0, -3px, 0) scale(1.008); }
+    }
+
     .cell-diagram text {
       font-family: var(--font-sans, sans-serif);
       font-size: 10px;
       font-weight: 700;
-      fill: #1c4430;
+      fill: #eafff2;
       paint-order: stroke;
-      stroke: rgba(255, 255, 255, 0.85);
-      stroke-width: 3px;
+      stroke: rgba(3, 35, 39, 0.9);
+      stroke-width: 3.5px;
       stroke-linejoin: round;
     }
 
@@ -307,35 +348,35 @@
     }
 
     /* bacterial cell */
-    .bacteria-wall { fill: rgba(64, 168, 110, 0.92); stroke: rgba(24, 96, 58, 0.85); stroke-width: 5; }
-    .bacteria-membrane { fill: rgba(198, 240, 214, 0.85); stroke: rgba(38, 120, 74, 0.5); stroke-width: 2; }
-    .bacteria-flagellum { stroke: rgba(38, 120, 74, 0.78); stroke-width: 5; stroke-linecap: round; fill: none; }
-    .bacteria-pilus { stroke: rgba(38, 120, 74, 0.55); stroke-width: 2.5; stroke-linecap: round; }
-    .bacteria-nucleoid { fill: rgba(241, 188, 74, 0.88); stroke: rgba(158, 108, 20, 0.55); stroke-width: 2; }
-    .bacteria-plasmid { stroke: rgba(158, 108, 20, 0.75); stroke-width: 3; fill: none; }
-    .bacteria-ribosomes circle { fill: rgba(93, 63, 140, 0.78); }
+    .bacteria-wall { fill: url(#bacteria-shell); stroke: rgba(167, 255, 190, 0.76); stroke-width: 5; filter: url(#cell-soft-depth); }
+    .bacteria-membrane { fill: url(#bacteria-cytoplasm); stroke: rgba(219, 255, 221, 0.5); stroke-width: 2; }
+    .bacteria-flagellum { stroke: url(#flagellum-line); stroke-width: 5; stroke-linecap: round; fill: none; filter: url(#cell-glow); }
+    .bacteria-pilus { stroke: rgba(191, 255, 207, 0.7); stroke-width: 2.5; stroke-linecap: round; }
+    .bacteria-nucleoid { fill: url(#dna-mass); stroke: rgba(255, 220, 121, 0.72); stroke-width: 2; filter: url(#cell-soft-depth); }
+    .bacteria-plasmid { stroke: #ffd276; stroke-width: 3; fill: none; filter: url(#cell-glow); }
+    .bacteria-ribosomes circle { fill: #ddbdff; filter: url(#cell-glow); }
 
     /* animal cell */
-    .animal-membrane { fill: rgba(158, 224, 196, 0.5); stroke: rgba(45, 140, 100, 0.55); stroke-width: 3; }
-    .nucleus-envelope-outer { fill: rgba(255, 224, 150, 0.35); stroke: rgba(158, 108, 20, 0.55); stroke-width: 3; }
-    .nucleus-envelope-inner { fill: rgba(255, 247, 214, 0.92); stroke: rgba(158, 108, 20, 0.32); stroke-width: 1.5; stroke-dasharray: 2 3; }
-    .nucleolus { fill: rgba(190, 120, 20, 0.8); }
-    .mito-body { fill: rgba(226, 120, 96, 0.88); stroke: rgba(150, 60, 40, 0.6); stroke-width: 2; }
-    .mito-crista { fill: none; stroke: rgba(150, 60, 40, 0.55); stroke-width: 2; }
-    .er-membrane { stroke: rgba(90, 130, 200, 0.65); stroke-width: 2.5; fill: none; }
-    .golgi-stack { fill: none; stroke: rgba(210, 150, 60, 0.75); stroke-width: 3; stroke-linecap: round; }
-    .golgi-vesicle { fill: rgba(210, 150, 60, 0.6); }
-    .lysosome { fill: rgba(210, 90, 130, 0.65); }
+    .animal-membrane { fill: url(#animal-cytoplasm); stroke: rgba(165, 255, 225, 0.68); stroke-width: 3; filter: url(#cell-organic-depth); }
+    .nucleus-envelope-outer { fill: url(#nucleus-halo); stroke: rgba(255, 220, 137, 0.7); stroke-width: 3; filter: url(#cell-soft-depth); }
+    .nucleus-envelope-inner { fill: url(#nucleus-core); stroke: rgba(255, 236, 180, 0.52); stroke-width: 1.5; stroke-dasharray: 2 3; }
+    .nucleolus { fill: url(#nucleolus-core); filter: url(#cell-glow); }
+    .mito-body { fill: url(#mitochondrion-body); stroke: rgba(255, 160, 129, 0.68); stroke-width: 2; filter: url(#cell-soft-depth); }
+    .mito-crista { fill: none; stroke: rgba(110, 30, 36, 0.7); stroke-width: 2; }
+    .er-membrane { stroke: rgba(164, 196, 255, 0.82); stroke-width: 2.5; fill: none; filter: url(#cell-glow); }
+    .golgi-stack { fill: none; stroke: rgba(255, 205, 103, 0.86); stroke-width: 3; stroke-linecap: round; filter: url(#cell-glow); }
+    .golgi-vesicle { fill: #ffd574; filter: url(#cell-glow); }
+    .lysosome { fill: url(#lysosome-core); filter: url(#cell-soft-depth); }
     .centriole { stroke: rgba(90, 90, 90, 0.6); stroke-width: 3; }
 
     /* plant cell */
-    .plant-wall-shape { fill: rgba(150, 205, 110, 0.35); stroke: rgba(60, 120, 40, 0.8); stroke-width: 6; }
-    .plant-membrane { fill: rgba(210, 240, 190, 0.4); stroke: rgba(60, 120, 40, 0.35); stroke-width: 2; }
-    .vacuole-shape { fill: rgba(160, 215, 235, 0.5); stroke: rgba(70, 150, 180, 0.55); stroke-width: 2.5; }
-    .chloroplast-shape { fill: rgba(90, 165, 80, 0.88); stroke: rgba(40, 100, 40, 0.6); stroke-width: 2; }
-    .thylakoid { stroke: rgba(30, 80, 30, 0.55); stroke-width: 1.4; }
+    .plant-wall-shape { fill: url(#plant-cytoplasm); stroke: url(#plant-wall-line); stroke-width: 7; filter: url(#cell-organic-depth); }
+    .plant-membrane { fill: rgba(185, 236, 151, 0.24); stroke: rgba(207, 255, 168, 0.58); stroke-width: 2; }
+    .vacuole-shape { fill: url(#vacuole-core); stroke: rgba(157, 231, 246, 0.68); stroke-width: 2.5; filter: url(#cell-soft-depth); }
+    .chloroplast-shape { fill: url(#chloroplast-body); stroke: rgba(168, 255, 118, 0.66); stroke-width: 2; filter: url(#cell-soft-depth); }
+    .thylakoid { stroke: rgba(23, 77, 27, 0.78); stroke-width: 1.4; }
 
-    .ribosome-dot { fill: rgba(93, 63, 140, 0.72); }
+    .ribosome-dot { fill: #d9b7ff; filter: url(#cell-glow); }
 
     .cell-focus-ring {
       position: absolute;
@@ -531,9 +572,9 @@
       overflow: hidden;
       border: 1px solid rgba(26, 127, 75, 0.13);
       background:
-        radial-gradient(circle at 50% 44%, rgba(255, 255, 255, 0.94) 0 31%, rgba(218, 237, 222, 0.84) 32% 33%, transparent 34%),
-        linear-gradient(155deg, rgba(20, 88, 47, 0.1), rgba(20, 88, 47, 0.02));
-      box-shadow: inset 0 0 0 12px rgba(255, 255, 255, 0.38);
+        radial-gradient(circle at 50% 44%, #d9f0cc 0 31%, #839d84 32% 33%, transparent 34%),
+        linear-gradient(145deg, #132b2c, #081a20);
+      box-shadow: inset 0 0 0 12px rgba(4, 28, 29, 0.42), 0 18px 40px rgba(8, 35, 34, 0.18);
       isolation: isolate;
     }
 
@@ -554,9 +595,10 @@
       border-radius: 50%;
       overflow: hidden;
       background:
-        radial-gradient(circle at 28% 24%, rgba(255, 255, 255, 0.72), transparent 16%),
-        radial-gradient(circle at 70% 70%, rgba(142, 216, 168, 0.36), transparent 22%),
-        rgba(232, 247, 235, 0.9);
+        radial-gradient(circle at 28% 24%, rgba(255, 255, 225, 0.72), transparent 16%),
+        radial-gradient(circle at 70% 70%, rgba(68, 143, 97, 0.34), transparent 25%),
+        radial-gradient(circle at center, #dceab7, #9ab987 68%, #577666 100%);
+      box-shadow: inset 0 0 52px rgba(21, 58, 47, 0.42);
     }
 
     .specimen-diagram {
@@ -574,15 +616,15 @@
       transform: scale(1);
     }
 
-    .specimen-wall { fill: rgba(190, 230, 160, 0.5); stroke: rgba(45, 110, 35, 0.78); stroke-width: 3; }
-    .specimen-nucleus { fill: rgba(255, 224, 150, 0.9); stroke: rgba(158, 108, 20, 0.55); stroke-width: 1.5; }
-    .specimen-nucleolus { fill: rgba(190, 120, 20, 0.85); }
-    .specimen-chloroplast { fill: rgba(90, 165, 80, 0.88); stroke: rgba(40, 100, 40, 0.6); stroke-width: 1.4; }
+    .specimen-wall { fill: url(#specimen-tissue); stroke: rgba(57, 104, 35, 0.72); stroke-width: 3; filter: url(#specimen-wobble); }
+    .specimen-nucleus { fill: url(#specimen-nucleus-core); stroke: rgba(112, 75, 42, 0.6); stroke-width: 1.5; filter: url(#cell-soft-depth); }
+    .specimen-nucleolus { fill: #87512f; }
+    .specimen-chloroplast { fill: url(#chloroplast-body); stroke: rgba(36, 90, 30, 0.66); stroke-width: 1.4; filter: url(#cell-soft-depth); }
     .specimen-thylakoid { stroke: rgba(30, 80, 30, 0.55); stroke-width: 1; }
-    .specimen-blob { fill: rgba(150, 220, 200, 0.42); stroke: rgba(40, 140, 105, 0.55); stroke-width: 2.5; }
-    .specimen-rod { fill: rgba(77, 186, 135, 0.78); stroke: rgba(25, 126, 79, 0.55); stroke-width: 1.5; }
-    .specimen-coccus { fill: rgba(93, 170, 130, 0.82); stroke: rgba(25, 126, 79, 0.5); stroke-width: 1.2; }
-    .specimen-hair { fill: rgba(190, 230, 160, 0.45); stroke: rgba(45, 110, 35, 0.65); stroke-width: 2.5; }
+    .specimen-blob { fill: url(#specimen-animal); stroke: rgba(60, 124, 100, 0.55); stroke-width: 2.5; filter: url(#specimen-wobble); }
+    .specimen-rod { fill: url(#bacteria-shell); stroke: rgba(29, 104, 68, 0.62); stroke-width: 1.5; filter: url(#cell-soft-depth); }
+    .specimen-coccus { fill: url(#bacteria-shell); stroke: rgba(29, 104, 68, 0.58); stroke-width: 1.2; filter: url(#cell-soft-depth); }
+    .specimen-hair { fill: url(#specimen-tissue); stroke: rgba(45, 110, 35, 0.65); stroke-width: 2.5; filter: url(#specimen-wobble); }
 
     .specimen-diagram text {
       font-family: var(--font-sans, sans-serif);
@@ -851,11 +893,13 @@
       min-height: 220px;
     }
 
-    .neuron-soma { fill: rgba(158, 224, 196, 0.6); stroke: rgba(45, 140, 100, 0.6); stroke-width: 3; }
-    .neuron-fiber { stroke: rgba(45, 140, 100, 0.7); stroke-width: 3; stroke-linecap: round; fill: none; }
-    .neuron-axon { stroke: rgba(45, 140, 100, 0.7); stroke-width: 4; stroke-linecap: round; fill: none; }
-    .myelin { fill: rgba(230, 240, 250, 0.85); stroke: rgba(90, 130, 200, 0.55); stroke-width: 1.5; }
+    .neuron-soma { fill: url(#animal-cytoplasm); stroke: rgba(165, 255, 225, 0.68); stroke-width: 3; filter: url(#cell-organic-depth); }
+    .neuron-fiber { stroke: url(#neuron-line); stroke-width: 3; stroke-linecap: round; fill: none; filter: url(#cell-glow); }
+    .neuron-axon { stroke: url(#neuron-line); stroke-width: 4; stroke-linecap: round; fill: none; filter: url(#cell-glow); }
+    .myelin { fill: url(#myelin-core); stroke: rgba(174, 201, 255, 0.65); stroke-width: 1.5; filter: url(#cell-soft-depth); }
     .rbc-body { stroke: rgba(122, 31, 24, 0.85); stroke-width: 3; }
+    .rbc-depression { fill: url(#rbcDepression); opacity: 0.92; }
+    .rbc-highlight { fill: none; stroke: rgba(255, 218, 195, 0.46); stroke-width: 9; stroke-linecap: round; filter: url(#cell-glow); }
 
     .morph-copy {
       display: grid;
@@ -909,6 +953,13 @@
       font-size: 0.82rem;
     }
 
+    @media (prefers-reduced-motion: reduce) {
+      .focus-panel .cell-diagram.is-active,
+      .morph-stage .cell-diagram.is-active {
+        animation: none;
+      }
+    }
+
     @media (max-width: 980px) {
       .cells-grid--2,
       .focus-top,
@@ -960,6 +1011,49 @@
 </head>
 <body class="cells-page theme-liquid-woodland theme-steam">
 <a class="skip-link" href="#main-content">Skip to content</a>
+<svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute;overflow:hidden">
+  <defs>
+    <linearGradient id="bacteria-shell" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d8ff9d"/><stop offset="0.35" stop-color="#5fd48c"/><stop offset="0.72" stop-color="#179a74"/><stop offset="1" stop-color="#096456"/>
+    </linearGradient>
+    <radialGradient id="bacteria-cytoplasm" cx="34%" cy="25%" r="78%">
+      <stop offset="0" stop-color="#f2ffd5" stop-opacity=".95"/><stop offset=".42" stop-color="#b5e58a" stop-opacity=".84"/><stop offset="1" stop-color="#4dbf86" stop-opacity=".72"/>
+    </radialGradient>
+    <linearGradient id="flagellum-line" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#d8ff9d"/><stop offset="1" stop-color="#4bcea0"/></linearGradient>
+    <radialGradient id="dna-mass" cx="38%" cy="30%" r="70%"><stop stop-color="#fff8bc"/><stop offset=".5" stop-color="#ffc85b"/><stop offset="1" stop-color="#d97a2e"/></radialGradient>
+    <radialGradient id="animal-cytoplasm" cx="35%" cy="26%" r="78%">
+      <stop offset="0" stop-color="#dcfff2" stop-opacity=".83"/><stop offset=".34" stop-color="#79d8bb" stop-opacity=".62"/><stop offset=".75" stop-color="#19908a" stop-opacity=".5"/><stop offset="1" stop-color="#0d5c69" stop-opacity=".72"/>
+    </radialGradient>
+    <radialGradient id="nucleus-halo" cx="34%" cy="28%" r="72%"><stop stop-color="#fff7c8" stop-opacity=".8"/><stop offset=".52" stop-color="#e5a75c" stop-opacity=".55"/><stop offset="1" stop-color="#9b593b" stop-opacity=".72"/></radialGradient>
+    <radialGradient id="nucleus-core" cx="32%" cy="26%" r="75%"><stop stop-color="#fff9d9"/><stop offset=".55" stop-color="#f4d483"/><stop offset="1" stop-color="#c98d54"/></radialGradient>
+    <radialGradient id="nucleolus-core" cx="32%" cy="25%" r="70%"><stop stop-color="#ffd67e"/><stop offset=".42" stop-color="#cb7138"/><stop offset="1" stop-color="#7c302e"/></radialGradient>
+    <linearGradient id="mitochondrion-body" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffc68b"/><stop offset=".45" stop-color="#f06f63"/><stop offset="1" stop-color="#9f3141"/></linearGradient>
+    <radialGradient id="lysosome-core" cx="32%" cy="28%" r="72%"><stop stop-color="#ffc5ef"/><stop offset=".5" stop-color="#d95eaa"/><stop offset="1" stop-color="#783a85"/></radialGradient>
+    <linearGradient id="plant-wall-line" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#dfff8e"/><stop offset=".5" stop-color="#6cb54d"/><stop offset="1" stop-color="#2f713b"/></linearGradient>
+    <radialGradient id="plant-cytoplasm" cx="28%" cy="22%" r="86%"><stop stop-color="#efffba" stop-opacity=".65"/><stop offset=".42" stop-color="#85cc69" stop-opacity=".44"/><stop offset="1" stop-color="#226c55" stop-opacity=".68"/></radialGradient>
+    <radialGradient id="vacuole-core" cx="35%" cy="25%" r="78%"><stop stop-color="#e8ffff" stop-opacity=".88"/><stop offset=".5" stop-color="#8edbe5" stop-opacity=".58"/><stop offset="1" stop-color="#2885a2" stop-opacity=".48"/></radialGradient>
+    <linearGradient id="chloroplast-body" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d7ff73"/><stop offset=".42" stop-color="#70c94c"/><stop offset="1" stop-color="#237044"/></linearGradient>
+    <radialGradient id="specimen-tissue" cx="32%" cy="28%" r="78%"><stop stop-color="#e8f5b4" stop-opacity=".7"/><stop offset=".6" stop-color="#8ec069" stop-opacity=".48"/><stop offset="1" stop-color="#4a8052" stop-opacity=".58"/></radialGradient>
+    <radialGradient id="specimen-animal" cx="34%" cy="26%" r="78%"><stop stop-color="#f2ffcf" stop-opacity=".72"/><stop offset=".58" stop-color="#88cfad" stop-opacity=".5"/><stop offset="1" stop-color="#368878" stop-opacity=".6"/></radialGradient>
+    <radialGradient id="specimen-nucleus-core" cx="30%" cy="26%" r="74%"><stop stop-color="#fff4ae"/><stop offset=".5" stop-color="#d6a060"/><stop offset="1" stop-color="#885a49"/></radialGradient>
+    <linearGradient id="neuron-line" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#8cf0cc"/><stop offset="1" stop-color="#42a9b7"/></linearGradient>
+    <radialGradient id="myelin-core" cx="35%" cy="24%" r="75%"><stop stop-color="#ffffff"/><stop offset=".55" stop-color="#c9def4"/><stop offset="1" stop-color="#789bc5"/></radialGradient>
+    <filter id="cell-soft-depth" x="-35%" y="-35%" width="170%" height="170%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#001a20" flood-opacity=".45"/>
+      <feDropShadow dx="-2" dy="-2" stdDeviation="2" flood-color="#eaffdf" flood-opacity=".25"/>
+    </filter>
+    <filter id="cell-organic-depth" x="-25%" y="-25%" width="150%" height="150%">
+      <feTurbulence type="fractalNoise" baseFrequency=".009 .018" numOctaves="2" seed="8" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G" result="wobble"/>
+      <feDropShadow in="wobble" dx="0" dy="8" stdDeviation="7" flood-color="#00141e" flood-opacity=".48"/>
+    </filter>
+    <filter id="specimen-wobble" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency=".018" numOctaves="2" seed="4" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="cell-glow" x="-80%" y="-80%" width="260%" height="260%"><feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="#d8fff0" flood-opacity=".52"/></filter>
+  </defs>
+</svg>
 <div class="ll-viewport">
   <header class="site-header">
     <div class="nav-wrap">
@@ -1328,8 +1422,17 @@
                         <stop offset="70%" stop-color="#c23f34"/>
                         <stop offset="100%" stop-color="#9c2a22"/>
                       </radialGradient>
+                      <radialGradient id="rbcDepression" cx="48%" cy="42%" r="62%">
+                        <stop offset="0" stop-color="#7f211f" stop-opacity=".9"/>
+                        <stop offset=".5" stop-color="#b93d35" stop-opacity=".68"/>
+                        <stop offset="1" stop-color="#ef7965" stop-opacity="0"/>
+                      </radialGradient>
                     </defs>
-                    <ellipse cx="200" cy="130" rx="120" ry="85" fill="url(#rbcGradient)" class="rbc-body"/>
+                    <g filter="url(#cell-organic-depth)">
+                      <ellipse cx="200" cy="130" rx="120" ry="85" fill="url(#rbcGradient)" class="rbc-body"/>
+                      <ellipse class="rbc-depression" cx="200" cy="130" rx="68" ry="42"/>
+                      <path class="rbc-highlight" d="M112 100 C142 48 246 38 293 91"/>
+                    </g>
                   </svg>
                 </div>
                 <div class="morph-copy">

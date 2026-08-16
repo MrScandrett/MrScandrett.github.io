@@ -35,9 +35,20 @@
     [data-theme="bark"] .pw-card p { color:rgba(245,245,247,0.72); }
     .pw-callout { border-radius:12px;padding:0.85rem 1rem;margin:0.8rem 0;font-size:0.84rem;line-height:1.6; }
     .pw-callout.green { background:rgba(48,209,88,0.1);border-left:3px solid #30d158; }
-    .pw-canvas-wrap { border:1px solid var(--line,#d2d2d7);border-radius:14px;overflow:hidden;margin:0.8rem 0;background:#050510;cursor:crosshair; }
-    #pw-canvas { width:100%;height:280px;display:block; }
-    .pw-readouts { display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin:0.6rem 0; }
+    .pw-canvas-wrap { border:1px solid var(--line,#d2d2d7);border-radius:14px 14px 0 0;overflow:hidden;margin:0.8rem 0 0;background:#050510;cursor:crosshair;position:relative; }
+    .pw-canvas-wrap:focus-visible { outline:2px solid #30d158;outline-offset:-2px; }
+    #pw-canvas { width:100%;height:280px;display:block;touch-action:none; }
+    .pw-graph-wrap { border:1px solid var(--line,#d2d2d7);border-top:none;border-radius:0 0 14px 14px;overflow:hidden;background:#0a0a18;margin:0 0 0.8rem; }
+    #pw-graph { width:100%;height:74px;display:block; }
+    .pw-sim-toolbar { display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;margin:0 0 0; }
+    .pw-sim-btn { background:rgba(48,209,88,0.12);color:#248a3d;border:1px solid rgba(48,209,88,0.35);border-radius:8px;padding:0.35rem 0.75rem;font-size:0.8rem;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem; }
+    .pw-sim-btn:hover { background:rgba(48,209,88,0.2); }
+    .pw-sim-btn:disabled { opacity:0.5;cursor:not-allowed; }
+    [data-lighting="night"] .pw-sim-btn,
+    [data-theme="vaporwave"] .pw-sim-btn,
+    [data-theme="bark"] .pw-sim-btn { color:#5ee889; }
+    .pw-sim-hint { font-size:0.72rem;color: var(--text-muted, #64748b);margin-left:auto; }
+    .pw-readouts { display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin:0.9rem 0 0.6rem; }
     .pw-readout { background:rgba(0,0,0,0.04);border:1px solid var(--line,#d2d2d7);border-radius:10px;padding:0.55rem 0.7rem;text-align:center; }
     [data-lighting="night"] .pw-readout,
     [data-theme="vaporwave"] .pw-readout,
@@ -115,16 +126,23 @@
 
         <section class="pw-card" style="--card-accent:#30d158;">
           <h2>Simulator</h2>
-          <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Click anywhere on the canvas to add a wave source (up to 3). Watch the circular wavefronts spread and interfere. Use the panel to adjust frequency and speed.</p>
-          <div class="pw-canvas-wrap">
-            <canvas id="pw-canvas" aria-label="Point wave simulation with circular spreading wavefronts"></canvas>
+          <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Click anywhere on the canvas to add a wave source (up to 3), or drag a source to move it. Watch the circular wavefronts spread and interfere — the strip below graphs the resultant amplitude along the dashed line. Use the panel to adjust frequency and speed.</p>
+          <div class="pw-canvas-wrap" id="pw-canvas-wrap" tabindex="0" role="application" aria-label="Point wave simulation with circular spreading wavefronts. Press Enter to add a source at the crosshair, Backspace to remove the last source.">
+            <canvas id="pw-canvas"></canvas>
+          </div>
+          <div class="pw-graph-wrap">
+            <canvas id="pw-graph" role="img" aria-label="Line graph of resultant wave amplitude along the dashed horizontal line through the canvas"></canvas>
+          </div>
+          <div class="pw-sim-toolbar">
+            <button type="button" class="pw-sim-btn" id="pw-pause-btn" aria-pressed="false">⏸ Pause</button>
+            <button type="button" class="pw-sim-btn" id="pw-clear-btn">↺ Clear sources</button>
+            <span class="pw-sim-hint" id="pw-hint-text">Click to add · drag to move · click a source to remove</span>
           </div>
           <div class="pw-readouts">
             <div class="pw-readout"><span class="pw-readout-label">Sources</span><span class="pw-readout-val" id="pw-r-src">1</span></div>
             <div class="pw-readout"><span class="pw-readout-label">Frequency</span><span class="pw-readout-val" id="pw-r-freq">1.0 Hz</span></div>
             <div class="pw-readout"><span class="pw-readout-label">Wavelength</span><span class="pw-readout-val" id="pw-r-wl">—</span></div>
           </div>
-          <p style="font-size:0.78rem;color: var(--text-muted, #64748b);margin:0;">Click canvas to add source. Click existing source to remove it.</p>
         </section>
 
         <section class="pw-card" style="--card-accent:#34c759;">
@@ -245,50 +263,59 @@
 </div>
 
 <script src="../assets/js/nav-mobile.js"></script>
+<script src="../assets/js/sim-kit.js"></script>
 <script>
 (function () {
-  const canvas = document.getElementById('pw-canvas');
-  const ctx    = canvas.getContext('2d');
-  let t = 0, sources = [];
+  const canvasWrap = document.getElementById('pw-canvas-wrap');
+  const canvas  = document.getElementById('pw-canvas');
+  const graphEl = document.getElementById('pw-graph');
+  const pauseBtn = document.getElementById('pw-pause-btn');
+  const clearBtn = document.getElementById('pw-clear-btn');
+
+  const main  = SimKit.canvas2d(canvas,  { box: canvasWrap, height: 280, dpr: false, contextAttributes: { willReadFrequently: true } });
+  const graph = SimKit.canvas2d(graphEl, { box: canvasWrap, height: 74,  dpr: false });
+  const ctx = main.ctx, gctx = graph.ctx;
+
+  let t = 0, paused = false;
+  let sources = [{ x: 0.5, y: 0.5 }]; // fractional coords so they survive resize
+  let dragIdx = -1, dragMoved = false, lastPointer = { x: 0.5, y: 0.5 };
 
   function getF() { return parseInt(document.getElementById('pw-f-slider').value) * 0.5; }
   function getV() { return parseInt(document.getElementById('pw-v-slider').value); }
   function decay(){ return document.getElementById('pw-decay').checked; }
 
-  function draw() {
-    const W = canvas.offsetWidth || 600;
-    canvas.width = W; canvas.height = 280;
-    const H = 280;
-    const f = getF(), v = getV();
-    const wl = v / f * 18; // pixels per wavelength (scaled)
+  function amplitudeAt(px, py, wl, f) {
+    let amp = 0;
+    sources.forEach(s => {
+      const dx = px - s.x * main.width, dy = py - s.y * main.height;
+      const r = Math.sqrt(dx*dx + dy*dy) || 0.1;
+      const phase = (2 * Math.PI * r / wl) - t * f * 0.12;
+      amp += decay() ? Math.sin(phase) / Math.sqrt(r / 30 + 1) : Math.sin(phase) * 0.7;
+    });
+    return amp;
+  }
 
-    if (sources.length === 0) {
-      sources = [{ x: W/2, y: H/2 }];
-    }
+  function draw() {
+    if (paused) return;
+    const W = main.width, H = main.height;
+    if (!W || !H) return;
+    const f = getF(), v = getV();
+    const wl = v / f * 18; // pixels per wavelength (scaled, 18px == 1m)
 
     ctx.fillStyle = '#050510';
     ctx.fillRect(0, 0, W, H);
 
-    // For each pixel, sum wave contributions
     const imgData = ctx.getImageData(0, 0, W, H);
     const d = imgData.data;
     for (let px = 0; px < W; px += 2) {
       for (let py = 0; py < H; py += 2) {
-        let amp = 0;
-        sources.forEach(src => {
-          const dx = px - src.x, dy = py - src.y;
-          const r = Math.sqrt(dx*dx + dy*dy) || 0.1;
-          const phase = (2 * Math.PI * r / wl) - t * f * 0.12;
-          const a = decay() ? Math.sin(phase) / Math.sqrt(r / 30 + 1) : Math.sin(phase) * 0.7;
-          amp += a;
-        });
+        const amp = amplitudeAt(px, py, wl, f);
         const intensity = Math.max(0, Math.min(255, 128 + amp * 80));
         const i = (py * W + px) * 4;
         d[i]   = 0;
         d[i+1] = Math.round(intensity * 0.78);
         d[i+2] = Math.round(intensity);
         d[i+3] = 255;
-        // fill 2x2 block
         const i2 = ((py+1) * W + px) * 4;
         const i3 = (py * W + (px+1)) * 4;
         const i4 = ((py+1) * W + (px+1)) * 4;
@@ -297,44 +324,127 @@
     }
     ctx.putImageData(imgData, 0, 0);
 
+    // Dashed sample line for the cross-section graph below
+    const midY = H / 2;
+    ctx.save();
+    ctx.setLineDash([5, 5]);
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.beginPath(); ctx.moveTo(0, midY); ctx.lineTo(W, midY); ctx.stroke();
+    ctx.restore();
+
     // Source dots
-    sources.forEach((src, idx) => {
-      ctx.beginPath(); ctx.arc(src.x, src.y, 7, 0, Math.PI*2);
+    sources.forEach((s, idx) => {
+      const x = s.x * W, y = s.y * H;
+      ctx.beginPath(); ctx.arc(x, y, dragIdx === idx ? 9 : 7, 0, Math.PI*2);
       ctx.fillStyle = '#30d158'; ctx.fill();
+      ctx.lineWidth = 1.5; ctx.strokeStyle = '#0b3d1c'; ctx.stroke();
       ctx.font = 'bold 10px Inter,sans-serif';
       ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(idx+1, src.x, src.y);
+      ctx.fillText(idx+1, x, y);
     });
     ctx.textBaseline = 'alphabetic';
+
+    // Amplitude cross-section graph
+    const GW = graph.width, GH = graph.height;
+    gctx.fillStyle = '#0a0a18';
+    gctx.fillRect(0, 0, GW, GH);
+    gctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    gctx.beginPath(); gctx.moveTo(0, GH/2); gctx.lineTo(GW, GH/2); gctx.stroke();
+    gctx.beginPath();
+    gctx.strokeStyle = '#5ee889';
+    gctx.lineWidth = 1.5;
+    for (let px = 0; px < W; px += 2) {
+      const amp = amplitudeAt(px, midY, wl, f);
+      const gx = (px / W) * GW;
+      const gy = GH/2 - amp * (GH/2 - 6);
+      if (px === 0) gctx.moveTo(gx, gy); else gctx.lineTo(gx, gy);
+    }
+    gctx.stroke();
 
     document.getElementById('pw-r-src').textContent  = sources.length;
     document.getElementById('pw-r-freq').textContent = f.toFixed(1) + ' Hz';
     document.getElementById('pw-r-wl').textContent   = (wl/18).toFixed(1) + ' m';
 
     t++;
-    requestAnimationFrame(draw);
   }
 
-  canvas.addEventListener('click', e => {
+  const rafLoop = SimKit.loop(draw);
+
+  function setPaused(next) {
+    paused = next;
+    pauseBtn.textContent = paused ? '▶ Play' : '⏸ Pause';
+    pauseBtn.setAttribute('aria-pressed', String(paused));
+    if (!paused) draw();
+  }
+  pauseBtn.addEventListener('click', () => setPaused(!paused));
+  clearBtn.addEventListener('click', () => { sources = []; draw(); canvasWrap.focus(); });
+
+  function pointerPos(e) {
     const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-    const y = (e.clientY - rect.top)  * (canvas.height / rect.height);
-    // Check if clicking existing source to remove
+    const cx = (e.touches ? e.touches[0].clientX : e.clientX);
+    const cy = (e.touches ? e.touches[0].clientY : e.clientY);
+    return {
+      x: (cx - rect.left) / rect.width,
+      y: (cy - rect.top)  / rect.height
+    };
+  }
+
+  function findSourceNear(pos) {
     for (let i = 0; i < sources.length; i++) {
-      const dx = x - sources[i].x, dy = y - sources[i].y;
-      if (Math.sqrt(dx*dx+dy*dy) < 15) { sources.splice(i, 1); return; }
+      const dx = (pos.x - sources[i].x) * main.width, dy = (pos.y - sources[i].y) * main.height;
+      if (Math.sqrt(dx*dx + dy*dy) < 15) return i;
     }
-    if (sources.length < 3) sources.push({x, y});
+    return -1;
+  }
+
+  canvas.addEventListener('pointerdown', e => {
+    const pos = pointerPos(e);
+    lastPointer = pos;
+    const idx = findSourceNear(pos);
+    if (idx >= 0) { dragIdx = idx; dragMoved = false; canvas.setPointerCapture(e.pointerId); }
+  });
+  canvas.addEventListener('pointermove', e => {
+    const pos = pointerPos(e);
+    lastPointer = pos;
+    if (dragIdx >= 0) {
+      dragMoved = true;
+      sources[dragIdx] = { x: Math.min(1, Math.max(0, pos.x)), y: Math.min(1, Math.max(0, pos.y)) };
+      if (paused) draw();
+    }
+  });
+  canvas.addEventListener('pointerup', e => {
+    const pos = pointerPos(e);
+    if (dragIdx >= 0) {
+      if (!dragMoved) sources.splice(dragIdx, 1); // plain click on a source removes it
+      dragIdx = -1;
+    } else if (sources.length < 3) {
+      sources.push(pos);
+    }
+    if (paused) draw();
+  });
+
+  canvasWrap.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      if (sources.length < 3) sources.push({ ...lastPointer });
+      if (paused) draw();
+    } else if (e.key === 'Backspace' || e.key === 'Delete') {
+      e.preventDefault();
+      sources.pop();
+      if (paused) draw();
+    }
   });
 
   document.getElementById('pw-f-slider').addEventListener('input', e => {
     document.getElementById('pw-f-val').textContent = (parseInt(e.target.value)*0.5).toFixed(1);
+    if (paused) draw();
   });
   document.getElementById('pw-v-slider').addEventListener('input', e => {
     document.getElementById('pw-v-val').textContent = e.target.value;
+    if (paused) draw();
   });
+  document.getElementById('pw-decay').addEventListener('change', () => { if (paused) draw(); });
 
-  window.addEventListener('resize', () => { sources = []; });
   draw();
 
   window.pwCheck = function(n,ans,tol) {

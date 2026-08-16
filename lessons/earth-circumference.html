@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Measuring the Earth · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
-  <meta name="description" content="Earth Science Lesson 04 — how Eratosthenes calculated Earth's circumference in 240 BC using shadows and geometry, and who else refined the measurement over 2,000 years." />
+  <meta name="description" content="An interactive Earth science evidence lab: measure Earth's circumference, compare round- and flat-Earth predictions, and decide which model the observations support." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -279,6 +279,109 @@
       --ll-tab-active-bg: rgba(52,199,89,0.10);
     }
     #ec-canvas { max-height: calc(100dvh - 140px); }
+
+    /* ── Evidence lab ─────────────────────────────────── */
+    .evidence-lab {
+      --lab-ink: #10273c;
+      --lab-paper: #f6fbfd;
+      --lab-cyan: #0b91a7;
+      --lab-amber: #f2a93b;
+      --lab-coral: #e35d4f;
+      position: relative;
+      overflow: hidden;
+      margin: 1.25rem 0;
+      color: var(--lab-ink);
+      background-color: var(--lab-paper);
+      background-image: linear-gradient(rgba(11,145,167,.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(11,145,167,.07) 1px, transparent 1px);
+      background-size: 24px 24px;
+      border: 1px solid rgba(16,39,60,.18);
+      border-radius: 22px;
+      box-shadow: 0 18px 45px rgba(16,39,60,.12);
+    }
+    .evidence-lab::before {
+      content: "EVIDENCE LAB";
+      position: absolute; right: -25px; top: 28px; z-index: 2;
+      padding: 5px 30px;
+      font: 800 .68rem/1 "Courier New", monospace;
+      letter-spacing: .14em; color: #fff; background: var(--lab-coral);
+      transform: rotate(8deg); box-shadow: 0 3px 0 rgba(16,39,60,.18);
+    }
+    .lab-head { padding: 1.35rem 1.45rem 1.1rem; background: rgba(255,255,255,.72); border-bottom: 1px solid rgba(16,39,60,.15); }
+    .lab-kicker { margin: 0 0 .35rem; font: 800 .7rem/1.2 "Courier New", monospace; letter-spacing: .13em; text-transform: uppercase; color: var(--lab-cyan); }
+    .lab-head h2 { margin: 0; max-width: 22ch; font-family: Georgia, "Times New Roman", serif; font-size: clamp(1.55rem, 4vw, 2.45rem); line-height: 1.03; letter-spacing: -.035em; }
+    .lab-intro { max-width: 68ch; margin: .65rem 0 0; color: #385269; font-size: .9rem; line-height: 1.62; }
+    .lab-rule { display: flex; gap: .65rem; align-items: flex-start; margin-top: .8rem; padding: .7rem .8rem; max-width: 68ch; background: #fff8df; border: 1px solid rgba(242,169,59,.45); border-radius: 10px; font-size: .82rem; line-height: 1.5; }
+    .lab-rule strong { color: #8b5705; }
+    .lab-progress { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--lab-ink); }
+    .lab-progress span { padding: .58rem .45rem; text-align: center; color: rgba(255,255,255,.62); font: 800 .66rem/1.2 "Courier New", monospace; letter-spacing: .06em; text-transform: uppercase; border-right: 1px solid rgba(255,255,255,.12); }
+    .lab-progress span:last-child { border-right: 0; }
+    .lab-progress span.done { color: #fff; background: rgba(11,145,167,.45); }
+    .lab-stations { padding: 1rem; display: grid; gap: 1rem; }
+    .lab-station { background: rgba(255,255,255,.92); border: 1px solid rgba(16,39,60,.16); border-radius: 16px; box-shadow: 0 7px 0 rgba(16,39,60,.08); overflow: hidden; }
+    .station-head { display: grid; grid-template-columns: auto 1fr auto; gap: .7rem; align-items: center; padding: .85rem 1rem; border-bottom: 1px dashed rgba(16,39,60,.22); }
+    .station-no { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: #fff; background: var(--lab-cyan); font: 900 .82rem/1 "Courier New", monospace; }
+    .station-head h3 { margin: 0; font-size: 1.05rem; color: var(--lab-ink); }
+    .station-tag { color: #557086; font: 800 .62rem/1.2 "Courier New", monospace; text-transform: uppercase; letter-spacing: .07em; }
+    .station-body { padding: 1rem; }
+    .prediction-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; margin-bottom: .9rem; }
+    .prediction { padding: .72rem .8rem; border-radius: 10px; font-size: .78rem; line-height: 1.45; }
+    .prediction strong { display: block; margin-bottom: .2rem; color: var(--lab-ink); font: 800 .67rem/1.2 "Courier New", monospace; text-transform: uppercase; letter-spacing: .05em; }
+    .prediction.round { background: rgba(11,145,167,.09); border: 1px solid rgba(11,145,167,.25); }
+    .prediction.flat { background: rgba(227,93,79,.07); border: 1px solid rgba(227,93,79,.2); }
+    .lab-control { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .6rem; align-items: center; margin: .7rem 0; }
+    .lab-control label { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: .5rem; color: #3f5a70; font: 800 .69rem/1.2 "Courier New", monospace; text-transform: uppercase; letter-spacing: .04em; }
+    .lab-control output { color: var(--lab-coral); }
+    .lab-control input[type="range"] { width: 100%; accent-color: var(--lab-cyan); }
+    .horizon-stage { position: relative; height: 154px; overflow: hidden; border-radius: 12px; background: linear-gradient(#9eddec 0 64%, #147f98 64%); border: 1px solid rgba(16,39,60,.16); }
+    .horizon-stage::after { content: ""; position: absolute; left: -12%; right: -12%; bottom: -76px; height: 126px; border-radius: 50% 50% 0 0; background: #0d6680; border-top: 3px solid rgba(255,255,255,.68); }
+    .boat { position: absolute; z-index: 2; left: 50%; bottom: 51px; width: 82px; transform: translateX(-50%); transition: clip-path .25s ease, transform .25s ease; }
+    .boat-sail { width: 0; height: 0; margin-left: 37px; border-left: 0 solid transparent; border-right: 30px solid transparent; border-bottom: 58px solid #fff4d6; filter: drop-shadow(1px 1px 0 rgba(16,39,60,.22)); }
+    .boat-mast { position: absolute; left: 35px; top: 4px; width: 3px; height: 65px; background: #543b2c; }
+    .boat-hull { height: 19px; margin-top: -1px; border-radius: 2px 2px 35px 35px; background: #e35d4f; border: 2px solid #8b352d; }
+    .lab-readout { display: grid; grid-template-columns: repeat(2,1fr); gap: .55rem; margin-top: .7rem; }
+    .lab-readout div { padding: .6rem .7rem; background: #edf5f7; border-radius: 9px; }
+    .lab-readout span { display: block; color: #5b7385; font: 700 .62rem/1.2 "Courier New", monospace; text-transform: uppercase; }
+    .lab-readout strong { display: block; margin-top: .15rem; font-size: 1rem; }
+    .shadow-board { position: relative; height: 170px; overflow: hidden; border-radius: 12px; background: linear-gradient(160deg,#cdeffa 0 54%,#e3c891 54%); border: 1px solid rgba(16,39,60,.16); }
+    .shadow-sun { position: absolute; left: 18px; top: 18px; width: 42px; height: 42px; border-radius: 50%; background: #ffd252; box-shadow: 0 0 0 8px rgba(255,210,82,.22); }
+    .shadow-stick { position: absolute; left: 50%; bottom: 31px; width: 5px; height: 74px; background: #5a3a26; transform: translateX(-50%); }
+    .shadow-cast { position: absolute; left: 50%; bottom: 27px; height: 7px; width: 92px; border-radius: 50%; background: rgba(16,39,60,.45); transform-origin: left center; transform: rotate(4deg); }
+    .shadow-angle { position: absolute; right: 13px; top: 13px; padding: .45rem .55rem; border-radius: 8px; color: #fff; background: var(--lab-ink); font: 800 .75rem/1 "Courier New", monospace; }
+    .moon-stage { position: relative; display: grid; place-items: center; height: 172px; border-radius: 12px; overflow: hidden; background: radial-gradient(circle at 22% 18%,#314a66,#091421 68%); }
+    .moon { position: relative; width: 112px; height: 112px; border-radius: 50%; overflow: hidden; background: radial-gradient(circle at 35% 30%,#fff8da,#c9c2a9 70%); box-shadow: 0 0 24px rgba(255,248,218,.25); }
+    .earth-shadow { position: absolute; width: 116px; height: 116px; left: -82px; top: -2px; border-radius: 50%; background: rgba(93,28,28,.82); transition: transform 1.15s ease; }
+    .moon-stage.run .earth-shadow { transform: translateX(160px); }
+    .moon-note { position: absolute; left: 10px; bottom: 9px; color: rgba(255,255,255,.78); font: 700 .64rem/1.3 "Courier New", monospace; }
+    .lab-btn { appearance: none; border: 0; border-radius: 9px; padding: .65rem .85rem; color: #fff; background: var(--lab-ink); font: 800 .73rem/1 "Courier New", monospace; letter-spacing: .04em; cursor: pointer; box-shadow: 0 3px 0 #07111c; }
+    .lab-btn:hover { background: #1b4967; }
+    .lab-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #07111c; }
+    .lab-btn:focus-visible, .evidence-lab input:focus-visible, .evidence-lab textarea:focus-visible { outline: 3px solid #ffd252; outline-offset: 3px; }
+    .lab-verdict { display: none; margin-top: .75rem; padding: .72rem .82rem; color: #164f36; background: #e8f8ef; border: 1px solid #9dd9b6; border-radius: 9px; font-size: .8rem; line-height: 1.48; }
+    .lab-verdict.show { display: block; animation: evidence-pop .32s ease both; }
+    .lab-verdict strong { color: #0e6a43; }
+    .lab-notebook { margin: 0 1rem 1rem; padding: 1rem; border: 2px solid var(--lab-ink); border-radius: 14px; background: #fffef8; box-shadow: 5px 5px 0 rgba(16,39,60,.15); }
+    .lab-notebook h3 { margin: 0 0 .25rem; font-family: Georgia, "Times New Roman", serif; font-size: 1.25rem; }
+    .lab-notebook > p { margin: 0 0 .8rem; color: #536a7c; font-size: .8rem; line-height: 1.5; }
+    .cer-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: .65rem; }
+    .cer-grid label { color: var(--lab-cyan); font: 900 .66rem/1.2 "Courier New", monospace; text-transform: uppercase; letter-spacing: .06em; }
+    .cer-grid textarea { box-sizing: border-box; display: block; width: 100%; min-height: 86px; margin-top: .35rem; resize: vertical; padding: .65rem; color: var(--lab-ink); background: repeating-linear-gradient(#fff 0 25px,#d9e8ed 26px); border: 1px solid #aac0c8; border-radius: 7px; font: 500 .8rem/1.55 Inter, sans-serif; }
+    .lab-score { display: flex; align-items: center; gap: .75rem; margin-top: .85rem; padding-top: .75rem; border-top: 1px dashed #aac0c8; }
+    .evidence-meter { flex: 1; height: 10px; overflow: hidden; background: #d9e4e7; border-radius: 99px; }
+    .evidence-meter span { display: block; width: 0; height: 100%; background: linear-gradient(90deg,var(--lab-amber),var(--lab-cyan)); transition: width .35s ease; }
+    .lab-score output { min-width: 5ch; color: var(--lab-ink); font: 900 .72rem/1 "Courier New", monospace; }
+    @keyframes evidence-pop { from { opacity: 0; transform: translateY(5px) rotate(-.4deg); } to { opacity: 1; transform: none; } }
+    @media (max-width: 680px) {
+      .prediction-grid, .cer-grid { grid-template-columns: 1fr; }
+      .station-head { grid-template-columns: auto 1fr; }
+      .station-tag { grid-column: 2; }
+      .lab-progress span { font-size: .56rem; }
+      .lab-head { padding-right: 3rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .boat, .earth-shadow, .evidence-meter span { transition: none; }
+      .lab-verdict.show { animation: none; }
+    }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -397,6 +500,110 @@
           <span class="ec-readout-label">Arc Distance</span>
           <span class="ec-readout-val" id="ec-r-dist">800</span>
           <span class="ec-readout-unit">km</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Model Showdown Evidence Lab ── -->
+    <section class="evidence-lab" aria-labelledby="evidence-lab-title">
+      <div class="lab-head">
+        <p class="lab-kicker">Student investigation · 15–25 minutes</p>
+        <h2 id="evidence-lab-title">Round Earth or flat Earth? Let the predictions compete.</h2>
+        <p class="lab-intro">Science does not ask which idea sounds confident or gets the most views. It asks which model makes predictions that match repeatable observations. Run all three stations, reveal the evidence, then write your verdict.</p>
+        <div class="lab-rule"><span aria-hidden="true">🧪</span><span><strong>Lab rule:</strong> Be respectful of people and ruthless with predictions. An idea earns trust when the same model explains many different observations.</span></div>
+      </div>
+      <div class="lab-progress" aria-label="Investigation progress">
+        <span id="lab-step-1">1 · Horizon</span>
+        <span id="lab-step-2">2 · Shadows</span>
+        <span id="lab-step-3">3 · Eclipse</span>
+      </div>
+
+      <div class="lab-stations">
+        <article class="lab-station">
+          <div class="station-head">
+            <span class="station-no">01</span>
+            <h3>Boat hide-and-seek</h3>
+            <span class="station-tag">Change the distance</span>
+          </div>
+          <div class="station-body">
+            <div class="prediction-grid">
+              <div class="prediction round"><strong>Globe predicts</strong>The curved surface blocks the hull first; more of the boat hides as distance increases.</div>
+              <div class="prediction flat"><strong>Flat plane predicts</strong>The whole boat only looks smaller. Zoom should restore every part of it.</div>
+            </div>
+            <div class="horizon-stage" role="img" aria-label="Sailboat moving beyond a curved horizon">
+              <div class="boat" id="lab-boat" aria-hidden="true"><div class="boat-sail"></div><div class="boat-mast"></div><div class="boat-hull"></div></div>
+            </div>
+            <div class="lab-control">
+              <label for="boat-distance">Distance from observer <output id="boat-distance-out">5 km</output></label>
+              <input id="boat-distance" type="range" min="2" max="40" value="5" step="1" />
+              <button class="lab-btn" id="boat-test" type="button">Record trial</button>
+            </div>
+            <div class="lab-readout">
+              <div><span>Curvature drop</span><strong id="curve-drop">2.0 m</strong></div>
+              <div><span>What disappears?</span><strong id="boat-hidden">Hull visible</strong></div>
+            </div>
+            <div class="lab-verdict" id="boat-verdict" role="status"><strong>Evidence:</strong> Distant objects are hidden bottom-first, and zoom cannot recover the part below the horizon. That matches a curved surface.</div>
+          </div>
+        </article>
+
+        <article class="lab-station">
+          <div class="station-head">
+            <span class="station-no">02</span>
+            <h3>Two-stick shadow test</h3>
+            <span class="station-tag">Make a prediction</span>
+          </div>
+          <div class="station-body">
+            <div class="prediction-grid">
+              <div class="prediction round"><strong>Distant Sun + globe predicts</strong>Parallel sunlight makes different angles because each stick points away from Earth's center.</div>
+              <div class="prediction flat"><strong>Flat plane predicts</strong>A nearby Sun could make different angles—but every city pair must point to one consistent Sun height.</div>
+            </div>
+            <div class="shadow-board" role="img" aria-label="Vertical stick casting a measurable shadow"><div class="shadow-sun"></div><div class="shadow-stick"></div><div class="shadow-cast" id="shadow-cast"></div><div class="shadow-angle" id="shadow-angle-label">7.2°</div></div>
+            <div class="lab-control">
+              <label for="lab-shadow-angle">Angle difference <output id="lab-shadow-out">7.2°</output></label>
+              <input id="lab-shadow-angle" type="range" min="2" max="15" value="7.2" step=".1" />
+              <button class="lab-btn" id="shadow-test" type="button">Calculate Earth</button>
+            </div>
+            <div class="lab-readout">
+              <div><span>City distance</span><strong>800 km</strong></div>
+              <div><span>Calculated circumference</span><strong id="lab-circ">40,000 km</strong></div>
+            </div>
+            <div class="lab-verdict" id="shadow-verdict" role="status"><strong>Evidence:</strong> Repeating this experiment with many north–south city pairs produces roughly the same 40,000 km globe. A nearby-Sun flat model gives conflicting Sun heights.</div>
+          </div>
+        </article>
+
+        <article class="lab-station">
+          <div class="station-head">
+            <span class="station-no">03</span>
+            <h3>The eclipse shadow challenge</h3>
+            <span class="station-tag">Watch the edge</span>
+          </div>
+          <div class="station-body">
+            <div class="prediction-grid">
+              <div class="prediction round"><strong>Sphere predicts</strong>Earth casts a circular shadow from every orientation.</div>
+              <div class="prediction flat"><strong>Disk predicts</strong>A disk only casts a circle face-on; most other angles make a stretched ellipse or thin line.</div>
+            </div>
+            <div class="moon-stage" id="moon-stage" role="img" aria-label="Earth's curved shadow moving across the Moon"><div class="moon"><div class="earth-shadow"></div></div><div class="moon-note">Lunar eclipse · shadow edge stays curved</div></div>
+            <div class="lab-control">
+              <span></span>
+              <button class="lab-btn" id="eclipse-test" type="button">Run eclipse</button>
+            </div>
+            <div class="lab-verdict" id="eclipse-verdict" role="status"><strong>Evidence:</strong> Earth's shadow on the Moon is always round. A sphere is the only simple shape that produces a circular silhouette from every direction.</div>
+          </div>
+        </article>
+      </div>
+
+      <div class="lab-notebook">
+        <h3>Your evidence notebook</h3>
+        <p>Complete a CER: one clear claim, two or more observations, and reasoning that connects them. Your writing stays on this device and is not submitted.</p>
+        <div class="cer-grid">
+          <label>Claim<textarea aria-label="Claim" placeholder="The model best supported by the tests is…"></textarea></label>
+          <label>Evidence<textarea aria-label="Evidence" placeholder="In station 1, I observed…"></textarea></label>
+          <label>Reasoning<textarea aria-label="Reasoning" placeholder="This evidence matters because the model predicted…"></textarea></label>
+        </div>
+        <div class="lab-score">
+          <button class="lab-btn" id="lab-finish" type="button">Check investigation</button>
+          <div class="evidence-meter" aria-hidden="true"><span id="evidence-meter-fill"></span></div>
+          <output id="lab-score-out" aria-live="polite">0 / 3</output>
         </div>
       </div>
     </section>
@@ -1022,6 +1229,86 @@
     });
 
     update();
+
+    /* ── Evidence lab ─────────────────────────────────── */
+    const completedStations = new Set();
+    const evidenceFill = document.getElementById('evidence-meter-fill');
+    const scoreOut = document.getElementById('lab-score-out');
+
+    function completeStation(number) {
+      completedStations.add(number);
+      document.getElementById('lab-step-' + number).classList.add('done');
+      const score = completedStations.size;
+      evidenceFill.style.width = (score / 3 * 100) + '%';
+      scoreOut.textContent = score + ' / 3';
+    }
+
+    const boatDistance = document.getElementById('boat-distance');
+    const boatDistanceOut = document.getElementById('boat-distance-out');
+    const curveDrop = document.getElementById('curve-drop');
+    const boatHidden = document.getElementById('boat-hidden');
+    const boat = document.getElementById('lab-boat');
+
+    function updateBoatTrial() {
+      const distanceKm = Number(boatDistance.value);
+      const dropMetres = (distanceKm * distanceKm) / 12.742;
+      const hiddenPercent = Math.min(92, Math.max(0, (dropMetres - 2) * 2.1));
+      boatDistanceOut.textContent = distanceKm + ' km';
+      curveDrop.textContent = dropMetres.toFixed(1) + ' m';
+      boat.style.clipPath = 'inset(0 0 ' + hiddenPercent + '% 0)';
+      boat.style.transform = 'translateX(-50%) scale(' + Math.max(.7, 1 - distanceKm / 180) + ')';
+      boatHidden.textContent = hiddenPercent < 8 ? 'Hull visible' : hiddenPercent < 48 ? 'Hull first' : hiddenPercent < 82 ? 'Most is hidden' : 'Nearly all hidden';
+    }
+    boatDistance.addEventListener('input', updateBoatTrial);
+    updateBoatTrial();
+    document.getElementById('boat-test').addEventListener('click', () => {
+      boatDistance.value = 28;
+      updateBoatTrial();
+      document.getElementById('boat-verdict').classList.add('show');
+      completeStation(1);
+    });
+
+    const labShadowAngle = document.getElementById('lab-shadow-angle');
+    const labShadowOut = document.getElementById('lab-shadow-out');
+    const labCirc = document.getElementById('lab-circ');
+    const shadowCast = document.getElementById('shadow-cast');
+    const shadowAngleLabel = document.getElementById('shadow-angle-label');
+
+    function updateShadowTrial() {
+      const degrees = Number(labShadowAngle.value);
+      const calculatedCirc = (360 / degrees) * 800;
+      labShadowOut.textContent = degrees.toFixed(1) + '°';
+      shadowAngleLabel.textContent = degrees.toFixed(1) + '°';
+      labCirc.textContent = Math.round(calculatedCirc).toLocaleString() + ' km';
+      shadowCast.style.width = (48 + degrees * 6) + 'px';
+    }
+    labShadowAngle.addEventListener('input', updateShadowTrial);
+    updateShadowTrial();
+    document.getElementById('shadow-test').addEventListener('click', () => {
+      labShadowAngle.value = 7.2;
+      updateShadowTrial();
+      document.getElementById('shadow-verdict').classList.add('show');
+      completeStation(2);
+    });
+
+    const moonStage = document.getElementById('moon-stage');
+    document.getElementById('eclipse-test').addEventListener('click', () => {
+      moonStage.classList.remove('run');
+      void moonStage.offsetWidth;
+      moonStage.classList.add('run');
+      document.getElementById('eclipse-verdict').classList.add('show');
+      completeStation(3);
+    });
+
+    document.getElementById('lab-finish').addEventListener('click', () => {
+      if (completedStations.size < 3) {
+        scoreOut.textContent = completedStations.size + ' / 3 — run every test';
+        return;
+      }
+      const written = Array.from(document.querySelectorAll('.cer-grid textarea'))
+        .filter(field => field.value.trim().length >= 12).length;
+      scoreOut.textContent = written === 3 ? 'Lab complete ✓' : 'Tests done — finish your CER';
+    });
 
     /* ── Practice checker ─────────────────────────────── */
     window.ecCheck = function (num, correct, tol) {

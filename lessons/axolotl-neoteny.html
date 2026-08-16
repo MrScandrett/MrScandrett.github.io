@@ -5,13 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Axolotls &amp; Neoteny · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
-  <meta name="description" content="Life Sciences Lesson 04 — explore axolotl neoteny, aquatic adaptation, regeneration, and a thoughtful reflection on keeping a curious beginner's mind." />
+  <meta name="description" content="Life Sciences Lesson 04 — explore axolotl neoteny, adaptation, regeneration, and care for Noodle, the live 3D class pet." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <script type="module" src="../assets/js/vendor/model-viewer.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
   <style>
     body.axo-page {
       font-family: var(--font-sans);
@@ -463,6 +465,332 @@
       margin-bottom: 0.3rem;
     }
 
+    /* Class pet: a small aquarium control room, not a generic game card. */
+    .axo-pet {
+      overflow: hidden;
+      --axo-border: rgba(75, 163, 174, 0.5);
+      --axo-bg: rgba(235, 250, 249, 0.9);
+      background:
+        radial-gradient(circle at 80% 7%, rgba(244, 134, 174, 0.2), transparent 24%),
+        linear-gradient(145deg, rgba(239, 253, 251, 0.96), rgba(255, 247, 239, 0.96));
+    }
+
+    .axo-pet-heading {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .axo-pet-heading p:not(.axo-kicker) {
+      max-width: 68ch;
+      margin-bottom: 0;
+    }
+
+    .axo-live-badge {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.48rem;
+      border: 1px solid rgba(29, 131, 118, 0.3);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.78);
+      color: #176e65;
+      font: 700 0.75rem "IBM Plex Mono", monospace;
+      letter-spacing: 0.05em;
+      padding: 0.52rem 0.72rem;
+      text-transform: uppercase;
+    }
+
+    .axo-live-dot {
+      width: 0.62rem;
+      height: 0.62rem;
+      border-radius: 50%;
+      background: #25b79f;
+      box-shadow: 0 0 0 5px rgba(37, 183, 159, 0.13);
+      animation: livePulse 2.2s ease-out infinite;
+    }
+
+    .axo-pet-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(310px, 0.75fr);
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .axo-tank {
+      position: relative;
+      overflow: hidden;
+      min-height: 510px;
+      border: 9px solid #276b73;
+      border-top-color: #388792;
+      border-radius: 22px 22px 30px 30px;
+      background:
+        linear-gradient(105deg, transparent 16%, rgba(255,255,255,0.22) 17% 19%, transparent 20% 68%, rgba(255,255,255,0.12) 69% 71%, transparent 72%),
+        radial-gradient(ellipse at 50% 105%, rgba(13, 78, 82, 0.38), transparent 48%),
+        linear-gradient(180deg, #9de6e2 0%, #4daeb2 58%, #267b83 100%);
+      box-shadow:
+        inset 0 0 45px rgba(12, 73, 79, 0.25),
+        0 18px 28px rgba(30, 91, 99, 0.16);
+      isolation: isolate;
+    }
+
+    .axo-tank::before {
+      content: "";
+      position: absolute;
+      z-index: 3;
+      inset: 0;
+      pointer-events: none;
+      border-radius: 12px 12px 20px 20px;
+      box-shadow: inset 10px 0 rgba(255,255,255,0.12), inset -7px 0 rgba(6,55,61,0.14), inset 0 8px rgba(255,255,255,0.16);
+    }
+
+    .axo-tank-light {
+      position: absolute;
+      z-index: -1;
+      top: -16%;
+      left: 17%;
+      width: 66%;
+      height: 78%;
+      background: linear-gradient(180deg, rgba(255,255,224,0.34), transparent);
+      clip-path: polygon(25% 0, 75% 0, 100% 100%, 0 100%);
+      filter: blur(4px);
+      pointer-events: none;
+    }
+
+    .axo-pet-model {
+      position: absolute;
+      z-index: 2;
+      inset: 2.7rem 2% 4.2rem;
+      width: 96%;
+      height: calc(100% - 6.9rem);
+      background: transparent;
+      --poster-color: transparent;
+      filter: drop-shadow(0 22px 22px rgba(16, 66, 75, 0.32));
+      animation: axoDrift 6.5s ease-in-out infinite;
+    }
+
+    .axo-tank-floor {
+      position: absolute;
+      z-index: 1;
+      left: -5%;
+      right: -5%;
+      bottom: -1rem;
+      height: 7rem;
+      border-radius: 50% 50% 0 0;
+      background:
+        radial-gradient(circle at 13% 38%, #d7c7a4 0 4px, transparent 5px),
+        radial-gradient(circle at 36% 62%, #8fae9b 0 5px, transparent 6px),
+        radial-gradient(circle at 74% 25%, #ead1b2 0 6px, transparent 7px),
+        radial-gradient(circle at 89% 56%, #95a38f 0 4px, transparent 5px),
+        linear-gradient(180deg, #d6b98a, #9a8b69);
+      box-shadow: 0 -8px 22px rgba(28, 79, 75, 0.16);
+    }
+
+    .axo-plant {
+      position: absolute;
+      z-index: 1;
+      bottom: 3.8rem;
+      width: 4.2rem;
+      height: 9rem;
+      opacity: 0.82;
+      background:
+        linear-gradient(78deg, transparent 45%, #2d8972 46% 52%, transparent 53%),
+        linear-gradient(102deg, transparent 44%, #62aa77 45% 51%, transparent 52%),
+        linear-gradient(90deg, transparent 47%, #327c67 48% 53%, transparent 54%);
+      transform-origin: bottom;
+      animation: plantSway 4.8s ease-in-out infinite alternate;
+    }
+
+    .axo-plant-left { left: 4%; transform: rotate(-9deg); }
+    .axo-plant-right { right: 5%; height: 7rem; animation-delay: -2s; }
+
+    .axo-pet-bubble {
+      position: absolute;
+      z-index: 1;
+      bottom: 3.5rem;
+      width: 11px;
+      height: 11px;
+      border: 2px solid rgba(255,255,255,0.64);
+      border-radius: 50%;
+      animation: petBubble 5.6s linear infinite;
+    }
+
+    .axo-pet-bubble:nth-of-type(1) { left: 17%; animation-delay: -1s; }
+    .axo-pet-bubble:nth-of-type(2) { left: 26%; width: 7px; height: 7px; animation-delay: -3.4s; }
+    .axo-pet-bubble:nth-of-type(3) { right: 19%; width: 15px; height: 15px; animation-delay: -4.5s; }
+
+    .axo-pet-message {
+      position: absolute;
+      z-index: 5;
+      left: 1rem;
+      top: 1rem;
+      max-width: min(75%, 24rem);
+      border-radius: 14px 14px 14px 4px;
+      background: rgba(255,255,255,0.9);
+      color: #17464c;
+      font-weight: 800;
+      line-height: 1.35;
+      padding: 0.7rem 0.85rem;
+      box-shadow: 0 9px 22px rgba(17, 77, 84, 0.17);
+    }
+
+    .axo-floating-food {
+      position: absolute;
+      z-index: 7;
+      top: 2.5rem;
+      left: var(--food-x, 50%);
+      font-size: 1.65rem;
+      pointer-events: none;
+      animation: foodDrop 1.8s ease-in forwards;
+    }
+
+    .axo-pet-console {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      min-width: 0;
+      border: 1.5px solid rgba(56, 135, 146, 0.3);
+      border-radius: 20px;
+      background: rgba(255,255,255,0.72);
+      padding: 1rem;
+      box-shadow: inset 0 0 0 5px rgba(102, 190, 184, 0.08);
+    }
+
+    .axo-pet-id {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      border-bottom: 1.5px dashed rgba(56, 135, 146, 0.28);
+      padding-bottom: 0.8rem;
+    }
+
+    .axo-pet-avatar {
+      display: grid;
+      place-items: center;
+      width: 3.4rem;
+      height: 3.4rem;
+      border-radius: 50%;
+      background: #ffd1df;
+      font-size: 1.7rem;
+      box-shadow: inset 0 -5px rgba(224, 91, 140, 0.1);
+    }
+
+    .axo-pet-id h3 { font: 700 1.35rem "DynaPuff", var(--font-sans); }
+    .axo-pet-id p { margin: 0.15rem 0 0; font: 600 0.72rem "IBM Plex Mono", monospace; color: #457078; }
+
+    .axo-pet-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+    }
+
+    .axo-pet-stat {
+      border-radius: 13px;
+      background: rgba(225, 245, 242, 0.68);
+      padding: 0.65rem;
+    }
+
+    .axo-pet-stat-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      color: #285c64;
+      font-size: 0.73rem;
+      font-weight: 800;
+    }
+
+    .axo-pet-meter {
+      overflow: hidden;
+      height: 8px;
+      margin-top: 0.42rem;
+      border-radius: 99px;
+      background: rgba(31, 94, 100, 0.12);
+    }
+
+    .axo-pet-meter span {
+      display: block;
+      width: var(--value, 50%);
+      height: 100%;
+      border-radius: inherit;
+      background: var(--meter-color, #e76d9f);
+      transition: width 0.45s ease;
+    }
+
+    .axo-food-tray h3,
+    .axo-unlocks h3 {
+      margin-bottom: 0.55rem;
+      font-size: 0.82rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .axo-food-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+
+    .axo-food-button {
+      border: 1.5px solid rgba(225, 91, 142, 0.25);
+      border-radius: 14px;
+      background: #fff8fb;
+      color: #3c4165;
+      cursor: pointer;
+      font: 800 0.72rem var(--font-sans);
+      padding: 0.62rem 0.3rem;
+      transition: transform 0.18s, box-shadow 0.18s, background 0.18s;
+    }
+
+    .axo-food-button span { display: block; margin-bottom: 0.18rem; font-size: 1.35rem; }
+    .axo-food-button:hover:not(:disabled), .axo-food-button:focus-visible { transform: translateY(-2px); background: #fff; box-shadow: 0 7px 14px rgba(100,66,93,0.12); outline: none; }
+    .axo-food-button:disabled { cursor: not-allowed; filter: grayscale(0.4); opacity: 0.55; }
+
+    .axo-feed-note {
+      min-height: 2.4em;
+      margin: 0.5rem 0 0;
+      color: #5a6670;
+      font: 600 0.73rem/1.45 "IBM Plex Mono", monospace;
+    }
+
+    .axo-points {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.65rem;
+      align-items: center;
+      border-radius: 14px;
+      background: #272d5c;
+      color: #fff;
+      padding: 0.72rem 0.8rem;
+    }
+
+    .axo-points strong { color: #ffe68b; font: 700 1.5rem "DynaPuff", var(--font-sans); }
+    .axo-points span { font-size: 0.75rem; line-height: 1.35; }
+
+    .axo-unlock-list { display: grid; gap: 0.42rem; }
+    .axo-unlock {
+      display: grid;
+      grid-template-columns: 2rem 1fr auto;
+      gap: 0.55rem;
+      align-items: center;
+      border-radius: 11px;
+      background: rgba(239, 237, 247, 0.68);
+      color: #69667d;
+      padding: 0.5rem 0.6rem;
+      font-size: 0.78rem;
+      font-weight: 750;
+    }
+
+    .axo-unlock.is-unlocked { background: rgba(219, 245, 229, 0.9); color: #27614f; }
+    .axo-unlock-icon { font-size: 1.08rem; text-align: center; }
+    .axo-unlock-state { font: 700 0.66rem "IBM Plex Mono", monospace; text-transform: uppercase; }
+
+    @keyframes livePulse { 70%, 100% { box-shadow: 0 0 0 9px rgba(37, 183, 159, 0); } }
+    @keyframes axoDrift { 0%, 100% { transform: translate3d(-1.2%, 0, 0) rotate(-0.6deg); } 50% { transform: translate3d(1.2%, -8px, 0) rotate(0.6deg); } }
+    @keyframes petBubble { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 0.75; } 100% { transform: translateY(-390px) translateX(18px); opacity: 0; } }
+    @keyframes plantSway { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
+    @keyframes foodDrop { 0% { transform: translate(-50%, -20px) rotate(-12deg); opacity: 0; } 15% { opacity: 1; } 75% { transform: translate(-50%, 230px) rotate(18deg); opacity: 1; } 100% { transform: translate(-50%, 265px) scale(0.25); opacity: 0; } }
+
     .axo-compare {
       display: grid;
       grid-template-columns: 1fr auto 1fr;
@@ -472,19 +800,95 @@
     }
 
     .axo-path {
-      min-height: 270px;
+      overflow: hidden;
+      min-height: 390px;
       border-radius: 18px;
       border: 1.5px solid rgba(111, 187, 180, 0.32);
       background: linear-gradient(180deg, rgba(255, 253, 248, 0.98), rgba(239, 249, 247, 0.92));
-      padding: 1rem;
-      text-align: center;
+      padding: 0;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease, opacity 0.25s ease;
     }
 
-    .axo-path svg {
-      width: min(210px, 100%);
-      min-height: 132px;
-      margin: 0.7rem auto 0.2rem;
+    .axo-path.is-emphasized {
+      border-color: #df6996;
+      box-shadow: 0 14px 28px rgba(86, 72, 102, 0.14);
+    }
+
+    .axo-path:not(.is-emphasized) {
+      opacity: 0.82;
+    }
+
+    .axo-path-media {
+      position: relative;
+      overflow: hidden;
+      min-height: 230px;
+      background: #243b3f;
+    }
+
+    .axo-path-media img {
       display: block;
+      width: 100%;
+      height: 250px;
+      object-fit: cover;
+    }
+
+    .axo-path-tag {
+      position: absolute;
+      left: 0.8rem;
+      top: 0.8rem;
+      border-radius: 999px;
+      background: rgba(17, 31, 39, 0.82);
+      color: #fff;
+      font: 700 0.7rem "IBM Plex Mono", monospace;
+      letter-spacing: 0.05em;
+      padding: 0.4rem 0.62rem;
+      text-transform: uppercase;
+      backdrop-filter: blur(7px);
+    }
+
+    .axo-path-body {
+      padding: 0.9rem 1rem 1rem;
+    }
+
+    .axo-path-body p {
+      margin-bottom: 0.7rem;
+    }
+
+    .axo-observation-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.65rem;
+    }
+
+    .axo-observation-list span {
+      border-radius: 6px;
+      background: rgba(96, 158, 151, 0.12);
+      color: #315d60;
+      font: 700 0.68rem "IBM Plex Mono", monospace;
+      padding: 0.34rem 0.46rem;
+    }
+
+    .axo-source-credit {
+      margin: 0.65rem 0 0;
+      color: #5e6870 !important;
+      font: 500 0.67rem/1.45 "IBM Plex Mono", monospace !important;
+    }
+
+    .axo-source-credit a {
+      color: #176f71;
+      font-weight: 800;
+    }
+
+    .axo-figure-caution {
+      margin: 0.85rem 0 0;
+      border-left: 4px solid #e7ba5c;
+      border-radius: 4px 12px 12px 4px;
+      background: rgba(255, 246, 214, 0.76);
+      color: #3c4353;
+      font-size: 0.82rem;
+      line-height: 1.55;
+      padding: 0.62rem 0.78rem;
     }
 
     .axo-arrow {
@@ -608,25 +1012,56 @@
     }
 
     .axo-regen-visual {
+      position: relative;
+      overflow: hidden;
       min-height: 300px;
       border-radius: 18px;
-      border: 1.5px solid rgba(235, 104, 151, 0.28);
-      background:
-        radial-gradient(circle at 50% 68%, rgba(255, 140, 172, 0.15), transparent 26%),
-        linear-gradient(180deg, #fffaf2 0%, #f8eefa 100%);
+      border: 1.5px solid rgba(83, 130, 135, 0.45);
+      background: #101519;
+    }
+
+    .axo-regen-frame {
+      position: absolute;
+      inset: 0;
       display: grid;
       place-items: center;
+      margin: 0;
+      opacity: 0;
+      transform: scale(1.025);
+      transition: opacity 0.28s ease, transform 0.28s ease;
+      pointer-events: none;
     }
 
-    .regen-limb-part {
-      opacity: 0.18;
-      transform-origin: 145px 172px;
-      transition: opacity 0.25s, transform 0.25s;
-    }
-
-    .regen-limb-part.is-grown {
+    .axo-regen-frame.is-active {
       opacity: 1;
       transform: scale(1);
+    }
+
+    .axo-regen-frame img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 300px;
+      object-fit: contain;
+    }
+
+    .axo-regen-day {
+      position: absolute;
+      left: 0.8rem;
+      top: 0.8rem;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 7px;
+      background: rgba(8, 14, 17, 0.82);
+      color: #fff;
+      font: 700 0.72rem "IBM Plex Mono", monospace;
+      padding: 0.4rem 0.55rem;
+    }
+
+    .axo-research-note {
+      grid-column: 1 / -1;
+      margin-top: -0.25rem;
+      border-top: 1.5px dashed rgba(83, 130, 135, 0.28);
+      padding-top: 0.75rem;
     }
 
     .axo-step-list {
@@ -739,7 +1174,8 @@
       .axo-regen-stage,
       .axo-habitat,
       .axo-prompt-grid,
-      .axo-compare {
+      .axo-compare,
+      .axo-pet-grid {
         grid-template-columns: 1fr;
       }
 
@@ -799,6 +1235,14 @@
       .axo-habitat-media {
         grid-template-columns: 1fr;
       }
+
+      .axo-pet-heading { flex-direction: column; }
+      .axo-tank { min-height: 430px; }
+      .axo-pet-stats { grid-template-columns: 1fr; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .axo-live-dot, .axo-pet-model, .axo-plant, .axo-pet-bubble { animation: none; }
     }
   </style>
 </head>
@@ -920,6 +1364,94 @@
       </aside>
     </section>
 
+    <section class="axo-card axo-pet" id="class-pet" aria-labelledby="class-pet-title">
+      <div class="axo-pet-heading">
+        <div>
+          <p class="axo-kicker">24/7 Class Pet</p>
+          <h2 id="class-pet-title">Visit Noodle's live tank</h2>
+          <p>Noodle keeps swimming after class ends. Feed the same class axolotl from any device, earn community points together, and unlock new tank surprises as the total grows.</p>
+        </div>
+        <div class="axo-live-badge" id="axo-live-badge" role="status">
+          <span class="axo-live-dot" aria-hidden="true"></span>
+          <span id="axo-connection-label">Connecting live</span>
+        </div>
+      </div>
+
+      <div class="axo-pet-grid">
+        <div class="axo-tank" id="axo-pet-tank">
+          <div class="axo-tank-light" aria-hidden="true"></div>
+          <span class="axo-pet-bubble" aria-hidden="true"></span>
+          <span class="axo-pet-bubble" aria-hidden="true"></span>
+          <span class="axo-pet-bubble" aria-hidden="true"></span>
+          <div class="axo-plant axo-plant-left" aria-hidden="true"></div>
+          <div class="axo-plant axo-plant-right" aria-hidden="true"></div>
+          <div class="axo-tank-floor" aria-hidden="true"></div>
+          <model-viewer
+            class="axo-pet-model"
+            src="../assets/models/axolotl.glb"
+            alt="Noodle, the class axolotl, swimming in a 3D aquarium. Drag to look around."
+            camera-controls
+            touch-action="pan-y"
+            interaction-prompt="none"
+            auto-rotate
+            rotation-per-second="7deg"
+            shadow-intensity="0.8"
+            environment-image="neutral"
+            environment-intensity="1.65"
+            exposure="1.08"
+            camera-orbit="22deg 73deg 70%"
+            field-of-view="25deg">
+          </model-viewer>
+          <div class="axo-pet-message" id="axo-pet-message">Noodle is checking the tank for snacks…</div>
+        </div>
+
+        <aside class="axo-pet-console" aria-label="Noodle's care controls">
+          <div class="axo-pet-id">
+            <span class="axo-pet-avatar" aria-hidden="true">🫧</span>
+            <div>
+              <h3>Noodle</h3>
+              <p><span id="axo-tank-clock">Tank time --:--</span> · <span id="axo-last-fed">Checking last meal</span></p>
+            </div>
+          </div>
+
+          <div class="axo-pet-stats" aria-label="Noodle's current needs">
+            <div class="axo-pet-stat">
+              <div class="axo-pet-stat-label"><span>Fullness</span><span id="axo-fullness-value">--%</span></div>
+              <div class="axo-pet-meter"><span id="axo-fullness-meter" style="--value:0%;--meter-color:#e76d9f"></span></div>
+            </div>
+            <div class="axo-pet-stat">
+              <div class="axo-pet-stat-label"><span>Happiness</span><span id="axo-happy-value">--%</span></div>
+              <div class="axo-pet-meter"><span id="axo-happy-meter" style="--value:0%;--meter-color:#77bba8"></span></div>
+            </div>
+          </div>
+
+          <div class="axo-food-tray">
+            <h3>Choose a snack</h3>
+            <div class="axo-food-buttons">
+              <button class="axo-food-button" type="button" data-food="Worm" data-emoji="🪱"><span aria-hidden="true">🪱</span>Worm</button>
+              <button class="axo-food-button" type="button" data-food="Shrimp" data-emoji="🦐"><span aria-hidden="true">🦐</span>Shrimp</button>
+              <button class="axo-food-button" type="button" data-food="Pellet" data-emoji="🟤"><span aria-hidden="true">🟤</span>Pellet</button>
+            </div>
+            <p class="axo-feed-note" id="axo-feed-note" aria-live="polite">Each visit can add 5 class points. Pick a snack when Noodle is ready.</p>
+          </div>
+
+          <div class="axo-points">
+            <strong><span id="axo-points-value">0</span> pts</strong>
+            <span id="axo-next-goal">First surprise unlocks at 50 class points.</span>
+          </div>
+
+          <div class="axo-unlocks">
+            <h3>Community unlock shelf</h3>
+            <div class="axo-unlock-list" id="axo-unlock-list">
+              <div class="axo-unlock" data-points="50"><span class="axo-unlock-icon">🎁</span><span>Mystery tank décor</span><span class="axo-unlock-state">50 pts</span></div>
+              <div class="axo-unlock" data-points="150"><span class="axo-unlock-icon">🎁</span><span>Noodle's hideout</span><span class="axo-unlock-state">150 pts</span></div>
+              <div class="axo-unlock" data-points="300"><span class="axo-unlock-icon">🎁</span><span>Night-tank lights</span><span class="axo-unlock-state">300 pts</span></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
     <section class="axo-grid axo-grid-3">
       <article class="axo-card axo-mini">
         <p class="axo-kicker">Key Term</p>
@@ -941,31 +1473,39 @@
     <section class="axo-card">
       <p class="axo-kicker">Compare</p>
       <h2>Two salamander life strategies</h2>
-      <p>Many amphibians change dramatically as they mature. Axolotls show a different path: adulthood with larval features. Use the slider to model the difference between metamorphosis and neoteny.</p>
+      <p>Many amphibians change dramatically as they mature. Axolotls show a different path: adulthood with larval features. Compare the real animals, then use the slider to focus the evidence.</p>
       <div class="axo-compare">
-        <div class="axo-path">
-          <h3>Metamorphosis Path</h3>
-          <svg viewBox="0 0 260 160" aria-label="Metamorphosis path from water larva to land adult">
-            <ellipse cx="72" cy="78" rx="46" ry="28" fill="#9adad2" />
-            <path d="M88 78 C119 48, 157 46, 188 78" fill="none" stroke="#489d95" stroke-width="8" stroke-linecap="round" />
-            <path d="M176 81 C203 95, 220 110, 236 134" fill="none" stroke="#6aa361" stroke-width="8" stroke-linecap="round" />
-            <circle cx="61" cy="70" r="5" fill="#173135" />
-            <path d="M150 92 L132 122 M172 94 L190 122" stroke="#6aa361" stroke-width="8" stroke-linecap="round" />
-          </svg>
-          <p>Some salamanders lose larval traits, rely more on lungs and skin, and move onto land.</p>
-        </div>
+        <figure class="axo-path" data-life-path="metamorphosis">
+          <div class="axo-path-media">
+            <img loading="lazy" decoding="async" src="../assets/images/axolotl-neoteny/tiger-salamander-adult.webp" alt="An adult California tiger salamander on rocky ground, showing its sturdy legs and lack of external gills." />
+            <span class="axo-path-tag">Relative after metamorphosis</span>
+          </div>
+          <figcaption class="axo-path-body">
+            <h3>Terrestrial adult strategy</h3>
+            <p>A California tiger salamander shows traits common in land-oriented adults after metamorphosis.</p>
+            <div class="axo-observation-list" aria-label="Visible terrestrial adult traits">
+              <span>No external gills</span><span>Strong walking limbs</span><span>Land camouflage</span>
+            </div>
+            <p class="axo-source-credit">Photo: <a href="https://commons.wikimedia.org/wiki/File:An_adult_California_tiger_salamander_(5349327007).jpg">Pacific Southwest Region USFWS</a>, public domain.</p>
+          </figcaption>
+        </figure>
         <div class="axo-arrow">COMPARED WITH</div>
-        <div class="axo-path">
-          <h3>Axolotl Path</h3>
-          <svg viewBox="0 0 260 160" aria-label="Axolotl path staying aquatic with juvenile traits">
-            <path d="M63 80 C98 43, 161 41, 211 76 C165 113, 103 113, 63 80 Z" fill="#ffc1d3" />
-            <path d="M55 60 C32 40, 21 43, 12 48 M55 80 C30 79, 18 88, 8 100 M55 99 C36 118, 29 134, 28 148" stroke="#eb5f8b" stroke-width="8" stroke-linecap="round" />
-            <circle cx="71" cy="73" r="5" fill="#173135" />
-            <path d="M107 108 L96 136 M139 110 L158 135" stroke="#df7196" stroke-width="8" stroke-linecap="round" />
-          </svg>
-          <p>Axolotls usually remain aquatic, keep larval traits, and still reach reproductive maturity.</p>
-        </div>
+        <figure class="axo-path is-emphasized" data-life-path="neoteny">
+          <div class="axo-path-media">
+            <img loading="lazy" decoding="async" src="../assets/images/axolotl-neoteny/axolotl-wild-type.webp" alt="Wild-type adult axolotl underwater, with feathery external gills and a sturdy aquatic body visible." />
+            <span class="axo-path-tag">Adult + juvenile traits</span>
+          </div>
+          <figcaption class="axo-path-body">
+            <h3>Aquatic adult strategy</h3>
+            <p>Adult axolotls usually stay in water while retaining the external gills and finned tail seen in larvae.</p>
+            <div class="axo-observation-list" aria-label="Visible neotenic adult traits">
+              <span>External gills</span><span>Finned tail</span><span>Water-ready body</span>
+            </div>
+            <p class="axo-source-credit">Photo: <a href="https://commons.wikimedia.org/wiki/File:Axolotl_Wild_Type.jpg">Mariblubb</a>, CC BY-SA 4.0; cropped.</p>
+          </figcaption>
+        </figure>
       </div>
+      <p class="axo-figure-caution"><strong>Read this comparison carefully:</strong> these are related species, not before-and-after photographs of one animal. The photographs show two different adult strategies within the mole salamander family.</p>
       <div class="axo-slider-shell">
         <label for="neoteny-slider">
           <span>Neoteny level</span>
@@ -1006,21 +1546,25 @@
     <section class="axo-card">
       <p class="axo-kicker">Regeneration Lab</p>
       <h2>How an axolotl rebuilds a limb</h2>
-      <p>Regeneration is not magic. It is organized biology: cells respond to injury, form a growth zone, rebuild missing structures, and reconnect tissues. Step through the simplified model below.</p>
+      <p>Regeneration is not magic. It is organized biology: cells respond to injury, form a growth zone, rebuild missing structures, and reconnect tissues. Step through photographs from a published axolotl study.</p>
       <div class="axo-regen-stage">
-        <div class="axo-regen-visual">
-          <svg viewBox="0 0 300 260" width="260" height="230" role="img" aria-label="Simplified axolotl limb regeneration stages">
-            <ellipse cx="134" cy="132" rx="86" ry="42" fill="#ffb5cb" />
-            <circle cx="78" cy="118" r="38" fill="#ffc9d8" />
-            <circle cx="67" cy="112" r="5" fill="#173135" />
-            <path d="M90 136 C105 147, 122 146, 136 136" fill="none" stroke="#bd4f76" stroke-width="5" stroke-linecap="round" />
-            <path d="M171 159 C189 177, 207 181, 226 171" fill="none" stroke="#dc7197" stroke-width="14" stroke-linecap="round" />
-            <g id="regen-limb">
-              <path class="regen-limb-part" data-stage="1" d="M220 172 C235 175, 247 180, 254 193" fill="none" stroke="#eb86a8" stroke-width="14" stroke-linecap="round" />
-              <path class="regen-limb-part" data-stage="2" d="M252 194 C263 205, 268 217, 266 232" fill="none" stroke="#e1769d" stroke-width="12" stroke-linecap="round" />
-              <path class="regen-limb-part" data-stage="3" d="M265 232 L255 244 M265 232 L271 248 M265 232 L282 241" fill="none" stroke="#cf5d88" stroke-width="6" stroke-linecap="round" />
-            </g>
-          </svg>
+        <div class="axo-regen-visual" id="regen-visual" aria-live="polite">
+          <figure class="axo-regen-frame is-active" data-stage="0">
+            <img loading="lazy" decoding="async" src="../assets/images/axolotl-neoteny/regeneration-intact.webp" alt="Axolotl forelimb at day zero immediately after amputation." />
+            <figcaption class="axo-regen-day">Day 0 · wound closes</figcaption>
+          </figure>
+          <figure class="axo-regen-frame" data-stage="1" aria-hidden="true">
+            <img loading="lazy" decoding="async" src="../assets/images/axolotl-neoteny/regeneration-blastema.webp" alt="Rounded blastema growing at the end of an axolotl limb nine days after amputation." />
+            <figcaption class="axo-regen-day">Day 9 · blastema</figcaption>
+          </figure>
+          <figure class="axo-regen-frame" data-stage="2" aria-hidden="true">
+            <img loading="lazy" decoding="async" src="../assets/images/axolotl-neoteny/regeneration-growth.webp" alt="Elongating axolotl limb regenerate twenty-one days after amputation." />
+            <figcaption class="axo-regen-day">Day 21 · pattern grows</figcaption>
+          </figure>
+          <figure class="axo-regen-frame" data-stage="3" aria-hidden="true">
+            <img loading="lazy" decoding="async" src="../assets/images/axolotl-neoteny/regeneration-complete.webp" alt="Regrown axolotl forelimb with digits forty-seven days after amputation." />
+            <figcaption class="axo-regen-day">Day 47 · digits restored</figcaption>
+          </figure>
         </div>
         <div>
           <ol class="axo-step-list" id="regen-steps">
@@ -1030,12 +1574,13 @@
             <li><strong>4. Function improves:</strong> The limb grows, reconnects, and becomes useful again over time.</li>
           </ol>
           <div class="axo-button-row" id="regen-buttons" aria-label="Regeneration stage controls">
-            <button type="button" class="is-active" data-stage="0">Wound</button>
-            <button type="button" data-stage="1">Blastema</button>
-            <button type="button" data-stage="2">Growth</button>
-            <button type="button" data-stage="3">Pattern</button>
+            <button type="button" class="is-active" data-stage="0">Day 0</button>
+            <button type="button" data-stage="1">Day 9</button>
+            <button type="button" data-stage="2">Day 21</button>
+            <button type="button" data-stage="3">Day 47</button>
           </div>
         </div>
+        <p class="axo-source-credit axo-research-note">Research images: cropped from Figure 1A in <a href="https://doi.org/10.3389/fgene.2022.1036641">Hu et al., <em>Frontiers in Genetics</em> (2022)</a>, CC BY 4.0. “dpa” means days post-amputation. The images show a control animal; crops preserve the original scale bars where present.</p>
       </div>
     </section>
 
@@ -1120,6 +1665,253 @@
   <script src="../assets/js/nav-mobile.js"></script>
   <script>
     (function () {
+      // The existing aquarium's public live-data rules are scoped to /fish.
+      // Noodle is a reserved, valid creature record there, so the pet can also
+      // appear in the main class aquarium without requiring a second backend.
+      const PET_PATH = "fish/classPetAxolotl";
+      const LOCAL_STATE_KEY = "classroomos:axolotl-pet-state:v1";
+      const LOCAL_FEED_KEY = "classroomos:axolotl-pet-last-feed:v1";
+      const FEED_COOLDOWN_MS = 60 * 1000;
+      const POINTS_PER_FEED = 5;
+      const firebaseConfig = {
+        apiKey: "AIzaSyD5_i08If4CWXvTzr3nhdh3rQiZHybSDsU",
+        authDomain: "steamaqaurium.firebaseapp.com",
+        databaseURL: "https://steamaqaurium-default-rtdb.firebaseio.com",
+        projectId: "steamaqaurium",
+        storageBucket: "steamaqaurium.firebasestorage.app",
+        messagingSenderId: "966555196100",
+        appId: "1:966555196100:web:e0243f586e9cf14f9f4791"
+      };
+      const defaultState = {
+        name: "Noodle",
+        color: "#f28fb2",
+        size: 0.95,
+        role: "eel",
+        petType: "class-axolotl",
+        points: 0,
+        totalFeeds: 0,
+        lastFed: Date.now() - (3 * 60 * 60 * 1000),
+        lastFood: "a snack",
+        startedAt: Date.now()
+      };
+      const elements = {
+        badge: document.getElementById("axo-live-badge"),
+        connection: document.getElementById("axo-connection-label"),
+        clock: document.getElementById("axo-tank-clock"),
+        lastFed: document.getElementById("axo-last-fed"),
+        fullnessValue: document.getElementById("axo-fullness-value"),
+        fullnessMeter: document.getElementById("axo-fullness-meter"),
+        happyValue: document.getElementById("axo-happy-value"),
+        happyMeter: document.getElementById("axo-happy-meter"),
+        message: document.getElementById("axo-pet-message"),
+        note: document.getElementById("axo-feed-note"),
+        points: document.getElementById("axo-points-value"),
+        nextGoal: document.getElementById("axo-next-goal"),
+        tank: document.getElementById("axo-pet-tank"),
+        unlocks: Array.from(document.querySelectorAll(".axo-unlock")),
+        buttons: Array.from(document.querySelectorAll(".axo-food-button"))
+      };
+      let state = Object.assign({}, defaultState);
+      let database = null;
+      let petRef = null;
+      let liveMode = false;
+      let serverOffset = 0;
+      let noteLockedUntil = 0;
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function safeState(value) {
+        const next = value && typeof value === "object" ? value : {};
+        return {
+          name: "Noodle",
+          color: "#f28fb2",
+          size: 0.95,
+          role: "eel",
+          petType: "class-axolotl",
+          points: clamp(Math.round(Number(next.points) || 0), 0, 10000000),
+          totalFeeds: clamp(Math.round(Number(next.totalFeeds) || 0), 0, 2000000),
+          lastFed: Number(next.lastFed) > 0 ? Number(next.lastFed) : defaultState.lastFed,
+          lastFood: typeof next.lastFood === "string" ? next.lastFood.slice(0, 24) : "a snack",
+          startedAt: Number(next.startedAt) > 0 ? Number(next.startedAt) : defaultState.startedAt
+        };
+      }
+
+      function now() {
+        return Date.now() + serverOffset;
+      }
+
+      function timeAgo(timestamp) {
+        const minutes = Math.max(0, Math.floor((now() - timestamp) / 60000));
+        if (minutes < 1) return "fed just now";
+        if (minutes < 60) return "fed " + minutes + "m ago";
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return "fed " + hours + "h ago";
+        return "fed " + Math.floor(hours / 24) + "d ago";
+      }
+
+      function careLevels() {
+        const hoursSinceFood = Math.max(0, (now() - state.lastFed) / 3600000);
+        return {
+          fullness: Math.round(clamp(100 - (hoursSinceFood * 4), 0, 100)),
+          happiness: Math.round(clamp(100 - (hoursSinceFood * 1.7), 12, 100))
+        };
+      }
+
+      function petCopy(levels) {
+        if (levels.fullness < 20) return "Noodle is very hungry. A snack would make those gills wiggle!";
+        if (levels.fullness < 48) return "Noodle is peeking through the plants for a snack.";
+        if (levels.fullness > 92) return "Noodle is full, floaty, and feeling fantastic.";
+        if (levels.happiness > 75) return "Noodle is happily patrolling the class tank.";
+        return "Noodle is calmly exploring the aquarium.";
+      }
+
+      function renderUnlocks() {
+        const locked = [];
+        elements.unlocks.forEach((item) => {
+          const threshold = Number(item.dataset.points);
+          const unlocked = state.points >= threshold;
+          item.classList.toggle("is-unlocked", unlocked);
+          item.querySelector(".axo-unlock-icon").textContent = unlocked ? "✨" : "🎁";
+          item.querySelector(".axo-unlock-state").textContent = unlocked ? "Unlocked" : threshold + " pts";
+          if (!unlocked) locked.push(threshold);
+        });
+        if (locked.length) {
+          const next = Math.min.apply(null, locked);
+          elements.nextGoal.textContent = (next - state.points) + " more points until the next tank surprise.";
+        } else {
+          elements.nextGoal.textContent = "All current goals unlocked. More surprises are coming later!";
+        }
+      }
+
+      function render() {
+        const levels = careLevels();
+        elements.clock.textContent = "Tank time " + new Intl.DateTimeFormat([], { hour: "numeric", minute: "2-digit" }).format(new Date(now()));
+        elements.lastFed.textContent = timeAgo(state.lastFed);
+        elements.fullnessValue.textContent = levels.fullness + "%";
+        elements.fullnessMeter.style.setProperty("--value", levels.fullness + "%");
+        elements.happyValue.textContent = levels.happiness + "%";
+        elements.happyMeter.style.setProperty("--value", levels.happiness + "%");
+        elements.points.textContent = state.points.toLocaleString();
+        if (Date.now() >= noteLockedUntil) elements.message.textContent = petCopy(levels);
+        renderUnlocks();
+        renderCooldown();
+      }
+
+      function getLastLocalFeed() {
+        try { return Number(localStorage.getItem(LOCAL_FEED_KEY)) || 0; } catch (error) { return 0; }
+      }
+
+      function renderCooldown() {
+        const remaining = Math.max(0, FEED_COOLDOWN_MS - (Date.now() - getLastLocalFeed()));
+        const cooling = remaining > 0;
+        elements.buttons.forEach((button) => { button.disabled = cooling; });
+        if (Date.now() < noteLockedUntil) return;
+        elements.note.textContent = cooling
+          ? "Noodle is chewing. Another snack can be given from this device in " + Math.ceil(remaining / 1000) + "s."
+          : "Each visit can add 5 class points. Pick a snack when Noodle is ready.";
+      }
+
+      function saveLocal() {
+        try { localStorage.setItem(LOCAL_STATE_KEY, JSON.stringify(state)); } catch (error) { /* The live state still works. */ }
+      }
+
+      function feedAnimation(emoji) {
+        const food = document.createElement("span");
+        food.className = "axo-floating-food";
+        food.textContent = emoji;
+        food.setAttribute("aria-hidden", "true");
+        food.style.setProperty("--food-x", (35 + Math.random() * 30) + "%");
+        elements.tank.appendChild(food);
+        window.setTimeout(() => food.remove(), 1900);
+      }
+
+      async function feed(button) {
+        if (Date.now() - getLastLocalFeed() < FEED_COOLDOWN_MS) {
+          renderCooldown();
+          return;
+        }
+        const foodName = button.dataset.food;
+        const emoji = button.dataset.emoji;
+        elements.buttons.forEach((item) => { item.disabled = true; });
+        elements.note.textContent = "Dropping " + foodName.toLowerCase() + " into the live tank…";
+        try {
+          const fedAt = now();
+          if (petRef) {
+            const result = await petRef.transaction((current) => {
+              const next = safeState(current);
+              next.points += POINTS_PER_FEED;
+              next.totalFeeds += 1;
+              next.lastFed = fedAt;
+              next.lastFood = foodName;
+              return next;
+            });
+            if (!result.committed) throw new Error("The live feed was not saved.");
+            state = safeState(result.snapshot.val());
+          } else {
+            state.points += POINTS_PER_FEED;
+            state.totalFeeds += 1;
+            state.lastFed = fedAt;
+            state.lastFood = foodName;
+          }
+          saveLocal();
+          try { localStorage.setItem(LOCAL_FEED_KEY, String(Date.now())); } catch (error) { /* Continue without cooldown storage. */ }
+          noteLockedUntil = Date.now() + 4500;
+          elements.message.textContent = "Nom! Noodle loved the " + foodName.toLowerCase() + ". +" + POINTS_PER_FEED + " class points!";
+          elements.note.textContent = liveMode
+            ? "Snack delivered. Everyone will see the new class total."
+            : "Snack saved. It will join the class total when the tank reconnects.";
+          feedAnimation(emoji);
+          render();
+        } catch (error) {
+          elements.note.textContent = "The live tank could not save that snack. Check the connection and try again.";
+          elements.buttons.forEach((item) => { item.disabled = false; });
+        }
+      }
+
+      function startLocalMode() {
+        try { state = safeState(JSON.parse(localStorage.getItem(LOCAL_STATE_KEY) || "null")); } catch (error) { state = safeState(defaultState); }
+        petRef = null;
+        liveMode = false;
+        elements.connection.textContent = "This device";
+        elements.badge.title = "The live class service is unavailable, so progress is saved on this device.";
+        render();
+      }
+
+      function connectLiveTank() {
+        try {
+          if (!window.firebase) throw new Error("Firebase did not load");
+          const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
+          database = app.database();
+          petRef = database.ref(PET_PATH);
+          database.ref(".info/serverTimeOffset").on("value", (snapshot) => {
+            serverOffset = Number(snapshot.val()) || 0;
+          });
+          database.ref(".info/connected").on("value", (snapshot) => {
+            liveMode = snapshot.val() === true;
+            elements.connection.textContent = liveMode ? "Class tank live" : "Reconnecting";
+          });
+          petRef.on("value", (snapshot) => {
+            state = safeState(snapshot.val());
+            saveLocal();
+            liveMode = true;
+            elements.connection.textContent = "Class tank live";
+            render();
+          }, startLocalMode);
+        } catch (error) {
+          startLocalMode();
+        }
+      }
+
+      elements.buttons.forEach((button) => button.addEventListener("click", () => feed(button)));
+      render();
+      connectLiveTank();
+      window.setInterval(render, 1000);
+    })();
+  </script>
+  <script>
+    (function () {
       const callout = document.getElementById("axo-callout");
       const featureCopy = {
         gills: {
@@ -1147,6 +1939,8 @@
       const value = document.getElementById("neoteny-value");
       const meter = document.getElementById("neoteny-meter");
       const readout = document.getElementById("neoteny-readout");
+      const metamorphosisPath = document.querySelector('[data-life-path="metamorphosis"]');
+      const neotenyPath = document.querySelector('[data-life-path="neoteny"]');
 
       function updateNeoteny() {
         const n = Number(slider.value);
@@ -1154,12 +1948,18 @@
         if (n < 34) {
           value.textContent = "Low: metamorphosis path";
           readout.textContent = "Juvenile traits fade, the animal becomes more land-oriented, and aquatic features become less central.";
+          metamorphosisPath.classList.add("is-emphasized");
+          neotenyPath.classList.remove("is-emphasized");
         } else if (n < 67) {
           value.textContent = "Mixed: transitional traits";
           readout.textContent = "Some juvenile traits remain useful, while other adult traits become more pronounced.";
+          metamorphosisPath.classList.add("is-emphasized");
+          neotenyPath.classList.add("is-emphasized");
         } else {
           value.textContent = "High: aquatic adult";
           readout.textContent = "External gills stay prominent, tail fin remains useful, and the animal keeps a water-ready body plan.";
+          metamorphosisPath.classList.remove("is-emphasized");
+          neotenyPath.classList.add("is-emphasized");
         }
       }
 
@@ -1168,12 +1968,16 @@
 
       const buttons = Array.from(document.querySelectorAll("#regen-buttons button"));
       const steps = Array.from(document.querySelectorAll("#regen-steps li"));
-      const limbParts = Array.from(document.querySelectorAll(".regen-limb-part"));
+      const regenFrames = Array.from(document.querySelectorAll(".axo-regen-frame"));
 
       function setStage(stage) {
         buttons.forEach((button) => button.classList.toggle("is-active", Number(button.dataset.stage) === stage));
         steps.forEach((step, index) => step.classList.toggle("is-active", index === stage));
-        limbParts.forEach((part) => part.classList.toggle("is-grown", Number(part.dataset.stage) <= stage));
+        regenFrames.forEach((frame) => {
+          const active = Number(frame.dataset.stage) === stage;
+          frame.classList.toggle("is-active", active);
+          frame.setAttribute("aria-hidden", String(!active));
+        });
       }
 
       buttons.forEach((button) => {

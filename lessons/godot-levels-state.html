@@ -1,0 +1,53 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Levels &amp; Game State · Godot Pathway</title><meta name="description" content="Godot Pathway Lesson 7: create menus, pause behavior, scene transitions, checkpoints, and persistent save data."><link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="../assets/css/classroom-home.css"><link rel="stylesheet" href="../assets/css/lessons/godot-pathway.css"></head><body class="theme-liquid-woodland theme-steam"><a class="skip-link" href="#main-content">Skip to content</a>
+<header class="gd-course-top"><div><a href="godot-pathway.html">← Pathway</a><span>Lesson 7 · Levels &amp; Game State</span><a href="godot-export-publish.html">Next lesson →</a></div></header><main id="main-content" class="gd-course">
+<section class="gd-lesson-hero"><p class="gd-eyebrow">Lesson 07 · 70 minutes · Structure layer</p><h1 class="gd-title">Connect moments into a complete loop.</h1><p class="gd-lede">Turn one playable level into a complete game flow with a title screen, pause menu, retries, scene transitions, checkpoints, and a small persistent save file.</p><div class="gd-meta"><span>AUTOLOAD</span><span>SCENE CHANGE</span><span>PAUSE</span><span>CHECKPOINTS</span><span>SAVE DATA</span></div></section><nav class="gd-nav"><a href="godot-animation-game-feel.html">← 06 Animation &amp; Feel</a><a href="godot-export-publish.html">08 Export &amp; Publish →</a></nav>
+<section class="gd-section"><div class="gd-section-mark">01 / FLOW</div><div><p class="gd-kicker">Game states</p><h2>Name every screen and transition.</h2><div class="gd-mini-tree" style="max-width:520px"><b>game flow</b><span>Title Screen</span><span>Level 1</span><span>Pause Overlay</span><span>Win / Retry</span><span>Level 2 or Credits</span></div><p>Draw arrows before coding. Each arrow needs a trigger: Start button, Escape key, last collectible, player death, or Continue button.</p></div></section>
+<section class="gd-section"><div class="gd-section-mark">02 / GLOBAL</div><div><p class="gd-kicker">Autoload</p><h2>Keep cross-scene data in one small manager.</h2><p>Create <code>game_state.gd</code>, then add it through <strong>Project Settings → Globals → Autoload</strong> as <code>GameState</code>.</p><div class="gd-code"><div class="gd-code-head"><span>game_state.gd</span><button class="gd-copy">Copy</button></div><pre><code><span class="k">extends</span> Node
+<span class="k">var</span> current_level := <span class="n">1</span>
+<span class="k">var</span> best_time := <span class="n">999.0</span>
+<span class="k">var</span> checkpoint := Vector3.ZERO
+
+<span class="k">func</span> start_game() -> void:
+    current_level = <span class="n">1</span>
+    get_tree().change_scene_to_file(<span class="s">"res://levels/level_1.tscn"</span>)
+
+<span class="k">func</span> retry_level() -> void:
+    get_tree().reload_current_scene()</code></pre></div><div class="gd-callout"><strong>Keep it small:</strong> Autoloads are useful for data that truly must survive scene changes. Do not turn GameState into a home for every unrelated script.</div></div></section>
+<section class="gd-section"><div class="gd-section-mark">03 / PAUSE</div><div><p class="gd-kicker">Control time</p><h2>Pause gameplay, not the menu.</h2><div class="gd-code"><div class="gd-code-head"><span>pause_menu.gd</span><button class="gd-copy">Copy</button></div><pre><code><span class="k">extends</span> Control
+
+<span class="k">func</span> _unhandled_input(event: InputEvent) -> void:
+    <span class="k">if</span> event.is_action_pressed(<span class="s">"pause"</span>):
+        <span class="k">var</span> paused := <span class="k">not</span> get_tree().paused
+        get_tree().paused = paused
+        visible = paused
+        Input.mouse_mode = Input.MOUSE_MODE_VISIBLE <span class="k">if</span> paused <span class="k">else</span> Input.MOUSE_MODE_CAPTURED</code></pre></div><p>Set the pause menu’s Process Mode to <strong>Always</strong>. It must receive the pause action both before the game pauses and while it is paused so the same key can resume.</p></div></section>
+<section class="gd-section"><div class="gd-section-mark">04 / SAVE</div><div><p class="gd-kicker">Persistence</p><h2>Save only the facts you need later.</h2><div class="gd-code"><div class="gd-code-head"><span>JSON save data</span><button class="gd-copy">Copy</button></div><pre><code><span class="k">const</span> SAVE_PATH := <span class="s">"user://save.json"</span>
+
+<span class="k">func</span> save_progress() -> void:
+    <span class="k">var</span> data = {<span class="s">"level"</span>: current_level, <span class="s">"best_time"</span>: best_time}
+    <span class="k">var</span> file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+    file.store_string(JSON.stringify(data))
+
+<span class="k">func</span> load_progress() -> void:
+    <span class="k">if not</span> FileAccess.file_exists(SAVE_PATH): <span class="k">return</span>
+    <span class="k">var</span> file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+    <span class="k">var</span> data = JSON.parse_string(file.get_as_text())
+    <span class="k">if</span> typeof(data) != TYPE_DICTIONARY: <span class="k">return</span>
+    current_level = int(data.get(<span class="s">"level"</span>, <span class="n">1</span>))
+    best_time = float(data.get(<span class="s">"best_time"</span>, <span class="n">999.0</span>))</code></pre></div><div class="gd-challenge"><h3>Remix challenge</h3><p>Add a reset-save button with a confirmation step. Test the experience as if a player clicks it accidentally.</p></div></div></section>
+<section class="gd-section"><div class="gd-section-mark">05 / CHECKPOINT</div><div><p class="gd-kicker">Recovery</p><h2>Respawn at the last activated checkpoint.</h2><p>Create a Checkpoint scene with an Area3D, collision shape, visible marker, and SpawnPoint child. Connect <code>body_entered</code>.</p><div class="gd-code"><div class="gd-code-head"><span>checkpoint.gd</span><button class="gd-copy">Copy</button></div><pre><code><span class="k">extends</span> Area3D
+<span class="k">var</span> activated := <span class="k">false</span>
+
+<span class="k">func</span> _on_body_entered(body: Node3D) -> void:
+    <span class="k">if</span> activated <span class="k">or not</span> body.is_in_group(<span class="s">"player"</span>): <span class="k">return</span>
+    activated = <span class="k">true</span>
+    GameState.checkpoint = $SpawnPoint.global_position
+    $AnimationPlayer.play(<span class="s">"activate"</span>)
+
+<span class="c"># In player.gd</span>
+<span class="k">func</span> respawn() -> void:
+    health = max_health
+    global_position = GameState.checkpoint
+    velocity = Vector3.ZERO</code></pre></div><div class="gd-practice" data-question data-correct="Correct. Runtime checkpoint position belongs in GameState, while the best result is worth saving between sessions." data-retry="Separate data needed after a scene reload from data needed after the app closes."><strong>Which data must be written to disk?</strong><div class="gd-practice-options"><button data-answer="wrong">Every velocity value</button><button data-answer="correct">The best result the player should keep next time</button><button data-answer="wrong">The camera's current shake offset</button></div><p class="gd-practice-result" aria-live="polite"></p></div><div class="gd-savepoint"><div><b>Duplicate the project as <code>SignalRun_07_GameLoop</code>.</b><span>Test title → play → checkpoint → death → respawn → pause → win → retry, then reopen the game and load the best result.</span></div></div></div></section>
+<section class="gd-section"><div class="gd-section-mark">06 / CHECK</div><div><p class="gd-kicker">Definition of done</p><h2>Your game loop is complete when…</h2><div class="gd-checklist"><label><input type="checkbox">Start, pause, resume, win, retry, and quit all have clear controls.</label><label><input type="checkbox">The mouse mode matches gameplay or menu state.</label><label><input type="checkbox">Death returns Player to the latest activated checkpoint.</label><label><input type="checkbox">Closing and reopening the game restores the best result.</label></div><p data-check-status>0/4 checked</p><p class="gd-evidence"><strong>Evidence:</strong> Complete the entire game-flow test without using the editor or changing code.</p><div class="gd-complete"><div><h3>Lesson 7 complete</h3><p>Your mechanics now form a beginning-to-end experience.</p></div><button class="gd-button" data-complete-lesson="7">Mark lesson complete</button></div></div></section>
+</main><script src="../assets/js/lessons/godot-pathway.js"></script><script src="../assets/js/lesson-print-button.js"></script></body></html>

@@ -1,0 +1,68 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Enemies &amp; Simple AI · Godot Pathway</title><meta name="description" content="Godot Pathway Lesson 5: build a state-based enemy with patrol, detection, navigation, chase, damage, and respawn behavior."><link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="../assets/css/classroom-home.css"><link rel="stylesheet" href="../assets/css/lessons/godot-pathway.css"></head><body class="theme-liquid-woodland theme-steam"><a class="skip-link" href="#main-content">Skip to content</a>
+<header class="gd-course-top"><div><a href="godot-pathway.html">← Pathway</a><span>Lesson 5 · Enemies &amp; Simple AI</span><a href="godot-animation-game-feel.html">Next lesson →</a></div></header><main id="main-content" class="gd-course">
+<section class="gd-lesson-hero"><p class="gd-eyebrow">Lesson 05 · 70 minutes · Challenge layer</p><h1 class="gd-title">Make an enemy choose.</h1><p class="gd-lede">Build a guard that patrols while the player is far away, chases after detection, deals damage on contact, and returns to patrol when the player escapes.</p><div class="gd-meta"><span>STATES</span><span>AREA3D</span><span>NAVIGATION</span><span>CHASE</span><span>DAMAGE</span></div></section><nav class="gd-nav"><a href="godot-collectibles-ui.html">← 04 Collectibles &amp; UI</a><a href="godot-animation-game-feel.html">06 Animation &amp; Feel →</a></nav>
+<section class="gd-section"><div class="gd-section-mark">01 / MODEL</div><div><p class="gd-kicker">State machine</p><h2>One enemy, three clear modes.</h2><div class="gd-card-grid"><article class="gd-card"><h3>Patrol</h3><p>Move between points and watch for the player.</p></article><article class="gd-card"><h3>Chase</h3><p>Update a navigation target and pursue while detected.</p></article><article class="gd-card"><h3>Return</h3><p>Navigate back to the patrol route after the player escapes.</p></article><article class="gd-card"><h3>Transition</h3><p>A detection signal changes the current state; the state controls behavior.</p></article></div><p>States prevent one large function from trying to patrol, chase, attack, and return at the same time.</p></div></section>
+<section class="gd-section"><div class="gd-section-mark">02 / NAV</div><div><p class="gd-kicker">Scene setup</p><h2>Give the guard a walkable map.</h2><div class="gd-mini-tree" style="max-width:520px"><b>enemy.tscn</b><span>Enemy · CharacterBody3D</span><span>NavigationAgent3D</span><span>DetectionArea · Area3D</span><span>CollisionShape3D</span><span>Mesh + Body Collision</span></div><ol class="gd-steps"><li><b>Add NavigationRegion3D to Main.</b>Create a NavigationMesh resource and bake the floor.</li><li><b>Create the enemy scene.</b>Add its mesh, physical collision, detection area, and NavigationAgent3D.</li><li><b>Create two patrol markers.</b>Add Marker3D nodes to Main, place them on the baked region, then assign both to the enemy’s <code>patrol_points</code> array.</li><li><b>Assign groups and signals.</b>Keep Player in <code>player</code>; connect DetectionArea’s <code>body_entered</code> and <code>body_exited</code>.</li><li><b>Test the map.</b>Turn on visible navigation in the Debug menu and confirm the route stays on the baked floor.</li></ol></div></section>
+<section class="gd-section"><div class="gd-section-mark">03 / CODE</div><div><p class="gd-kicker">Chase behavior</p><h2>Ask navigation for the next safe position.</h2><div class="gd-code"><div class="gd-code-head"><span>enemy.gd</span><button class="gd-copy">Copy</button></div><pre><code><span class="k">extends</span> CharacterBody3D
+<span class="k">enum</span> State { PATROL, CHASE, RETURN }
+<span class="k">@export var</span> speed := <span class="n">3.5</span>
+<span class="k">@export var</span> patrol_points: Array[Node3D]
+<span class="k">@onready var</span> agent: NavigationAgent3D = $NavigationAgent3D
+<span class="k">var</span> state := State.PATROL
+<span class="k">var</span> player: Node3D
+<span class="k">var</span> patrol_index := <span class="n">0</span>
+
+<span class="k">func</span> _ready() -> void:
+    <span class="k">if not</span> patrol_points.is_empty():
+        agent.target_position = patrol_points[<span class="n">0</span>].global_position
+
+<span class="k">func</span> _physics_process(_delta: float) -> void:
+    <span class="k">match</span> state:
+        State.PATROL: patrol()
+        State.CHASE: chase()
+        State.RETURN: return_to_patrol()
+    follow_path()
+
+<span class="k">func</span> patrol() -> void:
+    <span class="k">if</span> agent.is_navigation_finished() <span class="k">and not</span> patrol_points.is_empty():
+        patrol_index = (patrol_index + <span class="n">1</span>) % patrol_points.size()
+        agent.target_position = patrol_points[patrol_index].global_position
+
+<span class="k">func</span> chase() -> void:
+    <span class="k">if</span> is_instance_valid(player):
+        agent.target_position = player.global_position
+
+<span class="k">func</span> return_to_patrol() -> void:
+    <span class="k">if</span> patrol_points.is_empty(): <span class="k">return</span>
+    agent.target_position = patrol_points[patrol_index].global_position
+    <span class="k">if</span> agent.is_navigation_finished(): state = State.PATROL
+
+<span class="k">func</span> follow_path() -> void:
+    <span class="k">if</span> agent.is_navigation_finished():
+        velocity = Vector3.ZERO
+        <span class="k">return</span>
+    <span class="k">var</span> next := agent.get_next_path_position()
+    <span class="k">var</span> direction := global_position.direction_to(next)
+    velocity = direction * speed
+    move_and_slide()
+
+<span class="k">func</span> _on_detection_body_entered(body: Node3D) -> void:
+    <span class="k">if</span> body.is_in_group(<span class="s">"player"</span>):
+        player = body
+        state = State.CHASE
+
+<span class="k">func</span> _on_detection_body_exited(body: Node3D) -> void:
+    <span class="k">if</span> body == player:
+        player = <span class="k">null</span>
+        state = State.RETURN</code></pre></div><div class="gd-callout danger"><strong>Navigation is not collision.</strong> Navigation finds a route; CharacterBody3D and CollisionShape3D still handle physical contact.</div><div class="gd-practice" data-question data-correct="Correct. RETURN gives the enemy one clear goal before PATROL resumes." data-retry="The enemy no longer has a valid player target. It needs to reconnect with its route."><strong>The player leaves detection. Which state should run next?</strong><div class="gd-practice-options"><button data-answer="wrong">Keep CHASE forever</button><button data-answer="correct">RETURN to the current patrol point</button><button data-answer="wrong">Delete the enemy</button></div><p class="gd-practice-result" aria-live="polite"></p></div></div></section>
+<section class="gd-section"><div class="gd-section-mark">04 / DAMAGE</div><div><p class="gd-kicker">Fair challenge</p><h2>Signal danger before punishment.</h2><p>Add a red detection glow or sound before the chase begins. Use a short invulnerability timer after damage so one collision cannot remove all health in a single second.</p><div class="gd-code"><div class="gd-code-head"><span>player.gd · damage cooldown</span><button class="gd-copy">Copy</button></div><pre><code><span class="k">var</span> can_take_damage := <span class="k">true</span>
+
+<span class="k">func</span> take_damage(amount: int) -> void:
+    <span class="k">if not</span> can_take_damage: <span class="k">return</span>
+    can_take_damage = <span class="k">false</span>
+    health -= amount
+    <span class="k">if</span> health <= <span class="n">0</span>: respawn()
+    <span class="k">await</span> get_tree().create_timer(<span class="n">1.0</span>).timeout
+    can_take_damage = <span class="k">true</span></code></pre></div><div class="gd-challenge"><h3>Remix challenge</h3><p>Add an INVESTIGATE state. When the player escapes, the enemy first walks to the last position where it saw the player.</p></div><div class="gd-savepoint"><div><b>Duplicate the project as <code>SignalRun_05_AI</code>.</b><span>Your restore point must demonstrate Patrol → Chase → Return → Patrol and a one-second damage cooldown.</span></div></div></div></section>
+<section class="gd-section"><div class="gd-section-mark">05 / CHECK</div><div><p class="gd-kicker">Definition of done</p><h2>Your enemy is fair when…</h2><div class="gd-checklist"><label><input type="checkbox">The enemy follows at least two assigned patrol points.</label><label><input type="checkbox">Entering detection changes patrol into chase.</label><label><input type="checkbox">Escaping detection returns the enemy to its route.</label><label><input type="checkbox">Damage has clear warning and a cooldown.</label></div><p data-check-status>0/4 checked</p><p class="gd-evidence"><strong>Evidence:</strong> Narrate the current state while a partner deliberately triggers every transition.</p><div class="gd-complete"><div><h3>Lesson 5 complete</h3><p>Your game now creates pressure and meaningful risk.</p></div><button class="gd-button" data-complete-lesson="5">Mark lesson complete</button></div></div></section>
+</main><script src="../assets/js/lessons/godot-pathway.js"></script><script src="../assets/js/lesson-print-button.js"></script></body></html>

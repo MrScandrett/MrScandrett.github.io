@@ -475,6 +475,10 @@
       line-height: 1.6;
     }
 
+    .p1080-session-controls {
+      justify-content: center;
+    }
+
     .p1080-mission-actions {
       display: flex;
       flex-wrap: wrap;
@@ -1055,34 +1059,6 @@
               </div>
               <div class="p1080-mission-actions">
                 <button class="p1080-btn p1080-btn--primary" id="p1080-start-session" type="button">Start Session</button>
-                <button class="p1080-btn p1080-btn--warn" id="p1080-distraction-btn" type="button" disabled>Log Distraction</button>
-                <button class="p1080-btn" id="p1080-end-session" type="button" disabled>End Session</button>
-              </div>
-            </div>
-
-            <div class="p1080-efficiency">
-              <div class="p1080-gauge">
-                <svg viewBox="0 0 200 120" aria-hidden="true">
-                  <path d="M24 100 A76 76 0 0 1 176 100" fill="none" stroke="rgba(188, 206, 223, 0.75)" stroke-width="16" stroke-linecap="round"></path>
-                  <path id="p1080-gauge-arc" d="M24 100 A76 76 0 0 1 176 100" fill="none" stroke="#3b82f6" stroke-width="16" stroke-linecap="round" stroke-dasharray="239" stroke-dashoffset="0"></path>
-                  <line id="p1080-gauge-needle" x1="100" y1="100" x2="156" y2="100" stroke="#163049" stroke-width="5" stroke-linecap="round"></line>
-                  <circle cx="100" cy="100" r="8" fill="#163049"></circle>
-                </svg>
-                <div class="p1080-gauge-value" id="p1080-efficiency-score">100%</div>
-              </div>
-              <div class="p1080-efficiency-stats">
-                <div class="p1080-stat">
-                  <strong>Current Phase</strong>
-                  <span id="p1080-live-phase">Idle</span>
-                </div>
-                <div class="p1080-stat">
-                  <strong>Context Switches</strong>
-                  <span id="p1080-penalty-count">0</span>
-                </div>
-                <div class="p1080-stat">
-                  <strong>Next Shift</strong>
-                  <span id="p1080-next-shift">Session not started</span>
-                </div>
               </div>
             </div>
 
@@ -1200,6 +1176,37 @@
                 <ul class="p1080-rubric-list" id="p1080-session-review-list"></ul>
                 <textarea class="p1080-reflection-input" id="p1080-review-reflection" placeholder="What improved? What slipped? What should the next session protect?"></textarea>
               </section>
+            </div>
+
+            <div class="p1080-efficiency">
+              <div class="p1080-gauge">
+                <svg viewBox="0 0 200 120" aria-hidden="true">
+                  <path d="M24 100 A76 76 0 0 1 176 100" fill="none" stroke="rgba(188, 206, 223, 0.75)" stroke-width="16" stroke-linecap="round"></path>
+                  <path id="p1080-gauge-arc" d="M24 100 A76 76 0 0 1 176 100" fill="none" stroke="#3b82f6" stroke-width="16" stroke-linecap="round" stroke-dasharray="239" stroke-dashoffset="0"></path>
+                  <line id="p1080-gauge-needle" x1="100" y1="100" x2="156" y2="100" stroke="#163049" stroke-width="5" stroke-linecap="round"></line>
+                  <circle cx="100" cy="100" r="8" fill="#163049"></circle>
+                </svg>
+                <div class="p1080-gauge-value" id="p1080-efficiency-score">100%</div>
+              </div>
+              <div class="p1080-efficiency-stats">
+                <div class="p1080-stat">
+                  <strong>Current Phase</strong>
+                  <span id="p1080-live-phase">Idle</span>
+                </div>
+                <div class="p1080-stat">
+                  <strong>Context Switches</strong>
+                  <span id="p1080-penalty-count">0</span>
+                </div>
+                <div class="p1080-stat">
+                  <strong>Next Shift</strong>
+                  <span id="p1080-next-shift">Session not started</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="p1080-mission-actions p1080-session-controls">
+              <button class="p1080-btn p1080-btn--warn" id="p1080-distraction-btn" type="button">Log Distraction</button>
+              <button class="p1080-btn" id="p1080-end-session" type="button">End Session</button>
             </div>
           </div>
         </div>
@@ -1391,6 +1398,9 @@
       const reviewReflection = document.getElementById("p1080-review-reflection");
       const sessionManifest = document.getElementById("p1080-session-manifest");
       const manifestLog = document.getElementById("p1080-manifest-log");
+      const mainContent = document.getElementById("main-content");
+      const footerLandmark = document.querySelector(".p1080-footer");
+      let lastFocusedBeforeSession = null;
 
       const WORKFLOW_ENGINE = {
         active: false,
@@ -1439,6 +1449,9 @@
           document.body.classList.add("session-active", "session-phase-plan");
           document.body.classList.remove("session-phase-focus", "session-phase-review");
           sessionLayer.classList.add("is-open");
+          lastFocusedBeforeSession = document.activeElement;
+          mainContent.setAttribute("inert", "");
+          if (footerLandmark) footerLandmark.setAttribute("inert", "");
           distractionButton.disabled = false;
           endSessionButton.disabled = false;
           startSessionButton.disabled = true;
@@ -1452,6 +1465,7 @@
           this.applyPhase("plan");
           this.tick();
           this.timerId = window.setInterval(() => this.tick(), 1000);
+          endSessionButton.focus();
         },
         stop: function (showManifest = true) {
           if (this.timerId) {
@@ -1467,9 +1481,16 @@
           this.phase = "idle";
           sessionLayer.classList.remove("is-open");
           document.body.classList.remove("session-active", "session-phase-plan", "session-phase-focus", "session-phase-review");
+          mainContent.removeAttribute("inert");
+          if (footerLandmark) footerLandmark.removeAttribute("inert");
           distractionButton.disabled = true;
           endSessionButton.disabled = true;
           startSessionButton.disabled = false;
+          if (lastFocusedBeforeSession && lastFocusedBeforeSession !== document.body && document.body.contains(lastFocusedBeforeSession)) {
+            lastFocusedBeforeSession.focus();
+          } else {
+            startSessionButton.focus();
+          }
           livePhase.textContent = "Idle";
           nextShift.textContent = "Session complete";
           if (showManifest && this.startedAt) {
@@ -1585,7 +1606,7 @@
         const title = taskName.value.trim() || "Your task";
 
         planTitle.textContent = title;
-        summary.textContent = "For a " + minuteLabel(total) + " block, spend " + minuteLabel(plan) + " setting direction, " + minuteLabel(focus) + " doing the work, and " + minuteLabel(review) + " checking quality and deciding the next step. " + context.summary;
+        summary.textContent = "For a " + total + "-minute block, spend " + minuteLabel(plan) + " setting direction, " + minuteLabel(focus) + " doing the work, and " + minuteLabel(review) + " checking quality and deciding the next step. " + context.summary;
 
         planDuration.textContent = minuteLabel(plan);
         focusDuration.textContent = minuteLabel(focus);
@@ -1636,6 +1657,29 @@
 
       window.addEventListener("blur", () => {
         WORKFLOW_ENGINE.logPenalty("window-blur");
+      });
+
+      sessionLayer.addEventListener("keydown", (event) => {
+        if (!sessionLayer.classList.contains("is-open")) return;
+        if (event.key === "Escape") {
+          event.preventDefault();
+          WORKFLOW_ENGINE.stop(true);
+          return;
+        }
+        if (event.key !== "Tab") return;
+        const focusable = Array.from(
+          sessionLayer.querySelectorAll("button, textarea, [href], [tabindex]:not([tabindex='-1'])")
+        ).filter((el) => el.offsetParent !== null && !el.disabled);
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
       });
 
       WORKFLOW_ENGINE.updateEfficiency();

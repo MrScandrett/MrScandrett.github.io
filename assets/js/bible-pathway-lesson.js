@@ -63,6 +63,16 @@
       reflect: 'Choose one feast. Explain its timing, key practice, remembered event, and the way it formed Israel’s shared memory.'
     },
     {
+      id: 'elijah', code: '3C', stage: 'Stage 3 · Israel, Covenant & Prophets', grades: 'Grades 5–10', time: '45–65 minutes',
+      title: 'Elijah: Prophet of the Living God', lede: 'Follow Elijah’s confrontations with Ahab and Baal worship from Mount Carmel to the still small voice at Horeb.',
+      question: 'How does Elijah’s ministry confront false worship and reveal who the living God really is?',
+      scripture: '1 Kings 17–19 · 1 Kings 21 · 2 Kings 2:1–12',
+      goals: ['Sequence Elijah’s ministry from the drought announcement to his ascension in the chariot of fire.', 'Explain how Cherith, Zarephath, Carmel, and Horeb each reveal God’s provision, power, and character.', 'Compare God’s dramatic self-revelation in fire at Carmel with His quiet self-revelation in the “still small voice” at Horeb.'],
+      lenses: [['Cherith','Provision in hiding','After announcing a drought to King Ahab, Elijah hides at the Kerith Ravine, where ravens bring him bread and meat and he drinks from the brook.','Read 1 Kings 17:2–7 and ask what this hidden scene teaches about obedience before any public confrontation.'],['Zarephath','A widow’s flour and oil','Sent to a foreign widow during the famine, Elijah finds her jar of flour and jug of oil do not run out, and later raises her son to life.','Notice that God’s provision and power reach beyond Israel’s borders even as judgment falls on Israel.'],['Carmel','Fire falls, Baal is silent','Elijah challenges 450 prophets of Baal to a public contest of sacrifice and fire before all Israel; the Lord answers by fire while Baal answers nothing.','Read 1 Kings 18:20–39 and notice the crowd’s response: “The Lord, he is God.”'],['Horeb','The still small voice','Fleeing Jezebel’s threat after his greatest public victory, Elijah journeys forty days to Horeb, where wind, earthquake, and fire precede a quiet voice that recommissions him.','Compare the dramatic fire at Carmel with the quiet voice at Horeb, and ask what both reveal about God.']],
+      check: ['What does Elijah’s flight to Horeb right after Carmel teach?',['Public victory guarantees lasting confidence','Even a faithful prophet can grow afraid and discouraged after a great victory','Elijah stopped trusting God after Carmel'],'Even a faithful prophet can grow afraid and discouraged after a great victory','Elijah’s flight after his greatest public triumph shows that dramatic success does not remove fear, exhaustion, or the need for God’s renewing word.'],
+      reflect: 'Choose one scene—Cherith, Zarephath, Carmel, or Horeb. Describe Elijah’s circumstances, God’s provision, and Elijah’s response.'
+    },
+    {
       id: 'world-of-jesus', code: '4A', stage: 'Stage 4 · Jesus & the Kingdom', grades: 'Grades 4–10', time: '45–60 minutes',
       title: 'The World of Jesus', lede: 'Explore Galilee, Samaria, Judea, Jerusalem, roads, terrain, social groups, and Gospel events.',
       question: 'How do geography and historical setting clarify the Gospel accounts of Jesus?',
@@ -189,6 +199,13 @@
       now: 'Passover, Weeks, Atonement, Booths, and other appointed times teach Israel to remember and worship.',
       next: 'The Gospels and early Church unfold within this festival world, so the calendar clarifies many later scenes and themes.'
     },
+    'elijah': {
+      focus: ['covenant', 'kingdom'],
+      bigIdea: 'Elijah confronts Israel’s compromised worship of Baal and calls a divided kingdom back to covenant loyalty to the living God.',
+      before: 'After Solomon, the kingdom divides, and Israel’s kings—especially Ahab, married to the Phoenician princess Jezebel—promote the worship of Baal alongside or instead of the Lord.',
+      now: 'Elijah announces drought, is fed by ravens and a foreign widow, defeats the prophets of Baal on Carmel, and meets God in a quiet voice at Horeb.',
+      next: 'Elisha continues a prophetic ministry after Elijah, and later prophets keep calling divided, exiled, and returning Israel back to covenant faithfulness.'
+    },
     'world-of-jesus': {
       focus: ['exile', 'jesus'],
       bigIdea: 'Jesus enters Israel’s long story in real villages, contested regions, crowded roads, and a land ruled by Rome.',
@@ -247,6 +264,7 @@
     'temple-and-gods-presence': [['Genesis',3,22,24],['1 Kings',8,22,30],['John',1,14,18],['1 Corinthians',3,16,17],['Revelation',21,22,27]],
     'kingdoms-prophets-exile': [['1 Samuel',8,4,9],['1 Kings',12,16,20],['2 Kings',17,6,18],['2 Kings',25,8,12],['Ezra',1,1,4]],
     'feasts-of-israel': [['Exodus',12,1,14],['Leviticus',23,4,8],['Leviticus',23,15,22],['Leviticus',23,33,43],['Deuteronomy',16,16,17]],
+    'elijah': [['1 Kings',17,1,16],['1 Kings',18,20,39],['1 Kings',19,9,18],['2 Kings',2,9,12]],
     'world-of-jesus': [['Matthew',4,12,17],['Luke',4,16,21],['Luke',9,51,56],['John',4,4,10],['John',4,39,42]],
     'jesus-parables-lab': [['Matthew',13,1,9],['Matthew',13,31,33],['Luke',10,25,37],['Luke',15,11,24]],
     'holy-week': [['Matthew',21,1,11],['Mark',14,22,26],['Luke',23,32,49],['John',20,1,18]],
@@ -326,6 +344,13 @@
       page: 'https://commons.wikimedia.org/wiki/File:Feast_of_Tabernacle._Avram%27s_booth._Yehia_seated_in_door_of_tabernacle_booth_LOC_matpc.19879.jpg',
       alt: 'Historic photograph of a man seated in the doorway of a booth prepared for the Feast of Tabernacles',
       caption: 'A historic Jerusalem photograph shows an inhabited sukkah, an embodied practice of remembrance during the Feast of Booths.',
+      credit: 'Matson Collection / Library of Congress', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
+    },
+    'elijah': {
+      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Along_the_sea_coast._Elijah%27s_Spring%2C_Mount_Carmel_LOC_matpc.01205.jpg/1280px-Along_the_sea_coast._Elijah%27s_Spring%2C_Mount_Carmel_LOC_matpc.01205.jpg',
+      page: 'https://commons.wikimedia.org/wiki/File:Along_the_sea_coast._Elijah%27s_Spring,_Mount_Carmel_LOC_matpc.01205.jpg',
+      alt: 'Historic photograph of springs and grazing goats near a site traditionally associated with Elijah on Mount Carmel',
+      caption: 'A traditional site remembered as “Elijah’s Spring” near Mount Carmel, photographed around 1900. Local tradition preserves the memory; Scripture itself does not name this exact spot.',
       credit: 'Matson Collection / Library of Congress', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
     },
     'world-of-jesus': {
@@ -558,6 +583,7 @@
     'temple-and-gods-presence': 'jerusalem',
     'kingdoms-prophets-exile': 'kingdoms',
     'feasts-of-israel': 'tribes',
+    'elijah': 'kingdoms',
     'world-of-jesus': 'jesus',
     'jesus-parables-lab': 'galilee',
     'holy-week': 'jerusalem',
@@ -574,6 +600,7 @@
     'temple-and-gods-presence': 'This is a modern reference map, not a reconstruction of biblical Jerusalem. Use its hills and valleys to orient the Old City, Temple Mount, Mount of Olives, and approaches to Jerusalem across changing historical periods.',
     'kingdoms-prophets-exile': 'The eighth-century frame distinguishes Israel from Judah and places both among Aram-Damascus, Phoenicia, Philistia, Ammon, Moab, and Edom. Then zoom outward mentally toward Assyria and Babylon.',
     'feasts-of-israel': 'This interpretive map visualizes the tribal allotments described in Joshua 13–19. Use it to consider the distances and terrain involved when worshipers traveled toward a central place of worship.',
+    'elijah': 'This map is a later eighth-century snapshot, roughly a century after Elijah, but it still shows the divided kingdom—Israel in the north, Judah in the south—alongside Phoenicia, the homeland of Jezebel and the Baal worship she promoted in Israel.',
     'world-of-jesus': 'Read the regional labels first: Galilee, Samaria, Judea, Perea, and surrounding territories. Next locate the Sea of Galilee, Jordan Valley, Mediterranean coast, and the ascent to Jerusalem.',
     'jesus-parables-lab': 'Many parables were heard in a Galilean ministry setting. Locate Capernaum, the lake shore, nearby agricultural land, roads, and hills while remembering that individual parables are not always tied to a named place.',
     'holy-week': 'Use this modern map only for enduring topography and relative position. Locate the Mount of Olives east of the Old City, the Kidron Valley between them, and the city gates; ancient walls and street lines differed.',
@@ -628,6 +655,14 @@
       { title: 'Yom Kippur', kind: 'Holy day' },
       { title: 'Moses', kind: 'Biblical figure' },
       { title: 'Jerusalem', kind: 'Pilgrimage destination' }
+    ],
+    'elijah': [
+      { title: 'Elijah', kind: 'Biblical prophet' },
+      { title: 'Ahab', kind: 'Biblical king of Israel' },
+      { title: 'Jezebel', kind: 'Biblical queen' },
+      { title: 'Mount Carmel', kind: 'Place' },
+      { title: 'Mount Horeb', kind: 'Place' },
+      { title: 'Elisha', kind: 'Biblical prophet' }
     ],
     'world-of-jesus': [
       { title: 'Jesus', kind: 'Historical and biblical figure' },
