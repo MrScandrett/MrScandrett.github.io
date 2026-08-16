@@ -90,24 +90,61 @@
 
   function mod12(n) { return ((n % 12) + 12) % 12; }
 
-  /* Compute a playable-ish fretting for a chord that has no traditional shape:
-     for each string, take the lowest fret (0-11) whose note is a chord tone. */
-  function autoVoice(rootPC, intervals) {
+  function sortedIntervals(chordType) {
+    return chordType.intervals.slice().sort(function (a, b) { return a - b; });
+  }
+
+  var INVERSION_LABELS = ['Root position', '1st inversion', '2nd inversion', '3rd inversion'];
+
+  /* Compute a fretting with a specific chord tone forced into the bass: mute every
+     string below the string that carries that tone, then stack the rest normally. */
+  function autoVoiceInversion(rootPC, chordType, inversionIndex) {
+    var ivs = sortedIntervals(chordType);
+    var bassIv = ivs[inversionIndex % ivs.length];
+    var bassPC = mod12(rootPC + bassIv);
     var chordTones = {};
-    intervals.forEach(function (iv) { chordTones[mod12(rootPC + iv)] = true; });
-    return TUNING.map(function (str) {
-      for (var f = 0; f <= 4; f++) { if (chordTones[mod12(str.openPC + f)]) return f; }
-      for (var f2 = 5; f2 <= 11; f2++) { if (chordTones[mod12(str.openPC + f2)]) return f2; }
-      return 'x';
+    ivs.forEach(function (iv) { chordTones[mod12(rootPC + iv)] = true; });
+
+    var frets = TUNING.map(function () { return 'x'; });
+    var bassStringIdx = -1, bassFret = null;
+    for (var s = 0; s < TUNING.length && bassStringIdx < 0; s++) {
+      for (var f = 0; f <= 11; f++) {
+        if (mod12(TUNING[s].openPC + f) === bassPC) { bassStringIdx = s; bassFret = f; break; }
+      }
+    }
+    if (bassStringIdx < 0) return frets;
+    frets[bassStringIdx] = bassFret;
+    for (var s2 = bassStringIdx + 1; s2 < TUNING.length; s2++) {
+      for (var f2 = 0; f2 <= 11; f2++) {
+        if (chordTones[mod12(TUNING[s2].openPC + f2)]) { frets[s2] = f2; break; }
+      }
+    }
+    return frets;
+  }
+
+  /* Assign finger numbers 1-4 to fretted notes by rank of distinct fret value
+     (lowest fret = finger 1). Repeated frets share a finger, implying a barre. */
+  function computeFingering(frets) {
+    var fretted = frets.filter(function (f) { return typeof f === 'number' && f > 0; });
+    var unique = [];
+    fretted.forEach(function (f) { if (unique.indexOf(f) === -1) unique.push(f); });
+    unique.sort(function (a, b) { return a - b; });
+    return frets.map(function (f) {
+      if (f === 'x' || f === null || f === undefined) return 'x';
+      if (f === 0) return 'o';
+      return Math.min(unique.indexOf(f) + 1, 4);
     });
   }
 
-  function getChordShape(rootPC, chordType) {
+  function getChordShape(rootPC, chordType, inversionIndex) {
+    inversionIndex = inversionIndex || 0;
     var key = PITCHES[rootPC] + chordType.suffix;
-    if (OPEN_SHAPES[key]) {
-      return { frets: OPEN_SHAPES[key].slice(), fingers: (FINGERS[key] || null), source: 'shape', key: key };
+    if (inversionIndex === 0 && OPEN_SHAPES[key]) {
+      var shapeFrets = OPEN_SHAPES[key].slice();
+      return { frets: shapeFrets, fingers: (FINGERS[key] || computeFingering(shapeFrets)), source: 'shape', key: key, inversionIndex: 0 };
     }
-    return { frets: autoVoice(rootPC, chordType.intervals), fingers: null, source: 'computed', key: key };
+    var frets = autoVoiceInversion(rootPC, chordType, inversionIndex);
+    return { frets: frets, fingers: computeFingering(frets), source: 'computed', key: key, inversionIndex: inversionIndex };
   }
 
   function chordDisplayName(rootPC, chordType) {
@@ -166,8 +203,11 @@
     BUILD_FRETS: BUILD_FRETS,
     CHORD_TYPES: CHORD_TYPES,
     OPEN_SHAPES: OPEN_SHAPES,
+    INVERSION_LABELS: INVERSION_LABELS,
     mod12: mod12,
+    sortedIntervals: sortedIntervals,
     getChordShape: getChordShape,
+    computeFingering: computeFingering,
     chordDisplayName: chordDisplayName,
     detectChords: detectChords
   };
@@ -197,6 +237,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var startFret = opts.startFret || 0;
     var span = opts.span || GT.BUILD_FRETS;
     var frets = opts.frets || [null, null, null, null, null, null]; /* low E..high e */
+    var fingers = opts.fingers || null; /* low E..high e, values 1-4/'o'/'x' */
     var interactive = !!opts.interactive;
     var onCellClick = opts.onCellClick;
     var onOpenClick = opts.onOpenClick;
@@ -227,6 +268,8 @@ document.addEventListener('DOMContentLoaded', function () {
       row.setAttribute('data-string', str.label + str.num);
 
       var val = frets[stringIndexLowToHigh];
+      var fingerVal = fingers ? fingers[stringIndexLowToHigh] : null;
+      var fingerNum = (typeof fingerVal === 'number') ? fingerVal : null;
 
       var openCell = document.createElement('button');
       openCell.type = 'button';
@@ -250,7 +293,7 @@ document.addEventListener('DOMContentLoaded', function () {
         cell.setAttribute('aria-label', str.label + ' string, fret ' + fret);
         if (val === fret) {
           cell.classList.add('has-note');
-          cell.innerHTML = '<span class="gc-dot"></span>';
+          cell.innerHTML = '<span class="gc-dot">' + (fingerNum ? '<span class="gc-finger-num">' + fingerNum + '</span>' : '') + '</span>';
         }
         if (interactive) {
           cell.addEventListener('click', function (fretNum) {
@@ -295,6 +338,7 @@ document.addEventListener('DOMContentLoaded', function () {
       startFret: 0,
       span: GT.BUILD_FRETS,
       frets: builderState,
+      fingers: GT.computeFingering(builderState),
       interactive: true,
       onCellClick: function (stringIdx, fret) {
         builderState[stringIdx] = (builderState[stringIdx] === fret) ? null : fret;
@@ -369,10 +413,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
   var rootPicker = document.getElementById('gcRootPicker');
   var typePicker = document.getElementById('gcTypePicker');
+  var inversionPicker = document.getElementById('gcInversionPicker');
   var encBoard = document.getElementById('gcEncBoard');
   var encMeta = document.getElementById('gcEncMeta');
   var encCurrentRoot = 0;
   var encCurrentType = GT.CHORD_TYPES[0];
+  var encCurrentInversion = 0;
 
   function buildPickers() {
     if (rootPicker) {
@@ -400,8 +446,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (idx === 0) btn.classList.add('is-active');
         btn.addEventListener('click', function () {
           encCurrentType = ct;
+          encCurrentInversion = 0;
           Array.prototype.forEach.call(typePicker.children, function (c) { c.classList.remove('is-active'); });
           btn.classList.add('is-active');
+          buildInversionPicker();
           renderEncyclopedia();
         });
         typePicker.appendChild(btn);
@@ -409,9 +457,35 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  function buildInversionPicker() {
+    if (!inversionPicker) return;
+    inversionPicker.innerHTML = '';
+    var toneCount = GT.sortedIntervals(encCurrentType).length;
+    for (var i = 0; i < toneCount; i++) {
+      (function (idx) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'gc-pick-btn gc-inv-btn';
+        btn.textContent = GT.INVERSION_LABELS[idx] || (idx + 'th inversion');
+        if (idx === encCurrentInversion) btn.classList.add('is-active');
+        btn.addEventListener('click', function () {
+          encCurrentInversion = idx;
+          Array.prototype.forEach.call(inversionPicker.children, function (c) { c.classList.remove('is-active'); });
+          btn.classList.add('is-active');
+          renderEncyclopedia();
+        });
+        inversionPicker.appendChild(btn);
+      })(i);
+    }
+  }
+
+  function fingerSummary(fingers) {
+    return fingers.map(function (f) { return f === 'x' ? '×' : (f === 'o' ? 'open' : f); }).join(' – ');
+  }
+
   function renderEncyclopedia() {
     if (!encBoard) return;
-    var shape = GT.getChordShape(encCurrentRoot, encCurrentType);
+    var shape = GT.getChordShape(encCurrentRoot, encCurrentType, encCurrentInversion);
     var name = GT.chordDisplayName(encCurrentRoot, encCurrentType);
 
     var numericFrets = shape.frets.filter(function (f) { return typeof f === 'number' && f > 0; });
@@ -420,23 +494,31 @@ document.addEventListener('DOMContentLoaded', function () {
     var startFret = 0;
     if (maxFret > GT.BUILD_FRETS - 1) startFret = Math.max(0, minFret - 1);
 
-    renderBoard(encBoard, { startFret: startFret, span: GT.BUILD_FRETS, frets: shape.frets, interactive: false });
+    renderBoard(encBoard, { startFret: startFret, span: GT.BUILD_FRETS, frets: shape.frets, fingers: shape.fingers, interactive: false });
 
     if (encMeta) {
       var tag = shape.source === 'shape' ? 'Traditional open/barre shape' : 'Computed voicing — lowest matching fret per string';
       var detection = GT.detectChords(shape.frets);
       var notesLine = detection.notes.map(function (n) { return GT.PITCHES[n.pc]; }).join(' – ');
-      encMeta.innerHTML = '<h3>' + name + '</h3><p class="gc-enc-tag">' + tag + '</p><p class="gc-enc-notes">Notes: ' + notesLine + '</p><p class="gc-enc-formula">Formula: root' + encCurrentType.intervals.slice(1).map(function (i) { return ' + ' + i; }).join('') + ' semitones from ' + name.replace(encCurrentType.suffix, '') + '</p>';
+      var invLabel = GT.INVERSION_LABELS[encCurrentInversion] || (encCurrentInversion + 'th inversion');
+      var bassNote = detection.notes.length ? GT.PITCHES[detection.notes[0].pc] : '';
+      encMeta.innerHTML = '<h3>' + name + (encCurrentInversion === 0 ? '' : ' / ' + bassNote) + '</h3>' +
+        '<p class="gc-enc-tag">' + tag + '</p>' +
+        '<p class="gc-enc-notes"><strong>' + invLabel + '</strong> — bass note ' + bassNote + '</p>' +
+        '<p class="gc-enc-notes">Notes: ' + notesLine + '</p>' +
+        '<p class="gc-enc-notes">Fingering (low string → high string): ' + fingerSummary(shape.fingers) + '</p>' +
+        '<p class="gc-enc-formula">Formula: root' + encCurrentType.intervals.slice(1).map(function (i) { return ' + ' + i; }).join('') + ' semitones from ' + name.replace(encCurrentType.suffix, '') + '</p>';
     }
   }
 
   buildPickers();
+  buildInversionPicker();
   renderEncyclopedia();
 
   /* Load an encyclopedia chord into the builder for comparison. */
   var sendToBuilder = document.getElementById('gcSendToBuilder');
   if (sendToBuilder) sendToBuilder.addEventListener('click', function () {
-    var shape = GT.getChordShape(encCurrentRoot, encCurrentType);
+    var shape = GT.getChordShape(encCurrentRoot, encCurrentType, encCurrentInversion);
     builderState = shape.frets.slice();
     renderBuilder();
     var target = document.getElementById('builder');

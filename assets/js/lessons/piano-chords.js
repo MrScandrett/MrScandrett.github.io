@@ -29,6 +29,8 @@
      octave up (e.g. the 9th in add9) even though detection still works mod 12. */
   var VOICE_BUMP = { 'add9': { 2: 14 } };
 
+  var INVERSION_LABELS = ['Root position', '1st inversion', '2nd inversion', '3rd inversion'];
+
   function mod12(n) { return ((n % 12) + 12) % 12; }
 
   /* Build the 15 white / 10 black key descriptors, abs index 0..24 (C4..C6). */
@@ -62,15 +64,39 @@
     return PITCHES[pc] + octave;
   }
 
-  /* Compute the absolute key indices (0..24) for a root-position voicing. */
-  function voiceChord(rootPC, chordType) {
+  /* Compute the absolute key indices (0..24) for a closed-position voicing,
+     rotated so the interval at `inversionIndex` (0 = root) sits in the bass. */
+  function voiceChord(rootPC, chordType, inversionIndex) {
+    inversionIndex = inversionIndex || 0;
     var bump = VOICE_BUMP[chordType.suffix] || {};
     var raw = chordType.intervals.map(function (iv) { return bump[iv] !== undefined ? bump[iv] : iv; });
-    raw = raw.slice().sort(function (a, b) { return a - b; });
-    var abs = raw.map(function (iv) { return rootPC + iv; });
+    var sorted = raw.slice().sort(function (a, b) { return a - b; });
+    var n = sorted.length;
+    inversionIndex = inversionIndex % n;
+    var rotated = sorted.slice(inversionIndex).concat(sorted.slice(0, inversionIndex));
+
+    var abs = [];
+    var prev = null;
+    rotated.forEach(function (iv, i) {
+      var val = mod12(rootPC + iv);
+      if (i > 0) { while (val <= prev) val += 12; }
+      abs.push(val);
+      prev = val;
+    });
+
     var maxIdx = Math.max.apply(null, abs);
     if (maxIdx > KEY_SPAN) abs = abs.map(function (v) { return v - 12; });
     return abs;
+  }
+
+  /* A general beginner-method fingering: thumb on the bottom note, pinky on the
+     top note, fill in with the fingers in between. Applied bass-to-top regardless
+     of inversion, which is how most method books teach it. */
+  function typicalFingering(noteCount) {
+    if (noteCount <= 1) return [1];
+    if (noteCount === 2) return [1, 5];
+    if (noteCount === 3) return [1, 3, 5];
+    return [1, 2, 4, 5];
   }
 
   /* Detect chords from a set of absolute key indices (0..24), order-independent. */
@@ -119,11 +145,13 @@
     CHORD_TYPES: CHORD_TYPES,
     KEY_SPAN: KEY_SPAN,
     WHITE_COUNT: WHITE_COUNT,
+    INVERSION_LABELS: INVERSION_LABELS,
     mod12: mod12,
     buildKeys: buildKeys,
     chordDisplayName: chordDisplayName,
     noteLabel: noteLabel,
     voiceChord: voiceChord,
+    typicalFingering: typicalFingering,
     detectChords: detectChords
   };
 })();
@@ -138,6 +166,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function renderKeyboard(container, opts) {
     opts = opts || {};
     var active = opts.active || {}; /* map absIndex -> true */
+    var fingerMap = opts.fingerMap || {}; /* map absIndex -> finger number */
     var interactive = !!opts.interactive;
     var onToggle = opts.onToggle;
 
@@ -152,12 +181,18 @@ document.addEventListener('DOMContentLoaded', function () {
       btn.type = 'button';
       btn.className = 'pc-key pc-white';
       if (active[k.absIndex]) btn.classList.add('is-active');
-      btn.setAttribute('aria-label', PT.noteLabel(k.absIndex));
+      btn.setAttribute('aria-label', PT.noteLabel(k.absIndex) + (fingerMap[k.absIndex] ? ', finger ' + fingerMap[k.absIndex] : ''));
       if (k.isC) {
         var tag = document.createElement('span');
         tag.className = 'pc-key-tag';
         tag.textContent = 'C' + (4 + k.octave);
         btn.appendChild(tag);
+      }
+      if (fingerMap[k.absIndex]) {
+        var fw = document.createElement('span');
+        fw.className = 'pc-finger-num pc-finger-white';
+        fw.textContent = fingerMap[k.absIndex];
+        btn.appendChild(fw);
       }
       if (interactive) btn.addEventListener('click', function () { onToggle(k.absIndex); });
       else btn.disabled = true;
@@ -174,9 +209,15 @@ document.addEventListener('DOMContentLoaded', function () {
       btn.type = 'button';
       btn.className = 'pc-key pc-black';
       if (active[k.absIndex]) btn.classList.add('is-active');
-      btn.setAttribute('aria-label', PT.noteLabel(k.absIndex));
+      btn.setAttribute('aria-label', PT.noteLabel(k.absIndex) + (fingerMap[k.absIndex] ? ', finger ' + fingerMap[k.absIndex] : ''));
       btn.style.left = ((k.leftWhiteIdx + 1) * whiteWidth - blackWidth / 2) + '%';
       btn.style.width = blackWidth + '%';
+      if (fingerMap[k.absIndex]) {
+        var fb = document.createElement('span');
+        fb.className = 'pc-finger-num pc-finger-black';
+        fb.textContent = fingerMap[k.absIndex];
+        btn.appendChild(fb);
+      }
       if (interactive) btn.addEventListener('click', function (e) { e.stopPropagation(); onToggle(k.absIndex); });
       else btn.disabled = true;
       blackLayer.appendChild(btn);
@@ -184,6 +225,13 @@ document.addEventListener('DOMContentLoaded', function () {
     kb.appendChild(blackLayer);
 
     container.appendChild(kb);
+  }
+
+  function buildFingerMap(sortedAbsIndices) {
+    var fingers = PT.typicalFingering(sortedAbsIndices.length);
+    var map = {};
+    sortedAbsIndices.forEach(function (idx, i) { map[idx] = fingers[i]; });
+    return map;
   }
 
   /* ---------- Builder (place-your-own-notes) ---------- */
@@ -195,8 +243,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function renderBuilder() {
     if (!builderBoard) return;
+    var sortedIndices = Object.keys(builderActive).map(Number).sort(function (a, b) { return a - b; });
     renderKeyboard(builderBoard, {
       active: builderActive,
+      fingerMap: buildFingerMap(sortedIndices),
       interactive: true,
       onToggle: function (absIndex) {
         if (builderActive[absIndex]) delete builderActive[absIndex];
@@ -266,10 +316,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
   var rootPicker = document.getElementById('pcRootPicker');
   var typePicker = document.getElementById('pcTypePicker');
+  var inversionPicker = document.getElementById('pcInversionPicker');
   var encBoard = document.getElementById('pcEncBoard');
   var encMeta = document.getElementById('pcEncMeta');
   var encCurrentRoot = 0;
   var encCurrentType = PT.CHORD_TYPES[0];
+  var encCurrentInversion = 0;
 
   function buildPickers() {
     if (rootPicker) {
@@ -297,8 +349,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (idx === 0) btn.classList.add('is-active');
         btn.addEventListener('click', function () {
           encCurrentType = ct;
+          encCurrentInversion = 0;
           Array.prototype.forEach.call(typePicker.children, function (c) { c.classList.remove('is-active'); });
           btn.classList.add('is-active');
+          buildInversionPicker();
           renderEncyclopedia();
         });
         typePicker.appendChild(btn);
@@ -306,27 +360,59 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  function buildInversionPicker() {
+    if (!inversionPicker) return;
+    inversionPicker.innerHTML = '';
+    var toneCount = encCurrentType.intervals.length;
+    for (var i = 0; i < toneCount; i++) {
+      (function (idx) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'pc-pick-btn pc-inv-btn';
+        btn.textContent = PT.INVERSION_LABELS[idx] || (idx + 'th inversion');
+        if (idx === encCurrentInversion) btn.classList.add('is-active');
+        btn.addEventListener('click', function () {
+          encCurrentInversion = idx;
+          Array.prototype.forEach.call(inversionPicker.children, function (c) { c.classList.remove('is-active'); });
+          btn.classList.add('is-active');
+          renderEncyclopedia();
+        });
+        inversionPicker.appendChild(btn);
+      })(i);
+    }
+  }
+
   function renderEncyclopedia() {
     if (!encBoard) return;
-    var abs = PT.voiceChord(encCurrentRoot, encCurrentType);
+    var abs = PT.voiceChord(encCurrentRoot, encCurrentType, encCurrentInversion);
+    var sortedAbs = abs.slice().sort(function (a, b) { return a - b; });
     var name = PT.chordDisplayName(encCurrentRoot, encCurrentType);
     var active = {};
     abs.forEach(function (idx) { active[idx] = true; });
+    var fingerMap = buildFingerMap(sortedAbs);
 
-    renderKeyboard(encBoard, { active: active, interactive: false });
+    renderKeyboard(encBoard, { active: active, fingerMap: fingerMap, interactive: false });
 
     if (encMeta) {
-      var notesLine = abs.slice().sort(function (a, b) { return a - b; }).map(function (idx) { return PT.noteLabel(idx); }).join(' – ');
-      encMeta.innerHTML = '<h3>' + name + '</h3><p class="pc-enc-notes">Notes: ' + notesLine + '</p><p class="pc-enc-formula">Formula: root' + encCurrentType.intervals.slice(1).map(function (i) { return ' + ' + i; }).join('') + ' semitones from ' + PT.PITCHES[encCurrentRoot] + '</p>';
+      var notesLine = sortedAbs.map(function (idx) { return PT.noteLabel(idx); }).join(' – ');
+      var fingerLine = sortedAbs.map(function (idx) { return fingerMap[idx]; }).join(' – ');
+      var invLabel = PT.INVERSION_LABELS[encCurrentInversion] || (encCurrentInversion + 'th inversion');
+      var bassNote = PT.PITCHES[PT.mod12(sortedAbs[0])];
+      encMeta.innerHTML = '<h3>' + name + (encCurrentInversion === 0 ? '' : ' / ' + bassNote) + '</h3>' +
+        '<p class="pc-enc-notes"><strong>' + invLabel + '</strong> — bass note ' + bassNote + '</p>' +
+        '<p class="pc-enc-notes">Notes: ' + notesLine + '</p>' +
+        '<p class="pc-enc-notes">Right-hand fingering (typical): ' + fingerLine + '</p>' +
+        '<p class="pc-enc-formula">Formula: root' + encCurrentType.intervals.slice(1).map(function (i) { return ' + ' + i; }).join('') + ' semitones from ' + PT.PITCHES[encCurrentRoot] + '</p>';
     }
   }
 
   buildPickers();
+  buildInversionPicker();
   renderEncyclopedia();
 
   var sendToBuilder = document.getElementById('pcSendToBuilder');
   if (sendToBuilder) sendToBuilder.addEventListener('click', function () {
-    var abs = PT.voiceChord(encCurrentRoot, encCurrentType);
+    var abs = PT.voiceChord(encCurrentRoot, encCurrentType, encCurrentInversion);
     builderActive = {};
     abs.forEach(function (idx) { builderActive[idx] = true; });
     renderBuilder();
