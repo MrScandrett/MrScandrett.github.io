@@ -585,6 +585,82 @@
       color: var(--text-muted, #6e6e73);
       margin: 0 0 1rem;
     }
+    .bb-challenge-workbench {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, 310px);
+      gap: 0.85rem;
+      align-items: stretch;
+    }
+    .bb-challenge-board { min-width: 0; }
+    .bb-bench-status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+      color: var(--text-muted, #6e6e73);
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+    .bb-bench-status span:first-child::before {
+      content: "";
+      display: inline-block;
+      width: 0.55rem;
+      height: 0.55rem;
+      margin-right: 0.4rem;
+      border-radius: 50%;
+      background: #34c759;
+      box-shadow: 0 0 0 4px rgba(52, 199, 89, 0.13);
+      vertical-align: -0.04rem;
+    }
+    .bb-bench-coordinates {
+      padding: 0.22rem 0.42rem;
+      border-radius: 6px;
+      background: #334155;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: #f8fafc;
+    }
+    .bb-challenge-controls {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      padding: 1rem;
+      border: 1px solid #dbe2ea;
+      border-radius: 12px;
+      background: #f8fafc;
+    }
+    .bb-control-label {
+      display: block;
+      margin-bottom: 0.45rem;
+      color: #64748b;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .bb-control-rule {
+      width: 100%;
+      height: 1px;
+      margin: 0.75rem 0;
+      border: 0;
+      background: #dbe2ea;
+    }
+    .bb-control-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.45rem;
+      margin-top: auto;
+      padding-top: 0.25rem;
+    }
+    .bb-challenge-controls .bb-callout {
+      margin: 0.75rem 0 0;
+      padding: 0.75rem;
+      background: #fff7df;
+      border: 1px solid #f1d78d;
+      color: #5f4700;
+      font-size: 0.78rem;
+    }
 
     /* Challenge step indicator */
     .bb-steps {
@@ -668,6 +744,13 @@
       white-space: nowrap;
     }
     .bb-palette-btn:hover { border-color: #007aff; }
+    .bb-palette-btn:focus-visible,
+    .bb-next-btn:focus-visible,
+    .bb-reset-btn:focus-visible {
+      outline: 3px solid rgba(0, 122, 255, 0.25);
+      outline-offset: 2px;
+    }
+    .bb-palette-btn:disabled { opacity: 0.42; cursor: not-allowed; }
     .bb-palette-btn.is-selected {
       background: #007aff;
       color: #fff;
@@ -680,12 +763,18 @@
 
     /* Challenge canvas */
     .bb-chal-canvas-wrap {
-      overflow-x: auto;
+      overflow: hidden;
       border-radius: 10px;
       border: 1px solid var(--line, #d2d2d7);
       background: #1a1a2e;
     }
-    #bb-chal-canvas { display: block; cursor: crosshair; }
+    #bb-chal-canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      cursor: crosshair;
+      touch-action: manipulation;
+    }
 
     /* Feedback bar */
     .bb-chal-feedback {
@@ -883,6 +972,15 @@
     [data-lighting="night"] .bb-model-feedback p,
     [data-theme="vaporwave"] .bb-model-feedback p,
     [data-theme="bark"] .bb-model-feedback p { color: #cbd5e1; }
+    [data-lighting="night"] .bb-challenge-controls,
+    [data-theme="vaporwave"] .bb-challenge-controls,
+    [data-theme="bark"] .bb-challenge-controls {
+      background: #20252e;
+      border-color: #3a4554;
+    }
+    [data-lighting="night"] .bb-control-rule,
+    [data-theme="vaporwave"] .bb-control-rule,
+    [data-theme="bark"] .bb-control-rule { background: #3a4554; }
 
     /* ── LED glow animation ─────────────────────────────── */
     @keyframes bb-led-glow {
@@ -907,6 +1005,9 @@
       .bb-drag-hint { display: none; }
       .bb-model-feedback { grid-template-columns: 1fr; }
       .bb-model-progress { width: max-content; }
+      .bb-challenge-workbench { grid-template-columns: 1fr; }
+      .bb-chal-canvas-wrap { overflow-x: auto; }
+      #bb-chal-canvas { min-width: 560px; }
     }
 
     /* ── Layout overrides ─────────────────────────────── */
@@ -1160,13 +1261,52 @@
     <!-- ── Circuit Challenges ───────────────────────────── -->
     <section class="bb-challenges" id="bb-challenges-section">
       <h2>Circuit Challenges</h2>
-      <p class="bb-challenges-desc">Build a working LED circuit step by step. Select a component from the Controls panel, then click the source hole on the board.</p>
+      <p class="bb-challenges-desc">Build a working LED circuit step by step. Choose a part, then click its first and second connection points on the board.</p>
 
-      <div class="bb-chal-canvas-wrap" style="overflow-x:auto;">
-        <canvas id="bb-chal-canvas" width="360" height="420"></canvas>
+      <div class="bb-steps" id="bb-steps" aria-label="Challenge progress">
+        <div class="bb-step-pip is-active" id="pip-1">1 · Power the rails</div>
+        <div class="bb-step-pip" id="pip-2">2 · Add a resistor</div>
+        <div class="bb-step-pip" id="pip-3">3 · Place the LED</div>
+        <div class="bb-step-pip" id="pip-4">4 · Close the loop</div>
       </div>
 
-      <div class="bb-chal-feedback" id="bb-chal-feedback" style="margin-top:0.65rem;"></div>
+      <div class="bb-challenge-workbench">
+        <div class="bb-challenge-board">
+          <div class="bb-bench-status" aria-hidden="true">
+            <span>12-column practice board</span>
+            <span class="bb-bench-coordinates">rows a–j · rails + / − · scroll ↔</span>
+          </div>
+          <div class="bb-chal-canvas-wrap">
+            <canvas id="bb-chal-canvas" width="760" height="440" aria-label="Interactive breadboard circuit builder"></canvas>
+          </div>
+          <div class="bb-chal-feedback info" id="bb-chal-feedback" role="status" aria-live="polite">Choose the red wire to begin powering the positive rail.</div>
+        </div>
+
+        <div class="bb-challenge-controls">
+          <span class="bb-control-label">Current task</span>
+          <p class="bb-challenge-goal" id="chal-goal">Challenge 1 of 4</p>
+          <p class="bb-challenge-title" id="chal-title">Power Up the Rails</p>
+          <p class="bb-challenge-instruction" id="chal-instruction">
+            Connect the battery to the breadboard. Select <strong>Red Wire</strong>, then connect the battery <strong>+</strong> terminal to the <strong>+ power rail</strong>. Use <strong>Black Wire</strong> from battery <strong>−</strong> to the <strong>− rail</strong>.
+          </p>
+          <hr class="bb-control-rule">
+          <span class="bb-control-label">Choose a part</span>
+          <div class="bb-palette" id="bb-palette">
+            <button class="bb-palette-btn" data-tool="wire-red" aria-pressed="false">🔴 Red Wire</button>
+            <button class="bb-palette-btn" data-tool="wire-black" aria-pressed="false">⚫ Black Wire</button>
+            <button class="bb-palette-btn" data-tool="resistor" aria-pressed="false" disabled>🟡 Resistor</button>
+            <button class="bb-palette-btn" data-tool="led" aria-pressed="false" disabled>💡 LED</button>
+          </div>
+          <div class="bb-callout" id="bb-chal-hint">
+            <strong>Bench hint</strong>
+            <span id="bb-hint-text">A complete circuit needs power. Connect + (red) to the + rail, and − (black) to the − rail.</span>
+          </div>
+          <div class="bb-control-actions">
+            <button class="bb-next-btn" id="bb-next-btn">Next Step →</button>
+            <button class="bb-reset-btn" id="bb-reset-btn">↺ Start Over</button>
+          </div>
+        </div>
+      </div>
     </section>
 
     <circuit-playground data-profile="breadboard"></circuit-playground>
@@ -1264,45 +1404,12 @@
   <aside class="ll-panel" aria-hidden="false">
     <div class="ll-panel-head">
       <div class="ll-tabs">
-        <button class="ll-tab" aria-selected="true" data-pane="bb-params">Controls</button>
-        <button class="ll-tab" aria-selected="false" data-pane="bb-guide">Guide</button>
+        <button class="ll-tab" aria-selected="true" data-pane="bb-guide">Breadboard Guide</button>
       </div>
       <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
     </div>
     <div class="ll-panel-body">
-      <div class="ll-pane ll-active" id="bb-params">
-        <span class="ll-label">Challenge Progress</span>
-        <div class="bb-steps" id="bb-steps" style="flex-direction:column;gap:0.35rem;margin-bottom:0.75rem;">
-          <div class="bb-step-pip is-active" id="pip-1">Step 1: Power up the rails</div>
-          <div class="bb-step-pip" id="pip-2">Step 2: Add a resistor</div>
-          <div class="bb-step-pip" id="pip-3">Step 3: Light the LED</div>
-          <div class="bb-step-pip" id="pip-4">Step 4: Close the loop</div>
-        </div>
-        <hr class="ll-hr">
-        <span class="ll-label">Component Palette</span>
-        <div class="bb-palette" id="bb-palette" style="margin-bottom:0.5rem;">
-          <button class="bb-palette-btn" data-tool="wire-red">🔴 Red Wire</button>
-          <button class="bb-palette-btn" data-tool="wire-black">⚫ Black Wire</button>
-          <button class="bb-palette-btn" data-tool="resistor" disabled>🟡 Resistor</button>
-          <button class="bb-palette-btn" data-tool="led" disabled>💡 LED</button>
-        </div>
-        <hr class="ll-hr">
-        <span class="ll-label">Challenge</span>
-        <p class="bb-challenge-goal" id="chal-goal" style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color: var(--text-muted, #64748b);margin:0 0 0.2rem;">Challenge 1 of 4</p>
-        <p class="bb-challenge-title" id="chal-title" style="font-size:0.92rem;font-weight:700;margin:0 0 0.4rem;">Power Up the Rails</p>
-        <p class="bb-challenge-instruction" id="chal-instruction" style="font-size:0.8rem;color: var(--text-muted, #64748b);margin:0 0 0.6rem;line-height:1.55;">
-          Connect the battery to the breadboard. Select <strong>Red Wire</strong> from the palette, then click the battery <strong>+ terminal</strong> (top-left), then click the <strong>+ power rail</strong>. Then select <strong>Black Wire</strong> and connect the battery <strong>− terminal</strong> to the <strong>− power rail</strong>.
-        </p>
-        <button class="bb-next-btn" id="bb-next-btn">Next Step →</button>
-        <br>
-        <button class="bb-reset-btn" id="bb-reset-btn" style="margin-top:0.4rem;">↺ Reset Challenge</button>
-        <hr class="ll-hr">
-        <div class="bb-callout" id="bb-chal-hint" style="margin-top:0;">
-          <strong>Hint</strong>
-          <span id="bb-hint-text">A complete circuit needs a path from + to − through every component. Start by giving the board power from the battery.</span>
-        </div>
-      </div>
-      <div class="ll-pane" id="bb-guide">
+      <div class="ll-pane ll-active" id="bb-guide">
         <div class="ll-info">
           <strong>Connection rule</strong>
           Tie-point strips run vertically. All 5 holes in the same column and same half (a–e or f–j) share one node.
@@ -1674,8 +1781,8 @@
 
     // Challenge breadboard uses 12 columns, same row layout
     const CHAL_COLS  = 12;
-    const CHAL_LEFT  = 52;
-    const CHAL_COL_SP = 26;
+    const CHAL_LEFT  = 70;
+    const CHAL_COL_SP = 58;
 
     function chalHoleX(col) { return CHAL_LEFT + (col - 1) * CHAL_COL_SP; }
     function chalHoleY(row) { return Y[row]; }
@@ -1690,6 +1797,95 @@
       ledOn: false,
     };
 
+    function pointMatches(point, expected) {
+      if (!point || !expected) return false;
+      if (expected.special) return point.special === expected.special;
+      return point.row === expected.row && (expected.col == null || point.col === expected.col);
+    }
+
+    function connects(comp, first, second) {
+      return (pointMatches(comp.from, first) && pointMatches(comp.to, second))
+        || (pointMatches(comp.from, second) && pointMatches(comp.to, first));
+    }
+
+    function hasPoweredRails(comps) {
+      const red = comps.some(c => c.type === 'wire-red'
+        && connects(c, { special: 'bat+' }, { row: 'rail-top-plus' }));
+      const black = comps.some(c => c.type === 'wire-black'
+        && connects(c, { special: 'bat-' }, { row: 'rail-top-minus' }));
+      return red && black;
+    }
+
+    function hasResistor(comps) {
+      return comps.some(c => c.type === 'resistor'
+        && connects(c, { row: 'a', col: 3 }, { row: 'a', col: 6 }));
+    }
+
+    function hasLed(comps) {
+      return comps.some(c => c.type === 'led'
+        && pointMatches(c.from, { row: 'b', col: 6 })
+        && pointMatches(c.to, { row: 'b', col: 9 }));
+    }
+
+    function hasLoopWires(comps) {
+      const input = comps.some(c => c.type === 'wire-red'
+        && connects(c, { row: 'rail-top-plus' }, { row: 'a', col: 3 }));
+      const output = comps.some(c => c.type === 'wire-black'
+        && connects(c, { row: 'rail-top-minus' }, { row: 'a', col: 9 }));
+      return input && output;
+    }
+
+    function allowedEndpoints(challenge, tool) {
+      if (challenge === 1 && tool === 'wire-red') {
+        return [{ special: 'bat+' }, { row: 'rail-top-plus' }];
+      }
+      if (challenge === 1 && tool === 'wire-black') {
+        return [{ special: 'bat-' }, { row: 'rail-top-minus' }];
+      }
+      if (challenge === 2 && tool === 'resistor') {
+        return [{ row: 'a', col: 3 }, { row: 'a', col: 6 }];
+      }
+      if (challenge === 3 && tool === 'led') {
+        return [{ row: 'b', col: 6 }];
+      }
+      if (challenge === 4 && tool === 'wire-red') {
+        return [{ row: 'rail-top-plus' }, { row: 'a', col: 3 }];
+      }
+      if (challenge === 4 && tool === 'wire-black') {
+        return [{ row: 'rail-top-minus' }, { row: 'a', col: 9 }];
+      }
+      return [];
+    }
+
+    function isAllowedStart(point) {
+      return allowedEndpoints(state.challenge, state.selectedTool)
+        .some(expected => pointMatches(point, expected));
+    }
+
+    function isAllowedPlacement(from, to) {
+      const test = { type: state.selectedTool, from, to };
+      if (state.challenge === 1 && state.selectedTool === 'wire-red') {
+        return connects(test, { special: 'bat+' }, { row: 'rail-top-plus' });
+      }
+      if (state.challenge === 1 && state.selectedTool === 'wire-black') {
+        return connects(test, { special: 'bat-' }, { row: 'rail-top-minus' });
+      }
+      if (state.challenge === 2 && state.selectedTool === 'resistor') {
+        return connects(test, { row: 'a', col: 3 }, { row: 'a', col: 6 });
+      }
+      if (state.challenge === 3 && state.selectedTool === 'led') {
+        return pointMatches(from, { row: 'b', col: 6 })
+          && pointMatches(to, { row: 'b', col: 9 });
+      }
+      if (state.challenge === 4 && state.selectedTool === 'wire-red') {
+        return connects(test, { row: 'rail-top-plus' }, { row: 'a', col: 3 });
+      }
+      if (state.challenge === 4 && state.selectedTool === 'wire-black') {
+        return connects(test, { row: 'rail-top-minus' }, { row: 'a', col: 9 });
+      }
+      return false;
+    }
+
     // ── Challenge definitions ──────────────────────────────
     const CHALLENGES = [
       {
@@ -1701,9 +1897,7 @@
         availableTools: ['wire-red', 'wire-black'],
         // Validate: need wire-red from battery+ to rail-top-plus, wire-black from battery- to rail-top-minus
         validate(comps) {
-          const hasRed   = comps.some(c => c.type === 'wire-red'   && c.from.special === 'bat+' && c.to.row === 'rail-top-plus');
-          const hasBlack = comps.some(c => c.type === 'wire-black' && c.from.special === 'bat-' && c.to.row === 'rail-top-minus');
-          return hasRed && hasBlack;
+          return hasPoweredRails(comps);
         }
       },
       {
@@ -1714,49 +1908,37 @@
         hint: 'A resistor limits the current flowing to the LED. Place it flat across the board — both leads in the same half (rows a–e), connecting column 3 to column 6.',
         availableTools: ['wire-red', 'wire-black', 'resistor'],
         validate(comps) {
-          return comps.some(c => c.type === 'resistor'
-            && ((c.from.row === 'a' && c.from.col === 3 && c.to.row === 'a' && c.to.col === 6)
-             || (c.from.row === 'a' && c.from.col === 6 && c.to.row === 'a' && c.to.col === 3)));
+          return hasResistor(comps);
         }
       },
       {
         id: 3,
         goal: 'Challenge 3 of 4',
         title: 'Place the LED',
-        instruction: 'Select <strong>LED</strong> from the palette. Click <strong>row a, column 7</strong> (anode +) as the first lead, then <strong>row a, column 9</strong> (cathode −) as the second. Polarity matters — longer lead (anode) goes toward positive voltage.',
-        hint: 'The LED anode (+, longer lead) must go toward the positive side. Here the current flows left-to-right: resistor → LED → ground.',
+        instruction: 'Select <strong>LED</strong>. Click <strong>row b, column 6</strong> for the anode (+), then <strong>row b, column 9</strong> for the cathode (−). Rows a–e share each column, so the LED joins the resistor through column 6 without sharing a hole.',
+        hint: 'Polarity matters: place the LED anode at b6 and cathode at b9. The hidden vertical strips connect a6 to b6 and a9 to b9.',
         availableTools: ['wire-red', 'wire-black', 'resistor', 'led'],
         validate(comps) {
-          return comps.some(c => c.type === 'led'
-            && c.from.row === 'a' && c.from.col === 7
-            && c.to.row === 'a' && c.to.col === 9);
+          return hasLed(comps);
         }
       },
       {
         id: 4,
         goal: 'Challenge 4 of 4',
         title: 'Close the Loop',
-        instruction: 'The circuit still needs a return path to ground. Select <strong>Black Wire</strong>, click <strong>row a, column 3</strong> (the resistor\'s input end), and connect it to the <strong>+ power rail</strong>. Then click <strong>row a, column 9</strong> (LED cathode) and connect it to the <strong>− power rail</strong>.',
+        instruction: 'Finish both sides of the loop. Use <strong>Red Wire</strong> from the <strong>+ rail</strong> to <strong>a3</strong>. Then use <strong>Black Wire</strong> from <strong>a9</strong> to the <strong>− rail</strong>.',
         hint: 'Current must have a complete path: + rail → wire → resistor → LED → wire → − rail. Without both wires the circuit is open and the LED stays dark.',
         availableTools: ['wire-red', 'wire-black', 'resistor', 'led'],
         validate(comps) {
-          const inputWire  = comps.some(c => c.type === 'wire-red'
-            && ((c.from.row === 'rail-top-plus' && c.to.row === 'a' && c.to.col === 3)
-             || (c.to.row   === 'rail-top-plus' && c.from.row === 'a' && c.from.col === 3)));
-          const outputWire = comps.some(c => c.type === 'wire-black'
-            && ((c.from.row === 'rail-top-minus' && c.to.row === 'a' && c.to.col === 9)
-             || (c.to.row   === 'rail-top-minus' && c.from.row === 'a' && c.from.col === 9)
-             || (c.from.row === 'a' && c.from.col === 9 && c.to.row === 'rail-top-minus')
-             || (c.to.row   === 'a' && c.to.col === 9   && c.from.row === 'rail-top-minus')));
-          return inputWire && outputWire;
+          return hasPoweredRails(comps) && hasResistor(comps) && hasLed(comps) && hasLoopWires(comps);
         }
       },
     ];
 
     // ── Battery terminal positions (special anchors left of board) ──
-    const BAT_PLUS_X  = 18;
+    const BAT_PLUS_X  = 28;
     const BAT_PLUS_Y  = chalHoleY('rail-top-plus');
-    const BAT_MINUS_X = 18;
+    const BAT_MINUS_X = 28;
     const BAT_MINUS_Y = chalHoleY('rail-top-minus');
 
     // ── Drawing the challenge board ────────────────────────
@@ -1787,7 +1969,7 @@
       function railBand(row, color) {
         const y = chalHoleY(row);
         chalCtx.fillStyle = color + '22';
-        chalCtx.fillRect(CHAL_LEFT - 4, y - HOLE_R - 5, CHAL_COLS * CHAL_COL_SP + 8, HOLE_R * 2 + 10);
+        chalCtx.fillRect(CHAL_LEFT - 4, y - HOLE_R - 5, (CHAL_COLS - 1) * CHAL_COL_SP + 8, HOLE_R * 2 + 10);
       }
       railBand('rail-top-plus', '#ff3b30');
       railBand('rail-top-minus', '#0a84ff');
@@ -1796,7 +1978,7 @@
 
       // Center gap
       chalCtx.fillStyle = '#ff950033';
-      chalCtx.fillRect(CHAL_LEFT - 4, Y['gap'] - 2, CHAL_COLS * CHAL_COL_SP + 8, 14);
+      chalCtx.fillRect(CHAL_LEFT - 4, Y['gap'] - 2, (CHAL_COLS - 1) * CHAL_COL_SP + 8, 14);
 
       // Draw placed components (wires / resistor / LED)
       state.placedComponents.forEach(comp => drawComponent(comp));
@@ -1810,7 +1992,7 @@
         const fy = pf.special === 'bat+' ? BAT_PLUS_Y  :
                    pf.special === 'bat-' ? BAT_MINUS_Y :
                    chalHoleY(pf.row);
-        chalCtx.strokeStyle = state.selectedTool === 'wire-red' ? '#ff3b30aa' : '#0a84ffaa';
+        chalCtx.strokeStyle = state.selectedTool === 'wire-red' ? '#ff3b30aa' : '#b8b8beaa';
         chalCtx.lineWidth = 2;
         chalCtx.setLineDash([4, 4]);
         chalCtx.beginPath();
@@ -1879,6 +2061,22 @@
     }
 
     function drawBatteryTerminals() {
+      function drawTargetRing(special, x, y) {
+        const point = { special };
+        const isTarget = state.pendingFrom
+          ? isAllowedPlacement(state.pendingFrom, point)
+          : (state.selectedTool && isAllowedStart(point));
+        if (!isTarget) return;
+        chalCtx.beginPath();
+        chalCtx.arc(x, y, 14, 0, Math.PI * 2);
+        chalCtx.strokeStyle = '#ffd60a';
+        chalCtx.lineWidth = 3;
+        chalCtx.stroke();
+      }
+
+      drawTargetRing('bat+', BAT_PLUS_X, BAT_PLUS_Y);
+      drawTargetRing('bat-', BAT_MINUS_X, BAT_MINUS_Y);
+
       // + terminal
       chalCtx.beginPath();
       chalCtx.arc(BAT_PLUS_X, BAT_PLUS_Y, 9, 0, Math.PI * 2);
@@ -1922,10 +2120,10 @@
                  chalHoleY(to.row);
 
       if (type === 'wire-red' || type === 'wire-black') {
-        chalCtx.strokeStyle = type === 'wire-red' ? '#ff3b30' : '#5e5ce6';
+        chalCtx.strokeStyle = type === 'wire-red' ? '#ff3b30' : '#a1a1aa';
         chalCtx.lineWidth = 3.5;
         chalCtx.lineCap = 'round';
-        chalCtx.shadowColor = type === 'wire-red' ? '#ff3b3066' : '#5e5ce666';
+        chalCtx.shadowColor = type === 'wire-red' ? '#ff3b3066' : '#ffffff33';
         chalCtx.shadowBlur = 6;
         chalCtx.beginPath();
         chalCtx.moveTo(fx, fy);
@@ -2043,8 +2241,8 @@
 
     function drawLEDGlow() {
       // Large ambient glow around LED position
-      const cx = chalHoleX(7) + (chalHoleX(9) - chalHoleX(7)) / 2;
-      const cy = chalHoleY('a');
+      const cx = chalHoleX(6) + (chalHoleX(9) - chalHoleX(6)) / 2;
+      const cy = chalHoleY('b');
       const alpha = 0.15 + 0.1 * Math.sin(ledGlowPhase);
       const grad = chalCtx.createRadialGradient(cx, cy, 5, cx, cy, 45);
       grad.addColorStop(0, `rgba(52,199,89,${alpha + 0.2})`);
@@ -2063,27 +2261,11 @@
 
     // ── Target hole highlighting ───────────────────────────
     function isTargetHole(row, col) {
-      if (!state.selectedTool || !state.pendingFrom) return false;
-      // After first click, show the valid second-click targets
-      const ch = state.challenge;
-      if (ch === 1) {
-        if (state.pendingFrom.special === 'bat+' && row === 'rail-top-plus') return true;
-        if (state.pendingFrom.special === 'bat-' && row === 'rail-top-minus') return true;
-      }
-      if (ch === 2) {
-        if (state.pendingFrom.row === 'a' && state.pendingFrom.col === 3 && row === 'a' && col === 6) return true;
-        if (state.pendingFrom.row === 'a' && state.pendingFrom.col === 6 && row === 'a' && col === 3) return true;
-      }
-      if (ch === 3) {
-        if (state.pendingFrom.row === 'a' && state.pendingFrom.col === 7 && row === 'a' && col === 9) return true;
-      }
-      if (ch === 4) {
-        if (state.pendingFrom.row === 'rail-top-plus'  && row === 'a' && col === 3) return true;
-        if (state.pendingFrom.row === 'a' && state.pendingFrom.col === 3  && row === 'rail-top-plus') return true;
-        if (state.pendingFrom.row === 'rail-top-minus' && row === 'a' && col === 9) return true;
-        if (state.pendingFrom.row === 'a' && state.pendingFrom.col === 9  && row === 'rail-top-minus') return true;
-      }
-      return false;
+      if (!state.selectedTool) return false;
+      const point = { row, col };
+      return state.pendingFrom
+        ? isAllowedPlacement(state.pendingFrom, point)
+        : isAllowedStart(point);
     }
 
     // ── Palette selection ──────────────────────────────────
@@ -2095,12 +2277,18 @@
         if (state.selectedTool === tool) {
           state.selectedTool = null;
           btn.classList.remove('is-selected');
+          btn.setAttribute('aria-pressed', 'false');
         } else {
-          palette.querySelectorAll('.bb-palette-btn').forEach(b => b.classList.remove('is-selected'));
+          palette.querySelectorAll('.bb-palette-btn').forEach(b => {
+            b.classList.remove('is-selected');
+            b.setAttribute('aria-pressed', 'false');
+          });
           state.selectedTool = tool;
           btn.classList.add('is-selected');
+          btn.setAttribute('aria-pressed', 'true');
         }
         state.pendingFrom = null;
+        if (state.selectedTool) showFeedback('Part selected. Click its first highlighted connection point.', 'info');
         drawChalBoard();
       });
     }
@@ -2127,6 +2315,10 @@
     // ── Canvas click handler ───────────────────────────────
     if (chalCanvas) {
       chalCanvas.addEventListener('click', function (e) {
+        if (state.chalComplete[state.challenge - 1]) {
+          showFeedback('This step is complete. Choose Next Step to continue.', 'correct');
+          return;
+        }
         if (!state.selectedTool) {
           showFeedback('Select a component from the palette first.', 'info');
           return;
@@ -2140,9 +2332,14 @@
         if (!hit) return;
 
         if (!state.pendingFrom) {
+          if (!isAllowedStart(hit)) {
+            showFeedback('That point is not used for this part in the current step. Check the task card and try again.', 'wrong');
+            return;
+          }
           // First click — set source
           state.pendingFrom = hit;
-          showFeedback('Source selected. Now click the destination hole.', 'info');
+          showFeedback('First connection selected. The valid destination is highlighted in yellow.', 'info');
+          drawChalBoard();
         } else {
           // Second click — complete placement
           const from = state.pendingFrom;
@@ -2152,6 +2349,12 @@
           // Avoid placing on same hole
           if (from.row === to.row && from.col === to.col && !from.special && !to.special) {
             showFeedback('Pick two different holes.', 'wrong');
+            drawChalBoard();
+            return;
+          }
+
+          if (!isAllowedPlacement(from, to)) {
+            showFeedback('That connection does not match this step. No part was placed—follow the yellow target and try again.', 'wrong');
             drawChalBoard();
             return;
           }
@@ -2215,7 +2418,7 @@
 
     if (resetBtn) {
       resetBtn.addEventListener('click', function () {
-        resetChallenge(state.challenge);
+        resetChallenge(1);
       });
     }
 
@@ -2228,10 +2431,14 @@
       if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
 
       if (palette) {
-        palette.querySelectorAll('.bb-palette-btn').forEach(b => b.classList.remove('is-selected'));
+        palette.querySelectorAll('.bb-palette-btn').forEach(b => {
+          b.classList.remove('is-selected');
+          b.setAttribute('aria-pressed', 'false');
+        });
       }
       nextBtn.classList.remove('visible');
-      chalFeedback.className = 'bb-chal-feedback';
+      chalFeedback.className = 'bb-chal-feedback info';
+      chalFeedback.textContent = 'Choose the red wire to begin powering the positive rail.';
 
       // Reset pips
       for (let i = 1; i <= 4; i++) {
@@ -2244,6 +2451,8 @@
 
     function loadChallenge(num) {
       state.challenge = num;
+      state.selectedTool = null;
+      state.pendingFrom = null;
       const ch = CHALLENGES[num - 1];
       if (!ch) return;
 
@@ -2258,10 +2467,12 @@
           const tool = btn.dataset.tool;
           btn.disabled = !ch.availableTools.includes(tool);
           btn.classList.remove('is-selected');
+          btn.setAttribute('aria-pressed', 'false');
         });
       }
 
       updateStepPip(num, 'active');
+      if (num > 1) showFeedback('Choose the part named in the task card to continue building.', 'info');
       drawChalBoard();
     }
 

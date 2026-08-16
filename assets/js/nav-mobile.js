@@ -199,7 +199,7 @@
     var style = document.createElement("style");
     style.id = "classroomos-nav-a11y";
     style.textContent =
-      '.nav-settings-toggle:focus-visible, .site-nav a:focus-visible, .nav-mode-pill:focus-visible, .nav-tone-pill:focus-visible, .nav-theme-chip:focus-visible {' +
+      '.nav-settings-toggle:focus-visible, .nav-settings-close:focus-visible, .site-nav a:focus-visible, .nav-mode-pill:focus-visible, .nav-tone-pill:focus-visible, .nav-theme-chip:focus-visible {' +
         'outline: 2px solid var(--theme-accent, #007aff); outline-offset: 2px;' +
       '}' +
       /* Responsive grid for theme/canvas chips */
@@ -225,13 +225,53 @@
       '[data-theme="night"] .nav-auto-note, [data-lighting="night"] .nav-auto-note { color: #fcd34d; }' +
       '.nav-auto-note.is-visible { display: block; }' +
       '.nav-theme-chip[aria-disabled="true"], .nav-tone-pill[aria-disabled="true"] { cursor: not-allowed; }' +
+      '.nav-settings-panel[hidden] { display: none !important; }' +
+      '.nav-settings-panel { max-height: min(82vh, 680px); overflow-y: auto; overscroll-behavior: contain; }' +
+      '.nav-settings-close {' +
+        'display: inline-flex; align-items: center; justify-content: center; position: absolute; top: 0.75rem; right: 0.75rem;' +
+        'width: 2.5rem; height: 2.5rem; padding: 0; border: 1px solid var(--line, rgba(125,136,154,.3));' +
+        'border-radius: 999px; background: var(--surface-2, rgba(255,255,255,.72)); color: var(--text, #1d1d1f);' +
+        'font: inherit; font-size: 1.35rem; line-height: 1; cursor: pointer;' +
+      '}' +
+      '.nav-settings-head { position: relative; padding-right: 3rem; }' +
       '@media (max-width: 1120px) {' +
+        '.nav-settings {' +
+          'position: relative !important; order: 1; flex: 0 0 auto; min-width: 0; margin-left: auto !important;' +
+        '}' +
+        '.nav-settings-toggle {' +
+          'width: auto !important; min-width: 2.75rem; min-height: 2.75rem; margin: 0 !important;' +
+          'justify-content: center !important; white-space: nowrap;' +
+        '}' +
+        '.nav-settings-panel {' +
+          'position: fixed !important; top: var(--nav-settings-top, 4rem) !important;' +
+          'right: var(--nav-settings-right, 1rem) !important; left: auto !important; bottom: auto !important;' +
+          'width: min(440px, calc(100vw - 1.5rem)) !important;' +
+          'max-height: var(--nav-settings-max-height, calc(100dvh - 5rem)) !important;' +
+          'margin: 0 !important; overflow-x: hidden !important; overflow-y: auto !important;' +
+          'overscroll-behavior: contain; -webkit-overflow-scrolling: touch;' +
+        '}' +
         '.site-nav {' +
           'transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease, visibility 0s 0.3s;' +
         '}' +
         '.site-nav.is-open {' +
           'transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease, visibility 0s 0s;' +
         '}' +
+      '}' +
+      '@media (max-width: 680px) {' +
+        '.nav-settings-toggle > span:not(.nav-settings-status) { display: none !important; }' +
+        '.nav-settings-panel {' +
+          'top: var(--nav-settings-top, 4rem) !important;' +
+          'right: max(0.75rem, env(safe-area-inset-right)) !important;' +
+          'bottom: max(0.75rem, env(safe-area-inset-bottom)) !important;' +
+          'left: max(0.75rem, env(safe-area-inset-left)) !important;' +
+          'width: auto !important; max-height: none !important; border-radius: 22px !important;' +
+        '}' +
+      '}' +
+      '@media (max-width: 420px) {' +
+        '.nav-settings-status { display: none !important; }' +
+        '.nav-settings-panel { padding: 0.9rem !important; }' +
+        '.nav-settings-current { font-size: 1.2rem !important; }' +
+        '.nav-settings-note { font-size: 0.78rem !important; line-height: 1.42 !important; }' +
       '}';
     document.head.appendChild(style);
   }
@@ -555,6 +595,7 @@
   var canvasGrid = null;
   var autoNote = null;
   var trapFocusHandler = null;
+  var settingsViewportHandler = null;
 
   if (!isThemeIndependent) {
     settingsContainer = document.createElement("div");
@@ -568,6 +609,7 @@
         '<span class="nav-settings-status" aria-hidden="true"></span>' +
       "</button>" +
       '<div class="nav-settings-panel" id="' + panelId + '" role="dialog" aria-modal="true" aria-label="Theme Settings" hidden>' +
+        '<button type="button" class="nav-settings-close" aria-label="Close theme settings">&times;</button>' +
         '<div class="nav-settings-head">' +
           '<p class="nav-settings-eyebrow">Theme Controller</p>' +
           '<p class="nav-settings-current" aria-live="polite"></p>' +
@@ -726,7 +768,15 @@
     settingsContainer.classList.add("is-open");
     settingsToggle.setAttribute("aria-expanded", "true");
     settingsPanel.hidden = false;
-    var firstInteractive = settingsPanel.querySelector("button");
+    positionSettingsPanel();
+    settingsViewportHandler = function () { positionSettingsPanel(); };
+    window.addEventListener("resize", settingsViewportHandler);
+    window.addEventListener("scroll", settingsViewportHandler, true);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", settingsViewportHandler);
+      window.visualViewport.addEventListener("scroll", settingsViewportHandler);
+    }
+    var firstInteractive = settingsPanel.querySelector(".nav-settings-close") || settingsPanel.querySelector("button");
     if (firstInteractive) firstInteractive.focus();
 
     // Install focus trap
@@ -753,11 +803,38 @@
     settingsContainer.classList.remove("is-open");
     settingsToggle.setAttribute("aria-expanded", "false");
     settingsPanel.hidden = true;
+    if (settingsViewportHandler) {
+      window.removeEventListener("resize", settingsViewportHandler);
+      window.removeEventListener("scroll", settingsViewportHandler, true);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener("resize", settingsViewportHandler);
+        window.visualViewport.removeEventListener("scroll", settingsViewportHandler);
+      }
+      settingsViewportHandler = null;
+    }
     if (trapFocusHandler) {
       document.removeEventListener("keydown", trapFocusHandler);
       trapFocusHandler = null;
     }
     if (wasOpen && settingsToggle) settingsToggle.focus();
+  }
+
+  function positionSettingsPanel() {
+    if (!settingsPanel || settingsPanel.hidden || !settingsToggle) return;
+    var rect = settingsToggle.getBoundingClientRect();
+    var viewport = window.visualViewport;
+    var viewportHeight = viewport ? viewport.height : window.innerHeight;
+    var viewportWidth = viewport ? viewport.width : window.innerWidth;
+    var viewportTop = viewport ? viewport.offsetTop : 0;
+    var viewportLeft = viewport ? viewport.offsetLeft : 0;
+    var gap = 8;
+    var edge = 12;
+    var top = Math.max(viewportTop + edge, rect.bottom + gap);
+    var right = Math.max(edge, viewportWidth + viewportLeft - rect.right);
+    var availableHeight = Math.max(180, viewportTop + viewportHeight - top - edge);
+    settingsPanel.style.setProperty("--nav-settings-top", top + "px");
+    settingsPanel.style.setProperty("--nav-settings-right", right + "px");
+    settingsPanel.style.setProperty("--nav-settings-max-height", availableHeight + "px");
   }
 
   function updateSettingsUi(mode, activeId) {
@@ -892,6 +969,8 @@
     settingsToggle.addEventListener("click", function () {
       settingsContainer.classList.contains("is-open") ? closeSettings() : openSettings();
     });
+    var settingsClose = settingsPanel.querySelector(".nav-settings-close");
+    if (settingsClose) settingsClose.addEventListener("click", closeSettings);
   }
 
   document.addEventListener("click", function (e) {

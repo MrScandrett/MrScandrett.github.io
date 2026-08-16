@@ -134,6 +134,112 @@
     }
   ];
 
+  var storyAnchors = [
+    { id: 'creation', label: 'Creation', short: 'God creates', testament: 'Old Testament' },
+    { id: 'fall', label: 'Fall', short: 'Sin fractures', testament: 'Old Testament' },
+    { id: 'covenant', label: 'Covenant', short: 'God promises', testament: 'Old Testament' },
+    { id: 'exodus', label: 'Exodus', short: 'God rescues', testament: 'Old Testament' },
+    { id: 'kingdom', label: 'Kingdom', short: 'God reigns', testament: 'Old Testament' },
+    { id: 'exile', label: 'Exile & return', short: 'Hope remains', testament: 'Old Testament' },
+    { id: 'jesus', label: 'Jesus', short: 'The King comes', testament: 'New Testament' },
+    { id: 'church', label: 'Church', short: 'The good news goes', testament: 'New Testament' },
+    { id: 'new-creation', label: 'New creation', short: 'God dwells with us', testament: 'New Testament' }
+  ];
+
+  var lessonStoryContext = {
+    'world-of-the-bible': {
+      focus: storyAnchors.map(function (anchor) { return anchor.id; }),
+      bigIdea: 'The Bible is a library of many books that together tell one unfolding story of God, His world, and His people.',
+      before: 'Creation opens the story and the fall creates the conflict: humanity is separated from God and one another.',
+      now: 'Follow the promises, places, kingdoms, and turning points that hold the whole biblical story together.',
+      next: 'Each later lesson zooms in on one part of this map without losing sight of the whole.'
+    },
+    'how-the-bible-reached-us': {
+      focus: storyAnchors.map(function (anchor) { return anchor.id; }),
+      bigIdea: 'God’s word came through real authors, communities, manuscripts, and languages—and can be studied with both confidence and care.',
+      before: 'The events and teaching of Scripture took place in history before they were collected in the Bible we hold.',
+      now: 'See how writing, copying, canon recognition, printing, and translation are related but different.',
+      next: 'A clearer view of transmission helps us slow down, compare responsibly, and read every lesson’s passages well.'
+    },
+    'the-tabernacle': {
+      focus: ['fall', 'covenant', 'exodus'],
+      bigIdea: 'The Tabernacle shows God graciously dwelling among the people He rescued while providing a holy way to approach Him.',
+      before: 'Humanity loses open access to God’s presence; God then makes covenant promises and rescues Israel from Egypt.',
+      now: 'God places His sanctuary in Israel’s camp, with sacrifice, cleansing, priesthood, and ordered access.',
+      next: 'The Temple continues this presence theme, and Hebrews connects the sanctuary’s worship to Christ’s priestly work.'
+    },
+    'temple-and-gods-presence': {
+      focus: ['creation', 'fall', 'exodus', 'kingdom', 'jesus', 'church', 'new-creation'],
+      bigIdea: 'From Eden to new creation, Scripture moves toward God dwelling with His people in holiness, life, and peace.',
+      before: 'Presence is lost in Eden, then graciously pictured among Israel in the Tabernacle.',
+      now: 'The Temple gathers themes of sacred space, sacrifice, priesthood, kingship, and God’s name among His people.',
+      next: 'The New Testament centers God’s presence in Christ, extends it through the Spirit-filled Church, and completes it in new creation.'
+    },
+    'kingdoms-prophets-exile': {
+      focus: ['covenant', 'kingdom', 'exile'],
+      bigIdea: 'Israel’s kings fail, the prophets call the people back to covenant faithfulness, and judgment does not erase God’s promises.',
+      before: 'God rescues Israel, gives the covenant, settles the people in the land, and establishes the monarchy.',
+      now: 'The kingdom divides; Assyria and Babylon bring exile; prophets explain the crisis and announce hope.',
+      next: 'Return from exile is real but incomplete, intensifying the hope for a faithful King and lasting restoration.'
+    },
+    'feasts-of-israel': {
+      focus: ['covenant', 'exodus', 'kingdom'],
+      bigIdea: 'Israel’s calendar turns God’s rescue and provision into shared memory practiced with the body, the land, and the community.',
+      before: 'God rescues Israel from Egypt and forms a covenant people who live by His provision.',
+      now: 'Passover, Weeks, Atonement, Booths, and other appointed times teach Israel to remember and worship.',
+      next: 'The Gospels and early Church unfold within this festival world, so the calendar clarifies many later scenes and themes.'
+    },
+    'world-of-jesus': {
+      focus: ['exile', 'jesus'],
+      bigIdea: 'Jesus enters Israel’s long story in real villages, contested regions, crowded roads, and a land ruled by Rome.',
+      before: 'Israel returns from exile but still waits under foreign empires for the fullness of God’s kingdom promises.',
+      now: 'Jesus announces the kingdom through His teaching, actions, journeys, relationships, and confrontations.',
+      next: 'The parables explain the kingdom’s surprising character, and Holy Week reveals the decisive shape of Jesus’ mission.'
+    },
+    'jesus-parables-lab': {
+      focus: ['kingdom', 'jesus'],
+      bigIdea: 'Jesus’ parables reveal God’s kingdom by surprising hearers, overturning expectations, and calling for a response.',
+      before: 'Israel’s Scriptures create the images, hopes, conflicts, and kingdom expectations Jesus’ hearers bring to His stories.',
+      now: 'Read each parable inside its Gospel setting: audience, question, expected turn, surprise, and invitation.',
+      next: 'Jesus’ death and resurrection become the center from which His kingdom teaching and the Church’s mission are understood.'
+    },
+    'holy-week': {
+      focus: ['covenant', 'kingdom', 'jesus'],
+      bigIdea: 'The four Gospels present Jesus’ death and resurrection as the climax of His mission and the turning point of the biblical story.',
+      before: 'Covenant, sacrifice, kingship, prophecy, Temple, and Passover all form the Scriptural horizon of Jesus’ final week.',
+      now: 'Jesus enters Jerusalem, teaches, shares the supper, is crucified and buried, and rises from the dead.',
+      next: 'The risen Jesus commissions witnesses; Acts follows the Spirit-empowered good news from Jerusalem toward the nations.'
+    },
+    'acts-jerusalem-to-nations': {
+      focus: ['jesus', 'church'],
+      bigIdea: 'The risen Jesus continues His mission through the Holy Spirit as a diverse Church carries the good news outward.',
+      before: 'Jesus announces the kingdom, dies, rises, teaches His disciples, and promises the Holy Spirit.',
+      now: 'Witness spreads from Jerusalem through Judea and Samaria and across cultural boundaries toward the nations.',
+      next: 'Paul’s journeys show this widening mission at city scale as churches form, face pressure, and receive letters.'
+    },
+    'pauls-missionary-journeys': {
+      focus: ['jesus', 'church'],
+      bigIdea: 'Paul’s journeys connect the message of Jesus with real cities, cultures, conflicts, friendships, and emerging churches.',
+      before: 'Acts begins in Jerusalem and shows the gospel crossing geographic, ethnic, and social boundaries.',
+      now: 'Trace routes, companions, opposition, local responses, and the patient work of strengthening new communities.',
+      next: 'The New Testament letters speak into the life of these churches as they learn faithful belief, worship, unity, and practice.'
+    },
+    'proverbs-wisdom-decision-lab': {
+      focus: ['covenant', 'kingdom', 'jesus', 'church'],
+      bigIdea: 'Biblical wisdom trains people to fear the Lord, notice reality carefully, and choose fitting faithfulness in ordinary life.',
+      before: 'God forms a covenant people whose worship must shape speech, work, money, friendship, justice, and family life.',
+      now: 'Proverbs offers concise observations that require listening, comparison, context, and discernment—not mechanical use.',
+      next: 'Jesus embodies and teaches God’s wisdom, forming disciples whose inner character and outward practice belong together.'
+    },
+    'sermon-on-the-mount': {
+      focus: ['kingdom', 'jesus', 'church'],
+      bigIdea: 'Jesus describes kingdom life that reaches beneath visible behavior to motives, trust, relationships, and practiced obedience.',
+      before: 'Israel’s law, prophets, wisdom, and kingdom hope form the world in which Jesus addresses His disciples.',
+      now: 'The King teaches a community about blessing, reconciliation, enemy love, prayer, treasure, trust, and faithful action.',
+      next: 'Disciples carry Jesus’ teaching into the life and mission of the Church while awaiting the kingdom’s complete renewal.'
+    }
+  };
+
   var lessonPassages = {
     'world-of-the-bible': [['Genesis',12,1,9],['Joshua',1,1,9],['Luke',3,1,2],['Acts',17,24,28]],
     'how-the-bible-reached-us': [['Deuteronomy',31,24,26],['Luke',1,1,4],['2 Timothy',3,14,17],['2 Peter',1,19,21]],
@@ -271,6 +377,115 @@
       caption: 'The traditional Mount of Beatitudes overlooks the Sea of Galilee. The exact setting of the sermon is not identified with certainty in Matthew.',
       credit: 'israeltourism', license: 'CC BY-SA 2.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/2.0/'
     }
+  };
+
+  var lessonVisualJourneys = {
+    'temple-and-gods-presence': [
+      {
+        title: 'Garden and promise',
+        note: 'Eden is known through the biblical text, so artists visualize it rather than document it.',
+        items: [
+          {
+            title: 'The Garden of Eden', kind: 'Artistic depiction · Genesis 2–3',
+            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Thomas_Cole_-_The_Garden_of_Eden_-_1828.jpg/960px-Thomas_Cole_-_The_Garden_of_Eden_-_1828.jpg',
+            page: 'https://commons.wikimedia.org/wiki/File:Thomas_Cole_-_The_Garden_of_Eden_-_1828.jpg',
+            alt: 'Thomas Cole painting of a luminous, mountain-ringed Garden of Eden',
+            caption: 'Thomas Cole imagines Eden as a place where garden, river, mountain, light, and human life meet before exile.',
+            credit: 'Thomas Cole, 1828', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
+          }
+        ]
+      },
+      {
+        title: 'Mountains of encounter',
+        note: 'In Scripture, mountains often become places of covenant, prayer, revelation, and glory.',
+        items: [
+          {
+            title: 'Mount Sinai', kind: 'Traditional identification · Exodus 19–20',
+            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Mount_Sinai_BW_4.jpg/960px-Mount_Sinai_BW_4.jpg',
+            page: 'https://commons.wikimedia.org/wiki/File:Mount_Sinai_BW_4.jpg',
+            alt: 'Rocky summit of the mountain traditionally identified as Mount Sinai in Egypt',
+            caption: 'Sinai recalls God descending in fire and cloud to give the covenant; the mountain’s exact biblical location remains debated.',
+            credit: 'Berthold Werner', license: 'CC BY-SA 3.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/'
+          },
+          {
+            title: 'Mount Tabor', kind: 'Traditional identification · Matthew 17:1–8',
+            src: 'https://upload.wikimedia.org/wikipedia/commons/a/a6/Mount_Tabor4.jpg',
+            page: 'https://commons.wikimedia.org/wiki/File:Mount_Tabor4.jpg',
+            alt: 'Rounded green profile of Mount Tabor rising above the surrounding plain in Israel',
+            caption: 'Christian tradition connects Tabor with the Transfiguration, when Christ’s glory was revealed to Peter, James, and John.',
+            credit: 'Eliot / TheCuriousGnome', license: 'CC BY 2.0', licenseUrl: 'https://creativecommons.org/licenses/by/2.0/'
+          },
+          {
+            title: 'Mount of Olives', kind: 'Biblical place · Gospels and Acts',
+            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/2013-Aerial-Mount_of_Olives.jpg/960px-2013-Aerial-Mount_of_Olives.jpg',
+            page: 'https://commons.wikimedia.org/wiki/File:2013-Aerial-Mount_of_Olives.jpg',
+            alt: 'Aerial view of the Mount of Olives and its churches overlooking Jerusalem',
+            caption: 'The Mount of Olives frames Jesus’ prayer, teaching, entry into Jerusalem, and ascension in the Gospel and Acts narratives.',
+            credit: 'Godot13', license: 'CC BY-SA 4.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/'
+          }
+        ]
+      },
+      {
+        title: 'The Church in stone',
+        note: 'Christians across centuries have shaped worship spaces to gather communities around Word, sacrament, prayer, and praise.',
+        items: [
+          {
+            title: 'St. Peter’s Basilica', kind: 'Vatican City · Renaissance and Baroque',
+            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Exterior_of_Saint_Peter%27s_Basilica.jpg/960px-Exterior_of_Saint_Peter%27s_Basilica.jpg',
+            page: 'https://commons.wikimedia.org/wiki/File:Exterior_of_Saint_Peter%27s_Basilica.jpg',
+            alt: 'Facade and dome of Saint Peter’s Basilica seen from Saint Peter’s Square',
+            caption: 'One of Christianity’s most recognized churches, St. Peter’s joins a vast gathering place to imagery of apostles, saints, and the cross.',
+            credit: 'Yair Haklai', license: 'CC BY-SA 4.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/'
+          },
+          {
+            title: 'Notre-Dame de Paris', kind: 'France · Gothic',
+            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Paris%2C_Notre_Dame_--_2014_--_1448.jpg/960px-Paris%2C_Notre_Dame_--_2014_--_1448.jpg',
+            page: 'https://commons.wikimedia.org/wiki/File:Paris,_Notre_Dame_--_2014_--_1448.jpg',
+            alt: 'Western facade and twin towers of Notre-Dame Cathedral in Paris',
+            caption: 'Notre-Dame’s portals, towers, and rose window turn stone and colored light into a public proclamation of the Christian story.',
+            credit: 'Dietmar Rabich', license: 'CC BY-SA 4.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/'
+          },
+          {
+            title: 'Sagrada Família', kind: 'Barcelona · Modernisme',
+            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Exterior_of_the_Sagrada_Fam%C3%ADlia_20171225.jpg/960px-Exterior_of_the_Sagrada_Fam%C3%ADlia_20171225.jpg',
+            page: 'https://commons.wikimedia.org/wiki/File:Exterior_of_the_Sagrada_Fam%C3%ADlia_20171225.jpg',
+            alt: 'Sculpted towers and facade of the Sagrada Família basilica in Barcelona',
+            caption: 'Antoni Gaudí’s basilica uses branching columns, sculpted Scripture scenes, and changing light to join creation with the gospel story.',
+            credit: 'Suicasmo', license: 'CC BY-SA 4.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/'
+          },
+          {
+            title: 'Church of the Holy Sepulchre', kind: 'Jerusalem · Pilgrimage church',
+            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Jerusalem_Holy_Sepulchre_BW_22.JPG/960px-Jerusalem_Holy_Sepulchre_BW_22.JPG',
+            page: 'https://commons.wikimedia.org/wiki/File:Jerusalem_Holy_Sepulchre_BW_22.JPG',
+            alt: 'Stone entrance facade of the Church of the Holy Sepulchre in Jerusalem',
+            caption: 'The Holy Sepulchre gathers Christian memory around the traditional sites of Jesus’ crucifixion, burial, and resurrection.',
+            credit: 'Berthold Werner', license: 'CC BY-SA 3.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/'
+          }
+        ]
+      },
+      {
+        title: 'Artists picture revelation',
+        note: 'Sacred art interprets biblical testimony through visual symbols; it is not a photograph of the event.',
+        items: [
+          {
+            title: 'The Baptism of Christ', kind: 'Artistic depiction · Matthew 3:13–17',
+            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/The_Baptism_of_Christ_%28Verrocchio_%26_Leonardo%29.jpg/960px-The_Baptism_of_Christ_%28Verrocchio_%26_Leonardo%29.jpg',
+            page: 'https://commons.wikimedia.org/wiki/File:The_Baptism_of_Christ_(Verrocchio_%26_Leonardo).jpg',
+            alt: 'Renaissance painting of Jesus’ baptism, with the Spirit represented as a dove and heaven opening above',
+            caption: 'This Renaissance work pictures the Father’s voice, the Spirit descending like a dove, and the Son standing in the Jordan.',
+            credit: 'Verrocchio and Leonardo da Vinci', license: 'CC BY-SA 4.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/'
+          },
+          {
+            title: 'The Transfiguration', kind: 'Icon · Matthew 17:1–8',
+            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/Transfiguration_by_Feofan_Grek_from_Spaso-Preobrazhensky_Cathedral_in_Pereslavl-Zalessky_%2815th_c%2C_Tretyakov_gallery%29.jpeg/960px-Transfiguration_by_Feofan_Grek_from_Spaso-Preobrazhensky_Cathedral_in_Pereslavl-Zalessky_%2815th_c%2C_Tretyakov_gallery%29.jpeg',
+            page: 'https://commons.wikimedia.org/wiki/File:Transfiguration_by_Feofan_Grek_from_Spaso-Preobrazhensky_Cathedral_in_Pereslavl-Zalessky_(15th_c,_Tretyakov_gallery).jpeg',
+            alt: 'Fifteenth-century icon of the radiant Christ above the disciples at the Transfiguration',
+            caption: 'The icon uses radiating light and height to confess what the Gospel narrates: Christ’s glory disclosed before the disciples.',
+            credit: 'Unknown 15th-century icon painter', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
+          }
+        ]
+      }
+    ]
   };
 
   var geographyMaps = {
@@ -477,10 +692,12 @@
   var lesson = lessons[index];
   if (!lesson) { main.innerHTML = '<p>Lesson data could not be loaded.</p>'; return; }
   lesson.image = lessonImages[lesson.id];
+  lesson.visualJourney = lessonVisualJourneys[lesson.id] || [];
   lesson.map = geographyMaps[lessonMapKeys[lesson.id]];
   lesson.map.note = lessonMapNotes[lesson.id];
   lesson.entities = lessonEntities[lesson.id];
   lesson.passages = lessonPassages[lesson.id];
+  lesson.story = lessonStoryContext[lesson.id];
   main.setAttribute('data-stage-theme', lesson.code.charAt(0));
 
   function esc(value) {
@@ -494,6 +711,30 @@
     return passage[0] + ' ' + passage[1] + ':' + passage[2] + (passage[3] === passage[2] ? '' : '–' + passage[3]);
   }
 
+  function storyThreadMarkup(story) {
+    return '<section class="bpl-card bpl-story" aria-labelledby="bpl-story-title">' +
+      '<div class="bpl-story-head"><div><p class="bpl-label">The whole-Bible story</p><h2 id="bpl-story-title">Find this lesson in the bigger picture</h2></div><p class="bpl-big-idea"><strong>Big idea:</strong> ' + esc(story.bigIdea) + '</p></div>' +
+      '<div class="bpl-story-scroll" tabindex="0" aria-label="Scrollable biblical story timeline"><ol class="bpl-story-line">' + storyAnchors.map(function (anchor, anchorIndex) {
+        var active = story.focus.indexOf(anchor.id) !== -1;
+        var boundary = anchorIndex === 6 ? ' bpl-story-node--nt' : '';
+        return '<li class="bpl-story-node' + boundary + (active ? ' is-focus' : '') + '"><span class="bpl-story-dot" aria-hidden="true"></span>' + ((anchorIndex === 0 || anchorIndex === 6) ? '<span class="bpl-story-era">' + esc(anchor.testament) + '</span>' : '') + '<strong>' + esc(anchor.label) + '</strong><small>' + esc(anchor.short) + (active ? '<span class="bpl-visually-hidden">; this lesson connects here</span>' : '') + '</small></li>';
+      }).join('') + '</ol></div>' +
+      '<p class="bpl-story-key"><span aria-hidden="true"></span>Highlighted moments connect directly to this lesson. The line continues because every passage belongs to a larger story.</p>' +
+      '<div class="bpl-story-bridge"><article><span>What came before</span><p>' + esc(story.before) + '</p></article><article class="is-now"><span>This lesson</span><p>' + esc(story.now) + '</p></article><article><span>Where it leads</span><p>' + esc(story.next) + '</p></article></div>' +
+    '</section>';
+  }
+
+  function visualJourneyMarkup(groups) {
+    if (!groups.length) return '';
+    return '<section class="bpl-card bpl-visual-journey"><div class="bpl-visual-head"><div><p class="bpl-label">Visual journey</p><h2>From garden to gathered Church</h2></div><p>Compare biblical places, Christian architecture, and artists’ interpretations of divine presence.</p></div>' +
+      '<aside class="bpl-visual-note"><strong>Read the image type:</strong> Photographs document present-day places and buildings. Eden and divine manifestations are artistic interpretations, while several mountain identifications come from Christian tradition rather than certainty.</aside>' +
+      groups.map(function (group) {
+        return '<section class="bpl-visual-group"><header><h3>' + esc(group.title) + '</h3><p>' + esc(group.note) + '</p></header><div class="bpl-visual-grid bpl-visual-grid--' + group.items.length + '">' + group.items.map(function (item) {
+          return '<figure class="bpl-visual-card"><a href="' + esc(item.page) + '" target="_blank" rel="noopener noreferrer"><img src="' + esc(item.src) + '" alt="' + esc(item.alt) + '" loading="lazy" referrerpolicy="no-referrer"></a><figcaption><span>' + esc(item.kind) + '</span><h4>' + esc(item.title) + '</h4><p>' + esc(item.caption) + '</p><small>Image: <a href="' + esc(item.page) + '" target="_blank" rel="noopener noreferrer">' + esc(item.credit) + '</a> · <a href="' + esc(item.licenseUrl) + '" target="_blank" rel="license noopener noreferrer">' + esc(item.license) + '</a> · Wikimedia Commons</small></figcaption></figure>';
+        }).join('') + '</div></section>';
+      }).join('') + '</section>';
+  }
+
   main.className = 'bpl-page';
   main.innerHTML =
     '<a class="bpl-back" href="bible-foundations-pathway.html">&larr; Bible Foundations &amp; Pathway</a>' +
@@ -502,9 +743,11 @@
       '<h1>' + esc(lesson.title) + '</h1><p class="bpl-lede">' + esc(lesson.lede) + '</p>' +
       '<div class="bpl-meta"><span>' + esc(lesson.grades) + '</span><span>' + esc(lesson.time) + '</span><span>Guided exploration</span><span>Print-ready</span></div>' +
     '</section>' +
+    storyThreadMarkup(lesson.story) +
     '<figure class="bpl-figure"><a href="' + esc(lesson.image.page) + '" target="_blank" rel="noopener noreferrer"><img src="' + esc(lesson.image.src) + '" alt="' + esc(lesson.image.alt) + '" loading="eager" referrerpolicy="no-referrer"></a><figcaption><p>' + esc(lesson.image.caption) + '</p><small>Image: <a href="' + esc(lesson.image.page) + '" target="_blank" rel="noopener noreferrer">' + esc(lesson.image.credit) + '</a> · <a href="' + esc(lesson.image.licenseUrl) + '" target="_blank" rel="license noopener noreferrer">' + esc(lesson.image.license) + '</a> · Wikimedia Commons</small></figcaption></figure>' +
     '<div class="bpl-grid"><section class="bpl-card"><p class="bpl-label">Essential question</p><p class="bpl-question">' + esc(lesson.question) + '</p><p class="bpl-scripture"><strong>Read:</strong> ' + esc(lesson.scripture) + '</p></section>' +
     '<section class="bpl-card"><p class="bpl-label">Learning goals</p><h2>By the end, you can…</h2><ul class="bpl-goals">' + lesson.goals.map(function (goal) { return '<li>' + esc(goal) + '</li>'; }).join('') + '</ul></section></div>' +
+    visualJourneyMarkup(lesson.visualJourney) +
     '<section class="bpl-card bpl-reader"><div class="bpl-reader-head"><div><p class="bpl-label">Open Scripture reader</p><h2>Read in context</h2></div><p>Switch passages, translations, and languages while keeping the same verse reference in view.</p></div>' +
       '<div class="bpl-reader-controls"><label><span>Passage</span><select class="bpl-passage-select">' + lesson.passages.map(function (passage, passageIndex) { return '<option value="' + passageIndex + '">' + esc(passageLabel(passage)) + '</option>'; }).join('') + '</select></label>' +
       '<label><span>Language</span><select class="bpl-language-select">' + bibleLanguages.map(function (language) { return '<option value="' + esc(language.id) + '">' + esc(language.name) + '</option>'; }).join('') + '</select></label>' +
