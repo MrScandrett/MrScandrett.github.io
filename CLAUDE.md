@@ -73,6 +73,11 @@ copy):
   `assets/js/sim-kit-three.mjs`'s `createScene(canvas, { THREE, ... })` for
   renderer/camera/resize setup. See `lessons/cad-camera-controls.html` for a worked
   example.
+- `assets/vendor/matter-bundle.min.js` (rebuild with `npm run build:matter`, source
+  in `scripts/matter-bundle-entry.js`) — a pinned Matter.js build (`Engine`,
+  `Bodies`, `Body`, `Composite`, `World`) for sims that need real 2D rigid-body
+  collision instead of independently-moving points. See `lessons/cymatics.html`'s
+  sand-grain physics for a worked example.
 
 Existing lessons on other Three.js versions or hand-rolled canvas loops don't need to
 be migrated proactively — migrate opportunistically when touching that lesson anyway.
