@@ -16,6 +16,39 @@
     });
   });
 
+  const anatomyNotes = {
+    'building-root': ['Building — StaticBody3D', 'Marks this as permanent world geometry. It never moves, so Godot skips physics simulation on it, but other bodies still collide with its shape.'],
+    'building-mesh': ['Shape — MeshInstance3D', 'The visible geometry — a BoxMesh, an imported model, or several combined. A Material assigned here controls color and texture; MeshInstance3D itself has no physics.'],
+    'building-collision': ['Bounds — CollisionShape3D', 'An invisible boundary. Needs a Shape resource (Box, Sphere, Capsule…) in the Inspector — without one, the mesh is purely visual and things walk straight through it.'],
+    'car-root': ['Car — RigidBody3D', 'Fully physics-simulated: gravity pulls it down, and it can be pushed, bumped, and knocked around by other bodies — unlike a StaticBody3D or a code-driven CharacterBody3D.'],
+    'car-mesh': ['Body — MeshInstance3D', "The car's visible shape and paint. Same role as any MeshInstance3D: rendering only."],
+    'car-collision': ['Bounds — CollisionShape3D', 'Matches the mesh so RigidBody3D physics — bouncing, sliding, colliding — lines up with what you see.'],
+    'car-audio': ['Engine — AudioStreamPlayer3D', 'A positional sound source. Volume fades with distance and pans with the listener, unlike a plain AudioStreamPlayer.'],
+    'coin-root': ['Coin — Area3D', 'Detects overlap without solid collision. Bodies pass right through it — react to its "body_entered" signal instead.'],
+    'coin-mesh': ['Shape — MeshInstance3D', 'The visible coin. A Material here can add a metallic gold look via its texture and roughness settings.'],
+    'coin-collision': ['Sensor — CollisionShape3D', 'Defines the zone Area3D watches. Kept a little larger than the mesh so pickups feel forgiving instead of pixel-precise.']
+  };
+  document.querySelectorAll('.object-tree button[data-anat]').forEach(button => {
+    button.addEventListener('click', () => {
+      document.querySelectorAll('.object-tree button').forEach(item => item.classList.remove('is-active'));
+      button.classList.add('is-active');
+      const [name, note] = anatomyNotes[button.dataset.anat];
+      document.getElementById('anatomyReadout').innerHTML = `<strong>${name}:</strong> ${note}`;
+    });
+  });
+  document.querySelectorAll('.object-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.object-tab').forEach(item => item.classList.remove('is-active'));
+      tab.classList.add('is-active');
+      const object = tab.dataset.object;
+      document.querySelectorAll('.object-tree').forEach(tree => tree.classList.remove('is-active'));
+      document.getElementById(`tree-${object}`)?.classList.add('is-active');
+      document.querySelectorAll('.object-tree button').forEach(item => item.classList.remove('is-active'));
+      document.getElementById('anatomyLabel').textContent = `${object}.tscn`;
+      document.getElementById('anatomyReadout').textContent = 'Click a node above to see its job.';
+    });
+  });
+
   const editorNotes = {
     scene: ['Scene dock', 'A family tree of every node in the current scene. Parent-child relationships matter.'],
     viewport: ['3D viewport', 'The work area where you place, rotate, and scale objects. This is an editor view, not automatically the game camera.'],

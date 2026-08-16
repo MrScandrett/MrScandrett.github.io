@@ -61,10 +61,11 @@
             <a href="#launch"><b>01</b> Launch</a>
             <a href="#editor"><b>02</b> Editor</a>
             <a href="#model"><b>03</b> Mental model</a>
-            <a href="#build"><b>04</b> Build</a>
-            <a href="#script"><b>05</b> Script</a>
-            <a href="#play"><b>06</b> Play</a>
-            <a href="#check"><b>07</b> Check</a>
+            <a href="#toolbox"><b>04</b> Toolbox</a>
+            <a href="#build"><b>05</b> Build</a>
+            <a href="#script"><b>06</b> Script</a>
+            <a href="#play"><b>07</b> Play</a>
+            <a href="#check"><b>08</b> Check</a>
           </nav>
 
           <section class="lesson-section" id="launch">
@@ -112,8 +113,89 @@
             </div>
           </section>
 
+          <section class="lesson-section" id="toolbox">
+            <div class="section-label"><span>04</span><p>Toolbox</p></div>
+            <div class="section-content">
+              <p class="section-kicker">The pattern behind every object</p>
+              <h2>There is no "Car" node. It's a stack of jobs.</h2>
+              <p>Godot has no <code>Car3D</code> or <code>Building3D</code> class. Every solid-looking thing — a building, a car, a coin — is a small parent-child stack: a <strong>body</strong> node tells physics how to treat it, a <strong>MeshInstance3D</strong> gives it a visible shape, and a <strong>CollisionShape3D</strong> gives that shape a physical boundary. Swap the body type and the same two-node shape+collision pair becomes a wall, a wrecking ball, or a trigger zone. Pick an object to see its stack.</p>
+
+              <div class="object-tabs">
+                <button type="button" class="object-tab is-active" data-object="building">Building</button>
+                <button type="button" class="object-tab" data-object="car">Car</button>
+                <button type="button" class="object-tab" data-object="coin">Coin pickup</button>
+              </div>
+
+              <div class="scene-blueprint anatomy-blueprint" aria-label="Example node stacks">
+                <div class="blueprint-bar"><span></span><span></span><span></span><b id="anatomyLabel">building.tscn</b></div>
+
+                <div class="object-tree is-active" id="tree-building">
+                  <button type="button" class="tree-line root-node" data-anat="building-root"><i>▤</i><strong>Building</strong><small>StaticBody3D</small></button>
+                  <div class="tree-branch">
+                    <button type="button" class="tree-line" data-anat="building-mesh"><i>◫</i><strong>Shape</strong><small>MeshInstance3D</small></button>
+                    <button type="button" class="tree-line" data-anat="building-collision"><i>⬡</i><strong>Bounds</strong><small>CollisionShape3D</small></button>
+                  </div>
+                </div>
+                <div class="object-tree" id="tree-car">
+                  <button type="button" class="tree-line root-node" data-anat="car-root"><i>◍</i><strong>Car</strong><small>RigidBody3D</small></button>
+                  <div class="tree-branch">
+                    <button type="button" class="tree-line" data-anat="car-mesh"><i>◫</i><strong>Body</strong><small>MeshInstance3D</small></button>
+                    <button type="button" class="tree-line" data-anat="car-collision"><i>⬡</i><strong>Bounds</strong><small>CollisionShape3D</small></button>
+                    <button type="button" class="tree-line" data-anat="car-audio"><i>♪</i><strong>Engine</strong><small>AudioStreamPlayer3D</small></button>
+                  </div>
+                </div>
+                <div class="object-tree" id="tree-coin">
+                  <button type="button" class="tree-line root-node" data-anat="coin-root"><i>◎</i><strong>Coin</strong><small>Area3D</small></button>
+                  <div class="tree-branch">
+                    <button type="button" class="tree-line" data-anat="coin-mesh"><i>◫</i><strong>Shape</strong><small>MeshInstance3D</small></button>
+                    <button type="button" class="tree-line" data-anat="coin-collision"><i>⬡</i><strong>Sensor</strong><small>CollisionShape3D</small></button>
+                  </div>
+                </div>
+
+                <p id="anatomyReadout" aria-live="polite">Click a node above to see its job.</p>
+              </div>
+
+              <h3 class="toolbox-heading">The most common building blocks</h3>
+              <div class="toolbox-grid">
+                <article class="toolbox-card"><div class="toolbox-icon">○</div><p class="toolbox-job">Empty container</p><h3>Node3D</h3><p>Groups and positions other nodes. Draws nothing, has no physics — a plain parent to move a whole group at once.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">◫</div><p class="toolbox-job">Give it a shape</p><h3>MeshInstance3D</h3><p>Renders a mesh: a primitive like BoxMesh/SphereMesh, or an imported model. Purely visual — no physics of its own.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">▤</div><p class="toolbox-job">Fixed world geometry</p><h3>StaticBody3D</h3><p>Never moves during play: floors, walls, buildings. Other bodies collide with it, but it ignores gravity and pushes.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">◍</div><p class="toolbox-job">Fully simulated</p><h3>RigidBody3D</h3><p>Real physics: falls, bounces, gets knocked around by other bodies. Use for crates, balls, debris — anything physics should drive.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">◆</div><p class="toolbox-job">Moved by code</p><h3>CharacterBody3D</h3><p>Collides like a solid body, but you move it yourself in a script with <code>move_and_slide()</code>. Players and enemies.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">◎</div><p class="toolbox-job">Detects, doesn't collide</p><h3>Area3D</h3><p>Bodies pass straight through it. Emits signals like <code>body_entered</code> — pickups, damage zones, level triggers.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">⬡</div><p class="toolbox-job">Give it a boundary</p><h3>CollisionShape3D</h3><p>Pairs with a body or Area3D above it. Needs a Shape resource (Box, Sphere, Capsule…) in the Inspector, or the body has no physical presence.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">☀</div><p class="toolbox-job">Light like the sun</p><h3>DirectionalLight3D</h3><p>Parallel rays from one direction, no matter where it sits. One per outdoor scene is usually enough.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">✺</div><p class="toolbox-job">Light like a bulb</p><h3>OmniLight3D</h3><p>Radiates outward from a point in every direction. Lamps, torches, glowing pickups.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">◣</div><p class="toolbox-job">Light in a cone</p><h3>SpotLight3D</h3><p>A directional cone, like a flashlight or a car headlight. Aim it with rotation.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">◉</div><p class="toolbox-job">Frame the shot</p><h3>Camera3D</h3><p>The viewpoint rendered to the game window. Only one Camera3D can be Current at a time.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">♪</div><p class="toolbox-job">Give it sound</p><h3>AudioStreamPlayer3D</h3><p>Positional audio — volume fades and pans with distance from the listener, unlike a flat AudioStreamPlayer.</p></article>
+              </div>
+
+              <div class="toolbox-callout"><b>Textures and materials are not nodes.</b><p>A <strong>Texture</strong> is an image. A <strong>Material</strong> is a resource describing how a surface reacts to light, and it holds a texture. You assign a Material to a MeshInstance3D's surface in the Inspector — there is no separate node to add for color or texture.</p></div>
+
+              <div class="editor-proof">
+                <h3 class="toolbox-heading">See it in the real editor</h3>
+                <div class="editor-proof-grid">
+                  <figure class="editor-proof-card">
+                    <img src="../assets/images/lessons/godot-basics/create-node-dialog.webp" alt="Godot's Create New Node dialog searching &quot;characterbody3d&quot;, showing its real ancestry: Node, Node3D, CollisionObject3D, PhysicsBody3D, CharacterBody3D." width="573" height="271" loading="lazy" />
+                    <figcaption><b>The classes aren't random — they're ancestry.</b> Search any node type and Godot shows its real parent chain. CharacterBody3D descends from PhysicsBody3D, which descends from CollisionObject3D, which descends from Node3D. Each step down adds one capability.</figcaption>
+                  </figure>
+                  <figure class="editor-proof-card">
+                    <img src="../assets/images/lessons/godot-basics/scene-dock-tree.webp" alt="Godot's Scene dock showing a Player node with a yellow warning triangle icon next to it." width="286" height="271" loading="lazy" />
+                    <figcaption><b>Godot nags you when a piece is missing.</b> That yellow triangle means this body has no collision shape assigned yet — it looks solid, but nothing can touch it.</figcaption>
+                  </figure>
+                  <figure class="editor-proof-card">
+                    <img src="../assets/images/lessons/godot-basics/collision-shape-inspector.webp" alt="Godot's Inspector for a CollisionShape3D, showing an empty Shape property and a dropdown offering SphereShape3D, BoxShape3D, and CapsuleShape3D." width="310" height="333" loading="lazy" />
+                    <figcaption><b>The fix.</b> Select the CollisionShape3D, then assign a Shape resource in the Inspector — Sphere, Box, or Capsule. The warning disappears once it has one.</figcaption>
+                  </figure>
+                </div>
+                <p class="editor-proof-credit">Screenshots: <a href="https://docs.godotengine.org/en/stable/getting_started/first_3d_game/02.player_input.html" target="_blank" rel="noreferrer noopener">Godot Engine documentation</a>, © Juan Linietsky, Ariel Manzur and the Godot community, <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noreferrer noopener">CC BY 3.0</a>.</p>
+              </div>
+            </div>
+          </section>
+
           <section class="lesson-section" id="build">
-            <div class="section-label"><span>04</span><p>Build</p></div>
+            <div class="section-label"><span>05</span><p>Build</p></div>
             <div class="section-content">
               <p class="section-kicker">Hands on</p>
               <h2>Assemble your first 3D room.</h2>
@@ -129,11 +211,15 @@
           </section>
 
           <section class="lesson-section" id="script">
-            <div class="section-label"><span>05</span><p>Script</p></div>
+            <div class="section-label"><span>06</span><p>Script</p></div>
             <div class="section-content">
               <p class="section-kicker">Make it move</p>
               <h2>Map intentions, then write movement.</h2>
               <p>Open <strong>Project → Project Settings → Input Map</strong>. Add four actions and bind the keys shown. Action names keep your code readable and make gamepads easier to add later.</p>
+              <figure class="editor-proof-card standalone">
+                <img src="../assets/images/lessons/godot-basics/input-map-tab.webp" alt="Godot's Project Settings window open to the Input Map tab, with fields to add a new input action." width="813" height="339" loading="lazy" />
+                <figcaption>The real Input Map tab, opened from Project → Project Settings.</figcaption>
+              </figure>
               <div class="input-map" aria-label="Input actions and keys">
                 <span><kbd>W</kbd><code>move_forward</code></span><span><kbd>S</kbd><code>move_back</code></span><span><kbd>A</kbd><code>move_left</code></span><span><kbd>D</kbd><code>move_right</code></span>
               </div>
@@ -167,7 +253,7 @@
           </section>
 
           <section class="lesson-section" id="play">
-            <div class="section-label"><span>06</span><p>Play</p></div>
+            <div class="section-label"><span>07</span><p>Play</p></div>
             <div class="section-content">
               <p class="section-kicker">Test the idea here</p>
               <h2>Use WASD to cross the room.</h2>
@@ -188,7 +274,7 @@
           </section>
 
           <section class="lesson-section" id="check">
-            <div class="section-label"><span>07</span><p>Check</p></div>
+            <div class="section-label"><span>08</span><p>Check</p></div>
             <div class="section-content">
               <p class="section-kicker">Exit ticket</p>
               <h2>Can you think like Godot?</h2>
