@@ -6,14 +6,15 @@
 
   var current = location.pathname.split('/').pop() || '';
   var sequence = [
-    ['coulombs-law.html', '1', 'Charge & force'],
-    ['ohms-law.html', '2', 'Voltage, current & resistance'],
-    ['ac-vs-dc.html', '3', 'AC vs. DC'],
-    ['faradays-law.html', '4', 'Induction & transformers'],
-    ['electronic-components.html', '5', 'Components'],
-    ['electronic-schematics.html', '6', 'Schematics'],
-    ['breadboard-basics.html', '7', 'Build a circuit'],
-    ['sensor-modules.html', '8', 'Sensors & control']
+    ['what-is-electricity.html', '1', 'What is electricity?'],
+    ['coulombs-law.html', '2', 'Charge & force'],
+    ['ohms-law.html', '3', 'Voltage, current & resistance'],
+    ['ac-vs-dc.html', '4', 'AC vs. DC'],
+    ['faradays-law.html', '5', 'Induction & transformers'],
+    ['electronic-components.html', '6', 'Components'],
+    ['electronic-schematics.html', '7', 'Schematics'],
+    ['breadboard-basics.html', '8', 'Build a circuit'],
+    ['sensor-modules.html', '9', 'Sensors & control']
   ];
 
   var section = document.createElement('section');
