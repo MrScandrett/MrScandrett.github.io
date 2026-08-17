@@ -1017,12 +1017,11 @@
 // ── Nav dropdowns ───────────────────────────────────────────────────
 (function () {
   var TINKERCAD_CLASSES = [
-    { label: "Microschool",       url: "https://www.tinkercad.com/joinclass/DEATHJGMC" },
-    { label: "K-2",               url: "https://www.tinkercad.com/joinclass/KTAE7QDDZ" },
-    { label: "2nd Period",        url: "https://www.tinkercad.com/joinclass/TDASB5WIG" },
-    { label: "3rd Period",        url: "https://www.tinkercad.com/joinclass/JJHQDD8YD" },
-    { label: "Friday Study Hall", url: "https://www.tinkercad.com/joinclass/CWR9GNTKT" },
-    { label: "Summer Camp",       url: "https://www.tinkercad.com/joinclass/CHNHTUPI5" }
+    { label: "Microschool",              url: "https://www.tinkercad.com/joinclass/4GCH4RH2J" },
+    { label: "Period 2 Robotics/Coding", url: "https://www.tinkercad.com/joinclass/FKE9NVCHB" },
+    { label: "Period 3 Robotics/Coding", url: "https://www.tinkercad.com/joinclass/PUA5MPIDG" },
+    { label: "Period 5 Enrichment Wheel",url: "https://www.tinkercad.com/joinclass/ZNWEZ4N6G" },
+    { label: "Friday Study Hall",        url: "https://www.tinkercad.com/joinclass/4JMSDSC5Z" }
   ];
 
   /* Which nav link labels get a dropdown, and what goes inside */
