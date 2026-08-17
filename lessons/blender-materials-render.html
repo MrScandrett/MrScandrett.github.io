@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Blender Materials, Lighting &amp; Render · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Unwrap UVs, build a Principled BSDF material, light a scene, and render a final image in Blender — the finishing lesson of the Blender Fundamentals pathway." />
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../assets/css/lessons/blender-pathway.css" />
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="bl-topbar ll-topbar">
+      <div class="bl-topbar-inner">
+        <a href="blender-pathway.html">← Blender Pathway</a>
+        <span>Materials, Lighting &amp; Render · Lesson 07</span>
+        <a href="../class-downloads.html">Get Blender</a>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="bl-shell">
+          <section class="bl-hero">
+            <div class="hero-copy">
+              <p class="eyebrow">Shading &amp; Lighting · 55–70 minutes · Grades 7–12</p>
+              <h1>Gray plastic,<br /><span>no more.</span></h1>
+              <p class="hero-lede">Every object you've built so far is still the default gray. This lesson unwraps a surface, builds a real material, lights it on purpose, and renders a finished image — the pathway's capstone skill.</p>
+              <div class="hero-actions">
+                <a class="primary-action" href="#uv">Start the lesson</a>
+                <a class="secondary-action" href="blender-props-tools.html">Review Lesson 06</a>
+              </div>
+              <p class="hero-note"><strong>Finish line:</strong> one of your pathway objects, unwrapped, materialed, lit, and rendered to a saved image file.</p>
+            </div>
+            <div class="bl-viewport-art" aria-hidden="true">
+              <div class="bl-art-bar"><span></span><span></span><span></span><b>render_final.blend</b></div>
+              <div class="bl-art-stage"><div class="bl-art-grid"></div><div class="bl-art-gizmo"><i></i><i></i><i></i><em class="x">X</em><em class="y">Y</em><em class="z">Z</em></div></div>
+              <p class="bl-art-note">F12 renders exactly what the active camera sees — not the editor viewport.</p>
+            </div>
+          </section>
+
+          <nav class="lesson-track" aria-label="Lesson sections">
+            <a href="#uv"><b>01</b> UVs</a>
+            <a href="#material"><b>02</b> Material</a>
+            <a href="#light"><b>03</b> Light</a>
+            <a href="#render"><b>04</b> Render</a>
+            <a href="#build"><b>05</b> Build</a>
+            <a href="#check"><b>06</b> Check</a>
+          </nav>
+
+          <section class="lesson-section" id="uv">
+            <div class="section-label"><span>01</span><p>UVs</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Unfold the surface</p>
+              <h2>A UV map tells a texture where to sit.</h2>
+              <p>Every mesh face needs a matching 2D location in a flat "UV" layout before an image texture can wrap around it correctly. Think of it like unfolding a cardboard box flat before printing a design on it.</p>
+              <ol class="build-list">
+                <li><div><b>Mark seams</b><p>In Edit Mode, select edges where the unfold should split — like the inside seam of a sleeve — and press <kbd>Ctrl</kbd>+<kbd>E</kbd> → <strong>Mark Seam</strong>.</p></div><span>Ctrl+E</span></li>
+                <li><div><b>Unwrap</b><p>Select all (<kbd>A</kbd>) and press <kbd>U</kbd> → <strong>Unwrap</strong>. Open a UV Editing workspace tab to see the flattened result.</p></div><span>U</span></li>
+                <li><div><b>Check for stretching</b><p>In the UV Editor, enable a checker texture overlay — even, undistorted squares mean a healthy unwrap; stretched squares mean the seams need adjusting.</p></div><span>Checker check</span></li>
+              </ol>
+              <div class="rule"><strong>Simple objects need few seams</strong><span>A cube-like prop might only need seams where a real object would have real edges — a wrench doesn't need to be cut into a dozen pieces to unfold cleanly.</span></div>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="material">
+            <div class="section-label"><span>02</span><p>Material</p></div>
+            <div class="section-content">
+              <p class="section-kicker">One node covers most materials</p>
+              <h2>Meet the Principled BSDF.</h2>
+              <p>Every new material starts with a <strong>Principled BSDF</strong> node in the Shading workspace — a single node that can represent plastic, metal, wood, skin, or glass just by changing its inputs.</p>
+              <div class="toolbox-grid">
+                <article class="toolbox-card"><div class="toolbox-icon">●</div><p class="toolbox-job">The color</p><h3>Base Color</h3><p>The surface's raw color, or an Image Texture node plugged into this input.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">◐</div><p class="toolbox-job">Shiny vs. matte</p><h3>Roughness</h3><p>0 is a mirror, 1 is chalk-matte. Most real-world materials sit between 0.3 and 0.7.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">◆</div><p class="toolbox-job">Metal or not</p><h3>Metallic</h3><p>0 for wood, fabric, or plastic. 1 for bare metal. Rarely anything in between.</p></article>
+              </div>
+              <div class="callout"><b>Add an image texture</b><p>In the Shading workspace, press <kbd>Shift</kbd>+<kbd>A</kbd> → Texture → <strong>Image Texture</strong>, load an image, then drag a connection from its Color output to the Principled BSDF's Base Color input.</p></div>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="light">
+            <div class="section-label"><span>03</span><p>Light</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Direction sells the shape</p>
+              <h2>Light like a photographer, not a floodlight.</h2>
+              <p>One light straight-on flattens a form. A simple three-point setup reads as intentional: a strong key light, a softer fill from the opposite side, and an optional rim light to separate the subject from its background.</p>
+              <div class="step-grid three">
+                <article class="step-card"><span>1</span><h3>Key</h3><p>Your main light, angled 30–45° from the camera. This defines the primary shadows.</p></article>
+                <article class="step-card"><span>2</span><h3>Fill</h3><p>A dimmer light from the opposite side, softening the shadows the key light creates.</p></article>
+                <article class="step-card"><span>3</span><h3>Rim</h3><p>A light from behind the subject, catching its edge to separate it from the background.</p></article>
+              </div>
+              <div class="rule"><strong>The World also lights your scene</strong><span>Properties → World tab controls a background color and strength that lights everything evenly — raise it slightly instead of leaving it black for a quick, even base light.</span></div>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="render">
+            <div class="section-label"><span>04</span><p>Render</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Turn the scene into an image</p>
+              <h2>Choose an engine, then press F12.</h2>
+              <div class="toolbox-grid">
+                <article class="toolbox-card"><div class="toolbox-icon">⚡</div><p class="toolbox-job">Fast, real-time</p><h3>EEVEE</h3><p>Rasterized rendering — near-instant feedback, great for classroom iteration and game-style lighting.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">◑</div><p class="toolbox-job">Slower, physically accurate</p><h3>Cycles</h3><p>Path-traced light simulation — more realistic reflections and shadows, at a real time cost per image.</p></article>
+              </div>
+              <ol class="build-list">
+                <li><div><b>Position the camera</b><p>Select the Camera object, use <kbd>Numpad</kbd> <kbd>0</kbd> to look through it, and press <kbd>Ctrl</kbd>+<kbd>Numpad</kbd> <kbd>0</kbd> from any view to snap the camera there instead.</p></div><span>Camera</span></li>
+                <li><div><b>Render</b><p>Press <kbd>F12</kbd>. Blender opens an Image Viewer window with the final render.</p></div><span>F12</span></li>
+                <li><div><b>Save the image</b><p>In the Image Viewer, <em>Image → Save As</em>, and choose PNG for a lossless result.</p></div><span>Save As</span></li>
+              </ol>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="build">
+            <div class="section-label"><span>05</span><p>Build</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Hands on</p>
+              <h2>Finish and render one object.</h2>
+              <ol class="build-list">
+                <li><div><b>Choose an object</b><p>Your Lesson 03 chair or Lesson 06 tool works well — something with a few clear surfaces.</p></div><span>Choose</span></li>
+                <li><div><b>Mark seams and unwrap</b><p>Mark a few sensible seams, then <kbd>U</kbd> → Unwrap, and check the result with a checker overlay.</p></div><span>UVs</span></li>
+                <li><div><b>Build a material</b><p>Set Base Color, Roughness, and Metallic to match the real material — wood, painted metal, or plastic.</p></div><span>Material</span></li>
+                <li><div><b>Light it</b><p>Add a key and fill light, and raise the World strength slightly.</p></div><span>Light</span></li>
+                <li><div><b>Frame, render, save</b><p>Position the camera, press <kbd>F12</kbd>, and save the result as a PNG next to your .blend file.</p></div><span>Render</span></li>
+              </ol>
+              <details class="rescue"><summary>The render looks black, or the texture isn't showing?</summary><ul><li>In EEVEE, make sure the viewport shading mode is Material Preview or Rendered — Solid mode ignores materials.</li><li>Confirm the Image Texture node's Color output is actually connected to Base Color, not left floating.</li><li>Check the World strength and at least one light aren't both set to zero.</li></ul></details>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="check">
+            <div class="section-label"><span>06</span><p>Check</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Exit ticket</p>
+              <h2>Ready for the capstone scene?</h2>
+              <div class="quiz">
+                <fieldset><legend>1. What does a UV unwrap actually create?</legend><label><input type="radio" name="q1" value="wrong" /> A new material</label><label><input type="radio" name="q1" value="correct" /> A flat 2D layout that tells a texture where to sit on the mesh</label><label><input type="radio" name="q1" value="wrong" /> A new light</label></fieldset>
+                <fieldset><legend>2. What does a Roughness of 0 look like?</legend><label><input type="radio" name="q2" value="correct" /> A mirror-like, perfectly reflective surface</label><label><input type="radio" name="q2" value="wrong" /> Completely matte, like chalk</label><label><input type="radio" name="q2" value="wrong" /> Fully transparent</label></fieldset>
+                <fieldset><legend>3. Which key renders the final image from the active camera?</legend><label><input type="radio" name="q3" value="wrong" /> Tab</label><label><input type="radio" name="q3" value="wrong" /> Ctrl+S</label><label><input type="radio" name="q3" value="correct" /> F12</label></fieldset>
+                <button type="button" data-quiz-check>Check my answers</button><p data-quiz-result aria-live="polite"></p>
+              </div>
+              <div class="finish-line">
+                <div>
+                  <p class="section-kicker">Definition of done</p>
+                  <div class="checklist">
+                    <label><input type="checkbox"> The object is unwrapped with sensible seams and low UV stretching.</label>
+                    <label><input type="checkbox"> It has a real Principled BSDF material, not the default gray.</label>
+                    <label><input type="checkbox"> A rendered image is saved to disk as a PNG.</label>
+                  </div>
+                  <p data-check-status style="margin-top:.6rem;color:var(--text-muted,#64748b);font-size:.82rem;"></p>
+                </div>
+                <div class="finish-actions"><button type="button" data-complete-lesson="7">Mark lesson complete</button><a href="blender-pathway.html#capstone">Go to the capstone scene →</a></div>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-label="Lesson guide" aria-hidden="false">
+        <div class="ll-panel-head"><div class="ll-tabs"><button class="ll-tab" aria-selected="true" data-pane="pane-guide">Guide</button><button class="ll-tab" aria-selected="false" data-pane="pane-vocab">Vocab</button></div><button class="ll-panel-close" aria-label="Close guide panel">&#x2715;</button></div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="pane-guide">
+            <p class="ll-pane-title">Learning goals</p><ul class="ll-guide-list"><li>Mark seams and unwrap a mesh's UVs</li><li>Build a material from a Principled BSDF</li><li>Light a scene with key, fill, and World strength</li><li>Choose between EEVEE and Cycles</li><li>Render and save a finished image</li></ul>
+            <p class="ll-pane-title panel-gap">Requires</p><ul class="ll-guide-list"><li>Any completed object from Lessons 02–06</li></ul>
+            <p class="ll-pane-title panel-gap">Save habit</p><p class="panel-copy">Save your .blend file separately from the rendered PNG — you'll want to keep tweaking the material long after the first render.</p>
+          </div>
+          <div class="ll-pane" id="pane-vocab">
+            <p class="ll-pane-title">Key vocabulary</p><dl class="vocab-list"><dt>UV map</dt><dd>A flat 2D layout of a mesh's surface, used to place textures.</dd><dt>Seam</dt><dd>A marked edge where the UV unwrap splits the mesh open.</dd><dt>Principled BSDF</dt><dd>Blender's all-purpose physically based material node.</dd><dt>EEVEE</dt><dd>Blender's fast, real-time render engine.</dd><dt>Cycles</dt><dd>Blender's slower, physically accurate path-traced render engine.</dd></dl>
+          </div>
+        </div>
+      </aside>
+      <button class="ll-open-btn" aria-label="Open lesson guide" aria-expanded="true">&#x22EE;</button>
+    </div>
+  </div>
+
+  <script src="../assets/js/lessons/blender-pathway.js"></script>
+  <script src="../assets/js/reveal.js"></script>
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script src="../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Blender Windows &amp; Doors · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Model a real framed, paned window in Blender using the Boolean modifier to cut a true opening, then trim it with a frame and muntins." />
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../assets/css/lessons/blender-pathway.css" />
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="bl-topbar ll-topbar">
+      <div class="bl-topbar-inner">
+        <a href="blender-pathway.html">← Blender Pathway</a>
+        <span>Windows &amp; Doors · Lesson 02</span>
+        <a href="../class-downloads.html">Get Blender</a>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="bl-shell">
+          <section class="bl-hero">
+            <div class="hero-copy">
+              <p class="eyebrow">Hard-Surface Modeling · 50–65 minutes · Grades 7–12</p>
+              <h1>Cut a real hole.<br /><span>Not a painted one.</span></h1>
+              <p class="hero-lede">Anyone can draw a window with a texture. This lesson cuts an actual opening through a solid wall using the Boolean modifier, then frames it with a real 3D frame and muntins you can walk up to from any angle.</p>
+              <div class="hero-actions">
+                <a class="primary-action" href="#plan">Start the lesson</a>
+                <a class="secondary-action" href="blender-interface-basics.html">Review Lesson 01</a>
+              </div>
+              <p class="hero-note"><strong>Finish line:</strong> a wall segment with a clean, beveled, four-pane window cut all the way through it.</p>
+            </div>
+            <div class="bl-viewport-art" aria-hidden="true">
+              <div class="bl-art-bar"><span></span><span></span><span></span><b>window_frame.blend</b></div>
+              <div class="bl-art-stage"><div class="bl-art-grid"></div><div class="bl-art-gizmo"><i></i><i></i><i></i><em class="x">X</em><em class="y">Y</em><em class="z">Z</em></div></div>
+              <p class="bl-art-note">Boolean Difference: wall minus cutter cube = a real opening with real thickness on every edge.</p>
+            </div>
+          </section>
+
+          <nav class="lesson-track" aria-label="Lesson sections">
+            <a href="#plan"><b>01</b> Plan</a>
+            <a href="#boolean"><b>02</b> Boolean</a>
+            <a href="#frame"><b>03</b> Frame</a>
+            <a href="#build"><b>04</b> Build</a>
+            <a href="#fix"><b>05</b> Fix</a>
+            <a href="#check"><b>06</b> Check</a>
+          </nav>
+
+          <section class="lesson-section" id="plan">
+            <div class="section-label"><span>01</span><p>Plan</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Before you cut anything</p>
+              <h2>Decide the wall and the opening.</h2>
+              <div class="step-grid three">
+                <article class="step-card"><span>1</span><h3>Wall thickness</h3><p>Interior walls run about 0.1–0.15m thick. Exterior walls are often 0.2–0.3m. Pick one and write it down.</p></article>
+                <article class="step-card"><span>2</span><h3>Opening size</h3><p>A believable residential window is roughly 0.9m × 1.2m, with its sill about 0.9m off the floor.</p></article>
+                <article class="step-card"><span>3</span><h3>Style</h3><p>Single pane, a 2×2 grid, or a 3×1 grid of panes? Sketch it on paper before you touch Blender.</p></article>
+              </div>
+              <div class="rule"><strong>Real-world scale</strong><span>Confirm Blender's scene unit is Meters: <em>Properties → Scene → Units → Unit System → Metric</em>. Every dimension below assumes 1 Blender unit = 1 meter.</span></div>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="boolean">
+            <div class="section-label"><span>02</span><p>Boolean</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Two objects, one operation</p>
+              <h2>The Boolean modifier does the cutting.</h2>
+              <p>A Boolean modifier compares two meshes and combines them mathematically. <strong>Difference</strong> subtracts one from the other — exactly what a window opening needs.</p>
+              <div class="toolbox-grid">
+                <article class="toolbox-card"><div class="toolbox-icon">−</div><p class="toolbox-job">Cut a hole</p><h3>Difference</h3><p>Removes the cutter object's volume from the target. This is the operation you want for windows and doors.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">+</div><p class="toolbox-job">Merge shapes</p><h3>Union</h3><p>Combines two objects into one solid volume, removing the seam between them.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">∩</div><p class="toolbox-job">Keep overlap</p><h3>Intersect</h3><p>Keeps only the volume where both objects overlap — rarely used for architecture, common in prop detailing.</p></article>
+              </div>
+              <div class="callout"><b>Apply scale first</b><p>Select the wall and the cutter, then press <kbd>Ctrl</kbd>+<kbd>A</kbd> → <strong>Scale</strong> on both before adding the modifier. A Boolean run on un-applied scale is the single most common cause of broken geometry.</p></div>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="frame">
+            <div class="section-label"><span>03</span><p>Frame</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Trim the opening</p>
+              <h2>Inset, extrude, and array the details.</h2>
+              <ol class="build-list">
+                <li><div><b>Inset the frame lip</b><p>In Edit Mode on a frame ring object, select the inner face loop and press <kbd>I</kbd> to inset it, creating a lip the glass pane will sit behind.</p></div><span>Inset</span></li>
+                <li><div><b>Extrude the depth</b><p>Press <kbd>E</kbd> to push the inset face back into the wall thickness so the frame reads as a real object, not a flat decal.</p></div><span>Extrude</span></li>
+                <li><div><b>Bevel every hard edge</b><p>Select the frame object and add a <strong>Bevel</strong> modifier with a small width (around 0.003m). Sharp CG edges catch no light and read as fake.</p></div><span>Bevel modifier</span></li>
+                <li><div><b>Array the muntins</b><p>Model one vertical bar, then add an <strong>Array</strong> modifier set to a fixed count to repeat it evenly across the opening instead of duplicating by hand.</p></div><span>Array modifier</span></li>
+              </ol>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="build">
+            <div class="section-label"><span>04</span><p>Build</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Hands on</p>
+              <h2>Build one wall with one window.</h2>
+              <ol class="build-list">
+                <li><div><b>Model the wall</b><p>Add a Cube, scale it to roughly 3m wide × 2.5m tall × 0.15m thick using the <kbd>N</kbd> panel's Dimensions field for exact numbers.</p></div><span>Wall</span></li>
+                <li><div><b>Model the cutter</b><p>Add a second Cube sized to your window opening (about 0.9m × 1.2m), thicker than the wall on the depth axis so it cuts all the way through. Position it where the window belongs.</p></div><span>Cutter</span></li>
+                <li><div><b>Apply the Boolean</b><p>Select the wall, open the <strong>Modifier Properties</strong> tab (wrench icon), add <strong>Boolean → Difference</strong>, and set its Object field to the cutter. Then hide or delete the cutter.</p></div><span>Difference</span></li>
+                <li><div><b>Build the frame</b><p>Add a Cube around the opening, enter Edit Mode, and use Inset (<kbd>I</kbd>) and Extrude (<kbd>E</kbd>) to shape it into a ring that overlaps the wall's cut edge.</p></div><span>Frame</span></li>
+                <li><div><b>Add glass and muntins</b><p>Add a thin Plane inside the frame for glass. Model one muntin bar and Array it across the opening.</p></div><span>Glass + bars</span></li>
+                <li><div><b>Bevel and save</b><p>Add a Bevel modifier to the frame and muntins, then <kbd>Ctrl</kbd>+<kbd>S</kbd>.</p></div><span>Finish</span></li>
+              </ol>
+              <details class="rescue"><summary>The Boolean result looks broken or has holes?</summary><ul><li>Select both objects and apply scale (<kbd>Ctrl</kbd>+<kbd>A</kbd> → Scale) before the modifier — this fixes most cases instantly.</li><li>In the modifier's settings, try switching the Solver from <strong>Exact</strong> to <strong>Fast</strong>, or back, depending on which produces clean geometry for your shapes.</li><li>Make sure the cutter fully passes through the wall on every side — a cutter that stops flush with a wall face often leaves a thin sliver of leftover geometry.</li></ul></details>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="fix">
+            <div class="section-label"><span>05</span><p>Fix</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Read the surface, not just the shape</p>
+              <h2>Diagnose shading problems.</h2>
+              <div class="debug-grid">
+                <article><b>Interior faces look inside-out or dark</b><p>Normals are flipped. Enter Edit Mode, select all (<kbd>A</kbd>), and press <kbd>Shift</kbd>+<kbd>N</kbd> to recalculate normals outward.</p></article>
+                <article><b>Faces flicker as you orbit</b><p>Z-fighting — two faces occupy nearly the same plane. Nudge the glass pane a hair off the frame's inner face.</p></article>
+                <article><b>Boolean leaves stray triangles</b><p>Usually un-applied scale, or a cutter with non-manifold geometry. Rebuild the cutter as a clean primitive Cube.</p></article>
+                <article><b>Frame corners look faceted, not crisp</b><p>The Bevel modifier's Limit Method should be <strong>Angle</strong>, so it only rounds hard corners and leaves flat faces alone.</p></article>
+              </div>
+              <div class="callout"><b>See it clearly</b><p>Enable <em>Viewport Overlays → Face Orientation</em> while diagnosing normals — outward faces render blue, inward-facing (flipped) faces render red.</p></div>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="check">
+            <div class="section-label"><span>06</span><p>Check</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Exit ticket</p>
+              <h2>Do you understand the cut?</h2>
+              <div class="quiz">
+                <fieldset><legend>1. Which Boolean operation cuts a hole through a wall?</legend><label><input type="radio" name="q1" value="wrong" /> Union</label><label><input type="radio" name="q1" value="correct" /> Difference</label><label><input type="radio" name="q1" value="wrong" /> Intersect</label></fieldset>
+                <fieldset><legend>2. Why apply scale before a Boolean operation?</legend><label><input type="radio" name="q2" value="correct" /> Un-applied scale is the most common cause of broken Boolean geometry</label><label><input type="radio" name="q2" value="wrong" /> It makes the file render faster</label><label><input type="radio" name="q2" value="wrong" /> It's required to save the file</label></fieldset>
+                <fieldset><legend>3. A face that renders dark or inside-out usually needs...</legend><label><input type="radio" name="q3" value="wrong" /> A new material</label><label><input type="radio" name="q3" value="correct" /> Recalculated normals (Shift+N)</label><label><input type="radio" name="q3" value="wrong" /> A Bevel modifier</label></fieldset>
+                <button type="button" data-quiz-check>Check my answers</button><p data-quiz-result aria-live="polite"></p>
+              </div>
+              <div class="finish-line">
+                <div>
+                  <p class="section-kicker">Definition of done</p>
+                  <div class="checklist">
+                    <label><input type="checkbox"> The opening is a true cut made with the Boolean modifier, not a decal.</label>
+                    <label><input type="checkbox"> Scale was applied on both objects before the Boolean ran.</label>
+                    <label><input type="checkbox"> The frame and muntins have a Bevel modifier and no flipped normals.</label>
+                  </div>
+                  <p data-check-status style="margin-top:.6rem;color:var(--text-muted,#64748b);font-size:.82rem;"></p>
+                </div>
+                <div class="finish-actions"><button type="button" data-complete-lesson="2">Mark lesson complete</button><a href="blender-furniture-design.html">Continue to Furniture Design →</a></div>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-label="Lesson guide" aria-hidden="false">
+        <div class="ll-panel-head"><div class="ll-tabs"><button class="ll-tab" aria-selected="true" data-pane="pane-guide">Guide</button><button class="ll-tab" aria-selected="false" data-pane="pane-vocab">Vocab</button></div><button class="ll-panel-close" aria-label="Close guide panel">&#x2715;</button></div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="pane-guide">
+            <p class="ll-pane-title">Learning goals</p><ul class="ll-guide-list"><li>Cut a real opening with the Boolean modifier</li><li>Explain Difference vs. Union vs. Intersect</li><li>Build a frame with Inset, Extrude, and Bevel</li><li>Repeat detail geometry with the Array modifier</li><li>Diagnose flipped normals and Z-fighting</li></ul>
+            <p class="ll-pane-title panel-gap">Requires</p><ul class="ll-guide-list"><li>Lesson 01: Interface &amp; Navigation</li></ul>
+            <p class="ll-pane-title panel-gap">Save habit</p><p class="panel-copy">Save a new numbered version (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>) right before applying any Boolean — it's the easiest step to want to undo later.</p>
+          </div>
+          <div class="ll-pane" id="pane-vocab">
+            <p class="ll-pane-title">Key vocabulary</p><dl class="vocab-list"><dt>Boolean modifier</dt><dd>Combines two meshes with Difference, Union, or Intersect.</dd><dt>Cutter object</dt><dd>The mesh used to remove volume from another mesh.</dd><dt>Non-manifold geometry</dt><dd>A mesh with holes, internal faces, or edges shared by more than two faces — a common Boolean failure.</dd><dt>Muntin</dt><dd>The thin bars dividing a window into panes.</dd><dt>Normal</dt><dd>The direction a face points; flipped normals shade incorrectly.</dd></dl>
+          </div>
+        </div>
+      </aside>
+      <button class="ll-open-btn" aria-label="Open lesson guide" aria-expanded="true">&#x22EE;</button>
+    </div>
+  </div>
+
+  <script src="../assets/js/lessons/blender-pathway.js"></script>
+  <script src="../assets/js/reveal.js"></script>
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script src="../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
