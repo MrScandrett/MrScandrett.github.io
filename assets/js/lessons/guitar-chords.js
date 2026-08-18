@@ -88,6 +88,21 @@
     'B': ['x', 1, 4, 3, 2, 1]
   };
 
+  var SCALE_TYPES = [
+    { key: 'ionian', name: 'Major (Ionian)', intervals: [0, 2, 4, 5, 7, 9, 11], degrees: ['1', '2', '3', '4', '5', '6', '7'], mode: 1, desc: 'The reference scale everything else is measured against — bright and fully resolved.' },
+    { key: 'dorian', name: 'Dorian', intervals: [0, 2, 3, 5, 7, 9, 10], degrees: ['1', '2', '♭3', '4', '5', '6', '♭7'], mode: 2, desc: 'Minor-feeling but with a bright natural 6th — the jazzy, folky minor mode.' },
+    { key: 'phrygian', name: 'Phrygian', intervals: [0, 1, 3, 5, 7, 8, 10], degrees: ['1', '♭2', '♭3', '4', '5', '♭6', '♭7'], mode: 3, desc: 'Dark and Spanish-tinged, thanks to that lowered 2nd sitting right next to the root.' },
+    { key: 'lydian', name: 'Lydian', intervals: [0, 2, 4, 6, 7, 9, 11], degrees: ['1', '2', '3', '#4', '5', '6', '7'], mode: 4, desc: 'Major with a raised 4th — dreamy and floating, a favorite for film scores.' },
+    { key: 'mixolydian', name: 'Mixolydian', intervals: [0, 2, 4, 5, 7, 9, 10], degrees: ['1', '2', '3', '4', '5', '6', '♭7'], mode: 5, desc: 'Major with a lowered 7th — bluesy and unresolved, the dominant-7th sound.' },
+    { key: 'aeolian', name: 'Minor (Aeolian)', intervals: [0, 2, 3, 5, 7, 8, 10], degrees: ['1', '2', '♭3', '4', '5', '♭6', '♭7'], mode: 6, desc: 'The natural minor scale — dark and resolved, the minor-key equivalent of Ionian.' },
+    { key: 'locrian', name: 'Locrian', intervals: [0, 1, 3, 5, 6, 8, 10], degrees: ['1', '♭2', '♭3', '4', '♭5', '♭6', '♭7'], mode: 7, desc: 'Tense and unstable — even the chord built on its root is diminished.' },
+    { key: 'majorPent', name: 'Major Pentatonic', intervals: [0, 2, 4, 7, 9], degrees: ['1', '2', '3', '5', '6'], mode: null, desc: 'The major scale with the 4th and 7th removed — no half-steps, so it always sounds consonant.' },
+    { key: 'minorPent', name: 'Minor Pentatonic', intervals: [0, 3, 5, 7, 10], degrees: ['1', '♭3', '4', '5', '♭7'], mode: null, desc: 'The natural minor scale with the 2nd and 6th removed — the rock and blues soloing staple.' },
+    { key: 'blues', name: 'Blues', intervals: [0, 3, 5, 6, 7, 10], degrees: ['1', '♭3', '4', '♭5', '5', '♭7'], mode: null, desc: 'Minor pentatonic plus a chromatic ♭5 "blue note" passing between the 4th and 5th.' },
+    { key: 'harmonicMinor', name: 'Harmonic Minor', intervals: [0, 2, 3, 5, 7, 8, 11], degrees: ['1', '2', '♭3', '4', '5', '♭6', '7'], mode: null, desc: 'Natural minor with a raised 7th, opening a dramatic step-and-a-half gap right before the root.' },
+    { key: 'melodicMinor', name: 'Melodic Minor', intervals: [0, 2, 3, 5, 7, 9, 11], degrees: ['1', '2', '♭3', '4', '5', '6', '7'], mode: null, desc: 'Natural minor with a raised 6th and 7th — smooths out harmonic minor’s awkward gap.' }
+  ];
+
   function mod12(n) { return ((n % 12) + 12) % 12; }
 
   function sortedIntervals(chordType) {
@@ -202,6 +217,7 @@
     STRINGS_TOPDOWN: STRINGS_TOPDOWN,
     BUILD_FRETS: BUILD_FRETS,
     CHORD_TYPES: CHORD_TYPES,
+    SCALE_TYPES: SCALE_TYPES,
     OPEN_SHAPES: OPEN_SHAPES,
     INVERSION_LABELS: INVERSION_LABELS,
     mod12: mod12,
@@ -524,6 +540,164 @@ document.addEventListener('DOMContentLoaded', function () {
     var target = document.getElementById('builder');
     if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
+
+  /* ---------- Scales & modes ---------- */
+
+  var scaleRootPicker = document.getElementById('gcScaleRootPicker');
+  var scaleTypePicker = document.getElementById('gcScaleTypePicker');
+  var scaleBoard = document.getElementById('gcScaleBoard');
+  var scaleMeta = document.getElementById('gcScaleMeta');
+  var scaleCurrentRoot = 0;
+  var scaleCurrentType = GT.SCALE_TYPES[0];
+  var SCALE_SPAN = 12; /* show a full octave of frets so the pattern repeats visibly */
+
+  var MODE_ORDINALS = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th'];
+
+  function buildToneMap(rootPC, scaleType) {
+    var map = {};
+    scaleType.intervals.forEach(function (iv, i) {
+      var pc = GT.mod12(rootPC + iv);
+      map[pc] = { label: scaleType.degrees[i], isRoot: iv === 0 };
+    });
+    return map;
+  }
+
+  /* Read-only fretboard that highlights every occurrence of every scale tone
+     across the span, not just one per string — scale patterns repeat. */
+  function renderScaleBoard(container, opts) {
+    var startFret = opts.startFret || 0;
+    var span = opts.span || SCALE_SPAN;
+    var toneMap = opts.toneMap;
+
+    container.innerHTML = '';
+    var board = document.createElement('div');
+    board.className = 'gc-board';
+    board.style.setProperty('--gc-frets', span);
+
+    var head = document.createElement('div');
+    head.className = 'gc-row gc-head-row';
+    var openLabel = document.createElement('div');
+    openLabel.className = 'gc-open-label';
+    openLabel.textContent = 'Open';
+    head.appendChild(openLabel);
+    for (var f = startFret + 1; f <= startFret + span; f++) {
+      var fl = document.createElement('div');
+      fl.className = 'gc-fret-label';
+      fl.textContent = f;
+      head.appendChild(fl);
+    }
+    board.appendChild(head);
+
+    function dotHTML(tone) {
+      return '<span class="gc-dot' + (tone.isRoot ? ' gc-dot-root' : '') + '"><span class="gc-degree-label">' + tone.label + '</span></span>';
+    }
+
+    GT.STRINGS_TOPDOWN.forEach(function (str) {
+      var row = document.createElement('div');
+      row.className = 'gc-row';
+      row.setAttribute('data-string', str.label + str.num);
+
+      var openTone = toneMap[GT.mod12(str.openPC)];
+      var openCell = document.createElement('button');
+      openCell.type = 'button';
+      openCell.className = 'gc-cell gc-open-cell';
+      openCell.disabled = true;
+      openCell.setAttribute('aria-label', str.label + ' string, open' + (openTone ? ', scale tone ' + openTone.label : ''));
+      openCell.innerHTML = '<span class="gc-string-tag">' + str.label + '</span>' + (openTone ? dotHTML(openTone) : '');
+      row.appendChild(openCell);
+
+      for (var fret = startFret + 1; fret <= startFret + span; fret++) {
+        var tone = toneMap[GT.mod12(str.openPC + fret)];
+        var cell = document.createElement('button');
+        cell.type = 'button';
+        cell.className = 'gc-cell';
+        cell.disabled = true;
+        cell.setAttribute('aria-label', str.label + ' string, fret ' + fret + (tone ? ', scale tone ' + tone.label : ''));
+        if (tone) {
+          cell.classList.add('has-note');
+          cell.innerHTML = dotHTML(tone);
+        }
+        row.appendChild(cell);
+      }
+      board.appendChild(row);
+    });
+
+    var markerRow = document.createElement('div');
+    markerRow.className = 'gc-row gc-marker-row';
+    var markerBlank = document.createElement('div');
+    markerBlank.className = 'gc-open-label';
+    markerRow.appendChild(markerBlank);
+    var markers = fretMarkers(startFret + span);
+    for (var mf = startFret + 1; mf <= startFret + span; mf++) {
+      var mc = document.createElement('div');
+      mc.className = 'gc-fret-marker';
+      if (markers[mf] === 1) mc.innerHTML = '<span></span>';
+      if (markers[mf] === 2) mc.innerHTML = '<span></span><span></span>';
+      markerRow.appendChild(mc);
+    }
+    board.appendChild(markerRow);
+
+    container.appendChild(board);
+  }
+
+  function buildScalePickers() {
+    if (scaleRootPicker) {
+      GT.PITCHES.forEach(function (name, idx) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'gc-pick-btn';
+        btn.textContent = name;
+        if (idx === scaleCurrentRoot) btn.classList.add('is-active');
+        btn.addEventListener('click', function () {
+          scaleCurrentRoot = idx;
+          Array.prototype.forEach.call(scaleRootPicker.children, function (c) { c.classList.remove('is-active'); });
+          btn.classList.add('is-active');
+          renderScales();
+        });
+        scaleRootPicker.appendChild(btn);
+      });
+    }
+    if (scaleTypePicker) {
+      GT.SCALE_TYPES.forEach(function (st, idx) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'gc-pick-btn gc-type-btn';
+        btn.textContent = st.name;
+        if (idx === 0) btn.classList.add('is-active');
+        btn.addEventListener('click', function () {
+          scaleCurrentType = st;
+          Array.prototype.forEach.call(scaleTypePicker.children, function (c) { c.classList.remove('is-active'); });
+          btn.classList.add('is-active');
+          renderScales();
+        });
+        scaleTypePicker.appendChild(btn);
+      });
+    }
+  }
+
+  function renderScales() {
+    if (!scaleBoard) return;
+    var toneMap = buildToneMap(scaleCurrentRoot, scaleCurrentType);
+    renderScaleBoard(scaleBoard, { startFret: 0, span: SCALE_SPAN, toneMap: toneMap });
+
+    if (scaleMeta) {
+      var name = GT.PITCHES[scaleCurrentRoot] + ' ' + scaleCurrentType.name;
+      var noteNames = scaleCurrentType.intervals.map(function (iv) { return GT.PITCHES[GT.mod12(scaleCurrentRoot + iv)]; });
+      var html = '<h3>' + name + '</h3>';
+      html += '<p class="gc-enc-tag">' + scaleCurrentType.degrees.length + '-note scale</p>';
+      html += '<p class="gc-enc-notes">Notes: ' + noteNames.join(' – ') + '</p>';
+      html += '<p class="gc-enc-notes">Scale degrees: ' + scaleCurrentType.degrees.join(' – ') + '</p>';
+      if (scaleCurrentType.mode) {
+        var parentRoot = GT.mod12(scaleCurrentRoot - GT.SCALE_TYPES[0].intervals[scaleCurrentType.mode - 1]);
+        html += '<p class="gc-enc-notes">' + MODE_ORDINALS[scaleCurrentType.mode] + ' mode of the major scale — the same seven notes as <strong>' + GT.PITCHES[parentRoot] + ' Major</strong>, just starting from ' + GT.PITCHES[scaleCurrentRoot] + '.</p>';
+      }
+      html += '<p class="gc-enc-formula">' + scaleCurrentType.desc + '</p>';
+      scaleMeta.innerHTML = html;
+    }
+  }
+
+  buildScalePickers();
+  renderScales();
 
   /* ---------- Quiz ---------- */
   var checkBtn = document.getElementById('gcCheckQuiz');

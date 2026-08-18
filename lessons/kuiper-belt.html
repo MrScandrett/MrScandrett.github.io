@@ -1,0 +1,1151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Kuiper Belt · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Space Science lesson on the Kuiper Belt beyond Neptune — Pluto, Eris, Makemake, Haumea, orbital resonances, the scattered disk, and New Horizons' flybys of Pluto and Arrokoth." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .kb-page {
+      --space: #050b1a;
+      --space-2: #0f1c38;
+      --ice: #7dd8ff;
+      --neptune: #4f89ff;
+      --plutino: #b39dff;
+      --kbo: #d9e4f5;
+      padding: 1rem clamp(1rem, 3vw, 2rem) 0;
+      color: #192335;
+    }
+
+    .kb-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(300px, 1fr);
+      gap: 1rem;
+      margin-bottom: 1rem;
+      align-items: stretch;
+    }
+
+    .kb-panel,
+    .kb-card,
+    .kb-lab {
+      border: 1px solid var(--border-subtle, #d6dbe6);
+      border-radius: 16px;
+      background: color-mix(in srgb, var(--surface-1, #fff) 90%, transparent);
+      box-shadow: 0 16px 38px rgba(15, 23, 42, 0.08);
+    }
+
+    .kb-panel {
+      padding: clamp(1rem, 2.5vw, 1.6rem);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .kb-eyebrow {
+      margin: 0 0 0.45rem;
+      color: #1f4e8c;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .kb-hero h1 {
+      margin: 0;
+      max-width: 13ch;
+      color: #111b2d;
+      font-size: clamp(2rem, 5vw, 4rem);
+      line-height: 0.98;
+      letter-spacing: 0;
+    }
+
+    .kb-lede {
+      margin: 0.85rem 0 0;
+      max-width: 64ch;
+      color: #43536b;
+      line-height: 1.65;
+      font-size: 0.98rem;
+    }
+
+    .kb-objectives {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+      margin-top: 1rem;
+    }
+
+    .kb-objective {
+      border: 1px solid rgba(79, 137, 255, 0.3);
+      border-radius: 11px;
+      background: rgba(79, 137, 255, 0.08);
+      padding: 0.65rem;
+      color: #43536b;
+      font-size: 0.76rem;
+      line-height: 1.45;
+    }
+
+    .kb-objective strong {
+      display: block;
+      margin-bottom: 0.16rem;
+      color: #1f4e8c;
+      font-size: 0.7rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .kb-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: 1rem;
+    }
+
+    .kb-meta span {
+      border: 1px solid rgba(79, 137, 255, 0.4);
+      border-radius: 999px;
+      background: rgba(79, 137, 255, 0.12);
+      color: #1f4e8c;
+      padding: 0.28rem 0.62rem;
+      font-size: 0.73rem;
+      font-weight: 800;
+    }
+
+    .kb-lab {
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 18% 20%, rgba(79, 137, 255, 0.22), transparent 22%),
+        radial-gradient(circle at 82% 78%, rgba(179, 157, 255, 0.18), transparent 28%),
+        linear-gradient(145deg, var(--space), var(--space-2));
+      color: #f8fafc;
+      padding: 0.85rem;
+    }
+
+    .kb-lab-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.7rem;
+      align-items: center;
+      margin-bottom: 0.65rem;
+    }
+
+    .kb-lab-head strong {
+      font-size: 0.86rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .kb-lab-head small {
+      max-width: 24ch;
+      color: rgba(248, 250, 252, 0.72);
+      line-height: 1.4;
+      text-align: right;
+    }
+
+    .kb-canvas-wrap {
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 12px;
+      background: #030712;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+    }
+
+    #kb-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+    }
+
+    .kb-readout {
+      min-height: 2.4rem;
+      margin-top: 0.65rem;
+      color: rgba(248, 250, 252, 0.84);
+      font-size: 0.82rem;
+      line-height: 1.45;
+    }
+
+    .kb-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 0.8rem;
+      margin-top: 0.45rem;
+      color: rgba(248, 250, 252, 0.68);
+      font-size: 0.7rem;
+    }
+
+    .kb-legend span::before {
+      display: inline-block;
+      width: 0.58rem;
+      height: 0.58rem;
+      margin-right: 0.3rem;
+      border-radius: 50%;
+      background: var(--legend-color);
+      content: "";
+      vertical-align: -0.05rem;
+    }
+
+    .kb-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .kb-card {
+      padding: 1rem;
+    }
+
+    .kb-card h2,
+    .kb-card h3 {
+      margin: 0 0 0.55rem;
+      color: #111b2d;
+      letter-spacing: 0;
+    }
+
+    .kb-card h2 {
+      font-size: 1.15rem;
+    }
+
+    .kb-card h3 {
+      font-size: 0.98rem;
+    }
+
+    .kb-card p,
+    .kb-card li {
+      color: #43536b;
+      font-size: 0.88rem;
+      line-height: 1.62;
+    }
+
+    .kb-card p {
+      margin: 0 0 0.65rem;
+    }
+
+    .kb-card ul {
+      margin: 0.45rem 0 0;
+      padding-left: 1.1rem;
+    }
+
+    .kb-wide {
+      grid-column: span 2;
+    }
+
+    .kb-facts {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin-top: 0.75rem;
+    }
+
+    .kb-fact {
+      border: 1px solid rgba(79, 137, 255, 0.28);
+      border-radius: 12px;
+      background: rgba(79, 137, 255, 0.09);
+      padding: 0.72rem;
+    }
+
+    .kb-fact strong {
+      display: block;
+      color: #1f4e8c;
+      font-size: 0.83rem;
+      margin-bottom: 0.24rem;
+    }
+
+    .kb-fact small {
+      display: block;
+      color: #526178;
+      font-size: 0.75rem;
+      line-height: 1.5;
+    }
+
+    .kb-note {
+      border-left: 3px solid #4f89ff;
+      border-radius: 10px;
+      background: rgba(79, 137, 255, 0.12);
+      padding: 0.75rem 0.85rem;
+      color: #43536b;
+      font-size: 0.84rem;
+      line-height: 1.58;
+    }
+
+    .kb-myth {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.7rem;
+      align-items: start;
+      margin: 0.75rem 0 0;
+      border: 1px solid rgba(179, 157, 255, 0.3);
+      border-radius: 12px;
+      background: rgba(179, 157, 255, 0.1);
+      padding: 0.8rem;
+    }
+
+    .kb-myth-mark {
+      display: grid;
+      width: 2rem;
+      height: 2rem;
+      place-items: center;
+      border-radius: 50%;
+      background: #5b4bb8;
+      color: #fff;
+      font-weight: 900;
+    }
+
+    .kb-myth p {
+      margin: 0;
+    }
+
+    .kb-scale {
+      position: relative;
+      margin: 1rem 0 0.35rem;
+      padding-top: 2.2rem;
+    }
+
+    .kb-scale-line {
+      height: 0.5rem;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #4f89ff 0 22%, #7dd8ff 22% 62%, #b39dff 62% 100%);
+    }
+
+    .kb-scale-point {
+      position: absolute;
+      top: 0;
+      left: var(--point);
+      transform: translateX(-50%);
+      color: #26354d;
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .kb-scale-point:first-child {
+      transform: none;
+      text-align: left;
+    }
+
+    .kb-scale-point:nth-child(2) {
+      transform: translateX(-10%);
+      text-align: left;
+    }
+
+    .kb-scale-point:nth-child(4) {
+      transform: translateX(-100%);
+      text-align: right;
+    }
+
+    .kb-scale-point::after {
+      display: block;
+      width: 1px;
+      height: 1.25rem;
+      margin: 0.2rem auto 0;
+      background: #526178;
+      content: "";
+    }
+
+    .kb-scale-note {
+      margin: 0.55rem 0 0 !important;
+      font-size: 0.76rem !important;
+      text-align: center;
+    }
+
+    .kb-process {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.6rem;
+      margin-top: 0.75rem;
+      counter-reset: kb-step;
+    }
+
+    .kb-step {
+      position: relative;
+      border: 1px solid rgba(31, 78, 140, 0.2);
+      border-radius: 12px;
+      background: rgba(79, 137, 255, 0.07);
+      padding: 0.75rem;
+      counter-increment: kb-step;
+    }
+
+    .kb-step::before {
+      display: grid;
+      width: 1.45rem;
+      height: 1.45rem;
+      margin-bottom: 0.4rem;
+      place-items: center;
+      border-radius: 50%;
+      background: #1f4e8c;
+      color: #fff;
+      content: counter(kb-step);
+      font-size: 0.7rem;
+      font-weight: 900;
+    }
+
+    .kb-step strong {
+      display: block;
+      margin-bottom: 0.2rem;
+      color: #26354d;
+      font-size: 0.82rem;
+    }
+
+    .kb-step small {
+      color: #526178;
+      font-size: 0.75rem;
+      line-height: 1.48;
+    }
+
+    .kb-vocab {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.55rem;
+      margin-top: 0.65rem;
+    }
+
+    .kb-term {
+      border: 1px solid var(--border-subtle, #d6dbe6);
+      border-radius: 10px;
+      padding: 0.65rem;
+    }
+
+    .kb-term strong {
+      display: block;
+      color: #27395c;
+      font-size: 0.8rem;
+    }
+
+    .kb-term small {
+      color: #526178;
+      font-size: 0.75rem;
+      line-height: 1.45;
+    }
+
+    .kb-quiz {
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .kb-q {
+      border: 1px solid var(--border-subtle, #d6dbe6);
+      border-radius: 12px;
+      padding: 0.75rem;
+    }
+
+    .kb-q label {
+      display: block;
+      margin-bottom: 0.42rem;
+      color: #27395c;
+      font-size: 0.84rem;
+      font-weight: 800;
+    }
+
+    .kb-q select {
+      width: 100%;
+      border: 1px solid var(--border-subtle, #d6dbe6);
+      border-radius: 9px;
+      padding: 0.48rem 0.58rem;
+      color: #192335;
+      background: #fff;
+      font: inherit;
+      font-size: 0.82rem;
+    }
+
+    .kb-q.is-correct {
+      border-color: rgba(22, 114, 78, 0.5);
+      background: rgba(22, 114, 78, 0.06);
+    }
+
+    .kb-q.is-incorrect {
+      border-color: rgba(31, 78, 140, 0.5);
+      background: rgba(31, 78, 140, 0.06);
+    }
+
+    .kb-q-result {
+      min-height: 1rem;
+      margin: 0.35rem 0 0 !important;
+      font-size: 0.74rem !important;
+      font-weight: 700;
+    }
+
+    .kb-button {
+      width: 100%;
+      border: 0;
+      border-radius: 10px;
+      background: #1f4e8c;
+      color: #fff;
+      padding: 0.5rem 0.7rem;
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 800;
+      cursor: pointer;
+      text-align: left;
+      transition: transform 0.16s, background 0.16s;
+      margin-bottom: 0.45rem;
+    }
+
+    .kb-button:hover {
+      background: #163c6d;
+      transform: translateY(-1px);
+    }
+
+    .kb-button:focus-visible,
+    .kb-q select:focus-visible,
+    #kb-canvas:focus-visible {
+      outline: 3px solid #70c7ff;
+      outline-offset: 2px;
+    }
+
+    .kb-button.is-active {
+      background: #b39dff;
+      color: #1c1440;
+    }
+
+    .kb-feedback {
+      min-height: 1.2rem;
+      margin-top: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 800;
+    }
+
+    .kb-sources {
+      margin-top: 0.7rem !important;
+      color: #526178;
+      font-size: 0.74rem !important;
+    }
+
+    .kb-sources a {
+      color: #1f4e8c;
+      font-weight: 800;
+    }
+
+    .kb-ok {
+      color: #16724e;
+    }
+
+    .kb-try {
+      color: #1f4e8c;
+    }
+
+    .site-footer {
+      margin-top: 1.2rem;
+    }
+
+    @media (max-width: 980px) {
+      .kb-hero,
+      .kb-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .kb-wide {
+        grid-column: auto;
+      }
+
+      .kb-facts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .kb-objectives,
+      .kb-process {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .kb-page {
+        padding: 0.75rem 0.75rem 0;
+      }
+
+      .kb-hero h1 {
+        font-size: clamp(2rem, 15vw, 3.15rem);
+      }
+
+      .kb-facts {
+        grid-template-columns: 1fr;
+      }
+
+      .kb-vocab {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .kb-button { transition: none; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../paths.html">Paths</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Apps</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="kb-page">
+          <section class="kb-hero">
+            <div class="kb-panel">
+              <p class="kb-eyebrow">Space Science · Lesson 10</p>
+              <h1>The Kuiper Belt</h1>
+              <p class="kb-lede">Beyond Neptune lies a second, far larger ring of leftovers from the Solar System's birth — not rock like the asteroid belt, but ice. Pluto, Eris, Makemake, and Haumea all orbit out here, alongside hundreds of thousands of smaller icy worlds.</p>
+              <div class="kb-objectives" aria-label="Learning goals">
+                <div class="kb-objective"><strong>Locate</strong>Place the Kuiper Belt beyond Neptune's orbit.</div>
+                <div class="kb-objective"><strong>Explain</strong>Connect Neptune's gravity to trapped and scattered orbits.</div>
+                <div class="kb-objective"><strong>Classify</strong>Distinguish classical, resonant, and scattered-disk objects.</div>
+              </div>
+              <div class="kb-meta" aria-label="Lesson topics">
+                <span>Beyond Neptune</span>
+                <span>Pluto &amp; Eris</span>
+                <span>Resonances</span>
+                <span>New Horizons</span>
+              </div>
+            </div>
+
+            <div class="kb-lab">
+              <div class="kb-lab-head">
+                <strong>Trans-Neptunian Lab</strong>
+                <small>Click named objects or change the view in the side panel.</small>
+              </div>
+              <div class="kb-canvas-wrap">
+                <canvas id="kb-canvas" tabindex="0" role="img" aria-describedby="kb-readout kb-legend" aria-label="Animated, not-to-scale top-down model of the Kuiper Belt beyond Neptune"></canvas>
+              </div>
+              <div class="kb-readout" id="kb-readout">The Kuiper Belt sits roughly between 30 and 50 astronomical units from the Sun, just beyond Neptune.</div>
+              <div class="kb-legend" id="kb-legend" aria-label="Model legend">
+                <span style="--legend-color:#d9e4f5">Classical KBOs</span>
+                <span style="--legend-color:#b39dff">Scattered disk</span>
+                <span style="--legend-color:#4f89ff">Neptune</span>
+                <span style="--legend-color:#7dd8ff">Resonances</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="kb-grid">
+            <article class="kb-card kb-wide">
+              <h2>What Is the Kuiper Belt?</h2>
+              <p>The Kuiper Belt is a doughnut-shaped region beyond Neptune's orbit filled with hundreds of thousands of icy bodies called <strong>trans-Neptunian objects (TNOs)</strong>. Unlike the rocky asteroid belt, most Kuiper Belt objects (KBOs) are frozen mixtures of water ice, methane, ammonia, and rock.</p>
+              <p>It is named for astronomer Gerard Kuiper, though Kenneth Edgeworth had proposed a similar idea earlier — some scientists call it the Edgeworth-Kuiper Belt. The first KBO besides Pluto, named 1992 QB1, was not confirmed until 1992.</p>
+              <div class="kb-facts" aria-label="Kuiper Belt facts">
+                <div class="kb-fact">
+                  <strong>30-50 AU</strong>
+                  <small>A useful classroom range for the belt; its edges are not sharp.</small>
+                </div>
+                <div class="kb-fact">
+                  <strong>Icy, Not Rocky</strong>
+                  <small>KBOs are frozen mixtures of ice and rock, unlike the stony asteroid belt.</small>
+                </div>
+                <div class="kb-fact">
+                  <strong>Four Dwarf Planets</strong>
+                  <small>Pluto, Eris, Makemake, and Haumea are all Kuiper Belt residents.</small>
+                </div>
+                <div class="kb-fact">
+                  <strong>Comet Source</strong>
+                  <small>Most short-period comets — orbits under 200 years — originate here.</small>
+                </div>
+              </div>
+              <div class="kb-myth">
+                <span class="kb-myth-mark" aria-hidden="true">!</span>
+                <p><strong>Not the same as the Oort Cloud:</strong> the Kuiper Belt is a flattened disk near the plane of the planets. The Oort Cloud is a separate, far more distant spherical shell — thought to reach thousands of astronomical units out — and is the source of long-period comets, not short-period ones.</p>
+              </div>
+            </article>
+
+            <article class="kb-card">
+              <h2>Where Is It?</h2>
+              <p>An <strong>astronomical unit (AU)</strong> is the average Earth-Sun distance. Neptune orbits at about 30 AU, the Kuiper Belt spans roughly 30-50 AU, and the more scattered, tilted <strong>scattered disk</strong> stretches even farther.</p>
+              <div class="kb-scale" aria-label="Simplified distance scale from the Sun">
+                <div class="kb-scale-point" style="--point:0%">Neptune<br>30 AU</div>
+                <div class="kb-scale-point" style="--point:22%">Belt begins<br>30 AU</div>
+                <div class="kb-scale-point" style="--point:62%">Belt ends<br>50 AU</div>
+                <div class="kb-scale-point" style="--point:100%">Scattered disk<br>100+ AU</div>
+                <div class="kb-scale-line" aria-hidden="true"></div>
+              </div>
+              <p class="kb-scale-note">Positions are proportional within this Neptune-to-scattered-disk interval; object sizes are not.</p>
+            </article>
+
+            <article class="kb-card">
+              <h2>Pluto, Eris, Makemake, Haumea</h2>
+              <p><strong>Pluto</strong>, discovered in 1930, orbits at about 39.5 AU in a stable 3:2 resonance with Neptune — an orbit type called a <strong>plutino</strong>. It has a heart-shaped nitrogen-ice plain, five moons, and a thin nitrogen atmosphere.</p>
+              <p><strong>Eris</strong> is a scattered-disk object slightly more massive than Pluto; its 2005 discovery pushed astronomers to define "planet" more precisely. <strong>Makemake</strong> and <strong>Haumea</strong> are large classical KBOs — Haumea is football-shaped and spins once roughly every four hours.</p>
+            </article>
+
+            <article class="kb-card kb-wide">
+              <h2>Neptune's Push: Capture and Scattering</h2>
+              <p>Early in the Solar System's history, Neptune is thought to have migrated outward. As it moved, its gravity reorganized the icy planetesimals it passed.</p>
+              <div class="kb-process">
+                <div class="kb-step"><strong>Neptune migrates</strong><small>The ice giant's orbit slowly widens as it interacts with the outer disk of debris.</small></div>
+                <div class="kb-step"><strong>Some orbits are captured</strong><small>Objects locked into stable resonances, like Pluto's 3:2, survive for billions of years.</small></div>
+                <div class="kb-step"><strong>Others are scattered</strong><small>Close gravitational encounters fling many objects onto wider, tilted, more eccentric paths.</small></div>
+              </div>
+              <div class="kb-note"><strong>Important nuance:</strong> unlike the asteroid belt's Kirkwood gaps, Neptune's resonances often <em>concentrate</em> objects rather than clearing them out — a reminder that "resonance" does not always mean "empty."</div>
+            </article>
+
+            <article class="kb-card">
+              <h2>Classifying KBOs</h2>
+              <div class="kb-vocab">
+                <div class="kb-term"><strong>Classical KBO</strong><small>Roughly circular orbit, not locked to Neptune's resonances. Also called a cubewano.</small></div>
+                <div class="kb-term"><strong>Resonant KBO</strong><small>Orbit locked to Neptune's, like Pluto's plutinos at the 3:2 resonance.</small></div>
+                <div class="kb-term"><strong>Scattered Disk Object</strong><small>Wider, more eccentric, more tilted orbit shaped by past encounters with Neptune.</small></div>
+                <div class="kb-term"><strong>Kuiper Cliff</strong><small>The sharp, still-debated drop in known objects beyond about 50 AU.</small></div>
+              </div>
+            </article>
+
+            <article class="kb-card kb-wide">
+              <h2>Practice Check</h2>
+              <div class="kb-quiz">
+                <div class="kb-q">
+                  <label for="kb-q1">1. Where is the Kuiper Belt located?</label>
+                  <select id="kb-q1">
+                    <option value="">Choose an answer</option>
+                    <option value="inner">Between Mercury and Venus</option>
+                    <option value="main">Between Mars and Jupiter</option>
+                    <option value="outer">Beyond Neptune, roughly 30-50 AU out</option>
+                  </select>
+                  <p class="kb-q-result" aria-live="polite"></p>
+                </div>
+                <div class="kb-q">
+                  <label for="kb-q2">2. What is Pluto's 3:2 orbital relationship with Neptune called?</label>
+                  <select id="kb-q2">
+                    <option value="">Choose an answer</option>
+                    <option value="plutino">A plutino resonance</option>
+                    <option value="kirkwood">A Kirkwood gap</option>
+                    <option value="collision">A collision course</option>
+                  </select>
+                  <p class="kb-q-result" aria-live="polite"></p>
+                </div>
+                <div class="kb-q">
+                  <label for="kb-q3">3. Why does the Kuiper Belt matter for comets?</label>
+                  <select id="kb-q3">
+                    <option value="">Choose an answer</option>
+                    <option value="short">It is the main source of short-period comets.</option>
+                    <option value="long">It is the main source of long-period comets.</option>
+                    <option value="none">Comets do not come from the outer Solar System.</option>
+                  </select>
+                  <p class="kb-q-result" aria-live="polite"></p>
+                </div>
+                <div class="kb-q">
+                  <label for="kb-q4">4. What did NASA's New Horizons spacecraft visit after its 2015 Pluto flyby?</label>
+                  <select id="kb-q4">
+                    <option value="">Choose an answer</option>
+                    <option value="arrokoth">Arrokoth, a distant classical KBO</option>
+                    <option value="mars">Mars</option>
+                    <option value="ceres">Ceres, in the asteroid belt</option>
+                  </select>
+                  <p class="kb-q-result" aria-live="polite"></p>
+                </div>
+                <button type="button" class="kb-button" id="kb-check">Check Answers</button>
+                <div class="kb-feedback" id="kb-feedback" aria-live="polite"></div>
+              </div>
+            </article>
+
+            <article class="kb-card">
+              <h2>Evidence from Spacecraft</h2>
+              <p>NASA's <strong>New Horizons</strong> flew past Pluto on July 14, 2015, revealing towering water-ice mountains, a nitrogen-ice plain named Sputnik Planitia, and a hazy blue atmosphere no one expected from a small, cold world.</p>
+              <p>On January 1, 2019, New Horizons flew past <strong>Arrokoth</strong>, a small classical KBO roughly a billion miles farther out — the most distant object ever explored by a spacecraft. Its two fused lobes preserve a gentle, low-speed merger from the Solar System's earliest days.</p>
+              <div class="kb-note"><strong>Big idea:</strong> the Kuiper Belt is a deep freeze that has preserved building blocks from 4.6 billion years ago, largely unchanged.</div>
+              <p class="kb-sources">Explore the evidence: <a href="https://science.nasa.gov/mission/new-horizons/" target="_blank" rel="noopener noreferrer">NASA New Horizons mission</a> · <a href="https://science.nasa.gov/dwarf-planets/pluto/" target="_blank" rel="noopener noreferrer">NASA Pluto facts</a> · <a href="https://science.nasa.gov/solar-system/kuiper-belt/" target="_blank" rel="noopener noreferrer">NASA Kuiper Belt overview</a></p>
+            </article>
+          </section>
+
+          <footer class="site-footer">
+            <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">Lessons</a></p>
+          </footer>
+        </main>
+      </div>
+
+      <aside class="ll-panel" id="kb-controls" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs" role="tablist" aria-label="Lesson controls">
+            <button class="ll-tab" id="kb-tab-view" role="tab" aria-selected="true" aria-controls="kb-pane-view" data-pane="kb-pane-view">View</button>
+            <button class="ll-tab" id="kb-tab-guide" role="tab" aria-selected="false" aria-controls="kb-pane-guide" data-pane="kb-pane-guide">Guide</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="kb-pane-view" role="tabpanel" aria-labelledby="kb-tab-view">
+            <span class="ll-label">Focus Object</span>
+            <button class="kb-button is-active" type="button" aria-pressed="true" data-focus="belt">Kuiper Belt</button>
+            <button class="kb-button" type="button" aria-pressed="false" data-focus="pluto">Pluto</button>
+            <button class="kb-button" type="button" aria-pressed="false" data-focus="eris">Eris</button>
+            <button class="kb-button" type="button" aria-pressed="false" data-focus="makemake">Makemake</button>
+            <button class="kb-button" type="button" aria-pressed="false" data-focus="haumea">Haumea</button>
+            <button class="kb-button" type="button" aria-pressed="false" data-focus="resonances">Resonances</button>
+            <hr class="ll-hr">
+            <div class="ll-param">
+              <label class="ll-param-label" for="kb-speed">Orbit speed <span class="ll-val" id="kb-speed-val">1.0x</span></label>
+              <input id="kb-speed" type="range" min="0" max="40" value="10" />
+              <div class="ll-param-ends"><span>Paused</span><span>Fast</span></div>
+            </div>
+            <div class="ll-param">
+              <label class="ll-param-label" for="kb-density">KBO density <span class="ll-val" id="kb-density-val">220</span></label>
+              <input id="kb-density" type="range" min="80" max="360" value="220" />
+              <div class="ll-param-ends"><span>Simple</span><span>Dense</span></div>
+            </div>
+            <div class="ll-param">
+              <label class="ll-param-label" for="kb-scatter"><span>Show scattered disk</span></label>
+              <input id="kb-scatter" type="checkbox" checked />
+            </div>
+            <div class="ll-readouts">
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Region</span>
+                <span class="ll-readout-val">30-50 AU</span>
+              </div>
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Largest</span>
+                <span class="ll-readout-val">Eris / Pluto</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="ll-pane" id="kb-pane-guide" role="tabpanel" aria-labelledby="kb-tab-guide">
+            <div class="ll-info"><strong>AU</strong>One astronomical unit is the average Earth-Sun distance.</div>
+            <div class="ll-info"><strong>Kuiper Belt</strong>The icy disk beyond Neptune, not the rocky main asteroid belt near Mars and Jupiter.</div>
+            <div class="ll-info"><strong>Plutino</strong>A KBO, like Pluto, locked in a 3:2 orbital resonance with Neptune.</div>
+            <div class="ll-info"><strong>Scattered Disk</strong>A more eccentric, tilted population shaped by past close encounters with Neptune.</div>
+            <hr class="ll-hr">
+            <div class="ll-info"><strong>Observe</strong>Pause the model, focus on the resonances, and compare their distances with Pluto and Makemake.</div>
+            <div class="ll-info"><strong>Explain</strong>Why can a resonance concentrate objects in the Kuiper Belt but clear them out in the asteroid belt?</div>
+          </div>
+        </div>
+      </aside>
+
+      <button class="ll-open-btn" aria-label="Open panel" aria-controls="kb-controls" aria-expanded="true">
+        <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+      </button>
+    </div>
+  </div>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+    (function () {
+      var canvas = document.getElementById("kb-canvas");
+      var ctx = canvas.getContext("2d");
+      var kbos = [];
+      var density = 220;
+      var speed = 1;
+      var time = 0;
+      var showScatter = true;
+      var focus = "belt";
+      var hitTargets = [];
+      var raf = null;
+      var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      var panel = document.getElementById("kb-controls");
+      var openButton = document.querySelector(".ll-open-btn");
+      var MAX_AU = 58;
+
+      var bodies = {
+        pluto: { name: "Pluto", au: 39.5, angle: 0.85, color: "#e9ddc9", info: "Pluto orbits in a stable 3:2 resonance with Neptune — a plutino — with five moons and a thin nitrogen atmosphere." },
+        eris: { name: "Eris", au: 55, angle: 2.25, color: "#cbd5e1", info: "Eris is a scattered-disk dwarf planet slightly more massive than Pluto; its stretched orbit currently carries it far beyond this simplified view." },
+        makemake: { name: "Makemake", au: 45.8, angle: 4.1, color: "#e0a98f", info: "Makemake is a large, reddish classical KBO (a cubewano) with one small known moon." },
+        haumea: { name: "Haumea", au: 43, angle: 5.35, color: "#b7c4d8", info: "Haumea is an elongated, fast-spinning KBO with faint rings and two moons — a full spin takes only about four hours." }
+      };
+
+      function makeKbos() {
+        kbos = [];
+        for (var i = 0; i < density; i += 1) {
+          var seed = (i * 9301 + 49297) % 233280;
+          var rand = seed / 233280;
+          var au = 30 + ((i * 37) % 120) / 120 * 20;
+          var isPlutino = Math.abs(au - 39.4) < 0.7;
+          kbos.push({
+            au: au,
+            angle: rand * Math.PI * 2,
+            size: 1.0 + ((i * 17) % 7) * 0.2,
+            speed: 0.55 / Math.pow(au, 1.5),
+            tint: isPlutino ? 3 : i % 5,
+            scattered: false
+          });
+        }
+        if (showScatter) {
+          for (var j = 0; j < Math.round(density * 0.35); j += 1) {
+            var seed2 = (j * 5303 + 12841) % 199999;
+            var rand2 = seed2 / 199999;
+            var au2 = 34 + ((j * 53) % 200) / 200 * 24;
+            kbos.push({
+              au: au2,
+              angle: rand2 * Math.PI * 2,
+              size: 0.9 + ((j * 13) % 6) * 0.2,
+              speed: 0.5 / Math.pow(au2, 1.5),
+              tint: 4,
+              scattered: true
+            });
+          }
+        }
+      }
+
+      function sizeCanvas() {
+        var rect = canvas.getBoundingClientRect();
+        var scale = window.devicePixelRatio || 1;
+        canvas.width = Math.max(1, Math.round(rect.width * scale));
+        canvas.height = Math.max(1, Math.round(rect.height * scale));
+        ctx.setTransform(scale, 0, 0, scale, 0, 0);
+        draw();
+      }
+
+      function orbitRadius(au, maxR) {
+        return (au / MAX_AU) * maxR;
+      }
+
+      function drawOrbit(cx, cy, r, color, dash) {
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        if (dash) ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawBody(cx, cy, x, y, radius, color, label) {
+        ctx.shadowColor = color;
+        ctx.shadowBlur = radius * 3;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        if (label) {
+          ctx.fillStyle = "rgba(248, 250, 252, 0.86)";
+          ctx.font = "700 12px Inter, sans-serif";
+          ctx.fillText(label, x + radius + 6, y - radius - 2);
+        }
+      }
+
+      function drawResonanceLabel(cx, cy, au, ratio, maxR) {
+        var r = orbitRadius(au, maxR);
+        var angle = -0.55;
+        var x = cx + Math.cos(angle) * r;
+        var y = cy + Math.sin(angle) * r;
+        ctx.fillStyle = "rgba(125, 216, 255, 0.9)";
+        ctx.font = "800 10px Inter, sans-serif";
+        ctx.fillText(ratio, x + 4, y - 3);
+      }
+
+      function draw() {
+        var rect = canvas.getBoundingClientRect();
+        var w = rect.width;
+        var h = rect.height;
+        var cx = w / 2;
+        var cy = h / 2;
+        var maxR = Math.min(w, h) * 0.48;
+        hitTargets = [];
+
+        var gradient = ctx.createRadialGradient(cx, cy, 8, cx, cy, Math.max(w, h));
+        gradient.addColorStop(0, "#101d3d");
+        gradient.addColorStop(1, "#030712");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.fillStyle = "#ffd978";
+        ctx.shadowColor = "#ffd978";
+        ctx.shadowBlur = 14;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "rgba(255,255,255,0.72)";
+        ctx.font = "800 11px Inter, sans-serif";
+        ctx.fillText("Sun", cx + 12, cy + 4);
+
+        var neptuneR = orbitRadius(30.1, maxR);
+        var innerR = orbitRadius(30, maxR);
+        var outerR = orbitRadius(50, maxR);
+        drawOrbit(cx, cy, neptuneR, "rgba(79, 137, 255, 0.5)");
+        drawOrbit(cx, cy, innerR, "rgba(217, 228, 245, 0.3)", true);
+        drawOrbit(cx, cy, outerR, "rgba(217, 228, 245, 0.3)", true);
+
+        [{ au: 39.4, ratio: "3:2" }, { au: 47.8, ratio: "2:1" }].forEach(function (res) {
+          drawOrbit(cx, cy, orbitRadius(res.au, maxR), "rgba(125, 216, 255, 0.5)", true);
+          if (focus === "resonances") drawResonanceLabel(cx, cy, res.au, res.ratio, maxR);
+        });
+
+        kbos.forEach(function (rock) {
+          var angle = rock.angle + time * rock.speed;
+          var r = orbitRadius(rock.au, maxR);
+          var x = cx + Math.cos(angle) * r;
+          var y = cy + Math.sin(angle) * r;
+          if (rock.scattered) {
+            ctx.fillStyle = "#b39dff";
+            ctx.globalAlpha = focus === "resonances" ? 0.32 : 0.5;
+          } else if (rock.tint === 3) {
+            ctx.fillStyle = "#7dd8ff";
+            ctx.globalAlpha = focus === "resonances" ? 0.95 : 0.78;
+          } else {
+            ctx.fillStyle = rock.tint === 0 ? "#e5edfb" : rock.tint === 1 ? "#c3ccdb" : "#d9e4f5";
+            ctx.globalAlpha = focus === "resonances" ? 0.42 : 0.82;
+          }
+          ctx.beginPath();
+          ctx.arc(x, y, rock.size, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+
+        var nAngle = time * 0.1 + 0.2;
+        drawBody(cx, cy, cx + Math.cos(nAngle) * neptuneR, cy + Math.sin(nAngle) * neptuneR, 7, "#4f89ff", "Neptune");
+
+        Object.keys(bodies).forEach(function (key) {
+          var body = bodies[key];
+          var angle = body.angle + time * (0.34 / Math.pow(body.au, 1.5));
+          var r = orbitRadius(body.au, maxR);
+          var x = cx + Math.cos(angle) * r;
+          var y = cy + Math.sin(angle) * r;
+          var isFocus = focus === key;
+          drawBody(cx, cy, x, y, isFocus ? 7 : 4.5, body.color, body.name);
+          hitTargets.push({ key: key, x: x, y: y, r: 14 });
+        });
+      }
+
+      function tick() {
+        time += speed * 0.018;
+        draw();
+        raf = requestAnimationFrame(tick);
+      }
+
+      function setFocus(next) {
+        focus = next;
+        document.querySelectorAll("[data-focus]").forEach(function (btn) {
+          btn.classList.toggle("is-active", btn.dataset.focus === next);
+          btn.setAttribute("aria-pressed", btn.dataset.focus === next ? "true" : "false");
+        });
+        var readout = document.getElementById("kb-readout");
+        if (next === "belt") readout.textContent = "The Kuiper Belt is a broad, icy disk of small worlds beyond Neptune, roughly 30-50 AU from the Sun.";
+        if (next === "resonances") readout.textContent = "Highlighted are the approximate 3:2 (plutino) and 2:1 (twotino) resonances with Neptune: distances where repeated gravitational tugs trap objects into stable orbits instead of clearing them out.";
+        if (bodies[next]) readout.textContent = bodies[next].info;
+        draw();
+      }
+
+      document.querySelectorAll("[data-focus]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          setFocus(btn.dataset.focus);
+        });
+      });
+
+      document.getElementById("kb-speed").addEventListener("input", function (event) {
+        speed = Number(event.target.value) / 10;
+        document.getElementById("kb-speed-val").textContent = speed.toFixed(1) + "x";
+      });
+
+      document.getElementById("kb-density").addEventListener("input", function (event) {
+        density = Number(event.target.value);
+        document.getElementById("kb-density-val").textContent = String(density);
+        makeKbos();
+        draw();
+      });
+
+      document.getElementById("kb-scatter").addEventListener("change", function (event) {
+        showScatter = event.target.checked;
+        makeKbos();
+        draw();
+      });
+
+      canvas.addEventListener("keydown", function (event) {
+        var order = ["belt", "pluto", "eris", "makemake", "haumea", "resonances"];
+        if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+        event.preventDefault();
+        var current = order.indexOf(focus);
+        var direction = event.key === "ArrowRight" ? 1 : -1;
+        setFocus(order[(current + direction + order.length) % order.length]);
+      });
+
+      canvas.addEventListener("click", function (event) {
+        var rect = canvas.getBoundingClientRect();
+        var x = event.clientX - rect.left;
+        var y = event.clientY - rect.top;
+        var found = hitTargets.find(function (target) {
+          return Math.hypot(target.x - x, target.y - y) <= target.r;
+        });
+        if (found) setFocus(found.key);
+      });
+
+      document.querySelectorAll(".ll-tab").forEach(function (tab) {
+        tab.addEventListener("click", function () {
+          var panel = tab.closest(".ll-panel");
+          panel.querySelectorAll(".ll-tab").forEach(function (other) {
+            other.setAttribute("aria-selected", other === tab ? "true" : "false");
+          });
+          panel.querySelectorAll(".ll-pane").forEach(function (pane) {
+            pane.classList.toggle("ll-active", pane.id === tab.dataset.pane);
+          });
+        });
+      });
+
+      document.querySelector(".ll-panel-close").addEventListener("click", function () {
+        panel.setAttribute("aria-hidden", "true");
+        openButton.setAttribute("aria-expanded", "false");
+      });
+
+      openButton.addEventListener("click", function () {
+        panel.setAttribute("aria-hidden", "false");
+        openButton.setAttribute("aria-expanded", "true");
+      });
+
+      document.getElementById("kb-check").addEventListener("click", function () {
+        var answers = [
+          { id: "kb-q1", correct: "outer", explanation: "The Kuiper Belt lies beyond Neptune, roughly 30-50 AU from the Sun." },
+          { id: "kb-q2", correct: "plutino", explanation: "Pluto's 3:2 resonance with Neptune is the defining trait of a plutino orbit." },
+          { id: "kb-q3", correct: "short", explanation: "The Kuiper Belt supplies most short-period comets; the distant Oort Cloud supplies long-period ones." },
+          { id: "kb-q4", correct: "arrokoth", explanation: "New Horizons flew past the classical KBO Arrokoth on January 1, 2019." }
+        ];
+        var score = 0;
+        answers.forEach(function (answer) {
+          var select = document.getElementById(answer.id);
+          var wrapper = select.closest(".kb-q");
+          var result = wrapper.querySelector(".kb-q-result");
+          var correct = select.value === answer.correct;
+          wrapper.classList.toggle("is-correct", correct);
+          wrapper.classList.toggle("is-incorrect", !correct);
+          result.textContent = correct ? "Correct — " + answer.explanation : (select.value ? "Review: " + answer.explanation : "Choose an answer, then check again.");
+          if (correct) score += 1;
+        });
+        var feedback = document.getElementById("kb-feedback");
+        feedback.className = "kb-feedback " + (score === answers.length ? "kb-ok" : "kb-try");
+        feedback.textContent = score === answers.length ? "4/4 — excellent. You can locate, explain, and classify the key ideas." : score + "/4 correct. Use the explanation under each question, then try again.";
+      });
+
+      document.querySelectorAll(".kb-q select").forEach(function (select) {
+        select.addEventListener("change", function () {
+          var wrapper = select.closest(".kb-q");
+          wrapper.classList.remove("is-correct", "is-incorrect");
+          wrapper.querySelector(".kb-q-result").textContent = "";
+        });
+      });
+
+      window.addEventListener("resize", sizeCanvas);
+      makeKbos();
+      if (window.matchMedia && window.matchMedia("(max-width: 680px)").matches) {
+        panel.setAttribute("aria-hidden", "true");
+        openButton.setAttribute("aria-expanded", "false");
+      }
+      if (reduceMotion) {
+        speed = 0;
+        document.getElementById("kb-speed").value = "0";
+        document.getElementById("kb-speed-val").textContent = "0.0x";
+      }
+      sizeCanvas();
+      tick();
+      window.addEventListener("beforeunload", function () {
+        if (raf) cancelAnimationFrame(raf);
+      });
+    }());
+  </script>
+<script src="../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
