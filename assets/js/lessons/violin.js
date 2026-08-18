@@ -32,6 +32,25 @@
   function mod12(n) { return ((n % 12) + 12) % 12; }
   function mod2(n) { return ((n % 2) + 2) % 2; }
 
+  /* A real string's speaking length shrinks geometrically as a finger moves toward the
+     bridge (each semitone removes a fixed fraction of what's left) — so frets/positions
+     compress higher up the neck instead of spacing out evenly like a ruler. */
+  function semitoneFrac(n) { return 1 - Math.pow(2, -n / 12); }
+  function fracToSemitone(f) { return -12 * (Math.log(1 - f) / Math.LN2); }
+
+  /* Which finger (0=open .. 4) lands on a given scale/arpeggio degree in first position.
+     Major-shaped patterns (whole-whole-half-whole from the open string) use one slot map;
+     everything with a lowered 3rd (natural/harmonic/melodic minor, minor triad, dim7) uses
+     the "low 2nd/3rd finger" slot map real players learn for minor keys. Degrees that don't
+     land on a first-position slot (e.g. a dim7's b5) simply get no finger badge. */
+  var MAJOR_FINGER_SLOTS = [0, 2, 4, 5, 7];
+  var MINOR_FINGER_SLOTS = [0, 2, 3, 5, 7];
+  function fingerForInterval(patternId, iv) {
+    var slots = (patternId === 'major' || patternId === 'majtriad' || patternId === 'dom7') ? MAJOR_FINGER_SLOTS : MINOR_FINGER_SLOTS;
+    var idx = slots.indexOf(iv);
+    return idx === -1 ? null : idx;
+  }
+
   function pcInfo(midi) {
     var pc = mod12(midi);
     var name = PITCHES[pc];
@@ -162,6 +181,8 @@
     this.highlight = null; /* {rootPC, pattern} */
     this.played = {}; /* label -> semitone (integer) or undefined */
     this.dragging = null;
+    this.stepLabel = null; /* which string the playback cursor is currently on */
+    this.stepOffset = null;
     this.build();
   }
 
@@ -262,14 +283,17 @@
 
     function semitoneFromClientY(clientY) {
       var rect = track.getBoundingClientRect();
-      var raw = ((clientY - rect.top) / rect.height) * self.span;
+      var pct = (clientY - rect.top) / rect.height;
+      if (pct < 0) pct = 0;
+      if (pct > 1) pct = 1;
+      var raw = fracToSemitone(pct * semitoneFrac(self.span));
       if (raw < 0) raw = 0;
       if (raw > self.span) raw = self.span;
       return raw;
     }
 
     function positionGhost(raw) {
-      var pct = (raw / self.span) * 100;
+      var pct = (semitoneFrac(raw) / semitoneFrac(self.span)) * 100;
       dot.style.top = pct + '%';
       dot.hidden = false;
       lbl.style.top = pct + '%';
@@ -331,8 +355,15 @@
     track.addEventListener('pointerdown', onDown);
   };
 
+  var NECK_TAPER = 0.09; /* must match the clip-path inset in violin.css */
+
   FingerboardWidget.prototype.render = function () {
     var self = this;
+    /* The board narrows toward the nut (see NECK_TAPER); the E string sits flush against
+       that outer edge, so its note labels need extra clearance near the top or the taper
+       clips them. Measured once per render since it depends on the rendered board width. */
+    var taperMaxPx = self.root.getBoundingClientRect().width * NECK_TAPER;
+
     STRINGS.forEach(function (str) {
       var entry = self.laneEls[str.label];
       var track = entry.track;
@@ -360,34 +391,46 @@
         highlightSet = {};
         self.highlight.pattern.intervals.forEach(function (iv) {
           var pc = mod12(self.highlight.rootPC + iv);
-          highlightSet[pc] = INTERVAL_LABELS[iv];
+          highlightSet[pc] = iv;
         });
       }
 
       for (var i = 0; i <= self.span; i++) {
         var midi = str.openMidi + i;
+        var posPct = (semitoneFrac(i) / semitoneFrac(self.span)) * 100;
         var tick = document.createElement('div');
         tick.className = 'vln-tick' + (i === 0 ? ' vln-tick-open' : '');
-        tick.style.top = ((i / self.span) * 100) + '%';
+        tick.style.top = posPct + '%';
 
         var mark = document.createElement('span');
         mark.className = 'vln-tick-mark';
         tick.appendChild(mark);
 
         var pc = mod12(midi);
-        var hlLabel = highlightSet && highlightSet.hasOwnProperty(pc) ? highlightSet[pc] : null;
-        if (hlLabel) {
+        var hlIv = highlightSet && highlightSet.hasOwnProperty(pc) ? highlightSet[pc] : null;
+        if (hlIv !== null) {
           tick.classList.add('is-hl');
           var deg = document.createElement('span');
           deg.className = 'vln-degree';
-          deg.textContent = hlLabel;
+          deg.textContent = INTERVAL_LABELS[hlIv];
           tick.appendChild(deg);
+
+          if (self.span === FIRST_SPAN) {
+            var finger = fingerForInterval(self.highlight.pattern.id, hlIv);
+            if (finger !== null) {
+              var fingerEl = document.createElement('span');
+              fingerEl.className = 'vln-finger';
+              fingerEl.textContent = String(finger);
+              tick.appendChild(fingerEl);
+            }
+          }
         }
 
         if (self.showNames) {
           var name = document.createElement('span');
           name.className = 'vln-tick-name';
           name.textContent = noteName(midi);
+          if (str.label === 'E') name.style.right = (3 + taperMaxPx * (1 - posPct / 100)) + 'px';
           tick.appendChild(name);
         }
 
@@ -395,9 +438,52 @@
           tick.classList.add('is-played');
         }
 
+        if (self.stepLabel === str.label && self.stepOffset === i) {
+          tick.classList.add('is-step');
+        }
+
         track.appendChild(tick);
       }
     });
+  };
+
+  FingerboardWidget.prototype.setStep = function (label, i) {
+    this.stepLabel = label;
+    this.stepOffset = i;
+    this.render();
+  };
+
+  FingerboardWidget.prototype.clearStep = function () {
+    this.stepLabel = null;
+    this.stepOffset = null;
+    this.render();
+  };
+
+  /* The order a violinist actually plays a highlighted scale/arpeggio: ascend each string
+     in turn (low string to high), skipping a note that's the exact same pitch as the one
+     that ended the previous string (a first-position 4th finger often lands on the same
+     note as the next string's open note), then mirror back down for the descent. */
+  FingerboardWidget.prototype.getHighlightSequence = function () {
+    if (!this.highlight) return [];
+    var self = this;
+    var rootPC = this.highlight.rootPC;
+    var pattern = this.highlight.pattern;
+    var wanted = {};
+    pattern.intervals.forEach(function (iv) { wanted[mod12(rootPC + iv)] = true; });
+
+    var seq = [];
+    var lastMidi = null;
+    STRINGS.forEach(function (str) {
+      for (var i = 0; i <= self.span; i++) {
+        var midi = str.openMidi + i;
+        if (!wanted[mod12(midi)]) continue;
+        if (midi === lastMidi) continue;
+        seq.push({ label: str.label, offset: i, midi: midi });
+        lastMidi = midi;
+      }
+    });
+    var down = seq.slice(0, -1).reverse();
+    return seq.concat(down);
   };
 
   window.ViolinFingerboard = { create: function (el) { return new FingerboardWidget(el); }, Audio: Audio };
@@ -506,6 +592,7 @@ document.addEventListener('DOMContentLoaded', function () {
     btn.addEventListener('click', function () {
       spanBtns.forEach(function (b) { b.classList.remove('is-active'); });
       btn.classList.add('is-active');
+      stopPlayback();
       board.setSpan(btn.getAttribute('data-vln-span') === 'first' ? VT.FIRST_SPAN : VT.FULL_SPAN);
     });
   });
@@ -520,19 +607,57 @@ document.addEventListener('DOMContentLoaded', function () {
 
   /* Clear */
   var clearBtn = document.getElementById('vlnClear');
-  if (clearBtn) clearBtn.addEventListener('click', function () { board.clear(); });
+  if (clearBtn) clearBtn.addEventListener('click', function () { stopPlayback(); board.clear(); });
 
   /* Highlight picker: off / pattern / root */
   var rootPicker = document.getElementById('vlnRootPicker');
   var patternPicker = document.getElementById('vlnPatternPicker');
   var highlightOff = document.getElementById('vlnHighlightOff');
   var formulaOut = document.getElementById('vlnFormula');
+  var playBtn = document.getElementById('vlnPlayPattern');
   var currentRoot = 7; /* G, matches the violin's lowest open string */
   var currentPattern = VT.PATTERNS[0];
   var highlightOn = false;
+  var playTimer = null;
+
+  function playLabel() { return highlightOn ? '▶ Play ' + currentPattern.kind.toLowerCase() : '▶ Play'; }
+
+  function stopPlayback() {
+    if (playTimer) { clearInterval(playTimer); playTimer = null; }
+    board.clearStep();
+    if (playBtn) playBtn.textContent = playLabel();
+  }
+
+  function startPlayback() {
+    if (!highlightOn) return;
+    var seq = board.getHighlightSequence();
+    if (!seq.length) return;
+    var idx = 0;
+    if (playBtn) playBtn.textContent = '■ Stop';
+    function step() {
+      if (idx >= seq.length) { stopPlayback(); return; }
+      var n = seq[idx];
+      board.setStep(n.label, n.offset);
+      VF.Audio.blip(VT.freqOfMidi(n.midi), 380);
+      idx++;
+    }
+    step();
+    playTimer = setInterval(step, 420);
+  }
+
+  if (playBtn) {
+    playBtn.addEventListener('click', function () {
+      if (playTimer) stopPlayback(); else startPlayback();
+    });
+  }
 
   function applyHighlight() {
+    stopPlayback();
     board.setHighlight(highlightOn ? { rootPC: currentRoot, pattern: currentPattern } : null);
+    if (playBtn) {
+      playBtn.disabled = !highlightOn;
+      playBtn.textContent = playLabel();
+    }
     if (formulaOut) {
       if (!highlightOn) {
         formulaOut.textContent = 'Pick a root and a pattern to highlight it across all four strings.';

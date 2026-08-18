@@ -1,0 +1,1462 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Analog Mixer Lab: Patch, Gain &amp; FX Bus · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Patch a 12-channel analog mixer by hand: pick the right cable for every mic, instrument, and speaker, then work real rotary knobs and vertical faders to follow the signal from preamp to fader and into a reverb/delay FX bus." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    body { background: #0a0a0d; color: #e8e4da; margin: 0; overflow-x: hidden; }
+
+    /* ── Topbar ── */
+    .sc-topbar {
+      position: sticky; top: 0; z-index: 40;
+      backdrop-filter: blur(14px);
+      background: rgba(12, 12, 16, 0.94);
+      border-bottom: 1px solid rgba(245, 158, 11, 0.22);
+    }
+    .sc-topbar-inner {
+      width: min(1440px, calc(100% - 2rem));
+      margin: 0 auto; min-height: 48px;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .sc-topbar a { color: #f0b448; text-decoration: none; font-size: 0.82rem; }
+    .sc-topbar a:hover { color: #fff; }
+    .sc-topbar-title { font-size: 0.9rem; font-weight: 700; color: #f5ecd8; }
+
+    /* ── Hero ── */
+    .sc-hero { padding: 0.8rem 1.5rem 0.5rem; text-align: center; max-width: 760px; margin: 0 auto; }
+    .sc-hero h1 { font-size: clamp(1.4rem, 3.2vw, 2rem); font-weight: 800; color: #fff; margin: 0 0 0.4rem; }
+    .sc-hero p { font-size: 0.86rem; color: rgba(232, 228, 218, 0.68); margin: 0; line-height: 1.55; }
+    .sc-hero .note { display: block; margin-top: 0.5rem; font-size: 0.7rem; color: rgba(240, 180, 72, 0.65); }
+
+    .sc-wrap { padding: 0 1.1rem 1rem; max-width: 1440px; margin: 0 auto; }
+
+    /* ── Section headers ── */
+    .sc-section-title {
+      font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em;
+      color: rgba(220, 200, 160, 0.55); text-transform: uppercase;
+      margin: 1.4rem 0 0.6rem;
+    }
+    .sc-section-title:first-child { margin-top: 0; }
+
+    /* ── Patch bay ── */
+    .patch-outer {
+      background: linear-gradient(180deg, #101014, #0b0b0f);
+      border: 1px solid rgba(245, 158, 11, 0.16);
+      border-radius: 18px; padding: 1rem;
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
+    }
+    .patch-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+    .patch-card {
+      background: rgba(16, 16, 22, 0.85);
+      border: 1px solid rgba(150, 150, 170, 0.2);
+      border-radius: 13px; padding: 10px 11px;
+    }
+    .patch-card.ok { border-color: rgba(76, 192, 96, 0.55); background: rgba(18,48,26,0.4); }
+    .patch-card.bad { border-color: rgba(255, 90, 60, 0.5); background: rgba(58,20,16,0.35); }
+    .patch-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .patch-icon { font-size: 1.15rem; }
+    .patch-label { font-size: 0.74rem; font-weight: 800; color: #f5ecd8; line-height: 1.2; }
+    .patch-desc { font-size: 0.63rem; color: rgba(220,210,190,0.55); margin: 0 0 8px; line-height: 1.4; }
+    .patch-choices { display: flex; flex-wrap: wrap; gap: 5px; }
+    .patch-btn {
+      font-size: 0.62rem; font-weight: 700; padding: 5px 9px; border-radius: 999px;
+      border: 1px solid rgba(150,150,170,0.3); background: rgba(10,10,14,0.6);
+      color: rgba(232,228,218,0.75); cursor: pointer; transition: all 0.15s;
+    }
+    .patch-btn:hover { border-color: rgba(240,180,72,0.55); }
+    .patch-btn.chosen-correct { border-color: #4cc060; background: rgba(30,90,44,0.5); color: #7ade90; }
+    .patch-btn.chosen-wrong { border-color: #ff5a3c; background: rgba(80,30,20,0.5); color: #ff9078; }
+    .patch-fb { font-size: 0.63rem; margin-top: 6px; line-height: 1.45; min-height: 14px; color: rgba(230,224,210,0.7); }
+    .patch-fb.ok-fb { color: #7ade90; }
+    .patch-fb.bad-fb { color: #ff9078; }
+    .patch-tally { font-size: 0.72rem; color: rgba(232,228,218,0.6); margin-top: 0.7rem; text-align: right; }
+
+    .phantom-row {
+      display: flex; align-items: center; gap: 10px; margin-top: 0.9rem;
+      background: rgba(10,10,14,0.6); border: 1px solid rgba(150,150,170,0.2);
+      border-radius: 11px; padding: 8px 11px;
+    }
+    .phantom-btn {
+      border: none; border-radius: 999px; padding: 6px 14px; font-size: 0.68rem; font-weight: 800;
+      cursor: pointer; background: linear-gradient(180deg, #4a4a56, #2c2c34); color: #ddd;
+      flex-shrink: 0;
+    }
+    .phantom-btn.on { background: linear-gradient(180deg, #f0b448, #c98a1e); color: #201400; box-shadow: 0 0 12px rgba(240,180,72,0.4); }
+    .phantom-note { font-size: 0.66rem; color: rgba(220,210,190,0.6); line-height: 1.4; }
+
+    /* ── Signal chain diagram ── */
+    .chain-outer {
+      background: linear-gradient(180deg, #101014, #0b0b0f);
+      border: 1px solid rgba(245, 158, 11, 0.16);
+      border-radius: 18px; padding: 1.1rem 1rem 0.9rem;
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
+    }
+    .chain-row {
+      display: flex; align-items: stretch; gap: 4px;
+      overflow-x: auto; padding-bottom: 6px;
+      scrollbar-width: thin; scrollbar-color: rgba(245,158,11,0.3) transparent;
+    }
+    .chain-stage {
+      flex: 1 1 0; min-width: 80px;
+      background: rgba(24, 24, 30, 0.85);
+      border: 1px solid rgba(140, 140, 160, 0.2);
+      border-radius: 12px; padding: 10px 6px 8px;
+      text-align: center; cursor: pointer;
+      transition: border-color 0.2s, background 0.2s, transform 0.15s;
+      position: relative;
+    }
+    .chain-stage:hover { border-color: rgba(240, 180, 72, 0.55); transform: translateY(-2px); }
+    .chain-stage.active { border-color: #f0b448; background: rgba(50, 38, 16, 0.85); box-shadow: 0 0 18px rgba(240, 180, 72, 0.25); }
+    .chain-stage .st-icon { font-size: 1.3rem; line-height: 1; }
+    .chain-stage .st-name { font-size: 0.63rem; font-weight: 800; color: #f5ecd8; margin-top: 5px; line-height: 1.2; }
+    .chain-stage .st-sub  { font-size: 0.55rem; color: rgba(220, 210, 190, 0.5); margin-top: 2px; }
+    .chain-arrow {
+      flex-shrink: 0; align-self: center; color: rgba(240, 180, 72, 0.55);
+      font-size: 0.85rem; padding: 0 1px; user-select: none;
+    }
+    .fact-card {
+      background: rgba(10, 10, 14, 0.7);
+      border: 1px solid rgba(245, 158, 11, 0.14);
+      border-radius: 12px; padding: 11px 13px;
+      font-size: 0.78rem; line-height: 1.55;
+      color: rgba(230, 224, 210, 0.8);
+      margin-top: 0.8rem;
+    }
+    .fact-card strong { color: #f0b448; display: block; margin-bottom: 4px; font-size: 0.8rem; }
+
+    .fx-branch { display: flex; align-items: center; gap: 6px; margin-top: 6px; padding-left: 10%; }
+    .fx-branch .br-arrow { color: rgba(140, 190, 255, 0.6); font-size: 0.8rem; }
+    .fx-branch .br-chip {
+      font-size: 0.6rem; font-weight: 800; padding: 4px 10px; border-radius: 999px;
+      background: rgba(60, 90, 160, 0.25); border: 1px solid rgba(140, 190, 255, 0.35); color: #bcd8ff;
+    }
+
+    /* ══════════════════════════════════════════
+       PHYSICAL MIXER CHASSIS
+    ══════════════════════════════════════════ */
+    .chassis-outer {
+      position: relative;
+      background:
+        repeating-linear-gradient(115deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 3px),
+        linear-gradient(180deg, #26262c 0%, #1a1a1f 45%, #131316 100%);
+      border: 1px solid rgba(0,0,0,0.6);
+      border-radius: 10px;
+      padding: 14px 20px 10px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -2px 10px rgba(0,0,0,0.5), 0 10px 30px rgba(0,0,0,0.45);
+    }
+    /* side "cheeks" — a generic pro-audio-gear motif (mixers, decks, pedals across many brands
+       use flanking end panels), rendered in a walnut tone distinct from any single product's finish */
+    .chassis-outer::before, .chassis-outer::after {
+      content: ""; position: absolute; top: 0; bottom: 0; width: 9px;
+      background:
+        repeating-linear-gradient(180deg, rgba(0,0,0,0.12) 0px, rgba(0,0,0,0.12) 2px, transparent 2px, transparent 7px),
+        linear-gradient(90deg, #3a2617, #5a3c22);
+      border-radius: 9px 0 0 9px;
+    }
+    .chassis-outer::before { left: 0; }
+    .chassis-outer::after  { right: 0; transform: scaleX(-1); }
+    .chassis-screw {
+      position: absolute; width: 9px; height: 9px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #6a6a72, #202024 70%);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.6), 0 1px 1px rgba(255,255,255,0.08);
+    }
+    .chassis-screw::after {
+      content: ""; position: absolute; top: 50%; left: 10%; right: 10%; height: 1px;
+      background: rgba(0,0,0,0.7); transform: rotate(28deg);
+    }
+    .chassis-screw.tl { top: 8px; left: 8px; } .chassis-screw.tr { top: 8px; right: 8px; }
+    .chassis-screw.bl { bottom: 8px; left: 8px; } .chassis-screw.br { bottom: 8px; right: 8px; }
+    .chassis-label {
+      font-size: 0.58rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+      color: rgba(220, 200, 160, 0.45); margin: 0 0 8px 2px;
+    }
+
+    .strip-row {
+      display: flex; gap: 3px; overflow-x: auto; padding: 2px 2px 10px;
+      scrollbar-width: thin; scrollbar-color: rgba(245,158,11,0.3) transparent;
+    }
+    .strip {
+      flex: 0 0 108px; width: 108px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent 30%);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-right: 1px solid rgba(0,0,0,0.5);
+      border-radius: 6px;
+      padding: 8px 6px 10px;
+      display: flex; flex-direction: column; align-items: center; gap: 7px;
+    }
+    .strip.master-strip { flex: 0 0 128px; width: 128px; background: linear-gradient(180deg, rgba(240,180,72,0.05), transparent 30%); }
+    .deck-display {
+      width: 100%; font-size: 0.46rem; font-weight: 700; letter-spacing: 0.03em; text-align: center;
+      background: #0a140f; border: 1px solid rgba(0,0,0,0.7); border-radius: 4px; padding: 5px 3px;
+      color: #6fe86f; text-shadow: 0 0 4px rgba(111,232,111,0.5); box-shadow: inset 0 1px 3px rgba(0,0,0,0.7);
+    }
+    .deck-display-dot { display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: #6fe86f; box-shadow: 0 0 4px rgba(111,232,111,0.9); margin-right: 2px; }
+    .deck-transport { display: flex; gap: 5px; justify-content: center; }
+    .deck-transport span {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 16px; height: 14px; border-radius: 3px; font-size: 0.5rem;
+      background: rgba(0,0,0,0.45); border: 1px solid rgba(0,0,0,0.6);
+      color: rgba(220,215,205,0.55); box-shadow: inset 0 1px 1px rgba(255,255,255,0.05);
+    }
+    .deck-transport .play { color: #6fe86f; text-shadow: 0 0 4px rgba(111,232,111,0.7); box-shadow: inset 0 0 4px rgba(111,232,111,0.35); }
+    .deck-transport .rec { color: #ff5f52; text-shadow: 0 0 5px rgba(255,95,82,0.85); box-shadow: inset 0 0 5px rgba(255,95,82,0.4); }
+    .deck-transport .bt { color: #6fb4ff; text-shadow: 0 0 4px rgba(111,180,255,0.7); box-shadow: inset 0 0 4px rgba(111,180,255,0.35); font-size: 0.5rem; }
+    .strip.dim { opacity: 0.42; }
+    .strip.dim .knob-dial, .strip.dim .fader-cap { pointer-events: none; }
+
+    .strip-badge { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+    .strip-num {
+      position: relative;
+      font-size: 0.72rem; font-weight: 900; color: #f0b448; font-variant-numeric: tabular-nums;
+      background: rgba(0,0,0,0.4); border-radius: 4px; padding: 1px 14px 1px 7px; letter-spacing: 0.02em;
+    }
+    .sig-led {
+      position: absolute; top: 50%; right: 4px; transform: translateY(-50%);
+      width: 5px; height: 5px; border-radius: 50%; background: #123a18;
+      box-shadow: inset 0 0 1px rgba(0,0,0,0.6);
+    }
+    .sig-led.lit { background: #5be86a; box-shadow: 0 0 5px rgba(91,232,106,0.9); }
+    .strip-icon { font-size: 1rem; margin-top: 2px; }
+    .strip-name { font-size: 0.56rem; font-weight: 700; color: rgba(232,228,218,0.7); text-align: center; line-height: 1.25; min-height: 20px; }
+    .strip-cable { font-size: 0.5rem; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; color: rgba(150,150,170,0.55); }
+    .strip-cable.patched { color: #4cc060; }
+    .strip-cable.mispatched { color: #ff5a3c; }
+
+    .strip-divider { width: 84%; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent); }
+
+    .knob-row { display: flex; gap: 6px; justify-content: center; }
+
+    /* rotary knob */
+    .knob-unit { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .knob-dial {
+      width: 34px; height: 34px; border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 50%, transparent 0 62%, rgba(0,0,0,0.4) 63% 76%, transparent 77%),
+        repeating-conic-gradient(rgba(0,0,0,0.3) 0deg 2.5deg, transparent 2.5deg 10deg),
+        radial-gradient(circle at 34% 30%, #55555e, #202024 68%);
+      border: 1px solid rgba(0,0,0,0.7);
+      box-shadow: 0 2px 3px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.12);
+      position: relative; cursor: grab; touch-action: none;
+      outline-offset: 2px;
+    }
+    .knob-dial.big { width: 40px; height: 40px; }
+    .knob-dial:active, .knob-dial.active { cursor: grabbing; box-shadow: 0 0 0 3px rgba(240,180,72,0.35), 0 2px 3px rgba(0,0,0,0.5); }
+    .knob-dial:focus-visible { box-shadow: 0 0 0 3px rgba(240,180,72,0.55); }
+    .knob-indicator {
+      position: absolute; inset: 0; transform: rotate(-135deg);
+    }
+    .knob-indicator::after {
+      content: ""; position: absolute; top: 3px; left: 50%; width: 2px; height: 11px;
+      background: #f0b448; border-radius: 2px; transform: translateX(-50%);
+      box-shadow: 0 0 3px rgba(240,180,72,0.6);
+    }
+    .knob-unit.trim .knob-dial {
+      background:
+        radial-gradient(circle at 50% 50%, transparent 0 62%, rgba(0,0,0,0.4) 63% 76%, transparent 77%),
+        repeating-conic-gradient(rgba(0,0,0,0.3) 0deg 2.5deg, transparent 2.5deg 10deg),
+        radial-gradient(circle at 34% 30%, #6e2a28, #2a0e0d 68%);
+      border-color: rgba(0,0,0,0.75);
+    }
+    .knob-unit.trim .knob-indicator::after { background: #ff5f52; box-shadow: 0 0 4px rgba(255,95,82,0.7); }
+    .knob-unit.aux1 .knob-indicator::after { background: #6fb4ff; box-shadow: 0 0 3px rgba(111,180,255,0.6); }
+    .knob-unit.aux2 .knob-indicator::after { background: #ffb648; box-shadow: 0 0 3px rgba(255,182,72,0.6); }
+    .knob-unit.eq .knob-dial {
+      background:
+        radial-gradient(circle at 50% 50%, transparent 0 62%, rgba(0,0,0,0.4) 63% 76%, transparent 77%),
+        repeating-conic-gradient(rgba(0,0,0,0.3) 0deg 2.5deg, transparent 2.5deg 10deg),
+        radial-gradient(circle at 34% 30%, #6b6b74, #2a2a2e 68%);
+    }
+    .knob-unit.eq .knob-indicator::after { background: #f0f0ea; box-shadow: 0 0 3px rgba(240,240,234,0.6); height: 9px; }
+    .knob-unit.pan .knob-indicator::after { background: #6fb4ff; height: 9px; box-shadow: 0 0 3px rgba(111,180,255,0.5); }
+    .knob-value { font-size: 0.56rem; font-weight: 800; color: #f0b448; font-variant-numeric: tabular-nums; }
+    .knob-unit.trim .knob-value { color: #ff5f52; }
+    .knob-unit.aux1 .knob-value { color: #6fb4ff; }
+    .knob-unit.aux2 .knob-value { color: #ffb648; }
+    .knob-unit.eq .knob-value, .knob-unit.pan .knob-value { color: rgba(220,215,205,0.75); }
+    .knob-label { font-size: 0.5rem; font-weight: 700; color: rgba(180,175,165,0.55); text-transform: uppercase; letter-spacing: 0.03em; }
+
+    /* mute button */
+    .mute-btn {
+      width: 46px; height: 20px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.6);
+      background: linear-gradient(180deg, #3a1512, #24100e);
+      color: rgba(255,150,120,0.6); font-size: 0.56rem; font-weight: 900; letter-spacing: 0.06em;
+      cursor: pointer; box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
+    }
+    .mute-btn.on { background: linear-gradient(180deg, #ff4530, #b4361c); color: #200; box-shadow: 0 0 10px rgba(255,70,45,0.6), inset 0 1px 1px rgba(255,255,255,0.3); }
+
+    /* vertical fader */
+    .fader-row { display: flex; align-items: flex-end; gap: 5px; }
+    .fader-unit { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .fader-track {
+      position: relative; width: 26px; height: 148px; border-radius: 4px;
+      background: linear-gradient(90deg, #08080a, #121216 45%, #08080a);
+      border: 1px solid rgba(0,0,0,0.7);
+      box-shadow: inset 0 0 6px rgba(0,0,0,0.7);
+    }
+    .fader-track::before {
+      content: ""; position: absolute; left: 50%; top: 6px; bottom: 6px; width: 2px;
+      background: rgba(255,255,255,0.07); transform: translateX(-50%);
+    }
+    .fader-unity-mark { position: absolute; left: -2px; right: -2px; height: 1px; background: rgba(255,255,255,0.35); }
+    .fader-unity-mark::after { content: "0"; position: absolute; right: 28px; top: -5px; font-size: 0.48rem; color: rgba(255,255,255,0.4); }
+    .fader-cap {
+      position: absolute; left: 50%; width: 34px; height: 17px; margin-left: -17px; bottom: 0;
+      background: linear-gradient(180deg, #4a4a54, #232328);
+      border: 1px solid rgba(0,0,0,0.7); border-radius: 3px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.15);
+      cursor: grab; touch-action: none; outline-offset: 2px;
+    }
+    .fader-cap::after { content: ""; position: absolute; left: 3px; right: 3px; top: 50%; height: 2px; background: #f0b448; transform: translateY(-50%); border-radius: 1px; }
+    .fader-cap.gold { background: linear-gradient(180deg, #e8b84c, #a9782a); border-color: rgba(0,0,0,0.75); }
+    .fader-cap.gold::after { background: #2a1a06; }
+    .fader-cap:active, .fader-cap.active { cursor: grabbing; box-shadow: 0 0 0 3px rgba(240,180,72,0.35); }
+    .fader-cap:focus-visible { box-shadow: 0 0 0 3px rgba(240,180,72,0.55); }
+    .fader-meter {
+      width: 7px; height: 148px; border-radius: 3px; background: rgba(255,255,255,0.05);
+      position: relative; overflow: hidden; display: flex; flex-direction: column-reverse;
+    }
+    .fader-meter > div { width: 100%; background: linear-gradient(180deg, #e84030 0%, #e8a030 16%, #eec83a 28%, #4cc060 44%, #2f9e4a 100%); background-size: 100% 148px; background-position: bottom; transition: height 0.08s linear; }
+    .fader-value { font-size: 0.56rem; font-weight: 800; color: #f0b448; font-variant-numeric: tabular-nums; }
+    .fader-label { font-size: 0.5rem; font-weight: 700; color: rgba(180,175,165,0.55); text-transform: uppercase; }
+
+    .phantom-led { width: 7px; height: 7px; border-radius: 50%; background: #3a1512; border: 1px solid rgba(255,90,60,0.3); }
+    .phantom-led.lit { background: #f0b448; box-shadow: 0 0 6px rgba(240,180,72,0.8); }
+    .phantom-mini { font-size: 0.48rem; font-weight: 800; color: rgba(220,200,160,0.5); display: flex; align-items: center; gap: 3px; }
+
+    /* ── Cards ── */
+    .sc-card {
+      background: rgba(16, 16, 22, 0.72);
+      border: 1px solid rgba(245, 158, 11, 0.15);
+      border-radius: 15px; padding: 1rem 1.1rem; margin-bottom: 0.85rem;
+    }
+    .sc-card:last-child { margin-bottom: 0; }
+    .sc-card h3 {
+      font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em;
+      color: rgba(220, 200, 160, 0.55); text-transform: uppercase; margin: 0 0 0.85rem;
+    }
+
+    /* ── Master / FX section ── */
+    .lab-grid { display: grid; grid-template-columns: 1fr; gap: 0.85rem; margin-top: 0.85rem; }
+    @media (min-width: 1000px) { .lab-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr); } }
+
+    .console { background: linear-gradient(180deg, #17171d, #101014); border: 1px solid rgba(150, 150, 170, 0.18); border-radius: 15px; padding: 1rem 1.1rem; }
+    .console h3 { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; color: rgba(220, 200, 160, 0.55); text-transform: uppercase; margin: 0 0 0.9rem; }
+    .fx-select { display: flex; gap: 6px; margin: 4px 0 12px; }
+    .fx-opt {
+      flex: 1; font-size: 0.66rem; font-weight: 800; padding: 7px 4px; text-align: center; border-radius: 8px;
+      border: 1px solid rgba(150,150,170,0.3); background: rgba(20,20,26,0.7); color: rgba(232,228,218,0.7); cursor: pointer;
+    }
+    .fx-opt.active { border-color: #c68bff; background: rgba(90,50,140,0.4); color: #dfc0ff; box-shadow: 0 0 10px rgba(198,139,255,0.3); }
+
+    .tone-btn {
+      border: none; border-radius: 999px; padding: 9px 16px;
+      font-size: 0.74rem; font-weight: 800; letter-spacing: 0.03em; cursor: pointer;
+      background: linear-gradient(180deg, #3fae5a, #237a3c); color: #fff;
+      box-shadow: 0 4px 14px rgba(45, 150, 80, 0.35);
+    }
+    .tone-btn:hover { filter: brightness(1.1); }
+    .tone-btn.on { background: linear-gradient(180deg, #e8563a, #b4361c); box-shadow: 0 4px 14px rgba(200, 70, 40, 0.4); }
+
+    /* Meters */
+    .meters { display: flex; gap: 12px; justify-content: space-around; align-items: flex-end; padding: 0.4rem 0 0.2rem; }
+    .meter-col { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; }
+    .meter-shell {
+      width: 26px; height: 150px; border-radius: 7px;
+      background: #060608; border: 1px solid rgba(150,150,170,0.22);
+      position: relative; overflow: hidden;
+      display: flex; flex-direction: column-reverse;
+    }
+    .meter-fill { width: 100%; transition: height 0.08s linear; background: linear-gradient(180deg, #e84030 0%, #e8a030 18%, #eec83a 30%, #4cc060 45%, #2f9e4a 100%); background-size: 100% 150px; background-position: bottom; }
+    .meter-fill.blue { background: linear-gradient(180deg, #6fb4ff 0%, #4c86e8 100%); background-size: 100% 150px; background-position: bottom; }
+    .meter-fill.purple { background: linear-gradient(180deg, #c68bff 0%, #8a4ce8 100%); background-size: 100% 150px; background-position: bottom; }
+    .meter-unity { position: absolute; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.55); top: 26%; }
+    .meter-name { font-size: 0.6rem; font-weight: 800; color: rgba(232,228,218,0.65); text-transform: uppercase; letter-spacing: 0.04em; }
+    .meter-db { font-size: 0.64rem; color: #f0b448; font-variant-numeric: tabular-nums; }
+    .clip-led { width: 11px; height: 11px; border-radius: 50%; background: #3a1512; border: 1px solid rgba(255,90,60,0.35); transition: background 0.1s, box-shadow 0.1s; }
+    .clip-led.lit { background: #ff4530; box-shadow: 0 0 12px rgba(255, 70, 45, 0.9); }
+    .clip-caption { font-size: 0.53rem; color: rgba(255,120,90,0.7); font-weight: 700; letter-spacing: 0.05em; }
+
+    .verdict {
+      margin-top: 0.8rem; border-radius: 11px; padding: 9px 12px;
+      font-size: 0.74rem; font-weight: 700; line-height: 1.45;
+      background: rgba(10,10,14,0.7); border: 1px solid rgba(150,150,170,0.18);
+      color: rgba(232,228,218,0.75);
+    }
+    .verdict.good { border-color: rgba(76, 192, 96, 0.5); color: #7ade90; }
+    .verdict.bad  { border-color: rgba(255, 90, 60, 0.5);  color: #ff9078; }
+
+    /* ── Cable quiz ── */
+    .cable-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+    .cable-card {
+      background: rgba(10, 10, 14, 0.7);
+      border: 1px solid rgba(150,150,170,0.2);
+      border-radius: 12px; padding: 10px 8px; text-align: center;
+      cursor: pointer; transition: border-color 0.2s, background 0.2s;
+    }
+    .cable-card:hover { border-color: rgba(240,180,72,0.5); }
+    .cable-card.correct { border-color: #4cc060; background: rgba(18,48,26,0.6); }
+    .cable-card.wrong { border-color: #ff5a3c; background: rgba(58,20,16,0.55); }
+    .cable-card svg { width: 100%; max-width: 90px; height: auto; }
+    .cable-name { font-size: 0.66rem; font-weight: 800; color: #f5ecd8; margin-top: 5px; }
+    .quiz-q {
+      background: rgba(50,38,16,0.4); border: 1px solid rgba(240,180,72,0.3);
+      border-radius: 11px; padding: 9px 12px; font-size: 0.78rem; line-height: 1.5;
+      color: #f0dcb0; margin-bottom: 0.7rem;
+    }
+    .quiz-score { font-size: 0.72rem; color: rgba(232,228,218,0.6); margin-top: 0.6rem; }
+
+    /* Guide info cards */
+    .info-row { display: grid; grid-template-columns: 1fr; gap: 0.7rem; }
+    .info-card { background: rgba(16,16,22,0.72); border: 1px solid rgba(245,158,11,0.13); border-radius: 13px; padding: 1rem; }
+    .info-card h4 { font-size: 0.8rem; font-weight: 700; color: #f0b448; margin: 0 0 0.4rem; }
+    .info-card p  { font-size: 0.77rem; color: rgba(230,224,210,0.68); margin: 0 0 0.4rem; line-height: 1.55; }
+    .info-card p:last-child { margin-bottom: 0; }
+    .info-card ol, .info-card ul { margin: 0 0 0.4rem; padding-left: 1.1rem; font-size: 0.77rem; color: rgba(230,224,210,0.68); line-height: 1.6; }
+
+    /* ── ll-panel theming ── */
+    .ll-viewport {
+      --ll-panel-bg:      rgba(12, 12, 16, 0.97);
+      --ll-panel-border:  rgba(245, 158, 11, 0.2);
+      --ll-tab-color:     rgba(220, 200, 160, 0.6);
+      --ll-tab-active-bg: rgba(245, 158, 11, 0.18);
+      --ll-tab-active:    #f0b448;
+      --ll-toggle-bg:     rgba(12, 12, 16, 0.97);
+    }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport ll-dark">
+
+  <nav class="sc-topbar ll-topbar">
+    <div class="sc-topbar-inner">
+      <a href="../steam-lessons.html">← Engineering</a>
+      <span class="sc-topbar-title">🎚 Analog Mixer Lab</span>
+      <a href="../index.html">ClassroomOS</a>
+    </div>
+  </nav>
+
+  <div class="ll-stage" id="main-content">
+
+    <div class="ll-sim">
+      <header class="sc-hero">
+        <h1>🎚 Analog Mixer Lab: Patch, Gain &amp; FX Bus</h1>
+        <p>Set up a 12-channel analog mixer the way a real audio tech does: pick the right cable for every microphone, instrument, and speaker, then work real rotary knobs and vertical faders to trace the signal from preamp to fader, and route AUX sends into a reverb/delay FX bus.</p>
+        <span class="note">Channel numbering, jack types, and control layout mirror a real 12-channel console (like the TASCAM Model 12) so the hand motions transfer. The chassis artwork, colors, and code here are an original simulation — not the manufacturer's software.</span>
+      </header>
+
+      <div class="sc-wrap">
+
+        <div class="sc-section-title">1 · Patch Bay — Wire the Stage</div>
+        <div class="patch-outer">
+          <div class="patch-grid" id="patch-grid"></div>
+          <div class="phantom-row">
+            <button class="phantom-btn" id="phantom-btn" type="button">48V OFF</button>
+            <span class="phantom-note">Channel 1's condenser mic needs <strong>+48V phantom power</strong> to work. Dynamic mics and instruments never need it — leaving it on for them is harmless but pointless.</span>
+          </div>
+          <div class="patch-tally" id="patch-tally">0 / 5 connections correct</div>
+        </div>
+
+        <div class="sc-section-title">2 · Signal Flow — Click Every Stage</div>
+        <div class="chain-outer">
+          <div class="chain-row" id="chain-row" role="tablist" aria-label="Signal chain stages"></div>
+          <div class="fx-branch">
+            <span class="br-arrow">↳</span>
+            <span class="br-chip">AUX sends tap off here → Monitor bus &amp; FX bus</span>
+          </div>
+          <div class="fact-card" id="stage-fact">
+            <strong>Pick a stage</strong>
+            Click any block above to see what it does to the signal on its way from the stage to the speakers.
+          </div>
+        </div>
+
+        <div class="sc-section-title">3 · Channel Strips — drag the knobs and faders like the real console</div>
+        <div class="chassis-outer">
+          <span class="chassis-screw tl" aria-hidden="true"></span>
+          <span class="chassis-screw tr" aria-hidden="true"></span>
+          <span class="chassis-screw bl" aria-hidden="true"></span>
+          <span class="chassis-screw br" aria-hidden="true"></span>
+          <div class="chassis-label">Input channels 1–12 · scroll to see the whole console</div>
+          <div class="strip-row" id="mixer-grid"></div>
+        </div>
+
+        <div class="sc-section-title">4 · Master Section &amp; FX Bus</div>
+        <div class="lab-grid">
+
+          <div class="console">
+            <h3>✨ FX Bus — Reverb / Delay</h3>
+            <div class="fx-select" id="fx-select" role="radiogroup" aria-label="FX bus effect type">
+              <button class="fx-opt active" type="button" data-fx="off">Off</button>
+              <button class="fx-opt" type="button" data-fx="reverb">Reverb</button>
+              <button class="fx-opt" type="button" data-fx="delay">Delay</button>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <button class="tone-btn" id="tone-btn" type="button">🔊 Preview Ch.1 Through the Desk</button>
+            </div>
+            <div class="fact-card" style="margin-top:0.9rem;">
+              <strong>Pre-fader vs. post-fader sends</strong>
+              AUX 1 (Monitor) is tapped <em>pre-fader</em> — right after the preamp — so a performer's stage monitor mix doesn't jump around when you ride their channel fader. AUX 2 (FX) is tapped <em>post-fader</em>, so the reverb tail rises and falls together with the dry vocal, the way it should.
+            </div>
+            <div class="fact-card">
+              <strong>Why a shared FX bus?</strong>
+              Instead of giving every channel its own reverb, the console sends a little of each channel to <em>one</em> shared reverb via AUX 2, then blends that single wet signal back in with the FX Return knob on the master strip. Start the return low — it's easy to add more, hard to un-hear too much.
+            </div>
+          </div>
+
+          <div class="console">
+            <h3>📊 Meters</h3>
+            <div class="meters">
+              <div class="meter-col">
+                <div class="clip-led" id="clip-ch1"></div>
+                <div class="clip-caption">CLIP</div>
+                <div class="meter-shell"><div class="meter-fill" id="m-ch1" style="height:0%"></div><div class="meter-unity"></div></div>
+                <div class="meter-name">Ch.1</div>
+                <div class="meter-db" id="db-ch1">-∞</div>
+              </div>
+              <div class="meter-col">
+                <div class="meter-shell"><div class="meter-fill blue" id="m-aux1" style="height:0%"></div><div class="meter-unity"></div></div>
+                <div class="meter-name">Monitor</div>
+                <div class="meter-db" id="db-aux1">-∞</div>
+              </div>
+              <div class="meter-col">
+                <div class="meter-shell"><div class="meter-fill purple" id="m-fx" style="height:0%"></div><div class="meter-unity"></div></div>
+                <div class="meter-name">FX Bus</div>
+                <div class="meter-db" id="db-fx">-∞</div>
+              </div>
+              <div class="meter-col">
+                <div class="clip-led" id="clip-out"></div>
+                <div class="clip-caption">CLIP</div>
+                <div class="meter-shell"><div class="meter-fill" id="m-out" style="height:0%"></div><div class="meter-unity"></div></div>
+                <div class="meter-name">Master</div>
+                <div class="meter-db" id="db-out">-∞</div>
+              </div>
+            </div>
+            <div class="verdict" id="verdict" aria-live="polite">Patch the mics correctly and bring up gain to see healthy meters.</div>
+          </div>
+
+        </div><!-- .lab-grid -->
+
+      </div><!-- .sc-wrap -->
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="true">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="sc-pane-explore">Cables</button>
+          <button class="ll-tab" aria-selected="false" data-pane="sc-pane-guide">Guide</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="sc-pane-explore">
+          <div class="sc-card">
+            <h3>🔌 Which Cable Goes Where?</h3>
+            <div class="quiz-q" id="quiz-q" aria-live="polite">Loading…</div>
+            <div class="cable-grid" id="cable-grid"></div>
+            <div class="quiz-score" id="quiz-score"></div>
+          </div>
+          <div class="sc-card">
+            <h3>Know Your Connectors</h3>
+            <div class="info-row">
+              <div class="info-card">
+                <h4>XLR — 3 pins, balanced, locking</h4>
+                <p>The standard microphone cable. Two copies of the signal (one flipped) cancel out noise picked up along the run, and the latch keeps it from pulling loose mid-show. Use it for every mic input.</p>
+              </div>
+              <div class="info-card">
+                <h4>TRS — Tip · Ring · Sleeve, balanced</h4>
+                <p>A ¼″ jack with <strong>two</strong> dark rings. Used for balanced line-level gear (keyboards, DI-free synths) and for balanced main outs feeding powered speakers.</p>
+              </div>
+              <div class="info-card">
+                <h4>TS — Tip · Sleeve, unbalanced</h4>
+                <p>A ¼″ jack with <strong>one</strong> dark ring. The standard instrument cable for a guitar or bass plugged straight into a Hi-Z input. Keep these runs short — they pick up hum.</p>
+              </div>
+              <div class="info-card">
+                <h4>RCA — stereo consumer pair</h4>
+                <p>Red/white pair, unbalanced. Common for feeding a phone, tablet, or media player into an aux/tape input — never for a mic or a main speaker feed.</p>
+              </div>
+              <div class="info-card">
+                <h4>Bare speaker wire — power, not signal</h4>
+                <p>Carries amplified current from a power amplifier to a passive speaker. It is <strong>not</strong> a line-level connector — plugging it straight into a mixer's main out sends almost no usable signal and can damage the output.</p>
+              </div>
+            </div>
+          </div>
+        </div><!-- #sc-pane-explore -->
+
+        <div class="ll-pane" id="sc-pane-guide">
+          <div class="sc-card" style="margin-bottom:1rem">
+            <h3>Setting Up the Mixer Yourself</h3>
+            <div class="info-row">
+              <div class="info-card">
+                <h4>🧰 Step-by-Step Setup Checklist</h4>
+                <ol>
+                  <li>With everything powered <strong>off</strong>, patch each source into the correct input type: XLR for mics, TS for instruments, TRS for balanced line gear, RCA for consumer players.</li>
+                  <li>Patch the main outs to your speakers or amp with balanced TRS/XLR — never bare speaker wire from a mixer's line output.</li>
+                  <li>Pull every channel fader and the master fader down to minimum, and every gain knob to zero.</li>
+                  <li>Power on the mixer first, then your amplifiers/powered speakers last. Power off in the reverse order.</li>
+                  <li>Turn on phantom power only for channels with condenser mics that require it.</li>
+                  <li>One channel at a time, bring up gain while the performer plays/sings at full volume, until the channel meter reads just under clipping.</li>
+                  <li>Bring the channel fader up to unity (0 dB) before slowly bringing up the master fader.</li>
+                  <li>Set AUX sends last: Monitor (AUX 1) to taste for the performer, FX (AUX 2) sparingly — reverb is easy to overdo.</li>
+                </ol>
+              </div>
+              <div class="info-card">
+                <h4>🖐 Real Hardware Habits</h4>
+                <p>On a physical console every control is a knob or a fader, not a checkbox — you learn its feel with your hand, not your eyes. That's why the knobs here rotate and the faders slide vertically: drag up/down on a knob to turn it, drag the fader cap along its track, and both also respond to arrow keys once focused.</p>
+                <p>Real techs scan a console left to right, channel 1 through 12, the same way every time — the numbered labels above each strip are there so that habit starts now.</p>
+              </div>
+              <div class="info-card">
+                <h4>🎚 Gain Staging &amp; Unity</h4>
+                <p>Set <strong>gain (trim)</strong> so the loudest moment of the source sits just below clipping at the preamp — that's your headroom. Leave the fader near <strong>unity (0 dB)</strong>, where the channel neither boosts nor cuts. Mixing happens with faders; gain is set once per performance and left alone.</p>
+                <p>Golden rule: if the preamp clips, no fader below it can undo the damage. Fix problems at the earliest stage they appear.</p>
+              </div>
+              <div class="info-card">
+                <h4>🔀 AUX Sends: Pre-Fader vs. Post-Fader</h4>
+                <p>A <strong>pre-fader</strong> send taps the signal before the channel fader — used for monitor mixes, so a performer's in-ear mix stays steady even while you're riding their fader out front.</p>
+                <p>A <strong>post-fader</strong> send taps the signal after the fader — used for effects like reverb and delay, so the wet effect rises and falls together with the dry signal instead of getting out of proportion when you pull a fader down.</p>
+              </div>
+              <div class="info-card">
+                <h4>⚡ Phantom Power Safety</h4>
+                <p>+48V phantom power is only needed for condenser microphones — most dynamic mics (like an SM58) and all instrument/line inputs don't need it. Turning it on for a channel with nothing connected is safe; plugging or unplugging an unbalanced cable while phantom power is live can cause a loud pop, so patch first, power second.</p>
+              </div>
+              <div class="info-card">
+                <h4>🔁 Feedback in 10 Seconds</h4>
+                <p>Feedback is a loop: the mic hears the speaker, the speaker replays the mic, and one frequency snowballs into a howl. Break the loop by moving the mic behind the speakers, pointing it away from them, or cutting the ringing frequency on the EQ. Turning everything down is the last resort, not the first.</p>
+              </div>
+            </div>
+          </div>
+        </div><!-- #sc-pane-guide -->
+
+      </div><!-- .ll-panel-body -->
+    </aside><!-- .ll-panel -->
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+
+</div><!-- .ll-viewport -->
+
+<script>
+(function () {
+  'use strict';
+
+  /* ══════════════════════════════════════════
+     REUSABLE HARDWARE CONTROLS — knob + vertical fader
+  ══════════════════════════════════════════ */
+  function createKnob(opts) {
+    const min = opts.min, max = opts.max, step = opts.step || 1;
+    let value = opts.value;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'knob-unit' + (opts.variant ? ' ' + opts.variant : '');
+    const dial = document.createElement('div');
+    dial.className = 'knob-dial' + (opts.big ? ' big' : '');
+    dial.setAttribute('role', 'slider');
+    dial.tabIndex = 0;
+    dial.setAttribute('aria-label', opts.label);
+    dial.setAttribute('aria-valuemin', String(min));
+    dial.setAttribute('aria-valuemax', String(max));
+    const indicator = document.createElement('div');
+    indicator.className = 'knob-indicator';
+    dial.appendChild(indicator);
+    const valOut = document.createElement('div');
+    valOut.className = 'knob-value';
+    const lbl = document.createElement('div');
+    lbl.className = 'knob-label';
+    lbl.textContent = opts.label;
+    wrap.appendChild(dial);
+    wrap.appendChild(valOut);
+    if (opts.showLabel !== false) wrap.appendChild(lbl);
+
+    const SWEEP = 270;
+    function render() {
+      const frac = (value - min) / (max - min);
+      indicator.style.transform = 'rotate(' + (-135 + frac * SWEEP) + 'deg)';
+      dial.setAttribute('aria-valuenow', String(value));
+      valOut.textContent = opts.format ? opts.format(value) : String(value);
+    }
+    function setValue(v, silent) {
+      const snapped = Math.round(v / step) * step;
+      value = Math.max(min, Math.min(max, snapped));
+      render();
+      if (!silent && opts.onChange) opts.onChange(value);
+    }
+
+    let dragging = false, startY = 0, startVal = 0;
+    dial.addEventListener('pointerdown', function (e) {
+      dragging = true; startY = e.clientY; startVal = value;
+      try { dial.setPointerCapture(e.pointerId); } catch (err) {}
+      dial.classList.add('active');
+      e.preventDefault();
+    });
+    dial.addEventListener('pointermove', function (e) {
+      if (!dragging) return;
+      const dy = startY - e.clientY;
+      const sensitivity = (max - min) / 130;
+      setValue(startVal + dy * sensitivity);
+    });
+    function endDrag() { dragging = false; dial.classList.remove('active'); }
+    dial.addEventListener('pointerup', endDrag);
+    dial.addEventListener('pointercancel', endDrag);
+    dial.addEventListener('keydown', function (e) {
+      const big = (max - min) / 20 || step;
+      if (e.key === 'ArrowUp' || e.key === 'ArrowRight') { setValue(value + step); e.preventDefault(); }
+      else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') { setValue(value - step); e.preventDefault(); }
+      else if (e.key === 'PageUp') { setValue(value + big); e.preventDefault(); }
+      else if (e.key === 'PageDown') { setValue(value - big); e.preventDefault(); }
+      else if (e.key === 'Home') { setValue(min); e.preventDefault(); }
+      else if (e.key === 'End') { setValue(max); e.preventDefault(); }
+    });
+
+    render();
+    return {
+      el: wrap,
+      get value() { return value; },
+      set: function (v) { setValue(v, true); },
+    };
+  }
+
+  function createFader(opts) {
+    const min = opts.min, max = opts.max, step = opts.step || 1;
+    const H = opts.height || 148;
+    let value = opts.value;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'fader-unit';
+    const track = document.createElement('div');
+    track.className = 'fader-track';
+    track.style.height = H + 'px';
+    if (opts.unityAt !== undefined) {
+      const mark = document.createElement('div');
+      mark.className = 'fader-unity-mark';
+      const frac = (opts.unityAt - min) / (max - min);
+      mark.style.bottom = (frac * (H - 18) + 9) + 'px';
+      track.appendChild(mark);
+    }
+    const cap = document.createElement('div');
+    cap.className = 'fader-cap';
+    cap.setAttribute('role', 'slider');
+    cap.tabIndex = 0;
+    cap.setAttribute('aria-label', opts.label);
+    cap.setAttribute('aria-valuemin', String(min));
+    cap.setAttribute('aria-valuemax', String(max));
+    track.appendChild(cap);
+    const valOut = document.createElement('div');
+    valOut.className = 'fader-value';
+    const lbl = document.createElement('div');
+    lbl.className = 'fader-label';
+    lbl.textContent = opts.label;
+    wrap.appendChild(track);
+    wrap.appendChild(valOut);
+    wrap.appendChild(lbl);
+
+    function render() {
+      const frac = (value - min) / (max - min);
+      cap.style.bottom = (frac * (H - 18)) + 'px';
+      cap.setAttribute('aria-valuenow', String(value));
+      valOut.textContent = opts.format ? opts.format(value) : String(value);
+    }
+    function setValue(v, silent) {
+      const snapped = Math.round(v / step) * step;
+      value = Math.max(min, Math.min(max, snapped));
+      render();
+      if (!silent && opts.onChange) opts.onChange(value);
+    }
+    function posToVal(clientY) {
+      const rect = track.getBoundingClientRect();
+      const relY = rect.bottom - clientY - 9;
+      const frac = Math.max(0, Math.min(1, relY / (H - 18)));
+      return min + frac * (max - min);
+    }
+
+    let dragging = false;
+    cap.addEventListener('pointerdown', function (e) {
+      dragging = true;
+      try { cap.setPointerCapture(e.pointerId); } catch (err) {}
+      cap.classList.add('active');
+      e.preventDefault(); e.stopPropagation();
+    });
+    track.addEventListener('pointerdown', function (e) {
+      if (e.target === track) setValue(posToVal(e.clientY));
+    });
+    cap.addEventListener('pointermove', function (e) { if (dragging) setValue(posToVal(e.clientY)); });
+    function endDrag() { dragging = false; cap.classList.remove('active'); }
+    cap.addEventListener('pointerup', endDrag);
+    cap.addEventListener('pointercancel', endDrag);
+    cap.addEventListener('keydown', function (e) {
+      const big = (max - min) / 10 || step;
+      if (e.key === 'ArrowUp') { setValue(value + step); e.preventDefault(); }
+      else if (e.key === 'ArrowDown') { setValue(value - step); e.preventDefault(); }
+      else if (e.key === 'PageUp') { setValue(value + big); e.preventDefault(); }
+      else if (e.key === 'PageDown') { setValue(value - big); e.preventDefault(); }
+      else if (e.key === 'Home') { setValue(min); e.preventDefault(); }
+      else if (e.key === 'End') { setValue(max); e.preventDefault(); }
+    });
+
+    render();
+    return {
+      el: wrap,
+      get value() { return value; },
+      set: function (v) { setValue(v, true); },
+    };
+  }
+
+  /* ══════════════════════════════════════════
+     CABLE SVGS (shared by patch bay + quiz)
+  ══════════════════════════════════════════ */
+  const CABLE_SVGS = {
+    xlr: '<svg viewBox="0 0 96 64" role="img" aria-label="XLR connector: round barrel with three pins"><rect x="6" y="22" width="44" height="20" rx="6" fill="#3a3a44"/><circle cx="66" cy="32" r="22" fill="#4a4a56" stroke="#8a8a9a" stroke-width="2"/><circle cx="60" cy="24" r="4.5" fill="#d8d8e2"/><circle cx="74" cy="32" r="4.5" fill="#d8d8e2"/><circle cx="60" cy="40" r="4.5" fill="#d8d8e2"/></svg>',
+    trs: '<svg viewBox="0 0 96 64" role="img" aria-label="TRS quarter-inch plug with two separator rings"><rect x="4" y="24" width="30" height="16" rx="5" fill="#3a3a44"/><rect x="34" y="26" width="34" height="12" rx="2" fill="#c8c8d4"/><rect x="46" y="26" width="5" height="12" fill="#14141a"/><rect x="58" y="26" width="5" height="12" fill="#14141a"/><path d="M68 26 h12 q10 6 0 12 h-12 z" fill="#c8c8d4"/></svg>',
+    ts:  '<svg viewBox="0 0 96 64" role="img" aria-label="TS quarter-inch plug with one separator ring"><rect x="4" y="24" width="30" height="16" rx="5" fill="#3a3a44"/><rect x="34" y="26" width="34" height="12" rx="2" fill="#c8c8d4"/><rect x="52" y="26" width="5" height="12" fill="#14141a"/><path d="M68 26 h12 q10 6 0 12 h-12 z" fill="#c8c8d4"/></svg>',
+    rca: '<svg viewBox="0 0 96 64" role="img" aria-label="RCA plug: yellow-red barrel with center pin"><rect x="6" y="24" width="24" height="16" rx="4" fill="#3a3a44"/><path d="M30 22 h24 q14 10 0 20 h-24 z" fill="#c23a3a"/><rect x="68" y="29" width="10" height="6" rx="2" fill="#e8c840"/></svg>',
+    'trs-speaker': '<svg viewBox="0 0 96 64" role="img" aria-label="Balanced TRS cable to a powered speaker"><rect x="4" y="24" width="30" height="16" rx="5" fill="#3a3a44"/><rect x="34" y="26" width="34" height="12" rx="2" fill="#c8c8d4"/><rect x="46" y="26" width="5" height="12" fill="#14141a"/><rect x="58" y="26" width="5" height="12" fill="#14141a"/><path d="M68 26 h12 q10 6 0 12 h-12 z" fill="#c8c8d4"/><text x="48" y="58" font-size="9" fill="#6fb4ff" text-anchor="middle">to POWERED spkr</text></svg>',
+    'bare-wire': '<svg viewBox="0 0 96 64" role="img" aria-label="Bare speaker wire, two conductors"><path d="M4 24 q40 -10 88 0" stroke="#c23a3a" stroke-width="4" fill="none"/><path d="M4 40 q40 10 88 0" stroke="#3a3a44" stroke-width="4" fill="none"/><text x="48" y="58" font-size="9" fill="#ff9078" text-anchor="middle">amp → passive spkr only</text></svg>',
+  };
+  const CABLE_NAMES = { xlr: 'XLR', trs: 'TRS ¼″', ts: 'TS ¼″', rca: 'RCA', 'trs-speaker': 'TRS ¼″', 'bare-wire': 'Speaker wire' };
+
+  /* ══════════════════════════════════════════
+     PATCH BAY
+  ══════════════════════════════════════════ */
+  const PATCH_ITEMS = [
+    { id: 'ch1', icon: '🎤', label: 'Channel 1 — Lead Vocal', desc: 'Condenser mic into the combo XLR/TRS jack. Needs +48V phantom power.', correct: 'xlr', choices: ['xlr', 'ts', 'trs'],
+      okMsg: 'Correct — XLR is balanced and locks in place, exactly what a mic needs.',
+      badMsg: { ts: 'A ¼″ instrument cable has no mic-level gain stage and isn\'t balanced — you\'d get a hum-prone, dead-sounding signal.', trs: 'TRS suits balanced line gear, not a mic-level XLR capsule — the connector shapes don\'t even match a standard mic.' } },
+    { id: 'ch2', icon: '🎸', label: 'Channel 2 — Electric Guitar', desc: 'Instrument cable into the same combo jack\'s ¼″ side, Hi-Z.', correct: 'ts', choices: ['ts', 'xlr', 'rca'],
+      okMsg: 'Correct — TS is the standard unbalanced instrument cable for a short run to a Hi-Z input.',
+      badMsg: { xlr: 'XLR expects mic-level balanced signal — a guitar\'s pickup output isn\'t wired for it.', rca: 'RCA is a consumer line-level pair, not an instrument-level connector — the impedance is wrong for a guitar pickup.' } },
+    { id: 'ch3', icon: '🎹', label: 'Channels 7/8 — Keyboard', desc: 'Balanced stereo line-level output from a keyboard, one fader for both.', correct: 'trs', choices: ['trs', 'ts', 'xlr'],
+      okMsg: 'Correct — TRS carries the keyboard\'s balanced line-level output cleanly.',
+      badMsg: { ts: 'TS works, but it\'s unbalanced — over any real cable run you\'d start picking up hum the balanced TRS run avoids.', xlr: 'XLR is built for mic-level signal; a line-level keyboard output would badly overdrive an XLR mic input.' } },
+    { id: 'ch4', icon: '📱', label: 'Channels 9/10 — Media Player', desc: '3.5mm headphone jack into the dedicated stereo RCA input pair.', correct: 'rca', choices: ['rca', 'xlr', 'ts'],
+      okMsg: 'Correct — a stereo RCA pair (from a 3.5mm adapter) is the standard consumer aux hookup.',
+      badMsg: { xlr: 'A phone\'s headphone output isn\'t mic-level or balanced — XLR is the wrong connector entirely.', ts: 'TS would only carry one channel and expects instrument-level impedance, not a consumer stereo line output.' } },
+    { id: 'out', icon: '🔊', label: 'Main Output → Speakers', desc: 'Powered (active) speakers, from the mixer\'s main out.', correct: 'trs-speaker', choices: ['trs-speaker', 'bare-wire', 'rca'],
+      okMsg: 'Correct — a balanced TRS (or XLR) run from a line-level main out drives a powered speaker\'s built-in amplifier.',
+      badMsg: { 'bare-wire': 'Bare speaker wire carries amplified current from a power amp — a mixer\'s line output can\'t push a passive speaker at all.', rca: 'RCA works in a pinch over a short unbalanced run, but it\'s a consumer connector, not the professional balanced main-out standard.' } },
+  ];
+
+  const patchGrid = document.getElementById('patch-grid');
+  const patchTally = document.getElementById('patch-tally');
+  const patchState = {};
+
+  function renderPatch() {
+    PATCH_ITEMS.forEach(function (item) {
+      const card = document.createElement('div');
+      card.className = 'patch-card';
+      card.id = 'patch-' + item.id;
+      const choicesHtml = item.choices.map(function (c) {
+        return '<button type="button" class="patch-btn" data-item="' + item.id + '" data-cable="' + c + '">' + CABLE_NAMES[c] + '</button>';
+      }).join('');
+      card.innerHTML =
+        '<div class="patch-head"><span class="patch-icon">' + item.icon + '</span><span class="patch-label">' + item.label + '</span></div>' +
+        '<p class="patch-desc">' + item.desc + '</p>' +
+        '<div class="patch-choices">' + choicesHtml + '</div>' +
+        '<div class="patch-fb" id="patch-fb-' + item.id + '"></div>';
+      patchGrid.appendChild(card);
+    });
+    patchGrid.querySelectorAll('.patch-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const itemId = btn.dataset.item;
+        const cable = btn.dataset.cable;
+        const item = PATCH_ITEMS.find(function (p) { return p.id === itemId; });
+        const card = document.getElementById('patch-' + itemId);
+        const fb = document.getElementById('patch-fb-' + itemId);
+        card.querySelectorAll('.patch-btn').forEach(function (b) { b.classList.remove('chosen-correct', 'chosen-wrong'); });
+        const correct = cable === item.correct;
+        btn.classList.add(correct ? 'chosen-correct' : 'chosen-wrong');
+        card.classList.toggle('ok', correct);
+        card.classList.toggle('bad', !correct);
+        fb.textContent = correct ? item.okMsg : (item.badMsg[cable] || 'Not quite the right connector for this source.');
+        fb.className = 'patch-fb ' + (correct ? 'ok-fb' : 'bad-fb');
+        patchState[itemId] = correct;
+        updateTally();
+        updateStripCableLabels();
+        updateLab();
+      });
+    });
+  }
+
+  function updateTally() {
+    const total = PATCH_ITEMS.length;
+    const done = Object.keys(patchState).filter(function (k) { return patchState[k]; }).length;
+    patchTally.textContent = done + ' / ' + total + ' connections correct';
+  }
+
+  renderPatch();
+
+  /* Phantom power */
+  let phantomOn = false;
+  const phantomBtn = document.getElementById('phantom-btn');
+  phantomBtn.addEventListener('click', function () {
+    phantomOn = !phantomOn;
+    phantomBtn.textContent = phantomOn ? '48V ON' : '48V OFF';
+    phantomBtn.classList.toggle('on', phantomOn);
+    updatePhantomLeds();
+    updateLab();
+  });
+
+  /* ══════════════════════════════════════════
+     SIGNAL CHAIN STAGES
+  ══════════════════════════════════════════ */
+  const STAGES = [
+    { icon: '🎤', name: 'Source', sub: 'mic / line / inst.',
+      fact: '<strong>Source — where the sound begins</strong>Every input has its own native level: a microphone puts out a tiny "mic level" signal, while a keyboard or media player already puts out a stronger "line level" signal. The mixer has to treat each one differently, which is exactly what gain/trim is for.' },
+    { icon: '🔌', name: 'Cable', sub: 'carry',
+      fact: '<strong>Cable — matching the connector to the signal</strong>XLR (balanced, locking) for mics, TS (unbalanced) for instruments, TRS (balanced) for line gear, RCA for consumer players. The wrong cable either won\'t fit, won\'t carry the right signal level, or will pick up hum on a long run.' },
+    { icon: '🎛', name: 'Preamp / Gain', sub: 'boost',
+      fact: '<strong>Preamp — the most important knob on the console</strong>The gain (trim) knob boosts the incoming signal up to a consistent internal level. Too little and you\'re boosting hiss later; too much and you clip — permanent, un-fixable distortion. Set gain so the loudest note sits just below the red.' },
+    { icon: '🎚', name: 'EQ', sub: 'shape',
+      fact: '<strong>EQ — sculpting the sound</strong>The equalizer boosts or cuts frequency ranges: cut low "mud" around 200–400 Hz, add presence around 3–5 kHz. Pro habit: cut first, boost second — removing a problem sounds more natural than piling on more of something else.' },
+    { icon: '↗️', name: 'AUX Sends', sub: 'branch off',
+      fact: '<strong>AUX sends — tapping a copy of the signal</strong>Each channel has its own AUX knobs that send a copy of the signal to a separate bus, without disturbing the main mix. AUX 1 here feeds performer monitors (pre-fader); AUX 2 feeds the shared FX bus (post-fader).' },
+    { icon: '⚖️', name: 'Pan', sub: 'place',
+      fact: '<strong>Pan — left/right placement</strong>Pan decides where in the stereo field this channel sits. Spreading instruments across the stereo picture keeps a busy mix from turning into mush in the middle.' },
+    { icon: '🎛️', name: 'Fader', sub: 'mix',
+      fact: '<strong>Channel fader — where mixing actually happens</strong>The fader sets how loud this one source sits in the mix. Unity (0 dB) means "no change." If every fader ends up jammed at the top, your gain staging is wrong, not your mix.' },
+    { icon: '🎼', name: 'Master Bus', sub: 'sum',
+      fact: '<strong>Master bus — everything summed together</strong>Every channel\'s fader output, plus the FX return, sums into the master bus. The master fader is your emergency brake: one smooth pull silences everything without touching a single channel.' },
+    { icon: '🔊', name: 'Main Out → Speakers', sub: 'deliver',
+      fact: '<strong>Main out — leaving the mixer</strong>A balanced TRS or XLR run carries the finished line-level mix out to a powered speaker\'s own amplifier (or to a separate power amp feeding passive speakers). This is line level, not the amplified current a passive speaker needs directly.' },
+  ];
+
+  const chainRow = document.getElementById('chain-row');
+  const stageFact = document.getElementById('stage-fact');
+  STAGES.forEach(function (st, i) {
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'chain-stage';
+    el.setAttribute('aria-label', st.name);
+    el.innerHTML = '<div class="st-icon">' + st.icon + '</div><div class="st-name">' + st.name + '</div><div class="st-sub">' + st.sub + '</div>';
+    el.addEventListener('click', function () {
+      chainRow.querySelectorAll('.chain-stage').forEach(function (x) { x.classList.remove('active'); });
+      el.classList.add('active');
+      stageFact.innerHTML = st.fact;
+    });
+    chainRow.appendChild(el);
+    if (i < STAGES.length - 1) {
+      const ar = document.createElement('span');
+      ar.className = 'chain-arrow';
+      ar.textContent = '▸';
+      ar.setAttribute('aria-hidden', 'true');
+      chainRow.appendChild(ar);
+    }
+  });
+
+  /* ══════════════════════════════════════════
+     CHANNEL STRIPS — real console numbering
+  ══════════════════════════════════════════ */
+  const CHANNELS = [
+    { id: 'ch1', numberLabel: '1', icon: '🎤', name: 'Vocal', srcDb: -38, defGain: 32, patchId: 'ch1', needsPhantom: true },
+    { id: 'ch2', numberLabel: '2', icon: '🎸', name: 'Guitar', srcDb: -20, defGain: 18, patchId: 'ch2', needsPhantom: false },
+    { id: 'ch3', numberLabel: '7/8', icon: '🎹', name: 'Keyboard', srcDb: -12, defGain: 10, patchId: 'ch3', needsPhantom: false },
+    { id: 'ch4', numberLabel: '9/10', icon: '📱', name: 'Media', srcDb: -10, defGain: 6, patchId: 'ch4', needsPhantom: false },
+  ];
+  /* Real 12-channel consoles keep 1–6 as individual mono strips, then pair up at 7/8 and 9/10.
+     Channels 3–6 aren't wired into this lab's logic, but are shown (dimmed) so the console
+     reads left-to-right the way the real hardware does. */
+  const STRIP_ORDER = [
+    { live: 'ch1' }, { live: 'ch2' },
+    { dim: '3' }, { dim: '4' }, { dim: '5' }, { dim: '6' },
+    { live: 'ch3' }, { live: 'ch4' },
+  ];
+
+  const mixerGrid = document.getElementById('mixer-grid');
+  const chEls = {};
+
+  function buildStrip(ch) {
+    const strip = document.createElement('div');
+    strip.className = 'strip';
+
+    const badge = document.createElement('div');
+    badge.className = 'strip-badge';
+    badge.innerHTML = '<span class="strip-num">' + ch.numberLabel + '<span class="sig-led" id="sig-' + ch.id + '"></span></span><span class="strip-icon">' + ch.icon + '</span>';
+    strip.appendChild(badge);
+
+    const name = document.createElement('div');
+    name.className = 'strip-name';
+    name.textContent = ch.name;
+    strip.appendChild(name);
+
+    const cableLbl = document.createElement('div');
+    cableLbl.className = 'strip-cable';
+    cableLbl.textContent = 'unpatched';
+    strip.appendChild(cableLbl);
+
+    const phantomMini = document.createElement('div');
+    phantomMini.className = 'phantom-mini';
+    const phantomLed = document.createElement('span');
+    phantomLed.className = 'phantom-led';
+    phantomMini.appendChild(phantomLed);
+    phantomMini.appendChild(document.createTextNode(ch.needsPhantom ? '48V' : ''));
+    strip.appendChild(phantomMini);
+
+    strip.appendChild(Object.assign(document.createElement('div'), { className: 'strip-divider' }));
+
+    const gain = createKnob({ min: 0, max: 55, value: ch.defGain, step: 1, label: 'Gain', big: true, variant: 'trim', format: function (v) { return '+' + v; }, onChange: updateLab });
+    strip.appendChild(gain.el);
+
+    const eqRow = document.createElement('div');
+    eqRow.className = 'knob-row';
+    const eqHi = createKnob({ min: -12, max: 12, value: 0, step: 1, label: 'Hi', variant: 'eq', showLabel: false, format: function (v) { return v; }, onChange: updateAudio });
+    const eqLo = createKnob({ min: -12, max: 12, value: 0, step: 1, label: 'Lo', variant: 'eq', showLabel: false, format: function (v) { return v; }, onChange: updateAudio });
+    eqRow.appendChild(eqHi.el); eqRow.appendChild(eqLo.el);
+    strip.appendChild(eqRow);
+    const eqCaption = document.createElement('div');
+    eqCaption.className = 'fader-label';
+    eqCaption.textContent = 'HI · LO EQ';
+    strip.appendChild(eqCaption);
+
+    const pan = createKnob({ min: -100, max: 100, value: 0, step: 10, label: 'Pan', variant: 'pan', format: function (v) { return v === 0 ? 'C' : (v > 0 ? 'R' + v : 'L' + (-v)); }, onChange: function () {} });
+    strip.appendChild(pan.el);
+
+    const auxRow = document.createElement('div');
+    auxRow.className = 'knob-row';
+    const aux1 = createKnob({ min: 0, max: 100, value: 0, step: 5, label: 'Aux1', variant: 'aux1', showLabel: false, format: function (v) { return v; }, onChange: updateLab });
+    const aux2 = createKnob({ min: 0, max: 100, value: 0, step: 5, label: 'Aux2', variant: 'aux2', showLabel: false, format: function (v) { return v; }, onChange: updateLab });
+    auxRow.appendChild(aux1.el); auxRow.appendChild(aux2.el);
+    strip.appendChild(auxRow);
+    const auxCaption = document.createElement('div');
+    auxCaption.className = 'fader-label';
+    auxCaption.textContent = 'MON · FX';
+    strip.appendChild(auxCaption);
+
+    strip.appendChild(Object.assign(document.createElement('div'), { className: 'strip-divider' }));
+
+    const muteBtn = document.createElement('button');
+    muteBtn.type = 'button';
+    muteBtn.className = 'mute-btn';
+    muteBtn.textContent = 'MUTE';
+    let muted = false;
+    muteBtn.addEventListener('click', function () {
+      muted = !muted;
+      muteBtn.classList.toggle('on', muted);
+      updateLab();
+    });
+    strip.appendChild(muteBtn);
+
+    const faderRow = document.createElement('div');
+    faderRow.className = 'fader-row';
+    const fader = createFader({ min: -60, max: 10, value: -60, step: 1, label: ch.numberLabel, unityAt: 0, format: function (v) { return v > 0 ? '+' + v : v; }, onChange: updateLab });
+    const meterWrap = document.createElement('div');
+    meterWrap.className = 'fader-meter';
+    const meterFill = document.createElement('div');
+    meterWrap.appendChild(meterFill);
+    faderRow.appendChild(fader.el);
+    faderRow.appendChild(meterWrap);
+    strip.appendChild(faderRow);
+
+    mixerGrid.appendChild(strip);
+
+    chEls[ch.id] = {
+      gain: gain, aux1: aux1, aux2: aux2, fader: fader, eqHi: eqHi, eqLo: eqLo,
+      get muted() { return muted; },
+      cableLbl: cableLbl, mm: meterFill, phantomLed: phantomLed,
+      sigLed: document.getElementById('sig-' + ch.id),
+    };
+  }
+
+  const CHANNELS_BY_ID = {};
+  CHANNELS.forEach(function (ch) { CHANNELS_BY_ID[ch.id] = ch; });
+
+  function buildDimStrip(numberLabel) {
+    const strip = document.createElement('div');
+    strip.className = 'strip dim';
+    strip.title = 'Not part of this lab — shown so the console reads left to right the way the real 1–12 layout does.';
+    strip.innerHTML =
+      '<div class="strip-badge"><span class="strip-num">' + numberLabel + '<span class="sig-led"></span></span><span class="strip-icon">🎛️</span></div>' +
+      '<div class="strip-name">Line in</div>' +
+      '<div class="strip-cable">—</div>' +
+      '<div class="phantom-mini"><span class="phantom-led"></span></div>' +
+      '<div class="strip-divider"></div>';
+    const gain = createKnob({ min: 0, max: 55, value: 0, step: 1, label: 'Gain', big: true, variant: 'trim', format: function (v) { return '+' + v; }, onChange: function () {} });
+    strip.appendChild(gain.el);
+    const eqRow = document.createElement('div'); eqRow.className = 'knob-row';
+    eqRow.appendChild(createKnob({ min: -12, max: 12, value: 0, step: 1, label: 'Hi', variant: 'eq', showLabel: false, format: function (v) { return v; }, onChange: function () {} }).el);
+    eqRow.appendChild(createKnob({ min: -12, max: 12, value: 0, step: 1, label: 'Lo', variant: 'eq', showLabel: false, format: function (v) { return v; }, onChange: function () {} }).el);
+    strip.appendChild(eqRow);
+    strip.appendChild(createKnob({ min: -100, max: 100, value: 0, step: 10, label: 'Pan', variant: 'pan', format: function (v) { return v === 0 ? 'C' : (v > 0 ? 'R' + v : 'L' + (-v)); }, onChange: function () {} }).el);
+    const auxRow = document.createElement('div'); auxRow.className = 'knob-row';
+    auxRow.appendChild(createKnob({ min: 0, max: 100, value: 0, step: 5, label: 'Aux1', variant: 'aux1', showLabel: false, format: function (v) { return v; }, onChange: function () {} }).el);
+    auxRow.appendChild(createKnob({ min: 0, max: 100, value: 0, step: 5, label: 'Aux2', variant: 'aux2', showLabel: false, format: function (v) { return v; }, onChange: function () {} }).el);
+    strip.appendChild(auxRow);
+    strip.appendChild(Object.assign(document.createElement('div'), { className: 'strip-divider' }));
+    const muteBtn = document.createElement('button'); muteBtn.type = 'button'; muteBtn.className = 'mute-btn'; muteBtn.textContent = 'MUTE';
+    strip.appendChild(muteBtn);
+    const faderRow = document.createElement('div'); faderRow.className = 'fader-row';
+    faderRow.appendChild(createFader({ min: -60, max: 10, value: -60, step: 1, label: numberLabel, unityAt: 0, format: function (v) { return v; }, onChange: function () {} }).el);
+    const meterWrap = document.createElement('div'); meterWrap.className = 'fader-meter'; meterWrap.appendChild(document.createElement('div'));
+    faderRow.appendChild(meterWrap);
+    strip.appendChild(faderRow);
+    mixerGrid.appendChild(strip);
+  }
+
+  STRIP_ORDER.forEach(function (slot) {
+    if (slot.live) buildStrip(CHANNELS_BY_ID[slot.live]);
+    else buildDimStrip(slot.dim);
+  });
+
+  /* master strip inside the same chassis, for visual continuity */
+  (function buildMasterStrip() {
+    const strip = document.createElement('div');
+    strip.className = 'strip master-strip';
+    strip.innerHTML =
+      '<div class="strip-badge"><span class="strip-num">MASTER</span><span class="strip-icon">🎼</span></div>' +
+      '<div class="strip-name">Main Mix</div>' +
+      '<div class="deck-display" aria-hidden="true"><span class="deck-display-dot"></span> AUX·FX·MAIN</div>' +
+      '<div class="deck-transport" aria-hidden="true"><span class="play">▶</span><span>■</span><span class="rec">●</span><span class="bt">📶</span></div>';
+    strip.appendChild(Object.assign(document.createElement('div'), { className: 'strip-divider' }));
+
+    const monRow = document.createElement('div'); monRow.className = 'knob-row';
+    const monKnob = createKnob({ min: -60, max: 10, value: -6, step: 1, label: 'Monitor', variant: 'aux1', format: function (v) { return v; }, onChange: updateLab });
+    const fxRetKnob = createKnob({ min: -60, max: 10, value: -6, step: 1, label: 'FX Return', variant: 'aux2', format: function (v) { return v; }, onChange: updateLab });
+    monRow.appendChild(monKnob.el); monRow.appendChild(fxRetKnob.el);
+    strip.appendChild(monRow);
+    strip.appendChild(Object.assign(document.createElement('div'), { className: 'strip-divider' }));
+
+    const faderRow = document.createElement('div'); faderRow.className = 'fader-row';
+    const masterFader = createFader({ min: -60, max: 10, value: 0, step: 1, label: 'MASTER', unityAt: 0, format: function (v) { return v; }, onChange: updateLab });
+    masterFader.el.querySelector('.fader-cap').classList.add('gold');
+    const meterWrap = document.createElement('div'); meterWrap.className = 'fader-meter';
+    const meterFill = document.createElement('div'); meterWrap.appendChild(meterFill);
+    faderRow.appendChild(masterFader.el); faderRow.appendChild(meterWrap);
+    strip.appendChild(faderRow);
+
+    mixerGrid.appendChild(strip);
+
+    window.__master = { fader: masterFader, mon: monKnob, fxRet: fxRetKnob, mm: meterFill };
+  })();
+
+  function updatePhantomLeds() {
+    CHANNELS.forEach(function (ch) {
+      const e = chEls[ch.id];
+      if (ch.needsPhantom) e.phantomLed.classList.toggle('lit', phantomOn);
+    });
+  }
+
+  function updateStripCableLabels() {
+    CHANNELS.forEach(function (ch) {
+      const e = chEls[ch.id];
+      const state = patchState[ch.patchId];
+      e.cableLbl.textContent = state ? 'patched' : (state === false ? 'mis-patched' : 'unpatched');
+      e.cableLbl.className = 'strip-cable' + (state ? ' patched' : (state === false ? ' mispatched' : ''));
+    });
+  }
+  updateStripCableLabels();
+
+  /* ══════════════════════════════════════════
+     LEVEL MODEL
+  ══════════════════════════════════════════ */
+  function fmtDb(db) {
+    if (db === -Infinity || db < -80) return '-∞';
+    return (db > 0 ? '+' : '') + db.toFixed(1) + ' dB';
+  }
+  function linFromDb(db) { return db === -Infinity ? 0 : Math.pow(10, db / 20); }
+  function dbFromLin(lin) { return lin <= 0.00001 ? -Infinity : 20 * Math.log10(lin); }
+  function meterPct(db) {
+    if (db === -Infinity) return 0;
+    const pct = ((db + 60) / 66) * 100;
+    return Math.max(0, Math.min(100, pct));
+  }
+
+  let clipHold = { ch1: -1e9, out: -1e9 };
+
+  function channelPreGain(ch) {
+    const isMic = ch.needsPhantom;
+    if (isMic && !phantomOn) return -90;
+    if (!patchState[ch.patchId]) return -90;
+    const g = chEls[ch.id].gain.value;
+    return Math.min(ch.srcDb + g, 0);
+  }
+
+  function updateLab() {
+    const now = performance.now();
+    let masterLin = 0, aux1Lin = 0, auxFxLin = 0;
+    let ch1PostFaderDb = -Infinity, ch1Clipped = false;
+
+    CHANNELS.forEach(function (ch) {
+      const e = chEls[ch.id];
+      const preDb = channelPreGain(ch);
+      const gainClipped = (ch.srcDb + e.gain.value > 0) && patchState[ch.patchId] && !(ch.needsPhantom && !phantomOn);
+      const faderDb = e.fader.value;
+      const postFaderDb = preDb <= -80 ? -Infinity : Math.min(preDb + faderDb, 0);
+      const muted = e.muted;
+
+      const pct = meterPct(muted ? -Infinity : postFaderDb);
+      e.mm.style.height = pct + '%';
+      if (e.sigLed) e.sigLed.classList.toggle('lit', !muted && preDb > -80);
+
+      if (!muted && preDb > -80) {
+        masterLin += linFromDb(postFaderDb);
+        aux1Lin += linFromDb(preDb) * (e.aux1.value / 100);
+        auxFxLin += linFromDb(postFaderDb) * (e.aux2.value / 100);
+      }
+
+      if (ch.id === 'ch1') {
+        ch1PostFaderDb = muted ? -Infinity : postFaderDb;
+        ch1Clipped = gainClipped;
+      }
+    });
+
+    if (ch1Clipped) clipHold.ch1 = now;
+    document.getElementById('m-ch1').style.height = meterPct(ch1PostFaderDb) + '%';
+    document.getElementById('db-ch1').textContent = fmtDb(ch1PostFaderDb);
+    document.getElementById('clip-ch1').classList.toggle('lit', now - clipHold.ch1 < 900);
+
+    const M = window.__master;
+    const aux1BusDb = dbFromLin(aux1Lin) + M.mon.value;
+    document.getElementById('m-aux1').style.height = meterPct(aux1BusDb) + '%';
+    document.getElementById('db-aux1').textContent = fmtDb(aux1BusDb);
+
+    const fxBusDb = dbFromLin(auxFxLin);
+    const fxRetDb = fxBusDb + M.fxRet.value;
+    const fxActive = window.__fxType && window.__fxType !== 'off';
+    document.getElementById('m-fx').style.height = meterPct(fxActive ? fxBusDb : -Infinity) + '%';
+    document.getElementById('db-fx').textContent = fxActive ? fmtDb(fxBusDb) : 'off';
+
+    const summedLin = masterLin + (fxActive ? linFromDb(fxRetDb) : 0);
+    const masterOutDb = dbFromLin(summedLin) + M.fader.value;
+    const masterClipped = masterOutDb > 0;
+    if (masterClipped) clipHold.out = now;
+    document.getElementById('m-out').style.height = meterPct(masterOutDb) + '%';
+    document.getElementById('db-out').textContent = fmtDb(masterOutDb);
+    document.getElementById('clip-out').classList.toggle('lit', now - clipHold.out < 900);
+    M.mm.style.height = meterPct(masterOutDb) + '%';
+
+    const verdict = document.getElementById('verdict');
+    const allPatched = PATCH_ITEMS.every(function (p) { return patchState[p.id]; });
+    let msg, cls;
+    if (!allPatched) {
+      msg = 'Finish patching every connection correctly in the Patch Bay above before you trust these meters.'; cls = '';
+    } else if (masterClipped) {
+      msg = '🔴 The MASTER is clipping. Pull the master fader (or a hot channel) down toward unity.'; cls = 'bad';
+    } else if (now - clipHold.ch1 < 900) {
+      msg = '🔴 Channel 1 preamp is clipping. No fader below it can fix this — pull that channel\'s GAIN down.'; cls = 'bad';
+    } else if (masterOutDb < -30 && masterOutDb > -Infinity) {
+      msg = 'The mix is very quiet — bring up channel gains and faders toward unity.'; cls = '';
+    } else if (masterOutDb <= -3 && masterOutDb > -18) {
+      msg = '🟢 Healthy mix level — strong signal with headroom before clipping. This is show-ready gain staging.'; cls = 'good';
+    } else {
+      msg = 'Getting there — aim for a master level with headroom (roughly -3 to -12 dB) and faders near unity.'; cls = '';
+    }
+    verdict.textContent = msg;
+    verdict.className = 'verdict' + (cls ? ' ' + cls : '');
+  }
+
+  /* FX type buttons */
+  window.__fxType = 'off';
+  const fxSelect = document.getElementById('fx-select');
+  fxSelect.querySelectorAll('.fx-opt').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      fxSelect.querySelectorAll('.fx-opt').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      window.__fxType = btn.dataset.fx;
+      rebuildFx();
+      updateLab();
+    });
+  });
+
+  /* ══════════════════════════════════════════
+     WEB AUDIO — preview channel 1 through the desk + EQ + FX bus
+  ══════════════════════════════════════════ */
+  let actx = null, nodes = null, toneOn = false;
+  const toneBtn = document.getElementById('tone-btn');
+
+  function makeClipCurve() {
+    const n = 1024, curve = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const x = (i / (n - 1)) * 2 - 1;
+      curve[i] = Math.max(-1, Math.min(1, x));
+    }
+    return curve;
+  }
+
+  function makeImpulse(actxRef, seconds) {
+    const rate = actxRef.sampleRate;
+    const len = Math.max(1, Math.floor(rate * seconds));
+    const impulse = actxRef.createBuffer(2, len, rate);
+    for (let ch = 0; ch < 2; ch++) {
+      const data = impulse.getChannelData(ch);
+      for (let i = 0; i < len; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.4);
+      }
+    }
+    return impulse;
+  }
+
+  function buildAudio() {
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = actx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.value = 220;
+    const vib = actx.createOscillator();
+    vib.frequency.value = 5.2;
+    const vibGain = actx.createGain();
+    vibGain.gain.value = 3.5;
+    vib.connect(vibGain).connect(osc.frequency);
+
+    const trimGain = actx.createGain();
+    const eqHiFilter = actx.createBiquadFilter();
+    eqHiFilter.type = 'highshelf'; eqHiFilter.frequency.value = 3200;
+    const eqLoFilter = actx.createBiquadFilter();
+    eqLoFilter.type = 'lowshelf'; eqLoFilter.frequency.value = 220;
+    const clip = actx.createWaveShaper();
+    clip.curve = makeClipCurve();
+    const faderGain = actx.createGain();
+    const dryToMaster = actx.createGain();
+    const auxSendGain = actx.createGain();
+    const convolver = actx.createConvolver();
+    const delayNode = actx.createDelay(2.0);
+    delayNode.delayTime.value = 0.34;
+    const delayFeedback = actx.createGain();
+    delayFeedback.gain.value = 0.32;
+    delayNode.connect(delayFeedback).connect(delayNode);
+    const fxWetGain = actx.createGain();
+    const masterGain = actx.createGain();
+    const safety = actx.createGain();
+    safety.gain.value = 0.22;
+
+    osc.connect(trimGain).connect(eqLoFilter).connect(eqHiFilter).connect(clip).connect(faderGain);
+    faderGain.connect(dryToMaster).connect(masterGain);
+    faderGain.connect(auxSendGain);
+    auxSendGain.connect(convolver);
+    auxSendGain.connect(delayNode);
+    convolver.connect(fxWetGain);
+    delayNode.connect(fxWetGain);
+    fxWetGain.connect(masterGain);
+    masterGain.connect(safety).connect(actx.destination);
+
+    convolver.buffer = makeImpulse(actx, 1.6);
+    osc.start(); vib.start();
+    nodes = { trimGain: trimGain, eqHiFilter: eqHiFilter, eqLoFilter: eqLoFilter, faderGain: faderGain, auxSendGain: auxSendGain, fxWetGain: fxWetGain, masterGain: masterGain, convolver: convolver, delayNode: delayNode, delayFeedback: delayFeedback };
+  }
+
+  function rebuildFx() {
+    if (!actx || !nodes) return;
+    if (window.__fxType === 'reverb') {
+      nodes.convolver.buffer = makeImpulse(actx, 1.6);
+    }
+  }
+
+  function dbToLin(db) { return db === -Infinity ? 0 : Math.pow(10, db / 20); }
+
+  function updateAudio() {
+    if (!toneOn || !nodes) return;
+    const ch1 = CHANNELS[0];
+    const e = chEls.ch1;
+    const M = window.__master;
+    const preDb = channelPreGain(ch1);
+    nodes.trimGain.gain.value = preDb <= -80 ? 0 : dbToLin(e.gain.value);
+    const faderDb = e.muted ? -Infinity : e.fader.value;
+    nodes.faderGain.gain.value = preDb <= -80 ? 0 : dbToLin(Math.min(faderDb, 6));
+    nodes.auxSendGain.gain.value = e.aux2.value / 100;
+    const fxOn = window.__fxType !== 'off';
+    nodes.fxWetGain.gain.value = fxOn ? dbToLin(Math.min(M.fxRet.value, 6)) : 0;
+    nodes.masterGain.gain.value = dbToLin(Math.min(M.fader.value, 6));
+    nodes.eqHiFilter.gain.value = e.eqHi.value;
+    nodes.eqLoFilter.gain.value = e.eqLo.value;
+  }
+
+  toneBtn.addEventListener('click', function () {
+    if (!actx) buildAudio();
+    if (actx.state === 'suspended') actx.resume();
+    toneOn = !toneOn;
+    if (!toneOn && nodes) { nodes.masterGain.gain.value = 0; }
+    toneBtn.textContent = toneOn ? '🔇 Stop Preview' : '🔊 Preview Ch.1 Through the Desk';
+    toneBtn.classList.toggle('on', toneOn);
+    if (toneOn) updateAudio();
+  });
+
+  /* ══════════════════════════════════════════
+     CABLE ID QUIZ
+  ══════════════════════════════════════════ */
+  const QUIZ = [
+    { q: 'A condenser vocal mic needs a locking, balanced cable to the console. Which one?', a: 'xlr',
+      why: 'XLR — balanced, locking, and it carries phantom power for the condenser capsule.' },
+    { q: 'A bass guitar plugs straight into a Hi-Z input 6 feet away. Which cable?', a: 'ts',
+      why: 'TS — the standard unbalanced instrument cable, fine over a short run.' },
+    { q: 'A keyboard\'s balanced line output feeds a channel. Which ¼″ cable?', a: 'trs',
+      why: 'TRS — two rings, balanced, matches the keyboard\'s line-level output.' },
+    { q: 'A phone\'s headphone jack (via adapter) feeds the aux channel. Which cable?', a: 'rca',
+      why: 'RCA — the standard consumer stereo pair for a media player input.' },
+    { q: 'The main out needs to reach a powered speaker across the stage. Which connector?', a: 'trs-speaker',
+      why: 'Balanced TRS (or XLR) — a line-level signal into the speaker\'s own built-in amp.' },
+    { q: 'A power amplifier needs to reach a passive (unpowered) speaker cabinet. Which cable?', a: 'bare-wire',
+      why: 'Bare speaker wire — this carries amplified current, not line-level signal, and only belongs downstream of a power amp.' },
+  ];
+
+  let quizIdx = 0, quizScore = 0, quizLock = false;
+  const cableGrid = document.getElementById('cable-grid');
+  const quizQ = document.getElementById('quiz-q');
+  const quizScoreEl = document.getElementById('quiz-score');
+  const QUIZ_KEYS = ['xlr', 'trs', 'ts', 'rca', 'trs-speaker', 'bare-wire'];
+
+  QUIZ_KEYS.forEach(function (key) {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'cable-card';
+    card.dataset.key = key;
+    card.innerHTML = CABLE_SVGS[key] + '<div class="cable-name">' + CABLE_NAMES[key] + '</div>';
+    card.addEventListener('click', function () { answer(key, card); });
+    cableGrid.appendChild(card);
+  });
+
+  function askQuestion() {
+    quizLock = false;
+    cableGrid.querySelectorAll('.cable-card').forEach(function (c) { c.className = 'cable-card'; });
+    if (quizIdx >= QUIZ.length) {
+      quizQ.innerHTML = '🏁 <strong>Round complete — ' + quizScore + '/' + QUIZ.length + '.</strong> ' +
+        (quizScore === QUIZ.length ? 'Perfect. You\'re ready to patch a stage.' : 'Run it again and go for a clean sweep.');
+      quizScoreEl.innerHTML = '<button type="button" class="tone-btn" id="quiz-restart" style="padding:6px 14px;font-size:0.7rem;">↺ Play Again</button>';
+      document.getElementById('quiz-restart').addEventListener('click', function () {
+        quizIdx = 0; quizScore = 0; askQuestion();
+      });
+      return;
+    }
+    quizQ.textContent = 'Q' + (quizIdx + 1) + ' of ' + QUIZ.length + ': ' + QUIZ[quizIdx].q;
+    quizScoreEl.textContent = 'Score: ' + quizScore + '/' + quizIdx;
+  }
+
+  function answer(key, card) {
+    if (quizLock || quizIdx >= QUIZ.length) return;
+    quizLock = true;
+    const item = QUIZ[quizIdx];
+    const correct = key === item.a;
+    if (correct) quizScore++;
+    card.classList.add(correct ? 'correct' : 'wrong');
+    if (!correct) {
+      const right = cableGrid.querySelector('[data-key="' + item.a + '"]');
+      if (right) right.classList.add('correct');
+    }
+    quizQ.innerHTML = (correct ? '✅ ' : '❌ ') + item.why;
+    quizIdx++;
+    setTimeout(askQuestion, 2200);
+  }
+
+  askQuestion();
+  updateLab();
+
+  /* animation ticker */
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  (function tick() {
+    updateLab();
+    updateAudio();
+    if (!reduceMotion) requestAnimationFrame(tick);
+  })();
+  if (reduceMotion) setInterval(function () { updateLab(); updateAudio(); }, 250);
+})();
+</script>
+<script src="../assets/js/classroom-animations.js"></script>
+<script src="../assets/js/lesson-layout.js"></script>
+<script src="../assets/js/lesson-print-button.js"></script>
+
+</body>
+</html>
