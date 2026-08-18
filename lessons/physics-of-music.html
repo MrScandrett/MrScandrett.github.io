@@ -54,6 +54,9 @@
     .music-lab { border-radius:20px; overflow:hidden; margin:0.9rem 0; border:1px solid rgba(148,163,184,0.2); background:radial-gradient(circle at 20% 0%,rgba(20,184,166,0.22),transparent 45%),linear-gradient(180deg,#0f172a,#020617); color:#e2e8f0; box-shadow:0 18px 44px rgba(2,6,23,0.26); }
     .music-stage { padding:1rem; }
     #music-canvas, #interference-canvas { width:100%; height:260px; display:block; border-radius:14px; background:rgba(0,0,0,0.24); border:1px solid rgba(255,255,255,0.08); }
+    #music-canvas { cursor:grab; touch-action:none; }
+    #music-canvas:active { cursor:grabbing; }
+    #music-harmonics-canvas { width:100%; height:64px; display:block; margin-top:0.6rem; border-radius:12px; background:rgba(0,0,0,0.24); border:1px solid rgba(255,255,255,0.08); }
     .music-controls { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0.7rem; padding:0 1rem 1rem; }
     .music-control { display:flex; flex-direction:column; gap:0.35rem; }
     .music-control label { font-size:0.68rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; color: var(--text-muted, #64748b); }
@@ -145,6 +148,7 @@
       .music-grid, .music-controls, .music-readouts, .music-scope-grid, .music-mode-grid, .music-equation-art, .music-instrument-grid, .music-experiment-grid, .music-bio-grid, .music-glossary, .music-summary-grid { grid-template-columns:1fr; }
       .music-era { grid-template-columns:1fr; }
       #music-canvas, #interference-canvas { height:220px; }
+      #music-harmonics-canvas { height:52px; }
     }
   </style>
 </head>
@@ -262,14 +266,26 @@
 
         <section class="music-card" style="--card-accent:#6366f1;">
           <h2>Harmonic String Lab</h2>
-          <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Change the string length, tension, and harmonic number. The lab shows how a musical note is a physical standing wave.</p>
+          <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Change the string length and tension, then either isolate a pure harmonic or click-and-drag the string itself to pluck it. This string is a live finite-difference simulation of the wave equation, not a canned animation, and a pluck is voiced with the Karplus-Strong algorithm, the same physical-modeling technique real plucked-string synthesizers use.</p>
           <div class="music-formula" role="img" aria-label="String frequency equals harmonic number divided by two times length times square root of tension divided by linear density">
             <strong>f_n = n / (2L) x sqrt(T / mu)</strong>
             <span>L = vibrating length, T = tension, mu = string mass per metre</span>
           </div>
           <div class="music-lab">
+            <div class="music-lab-title">
+              <div>
+                <h3>Plucked String Simulator</h3>
+                <p>Drag the string to pull it out of place, then release to pluck. Where you pluck changes which harmonics ring loudest, watch the bar chart react.</p>
+              </div>
+              <div class="music-panel-actions">
+                <button class="music-dark-btn" id="music-pluck-center">Pluck Center</button>
+                <button class="music-dark-btn" id="music-play-harmonic">Play Isolated Harmonic</button>
+              </div>
+            </div>
             <div class="music-stage">
-              <canvas id="music-canvas" aria-label="Standing wave harmonics on a vibrating string"></canvas>
+              <canvas id="music-canvas" aria-label="Vibrating string simulated by solving the wave equation, draggable to pluck"></canvas>
+              <div class="music-pane-label" style="margin-top:0.6rem;"><span>Live Harmonic Content</span><span>Fourier decomposition of the string's shape</span></div>
+              <canvas id="music-harmonics-canvas" aria-label="Live bar chart of harmonic amplitudes present in the vibrating string"></canvas>
             </div>
             <div class="music-controls">
               <div class="music-control">
@@ -281,7 +297,7 @@
                 <input id="music-tension" type="range" min="40" max="160" value="100" />
               </div>
               <div class="music-control">
-                <label for="music-harmonic">Harmonic</label>
+                <label for="music-harmonic">Isolate harmonic</label>
                 <select id="music-harmonic">
                   <option value="1">1 - fundamental</option>
                   <option value="2">2 - octave</option>
@@ -296,9 +312,9 @@
               <div class="music-stat"><span>Fundamental</span><strong id="music-r-f0">220 Hz</strong></div>
               <div class="music-stat"><span>Selected</span><strong id="music-r-fn">220 Hz</strong></div>
               <div class="music-stat"><span>Wavelength</span><strong id="music-r-wave">140 cm</strong></div>
-              <div class="music-stat"><span>Pattern</span><strong id="music-r-pattern">1 loop</strong></div>
+              <div class="music-stat"><span>Mode</span><strong id="music-r-pattern">1 loop</strong></div>
             </div>
-            <p class="music-sim-note" id="music-string-note">Model assumes a 0.005 kg/m string. Frequency rises with sqrt(tension) and falls in direct proportion to string length.</p>
+            <p class="music-sim-note" id="music-string-note">The string is 96 mass points integrated against the wave equation every frame. Plucks decay naturally in time and are voiced through a real Karplus-Strong delay-line synthesizer; isolated harmonics ring forever because they are exact eigenmodes of the simulated string.</p>
           </div>
           <div class="music-prediction">
             <h3>Predict, Test, Correct</h3>
@@ -358,7 +374,7 @@
               <div class="music-control"><label for="drive-slider">Drive frequency</label><input id="drive-slider" type="range" min="100" max="700" value="260" /></div>
               <div class="music-control"><label>Resonance response</label><strong id="resonance-readout" style="color:#f8fafc;">0%</strong></div>
             </div>
-            <p class="music-sim-note">Orange curve uses the driven oscillator response A = 1 / sqrt((1 - r^2)^2 + (2 zeta r)^2), with r = drive frequency / natural frequency.</p>
+            <p class="music-sim-note">Orange curve is the closed-form driven-oscillator response A = 1 / sqrt((1 - r^2)^2 + (2 zeta r)^2), with r = drive frequency / natural frequency. The white ring is a live numerical integration of an actual damped, driven oscillator (x'' + 2 zeta omega0 x' + omega0^2 x = omega0^2 cos(omega_d t)), so it visibly rings and settles toward the theory instead of snapping straight to it.</p>
           </div>
           <div class="music-grid">
             <div class="music-mini"><strong>Sympathetic vibration</strong><small>One tuned object can make another vibrate without touching it, like an open guitar string responding to a matching note.</small></div>
@@ -823,6 +839,8 @@
 
   const canvas = document.getElementById('music-canvas');
   const ctx = canvas.getContext('2d');
+  const harmCanvas = document.getElementById('music-harmonics-canvas');
+  const harmCtx = harmCanvas.getContext('2d');
   const length = document.getElementById('music-length');
   const tension = document.getElementById('music-tension');
   const harmonic = document.getElementById('music-harmonic');
@@ -832,29 +850,214 @@
   const rPattern = document.getElementById('music-r-pattern');
   let t = 0;
 
-  function size() {
-    const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = Math.max(1, Math.round(rect.width * dpr));
-    canvas.height = Math.max(1, Math.round(rect.height * dpr));
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // --- Real wave-equation string simulation --------------------------------
+  // 96 mass points, fixed at both ends, integrated with the exact discrete
+  // d'Alembert solution (Courant number r = c*dt/dx pinned to 1):
+  //   y_new[i] = y[i-1] + y[i+1] - y_prev[i]
+  // This scheme has zero numerical dispersion, so an isolated harmonic mode
+  // stays a pure eigenmode forever instead of drifting or bleeding energy
+  // into neighbouring harmonics.
+  const N = 96;
+  const stringMu = 0.005;
+  const stringY = new Float32Array(N);
+  const stringYPrev = new Float32Array(N);
+  const stringScratch = new Float32Array(N);
+  let stringMode = 'harmonic'; // 'harmonic' isolates a pure mode, 'plucked' decays
+  let dragging = false;
+  let dragD = 0;
+
+  function currentWaveSpeed() {
+    return Math.sqrt(Number(tension.value) / stringMu);
   }
 
-  function draw() {
+  function currentLength() {
+    return Number(length.value) / 100;
+  }
+
+  function seedHarmonic(n) {
+    stringMode = 'harmonic';
+    const amp = 42 / Math.sqrt(n);
+    for (let i = 0; i < N; i++) stringY[i] = Math.sin(n * Math.PI * i / (N - 1)) * amp;
+    stringYPrev.set(stringY);
+  }
+
+  function seedPluck(p, d) {
+    stringMode = 'plucked';
+    const peakIndex = Math.min(N - 2, Math.max(1, Math.round(p * (N - 1))));
+    for (let i = 0; i < N; i++) {
+      stringY[i] = i <= peakIndex ? d * (i / peakIndex) : d * ((N - 1 - i) / (N - 1 - peakIndex));
+    }
+    stringY[0] = 0;
+    stringY[N - 1] = 0;
+    stringYPrev.set(stringY);
+  }
+
+  function stepString(realDt) {
+    const speed = currentWaveSpeed();
+    const dx = currentLength() / (N - 1);
+    const dt = dx / speed; // Courant number 1: exact, dispersion-free, unconditionally stable
+    const steps = Math.max(1, Math.min(500, Math.round(realDt / dt)));
+    for (let s = 0; s < steps; s++) {
+      for (let i = 1; i < N - 1; i++) stringScratch[i] = stringY[i - 1] + stringY[i + 1] - stringYPrev[i];
+      stringScratch[0] = 0;
+      stringScratch[N - 1] = 0;
+      stringYPrev.set(stringY);
+      stringY.set(stringScratch);
+    }
+    if (stringMode === 'plucked') {
+      // Decay is scaled to real elapsed seconds, not physics substeps, so a
+      // taut (many-substep) string doesn't die out faster than a slack one.
+      // Both buffers are scaled together so the implied velocity (the
+      // difference between them) decays smoothly instead of jumping.
+      const retainPerSecond = 0.22;
+      const factor = Math.pow(retainPerSecond, realDt);
+      for (let i = 1; i < N - 1; i++) {
+        stringY[i] *= factor;
+        stringYPrev[i] *= factor;
+      }
+    }
+  }
+
+  function harmonicContent() {
+    const amps = [];
+    for (let n = 1; n <= 8; n++) {
+      let sum = 0;
+      for (let i = 0; i < N; i++) sum += stringY[i] * Math.sin(n * Math.PI * i / (N - 1));
+      amps.push(Math.abs(sum) * (2 / N));
+    }
+    return amps;
+  }
+
+  // --- Karplus-Strong plucked-string synthesis ------------------------------
+  // Classic 1983 physical-modeling algorithm: a noise burst circulates through
+  // a delay line the length of one period, averaged and decayed on every pass,
+  // which converges to the fundamental while shedding high harmonics fastest.
+  function playPluckedString(f0, amplitude) {
+    ensureAudio();
+    const sr = audioCtx.sampleRate;
+    const clampedF0 = Math.max(40, Math.min(1200, f0));
+    const bufferLen = Math.max(4, Math.round(sr / clampedF0));
+    const durationSeconds = Math.min(3.2, 1.1 + 260 / clampedF0);
+    const totalSamples = Math.floor(sr * durationSeconds);
+    const ring = new Float32Array(bufferLen);
+    for (let i = 0; i < bufferLen; i++) ring[i] = Math.random() * 2 - 1;
+    const decay = 0.9935;
+    const audioBuffer = audioCtx.createBuffer(1, totalSamples, sr);
+    const channel = audioBuffer.getChannelData(0);
+    const fadeSamples = Math.min(totalSamples, Math.floor(sr * 0.06));
+    const gain = Math.max(0.18, Math.min(1, amplitude)) * 0.55;
+    let readPos = 0;
+    for (let n = 0; n < totalSamples; n++) {
+      const current = ring[readPos];
+      const next = ring[(readPos + 1) % bufferLen];
+      ring[readPos] = 0.5 * (current + next) * decay;
+      let sample = current * gain;
+      if (n > totalSamples - fadeSamples) sample *= (totalSamples - n) / fadeSamples;
+      channel[n] = sample;
+      readPos = (readPos + 1) % bufferLen;
+    }
+    const source = audioCtx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(analyser);
+    source.start();
+    scopeLabel.textContent = 'plucked string (Karplus-Strong)';
+  }
+
+  function playIsolatedHarmonic() {
+    ensureAudio();
+    const now = audioCtx.currentTime;
+    const n = Number(harmonic.value);
+    const fn = (currentWaveSpeed() / (2 * currentLength())) * n;
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = fn;
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.14, now + 0.04);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
+    osc.connect(g);
+    g.connect(analyser);
+    osc.start(now);
+    osc.stop(now + 1.85);
+    scopeLabel.textContent = `isolated harmonic ${n}`;
+  }
+
+  // --- Pointer-driven plucking ------------------------------------------------
+  function pointerToPluck(evt) {
+    const rect = canvas.getBoundingClientRect();
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
-    const L = Number(length.value) / 100;
-    const T = Number(tension.value);
-    const n = Number(harmonic.value);
-    const mu = 0.005;
-    const waveSpeed = Math.sqrt(T / mu);
-    const f0 = waveSpeed / (2 * L);
-    const fn = f0 * n;
-    const wavelength = (2 * L / n) * 100;
     const left = 38;
     const right = w - 38;
     const mid = h * 0.52;
-    const amp = Math.min(46, h * 0.22) / Math.sqrt(n);
+    const p = Math.min(0.92, Math.max(0.08, ((evt.clientX - rect.left) - left) / Math.max(1, right - left)));
+    dragD = Math.max(-64, Math.min(64, (evt.clientY - rect.top) - mid));
+    seedPluck(p, dragD);
+  }
+
+  canvas.addEventListener('pointerdown', (evt) => {
+    dragging = true;
+    canvas.setPointerCapture(evt.pointerId);
+    pointerToPluck(evt);
+  });
+  canvas.addEventListener('pointermove', (evt) => { if (dragging) pointerToPluck(evt); });
+  canvas.addEventListener('pointerup', () => {
+    if (!dragging) return;
+    dragging = false;
+    playPluckedString(currentWaveSpeed() / (2 * currentLength()), Math.abs(dragD) / 64);
+  });
+  canvas.addEventListener('pointercancel', () => { dragging = false; });
+
+  document.getElementById('music-pluck-center').addEventListener('click', () => {
+    seedPluck(0.5, 46);
+    playPluckedString(currentWaveSpeed() / (2 * currentLength()), 0.7);
+  });
+  document.getElementById('music-play-harmonic').addEventListener('click', () => {
+    seedHarmonic(Number(harmonic.value));
+    playIsolatedHarmonic();
+  });
+  harmonic.addEventListener('change', () => { if (!dragging) seedHarmonic(Number(harmonic.value)); });
+
+  seedHarmonic(Number(harmonic.value));
+
+  function drawHarmonicBars() {
+    const w = harmCanvas.clientWidth;
+    const h = harmCanvas.clientHeight;
+    harmCtx.clearRect(0, 0, w, h);
+    harmCtx.fillStyle = '#020617';
+    harmCtx.fillRect(0, 0, w, h);
+    const amps = harmonicContent();
+    const maxAmp = Math.max(1, ...amps);
+    const gap = 6;
+    const barW = (w - gap * (amps.length + 1)) / amps.length;
+    amps.forEach((amp, idx) => {
+      const norm = amp / maxAmp;
+      const barH = norm * (h - 22);
+      const x = gap + idx * (barW + gap);
+      harmCtx.fillStyle = idx === 0 ? '#f59e0b' : `hsl(${174 + norm * 40}, 78%, ${42 + norm * 26}%)`;
+      harmCtx.fillRect(x, h - barH - 14, barW, barH);
+      harmCtx.fillStyle = '#94a3b8';
+      harmCtx.font = '700 9px Inter, sans-serif';
+      harmCtx.fillText(`${idx + 1}f`, x + barW / 2 - 6, h - 3);
+    });
+  }
+
+  function draw(realDt) {
+    sizeCanvas(canvas, ctx);
+    sizeCanvas(harmCanvas, harmCtx);
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    const L = currentLength();
+    const speed = currentWaveSpeed();
+    const n = Number(harmonic.value);
+    const f0 = speed / (2 * L);
+    const fn = stringMode === 'harmonic' ? f0 * n : f0;
+    const wavelength = (stringMode === 'harmonic' ? (2 * L / n) : 2 * L) * 100;
+    const left = 38;
+    const right = w - 38;
+    const mid = h * 0.52;
+
+    if (!dragging) stepString(realDt);
 
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = '#020617';
@@ -868,25 +1071,10 @@
       ctx.stroke();
     }
 
-    ctx.strokeStyle = 'rgba(20,184,166,0.28)';
-    ctx.lineWidth = 2;
-    for (let i = 0; i <= n; i++) {
-      const x = left + (right - left) * (i / n);
-      ctx.beginPath();
-      ctx.moveTo(x, mid - amp - 22);
-      ctx.lineTo(x, mid + amp + 22);
-      ctx.stroke();
-      ctx.fillStyle = i === 0 || i === n ? '#f8fafc' : '#f59e0b';
-      ctx.beginPath();
-      ctx.arc(x, mid, i === 0 || i === n ? 5 : 4, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
     ctx.beginPath();
-    for (let i = 0; i <= 220; i++) {
-      const p = i / 220;
-      const x = left + (right - left) * p;
-      const y = mid + Math.sin(p * Math.PI * n) * Math.cos(t * 0.045 * n) * amp;
+    for (let i = 0; i < N; i++) {
+      const x = left + (right - left) * (i / (N - 1));
+      const y = mid + stringY[i];
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     }
@@ -897,26 +1085,43 @@
     ctx.stroke();
     ctx.shadowBlur = 0;
 
+    ctx.fillStyle = dragging ? '#f59e0b' : '#f8fafc';
+    ctx.beginPath();
+    ctx.arc(left, mid, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(right, mid, 5, 0, Math.PI * 2);
+    ctx.fill();
+
     ctx.fillStyle = 'rgba(226,232,240,0.72)';
     ctx.font = '700 12px Inter, sans-serif';
     ctx.fillText('fixed end', left - 24, mid + 30);
     ctx.fillText('fixed end', right - 28, mid + 30);
-    ctx.fillText(`T = ${T.toFixed(0)} N`, left, 26);
-    ctx.fillText(`mu = ${mu.toFixed(3)} kg/m`, left + 90, 26);
-    ctx.fillText(`v = ${waveSpeed.toFixed(0)} m/s`, left + 225, 26);
+    ctx.fillText(`T = ${Number(tension.value).toFixed(0)} N`, left, 26);
+    ctx.fillText(`mu = ${stringMu.toFixed(3)} kg/m`, left + 90, 26);
+    ctx.fillText(`v = ${speed.toFixed(0)} m/s`, left + 225, 26);
+    if (dragging) {
+      ctx.fillStyle = '#f59e0b';
+      ctx.fillText('release to pluck', left, mid - 58);
+    }
 
     rF0.textContent = `${Math.round(f0)} Hz`;
     rFn.textContent = `${Math.round(fn)} Hz`;
     rWave.textContent = `${Math.round(wavelength)} cm`;
-    rPattern.textContent = `${n} ${n === 1 ? 'loop' : 'loops'}`;
+    rPattern.textContent = stringMode === 'harmonic' ? `${n} ${n === 1 ? 'loop' : 'loops'}` : 'plucked, mixed modes';
 
-    t += 1;
-    requestAnimationFrame(draw);
+    drawHarmonicBars();
   }
 
-  window.addEventListener('resize', size);
-  size();
-  draw();
+  let lastStringFrame = performance.now();
+  function animateString(now) {
+    const dt = Math.min(0.05, Math.max(0, (now - lastStringFrame) / 1000));
+    lastStringFrame = now;
+    draw(dt);
+    t += 1;
+    requestAnimationFrame(animateString);
+  }
+  requestAnimationFrame(animateString);
 
   const interferenceCanvas = document.getElementById('interference-canvas');
   const interferenceCtx = interferenceCanvas.getContext('2d');
@@ -933,7 +1138,35 @@
     return Math.min(1, (1 / denominator) / peak);
   }
 
+  // Live driven oscillator, actually integrated (semi-implicit Euler) rather
+  // than snapped straight to the closed-form curve above, so sweeping through
+  // resonance visibly rings and settles the way a real driven system does.
+  const OSC_VIS = 0.0049; // maps the slider's stylized "Hz" onto a legible on-screen rate
+  let oscX = 0;
+  let oscV = 0;
+  let drivePhase = 0;
+  let responseEnvelope = 0;
+  let lastOscTime = performance.now();
+
+  function stepDrivenOscillator(realDt) {
+    const omega0 = NATURAL_FREQ * OSC_VIS;
+    const omegaD = Number(driveSlider.value) * OSC_VIS;
+    const subSteps = 8;
+    const h = realDt / subSteps;
+    for (let s = 0; s < subSteps; s++) {
+      const accel = -omega0 * omega0 * oscX - 2 * DAMPING * omega0 * oscV + omega0 * omega0 * Math.cos(drivePhase);
+      oscV += accel * h;
+      oscX += oscV * h;
+      drivePhase += omegaD * h;
+    }
+    const peak = 1 / (2 * DAMPING);
+    responseEnvelope = responseEnvelope * 0.985 + Math.abs(oscX / peak) * 0.015;
+  }
+
   function drawInterference() {
+    const nowMs = performance.now();
+    stepDrivenOscillator(Math.min(0.05, Math.max(0, (nowMs - lastOscTime) / 1000)));
+    lastOscTime = nowMs;
     sizeCanvas(interferenceCanvas, interferenceCtx);
     const w = interferenceCanvas.clientWidth;
     const h = interferenceCanvas.clientHeight;
@@ -995,11 +1228,19 @@
     interferenceCtx.beginPath();
     interferenceCtx.arc(driveX, driveY, 6, 0, Math.PI * 2);
     interferenceCtx.fill();
+
+    const measuredY = bottomTop + bottomH - Math.min(1.15, responseEnvelope) * bottomH;
+    interferenceCtx.strokeStyle = '#f8fafc';
+    interferenceCtx.lineWidth = 2;
+    interferenceCtx.beginPath();
+    interferenceCtx.arc(driveX, measuredY, 8, 0, Math.PI * 2);
+    interferenceCtx.stroke();
+
     interferenceCtx.fillStyle = '#94a3b8';
     interferenceCtx.font = '700 11px Inter, sans-serif';
     interferenceCtx.fillText('wave addition: blue + red = orange', 12, 18);
-    interferenceCtx.fillText(`resonance curve, natural frequency ${NATURAL_FREQ} Hz`, 12, bottomTop - 8);
-    resonanceReadout.textContent = `${Math.round(response * 100)}% at ${drive} Hz`;
+    interferenceCtx.fillText(`resonance curve, natural frequency ${NATURAL_FREQ} Hz — teal dot = theory, white ring = live integrated oscillator`, 12, bottomTop - 8);
+    resonanceReadout.textContent = `${Math.round(response * 100)}% theory · ${Math.round(Math.min(115, responseEnvelope * 100))}% measured at ${drive} Hz`;
     requestAnimationFrame(drawInterference);
   }
   drawInterference();

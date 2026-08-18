@@ -10,10 +10,249 @@
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../assets/css/lessons/figure-lesson.css" />
   <style>
-    :root { --fl-accent: #f59e0b; --fl-accent-2: #1d4ed8; --fl-ink: #1e1608; }
+    :root { --fl-accent: #f2b705; --fl-accent-2: #1d4ed8; --fl-ink: #1e1608; }
+
+    /* ── Ambient "lava lamp" background — painted in Van Gogh's own brushwork ── */
+    .vg-ambient { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: #0e1626; animation: vg-hue 140s ease-in-out infinite; }
+    [data-lighting="night"] .vg-ambient,
+    [data-theme="vaporwave"] .vg-ambient,
+    [data-theme="bark"] .vg-ambient { background: #0a0f1c; }
+    .vg-ambient::after {
+      content: '';
+      position: absolute; inset: -20%;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      opacity: 0.07;
+      mix-blend-mode: overlay;
+      z-index: 2;
+    }
+    /* Soft color wash beneath the brushwork — the "lava lamp" color drift */
+    .vg-blob {
+      position: absolute;
+      border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%;
+      filter: blur(min(9vw, 90px));
+      opacity: 0.24;
+      will-change: transform, border-radius;
+      animation: vg-drift linear infinite;
+    }
+    .vg-blob-1 { width: 46vw; height: 46vw; top: -12%; left: -10%; background: radial-gradient(circle at 35% 35%, #ffe27a, #f2b705 52%, transparent 76%); animation-duration: 46s; }
+    .vg-blob-2 { width: 52vw; height: 52vw; top: 4%; right: -16%; background: radial-gradient(circle at 60% 40%, #5b82ff, #142a7a 58%, transparent 78%); animation-duration: 58s; animation-delay: -9s; }
+    .vg-blob-3 { width: 40vw; height: 40vw; bottom: -14%; left: 10%; background: radial-gradient(circle at 45% 55%, #9a7bff, #3c1f78 58%, transparent 78%); animation-duration: 52s; animation-delay: -21s; }
+    .vg-blob-4 { width: 38vw; height: 38vw; bottom: -10%; right: 4%; background: radial-gradient(circle at 50% 45%, #ff8a5c, #c1440e 58%, transparent 78%); animation-duration: 63s; animation-delay: -31s; }
+    .vg-blob-5 { width: 32vw; height: 32vw; top: 40%; left: 36%; background: radial-gradient(circle at 50% 50%, #7fd9a3, #1f6f4a 62%, transparent 78%); animation-duration: 70s; animation-delay: -15s; }
+    @keyframes vg-drift {
+      0%   { transform: translate(0,0) scale(1) rotate(0deg); border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%; }
+      25%  { transform: translate(4vw,-3vh) scale(1.09) rotate(9deg); border-radius: 58% 42% 39% 61% / 55% 60% 40% 45%; }
+      50%  { transform: translate(-3vw,4vh) scale(0.95) rotate(-7deg); border-radius: 47% 53% 55% 45% / 60% 38% 62% 40%; }
+      75%  { transform: translate(3vw,3vh) scale(1.05) rotate(5deg); border-radius: 63% 37% 44% 56% / 45% 55% 45% 55%; }
+      100% { transform: translate(0,0) scale(1) rotate(0deg); border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%; }
+    }
+    @keyframes vg-hue {
+      0%, 100% { filter: hue-rotate(0deg); }
+      50%      { filter: hue-rotate(18deg); }
+    }
+    [data-lighting="night"] .vg-blob,
+    [data-theme="vaporwave"] .vg-blob,
+    [data-theme="bark"] .vg-blob { opacity: 0.38; }
+
+    /* Brushwork layer — hand-drawn swirl vortices + impasto dabs, Starry-Night style */
+    .vg-brush-svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; opacity: 0.9; }
+    .vg-swirl-core { filter: blur(14px); }
+    .vg-swirl-group { transform-box: view-box; will-change: transform; }
+    .vg-swirl-group-a { transform-origin: 170px 150px; animation: vg-swirl-rock 100s ease-in-out infinite; }
+    .vg-swirl-group-b { transform-origin: 650px 240px; animation: vg-swirl-rock 130s ease-in-out infinite reverse; }
+    @keyframes vg-swirl-rock {
+      0%, 100% { transform: rotate(0deg) scale(1); }
+      50%      { transform: rotate(10deg) scale(1.04); }
+    }
+    .vg-dab-group { transform-box: view-box; transform-origin: 400px 440px; will-change: transform; }
+    .vg-dab-group-field { animation: vg-dab-sway 34s ease-in-out infinite; }
+    .vg-dab-group-mid { animation: vg-dab-sway 46s ease-in-out infinite reverse; }
+    @keyframes vg-dab-sway {
+      0%, 100% { transform: translateX(0) skewX(0deg); }
+      50%      { transform: translateX(6px) skewX(-1.2deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .vg-blob, .vg-ambient, .vg-swirl-group, .vg-dab-group { animation: none; }
+    }
+    .ll-viewport { position: relative; z-index: 1; }
+
+    /* ── Hero glass panel — keeps text legible over the drifting color ── */
+    .vg-hero-panel {
+      background: color-mix(in srgb, var(--white,#fff) 78%, transparent);
+      backdrop-filter: blur(14px) saturate(140%);
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      border: 1px solid color-mix(in srgb, var(--line,#d2d2d7) 70%, transparent);
+      border-radius: 20px;
+      padding: 1.1rem 1.4rem 1.3rem;
+      box-shadow: 0 20px 50px rgba(20,20,10,0.1);
+    }
+    [data-lighting="night"] .vg-hero-panel,
+    [data-theme="vaporwave"] .vg-hero-panel,
+    [data-theme="bark"] .vg-hero-panel { background: color-mix(in srgb, #1c1c1e 72%, transparent); }
+
+    /* ── Gallery ── */
+    .vg-gallery-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 1rem; margin-top: 0.75rem; }
+    .vg-gallery-card { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; background: var(--white,#fff); transition: transform 0.18s ease, box-shadow 0.18s ease; }
+    .vg-gallery-card:hover { transform: translateY(-3px); box-shadow: 0 14px 28px rgba(0,0,0,0.14); }
+    .vg-gallery-photo { width: 100%; aspect-ratio: 4/3; overflow: hidden; background: #1a1a1a; cursor: zoom-in; }
+    .vg-gallery-photo img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s ease; }
+    .vg-gallery-card:hover .vg-gallery-photo img { transform: scale(1.06); }
+    .vg-gallery-body { padding: 0.75rem 0.85rem; }
+    .vg-gallery-body strong { display: block; font-size: 0.84rem; margin-bottom: 0.1rem; color: var(--fl-ink, #0f172a); }
+    .vg-gallery-year { display: block; font-size: 0.7rem; font-weight: 700; color: var(--fl-accent-2, #1d4ed8); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.3rem; }
+    [data-lighting="night"] .vg-gallery-body strong,
+    [data-theme="vaporwave"] .vg-gallery-body strong,
+    [data-theme="bark"] .vg-gallery-body strong { color: rgba(245,245,247,0.92); }
+    .vg-gallery-body p { margin: 0; font-size: 0.76rem; color: var(--text-muted, #64748b); line-height: 1.5; }
+    .vg-credits { margin-top: 1rem; padding-top: 0.8rem; border-top: 1px solid var(--line,#d2d2d7); font-size: 0.72rem; color: var(--text-muted, #64748b); line-height: 1.9; }
+    .vg-credits a { color: var(--fl-accent-2, #1d4ed8); text-decoration: none; }
+    .vg-credits a:hover { text-decoration: underline; }
+    .vg-lightbox { position: fixed; inset: 0; z-index: 200; display: none; align-items: center; justify-content: center;
+      padding: clamp(1rem,5vw,4rem); background: rgba(15,23,42,0.8); backdrop-filter: blur(6px); }
+    .vg-lightbox.open { display: flex; }
+    .vg-lightbox-frame { position: relative; max-width: min(920px,92vw); max-height: 90vh;
+      background: #fff; border-radius: 14px; padding: 0.9rem; box-shadow: 0 30px 80px rgba(0,0,0,0.45); }
+    .vg-lightbox-frame img { display: block; max-width: 100%; max-height: calc(90vh - 4.5rem); width: auto; height: auto;
+      margin: auto; border-radius: 8px; }
+    .vg-lightbox-cap { margin-top: 0.6rem; text-align: center; font-size: 0.8rem; color: #56657a; }
+    .vg-lightbox-close { position: absolute; top: -14px; right: -14px; width: 34px; height: 34px; border-radius: 50%;
+      border: 1px solid #cdd6e0; background: #fff; color: #18212f; font-size: 1.1rem; font-weight: 800;
+      cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
+    .vg-lightbox-close:hover { background: #f0f0f2; }
+
+    @media (max-width: 720px) {
+      .vg-gallery-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
+  <div class="vg-ambient" aria-hidden="true">
+    <div class="vg-blob vg-blob-1"></div>
+    <div class="vg-blob vg-blob-2"></div>
+    <div class="vg-blob vg-blob-3"></div>
+    <div class="vg-blob vg-blob-4"></div>
+    <div class="vg-blob vg-blob-5"></div>
+    <svg class="vg-brush-svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="vgRough" x="-30%" y="-30%" width="160%" height="160%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.015 0.025" numOctaves="2" seed="7" result="vgNoise" />
+          <feDisplacementMap in="SourceGraphic" in2="vgNoise" scale="16" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </defs>
+      <circle class="vg-swirl-core" cx="170" cy="150" r="40" fill="#ffe27a" opacity="0.55" />
+      <circle class="vg-swirl-core" cx="650" cy="240" r="34" fill="#c9b6ff" opacity="0.4" />
+      <g class="vg-swirl-group vg-swirl-group-a">
+       <g filter="url(#vgRough)">
+        <path d="M 182.5 150.0 L 184.4 152.7 L 185.7 156.2 L 186.1 160.1 L 185.5 164.4 L 183.8 168.8 L 181.0 173.0 L 177.1 176.7 L 172.2 179.7 L 166.3 181.8 L 159.8 182.6 L 152.9 182.0 L 145.9 180.0 L 139.1 176.4 L 132.9 171.2 L 127.5 164.7 L 123.4 156.8 L 120.8 147.9 L 119.9 138.3 L 121.0 128.3 L 124.1 118.3 L 129.3 108.8 L 136.5 100.1 L 145.5 92.8 L 156.1 87.1 L 168.0 83.4 L 180.8 82.1 L 193.9 83.2 L 207.0 87.0 L 219.6 93.4 L 230.9 102.3 L 240.7 113.4 L 248.3 126.6 L 253.5 141.4 L 255.8 157.3 L 255.0 173.7 L 251.0 190.1 L 243.9 205.7 L 233.7 220.1 L 220.6 232.6 L 205.1 242.6 L 187.6 249.7 L 168.8 253.4 L 149.1 253.4 L 129.4 249.7 L 110.4 242.3 L 92.7 231.1 L 77.2 216.6 L 64.5 199.0 L 55.1 179.1 L 49.5 157.3 L 48.2 134.5 L 51.1 111.4" fill="none" stroke="#1a3e8c" stroke-width="5.0" stroke-linecap="round" opacity="0.50" />
+        <path d="M 160.2 167.9 L 163.0 171.8 L 166.8 175.2 L 171.7 177.9 L 177.5 179.6 L 184.0 180.0 L 190.8 178.9 L 197.7 176.3 L 204.3 172.1 L 210.1 166.3 L 215.0 159.0 L 218.4 150.5 L 220.2 141.0 L 220.0 131.0 L 217.8 120.6 L 213.3 110.5 L 206.8 101.1 L 198.2 92.8 L 187.7 86.1 L 175.7 81.4 L 162.6 79.0 L 148.8 79.2 L 134.8 82.1 L 121.2 87.9 L 108.5 96.4 L 97.4 107.5 L 88.4 120.9 L 81.9 136.2 L 78.3 152.9 L 77.9 170.5 L 81.0 188.3 L 87.6 205.6 L 97.6 221.8 L 110.7 236.1 L 126.8 248.0 L 145.2 256.8 L 165.4 262.1 L 186.7 263.5 L 208.4 260.8 L 229.6 253.9 L 249.6 242.9 L 267.5 228.1 L 282.6 209.8 L 294.2 188.5 L 301.7 165.0 L 304.8 140.0 L 303.0 114.4 L 296.4 89.2 L 284.9 65.2 L 268.8 43.4 L 248.6 24.7 L 224.8 9.9 L 198.3 -0.4" fill="none" stroke="#3358c8" stroke-width="6.1" stroke-linecap="round" opacity="0.44" />
+        <path d="M 154.8 126.3 L 158.4 121.1 L 163.4 116.6 L 169.7 113.0 L 177.1 110.7 L 185.3 110.0 L 194.1 111.0 L 202.9 114.0 L 211.4 119.0 L 219.0 125.9 L 225.5 134.7 L 230.3 145.1 L 233.1 156.7 L 233.6 169.2 L 231.5 182.0 L 226.7 194.7 L 219.3 206.7 L 209.4 217.5 L 197.1 226.4 L 182.9 233.0 L 167.1 236.9 L 150.3 237.7 L 133.2 235.2 L 116.3 229.3 L 100.4 220.0 L 86.2 207.5 L 74.2 192.0 L 65.2 174.1 L 59.6 154.3 L 57.8 133.3 L 60.1 111.7 L 66.6 90.4 L 77.3 70.3 L 91.9 52.2 L 110.1 36.7 L 131.4 24.8 L 155.1 16.9 L 180.3 13.5 L 206.4 15.0 L 232.1 21.4 L 256.7 32.9 L 279.2 49.1 L 298.6 69.6 L 314.0 93.9 L 324.8 121.2 L 330.4 150.5 L 330.4 180.9 L 324.6 211.3 L 312.9 240.6 L 295.7 267.7 L 273.3 291.4 L 246.5 310.8 L 215.9 325.1" fill="none" stroke="#5b82ff" stroke-width="7.2" stroke-linecap="round" opacity="0.38" />
+        <path d="M 205.9 147.5 L 208.0 140.0 L 208.5 131.6 L 207.1 122.8 L 203.7 113.9 L 198.1 105.5 L 190.6 97.9 L 181.1 91.8 L 170.1 87.4 L 157.8 85.2 L 144.8 85.5 L 131.4 88.5 L 118.4 94.3 L 106.2 102.9 L 95.6 114.2 L 87.0 127.8 L 81.0 143.4 L 78.0 160.4 L 78.4 178.4 L 82.3 196.5 L 89.9 214.1 L 101.1 230.4 L 115.6 244.7 L 133.1 256.3 L 153.1 264.6 L 174.8 269.1 L 197.7 269.3 L 220.8 265.1 L 243.2 256.4 L 264.1 243.3 L 282.6 226.0 L 297.8 205.0 L 309.1 181.0 L 315.7 154.7 L 317.3 126.9 L 313.6 98.8 L 304.4 71.3 L 289.9 45.4 L 270.4 22.3 L 246.4 2.9 L 218.6 -11.9 L 188.0 -21.5 L 155.5 -25.1 L 122.2 -22.6 L 89.4 -13.6 L 58.4 1.6 L 30.2 22.7 L 6.2 49.2 L -12.9 80.3 L -25.9 115.0 L -32.3 152.1 L -31.7 190.4 L -23.7 228.5" fill="none" stroke="#8fa8ff" stroke-width="8.3" stroke-linecap="round" opacity="0.32" />
+       </g>
+      </g>
+      <g class="vg-swirl-group vg-swirl-group-b">
+       <g filter="url(#vgRough)">
+        <path d="M 664.5 240.0 L 666.5 243.1 L 667.9 246.9 L 668.3 251.3 L 667.6 256.1 L 665.7 260.9 L 662.6 265.5 L 658.4 269.7 L 653.0 273.0 L 646.6 275.3 L 639.5 276.3 L 632.0 275.9 L 624.3 273.8 L 616.8 270.0 L 609.8 264.6 L 603.8 257.6 L 599.0 249.2 L 595.9 239.7 L 594.6 229.3 L 595.3 218.4 L 598.3 207.5 L 603.4 196.9 L 610.7 187.2 L 620.1 178.8 L 631.3 172.1 L 643.9 167.5 L 657.6 165.3 L 671.8 165.7 L 686.2 168.9 L 700.1 175.0 L 712.9 183.8 L 724.2 195.1 L 733.4 208.7 L 740.0 224.2 L 743.7 241.1 L 744.2 258.7 L 741.3 276.6 L 735.0 294.1 L 725.3 310.4 L 712.4 324.9 L 696.7 337.0 L 678.7 346.2 L 658.8 352.0 L 637.8 354.1 L 616.3 352.1 L 595.2 346.1 L 575.2 336.0 L 557.1 322.1 L 541.5 304.8 L 529.3 284.5 L 520.8 261.9 L 516.7 237.8 L 517.1 212.8 L 522.2 187.9 L 532.0 164.0 L 546.3 142.0 L 564.8 122.7" fill="none" stroke="#3c1f78" stroke-width="4.5" stroke-linecap="round" opacity="0.42" />
+        <path d="M 639.0 260.1 L 642.1 264.4 L 646.3 268.1 L 651.7 271.0 L 658.0 272.8 L 665.1 273.2 L 672.5 272.1 L 679.9 269.3 L 687.1 264.8 L 693.5 258.6 L 698.9 250.9 L 702.7 241.8 L 704.9 231.7 L 705.0 220.8 L 702.8 209.7 L 698.4 198.7 L 691.7 188.4 L 682.8 179.2 L 671.8 171.6 L 659.2 166.1 L 645.3 162.9 L 630.5 162.5 L 615.4 164.9 L 600.6 170.3 L 586.7 178.7 L 574.3 189.9 L 563.8 203.7 L 556.0 219.6 L 551.1 237.2 L 549.6 255.8 L 551.6 275.0 L 557.4 293.8 L 566.8 311.7 L 579.8 327.9 L 595.9 341.8 L 614.7 352.6 L 635.7 359.8 L 658.2 363.1 L 681.4 362.1 L 704.5 356.7 L 726.6 346.9 L 747.0 332.9 L 764.7 314.9 L 779.0 293.5 L 789.3 269.4 L 795.1 243.4 L 795.9 216.2 L 791.6 188.8 L 782.1 162.2 L 767.5 137.5 L 748.3 115.4 L 725.0 97.1 L 698.2 83.1 L 668.8 74.2 L 637.8 70.9 L 606.2 73.4 L 575.1 81.9" fill="none" stroke="#5b3a9e" stroke-width="5.5" stroke-linecap="round" opacity="0.37" />
+        <path d="M 633.1 213.7 L 637.1 208.1 L 642.5 203.2 L 649.4 199.4 L 657.4 196.9 L 666.3 196.1 L 675.7 197.2 L 685.2 200.3 L 694.3 205.6 L 702.6 212.9 L 709.7 222.2 L 715.1 233.1 L 718.3 245.5 L 719.1 258.8 L 717.3 272.5 L 712.6 286.2 L 705.2 299.2 L 695.0 311.0 L 682.3 320.9 L 667.5 328.5 L 650.9 333.3 L 633.2 335.0 L 614.9 333.1 L 596.7 327.7 L 579.4 318.7 L 563.7 306.3 L 550.2 290.7 L 539.6 272.3 L 532.4 251.7 L 529.2 229.6 L 530.2 206.7 L 535.6 183.9 L 545.4 161.9 L 559.4 141.7 L 577.4 124.1 L 598.8 109.8 L 623.1 99.6 L 649.4 93.9 L 676.8 93.3 L 704.5 97.8 L 731.4 107.6 L 756.4 122.6 L 778.7 142.3 L 797.3 166.3 L 811.3 193.8 L 820.1 224.0 L 823.3 255.8 L 820.4 288.3 L 811.3 320.2 L 796.3 350.4 L 775.6 377.8 L 749.7 401.2 L 719.4 419.6 L 685.7 432.4 L 649.7 438.8 L 612.6 438.4 L 575.5 431.0" fill="none" stroke="#7d5ad1" stroke-width="6.5" stroke-linecap="round" opacity="0.32" />
+        <path d="M 689.6 237.2 L 691.8 229.1 L 692.2 220.1 L 690.6 210.6 L 686.9 201.1 L 681.0 192.0 L 673.0 183.9 L 663.0 177.2 L 651.3 172.4 L 638.2 169.9 L 624.3 170.0 L 610.1 172.9 L 596.1 178.8 L 583.0 187.6 L 571.4 199.2 L 561.9 213.3 L 555.1 229.6 L 551.3 247.6 L 551.0 266.5 L 554.4 285.8 L 561.7 304.6 L 572.7 322.3 L 587.3 338.1 L 605.1 351.2 L 625.7 361.0 L 648.3 366.9 L 672.3 368.5 L 696.8 365.4 L 720.9 357.7 L 743.6 345.2 L 764.1 328.3 L 781.6 307.4 L 795.1 283.0 L 804.0 255.9 L 807.7 227.0 L 806.0 197.3 L 798.6 167.8 L 785.6 139.6 L 767.2 113.8 L 743.8 91.4 L 716.1 73.5 L 685.0 60.7 L 651.4 53.8 L 616.5 53.3 L 581.5 59.4 L 547.6 72.1 L 516.1 91.2 L 488.3 116.3 L 465.1 146.6 L 447.8 181.3 L 436.9 219.2 L 433.3 259.0 L 437.1 299.5 L 448.6 339.3 L 467.5 376.7 L 493.4 410.6 L 525.7 439.4" fill="none" stroke="#a68bea" stroke-width="7.5" stroke-linecap="round" opacity="0.27" />
+       </g>
+      </g>
+      <g class="vg-dab-group vg-dab-group-mid">
+       <g filter="url(#vgRough)">
+        <path d="M 183.3 242.9 Q 173.4 264.6 171.0 288.4" fill="none" stroke="#9a7bff" stroke-width="3.3" stroke-linecap="round" opacity="0.16" />
+        <path d="M 309.9 322.3 Q 287.6 327.2 264.8 328.9" fill="none" stroke="#5b82ff" stroke-width="4.1" stroke-linecap="round" opacity="0.30" />
+        <path d="M 385.1 222.9 Q 387.9 240.3 397.0 255.4" fill="none" stroke="#3f9e6b" stroke-width="3.9" stroke-linecap="round" opacity="0.29" />
+        <path d="M 736.1 361.3 Q 718.3 364.8 701.6 371.7" fill="none" stroke="#f2b705" stroke-width="2.7" stroke-linecap="round" opacity="0.23" />
+        <path d="M 671.6 210.8 Q 679.6 222.2 686.0 234.6" fill="none" stroke="#7fd9a3" stroke-width="4.0" stroke-linecap="round" opacity="0.22" />
+        <path d="M 578.2 336.2 Q 594.0 330.5 604.9 343.3" fill="none" stroke="#5b82ff" stroke-width="2.6" stroke-linecap="round" opacity="0.31" />
+        <path d="M 166.2 199.3 Q 191.6 193.0 214.6 205.4" fill="none" stroke="#c1440e" stroke-width="2.9" stroke-linecap="round" opacity="0.16" />
+        <path d="M 139.8 193.1 Q 141.3 213.8 131.8 232.4" fill="none" stroke="#e2725b" stroke-width="4.0" stroke-linecap="round" opacity="0.19" />
+        <path d="M 491.4 318.3 Q 476.5 316.8 471.6 330.9" fill="none" stroke="#f5c93b" stroke-width="3.7" stroke-linecap="round" opacity="0.31" />
+        <path d="M 473.0 350.6 Q 458.7 359.4 442.2 356.3" fill="none" stroke="#9a7bff" stroke-width="3.9" stroke-linecap="round" opacity="0.26" />
+        <path d="M 104.5 307.4 Q 104.6 331.4 90.4 350.7" fill="none" stroke="#9a7bff" stroke-width="4.1" stroke-linecap="round" opacity="0.22" />
+        <path d="M 337.2 241.3 Q 339.4 260.0 354.0 272.1" fill="none" stroke="#1d4ed8" stroke-width="2.7" stroke-linecap="round" opacity="0.31" />
+        <path d="M 498.9 319.0 Q 498.5 340.1 507.2 359.4" fill="none" stroke="#e2725b" stroke-width="3.7" stroke-linecap="round" opacity="0.31" />
+        <path d="M 615.1 252.2 Q 612.1 274.7 602.3 295.1" fill="none" stroke="#c1440e" stroke-width="4.2" stroke-linecap="round" opacity="0.17" />
+        <path d="M 695.8 217.9 Q 692.3 234.7 684.3 249.9" fill="none" stroke="#f2b705" stroke-width="3.5" stroke-linecap="round" opacity="0.21" />
+        <path d="M 381.7 243.2 Q 389.1 255.1 399.4 264.6" fill="none" stroke="#e2725b" stroke-width="3.6" stroke-linecap="round" opacity="0.24" />
+        <path d="M 168.0 217.6 Q 170.3 234.3 162.4 249.3" fill="none" stroke="#1d4ed8" stroke-width="3.8" stroke-linecap="round" opacity="0.24" />
+        <path d="M 630.2 195.8 Q 625.8 208.9 615.1 217.7" fill="none" stroke="#9a7bff" stroke-width="3.2" stroke-linecap="round" opacity="0.25" />
+        <path d="M 273.1 353.1 Q 282.1 369.0 289.5 385.7" fill="none" stroke="#e2725b" stroke-width="3.0" stroke-linecap="round" opacity="0.18" />
+        <path d="M 179.6 199.3 Q 170.6 216.1 153.1 223.8" fill="none" stroke="#c1440e" stroke-width="4.0" stroke-linecap="round" opacity="0.20" />
+        <path d="M 487.0 325.7 Q 467.7 320.2 449.2 328.0" fill="none" stroke="#e2725b" stroke-width="3.0" stroke-linecap="round" opacity="0.19" />
+        <path d="M 44.8 285.0 Q 30.7 285.1 16.7 287.3" fill="none" stroke="#e2a30a" stroke-width="3.8" stroke-linecap="round" opacity="0.28" />
+        <path d="M 97.0 178.0 Q 101.1 192.0 98.9 206.4" fill="none" stroke="#f2b705" stroke-width="3.0" stroke-linecap="round" opacity="0.30" />
+        <path d="M 110.9 184.9 Q 103.1 200.9 102.5 218.6" fill="none" stroke="#e2a30a" stroke-width="2.8" stroke-linecap="round" opacity="0.25" />
+        <path d="M 259.6 361.0 Q 249.5 367.3 242.2 376.8" fill="none" stroke="#9a7bff" stroke-width="3.0" stroke-linecap="round" opacity="0.24" />
+        <path d="M 385.3 269.0 Q 362.5 273.6 339.5 270.4" fill="none" stroke="#9a7bff" stroke-width="2.6" stroke-linecap="round" opacity="0.31" />
+       </g>
+      </g>
+      <g class="vg-dab-group vg-dab-group-field">
+       <g filter="url(#vgRough)">
+        <path d="M 513.8 365.9 Q 513.5 379.0 520.5 390.1" fill="none" stroke="#5b82ff" stroke-width="3.2" stroke-linecap="round" opacity="0.55" />
+        <path d="M -1.9 387.3 Q 9.3 399.1 12.0 415.2" fill="none" stroke="#5b82ff" stroke-width="4.0" stroke-linecap="round" opacity="0.56" />
+        <path d="M 207.5 461.5 Q 214.9 478.9 219.8 497.1" fill="none" stroke="#e2725b" stroke-width="3.4" stroke-linecap="round" opacity="0.74" />
+        <path d="M 266.2 376.5 Q 261.2 385.6 259.3 395.8" fill="none" stroke="#f2b705" stroke-width="4.8" stroke-linecap="round" opacity="0.59" />
+        <path d="M 802.5 405.1 Q 795.6 419.8 792.3 435.8" fill="none" stroke="#7fd9a3" stroke-width="4.4" stroke-linecap="round" opacity="0.65" />
+        <path d="M 13.4 390.6 Q 22.4 400.6 23.6 414.0" fill="none" stroke="#f5c93b" stroke-width="4.0" stroke-linecap="round" opacity="0.56" />
+        <path d="M 682.9 381.1 Q 677.5 394.0 678.4 407.9" fill="none" stroke="#f5c93b" stroke-width="4.5" stroke-linecap="round" opacity="0.46" />
+        <path d="M 598.9 382.2 Q 590.5 393.6 586.1 407.0" fill="none" stroke="#5b82ff" stroke-width="3.5" stroke-linecap="round" opacity="0.51" />
+        <path d="M 631.2 362.9 Q 626.9 382.2 619.6 400.5" fill="none" stroke="#f5c93b" stroke-width="3.5" stroke-linecap="round" opacity="0.73" />
+        <path d="M 714.4 395.3 Q 709.6 413.4 717.9 430.2" fill="none" stroke="#1d4ed8" stroke-width="3.4" stroke-linecap="round" opacity="0.45" />
+        <path d="M 604.5 421.0 Q 604.5 439.8 607.1 458.3" fill="none" stroke="#7fd9a3" stroke-width="3.5" stroke-linecap="round" opacity="0.75" />
+        <path d="M 404.4 377.0 Q 406.1 386.7 411.6 394.8" fill="none" stroke="#3f9e6b" stroke-width="4.5" stroke-linecap="round" opacity="0.53" />
+        <path d="M 481.2 418.9 Q 473.5 430.8 479.9 443.4" fill="none" stroke="#f5c93b" stroke-width="4.7" stroke-linecap="round" opacity="0.59" />
+        <path d="M 203.5 441.5 Q 204.9 451.9 204.8 462.3" fill="none" stroke="#e2725b" stroke-width="5.4" stroke-linecap="round" opacity="0.67" />
+        <path d="M 412.1 371.6 Q 406.3 387.7 400.8 404.0" fill="none" stroke="#c1440e" stroke-width="3.4" stroke-linecap="round" opacity="0.67" />
+        <path d="M 425.6 454.4 Q 435.6 467.1 440.5 482.5" fill="none" stroke="#f2b705" stroke-width="3.3" stroke-linecap="round" opacity="0.53" />
+        <path d="M 804.6 460.1 Q 806.6 472.1 810.7 483.5" fill="none" stroke="#f5c93b" stroke-width="3.2" stroke-linecap="round" opacity="0.57" />
+        <path d="M 31.4 448.6 Q 38.5 466.1 44.9 484.0" fill="none" stroke="#5b82ff" stroke-width="3.4" stroke-linecap="round" opacity="0.58" />
+        <path d="M 494.7 470.3 Q 486.6 490.0 484.3 511.1" fill="none" stroke="#e2725b" stroke-width="4.0" stroke-linecap="round" opacity="0.64" />
+        <path d="M 290.0 468.5 Q 300.4 481.3 297.3 497.4" fill="none" stroke="#f2b705" stroke-width="4.5" stroke-linecap="round" opacity="0.48" />
+        <path d="M 160.5 366.9 Q 158.7 385.2 169.5 400.1" fill="none" stroke="#7fd9a3" stroke-width="3.2" stroke-linecap="round" opacity="0.48" />
+        <path d="M 546.4 390.9 Q 540.9 400.2 537.5 410.5" fill="none" stroke="#1d4ed8" stroke-width="3.6" stroke-linecap="round" opacity="0.57" />
+        <path d="M 319.4 368.9 Q 323.3 386.1 324.4 403.7" fill="none" stroke="#f2b705" stroke-width="4.7" stroke-linecap="round" opacity="0.74" />
+        <path d="M 67.3 410.7 Q 66.4 424.7 58.0 435.9" fill="none" stroke="#c1440e" stroke-width="4.3" stroke-linecap="round" opacity="0.45" />
+        <path d="M 125.9 411.9 Q 129.6 432.5 142.3 449.2" fill="none" stroke="#5b82ff" stroke-width="3.2" stroke-linecap="round" opacity="0.63" />
+        <path d="M 436.6 366.9 Q 438.2 377.8 431.6 386.7" fill="none" stroke="#3f9e6b" stroke-width="4.2" stroke-linecap="round" opacity="0.47" />
+        <path d="M 323.2 369.6 Q 320.2 383.8 310.5 394.4" fill="none" stroke="#1d4ed8" stroke-width="3.7" stroke-linecap="round" opacity="0.64" />
+        <path d="M 593.4 451.4 Q 598.6 468.9 593.9 486.6" fill="none" stroke="#c1440e" stroke-width="5.4" stroke-linecap="round" opacity="0.60" />
+        <path d="M 436.2 455.0 Q 435.4 464.8 434.6 474.5" fill="none" stroke="#5b82ff" stroke-width="3.4" stroke-linecap="round" opacity="0.74" />
+        <path d="M 50.1 380.8 Q 51.5 398.0 44.4 413.8" fill="none" stroke="#f5c93b" stroke-width="5.4" stroke-linecap="round" opacity="0.60" />
+        <path d="M 467.8 369.8 Q 465.3 379.6 464.7 389.7" fill="none" stroke="#7fd9a3" stroke-width="5.3" stroke-linecap="round" opacity="0.47" />
+        <path d="M 584.0 389.7 Q 584.8 404.2 579.2 417.6" fill="none" stroke="#7fd9a3" stroke-width="5.3" stroke-linecap="round" opacity="0.73" />
+        <path d="M -18.4 434.5 Q -12.7 449.8 -6.0 464.6" fill="none" stroke="#5b82ff" stroke-width="3.7" stroke-linecap="round" opacity="0.73" />
+        <path d="M 715.4 467.5 Q 714.9 482.3 724.5 493.6" fill="none" stroke="#e2725b" stroke-width="4.5" stroke-linecap="round" opacity="0.75" />
+        <path d="M 525.5 356.7 Q 526.8 376.4 533.2 395.2" fill="none" stroke="#e2a30a" stroke-width="3.7" stroke-linecap="round" opacity="0.71" />
+        <path d="M 600.1 381.5 Q 606.0 393.0 607.2 405.8" fill="none" stroke="#e2725b" stroke-width="4.3" stroke-linecap="round" opacity="0.49" />
+        <path d="M 748.3 364.7 Q 749.8 383.4 737.4 397.5" fill="none" stroke="#7fd9a3" stroke-width="4.9" stroke-linecap="round" opacity="0.62" />
+        <path d="M 198.9 447.8 Q 207.9 463.4 201.2 480.1" fill="none" stroke="#f5c93b" stroke-width="5.4" stroke-linecap="round" opacity="0.64" />
+        <path d="M 105.9 365.5 Q 106.3 379.4 104.5 393.1" fill="none" stroke="#f2b705" stroke-width="3.8" stroke-linecap="round" opacity="0.71" />
+        <path d="M 643.0 458.4 Q 652.6 477.2 654.5 498.1" fill="none" stroke="#f5c93b" stroke-width="3.9" stroke-linecap="round" opacity="0.60" />
+        <path d="M 722.3 474.7 Q 718.6 493.6 707.2 509.0" fill="none" stroke="#e2a30a" stroke-width="5.4" stroke-linecap="round" opacity="0.68" />
+        <path d="M 717.4 359.6 Q 713.6 379.1 723.4 396.3" fill="none" stroke="#c1440e" stroke-width="3.7" stroke-linecap="round" opacity="0.68" />
+        <path d="M 65.4 460.2 Q 65.9 481.0 76.2 499.1" fill="none" stroke="#1d4ed8" stroke-width="3.9" stroke-linecap="round" opacity="0.69" />
+        <path d="M 710.2 384.3 Q 715.4 401.4 713.7 419.2" fill="none" stroke="#f5c93b" stroke-width="5.4" stroke-linecap="round" opacity="0.50" />
+        <path d="M 519.6 401.2 Q 511.8 422.7 518.1 444.7" fill="none" stroke="#f5c93b" stroke-width="5.2" stroke-linecap="round" opacity="0.49" />
+        <path d="M 468.6 483.6 Q 470.2 493.3 466.8 502.5" fill="none" stroke="#7fd9a3" stroke-width="4.1" stroke-linecap="round" opacity="0.74" />
+        <path d="M 72.2 472.6 Q 78.1 482.5 82.1 493.3" fill="none" stroke="#5b82ff" stroke-width="5.3" stroke-linecap="round" opacity="0.59" />
+        <path d="M 582.0 446.5 Q 591.1 463.1 586.7 481.6" fill="none" stroke="#7fd9a3" stroke-width="4.6" stroke-linecap="round" opacity="0.63" />
+        <path d="M 87.2 467.6 Q 87.4 483.5 82.2 498.4" fill="none" stroke="#e2725b" stroke-width="4.4" stroke-linecap="round" opacity="0.47" />
+        <path d="M 532.7 402.7 Q 537.5 420.8 544.4 438.3" fill="none" stroke="#3f9e6b" stroke-width="4.4" stroke-linecap="round" opacity="0.40" />
+        <path d="M 223.5 410.2 Q 221.6 426.7 218.5 442.9" fill="none" stroke="#1d4ed8" stroke-width="4.7" stroke-linecap="round" opacity="0.58" />
+        <path d="M 649.6 471.8 Q 650.2 490.7 643.9 508.5" fill="none" stroke="#9a7bff" stroke-width="3.8" stroke-linecap="round" opacity="0.69" />
+        <path d="M 607.5 444.3 Q 618.2 453.5 614.4 467.1" fill="none" stroke="#c1440e" stroke-width="5.5" stroke-linecap="round" opacity="0.61" />
+        <path d="M 627.0 409.2 Q 622.0 429.4 624.0 450.1" fill="none" stroke="#3f9e6b" stroke-width="4.2" stroke-linecap="round" opacity="0.49" />
+        <path d="M 536.0 357.6 Q 537.2 377.3 526.2 393.8" fill="none" stroke="#3f9e6b" stroke-width="3.5" stroke-linecap="round" opacity="0.68" />
+        <path d="M 571.0 415.8 Q 570.1 433.1 558.1 445.7" fill="none" stroke="#e2a30a" stroke-width="5.0" stroke-linecap="round" opacity="0.63" />
+        <path d="M 817.8 426.6 Q 808.2 445.8 801.9 466.3" fill="none" stroke="#5b82ff" stroke-width="4.1" stroke-linecap="round" opacity="0.72" />
+        <path d="M 353.6 373.9 Q 350.5 394.3 355.6 414.3" fill="none" stroke="#e2725b" stroke-width="4.9" stroke-linecap="round" opacity="0.58" />
+        <path d="M 504.4 398.2 Q 510.0 407.2 508.5 417.7" fill="none" stroke="#7fd9a3" stroke-width="5.2" stroke-linecap="round" opacity="0.43" />
+        <path d="M 103.7 410.4 Q 108.0 420.6 109.7 431.5" fill="none" stroke="#7fd9a3" stroke-width="4.4" stroke-linecap="round" opacity="0.55" />
+       </g>
+      </g>
+    </svg>
+  </div>
   <a class="skip-link" href="#main-content">Skip to content</a>
 <div class="ll-viewport">
 
@@ -45,7 +284,7 @@
         </nav>
 
         <!-- Hero -->
-        <section class="hero fl-hero">
+        <section class="hero fl-hero vg-hero-panel">
           <p class="eyebrow">Visual Art · Color Theory · History of Art</p>
           <h1>Vincent van Gogh</h1>
           <div class="fl-hero-meta">
@@ -62,6 +301,7 @@
           <a href="#fl-sec-timeline">Timeline</a>
           <a href="#fl-sec-science">The Science</a>
           <a href="#fl-sec-contributions">Contributions</a>
+          <a href="#fl-sec-gallery">Gallery</a>
           <a href="#fl-sec-legacy">Legacy</a>
           <a href="#fl-sec-practice">Practice</a>
         </nav>
@@ -155,6 +395,84 @@
               <strong>The Letters Archive</strong>
               <p>Over 650 surviving letters to Theo, now held by the Van Gogh Museum, form an unusually detailed record of an artist's thinking.</p>
             </div>
+          </div>
+        </section>
+
+        <!-- Gallery -->
+        <section class="fl-card" id="fl-sec-gallery" style="--card-accent:#7c3aed;">
+          <h2>Gallery: Eight Works That Trace His Style</h2>
+          <p>Arranged roughly in the order he painted them, these eight works trace Van Gogh's palette from the dark, earthy tones of his early years to the vivid complementary contrasts and thick impasto of his final seasons in Arles, Saint-Rémy, and Auvers-sur-Oise. Click any painting to enlarge it.</p>
+
+          <div class="vg-gallery-grid">
+            <div class="vg-gallery-card">
+              <div class="vg-gallery-photo"><img src="../assets/images/vincent-van-gogh-history/potato-eaters.webp" alt="The Potato Eaters, 1885 — a dim, earth-toned painting of a peasant family eating potatoes by lamplight around a table" width="900" height="686" loading="lazy" decoding="async" class="vg-zoomable" /></div>
+              <div class="vg-gallery-body">
+                <span class="vg-gallery-year">1885 · Nuenen</span>
+                <strong>The Potato Eaters</strong>
+                <p>Painted before he moved to Paris and encountered Impressionism — dark, muddy tones with none of the complementary color contrast he'd adopt just three years later.</p>
+              </div>
+            </div>
+            <div class="vg-gallery-card">
+              <div class="vg-gallery-photo"><img src="../assets/images/vincent-van-gogh-history/sunflowers.webp" alt="Sunflowers, 1888 — a vase of chrome-yellow sunflowers against a warm ochre-yellow background" width="900" height="1144" loading="lazy" decoding="async" class="vg-zoomable" /></div>
+              <div class="vg-gallery-body">
+                <span class="vg-gallery-year">1888 · Arles</span>
+                <strong>Sunflowers</strong>
+                <p>Nearly monochromatic — Van Gogh pushed dozens of shades out of a single color family, chrome yellow, to decorate the room he hoped Gauguin would share.</p>
+              </div>
+            </div>
+            <div class="vg-gallery-card">
+              <div class="vg-gallery-photo"><img src="../assets/images/vincent-van-gogh-history/bedroom-in-arles.webp" alt="The Bedroom, 1888 — Van Gogh's simple bedroom in Arles, painted with pale violet walls and a chrome-yellow bed frame and chairs" width="900" height="698" loading="lazy" decoding="async" class="vg-zoomable" /></div>
+              <div class="vg-gallery-body">
+                <span class="vg-gallery-year">1888 · Arles</span>
+                <strong>The Bedroom</strong>
+                <p>Violet walls against a yellow bed frame — Van Gogh wrote to Theo that the flat complementary colors were meant to suggest rest, "where the imagination is set free."</p>
+              </div>
+            </div>
+            <div class="vg-gallery-card">
+              <div class="vg-gallery-photo"><img src="../assets/images/vincent-van-gogh-history/cafe-terrace-at-night.webp" alt="Café Terrace at Night, 1888 — a gas-lit yellow café awning in Arles under a deep cobalt-blue starry sky" width="900" height="1152" loading="lazy" decoding="async" class="vg-zoomable" /></div>
+              <div class="vg-gallery-body">
+                <span class="vg-gallery-year">1888 · Arles</span>
+                <strong>Café Terrace at Night</strong>
+                <p>The gas-lit yellow awning glows against a deep violet-blue sky — the same complementary pairing he'd take even further in The Starry Night a year later.</p>
+              </div>
+            </div>
+            <div class="vg-gallery-card">
+              <div class="vg-gallery-photo"><img src="../assets/images/vincent-van-gogh-history/starry-night.webp" alt="The Starry Night, 1889 — a swirling night sky over a village, with glowing yellow stars and a crescent moon against deep blue and violet" width="900" height="695" loading="lazy" decoding="async" class="vg-zoomable" /></div>
+              <div class="vg-gallery-body">
+                <span class="vg-gallery-year">1889 · Saint-Rémy</span>
+                <strong>The Starry Night</strong>
+                <p>His most famous painting, made from the asylum's east-facing window — thick impasto ridges of yellow and cobalt built by loaded brush and palette knife.</p>
+              </div>
+            </div>
+            <div class="vg-gallery-card">
+              <div class="vg-gallery-photo"><img src="../assets/images/vincent-van-gogh-history/irises.webp" alt="Irises, 1889 — a dense bed of cobalt-violet irises among yellow-green foliage, painted in the Saint-Paul-de-Mausole asylum garden" width="900" height="695" loading="lazy" decoding="async" class="vg-zoomable" /></div>
+              <div class="vg-gallery-body">
+                <span class="vg-gallery-year">1889 · Saint-Rémy</span>
+                <strong>Irises</strong>
+                <p>Painted in his first week at the asylum, working from the garden — violet petals set against complementary yellow-green leaves.</p>
+              </div>
+            </div>
+            <div class="vg-gallery-card">
+              <div class="vg-gallery-photo"><img src="../assets/images/vincent-van-gogh-history/self-portrait-1889.webp" alt="Self-Portrait, 1889 — Van Gogh's face rendered against a background of swirling blue brushstrokes" width="900" height="1094" loading="lazy" decoding="async" class="vg-zoomable" /></div>
+              <div class="vg-gallery-body">
+                <span class="vg-gallery-year">1889 · Saint-Rémy</span>
+                <strong>Self-Portrait</strong>
+                <p>One of over 35 self-portraits — the swirling blue background uses the same rhythmic brushwork he'd apply to the sky in The Starry Night.</p>
+              </div>
+            </div>
+            <div class="vg-gallery-card">
+              <div class="vg-gallery-photo"><img src="../assets/images/vincent-van-gogh-history/wheatfield-with-crows.webp" alt="Wheatfield with Crows, 1890 — a turbulent wheat field under a stormy sky with crows scattering, painted in thick, sculptural impasto" width="900" height="428" loading="lazy" decoding="async" class="vg-zoomable" /></div>
+              <div class="vg-gallery-body">
+                <span class="vg-gallery-year">1890 · Auvers-sur-Oise</span>
+                <strong>Wheatfield with Crows</strong>
+                <p>Painted weeks before his death — one of his final works, with paint applied so thickly it stands off the canvas in ridges.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="vg-credits">
+            <strong style="color:var(--fl-ink)">Image credits:</strong> All eight paintings are in the public domain (Van Gogh died in 1890) and reproduced via
+            <a href="https://commons.wikimedia.org/wiki/Category:Paintings_by_Vincent_van_Gogh" target="_blank" rel="noopener">Wikimedia Commons</a>, most digitized at high resolution by the Google Art Project.
           </div>
         </section>
 
@@ -303,9 +621,44 @@
 
   </div><!-- .ll-viewport -->
 
+  <div class="vg-lightbox" id="vgLightbox" role="dialog" aria-modal="true" aria-label="Enlarged painting">
+    <div class="vg-lightbox-frame">
+      <button type="button" class="vg-lightbox-close" id="vgLightboxClose" aria-label="Close enlarged painting">&#10005;</button>
+      <img id="vgLightboxImg" src="" alt="" />
+      <p class="vg-lightbox-cap" id="vgLightboxCap"></p>
+    </div>
+  </div>
+
 <script src="../assets/js/nav-mobile.js"></script>
 <script src="../assets/js/lesson-content.js"></script>
 <script src="../assets/js/figure-lesson.js"></script>
 <script src="../assets/js/lesson-print-button.js"></script>
+<script>
+  // Painting lightbox
+  (function () {
+    const lightbox = document.getElementById('vgLightbox'), lbImg = document.getElementById('vgLightboxImg'), lbCap = document.getElementById('vgLightboxCap');
+    if (!lightbox) return;
+    let lastFocused = null;
+    function open(img) {
+      lastFocused = document.activeElement;
+      lbImg.src = img.currentSrc || img.src;
+      lbImg.alt = img.alt || '';
+      lbCap.textContent = img.alt || '';
+      lightbox.classList.add('open');
+      document.getElementById('vgLightboxClose').focus();
+    }
+    function close() {
+      lightbox.classList.remove('open');
+      lbImg.src = '';
+      if (lastFocused) lastFocused.focus();
+    }
+    document.addEventListener('click', e => {
+      const img = e.target.closest('.vg-zoomable');
+      if (img) { open(img); return; }
+      if (e.target === lightbox || e.target.id === 'vgLightboxClose') close();
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && lightbox.classList.contains('open')) close(); });
+  })();
+</script>
 </body>
 </html>

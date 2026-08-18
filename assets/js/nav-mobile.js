@@ -1237,25 +1237,26 @@
       var li = link.parentNode;
       li.classList.add("nav-dd-wrap");
 
-      /* Replace bare link with trigger button + keep page link on label */
+      /* Keep the page link as-is (a <button> can't contain an <a> — that
+       * invalid nesting used to make the link inherit the outer button's
+       * hover/focus styling on top of its own, so the two fought over
+       * hover transitions on every pointer move). Add a sibling caret
+       * button instead of wrapping the link in one. */
+      link.classList.add("nav-dd-label");
+
       var trigger = document.createElement("button");
       trigger.type = "button";
       trigger.className = "nav-dd-trigger";
       trigger.setAttribute("aria-haspopup", "true");
       trigger.setAttribute("aria-expanded", "false");
-      trigger.innerHTML =
-        '<a href="' + link.getAttribute("href") + '" class="nav-dd-label"' +
-        (link.getAttribute("aria-current") ? ' aria-current="' + link.getAttribute("aria-current") + '"' : '') +
-        '>' + label + '</a>' +
-        '<span class="nav-dd-caret" aria-hidden="true">▾</span>';
+      trigger.setAttribute("aria-label", label + " menu");
+      trigger.innerHTML = '<span class="nav-dd-caret" aria-hidden="true">▾</span>';
 
       var panel = buildPanel(config.items);
-      li.replaceChild(trigger, link);
+      li.appendChild(trigger);
       li.appendChild(panel);
 
-      /* Intercept clicks on the label link (navigate) vs caret (open dropdown) */
       trigger.addEventListener("click", function (e) {
-        if (e.target.closest(".nav-dd-label")) return; /* let link navigate */
         e.preventDefault();
         var isOpen = li.classList.contains("is-open");
         if (openDd && openDd !== li) {

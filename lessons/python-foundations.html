@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Python Foundations · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Learn Python from zero: variables, data types, print(), operators, if/elif/else, for and while loops, lists, and functions — with predict-the-output and fill-in-the-code exercises and instant feedback." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    /* ── Theme tokens ─────────────────────────────────── */
+    .ll-viewport {
+      --ll-panel-w: 295px;
+      --ll-accent: #2f6f4f;
+      --ll-tab-active: #2f9e6f;
+      --ll-tab-active-bg: rgba(47, 158, 111, 0.10);
+    }
+
+    .ll-sim {
+      background:
+        radial-gradient(circle at 8% 4%, rgba(74, 222, 128, 0.16) 0, transparent 32rem),
+        var(--surface-0);
+    }
+
+    .pf-page { max-width: 1080px; margin: 0 auto; padding: 0 1rem 3rem; }
+
+    /* ── Hero ─────────────────────────────────────────── */
+    .pf-hero { padding: 0.75rem 0 1.15rem; display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.4rem; align-items: center; }
+    .pf-hero h1 { font-size: clamp(1.55rem, 3.5vw, 2.35rem); margin: 0.25rem 0 0.5rem; }
+    .pf-meta { display: flex; flex-wrap: wrap; gap: 0.35rem 0.65rem; margin: 0.55rem 0 0; font-size: 0.8rem; color: var(--text-muted, #64748b); }
+    .pf-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45; display: inline-block; align-self: center; }
+    .pf-lede { margin: 0.7rem 0 0; max-width: 60ch; color: var(--text-secondary, #3f4f65); font-size: 0.93rem; line-height: 1.65; }
+
+    .pf-hero-code {
+      background: #0d1117; border: 1px solid rgba(47, 158, 111, 0.35);
+      border-radius: 14px; overflow: hidden;
+      box-shadow: 0 14px 34px rgba(15, 23, 42, 0.18);
+    }
+    .pf-hero-code-head { display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: rgba(47, 158, 111, 0.12); border-bottom: 1px solid rgba(47, 158, 111, 0.28); }
+    .pf-dot { width: 9px; height: 9px; border-radius: 50%; }
+    .pf-hero-code-title { font-size: 0.68rem; font-weight: 700; color: rgba(230, 233, 242, 0.7); margin-left: 4px; font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace; }
+    .pf-hero-code pre { margin: 0; padding: 12px 14px; font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace; font-size: 0.76rem; line-height: 1.65; color: #e6e9f2; overflow-x: auto; }
+    .k  { color: #ff79a8; }
+    .fn { color: #6ab0f0; }
+    .st { color: #a8e07a; }
+    .nm { color: #ffd43b; }
+    .cm { color: rgba(140,155,185,0.6); font-style: italic; }
+    .bi { color: #7ee2c4; }
+
+    /* ── Card ─────────────────────────────────────────── */
+    .pf-card { background: #fff; border: 1px solid #dde3ea; border-left: 3.5px solid var(--pf-accent, #2f6f4f); border-radius: 16px; box-shadow: 0 8px 26px rgba(15, 23, 42, 0.07); padding: 1.15rem 1.3rem; margin-bottom: 0.9rem; }
+    .pf-card h2 { margin: 0 0 0.4rem; font-size: 1.18rem; }
+    .pf-card p  { margin: 0 0 0.55rem; color: var(--text-secondary, #3f4f65); font-size: 0.87rem; line-height: 1.65; }
+    .pf-card p:last-child { margin-bottom: 0; }
+
+    .pf-label { display: inline-block; margin-bottom: 0.3rem; font-weight: 900; color: #2f6f4f; letter-spacing: 0.06em; text-transform: uppercase; font-size: 0.7rem; }
+
+    .pf-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.4rem; }
+    .pf-card-head h2 { margin: 0 0 0.2rem; }
+
+    .pf-btn { flex-shrink: 0; border: 1px solid #dde3ea; border-radius: 8px; background: #fff; color: #56657a; font: inherit; font-weight: 700; font-size: 0.75rem; padding: 5px 11px; cursor: pointer; transition: border-color 120ms, background 120ms; }
+    .pf-btn:hover { border-color: #2f6f4f; background: #f0fdf5; color: #14532d; }
+
+    /* ── Ladder ───────────────────────────────────────── */
+    .pf-ladder { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; margin-top: 0.7rem; }
+    .pf-step { border: 1px solid #e3eaf1; border-radius: 12px; background: rgba(47, 158, 111, 0.05); padding: 0.7rem 0.85rem; display: flex; align-items: flex-start; gap: 0.55rem; font-size: 0.84rem; font-weight: 700; color: #18212f; }
+    .pf-step-n { width: 24px; height: 24px; flex: 0 0 auto; border-radius: 50%; display: grid; place-items: center; background: #bbf7d0; color: #14532d; font-size: 0.72rem; font-weight: 800; }
+
+    /* ── Code block (inside exercises) ───────────────── */
+    .pf-code { background: #0d1117; border-radius: 11px; padding: 0.75rem 0.95rem; margin: 0.55rem 0; overflow-x: auto; }
+    .pf-code pre { margin: 0; font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace; font-size: 0.8rem; line-height: 1.6; color: #e6e9f2; white-space: pre; }
+
+    /* ── Multiple choice ──────────────────────────────── */
+    .pf-mc { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0.55rem 0; }
+    .pf-choice { border: 1.5px solid #dde3ea; border-radius: 9px; background: #fff; color: #18212f; font: inherit; font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace; font-weight: 700; font-size: 0.83rem; padding: 0.45rem 0.75rem; cursor: pointer; transition: border-color 110ms, background 110ms; }
+    .pf-choice:hover { border-color: #2f6f4f; background: #f0fdf5; }
+    .pf-choice.correct { background: #d1fae5; border-color: #059669; color: #065f46; cursor: default; }
+    .pf-choice.wrong { background: #fee2e2; border-color: #dc2626; color: #7f1d1d; }
+    .pf-choice[disabled] { pointer-events: none; }
+
+    /* ── Feedback ─────────────────────────────────────── */
+    .pf-fb { font-size: 0.85rem; font-weight: 700; min-height: 1.5em; padding: 0.3rem 0; color: #059669; }
+    .pf-fb.err { color: #b91c1c; }
+    .pf-fb.neutral { color: #56657a; }
+
+    /* ── Fill-in-the-blank ────────────────────────────── */
+    .pf-fill-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 0.55rem 0; }
+    .pf-input { border: 1.5px solid #dde3ea; border-radius: 8px; padding: 0.5rem 0.65rem; background: #f8fafc; color: #18212f; font: inherit; font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace; font-size: 0.85rem; min-width: 160px; transition: border-color 140ms; }
+    .pf-input:focus { outline: none; border-color: #2f6f4f; background: #fff; }
+    .pf-input.pf-wide { flex: 1 1 100%; min-width: 100%; }
+    .pf-check-btn { border: 0; border-radius: 8px; background: #2f6f4f; color: #fff; font: inherit; font-weight: 800; font-size: 0.8rem; padding: 0.5rem 0.85rem; cursor: pointer; }
+    .pf-check-btn:hover { background: #1f4f38; }
+
+    textarea.pf-input { font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace; resize: vertical; min-height: 3.4rem; width: 100%; }
+
+    /* ── Two-column ───────────────────────────────────── */
+    .pf-two { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+
+    /* ── Type sorter ──────────────────────────────────── */
+    .pf-sort-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.55rem; margin: 0.65rem 0; }
+    .pf-sort-item { border: 1px solid #e3eaf1; border-radius: 12px; padding: 0.65rem 0.8rem; background: rgba(47, 158, 111, 0.03); }
+    .pf-sort-item code { display: block; font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace; font-size: 0.92rem; font-weight: 800; color: #18212f; margin-bottom: 0.4rem; }
+    .pf-sort-choices { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .pf-type-btn { border: 1px solid #dde3ea; border-radius: 999px; background: #fff; color: #56657a; font: inherit; font-weight: 700; font-size: 0.7rem; padding: 3px 10px; cursor: pointer; transition: background 110ms, color 110ms, border-color 110ms; }
+    .pf-type-btn:hover { border-color: #2f6f4f; }
+    .pf-type-btn.correct { background: #d1fae5; border-color: #059669; color: #065f46; }
+    .pf-type-btn.wrong { background: #fee2e2; border-color: #dc2626; color: #7f1d1d; }
+
+    /* ── Score ────────────────────────────────────────── */
+    .pf-score { position: sticky; top: 0.5rem; z-index: 5; display: flex; align-items: center; gap: 0.6rem; margin: 0 0 0.9rem; padding: 0.55rem 0.8rem; border-radius: 12px; border: 1px solid #dde3ea; background: rgba(255,255,255,0.9); backdrop-filter: blur(8px); box-shadow: 0 6px 18px rgba(15,23,42,0.06); }
+    .pf-score-ring { width: 2.15rem; aspect-ratio: 1; display: grid; place-items: center; border: 3px solid #2f6f4f; border-radius: 50%; color: #14532d; font-size: 0.68rem; font-weight: 900; }
+    .pf-score small { display: block; color: var(--text-muted, #64748b); font-size: 0.68rem; }
+    .pf-score strong { font-size: 0.82rem; }
+
+    /* ── Extension grid ───────────────────────────────── */
+    .pf-ext-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; margin-top: 0.7rem; }
+    .pf-ext-card { border: 1px solid #e3eaf1; border-radius: 13px; padding: 0.88rem 1rem; background: #fff; }
+    .pf-ext-card strong { display: block; font-size: 0.87rem; margin-bottom: 0.22rem; color: #2f6f4f; }
+    .pf-ext-card p { margin: 0; font-size: 0.81rem; color: var(--text-secondary, #3f4f65); line-height: 1.6; }
+    .pf-ext-card.pf-next { background: linear-gradient(135deg, rgba(47,158,111,0.08), rgba(47,158,111,0.02)); border-color: #2f9e6f; }
+    .pf-ext-card.pf-next a.pf-next-link { display: inline-block; margin-top: 0.4rem; font-size: 0.78rem; font-weight: 800; color: #14532d; text-decoration: none; border-bottom: 2px solid #2f9e6f; }
+    .pf-ext-card.pf-next a.pf-next-link:hover { color: #2f6f4f; }
+
+    /* ── Next lesson banner ───────────────────────────── */
+    .pf-next-banner {
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      margin-top: 1rem; padding: 1rem 1.2rem; border-radius: 16px;
+      background: linear-gradient(120deg, #0d1117, #14201a);
+      border: 1px solid rgba(47, 158, 111, 0.4);
+      color: #e6e9f2;
+    }
+    .pf-next-banner strong { display: block; font-size: 1rem; margin-bottom: 0.2rem; color: #7ee2c4; }
+    .pf-next-banner p { margin: 0; font-size: 0.82rem; color: rgba(230,233,242,0.7); max-width: 46ch; }
+    .pf-next-banner a { flex-shrink: 0; border: 1px solid #2f9e6f; border-radius: 999px; padding: 0.55rem 1.1rem; font-size: 0.8rem; font-weight: 800; color: #7ee2c4; text-decoration: none; white-space: nowrap; }
+    .pf-next-banner a:hover { background: rgba(47, 158, 111, 0.18); }
+
+    /* ── Footer ───────────────────────────────────────── */
+    .pf-footer { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #dde3ea; }
+
+    /* ── Responsive ───────────────────────────────────── */
+    @media (max-width: 860px) {
+      .pf-hero { grid-template-columns: 1fr; }
+      .pf-two { grid-template-columns: 1fr; }
+      .pf-sort-grid { grid-template-columns: 1fr; }
+      .pf-ext-grid { grid-template-columns: 1fr 1fr; }
+      .pf-ladder { grid-template-columns: repeat(2, 1fr); }
+      .pf-next-banner { flex-direction: column; align-items: flex-start; }
+    }
+    @media (max-width: 520px) {
+      .pf-ext-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+
+    <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../paths.html">Paths</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Apps</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+    <div class="ll-stage">
+      <main class="ll-sim" id="main-content">
+        <div class="pf-page">
+
+          <!-- ── Hero ───────────────────────────────── -->
+          <section class="pf-hero">
+            <div>
+              <span class="pf-label">Prerequisite · Start Here</span>
+              <h1>Python Foundations</h1>
+              <div class="pf-meta">
+                <span>Grades 5&ndash;9</span><span class="dot"></span>
+                <span>Interactive lab</span><span class="dot"></span>
+                <span>No install required</span>
+              </div>
+              <p class="pf-lede">Every Python program is built from the same handful of ideas: <strong>store</strong> a value, <strong>show</strong> it, <strong>decide</strong> with it, <strong>repeat</strong> with it, <strong>collect</strong> it, and <strong>reuse</strong> logic with it. Work through each station, read real Python code, predict what it does, and check your thinking instantly &mdash; before you ever touch <a href="pygame-game-loop.html">Pygame</a> or any other Python project on this site.</p>
+            </div>
+            <div class="pf-hero-code" aria-hidden="true">
+              <div class="pf-hero-code-head"><span class="pf-dot" style="background:#ff5f57"></span><span class="pf-dot" style="background:#febc2e"></span><span class="pf-dot" style="background:#28c840"></span><span class="pf-hero-code-title">foundations.py</span></div>
+              <pre><span class="va">name</span> = <span class="st">"Nova"</span>
+<span class="va">age</span> = <span class="nm">12</span>
+<span class="k">if</span> <span class="va">age</span> &gt;= <span class="nm">10</span>:
+    <span class="fn">print</span>(<span class="va">name</span>, <span class="st">"is ready."</span>)
+<span class="k">else</span>:
+    <span class="fn">print</span>(<span class="st">"Not yet."</span>)
+
+<span class="k">for</span> <span class="va">n</span> <span class="k">in</span> <span class="fn">range</span>(<span class="nm">3</span>):
+    <span class="fn">print</span>(<span class="st">"Loop"</span>, <span class="va">n</span>)</pre>
+            </div>
+          </section>
+
+          <!-- ── Score ──────────────────────────────── -->
+          <div class="pf-score" aria-live="polite">
+            <span class="pf-score-ring" id="scoreRing">0%</span>
+            <span><small>Lab progress</small><strong id="scoreText">0 of 0 checked</strong></span>
+          </div>
+
+          <!-- ── Ladder ─────────────────────────────── -->
+          <section class="pf-card" style="--pf-accent:#2f6f4f;">
+            <span class="pf-label">Map</span>
+            <h2>The Python Ladder</h2>
+            <p>Eight ideas, in order. Each station below teaches one rung, then the Mini Challenge at the end mixes them all together.</p>
+            <div class="pf-ladder">
+              <div class="pf-step"><span class="pf-step-n">1</span>Variables</div>
+              <div class="pf-step"><span class="pf-step-n">2</span>Data Types</div>
+              <div class="pf-step"><span class="pf-step-n">3</span>Operators</div>
+              <div class="pf-step"><span class="pf-step-n">4</span>print()</div>
+              <div class="pf-step"><span class="pf-step-n">5</span>Conditionals</div>
+              <div class="pf-step"><span class="pf-step-n">6</span>Loops</div>
+              <div class="pf-step"><span class="pf-step-n">7</span>Lists</div>
+              <div class="pf-step"><span class="pf-step-n">8</span>Functions</div>
+            </div>
+          </section>
+
+          <!-- ── Station 1: Variables & print() ────── -->
+          <section id="variables" class="pf-card" style="--pf-accent:#2f6f4f;">
+            <span class="pf-label">Station 1</span>
+            <h2>Variables &amp; print()</h2>
+            <p>A <strong>variable</strong> is a labeled box that holds a value. <code>=</code> stores a value in the box; it does <em>not</em> mean "equals" the way it does in math. <code>print()</code> shows a value on the screen.</p>
+            <div class="pf-code"><pre><span class="va">robot_name</span> = <span class="st">"Byte"</span>
+<span class="va">battery</span> = <span class="nm">87</span>
+<span class="fn">print</span>(<span class="va">robot_name</span>, <span class="st">"is at"</span>, <span class="va">battery</span>, <span class="st">"percent."</span>)</pre></div>
+            <p><strong>What does this print?</strong></p>
+            <div class="pf-mc" data-exercise>
+              <button class="pf-choice" type="button">robot_name is at battery percent.</button>
+              <button class="pf-choice" type="button" data-correct>Byte is at 87 percent.</button>
+              <button class="pf-choice" type="button">"Byte" is at 87 percent.</button>
+              <button class="pf-choice" type="button">Byte, 87</button>
+            </div>
+            <p class="pf-fb neutral" data-fb>Pick the line you think Python would print.</p>
+
+            <p style="margin-top:0.9rem;"><strong>Now fix it the other way:</strong> what variable name is missing from the blank so this code prints <code>Level 5</code>?</p>
+            <div class="pf-code"><pre><span class="va">____</span> = <span class="nm">5</span>
+<span class="fn">print</span>(<span class="st">"Level"</span>, <span class="va">level</span>)</pre></div>
+            <div class="pf-fill-row" data-exercise data-type="fill" data-answer="level">
+              <input class="pf-input" type="text" placeholder="type the missing name" data-fill />
+              <button class="pf-check-btn" type="button" data-check>Check</button>
+            </div>
+            <p class="pf-fb neutral" data-fb>Look at the second line to see what name is used there.</p>
+          </section>
+
+          <!-- ── Station 2: Data Types ──────────────── -->
+          <section id="types" class="pf-card" style="--pf-accent:#0f766e;">
+            <span class="pf-label">Station 2</span>
+            <h2>Data Types</h2>
+            <p>Every value in Python has a type. The four you'll use constantly: <strong>str</strong> (text, in quotes), <strong>int</strong> (whole numbers), <strong>float</strong> (decimal numbers), and <strong>bool</strong> (<code>True</code> or <code>False</code>). Tap the correct type for each value.</p>
+            <div class="pf-sort-grid" id="typeSorter">
+              <div class="pf-sort-item" data-answer="str"><code>"level 5"</code><div class="pf-sort-choices" data-exercise data-type="mc-inline"></div></div>
+              <div class="pf-sort-item" data-answer="int"><code>42</code><div class="pf-sort-choices" data-exercise data-type="mc-inline"></div></div>
+              <div class="pf-sort-item" data-answer="float"><code>3.5</code><div class="pf-sort-choices" data-exercise data-type="mc-inline"></div></div>
+              <div class="pf-sort-item" data-answer="bool"><code>True</code><div class="pf-sort-choices" data-exercise data-type="mc-inline"></div></div>
+              <div class="pf-sort-item" data-answer="str"><code>"42"</code><div class="pf-sort-choices" data-exercise data-type="mc-inline"></div></div>
+              <div class="pf-sort-item" data-answer="bool"><code>10 &gt; 3</code><div class="pf-sort-choices" data-exercise data-type="mc-inline"></div></div>
+            </div>
+            <p class="pf-fb neutral" id="typeSorterFb" aria-live="polite">Notice that <code>"42"</code> is a string because of the quotes &mdash; Python treats it as text, not a number.</p>
+          </section>
+
+          <!-- ── Station 3: Operators ──────────────── -->
+          <section id="operators" class="pf-card" style="--pf-accent:#7c3aed;">
+            <span class="pf-label">Station 3</span>
+            <h2>Operators</h2>
+            <p>Arithmetic operators do math: <code>+ - * /</code> plus two Python specials &mdash; <code>//</code> (floor division, drops the remainder) and <code>%</code> (modulo, keeps only the remainder). Comparison operators (<code>== != &gt; &lt; &gt;= &lt;=</code>) ask a yes/no question and produce a bool.</p>
+            <p><strong>What does <code>print(17 // 5)</code> output?</strong></p>
+            <div class="pf-mc" data-exercise>
+              <button class="pf-choice" type="button">3.4</button>
+              <button class="pf-choice" type="button" data-correct>3</button>
+              <button class="pf-choice" type="button">2</button>
+              <button class="pf-choice" type="button">17</button>
+            </div>
+            <p class="pf-fb neutral" data-fb>Floor division throws away the leftover and rounds down.</p>
+
+            <p style="margin-top:0.9rem;"><strong>What does <code>print(17 % 5)</code> output?</strong></p>
+            <div class="pf-mc" data-exercise>
+              <button class="pf-choice" type="button">3</button>
+              <button class="pf-choice" type="button" data-correct>2</button>
+              <button class="pf-choice" type="button">3.4</button>
+              <button class="pf-choice" type="button">0</button>
+            </div>
+            <p class="pf-fb neutral" data-fb>17 divided by 5 is 3 remainder 2 &mdash; <code>%</code> gives you just the remainder.</p>
+
+            <p style="margin-top:0.9rem;"><strong>What does <code>print("3" + "4")</code> output?</strong></p>
+            <div class="pf-mc" data-exercise>
+              <button class="pf-choice" type="button">7</button>
+              <button class="pf-choice" type="button" data-correct>34</button>
+              <button class="pf-choice" type="button">Error</button>
+              <button class="pf-choice" type="button">3 4</button>
+            </div>
+            <p class="pf-fb neutral" data-fb>Both sides are strings, so <code>+</code> glues the text together instead of adding numbers.</p>
+          </section>
+
+          <!-- ── Station 4: Conditionals ───────────── -->
+          <section id="conditionals" class="pf-card" style="--pf-accent:#b45309;">
+            <span class="pf-label">Station 4</span>
+            <h2>Conditionals: if / elif / else</h2>
+            <p>A conditional lets a program make decisions. Python checks each condition in order and runs the first block that is <code>True</code> &mdash; then skips the rest.</p>
+            <div class="pf-code"><pre><span class="va">score</span> = <span class="nm">72</span>
+<span class="k">if</span> <span class="va">score</span> &gt;= <span class="nm">90</span>:
+    <span class="fn">print</span>(<span class="st">"A"</span>)
+<span class="k">elif</span> <span class="va">score</span> &gt;= <span class="nm">70</span>:
+    <span class="fn">print</span>(<span class="st">"B"</span>)
+<span class="k">else</span>:
+    <span class="fn">print</span>(<span class="st">"Keep practicing"</span>)</pre></div>
+            <p><strong>What prints?</strong></p>
+            <div class="pf-mc" data-exercise>
+              <button class="pf-choice" type="button">A</button>
+              <button class="pf-choice" type="button" data-correct>B</button>
+              <button class="pf-choice" type="button">Keep practicing</button>
+              <button class="pf-choice" type="button">A and B</button>
+            </div>
+            <p class="pf-fb neutral" data-fb>72 is not &ge; 90, but it is &ge; 70 &mdash; and Python stops at the first true branch.</p>
+
+            <p style="margin-top:0.9rem;"><strong>Fill in the comparison</strong> so the code below prints <code>Access granted</code> when <code>pin</code> is exactly <code>1234</code>:</p>
+            <div class="pf-code"><pre><span class="va">pin</span> = <span class="nm">1234</span>
+<span class="k">if</span> <span class="va">pin</span> ____ <span class="nm">1234</span>:
+    <span class="fn">print</span>(<span class="st">"Access granted"</span>)</pre></div>
+            <div class="pf-fill-row" data-exercise data-type="fill" data-answer="==">
+              <input class="pf-input" type="text" placeholder="comparison operator" data-fill />
+              <button class="pf-check-btn" type="button" data-check>Check</button>
+            </div>
+            <p class="pf-fb neutral" data-fb>Remember: a single <code>=</code> stores a value; this needs the "is equal to" operator.</p>
+          </section>
+
+          <!-- ── Station 5: Loops ──────────────────── -->
+          <section id="loops" class="pf-card" style="--pf-accent:#0369a1;">
+            <span class="pf-label">Station 5</span>
+            <h2>Loops: for &amp; while</h2>
+            <p>A <strong>for loop</strong> repeats once per item in a sequence &mdash; <code>range(n)</code> counts from <code>0</code> up to (but not including) <code>n</code>. A <strong>while loop</strong> repeats as long as a condition stays <code>True</code>.</p>
+            <div class="pf-code"><pre><span class="k">for</span> <span class="va">i</span> <span class="k">in</span> <span class="fn">range</span>(<span class="nm">4</span>):
+    <span class="fn">print</span>(<span class="va">i</span>)</pre></div>
+            <p><strong>What prints?</strong></p>
+            <div class="pf-mc" data-exercise>
+              <button class="pf-choice" type="button">1 2 3 4</button>
+              <button class="pf-choice" type="button" data-correct>0 1 2 3</button>
+              <button class="pf-choice" type="button">0 1 2 3 4</button>
+              <button class="pf-choice" type="button">4</button>
+            </div>
+            <p class="pf-fb neutral" data-fb><code>range(4)</code> counts 0, 1, 2, 3 &mdash; four numbers, starting at zero.</p>
+
+            <p style="margin-top:0.9rem;"><strong>Fill in the blank</strong> so this while loop prints <code>0 1 2</code> and then stops (it must not run forever):</p>
+            <div class="pf-code"><pre><span class="va">count</span> = <span class="nm">0</span>
+<span class="k">while</span> <span class="va">count</span> &lt; <span class="nm">3</span>:
+    <span class="fn">print</span>(<span class="va">count</span>)
+    <span class="va">count</span> = <span class="va">count</span> + ____</pre></div>
+            <div class="pf-fill-row" data-exercise data-type="fill" data-answer="1">
+              <input class="pf-input" type="text" placeholder="what number?" data-fill />
+              <button class="pf-check-btn" type="button" data-check>Check</button>
+            </div>
+            <p class="pf-fb neutral" data-fb>Without changing <code>count</code>, the condition <code>count &lt; 3</code> would stay true forever &mdash; an infinite loop.</p>
+          </section>
+
+          <!-- ── Station 6: Lists ──────────────────── -->
+          <section id="lists" class="pf-card" style="--pf-accent:#dc2626;">
+            <span class="pf-label">Station 6</span>
+            <h2>Lists</h2>
+            <p>A <strong>list</strong> holds many values in order, in square brackets. Items are numbered starting at <code>0</code>. <code>.append()</code> adds an item to the end. <code>len()</code> counts how many items are in it.</p>
+            <div class="pf-code"><pre><span class="va">pets</span> = [<span class="st">"cat"</span>, <span class="st">"dog"</span>, <span class="st">"fish"</span>]
+<span class="va">pets</span>.<span class="fn">append</span>(<span class="st">"hamster"</span>)
+<span class="fn">print</span>(<span class="va">pets</span>[<span class="nm">1</span>])
+<span class="fn">print</span>(<span class="fn">len</span>(<span class="va">pets</span>))</pre></div>
+            <p><strong>What prints on the first line?</strong></p>
+            <div class="pf-mc" data-exercise>
+              <button class="pf-choice" type="button">cat</button>
+              <button class="pf-choice" type="button" data-correct>dog</button>
+              <button class="pf-choice" type="button">fish</button>
+              <button class="pf-choice" type="button">hamster</button>
+            </div>
+            <p class="pf-fb neutral" data-fb>Counting starts at 0, so index 1 is the second item: "dog".</p>
+
+            <p style="margin-top:0.9rem;"><strong>What prints on the second line</strong> &mdash; how many items are in <code>pets</code> after the <code>.append()</code>?</p>
+            <div class="pf-mc" data-exercise>
+              <button class="pf-choice" type="button">3</button>
+              <button class="pf-choice" type="button" data-correct>4</button>
+              <button class="pf-choice" type="button">5</button>
+              <button class="pf-choice" type="button">1</button>
+            </div>
+            <p class="pf-fb neutral" data-fb>The list started with 3 items; <code>.append("hamster")</code> made it 4.</p>
+          </section>
+
+          <!-- ── Station 7: Functions ──────────────── -->
+          <section id="functions" class="pf-card" style="--pf-accent:#a21caf;">
+            <span class="pf-label">Station 7</span>
+            <h2>Functions</h2>
+            <p>A <strong>function</strong> is a reusable block of code. <code>def</code> defines it, the names inside the parentheses are <strong>parameters</strong> (placeholders), and <code>return</code> sends a value back out to whoever called it.</p>
+            <div class="pf-code"><pre><span class="k">def</span> <span class="fn">double</span>(<span class="va">x</span>):
+    <span class="k">return</span> <span class="va">x</span> * <span class="nm">2</span>
+
+<span class="fn">print</span>(<span class="fn">double</span>(<span class="nm">5</span>))
+<span class="fn">print</span>(<span class="fn">double</span>(<span class="nm">10</span>))</pre></div>
+            <p><strong>What prints?</strong></p>
+            <div class="pf-mc" data-exercise>
+              <button class="pf-choice" type="button">5 10</button>
+              <button class="pf-choice" type="button" data-correct>10 20</button>
+              <button class="pf-choice" type="button">x2 x2</button>
+              <button class="pf-choice" type="button">15</button>
+            </div>
+            <p class="pf-fb neutral" data-fb>Each call passes a different <code>x</code> into the same function: 5&times;2=10, 10&times;2=20.</p>
+
+            <p style="margin-top:0.9rem;"><strong>Complete the function</strong> so <code>greet("Nova")</code> returns <code>"Hi, Nova!"</code>:</p>
+            <div class="pf-code"><pre><span class="k">def</span> <span class="fn">greet</span>(<span class="va">name</span>):
+    <span class="k">return</span> ____</pre></div>
+            <div class="pf-fill-row" data-exercise data-type="fill" data-answer="&quot;Hi, &quot; + name + &quot;!&quot;|'Hi, ' + name + '!'|f&quot;Hi, {name}!&quot;|f'Hi, {name}!'">
+              <input class="pf-input pf-wide" type="text" placeholder='e.g. "Hi, " + name + "!"' data-fill />
+              <button class="pf-check-btn" type="button" data-check>Check</button>
+            </div>
+            <p class="pf-fb neutral" data-fb>You can join strings with <code>+</code>, or use an f-string like <code>f"Hi, {name}!"</code>.</p>
+          </section>
+
+          <!-- ── Mini Challenge ────────────────────── -->
+          <section id="challenge" class="pf-card" style="--pf-accent:#111827;">
+            <span class="pf-label">Integration · Mini Challenge</span>
+            <h2>Predict the Full Output</h2>
+            <p>This program uses every rung of the ladder: a variable, a list, a loop, a conditional, and a function. Read it carefully, then type exactly what it prints &mdash; one line per <code>print()</code>.</p>
+            <div class="pf-code"><pre><span class="k">def</span> <span class="fn">status</span>(<span class="va">hp</span>):
+    <span class="k">if</span> <span class="va">hp</span> &gt; <span class="nm">0</span>:
+        <span class="k">return</span> <span class="st">"alive"</span>
+    <span class="k">else</span>:
+        <span class="k">return</span> <span class="st">"defeated"</span>
+
+<span class="va">team</span> = [<span class="nm">30</span>, <span class="nm">0</span>, <span class="nm">15</span>]
+
+<span class="k">for</span> <span class="va">hp</span> <span class="k">in</span> <span class="va">team</span>:
+    <span class="fn">print</span>(<span class="va">hp</span>, <span class="fn">status</span>(<span class="va">hp</span>))</pre></div>
+            <div class="pf-fill-row" data-exercise data-type="fill" data-answer="30 alive
+0 defeated
+15 alive">
+              <textarea class="pf-input pf-wide" rows="3" placeholder="type all three lines, one per row" data-fill></textarea>
+              <button class="pf-check-btn" type="button" data-check>Check</button>
+            </div>
+            <p class="pf-fb neutral" data-fb>The loop runs once per number in <code>team</code>, calling <code>status()</code> fresh each time.</p>
+          </section>
+
+          <!-- ── Where Python goes next ────────────── -->
+          <section class="pf-card" style="--pf-accent:#2f6f4f;">
+            <span class="pf-label">Extension</span>
+            <h2>Where Python Goes Next</h2>
+            <p>Once these eight ideas feel automatic, the same building blocks power every Python project on this site &mdash; and beyond.</p>
+            <div class="pf-ext-grid">
+              <div class="pf-ext-card pf-next">
+                <strong>Games &mdash; Pygame</strong>
+                <p>The exact input/update/render loop every game runs on, built from the loops and conditionals you just learned.</p>
+                <a class="pf-next-link" href="pygame-game-loop.html">Start Pygame: The Game Loop &rarr;</a>
+              </div>
+              <div class="pf-ext-card">
+                <strong>Data &amp; Automation</strong>
+                <p>Lists and loops scale up to spreadsheets, files, and scripts that do repetitive tasks automatically.</p>
+              </div>
+              <div class="pf-ext-card">
+                <strong>Artificial Intelligence</strong>
+                <p>Every AI model in this site's Computer Science module &mdash; from n-gram predictors to neural networks &mdash; is Python functions operating on lists of numbers.</p>
+              </div>
+            </div>
+          </section>
+
+          <div class="pf-next-banner">
+            <div><strong>Ready for real code in motion?</strong><p>Pygame: The Game Loop uses these exact variables, conditionals, and loops to move a sprite around the screen, frame by frame.</p></div>
+            <a href="pygame-game-loop.html">Next Lesson: Pygame &rarr;</a>
+          </div>
+
+          <footer class="site-footer pf-footer">
+            <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> &middot; <a href="../steam-lessons.html">Lessons</a></p>
+          </footer>
+
+        </div><!-- .pf-page -->
+      </main>
+
+      <!-- ── Side Panel ──────────────────────────────── -->
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs" role="tablist" aria-label="Lesson panel">
+            <button class="ll-tab" role="tab" aria-selected="true"  data-pane="pf-guide">Guide</button>
+            <button class="ll-tab" role="tab" aria-selected="false" data-pane="pf-vocab">Vocab</button>
+            <button class="ll-tab" role="tab" aria-selected="false" data-pane="pf-activities">Activities</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+
+        <div class="ll-panel-body">
+
+          <div class="ll-pane ll-active" id="pf-guide">
+            <div class="ll-info">
+              <strong>Lesson objective</strong>
+              Students read and predict the output of real Python code covering variables, data types, operators, conditionals, loops, lists, and functions &mdash; then check their prediction instantly.
+            </div>
+            <div class="ll-info">
+              <strong>Why "predict the output," not a live interpreter?</strong>
+              This lab intentionally skips running real Python in the browser. Predicting output first builds the mental model that makes an actual interpreter useful later &mdash; and it works on any device with zero setup.
+            </div>
+            <div class="ll-info">
+              <strong>Station 1&ndash;3</strong>
+              Read each code block aloud before choosing an answer. Naming the parts ("that's a variable, that's a string") builds vocabulary alongside syntax.
+            </div>
+            <div class="ll-info">
+              <strong>Station 4&ndash;5</strong>
+              For conditionals and loops, have students trace through the code by hand on paper first &mdash; write down each variable's value as it changes.
+            </div>
+            <div class="ll-info">
+              <strong>Station 6&ndash;7</strong>
+              Lists and functions are where most beginners stumble on off-by-one counting. Point out that indexing and <code>range()</code> both start at 0.
+            </div>
+            <div class="ll-info">
+              <strong>Mini Challenge</strong>
+              This is the assessment moment: can a student trace a program that combines every rung of the ladder? Multiple correct output formats are accepted for near-misses in spacing.
+            </div>
+          </div>
+
+          <div class="ll-pane" id="pf-vocab">
+            <div class="ll-info"><strong>Variable</strong>A named box that stores a value, created with <code>=</code>.</div>
+            <div class="ll-info"><strong>String (str)</strong>Text data, always written inside quotes: <code>"hello"</code>.</div>
+            <div class="ll-info"><strong>Integer (int)</strong>A whole number, positive or negative, with no decimal point.</div>
+            <div class="ll-info"><strong>Float</strong>A number with a decimal point, like <code>3.5</code>.</div>
+            <div class="ll-info"><strong>Boolean (bool)</strong>Exactly one of two values: <code>True</code> or <code>False</code>.</div>
+            <div class="ll-info"><strong>Operator</strong>A symbol that acts on values: <code>+ - * / // % ==</code> and more.</div>
+            <div class="ll-info"><strong>Conditional</strong>An <code>if</code> / <code>elif</code> / <code>else</code> block that runs different code depending on a condition.</div>
+            <div class="ll-info"><strong>Loop</strong>Code that repeats &mdash; a <code>for</code> loop repeats per item, a <code>while</code> loop repeats while a condition is true.</div>
+            <div class="ll-info"><strong>List</strong>An ordered collection of values in square brackets, indexed starting at 0.</div>
+            <div class="ll-info"><strong>Index</strong>The position number of an item in a list, starting at 0.</div>
+            <div class="ll-info"><strong>Function</strong>A named, reusable block of code defined with <code>def</code>.</div>
+            <div class="ll-info"><strong>Parameter</strong>A placeholder name inside a function's parentheses that receives a value when the function is called.</div>
+            <div class="ll-info"><strong>Argument</strong>The actual value passed into a function when it's called.</div>
+            <div class="ll-info"><strong>Return value</strong>The value a function sends back with the <code>return</code> keyword.</div>
+          </div>
+
+          <div class="ll-pane" id="pf-activities">
+            <div class="ll-info">
+              <strong>Whiteboard trace</strong>
+              Pick any code block from Stations 4&ndash;7 and have students trace it on a whiteboard, writing each variable's value at every step, before checking the interactive answer.
+            </div>
+            <div class="ll-info">
+              <strong>Type swap</strong>
+              Take a working code example and swap a string for a number (or vice versa) on purpose. Ask: does this still run? What error would Python show?
+            </div>
+            <div class="ll-info">
+              <strong>Build a function</strong>
+              Off-screen, have students write (on paper) a function that takes a name and age and returns a sentence. Compare answers before checking Station 7.
+            </div>
+            <div class="ll-info">
+              <strong>Off-by-one hunt</strong>
+              Ask students to find every place in this lesson where counting starts at 0 instead of 1 (list indexing, <code>range()</code>). Discuss why that's the convention.
+            </div>
+            <div class="ll-info">
+              <strong>Bridge to Pygame</strong>
+              After finishing this lab, open Pygame: The Game Loop and identify one variable, one conditional, and one loop in the real game code shown there.
+            </div>
+          </div>
+
+        </div><!-- .ll-panel-body -->
+      </aside>
+
+      <button class="ll-open-btn" aria-label="Open panel">
+        <span class="ll-open-dot"></span>
+        <span class="ll-open-dot"></span>
+        <span class="ll-open-dot"></span>
+      </button>
+
+    </div><!-- .ll-stage -->
+  </div><!-- .ll-viewport -->
+
+  <script>
+    /* ── Panel: tabs + open/close ─────────────────────── */
+    (function () {
+      const panel   = document.querySelector(".ll-panel");
+      const closeBtn= document.querySelector(".ll-panel-close");
+      const openBtn = document.querySelector(".ll-open-btn");
+      const tabs    = document.querySelectorAll(".ll-tab");
+
+      function showPane(id) {
+        document.querySelectorAll(".ll-pane").forEach(p => p.classList.remove("ll-active"));
+        const pane = document.getElementById(id);
+        if (pane) pane.classList.add("ll-active");
+        tabs.forEach(t => t.setAttribute("aria-selected", t.dataset.pane === id ? "true" : "false"));
+      }
+
+      tabs.forEach(tab => tab.addEventListener("click", () => showPane(tab.dataset.pane)));
+      closeBtn.addEventListener("click", () => panel.setAttribute("aria-hidden", "true"));
+      openBtn.addEventListener("click",  () => panel.setAttribute("aria-hidden", "false"));
+
+      if (window.innerWidth <= 680) {
+        document.querySelector(".ll-panel-head").addEventListener("click", e => {
+          if (e.target.closest(".ll-tab, .ll-panel-close")) return;
+          const hidden = panel.getAttribute("aria-hidden") === "true";
+          panel.setAttribute("aria-hidden", hidden ? "false" : "true");
+        });
+      }
+    })();
+
+    /* ── Type Sorter (Station 2) ──────────────────────── */
+    (function () {
+      const types = ["str", "int", "float", "bool"];
+      document.querySelectorAll("#typeSorter .pf-sort-item").forEach(item => {
+        const answer = item.dataset.answer;
+        const choices = item.querySelector(".pf-sort-choices");
+        types.forEach(t => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "pf-type-btn";
+          btn.textContent = t;
+          btn.addEventListener("click", () => {
+            if (btn.classList.contains("correct")) return;
+            choices.querySelectorAll(".pf-type-btn").forEach(b => b.disabled = false);
+            if (t === answer) {
+              btn.classList.add("correct");
+              choices.querySelectorAll(".pf-type-btn").forEach(b => { if (b !== btn) b.disabled = true; });
+              markExerciseDone(choices.closest("[data-exercise]"));
+            } else {
+              btn.classList.add("wrong");
+              setTimeout(() => btn.classList.remove("wrong"), 700);
+            }
+          });
+          choices.appendChild(btn);
+        });
+      });
+    })();
+
+    /* ── Generic multiple-choice checking ─────────────── */
+    document.querySelectorAll(".pf-mc[data-exercise]").forEach(mc => {
+      const fb = mc.nextElementSibling;
+      const hint = fb.textContent;
+      mc.querySelectorAll(".pf-choice").forEach(btn => {
+        btn.addEventListener("click", () => {
+          if (mc.dataset.done) return;
+          if (btn.hasAttribute("data-correct")) {
+            btn.classList.add("correct");
+            mc.querySelectorAll(".pf-choice").forEach(b => b.disabled = true);
+            fb.textContent = "Correct! " + hint;
+            fb.classList.remove("neutral", "err");
+            mc.dataset.done = "1";
+            markExerciseDone(mc);
+          } else {
+            btn.classList.add("wrong");
+            fb.textContent = "Not quite — try another option.";
+            fb.classList.remove("neutral");
+            fb.classList.add("err");
+            setTimeout(() => btn.classList.remove("wrong"), 700);
+          }
+        });
+      });
+    });
+
+    /* ── Generic fill-in-the-blank checking ───────────── */
+    document.querySelectorAll("[data-exercise][data-type='fill']").forEach(row => {
+      const input = row.querySelector("[data-fill]");
+      const checkBtn = row.querySelector("[data-check]");
+      const fb = row.nextElementSibling;
+      const hint = fb.textContent;
+      const answers = row.dataset.answer.split("|").map(a => normalize(a));
+
+      function normalize(s) {
+        return s.trim().replace(/\s+/g, " ").toLowerCase();
+      }
+
+      function attempt() {
+        if (row.dataset.done) return;
+        const val = normalize(input.value);
+        if (answers.includes(val)) {
+          fb.textContent = "Correct! " + hint;
+          fb.classList.remove("neutral", "err");
+          input.style.borderColor = "#059669";
+          row.dataset.done = "1";
+          markExerciseDone(row);
+        } else {
+          fb.textContent = "Not quite yet — check spacing and capitalization, then try again.";
+          fb.classList.remove("neutral");
+          fb.classList.add("err");
+          input.style.borderColor = "#dc2626";
+        }
+      }
+
+      checkBtn.addEventListener("click", attempt);
+      input.addEventListener("keydown", e => {
+        if (e.key === "Enter" && input.tagName !== "TEXTAREA") attempt();
+      });
+    });
+
+    /* ── Score tracking ────────────────────────────────── */
+    const totalExercises = document.querySelectorAll("[data-exercise]").length;
+    let doneCount = 0;
+    const scoreRing = document.getElementById("scoreRing");
+    const scoreText = document.getElementById("scoreText");
+    function updateScore() {
+      const pct = totalExercises ? Math.round((doneCount / totalExercises) * 100) : 0;
+      scoreRing.textContent = pct + "%";
+      scoreText.textContent = doneCount + " of " + totalExercises + " checked";
+    }
+    function markExerciseDone(el) {
+      if (!el || el.dataset.scored) return;
+      el.dataset.scored = "1";
+      doneCount++;
+      updateScore();
+    }
+    updateScore();
+  </script>
+</body>
+</html>
