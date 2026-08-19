@@ -360,6 +360,49 @@
     }
 
     /* ── Codex of machines ──────────────────────────────────── */
+    .dv-codex-section {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dv-vortex-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.15;
+      mix-blend-mode: multiply;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .dv-vortex-layer path {
+      fill: none;
+      stroke: var(--dv-muted);
+      stroke-width: 1.1;
+      stroke-linecap: round;
+    }
+
+    .dv-vortex-eddy {
+      transform-box: view-box;
+      animation: dv-vortex-spin linear infinite;
+    }
+
+    .dv-vortex-eddy.a { transform-origin: 190px 190px; animation-duration: 130s; }
+    .dv-vortex-eddy.b { transform-origin: 760px 430px; animation-duration: 95s; animation-direction: reverse; }
+    .dv-vortex-eddy.c { transform-origin: 560px 130px; animation-duration: 150s; }
+
+    @keyframes dv-vortex-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .dv-codex-section > h2,
+    .dv-codex-section > .dv-card-intro,
+    .dv-codex-section > .dv-codex-grid {
+      position: relative;
+      z-index: 1;
+    }
+
     .dv-codex-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -386,6 +429,45 @@
     }
 
     .dv-codex-sketch svg { width: 100%; height: 100%; }
+
+    .dv-anim-screw {
+      transform-box: view-box;
+      transform-origin: 50px 34px;
+      animation: dv-screw-spin 2.6s ease-in-out infinite;
+    }
+
+    @keyframes dv-screw-spin {
+      0%, 100% { transform: scaleX(1); }
+      50% { transform: scaleX(0.12); }
+    }
+
+    .dv-anim-wing-top,
+    .dv-anim-wing-bottom {
+      transform-box: view-box;
+      transform-origin: 50px 50px;
+      animation: dv-flap-top 1.7s ease-in-out infinite;
+    }
+
+    .dv-anim-wing-bottom { animation-name: dv-flap-bottom; }
+
+    @keyframes dv-flap-top {
+      0%, 100% { transform: rotate(-9deg); }
+      50% { transform: rotate(11deg); }
+    }
+
+    @keyframes dv-flap-bottom {
+      0%, 100% { transform: rotate(9deg); }
+      50% { transform: rotate(-11deg); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .dv-vortex-eddy,
+      .dv-anim-screw,
+      .dv-anim-wing-top,
+      .dv-anim-wing-bottom {
+        animation: none;
+      }
+    }
 
     .dv-codex-body { padding: 0.9rem 1rem 1.05rem; }
 
@@ -433,28 +515,89 @@
       align-items: center;
     }
 
-    .dv-supper-photo {
+    .dv-supper-stage {
       position: relative;
       border-radius: 18px;
       overflow: hidden;
       border: 1px solid var(--dv-line);
-      aspect-ratio: 2400 / 1305;
-      background: url("../assets/thumbs/the-last-supper-web.jpg") center / cover no-repeat;
     }
 
-    .dv-supper-photo::after {
-      content: "";
+    .dv-supper-photo {
+      aspect-ratio: 2400 / 1305;
+      background: url("../assets/thumbs/the-last-supper-web.jpg") center / cover no-repeat;
+      filter: grayscale(1) contrast(1.3) brightness(1.12) sepia(0.12);
+      transition: filter 0.9s ease;
+    }
+
+    .dv-supper-photo[data-stage="rays"] { filter: grayscale(0.5) contrast(1.08) sepia(0.06); }
+    .dv-supper-photo[data-stage="finished"] { filter: none; }
+
+    .dv-supper-overlay {
       position: absolute;
       inset: 0;
-      background:
-        linear-gradient(90deg, transparent 49.4%, rgba(156, 59, 46, 0.55) 49.7% 50.3%, transparent 50.6%);
-      opacity: 0.85;
+      width: 100%;
+      height: 100%;
+    }
+
+    .dv-supper-layer { opacity: 0; transition: opacity 0.6s ease; }
+    .dv-supper-layer.is-visible { opacity: 1; }
+
+    #dv-supper-grid-lines line {
+      stroke: #fdf7ea;
+      stroke-width: 0.9;
+      stroke-opacity: 0.6;
+      stroke-dasharray: 2 3;
+    }
+
+    #dv-supper-ray-lines line {
+      stroke: #f4ecd9;
+      stroke-width: 1.6;
+      stroke-dasharray: 4 4;
+    }
+
+    #dv-supper-ray-lines circle {
+      fill: #e2a24a;
+      stroke: #2c2115;
+      stroke-width: 1.5;
+    }
+
+    #dv-supper-ray-lines text {
+      font: 700 11px "Inter", sans-serif;
+      letter-spacing: 0.06em;
+      fill: #f4ecd9;
+    }
+
+    .dv-supper-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: 0.65rem;
+    }
+
+    .dv-supper-stage-btn {
+      border-radius: 999px;
+      border: 1px solid rgba(163, 120, 47, 0.35);
+      background: rgba(255, 253, 246, 0.85);
+      color: var(--dv-muted);
+      font: 700 0.76rem/1 var(--font-sans);
+      padding: 0.42rem 0.75rem;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .dv-supper-stage-btn:hover { border-color: var(--dv-gold); color: var(--dv-ink); }
+
+    .dv-supper-stage-btn.is-active {
+      background: var(--dv-ink);
+      border-color: var(--dv-ink);
+      color: #f4ecd9;
     }
 
     .dv-supper-caption {
       margin-top: 0.55rem;
       font-size: 0.78rem;
       color: var(--dv-muted);
+      min-height: 2.6em;
     }
 
     /* ── Timeline ───────────────────────────────────────────── */
@@ -699,17 +842,24 @@
       </div>
     </section>
 
-    <section class="dv-card" aria-labelledby="dv-codex-title">
+    <section class="dv-card dv-codex-section" aria-labelledby="dv-codex-title">
+      <svg class="dv-vortex-layer" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <path class="dv-vortex-eddy a" d="M198 191L195 194L190 196L184 195L179 192L178 188L182 184L190 181L199 183L205 187L206 193L201 199L190 201L179 200L171 194L169 186L177 179L190 176L204 178L214 185L215 195L206 203L190 207L173 204L162 196L161 185L171 175L190 171L209 174L222 183L223 196L212 207L191 212L168 208L153 197L152 183L166 171L189 165L214 169L231 182L232 198L217 212L191 217" />
+        <path class="dv-vortex-eddy b" d="M763 433L766 432L768 429L767 426L762 424L755 424L748 426L746 431L749 437L757 440L768 440L777 435L780 428L775 421L764 416L749 417L738 423L734 432L740 442L755 447L774 446L788 439L792 427L784 416L765 409L744 411L727 420L722 434L732 447L754 454L779 452L798 442L804 426L792 411L767 402L738 404L716 417L710 435L723 452" />
+        <path class="dv-vortex-eddy c" d="M557 134L553 132L551 129L553 126L558 124L565 124L570 127L573 131L570 135L563 138L554 138L546 135L544 129L547 123L556 119L568 120L577 124L580 131L576 139L564 143L550 143L539 137L536 128L541 120L555 115L571 115L584 122L588 132L582 142L566 148L547 147L532 139L528 128L535 116L553 110L575 111L591 119L596 133L588 145L568 152L544 151" />
+      </svg>
       <h2 id="dv-codex-title">Codex of Unbuilt Machines</h2>
       <p class="dv-card-intro">
-        Leonardo filled notebooks with mechanisms that were centuries ahead of the materials and engines needed to build them. Some anticipated real inventions; others reveal exactly where his physics broke down. Fact-check five of his most famous designs.
+        Leonardo filled notebooks with mechanisms that were centuries ahead of the materials and engines needed to build them. Some anticipated real inventions; others reveal exactly where his physics broke down. Fact-check five of his most famous designs — the aerial screw and ornithopter still turn and flap, the way he imagined them.
       </p>
 
       <div class="dv-codex-grid">
         <article class="dv-codex-card">
           <div class="dv-codex-sketch">
             <svg viewBox="0 0 100 100" aria-hidden="true">
-              <path d="M50 20 C 20 22, 20 45, 50 48 C 80 45, 80 22, 50 20 Z" fill="none" stroke="#6b5c47" stroke-width="1.6" />
+              <g class="dv-anim-screw">
+                <path d="M50 20 C 20 22, 20 45, 50 48 C 80 45, 80 22, 50 20 Z" fill="none" stroke="#6b5c47" stroke-width="1.6" />
+              </g>
               <line x1="50" y1="48" x2="50" y2="85" stroke="#6b5c47" stroke-width="1.6" />
               <rect x="34" y="80" width="32" height="10" fill="none" stroke="#6b5c47" stroke-width="1.6" />
             </svg>
@@ -726,8 +876,12 @@
           <div class="dv-codex-sketch">
             <svg viewBox="0 0 100 100" aria-hidden="true">
               <line x1="10" y1="50" x2="90" y2="50" stroke="#6b5c47" stroke-width="1.6" />
-              <path d="M50 50 L 20 20 M50 50 L 80 20 M50 50 L 20 80 M50 50 L 80 80" stroke="#6b5c47" stroke-width="1.4" fill="none" />
-              <path d="M20 20 Q 10 35 20 50 M80 20 Q 90 35 80 50 M20 80 Q 10 65 20 50 M80 80 Q 90 65 80 50" stroke="#6b5c47" stroke-width="1" fill="none" />
+              <g class="dv-anim-wing-top">
+                <path d="M50 50 L 20 20 M50 50 L 80 20 M20 20 Q 10 35 20 50 M80 20 Q 90 35 80 50" stroke="#6b5c47" stroke-width="1.2" fill="none" />
+              </g>
+              <g class="dv-anim-wing-bottom">
+                <path d="M50 50 L 20 80 M50 50 L 80 80 M20 80 Q 10 65 20 50 M80 80 Q 90 65 80 50" stroke="#6b5c47" stroke-width="1.2" fill="none" />
+              </g>
             </svg>
           </div>
           <div class="dv-codex-body">
@@ -812,8 +966,40 @@
       <h2 id="dv-supper-title">Observation Made Visible: The Last Supper</h2>
       <div class="dv-supper-grid">
         <div>
-          <div class="dv-supper-photo" role="img" aria-label="The Last Supper by Leonardo da Vinci, with a line marking the painting's central vanishing point"></div>
-          <p class="dv-supper-caption">Every architectural line in the room — the ceiling beams, the tapestries, the table edge — converges on a single vanishing point directly behind Christ's head. Leonardo used one-point perspective to make the eye land exactly where he wanted it.</p>
+          <figure class="dv-supper-stage" style="margin: 0;">
+            <div class="dv-supper-photo" id="dv-supper-photo" data-stage="underdrawing" role="img" aria-label="The Last Supper by Leonardo da Vinci, shown at a selectable stage of the painting's reveal"></div>
+            <svg class="dv-supper-overlay" viewBox="0 0 1000 544" preserveAspectRatio="none" aria-hidden="true">
+              <g id="dv-supper-grid-lines" class="dv-supper-layer">
+                <line x1="166.7" y1="0" x2="166.7" y2="544" />
+                <line x1="333.3" y1="0" x2="333.3" y2="544" />
+                <line x1="500" y1="0" x2="500" y2="544" />
+                <line x1="666.7" y1="0" x2="666.7" y2="544" />
+                <line x1="833.3" y1="0" x2="833.3" y2="544" />
+                <line x1="0" y1="136" x2="1000" y2="136" />
+                <line x1="0" y1="272" x2="1000" y2="272" />
+                <line x1="0" y1="408" x2="1000" y2="408" />
+              </g>
+              <g id="dv-supper-ray-lines" class="dv-supper-layer">
+                <line x1="500" y1="190" x2="120" y2="0" />
+                <line x1="500" y1="190" x2="400" y2="0" />
+                <line x1="500" y1="190" x2="600" y2="0" />
+                <line x1="500" y1="190" x2="880" y2="0" />
+                <line x1="500" y1="190" x2="60" y2="544" />
+                <line x1="500" y1="190" x2="350" y2="544" />
+                <line x1="500" y1="190" x2="650" y2="544" />
+                <line x1="500" y1="190" x2="940" y2="544" />
+                <circle cx="500" cy="190" r="6" />
+                <text x="500" y="176" text-anchor="middle">VANISHING POINT</text>
+              </g>
+            </svg>
+          </figure>
+          <div class="dv-supper-controls" role="group" aria-label="Reveal stage">
+            <button type="button" class="dv-supper-stage-btn is-active" data-stage="underdrawing" aria-pressed="true">1 · Underdrawing</button>
+            <button type="button" class="dv-supper-stage-btn" data-stage="grid" aria-pressed="false">2 · Proportion grid</button>
+            <button type="button" class="dv-supper-stage-btn" data-stage="rays" aria-pressed="false">3 · Vanishing point</button>
+            <button type="button" class="dv-supper-stage-btn" data-stage="finished" aria-pressed="false">4 · Finished fresco</button>
+          </div>
+          <p class="dv-supper-caption" id="dv-supper-caption">Leonardo built the fresco up in layers, the way most Renaissance painters did: a charcoal underdrawing transferred straight onto the wet plaster, then months of pigment glazes on top. Step through the stages below.</p>
         </div>
         <div>
           <p>
@@ -969,6 +1155,36 @@
       }
       mirrorInput.addEventListener('input', mirrorUpdate);
       mirrorUpdate();
+
+      var supperPhoto = document.getElementById('dv-supper-photo');
+      var supperCaption = document.getElementById('dv-supper-caption');
+      var supperGridLines = document.getElementById('dv-supper-grid-lines');
+      var supperRayLines = document.getElementById('dv-supper-ray-lines');
+      var supperButtons = document.querySelectorAll('.dv-supper-stage-btn');
+      var supperCaptions = {
+        underdrawing: 'Leonardo built the fresco up in layers, the way most Renaissance painters did: a charcoal underdrawing transferred straight onto the wet plaster, then months of pigment glazes on top. Step through the stages below.',
+        grid: 'Underneath the finished scene sits a strict architectural grid — the room’s walls, coffered ceiling, and table are all locked to evenly spaced construction lines, the same discipline he used to plot a face or a body.',
+        rays: 'Every one of those construction lines was chosen to converge on a single vanishing point directly behind Christ’s head. One-point perspective pulls your eye there before you’ve consciously looked for it.',
+        finished: 'With the scaffolding hidden again, the room reads as an extension of the actual dining hall it was painted in — the perspective trick only works because the geometry underneath is exact.'
+      };
+
+      function setSupperStage(stage) {
+        supperPhoto.setAttribute('data-stage', stage);
+        supperGridLines.classList.toggle('is-visible', stage === 'grid');
+        supperRayLines.classList.toggle('is-visible', stage === 'rays' || stage === 'finished');
+        supperCaption.textContent = supperCaptions[stage];
+        supperButtons.forEach(function (btn) {
+          var active = btn.getAttribute('data-stage') === stage;
+          btn.classList.toggle('is-active', active);
+          btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+      }
+
+      supperButtons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          setSupperStage(btn.getAttribute('data-stage'));
+        });
+      });
     })();
   </script>
   <script src="../assets/js/lesson-print-button.js"></script>

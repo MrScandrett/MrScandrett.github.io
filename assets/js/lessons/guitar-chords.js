@@ -87,6 +87,69 @@
     'Bm': ['x', 1, 4, 3, 2, 1],
     'B': ['x', 1, 4, 3, 2, 1]
   };
+  /* The table above was hand-authored before open strings and muted strings both
+     collapsed to 'x' — reconcile every entry against the shape it describes so an
+     open string (fret 0) always reports 'o', never the muted marker. */
+  Object.keys(FINGERS).forEach(function (key) {
+    var shape = OPEN_SHAPES[key];
+    if (!shape) return;
+    FINGERS[key] = FINGERS[key].map(function (finger, i) {
+      if (shape[i] === 0) return 'o';
+      if (shape[i] === 'x') return 'x';
+      return finger;
+    });
+  });
+
+  /* The 5 CAGED shapes (C-A-G-E-D) as movable templates: each array is the literal
+     fret pattern of that letter's OWN open chord (null = muted string), which then
+     slides as a block to put its root anywhere on the neck — the "same shape, new
+     root" idea the lesson teaches. E/A/G/D majors and E/A/D 7ths & maj7s reduce
+     exactly to their OPEN_SHAPES entry at shift 0 (verified below); the handful of
+     shapes with no clean open fingering (Cm/Cm7 lowering an open string's 3rd, and
+     Gm/Gm7 lowering an open string's 3rd on the B string) mute that one string
+     rather than force an unplayable low fret. */
+  var BARRE_TEMPLATES = {
+    '': {
+      E: [0, 2, 2, 1, 0, 0],
+      A: [null, 0, 2, 2, 2, 0],
+      G: [3, 2, 0, 0, 0, 3],
+      C: [null, 3, 2, 0, 1, 0],
+      D: [null, null, 0, 2, 3, 2]
+    },
+    'm': {
+      E: [0, 2, 2, 0, 0, 0],
+      A: [null, 0, 2, 2, 1, 0],
+      G: [3, 1, 0, 0, null, 3],
+      C: [null, 3, 1, 0, 1, null],
+      D: [null, null, 0, 2, 3, 1]
+    },
+    '7': {
+      E: [0, 2, 0, 1, 0, 0],
+      A: [null, 0, 2, 0, 2, 0],
+      G: [3, 2, 0, 0, 0, 1],
+      C: [null, 3, 2, 3, 1, 0],
+      D: [null, null, 0, 2, 1, 2]
+    },
+    'maj7': {
+      E: [0, 2, 1, 1, 0, 0],
+      A: [null, 0, 2, 1, 2, 0],
+      G: [3, 2, 0, 0, 0, 2],
+      C: [null, 3, 2, 0, 0, 0],
+      D: [null, null, 0, 2, 2, 2]
+    },
+    'm7': {
+      E: [0, 2, 0, 0, 0, 0],
+      A: [null, 0, 2, 0, 1, 0],
+      G: [3, 1, 0, 0, null, 1],
+      C: [null, 3, 1, 3, 1, null],
+      D: [null, null, 0, 2, 1, 1]
+    }
+  };
+
+  /* Pitch class each shape's own letter represents — the shift amount for a target
+     root is just targetRootPC - this, independent of any particular string. */
+  var CAGED_REF_PC = { C: 0, A: 9, G: 7, E: 4, D: 2 };
+  var CAGED_ORDER = ['C', 'A', 'G', 'E', 'D'];
 
   var SCALE_TYPES = [
     { key: 'ionian', name: 'Major (Ionian)', intervals: [0, 2, 4, 5, 7, 9, 11], degrees: ['1', '2', '3', '4', '5', '6', '7'], mode: 1, desc: 'The reference scale everything else is measured against — bright and fully resolved.' },
@@ -111,30 +174,108 @@
 
   var INVERSION_LABELS = ['Root position', '1st inversion', '2nd inversion', '3rd inversion'];
 
-  /* Compute a fretting with a specific chord tone forced into the bass: mute every
-     string below the string that carries that tone, then stack the rest normally. */
+  /* Compute a fretting with a specific chord tone forced into the bass on the low
+     E string (the only string that can reach any pitch class within an open-position
+     octave), then guarantee every remaining chord tone appears somewhere else in the
+     voicing before any string is allowed to double a tone. A naive "first tone found"
+     search per string can easily strand a required tone off the fretboard entirely —
+     e.g. a 1st-inversion Cmaj7 could omit the root C completely — which means the
+     voicing wouldn't actually be the chord it claims to be. */
   function autoVoiceInversion(rootPC, chordType, inversionIndex) {
     var ivs = sortedIntervals(chordType);
-    var bassIv = ivs[inversionIndex % ivs.length];
-    var bassPC = mod12(rootPC + bassIv);
-    var chordTones = {};
-    ivs.forEach(function (iv) { chordTones[mod12(rootPC + iv)] = true; });
-
+    var bassPC = mod12(rootPC + ivs[inversionIndex % ivs.length]);
     var frets = TUNING.map(function () { return 'x'; });
-    var bassStringIdx = -1, bassFret = null;
-    for (var s = 0; s < TUNING.length && bassStringIdx < 0; s++) {
-      for (var f = 0; f <= 11; f++) {
-        if (mod12(TUNING[s].openPC + f) === bassPC) { bassStringIdx = s; bassFret = f; break; }
-      }
+
+    var bassFret = null;
+    for (var f = 0; f <= 11; f++) {
+      if (mod12(TUNING[0].openPC + f) === bassPC) { bassFret = f; break; }
     }
-    if (bassStringIdx < 0) return frets;
-    frets[bassStringIdx] = bassFret;
-    for (var s2 = bassStringIdx + 1; s2 < TUNING.length; s2++) {
-      for (var f2 = 0; f2 <= 11; f2++) {
-        if (chordTones[mod12(TUNING[s2].openPC + f2)]) { frets[s2] = f2; break; }
-      }
-    }
+    if (bassFret === null) return frets;
+    frets[0] = bassFret;
+
+    var chordPCs = ivs.map(function (iv) { return mod12(rootPC + iv); });
+    var remainingPCs = ivs.filter(function (iv, i) { return i !== inversionIndex; }).map(function (iv) { return mod12(rootPC + iv); });
+    var openStrings = [1, 2, 3, 4, 5];
+
+    /* Every (tone, string) pairing at the fret it takes to reach that tone, closest
+       first — greedily claim the cheapest pairing so each tone lands on the string
+       that can reach it soonest, before any string is left to double up. */
+    var pairs = [];
+    remainingPCs.forEach(function (pc) {
+      openStrings.forEach(function (s) {
+        for (var fr = 0; fr <= 11; fr++) {
+          if (mod12(TUNING[s].openPC + fr) === pc) { pairs.push({ pc: pc, s: s, fret: fr }); break; }
+        }
+      });
+    });
+    pairs.sort(function (a, b) { return a.fret - b.fret; });
+    var assignedPCs = {};
+    pairs.forEach(function (p) {
+      if (assignedPCs[p.pc] || frets[p.s] !== 'x') return;
+      frets[p.s] = p.fret;
+      assignedPCs[p.pc] = true;
+    });
+
+    /* Any string left over (more strings than distinct chord tones) doubles
+       whichever chord tone it can reach at the lowest fret. */
+    openStrings.forEach(function (s) {
+      if (frets[s] !== 'x') return;
+      var bestFret = null;
+      chordPCs.forEach(function (pc) {
+        for (var fr = 0; fr <= 11; fr++) {
+          if (mod12(TUNING[s].openPC + fr) === pc) { if (bestFret === null || fr < bestFret) bestFret = fr; break; }
+        }
+      });
+      frets[s] = bestFret;
+    });
+
     return frets;
+  }
+
+  /* Slide a CAGED barre template so its root lands on rootPC — shift every fretted
+     note by (rootPC - the shape's own reference pitch class), same idea for every
+     shape regardless of which string that shape's root normally falls on. Returns
+     null when no template exists for this chord type. A shift of 0 is only
+     suppressed when OPEN_SHAPES already has an identical entry for this exact root —
+     e.g. the G-shape template at root G IS the primary "Standard" G major voicing,
+     so it would be a redundant duplicate button. But plenty of shapes (Gm, Cm7,
+     Dm7...) have no OPEN_SHAPES entry at all, so their shift-0 form is the *only*
+     place that voicing appears — suppressing it there would hide it everywhere. */
+  function barreShape(rootPC, chordType, formKey) {
+    var offsets = BARRE_TEMPLATES[chordType.suffix] && BARRE_TEMPLATES[chordType.suffix][formKey];
+    if (!offsets) return null;
+    var shift = mod12(rootPC - CAGED_REF_PC[formKey]);
+    var key = PITCHES[rootPC] + chordType.suffix;
+    if (shift === 0 && OPEN_SHAPES[key]) return null;
+    return offsets.map(function (off) { return off === null ? 'x' : off + shift; });
+  }
+
+  /* Which movable CAGED forms (besides the primary voicing) apply to this root/type,
+     in C-A-G-E-D order. */
+  function availableForms(rootPC, chordType) {
+    return CAGED_ORDER.filter(function (formKey) { return !!barreShape(rootPC, chordType, formKey); });
+  }
+
+  /* Scale-degree label for a semitone interval above the root, in chord-tone terms
+     (R, 3rd, 5th, 7th, ...) rather than the scale-degree numbers used for scales.
+     A whole-tone or perfect-4th interval reads as "9"/"11" only when a 3rd is also
+     present (add9/whatever) — with no 3rd at all it's the chord's actual 2nd/4th (sus). */
+  function intervalLabel(iv, hasThird) {
+    var LABELS = { 0: 'R', 3: '♭3', 4: '3', 6: '♭5', 7: '5', 8: '♯5', 9: '6', 10: '♭7', 11: '7' };
+    if (iv === 2) return hasThird ? '9' : '2';
+    if (iv === 5) return hasThird ? '11' : '4';
+    return LABELS[iv] || String(iv);
+  }
+
+  /* Per-string degree labels ({label, isRoot} or null) for a rendered voicing. */
+  function computeDegrees(rootPC, chordType, frets) {
+    var ivs = sortedIntervals(chordType);
+    var hasThird = ivs.indexOf(3) !== -1 || ivs.indexOf(4) !== -1;
+    return frets.map(function (f, i) {
+      if (f === 'x' || f === null || f === undefined) return null;
+      var iv = mod12(mod12(TUNING[i].openPC + f) - rootPC);
+      return { label: intervalLabel(iv, hasThird), isRoot: iv === 0 };
+    });
   }
 
   /* Assign finger numbers 1-4 to fretted notes by rank of distinct fret value
@@ -151,9 +292,15 @@
     });
   }
 
-  function getChordShape(rootPC, chordType, inversionIndex) {
+  function getChordShape(rootPC, chordType, inversionIndex, formKey) {
     inversionIndex = inversionIndex || 0;
     var key = PITCHES[rootPC] + chordType.suffix;
+    if (inversionIndex === 0 && formKey && CAGED_REF_PC.hasOwnProperty(formKey)) {
+      var bFrets = barreShape(rootPC, chordType, formKey);
+      if (bFrets) {
+        return { frets: bFrets, fingers: computeFingering(bFrets), source: 'barre-' + formKey, key: key, inversionIndex: 0 };
+      }
+    }
     if (inversionIndex === 0 && OPEN_SHAPES[key]) {
       var shapeFrets = OPEN_SHAPES[key].slice();
       return { frets: shapeFrets, fingers: (FINGERS[key] || computeFingering(shapeFrets)), source: 'shape', key: key, inversionIndex: 0 };
@@ -224,6 +371,9 @@
     sortedIntervals: sortedIntervals,
     getChordShape: getChordShape,
     computeFingering: computeFingering,
+    availableForms: availableForms,
+    intervalLabel: intervalLabel,
+    computeDegrees: computeDegrees,
     chordDisplayName: chordDisplayName,
     detectChords: detectChords
   };
@@ -254,6 +404,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var span = opts.span || GT.BUILD_FRETS;
     var frets = opts.frets || [null, null, null, null, null, null]; /* low E..high e */
     var fingers = opts.fingers || null; /* low E..high e, values 1-4/'o'/'x' */
+    var degrees = opts.degrees || null; /* low E..high e, values {label, isRoot} or null */
     var interactive = !!opts.interactive;
     var onCellClick = opts.onCellClick;
     var onOpenClick = opts.onOpenClick;
@@ -286,15 +437,35 @@ document.addEventListener('DOMContentLoaded', function () {
       var val = frets[stringIndexLowToHigh];
       var fingerVal = fingers ? fingers[stringIndexLowToHigh] : null;
       var fingerNum = (typeof fingerVal === 'number') ? fingerVal : null;
+      var degreeVal = degrees ? degrees[stringIndexLowToHigh] : null;
+
+      function dotInnerHTML() {
+        var dotCls = 'gc-dot' + (degreeVal && degreeVal.isRoot ? ' gc-dot-root' : '');
+        var html = '';
+        if (degreeVal) {
+          html += '<span class="gc-degree-label">' + degreeVal.label + '</span>';
+          if (fingerNum) html += '<span class="gc-finger-badge">' + fingerNum + '</span>';
+        } else if (fingerNum) {
+          html += '<span class="gc-finger-num">' + fingerNum + '</span>';
+        }
+        return { cls: dotCls, html: html };
+      }
 
       var openCell = document.createElement('button');
       openCell.type = 'button';
       openCell.className = 'gc-cell gc-open-cell';
-      openCell.setAttribute('aria-label', str.label + ' string, open or muted');
+      var openAria = str.label + ' string, ' + (val === 0 ? 'open' : (val === 'x' || val == null ? 'muted' : 'open or muted')) + (degreeVal ? ', ' + (degreeVal.isRoot ? 'root' : degreeVal.label) : '');
+      openCell.setAttribute('aria-label', openAria);
       if (val === 0) openCell.classList.add('is-open');
       if (val === 'x' || val === null || val === undefined) openCell.classList.add('is-muted');
-      openCell.innerHTML = '<span class="gc-string-tag">' + str.label + '</span>' +
-        (val === 0 ? '<span class="gc-dot gc-open-dot"></span>' : (val === 'x' || val == null ? '<span class="gc-mute-x">&times;</span>' : ''));
+      if (val === 0) {
+        var openDot = dotInnerHTML();
+        openCell.innerHTML = '<span class="gc-string-tag">' + str.label + '</span>' +
+          '<span class="' + openDot.cls + ' gc-open-dot">' + openDot.html + '</span>';
+      } else {
+        openCell.innerHTML = '<span class="gc-string-tag">' + str.label + '</span>' +
+          (val === 'x' || val == null ? '<span class="gc-mute-x">&times;</span>' : '');
+      }
       if (interactive) {
         openCell.addEventListener('click', function () { onOpenClick(stringIndexLowToHigh); });
       } else {
@@ -306,10 +477,11 @@ document.addEventListener('DOMContentLoaded', function () {
         var cell = document.createElement('button');
         cell.type = 'button';
         cell.className = 'gc-cell';
-        cell.setAttribute('aria-label', str.label + ' string, fret ' + fret);
+        cell.setAttribute('aria-label', str.label + ' string, fret ' + fret + (val === fret && degreeVal ? ', ' + (degreeVal.isRoot ? 'root' : degreeVal.label) : ''));
         if (val === fret) {
           cell.classList.add('has-note');
-          cell.innerHTML = '<span class="gc-dot">' + (fingerNum ? '<span class="gc-finger-num">' + fingerNum + '</span>' : '') + '</span>';
+          var fretDot = dotInnerHTML();
+          cell.innerHTML = '<span class="' + fretDot.cls + '">' + fretDot.html + '</span>';
         }
         if (interactive) {
           cell.addEventListener('click', function (fretNum) {
@@ -430,11 +602,14 @@ document.addEventListener('DOMContentLoaded', function () {
   var rootPicker = document.getElementById('gcRootPicker');
   var typePicker = document.getElementById('gcTypePicker');
   var inversionPicker = document.getElementById('gcInversionPicker');
+  var formGroup = document.getElementById('gcFormGroup');
+  var formPicker = document.getElementById('gcFormPicker');
   var encBoard = document.getElementById('gcEncBoard');
   var encMeta = document.getElementById('gcEncMeta');
   var encCurrentRoot = 0;
   var encCurrentType = GT.CHORD_TYPES[0];
   var encCurrentInversion = 0;
+  var encCurrentForm = null; /* null = primary voicing; 'E'/'A' = movable barre alternative */
 
   function buildPickers() {
     if (rootPicker) {
@@ -495,14 +670,53 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  var FORM_LABELS = { C: 'C-shape', A: 'A-shape', G: 'G-shape', E: 'E-shape', D: 'D-shape' };
+
+  /* The alternate-fingering row only makes sense at root position (barre templates
+     always put the root in the bass) and only for chord types with a CAGED template. */
+  function buildFormPicker() {
+    if (!formPicker) return;
+    var forms = encCurrentInversion === 0 ? GT.availableForms(encCurrentRoot, encCurrentType) : [];
+    var options = [null].concat(forms);
+    if (options.indexOf(encCurrentForm) === -1) encCurrentForm = null;
+
+    if (formGroup) formGroup.style.display = forms.length ? '' : 'none';
+    formPicker.innerHTML = '';
+    options.forEach(function (formKey) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'gc-pick-btn gc-form-btn';
+      btn.textContent = formKey ? FORM_LABELS[formKey] : 'Standard';
+      if (formKey === encCurrentForm) btn.classList.add('is-active');
+      btn.addEventListener('click', function () {
+        encCurrentForm = formKey;
+        Array.prototype.forEach.call(formPicker.children, function (c) { c.classList.remove('is-active'); });
+        btn.classList.add('is-active');
+        renderEncyclopedia();
+      });
+      formPicker.appendChild(btn);
+    });
+  }
+
   function fingerSummary(fingers) {
     return fingers.map(function (f) { return f === 'x' ? '×' : (f === 'o' ? 'open' : f); }).join(' – ');
   }
 
+  function sourceTag(source) {
+    if (source === 'shape') return 'Traditional open shape';
+    if (source.indexOf('barre-') === 0) {
+      var formKey = source.slice(6);
+      return 'Movable ' + FORM_LABELS[formKey] + ' barre — slide the whole shape to any fret';
+    }
+    return 'Computed voicing — lowest matching fret per string';
+  }
+
   function renderEncyclopedia() {
     if (!encBoard) return;
-    var shape = GT.getChordShape(encCurrentRoot, encCurrentType, encCurrentInversion);
+    buildFormPicker();
+    var shape = GT.getChordShape(encCurrentRoot, encCurrentType, encCurrentInversion, encCurrentForm);
     var name = GT.chordDisplayName(encCurrentRoot, encCurrentType);
+    var degrees = GT.computeDegrees(encCurrentRoot, encCurrentType, shape.frets);
 
     var numericFrets = shape.frets.filter(function (f) { return typeof f === 'number' && f > 0; });
     var maxFret = numericFrets.length ? Math.max.apply(null, numericFrets) : 0;
@@ -510,18 +724,20 @@ document.addEventListener('DOMContentLoaded', function () {
     var startFret = 0;
     if (maxFret > GT.BUILD_FRETS - 1) startFret = Math.max(0, minFret - 1);
 
-    renderBoard(encBoard, { startFret: startFret, span: GT.BUILD_FRETS, frets: shape.frets, fingers: shape.fingers, interactive: false });
+    renderBoard(encBoard, { startFret: startFret, span: GT.BUILD_FRETS, frets: shape.frets, fingers: shape.fingers, degrees: degrees, interactive: false });
 
     if (encMeta) {
-      var tag = shape.source === 'shape' ? 'Traditional open/barre shape' : 'Computed voicing — lowest matching fret per string';
+      var tag = sourceTag(shape.source);
       var detection = GT.detectChords(shape.frets);
       var notesLine = detection.notes.map(function (n) { return GT.PITCHES[n.pc]; }).join(' – ');
       var invLabel = GT.INVERSION_LABELS[encCurrentInversion] || (encCurrentInversion + 'th inversion');
       var bassNote = detection.notes.length ? GT.PITCHES[detection.notes[0].pc] : '';
+      var degreeLine = degrees.filter(function (d) { return d; }).map(function (d) { return d.label; }).join(' – ');
       encMeta.innerHTML = '<h3>' + name + (encCurrentInversion === 0 ? '' : ' / ' + bassNote) + '</h3>' +
         '<p class="gc-enc-tag">' + tag + '</p>' +
         '<p class="gc-enc-notes"><strong>' + invLabel + '</strong> — bass note ' + bassNote + '</p>' +
         '<p class="gc-enc-notes">Notes: ' + notesLine + '</p>' +
+        '<p class="gc-enc-notes">Intervals from the root (low string → high string): ' + degreeLine + '</p>' +
         '<p class="gc-enc-notes">Fingering (low string → high string): ' + fingerSummary(shape.fingers) + '</p>' +
         '<p class="gc-enc-formula">Formula: root' + encCurrentType.intervals.slice(1).map(function (i) { return ' + ' + i; }).join('') + ' semitones from ' + name.replace(encCurrentType.suffix, '') + '</p>';
     }
@@ -534,7 +750,7 @@ document.addEventListener('DOMContentLoaded', function () {
   /* Load an encyclopedia chord into the builder for comparison. */
   var sendToBuilder = document.getElementById('gcSendToBuilder');
   if (sendToBuilder) sendToBuilder.addEventListener('click', function () {
-    var shape = GT.getChordShape(encCurrentRoot, encCurrentType, encCurrentInversion);
+    var shape = GT.getChordShape(encCurrentRoot, encCurrentType, encCurrentInversion, encCurrentForm);
     builderState = shape.frets.slice();
     renderBuilder();
     var target = document.getElementById('builder');
@@ -545,11 +761,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
   var scaleRootPicker = document.getElementById('gcScaleRootPicker');
   var scaleTypePicker = document.getElementById('gcScaleTypePicker');
+  var scaleViewPicker = document.getElementById('gcScaleViewPicker');
+  var scalePositionControls = document.getElementById('gcScalePositionControls');
+  var scaleFretInput = document.getElementById('gcScaleFretInput');
+  var scaleAddLeftBtn = document.getElementById('gcScaleAddLeft');
+  var scaleAddRightBtn = document.getElementById('gcScaleAddRight');
   var scaleBoard = document.getElementById('gcScaleBoard');
   var scaleMeta = document.getElementById('gcScaleMeta');
   var scaleCurrentRoot = 0;
   var scaleCurrentType = GT.SCALE_TYPES[0];
   var SCALE_SPAN = 12; /* show a full octave of frets so the pattern repeats visibly */
+
+  var POSITION_SPAN = 4; /* frets per hand position — one fret per fretting finger */
+  var MAX_FRET = 15; /* highest fret a position window can reach */
+  var scaleViewMode = 'full'; /* 'full' = whole neck, 'position' = a single movable box */
+  var posStart = 0;
+  var posEnd = POSITION_SPAN - 1;
 
   var MODE_ORDINALS = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th'];
 
@@ -578,7 +805,7 @@ document.addEventListener('DOMContentLoaded', function () {
     head.className = 'gc-row gc-head-row';
     var openLabel = document.createElement('div');
     openLabel.className = 'gc-open-label';
-    openLabel.textContent = 'Open';
+    openLabel.textContent = startFret === 0 ? 'Open' : (startFret + 'fr');
     head.appendChild(openLabel);
     for (var f = startFret + 1; f <= startFret + span; f++) {
       var fl = document.createElement('div');
@@ -597,7 +824,9 @@ document.addEventListener('DOMContentLoaded', function () {
       row.className = 'gc-row';
       row.setAttribute('data-string', str.label + str.num);
 
-      var openTone = toneMap[GT.mod12(str.openPC)];
+      /* Open strings only sound at fret 0 — once the window starts higher up the
+         neck, that column is just a position marker, not a playable open note. */
+      var openTone = startFret === 0 ? toneMap[GT.mod12(str.openPC)] : null;
       var openCell = document.createElement('button');
       openCell.type = 'button';
       openCell.className = 'gc-cell gc-open-cell';
@@ -675,16 +904,78 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  function buildScaleViewPicker() {
+    if (!scaleViewPicker) return;
+    [{ key: 'full', label: 'Full neck' }, { key: 'position', label: 'Single position' }].forEach(function (opt) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'gc-pick-btn gc-type-btn';
+      btn.textContent = opt.label;
+      if (opt.key === scaleViewMode) btn.classList.add('is-active');
+      btn.addEventListener('click', function () {
+        scaleViewMode = opt.key;
+        Array.prototype.forEach.call(scaleViewPicker.children, function (c) { c.classList.remove('is-active'); });
+        btn.classList.add('is-active');
+        if (scaleViewMode === 'position') {
+          /* Fresh single-position window centered on whatever fret is in the input. */
+          var f = clampFret(parseInt(scaleFretInput.value, 10) || 0);
+          posStart = f;
+          posEnd = Math.min(MAX_FRET, f + POSITION_SPAN - 1);
+        }
+        renderScales();
+      });
+      scaleViewPicker.appendChild(btn);
+    });
+  }
+
+  function clampFret(f) { return Math.max(0, Math.min(MAX_FRET, f)); }
+
+  function updatePositionControls() {
+    if (scalePositionControls) scalePositionControls.classList.toggle('is-visible', scaleViewMode === 'position');
+    if (scaleAddLeftBtn) scaleAddLeftBtn.disabled = posStart <= 0;
+    if (scaleAddRightBtn) scaleAddRightBtn.disabled = posEnd >= MAX_FRET;
+  }
+
+  if (scaleFretInput) scaleFretInput.addEventListener('change', function () {
+    var f = clampFret(parseInt(scaleFretInput.value, 10) || 0);
+    scaleFretInput.value = f;
+    posStart = f;
+    posEnd = Math.min(MAX_FRET, f + POSITION_SPAN - 1);
+    renderScales();
+  });
+
+  /* "Add position" extends the visible window by one hand-position width rather
+     than replacing it, so a student can see how adjacent positions connect. */
+  if (scaleAddLeftBtn) scaleAddLeftBtn.addEventListener('click', function () {
+    posStart = Math.max(0, posStart - POSITION_SPAN);
+    renderScales();
+  });
+  if (scaleAddRightBtn) scaleAddRightBtn.addEventListener('click', function () {
+    posEnd = Math.min(MAX_FRET, posEnd + POSITION_SPAN);
+    renderScales();
+  });
+
   function renderScales() {
     if (!scaleBoard) return;
     var toneMap = buildToneMap(scaleCurrentRoot, scaleCurrentType);
-    renderScaleBoard(scaleBoard, { startFret: 0, span: SCALE_SPAN, toneMap: toneMap });
+    /* renderScaleBoard's `startFret` is the fret BEFORE the first shown column (0
+       reads as the open position, matching the chord boards elsewhere on this page) —
+       so a position window [posStart, posEnd] needs startFret = posStart - 1 to make
+       posStart itself the first visible fretted column, unless posStart is 0, where
+       the open column already covers it. */
+    var startFret = scaleViewMode === 'position' ? (posStart === 0 ? 0 : posStart - 1) : 0;
+    var span = scaleViewMode === 'position' ? (posEnd - startFret) : SCALE_SPAN;
+    renderScaleBoard(scaleBoard, { startFret: startFret, span: span, toneMap: toneMap });
+    updatePositionControls();
 
     if (scaleMeta) {
       var name = GT.PITCHES[scaleCurrentRoot] + ' ' + scaleCurrentType.name;
       var noteNames = scaleCurrentType.intervals.map(function (iv) { return GT.PITCHES[GT.mod12(scaleCurrentRoot + iv)]; });
       var html = '<h3>' + name + '</h3>';
       html += '<p class="gc-enc-tag">' + scaleCurrentType.degrees.length + '-note scale</p>';
+      if (scaleViewMode === 'position') {
+        html += '<p class="gc-enc-tag">' + (posStart === 0 ? 'Open position' : 'Frets ' + posStart + '–' + posEnd) + '</p>';
+      }
       html += '<p class="gc-enc-notes">Notes: ' + noteNames.join(' – ') + '</p>';
       html += '<p class="gc-enc-notes">Scale degrees: ' + scaleCurrentType.degrees.join(' – ') + '</p>';
       if (scaleCurrentType.mode) {
@@ -697,6 +988,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   buildScalePickers();
+  buildScaleViewPicker();
   renderScales();
 
   /* ---------- Quiz ---------- */
