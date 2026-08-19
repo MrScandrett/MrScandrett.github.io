@@ -8,6 +8,11 @@
   --gtr-accent: #d9822b;
   --gtr-accent-deep: #a4531a;
   --gtr-string: #e8c37a;
+  --gc-q-minor: #3b6fb0;
+  --gc-q-major: #3f8f4f;
+  --gc-q-perfect: #2b8f86;
+  --gc-q-augmented: #c0392b;
+  --gc-q-diminished: #7d3fa0;
 }
 
 * { box-sizing: border-box; }
@@ -94,6 +99,8 @@ code, kbd { font-family: "JetBrains Mono", monospace; }
 .gc-builder-controls { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin-bottom: .9rem; }
 .gc-btn { min-height: 42px; padding: .6rem 1rem; border: 1px solid rgba(138,90,52,.3); border-radius: 9px; background: #fff; color: var(--gtr-wood-deep); font: 700 .8rem "DM Sans",sans-serif; cursor: pointer; }
 .gc-btn:hover, .gc-btn:focus-visible { background: rgba(217,130,43,.12); outline: none; }
+.gc-btn:disabled { opacity: .45; cursor: not-allowed; }
+.gc-btn:disabled:hover { background: #fff; }
 .gc-btn.gc-btn-primary { background: var(--gtr-wood-deep); color: #fff; border-color: var(--gtr-wood-deep); }
 #gcChallengeReadout { margin: 0; color: var(--text-secondary,#465768); font-size: .82rem; }
 
@@ -135,6 +142,56 @@ code, kbd { font-family: "JetBrains Mono", monospace; }
 .gc-degree-label { font: 800 .62rem "JetBrains Mono",monospace; color: #2a1608; line-height: 1; }
 .gc-dot-root { background: var(--gtr-wood-deep); box-shadow: 0 0 0 2px var(--gtr-accent), 0 2px 6px rgba(0,0,0,.35); }
 .gc-dot-root .gc-degree-label { color: #fff; }
+
+/* ---------- Dot color-coding modes (default / rainbow / interval quality / b&w) ---------- */
+.gc-display-bar { margin: 0 0 1.6rem; padding: .8rem .9rem; border-radius: 13px; border: 1px solid var(--line,#d2d2d7); background: var(--white,#fff); }
+.gc-display-bar-row { display: flex; flex-wrap: wrap; gap: .6rem 1rem; align-items: center; }
+.gc-display-bar .gc-kicker-label { margin: 0; flex: 0 0 auto; }
+.gc-display-bar .gc-hint { text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--text-muted,#64748b); }
+.gc-display-bar .gc-pick-row { margin: 0; }
+.gc-color-legend { margin: .55rem 0 0; color: var(--text-secondary,#465768); font-size: .78rem; line-height: 1.5; }
+
+body[data-gc-color-mode="rainbow"] .gc-dot { background: hsl(var(--gc-hue, 0), 68%, 47%); }
+body[data-gc-color-mode="quality"] .gc-dot:not(.gc-dot-root)[data-quality="minor"] { background: var(--gc-q-minor); }
+body[data-gc-color-mode="quality"] .gc-dot:not(.gc-dot-root)[data-quality="major"] { background: var(--gc-q-major); }
+body[data-gc-color-mode="quality"] .gc-dot:not(.gc-dot-root)[data-quality="perfect"] { background: var(--gc-q-perfect); }
+body[data-gc-color-mode="quality"] .gc-dot:not(.gc-dot-root)[data-quality="augmented"] { background: var(--gc-q-augmented); }
+body[data-gc-color-mode="quality"] .gc-dot:not(.gc-dot-root)[data-quality="diminished"] { background: var(--gc-q-diminished); }
+body[data-gc-color-mode="bw"] .gc-dot { background: #fff; box-shadow: inset 0 0 0 2px #1a1a1a, 0 1px 2px rgba(0,0,0,.25); }
+body[data-gc-color-mode="bw"] .gc-dot-root { box-shadow: inset 0 0 0 3px #1a1a1a, 0 1px 2px rgba(0,0,0,.25); }
+body[data-gc-color-mode="bw"] .gc-degree-label, body[data-gc-color-mode="bw"] .gc-finger-num { color: #1a1a1a; }
+body[data-gc-color-mode="bw"] .gc-dot-root .gc-degree-label { color: #1a1a1a; }
+body[data-gc-color-mode="bw"] .gc-finger-badge { background: #1a1a1a; color: #fff; box-shadow: none; }
+
+/* ---------- Practice list (side panel) ---------- */
+.gc-practice-list { list-style: none; margin: .8rem 0 0; padding: 0; display: grid; gap: .4rem; }
+.gc-practice-item { display: flex; align-items: center; gap: .5rem; padding: .5rem .6rem; border-radius: 9px; background: rgba(36,26,18,.05); }
+.gc-practice-item-info { flex: 1 1 auto; min-width: 0; }
+.gc-practice-item-name { display: block; font-weight: 700; font-size: .84rem; color: var(--gtr-wood-deep,#5c3a20); }
+.gc-practice-item-sub { display: block; font-size: .72rem; color: var(--text-muted,#64748b); }
+.gc-practice-remove { flex: 0 0 auto; width: 24px; height: 24px; border: 0; border-radius: 50%; background: rgba(224,104,95,.15); color: #a5342b; font-weight: 800; cursor: pointer; line-height: 1; }
+.gc-practice-remove:hover, .gc-practice-remove:focus-visible { background: rgba(224,104,95,.3); outline: none; }
+.gc-practice-empty { display: none; margin-top: .8rem; }
+.gc-practice-list:empty + .gc-practice-empty { display: block; }
+.gc-practice-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+.gc-practice-actions .gc-btn { flex: 1 1 auto; font-size: .74rem; padding: .55rem .7rem; }
+
+/* ---------- Printable practice sheet ---------- */
+#gcPracticeSheetPrint { display: none; }
+#gcPracticeSheetPrint .gc-sheet-head { margin-bottom: 1.2rem; }
+#gcPracticeSheetPrint .gc-sheet-head h1 { margin: 0 0 .2rem; font-family: "Fraunces",serif; font-size: 1.6rem; }
+#gcPracticeSheetPrint .gc-sheet-head p { margin: 0; color: #444; font-size: .8rem; }
+#gcPracticeSheetPrint .gc-sheet-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; }
+#gcPracticeSheetPrint .gc-sheet-item { break-inside: avoid; padding: .8rem; border: 1px solid #ccc; border-radius: 10px; }
+#gcPracticeSheetPrint .gc-sheet-item h3 { margin: 0 0 .2rem; font-family: "Fraunces",serif; font-size: 1.2rem; }
+#gcPracticeSheetPrint .gc-sheet-item p { margin: .15rem 0; font-size: .74rem; color: #333; }
+#gcPracticeSheetPrint .gc-board { background: #fff; padding: 0; }
+#gcPracticeSheetPrint .gc-row:not(.gc-head-row):not(.gc-marker-row)::after { background: #999; }
+#gcPracticeSheetPrint .gc-cell, #gcPracticeSheetPrint .gc-open-cell { background: none; border-color: #ddd; }
+#gcPracticeSheetPrint .gc-open-cell { background: none; border-right-color: #333; }
+#gcPracticeSheetPrint .gc-string-tag { color: #333; }
+#gcPracticeSheetPrint .gc-head-row { color: #555; }
+#gcPracticeSheetPrint .gc-fret-marker span { background: #999; }
 
 .quiz { display: grid; gap: .7rem; }
 .quiz fieldset { display: grid; gap: .35rem; margin: 0; padding: .9rem 1rem; border: 1px solid var(--line,#d2d2d7); border-radius: 11px; }
@@ -183,4 +240,6 @@ code, kbd { font-family: "JetBrains Mono", monospace; }
 @media print {
   .lesson-track, .ll-panel, .ll-open-btn, .hero-actions { display: none !important; }
   .lesson-section { grid-template-columns: 60px 1fr; break-inside: avoid; }
+  body.gc-printing-practice .ll-viewport { display: none !important; }
+  body.gc-printing-practice #gcPracticeSheetPrint { display: block; }
 }

@@ -267,15 +267,30 @@
     return LABELS[iv] || String(iv);
   }
 
-  /* Per-string degree labels ({label, isRoot} or null) for a rendered voicing. */
+  /* Per-string degree labels ({label, isRoot, iv} or null) for a rendered voicing. */
   function computeDegrees(rootPC, chordType, frets) {
     var ivs = sortedIntervals(chordType);
     var hasThird = ivs.indexOf(3) !== -1 || ivs.indexOf(4) !== -1;
     return frets.map(function (f, i) {
       if (f === 'x' || f === null || f === undefined) return null;
       var iv = mod12(mod12(TUNING[i].openPC + f) - rootPC);
-      return { label: intervalLabel(iv, hasThird), isRoot: iv === 0 };
+      return { label: intervalLabel(iv, hasThird), isRoot: iv === 0, iv: iv };
     });
+  }
+
+  /* Bucket a degree label into a coarse interval-quality category for the
+     "color by interval quality" display mode. Chords and scales both use the
+     same ♭/♯ + numeral labeling convention, so one parser covers both. */
+  function degreeQuality(label) {
+    if (label === 'R' || label === '1') return 'root';
+    var first = label.charAt(0);
+    var flat = first === '♭';
+    var sharp = first === '♯' || first === '#';
+    var num = parseInt(flat || sharp ? label.slice(1) : label, 10);
+    if (sharp) return 'augmented';
+    if (flat) return num === 5 ? 'diminished' : 'minor';
+    if (num === 4 || num === 5 || num === 11) return 'perfect';
+    return 'major';
   }
 
   /* Assign finger numbers 1-4 to fretted notes by rank of distinct fret value
@@ -373,6 +388,7 @@
     computeFingering: computeFingering,
     availableForms: availableForms,
     intervalLabel: intervalLabel,
+    degreeQuality: degreeQuality,
     computeDegrees: computeDegrees,
     chordDisplayName: chordDisplayName,
     detectChords: detectChords
@@ -384,6 +400,14 @@ document.addEventListener('DOMContentLoaded', function () {
   if (!GT) return;
 
   /* ---------- Shared fretboard rendering ---------- */
+
+  /* Chromatic "rainbow solfège" hue for a semitone-from-root value: red at the
+     root through violet at the major 7th (0–270°, not a full wrap back to red,
+     so adjacent-ish intervals stay visually distinct like the classroom
+     rainbow-boomwhacker convention). */
+  function rainbowHue(iv) {
+    return Math.round((typeof iv === 'number' ? iv : 0) / 11 * 270);
+  }
 
   function fretMarkers(count) {
     var singles = [3, 5, 7, 9, 15, 17, 19, 21];
@@ -441,6 +465,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
       function dotInnerHTML() {
         var dotCls = 'gc-dot' + (degreeVal && degreeVal.isRoot ? ' gc-dot-root' : '');
+        var attrs = degreeVal ? ' data-quality="' + GT.degreeQuality(degreeVal.label) + '" style="--gc-hue:' + rainbowHue(degreeVal.iv) + '"' : '';
         var html = '';
         if (degreeVal) {
           html += '<span class="gc-degree-label">' + degreeVal.label + '</span>';
@@ -448,7 +473,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } else if (fingerNum) {
           html += '<span class="gc-finger-num">' + fingerNum + '</span>';
         }
-        return { cls: dotCls, html: html };
+        return { cls: dotCls, attrs: attrs, html: html };
       }
 
       var openCell = document.createElement('button');
@@ -461,7 +486,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (val === 0) {
         var openDot = dotInnerHTML();
         openCell.innerHTML = '<span class="gc-string-tag">' + str.label + '</span>' +
-          '<span class="' + openDot.cls + ' gc-open-dot">' + openDot.html + '</span>';
+          '<span class="' + openDot.cls + ' gc-open-dot"' + openDot.attrs + '>' + openDot.html + '</span>';
       } else {
         openCell.innerHTML = '<span class="gc-string-tag">' + str.label + '</span>' +
           (val === 'x' || val == null ? '<span class="gc-mute-x">&times;</span>' : '');
@@ -481,7 +506,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (val === fret) {
           cell.classList.add('has-note');
           var fretDot = dotInnerHTML();
-          cell.innerHTML = '<span class="' + fretDot.cls + '">' + fretDot.html + '</span>';
+          cell.innerHTML = '<span class="' + fretDot.cls + '"' + fretDot.attrs + '>' + fretDot.html + '</span>';
         }
         if (interactive) {
           cell.addEventListener('click', function (fretNum) {
@@ -513,6 +538,50 @@ document.addEventListener('DOMContentLoaded', function () {
     container.appendChild(board);
   }
 
+  /* ---------- Dot color-coding mode (applies to every board on the page) ---------- */
+
+  var COLOR_MODES = [
+    { key: 'default', label: 'Default', legend: 'Root notes are dark gold with a ring; every other note shares one accent color.' },
+    { key: 'rainbow', label: 'Rainbow (solfège)', legend: 'Chromatic rainbow order from the root (red) up through the major 7th (violet) — the same note is always the same color, in every chord and scale.' },
+    { key: 'quality', label: 'Interval quality', legend: 'Minor = blue, Major = green, Perfect (4th/5th) = teal, Augmented = red, Diminished = purple. The root keeps its own gold marker.' },
+    { key: 'bw', label: 'Black & white', legend: 'High-contrast outlines with no color — built for printing on a plain printer.' }
+  ];
+  var colorModePicker = document.getElementById('gcColorModePicker');
+  var colorLegend = document.getElementById('gcColorLegend');
+  var gcColorMode = 'default';
+  try {
+    var savedMode = localStorage.getItem('gcColorMode');
+    if (savedMode && COLOR_MODES.some(function (m) { return m.key === savedMode; })) gcColorMode = savedMode;
+  } catch (e) { /* localStorage unavailable — fall back to default */ }
+
+  function applyColorMode() {
+    document.body.setAttribute('data-gc-color-mode', gcColorMode);
+    var mode = COLOR_MODES.filter(function (m) { return m.key === gcColorMode; })[0];
+    if (colorLegend && mode) colorLegend.textContent = mode.legend;
+    if (colorModePicker) {
+      Array.prototype.forEach.call(colorModePicker.children, function (btn) {
+        btn.classList.toggle('is-active', btn.getAttribute('data-mode') === gcColorMode);
+      });
+    }
+  }
+
+  if (colorModePicker) {
+    COLOR_MODES.forEach(function (mode) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'gc-pick-btn gc-type-btn';
+      btn.textContent = mode.label;
+      btn.setAttribute('data-mode', mode.key);
+      btn.addEventListener('click', function () {
+        gcColorMode = mode.key;
+        try { localStorage.setItem('gcColorMode', gcColorMode); } catch (e) { /* ignore */ }
+        applyColorMode();
+      });
+      colorModePicker.appendChild(btn);
+    });
+  }
+  applyColorMode();
+
   /* ---------- Builder (place-your-own-notes) ---------- */
 
   var builderState = [null, null, null, null, null, null]; /* low E..high e, value = fret number, 'x', or null */
@@ -522,11 +591,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function renderBuilder() {
     if (!builderBoard) return;
+    var detection = GT.detectChords(builderState);
+    var degrees = detection.matches.length
+      ? GT.computeDegrees(detection.matches[0].root, detection.matches[0].chordType, builderState)
+      : null;
     renderBoard(builderBoard, {
       startFret: 0,
       span: GT.BUILD_FRETS,
       frets: builderState,
       fingers: GT.computeFingering(builderState),
+      degrees: degrees,
       interactive: true,
       onCellClick: function (stringIdx, fret) {
         builderState[stringIdx] = (builderState[stringIdx] === fret) ? null : fret;
@@ -540,12 +614,12 @@ document.addEventListener('DOMContentLoaded', function () {
         renderBuilder();
       }
     });
-    updateBuilderResult();
+    updateBuilderResult(detection);
   }
 
-  function updateBuilderResult() {
+  function updateBuilderResult(detection) {
     if (!builderResult) return;
-    var detection = GT.detectChords(builderState);
+    detection = detection || GT.detectChords(builderState);
 
     if (detection.notes.length === 0) {
       builderResult.innerHTML = '<p class="gc-result-empty">Click frets on the board above to place notes. Click a string\'s label to toggle it between muted (&times;) and open.</p>';
@@ -784,7 +858,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var map = {};
     scaleType.intervals.forEach(function (iv, i) {
       var pc = GT.mod12(rootPC + iv);
-      map[pc] = { label: scaleType.degrees[i], isRoot: iv === 0 };
+      map[pc] = { label: scaleType.degrees[i], isRoot: iv === 0, iv: iv };
     });
     return map;
   }
@@ -816,7 +890,8 @@ document.addEventListener('DOMContentLoaded', function () {
     board.appendChild(head);
 
     function dotHTML(tone) {
-      return '<span class="gc-dot' + (tone.isRoot ? ' gc-dot-root' : '') + '"><span class="gc-degree-label">' + tone.label + '</span></span>';
+      var attrs = ' data-quality="' + GT.degreeQuality(tone.label) + '" style="--gc-hue:' + rainbowHue(tone.iv) + '"';
+      return '<span class="gc-dot' + (tone.isRoot ? ' gc-dot-root' : '') + '"' + attrs + '><span class="gc-degree-label">' + tone.label + '</span></span>';
     }
 
     GT.STRINGS_TOPDOWN.forEach(function (str) {
@@ -990,6 +1065,173 @@ document.addEventListener('DOMContentLoaded', function () {
   buildScalePickers();
   buildScaleViewPicker();
   renderScales();
+
+  /* ---------- Practice list: pick specific chords/scales, print a worksheet ---------- */
+
+  var practiceList = [];
+  try {
+    var savedPractice = JSON.parse(localStorage.getItem('gcPracticeList') || '[]');
+    if (Array.isArray(savedPractice)) practiceList = savedPractice;
+  } catch (e) { practiceList = []; }
+
+  var practiceListUI = document.getElementById('gcPracticeListUI');
+  var practiceSheet = document.getElementById('gcPracticeSheetPrint');
+
+  function savePracticeList() {
+    try { localStorage.setItem('gcPracticeList', JSON.stringify(practiceList)); } catch (e) { /* ignore */ }
+  }
+
+  function practiceItemKey(item) {
+    return item.kind === 'chord'
+      ? ['chord', item.rootPC, item.typeSuffix, item.inversionIndex, item.formKey].join('|')
+      : ['scale', item.rootPC, item.scaleKey].join('|');
+  }
+
+  function addPracticeItem(item) {
+    var key = practiceItemKey(item);
+    if (practiceList.some(function (p) { return practiceItemKey(p) === key; })) return;
+    practiceList.push(item);
+    savePracticeList();
+    renderPracticeListUI();
+  }
+
+  function removePracticeItem(index) {
+    practiceList.splice(index, 1);
+    savePracticeList();
+    renderPracticeListUI();
+  }
+
+  function practiceItemLabel(item) {
+    if (item.kind === 'chord') {
+      var ct = GT.CHORD_TYPES.filter(function (c) { return c.suffix === item.typeSuffix; })[0];
+      if (!ct) return { name: 'Unknown chord', sub: '' };
+      var sub = (GT.INVERSION_LABELS[item.inversionIndex] || (item.inversionIndex + 'th inversion')) +
+        (item.formKey ? ' — ' + item.formKey + '-shape' : '');
+      return { name: GT.chordDisplayName(item.rootPC, ct), sub: sub };
+    }
+    var st = GT.SCALE_TYPES.filter(function (s) { return s.key === item.scaleKey; })[0];
+    if (!st) return { name: 'Unknown scale', sub: '' };
+    return { name: GT.PITCHES[item.rootPC] + ' ' + st.name, sub: st.degrees.length + '-note scale' };
+  }
+
+  function renderPracticeListUI() {
+    if (!practiceListUI) return;
+    practiceListUI.innerHTML = '';
+    practiceList.forEach(function (item, index) {
+      var info = practiceItemLabel(item);
+      var li = document.createElement('li');
+      li.className = 'gc-practice-item';
+      var infoWrap = document.createElement('div');
+      infoWrap.className = 'gc-practice-item-info';
+      infoWrap.innerHTML = '<span class="gc-practice-item-name">' + info.name + '</span><span class="gc-practice-item-sub">' + info.sub + '</span>';
+      var removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'gc-practice-remove';
+      removeBtn.setAttribute('aria-label', 'Remove ' + info.name + ' from practice list');
+      removeBtn.textContent = '×';
+      removeBtn.addEventListener('click', function () { removePracticeItem(index); });
+      li.appendChild(infoWrap);
+      li.appendChild(removeBtn);
+      practiceListUI.appendChild(li);
+    });
+    var clearBtnEl = document.getElementById('gcClearPractice');
+    var printBtnEl = document.getElementById('gcPrintPractice');
+    if (clearBtnEl) clearBtnEl.disabled = practiceList.length === 0;
+    if (printBtnEl) printBtnEl.disabled = practiceList.length === 0;
+  }
+
+  var addChordToPracticeBtn = document.getElementById('gcAddChordToPractice');
+  if (addChordToPracticeBtn) addChordToPracticeBtn.addEventListener('click', function () {
+    addPracticeItem({
+      kind: 'chord',
+      rootPC: encCurrentRoot,
+      typeSuffix: encCurrentType.suffix,
+      inversionIndex: encCurrentInversion,
+      formKey: encCurrentForm
+    });
+  });
+
+  var addScaleToPracticeBtn = document.getElementById('gcAddScaleToPractice');
+  if (addScaleToPracticeBtn) addScaleToPracticeBtn.addEventListener('click', function () {
+    addPracticeItem({ kind: 'scale', rootPC: scaleCurrentRoot, scaleKey: scaleCurrentType.key });
+  });
+
+  var clearPracticeBtn = document.getElementById('gcClearPractice');
+  if (clearPracticeBtn) clearPracticeBtn.addEventListener('click', function () {
+    practiceList = [];
+    savePracticeList();
+    renderPracticeListUI();
+  });
+
+  /* Render every listed chord/scale into the print-only sheet, reusing the
+     same board renderers as the live page so diagrams stay in sync with
+     whatever chord-shape/scale logic the rest of the lesson uses. */
+  function buildPracticeSheet() {
+    if (!practiceSheet) return;
+    practiceSheet.innerHTML = '';
+    var head = document.createElement('div');
+    head.className = 'gc-sheet-head';
+    head.innerHTML = '<h1>Guitar practice sheet</h1><p>' + practiceList.length + ' item' + (practiceList.length === 1 ? '' : 's') + ' — from the Guitar Chord Encyclopedia</p>';
+    practiceSheet.appendChild(head);
+
+    var grid = document.createElement('div');
+    grid.className = 'gc-sheet-grid';
+
+    practiceList.forEach(function (item) {
+      var info = practiceItemLabel(item);
+      var cell = document.createElement('div');
+      cell.className = 'gc-sheet-item';
+      var titleEl = document.createElement('h3');
+      titleEl.textContent = info.name;
+      var subEl = document.createElement('p');
+      subEl.textContent = info.sub;
+      cell.appendChild(titleEl);
+      cell.appendChild(subEl);
+      var boardHost = document.createElement('div');
+      cell.appendChild(boardHost);
+
+      if (item.kind === 'chord') {
+        var ct = GT.CHORD_TYPES.filter(function (c) { return c.suffix === item.typeSuffix; })[0];
+        if (ct) {
+          var shape = GT.getChordShape(item.rootPC, ct, item.inversionIndex, item.formKey);
+          var degrees = GT.computeDegrees(item.rootPC, ct, shape.frets);
+          var numericFrets = shape.frets.filter(function (f) { return typeof f === 'number' && f > 0; });
+          var maxFret = numericFrets.length ? Math.max.apply(null, numericFrets) : 0;
+          var minFret = numericFrets.length ? Math.min.apply(null, numericFrets) : 0;
+          var startFret = maxFret > GT.BUILD_FRETS - 1 ? Math.max(0, minFret - 1) : 0;
+          renderBoard(boardHost, { startFret: startFret, span: GT.BUILD_FRETS, frets: shape.frets, fingers: shape.fingers, degrees: degrees, interactive: false });
+          var fingerLine = document.createElement('p');
+          fingerLine.textContent = 'Fingering: ' + fingerSummary(shape.fingers);
+          cell.appendChild(fingerLine);
+        }
+      } else {
+        var st = GT.SCALE_TYPES.filter(function (s) { return s.key === item.scaleKey; })[0];
+        if (st) {
+          var toneMap = buildToneMap(item.rootPC, st);
+          renderScaleBoard(boardHost, { startFret: 0, span: SCALE_SPAN, toneMap: toneMap });
+          var notesLine = document.createElement('p');
+          notesLine.textContent = 'Notes: ' + st.intervals.map(function (iv) { return GT.PITCHES[GT.mod12(item.rootPC + iv)]; }).join(' – ');
+          cell.appendChild(notesLine);
+        }
+      }
+      grid.appendChild(cell);
+    });
+
+    practiceSheet.appendChild(grid);
+  }
+
+  var printPracticeBtn = document.getElementById('gcPrintPractice');
+  if (printPracticeBtn) printPracticeBtn.addEventListener('click', function () {
+    if (!practiceList.length) return;
+    buildPracticeSheet();
+    document.body.classList.add('gc-printing-practice');
+    window.print();
+  });
+  window.addEventListener('afterprint', function () {
+    document.body.classList.remove('gc-printing-practice');
+  });
+
+  renderPracticeListUI();
 
   /* ---------- Quiz ---------- */
   var checkBtn = document.getElementById('gcCheckQuiz');
