@@ -155,6 +155,30 @@
     return { notes: notes, uniquePCs: uniquePCs, bassPC: bassPC, matches: matches };
   }
 
+  /* Interval label (R, ♭3, 3, ♭5, 5, ♯5, 6, ♭7, 7, plus 9/11 vs 2/4 depending
+     on whether a 3rd is present) — same convention GuitarTheory uses, so
+     chords and scales read consistently across both lessons. */
+  function intervalLabel(iv, hasThird) {
+    var LABELS = { 0: 'R', 3: '♭3', 4: '3', 6: '♭5', 7: '5', 8: '♯5', 9: '6', 10: '♭7', 11: '7' };
+    if (iv === 2) return hasThird ? '9' : '2';
+    if (iv === 5) return hasThird ? '11' : '4';
+    return LABELS[iv] || String(iv);
+  }
+
+  /* Bucket a degree label into a coarse interval-quality category for the
+     "color by interval quality" display mode. */
+  function degreeQuality(label) {
+    if (label === 'R' || label === '1') return 'root';
+    var first = label.charAt(0);
+    var flat = first === '♭';
+    var sharp = first === '♯' || first === '#';
+    var num = parseInt(flat || sharp ? label.slice(1) : label, 10);
+    if (sharp) return 'augmented';
+    if (flat) return num === 5 ? 'diminished' : 'minor';
+    if (num === 4 || num === 5 || num === 11) return 'perfect';
+    return 'major';
+  }
+
   window.PianoTheory = {
     PITCHES: PITCHES,
     CHORD_TYPES: CHORD_TYPES,
@@ -168,7 +192,9 @@
     noteLabel: noteLabel,
     voiceChord: voiceChord,
     typicalFingering: typicalFingering,
-    detectChords: detectChords
+    detectChords: detectChords,
+    intervalLabel: intervalLabel,
+    degreeQuality: degreeQuality
   };
 })();
 
@@ -179,10 +205,33 @@ document.addEventListener('DOMContentLoaded', function () {
 
   /* ---------- Shared keyboard rendering ---------- */
 
+  /* Chromatic "rainbow solfège" hue for a semitone-from-root value: red at the
+     root through violet at the major 7th (0–270°, not a full wrap back to red,
+     so adjacent-ish intervals stay visually distinct like the classroom
+     rainbow-boomwhacker convention). */
+  function rainbowHue(iv) {
+    return Math.round((typeof iv === 'number' ? iv : 0) / 11 * 270);
+  }
+
+  /* Build a qualityMap (absIndex -> {label, quality, iv}) for a set of active
+     notes given a chord's root pitch class and formula. */
+  function buildQualityMap(rootPC, chordType, absIndices) {
+    var ivs = chordType.intervals;
+    var hasThird = ivs.indexOf(3) !== -1 || ivs.indexOf(4) !== -1;
+    var map = {};
+    absIndices.forEach(function (idx) {
+      var iv = PT.mod12(PT.mod12(idx) - rootPC);
+      var label = PT.intervalLabel(iv, hasThird);
+      map[idx] = { label: label, quality: PT.degreeQuality(label), iv: iv };
+    });
+    return map;
+  }
+
   function renderKeyboard(container, opts) {
     opts = opts || {};
     var active = opts.active || {}; /* map absIndex -> true */
     var fingerMap = opts.fingerMap || {}; /* map absIndex -> finger number */
+    var qualityMap = opts.qualityMap || {}; /* map absIndex -> {label, quality, iv} */
     var interactive = !!opts.interactive;
     var onToggle = opts.onToggle;
 
@@ -197,6 +246,10 @@ document.addEventListener('DOMContentLoaded', function () {
       btn.type = 'button';
       btn.className = 'pc-key pc-white';
       if (active[k.absIndex]) btn.classList.add('is-active');
+      if (active[k.absIndex] && qualityMap[k.absIndex]) {
+        btn.setAttribute('data-quality', qualityMap[k.absIndex].quality);
+        btn.style.setProperty('--pc-hue', rainbowHue(qualityMap[k.absIndex].iv));
+      }
       btn.setAttribute('aria-label', PT.noteLabel(k.absIndex) + (fingerMap[k.absIndex] ? ', finger ' + fingerMap[k.absIndex] : ''));
       if (k.isC) {
         var tag = document.createElement('span');
@@ -225,6 +278,10 @@ document.addEventListener('DOMContentLoaded', function () {
       btn.type = 'button';
       btn.className = 'pc-key pc-black';
       if (active[k.absIndex]) btn.classList.add('is-active');
+      if (active[k.absIndex] && qualityMap[k.absIndex]) {
+        btn.setAttribute('data-quality', qualityMap[k.absIndex].quality);
+        btn.style.setProperty('--pc-hue', rainbowHue(qualityMap[k.absIndex].iv));
+      }
       btn.setAttribute('aria-label', PT.noteLabel(k.absIndex) + (fingerMap[k.absIndex] ? ', finger ' + fingerMap[k.absIndex] : ''));
       btn.style.left = ((k.leftWhiteIdx + 1) * whiteWidth - blackWidth / 2) + '%';
       btn.style.width = blackWidth + '%';
@@ -250,6 +307,50 @@ document.addEventListener('DOMContentLoaded', function () {
     return map;
   }
 
+  /* ---------- Key color-coding mode (applies to every keyboard on the page) ---------- */
+
+  var COLOR_MODES = [
+    { key: 'default', label: 'Default', legend: 'Root notes are dark ink; every other active note shares one accent color.' },
+    { key: 'rainbow', label: 'Rainbow (solfège)', legend: 'Chromatic rainbow order from the root (red) up through the major 7th (violet) — the same note is always the same color, in every chord and scale.' },
+    { key: 'quality', label: 'Interval quality', legend: 'Minor = blue, Major = green, Perfect (4th/5th) = teal, Augmented = red, Diminished = purple. The root keeps its own dark marker.' },
+    { key: 'bw', label: 'Black & white', legend: 'High-contrast outlines with no color — built for printing on a plain printer.' }
+  ];
+  var colorModePicker = document.getElementById('pcColorModePicker');
+  var colorLegend = document.getElementById('pcColorLegend');
+  var pcColorMode = 'default';
+  try {
+    var savedMode = localStorage.getItem('pcColorMode');
+    if (savedMode && COLOR_MODES.some(function (m) { return m.key === savedMode; })) pcColorMode = savedMode;
+  } catch (e) { /* localStorage unavailable — fall back to default */ }
+
+  function applyColorMode() {
+    document.body.setAttribute('data-pc-color-mode', pcColorMode);
+    var mode = COLOR_MODES.filter(function (m) { return m.key === pcColorMode; })[0];
+    if (colorLegend && mode) colorLegend.textContent = mode.legend;
+    if (colorModePicker) {
+      Array.prototype.forEach.call(colorModePicker.children, function (btn) {
+        btn.classList.toggle('is-active', btn.getAttribute('data-mode') === pcColorMode);
+      });
+    }
+  }
+
+  if (colorModePicker) {
+    COLOR_MODES.forEach(function (mode) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'pc-pick-btn pc-type-btn';
+      btn.textContent = mode.label;
+      btn.setAttribute('data-mode', mode.key);
+      btn.addEventListener('click', function () {
+        pcColorMode = mode.key;
+        try { localStorage.setItem('pcColorMode', pcColorMode); } catch (e) { /* ignore */ }
+        applyColorMode();
+      });
+      colorModePicker.appendChild(btn);
+    });
+  }
+  applyColorMode();
+
   /* ---------- Builder (place-your-own-notes) ---------- */
 
   var builderActive = {};
@@ -260,9 +361,14 @@ document.addEventListener('DOMContentLoaded', function () {
   function renderBuilder() {
     if (!builderBoard) return;
     var sortedIndices = Object.keys(builderActive).map(Number).sort(function (a, b) { return a - b; });
+    var detection = PT.detectChords(sortedIndices);
+    var qualityMap = (detection.matches && detection.matches.length)
+      ? buildQualityMap(detection.matches[0].root, detection.matches[0].chordType, sortedIndices)
+      : {};
     renderKeyboard(builderBoard, {
       active: builderActive,
       fingerMap: buildFingerMap(sortedIndices),
+      qualityMap: qualityMap,
       interactive: true,
       onToggle: function (absIndex) {
         if (builderActive[absIndex]) delete builderActive[absIndex];
@@ -406,8 +512,9 @@ document.addEventListener('DOMContentLoaded', function () {
     var active = {};
     abs.forEach(function (idx) { active[idx] = true; });
     var fingerMap = buildFingerMap(sortedAbs);
+    var qualityMap = buildQualityMap(encCurrentRoot, encCurrentType, sortedAbs);
 
-    renderKeyboard(encBoard, { active: active, fingerMap: fingerMap, interactive: false });
+    renderKeyboard(encBoard, { active: active, fingerMap: fingerMap, qualityMap: qualityMap, interactive: false });
 
     if (encMeta) {
       var notesLine = sortedAbs.map(function (idx) { return PT.noteLabel(idx); }).join(' – ');
@@ -454,7 +561,7 @@ document.addEventListener('DOMContentLoaded', function () {
     for (var idx = 0; idx <= PT.KEY_SPAN; idx++) {
       var offset = PT.mod12(idx - rootPC);
       var pos = scaleType.intervals.indexOf(offset);
-      if (pos !== -1) map[idx] = { label: scaleType.degrees[pos], isRoot: offset === 0 };
+      if (pos !== -1) map[idx] = { label: scaleType.degrees[pos], isRoot: offset === 0, iv: offset };
     }
     return map;
   }
@@ -479,6 +586,8 @@ document.addEventListener('DOMContentLoaded', function () {
       if (tone) {
         btn.classList.add('is-active');
         if (tone.isRoot) btn.classList.add('is-root');
+        btn.setAttribute('data-quality', PT.degreeQuality(tone.label));
+        btn.style.setProperty('--pc-hue', rainbowHue(tone.iv));
       }
       btn.setAttribute('aria-label', PT.noteLabel(k.absIndex) + (tone ? ', scale degree ' + tone.label : ''));
       if (k.isC) {
@@ -510,6 +619,8 @@ document.addEventListener('DOMContentLoaded', function () {
       if (tone) {
         btn.classList.add('is-active');
         if (tone.isRoot) btn.classList.add('is-root');
+        btn.setAttribute('data-quality', PT.degreeQuality(tone.label));
+        btn.style.setProperty('--pc-hue', rainbowHue(tone.iv));
       }
       btn.setAttribute('aria-label', PT.noteLabel(k.absIndex) + (tone ? ', scale degree ' + tone.label : ''));
       btn.style.left = ((k.leftWhiteIdx + 1) * whiteWidth - blackWidth / 2) + '%';
@@ -585,6 +696,170 @@ document.addEventListener('DOMContentLoaded', function () {
 
   buildScalePickers();
   renderScales();
+
+  /* ---------- Practice list: pick specific chords/scales, print a worksheet ---------- */
+
+  var practiceList = [];
+  try {
+    var savedPractice = JSON.parse(localStorage.getItem('pcPracticeList') || '[]');
+    if (Array.isArray(savedPractice)) practiceList = savedPractice;
+  } catch (e) { practiceList = []; }
+
+  var practiceListUI = document.getElementById('pcPracticeListUI');
+  var practiceSheet = document.getElementById('pcPracticeSheetPrint');
+
+  function savePracticeList() {
+    try { localStorage.setItem('pcPracticeList', JSON.stringify(practiceList)); } catch (e) { /* ignore */ }
+  }
+
+  function practiceItemKey(item) {
+    return item.kind === 'chord'
+      ? ['chord', item.rootPC, item.typeSuffix, item.inversionIndex].join('|')
+      : ['scale', item.rootPC, item.scaleKey].join('|');
+  }
+
+  function addPracticeItem(item) {
+    var key = practiceItemKey(item);
+    if (practiceList.some(function (p) { return practiceItemKey(p) === key; })) return;
+    practiceList.push(item);
+    savePracticeList();
+    renderPracticeListUI();
+  }
+
+  function removePracticeItem(index) {
+    practiceList.splice(index, 1);
+    savePracticeList();
+    renderPracticeListUI();
+  }
+
+  function practiceItemLabel(item) {
+    if (item.kind === 'chord') {
+      var ct = PT.CHORD_TYPES.filter(function (c) { return c.suffix === item.typeSuffix; })[0];
+      if (!ct) return { name: 'Unknown chord', sub: '' };
+      var sub = PT.INVERSION_LABELS[item.inversionIndex] || (item.inversionIndex + 'th inversion');
+      return { name: PT.chordDisplayName(item.rootPC, ct), sub: sub };
+    }
+    var st = PT.SCALE_TYPES.filter(function (s) { return s.key === item.scaleKey; })[0];
+    if (!st) return { name: 'Unknown scale', sub: '' };
+    return { name: PT.PITCHES[item.rootPC] + ' ' + st.name, sub: st.degrees.length + '-note scale' };
+  }
+
+  function renderPracticeListUI() {
+    if (!practiceListUI) return;
+    practiceListUI.innerHTML = '';
+    practiceList.forEach(function (item, index) {
+      var info = practiceItemLabel(item);
+      var li = document.createElement('li');
+      li.className = 'pc-practice-item';
+      var infoWrap = document.createElement('div');
+      infoWrap.className = 'pc-practice-item-info';
+      infoWrap.innerHTML = '<span class="pc-practice-item-name">' + info.name + '</span><span class="pc-practice-item-sub">' + info.sub + '</span>';
+      var removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'pc-practice-remove';
+      removeBtn.setAttribute('aria-label', 'Remove ' + info.name + ' from practice list');
+      removeBtn.textContent = '×';
+      removeBtn.addEventListener('click', function () { removePracticeItem(index); });
+      li.appendChild(infoWrap);
+      li.appendChild(removeBtn);
+      practiceListUI.appendChild(li);
+    });
+    var clearBtnEl = document.getElementById('pcClearPractice');
+    var printBtnEl = document.getElementById('pcPrintPractice');
+    if (clearBtnEl) clearBtnEl.disabled = practiceList.length === 0;
+    if (printBtnEl) printBtnEl.disabled = practiceList.length === 0;
+  }
+
+  var addChordToPracticeBtn = document.getElementById('pcAddChordToPractice');
+  if (addChordToPracticeBtn) addChordToPracticeBtn.addEventListener('click', function () {
+    addPracticeItem({
+      kind: 'chord',
+      rootPC: encCurrentRoot,
+      typeSuffix: encCurrentType.suffix,
+      inversionIndex: encCurrentInversion
+    });
+  });
+
+  var addScaleToPracticeBtn = document.getElementById('pcAddScaleToPractice');
+  if (addScaleToPracticeBtn) addScaleToPracticeBtn.addEventListener('click', function () {
+    addPracticeItem({ kind: 'scale', rootPC: scaleCurrentRoot, scaleKey: scaleCurrentType.key });
+  });
+
+  var clearPracticeBtn = document.getElementById('pcClearPractice');
+  if (clearPracticeBtn) clearPracticeBtn.addEventListener('click', function () {
+    practiceList = [];
+    savePracticeList();
+    renderPracticeListUI();
+  });
+
+  /* Render every listed chord/scale into the print-only sheet, reusing the
+     same board renderers as the live page so diagrams stay in sync with
+     whatever chord-shape/scale logic the rest of the lesson uses. */
+  function buildPracticeSheet() {
+    if (!practiceSheet) return;
+    practiceSheet.innerHTML = '';
+    var head = document.createElement('div');
+    head.className = 'pc-sheet-head';
+    head.innerHTML = '<h1>Piano practice sheet</h1><p>' + practiceList.length + ' item' + (practiceList.length === 1 ? '' : 's') + ' — from the Piano Chord Encyclopedia</p>';
+    practiceSheet.appendChild(head);
+
+    var grid = document.createElement('div');
+    grid.className = 'pc-sheet-grid';
+
+    practiceList.forEach(function (item) {
+      var info = practiceItemLabel(item);
+      var cell = document.createElement('div');
+      cell.className = 'pc-sheet-item';
+      var titleEl = document.createElement('h3');
+      titleEl.textContent = info.name;
+      var subEl = document.createElement('p');
+      subEl.textContent = info.sub;
+      cell.appendChild(titleEl);
+      cell.appendChild(subEl);
+      var boardHost = document.createElement('div');
+      cell.appendChild(boardHost);
+
+      if (item.kind === 'chord') {
+        var ct = PT.CHORD_TYPES.filter(function (c) { return c.suffix === item.typeSuffix; })[0];
+        if (ct) {
+          var abs = PT.voiceChord(item.rootPC, ct, item.inversionIndex);
+          var sortedAbs = abs.slice().sort(function (a, b) { return a - b; });
+          var active = {};
+          abs.forEach(function (idx) { active[idx] = true; });
+          var fingerMap = buildFingerMap(sortedAbs);
+          renderKeyboard(boardHost, { active: active, fingerMap: fingerMap, interactive: false });
+          var notesLine = document.createElement('p');
+          notesLine.textContent = 'Notes: ' + sortedAbs.map(function (idx) { return PT.noteLabel(idx); }).join(' – ');
+          cell.appendChild(notesLine);
+        }
+      } else {
+        var st = PT.SCALE_TYPES.filter(function (s) { return s.key === item.scaleKey; })[0];
+        if (st) {
+          var toneMap = buildScaleToneMap(item.rootPC, st);
+          renderScaleKeyboard(boardHost, { toneMap: toneMap });
+          var scaleNotesLine = document.createElement('p');
+          scaleNotesLine.textContent = 'Notes: ' + st.intervals.map(function (iv) { return PT.PITCHES[PT.mod12(item.rootPC + iv)]; }).join(' – ');
+          cell.appendChild(scaleNotesLine);
+        }
+      }
+      grid.appendChild(cell);
+    });
+
+    practiceSheet.appendChild(grid);
+  }
+
+  var printPracticeBtn = document.getElementById('pcPrintPractice');
+  if (printPracticeBtn) printPracticeBtn.addEventListener('click', function () {
+    if (!practiceList.length) return;
+    buildPracticeSheet();
+    document.body.classList.add('pc-printing-practice');
+    window.print();
+  });
+  window.addEventListener('afterprint', function () {
+    document.body.classList.remove('pc-printing-practice');
+  });
+
+  renderPracticeListUI();
 
   /* ---------- Quiz ---------- */
   var checkBtn = document.getElementById('pcCheckQuiz');

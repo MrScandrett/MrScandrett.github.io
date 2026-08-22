@@ -5,6 +5,11 @@
   --pno-accent-deep: #4b3bb8;
   --pno-key-black: #221f36;
   --pno-key-active: #6c5ce7;
+  --pc-q-minor: #3b6fb0;
+  --pc-q-major: #3f8f4f;
+  --pc-q-perfect: #2b8f86;
+  --pc-q-augmented: #c0392b;
+  --pc-q-diminished: #7d3fa0;
 }
 
 * { box-sizing: border-box; }
@@ -58,6 +63,25 @@ code, kbd { font-family: "JetBrains Mono", monospace; }
 .pc-degree-white { bottom: 30px; }
 .pc-degree-black { bottom: 10px; background: var(--pno-accent); color: #fff; height: 17px; font-size: .58rem; }
 .pc-key.is-root .pc-degree-num { background: #fff; color: var(--pno-ink); }
+
+/* ---------- Key color-coding modes (applies to every keyboard on the page) ---------- */
+.pc-display-bar { margin: 0 0 1.6rem; padding: .8rem .9rem; border-radius: 13px; border: 1px solid var(--line,#d2d2d7); background: var(--white,#fff); }
+.pc-display-bar-row { display: flex; flex-wrap: wrap; gap: .6rem 1rem; align-items: center; }
+.pc-display-bar .pc-kicker-label { margin: 0; flex: 0 0 auto; }
+.pc-display-bar .pc-hint { text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--text-muted,#64748b); }
+.pc-display-bar .pc-pick-row { margin: 0; }
+.pc-color-legend { margin: .55rem 0 0; color: var(--text-secondary,#465768); font-size: .78rem; line-height: 1.5; }
+
+body[data-pc-color-mode="rainbow"] .pc-key.is-active { background: hsl(var(--pc-hue, 0), 68%, 47%); border-color: hsl(var(--pc-hue, 0), 68%, 34%); }
+body[data-pc-color-mode="quality"] .pc-key.is-active[data-quality="minor"] { background: var(--pc-q-minor); border-color: var(--pc-q-minor); }
+body[data-pc-color-mode="quality"] .pc-key.is-active[data-quality="major"] { background: var(--pc-q-major); border-color: var(--pc-q-major); }
+body[data-pc-color-mode="quality"] .pc-key.is-active[data-quality="perfect"] { background: var(--pc-q-perfect); border-color: var(--pc-q-perfect); }
+body[data-pc-color-mode="quality"] .pc-key.is-active[data-quality="augmented"] { background: var(--pc-q-augmented); border-color: var(--pc-q-augmented); }
+body[data-pc-color-mode="quality"] .pc-key.is-active[data-quality="diminished"] { background: var(--pc-q-diminished); border-color: var(--pc-q-diminished); }
+body[data-pc-color-mode="quality"] .pc-key.is-active[data-quality="root"] { background: var(--pno-ink); border-color: var(--pno-ink); }
+body[data-pc-color-mode="bw"] .pc-white.is-active { background: #fff; box-shadow: inset 0 0 0 2px #1a1a1a; border-color: #1a1a1a; }
+body[data-pc-color-mode="bw"] .pc-black.is-active { background: #1a1a1a; box-shadow: inset 0 0 0 2px #fff; border-color: #1a1a1a; }
+body[data-pc-color-mode="bw"] .pc-key-tag, body[data-pc-color-mode="bw"] .pc-finger-num, body[data-pc-color-mode="bw"] .pc-degree-num { color: #1a1a1a; }
 
 /* ---------- Section shells (shared cadence with other lessons) ---------- */
 .lesson-track { display: flex; gap: .35rem; margin: 1rem 0 2.6rem; padding: .35rem; overflow-x: auto; border: 1px solid var(--line,#d2d2d7); border-radius: 13px; background: var(--white,#fff); scrollbar-width: thin; }
@@ -137,6 +161,32 @@ code, kbd { font-family: "JetBrains Mono", monospace; }
 .vocab-list dt { margin-top: .75rem; font-weight: 800; }
 .vocab-list dd { margin: .12rem 0 0 .7rem; color: var(--text-muted,#64748b); line-height: 1.5; }
 
+/* ---------- Practice list ---------- */
+.pc-practice-list { list-style: none; margin: .8rem 0 0; padding: 0; display: grid; gap: .4rem; }
+.pc-practice-item { display: flex; align-items: center; gap: .5rem; padding: .5rem .6rem; border-radius: 9px; background: rgba(27,26,46,.05); }
+.pc-practice-item-info { flex: 1 1 auto; min-width: 0; }
+.pc-practice-item-name { display: block; font-weight: 700; font-size: .84rem; color: var(--pno-accent-deep); }
+.pc-practice-item-sub { display: block; font-size: .72rem; color: var(--text-muted,#64748b); }
+.pc-practice-remove { flex: 0 0 auto; width: 24px; height: 24px; border: 0; border-radius: 50%; background: rgba(224,104,95,.15); color: #a5342b; font-weight: 800; cursor: pointer; line-height: 1; }
+.pc-practice-remove:hover, .pc-practice-remove:focus-visible { background: rgba(224,104,95,.3); outline: none; }
+.pc-practice-empty { display: none; margin-top: .8rem; }
+.pc-practice-list:empty + .pc-practice-empty { display: block; }
+.pc-practice-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+.pc-practice-actions .pc-btn { flex: 1 1 auto; font-size: .74rem; padding: .55rem .7rem; }
+
+#pcPracticeSheetPrint { display: none; }
+#pcPracticeSheetPrint .pc-sheet-head { margin-bottom: 1.2rem; }
+#pcPracticeSheetPrint .pc-sheet-head h1 { margin: 0 0 .2rem; font-family: "Fraunces",serif; font-size: 1.6rem; }
+#pcPracticeSheetPrint .pc-sheet-head p { margin: 0; color: #444; font-size: .8rem; }
+#pcPracticeSheetPrint .pc-sheet-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; }
+#pcPracticeSheetPrint .pc-sheet-item { break-inside: avoid; padding: .8rem; border: 1px solid #ccc; border-radius: 10px; }
+#pcPracticeSheetPrint .pc-sheet-item h3 { margin: 0 0 .2rem; font-family: "Fraunces",serif; font-size: 1.2rem; }
+#pcPracticeSheetPrint .pc-sheet-item p { margin: .15rem 0; font-size: .74rem; color: #333; }
+#pcPracticeSheetPrint .pc-keyboard { height: 110px; }
+#pcPracticeSheetPrint .pc-white { background: #fff; border-color: #ccc; }
+#pcPracticeSheetPrint .pc-white.is-active { background: #ddd; border-color: #333; }
+#pcPracticeSheetPrint .pc-black.is-active { background: #333; }
+
 @media (max-width: 900px) {
   .pno-hero { grid-template-columns: 1fr; }
   .pc-enc-grid { grid-template-columns: 1fr; }
@@ -162,4 +212,6 @@ code, kbd { font-family: "JetBrains Mono", monospace; }
 @media print {
   .lesson-track, .ll-panel, .ll-open-btn, .hero-actions { display: none !important; }
   .lesson-section { grid-template-columns: 60px 1fr; break-inside: avoid; }
+  body.pc-printing-practice .ll-viewport { display: none !important; }
+  body.pc-printing-practice #pcPracticeSheetPrint { display: block; }
 }

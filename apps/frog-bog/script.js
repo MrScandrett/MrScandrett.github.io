@@ -5,6 +5,15 @@ const score1El = document.getElementById("score1");
 const score2El = document.getElementById("score2");
 const timerEl = document.getElementById("timer");
 const startBtn = document.getElementById("startBtn");
+const newRoundBtn = document.getElementById("newRoundBtn");
+const soundBtn = document.getElementById("soundBtn");
+const roundLabelEl = document.getElementById("roundLabel");
+const weatherStatusEl = document.getElementById("weatherStatus");
+const gameOverlay = document.getElementById("gameOverlay");
+const overlayKicker = document.getElementById("overlayKicker");
+const overlayTitle = document.getElementById("overlayTitle");
+const overlayText = document.getElementById("overlayText");
+const announcer = document.getElementById("announcer");
 
 const W = canvas.width;
 const H = canvas.height;
@@ -168,6 +177,43 @@ let timeLeft = ROUND_SECONDS;
 let lastTick = 0;
 let countdownTimer = null;
 let particles = [];
+let scorePopups = [];
+
+// Tiny Web Audio cues keep the game self-contained and make catches readable
+// even when both players are watching different sides of the pond.
+let audioContext = null;
+let soundEnabled = true;
+
+function playTone(frequency, duration = 0.08, type = "square", volume = 0.045, delay = 0) {
+  if (!soundEnabled) return;
+  const AudioApi = window.AudioContext || window.webkitAudioContext;
+  if (!AudioApi) return;
+  audioContext ||= new AudioApi();
+  if (audioContext.state === "suspended") audioContext.resume();
+  const start = audioContext.currentTime + delay;
+  const oscillator = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(frequency, start);
+  gain.gain.setValueAtTime(volume, start);
+  gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+  oscillator.connect(gain).connect(audioContext.destination);
+  oscillator.start(start);
+  oscillator.stop(start + duration);
+}
+
+function playCatch(golden) {
+  playTone(golden ? 660 : 440, 0.08, "square", 0.04);
+  playTone(golden ? 990 : 660, 0.1, "square", 0.035, 0.07);
+}
+
+function setOverlay(kicker, title, text, buttonText) {
+  overlayKicker.textContent = kicker;
+  overlayTitle.textContent = title;
+  overlayText.textContent = text;
+  startBtn.textContent = buttonText;
+  gameOverlay.hidden = false;
+}
 
 // --- weather system ---------------------------------------------------
 // NOTE: weather is purely atmospheric for now. Tying specific fly species
@@ -179,6 +225,9 @@ const WEATHER_MIN_DWELL = 480; // frames a weather state is guaranteed to last (
 let weather = "clear";
 let weatherTimer = WEATHER_MIN_DWELL;
 let raindrops = [];
+let lastWeather = "";
+
+const WEATHER_STATUS = { clear: "☀ Clear skies", fog: "◌ Low fog", rain: "☂ Bog rain", heat: "♨ Heat wave" };
 
 function updateWeather() {
   if (weatherTimer > 0) {
@@ -195,6 +244,10 @@ function updateWeather() {
   }
   for (const drop of raindrops) drop.y += drop.speed;
   raindrops = raindrops.filter((d) => d.y < H + 10);
+  if (weather !== lastWeather) {
+    weatherStatusEl.textContent = WEATHER_STATUS[weather];
+    lastWeather = weather;
+  }
 }
 
 function randomFly() {
@@ -239,18 +292,31 @@ function startGame() {
   suddenDeath = false;
   resetFlies();
   particles = [];
+  scorePopups = [];
   running = true;
-  startBtn.textContent = "Restart";
+  gameOverlay.hidden = true;
+  newRoundBtn.hidden = false;
+  roundLabelEl.textContent = "Round";
+  timerEl.classList.remove("urgent");
+  announcer.textContent = "Round started. Sixty seconds on the clock.";
+  playTone(330, 0.07, "square", 0.04);
+  playTone(495, 0.1, "square", 0.04, 0.08);
   clearInterval(countdownTimer);
   countdownTimer = setInterval(() => {
     if (!running) return;
     timeLeft--;
     timerEl.textContent = Math.max(timeLeft, 0);
+    timerEl.setAttribute("aria-label", `${Math.max(timeLeft, 0)} seconds`);
+    timerEl.classList.toggle("urgent", timeLeft <= 10);
     if (timeLeft <= 0) {
       if (p1.score === p2.score && !suddenDeath) {
         suddenDeath = true;
         timeLeft = SUDDEN_DEATH_SECONDS;
         timerEl.textContent = timeLeft;
+        roundLabelEl.textContent = "Sudden death";
+        announcer.textContent = "Tie game. Fifteen seconds of sudden death.";
+        playTone(220, 0.12, "sawtooth", 0.045);
+        playTone(220, 0.12, "sawtooth", 0.045, 0.16);
       } else {
         endGame();
       }
@@ -264,12 +330,27 @@ let suddenDeath = false;
 function endGame() {
   running = false;
   clearInterval(countdownTimer);
-  let message;
-  if (p1.score > p2.score) message = "Player 1 wins!";
-  else if (p2.score > p1.score) message = "Player 2 wins!";
-  else message = "It's a tie!";
+  let title;
+  let kicker;
+  if (p1.score > p2.score) {
+    title = "Pink frog wins!";
+    kicker = "Bog champion";
+  } else if (p2.score > p1.score) {
+    title = "Moon frog wins!";
+    kicker = "Bog champion";
+  } else {
+    title = "A perfect tie!";
+    kicker = "Evenly matched";
+  }
   timerEl.textContent = "0";
-  setTimeout(() => alert(`Time's up! ${message}\nPlayer 1: ${p1.score}  Player 2: ${p2.score}`), 50);
+  timerEl.classList.remove("urgent");
+  roundLabelEl.textContent = "Final";
+  newRoundBtn.hidden = true;
+  setOverlay(kicker, title, `Final score: Pink ${p1.score} · Moon ${p2.score}`, "Play again");
+  announcer.textContent = `${title} Final score: Pink ${p1.score}, Moon ${p2.score}.`;
+  playTone(392, 0.12, "square", 0.04);
+  playTone(523, 0.12, "square", 0.04, 0.12);
+  playTone(659, 0.2, "square", 0.04, 0.24);
 }
 
 function nearestFly(frog) {
@@ -369,14 +450,19 @@ function updateFrog(frog, now) {
   ) {
     const dist = manhattan(frog.targetFly.x, frog.targetFly.y, frog.x, frog.y);
     if (dist <= CATCH_MANHATTAN) {
+      const wasGolden = frog.targetFly.golden;
       frog.targetFly.alive = false;
-      frog.score += frog.targetFly.golden ? 3 : 1;
+      const points = wasGolden ? 3 : 1;
+      frog.score += points;
       frog.caught = true;
       spawnParticles(frog.targetFly.x, frog.targetFly.y, frog.tongueColor);
+      scorePopups.push({ x: frog.targetFly.x, y: frog.targetFly.y - 8, text: wasGolden ? "+3 GOLD!" : "+1", life: 1, golden: wasGolden });
+      playCatch(wasGolden);
       const idx = flies.indexOf(frog.targetFly);
       if (idx >= 0) flies[idx] = randomFly();
       frog.targetFly = null;
       (frog === p1 ? score1El : score2El).textContent = frog.score;
+      announcer.textContent = `${frog === p1 ? "Pink" : "Moon"} frog caught ${wasGolden ? "a golden fly for three points" : "a fly"}.`;
     }
   }
 
@@ -432,6 +518,7 @@ function spawnSplash(x, y) {
       size: 2 + lfsrRandom() * 2,
     });
   }
+  playTone(105, 0.16, "sawtooth", 0.035);
 }
 
 // Small rising bubbles for a frog treading water, waiting to hop to safety.
@@ -488,6 +575,11 @@ function updateParticles() {
     p.life -= 0.04;
   }
   particles = particles.filter((p) => p.life > 0);
+  for (const popup of scorePopups) {
+    popup.y -= 0.55;
+    popup.life -= 0.025;
+  }
+  scorePopups = scorePopups.filter((popup) => popup.life > 0);
 }
 
 function drawScene() {
@@ -642,7 +734,17 @@ function drawFly(fly) {
   if (!fly.alive) return;
   ctx.save();
   ctx.translate(fly.x, fly.y);
-  ctx.fillStyle = fly.golden ? "#d4af0a" : fly.state === "fleeing" ? "#4a1a1a" : "#12100f";
+  const wing = Math.sin(performance.now() * 0.035 + fly.bob) * 2;
+  if (fly.golden) {
+    ctx.shadowColor = "#ffe66b";
+    ctx.shadowBlur = 12;
+  }
+  ctx.fillStyle = fly.golden ? "rgba(255,245,190,0.75)" : "rgba(238,244,239,0.65)";
+  ctx.beginPath();
+  ctx.ellipse(-3, -3, 4, 2 + Math.abs(wing), -0.5, 0, Math.PI * 2);
+  ctx.ellipse(3, -3, 4, 2 + Math.abs(wing), 0.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = fly.golden ? "#ffd21f" : fly.state === "fleeing" ? "#4a1a1a" : "#12100f";
   ctx.beginPath();
   ctx.ellipse(0, 0, 5, 3.5, 0, 0, Math.PI * 2);
   ctx.fill();
@@ -720,6 +822,18 @@ function drawParticles() {
     ctx.fill();
   }
   ctx.globalAlpha = 1;
+
+  ctx.textAlign = "center";
+  ctx.font = "bold 17px ui-monospace, Consolas, monospace";
+  for (const popup of scorePopups) {
+    ctx.globalAlpha = Math.min(1, popup.life * 2);
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "rgba(6,20,17,0.8)";
+    ctx.strokeText(popup.text, popup.x, popup.y);
+    ctx.fillStyle = popup.golden ? "#ffe45e" : "#ffffff";
+    ctx.fillText(popup.text, popup.x, popup.y);
+  }
+  ctx.globalAlpha = 1;
 }
 
 function drawWeather() {
@@ -756,14 +870,6 @@ function drawWeather() {
   }
 }
 
-const WEATHER_LABELS = { clear: "☀️ Clear", fog: "🌫️ Fog", rain: "🌧️ Rain", heat: "🌡️ Heat" };
-function drawWeatherLabel() {
-  ctx.font = "13px Segoe UI, sans-serif";
-  ctx.textAlign = "left";
-  ctx.fillStyle = "rgba(255,255,255,0.85)";
-  ctx.fillText(WEATHER_LABELS[weather] || weather, 10, 20);
-}
-
 function draw() {
   const now = performance.now();
   drawScene();
@@ -773,16 +879,6 @@ function draw() {
   drawFrog(p2, now);
   drawParticles();
   drawWeather();
-  drawWeatherLabel();
-
-  if (!running) {
-    ctx.fillStyle = "rgba(0,0,0,0.45)";
-    ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = "#fff";
-    ctx.font = "bold 28px Segoe UI, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("Press Start Game to play", W / 2, H / 2);
-  }
 }
 
 function loop(now) {
@@ -826,6 +922,29 @@ window.addEventListener("keydown", (e) => {
 });
 
 startBtn.addEventListener("click", startGame);
+newRoundBtn.addEventListener("click", startGame);
+
+soundBtn.addEventListener("click", () => {
+  soundEnabled = !soundEnabled;
+  soundBtn.textContent = soundEnabled ? "Sound on" : "Sound off";
+  soundBtn.setAttribute("aria-pressed", String(soundEnabled));
+  soundBtn.setAttribute("aria-label", soundEnabled ? "Mute sound" : "Turn sound on");
+  if (soundEnabled) playTone(440, 0.08, "square", 0.035);
+});
+
+document.querySelectorAll("[data-player][data-action]").forEach((button) => {
+  button.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    const frog = button.dataset.player === "1" ? p1 : p2;
+    const action = button.dataset.action;
+    if (action === "catch") jump(frog);
+    else hop(frog, action === "left" ? -1 : 1);
+  });
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) lastTick = 0;
+});
 
 draw();
 requestAnimationFrame(loop);

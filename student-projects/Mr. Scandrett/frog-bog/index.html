@@ -1,38 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Bog Hoppers (1982)</title>
-<link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#081b18" />
+  <title>Frog Bog — Two-Player Arcade</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="wrap">
-    <h1>🐸 Bog Hoppers (1982)</h1>
-    <p class="subtitle">A tribute to the 1982 Atari classic. Catch flies with your frog's tongue before time runs out!</p>
+  <main class="wrap">
+    <header class="marquee">
+      <p class="eyebrow">Mr. Scandrett presents · 2-player arcade</p>
+      <h1><span>Frog</span> Bog</h1>
+      <p class="subtitle">Hop the pads. Snap up flies. Rule the bog before the buzzer.</p>
+    </header>
 
-    <div class="scoreboard">
-      <div class="score p1">
-        <span class="label">Player 1</span>
-        <span class="value" id="score1">0</span>
+    <section class="cabinet" aria-label="Frog Bog game cabinet">
+      <div class="scoreboard" aria-label="Round scores">
+        <div class="score p1">
+          <span class="player-dot" aria-hidden="true"></span>
+          <span class="score-copy"><span class="label">Pink frog</span><span class="key-hint">A · D · Space</span></span>
+          <span class="value" id="score1">0</span>
+        </div>
+
+        <div class="round-clock">
+          <span id="roundLabel">Ready</span>
+          <strong class="timer" id="timer" aria-label="60 seconds">60</strong>
+          <span class="seconds">seconds</span>
+        </div>
+
+        <div class="score p2">
+          <span class="value" id="score2">0</span>
+          <span class="score-copy"><span class="label">Moon frog</span><span class="key-hint">Arrows · Enter</span></span>
+          <span class="player-dot" aria-hidden="true"></span>
+        </div>
       </div>
-      <div class="timer" id="timer">60</div>
-      <div class="score p2">
-        <span class="label">Player 2</span>
-        <span class="value" id="score2">0</span>
+
+      <div class="game-stage">
+        <canvas id="game" width="800" height="500" tabindex="0" role="img" aria-label="Two frogs compete to catch flies across a pond"></canvas>
+        <div class="game-overlay" id="gameOverlay">
+          <p class="overlay-kicker" id="overlayKicker">The bog is buzzing</p>
+          <h2 id="overlayTitle">Ready to hop?</h2>
+          <p id="overlayText">Catch black flies for 1 point and rare golden flies for 3. A missed pad means a splash.</p>
+          <button class="primary-button" id="startBtn" type="button">Start round</button>
+        </div>
       </div>
-    </div>
 
-    <canvas id="game" width="800" height="500"></canvas>
+      <div class="control-deck">
+        <div class="player-controls p1-controls" aria-label="Pink frog touch controls">
+          <span class="control-name">Pink frog</span>
+          <button type="button" data-player="1" data-action="left" aria-label="Pink frog hop left">←</button>
+          <button class="catch-button" type="button" data-player="1" data-action="catch">Catch</button>
+          <button type="button" data-player="1" data-action="right" aria-label="Pink frog hop right">→</button>
+        </div>
 
-    <div class="controls">
-      <div class="controls-col">Player 1: <kbd>A</kbd>/<kbd>D</kbd> to hop, <kbd>SPACE</kbd> to catch</div>
-      <button id="startBtn">Start Game</button>
-      <div class="controls-col">Player 2: <kbd>←</kbd>/<kbd>→</kbd> to hop, <kbd>ENTER</kbd> to catch</div>
-    </div>
+        <div class="bog-status">
+          <span id="weatherStatus">☀ Clear skies</span>
+          <span class="fly-legend"><i aria-hidden="true"></i> Golden fly = 3</span>
+          <button class="icon-button" id="soundBtn" type="button" aria-pressed="true" aria-label="Mute sound">Sound on</button>
+          <button class="icon-button new-round" id="newRoundBtn" type="button" hidden>Restart</button>
+        </div>
 
-    <div class="hint">Tip: hop pad to pad to reach flies -- overshoot a pad and you'll splash into the water and have to hop back to safety!</div>
-  </div>
+        <div class="player-controls p2-controls" aria-label="Moon frog touch controls">
+          <span class="control-name">Moon frog</span>
+          <button type="button" data-player="2" data-action="left" aria-label="Moon frog hop left">←</button>
+          <button class="catch-button" type="button" data-player="2" data-action="catch">Catch</button>
+          <button type="button" data-player="2" data-action="right" aria-label="Moon frog hop right">→</button>
+        </div>
+      </div>
+    </section>
+
+    <p class="hint"><strong>How to play:</strong> hop left or right between lily pads, then catch when a fly comes within reach. If the score is tied, the bog adds 15 seconds of sudden death.</p>
+    <p class="sr-only" id="announcer" aria-live="polite"></p>
+  </main>
 
   <script src="script.js"></script>
 </body>

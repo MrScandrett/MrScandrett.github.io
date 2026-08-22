@@ -1,10 +1,12 @@
-import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
-import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
-import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
-import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
-import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import {
+  THREE,
+  OrbitControls,
+  EffectComposer,
+  RenderPass,
+  UnrealBloomPass,
+  OutputPass,
+  RoomEnvironment
+} from "./vendor/three-game-bundle.min.js";
 
 (() => {
   "use strict";
@@ -263,22 +265,33 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
 
   // ------------------------------------------------------------ holes
   const holeGeo = new THREE.CylinderGeometry(HOLE_SIZE * 0.42, HOLE_SIZE * 0.36, 0.12, 16);
-  const holeMat = new THREE.MeshStandardMaterial({ color: 0x140f26, roughness: 0.8, metalness: 0.2 });
-  const holeMesh = new THREE.InstancedMesh(holeGeo, holeMat, BOARD.size);
-  holeMesh.receiveShadow = true;
-  const holeIndexByKey = new Map();
-  {
-    let i = 0;
-    const m = new THREE.Matrix4();
-    for (const hole of BOARD.values()) {
-      const [px, pz] = cubeToWorld(hole.c);
-      m.setPosition(px, -0.06, -pz);
-      holeMesh.setMatrixAt(i, m);
-      holeIndexByKey.set(key(hole.c), i);
-      i++;
-    }
+  const holeMat = new THREE.MeshStandardMaterial({
+    color: 0x07040f,
+    emissive: 0x251344,
+    emissiveIntensity: 0.42,
+    roughness: 0.86,
+    metalness: 0.12
+  });
+  const holeRimGeo = new THREE.TorusGeometry(HOLE_SIZE * 0.38, HOLE_SIZE * 0.055, 8, 20);
+  holeRimGeo.rotateX(Math.PI / 2);
+  const holeRimMat = new THREE.MeshBasicMaterial({
+    color: 0xc8b5ff,
+    toneMapped: false
+  });
+  const holeMeshes = [];
+  for (const hole of BOARD.values()) {
+    const [px, pz] = cubeToWorld(hole.c);
+    const cup = new THREE.Mesh(holeGeo, holeMat);
+    cup.position.set(px, -0.025, -pz);
+    cup.receiveShadow = true;
+    cup.userData.cube = hole.c;
+    scene.add(cup);
+    holeMeshes.push(cup);
+
+    const rim = new THREE.Mesh(holeRimGeo, holeRimMat);
+    rim.position.set(px, 0.045, -pz);
+    scene.add(rim);
   }
-  scene.add(holeMesh);
 
   // pulsing highlight rings (pooled, shown/hidden per legal-move set)
   const RING_POOL_SIZE = 40;
@@ -474,6 +487,17 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
   let legalHops = new Map(); // key -> path (array of cube, excluding start)
   let animating = false;
   let gameOver = false;
+  let flowVersion = 0;
+  let aiTimer = null;
+
+  function cancelPendingFlow() {
+    flowVersion++;
+    if (aiTimer !== null) {
+      clearTimeout(aiTimer);
+      aiTimer = null;
+    }
+    animating = false;
+  }
 
   function keyOf(c) { return key(c); }
 
@@ -631,12 +655,14 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
   function easeInOutQuad(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
 
   function animatePathMove(peg, path, done) {
+    const version = flowVersion;
     animating = true;
     const segments = [];
     for (let i = 0; i < path.length - 1; i++) segments.push([path[i], path[i + 1]]);
     let segIdx = 0;
 
     function runSegment() {
+      if (version !== flowVersion) return;
       if (segIdx >= segments.length) {
         animating = false;
         done();
@@ -651,6 +677,7 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
       const hopHeight = isHop ? 1.35 : 0.15;
 
       function frame(now) {
+        if (version !== flowVersion) return;
         const t = Math.min(1, (now - start) / dur);
         const e = easeInOutQuad(t);
         const x = fx + (tx - fx) * e;
@@ -759,8 +786,11 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
     if (gameOver) return;
     const pl = players[currentPlayerIdx()];
     if (pl.isHuman) return;
+    const version = flowVersion;
     animating = true;
-    setTimeout(() => {
+    aiTimer = setTimeout(() => {
+      aiTimer = null;
+      if (version !== flowVersion || gameOver) return;
       const move = pickAIMove(currentPlayerIdx());
       if (!move) { animating = false; advanceTurn(); return; }
       const color = pl.color;
@@ -794,12 +824,8 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
     pointerNdc.x = ((clientX - rect.left) / rect.width) * 2 - 1;
     pointerNdc.y = -((clientY - rect.top) / rect.height) * 2 + 1;
     raycaster.setFromCamera(pointerNdc, camera);
-    const hit = raycaster.intersectObject(holeMesh, false)[0];
-    if (!hit || hit.instanceId == null) return null;
-    for (const [k, idx] of holeIndexByKey.entries()) {
-      if (idx === hit.instanceId) return k.split(",").map(Number);
-    }
-    return null;
+    const hit = raycaster.intersectObjects(holeMeshes, false)[0];
+    return hit ? hit.object.userData.cube : null;
   }
 
   function onPointerDown(ev) {
@@ -967,6 +993,10 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
   els.rulesBtn.addEventListener("click", openRulesMidGame);
 
   els.restartBtn.addEventListener("click", () => {
+    cancelPendingFlow();
+    deselect();
+    clearArcs();
+    pointGlows.forEach((g) => (g.visible = false));
     els.hud.hidden = true;
     els.win.hidden = true;
     els.boot.hidden = false;
@@ -976,6 +1006,7 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
   });
 
   function startGame(count) {
+    cancelPendingFlow();
     gameOver = false;
     deselect();
     pointGlows.forEach((g) => (g.visible = false));
