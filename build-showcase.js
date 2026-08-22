@@ -223,12 +223,23 @@ function rewriteCssPaths(css) {
 
 const SKIP_DIR_NAMES = new Set([
   ".git", "node_modules",
+  // Editor/IDE config, never referenced by a served page
+  ".vscode", ".idea", "__pycache__",
   // macOS/Windows system folders
   ".Spotlight-V100", ".fseventsd", ".Trashes", "$RECYCLE.BIN",
   "System Volume Information",
   // Consolidated alias folders (individual student folders already cover these)
   "pivotstickfigure",
 ]);
+
+// Per-project scaffolding that isn't part of the served app (dev scripts, changelogs,
+// docs) and shouldn't be published to apps/<slug>/. Keyed by slug.
+const PROJECT_EXTRA_SKIP_DIRS = {
+  thomas: new Set(["docs", "scripts", "update-repo"]),
+};
+const PROJECT_EXTRA_SKIP_FILES = {
+  thomas: new Set(["server.py"]),
+};
 
 function listSubdirs(dirPath) {
   const out = [];
@@ -653,11 +664,17 @@ async function processProject(source, slug) {
   await ensureDir(outputDir);
 
   // Copy everything except root index/style/script; those are rebuilt below.
-  const skipFiles = new Set([entryHtml]);
+  const skipFiles = new Set([entryHtml, ".DS_Store"]);
   if (sourceStyleName) skipFiles.add(sourceStyleName);
   if (sourceScriptName) skipFiles.add(sourceScriptName);
+  for (const name of PROJECT_EXTRA_SKIP_FILES[slug] || []) skipFiles.add(name);
+
+  const skipDirectories = new Set(SKIP_DIR_NAMES);
+  for (const name of PROJECT_EXTRA_SKIP_DIRS[slug] || []) skipDirectories.add(name);
+
   await copyDirectoryRecursive(projectDir, outputDir, {
-    skipFiles
+    skipFiles,
+    skipDirectories
   });
 
   if (hasScript) {

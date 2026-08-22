@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { MODULE_SECTION_IDS } from "../lib/compendium-sections.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const filename = path.join(ROOT, "steam-lessons.html");
@@ -10,23 +11,7 @@ const source = html
   .replace(volumeNavPattern, "\n")
   .replace(/\s*<section class="compendium-volume-divider"[\s\S]*?<\/section>/g, "\n");
 
-const sectionIds = {
-  mathematics: "module-math",
-  physics: "module-physics",
-  chemistry: "module-chemistry",
-  "life-sciences": "module-lifesci",
-  "earth-science": "module-earth",
-  cosmology: "module-space",
-  engineering: "module-engineering",
-  "fabrication-materials": "module-fabrication",
-  "technical-elements": "module-technical-elements",
-  "computer-science": "module-cs",
-  "game-development": "module-gamedev",
-  "visual-design": "module-art",
-  "language-literature": "module-language",
-  "complex-systems-humanities": "module-systems",
-  "bible-studies": "module-bible",
-};
+const sectionIds = MODULE_SECTION_IDS;
 
 const icons = ["📐", "⚛️", "🌿", "🛠️", "💻", "📚"];
 const modulePresentations = {

@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { MODULE_SECTION_IDS } from "../lib/compendium-sections.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const checkOnly = process.argv.includes("--check");
@@ -11,23 +12,7 @@ const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "lessons.json
 const catalogByUrl = new Map(catalog.lessons.map((lesson) => [lesson.url, lesson]));
 const shelf = readShelf(fs.readFileSync(shelfPath, "utf8"));
 const shelfUrls = new Set(shelf.flatMap((module) => module.lessons));
-const shelfSectionIds = {
-  mathematics: "module-math",
-  physics: "module-physics",
-  chemistry: "module-chemistry",
-  "life-sciences": "module-lifesci",
-  "earth-science": "module-earth",
-  cosmology: "module-space",
-  engineering: "module-engineering",
-  "fabrication-materials": "module-fabrication",
-  "technical-elements": "module-technical-elements",
-  "computer-science": "module-cs",
-  "game-development": "module-gamedev",
-  "visual-design": "module-art",
-  "language-literature": "module-language",
-  "complex-systems-humanities": "module-systems",
-  "bible-studies": "module-bible",
-};
+const shelfSectionIds = MODULE_SECTION_IDS;
 
 const errors = [];
 const seen = new Map();

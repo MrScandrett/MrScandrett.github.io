@@ -13,10 +13,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { MODULE_SECTION_IDS } from "../lib/compendium-sections.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const LESSONS_PATH = path.join(ROOT, "data", "lessons.json");
 const INDEX_PATH = path.join(ROOT, "assets", "data", "search-index.json");
+const COMPENDIUM_PLAN_PATH = path.join(ROOT, "data", "compendium-plan.json");
 const FIX = process.argv.includes("--fix");
 
 const errors = [];
@@ -134,45 +136,46 @@ for (const l of lessons) {
 if (notInIndex === 0) info("All live lessons present in search-index.json ✓");
 
 // Banner count drift check ────────────────────────────────────────────────────
-
-// Maps banner title text → primaryModule value used in lessons.json
-const BANNER_TO_MODULE = {
-  "Mathematics":                        "Mathematics",
-  "Physics":                            "Physics",
-  "Applied Physics & Materials Science":"Applied Physics & Materials Science",
-  "Chemistry":                          "Chemistry",
-  "Life Sciences":                      "Life Sciences",
-  "Earth Science":                      "Earth Science",
-  "Cosmology & Planetary Science":      "Cosmology",
-  "Engineering":                        "Engineering",
-  "Technical Elements":                 "Technical Elements",
-  "Computer Science":                   "Computer Science",
-  "Visual Perception & Design":         "Visual Perception & Design",
-  "Language & Literature":              "Language & Literature",
-  "Complex Systems & Humanities":       "Complex Systems & Humanities",
-  "Bible Story, Theology & Christian Formation": "Bible Studies",
-};
+//
+// steam-lessons.html hand-writes each module banner's "N live" count; the only
+// authority for which lessons actually belong to a module is data/compendium-plan.json
+// (data/lessons.json's primaryModule is a coarser, independent categorization used
+// for search-index.json and doesn't correspond 1:1 with the compendium's modules).
+// Match banners by their stable `id="module-xxx"` attribute, not title text, so a
+// future title reword doesn't silently stop this check the way it did before.
 
 const steamPath = path.join(ROOT, "steam-lessons.html");
-if (fs.existsSync(steamPath)) {
+if (fs.existsSync(steamPath) && fs.existsSync(COMPENDIUM_PLAN_PATH)) {
   const html = fs.readFileSync(steamPath, "utf8");
-  const bannerPattern = /module-banner-title[^>]*>([^<&]+(?:&amp;[^<]*)?)<\/h2>[\s\S]*?module-banner-count[^>]*>(\d+) live/g;
+  const plan = JSON.parse(fs.readFileSync(COMPENDIUM_PLAN_PATH, "utf8"));
+  const statusByUrl = new Map(lessons.map((l) => [l.url, l.status]));
+
+  const sectionIdToModuleId = Object.fromEntries(
+    Object.entries(MODULE_SECTION_IDS).map(([moduleId, sectionId]) => [sectionId, moduleId])
+  );
+
+  const liveCountByModuleId = {};
+  for (const volume of plan.volumes) {
+    for (const module of volume.modules) {
+      const urls = module.units.flatMap((unit) => unit.lessons);
+      liveCountByModuleId[module.id] = urls.filter((url) => statusByUrl.get(url) === "live").length;
+    }
+  }
+
+  const bannerPattern = /id="(module-[\w-]+)"[\s\S]*?module-banner-title[^>]*>([^<&]+(?:&amp;[^<]*)?)<\/h2>[\s\S]*?module-banner-count[^>]*>(\d+)\s*live/g;
   for (const match of html.matchAll(bannerPattern)) {
-    const bannerTitle = match[1].replace(/&amp;/g, "&").trim();
-    const bannerCount = parseInt(match[2], 10);
-    const moduleName = BANNER_TO_MODULE[bannerTitle];
-    if (!moduleName) {
-      warn(`Banner title not in BANNER_TO_MODULE map: "${bannerTitle}"`);
+    const sectionId = match[1];
+    const bannerTitle = match[2].replace(/&amp;/g, "&").trim();
+    const bannerCount = parseInt(match[3], 10);
+    const moduleId = sectionIdToModuleId[sectionId];
+    if (!moduleId) {
+      warn(`Banner section id not in MODULE_SECTION_IDS: "${sectionId}" ("${bannerTitle}")`);
       continue;
     }
-    const liveCount = lessons.filter(
-      (l) =>
-        l.status === "live" &&
-        (l.primaryModule === moduleName || (l.alsoAppearsIn || []).includes(moduleName))
-    ).length;
+    const liveCount = liveCountByModuleId[moduleId] ?? 0;
     if (liveCount !== bannerCount) {
       warn(
-        `Banner count mismatch for "${bannerTitle}": banner says ${bannerCount}, lessons.json has ${liveCount} live`
+        `Banner count mismatch for "${bannerTitle}" (${sectionId}): banner says ${bannerCount}, compendium plan has ${liveCount} live`
       );
     }
   }

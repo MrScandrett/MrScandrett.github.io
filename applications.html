@@ -198,6 +198,7 @@
                   <button class="steam-galaxy-nav-btn" type="button" data-galaxy-action="zoom-in">Zoom In</button>
                   <button class="steam-galaxy-nav-btn" type="button" data-galaxy-action="zoom-out">Zoom Out</button>
                   <button class="steam-galaxy-nav-btn" type="button" data-galaxy-action="reset-view">Center</button>
+                  <button class="steam-galaxy-nav-btn is-active" type="button" id="btn-focus-mode" data-galaxy-action="toggle-focus" aria-pressed="true">Simple View: On</button>
                 </div>
                 <p class="steam-galaxy-nav-hint">Drag, pinch, scroll, or use the mini-map to move.</p>
               </div>
@@ -3910,7 +3911,10 @@
         grade: "all",
         utility: "all",
         selectedId: null,
-        focusMode: false
+        // Default on: opening a pathway with all of its tools at full density reads
+        // as a wall of data. Simple View shows only Core Tools first; the toggle in
+        // the Galaxy Camera card lets anyone opt into the full set.
+        focusMode: true
       };
       const expandedCategories = new Set(defaultExpandedCategories);
 
@@ -4166,6 +4170,24 @@
         if (!selectedNode) {
           fitVisibleNodes(duration);
           return;
+        }
+        // Picking a tool now hides everything outside its local neighborhood (see
+        // syncVisuals), so frame the camera around that same neighborhood instead of
+        // just centering on the one point — otherwise the view stays zoomed for a
+        // whole category's worth of space around a mostly-empty stage.
+        if (selectedNode.type === "tool") {
+          const relatedIds = getRelatedIdSet(selectedNode);
+          const neighborhood = layoutNodes.filter((n) => relatedIds.has(n.id));
+          if (neighborhood.length) {
+            setCameraTransform(transformForBounds(getBoundsForNodes(neighborhood), {
+              padding: viewportWidth < 760
+                ? { top: 152, right: 52, bottom: 164, left: 52 }
+                : { top: 204, right: 236, bottom: 132, left: 144 },
+              centerYOffset: viewportWidth < 760 ? 0 : 28,
+              maxScale: viewportWidth < 760 ? 1.15 : 1.05
+            }), duration);
+            return;
+          }
         }
         const layoutNode = layoutNodes.find((n) => n.id === selectedNode.id) || selectedNode;
         const scale = selectedNode.type === "anchor" ? 0.82 : 0.98;
@@ -4563,13 +4585,31 @@
         }
       }
 
+      // Bezier control-point jitter only depends on link.id, never on live node
+      // positions, but getCurveMemo runs on every active link every render frame
+      // (up to 30x/sec). Hashing the id string that often is pure waste, so the
+      // jitter is solved once per link and reused for the life of the page.
+      const curveJitterCache = new Map();
+      function getCurveJitter(link) {
+        let jitter = curveJitterCache.get(link.id);
+        if (!jitter) {
+          jitter = {
+            x: (seededValue(link.id + "-bx") - 0.5) * 52,
+            y: (seededValue(link.id + "-by") - 0.5) * 52
+          };
+          curveJitterCache.set(link.id, jitter);
+        }
+        return jitter;
+      }
+
       function getCurveMemo(link, positions) {
         const sourceId = link.source.id || link.source;
         const targetId = link.target.id || link.target;
         const s = positions.get(sourceId) || { x: 0, y: 0 };
         const t = positions.get(targetId) || { x: 0, y: 0 };
-        const bx = (s.x + t.x) / 2 + (seededValue(link.id + "-bx") - 0.5) * 52;
-        const by = (s.y + t.y) / 2 + (seededValue(link.id + "-by") - 0.5) * 52;
+        const jitter = getCurveJitter(link);
+        const bx = (s.x + t.x) / 2 + jitter.x;
+        const by = (s.y + t.y) / 2 + jitter.y;
         return {
           link,
           sourceId,
@@ -4743,15 +4783,15 @@
             state.category = "all";
             state.grade = "all";
             state.utility = "all";
-            state.focusMode = false;
+            state.focusMode = true;
             state.selectedId = null;
             panelAutoRetracted = false;
-            if (stage) stage.dataset.focusMode = "false";
+            if (stage) stage.dataset.focusMode = "true";
             const focusButton = document.getElementById("btn-focus-mode");
             if (focusButton) {
-              focusButton.classList.remove("is-active");
-              focusButton.textContent = "Simple View: Off";
-              focusButton.setAttribute("aria-pressed", "false");
+              focusButton.classList.add("is-active");
+              focusButton.textContent = "Simple View: On";
+              focusButton.setAttribute("aria-pressed", "true");
             }
             if (galaxyLayout?.classList.contains("is-retracted")) {
               setGalaxyPanelRetracted(false);
@@ -5254,9 +5294,25 @@
         const visibleTools = steamGalaxyNodes.filter((node) => node.type === "tool" && toolVisible(node));
         const openCategory = Array.from(expandedCategories)[0] || null;
         const gradeNote = state.grade === "all" ? "" : ` for ${gradeOptions.find((option) => option.value === state.grade)?.label || state.grade}`;
-        const message = openCategory
-          ? `${visibleTools.length} tools in ${categoryMeta[openCategory]?.anchorLabel || openCategory}${gradeNote}. Choose a tool, or return to All pathways.`
-          : `Choose one of ${categoryKeys.length} pathway bubbles to begin${gradeNote}.`;
+        const selectedNode = getSelectedNode();
+        const anchorLabel = openCategory ? (categoryMeta[openCategory]?.anchorLabel || openCategory) : "";
+        let message;
+        if (selectedNode && selectedNode.type === "tool" && openCategory) {
+          // Selecting a tool now hides the rest of the category (local-graph view),
+          // so the status line needs to explain the smaller count and how to get
+          // the full list back — otherwise "16 tools" from a moment ago looks like
+          // a bug when only 3 or 4 are left on screen.
+          const relatedTools = Array.from(getRelatedIdSet(selectedNode))
+            .filter((id) => id !== selectedNode.id && nodesById.get(id)?.type === "tool");
+          const relatedNote = relatedTools.length
+            ? `${selectedNode.label} and ${relatedTools.length} related tool${relatedTools.length === 1 ? "" : "s"}`
+            : selectedNode.label;
+          message = `Showing ${relatedNote}. Select ${anchorLabel} to see all ${visibleTools.length}.`;
+        } else {
+          message = openCategory
+            ? `${visibleTools.length} tools in ${anchorLabel}${gradeNote}. Choose a tool, or return to All pathways.`
+            : `Choose one of ${categoryKeys.length} pathway bubbles to begin${gradeNote}.`;
+        }
         if (message !== lastStatusMessage) {
           statusText.textContent = message;
           lastStatusMessage = message;
@@ -5460,6 +5516,27 @@
           });
       }
 
+      // Nebula gradients used to be rebuilt from scratch (createRadialGradient +
+      // color-stop math) on every single animation frame, for every category —
+      // pure waste since a cloud's color and shape never change, only its live
+      // alpha/scale do. Bake the shape once per resize and reuse it as a sprite;
+      // per-frame drawing becomes a single drawImage call.
+      const NEBULA_SPRITE_SIZE = 256;
+      function bakeNebulaSprite(r, g, b) {
+        const sprite = document.createElement("canvas");
+        sprite.width = NEBULA_SPRITE_SIZE;
+        sprite.height = NEBULA_SPRITE_SIZE;
+        const spriteCtx = sprite.getContext("2d");
+        const center = NEBULA_SPRITE_SIZE / 2;
+        const grad = spriteCtx.createRadialGradient(center, center, 0, center, center, center);
+        grad.addColorStop(0,    `rgba(${r},${g},${b},1)`);
+        grad.addColorStop(0.45, `rgba(${r},${g},${b},0.35)`);
+        grad.addColorStop(1,    `rgba(${r},${g},${b},0)`);
+        spriteCtx.fillStyle = grad;
+        spriteCtx.fillRect(0, 0, NEBULA_SPRITE_SIZE, NEBULA_SPRITE_SIZE);
+        return sprite;
+      }
+
       function resizeStarField(width, height) {
         const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
         starsCanvas.width = Math.max(1, Math.round(width * pixelRatio));
@@ -5489,7 +5566,8 @@
             radius: 110 + seededValue(`nebula-${key}-r`) * 200,
             alpha: 0.035 + seededValue(`nebula-${key}-a`) * 0.05,
             phase: seededValue(`nebula-${key}-phase`) * Math.PI * 2,
-            r, g, b
+            r, g, b,
+            sprite: bakeNebulaSprite(r, g, b)
           };
         });
 
@@ -5586,16 +5664,11 @@
           const breathe = 0.88 + Math.sin(time * 0.00013 + cloud.phase) * 0.12;
           const alpha = cloud.alpha * (0.72 + Math.sin(time * 0.00025 + cloud.phase * 1.7) * 0.28);
           const r = cloud.radius * breathe;
-          if (!Number.isFinite(px) || !Number.isFinite(py) || !(r > 0)) return;
-          const grad = ctx.createRadialGradient(px, py, 0, px, py, r);
-          grad.addColorStop(0,   `rgba(${cloud.r},${cloud.g},${cloud.b},${alpha})`);
-          grad.addColorStop(0.45,`rgba(${cloud.r},${cloud.g},${cloud.b},${alpha * 0.35})`);
-          grad.addColorStop(1,   `rgba(${cloud.r},${cloud.g},${cloud.b},0)`);
-          ctx.fillStyle = grad;
-          ctx.beginPath();
-          ctx.arc(px, py, r, 0, Math.PI * 2);
-          ctx.fill();
+          if (!Number.isFinite(px) || !Number.isFinite(py) || !(r > 0) || !cloud.sprite) return;
+          ctx.globalAlpha = alpha;
+          ctx.drawImage(cloud.sprite, px - r, py - r, r * 2, r * 2);
         });
+        ctx.globalAlpha = 1;
 
         ctx.save();
         ctx.globalAlpha = 0.35;
@@ -5608,7 +5681,7 @@
         ctx.globalAlpha = globalTwinkle;
 
         const activeStarCount = state.focusMode
-          ? Math.max(48, Math.floor(starField.length * 0.3))
+          ? Math.min(starField.length, Math.max(48, Math.floor(starField.length * 0.3)))
           : Math.min(starField.length, 100);
         for (let index = 0; index < activeStarCount; index += 1) {
           const star = starField[index];
@@ -5896,7 +5969,14 @@
               const visible = cachedVisibleNodeIds.has(node.id);
               if (!visible) classes.push("is-hidden");
               if (visible && selectedNode && node.id === selectedNode.id) classes.push("is-active");
-              if (visible && selectedNode && node.id !== selectedNode.id && !relatedIds.has(node.id)) classes.push("is-muted");
+              if (visible && selectedNode && node.id !== selectedNode.id && !relatedIds.has(node.id)) {
+                // Picking a tool narrows the map to a local graph — itself plus its
+                // direct neighborhood — instead of leaving the rest of the category
+                // sitting around dimmed. Anchor selections keep the softer dim: their
+                // "related" set already covers the whole category, so nothing outside
+                // it is a sibling worth hiding.
+                classes.push(selectedNode.type === "tool" ? "is-hidden" : "is-muted");
+              }
               if (visible && selectedNode && node.id !== selectedNode.id && relatedIds.has(node.id)) classes.push("is-related");
               return classes.join(" ");
             })
