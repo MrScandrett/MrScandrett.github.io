@@ -14,7 +14,9 @@
     ['electronic-components.html', '6', 'Components'],
     ['electronic-schematics.html', '7', 'Schematics'],
     ['breadboard-basics.html', '8', 'Build a circuit'],
-    ['sensor-modules.html', '9', 'Sensors & control']
+    ['inputs-beyond-the-button.html', '9', 'Creative inputs'],
+    ['outputs-beyond-the-led.html', '10', 'Driving outputs'],
+    ['sensor-modules.html', '11', 'Sensors & control']
   ];
 
   var section = document.createElement('section');
@@ -38,4 +40,3 @@
   if (footer) main.insertBefore(section, footer);
   else main.appendChild(section);
 })();
-

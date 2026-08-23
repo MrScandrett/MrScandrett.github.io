@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Outputs: Beyond the LED · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Drive LEDs, buzzers, servos, motors, and relays safely — current-limiting resistors, transistor drivers, flyback diodes, and PWM, plus human-centered design for outputs." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../assets/css/electricity-path.css" />
+  <style>
+    :root {
+      --ob-ink: #12202a;
+      --ob-paper: #eef2f7;
+      --ob-panel: #fffdfa;
+      --ob-copper: #c65e2e;
+      --ob-blue: #146b8c;
+      --ob-lime: #b8d84b;
+      --ob-yellow: #f2bf3f;
+      --ob-red: #d94b41;
+      --ob-line: rgba(18, 32, 42, 0.18);
+      --ob-grid: rgba(20, 107, 140, 0.08);
+    }
+
+    body.theme-steam { font-family: "IBM Plex Sans", Inter, sans-serif; }
+    .ob-page { padding-bottom: 1.5rem; color: var(--ob-ink); }
+    .ll-viewport { --ll-panel-w: 310px; }
+    .ob-page button, .ob-page select, .ob-page input { font: inherit; }
+    .ob-page button { touch-action: manipulation; }
+    .ob-page :focus-visible { outline: 3px solid #0b83b1; outline-offset: 3px; }
+
+    .ob-hero {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(300px, .95fr);
+      gap: clamp(1.2rem, 4vw, 3.2rem);
+      align-items: center;
+      margin: .45rem 0 1rem;
+      padding: clamp(1.35rem, 4vw, 2.8rem);
+      border: 1px solid var(--ob-line);
+      border-radius: 10px;
+      background-color: var(--ob-paper);
+      background-image:
+        linear-gradient(var(--ob-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--ob-grid) 1px, transparent 1px);
+      background-size: 22px 22px;
+      box-shadow: 0 18px 48px rgba(18,32,42,.12);
+    }
+    .ob-hero::before {
+      content: "INPUT / OUTPUT WORKBENCH";
+      position: absolute;
+      right: -3rem;
+      top: 1.2rem;
+      transform: rotate(7deg);
+      color: rgba(20,107,140,.12);
+      font: 800 clamp(2.5rem, 7vw, 5.5rem)/.78 "Barlow Condensed", sans-serif;
+      letter-spacing: .04em;
+      pointer-events: none;
+    }
+    .ob-kicker, .ob-label {
+      font: 700 .73rem/1.2 "IBM Plex Mono", monospace;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+    .ob-kicker { color: var(--ob-blue); }
+    .ob-hero h1 {
+      max-width: 9ch;
+      margin: .3rem 0 .75rem;
+      font: 800 clamp(3rem, 8vw, 6.5rem)/.76 "Barlow Condensed", sans-serif;
+      letter-spacing: -.035em;
+      text-transform: uppercase;
+    }
+    .ob-hero h1 span { display: block; color: var(--ob-copper); }
+    .ob-lede { max-width: 58ch; margin: 0 0 1rem; font-size: 1rem; line-height: 1.7; }
+    .ob-meta { display: flex; flex-wrap: wrap; gap: .45rem; margin: .8rem 0 1.05rem; }
+    .ob-meta span {
+      padding: .28rem .52rem;
+      border: 1px solid var(--ob-line);
+      background: rgba(255,255,255,.56);
+      font: 600 .7rem/1.2 "IBM Plex Mono", monospace;
+    }
+    .ob-back { color: var(--ob-blue); font-weight: 700; text-decoration: none; }
+    .ob-back:hover { text-decoration: underline; }
+
+    .ob-demo-board {
+      position: relative;
+      z-index: 1;
+      min-height: 300px;
+      padding: 1rem;
+      border: 3px solid #273943;
+      border-radius: 14px;
+      background: #29424b;
+      box-shadow: 0 14px 0 #17272f, 0 25px 34px rgba(10,22,28,.24);
+      color: #f6fbf8;
+    }
+    .ob-board-label { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: .7rem; color: #d4e0df; font: 600 .68rem "IBM Plex Mono", monospace; }
+    .ob-board-screen {
+      min-height: 68px;
+      padding: .7rem .8rem;
+      border: 2px inset #688086;
+      background: #b9d897;
+      color: #173121;
+      font: 600 .78rem/1.45 "IBM Plex Mono", monospace;
+      box-shadow: inset 0 0 18px rgba(21,52,29,.2);
+    }
+    .ob-board-screen strong { display: block; font-size: 1rem; }
+    .ob-hardware-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; margin-top: .9rem; }
+    .ob-hardware { display: grid; place-items: center; gap: .5rem; color: #dbe7e5; font: 600 .66rem "IBM Plex Mono", monospace; }
+    .ob-led-demo {
+      width: 72px; height: 72px; border-radius: 50%; border: 3px solid #cfd9d7; background: #273c43;
+      display: grid; place-items: center; box-shadow: inset 0 0 10px rgba(0,0,0,.3);
+      transition: background-color .08s linear, box-shadow .08s linear;
+    }
+    .ob-hardware input[type="range"] { width: 100%; accent-color: var(--ob-yellow); }
+    .ob-buzzer-btn {
+      width: 76px; height: 76px; border: 0; border-radius: 50%; cursor: pointer;
+      background: radial-gradient(circle at 36% 30%, #7fd7e8 0 16%, #1f8aa8 37% 62%, #0e4a5c 64% 100%);
+      box-shadow: 0 8px 0 #0a3542, 0 11px 14px rgba(0,0,0,.35);
+      transition: transform .08s, box-shadow .08s;
+    }
+    .ob-buzzer-btn.is-beeping { animation: ob-beep .22s ease; }
+    @keyframes ob-beep { 0% { transform: scale(1); } 45% { transform: scale(1.14); box-shadow: 0 8px 0 #0a3542, 0 0 22px 6px rgba(127,215,232,.7); } 100% { transform: scale(1); } }
+
+    .ob-card {
+      margin-bottom: 1rem;
+      padding: clamp(1.1rem, 3vw, 1.65rem);
+      border: 1px solid var(--ob-line);
+      border-top: 5px solid var(--ob-accent, var(--ob-blue));
+      border-radius: 9px;
+      background: var(--ob-panel);
+      box-shadow: 0 8px 24px rgba(18,32,42,.07);
+    }
+    .ob-card h2 { margin: 0 0 .5rem; font: 800 clamp(1.65rem, 4vw, 2.35rem)/.95 "Barlow Condensed", sans-serif; text-transform: uppercase; letter-spacing: -.015em; }
+    .ob-card h3 { margin: 0 0 .35rem; font: 700 1.25rem/1 "Barlow Condensed", sans-serif; text-transform: uppercase; }
+    .ob-card p { margin: 0 0 .75rem; line-height: 1.67; }
+    .ob-card > p { max-width: 78ch; }
+    .ob-rule { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; margin-top: 1rem; }
+    .ob-rule article { position: relative; padding: 1rem; border: 1px solid var(--ob-line); background: #f4f6f8; transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+    .ob-rule article:hover { transform: translateY(-3px); border-color: var(--ob-blue); box-shadow: 0 10px 20px rgba(18,32,42,.1); }
+    .ob-rule b { display: block; margin-bottom: .28rem; color: var(--ob-blue); font-family: "IBM Plex Mono", monospace; }
+    .ob-rule p { margin: 0; font-size: .88rem; }
+
+    .ob-spectrum { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; margin-top: 1rem; }
+    .ob-spectrum article { padding: 1rem; border-left: 5px solid var(--type-color); background: color-mix(in srgb, var(--type-color) 9%, white); transition: transform .15s ease, background .15s ease; }
+    .ob-spectrum article:hover { transform: translateY(-3px); background: color-mix(in srgb, var(--type-color) 18%, white); }
+    .ob-spectrum .ob-label { color: var(--type-color); }
+    .ob-spectrum p { margin: .3rem 0 0; font-size: .87rem; }
+
+    .ob-driver-lab { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(300px, 1.2fr); gap: 1rem; margin-top: 1rem; }
+    .ob-driver-controls { display: grid; gap: .55rem; align-content: start; }
+    .ob-choice {
+      display: grid; grid-template-columns: auto 1fr; gap: .7rem; align-items: center; width: 100%; padding: .7rem;
+      border: 1px solid var(--ob-line); background: #f4f6f8; color: var(--ob-ink); text-align: left; cursor: pointer;
+      transition: border-color .15s ease, background .15s ease, transform .15s ease;
+    }
+    .ob-choice:hover:not([aria-pressed="true"]) { border-color: var(--ob-blue); transform: translateX(2px); }
+    .ob-choice[aria-pressed="true"] { border-color: var(--ob-blue); background: #dceef3; box-shadow: inset 4px 0 var(--ob-blue); }
+    .ob-choice-code { color: var(--ob-copper); font: 700 .74rem "IBM Plex Mono", monospace; }
+    .ob-circuit {
+      display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .6rem; min-height: 205px; padding: 1rem;
+      border: 1px solid #173944; color: #d8ecea; background-color: #173944;
+      background-image: radial-gradient(rgba(255,255,255,.12) 1px, transparent 1px); background-size: 12px 12px;
+    }
+    .ob-battery { padding: .55rem; border: 2px solid #dce8e6; font: 700 .7rem "IBM Plex Mono", monospace; }
+    .ob-pin { display: grid; place-items: center; width: 72px; height: 72px; border: 3px solid #cfd9d7; border-radius: 10px; background: #273c43; font: 700 1.6rem/1 "Barlow Condensed", sans-serif; transition: .15s; }
+    .ob-circuit.is-active .ob-pin { color: #12222a; background: #b8d84b; box-shadow: 0 0 24px #b8d84b; }
+    .ob-circuit.is-overcurrent .ob-pin { color: #fff2ee; background: var(--ob-red); box-shadow: 0 0 24px var(--ob-red); }
+    .ob-circuit-status { grid-column: 1 / -1; margin: .2rem 0 0; text-align: center; font: 600 .75rem "IBM Plex Mono", monospace; }
+    .ob-test-switch { grid-column: 1 / -1; justify-self: center; padding: .55rem 1rem; border: 2px solid #e7f0ee; background: #2f5e69; color: white; cursor: pointer; font-weight: 700; }
+
+    .ob-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; margin-top: 1rem; }
+    .ob-output-card { padding: 1rem; border: 1px solid var(--ob-line); background: #f7f8f4; transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+    .ob-output-card:hover { transform: translateY(-3px); border-color: var(--card-color, var(--ob-yellow)); box-shadow: 0 10px 20px rgba(18,32,42,.1); }
+    .ob-icon-badge { display: grid; place-items: center; width: 58px; height: 58px; margin-bottom: .7rem; border-radius: 50%; background: color-mix(in srgb, var(--card-color, var(--ob-blue)) 16%, white); color: var(--card-color, var(--ob-blue)); }
+    .ob-icon-badge svg { width: 34px; height: 34px; }
+    .ob-output-card p { margin: 0; font-size: .84rem; }
+    .ob-output-card small { display: block; margin-top: .55rem; color: #4d626b; font: 600 .68rem/1.4 "IBM Plex Mono", monospace; }
+
+    .ob-recipes { display: grid; grid-template-columns: 1fr 1fr; gap: .85rem; margin-top: 1rem; }
+    .ob-recipe { padding: 1rem; border: 1px solid var(--ob-line); background: #f5f6f4; transition: box-shadow .15s ease, border-color .15s ease; }
+    .ob-recipe:hover { border-color: var(--ob-copper); box-shadow: 0 10px 20px rgba(18,32,42,.08); }
+    .ob-recipe-header { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; padding-bottom: .55rem; border-bottom: 2px dashed var(--ob-line); }
+    .ob-recipe ol { margin: .7rem 0 0; padding-left: 1.25rem; font-size: .86rem; line-height: 1.55; }
+    .ob-recipe li + li { margin-top: .35rem; }
+    .ob-safety { margin-top: 1rem; padding: .9rem 1rem; border-left: 5px solid var(--ob-red); background: #fff0eb; }
+    .ob-safety strong { color: #a32e28; }
+
+    .ob-wiring { display: grid; grid-template-columns: minmax(280px, 1.1fr) minmax(260px, .9fr); gap: 1rem; margin-top: 1rem; }
+    .ob-diagram { padding: 1rem; border: 1px solid var(--ob-line); background: #f4f6f8; }
+    .ob-diagram svg { display: block; width: 100%; height: auto; }
+    .ob-code { margin: 0; overflow: auto; padding: 1rem; border-radius: 4px; background: #17272f; color: #e7f0e8; font: 500 .77rem/1.62 "IBM Plex Mono", monospace; }
+    .ob-code .c { color: #a8c86e; } .ob-code .k { color: #70c8e5; } .ob-code .n { color: #f2bf3f; }
+    .ob-truth { width: 100%; margin-top: .7rem; border-collapse: collapse; font-size: .8rem; }
+    .ob-truth th, .ob-truth td { padding: .48rem; border: 1px solid var(--ob-line); text-align: left; }
+    .ob-truth th { background: #e6ecf1; }
+
+    .ob-resistor-lab { display: grid; grid-template-columns: .72fr 1.28fr; gap: 1rem; margin-top: 1rem; align-items: start; }
+    .ob-resistor-controls { display: grid; gap: .75rem; }
+    .ob-window-field { display: grid; gap: .35rem; padding: .8rem; border: 1px solid var(--ob-line); background: #f4f6f8; }
+    .ob-window-field label { font: 700 .7rem "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: .05em; }
+    .ob-window-field label b { color: var(--ob-copper); }
+    .ob-window-field input[type="range"] { width: 100%; accent-color: var(--ob-copper); }
+    .ob-window-hint { margin: 0; font-size: .78rem; line-height: 1.5; color: #4d626b; }
+    .ob-gauge-readout { padding: .8rem; border: 1px solid var(--ob-line); background: #f4f6f8; font: 700 .95rem "IBM Plex Mono", monospace; }
+    .ob-gauge-readout span { display: block; margin-top: .3rem; font: 600 .78rem "IBM Plex Sans", sans-serif; }
+    .ob-gauge-readout.is-safe { border-left: 5px solid #5a7c18; }
+    .ob-gauge-readout.is-warn { border-left: 5px solid var(--ob-yellow); }
+    .ob-gauge-readout.is-danger { border-left: 5px solid var(--ob-red); }
+    .ob-resistor-preview { display: grid; place-items: center; padding: 1rem; border: 2px solid #24363e; background: #122229; }
+    .ob-resistor-preview .ob-led-demo { width: 110px; height: 110px; }
+
+    .ob-scope { padding: .75rem; border: 2px solid #24363e; background: #122229; color: #e6f1ed; }
+    .ob-scope-labels { display: flex; justify-content: space-between; margin-bottom: .4rem; font: 600 .68rem "IBM Plex Mono", monospace; }
+    .ob-wave { display: block; width: 100%; height: 110px; }
+    .ob-wave polyline { fill: none; stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; }
+    .ob-wave .pwm { stroke: #b8d84b; }
+    .ob-pwm-preview { display: flex; align-items: center; gap: 1rem; margin-top: .7rem; }
+    .ob-pwm-preview .ob-led-demo { width: 60px; height: 60px; }
+    .ob-pwm-readout { font: 600 .76rem "IBM Plex Mono", monospace; }
+
+    .ob-forge { display: grid; grid-template-columns: .85fr 1.15fr; gap: 1rem; margin-top: 1rem; }
+    .ob-forge-controls { display: grid; gap: .7rem; align-content: start; }
+    .ob-field { display: grid; gap: .3rem; }
+    .ob-field label { font: 700 .7rem "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: .05em; }
+    .ob-field select { width: 100%; padding: .65rem; border: 1px solid var(--ob-line); background: white; color: var(--ob-ink); }
+    .ob-forge-output { position: relative; min-height: 255px; padding: 1.2rem; border: 2px solid #233740; background: #1b3038; color: #eef6f3; }
+    .ob-forge-output::before { content: "PROTOTYPE CARD"; position: absolute; right: .7rem; top: .6rem; color: #83a4aa; font: 600 .62rem "IBM Plex Mono", monospace; }
+    .ob-forge-output h3 { max-width: 80%; margin-top: 1.4rem; color: var(--ob-lime); font-size: 1.7rem; }
+    .ob-forge-output p { color: #d4e3df; }
+    .ob-flow { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; margin: 1rem 0; }
+    .ob-flow span { padding: .42rem .55rem; border: 1px solid #668087; font: 600 .7rem "IBM Plex Mono", monospace; }
+    .ob-flow b { color: var(--ob-yellow); }
+    .ob-forge-note { padding-top: .75rem; border-top: 1px solid #567078; font-size: .8rem; }
+
+    .ob-principles { display: grid; grid-template-columns: repeat(2, 1fr); gap: .75rem; margin-top: 1rem; }
+    .ob-principles article { padding: 1rem; border: 1px solid var(--ob-line); background: #f4f6f8; transition: transform .15s ease, border-color .15s ease; }
+    .ob-principles article:hover { transform: translateY(-3px); border-color: var(--ob-blue); }
+    .ob-principles b { display: block; color: var(--ob-blue); }
+    .ob-principles p { margin: .3rem 0 0; font-size: .86rem; }
+
+    .ob-quiz { display: grid; gap: .85rem; margin-top: 1rem; }
+    .ob-question { padding: 1rem; border: 1px solid var(--ob-line); background: #f5f6f4; }
+    .ob-question > p { font-weight: 700; }
+    .ob-options { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+    .ob-option { padding: .65rem; border: 1px solid var(--ob-line); background: white; color: var(--ob-ink); text-align: left; cursor: pointer; transition: border-color .15s ease, background .15s ease; }
+    .ob-option:not(:disabled):hover { border-color: var(--ob-blue); background: #eef6f8; }
+    .ob-option.is-correct { border-color: #5a7c18; background: #edf7d2; }
+    .ob-option.is-wrong { border-color: #b5352e; background: #ffe2dc; }
+    .ob-feedback { min-height: 1.4em; margin: .55rem 0 0; font-size: .82rem; font-weight: 600; }
+
+    [data-lighting="night"] .ob-page, [data-theme="vaporwave"] .ob-page, [data-theme="bark"] .ob-page { --ob-ink: #edf5f2; --ob-panel: #16272e; --ob-paper: #182b38; --ob-line: rgba(228,242,237,.2); --ob-grid: rgba(112,200,229,.1); }
+    [data-lighting="night"] .ob-rule article, [data-lighting="night"] .ob-choice, [data-lighting="night"] .ob-output-card, [data-lighting="night"] .ob-recipe, [data-lighting="night"] .ob-diagram, [data-lighting="night"] .ob-principles article, [data-lighting="night"] .ob-question, [data-lighting="night"] .ob-window-field, [data-lighting="night"] .ob-gauge-readout,
+    [data-theme="vaporwave"] .ob-rule article, [data-theme="vaporwave"] .ob-choice, [data-theme="vaporwave"] .ob-output-card, [data-theme="vaporwave"] .ob-recipe, [data-theme="vaporwave"] .ob-diagram, [data-theme="vaporwave"] .ob-principles article, [data-theme="vaporwave"] .ob-question, [data-theme="vaporwave"] .ob-window-field, [data-theme="vaporwave"] .ob-gauge-readout,
+    [data-theme="bark"] .ob-rule article, [data-theme="bark"] .ob-choice, [data-theme="bark"] .ob-output-card, [data-theme="bark"] .ob-recipe, [data-theme="bark"] .ob-diagram, [data-theme="bark"] .ob-principles article, [data-theme="bark"] .ob-question, [data-theme="bark"] .ob-window-field, [data-theme="bark"] .ob-gauge-readout { background: rgba(255,255,255,.04); }
+    [data-lighting="night"] .ob-spectrum article, [data-theme="vaporwave"] .ob-spectrum article, [data-theme="bark"] .ob-spectrum article { background: rgba(255,255,255,.045); }
+    [data-lighting="night"] .ob-field select, [data-lighting="night"] .ob-option, [data-theme="vaporwave"] .ob-field select, [data-theme="vaporwave"] .ob-option, [data-theme="bark"] .ob-field select, [data-theme="bark"] .ob-option { background: #20343d; color: #eef6f3; }
+    [data-lighting="night"] .ob-truth th, [data-theme="vaporwave"] .ob-truth th, [data-theme="bark"] .ob-truth th { background: #29414a; }
+    [data-lighting="night"] .ob-safety, [data-theme="vaporwave"] .ob-safety, [data-theme="bark"] .ob-safety { background: rgba(217,75,65,.13); }
+
+    @media (max-width: 900px) {
+      .ob-hero, .ob-driver-lab, .ob-wiring, .ob-resistor-lab, .ob-forge { grid-template-columns: 1fr; }
+      .ob-gallery { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 600px) {
+      .ob-hero { padding: 1rem; }
+      .ob-hero h1 { font-size: 3.4rem; }
+      .ob-rule, .ob-spectrum, .ob-gallery, .ob-recipes, .ob-principles, .ob-options { grid-template-columns: 1fr; }
+      .ob-card { padding: 1rem; }
+      .ob-circuit { grid-template-columns: auto 1fr auto; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .ob-wave.is-running polyline { animation: none; }
+      .ob-buzzer-btn.is-beeping { animation: none; }
+      .ob-rule article, .ob-spectrum article, .ob-choice, .ob-output-card, .ob-recipe, .ob-principles article, .ob-option { transition: none; }
+      .ob-rule article:hover, .ob-spectrum article:hover, .ob-output-card:hover, .ob-principles article:hover, .ob-choice:hover { transform: none; }
+    }
+    @media print { .ob-demo-board, .ob-driver-lab, .ob-resistor-lab, .ob-forge-controls, .ll-panel, .ll-open-btn { display: none !important; } .ob-card { break-inside: avoid; box-shadow: none; } }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary"><ul>
+          <li><a href="../index.html">Home</a></li><li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li><li><a href="../paths.html">Paths</a></li><li><a href="../showcase.html">Showcase</a></li><li><a href="../applications.html">Apps</a></li><li><a href="../recipe-book.html">Library</a></li><li><a href="../about.html">About</a></li>
+        </ul></nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="ob-page">
+          <section class="ob-hero" aria-labelledby="ob-title">
+            <div>
+              <p class="ob-kicker">Engineering · Physical Computing · Design Lab</p>
+              <h1 id="ob-title">Outputs: <span>Beyond the LED</span></h1>
+              <p class="ob-lede">An LED is not just a light. It is a decision made visible. Turn code into motion, sound, and force—safely, with the right driver behind every real-world load.</p>
+              <div class="ob-meta"><span>Grades 6–12</span><span>60–90 minutes</span><span>Build + code</span><span>No solder required</span></div>
+              <a class="ob-back" href="../steam-lessons.html#module-engineering">← Back to Engineering</a>
+            </div>
+            <div class="ob-demo-board" aria-label="Interactive output demonstration board">
+              <div class="ob-board-label"><span>BENCH UNIT 02</span><span>5V LOGIC</span></div>
+              <div class="ob-board-screen" id="hero-screen" aria-live="polite"><strong>Waiting for output…</strong>Try the PWM dimmer and the digital buzzer.</div>
+              <div class="ob-hardware-grid">
+                <div class="ob-hardware"><div class="ob-led-demo" id="hero-led" aria-hidden="true"></div><input type="range" id="hero-pwm" min="0" max="255" value="0" aria-label="LED brightness, PWM duty value 0 to 255"><span>PWM BRIGHTNESS</span></div>
+                <div class="ob-hardware"><button class="ob-buzzer-btn" id="hero-buzzer" type="button" aria-label="Trigger a digital buzzer beep"></button><span>DIGITAL BEEP</span></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="ob-card" style="--ob-accent:var(--ob-blue);">
+            <p class="ob-label">Core idea</p><h2>An output is a change the system creates</h2>
+            <p>The physical result can be a blinking LED, but it can also be a beep, a buzz, a spinning wheel, a moving arm, or a switched-on lamp. Good output design connects three layers:</p>
+            <div class="ob-rule">
+              <article><b>1 · System decision</b><p>What just happened in the code—an event, a threshold, a countdown, a state change?</p></article>
+              <article><b>2 · Actuation method</b><p>What physical phenomenon makes it real—light, sound, heat, motion, or force?</p></article>
+              <article><b>3 · Human perception</b><p>What does a person notice, and does the intensity match how important it is?</p></article>
+            </div>
+          </section>
+
+          <section class="ob-card" style="--ob-accent:var(--ob-copper);">
+            <p class="ob-label">Signal vocabulary</p><h2>Three ways an output can speak</h2>
+            <div class="ob-spectrum">
+              <article style="--type-color:#146b8c"><span class="ob-label">Digital</span><h3>Two states</h3><p>Fully on or fully off—a relay click, a buzzer beep, an LED at full brightness. Best for clear events.</p></article>
+              <article style="--type-color:#c65e2e"><span class="ob-label">PWM (analog-ish)</span><h3>A range</h3><p>Brightness, speed, or angle. A digital pin fakes an in-between value by switching fast.</p></article>
+              <article style="--type-color:#6b7f26"><span class="ob-label">Pattern</span><h3>Meaning over time</h3><p>Blink codes, alarm rhythms, or animated sequences. Software turns timing into vocabulary.</p></article>
+            </div>
+          </section>
+
+          <section class="ob-card" style="--ob-accent:var(--ob-yellow);">
+            <p class="ob-label">Interactive circuit lab</p><h2>Can this pin drive it directly?</h2>
+            <p>A microcontroller pin can typically supply only about <strong>20–40 mA</strong> before it risks damage. Small outputs sip that safely through a resistor. Bigger outputs need a <strong>driver</strong>—a transistor, MOSFET, or relay—that lets a tiny signal switch a much larger current from its own power supply.</p>
+            <div class="ob-driver-lab">
+              <div class="ob-driver-controls" role="group" aria-label="Choose an output to test">
+                <button class="ob-choice" type="button" data-load="led" data-ma="15" aria-pressed="true"><span class="ob-choice-code">15 mA</span><span><strong>LED + resistor</strong><br><small>Well within pin limits</small></span></button>
+                <button class="ob-choice" type="button" data-load="buzzer" data-ma="25" aria-pressed="false"><span class="ob-choice-code">25 mA</span><span><strong>Small active buzzer</strong><br><small>Right at the edge—check the datasheet</small></span></button>
+                <button class="ob-choice" type="button" data-load="vibe" data-ma="80" aria-pressed="false"><span class="ob-choice-code">80 mA</span><span><strong>Vibration motor</strong><br><small>Exceeds most pin ratings</small></span></button>
+                <button class="ob-choice" type="button" data-load="motor" data-ma="250" aria-pressed="false"><span class="ob-choice-code">250 mA</span><span><strong>DC motor / relay coil</strong><br><small>Always needs a driver</small></span></button>
+              </div>
+              <div class="ob-circuit" id="driver-circuit">
+                <div class="ob-battery">+ 5V −</div><div class="ob-pin" id="driver-pin" aria-hidden="true">OUT</div><div></div>
+                <button class="ob-test-switch" id="test-driver" type="button">Drive this output</button>
+                <p class="ob-circuit-status" id="driver-status" aria-live="polite">Choose an output, then press drive.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="ob-card" style="--ob-accent:var(--ob-lime);">
+            <p class="ob-label">Idea gallery</p><h2>Ten actuators that turn code into action</h2>
+            <p>Start with the effect you want a person to notice, then choose an actuator that produces it honestly.</p>
+            <div class="ob-gallery">
+              <article class="ob-output-card" style="--card-color:#f2bf3f"><div class="ob-icon-badge"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3"><path d="M22 40 L22 24 A10 10 0 0 1 42 24 L42 40 Z"/><path d="M26 40v14M38 40v14" /><path d="M32 6v6M19 11l4 5M45 11l-4 5" stroke-linecap="round"/></svg></div><h3>Standard LED</h3><p>A single-color light that turns on, off, or dims with PWM.</p><small>LIGHT · DIGITAL OR PWM</small></article>
+              <article class="ob-output-card" style="--card-color:#d94b41"><div class="ob-icon-badge"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3"><path d="M22 40 L22 24 A10 10 0 0 1 42 24 L42 40 Z"/><path d="M26 40v14M38 40v14"/><circle cx="26" cy="16" r="2" fill="currentColor" stroke="none"/><circle cx="32" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="38" cy="16" r="2" fill="currentColor" stroke="none"/></svg></div><h3>RGB LED</h3><p>Three LEDs in one package—mix red, green, and blue PWM to make any color.</p><small>COLOR · THREE-CHANNEL PWM</small></article>
+              <article class="ob-output-card" style="--card-color:#146b8c"><div class="ob-icon-badge"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3"><circle cx="26" cy="32" r="14"/><path d="M46 22a14 14 0 010 20M52 16a22 22 0 010 32" stroke-linecap="round"/></svg></div><h3>Active buzzer</h3><p>Has its own oscillator—send power, get one fixed pitch of sound.</p><small>SOUND · DIGITAL</small></article>
+              <article class="ob-output-card" style="--card-color:#6b7f26"><div class="ob-icon-badge"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3"><rect x="18" y="22" width="28" height="20" rx="4"/><circle cx="46" cy="32" r="6" fill="currentColor" stroke="none"/><path d="M10 20q4 6 0 12M10 32q4 6 0 12" stroke-linecap="round"/></svg></div><h3>Vibration motor</h3><p>A spinning off-center weight turns electrical current into a buzz you can feel.</p><small>HAPTIC · DIGITAL OR PWM</small></article>
+              <article class="ob-output-card" style="--card-color:#c65e2e"><div class="ob-icon-badge"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3"><rect x="14" y="20" width="24" height="24" rx="3"/><circle cx="26" cy="32" r="5"/><path d="M31 28l16-10" stroke-linecap="round"/></svg></div><h3>Servo motor</h3><p>Holds a precise angle, usually 0–180°, set by pulse timing rather than a plain on/off signal.</p><small>POSITION · PULSE TIMING</small></article>
+              <article class="ob-output-card" style="--card-color:#146b8c"><div class="ob-icon-badge"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3"><circle cx="24" cy="32" r="12"/><path d="M36 32h8"/><circle cx="50" cy="32" r="8"/><path d="M50 24v16M42 32h16" stroke-width="2"/></svg></div><h3>DC motor + wheel</h3><p>Spins continuously; speed follows PWM duty cycle and direction follows polarity.</p><small>MOTION · PWM</small></article>
+              <article class="ob-output-card" style="--card-color:#d94b41"><div class="ob-icon-badge"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="32" cy="32" r="16" stroke-width="3"/><path d="M32 16v6M48 32h-6M32 48v-6M16 32h6M43 21l-4 4M43 43l-4-4M21 43l4-4M21 21l4 4" stroke-linecap="round"/></svg></div><h3>Stepper motor</h3><p>Moves in exact fixed steps—precise, repeatable position without a feedback sensor.</p><small>PRECISION MOTION · PULSES</small></article>
+              <article class="ob-output-card" style="--card-color:#f2bf3f"><div class="ob-icon-badge"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3"><circle cx="24" cy="32" r="10"/><path d="M24 22v-6M24 42v6M18 26l-4-4M30 26l4-4"/><rect x="40" y="24" width="16" height="16" rx="2"/></svg></div><h3>Relay-switched lamp</h3><p>A low-power signal clicks a mechanical switch that controls a separate, higher-power circuit.</p><small>SWITCHING · DIGITAL</small></article>
+              <article class="ob-output-card" style="--card-color:#6b7f26"><div class="ob-icon-badge"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3"><rect x="14" y="24" width="24" height="16" rx="2"/><path d="M18 24v16M24 24v16M30 24v16" stroke-width="2"/><rect x="38" y="28" width="16" height="8" rx="2" fill="currentColor" stroke="none"/></svg></div><h3>Solenoid latch</h3><p>A coil pulls a metal plunger in or out—locks, latches, and stamping mechanisms.</p><small>FORCE · DIGITAL</small></article>
+              <article class="ob-output-card" style="--card-color:#c65e2e"><div class="ob-icon-badge"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="8" y="28" width="48" height="8" rx="2"/><circle cx="16" cy="32" r="3" fill="currentColor" stroke="none"/><circle cx="28" cy="32" r="3" fill="currentColor" stroke="none"/><circle cx="40" cy="32" r="3" fill="currentColor" stroke="none"/><circle cx="52" cy="32" r="3" fill="currentColor" stroke="none"/></svg></div><h3>Addressable LED strip</h3><p>Each pixel gets its own color over a single data line—animated light from one wire.</p><small>ANIMATION · DATA PROTOCOL</small></article>
+            </div>
+          </section>
+
+          <section class="ob-card" style="--ob-accent:var(--ob-copper);">
+            <p class="ob-label">Build recipes</p><h2>Make four low-cost outputs</h2>
+            <p>Use only low-voltage classroom electronics. Confirm polarity and current before connecting a microcontroller.</p>
+            <div class="ob-recipes">
+              <article class="ob-recipe"><div class="ob-recipe-header"><h3>Blinking beacon</h3><span class="ob-label">10 min</span></div><ol><li>Wire an LED in series with a 220&nbsp;Ω resistor from a digital pin to ground.</li><li>Blink it at a fixed interval, then try a distress pattern instead of steady on/off.</li><li>Fade it in and out with <code>analogWrite</code> instead of a hard blink.</li><li>Compare how each pattern reads from across the room.</li></ol></article>
+              <article class="ob-recipe"><div class="ob-recipe-header"><h3>Alarm buzzer</h3><span class="ob-label">10 min</span></div><ol><li>Connect a small active buzzer directly to a digital pin and ground.</li><li>Trigger one short beep on an event, not a held tone.</li><li>Add a second, longer pattern for a more urgent event.</li><li>Test whether the two patterns are easy to tell apart by ear alone.</li></ol></article>
+              <article class="ob-recipe"><div class="ob-recipe-header"><h3>Servo flag signal</h3><span class="ob-label">15 min</span></div><ol><li>Attach a small paper or cardboard flag to a servo horn.</li><li>Sweep the servo between two named angles, like “clear” and “stop.”</li><li>Add a third, in-between angle for a “caution” state.</li><li>Power the servo from its own supply if it jitters on shared power.</li></ol></article>
+              <article class="ob-recipe"><div class="ob-recipe-header"><h3>Haptic wristband</h3><span class="ob-label">20 min</span></div><ol><li>Mount a vibration motor through a transistor driver, not directly on a pin.</li><li>Add a flyback diode across the motor leads.</li><li>Trigger a short pulse for a normal alert, a longer one for urgent.</li><li>Test it silently in a pocket or sleeve—does the pattern still read?</li></ol></article>
+            </div>
+            <div class="ob-safety"><strong>Safety boundary:</strong> Never wire a relay's high-voltage side to wall power, outlets, or mains wiring without direct teacher supervision and proper enclosures. Power motors, solenoids, and relay coils from a separate low-voltage supply, always share a common ground, and never exceed a component's rated voltage or current.</div>
+          </section>
+
+          <section class="ob-card" style="--ob-accent:var(--ob-blue);">
+            <p class="ob-label">Reliable wiring · part 1</p><h2>A resistor decides the current, not the code</h2>
+            <p>An LED is not a resistor—left unprotected, it lets through as much current as the supply and wires allow, which is usually more than it or the pin can survive. Ohm's Law, <code>I = V ⁄ R</code>, tells you how big a series resistor needs to be. Drag to pick a resistor and watch the current and brightness respond.</p>
+            <div class="ob-resistor-lab">
+              <div class="ob-resistor-controls">
+                <div class="ob-window-field">
+                  <label for="resistor-value">Series resistor: <b id="resistor-value-out">220</b> Ω</label>
+                  <input type="range" id="resistor-value" min="47" max="1000" step="1" value="220" aria-describedby="resistor-hint">
+                  <p class="ob-window-hint" id="resistor-hint">Source is 5 V, this LED's forward voltage is about 2 V, so the resistor absorbs the other 3 V.</p>
+                </div>
+                <div class="ob-gauge-readout is-safe" id="resistor-gauge">≈ 14 mA<span id="resistor-verdict">Good — comfortably bright and safe</span></div>
+              </div>
+              <div class="ob-resistor-preview"><div class="ob-led-demo" id="resistor-led" aria-hidden="true"></div></div>
+            </div>
+          </section>
+
+          <section class="ob-card" style="--ob-accent:var(--ob-red);">
+            <p class="ob-label">Reliable wiring · part 2</p><h2>Transistors amplify a signal into force</h2>
+            <p>A GPIO pin cannot safely power a motor, solenoid, or relay coil directly. Wire the pin to the base of an NPN transistor through a resistor. The transistor's collector-emitter path switches the load's much larger current, drawn from a separate supply that shares a common ground with the microcontroller. A <strong>flyback diode</strong> placed backward across the motor absorbs the voltage spike created when its magnetic field collapses, protecting the transistor from that spike.</p>
+            <div class="ob-wiring">
+              <div class="ob-diagram">
+                <svg viewBox="0 0 620 300" role="img" aria-labelledby="driver-title driver-desc">
+                  <title id="driver-title">A transistor driving a DC motor from a separate supply, protected by a flyback diode</title><desc id="driver-desc">A microcontroller pin connects through a base resistor to an NPN transistor, which switches motor current between a separate power supply and common ground; a diode is wired backward across the motor.</desc>
+                  <rect x="30" y="34" width="200" height="220" rx="10" fill="#dbe3ea" stroke="#173944" stroke-width="3"/>
+                  <text x="130" y="64" text-anchor="middle" font-family="IBM Plex Mono" font-size="17" font-weight="700" fill="#173944">MICROCONTROLLER</text>
+                  <circle cx="230" cy="120" r="8" fill="#146b8c"/><text x="198" y="107" text-anchor="end" font-family="IBM Plex Mono" font-size="15" fill="#173944">PIN 9</text>
+                  <circle cx="230" cy="220" r="8" fill="#12202a"/><text x="198" y="211" text-anchor="end" font-family="IBM Plex Mono" font-size="15" fill="#173944">GND</text>
+                  <path d="M230 120H300" stroke="#c65e2e" stroke-width="5"/><text x="248" y="112" font-family="IBM Plex Mono" font-size="12" fill="#8a3d20">220 Ω base R</text>
+                  <path d="M300 120V150" stroke="#12202a" stroke-width="4"/>
+                  <circle cx="330" cy="160" r="26" fill="none" stroke="#12202a" stroke-width="4"/>
+                  <text x="330" y="165" text-anchor="middle" font-family="IBM Plex Mono" font-size="13" font-weight="700" fill="#12202a">NPN</text>
+                  <path d="M300 150 356 130M356 190 300 170" stroke="#12202a" stroke-width="3"/>
+                  <path d="M356 130V70H420" fill="none" stroke="#12202a" stroke-width="4"/>
+                  <path d="M356 190V220H230" fill="none" stroke="#12202a" stroke-width="4"/>
+                  <rect x="420" y="46" width="60" height="46" rx="8" fill="#dbe3ea" stroke="#146b8c" stroke-width="3"/><text x="450" y="74" text-anchor="middle" font-family="IBM Plex Mono" font-size="16" font-weight="700" fill="#12202a">M</text>
+                  <path d="M480 70H560V220H420V92" fill="none" stroke="#12202a" stroke-width="4"/>
+                  <path d="M540 130l-16 12 16 12z" fill="#d94b41" stroke="#d94b41"/><path d="M524 118v40" stroke="#d94b41" stroke-width="4"/>
+                  <text x="540" y="105" text-anchor="middle" font-family="IBM Plex Mono" font-size="12" fill="#a32e28">flyback diode</text>
+                  <rect x="590" y="46" width="18" height="174" fill="none" stroke="#173944" stroke-width="3"/><text x="599" y="40" text-anchor="middle" font-family="IBM Plex Mono" font-size="13" fill="#173944">+V</text>
+                  <text x="330" y="255" text-anchor="middle" font-family="IBM Plex Mono" font-size="14" fill="#173944">COMMON GROUND</text>
+                </svg>
+                <table class="ob-truth"><thead><tr><th>Part</th><th>Job</th></tr></thead><tbody><tr><td>Base resistor</td><td>Limits the small current the pin has to supply</td></tr><tr><td>Transistor</td><td>Lets that small current switch a much larger one</td></tr><tr><td>Flyback diode</td><td>Absorbs the spike when the motor's field collapses</td></tr></tbody></table>
+              </div>
+              <pre class="ob-code" aria-label="Arduino motor driver example"><code><span class="k">const int</span> motorPin = <span class="n">9</span>;
+
+<span class="k">void</span> setup() {
+  pinMode(motorPin, OUTPUT);
+}
+
+<span class="k">void</span> loop() {
+  digitalWrite(motorPin, HIGH);
+  delay(<span class="n">1000</span>);
+  digitalWrite(motorPin, LOW);
+  delay(<span class="n">1000</span>);
+}
+
+<span class="c">// The pin only ever switches the</span>
+<span class="c">// transistor's base — the transistor</span>
+<span class="c">// and separate supply do the real work.</span></code></pre>
+            </div>
+          </section>
+
+          <section class="ob-card" style="--ob-accent:var(--ob-lime);">
+            <p class="ob-label">Faking analog</p><h2>PWM fakes an in-between value by blinking fast</h2>
+            <p>A digital pin only outputs fully HIGH or fully LOW—there is no in-between voltage to set directly. To get an in-between brightness or speed, code switches the pin on and off many times per second. The fraction of time spent HIGH, the <strong>duty cycle</strong>, sets the average voltage a motor or LED experiences. Drag the duty cycle and watch the wave, the average voltage, and the LED respond together.</p>
+            <div class="ob-resistor-lab">
+              <div class="ob-resistor-controls">
+                <div class="ob-window-field">
+                  <label for="duty-cycle">Duty cycle: <b id="duty-cycle-value">50</b>%</label>
+                  <input type="range" id="duty-cycle" min="0" max="100" step="1" value="50" aria-describedby="duty-hint">
+                  <p class="ob-window-hint" id="duty-hint">0% is always off, 100% is always on. 50% spends equal time HIGH and LOW.</p>
+                </div>
+                <div class="ob-pwm-preview"><div class="ob-led-demo" id="pwm-led" aria-hidden="true"></div><p class="ob-pwm-readout" id="pwm-readout">Average ≈ 2.50 V of 5 V</p></div>
+              </div>
+              <div class="ob-scope">
+                <div class="ob-scope-labels"><span>OSCILLOSCOPE · 4 CYCLES</span><span>PWM SIGNAL AT PIN</span></div>
+                <svg class="ob-wave is-running" id="pwm-wave" viewBox="0 0 620 160" preserveAspectRatio="none" aria-label="Square wave showing the PWM signal at the chosen duty cycle">
+                  <path d="M0 40H620M0 120H620" stroke="#36505a" stroke-width="1"/><polyline class="pwm" id="pwm-line" points="0,120 620,120"/>
+                </svg>
+              </div>
+            </div>
+          </section>
+
+          <section class="ob-card" style="--ob-accent:var(--ob-yellow);">
+            <p class="ob-label">Design generator</p><h2>The Output Forge</h2>
+            <p>Combine what just happened, which actuator responds, how the signal is shaped, and which sense it reaches. The best response is not the flashiest one—it is the one that matches how important the event actually is.</p>
+            <div class="ob-forge">
+              <div class="ob-forge-controls">
+                <div class="ob-field"><label for="forge-event">System event</label><select id="forge-event"><option value="timer">A timer finishes</option><option value="threshold">A sensor crosses a threshold</option><option value="win">A player wins</option><option value="low">Battery runs low</option><option value="message">A message arrives</option></select></div>
+                <div class="ob-field"><label for="forge-actuator">Actuator</label><select id="forge-actuator"><option value="led">Single LED</option><option value="rgb">RGB LED</option><option value="buzzer">Buzzer</option><option value="servo">Servo</option><option value="vibe">Vibration motor</option></select></div>
+                <div class="ob-field"><label for="forge-signal">Signal shape</label><select id="forge-signal"><option value="steady">Steady, held state</option><option value="blink">Blink code</option><option value="ramp">PWM ramp / fade</option><option value="pulse">Single short pulse</option></select></div>
+                <div class="ob-field"><label for="forge-channel">Perceptual channel</label><select id="forge-channel"><option value="visual">Visual only</option><option value="audible">Audible only</option><option value="tactile">Tactile only</option><option value="multi">Multiple senses</option></select></div>
+              </div>
+              <article class="ob-forge-output" aria-live="polite"><h3 id="forge-title">Countdown-finished light</h3><div class="ob-flow"><span id="forge-event-out">TIMER</span><b>→</b><span id="forge-actuator-out">LED</span><b>→</b><span id="forge-signal-out">STEADY + VISUAL</span></div><p id="forge-copy">Light the LED and hold it until acknowledged. Keep the response visible without demanding attention.</p><p class="ob-forge-note" id="forge-note"><strong>Prototype test:</strong> Does the intensity of the response match how important this event actually is?</p></article>
+            </div>
+          </section>
+
+          <section class="ob-card" style="--ob-accent:var(--ob-blue);">
+            <p class="ob-label">Trustworthy design</p><h2>Six principles for outputs people can trust</h2>
+            <div class="ob-principles">
+              <article><b>Proportional</b><p>Match reaction intensity to importance—a brief blink for status, a sustained alarm for danger.</p></article>
+              <article><b>Perceivable</b><p>Use more than one channel when the message truly matters—light and sound together.</p></article>
+              <article><b>Fail-safe</b><p>Choose a default the actuator can hold forever if the code crashes—relay open, motor off.</p></article>
+              <article><b>Protected</b><p>Current-limit and flyback-protect every real-world load; never trust code alone to keep current safe.</p></article>
+              <article><b>Non-blocking</b><p>Don't freeze the whole program waiting for a buzzer or motor to finish its cycle.</p></article>
+              <article><b>Repairable</b><p>Keep drivers, fuses, and connectors inspectable and easy to replace.</p></article>
+            </div>
+          </section>
+
+          <section class="ob-card" style="--ob-accent:var(--ob-copper);">
+            <p class="ob-label">Design challenge</p><h2>Build an output that communicates a value</h2>
+            <p>Build one output that shows a changing amount—not just on or off—using light, sound, or motion. Use PWM, a driver circuit, or both, as the load requires.</p>
+            <div class="ob-rule">
+              <article><b>Constraint</b><p>Drive at least one output through a resistor or transistor you sized yourself. Low voltage only.</p></article>
+              <article><b>Evidence</b><p>Test it with three people. Record whether they could read the value without being told the scale.</p></article>
+              <article><b>Iteration</b><p>Change one variable—duty cycle range, pattern speed, or feedback channel—and test again.</p></article>
+            </div>
+          </section>
+
+          <section class="ob-card" style="--ob-accent:var(--ob-yellow);">
+            <p class="ob-label">Quick check</p><h2>Can you drive the output?</h2>
+            <div class="ob-quiz">
+              <div class="ob-question" data-answer="b" data-explanation="Without a series resistor, an LED and the pin driving it can both draw far more current than they can safely handle."><p>1. Why does an LED need a series resistor?</p><div class="ob-options"><button class="ob-option" data-choice="a">It makes the LED a different color</button><button class="ob-option" data-choice="b">It limits current to a safe level for the LED and the pin</button><button class="ob-option" data-choice="c">It stores charge for later use</button><button class="ob-option" data-choice="d">It converts AC to DC</button></div><div class="ob-feedback" aria-live="polite"></div></div>
+              <div class="ob-question" data-answer="c" data-explanation="A transistor lets a small, pin-safe current control a much larger current drawn from a separate supply."><p>2. What problem does a transistor solve when driving a motor?</p><div class="ob-options"><button class="ob-option" data-choice="a">It makes the motor spin faster than its rated speed</button><button class="ob-option" data-choice="b">It converts digital signals into sound</button><button class="ob-option" data-choice="c">It lets a small pin current switch a much larger motor current</button><button class="ob-option" data-choice="d">It removes the need for a power supply</button></div><div class="ob-feedback" aria-live="polite"></div></div>
+              <div class="ob-question" data-answer="a" data-explanation="When current through a coil or motor stops suddenly, its collapsing magnetic field creates a brief high-voltage spike; the diode gives that spike a safe path."><p>3. What does a flyback diode protect against?</p><div class="ob-options"><button class="ob-option" data-choice="a">A voltage spike when a motor or coil turns off</button><button class="ob-option" data-choice="b">Overheating from bright LEDs</button><button class="ob-option" data-choice="c">Sound distortion in buzzers</button><button class="ob-option" data-choice="d">Static discharge from touch sensors</button></div><div class="ob-feedback" aria-live="polite"></div></div>
+              <div class="ob-question" data-answer="d" data-explanation="A digital pin is only ever fully HIGH or LOW; PWM's duty cycle sets the average voltage the load experiences, which reads as a brightness or speed in between."><p>4. What does PWM duty cycle actually control?</p><div class="ob-options"><button class="ob-option" data-choice="a">The color of an RGB LED</button><button class="ob-option" data-choice="b">The resistance of a series resistor</button><button class="ob-option" data-choice="c">Whether a pin can source or sink current</button><button class="ob-option" data-choice="d">The average voltage a load experiences over time</button></div><div class="ob-feedback" aria-live="polite"></div></div>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head"><div class="ll-tabs"><button class="ll-tab" aria-selected="true" data-pane="ob-plan">Lesson</button><button class="ll-tab" aria-selected="false" data-pane="ob-teacher">Teacher</button></div><button class="ll-panel-close" type="button" aria-label="Close panel">×</button></div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="ob-plan">
+            <span class="ll-label">Learning goals</span>
+            <div class="ll-info"><strong>Classify outputs</strong>Distinguish digital, PWM, and time-based output patterns.</div>
+            <div class="ll-info"><strong>Protect components</strong>Use Ohm's Law to size a current-limiting resistor.</div>
+            <div class="ll-info"><strong>Amplify signals</strong>Explain how a transistor and flyback diode let a pin drive real-world loads.</div>
+            <div class="ll-info"><strong>Fake analog</strong>Describe how PWM duty cycle sets an average voltage.</div>
+            <div class="ll-info"><strong>Design for people</strong>Match response intensity, channel, and defaults to what the output communicates.</div>
+          </div>
+          <div class="ll-pane" id="ob-teacher">
+            <span class="ll-label">Materials</span>
+            <div class="ll-info"><strong>Core kit</strong>LEDs, assorted resistors, active and passive buzzers, breadboards, wires, and multimeters.</div>
+            <div class="ll-info"><strong>Optional electronics</strong>Microcontroller, small DC or vibration motor, NPN transistor, 1N4001-style diode, relay module, servo.</div>
+            <div class="ll-info"><strong>Launch question</strong>“What is the difference between a light that is on and a light that is telling you something?”</div>
+            <div class="ll-info"><strong>Assessment</strong>Students must explain the event → actuator → signal shape → feedback chain and justify one driver or resistor calculation.</div>
+            <div class="ll-info"><strong>Safety</strong>Low-voltage USB or batteries only. Relay high-voltage sides stay teacher-supervised with proper enclosures; no mains wiring by students.</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const heroScreen = document.getElementById('hero-screen');
+      const heroLed = document.getElementById('hero-led');
+      const heroPwm = document.getElementById('hero-pwm');
+      const heroBuzzer = document.getElementById('hero-buzzer');
+      function paintLed(el, duty) {
+        const b = duty / 255;
+        el.style.background = b === 0 ? '#273c43' : `radial-gradient(circle, color-mix(in srgb, #f6ca4d ${Math.round(b*100)}%, #273c43) 0%, #273c43 100%)`;
+        el.style.boxShadow = b === 0 ? 'inset 0 0 10px rgba(0,0,0,.3)' : `0 0 ${Math.round(b*26)}px ${Math.round(b*8)}px rgba(246,202,77,${(0.15+b*0.55).toFixed(2)})`;
+      }
+      heroPwm.addEventListener('input', () => {
+        const v = Number(heroPwm.value);
+        paintLed(heroLed, v);
+        heroScreen.innerHTML = `<strong>PWM: ${v} / 255 (${Math.round(v/255*100)}%)</strong>Average voltage ≈ ${(v/255*5).toFixed(2)} V — the LED looks dimmer or brighter, never in between.`;
+      });
+      paintLed(heroLed, 0);
+      heroBuzzer.addEventListener('click', () => {
+        heroBuzzer.classList.remove('is-beeping'); void heroBuzzer.getBoundingClientRect(); heroBuzzer.classList.add('is-beeping');
+        heroScreen.innerHTML = '<strong>OUTPUT: DIGITAL BEEP</strong>A digital output is only ever fully on or fully off — no in-between.';
+      });
+
+      const loads = { led: { safe: true, note: 'Current stays under the pin’s 20–40 mA limit.' }, buzzer: { safe: true, note: 'Right at the edge — many pins handle it, some do not.' }, vibe: { safe: false, note: 'Exceeds most pin ratings — route it through a transistor.' }, motor: { safe: false, note: 'Always exceeds pin limits — a driver is required, not optional.' } };
+      let selectedLoad = 'led';
+      const driverCircuit = document.getElementById('driver-circuit');
+      const driverPin = document.getElementById('driver-pin');
+      const driverStatus = document.getElementById('driver-status');
+      const testDriver = document.getElementById('test-driver');
+      document.querySelectorAll('[data-load]').forEach(button => button.addEventListener('click', () => {
+        selectedLoad = button.dataset.load;
+        document.querySelectorAll('[data-load]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+        driverCircuit.classList.remove('is-active', 'is-overcurrent');
+        driverPin.textContent = 'OUT';
+        driverStatus.textContent = `Selected ${button.querySelector('strong').textContent} (~${button.dataset.ma} mA). Press drive to test.`;
+      }));
+      testDriver.addEventListener('click', () => {
+        const load = loads[selectedLoad];
+        const ma = document.querySelector(`[data-load="${selectedLoad}"]`).dataset.ma;
+        driverCircuit.classList.toggle('is-active', load.safe);
+        driverCircuit.classList.toggle('is-overcurrent', !load.safe);
+        driverPin.textContent = load.safe ? 'OK' : '⚠';
+        driverStatus.textContent = `≈ ${ma} mA draw → ${load.safe ? 'within pin limit → safe direct drive' : 'exceeds pin limit → pin damage risk'}. ${load.note}`;
+      });
+
+      const resistorInput = document.getElementById('resistor-value');
+      const resistorValueOut = document.getElementById('resistor-value-out');
+      const resistorGauge = document.getElementById('resistor-gauge');
+      const resistorVerdict = document.getElementById('resistor-verdict');
+      const resistorLed = document.getElementById('resistor-led');
+      function updateResistor() {
+        const r = Number(resistorInput.value);
+        resistorValueOut.textContent = r;
+        const mA = (3 / r) * 1000;
+        resistorGauge.firstChild.textContent = `≈ ${mA.toFixed(1)} mA `;
+        let cls = 'is-safe', verdict = 'Good — comfortably bright and safe';
+        if (mA > 30) { cls = 'is-danger'; verdict = 'Too much — exceeds most LED and pin ratings'; }
+        else if (mA > 20) { cls = 'is-warn'; verdict = 'Bright, and close to the limit'; }
+        else if (mA < 4) { cls = 'is-warn'; verdict = 'Very dim — may be hard to see'; }
+        resistorGauge.className = 'ob-gauge-readout ' + cls;
+        resistorVerdict.textContent = verdict;
+        paintLed(resistorLed, Math.max(0, Math.min(255, Math.round((mA / 25) * 255))));
+      }
+      resistorInput.addEventListener('input', updateResistor);
+      updateResistor();
+
+      const dutyInput = document.getElementById('duty-cycle');
+      const dutyValueOut = document.getElementById('duty-cycle-value');
+      const pwmReadout = document.getElementById('pwm-readout');
+      const pwmLed = document.getElementById('pwm-led');
+      const pwmLine = document.getElementById('pwm-line');
+      const pwmWave = document.getElementById('pwm-wave');
+      function updatePwm() {
+        const duty = Number(dutyInput.value);
+        dutyValueOut.textContent = duty;
+        pwmReadout.textContent = `Average ≈ ${(duty / 100 * 5).toFixed(2)} V of 5 V`;
+        paintLed(pwmLed, Math.round(duty / 100 * 255));
+        const cycleW = 155, highW = cycleW * (duty / 100);
+        let pts = [], x = 0;
+        for (let i = 0; i < 4; i++) {
+          if (duty <= 0) { pts.push(`${x},120`); x += cycleW; pts.push(`${x},120`); continue; }
+          if (duty >= 100) { pts.push(`${x},40`); x += cycleW; pts.push(`${x},40`); continue; }
+          pts.push(`${x},40`); x += highW; pts.push(`${x},40`); pts.push(`${x},120`); x += (cycleW - highW); pts.push(`${x},120`);
+        }
+        pwmLine.setAttribute('points', pts.join(' '));
+        pwmWave.classList.remove('is-running'); void pwmWave.getBoundingClientRect(); pwmWave.classList.add('is-running');
+      }
+      dutyInput.addEventListener('input', updatePwm);
+      updatePwm();
+
+      const eventData = { timer: ['Countdown-finished light', 'TIMER'], threshold: ['Threshold-crossed alert', 'SENSOR'], win: ['Victory celebration', 'WIN'], low: ['Low-battery warning', 'BATTERY'], message: ['New-message notice', 'MESSAGE'] };
+      const actuatorData = { led: ['LED', 'the LED'], rgb: ['RGB LED', 'the RGB LED'], buzzer: ['BUZZER', 'the buzzer'], servo: ['SERVO', 'the servo'], vibe: ['VIBRATION MOTOR', 'the vibration motor'] };
+      const signalData = { steady: ['STEADY', 'Hold a fixed state until acknowledged'], blink: ['BLINK CODE', 'Repeat a distinct on/off rhythm'], ramp: ['PWM RAMP', 'Fade smoothly up and back down'], pulse: ['SINGLE PULSE', 'Fire one short, clear pulse'] };
+      const channelData = { visual: ['VISUAL', 'without demanding attention'], audible: ['AUDIBLE', 'even when the screen is out of view'], tactile: ['TACTILE', 'even in a noisy or silent room'], multi: ['MULTI-SENSORY', 'through more than one sense at once'] };
+      const forgeFields = ['forge-event', 'forge-actuator', 'forge-signal', 'forge-channel'].map(id => document.getElementById(id));
+      function updateForge() {
+        const e = eventData[forgeFields[0].value], a = actuatorData[forgeFields[1].value], s = signalData[forgeFields[2].value], c = channelData[forgeFields[3].value];
+        document.getElementById('forge-title').textContent = e[0]; document.getElementById('forge-event-out').textContent = e[1]; document.getElementById('forge-actuator-out').textContent = a[0]; document.getElementById('forge-signal-out').textContent = `${s[0]} + ${c[0]}`;
+        document.getElementById('forge-copy').textContent = `${s[1]} on ${a[1]}, delivered ${c[1]}.`;
+        document.getElementById('forge-note').innerHTML = `<strong>Prototype test:</strong> Does the intensity of the ${s[0].toLowerCase()} response on ${a[1]} match how important this event actually is?`;
+      }
+      forgeFields.forEach(field => field.addEventListener('change', updateForge)); updateForge();
+
+      document.querySelectorAll('.ob-question').forEach(question => {
+        question.querySelectorAll('.ob-option').forEach(option => option.addEventListener('click', () => {
+          if (question.dataset.locked) return; question.dataset.locked = 'true';
+          question.querySelectorAll('.ob-option').forEach(item => { item.disabled = true; if (item.dataset.choice === question.dataset.answer) item.classList.add('is-correct'); });
+          const correct = option.dataset.choice === question.dataset.answer; if (!correct) option.classList.add('is-wrong');
+          question.querySelector('.ob-feedback').textContent = `${correct ? 'Correct. ' : 'Not quite. '}${question.dataset.explanation}`;
+        }));
+      });
+    })();
+  </script>
+  <script src="../assets/js/classroom-animations.js"></script>
+  <script src="../assets/js/lesson-layout.js"></script>
+  <script src="../assets/js/electricity-path.js"></script>
+  <script src="../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Inputs: Beyond the Button · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Design buttons, switches, touch controls, pressure pads, beam breaks, and other creative physical inputs, then learn pull-ups, debouncing, feedback, and accessible interaction design." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../assets/css/electricity-path.css" />
+  <style>
+    :root {
+      --ib-ink: #12202a;
+      --ib-paper: #eef5f3;
+      --ib-panel: #fffdfa;
+      --ib-copper: #c65e2e;
+      --ib-blue: #146b8c;
+      --ib-lime: #b8d84b;
+      --ib-yellow: #f2bf3f;
+      --ib-red: #d94b41;
+      --ib-line: rgba(18, 32, 42, 0.18);
+      --ib-grid: rgba(20, 107, 140, 0.08);
+    }
+
+    body.theme-steam { font-family: "IBM Plex Sans", Inter, sans-serif; }
+    .ib-page { padding-bottom: 1.5rem; color: var(--ib-ink); }
+    .ll-viewport { --ll-panel-w: 310px; }
+    .ib-page button, .ib-page select, .ib-page input { font: inherit; }
+    .ib-page button { touch-action: manipulation; }
+    .ib-page :focus-visible { outline: 3px solid #0b83b1; outline-offset: 3px; }
+
+    .ib-hero {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(300px, .95fr);
+      gap: clamp(1.2rem, 4vw, 3.2rem);
+      align-items: center;
+      margin: .45rem 0 1rem;
+      padding: clamp(1.35rem, 4vw, 2.8rem);
+      border: 1px solid var(--ib-line);
+      border-radius: 10px;
+      background-color: var(--ib-paper);
+      background-image:
+        linear-gradient(var(--ib-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--ib-grid) 1px, transparent 1px);
+      background-size: 22px 22px;
+      box-shadow: 0 18px 48px rgba(18,32,42,.12);
+    }
+    .ib-hero::before {
+      content: "INPUT / OUTPUT WORKBENCH";
+      position: absolute;
+      right: -3rem;
+      top: 1.2rem;
+      transform: rotate(7deg);
+      color: rgba(198,94,46,.13);
+      font: 800 clamp(2.5rem, 7vw, 5.5rem)/.78 "Barlow Condensed", sans-serif;
+      letter-spacing: .04em;
+      pointer-events: none;
+    }
+    .ib-kicker, .ib-label {
+      font: 700 .73rem/1.2 "IBM Plex Mono", monospace;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+    .ib-kicker { color: var(--ib-copper); }
+    .ib-hero h1 {
+      max-width: 9ch;
+      margin: .3rem 0 .75rem;
+      font: 800 clamp(3rem, 8vw, 6.5rem)/.76 "Barlow Condensed", sans-serif;
+      letter-spacing: -.035em;
+      text-transform: uppercase;
+    }
+    .ib-hero h1 span { display: block; color: var(--ib-blue); }
+    .ib-lede { max-width: 58ch; margin: 0 0 1rem; font-size: 1rem; line-height: 1.7; }
+    .ib-meta { display: flex; flex-wrap: wrap; gap: .45rem; margin: .8rem 0 1.05rem; }
+    .ib-meta span {
+      padding: .28rem .52rem;
+      border: 1px solid var(--ib-line);
+      background: rgba(255,255,255,.56);
+      font: 600 .7rem/1.2 "IBM Plex Mono", monospace;
+    }
+    .ib-back { color: var(--ib-blue); font-weight: 700; text-decoration: none; }
+    .ib-back:hover { text-decoration: underline; }
+
+    .ib-demo-board {
+      position: relative;
+      z-index: 1;
+      min-height: 300px;
+      padding: 1rem;
+      border: 3px solid #273943;
+      border-radius: 14px;
+      background: #29424b;
+      box-shadow: 0 14px 0 #17272f, 0 25px 34px rgba(10,22,28,.24);
+      color: #f6fbf8;
+    }
+    .ib-board-label { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: .7rem; color: #d4e0df; font: 600 .68rem "IBM Plex Mono", monospace; }
+    .ib-board-screen {
+      min-height: 68px;
+      padding: .7rem .8rem;
+      border: 2px inset #688086;
+      background: #b9d897;
+      color: #173121;
+      font: 600 .78rem/1.45 "IBM Plex Mono", monospace;
+      box-shadow: inset 0 0 18px rgba(21,52,29,.2);
+    }
+    .ib-board-screen strong { display: block; font-size: 1rem; }
+    .ib-hardware-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; margin-top: .9rem; }
+    .ib-hardware { display: grid; place-items: center; gap: .42rem; color: #dbe7e5; font: 600 .66rem "IBM Plex Mono", monospace; }
+    .ib-arcade {
+      width: 76px; height: 76px; border: 0; border-radius: 50%; cursor: pointer;
+      background: radial-gradient(circle at 36% 30%, #ff8a71 0 16%, #de4438 37% 62%, #8f261f 64% 100%);
+      box-shadow: 0 8px 0 #741f1a, 0 11px 14px rgba(0,0,0,.35);
+      transition: transform .08s, box-shadow .08s;
+    }
+    .ib-arcade:active, .ib-arcade.is-down { transform: translateY(7px); box-shadow: 0 1px 0 #741f1a, 0 3px 6px rgba(0,0,0,.3); }
+    .ib-toggle {
+      position: relative; width: 84px; height: 42px; border: 0; border-radius: 24px; background: #18282f; cursor: pointer;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,.65);
+    }
+    .ib-toggle::after {
+      content: ""; position: absolute; left: 6px; top: 6px; width: 30px; height: 30px; border-radius: 50%;
+      background: #d9e1df; box-shadow: 0 2px 5px rgba(0,0,0,.45); transition: transform .18s ease, background .18s;
+    }
+    .ib-toggle[aria-pressed="true"] { background: #6b7f26; }
+    .ib-toggle[aria-pressed="true"]::after { transform: translateX(42px); background: var(--ib-lime); }
+
+    .ib-card {
+      margin-bottom: 1rem;
+      padding: clamp(1.1rem, 3vw, 1.65rem);
+      border: 1px solid var(--ib-line);
+      border-top: 5px solid var(--ib-accent, var(--ib-blue));
+      border-radius: 9px;
+      background: var(--ib-panel);
+      box-shadow: 0 8px 24px rgba(18,32,42,.07);
+    }
+    .ib-card h2 { margin: 0 0 .5rem; font: 800 clamp(1.65rem, 4vw, 2.35rem)/.95 "Barlow Condensed", sans-serif; text-transform: uppercase; letter-spacing: -.015em; }
+    .ib-card h3 { margin: 0 0 .35rem; font: 700 1.25rem/1 "Barlow Condensed", sans-serif; text-transform: uppercase; }
+    .ib-card p { margin: 0 0 .75rem; line-height: 1.67; }
+    .ib-card > p { max-width: 78ch; }
+    .ib-rule { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; margin-top: 1rem; }
+    .ib-rule article { position: relative; padding: 1rem; border: 1px solid var(--ib-line); background: #f4f8f6; transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+    .ib-rule article:hover { transform: translateY(-3px); border-color: var(--ib-blue); box-shadow: 0 10px 20px rgba(18,32,42,.1); }
+    .ib-rule b { display: block; margin-bottom: .28rem; color: var(--ib-blue); font-family: "IBM Plex Mono", monospace; }
+    .ib-rule p { margin: 0; font-size: .88rem; }
+
+    .ib-spectrum { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; margin-top: 1rem; }
+    .ib-spectrum article { padding: 1rem; border-left: 5px solid var(--type-color); background: color-mix(in srgb, var(--type-color) 9%, white); transition: transform .15s ease, background .15s ease; }
+    .ib-spectrum article:hover { transform: translateY(-3px); background: color-mix(in srgb, var(--type-color) 18%, white); }
+    .ib-spectrum .ib-label { color: var(--type-color); }
+    .ib-spectrum p { margin: .3rem 0 0; font-size: .87rem; }
+
+    .ib-switch-lab { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(300px, 1.2fr); gap: 1rem; margin-top: 1rem; }
+    .ib-switch-controls { display: grid; gap: .55rem; align-content: start; }
+    .ib-choice {
+      display: grid; grid-template-columns: auto 1fr; gap: .7rem; align-items: center; width: 100%; padding: .7rem;
+      border: 1px solid var(--ib-line); background: #f4f8f6; color: var(--ib-ink); text-align: left; cursor: pointer;
+      transition: border-color .15s ease, background .15s ease, transform .15s ease;
+    }
+    .ib-choice:hover:not([aria-pressed="true"]) { border-color: var(--ib-blue); transform: translateX(2px); }
+    .ib-choice[aria-pressed="true"] { border-color: var(--ib-blue); background: #dceef3; box-shadow: inset 4px 0 var(--ib-blue); }
+    .ib-choice-code { color: var(--ib-copper); font: 700 .74rem "IBM Plex Mono", monospace; }
+    .ib-circuit {
+      display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .6rem; min-height: 205px; padding: 1rem;
+      border: 1px solid #173944; color: #d8ecea; background-color: #173944;
+      background-image: radial-gradient(rgba(255,255,255,.12) 1px, transparent 1px); background-size: 12px 12px;
+    }
+    .ib-battery { padding: .55rem; border: 2px solid #dce8e6; font: 700 .7rem "IBM Plex Mono", monospace; }
+    .ib-wire { position: relative; height: 5px; background: var(--ib-copper); }
+    .ib-wire::after { content: ""; position: absolute; right: 0; top: -5px; width: 12px; height: 12px; border-radius: 50%; background: var(--ib-copper); }
+    .ib-contact { position: absolute; left: 42%; top: -12px; width: 22%; height: 5px; transform: rotate(-17deg); transform-origin: right; background: #f5e1a4; transition: transform .15s; }
+    .ib-circuit.is-closed .ib-contact { transform: rotate(0deg); }
+    .ib-lamp { display: grid; place-items: center; width: 72px; height: 72px; border: 3px solid #cfd9d7; border-radius: 50%; background: #273c43; font-size: 1.7rem; transition: .15s; }
+    .ib-circuit.is-lit .ib-lamp { color: #231b08; background: #f6ca4d; box-shadow: 0 0 28px #f6ca4d; }
+    .ib-circuit-status { grid-column: 1 / -1; margin: .2rem 0 0; text-align: center; font: 600 .75rem "IBM Plex Mono", monospace; }
+    .ib-test-switch { grid-column: 1 / -1; justify-self: center; padding: .55rem 1rem; border: 2px solid #e7f0ee; background: #2f5e69; color: white; cursor: pointer; font-weight: 700; }
+
+    .ib-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; margin-top: 1rem; }
+    .ib-input-card { padding: 1rem; border: 1px solid var(--ib-line); background: #f7f8f4; transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+    .ib-input-card:hover { transform: translateY(-3px); border-color: var(--card-color, var(--ib-yellow)); box-shadow: 0 10px 20px rgba(18,32,42,.1); }
+    .ib-card-photo { display: block; width: calc(100% + 2rem); height: 155px; margin: -1rem -1rem .85rem; border-bottom: 1px solid var(--ib-line); object-fit: cover; background: #eef2ef; }
+    .ib-input-card p { margin: 0; font-size: .84rem; }
+    .ib-input-card small { display: block; margin-top: .55rem; color: #4d626b; font: 600 .68rem/1.4 "IBM Plex Mono", monospace; }
+
+    .ib-recipes { display: grid; grid-template-columns: 1fr 1fr; gap: .85rem; margin-top: 1rem; }
+    .ib-recipe { padding: 1rem; border: 1px solid var(--ib-line); background: #f5f8f4; transition: box-shadow .15s ease, border-color .15s ease; }
+    .ib-recipe:hover { border-color: var(--ib-copper); box-shadow: 0 10px 20px rgba(18,32,42,.08); }
+    .ib-recipe-header { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; padding-bottom: .55rem; border-bottom: 2px dashed var(--ib-line); }
+    .ib-recipe ol { margin: .7rem 0 0; padding-left: 1.25rem; font-size: .86rem; line-height: 1.55; }
+    .ib-recipe li + li { margin-top: .35rem; }
+    .ib-safety { margin-top: 1rem; padding: .9rem 1rem; border-left: 5px solid var(--ib-red); background: #fff0eb; }
+    .ib-safety strong { color: #a32e28; }
+
+    .ib-wiring { display: grid; grid-template-columns: minmax(280px, 1.1fr) minmax(260px, .9fr); gap: 1rem; margin-top: 1rem; }
+    .ib-diagram { padding: 1rem; border: 1px solid var(--ib-line); background: #f4f8f6; }
+    .ib-diagram svg { display: block; width: 100%; height: auto; }
+    .ib-code { margin: 0; overflow: auto; padding: 1rem; border-radius: 4px; background: #17272f; color: #e7f0e8; font: 500 .77rem/1.62 "IBM Plex Mono", monospace; }
+    .ib-code .c { color: #a8c86e; } .ib-code .k { color: #70c8e5; } .ib-code .n { color: #f2bf3f; }
+    .ib-truth { width: 100%; margin-top: .7rem; border-collapse: collapse; font-size: .8rem; }
+    .ib-truth th, .ib-truth td { padding: .48rem; border: 1px solid var(--ib-line); text-align: left; }
+    .ib-truth th { background: #e5efec; }
+
+    .ib-debounce { display: grid; grid-template-columns: .72fr 1.28fr; gap: 1rem; margin-top: 1rem; align-items: start; }
+    .ib-debounce-controls { display: grid; gap: .75rem; }
+    .ib-debounce-button { width: 100%; min-height: 92px; border: 0; border-radius: 8px; background: var(--ib-copper); color: white; cursor: pointer; box-shadow: 0 7px 0 #84391c; font: 800 1.4rem "Barlow Condensed", sans-serif; text-transform: uppercase; }
+    .ib-debounce-button:active { transform: translateY(6px); box-shadow: 0 1px 0 #84391c; }
+    .ib-window-field { display: grid; gap: .35rem; padding: .8rem; border: 1px solid var(--ib-line); background: #f4f8f6; }
+    .ib-window-field label { font: 700 .7rem "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: .05em; }
+    .ib-window-field label b { color: var(--ib-copper); }
+    .ib-window-field input[type="range"] { width: 100%; accent-color: var(--ib-copper); }
+    .ib-window-hint { margin: 0; font-size: .78rem; line-height: 1.5; color: #4d626b; }
+    .ib-scope { padding: .75rem; border: 2px solid #24363e; background: #122229; color: #e6f1ed; }
+    .ib-scope-labels { display: flex; justify-content: space-between; margin-bottom: .4rem; font: 600 .68rem "IBM Plex Mono", monospace; }
+    .ib-wave { display: block; width: 100%; height: 110px; }
+    .ib-wave polyline { fill: none; stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; }
+    .ib-wave .raw { stroke: #f07d55; } .ib-wave .clean { stroke: #b8d84b; }
+    .ib-wave.is-running .raw { stroke-dasharray: 600; animation: ib-trace .7s linear; }
+    .ib-wave.is-running .clean { stroke-dasharray: 600; animation: ib-trace .7s .15s linear both; }
+    @keyframes ib-trace { from { stroke-dashoffset: 600; } to { stroke-dashoffset: 0; } }
+    .ib-counts { display: flex; gap: .7rem; margin-top: .55rem; }
+    .ib-counts span { flex: 1; padding: .45rem; background: #20353d; text-align: center; font: 600 .7rem "IBM Plex Mono", monospace; }
+
+    .ib-forge { display: grid; grid-template-columns: .85fr 1.15fr; gap: 1rem; margin-top: 1rem; }
+    .ib-forge-controls { display: grid; gap: .7rem; align-content: start; }
+    .ib-field { display: grid; gap: .3rem; }
+    .ib-field label { font: 700 .7rem "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: .05em; }
+    .ib-field select { width: 100%; padding: .65rem; border: 1px solid var(--ib-line); background: white; color: var(--ib-ink); }
+    .ib-forge-output { position: relative; min-height: 255px; padding: 1.2rem; border: 2px solid #233740; background: #1b3038; color: #eef6f3; }
+    .ib-forge-output::before { content: "PROTOTYPE CARD"; position: absolute; right: .7rem; top: .6rem; color: #83a4aa; font: 600 .62rem "IBM Plex Mono", monospace; }
+    .ib-forge-output h3 { max-width: 80%; margin-top: 1.4rem; color: var(--ib-lime); font-size: 1.7rem; }
+    .ib-forge-output p { color: #d4e3df; }
+    .ib-flow { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; margin: 1rem 0; }
+    .ib-flow span { padding: .42rem .55rem; border: 1px solid #668087; font: 600 .7rem "IBM Plex Mono", monospace; }
+    .ib-flow b { color: var(--ib-yellow); }
+    .ib-forge-note { padding-top: .75rem; border-top: 1px solid #567078; font-size: .8rem; }
+
+    .ib-principles { display: grid; grid-template-columns: repeat(2, 1fr); gap: .75rem; margin-top: 1rem; }
+    .ib-principles article { padding: 1rem; border: 1px solid var(--ib-line); background: #f4f8f6; transition: transform .15s ease, border-color .15s ease; }
+    .ib-principles article:hover { transform: translateY(-3px); border-color: var(--ib-blue); }
+    .ib-principles b { display: block; color: var(--ib-blue); }
+    .ib-principles p { margin: .3rem 0 0; font-size: .86rem; }
+
+    .ib-quiz { display: grid; gap: .85rem; margin-top: 1rem; }
+    .ib-question { padding: 1rem; border: 1px solid var(--ib-line); background: #f5f8f4; }
+    .ib-question > p { font-weight: 700; }
+    .ib-options { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+    .ib-option { padding: .65rem; border: 1px solid var(--ib-line); background: white; color: var(--ib-ink); text-align: left; cursor: pointer; transition: border-color .15s ease, background .15s ease; }
+    .ib-option:not(:disabled):hover { border-color: var(--ib-blue); background: #eef6f8; }
+    .ib-option.is-correct { border-color: #5a7c18; background: #edf7d2; }
+    .ib-option.is-wrong { border-color: #b5352e; background: #ffe2dc; }
+    .ib-feedback { min-height: 1.4em; margin: .55rem 0 0; font-size: .82rem; font-weight: 600; }
+
+    [data-lighting="night"] .ib-page, [data-theme="vaporwave"] .ib-page, [data-theme="bark"] .ib-page { --ib-ink: #edf5f2; --ib-panel: #16272e; --ib-paper: #18313a; --ib-line: rgba(228,242,237,.2); --ib-grid: rgba(112,200,229,.1); }
+    [data-lighting="night"] .ib-rule article, [data-lighting="night"] .ib-choice, [data-lighting="night"] .ib-input-card, [data-lighting="night"] .ib-recipe, [data-lighting="night"] .ib-diagram, [data-lighting="night"] .ib-principles article, [data-lighting="night"] .ib-question, [data-lighting="night"] .ib-window-field,
+    [data-theme="vaporwave"] .ib-rule article, [data-theme="vaporwave"] .ib-choice, [data-theme="vaporwave"] .ib-input-card, [data-theme="vaporwave"] .ib-recipe, [data-theme="vaporwave"] .ib-diagram, [data-theme="vaporwave"] .ib-principles article, [data-theme="vaporwave"] .ib-question, [data-theme="vaporwave"] .ib-window-field,
+    [data-theme="bark"] .ib-rule article, [data-theme="bark"] .ib-choice, [data-theme="bark"] .ib-input-card, [data-theme="bark"] .ib-recipe, [data-theme="bark"] .ib-diagram, [data-theme="bark"] .ib-principles article, [data-theme="bark"] .ib-question, [data-theme="bark"] .ib-window-field { background: rgba(255,255,255,.04); }
+    [data-lighting="night"] .ib-spectrum article, [data-theme="vaporwave"] .ib-spectrum article, [data-theme="bark"] .ib-spectrum article { background: rgba(255,255,255,.045); }
+    [data-lighting="night"] .ib-field select, [data-lighting="night"] .ib-option, [data-theme="vaporwave"] .ib-field select, [data-theme="vaporwave"] .ib-option, [data-theme="bark"] .ib-field select, [data-theme="bark"] .ib-option { background: #20343d; color: #eef6f3; }
+    [data-lighting="night"] .ib-truth th, [data-theme="vaporwave"] .ib-truth th, [data-theme="bark"] .ib-truth th { background: #29414a; }
+    [data-lighting="night"] .ib-safety, [data-theme="vaporwave"] .ib-safety, [data-theme="bark"] .ib-safety { background: rgba(217,75,65,.13); }
+
+    @media (max-width: 900px) {
+      .ib-hero, .ib-switch-lab, .ib-wiring, .ib-debounce, .ib-forge { grid-template-columns: 1fr; }
+      .ib-gallery { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 600px) {
+      .ib-hero { padding: 1rem; }
+      .ib-hero h1 { font-size: 3.4rem; }
+      .ib-rule, .ib-spectrum, .ib-gallery, .ib-recipes, .ib-principles, .ib-options { grid-template-columns: 1fr; }
+      .ib-card { padding: 1rem; }
+      .ib-circuit { grid-template-columns: auto 1fr auto; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .ib-wave.is-running polyline { animation: none; }
+      .ib-toggle::after { transition: none; }
+      .ib-rule article, .ib-spectrum article, .ib-choice, .ib-input-card, .ib-recipe, .ib-principles article, .ib-option { transition: none; }
+      .ib-rule article:hover, .ib-spectrum article:hover, .ib-input-card:hover, .ib-principles article:hover, .ib-choice:hover { transform: none; }
+    }
+    @media print { .ib-demo-board, .ib-switch-lab, .ib-debounce, .ib-forge-controls, .ll-panel, .ll-open-btn { display: none !important; } .ib-card { break-inside: avoid; box-shadow: none; } }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary"><ul>
+          <li><a href="../index.html">Home</a></li><li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li><li><a href="../paths.html">Paths</a></li><li><a href="../showcase.html">Showcase</a></li><li><a href="../applications.html">Apps</a></li><li><a href="../recipe-book.html">Library</a></li><li><a href="../about.html">About</a></li>
+        </ul></nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="ib-page">
+          <section class="ib-hero" aria-labelledby="ib-title">
+            <div>
+              <p class="ib-kicker">Engineering · Physical Computing · Design Lab</p>
+              <h1 id="ib-title">Inputs: <span>Beyond the Button</span></h1>
+              <p class="ib-lede">A button is not a plastic circle. It is a decision made physical. Turn touch, pressure, distance, light, motion, sound—or almost any change in the world—into a clear, reliable command.</p>
+              <div class="ib-meta"><span>Grades 6–12</span><span>60–90 minutes</span><span>Build + code</span><span>No solder required</span></div>
+              <a class="ib-back" href="../steam-lessons.html#module-engineering">← Back to Engineering</a>
+            </div>
+            <div class="ib-demo-board" aria-label="Interactive input demonstration board">
+              <div class="ib-board-label"><span>BENCH UNIT 01</span><span>5V LOGIC</span></div>
+              <div class="ib-board-screen" id="hero-screen" aria-live="polite"><strong>Waiting for input…</strong>Try the momentary button and latching switch.</div>
+              <div class="ib-hardware-grid">
+                <div class="ib-hardware"><button class="ib-arcade" id="hero-arcade" type="button" aria-label="Hold the momentary arcade button"></button><span>MOMENTARY / HOLD</span></div>
+                <div class="ib-hardware"><button class="ib-toggle" id="hero-toggle" type="button" aria-label="Toggle the latching switch" aria-pressed="false"></button><span>LATCHING / TOGGLE</span></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="ib-card" style="--ib-accent:var(--ib-copper);">
+            <p class="ib-label">Core idea</p><h2>An input is a change the system can notice</h2>
+            <p>The physical object can be a button, but it can also be a floor tile, zipper, beam of light, door magnet, microphone, fruit, steering wheel, or whole room. Good input design connects three layers:</p>
+            <div class="ib-rule">
+              <article><b>1 · Human action</b><p>What should a person naturally do—tap, squeeze, step, turn, aim, wave, shout, or hold?</p></article>
+              <article><b>2 · Sensing method</b><p>What electrical change can detect it—contact, resistance, capacitance, light, sound, distance, or motion?</p></article>
+              <article><b>3 · System response</b><p>What should happen, and what feedback confirms the action was understood?</p></article>
+            </div>
+          </section>
+
+          <section class="ib-card" style="--ib-accent:var(--ib-blue);">
+            <p class="ib-label">Signal vocabulary</p><h2>Three ways an input can speak</h2>
+            <div class="ib-spectrum">
+              <article style="--type-color:#146b8c"><span class="ib-label">Digital</span><h3>Two states</h3><p>Pressed/released, open/closed, HIGH/LOW. Best for clear decisions and events.</p></article>
+              <article style="--type-color:#c65e2e"><span class="ib-label">Analog</span><h3>A range</h3><p>Pressure, knob position, light level, or distance. Best when “how much?” matters.</p></article>
+              <article style="--type-color:#6b7f26"><span class="ib-label">Pattern</span><h3>Meaning over time</h3><p>Hold, double-tap, rhythm, gesture, or sequence. Software turns changes into vocabulary.</p></article>
+            </div>
+          </section>
+
+          <section class="ib-card" style="--ib-accent:var(--ib-yellow);">
+            <p class="ib-label">Interactive circuit lab</p><h2>Open, closed, momentary, and latching</h2>
+            <p>A switch controls whether electricity has a complete path. <strong>Normally open (NO)</strong> means the path begins broken. <strong>Normally closed (NC)</strong> means it begins complete. Momentary controls return when released; latching controls remember their position.</p>
+            <div class="ib-switch-lab">
+              <div class="ib-switch-controls" role="group" aria-label="Choose a switch type">
+                <button class="ib-choice" type="button" data-switch="no" aria-pressed="true"><span class="ib-choice-code">NO</span><span><strong>Momentary, normally open</strong><br><small>Doorbell, game button, keyboard key</small></span></button>
+                <button class="ib-choice" type="button" data-switch="nc" aria-pressed="false"><span class="ib-choice-code">NC</span><span><strong>Momentary, normally closed</strong><br><small>Safety interlock, alarm loop</small></span></button>
+                <button class="ib-choice" type="button" data-switch="latch" aria-pressed="false"><span class="ib-choice-code">ON/OFF</span><span><strong>Latching toggle</strong><br><small>Lamp switch, power control</small></span></button>
+              </div>
+              <div class="ib-circuit" id="switch-circuit">
+                <div class="ib-battery">+ 5V −</div><div class="ib-wire"><span class="ib-contact"></span></div><div class="ib-lamp" aria-hidden="true">✦</div>
+                <button class="ib-test-switch" id="test-switch" type="button">Press and hold switch</button>
+                <p class="ib-circuit-status" id="switch-status" aria-live="polite">Released → circuit open → lamp off</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="ib-card" style="--ib-accent:var(--ib-lime);">
+            <p class="ib-label">Idea gallery</p><h2>Twelve objects that can become “buttons”</h2>
+            <p>Start with the action you want, then choose a sensor that makes that action legible to the circuit.</p>
+            <div class="ib-gallery">
+              <article class="ib-input-card"><img class="ib-card-photo" src="../assets/images/lessons/inputs-beyond-the-button/cardboard-arcade-button.webp" alt="Hand pressing a homemade spring-loaded cardboard button with foil contacts" loading="lazy" decoding="async" /><h3>Cardboard arcade pad</h3><p>Two foil surfaces touch when a springy cardboard top is pressed.</p><small>CONTACT · DIGITAL</small></article>
+              <article class="ib-input-card"><img class="ib-card-photo" src="../assets/images/lessons/inputs-beyond-the-button/pressure-floor-tile.webp" alt="Sneaker pressing a layered cardboard, foam, and foil pressure pad" loading="lazy" decoding="async" /><h3>Pressure floor tile</h3><p>Foam keeps foil layers apart until a foot compresses them.</p><small>PRESSURE · DIGITAL</small></article>
+              <article class="ib-input-card"><img class="ib-card-photo" src="../assets/images/lessons/inputs-beyond-the-button/banana-touch-control.webp" alt="Finger touching a banana connected to a small capacitive-touch sensor" loading="lazy" decoding="async" /><h3>Touch object</h3><p>Conductive fruit, clay, foil, or fabric becomes a capacitive touch pad.</p><small>CAPACITANCE · TOUCH</small></article>
+              <article class="ib-input-card"><img class="ib-card-photo" src="../assets/images/lessons/inputs-beyond-the-button/clothespin-switch.webp" alt="Open wooden clothespin with separate foil contacts and clip leads on its jaws" loading="lazy" decoding="async" /><h3>Clothespin switch</h3><p>Foil-wrapped jaws close a circuit when clipped—or open it when squeezed.</p><small>CONTACT · NO OR NC</small></article>
+              <article class="ib-input-card"><img class="ib-card-photo" src="../assets/images/lessons/inputs-beyond-the-button/wearable-textile-control.webp" alt="Hand squeezing a fabric wrist cuff with two conductive textile patches" loading="lazy" decoding="async" /><h3>Wearable textile control</h3><p>Conductive thread and fabric create soft squeeze, snap, or zipper switches.</p><small>CONTACT · WEARABLE</small></article>
+              <article class="ib-input-card"><img class="ib-card-photo" src="../assets/images/lessons/inputs-beyond-the-button/shadow-light-sensor.webp" alt="Close-up of a photoresistor light-sensing module" loading="lazy" decoding="async" /><h3>Shadow button</h3><p>A hand covering a photoresistor crosses a light threshold.</p><small>LIGHT · ANALOG</small></article>
+              <article class="ib-input-card"><img class="ib-card-photo" src="../assets/images/lessons/inputs-beyond-the-button/ultrasonic-air-button.webp" alt="Close-up of an ultrasonic distance-sensing module" loading="lazy" decoding="async" /><h3>Invisible air button</h3><p>An ultrasonic or infrared sensor triggers when a hand moves close.</p><small>DISTANCE · ANALOG</small></article>
+              <article class="ib-input-card"><img class="ib-card-photo" src="../assets/images/lessons/inputs-beyond-the-button/magnetic-door-switch.webp" alt="Close-up of a magnetic reed-switch sensor module" loading="lazy" decoding="async" /><h3>Magnetic door control</h3><p>A reed switch notices when a door, drawer, or secret box opens.</p><small>MAGNETIC · DIGITAL</small></article>
+              <article class="ib-input-card"><img class="ib-card-photo" src="../assets/images/lessons/inputs-beyond-the-button/clap-sound-trigger.webp" alt="Close-up of a microphone sound-sensing module" loading="lazy" decoding="async" /><h3>Clap or knock trigger</h3><p>A microphone or vibration sensor detects a sound event or rhythm.</p><small>SOUND · PATTERN</small></article>
+              <article class="ib-input-card"><img class="ib-card-photo" src="../assets/images/lessons/inputs-beyond-the-button/pull-cord-control.webp" alt="Hand pulling a cord that moves a lever on a classroom microswitch prototype" loading="lazy" decoding="async" /><h3>Pull-cord control</h3><p>A string pulls a lever, microswitch, or conductive contact.</p><small>MECHANICAL · DIGITAL</small></article>
+              <article class="ib-input-card"><img class="ib-card-photo" src="../assets/images/lessons/inputs-beyond-the-button/beam-break-gate.webp" alt="Close-up of a slotted photo-interrupter used to detect a broken light beam" loading="lazy" decoding="async" /><h3>Beam-break gate</h3><p>An object interrupts light traveling to a photo sensor.</p><small>LIGHT · EVENT</small></article>
+              <article class="ib-input-card"><img class="ib-card-photo" src="../assets/images/lessons/inputs-beyond-the-button/joystick-motion-control.webp" alt="Close-up of a two-axis joystick control module" loading="lazy" decoding="async" /><h3>Turn, tilt, or roll</h3><p>A knob, joystick, tilt switch, or accelerometer makes motion the control.</p><small>MOTION · RANGE</small></article>
+            </div>
+          </section>
+
+          <section class="ib-card" style="--ib-accent:var(--ib-copper);">
+            <p class="ib-label">Build recipes</p><h2>Make four low-cost inputs</h2>
+            <p>Use only low-voltage classroom electronics. Test continuity before connecting a microcontroller.</p>
+            <div class="ib-recipes">
+              <article class="ib-recipe"><div class="ib-recipe-header"><h3>Foil pressure pad</h3><span class="ib-label">10 min</span></div><ol><li>Tape foil to two pieces of cardboard and attach a wire to each.</li><li>Place perforated craft foam between them so the foil stays apart.</li><li>Press to join the foil through the openings; adjust foam thickness for sensitivity.</li><li>Cover edges with tape for strain relief, leaving the center flexible.</li></ol></article>
+              <article class="ib-recipe"><div class="ib-recipe-header"><h3>Clothespin contact</h3><span class="ib-label">5 min</span></div><ol><li>Wrap each jaw in a separate piece of foil.</li><li>Clip an alligator lead to each foil contact.</li><li>Use it closed for a normally closed alarm loop.</li><li>Add a paper spacer or object so removing it becomes the “press.”</li></ol></article>
+              <article class="ib-recipe"><div class="ib-recipe-header"><h3>Cardboard stomp button</h3><span class="ib-label">15 min</span></div><ol><li>Fold corrugated cardboard into a shallow springy dome.</li><li>Place copper tape or foil contacts under the moving center and on the base.</li><li>Add a stop so a hard stomp cannot crush the contacts.</li><li>Make the target large, high-contrast, and non-slip.</li></ol></article>
+              <article class="ib-recipe"><div class="ib-recipe-header"><h3>Conductive object key</h3><span class="ib-label">10 min</span></div><ol><li>Choose conductive objects: foil shapes, graphite marks, metal tools, or moist fruit.</li><li>Connect each to a capacitive-touch board or appropriate touch input.</li><li>Keep leads short and recalibrate if triggers become unreliable.</li><li>Give every object a light, sound, or screen response.</li></ol></article>
+            </div>
+            <div class="ib-safety"><strong>Safety boundary:</strong> Never connect homemade controls to wall power, outlets, appliances, or exposed mains wiring. Use battery-powered or USB microcontroller circuits only. Do not use a person’s body as a conductor in any circuit involving dangerous voltage or current.</div>
+          </section>
+
+          <section class="ib-card" style="--ib-accent:var(--ib-blue);">
+            <p class="ib-label">Reliable wiring</p><h2>Stop a disconnected pin from guessing</h2>
+            <p>A digital input left electrically disconnected is <strong>floating</strong>; it can randomly read HIGH or LOW. A pull-up resistor gives the pin a known default. Most Arduino-style boards can enable one internally with <code>INPUT_PULLUP</code>.</p>
+            <div class="ib-wiring">
+              <div class="ib-diagram">
+                <svg viewBox="0 0 620 310" role="img" aria-labelledby="pullup-title pullup-desc">
+                  <title id="pullup-title">Button wired to a digital pin using an internal pull-up resistor</title><desc id="pullup-desc">The input pin is internally pulled to five volts and a pushbutton connects it to ground when pressed.</desc>
+                  <defs><marker id="ib-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4 0 8z" fill="#c65e2e"/></marker></defs>
+                  <rect x="48" y="38" width="230" height="232" rx="10" fill="#dbe9e5" stroke="#173944" stroke-width="3"/>
+                  <text x="163" y="70" text-anchor="middle" font-family="IBM Plex Mono" font-size="18" font-weight="700" fill="#173944">MICROCONTROLLER</text>
+                  <circle cx="278" cy="132" r="8" fill="#146b8c"/><text x="246" y="119" text-anchor="end" font-family="IBM Plex Mono" font-size="15" fill="#173944">PIN 2</text>
+                  <circle cx="278" cy="224" r="8" fill="#12202a"/><text x="246" y="215" text-anchor="end" font-family="IBM Plex Mono" font-size="15" fill="#173944">GND</text>
+                  <path d="M278 132H382" stroke="#c65e2e" stroke-width="5"/>
+                  <circle cx="392" cy="132" r="8" fill="#c65e2e"/><circle cx="470" cy="132" r="8" fill="#c65e2e"/>
+                  <path d="M400 125L460 99" stroke="#173944" stroke-width="7" stroke-linecap="round"/>
+                  <path d="M470 132H520V224H278" fill="none" stroke="#12202a" stroke-width="5"/>
+                  <path d="M328 132V58H430" fill="none" stroke="#146b8c" stroke-width="4" stroke-dasharray="8 6"/>
+                  <path d="M430 58l-11 12 22 12-22 12 22 12-11 12v14" fill="none" stroke="#146b8c" stroke-width="4"/>
+                  <text x="446" y="64" font-family="IBM Plex Mono" font-size="14" fill="#146b8c">INTERNAL PULL-UP → 5V</text>
+                  <text x="430" y="178" text-anchor="middle" font-family="IBM Plex Mono" font-size="15" font-weight="700" fill="#173944">PUSHBUTTON</text>
+                  <path d="M342 160H296" stroke="#c65e2e" stroke-width="3" marker-end="url(#ib-arrow)"/>
+                  <text x="348" y="181" font-family="IBM Plex Mono" font-size="13" fill="#8a3d20">pressed = LOW</text>
+                  <text x="430" y="252" text-anchor="middle" font-family="IBM Plex Mono" font-size="14" fill="#173944">COMMON GROUND</text>
+                </svg>
+                <table class="ib-truth"><thead><tr><th>Button</th><th>Pin reading</th><th>Meaning</th></tr></thead><tbody><tr><td>Released</td><td>HIGH</td><td>Default / inactive</td></tr><tr><td>Pressed</td><td>LOW</td><td>Active</td></tr></tbody></table>
+              </div>
+              <pre class="ib-code" aria-label="Arduino button example"><code><span class="k">const int</span> buttonPin = <span class="n">2</span>;
+
+<span class="k">void</span> setup() {
+  pinMode(buttonPin, INPUT_PULLUP);
+  pinMode(LED_BUILTIN, OUTPUT);
+}
+
+<span class="k">void</span> loop() {
+  <span class="k">bool</span> pressed =
+    digitalRead(buttonPin) == LOW;
+
+  digitalWrite(
+    LED_BUILTIN,
+    pressed ? HIGH : LOW
+  );
+}
+
+<span class="c">// INPUT_PULLUP reverses the logic:</span>
+<span class="c">// LOW means pressed.</span></code></pre>
+            </div>
+          </section>
+
+          <section class="ib-card" style="--ib-accent:var(--ib-red);">
+            <p class="ib-label">Signal cleanup</p><h2>One press can look like many presses</h2>
+            <p>Metal contacts physically bounce for a few milliseconds. Fast code may count several HIGH/LOW changes before the switch settles. <strong>Debouncing</strong> waits for the signal to hold still for a set window before it trusts a change. Generate a random bounce below, then drag the window and watch the same electrical noise get read differently.</p>
+            <div class="ib-debounce">
+              <div class="ib-debounce-controls">
+                <button class="ib-debounce-button" id="bounce-button" type="button">Simulate one press</button>
+                <div class="ib-window-field">
+                  <label for="debounce-window">Debounce window: <b id="debounce-window-value">6</b> ms</label>
+                  <input type="range" id="debounce-window" min="1" max="15" step="1" value="6" aria-describedby="debounce-window-hint">
+                  <p class="ib-window-hint" id="debounce-window-hint">Too short, and bounces sneak through as extra presses. Too long, and a real quick press can be missed entirely — try dragging to the maximum.</p>
+                </div>
+              </div>
+              <div class="ib-scope">
+                <div class="ib-scope-labels"><span>OSCILLOSCOPE · 20 ms</span><span>ORANGE RAW / GREEN CLEAN</span></div>
+                <svg class="ib-wave" id="bounce-wave" viewBox="0 0 620 160" preserveAspectRatio="none" aria-label="Raw bouncing signal compared with a debounced signal">
+                  <path d="M0 40H620M0 120H620" stroke="#36505a" stroke-width="1"/><polyline class="raw" id="raw-line" points="0,40 620,40"/><polyline class="clean" id="clean-line" points="0,40 620,40"/>
+                </svg>
+                <div class="ib-counts"><span id="raw-count">Raw events: 0</span><span id="clean-count">Debounced events: 0</span></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="ib-card" style="--ib-accent:var(--ib-lime);">
+            <p class="ib-label">Design generator</p><h2>The Input Forge</h2>
+            <p>Combine an intended action, sensing method, and behavior. The best concept is not the most complicated one—it is the one people can discover, operate, and understand.</p>
+            <div class="ib-forge">
+              <div class="ib-forge-controls">
+                <div class="ib-field"><label for="forge-action">Natural action</label><select id="forge-action"><option value="step">Step or stomp</option><option value="touch">Touch or tap</option><option value="squeeze">Squeeze</option><option value="wave">Wave nearby</option><option value="turn">Turn or rotate</option><option value="sound">Clap or make a sound</option></select></div>
+                <div class="ib-field"><label for="forge-sensor">Sensing method</label><select id="forge-sensor"><option value="pressure">Layered pressure contact</option><option value="capacitive">Capacitive touch</option><option value="distance">Distance sensor</option><option value="light">Light or beam break</option><option value="motion">Motion / rotation sensor</option><option value="sound">Microphone / vibration sensor</option></select></div>
+                <div class="ib-field"><label for="forge-behavior">Software behavior</label><select id="forge-behavior"><option value="momentary">Active only while used</option><option value="toggle">Toggle between two states</option><option value="hold">Hold for a deliberate action</option><option value="double">Double-action shortcut</option><option value="analog">Continuous amount</option></select></div>
+                <div class="ib-field"><label for="forge-feedback">Confirmation</label><select id="forge-feedback"><option value="light">Light changes immediately</option><option value="sound">Short sound confirms it</option><option value="motion">Object moves</option><option value="screen">Screen names the action</option><option value="multi">Light + sound together</option></select></div>
+              </div>
+              <article class="ib-forge-output" aria-live="polite"><h3 id="forge-title">Stomp-to-launch floor control</h3><div class="ib-flow"><span id="forge-action-out">STEP</span><b>→</b><span id="forge-sensor-out">PRESSURE CONTACT</span><b>→</b><span id="forge-response-out">MOMENTARY + LIGHT</span></div><p id="forge-copy">Build a wide, non-slip pressure pad whose layered contacts close under a foot. Keep the output active while pressure is present and light the target immediately.</p><p class="ib-forge-note" id="forge-note"><strong>Prototype test:</strong> Can people find and trigger it without instructions? Can seated and standing users both reach it?</p></article>
+            </div>
+          </section>
+
+          <section class="ib-card" style="--ib-accent:var(--ib-blue);">
+            <p class="ib-label">Human-centered design</p><h2>A button must communicate</h2>
+            <div class="ib-principles">
+              <article><b>Discoverable</b><p>Shape, placement, label, lighting, or movement should suggest where and how to interact.</p></article>
+              <article><b>Reachable</b><p>Offer a usable height, target size, force, and alternative for different bodies and mobility.</p></article>
+              <article><b>Forgiving</b><p>Prevent accidental activation, but do not demand perfect timing or extreme precision.</p></article>
+              <article><b>Confirmed</b><p>Respond immediately with visible, audible, or physical feedback—preferably more than one mode.</p></article>
+              <article><b>Consistent</b><p>The same action should produce the same result. Dangerous actions deserve deliberate confirmation.</p></article>
+              <article><b>Repairable</b><p>Make contacts inspectable, wires strain-relieved, and replaceable parts easy to reach.</p></article>
+            </div>
+          </section>
+
+          <section class="ib-card" style="--ib-accent:var(--ib-copper);">
+            <p class="ib-label">Design challenge</p><h2>Create a control no one expects</h2>
+            <p>Build one input that controls an LED, sound, animation, motor, or game. It must use a physical action other than pressing a purchased plastic button.</p>
+            <div class="ib-rule">
+              <article><b>Constraint</b><p>Use cardboard, foil, tape, fabric, magnets, string, or a classroom sensor. Low voltage only.</p></article>
+              <article><b>Evidence</b><p>Test it with three people. Record missed triggers, false triggers, and whether they understood the feedback.</p></article>
+              <article><b>Iteration</b><p>Change one variable—size, spacing, threshold, debounce time, label, or feedback—and test again.</p></article>
+            </div>
+          </section>
+
+          <section class="ib-card" style="--ib-accent:var(--ib-yellow);">
+            <p class="ib-label">Quick check</p><h2>Can you read the input?</h2>
+            <div class="ib-quiz">
+              <div class="ib-question" data-answer="b" data-explanation="A pull-up gives the pin a known HIGH state until the button connects it to ground."><p>1. What problem does <code>INPUT_PULLUP</code> solve?</p><div class="ib-options"><button class="ib-option" data-choice="a">It makes an LED brighter</button><button class="ib-option" data-choice="b">It prevents a disconnected input from floating</button><button class="ib-option" data-choice="c">It increases motor speed</button><button class="ib-option" data-choice="d">It turns analog values into sound</button></div><div class="ib-feedback" aria-live="polite"></div></div>
+              <div class="ib-question" data-answer="d" data-explanation="With an internal pull-up, pressing connects the pin to ground, so the active reading is LOW."><p>2. A button wired from pin 2 to ground uses <code>INPUT_PULLUP</code>. What reading means “pressed”?</p><div class="ib-options"><button class="ib-option" data-choice="a">1023</button><button class="ib-option" data-choice="b">Floating</button><button class="ib-option" data-choice="c">HIGH</button><button class="ib-option" data-choice="d">LOW</button></div><div class="ib-feedback" aria-live="polite"></div></div>
+              <div class="ib-question" data-answer="a" data-explanation="Contact bounce produces rapid transitions that software can mistakenly count as several presses."><p>3. Why debounce a mechanical switch?</p><div class="ib-options"><button class="ib-option" data-choice="a">One physical press may create several rapid electrical transitions</button><button class="ib-option" data-choice="b">Buttons consume too much voltage</button><button class="ib-option" data-choice="c">Analog sensors cannot use wires</button><button class="ib-option" data-choice="d">It makes the button physically softer</button></div><div class="ib-feedback" aria-live="polite"></div></div>
+              <div class="ib-question" data-answer="c" data-explanation="The best input fits the intended human action, sensing method, feedback, and access needs—not merely the most advanced sensor."><p>4. What makes a creative input successful?</p><div class="ib-options"><button class="ib-option" data-choice="a">It uses the most expensive sensor</button><button class="ib-option" data-choice="b">It is hidden from first-time users</button><button class="ib-option" data-choice="c">Its action feels natural and its feedback is clear</button><button class="ib-option" data-choice="d">It triggers differently every time</button></div><div class="ib-feedback" aria-live="polite"></div></div>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head"><div class="ll-tabs"><button class="ll-tab" aria-selected="true" data-pane="ib-plan">Lesson</button><button class="ll-tab" aria-selected="false" data-pane="ib-teacher">Teacher</button></div><button class="ll-panel-close" type="button" aria-label="Close panel">×</button></div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="ib-plan">
+            <span class="ll-label">Learning goals</span>
+            <div class="ll-info"><strong>Classify inputs</strong>Distinguish digital, analog, and time-based input patterns.</div>
+            <div class="ll-info"><strong>Read switches</strong>Explain open/closed, NO/NC, momentary, and latching behavior.</div>
+            <div class="ll-info"><strong>Wire reliably</strong>Use a pull-up and explain why pressed can equal LOW.</div>
+            <div class="ll-info"><strong>Design for people</strong>Pair a natural action with sensing and immediate feedback.</div>
+            <div class="ll-info"><strong>Build + iterate</strong>Measure missed and false triggers, then improve one variable.</div>
+          </div>
+          <div class="ll-pane" id="ib-teacher">
+            <span class="ll-label">Materials</span>
+            <div class="ll-info"><strong>Core kit</strong>Cardboard, foil or copper tape, masking tape, craft foam, clothespins, wires, and multimeters.</div>
+            <div class="ll-info"><strong>Optional electronics</strong>Microcontroller, breadboard, LEDs, buzzers, touch board, photoresistor, ultrasonic sensor, reed switch.</div>
+            <div class="ll-info"><strong>Launch question</strong>“What is the largest button you have ever used? What is the smallest? Must a button move?”</div>
+            <div class="ll-info"><strong>Assessment</strong>Students must explain the action → sensor → behavior → feedback chain and show evidence from user tests.</div>
+            <div class="ll-info"><strong>Safety</strong>Low-voltage USB or batteries only. No mains-powered devices or circuits involving a person as a conductor.</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const heroScreen = document.getElementById('hero-screen');
+      const arcade = document.getElementById('hero-arcade');
+      const toggle = document.getElementById('hero-toggle');
+      const setArcade = (down) => {
+        arcade.classList.toggle('is-down', down);
+        heroScreen.innerHTML = down ? '<strong>INPUT: ACTIVE</strong>Momentary signal stays active only while held.' : '<strong>INPUT: RELEASED</strong>The momentary control returned to its default state.';
+      };
+      ['pointerdown', 'keydown'].forEach(type => arcade.addEventListener(type, e => { if (type === 'pointerdown' || e.key === ' ' || e.key === 'Enter') setArcade(true); }));
+      ['pointerup', 'pointercancel', 'pointerleave', 'keyup', 'blur'].forEach(type => arcade.addEventListener(type, () => setArcade(false)));
+      toggle.addEventListener('click', () => {
+        const on = toggle.getAttribute('aria-pressed') !== 'true';
+        toggle.setAttribute('aria-pressed', String(on));
+        heroScreen.innerHTML = `<strong>LATCHED: ${on ? 'ON' : 'OFF'}</strong>The switch remembers its state after your hand leaves.`;
+      });
+
+      let switchType = 'no';
+      let latched = false;
+      const circuit = document.getElementById('switch-circuit');
+      const testSwitch = document.getElementById('test-switch');
+      const switchStatus = document.getElementById('switch-status');
+      function renderSwitch(active) {
+        const closed = switchType === 'nc' ? !active : switchType === 'latch' ? latched : active;
+        circuit.classList.toggle('is-closed', closed);
+        circuit.classList.toggle('is-lit', closed);
+        const action = switchType === 'latch' ? (latched ? 'Latched ON' : 'Latched OFF') : (active ? 'Pressed' : 'Released');
+        switchStatus.textContent = `${action} → circuit ${closed ? 'closed' : 'open'} → lamp ${closed ? 'on' : 'off'}`;
+      }
+      document.querySelectorAll('[data-switch]').forEach(button => button.addEventListener('click', () => {
+        switchType = button.dataset.switch; latched = false;
+        document.querySelectorAll('[data-switch]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+        testSwitch.textContent = switchType === 'latch' ? 'Flip switch' : 'Press and hold switch'; renderSwitch(false);
+      }));
+      ['pointerdown', 'keydown'].forEach(type => testSwitch.addEventListener(type, e => {
+        if (type === 'keydown' && e.key !== ' ' && e.key !== 'Enter') return;
+        if (switchType === 'latch') { if (type === 'pointerdown' || !e.repeat) { latched = !latched; renderSwitch(false); } }
+        else renderSwitch(true);
+      }));
+      ['pointerup', 'pointercancel', 'pointerleave', 'keyup', 'blur'].forEach(type => testSwitch.addEventListener(type, () => { if (switchType !== 'latch') renderSwitch(false); }));
+      renderSwitch(false);
+
+      const bounceButton = document.getElementById('bounce-button');
+      const bounceWave = document.getElementById('bounce-wave');
+      const rawLine = document.getElementById('raw-line');
+      const cleanLine = document.getElementById('clean-line');
+      const windowInput = document.getElementById('debounce-window');
+      const windowValueEl = document.getElementById('debounce-window-value');
+      const SCOPE_MS = 20, SCOPE_W = 620, Y_HIGH = 40, Y_LOW = 120;
+      let currentEdges = null;
+
+      function randomBounceTrace() {
+        const edges = [{ t: 0, state: 1 }];
+        let t = 3 + Math.random() * 3;
+        edges.push({ t, state: 0 });
+        let state = 0;
+        const bounces = 2 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < bounces; i++) {
+          t += 0.5 + Math.random() * 1;
+          state = state === 0 ? 1 : 0;
+          edges.push({ t, state });
+        }
+        if (state !== 0) {
+          t += 0.5 + Math.random() * 1;
+          edges.push({ t, state: 0 });
+        }
+        return edges;
+      }
+
+      function rawStateAt(edges, t) {
+        let state = edges[0].state;
+        for (const e of edges) { if (e.t <= t) state = e.state; else break; }
+        return state;
+      }
+
+      function computeDebounced(edges, windowMs) {
+        const dt = 0.05;
+        let lastReading = rawStateAt(edges, 0);
+        let buttonState = lastReading;
+        let lastChangeTime = 0;
+        const events = [{ t: 0, state: buttonState }];
+        for (let t = 0; t <= SCOPE_MS; t += dt) {
+          const reading = rawStateAt(edges, t);
+          if (reading !== lastReading) lastChangeTime = t;
+          if (reading !== buttonState && (t - lastChangeTime) >= windowMs) {
+            buttonState = reading;
+            events.push({ t, state: buttonState });
+          }
+          lastReading = reading;
+        }
+        return events;
+      }
+
+      function buildStairPoints(events) {
+        const xScale = SCOPE_W / SCOPE_MS;
+        let prevY = events[0].state ? Y_HIGH : Y_LOW;
+        const pts = [`0,${prevY}`];
+        for (let i = 1; i < events.length; i++) {
+          const x = (events[i].t * xScale).toFixed(1);
+          const y = events[i].state ? Y_HIGH : Y_LOW;
+          pts.push(`${x},${prevY}`, `${x},${y}`);
+          prevY = y;
+        }
+        pts.push(`${SCOPE_W},${prevY}`);
+        return pts.join(' ');
+      }
+
+      function renderTrace(edges, windowMs) {
+        const debounced = computeDebounced(edges, windowMs);
+        rawLine.setAttribute('points', buildStairPoints(edges));
+        cleanLine.setAttribute('points', buildStairPoints(debounced));
+        document.getElementById('raw-count').textContent = `Raw events: ${edges.length - 1}`;
+        document.getElementById('clean-count').textContent = `Debounced events: ${debounced.length - 1}`;
+        bounceWave.classList.remove('is-running'); void bounceWave.getBoundingClientRect(); bounceWave.classList.add('is-running');
+      }
+
+      bounceButton.addEventListener('click', () => {
+        currentEdges = randomBounceTrace();
+        renderTrace(currentEdges, Number(windowInput.value));
+      });
+      windowInput.addEventListener('input', () => {
+        windowValueEl.textContent = windowInput.value;
+        if (currentEdges) renderTrace(currentEdges, Number(windowInput.value));
+      });
+
+      const actionData = { step:['Stomp-to-launch floor control','STEP','Build a wide, non-slip pressure pad'], touch:['Touch-to-reveal artifact','TOUCH','Make the target itself conductive and touch-sensitive'], squeeze:['Squeeze-to-speak soft control','SQUEEZE','Hide the sensor inside a soft, graspable object'], wave:['Wave-to-wake invisible control','WAVE','Set a comfortable trigger distance with no contact required'], turn:['Turn-to-tune dial','TURN','Use rotation to make adjustment visible and precise'], sound:['Clap-to-change sound control','CLAP','Listen for a clear sound event while rejecting room noise'] };
+      const sensorData = { pressure:['PRESSURE CONTACT','whose layered contacts close under force'], capacitive:['CAPACITIVE TOUCH','that detects a change in capacitance'], distance:['DISTANCE SENSOR','that detects an object entering a chosen zone'], light:['LIGHT / BEAM BREAK','that responds when light crosses a threshold'], motion:['MOTION SENSOR','that measures position or movement'], sound:['SOUND SENSOR','that detects a calibrated sound or vibration'] };
+      const behaviorData = { momentary:['MOMENTARY','Keep the output active while the action is present'], toggle:['TOGGLE','Change state once per intentional action'], hold:['HOLD','Require a deliberate hold before activating'], double:['DOUBLE ACTION','Recognize two actions within a clear time window'], analog:['CONTINUOUS','Map the measured amount to a continuous response'] };
+      const feedbackData = { light:['LIGHT','light the target immediately'], sound:['SOUND','play a short confirmation sound'], motion:['MOTION','move the controlled object immediately'], screen:['SCREEN','name the action on screen'], multi:['LIGHT + SOUND','confirm with both light and sound'] };
+      const forgeFields = ['forge-action','forge-sensor','forge-behavior','forge-feedback'].map(id => document.getElementById(id));
+      function updateForge() {
+        const a = actionData[forgeFields[0].value], s = sensorData[forgeFields[1].value], b = behaviorData[forgeFields[2].value], f = feedbackData[forgeFields[3].value];
+        document.getElementById('forge-title').textContent = a[0]; document.getElementById('forge-action-out').textContent = a[1]; document.getElementById('forge-sensor-out').textContent = s[0]; document.getElementById('forge-response-out').textContent = `${b[0]} + ${f[0]}`;
+        document.getElementById('forge-copy').textContent = `${a[2]} ${s[1]}. ${b[1]} and ${f[1]}.`;
+        document.getElementById('forge-note').innerHTML = `<strong>Prototype test:</strong> Can people discover the ${a[1].toLowerCase()} action without instructions? Does the ${f[0].toLowerCase()} feedback work for more than one sense or access need?`;
+      }
+      forgeFields.forEach(field => field.addEventListener('change', updateForge)); updateForge();
+
+      document.querySelectorAll('.ib-question').forEach(question => {
+        question.querySelectorAll('.ib-option').forEach(option => option.addEventListener('click', () => {
+          if (question.dataset.locked) return; question.dataset.locked = 'true';
+          question.querySelectorAll('.ib-option').forEach(item => { item.disabled = true; if (item.dataset.choice === question.dataset.answer) item.classList.add('is-correct'); });
+          const correct = option.dataset.choice === question.dataset.answer; if (!correct) option.classList.add('is-wrong');
+          question.querySelector('.ib-feedback').textContent = `${correct ? 'Correct. ' : 'Not quite. '}${question.dataset.explanation}`;
+        }));
+      });
+    })();
+  </script>
+  <script src="../assets/js/classroom-animations.js"></script>
+  <script src="../assets/js/lesson-layout.js"></script>
+  <script src="../assets/js/electricity-path.js"></script>
+  <script src="../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
