@@ -71,6 +71,19 @@ export function projectUrl(projectId) {
   return `project.html?id=${encodeURIComponent(projectId)}`;
 }
 
+function projectAction(project) {
+  if (is3DModelProject(project) || project.category === "3D") {
+    return { label: "Explore 3D", icon: "🧱" };
+  }
+  if (project.category === "Game") {
+    return { label: "Play game", icon: "▶" };
+  }
+  if (project.category === "Animation") {
+    return { label: "Watch", icon: "▶" };
+  }
+  return { label: "Open project", icon: "→" };
+}
+
 export function createProjectCard(project, options = {}) {
   const article = document.createElement("article");
   article.className = "project-card reveal";
@@ -90,11 +103,13 @@ export function createProjectCard(project, options = {}) {
 
   const link = document.createElement("a");
   link.className = "card-link";
-  link.href = projectUrl(project.id);
-  link.setAttribute("aria-label", `View project: ${project.title} by ${project.student}`);
+  const launchesProject = options.directLaunch && Boolean(project.appUrl);
+  const action = projectAction(project);
+  link.href = launchesProject ? project.appUrl : projectUrl(project.id);
+  link.setAttribute("aria-label", `${launchesProject ? action.label : "View project"}: ${project.title} by ${project.student}`);
   link.addEventListener("click", (e) => {
     // Call the global modal function if it exists
-    if (typeof openProjectModal === 'function') {
+    if (!launchesProject && typeof openProjectModal === 'function') {
       e.preventDefault();
       openProjectModal(project);
     }
@@ -172,9 +187,21 @@ export function createProjectCard(project, options = {}) {
     badges.appendChild(createBadge("Featured"));
   }
 
-  body.append(title, sub, badges);
+  const launchCue = document.createElement("span");
+  launchCue.className = "card-launch-cue";
+  launchCue.innerHTML = `<span aria-hidden="true">${action.icon}</span> ${launchesProject ? action.label : "See project"}`;
+
+  body.append(title, sub, badges, launchCue);
   link.append(thumb, body);
   article.appendChild(link);
+
+  if (options.showDetailsLink && launchesProject) {
+    const details = document.createElement("a");
+    details.className = "card-details-link";
+    details.href = projectUrl(project.id);
+    details.textContent = "About this project";
+    article.appendChild(details);
+  }
   return article;
 }
 

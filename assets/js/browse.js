@@ -174,7 +174,7 @@ function init() {
       const PAGE_SIZE = 12;
       let visibleLimit = PAGE_SIZE;
       projects.forEach((project) => {
-        const card = createProjectCard(project, { showFeatured: true });
+        const card = createProjectCard(project, { showFeatured: true, directLaunch: true, showDetailsLink: true });
         card.classList.add("is-visible");
         cardsById.set(project.id, card);
         dom.grid.appendChild(card);
@@ -362,7 +362,7 @@ function init() {
         if (dom.moreWrap && dom.more) {
           const remaining = Math.max(0, filteredSorted.length - displayedProjects.length);
           dom.moreWrap.hidden = remaining === 0;
-          dom.more.textContent = `Show ${Math.min(PAGE_SIZE, remaining)} more project${Math.min(PAGE_SIZE, remaining) === 1 ? "" : "s"}`;
+          dom.more.textContent = `Show more projects (${remaining} left)`;
         }
 
         if (filteredSorted.length === 0) {
