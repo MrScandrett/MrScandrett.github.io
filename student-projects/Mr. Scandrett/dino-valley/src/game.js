@@ -164,9 +164,9 @@ function offerFeed(game, trike, player) {
 }
 
 /** Dig at the player's feet; a fossil cairn within range pays out. */
-export function dig(game, player) {
+export function dig(game, playerPosition) {
   const site = game.cairnSites?.find(
-    (cairn) => !cairn.looted && flatDistance(cairn.position, player.position) < 18
+    (cairn) => !cairn.looted && flatDistance(cairn.position, playerPosition) < 18
   );
 
   if (!site) return 'You scuff at the dirt and find nothing. Look for a cairn of stacked stones.';
