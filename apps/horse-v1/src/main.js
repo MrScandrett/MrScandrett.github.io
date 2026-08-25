@@ -321,7 +321,7 @@ function updateHud() {
 
   dom.buttons.house.disabled = game.wood < 20 || Boolean(world.buildings.house);
   dom.buttons.stable.disabled = game.wood < 10 || game.quartz < 5 || Boolean(world.buildings.stable);
-  dom.buttons.ride.disabled = !canRide(game);
+  dom.buttons.ride.disabled = game.won || !canRide(game);
 
   dom.objective.textContent = nextObjective(game);
 }

@@ -171,9 +171,9 @@ function offerFeed(game, horse, player) {
 }
 
 /** Dig at the player's feet; a toucan cache within range pays out. */
-export function dig(game, player) {
+export function dig(game, playerPosition) {
   const cache = game.cacheBirds?.find(
-    (bird) => !bird.looted && flatDistance(bird.cache, player.position) < 18
+    (bird) => !bird.looted && flatDistance(bird.cache, playerPosition) < 18
   );
 
   if (!cache) return 'You scuff at the dirt and find nothing. Look for a circling toucan.';
@@ -248,7 +248,7 @@ export function canRide(game) {
 }
 
 export function ride(game) {
-  if (!canRide(game)) return null;
+  if (game.won || !canRide(game)) return null;
   game.won = true;
   return `You tack up ${game.horseName} and ride out across the field. That's the whole game — well done.`;
 }

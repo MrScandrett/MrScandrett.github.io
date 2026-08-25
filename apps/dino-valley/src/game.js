@@ -143,7 +143,11 @@ function offerFeed(game, trike, player) {
 
   if (game.ferns <= 0) return 'You have no ferns. Gather some, or wait for an apatosaurus to browse.';
 
-  if (trike.spooked > 0) return 'It is too jumpy to eat. Back off and approach at a walk.';
+  if (trike.spooked > 0) {
+    return trike.spookedByPredator
+      ? 'Something dangerous is close by — it is too on-edge to eat until the threat clears.'
+      : 'It is too jumpy to eat. Back off and approach at a walk.';
+  }
 
   const distance = flatDistance(trike.mesh.position, player.position);
   if (distance > FEED_RANGE) {

@@ -116,6 +116,7 @@ export function populate(world, templates) {
         boldness: 0.5 + i * 0.12,
         topSpeed: 26 + Math.random() * 12,
         spooked: 0,
+        spookedByPredator: false,
         comfort() {
           return 70 - this.trust * 0.45 - this.boldness * 12;
         },
@@ -257,6 +258,7 @@ function updateTriceratops(creature, ctx, delta) {
   const threat = nearestPredator(creature.mesh.position, ctx);
   if (threat && threat.distance < 100) {
     creature.spooked = Math.max(creature.spooked, 1.5);
+    creature.spookedByPredator = true;
     creature.trust = Math.max(0, creature.trust - 6 * delta);
     flee(creature, threat.predator.mesh.position, delta, creature.topSpeed);
     return;
@@ -267,6 +269,7 @@ function updateTriceratops(creature, ctx, delta) {
 
   if (rushing && distance < comfort + 25) {
     creature.spooked = 2;
+    creature.spookedByPredator = false;
     creature.trust = Math.max(0, creature.trust - 10 * delta);
     flee(creature, player.position, delta, creature.topSpeed);
     return;
