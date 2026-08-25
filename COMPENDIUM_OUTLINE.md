@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 182 public lessons and classifies 11 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 234 public lessons and classifies 11 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -15,7 +15,7 @@ This metadata-only draft organizes 182 public lessons and classifies 11 supporti
 
 # Volume I — Mathematical Thinking, Measurement & Astronomy
 
-Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 34 lessons
+Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 35 lessons
 
 ## Mathematics & Quantitative Reasoning (MAT)
 
@@ -67,18 +67,19 @@ Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 34 lesson
 - **COS-07** — The Asteroid Belt
 - **COS-08** — How America Got to the Moon
 - **COS-09** — Mars Rover Landing
+- **COS-10** — The Kuiper Belt
 
 ### Cosmology & Humanity's Place in Space
 
-- **COS-10** — Event Horizon Telescope
-- **COS-11** — Universe Expansion
-- **COS-12** — Searching for Extraterrestrial Intelligence
-- **COS-13** — Arecibo Message
-- **COS-14** — Pale Blue Dot — Scale of the Universe
+- **COS-11** — Event Horizon Telescope
+- **COS-12** — Universe Expansion
+- **COS-13** — Searching for Extraterrestrial Intelligence
+- **COS-14** — Arecibo Message
+- **COS-15** — Pale Blue Dot — Scale of the Universe
 
 # Volume II — Physics, Chemistry, Matter & Energy
 
-Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 42 lessons
+Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 45 lessons
 
 ## Physics & Physical Systems (PHY)
 
@@ -120,20 +121,22 @@ Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 42 l
 - **PHY-25** — James Clerk Maxwell
 - **PHY-26** — AC vs. DC Electricity — _also indexed in Engineering Systems & Electronics_
 - **PHY-27** — Cathode Ray Tube
+- **PHY-28** — What Is Electricity?
 
 ### Heat, Matter & Modern Physics
 
-- **PHY-28** — Thermodynamics
-- **PHY-29** — Entropy
-- **PHY-30** — Everything Pushes and Pulls — But How?
-- **PHY-31** — Electron Microscopes
-- **PHY-32** — World Quantum Day 2026
+- **PHY-29** — Thermodynamics
+- **PHY-30** — Entropy
+- **PHY-31** — Everything Pushes and Pulls — But How?
+- **PHY-32** — Electron Microscopes
+- **PHY-33** — World Quantum Day 2026
 
 ### People Who Changed Physics
 
-- **PHY-33** — Nikola Tesla
-- **PHY-34** — Marie Curie — _also indexed in Chemistry & Chemical Systems_
-- **PHY-35** — Albert Einstein: Reimagining Space, Time & Light
+- **PHY-34** — Nikola Tesla
+- **PHY-35** — Marie Curie — _also indexed in Chemistry & Chemical Systems_
+- **PHY-36** — Albert Einstein
+- **PHY-37** — Benjamin Franklin
 
 ## Chemistry & Chemical Systems (CHE)
 
@@ -149,10 +152,11 @@ Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 42 l
 - **CHE-05** — Titration
 - **CHE-06** — Catalysts & Activation Energy
 - **CHE-07** — Chemistry of Steam Machines
+- **CHE-08** — Plastics: Polymer Chemistry & Materials
 
 # Volume III — Living Systems, Earth & Environment
 
-Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 22 lessons
+Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 23 lessons
 
 ## Biology & Life Science (BIO)
 
@@ -169,12 +173,13 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 - **BIO-06** — Entomology: The Science of Insects
 - **BIO-07** — Axolotls & Neoteny
 - **BIO-08** — Slime Molds: Swarm Intelligence Without a Brain
+- **BIO-09** — Cryptozoology: From Footprints to Facts
 
 ### Evolution & Deep Time
 
-- **BIO-09** — Life Invented the Animal — _also indexed in Chemistry & Chemical Systems_
-- **BIO-10** — The K-Pg Extinction
-- **BIO-11** — The Evolution of Wood
+- **BIO-10** — Life Invented the Animal — _also indexed in Chemistry & Chemical Systems_
+- **BIO-11** — The K-Pg Extinction
+- **BIO-12** — The Evolution of Wood
 
 ## Earth & Environmental Science (EAR)
 
@@ -197,7 +202,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 28 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 50 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
@@ -207,20 +212,30 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 - **ENG-02** — Ohm's Law
 - **ENG-03** — Electronic Schematics
 - **ENG-04** — Breadboard Basics
-- **ENG-05** — Soldering
-- **ENG-06** — Sensor Modules Kit
+- **ENG-05** — Inputs: Beyond the Button
+- **ENG-06** — Outputs: Beyond the LED
+- **ENG-07** — Soldering
+- **ENG-08** — Sensor Modules Kit
+- **ENG-09** — The Internet of Things
 
 ### Mechanisms, Feedback & Control
 
-- **ENG-07** — Mechanisms and Gear Systems
-- **ENG-08** — PID Control & Feedback Loops
-- **ENG-09** — Maglev Train Engineering
-- **ENG-10** — Simple Rules, Complex Walkers
+- **ENG-10** — Mechanisms and Gear Systems
+- **ENG-11** — PID Control & Feedback Loops
+- **ENG-12** — Maglev Train Engineering
+- **ENG-13** — Simple Rules, Complex Walkers
 
 ### Structural Design Projects
 
-- **ENG-11** — Bridge Over Troubled Water
-- **ENG-12** — Biomimicry: Engineering Nature's Genius
+- **ENG-14** — Bridge Over Troubled Water
+- **ENG-15** — Biomimicry: Engineering Nature's Genius
+
+### People Who Changed Engineering
+
+- **ENG-16** — Emily Roebling
+- **ENG-17** — Henry Ford — _also indexed in Design, Materials & Fabrication_
+- **ENG-18** — Rube Goldberg
+- **ENG-19** — Hedy Lamarr
 
 ## Design, Materials & Fabrication (FAB)
 
@@ -243,6 +258,17 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 - **FAB-09** — XR: Extended Reality — OpenXR & WebXR
 - **FAB-10** — Steam & VR Launch Protocol — _also indexed in Computer Science & Artificial Intelligence_
 
+### 3D Modeling with Blender
+
+- **FAB-11** — Learn the tool. Then build anything. — _also indexed in Game Design & Development_
+- **FAB-12** — Read the editor. Move with confidence. — _also indexed in Game Design & Development_
+- **FAB-13** — Cut a real hole. Not a painted one. — _also indexed in Game Design & Development_
+- **FAB-14** — Half the shape. Twice the speed. — _also indexed in Game Design & Development_
+- **FAB-15** — Build the kit, not the room. — _also indexed in Game Design & Development_
+- **FAB-16** — Quads bend. Triangles break. — _also indexed in Game Design & Development_
+- **FAB-17** — Machined, not molded. Model it that way. — _also indexed in Game Design & Development_
+- **FAB-18** — Gray plastic, no more. — _also indexed in Game Design & Development_
+
 ## Audio, Lighting & Production Technology (TEC)
 
 ### Audio, Acoustics & Signal Flow
@@ -252,14 +278,24 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 - **TEC-03** — EQ: Find the Problem Frequency
 - **TEC-04** — Room Acoustics & Reverb Lab
 - **TEC-05** — Cymatics: The Geometry of Sound — _also indexed in Physics & Physical Systems_
+- **TEC-06** — Analog Mixer Lab: Patch, Gain & FX Bus — _also indexed in Engineering Systems & Electronics_
 
 ### Stage & Visual Production Systems
 
-- **TEC-06** — Stage Lighting Design Lab — _also indexed in Engineering Systems & Electronics_
+- **TEC-07** — Stage Lighting Design Lab — _also indexed in Engineering Systems & Electronics_
+- **TEC-08** — Walt Disney — _also indexed in Visual Art & Design_
+- **TEC-09** — Jim Henson
+
+### Music Theory & Instruments
+
+- **TEC-10** — Guitar Chord Encyclopedia
+- **TEC-11** — Piano Chord Encyclopedia
+- **TEC-12** — Violin Fingerboard Explorer
+- **TEC-13** — Ludwig van Beethoven
 
 # Volume V — Computer Science, AI & Interactive Media
 
-Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 28 lessons
+Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 47 lessons
 
 ## Computer Science & Artificial Intelligence (CSC)
 
@@ -271,31 +307,37 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 - **CSC-04** — Ethical Hacking & Cyber Safety
 - **CSC-05** — Blocks World Parser
 - **CSC-06** — N-gram Text Predictor
+- **CSC-07** — Python Foundations — _also indexed in Game Design & Development_
 
 ### Algorithms, Structures & Search
 
-- **CSC-07** — Sorting Algorithms
-- **CSC-08** — State Machines
-- **CSC-09** — A* Pathfinding Agent
-- **CSC-10** — Minimum Spanning Tree
-- **CSC-11** — Cryptography & The Enigma
+- **CSC-08** — Sorting Algorithms
+- **CSC-09** — State Machines
+- **CSC-10** — A* Pathfinding Agent
+- **CSC-11** — Minimum Spanning Tree
+- **CSC-12** — Cryptography & The Enigma
 
 ### Simulation & Generative Systems
 
-- **CSC-12** — Life Lab: The Game of Life
-- **CSC-13** — Perlin Noise
-- **CSC-14** — CGI Water: From Physics to Pixels
+- **CSC-13** — Life Lab: The Game of Life
+- **CSC-14** — Perlin Noise
+- **CSC-15** — CGI Water: From Physics to Pixels
 
 ### Artificial Intelligence & Machine Reasoning
 
-- **CSC-15** — Alan Turing and The Turing Test
-- **CSC-16** — AI Origins: ELIZA Chatbot
-- **CSC-17** — Rule Engine Expert System
-- **CSC-18** — Perceptron Lab
-- **CSC-19** — Chess: Origins and How to Play
-- **CSC-20** — 1v1 Game AI: Minimax
-- **CSC-21** — AI Chess Through History
-- **CSC-22** — Deep Blue to AlphaGo: The Go Challenge
+- **CSC-16** — Alan Turing and The Turing Test
+- **CSC-17** — AI Origins: ELIZA Chatbot
+- **CSC-18** — Rule Engine Expert System
+- **CSC-19** — Perceptron Lab
+- **CSC-20** — Chess: Origins and How to Play
+- **CSC-21** — 1v1 Game AI: Minimax
+- **CSC-22** — AI Chess Through History
+- **CSC-23** — Deep Blue to AlphaGo: The Go Challenge
+
+### People Who Changed Computing
+
+- **CSC-24** — Grace Hopper
+- **CSC-25** — Steve Jobs
 
 ## Game Design & Development (GAM)
 
@@ -311,9 +353,31 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 - **GAM-06** — Game Jam Week: From Idea to Demo
 
+### Godot Engine Pathway
+
+- **GAM-07** — Build the loop. Grow the world.
+- **GAM-08** — Think in scenes. Build with nodes.
+- **GAM-09** — Teach nodes what to do.
+- **GAM-10** — Make movement feel intentional.
+- **GAM-11** — Code it. Drop it. Collect it.
+- **GAM-12** — Make an enemy choose.
+- **GAM-13** — Make every event readable.
+- **GAM-14** — Connect moments into a complete loop.
+- **GAM-15** — A game is finished when someone else can play it.
+
+### Game Asset Studio Pathway
+
+- **GAM-16** — Game Asset Studio
+- **GAM-17** — Texture Workshop
+- **GAM-18** — Furniture Prop Lab
+- **GAM-19** — Modular Room Builder
+- **GAM-20** — UV, Materials & Export
+- **GAM-21** — Character Rigging
+- **GAM-22** — Character Animation
+
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 28 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 34 lessons
 
 ## Visual Art & Design (DES)
 
@@ -321,6 +385,11 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 
 - **DES-01** — Color Theory Lab
 - **DES-02** — Virtual Reality Museum
+
+### People Who Changed Visual Art
+
+- **DES-03** — Vincent van Gogh
+- **DES-04** — Pablo Picasso
 
 ## Language, Media & Critical Thinking (LAN)
 
@@ -338,17 +407,20 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **SYS-01** — The Roads to Rome
 - **SYS-02** — The Ages
 - **SYS-03** — The School of Athens
+- **SYS-04** — Leonardo da Vinci
+- **SYS-05** — The History of Medicine
 
 ### Institutions, Markets & Shared Resources
 
-- **SYS-04** — The History of Copyright Law
-- **SYS-05** — Tragedy of the Commons
-- **SYS-06** — Stock Exchange Simulator
+- **SYS-06** — The History of Copyright Law
+- **SYS-07** — Tragedy of the Commons
+- **SYS-08** — Stock Exchange Simulator
 
 ### Modern Human Systems
 
-- **SYS-07** — Social Media Algorithms
-- **SYS-08** — The 10-80-10 Productivity Process
+- **SYS-09** — Social Media Algorithms
+- **SYS-10** — The 10-80-10 Productivity Process
+- **SYS-11** — The Psychology of Polymaths
 
 ## Bible Story, Theology & Christian Formation (BIB)
 
@@ -361,13 +433,14 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **BIB-05** — The Temple & God's Presence
 - **BIB-06** — Kingdoms, Prophets & Exile
 - **BIB-07** — The Feasts of Israel
-- **BIB-08** — The World of Jesus
-- **BIB-09** — Jesus' Parables Lab
-- **BIB-10** — Holy Week: The Final Days of Jesus
-- **BIB-11** — Acts: Jerusalem to the Nations
-- **BIB-12** — Paul's Missionary Journeys
-- **BIB-13** — Proverbs: Wisdom Decision Lab
-- **BIB-14** — The Sermon on the Mount
+- **BIB-08** — Elijah: Prophet of the Living God
+- **BIB-09** — The World of Jesus
+- **BIB-10** — Jesus' Parables Lab
+- **BIB-11** — Holy Week: The Final Days of Jesus
+- **BIB-12** — Acts: Jerusalem to the Nations
+- **BIB-13** — Paul's Missionary Journeys
+- **BIB-14** — Proverbs: Wisdom Decision Lab
+- **BIB-15** — The Sermon on the Mount
 
 # Supporting Pages
 
