@@ -140,6 +140,7 @@ function init() {
     empty: document.getElementById("browse-empty"),
     moreWrap: document.getElementById("showcase-more-wrap"),
     more: document.getElementById("showcase-more"),
+    toolbar: document.querySelector(".sc-toolbar-wrap"),
   };
 
   if (!dom.grid) return;
@@ -419,6 +420,10 @@ function init() {
       if (advancedFilterCount() > 0 && dom.filterPanel && dom.filterToggle) {
         dom.filterPanel.hidden = false;
         dom.filterToggle.setAttribute("aria-expanded", "true");
+      }
+
+      if (dom.toolbar && (state.q || state.sort !== "newest" || advancedFilterCount() > 0)) {
+        dom.toolbar.open = true;
       }
 
       apply(true);
