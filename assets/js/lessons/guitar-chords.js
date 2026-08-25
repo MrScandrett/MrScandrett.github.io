@@ -16,6 +16,15 @@
   /* Top-to-bottom display order matches tab notation: high e on top. */
   var STRINGS_TOPDOWN = TUNING.slice().reverse();
 
+  /* Real-world open-string pitch in Hz (standard tuning, A440), low E to high e —
+     used for audio playback only; everything above this line works in pitch
+     classes (0-11) with no notion of octave. */
+  var OPEN_FREQ = [82.407, 110.000, 146.832, 195.998, 246.942, 329.628];
+
+  function noteFreq(stringIndexLowToHigh, fret) {
+    return OPEN_FREQ[stringIndexLowToHigh] * Math.pow(2, fret / 12);
+  }
+
   var BUILD_FRETS = 9; /* frets 0..9 shown in the builder */
 
   var CHORD_TYPES = [
@@ -143,7 +152,22 @@
       G: [3, 1, 0, 0, null, 1],
       C: [null, 3, 1, 3, 1, null],
       D: [null, null, 0, 2, 1, 1]
-    }
+    },
+    /* The remaining eight chord types only get the two movable forms every
+       guitarist actually reaches for (root on the low E string, or root on the
+       A string) — there's no widely-played C/G/D-shape version of an add9 or a
+       power chord the way there is for plain major/minor/7th/maj7/m7. Every
+       shape below is verified by direct interval arithmetic (each produces
+       exactly the chord's own pitch classes, nothing else) rather than
+       transcribed from memory. */
+    'sus2': { E: [0, 2, 4, 4, 0, 0], A: [null, 0, 2, 2, 0, 0] },
+    'sus4': { E: [0, 2, 2, 2, 0, 0], A: [null, 0, 2, 2, 3, 0] },
+    'dim': { E: [0, 1, null, 0, null, null], A: [null, 0, 1, null, 1, null] },
+    'aug': { E: [0, 3, 2, 1, 1, 0], A: [null, 0, 3, 2, 2, 1] },
+    '6': { E: [0, 2, 2, 1, 2, 0], A: [null, 0, 2, 2, 2, 2] },
+    'm6': { E: [0, 2, 2, 0, 2, 0], A: [null, 0, 2, 2, 1, 2] },
+    'add9': { E: [0, 2, 4, 1, 0, 0], A: [null, 0, 2, 4, 2, 0] },
+    '5': { E: [0, 2, 2, null, null, null], A: [null, 0, 2, 2, null, null] }
   };
 
   /* Pitch class each shape's own letter represents — the shift amount for a target
@@ -174,17 +198,36 @@
 
   var INVERSION_LABELS = ['Root position', '1st inversion', '2nd inversion', '3rd inversion'];
 
+  /* The fret nearest `anchorFret` on a given string that plays pitch class `pc`
+     (searching both directions, since the same note repeats every 12 frets).
+     Anchoring to the bass note's fret — instead of always grabbing whichever
+     fret is lowest in absolute terms — is what keeps a computed voicing within
+     a single hand's reach instead of scattering notes across the whole neck. */
+  function nearestFretForPC(stringOpenPC, pc, anchorFret, maxFret) {
+    var base = mod12(pc - stringOpenPC);
+    var best = null;
+    [base, base + 12, base - 12].forEach(function (fret) {
+      if (fret < 0 || fret > maxFret) return;
+      if (best === null || Math.abs(fret - anchorFret) < Math.abs(best - anchorFret)) best = fret;
+    });
+    return best;
+  }
+
   /* Compute a fretting with a specific chord tone forced into the bass on the low
      E string (the only string that can reach any pitch class within an open-position
      octave), then guarantee every remaining chord tone appears somewhere else in the
-     voicing before any string is allowed to double a tone. A naive "first tone found"
-     search per string can easily strand a required tone off the fretboard entirely —
-     e.g. a 1st-inversion Cmaj7 could omit the root C completely — which means the
-     voicing wouldn't actually be the chord it claims to be. */
+     voicing — clustered near the bass note's fret, the way a hand actually reaches —
+     before any string is allowed to double a tone. A naive "first tone found" search
+     per string can both strand a required tone off the fretboard entirely (e.g. a
+     1st-inversion Cmaj7 could omit the root C completely) and, if it always grabs the
+     globally-lowest fret regardless of where the bass note sits, produce shapes no
+     hand can actually play — a bass note at fret 9 with other tones computed at fret
+     1. Both are avoided here. */
   function autoVoiceInversion(rootPC, chordType, inversionIndex) {
     var ivs = sortedIntervals(chordType);
     var bassPC = mod12(rootPC + ivs[inversionIndex % ivs.length]);
     var frets = TUNING.map(function () { return 'x'; });
+    var MAX_FRET = 15;
 
     var bassFret = null;
     for (var f = 0; f <= 11; f++) {
@@ -197,18 +240,17 @@
     var remainingPCs = ivs.filter(function (iv, i) { return i !== inversionIndex; }).map(function (iv) { return mod12(rootPC + iv); });
     var openStrings = [1, 2, 3, 4, 5];
 
-    /* Every (tone, string) pairing at the fret it takes to reach that tone, closest
-       first — greedily claim the cheapest pairing so each tone lands on the string
-       that can reach it soonest, before any string is left to double up. */
+    /* Every (tone, string) pairing at the fret closest to the bass fret, sorted
+       so the pairing needing the least stretch from the bass claims its string
+       first, before any string is left to double up. */
     var pairs = [];
     remainingPCs.forEach(function (pc) {
       openStrings.forEach(function (s) {
-        for (var fr = 0; fr <= 11; fr++) {
-          if (mod12(TUNING[s].openPC + fr) === pc) { pairs.push({ pc: pc, s: s, fret: fr }); break; }
-        }
+        var fret = nearestFretForPC(TUNING[s].openPC, pc, bassFret, MAX_FRET);
+        if (fret !== null) pairs.push({ pc: pc, s: s, fret: fret, dist: Math.abs(fret - bassFret) });
       });
     });
-    pairs.sort(function (a, b) { return a.fret - b.fret; });
+    pairs.sort(function (a, b) { return a.dist - b.dist; });
     var assignedPCs = {};
     pairs.forEach(function (p) {
       if (assignedPCs[p.pc] || frets[p.s] !== 'x') return;
@@ -217,14 +259,14 @@
     });
 
     /* Any string left over (more strings than distinct chord tones) doubles
-       whichever chord tone it can reach at the lowest fret. */
+       whichever chord tone it can reach closest to the bass fret, so the extra
+       notes stay in the same hand position as the rest of the chord. */
     openStrings.forEach(function (s) {
       if (frets[s] !== 'x') return;
       var bestFret = null;
       chordPCs.forEach(function (pc) {
-        for (var fr = 0; fr <= 11; fr++) {
-          if (mod12(TUNING[s].openPC + fr) === pc) { if (bestFret === null || fr < bestFret) bestFret = fr; break; }
-        }
+        var fret = nearestFretForPC(TUNING[s].openPC, pc, bassFret, MAX_FRET);
+        if (fret !== null && (bestFret === null || Math.abs(fret - bassFret) < Math.abs(bestFret - bassFret))) bestFret = fret;
       });
       frets[s] = bestFret;
     });
@@ -254,6 +296,22 @@
      in C-A-G-E-D order. */
   function availableForms(rootPC, chordType) {
     return CAGED_ORDER.filter(function (formKey) { return !!barreShape(rootPC, chordType, formKey); });
+  }
+
+  /* Whichever movable form lands lowest on the neck for this root — the shape a
+     guitarist would actually reach for first — used to pick the "Standard"
+     voicing for any root/type that has no traditional open-position shape,
+     instead of leaving it to fall back to a generic computed grip. */
+  function bestDefaultForm(rootPC, chordType) {
+    var best = null, bestMax = Infinity;
+    availableForms(rootPC, chordType).forEach(function (formKey) {
+      var frets = barreShape(rootPC, chordType, formKey);
+      if (!frets) return;
+      var nums = frets.filter(function (f) { return typeof f === 'number'; });
+      var maxFret = nums.length ? Math.max.apply(null, nums) : Infinity;
+      if (maxFret < bestMax) { bestMax = maxFret; best = formKey; }
+    });
+    return best;
   }
 
   /* Scale-degree label for a semitone interval above the root, in chord-tone terms
@@ -320,6 +378,19 @@
       var shapeFrets = OPEN_SHAPES[key].slice();
       return { frets: shapeFrets, fingers: (FINGERS[key] || computeFingering(shapeFrets)), source: 'shape', key: key, inversionIndex: 0 };
     }
+    /* No traditional open-position shape for this exact root/type — reach for
+       the best available movable form (lowest resulting fret = easiest reach)
+       before falling back to a generic computed voicing, so e.g. F#m or Bb7
+       default to a real, commonly-played barre chord. */
+    if (inversionIndex === 0 && !formKey) {
+      var defaultForm = bestDefaultForm(rootPC, chordType);
+      if (defaultForm) {
+        var dFrets = barreShape(rootPC, chordType, defaultForm);
+        if (dFrets) {
+          return { frets: dFrets, fingers: computeFingering(dFrets), source: 'barre-' + defaultForm, key: key, inversionIndex: 0 };
+        }
+      }
+    }
     var frets = autoVoiceInversion(rootPC, chordType, inversionIndex);
     return { frets: frets, fingers: computeFingering(frets), source: 'computed', key: key, inversionIndex: inversionIndex };
   }
@@ -353,7 +424,16 @@
       intervalSet.sort(function (a, b) { return a - b; });
       CHORD_TYPES.forEach(function (ct) {
         var ref = ct.intervals.slice().sort(function (a, b) { return a - b; });
-        if (ref.length === intervalSet.length && ref.every(function (v, i) { return v === intervalSet[i]; })) {
+        /* A voicing missing only the perfect 5th (interval 7) still reads —
+           and is still written and named — as the full chord: guitarists
+           routinely drop the 5th on 4-tone chords (the open C7 shape, x32310,
+           does this), and the 3rd/7th alone already establish the quality. */
+        var ref5 = ref.length > 3 && ref.indexOf(7) !== -1
+          ? ref.filter(function (v) { return v !== 7; })
+          : null;
+        var isMatch = ref.length === intervalSet.length && ref.every(function (v, i) { return v === intervalSet[i]; });
+        var isNoFifthMatch = !isMatch && ref5 && ref5.length === intervalSet.length && ref5.every(function (v, i) { return v === intervalSet[i]; });
+        if (isMatch || isNoFifthMatch) {
           matches.push({
             root: root,
             chordType: ct,
@@ -377,6 +457,8 @@
     PITCHES: PITCHES,
     TUNING: TUNING,
     STRINGS_TOPDOWN: STRINGS_TOPDOWN,
+    OPEN_FREQ: OPEN_FREQ,
+    noteFreq: noteFreq,
     BUILD_FRETS: BUILD_FRETS,
     CHORD_TYPES: CHORD_TYPES,
     SCALE_TYPES: SCALE_TYPES,
@@ -393,6 +475,90 @@
     chordDisplayName: chordDisplayName,
     detectChords: detectChords
   };
+})();
+
+/* guitar-chords.js — plucked-string synth (Karplus-Strong), no audio assets */
+(function () {
+  'use strict';
+
+  var ctx = null;
+  function getContext() {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    if (!ctx) ctx = new AC();
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+
+  /* Karplus-Strong: a ring buffer of noise, repeatedly averaged-and-damped one
+     period at a time, is the classic minimal model of a plucked, decaying string —
+     it's what makes this sound like a plucked string rather than a synth tone. */
+  function pluckBuffer(audioCtx, freq, duration) {
+    var sampleRate = audioCtx.sampleRate;
+    var length = Math.max(2, Math.floor(sampleRate * duration));
+    var buffer = audioCtx.createBuffer(1, length, sampleRate);
+    var data = buffer.getChannelData(0);
+    var period = Math.max(2, Math.round(sampleRate / freq));
+    var ring = new Float32Array(period);
+    for (var i = 0; i < period; i++) ring[i] = Math.random() * 2 - 1;
+    var idx = 0, prev = 0, damping = 0.994;
+    for (var n = 0; n < length; n++) {
+      var cur = ring[idx];
+      data[n] = cur;
+      ring[idx] = damping * 0.5 * (cur + prev);
+      prev = cur;
+      idx = (idx + 1) % period;
+    }
+    return buffer;
+  }
+
+  /* Pluck one note. `opts.delay` offsets the start time (seconds from now) so
+     chords can be strummed or arpeggiated by calling this repeatedly. */
+  function pluck(freq, opts) {
+    opts = opts || {};
+    var audioCtx = getContext();
+    if (!audioCtx || !freq) return;
+    var now = audioCtx.currentTime + (opts.delay || 0);
+    var duration = opts.duration || 1.7;
+    var src = audioCtx.createBufferSource();
+    src.buffer = pluckBuffer(audioCtx, freq, duration);
+
+    var body = audioCtx.createBiquadFilter();
+    body.type = 'lowpass';
+    body.frequency.value = Math.min(9000, freq * 9 + 1200);
+
+    var gain = audioCtx.createGain();
+    var peak = opts.gain != null ? opts.gain : 0.32;
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.linearRampToValueAtTime(peak, now + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+    src.connect(body);
+    body.connect(gain);
+    gain.connect(audioCtx.destination);
+    src.start(now);
+    src.stop(now + duration + 0.05);
+  }
+
+  /* All notes together with a short low-to-high offset, like a downstroke. */
+  function strum(freqs, opts) {
+    opts = opts || {};
+    var spread = opts.spread != null ? opts.spread : 0.02;
+    freqs.forEach(function (f, i) {
+      pluck(f, { delay: i * spread, duration: opts.duration, gain: opts.gain });
+    });
+  }
+
+  /* Notes one at a time, evenly spaced — arpeggios and scale runs. */
+  function sequence(freqs, opts) {
+    opts = opts || {};
+    var interval = opts.interval != null ? opts.interval : 0.26;
+    freqs.forEach(function (f, i) {
+      pluck(f, { delay: i * interval, duration: opts.duration || interval * 2.6, gain: opts.gain });
+    });
+  }
+
+  window.GuitarAudio = { pluck: pluck, strum: strum, sequence: sequence, getContext: getContext };
 })();
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -432,10 +598,13 @@ document.addEventListener('DOMContentLoaded', function () {
     var interactive = !!opts.interactive;
     var onCellClick = opts.onCellClick;
     var onOpenClick = opts.onOpenClick;
+    /* Read-only boards still let a student click any sounding dot to hear its
+       pitch — that's independent of edit mode, which is builder-only. */
+    var playable = !interactive && opts.playable !== false;
 
     container.innerHTML = '';
     var board = document.createElement('div');
-    board.className = 'gc-board' + (interactive ? ' is-interactive' : '');
+    board.className = 'gc-board' + (interactive ? ' is-interactive' : '') + (playable ? ' is-playable' : '');
     board.style.setProperty('--gc-frets', span);
 
     var head = document.createElement('div');
@@ -493,6 +662,10 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       if (interactive) {
         openCell.addEventListener('click', function () { onOpenClick(stringIndexLowToHigh); });
+      } else if (playable && val === 0) {
+        openCell.addEventListener('click', function () {
+          if (window.GuitarAudio) window.GuitarAudio.pluck(GT.noteFreq(stringIndexLowToHigh, 0));
+        });
       } else {
         openCell.disabled = true;
       }
@@ -511,6 +684,12 @@ document.addEventListener('DOMContentLoaded', function () {
         if (interactive) {
           cell.addEventListener('click', function (fretNum) {
             return function () { onCellClick(stringIndexLowToHigh, fretNum); };
+          }(fret));
+        } else if (playable && val === fret) {
+          cell.addEventListener('click', function (fretNum) {
+            return function () {
+              if (window.GuitarAudio) window.GuitarAudio.pluck(GT.noteFreq(stringIndexLowToHigh, fretNum));
+            };
           }(fret));
         } else {
           cell.disabled = true;
@@ -582,6 +761,28 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   applyColorMode();
 
+  /* ---------- Chord/arpeggio playback (shared by builder + encyclopedia) ---------- */
+
+  function fretsToFreqs(frets) {
+    var out = [];
+    frets.forEach(function (f, i) {
+      if (typeof f === 'number') out.push(GT.noteFreq(i, f));
+    });
+    return out;
+  }
+
+  /* mode: 'strum' (all notes, low-to-high sweep), 'up'/'down' (arpeggio in that
+     direction), 'updown' (up then back down without repeating the top note). */
+  function playFrets(frets, mode) {
+    if (!window.GuitarAudio) return;
+    var freqs = fretsToFreqs(frets);
+    if (!freqs.length) return;
+    if (mode === 'strum') window.GuitarAudio.strum(freqs);
+    else if (mode === 'down') window.GuitarAudio.sequence(freqs.slice().reverse());
+    else if (mode === 'updown') window.GuitarAudio.sequence(freqs.concat(freqs.slice(0, -1).reverse()));
+    else window.GuitarAudio.sequence(freqs);
+  }
+
   /* ---------- Builder (place-your-own-notes) ---------- */
 
   var builderState = [null, null, null, null, null, null]; /* low E..high e, value = fret number, 'x', or null */
@@ -603,8 +804,10 @@ document.addEventListener('DOMContentLoaded', function () {
       degrees: degrees,
       interactive: true,
       onCellClick: function (stringIdx, fret) {
-        builderState[stringIdx] = (builderState[stringIdx] === fret) ? null : fret;
+        var placing = builderState[stringIdx] !== fret;
+        builderState[stringIdx] = placing ? fret : null;
         renderBuilder();
+        if (placing && window.GuitarAudio) window.GuitarAudio.pluck(GT.noteFreq(stringIdx, fret));
       },
       onOpenClick: function (stringIdx) {
         var cur = builderState[stringIdx];
@@ -612,6 +815,7 @@ document.addEventListener('DOMContentLoaded', function () {
         else if (cur === 'x' || cur === null || cur === undefined) builderState[stringIdx] = 0;
         else builderState[stringIdx] = 0;
         renderBuilder();
+        if (builderState[stringIdx] === 0 && window.GuitarAudio) window.GuitarAudio.pluck(GT.noteFreq(stringIdx, 0));
       }
     });
     updateBuilderResult(detection);
@@ -668,6 +872,15 @@ document.addEventListener('DOMContentLoaded', function () {
       challengeReadout.textContent = 'Build a ' + GT.chordDisplayName(root, type) + ' (' + type.name + '). Place notes so the intervals from your lowest note match: ' + type.intervals.join(', ') + ' semitones.';
     }
   });
+
+  var builderPlayStrum = document.getElementById('gcPlayStrum');
+  var builderPlayArpUp = document.getElementById('gcPlayArpUp');
+  var builderPlayArpDown = document.getElementById('gcPlayArpDown');
+  var builderPlayArpUpDown = document.getElementById('gcPlayArpUpDown');
+  if (builderPlayStrum) builderPlayStrum.addEventListener('click', function () { playFrets(builderState, 'strum'); });
+  if (builderPlayArpUp) builderPlayArpUp.addEventListener('click', function () { playFrets(builderState, 'up'); });
+  if (builderPlayArpDown) builderPlayArpDown.addEventListener('click', function () { playFrets(builderState, 'down'); });
+  if (builderPlayArpUpDown) builderPlayArpUpDown.addEventListener('click', function () { playFrets(builderState, 'updown'); });
 
   renderBuilder();
 
@@ -782,7 +995,7 @@ document.addEventListener('DOMContentLoaded', function () {
       var formKey = source.slice(6);
       return 'Movable ' + FORM_LABELS[formKey] + ' barre — slide the whole shape to any fret';
     }
-    return 'Computed voicing — lowest matching fret per string';
+    return 'Computed voicing — built around the bass note';
   }
 
   function renderEncyclopedia() {
@@ -831,6 +1044,104 @@ document.addEventListener('DOMContentLoaded', function () {
     if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
+  function currentEncFrets() {
+    return GT.getChordShape(encCurrentRoot, encCurrentType, encCurrentInversion, encCurrentForm).frets;
+  }
+  var encPlayStrum = document.getElementById('gcEncPlayStrum');
+  var encPlayArpUp = document.getElementById('gcEncPlayArpUp');
+  var encPlayArpDown = document.getElementById('gcEncPlayArpDown');
+  var encPlayArpUpDown = document.getElementById('gcEncPlayArpUpDown');
+  if (encPlayStrum) encPlayStrum.addEventListener('click', function () { playFrets(currentEncFrets(), 'strum'); });
+  if (encPlayArpUp) encPlayArpUp.addEventListener('click', function () { playFrets(currentEncFrets(), 'up'); });
+  if (encPlayArpDown) encPlayArpDown.addEventListener('click', function () { playFrets(currentEncFrets(), 'down'); });
+  if (encPlayArpUpDown) encPlayArpUpDown.addEventListener('click', function () { playFrets(currentEncFrets(), 'updown'); });
+
+  /* ---------- Diatonic triad ladder (root / 1st inv / 2nd inv walk-up) ----------
+     The seven triads built on each degree of the C major scale, root-to-root —
+     the classic voice-leading drill: play them root position (big jumps), then
+     the same seven chords in 1st and 2nd inversion (each neighbor barely moves,
+     since only one note changes). The 8th entry repeats the tonic to close the
+     ladder back home. */
+  var DIATONIC_TRIADS = [
+    { root: 0, suffix: '' }, { root: 2, suffix: 'm' }, { root: 4, suffix: 'm' },
+    { root: 5, suffix: '' }, { root: 7, suffix: '' }, { root: 9, suffix: 'm' },
+    { root: 11, suffix: 'dim' }, { root: 0, suffix: '' }
+  ];
+  var DIATONIC_ROMANS = ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°', 'I'];
+  var LADDER_SPAN = 6;
+  var LADDER_CHORD_GAP = 0.85;
+
+  function ladderChordType(suffix) {
+    return GT.CHORD_TYPES.filter(function (ct) { return ct.suffix === suffix; })[0];
+  }
+
+  function ladderShapes(inversionIndex) {
+    return DIATONIC_TRIADS.map(function (entry) {
+      return GT.getChordShape(entry.root, ladderChordType(entry.suffix), inversionIndex, null).frets;
+    });
+  }
+
+  function renderLadderStrip(containerId, inversionIndex) {
+    var strip = document.getElementById(containerId);
+    if (!strip) return;
+    strip.innerHTML = '';
+    DIATONIC_TRIADS.forEach(function (entry, i) {
+      var ct = ladderChordType(entry.suffix);
+      var shape = GT.getChordShape(entry.root, ct, inversionIndex, null);
+      var degrees = GT.computeDegrees(entry.root, ct, shape.frets);
+      var numericFrets = shape.frets.filter(function (f) { return typeof f === 'number' && f > 0; });
+      var maxFret = numericFrets.length ? Math.max.apply(null, numericFrets) : 0;
+      var minFret = numericFrets.length ? Math.min.apply(null, numericFrets) : 0;
+      var startFret = maxFret > LADDER_SPAN - 1 ? Math.max(0, minFret - 1) : 0;
+
+      var card = document.createElement('div');
+      card.className = 'gc-ladder-chord';
+      var label = document.createElement('p');
+      label.className = 'gc-ladder-chord-label';
+      label.innerHTML = '<strong>' + GT.chordDisplayName(entry.root, ct) + '</strong><span>' + DIATONIC_ROMANS[i] + '</span>';
+      card.appendChild(label);
+      var boardHost = document.createElement('div');
+      card.appendChild(boardHost);
+      renderBoard(boardHost, { startFret: startFret, span: LADDER_SPAN, frets: shape.frets, fingers: shape.fingers, degrees: degrees, interactive: false, playable: true });
+      strip.appendChild(card);
+    });
+  }
+
+  /* Plays a series of chords, each strummed low-to-high, spaced chordGap seconds apart. */
+  function playChordSequence(shapesArray, chordGap) {
+    if (!window.GuitarAudio) return;
+    var strumSpread = 0.02;
+    shapesArray.forEach(function (frets, chordIdx) {
+      fretsToFreqs(frets).forEach(function (freq, noteIdx) {
+        window.GuitarAudio.pluck(freq, { delay: chordIdx * chordGap + noteIdx * strumSpread });
+      });
+    });
+  }
+
+  renderLadderStrip('gcLadderStrip0', 0);
+  renderLadderStrip('gcLadderStrip1', 1);
+  renderLadderStrip('gcLadderStrip2', 2);
+
+  Array.prototype.forEach.call(document.querySelectorAll('.gc-ladder-play'), function (btn) {
+    btn.addEventListener('click', function () {
+      playChordSequence(ladderShapes(parseInt(btn.getAttribute('data-inversion'), 10)), LADDER_CHORD_GAP);
+    });
+  });
+
+  var ladderPlayAll = document.getElementById('gcLadderPlayAll');
+  if (ladderPlayAll) ladderPlayAll.addEventListener('click', function () {
+    playChordSequence(ladderShapes(0).concat(ladderShapes(1)).concat(ladderShapes(2)), LADDER_CHORD_GAP);
+  });
+
+  var ladderAddPractice = document.getElementById('gcLadderAddPractice');
+  if (ladderAddPractice) ladderAddPractice.addEventListener('click', function () {
+    [0, 1, 2].forEach(function (inv) {
+      DIATONIC_TRIADS.slice(0, 7).forEach(function (entry) {
+        addPracticeItem({ kind: 'chord', rootPC: entry.root, typeSuffix: entry.suffix, inversionIndex: inv, formKey: null });
+      });
+    });
+  });
+
   /* ---------- Scales & modes ---------- */
 
   var scaleRootPicker = document.getElementById('gcScaleRootPicker');
@@ -869,10 +1180,11 @@ document.addEventListener('DOMContentLoaded', function () {
     var startFret = opts.startFret || 0;
     var span = opts.span || SCALE_SPAN;
     var toneMap = opts.toneMap;
+    var playable = opts.playable !== false;
 
     container.innerHTML = '';
     var board = document.createElement('div');
-    board.className = 'gc-board';
+    board.className = 'gc-board' + (playable ? ' is-playable' : '');
     board.style.setProperty('--gc-frets', span);
 
     var head = document.createElement('div');
@@ -895,6 +1207,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     GT.STRINGS_TOPDOWN.forEach(function (str) {
+      var stringIndexLowToHigh = GT.TUNING.indexOf(str);
       var row = document.createElement('div');
       row.className = 'gc-row';
       row.setAttribute('data-string', str.label + str.num);
@@ -905,9 +1218,15 @@ document.addEventListener('DOMContentLoaded', function () {
       var openCell = document.createElement('button');
       openCell.type = 'button';
       openCell.className = 'gc-cell gc-open-cell';
-      openCell.disabled = true;
       openCell.setAttribute('aria-label', str.label + ' string, open' + (openTone ? ', scale tone ' + openTone.label : ''));
       openCell.innerHTML = '<span class="gc-string-tag">' + str.label + '</span>' + (openTone ? dotHTML(openTone) : '');
+      if (playable && openTone) {
+        openCell.addEventListener('click', function () {
+          if (window.GuitarAudio) window.GuitarAudio.pluck(GT.noteFreq(stringIndexLowToHigh, 0));
+        });
+      } else {
+        openCell.disabled = true;
+      }
       row.appendChild(openCell);
 
       for (var fret = startFret + 1; fret <= startFret + span; fret++) {
@@ -915,11 +1234,21 @@ document.addEventListener('DOMContentLoaded', function () {
         var cell = document.createElement('button');
         cell.type = 'button';
         cell.className = 'gc-cell';
-        cell.disabled = true;
         cell.setAttribute('aria-label', str.label + ' string, fret ' + fret + (tone ? ', scale tone ' + tone.label : ''));
         if (tone) {
           cell.classList.add('has-note');
           cell.innerHTML = dotHTML(tone);
+          if (playable) {
+            cell.addEventListener('click', function (fretNum) {
+              return function () {
+                if (window.GuitarAudio) window.GuitarAudio.pluck(GT.noteFreq(stringIndexLowToHigh, fretNum));
+              };
+            }(fret));
+          } else {
+            cell.disabled = true;
+          }
+        } else {
+          cell.disabled = true;
         }
         row.appendChild(cell);
       }
@@ -1066,6 +1395,34 @@ document.addEventListener('DOMContentLoaded', function () {
   buildScaleViewPicker();
   renderScales();
 
+  /* Root-position playback, independent of the fretboard view above — walks the
+     scale's own intervals up from the root rather than reading dots off a
+     particular string/position, so it sounds the same no matter which window
+     of the neck is currently shown. */
+  function scaleFrequencies(rootPC, scaleType) {
+    var base = 220 * Math.pow(2, (rootPC - 9) / 12); /* root landed near guitar's mid register */
+    var freqs = scaleType.intervals.map(function (iv) { return base * Math.pow(2, iv / 12); });
+    freqs.push(base * 2); /* close the phrase by resolving back to the root, an octave up */
+    return freqs;
+  }
+
+  var scalePlayUp = document.getElementById('gcScalePlayUp');
+  var scalePlayDown = document.getElementById('gcScalePlayDown');
+  var scalePlayUpDown = document.getElementById('gcScalePlayUpDown');
+  if (scalePlayUp) scalePlayUp.addEventListener('click', function () {
+    if (!window.GuitarAudio) return;
+    window.GuitarAudio.sequence(scaleFrequencies(scaleCurrentRoot, scaleCurrentType), { interval: 0.22 });
+  });
+  if (scalePlayDown) scalePlayDown.addEventListener('click', function () {
+    if (!window.GuitarAudio) return;
+    window.GuitarAudio.sequence(scaleFrequencies(scaleCurrentRoot, scaleCurrentType).slice().reverse(), { interval: 0.22 });
+  });
+  if (scalePlayUpDown) scalePlayUpDown.addEventListener('click', function () {
+    if (!window.GuitarAudio) return;
+    var freqs = scaleFrequencies(scaleCurrentRoot, scaleCurrentType);
+    window.GuitarAudio.sequence(freqs.concat(freqs.slice(0, -1).reverse()), { interval: 0.22 });
+  });
+
   /* ---------- Practice list: pick specific chords/scales, print a worksheet ---------- */
 
   var practiceList = [];
@@ -1199,7 +1556,7 @@ document.addEventListener('DOMContentLoaded', function () {
           var maxFret = numericFrets.length ? Math.max.apply(null, numericFrets) : 0;
           var minFret = numericFrets.length ? Math.min.apply(null, numericFrets) : 0;
           var startFret = maxFret > GT.BUILD_FRETS - 1 ? Math.max(0, minFret - 1) : 0;
-          renderBoard(boardHost, { startFret: startFret, span: GT.BUILD_FRETS, frets: shape.frets, fingers: shape.fingers, degrees: degrees, interactive: false });
+          renderBoard(boardHost, { startFret: startFret, span: GT.BUILD_FRETS, frets: shape.frets, fingers: shape.fingers, degrees: degrees, interactive: false, playable: false });
           var fingerLine = document.createElement('p');
           fingerLine.textContent = 'Fingering: ' + fingerSummary(shape.fingers);
           cell.appendChild(fingerLine);
@@ -1208,7 +1565,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var st = GT.SCALE_TYPES.filter(function (s) { return s.key === item.scaleKey; })[0];
         if (st) {
           var toneMap = buildToneMap(item.rootPC, st);
-          renderScaleBoard(boardHost, { startFret: 0, span: SCALE_SPAN, toneMap: toneMap });
+          renderScaleBoard(boardHost, { startFret: 0, span: SCALE_SPAN, toneMap: toneMap, playable: false });
           var notesLine = document.createElement('p');
           notesLine.textContent = 'Notes: ' + st.intervals.map(function (iv) { return GT.PITCHES[GT.mod12(item.rootPC + iv)]; }).join(' – ');
           cell.appendChild(notesLine);

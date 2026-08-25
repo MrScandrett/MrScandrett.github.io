@@ -127,13 +127,19 @@
             <div class="section-content">
               <p class="section-kicker">Place your own notes</p>
               <h2>Click frets. We'll tell you what chord you made.</h2>
-              <p>Click any fret on a string to place a note there. Click a string's label at the far left to toggle it between <strong>open</strong> (green dot) and <strong>muted</strong> (×). The lowest string you play becomes the bass note — if it isn't the chord's root, you've built an <strong>inversion</strong> (a slash chord, like C/E).</p>
+              <p>Click any fret on a string to place a note there — you'll hear a synthesized pluck at that pitch. Click a string's label at the far left to toggle it between <strong>open</strong> (green dot) and <strong>muted</strong> (×). The lowest string you play becomes the bass note — if it isn't the chord's root, you've built an <strong>inversion</strong> (a slash chord, like C/E). Once you've placed some notes, use the playback buttons to hear the whole chord strummed or broken into an arpeggio.</p>
 
               <div class="gc-builder-wrap">
                 <div class="gc-builder-controls">
                   <button type="button" class="gc-btn" id="gcClearBuilder">Clear fretboard</button>
                   <button type="button" class="gc-btn gc-btn-primary" id="gcChallengeBuilder">Give me a chord to build</button>
                   <p id="gcChallengeReadout"></p>
+                </div>
+                <div class="gc-builder-controls">
+                  <button type="button" class="gc-btn gc-btn-primary" id="gcPlayStrum">▶ Strum chord</button>
+                  <button type="button" class="gc-btn" id="gcPlayArpUp">Arpeggio ↑</button>
+                  <button type="button" class="gc-btn" id="gcPlayArpDown">Arpeggio ↓</button>
+                  <button type="button" class="gc-btn" id="gcPlayArpUpDown">Arpeggio ↑↓</button>
                 </div>
                 <div id="gcBuilderBoard"></div>
                 <p id="gcBuilderNotes"></p>
@@ -148,7 +154,7 @@
             <div class="section-content">
               <p class="section-kicker">Every root, every chord type</p>
               <h2>Browse the full chord library.</h2>
-              <p>Pick a root note, then a chord type, then an inversion — which chord tone sits in the bass. Root position shows the traditional open or barre shape where one exists; every inversion is voiced to include <strong>all</strong> of the chord's notes, not just some of them. Each dot is labeled with its interval from the root (R, 3, ♭3, 5, ♭7…) with a small number in the corner for suggested left-hand fingering (1 = index, 2 = middle, 3 = ring, 4 = pinky). Where a movable CAGED barre shape exists, an <strong>alternate fingering</strong> option lets you compare it to the standard voicing.</p>
+              <p>Pick a root note, then a chord type, then an inversion — which chord tone sits in the bass. Root position shows the traditional open or barre shape where one exists; every inversion is voiced to include <strong>all</strong> of the chord's notes, not just some of them. Each dot is labeled with its interval from the root (R, 3, ♭3, 5, ♭7…) with a small number in the corner for suggested left-hand fingering (1 = index, 2 = middle, 3 = ring, 4 = pinky). Where a movable CAGED barre shape exists, an <strong>alternate fingering</strong> option lets you compare it to the standard voicing. Click any dot to hear its pitch, or use the playback buttons to strum the whole voicing or hear it as an arpeggio — a great way to compare how different inversions of the same chord actually sound.</p>
               <div class="gc-enc-wrap">
                 <p class="gc-kicker-label">Root note</p>
                 <div class="gc-pick-row" id="gcRootPicker"></div>
@@ -165,8 +171,35 @@
                   <div class="gc-enc-meta" id="gcEncMeta"></div>
                 </div>
                 <div class="gc-builder-controls" style="margin-top:.9rem;">
+                  <button type="button" class="gc-btn gc-btn-primary" id="gcEncPlayStrum">▶ Strum chord</button>
+                  <button type="button" class="gc-btn" id="gcEncPlayArpUp">Arpeggio ↑</button>
+                  <button type="button" class="gc-btn" id="gcEncPlayArpDown">Arpeggio ↓</button>
+                  <button type="button" class="gc-btn" id="gcEncPlayArpUpDown">Arpeggio ↑↓</button>
+                </div>
+                <div class="gc-builder-controls">
                   <button type="button" class="gc-btn" id="gcSendToBuilder">Load this chord into the builder ↑</button>
                   <button type="button" class="gc-btn" id="gcAddChordToPractice">+ Add to practice list</button>
+                </div>
+              </div>
+
+              <div class="gc-ladder-wrap" id="gcLadderWrap">
+                <h3>Try it: the diatonic triad ladder</h3>
+                <p>A classic ear-training drill. Walk up the seven triads built from the C major scale — <strong>C, Dm, Em, F, G, Am, B°</strong> — and back to C. Play the ladder in root position first and notice how far your hand jumps between chords. Then play the same seven chords in 1st inversion, then 2nd — each ladder barely moves your hand, because only one note changes between neighboring chords. This is the same shape guitarists use to keep chord changes smooth instead of leaping around the neck.</p>
+                <div class="gc-ladder-row">
+                  <div class="gc-ladder-head"><span class="gc-ladder-title">Root position</span><button type="button" class="gc-btn gc-btn-primary gc-ladder-play" data-inversion="0">▶ Play this ladder</button></div>
+                  <div class="gc-ladder-strip" id="gcLadderStrip0"></div>
+                </div>
+                <div class="gc-ladder-row">
+                  <div class="gc-ladder-head"><span class="gc-ladder-title">1st inversion</span><button type="button" class="gc-btn gc-btn-primary gc-ladder-play" data-inversion="1">▶ Play this ladder</button></div>
+                  <div class="gc-ladder-strip" id="gcLadderStrip1"></div>
+                </div>
+                <div class="gc-ladder-row">
+                  <div class="gc-ladder-head"><span class="gc-ladder-title">2nd inversion</span><button type="button" class="gc-btn gc-btn-primary gc-ladder-play" data-inversion="2">▶ Play this ladder</button></div>
+                  <div class="gc-ladder-strip" id="gcLadderStrip2"></div>
+                </div>
+                <div class="gc-builder-controls" style="margin-top:.9rem;">
+                  <button type="button" class="gc-btn gc-btn-primary" id="gcLadderPlayAll">▶ Play all three ladders</button>
+                  <button type="button" class="gc-btn" id="gcLadderAddPractice">+ Add all 21 chords to practice list</button>
                 </div>
               </div>
             </div>
@@ -177,7 +210,7 @@
             <div class="section-content">
               <p class="section-kicker">The palette chords are picked from</p>
               <h2>A scale is a chord's whole family of notes.</h2>
-              <p>Where a chord is 3–4 notes stacked at once, a <strong>scale</strong> is the full set of notes — usually 5 to 7 of them — a melody or solo draws from over a chord progression. <strong>Modes</strong> are the seven scales hiding inside every major scale: play the same seven notes but start (and resolve) on a different one, and the whole thing takes on a new mood, from the bright major sound of <strong>Ionian</strong> down to the unstable <strong>Locrian</strong>. Pentatonic and blues scales strip that down to 5–6 notes with no awkward half-steps, which is why they're the first scales most guitarists learn to solo with.</p>
+              <p>Where a chord is 3–4 notes stacked at once, a <strong>scale</strong> is the full set of notes — usually 5 to 7 of them — a melody or solo draws from over a chord progression. <strong>Modes</strong> are the seven scales hiding inside every major scale: play the same seven notes but start (and resolve) on a different one, and the whole thing takes on a new mood, from the bright major sound of <strong>Ionian</strong> down to the unstable <strong>Locrian</strong>. Pentatonic and blues scales strip that down to 5–6 notes with no awkward half-steps, which is why they're the first scales most guitarists learn to solo with. Click any dot on the fretboard to hear that note, or use the playback buttons to hear the whole scale run ascending, descending, or both.</p>
               <div class="gc-enc-wrap">
                 <p class="gc-kicker-label">Root note</p>
                 <div class="gc-pick-row" id="gcScaleRootPicker"></div>
@@ -197,6 +230,11 @@
                   <div class="gc-enc-meta" id="gcScaleMeta"></div>
                 </div>
                 <div class="gc-builder-controls" style="margin-top:.9rem;">
+                  <button type="button" class="gc-btn gc-btn-primary" id="gcScalePlayUp">▶ Play ascending</button>
+                  <button type="button" class="gc-btn" id="gcScalePlayDown">Play descending</button>
+                  <button type="button" class="gc-btn" id="gcScalePlayUpDown">Play up &amp; down</button>
+                </div>
+                <div class="gc-builder-controls">
                   <button type="button" class="gc-btn" id="gcAddScaleToPractice">+ Add to practice list</button>
                 </div>
               </div>
