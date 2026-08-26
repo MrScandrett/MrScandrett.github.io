@@ -79,16 +79,39 @@
     return PITCHES[pc] + octave;
   }
 
+  /* Real-world pitch in Hz for a key (absIndex 0 = C4, MIDI 60) — used for audio
+     playback only; everything else on this page works in abstract key indices. */
+  function noteFreq(absIndex) {
+    return 440 * Math.pow(2, (absIndex - 9) / 12);
+  }
+
   /* Compute the absolute key indices (0..24) for a closed-position voicing,
      rotated so the interval at `inversionIndex` (0 = root) sits in the bass. */
   function voiceChord(rootPC, chordType, inversionIndex) {
     inversionIndex = inversionIndex || 0;
     var bump = VOICE_BUMP[chordType.suffix] || {};
-    var raw = chordType.intervals.map(function (iv) { return bump[iv] !== undefined ? bump[iv] : iv; });
-    var sorted = raw.slice().sort(function (a, b) { return a - b; });
-    var n = sorted.length;
-    inversionIndex = inversionIndex % n;
-    var rotated = sorted.slice(inversionIndex).concat(sorted.slice(0, inversionIndex));
+
+    /* Which raw interval is the bass for this inversion is decided by
+       "display" order (root, 3rd, 5th, then any bumped color tone like a 9th
+       last) — so add9's 1st inversion means the 3rd in the bass, not the raw
+       2nd/9th, matching how these are actually described and named. */
+    var byDisplay = chordType.intervals.slice().sort(function (a, b) {
+      var da = bump[a] !== undefined ? bump[a] : a;
+      var db = bump[b] !== undefined ? bump[b] : b;
+      return da - db;
+    });
+    var bassRaw = byDisplay[inversionIndex % byDisplay.length];
+
+    /* Build the actual closed-position stack purely from raw (single-octave)
+       interval values, rotated so bassRaw is first — the same safe algorithm
+       every chord type uses. Feeding an already-bumped value (e.g. 14 for a
+       9th) into this stacking step is what used to blow the span out to
+       nearly two octaves or push notes below the keyboard entirely, since
+       every later note then has to climb past that artificially high value
+       too; keeping this pass entirely in raw 0–11 terms avoids that. */
+    var sortedRaw = chordType.intervals.slice().sort(function (a, b) { return a - b; });
+    var bassPos = sortedRaw.indexOf(bassRaw);
+    var rotated = sortedRaw.slice(bassPos).concat(sortedRaw.slice(0, bassPos));
 
     var abs = [];
     var prev = null;
@@ -99,15 +122,45 @@
       prev = val;
     });
 
+    /* Now nudge any display-bumped tone up an extra octave so it reads as a
+       color tone on top — but only when it isn't the bass note itself (that
+       would defeat the inversion just selected), only when it still fits on
+       the keyboard, and only when doing so keeps the whole chord within a
+       single reasonable hand span. Root position needs the nudge (without it
+       the 9th sits a clashing 2 semitones from the root); most inversions
+       already land it in a sensible spot on their own, so skipping an
+       over-wide nudge there — rather than forcing it and blowing the voicing
+       out — is the safer default. */
+    var topBefore = Math.max.apply(null, abs);
+    var bottomBefore = Math.min.apply(null, abs);
+    var MAX_SPAN = 14; /* a major 9th — the same span root position's nudge produces */
+    abs = abs.map(function (v, i) {
+      var iv = rotated[i];
+      if (i > 0 && bump[iv] !== undefined && v < topBefore) {
+        var nudged = v + 12;
+        if (nudged <= KEY_SPAN && nudged - bottomBefore <= MAX_SPAN) return nudged;
+      }
+      return v;
+    });
+
     var maxIdx = Math.max.apply(null, abs);
     if (maxIdx > KEY_SPAN) abs = abs.map(function (v) { return v - 12; });
     return abs;
   }
 
-  /* A general beginner-method fingering: thumb on the bottom note, pinky on the
-     top note, fill in with the fingers in between. Applied bass-to-top regardless
-     of inversion, which is how most method books teach it. */
-  function typicalFingering(noteCount) {
+  /* A general beginner-method fingering, applied bass-to-top regardless of
+     inversion, which is how most method books teach it. Right hand: thumb (1)
+     on the bottom note, pinky (5) on top. Left hand mirrors this — pinky (5)
+     on the bottom note, thumb (1) on top — the standard paired convention
+     every method book (Alfred's, Faber, Hal Leonard) teaches for block chords,
+     since the two hands cross the keyboard in opposite directions. */
+  function typicalFingering(noteCount, hand) {
+    if (hand === 'left') {
+      if (noteCount <= 1) return [5];
+      if (noteCount === 2) return [5, 1];
+      if (noteCount === 3) return [5, 3, 1];
+      return [5, 4, 2, 1];
+    }
     if (noteCount <= 1) return [1];
     if (noteCount === 2) return [1, 5];
     if (noteCount === 3) return [1, 3, 5];
@@ -190,12 +243,91 @@
     buildKeys: buildKeys,
     chordDisplayName: chordDisplayName,
     noteLabel: noteLabel,
+    noteFreq: noteFreq,
     voiceChord: voiceChord,
     typicalFingering: typicalFingering,
     detectChords: detectChords,
     intervalLabel: intervalLabel,
     degreeQuality: degreeQuality
   };
+})();
+
+/* piano-chords.js — additive-synthesis piano tone (Web Audio, no samples).
+   A plucked string (guitar) decays the instant it's struck; a piano hammer
+   hits a string too, but the struck tone is much brighter and richer in
+   harmonics at the attack, so this uses a handful of sine partials — rather
+   than guitar's Karplus-Strong noise-ring model — summed under one decay
+   envelope. */
+(function () {
+  'use strict';
+
+  var ctx = null;
+  function getContext() {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    if (!ctx) ctx = new AC();
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+
+  /* Fundamental plus a handful of decreasingly-loud harmonics, all under one
+     shared envelope — a struck piano string rings continuously from the
+     moment of the hammer strike (no separate sustain plateau like an organ),
+     so a single fast-attack, slow-decay envelope covers the whole note. */
+  var HARMONICS = [
+    { mult: 1, amp: 1 }, { mult: 2, amp: 0.5 }, { mult: 3, amp: 0.22 },
+    { mult: 4, amp: 0.12 }, { mult: 6, amp: 0.05 }
+  ];
+
+  function tone(freq, opts) {
+    opts = opts || {};
+    var audioCtx = getContext();
+    if (!audioCtx || !freq) return;
+    var now = audioCtx.currentTime + (opts.delay || 0);
+    var duration = opts.duration || 2.4;
+    var peak = opts.gain != null ? opts.gain : 0.28;
+
+    var master = audioCtx.createGain();
+    master.gain.setValueAtTime(0.0001, now);
+    master.gain.linearRampToValueAtTime(peak, now + 0.008);
+    master.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+    var filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = Math.min(10000, freq * 6 + 1800);
+
+    master.connect(filter);
+    filter.connect(audioCtx.destination);
+
+    HARMONICS.forEach(function (h) {
+      var osc = audioCtx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq * h.mult;
+      var g = audioCtx.createGain();
+      g.gain.value = h.amp;
+      osc.connect(g);
+      g.connect(master);
+      osc.start(now);
+      osc.stop(now + duration + 0.05);
+    });
+  }
+
+  /* All notes struck together — a "block" chord. */
+  function block(freqs, opts) {
+    opts = opts || {};
+    freqs.forEach(function (f) { tone(f, { delay: opts.delay || 0, duration: opts.duration, gain: opts.gain }); });
+  }
+
+  /* Notes one at a time, evenly spaced — a "broken" chord, or a scale run. */
+  function broken(freqs, opts) {
+    opts = opts || {};
+    var interval = opts.interval != null ? opts.interval : 0.26;
+    freqs.forEach(function (f, i) {
+      tone(f, { delay: i * interval, duration: opts.duration || interval * 2.6, gain: opts.gain });
+    });
+  }
+
+  window.PianoAudio = { tone: tone, block: block, broken: broken, getContext: getContext };
 })();
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -234,10 +366,13 @@ document.addEventListener('DOMContentLoaded', function () {
     var qualityMap = opts.qualityMap || {}; /* map absIndex -> {label, quality, iv} */
     var interactive = !!opts.interactive;
     var onToggle = opts.onToggle;
+    /* Read-only keyboards still let a student click any active key to hear its
+       pitch — independent of edit mode, which is builder-only. */
+    var playable = !interactive && opts.playable !== false;
 
     container.innerHTML = '';
     var kb = document.createElement('div');
-    kb.className = 'pc-keyboard' + (interactive ? ' is-interactive' : '');
+    kb.className = 'pc-keyboard' + (interactive ? ' is-interactive' : '') + (playable ? ' is-playable' : '');
 
     var whiteRow = document.createElement('div');
     whiteRow.className = 'pc-white-row';
@@ -263,8 +398,15 @@ document.addEventListener('DOMContentLoaded', function () {
         fw.textContent = fingerMap[k.absIndex];
         btn.appendChild(fw);
       }
-      if (interactive) btn.addEventListener('click', function () { onToggle(k.absIndex); });
-      else btn.disabled = true;
+      if (interactive) {
+        btn.addEventListener('click', function () { onToggle(k.absIndex); });
+      } else if (playable && active[k.absIndex]) {
+        btn.addEventListener('click', function () {
+          if (window.PianoAudio) window.PianoAudio.tone(PT.noteFreq(k.absIndex));
+        });
+      } else {
+        btn.disabled = true;
+      }
       whiteRow.appendChild(btn);
     });
     kb.appendChild(whiteRow);
@@ -291,8 +433,16 @@ document.addEventListener('DOMContentLoaded', function () {
         fb.textContent = fingerMap[k.absIndex];
         btn.appendChild(fb);
       }
-      if (interactive) btn.addEventListener('click', function (e) { e.stopPropagation(); onToggle(k.absIndex); });
-      else btn.disabled = true;
+      if (interactive) {
+        btn.addEventListener('click', function (e) { e.stopPropagation(); onToggle(k.absIndex); });
+      } else if (playable && active[k.absIndex]) {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          if (window.PianoAudio) window.PianoAudio.tone(PT.noteFreq(k.absIndex));
+        });
+      } else {
+        btn.disabled = true;
+      }
       blackLayer.appendChild(btn);
     });
     kb.appendChild(blackLayer);
@@ -300,8 +450,8 @@ document.addEventListener('DOMContentLoaded', function () {
     container.appendChild(kb);
   }
 
-  function buildFingerMap(sortedAbsIndices) {
-    var fingers = PT.typicalFingering(sortedAbsIndices.length);
+  function buildFingerMap(sortedAbsIndices, hand) {
+    var fingers = PT.typicalFingering(sortedAbsIndices.length, hand);
     var map = {};
     sortedAbsIndices.forEach(function (idx, i) { map[idx] = fingers[i]; });
     return map;
@@ -351,6 +501,22 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   applyColorMode();
 
+  /* ---------- Chord playback (shared by builder + encyclopedia) ---------- */
+
+  /* mode: 'block' (all notes struck together), 'brokenUp'/'brokenDown' (one at
+     a time in that direction), 'brokenUpDown' (up then back down without
+     repeating the top note). */
+  function playIndices(absIndices, mode) {
+    if (!window.PianoAudio) return;
+    var sorted = absIndices.slice().sort(function (a, b) { return a - b; });
+    var freqs = sorted.map(function (idx) { return PT.noteFreq(idx); });
+    if (!freqs.length) return;
+    if (mode === 'block') window.PianoAudio.block(freqs);
+    else if (mode === 'brokenDown') window.PianoAudio.broken(freqs.slice().reverse());
+    else if (mode === 'brokenUpDown') window.PianoAudio.broken(freqs.concat(freqs.slice(0, -1).reverse()));
+    else window.PianoAudio.broken(freqs);
+  }
+
   /* ---------- Builder (place-your-own-notes) ---------- */
 
   var builderActive = {};
@@ -371,9 +537,11 @@ document.addEventListener('DOMContentLoaded', function () {
       qualityMap: qualityMap,
       interactive: true,
       onToggle: function (absIndex) {
+        var turningOn = !builderActive[absIndex];
         if (builderActive[absIndex]) delete builderActive[absIndex];
         else builderActive[absIndex] = true;
         renderBuilder();
+        if (turningOn && window.PianoAudio) window.PianoAudio.tone(PT.noteFreq(absIndex));
       }
     });
     updateBuilderResult();
@@ -431,6 +599,15 @@ document.addEventListener('DOMContentLoaded', function () {
       challengeReadout.textContent = 'Build a ' + PT.chordDisplayName(root, type) + ' (' + type.name + '). Select keys so the intervals from your lowest note match: ' + type.intervals.join(', ') + ' semitones.';
     }
   });
+
+  var builderPlayBlock = document.getElementById('pcPlayBlock');
+  var builderPlayBrokenUp = document.getElementById('pcPlayBrokenUp');
+  var builderPlayBrokenDown = document.getElementById('pcPlayBrokenDown');
+  var builderPlayBrokenUpDown = document.getElementById('pcPlayBrokenUpDown');
+  if (builderPlayBlock) builderPlayBlock.addEventListener('click', function () { playIndices(Object.keys(builderActive).map(Number), 'block'); });
+  if (builderPlayBrokenUp) builderPlayBrokenUp.addEventListener('click', function () { playIndices(Object.keys(builderActive).map(Number), 'brokenUp'); });
+  if (builderPlayBrokenDown) builderPlayBrokenDown.addEventListener('click', function () { playIndices(Object.keys(builderActive).map(Number), 'brokenDown'); });
+  if (builderPlayBrokenUpDown) builderPlayBrokenUpDown.addEventListener('click', function () { playIndices(Object.keys(builderActive).map(Number), 'brokenUpDown'); });
 
   renderBuilder();
 
@@ -518,13 +695,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (encMeta) {
       var notesLine = sortedAbs.map(function (idx) { return PT.noteLabel(idx); }).join(' – ');
-      var fingerLine = sortedAbs.map(function (idx) { return fingerMap[idx]; }).join(' – ');
+      var rhLine = sortedAbs.map(function (idx) { return fingerMap[idx]; }).join(' – ');
+      var lhFingerMap = buildFingerMap(sortedAbs, 'left');
+      var lhLine = sortedAbs.map(function (idx) { return lhFingerMap[idx]; }).join(' – ');
       var invLabel = PT.INVERSION_LABELS[encCurrentInversion] || (encCurrentInversion + 'th inversion');
       var bassNote = PT.PITCHES[PT.mod12(sortedAbs[0])];
       encMeta.innerHTML = '<h3>' + name + (encCurrentInversion === 0 ? '' : ' / ' + bassNote) + '</h3>' +
         '<p class="pc-enc-notes"><strong>' + invLabel + '</strong> — bass note ' + bassNote + '</p>' +
         '<p class="pc-enc-notes">Notes: ' + notesLine + '</p>' +
-        '<p class="pc-enc-notes">Right-hand fingering (typical): ' + fingerLine + '</p>' +
+        '<p class="pc-enc-notes">Right-hand fingering (typical): ' + rhLine + '</p>' +
+        '<p class="pc-enc-notes">Left-hand fingering (typical): ' + lhLine + '</p>' +
         '<p class="pc-enc-formula">Formula: root' + encCurrentType.intervals.slice(1).map(function (i) { return ' + ' + i; }).join('') + ' semitones from ' + PT.PITCHES[encCurrentRoot] + '</p>';
     }
   }
@@ -541,6 +721,102 @@ document.addEventListener('DOMContentLoaded', function () {
     renderBuilder();
     var target = document.getElementById('builder');
     if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  function currentEncIndices() {
+    return PT.voiceChord(encCurrentRoot, encCurrentType, encCurrentInversion);
+  }
+  var encPlayBlock = document.getElementById('pcEncPlayBlock');
+  var encPlayBrokenUp = document.getElementById('pcEncPlayBrokenUp');
+  var encPlayBrokenDown = document.getElementById('pcEncPlayBrokenDown');
+  var encPlayBrokenUpDown = document.getElementById('pcEncPlayBrokenUpDown');
+  if (encPlayBlock) encPlayBlock.addEventListener('click', function () { playIndices(currentEncIndices(), 'block'); });
+  if (encPlayBrokenUp) encPlayBrokenUp.addEventListener('click', function () { playIndices(currentEncIndices(), 'brokenUp'); });
+  if (encPlayBrokenDown) encPlayBrokenDown.addEventListener('click', function () { playIndices(currentEncIndices(), 'brokenDown'); });
+  if (encPlayBrokenUpDown) encPlayBrokenUpDown.addEventListener('click', function () { playIndices(currentEncIndices(), 'brokenUpDown'); });
+
+  /* ---------- Diatonic triad ladder (root / 1st inv / 2nd inv walk-up) ----------
+     The seven triads built on each degree of the C major scale, root-to-root —
+     the classic piano method-book voice-leading drill: play them root position
+     (big hand jumps), then the same seven chords in 1st and 2nd inversion (each
+     neighbor barely moves, since only one note changes). The 8th entry repeats
+     the tonic to close the ladder back home. */
+  var DIATONIC_TRIADS = [
+    { root: 0, suffix: '' }, { root: 2, suffix: 'm' }, { root: 4, suffix: 'm' },
+    { root: 5, suffix: '' }, { root: 7, suffix: '' }, { root: 9, suffix: 'm' },
+    { root: 11, suffix: 'dim' }, { root: 0, suffix: '' }
+  ];
+  var DIATONIC_ROMANS = ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°', 'I'];
+
+  function ladderChordType(suffix) {
+    return PT.CHORD_TYPES.filter(function (ct) { return ct.suffix === suffix; })[0];
+  }
+
+  function ladderIndices(inversionIndex) {
+    return DIATONIC_TRIADS.map(function (entry) {
+      return PT.voiceChord(entry.root, ladderChordType(entry.suffix), inversionIndex);
+    });
+  }
+
+  function renderLadderStrip(containerId, inversionIndex) {
+    var strip = document.getElementById(containerId);
+    if (!strip) return;
+    strip.innerHTML = '';
+    DIATONIC_TRIADS.forEach(function (entry, i) {
+      var ct = ladderChordType(entry.suffix);
+      var abs = PT.voiceChord(entry.root, ct, inversionIndex);
+      var sortedAbs = abs.slice().sort(function (a, b) { return a - b; });
+      var active = {};
+      abs.forEach(function (idx) { active[idx] = true; });
+      var fingerMap = buildFingerMap(sortedAbs);
+      var qualityMap = buildQualityMap(entry.root, ct, sortedAbs);
+
+      var card = document.createElement('div');
+      card.className = 'pc-ladder-chord';
+      var label = document.createElement('p');
+      label.className = 'pc-ladder-chord-label';
+      label.innerHTML = '<strong>' + PT.chordDisplayName(entry.root, ct) + '</strong><span>' + DIATONIC_ROMANS[i] + '</span>';
+      card.appendChild(label);
+      var boardHost = document.createElement('div');
+      card.appendChild(boardHost);
+      renderKeyboard(boardHost, { active: active, fingerMap: fingerMap, qualityMap: qualityMap, interactive: false });
+      strip.appendChild(card);
+    });
+  }
+
+  renderLadderStrip('pcLadderStrip0', 0);
+  renderLadderStrip('pcLadderStrip1', 1);
+  renderLadderStrip('pcLadderStrip2', 2);
+
+  var LADDER_CHORD_GAP = 0.9;
+  Array.prototype.forEach.call(document.querySelectorAll('.pc-ladder-play'), function (btn) {
+    btn.addEventListener('click', function () {
+      if (!window.PianoAudio) return;
+      var inv = parseInt(btn.getAttribute('data-inversion'), 10);
+      ladderIndices(inv).forEach(function (abs, chordIdx) {
+        var freqs = abs.map(function (idx) { return PT.noteFreq(idx); });
+        freqs.forEach(function (f) { window.PianoAudio.tone(f, { delay: chordIdx * LADDER_CHORD_GAP }); });
+      });
+    });
+  });
+
+  var ladderPlayAll = document.getElementById('pcLadderPlayAll');
+  if (ladderPlayAll) ladderPlayAll.addEventListener('click', function () {
+    if (!window.PianoAudio) return;
+    var all = ladderIndices(0).concat(ladderIndices(1)).concat(ladderIndices(2));
+    all.forEach(function (abs, chordIdx) {
+      var freqs = abs.map(function (idx) { return PT.noteFreq(idx); });
+      freqs.forEach(function (f) { window.PianoAudio.tone(f, { delay: chordIdx * LADDER_CHORD_GAP }); });
+    });
+  });
+
+  var ladderAddPractice = document.getElementById('pcLadderAddPractice');
+  if (ladderAddPractice) ladderAddPractice.addEventListener('click', function () {
+    [0, 1, 2].forEach(function (inv) {
+      DIATONIC_TRIADS.slice(0, 7).forEach(function (entry) {
+        addPracticeItem({ kind: 'chord', rootPC: entry.root, typeSuffix: entry.suffix, inversionIndex: inv });
+      });
+    });
   });
 
   /* ---------- Scales & modes ---------- */
@@ -570,10 +846,11 @@ document.addEventListener('DOMContentLoaded', function () {
      instead of a fingering number, and marks the root distinctly. */
   function renderScaleKeyboard(container, opts) {
     var toneMap = (opts && opts.toneMap) || {};
+    var playable = !opts || opts.playable !== false;
 
     container.innerHTML = '';
     var kb = document.createElement('div');
-    kb.className = 'pc-keyboard';
+    kb.className = 'pc-keyboard' + (playable ? ' is-playable' : '');
 
     var whiteRow = document.createElement('div');
     whiteRow.className = 'pc-white-row';
@@ -581,7 +858,6 @@ document.addEventListener('DOMContentLoaded', function () {
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'pc-key pc-white';
-      btn.disabled = true;
       var tone = toneMap[k.absIndex];
       if (tone) {
         btn.classList.add('is-active');
@@ -602,6 +878,13 @@ document.addEventListener('DOMContentLoaded', function () {
         dw.textContent = tone.label;
         btn.appendChild(dw);
       }
+      if (playable && tone) {
+        btn.addEventListener('click', function () {
+          if (window.PianoAudio) window.PianoAudio.tone(PT.noteFreq(k.absIndex));
+        });
+      } else {
+        btn.disabled = true;
+      }
       whiteRow.appendChild(btn);
     });
     kb.appendChild(whiteRow);
@@ -614,7 +897,6 @@ document.addEventListener('DOMContentLoaded', function () {
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'pc-key pc-black';
-      btn.disabled = true;
       var tone = toneMap[k.absIndex];
       if (tone) {
         btn.classList.add('is-active');
@@ -625,6 +907,14 @@ document.addEventListener('DOMContentLoaded', function () {
       btn.setAttribute('aria-label', PT.noteLabel(k.absIndex) + (tone ? ', scale degree ' + tone.label : ''));
       btn.style.left = ((k.leftWhiteIdx + 1) * whiteWidth - blackWidth / 2) + '%';
       btn.style.width = blackWidth + '%';
+      if (playable && tone) {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          if (window.PianoAudio) window.PianoAudio.tone(PT.noteFreq(k.absIndex));
+        });
+      } else {
+        btn.disabled = true;
+      }
       if (tone) {
         var db = document.createElement('span');
         db.className = 'pc-degree-num pc-degree-black';
@@ -696,6 +986,33 @@ document.addEventListener('DOMContentLoaded', function () {
 
   buildScalePickers();
   renderScales();
+
+  /* One clean octave run starting on the root, using its actual position on
+     the keyboard rather than an arbitrary register — matches exactly what the
+     scale keyboard above highlights. */
+  function scaleIndices() {
+    var abs = scaleCurrentType.intervals.map(function (iv) { return scaleCurrentRoot + iv; });
+    abs.push(scaleCurrentRoot + 12);
+    return abs;
+  }
+
+  var scalePlayUp = document.getElementById('pcScalePlayUp');
+  var scalePlayDown = document.getElementById('pcScalePlayDown');
+  var scalePlayUpDown = document.getElementById('pcScalePlayUpDown');
+  if (scalePlayUp) scalePlayUp.addEventListener('click', function () {
+    if (!window.PianoAudio) return;
+    window.PianoAudio.broken(scaleIndices().map(function (idx) { return PT.noteFreq(idx); }), { interval: 0.22 });
+  });
+  if (scalePlayDown) scalePlayDown.addEventListener('click', function () {
+    if (!window.PianoAudio) return;
+    window.PianoAudio.broken(scaleIndices().slice().reverse().map(function (idx) { return PT.noteFreq(idx); }), { interval: 0.22 });
+  });
+  if (scalePlayUpDown) scalePlayUpDown.addEventListener('click', function () {
+    if (!window.PianoAudio) return;
+    var abs = scaleIndices();
+    var full = abs.concat(abs.slice(0, -1).reverse());
+    window.PianoAudio.broken(full.map(function (idx) { return PT.noteFreq(idx); }), { interval: 0.22 });
+  });
 
   /* ---------- Practice list: pick specific chords/scales, print a worksheet ---------- */
 
@@ -827,7 +1144,7 @@ document.addEventListener('DOMContentLoaded', function () {
           var active = {};
           abs.forEach(function (idx) { active[idx] = true; });
           var fingerMap = buildFingerMap(sortedAbs);
-          renderKeyboard(boardHost, { active: active, fingerMap: fingerMap, interactive: false });
+          renderKeyboard(boardHost, { active: active, fingerMap: fingerMap, interactive: false, playable: false });
           var notesLine = document.createElement('p');
           notesLine.textContent = 'Notes: ' + sortedAbs.map(function (idx) { return PT.noteLabel(idx); }).join(' – ');
           cell.appendChild(notesLine);
@@ -836,7 +1153,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var st = PT.SCALE_TYPES.filter(function (s) { return s.key === item.scaleKey; })[0];
         if (st) {
           var toneMap = buildScaleToneMap(item.rootPC, st);
-          renderScaleKeyboard(boardHost, { toneMap: toneMap });
+          renderScaleKeyboard(boardHost, { toneMap: toneMap, playable: false });
           var scaleNotesLine = document.createElement('p');
           scaleNotesLine.textContent = 'Notes: ' + st.intervals.map(function (iv) { return PT.PITCHES[PT.mod12(item.rootPC + iv)]; }).join(' – ');
           cell.appendChild(scaleNotesLine);

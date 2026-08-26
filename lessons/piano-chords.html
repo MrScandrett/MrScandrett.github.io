@@ -116,13 +116,19 @@
             <div class="section-content">
               <p class="section-kicker">Place your own notes</p>
               <h2>Click keys. We'll tell you what chord you made.</h2>
-              <p>Click any key to select it — click again to deselect. Unlike a guitar, you're not limited to one note per string, so you can stack notes anywhere across both octaves. The lowest note you select becomes the bass note — if it isn't the chord's root, you've built an <strong>inversion</strong> (a slash chord, like C/E).</p>
+              <p>Click any key to select it — you'll hear its pitch — click again to deselect. Unlike a guitar, you're not limited to one note per string, so you can stack notes anywhere across both octaves. The lowest note you select becomes the bass note — if it isn't the chord's root, you've built an <strong>inversion</strong> (a slash chord, like C/E). Once you've selected some notes, use the playback buttons to hear them struck together as a block chord or broken one at a time.</p>
 
               <div class="pc-builder-wrap">
                 <div class="pc-builder-controls">
                   <button type="button" class="pc-btn" id="pcClearBuilder">Clear keyboard</button>
                   <button type="button" class="pc-btn pc-btn-primary" id="pcChallengeBuilder">Give me a chord to build</button>
                   <p id="pcChallengeReadout"></p>
+                </div>
+                <div class="pc-builder-controls">
+                  <button type="button" class="pc-btn pc-btn-primary" id="pcPlayBlock">▶ Play block chord</button>
+                  <button type="button" class="pc-btn" id="pcPlayBrokenUp">Broken ↑</button>
+                  <button type="button" class="pc-btn" id="pcPlayBrokenDown">Broken ↓</button>
+                  <button type="button" class="pc-btn" id="pcPlayBrokenUpDown">Broken ↑↓</button>
                 </div>
                 <div id="pcBuilderBoard"></div>
                 <p id="pcBuilderNotes"></p>
@@ -137,7 +143,7 @@
             <div class="section-content">
               <p class="section-kicker">Every root, every chord type</p>
               <h2>Browse the full chord library.</h2>
-              <p>Pick a root note, a chord type, then an inversion — which chord tone sits in the bass. Every voicing here is a closed stack: notes rotate up an octave as needed so the bass note you chose stays lowest. A typical right-hand fingering (1 = thumb, 5 = pinky) is shown on each key.</p>
+              <p>Pick a root note, a chord type, then an inversion — which chord tone sits in the bass. Every voicing here is a closed stack: notes rotate up an octave as needed so the bass note you chose stays lowest. Typical fingering is shown for both hands (right hand 1 = thumb, 5 = pinky; left hand mirrored, 5 = pinky on the bottom note, 1 = thumb on top) since method books teach chords for both. Click any key to hear its pitch, or use the playback buttons to hear the voicing struck as a block chord or broken apart.</p>
               <div class="pc-enc-wrap">
                 <p class="pc-kicker-label">Root note</p>
                 <div class="pc-pick-row" id="pcRootPicker"></div>
@@ -150,8 +156,35 @@
                   <div class="pc-enc-meta" id="pcEncMeta"></div>
                 </div>
                 <div class="pc-builder-controls" style="margin-top:.9rem;">
+                  <button type="button" class="pc-btn pc-btn-primary" id="pcEncPlayBlock">▶ Play block chord</button>
+                  <button type="button" class="pc-btn" id="pcEncPlayBrokenUp">Broken ↑</button>
+                  <button type="button" class="pc-btn" id="pcEncPlayBrokenDown">Broken ↓</button>
+                  <button type="button" class="pc-btn" id="pcEncPlayBrokenUpDown">Broken ↑↓</button>
+                </div>
+                <div class="pc-builder-controls">
                   <button type="button" class="pc-btn" id="pcSendToBuilder">Load this chord into the builder ↑</button>
                   <button type="button" class="pc-btn" id="pcAddChordToPractice">+ Add to practice list</button>
+                </div>
+              </div>
+
+              <div class="pc-ladder-wrap" id="pcLadderWrap">
+                <h3>Try it: the diatonic triad ladder</h3>
+                <p>A classic method-book drill. Walk up the seven triads built from the C major scale — <strong>C, Dm, Em, F, G, Am, B°</strong> — and back to C. Play the ladder in root position first and notice how far your hand jumps between chords. Then play the same seven chords in 1st inversion, then 2nd — each ladder barely moves your hand, because only one note changes between neighboring chords. This is exactly how pianists learn to connect chord changes smoothly instead of leaping around the keyboard.</p>
+                <div class="pc-ladder-row">
+                  <div class="pc-ladder-head"><span class="pc-ladder-title">Root position</span><button type="button" class="pc-btn pc-btn-primary pc-ladder-play" data-inversion="0">▶ Play this ladder</button></div>
+                  <div class="pc-ladder-strip" id="pcLadderStrip0"></div>
+                </div>
+                <div class="pc-ladder-row">
+                  <div class="pc-ladder-head"><span class="pc-ladder-title">1st inversion</span><button type="button" class="pc-btn pc-btn-primary pc-ladder-play" data-inversion="1">▶ Play this ladder</button></div>
+                  <div class="pc-ladder-strip" id="pcLadderStrip1"></div>
+                </div>
+                <div class="pc-ladder-row">
+                  <div class="pc-ladder-head"><span class="pc-ladder-title">2nd inversion</span><button type="button" class="pc-btn pc-btn-primary pc-ladder-play" data-inversion="2">▶ Play this ladder</button></div>
+                  <div class="pc-ladder-strip" id="pcLadderStrip2"></div>
+                </div>
+                <div class="pc-builder-controls" style="margin-top:.9rem;">
+                  <button type="button" class="pc-btn pc-btn-primary" id="pcLadderPlayAll">▶ Play all three ladders</button>
+                  <button type="button" class="pc-btn" id="pcLadderAddPractice">+ Add all 21 chords to practice list</button>
                 </div>
               </div>
             </div>
@@ -162,7 +195,7 @@
             <div class="section-content">
               <p class="section-kicker">The palette chords are picked from</p>
               <h2>A scale is a chord's whole family of notes.</h2>
-              <p>Where a chord is 3–4 notes stacked at once, a <strong>scale</strong> is the full set of notes — usually 5 to 7 of them — a melody or solo draws from over a chord progression. <strong>Modes</strong> are the seven scales hiding inside every major scale: play the same seven notes but start (and resolve) on a different one, and the whole thing takes on a new mood, from the bright major sound of <strong>Ionian</strong> down to the unstable <strong>Locrian</strong>. Pentatonic and blues scales strip that down to 5–6 notes with no awkward half-steps, which is why they're the first scales most improvisers learn.</p>
+              <p>Where a chord is 3–4 notes stacked at once, a <strong>scale</strong> is the full set of notes — usually 5 to 7 of them — a melody or solo draws from over a chord progression. <strong>Modes</strong> are the seven scales hiding inside every major scale: play the same seven notes but start (and resolve) on a different one, and the whole thing takes on a new mood, from the bright major sound of <strong>Ionian</strong> down to the unstable <strong>Locrian</strong>. Pentatonic and blues scales strip that down to 5–6 notes with no awkward half-steps, which is why they're the first scales most improvisers learn. Click any key to hear that note, or use the playback buttons to hear the whole scale run ascending, descending, or both.</p>
               <div class="pc-enc-wrap">
                 <p class="pc-kicker-label">Root note</p>
                 <div class="pc-pick-row" id="pcScaleRootPicker"></div>
@@ -173,6 +206,11 @@
                   <div class="pc-enc-meta" id="pcScaleMeta"></div>
                 </div>
                 <div class="pc-builder-controls" style="margin-top:.9rem;">
+                  <button type="button" class="pc-btn pc-btn-primary" id="pcScalePlayUp">▶ Play ascending</button>
+                  <button type="button" class="pc-btn" id="pcScalePlayDown">Play descending</button>
+                  <button type="button" class="pc-btn" id="pcScalePlayUpDown">Play up &amp; down</button>
+                </div>
+                <div class="pc-builder-controls">
                   <button type="button" class="pc-btn" id="pcAddScaleToPractice">+ Add to practice list</button>
                 </div>
               </div>
