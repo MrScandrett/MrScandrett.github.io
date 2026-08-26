@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>From Rocket Clubs to STEAM · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Trace how youth rocketry, the Space Race, STEM education, design, and the arts helped shape the modern STEAM classroom." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@400;600&family=Public+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      --steam-paper: #f3f0e6;
+      --steam-paper-deep: #e4dfd0;
+      --steam-ink: #17212b;
+      --steam-muted: #54616c;
+      --steam-navy: #173f5f;
+      --steam-orange: #bd3d1d;
+      --steam-gold: #e5a82d;
+      --steam-teal: #14807b;
+      --steam-line: rgba(23, 33, 43, 0.18);
+      --steam-panel: rgba(255, 255, 255, 0.74);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--steam-ink);
+      font-family: "Public Sans", Arial, sans-serif;
+      background:
+        linear-gradient(rgba(23, 63, 95, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(23, 63, 95, 0.045) 1px, transparent 1px),
+        radial-gradient(circle at 85% 4%, rgba(229, 168, 45, 0.2), transparent 24rem),
+        var(--steam-paper);
+      background-size: 24px 24px, 24px 24px, auto, auto;
+    }
+
+    .steam-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: rgba(243, 240, 230, 0.92);
+      border-bottom: 1px solid var(--steam-line);
+      backdrop-filter: blur(12px);
+    }
+    .steam-topbar-inner {
+      width: min(1180px, calc(100% - 2rem));
+      min-height: 56px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .steam-topbar a { color: var(--steam-navy); font-size: 0.82rem; font-weight: 800; text-decoration: none; }
+    .steam-topbar-title { font-family: "IBM Plex Mono", monospace; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; }
+
+    .steam-shell { width: min(1180px, calc(100% - 2rem)); margin: 0 auto; padding: 1.5rem 0 3.5rem; }
+    .steam-breadcrumb { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 0.8rem; color: var(--steam-muted); font-size: 0.78rem; }
+    .steam-breadcrumb a { color: var(--steam-navy); font-weight: 700; }
+
+    .steam-hero {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+      min-height: 510px;
+      border: 1px solid rgba(23, 33, 43, 0.28);
+      background: var(--steam-navy);
+      color: #fff;
+      box-shadow: 10px 10px 0 rgba(23, 33, 43, 0.12);
+    }
+    .steam-hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0.16;
+      background: repeating-linear-gradient(0deg, transparent 0 5px, rgba(255,255,255,0.12) 6px);
+      pointer-events: none;
+    }
+    .steam-hero-copy { position: relative; z-index: 1; padding: clamp(1.5rem, 5vw, 4.2rem); align-self: center; }
+    .steam-eyebrow, .steam-kicker {
+      margin: 0 0 0.65rem;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+    .steam-eyebrow { color: #ffd26f; }
+    .steam-hero h1 {
+      max-width: 11ch;
+      margin: 0;
+      font-family: "Barlow Condensed", Impact, sans-serif;
+      font-size: clamp(3.8rem, 9vw, 7.4rem);
+      font-weight: 800;
+      line-height: 0.82;
+      letter-spacing: -0.045em;
+      text-transform: uppercase;
+    }
+    .steam-hero h1 span { display: block; color: #ff6b3d; }
+    .steam-lede { max-width: 62ch; margin: 1.35rem 0 0; color: rgba(255,255,255,0.84); font-size: 1rem; line-height: 1.75; }
+    .steam-hero-art { position: relative; min-height: 440px; margin: 0; border-left: 1px solid rgba(255,255,255,0.2); background: #0c263b; }
+    .steam-hero-art img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.08); opacity: 0.76; }
+    .steam-hero-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, rgba(12,38,59,0.92)); }
+    .steam-photo-label { position: absolute; z-index: 2; left: 1rem; right: 1rem; bottom: 1rem; padding: 0.85rem; border: 1px solid rgba(255,255,255,0.28); background: rgba(12,38,59,0.74); color: rgba(255,255,255,0.82); font-family: "IBM Plex Mono", monospace; font-size: 0.68rem; line-height: 1.55; }
+
+    .steam-nav { display: flex; gap: 0.45rem; overflow-x: auto; padding: 1rem 0.15rem 0.4rem; scrollbar-width: thin; }
+    .steam-nav a { flex: 0 0 auto; padding: 0.58rem 0.76rem; border: 1px solid var(--steam-line); background: rgba(255,255,255,0.58); color: var(--steam-navy); font-size: 0.75rem; font-weight: 800; text-decoration: none; }
+
+    .steam-section { margin-top: 1rem; padding: clamp(1.1rem, 3vw, 2rem); border: 1px solid var(--steam-line); background: var(--steam-panel); }
+    .steam-section h2 { margin: 0 0 0.7rem; font-family: "Barlow Condensed", Impact, sans-serif; font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1; letter-spacing: -0.025em; text-transform: uppercase; }
+    .steam-section h3 { margin: 0 0 0.45rem; }
+    .steam-section p, .steam-section li { color: var(--steam-muted); line-height: 1.72; }
+    .steam-section p { max-width: 78ch; }
+    .steam-kicker { color: var(--steam-orange); }
+    .steam-intro-grid { display: grid; grid-template-columns: 1.35fr 0.65fr; gap: 1rem; align-items: start; }
+    .steam-note { padding: 1rem; border-left: 5px solid var(--steam-gold); background: #fff9e8; }
+    .steam-note strong { display: block; margin-bottom: 0.35rem; color: var(--steam-ink); }
+    .steam-note p { margin: 0; font-size: 0.86rem; }
+
+    .steam-launch-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; margin: 1.15rem 0 0; border: 1px solid var(--steam-line); background: var(--steam-line); }
+    .steam-launch-strip div { padding: 0.8rem; background: rgba(255,255,255,0.82); }
+    .steam-launch-strip b { display: block; color: var(--steam-orange); font-family: "Barlow Condensed", sans-serif; font-size: 1.55rem; }
+    .steam-launch-strip span { font-size: 0.72rem; color: var(--steam-muted); }
+
+    .steam-era-controls { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.45rem; margin: 1.1rem 0; }
+    .steam-era-button { min-height: 72px; padding: 0.65rem; border: 1px solid var(--steam-line); background: rgba(255,255,255,0.7); color: var(--steam-ink); text-align: left; cursor: pointer; }
+    .steam-era-button span { display: block; font-family: "IBM Plex Mono", monospace; font-size: 0.67rem; color: var(--steam-orange); }
+    .steam-era-button strong { display: block; margin-top: 0.22rem; font-size: 0.8rem; }
+    .steam-era-button[aria-selected="true"] { border-color: var(--steam-navy); background: var(--steam-navy); color: white; box-shadow: 4px 4px 0 var(--steam-gold); transform: translate(-2px, -2px); }
+    .steam-era-button[aria-selected="true"] span { color: #ffd26f; }
+    .steam-era-button:focus-visible, .steam-discipline:focus-visible, .steam-check:focus-visible { outline: 3px solid var(--steam-gold); outline-offset: 3px; }
+    .steam-era-panel { display: grid; grid-template-columns: 0.78fr 1.22fr; min-height: 350px; border: 1px solid var(--steam-line); background: #fff; }
+    .steam-era-image { position: relative; min-height: 300px; background: #173f5f; overflow: hidden; }
+    .steam-era-image img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1); }
+    .steam-era-image::after { content: ""; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(214,75,36,0.18), transparent 60%); mix-blend-mode: color; }
+    .steam-era-copy { padding: clamp(1.15rem, 3vw, 2rem); align-self: center; }
+    .steam-era-year { font-family: "IBM Plex Mono", monospace; color: var(--steam-orange); font-size: 0.78rem; font-weight: 700; }
+    .steam-era-copy h3 { margin: 0.35rem 0 0.65rem; font-family: "Barlow Condensed", sans-serif; font-size: 2rem; text-transform: uppercase; }
+    .steam-era-copy p { margin: 0; }
+    .steam-era-lesson { margin-top: 1rem !important; padding-top: 0.8rem; border-top: 1px dashed var(--steam-line); color: var(--steam-navy) !important; font-weight: 700; }
+
+    .steam-five-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.55rem; margin-top: 1rem; }
+    .steam-discipline { min-height: 112px; padding: 0.8rem; border: 2px solid var(--steam-line); background: #fff; color: var(--steam-ink); text-align: left; cursor: pointer; transition: transform 140ms ease, opacity 140ms ease; }
+    .steam-discipline:hover { transform: translateY(-3px); }
+    .steam-discipline .letter { display: block; font-family: "Barlow Condensed", sans-serif; font-size: 2.6rem; line-height: 1; color: var(--steam-orange); }
+    .steam-discipline strong { display: block; margin-top: 0.3rem; }
+    .steam-discipline small { display: block; margin-top: 0.25rem; color: var(--steam-muted); line-height: 1.35; }
+    .steam-discipline[aria-pressed="false"] { opacity: 0.38; border-style: dashed; filter: grayscale(1); }
+    .steam-flight-readout { display: grid; grid-template-columns: auto 1fr; gap: 1rem; align-items: center; margin-top: 0.75rem; padding: 1rem; background: #102c43; color: white; }
+    .steam-status-light { width: 66px; height: 66px; border-radius: 50%; background: #43d17a; box-shadow: 0 0 24px rgba(67,209,122,0.6), inset 0 -8px 14px rgba(0,0,0,0.18); }
+    .steam-flight-readout[data-state="warning"] .steam-status-light { background: #ffbd3f; box-shadow: 0 0 24px rgba(255,189,63,0.5); }
+    .steam-flight-readout[data-state="critical"] .steam-status-light { background: #ff5c43; box-shadow: 0 0 24px rgba(255,92,67,0.52); }
+    .steam-flight-readout strong { display: block; font-family: "IBM Plex Mono", monospace; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; }
+    .steam-flight-readout p { margin: 0.3rem 0 0; color: rgba(255,255,255,0.78); font-size: 0.86rem; }
+
+    .steam-debate-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+    .steam-debate-card { padding: 1rem; border-top: 5px solid var(--steam-navy); background: #fff; }
+    .steam-debate-card:last-child { border-color: var(--steam-orange); }
+    .steam-debate-card p { margin-bottom: 0; }
+    .steam-bridge { display: flex; justify-content: space-between; gap: 1rem; align-items: center; margin-top: 1rem; padding: 1rem; border: 1px dashed var(--steam-navy); background: rgba(23,63,95,0.07); }
+    .steam-bridge a { flex: 0 0 auto; padding: 0.7rem 0.85rem; background: var(--steam-navy); color: white; font-weight: 800; text-decoration: none; }
+
+    .steam-quiz { display: grid; gap: 0.75rem; }
+    .steam-question { padding: 1rem; border: 1px solid var(--steam-line); background: #fff; }
+    .steam-question p { margin-top: 0; color: var(--steam-ink); font-weight: 700; }
+    .steam-answer-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    .steam-question select { min-height: 42px; max-width: 100%; padding: 0.45rem; border: 1px solid var(--steam-line); background: white; color: var(--steam-ink); font: inherit; }
+    .steam-check { min-height: 42px; padding: 0.45rem 0.8rem; border: 0; background: var(--steam-orange); color: white; font-weight: 800; cursor: pointer; }
+    .steam-feedback { min-height: 1.25rem; font-size: 0.82rem; font-weight: 700; }
+    .steam-feedback.good { color: #087244; }
+    .steam-feedback.try { color: #a33119; }
+
+    .steam-sources { columns: 2; column-gap: 2rem; padding-left: 1.2rem; }
+    .steam-sources li { break-inside: avoid; margin-bottom: 0.6rem; font-size: 0.82rem; }
+    .steam-sources a { color: var(--steam-navy); font-weight: 700; }
+    .steam-footer { padding: 2rem 0 0; text-align: center; color: var(--steam-muted); font-size: 0.78rem; }
+    .steam-footer a { color: var(--steam-navy); font-weight: 700; }
+
+    @media (max-width: 820px) {
+      .steam-hero, .steam-era-panel { grid-template-columns: 1fr; }
+      .steam-hero-art { min-height: 310px; border-left: 0; border-top: 1px solid rgba(255,255,255,0.2); }
+      .steam-intro-grid { grid-template-columns: 1fr; }
+      .steam-era-controls { grid-template-columns: repeat(2, 1fr); }
+      .steam-five-grid { grid-template-columns: repeat(2, 1fr); }
+      .steam-launch-strip { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 560px) {
+      .steam-shell, .steam-topbar-inner { width: min(100% - 1rem, 1180px); }
+      .steam-topbar-title { display: none; }
+      .steam-hero-copy { padding: 1.35rem; }
+      .steam-hero h1 { font-size: clamp(3.6rem, 20vw, 5.4rem); }
+      .steam-era-controls, .steam-five-grid, .steam-debate-grid, .steam-launch-strip { grid-template-columns: 1fr; }
+      .steam-bridge { align-items: flex-start; flex-direction: column; }
+      .steam-sources { columns: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .steam-discipline { transition: none; }
+    }
+    @media print {
+      .steam-topbar, .steam-nav, .steam-era-controls, .steam-check { display: none !important; }
+      body { background: white; }
+      .steam-shell { width: 100%; }
+      .steam-hero, .steam-section { box-shadow: none; break-inside: avoid; }
+      .steam-era-panel { display: grid !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="steam-topbar">
+    <div class="steam-topbar-inner">
+      <a href="../steam-lessons.html">← All lessons</a>
+      <span class="steam-topbar-title">Learning history / Flight log 1957–today</span>
+      <a href="../index.html">ClassroomOS</a>
+    </div>
+  </header>
+
+  <main id="main-content" class="steam-shell">
+    <nav class="steam-breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a><span>/</span><a href="../steam-lessons.html">Lessons</a><span>/</span><span aria-current="page">From Rocket Clubs to STEAM</span>
+    </nav>
+
+    <section class="steam-hero" aria-labelledby="steam-title">
+      <div class="steam-hero-copy">
+        <p class="steam-eyebrow">The evolution of STEAM as a class</p>
+        <h1 id="steam-title">From Rocket Clubs <span>to STEAM</span></h1>
+        <p class="steam-lede">Modern STEAM did not appear all at once. It grew from science clubs, workshops, national competition, school reform, design practice, and a later argument that the arts belong inside technical problem-solving—not at the edge of it.</p>
+      </div>
+      <figure class="steam-hero-art">
+        <img src="../assets/thumbs/sputnik17.jpg" width="900" height="600" alt="Sputnik 1, the Soviet satellite whose 1957 launch intensified American interest in science and engineering education" />
+        <figcaption class="steam-photo-label">SIGNAL ACQUIRED · 4 OCT 1957<br />Sputnik made education part of the Space Race. But young people were already building, testing, measuring, publishing, and organizing around rockets.</figcaption>
+      </figure>
+    </section>
+
+    <nav class="steam-nav" aria-label="Lesson sections">
+      <a href="#origin">The starting point</a>
+      <a href="#timeline">Flight log</a>
+      <a href="#flight-computer">Build a STEAM mission</a>
+      <a href="#debate">Why add the arts?</a>
+      <a href="#check">Check your thinking</a>
+      <a href="#sources">Sources</a>
+    </nav>
+
+    <section class="steam-section" id="origin">
+      <div class="steam-intro-grid">
+        <div>
+          <p class="steam-kicker">Launch point · Youth rocketry</p>
+          <h2>Before STEAM had a name, students were already doing it</h2>
+          <p>In the 1950s, American teenagers fascinated by rockets often formed local clubs. Some experimented dangerously with homemade propellants. Physicist and writer <strong>G. Harry Stine</strong>, after receiving questions from young enthusiasts while working at White Sands, argued for a safer path: standardized model-rocket motors, a safety code, careful measurement, and organized clubs. He and Orville Carlisle helped establish modern model rocketry, and Stine founded the <strong>National Association of Rocketry (NAR)</strong> in 1957.</p>
+          <p>This is the strongest documented match for the “rocketry clubs of American youth” starting point. The exact phrase is not the name of one verified national organization; it describes a wider youth-club movement that included school science clubs and early NAR sections.</p>
+        </div>
+        <aside class="steam-note">
+          <strong>History is not a straight family tree.</strong>
+          <p>Youth rocketry did not invent the acronym STEAM. It is an early, vivid example of the learning pattern STEAM later named: ask, design, build, test, measure, communicate, and improve.</p>
+        </aside>
+      </div>
+      <div class="steam-launch-strip" aria-label="Five parts of an early model rocket project">
+        <div><b>ASK</b><span>What makes flight stable?</span></div>
+        <div><b>DRAW</b><span>Plan the body and fins.</span></div>
+        <div><b>BUILD</b><span>Turn a plan into an object.</span></div>
+        <div><b>LAUNCH</b><span>Test under safety rules.</span></div>
+        <div><b>MEASURE</b><span>Use time, angle, and altitude data.</span></div>
+      </div>
+    </section>
+
+    <section class="steam-section" id="timeline">
+      <p class="steam-kicker">Interactive flight log</p>
+      <h2>How a club activity became a classroom philosophy</h2>
+      <p>Choose an era. Notice that the story changes scale: from young builders, to national policy, to an acronym, and finally to a debate over what complete problem-solving requires.</p>
+      <div class="steam-era-controls" role="tablist" aria-label="STEAM history eras">
+        <button class="steam-era-button" role="tab" aria-selected="true" aria-controls="steam-era-panel" data-era="splitting"><span>Long ago–1900s</span><strong>Subjects split apart</strong></button>
+        <button class="steam-era-button" role="tab" aria-selected="false" aria-controls="steam-era-panel" data-era="clubs"><span>1954–1959</span><strong>Safer rocket clubs</strong></button>
+        <button class="steam-era-button" role="tab" aria-selected="false" aria-controls="steam-era-panel" data-era="space"><span>1957–1960s</span><strong>Space Race schools</strong></button>
+        <button class="steam-era-button" role="tab" aria-selected="false" aria-controls="steam-era-panel" data-era="projects"><span>1970s–1990s</span><strong>Projects &amp; technology</strong></button>
+        <button class="steam-era-button" role="tab" aria-selected="false" aria-controls="steam-era-panel" data-era="stem"><span>1990s–2001</span><strong>STEM gets a name</strong></button>
+        <button class="steam-era-button" role="tab" aria-selected="false" aria-controls="steam-era-panel" data-era="steam"><span>2000s–today</span><strong>Arts enter the frame</strong></button>
+      </div>
+      <div class="steam-era-panel" id="steam-era-panel" role="tabpanel" tabindex="0">
+        <div class="steam-era-image"><img id="steam-era-image" src="../assets/images/lessons/quadrivium/hortus-deliciarum-seven-liberal-arts.webp" alt="Medieval diagram of the seven liberal arts, showing math, music, and astronomy grouped as one subject" /></div>
+        <div class="steam-era-copy">
+          <span class="steam-era-year" id="steam-era-year">Long ago–1900s · ONE SUBJECT BECOMES MANY</span>
+          <h3 id="steam-era-title">Math, music, and stars used to be one class</h3>
+          <p id="steam-era-text">For centuries, thinkers studied math, music, and the stars together, the same way as the Quadrivium (see the last lesson). But as science grew bigger, schools split it into separate subjects — physics class, math class, art class — each with its own experts who rarely talked to each other.</p>
+          <p class="steam-era-lesson" id="steam-era-lesson">Classroom shift: one big connected idea breaks into many small, separate ones.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="steam-section" id="flight-computer">
+      <p class="steam-kicker">Mission simulator</p>
+      <h2>Can a rocket mission fly with one discipline missing?</h2>
+      <p>All five systems begin online. Switch disciplines off and read the mission report. This is the central claim of STEAM: real work crosses subject boundaries.</p>
+      <div class="steam-five-grid" aria-label="STEAM mission disciplines">
+        <button class="steam-discipline" aria-pressed="true" data-letter="S"><span class="letter">S</span><strong>Science</strong><small>forces, materials, atmosphere</small></button>
+        <button class="steam-discipline" aria-pressed="true" data-letter="T"><span class="letter">T</span><strong>Technology</strong><small>sensors, tools, computing</small></button>
+        <button class="steam-discipline" aria-pressed="true" data-letter="E"><span class="letter">E</span><strong>Engineering</strong><small>constraints, prototypes, testing</small></button>
+        <button class="steam-discipline" aria-pressed="true" data-letter="A"><span class="letter">A</span><strong>Arts</strong><small>design, story, human meaning</small></button>
+        <button class="steam-discipline" aria-pressed="true" data-letter="M"><span class="letter">M</span><strong>Mathematics</strong><small>scale, trajectory, data</small></button>
+      </div>
+      <div class="steam-flight-readout" id="steam-flight-readout" data-state="ready" aria-live="polite">
+        <div class="steam-status-light" aria-hidden="true"></div>
+        <div><strong id="steam-flight-status">Mission ready · All systems connected</strong><p id="steam-flight-message">The team can explain the physics, use tools, engineer a safe solution, communicate its purpose, and measure the result.</p></div>
+      </div>
+    </section>
+
+    <section class="steam-section" id="debate">
+      <p class="steam-kicker">The A changes the question</p>
+      <h2>Why did educators push STEM toward STEAM?</h2>
+      <div class="steam-debate-grid">
+        <article class="steam-debate-card">
+          <h3>The STEM case</h3>
+          <p>Science, technology, engineering, and mathematics became a shared policy category because nations needed scientific literacy, technical workers, and integrated problem-solvers. The grouping helped focus money, curriculum, and public attention.</p>
+        </article>
+        <article class="steam-debate-card">
+          <h3>The STEAM case</h3>
+          <p>Arts advocates and educators argued that invention also requires observation, visual thinking, iteration, storytelling, ethics, and designing for people. The “A” should mean authentic artistic and design practice—not merely coloring a science poster.</p>
+        </article>
+      </div>
+      <p>There is no single universally agreed birthday for STEAM. Integrative models appeared through several educators and organizations in the 2000s. By the early 2010s, Rhode Island School of Design's <strong>STEM to STEAM</strong> initiative helped move the idea into national policy discussion. The important shift was conceptual: technical knowledge answers <em>Can we make it?</em>; the arts help ask <em>What should it feel like, communicate, and mean to the people who use it?</em></p>
+      <div class="steam-bridge">
+        <div><strong>The same idea, echoing back</strong><p>Long before STEAM, the Quadrivium already treated math, music, and the sky as one connected subject. This isn't a new idea — it's an old one that keeps resurfacing.</p></div>
+        <a href="quadrivium.html">Return to the Quadrivium →</a>
+      </div>
+    </section>
+
+    <section class="steam-section" id="check">
+      <p class="steam-kicker">Knowledge check</p>
+      <h2>Read the history like an engineer</h2>
+      <div class="steam-quiz">
+        <div class="steam-question" data-answer="b">
+          <p>1. What did early organized model rocketry change most directly?</p>
+          <div class="steam-answer-row"><select aria-label="Answer question 1"><option value="">Choose…</option><option value="a">It invented spaceflight.</option><option value="b">It replaced homemade propellant experiments with safer, repeatable model systems.</option><option value="c">It created the acronym STEAM.</option></select><button class="steam-check">Check</button><span class="steam-feedback" aria-live="polite"></span></div>
+        </div>
+        <div class="steam-question" data-answer="c">
+          <p>2. Why was Sputnik important to American education?</p>
+          <div class="steam-answer-row"><select aria-label="Answer question 2"><option value="">Choose…</option><option value="a">It ended youth science clubs.</option><option value="b">It proved art did not belong in science.</option><option value="c">It intensified concern about science, math, technology, and national readiness.</option></select><button class="steam-check">Check</button><span class="steam-feedback" aria-live="polite"></span></div>
+        </div>
+        <div class="steam-question" data-answer="a">
+          <p>3. Which organization says NSF adopted “STEM” in 2001 after using “SMET”?</p>
+          <div class="steam-answer-row"><select aria-label="Answer question 3"><option value="">Choose…</option><option value="a">The National Science Foundation</option><option value="b">The medieval university system</option><option value="c">The National Association of Rocketry</option></select><button class="steam-check">Check</button><span class="steam-feedback" aria-live="polite"></span></div>
+        </div>
+        <div class="steam-question" data-answer="b">
+          <p>4. In a strong STEAM class, what does the “A” contribute?</p>
+          <div class="steam-answer-row"><select aria-label="Answer question 4"><option value="">Choose…</option><option value="a">Decoration after all technical work is finished</option><option value="b">Artistic process, communication, design, interpretation, and human purpose</option><option value="c">A replacement for measurement and testing</option></select><button class="steam-check">Check</button><span class="steam-feedback" aria-live="polite"></span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="steam-section" id="sources">
+      <p class="steam-kicker">Evidence desk</p>
+      <h2>Sources and further flight</h2>
+      <ul class="steam-sources">
+        <li><a href="https://archives.museumofflight.org/repositories/2/resources/268" target="_blank" rel="noopener noreferrer">Museum of Flight: G. Harry Stine collection</a> — archival biography and the 1957 beginnings of Model Missiles.</li>
+        <li><a href="https://airandspace.si.edu/collection-archive/g-harry-stine-collection/sova-nasm-xxxx-0573" target="_blank" rel="noopener noreferrer">Smithsonian National Air and Space Museum: Stine collection</a> — NAR, safety, publishing, and model-rocketry records.</li>
+        <li><a href="https://www.nar.org/content.aspx?club_id=114127&amp;module_id=667398&amp;page_id=22" target="_blank" rel="noopener noreferrer">National Association of Rocketry: About</a> — founding date, safety codes, clubs, and education mission.</li>
+        <li><a href="https://www.nasa.gov/history/sputnik/sputorig.html" target="_blank" rel="noopener noreferrer">NASA History: Sputnik and the Origins of the Space Age</a> — the 1957 launch and its American impact.</li>
+        <li><a href="https://www.nsf.gov/about/history/narrative" target="_blank" rel="noopener noreferrer">National Science Foundation: From Sputnik through the Golden Age</a> — teacher institutes, new curricula, and federal science education.</li>
+        <li><a href="https://www.nsf.gov/about/history" target="_blank" rel="noopener noreferrer">National Science Foundation history timeline</a> — NSF's account of adopting “STEM” in 2001 in place of “SMET.”</li>
+        <li><a href="https://www.arts.gov/news/press-releases/2014/reed-nea-chairman-jane-chu-leading-arts-advocates-tour-art-works-ri" target="_blank" rel="noopener noreferrer">National Endowment for the Arts: RISD's STEM to STEAM initiative</a> — adding art and design to the national STEM agenda.</li>
+        <li><a href="https://airandspace.si.edu/learn/programs/soar-together/rockets-2" target="_blank" rel="noopener noreferrer">Smithsonian: All About Rockets</a> — present-day school clubs and student rocketry challenges.</li>
+      </ul>
+    </section>
+
+    <footer class="steam-footer">Mr. Scandrett's ClassroomOS · <a href="../steam-lessons.html">Browse lessons</a> · <a href="quadrivium.html">The Quadrivium</a></footer>
+  </main>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script src="../assets/js/lesson-content.js"></script>
+  <script src="../assets/js/lesson-print-button.js"></script>
+  <script>
+    (function () {
+      var eras = {
+        splitting: {
+          year: "Long ago–1900s · ONE SUBJECT BECOMES MANY",
+          title: "Math, music, and stars used to be one class",
+          text: "For centuries, thinkers studied math, music, and the stars together, the same way as the Quadrivium (see the last lesson). But as science grew bigger, schools split it into separate subjects — physics class, math class, art class — each with its own experts who rarely talked to each other.",
+          lesson: "Classroom shift: one big connected idea breaks into many small, separate ones.",
+          image: "../assets/images/lessons/quadrivium/hortus-deliciarum-seven-liberal-arts.webp",
+          alt: "Medieval diagram of the seven liberal arts, showing math, music, and astronomy grouped as one subject"
+        },
+        clubs: {
+          year: "1954–1959 · CLUBS BECOME LABORATORIES",
+          title: "Safe motors turn danger into repeatable learning",
+          text: "Orville Carlisle developed small reusable model designs and replaceable manufactured motors. G. Harry Stine connected the hardware to flight safety, publishing, clubs, and measurement. The NAR's safety-centered model helped students learn rocketry without mixing explosive propellants themselves.",
+          lesson: "Classroom shift: “Watch a demonstration” becomes “build a testable model and collect evidence.”",
+          image: "../assets/thumbs/sputnik17.jpg",
+          alt: "Sputnik satellite"
+        },
+        space: {
+          year: "1957–1960s · EDUCATION BECOMES NATIONAL STRATEGY",
+          title: "Sputnik moves science learning to the center",
+          text: "After the Soviet Union launched Sputnik on October 4, 1957, Americans questioned the strength of their schools and technical workforce. Federal support expanded for science and mathematics curricula, laboratories, teacher institutes, and student preparation. Hands-on aerospace learning now sat inside a much larger national project.",
+          lesson: "Classroom shift: science and mathematics become tied to public investment, careers, and national competition.",
+          image: "../assets/thumbs/JFKmoonmission.jpg",
+          alt: "President John F. Kennedy speaking about the Moon mission"
+        },
+        projects: {
+          year: "1970s–1990s · MAKING ENTERS MORE CLASSROOMS",
+          title: "Technology education emphasizes systems and design",
+          text: "Industrial arts, vocational programs, science fairs, computers, robotics, and project-based learning gave more students practice turning ideas into working systems. These traditions were not one unified movement, but together they made building, troubleshooting, teamwork, and iteration familiar classroom methods.",
+          lesson: "Classroom shift: a finished object matters, but the documented design process matters too.",
+          image: "../assets/thumbs/mercurygeminiapollo.jpg",
+          alt: "Mercury, Gemini, and Apollo spacecraft showing an engineering progression"
+        },
+        stem: {
+          year: "1990s–2001 · FOUR FIELDS GET ONE LABEL",
+          title: "SMET becomes the more memorable STEM",
+          text: "Policy makers increasingly grouped science, technology, engineering, and mathematics when discussing education and workforce needs. The National Science Foundation records that in 2001 it adopted the acronym STEM, replacing the awkward earlier ordering SMET. The label was new; the connected work was not.",
+          lesson: "Classroom shift: four subjects become a shared national education category, even when schools still teach them separately.",
+          image: "../assets/thumbs/apollo8.jpg",
+          alt: "Apollo 8 spacecraft above the Moon"
+        },
+        steam: {
+          year: "2000s–TODAY · THE A OPENS THE SYSTEM",
+          title: "Art and design make technical work human",
+          text: "Educators promoted several STEAM frameworks, arguing that artistic practice and design belong inside technical inquiry. Rhode Island School of Design's STEM to STEAM initiative helped bring the idea into national policy discussion in the early 2010s. STEAM now has many local versions rather than one universal formula.",
+          lesson: "Classroom shift: students ask not only whether a solution works, but what it communicates, whom it serves, and how people experience it.",
+          image: "../assets/images/lessons/the-ages/apollo11-tv.webp",
+          alt: "People experiencing the Apollo 11 Moon landing through television media"
+        }
+      };
+
+      var eraButtons = Array.prototype.slice.call(document.querySelectorAll(".steam-era-button"));
+      var eraYear = document.getElementById("steam-era-year");
+      var eraTitle = document.getElementById("steam-era-title");
+      var eraText = document.getElementById("steam-era-text");
+      var eraLesson = document.getElementById("steam-era-lesson");
+      var eraImage = document.getElementById("steam-era-image");
+
+      eraButtons.forEach(function (button, index) {
+        button.addEventListener("click", function () {
+          var era = eras[button.dataset.era];
+          eraButtons.forEach(function (other) { other.setAttribute("aria-selected", String(other === button)); });
+          eraYear.textContent = era.year;
+          eraTitle.textContent = era.title;
+          eraText.textContent = era.text;
+          eraLesson.textContent = era.lesson;
+          eraImage.src = era.image;
+          eraImage.alt = era.alt;
+        });
+        button.addEventListener("keydown", function (event) {
+          if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+          event.preventDefault();
+          var direction = event.key === "ArrowRight" ? 1 : -1;
+          var nextButton = eraButtons[(index + direction + eraButtons.length) % eraButtons.length];
+          nextButton.focus();
+          nextButton.click();
+        });
+      });
+
+      var consequences = {
+        S: "Without science, the team cannot explain thrust, drag, stability, or material behavior.",
+        T: "Without technology, the team loses sensors, fabrication tools, simulation, and reliable data capture.",
+        E: "Without engineering, observations never become a safe system that meets constraints.",
+        A: "Without arts, the mission loses visual clarity, story, usability, ethical framing, and a connection to its audience.",
+        M: "Without mathematics, the team cannot calculate scale, mass, trajectory, uncertainty, or performance."
+      };
+      var disciplineButtons = Array.prototype.slice.call(document.querySelectorAll(".steam-discipline"));
+      var readout = document.getElementById("steam-flight-readout");
+      var flightStatus = document.getElementById("steam-flight-status");
+      var flightMessage = document.getElementById("steam-flight-message");
+
+      function updateFlight() {
+        var missing = disciplineButtons.filter(function (button) { return button.getAttribute("aria-pressed") === "false"; });
+        if (!missing.length) {
+          readout.dataset.state = "ready";
+          flightStatus.textContent = "Mission ready · All systems connected";
+          flightMessage.textContent = "The team can explain the physics, use tools, engineer a safe solution, communicate its purpose, and measure the result.";
+          return;
+        }
+        readout.dataset.state = missing.length > 1 ? "critical" : "warning";
+        flightStatus.textContent = missing.length === 1 ? "Mission compromised · One system offline" : "Mission critical · " + missing.length + " systems offline";
+        flightMessage.textContent = missing.map(function (button) { return consequences[button.dataset.letter]; }).join(" ");
+      }
+      disciplineButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          button.setAttribute("aria-pressed", String(button.getAttribute("aria-pressed") !== "true"));
+          updateFlight();
+        });
+      });
+
+      document.querySelectorAll(".steam-question").forEach(function (question) {
+        var select = question.querySelector("select");
+        var feedback = question.querySelector(".steam-feedback");
+        question.querySelector(".steam-check").addEventListener("click", function () {
+          if (!select.value) {
+            feedback.className = "steam-feedback try";
+            feedback.textContent = "Choose an answer first.";
+          } else if (select.value === question.dataset.answer) {
+            feedback.className = "steam-feedback good";
+            feedback.textContent = "Correct — evidence confirmed.";
+          } else {
+            feedback.className = "steam-feedback try";
+            feedback.textContent = "Not yet. Recheck the flight log above.";
+          }
+        });
+      });
+    }());
+  </script>
+</body>
+</html>

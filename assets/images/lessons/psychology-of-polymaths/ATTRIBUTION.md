@@ -18,7 +18,7 @@ All six prompts specified a wide, age-neutral, museum-quality educational illust
 with tactile paper and ink texture, symbolic rather than clip-art imagery, and no
 watermark or border.
 
-These eight portraits were resized and cropped to a 4:5 thumbnail for the "Polymaths
+These nine portraits were resized and cropped to a 4:5 thumbnail for the "Polymaths
 Across Time" gallery in `lessons/psychology-of-polymaths.html`. Source images and
 their credits are listed below.
 
@@ -70,6 +70,13 @@ their credits are listed below.
 - **Source:** [Hedy Lamarr Publicity Photo for The Heavenly Body 1944.jpg](https://commons.wikimedia.org/wiki/File:Hedy_Lamarr_Publicity_Photo_for_The_Heavenly_Body_1944.jpg)
 - **Credit:** Unknown author / studio publicity photo.
 - **Rights:** Public domain — U.S. work published 1931–1977 without a copyright notice.
+
+## `gustav-holst.jpg`
+
+- **Subject:** Portrait photograph of composer Gustav Holst in 1901.
+- **Source:** [HOLST 1901 portrait.jpg](https://commons.wikimedia.org/wiki/File:HOLST_1901_portrait.jpg)
+- **Credit:** Unknown photographer / The Holst Society.
+- **Rights:** Public domain — the image is identified as free of known copyright restrictions.
 
 ## `brian-may.jpg`
 

@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dadaism · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Explore Dadaism, the WWI-era art movement that broke every rule of composition on purpose — readymades, sound poetry, photomontage, and chance operations — with a hands-on cut-up poem generator." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../assets/css/lessons/figure-lesson.css" />
+  <style>
+    :root { --fl-accent: #b91c1c; --fl-accent-2: #0f172a; --fl-ink: #1c1917; }
+
+    .dd-hero-figure { margin: 0.9rem auto 0.2rem; max-width: 300px; text-align: center; }
+    .dd-hero-figure img { display: block; width: 100%; height: auto; border-radius: 14px; border: 1px solid var(--line,#d2d2d7); box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08)); }
+    .dd-hero-figure figcaption { margin-top: 0.55rem; font-size: 0.78rem; color: var(--text-muted,#64748b); line-height: 1.55; }
+    .dd-hero-figure .dd-era { display: block; font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fl-accent,#b91c1c); margin-bottom: 0.25rem; }
+    .dd-hero-figure a { color: var(--fl-accent,#b91c1c); font-weight: 700; text-underline-offset: 2px; }
+
+    .dd-grid-4 { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.75rem; }
+    .dd-art-card { padding: 0; overflow: hidden; display: flex; flex-direction: column; background: var(--white,#fff); }
+    [data-lighting="night"] .dd-art-card,
+    [data-theme="vaporwave"] .dd-art-card,
+    [data-theme="bark"] .dd-art-card { background: var(--white,#2c2c2e); }
+    .dd-art-photo { margin: 0; background: #ece6da; }
+    .dd-art-photo img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; background: #ece6da; }
+    .dd-art-photo figcaption { padding: 0.55rem 0.75rem 0.65rem; background: var(--white,#fff); border-top: 1px solid var(--line,#d2d2d7); border-bottom: 1px solid var(--line,#d2d2d7); }
+    [data-lighting="night"] .dd-art-photo figcaption,
+    [data-theme="vaporwave"] .dd-art-photo figcaption,
+    [data-theme="bark"] .dd-art-photo figcaption { background: var(--white,#2c2c2e); }
+    .dd-art-photo .dd-era { display: block; font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fl-accent,#b91c1c); margin-bottom: 0.2rem; }
+    .dd-art-photo .dd-caption-text { display: block; color: var(--text-muted,#64748b); font-size: 0.74rem; line-height: 1.5; }
+    .dd-art-photo a { color: var(--fl-accent,#b91c1c); font-weight: 700; text-underline-offset: 2px; }
+    .dd-art-card-body { padding: 0.8rem 0.85rem 0.9rem; flex: 1; }
+    @media (max-width: 560px) { .dd-grid-4 { grid-template-columns: 1fr; } }
+
+    /* Cut-up poem generator */
+    .dd-cutup-box { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; padding: 1rem 1.1rem; background: color-mix(in srgb, var(--fl-accent,#b91c1c) 5%, transparent); margin: 0.8rem 0; }
+    .dd-cutup-controls { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+    .dd-cutup-btn { background: var(--fl-accent,#b91c1c); color: #fff; border: none; border-radius: 8px; padding: 0.55rem 1rem; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+    .dd-cutup-btn:hover { filter: brightness(0.92); }
+    .dd-cutup-count { font-size: 0.8rem; color: var(--text-muted,#64748b); }
+    .dd-cutup-poem { display: flex; flex-wrap: wrap; gap: 0.5rem; min-height: 3.2rem; align-items: center; padding: 0.9rem; background: var(--white,#fff); border-radius: 10px; border: 1px dashed var(--line,#d2d2d7); }
+    [data-lighting="night"] .dd-cutup-poem,
+    [data-theme="vaporwave"] .dd-cutup-poem,
+    [data-theme="bark"] .dd-cutup-poem { background: var(--white,#2c2c2e); }
+    .dd-scrap { display: inline-block; background: #f5efd9; color: #1c1917; font-family: "Courier New", Courier, monospace; font-weight: 700; font-size: 0.9rem; padding: 0.3rem 0.55rem; border: 1px solid rgba(0,0,0,0.25); box-shadow: 1px 2px 3px rgba(0,0,0,0.18); cursor: pointer; transition: transform 0.1s ease; }
+    .dd-scrap:hover { transform: scale(1.06); }
+    .dd-scrap:nth-child(3n+1) { transform: rotate(-3deg); }
+    .dd-scrap:nth-child(3n+2) { transform: rotate(2deg); }
+    .dd-scrap:nth-child(3n)   { transform: rotate(-1deg); }
+    .dd-scrap:hover:nth-child(3n+1) { transform: rotate(-3deg) scale(1.08); }
+    .dd-scrap:hover:nth-child(3n+2) { transform: rotate(2deg) scale(1.08); }
+    .dd-scrap:hover:nth-child(3n)   { transform: rotate(-1deg) scale(1.08); }
+    .dd-cutup-hint { font-size: 0.76rem; color: var(--text-muted,#64748b); margin-top: 0.6rem; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport">
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../paths.html">Paths</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Apps</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="fl-page">
+
+        <nav class="ll-breadcrumb" aria-label="Breadcrumb">
+          <a href="../index.html">Home</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+          <a href="../steam-lessons.html">Lessons</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+          <span class="ll-crumb-current" aria-current="page">Dadaism</span>
+        </nav>
+
+        <!-- Hero -->
+        <section class="hero fl-hero">
+          <p class="eyebrow">Visual Art · Composition &amp; Layout · History of Art</p>
+          <h1>Dadaism</h1>
+          <div class="fl-hero-meta">
+            <span>Anti-Art</span><span class="dot"></span>
+            <span>Readymades</span><span class="dot"></span>
+            <span>Photomontage</span><span class="dot"></span>
+            <span>Sound Poetry</span><span class="dot"></span>
+            <span>Chance Operations</span>
+          </div>
+          <p class="fl-lede">Dada was an art movement born in 1916 that broke every rule of "good" art on purpose — no perspective, no realism, no polish, sometimes not even any sense at all. A urinal could be a sculpture. Words cut from a newspaper and shuffled at random could be a poem. To the artists who started it, that wasn't laziness — it was a protest, and it permanently changed what artists were allowed to call "art."</p>
+        </section>
+
+        <nav class="ll-lesson-steps" aria-label="Lesson sections">
+          <a href="#dd-sec-origin">Where Dada Began</a>
+          <a href="#dd-sec-gallery">Meet the Dadaists</a>
+          <a href="#dd-sec-rules">Breaking Every Rule</a>
+          <a href="#dd-sec-cutup">Make a Dada Poem</a>
+          <a href="#dd-sec-legacy">Legacy Today</a>
+          <a href="#dd-sec-practice">Practice</a>
+        </nav>
+
+        <!-- Where Dada Began -->
+        <section class="fl-card" id="dd-sec-origin" style="--card-accent:#b91c1c;">
+          <h2>Where Did Dada Begin?</h2>
+          <p>By 1916, World War I had been grinding on for two years, killing soldiers by the millions across Europe. To a small group of artists and poets who had fled the fighting for neutral Switzerland, something had clearly gone very wrong with "civilized" society — the same culture that produced fine art, tidy logic, and polite manners had also produced machine guns, poison gas, and trench warfare. They didn't want to make beautiful art that pretended everything was fine. They wanted to make art that matched the chaos and pointlessness they saw in the world around them.</p>
+          <p>On February 5, 1916, performer Hugo Ball and singer Emmy Hennings opened the Cabaret Voltaire, a small nightclub in Zurich, Switzerland. It quickly became a stage for wild, confrontational performances: nonsense poems shouted over pounding drums, actors in cardboard costumes, art that had no message you could pin down. That nightclub is considered the birthplace of Dada.</p>
+          <figure class="dd-hero-figure">
+            <img src="../assets/images/lessons/dadaism/hugo-ball-cabaret-voltaire-1916.webp" width="900" height="1227" loading="lazy" decoding="async" alt="Hugo Ball standing on stage at the Cabaret Voltaire in 1916, wearing a stiff cylindrical cardboard costume and tall pointed hat while reciting a sound poem" />
+            <figcaption><span class="dd-era">1916 · Zurich</span>Hugo Ball performing his sound poem "Karawane" at the Cabaret Voltaire, encased in a cardboard costume he could barely walk in. <a href="https://commons.wikimedia.org/wiki/File:Hugo_Ball_Cabaret_Voltaire.jpg" target="_blank" rel="noopener noreferrer">Public-domain source</a></figcaption>
+          </figure>
+          <div class="ll-accordion-group">
+            <details class="ll-accordion">
+              <summary>Why is it called "Dada"?</summary>
+              <div class="ll-accordion-body">Nobody agrees on the real story, and the artists liked it that way. One popular account says the founders picked a word at random out of a French–German dictionary by stabbing it with a letter opener, and it happened to land on <em>dada</em> — French slang for a hobby-horse, and also one of the first nonsense sounds babies make. A word with no fixed meaning, chosen by pure chance, was the perfect name for a movement built on both of those ideas.</div>
+            </details>
+            <details class="ll-accordion">
+              <summary>Was Dada trying to be funny, or serious?</summary>
+              <div class="ll-accordion-body">Both at once, on purpose. Dada used absurd humor and nonsense as a weapon — mocking the "serious," rational culture that had marched happily into a devastating war. Laughing at art, logic, and good taste was the protest.</div>
+            </details>
+          </div>
+        </section>
+
+        <!-- Meet the Dadaists -->
+        <section class="fl-card" id="dd-sec-gallery" style="--card-accent:#0f766e;">
+          <h2>Meet the Dadaists</h2>
+          <p>Dada didn't stay in one club in Zurich for long. Within a few years, artists carried its ideas to Berlin, Paris, and New York, and each city put its own spin on what "anti-art" could mean.</p>
+          <div class="dd-grid-4">
+            <div class="fl-contribution-card dd-art-card">
+              <figure class="dd-art-photo">
+                <img src="../assets/images/lessons/dadaism/duchamp-fountain-stieglitz-1917.webp" width="900" height="1175" loading="lazy" decoding="async" alt="1917 photograph of Marcel Duchamp's Fountain, a porcelain urinal signed R. Mutt, displayed on a pedestal in front of a painting" />
+                <figcaption><span class="dd-era">1917 · New York</span><span class="dd-caption-text">Marcel Duchamp's <em>Fountain</em> — a store-bought urinal he signed "R. Mutt" and submitted to an art exhibit, photographed by Alfred Stieglitz. <a href="https://commons.wikimedia.org/wiki/File:Marcel_Duchamp,_1917,_Fountain,_photograph_by_Alfred_Stieglitz.jpg" target="_blank" rel="noopener noreferrer">Public-domain source</a></span></figcaption>
+              </figure>
+              <div class="dd-art-card-body">
+                <strong>Marcel Duchamp — Readymades</strong>
+                <p>Duchamp argued that an artist could simply choose an ordinary manufactured object, declare it art, and that decision alone made it art. No carving, no painting required.</p>
+              </div>
+            </div>
+            <div class="fl-contribution-card dd-art-card">
+              <figure class="dd-art-photo">
+                <img src="../assets/images/lessons/dadaism/dada-fair-berlin-opening-1920.webp" width="900" height="750" loading="lazy" decoding="async" alt="1920 photograph of Berlin Dada artists posing at the opening of the First International Dada Fair, surrounded by collages, signs, and a stuffed dummy in a military uniform hanging from the ceiling" />
+                <figcaption><span class="dd-era">1920 · Berlin</span><span class="dd-caption-text">The opening of the First International Dada Fair in Berlin, where Dadaists hung a dummy in a military uniform from the ceiling to mock German militarism. <a href="https://commons.wikimedia.org/wiki/File:Grand_opening_of_the_first_Dada_exhibition,_Berlin,_5_June_1920.jpg" target="_blank" rel="noopener noreferrer">Public-domain source</a></span></figcaption>
+              </figure>
+              <div class="dd-art-card-body">
+                <strong>Berlin Dada — Political Attack</strong>
+                <p>In Berlin, artists like Hannah Höch, Raoul Hausmann, and George Grosz turned Dada into biting political satire aimed at the German government and military.</p>
+              </div>
+            </div>
+            <div class="fl-contribution-card dd-art-card">
+              <figure class="dd-art-photo">
+                <img src="../assets/images/lessons/dadaism/schwitters-merzbild-1a-1919.webp" width="900" height="1129" loading="lazy" decoding="async" alt="Kurt Schwitters' 1919 collage Merzbild 1A, assembled from scraps of scavenged paper, wood, wire, and printed labels" />
+                <figcaption><span class="dd-era">1919 · Hanover</span><span class="dd-caption-text">Kurt Schwitters' <em>Merzbild 1A</em>, built from scraps of trash and packaging he collected off the street. <a href="https://commons.wikimedia.org/wiki/File:Merzbild_1A_(The_Psychiatrist)_(1919).jpg" target="_blank" rel="noopener noreferrer">Public-domain source</a></span></figcaption>
+              </figure>
+              <div class="dd-art-card-body">
+                <strong>Kurt Schwitters — Merz Collage</strong>
+                <p>Schwitters built art entirely from garbage — bus tickets, wrappers, broken wood — proving that literally anything discarded could be arranged into something worth looking at.</p>
+              </div>
+            </div>
+            <div class="fl-contribution-card dd-art-card">
+              <figure class="dd-art-photo">
+                <img src="../assets/images/lessons/dadaism/picabia-391-n13-1920.webp" width="900" height="1328" loading="lazy" decoding="async" alt="Cover of the July 1920 issue of Francis Picabia's Dada art journal 391, featuring an absurdist mock-technical machine drawing" />
+                <figcaption><span class="dd-era">1920 · Paris</span><span class="dd-caption-text">A cover of Francis Picabia's journal <em>391</em>, full of absurd, mock-technical "machine" drawings that mimicked engineering diagrams for no working machine at all. <a href="https://commons.wikimedia.org/wiki/File:Francis_Picabia,_391,_n._13,_July_1920.jpg" target="_blank" rel="noopener noreferrer">Public-domain source</a></span></figcaption>
+              </figure>
+              <div class="dd-art-card-body">
+                <strong>Francis Picabia — Dada in Print</strong>
+                <p>Picabia spread Dada through cheap, fast-printed magazines, using nonsense "machine" drawings to poke fun at a society that worshipped industry and efficiency.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Breaking Every Rule -->
+        <section class="fl-card" id="dd-sec-rules" style="--card-accent:#7c3aed;">
+          <h2>Anti-Art: Breaking Every Rule on Purpose</h2>
+          <p>Most art movements before Dada tried to get better at something — better realism, better color, better composition. Dada instead asked: what if an artist broke every one of those rules on purpose, and let the results be strange, ugly, or random? Here are the main tools Dadaists used to do that.</p>
+          <div class="fl-grid-2">
+            <div class="fl-contribution-card">
+              <div class="fl-contribution-icon">&#128688;</div>
+              <strong>Readymades</strong>
+              <p>Take an ordinary object — a urinal, a bottle rack, a snow shovel — and call it art simply by choosing and displaying it.</p>
+            </div>
+            <div class="fl-contribution-card">
+              <div class="fl-contribution-icon">&#9986;&#65039;</div>
+              <strong>Photomontage</strong>
+              <p>Cut photographs out of newspapers and magazines, then glue the pieces back together into a single, jarring new image — pioneered by Hannah Höch and Raoul Hausmann.</p>
+            </div>
+            <div class="fl-contribution-card">
+              <div class="fl-contribution-icon">&#128266;</div>
+              <strong>Sound Poetry</strong>
+              <p>Recite invented words that aren't part of any real language, chosen for how they sound rather than what they mean.</p>
+            </div>
+            <div class="fl-contribution-card">
+              <div class="fl-contribution-icon">&#127922;</div>
+              <strong>Chance Operations</strong>
+              <p>Let randomness — a dice roll, a drawn slip of paper, a word pulled from a hat — decide part of the artwork, instead of the artist's own choices.</p>
+            </div>
+            <div class="fl-contribution-card">
+              <div class="fl-contribution-icon">&#128465;&#65039;</div>
+              <strong>Found Materials</strong>
+              <p>Build art from trash and scraps — bus tickets, wood, wire, wrapping paper — rather than expensive paint or marble.</p>
+            </div>
+            <div class="fl-contribution-card">
+              <div class="fl-contribution-icon">&#128514;</div>
+              <strong>Absurdist Humor</strong>
+              <p>Use jokes, nonsense, and mockery as a serious artistic weapon against a society Dadaists believed had lost its mind.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Try It: Make a Dada Poem -->
+        <section class="fl-card" id="dd-sec-cutup" style="--card-accent:#d97706;">
+          <h2>Try It: Make a Poem by Chance</h2>
+          <p>In 1920, poet Tristan Tzara wrote instructions for making a Dadaist poem: cut the words out of a newspaper article, drop them in a bag, shake it, and pull the words out one at a time in whatever order chance gives you. The result is your poem — "an infinitely original author of charming sensibility," Tzara joked, even though nobody actually wrote a single word of it.</p>
+          <p>Try the same trick below. Each click pulls a fresh handful of scraps out of a virtual hat — click any single scrap to swap just that word for a new random one.</p>
+          <div class="dd-cutup-box">
+            <div class="dd-cutup-controls">
+              <button class="dd-cutup-btn" id="dd-shuffle-btn" type="button">Pull From the Hat</button>
+              <span class="dd-cutup-count" id="dd-cutup-count"></span>
+            </div>
+            <div class="dd-cutup-poem" id="dd-cutup-poem" role="group" aria-label="Randomly generated Dada poem scraps"></div>
+            <p class="dd-cutup-hint">Click "Pull From the Hat" to draw new scraps. Click any single scrap to reroll just that word.</p>
+          </div>
+          <div class="ll-accordion-group">
+            <details class="ll-accordion">
+              <summary>Is this really "art" if a machine (or chance) made it?</summary>
+              <div class="ll-accordion-body">That's exactly the question Dadaists wanted people to argue about. They weren't claiming chance-poems were beautiful — they were claiming that <em>art is whatever gets chosen and presented as art</em>, which was a radical idea in 1920 and is still debated today, including in conversations about AI-generated art.</div>
+            </details>
+          </div>
+        </section>
+
+        <!-- Legacy -->
+        <section class="fl-card" id="dd-sec-legacy" style="--card-accent:#059669;">
+          <h2>Dada's Legacy Today</h2>
+          <p>Dada itself burned out fast — by the early 1920s, many of its artists had moved on to a related movement called Surrealism, which used dreamlike imagery instead of pure randomness to explore the unconscious mind. But Dada's core tools didn't disappear. They kept resurfacing in movement after movement for the rest of the century.</p>
+          <p>Photomontage and collage became standard tools of graphic design and advertising. Duchamp's readymades opened the door for later artists — including Pop Art icons like Andy Warhol, who turned soup cans and celebrity photos into gallery art the same way Duchamp had turned a urinal into a sculpture. Punk rock's ransom-note flyers and DIY zines borrowed Dada's cut-and-paste look directly. And today's internet meme culture — remixing found images and text into something absurd, fast, and disposable — runs on nearly the same idea Dada pioneered over a century ago: that anyone can cut up the existing culture and reassemble it into something new.</p>
+        </section>
+
+        <!-- Practice Problems -->
+        <section class="fl-card" id="dd-sec-practice" style="--card-accent:#007aff;">
+          <h2>Practice Problems</h2>
+          <p style="color: var(--text-muted, #64748b);font-size:0.84rem;">Test what you know about Dada's origins, its key artists, and its anti-art tools.</p>
+          <label class="ll-toggle" style="margin-bottom:0.8rem;">
+            <input type="checkbox" id="fl-hints-toggle">
+            <span class="ll-toggle-track" aria-hidden="true"></span>
+            <span>Show hints automatically</span>
+          </label>
+          <div class="fl-practice">
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="easy">Easy</span>1. What major world event most directly inspired the birth of Dada in 1916?</p>
+              <div class="fl-problem-row">
+                <select class="fl-ans-input" id="flans-1" style="width:220px;">
+                  <option value="">Choose…</option>
+                  <option value="a">World War I</option>
+                  <option value="b">The invention of photography</option>
+                  <option value="c">The French Revolution</option>
+                  <option value="d">The Great Depression</option>
+                </select>
+                <button class="fl-check-btn" onclick="flCheckText(1,'a')">Check</button>
+                <span class="fl-feedback" id="flfb-1"></span>
+              </div>
+              <div class="fl-hint" id="flhint-1">Hint: Artists fled to neutral Switzerland to escape a war that was killing millions by 1916.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="easy">Easy</span>2. In which city did Hugo Ball and Emmy Hennings open the Cabaret Voltaire, the birthplace of Dada?</p>
+              <div class="fl-problem-row">
+                <select class="fl-ans-input" id="flans-2" style="width:160px;">
+                  <option value="">Choose…</option>
+                  <option value="a">Zurich</option>
+                  <option value="b">Paris</option>
+                  <option value="c">Berlin</option>
+                  <option value="d">Vienna</option>
+                </select>
+                <button class="fl-check-btn" onclick="flCheckText(2,'a')">Check</button>
+                <span class="fl-feedback" id="flfb-2"></span>
+              </div>
+              <div class="fl-hint" id="flhint-2">Hint: The artists picked a neutral country that wasn't fighting in World War I.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="mid">Medium</span>3. Marcel Duchamp's "readymades" were ordinary objects declared to be art. What object did he sign "R. Mutt" and submit as <em>Fountain</em> in 1917?</p>
+              <div class="fl-problem-row">
+                <select class="fl-ans-input" id="flans-3" style="width:180px;">
+                  <option value="">Choose…</option>
+                  <option value="a">A urinal</option>
+                  <option value="b">A bicycle wheel</option>
+                  <option value="c">A painted canvas</option>
+                  <option value="d">A marble statue</option>
+                </select>
+                <button class="fl-check-btn" onclick="flCheckText(3,'a')">Check</button>
+                <span class="fl-feedback" id="flfb-3"></span>
+              </div>
+              <div class="fl-hint" id="flhint-3">Hint: It was a plumbing fixture, turned on its side and displayed on a pedestal.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="mid">Medium</span>4. The Cabaret Voltaire opened in 1916, and the First International Dada Fair was held in Berlin in 1920. How many years passed between the two?</p>
+              <div class="fl-problem-row">
+                <input type="number" class="fl-ans-input" id="flans-4" step="1" placeholder="years" />
+                <button class="fl-check-btn" onclick="flCheck(4, 4, 0)">Check</button>
+                <span class="fl-feedback" id="flfb-4"></span>
+              </div>
+              <div class="fl-hint" id="flhint-4">Hint: Subtract 1916 from 1920.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="mid">Medium</span>5. In Tristan Tzara's method for writing a Dada poem, newspaper words are cut out, dropped into a container, and pulled out one at a time. What decides the order of the words?</p>
+              <div class="fl-problem-row">
+                <select class="fl-ans-input" id="flans-5" style="width:260px;">
+                  <option value="">Choose…</option>
+                  <option value="a">Pure chance / random draw</option>
+                  <option value="b">Alphabetical order</option>
+                  <option value="c">A strict rhyme scheme</option>
+                  <option value="d">A vote among the audience</option>
+                </select>
+                <button class="fl-check-btn" onclick="flCheckText(5,'a')">Check</button>
+                <span class="fl-feedback" id="flfb-5"></span>
+              </div>
+              <div class="fl-hint" id="flhint-5">Hint: This is the same "pull from a hat" idea used in the poem generator above.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="easy">Easy</span>6. Which technique — pioneered by Hannah Höch and Raoul Hausmann in Berlin — cuts photographs apart and glues the pieces into a new image?</p>
+              <div class="fl-problem-row">
+                <select class="fl-ans-input" id="flans-6" style="width:200px;">
+                  <option value="">Choose…</option>
+                  <option value="a">Photomontage</option>
+                  <option value="b">Fresco</option>
+                  <option value="c">Engraving</option>
+                  <option value="d">Watercolor</option>
+                </select>
+                <button class="fl-check-btn" onclick="flCheckText(6,'a')">Check</button>
+                <span class="fl-feedback" id="flfb-6"></span>
+              </div>
+              <div class="fl-hint" id="flhint-6">Hint: The technique's name combines "photo" with the French word for assembling pieces together.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="hard">Challenge</span>7. Why did Dadaists deliberately fill their art with randomness, nonsense, and humor instead of skill and beauty?</p>
+              <div class="fl-problem-row">
+                <select class="fl-ans-input" id="flans-7" style="width:420px;">
+                  <option value="">Choose…</option>
+                  <option value="a">They hadn't been trained in traditional technique</option>
+                  <option value="b">As a protest against a "rational" society that had produced a devastating war</option>
+                  <option value="c">To make art that would sell for more money</option>
+                  <option value="d">To copy the styles of ancient Greek pottery</option>
+                </select>
+                <button class="fl-check-btn" onclick="flCheckText(7,'b')">Check</button>
+                <span class="fl-feedback" id="flfb-7"></span>
+              </div>
+              <div class="fl-hint" id="flhint-7">Hint: Look back at the "Where Did Dada Begin?" section — it's about what World War I revealed about "civilized" culture.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="hard">Challenge</span>8. Which of these modern practices most directly carries forward a Dada technique?</p>
+              <div class="fl-problem-row">
+                <select class="fl-ans-input" id="flans-8" style="width:440px;">
+                  <option value="">Choose…</option>
+                  <option value="a">Internet memes that remix found images and text into something absurd</option>
+                  <option value="b">A photorealistic oil portrait painted from life</option>
+                  <option value="c">A symphony performed by a full orchestra</option>
+                  <option value="d">A marble sculpture carved in the classical Greek style</option>
+                </select>
+                <button class="fl-check-btn" onclick="flCheckText(8,'a')">Check</button>
+                <span class="fl-feedback" id="flfb-8"></span>
+              </div>
+              <div class="fl-hint" id="flhint-8">Hint: Think about photomontage and readymades — taking existing material and reassembling it into something new and fast.</div>
+            </div>
+
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">Lessons</a></p>
+        </footer>
+      </main>
+    </div><!-- .ll-sim -->
+
+  </div><!-- .ll-viewport -->
+
+<script src="../assets/js/nav-mobile.js"></script>
+<script src="../assets/js/lesson-content.js"></script>
+<script src="../assets/js/figure-lesson.js"></script>
+<script src="../assets/js/lesson-print-button.js"></script>
+<script>
+(function () {
+  var WORDS = [
+    "machine", "silence", "revolt", "umbrella", "typewriter", "shadow",
+    "factory", "static", "trumpet", "gutter", "porcelain", "telegram",
+    "collapse", "confetti", "engine", "whisper", "newsprint", "cardboard",
+    "propeller", "insomnia", "clockwork", "debris", "carnival", "static",
+    "border", "scissors", "electric", "vertigo", "ration", "puppet",
+    "smokestack", "footnote", "gasoline", "marionette", "static", "rubble",
+    "ambulance", "megaphone", "curfew", "sawdust"
+  ];
+
+  var poemEl = document.getElementById("dd-cutup-poem");
+  var countEl = document.getElementById("dd-cutup-count");
+  var btn = document.getElementById("dd-shuffle-btn");
+  if (!poemEl || !btn) return;
+
+  var pullCount = 0;
+
+  function randomWord() {
+    return WORDS[Math.floor(Math.random() * WORDS.length)];
+  }
+
+  function renderPoem() {
+    poemEl.innerHTML = "";
+    var n = 7;
+    for (var i = 0; i < n; i++) {
+      var span = document.createElement("button");
+      span.type = "button";
+      span.className = "dd-scrap";
+      span.textContent = randomWord();
+      span.setAttribute("aria-label", "Reroll this word");
+      span.addEventListener("click", function () {
+        this.textContent = randomWord();
+      });
+      poemEl.appendChild(span);
+    }
+    pullCount++;
+    countEl.textContent = "Pull #" + pullCount;
+  }
+
+  btn.addEventListener("click", renderPoem);
+  renderPoem();
+})();
+</script>
+</body>
+</html>
