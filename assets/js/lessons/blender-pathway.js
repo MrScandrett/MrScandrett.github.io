@@ -89,6 +89,31 @@
     window.setTimeout(() => { button.textContent = 'Copy'; }, 1800);
   }));
 
+  // pathway goal picker: highlight the shortest useful route without hiding the full library
+  const routeMessages = {
+    all: '<strong>Full pathway:</strong> complete Lessons 01–07 in order for the broadest foundation.',
+    architecture: '<strong>Architecture route:</strong> 01 Interface → 02 Windows & Doors → 04 Environments → 07 Materials & Render.',
+    props: '<strong>Props route:</strong> 01 Interface → 03 Furniture → 06 Props & Tools → 07 Materials & Render.',
+    character: '<strong>Character route:</strong> 01 Interface → 05 Character → 07 Materials & Render → rigging in Game Asset Studio.',
+    game: '<strong>Game route:</strong> start with 01, choose the asset lesson you need, finish 07, then continue into Game Asset Studio for GLB and Godot.'
+  };
+  const routeStatus = document.querySelector('[data-route-status]');
+  document.querySelectorAll('[data-route-picker]').forEach(button => button.addEventListener('click', () => {
+    const route = button.dataset.routePicker;
+    document.querySelectorAll('[data-route-picker]').forEach(other => {
+      const active = other === button;
+      other.classList.toggle('is-active', active);
+      other.setAttribute('aria-pressed', String(active));
+    });
+    document.querySelectorAll('[data-route-node]').forEach(node => {
+      const routes = node.dataset.routeNode.split(/\s+/);
+      node.classList.toggle('is-route-dimmed', route !== 'all' && !routes.includes(route));
+      node.classList.toggle('is-route-picked', route !== 'all' && routes.includes(route));
+    });
+    document.querySelectorAll('[data-route-lane]').forEach(lane => lane.classList.toggle('is-route-dimmed', route !== 'all' && lane.dataset.routeLane !== route && !(route === 'game')));
+    if (routeStatus) routeStatus.innerHTML = routeMessages[route];
+  }));
+
   // guide/vocab side panel (shared shell)
   document.querySelectorAll('.ll-tab').forEach(tab => tab.addEventListener('click', () => {
     document.querySelectorAll('.ll-tab').forEach(item => item.setAttribute('aria-selected', 'false'));

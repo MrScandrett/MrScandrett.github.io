@@ -77,7 +77,7 @@
               <p>Lesson 02 cut a rectangular window opening. Hard-surface props usually need round or hex cuts — bolt holes, a wrench's gripping socket, a hanging hole in a handle.</p>
               <ol class="build-list">
                 <li><div><b>Add a Cylinder cutter</b><p><kbd>Shift</kbd>+<kbd>A</kbd> → Mesh → Cylinder, with enough sides (16–32) to read as round, or set to 6 for a hex socket.</p></div><span>Cylinder</span></li>
-                <li><div><b>Boolean Difference</b><p>Same workflow as Lesson 02: apply scale on both objects, add a Boolean modifier set to Difference on the tool body, and point it at the cutter.</p></div><span>Difference</span></li>
+                <li><div><b>Boolean Difference</b><p>Apply scale on both objects, then use <span class="bl-path">Properties Editor → Modifiers (wrench) → Add Modifier → Generate → Boolean</span>. Set Operation to Difference and Object to the cutter.</p></div><span>Difference</span></li>
                 <li><div><b>Stack multiple cuts</b><p>You can add several Boolean modifiers to one object — one per hole. Keep each cutter as a separate, named object so you can adjust one hole without disturbing the others.</p></div><span>Stack</span></li>
               </ol>
               <div class="rule"><strong>Keep cutters until you're done</strong><span>Hide cutter objects (click the eye icon in the Outliner) rather than deleting them, in case you need to nudge a hole's position later.</span></div>
@@ -93,10 +93,10 @@
             <div class="section-content">
               <p class="section-kicker">The hard-surface shading fix</p>
               <h2>Bevel, then fix the normals with weighting.</h2>
-              <p>Shade Auto Smooth alone often leaves ugly dark pinches on hard-surface models where a beveled edge meets a flat face. The fix is a second modifier that recalculates normals based on face area and angle.</p>
+              <p>Smooth by Angle can still leave dark pinches where a beveled edge meets a large flat face. A Weighted Normal modifier recalculates normals based on face area and angle.</p>
               <div class="toolbox-grid">
                 <article class="toolbox-card"><div class="toolbox-icon">◤</div><p class="toolbox-job">Round the edges</p><h3>Bevel modifier</h3><p>Small width, 2–3 segments, Limit Method set to Angle so flat faces stay flat.</p></article>
-                <article class="toolbox-card"><div class="toolbox-icon">✓</div><p class="toolbox-job">Fix the shading</p><h3>Weighted Normal modifier</h3><p>Add after Bevel. It recalculates smooth shading based on face area, removing the dark pinching that plain Auto Smooth leaves on hard-surface bevels.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">✓</div><p class="toolbox-job">Fix the shading</p><h3>Weighted Normal modifier</h3><p>Add after Bevel. It recalculates smooth shading based on face area, removing dark pinching that Smooth by Angle can leave on hard-surface bevels.</p></article>
                 <article class="toolbox-card"><div class="toolbox-icon">▥</div><p class="toolbox-job">Give it wall thickness</p><h3>Solidify modifier</h3><p>Turns a flat surface into a real solid shell with a set thickness — useful for a wrench's flat bar profile.</p></article>
               </div>
               <div class="bl-figure-row">
@@ -120,8 +120,8 @@
               <ol class="build-list">
                 <li><div><b>Block the primary shapes</b><p>Cylinder handle plus a boxy or hexagonal head, sized against a hand-scale reference (a fist is roughly 0.1m across).</p></div><span>Block-out</span></li>
                 <li><div><b>Cut every hole</b><p>Add cylinder or hex-prism cutters for bolt holes or a socket, and apply a Boolean Difference for each.</p></div><span>Booleans</span></li>
-                <li><div><b>Bevel every hard edge</b><p>Add a Bevel modifier to each part with a small, consistent width across the whole prop.</p></div><span>Bevel</span></li>
-                <li><div><b>Add Weighted Normal</b><p>Add it below Bevel in the modifier stack, and enable <strong>Auto Smooth</strong> in its settings.</p></div><span>Weighted Normal</span></li>
+                <li><div><b>Bevel every hard edge</b><p>Use <span class="bl-path">Properties Editor → Modifiers (wrench) → Add Modifier → Generate → Bevel</span> on each part with a small, consistent width.</p></div><span>Bevel</span></li>
+                <li><div><b>Add Weighted Normal</b><p>Use <span class="bl-path">Properties Editor → Modifiers (wrench) → Add Modifier → Normals → Weighted Normal</span>, then drag it below Bevel. Blender 5.2 has no Auto Smooth checkbox in this modifier.</p></div><span>Weighted Normal</span></li>
                 <li><div><b>Parent, rename, save</b><p>Join or parent the parts, rename everything in the Outliner, and press <kbd>Ctrl</kbd>+<kbd>S</kbd>.</p></div><span>Finish</span></li>
               </ol>
               <details class="rescue"><summary>Beveled edges still look dark or pinched?</summary><ul><li>Confirm the Weighted Normal modifier sits below Bevel in the stack, and that "Keep Sharp" is off unless you deliberately want a hard edge.</li><li>Check the mesh has no flipped normals — recalculate with Shift+N first.</li><li>Make sure Bevel's Limit Method is Angle, not None — beveling every edge indiscriminately rounds off shapes that should stay sharp.</li></ul></details>
@@ -136,7 +136,7 @@
               <div class="debug-grid">
                 <article><b>A Boolean hole is off-center</b><p>The cutter's origin or the tool's origin was moved after the modifier was added. Nudge the cutter object itself, not the tool.</p></article>
                 <article><b>The head and handle don't line up after Boolean</b><p>Scale wasn't applied on one of the two objects before the operation. Apply scale, then redo the cut.</p></article>
-                <article><b>Shading looks fine in the viewport but breaks after export</b><p>Weighted Normal data can be lost on export in some formats — check that "Auto Smooth" is baked and the exporter includes custom normals.</p></article>
+                <article><b>Shading looks fine in the viewport but breaks after export</b><p>Weighted normals can be lost in some formats. Apply the Weighted Normal modifier from its panel's down-arrow menu → <strong>Apply</strong>, then enable the exporter's normals option when that format provides one.</p></article>
                 <article><b>A cylinder cutter reads as faceted, not round</b><p>Increase its vertex count (16–32) before using it as a Boolean cutter — a low-poly cutter carves a low-poly hole.</p></article>
               </div>
             </div>
@@ -148,7 +148,7 @@
               <p class="section-kicker">Exit ticket</p>
               <h2>Would this hold up under studio lighting?</h2>
               <div class="quiz">
-                <fieldset><legend>1. What fixes the dark pinching Auto Smooth alone leaves on hard-surface bevels?</legend><label><input type="radio" name="q1" value="wrong" /> A Mirror modifier</label><label><input type="radio" name="q1" value="correct" /> A Weighted Normal modifier below Bevel</label><label><input type="radio" name="q1" value="wrong" /> Deleting the bevel</label></fieldset>
+                <fieldset><legend>1. What can fix dark pinching that Smooth by Angle leaves on hard-surface bevels?</legend><label><input type="radio" name="q1" value="wrong" /> A Mirror modifier</label><label><input type="radio" name="q1" value="correct" /> A Weighted Normal modifier below Bevel</label><label><input type="radio" name="q1" value="wrong" /> Deleting the bevel</label></fieldset>
                 <fieldset><legend>2. Why give a Boolean cutter cylinder 16–32 sides instead of 8?</legend><label><input type="radio" name="q2" value="correct" /> A low-poly cutter carves a visibly faceted hole</label><label><input type="radio" name="q2" value="wrong" /> Blender requires at least 16 sides for Boolean to work</label><label><input type="radio" name="q2" value="wrong" /> It changes the cutter's material</label></fieldset>
                 <fieldset><legend>3. What should you do with a cutter object once its hole is cut?</legend><label><input type="radio" name="q3" value="wrong" /> Always delete it immediately</label><label><input type="radio" name="q3" value="correct" /> Hide it, in case you need to adjust the hole later</label><label><input type="radio" name="q3" value="wrong" /> Apply a Mirror modifier to it</label></fieldset>
                 <button type="button" data-quiz-check>Check my answers</button><p data-quiz-result aria-live="polite"></p>
