@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Arduino: The Robot Brain · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Set up the Arduino IDE, blink an LED and read the Serial Monitor, understand setup() vs loop(), send a custom Morse-code message, and compare a microcontroller to a neuron." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      --arb-ink: #0e2224;
+      --arb-paper: #e8f3f1;
+      --arb-panel: #fffdfa;
+      --arb-teal: #00979d;
+      --arb-navy: #1b3a4b;
+      --arb-orange: #ef8354;
+      --arb-lime: #a6d854;
+      --arb-red: #d94b41;
+      --arb-line: rgba(14, 34, 36, 0.18);
+      --arb-grid: rgba(0, 151, 157, 0.08);
+    }
+    body.theme-steam { font-family: "IBM Plex Sans", Inter, sans-serif; }
+    .arb-page { padding-bottom: 1.5rem; color: var(--arb-ink); }
+    .ll-viewport { --ll-panel-w: 310px; }
+    .arb-page button, .arb-page select, .arb-page input { font: inherit; }
+    .arb-page button { touch-action: manipulation; cursor: pointer; }
+    .arb-page :focus-visible { outline: 3px solid #0b83b1; outline-offset: 3px; }
+
+    .arb-hero { position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(300px, .95fr); gap: clamp(1.2rem, 4vw, 3.2rem); align-items: center; margin: .45rem 0 1rem; padding: clamp(1.35rem, 4vw, 2.8rem); border: 1px solid var(--arb-line); border-radius: 10px; background-color: var(--arb-paper); background-image: linear-gradient(var(--arb-grid) 1px, transparent 1px), linear-gradient(90deg, var(--arb-grid) 1px, transparent 1px); background-size: 22px 22px; box-shadow: 0 18px 48px rgba(14,34,36,.12); }
+    .arb-hero::before { content: "WEEK 2 · ENR1-02A"; position: absolute; right: -2.6rem; top: 1.2rem; transform: rotate(7deg); color: rgba(0,151,157,.13); font: 800 clamp(2rem, 6vw, 4.4rem)/.78 "Barlow Condensed", sans-serif; letter-spacing: .04em; pointer-events: none; }
+    .arb-kicker, .arb-label { font: 700 .73rem/1.2 "IBM Plex Mono", monospace; letter-spacing: .09em; text-transform: uppercase; }
+    .arb-kicker { color: var(--arb-teal); }
+    .arb-hero h1 { max-width: 11ch; margin: .3rem 0 .75rem; font: 800 clamp(2.5rem, 6.6vw, 5rem)/.82 "Barlow Condensed", sans-serif; letter-spacing: -.03em; text-transform: uppercase; }
+    .arb-hero h1 span { display: block; color: var(--arb-orange); }
+    .arb-lede { max-width: 58ch; margin: 0 0 1rem; font-size: 1rem; line-height: 1.7; }
+    .arb-meta { display: flex; flex-wrap: wrap; gap: .45rem; margin: .8rem 0 1.05rem; }
+    .arb-meta span { padding: .28rem .52rem; border: 1px solid var(--arb-line); background: rgba(255,255,255,.56); font: 600 .7rem/1.2 "IBM Plex Mono", monospace; }
+    .arb-back { color: var(--arb-teal); font-weight: 700; text-decoration: none; }
+    .arb-back:hover { text-decoration: underline; }
+
+    /* Hero: fake IDE window */
+    .arb-ide { position: relative; z-index: 1; border-radius: 8px; overflow: hidden; box-shadow: 0 18px 40px rgba(10,20,22,.3); font-family: "IBM Plex Mono", monospace; }
+    .arb-ide-bar { display: flex; align-items: center; gap: .4rem; padding: .5rem .7rem; background: #2b2b2b; }
+    .arb-ide-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .arb-ide-bar span:nth-child(4) { margin-left: .5rem; color: #aaa; font-size: .72rem; }
+    .arb-ide-toolbar { display: flex; gap: .5rem; padding: .4rem .6rem; background: #383838; }
+    .arb-ide-btn { padding: .3rem .6rem; border: 1px solid #555; background: #444; color: #ddd; font: 600 .68rem "IBM Plex Mono", monospace; border-radius: 3px; }
+    .arb-ide-btn.is-primary { background: var(--arb-teal); border-color: var(--arb-teal); color: #06282a; }
+    .arb-ide-body { padding: 1rem 1.1rem; background: #1e1e1e; color: #d4d4d4; font-size: .8rem; line-height: 1.7; min-height: 170px; }
+    .arb-ide-body .k { color: #569cd6; } .arb-ide-body .f { color: #dcdcaa; } .arb-ide-body .c { color: #6a9955; } .arb-ide-body .n { color: #b5cea8; }
+    .arb-ide-serial { padding: .5rem .8rem; background: #101010; color: #7bd88f; font-size: .74rem; border-top: 1px solid #333; min-height: 2.6em; }
+
+    .arb-card { margin-bottom: 1rem; padding: clamp(1.1rem, 3vw, 1.65rem); border: 1px solid var(--arb-line); border-top: 5px solid var(--arb-accent, var(--arb-teal)); border-radius: 9px; background: var(--arb-panel); box-shadow: 0 8px 24px rgba(14,34,36,.07); }
+    .arb-card h2 { margin: 0 0 .5rem; font: 800 clamp(1.65rem, 4vw, 2.35rem)/.95 "Barlow Condensed", sans-serif; text-transform: uppercase; letter-spacing: -.015em; }
+    .arb-card h3 { margin: 0 0 .35rem; font: 700 1.25rem/1 "Barlow Condensed", sans-serif; text-transform: uppercase; }
+    .arb-card p { margin: 0 0 .75rem; line-height: 1.67; }
+    .arb-card > p { max-width: 78ch; }
+
+    .arb-anatomy { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+    .arb-anatomy-col { padding: 1rem; border: 1px solid var(--arb-line); background: #f3f8f7; }
+    .arb-anatomy-col.is-active { border-color: var(--arb-teal); box-shadow: 0 0 0 2px rgba(0,151,157,.25) inset; }
+    .arb-anatomy-col h3 { color: var(--arb-teal); }
+    .arb-code { margin: 0; overflow: auto; padding: .9rem 1rem; border-radius: 4px; background: #1e1e1e; color: #e7f0e8; font: 500 .78rem/1.6 "IBM Plex Mono", monospace; }
+    .arb-code .c { color: #6a9955; } .arb-code .k { color: #569cd6; } .arb-code .n { color: #b5cea8; } .arb-code .f { color: #dcdcaa; }
+    .arb-anatomy-run { display: block; margin: .8rem auto 0; padding: .5rem 1rem; border: 2px solid var(--arb-teal); background: transparent; color: var(--arb-teal); font-weight: 700; }
+    .arb-anatomy-run:hover { background: var(--arb-teal); color: white; }
+    .arb-anatomy-status { margin-top: .6rem; text-align: center; font: 600 .78rem "IBM Plex Mono", monospace; min-height: 1.4em; }
+
+    .arb-blinklab { display: grid; grid-template-columns: minmax(220px, .8fr) minmax(280px, 1.2fr); gap: 1rem; margin-top: 1rem; align-items: start; }
+    .arb-blink-board { display: grid; place-items: center; gap: .8rem; padding: 1.2rem; border: 3px solid #1b3a4b; border-radius: 12px; background: #142c38; }
+    .arb-led-visual { width: 70px; height: 70px; border-radius: 50%; background: #3a2a24; box-shadow: inset 0 0 10px rgba(0,0,0,.5); transition: background .1s, box-shadow .1s; }
+    .arb-led-visual.is-on { background: #ff6a3d; box-shadow: 0 0 34px #ff6a3d, inset 0 0 10px rgba(255,255,255,.3); }
+    .arb-led-caption { color: #cfe4e0; font: 600 .72rem "IBM Plex Mono", monospace; }
+    .arb-field { display: grid; gap: .3rem; padding: .8rem; border: 1px solid var(--arb-line); background: #f3f8f7; }
+    .arb-field label { font: 700 .7rem "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: .05em; }
+    .arb-field label b { color: var(--arb-orange); }
+    .arb-field input[type="range"] { width: 100%; accent-color: var(--arb-teal); }
+    .arb-field p { margin: .35rem 0 0; font-size: .78rem; color: #4d626b; }
+    .arb-serial { padding: .8rem; border: 2px solid #1b3a4b; background: #0e1e22; color: #7bd88f; font: 500 .78rem/1.6 "IBM Plex Mono", monospace; min-height: 110px; max-height: 160px; overflow-y: auto; }
+    .arb-serial-line { opacity: 0; animation: arb-fadein .2s forwards; }
+    @keyframes arb-fadein { to { opacity: 1; } }
+
+    .arb-morse { display: grid; grid-template-columns: minmax(240px, .85fr) minmax(280px, 1.15fr); gap: 1rem; margin-top: 1rem; align-items: start; }
+    .arb-morse-controls { display: grid; gap: .6rem; align-content: start; }
+    .arb-morse-controls input[type="text"] { width: 100%; padding: .6rem .7rem; border: 1px solid var(--arb-line); background: white; color: var(--arb-ink); font: 600 1rem "IBM Plex Mono", monospace; text-transform: uppercase; }
+    .arb-morse-btn { padding: .55rem 1rem; border: 2px solid var(--arb-teal); background: var(--arb-teal); color: white; font-weight: 700; }
+    .arb-morse-hint { margin: 0; font-size: .78rem; color: #4d626b; }
+    .arb-morse-board { display: grid; place-items: center; gap: .7rem; padding: 1.2rem; border: 3px solid #1b3a4b; border-radius: 12px; background: #142c38; min-height: 200px; }
+    .arb-morse-pattern { min-height: 1.6em; color: #cfe4e0; font: 700 1rem "IBM Plex Mono", monospace; letter-spacing: .1em; text-align: center; word-break: break-all; }
+    .arb-morse-chart { margin-top: 1rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: .35rem; font: 600 .72rem "IBM Plex Mono", monospace; }
+    .arb-morse-chart span { display: block; padding: .3rem .4rem; border: 1px solid var(--arb-line); background: #f3f8f7; text-align: center; }
+
+    .arb-neuro { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+    .arb-neuro svg { display: block; width: 100%; height: auto; }
+    .arb-neuro-col { padding: 1rem; border: 1px solid var(--arb-line); background: #f3f8f7; }
+    .arb-neuro-col h3 { text-align: center; }
+    .arb-analogy { display: grid; gap: .5rem; margin-top: 1rem; }
+    .arb-analogy-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: .6rem; align-items: center; padding: .55rem .7rem; border: 1px solid var(--arb-line); background: #f3f8f7; font-size: .85rem; }
+    .arb-analogy-row b { color: var(--arb-teal); }
+    .arb-analogy-row span:nth-child(2) { color: var(--arb-orange); font-weight: 700; }
+
+    .arb-quiz { display: grid; gap: .85rem; margin-top: 1rem; }
+    .arb-question { padding: 1rem; border: 1px solid var(--arb-line); background: #f3f8f7; }
+    .arb-question > p { font-weight: 700; }
+    .arb-options { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+    .arb-option { padding: .65rem; border: 1px solid var(--arb-line); background: white; color: var(--arb-ink); text-align: left; cursor: pointer; transition: border-color .15s ease, background .15s ease; }
+    .arb-option:not(:disabled):hover { border-color: var(--arb-teal); background: #e5f5f4; }
+    .arb-option.is-correct { border-color: #5a7c18; background: #edf7d2; }
+    .arb-option.is-wrong { border-color: #b5352e; background: #ffe2dc; }
+    .arb-feedback { min-height: 1.4em; margin: .55rem 0 0; font-size: .82rem; font-weight: 600; }
+
+    [data-lighting="night"] .arb-page, [data-theme="vaporwave"] .arb-page, [data-theme="bark"] .arb-page { --arb-ink: #e9f6f4; --arb-panel: #12262a; --arb-paper: #14282b; --arb-line: rgba(233,246,244,.2); --arb-grid: rgba(0,151,157,.12); }
+    [data-lighting="night"] .arb-anatomy-col, [data-lighting="night"] .arb-field, [data-lighting="night"] .arb-morse-chart span, [data-lighting="night"] .arb-neuro-col, [data-lighting="night"] .arb-analogy-row, [data-lighting="night"] .arb-question,
+    [data-theme="vaporwave"] .arb-anatomy-col, [data-theme="vaporwave"] .arb-field, [data-theme="vaporwave"] .arb-morse-chart span, [data-theme="vaporwave"] .arb-neuro-col, [data-theme="vaporwave"] .arb-analogy-row, [data-theme="vaporwave"] .arb-question,
+    [data-theme="bark"] .arb-anatomy-col, [data-theme="bark"] .arb-field, [data-theme="bark"] .arb-morse-chart span, [data-theme="bark"] .arb-neuro-col, [data-theme="bark"] .arb-analogy-row, [data-theme="bark"] .arb-question { background: rgba(255,255,255,.04); }
+    [data-lighting="night"] .arb-option, [data-theme="vaporwave"] .arb-option, [data-theme="bark"] .arb-option { background: #16302f; color: #eef6f3; }
+    [data-lighting="night"] .arb-morse-controls input[type="text"], [data-theme="vaporwave"] .arb-morse-controls input[type="text"], [data-theme="bark"] .arb-morse-controls input[type="text"] { background: #16302f; color: #eef6f3; }
+
+    @media (max-width: 900px) {
+      .arb-hero, .arb-anatomy, .arb-blinklab, .arb-morse, .arb-neuro { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .arb-hero { padding: 1rem; }
+      .arb-hero h1 { font-size: 2.8rem; }
+      .arb-options { grid-template-columns: 1fr; }
+      .arb-card { padding: 1rem; }
+      .arb-morse-chart { grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .arb-serial-line { animation: none; opacity: 1; }
+    }
+    @media print { .arb-ide, .ll-panel, .ll-open-btn { display: none !important; } .arb-card { break-inside: avoid; box-shadow: none; } }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary"><ul>
+          <li><a href="../index.html">Home</a></li><li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li><li><a href="../paths.html">Paths</a></li><li><a href="../showcase.html">Showcase</a></li><li><a href="../applications.html">Apps</a></li><li><a href="../recipe-book.html">Library</a></li><li><a href="../about.html">About</a></li>
+        </ul></nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="arb-page">
+          <section class="arb-hero" aria-labelledby="arb-title">
+            <div>
+              <p class="arb-kicker">Engineering · Arduino · Programming</p>
+              <h1 id="arb-title">Arduino: <span>The Robot Brain</span></h1>
+              <p class="arb-lede">The Arduino Uno is the "controller" from last class made real: a tiny computer you can program to read the world and react to it. Meet the IDE, blink your first LED, read the Serial Monitor, and send a message in Morse code.</p>
+              <div class="arb-meta"><span>Grades 6–12</span><span>60 minutes</span><span>First sketch upload</span><span>USB cable required</span></div>
+              <a class="arb-back" href="../steam-lessons.html#module-engineering">← Back to Engineering</a>
+            </div>
+            <div class="arb-ide" aria-label="Simplified Arduino IDE window">
+              <div class="arb-ide-bar"><span class="arb-ide-dot" style="background:#ff5f57"></span><span class="arb-ide-dot" style="background:#febc2e"></span><span class="arb-ide-dot" style="background:#28c840"></span><span>Blink | Arduino IDE</span></div>
+              <div class="arb-ide-toolbar"><button class="arb-ide-btn is-primary" type="button">✓ Verify</button><button class="arb-ide-btn" type="button">→ Upload</button><button class="arb-ide-btn" type="button">🔍 Serial Monitor</button></div>
+              <div class="arb-ide-body"><span class="k">void</span> <span class="f">setup</span>() {<br>&nbsp;&nbsp;pinMode(LED_BUILTIN, OUTPUT);<br>&nbsp;&nbsp;Serial.begin(<span class="n">9600</span>);<br>&nbsp;&nbsp;Serial.println(<span class="c">"Hello World!"</span>);<br>}<br><br><span class="k">void</span> <span class="f">loop</span>() {<br>&nbsp;&nbsp;digitalWrite(LED_BUILTIN, HIGH);<br>&nbsp;&nbsp;delay(<span class="n">1000</span>);<br>&nbsp;&nbsp;digitalWrite(LED_BUILTIN, LOW);<br>&nbsp;&nbsp;delay(<span class="n">1000</span>);<br>}</div>
+              <div class="arb-ide-serial">Hello World!</div>
+            </div>
+          </section>
+
+          <section class="arb-card" style="--arb-accent:var(--arb-teal);">
+            <p class="arb-label">First upload</p><h2>Meet the Arduino IDE</h2>
+            <p>The <strong>IDE</strong> (Integrated Development Environment) is where you write, check, and upload code called a <strong>sketch</strong>. Three buttons matter most: <strong>Verify</strong> checks your code for errors without touching the board, <strong>Upload</strong> compiles it and sends it over USB to the Arduino's memory, and the <strong>Serial Monitor</strong> opens a window that shows text your sketch sends back — your board's first "hello."</p>
+          </section>
+
+          <section class="arb-card" style="--arb-accent:var(--arb-orange);">
+            <p class="arb-label">Sketch anatomy</p><h2><code>setup()</code> vs <code>loop()</code></h2>
+            <p>Every Arduino sketch has exactly two required functions. Press run and watch how many times each one actually executes.</p>
+            <div class="arb-anatomy">
+              <div class="arb-anatomy-col" id="col-setup"><h3>setup()</h3><pre class="arb-code"><span class="k">void</span> <span class="f">setup</span>() {
+  pinMode(LED, OUTPUT);
+  Serial.begin(<span class="n">9600</span>);
+}</pre><p style="margin-top:.6rem;font-size:.82rem;">Runs <strong>once</strong>, the instant the board powers on or resets. Perfect for one-time setup: naming pins, starting Serial, initializing variables.</p></div>
+              <div class="arb-anatomy-col" id="col-loop"><h3>loop()</h3><pre class="arb-code"><span class="k">void</span> <span class="f">loop</span>() {
+  digitalWrite(LED, HIGH);
+  delay(<span class="n">1000</span>);
+  digitalWrite(LED, LOW);
+  delay(<span class="n">1000</span>);
+}</pre><p style="margin-top:.6rem;font-size:.82rem;">Runs <strong>forever</strong>, immediately repeating from the top the instant it reaches the bottom. This is the robot's feedback loop, made literal.</p></div>
+            </div>
+            <button class="arb-anatomy-run" id="anatomy-run" type="button">▶ Simulate power-on</button>
+            <p class="arb-anatomy-status" id="anatomy-status" aria-live="polite">Ready — press run to trace execution.</p>
+          </section>
+
+          <section class="arb-card" style="--arb-accent:var(--arb-teal);">
+            <p class="arb-label">Hardware basics</p><h2>Blink: Hello World, but with light</h2>
+            <p><code>delay(1000)</code> pauses for 1000 milliseconds (one second). Drag the slider to change the blink sketch's delay value and watch the simulated board — and its Serial Monitor — respond in real time.</p>
+            <div class="arb-blinklab">
+              <div class="arb-blink-board">
+                <div class="arb-led-visual" id="blink-led"></div>
+                <span class="arb-led-caption" id="blink-caption">LED_BUILTIN · OFF</span>
+              </div>
+              <div style="display:grid;gap:.7rem;">
+                <div class="arb-field">
+                  <label for="blink-delay">delay(<b id="blink-delay-value">1000</b>) milliseconds</label>
+                  <input type="range" id="blink-delay" min="100" max="2000" step="100" value="1000">
+                  <p>This one number controls both the HIGH delay and the LOW delay in the sketch above.</p>
+                </div>
+                <div class="arb-serial" id="blink-serial" aria-live="polite" aria-label="Simulated Serial Monitor output"></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="arb-card" style="--arb-accent:var(--arb-red);">
+            <p class="arb-label">Challenge</p><h2>Send a message in Morse code</h2>
+            <p>Modify Blink so the delay pattern spells something. A short flash is a <strong>dot</strong>, a long flash is a <strong>dash</strong>. Type a short word (letters and numbers only) and watch your virtual LED blink it out.</p>
+            <div class="arb-morse">
+              <div class="arb-morse-controls">
+                <label for="morse-input" class="arb-label">Message to send</label>
+                <input type="text" id="morse-input" maxlength="8" placeholder="e.g. SOS" value="SOS">
+                <button class="arb-morse-btn" id="morse-send" type="button">▶ Blink it out</button>
+                <p class="arb-morse-hint">Real code: build an array of dot/dash durations, then loop through it turning the LED on for each duration with a short pause between.</p>
+                <pre class="arb-code">int dot = 200, dash = 600;
+int pattern[] = {dot, gap, dot, gap, dot};
+<span class="c">// … one array per letter of "SOS"</span></pre>
+              </div>
+              <div class="arb-morse-board">
+                <div class="arb-led-visual" id="morse-led"></div>
+                <div class="arb-morse-pattern" id="morse-pattern">· · ·  – – –  · · ·</div>
+              </div>
+            </div>
+            <div class="arb-morse-chart" id="morse-chart"></div>
+          </section>
+
+          <section class="arb-card" style="--arb-accent:var(--arb-lime);">
+            <p class="arb-label">Bigger picture</p><h2>How does neuroscience relate to robotics?</h2>
+            <p>A neuron and a microcontroller solve the same problem: take in signals, decide, and pass a signal on. Compare the diagrams, then check the analogy table.</p>
+            <div class="arb-neuro">
+              <div class="arb-neuro-col"><h3>Neuron</h3><svg viewBox="0 0 260 150" role="img" aria-label="Diagram of a neuron: dendrites receive signals, the cell body integrates them, and the axon fires an output to a synapse">
+                <g stroke="#1b3a4b" stroke-width="3" fill="none"><path d="M20 40 L55 70"/><path d="M20 75 L55 75"/><path d="M20 110 L55 80"/></g>
+                <circle cx="75" cy="75" r="26" fill="#00979d" opacity=".85"/>
+                <path d="M101 75 H180" stroke="#1b3a4b" stroke-width="4"/>
+                <circle cx="195" cy="75" r="10" fill="#ef8354"/>
+                <text x="37" y="30" font-family="IBM Plex Mono" font-size="10" fill="#1b3a4b">dendrites</text>
+                <text x="60" y="115" font-family="IBM Plex Mono" font-size="10" fill="#1b3a4b">cell body</text>
+                <text x="150" y="65" font-family="IBM Plex Mono" font-size="10" fill="#1b3a4b">axon</text>
+                <text x="170" y="105" font-family="IBM Plex Mono" font-size="10" fill="#1b3a4b">synapse</text>
+              </svg></div>
+              <div class="arb-neuro-col"><h3>Microcontroller</h3><svg viewBox="0 0 260 150" role="img" aria-label="Diagram of a microcontroller: sensor pins receive signals, the chip processes them, and an output pin fires a signal to an actuator">
+                <g stroke="#1b3a4b" stroke-width="3" fill="none"><path d="M20 40 L55 70"/><path d="M20 75 L55 75"/><path d="M20 110 L55 80"/></g>
+                <rect x="55" y="52" width="46" height="46" rx="4" fill="#00979d" opacity=".85"/>
+                <path d="M101 75 H180" stroke="#1b3a4b" stroke-width="4"/>
+                <circle cx="195" cy="75" r="10" fill="#ef8354"/>
+                <text x="30" y="30" font-family="IBM Plex Mono" font-size="10" fill="#1b3a4b">sensor pins</text>
+                <text x="45" y="115" font-family="IBM Plex Mono" font-size="10" fill="#1b3a4b">chip / code</text>
+                <text x="145" y="65" font-family="IBM Plex Mono" font-size="10" fill="#1b3a4b">output pin</text>
+                <text x="165" y="105" font-family="IBM Plex Mono" font-size="10" fill="#1b3a4b">actuator</text>
+              </svg></div>
+            </div>
+            <div class="arb-analogy">
+              <div class="arb-analogy-row"><b>Dendrites receive input from other neurons</b><span>≈</span><span>Pins read voltage from sensors</span></div>
+              <div class="arb-analogy-row"><b>A neuron only fires past a threshold voltage</b><span>≈</span><span><code>if (value &gt; threshold)</code> in your code</span></div>
+              <div class="arb-analogy-row"><b>The axon carries one electrical signal onward</b><span>≈</span><span>A single output pin drives an LED or motor</span></div>
+              <div class="arb-analogy-row"><b>Repeated firing strengthens a synapse (learning)</b><span>≈</span><span>Your code doesn't change itself — a program only does what you wrote</span></div>
+            </div>
+          </section>
+
+          <section class="arb-card" style="--arb-accent:var(--arb-teal);">
+            <p class="arb-label">Quick check</p><h2>Test your sketch sense</h2>
+            <div class="arb-quiz">
+              <div class="arb-question" data-answer="b" data-explanation="setup() runs exactly once when the board powers on or resets; loop() repeats forever."><p>1. How many times does <code>setup()</code> run during normal operation?</p><div class="arb-options"><button class="arb-option" data-choice="a">Every time loop() finishes</button><button class="arb-option" data-choice="b">Exactly once, at power-on</button><button class="arb-option" data-choice="c">10 times per second</button><button class="arb-option" data-choice="d">It never runs automatically</button></div><div class="arb-feedback" aria-live="polite"></div></div>
+              <div class="arb-question" data-answer="c" data-explanation="delay() takes milliseconds; 1000 ms is one full second."><p>2. In <code>delay(1000)</code>, what does 1000 measure?</p><div class="arb-options"><button class="arb-option" data-choice="a">Volts</button><button class="arb-option" data-choice="b">Pin number</button><button class="arb-option" data-choice="c">Milliseconds</button><button class="arb-option" data-choice="d">Bytes of memory</button></div><div class="arb-feedback" aria-live="polite"></div></div>
+              <div class="arb-question" data-answer="a" data-explanation="Serial Monitor reads text your sketch sends with Serial.print() or Serial.println() over the USB connection."><p>3. What does opening the Serial Monitor let you do?</p><div class="arb-options"><button class="arb-option" data-choice="a">Read text messages your sketch sends over USB</button><button class="arb-option" data-choice="b">Change the LED's color</button><button class="arb-option" data-choice="c">Upload code without a cable</button><button class="arb-option" data-choice="d">Increase the board's voltage</button></div><div class="arb-feedback" aria-live="polite"></div></div>
+              <div class="arb-question" data-answer="d" data-explanation="Both a neuron and a microcontroller take in signals, apply a threshold or program, and pass a single output signal onward."><p>4. What do a neuron and a microcontroller have in common?</p><div class="arb-options"><button class="arb-option" data-choice="a">Both run on 120V AC power</button><button class="arb-option" data-choice="b">Both are made of silicon</button><button class="arb-option" data-choice="c">Neither can be reprogrammed</button><button class="arb-option" data-choice="d">Both take in signals, decide, and pass a signal on</button></div><div class="arb-feedback" aria-live="polite"></div></div>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head"><div class="ll-tabs"><button class="ll-tab" aria-selected="true" data-pane="arb-plan">Lesson</button><button class="ll-tab" aria-selected="false" data-pane="arb-teacher">Teacher</button></div><button class="ll-panel-close" type="button" aria-label="Close panel">×</button></div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="arb-plan">
+            <span class="ll-label">Learning goals</span>
+            <div class="ll-info"><strong>Navigate the IDE</strong>Locate Verify, Upload, and Serial Monitor and explain what each does.</div>
+            <div class="ll-info"><strong>Read a sketch</strong>Explain why setup() runs once and loop() runs forever.</div>
+            <div class="ll-info"><strong>Blink with purpose</strong>Change delay() values and predict the resulting blink rate.</div>
+            <div class="ll-info"><strong>Encode a message</strong>Translate a short word into Morse dots and dashes as timed LED flashes.</div>
+            <div class="ll-info"><strong>Draw the analogy</strong>Compare a neuron's fire-or-don't-fire behavior to a microcontroller reading a threshold.</div>
+          </div>
+          <div class="ll-pane" id="arb-teacher">
+            <span class="ll-label">Materials</span>
+            <div class="ll-info"><strong>Core kit</strong>One Arduino Uno with USB cable per student or pair, Arduino IDE installed ahead of class.</div>
+            <div class="ll-info"><strong>Launch question</strong>"If setup() only runs once, why doesn't the Arduino forget everything the instant loop() starts?" (Variables declared outside both functions persist.)</div>
+            <div class="ll-info"><strong>Extension</strong>Fast learners can encode their own name or initials and challenge a partner to decode the blink pattern back into letters.</div>
+            <div class="ll-info"><strong>Assessment</strong>A working Blink upload with a modified delay value, plus a correctly-timed Morse pattern for a 3-letter word.</div>
+            <div class="ll-info"><strong>Safety</strong>USB power only — never connect a board to wall power or an unknown power supply.</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      // ── setup/loop trace ──
+      var runBtn = document.getElementById('anatomy-run');
+      var statusEl = document.getElementById('anatomy-status');
+      var setupCol = document.getElementById('col-setup');
+      var loopCol = document.getElementById('col-loop');
+      var traceTimer = null, loopCount = 0;
+      runBtn.addEventListener('click', function () {
+        if (traceTimer) { clearInterval(traceTimer); traceTimer = null; }
+        loopCount = 0;
+        setupCol.classList.add('is-active'); loopCol.classList.remove('is-active');
+        statusEl.textContent = 'Power on → setup() runs once…';
+        setTimeout(function () {
+          setupCol.classList.remove('is-active');
+          traceTimer = setInterval(function () {
+            loopCol.classList.add('is-active');
+            loopCount++;
+            statusEl.textContent = 'loop() pass #' + loopCount + ' — setup() will not run again until reset.';
+            setTimeout(function () { loopCol.classList.remove('is-active'); }, 400);
+            if (loopCount >= 6) { clearInterval(traceTimer); traceTimer = null; statusEl.textContent = 'loop() keeps repeating forever — press run to trace again.'; }
+          }, 700);
+        }, 900);
+      });
+
+      // ── Blink lab ──
+      var blinkLed = document.getElementById('blink-led');
+      var blinkCaption = document.getElementById('blink-caption');
+      var blinkSerial = document.getElementById('blink-serial');
+      var delayInput = document.getElementById('blink-delay');
+      var delayValueEl = document.getElementById('blink-delay-value');
+      var blinkTimer = null, blinkState = false, serialLines = 0;
+      function logSerial(text) {
+        serialLines++;
+        var line = document.createElement('div');
+        line.className = 'arb-serial-line';
+        line.textContent = text;
+        blinkSerial.appendChild(line);
+        blinkSerial.scrollTop = blinkSerial.scrollHeight;
+        while (blinkSerial.children.length > 12) blinkSerial.removeChild(blinkSerial.firstChild);
+      }
+      function tickBlink() {
+        blinkState = !blinkState;
+        blinkLed.classList.toggle('is-on', blinkState);
+        blinkCaption.textContent = 'LED_BUILTIN · ' + (blinkState ? 'ON' : 'OFF');
+        logSerial((blinkState ? 'digitalWrite HIGH' : 'digitalWrite LOW') + '  @ t+' + (serialLines * Number(delayInput.value)) + 'ms');
+      }
+      function restartBlink() {
+        if (blinkTimer) clearInterval(blinkTimer);
+        blinkTimer = setInterval(tickBlink, Number(delayInput.value));
+      }
+      delayInput.addEventListener('input', function () {
+        delayValueEl.textContent = delayInput.value;
+        restartBlink();
+      });
+      logSerial('Hello World!');
+      tickBlink();
+      restartBlink();
+
+      // ── Morse challenge ──
+      var MORSE = { A:'.-',B:'-...',C:'-.-.',D:'-..',E:'.',F:'..-.',G:'--.',H:'....',I:'..',J:'.---',K:'-.-',L:'.-..',M:'--',N:'-.',O:'---',P:'.--.',Q:'--.-',R:'.-.',S:'...',T:'-',U:'..-',V:'...-',W:'.--',X:'-..-',Y:'-.--',Z:'--..','0':'-----','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.' };
+      var morseInput = document.getElementById('morse-input');
+      var morseSend = document.getElementById('morse-send');
+      var morseLed = document.getElementById('morse-led');
+      var morsePattern = document.getElementById('morse-pattern');
+      var morseChart = document.getElementById('morse-chart');
+      Object.keys(MORSE).sort().forEach(function (ch) {
+        var span = document.createElement('span');
+        span.textContent = ch + ' ' + MORSE[ch];
+        morseChart.appendChild(span);
+      });
+      var morsePlayToken = 0;
+      function encode(text) {
+        return text.toUpperCase().split('').filter(function (c) { return MORSE[c]; }).map(function (c) { return MORSE[c]; });
+      }
+      function playMorse() {
+        var myToken = ++morsePlayToken;
+        var letters = encode(morseInput.value || 'SOS');
+        morsePattern.textContent = letters.map(function (l) { return l.replace(/\./g, '· ').replace(/-/g, '– '); }).join(' ');
+        var DOT = 200, DASH = 600, GAP = 200;
+        var t = 0;
+        function schedule(on, duration) {
+          setTimeout(function () { if (morsePlayToken === myToken) morseLed.classList.toggle('is-on', on); }, t);
+          t += duration;
+        }
+        letters.forEach(function (letter) {
+          letter.split('').forEach(function (symbol) {
+            schedule(true, symbol === '.' ? DOT : DASH);
+            schedule(false, GAP);
+          });
+          t += GAP * 2;
+        });
+      }
+      morseSend.addEventListener('click', playMorse);
+      morseInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') playMorse(); });
+
+      // ── Quiz ──
+      document.querySelectorAll('.arb-question').forEach(function (question) {
+        question.querySelectorAll('.arb-option').forEach(function (option) {
+          option.addEventListener('click', function () {
+            if (question.dataset.locked) return;
+            question.dataset.locked = 'true';
+            question.querySelectorAll('.arb-option').forEach(function (item) {
+              item.disabled = true;
+              if (item.dataset.choice === question.dataset.answer) item.classList.add('is-correct');
+            });
+            var correct = option.dataset.choice === question.dataset.answer;
+            if (!correct) option.classList.add('is-wrong');
+            question.querySelector('.arb-feedback').textContent = (correct ? 'Correct. ' : 'Not quite. ') + question.dataset.explanation;
+          });
+        });
+      });
+    })();
+  </script>
+  <script src="../assets/js/classroom-animations.js"></script>
+  <script src="../assets/js/lesson-layout.js"></script>
+  <script src="../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

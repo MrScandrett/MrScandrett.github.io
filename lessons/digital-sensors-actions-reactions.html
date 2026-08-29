@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Digital Sensors: Actions = Reactions · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Learn how buttons, switches, and pull-up resistors let robots detect touch input, build a circuit where a button press drives an LED and a Serial message together, and design a binary communication system using buttons and LEDs." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      --dsr-ink: #14202a;
+      --dsr-paper: #eaf1f6;
+      --dsr-panel: #fffdfa;
+      --dsr-blue: #2b6ea3;
+      --dsr-navy: #1b2e3f;
+      --dsr-amber: #f2a53f;
+      --dsr-lime: #7ec850;
+      --dsr-red: #d9534b;
+      --dsr-line: rgba(20, 32, 42, 0.18);
+      --dsr-grid: rgba(43, 110, 163, 0.08);
+    }
+    body.theme-steam { font-family: "IBM Plex Sans", Inter, sans-serif; }
+    .dsr-page { padding-bottom: 1.5rem; color: var(--dsr-ink); }
+    .ll-viewport { --ll-panel-w: 310px; }
+    .dsr-page button, .dsr-page select, .dsr-page input { font: inherit; }
+    .dsr-page button { touch-action: manipulation; cursor: pointer; }
+    .dsr-page :focus-visible { outline: 3px solid #0b83b1; outline-offset: 3px; }
+
+    .dsr-hero { position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(300px, .95fr); gap: clamp(1.2rem, 4vw, 3.2rem); align-items: center; margin: .45rem 0 1rem; padding: clamp(1.35rem, 4vw, 2.8rem); border: 1px solid var(--dsr-line); border-radius: 10px; background-color: var(--dsr-paper); background-image: linear-gradient(var(--dsr-grid) 1px, transparent 1px), linear-gradient(90deg, var(--dsr-grid) 1px, transparent 1px); background-size: 22px 22px; box-shadow: 0 18px 48px rgba(20,32,42,.12); }
+    .dsr-hero::before { content: "WEEK 3 · ENR1-03A"; position: absolute; right: -2.6rem; top: 1.2rem; transform: rotate(7deg); color: rgba(43,110,163,.13); font: 800 clamp(2rem, 6vw, 4.4rem)/.78 "Barlow Condensed", sans-serif; letter-spacing: .04em; pointer-events: none; }
+    .dsr-kicker, .dsr-label { font: 700 .73rem/1.2 "IBM Plex Mono", monospace; letter-spacing: .09em; text-transform: uppercase; }
+    .dsr-kicker { color: var(--dsr-blue); }
+    .dsr-hero h1 { max-width: 12ch; margin: .3rem 0 .75rem; font: 800 clamp(2.3rem, 6vw, 4.6rem)/.85 "Barlow Condensed", sans-serif; letter-spacing: -.03em; text-transform: uppercase; }
+    .dsr-hero h1 span { display: block; color: var(--dsr-amber); }
+    .dsr-lede { max-width: 58ch; margin: 0 0 1rem; font-size: 1rem; line-height: 1.7; }
+    .dsr-meta { display: flex; flex-wrap: wrap; gap: .45rem; margin: .8rem 0 1.05rem; }
+    .dsr-meta span { padding: .28rem .52rem; border: 1px solid var(--dsr-line); background: rgba(255,255,255,.56); font: 600 .7rem/1.2 "IBM Plex Mono", monospace; }
+    .dsr-back { color: var(--dsr-blue); font-weight: 700; text-decoration: none; }
+    .dsr-back:hover { text-decoration: underline; }
+
+    .dsr-hero-board { position: relative; z-index: 1; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .7rem; min-height: 220px; padding: 1rem; border: 3px solid #1b2e3f; border-radius: 12px; background: #16283a; color: #dcecf5; }
+    .dsr-hero-battery { padding: .55rem; border: 2px solid #dce8e6; font: 700 .68rem "IBM Plex Mono", monospace; text-align: center; }
+    .dsr-hero-wire { position: relative; height: 5px; background: var(--dsr-amber); }
+    .dsr-hero-lamp { display: grid; place-items: center; width: 68px; height: 68px; border: 3px solid #cfd9d7; border-radius: 50%; background: #273c43; font-size: 1.6rem; transition: .15s; }
+    .dsr-hero-board.is-lit .dsr-hero-lamp { color: #231b08; background: #f6ca4d; box-shadow: 0 0 26px #f6ca4d; }
+    .dsr-hero-button { grid-column: 1 / -1; justify-self: center; padding: .8rem 1.6rem; border: 0; border-radius: 8px; background: var(--dsr-red); color: white; box-shadow: 0 6px 0 #8f2b26; font: 800 1rem "Barlow Condensed", sans-serif; text-transform: uppercase; letter-spacing: .04em; }
+    .dsr-hero-button:active, .dsr-hero-button.is-down { transform: translateY(5px); box-shadow: 0 1px 0 #8f2b26; }
+    .dsr-hero-status { grid-column: 1 / -1; margin: 0; text-align: center; font: 600 .74rem "IBM Plex Mono", monospace; color: #a9c3d4; }
+
+    .dsr-card { margin-bottom: 1rem; padding: clamp(1.1rem, 3vw, 1.65rem); border: 1px solid var(--dsr-line); border-top: 5px solid var(--dsr-accent, var(--dsr-blue)); border-radius: 9px; background: var(--dsr-panel); box-shadow: 0 8px 24px rgba(20,32,42,.07); }
+    .dsr-card h2 { margin: 0 0 .5rem; font: 800 clamp(1.65rem, 4vw, 2.35rem)/.95 "Barlow Condensed", sans-serif; text-transform: uppercase; letter-spacing: -.015em; }
+    .dsr-card h3 { margin: 0 0 .35rem; font: 700 1.25rem/1 "Barlow Condensed", sans-serif; text-transform: uppercase; }
+    .dsr-card p { margin: 0 0 .75rem; line-height: 1.67; }
+    .dsr-card > p { max-width: 78ch; }
+
+    .dsr-wiring { display: grid; grid-template-columns: minmax(280px, 1.1fr) minmax(260px, .9fr); gap: 1rem; margin-top: 1rem; }
+    .dsr-diagram { padding: 1rem; border: 1px solid var(--dsr-line); background: #f2f6f8; }
+    .dsr-diagram svg { display: block; width: 100%; height: auto; }
+    .dsr-code { margin: 0; overflow: auto; padding: 1rem; border-radius: 4px; background: #17272f; color: #e7f0e8; font: 500 .77rem/1.62 "IBM Plex Mono", monospace; }
+    .dsr-code .c { color: #a8c86e; } .dsr-code .k { color: #70c8e5; } .dsr-code .n { color: #f2bf3f; } .dsr-code .f { color: #dcdcaa; }
+    .dsr-truth { width: 100%; margin-top: .7rem; border-collapse: collapse; font-size: .8rem; }
+    .dsr-truth th, .dsr-truth td { padding: .48rem; border: 1px solid var(--dsr-line); text-align: left; }
+    .dsr-truth th { background: #e2ecf1; }
+
+    .dsr-build { display: grid; grid-template-columns: minmax(220px, .8fr) minmax(280px, 1.2fr); gap: 1rem; margin-top: 1rem; align-items: start; }
+    .dsr-build-board { display: grid; place-items: center; gap: .8rem; padding: 1.2rem; border: 3px solid #1b2e3f; border-radius: 12px; background: #16283a; }
+    .dsr-build-button { width: 96px; height: 96px; border: 0; border-radius: 50%; cursor: pointer; background: radial-gradient(circle at 36% 30%, #ff8a71 0 16%, #de4438 37% 62%, #8f261f 64% 100%); box-shadow: 0 8px 0 #741f1a, 0 11px 14px rgba(0,0,0,.35); transition: transform .08s, box-shadow .08s; }
+    .dsr-build-button:active, .dsr-build-button.is-down { transform: translateY(7px); box-shadow: 0 1px 0 #741f1a, 0 3px 6px rgba(0,0,0,.3); }
+    .dsr-build-led { width: 56px; height: 56px; border-radius: 50%; background: #3a2a24; box-shadow: inset 0 0 8px rgba(0,0,0,.5); transition: background .08s, box-shadow .08s; }
+    .dsr-build-led.is-on { background: #ff6a3d; box-shadow: 0 0 26px #ff6a3d, inset 0 0 8px rgba(255,255,255,.3); }
+    .dsr-build-caption { color: #cfe4e0; font: 600 .7rem "IBM Plex Mono", monospace; }
+    .dsr-build-serial { padding: .8rem; border: 2px solid #1b2e3f; background: #0e1a22; color: #7bd88f; font: 500 .78rem/1.6 "IBM Plex Mono", monospace; min-height: 130px; max-height: 180px; overflow-y: auto; }
+    .dsr-build-serial-line { opacity: 0; animation: dsr-fadein .2s forwards; }
+    @keyframes dsr-fadein { to { opacity: 1; } }
+
+    .dsr-binary { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+    .dsr-station { padding: 1rem; border: 1px solid var(--dsr-line); background: #f2f6f8; }
+    .dsr-station h3 { text-align: center; }
+    .dsr-bitrow { display: flex; justify-content: center; gap: .5rem; margin: .8rem 0; }
+    .dsr-bit-btn { width: 52px; height: 52px; border-radius: 50%; border: 2px solid #1b2e3f; background: #dfe8ec; color: var(--dsr-ink); font: 700 .8rem "IBM Plex Mono", monospace; }
+    .dsr-bit-btn[aria-pressed="true"] { background: var(--dsr-red); border-color: var(--dsr-red); color: white; }
+    .dsr-bit-led { width: 44px; height: 44px; border-radius: 50%; background: #2a2118; box-shadow: inset 0 0 6px rgba(0,0,0,.5); transition: background .1s, box-shadow .1s; }
+    .dsr-bit-led.is-on { background: #f6ca4d; box-shadow: 0 0 18px #f6ca4d; }
+    .dsr-station-value { text-align: center; font: 700 1.15rem "Barlow Condensed", sans-serif; text-transform: uppercase; margin: .6rem 0 0; }
+    .dsr-station-value b { color: var(--dsr-blue); font-size: 1.5rem; }
+    .dsr-send-btn { display: block; margin: .8rem auto 0; padding: .55rem 1.2rem; border: 2px solid var(--dsr-blue); background: var(--dsr-blue); color: white; font-weight: 700; }
+    .dsr-legend-note { margin-top: 1rem; font-size: .82rem; }
+    .dsr-legend-table { width: 100%; margin-top: .6rem; border-collapse: collapse; font-size: .78rem; }
+    .dsr-legend-table th, .dsr-legend-table td { padding: .35rem .5rem; border: 1px solid var(--dsr-line); text-align: center; }
+    .dsr-legend-table th { background: #e2ecf1; }
+
+    .dsr-quiz { display: grid; gap: .85rem; margin-top: 1rem; }
+    .dsr-question { padding: 1rem; border: 1px solid var(--dsr-line); background: #f2f6f8; }
+    .dsr-question > p { font-weight: 700; }
+    .dsr-options { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+    .dsr-option { padding: .65rem; border: 1px solid var(--dsr-line); background: white; color: var(--dsr-ink); text-align: left; cursor: pointer; transition: border-color .15s ease, background .15s ease; }
+    .dsr-option:not(:disabled):hover { border-color: var(--dsr-blue); background: #e6f0f6; }
+    .dsr-option.is-correct { border-color: #5a7c18; background: #edf7d2; }
+    .dsr-option.is-wrong { border-color: #b5352e; background: #ffe2dc; }
+    .dsr-feedback { min-height: 1.4em; margin: .55rem 0 0; font-size: .82rem; font-weight: 600; }
+
+    [data-lighting="night"] .dsr-page, [data-theme="vaporwave"] .dsr-page, [data-theme="bark"] .dsr-page { --dsr-ink: #eaf2f5; --dsr-panel: #142228; --dsr-paper: #16262f; --dsr-line: rgba(234,242,245,.2); --dsr-grid: rgba(43,110,163,.12); }
+    [data-lighting="night"] .dsr-diagram, [data-lighting="night"] .dsr-station, [data-lighting="night"] .dsr-question,
+    [data-theme="vaporwave"] .dsr-diagram, [data-theme="vaporwave"] .dsr-station, [data-theme="vaporwave"] .dsr-question,
+    [data-theme="bark"] .dsr-diagram, [data-theme="bark"] .dsr-station, [data-theme="bark"] .dsr-question { background: rgba(255,255,255,.04); }
+    [data-lighting="night"] .dsr-truth th, [data-lighting="night"] .dsr-legend-table th, [data-theme="vaporwave"] .dsr-truth th, [data-theme="vaporwave"] .dsr-legend-table th, [data-theme="bark"] .dsr-truth th, [data-theme="bark"] .dsr-legend-table th { background: #223948; }
+    [data-lighting="night"] .dsr-option, [data-theme="vaporwave"] .dsr-option, [data-theme="bark"] .dsr-option { background: #1a2f39; color: #eef6f3; }
+    [data-lighting="night"] .dsr-bit-btn, [data-theme="vaporwave"] .dsr-bit-btn, [data-theme="bark"] .dsr-bit-btn { background: #223948; color: #eef6f3; }
+
+    @media (max-width: 900px) {
+      .dsr-hero, .dsr-wiring, .dsr-build, .dsr-binary { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .dsr-hero { padding: 1rem; }
+      .dsr-hero h1 { font-size: 2.6rem; }
+      .dsr-options { grid-template-columns: 1fr; }
+      .dsr-card { padding: 1rem; }
+      .dsr-bit-btn { width: 44px; height: 44px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .dsr-build-serial-line { animation: none; opacity: 1; }
+    }
+    @media print { .dsr-hero-board, .dsr-build-board, .ll-panel, .ll-open-btn { display: none !important; } .dsr-card { break-inside: avoid; box-shadow: none; } }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary"><ul>
+          <li><a href="../index.html">Home</a></li><li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li><li><a href="../paths.html">Paths</a></li><li><a href="../showcase.html">Showcase</a></li><li><a href="../applications.html">Apps</a></li><li><a href="../recipe-book.html">Library</a></li><li><a href="../about.html">About</a></li>
+        </ul></nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="dsr-page">
+          <section class="dsr-hero" aria-labelledby="dsr-title">
+            <div>
+              <p class="dsr-kicker">Engineering · Digital Input · Robotics</p>
+              <h1 id="dsr-title">Digital Sensors: <span>Actions = Reactions</span></h1>
+              <p class="dsr-lede">A robot can't respond to touch until it can reliably detect it. Learn how buttons, switches, and pull-up resistors turn a press into a clean digital signal — then design a code your team can send with nothing but buttons and LEDs.</p>
+              <div class="dsr-meta"><span>Grades 6–12</span><span>60–75 minutes</span><span>Build + group challenge</span><span>Breadboard required</span></div>
+              <a class="dsr-back" href="../steam-lessons.html#module-engineering">← Back to Engineering</a>
+            </div>
+            <div class="dsr-hero-board" id="hero-board" aria-label="Interactive button and LED demonstration">
+              <div class="dsr-hero-battery">+ 5V −</div><div class="dsr-hero-wire"></div><div class="dsr-hero-lamp" aria-hidden="true">✦</div>
+              <button class="dsr-hero-button" id="hero-button" type="button">Press me</button>
+              <p class="dsr-hero-status" id="hero-status" aria-live="polite">Released → pin reads HIGH → lamp off</p>
+            </div>
+          </section>
+
+          <section class="dsr-card" style="--dsr-accent:var(--dsr-blue);">
+            <p class="dsr-label">Core idea</p><h2>Every reaction starts with a sensed action</h2>
+            <p>A digital pin only ever reads one of two states: <strong>HIGH</strong> or <strong>LOW</strong>. A button, switch, or touch sensor's entire job is to make that state change cleanly and predictably the instant a human acts — no in-between, no guessing.</p>
+          </section>
+
+          <section class="dsr-card" style="--dsr-accent:var(--dsr-amber);">
+            <p class="dsr-label">Wiring it reliably</p><h2>Buttons, switches &amp; the pull-up problem</h2>
+            <p>A pin left disconnected is <strong>floating</strong> — it can randomly read HIGH or LOW from stray electrical noise. A <strong>pull-up resistor</strong> solves this by holding the pin at a known HIGH until the button connects it to ground. Most boards can enable one internally with <code>INPUT_PULLUP</code> — no extra resistor needed.</p>
+            <div class="dsr-wiring">
+              <div class="dsr-diagram">
+                <svg viewBox="0 0 620 280" role="img" aria-labelledby="dsr-pullup-title dsr-pullup-desc">
+                  <title id="dsr-pullup-title">Button wired to a digital pin using an internal pull-up resistor</title><desc id="dsr-pullup-desc">The input pin is internally pulled to five volts and a pushbutton connects it to ground when pressed.</desc>
+                  <defs><marker id="dsr-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4 0 8z" fill="#c65e2e"/></marker></defs>
+                  <rect x="48" y="30" width="230" height="200" rx="10" fill="#dbe6ec" stroke="#1b2e3f" stroke-width="3"/>
+                  <text x="163" y="60" text-anchor="middle" font-family="IBM Plex Mono" font-size="16" font-weight="700" fill="#1b2e3f">MICROCONTROLLER</text>
+                  <circle cx="278" cy="112" r="8" fill="#2b6ea3"/><text x="246" y="99" text-anchor="end" font-family="IBM Plex Mono" font-size="14" fill="#1b2e3f">PIN 3</text>
+                  <circle cx="278" cy="188" r="8" fill="#12202a"/><text x="246" y="180" text-anchor="end" font-family="IBM Plex Mono" font-size="14" fill="#1b2e3f">GND</text>
+                  <path d="M278 112H382" stroke="#c65e2e" stroke-width="5"/>
+                  <circle cx="392" cy="112" r="8" fill="#c65e2e"/><circle cx="470" cy="112" r="8" fill="#c65e2e"/>
+                  <path d="M400 105L460 79" stroke="#1b2e3f" stroke-width="7" stroke-linecap="round"/>
+                  <path d="M470 112H520V188H278" fill="none" stroke="#12202a" stroke-width="5"/>
+                  <path d="M328 112V48H430" fill="none" stroke="#2b6ea3" stroke-width="4" stroke-dasharray="8 6"/>
+                  <path d="M430 48l-11 12 22 12-22 12 22 12-11 12v14" fill="none" stroke="#2b6ea3" stroke-width="4"/>
+                  <text x="446" y="54" font-family="IBM Plex Mono" font-size="13" fill="#2b6ea3">INTERNAL PULL-UP → 5V</text>
+                  <text x="430" y="158" text-anchor="middle" font-family="IBM Plex Mono" font-size="14" font-weight="700" fill="#1b2e3f">PUSHBUTTON</text>
+                  <path d="M342 140H296" stroke="#c65e2e" stroke-width="3" marker-end="url(#dsr-arrow)"/>
+                  <text x="348" y="161" font-family="IBM Plex Mono" font-size="12" fill="#8a3d20">pressed = LOW</text>
+                  <text x="163" y="255" text-anchor="middle" font-family="IBM Plex Mono" font-size="13" fill="#1b2e3f">COMMON GROUND</text>
+                </svg>
+                <table class="dsr-truth"><thead><tr><th>Button</th><th>Pin reading</th><th>Meaning</th></tr></thead><tbody><tr><td>Released</td><td>HIGH</td><td>Default / inactive</td></tr><tr><td>Pressed</td><td>LOW</td><td>Active</td></tr></tbody></table>
+              </div>
+              <pre class="dsr-code" aria-label="Arduino pull-up button example"><code><span class="k">const int</span> buttonPin = <span class="n">3</span>;
+
+<span class="k">void</span> <span class="f">setup</span>() {
+  pinMode(buttonPin, INPUT_PULLUP);
+  pinMode(LED_BUILTIN, OUTPUT);
+  Serial.begin(<span class="n">9600</span>);
+}
+
+<span class="k">void</span> <span class="f">loop</span>() {
+  <span class="k">bool</span> pressed =
+    digitalRead(buttonPin) == LOW;
+  digitalWrite(LED_BUILTIN, pressed);
+}
+
+<span class="c">// INPUT_PULLUP reverses the logic:</span>
+<span class="c">// LOW means pressed.</span></code></pre>
+            </div>
+            <p style="margin-top:.9rem;"><a class="dsr-back" href="inputs-beyond-the-button.html">Go deeper → Inputs: Beyond the Button, with debouncing</a></p>
+          </section>
+
+          <section class="dsr-card" style="--dsr-accent:var(--dsr-blue);">
+            <p class="dsr-label">Build: one press, two reactions</p><h2>Press the button, get both at once</h2>
+            <p>The point of the loop is that both reactions happen in the <em>same</em> pass — an LED lighting and a Serial message printing are not two separate events, they're one <code>if</code> statement with two lines inside it. Press the virtual button and watch both fire together.</p>
+            <div class="dsr-build">
+              <div class="dsr-build-board">
+                <button class="dsr-build-button" id="build-button" type="button" aria-label="Hold the pushbutton"></button>
+                <div class="dsr-build-led" id="build-led" aria-hidden="true"></div>
+                <span class="dsr-build-caption">PIN 3 · LED_BUILTIN</span>
+              </div>
+              <div class="dsr-build-serial" id="build-serial" aria-live="polite" aria-label="Simulated Serial Monitor output"></div>
+            </div>
+            <pre class="dsr-code" style="margin-top:.9rem;" aria-label="Simultaneous LED and Serial reaction code"><code><span class="k">void</span> <span class="f">loop</span>() {
+  <span class="k">bool</span> pressed = digitalRead(buttonPin) == LOW;
+  digitalWrite(LED_BUILTIN, pressed);      <span class="c">// reaction 1</span>
+  <span class="k">if</span> (pressed) Serial.println(<span class="c">"Button: PRESSED"</span>); <span class="c">// reaction 2</span>
+}</code></pre>
+          </section>
+
+          <section class="dsr-card" style="--dsr-accent:var(--dsr-lime);">
+            <p class="dsr-label">Group challenge</p><h2>Design a binary communication system</h2>
+            <p>Using only push buttons and LEDs, two stations can send whole messages to each other — no words, just patterns of on and off. Each button is one <strong>bit</strong>: pressed = 1, released = 0. Four buttons can represent any number from 0 to 15.</p>
+            <div class="dsr-binary">
+              <div class="dsr-station">
+                <h3>Sender station</h3>
+                <div class="dsr-bitrow" id="sender-bits" role="group" aria-label="Four sender buttons, most significant bit first"></div>
+                <p class="dsr-station-value">Binary <b id="sender-binary">0000</b> = Decimal <b id="sender-decimal">0</b></p>
+                <button class="dsr-send-btn" id="send-btn" type="button">Send pattern →</button>
+              </div>
+              <div class="dsr-station">
+                <h3>Receiver station</h3>
+                <div class="dsr-bitrow" id="receiver-leds" aria-label="Four receiver LEDs, most significant bit first"></div>
+                <p class="dsr-station-value">Received: <b id="receiver-decimal">—</b></p>
+                <p class="dsr-legend-note" id="receiver-meaning">Waiting for a signal…</p>
+              </div>
+            </div>
+            <div class="dsr-legend-note">
+              <strong>Team challenge:</strong> agree on a legend before you start sending. One idea — map 0–9 to digits, and reserve three more codes as commands:
+              <table class="dsr-legend-table"><thead><tr><th>0000–1001</th><th>1010</th><th>1011</th><th>1100</th></tr></thead><tbody><tr><td>Digits 0–9</td><td>SPACE</td><td>YES</td><td>NO</td></tr></tbody></table>
+              Spell a short number or send a YES/NO answer to a partner using only the sender panel above — they read the receiver panel without looking at your buttons.
+            </div>
+          </section>
+
+          <section class="dsr-card" style="--dsr-accent:var(--dsr-blue);">
+            <p class="dsr-label">Quick check</p><h2>Read the signal</h2>
+            <div class="dsr-quiz">
+              <div class="dsr-question" data-answer="b" data-explanation="A pull-up gives the pin a known HIGH state until the button connects it to ground."><p>1. What problem does <code>INPUT_PULLUP</code> solve?</p><div class="dsr-options"><button class="dsr-option" data-choice="a">It makes an LED brighter</button><button class="dsr-option" data-choice="b">It prevents a disconnected pin from floating</button><button class="dsr-option" data-choice="c">It increases Serial baud rate</button><button class="dsr-option" data-choice="d">It reverses motor direction</button></div><div class="dsr-feedback" aria-live="polite"></div></div>
+              <div class="dsr-question" data-answer="d" data-explanation="With an internal pull-up, pressing connects the pin to ground, so the active reading is LOW — the opposite of what you might expect."><p>2. A button wired with <code>INPUT_PULLUP</code> reads which value when pressed?</p><div class="dsr-options"><button class="dsr-option" data-choice="a">1023</button><button class="dsr-option" data-choice="b">Floating</button><button class="dsr-option" data-choice="c">HIGH</button><button class="dsr-option" data-choice="d">LOW</button></div><div class="dsr-feedback" aria-live="polite"></div></div>
+              <div class="dsr-question" data-answer="a" data-explanation="Both lines live inside the same loop() pass — they execute together on the same button press, not as separate events."><p>3. Why can one button press trigger an LED and a Serial message "simultaneously"?</p><div class="dsr-options"><button class="dsr-option" data-choice="a">Both actions run in the same loop() pass</button><button class="dsr-option" data-choice="b">The LED and Serial share one wire</button><button class="dsr-option" data-choice="c">Arduino runs two programs at once</button><button class="dsr-option" data-choice="d">Serial.println() also powers the LED</button></div><div class="dsr-feedback" aria-live="polite"></div></div>
+              <div class="dsr-question" data-answer="c" data-explanation="Four bits (buttons) can represent 2^4 = 16 distinct values, 0 through 15."><p>4. With 4 buttons as binary bits, how many distinct values can you send?</p><div class="dsr-options"><button class="dsr-option" data-choice="a">4</button><button class="dsr-option" data-choice="b">8</button><button class="dsr-option" data-choice="c">16</button><button class="dsr-option" data-choice="d">Unlimited</button></div><div class="dsr-feedback" aria-live="polite"></div></div>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head"><div class="ll-tabs"><button class="ll-tab" aria-selected="true" data-pane="dsr-plan">Lesson</button><button class="ll-tab" aria-selected="false" data-pane="dsr-teacher">Teacher</button></div><button class="ll-panel-close" type="button" aria-label="Close panel">×</button></div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="dsr-plan">
+            <span class="ll-label">Learning goals</span>
+            <div class="ll-info"><strong>Read digital state</strong>Explain HIGH/LOW and why a floating pin is unreliable.</div>
+            <div class="ll-info"><strong>Wire a pull-up</strong>Use <code>INPUT_PULLUP</code> and explain why pressed can equal LOW.</div>
+            <div class="ll-info"><strong>Combine reactions</strong>Trigger an LED and a Serial message from one button press in a single loop() pass.</div>
+            <div class="ll-info"><strong>Think in binary</strong>Represent a number 0–15 as four button/LED bits.</div>
+            <div class="ll-info"><strong>Design a protocol</strong>Agree on a shared legend before sending a message with a partner.</div>
+          </div>
+          <div class="ll-pane" id="dsr-teacher">
+            <span class="ll-label">Materials</span>
+            <div class="ll-info"><strong>Core kit</strong>One Arduino Uno, breadboard, pushbutton, LED, and current-limiting resistor per pair.</div>
+            <div class="ll-info"><strong>Launch question</strong>"If your team could only communicate with lights, how would you send the number 42?"</div>
+            <div class="ll-info"><strong>Group challenge setup</strong>Pair students back-to-back. One sends a digit or YES/NO with the binary buttons; the partner reads only the LEDs and decodes it against the shared legend.</div>
+            <div class="ll-info"><strong>Assessment</strong>A working button circuit that both lights an LED and prints to Serial on press, plus a correctly decoded 2-message exchange using the binary legend.</div>
+            <div class="ll-info"><strong>Safety</strong>Low-voltage USB or battery power only.</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      // ── Hero button/LED demo ──
+      var heroBoard = document.getElementById('hero-board');
+      var heroButton = document.getElementById('hero-button');
+      var heroStatus = document.getElementById('hero-status');
+      function setHero(pressed) {
+        heroBoard.classList.toggle('is-lit', pressed);
+        heroButton.classList.toggle('is-down', pressed);
+        heroStatus.textContent = (pressed ? 'Pressed → pin reads LOW → lamp on' : 'Released → pin reads HIGH → lamp off');
+      }
+      ['pointerdown', 'keydown'].forEach(function (type) { heroButton.addEventListener(type, function (e) { if (type === 'pointerdown' || e.key === ' ' || e.key === 'Enter') setHero(true); }); });
+      ['pointerup', 'pointercancel', 'pointerleave', 'keyup', 'blur'].forEach(function (type) { heroButton.addEventListener(type, function () { setHero(false); }); });
+
+      // ── Build lab: button + LED + Serial together ──
+      var buildButton = document.getElementById('build-button');
+      var buildLed = document.getElementById('build-led');
+      var buildSerial = document.getElementById('build-serial');
+      function logBuild(text) {
+        var line = document.createElement('div');
+        line.className = 'dsr-build-serial-line';
+        line.textContent = text;
+        buildSerial.appendChild(line);
+        buildSerial.scrollTop = buildSerial.scrollHeight;
+        while (buildSerial.children.length > 10) buildSerial.removeChild(buildSerial.firstChild);
+      }
+      function setBuild(pressed) {
+        buildButton.classList.toggle('is-down', pressed);
+        buildLed.classList.toggle('is-on', pressed);
+        if (pressed) logBuild('Button: PRESSED');
+      }
+      ['pointerdown', 'keydown'].forEach(function (type) { buildButton.addEventListener(type, function (e) { if (type === 'pointerdown' || e.key === ' ' || e.key === 'Enter') setBuild(true); }); });
+      ['pointerup', 'pointercancel', 'pointerleave', 'keyup', 'blur'].forEach(function (type) { buildButton.addEventListener(type, function () { setBuild(false); }); });
+      logBuild('Ready — waiting for input…');
+
+      // ── Binary communication challenge ──
+      var senderBitsEl = document.getElementById('sender-bits');
+      var receiverLedsEl = document.getElementById('receiver-leds');
+      var senderBinaryEl = document.getElementById('sender-binary');
+      var senderDecimalEl = document.getElementById('sender-decimal');
+      var receiverDecimalEl = document.getElementById('receiver-decimal');
+      var receiverMeaningEl = document.getElementById('receiver-meaning');
+      var bits = [0, 0, 0, 0];
+      var LEGEND = { 0:'Digit 0',1:'Digit 1',2:'Digit 2',3:'Digit 3',4:'Digit 4',5:'Digit 5',6:'Digit 6',7:'Digit 7',8:'Digit 8',9:'Digit 9',10:'SPACE',11:'YES',12:'NO',13:'(unassigned)',14:'(unassigned)',15:'(unassigned)' };
+      var receiverLeds = [];
+      for (var i = 0; i < 4; i++) {
+        (function (index) {
+          var btn = document.createElement('button');
+          btn.className = 'dsr-bit-btn';
+          btn.type = 'button';
+          btn.setAttribute('aria-pressed', 'false');
+          btn.textContent = 2 ? Math.pow(2, 3 - index) : '';
+          btn.addEventListener('click', function () {
+            bits[index] = bits[index] ? 0 : 1;
+            btn.setAttribute('aria-pressed', String(!!bits[index]));
+            updateSender();
+          });
+          senderBitsEl.appendChild(btn);
+
+          var led = document.createElement('div');
+          led.className = 'dsr-bit-led';
+          receiverLeds.push(led);
+          receiverLedsEl.appendChild(led);
+        })(i);
+      }
+      function updateSender() {
+        var binaryStr = bits.join('');
+        var decimal = parseInt(binaryStr, 2);
+        senderBinaryEl.textContent = binaryStr;
+        senderDecimalEl.textContent = String(decimal);
+      }
+      document.getElementById('send-btn').addEventListener('click', function () {
+        var decimal = parseInt(bits.join(''), 2);
+        bits.forEach(function (b, index) { receiverLeds[index].classList.toggle('is-on', !!b); });
+        receiverDecimalEl.textContent = String(decimal);
+        receiverMeaningEl.textContent = 'Decoded as: ' + (LEGEND[decimal] || 'unassigned code');
+      });
+      updateSender();
+    })();
+
+    // ── Shared quiz handler ──
+    document.querySelectorAll('.dsr-question').forEach(function (question) {
+      question.querySelectorAll('.dsr-option').forEach(function (option) {
+        option.addEventListener('click', function () {
+          if (question.dataset.locked) return;
+          question.dataset.locked = 'true';
+          question.querySelectorAll('.dsr-option').forEach(function (item) {
+            item.disabled = true;
+            if (item.dataset.choice === question.dataset.answer) item.classList.add('is-correct');
+          });
+          var correct = option.dataset.choice === question.dataset.answer;
+          if (!correct) option.classList.add('is-wrong');
+          question.querySelector('.dsr-feedback').textContent = (correct ? 'Correct. ' : 'Not quite. ') + question.dataset.explanation;
+        });
+      });
+    });
+  </script>
+  <script src="../assets/js/classroom-animations.js"></script>
+  <script src="../assets/js/lesson-layout.js"></script>
+  <script src="../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

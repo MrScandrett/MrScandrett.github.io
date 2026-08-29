@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Robotics Engineering Intro · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="What makes a robot a robot? Learn sensor, actuator, controller, and feedback loop, review lab safety and breadboard orientation, meet the Arduino Uno and its parts, and ask whether a webpage counts as a robot." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      --rei-ink: #12202a;
+      --rei-paper: #eef5f3;
+      --rei-panel: #fffdfa;
+      --rei-copper: #c65e2e;
+      --rei-blue: #146b8c;
+      --rei-lime: #b8d84b;
+      --rei-yellow: #f2bf3f;
+      --rei-red: #d94b41;
+      --rei-line: rgba(18, 32, 42, 0.18);
+      --rei-grid: rgba(20, 107, 140, 0.08);
+    }
+    body.theme-steam { font-family: "IBM Plex Sans", Inter, sans-serif; }
+    .rei-page { padding-bottom: 1.5rem; color: var(--rei-ink); }
+    .ll-viewport { --ll-panel-w: 310px; }
+    .rei-page button, .rei-page select, .rei-page input { font: inherit; }
+    .rei-page button { touch-action: manipulation; cursor: pointer; }
+    .rei-page :focus-visible { outline: 3px solid #0b83b1; outline-offset: 3px; }
+
+    .rei-hero {
+      position: relative; overflow: hidden;
+      display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(300px, .95fr);
+      gap: clamp(1.2rem, 4vw, 3.2rem); align-items: center;
+      margin: .45rem 0 1rem; padding: clamp(1.35rem, 4vw, 2.8rem);
+      border: 1px solid var(--rei-line); border-radius: 10px;
+      background-color: var(--rei-paper);
+      background-image: linear-gradient(var(--rei-grid) 1px, transparent 1px), linear-gradient(90deg, var(--rei-grid) 1px, transparent 1px);
+      background-size: 22px 22px;
+      box-shadow: 0 18px 48px rgba(18,32,42,.12);
+    }
+    .rei-hero::before {
+      content: "WEEK 1 · ENR1-01A"; position: absolute; right: -2.6rem; top: 1.2rem; transform: rotate(7deg);
+      color: rgba(198,94,46,.13); font: 800 clamp(2rem, 6vw, 4.4rem)/.78 "Barlow Condensed", sans-serif;
+      letter-spacing: .04em; pointer-events: none;
+    }
+    .rei-kicker, .rei-label { font: 700 .73rem/1.2 "IBM Plex Mono", monospace; letter-spacing: .09em; text-transform: uppercase; }
+    .rei-kicker { color: var(--rei-copper); }
+    .rei-hero h1 { max-width: 11ch; margin: .3rem 0 .75rem; font: 800 clamp(2.6rem, 7vw, 5.4rem)/.8 "Barlow Condensed", sans-serif; letter-spacing: -.03em; text-transform: uppercase; }
+    .rei-hero h1 span { display: block; color: var(--rei-blue); }
+    .rei-lede { max-width: 58ch; margin: 0 0 1rem; font-size: 1rem; line-height: 1.7; }
+    .rei-meta { display: flex; flex-wrap: wrap; gap: .45rem; margin: .8rem 0 1.05rem; }
+    .rei-meta span { padding: .28rem .52rem; border: 1px solid var(--rei-line); background: rgba(255,255,255,.56); font: 600 .7rem/1.2 "IBM Plex Mono", monospace; }
+    .rei-back { color: var(--rei-blue); font-weight: 700; text-decoration: none; }
+    .rei-back:hover { text-decoration: underline; }
+
+    .rei-loopcard { position: relative; z-index: 1; min-height: 300px; padding: 1rem; border: 3px solid #273943; border-radius: 14px; background: #29424b; box-shadow: 0 14px 0 #17272f, 0 25px 34px rgba(10,22,28,.24); color: #f6fbf8; }
+    .rei-loop-label { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: .5rem; color: #d4e0df; font: 600 .68rem "IBM Plex Mono", monospace; }
+    .rei-loop-svg { display: block; width: 100%; height: auto; }
+    .rei-loop-node rect { fill: #1c3038; stroke: #4c6a72; stroke-width: 2; transition: fill .2s, stroke .2s; }
+    .rei-loop-node text { fill: #cfe4e0; font: 700 .78rem "IBM Plex Mono", monospace; text-anchor: middle; }
+    .rei-loop-node.is-active rect { fill: var(--rei-yellow); stroke: var(--rei-yellow); }
+    .rei-loop-node.is-active text { fill: #23200a; }
+    .rei-loop-arrow { stroke: #4c6a72; stroke-width: 3; fill: none; marker-end: url(#rei-arrowhead); transition: stroke .2s; }
+    .rei-loop-arrow.is-active { stroke: var(--rei-yellow); }
+    .rei-loop-status { margin: .7rem 0 0; text-align: center; min-height: 1.4em; font: 600 .78rem/1.5 "IBM Plex Mono", monospace; color: #f6fbf8; }
+    .rei-loop-btn { display: block; margin: .7rem auto 0; padding: .55rem 1rem; border: 2px solid #e7f0ee; background: #2f5e69; color: white; font-weight: 700; }
+
+    .rei-card { margin-bottom: 1rem; padding: clamp(1.1rem, 3vw, 1.65rem); border: 1px solid var(--rei-line); border-top: 5px solid var(--rei-accent, var(--rei-blue)); border-radius: 9px; background: var(--rei-panel); box-shadow: 0 8px 24px rgba(18,32,42,.07); }
+    .rei-card h2 { margin: 0 0 .5rem; font: 800 clamp(1.65rem, 4vw, 2.35rem)/.95 "Barlow Condensed", sans-serif; text-transform: uppercase; letter-spacing: -.015em; }
+    .rei-card h3 { margin: 0 0 .35rem; font: 700 1.25rem/1 "Barlow Condensed", sans-serif; text-transform: uppercase; }
+    .rei-card p { margin: 0 0 .75rem; line-height: 1.67; }
+    .rei-card > p { max-width: 78ch; }
+
+    .rei-vocab { display: grid; grid-template-columns: repeat(4, 1fr); gap: .75rem; margin-top: 1rem; }
+    .rei-flip { position: relative; min-height: 150px; border: 0; background: none; padding: 0; perspective: 1000px; }
+    .rei-flip-inner { position: relative; width: 100%; height: 100%; min-height: 150px; transition: transform .5s; transform-style: preserve-3d; }
+    .rei-flip[aria-pressed="true"] .rei-flip-inner { transform: rotateY(180deg); }
+    .rei-flip-face { position: absolute; inset: 0; display: grid; align-content: center; gap: .35rem; padding: 1rem; border: 1px solid var(--rei-line); backface-visibility: hidden; text-align: left; }
+    .rei-flip-front { background: #f4f8f6; }
+    .rei-flip-back { background: var(--type-color, var(--rei-blue)); color: white; transform: rotateY(180deg); }
+    .rei-flip-front b { font: 700 1.15rem "Barlow Condensed", sans-serif; text-transform: uppercase; color: var(--type-color, var(--rei-blue)); }
+    .rei-flip-front span { font-size: .78rem; color: #4d626b; }
+    .rei-flip-back p { margin: 0; font-size: .84rem; line-height: 1.5; }
+
+    .rei-rules { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; margin-top: 1rem; }
+    .rei-rules article { padding: 1rem; border-left: 5px solid var(--rei-red); background: #fff0eb; }
+    .rei-rules b { display: block; margin-bottom: .28rem; color: #a32e28; font-family: "IBM Plex Mono", monospace; }
+    .rei-rules p { margin: 0; font-size: .88rem; }
+
+    .rei-board { display: grid; grid-template-columns: minmax(280px, 1.15fr) minmax(240px, .85fr); gap: 1rem; margin-top: 1rem; align-items: start; }
+    .rei-board svg { display: block; width: 100%; height: auto; cursor: pointer; }
+    .rei-board-zone { fill: transparent; }
+    .rei-board-zone.is-hot { fill: rgba(198,94,46,.28); }
+    .rei-board-readout { padding: 1rem; border: 1px solid var(--rei-line); background: #f4f8f6; min-height: 165px; }
+    .rei-board-readout h3 { margin-top: 0; }
+    .rei-board-readout p { margin: 0; font-size: .87rem; }
+    .rei-more { font-size: .84rem; font-weight: 700; color: var(--rei-blue); text-decoration: none; }
+    .rei-more:hover { text-decoration: underline; }
+
+    .rei-parts { display: grid; grid-template-columns: repeat(4, 1fr); gap: .75rem; margin-top: 1rem; }
+    .rei-part { padding: 0; border: 1px solid var(--rei-line); background: #f7f8f4; text-align: left; overflow: hidden; transition: transform .15s ease, box-shadow .15s ease; }
+    .rei-part:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(18,32,42,.1); }
+    .rei-part-art { display: grid; place-items: center; height: 110px; background: #1c3038; }
+    .rei-part-art svg { width: 84px; height: 84px; }
+    .rei-part-name { display: block; padding: .6rem .7rem 0; font: 700 .95rem "Barlow Condensed", sans-serif; text-transform: uppercase; }
+    .rei-part-info { display: none; padding: 0 .7rem .8rem; font-size: .8rem; line-height: 1.5; color: #33474f; }
+    .rei-part.is-open .rei-part-info { display: block; }
+    .rei-part-hint { display: block; padding: 0 .7rem .7rem; font-size: .7rem; color: #6e7f85; font-family: "IBM Plex Mono", monospace; }
+    .rei-part.is-open .rei-part-hint { display: none; }
+
+    .rei-webrobot { width: 100%; margin-top: .8rem; border-collapse: collapse; font-size: .86rem; }
+    .rei-webrobot th, .rei-webrobot td { padding: .55rem .6rem; border: 1px solid var(--rei-line); text-align: left; vertical-align: top; }
+    .rei-webrobot th { background: #e5efec; font-family: "IBM Plex Mono", monospace; font-size: .74rem; text-transform: uppercase; letter-spacing: .04em; }
+    .rei-reveal-btn { margin-top: 1rem; padding: .6rem 1rem; border: 2px solid var(--rei-blue); background: transparent; color: var(--rei-blue); font-weight: 700; }
+    .rei-reveal-btn:hover { background: var(--rei-blue); color: white; }
+    .rei-answer { display: none; margin-top: .8rem; padding: 1rem; border-left: 5px solid var(--rei-lime); background: #f4f9e6; }
+    .rei-answer.is-shown { display: block; }
+    .rei-answer p:last-child { margin-bottom: 0; }
+
+    .rei-quiz { display: grid; gap: .85rem; margin-top: 1rem; }
+    .rei-question { padding: 1rem; border: 1px solid var(--rei-line); background: #f5f8f4; }
+    .rei-question > p { font-weight: 700; }
+    .rei-options { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+    .rei-option { padding: .65rem; border: 1px solid var(--rei-line); background: white; color: var(--rei-ink); text-align: left; cursor: pointer; transition: border-color .15s ease, background .15s ease; }
+    .rei-option:not(:disabled):hover { border-color: var(--rei-blue); background: #eef6f8; }
+    .rei-option.is-correct { border-color: #5a7c18; background: #edf7d2; }
+    .rei-option.is-wrong { border-color: #b5352e; background: #ffe2dc; }
+    .rei-feedback { min-height: 1.4em; margin: .55rem 0 0; font-size: .82rem; font-weight: 600; }
+
+    [data-lighting="night"] .rei-page, [data-theme="vaporwave"] .rei-page, [data-theme="bark"] .rei-page { --rei-ink: #edf5f2; --rei-panel: #16272e; --rei-paper: #18313a; --rei-line: rgba(228,242,237,.2); --rei-grid: rgba(112,200,229,.1); }
+    [data-lighting="night"] .rei-flip-front, [data-lighting="night"] .rei-rules article, [data-lighting="night"] .rei-board-readout, [data-lighting="night"] .rei-part, [data-lighting="night"] .rei-question,
+    [data-theme="vaporwave"] .rei-flip-front, [data-theme="vaporwave"] .rei-rules article, [data-theme="vaporwave"] .rei-board-readout, [data-theme="vaporwave"] .rei-part, [data-theme="vaporwave"] .rei-question,
+    [data-theme="bark"] .rei-flip-front, [data-theme="bark"] .rei-rules article, [data-theme="bark"] .rei-board-readout, [data-theme="bark"] .rei-part, [data-theme="bark"] .rei-question { background: rgba(255,255,255,.04); }
+    [data-lighting="night"] .rei-part-info, [data-theme="vaporwave"] .rei-part-info, [data-theme="bark"] .rei-part-info { color: #c8d8d4; }
+    [data-lighting="night"] .rei-webrobot th, [data-theme="vaporwave"] .rei-webrobot th, [data-theme="bark"] .rei-webrobot th { background: #29414a; }
+    [data-lighting="night"] .rei-option, [data-theme="vaporwave"] .rei-option, [data-theme="bark"] .rei-option { background: #20343d; color: #eef6f3; }
+    [data-lighting="night"] .rei-answer, [data-theme="vaporwave"] .rei-answer, [data-theme="bark"] .rei-answer { background: rgba(184,216,75,.1); }
+
+    @media (max-width: 900px) {
+      .rei-hero, .rei-board { grid-template-columns: 1fr; }
+      .rei-vocab, .rei-parts { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 600px) {
+      .rei-hero { padding: 1rem; }
+      .rei-hero h1 { font-size: 3rem; }
+      .rei-vocab, .rei-rules, .rei-parts, .rei-options { grid-template-columns: 1fr; }
+      .rei-card { padding: 1rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .rei-flip-inner { transition: none; }
+      .rei-part { transition: none; }
+      .rei-part:hover { transform: none; }
+    }
+    @media print { .rei-loopcard, .ll-panel, .ll-open-btn { display: none !important; } .rei-card { break-inside: avoid; box-shadow: none; } }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary"><ul>
+          <li><a href="../index.html">Home</a></li><li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li><li><a href="../paths.html">Paths</a></li><li><a href="../showcase.html">Showcase</a></li><li><a href="../applications.html">Apps</a></li><li><a href="../recipe-book.html">Library</a></li><li><a href="../about.html">About</a></li>
+        </ul></nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="rei-page">
+          <section class="rei-hero" aria-labelledby="rei-title">
+            <div>
+              <p class="rei-kicker">Engineering · Robotics Intro · Lab Safety</p>
+              <h1 id="rei-title">What Makes a <span>Robot a Robot?</span></h1>
+              <p class="rei-lede">Before any code or wires, a robot is an idea: something that senses the world, decides what to do, and acts — over and over. Meet the four-word vocabulary every robot shares, review the lab rules that keep hands and eyes safe, and meet the parts on your bench.</p>
+              <div class="rei-meta"><span>Grades 6–12</span><span>45–60 minutes</span><span>Discussion + parts ID</span><span>No soldering</span></div>
+              <a class="rei-back" href="../steam-lessons.html#module-engineering">← Back to Engineering</a>
+            </div>
+            <div class="rei-loopcard" aria-label="Interactive sense-think-act loop demonstration">
+              <div class="rei-loop-label"><span>THE ROBOT LOOP</span><span>LIVE DEMO</span></div>
+              <svg class="rei-loop-svg" viewBox="0 0 300 190" role="img" aria-labelledby="loop-svg-title">
+                <title id="loop-svg-title">A four-stage loop: sensor, controller, actuator, and feedback, connected in a cycle</title>
+                <defs><marker id="rei-arrowhead" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4 0 8z" fill="#4c6a72"/></marker></defs>
+                <path class="rei-loop-arrow" id="arrow-0" d="M105 30H185"/>
+                <path class="rei-loop-arrow" id="arrow-1" d="M245 55V125"/>
+                <path class="rei-loop-arrow" id="arrow-2" d="M185 160H115"/>
+                <path class="rei-loop-arrow" id="arrow-3" d="M55 125V55"/>
+                <g class="rei-loop-node" id="node-sensor"><rect x="15" y="10" width="90" height="40" rx="6"/><text x="60" y="34">SENSOR</text></g>
+                <g class="rei-loop-node" id="node-controller"><rect x="195" y="10" width="90" height="40" rx="6"/><text x="240" y="34">CONTROLLER</text></g>
+                <g class="rei-loop-node" id="node-actuator"><rect x="195" y="140" width="90" height="40" rx="6"/><text x="240" y="164">ACTUATOR</text></g>
+                <g class="rei-loop-node" id="node-feedback"><rect x="15" y="140" width="90" height="40" rx="6"/><text x="60" y="158">FEEDBACK</text><text x="60" y="172" style="font-size:.55rem">loop closes</text></g>
+              </svg>
+              <p class="rei-loop-status" id="loop-status" aria-live="polite">Press start — a robot noticing an obstacle and steering away.</p>
+              <button class="rei-loop-btn" id="loop-start" type="button">▶ Run the loop</button>
+            </div>
+          </section>
+
+          <section class="rei-card" style="--rei-accent:var(--rei-blue);">
+            <p class="rei-label">Core vocabulary</p><h2>Four words, one repeating loop</h2>
+            <p>Every robot — a Roomba, a factory arm, a Mars rover, or a toy — is built from the same four ingredients. Click each card to flip it and read the definition.</p>
+            <div class="rei-vocab" role="group" aria-label="Robot vocabulary flip cards">
+              <button class="rei-flip" type="button" aria-pressed="false" data-flip>
+                <div class="rei-flip-inner">
+                  <div class="rei-flip-face rei-flip-front" style="--type-color:#146b8c"><b>Sensor</b><span>Tap to reveal</span></div>
+                  <div class="rei-flip-face rei-flip-back" style="--type-color:#146b8c"><p>A part that notices something about the world — light, distance, touch, sound, temperature — and turns it into an electrical signal.</p></div>
+                </div>
+              </button>
+              <button class="rei-flip" type="button" aria-pressed="false" data-flip>
+                <div class="rei-flip-inner">
+                  <div class="rei-flip-face rei-flip-front" style="--type-color:#c65e2e"><b>Controller</b><span>Tap to reveal</span></div>
+                  <div class="rei-flip-face rei-flip-back" style="--type-color:#c65e2e"><p>The "brain" — a microcontroller like an Arduino Uno — that reads sensor signals, runs a program, and decides what should happen next.</p></div>
+                </div>
+              </button>
+              <button class="rei-flip" type="button" aria-pressed="false" data-flip>
+                <div class="rei-flip-inner">
+                  <div class="rei-flip-face rei-flip-front" style="--type-color:#6b7f26"><b>Actuator</b><span>Tap to reveal</span></div>
+                  <div class="rei-flip-face rei-flip-back" style="--type-color:#6b7f26"><p>A part that turns an electrical decision back into motion or energy in the real world — a motor, LED, speaker, or servo.</p></div>
+                </div>
+              </button>
+              <button class="rei-flip" type="button" aria-pressed="false" data-flip>
+                <div class="rei-flip-inner">
+                  <div class="rei-flip-face rei-flip-front" style="--type-color:#a3862a"><b>Feedback Loop</b><span>Tap to reveal</span></div>
+                  <div class="rei-flip-face rei-flip-back" style="--type-color:#a3862a"><p>The cycle repeating: the actuator's action changes the world, the sensor notices the change again, and the loop continues.</p></div>
+                </div>
+              </button>
+            </div>
+          </section>
+
+          <section class="rei-card" style="--rei-accent:var(--rei-red);">
+            <p class="rei-label">Before we touch anything</p><h2>Lab rules &amp; circuit safety</h2>
+            <p>Robots run on electricity, and electricity deserves respect. These rules apply every session, on every bench.</p>
+            <div class="rei-rules">
+              <article><b>Power off to build</b><p>Disconnect USB or battery power before you change any wiring. Build first, power second.</p></article>
+              <article><b>Low voltage only</b><p>Everything on your bench runs on 5 volts or less from USB or batteries — never wall outlets or mains wiring.</p></article>
+              <article><b>Check before power-up</b><p>Trace your circuit with your finger before connecting power. Look for short circuits: bare wires touching that shouldn't.</p></article>
+              <article><b>One hand rule</b><p>When you do test a live circuit, keep one hand in your pocket. It's an old electrician's habit that keeps current from ever crossing your chest.</p></article>
+              <article><b>Components have a "wrong way"</b><p>LEDs, capacitors, and chips are polarized. If something gets warm fast or smells odd, disconnect power immediately.</p></article>
+              <article><b>Ask before you're unsure</b><p>A confused circuit is a normal Tuesday. A smoking one is not. When in doubt, hands off and ask.</p></article>
+            </div>
+          </section>
+
+          <section class="rei-card" style="--rei-accent:var(--rei-yellow);">
+            <p class="rei-label">Bench orientation</p><h2>Find your way around a breadboard</h2>
+            <p>You'll be building circuits on a solderless breadboard all year. Hover or tap each zone to see what it's for — then head to the full lesson for wiring practice.</p>
+            <div class="rei-board">
+              <svg viewBox="0 0 400 220" role="img" aria-labelledby="board-svg-title" aria-describedby="board-svg-desc">
+                <title id="board-svg-title">Simplified breadboard diagram with labeled zones</title>
+                <desc id="board-svg-desc">Power rails run along the top and bottom edges. Terminal strip columns run vertically in two central banks separated by a center gap.</desc>
+                <rect x="4" y="4" width="392" height="212" rx="8" fill="#e9e4d6" stroke="#173944" stroke-width="2"/>
+                <rect class="rei-board-zone" data-zone="rail-top" x="4" y="4" width="392" height="34"/>
+                <rect class="rei-board-zone" data-zone="rail-bottom" x="4" y="182" width="392" height="34"/>
+                <rect class="rei-board-zone" data-zone="strip-left" x="20" y="54" width="170" height="112"/>
+                <rect class="rei-board-zone" data-zone="gap" x="190" y="54" width="20" height="112"/>
+                <rect class="rei-board-zone" data-zone="strip-right" x="210" y="54" width="170" height="112"/>
+                <line x1="4" y1="21" x2="396" y2="21" stroke="#d94b41" stroke-width="2" stroke-dasharray="4 3"/>
+                <line x1="4" y1="199" x2="396" y2="199" stroke="#146b8c" stroke-width="2" stroke-dasharray="4 3"/>
+                <g fill="#173944" opacity=".55">
+                  <!-- rail dots -->
+                  <g id="rail-dots"></g>
+                  <!-- strip dots -->
+                  <g id="strip-dots"></g>
+                </g>
+                <text x="200" y="12" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" fill="#173944">+ POWER RAIL (RED = +, BLUE = −)</text>
+                <text x="60" y="70" font-family="IBM Plex Mono" font-size="9" fill="#173944">TERMINAL STRIP A</text>
+                <text x="270" y="70" font-family="IBM Plex Mono" font-size="9" fill="#173944">TERMINAL STRIP B</text>
+                <text x="200" y="145" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" fill="#173944">CENTER GAP</text>
+              </svg>
+              <div class="rei-board-readout" id="board-readout" aria-live="polite">
+                <h3>Tap a zone</h3>
+                <p>Power rails, terminal strips, and the center gap each connect electricity differently. Explore the diagram to find out how.</p>
+              </div>
+            </div>
+            <p style="margin-top:.9rem;"><a class="rei-more" href="breadboard-basics.html">Go deeper → Breadboard Basics, with a full LED build</a></p>
+          </section>
+
+          <section class="rei-card" style="--rei-accent:var(--rei-blue);">
+            <p class="rei-label">Meet the parts</p><h2>What's on your bench?</h2>
+            <p>Four parts you'll use constantly this year. Click one to reveal what it does and how to spot it.</p>
+            <div class="rei-parts" role="group" aria-label="Component identification cards">
+              <button class="rei-part" type="button" data-part>
+                <span class="rei-part-art"><svg viewBox="0 0 100 100"><rect x="10" y="15" width="80" height="60" rx="4" fill="#146b8c"/><rect x="16" y="8" width="16" height="12" rx="2" fill="#8a9296"/><g fill="#d8b64a"><rect x="18" y="24" width="6" height="6"/><rect x="18" y="34" width="6" height="6"/><rect x="18" y="44" width="6" height="6"/><rect x="18" y="54" width="6" height="6"/><rect x="76" y="24" width="6" height="6"/><rect x="76" y="34" width="6" height="6"/><rect x="76" y="44" width="6" height="6"/><rect x="76" y="54" width="6" height="6"/></g><circle cx="50" cy="45" r="12" fill="#0d1a20"/></svg></span>
+                <span class="rei-part-name">Arduino Uno</span>
+                <span class="rei-part-hint">Click to identify →</span>
+                <span class="rei-part-info">The controller board — a small computer that runs your code, reads sensors on its pins, and drives outputs. It plugs into your computer over USB.</span>
+              </button>
+              <button class="rei-part" type="button" data-part>
+                <span class="rei-part-art"><svg viewBox="0 0 100 100"><path d="M15 30 Q40 15 55 40 T85 65" fill="none" stroke="#b8d84b" stroke-width="6" stroke-linecap="round"/><circle cx="15" cy="30" r="6" fill="#2a2a2a"/><circle cx="85" cy="65" r="6" fill="#2a2a2a"/></svg></span>
+                <span class="rei-part-name">Jumper Wire</span>
+                <span class="rei-part-hint">Click to identify →</span>
+                <span class="rei-part-info">A flexible wire with pins on each end. It carries electricity between breadboard holes, sensor modules, and the Arduino's pins — no soldering needed.</span>
+              </button>
+              <button class="rei-part" type="button" data-part>
+                <span class="rei-part-art"><svg viewBox="0 0 100 100"><line x1="5" y1="50" x2="30" y2="50" stroke="#c8a35a" stroke-width="4"/><line x1="70" y1="50" x2="95" y2="50" stroke="#c8a35a" stroke-width="4"/><rect x="30" y="35" width="40" height="30" rx="4" fill="#e8dcc0"/><rect x="36" y="35" width="5" height="30" fill="#8a5a2e"/><rect x="45" y="35" width="5" height="30" fill="#2a2a2a"/><rect x="54" y="35" width="5" height="30" fill="#d94b41"/><rect x="63" y="35" width="5" height="30" fill="#d8b64a"/></svg></span>
+                <span class="rei-part-name">Resistor</span>
+                <span class="rei-part-hint">Click to identify →</span>
+                <span class="rei-part-info">A tan cylinder with colored bands that limits current flow, protecting LEDs and chips from burning out. The color bands are a code you'll learn to read.</span>
+              </button>
+              <button class="rei-part" type="button" data-part>
+                <span class="rei-part-art"><svg viewBox="0 0 100 100"><path d="M50 15 C30 15 20 30 20 45 C20 58 28 65 34 70 L34 82 L66 82 L66 70 C72 65 80 58 80 45 C80 30 70 15 50 15Z" fill="#e5453b"/><line x1="42" y1="82" x2="42" y2="95" stroke="#c8a35a" stroke-width="3"/><line x1="58" y1="82" x2="58" y2="95" stroke="#c8a35a" stroke-width="3"/></svg></span>
+                <span class="rei-part-name">LED</span>
+                <span class="rei-part-hint">Click to identify →</span>
+                <span class="rei-part-info">A light-emitting diode — a small dome that glows when current flows the right direction. It's your simplest actuator: a controller's easiest way to "act."</span>
+              </button>
+            </div>
+            <p style="margin-top:.9rem;"><a class="rei-more" href="electronic-components.html">Go deeper → Electronic Components, with resistor color codes</a></p>
+          </section>
+
+          <section class="rei-card" style="--rei-accent:var(--rei-lime);">
+            <p class="rei-label">A thought experiment</p><h2>Is a webpage a robot?</h2>
+            <p>Your student website doesn't have motors or LEDs — so is it fair to call it a robot? Compare the parts before you decide.</p>
+            <table class="rei-webrobot">
+              <thead><tr><th>Robot part</th><th>Physical robot example</th><th>Webpage equivalent</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Sensor</strong></td><td>Touch sensor, camera, microphone</td><td>A click, a keystroke, a form field, a scroll</td></tr>
+                <tr><td><strong>Controller</strong></td><td>Arduino Uno running a sketch</td><td>JavaScript running in the browser</td></tr>
+                <tr><td><strong>Actuator</strong></td><td>Motor, LED, speaker</td><td>Updating text on screen, changing a color, playing a sound</td></tr>
+                <tr><td><strong>Feedback loop</strong></td><td>Sense → decide → act → sense again</td><td>An event listener waits, fires, then waits again for the next input</td></tr>
+              </tbody>
+            </table>
+            <button class="rei-reveal-btn" id="reveal-answer" type="button" aria-expanded="false">Reveal the answer</button>
+            <div class="rei-answer" id="answer-box">
+              <p><strong>Sort of — and that "sort of" is the point.</strong> A webpage shares the exact sense → think → act loop every robot uses. What it's missing is a physical actuator: it can't push a real object or move through real space on its own.</p>
+              <p>Engineers call this distinction <strong>embodiment</strong> — whether a system acts on the physical world or only on information. Your student website is where you'll practice the controller half of robotics all year: reading input, making decisions, and producing a response — even before you ever plug in an Arduino.</p>
+            </div>
+            <p style="margin-top:.9rem;"><a class="rei-more" href="build-your-student-page.html">Start building → Your Student Page</a></p>
+          </section>
+
+          <section class="rei-card" style="--rei-accent:var(--rei-blue);">
+            <p class="rei-label">Quick check</p><h2>Lock in the vocabulary</h2>
+            <div class="rei-quiz">
+              <div class="rei-question" data-answer="c" data-explanation="A sensor's job is to notice something about the world and turn it into a signal the controller can read."><p>1. A photoresistor detects light level and reports it to the Arduino. What role is it playing?</p><div class="rei-options"><button class="rei-option" data-choice="a">Actuator</button><button class="rei-option" data-choice="b">Controller</button><button class="rei-option" data-choice="c">Sensor</button><button class="rei-option" data-choice="d">Feedback loop</button></div><div class="rei-feedback" aria-live="polite"></div></div>
+              <div class="rei-question" data-answer="b" data-explanation="The Arduino Uno is the controller — it runs the program that reads sensors and decides what outputs should do."><p>2. Which part of a robot is the Arduino Uno?</p><div class="rei-options"><button class="rei-option" data-choice="a">Sensor</button><button class="rei-option" data-choice="b">Controller</button><button class="rei-option" data-choice="c">Actuator</button><button class="rei-option" data-choice="d">Power rail</button></div><div class="rei-feedback" aria-live="polite"></div></div>
+              <div class="rei-question" data-answer="d" data-explanation="Everything on the bench runs on low voltage from USB or batteries. Mains outlets are always off-limits."><p>3. What voltage source is safe for classroom robotics circuits?</p><div class="rei-options"><button class="rei-option" data-choice="a">Wall outlet</button><button class="rei-option" data-choice="b">Extension cord</button><button class="rei-option" data-choice="c">Car battery</button><button class="rei-option" data-choice="d">USB or AA batteries</button></div><div class="rei-feedback" aria-live="polite"></div></div>
+              <div class="rei-question" data-answer="a" data-explanation="A webpage senses input and reacts, but it never pushes or moves a physical object — it lacks a real-world actuator."><p>4. What does a webpage lack compared to a physical robot?</p><div class="rei-options"><button class="rei-option" data-choice="a">A physical actuator that acts on the real world</button><button class="rei-option" data-choice="b">Any way to receive input</button><button class="rei-option" data-choice="c">A controller of any kind</button><button class="rei-option" data-choice="d">A feedback loop</button></div><div class="rei-feedback" aria-live="polite"></div></div>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head"><div class="ll-tabs"><button class="ll-tab" aria-selected="true" data-pane="rei-plan">Lesson</button><button class="ll-tab" aria-selected="false" data-pane="rei-teacher">Teacher</button></div><button class="ll-panel-close" type="button" aria-label="Close panel">×</button></div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="rei-plan">
+            <span class="ll-label">Learning goals</span>
+            <div class="ll-info"><strong>Define the loop</strong>Explain sensor, controller, actuator, and feedback loop with an example of each.</div>
+            <div class="ll-info"><strong>Work safely</strong>State the lab rules and why low-voltage-only matters before building.</div>
+            <div class="ll-info"><strong>Read the board</strong>Locate the power rails, terminal strips, and center gap on a breadboard.</div>
+            <div class="ll-info"><strong>Identify parts</strong>Name the Arduino Uno, jumper wire, resistor, and LED on sight.</div>
+            <div class="ll-info"><strong>Compare systems</strong>Argue whether a webpage counts as a robot, using the sense/think/act loop as evidence.</div>
+          </div>
+          <div class="ll-pane" id="rei-teacher">
+            <span class="ll-label">Materials</span>
+            <div class="ll-info"><strong>Core kit</strong>One Arduino Uno, one breadboard, a handful of jumper wires, assorted resistors, and LEDs per student or pair — no power needed for this session.</div>
+            <div class="ll-info"><strong>Launch question</strong>"Name a robot you've seen in real life. What does it sense? What does it do about it?"</div>
+            <div class="ll-info"><strong>Discussion</strong>Push past the "is a webpage a robot" reveal — ask what a robot would need to become a webpage (a physical output) or vice versa.</div>
+            <div class="ll-info"><strong>Assessment</strong>Students can label all four vocabulary terms on an unfamiliar device (a thermostat, an automatic door) and identify the four bench parts by sight.</div>
+            <div class="ll-info"><strong>Safety</strong>No live circuits are powered this session. Save first power-up for Breadboard Basics next class, under supervision.</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      // ── Robot loop demo ──
+      var loopSteps = ['node-sensor', 'arrow-0', 'node-controller', 'arrow-1', 'node-actuator', 'arrow-2', 'node-feedback', 'arrow-3'];
+      var loopMessages = {
+        'node-sensor': 'SENSOR: a distance sensor notices a wall getting close.',
+        'node-controller': 'CONTROLLER: the Arduino compares the distance to a safe limit.',
+        'node-actuator': 'ACTUATOR: the drive motors steer away from the wall.',
+        'node-feedback': 'FEEDBACK LOOP: the robot moved, so the sensor checks again — the loop repeats.'
+      };
+      var loopTimer = null, loopIndex = 0;
+      var statusEl = document.getElementById('loop-status');
+      var startBtn = document.getElementById('loop-start');
+      function clearLoop() {
+        loopSteps.forEach(function (id) { var el = document.getElementById(id); if (el) el.classList.remove('is-active'); });
+      }
+      function stepLoop() {
+        clearLoop();
+        var id = loopSteps[loopIndex];
+        var el = document.getElementById(id);
+        if (el) el.classList.add('is-active');
+        if (loopMessages[id]) statusEl.textContent = loopMessages[id];
+        loopIndex = (loopIndex + 1) % loopSteps.length;
+      }
+      startBtn.addEventListener('click', function () {
+        if (loopTimer) { clearInterval(loopTimer); loopTimer = null; startBtn.textContent = '▶ Run the loop'; clearLoop(); statusEl.textContent = 'Press start — a robot noticing an obstacle and steering away.'; return; }
+        loopIndex = 0; stepLoop();
+        loopTimer = setInterval(stepLoop, 1400);
+        startBtn.textContent = '■ Stop the loop';
+      });
+
+      // ── Vocabulary flip cards ──
+      document.querySelectorAll('[data-flip]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var open = btn.getAttribute('aria-pressed') === 'true';
+          btn.setAttribute('aria-pressed', String(!open));
+        });
+      });
+
+      // ── Breadboard zones ──
+      var boardInfo = {
+        'rail-top': ['Top power rail', 'Every hole along this strip is electrically connected in one long line — usually the positive (+) supply, marked with a red stripe.'],
+        'rail-bottom': ['Bottom power rail', 'A second long connected strip — usually the negative/ground (−) return path, marked with a blue stripe.'],
+        'strip-left': ['Terminal strip A', 'Each short vertical column of five holes is connected to itself, but not to its neighbor column. Components placed in the same column share a connection.'],
+        'strip-right': ['Terminal strip B', 'A mirror of strip A on the other side of the center gap — its own independent set of five-hole columns.'],
+        'gap': ['Center gap', 'This channel is NOT electrically connected across it. It exists so an IC chip can straddle it without shorting its own pins together.']
+      };
+      var readout = document.getElementById('board-readout');
+      document.querySelectorAll('.rei-board-zone').forEach(function (zone) {
+        zone.addEventListener('click', function () {
+          document.querySelectorAll('.rei-board-zone').forEach(function (z) { z.classList.remove('is-hot'); });
+          zone.classList.add('is-hot');
+          var info = boardInfo[zone.dataset.zone];
+          if (info) readout.innerHTML = '<h3>' + info[0] + '</h3><p>' + info[1] + '</p>';
+        });
+      });
+
+      // ── Part ID cards ──
+      document.querySelectorAll('[data-part]').forEach(function (btn) {
+        btn.addEventListener('click', function () { btn.classList.toggle('is-open'); });
+      });
+
+      // ── Reveal answer ──
+      var revealBtn = document.getElementById('reveal-answer');
+      var answerBox = document.getElementById('answer-box');
+      revealBtn.addEventListener('click', function () {
+        var shown = answerBox.classList.toggle('is-shown');
+        revealBtn.setAttribute('aria-expanded', String(shown));
+        revealBtn.textContent = shown ? 'Hide the answer' : 'Reveal the answer';
+      });
+
+      // ── Quiz ──
+      document.querySelectorAll('.rei-question').forEach(function (question) {
+        question.querySelectorAll('.rei-option').forEach(function (option) {
+          option.addEventListener('click', function () {
+            if (question.dataset.locked) return;
+            question.dataset.locked = 'true';
+            question.querySelectorAll('.rei-option').forEach(function (item) {
+              item.disabled = true;
+              if (item.dataset.choice === question.dataset.answer) item.classList.add('is-correct');
+            });
+            var correct = option.dataset.choice === question.dataset.answer;
+            if (!correct) option.classList.add('is-wrong');
+            question.querySelector('.rei-feedback').textContent = (correct ? 'Correct. ' : 'Not quite. ') + question.dataset.explanation;
+          });
+        });
+      });
+    })();
+  </script>
+  <script src="../assets/js/classroom-animations.js"></script>
+  <script src="../assets/js/lesson-layout.js"></script>
+  <script src="../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
