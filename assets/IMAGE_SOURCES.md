@@ -93,6 +93,9 @@ Maintained to demonstrate good-faith educational use and to credit creators.
 | tycho-brahe.jpg | Tycho Brahe portrait | Oil painting by Eduard Ender (1822–1883); public domain via Wikimedia Commons |
 | curiosity-rover-selfportrait.jpg | Curiosity rover self-portrait on Mars | NASA/JPL-Caltech/Malin Space Science Systems; public domain |
 | ceres-vesta-comparison.jpg | Ceres and Vesta size compared to the Moon | NASA Dawn mission; public domain |
+| earth-blue-marble-nasa.jpg | Suomi NPP “Blue Marble” composite, 2012 | NASA/NOAA/GSFC/Suomi NPP/VIIRS; public domain via NASA SVS ID 30002 |
+| moon-lro-nasa.jpg | Full Moon mosaic from 1,231 LRO Narrow Angle Camera images | NASA Scientific Visualization Studio; public domain via NASA SVS ID 5001 |
+| sun-sdo-hmi-nasa.jpg | Visible-light solar photosphere from SDO/HMI | NASA/GSFC Scientific Visualization Studio and SDO Science Team; public domain via NASA SVS ID 3988 |
 | solvay-conference-1927.jpg | Solvay Conference 1927 | Photo by Benjamin Couprie; Institut International de Physique Solvay; public domain |
 | antikythera-mechanism.jpg | Antikythera Mechanism | Museum artifact photo (National Archaeological Museum Athens) |
 | foucault-pendulum.jpg | Foucault pendulum | Public domain photograph |

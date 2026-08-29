@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GitHub — From Idea to Shared Prototype · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Learn Git, GitHub collaboration, repositories, commits, branches, pull requests, and how to publish a safe student prototype with GitHub Pages." />
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      --gh-paper: #f6f8fa;
+      --gh-white: #ffffff;
+      --gh-ink: #17212b;
+      --gh-muted: #576574;
+      --gh-line: #c9d1d9;
+      --gh-blue: #0969da;
+      --gh-violet: #8250df;
+      --gh-green: #1a7f37;
+      --gh-coral: #cf4c2f;
+      --gh-yellow: #fff8c5;
+      --gh-dark: #0d1117;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--gh-paper); color: var(--gh-ink); font-family: "DM Sans", Arial, sans-serif; }
+    button, input, textarea, select { font: inherit; }
+    a { color: var(--gh-blue); }
+    :focus-visible { outline: 3px solid #bf8700; outline-offset: 3px; }
+    .gh-topbar { position: sticky; top: 0; z-index: 30; background: rgba(13,17,23,.96); color: #fff; border-bottom: 1px solid #30363d; }
+    .gh-topbar-inner { width: min(1200px, calc(100% - 2rem)); min-height: 54px; margin: auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .gh-topbar a { color: #f0f6fc; text-decoration: none; font-weight: 700; font-size: .82rem; }
+    .gh-topbar-title { font: 700 .72rem/1 "JetBrains Mono", monospace; letter-spacing: .06em; color: #b6c2cf; }
+    .gh-shell { width: min(1200px, calc(100% - 2rem)); margin: auto; padding: 1.25rem 0 4rem; }
+    .gh-crumbs { margin: 0 0 .75rem; font-size: .78rem; color: var(--gh-muted); }
+    .gh-crumbs a { font-weight: 700; }
+
+    .gh-hero { position: relative; overflow: hidden; display: grid; grid-template-columns: 1.06fr .94fr; min-height: 580px; border: 1px solid #30363d; background: var(--gh-dark); color: #f0f6fc; box-shadow: 12px 12px 0 #d8dee4; }
+    .gh-hero::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 70% 25%, rgba(130,80,223,.25), transparent 34rem); }
+    .gh-hero-copy { position: relative; z-index: 2; align-self: center; padding: clamp(2rem, 6vw, 5rem); }
+    .gh-kicker { margin: 0 0 .8rem; color: #7ee787; font: 700 .72rem/1.4 "JetBrains Mono", monospace; letter-spacing: .1em; text-transform: uppercase; }
+    .gh-hero h1 { max-width: 9ch; margin: 0; font-family: "Archivo Black", Impact, sans-serif; font-size: clamp(3.6rem, 9vw, 7.3rem); font-weight: 400; line-height: .87; letter-spacing: -.055em; }
+    .gh-hero h1 span { display: block; color: #a371f7; }
+    .gh-lede { max-width: 54ch; margin: 1.3rem 0 0; color: #b6c2cf; line-height: 1.7; }
+    .gh-hero-actions { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: 1.35rem; }
+    .gh-btn { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; min-height: 42px; padding: .65rem .9rem; border: 1px solid #8c959f; border-radius: 6px; background: transparent; color: inherit; font-weight: 700; text-decoration: none; cursor: pointer; }
+    .gh-btn-primary { border-color: #2ea043; background: #238636; color: #fff; }
+
+    .commit-conveyor { position: relative; z-index: 2; min-height: 510px; align-self: center; padding: 3rem 2rem; border-left: 1px solid #30363d; }
+    .branch-line { position: absolute; left: 66px; top: 3rem; bottom: 3rem; width: 3px; background: linear-gradient(#a371f7 0 57%, #3fb950 57%); }
+    .commit-card { position: relative; display: grid; grid-template-columns: 34px 1fr; gap: 1rem; align-items: start; margin: 0 0 1.55rem; }
+    .commit-dot { z-index: 2; display: grid; place-items: center; width: 34px; height: 34px; border: 3px solid #a371f7; border-radius: 50%; background: var(--gh-dark); font: 700 .68rem "JetBrains Mono", monospace; }
+    .commit-card:last-child .commit-dot { border-color: #3fb950; background: #1f6f35; }
+    .commit-box { padding: .9rem 1rem; border: 1px solid #30363d; border-radius: 8px; background: #161b22; }
+    .commit-box strong { display: block; color: #f0f6fc; }
+    .commit-box small { display: block; margin-top: .25rem; color: #8c959f; font: 500 .68rem/1.5 "JetBrains Mono", monospace; }
+
+    .gh-jump { display: flex; gap: .45rem; overflow-x: auto; padding: 1rem 0 .25rem; scrollbar-width: thin; }
+    .gh-jump a { flex: 0 0 auto; padding: .55rem .75rem; border: 1px solid var(--gh-line); border-radius: 999px; background: var(--gh-white); color: #24292f; font-size: .75rem; font-weight: 700; text-decoration: none; }
+    .gh-section { margin-top: 1rem; padding: clamp(1.2rem, 3vw, 2.2rem); border: 1px solid var(--gh-line); border-radius: 10px; background: rgba(255,255,255,.92); }
+    .section-head { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 1rem; align-items: start; margin-bottom: 1.2rem; }
+    .section-id { color: var(--gh-violet); font: 700 .72rem/1 "JetBrains Mono", monospace; }
+    .gh-section h2 { margin: 0; font-family: "Archivo Black", Impact, sans-serif; font-size: clamp(1.8rem, 4vw, 3.2rem); font-weight: 400; letter-spacing: -.035em; line-height: .98; }
+    .section-intro { max-width: 72ch; margin: .65rem 0 0; color: var(--gh-muted); line-height: 1.7; }
+    .target-grid, .concept-grid, .use-grid, .source-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: .75rem; }
+    .target, .concept, .use-card, .source-card { padding: 1rem; border: 1px solid var(--gh-line); border-radius: 8px; background: var(--gh-white); }
+    .target { border-top: 4px solid var(--gh-violet); }
+    .target strong, .concept strong, .use-card strong { display: block; margin-bottom: .35rem; }
+    .target p, .concept p, .use-card p, .source-card p { margin: 0; color: var(--gh-muted); font-size: .86rem; line-height: 1.6; }
+
+    .history-strip { display: grid; grid-template-columns: .55fr 1.45fr; gap: 1rem; padding: 1.2rem; border: 1px solid #30363d; border-radius: 8px; background: var(--gh-dark); color: #fff; }
+    .history-year { font-family: "Archivo Black", Impact, sans-serif; font-size: clamp(4rem, 11vw, 8rem); line-height: .8; color: #a371f7; }
+    .history-strip h3 { margin: 0 0 .5rem; }
+    .history-strip p { margin: 0; color: #b6c2cf; line-height: 1.7; }
+    .not-equal { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: stretch; margin-top: 1rem; }
+    .not-equal article { padding: 1rem; border: 1px solid var(--gh-line); border-radius: 8px; }
+    .not-equal b { align-self: center; font: 700 2rem "JetBrains Mono", monospace; color: var(--gh-coral); }
+    .not-equal h3 { margin: 0 0 .4rem; }
+    .not-equal p { margin: 0; color: var(--gh-muted); line-height: 1.6; }
+
+    .repo-lab { display: grid; grid-template-columns: .85fr 1.15fr; gap: 1rem; }
+    .lab-controls { padding: 1rem; border: 1px solid var(--gh-line); border-radius: 8px; background: #f6f8fa; }
+    .field { display: block; margin-bottom: .85rem; font-weight: 700; font-size: .82rem; }
+    .field input, .field textarea, .field select { display: block; width: 100%; margin-top: .35rem; padding: .68rem .72rem; border: 1px solid #8c959f; border-radius: 6px; background: #fff; color: #24292f; }
+    .field textarea { min-height: 90px; resize: vertical; }
+    .lab-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .lab-actions button { min-height: 40px; padding: .55rem .75rem; border: 1px solid #8c959f; border-radius: 6px; background: #fff; color: #24292f; font-weight: 700; cursor: pointer; }
+    .lab-actions button[data-primary] { border-color: #1f883d; background: #1f883d; color: #fff; }
+    .repo-view { overflow: hidden; border: 1px solid var(--gh-line); border-radius: 8px; background: #fff; }
+    .repo-bar { display: flex; justify-content: space-between; gap: 1rem; padding: .75rem 1rem; border-bottom: 1px solid var(--gh-line); background: #f6f8fa; font: 700 .72rem "JetBrains Mono", monospace; }
+    .repo-file { display: grid; grid-template-columns: 1fr auto; gap: .75rem; padding: .7rem 1rem; border-bottom: 1px solid #d8dee4; font-size: .82rem; }
+    .repo-file code { color: var(--gh-blue); font-weight: 700; }
+    .repo-file span { color: var(--gh-muted); }
+    .commit-log { padding: 1rem; background: var(--gh-dark); color: #f0f6fc; min-height: 170px; }
+    .commit-log h3 { margin: 0 0 .75rem; font-size: .82rem; }
+    .log-entry { display: grid; grid-template-columns: 66px 1fr; gap: .65rem; margin: .5rem 0; font: 500 .72rem/1.5 "JetBrains Mono", monospace; }
+    .log-hash { color: #a371f7; }
+    .lab-feedback { min-height: 1.5em; margin: .75rem 0 0; color: #1a7f37; font-weight: 700; font-size: .82rem; }
+
+    /* Lifelike repository simulation */
+    .real-repo { overflow: hidden; border: 1px solid var(--gh-line); border-radius: 10px; background: #fff; box-shadow: 0 8px 24px rgba(31,35,40,.08); }
+    .repo-masthead { padding: 1rem 1.1rem .7rem; border-bottom: 1px solid var(--gh-line); background: #f6f8fa; }
+    .repo-identity { display: flex; align-items: center; flex-wrap: wrap; gap: .45rem; color: #57606a; font-size: .9rem; }
+    .repo-identity strong { color: var(--gh-blue); font-size: 1rem; }
+    .repo-icon { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid #d0d7de; border-radius: 50%; background: #fff; font: 700 .7rem "JetBrains Mono", monospace; color: #57606a; }
+    .visibility-pill { padding: .18rem .48rem; border: 1px solid #afb8c1; border-radius: 999px; color: #57606a; font-size: .68rem; font-weight: 700; }
+    .repo-tabs { display: flex; gap: .15rem; overflow-x: auto; margin: .85rem 0 -.72rem; }
+    .repo-tab { position: relative; flex: 0 0 auto; padding: .7rem .75rem; border: 0; background: transparent; color: #24292f; font-size: .78rem; cursor: pointer; }
+    .repo-tab[aria-selected="true"] { font-weight: 700; }
+    .repo-tab[aria-selected="true"]::after { content: ""; position: absolute; left: .45rem; right: .45rem; bottom: 0; height: 2px; background: #fd8c73; }
+    .counter { display: inline-grid; min-width: 1.25rem; min-height: 1.25rem; margin-left: .25rem; place-items: center; border-radius: 999px; background: #afb8c133; font: 700 .65rem "JetBrains Mono", monospace; }
+    .repo-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; padding: .8rem 1rem; }
+    .branch-control { display: flex; align-items: center; gap: .4rem; }
+    .branch-control label { font-size: .72rem; font-weight: 700; }
+    .branch-control select, .repo-action { min-height: 36px; padding: .45rem .62rem; border: 1px solid #d0d7de; border-radius: 6px; background: #f6f8fa; color: #24292f; font-size: .74rem; font-weight: 700; }
+    .repo-action { cursor: pointer; }
+    .repo-action:disabled { cursor: not-allowed; opacity: .5; }
+    .repo-action.green { margin-left: auto; border-color: #1f883d; background: #1f883d; color: #fff; }
+    .branch-note { flex: 1 1 180px; color: #57606a; font-size: .72rem; }
+    .repo-code-layout { display: grid; grid-template-columns: minmax(210px,.65fr) minmax(0,1.35fr); gap: .8rem; padding: 0 1rem 1rem; }
+    .repo-files, .file-viewer { overflow: hidden; border: 1px solid var(--gh-line); border-radius: 7px; }
+    .repo-files-head, .file-viewer-head { display: flex; justify-content: space-between; gap: .6rem; padding: .7rem .8rem; border-bottom: 1px solid var(--gh-line); background: #f6f8fa; color: #57606a; font: 600 .7rem/1.4 "JetBrains Mono", monospace; }
+    .repo-file-button { display: grid; width: 100%; grid-template-columns: 1fr auto; gap: .65rem; padding: .68rem .78rem; border: 0; border-bottom: 1px solid #d8dee4; background: #fff; color: #24292f; text-align: left; font-size: .75rem; cursor: pointer; }
+    .repo-file-button:last-child { border-bottom: 0; }
+    .repo-file-button:hover, .repo-file-button[aria-current="true"] { background: #f6f8fa; }
+    .repo-file-button strong { color: var(--gh-blue); font: 600 .7rem "JetBrains Mono", monospace; }
+    .repo-file-button span { color: #6e7781; font-size: .67rem; }
+    .file-panel { min-height: 330px; }
+    .file-panel[hidden] { display: none; }
+    .markdown-preview { padding: 1.1rem; }
+    .markdown-preview h3 { margin: 0 0 .4rem; }
+    .markdown-preview > p { margin: 0 0 1rem; color: var(--gh-muted); line-height: 1.6; }
+    .mission-gallery { display: grid; grid-template-columns: 1.25fr .75fr .75fr; gap: .55rem; }
+    .mission-asset { position: relative; overflow: hidden; min-height: 190px; margin: 0; border: 1px solid #30363d; border-radius: 6px; background: #010409; }
+    .mission-asset img { width: 100%; height: 100%; min-height: 190px; object-fit: cover; display: block; }
+    .mission-asset figcaption { position: absolute; left: 0; right: 0; bottom: 0; padding: 2.2rem .65rem .55rem; background: linear-gradient(transparent, rgba(1,4,9,.96)); color: #fff; font-size: .68rem; line-height: 1.4; }
+    .mission-asset figcaption a { color: #79c0ff; }
+    .code-file { overflow: auto; min-height: 330px; margin: 0; padding: 1rem; background: #0d1117; color: #e6edf3; font: 500 .72rem/1.7 "JetBrains Mono", monospace; white-space: pre; }
+    .image-file { min-height: 330px; display: grid; grid-template-columns: minmax(180px, 300px) 1fr; gap: 1rem; align-items: center; padding: 1rem; background: #0d1117; color: #f0f6fc; }
+    .image-file img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 7px; }
+    .image-file h3 { margin: 0 0 .4rem; }
+    .image-file p { color: #b6c2cf; font-size: .8rem; line-height: 1.6; }
+    .image-file a { color: #79c0ff; }
+    .change-desk { display: grid; grid-template-columns: 1.05fr .95fr; gap: .8rem; padding: 1rem; border-top: 1px solid var(--gh-line); background: #f6f8fa; }
+    .change-editor label, .commit-box-live label { display: block; margin-bottom: .4rem; color: #24292f; font-size: .75rem; font-weight: 700; }
+    .change-editor textarea { width: 100%; min-height: 154px; resize: vertical; padding: .75rem; border: 1px solid #8c959f; border-radius: 6px; background: #0d1117; color: #e6edf3; font: 500 .7rem/1.55 "JetBrains Mono", monospace; }
+    .commit-box-live { padding: .9rem; border: 1px solid var(--gh-line); border-radius: 7px; background: #fff; }
+    .commit-box-live input { width: 100%; padding: .6rem; border: 1px solid #8c959f; border-radius: 6px; }
+    .commit-box-live .lab-actions { margin-top: .7rem; }
+    .commit-mini-log { margin-top: .75rem; padding-top: .7rem; border-top: 1px solid #d8dee4; }
+    .commit-mini-log .log-entry { color: #57606a; }
+    .simulation-status { display: flex; align-items: center; gap: .5rem; min-height: 43px; padding: .7rem 1rem; border-top: 1px solid var(--gh-line); background: #fff8c5; color: #6a4c00; font-size: .78rem; font-weight: 700; }
+    .status-dot { width: 12px; height: 12px; border: 3px solid #bf8700; border-radius: 50%; background: #fff; }
+    .simulation-status.ready { background: #dafbe1; color: #116329; }
+    .simulation-status.ready .status-dot { border-color: #1a7f37; background: #1a7f37; }
+    .pr-panel { padding: 1rem; }
+    .pr-panel[hidden] { display: none; }
+    .pr-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+    .pr-title h3 { margin: 0; font-size: 1.25rem; }
+    .open-pill, .merged-pill { display: inline-flex; padding: .35rem .6rem; border-radius: 999px; background: #1f883d; color: #fff; font-size: .7rem; font-weight: 700; }
+    .merged-pill { background: #8250df; }
+    .pr-meta { color: #57606a; font-size: .76rem; }
+    .checks-box { margin-top: 1rem; border: 1px solid var(--gh-line); border-radius: 7px; }
+    .check-row { display: flex; gap: .65rem; align-items: center; padding: .75rem; border-bottom: 1px solid #d8dee4; font-size: .77rem; }
+    .check-row:last-child { border: 0; }
+    .check-pass { color: #1a7f37; font-weight: 900; }
+    .diff-box { display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; margin-top: 1rem; border: 1px solid var(--gh-line); border-radius: 7px; font: 500 .7rem/1.6 "JetBrains Mono", monospace; }
+    .diff-box div { padding: .75rem; }
+    .diff-old { background: #ffebe9; color: #82071e; }
+    .diff-new { background: #dafbe1; color: #116329; }
+    .pr-actions { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: 1rem; }
+    .pages-preview { margin-top: 1rem; overflow: hidden; border: 1px solid var(--gh-line); border-radius: 8px; }
+    .browser-chrome { display: flex; align-items: center; gap: .5rem; padding: .55rem .7rem; border-bottom: 1px solid #d8dee4; background: #f6f8fa; }
+    .traffic-lights { color: #24292f; letter-spacing: .15em; }
+    .address-bar { flex: 1; padding: .38rem .6rem; border: 1px solid #d0d7de; border-radius: 999px; background: #fff; color: #57606a; font: 500 .65rem "JetBrains Mono", monospace; }
+    .live-site { display: grid; grid-template-columns: .75fr 1.25fr; min-height: 270px; background: #07111f; color: #fff; }
+    .live-site-copy { align-self: center; padding: 1.3rem; }
+    .live-site-copy small { color: #79c0ff; font: 700 .65rem "JetBrains Mono", monospace; }
+    .live-site-copy h3 { margin: .4rem 0; font-size: 1.65rem; }
+    .live-site-copy p { color: #b6c2cf; font-size: .8rem; line-height: 1.55; }
+    .live-site-image { width: 100%; height: 100%; min-height: 270px; object-fit: cover; }
+    .asset-provenance { margin: .75rem 0 0; color: var(--gh-muted); font-size: .72rem; line-height: 1.55; }
+
+    .flow-board { overflow-x: auto; padding: 1rem; border: 1px solid #30363d; border-radius: 8px; background: var(--gh-dark); color: #fff; }
+    .flow-track { min-width: 760px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 1.2rem; align-items: center; }
+    .flow-step { position: relative; min-height: 130px; padding: 1rem; border: 1px solid #30363d; border-radius: 8px; background: #161b22; }
+    .flow-step:not(:last-child)::after { content: "→"; position: absolute; right: -1.05rem; top: 47%; color: #7ee787; font-size: 1.2rem; }
+    .flow-step span { color: #a371f7; font: 700 .68rem "JetBrains Mono", monospace; }
+    .flow-step strong { display: block; margin: .35rem 0; }
+    .flow-step p { margin: 0; color: #8c959f; font-size: .75rem; line-height: 1.45; }
+    .review-lab { margin-top: 1rem; padding: 1rem; border: 1px solid var(--gh-line); border-radius: 8px; background: #fff; }
+    .review-lab h3 { margin: 0 0 .4rem; }
+    .review-change { padding: .75rem; border-left: 4px solid var(--gh-green); background: #dafbe1; font: 500 .78rem/1.65 "JetBrains Mono", monospace; }
+    .review-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+    .review-actions button { padding: .55rem .75rem; border: 1px solid var(--gh-line); border-radius: 6px; background: #fff; font-weight: 700; cursor: pointer; }
+    .review-result { margin: .75rem 0 0; min-height: 2.5rem; color: var(--gh-muted); line-height: 1.55; }
+
+    .planner { display: grid; grid-template-columns: .82fr 1.18fr; gap: 1rem; }
+    .plan-output { padding: 1rem; border: 1px solid #30363d; border-radius: 8px; background: var(--gh-dark); color: #f0f6fc; }
+    .plan-output h3 { margin: 0; font-size: 1.05rem; }
+    .plan-output pre { overflow-x: auto; margin: .8rem 0; padding: .8rem; border: 1px solid #30363d; border-radius: 6px; background: #010409; color: #7ee787; font: 500 .72rem/1.6 "JetBrains Mono", monospace; }
+    .plan-output ul { padding-left: 1.2rem; color: #b6c2cf; line-height: 1.65; font-size: .84rem; }
+    .fit-label { display: inline-flex; margin-top: .7rem; padding: .35rem .55rem; border-radius: 999px; background: #1f6f35; color: #fff; font: 700 .68rem "JetBrains Mono", monospace; }
+    .fit-label.caution { background: #9a6700; }
+    .fit-label.no { background: #b62324; }
+
+    .deploy-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: .75rem; }
+    .deploy-step { display: grid; grid-template-columns: 38px 1fr; gap: .8rem; padding: 1rem; border: 1px solid var(--gh-line); border-radius: 8px; background: #fff; }
+    .deploy-num { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: #ddf4ff; color: #0550ae; font: 700 .75rem "JetBrains Mono", monospace; }
+    .deploy-step h3 { margin: 0 0 .35rem; font-size: .95rem; }
+    .deploy-step p { margin: 0; color: var(--gh-muted); font-size: .82rem; line-height: 1.6; }
+    .deploy-step code { padding: .08rem .28rem; border-radius: 4px; background: #eff1f3; color: #24292f; }
+    .publish-check { margin-top: 1rem; padding: 1rem; border: 2px solid var(--gh-blue); border-radius: 8px; background: #ddf4ff; }
+    .publish-check h3 { margin: 0 0 .65rem; }
+    .check-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .45rem; }
+    .check-list label { display: flex; gap: .55rem; align-items: flex-start; padding: .55rem; border-radius: 6px; background: rgba(255,255,255,.7); font-size: .8rem; line-height: 1.45; }
+    .check-list input { margin-top: .18rem; accent-color: var(--gh-green); }
+    .check-status { margin: .7rem 0 0; font-weight: 700; color: #0550ae; }
+
+    .safety-gate { display: grid; grid-template-columns: .65fr 1.35fr; gap: 1rem; padding: 1.2rem; border: 2px solid #bf8700; border-radius: 8px; background: var(--gh-yellow); }
+    .safety-gate h3 { margin: 0; font-family: "Archivo Black", Impact, sans-serif; font-size: 1.7rem; font-weight: 400; }
+    .safety-gate ul { margin: 0; padding-left: 1.2rem; line-height: 1.7; }
+    .safety-gate li::marker { color: #9a6700; }
+    .use-card.good { border-top: 4px solid var(--gh-green); }
+    .use-card.caution { border-top: 4px solid #bf8700; }
+    .use-card.stop { border-top: 4px solid #cf222e; }
+
+    .quiz { display: grid; gap: .7rem; }
+    .quiz-card { padding: 1rem; border: 1px solid var(--gh-line); border-radius: 8px; background: #fff; }
+    .quiz-card fieldset { margin: 0; padding: 0; border: 0; }
+    .quiz-card legend { margin-bottom: .65rem; font-weight: 700; }
+    .quiz-card label { display: block; margin: .4rem 0; color: var(--gh-muted); }
+    .quiz-result { margin: .75rem 0 0; font-weight: 700; }
+    .source-card a { font-weight: 700; }
+    .teacher-note { margin-top: 1rem; padding: 1rem; border-left: 4px solid var(--gh-violet); background: #f3f0ff; color: #3c2f5c; line-height: 1.65; }
+
+    [data-site-theme="night"] body { background: #0d1117; color: #f0f6fc; }
+    [data-site-theme="night"] .gh-section { border-color: #30363d; background: #161b22; }
+    [data-site-theme="night"] .target, [data-site-theme="night"] .concept, [data-site-theme="night"] .use-card, [data-site-theme="night"] .source-card, [data-site-theme="night"] .review-lab, [data-site-theme="night"] .deploy-step, [data-site-theme="night"] .gh-jump a { border-color: #30363d; background: #0d1117; color: #f0f6fc; }
+    [data-site-theme="night"] .section-intro, [data-site-theme="night"] .target p, [data-site-theme="night"] .concept p, [data-site-theme="night"] .use-card p, [data-site-theme="night"] .source-card p, [data-site-theme="night"] .deploy-step p, [data-site-theme="night"] .review-result { color: #b6c2cf; }
+    [data-site-theme="night"] .lab-controls { border-color: #30363d; background: #0d1117; }
+    [data-site-theme="night"] .not-equal article { border-color: #30363d; }
+
+    @media (max-width: 850px) {
+      .gh-hero, .repo-lab, .planner, .safety-gate { grid-template-columns: 1fr; }
+      .commit-conveyor { border-top: 1px solid #30363d; border-left: 0; }
+      .target-grid, .concept-grid, .use-grid, .source-grid { grid-template-columns: 1fr 1fr; }
+      .history-strip { grid-template-columns: 1fr; }
+      .repo-code-layout, .change-desk { grid-template-columns: 1fr; }
+      .mission-gallery { grid-template-columns: 1fr 1fr; }
+      .mission-asset:first-child { grid-column: 1 / -1; }
+    }
+    @media (max-width: 590px) {
+      .gh-shell { width: min(100% - 1rem, 1200px); }
+      .gh-topbar-title { display: none; }
+      .gh-hero h1 { font-size: clamp(3.2rem, 19vw, 5rem); }
+      .commit-conveyor { padding: 2rem 1rem; }
+      .branch-line { left: 30px; top: 2rem; bottom: 2rem; }
+      .target-grid, .concept-grid, .use-grid, .source-grid, .deploy-grid, .check-list { grid-template-columns: 1fr; }
+      .not-equal { grid-template-columns: 1fr; }
+      .not-equal b { justify-self: center; }
+      .section-head { grid-template-columns: 1fr; gap: .35rem; }
+      .mission-gallery, .image-file, .live-site { grid-template-columns: 1fr; }
+      .mission-asset:first-child { grid-column: auto; }
+      .repo-action.green { margin-left: 0; }
+      .diff-box { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    @media print {
+      .gh-topbar, .gh-jump, .gh-hero-actions, button { display: none !important; }
+      body { background: #fff; color: #000; }
+      .gh-shell { width: 100%; padding: 0; }
+      .gh-hero, .history-strip, .flow-board, .plan-output, .commit-log { background: #fff; color: #000; box-shadow: none; }
+      .gh-hero { min-height: 0; grid-template-columns: 1fr; }
+      .commit-conveyor { display: none; }
+      .gh-section { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <header class="gh-topbar">
+    <div class="gh-topbar-inner">
+      <a href="../steam-lessons.html">← Lesson library</a>
+      <span class="gh-topbar-title">CLASSROOMOS / COMPUTER SCIENCE / GITHUB</span>
+      <a href="../index.html">Home</a>
+    </div>
+  </header>
+
+  <main class="gh-shell">
+    <p class="gh-crumbs"><a href="../paths.html">Learning paths</a> / Ideas to Internet / GitHub</p>
+    <section class="gh-hero" aria-labelledby="page-title">
+      <div class="gh-hero-copy">
+        <p class="gh-kicker">Founded 2008 · Version control for human collaboration</p>
+        <h1 id="page-title">Ideas become <span>shared.</span></h1>
+        <p class="gh-lede">Git remembers every useful change. GitHub gives that history a meeting place. Together, they let people prototype websites, document inventions, review one another’s work, and publish ideas to the world.</p>
+        <div class="gh-hero-actions">
+          <a class="gh-btn gh-btn-primary" href="#prototype">Plan my prototype</a>
+          <a class="gh-btn" href="#publish">Learn to publish</a>
+        </div>
+      </div>
+      <div class="commit-conveyor" aria-label="An idea moving through four commits into a published prototype">
+        <div class="branch-line" aria-hidden="true"></div>
+        <div class="commit-card"><span class="commit-dot">01</span><div class="commit-box"><strong>Start with a question</strong><small>README.md · “Could a site help our club share events?”</small></div></div>
+        <div class="commit-card"><span class="commit-dot">02</span><div class="commit-box"><strong>Make the smallest version</strong><small>index.html · one page, one audience, one job</small></div></div>
+        <div class="commit-card"><span class="commit-dot">03</span><div class="commit-box"><strong>Invite a useful review</strong><small>pull request · explain the change, test the link</small></div></div>
+        <div class="commit-card"><span class="commit-dot">04</span><div class="commit-box"><strong>Publish and learn</strong><small>GitHub Pages · prototype live, history preserved</small></div></div>
+      </div>
+    </section>
+
+    <nav class="gh-jump" aria-label="Lesson sections">
+      <a href="#why">Why GitHub?</a><a href="#vocabulary">Core ideas</a><a href="#commit-lab">Commit lab</a><a href="#collaborate">Collaborate</a><a href="#prototype">Prototype planner</a><a href="#publish">Publish</a><a href="#safety">Safety</a><a href="#check">Check learning</a>
+    </nav>
+
+    <section class="gh-section" id="why">
+      <div class="section-head"><span class="section-id">00 / ORIENT</span><div><h2>One platform, three powers</h2><p class="section-intro">This is not simply cloud storage. GitHub combines a project home, a detailed memory of change, and a structured conversation about what should happen next.</p></div></div>
+      <div class="target-grid">
+        <article class="target"><strong>Remember</strong><p>Explain how a commit preserves a meaningful checkpoint instead of replacing the past.</p></article>
+        <article class="target"><strong>Collaborate</strong><p>Use a branch, pull request, review, and merge to improve work without everyone editing the same copy.</p></article>
+        <article class="target"><strong>Launch</strong><p>Choose an idea that fits GitHub, organize its repository, and publish a safe static prototype with Pages.</p></article>
+      </div>
+      <div class="history-strip">
+        <div class="history-year">2008</div>
+        <div><h3>A social layer for software</h3><p>GitHub launched in 2008 as a place to host Git repositories and collaborate on code. Its big idea was human: make change visible, discussable, reviewable, and reusable. Today the same workflow can support a science dashboard, club website, game prototype, hardware documentation, art portfolio, research notebook, or almost any idea that benefits from files plus a clear history.</p></div>
+      </div>
+    </section>
+
+    <section class="gh-section" id="vocabulary">
+      <div class="section-head"><span class="section-id">01 / MODEL</span><div><h2>Git is the memory. GitHub is the meeting place.</h2><p class="section-intro">Keep these two ideas separate and the rest of the system becomes much easier to understand.</p></div></div>
+      <div class="not-equal">
+        <article><h3>Git</h3><p>A version-control system that tracks snapshots of files. It can work locally on one computer without GitHub.</p></article>
+        <b aria-label="is not the same as">≠</b>
+        <article><h3>GitHub</h3><p>An online platform that hosts Git repositories and adds accounts, issues, pull requests, reviews, project tools, and Pages hosting.</p></article>
+      </div>
+      <div class="concept-grid" style="margin-top:1rem">
+        <article class="concept"><strong>Repository</strong><p>The project folder, its files, and the history of those files.</p></article>
+        <article class="concept"><strong>Commit</strong><p>A named checkpoint: what changed, who changed it, and when.</p></article>
+        <article class="concept"><strong>Branch</strong><p>A safe line of work where an idea can grow without disturbing the main version.</p></article>
+        <article class="concept"><strong>Issue</strong><p>A focused conversation about a task, question, proposal, or problem.</p></article>
+        <article class="concept"><strong>Pull request</strong><p>A request to compare, discuss, test, and possibly merge one branch into another.</p></article>
+        <article class="concept"><strong>Merge</strong><p>The act of bringing approved changes together into the shared line of work.</p></article>
+      </div>
+    </section>
+
+    <section class="gh-section" id="commit-lab">
+      <div class="section-head"><span class="section-id">02 / PRACTICE</span><div><h2>Work inside a real-feeling repository</h2><p class="section-intro">You are joining <strong>lunar-field-guide</strong>, a student Pages project built with public-domain NASA science imagery. Inspect its files, commit a focused change on a branch, open a pull request, pass review, merge, and watch the published site update.</p></div></div>
+      <div class="real-repo" id="repo-simulator">
+        <div class="repo-masthead">
+          <div class="repo-identity"><span class="repo-icon" aria-hidden="true">&lt;/&gt;</span><span>orbital-classroom /</span><strong>lunar-field-guide</strong><span class="visibility-pill">Public</span></div>
+          <div class="repo-tabs" role="tablist" aria-label="Repository areas">
+            <button class="repo-tab" type="button" role="tab" aria-selected="true" data-repo-tab="code">Code</button>
+            <button class="repo-tab" type="button" role="tab" aria-selected="false" data-repo-tab="issues">Issues <span class="counter">2</span></button>
+            <button class="repo-tab" type="button" role="tab" aria-selected="false" data-repo-tab="pulls">Pull requests <span class="counter" id="pr-count">0</span></button>
+          </div>
+        </div>
+
+        <div id="code-tab-panel" role="tabpanel">
+          <div class="repo-toolbar">
+            <div class="branch-control"><label for="branch-select">Branch</label><select id="branch-select"><option value="feature">feature/add-sun-card</option><option value="main">main</option></select></div>
+            <span class="branch-note" id="branch-note">2 commits ahead of main · safe place to work</span>
+            <button class="repo-action green" type="button" id="open-pr" disabled>Open pull request</button>
+          </div>
+          <div class="repo-code-layout">
+            <div class="repo-files" aria-label="Repository files">
+              <div class="repo-files-head"><span>Files</span><span id="commit-count">2 commits</span></div>
+              <button class="repo-file-button" type="button" data-repo-file="readme" aria-current="true"><strong>README.md</strong><span>Explain project</span></button>
+              <button class="repo-file-button" type="button" data-repo-file="html"><strong>index.html</strong><span>Build atlas page</span></button>
+              <button class="repo-file-button" type="button" data-repo-file="data"><strong>data/worlds.json</strong><span id="latest-message">Add Earth and Moon facts</span></button>
+              <button class="repo-file-button" type="button" data-repo-file="moon"><strong>assets/moon-lro-nasa.jpg</strong><span>NASA SVS · public domain</span></button>
+              <button class="repo-file-button" type="button" data-repo-file="earth"><strong>assets/earth-blue-marble-nasa.jpg</strong><span>NASA SVS · public domain</span></button>
+              <button class="repo-file-button" type="button" data-repo-file="sun"><strong>assets/sun-sdo-hmi-nasa.jpg</strong><span>NASA SVS · public domain</span></button>
+            </div>
+            <div class="file-viewer">
+              <div class="file-viewer-head"><span id="viewer-path">lunar-field-guide / README.md</span><span id="viewer-meta">Preview</span></div>
+              <div class="file-panel markdown-preview" data-file-panel="readme">
+                <h3>Lunar Field Guide</h3><p>A small, accessible atlas that compares worlds using spacecraft observations and clearly credited public-domain media.</p>
+                <div class="mission-gallery">
+                  <figure class="mission-asset"><img src="../assets/images/moon-lro-nasa.jpg" alt="Detailed grayscale mosaic of the Moon from Lunar Reconnaissance Orbiter imagery" /><figcaption>Moon mosaic · NASA SVS / LRO · <a href="https://svs.gsfc.nasa.gov/5001/" target="_blank" rel="noopener noreferrer">source ↗</a></figcaption></figure>
+                  <figure class="mission-asset"><img src="../assets/images/earth-blue-marble-nasa.jpg" alt="Blue Marble composite of Earth observed by the Suomi NPP satellite" /><figcaption>Blue Marble 2012 · NASA/NOAA · <a href="https://svs.gsfc.nasa.gov/30002/" target="_blank" rel="noopener noreferrer">source ↗</a></figcaption></figure>
+                  <figure class="mission-asset"><img src="../assets/images/sun-sdo-hmi-nasa.jpg" alt="Visible-light full disk view of the Sun showing dark sunspots" /><figcaption>Sun in visible light · NASA SVS / SDO · <a href="https://svs.gsfc.nasa.gov/3988/" target="_blank" rel="noopener noreferrer">source ↗</a></figcaption></figure>
+                </div>
+              </div>
+              <pre class="file-panel code-file" data-file-panel="html" hidden>&lt;main class="atlas"&gt;
+  &lt;h1&gt;Lunar Field Guide&lt;/h1&gt;
+  &lt;section id="world-cards" aria-label="World comparisons"&gt;&lt;/section&gt;
+&lt;/main&gt;
+&lt;script s&#114;c="script.js"&gt;&lt;\/script&gt;</pre>
+              <pre class="file-panel code-file" data-file-panel="data" hidden>[
+  { "name": "Moon", "diameterKm": 3475, "image": "assets/moon-lro-nasa.jpg" },
+  { "name": "Earth", "diameterKm": 12742, "image": "assets/earth-blue-marble-nasa.jpg" }
+]</pre>
+              <div class="file-panel image-file" data-file-panel="moon" hidden><img src="../assets/images/moon-lro-nasa.jpg" alt="Full Moon mosaic made from Lunar Reconnaissance Orbiter imagery" /><div><h3>moon-lro-nasa.jpg</h3><p>A photographic mosaic assembled from 1,231 Lunar Reconnaissance Orbiter Narrow Angle Camera images.</p><a href="https://svs.gsfc.nasa.gov/5001/" target="_blank" rel="noopener noreferrer">NASA SVS source and credits ↗</a></div></div>
+              <div class="file-panel image-file" data-file-panel="earth" hidden><img src="../assets/images/earth-blue-marble-nasa.jpg" alt="Blue Marble composite image of Earth from Suomi NPP" /><div><h3>earth-blue-marble-nasa.jpg</h3><p>The 2012 Blue Marble composite uses VIIRS observations collected by the Suomi NPP satellite.</p><a href="https://svs.gsfc.nasa.gov/30002/" target="_blank" rel="noopener noreferrer">NASA SVS source and credits ↗</a></div></div>
+              <div class="file-panel image-file" data-file-panel="sun" hidden><img src="../assets/images/sun-sdo-hmi-nasa.jpg" alt="Visible-light image of the Sun captured by SDO HMI" /><div><h3>sun-sdo-hmi-nasa.jpg</h3><p>The Solar Dynamics Observatory’s HMI instrument records the solar photosphere in a narrow range of visible light.</p><a href="https://svs.gsfc.nasa.gov/3988/" target="_blank" rel="noopener noreferrer">NASA SVS source and credits ↗</a></div></div>
+            </div>
+          </div>
+
+          <div class="change-desk">
+            <div class="change-editor"><label for="idea-text">Editing data/worlds.json on <code>feature/add-sun-card</code></label><textarea id="idea-text" spellcheck="false">{
+  "name": "Sun",
+  "diameterKm": 1392700,
+  "image": "assets/sun-sdo-hmi-nasa.jpg",
+  "alt": "Visible-light Sun with dark sunspots"
+}</textarea></div>
+            <div class="commit-box-live">
+              <label for="commit-message">Commit message</label><input id="commit-message" value="Add visible-light Sun comparison" />
+              <div class="lab-actions"><button type="button" data-primary id="commit-button">Commit to feature branch</button><button type="button" id="restore-button">Restore draft</button></div>
+              <p class="lab-feedback" id="commit-feedback" aria-live="polite">1 changed file is ready to commit.</p>
+              <div class="commit-mini-log"><strong style="font-size:.72rem">Recent commits</strong><div id="commit-log"><div class="log-entry"><span class="log-hash">8bd14e2</span><span>Start lunar atlas</span></div><div class="log-entry"><span class="log-hash">a42e61c</span><span>Add Earth and Moon facts</span></div></div></div>
+            </div>
+          </div>
+          <div class="simulation-status" id="simulation-status" aria-live="polite"><span class="status-dot" aria-hidden="true"></span><span>Next: commit the Sun card on the feature branch.</span></div>
+        </div>
+
+        <div class="pr-panel" id="issues-tab-panel" role="tabpanel" hidden>
+          <h3>2 open issues</h3><p class="pr-meta">Issues turn feedback into named, trackable work.</p>
+          <div class="checks-box"><div class="check-row"><span>○</span><span><strong>Add a visible-light Sun comparison</strong><br />Define “done”: credited image, accurate diameter, useful alt text.</span></div><div class="check-row"><span>○</span><span><strong>Test card layout at 375 px</strong><br />Make sure the atlas works on a phone.</span></div></div>
+        </div>
+        <div class="pr-panel" id="pulls-tab-panel" role="tabpanel" hidden>
+          <div id="pr-empty"><h3>No open pull requests</h3><p class="pr-meta">Commit the change, then open a pull request from the feature branch.</p></div>
+          <div id="pr-live" hidden>
+            <div class="pr-title"><div><h3>Add visible-light Sun comparison <span style="color:#6e7781;font-weight:400">#1</span></h3><p class="pr-meta"><strong>Maya</strong> wants to merge 1 commit into <code>main</code> from <code>feature/add-sun-card</code></p></div><span class="open-pill" id="pr-state">Open</span></div>
+            <div class="diff-box"><div class="diff-old">- 2 world cards<br />- Moon and Earth only</div><div class="diff-new">+ Sun card and diameter<br />+ descriptive alt text<br />+ NASA SVS source credit</div></div>
+            <div class="checks-box"><div class="check-row"><span class="check-pass">✓</span><span>HTML and JSON checks passed</span></div><div class="check-row"><span class="check-pass">✓</span><span>Image has alt text and source credit</span></div><div class="check-row"><span id="review-check">○</span><span id="review-check-text">Review required from teammate Theo</span></div></div>
+            <div class="pr-actions"><button class="repo-action" type="button" id="approve-pr">Review as Theo: approve</button><button class="repo-action green" type="button" id="merge-pr" disabled>Merge pull request</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pages-preview" aria-label="GitHub Pages deployment preview">
+        <div class="browser-chrome"><span class="traffic-lights" aria-hidden="true">● ● ●</span><span class="address-bar">https://orbital-classroom.github.io/lunar-field-guide/</span></div>
+        <div class="live-site"><div class="live-site-copy"><small id="deploy-label">PAGES · MAIN BRANCH</small><h3 id="deploy-title">Lunar Field Guide</h3><p id="deploy-copy">Published version: Moon and Earth. Merge the pull request to deploy the new Sun comparison.</p></div><img class="live-site-image" id="deploy-image" src="../assets/images/moon-lro-nasa.jpg" alt="Published lunar guide preview showing the LRO Moon mosaic" /></div>
+      </div>
+      <p class="asset-provenance">Authentic media: NASA Scientific Visualization Studio. Its visualizations are <a href="https://svs.gsfc.nasa.gov/help/" target="_blank" rel="noopener noreferrer">public domain unless otherwise noted</a>. This lesson reuses existing local copies and keeps source, mission, and alt-text information beside the files.</p>
+    </section>
+
+    <section class="gh-section" id="collaborate">
+      <div class="section-head"><span class="section-id">03 / COLLABORATE</span><div><h2>The GitHub flow is a conversation with evidence</h2><p class="section-intro">Each step reduces a different risk: unclear work, accidental breakage, invisible decisions, or untested changes.</p></div></div>
+      <div class="flow-board" tabindex="0" aria-label="Scrollable GitHub collaboration flow">
+        <div class="flow-track">
+          <article class="flow-step"><span>ISSUE</span><strong>Name the need</strong><p>What is wrong or worth making? Define “done.”</p></article>
+          <article class="flow-step"><span>BRANCH</span><strong>Protect main</strong><p>Create a separate place to try the change.</p></article>
+          <article class="flow-step"><span>COMMITS</span><strong>Show progress</strong><p>Save small, understandable checkpoints.</p></article>
+          <article class="flow-step"><span>PULL REQUEST</span><strong>Ask for review</strong><p>Compare the branch, explain choices, and test.</p></article>
+          <article class="flow-step"><span>MERGE</span><strong>Share the result</strong><p>Bring the approved work into the main branch.</p></article>
+        </div>
+      </div>
+      <div class="review-lab">
+        <h3>Mini review: what would help the author most?</h3>
+        <p>The pull request says “Improve home page.” The change adds a button:</p>
+        <div class="review-change">+ &lt;button style="color:lightgray"&gt;Learn more&lt;/button&gt;</div>
+        <div class="review-actions"><button type="button" data-review="vague">Looks bad. Fix it.</button><button type="button" data-review="useful">Could you increase the text contrast and link the button to the About section? I tested it with the keyboard; focus works.</button><button type="button" data-review="silent">Merge without comment</button></div>
+        <p class="review-result" id="review-result" aria-live="polite">Choose the review that names evidence and a useful next step.</p>
+      </div>
+    </section>
+
+    <section class="gh-section" id="prototype">
+      <div class="section-head"><span class="section-id">04 / PLAN</span><div><h2>Give your idea a platform</h2><p class="section-intro">A repository is strongest when it has one clear purpose, a small first version, and a README that helps another human understand what they found.</p></div></div>
+      <div class="planner">
+        <form class="lab-controls" id="prototype-form">
+          <label class="field">Project name<input id="project-name" value="Campus Garden Map" maxlength="50" /></label>
+          <label class="field">What are you making?<select id="project-type"><option value="website">Website or portfolio</option><option value="game">Browser game</option><option value="research">Research or data story</option><option value="hardware">Hardware build documentation</option><option value="app">App with accounts or a database</option></select></label>
+          <label class="field">Who is it for?<input id="project-audience" value="students who want to find herbs and pollinator plants" maxlength="100" /></label>
+          <label class="field">Smallest useful version<textarea id="project-mvp">A labeled map with six plants and one fact about each.</textarea></label>
+          <button class="gh-btn gh-btn-primary" type="submit">Build repository plan</button>
+        </form>
+        <div class="plan-output" aria-live="polite">
+          <h3 id="plan-title">campus-garden-map</h3><span class="fit-label" id="fit-label">Strong GitHub fit</span>
+          <pre id="file-tree">campus-garden-map/
+├── README.md
+├── index.html
+├── style.css
+├── script.js
+└── assets/</pre>
+          <ul id="plan-tasks"><li>Write the audience and purpose in README.md.</li><li>Build the six-plant map in index.html.</li><li>Test every label and link on a phone.</li></ul>
+          <button class="gh-btn" type="button" id="download-plan">Download README plan</button>
+        </div>
+      </div>
+      <div class="teacher-note"><strong>The “platform” is more than the published page.</strong> Your repository can hold the prototype, design decisions, a task list, evidence, feedback, and every revision. That makes the thinking visible—not only the final product.</div>
+    </section>
+
+    <section class="gh-section" id="publish">
+      <div class="section-head"><span class="section-id">05 / SHIP</span><div><h2>Publish a first website with GitHub Pages</h2><p class="section-intro">This browser-only route avoids the command line. GitHub’s labels can change over time, so use the linked official guide if the interface differs.</p></div></div>
+      <div class="deploy-grid">
+        <article class="deploy-step"><span class="deploy-num">1</span><div><h3>Create your account safely</h3><p>Students must meet GitHub’s age requirement (13+ in the U.S.; local minimum ages may differ). Use a unique password, enable two-factor authentication, and do not put private information in the username or profile.</p></div></article>
+        <article class="deploy-step"><span class="deploy-num">2</span><div><h3>Create a repository</h3><p>Select <strong>+</strong> → <strong>New repository</strong>. Use a short lowercase name such as <code>cloud-guide</code>. For free Pages, choose <strong>Public</strong>. Turn on <strong>Add a README</strong>, then create it.</p></div></article>
+        <article class="deploy-step"><span class="deploy-num">3</span><div><h3>Add the home page</h3><p>Select <strong>Add file</strong> → <strong>Create new file</strong>. Name it exactly <code>index.html</code>. Add your HTML, preview it, and commit with a message that describes the change.</p></div></article>
+        <article class="deploy-step"><span class="deploy-num">4</span><div><h3>Turn on Pages</h3><p>Open <strong>Settings</strong> → <strong>Pages</strong>. Under <strong>Build and deployment</strong>, choose <strong>Deploy from a branch</strong>, then <code>main</code> and <code>/(root)</code>. Save.</p></div></article>
+        <article class="deploy-step"><span class="deploy-num">5</span><div><h3>Open and test the URL</h3><p>Your project site normally appears at <code>https://USERNAME.github.io/REPOSITORY/</code>. Publishing can take a few minutes. Test navigation, mobile layout, keyboard use, and image paths.</p></div></article>
+        <article class="deploy-step"><span class="deploy-num">6</span><div><h3>Improve through branches</h3><p>Create an issue for one improvement, make a branch, commit the change, open a pull request, ask for a focused review, then merge after testing.</p></div></article>
+      </div>
+      <div class="publish-check">
+        <h3>Pre-publish gate</h3>
+        <div class="check-list" id="publish-list">
+          <label><input type="checkbox" /> I own or may reuse every image, sound, and text.</label>
+          <label><input type="checkbox" /> No password, secret key, private name, schedule, or location is in the files.</label>
+          <label><input type="checkbox" /> The home file is named <code>index.html</code> with matching letter case.</label>
+          <label><input type="checkbox" /> Links, images, keyboard controls, and phone layout work.</label>
+        </div>
+        <p class="check-status" id="check-status" aria-live="polite">0 of 4 release checks complete.</p>
+      </div>
+    </section>
+
+    <section class="gh-section" id="safety">
+      <div class="section-head"><span class="section-id">06 / DECIDE</span><div><h2>Know what belongs on GitHub—and what does not</h2><p class="section-intro">GitHub Pages hosts static files. Anything committed to a public repository can be copied, even if you delete it later. Treat every public commit as permanent.</p></div></div>
+      <div class="safety-gate">
+        <h3>Before an account or a publish</h3>
+        <ul><li><strong>Under 13?</strong> Do the planner and simulations without an account; use a teacher-approved school platform instead.</li><li><strong>Public means public.</strong> Use project names, not personal details. Never publish class lists, private photos, precise schedules, or student locations.</li><li><strong>Secrets never go in code.</strong> API keys, passwords, database credentials, and private tokens do not belong in HTML or a public repository.</li><li><strong>Credit creators.</strong> A file being online does not mean you may reuse it. Check its license and add attribution.</li></ul>
+      </div>
+      <div class="use-grid" style="margin-top:1rem">
+        <article class="use-card good"><strong>Great fit</strong><p>Static websites, portfolios, browser games, public data stories, documentation, design prototypes, open-source code, and project planning.</p></article>
+        <article class="use-card caution"><strong>Needs another service</strong><p>Logins, live databases, payments, private forms, or server-side code. GitHub can store the code, but Pages alone cannot safely run the backend.</p></article>
+        <article class="use-card stop"><strong>Do not publish</strong><p>Passwords, secret keys, private student data, copyrighted uploads without permission, harmful code, or anything that exposes someone’s safety.</p></article>
+      </div>
+    </section>
+
+    <section class="gh-section" id="check">
+      <div class="section-head"><span class="section-id">07 / PROVE</span><div><h2>Can you think like a collaborator?</h2><p class="section-intro">Choose the best answer for each real project decision.</p></div></div>
+      <form class="quiz" id="quiz-form">
+        <div class="quiz-card"><fieldset><legend>1. Your teammate wants to try a new navigation system without breaking the published site. What should they create?</legend><label><input type="radio" name="q1" value="a" /> A branch</label><label><input type="radio" name="q1" value="b" /> A password</label><label><input type="radio" name="q1" value="c" /> A second “final-final” folder</label></fieldset></div>
+        <div class="quiz-card"><fieldset><legend>2. What makes “Improve the page” a weak commit message?</legend><label><input type="radio" name="q2" value="a" /> It is too short to be legal</label><label><input type="radio" name="q2" value="b" /> It does not say what actually changed</label><label><input type="radio" name="q2" value="c" /> Commit messages must contain code</label></fieldset></div>
+        <div class="quiz-card"><fieldset><legend>3. A weather site needs a secret paid API key. Where should the key go?</legend><label><input type="radio" name="q3" value="a" /> At the top of index.html</label><label><input type="radio" name="q3" value="b" /> In a public README</label><label><input type="radio" name="q3" value="c" /> In a secure server-side secret store, not the public Pages files</label></fieldset></div>
+        <button class="gh-btn gh-btn-primary" type="submit">Check answers</button>
+        <p class="quiz-result" id="quiz-result" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section class="gh-section" id="sources">
+      <div class="section-head"><span class="section-id">SOURCE / CONTINUE</span><div><h2>Use the live documentation</h2><p class="section-intro">These official sources support the lesson and are the best place to check current labels, requirements, and workflows.</p></div></div>
+      <div class="source-grid">
+        <article class="source-card"><a href="https://github.com/about/press" target="_blank" rel="noopener noreferrer">GitHub press facts ↗</a><p>Official founding date and company background.</p></article>
+        <article class="source-card"><a href="https://docs.github.com/en/repositories/creating-and-managing-repositories/quickstart-for-repositories" target="_blank" rel="noopener noreferrer">Repository quickstart ↗</a><p>Create a repository and make the first commit.</p></article>
+        <article class="source-card"><a href="https://docs.github.com/en/get-started/using-github/github-flow" target="_blank" rel="noopener noreferrer">GitHub flow ↗</a><p>Branches, commits, pull requests, review, and merge.</p></article>
+        <article class="source-card"><a href="https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site" target="_blank" rel="noopener noreferrer">Create a Pages site ↗</a><p>Current publishing setup and source options.</p></article>
+        <article class="source-card"><a href="https://docs.github.com/en/site-policy/github-terms/github-terms-of-service" target="_blank" rel="noopener noreferrer">GitHub Terms ↗</a><p>Account requirements, including age and user responsibilities.</p></article>
+        <article class="source-card"><a href="https://skills.github.com/" target="_blank" rel="noopener noreferrer">GitHub Skills ↗</a><p>Hands-on practice inside real repositories.</p></article>
+        <article class="source-card"><a href="https://svs.gsfc.nasa.gov/help/" target="_blank" rel="noopener noreferrer">NASA SVS reuse policy ↗</a><p>SVS content is public domain unless an item says otherwise.</p></article>
+        <article class="source-card"><a href="https://svs.gsfc.nasa.gov/5001/" target="_blank" rel="noopener noreferrer">LRO Moon mosaic ↗</a><p>1,231 spacecraft images assembled into the simulator’s Moon asset.</p></article>
+        <article class="source-card"><a href="https://svs.gsfc.nasa.gov/30002/" target="_blank" rel="noopener noreferrer">NPP Blue Marble ↗</a><p>2012 VIIRS composite used as the Earth asset.</p></article>
+        <article class="source-card"><a href="https://svs.gsfc.nasa.gov/3988/" target="_blank" rel="noopener noreferrer">SDO/HMI visible Sun ↗</a><p>Visible-light solar observation used as the Sun asset.</p></article>
+        <article class="source-card"><a href="build-your-student-page.html">Next: Build Your Student Page →</a><p>Write HTML, CSS, and JavaScript in the ClassroomOS live editor.</p></article>
+      </div>
+    </section>
+  </main>
+
+  <script>
+  (function () {
+    'use strict';
+    var starterDraft = '{\n  "name": "Sun",\n  "diameterKm": 1392700,\n  "image": "assets/sun-sdo-hmi-nasa.jpg",\n  "alt": "Visible-light Sun with dark sunspots"\n}';
+    var commits = [
+      { hash: '8bd14e2', message: 'Start lunar atlas', text: '' },
+      { hash: 'a42e61c', message: 'Add Earth and Moon facts', text: '' }
+    ];
+    var ideaText = document.getElementById('idea-text');
+    var commitMessage = document.getElementById('commit-message');
+    var feedback = document.getElementById('commit-feedback');
+    var log = document.getElementById('commit-log');
+    var openPr = document.getElementById('open-pr');
+    var status = document.getElementById('simulation-status');
+    var committed = false; var prOpened = false; var approved = false; var merged = false;
+    function fakeHash(seed) {
+      var n = 0;
+      for (var i = 0; i < seed.length; i += 1) n = ((n << 5) - n + seed.charCodeAt(i)) | 0;
+      return Math.abs(n).toString(16).padStart(7, '0').slice(0, 7);
+    }
+    function renderCommits() {
+      log.innerHTML = '';
+      commits.slice().reverse().forEach(function (entry) {
+        var row = document.createElement('div'); row.className = 'log-entry';
+        var hash = document.createElement('span'); hash.className = 'log-hash'; hash.textContent = entry.hash;
+        var msg = document.createElement('span'); msg.textContent = entry.message;
+        row.append(hash, msg); log.appendChild(row);
+      });
+      document.getElementById('commit-count').textContent = commits.length + (commits.length === 1 ? ' commit' : ' commits');
+      document.getElementById('latest-message').textContent = commits[commits.length - 1].message;
+    }
+    function selectRepoTab(name) {
+      document.querySelectorAll('[data-repo-tab]').forEach(function (button) { button.setAttribute('aria-selected', String(button.dataset.repoTab === name)); });
+      document.getElementById('code-tab-panel').hidden = name !== 'code';
+      document.getElementById('issues-tab-panel').hidden = name !== 'issues';
+      document.getElementById('pulls-tab-panel').hidden = name !== 'pulls';
+    }
+    document.querySelectorAll('[data-repo-tab]').forEach(function (button) { button.addEventListener('click', function () { selectRepoTab(button.dataset.repoTab); }); });
+
+    var fileInfo = {
+      readme: ['README.md', 'Preview'], html: ['index.html', '6 lines'], data: ['data/worlds.json', '2 objects'],
+      moon: ['assets/moon-lro-nasa.jpg', '621 × 621'], earth: ['assets/earth-blue-marble-nasa.jpg', '1000 × 1000'], sun: ['assets/sun-sdo-hmi-nasa.jpg', '938 × 938']
+    };
+    document.querySelectorAll('[data-repo-file]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var key = button.dataset.repoFile;
+        document.querySelectorAll('[data-repo-file]').forEach(function (item) { item.setAttribute('aria-current', String(item === button)); });
+        document.querySelectorAll('[data-file-panel]').forEach(function (panel) { panel.hidden = panel.dataset.filePanel !== key; });
+        document.getElementById('viewer-path').textContent = 'lunar-field-guide / ' + fileInfo[key][0];
+        document.getElementById('viewer-meta').textContent = fileInfo[key][1];
+      });
+    });
+
+    document.getElementById('branch-select').addEventListener('change', function (event) {
+      var main = event.target.value === 'main';
+      document.getElementById('branch-note').textContent = main ? 'default branch · published source' : (committed ? '3 commits ahead of main · pull request ready' : '2 commits ahead of main · safe place to work');
+      ideaText.disabled = main; commitMessage.disabled = main; document.getElementById('commit-button').disabled = main || committed;
+      openPr.disabled = main || !committed || prOpened;
+      feedback.textContent = main ? 'Main is protected in this lab. Switch to the feature branch to make changes.' : (committed ? 'Change committed. Open a pull request when you are ready.' : '1 changed file is ready to commit.');
+    });
+
+    document.getElementById('commit-button').addEventListener('click', function () {
+      var message = commitMessage.value.trim(); var text = ideaText.value.trim();
+      if (!text) { feedback.textContent = 'Nothing to commit: add the Sun data first.'; return; }
+      if (message.length < 6 || /^(update|changes|stuff|fix)$/i.test(message)) { feedback.textContent = 'Name the change more clearly—try a verb plus the specific result.'; return; }
+      try {
+        var parsed = JSON.parse(text);
+        if (!parsed.name || !parsed.image || !parsed.alt) throw new Error('missing fields');
+      } catch (error) { feedback.textContent = 'The JSON needs valid name, image, and alt fields before it can be committed.'; return; }
+      commits.push({ hash: fakeHash(message + text + commits.length), message: message, text: text }); committed = true; renderCommits();
+      document.getElementById('commit-button').disabled = true; openPr.disabled = false;
+      feedback.textContent = 'Committed to feature/add-sun-card. Main and the live site are unchanged.';
+      document.getElementById('branch-note').textContent = '3 commits ahead of main · pull request ready';
+      status.className = 'simulation-status ready'; status.querySelector('span:last-child').textContent = 'Commit saved. Next: open a pull request so a teammate can review it.';
+    });
+    document.getElementById('restore-button').addEventListener('click', function () {
+      if (committed) { feedback.textContent = 'That change is already committed. Git preserves it; make another commit instead of silently rewriting history.'; return; }
+      ideaText.value = starterDraft; feedback.textContent = 'Draft restored to its last uncommitted version.';
+    });
+    openPr.addEventListener('click', function () {
+      if (!committed || prOpened) return;
+      prOpened = true; openPr.disabled = true; document.getElementById('pr-count').textContent = '1';
+      document.getElementById('pr-empty').hidden = true; document.getElementById('pr-live').hidden = false; selectRepoTab('pulls');
+      status.className = 'simulation-status'; status.querySelector('span:last-child').textContent = 'Pull request #1 is open. Next: ask Theo to review the evidence.';
+    });
+    document.getElementById('approve-pr').addEventListener('click', function () {
+      if (!prOpened || approved) return;
+      approved = true; document.getElementById('review-check').textContent = '✓'; document.getElementById('review-check').className = 'check-pass';
+      document.getElementById('review-check-text').textContent = 'Theo approved: accurate source, useful alt text, focused change';
+      document.getElementById('approve-pr').disabled = true; document.getElementById('merge-pr').disabled = false;
+      status.className = 'simulation-status ready'; status.querySelector('span:last-child').textContent = 'Review approved and checks passed. The pull request is safe to merge.';
+    });
+    document.getElementById('merge-pr').addEventListener('click', function () {
+      if (!approved || merged) return;
+      merged = true; document.getElementById('merge-pr').disabled = true; document.getElementById('pr-count').textContent = '0';
+      var state = document.getElementById('pr-state'); state.textContent = 'Merged'; state.className = 'merged-pill';
+      document.getElementById('deploy-label').textContent = 'PAGES · DEPLOYED FROM MAIN';
+      document.getElementById('deploy-title').textContent = 'Lunar Field Guide + Sun';
+      document.getElementById('deploy-copy').textContent = 'Published version now includes the visible-light Sun card, descriptive alt text, and NASA SVS source credit.';
+      document.getElementById('deploy-image').src = '../assets/images/sun-sdo-hmi-nasa.jpg';
+      document.getElementById('deploy-image').alt = 'Updated field guide preview showing the visible-light SDO image of the Sun';
+      status.className = 'simulation-status ready'; status.querySelector('span:last-child').textContent = 'Merged and deployed. The feature branch history is now part of main.';
+    });
+
+    document.querySelectorAll('[data-review]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var results = {
+          vague: 'This signals a problem but gives no evidence or next step. A reviewer should be specific and respectful.',
+          useful: 'Strong review: it names the contrast problem, requests a clear behavior, and reports a test that already passed.',
+          silent: 'Merging skips a learning opportunity and may ship unreadable text or a button that goes nowhere.'
+        };
+        document.getElementById('review-result').textContent = results[button.dataset.review];
+      });
+    });
+
+    var planByType = {
+      website: { fit: 'Strong GitHub fit', cls: '', files: ['README.md','index.html','style.css','script.js','assets/'], task: 'Build the main page and one clear action.' },
+      game: { fit: 'Strong GitHub fit', cls: '', files: ['README.md','index.html','style.css','game.js','assets/'], task: 'Build one playable loop with a restart.' },
+      research: { fit: 'Strong GitHub fit', cls: '', files: ['README.md','index.html','style.css','data/','sources.md'], task: 'Show one claim with a cited source and visualization.' },
+      hardware: { fit: 'Good documentation fit', cls: 'caution', files: ['README.md','build-guide.md','code/','diagrams/','photos/'], task: 'Document one tested build with parts and safety notes.' },
+      app: { fit: 'Pages alone is not enough', cls: 'no', files: ['README.md','frontend/','server/','docs/security-plan.md'], task: 'Prototype the interface, then choose a secure backend with a teacher.' }
+    };
+    function slugify(text) { return text.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'my-prototype'; }
+    function buildPlan() {
+      var title = document.getElementById('project-name').value.trim() || 'My prototype';
+      var audience = document.getElementById('project-audience').value.trim() || 'a clearly named audience';
+      var mvp = document.getElementById('project-mvp').value.trim() || 'one small useful version';
+      var type = document.getElementById('project-type').value; var plan = planByType[type]; var slug = slugify(title);
+      document.getElementById('plan-title').textContent = slug;
+      var fit = document.getElementById('fit-label'); fit.textContent = plan.fit; fit.className = 'fit-label ' + plan.cls;
+      document.getElementById('file-tree').textContent = slug + '/\n' + plan.files.map(function (file, i) { return (i === plan.files.length - 1 ? '└── ' : '├── ') + file; }).join('\n');
+      var tasks = document.getElementById('plan-tasks'); tasks.innerHTML = '';
+      ['Write in README.md: “' + title + ' helps ' + audience + '.”', plan.task, 'First version: ' + mvp, 'Ask one person from the audience to test it.'].forEach(function (task) { var li = document.createElement('li'); li.textContent = task; tasks.appendChild(li); });
+      return { title: title, slug: slug, audience: audience, mvp: mvp, type: type, plan: plan };
+    }
+    document.getElementById('prototype-form').addEventListener('submit', function (event) { event.preventDefault(); buildPlan(); });
+    document.getElementById('download-plan').addEventListener('click', function () {
+      var p = buildPlan();
+      var content = '# ' + p.title + '\n\n## Purpose\n' + p.title + ' helps ' + p.audience + '.\n\n## Smallest useful version\n' + p.mvp + '\n\n## Build checklist\n- [ ] ' + p.plan.task + '\n- [ ] Test on a phone and with a keyboard\n- [ ] Ask one audience member for feedback\n- [ ] Check privacy, licenses, and secrets before publishing\n';
+      var url = URL.createObjectURL(new Blob([content], { type: 'text/markdown' })); var a = document.createElement('a'); a.href = url; a.download = p.slug + '-README.md'; a.click(); URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('publish-list').addEventListener('change', function () {
+      var checked = document.querySelectorAll('#publish-list input:checked').length;
+      document.getElementById('check-status').textContent = checked === 4 ? '4 of 4 complete. Ready for a teacher or teammate review.' : checked + ' of 4 release checks complete.';
+    });
+    document.getElementById('quiz-form').addEventListener('submit', function (event) {
+      event.preventDefault(); var answers = { q1: 'a', q2: 'b', q3: 'c' }; var score = 0;
+      Object.keys(answers).forEach(function (name) { var chosen = document.querySelector('input[name="' + name + '"]:checked'); if (chosen && chosen.value === answers[name]) score += 1; });
+      document.getElementById('quiz-result').textContent = score === 3 ? '3 / 3 — Ready to create, review, and publish responsibly.' : score + ' / 3 — Revisit branches, useful commit messages, and the safety gate, then try again.';
+    });
+  }());
+  </script>
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script src="../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
