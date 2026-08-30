@@ -25,7 +25,7 @@ const urls = matchPattern ? configuredUrls.filter((entry) => entry.url.includes(
 const concurrency = Math.min(urls.length, Math.max(1, Number(process.env.A11Y_CONCURRENCY || config.defaults?.concurrency || 3)));
 const localChromium = "/home/evanscandrett/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome";
 const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH ||
-  (existsSync(localChromium) ? localChromium : puppeteer.executablePath());
+  (existsSync(localChromium) ? localChromium : await puppeteer.executablePath());
 
 const launchOptions = {
   executablePath,

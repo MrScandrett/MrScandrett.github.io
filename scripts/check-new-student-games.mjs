@@ -7,7 +7,13 @@ import path from "node:path";
 import { chromium } from "playwright";
 
 const BASE_URL = process.env.SITE_URL || "http://localhost:8080";
-const CHROME_PATH = path.join(os.homedir(), ".cache/ms-playwright/chromium-1208/chrome-linux64/chrome");
+const CHROME_PATH = [
+  process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
+  path.join(os.homedir(), ".cache/ms-playwright/chromium-1208/chrome-linux64/chrome"),
+  "/usr/bin/google-chrome",
+  "/usr/bin/chromium",
+  "/usr/bin/chromium-browser",
+].find((candidate) => candidate && fs.existsSync(candidate));
 
 function ensure(condition, message) {
   if (!condition) throw new Error(message);
@@ -163,8 +169,8 @@ const checks = {
   },
 };
 
-if (!fs.existsSync(CHROME_PATH)) {
-  console.error(`[new-games] Chromium not found: ${CHROME_PATH}`);
+if (!CHROME_PATH) {
+  console.error("[new-games] Chromium not found. Set PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH or install Chrome/Chromium.");
   process.exit(1);
 }
 

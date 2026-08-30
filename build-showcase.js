@@ -2168,7 +2168,9 @@ async function main() {
   }
   logStep(`Found ${uniqueProjects.length} project(s); building ${onlySlug || "all projects"}.`);
 
-  const manifest = onlySlug ? await readExistingManifest() : [];
+  const existingManifest = await readExistingManifest();
+  const existingBySlug = new Map(existingManifest.map((item) => [item && item.slug, item]));
+  const manifest = onlySlug ? existingManifest.slice() : [];
   const failures = [];
 
   for (const { source, slug } of selectedProjects) {
@@ -2191,6 +2193,14 @@ async function main() {
         entry = await processFileProject(source, slug);
       } else {
         entry = await processProject(source, slug);
+      }
+      // date_added records the project's first publication, not the day of every
+      // rebuild. Preserve the committed manifest value so clean CI rebuilds are
+      // byte-for-byte reproducible while genuinely new projects still receive
+      // their initial build date.
+      const existingEntry = existingBySlug.get(slug);
+      if (existingEntry && /^\d{4}-\d{2}-\d{2}$/.test(existingEntry.date_added || "")) {
+        entry.date_added = existingEntry.date_added;
       }
       const existingIndex = manifest.findIndex((item) => item && item.slug === slug);
       if (existingIndex >= 0) manifest[existingIndex] = entry;

@@ -5,7 +5,6 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import pa11y from "pa11y";
 import puppeteer from "puppeteer";
-import { chromium } from "playwright";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const THEMES = [
@@ -196,16 +195,17 @@ if (!selectedThemes.length) throw new Error(`Unknown THEME_AUDIT_THEME=${themeFi
 
 const cases = pages.flatMap((pagePath) => selectedThemes.map((theme) => ({ pagePath, theme })));
 const { server, baseUrl } = await startStaticServer();
+const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || await puppeteer.executablePath();
 const browser = await puppeteer.launch({
   args: ["--disable-dev-shm-usage", "--no-sandbox"],
-  executablePath: chromium.executablePath(),
+  executablePath,
   headless: true,
 });
 
 let results;
 try {
   console.log(`Running Pa11y color-contrast checks on ${pages.length} pages across ${selectedThemes.length} themes (${cases.length} combinations).`);
-  const browserContexts = await Promise.all(Array.from({ length: 4 }, () => browser.createIncognitoBrowserContext()));
+  const browserContexts = await Promise.all(Array.from({ length: 4 }, () => browser.createBrowserContext()));
   results = await runPool(cases, browserContexts.length, ({ pagePath, theme }, workerIndex) => (
     auditCase(browser, browserContexts[workerIndex], baseUrl, pagePath, theme)
   ));

@@ -25,7 +25,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -35,6 +35,9 @@ jobs:
       # student source so Pages can never deploy stale or hand-edited copies.
       - name: Rebuild showcase from canonical student sources
         run: npm run build -- --strict
+
+      - name: Verify generated showcase output is committed and reproducible
+        run: git diff --exit-code -- apps
 
       - name: Start site for interactive checks
         run: |

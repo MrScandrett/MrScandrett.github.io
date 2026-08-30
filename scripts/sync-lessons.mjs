@@ -6,8 +6,8 @@
  *
  * Modes:
  *   node scripts/sync-lessons.mjs          -- validate only, report drift
- *   node scripts/sync-lessons.mjs --fix    -- patch search-index.json lesson entries
- *                                             from data/lessons.json and report
+ *   node scripts/sync-lessons.mjs --fix    -- regenerate search and accessibility
+ *                                             lesson entries from data/lessons.json
  */
 
 import fs from "node:fs";
@@ -19,6 +19,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const LESSONS_PATH = path.join(ROOT, "data", "lessons.json");
 const INDEX_PATH = path.join(ROOT, "assets", "data", "search-index.json");
 const COMPENDIUM_PLAN_PATH = path.join(ROOT, "data", "compendium-plan.json");
+const A11Y_PATH = path.join(ROOT, ".pa11yci.json");
 const FIX = process.argv.includes("--fix");
 
 const errors = [];
@@ -51,6 +52,11 @@ if (!Array.isArray(lessonsData.lessons)) {
 
 const lessons = lessonsData.lessons;
 info(`Loaded ${lessons.length} lesson records from data/lessons.json`);
+
+const compendiumPlan = JSON.parse(fs.readFileSync(COMPENDIUM_PLAN_PATH, "utf8"));
+const supportingUrls = new Set(compendiumPlan.supportingPages.map((item) => item.url));
+const lessonUrls = new Set(lessons.map((lesson) => lesson.url));
+const liveLessonUrls = new Set(lessons.filter((lesson) => lesson.status === "live").map((lesson) => lesson.url));
 
 // ── Validate: required fields ─────────────────────────────────────────────────
 
@@ -85,7 +91,6 @@ for (const [id, count] of Object.entries(idCounts)) {
 
 // ── Validate: lessons on disk not in lessons.json ────────────────────────────
 
-const knownIds = new Set(lessons.map((l) => l.id));
 const lessonsDir = path.join(ROOT, "lessons");
 
 function walkLessons(dir, prefix = "") {
@@ -97,8 +102,9 @@ function walkLessons(dir, prefix = "") {
       continue;
     }
     if (!entry.name.endsWith(".html")) continue;
-    const id = (prefix + entry.name.replace(".html", "")).replace(/\/index$/, "");
-    if (!knownIds.has(id)) missing.push(id);
+    const relativePath = `${prefix}${entry.name}`;
+    const url = `lessons/${relativePath}`;
+    if (!lessonUrls.has(url) && !supportingUrls.has(url)) missing.push(relativePath.replace(/\.html$/, ""));
   }
   return missing;
 }
@@ -108,7 +114,7 @@ if (untracked.length === 0) {
   info("No untracked lesson files ✓");
 } else {
   for (const id of untracked) {
-    warn(`Lesson file exists but not in data/lessons.json: "${id}"`);
+    warn(`Lesson file is neither registered nor classified as supporting: "${id}"`);
   }
 }
 
@@ -129,11 +135,44 @@ const indexLessonUrls = new Set(
 let notInIndex = 0;
 for (const l of lessons) {
   if (l.status === "live" && !indexLessonUrls.has(l.url)) {
-    warn(`Live lesson not in search-index.json: "${l.id}" (${l.url})`);
+    err(`Live lesson not in search-index.json: "${l.id}" (${l.url})`);
     notInIndex++;
   }
 }
 if (notInIndex === 0) info("All live lessons present in search-index.json ✓");
+
+// ── Cross-check public shelf and accessibility coverage ─────────────────────
+
+const steamPath = path.join(ROOT, "steam-lessons.html");
+const steamHtml = fs.readFileSync(steamPath, "utf8");
+const shelfUrls = new Set(
+  [...steamHtml.matchAll(/href=["'](lessons\/[^"'#?]+\.html)/g)].map((match) => match[1])
+);
+
+for (const url of shelfUrls) {
+  if (!liveLessonUrls.has(url)) err(`Public shelf lesson is not a live registry record: ${url}`);
+}
+for (const url of liveLessonUrls) {
+  if (!shelfUrls.has(url)) err(`Live registry lesson is missing from the public shelf: ${url}`);
+}
+if (shelfUrls.size === liveLessonUrls.size && [...shelfUrls].every((url) => liveLessonUrls.has(url))) {
+  info(`Public shelf and registry agree on ${shelfUrls.size} live lessons ✓`);
+}
+
+const a11yConfig = JSON.parse(fs.readFileSync(A11Y_PATH, "utf8"));
+const configuredA11yPaths = new Set(a11yConfig.urls.map((entry) => {
+  const url = typeof entry === "string" ? entry : entry.url;
+  return new URL(url).pathname.replace(/^\//, "");
+}));
+const expectedA11yPaths = new Set([...liveLessonUrls, ...supportingUrls]);
+for (const url of expectedA11yPaths) {
+  if (!configuredA11yPaths.has(url)) err(`Registered lesson missing from .pa11yci.json: ${url}`);
+}
+for (const url of configuredA11yPaths) {
+  if (url.startsWith("lessons/") && !expectedA11yPaths.has(url)) {
+    err(`Unregistered lesson URL in .pa11yci.json: ${url}`);
+  }
+}
 
 // Banner count drift check ────────────────────────────────────────────────────
 //
@@ -144,38 +183,25 @@ if (notInIndex === 0) info("All live lessons present in search-index.json ✓");
 // Match banners by their stable `id="module-xxx"` attribute, not title text, so a
 // future title reword doesn't silently stop this check the way it did before.
 
-const steamPath = path.join(ROOT, "steam-lessons.html");
 if (fs.existsSync(steamPath) && fs.existsSync(COMPENDIUM_PLAN_PATH)) {
-  const html = fs.readFileSync(steamPath, "utf8");
-  const plan = JSON.parse(fs.readFileSync(COMPENDIUM_PLAN_PATH, "utf8"));
-  const statusByUrl = new Map(lessons.map((l) => [l.url, l.status]));
-
-  const sectionIdToModuleId = Object.fromEntries(
-    Object.entries(MODULE_SECTION_IDS).map(([moduleId, sectionId]) => [sectionId, moduleId])
-  );
-
-  const liveCountByModuleId = {};
-  for (const volume of plan.volumes) {
-    for (const module of volume.modules) {
-      const urls = module.units.flatMap((unit) => unit.lessons);
-      liveCountByModuleId[module.id] = urls.filter((url) => statusByUrl.get(url) === "live").length;
-    }
-  }
-
   const bannerPattern = /id="(module-[\w-]+)"[\s\S]*?module-banner-title[^>]*>([^<&]+(?:&amp;[^<]*)?)<\/h2>[\s\S]*?module-banner-count[^>]*>(\d+)\s*live/g;
-  for (const match of html.matchAll(bannerPattern)) {
+  const bannerMatches = [...steamHtml.matchAll(bannerPattern)];
+  for (const [index, match] of bannerMatches.entries()) {
     const sectionId = match[1];
     const bannerTitle = match[2].replace(/&amp;/g, "&").trim();
     const bannerCount = parseInt(match[3], 10);
-    const moduleId = sectionIdToModuleId[sectionId];
-    if (!moduleId) {
+    if (!Object.values(MODULE_SECTION_IDS).includes(sectionId)) {
       warn(`Banner section id not in MODULE_SECTION_IDS: "${sectionId}" ("${bannerTitle}")`);
       continue;
     }
-    const liveCount = liveCountByModuleId[moduleId] ?? 0;
+    const sectionEnd = bannerMatches[index + 1]?.index ?? steamHtml.indexOf("</main>", match.index);
+    const sectionHtml = steamHtml.slice(match.index, sectionEnd > match.index ? sectionEnd : undefined);
+    const liveCount = new Set(
+      [...sectionHtml.matchAll(/href=["'](lessons\/[^"'#?]+\.html)/g)].map((item) => item[1])
+    ).size;
     if (liveCount !== bannerCount) {
-      warn(
-        `Banner count mismatch for "${bannerTitle}" (${sectionId}): banner says ${bannerCount}, compendium plan has ${liveCount} live`
+      err(
+        `Banner count mismatch for "${bannerTitle}" (${sectionId}): banner says ${bannerCount}, shelf contains ${liveCount} unique lessons`
       );
     }
   }
@@ -240,6 +266,20 @@ if (FIX) {
   const newIndex = [...nonLessonEntries, ...lessonEntries];
   fs.writeFileSync(INDEX_PATH, JSON.stringify(newIndex, null, 2), "utf8");
   info(`search-index.json updated: ${newIndex.length} total entries (${lessonEntries.length} lessons)`);
+
+  const nonLessonA11yEntries = a11yConfig.urls.filter((entry) => {
+    const value = typeof entry === "string" ? entry : entry.url;
+    return !new URL(value).pathname.startsWith("/lessons/");
+  });
+  const lessonA11yEntries = [...expectedA11yPaths]
+    .sort()
+    .map((url) => `http://localhost:8080/${url}`);
+  const nextA11yConfig = {
+    ...a11yConfig,
+    urls: [...nonLessonA11yEntries, ...lessonA11yEntries],
+  };
+  fs.writeFileSync(A11Y_PATH, `${JSON.stringify(nextA11yConfig, null, 2)}\n`, "utf8");
+  info(`.pa11yci.json updated: ${lessonA11yEntries.length} lesson and supporting URLs`);
 }
 
 // ── Summary ───────────────────────────────────────────────────────────────────
