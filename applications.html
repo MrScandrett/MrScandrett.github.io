@@ -109,12 +109,47 @@
   </header>
 
   <main id="main-content">
-    <section class="hero applications-hero" aria-label="Quick Start">
+    <section class="hero applications-hero" aria-labelledby="applications-title">
       <div class="applications-hero-copy">
-        <p class="eyebrow">Applications</p>
-        <h1 class="reveal">Classroom<br>Applications</h1>
-        <p class="applications-hero-lead reveal" style="--i:1">Three ways to find the right tool — explore the <strong>visual galaxy</strong>, follow a <strong>guided mission</strong>, or browse the <strong>full library</strong>. Use Neural Search (⌘K) to jump anywhere instantly.</p>
+        <p class="eyebrow">Classroom tool room</p>
+        <h1 class="reveal" id="applications-title">Find the right tool.<br><span>Start making.</span></h1>
+        <p class="applications-hero-lead reveal" style="--i:1">Choose a trusted classroom app without digging through a wall of links. Browse the shelf, follow a project route, or map the whole STEAM galaxy.</p>
+        <div class="applications-hero-facts reveal" style="--i:2" aria-label="Library highlights">
+          <span><strong>100+</strong> curated tools</span>
+          <span><strong>K–12</strong> pathways</span>
+          <span><strong>3</strong> ways in</span>
+        </div>
       </div>
+
+      <aside class="applications-console reveal" style="--i:2" aria-label="Choose how to explore applications">
+        <div class="applications-console-head">
+          <span class="applications-console-status"><i aria-hidden="true"></i> Tool signal online</span>
+          <span class="applications-console-code" aria-hidden="true">APP / 001</span>
+        </div>
+        <button class="applications-console-search" id="hero-app-search" type="button" aria-haspopup="dialog" aria-controls="app-command-palette">
+          <span class="applications-console-search-icon" aria-hidden="true">⌕</span>
+          <span><strong>Search by what you want to make</strong><small>Games, robots, music, research…</small></span>
+          <kbd>⌘ K</kbd>
+        </button>
+        <div class="applications-route-list" aria-label="Application routes">
+          <button class="applications-route" type="button" data-app-route="tab-btn-library">
+            <span class="applications-route-mark applications-route-mark--library" aria-hidden="true">A</span>
+            <span><strong>Browse the shelf</strong><small>Start with trusted tools</small></span>
+            <span class="applications-route-arrow" aria-hidden="true">→</span>
+          </button>
+          <button class="applications-route" type="button" data-app-route="tab-btn-guided">
+            <span class="applications-route-mark applications-route-mark--guided" aria-hidden="true">B</span>
+            <span><strong>Follow a project route</strong><small>Tell us what you want to build</small></span>
+            <span class="applications-route-arrow" aria-hidden="true">→</span>
+          </button>
+          <button class="applications-route" type="button" data-app-route="tab-btn-galaxy">
+            <span class="applications-route-mark applications-route-mark--galaxy" aria-hidden="true">C</span>
+            <span><strong>Explore the galaxy</strong><small>See how STEAM tools connect</small></span>
+            <span class="applications-route-arrow" aria-hidden="true">→</span>
+          </button>
+        </div>
+        <p class="applications-console-note"><span aria-hidden="true">↳</span> Pick a route. You can switch views at any time.</p>
+      </aside>
     </section>
 
     <div class="app-tab-bar" role="tablist" aria-label="Applications views">
@@ -3414,6 +3449,13 @@
         });
 
         window.applicationsTabs = { activateTab };
+
+        document.querySelectorAll("[data-app-route]").forEach(function (route) {
+          route.addEventListener("click", function () {
+            activateTab(route.dataset.appRoute);
+            document.querySelector(".app-tab-bar")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+        });
       })();
 
       (function () {
@@ -3617,6 +3659,10 @@
         }
 
         openButton.addEventListener("click", function () {
+          openPalette("");
+        });
+
+        document.getElementById("hero-app-search")?.addEventListener("click", function () {
           openPalette("");
         });
 
