@@ -37,6 +37,7 @@ function resolveThumbPath(value, slug) {
   if (raw.startsWith("assets/thumbs/"))    return `/${raw}`;
 
   // Allow app-relative paths (manifest thumbnails live inside /apps/<slug>/)
+  if (raw.startsWith("/apps/"))            return raw;
   if (raw.startsWith("./apps/"))           return raw.slice(1);
   if (raw.startsWith("apps/"))             return `/${raw}`;
 

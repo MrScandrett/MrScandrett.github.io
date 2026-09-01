@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="assets/css/pages/index.css" />
   <link rel="stylesheet" href="assets/css/main.css" />
   <link rel="stylesheet" href="assets/css/liquid-woodland.css" />
+  <script src="assets/js/theme-registry.js"></script>
   <script src="assets/js/theme-lighting.js"></script>
 </head>
 <body class="theme-liquid-woodland theme-home">
@@ -155,8 +156,9 @@
               <span class="home-weather-station-wrap">Outdoor Readiness · <span class="home-weather-station" id="home-weather-station">LW_FL_32750</span></span>
               <span class="home-weather-city" id="home-weather-city">LONGWOOD, FL</span>
             </div>
+            <p class="weather-learning-invite"><span aria-hidden="true">↗</span> Hover or tap a panel to investigate the reading.</p>
             <div class="home-weather-dashboard">
-              <div class="weather-primary">
+              <div class="weather-primary weather-learning-panel" data-weather-topic="temperature">
                 <div class="weather-current-reading">
                   <div>
                     <p class="home-weather-temp" id="home-weather-temp">--°</p>
@@ -173,28 +175,28 @@
                 </p>
               </div>
               <div class="weather-telemetry-grid" aria-label="Weather telemetry">
-                <div class="telemetry-stat" id="home-weather-wind-card">
+                <div class="telemetry-stat weather-learning-panel" id="home-weather-wind-card" data-weather-topic="wind">
                   <span class="stat-label">Wind</span>
                   <span class="stat-value" id="home-weather-wind">-- MPH</span>
                 </div>
-                <div class="telemetry-stat" id="home-weather-uv-card">
+                <div class="telemetry-stat weather-learning-panel" id="home-weather-uv-card" data-weather-topic="uv">
                   <span class="stat-label">UV</span>
                   <span class="stat-value" id="home-weather-uv">--</span>
                 </div>
-                <div class="telemetry-stat" id="home-weather-pollen-card">
+                <div class="telemetry-stat weather-learning-panel" id="home-weather-pollen-card" data-weather-topic="pollen">
                   <span class="stat-label">Pollen</span>
                   <span class="stat-value" id="home-weather-pollen">--</span>
                 </div>
-                <div class="telemetry-stat" id="home-weather-humidity-card">
+                <div class="telemetry-stat weather-learning-panel" id="home-weather-humidity-card" data-weather-topic="humidity">
                   <span class="stat-label">Humidity</span>
                   <span class="stat-value" id="home-weather-humidity">--%</span>
                 </div>
               </div>
             </div>
-            <div class="weather-forecast" id="home-weather-forecast" aria-label="Five day forecast"></div>
-            <div class="weather-solar" id="home-weather-solar" aria-label="Daylight and moon phase"></div>
-            <div class="weather-clothing" id="home-weather-clothing" aria-live="polite"></div>
-            <div class="weather-precip-chart" id="home-weather-precip" aria-label="5-day precipitation chances"></div>
+            <div class="weather-forecast weather-learning-panel" id="home-weather-forecast" data-weather-topic="forecast" aria-label="Five day forecast"></div>
+            <div class="weather-solar weather-learning-panel" id="home-weather-solar" data-weather-topic="sunlight" aria-label="Daylight and moon phase"></div>
+            <div class="weather-clothing weather-learning-panel" id="home-weather-clothing" data-weather-topic="readiness" aria-live="polite"></div>
+            <div class="weather-precip-chart weather-learning-panel" id="home-weather-precip" data-weather-topic="precipitation" aria-label="5-day precipitation chances"></div>
             <div class="weather-lessons-bar">
               <span class="weather-lessons-label">Explore the science:</span>
               <a href="lessons/water-cycle.html" class="weather-lesson-link">Water Cycle</a>
@@ -257,6 +259,37 @@
             </div>
           </div>
         </div>
+
+        <section class="home-widget home-widget--science-news" aria-labelledby="science-news-title">
+          <div class="science-news-signal" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <header class="science-news-header">
+            <div>
+              <p class="science-news-kicker"><span class="science-news-live-dot" aria-hidden="true"></span> Classroom science desk</p>
+              <h3 class="science-news-title" id="science-news-title">What scientists are discovering now</h3>
+              <p class="science-news-intro">Fresh, student-friendly reporting from across Earth, space, life, technology, and more.</p>
+            </div>
+            <div class="science-news-controls">
+              <span class="science-news-source">Science News Explores</span>
+              <button class="science-news-refresh" id="science-news-refresh" type="button">
+                Check for new stories
+              </button>
+            </div>
+          </header>
+          <div class="science-news-feed" id="science-news-feed" aria-live="polite" aria-busy="true">
+            <div class="science-news-loading" role="status">
+              <span class="science-news-loading-line"></span>
+              <span class="science-news-loading-line"></span>
+              <span class="science-news-loading-line"></span>
+              <span class="visually-hidden">Loading the latest science stories</span>
+            </div>
+          </div>
+          <footer class="science-news-footer">
+            <p class="science-news-question"><span aria-hidden="true">?</span> <strong>Ask like a scientist:</strong> What evidence would you want to see?</p>
+            <p class="science-news-credit">Independent nonprofit reporting written for ages 9–14. <a href="https://www.snexplores.org/" target="_blank" rel="noreferrer noopener">Browse all stories <span aria-hidden="true">↗</span></a></p>
+          </footer>
+        </section>
 
         <div class="daily-discovery-stack" aria-label="Daily discoveries">
           <!-- Word of the Day -->
@@ -601,6 +634,7 @@
 
   <script type="module" src="assets/js/votd.js"></script>
   <script type="module" src="assets/js/apod.js"></script>
+  <script type="module" src="assets/js/science-news.js"></script>
   <script src="assets/js/canvas-bg.js"></script>
   <script src="assets/js/reveal.js"></script>
   <script src="assets/js/nav-mobile.js"></script>
@@ -963,6 +997,272 @@
         pollenCard: document.getElementById('home-weather-pollen-card')
       };
 
+      const WEATHER_LESSONS = {
+        temperature: {
+          title: 'Temperature & “feels like”',
+          label: 'Temperature lesson',
+          fields: [
+            ['What it is', 'Temperature measures how much thermal energy is in the air. “Feels like” estimates how that air affects your body after humidity and wind are considered.'],
+            ['Why it matters', 'Your body must stay near 98.6°F. A large gap between air temperature and “feels like” can change how quickly you heat up or cool down outside.'],
+            ['How we measure it', 'Weather stations shield electronic thermometers from direct sun and report air temperature in degrees Fahrenheit or Celsius.'],
+            ['Cool fact', 'A thermometer in sunlight can read much hotter than the shaded air, which is why official instruments sit inside ventilated shields.']
+          ]
+        },
+        wind: {
+          title: 'Wind speed & direction',
+          label: 'Wind lesson',
+          fields: [
+            ['What it is', 'Wind is air moving from higher pressure toward lower pressure. The letters show where it comes from: a NE wind arrives from the northeast.'],
+            ['Why it matters', 'Wind changes fire spread, boating safety, flying conditions, heat loss, and how quickly storms move. Strong gusts can be more important than the average.'],
+            ['How we measure it', 'An anemometer measures speed; a wind vane measures direction. Standard weather readings are usually taken about 10 meters above open ground.'],
+            ['Cool fact', 'The calm center of a hurricane may have light wind even while the eyewall around it contains the storm’s strongest winds.']
+          ]
+        },
+        uv: {
+          title: 'UV Index',
+          label: 'UV Index lesson',
+          fields: [
+            ['What it is', 'Ultraviolet radiation is invisible energy from the Sun. UVA reaches deeper into skin; UVB is a major cause of sunburn and can damage DNA.'],
+            ['Why it matters', 'Too much UV raises the risk of sunburn, eye injury, early skin aging, and skin cancer. Shade, clothing, sunglasses, and sunscreen reduce exposure.'],
+            ['How we measure it', 'The UV Index weights different UV wavelengths by how strongly they harm human skin: 0–2 low, 3–5 moderate, 6–7 high, 8–10 very high, and 11+ extreme.'],
+            ['Cool fact', 'Clouds do not block all UV. You can still get sunburned on an overcast day—and fresh snow can reflect UV back toward you.']
+          ]
+        },
+        pollen: {
+          title: 'Pollen outlook',
+          label: 'Pollen lesson',
+          fields: [
+            ['What it is', 'Pollen is a fine powder plants use to reproduce. Wind-carried pollen from trees, grasses, and weeds is a common trigger for seasonal allergies.'],
+            ['Why it matters', 'A higher pollen level can mean more sneezing, itchy eyes, or asthma symptoms for sensitive people. Levels often rise on warm, dry, windy days.'],
+            ['How we measure it', 'Real pollen stations collect airborne grains and count them under a microscope, often as grains per cubic meter of air. This widget shows a seasonal outlook—not a live local count.'],
+            ['Cool fact', 'Showy flowers usually rely on insects and make heavier, stickier pollen. Many allergy-causing plants use tiny airborne grains instead.']
+          ]
+        },
+        humidity: {
+          title: 'Relative humidity',
+          label: 'Humidity lesson',
+          fields: [
+            ['What it is', 'Relative humidity compares the water vapor in the air with the maximum that air could hold at its current temperature.'],
+            ['Why it matters', 'High humidity slows sweat evaporation, making heat feel more stressful. Very dry air can dry skin and help some materials lose moisture quickly.'],
+            ['How we measure it', 'A hygrometer reports relative humidity as a percent. Because warm air can hold more vapor, the percentage can change even when no water is added.'],
+            ['Cool fact', 'When relative humidity reaches 100%, the air is saturated. Cooling it further can form dew, fog, or clouds.']
+          ]
+        },
+        forecast: {
+          title: 'Five-day forecast',
+          label: 'Forecast lesson',
+          fields: [
+            ['What it is', 'A forecast is a scientific estimate of future atmosphere conditions—not a promise. Each day here pairs the expected weather pattern with the forecast high.'],
+            ['Why it matters', 'Looking several days ahead helps you plan, but the closest days usually carry the most detail and confidence. Check again as an outdoor event gets nearer.'],
+            ['How we make it', 'Computers combine observations from satellites, radar, weather balloons, stations, and buoys, then solve physics equations on a 3D grid.'],
+            ['Cool fact', 'Meteorologists compare many model runs called an ensemble. When the runs disagree, uncertainty is higher.']
+          ]
+        },
+        sunlight: {
+          title: 'Daylight & Moon phase',
+          label: 'Daylight lesson',
+          fields: [
+            ['What it is', 'Sunrise and sunset mark the Sun crossing the horizon. Moon phase describes how much of the Moon’s sunlit half we can see from Earth.'],
+            ['Why it matters', 'Daylight helps you plan safe outdoor time. Moonlight, tides, animal behavior, and nighttime visibility follow repeating lunar patterns.'],
+            ['How we calculate it', 'Astronomers predict these times and phases from Earth’s rotation, its orbit around the Sun, and the Moon’s roughly 29.5-day phase cycle.'],
+            ['Cool fact', 'The Moon is always half lit by the Sun—except during an eclipse. Its changing phase comes from our viewing angle, not Earth’s shadow.']
+          ]
+        },
+        readiness: {
+          title: 'Outdoor readiness',
+          label: 'Outdoor readiness lesson',
+          fields: [
+            ['What it is', 'This recommendation combines temperature with rain, UV, and wind so one reading does not tell the whole story.'],
+            ['Why it matters', 'Layers, water, sun protection, and rain gear help your body manage heat and stay comfortable as conditions change.'],
+            ['How to use it', 'Treat the advice as a starting checklist. Your activity, time outside, health needs, and official local alerts matter too.'],
+            ['Cool fact', 'Sweat cools you only when it evaporates. On humid days it evaporates more slowly, so the same temperature can feel hotter.']
+          ]
+        },
+        precipitation: {
+          title: 'Chance of precipitation',
+          label: 'Rain chance lesson',
+          fields: [
+            ['What it is', 'The percentage is the chance that measurable precipitation will fall at a particular point in the forecast area during that period.'],
+            ['Why it matters', 'Probability helps you make a decision under uncertainty. A 70% chance suggests rain gear is wiser than a 10% chance, but neither guarantees an outcome.'],
+            ['How we estimate it', 'Forecasters combine model evidence, moisture, lift, storm tracks, and past performance. The value does not mean it will rain for that percent of the day.'],
+            ['Cool fact', 'A 30% rain chance can still produce a downpour where a storm forms; probability describes whether rain occurs, not how hard it falls.']
+          ]
+        }
+      };
+
+      function weatherLessonMarkup(topic, drawerId) {
+        const lesson = WEATHER_LESSONS[topic];
+        if (!lesson) return '';
+        const notes = lesson.fields.map(([heading, copy]) => `
+          <p class="weather-learning-note"><strong>${heading}</strong><span>${copy}</span></p>
+        `).join('');
+        return `
+          <button class="weather-learn-cue" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="${drawerId}"><span aria-hidden="true">+</span> Learn</button>
+          <div class="weather-learning-drawer" id="${drawerId}" aria-hidden="true">
+            <div class="weather-learning-drawer-inner">
+              <span class="weather-field-note">Weather field note</span>
+              <h3>${lesson.title}</h3>
+              <div class="weather-learning-notes">${notes}</div>
+            </div>
+          </div>`;
+      }
+
+      function weatherPanelReading(panel) {
+        const reading = panel.querySelector('.stat-value, .home-weather-temp, .forecast-temp, .solar-time, .clothing-main, .precip-pct');
+        return reading ? reading.textContent.trim() : '';
+      }
+
+      function hydrateWeatherLearningPanels() {
+        if (weatherOpenPanel && !document.contains(weatherOpenPanel)) {
+          weatherOpenPanel = null;
+        }
+        weatherEls.shell.querySelectorAll('.weather-learning-panel[data-weather-topic]').forEach((panel, index) => {
+          const topic = panel.dataset.weatherTopic;
+          const lesson = WEATHER_LESSONS[topic];
+          if (!lesson) return;
+          const drawerId = `weather-learning-${topic}-${index}`;
+          if (!panel.querySelector('.weather-learning-drawer')) {
+            panel.insertAdjacentHTML('beforeend', weatherLessonMarkup(topic, drawerId));
+          }
+          const cue = panel.querySelector('.weather-learn-cue');
+          const reading = weatherPanelReading(panel);
+          if (cue) cue.setAttribute('aria-label', `${lesson.label}${reading ? `. Displayed value: ${reading}` : ''}.`);
+        });
+      }
+
+      // Field-note drawers float in as their own fixed-position panel instead
+      // of pushing the widget's layout down. Only one is open at a time.
+      let weatherOpenPanel = null;
+      let weatherHideTimer = null;
+
+      function canHoverWeather() {
+        return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+      }
+
+      function positionWeatherDrawer(panel, drawer) {
+        const rect = panel.getBoundingClientRect();
+        const margin = 10;
+        const drawerRect = drawer.getBoundingClientRect();
+        let left = Math.min(rect.left, window.innerWidth - drawerRect.width - margin);
+        left = Math.max(left, margin);
+        let top = rect.bottom + margin;
+        let placement = 'bottom';
+        if (top + drawerRect.height > window.innerHeight - margin) {
+          const above = rect.top - drawerRect.height - margin;
+          if (above >= margin) {
+            top = above;
+            placement = 'top';
+          } else {
+            top = Math.max(window.innerHeight - drawerRect.height - margin, margin);
+          }
+        }
+        drawer.style.left = `${left}px`;
+        drawer.style.top = `${top}px`;
+        drawer.dataset.placement = placement;
+      }
+
+      function setWeatherDrawerVisible(panel, visible, immediate) {
+        const drawer = panel.querySelector('.weather-learning-drawer');
+        const cue = panel.querySelector('.weather-learn-cue');
+        clearTimeout(weatherHideTimer);
+        if (visible) {
+          weatherEls.shell.querySelectorAll('.weather-learning-panel.is-open').forEach((openPanel) => {
+            if (openPanel !== panel) setWeatherDrawerVisible(openPanel, false, true);
+          });
+          panel.classList.add('is-open');
+          weatherOpenPanel = panel;
+          if (drawer) {
+            drawer.setAttribute('aria-hidden', 'false');
+            drawer.classList.add('is-visible');
+            positionWeatherDrawer(panel, drawer);
+            requestAnimationFrame(() => {
+              if (panel.classList.contains('is-open')) positionWeatherDrawer(panel, drawer);
+            });
+          }
+          if (cue) {
+            cue.setAttribute('aria-expanded', 'true');
+            cue.innerHTML = '<span aria-hidden="true">−</span> Close';
+          }
+        } else {
+          if (cue) {
+            cue.setAttribute('aria-expanded', 'false');
+            cue.innerHTML = '<span aria-hidden="true">+</span> Learn';
+          }
+          if (weatherOpenPanel === panel) weatherOpenPanel = null;
+          const doClose = () => {
+            panel.classList.remove('is-open');
+            if (drawer) {
+              drawer.classList.remove('is-visible');
+              drawer.setAttribute('aria-hidden', 'true');
+            }
+          };
+          if (immediate) doClose();
+          else weatherHideTimer = setTimeout(doClose, 140);
+        }
+      }
+
+      function toggleWeatherDrawer(panel) {
+        if (panel.classList.contains('is-open')) setWeatherDrawerVisible(panel, false, true);
+        else setWeatherDrawerVisible(panel, true);
+      }
+
+      weatherEls.shell.addEventListener('mouseover', (event) => {
+        if (!canHoverWeather()) return;
+        const panel = event.target.closest('.weather-learning-panel');
+        if (!panel) return;
+        setWeatherDrawerVisible(panel, true);
+      });
+
+      weatherEls.shell.addEventListener('mouseout', (event) => {
+        if (!canHoverWeather()) return;
+        const fromPanel = event.target.closest('.weather-learning-panel');
+        if (!fromPanel) return;
+        const toPanel = event.relatedTarget && event.relatedTarget.closest ? event.relatedTarget.closest('.weather-learning-panel') : null;
+        if (toPanel === fromPanel) return;
+        setWeatherDrawerVisible(fromPanel, false, false);
+      });
+
+      weatherEls.shell.addEventListener('focusin', (event) => {
+        const panel = event.target.closest('.weather-learning-panel');
+        if (panel) setWeatherDrawerVisible(panel, true);
+      });
+
+      weatherEls.shell.addEventListener('focusout', (event) => {
+        const panel = event.target.closest('.weather-learning-panel');
+        if (!panel) return;
+        const toPanel = event.relatedTarget && event.relatedTarget.closest ? event.relatedTarget.closest('.weather-learning-panel') : null;
+        if (toPanel === panel) return;
+        setWeatherDrawerVisible(panel, false, true);
+      });
+
+      weatherEls.shell.addEventListener('click', (event) => {
+        const panel = event.target.closest('.weather-learning-panel');
+        if (!panel || event.target.closest('a')) return;
+        toggleWeatherDrawer(panel);
+      });
+
+      document.addEventListener('click', (event) => {
+        if (!weatherOpenPanel) return;
+        if (weatherOpenPanel.contains(event.target)) return;
+        setWeatherDrawerVisible(weatherOpenPanel, false, true);
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && weatherOpenPanel) {
+          setWeatherDrawerVisible(weatherOpenPanel, false, true);
+        }
+      });
+
+      window.addEventListener('scroll', () => {
+        if (weatherOpenPanel) setWeatherDrawerVisible(weatherOpenPanel, false, true);
+      }, { passive: true, capture: true });
+
+      window.addEventListener('resize', () => {
+        if (weatherOpenPanel) setWeatherDrawerVisible(weatherOpenPanel, false, true);
+      });
+
+      hydrateWeatherLearningPanels();
+
       function setWeatherCard(data) {
         weatherEls.city.textContent = data.label.toUpperCase();
         weatherEls.station.textContent = data.stationId;
@@ -991,6 +1291,7 @@
         weatherEls.solar.innerHTML = buildSolarSection(data);
         weatherEls.clothing.innerHTML = buildClothingAdvice(data);
         weatherEls.precipChart.innerHTML = buildPrecipChart(data.precipData, data.forecast);
+        hydrateWeatherLearningPanels();
       }
 
       function weatherLabelFromCode(code) {
@@ -1064,6 +1365,14 @@
         if (weatherCode >= 95 || rainChance >= 75) return 'STATUS: WEATHER WATCH';
         if (uv >= 8 || pollenScore >= 3) return 'STATUS: ADVISORY';
         return 'STATUS: NOMINAL';
+      }
+
+      function getUvCategory(uv) {
+        if (uv >= 11) return 'EXTREME';
+        if (uv >= 8) return 'V HIGH';
+        if (uv >= 6) return 'HIGH';
+        if (uv >= 3) return 'MOD';
+        return 'LOW';
       }
 
       function buildClothingAdvice({ temperature, rainChance, uvAlert, wind }) {
@@ -1213,7 +1522,7 @@
           wind: current.wind_speed_10m || 0,
           windDirection: current.wind_direction_10m != null ? current.wind_direction_10m : null,
           humidity: current.relative_humidity_2m || 0,
-          uvLabel: uv >= 8 ? `${uv >= 10 ? '10+' : uv.toFixed(1)} (HIGH)` : (uv >= 6 ? `${uv.toFixed(1)} (MOD)` : uv.toFixed(1)),
+          uvLabel: `${uv.toFixed(1)} ${getUvCategory(uv)}`,
           uvAlert: uv >= 6,
           pollen,
           pollenAlert: pollen.score >= 2,
@@ -1301,6 +1610,7 @@
                 <span class="forecast-temp">--°</span>
               </div>
             `;
+            hydrateWeatherLearningPanels();
           }
         }
       })();

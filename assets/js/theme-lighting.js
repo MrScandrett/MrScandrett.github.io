@@ -2,7 +2,8 @@
   var REFRESH_MS = 15 * 60 * 1000;
   var STORAGE_MODE = "classroomos-lighting-mode";
   var STORAGE_THEME = "classroomos-lighting-phase";
-  var VALID_THEMES = ["day", "night", "sakura", "diamond", "emerald", "topaz", "vaporwave", "goldfish", "cobblestone", "bark"];
+  var STORAGE_REDUCED_MOTION = "classroomos-reduced-motion";
+  var registry = window.ClassroomOSThemeRegistry;
   var currentTheme = null;
   var CHANGE_EVENT = "classroomos:lightingchange";
   var isApplyingTheme = false;
@@ -23,19 +24,12 @@
     return (hours >= 6 && hours < 19) ? "day" : "night";
   }
 
-  function isValidTheme(theme) {
-    return VALID_THEMES.indexOf(theme) !== -1;
-  }
-
   function normalizeTheme(theme) {
-    if (theme === "morning" || theme === "dusk") return "day";
-    if (theme === "kiwi") return "emerald";
-    if (theme === "mango") return "topaz";
-    return isValidTheme(theme) ? theme : "day";
+    return registry.normalize(theme);
   }
 
   function getLightingForTheme(theme) {
-    return (theme === "night" || theme === "vaporwave" || theme === "bark") ? "night" : "day";
+    return registry.isDark(theme) ? "night" : "day";
   }
 
   function readStorage(key) {
@@ -85,9 +79,14 @@
     window.dispatchEvent(event);
   }
 
+  function reducedMotionOverride() {
+    return readStorage(STORAGE_REDUCED_MOTION) === "on";
+  }
+
   function cosTransition() {
     if (!document.documentElement) return;
     if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (reducedMotionOverride()) return;
     var html = document.documentElement;
     clearTimeout(html._cosThemeTimer);
     html.classList.add("theme-transitioning");

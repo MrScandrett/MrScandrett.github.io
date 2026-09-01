@@ -3162,6 +3162,173 @@ body.theme-liquid-woodland.theme-home .sidepanel-component .vod-inner {
   outline: none;
 }
 
+/* Expandable weather field notes */
+.home-widget--weather .weather-learning-invite {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+  margin: -0.18rem 0 0;
+  font-family: var(--font-mono);
+  font-size: clamp(0.62rem, 2.4cqw, 0.7rem);
+  font-weight: 700;
+  letter-spacing: 0.035em;
+  color: var(--weather-text-soft);
+}
+
+.home-widget--weather .weather-learning-invite > span {
+  color: var(--weather-cyan);
+  font-size: 1.1em;
+}
+
+.home-widget--weather .weather-learning-panel {
+  position: relative;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.home-widget--weather .weather-learning-panel:focus-visible {
+  outline: 2px solid var(--weather-cyan);
+  outline-offset: 3px;
+}
+
+.home-widget--weather .weather-learn-cue {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 0.28rem;
+  margin-top: 0.34rem;
+  font-family: var(--font-mono);
+  font-size: clamp(0.57rem, 2.1cqw, 0.64rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--weather-cyan);
+}
+
+.home-widget--weather .weather-learn-cue > span {
+  display: grid;
+  place-items: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  line-height: 1;
+}
+
+.home-widget--weather .weather-forecast > .weather-learn-cue {
+  grid-column: 1 / -1;
+  justify-self: end;
+}
+
+.home-widget--weather .weather-clothing {
+  flex-wrap: wrap;
+}
+
+.home-widget--weather .weather-clothing > .weather-learn-cue {
+  margin-left: auto;
+}
+
+/* Field-note drawer — floats in as its own fixed-position card near the
+   panel instead of expanding inline and pushing the rest of the widget
+   down. Stays nested under .weather-learning-panel (rather than portaled to
+   <body>) so it keeps inheriting the widget's theme-variable cascade
+   (cos-home, diamond, liquid-woodland, night lighting all key off this
+   ancestry). position:fixed removes it from layout flow regardless of
+   nesting, so overflow:hidden on .home-weather-shell doesn't clip it. */
+.home-widget--weather .weather-learning-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 4000;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 24px));
+  min-width: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition: opacity 160ms ease, transform 160ms ease, visibility 0s linear 160ms;
+}
+
+.home-widget--weather .weather-learning-drawer[data-placement="top"] {
+  transform: translateY(6px);
+}
+
+.home-widget--weather .weather-learning-drawer.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+  transition: opacity 160ms ease, transform 160ms ease, visibility 0s linear 0s;
+}
+
+.home-widget--weather .weather-learning-drawer-inner {
+  min-height: 0;
+  padding: 0.85rem 1rem 0.95rem;
+  border-radius: 10px;
+  background: var(--weather-panel-bg);
+  border: 1px solid var(--weather-panel-border);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.home-widget--weather .weather-field-note {
+  display: inline-block;
+  margin-bottom: 0.3rem;
+  font-family: var(--font-mono);
+  font-size: clamp(0.56rem, 2.15cqw, 0.63rem);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--weather-pink);
+}
+
+.home-widget--weather .weather-learning-drawer h3 {
+  margin: 0 0 0.58rem;
+  font-size: clamp(0.88rem, 3.4cqw, 1.02rem);
+  line-height: 1.2;
+  color: var(--weather-text-strong);
+}
+
+.home-widget--weather .weather-learning-notes {
+  display: grid;
+  gap: 0.52rem;
+}
+
+.home-widget--weather .weather-learning-note {
+  display: grid;
+  gap: 0.14rem;
+  margin: 0;
+  font-size: clamp(0.68rem, 2.7cqw, 0.76rem);
+  line-height: 1.4;
+  color: var(--weather-text-soft);
+}
+
+.home-widget--weather .weather-learning-note strong {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  color: var(--weather-cyan);
+}
+
+.home-widget--weather .weather-learning-note:last-child {
+  padding: 0.45rem 0.55rem;
+  border-left: 2px solid var(--weather-pink);
+  border-radius: 0 6px 6px 0;
+  background: rgba(255, 97, 216, 0.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-widget--weather .weather-learning-panel,
+  .home-widget--weather .weather-learning-drawer {
+    transition: none;
+  }
+}
+
 /* VOD widget internals */
 .home-widget--vod {
   grid-column: 1 / -1;
@@ -5005,6 +5172,290 @@ html[data-lighting="night"] .cos-hero-copy {
   .timer-layout { grid-template-columns: 1fr; justify-items: center; }
 }
 
+/* ─── Classroom Science Desk ─────────────────────────────────────────────── */
+.home-widget--science-news {
+  position: relative;
+  grid-column: 1 / -1;
+  overflow: hidden;
+  padding: clamp(1.15rem, 2.4vw, 1.8rem);
+  border-color: color-mix(in srgb, #149b82 28%, var(--border-default, #d2d2d7));
+  background:
+    linear-gradient(90deg, color-mix(in srgb, #16a085 5%, transparent) 1px, transparent 1px),
+    linear-gradient(color-mix(in srgb, #16a085 5%, transparent) 1px, transparent 1px),
+    var(--cos-card-bg, var(--surface-panel, #fff));
+  background-size: 28px 28px;
+}
+
+.science-news-signal {
+  position: absolute;
+  top: 0;
+  right: clamp(1rem, 3vw, 2rem);
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 2.15rem;
+  padding: 0.45rem 0.7rem 0.35rem;
+  border-radius: 0 0 10px 10px;
+  background: #073b38;
+}
+
+.science-news-signal span {
+  width: 3px;
+  border-radius: 3px;
+  background: #70f3c5;
+  box-shadow: 0 0 8px rgba(112, 243, 197, 0.48);
+}
+
+.science-news-signal span:nth-child(1),
+.science-news-signal span:nth-child(5) { height: 35%; }
+.science-news-signal span:nth-child(2),
+.science-news-signal span:nth-child(4) { height: 65%; }
+.science-news-signal span:nth-child(3) { height: 100%; }
+
+.science-news-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.25rem;
+  align-items: end;
+  padding: 0 4.6rem 1.15rem 0;
+  border-bottom: 1px solid color-mix(in srgb, #149b82 22%, var(--border-default, #d2d2d7));
+}
+
+.science-news-kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 0.55rem;
+  color: #08735f;
+  font: 800 0.68rem/1.2 var(--font-mono, monospace);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.science-news-live-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #0e8a55;
+  box-shadow: 0 0 0 4px rgba(14, 138, 85, 0.13);
+}
+
+.science-news-title {
+  max-width: 760px;
+  margin: 0;
+  color: var(--text-primary, var(--text));
+  font-size: clamp(1.45rem, 3vw, 2.35rem);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+}
+
+.science-news-intro {
+  max-width: 690px;
+  margin: 0.6rem 0 0;
+  color: var(--text-muted, var(--muted));
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.science-news-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.55rem;
+}
+
+.science-news-source {
+  color: var(--text-muted, var(--muted));
+  font: 700 0.66rem/1 var(--font-mono, monospace);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.science-news-refresh {
+  min-height: 2.45rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid color-mix(in srgb, #13846f 50%, var(--border-default, #d2d2d7));
+  border-radius: 999px;
+  background: color-mix(in srgb, #18a085 9%, var(--surface-panel, #fff));
+  color: #086b59;
+  font: 750 0.74rem/1 var(--font-sans, sans-serif);
+  cursor: pointer;
+}
+
+.science-news-refresh:hover,
+.science-news-refresh:focus-visible {
+  border-color: #13846f;
+  background: color-mix(in srgb, #18a085 16%, var(--surface-panel, #fff));
+}
+
+.science-news-refresh:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.science-news-refresh::before {
+  content: "↻";
+  margin-right: 0.25rem;
+}
+
+.science-news-feed {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-bottom: 1px solid color-mix(in srgb, #149b82 22%, var(--border-default, #d2d2d7));
+}
+
+.science-news-story {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.85rem;
+  min-width: 0;
+  padding: 1.15rem 1.2rem 1.15rem 0;
+}
+
+.science-news-story:nth-child(odd) {
+  border-right: 1px solid color-mix(in srgb, #149b82 18%, var(--border-default, #d2d2d7));
+}
+
+.science-news-story:nth-child(even) { padding-left: 1.2rem; }
+.science-news-story:nth-child(n + 3) { border-top: 1px solid color-mix(in srgb, #149b82 18%, var(--border-default, #d2d2d7)); }
+
+.science-news-number {
+  padding-top: 0.1rem;
+  color: #08735f;
+  font: 800 0.72rem/1 var(--font-mono, monospace);
+}
+
+.science-news-story-copy { min-width: 0; }
+
+.science-news-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.75rem;
+  margin: 0 0 0.45rem;
+  color: var(--text-muted, var(--muted));
+  font: 700 0.63rem/1.2 var(--font-mono, monospace);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.science-news-meta span { color: #08735f; }
+
+.science-news-story h4 {
+  margin: 0;
+  font-size: clamp(0.98rem, 1.6vw, 1.16rem);
+  line-height: 1.28;
+  letter-spacing: -0.015em;
+}
+
+.science-news-story h4 a { color: var(--text-primary, var(--text)); text-decoration: none; }
+.science-news-story h4 a::after { content: ""; position: absolute; inset: 0; }
+.science-news-story:hover h4 a,
+.science-news-story:focus-within h4 a { color: #08735f; text-decoration: underline; text-underline-offset: 0.18em; }
+
+.science-news-summary {
+  margin: 0.48rem 0 0;
+  color: var(--text-muted, var(--muted));
+  font-size: 0.8rem;
+  line-height: 1.48;
+}
+
+.science-news-arrow {
+  align-self: center;
+  color: #08735f;
+  font-size: 1rem;
+  transition: transform 150ms ease;
+}
+
+.science-news-story:hover .science-news-arrow,
+.science-news-story:focus-within .science-news-arrow { transform: translate(2px, -2px); }
+
+.science-news-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding-top: 1rem;
+}
+
+.science-news-question,
+.science-news-credit { margin: 0; font-size: 0.74rem; line-height: 1.45; }
+.science-news-question { color: var(--text-primary, var(--text)); }
+.science-news-question > span { color: #08735f; font: 900 1rem/1 var(--font-mono, monospace); }
+.science-news-credit { color: var(--text-muted, var(--muted)); text-align: right; }
+.science-news-credit a { color: #08735f; font-weight: 750; }
+
+.science-news-loading,
+.science-news-error {
+  grid-column: 1 / -1;
+  min-height: 190px;
+  padding: 1.5rem 0;
+}
+
+.science-news-loading { display: grid; align-content: center; gap: 0.8rem; }
+.science-news-loading-line {
+  display: block;
+  width: min(100%, 720px);
+  height: 1rem;
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(20, 155, 130, 0.08), rgba(20, 155, 130, 0.2), rgba(20, 155, 130, 0.08));
+  background-size: 200% 100%;
+  animation: science-news-loading 1.3s linear infinite;
+}
+.science-news-loading-line:nth-child(2) { width: min(82%, 590px); }
+.science-news-loading-line:nth-child(3) { width: min(64%, 460px); }
+
+@keyframes science-news-loading { to { background-position: -200% 0; } }
+
+.science-news-error {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.45rem;
+  color: var(--text-muted, var(--muted));
+}
+.science-news-error strong { color: var(--text-primary, var(--text)); }
+.science-news-error a { width: fit-content; color: #08735f; font-weight: 750; }
+
+body.theme-liquid-woodland[data-lighting="night"] .science-news-kicker,
+body.theme-liquid-woodland[data-lighting="night"] .science-news-number,
+body.theme-liquid-woodland[data-lighting="night"] .science-news-meta span,
+body.theme-liquid-woodland[data-lighting="night"] .science-news-story:hover h4 a,
+body.theme-liquid-woodland[data-lighting="night"] .science-news-story:focus-within h4 a,
+body.theme-liquid-woodland[data-lighting="night"] .science-news-arrow,
+body.theme-liquid-woodland[data-lighting="night"] .science-news-question > span,
+body.theme-liquid-woodland[data-lighting="night"] .science-news-credit a,
+body.theme-liquid-woodland[data-lighting="night"] .science-news-error a { color: #70e8c3; }
+
+body.theme-liquid-woodland[data-lighting="night"] .science-news-refresh {
+  color: #8cf0d2;
+  background: rgba(31, 169, 141, 0.13);
+}
+
+@media (max-width: 780px) {
+  .science-news-header { grid-template-columns: 1fr; padding-right: 3.2rem; }
+  .science-news-controls { align-items: flex-start; }
+  .science-news-feed { grid-template-columns: 1fr; }
+  .science-news-story,
+  .science-news-story:nth-child(even) { padding: 1rem 0; border-right: 0; }
+  .science-news-story:nth-child(n + 2) { border-top: 1px solid color-mix(in srgb, #149b82 18%, var(--border-default, #d2d2d7)); }
+  .science-news-footer { align-items: flex-start; flex-direction: column; }
+  .science-news-credit { text-align: left; }
+}
+
+@media (max-width: 480px) {
+  .home-widget--science-news { padding: 1rem; }
+  .science-news-header { padding-right: 2.3rem; }
+  .science-news-title { font-size: 1.35rem; }
+  .science-news-story { grid-template-columns: auto minmax(0, 1fr); gap: 0.65rem; }
+  .science-news-arrow { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .science-news-loading-line { animation: none; }
+  .science-news-arrow { transition: none; }
+}
+
 /* Outdoor Readiness — theme-native weather dashboard */
 .cos-home .home-widget--weather {
   --weather-accent: var(--theme-accent, #0071e3);
@@ -5054,7 +5505,7 @@ html[data-lighting="night"] .cos-hero-copy {
 .cos-home .home-widget--weather .home-weather-dashboard {
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
   gap: clamp(0.8rem, 3cqw, 1.25rem);
-  align-items: stretch;
+  align-items: start;
 }
 
 .cos-home .home-widget--weather .weather-primary {
@@ -5233,6 +5684,49 @@ html[data-lighting="night"] .cos-hero-copy {
   background: color-mix(in srgb, var(--weather-tint) 100%, transparent);
   outline: 2px solid color-mix(in srgb, var(--weather-accent) 45%, transparent);
   outline-offset: 2px;
+}
+
+.cos-home .home-widget--weather .weather-learning-invite {
+  color: var(--weather-ink-muted);
+}
+
+.cos-home .home-widget--weather .weather-learning-invite > span,
+.cos-home .home-widget--weather .weather-learn-cue,
+.cos-home .home-widget--weather .weather-learning-note strong {
+  color: var(--weather-accent-strong);
+}
+
+.cos-home .home-widget--weather .weather-learning-panel:focus-visible {
+  outline-color: var(--weather-accent);
+}
+
+.cos-home .home-widget--weather .weather-learning-panel:hover,
+.cos-home .home-widget--weather .weather-learning-panel.is-open {
+  border-color: color-mix(in srgb, var(--weather-accent) 42%, var(--weather-line));
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--weather-accent) 10%, transparent), inset 0 1px 0 color-mix(in srgb, white 48%, transparent);
+}
+
+.cos-home .home-widget--weather .weather-learning-drawer-inner {
+  background: var(--weather-surface-raised);
+  border-color: var(--weather-line);
+  box-shadow: 0 18px 38px rgba(16, 29, 48, 0.18), inset 0 1px 0 color-mix(in srgb, white 48%, transparent);
+}
+
+.cos-home .home-widget--weather .weather-field-note {
+  color: var(--weather-alert);
+}
+
+.cos-home .home-widget--weather .weather-learning-drawer h3 {
+  color: var(--weather-ink);
+}
+
+.cos-home .home-widget--weather .weather-learning-note {
+  color: var(--weather-ink-muted);
+}
+
+.cos-home .home-widget--weather .weather-learning-note:last-child {
+  border-left-color: var(--weather-alert);
+  background: color-mix(in srgb, var(--weather-alert) 7%, transparent);
 }
 
 html[data-lighting="night"] .cos-home .home-widget--weather {
@@ -6186,7 +6680,7 @@ html[data-lighting="night"] .cos-home :is(.timer-btn, .timer-preset-btn, .timer-
     padding: 0.3rem 0.38rem 0.3rem 0.58rem;
   }
 
-  body.theme-liquid-woodland.theme-home .nav-settings-toggle > span:not(.nav-settings-status) {
+body.theme-liquid-woodland.theme-home .nav-settings-toggle > span:not(.nav-settings-status) {
     display: none;
   }
 
@@ -6202,4 +6696,14 @@ html[data-lighting="night"] .cos-home :is(.timer-btn, .timer-preset-btn, .timer-
   body.theme-liquid-woodland.theme-home .cos-home .hero {
     padding-top: 1.25rem;
   }
+}
+
+/* Keep the briefing full-width after the responsive home-grid rules above. */
+.cos-home .today-grid > .home-widget--science-news {
+  grid-column: 1 / -1;
+  background: #fbfdfc;
+}
+
+body.theme-liquid-woodland[data-lighting="night"] .cos-home .today-grid > .home-widget--science-news {
+  background: #102725;
 }

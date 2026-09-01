@@ -24,6 +24,18 @@ const FILTER_LABELS = {
   cohort: "Class",
 };
 
+const COLLECTION_DESCRIPTIONS = {
+  Games: "Play student-built adventures, puzzles, racers, and arcade experiments.",
+  "3D Worlds": "Explore interactive models, environments, and three-dimensional creations.",
+  Simulations: "Try systems, experiments, and interactive ideas built by students.",
+  Animation: "Watch student stories, motion studies, and animated scenes.",
+  Music: "Open playable music projects, rhythm tools, and sound experiments.",
+  "Web & Art": "Browse websites, visual designs, and creative digital work.",
+  Everything: "Browse every published student project in one place.",
+  "Find a project": "Search every collection by project name, student, tool, or tag.",
+  "Project results": "Your saved search and filter choices are ready."
+};
+
 function blankState() {
   return {
     q: "",
@@ -141,6 +153,17 @@ function init() {
     moreWrap: document.getElementById("showcase-more-wrap"),
     more: document.getElementById("showcase-more"),
     toolbar: document.querySelector(".sc-toolbar-wrap"),
+    home: document.getElementById("showcase-home"),
+    results: document.getElementById("showcase-results"),
+    back: document.getElementById("showcase-back"),
+    find: document.getElementById("showcase-find"),
+    pageTitle: document.getElementById("showcase-title"),
+    instruction: document.getElementById("showcase-instruction"),
+    resultsTitle: document.getElementById("showcase-results-title"),
+    resultsDescription: document.getElementById("showcase-results-description"),
+    resultsSymbol: document.getElementById("showcase-results-symbol"),
+    location: document.getElementById("showcase-location"),
+    makerTools: document.getElementById("showcase-maker-tools"),
   };
 
   if (!dom.grid) return;
@@ -180,6 +203,48 @@ function init() {
         cardsById.set(project.id, card);
         dom.grid.appendChild(card);
       });
+
+      dom.categoryPresets.forEach((button) => {
+        const values = (button.dataset.categoryPreset || "")
+          .split(",")
+          .map((value) => value.trim())
+          .filter(Boolean);
+        const matches = values.length === 0
+          ? projects
+          : projects.filter((project) => values.includes(project.category));
+        const representativeMatches = matches
+          .slice()
+          .sort((left, right) => {
+            const thumbnailScore = (project) => {
+              const path = String(project.thumbnail || "");
+              const slug = String(project.id || "").replace(/^app-/, "");
+              if (path.includes("/assets/thumbs/showcase/avatar-")) return 0;
+              if (project.category === "3D" && path.includes("/assets/thumbs/showcase/") && slug && !path.includes(slug)) return 0;
+              if (/\/apps\/[^/]+\/assets\/thumb\.svg$/i.test(path)) return 1;
+              if (path.includes("/assets/thumbs/showcase/")) return 3;
+              return 2;
+            };
+            return thumbnailScore(right) - thumbnailScore(left);
+          });
+        const preview = button.querySelector(".showcase-folder-preview");
+        if (preview) {
+          preview.replaceChildren();
+          representativeMatches.slice(0, 4).forEach((project) => {
+            const image = document.createElement("img");
+            image.src = project.thumbnail;
+            image.alt = "";
+            image.loading = "eager";
+            image.decoding = "async";
+            preview.appendChild(image);
+          });
+          preview.dataset.items = String(preview.children.length);
+        }
+        const count = button.querySelector("small");
+        if (count) count.textContent = `${matches.length} project${matches.length === 1 ? "" : "s"}`;
+        const title = button.dataset.folderTitle || button.querySelector("strong")?.textContent || "Projects";
+        button.setAttribute("aria-label", `${title} collection, ${matches.length} projects`);
+      });
+      if (dom.location) dom.location.textContent = `${projects.length} projects in 7 collections`;
 
       const categoryValues = uniqueValues(projects, "category").sort();
       const techValues = uniqueValues(projects, "tech").sort();
@@ -262,6 +327,49 @@ function init() {
 
       function hasCustomState() {
         return Boolean(state.q) || state.sort !== "newest" || FILTER_KEYS.some((key) => state[key].size > 0);
+      }
+
+      function openResultsShell(title, symbol, description) {
+        if (dom.home) dom.home.hidden = true;
+        if (dom.results) dom.results.hidden = false;
+        if (dom.back) dom.back.hidden = false;
+        if (dom.makerTools) dom.makerTools.hidden = true;
+        if (dom.pageTitle) dom.pageTitle.textContent = title;
+        if (dom.instruction) dom.instruction.textContent = "Tap a project to open it.";
+        if (dom.resultsTitle) dom.resultsTitle.textContent = title;
+        if (dom.resultsSymbol) dom.resultsSymbol.textContent = symbol;
+        if (dom.resultsDescription) dom.resultsDescription.textContent = description || COLLECTION_DESCRIPTIONS[title] || "Tap a picture to open the project.";
+      }
+
+      function resetState() {
+        const reset = blankState();
+        state.q = reset.q;
+        state.sort = reset.sort;
+        FILTER_KEYS.forEach((key) => state[key].clear());
+      }
+
+      function showHome({ focus = true } = {}) {
+        resetState();
+        if (dom.home) dom.home.hidden = false;
+        if (dom.results) dom.results.hidden = true;
+        if (dom.back) dom.back.hidden = true;
+        if (dom.makerTools) dom.makerTools.hidden = false;
+        if (dom.pageTitle) dom.pageTitle.textContent = "Choose a collection.";
+        if (dom.instruction) dom.instruction.textContent = "Then tap a project to play, explore, or watch it.";
+        if (dom.toolbar) dom.toolbar.open = false;
+        apply(true);
+        if (focus) dom.categoryPresets[0]?.focus();
+      }
+
+      function openCollection(button) {
+        resetState();
+        categoryPresetValues(button).forEach((value) => state.category.add(value));
+        const title = button.dataset.folderTitle || button.querySelector("strong")?.textContent || "Projects";
+        const symbol = button.dataset.folderSymbol || "★";
+        openResultsShell(title, symbol, COLLECTION_DESCRIPTIONS[title]);
+        apply(true);
+        dom.back?.focus();
+        dom.results?.scrollIntoView({ behavior: "smooth", block: "start" });
       }
 
       function updateFilterToggle() {
@@ -382,10 +490,17 @@ function init() {
 
       dom.categoryPresets.forEach((button) => {
         button.addEventListener("click", () => {
-          state.category.clear();
-          categoryPresetValues(button).forEach((value) => state.category.add(value));
-          apply(true);
+          openCollection(button);
         });
+      });
+
+      dom.back?.addEventListener("click", () => showHome());
+      dom.find?.addEventListener("click", () => {
+        resetState();
+        openResultsShell("Find a project", "⌕", COLLECTION_DESCRIPTIONS["Find a project"]);
+        if (dom.toolbar) dom.toolbar.open = true;
+        apply(true);
+        requestAnimationFrame(() => dom.search.focus());
       });
 
       dom.search.addEventListener("input", () => {
@@ -422,8 +537,13 @@ function init() {
         dom.filterToggle.setAttribute("aria-expanded", "true");
       }
 
-      if (dom.toolbar && (state.q || state.sort !== "newest" || advancedFilterCount() > 0)) {
+      const restoredState = hasCustomState();
+      if (dom.toolbar && restoredState) {
         dom.toolbar.open = true;
+      }
+
+      if (restoredState) {
+        openResultsShell("Project results", "⌕", COLLECTION_DESCRIPTIONS["Project results"]);
       }
 
       apply(true);

@@ -293,18 +293,8 @@
     '<circle cx="8" cy="8" r="2.05" stroke="currentColor" stroke-width="1.15"/>' +
     '</svg>';
 
-  var THEME_OPTIONS = [
-    { id: "day",       label: "Day",       detail: "Clean and bright — the default ClassroomOS look.",      tone: "light" },
-    { id: "sakura",    label: "Sakura",    detail: "Cherry blossom pink with a soft spring glow.",           tone: "light" },
-    { id: "diamond",   label: "Diamond",   detail: "Icy teal blue — crisp, cool, and focused.",             tone: "light" },
-    { id: "emerald",   label: "Emerald",   detail: "Fresh leaf green — calm and easy on the eyes.",         tone: "light" },
-    { id: "topaz",     label: "Honey",     detail: "Warm amber — like afternoon sunlight through a window.", tone: "light" },
-    { id: "goldfish",  label: "Goldfish",  detail: "Saturated goldfish orange with a scale-textured glow.",  tone: "light" },
-    { id: "cobblestone", label: "Cobblestone", detail: "Light grey stone tones — quiet and understated.",    tone: "light" },
-    { id: "bark",      label: "Bark",      detail: "Warm dark wood tones with a rough bark texture.",       tone: "dark"  },
-    { id: "night",     label: "Night",     detail: "Easy on the eyes after dark — full dark mode.",          tone: "dark"  },
-    { id: "vaporwave", label: "Vaporwave", detail: "Neon magenta and cyan — retro synthwave vibes.",        tone: "dark"  }
-  ];
+  var themeRegistry = window.ClassroomOSThemeRegistry;
+  var THEME_OPTIONS = themeRegistry.THEMES;
 
   var CANVAS_OPTIONS = [
     { id: "none",      label: "None",      detail: "Static background.",          icon: "◻" },
@@ -341,6 +331,8 @@
 
   var STORAGE_MODE = "classroomos-lighting-mode";
   var STORAGE_PHASE = "classroomos-lighting-phase";
+  var STORAGE_REDUCED_MOTION = "classroomos-reduced-motion";
+  var REDUCED_MOTION_EVENT = "classroomos:reducedmotionchange";
   var LIGHTING_EVENT = "classroomos:lightingchange";
   var themeScope = (document.documentElement && document.documentElement.dataset.themeScope) ||
     (document.body && document.body.dataset.themeScope) || "";
@@ -406,18 +398,8 @@
     }
   }
 
-  function isValidTheme(theme) {
-    for (var i = 0; i < THEME_OPTIONS.length; i++) {
-      if (THEME_OPTIONS[i].id === theme) return true;
-    }
-    return false;
-  }
-
   function normalizeTheme(theme) {
-    if (theme === "morning" || theme === "dusk") return "day";
-    if (theme === "kiwi") return "emerald";
-    if (theme === "mango") return "topaz";
-    return isValidTheme(theme) ? theme : "day";
+    return themeRegistry.normalize(theme);
   }
 
   function getThemeFromDate(date) {
@@ -437,9 +419,14 @@
     return "local time";
   }
 
+  function reducedMotionOverride() {
+    return readStorage(STORAGE_REDUCED_MOTION) === "on";
+  }
+
   function cosTransition() {
     if (!document.documentElement) return;
     if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (reducedMotionOverride()) return;
     var html = document.documentElement;
     clearTimeout(html._cosThemeTimer);
     html.classList.add("theme-transitioning");
@@ -449,8 +436,7 @@
   }
 
   function getLightingForTheme(theme) {
-    var normalized = normalizeTheme(theme);
-    return (normalized === "night" || normalized === "vaporwave" || normalized === "bark") ? "night" : "day";
+    return themeRegistry.isDark(theme) ? "night" : "day";
   }
 
   function ensureLightingApi() {
@@ -576,10 +562,7 @@
   }
 
   function getOptionLabel(optionId) {
-    for (var i = 0; i < THEME_OPTIONS.length; i++) {
-      if (THEME_OPTIONS[i].id === optionId) return THEME_OPTIONS[i].label;
-    }
-    return "Day";
+    return themeRegistry.getLabel(optionId);
   }
 
   var lighting = isThemeIndependent ? null : ensureLightingApi();
@@ -594,6 +577,7 @@
   var themeGrid = null;
   var canvasGrid = null;
   var autoNote = null;
+  var motionCheckbox = null;
   var trapFocusHandler = null;
   var settingsViewportHandler = null;
 
@@ -614,22 +598,26 @@
           '<p class="nav-settings-eyebrow">Theme Controller</p>' +
           '<p class="nav-settings-current" aria-live="polite"></p>' +
         "</div>" +
-        '<p class="nav-settings-note">Move between automatic lighting, quick day or night tones, and the full palette without leaving the page.</p>' +
-        '<div class="nav-settings-mode" role="group" aria-label="Theme mode">' +
-          '<button type="button" class="nav-mode-pill" data-mode="auto" aria-pressed="false">Auto</button>' +
-          '<button type="button" class="nav-mode-pill" data-mode="manual" aria-pressed="false">Manual</button>' +
+        '<div class="nav-settings-section">' +
+          '<p class="nav-settings-eyebrow">Lighting</p>' +
+          '<p class="nav-settings-note">Move between automatic lighting, quick day or night tones, and the full palette without leaving the page.</p>' +
+          '<div class="nav-settings-mode" role="group" aria-label="Theme mode">' +
+            '<button type="button" class="nav-mode-pill" data-mode="auto" aria-pressed="false">Auto</button>' +
+            '<button type="button" class="nav-mode-pill" data-mode="manual" aria-pressed="false">Manual</button>' +
+          '</div>' +
+          '<p class="nav-auto-note" role="status" aria-live="polite">Following local time — select <strong>Manual</strong> above to choose a theme.</p>' +
+          '<div class="nav-tone-rail" role="group" aria-label="Quick tone">' +
+            '<button type="button" class="nav-tone-pill" data-tone="day" aria-label="Use day theme">' +
+              '<span class="nav-tone-icon" aria-hidden="true">&#9728;</span>' +
+              '<span class="nav-tone-copy">Day</span>' +
+            '</button>' +
+            '<button type="button" class="nav-tone-pill" data-tone="night" aria-label="Use night theme">' +
+              '<span class="nav-tone-icon" aria-hidden="true">&#9789;</span>' +
+              '<span class="nav-tone-copy">Night</span>' +
+            '</button>' +
+          '</div>' +
         '</div>' +
-        '<p class="nav-auto-note" role="status" aria-live="polite">Following local time — select <strong>Manual</strong> above to choose a theme.</p>' +
-        '<div class="nav-tone-rail" role="group" aria-label="Quick tone">' +
-          '<button type="button" class="nav-tone-pill" data-tone="day" aria-label="Use day theme">' +
-            '<span class="nav-tone-icon" aria-hidden="true">&#9728;</span>' +
-            '<span class="nav-tone-copy">Day</span>' +
-          '</button>' +
-          '<button type="button" class="nav-tone-pill" data-tone="night" aria-label="Use night theme">' +
-            '<span class="nav-tone-icon" aria-hidden="true">&#9789;</span>' +
-            '<span class="nav-tone-copy">Night</span>' +
-          '</button>' +
-        '</div>' +
+        '<div class="nav-settings-divider"></div>' +
         '<div class="nav-settings-section">' +
           '<p class="nav-settings-eyebrow">Palette</p>' +
           '<div class="nav-theme-grid" role="list"></div>' +
@@ -639,6 +627,18 @@
           '<p class="nav-settings-eyebrow">Page Background</p>' +
           '<p class="nav-settings-note">Animated canvas behind the site. The choice follows you across shared pages.</p>' +
           '<div class="nav-canvas-grid" role="list"></div>' +
+        '</div>' +
+        '<div class="nav-settings-divider"></div>' +
+        '<div class="nav-settings-section">' +
+          '<p class="nav-settings-eyebrow">Accessibility</p>' +
+          '<label class="nav-motion-toggle">' +
+            '<input type="checkbox" class="nav-motion-checkbox" />' +
+            '<span class="nav-motion-track" aria-hidden="true"><span class="nav-motion-thumb"></span></span>' +
+            '<span class="nav-motion-copy">' +
+              '<strong>Reduce motion</strong>' +
+              '<small>Turns off the animated page background and theme-change fades, regardless of your system setting.</small>' +
+            '</span>' +
+          '</label>' +
         '</div>' +
       "</div>";
 
@@ -654,6 +654,7 @@
     themeGrid = settingsContainer.querySelector(".nav-theme-grid");
     canvasGrid = settingsContainer.querySelector(".nav-canvas-grid");
     autoNote = settingsContainer.querySelector(".nav-auto-note");
+    motionCheckbox = settingsContainer.querySelector(".nav-motion-checkbox");
 
     THEME_OPTIONS.forEach(function (option) {
       var optionBtn = document.createElement("button");
@@ -761,6 +762,21 @@
     });
 
     syncCanvasUi();
+
+    if (motionCheckbox) {
+      motionCheckbox.checked = reducedMotionOverride();
+      motionCheckbox.addEventListener("change", function () {
+        writeStorage(STORAGE_REDUCED_MOTION, motionCheckbox.checked ? "on" : "off");
+        var ev;
+        if (typeof window.CustomEvent === "function") {
+          ev = new CustomEvent(REDUCED_MOTION_EVENT, { detail: { reducedMotion: motionCheckbox.checked } });
+        } else {
+          ev = document.createEvent("CustomEvent");
+          ev.initCustomEvent(REDUCED_MOTION_EVENT, false, false, { reducedMotion: motionCheckbox.checked });
+        }
+        window.dispatchEvent(ev);
+      });
+    }
   }
 
   function openSettings() {
@@ -1009,6 +1025,12 @@
     });
 
     syncLightingUi();
+
+    window.addEventListener("storage", function (event) {
+      if (motionCheckbox && event && event.key === STORAGE_REDUCED_MOTION) {
+        motionCheckbox.checked = reducedMotionOverride();
+      }
+    });
   }
 
   ensureCanvasBackgroundEngine();

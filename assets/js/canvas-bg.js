@@ -46,22 +46,20 @@
     return readPrefs()[theme] || THEME_DEFAULT_BG[theme] || 'particles';
   }
 
+  /* Site-level "Reduce motion" toggle in the settings panel — independent
+   * of (and checked in addition to) the OS prefers-reduced-motion query. */
+  function reducedMotionOverride() {
+    try {
+      return localStorage.getItem('classroomos-reduced-motion') === 'on';
+    } catch (e) {
+      return false;
+    }
+  }
+
   /* ── Theme-aware accent colour ───────────────────────────────── */
   function accentRGB() {
     var theme = document.documentElement.dataset.theme || 'day';
-    var map = {
-      day:     [  0, 113, 227],
-      night:   [105, 168, 255],
-      sakura:  [220,  80, 150],
-      diamond: [ 80, 190, 255],
-      emerald: [ 50, 180, 100],
-      topaz:   [255, 185,   0],
-      vaporwave: [255,   0, 255],
-      goldfish: [255, 106,  26],
-      cobblestone: [138, 141, 145],
-      bark: [217, 154, 84]
-    };
-    return map[theme] || map['day'];
+    return window.ClassroomOSThemeRegistry.getAccentRGB(theme);
   }
 
   function rgba(rgb, a) {
@@ -439,16 +437,27 @@
     if (!mount()) return;
 
     var stored = bgForTheme(currentTheme());
-    if (stored && stored !== 'none') start(stored);
+    if (stored && stored !== 'none' && !reducedMotionOverride()) start(stored);
 
     // Settings panel fired a change on this same page
     window.addEventListener(CHANGE_EVENT, function (e) {
-      if (e && e.detail && e.detail.bg) start(e.detail.bg);
+      if (e && e.detail && e.detail.bg && !reducedMotionOverride()) start(e.detail.bg);
+    });
+
+    // "Reduce motion" toggle flipped in the settings panel this session
+    window.addEventListener('classroomos:reducedmotionchange', function (e) {
+      var on = e && e.detail ? !!e.detail.reducedMotion : reducedMotionOverride();
+      if (on) stop();
+      else start(bgForTheme(currentTheme()));
     });
 
     // Preference changed from another tab
     window.addEventListener('storage', function (e) {
-      if (e && e.key === STORAGE_KEY) start(bgForTheme(currentTheme()));
+      if (e && e.key === STORAGE_KEY && !reducedMotionOverride()) start(bgForTheme(currentTheme()));
+      if (e && e.key === 'classroomos-reduced-motion') {
+        if (reducedMotionOverride()) stop();
+        else start(bgForTheme(currentTheme()));
+      }
     });
 
     // Repaint on resize
@@ -469,6 +478,7 @@
     // Theme changed (live, no reload): switch to that theme's pick/default
     // — e.g. hive debuts with honey, petals with sakura — and re-colour.
     window.addEventListener('classroomos:lightingchange', function (e) {
+      if (reducedMotionOverride()) return;
       var theme = (e && e.detail && e.detail.theme) || currentTheme();
       var bg = bgForTheme(theme);
       if (bg !== currentBg) start(bg);

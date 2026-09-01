@@ -14,7 +14,7 @@ export function createScene(canvas, opts) {
   const far = opts.far ?? 100;
   const maxDpr = opts.maxDpr ?? 2;
 
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: opts.antialias !== false });
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: opts.antialias !== false, alpha: opts.alpha === true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDpr));
   if (opts.clearColor !== undefined) renderer.setClearColor(opts.clearColor, opts.clearAlpha ?? 1);
 
