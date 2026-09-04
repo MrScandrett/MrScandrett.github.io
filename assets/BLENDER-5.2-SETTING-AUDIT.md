@@ -48,6 +48,16 @@ Keyboard-first modeling actions such as `G`, `E`, `U`, and `Ctrl+R` are already 
 | 07 Materials | active camera view | Numpad 0 | implicit shortcut |
 | 07 Materials | align camera to view | Ctrl+Alt+Numpad 0; View → Align View → Align Active Camera to View | shortcut and breadcrumb |
 | 07 Materials | render and save | Render → Render Image; Image → Save As | breadcrumb |
+| Workspaces: Sculpting | enter Sculpt Mode | Workspace tab bar → Sculpting, or Object Mode dropdown → Sculpt Mode | breadcrumb and authentic workspace image |
+| Workspaces: Sculpting | Dyntopo toggle | Sculpt Mode toolbar header → Dyntopo, or Ctrl+D | breadcrumb and shortcut |
+| Workspaces: Sculpting | Voxel Remesh | Sculpt Mode → Remesh panel → Voxel Size → Remesh, or Ctrl+R | breadcrumb and shortcut |
+| Workspaces: Sculpting | Mask / Face Sets | Sculpt Mode → M (Mask brush), Ctrl+I invert; Face Set tool → Ctrl+drag | breadcrumb and shortcut |
+| Workspaces: Geometry Nodes | add modifier | Properties Editor → Modifier Properties → Add Modifier → Geometry Nodes, or Geometry Nodes workspace → New | breadcrumb and authentic modifier-panel image |
+| Workspaces: Geometry Nodes | expose an input | Node editor Sidebar (N) → Group tab → + to add a socket | breadcrumb |
+| Workspaces: Geometry Nodes | preview a node | Ctrl+Shift+click a node in the node editor | shortcut |
+| Workspaces: Compositing | enable node graph | Compositing workspace → header → Use Nodes | breadcrumb and authentic workspace image |
+| Workspaces: Compositing | Viewer node | Shift+A → Output → Viewer, or Ctrl+Shift+click a node | breadcrumb and shortcut |
+| Workspaces: Compositing | Glare / Color Balance | Shift+A → Filter → Glare; Shift+A → Color → Color Balance | breadcrumb |
 
 ## Corrections made during the 5.2 audit
 

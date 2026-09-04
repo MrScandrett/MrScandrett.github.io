@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Blender Compositing · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Grade and combine a rendered image with a node graph — Render Layers, the Viewer node, Glare and Color Balance, and a hands-on grade, from Blender's Workspaces pathway." />
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../assets/css/lessons/blender-pathway.css" />
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="bl-topbar ll-topbar">
+      <div class="bl-topbar-inner">
+        <a href="blender-workspaces-pathway.html">← Blender Workspaces</a>
+        <span>Compositing · Workspace 09</span>
+        <a href="../class-downloads.html">Get Blender</a>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="bl-shell">
+          <section class="bl-hero">
+            <div class="hero-copy">
+              <p class="eyebrow">Compositing Workspace · 45–60 minutes · Grades 8–12</p>
+              <h1>The render isn't<br /><span>the last step.</span></h1>
+              <p class="hero-lede">F12 gives you one flat image. The Compositor is a second node graph — this one working on that rendered image, not the 3D scene — where you grade color, add glow, and combine renders before anything is called finished.</p>
+              <div class="hero-actions">
+                <a class="primary-action" href="#workspace">Start the lesson</a>
+                <a class="secondary-action" href="blender-workspaces-pathway.html">Back to Workspaces</a>
+              </div>
+              <p class="hero-note"><strong>Finish line:</strong> a render graded with Color Balance and Glare, previewed with a Viewer node, saved as a second, finished image.</p>
+            </div>
+            <div class="bl-viewport-art" aria-hidden="true">
+              <div class="bl-art-bar"><span></span><span></span><span></span><b>comp_grade.blend</b></div>
+              <div class="bl-art-stage"><div class="bl-art-grid"></div><div class="bl-art-gizmo"><i></i><i></i><i></i><em class="x">X</em><em class="y">Y</em><em class="z">Z</em></div></div>
+              <p class="bl-art-note">The Compositor never touches the 3D scene — only the image that came out of it.</p>
+            </div>
+          </section>
+
+          <nav class="lesson-track" aria-label="Lesson sections">
+            <a href="#workspace"><b>01</b> Workspace</a>
+            <a href="#layers"><b>02</b> Layers &amp; Viewer</a>
+            <a href="#nodes"><b>03</b> Common nodes</a>
+            <a href="#build"><b>04</b> Build</a>
+            <a href="#check"><b>05</b> Check</a>
+          </nav>
+
+          <section class="lesson-section" id="workspace">
+            <div class="section-label"><span>01</span><p>Workspace</p></div>
+            <div class="section-content">
+              <p class="section-kicker">A node graph for the finished image</p>
+              <h2>The Compositing tab works after the render, not before it.</h2>
+              <p>Click the <span class="bl-path">Compositing</span> tab. If the node graph is empty, the header's <strong>Use Nodes</strong> checkbox turns it on — Blender starts you with a default Render Layers node already wired to a Composite node.</p>
+              <figure class="bl-figure">
+                <img src="../assets/images/lessons/blender-compositing/compositing-workspace.webp" alt="Blender's Compositing workspace, showing the full row of workspace tabs across the top with Compositing active, the image preview area above, and an empty node editor below." width="1400" height="828" loading="lazy" />
+                <figcaption><b>The Compositing workspace</b>Notice the tab bar across the top — Compositing is one workspace among the eleven this pathway maps. The image area on top previews; the node graph below builds the recipe that produces it.</figcaption>
+              </figure>
+              <div class="rule"><strong>This graph runs on every render</strong><span>Once built, the compositing graph applies automatically every time you press F12 — you're not manually reprocessing each image by hand.</span></div>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="layers">
+            <div class="section-label"><span>02</span><p>Layers &amp; Viewer</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Three nodes you'll always have</p>
+              <h2>Render Layers in, Composite out, Viewer to check your work.</h2>
+              <div class="toolbox-grid">
+                <article class="toolbox-card"><div class="toolbox-icon">◧</div><p class="toolbox-job">The input</p><h3>Render Layers</h3><p>The rendered image and its passes — Alpha, Z-depth, and any Cryptomatte mattes you enabled in Render Properties.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">◨</div><p class="toolbox-job">The final output</p><h3>Composite</h3><p>Whatever reaches this node is what gets saved when you render — this is the graph's actual destination.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">◉</div><p class="toolbox-job">A free preview</p><h3>Viewer</h3><p>Connect any node to a Viewer to preview it in the image area, without changing what Composite outputs.</p></article>
+              </div>
+              <ol class="build-list">
+                <li><div><b>Add a Viewer</b><p><kbd>Shift</kbd>+<kbd>A</kbd> → Output → Viewer, or hold <kbd>Ctrl</kbd>+<kbd>Shift</kbd> and click any node to wire a Viewer to it instantly.</p></div><span>Ctrl+Shift+Click</span></li>
+                <li><div><b>Toggle the backdrop</b><p>The node editor's <strong>Backdrop</strong> toggle in the header shows the Viewer's current image behind the nodes themselves.</p></div><span>Backdrop</span></li>
+              </ol>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="nodes">
+            <div class="section-label"><span>03</span><p>Common nodes</p></div>
+            <div class="section-content">
+              <p class="section-kicker">A small toolkit covers most grading</p>
+              <h2>Four nodes handle almost every finishing pass.</h2>
+              <div class="toolbox-grid">
+                <article class="toolbox-card"><div class="toolbox-icon">◐</div><p class="toolbox-job">Color grade</p><h3>Color Balance</h3><p>Pushes shadows, midtones, and highlights toward different colors — the same lift/gamma/gain grading photographers use.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">✦</div><p class="toolbox-job">Bright-area glow</p><h3>Glare</h3><p>Adds bloom, streaks, or a fog glow around the brightest parts of a render — Fog Glow is the most forgiving starting mode.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">▢</div><p class="toolbox-job">Soften</p><h3>Blur</h3><p>Softens an image or a single channel — useful for depth-of-field effects driven by the Z-depth pass.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">▣</div><p class="toolbox-job">Layer two images</p><h3>Alpha Over</h3><p>Composites one image over another using alpha transparency — a logo over a render, or two separate renders combined.</p></article>
+              </div>
+              <figure class="bl-figure">
+                <img src="../assets/images/lessons/blender-compositing/compositor-node-graph.webp" alt="A Blender compositor node graph combining a Render Layers node and an image texture through Cryptomatte and Map UV nodes into an Alpha Over node, feeding both Composite and Viewer outputs." width="1396" height="840" loading="lazy" />
+                <figcaption><b>A real compositor graph</b>Render Layers feeds a Cryptomatte matte and an image, combined with Alpha Over, and sent to both Composite and Viewer at once — the same shape any grading graph in this lesson will take.</figcaption>
+              </figure>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="build">
+            <div class="section-label"><span>04</span><p>Build</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Hands on</p>
+              <h2>Grade a render you already made.</h2>
+              <ol class="build-list">
+                <li><div><b>Render a scene</b><p>Use the lit, materialed object from <a href="blender-materials-render.html">Materials, Lighting &amp; Render</a>, or any scene with a camera and at least one light. Press <kbd>F12</kbd>.</p></div><span>F12</span></li>
+                <li><div><b>Open Compositing and enable nodes</b><p>Click the <strong>Compositing</strong> tab; turn on <strong>Use Nodes</strong> if the graph is empty.</p></div><span>Use Nodes</span></li>
+                <li><div><b>Add Glare</b><p><kbd>Shift</kbd>+<kbd>A</kbd> → Filter → Glare, wired between Render Layers and Composite. Set Glare Type to <strong>Fog Glow</strong> and lower Threshold until only the brightest areas bloom.</p></div><span>Glare</span></li>
+                <li><div><b>Add Color Balance</b><p><kbd>Shift</kbd>+<kbd>A</kbd> → Color → Color Balance, after Glare in the chain. Nudge Gain slightly toward one color for a deliberate mood.</p></div><span>Color Balance</span></li>
+                <li><div><b>Preview, then render again</b><p>Wire a Viewer to the end of the chain to confirm the look, then press <kbd>F12</kbd> — the graded version is what saves now.</p></div><span>Re-render</span></li>
+                <li><div><b>Save as a second file</b><p><em>Image → Save As</em> in the Image Editor, with a filename that makes clear this is the graded version.</p></div><span>Save As</span></li>
+              </ol>
+              <details class="rescue"><summary>The image didn't change after adding nodes?</summary><ul><li>Check <strong>Use Nodes</strong> is actually on — an unchecked box means the graph is built but ignored.</li><li>Confirm the chain reaches <strong>Composite</strong>, not just a Viewer — Viewer previews without affecting the saved render.</li><li>Press <kbd>F12</kbd> again after editing the graph; the Image Editor doesn't re-run the graph on an old render automatically.</li></ul></details>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="check">
+            <div class="section-label"><span>05</span><p>Check</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Exit ticket</p>
+              <h2>Workspaces pathway, complete.</h2>
+              <div class="quiz">
+                <fieldset><legend>1. What does the Compositor actually operate on?</legend><label><input type="radio" name="q1" value="wrong" /> The 3D objects in the scene directly</label><label><input type="radio" name="q1" value="correct" /> The rendered image and its passes, after the render</label><label><input type="radio" name="q1" value="wrong" /> The mesh's UV layout</label></fieldset>
+                <fieldset><legend>2. What does connecting a node to a Viewer do?</legend><label><input type="radio" name="q2" value="correct" /> Lets you preview that point in the graph without changing the saved render</label><label><input type="radio" name="q2" value="wrong" /> Permanently replaces the Composite node's output</label><label><input type="radio" name="q2" value="wrong" /> Deletes that node's connections</label></fieldset>
+                <fieldset><legend>3. Which node adds bloom around bright areas of a render?</legend><label><input type="radio" name="q3" value="wrong" /> Color Balance</label><label><input type="radio" name="q3" value="correct" /> Glare</label><label><input type="radio" name="q3" value="wrong" /> Alpha Over</label></fieldset>
+                <button type="button" data-quiz-check>Check my answers</button><p data-quiz-result aria-live="polite"></p>
+              </div>
+              <div class="finish-line">
+                <div>
+                  <p class="section-kicker">Definition of done</p>
+                  <div class="checklist">
+                    <label><input type="checkbox"> A Glare node adds visible bloom to the brightest part of the render.</label>
+                    <label><input type="checkbox"> A Color Balance node applies a deliberate, visible color grade.</label>
+                    <label><input type="checkbox"> The graded image is re-rendered and saved separately from the original.</label>
+                  </div>
+                  <p data-check-status style="margin-top:.6rem;color:var(--text-muted,#64748b);font-size:.82rem;"></p>
+                </div>
+                <div class="finish-actions"><button type="button" data-complete-lesson="3">Mark lesson complete</button><a href="blender-workspaces-pathway.html">Back to Workspaces →</a></div>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-label="Lesson guide" aria-hidden="false">
+        <div class="ll-panel-head"><div class="ll-tabs"><button class="ll-tab" aria-selected="true" data-pane="pane-guide">Guide</button><button class="ll-tab" aria-selected="false" data-pane="pane-vocab">Vocab</button></div><button class="ll-panel-close" aria-label="Close guide panel">&#x2715;</button></div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="pane-guide">
+            <p class="ll-pane-title">Learning goals</p><ul class="ll-guide-list"><li>Explain why the Compositor runs after the render, not before</li><li>Use Render Layers, Composite, and Viewer nodes together</li><li>Apply Glare and Color Balance to grade an image</li><li>Preview a mid-graph result without changing the saved render</li><li>Re-render and save a graded image separately from the original</li></ul>
+            <p class="ll-pane-title panel-gap">Requires</p><ul class="ll-guide-list"><li><a href="blender-materials-render.html">Materials, Lighting &amp; Render</a> (or any lit, rendered scene)</li></ul>
+            <p class="ll-pane-title panel-gap">Save habit</p><p class="panel-copy">Save the graded image under a new filename. Overwriting the original render makes it impossible to compare before and after.</p>
+          </div>
+          <div class="ll-pane" id="pane-vocab">
+            <p class="ll-pane-title">Key vocabulary</p><dl class="vocab-list"><dt>Compositor</dt><dd>Blender's node editor for processing a rendered image after it's produced.</dd><dt>Render Layers node</dt><dd>The compositor's input — the rendered image and its passes.</dd><dt>Composite node</dt><dd>The compositor's final output; whatever reaches it is what gets saved.</dd><dt>Viewer node</dt><dd>Lets you preview any point in the graph without affecting the saved render.</dd><dt>Glare</dt><dd>A node that adds bloom, streaks, or glow around bright areas.</dd></dl>
+          </div>
+        </div>
+      </aside>
+      <button class="ll-open-btn" aria-label="Open lesson guide" aria-expanded="true">&#x22EE;</button>
+    </div>
+  </div>
+
+  <script src="../assets/js/lessons/blender-workspaces.js"></script>
+  <script src="../assets/js/reveal.js"></script>
+  <script src="../assets/js/theme-registry.js"></script>
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script src="../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

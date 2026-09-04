@@ -48,7 +48,7 @@
           </h1>
           <div class="stl-tip" id="stl-tip" role="status" aria-live="polite"></div>
         </div>
-        <p class="lessons-library-count">170 printable lessons</p>
+        <p class="lessons-library-count" id="lessons-library-count">248 interactive lessons</p>
       </div>
       <div class="search-container">
         <input
@@ -77,6 +77,33 @@
         <button class="lesson-availability-btn is-active" id="show-live-lessons" type="button" aria-pressed="true">✓ Available now</button>
         <button class="lesson-availability-btn" id="show-planned-lessons" type="button" aria-pressed="false">＋ Include planned lessons</button>
         <span id="lesson-availability-status" aria-live="polite">Roadmap cards are hidden.</span>
+      </div>
+      <div class="lesson-filter-panel" aria-label="Filter the lesson library">
+        <label class="lesson-filter-field" for="lesson-subject-filter">
+          <span>Subject</span>
+          <select id="lesson-subject-filter">
+            <option value="all">All subjects</option>
+            <option value="math">Mathematics</option>
+            <option value="science">Natural sciences</option>
+            <option value="engineering">Engineering</option>
+            <option value="technical">Technical production</option>
+            <option value="technology">Computing and game design</option>
+            <option value="art">Art and design</option>
+            <option value="bridge">Humanities and Bible</option>
+          </select>
+        </label>
+        <label class="lesson-filter-field" for="lesson-grade-filter">
+          <span>Grade</span>
+          <select id="lesson-grade-filter">
+            <option value="all">All grades</option>
+            <option value="k2">K–2</option>
+            <option value="35">3–5</option>
+            <option value="68">6–8</option>
+            <option value="912">9–12</option>
+          </select>
+        </label>
+        <button class="lesson-filter-reset" id="lesson-filter-reset" type="button" hidden>Reset filters</button>
+        <p class="lesson-filter-status" id="lesson-filter-status" aria-live="polite">Showing all available lessons.</p>
       </div>
     </section>
 
@@ -966,13 +993,6 @@
         var lastResults = [];
         var hideTimer = null;
 
-        moduleSections.forEach(function(section, secIndex) {
-          section.style.viewTransitionName = "module-sec-" + secIndex;
-          section.querySelectorAll(".tile").forEach(function(tile, tileIndex) {
-            tile.style.viewTransitionName = "lesson-tile-" + secIndex + "-" + tileIndex;
-          });
-        });
-
         function normalizeText(text) {
           return (text || "").toLowerCase().trim();
         }
@@ -1039,60 +1059,62 @@
         }
 
         var lessonCache = buildLessonCache();
-        var contentIndexStarted = false;
 
-        function extractLessonBodyText(html) {
-          var doc = new DOMParser().parseFromString(html, "text/html");
-          var root = doc.querySelector("#main-content") || doc.querySelector("main") || doc.body;
-          if (!root) return "";
-          var clone = root.cloneNode(true);
-          Array.prototype.slice.call(clone.querySelectorAll("script, style, nav, header, footer, noscript")).forEach(function(el) {
-            el.remove();
-          });
-          return normalizeText(clone.textContent).replace(/\s+/g, " ");
-        }
-
-        function indexLessonContent() {
-          if (contentIndexStarted) return;
-          contentIndexStarted = true;
-
-          var cacheKey = "steamLessonSearchIndex";
-          var stored;
-          try {
-            stored = JSON.parse(sessionStorage.getItem(cacheKey) || "{}");
-          } catch (err) {
-            stored = {};
-          }
-
-          var fetches = lessonCache.map(function(lesson) {
-            if (typeof stored[lesson.href] === "string") {
-              appendLessonContentText(lesson, stored[lesson.href]);
-              return Promise.resolve();
-            }
-            return fetch(lesson.href)
-              .then(function(response) { return response.ok ? response.text() : ""; })
-              .then(function(html) {
-                var contentText = html ? extractLessonBodyText(html) : "";
-                stored[lesson.href] = contentText;
-                appendLessonContentText(lesson, contentText);
-              })
-              .catch(function() {});
-          });
-
-          Promise.all(fetches).then(function() {
-            try { sessionStorage.setItem(cacheKey, JSON.stringify(stored)); } catch (err) {}
-            if (normalizeText(searchInput.value)) runSearch();
-          });
-        }
-
-        function appendLessonContentText(lesson, contentText) {
-          if (!contentText) return;
-          lesson.searchableText = (lesson.searchableText + " " + contentText).trim();
+        function addLessonMetadata(lesson, metadata) {
+          if (!metadata) return;
+          var extraText = [
+            metadata.title,
+            metadata.summary,
+            metadata.primaryModule,
+            metadata.gradeBand,
+            metadata.lessonType,
+            (metadata.keywords || []).join(" "),
+            (metadata.learningPaths || []).join(" ")
+          ].join(" ");
+          lesson.searchableText = normalizeText(lesson.searchableText + " " + extraText);
           lesson.words = lesson.searchableText.split(/[^a-z0-9]+/).filter(Boolean);
+          lesson.difficulty = metadata.gradeBand ? "Grades " + metadata.gradeBand : lesson.difficulty;
+          lesson.tile.dataset.catalogGrade = metadata.gradeBand || "";
+          lesson.tile.dataset.lessonType = metadata.lessonType || "";
         }
 
-        searchInput.addEventListener("focus", indexLessonContent, { once: true });
-        searchInput.addEventListener("input", indexLessonContent, { once: true });
+        function loadLessonMetadata() {
+          return fetch("data/lessons.json", { cache: "force-cache" })
+            .then(function(response) {
+              if (!response.ok) throw new Error("Lesson metadata unavailable");
+              return response.json();
+            })
+            .then(function(data) {
+              var liveLessons = (data.lessons || []).filter(function(lesson) {
+                return lesson.status === "live" && lesson.url;
+              });
+              var metadataByUrl = new Map(liveLessons.map(function(lesson) {
+                return [lesson.url, lesson];
+              }));
+
+              lessonCache.forEach(function(lesson) {
+                addLessonMetadata(lesson, metadataByUrl.get(lesson.href));
+              });
+
+              var count = document.getElementById("lessons-library-count");
+              if (count) count.textContent = liveLessons.length + " interactive lessons";
+              if (typeof window.updateLessonBrowseFilters === "function") {
+                window.updateLessonBrowseFilters();
+              }
+              if (normalizeText(searchInput.value)) runSearch();
+              return liveLessons;
+            })
+            .catch(function() {
+              var uniqueLessonUrls = new Set(lessonCache.map(function(lesson) { return lesson.href; }).filter(function(href) {
+                return /^lessons\//.test(href);
+              }));
+              var count = document.getElementById("lessons-library-count");
+              if (count) count.textContent = uniqueLessonUrls.size + " interactive lessons";
+              return [];
+            });
+        }
+
+        window.lessonCatalogReady = loadLessonMetadata();
 
         function searchLessons(query) {
           var normalizedQuery = normalizeText(query);
@@ -1100,6 +1122,9 @@
           var queryTokens = normalizedQuery.split(/\s+/).filter(Boolean);
 
           return lessonCache
+            .filter(function(lesson) {
+              return !lesson.tile.classList.contains("grade-hidden");
+            })
             .map(function(lesson) {
               var score = 0;
               var matched = queryTokens.every(function(token) {
@@ -1233,6 +1258,10 @@
           } else {
             searchStatus.textContent = totalMatches + " lesson" + (totalMatches !== 1 ? "s" : "") + " found";
           }
+
+          if (typeof window.updateLessonBrowseFilters === "function") {
+            window.updateLessonBrowseFilters();
+          }
         }
 
         function runSearch() {
@@ -1243,6 +1272,8 @@
           updateLessonVisibility(lastResults, query);
           renderDropdown(lastResults, query);
         }
+
+        window.refreshLessonCatalogSearch = runSearch;
 
         function scheduleSearch() {
           clearTimeout(debounceTimer);
@@ -3156,7 +3187,7 @@
           <p class="module-banner-sub">Design rules, tools, engines, and interactive worlds that unite code, systems thinking, art, and play</p>
           <span class="module-banner-level">K–12 Progression · Game Design</span>
         </div>
-        <span class="module-banner-count">31 live · 31 lessons</span>
+        <span class="module-banner-count">35 live · 35 lessons</span>
         <span class="module-chevron" aria-hidden="true">▾</span>
       </div>
       <div class="module-drawer">
@@ -3300,6 +3331,31 @@
           <span class="tile-kicker">Blender 07 · UVs · Principled BSDF · Lighting · Render</span>
           <strong>Materials, Lighting &amp; Render</strong>
           <small>Unwrap UVs, build a Principled BSDF material, light a scene with a key and fill light, and render a finished image.</small>
+        </a>
+
+        <div class="module-cluster-label">
+          <strong>Level 4.6 · Blender Workspaces (6–12)</strong>
+          <small>A tab-by-tab map of Blender's workspaces, with direct lessons for the tabs the Fundamentals pathway doesn't cover on its own.</small>
+        </div>
+        <a class="tile tile-hero" href="lessons/blender-workspaces-pathway.html" style="border-left:3.5px solid #4f8fc0;" data-added="2026-09-01">
+          <span class="tile-kicker">Pathway · 3 New Lessons · Blender 5.x · Tab-to-Lesson Map</span>
+          <strong>Blender Workspaces Pathway</strong>
+          <small>Map all eleven Blender workspace tabs to a direct lesson, with new tutorials for Sculpting, Geometry Nodes, and Compositing.</small>
+        </a>
+        <a class="tile" href="lessons/blender-sculpting.html" style="border-left:3.5px solid #8a5fb0;" data-added="2026-09-01">
+          <span class="tile-kicker">Workspace · Brushes · Dyntopo · Voxel Remesh</span>
+          <strong>Sculpting</strong>
+          <small>Block in an organic form with sculpt brushes, toggle Dynamic Topology, and clean up with Voxel Remesh.</small>
+        </a>
+        <a class="tile" href="lessons/blender-geometry-nodes.html" style="border-left:3.5px solid #5c8f6b;" data-added="2026-09-01">
+          <span class="tile-kicker">Workspace · Node Graph · Fields · Scatter</span>
+          <strong>Geometry Nodes</strong>
+          <small>Read a node graph, expose modifier inputs, understand fields, and build a randomized instance scatter.</small>
+        </a>
+        <a class="tile" href="lessons/blender-compositing.html" style="border-left:3.5px solid #4f8fc0;" data-added="2026-09-01">
+          <span class="tile-kicker">Workspace · Render Layers · Glare · Color Grade</span>
+          <strong>Compositing</strong>
+          <small>Grade and finish a rendered image with a compositor node graph — Glare, Color Balance, and the Viewer node.</small>
         </a>
 
         <div class="module-cluster-label">
@@ -4029,16 +4085,7 @@
         return;
       }
 
-      var computedImages = [
-        getComputedStyle(tile).backgroundImage,
-        getComputedStyle(tile, '::before').backgroundImage,
-        getComputedStyle(tile, '::after').backgroundImage
-      ].join(' ');
-
-      if (/url\(/.test(computedImages)) {
-        tile.classList.add('tile-existing-thumb');
-        tile.dataset.visualKind = 'existing-image';
-      } else if (customClasses.length) {
+      if (customClasses.length) {
         tile.classList.add('tile-themed-thumb');
         tile.dataset.visualKind = 'bespoke-theme';
       } else {
@@ -4047,17 +4094,38 @@
       }
     });
 
-    // ── 2. Grade filter + live-only toggle ────────────────────────────
-    var activeGrade = 'all';
-    var activeTheme = 'all';
-    var liveOnly = localStorage.getItem('sl-live-only') === 'true';
+    // ── 2. Compact subject and grade filters ──────────────────────────
+    var gradeFilter = document.getElementById('lesson-grade-filter');
+    var subjectFilter = document.getElementById('lesson-subject-filter');
+    var filterReset = document.getElementById('lesson-filter-reset');
+    var filterStatus = document.getElementById('lesson-filter-status');
+    var activeGrade = gradeFilter ? gradeFilter.value : 'all';
+    var activeTheme = subjectFilter ? subjectFilter.value : 'all';
+    var gradeRanges = {
+      k2: [0, 2],
+      35: [3, 5],
+      68: [6, 8],
+      912: [9, 12]
+    };
 
-    var liveToggleInput = document.getElementById('live-only-toggle');
-    if (liveToggleInput) liveToggleInput.checked = liveOnly;
+    function gradeMatches(value, selected) {
+      if (selected === 'all') return true;
+      if (!value || value === 'all') return true;
+      if (value === 'capstone') return selected === '912';
+      if (gradeRanges[value]) return value === selected;
+
+      var normalized = String(value).toLowerCase().replace(/[–—]/g, '-').replace(/kindergarten/g, 'k');
+      var match = normalized.match(/(k|\d{1,2})\s*-\s*(\d{1,2})/);
+      if (!match) return true;
+      var lessonStart = match[1] === 'k' ? 0 : parseInt(match[1], 10);
+      var lessonEnd = parseInt(match[2], 10);
+      var selectedRange = gradeRanges[selected];
+      return lessonStart <= selectedRange[1] && lessonEnd >= selectedRange[0];
+    }
 
     function applyFilters() {
       var visibleModuleCount = 0;
-      var visibleLessonCount = 0;
+      var visibleLessonUrls = new Set();
 
       document.querySelectorAll('.module-section').forEach(function (section) {
         var grid = section.querySelector('.module-tile-grid');
@@ -4071,17 +4139,22 @@
 
         grid.querySelectorAll(':scope > .lesson-pathway').forEach(function (pathway) {
           var band = pathway.dataset.gradeBand || 'all';
-          var gradeMatch = activeGrade === 'all' || band === 'all' || band === 'capstone' || band === activeGrade;
           var pathwayHasVisible = false;
 
           pathway.querySelectorAll('.tile').forEach(function (tile) {
-            var liveMatch = !liveOnly || !tile.classList.contains('tile-coming-soon');
+            var tileGrade = tile.dataset.catalogGrade || band;
+            var gradeMatch = gradeMatches(tileGrade, activeGrade);
+            var liveMatch = !tile.classList.contains('tile-coming-soon') || document.body.classList.contains('show-planned-lessons');
             var showTile = themeMatch && gradeMatch && liveMatch;
             tile.classList.toggle('grade-hidden', !showTile);
-            if (showTile) pathwayHasVisible = true;
+            if (showTile) {
+              pathwayHasVisible = true;
+              var href = tile.getAttribute('href') || '';
+              if (/^lessons\//.test(href) && !tile.classList.contains('lesson-hidden')) visibleLessonUrls.add(href);
+            }
           });
 
-          var showPathway = themeMatch && gradeMatch && pathwayHasVisible;
+          var showPathway = themeMatch && pathwayHasVisible;
           pathway.classList.toggle('grade-hidden', !showPathway);
           if (showPathway) hasVisible = true;
         });
@@ -4089,9 +4162,6 @@
         var showSection = themeMatch && hasVisible;
         section.classList.toggle('grade-hidden', !showSection);
         if (showSection) visibleModuleCount++;
-        visibleLessonCount += Array.from(grid.querySelectorAll('.tile')).filter(function (tile) {
-          return !tile.classList.contains('grade-hidden') && !tile.classList.contains('lesson-hidden');
-        }).length;
       });
 
       document.querySelectorAll('.module-map-group').forEach(function (group) {
@@ -4104,38 +4174,56 @@
       var lessonsReadout = document.getElementById('steam-readout-lessons');
       if (modulesReadout) modulesReadout.textContent = document.querySelectorAll('.module-section').length;
       if (visibleReadout) visibleReadout.textContent = visibleModuleCount;
-      if (lessonsReadout) lessonsReadout.textContent = visibleLessonCount;
+      if (lessonsReadout) lessonsReadout.textContent = visibleLessonUrls.size;
+      if (filterStatus) {
+        var qualifiers = [];
+        if (subjectFilter && activeTheme !== 'all') qualifiers.push(subjectFilter.options[subjectFilter.selectedIndex].text);
+        if (gradeFilter && activeGrade !== 'all') qualifiers.push('grades ' + gradeFilter.options[gradeFilter.selectedIndex].text);
+        filterStatus.textContent = 'Showing ' + visibleLessonUrls.size + ' lesson' + (visibleLessonUrls.size === 1 ? '' : 's') + (qualifiers.length ? ' for ' + qualifiers.join(', ') + '.' : '.');
+      }
+      if (filterReset) filterReset.hidden = activeGrade === 'all' && activeTheme === 'all';
       if (typeof updateActiveFromScroll === 'function' && Array.isArray(subjectLinks)) updateActiveFromScroll();
     }
 
-    document.querySelectorAll('.grade-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        activeGrade = btn.dataset.grade;
-        document.querySelectorAll('.grade-btn').forEach(function (b) {
-          b.classList.toggle('grade-btn--active', b.dataset.grade === activeGrade);
-        });
-        applyFilters();
-      });
-    });
+    function refreshActiveSearch() {
+      var searchInput = document.getElementById('lesson-search');
+      if (searchInput && searchInput.value.trim() && typeof window.refreshLessonCatalogSearch === 'function') {
+        window.refreshLessonCatalogSearch();
+      }
+    }
 
-    if (liveToggleInput) {
-      liveToggleInput.addEventListener('change', function () {
-        liveOnly = liveToggleInput.checked;
-        localStorage.setItem('sl-live-only', liveOnly);
+    if (gradeFilter) {
+      gradeFilter.addEventListener('change', function () {
+        activeGrade = gradeFilter.value;
+        if (typeof window.setCompendiumVolume === 'function') window.setCompendiumVolume('all');
         applyFilters();
+        refreshActiveSearch();
       });
     }
 
-    document.querySelectorAll('.theme-filter-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        activeTheme = btn.dataset.themeFilter;
-        document.querySelectorAll('.theme-filter-btn').forEach(function (b) {
-          b.classList.toggle('theme-filter-btn--active', b.dataset.themeFilter === activeTheme);
-        });
+    if (subjectFilter) {
+      subjectFilter.addEventListener('change', function () {
+        activeTheme = subjectFilter.value;
+        if (typeof window.setCompendiumVolume === 'function') window.setCompendiumVolume('all');
         applyFilters();
+        refreshActiveSearch();
       });
-    });
+    }
 
+    if (filterReset) {
+      filterReset.addEventListener('click', function () {
+        activeGrade = 'all';
+        activeTheme = 'all';
+        if (gradeFilter) gradeFilter.value = 'all';
+        if (subjectFilter) subjectFilter.value = 'all';
+        if (typeof window.setCompendiumVolume === 'function') window.setCompendiumVolume('all');
+        applyFilters();
+        refreshActiveSearch();
+        if (subjectFilter) subjectFilter.focus();
+      });
+    }
+
+    window.updateLessonBrowseFilters = applyFilters;
     applyFilters();
 
     // ── 3. "/" shortcut to focus search ───────────────────────────────
@@ -4169,6 +4257,8 @@
     var subjectLinks = Array.from(document.querySelectorAll('.subject-nav-link[href^="#module-"]'));
     var moduleMapLinks = Array.from(document.querySelectorAll('.module-map-link[href^="#module-"]'));
     var progressBar = document.getElementById('subject-nav-progress-bar');
+    var subjectNav = document.querySelector('.subject-nav');
+    var trackSubjectPosition = Boolean(subjectNav && !subjectNav.hidden);
     var themeColors = {
       science: '#38bdf8',
       technology: '#f59e0b',
@@ -4229,14 +4319,17 @@
     }
 
     function updateActiveFromScroll() {
+      if (!trackSubjectPosition) return;
       var id = getActiveSectionIdFromScroll();
       if (id) setActiveModule(id);
       updateScrollProgress();
     }
 
-    window.addEventListener('scroll', updateActiveFromScroll, { passive: true });
-    window.addEventListener('resize', updateActiveFromScroll);
-    updateActiveFromScroll();
+    if (trackSubjectPosition) {
+      window.addEventListener('scroll', updateActiveFromScroll, { passive: true });
+      window.addEventListener('resize', updateActiveFromScroll);
+      updateActiveFromScroll();
+    }
 
     // ── 5. Back to top ────────────────────────────────────────────────
     var btt = document.getElementById('back-to-top');
@@ -4299,6 +4392,9 @@
           var drawer = banner.nextElementSibling;
           if (drawer) drawer.style.maxHeight = drawer.scrollHeight + 'px';
         });
+        if (typeof window.updateLessonBrowseFilters === 'function') {
+          window.updateLessonBrowseFilters();
+        }
       }
 
       liveButton.addEventListener('click', function () { setPlannedVisible(false); });

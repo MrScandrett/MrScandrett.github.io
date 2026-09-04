@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Blender Geometry Nodes · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Generate and vary geometry procedurally with a node graph — reading a graph, exposing modifier inputs, fields, and a hands-on scatter build, from Blender's Workspaces pathway." />
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../assets/css/lessons/blender-pathway.css" />
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="bl-topbar ll-topbar">
+      <div class="bl-topbar-inner">
+        <a href="blender-workspaces-pathway.html">← Blender Workspaces</a>
+        <span>Geometry Nodes · Workspace 10</span>
+        <a href="../class-downloads.html">Get Blender</a>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="bl-shell">
+          <section class="bl-hero">
+            <div class="hero-copy">
+              <p class="eyebrow">Geometry Nodes Workspace · 55–70 minutes · Grades 8–12</p>
+              <h1>Model once,<br /><span>generate forever.</span></h1>
+              <p class="hero-lede">Every lesson so far hand-shapes one specific object. Geometry Nodes builds a recipe instead — a node graph that generates or modifies geometry — so changing one number can rescatter a thousand rocks or regrow an entire wall of bricks without touching a single vertex by hand.</p>
+              <div class="hero-actions">
+                <a class="primary-action" href="#concept">Start the lesson</a>
+                <a class="secondary-action" href="blender-workspaces-pathway.html">Back to Workspaces</a>
+              </div>
+              <p class="hero-note"><strong>Finish line:</strong> a plane scattered with instanced objects, randomized in scale and rotation, entirely from a node graph.</p>
+            </div>
+            <div class="bl-viewport-art" aria-hidden="true">
+              <div class="bl-art-bar"><span></span><span></span><span></span><b>scatter_nodes.blend</b></div>
+              <div class="bl-art-stage"><div class="bl-art-grid"></div><div class="bl-art-gizmo"><i></i><i></i><i></i><em class="x">X</em><em class="y">Y</em><em class="z">Z</em></div></div>
+              <p class="bl-art-note">The node graph lives inside a modifier — the base mesh underneath never changes.</p>
+            </div>
+          </section>
+
+          <nav class="lesson-track" aria-label="Lesson sections">
+            <a href="#concept"><b>01</b> Concept</a>
+            <a href="#reading"><b>02</b> Reading a graph</a>
+            <a href="#exposing"><b>03</b> Exposing inputs</a>
+            <a href="#fields"><b>04</b> Fields</a>
+            <a href="#build"><b>05</b> Build</a>
+            <a href="#check"><b>06</b> Check</a>
+          </nav>
+
+          <section class="lesson-section" id="concept">
+            <div class="section-label"><span>01</span><p>Concept</p></div>
+            <div class="section-content">
+              <p class="section-kicker">A modifier that runs a node graph</p>
+              <h2>Geometry Nodes is a modifier, not a mesh edit.</h2>
+              <p>Click the <span class="bl-path">Geometry Nodes</span> tab, select an object, and press <strong>New</strong> — Blender adds a <strong>Geometry Nodes</strong> modifier to the object and opens its node graph below the 3D Viewport. Nothing about the base mesh changes; the modifier reads it, transforms it, and hands the result to the viewport and the final render. Delete the modifier and the original mesh is exactly as it was.</p>
+              <p><span class="bl-path">Properties Editor → Modifier Properties (wrench) → Add Modifier → Geometry Nodes</span> does the same thing without opening the workspace tab.</p>
+              <div class="rule"><strong>This is why it's called "procedural"</strong><span>The graph is a recipe, evaluated fresh every time an input changes. Adjust one slider and the whole result regenerates — nothing to redo by hand.</span></div>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="reading">
+            <div class="section-label"><span>02</span><p>Reading a graph</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Follow the geometry socket</p>
+              <h2>Every graph starts and ends with Geometry.</h2>
+              <p><strong>Group Input</strong> on the left is the object's original mesh entering the graph; <strong>Group Output</strong> on the right is what actually gets drawn. Every node between them takes geometry in one side and passes a modified version out the other. Sockets are color-coded by data type — green for Geometry, and other colors for Vector, Float, Boolean, and Integer values.</p>
+              <figure class="bl-figure">
+                <img src="../assets/images/lessons/blender-geometry-nodes/geometry-nodes-modifier.webp" alt="Blender's Modifier Properties panel showing a Geometry Nodes modifier named GeometryNodes with exposed inputs (Rotations, Divergence, Viewport Resolution) above the node graph in the editor below." width="1400" height="727" loading="lazy" />
+                <figcaption><b>Modifier panel + node graph</b>Every value exposed in the graph's Group Input shows up here in the Modifier panel — this is how a graph becomes something a teammate can tweak without opening the node editor at all.</figcaption>
+              </figure>
+              <ol class="build-list">
+                <li><div><b>Add a node</b><p><kbd>Shift</kbd>+<kbd>A</kbd> in the node editor, same as adding an object in the 3D Viewport.</p></div><span>Shift+A</span></li>
+                <li><div><b>Connect sockets</b><p>Drag from an output dot to an input dot of a matching color. Blender auto-converts most compatible types.</p></div><span>Drag</span></li>
+                <li><div><b>Preview any point</b><p>Select a node and press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+click it to preview its output directly in the 3D Viewport before it reaches Group Output.</p></div><span>Preview</span></li>
+              </ol>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="exposing">
+            <div class="section-label"><span>03</span><p>Exposing inputs</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Turn a hard-coded value into a control</p>
+              <h2>Sockets on Group Input become sliders in the modifier.</h2>
+              <p>Open the node editor's Sidebar (<kbd>N</kbd>) and select the <strong>Group</strong> tab, then use the <strong>+</strong> button to add a new input socket — choose its type (Float, Integer, Vector, Boolean) and give it a real name. That socket immediately appears as a field in the Modifier panel, exactly like the Rotations and Divergence sliders in the screenshot above.</p>
+              <div class="callout"><b>Name it for the person using it, not for you</b><p>"Count" or "Scatter Density" reads clearly in the Modifier panel months later. "Value.002" does not.</p></div>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="fields">
+            <div class="section-label"><span>04</span><p>Fields</p></div>
+            <div class="section-content">
+              <p class="section-kicker">One node, a different answer per point</p>
+              <h2>A field evaluates per-element, not once.</h2>
+              <p>A plain number is the same everywhere. A <strong>field</strong> — like <strong>Position</strong>, <strong>Index</strong>, or <strong>Random Value</strong> — produces a different value for every point, vertex, or instance it touches. This is what makes a scatter look natural instead of a single copy-pasted a thousand times: each instance can read its own index or position and use it to vary scale, rotation, or which object it becomes.</p>
+              <figure class="bl-figure" style="max-width:520px;">
+                <img src="../assets/images/lessons/blender-geometry-nodes/node-chain-example.webp" alt="A simple Geometry Nodes chain: Group Input feeds a Set Position node, whose Position input is fed by a Position node's output scaled by a Scale node, highlighted as a field." width="1156" height="467" loading="lazy" />
+                <figcaption><b>A field in a graph</b>The highlighted Position → Scale chain computes a different offset for every point before it ever reaches Set Position — that's a field at work.</figcaption>
+              </figure>
+              <div class="rule"><strong>Key nodes for a scatter</strong><span><strong>Distribute Points on Faces</strong> places points across a surface. <strong>Instance on Points</strong> puts a copy of another object at each one. <strong>Random Value</strong> feeds per-instance variation into rotation and scale.</span></div>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="build">
+            <div class="section-label"><span>05</span><p>Build</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Hands on</p>
+              <h2>Scatter randomized instances across a surface.</h2>
+              <ol class="build-list">
+                <li><div><b>Set up two objects</b><p>A flat plane (the scatter surface) and a small object to instance — an Ico Sphere or a simple rock shape works well.</p></div><span>Setup</span></li>
+                <li><div><b>Add the modifier</b><p>Select the plane, open the <strong>Geometry Nodes</strong> workspace, and press <strong>New</strong>.</p></div><span>New</span></li>
+                <li><div><b>Distribute points</b><p><kbd>Shift</kbd>+<kbd>A</kbd> → Geometry → Sample → <strong>Distribute Points on Faces</strong>, connected from Group Input's Geometry.</p></div><span>Distribute</span></li>
+                <li><div><b>Instance the object</b><p><kbd>Shift</kbd>+<kbd>A</kbd> → Instances → <strong>Instance on Points</strong>; plug the points into it and set its Instance input to an Object Info node referencing your rock or sphere.</p></div><span>Instance</span></li>
+                <li><div><b>Randomize scale and rotation</b><p>Add a <strong>Random Value</strong> node (Float, with a Min/Max range) into the Instance on Points node's Scale input, and another feeding Rotation, before connecting to Group Output.</p></div><span>Random Value</span></li>
+                <li><div><b>Expose the density</b><p>Add an input socket for Distribute Points on Faces' Density, so it appears as a slider in the Modifier panel.</p></div><span>Expose</span></li>
+              </ol>
+              <details class="rescue"><summary>Nothing is showing up in the viewport?</summary><ul><li>Confirm Group Output's Geometry socket is actually connected — an unconnected chain produces nothing, even if every node in between looks right.</li><li>Distribute Points on Faces needs faces, not just an edge or a point cloud — check the scatter surface is a real mesh with area.</li><li>Instance on Points needs a valid object plugged into Instance; an empty or missing Object Info reference instances nothing.</li></ul></details>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="check">
+            <div class="section-label"><span>06</span><p>Check</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Exit ticket</p>
+              <h2>Ready to grade the render?</h2>
+              <div class="quiz">
+                <fieldset><legend>1. What does a Geometry Nodes modifier change about the base mesh?</legend><label><input type="radio" name="q1" value="wrong" /> It permanently edits the base mesh's vertices</label><label><input type="radio" name="q1" value="correct" /> Nothing — the base mesh stays untouched, only the modifier's output changes</label><label><input type="radio" name="q1" value="wrong" /> It deletes the base mesh once applied</label></fieldset>
+                <fieldset><legend>2. How does a socket added to Group Input reach a teammate?</legend><label><input type="radio" name="q2" value="correct" /> It appears automatically as a field in the object's Modifier panel</label><label><input type="radio" name="q2" value="wrong" /> They have to open the node graph and edit the node directly</label><label><input type="radio" name="q2" value="wrong" /> It has no effect until the file is reopened</label></fieldset>
+                <fieldset><legend>3. What makes a field different from a plain number?</legend><label><input type="radio" name="q3" value="wrong" /> Fields can only be used in the Shading workspace</label><label><input type="radio" name="q3" value="correct" /> A field can evaluate to a different value for every point or element</label><label><input type="radio" name="q3" value="wrong" /> Fields are always random</label></fieldset>
+                <button type="button" data-quiz-check>Check my answers</button><p data-quiz-result aria-live="polite"></p>
+              </div>
+              <div class="finish-line">
+                <div>
+                  <p class="section-kicker">Definition of done</p>
+                  <div class="checklist">
+                    <label><input type="checkbox"> Distribute Points on Faces and Instance on Points scatter a real object across the surface.</label>
+                    <label><input type="checkbox"> Scale and rotation are randomized per instance with Random Value, not identical everywhere.</label>
+                    <label><input type="checkbox"> At least one input (density, scale range, or similar) is exposed as a Modifier panel field.</label>
+                  </div>
+                  <p data-check-status style="margin-top:.6rem;color:var(--text-muted,#64748b);font-size:.82rem;"></p>
+                </div>
+                <div class="finish-actions"><button type="button" data-complete-lesson="2">Mark lesson complete</button><a href="blender-compositing.html">Next: Compositing →</a></div>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-label="Lesson guide" aria-hidden="false">
+        <div class="ll-panel-head"><div class="ll-tabs"><button class="ll-tab" aria-selected="true" data-pane="pane-guide">Guide</button><button class="ll-tab" aria-selected="false" data-pane="pane-vocab">Vocab</button></div><button class="ll-panel-close" aria-label="Close guide panel">&#x2715;</button></div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="pane-guide">
+            <p class="ll-pane-title">Learning goals</p><ul class="ll-guide-list"><li>Add a Geometry Nodes modifier and open its node graph</li><li>Read a graph by following the Geometry socket from input to output</li><li>Expose a Group Input socket as a Modifier panel field</li><li>Explain what makes a field different from a fixed value</li><li>Build a randomized scatter with Distribute Points and Instance on Points</li></ul>
+            <p class="ll-pane-title panel-gap">Requires</p><ul class="ll-guide-list"><li><a href="blender-interface-basics.html">Blender Interface &amp; Navigation</a></li></ul>
+            <p class="ll-pane-title panel-gap">Save habit</p><p class="panel-copy">Name every exposed socket as you add it. An unnamed "Value" input is unreadable the moment you have three of them.</p>
+          </div>
+          <div class="ll-pane" id="pane-vocab">
+            <p class="ll-pane-title">Key vocabulary</p><dl class="vocab-list"><dt>Geometry Nodes modifier</dt><dd>A modifier that runs a node graph to generate or modify an object's geometry.</dd><dt>Field</dt><dd>A value that can evaluate differently for every point or element it touches.</dd><dt>Group Input / Output</dt><dd>The graph's entry and exit points for geometry and exposed values.</dd><dt>Distribute Points on Faces</dt><dd>Scatters points across a mesh surface.</dd><dt>Instance on Points</dt><dd>Places a copy of another object at each point without duplicating real geometry.</dd></dl>
+          </div>
+        </div>
+      </aside>
+      <button class="ll-open-btn" aria-label="Open lesson guide" aria-expanded="true">&#x22EE;</button>
+    </div>
+  </div>
+
+  <script src="../assets/js/lessons/blender-workspaces.js"></script>
+  <script src="../assets/js/reveal.js"></script>
+  <script src="../assets/js/theme-registry.js"></script>
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script src="../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

@@ -74,6 +74,76 @@ body.theme-liquid-woodland .lessons-library-head h1 {
   text-align: left;
 }
 
+.lessons-library-head .lesson-availability,
+.lesson-filter-panel {
+  grid-column: 1 / -1;
+}
+
+.lesson-filter-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(12rem, 1fr)) auto;
+  gap: 0.65rem;
+  align-items: end;
+  padding: 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border-subtle));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--glass-fill-soft) 88%, transparent);
+}
+
+.lesson-filter-field {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 720;
+}
+
+.lesson-filter-field select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.58rem 2.2rem 0.58rem 0.72rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: var(--surface-elevated, var(--surface, #fff));
+  color: var(--text-main, var(--text, #1d1d1f));
+  font: inherit;
+  font-size: 0.84rem;
+  cursor: pointer;
+}
+
+.lesson-filter-field select:focus-visible,
+.lesson-filter-reset:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--focus-ring) 68%, transparent);
+  outline-offset: 2px;
+}
+
+.lesson-filter-reset {
+  min-height: 44px;
+  padding: 0.58rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border-subtle));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface, #fff));
+  color: var(--text-main, var(--text, #1d1d1f));
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 720;
+  cursor: pointer;
+}
+
+.lesson-filter-reset:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface, #fff));
+}
+
+.lesson-filter-status {
+  grid-column: 1 / -1;
+  min-height: 1.1rem;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
 .module-map[hidden],
 .subject-nav[hidden] {
   display: none !important;
@@ -626,6 +696,9 @@ body.theme-liquid-woodland .lessons-library-head h1 {
   .lessons-library-title-row { justify-content: space-between; }
   .lessons-library-head .search-status { grid-column: 1; }
   .lessons-library-count { font-size: 0.62rem; }
+  .lesson-filter-panel { grid-template-columns: 1fr; }
+  .lesson-filter-reset,
+  .lesson-filter-status { grid-column: 1; }
   .compendium-volume-divider { grid-template-columns: auto minmax(0, 1fr); padding: 1.1rem; }
   .compendium-volume-icon { width: 3rem; height: 3rem; font-size: 1.35rem; }
   .compendium-volume-toggle { grid-column: 1 / -1; justify-self: stretch; }
@@ -4956,6 +5029,8 @@ body.theme-liquid-woodland .lessons-library-head h1 {
   --module-secondary: #53d7c7;
   --module-deep: #111a35;
   --module-copy: #eef3ff;
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 6rem;
 }
 
 #module-math { --module-accent: #818cf8; --module-secondary: #f6c453; --module-deep: #17183c; }
@@ -5073,6 +5148,12 @@ body.theme-liquid-woodland.theme-steam .module-section .module-tile-grid {
   background:
     repeating-linear-gradient(135deg, color-mix(in srgb, var(--module-accent) 9%, transparent) 0 10px, transparent 10px 21px),
     linear-gradient(145deg, color-mix(in srgb, var(--module-accent) 18%, var(--module-deep)), var(--module-deep));
+}
+
+/* Closed shelves keep their cards in the accessible DOM, but do not request
+   dozens of thumbnail backgrounds until a student opens that subject. */
+.module-banner:not(.open) + .module-drawer .tile {
+  background-image: none !important;
 }
 
 @media (max-width: 640px) {

@@ -159,6 +159,25 @@ if (shelfUrls.size === liveLessonUrls.size && [...shelfUrls].every((url) => live
   info(`Public shelf and registry agree on ${shelfUrls.size} live lessons ✓`);
 }
 
+const libraryCountPattern = /(<p class="lessons-library-count"[^>]*>)(\d+)(\s+interactive lessons<\/p>)/;
+const libraryCountMatch = steamHtml.match(libraryCountPattern);
+if (!libraryCountMatch) {
+  err("steam-lessons.html is missing its authoritative interactive lesson count");
+} else if (Number(libraryCountMatch[2]) !== liveLessonUrls.size) {
+  if (FIX) {
+    const updatedSteamHtml = steamHtml.replace(
+      libraryCountPattern,
+      `$1${liveLessonUrls.size}$3`
+    );
+    fs.writeFileSync(steamPath, updatedSteamHtml);
+    info(`Updated steam-lessons.html library count to ${liveLessonUrls.size} ✓`);
+  } else {
+    err(
+      `Library count mismatch: heading says ${libraryCountMatch[2]}, registry contains ${liveLessonUrls.size} live lessons`
+    );
+  }
+}
+
 const a11yConfig = JSON.parse(fs.readFileSync(A11Y_PATH, "utf8"));
 const configuredA11yPaths = new Set(a11yConfig.urls.map((entry) => {
   const url = typeof entry === "string" ? entry : entry.url;
