@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Blender Materials, Lighting &amp; Render · Mr. Scandrett's ClassroomOS</title>
-  <meta name="description" content="Unwrap UVs, build a Principled BSDF material, light a scene, and render a final image in Blender — the finishing lesson of the Blender Fundamentals pathway." />
+  <meta name="description" content="Unwrap UVs, build a Principled BSDF material, paint directly onto a texture, blend two textures with a painted vertex-group mask, light a scene, and render a final image in Blender — the finishing lesson of the Blender Fundamentals pathway." />
   <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -30,7 +30,7 @@
         <main id="main-content" class="bl-shell">
           <section class="bl-hero">
             <div class="hero-copy">
-              <p class="eyebrow">Shading &amp; Lighting · 55–70 minutes · Grades 7–12</p>
+              <p class="eyebrow">Shading &amp; Lighting · 75–95 minutes · Grades 7–12</p>
               <h1>Gray plastic,<br /><span>no more.</span></h1>
               <p class="hero-lede">Every object you've built so far is still the default gray. This lesson unwraps a surface, builds a real material, lights it on purpose, and renders a finished image — the pathway's capstone skill.</p>
               <div class="hero-actions">
@@ -49,10 +49,12 @@
           <nav class="lesson-track" aria-label="Lesson sections">
             <a href="#uv"><b>01</b> UVs</a>
             <a href="#material"><b>02</b> Material</a>
-            <a href="#light"><b>03</b> Light</a>
-            <a href="#render"><b>04</b> Render</a>
-            <a href="#build"><b>05</b> Build</a>
-            <a href="#check"><b>06</b> Check</a>
+            <a href="#paint"><b>03</b> Paint</a>
+            <a href="#blend"><b>04</b> Blend</a>
+            <a href="#light"><b>05</b> Light</a>
+            <a href="#render"><b>06</b> Render</a>
+            <a href="#build"><b>07</b> Build</a>
+            <a href="#check"><b>08</b> Check</a>
           </nav>
 
           <section class="lesson-section" id="uv">
@@ -89,8 +91,40 @@
             </div>
           </section>
 
+          <section class="lesson-section" id="paint">
+            <div class="section-label"><span>03</span><p>Paint</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Straight onto the pixels</p>
+              <h2>Paint marks directly onto the texture with a brush.</h2>
+              <p>An Image Texture node holds pixel data like any picture file. <strong>Texture Paint</strong> mode lets you paint straight onto it in the 3D Viewport with a brush, instead of round-tripping through an external image editor — good for grime, scratches, and hand-placed detail a plain image alone won't give you.</p>
+              <ol class="build-list">
+                <li><div><b>Mark the target image active</b><p>In the Shading workspace's Shader Editor, click your Image Texture node once so it's outlined white. Texture Paint always paints onto whichever Image Texture node is currently active.</p></div><span>Active node</span></li>
+                <li><div><b>Enter Texture Paint mode</b><p>Open the <span class="bl-path">Texture Paint</span> workspace tab, or use the mode dropdown. You need real UVs first (section 01) — Blender uses them to know where a brush stroke lands on the flat image.</p></div><span>Texture Paint</span></li>
+                <li><div><b>Pick a brush and paint</b><p><strong>Draw</strong> lays down flat color; <strong>Soften</strong> and <strong>Smear</strong> blend pixels that are already there instead of adding new ones. Adjust Radius and Strength with <kbd>F</kbd> and <kbd>Shift</kbd>+<kbd>F</kbd> — the same pattern as sculpt brushes.</p></div><span>F</span></li>
+              </ol>
+              <div class="rule"><strong>Save the paint, not just the file</strong><span>A painted image lives only in memory until you save it on its own: with the image open in an Image Editor, use <em>Image → Save As</em>, or pack it into the .blend with <span class="bl-path">top menu → File → External Data → Pack Resources</span>. <kbd>Ctrl</kbd>+<kbd>S</kbd> alone does not save an unpacked image's pixels.</span></div>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="blend">
+            <div class="section-label"><span>04</span><p>Blend</p></div>
+            <div class="section-content">
+              <p class="section-kicker">One weight, painted by hand</p>
+              <h2>Blend two textures with a mask you paint on the mesh.</h2>
+              <p>A single Image Texture is one material across the whole surface, but real ground never is — sand near a path, grass in the middle, bare stone at the edges. Instead of painting that transition in an image editor, paint it directly on the mesh as a <strong>Vertex Group</strong> weight, then read that weight back in the Shader Editor to mix between two Image Texture nodes.</p>
+              <ol class="build-list">
+                <li><div><b>Add a vertex group</b><p><span class="bl-path">Object Data Properties (green triangle icon) → Vertex Groups → +</span>, then name it something you'll remember — <code>Blend</code> works. Enter <strong>Weight Paint</strong> mode from the workspace tab or the mode dropdown.</p></div><span>Vertex Groups</span></li>
+                <li><div><b>Paint the heat map</b><p>Paint with the Draw brush: full <strong>Weight</strong> (red) marks one texture, zero weight (blue) marks the other, with the green-to-yellow middle blending between them. Set the brush's Weight value in the tool settings before each stroke.</p></div><span>Weight Paint</span></li>
+                <li><div><b>Read it into the shader</b><p>Back in the Shading workspace: <span class="bl-path">Shader Editor → Shift+A → Input → Attribute</span>, set its <strong>Type</strong> to <em>Geometry</em>, and type your vertex group's exact name into the Name field — it won't appear in a dropdown, so a typo here silently reads nothing.</p></div><span>Attribute</span></li>
+                <li><div><b>Mix the two textures</b><p><span class="bl-path">Shift+A → Color → Mix Color</span>. Plug your two Image Texture nodes into A and B, and the Attribute node's <strong>Fac</strong> output into the Mix node's <strong>Factor</strong>. The Mix output goes to the Principled BSDF's Base Color.</p></div><span>Mix Color</span></li>
+              </ol>
+              <div class="callout"><b>Sharpen the transition with a Color Ramp</b><p>A raw painted weight blends softly. For a harder edge, route the Attribute's Fac through <span class="bl-path">Shift+A → Converter → Color Ramp</span> first, then feed the ramp's output into the Mix node's Factor instead. Drag the ramp's triangular stop markers together to sharpen the blend, or apart to soften it — no repainting required.</p></div>
+              <div class="rule"><strong>Adding a third texture</strong><span>Chain a second Mix Color node off the first one's output, add a Stone texture as its B input, and drive its Factor from a second vertex group (or a second Color Ramp reading the same one) so stone only appears at the highest weights.</span></div>
+            </div>
+          </section>
+
           <section class="lesson-section" id="light">
-            <div class="section-label"><span>03</span><p>Light</p></div>
+            <div class="section-label"><span>05</span><p>Light</p></div>
             <div class="section-content">
               <p class="section-kicker">Direction sells the shape</p>
               <h2>Light like a photographer, not a floodlight.</h2>
@@ -109,7 +143,7 @@
           </section>
 
           <section class="lesson-section" id="render">
-            <div class="section-label"><span>04</span><p>Render</p></div>
+            <div class="section-label"><span>06</span><p>Render</p></div>
             <div class="section-content">
               <p class="section-kicker">Turn the scene into an image</p>
               <h2>Choose an engine, then press F12.</h2>
@@ -119,7 +153,7 @@
                 <article class="toolbox-card"><div class="toolbox-icon">◑</div><p class="toolbox-job">Slower, physically accurate</p><h3>Cycles</h3><p>Path-traced light simulation — more realistic reflections and shadows, at a real time cost per image.</p></article>
               </div>
               <ol class="build-list">
-                <li><div><b>Position the camera</b><p><kbd>Numpad</kbd> <kbd>0</kbd> views the active camera. To align it to your current view use <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Numpad</kbd> <kbd>0</kbd>, or <span class="bl-path">3D Viewport header → View → Align View → Align Active Camera to View</span>.</p></div><span>Camera</span></li>
+                <li><div><b>Position the camera</b><p><kbd>Numpad</kbd> <kbd>0</kbd> views the active camera. To snap it to your current view once, use <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Numpad</kbd> <kbd>0</kbd>. To keep adjusting the shot by orbiting the viewport itself, open the <span class="bl-path">Sidebar (N) → View tab → Lock Camera to View</span> checkbox instead — every viewport move drags the camera with it until you turn it back off.</p></div><span>Camera</span></li>
                 <li><div><b>Render</b><p>Press <kbd>F12</kbd>, or use <span class="bl-path">top menu → Render → Render Image</span>. Blender opens the Render Result in the Image Editor.</p></div><span>F12</span></li>
                 <li><div><b>Save the image</b><p>In the Image Viewer, <em>Image → Save As</em>, and choose PNG for a lossless result.</p></div><span>Save As</span></li>
               </ol>
@@ -127,7 +161,7 @@
           </section>
 
           <section class="lesson-section" id="build">
-            <div class="section-label"><span>05</span><p>Build</p></div>
+            <div class="section-label"><span>07</span><p>Build</p></div>
             <div class="section-content">
               <p class="section-kicker">Hands on</p>
               <h2>Finish and render one object.</h2>
@@ -143,7 +177,7 @@
           </section>
 
           <section class="lesson-section" id="check">
-            <div class="section-label"><span>06</span><p>Check</p></div>
+            <div class="section-label"><span>08</span><p>Check</p></div>
             <div class="section-content">
               <p class="section-kicker">Exit ticket</p>
               <h2>Ready for the capstone scene?</h2>
@@ -174,12 +208,12 @@
         <div class="ll-panel-head"><div class="ll-tabs"><button class="ll-tab" aria-selected="true" data-pane="pane-guide">Guide</button><button class="ll-tab" aria-selected="false" data-pane="pane-vocab">Vocab</button></div><button class="ll-panel-close" aria-label="Close guide panel">&#x2715;</button></div>
         <div class="ll-panel-body">
           <div class="ll-pane ll-active" id="pane-guide">
-            <p class="ll-pane-title">Learning goals</p><ul class="ll-guide-list"><li>Mark seams and unwrap a mesh's UVs</li><li>Build a material from a Principled BSDF</li><li>Light a scene with key, fill, and World strength</li><li>Choose between EEVEE and Cycles</li><li>Render and save a finished image</li></ul>
+            <p class="ll-pane-title">Learning goals</p><ul class="ll-guide-list"><li>Mark seams and unwrap a mesh's UVs</li><li>Build a material from a Principled BSDF</li><li>Paint directly onto a texture in Texture Paint mode</li><li>Paint a Vertex Group and mix two textures with it in the shader</li><li>Light a scene with key, fill, and World strength</li><li>Choose between EEVEE and Cycles</li><li>Render and save a finished image</li></ul>
             <p class="ll-pane-title panel-gap">Requires</p><ul class="ll-guide-list"><li>Any completed object from Lessons 02–06</li></ul>
             <p class="ll-pane-title panel-gap">Save habit</p><p class="panel-copy">Save your .blend file separately from the rendered PNG — you'll want to keep tweaking the material long after the first render.</p>
           </div>
           <div class="ll-pane" id="pane-vocab">
-            <p class="ll-pane-title">Key vocabulary</p><dl class="vocab-list"><dt>UV map</dt><dd>A flat 2D layout of a mesh's surface, used to place textures.</dd><dt>Seam</dt><dd>A marked edge where the UV unwrap splits the mesh open.</dd><dt>Principled BSDF</dt><dd>Blender's all-purpose physically based material node.</dd><dt>EEVEE</dt><dd>Blender's fast, real-time render engine.</dd><dt>Cycles</dt><dd>Blender's slower, physically accurate path-traced render engine.</dd></dl>
+            <p class="ll-pane-title">Key vocabulary</p><dl class="vocab-list"><dt>UV map</dt><dd>A flat 2D layout of a mesh's surface, used to place textures.</dd><dt>Seam</dt><dd>A marked edge where the UV unwrap splits the mesh open.</dd><dt>Principled BSDF</dt><dd>Blender's all-purpose physically based material node.</dd><dt>Texture Paint</dt><dd>A mode that paints pixels directly onto an image texture with a brush.</dd><dt>Vertex Group</dt><dd>A named, per-vertex weight (0 to 1) painted onto a mesh.</dd><dt>Attribute node</dt><dd>Reads a named mesh attribute, like a vertex group, into the shader.</dd><dt>Color Ramp</dt><dd>Remaps a value through a gradient using draggable color stops.</dd><dt>Lock Camera to View</dt><dd>A toggle that drags the camera along with every viewport move.</dd><dt>EEVEE</dt><dd>Blender's fast, real-time render engine.</dd><dt>Cycles</dt><dd>Blender's slower, physically accurate path-traced render engine.</dd></dl>
           </div>
         </div>
       </aside>
@@ -192,5 +226,6 @@
   <script src="../assets/js/theme-registry.js"></script>
   <script src="../assets/js/nav-mobile.js"></script>
   <script src="../assets/js/lesson-print-button.js"></script>
+  <script src="../assets/js/lessons/blender-workspace-switcher.js"></script>
 </body>
 </html>
