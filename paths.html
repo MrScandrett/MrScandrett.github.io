@@ -86,7 +86,7 @@
     /* ── Lesson step card ──────────────────────────── */
     .path-step {
       flex-shrink: 0;
-      width: 200px;
+      width: 260px;
       border-radius: 16px;
       border: 1px solid var(--line, #d2d2d7);
       background: var(--white, #fff);
@@ -112,6 +112,16 @@
       letter-spacing: 0.04em;
       color: var(--path-color, #5856d6);
       opacity: 0.8;
+    }
+    .path-step-image {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 9;
+      object-fit: contain;
+      background: #122237;
+      border-radius: 9px;
+      margin-bottom: 0.3rem;
     }
     .path-step-title {
       font-size: 0.92rem;
@@ -316,6 +326,7 @@
           'asteroid-belt',
           'kuiper-belt',
           'universe-expansion',
+          'roman-space-telescope',
           'pale-blue-dot',
         ],
       },
@@ -442,11 +453,15 @@
     ];
 
     async function loadLessons() {
-      const res = await fetch('data/lessons.json', { cache: 'no-store' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      const [data, images] = await Promise.all(
+        ['data/lessons.json', 'data/path-lesson-images.json'].map(async (url) => {
+          const res = await fetch(url, { cache: 'no-store' });
+          if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
+          return res.json();
+        })
+      );
       const map = {};
-      for (const l of data.lessons) map[l.id] = l;
+      for (const l of data.lessons) map[l.id] = { ...l, preview: images[l.id] };
       return map;
     }
 
@@ -454,6 +469,18 @@
       const a = document.createElement('a');
       a.className = 'path-step';
       a.href = lesson ? lesson.url : '#';
+
+      if (lesson && lesson.preview) {
+        const img = document.createElement('img');
+        img.className = 'path-step-image';
+        img.src = lesson.preview.src;
+        img.alt = lesson.preview.alt;
+        img.width = 640;
+        img.height = 360;
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        a.appendChild(img);
+      }
 
       const num = document.createElement('span');
       num.className = 'path-step-num';

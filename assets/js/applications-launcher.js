@@ -1,8 +1,20 @@
 import { categoryMeta, steamGalaxyNodes } from "./app-registry.js";
 
-const FOLDER_ORDER = ["coding", "games", "robotics", "design3d", "art", "music", "science", "research", "immersive", "ai"];
+import { projectPaths } from "./app-learning-resources.js";
+
+const ACCESS_LABELS = {"no-account":"No account", classroom:"Join your class", installed:"Installed / lab", account:"Account needed", check:"Access to check"};
+const ACCESS_HELP = {"no-account":"Use these free activities without signing in. Open “Save & return” to learn how to keep your work.", classroom:"Your teacher sets up access. You do not need a personal email address.", installed:"Ask your teacher which tools are ready on your classroom computer. Links may open download or store pages.", account:"Use these only with an account your teacher has approved. Free tiers may have limits.", all:"The full collection. “Access to check” means we have not yet confirmed whether you can use the tool without signing in."};
+
+const FOLDER_ORDER = ["coding", "games", "robotics", "design3d", "art", "music", "storytelling", "math", "science", "research", "immersive", "ai", "cybersecurity", "steam"];
+
+// "steam" is a folder of folders: opening it shows these four genre folders instead of apps.
+const FOLDER_GROUPS = {
+  steam: ["steam-software", "steam-sims", "steam-arcade", "steam-vr"]
+};
 
 const FOLDER_DETAILS = {
+  storytelling: { label: "Stories & Animation", symbol: "📖", color: "#b76b94" },
+  math: { label: "Math & Patterns", symbol: "📐", color: "#36a69c" },
   coding: { label: "Coding", symbol: "⌨️", color: "#5b87f7" },
   games: { label: "Game Design", symbol: "🎮", color: "#f06479" },
   robotics: { label: "Robotics", symbol: "🤖", color: "#48bd7a" },
@@ -12,10 +24,20 @@ const FOLDER_DETAILS = {
   science: { label: "Science", symbol: "🔬", color: "#e2b63b" },
   research: { label: "Research", symbol: "🔎", color: "#33afa8" },
   immersive: { label: "VR & Creative Tech", symbol: "🥽", color: "#7557c7" },
-  ai: { label: "AI Tools", symbol: "✨", color: "#e38d32" }
+  ai: { label: "AI Tools", symbol: "✨", color: "#e38d32" },
+  cybersecurity: { label: "Cybersecurity", symbol: "🛡️", color: "#ff4d5e" },
+  steam: { label: "Steam Apps", symbol: "🖥️", color: "#66c0f4" },
+  "steam-software": { label: "Steam: Creative Software", symbol: "🛠️", color: "#66c0f4" },
+  "steam-sims": { label: "Steam: Simulations", symbol: "🧪", color: "#4fae7a" },
+  "steam-arcade": { label: "Steam: Arcade & Story Games", symbol: "🕹️", color: "#ff7a59" },
+  "steam-vr": { label: "Steam: VR Experiences", symbol: "🕶️", color: "#8a63d2" }
 };
 
-const QUICK_START_IDS = ["scratch", "codeorg", "tinkercad", "chrome-music-lab", "phet", "googledocs"];
+function parentGroupOf(folderId) {
+  return Object.keys(FOLDER_GROUPS).find((groupId) => FOLDER_GROUPS[groupId].includes(folderId)) || null;
+}
+
+const QUICK_START_IDS = ["scratch", "beepbox", "twine", "piskel", "mlc-geoboard", "phet", "tinkercad", "codeorg"];
 const ICON_COLORS = ["#3f68dc", "#d84e67", "#2d9c72", "#7c59c7", "#d87932", "#168d9c", "#52617c", "#b64993"];
 
 const tools = steamGalaxyNodes.filter((node) => node.type === "tool" && node.link);
@@ -38,6 +60,8 @@ const elements = {
   search: document.getElementById("app-search"),
   clearSearch: document.getElementById("clear-app-search"),
   grade: document.getElementById("grade-filter"),
+  access: document.getElementById("access-filter"),
+  accessExplanation: document.getElementById("access-explanation"),
   empty: document.getElementById("apps-empty"),
   resetFilters: document.getElementById("reset-app-filters"),
   dock: document.getElementById("favorites-dock"),
@@ -50,8 +74,10 @@ const elements = {
 
 const state = {
   folder: null,
+  group: null,
   query: "",
   grade: "all",
+  access: "no-account",
   pendingTool: null,
   lastFocused: null
 };
@@ -80,6 +106,11 @@ function iconColor(tool) {
 }
 
 function toolsInFolder(folderId) {
+  const childIds = FOLDER_GROUPS[folderId];
+  if (childIds) {
+    const seen = new Set();
+    return childIds.flatMap((childId) => toolsInFolder(childId)).filter((tool) => (seen.has(tool.id) ? false : seen.add(tool.id)));
+  }
   return tools.filter((tool) => tool.category === folderId || (tool.categories || []).includes(folderId));
 }
 
@@ -88,7 +119,13 @@ function categoryMatches(tool, folderId) {
   return tool.category === folderId || (tool.categories || []).includes(folderId);
 }
 
+function matchesFilters(tool) {
+  return (state.access === "all" || tool.access === state.access) &&
+    (state.grade === "all" || (tool.grades || []).includes(state.grade));
+}
+
 function toolMatches(tool) {
+  if (!matchesFilters(tool)) return false;
   if (!categoryMatches(tool, state.folder)) return false;
   if (state.grade !== "all" && !(tool.grades || []).includes(state.grade)) return false;
   if (!state.query) return true;
@@ -128,11 +165,12 @@ function makeMiniIcon(tool) {
   return makeIconArtwork(tool, "mini-app-icon");
 }
 
-function renderFolders() {
+function renderFolders(folderIds) {
   elements.folderGrid.replaceChildren();
-  FOLDER_ORDER.forEach((folderId) => {
+  folderIds.forEach((folderId) => {
     const details = FOLDER_DETAILS[folderId];
-    const folderTools = toolsInFolder(folderId);
+    const folderTools = toolsInFolder(folderId).filter(matchesFilters);
+    if (!folderTools.length) return;
     const button = document.createElement("button");
     button.className = "folder-button";
     button.type = "button";
@@ -156,6 +194,7 @@ function renderFolders() {
     button.append(shape, label, count);
     elements.folderGrid.append(button);
   });
+  document.getElementById("folders-empty").hidden = elements.folderGrid.childElementCount > 0;
 }
 
 function makeAppButton(tool, compact = false) {
@@ -163,7 +202,7 @@ function makeAppButton(tool, compact = false) {
   button.className = compact ? "dock-button" : "app-button";
   button.type = "button";
   button.dataset.toolId = tool.id;
-  button.setAttribute("aria-label", `Open ${tool.label}${tool.login ? `. ${tool.login}` : ""}`);
+  button.setAttribute("aria-label", `Open ${tool.label}. ${ACCESS_LABELS[tool.access]}. Opens a new tab.`);
 
   const icon = makeIconArtwork(tool, compact ? "dock-icon" : "app-icon");
 
@@ -175,15 +214,41 @@ function makeAppButton(tool, compact = false) {
   if (!compact) {
     const note = document.createElement("span");
     note.className = "app-note";
-    note.textContent = tool.free ? (tool.login?.toLowerCase().includes("no login") ? "Free · no login" : "Free") : "Account or plan may be needed";
+    note.textContent = `${ACCESS_LABELS[tool.access]} · ${tool.cost}`;
     button.append(note);
   }
-  return button;
+  if (compact) return button;
+  const card = document.createElement("article");
+  card.className = "app-card";
+  card.dataset.access = tool.access;
+  const purpose = document.createElement("p");
+  purpose.className = "app-purpose";
+  purpose.textContent = tool.description;
+  const details = document.createElement("details");
+  details.className = "app-save";
+  const summary = document.createElement("summary");
+  summary.textContent = "Save & return";
+  const instructions = document.createElement("p");
+  instructions.textContent = tool.save;
+  details.append(summary, instructions);
+  if (tool.source) {
+    const source = document.createElement("a");
+    source.href = tool.source;
+    source.target = "_blank";
+    source.rel = "noopener noreferrer";
+    source.textContent = `Tool guide · reviewed ${tool.reviewedOn}`;
+    details.append(source);
+  }
+  card.append(button, purpose, details);
+  return card;
 }
 
 function renderDock() {
   elements.dockApps.replaceChildren();
-  QUICK_START_IDS.map((id) => toolById.get(id)).filter(Boolean).forEach((tool) => elements.dockApps.append(makeAppButton(tool, true)));
+  const favorites = QUICK_START_IDS.map(id => toolById.get(id)).filter(tool => tool && matchesFilters(tool));
+  const picks = favorites.length ? favorites : tools.filter(matchesFilters).slice(0, 6);
+  picks.slice(0, 6).forEach(tool => elements.dockApps.append(makeAppButton(tool, true)));
+  elements.dock.hidden = !!state.folder || !!state.group || !picks.length;
 }
 
 function renderApps() {
@@ -194,17 +259,27 @@ function renderApps() {
   elements.location.textContent = `${matches.length} ${matches.length === 1 ? "app" : "apps"}${state.grade === "all" ? "" : ` for ${elements.grade.selectedOptions[0].textContent}`}`;
 }
 
+function folderLocationText() {
+  const count = tools.filter(matchesFilters).length;
+  const base = `${state.group ? FOLDER_DETAILS[state.group].label : "All folders"} · ${count} resources`;
+  return state.grade === "all" ? base : `${base} · ${elements.grade.selectedOptions[0].textContent}`;
+}
+
 function updateHash() {
   const params = new URLSearchParams();
   if (state.folder) params.set("folder", state.folder);
+  else if (state.group) params.set("group", state.group);
   if (state.grade !== "all") params.set("grade", state.grade);
+  params.set("access", state.access);
+  if (state.query) params.set("q", state.query);
   const hash = params.toString();
   history.replaceState(null, "", `${location.pathname}${location.search}${hash ? `#${hash}` : ""}`);
 }
 
 function openFolder(folderId, options = {}) {
-  if (!FOLDER_DETAILS[folderId]) return;
+  if (!FOLDER_DETAILS[folderId] || FOLDER_GROUPS[folderId]) return;
   state.folder = folderId;
+  state.group = parentGroupOf(folderId);
   const details = FOLDER_DETAILS[folderId];
   const meta = categoryMeta[folderId];
   elements.folderView.hidden = true;
@@ -223,8 +298,28 @@ function openFolder(folderId, options = {}) {
   if (options.scroll) elements.appsView.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function openGroup(groupId, options = {}) {
+  const childIds = FOLDER_GROUPS[groupId];
+  if (!childIds) return;
+  state.group = groupId;
+  state.folder = null;
+  const details = FOLDER_DETAILS[groupId];
+  elements.folderView.hidden = false;
+  elements.appsView.hidden = true;
+  elements.back.hidden = false;
+  elements.title.textContent = details.label;
+  elements.instruction.textContent = "Choose a folder, then tap an app to open it.";
+  elements.location.textContent = folderLocationText();
+  elements.dock.hidden = true;
+  renderFolders(childIds);
+  updateHash();
+  if (options.focus !== false) document.querySelector(".folder-button")?.focus();
+  if (options.scroll) elements.folderView.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function showFolders(options = {}) {
   state.folder = null;
+  state.group = null;
   state.query = "";
   elements.search.value = "";
   elements.clearSearch.hidden = true;
@@ -232,9 +327,10 @@ function showFolders(options = {}) {
   elements.appsView.hidden = true;
   elements.back.hidden = true;
   elements.title.textContent = "Choose a folder.";
-  elements.instruction.textContent = "Then tap an app to open it.";
-  elements.location.textContent = "All folders";
-  elements.dock.hidden = false;
+  elements.instruction.textContent = "Choose an activity. Read how to save it.";
+  elements.location.textContent = folderLocationText();
+  renderDock();
+  renderFolders(FOLDER_ORDER);
   updateHash();
   if (options.focus !== false) document.querySelector(".folder-button")?.focus();
 }
@@ -251,25 +347,21 @@ function closeSearch() {
 }
 
 function searchAllApps() {
-  if (!state.folder) {
-    state.folder = "search";
-    elements.folderView.hidden = true;
-    elements.appsView.hidden = false;
-    elements.back.hidden = false;
-    elements.title.textContent = "Search results";
-    elements.instruction.textContent = "Tap an app to open it.";
-    elements.folderTitle.textContent = "Search results";
-    elements.folderDescription.textContent = "Results from every classroom folder.";
-    elements.folderSymbol.textContent = "⌕";
-    elements.folderSymbol.style.setProperty("--folder-color", "#64748b");
-    elements.dock.hidden = true;
-  }
-  const query = elements.search.value.trim().toLowerCase();
-  state.query = query;
-  elements.clearSearch.hidden = !query;
-  if (state.folder === "search") state.folder = null;
+  state.folder = "search";
+  state.group = null;
+  elements.folderView.hidden = true;
+  elements.appsView.hidden = false;
+  elements.back.hidden = false;
+  elements.title.textContent = "Search results";
+  elements.instruction.textContent = "Search every folder within your access and grade choices.";
+  elements.folderTitle.textContent = "Search results";
+  elements.folderDescription.textContent = "Try an app name or something you want to make.";
+  elements.folderSymbol.textContent = "⌕";
+  state.query = elements.search.value.trim().toLowerCase();
+  elements.clearSearch.hidden = !state.query;
+  elements.dock.hidden = true;
   renderApps();
-  if (!state.folder) state.folder = "search";
+  updateHash();
 }
 
 function focusableIn(dialog) {
@@ -309,19 +401,33 @@ function launchTool(tool) {
 
 function restoreFromHash() {
   const params = new URLSearchParams(location.hash.slice(1));
+  const access = params.get("access");
+  state.access = Object.hasOwn(ACCESS_HELP, access) ? access : "no-account";
+  elements.access.value = state.access;
+  elements.accessExplanation.textContent = ACCESS_HELP[state.access];
+  state.grade = "all";
+  elements.grade.value = "all";
   const grade = params.get("grade");
   if (["K-2", "3-5", "6-8", "9-12"].includes(grade)) {
     state.grade = grade;
     elements.grade.value = grade;
   }
   const folder = params.get("folder");
-  if (folder && FOLDER_DETAILS[folder]) openFolder(folder, { focus: false });
+  const group = params.get("group");
+  if (folder === "search" || params.get("q")) { elements.search.value = params.get("q") || ""; openSearch(); searchAllApps(); }
+  else if (folder && FOLDER_DETAILS[folder] && !FOLDER_GROUPS[folder]) openFolder(folder, { focus: false });
+  else if (group && FOLDER_GROUPS[group]) openGroup(group, { focus: false });
   else showFolders({ focus: false });
+  renderDock();
+  renderProjectPaths();
 }
 
 elements.folderGrid.addEventListener("click", (event) => {
   const button = event.target.closest("[data-folder]");
-  if (button) openFolder(button.dataset.folder, { scroll: true });
+  if (!button) return;
+  const folderId = button.dataset.folder;
+  if (FOLDER_GROUPS[folderId]) openGroup(folderId, { scroll: true });
+  else openFolder(folderId, { scroll: true });
 });
 
 [elements.appGrid, elements.dockApps].forEach((container) => container.addEventListener("click", (event) => {
@@ -329,7 +435,10 @@ elements.folderGrid.addEventListener("click", (event) => {
   if (button) launchTool(toolById.get(button.dataset.toolId));
 }));
 
-elements.back.addEventListener("click", () => showFolders());
+elements.back.addEventListener("click", () => {
+  if (!elements.appsView.hidden && state.group) openGroup(state.group);
+  else showFolders();
+});
 elements.searchToggle.addEventListener("click", () => elements.searchPanel.hidden ? openSearch() : closeSearch());
 elements.search.addEventListener("input", searchAllApps);
 elements.clearSearch.addEventListener("click", () => {
@@ -337,23 +446,29 @@ elements.clearSearch.addEventListener("click", () => {
   state.query = "";
   elements.clearSearch.hidden = true;
   renderApps();
+  updateHash();
   elements.search.focus();
 });
 
-elements.grade.addEventListener("change", () => {
-  state.grade = elements.grade.value;
-  if (elements.appsView.hidden) elements.location.textContent = state.grade === "all" ? "All folders" : `Folders · ${elements.grade.selectedOptions[0].textContent}`;
-  else renderApps();
+function refreshFilters() {
+  elements.accessExplanation.textContent = ACCESS_HELP[state.access];
+  if (elements.appsView.hidden) {
+    renderFolders(state.group ? FOLDER_GROUPS[state.group] : FOLDER_ORDER);
+    elements.location.textContent = folderLocationText();
+  } else renderApps();
+  renderDock();
+  renderProjectPaths();
   updateHash();
-});
-
+}
+elements.grade.addEventListener("change", () => { state.grade = elements.grade.value; refreshFilters(); });
+elements.access.addEventListener("change", () => { state.access = elements.access.value; refreshFilters(); });
 elements.resetFilters.addEventListener("click", () => {
   state.grade = "all";
   state.query = "";
   elements.grade.value = "all";
   elements.search.value = "";
   elements.clearSearch.hidden = true;
-  renderApps();
+  refreshFilters();
 });
 
 elements.aiPledge.addEventListener("change", () => { elements.aiConfirm.disabled = !elements.aiPledge.checked; });
@@ -402,6 +517,76 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-renderFolders();
-renderDock();
+const PROGRESS_KEY = "classroomos-launchpad-progress-v1";
+let projectProgress = {};
+try {
+  const saved = JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}");
+  if (saved && typeof saved === "object" && !Array.isArray(saved)) projectProgress = saved;
+} catch { /* The checklist also works when storage is unavailable. */ }
+function saveProgress() {
+  try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(projectProgress)); }
+  catch { document.getElementById("progress-note").textContent = "Storage is unavailable. Checkmarks last for this visit only. Download your project files before leaving."; }
+}
+function renderProjectPaths() {
+  const list = document.getElementById("project-path-list");
+  const openIds = new Set([...list.querySelectorAll("details[open]")].map(el => el.id));
+  list.replaceChildren();
+  projectPaths.filter(path => state.grade === "all" || path.grades.includes(state.grade)).forEach(path => {
+    const details = document.createElement("details");
+    details.className = "project-path";
+    details.id = `project-${path.id}`;
+    details.open = openIds.has(details.id);
+    const summary = document.createElement("summary");
+    summary.textContent = path.title;
+    const links = document.createElement("p");
+    links.className = "path-tools";
+    path.tools.forEach(id => {
+      const tool = toolById.get(id);
+      const link = document.createElement("a");
+      link.href = tool.link;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = tool.label;
+      links.append(link);
+    });
+    const starter = document.createElement("a");
+    starter.href = path.starter;
+    starter.download = "";
+    starter.textContent = path.starterLabel;
+    const steps = document.createElement("ol");
+    path.steps.forEach((step, index) => {
+      const li = document.createElement("li");
+      const label = document.createElement("label");
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      const key = `${path.id}-${index}`;
+      input.checked = projectProgress[key] === true;
+      input.addEventListener("change", () => {
+        projectProgress[key] = input.checked;
+        saveProgress();
+        const complete = path.steps.filter((_, i) => projectProgress[`${path.id}-${i}`] === true).length;
+        document.getElementById("project-progress-status").textContent = `${path.title}: ${complete} of 4 steps checked.`;
+      });
+      const text = document.createElement("span");
+      const strong = document.createElement("strong");
+      strong.textContent = ["Start. ","Create. ","Save. ","Return. "][index];
+      text.append(strong, step);
+      label.append(input, text);
+      li.append(label);
+      steps.append(li);
+    });
+    details.append(summary, links, starter, steps);
+    list.append(details);
+  });
+}
+document.getElementById("clear-project-progress").addEventListener("click", () => {
+  projectProgress = {};
+  saveProgress();
+  renderProjectPaths();
+  document.getElementById("project-progress-status").textContent = "Project checkmarks cleared. Your downloaded files are unchanged.";
+});
+window.addEventListener("hashchange", () => {
+  if (location.hash === "#project-paths") return;
+  restoreFromHash();
+});
 restoreFromHash();
