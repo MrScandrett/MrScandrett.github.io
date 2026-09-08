@@ -1,6 +1,7 @@
 # Blender Sculpting screenshot sources
 
-Real Blender screenshots used in `lessons/blender-sculpting.html`, sourced
+Real Blender screenshots used in `lessons/blender-sculpting.html` and
+`lessons/blender-pathway.html`, sourced
 from the official Blender Manual at docs.blender.org. Manual content (including
 embedded screenshots) is licensed **CC BY-SA 4.0**
 (https://docs.blender.org/manual/en/latest/copyright.html).

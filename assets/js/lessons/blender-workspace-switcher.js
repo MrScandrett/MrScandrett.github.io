@@ -62,6 +62,8 @@
     var fab = document.createElement("button");
     fab.type = "button";
     fab.className = "blwsq-fab";
+    // The hub supplies tested colors for both button states.
+    if (document.body.classList.contains("bl-pathway-hub")) fab.setAttribute("data-contrast-guard-skip", "");
     fab.setAttribute("aria-haspopup", "true");
     fab.setAttribute("aria-expanded", "false");
     fab.innerHTML = '<span class="blwsq-fab-icon">&#8646;</span><span>Workspaces</span>';

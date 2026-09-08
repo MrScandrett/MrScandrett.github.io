@@ -1,8 +1,75 @@
 (() => {
   const key = 'classroomos-blender-pathway';
-  const totalLessons = 7;
-  const readProgress = () => { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; } };
-  const saveProgress = value => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
+  const lessonIds = ['1', '2', '3', '4', '5', '6', '7'];
+  const totalLessons = lessonIds.length;
+  const routeKey = `${key}-route`;
+  const routes = {
+    all: { ids: lessonIds, name: 'Full pathway', note: 'Build a broad foundation, from your first objects to a finished render.' },
+    architecture: { ids: ['1', '2', '3', '4', '7'], name: 'Room or building', note: 'Make the window and chair first, then bring them together in a modular room.' },
+    props: { ids: ['1', '3', '6', '7'], name: 'Furniture or props', note: 'Practice on a chair, build a tool, then light and render your work.' },
+    character: { ids: ['1', '5', '7'], name: 'Character', note: 'Model and render a character, then continue to rigging in Game Asset Studio.' },
+    game: { ids: ['1', '6', '7'], name: 'First game prop', note: 'Start with one manageable prop. After rendering it, use Game Asset Studio for export and engine setup. For a room or character, choose that route instead.' }
+  };
+  let sessionProgress = [];
+  let storageAvailable = true;
+  const readProgress = () => {
+    try {
+      const value = JSON.parse(localStorage.getItem(key) || '[]');
+      return Array.isArray(value) ? [...new Set(value.map(String).filter(id => lessonIds.includes(id)))] : [];
+    } catch { return sessionProgress; }
+  };
+  const saveProgress = value => {
+    sessionProgress = value;
+    try { localStorage.setItem(key, JSON.stringify(value)); }
+    catch { storageAvailable = false; }
+  };
+  const readRoute = () => {
+    try { const value = localStorage.getItem(routeKey); return Object.hasOwn(routes, value) ? value : 'all'; }
+    catch { return 'all'; }
+  };
+  let selectedRoute = readRoute();
+  const refreshRoute = done => {
+    const plan = document.querySelector('[data-route-plan]');
+    if (!plan) return;
+    const route = routes[selectedRoute];
+    const cards = [...document.querySelectorAll('[data-lesson-card]')];
+    const nextId = route.ids.find(id => !done.includes(id));
+    const nextCard = cards.find(card => card.dataset.lessonCard === nextId);
+    document.querySelectorAll('[data-route-picker]').forEach(button => {
+      const active = button.dataset.routePicker === selectedRoute;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+    cards.forEach(card => {
+      const inRoute = route.ids.includes(card.dataset.lessonCard);
+      card.classList.toggle('is-route-picked', inRoute && selectedRoute !== 'all');
+      const status = card.querySelector('[data-card-status]');
+      if (status) status.textContent = done.includes(card.dataset.lessonCard) ? 'Completed ✓' : card.dataset.lessonCard === nextId ? 'Up next' : inRoute && selectedRoute !== 'all' ? 'In your route' : 'Not started';
+    });
+    plan.replaceChildren(...route.ids.map(id => {
+      const card = cards.find(item => item.dataset.lessonCard === id);
+      const li = document.createElement('li');
+      const link = document.createElement('a');
+      link.href = card.href;
+      const label = document.createElement('span');
+      label.textContent = `Lesson ${id.padStart(2, '0')} · ${done.includes(id) ? 'Completed ✓' : id === nextId ? 'Up next' : 'To do'}`;
+      const title = document.createElement('b');
+      title.textContent = card.querySelector('.bl-path-copy b').textContent;
+      link.append(label, title);
+      if (id === nextId) { li.className = 'is-next'; link.setAttribute('aria-current', 'step'); }
+      if (done.includes(id)) li.classList.add('is-complete');
+      li.append(link);
+      return li;
+    }));
+    document.querySelector('[data-route-status]').textContent = `${route.name}: ${route.note}`;
+    document.querySelector('[data-route-progress]').textContent = `${route.ids.length} lessons · ${route.ids.filter(id => done.includes(id)).length} complete`;
+    document.querySelectorAll('[data-continue-link], [data-route-continue]').forEach(link => {
+      link.href = nextCard ? nextCard.href : '#capstone';
+      link.textContent = nextCard ? `${done.some(id => route.ids.includes(id)) ? 'Continue' : 'Start'} Lesson ${nextId} →` : 'Route complete · Show your work →';
+    });
+    const note = document.querySelector('[data-save-note]');
+    if (note && !storageAvailable) note.textContent = 'Browser storage is unavailable. Progress lasts only while this page stays open.';
+  };
 
   const refresh = () => {
     const done = readProgress();
@@ -10,12 +77,14 @@
     document.querySelectorAll('[data-complete-lesson]').forEach(button => {
       const complete = done.includes(button.dataset.completeLesson);
       button.classList.toggle('is-done', complete);
+      button.setAttribute('aria-pressed', String(complete));
       button.textContent = complete ? 'Lesson completed ✓' : 'Mark lesson complete';
     });
     const bar = document.querySelector('[data-course-progress]');
     if (bar) { bar.style.width = `${(done.length / totalLessons) * 100}%`; bar.parentElement?.setAttribute('aria-valuenow', String(done.length)); }
     const label = document.querySelector('[data-progress-label]');
     if (label) label.textContent = `${done.length} of ${totalLessons} lessons complete`;
+    refreshRoute(done);
   };
 
   document.querySelectorAll('[data-complete-lesson]').forEach(button => button.addEventListener('click', () => {
@@ -89,30 +158,17 @@
     window.setTimeout(() => { button.textContent = 'Copy'; }, 1800);
   }));
 
-  // pathway goal picker: highlight the shortest useful route without hiding the full library
-  const routeMessages = {
-    all: '<strong>Full pathway:</strong> complete Lessons 01–07 in order for the broadest foundation.',
-    architecture: '<strong>Architecture route:</strong> 01 Interface → 02 Windows & Doors → 04 Environments → 07 Materials & Render.',
-    props: '<strong>Props route:</strong> 01 Interface → 03 Furniture → 06 Props & Tools → 07 Materials & Render.',
-    character: '<strong>Character route:</strong> 01 Interface → 05 Character → 07 Materials & Render → rigging in Game Asset Studio.',
-    game: '<strong>Game route:</strong> start with 01, choose the asset lesson you need, finish 07, then continue into Game Asset Studio for GLB and Godot.'
-  };
-  const routeStatus = document.querySelector('[data-route-status]');
+  // Keep the selected route and completion in sync when returning from a lesson.
   document.querySelectorAll('[data-route-picker]').forEach(button => button.addEventListener('click', () => {
-    const route = button.dataset.routePicker;
-    document.querySelectorAll('[data-route-picker]').forEach(other => {
-      const active = other === button;
-      other.classList.toggle('is-active', active);
-      other.setAttribute('aria-pressed', String(active));
-    });
-    document.querySelectorAll('[data-route-node]').forEach(node => {
-      const routes = node.dataset.routeNode.split(/\s+/);
-      node.classList.toggle('is-route-dimmed', route !== 'all' && !routes.includes(route));
-      node.classList.toggle('is-route-picked', route !== 'all' && routes.includes(route));
-    });
-    document.querySelectorAll('[data-route-lane]').forEach(lane => lane.classList.toggle('is-route-dimmed', route !== 'all' && lane.dataset.routeLane !== route && !(route === 'game')));
-    if (routeStatus) routeStatus.innerHTML = routeMessages[route];
+    if (!Object.hasOwn(routes, button.dataset.routePicker)) return;
+    selectedRoute = button.dataset.routePicker;
+    try { localStorage.setItem(routeKey, selectedRoute); } catch { storageAvailable = false; }
+    refresh();
   }));
+  window.addEventListener('storage', event => {
+    if (event.key === key || event.key === routeKey || event.key === null) { selectedRoute = readRoute(); refresh(); }
+  });
+  window.addEventListener('pageshow', refresh);
 
   // guide/vocab side panel (shared shell)
   document.querySelectorAll('.ll-tab').forEach(tab => tab.addEventListener('click', () => {
