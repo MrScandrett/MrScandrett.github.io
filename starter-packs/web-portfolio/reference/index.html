@@ -1,0 +1,240 @@
+<!doctype html>
+<!--
+  ============================================================
+  REFERENCE BUILD — Web Portfolio
+  This file completes CHALLENGE 5 from challenges.md:
+  "Build the filter buttons from the data instead of typing them in the HTML."
+
+  Why that challenge is worth doing: in the starter pack the buttons are written
+  by hand in index.html and the categories are written in script.js, so the two
+  can disagree. Here the buttons are generated from the projects themselves, so
+  they cannot. Add a project with a new category and its button appears.
+
+  Try it yourself first, then compare. Other answers are possible.
+  CSS and JavaScript are inline here so the whole thing reads in one scroll.
+  ============================================================
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reference: self-building filters — Web Portfolio</title>
+  <style>
+    :root {
+      --bg: #f7f5f2; --surface: #fff; --text: #1d2430; --muted: #5a6675;
+      --accent: #b64a22; --ink: #2b3a55; --border: #ddd6cd; --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 20px; background: var(--bg); color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.6;
+    }
+    header, main, footer { width: min(940px, 100%); margin-inline: auto; }
+    header {
+      padding: 14px 18px; border: 1px solid var(--border);
+      border-radius: var(--radius); background: var(--surface);
+    }
+    .eyebrow { margin: 0 0 6px; color: var(--accent); font-size: .75rem; font-weight: 800; letter-spacing: .16em; }
+    h1 { margin: 0; font-size: clamp(1.5rem, 4.5vw, 2.4rem); line-height: 1.2; }
+    h2 { font-size: clamp(1.15rem, 3vw, 1.5rem); }
+    h3 { margin: 0 0 4px; font-size: 1.05rem; }
+    main { margin-block: 28px; }
+    .filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 10px; }
+    .filter {
+      padding: 8px 16px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--surface); color: var(--ink); font: inherit; font-weight: 700; cursor: pointer;
+    }
+    .filter[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+    .status { margin: 0 0 16px; color: var(--muted); font-size: .95rem; }
+    .project-grid {
+      display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      list-style: none; margin: 0; padding: 0;
+    }
+    .project-card {
+      display: flex; flex-direction: column; gap: 8px; padding: 16px;
+      border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
+    }
+    .thumb {
+      display: grid; place-items: center; aspect-ratio: 16 / 10; border: 1px dashed var(--border);
+      border-radius: 10px; color: var(--muted); font-size: .85rem; text-transform: uppercase;
+      background: repeating-linear-gradient(45deg,
+        color-mix(in srgb, var(--ink) 6%, transparent) 0 10px, transparent 10px 20px);
+    }
+    .badge {
+      align-self: start; margin: 0; padding: 2px 10px; border-radius: 999px;
+      background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent);
+      font-size: .75rem; font-weight: 800; text-transform: uppercase;
+    }
+    .project-card p { margin: 0; color: var(--muted); }
+    .card-details { margin: 4px 0 0; font-size: .92rem; }
+    .card-details dt { color: var(--ink); font-weight: 700; }
+    .card-details dd { margin: 0 0 8px; color: var(--muted); }
+    .empty-state {
+      grid-column: 1 / -1; padding: 24px; border: 1px dashed var(--border); border-radius: var(--radius);
+      background: var(--surface); color: var(--muted); text-align: center;
+    }
+    footer { padding-top: 14px; border-top: 1px solid var(--border); color: var(--muted); font-size: .9rem; }
+    :focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <header>
+    <p class="eyebrow">WEB PORTFOLIO &middot; REFERENCE</p>
+    <h1>Filters built from the data</h1>
+  </header>
+
+  <main>
+    <section aria-labelledby="work-heading">
+      <h2 id="work-heading">Selected work</h2>
+
+      <!-- The buttons are NOT written here. JavaScript fills this group in. -->
+      <div id="filters" class="filters" role="group" aria-label="Filter work by category"></div>
+
+      <p id="filter-status" class="status" role="status" aria-live="polite">Showing all work.</p>
+      <ul id="project-grid" class="project-grid"></ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>Reference build. Starter pack from Mr. Scandrett's ClassroomOS.</p>
+  </footer>
+
+  <script>
+    "use strict";
+
+    // ---------- DATA ----------
+    // Note the fourth project in a category the starter pack never had. No HTML
+    // was edited to make its button exist.
+    const projects = [
+      { title: "Placeholder game project", category: "game", summary: "Replace this with your own work. Two sentences.", tools: "HTML canvas, JavaScript", learned: "One specific thing." },
+      { title: "Placeholder simulation project", category: "simulation", summary: "Replace this with your own work. Two sentences.", tools: "JavaScript", learned: "One specific thing." },
+      { title: "Placeholder art project", category: "art", summary: "Replace this with your own work. Two sentences.", tools: "SVG, CSS", learned: "One specific thing." },
+      { title: "Placeholder hardware project", category: "hardware", summary: "Replace this with your own work. Two sentences.", tools: "micro:bit, MakeCode", learned: "One specific thing." }
+    ];
+
+    const filterBar = document.querySelector("#filters");
+    const grid = document.querySelector("#project-grid");
+    const status = document.querySelector("#filter-status");
+
+    // ---------- FUNCTIONS ----------
+
+    // THE CHALLENGE ANSWER, PART 1:
+    // collect every category that actually exists, with no repeats.
+    // A Set refuses duplicates, so "game" appearing twice still yields one button.
+    function collectCategories() {
+      const found = new Set(projects.map(function (project) { return project.category; }));
+      return ["all"].concat(Array.from(found).sort());
+    }
+
+    // THE CHALLENGE ANSWER, PART 2: draw a real <button> for each category.
+    function buildFilterButtons() {
+      filterBar.replaceChildren();
+      collectCategories().forEach(function (category) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "filter";
+        button.dataset.category = category;
+        button.setAttribute("aria-pressed", String(category === "all"));
+        // Capital first letter for display only; the data keeps lower case.
+        button.textContent = category === "all"
+          ? "All"
+          : category.charAt(0).toUpperCase() + category.slice(1);
+        filterBar.append(button);
+      });
+    }
+
+    function createDetail(label, value) {
+      const fragment = document.createDocumentFragment();
+      const term = document.createElement("dt");
+      term.textContent = label;
+      const definition = document.createElement("dd");
+      definition.textContent = value;
+      fragment.append(term, definition);
+      return fragment;
+    }
+
+    function createProjectCard(project) {
+      const card = document.createElement("li");
+      card.className = "project-card";
+
+      const thumb = document.createElement("div");
+      thumb.className = "thumb";
+      thumb.setAttribute("aria-hidden", "true");
+      thumb.textContent = "Your screenshot here";
+
+      const heading = document.createElement("h3");
+      heading.textContent = project.title;
+
+      const badge = document.createElement("p");
+      badge.className = "badge";
+      badge.textContent = project.category;
+
+      const summary = document.createElement("p");
+      summary.textContent = project.summary;
+
+      const details = document.createElement("dl");
+      details.className = "card-details";
+      details.append(
+        createDetail("Tools", project.tools),
+        createDetail("One thing I learned", project.learned)
+      );
+
+      card.append(thumb, heading, badge, summary, details);
+      return card;
+    }
+
+    function renderProjects(list) {
+      grid.replaceChildren();
+      if (list.length === 0) {
+        const empty = document.createElement("li");
+        empty.className = "empty-state";
+        empty.textContent = "No work in this category yet. Try another filter.";
+        grid.append(empty);
+        return;
+      }
+      list.forEach(function (project) { grid.append(createProjectCard(project)); });
+    }
+
+    function announce(category, shownCount) {
+      if (shownCount === 0) {
+        status.textContent = "No work tagged " + category + " yet.";
+      } else if (category === "all") {
+        status.textContent = "Showing all " + shownCount + " projects.";
+      } else {
+        status.textContent = "Showing " + shownCount + " " + category + " project" +
+          (shownCount === 1 ? "" : "s") + ".";
+      }
+    }
+
+    function setPressedButton(category) {
+      filterBar.querySelectorAll(".filter").forEach(function (button) {
+        button.setAttribute("aria-pressed", String(button.dataset.category === category));
+      });
+    }
+
+    function applyFilter(category) {
+      const matching = projects.filter(function (project) {
+        return category === "all" || project.category === category;
+      });
+      setPressedButton(category);
+      renderProjects(matching);
+      announce(category, matching.length);
+    }
+
+    function handleFilterClick(event) {
+      const button = event.target.closest(".filter");
+      if (!button) return;
+      applyFilter(button.dataset.category);
+    }
+
+    // ---------- START ----------
+    function init() {
+      buildFilterButtons();
+      applyFilter("all");
+      filterBar.addEventListener("click", handleFilterClick);
+    }
+
+    init();
+  </script>
+</body>
+</html>

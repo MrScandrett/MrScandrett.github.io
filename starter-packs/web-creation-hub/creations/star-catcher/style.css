@@ -1,0 +1,120 @@
+/* WHAT: Star Catcher's own stylesheet. It borrows the hub's colour variables so
+   the pack looks like one project rather than three unrelated pages.
+   TRY THIS: change --accent here, in bounce-lab/style.css and in the hub's
+   style.css to recolour everything. */
+:root {
+  color-scheme: dark;
+  --bg: #0b0f1a;
+  --panel: #151d2e;
+  --panel-edge: #2a3549;
+  --text: #edf2fb;
+  --muted: #9dabc4;
+  --accent: #ffc857;
+  --accent-ink: #2a1c00;
+  --game: #7ee0b8;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0 auto;
+  padding: 32px 16px 56px;
+  width: min(880px, 100%);
+  background: radial-gradient(circle at 80% -10%, #1c2740, var(--bg) 60%);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  line-height: 1.6;
+}
+
+h1 { margin: 0 0 8px; font-size: clamp(1.9rem, 5vw, 2.8rem); }
+h2 { margin-top: 40px; font-size: 1.35rem; }
+.eyebrow { margin: 0 0 4px; color: var(--game); font-weight: 800; letter-spacing: .14em; font-size: .78rem; }
+.lede { color: var(--muted); max-width: 62ch; }
+.note { color: var(--muted); max-width: 66ch; }
+.muted { color: var(--muted); font-size: .9rem; }
+a { color: var(--accent); }
+code { font-family: ui-monospace, Consolas, monospace; color: var(--accent); font-size: .95em; }
+kbd {
+  font-family: ui-monospace, Consolas, monospace; font-size: .85em;
+  padding: 1px 7px; border: 1px solid var(--panel-edge); border-radius: 6px;
+  background: var(--panel); color: var(--text);
+}
+
+.skip-link {
+  position: absolute; left: -9999px; top: 8px;
+  padding: 8px 14px; border-radius: 8px;
+  background: var(--accent); color: var(--accent-ink); font-weight: 700;
+}
+.skip-link:focus { left: 16px; }
+
+/* WHAT: hidden from the screen, still read aloud by a screen reader.
+   WHY: never use display:none for a heading you still want announced —
+   display:none removes it from the accessibility tree as well. */
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px;
+  margin: -1px; padding: 0; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+
+/* WHAT: the canvas element is 720x480 in its HTML attributes — that is the
+   drawing surface. WHY these CSS rules: they let it shrink on a narrow screen
+   without changing the coordinate system game.js draws in. */
+canvas {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  aspect-ratio: 3 / 2;
+  margin: 20px auto 0;
+  border: 1px solid var(--panel-edge);
+  border-radius: 16px;
+  background: #0a1120;
+  touch-action: none;
+}
+
+.readouts {
+  display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
+  margin: 16px 0 0; padding: 0;
+}
+.readouts > div {
+  min-width: 116px; padding: 10px 16px;
+  border: 1px solid var(--panel-edge); border-radius: 12px;
+  background: var(--panel); text-align: center;
+}
+.readouts dt { color: var(--muted); font-size: .74rem; letter-spacing: .1em; text-transform: uppercase; }
+.readouts dd { margin: 2px 0 0; font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.status {
+  min-height: 1.6em; margin: 14px 0 0;
+  text-align: center; color: var(--game); font-weight: 600;
+}
+
+.buttons { display: flex; gap: 10px; justify-content: center; margin-top: 14px; }
+
+button {
+  font: inherit; cursor: pointer; font-weight: 700;
+  padding: 10px 22px; border-radius: 999px;
+  border: 1px solid var(--panel-edge); background: var(--panel); color: var(--text);
+}
+button:hover { border-color: var(--accent); }
+
+/* WHY :focus-visible and not :focus — the outline appears for keyboard users
+   and stays out of the way of mouse clicks. Never replace this with
+   outline: none. A keyboard user who cannot see where they are is stuck. */
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 8px; }
+
+.controls {
+  max-width: 66ch;
+  padding: 14px 18px;
+  border-left: 3px solid var(--panel-edge);
+  background: var(--panel);
+  border-radius: 0 12px 12px 0;
+}
+.controls dt { color: var(--muted); font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; }
+.controls dd { margin: 2px 0 10px; }
+.controls dd:last-child { margin-bottom: 0; }
+
+ul { max-width: 66ch; color: var(--muted); }
+ul strong { color: var(--text); }
+li { margin-bottom: 8px; }
+
+footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--panel-edge); }

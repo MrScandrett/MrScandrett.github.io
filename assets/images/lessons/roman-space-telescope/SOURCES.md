@@ -22,7 +22,7 @@ Retrieved 2026-09-06. These are authentic published NASA photographs, engineerin
 - [Source and full credits: NASA SVS 14181, Roman Interactive Stills](https://svs.gsfc.nasa.gov/14181/), released August 4, 2022.
 - NASA educational media reuse; contractor participation is disclosed rather than assuming every illustration is a federal employee work. Downloaded official 1024px print JPEGs, without cropping.
 
-### nancy-roman.webp
+### nancy-roman.jpg
 - Historical photograph of Nancy Grace Roman with a model of the planned Hubble telescope, 1966. The model is **not** the Roman telescope.
 - Credit: **NASA**.
 - [Source](https://science.nasa.gov/people/nancy-roman/).

@@ -1,0 +1,279 @@
+<!doctype html>
+<!--
+  ============================================================
+  REFERENCE BUILD — WebXR Gallery
+  This file completes CHALLENGE 5 from challenges.md:
+  "Report honestly whether this device could enter VR, without pretending."
+
+  Why that challenge is worth doing: nearly every WebXR tutorial puts an
+  "Enter VR" button on the page and finds out later whether it works. That
+  button is a promise, and on most machines it is a broken one. The version
+  below asks three separate questions in order, says which one failed, and only
+  offers the button when all three answers are yes. A disabled button with a
+  sentence explaining why is more use than an enabled button that does nothing.
+
+  Everything here runs offline and needs no headset. Opened from a file:// URL
+  it will report "not a secure context" — that is the correct answer, not a bug,
+  and it is worth seeing.
+
+  Try it yourself first, then compare. Other answers are possible.
+  CSS and JavaScript are inline here so the whole thing reads in one scroll.
+  ============================================================
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reference: an honest capability report — WebXR Gallery</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0d0b14; --panel: #191527; --panel-edge: #322a4a;
+      --text: #f0ecf8; --muted: #a99fc2; --accent: #ffb86b; --accent-ink: #2b1600;
+      --yes: #7ee0b8; --no: #ff9a9a; --maybe: #ffc857;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0 auto; padding: 28px 16px 56px; width: min(820px, 100%);
+      background: radial-gradient(circle at 15% -10%, #221a35, var(--bg) 60%);
+      color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+    h1 { margin: 0 0 8px; font-size: clamp(1.8rem, 5vw, 2.5rem); }
+    h2 { margin-top: 36px; font-size: 1.25rem; }
+    .eyebrow { margin: 0 0 4px; color: var(--accent); font-weight: 800; letter-spacing: .14em; font-size: .78rem; }
+    .lede { color: var(--muted); max-width: 62ch; }
+    p.note { color: var(--muted); max-width: 68ch; }
+    code { font-family: ui-monospace, Consolas, monospace; color: var(--accent); font-size: .95em; }
+
+    .checks { list-style: none; margin: 20px 0 0; padding: 0; }
+    .check {
+      display: grid; grid-template-columns: 30px 1fr; gap: 12px;
+      padding: 16px 18px; margin-bottom: 10px;
+      border: 1px solid var(--panel-edge); border-radius: 14px; background: var(--panel);
+    }
+    .check .mark { font-size: 1.25rem; line-height: 1.3; text-align: center; }
+    .check h3 { margin: 0 0 2px; font-size: 1.02rem; }
+    .check p { margin: 0; color: var(--muted); font-size: .94rem; }
+    .check[data-result="yes"] .mark { color: var(--yes); }
+    .check[data-result="no"] .mark { color: var(--no); }
+    .check[data-result="pending"] .mark { color: var(--maybe); }
+
+    .verdict {
+      margin-top: 22px; padding: 16px 18px;
+      border: 1px solid var(--panel-edge); border-left: 5px solid var(--accent);
+      border-radius: 0 14px 14px 0; background: var(--panel);
+    }
+    .verdict p { margin: 0; }
+
+    button {
+      font: inherit; font-weight: 700; cursor: pointer;
+      margin-top: 16px; padding: 11px 24px; border-radius: 999px;
+      border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink);
+    }
+    /* WHAT: a disabled button that still looks deliberate.
+       WHY: :disabled already stops clicks and is announced as unavailable, so
+       there is nothing to add in JavaScript. Never fake this with a class and a
+       click handler that returns early — a screen reader is not told about a
+       class, so it announces a button that cannot be pressed. */
+    button:disabled { cursor: not-allowed; opacity: .45; }
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <header>
+    <p class="eyebrow">REFERENCE BUILD · CHALLENGE 5</p>
+    <h1>Can this device enter VR?</h1>
+    <p class="lede">
+      Three questions, asked in order, each answered from the browser rather than
+      guessed. The button at the bottom is only offered when all three say yes.
+    </p>
+  </header>
+
+  <main>
+    <ul class="checks" id="checks"></ul>
+
+    <div class="verdict">
+      <p id="verdict">Checking…</p>
+    </div>
+
+    <button id="enter" type="button" disabled>Enter VR</button>
+
+    <h2>Why it is three questions and not one</h2>
+    <p class="note">
+      <strong>1. Is <code>navigator.xr</code> there at all?</strong> On most
+      desktop browsers it simply is not, and reading a property of something
+      undefined throws. This is feature detection: ask the browser what it has
+      rather than guessing from its name. A name can be changed by anybody; the
+      property is the truth.
+    </p>
+    <p class="note">
+      <strong>2. Is this a secure context?</strong> The browser hides WebXR
+      unless the page came over HTTPS or from <code>localhost</code>. Opening
+      the file directly (<code>file://</code>) is not secure enough, and neither
+      is typing your laptop's <code>http://192.168.…</code> address into a
+      headset's browser — that surprises almost everybody the first time.
+      <code>window.isSecureContext</code> answers it in one word.
+    </p>
+    <p class="note">
+      <strong>3. Is an immersive session actually available?</strong> A browser
+      can support WebXR on a machine with no headset plugged in.
+      <code>navigator.xr.isSessionSupported("immersive-vr")</code> returns a
+      promise, so this answer arrives a moment after the other two — which is
+      why the row starts as "checking" rather than as a guess.
+    </p>
+    <p class="note">
+      There is a fourth rule that no amount of checking gets around: entering a
+      session requires a real click. A page cannot put somebody into a headset
+      on load. That is a safety rule, not an obstacle to route around.
+    </p>
+  </main>
+
+  <script>
+    "use strict";
+
+    const checksEl = document.querySelector("#checks");
+    const verdictEl = document.querySelector("#verdict");
+    const enterButton = document.querySelector("#enter");
+
+    // Each check: a name, an explanation, and a result of
+    // "yes" | "no" | "pending". Rendering is driven entirely by this array, so
+    // an answer arriving late is a data change followed by a redraw — never a
+    // hunt through the page for the row that needs updating.
+    // `blocker` is how this check reads in the one-line verdict at the bottom.
+    // Reusing `title` there produced sentences like "an immersive VR session is
+    // available — no", which is exactly the kind of wording that makes a reader
+    // stop and re-read. Two fields, each written for where it appears.
+    const checks = [
+      {
+        id: "api", title: "The WebXR API exists",
+        blocker: "this browser has no WebXR API",
+        detail: "Checking…", result: "pending"
+      },
+      {
+        id: "secure", title: "The page is a secure context",
+        blocker: "this page is not a secure context",
+        detail: "Checking…", result: "pending"
+      },
+      {
+        id: "session", title: "An immersive VR session is available",
+        blocker: "no immersive VR session is available on this device",
+        detail: "Checking…", result: "pending"
+      }
+    ];
+
+    const MARKS = { yes: "✓", no: "✕", pending: "…" };
+
+    function render() {
+      checksEl.replaceChildren();
+      checks.forEach(function (check) {
+        const item = document.createElement("li");
+        item.className = "check";
+        item.dataset.result = check.result;
+
+        const mark = document.createElement("p");
+        mark.className = "mark";
+        mark.textContent = MARKS[check.result];
+        // WHY aria-hidden on the tick: a screen reader would read "✓" as
+        // "check mark", which says nothing about WHAT passed. The sentence
+        // underneath carries the meaning, so the symbol is decoration.
+        mark.setAttribute("aria-hidden", "true");
+
+        const body = document.createElement("div");
+        const heading = document.createElement("h3");
+        heading.textContent = check.title;
+        const detail = document.createElement("p");
+        // The result is put into words, not left to the colour and the symbol.
+        // Roughly one reader in twelve cannot rely on the colour, and nobody
+        // listening to the page gets either.
+        const prefix = check.result === "yes" ? "Yes. " : check.result === "no" ? "No. " : "";
+        detail.textContent = prefix + check.detail;
+        body.append(heading, detail);
+
+        item.append(mark, body);
+        checksEl.append(item);
+      });
+    }
+
+    function setCheck(id, result, detail) {
+      const check = checks.find(function (entry) { return entry.id === id; });
+      check.result = result;
+      check.detail = detail;
+      render();
+      updateVerdict();
+    }
+
+    function updateVerdict() {
+      const failed = checks.find(function (check) { return check.result === "no"; });
+      const waiting = checks.some(function (check) { return check.result === "pending"; });
+
+      if (failed) {
+        verdictEl.textContent =
+          "This device cannot enter VR from this page, because " + failed.blocker +
+          ". The gallery itself is unaffected — which is the whole reason the flat " +
+          "version is built first.";
+        enterButton.disabled = true;
+        return;
+      }
+      if (waiting) {
+        verdictEl.textContent = "Still asking the browser…";
+        enterButton.disabled = true;
+        return;
+      }
+      verdictEl.textContent =
+        "All three checks passed. A headset session is genuinely possible here, " +
+        "so the button below is offered — and only now.";
+      enterButton.disabled = false;
+    }
+
+    async function runChecks() {
+      // Question 1. "xr" in navigator is safe even when it is missing, which is
+      // the whole reason to write it this way round.
+      const hasApi = "xr" in navigator && navigator.xr;
+      setCheck("api", hasApi ? "yes" : "no",
+        hasApi
+          ? "navigator.xr is present in this browser."
+          : "navigator.xr does not exist in this browser, so nothing else here can be asked.");
+
+      // Question 2.
+      setCheck("secure", window.isSecureContext ? "yes" : "no",
+        window.isSecureContext
+          ? "The page was loaded over HTTPS or from localhost."
+          : "This page is not a secure context — opened from a file, or over plain http. WebXR stays hidden until it is served over HTTPS.");
+
+      if (!hasApi) {
+        setCheck("session", "no", "There is no API to ask, so this question cannot be answered.");
+        return;
+      }
+
+      // Question 3. isSessionSupported returns a promise, and it is allowed to
+      // reject — a headset browser in a strange state, or a permissions policy
+      // that blocks XR, both end up here. try/catch means a rejection becomes a
+      // clear sentence on the page rather than a red line in a console nobody
+      // has open.
+      try {
+        const supported = await navigator.xr.isSessionSupported("immersive-vr");
+        setCheck("session", supported ? "yes" : "no",
+          supported
+            ? "The browser reports that an immersive-vr session can be started."
+            : "The API is here, but no immersive-vr session is available — usually no headset is connected.");
+      } catch (error) {
+        setCheck("session", "no",
+          "Asking the browser threw an error: " + error.message);
+      }
+    }
+
+    enterButton.addEventListener("click", function () {
+      // Deliberately not started here. Requesting a session needs a renderer to
+      // hand the headset's views to, which this reference does not have — and
+      // saying so is more honest than opening a session that shows a black void.
+      verdictEl.textContent =
+        "This reference stops here on purpose: a session needs something to draw. " +
+        "Wiring requestSession to a real renderer is the next project, not this one.";
+    });
+
+    render();
+    runChecks();
+  </script>
+</body>
+</html>

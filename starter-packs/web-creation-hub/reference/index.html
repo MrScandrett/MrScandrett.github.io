@@ -1,0 +1,334 @@
+<!doctype html>
+<!--
+  ============================================================
+  REFERENCE BUILD — Creation Hub
+  This file completes CHALLENGE 4 from challenges.md:
+  "Add a search box that works together with the category filters."
+
+  Why that challenge is worth doing: it is the first time two controls have to
+  agree about what is on screen. The tempting version keeps a list of "currently
+  visible cards" and hides some of them, and it goes wrong the moment somebody
+  types and then clicks a filter. The version below keeps ONE object describing
+  what is being asked for — the category and the search text — and rebuilds the
+  catalog from the data every time either one changes. Nothing on screen is ever
+  read back to work out what to do next.
+
+  Try it yourself first, then compare. Other answers are possible.
+  CSS and JavaScript are inline here so the whole thing reads in one scroll.
+  ============================================================
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reference: search plus filters — Creation Hub</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0f1a; --panel: #151d2e; --panel-edge: #2a3549;
+      --text: #edf2fb; --muted: #9dabc4; --accent: #ffc857; --accent-ink: #2a1c00;
+      --game: #7ee0b8; --sim: #8ecdf7; --art: #f79fd0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0 auto; padding: 28px 16px 56px; width: min(980px, 100%);
+      background: radial-gradient(circle at 80% -10%, #1c2740, var(--bg) 60%);
+      color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+    h1 { margin: 0 0 8px; font-size: clamp(1.8rem, 5vw, 2.6rem); }
+    h2 { margin-top: 32px; font-size: 1.3rem; }
+    h3 { margin: 0; font-size: 1.1rem; }
+    .eyebrow { margin: 0 0 4px; color: var(--accent); font-weight: 800; letter-spacing: .14em; font-size: .78rem; }
+    .lede { color: var(--muted); max-width: 62ch; }
+    code { font-family: ui-monospace, Consolas, monospace; color: var(--accent); font-size: .95em; }
+
+    .search { margin-top: 24px; }
+    .search label { display: block; color: var(--muted); font-size: .85rem; letter-spacing: .06em; text-transform: uppercase; }
+    .search input {
+      font: inherit; width: min(360px, 100%); margin-top: 6px;
+      padding: 10px 14px; border-radius: 10px;
+      border: 1px solid var(--panel-edge); background: var(--panel); color: var(--text);
+    }
+
+    .filter-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    button {
+      font: inherit; cursor: pointer; font-weight: 600;
+      padding: 8px 16px; border-radius: 999px;
+      border: 1px solid var(--panel-edge); background: var(--panel); color: var(--text);
+    }
+    button[aria-pressed="true"] {
+      background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 800;
+    }
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 8px; }
+
+    .status { min-height: 1.5em; margin: 16px 0 0; color: var(--accent); font-size: .95rem; }
+
+    .card-list {
+      list-style: none; margin: 12px 0 0; padding: 0;
+      display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+    .card {
+      display: flex; flex-direction: column; gap: 10px; padding: 18px;
+      border: 1px solid var(--panel-edge); border-radius: 16px; background: var(--panel);
+    }
+    .card p { margin: 0; }
+    .card .blurb { color: var(--muted); }
+    .badge {
+      align-self: start; padding: 2px 12px; border-radius: 999px;
+      font-size: .75rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #0b0f1a;
+    }
+    .badge-game { background: var(--game); }
+    .badge-simulation { background: var(--sim); }
+    .badge-art { background: var(--art); }
+    .launch {
+      align-self: start; margin-top: auto; display: inline-block;
+      padding: 10px 20px; border-radius: 999px;
+      background: var(--accent); color: var(--accent-ink); font-weight: 800; text-decoration: none;
+    }
+    .empty-slot {
+      margin-top: auto; padding: 10px 14px; border: 1px dashed var(--panel-edge);
+      border-radius: 12px; color: var(--muted); font-size: .92rem;
+    }
+    .empty {
+      margin-top: 16px; padding: 20px; border: 1px dashed var(--panel-edge);
+      border-radius: 16px; background: #101728; color: var(--muted);
+    }
+    .empty[hidden] { display: none; }
+    .empty h3 { color: var(--text); margin-bottom: 4px; }
+    .note { max-width: 68ch; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <p class="eyebrow">REFERENCE BUILD · CHALLENGE 4</p>
+    <h1>The Workshop</h1>
+    <p class="lede">
+      The same catalog, with a search box that works together with the category
+      buttons instead of fighting them. Type <code>star</code> and then click
+      <strong>Simulation</strong>: you get an honest empty state, not a stale
+      card left over from the last thing you did.
+    </p>
+  </header>
+
+  <main>
+    <p class="search">
+      <label for="search">Search titles and blurbs</label>
+      <input id="search" type="search" placeholder="try: star, physics, bounce" autocomplete="off">
+    </p>
+
+    <div id="filter-buttons" class="filter-row"></div>
+
+    <p id="catalog-status" class="status" aria-live="polite"></p>
+
+    <ul id="creation-list" class="card-list"></ul>
+
+    <div id="no-matches" class="empty" hidden>
+      <h3>Nothing matches both of those</h3>
+      <p>Clear the search box, or pick a different category.</p>
+    </div>
+
+    <h2>What changed from the starter</h2>
+    <p class="note">
+      One object, <code>query</code>, holds everything being asked for. Both
+      controls write into it and then call the same <code>refresh()</code>.
+      Adding a third control later means adding a third field — no existing
+      code has to learn about it. Compare that with the version where each
+      control hides and shows cards on its own: with two controls that needs two
+      rules, and with three it needs six, one for every pair.
+    </p>
+  </main>
+
+  <script>
+    "use strict";
+
+    const CREATIONS = [
+      {
+        id: "star-catcher",
+        title: "Star Catcher",
+        category: "game",
+        blurb: "Catch falling stars in a basket you steer with the keyboard. Sixty seconds, one life, and a score you can actually beat.",
+        controls: [
+          { label: "Move", detail: "Left and Right arrow keys, or A and D" },
+          { label: "Pause and resume", detail: "P, or the Pause button" },
+          { label: "Play again", detail: "R, or the Play again button" }
+        ],
+        path: "../creations/star-catcher/index.html"
+      },
+      {
+        id: "bounce-lab",
+        title: "Bounce Lab",
+        category: "simulation",
+        blurb: "Drop a handful of balls and change the physics while they are still moving. Turn gravity down, turn bounce up, and watch what the numbers actually do.",
+        controls: [
+          { label: "Gravity, bounce, ball count", detail: "The three sliders. They take effect immediately." },
+          { label: "Run and pause", detail: "The Run button, or the Space bar" },
+          { label: "Reset", detail: "The Reset button — drops a fresh set of balls" }
+        ],
+        path: "../creations/bounce-lab/index.html"
+      },
+      {
+        id: "your-art-piece",
+        title: "Your generative artwork",
+        category: "art",
+        blurb: "Nothing here yet. Copy one of the folders in creations/, make it draw something of yours, then replace this entry with the real thing.",
+        controls: [{ label: "Controls", detail: "Write them here once the piece exists." }],
+        path: null
+      }
+    ];
+
+    const ALL = "all";
+
+    const filterRow = document.querySelector("#filter-buttons");
+    const searchBox = document.querySelector("#search");
+    const list = document.querySelector("#creation-list");
+    const statusLine = document.querySelector("#catalog-status");
+    const noMatches = document.querySelector("#no-matches");
+
+    // ---------- THE CHANGE ----------
+    // Everything being asked for, in one object. This is the whole idea of the
+    // challenge: two controls, one description of the request.
+    const query = { category: ALL, text: "" };
+
+    function categoriesInUse() {
+      return Array.from(new Set(CREATIONS.map(c => c.category))).sort();
+    }
+
+    function titleCase(word) {
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    }
+
+    function buildFilters() {
+      filterRow.replaceChildren();
+      [ALL].concat(categoriesInUse()).forEach(function (category) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.dataset.category = category;
+        button.setAttribute("aria-pressed", String(category === query.category));
+        button.textContent = category === ALL ? "All" : titleCase(category);
+        filterRow.append(button);
+      });
+    }
+
+    // Does one creation satisfy BOTH parts of the request?
+    // Both comparisons are lower-cased, because a visitor typing "Star" means
+    // the same thing as one typing "star" and the page should not disagree.
+    function matches(creation) {
+      const categoryOk = query.category === ALL || creation.category === query.category;
+      const haystack = (creation.title + " " + creation.blurb).toLowerCase();
+      const textOk = query.text === "" || haystack.includes(query.text);
+      return categoryOk && textOk;
+    }
+
+    function createControlsBlock(controls) {
+      const block = document.createElement("dl");
+      block.style.cssText = "margin:0;padding:10px 14px;border-left:3px solid var(--panel-edge);background:#101728;border-radius:0 10px 10px 0;font-size:.92rem;";
+      controls.forEach(function (control) {
+        const dt = document.createElement("dt");
+        dt.style.cssText = "color:var(--muted);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;";
+        dt.textContent = control.label;
+        const dd = document.createElement("dd");
+        dd.style.margin = "2px 0 8px";
+        dd.textContent = control.detail;
+        block.append(dt, dd);
+      });
+      return block;
+    }
+
+    function createCard(creation) {
+      const card = document.createElement("li");
+      card.className = "card";
+
+      const badge = document.createElement("p");
+      badge.className = "badge badge-" + creation.category;
+      badge.textContent = creation.category;
+
+      const heading = document.createElement("h3");
+      heading.textContent = creation.title;
+
+      const blurb = document.createElement("p");
+      blurb.className = "blurb";
+      blurb.textContent = creation.blurb;
+
+      card.append(badge, heading, blurb, createControlsBlock(creation.controls));
+
+      if (creation.path) {
+        const link = document.createElement("a");
+        link.className = "launch";
+        link.href = creation.path;
+        link.textContent = "Open";
+        link.setAttribute("aria-label", "Open " + creation.title);
+        card.append(link);
+      } else {
+        const slot = document.createElement("p");
+        slot.className = "empty-slot";
+        slot.textContent = "Not built yet — there is no folder for this one.";
+        card.append(slot);
+      }
+      return card;
+    }
+
+    // Says what is on screen, including WHY it is empty. "No matches" is not
+    // enough when two things could be responsible for the emptiness.
+    function announce(count) {
+      const searching = query.text !== "";
+      const filtering = query.category !== ALL;
+
+      if (count > 0) {
+        let sentence = "Showing " + count + " creation" + (count === 1 ? "" : "s");
+        if (filtering) sentence += " tagged " + query.category;
+        if (searching) sentence += " matching “" + query.text + "”";
+        statusLine.textContent = sentence + ".";
+        return;
+      }
+
+      if (searching && filtering) {
+        statusLine.textContent = "Nothing tagged " + query.category + " matches “" + query.text + "”.";
+      } else if (searching) {
+        statusLine.textContent = "Nothing matches “" + query.text + "”.";
+      } else {
+        statusLine.textContent = "Nothing tagged " + query.category + " yet.";
+      }
+    }
+
+    // The one function that redraws everything, called by both controls.
+    function refresh() {
+      const shown = CREATIONS.filter(matches);
+
+      filterRow.querySelectorAll("button").forEach(function (button) {
+        button.setAttribute("aria-pressed", String(button.dataset.category === query.category));
+      });
+
+      list.replaceChildren();
+      noMatches.hidden = shown.length > 0;
+      shown.forEach(function (creation) {
+        list.append(createCard(creation));
+      });
+
+      announce(shown.length);
+    }
+
+    function init() {
+      buildFilters();
+      refresh();
+
+      filterRow.addEventListener("click", function (event) {
+        const button = event.target.closest("button");
+        if (!button) return;
+        query.category = button.dataset.category;
+        refresh();
+      });
+
+      // "input" fires on every keystroke, including paste and the little clear
+      // button inside a search field. "change" would wait for the field to lose
+      // focus, which feels broken in a search box.
+      searchBox.addEventListener("input", function () {
+        query.text = searchBox.value.trim().toLowerCase();
+        refresh();
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>

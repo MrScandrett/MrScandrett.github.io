@@ -10,7 +10,14 @@ const packs = [
   "browser-game-builder",
   "pygame-arcade",
   "creative-coding-demoscene",
-  "godot-adventure"
+  "godot-adventure",
+  "web-foundations",
+  "web-portfolio",
+  "web-business",
+  "web-store",
+  "web-wiki",
+  "web-creation-hub",
+  "webxr-gallery"
 ];
 const requiredTutorialFiles = ["README-FIRST.md", "challenges.md", "troubleshooting.md", "credits.txt"];
 

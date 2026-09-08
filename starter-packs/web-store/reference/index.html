@@ -1,0 +1,336 @@
+<!doctype html>
+<!--
+  ============================================================================
+  REFERENCE BUILD — GUIDED CHANGE 4: "Add a quantity limit of 10 per product"
+  ============================================================================
+  This file completes guided change 4 from README-FIRST.md. Open it AFTER you
+  have made your own attempt, not before.
+
+  The change lives in changeQuantity(). The limit is applied to the DATA (the
+  quantity stored in the cart array), not to the number printed on screen, and
+  the visitor is told what happened through the live region instead of being
+  silently ignored.
+
+  This file is deliberately self-contained: the CSS and JavaScript are inside
+  it, so it runs on its own and you can diff it against your work without
+  worrying about which stylesheet it picked up. Your version should keep them
+  in separate files.
+
+  Practice only. Fictional shop. No checkout, no payment, no orders.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reference — Quantity Limit (Nebula Supply)</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0a1020; --panel: #141d33; --panel-edge: #2b3a5c;
+      --text: #eef3ff; --muted: #a3b1cd; --accent: #7ee0b8; --accent-ink: #06231a; --warn: #ffd479;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 0 0 48px; color: var(--text); line-height: 1.55;
+      background: radial-gradient(circle at 20% -10%, #1d2c50, var(--bg) 60%);
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    .shell { width: min(1000px, 100% - 32px); margin-inline: auto; }
+    header { padding-top: 32px; }
+    h1 { margin: 0 0 8px; font-size: clamp(1.8rem, 5vw, 2.8rem); }
+    h2 { margin-top: 36px; }
+    h3 { margin: 0 0 6px; font-size: 1.05rem; }
+    .eyebrow { margin: 0 0 4px; color: var(--accent); font-weight: 800; letter-spacing: .14em; font-size: .8rem; }
+    .lede { color: var(--muted); }
+    .notice { margin: 16px 0 0; padding: 12px 16px; border: 1px solid var(--warn); border-radius: 12px; background: #2a2411; color: #ffeec4; }
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin: 16px 0 0; padding: 0; list-style: none; }
+    .product-card { display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid var(--panel-edge); border-radius: 16px; background: var(--panel); }
+    .product-swatch { height: 84px; border-radius: 12px; background: #26314f; }
+    .product-price { font-weight: 800; font-size: 1.15rem; margin: 0; }
+    .product-blurb { margin: 0; color: var(--muted); font-size: .95rem; flex: 1; }
+    .product-tag { align-self: start; padding: 2px 10px; border-radius: 999px; background: #22304e; color: var(--muted); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; }
+    button { font: inherit; cursor: pointer; border: 0; border-radius: 999px; padding: 10px 16px; background: var(--accent); color: var(--accent-ink); font-weight: 800; }
+    button.secondary { background: transparent; border: 1px solid var(--panel-edge); color: var(--text); font-weight: 600; }
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+    .cart-status { min-height: 1.5em; color: var(--accent); font-weight: 600; }
+    .cart-list { margin: 8px 0 0; padding: 0; list-style: none; }
+    .cart-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 12px 14px; margin-bottom: 10px; border: 1px solid var(--panel-edge); border-radius: 14px; background: var(--panel); }
+    .cart-name { font-weight: 700; }
+    .cart-each { color: var(--muted); font-size: .9rem; }
+    .cart-line-total { margin-left: auto; font-weight: 800; }
+    .qty-controls { display: flex; align-items: center; gap: 8px; }
+    .qty-controls button { width: 38px; height: 38px; padding: 0; font-size: 1.2rem; line-height: 1; }
+    .qty-value { min-width: 2ch; text-align: center; font-weight: 700; }
+    .remove-button { background: transparent; border: 1px solid #6b3550; color: #ffb4c8; padding: 8px 12px; font-weight: 600; }
+    .cart-empty { padding: 20px; border: 1px dashed var(--panel-edge); border-radius: 16px; background: #101a2f; color: var(--muted); }
+    .cart-empty h3 { color: var(--text); }
+    .cart-empty[hidden] { display: none; }
+    .cart-total { margin-top: 16px; font-size: 1.2rem; }
+    footer { margin-top: 40px; color: var(--muted); font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <header class="shell">
+    <p class="eyebrow">REFERENCE BUILD — GUIDED CHANGE 4</p>
+    <h1>Nebula Supply Co.</h1>
+    <p class="lede">Finished version of the "maximum 10 per product" change. Compare this with your own attempt.</p>
+    <p class="notice" role="note">
+      <strong>Practice only.</strong> Fictional products. No checkout, no payment, and no order is ever created.
+    </p>
+  </header>
+
+  <main class="shell">
+    <section aria-labelledby="catalog-heading">
+      <h2 id="catalog-heading">Products</h2>
+      <ul id="product-list" class="product-grid"></ul>
+    </section>
+
+    <section aria-labelledby="cart-heading">
+      <h2 id="cart-heading">Your cart</h2>
+      <p id="cart-status" class="cart-status" aria-live="polite"></p>
+      <ul id="cart-list" class="cart-list"></ul>
+      <div id="cart-empty" class="cart-empty">
+        <h3>Your cart is empty</h3>
+        <p>Choose <strong>Add to cart</strong> on any product above. Your items and a running total will appear here.</p>
+      </div>
+      <p class="cart-total">Running total: <strong id="cart-total">$0.00</strong></p>
+      <button id="clear-cart" type="button" class="secondary">Empty the cart</button>
+    </section>
+  </main>
+
+  <footer class="shell">
+    <p>ClassroomOS web store starter — reference build.</p>
+  </footer>
+
+  <script>
+    "use strict";
+
+    // ---- THE CHANGE -------------------------------------------------------
+    // One named constant instead of a bare 10 buried in a function, so the
+    // rule has a name and can be changed in one place.
+    const MAX_PER_PRODUCT = 10;
+    // -----------------------------------------------------------------------
+
+    const PRODUCTS = [
+      { id: "orbit-notebook", name: "Orbit Field Notebook", priceCents: 899, tag: "paper", color: "#2f4a6d",
+        blurb: "Dot-grid pages that lie flat, for sketching mechanisms and bad first ideas." },
+      { id: "solder-practice", name: "Solder Practice Board", priceCents: 1250, tag: "electronics", color: "#3c3260",
+        blurb: "Thirty throwaway joints so your first real circuit is not your first attempt." },
+      { id: "filament-sample", name: "Filament Sample Spool", priceCents: 675, tag: "3d printing", color: "#1f4a44",
+        blurb: "A short spool for test prints, so a failed benchy costs pennies." },
+      { id: "caliper-basic", name: "Beginner Digital Caliper", priceCents: 2199, tag: "tools", color: "#5a3a2c",
+        blurb: "Measures to a tenth of a millimetre. The tool that ends guessing." },
+      { id: "sticker-pack", name: "Lab Sticker Sheet", priceCents: 350, tag: "extras", color: "#4b2f4e",
+        blurb: "Twelve vinyl stickers of imaginary instruments. Fictional, like this shop." }
+    ];
+
+    let cart = [];
+
+    const productList = document.querySelector("#product-list");
+    const cartList = document.querySelector("#cart-list");
+    const cartEmpty = document.querySelector("#cart-empty");
+    const cartTotalLabel = document.querySelector("#cart-total");
+    const cartStatus = document.querySelector("#cart-status");
+    const clearButton = document.querySelector("#clear-cart");
+
+    // Money is stored in whole cents and only becomes text here.
+    function formatMoney(cents) {
+      return "$" + Math.floor(cents / 100) + "." + String(cents % 100).padStart(2, "0");
+    }
+
+    function cartTotalCents() {
+      let total = 0;
+      for (const line of cart) {
+        const product = findProduct(line.id);
+        if (product) total += product.priceCents * line.quantity;
+      }
+      return total;
+    }
+
+    function findProduct(id) { return PRODUCTS.find((p) => p.id === id); }
+    function findCartLine(id) { return cart.find((line) => line.id === id); }
+    function announce(message) { cartStatus.textContent = message; }
+
+    // Adding also respects the limit — otherwise Add to cart would be a way
+    // around it, which is exactly the kind of gap that ships to real users.
+    function addToCart(id) {
+      const product = findProduct(id);
+      if (!product) return;
+      const existing = findCartLine(id);
+
+      if (existing) {
+        if (existing.quantity >= MAX_PER_PRODUCT) {
+          announce("Limit reached: you can order at most " + MAX_PER_PRODUCT + " of " + product.name + ".");
+          return;
+        }
+        existing.quantity += 1;
+      } else {
+        cart.push({ id: id, quantity: 1 });
+      }
+      announce(product.name + " added. Cart total is now " + formatMoney(cartTotalCents()) + ".");
+      renderCart();
+    }
+
+    // THE CHANGE: the ceiling is checked against the stored quantity, before
+    // anything is drawn. The screen can only ever show what the data allows.
+    function changeQuantity(id, step) {
+      const line = findCartLine(id);
+      if (!line) return;
+      const product = findProduct(id);
+      const wanted = line.quantity + step;
+
+      if (wanted < 1) { removeFromCart(id); return; }
+
+      if (wanted > MAX_PER_PRODUCT) {
+        announce("Limit reached: you can order at most " + MAX_PER_PRODUCT + " of " + product.name + ".");
+        return;
+      }
+
+      line.quantity = wanted;
+      announce(product.name + " quantity is now " + line.quantity + ".");
+      renderCart();
+    }
+
+    function removeFromCart(id) {
+      const product = findProduct(id);
+      cart = cart.filter((line) => line.id !== id);
+      announce((product ? product.name : "Item") + " removed from the cart.");
+      renderCart();
+    }
+
+    function emptyCart() {
+      if (cart.length === 0) { announce("The cart is already empty."); return; }
+      cart = [];
+      announce("Cart emptied.");
+      renderCart();
+    }
+
+    function buildProductCard(product) {
+      const item = document.createElement("li");
+      item.className = "product-card";
+
+      const swatch = document.createElement("div");
+      swatch.className = "product-swatch";
+      swatch.style.background = product.color;
+      swatch.setAttribute("aria-hidden", "true");
+
+      const tag = document.createElement("span");
+      tag.className = "product-tag";
+      tag.textContent = product.tag;
+
+      const name = document.createElement("h3");
+      name.textContent = product.name;
+
+      const price = document.createElement("p");
+      price.className = "product-price";
+      price.textContent = formatMoney(product.priceCents);
+
+      const blurb = document.createElement("p");
+      blurb.className = "product-blurb";
+      blurb.textContent = product.blurb;
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = "Add to cart";
+      button.dataset.productId = product.id;
+      button.dataset.action = "add";
+      button.setAttribute("aria-label", "Add " + product.name + " to cart");
+
+      item.append(swatch, tag, name, price, blurb, button);
+      return item;
+    }
+
+    function renderProducts() {
+      productList.textContent = "";
+      for (const product of PRODUCTS) productList.append(buildProductCard(product));
+    }
+
+    function buildCartRow(line) {
+      const product = findProduct(line.id);
+      const row = document.createElement("li");
+      row.className = "cart-row";
+
+      const name = document.createElement("span");
+      name.className = "cart-name";
+      name.textContent = product.name;
+
+      const each = document.createElement("span");
+      each.className = "cart-each";
+      each.textContent = formatMoney(product.priceCents) + " each";
+
+      const controls = document.createElement("div");
+      controls.className = "qty-controls";
+
+      const down = document.createElement("button");
+      down.type = "button";
+      down.textContent = "−";
+      down.dataset.productId = product.id;
+      down.dataset.action = "decrease";
+      down.setAttribute("aria-label", "Decrease quantity of " + product.name);
+
+      const quantity = document.createElement("span");
+      quantity.className = "qty-value";
+      quantity.textContent = String(line.quantity);
+
+      const up = document.createElement("button");
+      up.type = "button";
+      up.textContent = "+";
+      up.dataset.productId = product.id;
+      up.dataset.action = "increase";
+      up.setAttribute("aria-label", "Increase quantity of " + product.name);
+      // A control that cannot do anything should say so, not fail silently.
+      if (line.quantity >= MAX_PER_PRODUCT) {
+        up.disabled = true;
+        up.title = "Maximum " + MAX_PER_PRODUCT + " per product";
+      }
+
+      controls.append(down, quantity, up);
+
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "remove-button";
+      remove.textContent = "Remove";
+      remove.dataset.productId = product.id;
+      remove.dataset.action = "remove";
+      remove.setAttribute("aria-label", "Remove " + product.name + " from cart");
+
+      const lineTotal = document.createElement("span");
+      lineTotal.className = "cart-line-total";
+      lineTotal.textContent = formatMoney(product.priceCents * line.quantity);
+
+      row.append(name, each, controls, remove, lineTotal);
+      return row;
+    }
+
+    function renderCart() {
+      cartList.textContent = "";
+      for (const line of cart) {
+        if (findProduct(line.id)) cartList.append(buildCartRow(line));
+      }
+      cartEmpty.hidden = cart.length > 0;
+      cartTotalLabel.textContent = formatMoney(cartTotalCents());
+    }
+
+    function handleClick(event) {
+      const button = event.target.closest("button[data-action]");
+      if (!button) return;
+      const id = button.dataset.productId;
+      if (button.dataset.action === "add") addToCart(id);
+      if (button.dataset.action === "increase") changeQuantity(id, 1);
+      if (button.dataset.action === "decrease") changeQuantity(id, -1);
+      if (button.dataset.action === "remove") removeFromCart(id);
+    }
+
+    function init() {
+      renderProducts();
+      renderCart();
+      announce("Reference build ready. Maximum " + MAX_PER_PRODUCT + " of each product. Nothing here can be purchased.");
+      productList.addEventListener("click", handleClick);
+      cartList.addEventListener("click", handleClick);
+      clearButton.addEventListener("click", emptyCart);
+    }
+
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,298 @@
+<!doctype html>
+<!--
+  ============================================================
+  REFERENCE BUILD — Web Business
+  This file completes CHALLENGE 4 from challenges.md:
+  "Check each field as the person leaves it, instead of only on submit."
+
+  What changed from the starter pack:
+    * leaving a field (the "blur" event) checks just that field
+    * once a field has shown an error, it re-checks on every keystroke, so the
+      message disappears the moment it is fixed
+    * a field is never marked wrong before somebody has had a chance to fill it
+  That last rule is the one people get wrong: shouting "required!" at an empty
+  box the person has not reached yet is hostile, not helpful.
+
+  Everything else is unchanged, including the most important thing: NOTHING IS
+  EVER SENT. The form validates and previews. Read "What a real contact form
+  needs" in README-FIRST.md.
+
+  This business is invented. CSS and JavaScript are inline so it reads in one scroll.
+  ============================================================
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reference: live field checking — Web Business</title>
+  <style>
+    :root {
+      --bg: #f4f6f3; --surface: #fff; --text: #16221b; --muted: #55665c;
+      --brand: #1f3d2b; --accent: #9a6b12; --error: #a3260f; --ok: #17603a;
+      --border: #d5ded7; --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 20px; background: var(--bg); color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.6;
+    }
+    header, main, footer { width: min(900px, 100%); margin-inline: auto; }
+    header {
+      padding: 14px 18px; border: 1px solid var(--border);
+      border-radius: var(--radius); background: var(--surface);
+    }
+    .eyebrow { margin: 0; color: var(--accent); font-size: .7rem; font-weight: 800; letter-spacing: .14em; }
+    h1 { margin: 0; font-size: clamp(1.4rem, 4.5vw, 2.2rem); line-height: 1.2; }
+    h2 { margin-top: 0; font-size: clamp(1.15rem, 3vw, 1.4rem); }
+    main { margin-block: 26px; }
+    .callout {
+      padding: 14px 16px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+      border-left: 5px solid var(--accent); border-radius: var(--radius);
+      background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+    }
+    form { display: grid; gap: 16px; max-width: 34rem; margin-top: 18px; }
+    .field { display: grid; gap: 5px; }
+    label { font-weight: 700; }
+    .req { color: var(--muted); font-weight: 400; font-size: .85em; }
+    input, select, textarea {
+      padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;
+      background: var(--surface); color: inherit; font: inherit;
+    }
+    textarea { resize: vertical; }
+    [aria-invalid="true"] { border-color: var(--error); border-width: 2px; }
+    .error { margin: 0; color: var(--error); font-size: .9rem; font-weight: 600; }
+    .error:empty { display: none; }
+    .hint { margin: 0; color: var(--muted); font-size: .88rem; }
+    .button {
+      padding: 11px 20px; border: 0; border-radius: 999px; background: var(--brand);
+      color: #fff; font: inherit; font-weight: 700; cursor: pointer;
+    }
+    .status { margin: 16px 0 0; font-weight: 600; }
+    .status:empty { display: none; }
+    .status-error { color: var(--error); }
+    .status-ok { color: var(--ok); }
+    .preview {
+      margin-top: 20px; padding: 18px 20px; border: 2px dashed var(--accent);
+      border-radius: var(--radius); background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+    }
+    .preview h3 { margin-top: 0; color: var(--accent); }
+    .preview-body { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 12px 0 0; }
+    .preview-body dt { font-weight: 700; }
+    .preview-body dd { margin: 0; color: var(--muted); overflow-wrap: anywhere; }
+    .small { color: var(--muted); font-size: .88rem; }
+    footer { padding-top: 14px; border-top: 1px solid var(--border); color: var(--muted); font-size: .9rem; }
+    :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; border-radius: 6px; }
+    @media (max-width: 420px) { .preview-body { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <p class="eyebrow">WEB BUSINESS &middot; REFERENCE &middot; INVENTED BUSINESS</p>
+    <h1>Live field checking</h1>
+  </header>
+
+  <main>
+    <section aria-labelledby="contact-heading">
+      <h2 id="contact-heading">Ask about a repair</h2>
+
+      <p class="callout">
+        <strong>This form does not send anything.</strong> It checks your answers
+        and shows a preview on this page. Nothing leaves this browser window.
+      </p>
+
+      <form id="contact-form" novalidate>
+        <div class="field">
+          <label for="name">Your name <span class="req">(required)</span></label>
+          <input id="name" name="name" type="text" autocomplete="name" aria-describedby="name-error">
+          <p class="error" id="name-error"></p>
+        </div>
+
+        <div class="field">
+          <label for="email">Email address <span class="req">(required)</span></label>
+          <input id="email" name="email" type="email" autocomplete="email" aria-describedby="email-error">
+          <p class="error" id="email-error"></p>
+        </div>
+
+        <div class="field">
+          <label for="service">Which service? <span class="req">(required)</span></label>
+          <select id="service" name="service" aria-describedby="service-error">
+            <option value="">Choose one</option>
+            <option value="Safety check">Safety check</option>
+            <option value="Gears and brakes">Gears and brakes</option>
+            <option value="Wheel rebuild">Wheel rebuild</option>
+            <option value="Something else">Something else</option>
+          </select>
+          <p class="error" id="service-error"></p>
+        </div>
+
+        <div class="field">
+          <label for="message">What is wrong with the bike? <span class="req">(required)</span></label>
+          <textarea id="message" name="message" rows="5" aria-describedby="message-error message-hint"></textarea>
+          <p class="hint" id="message-hint">At least 10 characters. The make and model helps.</p>
+          <p class="error" id="message-error"></p>
+        </div>
+
+        <button type="submit" class="button">Check and preview my message</button>
+      </form>
+
+      <p id="form-status" class="status" role="status" aria-live="polite"></p>
+
+      <section id="preview" class="preview" aria-labelledby="preview-heading" hidden>
+        <h3 id="preview-heading">Preview &mdash; not sent to anyone</h3>
+        <p class="small">
+          This message exists only in this browser window. Nobody has received it.
+          Refresh the page and it is gone.
+        </p>
+        <dl id="preview-body" class="preview-body"></dl>
+      </section>
+    </section>
+  </main>
+
+  <footer>
+    <p>Reference build for an invented business. Starter pack from Mr. Scandrett's ClassroomOS.</p>
+  </footer>
+
+  <script>
+    "use strict";
+
+    // ---------- DATA ----------
+    const validationRules = [
+      {
+        id: "name",
+        label: "Your name",
+        check: function (value) {
+          if (value.trim() === "") return "Please enter your name so we know who to reply to.";
+          if (value.trim().length < 2) return "That looks too short. Please enter your full name.";
+          return "";
+        }
+      },
+      {
+        id: "email",
+        label: "Email address",
+        check: function (value) {
+          const text = value.trim();
+          if (text === "") return "Please enter an email address.";
+          const looksLikeEmail = text.includes("@") && text.indexOf("@") < text.lastIndexOf(".");
+          if (!looksLikeEmail) return "That does not look like an email address. Check for a missing @ or a missing dot.";
+          return "";
+        }
+      },
+      {
+        id: "service",
+        label: "Which service",
+        check: function (value) {
+          if (value === "") return "Please choose a service from the list.";
+          return "";
+        }
+      },
+      {
+        id: "message",
+        label: "What is wrong with the bike",
+        check: function (value) {
+          if (value.trim() === "") return "Please describe the problem.";
+          if (value.trim().length < 10) return "Please add a little more detail - at least 10 characters.";
+          return "";
+        }
+      }
+    ];
+
+    const form = document.querySelector("#contact-form");
+    const formStatus = document.querySelector("#form-status");
+    const preview = document.querySelector("#preview");
+    const previewBody = document.querySelector("#preview-body");
+
+    // ---------- FUNCTIONS ----------
+
+    function showFieldError(rule, messageText) {
+      const field = document.querySelector("#" + rule.id);
+      document.querySelector("#" + rule.id + "-error").textContent = messageText;
+      field.setAttribute("aria-invalid", messageText === "" ? "false" : "true");
+    }
+
+    // Check one field and show or clear its message. Returns true if it is fine.
+    function checkOneField(rule) {
+      const field = document.querySelector("#" + rule.id);
+      const messageText = rule.check(field.value);
+      showFieldError(rule, messageText);
+      return messageText === "";
+    }
+
+    function findProblems() {
+      const problems = [];
+      validationRules.forEach(function (rule) {
+        if (!checkOneField(rule)) problems.push(rule);
+      });
+      return problems;
+    }
+
+    function addPreviewRow(label, value) {
+      const term = document.createElement("dt");
+      term.textContent = label;
+      const definition = document.createElement("dd");
+      definition.textContent = value;
+      previewBody.append(term, definition);
+    }
+
+    function showPreview() {
+      previewBody.replaceChildren();
+      addPreviewRow("From", document.querySelector("#name").value.trim());
+      addPreviewRow("Reply to", document.querySelector("#email").value.trim());
+      addPreviewRow("Service", document.querySelector("#service").value);
+      addPreviewRow("Message", document.querySelector("#message").value.trim());
+      preview.hidden = false;
+      formStatus.textContent =
+        "Your message looks complete. A preview is shown below. Nothing has been sent, because this page cannot send mail.";
+      formStatus.className = "status status-ok";
+    }
+
+    function handleSubmit(event) {
+      event.preventDefault();
+      const problems = findProblems();
+
+      if (problems.length > 0) {
+        preview.hidden = true;
+        formStatus.textContent = problems.length === 1
+          ? "One field needs fixing: " + problems[0].label + "."
+          : problems.length + " fields need fixing. The first is " + problems[0].label + ".";
+        formStatus.className = "status status-error";
+        document.querySelector("#" + problems[0].id).focus();
+        return;
+      }
+
+      showPreview();
+    }
+
+    // THE CHALLENGE ANSWER.
+    // Two listeners per field, with different timing on purpose:
+    //   "blur"  - fires when the person leaves the field. Checking here is polite:
+    //             they have finished their attempt.
+    //   "input" - fires on every keystroke, but ONLY corrects a message that is
+    //             already showing. Checking on every keystroke from the start
+    //             would call an empty box wrong before it has been typed in.
+    function watchField(rule) {
+      const field = document.querySelector("#" + rule.id);
+
+      field.addEventListener("blur", function () {
+        checkOneField(rule);
+      });
+
+      field.addEventListener("input", function () {
+        if (field.getAttribute("aria-invalid") === "true") checkOneField(rule);
+      });
+
+      // A <select> has no typing, so "change" is its equivalent of input.
+      if (field.tagName === "SELECT") {
+        field.addEventListener("change", function () { checkOneField(rule); });
+      }
+    }
+
+    // ---------- START ----------
+    function init() {
+      form.addEventListener("submit", handleSubmit);
+      validationRules.forEach(watchField);
+    }
+
+    init();
+  </script>
+</body>
+</html>

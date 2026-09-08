@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Design with CSS · ClassroomOS</title>
+<meta name="description" content="Lesson 3 of Build Your Own Web: selectors, the box model, a spacing scale, type, color, Flexbox, Grid and one media query.">
+<link rel="icon" href="../assets/images/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/classroom-home.css">
+<link rel="stylesheet" href="../assets/css/lessons/web-design-pathway.css">
+<script src="../assets/js/theme-registry.js" defer></script>
+<script src="../assets/js/lessons/web-design-pathway.js" defer></script>
+<script src="../assets/js/lessons/web-foundations-labs.js" defer></script>
+</head>
+<body class="web-course">
+<a class="skip-link" href="#main">Skip to lesson</a>
+<header class="web-topbar">
+<a href="web-design-pathway.html"><strong>Build Your Own Web</strong></a>
+<nav aria-label="Site"><a href="../steam-lessons.html">STEAM lessons</a><a href="../paths.html">All pathways</a><a href="../class-downloads.html">Downloads</a></nav>
+</header>
+<main id="main" class="web-main">
+
+<section class="web-hero">
+<p class="web-meta">Lesson 3 of the pathway · 55–75 minutes · You need the folder and the HTML from Lessons 1 and 2</p>
+<h1>Design with CSS</h1>
+<p class="web-lead">HTML says what your page means. CSS says what it looks like. In this lesson you set spacing, type and color once, then let a grid arrange your project cards at any screen size.</p>
+<p>Work in <code>style.css</code>. Save, then refresh the browser after every change. If nothing happens, check that <code>index.html</code> still contains <code>&lt;link rel=&quot;stylesheet&quot; href=&quot;style.css&quot;&gt;</code> inside its <code>&lt;head&gt;</code>.</p>
+</section>
+
+<section class="web-section">
+<h2>A rule has three parts</h2>
+<p>Every CSS rule points at some elements and changes some of their properties.</p>
+<pre><code>h1 {              /* selector: which elements */
+  color: #14243d; /* property: value; */
+  margin-bottom: 8px;
+}</code></pre>
+<p>You only need four kinds of selector to build a real site. Learn these, and add more later when you actually need them.</p>
+<div class="web-table">
+<table>
+<caption class="web-muted">The four selectors that do most of the work</caption>
+<thead><tr><th>Selector</th><th>Matches</th><th>Use it for</th></tr></thead>
+<tbody>
+<tr><td><code>p</code></td><td>Every paragraph on the page</td><td>Site-wide defaults: type, color, spacing</td></tr>
+<tr><td><code>.card</code></td><td>Elements with <code>class="card"</code></td><td>Anything you repeat — this is your main tool</td></tr>
+<tr><td><code>#contact</code></td><td>The one element with <code>id="contact"</code></td><td>A single unique thing, usually a link target</td></tr>
+<tr><td><code>.card h3</code></td><td>Headings <em>inside</em> a card</td><td>Styling parts of a component</td></tr>
+</tbody>
+</table>
+</div>
+<h3>When two rules disagree</h3>
+<p>Sometimes the browser ignores a rule you wrote. It is rarely broken; usually another rule won. The browser scores selectors — an id beats a class, a class beats an element name — and when two rules score the same, the later one wins.</p>
+<pre><code>p        { color: gray; }   /* score: element */
+.intro   { color: navy; }   /* score: class — this one wins */</code></pre>
+<p class="web-callout"><strong>The rule to live by:</strong> style with classes. Reach for ids and long selector chains only when a class genuinely cannot do the job. Never use <code>!important</code> to win an argument you can win by deleting the rule that conflicts.</p>
+</section>
+
+<section class="web-section">
+<h2>Every element is a box</h2>
+<p>Point at any element on your page and the browser is drawing four nested layers around it: the content, then <strong>padding</strong> inside the border, then the <strong>border</strong>, then <strong>margin</strong> as empty space outside it.</p>
+<pre><code>.card {
+  padding: 16px;                 /* space inside the border */
+  border: 1px solid #c6d0df;     /* the line itself */
+  margin-bottom: 16px;           /* space pushing other things away */
+}</code></pre>
+<p>The difference matters: padding grows the coloured area of a box, margin does not. If a background color stops too close to your text, you want more padding. If two boxes are crowding each other, you want more margin.</p>
+<p>Add this one rule at the top of every stylesheet you ever write:</p>
+<pre><code>*, *::before, *::after { box-sizing: border-box; }</code></pre>
+<p>Without it, a box set to <code>width: 300px</code> with 16px of padding really occupies 332 pixels and your layouts overflow. With it, the width you asked for is the width you get.</p>
+</section>
+
+<section class="web-section">
+<h2>Pick a spacing scale and keep it</h2>
+<p>Beginner pages look untidy for one boring reason: the spacing is 13px here, 7px there, 22px somewhere else. Professional pages usually use one small set of numbers everywhere. Store them once as <strong>custom properties</strong>:</p>
+<pre><code>:root {
+  --space: 16px;          /* one step */
+  --space-lg: 32px;       /* two steps */
+  --accent: #2455a6;
+}
+
+.card { padding: var(--space); }
+section { margin-bottom: var(--space-lg); }
+a { color: var(--accent); }</code></pre>
+<p>A custom property is a name you invent, starting with two dashes, that holds a value; declaring it on <code>:root</code> makes it available to the whole document. Changing your accent color across fifty rules is now one edit, not fifty.</p>
+</section>
+
+<section class="web-section">
+<h2>Type people can actually read</h2>
+<p>Three settings do most of the work: size, line height, and line length.</p>
+<pre><code>body {
+  font-family: system-ui, Arial, sans-serif;
+  font-size: 18px;
+  line-height: 1.6;      /* 1.6 × the font size */
+}
+p { max-width: 65ch; }   /* about 65 characters per line */</code></pre>
+<p>Line height under about 1.4 feels cramped, and a line running the full width of a wide monitor is genuinely hard to read: your eye loses its place coming back to the left edge. The <code>ch</code> unit is the width of a zero in the current font, so <code>65ch</code> is roughly the measure a book uses.</p>
+<p>Headings need a scale, not random sizes. Pick three or four steps and stop: for example 2rem, 1.5rem, 1.25rem. Keep the same font family for everything until the rest of the site works.</p>
+</section>
+
+<section class="web-section">
+<h2>Color, and the contrast check you owe your reader</h2>
+<p>Text must stand out from what is behind it: at least a 4.5 to 1 contrast ratio for normal text. Light gray on white fails. You cannot judge this by eye on a bright screen, so check it.</p>
+<ol class="web-steps">
+<li>Open your page, right-click your body text and choose <strong>Inspect</strong>.</li>
+<li>Find the <code>color</code> value in the Styles panel and click its color swatch.</li>
+<li>Chrome and Firefox show the contrast ratio against the background. Aim for 4.5 or higher.</li>
+</ol>
+<p>Also: never use color as the only signal. If your "sold out" cards are just red, a reader who cannot distinguish red from green learns nothing. Add a word, an icon, or a border as well.</p>
+<p>Finally, make focus visible. Keyboard users need to see where they are:</p>
+<pre><code>:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }</code></pre>
+</section>
+
+<section class="web-section">
+<h2>Flexbox: a row of things</h2>
+<p>Flexbox lays items out along one line and shares out the leftover space. It is the right tool for a navigation bar, a row of buttons, or a header with a title on the left and links on the right.</p>
+<pre><code>.site-nav {
+  display: flex;             /* children become a row */
+  gap: var(--space);         /* space between them */
+  align-items: center;       /* line them up vertically */
+  flex-wrap: wrap;           /* let them drop to a new line if narrow */
+}</code></pre>
+<p>Add <code>justify-content: space-between;</code> and the first child hugs the left edge while the last hugs the right. Leave <code>flex-wrap: wrap</code> on, or a narrow phone squashes your links instead of stacking them.</p>
+</section>
+
+<section class="web-section">
+<h2>Grid: a layout of cards</h2>
+<p>Flexbox arranges one line. Grid arranges rows <em>and</em> columns at the same time, which is what a page of project cards needs. Three properties do it:</p>
+<pre><code>.cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space);
+}</code></pre>
+<p><code>1fr</code> means "one share of the free space", so three of them make three equal columns. <code>minmax(0, 1fr)</code> is the safe version: it allows a column to shrink below the size of its content instead of forcing the page to scroll sideways.</p>
+
+<div class="web-lab">
+<h3>Lab: feel what the grid properties do</h3>
+<p>Change the controls and watch the preview. The narrower widths simulate a phone. Read the generated rule at the bottom as you go — it is real CSS you can use.</p>
+
+<label for="css-columns">Column count</label>
+<select id="css-columns">
+<option value="1">1 — a single stacked column</option>
+<option value="2">2 — two equal columns</option>
+<option value="3" selected>3 — three equal columns</option>
+<option value="auto">auto-fit — responsive, fits as many as will comfortably fit</option>
+</select>
+
+<label for="css-gap">Gap between cards: <span id="css-gap-value"></span></label>
+<input type="range" id="css-gap" min="0" max="48" value="16">
+
+<label for="css-width">Available width: <span id="css-width-value"></span></label>
+<input type="range" id="css-width" min="30" max="100" value="100">
+
+<div id="css-preview">
+<div class="web-panel"><h3>Maze game</h3><p>A keyboard-controlled maze with three levels and a timer.</p></div>
+<div class="web-panel"><h3>Bridge simulator</h3><p>Load a truss and watch which members go into tension.</p></div>
+<div class="web-panel"><h3>Photo filters</h3><p>Adjust brightness and contrast on an image in the browser.</p></div>
+<div class="web-panel"><h3>Study timer</h3><p>Twenty-five minutes of work, then a five minute break.</p></div>
+<div class="web-panel"><h3>Weather log</h3><p>A week of temperatures recorded and charted by hand.</p></div>
+<div class="web-panel"><h3>Story map</h3><p>Clickable locations from a book, each with a short note.</p></div>
+</div>
+
+<p><strong>The rule this produces:</strong></p>
+<pre id="css-generated"></pre>
+<p id="css-feedback" class="web-feedback" aria-live="polite"></p>
+</div>
+
+<p><strong>Check.</strong> With three fixed columns, drag the width down to 30%. The columns stay at three, the cards get very narrow, and the words start breaking one per line. Now switch to auto-fit and drag the width again: the number of columns drops to two, then one, and the text stays readable. That difference is the whole idea of responsive layout.</p>
+<p><strong>Repair.</strong> If your own grid overflows the screen, look for these three things in order: a fixed <code>width</code> in pixels on the cards, a missing <code>minmax(0, 1fr)</code>, or a long unbroken string such as a URL. For the last one add <code>overflow-wrap: anywhere;</code> to the card.</p>
+<p>Copy the generated rule into your own <code>style.css</code>, then give the element wrapping your project cards the matching <code>class="cards"</code>. Save both files and refresh. If nothing changes, the class in the HTML and the selector in the CSS do not match — that is the cause nine times in ten.</p>
+</section>
+
+<section class="web-section">
+<h2>Responsive design without guessing</h2>
+<p>Responsive does not mean "make a phone version". It means writing a layout that has no fixed idea of how wide it is. Two habits get you most of the way:</p>
+<ul>
+<li><strong>Prefer fluid values.</strong> <code>width: 100%</code>, <code>max-width: 1100px</code> and <code>1fr</code> adapt on their own. <code>width: 960px</code> cannot.</li>
+<li><strong>Let content set the breakpoint.</strong> Drag your browser window narrower until the layout actually looks bad. That width is where you add a media query — not 768px because someone said so.</li>
+</ul>
+<pre><code>.page { width: 100%; max-width: 1100px; margin: 0 auto; }
+
+@media (max-width: 700px) {
+  .cards { grid-template-columns: 1fr; }
+  body   { font-size: 17px; }
+}</code></pre>
+<p>Read that query as: "when the viewport is 700px wide or less, also apply these rules." Everything outside the query still applies; the query only overrides the few properties inside it. One well-chosen breakpoint beats five guessed ones.</p>
+<p>Test it honestly: open developer tools, use the device toolbar to check a 360px phone, then zoom the browser to 200%. A layout that survives both will survive most real visitors.</p>
+</section>
+
+<section class="web-section">
+<h2>Your starting stylesheet</h2>
+<p>This is a complete, working <code>style.css</code>. Replace the file from Lesson 1 with it, then change the custom properties at the top first — those five lines control the feel of the whole site.</p>
+<pre><code>/* ---------------------------------------------------------
+   style.css — starting point for the Build Your Own Web site
+   Change the values in :root first. Everything else follows.
+   --------------------------------------------------------- */
+
+/* 1. Design tokens: the numbers and colors used everywhere. */
+:root {
+  --space: 16px;
+  --space-lg: 32px;
+  --accent: #2455a6;
+  --ink: #172944;
+  --paper: #ffffff;
+  --line: #c6d0df;
+}
+
+/* 2. Sensible defaults. box-sizing keeps widths predictable. */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: var(--space);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: system-ui, Arial, sans-serif;
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+/* 3. A heading scale. Three steps is enough for one site. */
+h1 { font-size: 2rem;    line-height: 1.2; margin: 0 0 var(--space); }
+h2 { font-size: 1.5rem;  line-height: 1.25; margin: var(--space-lg) 0 var(--space); }
+h3 { font-size: 1.25rem; line-height: 1.3; margin: var(--space) 0 8px; }
+
+/* 4. Readable measure: about 65 characters per line. */
+p, li { max-width: 65ch; }
+
+/* 5. Links, and a focus ring keyboard users can see. */
+a { color: var(--accent); }
+a:hover { text-decoration-thickness: 2px; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+/* 6. The page container: fluid, but never uncomfortably wide. */
+.page { width: 100%; max-width: 1100px; margin: 0 auto; }
+
+/* 7. A row (Flexbox) for the navigation. */
+.site-nav {
+  display: flex;
+  gap: var(--space);
+  align-items: center;
+  flex-wrap: wrap;
+  padding-bottom: var(--space);
+  border-bottom: 1px solid var(--line);
+}
+
+/* 8. A layout (Grid) for the project cards. */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: var(--space);
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  padding: var(--space);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.card h3 { margin-top: 0; }
+.card img { display: block; width: 100%; height: auto; border-radius: 6px; }
+
+/* 9. One breakpoint, chosen because the cards get cramped here. */
+@media (max-width: 700px) {
+  body { font-size: 17px; padding: 12px; }
+  h1 { font-size: 1.65rem; }
+  .site-nav { gap: 10px; }
+}</code></pre>
+<p class="web-muted">This file styles a page whose wrapper has <code>class="page"</code>, whose nav has <code>class="site-nav"</code>, and whose card list has <code>class="cards"</code> with each item <code>class="card"</code>. Add those class names to your HTML from Lesson 2 or nothing will change.</p>
+</section>
+
+<section class="web-section">
+<h2>Before you move on</h2>
+<p>Do a last pass narrow, then wide. Nothing should scroll sideways, no text should touch an edge, and every link should outline when you press <kbd>Tab</kbd>. Note the one change that improved the page most.</p>
+<ul class="web-checklist">
+<li><label><input type="checkbox" data-web-check="0"> My stylesheet defines custom properties in <code>:root</code> and uses <code>var()</code> instead of repeating values.</label></li>
+<li><label><input type="checkbox" data-web-check="1"> I can explain the difference between padding and margin using my own page as the example.</label></li>
+<li><label><input type="checkbox" data-web-check="2"> My project cards use CSS Grid and rearrange themselves when the window gets narrow.</label></li>
+<li><label><input type="checkbox" data-web-check="3"> My body text has a readable line length and passes a 4.5:1 contrast check.</label></li>
+<li><label><input type="checkbox" data-web-check="4"> Pressing Tab shows a visible focus outline on every link.</label></li>
+</ul>
+<div class="web-progress"><progress data-web-meter max="1" value="0" aria-label="Lesson checkpoints"></progress><span data-web-progress aria-live="polite"></span><button type="button" data-web-reset>Reset this lesson’s checks</button></div>
+</section>
+
+<nav class="web-next" aria-label="Lesson sequence"><a href="web-html.html">← Previous: Give the page meaning with HTML</a><a href="web-javascript.html">Next: Make it respond with JavaScript →</a></nav>
+
+</main>
+<footer>ClassroomOS web workshop · Read, change, test, explain. <a href="web-design-pathway.html">Course map</a></footer>
+<script src="../assets/js/lesson-print-button.js"></script>
+</body></html>

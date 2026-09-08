@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Extend into WebXR · ClassroomOS</title>
+<meta name="description" content="Optional final extension: build a 3D gallery of your projects that runs on any desktop browser and, on supported hardware, in an immersive VR session.">
+<link rel="icon" href="../assets/images/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/classroom-home.css">
+<link rel="stylesheet" href="../assets/css/lessons/web-design-pathway.css">
+<script src="../assets/js/theme-registry.js" defer></script>
+<script src="../assets/js/lessons/web-design-pathway.js" defer></script>
+<script type="module" src="../assets/js/lessons/webxr-gallery.mjs"></script>
+</head>
+<body class="web-course">
+<a class="skip-link" href="#main">Skip to lesson</a>
+<header class="web-topbar">
+<a href="web-design-pathway.html"><strong>Build Your Own Web</strong></a>
+<nav aria-label="Site"><a href="../steam-lessons.html">STEAM lessons</a><a href="../paths.html">All pathways</a><a href="../class-downloads.html">Downloads</a></nav>
+</header>
+<main id="main" class="web-main">
+
+<section class="web-hero web-split">
+<div>
+<p class="web-meta">Lesson 10 · Optional extension · 45–60 minutes</p>
+<h1>Extend into WebXR</h1>
+<p class="web-lead">WebXR lets a web page ask the browser for a headset. When one is there, your gallery becomes a room you can stand in. When one is not — which will be the case for most people reading this — the same page is still a working 3D gallery you drive with your mouse and some buttons.</p>
+<p><strong>You are not blocked without a headset.</strong> The desktop gallery is the deliverable for this lesson. VR is a bonus that happens to be available on some machines. Nothing below asks you to buy hardware.</p>
+</div>
+<div class="web-panel">
+<h2>What you are building</h2>
+<p>A small room holding three exhibit panels, one for each of your projects. It runs inside your existing site, on the page you already publish, using the same HTML and JavaScript you have been writing all course.</p>
+<p>Two rules hold the whole lesson together:</p>
+<ul>
+<li>The 3D view is an <strong>enhancement</strong>. The flat page underneath it must carry the same information.</li>
+<li>Anything the 3D view can do, a plain button or a plain list must also be able to do.</li>
+</ul>
+<p class="web-muted">Deeper XR concepts — AR, MR, tracking, controllers, and the design questions around them — are covered in <a href="xr-extended-reality.html">Extended Reality</a>.</p>
+</div>
+</section>
+
+<section class="web-section">
+<h2>What WebXR is, and what it is not</h2>
+<p>WebXR is a browser API. Your JavaScript asks <code>navigator.xr</code> whether an immersive session is possible, and if the user agrees, the browser hands your renderer a pair of eye views and the position of the headset. Your page keeps running the whole time. There is no separate app, no install, and no store.</p>
+<p>What it is <em>not</em> is a replacement for your website. A headset is a device some visitors have; a screen is a device nearly all of them have. If your projects only exist inside the 3D room, most of your audience cannot see them at all. Build the flat version first, then let the 3D version show the same content in another form. This is the same "enhancement, not replacement" idea you used when you made the site work without JavaScript.</p>
+<p>Three practical limits are worth knowing before you start:</p>
+<ul>
+<li><strong>WebXR requires a secure context.</strong> The browser only exposes <code>navigator.xr</code> on HTTPS pages or on <code>localhost</code>. Opening the file directly, or typing your laptop's <code>http://192.168.…</code> LAN address into a headset browser, is not enough — an HTTP address on the local network is not a secure context, and the VR button will stay disabled. Publishing to GitHub Pages, which is HTTPS, is the easy way to satisfy this.</li>
+<li><strong>Support varies by device and browser</strong>, and it can change with an update. Ask at runtime with <code>isSessionSupported</code>; never assume.</li>
+<li><strong>Entering VR needs a real user gesture.</strong> A page cannot drop somebody into a headset session on load. That is a deliberate safety rule, not a bug to work around.</li>
+</ul>
+</section>
+
+<section class="web-section">
+<h2>The gallery</h2>
+<p>This is the working example. Drag nothing and install nothing: use the buttons. The status line tells you exactly what this device and browser can do.</p>
+
+<div class="web-lab">
+<h3>Project gallery</h3>
+<canvas id="gallery-canvas" width="960" height="540" aria-label="Three-dimensional gallery room with three exhibit panels. The same exhibits are listed in text below.">Your browser cannot draw this 3D scene. The exhibit list below has the same information.</canvas>
+<p id="gallery-status" class="web-feedback" aria-live="polite">Checking this device for VR support…</p>
+<div class="web-actions">
+<button type="button" id="gallery-enter" disabled>Enter VR</button>
+<button type="button" id="gallery-exit" disabled>Exit VR</button>
+<button type="button" data-gallery-look="-0.25">Look left</button>
+<button type="button" data-gallery-look="0.25">Look right</button>
+<button type="button" id="gallery-center">Center the view</button>
+</div>
+<p class="web-muted">The two VR buttons stay disabled until the page has confirmed a headset session is actually available. That is the honest state, not a fault.</p>
+
+<h3>Exhibit list</h3>
+<p>Every exhibit in the room appears here in text. This list is the accessible version of the gallery, and it works with no 3D at all.</p>
+<ul>
+<li><strong>Orbit study</strong> — the exhibit on the left. A sphere above a green panel, standing for a simulation project: something that moves on its own once you press start, like a planet on a path or a bouncing particle.</li>
+<li><strong>Geometry game</strong> — the exhibit in the middle. A cube above an orange panel, standing for a project the visitor plays: rules, input, and a score or a goal.</li>
+<li><strong>Light experiment</strong> — the exhibit on the right. A ring above a violet panel, standing for a visual experiment: colour, shading, and how a surface reacts to the direction it faces.</li>
+</ul>
+<p class="web-muted">The three shapes are drawn with a normal material, so their colours come from which way each face is pointing rather than from a light in the room. Turning your view changes the colours you see on the same object.</p>
+</div>
+
+<p><strong>Check:</strong> you see a dark room with three coloured panels and three shapes in front of them. "Look left" and "Look right" swing the view, "Center the view" puts it back, and the status line ends in a sentence about this device — either that VR is supported, or a specific reason it is not.</p>
+<p><strong>Repair:</strong> if the canvas is blank and the status line reports that 3D graphics are unavailable, WebGL is switched off or unsupported in this browser — the exhibit list still holds all the content, which is exactly why it is there. If the status line never changes from "Checking this device", open the console: a module that fails to load is the usual cause, and the path <code>../assets/js/lessons/webxr-gallery.mjs</code> must be exact, including its case. If "Enter VR" stays disabled with a headset connected, read the status text before anything else — it distinguishes an insecure page, a browser with no WebXR, and a device with no immersive session available.</p>
+</section>
+
+<section class="web-section">
+<h2>How the page asks for VR</h2>
+<p>The whole VR negotiation is four short moves. Read this and then read the real file, <code>assets/js/lessons/webxr-gallery.mjs</code>, next to it.</p>
+<p><strong>1. Turn XR on in the renderer</strong>, so it knows to render two eye views when a session starts:</p>
+<pre><code>renderer.xr.enabled = true;
+renderer.xr.setReferenceSpaceType('local');</code></pre>
+<p><strong>2. Ask, do not assume.</strong> Check the secure context first, then whether the browser exposes the API at all, then whether this particular session type is supported. Each failure gets its own message, because "it didn't work" is not a repairable sentence:</p>
+<pre><code>if (!window.isSecureContext) { /* HTTPS or localhost required */ }
+if (!navigator.xr) { /* browser has no WebXR at all */ }
+const supported = await navigator.xr.isSessionSupported('immersive-vr');
+enter.disabled = !supported;</code></pre>
+<p><strong>3. Start the session from a click</strong>, and hand it to the renderer:</p>
+<pre><code>session = await navigator.xr.requestSession('immersive-vr');
+await renderer.xr.setSession(session);</code></pre>
+<p><strong>4. Always draw through the XR loop.</strong> A normal <code>requestAnimationFrame</code> loop does not run at headset frame rate. <code>setAnimationLoop</code> does, and it keeps working on the desktop when no session is active:</p>
+<pre><code>renderer.setAnimationLoop(() =&gt; {
+  if (!renderer.xr.isPresenting) syncSize();
+  renderer.render(scene, camera);
+});</code></pre>
+<p>Notice what happens when step 3 fails: the code catches the error, re-enables the button, and writes the error name into the status line. Every failure path in that file ends with a working desktop gallery. That is the pattern to copy — the enhancement can fail, but the page cannot.</p>
+</section>
+
+<section class="web-section">
+<h2>Comfort and safety in a headset</h2>
+<p>If you do have hardware, this section is not optional advice. Discomfort in VR is a real physical response, not a lack of toughness.</p>
+<div class="web-split">
+<div>
+<h3>Before you put it on</h3>
+<ul>
+<li>Clear the play area: no chairs, tables, pets, or younger siblings within arm's reach, and nothing overhead.</li>
+<li>Stay seated for a gallery like this one. Sitting removes most of the risk of walking into something.</li>
+<li>Have another person nearby the first few times.</li>
+<li>Know how to leave before you enter: the headset's system button, and the <strong>Exit VR</strong> button on the page.</li>
+</ul>
+<h3>While you are in</h3>
+<ul>
+<li>Take a break every fifteen to twenty minutes, whether or not you feel you need one.</li>
+<li>Stop at the first sign of nausea, dizziness, sweating, or eye strain. It gets worse quickly and takes a while to pass.</li>
+<li>Take the headset off to talk to someone. You cannot see them.</li>
+</ul>
+</div>
+<div class="web-panel">
+<h3>Rules for what you build</h3>
+<p><strong>Do not move the camera for the user.</strong> Motion the body did not ask for is the single largest cause of sickness in VR. In this gallery the view only changes when a button is pressed, and it snaps rather than sliding.</p>
+<p><strong>Keep the frame rate steady.</strong> Stutter is uncomfortable in a way it never is on a monitor. Fewer objects and simpler materials are worth more than detail.</p>
+<p><strong>Never trap the user.</strong> There is always a visible way out, and your exit path must work even if your own code has failed.</p>
+<p><strong>No flashing.</strong> Rapid flashing can trigger seizures, and a headset fills the whole field of view.</p>
+<p><strong>Say what a visitor is walking into.</strong> Put a line on the flat page: what the scene contains, whether it moves, and roughly how long it lasts.</p>
+</div>
+</div>
+</section>
+
+<section class="web-section">
+<h2>3D is not accessible by itself</h2>
+<p>A canvas is one element containing pixels. A screen reader cannot describe a shape in it, a keyboard cannot tab to an object inside it, and someone who cannot use a mouse cannot orbit it. If the gallery were the only place your projects existed, you would have made your site less usable than it was before.</p>
+<p>Three things carry the load instead, and all three are ordinary HTML:</p>
+<ol class="web-steps">
+<li><strong>The exhibit list.</strong> Real text, in the document, naming every exhibit and describing it. It must stay in agreement with the scene — if you add a fourth exhibit to the 3D room, you add a fourth item to the list in the same commit.</li>
+<li><strong>The buttons.</strong> "Look left", "Look right", and "Center the view" are keyboard-reachable and screen-reader-readable. They give a second route to everything the mouse can do, and "Center the view" is the recovery move when someone is lost.</li>
+<li><strong>The status line.</strong> It is marked <code>aria-live="polite"</code>, so its message is announced when it changes instead of silently appearing. It also uses words, not colour, to report state — a red border alone would tell a colour-blind visitor nothing.</li>
+</ol>
+<p>Test it the way you tested the rest of your site: unplug the mouse, tab through the lab, and confirm you can read every exhibit and reach every control. Then zoom to 200% and check the list still reads properly.</p>
+</section>
+
+<section class="web-section">
+<h2>Make it your own</h2>
+<ol class="web-steps">
+<li>Copy the lab markup and the module into your own project folder, keeping the element ids the script looks for: <code>gallery-canvas</code>, <code>gallery-status</code>, <code>gallery-enter</code>, <code>gallery-exit</code>, <code>gallery-center</code>, and the <code>data-gallery-look</code> buttons.</li>
+<li>Replace the three exhibit titles with your own project names — in the script's exhibit array <em>and</em> in the HTML list. Out-of-date text under a 3D scene is worse than no text.</li>
+<li>Change the panel colours and the shapes so each exhibit is distinguishable by shape as well as colour.</li>
+<li>Add a normal link under each list item that opens the real project page. The gallery advertises the work; the flat page delivers it.</li>
+<li>Publish over HTTPS using <a href="web-publish.html">the publishing lesson</a>, then test on the real URL. The secure-context rule means the local file will never fully exercise the VR path.</li>
+</ol>
+<p>When you show this to someone, show the flat page first and the room second. If the flat page already answers "what did you make?", the 3D version is what it should be: a bonus.</p>
+</section>
+
+<section class="web-section">
+<h2>Checkpoints</h2>
+<ul class="web-checklist">
+<li><label><input type="checkbox" data-web-check="0"> I can explain why WebXR needs HTTPS or localhost, and why a LAN <code>http://</code> address does not count.</label></li>
+<li><label><input type="checkbox" data-web-check="1"> My gallery works fully on a desktop screen, with no headset involved.</label></li>
+<li><label><input type="checkbox" data-web-check="2"> My exhibit list names and describes every exhibit in the 3D scene, and the two agree.</label></li>
+<li><label><input type="checkbox" data-web-check="3"> I can reach every gallery control with the keyboard and read the status message as text.</label></li>
+<li><label><input type="checkbox" data-web-check="4"> I can state the comfort rules: clear space, breaks, no forced camera movement, always a way out.</label></li>
+</ul>
+<div class="web-progress"><progress data-web-meter max="1" value="0" aria-label="Lesson checkpoints"></progress><span data-web-progress aria-live="polite"></span><button type="button" data-web-reset>Reset this lesson’s checks</button></div>
+</section>
+
+<nav class="web-next" aria-label="Lesson sequence"><a href="web-publish.html">← Previous: Publish and maintain your website</a><a href="web-design-pathway.html">Back to the course map →</a></nav>
+
+</main>
+<footer>ClassroomOS web workshop · Read, change, test, explain. <a href="web-design-pathway.html">Course map</a></footer>
+<script src="../assets/js/lesson-print-button.js"></script>
+</body></html>

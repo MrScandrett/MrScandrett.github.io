@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Star Catcher — a Workshop creation</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip-link" href="#game">Skip to the game</a>
+
+  <header>
+    <p class="eyebrow">A WORKSHOP CREATION · GAME</p>
+    <h1>Star Catcher</h1>
+    <p class="lede">
+      Sixty seconds. Steer the basket, catch the stars, miss as few as you can.
+      Everything you see is drawn by <code>game.js</code> onto one canvas.
+    </p>
+  </header>
+
+  <main>
+    <section id="game" aria-labelledby="game-heading">
+      <h2 id="game-heading" class="visually-hidden">The game</h2>
+
+      <!-- WHAT: the text between the tags is what a browser shows when it
+           cannot draw a canvas at all. WHY: it is a real fallback, not a
+           decoration — write something useful in it. -->
+      <canvas id="stage" width="720" height="480"
+        aria-label="Play area. The basket you steer sits at the bottom and stars fall from the top. The score, time and misses are also written in text below the game.">
+        This browser cannot draw a canvas, so Star Catcher cannot run here.
+        The score readouts below still work.
+      </canvas>
+
+      <!-- WHAT: the numbers live in real HTML as well as on the canvas.
+           WHY: nothing drawn on a canvas exists for a screen reader — a canvas
+           is one image as far as the browser is concerned. If a number matters,
+           it has to be text somewhere too. -->
+      <dl class="readouts">
+        <div><dt>Score</dt><dd id="score">0</dd></div>
+        <div><dt>Missed</dt><dd id="missed">0</dd></div>
+        <div><dt>Time left</dt><dd id="time">60s</dd></div>
+      </dl>
+
+      <p id="status" class="status" role="status" aria-live="polite">Press an arrow key to start.</p>
+
+      <div class="buttons">
+        <button id="pause" type="button">Pause</button>
+        <button id="restart" type="button">Play again</button>
+      </div>
+    </section>
+
+    <section aria-labelledby="how-heading">
+      <h2 id="how-heading">How to play</h2>
+      <dl class="controls">
+        <dt>Move the basket</dt>
+        <dd>Left and Right arrow keys, or <kbd>A</kbd> and <kbd>D</kbd>.</dd>
+        <dt>Pause and resume</dt>
+        <dd><kbd>P</kbd>, or the Pause button.</dd>
+        <dt>Play again</dt>
+        <dd><kbd>R</kbd>, or the Play again button.</dd>
+      </dl>
+      <p class="note">
+        The game also pauses itself when you switch to another tab, so you never
+        come back to a run that was played without you.
+      </p>
+    </section>
+
+    <section aria-labelledby="read-heading">
+      <h2 id="read-heading">What to read in the code</h2>
+      <p>
+        Open <code>game.js</code>. It is arranged in the order the game happens:
+        settings, then state, then input, then <code>update()</code>, then
+        <code>draw()</code>, then the loop that calls those two forever.
+      </p>
+      <ul>
+        <li>
+          <strong>Nothing is drawn during <code>update()</code>, and nothing is
+          decided during <code>draw()</code>.</strong> Keeping those two jobs
+          apart is the single most useful habit in this file.
+        </li>
+        <li>
+          <strong>Movement is multiplied by <code>dt</code></strong>, the seconds
+          since the last frame. Without it the game runs at a different speed on
+          a 120&nbsp;Hz screen than on a 60&nbsp;Hz one.
+        </li>
+        <li>
+          <strong>Keys are stored, not acted on.</strong> The keydown handler
+          only records that a key is down; <code>update()</code> decides what
+          that means. That is why holding a key gives smooth movement.
+        </li>
+      </ul>
+      <p class="note">
+        Change one number in the <code>CONFIG</code> block at the top and reload.
+        That block exists so you can tune the game without hunting through the
+        logic for a number that is only used once.
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    <p><a href="../../index.html">← Back to The Workshop</a></p>
+    <p class="muted">Original ClassroomOS teaching material. No images, no audio, no libraries.</p>
+  </footer>
+
+  <script src="game.js" defer></script>
+</body>
+</html>

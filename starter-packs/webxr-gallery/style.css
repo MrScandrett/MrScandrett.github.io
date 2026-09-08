@@ -1,0 +1,142 @@
+/* WHAT: the gallery's design system, as CSS custom properties.
+   WHY at the top of the file: every colour below is a name, not a hex code, so
+   recolouring the whole pack is one small edit here.
+   TRY THIS: change --accent and reload. Then change --wall. */
+:root {
+  color-scheme: dark;
+  --bg: #0d0b14;
+  --panel: #191527;
+  --panel-edge: #322a4a;
+  --text: #f0ecf8;
+  --muted: #a99fc2;
+  --accent: #ffb86b;
+  --accent-ink: #2b1600;
+  --wall: #2a2440;
+  --floor: #14101f;
+  /* One colour per exhibit. script.js hands these out in order, so a fifth
+     exhibit added to the data reuses the first colour rather than crashing. */
+  --ex-1: #7ee0b8;
+  --ex-2: #ffc857;
+  --ex-3: #9db8ff;
+  --ex-4: #f79fd0;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding-bottom: 56px;
+  background: radial-gradient(circle at 15% -10%, #221a35, var(--bg) 60%);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  line-height: 1.6;
+}
+
+.shell { width: min(960px, 100% - 32px); margin-inline: auto; }
+
+header { padding-top: 32px; }
+h1 { margin: 0 0 8px; font-size: clamp(2rem, 6vw, 3rem); }
+h2 { margin-top: 44px; font-size: 1.45rem; }
+h3 { margin: 0 0 2px; font-size: 1.1rem; }
+.eyebrow { margin: 0 0 4px; color: var(--accent); font-weight: 800; letter-spacing: .14em; font-size: .78rem; }
+.lede { color: var(--muted); max-width: 62ch; }
+.hint { color: var(--muted); max-width: 68ch; font-size: .95rem; }
+a { color: var(--accent); }
+code { font-family: ui-monospace, Consolas, monospace; color: var(--accent); font-size: .95em; }
+kbd {
+  font-family: ui-monospace, Consolas, monospace; font-size: .85em;
+  padding: 1px 7px; border: 1px solid var(--panel-edge); border-radius: 6px;
+  background: var(--panel); color: var(--text);
+}
+
+.notice {
+  margin-top: 16px; padding: 12px 16px;
+  border: 1px solid var(--panel-edge); border-radius: 12px;
+  background: var(--panel); color: var(--muted);
+}
+
+.skip-link {
+  position: absolute; left: -9999px; top: 8px;
+  padding: 8px 14px; border-radius: 8px;
+  background: var(--accent); color: var(--accent-ink); font-weight: 700;
+}
+.skip-link:focus { left: 16px; }
+
+canvas {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  aspect-ratio: 18 / 11;
+  margin: 16px 0 0;
+  border: 1px solid var(--panel-edge);
+  border-radius: 16px;
+  background: var(--floor);
+}
+
+.status { min-height: 1.6em; margin: 12px 0 0; color: var(--accent); font-weight: 600; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; color: var(--muted); font-size: .9rem; }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.legend i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+
+.exhibit-list { margin: 16px 0 0; padding-left: 0; list-style: none; counter-reset: exhibit; }
+
+/* WHAT: the number beside each exhibit, drawn by CSS from a counter.
+   WHY not type the numbers into the HTML: reorder the data and hand-typed
+   numbers immediately lie. A counter can only ever be right. */
+.exhibit {
+  counter-increment: exhibit;
+  position: relative;
+  margin-bottom: 14px;
+  padding: 18px 18px 18px 60px;
+  border: 1px solid var(--panel-edge);
+  border-left: 5px solid var(--exhibit-color, var(--accent));
+  border-radius: 14px;
+  background: var(--panel);
+}
+.exhibit::before {
+  content: counter(exhibit);
+  position: absolute; left: 18px; top: 18px;
+  width: 28px; height: 28px;
+  display: grid; place-items: center;
+  border-radius: 999px;
+  background: var(--exhibit-color, var(--accent));
+  color: #16121f; font-weight: 800; font-size: .9rem;
+}
+.exhibit[aria-current="true"] { border-color: var(--exhibit-color, var(--accent)); }
+
+.exhibit p { margin: 0; }
+.exhibit .summary { color: var(--muted); margin-top: 6px; }
+.exhibit .facts { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 10px 0 0; padding: 0; font-size: .9rem; }
+.exhibit .facts dt { color: var(--muted); font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; }
+.exhibit .facts dd { margin: 0 0 0; }
+.exhibit .facts > div { min-width: 120px; }
+
+button {
+  font: inherit; cursor: pointer; font-weight: 700;
+  margin-top: 14px; padding: 8px 18px; border-radius: 999px;
+  border: 1px solid var(--panel-edge); background: #221c35; color: var(--text);
+}
+button:hover { border-color: var(--accent); }
+button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+/* WHY :focus-visible rather than :focus — the outline appears for keyboard
+   users and stays out of a mouse user's way. Never replace it with
+   outline: none: a keyboard visitor who cannot see where they are is lost. */
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 8px; }
+
+.walk { max-width: 68ch; padding: 14px 18px; border-left: 3px solid var(--panel-edge); background: var(--panel); border-radius: 0 12px 12px 0; }
+
+.steps { color: var(--muted); max-width: 68ch; }
+.steps li { margin-bottom: 8px; }
+.steps strong { color: var(--text); }
+
+footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--panel-edge); color: var(--muted); font-size: .9rem; }
+
+/* WHAT: honours the visitor's "reduce motion" system setting.
+   WHY it is here in a pack with no animation yet: the moment you add a moving
+   3D view, this is the rule that keeps it usable for somebody who gets motion
+   sick. Movement in a headset is the most common cause of that, by a distance. */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

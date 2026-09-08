@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Build a Home for Interactive Work · ClassroomOS</title>
+<meta name="description" content="Learn how an animation loop, delta time, and the canvas 2D context work, then embed and credit your own interactive creations on your site.">
+<link rel="icon" href="../assets/images/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/classroom-home.css">
+<link rel="stylesheet" href="../assets/css/lessons/web-design-pathway.css">
+<script src="../assets/js/theme-registry.js" defer></script>
+<script src="../assets/js/lessons/web-design-pathway.js" defer></script>
+<script src="../assets/js/sim-kit.js" defer></script>
+<script src="../assets/js/lessons/web-creative-labs.js" defer></script>
+</head>
+<body class="web-course">
+<a class="skip-link" href="#main">Skip to lesson</a>
+<header class="web-topbar">
+<a href="web-design-pathway.html"><strong>Build Your Own Web</strong></a>
+<nav aria-label="Site"><a href="../steam-lessons.html">STEAM lessons</a><a href="../paths.html">All pathways</a><a href="../class-downloads.html">Downloads</a></nav>
+</header>
+<main id="main" class="web-main">
+
+<section class="web-hero web-split">
+<div>
+<p class="web-meta">Lesson 8 · 60–75 minutes · Canvas, loops, and publishing your creations</p>
+<h1>Build a Home for Interactive Work</h1>
+<p class="web-lead">The last lesson ended with a plugin being switched off. This one starts where it left off: the browser itself is now the runtime. You are going to learn the machinery underneath every game and simulation — a loop, some state, and a drawing surface — and then how to give your creations a permanent address on your own site.</p>
+<p>Work through the two labs on this page first. Then copy the code blocks into your own project folder and make them yours.</p>
+</div>
+<div class="web-panel">
+<h2>What you will be able to do</h2>
+<ul>
+<li>Write an animation loop that runs at the same speed on any machine.</li>
+<li>Explain why you multiply movement by delta time.</li>
+<li>Draw to a <code>&lt;canvas&gt;</code> and keep state separate from drawing.</li>
+<li>Add controls a person can actually use — including without a mouse.</li>
+<li>Put a finished creation in its own folder, link it, document it, and credit it.</li>
+</ul>
+</div>
+</section>
+
+<section class="web-section">
+<h2>A game is state, events, and feedback</h2>
+<p>Before any animation, get the smallest possible version straight. Every interactive thing you will ever build has the same three parts:</p>
+<ol class="web-steps">
+<li><strong>State</strong> — the facts the program is currently holding. A score. A position. Whether it is paused. State is just variables.</li>
+<li><strong>Events</strong> — moments when something happens. A click, a key, a slider drag, a frame of the loop ticking over. Events change state and nothing else.</li>
+<li><strong>Feedback</strong> — how the person finds out the state changed. Text on the screen, a drawn shape, a sound. Feedback reads state; it never invents state.</li>
+</ol>
+<p>Keep those separate and your projects stay fixable. Mix them together — a click handler that quietly draws something, a drawing function that also adds to the score — and by week three you will not be able to find your own bug.</p>
+</section>
+
+<section class="web-section">
+<h2>Lab A: score, event, readout</h2>
+<p>This lab has no animation at all. One variable, one click event, one line of feedback. Press the button five times, then reset.</p>
+<div class="web-lab">
+<h3>Star counter</h3>
+<div class="web-actions">
+<button type="button" id="collect-star">★ Collect a star</button>
+<button type="button" id="star-reset">Reset the score</button>
+</div>
+<p id="star-score" class="web-feedback" aria-live="polite">Stars collected: 0</p>
+</div>
+<p><strong>Check:</strong> the count goes up by exactly one per press, the readout says "Stars collected: 5" after five presses, and Reset puts it back to "Stars collected: 0".</p>
+<p><strong>Look closer:</strong> the collect button also changes its own label as the count goes odd and even. Reset puts the <em>number</em> back to zero but leaves the button wearing whatever label it last had. That is not a trick — it is the most common bug in interactive projects: a reset that restores part of the state and forgets the rest. When you write your own reset, list every piece of state on paper first, then set them all.</p>
+<p>The whole lab in JavaScript is about this small:</p>
+<pre><code>let score = 0;                                    // state
+
+const button = document.getElementById('collect-star');
+const readout = document.getElementById('star-score');
+
+button.addEventListener('click', () =&gt; {          // event
+  score = score + 1;                              // change state
+  readout.textContent = 'Stars collected: ' + score;   // feedback
+});</code></pre>
+<p>Notice that the readout is a normal paragraph with <code>aria-live="polite"</code>, so a screen reader announces the new number when it changes. You get that for free with text. You will not get it for free from a canvas, which is the next problem to solve.</p>
+</section>
+
+<section class="web-section">
+<h2>The loop, and why delta time exists</h2>
+<p>Animation is not a special feature of the browser. It is you, redrawing the screen slightly differently many times a second. The browser gives you one function for this: <code>requestAnimationFrame</code>. You hand it a function, it calls that function right before the next screen refresh, and you ask again.</p>
+<p>Here is the version almost everyone writes first. It is broken, and the reason is worth understanding properly:</p>
+<pre><code>// BROKEN: moves 2 pixels per FRAME.
+let x = 0;
+
+function frame() {
+  x = x + 2;
+  draw();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);</code></pre>
+<p>A frame is not a fixed amount of time. On an ordinary 60 Hz display this moves 120 pixels per second. On a 120 Hz gaming laptop or a recent phone, the same code moves 240 pixels per second — the game is literally twice as fast. On an old machine struggling at 30 frames per second it crawls. Your jump height, your enemy speed, and your timers all change depending on whose computer is running them. You cannot balance a game like that.</p>
+<p>The fix is <strong>delta time</strong>: measure how many seconds actually passed since the last frame, and multiply every movement by it. Then you write speeds in pixels <em>per second</em>, which is a real unit that means the same thing everywhere.</p>
+<pre><code>// CORRECT: moves 120 pixels per SECOND on any machine.
+let x = 0;
+const SPEED = 120;        // pixels per second
+let last = null;
+
+function frame(now) {     // the browser passes a timestamp in milliseconds
+  if (last === null) last = now;
+  let dt = (now - last) / 1000;   // seconds since the previous frame
+  last = now;
+
+  if (dt &gt; 0.05) dt = 0.05;       // safety clamp, explained below
+
+  update(dt);
+  draw();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+function update(dt) {
+  x = x + SPEED * dt;             // distance = speed × time
+}</code></pre>
+<p>On a 60 Hz screen <code>dt</code> is about <code>0.0167</code>, so each frame adds <code>120 × 0.0167 = 2</code> pixels. At 120 Hz it is about <code>0.0083</code>, so each frame adds 1 pixel — but there are twice as many frames. Same distance per second. That is the entire idea.</p>
+<p><strong>Why clamp <code>dt</code>:</strong> if someone switches tabs for thirty seconds, the next frame arrives with a <code>dt</code> of 30. Without a clamp your ball teleports 3,600 pixels through a wall in a single step. Capping <code>dt</code> at something like 0.05 seconds means a long pause makes the simulation briefly run slow instead of exploding. The lab below uses exactly this clamp.</p>
+<p class="web-callout"><strong>The rule to memorize:</strong> anything that should happen "per second" gets multiplied by <code>dt</code>. Movement, rotation, fuel drain, spawn timers. Anything that is a one-off event — a click, a collision, a level change — does not.</p>
+</section>
+
+<section class="web-section">
+<h2>Canvas: a drawing surface with a context</h2>
+<p><code>&lt;canvas&gt;</code> is one HTML element that gives you a rectangle of pixels. The element itself draws nothing. You ask it for a <strong>context</strong> — an object holding the drawing commands — and every shape you want comes from calling methods on that object.</p>
+<pre><code>&lt;canvas id="stage" width="640" height="240"&gt;&lt;/canvas&gt;</code></pre>
+<pre><code>const canvas = document.getElementById('stage');
+const ctx = canvas.getContext('2d');   // the 2D drawing context
+
+ctx.fillStyle = '#2455a6';             // set a colour, then draw
+ctx.fillRect(20, 20, 100, 60);         // x, y, width, height
+
+ctx.beginPath();                       // circles need a path
+ctx.arc(300, 120, 40, 0, Math.PI * 2); // x, y, radius, start, end
+ctx.fill();
+
+ctx.clearRect(0, 0, canvas.width, canvas.height);  // wipe everything</code></pre>
+<p>Three things trip people up. First, coordinates start at <code>0, 0</code> in the <strong>top left</strong>, and <code>y</code> grows <em>downward</em> — bigger <code>y</code> means further down the screen. Second, the <code>width</code> and <code>height</code> attributes on the element set how many pixels the canvas actually has; setting the size in CSS instead just stretches those pixels and makes everything blurry. Third, canvas does not remember shapes. Once drawn, a circle is just coloured pixels — there is no object to move. To animate, you clear the whole canvas and draw the new frame from scratch, every frame.</p>
+</section>
+
+<section class="web-section">
+<h2>Lab B: a real loop with real controls</h2>
+<p>Now put it together. The dot below is drawn by a loop using delta time, its speed comes from the slider, and the line under it is the accessible readout.</p>
+<div class="web-lab">
+<h3>Motion lab</h3>
+<div>
+<canvas id="motion-canvas" width="640" height="180" aria-hidden="true"></canvas>
+</div>
+<div class="web-actions">
+<button type="button" id="motion-toggle" aria-pressed="false">Start</button>
+<button type="button" id="motion-reset">Reset distance</button>
+</div>
+<label for="motion-speed">Speed in pixels per second: <span id="motion-speed-value">120</span></label>
+<input type="range" id="motion-speed" min="10" max="400" value="120">
+<p id="motion-status" class="web-feedback" aria-live="polite"></p>
+</div>
+<p><strong>Check:</strong> press Start and the dot moves left to right, wrapping around when it reaches the end. The button changes to Pause. Drag the slider to 400 and the dot visibly speeds up; the number beside the label follows the slider immediately. The status line reports the state roughly once a second while running, and immediately when you press a button or move the slider. Reset distance sets the distance back to 0 without stopping the animation.</p>
+<p><strong>Repair:</strong> a completely blank box means the drawing code never ran — check the console for an error, and confirm <code>sim-kit.js</code> loaded <em>before</em> the lab script. A dot that never moves usually means the loop is running but the state is not changing: press Start again and watch whether the status line says "Running" or "Paused". If the numbers move but nothing is drawn, your <code>draw()</code> is reading different variables than your <code>update()</code> is writing.</p>
+<h3>Why the canvas is marked <code>aria-hidden</code></h3>
+<p>The canvas on this page carries <code>aria-hidden="true"</code>, and the status line under it is the accessible equivalent of the animation. A screen reader cannot see a canvas — to assistive technology it is one blank rectangle, no matter how much is happening inside it. So the moving dot is treated as decoration, and everything it communicates is also written in text: whether the simulation is running, how far the dot has travelled, and how fast it is going. Anyone who cannot see the animation can still read the same facts, use the same buttons, and get the same result.</p>
+<p>That is the pattern to copy: <strong>a canvas is never the only place your information lives.</strong></p>
+</section>
+
+<section class="web-section">
+<h2>The three-part structure to copy</h2>
+<p>Here is a complete, working file skeleton. Every simulation you build in this course should look like this: <code>update(dt)</code> changes state, <code>draw()</code> renders state, and the loop calls both in that order. Nothing draws outside <code>draw()</code>, and nothing changes state inside <code>draw()</code>.</p>
+<pre><code>&lt;canvas id="stage" width="640" height="240"&gt;&lt;/canvas&gt;
+&lt;div&gt;
+  &lt;button type="button" id="toggle" aria-pressed="false"&gt;Start&lt;/button&gt;
+  &lt;label for="speed"&gt;Speed in pixels per second: &lt;span id="speed-value"&gt;120&lt;/span&gt;&lt;/label&gt;
+  &lt;input type="range" id="speed" min="10" max="400" value="120"&gt;
+&lt;/div&gt;
+&lt;p id="status" aria-live="polite"&gt;Paused. Position: 20 pixels.&lt;/p&gt;
+&lt;script src="game.js"&gt;&lt;/script&gt;</code></pre>
+<pre><code>// game.js — state, update, draw, loop. In that order.
+const canvas = document.getElementById('stage');
+const ctx = canvas.getContext('2d');
+const status = document.getElementById('status');
+const speedInput = document.getElementById('speed');
+const toggle = document.getElementById('toggle');
+
+// 1. STATE — every fact the program holds, in one place.
+const state = {
+  x: 20,
+  y: 120,
+  speed: 120,        // pixels per second
+  direction: 1,      // 1 = right, -1 = left
+  running: false
+};
+
+// 2. UPDATE — changes state. Draws nothing.
+function update(dt) {
+  if (!state.running) return;
+  state.x = state.x + state.speed * state.direction * dt;
+  if (state.x &gt; canvas.width - 16) { state.x = canvas.width - 16; state.direction = -1; }
+  if (state.x &lt; 16) { state.x = 16; state.direction = 1; }
+}
+
+// 3. DRAW — reads state. Changes nothing.
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#2455a6';
+  ctx.beginPath();
+  ctx.arc(state.x, state.y, 16, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+// 4. LOOP — calls update, then draw. Forever.
+let last = null;
+function frame(now) {
+  if (last === null) last = now;
+  let dt = (now - last) / 1000;
+  last = now;
+  if (dt &gt; 0.05) dt = 0.05;
+  update(dt);
+  draw();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// 5. CONTROLS — events change state and report it. They never draw.
+function report() {
+  status.textContent = (state.running ? 'Running' : 'Paused')
+    + '. Position: ' + Math.round(state.x) + ' pixels.'
+    + ' Speed: ' + state.speed + ' pixels per second.';
+}
+
+toggle.addEventListener('click', () =&gt; {
+  state.running = !state.running;
+  toggle.textContent = state.running ? 'Pause' : 'Start';
+  toggle.setAttribute('aria-pressed', String(state.running));
+  report();
+});
+
+speedInput.addEventListener('input', () =&gt; {
+  state.speed = Number(speedInput.value);   // value is a STRING — convert it
+  document.getElementById('speed-value').textContent = speedInput.value;
+  report();
+});
+
+report();</code></pre>
+<p>Two details in there are worth stealing. <code>Number(speedInput.value)</code> matters because an input's value is always a string: without the conversion, <code>state.x + "200" * dt</code> gives you nonsense or <code>NaN</code>. And <code>report()</code> is called from every control <em>and</em> once at the start, so the status line is never blank and never stale.</p>
+<p class="web-callout"><strong>Debug rule:</strong> when a simulation misbehaves, ask one question first — is this an <em>update</em> bug or a <em>draw</em> bug? Temporarily print the state to the status line. If the numbers are wrong, the bug is in <code>update()</code>. If the numbers are right but the screen is wrong, the bug is in <code>draw()</code>. That single question halves the search every time.</p>
+</section>
+
+<section class="web-section">
+<h2>Honest limits of a canvas project</h2>
+<p>A canvas game is not automatically usable by everyone, and no library fixes that for you. If you publish an interactive project, provide all of these alongside it:</p>
+<ul>
+<li><strong>Written instructions in HTML</strong> — the goal, the rules, and every control, in text on the page. Not in an image, not only inside the game.</li>
+<li><strong>A status line</strong> with <code>aria-live="polite"</code> reporting score, lives, level, and win or lose. This is the text equivalent of what the canvas shows.</li>
+<li><strong>Keyboard controls.</strong> A canvas cannot be tabbed to or clicked meaningfully by keyboard on its own. Listen for <code>keydown</code> on the document, or give the canvas <code>tabindex="0"</code> and listen on it, and say in your instructions which keys do what. Never build a game that requires dragging a mouse and nothing else.</li>
+<li><strong>A pause.</strong> Some people need to stop and come back. A pause button also makes your project testable.</li>
+<li><strong>Respect for reduced motion.</strong> If someone's system asks for less animation, honour it: check <code>window.matchMedia('(prefers-reduced-motion: reduce)').matches</code> and start paused or tone the motion down.</li>
+</ul>
+<p>Say plainly what your project cannot do, too. A browser game running from plain files has no server: it cannot store a shared high-score table that other people see, it cannot verify who is playing, and anything it "saves" lives only in that one browser on that one device. Claiming otherwise on your site is the kind of thing that gets found out in about ten seconds.</p>
+</section>
+
+<section class="web-section">
+<h2>Give your creation a home on your site</h2>
+<p>You now have something that runs. Here is how it becomes part of your website instead of a file on your desktop.</p>
+<ol class="web-steps">
+<li><strong>One folder per creation.</strong> Every project gets its own directory with its own <code>index.html</code>. That keeps names from colliding and lets you move or delete the whole thing in one action.</li>
+<li><strong>Keep its files together.</strong> The HTML, CSS, JavaScript, and art for a project live <em>inside</em> that folder so relative links keep working. A link like <code>art/ship.png</code> survives being moved; <code>C:\Users\me\Desktop\ship.png</code> does not, and neither does a path that reaches up out of the folder into somewhere else on your site.</li>
+<li><strong>Link it from a hub page.</strong> One page — <code>projects.html</code> or <code>creations.html</code> — lists every creation with a real, descriptive link. "Star Runner — a canvas game" is a link; "click here" is not.</li>
+<li><strong>Write the controls down</strong> on the project page itself. Assume the reader has never seen it and nobody is sitting beside them.</li>
+<li><strong>Credit everything you did not make.</strong> Art, sound, fonts, code you adapted from a tutorial. Name the creator, link the source, and say what the licence permits. Last lesson's rule applies here: being able to open a file is not permission to publish it.</li>
+</ol>
+<pre><code>my-site/
+  index.html
+  projects.html          &lt;-- the hub page that links to each creation
+  style.css
+  games/
+    star-runner/
+      index.html         &lt;-- the game's own page
+      style.css
+      game.js
+      README.md          &lt;-- what it is, how to run it, controls, credits
+      art/
+        ship.png</code></pre>
+<pre><code>&lt;!-- in projects.html --&gt;
+&lt;article&gt;
+  &lt;h2&gt;&lt;a href="games/star-runner/index.html"&gt;Star Runner&lt;/a&gt;&lt;/h2&gt;
+  &lt;p&gt;A canvas game about dodging asteroids. Arrow keys to move, P to pause.&lt;/p&gt;
+  &lt;p&gt;Ship art by me. Sound effect by A. Composer, used under CC BY 4.0.&lt;/p&gt;
+&lt;/article&gt;</code></pre>
+<p>If you would rather show a project inside another page than link straight to it, an <code>&lt;iframe&gt;</code> works and it needs a <code>title</code> attribute so people using a screen reader know what the frame contains: <code>&lt;iframe src="games/star-runner/index.html" title="Star Runner game"&gt;&lt;/iframe&gt;</code>. Linking directly is usually kinder — the game gets the whole window.</p>
+<p>That <code>README.md</code> is not busywork. It is the documentation from the preservation lesson, in the place it belongs: beside the files, in plain text, readable in twenty years by someone who has never met you.</p>
+</section>
+
+<section class="web-section">
+<h2>Checkpoints</h2>
+<ul class="web-checklist">
+<li><label><input type="checkbox" data-web-check="0"> I ran both labs and got the results described in the Check paragraphs.</label></li>
+<li><label><input type="checkbox" data-web-check="1"> I can explain why movement is multiplied by delta time, and what breaks without it.</label></li>
+<li><label><input type="checkbox" data-web-check="2"> My own file separates state, <code>update(dt)</code>, and <code>draw()</code>, and nothing draws outside <code>draw()</code>.</label></li>
+<li><label><input type="checkbox" data-web-check="3"> My project has written instructions, a live status line, and keyboard controls beside the canvas.</label></li>
+<li><label><input type="checkbox" data-web-check="4"> My creation lives in its own folder, is linked from a hub page, and credits everything I did not make.</label></li>
+</ul>
+<div class="web-progress"><progress data-web-meter max="1" value="0" aria-label="Lesson checkpoints"></progress><span data-web-progress aria-live="polite"></span><button type="button" data-web-reset>Reset this lesson’s checks</button></div>
+</section>
+
+<nav class="web-next" aria-label="Lesson sequence"><a href="web-flash-history.html">← Previous: The Flash era</a><a href="web-publish.html">Next: Publish and maintain your website →</a></nav>
+
+</main>
+<footer>ClassroomOS web workshop · Read, change, test, explain. <a href="web-design-pathway.html">Course map</a></footer>
+<script src="../assets/js/lesson-print-button.js"></script>
+</body></html>

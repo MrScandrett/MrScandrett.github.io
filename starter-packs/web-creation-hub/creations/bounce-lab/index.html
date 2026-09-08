@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bounce Lab — a Workshop creation</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip-link" href="#lab">Skip to the simulation</a>
+
+  <header>
+    <p class="eyebrow">A WORKSHOP CREATION · SIMULATION</p>
+    <h1>Bounce Lab</h1>
+    <p class="lede">
+      Drop some balls and change the rules while they are still falling. This is
+      a simulation rather than a game: there is nothing to win, and the point is
+      to change one number and be able to say what it did.
+    </p>
+  </header>
+
+  <main>
+    <section id="lab" aria-labelledby="lab-heading">
+      <h2 id="lab-heading" class="visually-hidden">The simulation</h2>
+
+      <canvas id="stage" width="720" height="440"
+        aria-label="A box of bouncing balls. The measurements below the box are updated as it runs and are readable as text.">
+        This browser cannot draw a canvas, so the balls cannot be shown here.
+        The measurements below still update.
+      </canvas>
+
+      <!-- WHAT: real <input type="range"> elements, not something built out of
+           divs. WHY: a real range is reachable by Tab, adjustable with the
+           arrow keys, announced with its name and value, and works with voice
+           control — all of which you would have to rebuild by hand, badly, if
+           you drew your own slider. -->
+      <div class="controls">
+        <p class="control">
+          <label for="gravity">Gravity</label>
+          <input id="gravity" type="range" min="0" max="2400" step="50" value="900">
+          <output for="gravity" id="gravity-out">900 px/s²</output>
+        </p>
+        <p class="control">
+          <label for="bounce">Bounce</label>
+          <input id="bounce" type="range" min="0" max="100" step="1" value="82">
+          <output for="bounce" id="bounce-out">0.82</output>
+        </p>
+        <p class="control">
+          <label for="count">Balls</label>
+          <input id="count" type="range" min="1" max="24" step="1" value="8">
+          <output for="count" id="count-out">8</output>
+        </p>
+      </div>
+
+      <div class="buttons">
+        <button id="run" type="button" aria-pressed="true">Pause</button>
+        <button id="reset" type="button">Reset</button>
+      </div>
+
+      <p id="status" class="status" role="status" aria-live="polite">Running.</p>
+
+      <!-- WHAT: measurements taken from the simulation, in text.
+           WHY: they are the reason to change a slider. Without a number to
+           watch, "turn gravity up" is just a thing that looks different. -->
+      <dl class="readouts">
+        <div><dt>Balls</dt><dd id="ball-count">8</dd></div>
+        <div><dt>Average speed</dt><dd id="avg-speed">0</dd></div>
+        <div><dt>Bounces</dt><dd id="bounces">0</dd></div>
+      </dl>
+    </section>
+
+    <section aria-labelledby="try-heading">
+      <h2 id="try-heading">Four things to try</h2>
+      <ol class="try">
+        <li>
+          Set <strong>Bounce</strong> to <code>1.00</code> and watch the average
+          speed. The balls keep going and the number wanders around one value
+          instead of falling away — nothing in this model takes energy out. It
+          wobbles because a collision can hand most of one ball's speed to
+          another, and that changes the average without changing the total.
+        </li>
+        <li>
+          Now set <strong>Bounce</strong> to <code>0.60</code>. Every ball
+          settles on the floor within a few seconds. Each impact keeps 60% of
+          the speed it arrived with, and 0.6 multiplied by itself enough times
+          is nearly nothing.
+        </li>
+        <li>
+          Set <strong>Gravity</strong> to <code>0</code>. The balls drift in
+          straight lines and rebound off the walls forever. That is what "no
+          force acting" looks like, and it is also a decent test that your wall
+          collision code is right.
+        </li>
+        <li>
+          Push <strong>Balls</strong> to 24 and watch the frame rate. Every ball
+          is compared with every other one, so the work grows with the
+          <em>square</em> of the count. Twice the balls is four times the work.
+        </li>
+      </ol>
+    </section>
+
+    <section aria-labelledby="honest-heading">
+      <h2 id="honest-heading">What this model gets wrong on purpose</h2>
+      <p>
+        This is a teaching model, not a physics engine. Saying where a model
+        stops being true is part of using one honestly.
+      </p>
+      <ul>
+        <li>
+          <strong>No spin, no friction, no air.</strong> A real ball slows down
+          and rolls. These slide forever unless the bounce setting takes their
+          speed away.
+        </li>
+        <li>
+          <strong>Collisions are resolved one pair at a time.</strong> Three
+          balls arriving at the same corner together are handled as three
+          separate pairs, which is not what really happens.
+        </li>
+        <li>
+          <strong>Positions are stepped, not solved.</strong> The simulation
+          moves each ball a little every frame. At very high speeds a ball can
+          step past a wall before anything notices, so the code nudges it back —
+          look for <code>separate()</code> in <code>sim.js</code>.
+        </li>
+        <li>
+          <strong>All balls have the same mass.</strong> That is why the
+          collision maths below is as short as it is. Different masses is
+          challenge 5.
+        </li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p><a href="../../index.html">← Back to The Workshop</a></p>
+    <p class="muted">Original ClassroomOS teaching material. No images, no audio, no libraries.</p>
+  </footer>
+
+  <script src="sim.js" defer></script>
+</body>
+</html>

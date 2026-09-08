@@ -1,0 +1,407 @@
+<!doctype html>
+<!--
+  ============================================================================
+  REFERENCE BUILD — GUIDED CHANGE 4: "Make the related links point both ways"
+  ============================================================================
+  This file completes guided change 4 from README-FIRST.md. Open it AFTER you
+  have made your own attempt.
+
+  The change is findBacklinks() plus the "Also links here" section in
+  renderArticle(). A back-link is any OTHER article whose related list names
+  this one. Articles this one already links to are left out, so nothing is
+  listed twice.
+
+  Two deliberate differences from the main pack, so you can actually see the
+  feature working:
+    1. The related links here are one-way on purpose. In the main pack all
+       three articles link to each other, which would leave every "Also links
+       here" list empty and prove nothing.
+    2. The article bodies are shortened. This is a build for comparing code,
+       not for reading.
+
+  Self-contained on purpose: the CSS and JavaScript are inside this one file so
+  it runs alone. Your version should keep them in separate files.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reference — Two-Way Related Links (Signal Notes)</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0d1117; --panel: #161d27; --panel-edge: #2c3646;
+      --text: #eaf0f7; --muted: #9fb0c4; --accent: #8ecdf7; --accent-ink: #072034; --warn: #ffd479;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding-bottom: 56px; background: var(--bg); color: var(--text); line-height: 1.65;
+           font-family: Georgia, "Iowan Old Style", "Times New Roman", serif; }
+    .shell { width: min(760px, 100% - 32px); margin-inline: auto; }
+    header { padding-top: 32px; }
+    h1 { margin: 0 0 8px; font-size: clamp(1.8rem, 5vw, 2.6rem); }
+    h2 { margin-top: 32px; font-size: 1.5rem; }
+    h3 { font-size: 1.1rem; margin-bottom: .3rem; }
+    .eyebrow { margin: 0 0 4px; color: var(--accent); font-weight: 700; letter-spacing: .16em; font-size: .78rem; font-family: system-ui, sans-serif; }
+    .lede { color: var(--muted); }
+    a { color: var(--accent); }
+    code { font-family: ui-monospace, Consolas, monospace; color: var(--accent); }
+    .notice { margin-top: 16px; padding: 12px 16px; border-left: 4px solid var(--warn); border-radius: 0 10px 10px 0;
+              background: #241f10; color: #ffeec4; font-family: system-ui, sans-serif; font-size: .95rem; }
+    nav { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 24px; padding: 14px 16px;
+          border: 1px solid var(--panel-edge); border-radius: 14px; background: var(--panel); font-family: system-ui, sans-serif; }
+    .home-link { font-weight: 700; }
+    .search { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-left: auto; }
+    .search label { color: var(--muted); font-size: .9rem; }
+    input[type="search"] { font: inherit; padding: 8px 12px; min-width: 190px; border: 1px solid var(--panel-edge);
+                           border-radius: 999px; background: #0b1119; color: var(--text); }
+    button { font: inherit; cursor: pointer; padding: 8px 14px; border: 0; border-radius: 999px;
+             background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+    button.secondary { background: transparent; border: 1px solid var(--panel-edge); color: var(--text); font-weight: 600; }
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+    h2:focus { outline: none; }
+    h2:focus-visible { outline: 3px solid var(--accent); }
+    .status { min-height: 1.5em; color: var(--accent); font-family: system-ui, sans-serif; font-size: .95rem; }
+    .card-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 14px; }
+    .card { padding: 16px 18px; border: 1px solid var(--panel-edge); border-radius: 14px; background: var(--panel); }
+    .card h3 { margin-top: 0; }
+    .card p { margin: 0; color: var(--muted); }
+    .empty { padding: 20px; border: 1px dashed var(--panel-edge); border-radius: 14px; background: #121924; color: var(--muted); }
+    .empty h3 { color: var(--text); margin-top: 0; }
+    .empty[hidden], #article-view[hidden], #index-view[hidden] { display: none; }
+    .crumb { font-family: system-ui, sans-serif; font-size: .9rem; margin-bottom: 0; }
+    .summary { font-size: 1.12rem; color: var(--muted); }
+    .example { padding: 14px 18px; border-left: 4px solid var(--accent); border-radius: 0 12px 12px 0; background: var(--panel); }
+    .example p:first-child { margin-top: 0; }
+    .example .sample { font-family: ui-monospace, Consolas, monospace; color: var(--accent); }
+    .related-list { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 8px; }
+    .related-list a { font-weight: 700; }
+    .related-list .why { color: var(--muted); font-family: system-ui, sans-serif; font-size: .9rem; }
+    .none { color: var(--muted); font-family: system-ui, sans-serif; font-size: .92rem; }
+    .sources { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--panel-edge);
+               color: var(--muted); font-family: system-ui, sans-serif; font-size: .88rem; }
+    footer { margin-top: 48px; color: var(--muted); font-size: .88rem; font-family: system-ui, sans-serif; }
+  </style>
+</head>
+<body>
+  <header class="shell">
+    <p class="eyebrow">REFERENCE BUILD — GUIDED CHANGE 4</p>
+    <h1>Signal Notes</h1>
+    <p class="lede">Finished version of the two-way "Also links here" change. Compare it with your own attempt.</p>
+    <p class="notice" role="note">
+      <strong>A published snapshot, not a collaborative wiki.</strong> Nothing on this page can be edited by a reader.
+    </p>
+  </header>
+
+  <nav class="shell" aria-label="Wiki">
+    <a class="home-link" href="#/">All articles</a>
+    <form id="search-form" class="search" role="search">
+      <label for="search-input">Search the articles</label>
+      <input id="search-input" name="q" type="search" autocomplete="off" placeholder="try: binary, pixel, loop">
+      <button type="button" id="search-clear" class="secondary">Clear</button>
+    </form>
+  </nav>
+
+  <main id="main" class="shell" tabindex="-1">
+    <section id="index-view" aria-labelledby="index-heading">
+      <h2 id="index-heading" tabindex="-1">All articles</h2>
+      <p id="search-status" class="status" aria-live="polite"></p>
+      <ul id="article-index" class="card-list"></ul>
+      <div id="no-results" class="empty" hidden>
+        <h3>No article matches that</h3>
+        <p>Try a shorter word, or check the spelling. This searches three articles, not the internet.</p>
+      </div>
+    </section>
+
+    <article id="article-view" hidden aria-labelledby="article-title">
+      <p class="crumb"><a href="#/">&larr; All articles</a></p>
+      <h2 id="article-title" tabindex="-1"></h2>
+      <p id="article-summary" class="summary"></p>
+      <div id="article-body"></div>
+
+      <section aria-labelledby="example-heading">
+        <h3 id="example-heading">Worked example</h3>
+        <div id="article-example" class="example"></div>
+      </section>
+
+      <section aria-labelledby="related-heading">
+        <h3 id="related-heading">Related articles</h3>
+        <ul id="article-related" class="related-list"></ul>
+        <p id="article-related-none" class="none" hidden>This article does not link out to any other article yet.</p>
+      </section>
+
+      <!-- THE CHANGE: a second section, built from the other articles' data. -->
+      <section aria-labelledby="backlinks-heading">
+        <h3 id="backlinks-heading">Also links here</h3>
+        <ul id="article-backlinks" class="related-list"></ul>
+        <p id="article-backlinks-none" class="none" hidden>No other article links to this one yet.</p>
+      </section>
+
+      <p id="article-sources" class="sources"></p>
+    </article>
+  </main>
+
+  <footer class="shell">
+    <p>ClassroomOS web wiki starter — reference build.</p>
+  </footer>
+
+  <script>
+    "use strict";
+
+    // Related links are deliberately ONE-WAY here so the back-links have
+    // something to show. Binary links to both others; Pixels links only to
+    // Loops; Loops links to nothing.
+    const ARTICLES = [
+      {
+        slug: "how-computers-count",
+        title: "How Computers Count: Binary",
+        summary: "A computer has only two symbols to work with, so it counts in twos instead of tens.",
+        keywords: ["base 2", "bits", "byte", "place value"],
+        body: [
+          "You count in base ten because you have ten fingers. In 407, each position is worth ten times the position to its right.",
+          "A computer stores everything as electricity, so it has two symbols and counts in base two: 1, 2, 4, 8, 16 and so on. Eight of those positions make a byte, which holds 0 to 255."
+        ],
+        example: {
+          intro: "Read 1101 by writing the place values above it and adding the columns that hold a 1.",
+          sample: "  8  4  2  1\n  1  1  0  1   ->   8 + 4 + 0 + 1  =  13",
+          explain: "So 1101 in binary is 13 in decimal."
+        },
+        related: [
+          { slug: "what-a-pixel-is", why: "Screen colours are stored as three numbers from 0 to 255 — one byte each." },
+          { slug: "why-loops-repeat", why: "Counting up in twos is a job for a loop." }
+        ],
+        sources: "Written for ClassroomOS from a classroom place-value demonstration. Check it by hand: 128 + 64 + 32 + 16 + 8 + 4 + 2 + 1 = 255."
+      },
+      {
+        slug: "what-a-pixel-is",
+        title: "What a Pixel Actually Is",
+        summary: "Every picture on a screen is a grid of tiny squares, and every square's colour is three numbers.",
+        keywords: ["rgb", "resolution", "colour", "color"],
+        body: [
+          "A pixel is the smallest square of a screen that can be given its own colour. A 1920 by 1080 screen holds 2,073,600 of them.",
+          "Each pixel's colour is how much red, green and blue to mix, each from 0 to 255. That gives 256 x 256 x 256 = 16,777,216 possible colours."
+        ],
+        example: {
+          intro: "Pure red uses all the red light and none of the others.",
+          sample: "rgb(255, 0, 0)      is the same colour as      #ff0000",
+          explain: "255 written in hexadecimal is ff, which is why the pairs look like that."
+        },
+        related: [
+          { slug: "why-loops-repeat", why: "Changing every pixel means visiting two million of them." }
+        ],
+        sources: "Written for ClassroomOS after zooming into a photograph until the squares were visible. Check the arithmetic: 1920 x 1080, and 256 x 256 x 256."
+      },
+      {
+        slug: "why-loops-repeat",
+        title: "Why Loops Exist",
+        summary: "A loop is how you ask for a job to be done many times without writing it out many times.",
+        keywords: ["for", "while", "iteration", "off by one"],
+        body: [
+          "A loop separates the job you want done from the number of times you want it done, so either can change without touching the other.",
+          "A counting loop has three parts: where the counter starts, the test that decides whether to keep going, and the step that changes the counter. Getting the test wrong by one is so common it has a name: an off-by-one error."
+        ],
+        example: {
+          intro: "This loop runs three times: start at 0, keep going while under 3, add 1 each time.",
+          sample: "for (let i = 0; i < 3; i++) {\n  console.log(i);\n}\n\n// prints:  0  1  2",
+          explain: "It never prints 3, because at 3 the test is false and the loop stops."
+        },
+        related: [],
+        sources: "Written for ClassroomOS from the loop lesson used in class. Test it in your browser console in under a minute."
+      }
+    ];
+
+    const indexView = document.querySelector("#index-view");
+    const articleView = document.querySelector("#article-view");
+    const articleIndex = document.querySelector("#article-index");
+    const noResults = document.querySelector("#no-results");
+    const searchInput = document.querySelector("#search-input");
+    const searchForm = document.querySelector("#search-form");
+    const searchClear = document.querySelector("#search-clear");
+    const searchStatus = document.querySelector("#search-status");
+    const indexHeading = document.querySelector("#index-heading");
+    const articleTitle = document.querySelector("#article-title");
+    const articleSummary = document.querySelector("#article-summary");
+    const articleBody = document.querySelector("#article-body");
+    const articleExample = document.querySelector("#article-example");
+    const articleRelated = document.querySelector("#article-related");
+    const articleRelatedNone = document.querySelector("#article-related-none");
+    const articleBacklinks = document.querySelector("#article-backlinks");
+    const articleBacklinksNone = document.querySelector("#article-backlinks-none");
+    const articleSources = document.querySelector("#article-sources");
+
+    let searchTerm = "";
+    let hasNavigated = false;
+
+    function findArticle(slug) { return ARTICLES.find((a) => a.slug === slug); }
+
+    // ---- THE CHANGE -----------------------------------------------------
+    // Every OTHER article whose related list names this one, minus the ones
+    // this article already links to, so nothing appears in both sections.
+    function findBacklinks(article) {
+      const alreadyLinked = article.related.map((relation) => relation.slug);
+      return ARTICLES.filter((other) =>
+        other.slug !== article.slug &&
+        !alreadyLinked.includes(other.slug) &&
+        other.related.some((relation) => relation.slug === article.slug)
+      );
+    }
+    // ---------------------------------------------------------------------
+
+    function searchableText(article) {
+      return [article.title, article.summary, article.keywords.join(" "), article.body.join(" ")]
+        .join(" ").toLowerCase();
+    }
+
+    function searchArticles(term) {
+      const needle = term.trim().toLowerCase();
+      if (needle === "") return ARTICLES;
+      return ARTICLES.filter((article) => searchableText(article).includes(needle));
+    }
+
+    function buildIndexCard(article) {
+      const item = document.createElement("li");
+      item.className = "card";
+      const heading = document.createElement("h3");
+      const link = document.createElement("a");
+      link.href = "#/article/" + article.slug;
+      link.textContent = article.title;
+      heading.append(link);
+      const summary = document.createElement("p");
+      summary.textContent = article.summary;
+      item.append(heading, summary);
+      return item;
+    }
+
+    function renderIndex() {
+      const matches = searchArticles(searchTerm);
+      articleIndex.textContent = "";
+      for (const article of matches) articleIndex.append(buildIndexCard(article));
+      noResults.hidden = matches.length > 0;
+
+      if (searchTerm.trim() === "") {
+        searchStatus.textContent = "Showing all " + ARTICLES.length + " articles.";
+      } else if (matches.length === 0) {
+        searchStatus.textContent = "No articles match " + JSON.stringify(searchTerm) + ".";
+      } else {
+        searchStatus.textContent = matches.length +
+          (matches.length === 1 ? " article matches " : " articles match ") + JSON.stringify(searchTerm) + ".";
+      }
+    }
+
+    // Builds one <li> with a link and a reason. Used by both link sections.
+    function buildRelationItem(article, why) {
+      const item = document.createElement("li");
+      const link = document.createElement("a");
+      link.href = "#/article/" + article.slug;
+      link.textContent = article.title;
+      item.append(link);
+      if (why) {
+        const note = document.createElement("span");
+        note.className = "why";
+        note.textContent = " — " + why;
+        item.append(note);
+      }
+      return item;
+    }
+
+    function renderArticle(article) {
+      articleTitle.textContent = article.title;
+      articleSummary.textContent = article.summary;
+
+      articleBody.textContent = "";
+      for (const paragraph of article.body) {
+        const p = document.createElement("p");
+        p.textContent = paragraph;
+        articleBody.append(p);
+      }
+
+      articleExample.textContent = "";
+      const intro = document.createElement("p");
+      intro.textContent = article.example.intro;
+      const sample = document.createElement("pre");
+      sample.className = "sample";
+      sample.textContent = article.example.sample;
+      const explain = document.createElement("p");
+      explain.textContent = article.example.explain;
+      articleExample.append(intro, sample, explain);
+
+      articleRelated.textContent = "";
+      let outgoing = 0;
+      for (const relation of article.related) {
+        const target = findArticle(relation.slug);
+        if (!target) continue;
+        articleRelated.append(buildRelationItem(target, relation.why));
+        outgoing += 1;
+      }
+      articleRelatedNone.hidden = outgoing > 0;
+
+      // THE CHANGE, drawn. The reason text comes from the OTHER article's
+      // entry, because that is who described the connection.
+      articleBacklinks.textContent = "";
+      const backlinks = findBacklinks(article);
+      for (const other of backlinks) {
+        const relation = other.related.find((r) => r.slug === article.slug);
+        articleBacklinks.append(buildRelationItem(other, relation ? relation.why : ""));
+      }
+      articleBacklinksNone.hidden = backlinks.length > 0;
+
+      articleSources.textContent = "Sources: " + article.sources;
+    }
+
+    function route() {
+      const hash = window.location.hash;
+      if (hash.startsWith("#/article/")) {
+        const slug = hash.slice("#/article/".length);
+        const article = findArticle(slug);
+        if (article) {
+          renderArticle(article);
+          showView(articleView, articleTitle);
+          document.title = article.title + " — Signal Notes (reference)";
+          return;
+        }
+        showIndexView("No article called " + JSON.stringify(slug) + ". Showing all articles instead.");
+        return;
+      }
+      showIndexView();
+    }
+
+    function showIndexView(message) {
+      renderIndex();
+      if (message) searchStatus.textContent = message;
+      showView(indexView, indexHeading);
+      document.title = "Reference — Two-Way Related Links (Signal Notes)";
+    }
+
+    function showView(viewToShow, headingToFocus) {
+      indexView.hidden = viewToShow !== indexView;
+      articleView.hidden = viewToShow !== articleView;
+      window.scrollTo(0, 0);
+      if (hasNavigated) headingToFocus.focus();
+      hasNavigated = true;
+    }
+
+    function handleSearchInput() {
+      searchTerm = searchInput.value;
+      if (window.location.hash.startsWith("#/article/")) { window.location.hash = "#/"; return; }
+      renderIndex();
+    }
+
+    function handleSearchClear() {
+      searchInput.value = "";
+      searchTerm = "";
+      if (window.location.hash.startsWith("#/article/")) { window.location.hash = "#/"; return; }
+      renderIndex();
+      searchInput.focus();
+    }
+
+    function init() {
+      searchInput.addEventListener("input", handleSearchInput);
+      searchClear.addEventListener("click", handleSearchClear);
+      searchForm.addEventListener("submit", (event) => event.preventDefault());
+      window.addEventListener("hashchange", route);
+      route();
+    }
+
+    init();
+  </script>
+</body>
+</html>

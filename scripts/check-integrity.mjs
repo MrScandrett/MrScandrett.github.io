@@ -205,7 +205,21 @@ async function checkJson(filePath, text) {
   }
 }
 
-async function checkHtml(filePath, text) {
+// Source shown to the reader inside <pre>/<code> is a teaching example, not a
+// reference the site has to resolve: the web-design pathway and
+// build-your-student-page.html deliberately print markup like
+// <img src="images/chart.png"> that names files the student will create in their
+// own project folder. Blank those regions out (preserving offsets) before scanning
+// so example code is never reported as a missing local reference. Measured across
+// the repo, every src/href inside <pre>/<code> is such an example.
+function maskCodeSamples(text) {
+  return text.replace(/<pre\b[\s\S]*?<\/pre>|<code\b[\s\S]*?<\/code>/gi, (block) =>
+    block.replace(/[^\n]/g, " ")
+  );
+}
+
+async function checkHtml(filePath, rawText) {
+  const text = maskCodeSamples(rawText);
   const attrPattern = /\b(?:src|href|poster)\s*=\s*(["'])([^"']+)\1/gi;
   for (const match of text.matchAll(attrPattern)) {
     await checkLocalReference(filePath, match[2]);

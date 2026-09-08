@@ -27,4 +27,4 @@ npm run check:integrity
 
 For a browser outside Playwright's default cache, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` for the browser check and `PUPPETEER_EXECUTABLE_PATH` for accessibility. Browser checks use a temporary profile, test local interactions and starter downloads, and write screenshots under `/tmp`. They do not certify third-party websites. Fresh signed-out BeepBox and Twine entry points were also spot-checked during this update; the fraction app's text-only browser output did not provide sufficient interaction evidence.
 
-The configured Pa11y audit ignores color-contrast findings; the theme token check is separate. Full-site integrity currently reports an unrelated pre-existing invalid WEBP signature at `assets/images/lessons/roman-space-telescope/nancy-roman.webp`.
+The configured Pa11y audit ignores color-contrast findings; the theme token check is separate. The NASA portrait is served from a `.webp` URL but is actually JPEG data, so it is stored as `assets/images/lessons/roman-space-telescope/nancy-roman.jpg` to match its real format and keep the integrity check green.

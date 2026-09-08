@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Test, Debug, and Include Everyone · ClassroomOS</title>
+<meta name="description" content="Use browser developer tools, a keyboard, a narrow screen, and a repair lab to test your own website without help.">
+<link rel="icon" href="../assets/images/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/classroom-home.css">
+<link rel="stylesheet" href="../assets/css/lessons/web-design-pathway.css">
+<script src="../assets/js/theme-registry.js" defer></script>
+<script src="../assets/js/lessons/web-design-pathway.js" defer></script>
+<script src="../assets/js/lessons/web-studio-labs.js" defer></script>
+</head>
+<body class="web-course">
+<a class="skip-link" href="#main">Skip to lesson</a>
+<header class="web-topbar">
+<a href="web-design-pathway.html"><strong>Build Your Own Web</strong></a>
+<nav aria-label="Site"><a href="../steam-lessons.html">STEAM lessons</a><a href="../paths.html">All pathways</a><a href="../class-downloads.html">Downloads</a></nav>
+</header>
+<main id="main" class="web-main">
+
+<section class="web-hero">
+<p class="web-meta">Lesson 5 · 50–65 minutes · After JavaScript</p>
+<h1>Make it work for someone else.</h1>
+<p class="web-lead">A page that looks right on your laptop is the beginning of testing, not the end of it. Learn to find a broken link, repair a JavaScript error, and make your site usable with a keyboard and a narrow screen.</p>
+<p><strong>Finish line:</strong> your foundation website passes a written test plan, and you can show one before-and-after repair you can explain.</p>
+<div class="web-actions"><a class="web-button" href="../downloads/web-foundations-starter-pack.zip" download>Get the source pack</a><a class="web-button" href="#repair-lab">Try the repair lab</a></div>
+</section>
+
+<section class="web-section">
+<h2>1. Make a bug report you can act on</h2>
+<p>Continue with your saved folder from the JavaScript lesson. Create a file called <code>test-notes.md</code> beside <code>index.html</code>. Record exactly how to reproduce each problem. "It is broken" tells a future you nothing; "the search shows every project when I type a word with a capital letter" tells you where to look.</p>
+<pre><code># Website test notes
+
+Browser and screen size:
+Page / feature:
+Steps to reproduce:
+Expected result:
+Actual result:
+First useful error or failed request:
+Change I made:
+Result after saving and refreshing:</code></pre>
+<div class="web-callout"><strong>Do:</strong> search your project list for a title that exists, then for a word that does not. <strong>Check:</strong> matching projects appear, the empty result explains itself, and clearing the search restores everything. <strong>Repair:</strong> confirm the query is trimmed and compared in the same case as the project titles.</div>
+</section>
+
+<section class="web-section">
+<h2>2. Follow the evidence in DevTools</h2>
+<div class="web-split">
+<ol class="web-steps">
+<li>Open your site, right-click a visible project title, and choose <strong>Inspect</strong>. Find that element in the browser's element tree.</li>
+<li>Change its text or a colour in the inspector, then refresh. The change disappears, because you edited the browser's copy of the page and not your saved source. This is the single most common source of lost work.</li>
+<li>Open the <strong>Console</strong>. Refresh <em>before</em> reproducing the bug so the error list is clean, then read the first relevant error and the filename and line number beside it.</li>
+<li>Open the <strong>Network</strong> panel and reload. A missing script or image points at a path, a spelling, or a filename-case problem. Serving the page through a local server makes the HTTP status codes visible.</li>
+<li>Make the repair in VS Code, save, reload, and repeat your original steps. Then test a second input, because one passing case is not evidence.</li>
+</ol>
+<div class="web-panel">
+<h3>Ask the right question first</h3>
+<div class="web-table">
+<table>
+<thead><tr><th>Symptom</th><th>First place to look</th></tr></thead>
+<tbody>
+<tr><td>Image missing</td><td>Network request and the <code>src</code> path</td></tr>
+<tr><td>Style ignored</td><td>Computed styles, and crossed-out declarations in the inspector</td></tr>
+<tr><td>Button does nothing</td><td>Console, then the selector, then script loading order</td></tr>
+<tr><td>Sideways scrolling</td><td>Fixed widths and over-wide children in the element inspector</td></tr>
+<tr><td>Old content keeps appearing</td><td>Cache — do a hard reload</td></tr>
+</tbody>
+</table>
+</div>
+<p>These panels inspect different layers of the same page. See <a href="https://developer.mozilla.org/en-US/docs/Learn_web_development/Howto/Tools_and_setup/What_are_browser_developer_tools">MDN's guide to browser developer tools</a>.</p>
+</div>
+</div>
+</section>
+
+<section class="web-section" id="repair-lab">
+<h2>3. Repair one cause at a time</h2>
+<p>Copy this deliberately broken example into a separate file called <code>debug-practice.html</code>. Open it and read the Console. A <code>null</code> value means the selector did not find an element — so the code asked for something that is not on the page.</p>
+<pre><code>&lt;!-- Broken example: the ID and the selector disagree. --&gt;
+&lt;button id="show-projects" type="button"&gt;Show projects&lt;/button&gt;
+&lt;p id="project-status" aria-live="polite"&gt;&lt;/p&gt;
+&lt;script&gt;
+  const button = document.querySelector("#show-project");
+  button.addEventListener("click", () =&gt; {
+    document.querySelector("#project-status").textContent = "Three projects ready.";
+  });
+&lt;/script&gt;</code></pre>
+<div class="web-lab">
+<h3>Which edit repairs the cause?</h3>
+<p>The button's ID is <code>show-projects</code>. The selector asks for <code>#show-project</code>. Choose the repair, then test the restored demo.</p>
+<div class="web-repair-options">
+<button type="button" data-repair="color" aria-pressed="false">Change the button's background colour</button>
+<button type="button" data-repair="selector" aria-pressed="false">Change the selector to #show-projects</button>
+<button type="button" data-repair="delay" aria-pressed="false">Wait longer before clicking</button>
+</div>
+<p data-repair-feedback class="web-feedback" aria-live="polite">Choose an edit and explain what it changes.</p>
+<div class="web-actions"><button type="button" data-repaired-button disabled>Show projects</button><button type="button" data-repair-reset>Reset the bug</button></div>
+<p data-repaired-output aria-live="polite">The demo cannot run until its selector is repaired.</p>
+</div>
+<p><strong>Check in your own file:</strong> the Console error is gone and clicking shows the message. <strong>Explain:</strong> the repair makes the selector match a real element. Changing decoration cannot fix a missing element reference, and waiting longer cannot conjure one — the two wrong answers are wrong for different reasons, and naming those reasons is the skill.</p>
+</section>
+
+<section class="web-section">
+<h2>4. Design a route for the keyboard</h2>
+<p>Put your mouse aside. Reload and press <kbd>Tab</kbd> repeatedly. Can you see which link, button, or field has focus? Can you activate it with the key you would expect? Use a link to go somewhere and a button to do something — swapping them breaks the keyboard behaviour people rely on.</p>
+<div class="web-split">
+<div>
+<h3>Add visible focus in style.css</h3>
+<pre><code>:focus-visible {
+  outline: 3px solid #2455a6;
+  outline-offset: 4px;
+}
+/* Keep the browser's focus outline unless you replace it
+   with something at least as visible. Never just remove it. */</code></pre>
+<p>Check the outline against your own background. If it disappears, choose a colour that contrasts with it. Do not rely on hover alone to reveal a control someone needs.</p>
+</div>
+<div>
+<h3>Give every field a real label</h3>
+<pre><code>&lt;label for="project-search"&gt;Search projects&lt;/label&gt;
+&lt;input id="project-search" type="search"&gt;
+&lt;p id="results" aria-live="polite"&gt;&lt;/p&gt;</code></pre>
+<p>The label's <code>for</code> must match the input's <code>id</code>. Placeholder text is a hint, not a label — it vanishes as soon as someone types. Use headings to structure the page, and write alt text that carries the information the image carries. Decorative images take <code>alt=""</code>.</p>
+</div>
+</div>
+<p>Check your markup choices against <a href="https://www.w3.org/WAI/tutorials/page-structure/">W3C page structure</a> and <a href="https://www.w3.org/WAI/tutorials/forms/labels/">form labelling</a>.</p>
+</section>
+
+<section class="web-section">
+<h2>5. Stress-test your layout and content</h2>
+<ol class="web-steps">
+<li><strong>Narrow screen.</strong> Use the responsive view in DevTools at 375px wide and read top to bottom. The page itself must not scroll sideways. A wide code block or table may scroll inside its own box — that is different.</li>
+<li><strong>Long content.</strong> Replace a short project title with a much longer one. It should wrap, not cover a control or push the layout apart.</li>
+<li><strong>Zoom.</strong> Zoom to 200%. Navigation, labels, and buttons must all still be usable.</li>
+<li><strong>Missing media.</strong> Temporarily break an image's path. Does the alt text explain what is missing? Restore the path afterwards.</li>
+<li><strong>Without motion.</strong> No important instruction should depend on an animation, and nothing should start playing sound on its own.</li>
+<li><strong>Colour.</strong> Check text and background contrast with an accessibility checker, and make sure states are communicated by words or shapes as well as by colour.</li>
+</ol>
+<div class="web-callout"><strong>A tool cannot finish the review for you.</strong> Automated checks catch some defects. Reading the page, operating it with a keyboard, and watching another person try to complete a task each reveal problems the others miss.</div>
+</section>
+
+<section class="web-section">
+<h2>6. Your release rehearsal</h2>
+<p>Ask a partner to find a project, open it, and get back to the home page. Watch in silence — every hint you give hides a real defect. Write down the first moment of confusion, fix that one thing, then ask them to repeat the task. Keep both observations in <code>test-notes.md</code>; the pair of them is your evidence that the change helped.</p>
+<h3>Choose an extension</h3>
+<ul>
+<li>Add a skip link to your main content and test it with the keyboard alone.</li>
+<li>Introduce a deliberate filename-case mismatch, diagnose it from the Network panel, and write down why a web host will expose it when your laptop did not.</li>
+<li>Test your site in a second browser and compare your evidence against the first.</li>
+</ul>
+<ul class="web-checklist">
+<li><label><input type="checkbox" data-web-check="0"> I reproduced and repaired an error using the Console or the Network panel.</label></li>
+<li><label><input type="checkbox" data-web-check="1"> I can use the whole page with the keyboard, and I can see where focus is.</label></li>
+<li><label><input type="checkbox" data-web-check="2"> I checked the narrow layout, zoom, a long title, and an empty search result.</label></li>
+<li><label><input type="checkbox" data-web-check="3"> A classmate completed three tasks and I recorded one improvement I made because of it.</label></li>
+</ul>
+<div class="web-progress"><progress data-web-meter max="1" value="0" aria-label="Lesson checkpoints"></progress><span data-web-progress aria-live="polite"></span><button type="button" data-web-reset>Reset this lesson’s checks</button></div>
+</section>
+
+<nav class="web-next" aria-label="Lesson sequence"><a href="web-javascript.html">← Previous: JavaScript</a><a href="web-project-studio.html">Next: Choose your website studio →</a></nav>
+
+</main>
+<footer>ClassroomOS web workshop · Read, change, test, explain. <a href="web-design-pathway.html">Course map</a></footer>
+<script src="../assets/js/lesson-print-button.js"></script>
+</body></html>

@@ -1,0 +1,199 @@
+<!doctype html>
+<!--
+  ============================================================
+  REFERENCE BUILD — Web Foundations
+  This file completes CHALLENGE 4 from challenges.md:
+  "Make each tag clickable so it searches for that tag."
+
+  Try the challenge yourself first, then compare. There is more than one
+  correct answer; this is only one of them.
+
+  Everything (CSS and JavaScript) is inside this single file so you can read it
+  in one scroll. Your own pack keeps them in separate files, which is the better
+  habit for real sites.
+  ============================================================
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reference: clickable tags — Web Foundations</title>
+  <style>
+    :root {
+      --bg: #f4f7fb; --surface: #fff; --text: #16232e; --muted: #536676;
+      --accent: #0f6f8c; --border: #d3dde6; --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 24px; background: var(--bg); color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.55;
+    }
+    header, main, footer { width: min(880px, 100%); margin-inline: auto; }
+    header {
+      padding: 16px 20px; border: 1px solid var(--border);
+      border-radius: var(--radius); background: var(--surface);
+    }
+    .eyebrow { margin: 0; color: var(--accent); font-size: .75rem; font-weight: 800; letter-spacing: .14em; }
+    h1 { margin: 0; font-size: clamp(1.6rem, 5vw, 2.4rem); }
+    h2 { font-size: 1.25rem; }
+    main { margin-block: 24px; }
+    .search-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .search-row label { font-weight: 700; }
+    .search-row input {
+      flex: 1 1 240px; padding: 10px 12px; border: 1px solid var(--border);
+      border-radius: 10px; background: var(--surface); color: inherit; font: inherit;
+    }
+    .status { margin: 0 0 14px; color: var(--muted); font-size: .95rem; }
+    .project-list {
+      list-style: none; margin: 0; padding: 0; display: grid; gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+    .project-card {
+      padding: 16px 18px; border: 1px solid var(--border); border-top: 4px solid var(--accent);
+      border-radius: var(--radius); background: var(--surface);
+    }
+    .project-card h3 { margin: 0 0 4px; font-size: 1.05rem; }
+    .project-card p { margin: 0 0 10px; color: var(--muted); }
+    .tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    /* The tag is now a real <button>, so it is keyboard-operable for free. */
+    .tag {
+      padding: 3px 10px; border: 1px solid transparent; border-radius: 999px;
+      background: color-mix(in srgb, var(--accent) 14%, transparent);
+      color: var(--accent); font: inherit; font-size: .78rem; font-weight: 700; cursor: pointer;
+    }
+    .tag:hover { border-color: var(--accent); }
+    footer { padding-top: 14px; border-top: 1px solid var(--border); color: var(--muted); font-size: .9rem; }
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <header>
+    <p class="eyebrow">WEB FOUNDATIONS &middot; REFERENCE</p>
+    <h1>Clickable tags</h1>
+  </header>
+
+  <main>
+    <section>
+      <h2>Projects</h2>
+      <div class="search-row">
+        <label for="search">Search projects</label>
+        <input id="search" type="search" placeholder="Try: game, sensor, paint" autocomplete="off">
+      </div>
+      <p id="search-status" class="status" role="status" aria-live="polite">Showing all projects.</p>
+      <ul id="project-list" class="project-list"></ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>Reference build. Starter pack from Mr. Scandrett's ClassroomOS.</p>
+  </footer>
+
+  <script>
+    "use strict";
+
+    // ---------- DATA ----------
+    const projects = [
+      { title: "Orbit Dodge", year: 2026, summary: "A canvas game where you steer a satellite through a debris field.", tags: ["game", "canvas", "javascript"] },
+      { title: "Greenhouse Sensor Log", year: 2026, summary: "Temperature readings from a micro:bit, charted as a simple bar graph.", tags: ["sensor", "data", "microbit"] },
+      { title: "Generative Paint", year: 2025, summary: "Click and drag to grow branching shapes that never repeat.", tags: ["art", "canvas", "paint"] }
+    ];
+
+    const searchBox = document.querySelector("#search");
+    const projectList = document.querySelector("#project-list");
+    const searchStatus = document.querySelector("#search-status");
+
+    // ---------- FUNCTIONS ----------
+
+    // Same matcher as the starter file.
+    function matchesSearch(project, query) {
+      const needle = query.trim().toLowerCase();
+      if (needle === "") return true;
+      const haystack = (project.title + " " + project.summary + " " + project.tags.join(" ")).toLowerCase();
+      return haystack.includes(needle);
+    }
+
+    // THE CHALLENGE ANSWER, PART 1:
+    // each tag is a <button type="button"> instead of a <span>. A button can be
+    // reached with Tab and pressed with Enter or Space with no extra code.
+    function createTagButton(tag) {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "tag";
+      chip.textContent = tag;
+      chip.setAttribute("aria-label", "Search for " + tag);
+      return chip;
+    }
+
+    function createProjectCard(project) {
+      const item = document.createElement("li");
+      item.className = "project-card";
+
+      const heading = document.createElement("h3");
+      heading.textContent = project.title + " (" + project.year + ")";
+
+      const summary = document.createElement("p");
+      summary.textContent = project.summary;
+
+      const tagRow = document.createElement("div");
+      tagRow.className = "tag-row";
+      project.tags.forEach(function (tag) { tagRow.append(createTagButton(tag)); });
+
+      item.append(heading, summary, tagRow);
+      return item;
+    }
+
+    function renderProjects(list) {
+      projectList.replaceChildren();
+      if (list.length === 0) {
+        const empty = document.createElement("li");
+        empty.className = "project-card";
+        empty.textContent = "No projects match that search yet.";
+        projectList.append(empty);
+        return;
+      }
+      list.forEach(function (project) { projectList.append(createProjectCard(project)); });
+    }
+
+    function announceCount(shownCount) {
+      if (shownCount === projects.length) {
+        searchStatus.textContent = "Showing all " + projects.length + " projects.";
+      } else if (shownCount === 0) {
+        searchStatus.textContent = "No matches. Try a shorter word.";
+      } else {
+        searchStatus.textContent = "Showing " + shownCount + " of " + projects.length + " projects.";
+      }
+    }
+
+    function handleSearch() {
+      const matching = projects.filter(function (project) {
+        return matchesSearch(project, searchBox.value);
+      });
+      renderProjects(matching);
+      announceCount(matching.length);
+    }
+
+    // THE CHALLENGE ANSWER, PART 2:
+    // one listener on the whole list instead of one listener per tag button.
+    // The cards are rebuilt on every search, so per-button listeners would have
+    // to be re-attached every time. This listener survives because the <ul> never
+    // gets replaced. event.target is the exact thing that was clicked.
+    function handleTagClick(event) {
+      const chip = event.target.closest(".tag");
+      if (!chip) return;
+      searchBox.value = chip.textContent;
+      handleSearch();
+      searchBox.focus();
+    }
+
+    // ---------- START ----------
+    function init() {
+      renderProjects(projects);
+      announceCount(projects.length);
+      searchBox.addEventListener("input", handleSearch);
+      projectList.addEventListener("click", handleTagClick);
+    }
+
+    init();
+  </script>
+</body>
+</html>

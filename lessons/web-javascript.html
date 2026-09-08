@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Make It Respond with JavaScript · ClassroomOS</title>
+<meta name="description" content="Lesson 4 of Build Your Own Web: variables, arrays, functions, the DOM and events, used to build a working search that filters your project cards.">
+<link rel="icon" href="../assets/images/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/classroom-home.css">
+<link rel="stylesheet" href="../assets/css/lessons/web-design-pathway.css">
+<script src="../assets/js/theme-registry.js" defer></script>
+<script src="../assets/js/lessons/web-design-pathway.js" defer></script>
+<script src="../assets/js/lessons/web-foundations-labs.js" defer></script>
+</head>
+<body class="web-course">
+<a class="skip-link" href="#main">Skip to lesson</a>
+<header class="web-topbar">
+<a href="web-design-pathway.html"><strong>Build Your Own Web</strong></a>
+<nav aria-label="Site"><a href="../steam-lessons.html">STEAM lessons</a><a href="../paths.html">All pathways</a><a href="../class-downloads.html">Downloads</a></nav>
+</header>
+<main id="main" class="web-main">
+
+<section class="web-hero">
+<p class="web-meta">Lesson 4 of the pathway · 60–75 minutes · You need the styled page from Lesson 3</p>
+<h1>Make It Respond with JavaScript</h1>
+<p class="web-lead">HTML is the structure and CSS is the design. JavaScript is the part that reacts: it reads what a visitor did, decides something, and changes the page. By the end of this lesson your own site will have a search box that filters your project cards as you type.</p>
+<p>Work in <code>script.js</code>. Confirm the last line before <code>&lt;/body&gt;</code> in <code>index.html</code> is <code>&lt;script src=&quot;script.js&quot;&gt;&lt;/script&gt;</code>. The position matters: code runs the moment it loads, and it cannot find elements the browser has not built yet.</p>
+</section>
+
+<section class="web-section">
+<h2>First tool: see what your program believes</h2>
+<p>Programs almost never fail mysteriously. They do exactly what you wrote, on values you did not expect. <code>console.log()</code> is how you find out which.</p>
+<pre><code>const name = "Ada";
+console.log("name is:", name);
+console.log("length is:", name.length);</code></pre>
+<p>Open the page, press <kbd>F12</kbd> (or right-click and choose <strong>Inspect</strong>), then click the <strong>Console</strong> tab. Red text there is an error with a file name and a line number — read it before changing anything, because it usually names the problem exactly.</p>
+<p class="web-callout"><strong>Habit to build now:</strong> when something does not work, do not guess and retype. Log the value one line <em>before</em> the line that misbehaves, and log it again one line after. The bug is between the last value that looked right and the first value that looked wrong.</p>
+</section>
+
+<section class="web-section">
+<h2>Values and the boxes that hold them</h2>
+<p>A variable is a name for a value. Use <code>const</code> unless you know the value must change; then use <code>let</code>. Do not use <code>var</code>.</p>
+<pre><code>const siteName = "Maya's Creation Station"; // string: text in quotes
+let visitCount = 0;                          // number: no quotes
+const isPublished = true;                    // boolean: true or false
+
+visitCount = visitCount + 1;   // fine, visitCount is let
+// siteName = "something else"; // error: siteName is const</code></pre>
+<p><code>const</code> is not a restriction. It is a promise to your future self that this name will always mean this thing, and that promise is what makes code readable a month later.</p>
+<p>Two kinds of collection hold the rest of your data:</p>
+<pre><code>// An array: an ordered list. Positions start at 0.
+const tags = ["game", "physics", "art"];
+console.log(tags[0]);      // "game"
+console.log(tags.length);  // 3
+
+// An object: named fields describing one thing.
+const project = {
+  title: "Maze game",
+  tags: ["game", "keyboard"],
+  finished: true
+};
+console.log(project.title);   // "Maze game"
+
+// An array of objects: the normal shape of real site data.
+const projects = [project, { title: "Study timer", tags: ["tool"], finished: false }];</code></pre>
+</section>
+
+<section class="web-section">
+<h2>Functions: a name for a job</h2>
+<p>A function packages steps so you can run them whenever you like, without repeating them.</p>
+<pre><code>function describe(project) {          // project is the input, called a parameter
+  return project.title + " — " + project.tags.join(", ");
+}
+
+console.log(describe(project));      // "Maze game — game, keyboard"</code></pre>
+<p><code>return</code> hands a value back to whoever called the function. A function without one still does its work, but answers <code>undefined</code> — so a logged <code>undefined</code> usually means a missing <code>return</code>.</p>
+</section>
+
+<section class="web-section">
+<h2>The DOM: your page, as objects</h2>
+<p>When the browser loads your HTML it builds a live model of it called the DOM. JavaScript can read and change that model, and the screen updates immediately. Four operations cover nearly everything you will do this year.</p>
+<div class="web-table">
+<table>
+<caption class="web-muted">The four DOM moves worth memorising</caption>
+<thead><tr><th>Code</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><code>document.querySelector(".card")</code></td><td>Finds the first element matching a CSS selector, or <code>null</code></td></tr>
+<tr><td><code>document.querySelectorAll(".card")</code></td><td>Finds every match, as a list you can loop over</td></tr>
+<tr><td><code>el.textContent = "Hi"</code></td><td>Replaces the text inside an element</td></tr>
+<tr><td><code>el.hidden = true</code></td><td>Hides the element from sight <em>and</em> from screen readers</td></tr>
+</tbody>
+</table>
+</div>
+<p>You will also use <code>el.classList.add("is-active")</code>, <code>.remove()</code> and <code>.toggle()</code>. These let JavaScript decide <em>which</em> state an element is in while CSS decides what that state looks like — a better split than writing colors in your JavaScript.</p>
+<p>If <code>querySelector</code> returns <code>null</code> the selector matched nothing, and the next line fails with "Cannot read properties of null". Check the spelling, the dot before a class name, and that your script runs after the HTML.</p>
+</section>
+
+<section class="web-section">
+<h2>Events: waiting for the visitor</h2>
+<p>Your code should not run in one straight line and stop. It should wait. <code>addEventListener</code> attaches a function that runs later, every time something happens.</p>
+<pre><code>const button = document.querySelector("#say-hi");
+
+button.addEventListener("click", function () {
+  console.log("The button was clicked");
+});</code></pre>
+<p>Three event names cover most work: <code>"click"</code> for buttons, <code>"input"</code> for text fields (it fires on every keystroke, including paste), and <code>"submit"</code> for forms. You never call that function yourself — you hand it to the browser, which calls it.</p>
+</section>
+
+<section class="web-section">
+<h2>The project: search that filters cards</h2>
+<p>Here is the finished behaviour. Type in the box; cards that do not match disappear and the count updates. Try <strong>maze</strong>, then <strong>Maze</strong>, then a word that matches nothing.</p>
+
+<div class="web-lab">
+<h3>Lab: filter a list of projects</h3>
+
+<label for="js-search">Search these projects</label>
+<input type="search" id="js-search" placeholder="Try: maze, timer, physics">
+<div class="web-actions"><button type="button" id="js-clear">Clear</button></div>
+<p id="js-count" class="web-feedback" aria-live="polite"></p>
+
+<div>
+<article class="web-panel" data-lab-project><h3>Maze game</h3><p>Keyboard controls, three levels, a timer and collision detection.</p></article>
+<article class="web-panel" data-lab-project><h3>Bridge simulator</h3><p>A physics model showing tension and compression in a truss.</p></article>
+<article class="web-panel" data-lab-project><h3>Photo filters</h3><p>Brightness, contrast and grayscale applied to an image on a canvas.</p></article>
+<article class="web-panel" data-lab-project><h3>Study timer</h3><p>Twenty-five minutes of focus, then a five minute break, with sound off by default.</p></article>
+<article class="web-panel" data-lab-project><h3>Weather log</h3><p>A week of temperature readings charted from data I collected myself.</p></article>
+</div>
+
+<p><strong>What the code is deciding, step by step:</strong></p>
+<pre id="js-trace"></pre>
+<p class="web-muted">That trace is not magic. It is exactly what <code>console.log()</code> would print for each card on each keystroke — the same information, shown on the page so you can watch it while you type.</p>
+</div>
+
+<p><strong>Check.</strong> Typing <code>maze</code> should leave one card and report "1 of 5 projects shown". Typing <code>MAZE</code> must give the identical result. Typing <code>zz</code> should hide everything and say so. Clearing the box brings all five back and returns your cursor to the field.</p>
+<p><strong>Repair.</strong> If your own version hides <em>every</em> card as soon as you type one letter, log your search term: you are almost certainly comparing lowercase page text against a capital letter, or comparing against text that still has spaces around it. If nothing at all happens, log the result of <code>querySelectorAll</code> — a length of 0 means your selector and your HTML disagree.</p>
+</section>
+
+<section class="web-section">
+<h2>Build it yourself, one stage at a time</h2>
+<p>Type each stage into <code>script.js</code>, save, and refresh before writing the next one. Watching one stage work is worth more than pasting all six.</p>
+
+<p><strong>Stage 1 — get the elements.</strong> Nothing can happen until the code holds the things it will change.</p>
+<pre><code>const searchBox = document.querySelector("#search");
+const cards     = document.querySelectorAll(".card");
+const countLine = document.querySelector("#count");
+
+console.log("cards found:", cards.length);   // expect your real number, not 0</code></pre>
+
+<p><strong>Stage 2 — read the value, and clean it.</strong></p>
+<pre><code>function filterCards() {
+  const term = searchBox.value.trim().toLowerCase();
+  console.log("term:", term);
+}</code></pre>
+<p><code>.trim()</code> removes spaces from the start and end, so the space a phone keyboard adds does not stop <code>"maze "</code> matching <code>"maze"</code>. <code>.toLowerCase()</code> makes the comparison ignore capitals — you lowercase <em>both</em> sides. Neither changes what the visitor sees in the box; both return a new string used only for comparing.</p>
+
+<p><strong>Stage 3 — loop over every card.</strong></p>
+<pre><code>  cards.forEach(function (card) {
+    const text = card.textContent.toLowerCase();
+  });</code></pre>
+
+<p><strong>Stage 4 — decide.</strong> <code>includes()</code> answers true or false: does this text contain that text anywhere?</p>
+<pre><code>    const matches = text.includes(term);</code></pre>
+
+<p><strong>Stage 5 — show or hide.</strong> Use <code>hidden</code>, not a CSS class that only fades the card. A card hidden with <code>hidden</code> is also removed from what a screen reader announces, which is what you want.</p>
+<pre><code>    card.hidden = !matches;   // ! means "not"</code></pre>
+
+<p><strong>Stage 6 — report the count, and listen.</strong> Here is the whole file:</p>
+<pre><code>/* script.js — filter the project cards as the visitor types. */
+
+const searchBox = document.querySelector("#search");
+const cards     = document.querySelectorAll(".card");
+const countLine = document.querySelector("#count");
+
+function filterCards() {
+  // 1. Read what was typed and normalise it for comparing.
+  const term = searchBox.value.trim().toLowerCase();
+  let visible = 0;
+
+  // 2. Ask each card whether it matches, then show or hide it.
+  cards.forEach(function (card) {
+    const matches = card.textContent.toLowerCase().includes(term);
+    card.hidden = !matches;
+    if (matches) {
+      visible = visible + 1;
+    }
+  });
+
+  // 3. Tell the visitor what happened. Never leave them guessing.
+  if (visible === 0) {
+    countLine.textContent =
+      'No projects match "' + searchBox.value + '". Try a shorter word, or clear the box to see all ' + cards.length + '.';
+  } else {
+    countLine.textContent = visible + " of " + cards.length + " projects shown.";
+  }
+}
+
+// 4. Run it on every keystroke, and once at startup.
+searchBox.addEventListener("input", filterCards);
+filterCards();</code></pre>
+<p>The matching HTML needs three things: <code>&lt;input type="search" id="search"&gt;</code> with a real <code>&lt;label for="search"&gt;</code>, a <code>&lt;p id="count"&gt;</code> carrying <code>aria-live="polite"</code>, and cards with <code>class="card"</code>. That <code>aria-live</code> is what makes a screen reader announce the new count.</p>
+<p>Notice the last line: calling <code>filterCards()</code> once at startup makes the count correct before anyone types. A page that starts blank looks broken.</p>
+</section>
+
+<section class="web-section">
+<h2>Empty results are a design decision</h2>
+<p>The most common failure in a student search box is not a crash. It is a page that goes blank and says nothing, leaving the visitor unable to tell whether they searched badly or your site broke.</p>
+<p>An empty state owes the visitor three things: <strong>what happened</strong>, <strong>why</strong>, and <strong>what to do next</strong>. "No results" gives one of the three. The message in Stage 6 gives all three — it names the term, and it offers a way back.</p>
+<p>Add a visible way out as well, so nobody has to select and delete text to recover:</p>
+<pre><code>const clearButton = document.querySelector("#clear");
+
+clearButton.addEventListener("click", function () {
+  searchBox.value = "";
+  filterCards();      // re-run so the cards come back
+  searchBox.focus();  // put the cursor back where they were working
+});</code></pre>
+<p>That <code>focus()</code> line is small and it matters. Without it, a keyboard user who clicks Clear is dropped at the button with no obvious place to continue.</p>
+</section>
+
+<section class="web-section">
+<h2>Building the list from data</h2>
+<p>Once the search works, notice that your card HTML repeats itself. You can keep the data in one array and let JavaScript write the cards, so adding a project is one line instead of eight.</p>
+<pre><code>const projects = [
+  { title: "Maze game",    blurb: "Keyboard controls and three levels." },
+  { title: "Study timer",  blurb: "Twenty-five minutes, then a break." }
+];
+
+const list = document.querySelector("#project-list");
+
+list.innerHTML = projects.map(function (project) {
+  return "&lt;li class='card'&gt;&lt;h3&gt;" + project.title + "&lt;/h3&gt;&lt;p&gt;" + project.blurb + "&lt;/p&gt;&lt;/li&gt;";
+}).join("");</code></pre>
+<p><code>map</code> turns each object into a string of HTML and <code>join("")</code> glues them together. Build the list <em>before</em> calling <code>querySelectorAll(".card")</code>, or the search finds nothing — those cards do not exist yet.</p>
+<p class="web-callout"><strong>Be honest about the limit.</strong> This data lives inside your own file. Writing <code>innerHTML</code> from text a stranger typed is how real sites get attacked, so only ever build HTML from data you wrote yourself. Anything typed by a visitor goes into <code>textContent</code>, never <code>innerHTML</code>.</p>
+</section>
+
+<section class="web-section">
+<h2>Remembering one preference</h2>
+<p><code>localStorage</code> stores small pieces of text in the visitor's own browser and gives them back on the next visit. Use it for one small preference, such as a compact view.</p>
+<pre><code>const toggle = document.querySelector("#compact");
+
+// Read the saved answer when the page loads. It is always text.
+if (localStorage.getItem("compact") === "yes") {
+  toggle.checked = true;
+  document.body.classList.add("is-compact");
+}
+
+toggle.addEventListener("change", function () {
+  document.body.classList.toggle("is-compact", toggle.checked);
+  localStorage.setItem("compact", toggle.checked ? "yes" : "no");
+});</code></pre>
+<p>Say clearly what this does and does not do. It saves in <strong>this browser on this device only</strong>. It is not an account, it does not reach a server, and the same person on their phone starts fresh. A visitor can clear it at any time, and some private-browsing modes refuse to store anything — so your page must still work when nothing comes back. Never store anything personal in it.</p>
+</section>
+
+<section class="web-section">
+<h2>Before you move on</h2>
+<p>Test your search with the mouse, then with the keyboard alone: <kbd>Tab</kbd> to the field, type, <kbd>Tab</kbd> to Clear, press <kbd>Enter</kbd>. Screenshot a successful search and your empty state, and keep both as evidence. Next lesson you will break a feature like this one and repair it.</p>
+<ul class="web-checklist">
+<li><label><input type="checkbox" data-web-check="0"> I used <code>console.log()</code> to inspect a value and can say what it showed me.</label></li>
+<li><label><input type="checkbox" data-web-check="1"> My search filters my own cards and updates a live count on every keystroke.</label></li>
+<li><label><input type="checkbox" data-web-check="2"> I can explain why <code>.trim()</code> and <code>.toLowerCase()</code> are in the code.</label></li>
+<li><label><input type="checkbox" data-web-check="3"> My empty state names the search term and tells the visitor what to do next.</label></li>
+<li><label><input type="checkbox" data-web-check="4"> I saved one preference with <code>localStorage</code> and can state its real limits.</label></li>
+</ul>
+<div class="web-progress"><progress data-web-meter max="1" value="0" aria-label="Lesson checkpoints"></progress><span data-web-progress aria-live="polite"></span><button type="button" data-web-reset>Reset this lesson’s checks</button></div>
+</section>
+
+<nav class="web-next" aria-label="Lesson sequence"><a href="web-css.html">← Previous: Design with CSS</a><a href="web-accessibility-debugging.html">Next: Test, debug, and include everyone →</a></nav>
+
+</main>
+<footer>ClassroomOS web workshop · Read, change, test, explain. <a href="web-design-pathway.html">Course map</a></footer>
+<script src="../assets/js/lesson-print-button.js"></script>
+</body></html>
