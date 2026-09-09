@@ -30,20 +30,29 @@
         <main id="main-content" class="bl-shell">
           <section class="bl-hero">
             <div class="hero-copy">
-              <p class="eyebrow">Hard-Surface Modeling · 50–65 minutes · Grades 7–12</p>
-              <h1>Cut a real hole.<br /><span>Not a painted one.</span></h1>
-              <p class="hero-lede">Anyone can draw a window with a texture. This lesson cuts an actual opening through a solid wall using the Boolean modifier, then frames it with a real 3D frame and muntins you can walk up to from any angle.</p>
+              <p class="eyebrow">Hard-Surface Modeling · 70–90 minutes · Grades 7–12</p>
+              <h1>Build a wall.<br /><span>Frame the opening.</span></h1>
+              <p class="hero-lede">Build a reusable two-meter wall panel with a centered window. Use a live Boolean to cut the opening, assemble measured frame pieces, and fit four panes. Keep this module for the room you will build in Lesson 04.</p>
               <div class="hero-actions">
                 <a class="primary-action" href="#plan">Start the lesson</a>
                 <a class="secondary-action" href="blender-interface-basics.html">Review Lesson 01</a>
               </div>
-              <p class="hero-note"><strong>Finish line:</strong> a wall segment with a clean, beveled, four-pane window cut all the way through it.</p>
+              <p class="hero-note"><strong>Finish line:</strong> a 2m × 2m wall panel, a 1.2m-square opening, and a named collection you can reuse.</p>
             </div>
-            <div class="bl-viewport-art" aria-hidden="true">
-              <div class="bl-art-bar"><span></span><span></span><span></span><b>window_frame.blend</b></div>
-              <div class="bl-art-stage"><div class="bl-art-grid"></div><div class="bl-art-gizmo"><i></i><i></i><i></i><em class="x">X</em><em class="y">Y</em><em class="z">Z</em></div></div>
-              <p class="bl-art-note">Boolean Difference: wall minus cutter cube = a real opening with real thickness on every edge.</p>
-            </div>
+            <figure class="bl-figure">
+              <img src="../assets/images/lessons/blender-windows-doors/boolean-difference-examples.webp" alt="Official Blender example showing Intersect on the left, Union in the middle, and Difference on the right, using a sphere and cube." width="603" height="328" />
+              <figcaption><b>Look for the missing volume</b>The right-hand Difference result removes the cube's volume from the sphere. Your wall and cutter use the same operation. <a href="../assets/images/lessons/blender-windows-doors/ATTRIBUTION.md">Blender Manual image · CC BY-SA 4.0</a>.</figcaption>
+            </figure>
+          </section>
+
+          <section class="bl-studio-brief" aria-label="Lesson plan">
+            <h2>Your studio plan</h2>
+            <dl>
+              <div><dt>Make</dt><dd>A modular wall with a real opening, four frame rails, dividing bars, and four pane meshes.</dd></div>
+              <div><dt>Before you start</dt><dd>Finish Lesson 01. Open Blender with its default keymap, know Object Mode and the Item sidebar, and have a folder for your .blend files. Instructions use Blender 4.5 LTS terminology.</dd></div>
+              <div><dt>Pace</dt><dd>70–90 minutes, or two class periods: wall and cut first; frame, panes, and review second. Stop at each save point.</dd></div>
+              <div><dt>Keep for later</dt><dd>Save <code>02-window-module.blend</code> with a collection named <code>WindowModule</code>. Lesson 04 will append this entire collection, including the cutter.</dd></div>
+            </dl>
           </section>
 
           <nav class="lesson-track" aria-label="Lesson sections">
@@ -58,104 +67,146 @@
           <section class="lesson-section" id="plan">
             <div class="section-label"><span>01</span><p>Plan</p></div>
             <div class="section-content">
-              <p class="section-kicker">Before you cut anything</p>
-              <h2>Decide the wall and the opening.</h2>
+              <p class="section-kicker">One coordinate system for the whole pathway</p>
+              <h2>Build a module that fits the next lesson.</h2>
+              <p><strong>X is width, Y is thickness, Z is height.</strong> The floor is Z = 0. The wall is centered at X = 0, Y = 0; its center is one meter above the floor. This is a classroom model module, not a building-code specification.</p>
               <div class="step-grid three">
-                <article class="step-card"><span>1</span><h3>Wall thickness</h3><p>Interior walls run about 0.1–0.15m thick. Exterior walls are often 0.2–0.3m. Pick one and write it down.</p></article>
-                <article class="step-card"><span>2</span><h3>Opening size</h3><p>A believable residential window is roughly 0.9m × 1.2m, with its sill about 0.9m off the floor.</p></article>
-                <article class="step-card"><span>3</span><h3>Style</h3><p>Single pane, a 2×2 grid, or a 3×1 grid of panes? Sketch it on paper before you touch Blender.</p></article>
+                <article class="step-card"><span>LOOK</span><h3>Wall</h3><p>Dimensions X = <b>2m</b>, Y = <b>0.15m</b>, Z = <b>2m</b>. Location <b>(0, 0, 1)</b>. Its bottom is 1 − 2 ÷ 2 = <b>0m</b>.</p></article>
+                <article class="step-card"><span>LOOK</span><h3>Opening</h3><p>A <b>1.2m × 1.2m</b> opening centered at <b>(0, 0, 1)</b>. The wall left around it is (2 − 1.2) ÷ 2 = <b>0.4m</b> on every side.</p></article>
+                <article class="step-card"><span>LOOK</span><h3>Cutter</h3><p>Dimensions <b>(1.2, 0.45, 1.2)m</b>. Its 0.45m depth extends 0.15m past each wall face, so the cut goes completely through.</p></article>
               </div>
-              <div class="rule"><strong>Real-world scale</strong><span>Confirm Blender's scene unit is meters: <span class="bl-path">Properties Editor → Scene Properties → Units → Unit System → Metric; Length → Meters</span>. Every dimension below assumes 1 Blender unit = 1 meter.</span></div>
+              <article class="bl-build-step">
+                <h3>1. Start a clean file and set the units</h3>
+                <p><strong>DO ·</strong> Save any current project first. Choose <span class="bl-path">File → New → General</span>. With the pointer over the 3D Viewport in <strong>Object Mode</strong>, press <kbd>A</kbd>, then <kbd>X</kbd> and confirm Delete to remove the new default objects. In the Outliner, double-click the remaining <strong>Collection</strong> name and rename it <code>WindowModule</code>; keep it as the active collection.</p>
+                <p>Open <span class="bl-path">Properties → Scene → Units</span>: set Unit System to <strong>Metric</strong>, Unit Scale to <strong>1.000</strong>, and Length to <strong>Meters</strong>. In the viewport, use <kbd>Shift</kbd>+<kbd>S</kbd> → <strong>Cursor to World Origin</strong>. Use <span class="bl-path">View → Viewpoint → Front</span> (or <kbd>Numpad 1</kbd>) to look along the wall's thickness axis.</p>
+                <p class="bl-checkpoint"><strong>CHECK ·</strong> You have an empty scene, the <code>WindowModule</code> collection, and a front view with X horizontal and Z vertical.</p>
+                <p class="bl-repair"><strong>REPAIR ·</strong> If shortcuts act on the Outliner, move the pointer back over the viewport. If the mode selector says Edit Mode, press <kbd>Tab</kbd> to return to Object Mode before adding separate objects.</p>
+              </article>
+              <div class="callout"><b>Our repeatable cube recipe</b><p>In Object Mode: <span class="bl-path">Add → Mesh → Cube</span>, press <kbd>F2</kbd> to name it, then open <kbd>N</kbd> → <strong>Item</strong>. Enter the stated <strong>Dimensions X/Y/Z</strong> and <strong>Location X/Y/Z</strong>; leave Rotation at 0°. Press Enter after each field. Then, with the pointer over the viewport, use <kbd>Ctrl</kbd>+<kbd>A</kbd> → <strong>Scale</strong>. Scale should become <b>1, 1, 1</b> while dimensions stay the same. This makes later bevel sizes predictable. <a href="https://docs.blender.org/manual/en/4.5/scene_layout/object/editing/apply.html">Manual: Apply transforms</a>.</p></div>
             </div>
           </section>
 
           <section class="lesson-section" id="boolean">
             <div class="section-label"><span>02</span><p>Boolean</p></div>
             <div class="section-content">
-              <p class="section-kicker">Two objects, one operation</p>
-              <h2>The Boolean modifier does the cutting.</h2>
-              <p>A Boolean modifier compares two meshes and combines them mathematically. <strong>Difference</strong> subtracts one from the other — exactly what a window opening needs.</p>
-              <div class="toolbox-grid">
-                <article class="toolbox-card"><div class="toolbox-icon">−</div><p class="toolbox-job">Cut a hole</p><h3>Difference</h3><p>Removes the cutter object's volume from the target. This is the operation you want for windows and doors.</p></article>
-                <article class="toolbox-card"><div class="toolbox-icon">+</div><p class="toolbox-job">Merge shapes</p><h3>Union</h3><p>Combines two objects into one solid volume, removing the seam between them.</p></article>
-                <article class="toolbox-card"><div class="toolbox-icon">∩</div><p class="toolbox-job">Keep overlap</p><h3>Intersect</h3><p>Keeps only the volume where both objects overlap — rarely used for architecture, common in prop detailing.</p></article>
-              </div>
-              <div class="callout"><b>Apply scale first</b><p>Select the wall and the cutter, then press <kbd>Ctrl</kbd>+<kbd>A</kbd> → <strong>Scale</strong> on both before adding the modifier. A Boolean run on un-applied scale is the single most common cause of broken geometry.</p></div>
+              <p class="section-kicker">Make the wall, then remove a volume</p>
+              <h2>Keep the cut editable.</h2>
+              <article class="bl-build-step">
+                <h3>2. Add the wall and cutter</h3>
+                <p><strong>LOOK ·</strong> The wall and cutter share the same center. Only the cutter is deeper than the wall.</p>
+                <p><strong>DO ·</strong> In <strong>Object Mode</strong>, use the cube recipe to create <code>WallPanel</code>: Dimensions <b>(2, 0.15, 2)m</b>, Location <b>(0, 0, 1)m</b>. Add a second cube named <code>WindowCut</code>: Dimensions <b>(1.2, 0.45, 1.2)m</b>, Location <b>(0, 0, 1)m</b>. Apply Scale on each.</p>
+                <p>With <code>WindowCut</code> selected, set <span class="bl-path">Object Properties → Viewport Display → Display As → Wire</span>. This makes its outline visible without covering the wall; it does <strong>not</strong> hide it from renders.</p>
+                <p class="bl-checkpoint"><strong>CHECK ·</strong> Front view shows a centered square inside the wall. Orbit using the middle mouse button, or drag the navigation gizmo, and check that the cutter sticks out on <strong>both</strong> sides.</p>
+                <p class="bl-repair"><strong>REPAIR ·</strong> If both cubes became one mesh, undo back before the second cube, make sure you are in <strong>Object Mode</strong>, and add it again. You need two separate Outliner rows for a Boolean operand.</p>
+              </article>
               <figure class="bl-figure">
-                <img src="../assets/images/lessons/blender-windows-doors/boolean-difference-examples.webp" alt="A sphere with a Boolean modifier applied against a cube, showing the Intersect, Union, and Difference results side by side; the cube itself is hidden so only the resulting mesh is visible." width="603" height="328" loading="lazy" />
-                <figcaption><b>Boolean operations, from the Blender manual</b>Difference (right) cuts the second object's volume out of the first — the same operation you'll use to cut a window opening out of a wall.</figcaption>
+                <img src="../assets/images/lessons/blender-windows-doors/boolean-modifier-panel.webp" alt="Blender Boolean modifier panel with Difference, Object operand type, and Exact solver selected; the example operand is named Cube." width="409" height="251" loading="lazy" />
+                <figcaption><b>Match the operation, operand, and solver</b>Choose Difference and Exact as shown. In your project the Object field must read <code>WindowCut</code>, not the example's <code>Cube</code>. <a href="../assets/images/lessons/blender-windows-doors/ATTRIBUTION.md">Official Blender Manual screenshot · CC BY-SA 4.0</a>.</figcaption>
               </figure>
+              <article class="bl-build-step">
+                <h3>3. Add Difference to the wall</h3>
+                <p><strong>DO ·</strong> Select <code>WallPanel</code> in the Outliner. Open <span class="bl-path">Properties → Modifiers (wrench) → Add Modifier → Generate → Boolean</span>; if needed, search the Add Modifier menu for <strong>Boolean</strong>. Choose <strong>Difference</strong>, Operand Type <strong>Object</strong>, Object <strong>WindowCut</strong>, and Solver <strong>Exact</strong>. Leave the modifier in the stack.</p>
+                <p>Select <code>WindowCut</code> and press <kbd>H</kbd> with the pointer over the viewport to hide it locally. In <span class="bl-path">Outliner → Filter (funnel) → Restriction Toggles</span>, enable the <strong>camera column</strong>. Turn off the camera toggle on the <code>WindowCut</code> row so the cutter is also hidden from final renders. Leave the <code>WindowModule</code> collection enabled. The eye/H toggle and camera toggle do different jobs.</p>
+                <p class="bl-checkpoint"><strong>CHECK ·</strong> Orbit the wall: see through the opening and see thickness on its four inside edges. The Boolean remains on <code>WallPanel</code>; <code>WindowCut</code> remains in the Outliner with its eye closed and rendering disabled.</p>
+                <p class="bl-repair"><strong>REPAIR ·</strong> If the wall is still solid, check the modifier is on <code>WallPanel</code>, its Object field is <code>WindowCut</code>, and its viewport display icon is enabled. If the whole wall vanished, check you chose Difference instead of Intersect and restore the cutter dimensions.</p>
+              </article>
+              <div class="callout"><b>Save point 1 · a working opening</b><p>Use <span class="bl-path">File → Save As</span> and save <code>02-window-module.blend</code>. A live modifier needs its cutter: <strong>do not delete WindowCut</strong>. To adjust it later, reopen its Outliner eye, select it, change a dimension or position, then hide it again. <a href="https://docs.blender.org/manual/en/4.5/modeling/modifiers/generate/booleans.html">Manual: Boolean modifier</a> · <a href="https://docs.blender.org/manual/en/4.2/editors/outliner/interface.html#restriction-columns">Manual: eye and camera toggles</a>.</p></div>
+              <div class="teacher-check"><strong>Explain the operation</strong><span>Difference subtracts the cutter's volume; Union adds the volumes; Intersect keeps their overlap. Point at the two objects and explain why the cutter must extend past both wall faces.</span></div>
             </div>
           </section>
 
           <section class="lesson-section" id="frame">
             <div class="section-label"><span>03</span><p>Frame</p></div>
             <div class="section-content">
-              <p class="section-kicker">Trim the opening</p>
-              <h2>Inset, extrude, and array the details.</h2>
-              <ol class="build-list">
-                <li><div><b>Inset the frame lip</b><p>In Edit Mode on a frame ring object, select the inner face loop and press <kbd>I</kbd> to inset it, creating a lip the glass pane will sit behind.</p></div><span>Inset</span></li>
-                <li><div><b>Extrude the depth</b><p>Press <kbd>E</kbd> to push the inset face back into the wall thickness so the frame reads as a real object, not a flat decal.</p></div><span>Extrude</span></li>
-                <li><div><b>Bevel every hard edge</b><p><span class="bl-path">Properties Editor → Modifiers (wrench) → Add Modifier → Generate → Bevel</span> Use a small width (around 0.003m). Sharp CG edges catch no light and read as fake.</p></div><span>Bevel modifier</span></li>
-                <li><div><b>Array the muntins</b><p>Model one vertical bar, then use <span class="bl-path">Properties Editor → Modifiers (wrench) → Add Modifier → Generate → Array</span>. Set Count to repeat it evenly instead of duplicating by hand.</p></div><span>Array modifier</span></li>
-              </ol>
-              <figure class="bl-figure" style="max-width:260px;margin-left:auto;margin-right:auto;">
-                <img src="../assets/images/lessons/blender-windows-doors/boolean-modifier-panel.webp" alt="The Boolean modifier's panel in Blender's Properties editor, with the Operation set to Difference and an Object field pointing at the cutter mesh." width="409" height="251" loading="lazy" />
-                <figcaption><b>The Boolean modifier panel</b>This is the panel you'll actually use: set Operation to Difference, point Object at your cutter, then build the frame with Inset, Extrude, Bevel, and an Array of muntins as described above.</figcaption>
-              </figure>
+              <p class="section-kicker">A frame assembled from measured parts</p>
+              <h2>Four rails make the frame.</h2>
+              <p><strong>LOOK ·</strong> Each rail is 0.08m wide and 0.20m deep. The frame surrounds the opening and projects 0.025m beyond each wall face. The longer side rails cover the ends of the shorter top and bottom rails: simple butt joints.</p>
+              <article class="bl-build-step">
+                <h3>4. Build the side rails, then the top and bottom</h3>
+                <ol class="build-list">
+                  <li><div><b>FrameLeft</b><p>In <strong>Object Mode</strong>, use the cube recipe: Dimensions <strong>(0.08, 0.20, 1.36)m</strong>, Location <strong>(−0.64, 0, 1)m</strong>. Apply Scale.</p></div><span>Left</span></li>
+                  <li><div><b>FrameRight</b><p>With FrameLeft selected in <strong>Object Mode</strong>, press <kbd>Shift</kbd>+<kbd>D</kbd>, then <kbd>Esc</kbd> to cancel only the movement. The duplicate still exists. Rename it <code>FrameRight</code>, and change <strong>Location X to 0.64m</strong>.</p></div><span>Right</span></li>
+                  <li><div><b>FrameBottom</b><p>Add a new cube: Dimensions <strong>(1.20, 0.20, 0.08)m</strong>, Location <strong>(0, 0, 0.36)m</strong>. Apply Scale.</p></div><span>Bottom</span></li>
+                  <li><div><b>FrameTop</b><p>Duplicate FrameBottom with <kbd>Shift</kbd>+<kbd>D</kbd>, then <kbd>Esc</kbd>. Rename it <code>FrameTop</code>, and change <strong>Location Z to 1.64m</strong>.</p></div><span>Top</span></li>
+                </ol>
+                <p class="bl-checkpoint"><strong>CHECK ·</strong> Front view shows a complete frame around a still-empty 1.2m-square opening. Its outside spans X = −0.68 to +0.68 and Z = 0.32 to 1.68. There are four named rail objects.</p>
+                <p class="bl-repair"><strong>REPAIR ·</strong> If a corner has a gap, compare <strong>Location</strong> and <strong>Dimensions</strong> separately. Locations describe centers: 0.64 = half the opening (0.60) + half the rail (0.04). If one rail flickers, look for an extra duplicate left at the original location.</p>
+              </article>
+              <div class="teacher-check"><strong>STEAM · design with constraints</strong><span>Calculate the opening area: 1.2 × 1.2 = <strong>1.44m²</strong>, or <strong>36%</strong> of the 4m² panel. Explain how a larger opening could admit more light while leaving less wall material. These geometric comparisons do not prove structural safety.</span></div>
             </div>
           </section>
 
           <section class="lesson-section" id="build">
             <div class="section-label"><span>04</span><p>Build</p></div>
             <div class="section-content">
-              <p class="section-kicker">Hands on</p>
-              <h2>Build one wall with one window.</h2>
-              <ol class="build-list">
-                <li><div><b>Model the wall</b><p>Add a Cube, then enter exact numbers at <span class="bl-path">3D Viewport → Sidebar (N) → Item → Transform → Dimensions</span>: roughly 3m wide × 2.5m tall × 0.15m thick.</p></div><span>Wall</span></li>
-                <li><div><b>Model the cutter</b><p>Add a second Cube sized to your window opening (about 0.9m × 1.2m), thicker than the wall on the depth axis so it cuts all the way through. Position it where the window belongs.</p></div><span>Cutter</span></li>
-                <li><div><b>Apply the Boolean</b><p>Select the wall, then use <span class="bl-path">Properties Editor → Modifiers (wrench) → Add Modifier → Generate → Boolean</span>. Set Operation to <strong>Difference</strong> and Object to the cutter. Then hide or delete the cutter.</p></div><span>Difference</span></li>
-                <li><div><b>Build the frame</b><p>Add a Cube around the opening, enter Edit Mode, and use Inset (<kbd>I</kbd>) and Extrude (<kbd>E</kbd>) to shape it into a ring that overlaps the wall's cut edge.</p></div><span>Frame</span></li>
-                <li><div><b>Add glass and muntins</b><p>Add a thin Plane inside the frame for glass. Model one muntin bar and Array it across the opening.</p></div><span>Glass + bars</span></li>
-                <li><div><b>Bevel and save</b><p>For the frame and muntins use <span class="bl-path">Properties Editor → Modifiers → Add Modifier → Generate → Bevel</span>, then <kbd>Ctrl</kbd>+<kbd>S</kbd>.</p></div><span>Finish</span></li>
-              </ol>
-              <details class="rescue"><summary>The Boolean result looks broken or has holes?</summary><ul><li>Select both objects and apply scale (<kbd>Ctrl</kbd>+<kbd>A</kbd> → Scale) before the modifier — this fixes most cases instantly.</li><li>In the modifier's settings, try switching the Solver from <strong>Exact</strong> to <strong>Fast</strong>, or back, depending on which produces clean geometry for your shapes.</li><li>Make sure the cutter fully passes through the wall on every side — a cutter that stops flush with a wall face often leaves a thin sliver of leftover geometry.</li></ul></details>
+              <p class="section-kicker">Divide, fit, and finish</p>
+              <h2>Fit four panes into the opening.</h2>
+              <article class="bl-build-step">
+                <h3>5. Make the dividing bars</h3>
+                <p><strong>LOOK ·</strong> A vertical bar and two shorter horizontal bars divide the opening into four squares. Each clear square is (1.20 − 0.04) ÷ 2 = <strong>0.58m</strong> wide and high.</p>
+                <p><strong>DO ·</strong> In <strong>Object Mode</strong>, add <code>MuntinVertical</code> using the cube recipe: Dimensions <b>(0.04, 0.08, 1.20)m</b>, Location <b>(0, 0, 1)m</b>. Add <code>MuntinLeft</code>: Dimensions <b>(0.58, 0.08, 0.04)m</b>, Location <b>(−0.31, 0, 1)m</b>. Apply Scale on both. Duplicate MuntinLeft, cancel the movement, rename it <code>MuntinRight</code>, and set <strong>Location X = 0.31m</strong>.</p>
+                <p class="bl-checkpoint"><strong>CHECK ·</strong> You have four equally sized spaces. The short bars meet the sides of the vertical bar, and all three bars sit inside the frame's depth.</p>
+                <p class="bl-repair"><strong>REPAIR ·</strong> If one bar runs through the wall, check the axis order: Y is its 0.08m depth, not its length. Keep all object rotations at 0° for this build.</p>
+              </article>
+              <article class="bl-build-step">
+                <h3>6. Add the panes with a small fitting gap</h3>
+                <p><strong>DO ·</strong> In <strong>Object Mode</strong>, add a cube named <code>PaneLowerLeft</code>: Dimensions <b>(0.576, 0.012, 0.576)m</b>, Location <b>(−0.31, 0, 0.69)m</b>. Apply Scale. This is a thin solid pane, with <strong>0.002m clearance per edge</strong>. Duplicate it one at a time with <kbd>Shift</kbd>+<kbd>D</kbd>, <kbd>Esc</kbd>; rename each and enter its full Location:</p>
+                <div class="step-grid three">
+                  <article class="step-card"><span>2</span><h3>PaneLowerRight</h3><p><strong>(0.31, 0, 0.69)m</strong></p></article>
+                  <article class="step-card"><span>3</span><h3>PaneUpperLeft</h3><p><strong>(−0.31, 0, 1.31)m</strong></p></article>
+                  <article class="step-card"><span>4</span><h3>PaneUpperRight</h3><p><strong>(0.31, 0, 1.31)m</strong></p></article>
+                </div>
+                <p class="bl-checkpoint"><strong>CHECK ·</strong> Four separate pane objects share the same dimensions. In Solid shading they look opaque: this is expected. Lesson 07 handles materials; a mesh name does not make an object transparent.</p>
+                <p class="bl-repair"><strong>REPAIR ·</strong> To inspect the cut again, hide only the four pane objects using their Outliner eyes. Reopen those eyes after checking. Avoid <kbd>Alt</kbd>+<kbd>H</kbd> here: it also reveals the cutter.</p>
+              </article>
+              <article class="bl-build-step">
+                <h3>7. Add a small bevel to the seven frame and bar parts</h3>
+                <p><strong>LOOK ·</strong> A bevel creates a narrow surface that can catch a highlight along an edge.</p>
+                <p><strong>DO ·</strong> Select <code>FrameLeft</code>. Open <span class="bl-path">Properties → Modifiers → Add Modifier → Generate → Bevel</span>. Set Affect to <strong>Edges</strong>, Width Type to <strong>Offset</strong>, Amount to <strong>0.003m</strong>, Segments to <strong>2</strong>, and Limit Method to <strong>Angle</strong> (30°). Keep Clamp Overlap on. Repeat these settings on the other three frame rails and the three muntin bars. Leave the wall, cutter, and panes as they are.</p>
+                <p class="bl-checkpoint"><strong>CHECK ·</strong> Zoom in and orbit: the frame edges have a small chamfer, and the four openings remain recognizable. Each of those seven parts has Scale 1, 1, 1 and one Bevel modifier.</p>
+                <p class="bl-repair"><strong>REPAIR ·</strong> If bevels look uneven, apply that object's Scale. If too much material disappears, confirm the amount is <strong>0.003m (3mm)</strong>, not 0.3m. Keep flat shading while inspecting these simple solids. <a href="https://docs.blender.org/manual/en/4.4/modeling/modifiers/generate/bevel.html">Manual: Bevel controls</a>.</p>
+              </article>
+              <div class="callout"><b>Save point 2 · a reusable assembly</b><p>Press <kbd>Ctrl</kbd>+<kbd>S</kbd>. Expand <code>WindowModule</code>: it should contain <strong>13 objects</strong> — one wall, one hidden cutter, four frame rails, three bars, and four panes. Keep them separate and keep the Boolean live. Lesson 04 uses <span class="bl-path">File → Append → 02-window-module.blend → Collection → WindowModule</span>.</p></div>
             </div>
           </section>
 
           <section class="lesson-section" id="fix">
             <div class="section-label"><span>05</span><p>Fix</p></div>
             <div class="section-content">
-              <p class="section-kicker">Read the surface, not just the shape</p>
-              <h2>Diagnose shading problems.</h2>
+              <p class="section-kicker">Recover before rebuilding</p>
+              <h2>Check the object, the operation, then the surface.</h2>
               <div class="debug-grid">
-                <article><b>Interior faces look inside-out or dark</b><p>Normals are flipped. Enter Edit Mode, select all (<kbd>A</kbd>), and press <kbd>Shift</kbd>+<kbd>N</kbd> to recalculate normals outward.</p></article>
-                <article><b>Faces flicker as you orbit</b><p>Z-fighting — two faces occupy nearly the same plane. Nudge the glass pane a hair off the frame's inner face.</p></article>
-                <article><b>Boolean leaves stray triangles</b><p>Usually un-applied scale, or a cutter with non-manifold geometry. Rebuild the cutter as a clean primitive Cube.</p></article>
-                <article><b>Frame corners look faceted, not crisp</b><p>The Bevel modifier's Limit Method should be <strong>Angle</strong>, so it only rounds hard corners and leaves flat faces alone.</p></article>
+                <article><b>The opening disappears (Live Modifier issue)</b><p>The wall still depends on its cutter. Move the complete module, including <code>WindowCut</code>, or use the collection workflow in Lesson 04. If you duplicate a wall, inspect its Boolean Object field before editing: a wall-only copy can still refer to the original cutter.</p></article>
+                <article><b>A block fills the opening in the render</b><p>H and the eye toggle affect the viewport. Disable <code>WindowCut</code>'s <strong>camera</strong> toggle in the Outliner too. Do not turn off the Boolean modifier's render icon: that removes the cut from the rendered wall.</p></article>
+                <article><b>The cut has a thin cap or odd fragments</b><p>Check that WindowCut is a closed cube, depth 0.45m, centered at Y = 0. Restore these values and use Exact. Applying Scale helps measurement-dependent modifiers; it cannot fix a cutter that misses the wall or a mesh with missing faces.</p></article>
+                <article><b>A surface looks wrong (Topology/Normals)</b><p>First check for duplicate objects or overlapping faces causing Z-fighting. If you suspect reversed normals or bad topology, select the affected closed mesh, enter Edit Mode, press A, then <kbd>Shift</kbd>+<kbd>N</kbd> to recalculate outside; return to Object Mode. Merging by distance (<kbd>M</kbd>) can also clean up bad topology.</p></article>
               </div>
-              <div class="callout"><b>See it clearly</b><p>Enable <span class="bl-path">3D Viewport header → Viewport Overlays popover (two circles) → Geometry → Face Orientation</span> while diagnosing normals — outward faces render blue, inward-facing faces render red.</p></div>
+              <details class="rescue"><summary>What does Apply mean, and when may I delete the cutter?</summary><p>Adding a modifier leaves it editable. <strong>Apply</strong> writes its result into the mesh and removes that modifier. For this lesson keep the live version. If a later export needs a permanent cut, first use <span class="bl-path">File → Save As</span> to make <code>02-window-baked-copy.blend</code>. In Object Mode select WallPanel, open the Boolean modifier header's dropdown, and choose <strong>Apply</strong>. Verify the opening remains, then delete WindowCut <strong>only in that copy</strong>. Keep the original module file for revisions. Applying object Scale and applying a modifier are different operations. <a href="https://docs.blender.org/manual/en/4.5/modeling/modifiers/introduction.html">Manual: modifier stack and Apply</a>.</p></details>
+              <details class="rescue"><summary>Optional stretch · turn a copy into a doorway</summary><p>Save As <code>02-door-study.blend</code>. In this copy, delete the four rails, three bars, and four panes, leaving the wall and cutter. Reveal WindowCut; set Dimensions to <strong>(0.9, 0.45, 1.82)m</strong> and Location to <strong>(0, 0, 0.9)m</strong>, then Apply Scale. Its bottom now reaches Z = −0.01, just below the wall base, and its top reaches Z = 1.81. Hide the cutter again and keep its camera disabled. Check that the doorway is open at floor level, rather than leaving a thin threshold. Explain why an ordinary window cutter placed above the floor would fail this test. Keep <code>02-window-module.blend</code> unchanged for the room lesson.</p></details>
             </div>
           </section>
 
           <section class="lesson-section" id="check">
             <div class="section-label"><span>06</span><p>Check</p></div>
             <div class="section-content">
-              <p class="section-kicker">Exit ticket</p>
-              <h2>Do you understand the cut?</h2>
+              <p class="section-kicker">Show the model and explain your choices</p>
+              <h2>Prove the module is ready.</h2>
               <div class="quiz">
-                <fieldset><legend>1. Which Boolean operation cuts a hole through a wall?</legend><label><input type="radio" name="q1" value="wrong" /> Union</label><label><input type="radio" name="q1" value="correct" /> Difference</label><label><input type="radio" name="q1" value="wrong" /> Intersect</label></fieldset>
-                <fieldset><legend>2. Why apply scale before a Boolean operation?</legend><label><input type="radio" name="q2" value="correct" /> Un-applied scale is the most common cause of broken Boolean geometry</label><label><input type="radio" name="q2" value="wrong" /> It makes the file render faster</label><label><input type="radio" name="q2" value="wrong" /> It's required to save the file</label></fieldset>
-                <fieldset><legend>3. A face that renders dark or inside-out usually needs...</legend><label><input type="radio" name="q3" value="wrong" /> A new material</label><label><input type="radio" name="q3" value="correct" /> Recalculated normals (Shift+N)</label><label><input type="radio" name="q3" value="wrong" /> A Bevel modifier</label></fieldset>
+                <fieldset><legend>1. Which Boolean operation cuts the cutter's volume out of the wall?</legend><label><input type="radio" name="q1" value="wrong" /> Union</label><label><input type="radio" name="q1" value="correct" /> Difference</label><label><input type="radio" name="q1" value="wrong" /> Intersect</label></fieldset>
+                <fieldset><legend>2. You hid WindowCut with H. What else must you do before rendering?</legend><label><input type="radio" name="q2" value="wrong" /> Delete it while the live Boolean still needs it</label><label><input type="radio" name="q2" value="correct" /> Disable the cutter's camera toggle; keep the Boolean enabled for rendering</label><label><input type="radio" name="q2" value="wrong" /> Disable the wall's Boolean modifier</label></fieldset>
+                <fieldset><legend>3. Why is FrameLeft centered at X = −0.64m?</legend><label><input type="radio" name="q3" value="wrong" /> Location measures the object's leftmost corner</label><label><input type="radio" name="q3" value="correct" /> Half the opening is 0.60m and half the rail is 0.04m</label><label><input type="radio" name="q3" value="wrong" /> Every Blender cube must sit at a negative location</label></fieldset>
                 <button type="button" data-quiz-check>Check my answers</button><p data-quiz-result aria-live="polite"></p>
               </div>
+              <div class="teacher-check"><strong>Partner demonstration</strong><span>Hide the four panes, orbit to show the through-opening, and restore the panes. Select WallPanel and show its live Difference modifier. Explain one repair you could make without rebuilding the whole model.</span></div>
               <div class="finish-line">
                 <div>
                   <p class="section-kicker">Definition of done</p>
                   <div class="checklist">
-                    <label><input type="checkbox"> The opening is a true cut made with the Boolean modifier, not a decal.</label>
-                    <label><input type="checkbox"> Scale was applied on both objects before the Boolean ran.</label>
-                    <label><input type="checkbox"> The frame and muntins have a Bevel modifier and no flipped normals.</label>
+                    <label><input type="checkbox"> WallPanel is 2 × 0.15 × 2m at (0, 0, 1), with a centered 1.2m-square through-opening.</label>
+                    <label><input type="checkbox"> WindowCut remains in the collection, hidden in the viewport and disabled for renders; the wall's live Boolean still references it.</label>
+                    <label><input type="checkbox"> Four rails and three bars frame four equal spaces; all seven have Scale 1, 1, 1 and a 0.003m bevel.</label>
+                    <label><input type="checkbox"> Four pane cubes measure 0.576 × 0.012 × 0.576m and occupy the four different positions.</label>
+                    <label><input type="checkbox"> I saved 02-window-module.blend with all 13 objects in WindowModule and can explain the 0.4m wall margin.</label>
                   </div>
                   <p data-check-status style="margin-top:.6rem;color:var(--text-muted,#64748b);font-size:.82rem;"></p>
                 </div>
@@ -170,12 +221,12 @@
         <div class="ll-panel-head"><div class="ll-tabs"><button class="ll-tab" aria-selected="true" data-pane="pane-guide">Guide</button><button class="ll-tab" aria-selected="false" data-pane="pane-vocab">Vocab</button></div><button class="ll-panel-close" aria-label="Close guide panel">&#x2715;</button></div>
         <div class="ll-panel-body">
           <div class="ll-pane ll-active" id="pane-guide">
-            <p class="ll-pane-title">Learning goals</p><ul class="ll-guide-list"><li>Cut a real opening with the Boolean modifier</li><li>Explain Difference vs. Union vs. Intersect</li><li>Build a frame with Inset, Extrude, and Bevel</li><li>Repeat detail geometry with the Array modifier</li><li>Diagnose flipped normals and Z-fighting</li></ul>
+            <p class="ll-pane-title">Learning goals</p><ul class="ll-guide-list"><li>Cut a real opening with the Boolean modifier</li><li>Explain Difference vs. Union vs. Intersect</li><li>Assemble a frame from exact dimensions and center coordinates</li><li>Duplicate and place four panes with a fitting gap</li><li>Keep a Boolean cutter editable and control viewport/render visibility</li><li>Save a complete module for the room lesson</li></ul>
             <p class="ll-pane-title panel-gap">Requires</p><ul class="ll-guide-list"><li>Lesson 01: Interface &amp; Navigation</li></ul>
-            <p class="ll-pane-title panel-gap">Save habit</p><p class="panel-copy">Save a new numbered version (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>) right before applying any Boolean — it's the easiest step to want to undo later.</p>
+            <p class="ll-pane-title panel-gap">Save habit</p><p class="panel-copy">Save <code>02-window-module.blend</code> after the working cut and again after the finished frame. Keep the original Boolean live. Use Save As before a doorway experiment or permanently applying a modifier.</p>
           </div>
           <div class="ll-pane" id="pane-vocab">
-            <p class="ll-pane-title">Key vocabulary</p><dl class="vocab-list"><dt>Boolean modifier</dt><dd>Combines two meshes with Difference, Union, or Intersect.</dd><dt>Cutter object</dt><dd>The mesh used to remove volume from another mesh.</dd><dt>Non-manifold geometry</dt><dd>A mesh with holes, internal faces, or edges shared by more than two faces — a common Boolean failure.</dd><dt>Muntin</dt><dd>The thin bars dividing a window into panes.</dd><dt>Normal</dt><dd>The direction a face points; flipped normals shade incorrectly.</dd></dl>
+            <p class="ll-pane-title">Key vocabulary</p><dl class="vocab-list"><dt>Boolean modifier</dt><dd>Combines two meshes with Difference, Union, or Intersect.</dd><dt>Cutter object</dt><dd>The mesh used to remove volume from another mesh.</dd><dt>Manifold solid</dt><dd>A closed mesh with a consistent inside and outside; the cube cutter is a dependable starting shape.</dd><dt>Modifier</dt><dd>An editable operation evaluated on an object; applying it makes its result part of the mesh.</dd><dt>Clearance</dt><dd>A small intentional fitting gap between parts.</dd><dt>Muntin</dt><dd>The thin bars dividing a window into panes.</dd><dt>Normal</dt><dd>The direction a face points; flipped normals shade incorrectly.</dd></dl>
           </div>
         </div>
       </aside>

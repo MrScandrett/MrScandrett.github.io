@@ -118,13 +118,13 @@
               <p class="section-kicker">Hands on</p>
               <h2>Model your tool.</h2>
               <ol class="build-list">
-                <li><div><b>Block the primary shapes</b><p>Cylinder handle plus a boxy or hexagonal head, sized against a hand-scale reference (a fist is roughly 0.1m across).</p></div><span>Block-out</span></li>
-                <li><div><b>Cut every hole</b><p>Add cylinder or hex-prism cutters for bolt holes or a socket, and apply a Boolean Difference for each.</p></div><span>Booleans</span></li>
-                <li><div><b>Bevel every hard edge</b><p>Use <span class="bl-path">Properties Editor → Modifiers (wrench) → Add Modifier → Generate → Bevel</span> on each part with a small, consistent width.</p></div><span>Bevel</span></li>
-                <li><div><b>Add Weighted Normal</b><p>Use <span class="bl-path">Properties Editor → Modifiers (wrench) → Add Modifier → Normals → Weighted Normal</span>, then drag it below Bevel. Blender 5.2 has no Auto Smooth checkbox in this modifier.</p></div><span>Weighted Normal</span></li>
-                <li><div><b>Parent, rename, save</b><p>Join or parent the parts, rename everything in the Outliner, and press <kbd>Ctrl</kbd>+<kbd>S</kbd>.</p></div><span>Finish</span></li>
+                <li><div><b>Block the primary shapes</b><p>In <kbd>Object Mode</kbd>, add a Cylinder handle (Radius: 0.02m, Depth: 0.15m) and a boxy head (0.1m &times; 0.04m &times; 0.04m). Position them together.</p></div><span>Block-out</span></li>
+                <li><div><b>Cut the holes</b><p>In <kbd>Object Mode</kbd>, add a new Cylinder (Radius: 0.005m, Depth: 0.1m) to use as a cutter. Position it through the handle. Select the handle, add a Boolean modifier (Difference), and select the cutter object.</p></div><span>Booleans</span></li>
+                <li><div><b>Bevel the hard edges</b><p>With the tool selected in <kbd>Object Mode</kbd>, use <span class="bl-path">Properties Editor &rarr; Modifiers (wrench) &rarr; Add Modifier &rarr; Generate &rarr; Bevel</span>. Set Amount to 0.002m and Segments to 3.</p></div><span>Bevel</span></li>
+                <li><div><b>Add Weighted Normal</b><p>Use <span class="bl-path">Properties Editor &rarr; Modifiers (wrench) &rarr; Add Modifier &rarr; Normals &rarr; Weighted Normal</span>. Drag it below Bevel in the modifier stack.</p></div><span>Weighted Normal</span></li>
               </ol>
-              <details class="rescue"><summary>Beveled edges still look dark or pinched?</summary><ul><li>Confirm the Weighted Normal modifier sits below Bevel in the stack, and that "Keep Sharp" is off unless you deliberately want a hard edge.</li><li>Check the mesh has no flipped normals — recalculate with Shift+N first.</li><li>Make sure Bevel's Limit Method is Angle, not None — beveling every edge indiscriminately rounds off shapes that should stay sharp.</li></ul></details>
+              <div class="teacher-check"><strong>Checkpoint</strong><span>Your tool has at least one clean Boolean cut, smooth beveled edges, and no dark shading artifacts around the cut.</span></div>
+              <details class="rescue"><summary>Beveled edges still look dark or pinched?</summary><ul><li>Confirm the Weighted Normal modifier sits below Bevel in the stack, and that "Keep Sharp" is off unless you deliberately want a hard edge.</li><li>Check the mesh has no flipped normals — recalculate with <kbd>Shift</kbd>+<kbd>N</kbd> in Edit Mode first.</li><li>Make sure Bevel's Limit Method is Angle, not None — beveling every edge indiscriminately rounds off shapes that should stay sharp.</li></ul></details>
             </div>
           </section>
 
@@ -134,10 +134,10 @@
               <p class="section-kicker">Common hard-surface bugs</p>
               <h2>Diagnose before you re-model.</h2>
               <div class="debug-grid">
-                <article><b>A Boolean hole is off-center</b><p>The cutter's origin or the tool's origin was moved after the modifier was added. Nudge the cutter object itself, not the tool.</p></article>
-                <article><b>The head and handle don't line up after Boolean</b><p>Scale wasn't applied on one of the two objects before the operation. Apply scale, then redo the cut.</p></article>
-                <article><b>Shading looks fine in the viewport but breaks after export</b><p>Weighted normals can be lost in some formats. Apply the Weighted Normal modifier from its panel's down-arrow menu → <strong>Apply</strong>, then enable the exporter's normals option when that format provides one.</p></article>
-                <article><b>A cylinder cutter reads as faceted, not round</b><p>Increase its vertex count (16–32) before using it as a Boolean cutter — a low-poly cutter carves a low-poly hole.</p></article>
+                <article><b>Boolean cut is broken or invisible</b><p>Did you apply scale? Select both objects, <kbd>Ctrl</kbd>+<kbd>A</kbd> &rarr; Scale. Or check if the cutter's normals are flipped.</p></article>
+                <article><b>Live modifiers are causing lag</b><p>If you have many Boolean cutters, Blender might slow down. Hide cutters in the viewport when not actively placing them.</p></article>
+                <article><b>Bad topology around the cut</b><p>Boolean operations can create n-gons (faces with more than 4 sides). The Weighted Normal modifier helps hide this, but avoid placing cuts directly on edges or corners of the base mesh.</p></article>
+                <article><b>A cylinder cutter reads as faceted, not round</b><p>Increase its vertex count (16&ndash;32) when creating the primitive &mdash; a low-poly cutter carves a low-poly hole.</p></article>
               </div>
             </div>
           </section>
@@ -160,6 +160,7 @@
                     <label><input type="checkbox"> Every hole or socket is a real Boolean cut, not a texture.</label>
                     <label><input type="checkbox"> Every hard edge is beveled with consistent width.</label>
                     <label><input type="checkbox"> A Weighted Normal modifier removes dark pinching on the shading.</label>
+                    <label><input type="checkbox"> File is saved as <code>06-tool.blend</code>.</label>
                   </div>
                   <p data-check-status style="margin-top:.6rem;color:var(--text-muted,#64748b);font-size:.82rem;"></p>
                 </div>
