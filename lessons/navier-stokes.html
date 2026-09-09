@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Navier-Stokes Equations · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Physics Lesson — Navier-Stokes Equations: Understanding the mathematics of fluid dynamics." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .hp-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 280px; }
+    .hp-hero { padding: 0.4rem 0 1.3rem; }
+    .hp-hero h1 { max-width: 30ch; margin-left: 0; font-size: clamp(1.55rem,3.5vw,2.3rem); }
+    .hp-meta { display:flex;flex-wrap:wrap;gap:0.4rem 0.7rem;margin:0.5rem 0 0;font-size:0.82rem;color: var(--text-muted, #64748b); }
+    .hp-meta .dot { width:3px;height:3px;border-radius:50%;background:currentColor;opacity:0.4;display:inline-block;vertical-align:middle; }
+    .hp-lede { margin:0.65rem 0 0;max-width:68ch;color: var(--text-secondary, #3f4f65);font-size:0.96rem;line-height:1.62; }
+    [data-lighting="night"] .hp-lede,
+    [data-theme="vaporwave"] .hp-lede,
+    [data-theme="bark"] .hp-lede { color:rgba(245,245,247,0.7); }
+    .hp-card { background:var(--white,#fff);border:1px solid var(--line,#d2d2d7);border-left:3.5px solid var(--card-accent,#007aff);border-radius:var(--radius,18px);box-shadow:var(--shadow,0 12px 34px rgba(0,0,0,0.08));padding:1.2rem 1.4rem;margin-bottom:1rem; }
+    .hp-card h2 { margin:0 0 0.55rem;font-size:1.2rem; }
+    .hp-card h3 { margin:0.85rem 0 0.3rem;font-size:1rem; }
+    .hp-card p  { margin:0 0 0.6rem;color: var(--text-secondary, #3f4f65);font-size:0.88rem;line-height:1.65; }
+    .hp-card p:last-child { margin-bottom:0; }
+    .hp-card ul { margin: 0.5rem 0 0.5rem 1.5rem; font-size: 0.88rem; line-height: 1.65; color: var(--text-secondary, #3f4f65); }
+    [data-lighting="night"] .hp-card,
+    [data-theme="vaporwave"] .hp-card,
+    [data-theme="bark"] .hp-card { background:#2c2c2e; }
+    [data-lighting="night"] .hp-card p,
+    [data-theme="vaporwave"] .hp-card p,
+    [data-theme="bark"] .hp-card p,
+    [data-lighting="night"] .hp-card ul,
+    [data-theme="vaporwave"] .hp-card ul,
+    [data-theme="bark"] .hp-card ul { color:rgba(245,245,247,0.72); }
+    .hp-callout { border-radius:12px;padding:0.85rem 1rem;margin:0.8rem 0;font-size:0.84rem;line-height:1.6; }
+    .hp-callout.blue { background:rgba(0,122,255,0.1);border-left:3px solid #007aff; }
+    .hp-canvas-wrap { border:1px solid var(--line,#d2d2d7);border-radius:14px;overflow:hidden;margin:0.8rem 0;background:#000; position: relative; }
+    #ns-canvas { width:100%;height:320px;display:block; cursor: crosshair; }
+    .hp-btn-row { display:flex;gap:0.5rem;margin:0.5rem 0;flex-wrap:wrap; }
+    .hp-btn { background:#007aff;color:#fff;border:none;border-radius:9px;padding:0.4rem 0.9rem;font-size:0.84rem;font-weight:600;cursor:pointer; }
+    .hp-btn:hover { background:#0060df; }
+    .hp-btn.secondary { background:#e5e5ea;color:#1d1d1f; }
+    .hp-btn.secondary:hover { background:#d1d1d6; }
+    .hp-apps { display:grid;grid-template-columns:repeat(2,1fr);gap:0.7rem;margin:0.8rem 0; }
+    .hp-app  { border:1px solid var(--line,#d2d2d7);border-radius:12px;padding:0.8rem; }
+    .hp-app-icon { font-size:1.5rem;margin-bottom:0.3rem; }
+    .hp-app strong { display:block;font-size:0.84rem;margin-bottom:0.2rem; }
+    .hp-app small  { font-size:0.77rem;color: var(--text-muted, #64748b);line-height:1.5;display:block; }
+    .hp-practice .hp-problem { border:1px solid var(--line,#d2d2d7);border-radius:12px;padding:0.9rem 1rem;margin-bottom:0.7rem; }
+    .hp-problem p { margin-bottom:0.5rem;font-size:0.88rem;color: var(--text-secondary, #3f4f65);line-height:1.6; }
+    [data-lighting="night"] .hp-problem p,
+    [data-theme="vaporwave"] .hp-problem p,
+    [data-theme="bark"] .hp-problem p { color:rgba(245,245,247,0.72); }
+    .hp-problem-row { display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap; }
+    .hp-ans-input { border:1px solid var(--line,#d2d2d7);border-radius:8px;padding:0.35rem 0.6rem;font-size:0.88rem;width:140px;background:var(--white,#fff);color:var(--text,#1d1d1f); }
+    .hp-check-btn { background:#007aff;color:#fff;border:none;border-radius:8px;padding:0.35rem 0.8rem;font-size:0.84rem;font-weight:600;cursor:pointer; }
+    .hp-check-btn:hover { background:#0060df; }
+    .hp-feedback { font-size:0.82rem;font-weight:600; }
+    .hp-feedback.ok { color:#34c759; }
+    .hp-feedback.err { color:#ff3b30; }
+    .hp-hint { font-size:0.78rem;color: var(--text-muted, #64748b);margin-top:0.4rem;display:none; }
+    .diff-easy { background:rgba(52,199,89,0.15);color:#248a3d;border-radius:5px;padding:0.1rem 0.4rem;font-size:0.72rem;font-weight:700;margin-right:0.4rem; }
+    .diff-mid  { background:rgba(255,149,0,0.15);color:#c07000;border-radius:5px;padding:0.1rem 0.4rem;font-size:0.72rem;font-weight:700;margin-right:0.4rem; }
+    .diff-hard { background:rgba(255,59,48,0.12);color:#c0392b;border-radius:5px;padding:0.1rem 0.4rem;font-size:0.72rem;font-weight:700;margin-right:0.4rem; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../paths.html">Paths</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Apps</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="hp-page">
+
+        <section class="hero hp-hero">
+          <p class="eyebrow">Physics</p>
+          <h1>Navier-Stokes Equations</h1>
+          <div class="hp-meta">
+            <span>Fluid Mechanics</span><span class="dot"></span>
+            <span>Differential Equations</span><span class="dot"></span>
+            <span>Viscosity</span>
+          </div>
+          <p class="hp-lede">The Navier-Stokes equations describe the motion of viscous fluid substances. These equations are the mathematical foundation for understanding everything from weather patterns and ocean currents to the aerodynamics of an airplane wing.</p>
+        </section>
+
+        <section class="hp-card" style="--card-accent:#007aff;">
+          <h2>The Equation</h2>
+          <p>At its core, the Navier-Stokes equation is an application of Newton's second law (F = ma) to fluid flow. For an incompressible fluid, the vector equation is:</p>
+          <div style="text-align: center; font-weight: bold; font-family: monospace; font-size: 1.1rem; margin: 1.5rem 0; padding: 1rem; background: rgba(0,0,0,0.05); border-radius: 8px;">
+            ρ(∂v/∂t + v ⋅ ∇v) = -∇p + μ∇²v + f
+          </div>
+          <p>Let's break down the terms:</p>
+          <ul>
+            <li><strong>ρ (Density):</strong> The mass per unit volume of the fluid.</li>
+            <li><strong>∂v/∂t (Unsteady acceleration):</strong> How velocity changes over time at a fixed point.</li>
+            <li><strong>v ⋅ ∇v (Convective acceleration):</strong> The acceleration of fluid due to its movement through space.</li>
+            <li><strong>-∇p (Pressure gradient):</strong> Fluids flow from areas of high pressure to low pressure.</li>
+            <li><strong>μ∇²v (Viscosity):</strong> The internal friction of the fluid resisting flow.</li>
+            <li><strong>f (Body forces):</strong> External forces acting on the fluid, like gravity.</li>
+          </ul>
+          <div class="hp-callout blue">
+            <strong>The Millennium Prize:</strong> Despite their importance, the mathematical properties of the Navier-Stokes equations are not fully understood. Proving whether smooth solutions always exist in three dimensions is one of the Clay Mathematics Institute's million-dollar Millennium Prize Problems.
+          </div>
+        </section>
+
+        <section class="hp-card" style="--card-accent:#5856d6;">
+          <h2>Simulator — Eulerian Fluid Dynamics</h2>
+          <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">This is a real-time, grid-based fluid simulation solving a simplified version of Navier-Stokes. <strong>Click and drag</strong> on the canvas to add density (dye) and velocity (force) to the fluid.</p>
+          <div class="hp-canvas-wrap">
+            <canvas id="ns-canvas" aria-label="Navier-Stokes fluid simulation"></canvas>
+            <div style="position: absolute; top: 10px; left: 10px; color: rgba(255,255,255,0.7); font-size: 0.8rem; pointer-events: none;">Drag mouse to interact</div>
+          </div>
+          <div class="hp-btn-row">
+            <button class="hp-btn secondary" onclick="nsClear()">Clear Fluid</button>
+          </div>
+        </section>
+
+        <section class="hp-card" style="--card-accent:#34c759;">
+          <h2>Real-World Applications</h2>
+          <div class="hp-apps">
+            <div class="hp-app"><div class="hp-app-icon">✈️</div><strong>Aerodynamics</strong><small>Engineers use computational fluid dynamics (CFD) based on Navier-Stokes to design aircraft wings that maximize lift and minimize drag.</small></div>
+            <div class="hp-app"><div class="hp-app-icon">🌤️</div><strong>Weather Prediction</strong><small>The atmosphere behaves as a fluid. Supercomputers solve Navier-Stokes equations on global grids to predict storms and climate changes.</small></div>
+            <div class="hp-app"><div class="hp-app-icon">🎬</div><strong>CGI & VFX</strong><small>Movies and video games use simplified Navier-Stokes solvers (like the one above) to create realistic water, fire, and smoke animations.</small></div>
+            <div class="hp-app"><div class="hp-app-icon">🩺</div><strong>Medicine</strong><small>Doctors and researchers use fluid dynamic models to understand blood flow through arteries and design better artificial heart valves.</small></div>
+          </div>
+        </section>
+
+        <section class="hp-card" style="--card-accent:#ff9500;">
+          <h2>Practice Problems</h2>
+          <div class="hp-practice">
+
+            <div class="hp-problem">
+              <p><span class="diff-easy">Easy</span>1. Which principle from classical mechanics forms the basis of the Navier-Stokes equations?</p>
+              <div class="hp-problem-row">
+                <select class="hp-ans-input" id="nsans-1">
+                  <option value="">Choose…</option>
+                  <option value="newton2">Newton's Second Law (F=ma)</option>
+                  <option value="newton3">Newton's Third Law</option>
+                  <option value="thermo">Laws of Thermodynamics</option>
+                </select>
+                <button class="hp-check-btn" onclick="nsCheckText(1,'newton2')">Check</button>
+                <span class="hp-feedback" id="nsfb-1"></span>
+              </div>
+              <div class="hp-hint" id="nshint-1">Hint: It equates the mass times acceleration of fluid to the sum of forces (pressure, viscosity, gravity).</div>
+            </div>
+
+            <div class="hp-problem">
+              <p><span class="diff-mid">Medium</span>2. The term <strong>μ∇²v</strong> represents which property of the fluid?</p>
+              <div class="hp-problem-row">
+                <select class="hp-ans-input" id="nsans-2">
+                  <option value="">Choose…</option>
+                  <option value="pressure">Pressure</option>
+                  <option value="viscosity">Viscosity (Internal friction)</option>
+                  <option value="convection">Convection</option>
+                </select>
+                <button class="hp-check-btn" onclick="nsCheckText(2,'viscosity')">Check</button>
+                <span class="hp-feedback" id="nsfb-2"></span>
+              </div>
+              <div class="hp-hint" id="nshint-2">Hint: μ (mu) is the dynamic viscosity coefficient. It diffuses velocity, making honey act differently than water.</div>
+            </div>
+
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">Lessons</a></p>
+        </footer>
+      </main>
+    </div>
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="ns-pane-sim">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="ns-pane-guide">Summary</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="ns-pane-sim">
+          <span class="ll-label">Viscosity (μ)</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Resistance <span id="ns-visc-val">Low</span></label>
+            <input type="range" class="nl-slider" id="ns-visc" min="0" max="100" value="5" style="width:100%;" />
+          </div>
+          <span class="ll-label">Diffusion</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Dye Spread <span id="ns-diff-val">Medium</span></label>
+            <input type="range" class="nl-slider" id="ns-diff" min="0" max="100" value="20" style="width:100%;" />
+          </div>
+          <span class="ll-label">Color</span>
+          <div style="margin-bottom:0.9rem;">
+            <input type="color" id="ns-color" value="#00aaff" style="width:100%; border:none; border-radius:4px; height: 30px; cursor:pointer;" />
+          </div>
+        </div>
+        <div class="ll-pane" id="ns-pane-guide">
+          <div class="ll-info"><strong>Navier-Stokes</strong>These partial differential equations describe the motion of viscous fluid substances.</div>
+          <div class="ll-info"><strong>Convection</strong>Fluid momentum carries itself forward. This is the non-linear term that makes fluid dynamics so complex to solve.</div>
+          <div class="ll-info"><strong>Pressure Gradient</strong>Fluids naturally want to move from high pressure areas to low pressure areas.</div>
+          <div class="ll-info"><strong>Viscosity</strong>The internal resistance to flow. High viscosity means sticky fluids like honey; low viscosity means water or air.</div>
+        </div>
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+  </div>
+</div>
+
+<script src="../assets/js/theme-registry.js"></script>
+<script src="../assets/js/nav-mobile.js"></script>
+<script>
+(function () {
+  /* Simple Jos Stam Stable Fluids Eulerian Solver */
+  const N = 64;
+  const iter = 4;
+  const SIZE = (N + 2) * (N + 2);
+  
+  let s = new Float32Array(SIZE);
+  let density = new Float32Array(SIZE);
+  let Vx = new Float32Array(SIZE);
+  let Vy = new Float32Array(SIZE);
+  let Vx0 = new Float32Array(SIZE);
+  let Vy0 = new Float32Array(SIZE);
+
+  function IX(x, y) { return x + (N + 2) * y; }
+
+  function add_source(x, s, dt) {
+    for (let i = 0; i < SIZE; i++) x[i] += dt * s[i];
+  }
+
+  function set_bnd(b, x) {
+    for (let i = 1; i <= N; i++) {
+      x[IX(0, i)]     = b === 1 ? -x[IX(1, i)] : x[IX(1, i)];
+      x[IX(N + 1, i)] = b === 1 ? -x[IX(N, i)] : x[IX(N, i)];
+      x[IX(i, 0)]     = b === 2 ? -x[IX(i, 1)] : x[IX(i, 1)];
+      x[IX(i, N + 1)] = b === 2 ? -x[IX(i, N)] : x[IX(i, N)];
+    }
+    x[IX(0, 0)]         = 0.5 * (x[IX(1, 0)] + x[IX(0, 1)]);
+    x[IX(0, N + 1)]     = 0.5 * (x[IX(1, N + 1)] + x[IX(0, N)]);
+    x[IX(N + 1, 0)]     = 0.5 * (x[IX(N, 0)] + x[IX(N + 1, 1)]);
+    x[IX(N + 1, N + 1)] = 0.5 * (x[IX(N, N + 1)] + x[IX(N + 1, N)]);
+  }
+
+  function lin_solve(b, x, x0, a, c) {
+    let cRecip = 1.0 / c;
+    for (let k = 0; k < iter; k++) {
+      for (let j = 1; j <= N; j++) {
+        for (let i = 1; i <= N; i++) {
+          x[IX(i, j)] = (x0[IX(i, j)] + a * (x[IX(i + 1, j)] + x[IX(i - 1, j)] + x[IX(i, j + 1)] + x[IX(i, j - 1)])) * cRecip;
+        }
+      }
+      set_bnd(b, x);
+    }
+  }
+
+  function diffuse(b, x, x0, diff, dt) {
+    let a = dt * diff * N * N;
+    lin_solve(b, x, x0, a, 1 + 4 * a);
+  }
+
+  function advect(b, d, d0, u, v, dt) {
+    let i0, j0, i1, j1;
+    let x, y, s0, t0, s1, t1;
+    let dt0 = dt * N;
+    for (let j = 1; j <= N; j++) {
+      for (let i = 1; i <= N; i++) {
+        x = i - dt0 * u[IX(i, j)]; y = j - dt0 * v[IX(i, j)];
+        if (x < 0.5) x = 0.5; if (x > N + 0.5) x = N + 0.5;
+        i0 = Math.floor(x); i1 = i0 + 1;
+        if (y < 0.5) y = 0.5; if (y > N + 0.5) y = N + 0.5;
+        j0 = Math.floor(y); j1 = j0 + 1;
+        s1 = x - i0; s0 = 1.0 - s1; t1 = y - j0; t0 = 1.0 - t1;
+        d[IX(i, j)] = s0 * (t0 * d0[IX(i0, j0)] + t1 * d0[IX(i0, j1)]) +
+                      s1 * (t0 * d0[IX(i1, j0)] + t1 * d0[IX(i1, j1)]);
+      }
+    }
+    set_bnd(b, d);
+  }
+
+  function project(u, v, p, div) {
+    let h = 1.0 / N;
+    for (let j = 1; j <= N; j++) {
+      for (let i = 1; i <= N; i++) {
+        div[IX(i, j)] = -0.5 * h * (u[IX(i + 1, j)] - u[IX(i - 1, j)] + v[IX(i, j + 1)] - v[IX(i, j - 1)]);
+        p[IX(i, j)] = 0;
+      }
+    }
+    set_bnd(0, div); set_bnd(0, p);
+    lin_solve(0, p, div, 1, 4);
+    for (let j = 1; j <= N; j++) {
+      for (let i = 1; i <= N; i++) {
+        u[IX(i, j)] -= 0.5 * (p[IX(i + 1, j)] - p[IX(i - 1, j)]) / h;
+        v[IX(i, j)] -= 0.5 * (p[IX(i, j + 1)] - p[IX(i, j - 1)]) / h;
+      }
+    }
+    set_bnd(1, u); set_bnd(2, v);
+  }
+
+  function dens_step(x, x0, u, v, diff, dt) {
+    add_source(x, x0, dt);
+    let temp = x0; x0 = x; x = temp; // swap
+    diffuse(0, x, x0, diff, dt);
+    temp = x0; x0 = x; x = temp; // swap
+    advect(0, x, x0, u, v, dt);
+  }
+
+  function vel_step(u, v, u0, v0, visc, dt) {
+    add_source(u, u0, dt); add_source(v, v0, dt);
+    let temp = u0; u0 = u; u = temp; // swap
+    diffuse(1, u, u0, visc, dt);
+    temp = v0; v0 = v; v = temp; // swap
+    diffuse(2, v, v0, visc, dt);
+    project(u, v, u0, v0);
+    temp = u0; u0 = u; u = temp; // swap
+    temp = v0; v0 = v; v = temp; // swap
+    advect(1, u, u0, u0, v0, dt); advect(2, v, v0, u0, v0, dt);
+    project(u, v, u0, v0);
+  }
+
+  const canvas = document.getElementById('ns-canvas');
+  const ctx = canvas.getContext('2d');
+  let raf = null;
+  let px = 0, py = 0, isDown = false;
+
+  canvas.addEventListener('mousedown', e => { 
+    isDown = true; 
+    const rect = canvas.getBoundingClientRect();
+    px = e.clientX - rect.left;
+    py = e.clientY - rect.top;
+    updatePos(e); 
+  });
+  canvas.addEventListener('mousemove', e => { if (isDown) updatePos(e); });
+  canvas.addEventListener('mouseup', () => { isDown = false; });
+  canvas.addEventListener('mouseleave', () => { isDown = false; });
+  
+  // Touch support
+  canvas.addEventListener('touchstart', e => { 
+    isDown = true; 
+    const rect = canvas.getBoundingClientRect();
+    px = e.touches[0].clientX - rect.left;
+    py = e.touches[0].clientY - rect.top;
+    updatePos(e.touches[0]); 
+    e.preventDefault(); 
+  });
+  canvas.addEventListener('touchmove', e => { if (isDown) updatePos(e.touches[0]); e.preventDefault(); });
+  canvas.addEventListener('touchend', () => { isDown = false; });
+
+  function updatePos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    // Ensure canvas has width/height before using it
+    const cw = canvas.width || 1;
+    const ch = canvas.height || 1;
+    
+    let gridX = Math.floor((x / cw) * N) + 1;
+    let gridY = Math.floor((y / ch) * N) + 1;
+    
+    if (gridX < 1) gridX = 1; if (gridX > N) gridX = N;
+    if (gridY < 1) gridY = 1; if (gridY > N) gridY = N;
+
+    let dx = x - px; let dy = y - py;
+    px = x; py = y;
+    
+    if (Math.abs(dx) > 0 || Math.abs(dy) > 0) {
+      const amt = 50.0;
+      Vx0[IX(gridX, gridY)] += dx * amt;
+      Vy0[IX(gridX, gridY)] += dy * amt;
+    }
+    for (let i = -1; i <= 1; i++) {
+      for (let j = -1; j <= 1; j++) {
+        let gx = gridX + i;
+        let gy = gridY + j;
+        if (gx >= 1 && gx <= N && gy >= 1 && gy <= N) {
+          s[IX(gx, gy)] = 4000.0;
+        }
+      }
+    }
+  }
+
+  function getVisc() { return (document.getElementById('ns-visc').value / 100) * 0.0005; }
+  function getDiff() { return (document.getElementById('ns-diff').value / 100) * 0.0005; }
+
+  function hexToRgb(hex) {
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : { r: 0, g: 170, b: 255 };
+  }
+
+  function loop() {
+    const w = canvas.offsetWidth || 300;
+    const h = canvas.offsetHeight || 320;
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+    
+    vel_step(Vx, Vy, Vx0, Vy0, getVisc(), 0.1);
+    dens_step(density, s, Vx, Vy, getDiff(), 0.1);
+    
+    // Clear input arrays
+    for (let i = 0; i < SIZE; i++) {
+      Vx0[i] = 0; Vy0[i] = 0; s[i] = 0;
+    }
+    
+    // Fade density slowly
+    for (let i = 0; i < SIZE; i++) {
+      density[i] = Math.max(0, density[i] - 0.5);
+    }
+    
+    const cw = canvas.width;
+    const ch = canvas.height;
+    const cellW = cw / N;
+    const cellH = ch / N;
+    
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, cw, ch);
+    
+    const colorHex = document.getElementById('ns-color').value;
+    const rgb = hexToRgb(colorHex);
+    
+    for (let j = 1; j <= N; j++) {
+      for (let i = 1; i <= N; i++) {
+        let d = density[IX(i, j)];
+        if (d > 0) {
+          let alpha = Math.min(1.0, d / 255.0);
+          ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+          ctx.fillRect((i - 1) * cellW, (j - 1) * cellH, Math.ceil(cellW), Math.ceil(cellH));
+        }
+      }
+    }
+    
+    raf = requestAnimationFrame(loop);
+  }
+
+  window.nsClear = function() {
+    for (let i = 0; i < SIZE; i++) {
+      density[i] = 0; Vx[i] = 0; Vy[i] = 0;
+    }
+  };
+
+  loop();
+
+  window.nsCheckText = function(n,ans) {
+    const el = document.getElementById('nsans-'+n);
+    const fb = document.getElementById('nsfb-'+n);
+    const hint = document.getElementById('nshint-'+n);
+    if (el.value===ans) { fb.textContent='✓ Correct!'; fb.className='hp-feedback ok'; }
+    else { fb.textContent='✗ Try again.'; fb.className='hp-feedback err'; hint.style.display='block'; }
+  };
+
+  document.getElementById('ns-visc').addEventListener('input', e => {
+    let val = e.target.value;
+    document.getElementById('ns-visc-val').textContent = val < 20 ? 'Low' : val > 80 ? 'High' : 'Medium';
+  });
+  document.getElementById('ns-diff').addEventListener('input', e => {
+    let val = e.target.value;
+    document.getElementById('ns-diff-val').textContent = val < 20 ? 'Low' : val > 80 ? 'High' : 'Medium';
+  });
+})();
+</script>
+<script src="../assets/js/classroom-animations.js"></script>
+  <script src="../assets/js/lesson-layout.js"></script>
+<script src="../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
+

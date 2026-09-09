@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Print-in-Place Fidgets — The Spiral Cone · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Design 3D-printed fidgets that come off the bed already moving. Measure your printer's real clearance, build a captured spinner, then model the spiral cone fidget from scratch — with a full path in both Blender and Tinkercad." />
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../assets/css/lessons/blender-pathway.css" />
+  <link rel="stylesheet" href="../assets/css/lessons/print-fidgets.css" />
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="bl-topbar ll-topbar">
+      <div class="bl-topbar-inner">
+        <a href="3d-printing.html">← 3D Printing</a>
+        <span>Print-in-Place Fidgets · Fabrication Lab</span>
+        <a href="../class-downloads.html">Get Blender</a>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="bl-shell">
+          <section class="bl-hero">
+            <div class="hero-copy">
+              <p class="eyebrow">Design for Fabrication · Two 55-minute sessions · Grades 7–12</p>
+              <h1>It comes off the bed<br /><span>already moving.</span></h1>
+              <p class="hero-lede">A print-in-place fidget is one object with no assembly, no screws, and no glue — the moving parts are printed inside each other, separated by nothing but a designed gap of air. Get that gap wrong by two tenths of a millimetre and you print a paperweight.</p>
+              <div class="hero-actions">
+                <a class="primary-action" href="#plan">Start the lesson</a>
+                <a class="secondary-action" href="#design">Jump to the Spiral Cone Lab</a>
+              </div>
+              <p class="hero-note"><strong>Finish line:</strong> a spiral cone fidget modelled from scratch — in Blender or Tinkercad — sliced with supports off, that stretches to twice its height and springs back.</p>
+            </div>
+            <div class="bl-viewport-art" aria-hidden="true">
+              <div class="bl-art-bar"><span></span><span></span><span></span><b>spiral_cone.blend</b></div>
+              <div class="bl-art-stage"><div class="bl-art-grid"></div><div class="bl-art-gizmo"><i></i><i></i><i></i><em class="x">X</em><em class="y">Y</em><em class="z">Z</em></div><span class="bl-art-label">8 TURNS</span></div>
+              <p class="bl-art-note">A cone shell, sliced by one blade that spirals eight times up a 60 mm rise. The fidget is the gap you cut away.</p>
+            </div>
+          </section>
+
+          <nav class="lesson-track" aria-label="Lesson sections">
+            <a href="#plan"><b>01</b> Plan</a>
+            <a href="#gap"><b>02</b> Gap</a>
+            <a href="#comb"><b>03</b> Comb</a>
+            <a href="#revolve"><b>04</b> Revolve</a>
+            <a href="#design"><b>05</b> Design</a>
+            <a href="#spiral"><b>06</b> Spiral</a>
+            <a href="#print"><b>07</b> Print</a>
+            <a href="#fix"><b>08</b> Fix</a>
+            <a href="#ship"><b>09</b> Ship</a>
+          </nav>
+
+          <section class="lesson-section" id="plan">
+            <div class="section-label"><span>01</span><p>Plan</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Three builds, one idea</p>
+              <h2>Every fidget you print is the same trick.</h2>
+              <p>A 3D printer is a robot that draws with a 0.4 mm pen and stacks the drawings 0.2 mm apart. It has no idea what a hinge is. If two surfaces are close enough for the molten plastic to touch, they weld into one solid piece — so the only thing separating a spinner from a paperweight is whether you left the robot enough room to draw two separate outlines.</p>
+              <p>You will build three objects. Each one adds exactly one new constraint, and the third one is the fidget everybody actually wants.</p>
+              <div class="pf-ladder">
+                <article>
+                  <small>BUILD 01</small>
+                  <h3>Clearance comb</h3>
+                  <p>Six slots, from 0.15 mm to 0.5 mm, cut in one Boolean. Prints in ten minutes and tells you the one number the rest of this lesson depends on.</p>
+                  <span>Boolean · 10 min print</span>
+                </article>
+                <article>
+                  <small>BUILD 02</small>
+                  <h3>Captured spinner</h3>
+                  <p>A disc that spins inside a cup, printed as one piece. You draw the clearance straight into a cross-section and revolve it with the Screw modifier.</p>
+                  <span>Screw revolve · 40 min print</span>
+                </article>
+                <article>
+                  <small>BUILD 03</small>
+                  <h3>Spiral cone fidget</h3>
+                  <p>The boss fight. A cone shell sliced into one ribbon that winds eight times up the axis, stretches like a spring, and snaps back.</p>
+                  <span>Solidify + Screw + Boolean · 2 hr print</span>
+                </article>
+              </div>
+              <p class="section-kicker" style="margin-top:1.8rem;">Pick your tool</p>
+              <div class="step-grid two">
+                <article class="step-card"><span>TINKERCAD</span><h3>Free, in a browser, already in millimetres</h3><p>Adds and subtracts shapes from a fixed library — which is all Builds 01 and 02 need, and it will never let you get the units wrong. The spiral cone needs its Codeblocks mode, because the editor cannot sweep a curve.</p></article>
+                <article class="step-card"><span>BLENDER</span><h3>Installed, and it can sweep any profile</h3><p>Revolves a cross-section into a solid and cuts a true helix with a Boolean, so all three builds happen in one place. The price is that you have to tell it you are working in millimetres.</p></article>
+              </div>
+              <p>Every build below carries both paths — pick a tab and follow it. The design numbers never change; only the clicks do.</p>
+              <div class="rule"><strong>Why the third build needs a different approach</strong><span>Tinkercad is a <em>constructive solid geometry</em> modeller: every object is primitives added together or subtracted. Blender is a mesh modeller, where you can draw any profile and sweep it along any path. A helical ribbon is a swept curve — so in Blender it is a two-modifier stack, and in Tinkercad it has to be approximated by a few hundred primitives placed by a loop.</span></div>
+              <div class="rule"><strong>Bring your printer's numbers</strong><span>Everything here is written for a 0.4 mm nozzle at 0.2 mm layers in PLA — the classroom default. If your machine differs, the labs below recompute for it; change the nozzle and layer dropdowns and the safe gaps move with them.</span></div>
+              <div class="teacher-check"><strong>Checkpoint</strong><span>You can explain, in one sentence, why a printed hinge does not need to be assembled — and what physically happens if its gap is too small.</span></div>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="gap">
+            <div class="section-label"><span>02</span><p>Gap</p></div>
+            <div class="section-content">
+              <p class="section-kicker">The one measurement that matters</p>
+              <h2>Clearance has two different sizes.</h2>
+              <p>Designers say "leave 0.4 mm clearance" as if a gap were a gap. It is not. A gap between two walls standing <em>side by side</em> is a slot the nozzle has to drive around. A gap between one part and the part <em>above</em> it is a ceiling the next layer has to fly across. Those two situations fail in opposite directions, so they get different numbers.</p>
+
+              <div class="pf-lab" data-pf-lab="clearance">
+                <div class="pf-lab-head">
+                  <h3>Clearance Lab</h3>
+                  <p>A cross-section of two neighbouring walls, drawn bead by bead</p>
+                </div>
+                <div class="pf-lab-body">
+                  <div class="pf-stage pf-stage-2d">
+                    <span class="pf-stage-tag">CROSS-SECTION</span>
+                    <canvas data-pf-canvas role="img" aria-label="Cross-section of two printed walls separated by a designed gap."></canvas>
+                  </div>
+                  <div class="pf-controls">
+                    <div class="pf-field">
+                      <div class="pf-field-top"><label for="cl-mode">Which direction?</label></div>
+                      <select id="cl-mode" data-pf-input="mode">
+                        <option value="0">XY — walls side by side</option>
+                        <option value="1">Z — one part above the other</option>
+                      </select>
+                    </div>
+                    <div class="pf-field">
+                      <div class="pf-field-top"><label for="cl-gap">Designed gap</label><output data-pf-output="gap">0.4 mm</output></div>
+                      <input id="cl-gap" type="range" min="0.05" max="1" step="0.05" value="0.4" data-pf-input="gap" data-pf-unit=" mm" />
+                    </div>
+                    <div class="pf-field">
+                      <div class="pf-field-top"><label for="cl-nozzle">Nozzle</label></div>
+                      <select id="cl-nozzle" data-pf-input="nozzle">
+                        <option value="0.2">0.2 mm</option>
+                        <option value="0.4" selected>0.4 mm (standard)</option>
+                        <option value="0.6">0.6 mm</option>
+                        <option value="0.8">0.8 mm</option>
+                      </select>
+                    </div>
+                    <div class="pf-field">
+                      <div class="pf-field-top"><label for="cl-layer">Layer height</label></div>
+                      <select id="cl-layer" data-pf-input="layer">
+                        <option value="0.1">0.10 mm</option>
+                        <option value="0.15">0.15 mm</option>
+                        <option value="0.2" selected>0.20 mm (standard)</option>
+                        <option value="0.28">0.28 mm</option>
+                      </select>
+                    </div>
+                    <div class="pf-buttons">
+                      <button type="button" data-pf-preset='{"mode":0,"gap":0.4,"nozzle":0.4,"layer":0.2}'>Safe slot</button>
+                      <button type="button" data-pf-preset='{"mode":1,"gap":0.2,"nozzle":0.4,"layer":0.2}'>Safe ceiling</button>
+                      <button type="button" data-pf-preset='{"mode":0,"gap":0.15,"nozzle":0.4,"layer":0.2}'>Weld it shut</button>
+                    </div>
+                    <p class="pf-field-note">Each rounded block is one extruded bead. A bead is always a little wider than the nozzle that made it — that spread is what welds parts together.</p>
+                  </div>
+                </div>
+                <div class="pf-readout">
+                  <ul class="pf-stats" data-pf-stats></ul>
+                  <ul class="pf-verdicts" data-pf-verdicts aria-live="polite"></ul>
+                </div>
+              </div>
+
+              <div class="pf-callsheet">
+                <div><b>XY clearance ≈ one nozzle width</b><span>0.4 mm for a 0.4 mm nozzle. Narrower and the slicer either merges the two perimeters or squirts a gap-fill bead into the slot, welding both walls.</span></div>
+                <div><b>Z clearance ≈ one layer height</b><span>0.2 mm at 0.2 mm layers. The moving part's first layer sags across the gap, lands, cools, and never bonds — because it was never pressed into hot plastic.</span></div>
+                <div><b>Too big fails too</b><span>Past about 0.6 mm in Z there is nothing close enough underneath. The first layer curls, catches the nozzle, and the print derails. Clearance has a floor <em>and</em> a ceiling.</span></div>
+              </div>
+
+              <div class="rule"><strong>Why one nozzle width, exactly</strong><span>A slicer draws toolpaths, not shapes. It can only place a bead where a whole bead fits. A 0.25 mm slot in your model is a slot the toolpath planner cannot represent at 0.4 mm — so it disappears, and the two "separate" parts are printed as one continuous outline.</span></div>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="comb">
+            <div class="section-label"><span>03</span><p>Comb</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Build 01 · measure your own machine</p>
+              <h2>Stop guessing. Print the comb.</h2>
+              <p>Nozzle wear, filament brand, and how squished your first layer is all shift the real minimum clearance by a tenth of a millimetre or two. Ten minutes of printing replaces every guess in this lesson with a measured number.</p>
+              <div class="tabset-buttons" role="group" aria-label="Choose your modelling tool" data-tabset="comb-tools">
+                <button type="button" class="is-active" data-tab="blender" aria-pressed="true">Blender</button>
+                <button type="button" data-tab="tinkercad" aria-pressed="false">Tinkercad</button>
+              </div>
+              <div class="tabset-panel is-active" data-tabset-panel="blender" data-tabset-for="comb-tools">
+                <p class="pf-path-tag">Blender path</p>
+              <ol class="build-list">
+                <li><div><b>Set Blender to millimetres</b><p>Open <span class="bl-path">Properties Editor → Scene → Units</span>. Unit System: Metric, Unit Scale: <kbd>0.001</kbd>, Length: Millimeters. Now typing 50 into a dimension field means 50 mm, and your STL will export at the size you think it is.</p></div><span>Units</span></li>
+                <li><div><b>Add the plate</b><p><kbd>Shift</kbd>+<kbd>A</kbd> → Mesh → Cube. In the <kbd>N</kbd> sidebar set Dimensions to 50 x 24 x 3 mm and Location Z to 1.5 mm so it sits on the ground plane. Then <kbd>Ctrl</kbd>+<kbd>A</kbd> → Scale.</p></div><span>Plate</span></li>
+                <li><div><b>Add six cutters</b><p>Add a Cube with Dimensions 0.15 x 16 x 5 mm at Location (−20, −4, 1.5). <kbd>Shift</kbd>+<kbd>D</kbd> to duplicate it five times, moving each to X = −12, −4, 4, 12, 20 and setting its X dimension to 0.2, 0.25, 0.3, 0.4, and 0.5 mm. Apply scale to every one of them.</p></div><span>Cutters</span></li>
+                <li><div><b>Join, then cut once</b><p>Select all six cutters, <kbd>Ctrl</kbd>+<kbd>J</kbd> to join them into a single object. Select the plate, then <span class="bl-path">Properties Editor → Modifiers → Add Modifier → Generate → Boolean</span>, Operation: Difference, Object: the joined cutters. One modifier, six slots.</p></div><span>Boolean</span></li>
+                <li><div><b>Print it flat, no supports</b><p>Export STL, slice at 0.2 mm layers with supports off, and print. Then hold it to a light: the first slot you can see through, and whose finger flexes on its own, is your machine's minimum XY clearance.</p></div><span>Measure</span></li>
+              </ol>
+              </div>
+              <div class="tabset-panel" data-tabset-panel="tinkercad" data-tabset-for="comb-tools">
+                <p class="pf-path-tag">Tinkercad path</p>
+              <ol class="build-list">
+                <li><div><b>Start with a Ruler</b><p>New 3D design, then drag the <strong>Ruler</strong> out of the right-hand toolbar onto the workplane. Every shape you select now shows editable width, length, height, and position boxes — all in millimetres, which is what makes Tinkercad immune to the unit-scale trap.</p></div><span>Ruler</span></li>
+                <li><div><b>Drop the plate</b><p>Drag a <strong>Box</strong> onto the workplane and type its size into the dimension boxes: 50 wide, 24 long, 3 high.</p></div><span>Plate</span></li>
+                <li><div><b>Make one slot</b><p>Drag a second Box, size it 0.15 x 16 x 5, and click <strong>Hole</strong> in the Inspector — it turns transparent. Slide it so it crosses the front edge of the plate and stops 8 mm short of the back, leaving a spine.</p></div><span>Hole</span></li>
+                <li><div><b>Duplicate across the plate</b><p><kbd>Ctrl</kbd>+<kbd>D</kbd> five times. Set each copy 8 mm further along X and change only its width: 0.2, 0.25, 0.3, 0.4, 0.5. At 0.15 mm the hole is thinner than the line drawn on screen — trust the number box, not your eyes.</p></div><span>Duplicate</span></li>
+                <li><div><b>Group once, cut six times</b><p>Select everything (<kbd>Ctrl</kbd>+<kbd>A</kbd>) and press <kbd>Ctrl</kbd>+<kbd>G</kbd>. In Tinkercad, Group is the Boolean: solids merge, holes subtract, all in one step.</p></div><span>Group</span></li>
+                <li><div><b>Export and print</b><p><span class="bl-path">Export → .STL</span>, slice at 0.2 mm with supports off, and print flat. Same test as before: the first slot you can see light through is your machine's real minimum clearance.</p></div><span>Export</span></li>
+              </ol>
+              </div>
+              <div class="rule"><strong>Write the number on the print</strong><span>Sharpie your measured clearance onto the comb and keep it by the printer. Every fidget in this lesson — and every hinge, lid, and captive nut you design afterwards — starts from that number.</span></div>
+              <div class="teacher-check"><strong>Checkpoint</strong><span>Your comb has slots that visibly exist at the wide end and visibly vanished at the narrow end. If all six slots opened, your printer is unusually well tuned; if none did, re-check that supports were off and that the slots survived into the slicer preview.</span></div>
+              <details class="rescue"><summary>Every slot printed solid?</summary><ul><li>Look at the slicer preview, not the model. If the preview shows one solid outline, the slots never made it to the toolpath — the gaps are smaller than one extrusion width.</li><li>Check that you applied scale (<kbd>Ctrl</kbd>+<kbd>A</kbd> → Scale) before the Boolean. An unapplied scale silently resizes the cutters.</li><li>Confirm the plate really is 50 mm long in the slicer. If it arrived 0.05 mm long, your unit scale is wrong — see Build 03's export step.</li></ul></details>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="revolve">
+            <div class="section-label"><span>04</span><p>Revolve</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Build 02 · the skill the cone needs</p>
+              <h2>Draw the gap into the cross-section.</h2>
+              <p>Round parts are not modelled by pushing vertices around in 3D. You draw a flat outline — the cross-section of the part, measured from the axis outward — and spin it. In Blender that is the <strong>Screw modifier</strong>, and it is the same tool that will wind the spiral cone, so learn it on something simpler: a disc captured inside a cup, printed as one piece, spinning on the first try.</p>
+              <p>Here is the whole design. Read it as a slice through the middle: the left edge is the axis, and every measurement is a radius.</p>
+
+              <figure class="bl-figure">
+                <svg viewBox="0 0 560 270" role="img" aria-labelledby="cup-figure-title cup-figure-desc">
+                  <title id="cup-figure-title">Cross-section of the captured spinner</title>
+                  <desc id="cup-figure-desc">A half-section through the cup and the disc inside it. The cup is a base 2.6 millimetres thick with a wall reaching a radius of 20 millimetres and an internal groove ending at a radius of 16.6 millimetres, closed by a 45-degree chamfered ceiling. The disc spans radius 8 to 16.2 millimetres and is 4 millimetres thick, leaving 0.2 millimetres of air below it, 0.2 millimetres under the groove ceiling at its outer corner, and 0.4 millimetres outside it.</desc>
+                  <line x1="60" y1="24" x2="60" y2="228" stroke="currentColor" stroke-width="1.2" stroke-dasharray="10 4 2 4" opacity=".6" />
+                  <text class="bl-diagram-label" x="60" y="18" text-anchor="middle">axis</text>
+                  <polygon points="60,200 360,200 360,50 264,50 309,95 309,161 60,161" fill="rgba(138,106,77,.34)" stroke="#8a6a4d" stroke-width="2" stroke-linejoin="round" />
+                  <polygon points="180,158 303,158 303,98 180,98" fill="rgba(232,121,42,.5)" stroke="#a94e11" stroke-width="2" stroke-linejoin="round" />
+                  <text class="bl-diagram-label strong" x="241" y="132" text-anchor="middle">disc that spins</text>
+                  <text class="bl-diagram-label" x="245" y="186" text-anchor="middle">cup base (2.6 mm)</text>
+                  <line x1="287" y1="72" x2="205" y2="46" stroke="currentColor" stroke-width="1" opacity=".55" />
+                  <text class="bl-diagram-label" x="200" y="42" text-anchor="end">45° chamfer traps the disc</text>
+                  <line x1="309" y1="96" x2="378" y2="64" stroke="currentColor" stroke-width="1" opacity=".55" />
+                  <text class="bl-diagram-label strong" x="384" y="68">0.2 mm ceiling gap</text>
+                  <line x1="306" y1="140" x2="378" y2="132" stroke="currentColor" stroke-width="1" opacity=".55" />
+                  <text class="bl-diagram-label strong" x="384" y="136">0.4 mm side gap</text>
+                  <line x1="345" y1="152" x2="378" y2="190" stroke="currentColor" stroke-width="1" opacity=".55" />
+                  <text class="bl-diagram-label" x="384" y="194">cup wall</text>
+                  <line x1="150" y1="161" x2="112" y2="238" stroke="currentColor" stroke-width="1" opacity=".55" />
+                  <text class="bl-diagram-label strong" x="104" y="252">0.2 mm floor gap</text>
+                  <text class="bl-diagram-label" x="60" y="222" text-anchor="middle">r0</text>
+                  <text class="bl-diagram-label" x="360" y="222" text-anchor="middle">r20</text>
+                </svg>
+                <figcaption><b>The clearance is not a setting — it is geometry</b>Nothing in the slicer will add these gaps for you. The 0.4 mm outside the disc, the 0.2 mm under it, and the 0.2 mm over it are drawn into the profile before anything is revolved.</figcaption>
+              </figure>
+
+
+              <div class="tabset-buttons" role="group" aria-label="Choose your modelling tool" data-tabset="spinner-tools">
+                <button type="button" class="is-active" data-tab="blender" aria-pressed="true">Blender · Screw modifier</button>
+                <button type="button" data-tab="tinkercad" aria-pressed="false">Tinkercad · Hole + Group</button>
+              </div>
+              <div class="tabset-panel is-active" data-tabset-panel="blender" data-tabset-for="spinner-tools">
+                <p class="pf-path-tag">Blender path</p>
+              <div class="pf-table-wrap">
+                <table class="pf-table">
+                  <caption>Type these into the <kbd>N</kbd> sidebar with one vertex selected. X is the radius, Y stays 0, Z is the height.</caption>
+                  <thead><tr><th scope="col">Part</th><th scope="col">X (radius)</th><th scope="col">Z (height)</th><th scope="col">What it is</th></tr></thead>
+                  <tbody>
+                    <tr><td>Cup</td><td>0</td><td>0</td><td>Centre of the base, on the bed</td></tr>
+                    <tr><td>Cup</td><td>20</td><td>0</td><td>Outside edge of the base</td></tr>
+                    <tr><td>Cup</td><td>20</td><td>10</td><td>Top of the outer wall</td></tr>
+                    <tr><td>Cup</td><td>13.6</td><td>10</td><td>Lip — narrower than the disc, so it cannot escape</td></tr>
+                    <tr><td>Cup</td><td>16.6</td><td>7.0</td><td>Ceiling of the groove, at 45° so it self-supports</td></tr>
+                    <tr><td>Cup</td><td>16.6</td><td>2.6</td><td>Outer wall of the groove</td></tr>
+                    <tr><td>Cup</td><td>0</td><td>2.6</td><td>Floor the disc spins on</td></tr>
+                    <tr><td>Disc</td><td>8</td><td>2.8</td><td>Finger hole, 0.2 mm above the floor</td></tr>
+                    <tr><td>Disc</td><td>16.2</td><td>2.8</td><td>Rim, 0.4 mm inside the groove wall</td></tr>
+                    <tr><td>Disc</td><td>16.2</td><td>6.8</td><td>Top of the rim, 0.2 mm under the groove ceiling</td></tr>
+                    <tr><td>Disc</td><td>8</td><td>6.8</td><td>Back to the finger hole</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <ol class="build-list">
+                <li><div><b>Make an outline, not a face</b><p>Add a Plane, <kbd>Tab</kbd> into Edit Mode, select all, then <kbd>X</kbd> → Only Faces. You are left with four vertices joined by four edges — a closed outline the Screw modifier can sweep into a surface.</p></div><span>Outline</span></li>
+                <li><div><b>Place the vertices</b><p>Select one vertex at a time and type its X and Z from the table into the <kbd>N</kbd> sidebar. For the cup, select an edge and press <kbd>E</kbd> to extrude the extra vertices until all seven are placed and the loop closes.</p></div><span>Profile</span></li>
+                <li><div><b>Revolve it</b><p><span class="bl-path">Properties Editor → Modifiers → Add Modifier → Generate → Screw</span>. Axis: Z, Angle: 360°, Screw: 0 mm, Steps: 64, and turn on Merge Vertices so the seam closes into a watertight surface.</p></div><span>Screw</span></li>
+                <li><div><b>Build the disc the same way</b><p>Four vertices, same modifier, same settings. Leave both objects in the scene, exactly where they sit. You are not going to cut anything — the air between them is already the design.</p></div><span>Disc</span></li>
+                <li><div><b>Print without touching the slicer's support button</b><p>Supports off. The disc's first layer prints across 0.2 mm of air over the cup's floor, lands, and cools without bonding. That is the whole trick.</p></div><span>Print</span></li>
+              </ol>
+              </div>
+              <div class="tabset-panel" data-tabset-panel="tinkercad" data-tabset-for="spinner-tools">
+                <p class="pf-path-tag">Tinkercad path</p>
+              <div class="pf-table-wrap">
+                <table class="pf-table">
+                  <caption>Tinkercad thinks in diameters and heights above the workplane, so the same design reads like this.</caption>
+                  <thead><tr><th scope="col">Shape</th><th scope="col">Size (mm)</th><th scope="col">Height above workplane</th><th scope="col">Solid or hole</th></tr></thead>
+                  <tbody>
+                    <tr><td>Cylinder</td><td>Ø40 x 10 high</td><td>0</td><td>Solid — the blank</td></tr>
+                    <tr><td>Cylinder</td><td>Ø33.2 x 4.4 high</td><td>2.6</td><td>Hole — the groove</td></tr>
+                    <tr><td>Cone</td><td>Ø33.2 x 16.6 high</td><td>7.0</td><td>Hole — the 45° ceiling</td></tr>
+                    <tr><td>Cylinder</td><td>Ø32.4 x 4 high</td><td>2.8</td><td>Solid — the disc</td></tr>
+                    <tr><td>Cylinder</td><td>Ø16 x 4 high</td><td>2.8</td><td>Hole — the finger hole</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <ol class="build-list">
+                <li><div><b>Raise the side count first</b><p>Drag in a Cylinder and set <strong>Sides</strong> to 64 in the Inspector before you size it. Tinkercad's default 20-sided cylinder is a visible polygon, and a polygonal disc grinds instead of spinning.</p></div><span>Sides</span></li>
+                <li><div><b>Blank, then groove</b><p>Size the cylinder Ø40 x 10. Add a second cylinder Ø33.2 x 4.4, click <strong>Hole</strong>, use <strong>Align</strong> to centre it on the blank, and raise it 2.6 mm above the workplane.</p></div><span>Groove</span></li>
+                <li><div><b>Cut the ceiling with a cone</b><p>Add a <strong>Cone</strong>, size it Ø33.2 x 16.6 high, make it a Hole, centre it, and raise it 7.0 mm. A cone whose radius equals its height has 45° sides — so this one cut gives you a self-supporting ceiling and leaves a Ø27.2 lip at the top.</p></div><span>Chamfer</span></li>
+                <li><div><b>Group the cup — and only the cup</b><p>Select the blank and its two holes, then <kbd>Ctrl</kbd>+<kbd>G</kbd>. Do this <em>before</em> the disc exists. If the disc is in the selection when those holes fire, they will eat straight through it.</p></div><span>Group</span></li>
+                <li><div><b>Build the disc separately</b><p>Cylinder Ø32.4 x 4 with a Ø16 hole through the middle, grouped together, raised 2.8 mm, then aligned to the cup's centre. Leave it as its own object so you can still nudge it.</p></div><span>Disc</span></li>
+                <li><div><b>Check the three gaps by arithmetic</b><p>Ø33.2 − Ø32.4 leaves 0.4 mm all the way around. 2.8 − 2.6 leaves 0.2 mm underneath. 7.0 − 6.8 leaves 0.2 mm above. Tinkercad will not warn you about any of these — the numbers are the only check you get.</p></div><span>Verify</span></li>
+              </ol>
+              </div>
+              <div class="rule"><strong>Why the ceiling is chamfered at 45°</strong><span>A flat ledge over the disc would be an unsupported horizontal roof. Sloping it from r16.6 to r13.6 over 3 mm of height makes every layer land on the one below at exactly 45° — the steepest angle a printer can hold without support. Self-supporting geometry is designed, not fixed later.</span></div>
+              <div class="teacher-check"><strong>Checkpoint</strong><span>Your cup and disc are two separate objects that never touch, and you can state the three gaps out loud: 0.4 mm at the side, 0.2 mm below, 0.2 mm above.</span></div>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="design">
+            <div class="section-label"><span>05</span><p>Design</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Design it before you model it</p>
+              <h2>The spiral cone is five numbers.</h2>
+              <p>Base radius, height, turns, cutter thickness, ribbon thickness. Every failure mode of this fidget is one of those five numbers being wrong, and you can find out which one before spending two hours of printer time. Drag the sliders and watch the verdicts: they run the same three rules a slicer will run — one nozzle width of air, 45° of lean, two beads of wall.</p>
+
+              <div class="pf-lab" data-pf-lab="spiral">
+                <div class="pf-lab-head">
+                  <h3>Spiral Cone Lab</h3>
+                  <p>Drag to orbit · every number here is a number you type into Blender</p>
+                </div>
+                <div class="pf-lab-body">
+                  <div class="pf-stage pf-stage-3d">
+                    <span class="pf-stage-tag">LIVE MODEL</span>
+                    <canvas data-pf-canvas role="img" aria-label="A spiral cone fidget rebuilt from the current design numbers."></canvas>
+                    <p class="pf-nogl" data-pf-nogl hidden>This browser cannot start WebGL, so the 3D preview is off — the design numbers and verdicts below still update as you change the sliders.</p>
+                  </div>
+                  <div class="pf-controls">
+                    <div class="pf-field">
+                      <div class="pf-field-top"><label for="sp-radius">Base radius</label><output data-pf-output="radius">30 mm</output></div>
+                      <input id="sp-radius" type="range" min="10" max="50" step="1" value="30" data-pf-input="radius" data-pf-unit=" mm" />
+                    </div>
+                    <div class="pf-field">
+                      <div class="pf-field-top"><label for="sp-height">Height</label><output data-pf-output="height">60 mm</output></div>
+                      <input id="sp-height" type="range" min="20" max="110" step="2" value="60" data-pf-input="height" data-pf-unit=" mm" />
+                    </div>
+                    <div class="pf-field">
+                      <div class="pf-field-top"><label for="sp-turns">Turns</label><output data-pf-output="turns">8</output></div>
+                      <input id="sp-turns" type="range" min="3" max="14" step="1" value="8" data-pf-input="turns" />
+                    </div>
+                    <div class="pf-field">
+                      <div class="pf-field-top"><label for="sp-gap">Cutter thickness</label><output data-pf-output="gap">0.5 mm</output></div>
+                      <input id="sp-gap" type="range" min="0.1" max="1.2" step="0.05" value="0.5" data-pf-input="gap" data-pf-unit=" mm" />
+                    </div>
+                    <div class="pf-field">
+                      <div class="pf-field-top"><label for="sp-thickness">Ribbon thickness</label><output data-pf-output="thickness">1.2 mm</output></div>
+                      <input id="sp-thickness" type="range" min="0.4" max="3" step="0.1" value="1.2" data-pf-input="thickness" data-pf-unit=" mm" />
+                    </div>
+                    <div class="pf-field">
+                      <div class="pf-field-top"><label for="sp-nozzle">Nozzle</label></div>
+                      <select id="sp-nozzle" data-pf-input="nozzle">
+                        <option value="0.2">0.2 mm</option>
+                        <option value="0.4" selected>0.4 mm (standard)</option>
+                        <option value="0.6">0.6 mm</option>
+                      </select>
+                    </div>
+                    <div class="pf-field">
+                      <div class="pf-field-top"><label for="sp-layer">Layer height</label></div>
+                      <select id="sp-layer" data-pf-input="layer">
+                        <option value="0.1">0.10 mm</option>
+                        <option value="0.16">0.16 mm</option>
+                        <option value="0.2" selected>0.20 mm</option>
+                        <option value="0.28">0.28 mm</option>
+                      </select>
+                    </div>
+                    <div class="pf-buttons">
+                      <button type="button" data-pf-pull>Pull the tip</button>
+                      <button type="button" data-pf-preset='{"radius":30,"height":60,"turns":8,"gap":0.5,"thickness":1.2}'>Classroom default</button>
+                      <button type="button" data-pf-preset='{"radius":30,"height":60,"turns":8,"gap":0.15,"thickness":1.2}'>Welds solid</button>
+                      <button type="button" data-pf-preset='{"radius":46,"height":34,"turns":6,"gap":0.5,"thickness":1.2}'>Too wide to print</button>
+                      <button type="button" data-pf-preset='{"radius":20,"height":104,"turns":13,"gap":0.5,"thickness":1.0}'>Tall spring</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="pf-readout">
+                  <ul class="pf-stats" data-pf-stats></ul>
+                  <ul class="pf-verdicts" data-pf-verdicts aria-live="polite"></ul>
+                </div>
+              </div>
+
+              <p class="section-kicker" style="margin-top:1.6rem;">The three rules the lab is checking</p>
+              <div class="toolbox-grid">
+                <article class="toolbox-card"><div class="toolbox-icon">∠</div><p class="toolbox-job">Can it hold itself up?</p><h3>Lean = atan(radius ÷ height)</h3><p>A 30 mm radius over a 60 mm height leans 26.6° from vertical — comfortably inside the 45° rule, so every layer lands on the one below and no supports are needed.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">↕</div><p class="toolbox-job">Will the windings separate?</p><h3>Air = slot · cos(lean)</h3><p>The cut is horizontal but the wall is not, so a 0.5 mm cutter leaves only 0.46 mm of real air between the ribbon faces. That is why the cutter is drawn thicker than the clearance you measured on the comb.</p></article>
+                <article class="toolbox-card"><div class="toolbox-icon">▮</div><p class="toolbox-job">Will it survive being pulled?</p><h3>Wall = 3 · nozzle</h3><p>1.2 mm of ribbon is three solid beads with no infill. Two beads flexes further but snaps near the tip; one bead is not a fidget, it is confetti.</p></article>
+              </div>
+              <div class="rule"><strong>Rise per turn is your budget</strong><span>Height ÷ turns is how much room each winding gets. Split 60 mm across 8 turns and each ribbon gets 7.5 mm of rise: 7 mm of plastic plus the half-millimetre the cutter takes away. Ask for 20 turns in the same 60 mm and each winding drops to 3 mm — thin, floppy, and mostly gap.</span></div>
+              <div class="teacher-check"><strong>Checkpoint</strong><span>Find a setting where all four verdicts are green, then break exactly one of them on purpose and say which physical failure it would cause on the bed.</span></div>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="spiral">
+            <div class="section-label"><span>06</span><p>Spiral</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Build 03 · the boss fight</p>
+              <h2>Cut a helix out of a cone.</h2>
+              <p>The finished fidget is a cone-shaped shell sliced into one continuous ribbon by a single helical cut. So build it that way: make the shell, then make a cutter that spirals up the axis and Boolean it away. Every winding is separated from the next by exactly the thickness of that cutter.</p>
+              <div class="tabset-buttons" role="group" aria-label="Choose your modelling tool" data-tabset="cone-tools">
+                <button type="button" class="is-active" data-tab="blender" aria-pressed="true">Blender · Boolean the helix</button>
+                <button type="button" data-tab="tinkercad" aria-pressed="false">Tinkercad · Codeblocks</button>
+              </div>
+              <div class="tabset-panel is-active" data-tabset-panel="blender" data-tabset-for="cone-tools">
+                <p class="pf-path-tag">Blender path</p>
+              <ol class="build-list">
+                <li><div><b>Make the cone surface</b><p><kbd>Shift</kbd>+<kbd>A</kbd> → Mesh → Cone. In the operator panel set Vertices: <kbd>96</kbd>, Radius 1: <kbd>30 mm</kbd>, Radius 2: <kbd>3 mm</kbd>, Depth: <kbd>60 mm</kbd>, Base Fill Type: <kbd>Nothing</kbd>. Set Location Z to 30 mm so the base sits on the ground plane.</p></div><span>Cone</span></li>
+                <li><div><b>Give it wall thickness</b><p><span class="bl-path">Add Modifier → Generate → Solidify</span>, Thickness <kbd>1.2 mm</kbd>, Offset <kbd>0</kbd>. Solidify measures perpendicular to the surface, so the ribbon ends up 1.2 mm thick everywhere — three beads, no infill.</p></div><span>Solidify</span></li>
+                <li><div><b>Draw the cutter's cross-section</b><p>Add a Plane, <kbd>X</kbd> → Only Faces, and place its four vertices at X = 1 and 35, Z = 0 and 0.5. It is a flat blade 0.5 mm thick that reaches from near the axis out past the widest part of the cone.</p></div><span>Blade</span></li>
+                <li><div><b>Spiral the cutter up the axis</b><p><span class="bl-path">Add Modifier → Generate → Screw</span>. Axis: Z, Angle: <kbd>360°</kbd>, Screw: <kbd>7.5 mm</kbd>, Iterations: <kbd>9</kbd>, Steps: 64, Merge Vertices on. Set the cutter's Z location to about 4 mm so the bottom winding survives whole. Screw is the same modifier from Build 02 — the only change is that it now climbs 7.5 mm per turn instead of 0.</p></div><span>Screw</span></li>
+                <li><div><b>Cut the spiral</b><p>Apply the modifiers on both objects. Select the cone, then <span class="bl-path">Add Modifier → Generate → Boolean</span>, Solver: Exact, Operation: Difference, Object: the cutter. Apply it. The shell is now one continuous ribbon wound eight times, separated by a 0.5 mm helical slot.</p></div><span>Boolean</span></li>
+                <li><div><b>Add a base ring so it sticks</b><p>The bottom rim touches the bed along a 1.3 mm annulus — not enough. Revolve a second profile (X = 28.2 to 31.8, Z = 0 to 1.6, Screw: 0, Angle: 360°) into a ring and Boolean <em>Union</em> it to the cone, giving the spring a fixed foot to push against.</p></div><span>Base</span></li>
+                <li><div><b>Name it and save</b><p>Save as <code>spiral-cone-fidget.blend</code> before the export step. The next section will send you back here at least once.</p></div><span>Save</span></li>
+              </ol>
+              </div>
+              <div class="tabset-panel" data-tabset-panel="tinkercad" data-tabset-for="cone-tools">
+                <p class="pf-path-tag">Tinkercad path</p>
+              <p>Tinkercad's 3D editor only adds and subtracts shapes from a fixed library. It has no revolve, no sweep, and no taper — so there is no shape to cut a helix with. What it does have is <strong>Codeblocks</strong>: a loop that can place a few hundred small ribbon segments along a conical helix and weld them into one body.</p>
+              <ol class="build-list">
+                <li><div><b>Open a Codeblocks design</b><p>From your Tinkercad dashboard choose <span class="bl-path">Create → Codeblocks</span>. You get a block workspace on the left and a live preview on the right that rebuilds every time you press Play.</p></div><span>Codeblocks</span></li>
+                <li><div><b>Set the design numbers as variables</b><p>Create variables for <code>turns</code> = 8, <code>perTurn</code> = 24, <code>baseR</code> = 30, <code>tipR</code> = 3, <code>H</code> = 60, <code>ribbon</code> = 1.2, and <code>band</code> = 7. Those are the Spiral Cone Lab's numbers — the same design, driven by arithmetic instead of a modifier.</p></div><span>Variables</span></li>
+                <li><div><b>Loop once per segment</b><p>Add <span class="bl-path">Control → Count with i from 0 to (turns · perTurn)</span>. Inside it compute <code>t = i ÷ (turns · perTurn)</code>, then <code>r = baseR − (baseR − tipR) · t</code>, <code>a = 360 · turns · t</code>, and <code>z = H · t</code>.</p></div><span>Loop</span></li>
+                <li><div><b>Place one ribbon segment</b><p>Add a <strong>Box</strong> and set its width to <code>ribbon</code>, its length to <code>2 · 3.1416 · r ÷ perTurn · 1.4</code>, and its height to <code>band</code>. Making it 1.4 times the arc it has to cover means neighbouring segments overlap and fuse into one continuous ribbon instead of a string of beads.</p></div><span>Segment</span></li>
+                <li><div><b>Rotate first, then move</b><p><strong>Rotate</strong> the box by <code>a</code> degrees around Z, then <strong>move</strong> it by <code>r · cos(a)</code> in X, <code>r · sin(a)</code> in Y, and <code>z</code> in Z. Do it in that order: the segment is still sitting on the origin when it turns, so it lines up with the curve before it is carried out to its radius.</p></div><span>Transform</span></li>
+                <li><div><b>Play it, then read the gap</b><p>Rise per turn is 60 ÷ 8 = 7.5 mm and each segment is 7 mm tall, so the loop leaves a 0.5 mm helical gap — exactly the slot the Blender cutter carves. Watch the preview build: if the ribbon spirals off the axis or winds the wrong way, your rotate and move are in the wrong order.</p></div><span>Play</span></li>
+                <li><div><b>Add the base ring in the 3D editor</b><p>Send the result to Tinkercad (or export STL and re-import), then add a ring for bed adhesion: a Ø63.6 cylinder with a Ø56.4 hole through it, 1.6 mm tall, grouped to the spiral.</p></div><span>Base</span></li>
+              </ol>
+              <div class="rule"><strong>Keep the segment count sane</strong><span>24 segments per turn is 192 boxes, which Codeblocks handles comfortably. Push it to 60 per turn for a smoother ribbon and you are asking the browser to boolean 480 solids — it will crawl. This faceting is the honest cost of building a curve out of primitives; Blender's Boolean cuts a true helix at any resolution.</span></div>
+              </div>
+              <div class="rule"><strong>Why the cutter reaches all the way to X = 1</strong><span>The cone's radius shrinks from 30 mm to 3 mm as it climbs. A cutter parked at a fixed radius would slice the bottom windings and miss the top ones entirely. Sweeping from near the axis outward guarantees the blade crosses the wall at every single height.</span></div>
+              <div class="rule"><strong>The base ring is not just adhesion</strong><span>A spring needs something to push against. Fusing the bottom winding to a solid ring is what lets you pull the tip and feel it snap back instead of unrolling the whole cone in your hand.</span></div>
+              <details class="rescue"><summary>The Screw modifier produced a mess instead of a helix</summary><ul><li>Check that the profile is edges only. If the plane still has its face, the revolve sweeps a solid that folds in on itself.</li><li>Keep every vertex at a positive X. A profile crossing the axis turns inside out as it revolves.</li><li>Angle is per iteration, not total. 360° with 9 iterations gives nine turns; 3240° with 9 iterations gives eighty-one.</li><li>If the Boolean returns garbage, apply the Screw modifier first, then run <span class="bl-path">3D-Print Toolbox → Check All</span> on the cutter itself. A cutter with holes in it cuts holes that make no sense.</li></ul></details>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="print">
+            <div class="section-label"><span>07</span><p>Print</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Check, export, slice</p>
+              <h2>Let Blender find the flaws first.</h2>
+              <p>Blender ships with a print checker most people never turn on. Enable it once and it will tell you, before you waste filament, whether your mesh is a real solid and whether anything on it is too thin or too steep to print.</p>
+              <ol class="build-list">
+                <li><div><b>Turn on the 3D-Print Toolbox</b><p><span class="bl-path">Edit → Preferences → Add-ons</span>, search for "3D Print", and enable <strong>3D Print Toolbox</strong> (older builds list it as "Mesh: 3D-Print Toolbox"). It appears as a 3D-Print tab in the <kbd>N</kbd> sidebar.</p></div><span>Add-on</span></li>
+                <li><div><b>Run Check All</b><p>Set Thickness to 0.8 mm and Overhang to 45°, then press Check All. You want zero non-manifold edges and zero intersections. Anything reported gets clicked — the toolbox selects the exact faces at fault.</p></div><span>Check</span></li>
+                <li><div><b>Export in millimetres</b><p><span class="bl-path">File → Export → STL (.stl)</span> with Scale 1.00 and Selection Only ticked. Then verify in the slicer: the object must read roughly 60 x 60 x 62 mm. If it arrives as a 0.06 mm speck, your scene unit scale was never set to 0.001.</p></div><span>Export</span></li>
+                <li><div><b>Slice it deliberately</b><p>0.2 mm layers, 3 walls, supports <strong>off</strong>, brim on if the base ring lifts, seam position Random, cooling fan 100% after the third layer, PLA at the cool end of its range. Vase mode stays off — it would delete the gap entirely.</p></div><span>Slice</span></li>
+                <li><div><b>Read the preview before you press print</b><p>Drag the layer slider to the middle of the cone. You should see two separate ribbon cross-sections with visible air between them. One merged blob means the gap did not survive slicing — go back and widen it by 0.1 mm.</p></div><span>Verify</span></li>
+              </ol>
+              <p class="section-kicker" style="margin-top:1.8rem;">If you modelled in Tinkercad</p>
+              <div class="pf-callsheet">
+                <div><b>No unit trap</b><span>Tinkercad works in millimetres and exports millimetres, so Ø60 in the editor arrives as 60 mm in the slicer. Glance at the dimensions anyway — it costs nothing.</span></div>
+                <div><b>Nothing to make manifold</b><span>Grouped solids and holes always come out as a closed shell, so Tinkercad cannot hand you a leaking mesh. What it also cannot do is warn you about a 51° overhang or a 0.6 mm wall. That judgement is entirely yours.</span></div>
+                <div><b>Export everything, not the selection</b><span>The export dialog offers the whole design or just the selected shape. Choose the whole design, or the disc sitting inside the cup gets left behind and you print half a fidget.</span></div>
+              </div>
+              <div class="rule"><strong>Supports would destroy this print</strong><span>Support material is generated wherever the slicer sees overhang — including inside every millimetre of your helical gap. It would print a scaffold in the one place that must stay empty and weld the fidget solid. Design so you never need it; that is what the 45° rule bought you.</span></div>
+              <div class="pf-callsheet">
+                <div><b>Expect a light tack</b><span>A print-in-place part often comes off the bed slightly stuck. One firm twist frees it. If it needs pliers and force, your gap was too small.</span></div>
+                <div><b>Watch the tip</b><span>The last few windings are tiny, so each layer returns before the previous one cooled. Turn on minimum layer time or slow the top 20% to about 20 mm/s.</span></div>
+                <div><b>Elephant's foot</b><span>Squished first layers spread outward and can weld the bottom winding to the base ring in the wrong place. Enable elephant-foot compensation if the lowest turn refuses to move.</span></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="fix">
+            <div class="section-label"><span>08</span><p>Fix</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Read the failure, then fix the number</p>
+              <h2>Every failure names its own cause.</h2>
+              <div class="debug-grid">
+                <article><b>It printed as one solid cone</b><p>The slot never reached the toolpath. Check the slicer preview at mid-height, then make the cutter 0.1 mm thicker — remember the lean costs you the cosine of the wall angle.</p></article>
+                <article><b>The ribbon snapped when I pulled it</b><p>Under three beads of wall, or a tip that tapers to nothing. Take the Solidify thickness to 1.2–1.6 mm and keep Radius 2 at 3 mm instead of 0.</p></article>
+                <article><b>Stringy chaos above half height</b><p>The cross-section gets tiny near the tip, so layers stack before they cool. Enable minimum layer time, run the fan at 100%, and drop the top-section speed.</p></article>
+                <article><b>It fell over mid-print</b><p>The bottom winding alone barely touches the bed. Add the base ring, add a brim, and confirm the ring is actually unioned to the spiral rather than floating beside it.</p></article>
+                <article><b>The slicer shows a 0.06 mm object</b><p>Scene unit scale. Set <span class="bl-path">Scene → Units → Unit Scale 0.001</span>, Length: Millimeters, re-export, and re-check the dimensions in the slicer every time.</p></article>
+                <article><b>Tinkercad: the disc is fused to the cup</b><p>Check the arithmetic before you blame the printer. Ø33.2 − Ø32.4 must leave 0.4 mm, and 2.8 − 2.6 must leave 0.2 mm. Tinkercad lets two solids overlap by a tenth of a millimetre without a word, and Group then welds them into one body.</p></article>
+                <article><b>Tinkercad: the Codeblocks spiral is a string of beads</b><p>Each segment is shorter than the arc it has to cover. Raise the 1.4 length multiplier, or raise <code>perTurn</code> so the segments are smaller and closer together.</p></article>
+                <article><b>Blender reports non-manifold edges</b><p>Usually the Boolean. Apply scale on both objects (<kbd>Ctrl</kbd>+<kbd>A</kbd> → Scale), switch the solver to Exact, and re-cut. Stray loose edges left over from a profile also count — select all in Edit Mode and use Mesh → Clean Up → Delete Loose.</p></article>
+              </div>
+              <details class="rescue"><summary>Only the bottom two windings are stuck</summary><ul><li>Classic elephant's foot: the first layers are squished wider than designed and bridge the gap. Enable elephant-foot compensation, or lower the bed temperature slightly.</li><li>Check your first-layer squish. An over-squished first layer spreads plastic 0.1–0.2 mm past where the model said it should be — enough to close a 0.4 mm gap.</li><li>Try twisting rather than pulling straight up. The windings shear apart along the helix far more easily than they separate axially.</li></ul></details>
+            </div>
+          </section>
+
+          <section class="lesson-section" id="ship">
+            <div class="section-label"><span>09</span><p>Ship</p></div>
+            <div class="section-content">
+              <p class="section-kicker">Exit ticket</p>
+              <h2>Would it survive a pocket?</h2>
+              <div class="quiz">
+                <fieldset><legend>1. Why must a side-by-side gap be at least one nozzle width?</legend><label><input type="radio" name="q1" value="wrong" /> Because thinner walls cool too quickly</label><label><input type="radio" name="q1" value="correct" /> Because a slot narrower than one bead cannot be represented as a toolpath, so the slicer fills or merges it</label><label><input type="radio" name="q1" value="wrong" /> Because STL files round every measurement to 0.4 mm</label></fieldset>
+                <fieldset><legend>2. A cone has a 30 mm base radius and is 60 mm tall. What does that tell you?</legend><label><input type="radio" name="q2" value="correct" /> Its wall leans about 27° from vertical, so it prints without supports</label><label><input type="radio" name="q2" value="wrong" /> Its wall leans about 63° from vertical, so it needs supports</label><label><input type="radio" name="q2" value="wrong" /> Nothing — overhang depends only on layer height</label></fieldset>
+                <fieldset><legend>3. Why can a Z gap be smaller than an XY gap?</legend><label><input type="radio" name="q3" value="wrong" /> Gravity compresses vertical gaps during printing</label><label><input type="radio" name="q3" value="correct" /> A ceiling gap only needs one layer of air, while a slot needs a whole bead to fit between two walls</label><label><input type="radio" name="q3" value="wrong" /> Slicers ignore vertical clearances entirely</label></fieldset>
+                <fieldset><legend>4. Why are supports forbidden on a spiral cone fidget?</legend><label><input type="radio" name="q4" value="wrong" /> They would double the print time</label><label><input type="radio" name="q4" value="correct" /> They would be generated inside the helical gap and lock the windings together</label><label><input type="radio" name="q4" value="wrong" /> They cannot be printed on curved surfaces</label></fieldset>
+                <fieldset><legend>5. Tinkercad has no revolve or sweep tool. Why does that matter for this fidget?</legend><label><input type="radio" name="q5" value="wrong" /> Tinkercad cannot export STL files for printing</label><label><input type="radio" name="q5" value="correct" /> A helical ribbon is a swept profile, so it has to be approximated by hundreds of primitives placed in a loop</label><label><input type="radio" name="q5" value="wrong" /> Tinkercad cannot subtract one shape from another</label></fieldset>
+                <button type="button" data-quiz-check>Check my answers</button><p data-quiz-result aria-live="polite"></p>
+              </div>
+              <div class="finish-line">
+                <div>
+                  <p class="section-kicker">Definition of done</p>
+                  <div class="checklist">
+                    <label><input type="checkbox"> The clearance comb is printed and my machine's real number is written on it.</label>
+                    <label><input type="checkbox"> The captured spinner spins without being cut, pried, or assembled.</label>
+                    <label><input type="checkbox"> The model is verified — Blender's Check All reports zero non-manifold edges and no overhang past 45°, or the Tinkercad clearances have been checked by arithmetic.</label>
+                    <label><input type="checkbox"> The slicer preview at mid-height shows air between the windings, with supports off.</label>
+                    <label><input type="checkbox"> The cone stretches and springs back, saved as <code>spiral-cone-fidget.stl</code>.</label>
+                  </div>
+                  <p data-check-status style="margin-top:.6rem;color:var(--text-muted,#64748b);font-size:.82rem;"></p>
+                </div>
+                <div class="finish-actions"><button type="button" data-pf-complete>Mark lesson complete</button><a href="3d-printing.html">Tune the printer next →</a></div>
+              </div>
+
+              <p class="section-kicker" style="margin-top:2rem;">Take it further</p>
+              <div class="step-grid three">
+                <article class="step-card"><span>1</span><h3>Double helix</h3><p>Duplicate the cutter and rotate the copy 180° around Z before cutting. Two interleaved spirals stretch twice as smoothly.</p></article>
+                <article class="step-card"><span>2</span><h3>Measure the spring</h3><p>Hang known masses from the tip and plot force against extension. A printed spiral obeys Hooke's law until it does not — find where.</p></article>
+                <article class="step-card"><span>3</span><h3>Hex cone</h3><p>Drop the cone's Vertices from 96 to 6. The same fidget with flat facets feels completely different in the hand.</p></article>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-label="Lesson guide" aria-hidden="false">
+        <div class="ll-panel-head"><div class="ll-tabs"><button class="ll-tab" aria-selected="true" data-pane="pane-guide">Guide</button><button class="ll-tab" aria-selected="false" data-pane="pane-vocab">Vocab</button></div><button class="ll-panel-close" aria-label="Close guide panel">&#x2715;</button></div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="pane-guide">
+            <p class="ll-pane-title">Learning goals</p><ul class="ll-guide-list"><li>Explain why print-in-place parts need no assembly</li><li>Size XY and Z clearance from nozzle width and layer height</li><li>Measure a printer's real minimum clearance</li><li>Revolve a profile into a solid with the Screw modifier</li><li>Wind a helical cutter with Screw pitch and Boolean it out of a shell</li><li>Cut and combine solids in Tinkercad with Hole and Group</li><li>Place a spiral with a Codeblocks loop, and say why a loop is needed</li><li>Verify a mesh with the 3D-Print Toolbox before slicing</li></ul>
+            <p class="ll-pane-title panel-gap">Requires</p><ul class="ll-guide-list"><li>Tinkercad (free, in a browser) or Blender 4.5 LTS or newer</li><li>An FDM printer and a slicer</li><li>Helpful: <a href="blender-interface-basics.html">Blender Interface &amp; Navigation</a> and <a href="3d-printing.html">3D Printing</a></li></ul>
+            <p class="ll-pane-title panel-gap">Save habit</p><p class="panel-copy">Save right before applying the Screw and Boolean modifiers. Applied modifiers are hard to unwind, and you will want to change the slot thickness after the first print.</p>
+          </div>
+          <div class="ll-pane" id="pane-vocab">
+            <p class="ll-pane-title">Key vocabulary</p><dl class="vocab-list"><dt>Print-in-place</dt><dd>A design whose moving parts are printed already assembled, separated only by designed gaps.</dd><dt>Clearance</dt><dd>The deliberate air gap between two parts that must not fuse.</dd><dt>Extrusion width</dt><dd>How wide one deposited bead is — slightly wider than the nozzle that made it.</dd><dt>Overhang</dt><dd>A surface leaning far enough from vertical that a layer hangs past the one below it. 45° is the practical limit.</dd><dt>Manifold</dt><dd>A watertight mesh with a real inside and outside — the only kind a slicer can fill.</dd><dt>Screw modifier</dt><dd>Revolves a profile around an axis, optionally climbing as it turns, producing a solid of revolution or a helix.</dd><dt>Rise per turn</dt><dd>Height divided by turns: how much vertical room each winding of a spiral gets.</dd><dt>Constructive solid geometry</dt><dd>Modelling by adding and subtracting primitive shapes only — how Tinkercad works.</dd><dt>Hole (Tinkercad)</dt><dd>A shape flagged to subtract itself from whatever it is grouped with.</dd><dt>Codeblocks</dt><dd>Tinkercad's block-programming mode, where a loop can place hundreds of shapes by arithmetic.</dd></dl>
+          </div>
+        </div>
+      </aside>
+      <button class="ll-open-btn" aria-label="Open lesson guide" aria-expanded="true">&#x22EE;</button>
+    </div>
+  </div>
+
+  <script src="../assets/js/sim-kit.js"></script>
+  <script type="module" src="../assets/js/lessons/print-fidgets.mjs"></script>
+  <script src="../assets/js/lessons/blender-pathway.js"></script>
+  <script src="../assets/js/reveal.js"></script>
+  <script src="../assets/js/theme-registry.js"></script>
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script src="../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
