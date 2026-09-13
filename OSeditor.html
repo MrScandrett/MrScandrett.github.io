@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OSeditor - MrScandrett</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23007acc'/%3E%3Cpath d='m17 21-9 11 9 11M47 21l9 11-9 11M38 14 26 50' fill='none' stroke='white' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/assets/css/classroom-fonts.css">
   <link rel="stylesheet" href="/assets/css/OSeditor.css">
 </head>
 <body>
@@ -15,6 +16,7 @@
         <div class="mode-message" id="mode-message">Learn by changing real ClassroomOS pages</div>
       </div>
       <div class="actions">
+        <span id="unsaved-badge" class="unsaved-badge" hidden></span>
         <button id="btn-import" type="button">Open workspace ZIP</button>
         <input id="workspace-import" type="file" accept=".zip,application/zip" hidden>
         <button id="btn-download" type="button">Download workspace</button>
@@ -23,6 +25,10 @@
     </header>
     <div class="mode-banner" id="mode-banner">
       Your edits are temporary until you download a ZIP or deliberately use Write to source.
+    </div>
+    <div class="autosave-banner" id="autosave-banner" hidden>
+      Restored unsaved edits from your last session in this browser (autosaved locally).
+      <button type="button" id="btn-discard-autosave">Discard restored edits</button>
     </div>
     <main class="oseditor-main">
       <aside class="file-explorer" id="file-explorer" aria-labelledby="files-heading">
@@ -33,6 +39,18 @@
         </select>
         <label class="file-filter-label" for="file-filter">Filter files</label>
         <input id="file-filter" class="file-filter" type="search" placeholder="Filter by path…" autocomplete="off">
+        <button type="button" id="btn-find-files" class="find-files-btn">🔍 Find in files</button>
+        <div class="find-files-panel" id="find-files-panel" hidden>
+          <label class="sr-only" for="find-files-query">Search text</label>
+          <input type="search" id="find-files-query" placeholder="Search text…" autocomplete="off">
+          <label class="sr-only" for="find-files-replacement">Replace with</label>
+          <input type="text" id="find-files-replacement" placeholder="Replace with… (optional)" autocomplete="off">
+          <div class="find-files-actions">
+            <button type="button" id="find-files-search">Search</button>
+            <button type="button" id="find-files-replace-all" disabled>Replace all</button>
+          </div>
+          <ul id="find-files-results" class="find-files-results"></ul>
+        </div>
         <ul id="file-tree" class="file-tree">
           <li class="file-message">Loading files…</li>
         </ul>
@@ -51,7 +69,93 @@
               <button type="button" id="mode-code" class="mode-toggle-btn active" aria-pressed="true">Code preview</button>
               <button type="button" id="mode-visual" class="mode-toggle-btn" aria-pressed="false">Design canvas</button>
             </div>
+            <div class="mode-toggle" role="group" aria-label="Preview width">
+              <button type="button" id="pw-desktop" class="mode-toggle-btn active" aria-pressed="true" title="Full width">Desktop</button>
+              <button type="button" id="pw-tablet" class="mode-toggle-btn" aria-pressed="false" title="768px wide">Tablet</button>
+              <button type="button" id="pw-mobile" class="mode-toggle-btn" aria-pressed="false" title="390px wide">Mobile</button>
+            </div>
             <button id="btn-refresh-preview" type="button" aria-label="Refresh preview" title="Refresh preview">↻</button>
+          </div>
+        </div>
+        <div class="design-toolbar" id="design-toolbar">
+          <button type="button" id="dt-undo" title="Undo last Design canvas change (Ctrl+Z)">↶ Undo</button>
+          <button type="button" id="dt-redo" title="Redo (Ctrl+Shift+Z)">↷ Redo</button>
+          <span class="design-toolbar-sep"></span>
+          <button type="button" id="dt-bold" data-tb="bold" title="Bold selected text (Ctrl+B)"><b>B</b></button>
+          <button type="button" id="dt-italic" data-tb="italic" title="Italic selected text (Ctrl+I)"><i>I</i></button>
+          <button type="button" id="dt-underline" data-tb="underline" title="Underline selected text (Ctrl+U)"><u>U</u></button>
+          <span class="design-toolbar-sep"></span>
+          <button type="button" data-align="left" title="Align left">⟸</button>
+          <button type="button" data-align="center" title="Align center">≡</button>
+          <button type="button" data-align="right" title="Align right">⟹</button>
+          <span class="design-toolbar-sep"></span>
+          <button type="button" id="dt-link" title="Add or edit a link on the selected text">🔗 Link</button>
+          <span class="design-toolbar-sep"></span>
+          <label class="sr-only" for="dt-font">Font family</label>
+          <select id="dt-font" title="Font family">
+            <option value="">Font…</option>
+            <option value="'Classroom Chicago', sans-serif">Classroom Chicago</option>
+            <option value="'IBM Plex Sans', sans-serif">IBM Plex Sans</option>
+            <option value="Georgia, serif">Georgia</option>
+            <option value="'Times New Roman', serif">Times New Roman</option>
+            <option value="'Courier New', monospace">Courier New</option>
+            <option value="'Comic Sans MS', cursive">Comic Sans</option>
+            <option value="Arial, sans-serif">Arial</option>
+            <option value="Verdana, sans-serif">Verdana</option>
+          </select>
+          <label class="sr-only" for="dt-fontsize">Font size in pixels</label>
+          <input id="dt-fontsize" type="number" min="8" max="160" placeholder="size" title="Font size (px)">
+          <span class="design-toolbar-sep"></span>
+          <label title="Text color">A<input id="dt-color-text" type="color" value="#1d1d1f"></label>
+          <label title="Fill / gradient color 1">▨<input id="dt-color-a" type="color" value="#0071e3"></label>
+          <label title="Gradient color 2">▨<input id="dt-color-b" type="color" value="#f2b84b"></label>
+          <button type="button" id="dt-fill" title="Fill selected panel with color 1">Fill</button>
+          <button type="button" id="dt-gradient" title="Fill selected panel with a gradient">Gradient</button>
+          <span class="design-toolbar-sep"></span>
+          <label class="sr-only" for="dt-padding">Padding in pixels, selected panel</label>
+          <input id="dt-padding" type="number" min="0" max="200" placeholder="padding" title="Padding (px) inside the selected panel">
+          <label class="sr-only" for="dt-margin">Margin in pixels, selected panel</label>
+          <input id="dt-margin" type="number" min="0" max="200" placeholder="margin" title="Margin (px) around the selected panel">
+          <label class="sr-only" for="dt-radius">Corner radius in pixels</label>
+          <input id="dt-radius" type="number" min="0" max="200" placeholder="radius" title="Corner rounding (px) on the selected panel">
+          <label class="sr-only" for="dt-opacity">Opacity percent</label>
+          <input id="dt-opacity" type="number" min="0" max="100" placeholder="opacity %" title="Opacity (%) on the selected panel">
+          <span class="design-toolbar-sep"></span>
+          <label class="sr-only" for="dt-border-width">Border width in pixels</label>
+          <input id="dt-border-width" type="number" min="0" max="20" placeholder="width" title="Border width (px)">
+          <label class="sr-only" for="dt-border-style">Border style</label>
+          <select id="dt-border-style" title="Border style">
+            <option value="solid">Solid</option>
+            <option value="dashed">Dashed</option>
+            <option value="dotted">Dotted</option>
+            <option value="double">Double</option>
+          </select>
+          <label title="Border color">▭<input id="dt-border-color" type="color" value="#1d1d1f"></label>
+          <button type="button" id="dt-apply-border" title="Apply this border to the selected panel">Border</button>
+          <button type="button" id="dt-remove-border" title="Remove border from the selected panel">No border</button>
+          <label class="sr-only" for="dt-shadow">Shadow preset</label>
+          <select id="dt-shadow" title="Drop shadow on the selected panel">
+            <option value="none">No shadow</option>
+            <option value="small">Small shadow</option>
+            <option value="medium">Medium shadow</option>
+            <option value="large">Large shadow</option>
+          </select>
+          <span class="design-toolbar-sep"></span>
+          <button type="button" id="dt-insert-image" title="Upload a new image into selected panel">🖼️ Image</button>
+          <button type="button" id="dt-browse-image" title="Insert an image already used elsewhere on the site">📁 Browse</button>
+          <button type="button" id="dt-insert-video" title="Insert video into selected panel">🎬 Video</button>
+          <input id="dt-file-image" type="file" accept="image/*" hidden>
+          <input id="dt-file-video" type="file" accept="video/*" hidden>
+          <span class="design-toolbar-hint">Click a panel to select it, or click into text to type. Ctrl/⌘+B/I/U format · Ctrl/⌘+D duplicate · Ctrl/⌘+↑/↓ move · Delete removes the selected panel — press Undo (or Ctrl/⌘+Z) right away if that was a mistake · Ctrl/⌘+Shift+Z or Ctrl/⌘+Y redoes · Esc deselects.</span>
+        </div>
+        <div class="asset-browser" id="asset-browser" hidden>
+          <div class="asset-browser-header">
+            <label class="sr-only" for="asset-browser-filter">Filter images</label>
+            <input type="search" id="asset-browser-filter" placeholder="Filter images by path…" autocomplete="off">
+            <button type="button" id="asset-browser-close" aria-label="Close image browser">×</button>
+          </div>
+          <div class="asset-browser-grid" id="asset-browser-grid">
+            <p class="asset-browser-message">Loading images…</p>
           </div>
         </div>
         <iframe id="preview-frame" title="Live preview" sandbox="allow-scripts allow-forms"></iframe>

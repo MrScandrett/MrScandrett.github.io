@@ -30,10 +30,16 @@ const visualOverlayStyle = `
 [data-oe-editable]:hover, [data-oe-editable]:focus {
   outline: 1px dashed #f2b84b; outline-offset: 1px; cursor: text;
 }
-#oe-toolbar {
-  position: fixed; bottom: 10px; right: 10px; z-index: 99999; max-width: min(360px, calc(100vw - 20px));
-  background: #1676bd; color: #fff; font: 12px -apple-system, BlinkMacSystemFont, sans-serif;
-  padding: 8px 10px; border-radius: 6px; box-shadow: 0 3px 14px rgb(0 0 0 / 35%);
+[data-oe-block] img, [data-oe-block] video {
+  touch-action: none; max-width: 100%;
+}
+[data-oe-block] img:hover, [data-oe-block] video:hover, .oe-resizing {
+  outline: 2px dashed #62a9de; outline-offset: 2px; cursor: nwse-resize;
+}
+.oe-resize-tag {
+  position: absolute; z-index: 99998; background: #1676bd; color: #fff;
+  font: 11px -apple-system, BlinkMacSystemFont, sans-serif; padding: 2px 5px;
+  border-radius: 3px; pointer-events: none; transform: translate(4px, 4px);
 }
 `;
 
@@ -64,7 +70,11 @@ const visualOverlayScript = `
   }
   function cleanClone() {
     var clone = doc.documentElement.cloneNode(true);
-    clone.querySelectorAll(".oe-handle, #oe-toolbar, [data-oe-style], [data-oe-script]").forEach(function (el) { el.remove(); });
+    clone.querySelectorAll(".oe-handle, #oe-toolbar, [data-oe-style], [data-oe-script], [data-oe-vendor]").forEach(function (el) { el.remove(); });
+    clone.querySelectorAll("img, video").forEach(function (el) {
+      el.classList.remove("oe-resizing");
+      el.removeAttribute("data-oe-resizable");
+    });
     clone.querySelectorAll("[data-oe-block]").forEach(function (el) {
       el.removeAttribute("data-oe-block");
       el.removeAttribute("draggable");
@@ -77,11 +87,84 @@ const visualOverlayScript = `
     });
     return clone.outerHTML;
   }
+
+  // ---- Undo/redo history. Design canvas edits sync into the Monaco model via
+  // editor.setValue(), which discards Monaco's OWN undo stack every time --
+  // so without this, an accidental deletion in Design canvas mode was
+  // unrecoverable. This keeps its own snapshot stack independent of Monaco.
+  var historyStack = [];
+  var historyIndex = -1;
+  var MAX_HISTORY = 50;
+  var restoringHistory = false;
+  function pushHistory(html) {
+    if (restoringHistory) return;
+    if (historyStack[historyIndex] === html) return;
+    historyStack = historyStack.slice(0, historyIndex + 1);
+    historyStack.push(html);
+    if (historyStack.length > MAX_HISTORY) historyStack.shift();
+    historyIndex = historyStack.length - 1;
+  }
+  function restoreSnapshot(html) {
+    restoringHistory = true;
+    var parsed = new DOMParser().parseFromString(html, "text/html");
+    doc.body.innerHTML = parsed.body.innerHTML;
+    topBlocks().forEach(wireBlock);
+    markEditable(doc.body);
+    wireResizable(doc.body);
+    restoringHistory = false;
+    parent.postMessage({ type: "oe-sync", html: html }, "*");
+  }
+  function undo() {
+    if (historyIndex <= 0) return;
+    historyIndex--;
+    restoreSnapshot(historyStack[historyIndex]);
+  }
+  function redo() {
+    if (historyIndex >= historyStack.length - 1) return;
+    historyIndex++;
+    restoreSnapshot(historyStack[historyIndex]);
+  }
   function sync() {
     clearTimeout(window.__oeSyncTimer);
     window.__oeSyncTimer = setTimeout(function () {
-      parent.postMessage({ type: "oe-sync", html: cleanClone() }, "*");
+      var html = cleanClone();
+      pushHistory(html);
+      parent.postMessage({ type: "oe-sync", html: html }, "*");
     }, 400);
+  }
+  function selectBlock(block) {
+    doc.querySelectorAll("[data-oe-block]").forEach(function (b) { b.classList.remove("oe-selected"); });
+    if (block) block.classList.add("oe-selected");
+  }
+  function getSelectedBlock() {
+    return doc.querySelector("[data-oe-block].oe-selected");
+  }
+  function moveBlock(block, direction) {
+    var parentEl = block.parentElement;
+    if (direction < 0 && block.previousElementSibling) {
+      parentEl.insertBefore(block, block.previousElementSibling);
+    } else if (direction > 0 && block.nextElementSibling) {
+      parentEl.insertBefore(block.nextElementSibling, block);
+    }
+  }
+  function duplicateBlock(block) {
+    var clone = block.cloneNode(true);
+    block.parentElement.insertBefore(clone, block.nextSibling);
+    markEditable(clone);
+    wireBlock(clone);
+    // cloneNode copies the data-oe-resizable *attribute* but interact.js's
+    // binding is per-element and isn't cloned, so clear the flag before
+    // rewiring or the clone's images/video would silently lose resizing.
+    (clone.matches && clone.matches("img,video") ? [clone] : Array.prototype.slice.call(clone.querySelectorAll("img,video")))
+      .forEach(function (el) { delete el.dataset.oeResizable; });
+    wireResizable(clone);
+    selectBlock(clone);
+    return clone;
+  }
+  function removeBlock(block) {
+    var wasSelected = block.classList.contains("oe-selected");
+    block.remove();
+    if (wasSelected) selectBlock(null);
   }
   function wireBlock(block) {
     block.setAttribute("data-oe-block", "");
@@ -98,26 +181,16 @@ const visualOverlayScript = `
       var button = event.target.closest("button");
       if (!button) return;
       event.stopPropagation();
-      var parentEl = block.parentElement;
-      if (button.dataset.act === "up" && block.previousElementSibling) {
-        parentEl.insertBefore(block, block.previousElementSibling);
-      } else if (button.dataset.act === "down" && block.nextElementSibling) {
-        parentEl.insertBefore(block.nextElementSibling, block);
-      } else if (button.dataset.act === "dup") {
-        var clone = block.cloneNode(true);
-        parentEl.insertBefore(clone, block.nextSibling);
-        markEditable(clone);
-        wireBlock(clone);
-      } else if (button.dataset.act === "del") {
-        block.remove();
-      }
+      if (button.dataset.act === "up") moveBlock(block, -1);
+      else if (button.dataset.act === "down") moveBlock(block, 1);
+      else if (button.dataset.act === "dup") duplicateBlock(block);
+      else if (button.dataset.act === "del") removeBlock(block);
       sync();
     });
     block.prepend(handle);
     block.addEventListener("click", function (event) {
       if (event.target.closest(".oe-handle")) return;
-      doc.querySelectorAll("[data-oe-block]").forEach(function (b) { b.classList.remove("oe-selected"); });
-      block.classList.add("oe-selected");
+      selectBlock(block);
     });
     block.addEventListener("dragstart", function () { block.classList.add("oe-dragging"); });
     block.addEventListener("dragend", function () { block.classList.remove("oe-dragging"); sync(); });
@@ -136,10 +209,257 @@ const visualOverlayScript = `
   doc.body.addEventListener("input", function (event) {
     if (event.target.hasAttribute && event.target.hasAttribute("data-oe-editable")) sync();
   });
-  var badge = doc.createElement("div");
-  badge.id = "oe-toolbar";
-  badge.textContent = "Design canvas \\u2014 drag a panel to reorder, click text to type, use its \\u2191 \\u2193 \\u29C9 \\u00D7 handle to rearrange, duplicate, or remove it.";
-  doc.body.appendChild(badge);
+  // A native prompt()/confirm() in the PARENT page (e.g. the Link tool asking
+  // for a URL) force-blurs this iframe's document.activeElement to <body>
+  // while it's open -- unlike an ordinary focus change, it doesn't restore
+  // afterward. Track the last real editable focus so toolbar commands that
+  // resolve after a dialog closes still know what they're acting on.
+  var lastEditableEl = null;
+  doc.body.addEventListener("focusin", function (event) {
+    if (event.target && event.target.hasAttribute && event.target.hasAttribute("data-oe-editable")) {
+      lastEditableEl = event.target;
+    }
+  });
+
+  // ---- Image/video resizing, via interact.js (MIT license, interactjs.io) ----
+  function wireResizable(root) {
+    if (!window.interact) return;
+    var els = (root.matches && root.matches("img,video")) ? [root] : Array.prototype.slice.call(root.querySelectorAll("img,video"));
+    els.forEach(function (el) {
+      if (el.dataset.oeResizable !== undefined) return;
+      el.dataset.oeResizable = "";
+      interact(el).resizable({
+        edges: { right: true, bottom: true },
+        margin: 12,
+        modifiers: [interact.modifiers.restrictSize({ min: { width: 40, height: 30 } })],
+        listeners: {
+          start: function () { el.classList.add("oe-resizing"); },
+          move: function (event) {
+            el.style.width = event.rect.width + "px";
+            el.style.height = event.rect.height + "px";
+          },
+          end: function () { el.classList.remove("oe-resizing"); sync(); }
+        }
+      });
+    });
+  }
+  wireResizable(doc.body);
+  pushHistory(cleanClone());
+
+  // ---- Design toolbar: fonts, colors, gradients, images, video, hotkeys ----
+  function getActiveEditable() {
+    var el = doc.activeElement;
+    if (el && el.hasAttribute && el.hasAttribute("data-oe-editable")) return el;
+    return (lastEditableEl && doc.body.contains(lastEditableEl)) ? lastEditableEl : null;
+  }
+  function insertionTarget() {
+    return getSelectedBlock() || topBlocks()[topBlocks().length - 1] || doc.body;
+  }
+  function toggleTextCommand(cmd, styleProp, onValue, offValue) {
+    var editable = getActiveEditable();
+    if (editable && doc.getSelection && !doc.getSelection().isCollapsed) {
+      doc.execCommand(cmd, false, null);
+      sync();
+      return;
+    }
+    var target = editable || getSelectedBlock();
+    if (!target) return;
+    target.style[styleProp] = target.style[styleProp] === onValue ? offValue : onValue;
+    sync();
+  }
+  function applyAlign(value) {
+    var target = getActiveEditable() || getSelectedBlock();
+    if (!target) return;
+    target.style.textAlign = value;
+    sync();
+  }
+  function applyFontFamily(value) {
+    var target = getActiveEditable() || getSelectedBlock();
+    if (!target) return;
+    target.style.fontFamily = value;
+    sync();
+  }
+  function applyFontSize(px) {
+    var target = getActiveEditable() || getSelectedBlock();
+    if (!target || !px) return;
+    target.style.fontSize = px + "px";
+    sync();
+  }
+  function applyTextColor(color) {
+    var target = getActiveEditable() || getSelectedBlock();
+    if (!target) return;
+    target.style.color = color;
+    sync();
+  }
+  function applyFillColor(color) {
+    var target = getSelectedBlock();
+    if (!target) return;
+    target.style.backgroundImage = "none";
+    target.style.backgroundColor = color;
+    sync();
+  }
+  function applyGradient(colorA, colorB) {
+    var target = getSelectedBlock();
+    if (!target) return;
+    target.style.backgroundColor = "";
+    target.style.backgroundImage = "linear-gradient(135deg, " + colorA + ", " + colorB + ")";
+    sync();
+  }
+  function applyLink(url) {
+    var target = getActiveEditable();
+    if (!target) return;
+    if (!url) {
+      if (target.tagName === "A") {
+        var parent = target.parentNode;
+        while (target.firstChild) parent.insertBefore(target.firstChild, target);
+        parent.removeChild(target);
+      } else {
+        doc.execCommand("unlink", false, null);
+      }
+      sync();
+      return;
+    }
+    if (target.tagName === "A") {
+      target.setAttribute("href", url);
+    } else if (doc.getSelection && !doc.getSelection().isCollapsed) {
+      doc.execCommand("createLink", false, url);
+    } else {
+      var link = doc.createElement("a");
+      link.href = url;
+      while (target.firstChild) link.appendChild(target.firstChild);
+      target.appendChild(link);
+    }
+    sync();
+  }
+  // ---- Box model: padding, margin, border, radius, shadow, opacity. Applies
+  // to the selected panel, the one part of the CSS box model the toolbar
+  // couldn't touch before -- text/color/image edits only ever set properties
+  // Monaco's own model already had a picker for.
+  function applyPadding(px) {
+    var target = getSelectedBlock();
+    if (!target || px === "" || px === null) return;
+    target.style.padding = px + "px";
+    sync();
+  }
+  function applyMargin(px) {
+    var target = getSelectedBlock();
+    if (!target || px === "" || px === null) return;
+    target.style.margin = px + "px";
+    sync();
+  }
+  function applyRadius(px) {
+    var target = getSelectedBlock();
+    if (!target || px === "" || px === null) return;
+    target.style.borderRadius = px + "px";
+    sync();
+  }
+  function applyOpacity(percent) {
+    var target = getSelectedBlock();
+    if (!target || percent === "" || percent === null) return;
+    var clamped = Math.max(0, Math.min(100, Number(percent)));
+    target.style.opacity = String(clamped / 100);
+    sync();
+  }
+  function applyBorder(spec) {
+    var target = getSelectedBlock();
+    if (!target) return;
+    var width = Number(spec && spec.width);
+    if (!width) {
+      target.style.border = "none";
+    } else {
+      target.style.border = width + "px " + spec.style + " " + spec.color;
+    }
+    sync();
+  }
+  var SHADOW_PRESETS = {
+    none: "none",
+    small: "0 1px 3px rgba(0, 0, 0, 0.25)",
+    medium: "0 4px 12px rgba(0, 0, 0, 0.25)",
+    large: "0 12px 34px rgba(0, 0, 0, 0.3)"
+  };
+  function applyShadow(preset) {
+    var target = getSelectedBlock();
+    if (!target) return;
+    target.style.boxShadow = SHADOW_PRESETS[preset] || "none";
+    sync();
+  }
+  // The design toolbar itself lives in the parent OSeditor page (outside this
+  // previewed document) so it can never cover previewed content. It drives
+  // these same functions via postMessage.
+  var commandMap = {
+    bold: function () { toggleTextCommand("bold", "fontWeight", "bold", "normal"); },
+    italic: function () { toggleTextCommand("italic", "fontStyle", "italic", "normal"); },
+    underline: function () { toggleTextCommand("underline", "textDecoration", "underline", "none"); },
+    align: function (value) { applyAlign(value); },
+    fontFamily: function (value) { applyFontFamily(value); },
+    fontSize: function (value) { applyFontSize(value); },
+    textColor: function (value) { applyTextColor(value); },
+    fill: function (value) { applyFillColor(value); },
+    gradient: function (value) { applyGradient(value.colorA, value.colorB); },
+    link: function (value) { applyLink(value); },
+    padding: function (value) { applyPadding(value); },
+    margin: function (value) { applyMargin(value); },
+    radius: function (value) { applyRadius(value); },
+    opacity: function (value) { applyOpacity(value); },
+    border: function (value) { applyBorder(value); },
+    shadow: function (value) { applyShadow(value); },
+    insertImage: function (value) { insertImageDataUrl(value); },
+    insertVideo: function (value) { insertVideoDataUrl(value); },
+    undo: function () { undo(); },
+    redo: function () { redo(); }
+  };
+  function insertImageDataUrl(value) {
+    var src = typeof value === "string" ? value : value.src;
+    var alt = (value && typeof value === "object" && value.alt) ? value.alt : "";
+    var img = doc.createElement("img");
+    img.src = src;
+    img.alt = alt;
+    img.style.maxWidth = "100%";
+    insertionTarget().appendChild(img);
+    wireResizable(img);
+    sync();
+  }
+  function insertVideoDataUrl(dataUrl) {
+    var video = doc.createElement("video");
+    video.src = dataUrl;
+    video.controls = true;
+    video.style.maxWidth = "100%";
+    insertionTarget().appendChild(video);
+    wireResizable(video);
+    sync();
+  }
+  window.addEventListener("message", function (event) {
+    if (!event.data || event.data.type !== "oe-command") return;
+    var handler = commandMap[event.data.cmd];
+    if (handler) handler(event.data.value);
+  });
+
+  doc.addEventListener("keydown", function (event) {
+    var mod = event.ctrlKey || event.metaKey;
+    var editing = !!getActiveEditable();
+    if (mod && !event.shiftKey && !event.altKey && (event.key === "b" || event.key === "B")) {
+      event.preventDefault(); toggleTextCommand("bold", "fontWeight", "bold", "normal");
+    } else if (mod && (event.key === "i" || event.key === "I")) {
+      event.preventDefault(); toggleTextCommand("italic", "fontStyle", "italic", "normal");
+    } else if (mod && (event.key === "u" || event.key === "U")) {
+      event.preventDefault(); toggleTextCommand("underline", "textDecoration", "underline", "none");
+    } else if (mod && !event.shiftKey && (event.key === "z" || event.key === "Z")) {
+      event.preventDefault(); undo();
+    } else if (mod && ((event.shiftKey && (event.key === "z" || event.key === "Z")) || event.key === "y" || event.key === "Y")) {
+      event.preventDefault(); redo();
+    } else if (mod && (event.key === "d" || event.key === "D")) {
+      var selected = getSelectedBlock();
+      if (selected) { event.preventDefault(); duplicateBlock(selected); sync(); }
+    } else if (mod && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
+      var block = getSelectedBlock();
+      if (block) { event.preventDefault(); moveBlock(block, event.key === "ArrowUp" ? -1 : 1); sync(); }
+    } else if (!editing && (event.key === "Delete" || event.key === "Backspace")) {
+      var toRemove = getSelectedBlock();
+      if (toRemove) { event.preventDefault(); removeBlock(toRemove); sync(); }
+    } else if (event.key === "Escape") {
+      selectBlock(null);
+    }
+  });
 })();
 `;
 
@@ -160,7 +480,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     projectSelect: document.getElementById("project-select"),
     guide: document.getElementById("guide-content"),
     modeCode: document.getElementById("mode-code"),
-    modeVisual: document.getElementById("mode-visual")
+    modeVisual: document.getElementById("mode-visual"),
+    designToolbar: document.getElementById("design-toolbar"),
+    unsavedBadge: document.getElementById("unsaved-badge"),
+    autosaveBanner: document.getElementById("autosave-banner"),
+    discardAutosave: document.getElementById("btn-discard-autosave")
   });
 
   elements.save.disabled = true;
@@ -172,6 +496,19 @@ document.addEventListener("DOMContentLoaded", async () => {
   elements.modeCode.addEventListener("click", () => setEditMode("code"));
   elements.modeVisual.addEventListener("click", () => setEditMode("visual"));
   window.addEventListener("message", handleVisualSyncMessage);
+  window.addEventListener("beforeunload", (event) => {
+    if (!hasUnsavedChanges()) return;
+    event.preventDefault();
+    event.returnValue = "";
+  });
+  elements.discardAutosave.addEventListener("click", () => {
+    writeAutosaveStore({});
+    location.reload();
+  });
+  wireDesignToolbar();
+  wireAssetBrowser();
+  wireFindInFiles();
+  wirePreviewWidth();
   elements.guide.addEventListener("click", (event) => {
     const location = event.target.closest("[data-coach-line]");
     if (!location || !editor) return;
@@ -210,6 +547,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     setStatus(config.saveEnabled
       ? "Editor ready. Choose a page to begin; source writing requires your password."
       : "Editor ready. Choose a page to begin; source writing is currently disabled.");
+    await restoreAutosave();
   } catch (error) {
     console.error("OSeditor failed to start", error);
   }
@@ -364,6 +702,7 @@ function buildProjectScope(entryPath) {
 }
 
 function renderFileList() {
+  updateUnsavedBadge();
   const query = elements.filter.value.trim().toLowerCase();
   const source = showAllFiles ? availableFiles : [...projectScope];
   const matches = source.filter((filePath) => filePath.toLowerCase().includes(query)).sort();
@@ -387,7 +726,7 @@ function renderFileList() {
     button.title = filePath;
     button.dataset.path = filePath;
     button.classList.toggle("active", filePath === currentFilePath);
-    button.classList.toggle("dirty", drafts.has(filePath) && drafts.get(filePath) !== savedContents.get(filePath));
+    button.classList.toggle("dirty", isDirty(filePath));
     if (filePath === currentFilePath) button.setAttribute("aria-current", "true");
     button.addEventListener("click", () => openFile(filePath));
     item.appendChild(button);
@@ -431,7 +770,78 @@ function rememberCurrentDraft() {
   if (!editor || !currentFilePath) return;
   drafts.set(currentFilePath, editor.getValue());
   const button = elements.tree.querySelector(`[data-path="${window.CSS.escape(currentFilePath)}"]`);
-  if (button) button.classList.toggle("dirty", editor.getValue() !== savedContents.get(currentFilePath));
+  if (button) button.classList.toggle("dirty", isDirty(currentFilePath));
+  persistAutosave();
+}
+
+// ---- Autosave: drafts live only in memory, so a reload/crash previously lost
+// everything silently (the incident that made this necessary). Dirty drafts
+// are mirrored to localStorage so they survive a reload of this same browser.
+const AUTOSAVE_KEY = "oseditor:autosave:v1";
+
+function isDirty(filePath) {
+  return drafts.has(filePath) && drafts.get(filePath) !== savedContents.get(filePath);
+}
+
+function hasUnsavedChanges() {
+  for (const filePath of drafts.keys()) {
+    if (isDirty(filePath)) return true;
+  }
+  return false;
+}
+
+function readAutosaveStore() {
+  try {
+    return JSON.parse(localStorage.getItem(AUTOSAVE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function writeAutosaveStore(store) {
+  try {
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(store));
+  } catch (error) {
+    console.error("Could not write autosave to localStorage", error);
+  }
+}
+
+let autosaveTimer;
+function persistAutosave() {
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => {
+    const store = {};
+    for (const [filePath, content] of drafts) {
+      if (isDirty(filePath)) store[filePath] = content;
+    }
+    writeAutosaveStore(store);
+    updateUnsavedBadge();
+  }, 500);
+}
+
+function updateUnsavedBadge() {
+  if (!elements.unsavedBadge) return;
+  const count = [...drafts.keys()].filter(isDirty).length;
+  elements.unsavedBadge.hidden = count === 0;
+  elements.unsavedBadge.textContent = count ? `${count} unsaved file${count === 1 ? "" : "s"}` : "";
+}
+
+async function restoreAutosave() {
+  const store = readAutosaveStore();
+  const paths = Object.keys(store).filter((filePath) => availableFiles.includes(filePath));
+  if (!paths.length) return;
+  for (const filePath of paths) {
+    try {
+      const response = await fetch(filePath, { cache: "no-store" });
+      if (response.ok) savedContents.set(filePath, await response.text());
+    } catch (error) {
+      console.error(`Could not fetch original for ${filePath} while restoring autosave`, error);
+    }
+    drafts.set(filePath, store[filePath]);
+  }
+  elements.autosaveBanner.hidden = false;
+  setStatus(`Restored ${paths.length} unsaved file${paths.length === 1 ? "" : "s"} from a previous session in this browser.`);
+  renderFileList();
 }
 
 function extensionOf(filePath) {
@@ -487,6 +897,14 @@ function updatePreview() {
     styleTag.dataset.oeStyle = "";
     styleTag.textContent = visualOverlayStyle;
     documentModel.head.appendChild(styleTag);
+    // interact.js (MIT, https://interactjs.io/) powers the corner resize handles
+    // on images/video below. Loaded before the inline overlay script so it's
+    // ready by the time that script runs (classic <script> tags execute in
+    // document order while the iframe parses the srcdoc).
+    const vendorScript = documentModel.createElement("script");
+    vendorScript.dataset.oeVendor = "";
+    vendorScript.src = "https://cdn.jsdelivr.net/npm/interactjs@1.10.28/dist/interact.min.js";
+    documentModel.body.appendChild(vendorScript);
     const scriptTag = documentModel.createElement("script");
     scriptTag.dataset.oeScript = "";
     scriptTag.textContent = visualOverlayScript;
@@ -522,8 +940,305 @@ function handleVisualSyncMessage(event) {
     editor.setValue(html);
     suppressPreviewSync = false;
   }
+  persistAutosave();
   renderFileList();
   renderGuide();
+}
+
+function sendDesignCommand(cmd, value) {
+  if (!elements.frame || !elements.frame.contentWindow) return;
+  elements.frame.contentWindow.postMessage({ type: "oe-command", cmd, value }, "*");
+}
+
+function wireDesignToolbar() {
+  const toolbar = elements.designToolbar;
+  if (!toolbar) return;
+
+  document.getElementById("dt-undo").addEventListener("click", () => sendDesignCommand("undo"));
+  document.getElementById("dt-redo").addEventListener("click", () => sendDesignCommand("redo"));
+
+  toolbar.querySelectorAll("[data-tb]").forEach((button) => {
+    button.addEventListener("click", () => sendDesignCommand(button.dataset.tb));
+  });
+  toolbar.querySelectorAll("[data-align]").forEach((button) => {
+    button.addEventListener("click", () => sendDesignCommand("align", button.dataset.align));
+  });
+  document.getElementById("dt-font").addEventListener("change", (event) => {
+    if (event.target.value) sendDesignCommand("fontFamily", event.target.value);
+  });
+  document.getElementById("dt-fontsize").addEventListener("change", (event) => {
+    if (event.target.value) sendDesignCommand("fontSize", event.target.value);
+  });
+  document.getElementById("dt-color-text").addEventListener("input", (event) => {
+    sendDesignCommand("textColor", event.target.value);
+  });
+  document.getElementById("dt-fill").addEventListener("click", () => {
+    sendDesignCommand("fill", document.getElementById("dt-color-a").value);
+  });
+  document.getElementById("dt-gradient").addEventListener("click", () => {
+    sendDesignCommand("gradient", {
+      colorA: document.getElementById("dt-color-a").value,
+      colorB: document.getElementById("dt-color-b").value
+    });
+  });
+  document.getElementById("dt-link").addEventListener("click", () => {
+    const url = window.prompt("Link URL (leave blank and OK to remove an existing link):", "https://");
+    if (url === null) return;
+    sendDesignCommand("link", url.trim());
+  });
+
+  document.getElementById("dt-padding").addEventListener("change", (event) => {
+    if (event.target.value !== "") sendDesignCommand("padding", event.target.value);
+  });
+  document.getElementById("dt-margin").addEventListener("change", (event) => {
+    if (event.target.value !== "") sendDesignCommand("margin", event.target.value);
+  });
+  document.getElementById("dt-radius").addEventListener("change", (event) => {
+    if (event.target.value !== "") sendDesignCommand("radius", event.target.value);
+  });
+  document.getElementById("dt-opacity").addEventListener("change", (event) => {
+    if (event.target.value !== "") sendDesignCommand("opacity", event.target.value);
+  });
+  document.getElementById("dt-apply-border").addEventListener("click", () => {
+    sendDesignCommand("border", {
+      width: document.getElementById("dt-border-width").value,
+      style: document.getElementById("dt-border-style").value,
+      color: document.getElementById("dt-border-color").value
+    });
+  });
+  document.getElementById("dt-remove-border").addEventListener("click", () => {
+    sendDesignCommand("border", { width: 0 });
+  });
+  document.getElementById("dt-shadow").addEventListener("change", (event) => {
+    sendDesignCommand("shadow", event.target.value);
+  });
+
+  const wireFilePicker = (buttonId, inputId, cmd, promptAlt) => {
+    const button = document.getElementById(buttonId);
+    const input = document.getElementById(inputId);
+    button.addEventListener("click", () => input.click());
+    input.addEventListener("change", () => {
+      const file = input.files[0];
+      input.value = "";
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (promptAlt) {
+          const alt = window.prompt("Alt text for this image (describes it for screen readers; can leave blank):", "") || "";
+          sendDesignCommand(cmd, { src: reader.result, alt });
+        } else {
+          sendDesignCommand(cmd, reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+  wireFilePicker("dt-insert-image", "dt-file-image", "insertImage", true);
+  wireFilePicker("dt-insert-video", "dt-file-video", "insertVideo", false);
+}
+
+let assetFilesCache = null;
+async function ensureAssetFiles() {
+  if (assetFilesCache) return assetFilesCache;
+  try {
+    const response = await fetch(`${editorApi}/assets`, { cache: "no-store" });
+    assetFilesCache = response.ok ? await response.json() : [];
+  } catch (error) {
+    console.error("Could not load image assets", error);
+    assetFilesCache = [];
+  }
+  return assetFilesCache;
+}
+
+function renderAssetBrowser(query) {
+  const grid = document.getElementById("asset-browser-grid");
+  const needle = (query || "").trim().toLowerCase();
+  const items = (assetFilesCache || []).filter((assetPath) => assetPath.toLowerCase().includes(needle)).slice(0, 200);
+  grid.replaceChildren();
+  if (!items.length) {
+    const message = document.createElement("p");
+    message.className = "asset-browser-message";
+    message.textContent = "No matching images.";
+    grid.appendChild(message);
+    return;
+  }
+  for (const assetPath of items) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "asset-browser-item";
+    button.title = assetPath;
+    const img = document.createElement("img");
+    img.src = assetPath;
+    img.alt = "";
+    img.loading = "lazy";
+    const label = document.createElement("span");
+    label.textContent = assetPath.split("/").pop();
+    button.append(img, label);
+    button.addEventListener("click", () => {
+      sendDesignCommand("insertImage", { src: assetPath, alt: "" });
+      document.getElementById("asset-browser").hidden = true;
+    });
+    grid.appendChild(button);
+  }
+}
+
+function wireAssetBrowser() {
+  const panel = document.getElementById("asset-browser");
+  const browseButton = document.getElementById("dt-browse-image");
+  const filterInput = document.getElementById("asset-browser-filter");
+  if (!panel || !browseButton) return;
+
+  browseButton.addEventListener("click", async () => {
+    panel.hidden = !panel.hidden;
+    if (!panel.hidden) {
+      await ensureAssetFiles();
+      renderAssetBrowser(filterInput.value);
+      filterInput.focus();
+    }
+  });
+  document.getElementById("asset-browser-close").addEventListener("click", () => {
+    panel.hidden = true;
+  });
+  filterInput.addEventListener("input", () => renderAssetBrowser(filterInput.value));
+}
+
+function wirePreviewWidth() {
+  const previewPane = document.querySelector(".preview-pane");
+  const modes = ["desktop", "tablet", "mobile"];
+  const setPreviewWidth = (mode) => {
+    if (mode === "desktop") previewPane.removeAttribute("data-preview-width");
+    else previewPane.dataset.previewWidth = mode;
+    modes.forEach((candidate) => {
+      const button = document.getElementById(`pw-${candidate}`);
+      button.classList.toggle("active", candidate === mode);
+      button.setAttribute("aria-pressed", String(candidate === mode));
+    });
+  };
+  modes.forEach((mode) => {
+    document.getElementById(`pw-${mode}`).addEventListener("click", () => setPreviewWidth(mode));
+  });
+}
+
+const SEARCHABLE_EXTENSION = /\.(html|css|js|mjs|json|md)$/i;
+
+async function searchInFiles(query) {
+  const resultsList = document.getElementById("find-files-results");
+  const replaceAllButton = document.getElementById("find-files-replace-all");
+  resultsList.replaceChildren();
+  replaceAllButton.disabled = true;
+  if (!query) return;
+
+  const scope = showAllFiles || !projectScope.size ? availableFiles : [...projectScope];
+  const needle = query.toLowerCase();
+  let totalMatches = 0;
+  const matchedFiles = new Set();
+
+  for (const filePath of scope) {
+    if (!SEARCHABLE_EXTENSION.test(filePath)) continue;
+    let content;
+    try {
+      content = await ensureFileLoaded(filePath);
+    } catch (error) {
+      continue;
+    }
+    const lines = content.split("\n");
+    lines.forEach((line, lineIndex) => {
+      if (line.toLowerCase().indexOf(needle) === -1) return;
+      totalMatches++;
+      matchedFiles.add(filePath);
+      if (resultsList.children.length >= 200) return;
+
+      const li = document.createElement("li");
+      const button = document.createElement("button");
+      button.type = "button";
+      const pathEl = document.createElement("span");
+      pathEl.className = "find-files-path";
+      pathEl.textContent = `${filePath}:${lineIndex + 1}`;
+      const snippetEl = document.createElement("span");
+      snippetEl.className = "find-files-snippet";
+      snippetEl.textContent = line.trim().slice(0, 140);
+      button.append(pathEl, snippetEl);
+      button.addEventListener("click", async () => {
+        await openFile(filePath);
+        setEditMode("code");
+        editor.revealLineInCenter(lineIndex + 1);
+        editor.setPosition({ lineNumber: lineIndex + 1, column: 1 });
+        editor.focus();
+      });
+      li.appendChild(button);
+      resultsList.appendChild(li);
+    });
+  }
+
+  setStatus(totalMatches
+    ? `${totalMatches} match${totalMatches === 1 ? "" : "es"} in ${matchedFiles.size} file${matchedFiles.size === 1 ? "" : "s"}.`
+    : "No matches found.");
+  replaceAllButton.disabled = totalMatches === 0;
+}
+
+async function replaceAllInFiles(query, replacement) {
+  if (!query) return;
+  const scope = showAllFiles || !projectScope.size ? availableFiles : [...projectScope];
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(escaped, "gi");
+  let filesChanged = 0;
+  let occurrences = 0;
+
+  for (const filePath of scope) {
+    if (!SEARCHABLE_EXTENSION.test(filePath)) continue;
+    let content;
+    try {
+      content = await ensureFileLoaded(filePath);
+    } catch (error) {
+      continue;
+    }
+    pattern.lastIndex = 0;
+    const matches = content.match(pattern);
+    if (!matches) continue;
+
+    occurrences += matches.length;
+    filesChanged++;
+    const updated = content.replace(pattern, replacement);
+    drafts.set(filePath, updated);
+    if (filePath === currentFilePath && editor) {
+      suppressPreviewSync = true;
+      editor.setValue(updated);
+      suppressPreviewSync = false;
+    }
+  }
+
+  persistAutosave();
+  renderFileList();
+  if (currentFilePath && drafts.has(currentFilePath)) updatePreview();
+  setStatus(`Replaced ${occurrences} occurrence${occurrences === 1 ? "" : "s"} across ${filesChanged} file${filesChanged === 1 ? "" : "s"}.`);
+}
+
+function wireFindInFiles() {
+  const toggleButton = document.getElementById("btn-find-files");
+  const panel = document.getElementById("find-files-panel");
+  const queryInput = document.getElementById("find-files-query");
+  const replacementInput = document.getElementById("find-files-replacement");
+  if (!toggleButton || !panel) return;
+
+  toggleButton.addEventListener("click", () => {
+    panel.hidden = !panel.hidden;
+    if (!panel.hidden) queryInput.focus();
+  });
+  document.getElementById("find-files-search").addEventListener("click", () => {
+    searchInFiles(queryInput.value.trim());
+  });
+  queryInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") searchInFiles(queryInput.value.trim());
+  });
+  document.getElementById("find-files-replace-all").addEventListener("click", () => {
+    const query = queryInput.value.trim();
+    const replacement = replacementInput.value;
+    if (!query) return;
+    const confirmed = window.confirm(
+      `Replace all matches of "${query}" with "${replacement}" across the searched files?\n\nThis edits drafts in the editor only — nothing is written to disk until you use Write to source.`
+    );
+    if (confirmed) replaceAllInFiles(query, replacement);
+  });
 }
 
 function escapeHtml(value) {
@@ -682,6 +1397,7 @@ async function saveToServer() {
     });
     if (!response.ok) throw new Error(await response.text());
     savedContents.set(currentFilePath, drafts.get(currentFilePath));
+    persistAutosave();
     renderFileList();
     setStatus(`Saved ${currentFilePath}`);
   } catch (error) {

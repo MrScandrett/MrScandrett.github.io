@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Connectomics: Mapping the Brain · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Explore the field of Connectomics, mapping the brain's wiring diagram, and simulate how neural circuits produce behavior." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport {
+      --ll-panel-w: 320px;
+      --ll-accent: #2e6bba;
+      --ll-tab-active: #2e6bba;
+      --ll-tab-active-bg: rgba(46, 107, 186, 0.14);
+    }
+    
+    .connectomics-page {
+      font-family: var(--font-sans);
+      color: var(--text);
+      background: var(--bg);
+    }
+    
+    .connectomics-shell {
+      width: min(1200px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.5rem 0 3.6rem;
+      display: grid;
+      gap: 1.5rem;
+      grid-template-columns: 1fr;
+    }
+    
+    @media (min-width: 900px) {
+      .connectomics-shell {
+        grid-template-columns: var(--ll-panel-w) 1fr;
+      }
+    }
+
+    .card {
+      border-radius: 20px;
+      border: 1px solid rgba(120, 140, 160, 0.2);
+      background: var(--card-bg);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.05);
+      padding: 1.5rem;
+    }
+
+    .sim-container {
+      position: relative;
+      background: #0b111a;
+      border-radius: 12px;
+      overflow: hidden;
+      aspect-ratio: 16/10;
+      width: 100%;
+    }
+
+    .sim-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .wiring-controls {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      background: rgba(46, 107, 186, 0.1);
+      border: 1px solid var(--ll-accent);
+      color: var(--ll-accent);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-family: var(--font-sans);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .btn.active, .btn:hover {
+      background: var(--ll-accent);
+      color: #fff;
+    }
+    
+    .text-content p {
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+    
+    .text-content h2, .text-content h3 {
+      margin-top: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+    
+    .text-content a {
+      color: var(--ll-accent);
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam connectomics-page">
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../steam-lessons.html">Lessons</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="connectomics-shell">
+    <aside class="sidebar">
+      <div class="card text-content">
+        <h2>Connectomics</h2>
+        <p><strong><a href="https://en.wikipedia.org/wiki/Connectomics" target="_blank">Connectomics</a></strong> is the study of the connectome: the comprehensive map of neural connections in the brain (its "wiring diagram").</p>
+        
+        <h3>The Fruit Fly Milestone</h3>
+        <p>Mapping a brain is incredibly difficult because neurons are tiny and densely packed. In 2024, the FlyWire project achieved a historic milestone: they mapped the <em>entire</em> adult male fruit fly brain, detailing over 140,000 neurons and 50 million synapses.</p>
+        
+        <h3>Wiring Creates Behavior</h3>
+        <p>Why map these connections? Because how neurons wire to each other directly determines how an organism processes information and behaves. By tracing the paths from sensory inputs (like eyes) to motor outputs (like wings), we can understand the physical basis of behavior.</p>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <div class="card">
+        <h2 style="margin-top:0; margin-bottom: 1rem;">Simulation: The Architecture of Behavior</h2>
+        <p class="text-content">In the 1980s, Valentino Braitenberg proposed simple hypothetical vehicles to show how complex behaviors emerge from very simple neural wiring. In this simulation, the "fly" has two sensors (detecting the food source) and two motors (driving the left and right wheels).</p>
+        <p class="text-content"><strong>Try changing the neural wiring below and observe how the fly's behavior changes entirely!</strong></p>
+        
+        <div class="sim-container">
+          <canvas id="simCanvas" class="sim-canvas"></canvas>
+        </div>
+        
+        <div class="wiring-controls">
+          <button class="btn active" id="btn-coward">Wiring A (Fear / Coward)</button>
+          <button class="btn" id="btn-aggressive">Wiring B (Aggression)</button>
+          <button class="btn" id="btn-love">Wiring C (Attraction / Love)</button>
+          <button class="btn" id="btn-explorer">Wiring D (Explorer)</button>
+        </div>
+        <p id="wiring-desc" style="margin-top: 1rem; font-style: italic; color: var(--text-muted);">
+          Wiring A: Sensors connect straight back to the motors on the same side. The closer the food, the faster the motor runs. The fly turns away and flees!
+        </p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../../assets/js/sim-kit.js"></script>
+<script>
+(function() {
+  const canvas = document.getElementById('simCanvas');
+  const sim = window.SimKit.canvas2d(canvas);
+  
+  // Simulation State
+  let food = { x: sim.width / 2, y: sim.height / 2 };
+  let fly = {
+    x: sim.width * 0.2,
+    y: sim.height * 0.8,
+    angle: -Math.PI / 4,
+    size: 20
+  };
+  
+  // Wiring configurations
+  // ipsilateral: sensor to same-side motor (true) or crossed (false)
+  // excitatory: stronger signal = faster motor (true) or inhibitory = slower motor (false)
+  const wirings = {
+    'coward': { ipsi: true, excitatory: true, desc: "Wiring A (Fear): Sensors connect to motors on the SAME side. The closer the sensor is to the food, the faster that motor runs. This causes the fly to turn AWAY and run!" },
+    'aggressive': { ipsi: false, excitatory: true, desc: "Wiring B (Aggressive): Sensors cross over to motors on the OPPOSITE side. The closer the sensor, the faster the opposite motor runs. The fly turns TOWARDS the food and charges it!" },
+    'love': { ipsi: true, excitatory: false, desc: "Wiring C (Love/Attraction): Sensors connect to the SAME side, but are INHIBITORY. The closer the food, the SLOWER the motor runs. The fly turns towards the food and comes to rest near it." },
+    'explorer': { ipsi: false, excitatory: false, desc: "Wiring D (Explorer): Sensors cross over and are INHIBITORY. The fly approaches the food but then speeds up its outside wheel, swooping away to explore elsewhere." }
+  };
+  
+  let currentWiring = wirings['coward'];
+  
+  // UI Handlers
+  const btns = {
+    'btn-coward': 'coward',
+    'btn-aggressive': 'aggressive',
+    'btn-love': 'love',
+    'btn-explorer': 'explorer'
+  };
+  
+  for (let id in btns) {
+    document.getElementById(id).addEventListener('click', (e) => {
+      document.querySelectorAll('.wiring-controls .btn').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      currentWiring = wirings[btns[id]];
+      document.getElementById('wiring-desc').textContent = currentWiring.desc;
+      
+      // Reset fly position to see behavior again
+      fly.x = sim.width * Math.random();
+      fly.y = sim.height * Math.random();
+      fly.angle = Math.random() * Math.PI * 2;
+    });
+  }
+  
+  // Dragging food
+  let dragging = false;
+  canvas.addEventListener('mousedown', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const dx = mx - food.x;
+    const dy = my - food.y;
+    if (Math.sqrt(dx*dx + dy*dy) < 30) {
+      dragging = true;
+    }
+  });
+  canvas.addEventListener('mousemove', (e) => {
+    if (dragging) {
+      const rect = canvas.getBoundingClientRect();
+      food.x = e.clientX - rect.left;
+      food.y = e.clientY - rect.top;
+    }
+  });
+  window.addEventListener('mouseup', () => dragging = false);
+  canvas.addEventListener('touchstart', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.touches[0].clientX - rect.left;
+    const my = e.touches[0].clientY - rect.top;
+    const dx = mx - food.x;
+    const dy = my - food.y;
+    if (Math.sqrt(dx*dx + dy*dy) < 40) {
+      dragging = true;
+    }
+  }, {passive: true});
+  canvas.addEventListener('touchmove', (e) => {
+    if (dragging) {
+      const rect = canvas.getBoundingClientRect();
+      food.x = e.touches[0].clientX - rect.left;
+      food.y = e.touches[0].clientY - rect.top;
+    }
+  }, {passive: true});
+  window.addEventListener('touchend', () => dragging = false);
+
+  window.SimKit.loop((dt) => {
+    const ctx = sim.ctx;
+    
+    // Logic
+    // 1. Calculate sensor positions (left and right of the fly's head)
+    const sensorDist = fly.size * 0.8;
+    const leftSensor = {
+      x: fly.x + Math.cos(fly.angle - 0.5) * sensorDist,
+      y: fly.y + Math.sin(fly.angle - 0.5) * sensorDist
+    };
+    const rightSensor = {
+      x: fly.x + Math.cos(fly.angle + 0.5) * sensorDist,
+      y: fly.y + Math.sin(fly.angle + 0.5) * sensorDist
+    };
+    
+    // 2. Calculate distance from sensors to food
+    const distL = Math.max(10, Math.sqrt(Math.pow(leftSensor.x - food.x, 2) + Math.pow(leftSensor.y - food.y, 2)));
+    const distR = Math.max(10, Math.sqrt(Math.pow(rightSensor.x - food.x, 2) + Math.pow(rightSensor.y - food.y, 2)));
+    
+    // Signal strength (inverse square or simple inverse)
+    const maxSignal = 200;
+    let sigL = Math.min(maxSignal, 15000 / distL);
+    let sigR = Math.min(maxSignal, 15000 / distR);
+    
+    // 3. Apply wiring to motors
+    let motorL, motorR;
+    
+    if (currentWiring.ipsi) {
+      motorL = currentWiring.excitatory ? sigL : (maxSignal - sigL);
+      motorR = currentWiring.excitatory ? sigR : (maxSignal - sigR);
+    } else {
+      motorL = currentWiring.excitatory ? sigR : (maxSignal - sigR);
+      motorR = currentWiring.excitatory ? sigL : (maxSignal - sigL);
+    }
+    
+    // Base speed so it moves a little when far away
+    motorL = Math.max(20, motorL);
+    motorR = Math.max(20, motorR);
+    
+    // 4. Update fly position based on differential drive
+    const speedScale = 1.0;
+    const v = (motorL + motorR) / 2 * speedScale;
+    const w = (motorR - motorL) / (fly.size * 2) * speedScale;
+    
+    fly.angle += w * dt;
+    fly.x += Math.cos(fly.angle) * v * dt;
+    fly.y += Math.sin(fly.angle) * v * dt;
+    
+    // Wrap around screen
+    if (fly.x < 0) fly.x = sim.width;
+    if (fly.x > sim.width) fly.x = 0;
+    if (fly.y < 0) fly.y = sim.height;
+    if (fly.y > sim.height) fly.y = 0;
+    
+    // Render
+    ctx.clearRect(0, 0, sim.width, sim.height);
+    
+    // Draw Food
+    ctx.fillStyle = '#ffb020';
+    ctx.beginPath();
+    ctx.arc(food.x, food.y, 15 + Math.sin(Date.now() / 200) * 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowColor = '#ffb020';
+    ctx.shadowBlur = 20;
+    ctx.fill();
+    ctx.shadowBlur = 0; // reset
+    
+    // Draw "chemical gradient" (circles)
+    ctx.strokeStyle = 'rgba(255, 176, 32, 0.1)';
+    for(let i=1; i<=4; i++) {
+       ctx.beginPath();
+       ctx.arc(food.x, food.y, i * 60, 0, Math.PI * 2);
+       ctx.stroke();
+    }
+    
+    // Draw Fly
+    ctx.save();
+    ctx.translate(fly.x, fly.y);
+    ctx.rotate(fly.angle);
+    
+    // Body
+    ctx.fillStyle = '#a0a0a0';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, fly.size, fly.size * 0.6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Head / Eyes
+    ctx.fillStyle = '#e04040';
+    ctx.beginPath();
+    ctx.arc(fly.size * 0.5, -fly.size * 0.4, 4, 0, Math.PI * 2);
+    ctx.arc(fly.size * 0.5, fly.size * 0.4, 4, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Wings (flapping)
+    const flap = Math.sin(Date.now() / 20) * 0.3;
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.beginPath();
+    ctx.ellipse(-fly.size*0.2, -fly.size*0.7 - flap*10, fly.size*0.6, fly.size*0.3, -0.3 + flap, 0, Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(-fly.size*0.2, fly.size*0.7 + flap*10, fly.size*0.6, fly.size*0.3, 0.3 - flap, 0, Math.PI*2);
+    ctx.fill();
+    
+    // Draw Wiring (Sensors to Motors)
+    ctx.strokeStyle = currentWiring.excitatory ? '#40ff40' : '#ff4040';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([2, 2]);
+    ctx.beginPath();
+    // left sensor
+    ctx.moveTo(fly.size * 0.5, -fly.size * 0.4);
+    if (currentWiring.ipsi) {
+      ctx.lineTo(-fly.size * 0.5, -fly.size * 0.5); // left motor
+    } else {
+      ctx.lineTo(-fly.size * 0.5, fly.size * 0.5); // right motor
+    }
+    
+    // right sensor
+    ctx.moveTo(fly.size * 0.5, fly.size * 0.4);
+    if (currentWiring.ipsi) {
+      ctx.lineTo(-fly.size * 0.5, fly.size * 0.5); // right motor
+    } else {
+      ctx.lineTo(-fly.size * 0.5, -fly.size * 0.5); // left motor
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    ctx.restore();
+    
+    // Draw connections from sensors to food
+    ctx.strokeStyle = 'rgba(255, 176, 32, 0.3)';
+    ctx.beginPath();
+    ctx.moveTo(leftSensor.x, leftSensor.y);
+    ctx.lineTo(food.x, food.y);
+    ctx.moveTo(rightSensor.x, rightSensor.y);
+    ctx.lineTo(food.x, food.y);
+    ctx.stroke();
+    
+  });
+})();
+</script>
+</body>
+</html>

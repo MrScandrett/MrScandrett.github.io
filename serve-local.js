@@ -11,7 +11,30 @@ const host = process.env.HOST || "127.0.0.1";
 const editorPassword = process.env.ADMIN_PASS || "";
 const maxSaveBytes = 2 * 1024 * 1024;
 const editableExtension = /\.(html|css|js|mjs|json|md)$/i;
+const imageExtension = /\.(png|jpe?g|gif|svg|webp|avif)$/i;
 const ignoredEditorDirectories = new Set(["node_modules", ".git", "apps", "dist", ".vscode"]);
+
+function findFiles(dir, pattern) {
+  let results = [];
+  try {
+    const list = fs.readdirSync(dir, { withFileTypes: true });
+    list.forEach((entry) => {
+      const file = entry.name;
+      const absolutePath = path.join(dir, file);
+      if (entry.isSymbolicLink()) return;
+      if (entry.isDirectory()) {
+        if (!ignoredEditorDirectories.has(file)) {
+          results = results.concat(findFiles(absolutePath, pattern));
+        }
+      } else if (entry.isFile() && pattern.test(file)) {
+        results.push(`/${path.relative(root, absolutePath).replace(/\\/g, "/")}`);
+      }
+    });
+  } catch (error) {
+    console.error(`Could not index ${dir}:`, error.message);
+  }
+  return results;
+}
 
 const mime = {
   ".html": "text/html; charset=utf-8",
@@ -55,29 +78,14 @@ http
     }
 
     if (urlPath === "/api/files" && req.method === "GET") {
-      const getFiles = (dir) => {
-        let results = [];
-        try {
-          const list = fs.readdirSync(dir, { withFileTypes: true });
-          list.forEach((entry) => {
-            const file = entry.name;
-            const absolutePath = path.join(dir, file);
-            if (entry.isSymbolicLink()) return;
-            if (entry.isDirectory()) {
-              if (!ignoredEditorDirectories.has(file)) {
-                results = results.concat(getFiles(absolutePath));
-              }
-            } else if (entry.isFile() && editableExtension.test(file)) {
-              results.push(`/${path.relative(root, absolutePath).replace(/\\/g, "/")}`);
-            }
-          });
-        } catch (error) {
-          console.error(`Could not index ${dir}:`, error.message);
-        }
-        return results;
-      };
       res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
-      res.end(JSON.stringify(getFiles(root).sort()));
+      res.end(JSON.stringify(findFiles(root, editableExtension).sort()));
+      return;
+    }
+
+    if (urlPath === "/api/assets" && req.method === "GET") {
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+      res.end(JSON.stringify(findFiles(root, imageExtension).sort()));
       return;
     }
 
