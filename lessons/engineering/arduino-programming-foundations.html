@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Arduino Programming: Variables, Functions &amp; Libraries · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Go beyond Blink: store readings in variables, map an analog sensor to a PWM output, write a custom function with parameters, and pull in a library instead of reinventing the wheel." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      --apf-ink: #1c2113;
+      --apf-paper: #f0f3e4;
+      --apf-panel: #fffdfa;
+      --apf-green: #4c7a1f;
+      --apf-navy: #1b3a4b;
+      --apf-orange: #ef8354;
+      --apf-teal: #00979d;
+      --apf-purple: #7a5af5;
+      --apf-red: #d94b41;
+      --apf-line: rgba(28, 33, 19, 0.16);
+      --apf-grid: rgba(76, 122, 31, 0.08);
+    }
+    body.theme-steam { font-family: "IBM Plex Sans", Inter, sans-serif; }
+    .apf-page { padding-bottom: 1.5rem; color: var(--apf-ink); }
+    .ll-viewport { --ll-panel-w: 310px; }
+    .apf-page button, .apf-page select, .apf-page input { font: inherit; }
+    .apf-page button { touch-action: manipulation; cursor: pointer; }
+    .apf-page :focus-visible { outline: 3px solid #0b83b1; outline-offset: 3px; }
+
+    .apf-hero { position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(300px, .95fr); gap: clamp(1.2rem, 4vw, 3.2rem); align-items: center; margin: .45rem 0 1rem; padding: clamp(1.35rem, 4vw, 2.8rem); border: 1px solid var(--apf-line); border-radius: 10px; background-color: var(--apf-paper); background-image: linear-gradient(var(--apf-grid) 1px, transparent 1px), linear-gradient(90deg, var(--apf-grid) 1px, transparent 1px); background-size: 22px 22px; box-shadow: 0 18px 48px rgba(28,33,19,.12); }
+    .apf-hero::before { content: "WEEK 4 · ENR1-04A"; position: absolute; right: -2.6rem; top: 1.2rem; transform: rotate(7deg); color: rgba(76,122,31,.13); font: 800 clamp(2rem, 6vw, 4.4rem)/.78 "Barlow Condensed", sans-serif; letter-spacing: .04em; pointer-events: none; }
+    .apf-kicker, .apf-label { font: 700 .73rem/1.2 "IBM Plex Mono", monospace; letter-spacing: .09em; text-transform: uppercase; }
+    .apf-kicker { color: var(--apf-green); }
+    .apf-hero h1 { max-width: 13ch; margin: .3rem 0 .75rem; font: 800 clamp(2.2rem, 5.6vw, 4rem)/.9 "Barlow Condensed", sans-serif; letter-spacing: -.03em; text-transform: uppercase; }
+    .apf-hero h1 span { display: block; color: var(--apf-orange); }
+    .apf-lede { max-width: 58ch; margin: 0 0 1rem; font-size: 1rem; line-height: 1.7; }
+    .apf-meta { display: flex; flex-wrap: wrap; gap: .45rem; margin: .8rem 0 1.05rem; }
+    .apf-meta span { padding: .28rem .52rem; border: 1px solid var(--apf-line); background: rgba(255,255,255,.56); font: 600 .7rem/1.2 "IBM Plex Mono", monospace; }
+    .apf-back { color: var(--apf-green); font-weight: 700; text-decoration: none; }
+    .apf-back:hover { text-decoration: underline; }
+
+    .apf-ide { position: relative; z-index: 1; border-radius: 8px; overflow: hidden; box-shadow: 0 18px 40px rgba(10,20,22,.3); font-family: "IBM Plex Mono", monospace; }
+    .apf-ide-bar { display: flex; align-items: center; gap: .4rem; padding: .5rem .7rem; background: #2b2b2b; }
+    .apf-ide-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .apf-ide-bar span:nth-child(4) { margin-left: .5rem; color: #aaa; font-size: .72rem; }
+    .apf-ide-body { padding: 1rem 1.1rem; background: #1e1e1e; color: #d4d4d4; font-size: .78rem; line-height: 1.65; min-height: 200px; }
+    .apf-ide-body .k { color: #569cd6; } .apf-ide-body .f { color: #dcdcaa; } .apf-ide-body .c { color: #6a9955; } .apf-ide-body .n { color: #b5cea8; } .apf-ide-body .t { color: #4ec9b0; }
+
+    .apf-card { margin-bottom: 1rem; padding: clamp(1.1rem, 3vw, 1.65rem); border: 1px solid var(--apf-line); border-top: 5px solid var(--apf-accent, var(--apf-green)); border-radius: 9px; background: var(--apf-panel); box-shadow: 0 8px 24px rgba(28,33,19,.07); }
+    .apf-card h2 { margin: 0 0 .5rem; font: 800 clamp(1.65rem, 4vw, 2.35rem)/.95 "Barlow Condensed", sans-serif; text-transform: uppercase; letter-spacing: -.015em; }
+    .apf-card h3 { margin: 0 0 .35rem; font: 700 1.15rem/1 "Barlow Condensed", sans-serif; text-transform: uppercase; }
+    .apf-card p { margin: 0 0 .75rem; line-height: 1.67; }
+    .apf-card > p { max-width: 78ch; }
+    .apf-code { margin: 0; overflow: auto; padding: .9rem 1rem; border-radius: 4px; background: #1e1e1e; color: #e7e8d8; font: 500 .78rem/1.6 "IBM Plex Mono", monospace; }
+    .apf-code .c { color: #6a9955; } .apf-code .k { color: #569cd6; } .apf-code .n { color: #b5cea8; } .apf-code .f { color: #dcdcaa; } .apf-code .t { color: #4ec9b0; }
+
+    /* Data type matcher */
+    .apf-match { display: grid; gap: .6rem; margin-top: 1rem; }
+    .apf-match-row { display: grid; grid-template-columns: 1fr auto; gap: .6rem; align-items: center; padding: .6rem .75rem; border: 1px solid var(--apf-line); background: #f2f5ea; }
+    .apf-match-row p { margin: 0; font-size: .86rem; }
+    .apf-match-choices { display: flex; gap: .35rem; flex-wrap: wrap; }
+    .apf-type-btn { padding: .3rem .6rem; border: 1px solid var(--apf-line); background: white; font: 600 .74rem "IBM Plex Mono", monospace; }
+    .apf-type-btn.is-correct { border-color: #5a7c18; background: #edf7d2; }
+    .apf-type-btn.is-wrong { border-color: #b5352e; background: #ffe2dc; }
+    .apf-match-row.is-done .apf-type-btn:not(.is-correct) { opacity: .5; }
+
+    /* analogRead / map lab */
+    .apf-lab { display: grid; grid-template-columns: minmax(230px, .85fr) minmax(280px, 1.15fr); gap: 1rem; margin-top: 1rem; align-items: start; }
+    .apf-lab-board { display: grid; place-items: center; gap: .7rem; padding: 1.2rem; border: 3px solid #1b3a4b; border-radius: 12px; background: #142c38; }
+    .apf-led-visual { width: 64px; height: 64px; border-radius: 50%; background: #3a2a24; box-shadow: inset 0 0 10px rgba(0,0,0,.5); transition: background .1s, box-shadow .1s; }
+    .apf-led-caption { color: #cfe4e0; font: 600 .72rem "IBM Plex Mono", monospace; }
+    .apf-field { display: grid; gap: .3rem; padding: .8rem; border: 1px solid var(--apf-line); background: #f2f5ea; }
+    .apf-field label { font: 700 .7rem "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: .05em; }
+    .apf-field label b { color: var(--apf-orange); }
+    .apf-field input[type="range"] { width: 100%; accent-color: var(--apf-green); }
+    .apf-readout { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; margin-top: .6rem; }
+    .apf-readout div { padding: .5rem; border: 1px solid var(--apf-line); background: #f2f5ea; text-align: center; }
+    .apf-readout strong { display: block; font: 700 1.3rem "Barlow Condensed", sans-serif; color: var(--apf-teal); }
+    .apf-readout span { font: 600 .68rem "IBM Plex Mono", monospace; text-transform: uppercase; }
+
+    /* Function call trace */
+    .apf-trace { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+    .apf-trace-col { padding: 1rem; border: 1px solid var(--apf-line); background: #f2f5ea; }
+    .apf-trace-col.is-active { border-color: var(--apf-teal); box-shadow: 0 0 0 2px rgba(0,151,157,.25) inset; }
+    .apf-trace-run { display: block; margin: .8rem auto 0; padding: .5rem 1rem; border: 2px solid var(--apf-teal); background: transparent; color: var(--apf-teal); font-weight: 700; }
+    .apf-trace-run:hover { background: var(--apf-teal); color: white; }
+    .apf-trace-status { margin-top: .6rem; text-align: center; font: 600 .78rem "IBM Plex Mono", monospace; min-height: 1.4em; }
+
+    /* Library matcher */
+    .apf-libs { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: .7rem; margin-top: 1rem; }
+    .apf-lib-card { padding: .8rem; border: 1px solid var(--apf-line); background: #f2f5ea; }
+    .apf-lib-card code { color: var(--apf-teal); font-weight: 700; }
+    .apf-lib-card p { margin: .35rem 0 0; font-size: .82rem; }
+
+    .apf-quiz { display: grid; gap: .85rem; margin-top: 1rem; }
+    .apf-question { padding: 1rem; border: 1px solid var(--apf-line); background: #f2f5ea; }
+    .apf-question > p { font-weight: 700; }
+    .apf-options { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+    .apf-option { padding: .65rem; border: 1px solid var(--apf-line); background: white; color: var(--apf-ink); text-align: left; cursor: pointer; transition: border-color .15s ease, background .15s ease; }
+    .apf-option:not(:disabled):hover { border-color: var(--apf-green); background: #e9f2dd; }
+    .apf-option.is-correct { border-color: #5a7c18; background: #edf7d2; }
+    .apf-option.is-wrong { border-color: #b5352e; background: #ffe2dc; }
+    .apf-feedback { min-height: 1.4em; margin: .55rem 0 0; font-size: .82rem; font-weight: 600; }
+
+    [data-lighting="night"] .apf-page, [data-theme="vaporwave"] .apf-page, [data-theme="bark"] .apf-page { --apf-ink: #eef4e6; --apf-panel: #131c11; --apf-paper: #162013; --apf-line: rgba(238,244,230,.2); --apf-grid: rgba(76,122,31,.16); }
+    [data-lighting="night"] .apf-match-row, [data-theme="vaporwave"] .apf-match-row, [data-theme="bark"] .apf-match-row,
+    [data-lighting="night"] .apf-field, [data-theme="vaporwave"] .apf-field, [data-theme="bark"] .apf-field,
+    [data-lighting="night"] .apf-readout div, [data-theme="vaporwave"] .apf-readout div, [data-theme="bark"] .apf-readout div,
+    [data-lighting="night"] .apf-trace-col, [data-theme="vaporwave"] .apf-trace-col, [data-theme="bark"] .apf-trace-col,
+    [data-lighting="night"] .apf-lib-card, [data-theme="vaporwave"] .apf-lib-card, [data-theme="bark"] .apf-lib-card,
+    [data-lighting="night"] .apf-question, [data-theme="vaporwave"] .apf-question, [data-theme="bark"] .apf-question { background: rgba(255,255,255,.04); }
+    [data-lighting="night"] .apf-option, [data-theme="vaporwave"] .apf-option, [data-theme="bark"] .apf-option { background: #16220f; color: #eef4e6; }
+    [data-lighting="night"] .apf-type-btn, [data-theme="vaporwave"] .apf-type-btn, [data-theme="bark"] .apf-type-btn { background: #16220f; color: #eef4e6; }
+
+    @media (max-width: 900px) {
+      .apf-hero, .apf-lab, .apf-trace { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .apf-hero { padding: 1rem; }
+      .apf-hero h1 { font-size: 2.4rem; }
+      .apf-options { grid-template-columns: 1fr; }
+      .apf-card { padding: 1rem; }
+      .apf-match-row { grid-template-columns: 1fr; }
+    }
+    @media print { .apf-ide, .ll-panel, .ll-open-btn { display: none !important; } .apf-card { break-inside: avoid; box-shadow: none; } }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary"><ul>
+          <li><a href="../../index.html">Home</a></li><li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li><li><a href="../../paths.html">Paths</a></li><li><a href="../../showcase.html">Showcase</a></li><li><a href="../../applications.html">Apps</a></li><li><a href="../../recipe-book.html">Library</a></li><li><a href="../../about.html">About</a></li>
+        </ul></nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="apf-page">
+          <section class="apf-hero" aria-labelledby="apf-title">
+            <div>
+              <p class="apf-kicker">Engineering · Arduino · Programming</p>
+              <h1 id="apf-title">Variables, <span>Functions &amp; Libraries</span></h1>
+              <p class="apf-lede">Blink hard-codes everything. Real sketches store readings in variables, turn repeated steps into functions you can call by name, and borrow other people's tested code with a single <code>#include</code> line instead of reinventing it.</p>
+              <div class="apf-meta"><span>Grades 6–12</span><span>60 minutes</span><span>Builds on Arduino: The Robot Brain</span></div>
+              <a class="apf-back" href="../../steam-lessons.html#module-engineering">← Back to Engineering</a>
+            </div>
+            <div class="apf-ide" aria-label="Simplified Arduino IDE window showing a sketch with a variable, a function, and a library include">
+              <div class="apf-ide-bar"><span class="apf-ide-dot" style="background:#ff5f57"></span><span class="apf-ide-dot" style="background:#febc2e"></span><span class="apf-ide-dot" style="background:#28c840"></span><span>brightness_lamp.ino</span></div>
+              <div class="apf-ide-body"><span class="c">#include</span> <span class="t">&lt;Servo.h&gt;</span><br><br><span class="k">int</span> lightLevel = <span class="n">0</span>;<br><span class="k">int</span> brightness = <span class="n">0</span>;<br><br><span class="k">void</span> <span class="f">setup</span>() {<br>&nbsp;&nbsp;pinMode(<span class="n">9</span>, OUTPUT);<br>&nbsp;&nbsp;Serial.begin(<span class="n">9600</span>);<br>}<br><br><span class="k">int</span> <span class="f">scaleReading</span>(<span class="k">int</span> raw) {<br>&nbsp;&nbsp;<span class="k">return</span> map(raw, <span class="n">0</span>, <span class="n">1023</span>, <span class="n">0</span>, <span class="n">255</span>);<br>}<br><br><span class="k">void</span> <span class="f">loop</span>() {<br>&nbsp;&nbsp;lightLevel = analogRead(A0);<br>&nbsp;&nbsp;brightness = <span class="f">scaleReading</span>(lightLevel);<br>&nbsp;&nbsp;analogWrite(<span class="n">9</span>, brightness);<br>}</div>
+            </div>
+          </section>
+
+          <section class="apf-card" style="--apf-accent:var(--apf-green);">
+            <p class="apf-label">Storing information</p><h2>Variables &amp; data types</h2>
+            <p>A <strong>variable</strong> is a named box that holds a value your sketch can read and change. Every variable in C++ (the language Arduino sketches are written in) needs a <strong>data type</strong> that says what kind of value it can hold.</p>
+            <div class="apf-table-wrap" style="overflow-x:auto;">
+              <table style="width:100%;border-collapse:collapse;font-size:.84rem;min-width:520px;">
+                <thead><tr><th style="padding:.5rem .6rem;border:1px solid var(--apf-line);background:#e4ecd8;text-align:left;">Type</th><th style="padding:.5rem .6rem;border:1px solid var(--apf-line);background:#e4ecd8;text-align:left;">Holds</th><th style="padding:.5rem .6rem;border:1px solid var(--apf-line);background:#e4ecd8;text-align:left;">Example</th></tr></thead>
+                <tbody>
+                  <tr><td style="padding:.5rem .6rem;border:1px solid var(--apf-line);"><code>int</code></td><td style="padding:.5rem .6rem;border:1px solid var(--apf-line);">Whole numbers, roughly ±32,000</td><td style="padding:.5rem .6rem;border:1px solid var(--apf-line);"><code>int pin = 9;</code></td></tr>
+                  <tr><td style="padding:.5rem .6rem;border:1px solid var(--apf-line);"><code>float</code></td><td style="padding:.5rem .6rem;border:1px solid var(--apf-line);">Decimal numbers</td><td style="padding:.5rem .6rem;border:1px solid var(--apf-line);"><code>float tempC = 21.5;</code></td></tr>
+                  <tr><td style="padding:.5rem .6rem;border:1px solid var(--apf-line);"><code>bool</code></td><td style="padding:.5rem .6rem;border:1px solid var(--apf-line);">true / false only</td><td style="padding:.5rem .6rem;border:1px solid var(--apf-line);"><code>bool isPressed = false;</code></td></tr>
+                  <tr><td style="padding:.5rem .6rem;border:1px solid var(--apf-line);"><code>char</code></td><td style="padding:.5rem .6rem;border:1px solid var(--apf-line);">A single character</td><td style="padding:.5rem .6rem;border:1px solid var(--apf-line);"><code>char grade = 'A';</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p style="margin-top:.9rem;">Match each scenario to the data type that fits it best.</p>
+            <div class="apf-match" id="apf-match">
+              <div class="apf-match-row" data-answer="float"><p>Storing a temperature reading of 21.5°C</p><div class="apf-match-choices"><button class="apf-type-btn" data-type="int">int</button><button class="apf-type-btn" data-type="float">float</button><button class="apf-type-btn" data-type="bool">bool</button></div></div>
+              <div class="apf-match-row" data-answer="bool"><p>Tracking whether a button is currently pressed</p><div class="apf-match-choices"><button class="apf-type-btn" data-type="int">int</button><button class="apf-type-btn" data-type="float">float</button><button class="apf-type-btn" data-type="bool">bool</button></div></div>
+              <div class="apf-match-row" data-answer="int"><p>Counting how many times a sensor has triggered</p><div class="apf-match-choices"><button class="apf-type-btn" data-type="int">int</button><button class="apf-type-btn" data-type="float">float</button><button class="apf-type-btn" data-type="bool">bool</button></div></div>
+              <div class="apf-match-row" data-answer="int"><p>Storing a raw analogRead() value (0–1023)</p><div class="apf-match-choices"><button class="apf-type-btn" data-type="int">int</button><button class="apf-type-btn" data-type="float">float</button><button class="apf-type-btn" data-type="bool">bool</button></div></div>
+            </div>
+          </section>
+
+          <section class="apf-card" style="--apf-accent:var(--apf-teal);">
+            <p class="apf-label">Reading the analog world</p><h2><code>analogRead()</code> and <code>map()</code></h2>
+            <p>A sensor's raw reading rarely matches the range you want to use it in. <code>analogRead()</code> returns a value from <strong>0 to 1023</strong>; <code>analogWrite()</code> (PWM brightness) expects <strong>0 to 255</strong>. <code>map()</code> rescales one range into another. Drag the slider to simulate a light sensor and watch both numbers — and the LED — update.</p>
+            <div class="apf-lab">
+              <div class="apf-lab-board">
+                <div class="apf-led-visual" id="apf-led"></div>
+                <span class="apf-led-caption" id="apf-led-caption">Pin 9 · analogWrite 0</span>
+              </div>
+              <div style="display:grid;gap:.7rem;">
+                <div class="apf-field">
+                  <label for="apf-sensor">Simulated light sensor (A0)</label>
+                  <input type="range" id="apf-sensor" min="0" max="1023" step="1" value="0">
+                </div>
+                <div class="apf-readout">
+                  <div><strong id="apf-raw">0</strong><span>analogRead(A0)</span></div>
+                  <div><strong id="apf-mapped">0</strong><span>map() → 0–255</span></div>
+                </div>
+                <pre class="apf-code">lightLevel = analogRead(A0);
+brightness = <span class="f">map</span>(lightLevel, <span class="n">0</span>, <span class="n">1023</span>, <span class="n">0</span>, <span class="n">255</span>);
+analogWrite(<span class="n">9</span>, brightness);</pre>
+              </div>
+            </div>
+          </section>
+
+          <section class="apf-card" style="--apf-accent:var(--apf-orange);">
+            <p class="apf-label">Reusable steps</p><h2>Writing your own function</h2>
+            <p>A <strong>function</strong> packages a sequence of steps under one name. <code>scaleReading(raw)</code> takes a <strong>parameter</strong> (an input value named <code>raw</code>) and <strong>returns</strong> a result — so <code>loop()</code> can call it instead of repeating the math every time. Press run to trace which code actually executes when <code>loop()</code> calls the function.</p>
+            <div class="apf-trace">
+              <div class="apf-trace-col" id="apf-col-loop"><h3>loop()</h3><pre class="apf-code"><span class="k">void</span> <span class="f">loop</span>() {
+  lightLevel = analogRead(A0);
+  brightness =
+    <span class="f">scaleReading</span>(lightLevel);
+  analogWrite(<span class="n">9</span>, brightness);
+}</pre></div>
+              <div class="apf-trace-col" id="apf-col-func"><h3>scaleReading()</h3><pre class="apf-code"><span class="k">int</span> <span class="f">scaleReading</span>(<span class="k">int</span> raw) {
+  <span class="k">return</span> <span class="f">map</span>(raw,
+    <span class="n">0</span>, <span class="n">1023</span>, <span class="n">0</span>, <span class="n">255</span>);
+}</pre></div>
+            </div>
+            <button class="apf-trace-run" id="apf-trace-run" type="button">▶ Trace one loop() pass</button>
+            <p class="apf-trace-status" id="apf-trace-status" aria-live="polite">Ready — press run to trace execution.</p>
+          </section>
+
+          <section class="apf-card" style="--apf-accent:var(--apf-purple);">
+            <p class="apf-label">Don't reinvent the wheel</p><h2>Libraries: borrowing tested code</h2>
+            <p>A <strong>library</strong> is someone else's code, packaged so you can use it with one line — <code>#include &lt;LibraryName.h&gt;</code> — instead of writing the low-level details yourself. Three you'll meet constantly:</p>
+            <div class="apf-libs">
+              <div class="apf-lib-card"><code>&lt;Servo.h&gt;</code><p>Turns a few lines of manual pulse-timing into <code>myServo.write(90);</code> — set an angle and go.</p></div>
+              <div class="apf-lib-card"><code>&lt;Wire.h&gt;</code><p>Handles the I2C protocol so two-wire sensors and displays can be addressed by a simple ID number.</p></div>
+              <div class="apf-lib-card"><code>&lt;DHT.h&gt;</code><p>Decodes a temperature/humidity sensor's raw timing signal into clean <code>°C</code> and <code>%</code> values.</p></div>
+            </div>
+            <p style="margin-top:.9rem;">Libraries are installed once (Library Manager) and included once per sketch — but which board you've selected can still matter, since some libraries only work with certain chips (a Wi-Fi library for the ESP32 won't run on an Uno).</p>
+          </section>
+
+          <section class="apf-card" style="--apf-accent:var(--apf-green);">
+            <p class="apf-label">Quick check</p><h2>Test your vocabulary</h2>
+            <div class="apf-quiz">
+              <div class="apf-question" data-answer="b" data-explanation="float is the data type built to hold decimal values like 21.5."><p>1. Which data type should store 21.5°C?</p><div class="apf-options"><button class="apf-option" data-choice="a">int</button><button class="apf-option" data-choice="b">float</button><button class="apf-option" data-choice="c">bool</button><button class="apf-option" data-choice="d">char</button></div><div class="apf-feedback" aria-live="polite"></div></div>
+              <div class="apf-question" data-answer="c" data-explanation="analogRead() reports a raw value from 0 to 1023 on Arduino's 10-bit ADC."><p>2. What range does analogRead() return on an Uno?</p><div class="apf-options"><button class="apf-option" data-choice="a">0 to 255</button><button class="apf-option" data-choice="b">0 to 5</button><button class="apf-option" data-choice="c">0 to 1023</button><button class="apf-option" data-choice="d">-128 to 127</button></div><div class="apf-feedback" aria-live="polite"></div></div>
+              <div class="apf-question" data-answer="a" data-explanation="map() rescales a number from one range into another — exactly what's needed to turn a 0–1023 sensor reading into a 0–255 PWM value."><p>3. What does map(value, 0, 1023, 0, 255) do?</p><div class="apf-options"><button class="apf-option" data-choice="a">Rescales value from the first range into the second range</button><button class="apf-option" data-choice="b">Reads a new sensor value</button><button class="apf-option" data-choice="c">Deletes the variable</button><button class="apf-option" data-choice="d">Sets a pin to OUTPUT mode</button></div><div class="apf-feedback" aria-live="polite"></div></div>
+              <div class="apf-question" data-answer="d" data-explanation="raw is the parameter — the input value scaleReading() receives when it's called."><p>4. In <code>int scaleReading(int raw) { … }</code>, what is <code>raw</code>?</p><div class="apf-options"><button class="apf-option" data-choice="a">A library</button><button class="apf-option" data-choice="b">A data type</button><button class="apf-option" data-choice="c">The function's return value</button><button class="apf-option" data-choice="d">A parameter — the function's input</button></div><div class="apf-feedback" aria-live="polite"></div></div>
+              <div class="apf-question" data-answer="b" data-explanation="#include pulls in a library — pre-written, tested code — so you don't have to rewrite low-level details like servo pulse timing yourself."><p>5. What does <code>#include &lt;Servo.h&gt;</code> do?</p><div class="apf-options"><button class="apf-option" data-choice="a">Declares a new variable named Servo</button><button class="apf-option" data-choice="b">Pulls in a pre-written library of servo code</button><button class="apf-option" data-choice="c">Uploads the sketch to the board</button><button class="apf-option" data-choice="d">Opens the Serial Monitor</button></div><div class="apf-feedback" aria-live="polite"></div></div>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head"><div class="ll-tabs"><button class="ll-tab" aria-selected="true" data-pane="apf-plan">Lesson</button><button class="ll-tab" aria-selected="false" data-pane="apf-teacher">Teacher</button></div><button class="ll-panel-close" type="button" aria-label="Close panel">×</button></div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="apf-plan">
+            <span class="ll-label">Learning goals</span>
+            <div class="ll-info"><strong>Choose data types</strong>Match int, float, bool, and char to the kind of value each is built to hold.</div>
+            <div class="ll-info"><strong>Rescale a reading</strong>Explain what map() does and use it to convert a sensor range into an output range.</div>
+            <div class="ll-info"><strong>Write a function</strong>Identify a function's parameter and return value, and trace when it executes relative to loop().</div>
+            <div class="ll-info"><strong>Use a library</strong>Explain what #include does and name one reason a library saves work over hand-written code.</div>
+          </div>
+          <div class="ll-pane" id="apf-teacher">
+            <span class="ll-label">Materials</span>
+            <div class="ll-info"><strong>Core kit</strong>One Arduino Uno (or Nano) with a potentiometer or photoresistor on A0 and an LED with resistor on pin 9, per student or pair.</div>
+            <div class="ll-info"><strong>Launch question</strong>"Blink used the number 1000 directly in the code. What's the downside of that, versus storing it in a variable named delayTime?" (Reuse, readability, easy tuning in one place.)</div>
+            <div class="ll-info"><strong>Extension</strong>Have students write a second function, e.g. isDark(int reading), that returns a bool, and call it from loop() to decide whether to turn on the LED.</div>
+            <div class="ll-info"><strong>Assessment</strong>A working sketch that reads an analog sensor, maps it through a custom function, and drives an LED's brightness with analogWrite().</div>
+            <div class="ll-info"><strong>Safety</strong>USB power only — same as prior Arduino lessons.</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      // ── Data type matcher ──
+      document.querySelectorAll('.apf-match-row').forEach(function (row) {
+        row.querySelectorAll('.apf-type-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            if (row.dataset.locked) return;
+            row.dataset.locked = 'true';
+            row.classList.add('is-done');
+            row.querySelectorAll('.apf-type-btn').forEach(function (b) {
+              if (b.dataset.type === row.dataset.answer) b.classList.add('is-correct');
+            });
+            if (btn.dataset.type !== row.dataset.answer) btn.classList.add('is-wrong');
+          });
+        });
+      });
+
+      // ── analogRead / map lab ──
+      var sensor = document.getElementById('apf-sensor');
+      var rawEl = document.getElementById('apf-raw');
+      var mappedEl = document.getElementById('apf-mapped');
+      var led = document.getElementById('apf-led');
+      var caption = document.getElementById('apf-led-caption');
+      function updateLab() {
+        var raw = Number(sensor.value);
+        var mapped = Math.round((raw / 1023) * 255);
+        rawEl.textContent = raw;
+        mappedEl.textContent = mapped;
+        var alpha = mapped / 255;
+        led.style.background = 'rgb(' + Math.round(58 + alpha * (255 - 58)) + ',' + Math.round(42 + alpha * (106 - 42)) + ',' + Math.round(36 + alpha * (61 - 36)) + ')';
+        led.style.boxShadow = alpha > 0.05 ? ('0 0 ' + Math.round(alpha * 34) + 'px rgba(255,138,61,' + alpha + '), inset 0 0 10px rgba(255,255,255,.3)') : 'inset 0 0 10px rgba(0,0,0,.5)';
+        caption.textContent = 'Pin 9 · analogWrite ' + mapped;
+      }
+      sensor.addEventListener('input', updateLab);
+      updateLab();
+
+      // ── Function call trace ──
+      var traceBtn = document.getElementById('apf-trace-run');
+      var traceStatus = document.getElementById('apf-trace-status');
+      var colLoop = document.getElementById('apf-col-loop');
+      var colFunc = document.getElementById('apf-col-func');
+      traceBtn.addEventListener('click', function () {
+        colLoop.classList.remove('is-active'); colFunc.classList.remove('is-active');
+        colLoop.classList.add('is-active');
+        traceStatus.textContent = 'loop() reads analogRead(A0)…';
+        setTimeout(function () {
+          colLoop.classList.remove('is-active'); colFunc.classList.add('is-active');
+          traceStatus.textContent = 'loop() calls scaleReading(lightLevel) — control jumps into the function…';
+          setTimeout(function () {
+            colFunc.classList.remove('is-active');
+            traceStatus.textContent = 'scaleReading() returns a value — control jumps back to loop(), which calls analogWrite().';
+            setTimeout(function () {
+              colLoop.classList.add('is-active');
+              traceStatus.textContent = 'Back in loop() — analogWrite(9, brightness) runs, then loop() repeats from the top.';
+              setTimeout(function () { colLoop.classList.remove('is-active'); }, 700);
+            }, 900);
+          }, 900);
+        }, 700);
+      });
+
+      // ── Quiz ──
+      document.querySelectorAll('.apf-question').forEach(function (question) {
+        question.querySelectorAll('.apf-option').forEach(function (option) {
+          option.addEventListener('click', function () {
+            if (question.dataset.locked) return;
+            question.dataset.locked = 'true';
+            question.querySelectorAll('.apf-option').forEach(function (item) {
+              item.disabled = true;
+              if (item.dataset.choice === question.dataset.answer) item.classList.add('is-correct');
+            });
+            var correct = option.dataset.choice === question.dataset.answer;
+            if (!correct) option.classList.add('is-wrong');
+            question.querySelector('.apf-feedback').textContent = (correct ? 'Correct. ' : 'Not quite. ') + question.dataset.explanation;
+          });
+        });
+      });
+    })();
+  </script>
+  <script src="../../assets/js/classroom-animations.js"></script>
+  <script src="../../assets/js/lesson-layout.js"></script>
+  <script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

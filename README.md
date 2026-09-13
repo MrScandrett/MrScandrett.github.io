@@ -12,6 +12,33 @@ node serve-local.js
 
 Open <http://localhost:8080/>.
 
+### Local OSeditor
+
+Open <http://localhost:8080/OSeditor.html> to edit and preview site files. Student
+workspace downloads are always available. Writing back to the repository is
+disabled by default; start the server with an explicit password to enable the
+**Write to source** button:
+
+```bash
+ADMIN_PASS='choose-a-strong-password' node serve-local.js
+```
+
+The development server binds to `127.0.0.1` by default. Do not expose the editor
+to a classroom network. The password is kept only in the server process and is
+requested again for each save.
+
+OSeditor is one universal guided workbench. Choose a page or student project to
+open its connected editable files, or select **Entire ClassroomOS source** when
+you need the complete source tree. Code Coach identifies common HTML, CSS, and
+JavaScript patterns, explains their purpose, and points to useful edits by file
+and line number.
+
+Experiment in the isolated preview and download a reopenable workspace ZIP. Use
+**Open workspace ZIP** to continue that work later or bring it back by USB. ZIP
+work remains temporary unless someone deliberately confirms **Write to source**
+and supplies the server password. Review the resulting Git diff before committing
+or pushing.
+
 ## Repository map
 
 - `lessons/` — interactive lesson pages

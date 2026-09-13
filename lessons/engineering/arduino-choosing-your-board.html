@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Arduino Board Anatomy Lab · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Explore Arduino UNO R3, Nano Every, UNO R4 WiFi, and UNO Q. Select pins, chips, connectors, LEDs, and printed terms to see what they do and how each board's brains are wired." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../assets/css/arduino-board-lab.css" />
+  <style>
+    :root {
+      --acb-ink: #1c2331;
+      --acb-paper: #eef1f8;
+      --acb-panel: #fffdfa;
+      --acb-blue: #2e5eaa;
+      --acb-navy: #1b2a44;
+      --acb-orange: #ef8354;
+      --acb-teal: #00979d;
+      --acb-purple: #7a5af5;
+      --acb-red: #d94b41;
+      --acb-line: rgba(28, 35, 49, 0.16);
+      --acb-grid: rgba(46, 94, 170, 0.08);
+    }
+    body.theme-steam { font-family: "IBM Plex Sans", Inter, sans-serif; }
+    .acb-page { padding-bottom: 1.5rem; color: var(--acb-ink); }
+    .ll-viewport { --ll-panel-w: 310px; }
+    .acb-page button, .acb-page select, .acb-page input { font: inherit; }
+    .acb-page button { touch-action: manipulation; cursor: pointer; }
+    .acb-page :focus-visible { outline: 3px solid #0b83b1; outline-offset: 3px; }
+
+    .acb-hero { position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(300px, .95fr); gap: clamp(1.2rem, 4vw, 3.2rem); align-items: center; margin: .45rem 0 1rem; padding: clamp(1.35rem, 4vw, 2.8rem); border: 1px solid var(--acb-line); border-radius: 10px; background-color: var(--acb-paper); background-image: linear-gradient(var(--acb-grid) 1px, transparent 1px), linear-gradient(90deg, var(--acb-grid) 1px, transparent 1px); background-size: 22px 22px; box-shadow: 0 18px 48px rgba(28,35,49,.12); }
+    .acb-hero::before { content: "WEEK 3 · ENR1-03A"; position: absolute; right: -2.6rem; top: 1.2rem; transform: rotate(7deg); color: rgba(46,94,170,.13); font: 800 clamp(2rem, 6vw, 4.4rem)/.78 "Barlow Condensed", sans-serif; letter-spacing: .04em; pointer-events: none; }
+    .acb-kicker, .acb-label { font: 700 .73rem/1.2 "IBM Plex Mono", monospace; letter-spacing: .09em; text-transform: uppercase; }
+    .acb-kicker { color: var(--acb-blue); }
+    .acb-hero h1 { max-width: 12ch; margin: .3rem 0 .75rem; font: 800 clamp(2.3rem, 6vw, 4.4rem)/.86 "Barlow Condensed", sans-serif; letter-spacing: -.03em; text-transform: uppercase; }
+    .acb-hero h1 span { display: block; color: var(--acb-orange); }
+    .acb-lede { max-width: 58ch; margin: 0 0 1rem; font-size: 1rem; line-height: 1.7; }
+    .acb-meta { display: flex; flex-wrap: wrap; gap: .45rem; margin: .8rem 0 1.05rem; }
+    .acb-meta span { padding: .28rem .52rem; border: 1px solid var(--acb-line); background: rgba(255,255,255,.56); font: 600 .7rem/1.2 "IBM Plex Mono", monospace; }
+    .acb-back { color: var(--acb-blue); font-weight: 700; text-decoration: none; }
+    .acb-back:hover { text-decoration: underline; }
+
+    /* Hero: fake IDE Tools > Board menu */
+    .acb-ide { position: relative; z-index: 1; border-radius: 8px; overflow: hidden; box-shadow: 0 18px 40px rgba(10,20,22,.3); font-family: "IBM Plex Mono", monospace; }
+    .acb-ide-bar { display: flex; align-items: center; gap: .4rem; padding: .5rem .7rem; background: #2b2b2b; }
+    .acb-ide-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .acb-ide-bar span:nth-child(4) { margin-left: .5rem; color: #aaa; font-size: .72rem; }
+    .acb-ide-menu { padding: .5rem .3rem; background: #1e1e1e; }
+    .acb-ide-menu-item { display: flex; justify-content: space-between; gap: .6rem; padding: .45rem .8rem; color: #d4d4d4; font-size: .78rem; border-left: 3px solid transparent; }
+    .acb-ide-menu-item.is-selected { background: rgba(46,94,170,.22); border-left-color: var(--acb-teal); color: #fff; }
+    .acb-ide-menu-item b { color: #7bd8ff; font-weight: 600; }
+    .acb-ide-menu-item small { color: #8a8a8a; }
+
+    .acb-card { margin-bottom: 1rem; padding: clamp(1.1rem, 3vw, 1.65rem); border: 1px solid var(--acb-line); border-top: 5px solid var(--acb-accent, var(--acb-blue)); border-radius: 9px; background: var(--acb-panel); box-shadow: 0 8px 24px rgba(28,35,49,.07); }
+    .acb-card h2 { margin: 0 0 .5rem; font: 800 clamp(1.65rem, 4vw, 2.35rem)/.95 "Barlow Condensed", sans-serif; text-transform: uppercase; letter-spacing: -.015em; }
+    .acb-card h3 { margin: 0 0 .35rem; font: 700 1.15rem/1 "Barlow Condensed", sans-serif; text-transform: uppercase; }
+    .acb-card p { margin: 0 0 .75rem; line-height: 1.67; }
+    .acb-card > p { max-width: 78ch; }
+
+    /* Board comparison table */
+    .acb-table-wrap { overflow-x: auto; margin-top: 1rem; }
+    .acb-table { width: 100%; border-collapse: collapse; font-size: .84rem; min-width: 640px; }
+    .acb-table th, .acb-table td { padding: .55rem .7rem; border: 1px solid var(--acb-line); text-align: left; vertical-align: top; }
+    .acb-table thead th { background: #e2e8f5; font: 700 .72rem "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: .03em; }
+    .acb-table tbody th { font-weight: 700; white-space: nowrap; background: #f3f6fb; }
+    .acb-table tbody tr:hover td, .acb-table tbody tr:hover th { background: #e9f0fb; }
+    .acb-chip { display: inline-block; margin: .1rem .2rem 0 0; padding: .1rem .45rem; border-radius: 99px; font: 600 .68rem "IBM Plex Mono", monospace; }
+    .acb-chip.v5 { background: rgba(217,75,65,.12); color: #a3352c; }
+    .acb-chip.v33 { background: rgba(0,151,157,.14); color: #00676b; }
+    .acb-chip.wifi { background: rgba(122,90,245,.14); color: #5a3fc0; }
+
+    /* Requirement picker */
+    .acb-picker { display: grid; grid-template-columns: minmax(240px, .95fr) minmax(280px, 1.05fr); gap: 1.1rem; margin-top: 1rem; align-items: start; }
+    .acb-checks { display: grid; gap: .55rem; }
+    .acb-check { display: flex; align-items: flex-start; gap: .6rem; padding: .6rem .7rem; border: 1px solid var(--acb-line); background: #f3f6fb; cursor: pointer; }
+    .acb-check input { margin-top: .2rem; accent-color: var(--acb-blue); }
+    .acb-check span { font-size: .84rem; line-height: 1.4; }
+    .acb-result { padding: 1.1rem; border: 2px solid var(--acb-blue); border-radius: 8px; background: #142c38; color: #eaf1ff; min-height: 200px; }
+    .acb-result-board { font: 800 1.6rem/1 "Barlow Condensed", sans-serif; text-transform: uppercase; color: #7bd8ff; margin: 0 0 .4rem; }
+    .acb-result-why { font-size: .84rem; line-height: 1.6; color: #cfe0f7; margin: 0; }
+    .acb-result-why li { margin-bottom: .25rem; }
+
+    /* Voltage callout */
+    .acb-volt { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+    .acb-volt-col { padding: 1rem; border: 1px solid var(--acb-line); background: #f3f6fb; }
+    .acb-volt-col h3 { color: var(--acb-blue); }
+    .acb-volt-warn { margin-top: 1rem; padding: .8rem 1rem; border-left: 4px solid var(--acb-red); background: rgba(217,75,65,.08); font-size: .84rem; }
+    .acb-volt-warn strong { color: #a3352c; }
+
+    .acb-quiz { display: grid; gap: .85rem; margin-top: 1rem; }
+    .acb-question { padding: 1rem; border: 1px solid var(--acb-line); background: #f3f6fb; }
+    .acb-question > p { font-weight: 700; }
+    .acb-options { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+    .acb-option { padding: .65rem; border: 1px solid var(--acb-line); background: white; color: var(--acb-ink); text-align: left; cursor: pointer; transition: border-color .15s ease, background .15s ease; }
+    .acb-option:not(:disabled):hover { border-color: var(--acb-blue); background: #e5edfb; }
+    .acb-option.is-correct { border-color: #5a7c18; background: #edf7d2; }
+    .acb-option.is-wrong { border-color: #b5352e; background: #ffe2dc; }
+    .acb-feedback { min-height: 1.4em; margin: .55rem 0 0; font-size: .82rem; font-weight: 600; }
+
+    [data-lighting="night"] .acb-page, [data-theme="vaporwave"] .acb-page, [data-theme="bark"] .acb-page { --acb-ink: #eaf0fb; --acb-panel: #131c2c; --acb-paper: #15202e; --acb-line: rgba(234,240,251,.2); --acb-grid: rgba(46,94,170,.14); }
+    [data-lighting="night"] .acb-table thead th, [data-theme="vaporwave"] .acb-table thead th, [data-theme="bark"] .acb-table thead th,
+    [data-lighting="night"] .acb-table tbody th, [data-theme="vaporwave"] .acb-table tbody th, [data-theme="bark"] .acb-table tbody th,
+    [data-lighting="night"] .acb-check, [data-theme="vaporwave"] .acb-check, [data-theme="bark"] .acb-check,
+    [data-lighting="night"] .acb-volt-col, [data-theme="vaporwave"] .acb-volt-col, [data-theme="bark"] .acb-volt-col,
+    [data-lighting="night"] .acb-question, [data-theme="vaporwave"] .acb-question, [data-theme="bark"] .acb-question { background: rgba(255,255,255,.04); }
+    [data-lighting="night"] .acb-table tbody tr:hover td, [data-lighting="night"] .acb-table tbody tr:hover th,
+    [data-theme="vaporwave"] .acb-table tbody tr:hover td, [data-theme="vaporwave"] .acb-table tbody tr:hover th,
+    [data-theme="bark"] .acb-table tbody tr:hover td, [data-theme="bark"] .acb-table tbody tr:hover th { background: rgba(255,255,255,.08); }
+    [data-lighting="night"] .acb-option, [data-theme="vaporwave"] .acb-option, [data-theme="bark"] .acb-option { background: #16232f; color: #eef4fb; }
+
+    @media (max-width: 900px) {
+      .acb-hero, .acb-picker, .acb-volt { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .acb-hero { padding: 1rem; }
+      .acb-hero h1 { font-size: 2.6rem; }
+      .acb-options { grid-template-columns: 1fr; }
+      .acb-card { padding: 1rem; }
+    }
+    @media print { .acb-ide, .ll-panel, .ll-open-btn { display: none !important; } .acb-card { break-inside: avoid; box-shadow: none; } }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary"><ul>
+          <li><a href="../../index.html">Home</a></li><li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li><li><a href="../../paths.html">Paths</a></li><li><a href="../../showcase.html">Showcase</a></li><li><a href="../../applications.html">Apps</a></li><li><a href="../../recipe-book.html">Library</a></li><li><a href="../../about.html">About</a></li>
+        </ul></nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="acb-page">
+          <section class="acb-hero" aria-labelledby="acb-title">
+            <div>
+              <p class="acb-kicker">Engineering · Arduino · Hardware Anatomy</p>
+              <h1 id="acb-title">Inside <span>Your Board</span></h1>
+              <p class="acb-lede">Arduino boards share a programming language, but not the same anatomy. Explore every exposed pin group and the major parts that power, connect, and think—from the classic UNO and tiny Nano to the dual-brain UNO Q.</p>
+              <div class="acb-meta"><span>Grades 6–12</span><span>45 minutes</span><span>Builds on Arduino: The Robot Brain</span></div>
+              <a class="acb-back" href="../../steam-lessons.html#module-engineering">← Back to Engineering</a>
+            </div>
+            <div class="acb-ide" aria-label="Simplified Arduino IDE Tools › Board menu">
+              <div class="acb-ide-bar"><span class="acb-ide-dot" style="background:#ff5f57"></span><span class="acb-ide-dot" style="background:#febc2e"></span><span class="acb-ide-dot" style="background:#28c840"></span><span>Tools › Board</span></div>
+              <div class="acb-ide-menu">
+                <div class="acb-ide-menu-item is-selected"><b>Arduino Uno</b><small>ATmega328P · 5V</small></div>
+                <div class="acb-ide-menu-item"><b>Arduino Nano</b><small>ATmega328P · 5V</small></div>
+                <div class="acb-ide-menu-item"><b>Arduino Mega 2560</b><small>ATmega2560 · 5V</small></div>
+                <div class="acb-ide-menu-item"><b>Arduino Leonardo</b><small>ATmega32u4 · 5V · native USB</small></div>
+                <div class="acb-ide-menu-item"><b>Arduino UNO R4 WiFi</b><small>RA4M1 + ESP32-S3 · 5V</small></div>
+                <div class="acb-ide-menu-item"><b>Arduino UNO Q</b><small>Linux MPU + real-time MCU · 3.3V</small></div>
+                <div class="acb-ide-menu-item"><b>ESP32 Dev Module</b><small>Xtensa dual-core · 3.3V · Wi-Fi/BT</small></div>
+                <div class="acb-ide-menu-item"><b>NodeMCU (ESP8266)</b><small>Xtensa · 3.3V · Wi-Fi</small></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="acb-card abl-shell" style="--acb-accent:var(--acb-teal);" aria-labelledby="abl-title">
+            <p class="acb-label">Board anatomy simulator</p><h2 id="abl-title">Trace the board's brain</h2>
+            <p class="abl-intro">A <button class="abl-term" type="button" data-abl-term="pcb">PCB</button> is more than a collection of parts. Copper paths carry power and signals between connectors and one or more computing “brains.” Choose a board, then select any white target or exposed pin. The yellow route shows where information or power travels.</p>
+            <div class="abl-tabs" role="tablist" aria-label="Choose an Arduino board">
+              <button class="abl-tab" role="tab" aria-selected="true" data-board="uno">UNO R3<small>classic · one brain</small></button>
+              <button class="abl-tab" role="tab" aria-selected="false" data-board="nano">Nano Every<small>small · helper chip</small></button>
+              <button class="abl-tab" role="tab" aria-selected="false" data-board="r4">UNO R4 WiFi<small>wireless · two MCUs</small></button>
+              <button class="abl-tab" role="tab" aria-selected="false" data-board="q">UNO Q<small>Linux + real time</small></button>
+            </div>
+            <div class="abl-bench">
+              <div class="abl-map-wrap" id="abl-map-wrap">
+                <div class="abl-heading"><h3 id="abl-board-name">Arduino UNO R3</h3><span id="abl-board-sub">ATmega328P · 5 V logic · 16 MHz</span></div>
+                <div class="abl-board" id="abl-board" role="group" aria-label="Interactive top view of Arduino UNO R3">
+                  <svg class="abl-traces" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="abl-trace-static" d="M8 18 H29 V50 H50 M8 50 H50 M92 24 H72 V50 H50 M92 72 H70 V50 H50"/><path class="abl-trace-active" id="abl-active-trace" d="M15 20 L50 50"/></svg>
+                  <button class="abl-brain" id="abl-brain" type="button" aria-pressed="true">ATmega<br>328P</button><div id="abl-targets"></div>
+                </div>
+                <p class="abl-hint" id="abl-map-note">The photograph shows the real board; the yellow route is a conceptual signal path, not an exact microscopic copper trace.</p>
+                <p class="abl-credit" id="abl-credit">Photo: <span id="abl-credit-name"></span> · <a id="abl-credit-link" href="#" target="_blank" rel="noopener"></a></p>
+              </div>
+              <aside class="abl-inspector" aria-live="polite" aria-atomic="true">
+                <p class="abl-kind" id="abl-kind">MAIN COMPUTING BRAIN</p><h3 id="abl-name">ATmega328P</h3>
+                <p id="abl-meaning">This main microcontroller runs your sketch, reads inputs, follows instructions, and changes outputs.</p>
+                <p class="abl-use" id="abl-use"><strong>Try it:</strong> Read sensors and control outputs. Larger loads still need a driver and separate power.</p>
+                <code class="abl-code" id="abl-code">sketch → ATmega328P → GPIO pins</code><div class="abl-route" id="abl-route"><span>sketch</span><b>→</b><span>ATmega328P</span><b>→</b><span>GPIO pins</span></div>
+              </aside>
+            </div>
+            <div class="abl-pin-bank"><h3>Exposed pins</h3><p>Select an individual label. A tilde such as <button class="abl-term" type="button" data-abl-term="pwm">~PWM</button> means that pin has an extra ability; it is still a normal digital pin too.</p><div class="abl-pin-groups" id="abl-pin-groups"></div><p class="abl-note" id="abl-note"></p></div>
+            <h3 style="margin-top:1.25rem;">Decode words printed on the board</h3><p>The white “ink” is the <button class="abl-term" type="button" data-abl-term="silkscreen">silkscreen</button>. Select a term to open its plain-language explanation above.</p>
+            <div class="abl-glossary"><button type="button" data-abl-term="digital"><strong>DIGITAL</strong><span>Two-state input or output</span></button><button type="button" data-abl-term="analog"><strong>ANALOG / A0</strong><span>Measures a changing voltage</span></button><button type="button" data-abl-term="pwm"><strong>~ / PWM</strong><span>Fast pulses that imitate levels</span></button><button type="button" data-abl-term="uart"><strong>TX / RX</strong><span>Serial send and receive</span></button><button type="button" data-abl-term="i2c"><strong>SDA / SCL</strong><span>Two-wire device network</span></button><button type="button" data-abl-term="spi"><strong>COPI / CIPO / SCK</strong><span>Fast short-distance data bus</span></button><button type="button" data-abl-term="power"><strong>VIN / 5V / 3V3</strong><span>Different power routes</span></button><button type="button" data-abl-term="ground"><strong>GND</strong><span>Shared electrical reference</span></button><button type="button" data-abl-term="reset"><strong>RESET / RST</strong><span>Starts the program again</span></button></div>
+            <p class="abl-note">Build from the exact manufacturer's diagram, not this conceptual map: <a href="https://docs.arduino.cc/hardware/uno-rev3/" target="_blank" rel="noopener">UNO R3</a> · <a href="https://docs.arduino.cc/hardware/nano-every/" target="_blank" rel="noopener">Nano Every</a> · <a href="https://docs.arduino.cc/hardware/uno-r4-wifi/" target="_blank" rel="noopener">UNO R4 WiFi</a> · <a href="https://docs.arduino.cc/hardware/uno-q/" target="_blank" rel="noopener">UNO Q</a>.</p>
+          </section>
+
+          <section class="acb-card" style="--acb-accent:var(--acb-blue);">
+            <p class="acb-label">Same language, different hardware</p><h2>From one brain to two</h2>
+            <p>Every board in the menu above runs the same <code>setup()</code> / <code>loop()</code> sketch structure and the same core functions — <code>pinMode()</code>, <code>digitalWrite()</code>, <code>analogRead()</code>. What actually differs board to board is the hardware you're programming: the number of usable pins, how much sketch memory you get, whether the chip talks to Wi-Fi or Bluetooth on its own, and whether its pins run at 5 volts or 3.3 volts. Picking a board is a hardware decision, not a coding decision.</p>
+          </section>
+
+          <section class="acb-card" style="--acb-accent:var(--acb-teal);">
+            <p class="acb-label">The lineup</p><h2>Eight boards, side by side</h2>
+            <p>These boards span classic classroom controllers, connected devices, and Linux-powered edge computing. Scan the table, then use the picker below to match a project to a board.</p>
+            <div class="acb-table-wrap">
+              <table class="acb-table">
+                <thead><tr><th scope="col">Board</th><th scope="col">Chip</th><th scope="col">Digital / Analog pins</th><th scope="col">Flash memory</th><th scope="col">Logic voltage</th><th scope="col">Best for</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">Uno R3</th><td>ATmega328P</td><td>14 / 6</td><td>32 KB</td><td><span class="acb-chip v5">5V</span></td><td>The default choice — most tutorials, kits, and shields target this board first.</td></tr>
+                  <tr><th scope="row">Nano</th><td>ATmega328P</td><td>14 / 8</td><td>32 KB</td><td><span class="acb-chip v5">5V</span></td><td>Same brain as the Uno in a breadboard-friendly size — great for permanent builds.</td></tr>
+                  <tr><th scope="row">Mega 2560</th><td>ATmega2560</td><td>54 / 16</td><td>256 KB</td><td><span class="acb-chip v5">5V</span></td><td>Big projects: many sensors and motors at once, or four hardware serial ports.</td></tr>
+                  <tr><th scope="row">Leonardo / Micro</th><td>ATmega32u4</td><td>20 / 12</td><td>32 KB</td><td><span class="acb-chip v5">5V</span></td><td>Native USB — the board itself can act like a keyboard, mouse, or game controller.</td></tr>
+                  <tr><th scope="row">UNO R4 WiFi</th><td>RA4M1 + ESP32-S3</td><td>14 / 6</td><td>256 KB (main MCU)</td><td><span class="acb-chip v5">5V GPIO</span> <span class="acb-chip wifi">Wi-Fi + BT</span></td><td>Modern UNO projects needing wireless, a 12 × 8 LED matrix, DAC, CAN, or native USB.</td></tr>
+                  <tr><th scope="row">UNO Q</th><td>QRB2210 MPU + STM32U585 MCU</td><td>UNO-style headers</td><td>Linux storage + 2 MB MCU flash</td><td><span class="acb-chip v33">3.3V MCU GPIO</span> <span class="acb-chip wifi">Wi-Fi + BT</span></td><td>Camera, AI, or Linux applications paired with precise real-time physical control.</td></tr>
+                  <tr><th scope="row">ESP32</th><td>Dual-core Xtensa</td><td>~34 usable</td><td>4 MB+</td><td><span class="acb-chip v33">3.3V</span> <span class="acb-chip wifi">Wi-Fi + BT</span></td><td>Internet of Things projects, two tasks running at once, way more memory than an Uno.</td></tr>
+                  <tr><th scope="row">ESP8266 (NodeMCU / D1 Mini)</th><td>Single-core Xtensa</td><td>~11 usable</td><td>4 MB</td><td><span class="acb-chip v33">3.3V</span> <span class="acb-chip wifi">Wi-Fi</span></td><td>Budget Wi-Fi projects where you don't need Bluetooth or many pins.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="acb-card" style="--acb-accent:var(--acb-purple);">
+            <p class="acb-label">Interactive picker</p><h2>Match your project to a board</h2>
+            <p>Check every requirement your project actually has. The recommendation updates live — and explains its reasoning, the way a good engineer should.</p>
+            <div class="acb-picker">
+              <div class="acb-checks" id="acb-checks">
+                <label class="acb-check"><input type="checkbox" data-req="wifi"><span>It needs to connect to Wi-Fi or send data to the internet.</span></label>
+                <label class="acb-check"><input type="checkbox" data-req="manypins"><span>It needs more than ~20 sensors, motors, or LEDs wired at once.</span></label>
+                <label class="acb-check"><input type="checkbox" data-req="usbhid"><span>The board itself should act like a keyboard, mouse, or game controller over USB.</span></label>
+                <label class="acb-check"><input type="checkbox" data-req="small"><span>Space is tight — it needs to fit permanently inside something small.</span></label>
+                <label class="acb-check"><input type="checkbox" data-req="beginner"><span>This is a first project and should match the most common tutorials.</span></label>
+              </div>
+              <div class="acb-result" id="acb-result" aria-live="polite">
+                <p class="acb-result-board" id="acb-result-board">Arduino Uno</p>
+                <ul class="acb-result-why" id="acb-result-why"><li>No special requirements checked yet — the Uno is the safest, best-documented starting point.</li></ul>
+              </div>
+            </div>
+          </section>
+
+          <section class="acb-card" style="--acb-accent:var(--acb-red);">
+            <p class="acb-label">The gotcha</p><h2>5 volts vs. 3.3 volts</h2>
+            <p>The Uno, Nano, Mega, and Leonardo all read and write pins at <strong>5V</strong>. The ESP32 and ESP8266 read and write pins at <strong>3.3V</strong> — and their pins are not tolerant of 5V. This single fact causes more fried boards than anything else in this lesson.</p>
+            <div class="acb-volt">
+              <div class="acb-volt-col"><h3>5V family</h3><p style="font-size:.84rem;">Uno · Nano · Mega · Leonardo/Micro. A HIGH signal reads as roughly 5V. Most beginner sensor modules and shields are designed around this voltage.</p></div>
+              <div class="acb-volt-col"><h3>3.3V family</h3><p style="font-size:.84rem;">ESP32 · ESP8266. A HIGH signal reads as roughly 3.3V. Feeding a 5V sensor's output straight into one of these pins can damage the chip.</p></div>
+            </div>
+            <div class="acb-volt-warn"><strong>Rule of thumb:</strong> before wiring a 5V-family sensor to an ESP32 or ESP8266, add a voltage divider or logic-level converter between them — never connect the 5V output pin directly to a 3.3V input pin.</div>
+          </section>
+
+          <section class="acb-card" style="--acb-accent:var(--acb-blue);">
+            <p class="acb-label">Quick check</p><h2>Test your board sense</h2>
+            <div class="acb-quiz">
+              <div class="acb-question" data-answer="c" data-explanation="The Mega 2560 has by far the most digital and analog pins of the group — 54 digital, 16 analog."><p>1. A project needs 30 digital pins for an LED matrix. Which board fits?</p><div class="acb-options"><button class="acb-option" data-choice="a">Nano</button><button class="acb-option" data-choice="b">Leonardo</button><button class="acb-option" data-choice="c">Mega 2560</button><button class="acb-option" data-choice="d">ESP8266</button></div><div class="acb-feedback" aria-live="polite"></div></div>
+              <div class="acb-question" data-answer="b" data-explanation="The ATmega32u4 inside the Leonardo and Micro supports native USB, so the board can present itself as a keyboard, mouse, or joystick."><p>2. Which board can act as a USB keyboard on its own?</p><div class="acb-options"><button class="acb-option" data-choice="a">Uno</button><button class="acb-option" data-choice="b">Leonardo</button><button class="acb-option" data-choice="c">Mega 2560</button><button class="acb-option" data-choice="d">Nano</button></div><div class="acb-feedback" aria-live="polite"></div></div>
+              <div class="acb-question" data-answer="d" data-explanation="ESP32 and ESP8266 pins run at 3.3V logic; all four AVR-based boards (Uno, Nano, Mega, Leonardo) run at 5V."><p>3. Which board runs its pins at 3.3V instead of 5V?</p><div class="acb-options"><button class="acb-option" data-choice="a">Uno</button><button class="acb-option" data-choice="b">Mega 2560</button><button class="acb-option" data-choice="c">Leonardo</button><button class="acb-option" data-choice="d">ESP32</button></div><div class="acb-feedback" aria-live="polite"></div></div>
+              <div class="acb-question" data-answer="a" data-explanation="Connecting a 5V-logic sensor output directly to a 3.3V-only input pin can push too much voltage into the chip and damage it — use a voltage divider or logic-level converter."><p>4. What's the risk of wiring a 5V sensor's output straight into an ESP32 pin?</p><div class="acb-options"><button class="acb-option" data-choice="a">The extra voltage can damage the ESP32's 3.3V-only pin</button><button class="acb-option" data-choice="b">Nothing — all Arduino-family pins tolerate any voltage</button><button class="acb-option" data-choice="c">The sketch simply won't compile</button><button class="acb-option" data-choice="d">The Serial Monitor will show garbled text</button></div><div class="acb-feedback" aria-live="polite"></div></div>
+              <div class="acb-question" data-answer="b" data-explanation="Every board covered here — from the Uno to the ESP32 — is programmed with the same setup()/loop() sketch structure and core functions; the board choice is a hardware decision."><p>5. What stays the same no matter which of these six boards you choose?</p><div class="acb-options"><button class="acb-option" data-choice="a">The logic voltage</button><button class="acb-option" data-choice="b">The setup()/loop() sketch structure</button><button class="acb-option" data-choice="c">The number of pins</button><button class="acb-option" data-choice="d">Built-in Wi-Fi</button></div><div class="acb-feedback" aria-live="polite"></div></div>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head"><div class="ll-tabs"><button class="ll-tab" aria-selected="true" data-pane="acb-plan">Lesson</button><button class="ll-tab" aria-selected="false" data-pane="acb-teacher">Teacher</button></div><button class="ll-panel-close" type="button" aria-label="Close panel">×</button></div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="acb-plan">
+            <span class="ll-label">Learning goals</span>
+            <div class="ll-info"><strong>Compare boards</strong>Read pin count, memory, and logic voltage off a spec table for six popular Arduino-family boards.</div>
+            <div class="ll-info"><strong>Match hardware to requirements</strong>Translate a project's needs (Wi-Fi, pin count, USB behavior, size) into a board recommendation.</div>
+            <div class="ll-info"><strong>Explain logic voltage</strong>State which boards run at 5V vs. 3.3V and why mixing them without protection is risky.</div>
+            <div class="ll-info"><strong>Separate code from hardware</strong>Explain why the same sketch structure works across every board in the lineup.</div>
+          </div>
+          <div class="ll-pane" id="acb-teacher">
+            <span class="ll-label">Materials</span>
+            <div class="ll-info"><strong>Core kit</strong>No hardware required — this is a planning/reasoning lesson best run before students select boards for a project. A mixed set of physical boards to pass around reinforces the size/pin-count differences well.</div>
+            <div class="ll-info"><strong>Launch question</strong>"If Blink runs on every board here, what's actually different between them?" (Pins, memory, voltage, wireless — not the code.)</div>
+            <div class="ll-info"><strong>Extension</strong>Have students research one additional board not covered here (e.g. Arduino Due, Teensy, Raspberry Pi Pico) and add a row to the comparison table.</div>
+            <div class="ll-info"><strong>Assessment</strong>A short written justification: given a project brief, name a board and cite two spec-table facts that justify the choice.</div>
+            <div class="ll-info"><strong>Safety</strong>If handling real ESP32/ESP8266 boards alongside 5V-family boards, flag the voltage difference before any wiring — this is the single most common way students damage a board.</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      // ── Board picker ──
+      var checks = document.querySelectorAll('#acb-checks input[type="checkbox"]');
+      var resultBoard = document.getElementById('acb-result-board');
+      var resultWhy = document.getElementById('acb-result-why');
+
+      function recommend() {
+        var reqs = {};
+        checks.forEach(function (c) { reqs[c.dataset.req] = c.checked; });
+        var board, reasons = [];
+
+        if (reqs.wifi && reqs.manypins) {
+          board = 'ESP32';
+          reasons = ['Needs Wi-Fi, and the ESP32 is the only board here with built-in Wi-Fi plus enough usable pins for a large project.', 'Its dual-core chip and larger memory give headroom the ESP8266 lacks.'];
+        } else if (reqs.wifi) {
+          board = 'ESP32 (or ESP8266 on a budget)';
+          reasons = ['Needs Wi-Fi — only the ESP32 and ESP8266 have it built in.', 'Remember: both run at 3.3V logic, not 5V.'];
+        } else if (reqs.manypins) {
+          board = 'Arduino Mega 2560';
+          reasons = ['Needs more pins than a Uno, Nano, or Leonardo can offer.', 'The Mega’s 54 digital / 16 analog pins comfortably cover large sensor/motor arrays.'];
+        } else if (reqs.usbhid) {
+          board = 'Arduino Leonardo (or Micro)';
+          reasons = ['Needs native USB behavior — only the ATmega32u4-based boards can act as a keyboard, mouse, or joystick.'];
+        } else if (reqs.small) {
+          board = 'Arduino Nano';
+          reasons = ['Needs a small, breadboard-friendly footprint for a permanent build.', 'Same ATmega328P brain as the Uno, so every Uno tutorial still applies.'];
+        } else if (reqs.beginner) {
+          board = 'Arduino Uno';
+          reasons = ['First project — the Uno matches the largest share of tutorials, kits, and shields.'];
+        } else {
+          board = 'Arduino Uno';
+          reasons = ['No special requirements checked yet — the Uno is the safest, best-documented starting point.'];
+        }
+
+        resultBoard.textContent = board;
+        resultWhy.innerHTML = reasons.map(function (r) { return '<li>' + r + '</li>'; }).join('');
+      }
+      checks.forEach(function (c) { c.addEventListener('change', recommend); });
+      recommend();
+
+      // ── Quiz ──
+      document.querySelectorAll('.acb-question').forEach(function (question) {
+        question.querySelectorAll('.acb-option').forEach(function (option) {
+          option.addEventListener('click', function () {
+            if (question.dataset.locked) return;
+            question.dataset.locked = 'true';
+            question.querySelectorAll('.acb-option').forEach(function (item) {
+              item.disabled = true;
+              if (item.dataset.choice === question.dataset.answer) item.classList.add('is-correct');
+            });
+            var correct = option.dataset.choice === question.dataset.answer;
+            if (!correct) option.classList.add('is-wrong');
+            question.querySelector('.acb-feedback').textContent = (correct ? 'Correct. ' : 'Not quite. ') + question.dataset.explanation;
+          });
+        });
+      });
+    })();
+  </script>
+  <script src="../../assets/js/arduino-board-lab.js"></script>
+  <script src="../../assets/js/classroom-animations.js"></script>
+  <script src="../../assets/js/lesson-layout.js"></script>
+  <script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

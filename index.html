@@ -1156,8 +1156,13 @@
             top = Math.max(window.innerHeight - drawerRect.height - margin, margin);
           }
         }
-        drawer.style.left = `${left}px`;
-        drawer.style.top = `${top}px`;
+        // .home-widget--weather sets container-type: inline-size for its cqw-based
+        // type scale, which makes it the containing block for this fixed-position
+        // drawer instead of the viewport. All the math above is viewport-relative,
+        // so offset by the container's own position before assigning top/left.
+        const containerRect = panel.closest('.home-widget--weather').getBoundingClientRect();
+        drawer.style.left = `${left - containerRect.left}px`;
+        drawer.style.top = `${top - containerRect.top}px`;
         drawer.dataset.placement = placement;
       }
 
