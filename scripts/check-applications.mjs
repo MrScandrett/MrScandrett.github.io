@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { access, readFile } from 'node:fs/promises';
-import { steamGalaxyNodes, categoryMeta } from '../assets/js/app-registry.js';
-import { projectPaths } from '../assets/js/app-learning-resources.js';
+import { steamGalaxyNodes, categoryMeta } from '../assets/js/pages/app-registry.js';
+import { projectPaths } from '../assets/js/pages/app-learning-resources.js';
 const tools = steamGalaxyNodes.filter(t => t.type === 'tool');
 const byId = new Map(tools.map(t => [t.id,t]));
 assert.equal(byId.size,tools.length,'Resource IDs must be unique');

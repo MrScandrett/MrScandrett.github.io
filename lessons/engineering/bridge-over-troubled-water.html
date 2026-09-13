@@ -1,0 +1,4120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bridge Over Troubled Water · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Engineering Lesson 01 — build a bridge in a construction sim, triangulate the span, manage budget, and stress-test it with an ambulance." />
+  <link rel="stylesheet" href="../../assets/css/lessons/phase3-labs.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .bridge-page {
+      padding-bottom: 3.6rem;
+    }
+
+    .bridge-shell {
+      width: min(1180px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.5rem 0 0;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .bridge-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .bridge-hero-copy,
+    .bridge-hero-mission,
+    .bridge-card,
+    .bridge-builder {
+      border-radius: 26px;
+      border: 1px solid rgba(196, 208, 220, 0.9);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 249, 252, 0.96));
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+    }
+
+    .bridge-hero-copy,
+    .bridge-hero-mission,
+    .bridge-card,
+    .bridge-builder {
+      padding: 1.3rem;
+    }
+
+    .bridge-hero-copy {
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 14% 20%, rgba(255, 179, 77, 0.16), transparent 32%),
+        radial-gradient(circle at 88% 16%, rgba(93, 205, 255, 0.16), transparent 34%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(245, 249, 252, 0.96));
+    }
+
+    .bridge-hero-copy::after {
+      content: "";
+      position: absolute;
+      right: -34px;
+      bottom: -44px;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle, rgba(78, 181, 240, 0.14) 0%, rgba(78, 181, 240, 0) 72%);
+      pointer-events: none;
+    }
+
+    .bridge-eyebrow,
+    .bridge-kicker {
+      margin: 0 0 0.45rem;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      color: #687d90;
+    }
+
+    .bridge-hero-copy h1 {
+      margin: 0;
+      max-width: 10.5ch;
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      line-height: 1.02;
+      letter-spacing: -0.045em;
+      color: #142331;
+    }
+
+    .bridge-lede,
+    .bridge-card p,
+    .bridge-mission-copy,
+    .bridge-meter-note,
+    .bridge-stage-note,
+    .bridge-checklist li,
+    .bridge-tip-card small,
+    .bridge-force-card small,
+    .bridge-step-card small {
+      color: #486277;
+      line-height: 1.66;
+    }
+
+    .bridge-lede {
+      margin: 0.9rem 0 0;
+      max-width: 64ch;
+      font-size: 1rem;
+    }
+
+    .bridge-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .bridge-meta span,
+    .bridge-mission-stat strong,
+    .bridge-status-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 1.85rem;
+      padding: 0.28rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(141, 167, 188, 0.3);
+      background: rgba(241, 247, 251, 0.94);
+      color: #214f77;
+      font-size: 0.77rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .bridge-hero-mission {
+      display: grid;
+      gap: 1rem;
+      align-content: start;
+      background:
+        radial-gradient(circle at top right, rgba(255, 180, 84, 0.12), transparent 38%),
+        linear-gradient(180deg, rgba(248, 251, 253, 0.98), rgba(244, 249, 252, 0.96));
+    }
+
+    .bridge-hero-mission h2,
+    .bridge-card h2,
+    .bridge-builder h2 {
+      margin: 0;
+      color: #142331;
+      letter-spacing: -0.02em;
+    }
+
+    .bridge-mission-grid,
+    .bridge-force-grid,
+    .bridge-step-grid,
+    .bridge-tip-grid,
+    .bridge-quiz {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.9rem;
+      margin-top: 0.85rem;
+    }
+
+    .bridge-mission-stat,
+    .bridge-force-card,
+    .bridge-step-card,
+    .bridge-tip-card,
+    .bridge-question {
+      border-radius: 18px;
+      border: 1px solid rgba(198, 210, 221, 0.94);
+      background: rgba(255, 255, 255, 0.7);
+      padding: 0.95rem 1rem;
+    }
+
+    .bridge-mission-stat strong {
+      margin-bottom: 0.4rem;
+      padding-left: 0;
+      padding-right: 0;
+      min-height: auto;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      color: #153453;
+      font-size: 0.76rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .bridge-mission-stat span {
+      display: block;
+      font-size: 1.45rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      color: #111f2c;
+    }
+
+    .bridge-mission-stat small {
+      display: block;
+      margin-top: 0.24rem;
+      color: #61778a;
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+
+    .bridge-card p {
+      margin: 0.55rem 0 0;
+      font-size: 0.9rem;
+    }
+
+    .bridge-force-card strong,
+    .bridge-step-card strong,
+    .bridge-tip-card strong,
+    .bridge-question p {
+      display: block;
+      margin-bottom: 0.3rem;
+      color: #142331;
+    }
+
+    .bridge-builder {
+      display: grid;
+      gap: 1rem;
+      background:
+        radial-gradient(circle at top left, rgba(77, 180, 255, 0.08), transparent 34%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 249, 252, 0.96));
+    }
+
+    .bridge-mission-progress {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.65rem;
+    }
+
+    .bridge-mission-step {
+      position: relative;
+      display: grid;
+      grid-template-columns: 2rem minmax(0, 1fr);
+      gap: 0.65rem;
+      align-items: center;
+      min-height: 58px;
+      padding: 0.72rem 0.8rem;
+      border: 1px solid rgba(188, 202, 216, 0.95);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.7);
+      color: #657b8e;
+    }
+
+    .bridge-mission-step span {
+      display: grid;
+      place-items: center;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: #e5edf4;
+      color: #476176;
+      font-size: 0.8rem;
+      font-weight: 900;
+    }
+
+    .bridge-mission-step strong {
+      display: block;
+      color: inherit;
+      font-size: 0.79rem;
+      line-height: 1.35;
+    }
+
+    .bridge-mission-step small {
+      display: block;
+      margin-top: 0.12rem;
+      font-size: 0.7rem;
+      line-height: 1.35;
+    }
+
+    .bridge-mission-step.is-active {
+      border-color: rgba(52, 136, 201, 0.52);
+      background: rgba(52, 136, 201, 0.1);
+      color: #19466a;
+      box-shadow: 0 10px 22px rgba(34, 95, 142, 0.09);
+    }
+
+    .bridge-mission-step.is-active span {
+      background: #2677b2;
+      color: #fff;
+    }
+
+    .bridge-mission-step.is-complete {
+      border-color: rgba(52, 199, 89, 0.34);
+      background: rgba(52, 199, 89, 0.07);
+      color: #23713b;
+    }
+
+    .bridge-mission-step.is-complete span {
+      background: #2f9d55;
+      color: #fff;
+    }
+
+    .bridge-builder-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .bridge-builder-sub {
+      margin: 0.35rem 0 0;
+      color: #61778a;
+      font-size: 0.86rem;
+    }
+
+    .bridge-lab-topbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.95fr);
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .bridge-objective-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.8rem;
+    }
+
+    .bridge-objective-card,
+    .bridge-controls-card {
+      border-radius: 20px;
+      border: 1px solid rgba(188, 202, 216, 0.95);
+      background: rgba(255, 255, 255, 0.74);
+      padding: 0.95rem 1rem;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    }
+
+    .bridge-objective-card strong,
+    .bridge-stage-help strong {
+      display: block;
+      margin-bottom: 0.32rem;
+      color: #142331;
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .bridge-objective-card span {
+      display: block;
+      color: #17324b;
+      font-size: 1.1rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .bridge-objective-card small,
+    .bridge-tool-copy,
+    .bridge-stage-help span {
+      display: block;
+      margin-top: 0.26rem;
+      color: #587084;
+      font-size: 0.82rem;
+      line-height: 1.55;
+    }
+
+    .bridge-tool-copy {
+      margin: 0;
+    }
+
+    .bridge-controls-card {
+      display: grid;
+      gap: 0.9rem;
+      align-content: start;
+    }
+
+    .bridge-action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+    }
+
+    .bridge-action-button {
+      border: 1px solid rgba(181, 194, 206, 0.95);
+      background: rgba(255, 255, 255, 0.88);
+      color: #142331;
+      border-radius: 14px;
+      padding: 0.68rem 0.92rem;
+      font: inherit;
+      font-size: 0.84rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+    }
+
+    .bridge-action-button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(75, 157, 211, 0.48);
+    }
+
+    .bridge-action-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+      transform: none;
+    }
+
+    .bridge-action-button:focus-visible,
+    .bridge-toggle:focus-visible,
+    .bridge-option:focus-visible {
+      outline: 3px solid rgba(39, 126, 190, 0.3);
+      outline-offset: 2px;
+    }
+
+    .bridge-action-button.is-primary {
+      border-color: rgba(45, 113, 163, 0.78);
+      background: linear-gradient(180deg, #2d78af, #225f8e);
+      color: #f7fbff;
+      box-shadow: 0 14px 28px rgba(34, 95, 142, 0.18);
+    }
+
+    .bridge-controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.95rem 1rem;
+      align-items: start;
+    }
+
+    .bridge-field {
+      display: grid;
+      gap: 0.38rem;
+    }
+
+    .bridge-field label,
+    .bridge-field legend {
+      margin: 0;
+      padding: 0;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6a8094;
+    }
+
+    .bridge-select,
+    .bridge-slider {
+      width: 100%;
+      font: inherit;
+    }
+
+    .bridge-select {
+      appearance: none;
+      border-radius: 12px;
+      border: 1.5px solid rgba(182, 195, 207, 0.95);
+      background: rgba(255, 255, 255, 0.92);
+      color: #142331;
+      padding: 0.72rem 0.85rem;
+      font-size: 0.88rem;
+    }
+
+    .bridge-select:focus,
+    .bridge-slider:focus {
+      outline: none;
+      border-color: rgba(75, 157, 211, 0.75);
+      box-shadow: 0 0 0 3px rgba(75, 157, 211, 0.12);
+    }
+
+    .bridge-slider-wrap {
+      display: flex;
+      gap: 0.8rem;
+      align-items: center;
+    }
+
+    .bridge-slider {
+      accent-color: #3488c9;
+    }
+
+    .bridge-slider-value {
+      min-width: 74px;
+      text-align: right;
+      font-size: 0.86rem;
+      font-weight: 800;
+      color: #153453;
+    }
+
+    .bridge-toggle-group {
+      display: flex;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+    }
+
+    .bridge-toggle {
+      border: 1px solid rgba(181, 194, 206, 0.95);
+      background: rgba(255, 255, 255, 0.82);
+      color: #142331;
+      border-radius: 999px;
+      padding: 0.55rem 0.8rem;
+      font: inherit;
+      font-size: 0.84rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: border-color 0.16s ease, transform 0.16s ease, background 0.16s ease;
+    }
+
+    .bridge-toggle:hover {
+      transform: translateY(-1px);
+      border-color: rgba(75, 157, 211, 0.5);
+    }
+
+    .bridge-toggle.is-active {
+      background: rgba(52, 136, 201, 0.12);
+      border-color: rgba(52, 136, 201, 0.48);
+      color: #19466a;
+    }
+
+    .bridge-builder-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(270px, 0.85fr);
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .bridge-stage {
+      position: relative;
+      overflow: hidden;
+      border-radius: 24px;
+      min-height: 380px;
+      border: 1px solid rgba(170, 194, 214, 0.92);
+      background:
+        linear-gradient(180deg, #d8eefb 0 46%, #6eb0da 46% 58%, #2e6b9c 58% 100%);
+    }
+
+    .bridge-stage::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 44%;
+      height: 20px;
+      background:
+        radial-gradient(circle at 15% 50%, rgba(255, 255, 255, 0.28), transparent 26%),
+        radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.22), transparent 24%),
+        radial-gradient(circle at 72% 50%, rgba(255, 255, 255, 0.22), transparent 26%);
+      opacity: 0.55;
+      pointer-events: none;
+    }
+
+    .bridge-stage-note {
+      position: absolute;
+      left: 1rem;
+      bottom: 1rem;
+      margin: 0;
+      max-width: 26ch;
+      padding: 0.65rem 0.8rem;
+      border-radius: 14px;
+      background: rgba(13, 26, 38, 0.52);
+      color: rgba(255, 255, 255, 0.88);
+      font-size: 0.78rem;
+      line-height: 1.55;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .bridge-stage-help {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      z-index: 2;
+      max-width: min(320px, calc(100% - 2rem));
+      padding: 0.7rem 0.85rem;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(176, 196, 214, 0.94);
+      box-shadow: 0 12px 26px rgba(20, 35, 49, 0.12);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .bridge-stage svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 380px;
+      touch-action: none;
+    }
+
+    .bridge-stage svg [data-node-id],
+    .bridge-stage svg [data-member-id] {
+      cursor: pointer;
+    }
+
+    .bridge-member-hit {
+      stroke: transparent;
+      stroke-width: 24;
+      pointer-events: stroke;
+    }
+
+    .bridge-member-casing {
+      pointer-events: none;
+      opacity: 0.56;
+    }
+
+    .bridge-member-extrusion,
+    .bridge-member-highlight {
+      pointer-events: none;
+    }
+
+    .bridge-member-extrusion {
+      opacity: 0.58;
+      transform: translate(3px, 5px);
+    }
+
+    .bridge-member-highlight {
+      opacity: 0.34;
+      transform: translate(-0.8px, -1.2px);
+    }
+
+    .bridge-member-deck-edge {
+      pointer-events: none;
+      opacity: 0.88;
+      transform: translateY(5px);
+    }
+
+    .bridge-node-shadow {
+      pointer-events: none;
+      opacity: 0.34;
+      transform: translate(4px, 6px);
+    }
+
+    .bridge-ambulance-body {
+      animation: bridge-jalopy-idle 2.1s ease-in-out infinite;
+      transform-box: fill-box;
+      transform-origin: center bottom;
+    }
+
+    .bridge-amb-running .bridge-ambulance-body {
+      animation: bridge-jalopy-running 0.34s ease-in-out infinite alternate;
+    }
+
+    .bridge-wheel {
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    .bridge-amb-running .bridge-wheel {
+      animation: bridge-jalopy-wheel 0.42s linear infinite;
+    }
+
+    .bridge-exhaust-puff {
+      animation: bridge-jalopy-exhaust 2.2s ease-out infinite;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    .bridge-exhaust-puff--two {
+      animation-delay: -1.08s;
+    }
+
+    @keyframes bridge-jalopy-idle {
+      0%, 100% { transform: translateY(0) rotate(-0.45deg); }
+      38% { transform: translateY(-1.5px) rotate(0.25deg); }
+      68% { transform: translateY(-0.35px) rotate(-0.15deg); }
+    }
+
+    @keyframes bridge-jalopy-running {
+      from { transform: translateY(0.8px) rotate(-0.75deg); }
+      to { transform: translateY(-1.8px) rotate(0.65deg); }
+    }
+
+    @keyframes bridge-jalopy-wheel {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes bridge-jalopy-exhaust {
+      0% { opacity: 0; transform: translate(0, 0) scale(0.45); }
+      24% { opacity: 0.34; }
+      100% { opacity: 0; transform: translate(-12px, -8px) scale(1.45); }
+    }
+
+    .bridge-node-visual {
+      transition: transform 0.16s ease, filter 0.16s ease;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    .bridge-stage svg [data-node-id]:hover .bridge-node-visual {
+      transform: scale(1.18);
+      filter: drop-shadow(0 3px 5px rgba(10, 35, 54, 0.28));
+    }
+
+    .bridge-force-legend {
+      position: absolute;
+      right: 1rem;
+      bottom: 1rem;
+      z-index: 2;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 0.45rem 0.75rem;
+      max-width: 270px;
+      padding: 0.58rem 0.7rem;
+      border: 1px solid rgba(175, 196, 213, 0.82);
+      border-radius: 13px;
+      background: rgba(255, 255, 255, 0.8);
+      color: #314d64;
+      font-size: 0.68rem;
+      font-weight: 800;
+      backdrop-filter: blur(9px);
+      -webkit-backdrop-filter: blur(9px);
+    }
+
+    .bridge-force-key {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .bridge-force-swatch {
+      width: 1.25rem;
+      height: 0.28rem;
+      border-radius: 999px;
+      background: var(--swatch);
+      box-shadow: 0 0 0 1px rgba(17, 31, 44, 0.08);
+    }
+
+    .bridge-force-swatch.is-arrow {
+      height: 0.42rem;
+      background: #39d996;
+    }
+
+    .bridge-meter {
+      display: grid;
+      gap: 0.9rem;
+      align-content: start;
+    }
+
+    .bridge-status {
+      border-radius: 22px;
+      border: 1px solid rgba(183, 198, 211, 0.95);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 249, 252, 0.96));
+      padding: 1rem 1.05rem;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .bridge-status-pass {
+      border-color: rgba(52, 199, 89, 0.26);
+      background:
+        linear-gradient(180deg, rgba(230, 253, 237, 0.96), rgba(245, 251, 247, 0.94));
+    }
+
+    .bridge-status-fail {
+      border-color: rgba(255, 59, 48, 0.24);
+      background:
+        linear-gradient(180deg, rgba(255, 242, 240, 0.96), rgba(252, 247, 246, 0.94));
+    }
+
+    .bridge-status-warn {
+      border-color: rgba(245, 158, 11, 0.28);
+      background:
+        linear-gradient(180deg, rgba(255, 248, 231, 0.98), rgba(255, 252, 245, 0.96));
+    }
+
+    .bridge-status-pill {
+      width: fit-content;
+      margin-bottom: 0.65rem;
+      background: rgba(255, 255, 255, 0.74);
+    }
+
+    .bridge-capacity {
+      margin: 0;
+      font-size: clamp(1.9rem, 4.5vw, 2.45rem);
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      color: #142331;
+    }
+
+    .bridge-capacity small {
+      display: block;
+      margin-top: 0.22rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #60778b;
+    }
+
+    .bridge-progress-block {
+      display: grid;
+      gap: 0.45rem;
+      margin: 0.9rem 0;
+    }
+
+    .bridge-progress-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      align-items: baseline;
+      color: #14304b;
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+    }
+
+    .bridge-progress-head span {
+      color: #647d90;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.72rem;
+    }
+
+    .bridge-progress-track {
+      overflow: hidden;
+      border-radius: 999px;
+      height: 0.62rem;
+      background: rgba(211, 223, 233, 0.92);
+    }
+
+    .bridge-progress-fill {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #62c96b, #35a160);
+      transition: width 0.18s ease;
+    }
+
+    .bridge-progress-fill.is-risk {
+      background: linear-gradient(90deg, #f3c148, #f1853a, #e24a3b);
+    }
+
+    .bridge-meter-grid {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .bridge-meter-row {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      gap: 0.65rem;
+      align-items: baseline;
+    }
+
+    .bridge-meter-row dt {
+      margin: 0;
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #687d90;
+    }
+
+    .bridge-meter-row dd {
+      margin: 0;
+      font-size: 0.93rem;
+      font-weight: 700;
+      color: #142331;
+    }
+
+    .bridge-meter-note {
+      margin: 0;
+      font-size: 0.83rem;
+    }
+
+    .bridge-status h2 {
+      margin: 0 0 0.78rem;
+      color: #142331;
+      font-size: 1.02rem;
+      letter-spacing: -0.02em;
+    }
+
+    .bridge-readiness {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.55rem;
+      margin-bottom: 0.95rem;
+    }
+
+    .bridge-ready-item {
+      display: flex;
+      gap: 0.45rem;
+      align-items: center;
+      min-height: 2.6rem;
+      padding: 0.55rem 0.62rem;
+      border-radius: 12px;
+      background: rgba(231, 238, 244, 0.78);
+      color: #63798b;
+      font-size: 0.74rem;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+
+    .bridge-ready-item::before {
+      content: "○";
+      flex: 0 0 auto;
+      font-size: 1rem;
+    }
+
+    .bridge-ready-item.is-ready {
+      background: rgba(52, 199, 89, 0.1);
+      color: #20713a;
+    }
+
+    .bridge-ready-item.is-ready::before {
+      content: "✓";
+    }
+
+    .bridge-score-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.6rem;
+      margin: 0 0 0.95rem;
+    }
+
+    .bridge-score-stat {
+      padding: 0.68rem 0.75rem;
+      border: 1px solid rgba(190, 204, 217, 0.8);
+      border-radius: 13px;
+      background: rgba(255, 255, 255, 0.64);
+    }
+
+    .bridge-score-stat span {
+      display: block;
+      color: #6a8094;
+      font-size: 0.66rem;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .bridge-score-stat strong {
+      display: block;
+      margin-top: 0.16rem;
+      color: #142331;
+      font-size: 1rem;
+    }
+
+    .bridge-quiz-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .bridge-quiz-score {
+      flex: 0 0 auto;
+      padding: 0.55rem 0.75rem;
+      border-radius: 999px;
+      background: rgba(52, 136, 201, 0.1);
+      color: #19466a;
+      font-size: 0.78rem;
+      font-weight: 900;
+    }
+
+    .bridge-meter-note strong {
+      color: #153453;
+    }
+
+    .bridge-checklist {
+      margin: 0;
+      padding-left: 1.15rem;
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .bridge-options {
+      display: grid;
+      gap: 0.45rem;
+      margin-top: 0.7rem;
+    }
+
+    .bridge-option {
+      width: 100%;
+      text-align: left;
+      border: 1px solid rgba(183, 198, 211, 0.95);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.86);
+      color: #142331;
+      padding: 0.72rem 0.8rem;
+      font: inherit;
+      font-size: 0.84rem;
+      line-height: 1.45;
+      cursor: pointer;
+      transition: border-color 0.16s ease, transform 0.16s ease, background 0.16s ease;
+    }
+
+    .bridge-option:hover {
+      transform: translateY(-1px);
+      border-color: rgba(75, 157, 211, 0.5);
+    }
+
+    .bridge-option.is-correct {
+      border-color: rgba(52, 199, 89, 0.42);
+      background: rgba(52, 199, 89, 0.08);
+    }
+
+    .bridge-option.is-wrong {
+      border-color: rgba(255, 59, 48, 0.4);
+      background: rgba(255, 59, 48, 0.08);
+    }
+
+    .bridge-feedback {
+      min-height: 2.3em;
+      margin-top: 0.6rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      line-height: 1.5;
+      color: #60778b;
+    }
+
+    .bridge-feedback.correct {
+      color: #177334;
+    }
+
+    .bridge-feedback.wrong {
+      color: #b12720;
+    }
+
+    .bridge-footer-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-top: 0.4rem;
+      color: #24507a;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .bridge-footer-link:hover {
+      color: #16344e;
+      text-decoration: underline;
+    }
+
+    /* ── Ambulance flashing lights ──────────────────────── */
+    @keyframes bridge-amb-flash {
+      0%, 44% { fill: #ff4d4f; }
+      50%, 94% { fill: #5bc4ff; }
+      100%     { fill: #ff4d4f; }
+    }
+    .bridge-amb-running .amb-light {
+      animation: bridge-amb-flash 0.55s ease-in-out infinite;
+    }
+
+    /* ── Test speed control ─────────────────────────────── */
+    .bridge-speed-row {
+      display: flex; align-items: center; gap: 0.45rem;
+      flex-wrap: wrap; margin-top: 0.5rem;
+    }
+    .bridge-speed-label {
+      font-size: 0.73rem; font-weight: 800;
+      letter-spacing: 0.07em; text-transform: uppercase;
+      color: #6a8094; white-space: nowrap;
+    }
+
+    .bridge-analysis-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem;
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid rgba(181, 194, 206, 0.62);
+    }
+
+    .bridge-analysis-copy {
+      display: grid;
+      gap: 0.15rem;
+    }
+
+    .bridge-analysis-copy strong {
+      font-size: 0.82rem;
+      color: #17324b;
+      letter-spacing: -0.01em;
+    }
+
+    .bridge-analysis-copy span {
+      font-size: 0.73rem;
+      line-height: 1.45;
+      color: #6b8091;
+    }
+
+    .bridge-blueprint-toggle {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      width: 70px;
+      height: 38px;
+      flex: 0 0 auto;
+      cursor: pointer;
+    }
+
+    .bridge-blueprint-toggle input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .bridge-blueprint-track {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      border: 1px solid rgba(63, 122, 166, 0.28);
+      background:
+        linear-gradient(135deg, rgba(197, 228, 255, 0.9), rgba(232, 243, 255, 0.94));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+      transition: background 0.18s ease, border-color 0.18s ease;
+    }
+
+    .bridge-blueprint-thumb {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 30% 30%, #ffffff, #bedcff 74%);
+      box-shadow: 0 6px 14px rgba(27, 58, 82, 0.2);
+      transition: transform 0.18s ease, background 0.18s ease;
+    }
+
+    .bridge-blueprint-track::before,
+    .bridge-blueprint-track::after {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .bridge-blueprint-track::before {
+      content: "Live";
+      left: 11px;
+      color: rgba(20, 44, 68, 0.84);
+    }
+
+    .bridge-blueprint-track::after {
+      content: "BP";
+      right: 10px;
+      color: rgba(255, 255, 255, 0.68);
+    }
+
+    .bridge-blueprint-toggle input:checked + .bridge-blueprint-track {
+      border-color: rgba(129, 209, 255, 0.4);
+      background:
+        linear-gradient(135deg, rgba(11, 46, 84, 0.96), rgba(26, 77, 120, 0.98));
+    }
+
+    .bridge-blueprint-toggle input:checked + .bridge-blueprint-track .bridge-blueprint-thumb {
+      transform: translateX(32px);
+      background:
+        radial-gradient(circle at 30% 30%, #ffffff, #a9ecff 76%);
+    }
+
+    .bridge-stage.is-blueprint {
+      border-color: rgba(120, 187, 235, 0.38);
+      background:
+        linear-gradient(180deg, #123257 0 44%, #0f3b66 44% 60%, #0a2948 60% 100%);
+      box-shadow:
+        inset 0 0 0 1px rgba(196, 235, 255, 0.06),
+        0 22px 50px rgba(6, 17, 31, 0.28);
+    }
+
+    .bridge-stage.is-blueprint::before {
+      opacity: 0.18;
+      filter: saturate(0.75);
+    }
+
+    .bridge-stage.is-blueprint .bridge-stage-help {
+      background: rgba(8, 27, 47, 0.76);
+      border-color: rgba(125, 195, 241, 0.28);
+      color: rgba(232, 246, 255, 0.96);
+      box-shadow: 0 18px 30px rgba(4, 14, 25, 0.26);
+    }
+
+    .bridge-stage.is-blueprint .bridge-stage-help strong,
+    .bridge-stage.is-blueprint .bridge-stage-help span,
+    .bridge-stage.is-blueprint .bridge-stage-note {
+      color: rgba(231, 247, 255, 0.92);
+    }
+
+    .bridge-stage.is-blueprint .bridge-stage-note {
+      background: rgba(7, 25, 42, 0.7);
+      border: 1px solid rgba(120, 185, 235, 0.24);
+    }
+
+    .bridge-stage.is-blueprint #bridge-svg text {
+      fill: rgba(233, 248, 255, 0.88) !important;
+    }
+
+    .bridge-stage.is-blueprint .bridge-scene-detail {
+      opacity: 0.22;
+      filter: saturate(0.25) hue-rotate(155deg);
+    }
+
+    .bridge-stage.is-blueprint .bridge-depth-detail {
+      opacity: 0.18;
+      filter: saturate(0.2) hue-rotate(155deg);
+    }
+
+    .bridge-stage.is-blueprint .bridge-member-extrusion,
+    .bridge-stage.is-blueprint .bridge-member-highlight,
+    .bridge-stage.is-blueprint .bridge-member-deck-edge,
+    .bridge-stage.is-blueprint .bridge-node-shadow {
+      opacity: 0.16;
+    }
+
+    .bridge-stage.is-blueprint #bridge-foreground-separation {
+      opacity: 0.18;
+    }
+
+    .bridge-stage.is-blueprint .bridge-force-legend {
+      border-color: rgba(125, 195, 241, 0.28);
+      background: rgba(8, 27, 47, 0.76);
+      color: rgba(231, 247, 255, 0.92);
+    }
+
+    .bridge-stage.is-blueprint #bridge-left-bank,
+    .bridge-stage.is-blueprint #bridge-right-bank {
+      opacity: 0.68;
+      filter: saturate(0.28) hue-rotate(145deg) brightness(0.8);
+    }
+
+    .bridge-member {
+      transition: stroke 0.16s ease, stroke-width 0.16s ease, opacity 0.16s ease;
+    }
+
+    .bridge-member--active {
+      animation: bridge-member-pulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes bridge-member-pulse {
+      0%, 100% {
+        opacity: 0.92;
+        filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0));
+      }
+      50% {
+        opacity: 1;
+        filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.28));
+      }
+    }
+
+    .bridge-river-foam {
+      pointer-events: none;
+      animation: bridge-river-flow 13s linear infinite;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    .bridge-river-foam--slow {
+      animation-duration: 15s;
+    }
+
+    @keyframes bridge-river-flow {
+      from { transform: translateX(0); }
+      to { transform: translateX(-55px); }
+    }
+
+    .bridge-water-glint {
+      pointer-events: none;
+      animation: bridge-water-glint 5.8s ease-in-out infinite alternate;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    .bridge-water-glint--slow {
+      animation-duration: 8.6s;
+      animation-delay: -2.2s;
+    }
+
+    @keyframes bridge-water-glint {
+      0% { opacity: 0.18; transform: translateX(-7px) scaleX(0.96); }
+      55% { opacity: 0.58; }
+      100% { opacity: 0.25; transform: translateX(9px) scaleX(1.04); }
+    }
+
+    .bridge-sun-core {
+      animation: bridge-sun-pulse 4.8s ease-in-out infinite alternate;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    .bridge-sun-haze {
+      animation: bridge-heat-drift 3.6s ease-in-out infinite alternate;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    .bridge-sun-haze--slow {
+      animation-duration: 6.4s;
+      animation-delay: -1.7s;
+    }
+
+    @keyframes bridge-sun-pulse {
+      from { opacity: 0.84; transform: scale(0.985); }
+      to { opacity: 0.94; transform: scale(1.02); }
+    }
+
+    @keyframes bridge-heat-drift {
+      from { opacity: 0.28; transform: translate(-5px, 2px) scaleX(0.94); }
+      to { opacity: 0.62; transform: translate(7px, -2px) scaleX(1.08); }
+    }
+
+    .bridge-stage.is-shaking {
+      animation: bridge-camera-shake 0.46s linear 1;
+    }
+
+    @keyframes bridge-camera-shake {
+      0%, 100% { transform: translate3d(0, 0, 0); }
+      20% { transform: translate3d(-4px, 2px, 0); }
+      40% { transform: translate3d(4px, -3px, 0); }
+      60% { transform: translate3d(-3px, -2px, 0); }
+      80% { transform: translate3d(3px, 2px, 0); }
+    }
+
+    @media (max-width: 960px) {
+      .bridge-hero,
+      .bridge-lab-topbar,
+      .bridge-builder-grid,
+      .bridge-objective-grid,
+      .bridge-force-grid,
+      .bridge-step-grid,
+      .bridge-tip-grid,
+      .bridge-quiz {
+        grid-template-columns: 1fr;
+      }
+
+      .bridge-mission-progress,
+      .bridge-readiness {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      .bridge-shell {
+        width: min(100%, calc(100% - 1rem));
+      }
+
+      .bridge-hero-copy,
+      .bridge-hero-mission,
+      .bridge-card,
+      .bridge-builder {
+        padding: 1rem;
+        border-radius: 22px;
+      }
+
+      .bridge-controls,
+      .bridge-mission-grid,
+      .bridge-action-row {
+        grid-template-columns: 1fr;
+      }
+
+      .bridge-meter-row {
+        grid-template-columns: 1fr;
+        gap: 0.18rem;
+      }
+
+      .bridge-action-row {
+        display: grid;
+      }
+
+      .bridge-force-legend {
+        right: 0.65rem;
+        bottom: 0.65rem;
+        max-width: 210px;
+      }
+
+      .bridge-mission-progress,
+      .bridge-readiness,
+      .bridge-score-strip {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .bridge-amb-running .amb-light,
+      .bridge-member--active,
+      .bridge-river-foam,
+      .bridge-water-glint,
+      .bridge-sun-core,
+      .bridge-sun-haze,
+      .bridge-ambulance-body,
+      .bridge-wheel,
+      .bridge-exhaust-puff,
+      .bridge-stage.is-shaking {
+        animation: none !important;
+      }
+    }
+
+    /* ── Rural explorer field-station theme ───────────── */
+    .ll-sim {
+      background:
+        linear-gradient(151deg, transparent 0 57%, rgba(87, 109, 61, 0.72) 57.2% 65%, transparent 65.2%),
+        linear-gradient(207deg, transparent 0 54%, rgba(112, 132, 72, 0.66) 54.2% 63%, transparent 63.2%),
+        radial-gradient(ellipse at 18% 58%, rgba(90, 113, 63, 0.88) 0 15%, transparent 15.3%),
+        radial-gradient(ellipse at 81% 61%, rgba(108, 126, 69, 0.9) 0 19%, transparent 19.3%),
+        linear-gradient(180deg, #b9d8dd 0 43%, #dce5c8 43.2% 48%, #8fa45f 48.2% 71%, #bea069 71.2% 100%);
+      background-attachment: fixed;
+    }
+
+    .bridge-page {
+      position: relative;
+      isolation: isolate;
+    }
+
+    .bridge-page::before,
+    .bridge-page::after {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .bridge-page::before {
+      inset: 0;
+      opacity: 0.22;
+      background-image:
+        linear-gradient(90deg, transparent 49.5%, rgba(80, 61, 39, 0.6) 49.5% 50.5%, transparent 50.5%),
+        linear-gradient(0deg, transparent 48%, rgba(255, 255, 255, 0.22) 48% 52%, transparent 52%);
+      background-size: 180px 78px;
+      mask-image: linear-gradient(90deg, #000 0 8%, transparent 18% 82%, #000 92% 100%);
+      -webkit-mask-image: linear-gradient(90deg, #000 0 8%, transparent 18% 82%, #000 92% 100%);
+    }
+
+    .bridge-page::after {
+      top: 35px;
+      right: max(10px, calc((100% - 1240px) / 2));
+      width: 82px;
+      height: 116px;
+      border: 8px solid rgba(92, 67, 42, 0.68);
+      border-top: 0;
+      border-bottom: 0;
+      transform: rotate(3deg);
+      opacity: 0.72;
+    }
+
+    .bridge-hero-copy,
+    .bridge-hero-mission,
+    .bridge-card,
+    .bridge-builder {
+      position: relative;
+      overflow: hidden;
+      border: 3px solid #67492f;
+      border-radius: 10px 14px 9px 13px;
+      background:
+        radial-gradient(circle at 15px 15px, #3f4240 0 3px, #a4a099 3.4px 5px, transparent 5.4px),
+        radial-gradient(circle at calc(100% - 15px) 15px, #3f4240 0 3px, #a4a099 3.4px 5px, transparent 5.4px),
+        radial-gradient(circle at 15px calc(100% - 15px), #3f4240 0 3px, #a4a099 3.4px 5px, transparent 5.4px),
+        radial-gradient(circle at calc(100% - 15px) calc(100% - 15px), #3f4240 0 3px, #a4a099 3.4px 5px, transparent 5.4px),
+        repeating-linear-gradient(2deg, rgba(104, 69, 36, 0.11) 0 2px, transparent 2px 19px),
+        linear-gradient(96deg, rgba(255,255,255,0.15), transparent 36%, rgba(93,57,25,0.1) 70%, transparent),
+        #d2ac76;
+      box-shadow:
+        0 5px 0 #4c3523,
+        0 17px 30px rgba(52, 39, 24, 0.25),
+        inset 0 1px 0 rgba(255, 244, 214, 0.45);
+    }
+
+    .bridge-hero-copy {
+      background:
+        radial-gradient(circle at 15px 15px, #3f4240 0 3px, #aaa59d 3.4px 5px, transparent 5.4px),
+        radial-gradient(circle at calc(100% - 15px) 15px, #3f4240 0 3px, #aaa59d 3.4px 5px, transparent 5.4px),
+        radial-gradient(circle at 15px calc(100% - 15px), #3f4240 0 3px, #aaa59d 3.4px 5px, transparent 5.4px),
+        radial-gradient(circle at calc(100% - 15px) calc(100% - 15px), #3f4240 0 3px, #aaa59d 3.4px 5px, transparent 5.4px),
+        repeating-linear-gradient(1deg, rgba(80, 51, 28, 0.12) 0 2px, transparent 2px 21px),
+        linear-gradient(100deg, rgba(255,255,255,0.14), transparent 42%, rgba(88,54,27,0.12)),
+        #c7985d;
+      transform: rotate(-0.18deg);
+    }
+
+    .bridge-hero-copy::after {
+      content: "N";
+      display: grid;
+      place-items: start center;
+      position: absolute;
+      right: 2.2rem;
+      bottom: 2rem;
+      width: 112px;
+      height: 112px;
+      padding-top: 0.35rem;
+      border: 3px double rgba(55, 67, 38, 0.64);
+      border-radius: 50%;
+      background:
+        linear-gradient(45deg, transparent 47%, rgba(55, 67, 38, 0.68) 48% 52%, transparent 53%),
+        linear-gradient(-45deg, transparent 47%, rgba(55, 67, 38, 0.68) 48% 52%, transparent 53%),
+        radial-gradient(circle, transparent 0 28%, rgba(55, 67, 38, 0.38) 29% 31%, transparent 32% 47%, rgba(55, 67, 38, 0.42) 48% 50%, transparent 51%);
+      color: rgba(48, 62, 34, 0.76);
+      font-size: 0.74rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      opacity: 0.48;
+      transform: rotate(8deg);
+      pointer-events: none;
+    }
+
+    .bridge-hero-mission {
+      background:
+        radial-gradient(circle at 15px 15px, #3f4240 0 3px, #aaa59d 3.4px 5px, transparent 5.4px),
+        radial-gradient(circle at calc(100% - 15px) 15px, #3f4240 0 3px, #aaa59d 3.4px 5px, transparent 5.4px),
+        radial-gradient(circle at 15px calc(100% - 15px), #3f4240 0 3px, #aaa59d 3.4px 5px, transparent 5.4px),
+        radial-gradient(circle at calc(100% - 15px) calc(100% - 15px), #3f4240 0 3px, #aaa59d 3.4px 5px, transparent 5.4px),
+        repeating-linear-gradient(178deg, rgba(89, 58, 31, 0.09) 0 2px, transparent 2px 18px),
+        #dfbd85;
+      transform: rotate(0.16deg);
+    }
+
+    .bridge-card:nth-of-type(even) {
+      transform: rotate(0.08deg);
+    }
+
+    .bridge-card:nth-of-type(odd) {
+      transform: rotate(-0.08deg);
+    }
+
+    .bridge-builder {
+      padding: 1.45rem;
+      background:
+        radial-gradient(circle at 17px 17px, #3f4240 0 4px, #aaa59d 4.3px 6px, transparent 6.4px),
+        radial-gradient(circle at calc(100% - 17px) 17px, #3f4240 0 4px, #aaa59d 4.3px 6px, transparent 6.4px),
+        radial-gradient(circle at 17px calc(100% - 17px), #3f4240 0 4px, #aaa59d 4.3px 6px, transparent 6.4px),
+        radial-gradient(circle at calc(100% - 17px) calc(100% - 17px), #3f4240 0 4px, #aaa59d 4.3px 6px, transparent 6.4px),
+        repeating-linear-gradient(1deg, rgba(73, 47, 25, 0.14) 0 2px, transparent 2px 23px),
+        linear-gradient(92deg, rgba(255,255,255,0.12), transparent 26%, rgba(77,47,23,0.12) 69%, transparent),
+        #b98751;
+    }
+
+    .bridge-hero-copy h1,
+    .bridge-hero-mission h2,
+    .bridge-card h2,
+    .bridge-builder h2,
+    .bridge-force-card strong,
+    .bridge-step-card strong,
+    .bridge-tip-card strong,
+    .bridge-question p {
+      color: #2f2419;
+      text-shadow: 0 1px rgba(255, 245, 218, 0.28);
+    }
+
+    .bridge-lede,
+    .bridge-mission-copy,
+    .bridge-card p,
+    .bridge-force-card small,
+    .bridge-step-card small,
+    .bridge-tip-card small,
+    .bridge-checklist li,
+    .bridge-meter-note {
+      color: #4d4031;
+    }
+
+    .bridge-eyebrow,
+    .bridge-kicker {
+      color: #4c5f38;
+    }
+
+    .bridge-meta span,
+    .bridge-status-pill {
+      border-color: rgba(74, 85, 48, 0.5);
+      background: rgba(238, 221, 179, 0.72);
+      color: #354929;
+    }
+
+    .bridge-mission-stat,
+    .bridge-force-card,
+    .bridge-step-card,
+    .bridge-tip-card,
+    .bridge-question,
+    .bridge-objective-card,
+    .bridge-controls-card,
+    .bridge-status {
+      border: 1px solid rgba(91, 67, 39, 0.48);
+      border-radius: 7px 10px 8px 11px;
+      background:
+        repeating-linear-gradient(176deg, rgba(104, 79, 45, 0.05) 0 1px, transparent 1px 13px),
+        rgba(246, 231, 195, 0.88);
+      box-shadow: 0 3px 0 rgba(83, 58, 34, 0.18), inset 0 1px rgba(255,255,255,0.38);
+    }
+
+    .bridge-mission-stat span,
+    .bridge-objective-card span,
+    .bridge-meter-row dd,
+    .bridge-capacity,
+    .bridge-score-stat strong {
+      color: #32271c;
+    }
+
+    .bridge-objective-card strong,
+    .bridge-mission-stat strong,
+    .bridge-stage-help strong,
+    .bridge-field label,
+    .bridge-field legend,
+    .bridge-speed-label {
+      color: #55633c;
+    }
+
+    .bridge-mission-step {
+      border: 2px solid #694b30;
+      border-radius: 5px 8px 6px 7px;
+      background:
+        repeating-linear-gradient(2deg, rgba(93, 57, 27, 0.08) 0 1px, transparent 1px 12px),
+        #d9b477;
+      color: #604c38;
+      box-shadow: 0 3px 0 #563a24;
+    }
+
+    .bridge-mission-step.is-active {
+      border-color: #405b35;
+      background:
+        repeating-linear-gradient(2deg, rgba(47, 71, 37, 0.1) 0 1px, transparent 1px 12px),
+        #b7c58b;
+      color: #30452a;
+      box-shadow: 0 3px 0 #3d5333, 0 9px 18px rgba(55, 70, 42, 0.16);
+    }
+
+    .bridge-mission-step.is-complete {
+      border-color: #4f6a3d;
+      background: #c9d19a;
+      color: #324c2c;
+    }
+
+    .bridge-mission-step span,
+    .bridge-mission-step.is-active span,
+    .bridge-mission-step.is-complete span {
+      background: #4c653d;
+      color: #fff8df;
+    }
+
+    .bridge-action-button,
+    .bridge-toggle {
+      border: 2px solid #694b30;
+      border-radius: 5px 8px 6px 7px;
+      background:
+        linear-gradient(rgba(255,255,255,0.08), rgba(70,43,24,0.08)),
+        #d9b06f;
+      color: #32271c;
+      box-shadow: 0 3px 0 #563a24;
+    }
+
+    .bridge-action-button:hover,
+    .bridge-toggle:hover {
+      border-color: #4e693d;
+      transform: translateY(-2px) rotate(-0.3deg);
+    }
+
+    .bridge-action-button.is-primary {
+      border-color: #30482c;
+      background: linear-gradient(#577848, #3d5d37);
+      color: #fff8df;
+      box-shadow: 0 4px 0 #293d27, 0 10px 18px rgba(47, 66, 38, 0.22);
+    }
+
+    .bridge-toggle.is-active {
+      border-color: #365332;
+      background: #afc184;
+      color: #263d25;
+    }
+
+    .bridge-stage {
+      border: 7px solid #553a25;
+      border-radius: 8px;
+      box-shadow:
+        0 0 0 3px #8b613b,
+        inset 0 0 0 2px rgba(255,255,255,0.16),
+        0 8px 0 rgba(64, 41, 23, 0.36),
+        0 16px 28px rgba(57, 39, 23, 0.25);
+    }
+
+    .bridge-stage-help {
+      border: 1px solid rgba(87, 63, 38, 0.54);
+      border-radius: 4px 7px 5px 8px;
+      background:
+        repeating-linear-gradient(177deg, rgba(110, 81, 43, 0.05) 0 1px, transparent 1px 12px),
+        rgba(248, 235, 199, 0.94);
+      box-shadow: 0 4px 0 rgba(75, 51, 29, 0.28), 0 10px 24px rgba(45, 33, 23, 0.16);
+    }
+
+    .bridge-stage-note {
+      border: 1px solid rgba(231, 214, 172, 0.24);
+      border-radius: 5px;
+      background: rgba(49, 42, 30, 0.8);
+      color: #fff3d5;
+    }
+
+    .bridge-force-legend {
+      border: 2px solid #684a30;
+      border-radius: 5px;
+      background: rgba(239, 222, 182, 0.9);
+      color: #3e3429;
+      box-shadow: 0 3px 0 rgba(72, 48, 28, 0.3);
+    }
+
+    .bridge-select,
+    .bridge-option {
+      border-color: rgba(93, 69, 41, 0.56);
+      border-radius: 5px 8px 6px 7px;
+      background: rgba(250, 238, 205, 0.92);
+      color: #35291d;
+    }
+
+    .bridge-readiness,
+    .bridge-score-strip {
+      margin-top: 0.3rem;
+    }
+
+    .bridge-ready-item,
+    .bridge-score-stat {
+      border-color: rgba(91, 67, 39, 0.38);
+      border-radius: 5px;
+      background: rgba(224, 204, 158, 0.68);
+      color: #68533c;
+    }
+
+    .bridge-ready-item.is-ready {
+      background: rgba(164, 188, 121, 0.65);
+      color: #314b2b;
+    }
+
+    .bridge-status-pass {
+      border-color: #567646;
+      background: linear-gradient(rgba(224, 235, 196, 0.94), rgba(200, 216, 166, 0.92));
+    }
+
+    .bridge-status-fail {
+      border-color: #8a4b3a;
+      background: linear-gradient(rgba(242, 214, 188, 0.95), rgba(226, 187, 158, 0.92));
+    }
+
+    .bridge-status-warn {
+      border-color: #8a6a32;
+      background: linear-gradient(rgba(241, 224, 177, 0.96), rgba(225, 202, 145, 0.94));
+    }
+
+    .bridge-progress-track {
+      border: 1px solid rgba(79, 58, 37, 0.28);
+      background: rgba(120, 90, 54, 0.2);
+    }
+
+    .bridge-footer-link {
+      color: #334d2c;
+    }
+
+    @media (max-width: 720px) {
+      .bridge-builder {
+        padding: 1.05rem;
+      }
+
+      .bridge-hero-copy::after {
+        right: 1.1rem;
+        bottom: 1rem;
+        width: 76px;
+        height: 76px;
+        opacity: 0.24;
+      }
+
+      .bridge-hero-copy,
+      .bridge-hero-mission,
+      .bridge-card,
+      .bridge-builder {
+        border-width: 2px;
+        border-radius: 8px;
+      }
+    }
+
+    /* ── Compact formatting pass ───────────────────────── */
+    .bridge-shell {
+      gap: 0.8rem;
+    }
+
+    .bridge-hero {
+      align-items: start;
+      gap: 0.8rem;
+    }
+
+    .bridge-hero-mission {
+      gap: 0.65rem;
+      padding: 1.05rem 1.15rem;
+    }
+
+    .bridge-mission-grid {
+      gap: 0.55rem;
+      margin-top: 0.55rem;
+    }
+
+    .bridge-mission-stat {
+      padding: 0.65rem 0.75rem;
+    }
+
+    .bridge-mission-stat span {
+      font-size: 1.25rem;
+    }
+
+    .bridge-mission-stat small {
+      margin-top: 0.12rem;
+      font-size: 0.75rem;
+      line-height: 1.35;
+    }
+
+    .bridge-builder {
+      gap: 0.75rem;
+    }
+
+    .bridge-builder-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.75rem;
+      align-items: start;
+    }
+
+    .bridge-builder-sub {
+      max-width: 88ch;
+    }
+
+    .bridge-mission-progress,
+    .bridge-lab-topbar {
+      gap: 0.55rem;
+    }
+
+    .bridge-mission-step {
+      min-height: 50px;
+      padding: 0.52rem 0.62rem;
+    }
+
+    .bridge-objective-grid {
+      gap: 0.55rem;
+    }
+
+    .bridge-objective-card,
+    .bridge-controls-card {
+      padding: 0.78rem 0.85rem;
+    }
+
+    .bridge-controls-card {
+      gap: 0.62rem;
+    }
+
+    .bridge-action-button {
+      padding: 0.58rem 0.78rem;
+    }
+
+    .bridge-toggle {
+      padding: 0.48rem 0.7rem;
+    }
+
+    .bridge-analysis-row {
+      margin-top: 0.45rem;
+      padding-top: 0.55rem;
+    }
+
+    @media (min-width: 961px) {
+      .bridge-meter {
+        grid-template-columns: minmax(0, 1.35fr) minmax(285px, 0.65fr);
+        gap: 0.7rem;
+        align-items: start;
+      }
+
+      .bridge-status {
+        padding: 0.85rem 0.9rem;
+      }
+
+      .bridge-checklist {
+        gap: 0.38rem;
+      }
+    }
+
+    @media (max-width: 960px) {
+      .bridge-builder-head {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .bridge-shell {
+        gap: 0.65rem;
+      }
+
+      .bridge-hero,
+      .bridge-builder,
+      .bridge-hero-mission {
+        gap: 0.65rem;
+      }
+
+      .bridge-builder-head {
+        gap: 0.4rem;
+      }
+    }
+
+    /* ── Layout overrides ─────────────────────────────── */
+    .ll-viewport {
+      --ll-tab-active: #3488c9;
+      --ll-tab-active-bg: rgba(52,136,201,0.12);
+    }
+    /* Override the 2-col builder-grid — meter moves to panel */
+    .bridge-builder-grid { display: block; }
+    .bridge-stage { max-height: calc(100dvh - 140px); min-height: 260px; }
+    .ll-viewport .bridge-stage { min-height: clamp(240px, 45vh, 380px); }
+    .ll-viewport .bridge-stage svg { min-height: clamp(240px, 45vh, 380px); }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+<div class="ll-viewport">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+  <div class="ll-sim">
+  <main id="main-content" class="bridge-page">
+    <div class="bridge-shell">
+      <section class="bridge-hero">
+        <article class="bridge-hero-copy">
+          <p class="bridge-eyebrow">Engineering · Lesson 01</p>
+          <h1>Bridge Over Troubled Water</h1>
+          <p class="bridge-lede">A storm washed out the crossing to a rural clinic. In this construction sim, you will place joints, draw road and support members, then watch the ambulance test your design. A good bridge keeps a clear load path, stays under budget, and uses triangles to keep the road from sagging.</p>
+          <div class="bridge-meta">
+            <span>Construction sim</span>
+            <span>Triangulation</span>
+            <span>Stress test</span>
+            <span>Iterate and test</span>
+          </div>
+          <a class="bridge-footer-link" href="../../steam-lessons.html#module-engineering">&larr; Back to Engineering</a>
+        </article>
+
+        <aside class="bridge-hero-mission" aria-label="Bridge mission brief">
+          <div>
+            <p class="bridge-kicker">Mission brief</p>
+            <h2>Get the ambulance across</h2>
+            <p class="bridge-mission-copy">Assume a fully loaded ambulance has a mass of about <strong>6,500 kg</strong>. That produces a weight of about <strong>64 kN</strong>. Engineers do not stop there. They also account for braking, bumps, and uncertainty, so this lesson uses a <strong>target design load of 105 kN</strong>.</p>
+          </div>
+
+          <div class="bridge-mission-grid">
+            <div class="bridge-mission-stat">
+              <strong>Vehicle</strong>
+              <span>6,500 kg</span>
+              <small>Ambulance with crew and gear</small>
+            </div>
+            <div class="bridge-mission-stat">
+              <strong>Weight</strong>
+              <span>64 kN</span>
+              <small>Force from gravity on the vehicle</small>
+            </div>
+            <div class="bridge-mission-stat">
+              <strong>Target</strong>
+              <span>105 kN</span>
+              <small>Design load after safety margin</small>
+            </div>
+            <div class="bridge-mission-stat">
+              <strong>Goal</strong>
+              <span>Pass</span>
+              <small>Capacity must meet or beat the target</small>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="bridge-builder">
+        <div class="bridge-builder-head">
+          <div>
+            <p class="bridge-kicker">Construction sim</p>
+            <h2>Bridge Build Lab</h2>
+            <p class="bridge-builder-sub">Place joints, connect road and support members, then run the ambulance test. Flat decks usually fail. Triangles, depth, and clean load paths win.</p>
+          </div>
+          <span class="bridge-status-pill" id="bridge-status-pill">Edit mode</span>
+        </div>
+
+        <div class="bridge-mission-progress" aria-label="Mission progress">
+          <div class="bridge-mission-step is-active" data-mission-step="road">
+            <span>1</span><div><strong>Connect the road</strong><small>Make a driveable path</small></div>
+          </div>
+          <div class="bridge-mission-step" data-mission-step="triangles">
+            <span>2</span><div><strong>Build triangles</strong><small>Add at least four</small></div>
+          </div>
+          <div class="bridge-mission-step" data-mission-step="test">
+            <span>3</span><div><strong>Stress-test</strong><small>Watch force and sag</small></div>
+          </div>
+          <div class="bridge-mission-step" data-mission-step="deliver">
+            <span>4</span><div><strong>Reach the clinic</strong><small>Pass within budget</small></div>
+          </div>
+        </div>
+
+        <div class="bridge-lab-topbar">
+          <div class="bridge-objective-grid">
+            <article class="bridge-objective-card">
+              <strong>Mission</strong>
+              <span>Connect the clinic road</span>
+              <small>Build one continuous road path from the left anchor to the right bank.</small>
+            </article>
+            <article class="bridge-objective-card">
+              <strong>Load</strong>
+              <span>105 kN target</span>
+              <small>The ambulance weighs about 64 kN, but the lesson tests a higher design load for safety.</small>
+            </article>
+            <article class="bridge-objective-card">
+              <strong>Constraint</strong>
+              <span>Stay under budget</span>
+              <small>Road is required, wood is cheap for triangles, and steel is stronger but costs more.</small>
+            </article>
+          </div>
+
+          <div class="bridge-controls-card">
+            <p class="bridge-tool-copy" id="bridge-tool-copy">Road selected. Click the grid to place a joint, then click another joint to connect a road segment.</p>
+            <div class="bridge-toggle-group" id="bridge-tool-group" aria-label="Bridge build tools">
+              <button class="bridge-toggle" type="button" data-tool="move" aria-pressed="false">Move</button>
+              <button class="bridge-toggle is-active" type="button" data-tool="road" aria-pressed="true">Road</button>
+              <button class="bridge-toggle" type="button" data-tool="wood" aria-pressed="false">Wood</button>
+              <button class="bridge-toggle" type="button" data-tool="steel" aria-pressed="false">Steel</button>
+              <button class="bridge-toggle" type="button" data-tool="delete" aria-pressed="false">Delete</button>
+            </div>
+            <div class="bridge-action-row">
+              <button class="bridge-action-button is-primary" type="button" id="bridge-test-btn">Run Test</button>
+              <button class="bridge-action-button" type="button" id="bridge-replay-btn" style="display:none;">↺ Replay</button>
+              <button class="bridge-action-button" type="button" id="bridge-undo-btn" disabled>↶ Undo</button>
+              <button class="bridge-action-button" type="button" id="bridge-example-btn">Load Example</button>
+              <button class="bridge-action-button" type="button" id="bridge-reset-btn">Reset Level</button>
+            </div>
+            <div class="bridge-speed-row">
+              <span class="bridge-speed-label">Speed</span>
+              <button class="bridge-toggle is-active" type="button" data-speed="1">1×</button>
+              <button class="bridge-toggle" type="button" data-speed="0.5">½×</button>
+              <button class="bridge-toggle" type="button" data-speed="2">2×</button>
+            </div>
+            <div class="bridge-analysis-row">
+              <div class="bridge-analysis-copy">
+                <strong>Blueprint Studio</strong>
+                <span>Flip to schematic contrast when you want a cleaner stress and reaction readout.</span>
+              </div>
+              <label class="bridge-blueprint-toggle" for="bridge-blueprint-toggle">
+                <input id="bridge-blueprint-toggle" type="checkbox" aria-label="Toggle blueprint mode">
+                <span class="bridge-blueprint-track">
+                  <span class="bridge-blueprint-thumb"></span>
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="bridge-builder-grid">
+          <div class="bridge-stage" id="bridge-stage">
+            <div class="bridge-stage-help" aria-live="polite">
+              <strong id="bridge-tool-label">Road Tool</strong>
+              <span id="bridge-stage-prompt">Click empty grid points to drop joints. Click two joints to connect a road panel.</span>
+            </div>
+            <svg id="bridge-svg" viewBox="0 0 780 380" aria-label="Bridge construction simulator" role="img">
+              <defs>
+                <linearGradient id="bridgeSkyGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#c6dfe1"></stop>
+                  <stop offset="0.68" stop-color="#e8e4d1"></stop>
+                  <stop offset="1" stop-color="#f3ead5"></stop>
+                </linearGradient>
+                <linearGradient id="bridgeUkiyoFar" x1="0" y1="0" x2="0.8" y2="1">
+                  <stop offset="0" stop-color="#8faeb2"></stop>
+                  <stop offset="1" stop-color="#607f8d"></stop>
+                </linearGradient>
+                <linearGradient id="bridgeUkiyoFuji" x1="0.2" y1="0" x2="0.8" y2="1">
+                  <stop offset="0" stop-color="#7899aa"></stop>
+                  <stop offset="0.52" stop-color="#527a91"></stop>
+                  <stop offset="1" stop-color="#315d78"></stop>
+                </linearGradient>
+                <linearGradient id="bridgeUkiyoNear" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#426d75"></stop>
+                  <stop offset="1" stop-color="#274f61"></stop>
+                </linearGradient>
+                <radialGradient id="bridgeSunCore" cx="42%" cy="36%" r="64%">
+                  <stop offset="0" stop-color="#fff4bf"></stop>
+                  <stop offset="0.22" stop-color="#ffe18a"></stop>
+                  <stop offset="0.54" stop-color="#f4ad45"></stop>
+                  <stop offset="0.82" stop-color="#dc6932"></stop>
+                  <stop offset="1" stop-color="#a94731"></stop>
+                </radialGradient>
+                <radialGradient id="bridgeSunBloom" cx="50%" cy="50%" r="50%">
+                  <stop offset="0" stop-color="#fffbd7" stop-opacity="0.95"></stop>
+                  <stop offset="0.2" stop-color="#ffc85c" stop-opacity="0.78"></stop>
+                  <stop offset="0.5" stop-color="#f37a2a" stop-opacity="0.4"></stop>
+                  <stop offset="1" stop-color="#df4e25" stop-opacity="0"></stop>
+                </radialGradient>
+                <pattern id="bridgeUkiyoGrain" width="26" height="18" patternUnits="userSpaceOnUse">
+                  <path d="M-4 5C4 1 12 9 30 4M-5 14C7 9 16 17 31 12" fill="none" stroke="#173f59" stroke-opacity="0.12" stroke-width="1"></path>
+                </pattern>
+                <linearGradient id="bridgeBankGradient" x1="0" y1="0" x2="0.85" y2="1">
+                  <stop offset="0" stop-color="#a68b68"></stop>
+                  <stop offset="0.48" stop-color="#80694f"></stop>
+                  <stop offset="1" stop-color="#5b4b3d"></stop>
+                </linearGradient>
+                <linearGradient id="bridgeGrassGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#87b75d"></stop>
+                  <stop offset="1" stop-color="#4f7d43"></stop>
+                </linearGradient>
+                <linearGradient id="bridgeGrassTop" x1="0" y1="0" x2="0.8" y2="1">
+                  <stop offset="0" stop-color="#b6d47d"></stop>
+                  <stop offset="0.5" stop-color="#7fac58"></stop>
+                  <stop offset="1" stop-color="#527e40"></stop>
+                </linearGradient>
+                <linearGradient id="bridgeBankSide" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#74563d"></stop>
+                  <stop offset="1" stop-color="#3e3028"></stop>
+                </linearGradient>
+                <linearGradient id="bridgeCliffFace" x1="0" y1="0" x2="0.72" y2="1">
+                  <stop offset="0" stop-color="#a47d59"></stop>
+                  <stop offset="0.3" stop-color="#826044"></stop>
+                  <stop offset="0.72" stop-color="#644a38"></stop>
+                  <stop offset="1" stop-color="#49382f"></stop>
+                </linearGradient>
+                <linearGradient id="bridgeCliffLip" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#684c36"></stop>
+                  <stop offset="1" stop-color="#382d27"></stop>
+                </linearGradient>
+                <linearGradient id="bridgeWetEarth" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#4e4836" stop-opacity="0.15"></stop>
+                  <stop offset="1" stop-color="#233a36" stop-opacity="0.78"></stop>
+                </linearGradient>
+                <linearGradient id="bridgeWaterDepth" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#8fd2e8"></stop>
+                  <stop offset="0.12" stop-color="#3f9bc4"></stop>
+                  <stop offset="0.48" stop-color="#17628f"></stop>
+                  <stop offset="1" stop-color="#082f52"></stop>
+                </linearGradient>
+                <linearGradient id="bridgeWaterReflection" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0" stop-color="#d9f6ff" stop-opacity="0.04"></stop>
+                  <stop offset="0.22" stop-color="#d9f6ff" stop-opacity="0.4"></stop>
+                  <stop offset="0.42" stop-color="#7cc4df" stop-opacity="0.08"></stop>
+                  <stop offset="0.7" stop-color="#e9fbff" stop-opacity="0.32"></stop>
+                  <stop offset="1" stop-color="#9ed9ec" stop-opacity="0.03"></stop>
+                </linearGradient>
+                <radialGradient id="bridgeWaterSunGlare" cx="72%" cy="0%" r="75%">
+                  <stop offset="0" stop-color="#f5ffff" stop-opacity="0.62"></stop>
+                  <stop offset="0.22" stop-color="#c9f2ff" stop-opacity="0.2"></stop>
+                  <stop offset="0.7" stop-color="#54a9cf" stop-opacity="0"></stop>
+                </radialGradient>
+                <linearGradient id="bridgeRoadSurface" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#aab9b8"></stop>
+                  <stop offset="0.26" stop-color="#7b8d8f"></stop>
+                  <stop offset="0.62" stop-color="#50636c"></stop>
+                  <stop offset="1" stop-color="#263a46"></stop>
+                </linearGradient>
+                <linearGradient id="bridgeRoadEdge" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#18242d"></stop>
+                  <stop offset="1" stop-color="#060b10"></stop>
+                </linearGradient>
+                <linearGradient id="bridgeLeafLight" x1="0" y1="0" x2="0.9" y2="1">
+                  <stop offset="0" stop-color="#9bc172"></stop>
+                  <stop offset="0.48" stop-color="#6c9a55"></stop>
+                  <stop offset="1" stop-color="#3f6d43"></stop>
+                </linearGradient>
+                <linearGradient id="bridgeLeafShade" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#638f50"></stop>
+                  <stop offset="1" stop-color="#31583b"></stop>
+                </linearGradient>
+                <linearGradient id="bridgeClinicFront" x1="0" y1="0" x2="0.8" y2="1">
+                  <stop offset="0" stop-color="#f7fcf8"></stop>
+                  <stop offset="1" stop-color="#cadde0"></stop>
+                </linearGradient>
+                <linearGradient id="bridgeClinicSide" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#b8cdd1"></stop>
+                  <stop offset="1" stop-color="#829fa8"></stop>
+                </linearGradient>
+                <linearGradient id="bridgeClinicRoof" x1="0" y1="0" x2="0.8" y2="1">
+                  <stop offset="0" stop-color="#e36a5e"></stop>
+                  <stop offset="1" stop-color="#a83f3c"></stop>
+                </linearGradient>
+                <linearGradient id="bridgeWoodStroke" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#ffd188"></stop>
+                  <stop offset="0.42" stop-color="#dc8c3d"></stop>
+                  <stop offset="1" stop-color="#a65323"></stop>
+                </linearGradient>
+                <linearGradient id="bridgeSteelStroke" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#f2fbff"></stop>
+                  <stop offset="0.45" stop-color="#a8c7dc"></stop>
+                  <stop offset="1" stop-color="#6288a4"></stop>
+                </linearGradient>
+                <radialGradient id="bridgeNodeGradient" cx="32%" cy="25%" r="72%">
+                  <stop offset="0" stop-color="#ffffff"></stop>
+                  <stop offset="0.68" stop-color="#e7f3fa"></stop>
+                  <stop offset="1" stop-color="#a9c4d6"></stop>
+                </radialGradient>
+                <filter id="bridgeSoftShadow" x="-40%" y="-40%" width="180%" height="180%">
+                  <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#102638" flood-opacity="0.28"></feDropShadow>
+                </filter>
+                <filter id="bridgeWoodblockInk" x="-4%" y="-5%" width="108%" height="112%">
+                  <feTurbulence type="fractalNoise" baseFrequency="0.018 0.09" numOctaves="2" seed="19" result="inkNoise"></feTurbulence>
+                  <feDisplacementMap in="SourceGraphic" in2="inkNoise" scale="1.35" xChannelSelector="R" yChannelSelector="B"></feDisplacementMap>
+                </filter>
+                <filter id="bridgeSunHalo" x="-120%" y="-120%" width="340%" height="340%" color-interpolation-filters="sRGB">
+                  <feGaussianBlur stdDeviation="9" result="sunBlur"></feGaussianBlur>
+                  <feColorMatrix in="sunBlur" type="matrix" values="1.05 0 0 0 0.08  0 0.68 0 0 0.01  0 0 0.24 0 0  0 0 0 0.62 0"></feColorMatrix>
+                </filter>
+                <filter id="bridgeHeatShimmer" x="-80%" y="-70%" width="260%" height="250%" color-interpolation-filters="sRGB">
+                  <feTurbulence type="fractalNoise" baseFrequency="0.011 0.075" numOctaves="2" seed="27" result="heatNoise">
+                    <animate attributeName="baseFrequency" dur="4.2s" values="0.011 0.075;0.018 0.105;0.011 0.075" repeatCount="indefinite"></animate>
+                  </feTurbulence>
+                  <feDisplacementMap in="SourceGraphic" in2="heatNoise" scale="9" xChannelSelector="R" yChannelSelector="B" result="heatWarp"></feDisplacementMap>
+                  <feGaussianBlur in="heatWarp" stdDeviation="1.5 0.55"></feGaussianBlur>
+                </filter>
+                <filter id="bridgeSunMotionBlur" x="-80%" y="-100%" width="260%" height="300%" color-interpolation-filters="sRGB">
+                  <feGaussianBlur stdDeviation="10 1.4"></feGaussianBlur>
+                </filter>
+                <filter id="bridgeWorldShadow" x="-30%" y="-30%" width="180%" height="200%">
+                  <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="blur"></feGaussianBlur>
+                  <feOffset in="blur" dx="7" dy="10" result="offsetBlur"></feOffset>
+                  <feColorMatrix in="offsetBlur" type="matrix" values="0 0 0 0 0.03 0 0 0 0 0.10 0 0 0 0 0.15 0 0 0 0.36 0" result="worldShadow"></feColorMatrix>
+                  <feMerge><feMergeNode in="worldShadow"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+                </filter>
+                <filter id="bridgeCliffTexture" x="-12%" y="-10%" width="124%" height="125%" color-interpolation-filters="sRGB">
+                  <feTurbulence type="fractalNoise" baseFrequency="0.038 0.105" numOctaves="4" seed="31" result="soilNoise"></feTurbulence>
+                  <feDiffuseLighting in="soilNoise" surfaceScale="2.4" diffuseConstant="0.42" lighting-color="#d7b184" result="soilLight">
+                    <feDistantLight azimuth="228" elevation="52"></feDistantLight>
+                  </feDiffuseLighting>
+                  <feComposite in="soilLight" in2="SourceGraphic" operator="in" result="litSoil"></feComposite>
+                  <feBlend in="SourceGraphic" in2="litSoil" mode="soft-light"></feBlend>
+                </filter>
+                <filter id="bridgeWaterCGI" x="-12%" y="-22%" width="124%" height="150%" color-interpolation-filters="sRGB">
+                  <feTurbulence type="fractalNoise" baseFrequency="0.012 0.085" numOctaves="3" seed="11" result="waterNoise">
+                    <animate attributeName="baseFrequency" dur="12s" values="0.012 0.085;0.016 0.105;0.012 0.085" repeatCount="indefinite"></animate>
+                  </feTurbulence>
+                  <feDisplacementMap in="SourceGraphic" in2="waterNoise" scale="8" xChannelSelector="R" yChannelSelector="B" result="warpedWater"></feDisplacementMap>
+                  <feSpecularLighting in="waterNoise" surfaceScale="3.4" specularConstant="0.72" specularExponent="24" lighting-color="#dff9ff" result="waterSpecular">
+                    <feDistantLight azimuth="218" elevation="56"></feDistantLight>
+                  </feSpecularLighting>
+                  <feComposite in="waterSpecular" in2="SourceGraphic" operator="in" result="clippedSpecular"></feComposite>
+                  <feBlend in="warpedWater" in2="clippedSpecular" mode="screen"></feBlend>
+                </filter>
+                <filter id="bridgeWaterRipple" x="-12%" y="-50%" width="124%" height="200%" color-interpolation-filters="sRGB">
+                  <feTurbulence type="turbulence" baseFrequency="0.008 0.12" numOctaves="2" seed="4" result="rippleNoise">
+                    <animate attributeName="baseFrequency" dur="9s" values="0.008 0.12;0.011 0.15;0.008 0.12" repeatCount="indefinite"></animate>
+                  </feTurbulence>
+                  <feDisplacementMap in="SourceGraphic" in2="rippleNoise" scale="11" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
+                  <feGaussianBlur stdDeviation="0.35"></feGaussianBlur>
+                </filter>
+                <clipPath id="bridgeRiverClip">
+                  <path d="M170 188H610L680 380H100Z"></path>
+                </clipPath>
+                <symbol id="bridgeTree" viewBox="0 0 44 72">
+                  <path d="M18 36h8l2 33H16z" fill="#5c4433"></path>
+                  <path d="M22 35c-1 11-2 21-1 34" fill="none" stroke="#967054" stroke-width="2" stroke-linecap="round" opacity="0.65"></path>
+                  <path d="M20 45L9 31M24 43l12-15" fill="none" stroke="#5c4433" stroke-width="4" stroke-linecap="round"></path>
+                  <path d="M5 34C0 25 5 17 13 16C13 7 22 2 29 8C37 7 42 14 39 21C46 27 41 38 33 39C29 46 16 46 12 40C7 41 3 38 5 34Z" fill="url(#bridgeLeafShade)"></path>
+                  <path d="M8 29C4 22 10 16 16 17C15 10 23 6 29 11C36 10 39 17 36 22C40 27 35 34 29 33C25 39 15 38 13 33C9 34 6 32 8 29Z" fill="url(#bridgeLeafLight)"></path>
+                  <path d="M13 21c6-5 14-5 19 1M10 29c8 4 18 4 26-2" fill="none" stroke="#b5d58a" stroke-opacity="0.28" stroke-width="2" stroke-linecap="round"></path>
+                </symbol>
+                <symbol id="bridgeGrassTuft" viewBox="0 0 22 18">
+                  <path d="M11 18C10 11 9 7 4 2M11 18C12 10 15 5 20 1M11 18C9 10 5 7 1 6M11 18C13 11 17 9 22 8M11 18V2" fill="none" stroke="#4f7a3d" stroke-width="2" stroke-linecap="round"></path>
+                  <path d="M11 17C10 11 12 7 15 4" fill="none" stroke="#a3c86d" stroke-width="1.2" stroke-linecap="round"></path>
+                </symbol>
+                <symbol id="bridgeCloud" viewBox="0 0 110 42">
+                  <path d="M3 25C14 25 16 17 26 17C33 17 36 21 39 24C45 15 55 12 63 17C67 19 69 22 71 25C80 20 88 23 92 27H107" fill="none" stroke="#f6f0dd" stroke-opacity="0.88" stroke-width="7" stroke-linecap="round"></path>
+                  <path d="M11 34H98" fill="none" stroke="#f6f0dd" stroke-opacity="0.68" stroke-width="4" stroke-linecap="round"></path>
+                </symbol>
+                <pattern id="bridgeGrid" width="55" height="36" patternUnits="userSpaceOnUse">
+                  <path d="M 55 0 L 0 0 0 36" fill="none" stroke="#ffffff" stroke-opacity="0.24" stroke-width="1"></path>
+                </pattern>
+                <pattern id="bridgeRiverPattern" width="110" height="48" patternUnits="userSpaceOnUse">
+                  <rect width="110" height="48" fill="rgba(92, 173, 224, 0.12)"></rect>
+                  <path class="bridge-river-foam" d="M-18 14C-2 10 12 10 28 14S59 18 76 14S108 10 126 14" fill="none" stroke="rgba(225,247,255,0.26)" stroke-width="1.45" stroke-linecap="round"></path>
+                  <path class="bridge-river-foam bridge-river-foam--slow" d="M-10 33C8 29 22 29 40 33S74 37 92 33S120 29 138 33" fill="none" stroke="rgba(186,229,247,0.2)" stroke-width="1.15" stroke-linecap="round"></path>
+                </pattern>
+                <filter id="bridgeRiverTurbulence" x="-8%" y="-12%" width="116%" height="124%">
+                  <feTurbulence type="fractalNoise" baseFrequency="0.018 0.075" numOctaves="2" seed="7" result="noise">
+                    <animate attributeName="baseFrequency" dur="8s" values="0.018 0.075;0.024 0.095;0.018 0.075" repeatCount="indefinite"></animate>
+                  </feTurbulence>
+                  <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="B"></feDisplacementMap>
+                </filter>
+              </defs>
+
+              <g class="bridge-scene-detail" aria-hidden="true">
+                <rect width="780" height="188" fill="url(#bridgeSkyGradient)"></rect>
+                <g id="bridge-distant-sun" transform="translate(22 -5)">
+                  <circle cx="674" cy="54" r="47" fill="url(#bridgeSunBloom)" filter="url(#bridgeSunHalo)" opacity="0.46"></circle>
+                  <g class="bridge-sun-haze" fill="none" stroke-linecap="round" filter="url(#bridgeSunMotionBlur)">
+                    <path d="M617 38H730" stroke="#ffb13f" stroke-opacity="0.34" stroke-width="5"></path>
+                    <path d="M605 54H742" stroke="#ffdc76" stroke-opacity="0.42" stroke-width="4"></path>
+                    <path d="M621 70H728" stroke="#f4772d" stroke-opacity="0.3" stroke-width="6"></path>
+                  </g>
+                  <circle class="bridge-sun-haze bridge-sun-haze--slow" cx="674" cy="54" r="33" fill="none" stroke="#ff9d38" stroke-opacity="0.3" stroke-width="5" filter="url(#bridgeHeatShimmer)"></circle>
+                  <circle class="bridge-sun-core" cx="674" cy="54" r="23" fill="url(#bridgeSunCore)" filter="url(#bridgeHeatShimmer)"></circle>
+                  <ellipse cx="666" cy="46" rx="7" ry="4.5" fill="#fff7cf" opacity="0.44" filter="url(#bridgeSunMotionBlur)"></ellipse>
+                </g>
+
+                <g filter="url(#bridgeWoodblockInk)">
+                  <path d="M0 152V116C31 105 48 82 78 87C103 91 119 116 145 113C171 110 183 87 212 91C240 95 252 126 282 126C309 126 321 105 349 107C376 109 387 130 414 132V152Z" fill="url(#bridgeUkiyoFar)" opacity="0.72" stroke="#466675" stroke-width="1.8"></path>
+
+                  <path d="M190 153C235 139 269 111 305 83C337 58 364 31 394 18C426 42 449 72 480 96C514 122 548 139 593 153Z" fill="url(#bridgeUkiyoFuji)" stroke="#244f69" stroke-width="2.3" stroke-linejoin="round"></path>
+                  <path d="M306 83C338 57 365 31 394 18C416 35 431 54 449 73L430 66L419 76L405 61L392 73L378 57L363 76L348 68L335 85Z" fill="#f3eedb" stroke="#3e6578" stroke-width="1.5" stroke-linejoin="round"></path>
+                  <path d="M394 22L395 59M363 75C340 95 321 116 302 142M430 71C452 96 474 120 493 144" fill="none" stroke="#d6e2df" stroke-opacity="0.34" stroke-width="2"></path>
+                  <path d="M264 126C309 119 350 123 389 127M414 112C451 110 489 120 526 132" fill="none" stroke="#173f59" stroke-opacity="0.28" stroke-width="1.4"></path>
+                  <path d="M190 153C235 139 269 111 305 83C337 58 364 31 394 18C426 42 449 72 480 96C514 122 548 139 593 153Z" fill="url(#bridgeUkiyoGrain)" opacity="0.62"></path>
+
+                  <path d="M0 151C48 137 78 123 119 129C151 134 164 151 199 147C232 143 252 125 286 131C315 136 326 153 362 151C399 149 421 125 455 127C491 129 504 151 540 148C581 145 603 113 646 116C694 119 725 147 780 131V188H0Z" fill="url(#bridgeUkiyoNear)" stroke="#1e485c" stroke-width="2"></path>
+                  <path d="M0 166C65 153 118 159 176 164M516 158C591 148 671 157 780 146" fill="none" stroke="#9cb8b4" stroke-opacity="0.28" stroke-width="2"></path>
+                </g>
+
+                <g opacity="0.92">
+                  <use href="#bridgeCloud" x="45" y="36" width="128" height="48"></use>
+                  <use href="#bridgeCloud" x="482" y="58" width="116" height="44" opacity="0.82"></use>
+                  <path d="M98 105C168 99 217 106 275 103" fill="none" stroke="#f7efda" stroke-opacity="0.7" stroke-width="7" stroke-linecap="round"></path>
+                  <path d="M469 119C537 112 603 119 666 114" fill="none" stroke="#f7efda" stroke-opacity="0.58" stroke-width="6" stroke-linecap="round"></path>
+                </g>
+              </g>
+
+              <g id="bridge-river-layer" aria-hidden="true">
+                <path d="M170 188H610L680 380H100Z" fill="url(#bridgeWaterDepth)" opacity="0.98"></path>
+                <g clip-path="url(#bridgeRiverClip)">
+                  <rect x="96" y="182" width="588" height="204" fill="url(#bridgeWaterReflection)" filter="url(#bridgeWaterCGI)" opacity="0.82"></rect>
+                  <rect x="96" y="182" width="588" height="204" fill="url(#bridgeWaterSunGlare)" opacity="0.54"></rect>
+                  <path class="bridge-water-glint" d="M185 207C246 202 283 211 343 206S452 200 589 207" fill="none" stroke="#e7fbff" stroke-opacity="0.7" stroke-width="2.2" stroke-linecap="round" filter="url(#bridgeWaterRipple)"></path>
+                  <path class="bridge-water-glint bridge-water-glint--slow" d="M159 239C226 233 283 244 354 237S491 232 619 241" fill="none" stroke="#c8effa" stroke-opacity="0.48" stroke-width="2.8" stroke-linecap="round" filter="url(#bridgeWaterRipple)"></path>
+                  <path class="bridge-water-glint" d="M148 279C229 270 296 286 373 276S515 272 631 282" fill="none" stroke="#9bd8eb" stroke-opacity="0.34" stroke-width="3.4" stroke-linecap="round" filter="url(#bridgeWaterRipple)"></path>
+                  <g class="bridge-depth-detail" fill="none" stroke="#d8f5ff" stroke-linecap="round" filter="url(#bridgeWaterRipple)">
+                    <path d="M204 220C238 216 266 224 301 219" stroke-opacity="0.22" stroke-width="1.1"></path>
+                    <path d="M416 224C452 218 493 226 535 220" stroke-opacity="0.18" stroke-width="1.2"></path>
+                    <path d="M246 258C288 251 326 263 370 256" stroke-opacity="0.15" stroke-width="1.4"></path>
+                    <path d="M455 294C502 286 551 299 600 290" stroke-opacity="0.12" stroke-width="1.6"></path>
+                  </g>
+                </g>
+              </g>
+              <rect x="170" y="100" width="440" height="180" fill="url(#bridgeGrid)"></rect>
+              <rect x="170" y="100" width="440" height="180" fill="#ffffff" fill-opacity="0.04"></rect>
+
+              <g id="bridge-left-bank">
+                <path d="M24 188H170L145 318H24Z" fill="url(#bridgeCliffFace)" filter="url(#bridgeWorldShadow)"></path>
+                <path d="M24 188H170L145 318H24Z" fill="url(#bridgeCliffFace)" filter="url(#bridgeCliffTexture)" opacity="0.58"></path>
+                <path d="M145 188H170L170 305L145 318Z" fill="url(#bridgeBankSide)"></path>
+                <path d="M38 166H186L170 188H24Z" fill="url(#bridgeGrassTop)" stroke="#4e763d" stroke-width="1.5"></path>
+                <path d="M24 188H170L166 202C126 197 84 204 24 199Z" fill="url(#bridgeCliffLip)" opacity="0.72"></path>
+                <path d="M44 214C76 207 112 220 153 211M40 241C75 234 105 249 149 238M35 274C70 266 103 282 143 270" fill="none" stroke="#d8bc93" stroke-opacity="0.28" stroke-width="2.4" stroke-linecap="round"></path>
+                <path d="M53 203C61 218 54 232 68 247M125 201C118 217 128 225 120 242" fill="none" stroke="#41352b" stroke-opacity="0.58" stroke-width="2" stroke-linecap="round"></path>
+                <path d="M25 286C62 278 102 291 150 281L145 318H24Z" fill="url(#bridgeWetEarth)"></path>
+                <g opacity="0.9">
+                  <ellipse cx="83" cy="226" rx="6" ry="4" fill="#59483a"></ellipse><ellipse cx="81" cy="224" rx="4" ry="2" fill="#b0926d"></ellipse>
+                  <ellipse cx="119" cy="257" rx="8" ry="5" fill="#4b4037"></ellipse><ellipse cx="117" cy="255" rx="5" ry="2.5" fill="#9e8365"></ellipse>
+                  <ellipse cx="57" cy="294" rx="5" ry="3.5" fill="#403a34"></ellipse><ellipse cx="56" cy="293" rx="3" ry="1.5" fill="#88745e"></ellipse>
+                </g>
+                <path d="M51 169L169 169" stroke="#d8eaa4" stroke-opacity="0.44" stroke-width="2" stroke-linecap="round"></path>
+                <use href="#bridgeGrassTuft" x="43" y="151" width="20" height="17"></use>
+                <use href="#bridgeGrassTuft" x="133" y="151" width="18" height="16" opacity="0.86"></use>
+                <use href="#bridgeGrassTuft" x="160" y="156" width="14" height="13" opacity="0.72"></use>
+              </g>
+
+              <g id="bridge-right-bank">
+                <path d="M610 188H756V318H635Z" fill="url(#bridgeCliffFace)" filter="url(#bridgeWorldShadow)"></path>
+                <path d="M610 188H756V318H635Z" fill="url(#bridgeCliffFace)" filter="url(#bridgeCliffTexture)" opacity="0.58"></path>
+                <path d="M610 188H635V318L610 305Z" fill="url(#bridgeBankSide)"></path>
+                <path d="M594 166H742L756 188H610Z" fill="url(#bridgeGrassTop)" stroke="#4e763d" stroke-width="1.5"></path>
+                <path d="M610 188H756V199C700 204 656 197 614 202Z" fill="url(#bridgeCliffLip)" opacity="0.72"></path>
+                <path d="M627 211C666 219 704 207 741 214M632 238C676 249 704 234 746 241M638 270C681 281 711 266 750 274" fill="none" stroke="#d8bc93" stroke-opacity="0.28" stroke-width="2.4" stroke-linecap="round"></path>
+                <path d="M655 202C663 218 654 230 669 245M716 202C708 216 720 229 711 244" fill="none" stroke="#41352b" stroke-opacity="0.58" stroke-width="2" stroke-linecap="round"></path>
+                <path d="M630 281C675 291 716 278 756 286V318H635Z" fill="url(#bridgeWetEarth)"></path>
+                <g opacity="0.9">
+                  <ellipse cx="684" cy="224" rx="7" ry="4.5" fill="#59483a"></ellipse><ellipse cx="682" cy="222" rx="4.5" ry="2" fill="#b0926d"></ellipse>
+                  <ellipse cx="729" cy="258" rx="6" ry="4" fill="#4b4037"></ellipse><ellipse cx="727" cy="256" rx="4" ry="2" fill="#9e8365"></ellipse>
+                  <ellipse cx="659" cy="292" rx="5" ry="3.5" fill="#403a34"></ellipse><ellipse cx="658" cy="291" rx="3" ry="1.5" fill="#88745e"></ellipse>
+                </g>
+                <path d="M611 169L729 169" stroke="#d8eaa4" stroke-opacity="0.44" stroke-width="2" stroke-linecap="round"></path>
+                <use href="#bridgeGrassTuft" x="603" y="154" width="16" height="15" opacity="0.78"></use>
+                <use href="#bridgeGrassTuft" x="644" y="151" width="19" height="17"></use>
+                <use href="#bridgeGrassTuft" x="724" y="152" width="18" height="16" opacity="0.88"></use>
+              </g>
+
+              <g class="bridge-scene-detail" aria-hidden="true">
+                <use href="#bridgeTree" x="72" y="102" width="44" height="72"></use>
+                <use href="#bridgeTree" x="120" y="120" width="32" height="54" opacity="0.88"></use>
+                <use href="#bridgeTree" x="722" y="116" width="32" height="54"></use>
+                <ellipse cx="94" cy="177" rx="35" ry="7" fill="#183a2c" opacity="0.22"></ellipse>
+                <ellipse cx="692" cy="174" rx="44" ry="8" fill="#17372d" opacity="0.24"></ellipse>
+                <g transform="translate(655 113)" filter="url(#bridgeWorldShadow)">
+                  <path d="M8 23H50L64 31V58L50 64H8Z" fill="url(#bridgeClinicSide)" stroke="#5d7883" stroke-width="1.5"></path>
+                  <path d="M8 23H50V64H8Z" fill="url(#bridgeClinicFront)" stroke="#5d7883" stroke-width="2"></path>
+                  <path d="M50 23L64 31V58L50 64Z" fill="url(#bridgeClinicSide)" stroke="#5d7883" stroke-width="1.5"></path>
+                  <path d="M3 25L28 4L54 25Z" fill="url(#bridgeClinicRoof)" stroke="#963b38" stroke-width="2" stroke-linejoin="round"></path>
+                  <path d="M28 4L42 10L68 32L54 25Z" fill="#8f3836" stroke="#79302f" stroke-width="1.5" stroke-linejoin="round"></path>
+                  <path d="M8 64H50L64 58V64L50 69H8Z" fill="#607d86" opacity="0.85"></path>
+                  <rect x="30" y="42" width="11" height="22" rx="1" fill="#718d98"></rect>
+                  <rect x="14" y="37" width="10" height="10" rx="1" fill="#79c0e3" stroke="#fff" stroke-width="1.5"></rect>
+                  <path d="M19 38v8M15 42h8" stroke="#dff5ff" stroke-width="1"></path>
+                  <path d="M52 37l7 3v9l-7-1Z" fill="#69a9c6" stroke="#dff5ff" stroke-width="1"></path>
+                  <rect x="43" y="3" width="7" height="16" fill="#eef7fb" stroke="#a9bdc4" stroke-width="1"></rect>
+                  <path d="M46.5 5v11M42 10.5h9" stroke="#e14f4f" stroke-width="2.4" stroke-linecap="round"></path>
+                  <path d="M31 60h7" stroke="#a8c0c7" stroke-width="1.5"></path>
+                </g>
+              </g>
+
+              <text x="54" y="94" fill="#111f2c" fill-opacity="0.72" font-size="14" font-weight="800" letter-spacing="0.08em">START BANK</text>
+              <text x="612" y="94" fill="#111f2c" fill-opacity="0.72" font-size="14" font-weight="800" letter-spacing="0.08em">CLINIC BANK</text>
+
+              <g id="bridge-foreground-separation" aria-hidden="true">
+                <path d="M162 170H618" stroke="#f3eed5" stroke-opacity="0.3" stroke-width="24" stroke-linecap="round" filter="url(#bridgeSoftShadow)"></path>
+              </g>
+              <g id="bridge-reaction-layer"></g>
+              <g id="bridge-member-layer"></g>
+              <g id="bridge-node-layer"></g>
+              <g id="bridge-selection-layer"></g>
+
+              <g id="bridge-ambulance">
+                <g class="bridge-ambulance-body">
+                  <ellipse cx="4" cy="14" rx="34" ry="6" fill="#102430" opacity="0.32"></ellipse>
+                  <circle class="bridge-exhaust-puff" cx="-34" cy="-8" r="4" fill="#a6adb0" opacity="0"></circle>
+                  <circle class="bridge-exhaust-puff bridge-exhaust-puff--two" cx="-35" cy="-7" r="3" fill="#c4c8c5" opacity="0"></circle>
+                  <path d="M-31-13L-26-8H33V5L28 9V4H-31Z" fill="#545f59" opacity="0.86"></path>
+                  <path d="M-31-18H20L30-12V4H-31Z" fill="#e2d6ad" stroke="#685f4d" stroke-width="1.8" stroke-linejoin="round"></path>
+                  <path d="M20-18L30-12V4H20Z" fill="#a9a485" stroke="#685f4d" stroke-width="1.5"></path>
+                  <path d="M-31-10C-12-8 9-12 29-9" fill="none" stroke="#a9443b" stroke-width="4" opacity="0.88"></path>
+                  <path d="M-24-18L-18-29H10L20-18Z" fill="#d8cda7" stroke="#685f4d" stroke-width="1.7" stroke-linejoin="round"></path>
+                  <path d="M-16-27H-5L-7-19H-21Z" fill="#88b5c1" stroke="#596c70" stroke-width="1.2"></path>
+                  <path d="M-3-27H8L17-19H-1Z" fill="#78a7b4" stroke="#596c70" stroke-width="1.2"></path>
+                  <path d="M4-26L0-20" stroke="#e4e1cc" stroke-width="1.2" opacity="0.78"></path>
+                  <rect x="-5" y="-35" width="11" height="5" rx="2" fill="#d95045" class="amb-light" stroke="#70423c" stroke-width="1"></rect>
+                  <path d="M-8-17v18M-15-8H-1" stroke="#b7463e" stroke-width="3.3" stroke-linecap="round" opacity="0.88"></path>
+                  <path d="M-30 1L-35 3M27 3L34 1" stroke="#4a4740" stroke-width="3" stroke-linecap="round"></path>
+                  <path d="M-29-15l5 1M13-15l5-1M-19 0l6-2" stroke="#9a633c" stroke-width="2" stroke-linecap="round" opacity="0.9"></path>
+                  <path d="M22-7l5 2M-28-4l3-1" stroke="#6f4933" stroke-width="1.5" stroke-linecap="round"></path>
+                  <g class="bridge-wheel">
+                    <circle cx="-18" cy="8" r="8" fill="#20282a" stroke="#111719" stroke-width="1.5"></circle>
+                    <circle cx="-18" cy="8" r="4" fill="#827f70" stroke="#c2bda4" stroke-width="1"></circle>
+                    <path d="M-18 4v8M-22 8h8" stroke="#403f39" stroke-width="1.2"></path>
+                  </g>
+                  <g class="bridge-wheel">
+                    <circle cx="17" cy="8" r="8" fill="#20282a" stroke="#111719" stroke-width="1.5"></circle>
+                    <circle cx="17" cy="8" r="4" fill="#827f70" stroke="#c2bda4" stroke-width="1"></circle>
+                    <path d="M17 4v8M13 8h8" stroke="#403f39" stroke-width="1.2"></path>
+                  </g>
+                  <path d="M-26-17C-24-21-18-22-14-20" fill="none" stroke="#f1e5be" stroke-width="1.4" opacity="0.7"></path>
+                </g>
+              </g>
+            </svg>
+            <div class="bridge-force-legend" aria-label="Stress color legend">
+              <span class="bridge-force-key"><i class="bridge-force-swatch" style="--swatch:#318ce7"></i>Tension</span>
+              <span class="bridge-force-key"><i class="bridge-force-swatch" style="--swatch:#ed5548"></i>Compression</span>
+              <span class="bridge-force-key"><i class="bridge-force-swatch is-arrow"></i>Reaction</span>
+            </div>
+            <p class="bridge-stage-note" id="bridge-stage-note">The starter deck is intentionally weak. Add joints under the road, connect them into triangles, and watch how the sag drops when you retest.</p>
+          </div>
+
+          <div class="bridge-meter">
+            <section class="bridge-status" id="bridge-status-card" aria-live="polite">
+              <div class="bridge-readiness" aria-label="Design readiness checklist">
+                <div class="bridge-ready-item" id="bridge-ready-road">Road connected</div>
+                <div class="bridge-ready-item" id="bridge-ready-triangles">4+ triangles</div>
+                <div class="bridge-ready-item" id="bridge-ready-budget">Within budget</div>
+                <div class="bridge-ready-item" id="bridge-ready-tested">Test completed</div>
+              </div>
+              <div class="bridge-score-strip" aria-label="Mission score">
+                <div class="bridge-score-stat"><span>Score</span><strong id="bridge-score">—</strong></div>
+                <div class="bridge-score-stat"><span>Best</span><strong id="bridge-best-score">—</strong></div>
+                <div class="bridge-score-stat"><span>Attempts</span><strong id="bridge-attempts">0</strong></div>
+              </div>
+              <p class="bridge-meter-note">A passing score rewards two engineering goals: <strong>lower cost</strong> and <strong>lower peak stress, sag, and slope</strong>.</p>
+              <p class="bridge-capacity" id="bridge-budget-display">$0<small>Budget spent</small></p>
+              <div class="bridge-progress-block">
+                <div class="bridge-progress-head">
+                  <span>Budget</span>
+                  <strong id="bridge-budget-summary">$4,800 left</strong>
+                </div>
+                <div class="bridge-progress-track">
+                  <div class="bridge-progress-fill" id="bridge-budget-bar"></div>
+                </div>
+              </div>
+              <div class="bridge-progress-block">
+                <div class="bridge-progress-head">
+                  <span>Stability</span>
+                  <strong id="bridge-risk-summary">Run the test</strong>
+                </div>
+                <div class="bridge-progress-track">
+                  <div class="bridge-progress-fill is-risk" id="bridge-risk-bar"></div>
+                </div>
+              </div>
+              <dl class="bridge-meter-grid">
+                <div class="bridge-meter-row">
+                  <dt>Target</dt>
+                  <dd id="bridge-target">105 kN design load</dd>
+                </div>
+                <div class="bridge-meter-row">
+                  <dt>Deck path</dt>
+                  <dd id="bridge-deck-path">Gap not connected</dd>
+                </div>
+                <div class="bridge-meter-row">
+                  <dt>Max strain</dt>
+                  <dd id="bridge-strain">Not tested</dd>
+                </div>
+                <div class="bridge-meter-row">
+                  <dt>Deck sag</dt>
+                  <dd id="bridge-sag">Not tested</dd>
+                </div>
+                <div class="bridge-meter-row">
+                  <dt>Road slope</dt>
+                  <dd id="bridge-slope">Not tested</dd>
+                </div>
+                <div class="bridge-meter-row">
+                  <dt>Vehicle</dt>
+                  <dd id="bridge-vehicle-status">Waiting on the left bank</dd>
+                </div>
+                <div class="bridge-meter-row">
+                  <dt>Verdict</dt>
+                  <dd id="bridge-verdict">Connect the road, add triangles, then run the ambulance test.</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section class="bridge-status">
+              <h2>How To Build</h2>
+              <ul class="bridge-checklist">
+                <li>With Road, Wood, or Steel selected, click an empty grid point to drop a joint.</li>
+                <li>Click one joint, then another, to place a member. The second joint stays selected so you can keep building.</li>
+                <li>Use Move to drag free joints and flatten the deck before you test.</li>
+                <li>Use Delete to remove one member or a non-anchor joint.</li>
+              </ul>
+              <p class="bridge-meter-note"><strong>Road</strong> carries the ambulance. <strong>Wood</strong> is cheaper and works well in short triangles. <strong>Steel</strong> costs more but holds longer spans and bottom chords more effectively.</p>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="bridge-card">
+        <h2>What a bridge must do</h2>
+        <p>A bridge does not magically "hold up weight." It moves force. The ambulance pushes down on the deck. The deck passes that load into beams or trusses. Those members send forces into the supports, and the supports push back on the ground. If any part of that path is weak, the bridge fails there first.</p>
+
+        <div class="bridge-force-grid">
+          <article class="bridge-force-card">
+            <strong>Compression</strong>
+            <small>Members under compression are being squeezed. Top chords, arches, and some vertical supports usually carry compression.</small>
+          </article>
+          <article class="bridge-force-card">
+            <strong>Tension</strong>
+            <small>Members under tension are being pulled. Bottom chords, hangers, and tie members often carry tension.</small>
+          </article>
+          <article class="bridge-force-card">
+            <strong>Triangulation</strong>
+            <small>Triangles lock a structure into shape. A rectangular frame can rack sideways, but triangles turn bending into cleaner tension-and-compression paths.</small>
+          </article>
+          <article class="bridge-force-card">
+            <strong>Safety factor</strong>
+            <small>Engineers design for more than the expected load. Real traffic is messy, materials vary, and weather plus impact loads add extra stress.</small>
+          </article>
+        </div>
+      </section>
+      <section class="p3-lab" style="--p3-accent:#5fc4f1;--p3-bg:#102735;--p3-highlight:#ffd166" aria-labelledby="bridge-p3-title"><h2 id="bridge-p3-title">Failure microscope</h2><p>Replay a failure one member at a time, then compare a targeted repair. Red marks the first member that exceeds capacity—not every member moving during collapse.</p><div class="p3-actions" id="bridge-p3-cases"><button type="button" data-bridge-case="long">Long unsupported panel</button><button type="button" data-bridge-case="flat">Unbraced rectangle</button><button type="button" data-bridge-case="weak">Weak center member</button></div><div class="p3-two"><svg class="p3-bridge-svg" id="bridge-p3-svg" viewBox="0 0 640 250" role="img" aria-label="Bridge failure and repaired design comparison"></svg><div><h3 id="bridge-p3-member">Choose a failure case</h3><p id="bridge-p3-explain">The replay will pause at the first overloaded member and explain the load-path repair.</p><button type="button" id="bridge-p3-repair" disabled>Show repaired design</button><div class="p3-compare-readout"><span id="bridge-p3-stress">Peak stress —</span><span id="bridge-p3-sag">Sag —</span><span id="bridge-p3-cost">Added cost —</span></div></div></div><p class="p3-status" id="bridge-p3-status" role="status"></p></section>
+
+      <section class="bridge-card">
+        <h2>Build sequence</h2>
+        <p>A safe bridge is usually the result of process, not a lucky guess. Construction-sim games teach the same loop real engineers use: build, test, watch what fails, and revise.</p>
+
+        <div class="bridge-step-grid">
+          <article class="bridge-step-card">
+            <strong>1. Lay the road</strong>
+            <small>Start with a continuous deck from one bank to the other. If the road is broken, the vehicle has nowhere to go.</small>
+          </article>
+          <article class="bridge-step-card">
+            <strong>2. Drop lower joints</strong>
+            <small>Add joints below the deck so your support members can form triangles instead of leaving the road as one loose chain.</small>
+          </article>
+          <article class="bridge-step-card">
+            <strong>3. Triangulate the span</strong>
+            <small>Wood and steel members under the road turn bending into cleaner tension-and-compression paths.</small>
+          </article>
+          <article class="bridge-step-card">
+            <strong>4. Test and tune</strong>
+            <small>Run the ambulance, watch strain, sag, and slope, then move joints or swap materials until the bridge is stable and affordable.</small>
+          </article>
+        </div>
+      </section>
+
+      <section class="bridge-card">
+        <h2>Quick design tips</h2>
+        <p>If your bridge keeps failing the ambulance run, try these moves first.</p>
+
+        <div class="bridge-tip-grid">
+          <article class="bridge-tip-card">
+            <strong>Shorten each road panel</strong>
+            <small>Long flat road panels sag fast. More joints mean smaller spans and better control of the deck shape.</small>
+          </article>
+          <article class="bridge-tip-card">
+            <strong>Put triangles under the load</strong>
+            <small>A road segment becomes much stronger when two braces meet below it and create a triangular load path.</small>
+          </article>
+          <article class="bridge-tip-card">
+            <strong>Use steel where it matters</strong>
+            <small>Save steel for longer bottom chords or heavily loaded diagonals, then let cheaper wood fill the shorter braces.</small>
+          </article>
+          <article class="bridge-tip-card">
+            <strong>Keep the deck smooth</strong>
+            <small>If the road tilts too sharply between joints, the ambulance will lose its path even if the rest of the frame looks strong.</small>
+          </article>
+        </div>
+      </section>
+
+      <section class="bridge-card">
+        <div class="bridge-quiz-head">
+          <div><h2>Quick Check</h2><p>Choose the best answer for each engineering question.</p></div>
+          <span class="bridge-quiz-score" id="bridge-quiz-score">0 of 4 correct</span>
+        </div>
+
+        <div class="bridge-quiz">
+          <div class="bridge-question" data-answer="b" data-explanation="A bridge is really a force-routing system. The ambulance load must move from the deck into the main structure, then into the supports and the ground.">
+            <p>1. What is the bridge's most important job in this lesson?</p>
+            <div class="bridge-options">
+              <button class="bridge-option" type="button" data-choice="a">Make the ambulance travel faster</button>
+              <button class="bridge-option" type="button" data-choice="b">Carry the load safely into the supports</button>
+              <button class="bridge-option" type="button" data-choice="c">Eliminate gravity on the vehicle</button>
+            </div>
+            <div class="bridge-feedback" aria-live="polite"></div>
+          </div>
+
+          <div class="bridge-question" data-answer="c" data-explanation="Triangles are hard to deform without changing the length of a side, so they provide a much more stable load path than rectangles.">
+            <p>2. Why are triangles used so often in truss bridges?</p>
+            <div class="bridge-options">
+              <button class="bridge-option" type="button" data-choice="a">They make bridges lighter than air</button>
+              <button class="bridge-option" type="button" data-choice="b">They prevent the need for supports</button>
+              <button class="bridge-option" type="button" data-choice="c">They lock the structure into a stable shape</button>
+            </div>
+            <div class="bridge-feedback" aria-live="polite"></div>
+          </div>
+
+          <div class="bridge-question" data-answer="a" data-explanation="A safety factor means the bridge is designed for more than the expected load so it can handle shocks, uncertainty, and material variation.">
+            <p>3. Why does the lesson use a 105 kN target instead of just the ambulance's 64 kN weight?</p>
+            <div class="bridge-options">
+              <button class="bridge-option" type="button" data-choice="a">Because engineers add a safety margin above the expected load</button>
+              <button class="bridge-option" type="button" data-choice="b">Because a bridge can only be tested with made-up numbers</button>
+              <button class="bridge-option" type="button" data-choice="c">Because the ambulance becomes heavier in daylight</button>
+            </div>
+            <div class="bridge-feedback" aria-live="polite"></div>
+          </div>
+
+          <div class="bridge-question" data-answer="b" data-explanation="Adding a center pier shortens the unsupported distance, which strongly reduces bending demands and raises capacity.">
+            <p>4. Which change usually helps the most if a bridge is failing because the span is too long?</p>
+            <div class="bridge-options">
+              <button class="bridge-option" type="button" data-choice="a">Paint it a brighter color</button>
+              <button class="bridge-option" type="button" data-choice="b">Add a center pier</button>
+              <button class="bridge-option" type="button" data-choice="c">Remove the deck entirely</button>
+            </div>
+            <div class="bridge-feedback" aria-live="polite"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../index.html">Home</a> · <a href="../../steam-lessons.html">Lessons</a></p>
+  </footer>
+  </div>
+  </div>
+</div>
+
+  <script src="../../assets/js/theme-registry.js"></script>
+  <script src="../../assets/js/nav-mobile.js"></script>
+  <script>
+    (function () {
+      const TARGET_LOAD = 105;
+      const AMBULANCE_WEIGHT = 64;
+      const LEVEL_BUDGET = 4800;
+      const LEFT_ANCHOR_ID = 0;
+      const RIGHT_ANCHOR_ID = 4;
+      const DECK_Y = 172;
+      const BUILD_ZONE = {
+        left: 170,
+        right: 610,
+        top: 100,
+        bottom: 280
+      };
+      const GRID = {
+        x: 55,
+        y: 36
+      };
+      const METERS_PER_PIXEL = 16 / (BUILD_ZONE.right - BUILD_ZONE.left);
+      const ROAD_FAILURE_SAG = 20;
+      const ROAD_FAILURE_SLOPE = 0.18;
+      const VERLET_DAMPING = 0.92;
+
+      const MATERIALS = {
+        road: {
+          label: 'Road',
+          cost: 120,
+          stiffness: 0.24,
+          breakStrain: 0.035,
+          width: 12,
+          color: '#1b2734'
+        },
+        wood: {
+          label: 'Wood',
+          cost: 55,
+          stiffness: 0.18,
+          breakStrain: 0.08,
+          width: 8,
+          color: 'url(#bridgeWoodStroke)'
+        },
+        steel: {
+          label: 'Steel',
+          cost: 90,
+          stiffness: 0.26,
+          breakStrain: 0.11,
+          width: 8,
+          color: 'url(#bridgeSteelStroke)'
+        }
+      };
+
+      const TOOL_HINTS = {
+        move: {
+          label: 'Move Tool',
+          copy: 'Move selected. Drag any free joint to change the bridge shape and update the member lengths.',
+          prompt: 'Drag joints to flatten the road or deepen the truss before the next test.'
+        },
+        road: {
+          label: 'Road Tool',
+          copy: 'Road selected. Click the grid to place a joint, then click another joint to connect a road segment.',
+          prompt: 'Road is the driveable deck. Keep it continuous and reasonably flat from bank to bank.'
+        },
+        wood: {
+          label: 'Wood Tool',
+          copy: 'Wood selected. Use it for short braces and triangles under the deck where cost matters.',
+          prompt: 'Wood is cheaper than steel. Use it to turn long flat spans into smaller triangular panels.'
+        },
+        steel: {
+          label: 'Steel Tool',
+          copy: 'Steel selected. Save it for longer spans, bottom chords, or braces that keep stretching.',
+          prompt: 'Steel is stiffer and pricier. Use it where wood keeps sagging too much.'
+        },
+        delete: {
+          label: 'Delete Tool',
+          copy: 'Delete selected. Click one member or one non-anchor joint to remove it from the design.',
+          prompt: 'Trim extra pieces, remove bad joints, and watch the budget come back under control.'
+        }
+      };
+
+      const toolButtons = document.querySelectorAll('[data-tool]');
+      const testButton = document.getElementById('bridge-test-btn');
+      const exampleButton = document.getElementById('bridge-example-btn');
+      const resetButton = document.getElementById('bridge-reset-btn');
+      const undoButton = document.getElementById('bridge-undo-btn');
+      const blueprintToggle = document.getElementById('bridge-blueprint-toggle');
+
+      const svg = document.getElementById('bridge-svg');
+      const stage = document.getElementById('bridge-stage');
+      const reactionLayer = document.getElementById('bridge-reaction-layer');
+      const memberLayer = document.getElementById('bridge-member-layer');
+      const nodeLayer = document.getElementById('bridge-node-layer');
+      const selectionLayer = document.getElementById('bridge-selection-layer');
+      const ambulance = document.getElementById('bridge-ambulance');
+
+      const statusCard = document.getElementById('bridge-status-card');
+      const statusPill = document.getElementById('bridge-status-pill');
+      const budgetDisplay = document.getElementById('bridge-budget-display');
+      const budgetSummary = document.getElementById('bridge-budget-summary');
+      const budgetBar = document.getElementById('bridge-budget-bar');
+      const riskSummary = document.getElementById('bridge-risk-summary');
+      const riskBar = document.getElementById('bridge-risk-bar');
+      const targetEl = document.getElementById('bridge-target');
+      const deckPathEl = document.getElementById('bridge-deck-path');
+      const strainEl = document.getElementById('bridge-strain');
+      const sagEl = document.getElementById('bridge-sag');
+      const slopeEl = document.getElementById('bridge-slope');
+      const vehicleStatusEl = document.getElementById('bridge-vehicle-status');
+      const verdictEl = document.getElementById('bridge-verdict');
+      const stageNote = document.getElementById('bridge-stage-note');
+      const toolCopy = document.getElementById('bridge-tool-copy');
+      const toolLabel = document.getElementById('bridge-tool-label');
+      const stagePrompt = document.getElementById('bridge-stage-prompt');
+      const replayBtn = document.getElementById('bridge-replay-btn');
+      const scoreEl = document.getElementById('bridge-score');
+      const bestScoreEl = document.getElementById('bridge-best-score');
+      const attemptsEl = document.getElementById('bridge-attempts');
+      const readyRoadEl = document.getElementById('bridge-ready-road');
+      const readyTrianglesEl = document.getElementById('bridge-ready-triangles');
+      const readyBudgetEl = document.getElementById('bridge-ready-budget');
+      const readyTestedEl = document.getElementById('bridge-ready-tested');
+      const missionSteps = document.querySelectorAll('[data-mission-step]');
+      const quizScoreEl = document.getElementById('bridge-quiz-score');
+
+      let bridgeState = createStarterState();
+      let selectedTool = 'road';
+      let selectedNodeId = null;
+      let dragState = null;
+      let suppressClick = false;
+      let animationFrameId = 0;
+      let testState = createEmptyTestState();
+      let testSpeed = 1;
+      let history = [];
+      let attempts = 0;
+      let lastScore = null;
+      let bestScore = readBestScore();
+      const quizResults = new Map();
+
+      function readBestScore() {
+        try {
+          const value = Number(window.localStorage.getItem('bridge-lab-best-score'));
+          return Number.isFinite(value) && value > 0 ? value : null;
+        } catch (error) {
+          return null;
+        }
+      }
+
+      function saveBestScore(score) {
+        try {
+          window.localStorage.setItem('bridge-lab-best-score', String(score));
+        } catch (error) {
+          /* Storage can be unavailable in private or embedded contexts. */
+        }
+      }
+
+      function cloneBridgeState(state) {
+        return {
+          nodes: state.nodes.map((node) => Object.assign({}, node)),
+          members: state.members.map((member) => Object.assign({}, member)),
+          nextNodeId: state.nextNodeId,
+          nextMemberId: state.nextMemberId
+        };
+      }
+
+      function rememberState() {
+        history.push(cloneBridgeState(bridgeState));
+        if (history.length > 30) history.shift();
+        undoButton.disabled = false;
+      }
+
+      function undoLastChange() {
+        if (!history.length || testState.running) return;
+        bridgeState = history.pop();
+        selectedNodeId = null;
+        lastScore = null;
+        clearTestState();
+        undoButton.disabled = history.length === 0;
+        render();
+        updateDashboard();
+      }
+
+      function createNode(id, x, y, fixed) {
+        return {
+          id,
+          x,
+          y,
+          fixed: Boolean(fixed)
+        };
+      }
+
+      function createMember(id, a, b, type, nodes) {
+        return {
+          id,
+          a,
+          b,
+          type,
+          restLength: distance(nodeMapFrom(nodes).get(a), nodeMapFrom(nodes).get(b))
+        };
+      }
+
+      function createStarterState() {
+        const nodes = [
+          createNode(LEFT_ANCHOR_ID, 170, DECK_Y, true),
+          createNode(1, 280, DECK_Y, false),
+          createNode(2, 390, DECK_Y, false),
+          createNode(3, 500, DECK_Y, false),
+          createNode(RIGHT_ANCHOR_ID, 610, DECK_Y, true)
+        ];
+
+        return {
+          nodes,
+          members: [
+            createMember(0, 0, 1, 'road', nodes),
+            createMember(1, 1, 2, 'road', nodes),
+            createMember(2, 2, 3, 'road', nodes),
+            createMember(3, 3, 4, 'road', nodes)
+          ],
+          nextNodeId: 5,
+          nextMemberId: 4
+        };
+      }
+
+      function createExampleState() {
+        const nodes = [
+          createNode(LEFT_ANCHOR_ID, 170, DECK_Y, true),
+          createNode(1, 280, DECK_Y, false),
+          createNode(2, 390, DECK_Y, false),
+          createNode(3, 500, DECK_Y, false),
+          createNode(RIGHT_ANCHOR_ID, 610, DECK_Y, true),
+          createNode(5, 225, 244, false),
+          createNode(6, 335, 244, false),
+          createNode(7, 445, 244, false),
+          createNode(8, 555, 244, false)
+        ];
+
+        return {
+          nodes,
+          members: [
+            createMember(0, 0, 1, 'road', nodes),
+            createMember(1, 1, 2, 'road', nodes),
+            createMember(2, 2, 3, 'road', nodes),
+            createMember(3, 3, 4, 'road', nodes),
+            createMember(4, 0, 5, 'wood', nodes),
+            createMember(5, 5, 1, 'wood', nodes),
+            createMember(6, 1, 6, 'wood', nodes),
+            createMember(7, 6, 2, 'wood', nodes),
+            createMember(8, 2, 7, 'wood', nodes),
+            createMember(9, 7, 3, 'wood', nodes),
+            createMember(10, 3, 8, 'wood', nodes),
+            createMember(11, 8, 4, 'wood', nodes),
+            createMember(12, 5, 6, 'steel', nodes),
+            createMember(13, 6, 7, 'steel', nodes),
+            createMember(14, 7, 8, 'steel', nodes)
+          ],
+          nextNodeId: 9,
+          nextMemberId: 15
+        };
+      }
+
+      function createEmptyTestState() {
+        return {
+          running: false,
+          finished: false,
+          result: 'edit',
+          message: 'Connect the road, add triangles, then run the ambulance test.',
+          progress: 0,
+          path: null,
+          simNodes: null,
+          memberRatios: new Map(),
+          memberStress: new Map(),
+          maxStrain: 0,
+          maxSag: 0,
+          maxSlope: 0,
+          vehicleLabel: 'Waiting on the left bank',
+          collapsing: false,
+          collapseFrames: 0,
+          collapseMessage: '',
+          reactionForces: {
+            left: 0,
+            right: 0
+          },
+          elapsedMs: 0,
+          failureFeedbackPlayed: false
+        };
+      }
+
+      function nodeMapFrom(nodes) {
+        return new Map(nodes.map((node) => [node.id, node]));
+      }
+
+      function nodeById(nodes, id) {
+        return nodes.find((node) => node.id === id) || null;
+      }
+
+      function distance(a, b) {
+        return Math.hypot(b.x - a.x, b.y - a.y);
+      }
+
+      function clamp(min, value, max) {
+        return Math.max(min, Math.min(value, max));
+      }
+
+      function isBuildTool(tool) {
+        return tool === 'road' || tool === 'wood' || tool === 'steel';
+      }
+
+      function formatCurrency(value) {
+        return '$' + Math.round(value).toLocaleString();
+      }
+
+      function asPercent(value) {
+        return Math.round(value * 100) + '%';
+      }
+
+      function memberBetween(state, a, b) {
+        return state.members.find((member) => {
+          return (member.a === a && member.b === b) || (member.a === b && member.b === a);
+        }) || null;
+      }
+
+      function setMemberRestLength(member) {
+        const lookup = nodeMapFrom(bridgeState.nodes);
+        member.restLength = distance(lookup.get(member.a), lookup.get(member.b));
+      }
+
+      function updateConnectedRestLengths(nodeId) {
+        bridgeState.members.forEach((member) => {
+          if (member.a === nodeId || member.b === nodeId) {
+            setMemberRestLength(member);
+          }
+        });
+      }
+
+      function stopAnimation() {
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+          animationFrameId = 0;
+        }
+      }
+
+      function clearTestState() {
+        stopAnimation();
+        testState = createEmptyTestState();
+      }
+
+      function loadState(factory) {
+        rememberState();
+        bridgeState = factory();
+        selectedNodeId = null;
+        dragState = null;
+        suppressClick = false;
+        ambulance.classList.remove('bridge-amb-running');
+        replayBtn.style.display = 'none';
+        clearTestState();
+        lastScore = null;
+        render();
+        updateDashboard();
+      }
+
+      function computeCost(state) {
+        const nodes = nodeMapFrom(state.nodes);
+        return state.members.reduce((total, member) => {
+          return total + (distance(nodes.get(member.a), nodes.get(member.b)) * METERS_PER_PIXEL * MATERIALS[member.type].cost);
+        }, 0);
+      }
+
+      function findRoadPath(state, workingNodes) {
+        const nodes = workingNodes || state.nodes;
+        const lookup = nodeMapFrom(nodes);
+        const adjacency = new Map(state.nodes.map((node) => [node.id, []]));
+
+        state.members.forEach((member) => {
+          if (member.type !== 'road') {
+            return;
+          }
+
+          const a = lookup.get(member.a);
+          const b = lookup.get(member.b);
+
+          if (!a || !b) {
+            return;
+          }
+
+          const weight = distance(a, b);
+          adjacency.get(member.a).push({ to: member.b, weight });
+          adjacency.get(member.b).push({ to: member.a, weight });
+        });
+
+        const distances = new Map(state.nodes.map((node) => [node.id, Infinity]));
+        const previous = new Map();
+        const queue = state.nodes.map((node) => node.id);
+        distances.set(LEFT_ANCHOR_ID, 0);
+
+        while (queue.length) {
+          queue.sort((a, b) => distances.get(a) - distances.get(b));
+          const current = queue.shift();
+
+          if (current === RIGHT_ANCHOR_ID) {
+            break;
+          }
+
+          adjacency.get(current).forEach((edge) => {
+            const nextDistance = distances.get(current) + edge.weight;
+            if (nextDistance < distances.get(edge.to)) {
+              distances.set(edge.to, nextDistance);
+              previous.set(edge.to, current);
+            }
+          });
+        }
+
+        if (!previous.has(RIGHT_ANCHOR_ID)) {
+          return null;
+        }
+
+        const path = [RIGHT_ANCHOR_ID];
+        let cursor = RIGHT_ANCHOR_ID;
+
+        while (cursor !== LEFT_ANCHOR_ID) {
+          cursor = previous.get(cursor);
+          if (cursor == null) {
+            return null;
+          }
+          path.unshift(cursor);
+        }
+
+        return path;
+      }
+
+      function locateVehicle(path, nodes, progress) {
+        if (!path || path.length < 2) {
+          return null;
+        }
+
+        const lookup = nodeMapFrom(nodes);
+        const segments = [];
+        let totalLength = 0;
+
+        for (let index = 0; index < path.length - 1; index += 1) {
+          const a = lookup.get(path[index]);
+          const b = lookup.get(path[index + 1]);
+          const length = distance(a, b);
+          segments.push({ a, b, length });
+          totalLength += length;
+        }
+
+        if (totalLength === 0) {
+          return null;
+        }
+
+        let travel = clamp(0, progress, 1) * totalLength;
+
+        for (let index = 0; index < segments.length; index += 1) {
+          const segment = segments[index];
+          if (travel <= segment.length || index === segments.length - 1) {
+            const t = segment.length === 0 ? 0 : travel / segment.length;
+            const x = segment.a.x + ((segment.b.x - segment.a.x) * t);
+            const y = segment.a.y + ((segment.b.y - segment.a.y) * t);
+
+            return {
+              x,
+              y,
+              angle: Math.atan2(segment.b.y - segment.a.y, segment.b.x - segment.a.x),
+              a: segment.a.id,
+              b: segment.b.id,
+              t
+            };
+          }
+
+          travel -= segment.length;
+        }
+
+        return null;
+      }
+
+      function createSimulationNodes(state) {
+        return state.nodes.map((node) => {
+          return {
+            id: node.id,
+            x: node.x,
+            y: node.y,
+            homeX: node.x,
+            homeY: node.y,
+            prevX: node.x,
+            prevY: node.y,
+            fixed: node.fixed
+          };
+        });
+      }
+
+      function roadNodeSet(state) {
+        const nodes = new Set();
+        state.members.forEach((member) => {
+          if (member.type === 'road') {
+            nodes.add(member.a);
+            nodes.add(member.b);
+          }
+        });
+        return nodes;
+      }
+
+      function stressSample(member, lookup) {
+        const a = lookup.get(member.a);
+        const b = lookup.get(member.b);
+        const currentLength = distance(a, b);
+        const delta = currentLength - member.restLength;
+        const strain = Math.abs(delta) / Math.max(member.restLength, 1);
+
+        return {
+          currentLength,
+          delta,
+          strain,
+          ratio: strain / MATERIALS[member.type].breakStrain,
+          mode: delta >= 0 ? 'tension' : 'compression'
+        };
+      }
+
+      function computeMemberStress(displayNodes) {
+        const lookup = nodeMapFrom(displayNodes);
+        const stress = new Map();
+
+        bridgeState.members.forEach((member) => {
+          stress.set(member.id, stressSample(member, lookup));
+        });
+
+        return stress;
+      }
+
+      function ratiosFromStress(stressMap) {
+        const ratios = new Map();
+        stressMap.forEach((entry, memberId) => {
+          ratios.set(memberId, entry.ratio);
+        });
+        return ratios;
+      }
+
+      function countTriangles(state) {
+        const connections = new Set();
+        state.members.forEach((member) => {
+          connections.add(Math.min(member.a, member.b) + ':' + Math.max(member.a, member.b));
+        });
+        let total = 0;
+        const ids = state.nodes.map((node) => node.id);
+        for (let a = 0; a < ids.length - 2; a += 1) {
+          for (let b = a + 1; b < ids.length - 1; b += 1) {
+            for (let c = b + 1; c < ids.length; c += 1) {
+              const ab = ids[a] + ':' + ids[b];
+              const ac = ids[a] + ':' + ids[c];
+              const bc = ids[b] + ':' + ids[c];
+              if (connections.has(ab) && connections.has(ac) && connections.has(bc)) total += 1;
+            }
+          }
+        }
+        return total;
+      }
+
+      function calculateScore() {
+        const costRatio = computeCost(bridgeState) / LEVEL_BUDGET;
+        const risk = Math.max(testState.maxStrain, testState.maxSag / ROAD_FAILURE_SAG, testState.maxSlope / ROAD_FAILURE_SLOPE);
+        return Math.max(100, Math.round(1000 - (costRatio * 360) - (Math.min(1, risk) * 360)));
+      }
+
+      function measureBridge(displayNodes, path) {
+        const lookup = nodeMapFrom(displayNodes);
+        let maxStrain = 0;
+        let maxSag = 0;
+        let maxSlope = 0;
+
+        bridgeState.members.forEach((member) => {
+          maxStrain = Math.max(maxStrain, stressSample(member, lookup).ratio);
+        });
+
+        if (path) {
+          for (let index = 1; index < path.length - 1; index += 1) {
+            const node = lookup.get(path[index]);
+            maxSag = Math.max(maxSag, Math.max(0, node.y - DECK_Y));
+          }
+
+          for (let index = 0; index < path.length - 1; index += 1) {
+            const a = lookup.get(path[index]);
+            const b = lookup.get(path[index + 1]);
+            const dx = b.x - a.x;
+            const slope = dx === 0 ? 1 : Math.abs((b.y - a.y) / dx);
+            maxSlope = Math.max(maxSlope, slope);
+          }
+        }
+
+        return {
+          maxStrain,
+          maxSag,
+          maxSlope
+        };
+      }
+
+      function failureMessage(metrics) {
+        const reasons = [
+          {
+            key: 'strain',
+            value: metrics.maxStrain,
+            message: 'One or more members stretched too far. Shorten the longest panel or swap a critical brace to steel.'
+          },
+          {
+            key: 'sag',
+            value: metrics.maxSag / ROAD_FAILURE_SAG,
+            message: 'The road sagged too much. Add lower joints and triangles under the longest road panels.'
+          },
+          {
+            key: 'slope',
+            value: metrics.maxSlope / ROAD_FAILURE_SLOPE,
+            message: 'The road became too steep for the ambulance. Pull the deck flatter with deeper support triangles.'
+          }
+        ];
+
+        reasons.sort((a, b) => b.value - a.value);
+        return reasons[0].message;
+      }
+
+      function stressStyle(member, stress) {
+        const material = MATERIALS[member.type];
+        const baseline = {
+          stroke: material.color,
+          width: material.width,
+          className: 'bridge-member',
+          opacity: member.type === 'road' ? '1' : '0.95'
+        };
+
+        if (!stress) {
+          return baseline;
+        }
+
+        let ratio = stress.ratio;
+        if (testState.collapsing) {
+          ratio = Math.max(ratio, Math.min(1.35, (testState.collapseFrames / 38) * 1.45));
+        }
+
+        if (ratio < 0.08) {
+          return baseline;
+        }
+
+        const intensity = clamp(0, ratio, 1.3);
+        const lightness = stress.mode === 'tension'
+          ? (84 - (intensity * 38))
+          : (88 - (intensity * 46));
+        const stroke = stress.mode === 'tension'
+          ? 'hsl(209 100% ' + lightness.toFixed(1) + '%)'
+          : 'hsl(5 94% ' + lightness.toFixed(1) + '%)';
+
+        return {
+          stroke,
+          width: (material.width * (1 + Math.min(0.55, intensity * 0.34))).toFixed(2),
+          className: 'bridge-member bridge-member--active',
+          opacity: (0.86 + Math.min(0.14, intensity * 0.1)).toFixed(2)
+        };
+      }
+
+      function computeReactionForces(path, nodes, progress) {
+        if (!path || path.length < 2) {
+          return { left: 0, right: 0 };
+        }
+
+        const lookup = nodeMapFrom(nodes);
+        const left = lookup.get(LEFT_ANCHOR_ID);
+        const right = lookup.get(RIGHT_ANCHOR_ID);
+        const vehicle = locateVehicle(path, nodes, progress);
+
+        if (!left || !right || !vehicle) {
+          return {
+            left: TARGET_LOAD * 0.5,
+            right: TARGET_LOAD * 0.5
+          };
+        }
+
+        const span = Math.max(1, right.x - left.x);
+        const t = clamp(0, (vehicle.x - left.x) / span, 1);
+        const deadLoad = TARGET_LOAD * 0.18;
+        const liveLoad = TARGET_LOAD * 0.82;
+
+        return {
+          left: (deadLoad * 0.5) + (liveLoad * (1 - t)),
+          right: (deadLoad * 0.5) + (liveLoad * t)
+        };
+      }
+
+      function reactionArrowMarkup(anchor, force, side) {
+        const height = 18 + (force * 1.42);
+        const width = 18 + (force * 0.1);
+        const shaftWidth = Math.max(5, width * 0.22);
+        const tipY = anchor.y - height;
+        const baseY = anchor.y + 16;
+        const direction = side === 'left' ? -1 : 1;
+        const labelX = anchor.x + (direction * 20);
+        const labelAnchor = side === 'left' ? 'end' : 'start';
+
+        return '<g class="bridge-reaction-vector" aria-hidden="true">' +
+          '<path d="M ' + anchor.x.toFixed(1) + ' ' + baseY.toFixed(1) +
+          ' L ' + anchor.x.toFixed(1) + ' ' + (tipY + 22).toFixed(1) +
+          '" stroke="rgba(104, 255, 188, 0.68)" stroke-width="' + shaftWidth.toFixed(1) +
+          '" stroke-linecap="round"></path>' +
+          '<path d="M ' + (anchor.x - (width * 0.5)).toFixed(1) + ' ' + (tipY + 18).toFixed(1) +
+          ' L ' + anchor.x.toFixed(1) + ' ' + tipY.toFixed(1) +
+          ' L ' + (anchor.x + (width * 0.5)).toFixed(1) + ' ' + (tipY + 18).toFixed(1) +
+          '" fill="rgba(104, 255, 188, 0.48)"></path>' +
+          '<text x="' + labelX.toFixed(1) + '" y="' + (tipY - 10).toFixed(1) + '" fill="rgba(230,255,243,0.9)" font-size="12" font-weight="700" text-anchor="' + labelAnchor + '">' +
+          Math.round(force) + ' kN</text>' +
+          '</g>';
+      }
+
+      function renderReactionVectors(displayNodes) {
+        const lookup = nodeMapFrom(displayNodes);
+        const leftAnchor = lookup.get(LEFT_ANCHOR_ID);
+        const rightAnchor = lookup.get(RIGHT_ANCHOR_ID);
+
+        if (!leftAnchor || !rightAnchor) {
+          reactionLayer.innerHTML = '';
+          return;
+        }
+
+        const forces = (testState.running || testState.finished)
+          ? testState.reactionForces
+          : { left: TARGET_LOAD * 0.5, right: TARGET_LOAD * 0.5 };
+
+        reactionLayer.innerHTML = [
+          reactionArrowMarkup(leftAnchor, forces.left, 'left'),
+          reactionArrowMarkup(rightAnchor, forces.right, 'right')
+        ].join('');
+      }
+
+      function triggerFailureFeedback() {
+        stage.classList.remove('is-shaking');
+        void stage.offsetWidth;
+        stage.classList.add('is-shaking');
+        window.setTimeout(function () {
+          stage.classList.remove('is-shaking');
+        }, 480);
+
+        if (window.navigator && typeof window.navigator.vibrate === 'function') {
+          window.navigator.vibrate([85, 45, 120]);
+        }
+      }
+
+      function renderVehicle(displayNodes) {
+        let transform = 'translate(120 156)';
+        let opacity = '0.88';
+        let path = findRoadPath(bridgeState, bridgeState.nodes);
+        let progress = 0;
+
+        if (testState.running || testState.finished) {
+          path = testState.path;
+          progress = testState.progress;
+          opacity = '1';
+        }
+
+        if (path) {
+          const vehicle = locateVehicle(path, displayNodes, progress);
+          if (vehicle) {
+            const bounce = testState.running
+              ? Math.sin(testState.elapsedMs / 115) * Math.min(3.8, 1 + (testState.maxSag * 0.08))
+              : 0;
+            transform = 'translate(' + vehicle.x.toFixed(1) + ' ' + (vehicle.y - 14 + bounce).toFixed(1) + ') rotate(' + ((vehicle.angle * 180) / Math.PI).toFixed(1) + ')';
+          }
+        }
+
+        ambulance.setAttribute('transform', transform);
+        ambulance.setAttribute('opacity', opacity);
+      }
+
+      function render() {
+        const displayNodes = (testState.running || testState.finished) && testState.simNodes ? testState.simNodes : bridgeState.nodes;
+        const lookup = nodeMapFrom(displayNodes);
+        const stressMap = (testState.running || testState.finished) ? testState.memberStress : new Map();
+
+        memberLayer.innerHTML = bridgeState.members.map((member) => {
+          const a = lookup.get(member.a);
+          const b = lookup.get(member.b);
+          const style = stressStyle(member, stressMap.get(member.id));
+
+          const coordinates = ' x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) + '" x2="' + b.x.toFixed(1) + '" y2="' + b.y.toFixed(1) + '"';
+          const extrusionWidth = (Number(style.width) + (member.type === 'road' ? 5 : 2)).toFixed(2);
+          const highlightWidth = Math.max(1.25, Number(style.width) * 0.17).toFixed(2);
+          return '<g data-member-id="' + member.id + '">' +
+            '<line class="bridge-member-hit"' + coordinates + '></line>' +
+            '<line class="bridge-member-extrusion"' + coordinates + ' stroke="#09131a" stroke-width="' + extrusionWidth + '" stroke-linecap="round"></line>' +
+            (member.type === 'road' ? '<line class="bridge-member-deck-edge"' + coordinates + ' stroke="url(#bridgeRoadEdge)" stroke-width="' + (Number(style.width) + 3).toFixed(2) + '" stroke-linecap="round"></line>' : '') +
+            '<line class="bridge-member-casing"' + coordinates + ' stroke="#f1ead3" stroke-width="' + (Number(style.width) + 4).toFixed(2) + '" stroke-linecap="round"></line>' +
+            '<line class="' + style.className + '"' + coordinates + ' stroke="' + (member.type === 'road' && !stressMap.get(member.id) ? 'url(#bridgeRoadSurface)' : style.stroke) + '" stroke-width="' + style.width + '" stroke-linecap="round" stroke-linejoin="round" opacity="' + style.opacity + '"></line>' +
+            '<line class="bridge-member-highlight"' + coordinates + ' stroke="#fff" stroke-width="' + highlightWidth + '" stroke-linecap="round"></line>' +
+            '</g>';
+        }).join('');
+
+        nodeLayer.innerHTML = displayNodes.map((node) => {
+          const radius = node.fixed ? 9 : 6;
+          const halo = node.fixed
+            ? '<circle cx="' + node.x.toFixed(1) + '" cy="' + node.y.toFixed(1) + '" r="13" fill="#5099d6" fill-opacity="0.2"></circle>'
+            : '';
+
+          return '<g data-node-id="' + node.id + '" class="bridge-node-visual">' +
+            '<ellipse class="bridge-node-shadow" cx="' + node.x.toFixed(1) + '" cy="' + (node.y + 1).toFixed(1) + '" rx="' + (radius + 2) + '" ry="' + Math.max(4, radius * 0.55).toFixed(1) + '" fill="#07131b"></ellipse>' +
+            halo +
+            '<circle cx="' + node.x.toFixed(1) + '" cy="' + node.y.toFixed(1) + '" r="' + radius + '" fill="' + (node.fixed ? '#17324b' : 'url(#bridgeNodeGradient)') + '" stroke="' + (node.fixed ? '#9dd6ff' : '#23465f') + '" stroke-width="' + (node.fixed ? '3' : '2') + '" filter="url(#bridgeSoftShadow)"></circle>' +
+            (!node.fixed ? '<circle cx="' + (node.x - 1.6).toFixed(1) + '" cy="' + (node.y - 1.6).toFixed(1) + '" r="1.7" fill="#fff" opacity="0.9"></circle>' : '') +
+            '</g>';
+        }).join('');
+
+        if (!testState.running && !testState.finished && selectedNodeId != null) {
+          const selected = lookup.get(selectedNodeId);
+          selectionLayer.innerHTML = selected
+            ? '<circle cx="' + selected.x.toFixed(1) + '" cy="' + selected.y.toFixed(1) + '" r="13" fill="none" stroke="#1f7bd3" stroke-width="3" stroke-dasharray="5 4"></circle>'
+            : '';
+        } else {
+          selectionLayer.innerHTML = '';
+        }
+
+        renderReactionVectors(displayNodes);
+        renderVehicle(displayNodes);
+      }
+
+      function finishTest(result, message) {
+        stopAnimation();
+        testState.running = false;
+        testState.collapsing = false;
+        testState.finished = true;
+        testState.result = result;
+        testState.message = message;
+        testState.vehicleLabel = result === 'pass'
+          ? 'Reached the clinic'
+          : result === 'warn'
+            ? 'Crossed, but over budget'
+            : 'Test failed';
+        testState.memberStress = testState.simNodes ? computeMemberStress(testState.simNodes) : new Map();
+        testState.memberRatios = ratiosFromStress(testState.memberStress);
+        testState.reactionForces = testState.path
+          ? computeReactionForces(testState.path, testState.simNodes || bridgeState.nodes, testState.progress)
+          : { left: 0, right: 0 };
+        if (result === 'pass') {
+          lastScore = calculateScore();
+          if (bestScore == null || lastScore > bestScore) {
+            bestScore = lastScore;
+            saveBestScore(bestScore);
+          }
+        } else {
+          lastScore = null;
+        }
+        ambulance.classList.remove('bridge-amb-running');
+        replayBtn.style.display = '';
+        render();
+        updateDashboard();
+      }
+
+      function runTest() {
+        if (testState.running) return;
+        attempts += 1;
+        const path = findRoadPath(bridgeState, bridgeState.nodes);
+
+        if (!path) {
+          clearTestState();
+          testState.finished = true;
+          testState.result = 'fail';
+          testState.message = 'The road is broken. Connect one continuous deck from bank to bank before you test.';
+          testState.vehicleLabel = 'Cannot start';
+          render();
+          updateDashboard();
+          return;
+        }
+
+        stopAnimation();
+        selectedNodeId = null;
+        testState = createEmptyTestState();
+        testState.running = true;
+        testState.path = path;
+        testState.simNodes = createSimulationNodes(bridgeState);
+        testState.memberStress = computeMemberStress(testState.simNodes);
+        testState.memberRatios = ratiosFromStress(testState.memberStress);
+        testState.reactionForces = computeReactionForces(path, testState.simNodes, 0);
+        testState.message = 'Ambulance rolling onto the bridge. Blue members are in tension, red members are in compression, and the green arrows show support reactions.';
+        testState.vehicleLabel = 'Rolling onto the bridge';
+        ambulance.classList.add('bridge-amb-running');
+        replayBtn.style.display = 'none';
+
+        let lastTimestamp = performance.now();
+
+        function tick(timestamp) {
+          if (!testState.running) {
+            return;
+          }
+
+          /* ── Collapse animation ─────────────────────────── */
+          if (testState.collapsing) {
+            testState.collapseFrames += 1;
+            testState.simNodes.forEach(function (node) {
+              if (node.fixed) { node.x = node.homeX; node.y = node.homeY; return; }
+              var vx = (node.x - node.prevX) * VERLET_DAMPING;
+              var vy = (node.y - node.prevY) * VERLET_DAMPING;
+              node.prevX = node.x; node.prevY = node.y;
+              node.x = clamp(BUILD_ZONE.left - 60, node.x + vx, BUILD_ZONE.right + 60);
+              node.y = clamp(BUILD_ZONE.top - 20,  node.y + vy + 2.0, BUILD_ZONE.bottom + 120);
+            });
+            testState.memberStress = computeMemberStress(testState.simNodes);
+            testState.memberRatios = ratiosFromStress(testState.memberStress);
+            testState.reactionForces = computeReactionForces(testState.path, testState.simNodes, testState.progress);
+            render();
+            if (testState.collapseFrames >= 38) {
+              finishTest('fail', testState.collapseMessage);
+              return;
+            }
+            animationFrameId = requestAnimationFrame(tick);
+            return;
+          }
+
+          const frameScale = Math.min((timestamp - lastTimestamp) / 16.6667, 2);
+          testState.elapsedMs += Math.max(0, timestamp - lastTimestamp);
+          lastTimestamp = timestamp;
+          const movingRoadNodes = roadNodeSet(bridgeState);
+          const vehicle = locateVehicle(testState.path, testState.simNodes, testState.progress);
+
+          for (let step = 0; step < 6; step += 1) {
+            const loads = new Map(testState.simNodes.map((node) => [node.id, movingRoadNodes.has(node.id) ? 0.5 : 0.08]));
+
+            if (vehicle) {
+              const designLoadScale = TARGET_LOAD / 105;
+              loads.set(vehicle.a, loads.get(vehicle.a) + (10 * designLoadScale * (1 - vehicle.t)));
+              loads.set(vehicle.b, loads.get(vehicle.b) + (10 * designLoadScale * vehicle.t));
+            }
+
+            testState.simNodes.forEach((node) => {
+              if (node.fixed) {
+                node.x = node.homeX;
+                node.y = node.homeY;
+                node.prevX = node.homeX;
+                node.prevY = node.homeY;
+                return;
+              }
+
+              const vx = (node.x - node.prevX) * VERLET_DAMPING;
+              const vy = (node.y - node.prevY) * VERLET_DAMPING;
+
+              node.prevX = node.x;
+              node.prevY = node.y;
+              node.x = clamp(BUILD_ZONE.left, node.x + vx, BUILD_ZONE.right);
+              node.y = clamp(BUILD_ZONE.top, node.y + vy + (loads.get(node.id) * 0.055), BUILD_ZONE.bottom + 28);
+            });
+
+            for (let iteration = 0; iteration < 8; iteration += 1) {
+              const lookup = nodeMapFrom(testState.simNodes);
+              bridgeState.members.forEach((member) => {
+                const a = lookup.get(member.a);
+                const b = lookup.get(member.b);
+                const dx = b.x - a.x;
+                const dy = b.y - a.y;
+                const length = Math.hypot(dx, dy) || 1;
+                const difference = (length - member.restLength) / length;
+                const factor = difference * MATERIALS[member.type].stiffness;
+
+                if (a.fixed && b.fixed) {
+                  return;
+                }
+
+                if (a.fixed) {
+                  b.x -= dx * factor;
+                  b.y -= dy * factor;
+                  return;
+                }
+
+                if (b.fixed) {
+                  a.x += dx * factor;
+                  a.y += dy * factor;
+                  return;
+                }
+
+                a.x += dx * factor * 0.5;
+                a.y += dy * factor * 0.5;
+                b.x -= dx * factor * 0.5;
+                b.y -= dy * factor * 0.5;
+              });
+            }
+          }
+
+          testState.progress = Math.min(1, testState.progress + (0.0035 * frameScale * testSpeed));
+          testState.memberStress = computeMemberStress(testState.simNodes);
+          testState.memberRatios = ratiosFromStress(testState.memberStress);
+          testState.reactionForces = computeReactionForces(testState.path, testState.simNodes, testState.progress);
+
+          const metrics = measureBridge(testState.simNodes, testState.path);
+          testState.maxStrain = Math.max(testState.maxStrain, metrics.maxStrain);
+          testState.maxSag = Math.max(testState.maxSag, metrics.maxSag);
+          testState.maxSlope = Math.max(testState.maxSlope, metrics.maxSlope);
+          testState.vehicleLabel = Math.round(testState.progress * 100) + '% across';
+
+          render();
+          updateDashboard();
+
+          if (metrics.maxStrain > 1 || metrics.maxSag > ROAD_FAILURE_SAG || metrics.maxSlope > ROAD_FAILURE_SLOPE) {
+            testState.collapsing = true;
+            testState.collapseFrames = 0;
+            testState.collapseMessage = failureMessage(metrics);
+            if (!testState.failureFeedbackPlayed) {
+              triggerFailureFeedback();
+              testState.failureFeedbackPlayed = true;
+            }
+            verdictEl.textContent = 'Structure failing — collapse in progress.';
+            statusPill.textContent = 'Collapsing';
+            statusCard.classList.add('bridge-status-fail');
+            animationFrameId = requestAnimationFrame(tick);
+            return;
+          }
+
+          if (testState.progress >= 1) {
+            if (computeCost(bridgeState) > LEVEL_BUDGET) {
+              finishTest('warn', 'The ambulance made it, but the design missed the budget target. Remove extras or replace some steel with wood.');
+            } else {
+              finishTest('pass', 'Ambulance delivered. The road stayed flat enough and the load path held together.');
+            }
+            return;
+          }
+
+          animationFrameId = requestAnimationFrame(tick);
+        }
+
+        animationFrameId = requestAnimationFrame(tick);
+        render();
+        updateDashboard();
+      }
+
+      function pointFromEvent(event) {
+        const bounds = svg.getBoundingClientRect();
+        return {
+          x: ((event.clientX - bounds.left) / bounds.width) * 780,
+          y: ((event.clientY - bounds.top) / bounds.height) * 380
+        };
+      }
+
+      function pointInBuildZone(point) {
+        return point.x >= BUILD_ZONE.left - 10 &&
+          point.x <= BUILD_ZONE.right + 10 &&
+          point.y >= BUILD_ZONE.top - 10 &&
+          point.y <= BUILD_ZONE.bottom + 10;
+      }
+
+      function snapPoint(point) {
+        const snappedX = BUILD_ZONE.left + (Math.round((point.x - BUILD_ZONE.left) / GRID.x) * GRID.x);
+        const snappedY = BUILD_ZONE.top + (Math.round((point.y - BUILD_ZONE.top) / GRID.y) * GRID.y);
+
+        return {
+          x: clamp(BUILD_ZONE.left, snappedX, BUILD_ZONE.right),
+          y: clamp(BUILD_ZONE.top, snappedY, BUILD_ZONE.bottom)
+        };
+      }
+
+      function nodeNearPoint(point, ignoreId) {
+        return bridgeState.nodes.find((node) => {
+          return node.id !== ignoreId && distance(node, point) < 16;
+        }) || null;
+      }
+
+      function addNode(point) {
+        const existing = nodeNearPoint(point, null);
+        if (existing) {
+          return existing;
+        }
+
+        const node = createNode(bridgeState.nextNodeId, point.x, point.y, false);
+        bridgeState.nextNodeId += 1;
+        bridgeState.nodes.push(node);
+        return node;
+      }
+
+      function removeNode(nodeId) {
+        const node = nodeById(bridgeState.nodes, nodeId);
+        if (!node || node.fixed) {
+          return;
+        }
+
+        bridgeState.nodes = bridgeState.nodes.filter((candidate) => candidate.id !== nodeId);
+        bridgeState.members = bridgeState.members.filter((member) => member.a !== nodeId && member.b !== nodeId);
+
+        if (selectedNodeId === nodeId) {
+          selectedNodeId = null;
+        }
+      }
+
+      function removeMember(memberId) {
+        bridgeState.members = bridgeState.members.filter((member) => member.id !== memberId);
+      }
+
+      function connectNodes(a, b, type) {
+        if (a === b) {
+          return;
+        }
+
+        const existing = memberBetween(bridgeState, a, b);
+
+        if (existing) {
+          existing.type = type;
+          setMemberRestLength(existing);
+        } else {
+          bridgeState.members.push({
+            id: bridgeState.nextMemberId,
+            a,
+            b,
+            type,
+            restLength: distance(nodeById(bridgeState.nodes, a), nodeById(bridgeState.nodes, b))
+          });
+          bridgeState.nextMemberId += 1;
+        }
+
+        selectedNodeId = b;
+      }
+
+      function setTool(tool) {
+        selectedTool = tool;
+        if (!isBuildTool(tool)) {
+          selectedNodeId = null;
+        }
+
+        toolButtons.forEach((button) => {
+          button.classList.toggle('is-active', button.dataset.tool === tool);
+          button.setAttribute('aria-pressed', button.dataset.tool === tool ? 'true' : 'false');
+        });
+
+        updateDashboard();
+        render();
+      }
+
+      function handleNodeInteraction(nodeId) {
+        clearTestState();
+        const node = nodeById(bridgeState.nodes, nodeId);
+        if (!node) {
+          return;
+        }
+
+        if (selectedTool === 'delete') {
+          if (!node.fixed) rememberState();
+          removeNode(nodeId);
+        } else if (selectedTool === 'move') {
+          selectedNodeId = nodeId;
+        } else if (isBuildTool(selectedTool)) {
+          if (selectedNodeId == null) {
+            selectedNodeId = nodeId;
+          } else if (selectedNodeId === nodeId) {
+            selectedNodeId = null;
+          } else {
+            rememberState();
+            connectNodes(selectedNodeId, nodeId, selectedTool);
+          }
+        }
+
+        render();
+        updateDashboard();
+      }
+
+      function handleMemberInteraction(memberId) {
+        if (selectedTool !== 'delete') {
+          return;
+        }
+
+        clearTestState();
+        rememberState();
+        removeMember(memberId);
+        render();
+        updateDashboard();
+      }
+
+      function handleStageClick(point) {
+        if (!pointInBuildZone(point)) {
+          selectedNodeId = null;
+          render();
+          updateDashboard();
+          return;
+        }
+
+        if (!isBuildTool(selectedTool)) {
+          selectedNodeId = null;
+          render();
+          updateDashboard();
+          return;
+        }
+
+        clearTestState();
+        rememberState();
+        const snapped = snapPoint(point);
+        const node = addNode(snapped);
+
+        if (selectedNodeId != null && selectedNodeId !== node.id) {
+          connectNodes(selectedNodeId, node.id, selectedTool);
+        } else {
+          selectedNodeId = node.id;
+        }
+
+        render();
+        updateDashboard();
+      }
+
+      function updateDashboard() {
+        const cost = computeCost(bridgeState);
+        const budgetDelta = LEVEL_BUDGET - cost;
+        const budgetRatio = cost / LEVEL_BUDGET;
+        const path = findRoadPath(bridgeState, bridgeState.nodes);
+        const triangleCount = countTriangles(bridgeState);
+        const tested = testState.running || testState.finished;
+        const riskValue = tested
+          ? Math.max(testState.maxStrain, testState.maxSag / ROAD_FAILURE_SAG, testState.maxSlope / ROAD_FAILURE_SLOPE)
+          : 0;
+
+        budgetDisplay.innerHTML = formatCurrency(cost) + '<small>Budget spent</small>';
+        budgetSummary.textContent = budgetDelta >= 0
+          ? formatCurrency(budgetDelta) + ' left'
+          : formatCurrency(Math.abs(budgetDelta)) + ' over';
+        budgetBar.style.width = Math.min(100, budgetRatio * 100).toFixed(1) + '%';
+        budgetBar.style.background = budgetDelta >= 0
+          ? 'linear-gradient(90deg, #62c96b, #35a160)'
+          : 'linear-gradient(90deg, #f3c148, #e24a3b)';
+
+        riskSummary.textContent = tested ? asPercent(Math.min(riskValue, 1.5)) + ' of limit' : 'Run the test';
+        riskBar.style.width = Math.min(100, riskValue * 100).toFixed(1) + '%';
+        targetEl.textContent = TARGET_LOAD + ' kN design load (' + AMBULANCE_WEIGHT + ' kN ambulance)';
+        deckPathEl.textContent = path ? 'Connected from bank to bank' : 'Gap not connected';
+        strainEl.textContent = tested ? asPercent(testState.maxStrain) : 'Not tested';
+        sagEl.textContent = tested ? testState.maxSag.toFixed(1) + ' px' : 'Not tested';
+        slopeEl.textContent = tested ? asPercent(testState.maxSlope) : 'Not tested';
+        vehicleStatusEl.textContent = tested ? testState.vehicleLabel : 'Waiting on the left bank';
+        scoreEl.textContent = lastScore == null ? '—' : lastScore.toLocaleString();
+        bestScoreEl.textContent = bestScore == null ? '—' : bestScore.toLocaleString();
+        attemptsEl.textContent = String(attempts);
+        readyRoadEl.classList.toggle('is-ready', Boolean(path));
+        readyTrianglesEl.classList.toggle('is-ready', triangleCount >= 4);
+        readyTrianglesEl.textContent = Math.min(triangleCount, 4) + '/4 triangles';
+        readyBudgetEl.classList.toggle('is-ready', budgetDelta >= 0);
+        readyTestedEl.classList.toggle('is-ready', testState.finished);
+        undoButton.disabled = history.length === 0 || testState.running;
+
+        const missionState = testState.finished && testState.result === 'pass'
+          ? 'deliver'
+          : testState.running || testState.finished
+            ? 'test'
+            : triangleCount >= 4 && path
+              ? 'test'
+              : path
+                ? 'triangles'
+                : 'road';
+        const order = ['road', 'triangles', 'test', 'deliver'];
+        const activeIndex = order.indexOf(missionState);
+        missionSteps.forEach((step) => {
+          const stepIndex = order.indexOf(step.dataset.missionStep);
+          step.classList.toggle('is-active', stepIndex === activeIndex);
+          step.classList.toggle('is-complete', stepIndex < activeIndex || (missionState === 'deliver' && stepIndex === activeIndex));
+          const badge = step.querySelector('span');
+          badge.textContent = step.classList.contains('is-complete') ? '✓' : String(stepIndex + 1);
+        });
+        toolCopy.textContent = TOOL_HINTS[selectedTool].copy;
+        toolLabel.textContent = TOOL_HINTS[selectedTool].label;
+        stagePrompt.textContent = TOOL_HINTS[selectedTool].prompt;
+
+        statusCard.classList.remove('bridge-status-pass', 'bridge-status-fail', 'bridge-status-warn');
+
+        if (testState.running) {
+          statusPill.textContent = 'Ambulance testing';
+          verdictEl.textContent = 'Testing in progress. Watch the road shape, the blue-vs-red force flow, and the support arrows at each bank.';
+          stageNote.textContent = 'Blue members are being pulled in tension. Red members are being squeezed in compression. If the deck dips too far, the run will fail.';
+        } else if (testState.finished && testState.result === 'pass') {
+          statusPill.textContent = 'Clinic reached';
+          statusCard.classList.add('bridge-status-pass');
+          verdictEl.textContent = testState.message;
+          stageNote.textContent = 'This design kept the deck nearly level. Notice how the reaction arrows balance out once the load reaches the clinic bank.';
+        } else if (testState.finished && testState.result === 'warn') {
+          statusPill.textContent = 'Over budget';
+          statusCard.classList.add('bridge-status-warn');
+          verdictEl.textContent = testState.message;
+          stageNote.textContent = 'The bridge works, but it costs too much. Keep the efficient load path, then trim expensive members that are not carrying much stress.';
+        } else if (testState.finished && testState.result === 'fail') {
+          statusPill.textContent = 'Bridge failed';
+          statusCard.classList.add('bridge-status-fail');
+          verdictEl.textContent = testState.message;
+          stageNote.textContent = testState.message;
+        } else if (!path) {
+          statusPill.textContent = 'Edit mode';
+          verdictEl.textContent = 'Build one continuous road from the start bank to the clinic bank before you test.';
+          stageNote.textContent = 'Road pieces are the only parts the ambulance can drive on. Connect the gap first, then reinforce it.';
+        } else if (budgetDelta < 0) {
+          statusPill.textContent = 'Edit mode';
+          verdictEl.textContent = 'This design is over budget. Trim extra members or replace some steel with cheaper wood before testing.';
+          stageNote.textContent = 'The deck is connected, but the cost target is blown. Remove unused members and keep only the triangles that carry load.';
+        } else {
+          statusPill.textContent = 'Edit mode';
+          verdictEl.textContent = 'Road connected. Add triangles under the deck and run the ambulance test.';
+          stageNote.textContent = 'The starter road is only the beginning. The strongest student designs make deep triangles below the longest panels.';
+        }
+      }
+
+      svg.addEventListener('pointerdown', function (event) {
+        if (testState.running) {
+          return;
+        }
+
+        const target = event.target instanceof Element ? event.target : null;
+        const nodeElement = target ? target.closest('[data-node-id]') : null;
+
+        if (selectedTool !== 'move' || !nodeElement) {
+          return;
+        }
+
+        const nodeId = Number(nodeElement.dataset.nodeId);
+        const node = nodeById(bridgeState.nodes, nodeId);
+
+        if (!node || node.fixed) {
+          return;
+        }
+
+        clearTestState();
+        rememberState();
+        selectedNodeId = nodeId;
+        dragState = {
+          pointerId: event.pointerId,
+          nodeId,
+          moved: false
+        };
+        suppressClick = false;
+        svg.setPointerCapture(event.pointerId);
+        render();
+        updateDashboard();
+      });
+
+      svg.addEventListener('pointermove', function (event) {
+        if (!dragState) {
+          return;
+        }
+
+        const point = snapPoint(pointFromEvent(event));
+        const overlap = nodeNearPoint(point, dragState.nodeId);
+
+        if (overlap) {
+          return;
+        }
+
+        const node = nodeById(bridgeState.nodes, dragState.nodeId);
+
+        if (!node) {
+          return;
+        }
+
+        if (Math.abs(node.x - point.x) > 0.5 || Math.abs(node.y - point.y) > 0.5) {
+          dragState.moved = true;
+          suppressClick = true;
+        }
+
+        node.x = point.x;
+        node.y = point.y;
+        updateConnectedRestLengths(node.id);
+        render();
+        updateDashboard();
+      });
+
+      window.addEventListener('pointerup', function (event) {
+        if (!dragState) {
+          return;
+        }
+
+        if (svg.hasPointerCapture(dragState.pointerId)) {
+          svg.releasePointerCapture(dragState.pointerId);
+        }
+
+        dragState = null;
+        window.setTimeout(function () {
+          suppressClick = false;
+        }, 0);
+      });
+
+      svg.addEventListener('click', function (event) {
+        if (testState.running) {
+          return;
+        }
+
+        if (suppressClick) {
+          suppressClick = false;
+          return;
+        }
+
+        const target = event.target instanceof Element ? event.target : null;
+        const nodeElement = target ? target.closest('[data-node-id]') : null;
+        const memberElement = target ? target.closest('[data-member-id]') : null;
+
+        if (nodeElement) {
+          handleNodeInteraction(Number(nodeElement.dataset.nodeId));
+          return;
+        }
+
+        if (memberElement) {
+          handleMemberInteraction(Number(memberElement.dataset.memberId));
+          return;
+        }
+
+        handleStageClick(pointFromEvent(event));
+      });
+
+      toolButtons.forEach((button) => {
+        button.addEventListener('click', function () {
+          setTool(button.dataset.tool);
+        });
+      });
+
+      testButton.addEventListener('click', runTest);
+      exampleButton.addEventListener('click', function () {
+        loadState(createExampleState);
+      });
+      resetButton.addEventListener('click', function () {
+        loadState(createStarterState);
+      });
+      undoButton.addEventListener('click', undoLastChange);
+
+      replayBtn.addEventListener('click', runTest);
+      blueprintToggle.addEventListener('change', function () {
+        stage.classList.toggle('is-blueprint', blueprintToggle.checked);
+      });
+
+      document.querySelectorAll('[data-speed]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          testSpeed = parseFloat(btn.dataset.speed);
+          document.querySelectorAll('[data-speed]').forEach(function (b) {
+            b.classList.toggle('is-active', b === btn);
+            b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+          });
+        });
+      });
+
+      document.querySelectorAll('.bridge-question').forEach((question) => {
+        const answer = question.dataset.answer;
+        const explanation = question.dataset.explanation;
+        const feedback = question.querySelector('.bridge-feedback');
+        const options = question.querySelectorAll('.bridge-option');
+
+        options.forEach((option) => {
+          option.addEventListener('click', function () {
+            options.forEach((button) => {
+              button.classList.remove('is-correct', 'is-wrong');
+              if (button.dataset.choice === answer) {
+                button.classList.add('is-correct');
+              }
+            });
+
+            if (option.dataset.choice === answer) {
+              quizResults.set(question, true);
+              feedback.className = 'bridge-feedback correct';
+              feedback.textContent = 'Correct. ' + explanation;
+            } else {
+              quizResults.set(question, false);
+              option.classList.add('is-wrong');
+              feedback.className = 'bridge-feedback wrong';
+              feedback.textContent = 'Not quite. ' + explanation;
+            }
+            const correctCount = Array.from(quizResults.values()).filter(Boolean).length;
+            quizScoreEl.textContent = correctCount + ' of 4 correct';
+          });
+        });
+      });
+
+      document.addEventListener('keydown', function (event) {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+          event.preventDefault();
+          undoLastChange();
+        }
+        if (event.key === 'Enter' && document.activeElement === svg && !testState.running) {
+          runTest();
+        }
+      });
+
+      render();
+      updateDashboard();
+    }());
+  </script>
+  <script src="../../assets/js/classroom-animations.js"></script>
+<script src="../../assets/js/lesson-print-button.js"></script>
+<script src="../../assets/js/lessons/bridge-failure-microscope.js"></script>
+</body>
+</html>

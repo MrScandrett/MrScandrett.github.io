@@ -5,7 +5,7 @@
 // Usage (paths relative to a file in lessons/): import THREE + OrbitControls etc.
 // from the vendor bundle, import createScene from this file, then call
 // createScene(canvas, { THREE }) to get { renderer, scene, camera, syncSize }.
-// See lessons/cad-camera-controls.html for a worked example.
+// See lessons/applied-physics-materials/cad-camera-controls.html for a worked example.
 
 export function createScene(canvas, opts) {
   const THREE = opts.THREE;

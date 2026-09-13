@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Math of the Rubik's Cube · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Mathematics Lesson — type in the colours on your own Rubik's Cube and get a full step-by-step solution, then explore the group theory, permutations and algorithms behind it." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../assets/css/lessons/rubiks-cube-math.css" />
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="rc-page">
+
+          <!-- HERO -->
+          <section class="hero rc-hero">
+            <p class="eyebrow">Mathematics · Lesson 08</p>
+            <h1>The Math of the Rubik's Cube</h1>
+            <div class="rc-hero-meta">
+              <span>Group Theory</span><span class="dot"></span>
+              <span>Permutations</span><span class="dot"></span>
+              <span>Algorithms</span><span class="dot"></span>
+              <span>3D Thinking</span><span class="dot"></span>
+              <span>Pattern Recognition</span>
+            </div>
+            <p class="rc-lede">
+              Invented by Hungarian architect Ernő Rubik in 1974, the Rubik's Cube is the
+              world's best-selling puzzle toy — and one of the richest objects in all of
+              mathematics. It connects abstract algebra, combinatorics, and computer science
+              in a 3-inch plastic package with <strong>43 quintillion possible positions</strong>.
+              Only one of them is solved.
+            </p>
+            <p class="rc-lede rc-lede-cta">
+              <strong>Got a cube in front of you?</strong> Type in the colours you can see and
+              this page will work out every move you need — then walk you through them one turn
+              at a time. <a href="#rc-lab">Start with your cube ↓</a>
+            </p>
+          </section>
+
+          <!-- CUBE SOLVER LAB -->
+          <section class="rc-lab" id="rc-lab" aria-label="Rubik's Cube solver">
+            <div class="rc-lab-head">
+              <div class="rc-lab-badge"><span class="rc-live-dot"></span>Bring your own cube</div>
+              <h2>Type in your cube. Get the moves.</h2>
+              <p>
+                Enter the colours you can actually see. The page checks that your cube is a real
+                one, works out a complete solution, and then walks you through it a single turn at
+                a time while a 3D copy makes the same move.
+              </p>
+            </div>
+
+            <!-- Step 1: orientation -->
+            <div class="rc-hold">
+              <h3><span class="rc-step-num">1</span> Hold your cube like this</h3>
+              <p>
+                <strong>White face on the bottom. Green face pointing at you.</strong>
+                Keep it that way for the whole solve — never spin the whole cube around, only turn
+                the faces the moves ask for.
+              </p>
+              <ul class="rc-hold-list">
+                <li data-colour="Y"><span></span>Top is yellow</li>
+                <li data-colour="W"><span></span>Bottom is white</li>
+                <li data-colour="G"><span></span>Front is green</li>
+                <li data-colour="B"><span></span>Back is blue</li>
+                <li data-colour="R"><span></span>Left is red</li>
+                <li data-colour="O"><span></span>Right is orange</li>
+              </ul>
+              <p class="rc-hold-note">
+                Standard cubes always land this way round: put white down and green in front and
+                red really will be on your left. Centres never move relative to each other, which
+                is why they can be printed in for you below.
+              </p>
+            </div>
+
+            <!-- Step 2: input + live 3D -->
+            <div class="rc-build">
+              <div class="rc-build-input">
+                <h3><span class="rc-step-num">2</span> Fill in the 54 squares</h3>
+                <p class="rc-build-hint">
+                  Pick a colour and click squares — or click one square and just type
+                  <kbd>w</kbd> <kbd>y</kbd> <kbd>g</kbd> <kbd>b</kbd> <kbd>o</kbd> <kbd>r</kbd>,
+                  and the cursor walks along by itself. Arrow keys move it, backspace clears.
+                </p>
+
+                <div class="rc-palette" id="rc-palette" role="group" aria-label="Colour to paint with"></div>
+                <div class="rc-net" id="rc-net" aria-label="Your cube, unfolded"></div>
+                <p class="rc-net-note">
+                  This is your cube unfolded flat, the way a cardboard box opens out. If you lose
+                  track of which square is which, check the 3D cube — it shows exactly what you
+                  have typed so far.
+                </p>
+                <div class="rc-status is-waiting" id="rc-status" role="status" aria-live="polite"></div>
+
+                <div class="rc-input-actions">
+                  <button class="rc-action-btn rc-btn-solve" id="rc-solve" type="button">Solve it →</button>
+                  <button class="rc-action-btn rc-btn-ghost" id="rc-clear" type="button">Clear &amp; enter my cube</button>
+                  <button class="rc-action-btn rc-btn-ghost" id="rc-random" type="button">Random scramble</button>
+                  <button class="rc-action-btn rc-btn-ghost" id="rc-reset-cube" type="button">Solved cube</button>
+                </div>
+              </div>
+
+              <div class="rc-build-view">
+                <div class="rc-canvas-wrap">
+                  <canvas id="rc-canvas" aria-label="3D model of the cube you have typed in"></canvas>
+                </div>
+                <p class="rc-canvas-note">Drag to spin the view. This is your cube — it updates as you type.</p>
+
+                <details class="rc-freeplay">
+                  <summary>Turn this cube by hand instead</summary>
+                  <div class="rc-move-groups">
+                    <div class="rc-move-group">
+                      <span>Up (U)</span>
+                      <div class="rc-move-group-btns">
+                        <button class="rc-move-btn" data-move="U" type="button" aria-label="Up face clockwise">↻</button>
+                        <button class="rc-move-btn" data-move="U'" type="button" aria-label="Up face anticlockwise">↺</button>
+                      </div>
+                    </div>
+                    <div class="rc-move-group">
+                      <span>Down (D)</span>
+                      <div class="rc-move-group-btns">
+                        <button class="rc-move-btn" data-move="D" type="button" aria-label="Down face clockwise">↻</button>
+                        <button class="rc-move-btn" data-move="D'" type="button" aria-label="Down face anticlockwise">↺</button>
+                      </div>
+                    </div>
+                    <div class="rc-move-group">
+                      <span>Right (R)</span>
+                      <div class="rc-move-group-btns">
+                        <button class="rc-move-btn" data-move="R" type="button" aria-label="Right face clockwise">↻</button>
+                        <button class="rc-move-btn" data-move="R'" type="button" aria-label="Right face anticlockwise">↺</button>
+                      </div>
+                    </div>
+                    <div class="rc-move-group">
+                      <span>Left (L)</span>
+                      <div class="rc-move-group-btns">
+                        <button class="rc-move-btn" data-move="L" type="button" aria-label="Left face clockwise">↻</button>
+                        <button class="rc-move-btn" data-move="L'" type="button" aria-label="Left face anticlockwise">↺</button>
+                      </div>
+                    </div>
+                    <div class="rc-move-group">
+                      <span>Front (F)</span>
+                      <div class="rc-move-group-btns">
+                        <button class="rc-move-btn" data-move="F" type="button" aria-label="Front face clockwise">↻</button>
+                        <button class="rc-move-btn" data-move="F'" type="button" aria-label="Front face anticlockwise">↺</button>
+                      </div>
+                    </div>
+                    <div class="rc-move-group">
+                      <span>Back (B)</span>
+                      <div class="rc-move-group-btns">
+                        <button class="rc-move-btn" data-move="B" type="button" aria-label="Back face clockwise">↻</button>
+                        <button class="rc-move-btn" data-move="B'" type="button" aria-label="Back face anticlockwise">↺</button>
+                      </div>
+                    </div>
+                  </div>
+                </details>
+              </div>
+            </div>
+
+            <!-- Step 3: the player -->
+            <div class="rc-player" id="rc-player" hidden>
+              <h3><span class="rc-step-num">3</span> Do these moves on your cube</h3>
+              <div class="rc-move-card" id="rc-move-card"></div>
+              <div class="rc-progress"><div class="rc-progress-fill" id="rc-progress-fill"></div></div>
+              <p class="rc-progress-text" id="rc-progress-text" aria-live="polite"></p>
+              <div class="rc-player-row">
+                <button class="rc-action-btn rc-btn-ghost" id="rc-prev" type="button">← Back</button>
+                <button class="rc-action-btn rc-btn-solve" id="rc-next" type="button">Next move →</button>
+                <button class="rc-action-btn rc-btn-scramble" id="rc-play" type="button">▶ Play all</button>
+                <button class="rc-action-btn rc-btn-ghost" id="rc-restart" type="button">Start over</button>
+                <button class="rc-action-btn rc-btn-ghost" id="rc-copy" type="button">Copy the moves</button>
+                <label class="rc-speed-label">Speed
+                  <input type="range" id="rc-speed" min="200" max="1700" value="1000" aria-label="Playback speed" />
+                </label>
+              </div>
+              <p class="rc-player-tip">Tip: use the ← and → arrow keys to step through without hunting for the buttons.</p>
+            </div>
+
+            <div class="rc-plan" id="rc-plan"></div>
+          </section>
+
+          <!-- HOW THE SOLVER THINKS -->
+          <section class="rc-card" style="--card-accent:#0ea5e9;">
+            <h2>How This Page Knows Your Cube Is Impossible</h2>
+            <p>
+              Before it tries to solve anything, the page runs five checks on the colours you
+              typed in. The first two are obvious. The last three are theorems.
+            </p>
+            <ol class="rc-check-list">
+              <li><strong>Nine of each colour.</strong> Six colours, fifty-four stickers.</li>
+              <li><strong>Every corner is a real corner, every edge a real edge.</strong> There is no
+                white-yellow edge on a cube, because white and yellow are on opposite sides.</li>
+              <li><strong>Corner twists add up to a multiple of 3.</strong> You can never twist just
+                one corner in place. Twist one, and another two must be twisted to compensate.</li>
+              <li><strong>Edge flips add up to an even number.</strong> Same idea: edges only ever
+                flip in pairs.</li>
+              <li><strong>Corner swaps and edge swaps have matching parity.</strong> Swapping two
+                corners forces two edges to swap as well.</li>
+            </ol>
+            <div class="rc-callout">
+              <strong>This is where the "divide by 12" comes from.</strong> If you pulled a cube apart
+              and reassembled it at random, only 1 in 12 of the arrangements could ever be twisted
+              back to solved — 3 for corner twists, 2 for edge flips, 2 for parity. So if the page
+              tells you your cube can't be solved, it is not being difficult: either a sticker got
+              mistyped, or somebody once forced a piece back in the wrong way.
+            </div>
+          </section>
+
+          <!-- THE METHOD -->
+          <section class="rc-card" style="--card-accent:#14b8a6;">
+            <h2>The Seven Stages of the Solution</h2>
+            <p>
+              The solution above is the <strong>beginner's method</strong> — the route almost every
+              cuber learns first. Instead of solving the cube all at once, it breaks an impossible
+              problem into seven possible ones, and never undoes work it has already done.
+            </p>
+            <div class="rc-method-grid">
+              <div class="rc-method-card"><span>1</span><strong>White cross</strong><em>Four edges around the white centre, matching the side colours too.</em></div>
+              <div class="rc-method-card"><span>2</span><strong>White corners</strong><em>The bottom layer finished, one corner at a time.</em></div>
+              <div class="rc-method-card"><span>3</span><strong>Middle layer</strong><em>Four edges slotted in from above. Two layers done.</em></div>
+              <div class="rc-method-card"><span>4</span><strong>Yellow cross</strong><em>Turn the top edges the right way up — position comes later.</em></div>
+              <div class="rc-method-card"><span>5</span><strong>Yellow face</strong><em>Sune and its mirror twist the last corners upright.</em></div>
+              <div class="rc-method-card"><span>6</span><strong>Corners home</strong><em>Cycle the corners into their proper places.</em></div>
+              <div class="rc-method-card"><span>7</span><strong>Edges home</strong><em>One three-edge cycle finishes the cube.</em></div>
+            </div>
+            <p>
+              Notice what stages 4 and 5 do: one fixes <em>which way up</em> pieces are, the other
+              fixes <em>where they are</em>. Separating orientation from position is the single idea
+              that makes the last layer solvable by a human. Every serious method — CFOP, Roux,
+              ZZ — is a different way of splitting the same two questions.
+            </p>
+            <div class="rc-callout rc-callout--purple">
+              <strong>Why so many moves?</strong> A beginner solve runs about 130 moves. A speedcuber
+              using CFOP averages around 55. The shortest possible solution for <em>any</em> scramble
+              is 20. The difference is memory: fewer moves means more patterns you have to recognise
+              on sight.
+            </div>
+          </section>
+
+          <!-- PERMUTATIONS & COMBINATIONS -->
+          <section class="rc-card" style="--card-accent:#ef4444;">
+            <h2>Permutations &amp; Combinations — 43 Quintillion Positions</h2>
+            <p>
+              The Rubik's Cube has exactly <strong>43,252,003,274,489,856,000</strong> possible
+              configurations. That number — roughly 43 quintillion — comes directly from counting
+              the ways the pieces can be arranged using combinatorics.
+            </p>
+
+            <div class="rc-perm-display">
+              <div class="rc-perm-number">43,252,003,274,489,856,000</div>
+              <div class="rc-perm-label">Distinct reachable positions of a 3×3×3 Rubik's Cube</div>
+            </div>
+
+            <h3>Where does that number come from?</h3>
+            <p>
+              The cube has <strong>8 corner pieces</strong>, <strong>12 edge pieces</strong>,
+              and <strong>6 center pieces</strong> (which never move relative to each other).
+              Mathematicians calculate the arrangements like this:
+            </p>
+            
+            <div class="rc-math-grid">
+              <div class="rc-math-card">
+                <strong>8! = 40,320</strong>
+                <span>Corner arrangements</span>
+              </div>
+              <div class="rc-math-card">
+                <strong>3⁷ = 2,187</strong>
+                <span>Corner orientations</span>
+              </div>
+              <div class="rc-math-card">
+                <strong>12! / 2 = 239,500,800</strong>
+                <span>Edge arrangements</span>
+              </div>
+              <div class="rc-math-card">
+                <strong>2¹¹ = 2,048</strong>
+                <span>Edge orientations</span>
+              </div>
+            </div>
+            
+            <p>
+              Multiply the four numbers above together — the halved edge count already builds in the
+              parity constraint (not every arrangement is physically reachable without taking the cube apart):
+            </p>
+
+            <div class="rc-algo-box rc-algo-box--count">
+              <div class="algo-moves algo-moves--count">8! × 3⁷ × (12! ÷ 2) × 2¹¹</div>
+              <div class="algo-desc">Total Valid Permutations</div>
+            </div>
+            
+            <div class="rc-callout">
+              <strong>To put that in perspective:</strong> If you could examine one billion positions per second,
+              it would take <strong>1,371 years</strong> to check every single one. The universe
+              is roughly 13.8 billion years old — if you started checking a new cube every second at the
+              Big Bang, you'd have only explored a tiny fraction of them by now.
+            </div>
+            
+            <div class="rc-sep"></div>
+
+            <h3>A Permutation Is an Arrangement</h3>
+            <p>
+              A <strong>permutation</strong> is any reordering of a set of objects. When you turn
+              a face of the Rubik's Cube, you permute 8 pieces (4 corners and 4 edges around that
+              face). A <strong>combination</strong> is a selection where order doesn't matter —
+              but on the cube, order always matters (rotating U then R gives a different result
+              than R then U). This is what makes the cube's math so rich.
+            </p>
+          </section>
+
+          <!-- GROUP THEORY -->
+          <section class="rc-card" style="--card-accent:#8b5cf6;">
+            <h2>Group Theory — The Algebra of the Cube</h2>
+            <p>
+              The set of all possible Rubik's Cube moves forms a mathematical structure called
+              a <strong>group</strong> — specifically the <em>Rubik's Cube Group</em>, written
+              as a subgroup of the symmetric group on 48 elements (the 48 visible stickers,
+              excluding centers). This is a branch of abstract algebra that studies symmetry.
+            </p>
+
+            <div class="rc-callout rc-callout--purple">
+              <strong>What Makes Something a Group?</strong>
+              A group is a set with an operation (here: "apply move after move") that satisfies four axioms. The Rubik's Cube perfectly demonstrates all of them:
+            </div>
+            <div class="rc-group-grid">
+              <div class="rc-group-card">
+                <div class="rc-axiom-head"><span class="rc-axiom-num">1</span> <strong>Closure</strong></div>
+                <p>Any sequence of moves produces another valid cube state. You can never reach an "illegal" position by turning faces. The result of any two moves is also a move in the group.</p>
+              </div>
+              <div class="rc-group-card">
+                <div class="rc-axiom-head"><span class="rc-axiom-num">2</span> <strong>Associativity</strong></div>
+                <p>The order of grouping doesn't change the result: <code class="rc-code-accent">(A·B)·C = A·(B·C)</code>. Applying three moves is the same regardless of which two you group together first.</p>
+              </div>
+              <div class="rc-group-card">
+                <div class="rc-axiom-head"><span class="rc-axiom-num">3</span> <strong>Identity</strong></div>
+                <p>There exists a "do nothing" move — the solved state. Applying it changes nothing. In math notation this is often written as <code class="rc-code-accent">e</code> or <code class="rc-code-accent">I</code>.</p>
+              </div>
+              <div class="rc-group-card">
+                <div class="rc-axiom-head"><span class="rc-axiom-num">4</span> <strong>Inverse</strong></div>
+                <p>Every move has a reverse. <code class="rc-code-accent">U</code> followed by <code class="rc-code-accent">U'</code> returns to the original state. Every scramble can be exactly unscrambled.</p>
+              </div>
+            </div>
+
+            <div class="rc-sep"></div>
+            <h3>The Order of a Move</h3>
+            <p>
+              In group theory, the <strong>order</strong> is how many times you must
+              apply a move (or sequence of moves) to get back to the identity (the solved state).
+            </p>
+            <div class="rc-fact-row" style="margin-bottom: 1rem;">
+              <span class="rc-fact">U has order 4 (U U U U = solved)</span>
+              <span class="rc-fact">U U' = identity</span>
+              <span class="rc-fact">"Right-Hand Algorithm" (R U R' U') has order 6</span>
+              <span class="rc-fact">Group order = 43,252,003,274,489,856,000</span>
+            </div>
+            <p>
+              A single face turn like <code>U</code> has order 4. But sequences can have surprisingly large orders. The common "Right-Hand Algorithm" (<code>R U R' U'</code>) has order 6 — applying it 6 times returns the cube to its original state. Some complex combinations have orders in the thousands, meaning you'd have to repeat the exact same sequence thousands of times before the cube accidentally solved itself again!
+            </p>
+          </section>
+
+          <!-- NOTATION & ALGORITHMS -->
+          <section class="rc-card" style="--card-accent:#f59e0b;">
+            <h2>Notation &amp; Algorithms</h2>
+            <p>
+              Speedcubers around the world share solutions using <strong>Singmaster notation</strong>,
+              invented by mathematician David Singmaster in 1979. Six letters, three modifiers,
+              and infinite precision.
+            </p>
+
+            <div class="rc-notation-grid rc-notation-grid--dark">
+              <div class="rc-notation-card rc-notation-card--dark">
+                <div class="nc-symbol">U / U'</div>
+                <div class="nc-name">Up</div>
+                <div class="nc-desc">Top face clockwise / counterclockwise</div>
+              </div>
+              <div class="rc-notation-card rc-notation-card--dark">
+                <div class="nc-symbol">D / D'</div>
+                <div class="nc-name">Down</div>
+                <div class="nc-desc">Bottom face clockwise / counterclockwise</div>
+              </div>
+              <div class="rc-notation-card rc-notation-card--dark">
+                <div class="nc-symbol">R / R'</div>
+                <div class="nc-name">Right</div>
+                <div class="nc-desc">Right face clockwise / counterclockwise</div>
+              </div>
+              <div class="rc-notation-card rc-notation-card--dark">
+                <div class="nc-symbol">L / L'</div>
+                <div class="nc-name">Left</div>
+                <div class="nc-desc">Left face clockwise / counterclockwise</div>
+              </div>
+              <div class="rc-notation-card rc-notation-card--dark">
+                <div class="nc-symbol">F / F'</div>
+                <div class="nc-name">Front</div>
+                <div class="nc-desc">Front face clockwise / counterclockwise</div>
+              </div>
+              <div class="rc-notation-card rc-notation-card--dark">
+                <div class="nc-symbol">2 suffix</div>
+                <div class="nc-name">Double</div>
+                <div class="nc-desc">U2 = turn the face 180° (two quarter turns)</div>
+              </div>
+            </div>
+
+            <h3>Famous Algorithms</h3>
+            <div class="rc-algo-box">
+              <div class="algo-name">Right-Hand Algorithm — Cycles 3 corners</div>
+              <div class="algo-moves">R U R' U'</div>
+              <div class="algo-desc">The most common 4-move sequence in speedcubing. Repeating it 6 times returns the cube to its original state. Used in dozens of multi-step algorithms.</div>
+            </div>
+            <div class="rc-algo-box">
+              <div class="algo-name">Sune — Orients corners on the last layer</div>
+              <div class="algo-moves">R U R' U R U2 R'</div>
+              <div class="algo-desc">A 7-move algorithm that rotates 3 corners of the top face. Key to many OLL (Orient Last Layer) solutions.</div>
+            </div>
+            <div class="rc-algo-box">
+              <div class="algo-name">T Permutation — Swaps 2 corners + 2 edges</div>
+              <div class="algo-moves">R U R' U' R' F R2 U' R' U' R U R' F'</div>
+              <div class="algo-desc">A 14-move PLL (Permute Last Layer) algorithm. Swaps two adjacent corners and two adjacent edges simultaneously, leaving all other pieces untouched.</div>
+            </div>
+            <div class="rc-algo-box">
+              <div class="algo-name">God's Algorithm — Maximum moves needed</div>
+              <div class="algo-moves">≤ 20 moves (half-turn metric)</div>
+              <div class="algo-desc">Proven in 2010 by a team using Google's computers: every possible scramble can be solved in 20 or fewer moves. This is called "God's Number." Finding the optimal solution required 35 CPU-years of computation.</div>
+            </div>
+
+            <h3>How Speedcubers Use Algorithms</h3>
+            <p>
+              The CFOP method (Cross, F2L, OLL, PLL) breaks the solve into four stages, each
+              handled by memorized algorithms. Top speedcubers know over 100 algorithms and execute
+              them in under 5 seconds total — their fingers move faster than conscious thought,
+              guided purely by pattern recognition trained into muscle memory.
+            </p>
+          </section>
+
+          <!-- 3D SPATIAL THINKING -->
+          <section class="rc-card" style="--card-accent:#3b82f6;">
+            <h2>3D Spatial Thinking</h2>
+            <p>
+              The Rubik's Cube is one of the most powerful tools ever invented for developing
+              <strong>spatial reasoning</strong> — the ability to mentally rotate, reflect, and
+              track objects in three dimensions. Brain imaging studies show that experienced
+              cubers have measurably larger activation in the parietal lobe (the brain's spatial
+              processing center) while solving.
+            </p>
+            <p>
+              When you solve a Rubik's Cube, you must simultaneously:
+            </p>
+            <div class="rc-fact-row">
+              <span class="rc-fact">Track 20 moving pieces at once</span>
+              <span class="rc-fact">Predict positions after 5+ future moves</span>
+              <span class="rc-fact">Maintain 3D orientation while rotating the cube</span>
+              <span class="rc-fact">Recognize patterns across 6 faces simultaneously</span>
+            </div>
+            <p>
+              Architects, surgeons, pilots, engineers, and mathematicians all rely on strong
+              spatial reasoning. Research from universities including Carnegie Mellon and MIT
+              has found that Rubik's Cube practice measurably improves spatial IQ scores —
+              making it one of the few toys with documented cognitive benefits.
+            </p>
+            <p>
+              The cube also introduces <strong>coordinate systems</strong>: every piece can be
+              described by (x, y, z) coordinates, and every move is a rotation of a slice
+              around one axis. This is the same mathematics used in 3D animation, robotics,
+              flight simulation, and spacecraft attitude control.
+            </p>
+          </section>
+
+          <!-- PATTERN RECOGNITION & GOD'S NUMBER -->
+          <section class="rc-card" style="--card-accent:#22c55e;">
+            <h2>Pattern Recognition &amp; God's Number</h2>
+            <p>
+              A scrambled Rubik's Cube looks like chaos. A skilled cuber looks at the same
+              cube and sees <em>patterns</em> — recognizable configurations with known solutions.
+              This is a profound illustration of how mathematical expertise transforms perception:
+              what looks random to a novice is structured information to an expert.
+            </p>
+
+            <h3>God's Number = 20</h3>
+            <p>
+              In 2010, mathematicians Tomas Rokicki, Herbert Kociemba, Morley Davidson, and
+              John Dethridge proved the following: no matter how scrambled a Rubik's Cube is,
+              it can always be solved in <strong>20 or fewer moves</strong>. This maximum is
+              called <strong>God's Number</strong> — the number of moves an omniscient being
+              would need in the worst case.
+            </p>
+            <p>
+              The proof required checking all 43 quintillion positions. They used a symmetry
+              reduction to collapse it to about 2.2 billion equivalence classes, then verified
+              each using computers donated by Google. The total computation took 35 CPU-years,
+              completed in weeks on modern hardware.
+            </p>
+
+            <h3>Pattern Databases in AI Solvers</h3>
+            <p>
+              The algorithm that enabled God's Number proof — <strong>Kociemba's two-phase algorithm</strong> —
+              works by recognizing patterns. Phase 1 finds a short sequence that moves the cube
+              into a special subgroup where only certain moves are needed. Phase 2 solves from
+              there. This two-stage pattern recognition makes it fast enough to run on a phone.
+            </p>
+            <p>
+              Modern AI solvers (like DeepCubeA from USC, 2019) use deep reinforcement learning —
+              the AI taught itself to solve the cube without human knowledge of algorithms, purely
+              by exploring positions and learning which patterns lead toward solved. It solves in
+              an average of 28 moves and finds solutions humans hadn't written algorithms for.
+            </p>
+          </section>
+
+          <!-- PRACTICE PROBLEMS -->
+          <section class="rc-card" style="--card-accent:#8b5cf6;">
+            <h2>Practice Problems</h2>
+            <div class="rc-score-bar"><span id="rc-score">0 / 6 correct</span></div>
+            <div class="rc-practice">
+
+              <div class="rc-problem" id="rc-prob-1">
+                <label for="rc-ans-1">1. How many quarter-turn moves does it take to return a single face (like U) to its original position?</label>
+                <div class="rc-problem-input-row">
+                  <input type="text" class="rc-ans-input" id="rc-ans-1" placeholder="Number">
+                  <button class="rc-check-btn" onclick="rcCheck(1,4,0)">Check</button>
+                  <span class="rc-feedback" id="rc-fb-1" aria-live="polite"></span>
+                </div>
+                <div class="rc-hint" id="rc-hint-1">Hint: Each turn is 90°. A full rotation is 360°. 360 ÷ 90 = ?</div>
+              </div>
+
+              <div class="rc-problem" id="rc-prob-2">
+                <label for="rc-ans-2">2. How many times must you apply the "Right-Hand Algorithm" (R U R' U') to return the cube to its original state?</label>
+                <div class="rc-problem-input-row">
+                  <input type="text" class="rc-ans-input" id="rc-ans-2" placeholder="Number">
+                  <button class="rc-check-btn" onclick="rcCheck(2,6,0)">Check</button>
+                  <span class="rc-feedback" id="rc-fb-2" aria-live="polite"></span>
+                </div>
+                <div class="rc-hint" id="rc-hint-2">Hint: This is the "order" of the move. The lesson states it directly.</div>
+              </div>
+
+              <div class="rc-problem" id="rc-prob-3">
+                <label for="rc-ans-3">3. The Rubik's Cube has 8 corner pieces. How many ways can 8 distinct objects be arranged? (Calculate 8! — "8 factorial")</label>
+                <div class="rc-problem-input-row">
+                  <input type="text" class="rc-ans-input" id="rc-ans-3" placeholder="Number">
+                  <button class="rc-check-btn" onclick="rcCheck(3,40320,0)">Check</button>
+                  <span class="rc-feedback" id="rc-fb-3" aria-live="polite"></span>
+                </div>
+                <div class="rc-hint" id="rc-hint-3">Hint: 8! = 8×7×6×5×4×3×2×1 = ?</div>
+              </div>
+
+              <div class="rc-problem" id="rc-prob-4">
+                <label for="rc-ans-4">4. What is God's Number — the maximum number of moves needed to solve any Rubik's Cube position?</label>
+                <div class="rc-problem-input-row">
+                  <input type="text" class="rc-ans-input" id="rc-ans-4" placeholder="Number">
+                  <button class="rc-check-btn" onclick="rcCheck(4,20,0)">Check</button>
+                  <span class="rc-feedback" id="rc-fb-4" aria-live="polite"></span>
+                </div>
+                <div class="rc-hint" id="rc-hint-4">Hint: It was proven in 2010. The lesson states it.</div>
+              </div>
+
+              <div class="rc-problem" id="rc-prob-5">
+                <label for="rc-ans-5">5. Take a cube apart and rebuild it with the pieces in random places. Only <strong>1 in N</strong> of those rebuilds can ever be twisted back to solved. What is N?</label>
+                <div class="rc-problem-input-row">
+                  <input type="text" class="rc-ans-input" id="rc-ans-5" placeholder="Number">
+                  <button class="rc-check-btn" onclick="rcCheck(5,12,0)">Check</button>
+                  <span class="rc-feedback" id="rc-fb-5" aria-live="polite"></span>
+                </div>
+                <div class="rc-hint" id="rc-hint-5">Hint: 3 ways the corner twists can land, times 2 for edge flips, times 2 for parity. Multiply them.</div>
+              </div>
+
+              <div class="rc-problem" id="rc-prob-6">
+                <label for="rc-ans-6">6. The Rubik's Cube has approximately 4.3 × 10<sup>N</sup> positions. What is N? (i.e., 43 quintillion ≈ 4.3 × 10 to the power of what?)</label>
+                <div class="rc-problem-input-row">
+                  <input type="text" class="rc-ans-input" id="rc-ans-6" placeholder="N = ?">
+                  <button class="rc-check-btn" onclick="rcCheck(6,19,0)">Check</button>
+                  <span class="rc-feedback" id="rc-fb-6" aria-live="polite"></span>
+                </div>
+                <div class="rc-hint" id="rc-hint-6">Hint: 43,252,003,274,489,856,000 ≈ 4.3 × 10¹⁹. Count the digits after 4.3.</div>
+              </div>
+
+            </div>
+          </section>
+
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu" crossorigin="anonymous"></script>
+
+  <!-- CUBE MODEL, SOLVER, AND THE INTERACTIVE LAB -->
+  <script src="../../assets/js/lessons/rubiks-cube-solver.js"></script>
+  <script src="../../assets/js/lessons/rubiks-cube-lab.js"></script>
+
+  <!-- PRACTICE PROBLEMS -->
+  <script>
+  (function () {
+    const total  = 6;
+    const solved = new Set();
+
+    function updateScore() {
+      const el = document.getElementById('rc-score');
+      if (el) el.textContent = `${solved.size} / ${total} correct`;
+      if (solved.size === total && el) el.style.color = '#22c55e';
+    }
+
+    window.rcCheck = function (num, correct, tol) {
+      const input = document.getElementById('rc-ans-' + num);
+      const fb    = document.getElementById('rc-fb-'  + num);
+      const hint  = document.getElementById('rc-hint-'+ num);
+      const prob  = document.getElementById('rc-prob-'+ num);
+      const val   = parseFloat(input.value);
+      const tol_  = tol || 0;
+
+      fb.className = 'rc-feedback';
+      if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.classList.add('wrong'); return; }
+
+      if (Math.abs(val - correct) <= Math.max(tol_, 0.001)) {
+        fb.textContent = 'Correct!'; fb.classList.add('correct');
+        hint.classList.remove('visible');
+        input.style.borderColor = '#22c55e'; input.disabled = true;
+        prob.classList.add('solved');
+        if (!solved.has(num)) { solved.add(num); updateScore(); }
+      } else {
+        fb.textContent = 'Try again'; fb.classList.add('wrong');
+        hint.classList.add('visible');
+        input.style.borderColor = '#ef4444';
+        prob.classList.remove('rc-shake'); void prob.offsetWidth; prob.classList.add('rc-shake');
+      }
+    };
+
+    document.querySelectorAll('.rc-ans-input').forEach(input => {
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') input.closest('.rc-problem').querySelector('.rc-check-btn').click();
+      });
+    });
+    updateScore();
+  })();
+  </script>
+
+  <script src="../../assets/js/classroom-animations.js"></script>
+  <script src="../../assets/js/lesson-layout.js"></script>
+<script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

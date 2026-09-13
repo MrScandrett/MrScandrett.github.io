@@ -1,0 +1,1358 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>1v1 Game AI: Minimax · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="1v1 Game AI: Minimax lesson in the AI Origins unit." />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lessons/minimax-1v1.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 300px; --ll-accent: #134c97; --ll-tab-active: #1c6ed7; --ll-tab-active-bg: rgba(28,110,215,0.10); }
+
+    .minimax-page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 1rem 2.5rem;
+      font-family: var(--font-sans);
+    }
+
+    .minimax-lab-ui {
+      display: grid;
+      gap: 1rem;
+      background: linear-gradient(180deg, #f8fbff 0%, #f4f8ff 100%);
+    }
+
+    .minimax-card {
+      border: 1px solid #d8e0ed;
+      border-radius: 16px;
+      background: #ffffff;
+      padding: 1rem;
+      box-shadow: 0 10px 24px rgba(12, 26, 49, 0.07);
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .minimax-card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .minimax-card-head h3 {
+      margin: 0;
+      font-size: 1.02rem;
+      letter-spacing: 0.01em;
+    }
+
+    .minimax-turn-pill {
+      margin: 0;
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 0.33rem 0.58rem;
+      border: 1px solid #d1dbeb;
+      border-radius: 999px;
+      background: #f6f9ff;
+    }
+
+    .minimax-ai-choice {
+      margin: 0;
+      color: #324c71;
+      font-size: 0.92rem;
+      min-height: 1.25rem;
+    }
+
+    .minimax-tension {
+      display: grid;
+      gap: 0.48rem;
+      margin-bottom: 0.1rem;
+    }
+
+    .minimax-tension-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      align-items: baseline;
+      color: #e9dec0;
+    }
+
+    .minimax-tension-head strong {
+      font-size: 0.82rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .minimax-tension-head span {
+      font-size: 0.82rem;
+      color: #cab98d;
+    }
+
+    .minimax-tension-gauge {
+      position: relative;
+      min-height: 86px;
+      padding: 0.35rem 0.25rem 0.15rem;
+      border-radius: 14px;
+      background: rgba(16, 26, 19, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+    }
+
+    .minimax-tension-gauge svg {
+      display: block;
+      width: 100%;
+      height: 72px;
+    }
+
+    .minimax-gauge-needle {
+      transform-origin: 50% 53px;
+      transition: transform 260ms ease;
+      filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45));
+    }
+
+    .minimax-gauge-legend {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: #d9cfb6;
+      padding: 0 0.2rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Chalkboard card frame (wooden tray feel) ───────────────── */
+    /* ══════════════════════════════════════════════════════════════
+       CLASSROOM CHALKBOARD — picture-frame style
+       ══════════════════════════════════════════════════════════════ */
+
+    /* Wooden picture frame — the card itself IS the frame */
+    .minimax-card-board {
+      background:
+        repeating-linear-gradient(
+          92deg,
+          transparent 0px, transparent 14px,
+          rgba(0, 0, 0, 0.03) 14px, rgba(0, 0, 0, 0.03) 15px
+        ),
+        linear-gradient(165deg, #a8713e 0%, #7c4c24 30%, #5e3510 55%, #8c5c2e 80%, #a06830 100%);
+      border: none;
+      border-radius: 6px;
+      box-shadow:
+        0 18px 48px rgba(0, 0, 0, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.35),
+        inset 2px 0 0 rgba(255, 255, 255, 0.08),
+        inset -2px 0 0 rgba(0, 0, 0, 0.2);
+    }
+
+    .minimax-card-board .minimax-card-head {
+      padding-top: 0.9rem;
+    }
+
+    .minimax-card-board .minimax-card-head h3 {
+      color: #f2e0be;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+    .minimax-turn-pill {
+      background: rgba(0, 0, 0, 0.28);
+      border-color: rgba(255, 255, 255, 0.14);
+      color: #e8d4a0;
+    }
+
+    .minimax-ai-choice {
+      color: #c8b070;
+    }
+
+    /* ── Board wrap — provides the wooden margin visible around the board ── */
+    .minimax-board-wrap {
+      display: flex;
+      justify-content: center;
+      padding: 0.2rem 2rem 1.6rem; /* extra bottom padding = chalk tray space */
+      position: relative;
+    }
+
+    /* Chalk tray ledge at the bottom of the frame */
+    .minimax-board-wrap::after {
+      content: '';
+      position: absolute;
+      bottom: 0.42rem;
+      left: 1.4rem;
+      right: 1.4rem;
+      height: 0.85rem;
+      background: linear-gradient(180deg, #6a3e14 0%, #4e2a08 60%, #6a3e14 100%);
+      border-radius: 3px;
+      box-shadow:
+        0 3px 10px rgba(0, 0, 0, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.14),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+    }
+
+    /* Chalk piece sitting on the tray */
+    .minimax-board-wrap::before {
+      content: '';
+      position: absolute;
+      bottom: 0.7rem;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2.2rem;
+      height: 0.55rem;
+      background: linear-gradient(180deg, #f0ece0 0%, #d8d4c4 50%, #e8e4d4 100%);
+      border-radius: 3px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+      z-index: 1;
+    }
+
+    /* ── Chalkboard surface ─────────────────────────────────────── */
+    .minimax-board {
+      position: relative;
+      width: min(100%, 380px);
+      aspect-ratio: 1 / 1;
+      background:
+        radial-gradient(ellipse at 25% 25%, rgba(255, 255, 255, 0.018) 0%, transparent 55%),
+        radial-gradient(ellipse at 75% 75%, rgba(0, 0, 0, 0.06) 0%, transparent 55%),
+        linear-gradient(140deg, #3d5f42 0%, #2e5035 35%, #2a4a30 60%, #375840 100%);
+      border: none;
+      border-radius: 2px;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0; /* grid lines drawn as cell borders */
+      box-shadow:
+        inset 0 2px 16px rgba(0, 0, 0, 0.35),
+        inset 0 0 50px rgba(0, 0, 0, 0.12);
+    }
+
+    .minimax-board::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300' preserveAspectRatio='none'%3E%3Cpath d='M100 6 C96 90 105 195 98 294' stroke='rgba(232,228,206,0.42)' stroke-width='2.6' stroke-linecap='round' fill='none'/%3E%3Cpath d='M200 8 C205 108 192 202 203 292' stroke='rgba(232,228,206,0.42)' stroke-width='2.6' stroke-linecap='round' fill='none'/%3E%3Cpath d='M8 100 C94 97 195 107 292 99' stroke='rgba(232,228,206,0.42)' stroke-width='2.6' stroke-linecap='round' fill='none'/%3E%3Cpath d='M10 201 C100 195 196 208 291 198' stroke='rgba(232,228,206,0.42)' stroke-width='2.6' stroke-linecap='round' fill='none'/%3E%3C/svg%3E") center/100% 100% no-repeat;
+      mix-blend-mode: screen;
+      opacity: 0.9;
+      z-index: 2;
+    }
+
+    /* ── Individual cells ───────────────────────────────────────── */
+    .minimax-cell {
+      position: relative;
+      border: none;
+      background: transparent; /* board surface shows through */
+      color: rgba(245, 242, 226, 0.92);
+      font: 700 clamp(2.4rem, 9vw, 3.8rem) / 1 'Caveat', cursive;
+      cursor: pointer;
+      transition: background 140ms ease;
+      z-index: 1;
+    }
+
+    /* Remove old corner radii — board is flat now */
+    .minimax-cell:nth-child(1),
+    .minimax-cell:nth-child(3),
+    .minimax-cell:nth-child(7),
+    .minimax-cell:nth-child(9) { border-radius: 0; }
+
+    /* All cells transparent (board colour) */
+    .minimax-cell:nth-child(odd),
+    .minimax-cell:nth-child(even) { background: transparent; }
+
+    /* ── Chalk grid lines drawn as cell borders ─────────────────── */
+    /* Vertical lines: right border on columns 1 and 2 */
+    .minimax-cell:not(:nth-child(3)):not(:nth-child(6)):not(:nth-child(9)) {
+      border-right: 2.5px solid rgba(232, 228, 206, 0.58);
+    }
+    /* Horizontal lines: bottom border on rows 1 and 2 */
+    .minimax-cell:not(:nth-child(7)):not(:nth-child(8)):not(:nth-child(9)) {
+      border-bottom: 2.5px solid rgba(232, 228, 206, 0.58);
+    }
+
+    .minimax-cell:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.055);
+    }
+
+    .minimax-cell.has-ghost:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .minimax-cell:focus-visible {
+      outline: 2px solid rgba(220, 215, 195, 0.65);
+      outline-offset: -2px;
+      z-index: 4;
+    }
+
+    .minimax-cell:disabled {
+      cursor: not-allowed;
+      opacity: 1;
+    }
+
+    /* ── Chalk X — white chalk ───────────────────────────────────── */
+    .minimax-cell.is-max {
+      color: rgba(245, 242, 226, 0.96);
+      text-shadow:
+        0 0 8px rgba(255, 255, 255, 0.20),
+        1px 1px 3px rgba(0, 0, 0, 0.5),
+        -0.5px -0.5px 1px rgba(255, 255, 255, 0.12);
+      filter: url(#chalk-rough);
+    }
+
+    /* ── Chalk O — same white chalk as X ────────────────────────── */
+    .minimax-cell.is-min {
+      color: rgba(245, 242, 226, 0.90);
+      text-shadow:
+        0 0 8px rgba(255, 255, 255, 0.18),
+        1px 1px 3px rgba(0, 0, 0, 0.5),
+        -0.5px -0.5px 1px rgba(255, 255, 255, 0.10);
+      filter: url(#chalk-rough);
+    }
+
+    /* ── Last-move & AI-choice badges ───────────────────────────── */
+    .minimax-cell.is-last-move {
+      box-shadow: inset 0 0 0 2px rgba(232, 228, 206, 0.45);
+    }
+
+    .minimax-cell.is-last-move::after {
+      content: "LAST";
+      position: absolute;
+      right: 0.22rem;
+      bottom: 0.2rem;
+      font: 700 0.56rem/1 "SFMono-Regular", Menlo, Consolas, monospace;
+      letter-spacing: 0.04em;
+      color: rgba(228, 224, 200, 0.95);
+      background: rgba(22, 42, 26, 0.90);
+      border: 1px solid rgba(200, 196, 172, 0.38);
+      border-radius: 5px;
+      padding: 0.12rem 0.18rem;
+    }
+
+    .minimax-cell.is-ai-choice {
+      box-shadow: inset 0 0 0 2px rgba(255, 210, 90, 0.45);
+    }
+
+    .minimax-cell.is-ai-choice::before {
+      content: "AI";
+      position: absolute;
+      left: 0.22rem;
+      top: 0.2rem;
+      font: 700 0.56rem/1 "SFMono-Regular", Menlo, Consolas, monospace;
+      letter-spacing: 0.04em;
+      color: rgba(255, 218, 130, 0.95);
+      background: rgba(22, 42, 26, 0.90);
+      border: 1px solid rgba(210, 175, 70, 0.42);
+      border-radius: 5px;
+      padding: 0.12rem 0.2rem;
+    }
+
+    .minimax-cell.is-mistake {
+      background: rgba(140, 22, 18, 0.16) !important;
+      box-shadow: inset 0 0 0 1px rgba(255, 122, 100, 0.22), inset 0 0 18px rgba(130, 18, 18, 0.26);
+    }
+
+    .minimax-ghost-score {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      color: rgba(245, 242, 226, 0.38);
+      text-shadow: 0 0 2px rgba(255,255,255,0.62), 0 1px 1px rgba(0,0,0,0.28);
+      font: 700 clamp(1.05rem, 3vw, 1.45rem) / 1 "Caveat", cursive;
+      opacity: 0.92;
+      filter: url(#chalk-rough);
+    }
+
+    .minimax-ghost-score.is-good {
+      color: rgba(232, 245, 226, 0.4);
+    }
+
+    .minimax-ghost-score.is-bad {
+      color: rgba(255, 198, 184, 0.34);
+    }
+
+    .minimax-thinking-mark {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font: 700 clamp(2rem, 8vw, 3.2rem) / 1 "Caveat", cursive;
+      color: rgba(245, 242, 226, 0.34);
+      pointer-events: none;
+      animation: mm-flicker 140ms steps(2) infinite;
+      filter: url(#chalk-rough);
+    }
+
+    .minimax-dust-layer,
+    .minimax-eraser {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .minimax-dust {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(245, 242, 226, 0.82);
+      box-shadow: 0 0 6px rgba(255,255,255,0.3);
+      animation: mm-dust-fall 620ms ease-out forwards;
+    }
+
+    .minimax-eraser {
+      display: none;
+      z-index: 4;
+      overflow: hidden;
+    }
+
+    .minimax-eraser.is-active {
+      display: block;
+    }
+
+    .minimax-eraser-block {
+      position: absolute;
+      top: 12%;
+      bottom: 12%;
+      width: 28%;
+      border-radius: 12px;
+      background:
+        linear-gradient(180deg, #9a6c40 0%, #7c5230 54%, #b38559 100%);
+      border: 1px solid rgba(84, 49, 23, 0.7);
+      box-shadow:
+        0 10px 18px rgba(0,0,0,0.34),
+        inset 0 2px 0 rgba(255,255,255,0.18),
+        inset 0 -3px 0 rgba(0,0,0,0.22);
+      animation: mm-erase-pass 720ms ease-in-out forwards;
+    }
+
+    .minimax-eraser-block::after {
+      content: "";
+      position: absolute;
+      inset: 12% 9%;
+      border-radius: 8px;
+      background: linear-gradient(180deg, #dbc9aa, #bfa47c);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.22);
+      opacity: 0.92;
+    }
+
+    @keyframes mm-dust-fall {
+      0% { transform: translateY(0) scale(1); opacity: 0.85; }
+      100% { transform: translateY(18px) scale(0.35); opacity: 0; }
+    }
+
+    @keyframes mm-flicker {
+      0%, 100% { opacity: 0.18; }
+      50% { opacity: 0.42; }
+    }
+
+    @keyframes mm-erase-pass {
+      0% { transform: translateX(-130%); opacity: 0; }
+      8% { opacity: 1; }
+      50% { transform: translateX(130%); opacity: 1; }
+      100% { transform: translateX(280%); opacity: 0; }
+    }
+
+    /* ── Control buttons on wooden card ─────────────────────────── */
+    .minimax-card-board .minimax-btn-primary {
+      background: #3a6b48;
+      border-color: #4a8a5a;
+      color: #e8f0e0;
+    }
+
+    .minimax-card-board .minimax-btn-primary:hover:not(:disabled) {
+      background: #2e5538;
+    }
+
+    .minimax-card-board .minimax-btn-secondary {
+      background: rgba(0, 0, 0, 0.22);
+      border-color: rgba(255, 255, 255, 0.16);
+      color: #d0c090;
+    }
+
+    .minimax-card-board .minimax-btn-secondary:hover:not(:disabled) {
+      background: rgba(0, 0, 0, 0.32);
+    }
+
+    .minimax-primary-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .minimax-btn {
+      border-radius: 10px;
+      padding: 0.54rem 0.86rem;
+      font: inherit;
+      font-weight: 650;
+      border: 1px solid #b6c5dc;
+      cursor: pointer;
+    }
+
+    .minimax-btn:focus-visible {
+      outline: 3px solid #1c6ed7;
+      outline-offset: 2px;
+    }
+
+    .minimax-btn-primary {
+      background: #134c97;
+      color: #ffffff;
+      border-color: #134c97;
+    }
+
+    .minimax-btn-primary:hover:not(:disabled) {
+      background: #0f3f7c;
+    }
+
+    .minimax-btn-secondary {
+      background: #f8fbff;
+      color: #0f315d;
+    }
+
+    .minimax-btn-secondary:hover:not(:disabled) {
+      background: #edf3fc;
+    }
+
+    .minimax-control-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+      align-items: end;
+    }
+
+    .minimax-field {
+      display: grid;
+      gap: 0.25rem;
+      font-size: 0.88rem;
+    }
+
+    .minimax-field select {
+      border: 1px solid #c9d4e6;
+      border-radius: 10px;
+      padding: 0.45rem 0.55rem;
+      background: #fff;
+      font: inherit;
+      color: #173860;
+    }
+
+    .minimax-toggles {
+      display: grid;
+      gap: 0.42rem;
+      font-size: 0.9rem;
+    }
+
+    .minimax-toggles label {
+      display: flex;
+      align-items: center;
+      gap: 0.42rem;
+    }
+
+    .minimax-metric-tiles {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+
+    .minimax-metric {
+      border: 1px solid #dbe3f0;
+      border-radius: 12px;
+      background: #f9fbff;
+      padding: 0.58rem;
+      display: grid;
+      gap: 0.18rem;
+    }
+
+    .minimax-metric-value {
+      margin: 0;
+      font-size: 1.42rem;
+      font-weight: 760;
+      letter-spacing: -0.01em;
+      color: #123a73;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .minimax-metric-label {
+      margin: 0;
+      font-size: 0.76rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: #4b607d;
+    }
+
+    .minimax-score-strip {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.45rem;
+    }
+
+    .minimax-score-strip li {
+      border: 1px solid #dde4f0;
+      border-radius: 10px;
+      background: #f8fbff;
+      padding: 0.44rem 0.5rem;
+      display: grid;
+      gap: 0.2rem;
+      text-align: center;
+    }
+
+    .minimax-score-strip span {
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .minimax-score-strip strong {
+      font-size: 1.06rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .minimax-note {
+      margin: 0;
+      color: #4a627f;
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+
+    .minimax-log {
+      border: 1px solid #e1e8f3;
+      border-radius: 12px;
+      background: #fbfdff;
+      max-height: 190px;
+      overflow: auto;
+      padding: 0.52rem 0.56rem;
+      display: grid;
+      gap: 0.2rem;
+      font: 0.78rem/1.45 "SFMono-Regular", Menlo, Consolas, monospace;
+      color: #2f455f;
+    }
+
+    .minimax-log.is-expanded {
+      max-height: 370px;
+    }
+
+    .minimax-log-line {
+      border-bottom: 1px solid #edf2f8;
+      padding-bottom: 0.14rem;
+    }
+
+    .minimax-log-line:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .minimax-log-toggle {
+      justify-self: start;
+    }
+
+    .minimax-collapsible {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .minimax-collapsible summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.82rem 0.98rem;
+      border-bottom: 1px solid #e3e9f4;
+      font-weight: 700;
+      color: #213f66;
+    }
+
+    .minimax-collapsible summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .minimax-summary-meta {
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #57739a;
+      font-weight: 600;
+    }
+
+    .minimax-collapsible-body {
+      padding: 0.9rem 0.98rem 1rem;
+      display: grid;
+      gap: 0.58rem;
+    }
+
+    .minimax-tree {
+      display: grid;
+      gap: 0.56rem;
+    }
+
+    .minimax-tree-level {
+      display: grid;
+      gap: 0.34rem;
+    }
+
+    .minimax-tree-level h4 {
+      margin: 0;
+      font-size: 0.82rem;
+      color: #4a617e;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .minimax-tree-nodes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(146px, 1fr));
+      gap: 0.36rem;
+    }
+
+    .minimax-tree-node {
+      border: 1px solid #d6dbe3;
+      border-radius: 10px;
+      background: #f9fbff;
+      padding: 0.42rem 0.48rem;
+      display: grid;
+      gap: 0.18rem;
+    }
+
+    .minimax-tree-node.is-terminal {
+      border-color: #e4cf90;
+      background: #fffaf0;
+    }
+
+    .minimax-tree-node-title,
+    .minimax-tree-node-board,
+    .minimax-tree-node-score,
+    .minimax-tree-node-pick {
+      margin: 0;
+      font-size: 0.76rem;
+    }
+
+    .minimax-tree-node-board {
+      font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+      color: #455b75;
+    }
+
+    .minimax-debug-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.58rem;
+      align-items: center;
+      font-size: 0.86rem;
+    }
+
+    .minimax-debug-log {
+      margin: 0;
+      border: 1px solid #e1e8f3;
+      border-radius: 12px;
+      background: #fbfdff;
+      max-height: 220px;
+      overflow: auto;
+      padding: 0.56rem 0.62rem;
+      font: 0.77rem/1.4 "SFMono-Regular", Menlo, Consolas, monospace;
+      color: #2f4258;
+      white-space: pre-wrap;
+    }
+
+    .minimax-role-max,
+    .minimax-tree-node.is-max .minimax-tree-node-title {
+      color: #1f6feb;
+    }
+
+    .minimax-role-min,
+    .minimax-tree-node.is-min .minimax-tree-node-title {
+      color: #c0392b;
+    }
+
+    .minimax-terminal,
+    .minimax-tree-node-terminal {
+      color: #9f7a08;
+      font-weight: 700;
+    }
+
+    .jvn-layout {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: minmax(0, 1.12fr) minmax(260px, 0.88fr);
+      align-items: start;
+    }
+
+    .jvn-kicker {
+      margin: 0;
+      font-size: 0.78rem;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: #3b5a84;
+      font-weight: 700;
+    }
+
+    .jvn-title {
+      margin: 0.25rem 0 0.65rem;
+      font-size: clamp(1.4rem, 2.8vw, 2rem);
+      letter-spacing: -0.02em;
+    }
+
+    .jvn-bio p {
+      margin: 0 0 0.72rem;
+      color: #324760;
+      line-height: 1.6;
+    }
+
+    .jvn-bio p:last-child {
+      margin-bottom: 0;
+    }
+
+    .jvn-transition {
+      border-top: 1px solid #dfe6f1;
+      padding-top: 0.72rem;
+      margin-top: 0.75rem;
+      font-weight: 600;
+      color: #213955;
+    }
+
+    .jvn-transition a {
+      color: #0f4da7;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(15, 77, 167, 0.45);
+    }
+
+    .jvn-transition a:hover {
+      border-bottom-color: #0f4da7;
+    }
+
+    .jvn-facts ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .jvn-facts {
+      display: grid;
+      gap: 0.72rem;
+    }
+
+    .jvn-facts h3 {
+      margin: 0;
+    }
+
+    .jvn-portrait {
+      margin: 0;
+      border: 1px solid #dce5f2;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .jvn-portrait img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      object-fit: cover;
+      object-position: center 24%;
+    }
+
+    .jvn-portrait figcaption {
+      margin: 0;
+      padding: 0.52rem 0.62rem;
+      font-size: 0.74rem;
+      line-height: 1.4;
+      color: #4f6480;
+      border-top: 1px solid #e0e7f1;
+      background: #f9fbff;
+    }
+
+    .jvn-facts li {
+      border: 1px solid #e0e7f1;
+      border-radius: 10px;
+      padding: 0.52rem 0.62rem;
+      background: #f9fbff;
+      display: grid;
+      gap: 0.2rem;
+    }
+
+    .jvn-facts span {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #4f6480;
+      font-weight: 700;
+    }
+
+    .jvn-facts strong {
+      font-size: 0.96rem;
+      color: #1f3048;
+    }
+
+    .minimax-explainer-grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: minmax(0, 1.08fr) minmax(260px, 0.92fr);
+      align-items: start;
+    }
+
+    .minimax-explain p {
+      margin: 0 0 0.78rem;
+      color: #324760;
+      line-height: 1.62;
+    }
+
+    .minimax-explain p:last-child {
+      margin-bottom: 0;
+    }
+
+    .minimax-score-card {
+      border: 1px solid #dce5f2;
+      border-radius: 12px;
+      padding: 0.72rem;
+      background: #f9fbff;
+      display: grid;
+      gap: 0.18rem;
+    }
+
+    .minimax-score-card strong {
+      font-size: 1.2rem;
+      color: #1f3048;
+    }
+
+    .minimax-score-card span {
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #4f6480;
+      font-weight: 700;
+    }
+
+    .minimax-score-card p {
+      margin: 0;
+      color: #4f6480;
+      line-height: 1.45;
+      font-size: 0.9rem;
+    }
+
+    .minimax-score-strip-cards {
+      display: grid;
+      gap: 0.72rem;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .minimax-steps {
+      margin: 0;
+      padding-left: 1.1rem;
+      display: grid;
+      gap: 0.72rem;
+      color: #324760;
+      line-height: 1.55;
+    }
+
+    .minimax-steps strong {
+      color: #1f3048;
+    }
+
+    @media (max-width: 899px) {
+      .jvn-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .minimax-explainer-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .minimax-card {
+        padding: 0.88rem;
+      }
+
+      .minimax-metric-tiles,
+      .minimax-score-strip-cards {
+        grid-template-columns: 1fr;
+      }
+
+      .minimax-tree-nodes {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim" id="main-content">
+      <div class="minimax-page">
+
+        <div class="ll-hero">
+          <p class="eyebrow">AI Origins · Lesson 02</p>
+          <h1>1v1 Game AI: Minimax</h1>
+          <p>Live adversarial search lab: play Tic-Tac-Toe while the engine reveals maximizing/minimizing logic, terminal scoring, and game-tree decisions.</p>
+        </div>
+
+        <section class="section" id="minimax-live">
+          <div class="section-head">
+            <h2>Live Minimax Engine Lab</h2>
+            <p>Play as X (maximizer). The AI plays O (minimizer) and returns best score + best move each turn using the minimax framework tied to von Neumann's 1928 theorem.</p>
+          </div>
+
+          <article class="card minimax-lab minimax-lab-ui" id="minimax-lab">
+            <article class="minimax-card minimax-card-board">
+              <header class="minimax-card-head">
+                <h3>Tic-Tac-Toe Board</h3>
+                <p id="mm-turn-role" class="minimax-turn-pill minimax-role-max" aria-live="polite">X turn · Maximizer</p>
+              </header>
+
+              <div class="minimax-tension">
+                <div class="minimax-tension-head">
+                  <strong>Balance of Power</strong>
+                  <span id="mm-tension-label">Perfect draw</span>
+                </div>
+                <div class="minimax-tension-gauge" aria-hidden="true">
+                  <svg viewBox="0 0 320 100">
+                    <path d="M42 78 A118 118 0 0 1 160 18 A118 118 0 0 1 278 78" fill="none" stroke="rgba(237,228,196,0.22)" stroke-width="16" stroke-linecap="round"/>
+                    <path d="M42 78 A118 118 0 0 1 160 18" fill="none" stroke="rgba(77, 138, 240, 0.82)" stroke-width="16" stroke-linecap="round"/>
+                    <path d="M160 18 A118 118 0 0 1 278 78" fill="none" stroke="rgba(220, 92, 72, 0.82)" stroke-width="16" stroke-linecap="round"/>
+                    <g id="mm-gauge-needle" class="minimax-gauge-needle">
+                      <line x1="160" y1="53" x2="160" y2="24" stroke="#f6f0d8" stroke-width="6" stroke-linecap="round"/>
+                      <circle cx="160" cy="53" r="8" fill="#f6f0d8"/>
+                    </g>
+                  </svg>
+                  <div class="minimax-gauge-legend">
+                    <span>X pressure</span>
+                    <span>Draw</span>
+                    <span>O pressure</span>
+                  </div>
+                </div>
+              </div>
+
+              <p id="mm-ai-choice" class="minimax-ai-choice">AI choice will appear here after search.</p>
+
+              <div class="minimax-board-wrap">
+                <div class="minimax-board" id="mm-board" role="grid" aria-label="Tic-Tac-Toe board"></div>
+                <div id="mm-dust-layer" class="minimax-dust-layer" aria-hidden="true"></div>
+                <div id="mm-eraser" class="minimax-eraser" aria-hidden="true">
+                  <div class="minimax-eraser-block"></div>
+                </div>
+              </div>
+
+              <div class="minimax-primary-controls">
+                <button id="mm-ai-move" class="minimax-btn minimax-btn-primary" type="button">Run AI Move</button>
+                <button id="mm-reset" class="minimax-btn minimax-btn-secondary" type="button">Reset Game</button>
+              </div>
+            </article>
+
+            <details id="mm-tree-panel" class="minimax-card minimax-collapsible" hidden>
+              <summary>
+                <span>Game Tree Snapshot</span>
+                <span class="minimax-summary-meta">Partial tree</span>
+              </summary>
+              <div class="minimax-collapsible-body">
+                <p class="minimax-note">Blue nodes maximize, red nodes minimize, gold nodes are terminal outcomes.</p>
+                <div id="mm-tree" class="minimax-tree" aria-live="polite"></div>
+              </div>
+            </details>
+
+            <details class="minimax-card minimax-collapsible minimax-debug">
+              <summary>
+                <span>Debug Console</span>
+                <span class="minimax-summary-meta">Engine events</span>
+              </summary>
+              <div class="minimax-collapsible-body">
+                <div class="minimax-debug-controls">
+                  <label><input id="mm-debug-toggle" type="checkbox" /> Enable debug logging</label>
+                  <button id="mm-debug-clear" class="minimax-btn minimax-btn-secondary" type="button">Clear Debug Log</button>
+                </div>
+                <pre id="mm-debug-log" class="minimax-debug-log"></pre>
+              </div>
+            </details>
+          </article>
+        </section>
+
+        <section class="section">
+          <div class="jvn-layout">
+            <article class="card jvn-bio">
+              <p class="jvn-kicker">Biography Spotlight</p>
+              <h2 class="jvn-title">The Architect of the Modern Mind</h2>
+              <p>John von Neumann (1903–1957) was a Hungarian-American mathematician and polymath whose theoretical frameworks provide the literal blueprint for every AI you interact with today.</p>
+              <p>While he is famously known for the Von Neumann Architecture, the standard design of modern computers that separates processing from memory, his legacy in AI and robotics also comes from his obsession with self-replicating automata.</p>
+              <p>In 1928, he formalized the Minimax Theorem in game theory, showing how rational players choose the best strategy under opposition. That logic is still at the core of adversarial AI decision-making.</p>
+              <p class="jvn-transition">Now test that exact theory in action: <a href="#minimax-live">play this Tic-Tac-Toe lab using minimax ideas developed by JVN in 1928.</a></p>
+            </article>
+
+            <aside class="card jvn-facts" aria-label="John von Neumann quick facts">
+              <figure class="jvn-portrait">
+                <img src="../../assets/thumbs/john-von-neumann-bio.png" alt="John von Neumann seated in front of a chalkboard covered in equations." loading="lazy" decoding="async" />
+                <figcaption>John von Neumann in New Mexico, often pictured in settings that reflected his mathematical work.</figcaption>
+              </figure>
+              <h3>Quick Facts</h3>
+              <ul>
+                <li><span>Born</span><strong>1903, Budapest</strong></li>
+                <li><span>Died</span><strong>1957, Washington, D.C.</strong></li>
+                <li><span>Known for</span><strong>Architecture, Game Theory, Automata</strong></li>
+                <li><span>AI link</span><strong>Formal strategy + machine self-replication models</strong></li>
+              </ul>
+            </aside>
+          </div>
+        </section>
+
+        <section class="section" aria-labelledby="minimax-explainer-title">
+          <div class="section-head">
+            <h2 id="minimax-explainer-title">What Minimax Actually Is</h2>
+            <p>Minimax is the decision rule behind many two-player game AIs: it looks ahead through possible moves, scores the endings, and then chooses the move that leads to the best worst-case outcome.</p>
+          </div>
+
+          <div class="minimax-explainer-grid">
+            <article class="card minimax-explain">
+              <p>In a game like Tic-Tac-Toe, Minimax assumes that both players are trying to play as intelligently as possible. Instead of asking, "What move looks good right now?" the AI asks, "If I make this move, what will my opponent do next, and what happens after that?"</p>
+              <p>The algorithm explores the game tree one turn at a time until it reaches terminal states such as a win, loss, or draw. Those endings are given scores, and the scores are then passed back up the tree to evaluate earlier choices.</p>
+              <div class="minimax-score-strip-cards" aria-label="Minimax scoring examples">
+                <div class="minimax-score-card">
+                  <span>For X</span>
+                  <strong>+1</strong>
+                  <p>X can force a win.</p>
+                </div>
+                <div class="minimax-score-card">
+                  <span>For Draw</span>
+                  <strong>0</strong>
+                  <p>Neither side can force victory.</p>
+                </div>
+                <div class="minimax-score-card">
+                  <span>For O</span>
+                  <strong>-1</strong>
+                  <p>O can force a win.</p>
+                </div>
+              </div>
+              <p>When it is the maximizing player's turn, the algorithm chooses the highest score available. When it is the minimizing player's turn, it chooses the lowest. That back-and-forth is why it is called <em>Mini</em>max: one player maximizes the score, while the other minimizes it.</p>
+            </article>
+
+            <aside class="card jvn-facts" aria-label="How Minimax works step by step">
+              <h3>How The Search Works</h3>
+              <ol class="minimax-steps">
+                <li><strong>Generate moves.</strong> The AI lists every legal move from the current board.</li>
+                <li><strong>Look ahead.</strong> For each move, it simulates what the opponent could do next.</li>
+                <li><strong>Score endings.</strong> Wins, losses, and draws are turned into numbers.</li>
+                <li><strong>Back up values.</strong> Scores travel upward through the game tree.</li>
+                <li><strong>Choose rationally.</strong> Max picks the highest value; Min picks the lowest.</li>
+              </ol>
+              <ul>
+                <li><span>In this lab</span><strong>X = maximizer, O = minimizer</strong></li>
+                <li><span>Main idea</span><strong>Plan for the best move assuming your opponent also plays well</strong></li>
+                <li><span>Why it matters</span><strong>It turns turn-based strategy into a clear search problem</strong></li>
+              </ul>
+            </aside>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>Other von Neumann Projects</h2>
+          </div>
+          <article class="card">
+            <ul class="rhythm">
+              <li><span>Universal Constructor</span><strong>A theoretical machine that can build any machine, including a copy of itself, from symbolic instructions.</strong></li>
+              <li><span>Kinematic Self-Replicating Robots</span><strong>Mechanical self-replication models that inspired later ideas in robotics, autonomous manufacturing, and artificial life.</strong></li>
+              <li><span>Stochastic Computing</span><strong>Probabilistic methods for computation under uncertainty, foundational for noisy real-world AI and robust system design.</strong></li>
+            </ul>
+          </article>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>What You Are Experimenting With</h2>
+          </div>
+          <article class="card">
+            <ul class="rhythm">
+              <li><span>Alternating Turns</span><strong>Observe maximizing (X) and minimizing (O) behavior in real time.</strong></li>
+              <li><span>Game Tree Reasoning</span><strong>Trace score propagation from terminal nodes back to current move choice.</strong></li>
+              <li><span>Search Constraints</span><strong>Adjust depth and compare node count + branching factor growth.</strong></li>
+              <li><span>Heuristic Bias</span><strong>Toggle depth preference to compare equal-score move ordering.</strong></li>
+            </ul>
+          </article>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>Reflection + Publish</h2>
+            <p>Capture what the engine chose and why, then publish a short reflection with your demo link.</p>
+          </div>
+          <div class="tile-grid">
+            <a class="tile tile-hero" href="#" aria-disabled="true">
+              <span class="tile-kicker">Reflection</span>
+              <strong>Publish a minimax explanation</strong>
+              <small>Include one board state, chosen move, returned score, and metric snapshot.</small>
+            </a>
+
+            <a class="tile" href="#" aria-disabled="true">
+              <span class="tile-kicker">Extension</span>
+              <strong>Add depth-based scoring to prefer faster wins</strong>
+              <small>Optional challenge for advanced students</small>
+            </a>
+
+            <a class="tile" href="../../steam-lessons.html">
+              <span class="tile-kicker">Navigate</span>
+              <strong>Back to STEAM Lessons</strong>
+              <small>Return to the full ClassroomOS lesson shelf</small>
+            </a>
+          </div>
+        </section>
+
+      </div><!-- /.minimax-page -->
+    </div><!-- /.ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true" data-pane="mm-params">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="mm-guide">Guide</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="mm-params">
+          <span class="ll-label">Search Depth</span>
+          <div class="ll-param">
+            <label class="minimax-field" for="mm-depth" style="font-size:0.75rem;color:var(--ll-tab-color);">
+              <select id="mm-depth" style="width:100%;font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--ll-panel-border);">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9" selected>9 (full tree)</option>
+              </select>
+            </label>
+          </div>
+
+          <span class="ll-label">Options</span>
+          <div class="ll-param">
+            <div class="minimax-toggles">
+              <label><input id="mm-fast-wins" type="checkbox" /> Prefer Faster Wins</label>
+              <label><input id="mm-tree-toggle" type="checkbox" /> Show Partial Game Tree</label>
+            </div>
+          </div>
+
+          <hr class="ll-hr" />
+
+          <span class="ll-label">Search Metrics</span>
+          <div class="ll-readouts">
+            <div class="ll-readout">
+              <span class="ll-readout-lbl">Depth</span>
+              <span class="ll-readout-val" id="mm-metric-depth">0</span>
+            </div>
+            <div class="ll-readout">
+              <span class="ll-readout-lbl">Nodes</span>
+              <span class="ll-readout-val" id="mm-metric-nodes">0</span>
+            </div>
+          </div>
+          <div class="ll-readouts">
+            <div class="ll-readout" style="grid-column:1/-1;">
+              <span class="ll-readout-lbl">Branching Factor</span>
+              <span class="ll-readout-val" id="mm-metric-branching">0.00</span>
+            </div>
+          </div>
+
+          <hr class="ll-hr" />
+
+          <span class="ll-label">Terminal Scoring</span>
+          <div class="ll-readouts">
+            <div class="ll-readout">
+              <span class="ll-readout-lbl" style="color:#1f6feb;">Win (X)</span>
+              <span class="ll-readout-val">+1</span>
+            </div>
+            <div class="ll-readout">
+              <span class="ll-readout-lbl" style="color:#c0392b;">Loss (O)</span>
+              <span class="ll-readout-val">-1</span>
+            </div>
+          </div>
+          <div class="ll-readouts">
+            <div class="ll-readout" style="grid-column:1/-1;">
+              <span class="ll-readout-lbl" style="color:#9f7a08;">Draw</span>
+              <span class="ll-readout-val">0</span>
+            </div>
+          </div>
+
+          <span class="ll-label" style="margin-top:0.6rem;">Eval Log</span>
+          <div id="mm-eval-log" class="minimax-log" aria-live="polite"></div>
+          <button id="mm-log-expand" class="minimax-btn minimax-btn-secondary minimax-log-toggle" type="button" aria-expanded="false" style="font-size:0.72rem;padding:4px 10px;margin-top:4px;">Show more</button>
+        </div><!-- /#mm-params -->
+
+        <div class="ll-pane" id="mm-guide">
+          <div class="ll-info">
+            <strong>What is Minimax?</strong>
+            A search algorithm for two-player zero-sum games. One player maximizes the score; the other minimizes it. The AI looks ahead and picks the move leading to the best worst-case outcome.
+          </div>
+          <div class="ll-info">
+            <strong>Scoring Terminal States</strong>
+            +1 = X wins, -1 = O wins, 0 = draw. These values propagate up the game tree to guide every move decision.
+          </div>
+          <div class="ll-info">
+            <strong>Search Depth</strong>
+            Depth 9 = full Tic-Tac-Toe game tree (never loses). Lower depths may miss winning moves — try depth 1 to see how the AI degrades.
+          </div>
+          <div class="ll-info">
+            <strong>Branching Factor</strong>
+            Average legal moves per position. Tic-Tac-Toe starts at 9 and shrinks. In chess (~35) or Go (~200), this explodes — making raw minimax impractical.
+          </div>
+          <div class="ll-info">
+            <strong>Von Neumann Connection</strong>
+            John von Neumann formalized the Minimax Theorem in 1928, proving that rational players always have an optimal strategy in finite two-player games.
+          </div>
+        </div><!-- /#mm-guide -->
+
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+  </div><!-- /.ll-stage -->
+</div><!-- /.ll-viewport -->
+
+  <footer class="site-footer">
+    <p><a href="../../steam-lessons.html">Back to Lessons</a></p>
+  </footer>
+  <script type="module" src="../../assets/js/lessons/minimax-lab.js"></script>
+  <script src="../../assets/js/theme-registry.js"></script>
+  <script src="../../assets/js/nav-mobile.js"></script>
+  <script src="../../assets/js/classroom-animations.js"></script>
+  <script src="../../assets/js/lesson-layout.js"></script>
+
+  <!-- SVG filter: chalk roughness applied to .is-max and .is-min cells -->
+  <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+    <defs>
+      <filter id="chalk-rough" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.04 0.05" numOctaves="4" seed="2" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.5" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+    </defs>
+  </svg>
+<script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

@@ -1,0 +1,1343 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Measuring the Earth · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="An interactive Earth science evidence lab: measure Earth's circumference, compare round- and flat-Earth predictions, and decide which model the observations support." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    /* ── Page ─────────────────────────────────────────── */
+    .ec-page { padding-bottom: 3.5rem; }
+
+    /* ── Hero ─────────────────────────────────────────── */
+    .ec-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .ec-hero h1 { max-width: 28ch; margin-left: 0; margin-right: 0;
+      font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .ec-hero-meta { display: flex; flex-wrap: wrap; align-items: center;
+      gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .ec-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%;
+      background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .ec-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-secondary, #3f4f65);
+      font-size: 0.96rem; line-height: 1.62; }
+    [data-lighting="night"] .ec-lede,
+    [data-theme="vaporwave"] .ec-lede,
+    [data-theme="bark"] .ec-lede { color: rgba(245,245,247,0.7); }
+
+    /* ── Section card ─────────────────────────────────── */
+    .ec-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--card-accent, #34c759);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.4rem;
+      margin-bottom: 1rem;
+    }
+    .ec-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .ec-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; letter-spacing: -0.01em; }
+    .ec-card p  { margin: 0 0 0.6rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .ec-card p:last-child { margin-bottom: 0; }
+    [data-lighting="night"] .ec-card,
+    [data-theme="vaporwave"] .ec-card,
+    [data-theme="bark"] .ec-card { background: var(--white, #2c2c2e); }
+    [data-lighting="night"] .ec-card p,
+    [data-theme="vaporwave"] .ec-card p,
+    [data-theme="bark"] .ec-card p { color: rgba(245,245,247,0.72); }
+
+    /* ── Callout ──────────────────────────────────────── */
+    .ec-callout {
+      border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0;
+      font-size: 0.85rem; line-height: 1.6; color: var(--text-secondary, #3f4f65);
+    }
+    [data-lighting="night"] .ec-callout,
+    [data-theme="vaporwave"] .ec-callout,
+    [data-theme="bark"] .ec-callout { color: rgba(245,245,247,0.72); }
+    .ec-callout.green  { background: rgba(52,199,89,0.07);  border: 1px solid rgba(52,199,89,0.2);  }
+    .ec-callout.blue   { background: rgba(0,122,255,0.07);  border: 1px solid rgba(0,122,255,0.2);  }
+    .ec-callout.orange { background: rgba(255,149,0,0.07);  border: 1px solid rgba(255,149,0,0.2);  }
+    .ec-callout.purple { background: rgba(88,86,214,0.07);  border: 1px solid rgba(88,86,214,0.2);  }
+    .ec-callout strong { color: var(--text,#1d1d1f); }
+
+    /* ── Bio ──────────────────────────────────────────── */
+    .ec-bio { display: flex; gap: 1rem; align-items: flex-start; }
+    .ec-bio-portrait {
+      width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; line-height: 1;
+    }
+    .ec-bio-text { flex: 1; font-size: 0.87rem; color: var(--text-secondary, #3f4f65); line-height: 1.62; }
+    [data-lighting="night"] .ec-bio-text,
+    [data-theme="vaporwave"] .ec-bio-text,
+    [data-theme="bark"] .ec-bio-text { color: rgba(245,245,247,0.72); }
+    .ec-bio-text strong { color: var(--text,#1d1d1f); }
+
+    /* ── Step-by-step ─────────────────────────────────── */
+    .ec-steps { display: flex; flex-direction: column; gap: 0.75rem; margin: 0.8rem 0; }
+    .ec-step  { display: flex; gap: 0.85rem; align-items: flex-start; }
+    .ec-step-num {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.78rem; font-weight: 800; color: #fff; background: #34c759;
+      margin-top: 0.05rem;
+    }
+    .ec-step-body { flex: 1; font-size: 0.87rem; color: var(--text-secondary, #3f4f65); line-height: 1.6; }
+    [data-lighting="night"] .ec-step-body,
+    [data-theme="vaporwave"] .ec-step-body,
+    [data-theme="bark"] .ec-step-body { color: rgba(245,245,247,0.72); }
+    .ec-step-body strong { color: var(--text,#1d1d1f); }
+
+    /* ── Formula box ──────────────────────────────────── */
+    .ec-formula-box {
+      display: flex; align-items: center; justify-content: center;
+      flex-wrap: wrap; gap: 0.6rem 1.2rem;
+      background: linear-gradient(135deg, rgba(52,199,89,0.09), rgba(0,122,255,0.06));
+      border: 1px solid rgba(52,199,89,0.25);
+      border-radius: 14px; padding: 1rem 1.4rem; margin: 0.8rem 0;
+    }
+    .ec-formula-sym { font-size: clamp(1rem, 2.5vw, 1.3rem); font-weight: 900;
+      color: var(--text,#1d1d1f); line-height: 1.4; text-align: center; }
+    .ec-formula-sym em { color: #34c759; font-style: normal; }
+    .ec-formula-note { font-size: 0.8rem; color: var(--text-muted, #64748b); max-width: 30ch;
+      line-height: 1.5; text-align: center; }
+
+    /* ── Interactive simulator ────────────────────────── */
+    .ec-sim {
+      background: var(--white,#fff);
+      border: 1px solid var(--line,#d2d2d7);
+      border-left: 3.5px solid #ff9500;
+      border-radius: var(--radius,18px);
+      box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.4rem; margin-bottom: 1rem;
+    }
+    [data-lighting="night"] .ec-sim,
+    [data-theme="vaporwave"] .ec-sim,
+    [data-theme="bark"] .ec-sim { background: var(--white,#2c2c2e); }
+    .ec-sim h2 { margin: 0 0 0.2rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .ec-sim-sub { margin: 0 0 1rem; font-size: 0.84rem; color: var(--text-muted, #64748b); }
+
+    .ec-sim-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem 1.4rem;
+      margin-bottom: 1rem; }
+    .ec-slider-group { display: flex; flex-direction: column; gap: 0.3rem; }
+    .ec-slider-label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted, #64748b);
+      letter-spacing: 0.04em; text-transform: uppercase;
+      display: flex; justify-content: space-between; align-items: baseline; }
+    .ec-slider-label span { font-weight: 800; color: var(--text,#1d1d1f); }
+    .ec-slider { width: 100%; accent-color: #ff9500; cursor: pointer; }
+
+    #ec-canvas { display: block; border-radius: 12px; width: 100%; }
+
+    .ec-readout { display: grid; grid-template-columns: repeat(4,1fr);
+      gap: 0.6rem; margin-top: 0.8rem; }
+    .ec-readout-cell { background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7);
+      border-radius: 10px; padding: 0.6rem 0.8rem; text-align: center; }
+    [data-lighting="night"] .ec-readout-cell,
+    [data-theme="vaporwave"] .ec-readout-cell,
+    [data-theme="bark"] .ec-readout-cell { background: rgba(255,255,255,0.05); }
+    .ec-readout-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--text-muted, #64748b); display: block; margin-bottom: 0.2rem; }
+    .ec-readout-val { font-size: 0.98rem; font-weight: 900; letter-spacing: -0.02em;
+      color: var(--text,#1d1d1f); }
+    .ec-readout-unit { font-size: 0.68rem; color: var(--text-muted, #64748b); font-weight: 500; }
+    .ec-readout-cell.highlight { border-color: #ff9500; background: rgba(255,149,0,0.07); }
+    .ec-readout-cell.highlight .ec-readout-val { color: #ff9500; }
+
+    .ec-preset-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
+    .ec-preset-btn { padding: 5px 12px; border-radius: 8px; border: 1.5px solid var(--line,#d2d2d7);
+      background: var(--white,#fff); font-size: 0.75rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; color: var(--text,#1d1d1f);
+      transition: border-color 0.15s; }
+    [data-lighting="night"] .ec-preset-btn,
+    [data-theme="vaporwave"] .ec-preset-btn,
+    [data-theme="bark"] .ec-preset-btn { background: rgba(255,255,255,0.06); color: #fff; }
+    .ec-preset-btn:hover { border-color: #ff9500; }
+    .ec-preset-btn.active { border-color: #ff9500; background: rgba(255,149,0,0.1); color: #b35900; }
+    [data-lighting="night"] .ec-preset-btn.active,
+    [data-theme="vaporwave"] .ec-preset-btn.active,
+    [data-theme="bark"] .ec-preset-btn.active { color: #ff9500; }
+
+    /* ── Timeline ─────────────────────────────────────── */
+    .ec-timeline { list-style: none; padding: 0; margin: 0.7rem 0 0;
+      display: flex; flex-direction: column; gap: 0; }
+    .ec-timeline li { display: flex; gap: 0; position: relative; }
+    .ec-timeline li:not(:last-child)::before {
+      content: ''; position: absolute; left: 40px; top: 44px;
+      width: 2px; height: calc(100% - 12px);
+      background: var(--line,#d2d2d7); z-index: 0;
+    }
+    .ec-tl-year-col {
+      flex-shrink: 0; width: 80px; padding-top: 0.7rem;
+      font-size: 0.78rem; font-weight: 800; color: var(--text-muted, #64748b); text-align: right;
+      padding-right: 0.8rem;
+    }
+    .ec-tl-dot {
+      flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%;
+      margin-top: 0.7rem; z-index: 1; border: 3px solid var(--white,#fff);
+      box-shadow: 0 0 0 1px var(--line,#d2d2d7);
+    }
+    .ec-tl-body { flex: 1; padding: 0.55rem 0 1rem 0.85rem; }
+    .ec-tl-name { font-size: 0.92rem; font-weight: 800; color: var(--text,#1d1d1f);
+      margin: 0 0 0.15rem; }
+    .ec-tl-result { font-size: 0.78rem; font-weight: 700; padding: 2px 8px;
+      border-radius: 999px; display: inline-block; margin-bottom: 0.25rem; }
+    .ec-tl-text { font-size: 0.83rem; color: var(--text-secondary, #3f4f65); line-height: 1.58; margin: 0; }
+    [data-lighting="night"] .ec-tl-text,
+    [data-theme="vaporwave"] .ec-tl-text,
+    [data-theme="bark"] .ec-tl-text { color: rgba(245,245,247,0.68); }
+
+    /* ── Accuracy bar ─────────────────────────────────── */
+    .ec-acc-table { width: 100%; border-collapse: collapse; margin: 0.8rem 0; font-size: 0.84rem; }
+    .ec-acc-table th { text-align: left; font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted, #64748b);
+      padding: 0.4rem 0.6rem; border-bottom: 2px solid var(--line,#d2d2d7); }
+    .ec-acc-table td { padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--line,#d2d2d7);
+      color: var(--text,#1d1d1f); vertical-align: middle; }
+    .ec-acc-table tr:last-child td { border-bottom: none; }
+    .ec-acc-bar-wrap { width: 100%; max-width: 140px; display: inline-block;
+      background: rgba(0,0,0,0.06); border-radius: 4px; height: 12px;
+      vertical-align: middle; overflow: hidden; }
+    [data-lighting="night"] .ec-acc-bar-wrap,
+    [data-theme="vaporwave"] .ec-acc-bar-wrap,
+    [data-theme="bark"] .ec-acc-bar-wrap { background: rgba(255,255,255,0.08); }
+    .ec-acc-bar { height: 100%; border-radius: 4px; background: #34c759; }
+    .ec-acc-pct { font-weight: 800; color: #34c759; }
+
+    /* ── Applications ─────────────────────────────────── */
+    .ec-apps { display: grid; grid-template-columns: repeat(2,1fr);
+      gap: 0.8rem; margin-top: 0.7rem; }
+    .ec-app-card { background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7);
+      border-radius: 12px; padding: 0.85rem; display: flex; gap: 0.7rem; align-items: flex-start; }
+    [data-lighting="night"] .ec-app-card,
+    [data-theme="vaporwave"] .ec-app-card,
+    [data-theme="bark"] .ec-app-card { background: rgba(255,255,255,0.04); }
+    .ec-app-icon { font-size: 1.55rem; line-height: 1; flex-shrink: 0; }
+    .ec-app-text strong { display: block; font-size: 0.86rem; margin-bottom: 0.18rem; }
+    .ec-app-text small  { font-size: 0.78rem; color: var(--text-muted, #64748b); line-height: 1.5; display: block; }
+
+    /* ── Practice problems ────────────────────────────── */
+    .ec-practice { display: flex; flex-direction: column; gap: 0.9rem; margin-top: 0.8rem; }
+    .ec-problem { background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7);
+      border-radius: 12px; padding: 0.9rem 1rem; }
+    [data-lighting="night"] .ec-problem,
+    [data-theme="vaporwave"] .ec-problem,
+    [data-theme="bark"] .ec-problem { background: rgba(255,255,255,0.04); }
+    .ec-problem p { margin: 0 0 0.5rem; font-size: 0.87rem;
+      color: var(--text,#1d1d1f); font-weight: 600; }
+    .ec-problem-row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+    .ec-ans-input { width: 110px; padding: 6px 10px;
+      border: 1.5px solid var(--line,#d2d2d7); border-radius: 8px;
+      font-size: 0.88rem; font-family: inherit;
+      background: var(--white,#fff); color: var(--text,#1d1d1f); outline: none; }
+    .ec-ans-input:focus { border-color: #34c759; }
+    .ec-check-btn { padding: 6px 14px; border-radius: 8px; border: none;
+      background: #34c759; color: #fff; font-size: 0.82rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: opacity 0.15s; }
+    .ec-check-btn:hover { opacity: 0.85; }
+    .ec-feedback { font-size: 0.8rem; font-weight: 700; padding: 4px 10px;
+      border-radius: 999px; display: none; }
+    .ec-feedback.correct { background: rgba(52,199,89,0.15); color: #1a7a2e; display: inline-block; }
+    .ec-feedback.wrong   { background: rgba(255,59,48,0.12);  color: #c0392b; display: inline-block; }
+    [data-lighting="night"] .ec-feedback.correct,
+    [data-theme="vaporwave"] .ec-feedback.correct,
+    [data-theme="bark"] .ec-feedback.correct { color: #34c759; }
+    [data-lighting="night"] .ec-feedback.wrong,
+    [data-theme="vaporwave"] .ec-feedback.wrong,
+    [data-theme="bark"] .ec-feedback.wrong   { color: #ff6b6b; }
+    .ec-hint { font-size: 0.77rem; color: var(--text-muted, #64748b); margin-top: 0.35rem; display: none; }
+    .ec-hint.visible { display: block; }
+    .ec-problem-diff { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em;
+      text-transform: uppercase; padding: 2px 7px; border-radius: 999px;
+      margin-right: 0.4rem; vertical-align: middle; }
+    .diff-easy { background: rgba(52,199,89,0.12); color: #1a7a2e; }
+    .diff-mid  { background: rgba(0,122,255,0.12);  color: #0055cc; }
+    .diff-hard { background: rgba(255,149,0,0.12);  color: #b35900; }
+    [data-lighting="night"] .diff-easy,
+    [data-theme="vaporwave"] .diff-easy,
+    [data-theme="bark"] .diff-easy { color: #34c759; }
+    [data-lighting="night"] .diff-mid,
+    [data-theme="vaporwave"] .diff-mid,
+    [data-theme="bark"] .diff-mid  { color: #5ac8fa; }
+    [data-lighting="night"] .diff-hard,
+    [data-theme="vaporwave"] .diff-hard,
+    [data-theme="bark"] .diff-hard { color: #ff9500; }
+
+    @media (max-width: 680px) {
+      .ec-bio         { flex-direction: column; align-items: center; text-align: center; }
+      .ec-apps        { grid-template-columns: 1fr; }
+      .ec-sim-controls{ grid-template-columns: 1fr; }
+      .ec-readout     { grid-template-columns: repeat(2,1fr); }
+    }
+
+    /* ── Layout overrides ─────────────────────────────── */
+    .ll-viewport {
+      --ll-tab-active: #34c759;
+      --ll-tab-active-bg: rgba(52,199,89,0.10);
+    }
+    #ec-canvas { max-height: calc(100dvh - 140px); }
+
+    /* ── Evidence lab ─────────────────────────────────── */
+    .evidence-lab {
+      --lab-ink: #10273c;
+      --lab-paper: #f6fbfd;
+      --lab-cyan: #0b91a7;
+      --lab-amber: #f2a93b;
+      --lab-coral: #e35d4f;
+      position: relative;
+      overflow: hidden;
+      margin: 1.25rem 0;
+      color: var(--lab-ink);
+      background-color: var(--lab-paper);
+      background-image: linear-gradient(rgba(11,145,167,.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(11,145,167,.07) 1px, transparent 1px);
+      background-size: 24px 24px;
+      border: 1px solid rgba(16,39,60,.18);
+      border-radius: 22px;
+      box-shadow: 0 18px 45px rgba(16,39,60,.12);
+    }
+    .evidence-lab::before {
+      content: "EVIDENCE LAB";
+      position: absolute; right: -25px; top: 28px; z-index: 2;
+      padding: 5px 30px;
+      font: 800 .68rem/1 "Courier New", monospace;
+      letter-spacing: .14em; color: #fff; background: var(--lab-coral);
+      transform: rotate(8deg); box-shadow: 0 3px 0 rgba(16,39,60,.18);
+    }
+    .lab-head { padding: 1.35rem 1.45rem 1.1rem; background: rgba(255,255,255,.72); border-bottom: 1px solid rgba(16,39,60,.15); }
+    .lab-kicker { margin: 0 0 .35rem; font: 800 .7rem/1.2 "Courier New", monospace; letter-spacing: .13em; text-transform: uppercase; color: var(--lab-cyan); }
+    .lab-head h2 { margin: 0; max-width: 22ch; font-family: Georgia, "Times New Roman", serif; font-size: clamp(1.55rem, 4vw, 2.45rem); line-height: 1.03; letter-spacing: -.035em; }
+    .lab-intro { max-width: 68ch; margin: .65rem 0 0; color: #385269; font-size: .9rem; line-height: 1.62; }
+    .lab-rule { display: flex; gap: .65rem; align-items: flex-start; margin-top: .8rem; padding: .7rem .8rem; max-width: 68ch; background: #fff8df; border: 1px solid rgba(242,169,59,.45); border-radius: 10px; font-size: .82rem; line-height: 1.5; }
+    .lab-rule strong { color: #8b5705; }
+    .lab-progress { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--lab-ink); }
+    .lab-progress span { padding: .58rem .45rem; text-align: center; color: rgba(255,255,255,.62); font: 800 .66rem/1.2 "Courier New", monospace; letter-spacing: .06em; text-transform: uppercase; border-right: 1px solid rgba(255,255,255,.12); }
+    .lab-progress span:last-child { border-right: 0; }
+    .lab-progress span.done { color: #fff; background: rgba(11,145,167,.45); }
+    .lab-stations { padding: 1rem; display: grid; gap: 1rem; }
+    .lab-station { background: rgba(255,255,255,.92); border: 1px solid rgba(16,39,60,.16); border-radius: 16px; box-shadow: 0 7px 0 rgba(16,39,60,.08); overflow: hidden; }
+    .station-head { display: grid; grid-template-columns: auto 1fr auto; gap: .7rem; align-items: center; padding: .85rem 1rem; border-bottom: 1px dashed rgba(16,39,60,.22); }
+    .station-no { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: #fff; background: var(--lab-cyan); font: 900 .82rem/1 "Courier New", monospace; }
+    .station-head h3 { margin: 0; font-size: 1.05rem; color: var(--lab-ink); }
+    .station-tag { color: #557086; font: 800 .62rem/1.2 "Courier New", monospace; text-transform: uppercase; letter-spacing: .07em; }
+    .station-body { padding: 1rem; }
+    .prediction-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; margin-bottom: .9rem; }
+    .prediction { padding: .72rem .8rem; border-radius: 10px; font-size: .78rem; line-height: 1.45; }
+    .prediction strong { display: block; margin-bottom: .2rem; color: var(--lab-ink); font: 800 .67rem/1.2 "Courier New", monospace; text-transform: uppercase; letter-spacing: .05em; }
+    .prediction.round { background: rgba(11,145,167,.09); border: 1px solid rgba(11,145,167,.25); }
+    .prediction.flat { background: rgba(227,93,79,.07); border: 1px solid rgba(227,93,79,.2); }
+    .lab-control { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .6rem; align-items: center; margin: .7rem 0; }
+    .lab-control label { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: .5rem; color: #3f5a70; font: 800 .69rem/1.2 "Courier New", monospace; text-transform: uppercase; letter-spacing: .04em; }
+    .lab-control output { color: var(--lab-coral); }
+    .lab-control input[type="range"] { width: 100%; accent-color: var(--lab-cyan); }
+    .horizon-stage { position: relative; height: 154px; overflow: hidden; border-radius: 12px; background: linear-gradient(#9eddec 0 64%, #147f98 64%); border: 1px solid rgba(16,39,60,.16); }
+    .horizon-stage::after { content: ""; position: absolute; left: -12%; right: -12%; bottom: -76px; height: 126px; border-radius: 50% 50% 0 0; background: #0d6680; border-top: 3px solid rgba(255,255,255,.68); }
+    .boat { position: absolute; z-index: 2; left: 50%; bottom: 51px; width: 82px; transform: translateX(-50%); transition: clip-path .25s ease, transform .25s ease; }
+    .boat-sail { width: 0; height: 0; margin-left: 37px; border-left: 0 solid transparent; border-right: 30px solid transparent; border-bottom: 58px solid #fff4d6; filter: drop-shadow(1px 1px 0 rgba(16,39,60,.22)); }
+    .boat-mast { position: absolute; left: 35px; top: 4px; width: 3px; height: 65px; background: #543b2c; }
+    .boat-hull { height: 19px; margin-top: -1px; border-radius: 2px 2px 35px 35px; background: #e35d4f; border: 2px solid #8b352d; }
+    .lab-readout { display: grid; grid-template-columns: repeat(2,1fr); gap: .55rem; margin-top: .7rem; }
+    .lab-readout div { padding: .6rem .7rem; background: #edf5f7; border-radius: 9px; }
+    .lab-readout span { display: block; color: #5b7385; font: 700 .62rem/1.2 "Courier New", monospace; text-transform: uppercase; }
+    .lab-readout strong { display: block; margin-top: .15rem; font-size: 1rem; }
+    .shadow-board { position: relative; height: 170px; overflow: hidden; border-radius: 12px; background: linear-gradient(160deg,#cdeffa 0 54%,#e3c891 54%); border: 1px solid rgba(16,39,60,.16); }
+    .shadow-sun { position: absolute; left: 18px; top: 18px; width: 42px; height: 42px; border-radius: 50%; background: #ffd252; box-shadow: 0 0 0 8px rgba(255,210,82,.22); }
+    .shadow-stick { position: absolute; left: 50%; bottom: 31px; width: 5px; height: 74px; background: #5a3a26; transform: translateX(-50%); }
+    .shadow-cast { position: absolute; left: 50%; bottom: 27px; height: 7px; width: 92px; border-radius: 50%; background: rgba(16,39,60,.45); transform-origin: left center; transform: rotate(4deg); }
+    .shadow-angle { position: absolute; right: 13px; top: 13px; padding: .45rem .55rem; border-radius: 8px; color: #fff; background: var(--lab-ink); font: 800 .75rem/1 "Courier New", monospace; }
+    .moon-stage { position: relative; display: grid; place-items: center; height: 172px; border-radius: 12px; overflow: hidden; background: radial-gradient(circle at 22% 18%,#314a66,#091421 68%); }
+    .moon { position: relative; width: 112px; height: 112px; border-radius: 50%; overflow: hidden; background: radial-gradient(circle at 35% 30%,#fff8da,#c9c2a9 70%); box-shadow: 0 0 24px rgba(255,248,218,.25); }
+    .earth-shadow { position: absolute; width: 116px; height: 116px; left: -82px; top: -2px; border-radius: 50%; background: rgba(93,28,28,.82); transition: transform 1.15s ease; }
+    .moon-stage.run .earth-shadow { transform: translateX(160px); }
+    .moon-note { position: absolute; left: 10px; bottom: 9px; color: rgba(255,255,255,.78); font: 700 .64rem/1.3 "Courier New", monospace; }
+    .lab-btn { appearance: none; border: 0; border-radius: 9px; padding: .65rem .85rem; color: #fff; background: var(--lab-ink); font: 800 .73rem/1 "Courier New", monospace; letter-spacing: .04em; cursor: pointer; box-shadow: 0 3px 0 #07111c; }
+    .lab-btn:hover { background: #1b4967; }
+    .lab-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #07111c; }
+    .lab-btn:focus-visible, .evidence-lab input:focus-visible, .evidence-lab textarea:focus-visible { outline: 3px solid #ffd252; outline-offset: 3px; }
+    .lab-verdict { display: none; margin-top: .75rem; padding: .72rem .82rem; color: #164f36; background: #e8f8ef; border: 1px solid #9dd9b6; border-radius: 9px; font-size: .8rem; line-height: 1.48; }
+    .lab-verdict.show { display: block; animation: evidence-pop .32s ease both; }
+    .lab-verdict strong { color: #0e6a43; }
+    .lab-notebook { margin: 0 1rem 1rem; padding: 1rem; border: 2px solid var(--lab-ink); border-radius: 14px; background: #fffef8; box-shadow: 5px 5px 0 rgba(16,39,60,.15); }
+    .lab-notebook h3 { margin: 0 0 .25rem; font-family: Georgia, "Times New Roman", serif; font-size: 1.25rem; }
+    .lab-notebook > p { margin: 0 0 .8rem; color: #536a7c; font-size: .8rem; line-height: 1.5; }
+    .cer-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: .65rem; }
+    .cer-grid label { color: var(--lab-cyan); font: 900 .66rem/1.2 "Courier New", monospace; text-transform: uppercase; letter-spacing: .06em; }
+    .cer-grid textarea { box-sizing: border-box; display: block; width: 100%; min-height: 86px; margin-top: .35rem; resize: vertical; padding: .65rem; color: var(--lab-ink); background: repeating-linear-gradient(#fff 0 25px,#d9e8ed 26px); border: 1px solid #aac0c8; border-radius: 7px; font: 500 .8rem/1.55 Inter, sans-serif; }
+    .lab-score { display: flex; align-items: center; gap: .75rem; margin-top: .85rem; padding-top: .75rem; border-top: 1px dashed #aac0c8; }
+    .evidence-meter { flex: 1; height: 10px; overflow: hidden; background: #d9e4e7; border-radius: 99px; }
+    .evidence-meter span { display: block; width: 0; height: 100%; background: linear-gradient(90deg,var(--lab-amber),var(--lab-cyan)); transition: width .35s ease; }
+    .lab-score output { min-width: 5ch; color: var(--lab-ink); font: 900 .72rem/1 "Courier New", monospace; }
+    @keyframes evidence-pop { from { opacity: 0; transform: translateY(5px) rotate(-.4deg); } to { opacity: 1; transform: none; } }
+    @media (max-width: 680px) {
+      .prediction-grid, .cer-grid { grid-template-columns: 1fr; }
+      .station-head { grid-template-columns: auto 1fr; }
+      .station-tag { grid-column: 2; }
+      .lab-progress span { font-size: .56rem; }
+      .lab-head { padding-right: 3rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .boat, .earth-shadow, .evidence-meter span { transition: none; }
+      .lab-verdict.show { animation: none; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+<div class="ll-viewport">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+  <div class="ll-sim">
+  <main id="main-content" class="ec-page">
+
+    <!-- ── Hero ── -->
+    <section class="hero ec-hero">
+      <p class="eyebrow">Earth Science · Lesson 04</p>
+      <h1>Measuring the Earth</h1>
+      <div class="ec-hero-meta">
+        <span>Eratosthenes</span>
+        <span class="dot"></span>
+        <span>240 BC → Today</span>
+        <span class="dot"></span>
+        <span>Geometry</span>
+        <span class="dot"></span>
+        <span>Earth's Circumference</span>
+        <span class="dot"></span>
+        <span>K–12</span>
+      </div>
+      <p class="ec-lede">Over 2,200 years ago, a librarian in Egypt measured the size of the entire Earth using nothing but a stick, a shadow, and brilliant geometry — and got within 2% of the correct answer. Here's how he did it, and how scientists refined the measurement ever since.</p>
+    </section>
+
+    <!-- ── The Big Question ── -->
+    <section class="ec-card" style="--card-accent:#34c759;">
+      <h2>The Big Question: How Big is Earth?</h2>
+      <p>For most of human history, no one knew how large the Earth was. Ancient peoples could see the horizon, feel the curve of a coastline, and watch ships disappear hull-first over the sea — enough to know Earth was round — but measuring it seemed impossible.</p>
+      <p>How would <em>you</em> measure the size of a planet you're standing on? You can't see it from space. You can't drive around it with an odometer. The answer required an extraordinary leap of imagination: using the <strong>angle of sunlight</strong> and the known <strong>distance between two cities</strong>.</p>
+      <div class="ec-callout green">
+        <strong>Key idea:</strong> If the Sun is so far away that its rays hit Earth in parallel lines, then any difference in shadow angles between two cities must be caused by the <em>curvature of Earth itself</em>. Measure the angle and the distance, and you can calculate the whole circumference.
+      </div>
+    </section>
+
+    <!-- ── Eratosthenes ── -->
+    <section class="ec-card" style="--card-accent:#ff9500;">
+      <h2>Eratosthenes — The Librarian Who Measured a Planet</h2>
+      <div class="ec-bio">
+        <div class="ec-bio-portrait" style="background:linear-gradient(135deg,#ff9500,#ffcc00);" aria-hidden="true">📜</div>
+        <p class="ec-bio-text">
+          <strong>Eratosthenes of Cyrene (276–194 BC)</strong> was the chief librarian of the great Library of Alexandria in Egypt — the largest collection of knowledge in the ancient world. He was a mathematician, geographer, astronomer, and poet. His contemporaries called him "Beta" (second best) because he excelled at everything but was never the single greatest in one field. However, his measurement of Earth's circumference, made around <strong>240 BC</strong>, stands as one of the most remarkable scientific achievements in history.
+        </p>
+      </div>
+
+      <h3>The Clue in a Well</h3>
+      <p>Eratosthenes read a curious report from the city of <strong>Syene</strong> (modern-day Aswan, Egypt): on the summer solstice at noon, the Sun shone straight down into a deep well — no shadow on the walls, because the Sun was directly overhead. He also noticed that on the same day, at the same time in <strong>Alexandria</strong> (about 800 km to the north), a vertical stick cast a shadow.</p>
+      <p>This bothered him. If the Earth were flat, the Sun would be directly overhead both places at noon — yet Alexandria had a shadow and Syene did not. The only explanation: the Earth is <strong>curved</strong>, and the two cities sit at different angles relative to the Sun.</p>
+
+      <h3>The Four Steps of His Experiment</h3>
+      <div class="ec-steps">
+        <div class="ec-step">
+          <div class="ec-step-num">1</div>
+          <div class="ec-step-body"><strong>Identify a place where the Sun is directly overhead.</strong> Syene was known to have the Sun shine straight down a deep well on the summer solstice — meaning the Sun was at exactly 90° (directly overhead) at noon.</div>
+        </div>
+        <div class="ec-step">
+          <div class="ec-step-num">2</div>
+          <div class="ec-step-body"><strong>Measure the shadow angle in Alexandria on the same day.</strong> Eratosthenes placed a stick (called a <em>gnomon</em>) vertically in the ground in Alexandria and measured the angle of its shadow at noon on the summer solstice. He found it was <strong>7.2°</strong> — exactly 1/50th of a full circle (360°).</div>
+        </div>
+        <div class="ec-step">
+          <div class="ec-step-num">3</div>
+          <div class="ec-step-body"><strong>Understand why that angle exists.</strong> Because the Sun's rays are parallel, the 7.2° difference in shadow angle equals the angle between Syene and Alexandria as seen from Earth's center. In other words, the arc between the two cities spans 1/50th of Earth's full circumference.</div>
+        </div>
+        <div class="ec-step">
+          <div class="ec-step-num">4</div>
+          <div class="ec-step-body"><strong>Multiply by 50.</strong> If the 800 km between the two cities equals 1/50th of the circumference, then the full circumference is 50 × 800 km = <strong>40,000 km</strong>. The modern accepted value is 40,075 km. Eratosthenes was off by less than <strong>2%</strong>.</div>
+        </div>
+      </div>
+
+      <div class="ec-formula-box" role="img" aria-label="Circumference formula">
+        <div class="ec-formula-sym">
+          Circumference = <em>360°</em> ÷ Shadow Angle × Distance between cities
+        </div>
+        <div class="ec-formula-note">Eratosthenes: 360° ÷ 7.2° × 800 km = 50 × 800 = <strong>40,000 km</strong></div>
+      </div>
+
+      <div class="ec-callout orange">
+        <strong>What is a gnomon?</strong> A gnomon (NOH-mon) is simply a vertical stick or post used to cast a shadow and measure angles. Sundials use a gnomon. The word comes from Greek, meaning "one who knows" or "indicator." It is one of humanity's oldest scientific instruments.
+      </div>
+    </section>
+
+    <!-- ── Interactive Simulator ── -->
+    <section class="ec-sim">
+      <h2>Replicate Eratosthenes' Experiment</h2>
+      <p class="ec-sim-sub">Adjust the shadow angle and distance in the Controls panel to see how the circumference calculation changes.</p>
+
+      <canvas id="ec-canvas" height="260" aria-label="Eratosthenes experiment diagram"></canvas>
+
+      <div class="ec-readout" style="margin-top:0.8rem;">
+        <div class="ec-readout-cell">
+          <span class="ec-readout-label">Shadow Angle</span>
+          <span class="ec-readout-val" id="ec-r-angle">7.2</span>
+          <span class="ec-readout-unit">degrees</span>
+        </div>
+        <div class="ec-readout-cell">
+          <span class="ec-readout-label">Arc Distance</span>
+          <span class="ec-readout-val" id="ec-r-dist">800</span>
+          <span class="ec-readout-unit">km</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Model Showdown Evidence Lab ── -->
+    <section class="evidence-lab" aria-labelledby="evidence-lab-title">
+      <div class="lab-head">
+        <p class="lab-kicker">Student investigation · 15–25 minutes</p>
+        <h2 id="evidence-lab-title">Round Earth or flat Earth? Let the predictions compete.</h2>
+        <p class="lab-intro">Science does not ask which idea sounds confident or gets the most views. It asks which model makes predictions that match repeatable observations. Run all three stations, reveal the evidence, then write your verdict.</p>
+        <div class="lab-rule"><span aria-hidden="true">🧪</span><span><strong>Lab rule:</strong> Be respectful of people and ruthless with predictions. An idea earns trust when the same model explains many different observations.</span></div>
+      </div>
+      <div class="lab-progress" aria-label="Investigation progress">
+        <span id="lab-step-1">1 · Horizon</span>
+        <span id="lab-step-2">2 · Shadows</span>
+        <span id="lab-step-3">3 · Eclipse</span>
+      </div>
+
+      <div class="lab-stations">
+        <article class="lab-station">
+          <div class="station-head">
+            <span class="station-no">01</span>
+            <h3>Boat hide-and-seek</h3>
+            <span class="station-tag">Change the distance</span>
+          </div>
+          <div class="station-body">
+            <div class="prediction-grid">
+              <div class="prediction round"><strong>Globe predicts</strong>The curved surface blocks the hull first; more of the boat hides as distance increases.</div>
+              <div class="prediction flat"><strong>Flat plane predicts</strong>The whole boat only looks smaller. Zoom should restore every part of it.</div>
+            </div>
+            <div class="horizon-stage" role="img" aria-label="Sailboat moving beyond a curved horizon">
+              <div class="boat" id="lab-boat" aria-hidden="true"><div class="boat-sail"></div><div class="boat-mast"></div><div class="boat-hull"></div></div>
+            </div>
+            <div class="lab-control">
+              <label for="boat-distance">Distance from observer <output id="boat-distance-out">5 km</output></label>
+              <input id="boat-distance" type="range" min="2" max="40" value="5" step="1" />
+              <button class="lab-btn" id="boat-test" type="button">Record trial</button>
+            </div>
+            <div class="lab-readout">
+              <div><span>Curvature drop</span><strong id="curve-drop">2.0 m</strong></div>
+              <div><span>What disappears?</span><strong id="boat-hidden">Hull visible</strong></div>
+            </div>
+            <div class="lab-verdict" id="boat-verdict" role="status"><strong>Evidence:</strong> Distant objects are hidden bottom-first, and zoom cannot recover the part below the horizon. That matches a curved surface.</div>
+          </div>
+        </article>
+
+        <article class="lab-station">
+          <div class="station-head">
+            <span class="station-no">02</span>
+            <h3>Two-stick shadow test</h3>
+            <span class="station-tag">Make a prediction</span>
+          </div>
+          <div class="station-body">
+            <div class="prediction-grid">
+              <div class="prediction round"><strong>Distant Sun + globe predicts</strong>Parallel sunlight makes different angles because each stick points away from Earth's center.</div>
+              <div class="prediction flat"><strong>Flat plane predicts</strong>A nearby Sun could make different angles—but every city pair must point to one consistent Sun height.</div>
+            </div>
+            <div class="shadow-board" role="img" aria-label="Vertical stick casting a measurable shadow"><div class="shadow-sun"></div><div class="shadow-stick"></div><div class="shadow-cast" id="shadow-cast"></div><div class="shadow-angle" id="shadow-angle-label">7.2°</div></div>
+            <div class="lab-control">
+              <label for="lab-shadow-angle">Angle difference <output id="lab-shadow-out">7.2°</output></label>
+              <input id="lab-shadow-angle" type="range" min="2" max="15" value="7.2" step=".1" />
+              <button class="lab-btn" id="shadow-test" type="button">Calculate Earth</button>
+            </div>
+            <div class="lab-readout">
+              <div><span>City distance</span><strong>800 km</strong></div>
+              <div><span>Calculated circumference</span><strong id="lab-circ">40,000 km</strong></div>
+            </div>
+            <div class="lab-verdict" id="shadow-verdict" role="status"><strong>Evidence:</strong> Repeating this experiment with many north–south city pairs produces roughly the same 40,000 km globe. A nearby-Sun flat model gives conflicting Sun heights.</div>
+          </div>
+        </article>
+
+        <article class="lab-station">
+          <div class="station-head">
+            <span class="station-no">03</span>
+            <h3>The eclipse shadow challenge</h3>
+            <span class="station-tag">Watch the edge</span>
+          </div>
+          <div class="station-body">
+            <div class="prediction-grid">
+              <div class="prediction round"><strong>Sphere predicts</strong>Earth casts a circular shadow from every orientation.</div>
+              <div class="prediction flat"><strong>Disk predicts</strong>A disk only casts a circle face-on; most other angles make a stretched ellipse or thin line.</div>
+            </div>
+            <div class="moon-stage" id="moon-stage" role="img" aria-label="Earth's curved shadow moving across the Moon"><div class="moon"><div class="earth-shadow"></div></div><div class="moon-note">Lunar eclipse · shadow edge stays curved</div></div>
+            <div class="lab-control">
+              <span></span>
+              <button class="lab-btn" id="eclipse-test" type="button">Run eclipse</button>
+            </div>
+            <div class="lab-verdict" id="eclipse-verdict" role="status"><strong>Evidence:</strong> Earth's shadow on the Moon is always round. A sphere is the only simple shape that produces a circular silhouette from every direction.</div>
+          </div>
+        </article>
+      </div>
+
+      <div class="lab-notebook">
+        <h3>Your evidence notebook</h3>
+        <p>Complete a CER: one clear claim, two or more observations, and reasoning that connects them. Your writing stays on this device and is not submitted.</p>
+        <div class="cer-grid">
+          <label>Claim<textarea aria-label="Claim" placeholder="The model best supported by the tests is…"></textarea></label>
+          <label>Evidence<textarea aria-label="Evidence" placeholder="In station 1, I observed…"></textarea></label>
+          <label>Reasoning<textarea aria-label="Reasoning" placeholder="This evidence matters because the model predicted…"></textarea></label>
+        </div>
+        <div class="lab-score">
+          <button class="lab-btn" id="lab-finish" type="button">Check investigation</button>
+          <div class="evidence-meter" aria-hidden="true"><span id="evidence-meter-fill"></span></div>
+          <output id="lab-score-out" aria-live="polite">0 / 3</output>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Others Who Measured ── -->
+    <section class="ec-card" style="--card-accent:#5856d6;">
+      <h2>Others Who Measured the Earth</h2>
+      <p>Eratosthenes wasn't the last to tackle this problem. Over the next 2,000 years, scientists across the world refined the measurement using better instruments, higher mountains, and eventually satellites.</p>
+
+      <ul class="ec-timeline">
+
+        <li>
+          <div class="ec-tl-year-col">240 BC</div>
+          <div class="ec-tl-dot" style="background:#ff9500;"></div>
+          <div class="ec-tl-body">
+            <p class="ec-tl-name">Eratosthenes of Cyrene</p>
+            <span class="ec-tl-result" style="background:rgba(52,199,89,0.12);color:#1a7a2e;">~40,000 km · 0.2% off</span>
+            <p class="ec-tl-text">Using shadow angles in Alexandria and Syene. He measured the arc at 7.2° and the distance at 5,000 <em>stadia</em>. Depending on the exact length of a stadion used, his result falls between 39,375 km and 46,250 km — with the most likely value of ~40,000 km being remarkably accurate.</p>
+          </div>
+        </li>
+
+        <li>
+          <div class="ec-tl-year-col">100 BC</div>
+          <div class="ec-tl-dot" style="background:#5856d6;"></div>
+          <div class="ec-tl-body">
+            <p class="ec-tl-name">Poseidonius of Apamea</p>
+            <span class="ec-tl-result" style="background:rgba(88,86,214,0.1);color:#3a38c4;">~38,600 km · 3.7% off</span>
+            <p class="ec-tl-text">A Greek philosopher and polymath, Poseidonius used the star <strong>Canopus</strong> rather than the Sun. He measured the angle difference of Canopus above the horizon at Rhodes and Alexandria, then multiplied by the distance between them. His estimate ranged from 29,000 km to 38,600 km across different attempts — the latter being quite good. Ironically, his lower estimate was the one Columbus used centuries later, leading Columbus to badly underestimate how far away Asia was.</p>
+          </div>
+        </li>
+
+        <li>
+          <div class="ec-tl-year-col">827 AD</div>
+          <div class="ec-tl-dot" style="background:#34c759;"></div>
+          <div class="ec-tl-body">
+            <p class="ec-tl-name">Al-Ma'mun's Expedition (Baghdad)</p>
+            <span class="ec-tl-result" style="background:rgba(52,199,89,0.12);color:#1a7a2e;">~40,250 km · 0.4% off</span>
+            <p class="ec-tl-text">The Abbasid Caliph Al-Ma'mun ordered two teams of surveyors to walk in opposite directions along a flat plain in Mesopotamia (modern Iraq), measuring how far they had to travel before the North Star's altitude changed by exactly one degree. The average of their results gave a degree of latitude of about 111.8 km — implying a circumference of around 40,248 km. Extraordinarily precise for the 9th century.</p>
+          </div>
+        </li>
+
+        <li>
+          <div class="ec-tl-year-col">1030 AD</div>
+          <div class="ec-tl-dot" style="background:#5ac8fa;"></div>
+          <div class="ec-tl-body">
+            <p class="ec-tl-name">Al-Biruni of Khwarezm</p>
+            <span class="ec-tl-result" style="background:rgba(90,200,250,0.12);color:#0071a4;">~40,248 km · 0.4% off</span>
+            <p class="ec-tl-text">The Islamic scholar Abu Rayhan Al-Biruni devised an entirely new method requiring only a single person and a mountain. He measured the height of a mountain, then used a special instrument to measure the <strong>dip angle</strong> of the horizon from the summit. Combining these two measurements with trigonometry, he calculated Earth's radius — and thus its circumference — to within 0.4% of the modern value. This technique required no second city and no team of surveyors.</p>
+          </div>
+        </li>
+
+        <li>
+          <div class="ec-tl-year-col">1669</div>
+          <div class="ec-tl-dot" style="background:#007aff;"></div>
+          <div class="ec-tl-body">
+            <p class="ec-tl-name">Jean Picard (France)</p>
+            <span class="ec-tl-result" style="background:rgba(0,122,255,0.1);color:#0055cc;">~40,062 km · 0.03% off</span>
+            <p class="ec-tl-text">French astronomer Jean Picard was the first to use <strong>telescopic sights and triangulation</strong> to measure a meridian arc. He carefully surveyed 1.1° of latitude along the Paris meridian using a chain of triangles and measured star angles with a precision instrument. His result of 40,062 km was so accurate that <strong>Isaac Newton used it to verify his law of universal gravitation</strong> — the new precision confirmed Newton's predictions perfectly.</p>
+          </div>
+        </li>
+
+        <li>
+          <div class="ec-tl-year-col">1799</div>
+          <div class="ec-tl-dot" style="background:#ff3b30;"></div>
+          <div class="ec-tl-body">
+            <p class="ec-tl-name">Méchain &amp; Delambre (France)</p>
+            <span class="ec-tl-result" style="background:rgba(255,59,48,0.1);color:#c0392b;">~40,009 km · 0.02% off</span>
+            <p class="ec-tl-text">Pierre Méchain and Jean-Baptiste Delambre spent seven years (1792–1799) measuring the meridian from Dunkirk to Barcelona, covering 9.5° of latitude with unprecedented precision. Their mission was not just scientific — it was political. The French Revolutionary government wanted a universal unit of measurement based on nature. The result: the <strong>metre</strong> was defined as 1/10,000,000 of the distance from the North Pole to the equator. Every metre you measure today is a direct descendant of their survey of Earth's circumference.</p>
+          </div>
+        </li>
+
+        <li>
+          <div class="ec-tl-year-col">Today</div>
+          <div class="ec-tl-dot" style="background:#34c759;border-color:#34c759;"></div>
+          <div class="ec-tl-body">
+            <p class="ec-tl-name">GPS Satellites &amp; Laser Ranging</p>
+            <span class="ec-tl-result" style="background:rgba(52,199,89,0.12);color:#1a7a2e;">40,075.017 km · exact</span>
+            <p class="ec-tl-text">Modern measurement uses a network of GPS satellites, ground stations, and laser ranging to track Earth's exact shape in real time. Earth is not a perfect sphere — it bulges slightly at the equator due to its rotation (equatorial circumference: 40,075 km; polar circumference: 40,008 km). The difference is 67 km — less than 0.2%. Not bad for a shadow and a stick.</p>
+          </div>
+        </li>
+
+      </ul>
+
+      <h3>How Accurate Were They?</h3>
+      <table class="ec-acc-table" aria-label="Accuracy comparison of Earth circumference measurements">
+        <thead>
+          <tr><th>Scientist</th><th>Year</th><th>Result (km)</th><th>Error</th><th>Accuracy</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Eratosthenes</td><td>240 BC</td><td>~40,000</td><td>0.2%</td>
+            <td><div class="ec-acc-bar-wrap"><div class="ec-acc-bar" style="width:99.8%;"></div></div> <span class="ec-acc-pct">99.8%</span></td>
+          </tr>
+          <tr>
+            <td>Poseidonius</td><td>100 BC</td><td>~38,600</td><td>3.7%</td>
+            <td><div class="ec-acc-bar-wrap"><div class="ec-acc-bar" style="width:96.3%;background:#ff9500;"></div></div> <span class="ec-acc-pct" style="color:#ff9500;">96.3%</span></td>
+          </tr>
+          <tr>
+            <td>Al-Ma'mun's team</td><td>827 AD</td><td>~40,250</td><td>0.4%</td>
+            <td><div class="ec-acc-bar-wrap"><div class="ec-acc-bar" style="width:99.6%;"></div></div> <span class="ec-acc-pct">99.6%</span></td>
+          </tr>
+          <tr>
+            <td>Al-Biruni</td><td>1030 AD</td><td>~40,248</td><td>0.4%</td>
+            <td><div class="ec-acc-bar-wrap"><div class="ec-acc-bar" style="width:99.6%;"></div></div> <span class="ec-acc-pct">99.6%</span></td>
+          </tr>
+          <tr>
+            <td>Jean Picard</td><td>1669</td><td>40,062</td><td>0.03%</td>
+            <td><div class="ec-acc-bar-wrap"><div class="ec-acc-bar" style="width:99.97%;"></div></div> <span class="ec-acc-pct">99.97%</span></td>
+          </tr>
+          <tr>
+            <td>Méchain &amp; Delambre</td><td>1799</td><td>40,009</td><td>0.02%</td>
+            <td><div class="ec-acc-bar-wrap"><div class="ec-acc-bar" style="width:99.98%;"></div></div> <span class="ec-acc-pct">99.98%</span></td>
+          </tr>
+          <tr>
+            <td>GPS / Modern</td><td>Today</td><td>40,075.017</td><td>0.000%</td>
+            <td><div class="ec-acc-bar-wrap"><div class="ec-acc-bar" style="width:100%;"></div></div> <span class="ec-acc-pct">100%</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ── Why it Matters ── -->
+    <section class="ec-card" style="--card-accent:#5ac8fa;">
+      <h2>Why Measuring Earth's Circumference Matters</h2>
+      <div class="ec-apps">
+        <div class="ec-app-card">
+          <span class="ec-app-icon">📏</span>
+          <div class="ec-app-text">
+            <strong>The Metre Was Born From It</strong>
+            <small>The metric system — used by nearly every country on Earth — was literally defined as a fraction of Earth's circumference. One metre was set as 1/10,000,000 of the distance from equator to pole. Every ruler, every kilometre, every km/h speed limit descends from this measurement.</small>
+          </div>
+        </div>
+        <div class="ec-app-card">
+          <span class="ec-app-icon">🧭</span>
+          <div class="ec-app-text">
+            <strong>Navigation and Cartography</strong>
+            <small>Accurate maps require knowing Earth's size. Before Picard's 1669 measurement, maps had systematic errors that led ships astray. Knowing the exact circumference let navigators calculate longitude and latitude with far greater precision.</small>
+          </div>
+        </div>
+        <div class="ec-app-card">
+          <span class="ec-app-icon">🛰️</span>
+          <div class="ec-app-text">
+            <strong>GPS and Satellite Orbits</strong>
+            <small>Every GPS satellite knows Earth's exact shape and circumference. Your phone uses this to triangulate your position to within a few metres. Even the height and speed of satellite orbits are calculated from Earth's known size and gravity.</small>
+          </div>
+        </div>
+        <div class="ec-app-card">
+          <span class="ec-app-icon">🔭</span>
+          <div class="ec-app-text">
+            <strong>Verifying Newton's Laws</strong>
+            <small>When Picard measured Earth's circumference precisely in 1669, Newton used that number to check whether his theory of gravity correctly predicted the Moon's orbit. It did — confirming one of the greatest scientific theories in history.</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Practice Problems ── -->
+    <section class="ec-card" style="--card-accent:#34c759;">
+      <h2>Practice Problems</h2>
+      <p style="color: var(--text-muted, #64748b);font-size:0.84rem;">Use the formula: Circumference = 360° ÷ angle × distance. Round to the nearest whole number unless stated.</p>
+      <div class="ec-practice">
+
+        <div class="ec-problem">
+          <p><span class="ec-problem-diff diff-easy">Easy</span>1. Eratosthenes measured a shadow angle of 7.2° and a city distance of 800 km. Use his formula to calculate Earth's circumference in km.</p>
+          <div class="ec-problem-row">
+            <input type="number" class="ec-ans-input" id="eans-1" placeholder="km" />
+            <button class="ec-check-btn" onclick="ecCheck(1, 40000, 200)">Check</button>
+            <span class="ec-feedback" id="efb-1"></span>
+          </div>
+          <div class="ec-hint" id="ehint-1">Hint: 360 ÷ 7.2 × 800 = 50 × 800 = 40,000 km</div>
+        </div>
+
+        <div class="ec-problem">
+          <p><span class="ec-problem-diff diff-easy">Easy</span>2. If you measured a shadow angle of 9° between two cities that are 1,000 km apart, what circumference would you calculate?</p>
+          <div class="ec-problem-row">
+            <input type="number" class="ec-ans-input" id="eans-2" placeholder="km" />
+            <button class="ec-check-btn" onclick="ecCheck(2, 40000, 200)">Check</button>
+            <span class="ec-feedback" id="efb-2"></span>
+          </div>
+          <div class="ec-hint" id="ehint-2">Hint: 360 ÷ 9 × 1,000 = 40 × 1,000 = 40,000 km</div>
+        </div>
+
+        <div class="ec-problem">
+          <p><span class="ec-problem-diff diff-mid">Medium</span>3. Poseidonius measured a star angle of 7.5° between Rhodes and Alexandria (distance: 800 km). What circumference did he calculate? Round to the nearest 100 km.</p>
+          <div class="ec-problem-row">
+            <input type="number" class="ec-ans-input" id="eans-3" placeholder="km" />
+            <button class="ec-check-btn" onclick="ecCheck(3, 38400, 200)">Check</button>
+            <span class="ec-feedback" id="efb-3"></span>
+          </div>
+          <div class="ec-hint" id="ehint-3">Hint: 360 ÷ 7.5 × 800 = 48 × 800 = 38,400 km</div>
+        </div>
+
+        <div class="ec-problem">
+          <p><span class="ec-problem-diff diff-mid">Medium</span>4. Eratosthenes' result (40,000 km) differs from the modern value (40,075 km) by how many km?</p>
+          <div class="ec-problem-row">
+            <input type="number" class="ec-ans-input" id="eans-4" placeholder="km" />
+            <button class="ec-check-btn" onclick="ecCheck(4, 75, 2)">Check</button>
+            <span class="ec-feedback" id="efb-4"></span>
+          </div>
+          <div class="ec-hint" id="ehint-4">Hint: 40,075 − 40,000 = 75 km</div>
+        </div>
+
+        <div class="ec-problem">
+          <p><span class="ec-problem-diff diff-hard">Challenge</span>5. One degree of latitude equals about 111 km on Earth's surface. If a student in your city measures a shadow angle of 4.3° compared to a city 478 km south where the Sun is directly overhead, how close is their calculated circumference to the real value? Calculate their result first, then find the % error to 1 decimal place. (% error = |result − 40,075| ÷ 40,075 × 100)</p>
+          <div class="ec-problem-row">
+            <input type="number" class="ec-ans-input" id="eans-5" step="0.1" placeholder="km" />
+            <button class="ec-check-btn" onclick="ecCheck(5, 40018, 300)">Check circumference</button>
+            <span class="ec-feedback" id="efb-5"></span>
+          </div>
+          <div class="ec-hint" id="ehint-5">Hint: 360 ÷ 4.3 × 478 = 83.72 × 478 ≈ 40,018 km. Error = |40,018 − 40,075| ÷ 40,075 × 100 ≈ 0.1% — impressively close!</div>
+        </div>
+
+        <div class="ec-problem">
+          <p><span class="ec-problem-diff diff-hard">Challenge</span>6. The metre was defined as 1/10,000,000 of the distance from the equator to the North Pole. Using Earth's polar circumference of 40,008 km, calculate this pole-to-equator distance in km, then check whether it equals exactly 10,000 km (one ten-millionth of that should be 1 m). Enter the distance in km.</p>
+          <div class="ec-problem-row">
+            <input type="number" class="ec-ans-input" id="eans-6" step="0.1" placeholder="km" />
+            <button class="ec-check-btn" onclick="ecCheck(6, 10002, 5)">Check</button>
+            <span class="ec-feedback" id="efb-6"></span>
+          </div>
+          <div class="ec-hint" id="ehint-6">Hint: Equator to pole = polar circumference ÷ 4 = 40,008 ÷ 4 = 10,002 km. The metre was meant to be exactly 1/10,000,000 of this (= 1.0002 m by modern standards — very close!).</div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+  </div><!-- /.ll-sim -->
+
+  <aside class="ll-panel" aria-hidden="false">
+    <div class="ll-panel-head">
+      <div class="ll-tabs">
+        <button class="ll-tab" aria-selected="true" data-pane="ec-params">Controls</button>
+        <button class="ll-tab" aria-selected="false" data-pane="ec-guide">Guide</button>
+      </div>
+      <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+    </div>
+    <div class="ll-panel-body">
+      <div class="ll-pane ll-active" id="ec-params">
+        <span class="ll-label">Historical Presets</span>
+        <div class="ll-presets" id="ec-presets">
+          <button class="ll-preset ll-active ec-preset-btn" data-angle="7.2" data-dist="800">Eratosthenes 240 BC</button>
+          <button class="ll-preset ec-preset-btn" data-angle="7.5" data-dist="800">Poseidonius 100 BC</button>
+          <button class="ll-preset ec-preset-btn" data-angle="0.52" data-dist="111">Al-Biruni 1030 AD</button>
+          <button class="ll-preset ec-preset-btn" data-angle="1.0" data-dist="110.6">Picard 1669</button>
+        </div>
+        <hr class="ll-hr">
+        <div class="ll-param">
+          <div class="ll-param-label">
+            <span>Shadow angle</span>
+            <span class="ll-val" id="ec-angle-val">7.2°</span>
+          </div>
+          <input type="range" class="ec-slider" id="ec-angle-slider" min="0.3" max="20" step="0.1" value="7.2" style="width:100%;accent-color:#34c759;" />
+          <div class="ll-param-ends"><span>0.3°</span><span>20°</span></div>
+        </div>
+        <div class="ll-param">
+          <div class="ll-param-label">
+            <span>City distance</span>
+            <span class="ll-val" id="ec-dist-val">800 km</span>
+          </div>
+          <input type="range" class="ec-slider" id="ec-dist-slider" min="50" max="3000" step="10" value="800" style="width:100%;accent-color:#34c759;" />
+          <div class="ll-param-ends"><span>50 km</span><span>3,000 km</span></div>
+        </div>
+        <hr class="ll-hr">
+        <span class="ll-label">Live Readout</span>
+        <div class="ll-readouts">
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Circumference</span>
+            <span class="ll-readout-val" id="ec-r-circ">40,000</span>
+          </div>
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Fraction</span>
+            <span class="ll-readout-val" id="ec-r-frac">1/50</span>
+          </div>
+        </div>
+      </div>
+      <div class="ll-pane" id="ec-guide">
+        <div class="ll-info">
+          <strong>Eratosthenes' method</strong>
+          C = (360° ÷ shadow angle) × distance. A 7.2° angle and 800 km gives 40,000 km.
+        </div>
+        <div class="ll-info">
+          <strong>Modern value</strong>
+          40,075 km (equatorial). Eratosthenes was within 0.2%.
+        </div>
+        <div class="ll-info">
+          <strong>The metre's origin</strong>
+          1 metre was defined as 1/10,000,000 of the distance from equator to pole — a direct legacy of measuring Earth's size.
+        </div>
+        <div class="ll-info">
+          <strong>Columbus's error</strong>
+          He used Poseidonius's lower estimate (~29,000 km) and badly underestimated how far away Asia was.
+        </div>
+        <div class="ll-info">
+          <strong>Al-Biruni's trick</strong>
+          He needed only a mountain — no second city. He measured the dip angle of the horizon from the summit and used trigonometry.
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <button class="ll-open-btn" aria-label="Open panel">
+    <span class="ll-open-dot"></span>
+    <span class="ll-open-dot"></span>
+    <span class="ll-open-dot"></span>
+  </button>
+  </div><!-- /.ll-stage -->
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../index.html">Home</a> · <a href="../../steam-lessons.html">Lessons</a></p>
+  </footer>
+</div><!-- /.ll-viewport -->
+
+  <script src="../../assets/js/theme-registry.js"></script>
+  <script src="../../assets/js/nav-mobile.js"></script>
+  <script>
+  (function () {
+
+    /* ── Simulator ─────────────────────────────────────── */
+    const canvas      = document.getElementById('ec-canvas');
+    const ctx         = canvas.getContext('2d');
+    const angleSlider = document.getElementById('ec-angle-slider');
+    const distSlider  = document.getElementById('ec-dist-slider');
+    const angleValEl  = document.getElementById('ec-angle-val');
+    const distValEl   = document.getElementById('ec-dist-val');
+    const rAngle      = document.getElementById('ec-r-angle');
+    const rDist       = document.getElementById('ec-r-dist');
+    const rFrac       = document.getElementById('ec-r-frac');
+    const rCirc       = document.getElementById('ec-r-circ');
+
+    function getAngle() { return parseFloat(angleSlider.value); }
+    function getDist()  { return parseInt(distSlider.value); }
+
+    function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+    function simplifyFraction(num, den) {
+      const g = gcd(Math.round(num), Math.round(den));
+      return [Math.round(num / g), Math.round(den / g)];
+    }
+
+    function updateReadout() {
+      const angle = getAngle();
+      const dist  = getDist();
+      const circ  = (360 / angle) * dist;
+      const frac  = 360 / angle; // denominator of 1/frac
+
+      angleValEl.textContent = angle.toFixed(1) + '°';
+      distValEl.textContent  = dist.toLocaleString() + ' km';
+      rAngle.textContent     = angle.toFixed(1);
+      rDist.textContent      = dist.toLocaleString();
+      rCirc.textContent      = Math.round(circ).toLocaleString();
+
+      // Fraction display: 1/50 style
+      const [n, d] = simplifyFraction(1, Math.round(frac));
+      rFrac.textContent = n + '/' + d;
+    }
+
+    function drawDiagram() {
+      const W = canvas.offsetWidth || 600;
+      canvas.width  = W;
+      const H       = canvas.height;
+      const angle   = getAngle();
+      const dist    = getDist();
+      const circ    = (360 / angle) * dist;
+
+      ctx.clearRect(0, 0, W, H);
+
+      // Sky gradient
+      const sky = ctx.createLinearGradient(0, 0, 0, H * 0.55);
+      sky.addColorStop(0, '#87CEEB');
+      sky.addColorStop(1, '#e0f4ff');
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, W, H * 0.55);
+
+      // Earth arc
+      const EARTH_R  = Math.min(W, H) * 1.6;
+      const earthCX  = W / 2;
+      const earthCY  = H + EARTH_R - H * 0.48;
+
+      // Earth fill (visible arc)
+      const earthGrad = ctx.createRadialGradient(earthCX, earthCY, EARTH_R * 0.8, earthCX, earthCY, EARTH_R);
+      earthGrad.addColorStop(0, '#2d8a4e');
+      earthGrad.addColorStop(0.4, '#3aab5e');
+      earthGrad.addColorStop(1, '#1a5c30');
+      ctx.fillStyle = earthGrad;
+      ctx.beginPath();
+      ctx.arc(earthCX, earthCY, EARTH_R, Math.PI, 2 * Math.PI);
+      ctx.closePath();
+      ctx.fill();
+
+      // Ocean highlight strip
+      ctx.fillStyle = 'rgba(90,200,250,0.25)';
+      ctx.beginPath();
+      ctx.arc(earthCX, earthCY, EARTH_R, Math.PI, 2 * Math.PI);
+      ctx.closePath();
+      ctx.fill();
+
+      // Surface line
+      ctx.strokeStyle = 'rgba(0,60,20,0.35)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(earthCX, earthCY, EARTH_R, Math.PI * 1.1, Math.PI * 1.9);
+      ctx.stroke();
+
+      // City positions
+      // Syene: directly south (bottom centre of arc), Sun directly overhead
+      // Alexandria: to the north, offset by the angle
+      const syeneAngle = Math.PI + Math.PI / 2;    // straight up from Earth centre
+      const alexAngle  = syeneAngle - (angle * Math.PI / 180); // offset north by shadow angle
+
+      function cityPos(a) {
+        return {
+          x: earthCX + EARTH_R * Math.cos(a),
+          y: earthCY + EARTH_R * Math.sin(a),
+        };
+      }
+      function cityNormal(a) {
+        // outward unit vector
+        return { nx: Math.cos(a), ny: Math.sin(a) };
+      }
+
+      const syene = cityPos(syeneAngle);
+      const alex  = cityPos(alexAngle);
+      const syeneN = cityNormal(syeneAngle);
+      const alexN  = cityNormal(alexAngle);
+
+      const GNOMON = 38; // stick height in px
+
+      // Draw arc between cities (shows the measured distance)
+      ctx.strokeStyle = '#ff9500';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.arc(earthCX, earthCY, EARTH_R, Math.min(syeneAngle, alexAngle), Math.max(syeneAngle, alexAngle));
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Distance label on arc
+      const midArc = (syeneAngle + alexAngle) / 2;
+      const midArcPt = cityPos(midArc);
+      const labelR = EARTH_R - 22;
+      const labelX = earthCX + labelR * Math.cos(midArc);
+      const labelY = earthCY + labelR * Math.sin(midArc);
+      ctx.fillStyle = '#b35900';
+      ctx.font = 'bold 10px Inter,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(dist.toLocaleString() + ' km', labelX, labelY);
+
+      // Sun rays — parallel, coming from top-right
+      const sunRayDX = 0;   // straight down
+      const sunRayDY = 1;
+      ctx.strokeStyle = 'rgba(255,204,0,0.55)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([5, 5]);
+      [-30, 0, 30, 60, 90, 120].forEach(ox => {
+        const rx = syene.x + ox;
+        ctx.beginPath();
+        ctx.moveTo(rx, 0);
+        ctx.lineTo(rx, syene.y - GNOMON - 2);
+        ctx.stroke();
+      });
+      ctx.setLineDash([]);
+
+      // ── Syene gnomon ── (no shadow — sun directly overhead)
+      const sGx = syene.x;
+      const sGy = syene.y;
+      // Stick along normal
+      ctx.strokeStyle = '#5c3317';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(sGx, sGy);
+      ctx.lineTo(sGx + syeneN.nx * GNOMON, sGy + syeneN.ny * GNOMON);
+      ctx.stroke();
+      ctx.lineCap = 'butt';
+
+      // Sun ray hits tip of Syene stick — no angle
+      ctx.strokeStyle = '#ffcc00';
+      ctx.lineWidth = 2;
+      const sTipX = sGx + syeneN.nx * GNOMON;
+      const sTipY = sGy + syeneN.ny * GNOMON;
+      ctx.beginPath();
+      ctx.moveTo(sTipX, 10);
+      ctx.lineTo(sTipX, sTipY);
+      ctx.stroke();
+
+      // Syene label
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 10px Inter,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Syene', sGx, sGy + 14);
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.font = '9px Inter,sans-serif';
+      ctx.fillText('No shadow', sGx, sGy + 25);
+
+      // ── Alexandria gnomon ── (shadow = angle)
+      const aGx = alex.x;
+      const aGy = alex.y;
+      // Stick along normal (perpendicular to Earth's surface at Alex)
+      const aTipX = aGx + alexN.nx * GNOMON;
+      const aTipY = aGy + alexN.ny * GNOMON;
+
+      ctx.strokeStyle = '#5c3317';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(aGx, aGy);
+      ctx.lineTo(aTipX, aTipY);
+      ctx.stroke();
+      ctx.lineCap = 'butt';
+
+      // Sun ray hits tip of Alex stick — continues straight down
+      ctx.strokeStyle = '#ffcc00';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(aTipX, 10);
+      ctx.lineTo(aTipX, aTipY);
+      ctx.stroke();
+
+      // Shadow line (projected ray continuing past stick to ground)
+      // The ray is vertical; the stick is angled — so shadow appears offset
+      // Shadow point on surface: project vertical ray from tip down to surface circle
+      // Since ray is vertical, shadow is directly below the tip
+      // Find where vertical line from aTipX intersects the Earth circle
+      const dx2 = aTipX - earthCX;
+      const a2coeff = 1;
+      const b2coeff = 2 * (earthCY - earthCY); // simplifies
+      const disc = EARTH_R * EARTH_R - dx2 * dx2;
+      if (disc >= 0) {
+        const shadowY = earthCY - Math.sqrt(disc); // upper intersection (surface)
+        ctx.strokeStyle = 'rgba(80,40,0,0.5)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(aTipX, aTipY);
+        ctx.lineTo(aTipX, shadowY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Angle arc at tip of stick
+        const angleRad = angle * Math.PI / 180;
+        const arcR = 16;
+        // The stick direction angle from vertical: the stick normal is alexN, vertical is (0,-1)
+        // Angle between them is exactly `angle` degrees
+        const stickAngleFromUp = Math.atan2(alexN.nx, -alexN.ny); // angle of stick from straight up
+        ctx.strokeStyle = '#ff3b30';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(aTipX, aTipY, arcR,
+          -Math.PI / 2,
+          -Math.PI / 2 + stickAngleFromUp, false);
+        ctx.stroke();
+
+        // Angle label
+        ctx.fillStyle = '#ff3b30';
+        ctx.font = 'bold 10px Inter,sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(angle.toFixed(1) + '°', aTipX + arcR + 3, aTipY - 2);
+      }
+
+      // Alexandria label
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 10px Inter,sans-serif';
+      ctx.textAlign = 'center';
+      // Label position — offset based on direction of normal
+      const lOff = 14;
+      ctx.fillText('Alexandria', aGx + alexN.nx * lOff * 1.5, aGy + 14);
+
+      // ── Centre angle indicator ──────────────────────── */
+      const centerR = 40;
+      ctx.strokeStyle = 'rgba(255,149,0,0.6)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(earthCX, earthCY, centerR,
+        Math.min(syeneAngle, alexAngle), Math.max(syeneAngle, alexAngle));
+      ctx.stroke();
+      ctx.fillStyle = '#ff9500';
+      ctx.font = 'bold 9px Inter,sans-serif';
+      ctx.textAlign = 'center';
+      const cLabelA = (syeneAngle + alexAngle) / 2;
+      ctx.fillText(angle.toFixed(1) + '°', earthCX + (centerR + 14) * Math.cos(cLabelA),
+        earthCY + (centerR + 14) * Math.sin(cLabelA));
+
+      // Sun icon
+      ctx.fillStyle = '#ffcc00';
+      ctx.font = '22px serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('☀', W - 36, 28);
+
+      // Legend
+      ctx.font = '9px Inter,sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#ff9500';
+      ctx.fillText('▬ arc distance = ' + dist.toLocaleString() + ' km', 10, H - 32);
+      ctx.fillStyle = '#ff3b30';
+      ctx.fillText('↺ shadow angle = ' + angle.toFixed(1) + '° = 1/' + Math.round(360 / angle) + ' of 360°', 10, H - 18);
+      ctx.fillStyle = '#34c759';
+      ctx.textAlign = 'right';
+      ctx.fillText('Circumference ≈ ' + Math.round(circ).toLocaleString() + ' km', W - 10, H - 18);
+    }
+
+    function update() {
+      updateReadout();
+      drawDiagram();
+    }
+
+    angleSlider.addEventListener('input', () => {
+      // deactivate presets
+      document.querySelectorAll('.ec-preset-btn').forEach(b => b.classList.remove('active'));
+      update();
+    });
+    distSlider.addEventListener('input', () => {
+      document.querySelectorAll('.ec-preset-btn').forEach(b => b.classList.remove('active'));
+      update();
+    });
+
+    // Presets
+    document.getElementById('ec-presets').addEventListener('click', e => {
+      const btn = e.target.closest('.ec-preset-btn');
+      if (!btn) return;
+      document.querySelectorAll('.ec-preset-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      angleSlider.value = btn.dataset.angle;
+      distSlider.value  = btn.dataset.dist;
+      update();
+    });
+
+    update();
+
+    /* ── Evidence lab ─────────────────────────────────── */
+    const completedStations = new Set();
+    const evidenceFill = document.getElementById('evidence-meter-fill');
+    const scoreOut = document.getElementById('lab-score-out');
+
+    function completeStation(number) {
+      completedStations.add(number);
+      document.getElementById('lab-step-' + number).classList.add('done');
+      const score = completedStations.size;
+      evidenceFill.style.width = (score / 3 * 100) + '%';
+      scoreOut.textContent = score + ' / 3';
+    }
+
+    const boatDistance = document.getElementById('boat-distance');
+    const boatDistanceOut = document.getElementById('boat-distance-out');
+    const curveDrop = document.getElementById('curve-drop');
+    const boatHidden = document.getElementById('boat-hidden');
+    const boat = document.getElementById('lab-boat');
+
+    function updateBoatTrial() {
+      const distanceKm = Number(boatDistance.value);
+      const dropMetres = (distanceKm * distanceKm) / 12.742;
+      const hiddenPercent = Math.min(92, Math.max(0, (dropMetres - 2) * 2.1));
+      boatDistanceOut.textContent = distanceKm + ' km';
+      curveDrop.textContent = dropMetres.toFixed(1) + ' m';
+      boat.style.clipPath = 'inset(0 0 ' + hiddenPercent + '% 0)';
+      boat.style.transform = 'translateX(-50%) scale(' + Math.max(.7, 1 - distanceKm / 180) + ')';
+      boatHidden.textContent = hiddenPercent < 8 ? 'Hull visible' : hiddenPercent < 48 ? 'Hull first' : hiddenPercent < 82 ? 'Most is hidden' : 'Nearly all hidden';
+    }
+    boatDistance.addEventListener('input', updateBoatTrial);
+    updateBoatTrial();
+    document.getElementById('boat-test').addEventListener('click', () => {
+      boatDistance.value = 28;
+      updateBoatTrial();
+      document.getElementById('boat-verdict').classList.add('show');
+      completeStation(1);
+    });
+
+    const labShadowAngle = document.getElementById('lab-shadow-angle');
+    const labShadowOut = document.getElementById('lab-shadow-out');
+    const labCirc = document.getElementById('lab-circ');
+    const shadowCast = document.getElementById('shadow-cast');
+    const shadowAngleLabel = document.getElementById('shadow-angle-label');
+
+    function updateShadowTrial() {
+      const degrees = Number(labShadowAngle.value);
+      const calculatedCirc = (360 / degrees) * 800;
+      labShadowOut.textContent = degrees.toFixed(1) + '°';
+      shadowAngleLabel.textContent = degrees.toFixed(1) + '°';
+      labCirc.textContent = Math.round(calculatedCirc).toLocaleString() + ' km';
+      shadowCast.style.width = (48 + degrees * 6) + 'px';
+    }
+    labShadowAngle.addEventListener('input', updateShadowTrial);
+    updateShadowTrial();
+    document.getElementById('shadow-test').addEventListener('click', () => {
+      labShadowAngle.value = 7.2;
+      updateShadowTrial();
+      document.getElementById('shadow-verdict').classList.add('show');
+      completeStation(2);
+    });
+
+    const moonStage = document.getElementById('moon-stage');
+    document.getElementById('eclipse-test').addEventListener('click', () => {
+      moonStage.classList.remove('run');
+      void moonStage.offsetWidth;
+      moonStage.classList.add('run');
+      document.getElementById('eclipse-verdict').classList.add('show');
+      completeStation(3);
+    });
+
+    document.getElementById('lab-finish').addEventListener('click', () => {
+      if (completedStations.size < 3) {
+        scoreOut.textContent = completedStations.size + ' / 3 — run every test';
+        return;
+      }
+      const written = Array.from(document.querySelectorAll('.cer-grid textarea'))
+        .filter(field => field.value.trim().length >= 12).length;
+      scoreOut.textContent = written === 3 ? 'Lab complete ✓' : 'Tests done — finish your CER';
+    });
+
+    /* ── Practice checker ─────────────────────────────── */
+    window.ecCheck = function (num, correct, tol) {
+      const input = document.getElementById('eans-' + num);
+      const fb    = document.getElementById('efb-' + num);
+      const hint  = document.getElementById('ehint-' + num);
+      const val   = parseFloat(input.value);
+
+      fb.className = 'ec-feedback';
+      if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.classList.add('wrong'); return; }
+
+      if (Math.abs(val - correct) <= tol) {
+        fb.textContent = '✓ Correct!';
+        fb.classList.add('correct');
+        hint.classList.remove('visible');
+        input.style.borderColor = '#34c759';
+      } else {
+        fb.textContent = '✗ Try again';
+        fb.classList.add('wrong');
+        hint.classList.add('visible');
+        input.style.borderColor = '#ff3b30';
+      }
+    };
+
+  })();
+  </script>
+  <script src="../../assets/js/classroom-animations.js"></script>
+  <script src="../../assets/js/lesson-layout.js"></script>
+<script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

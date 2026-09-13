@@ -1,0 +1,1520 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Climate Modeling Simulator · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Manipulate CO₂, solar output, ice coverage, and deforestation to model climate change on a live 3D Earth with animated particle effects." />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../assets/css/lessons/phase3-labs.css" />
+  <style>
+    body { background: #000813; color: #c8d8ff; margin: 0; overflow-x: hidden; }
+
+    /* ── Topbar ── */
+    .cs-topbar {
+      position: sticky; top: 0; z-index: 40;
+      backdrop-filter: blur(14px) saturate(160%);
+      background: rgba(0, 8, 20, 0.90);
+      border-bottom: 1px solid rgba(60, 120, 220, 0.22);
+    }
+    .cs-topbar-inner {
+      width: min(1400px, calc(100% - 2rem));
+      margin: 0 auto; min-height: 48px;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .cs-topbar a { color: #7aaeff; text-decoration: none; font-size: 0.82rem; }
+    .cs-topbar a:hover { color: #fff; }
+    .cs-topbar-title { font-size: 0.9rem; font-weight: 700; color: #c8d8ff; letter-spacing: -0.01em; }
+
+    /* ── Hero ── */
+    .cs-hero {
+      text-align: center; padding: 2.2rem 1.5rem 1rem;
+      max-width: 740px; margin: 0 auto;
+    }
+    .cs-hero h1 { font-size: clamp(1.5rem, 3.5vw, 2.2rem); font-weight: 800; color: #fff; margin: 0 0 0.5rem; }
+    .cs-hero p { font-size: 0.9rem; color: rgba(200,220,255,0.7); margin: 0; line-height: 1.55; }
+
+    /* ── Main Layout ── */
+    .cs-wrap {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 1.2rem;
+      padding: 0 1.2rem 1.5rem;
+      max-width: 1400px;
+      margin: 0 auto;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .cs-wrap { grid-template-columns: 1fr; }
+    }
+
+    /* ── Globe ── */
+    .globe-outer {
+      position: relative;
+      border-radius: 20px;
+      overflow: hidden;
+      background: radial-gradient(ellipse at 50% 40%, #050f28 0%, #000510 65%, #000 100%);
+      aspect-ratio: 4/3;
+      box-shadow: 0 0 80px rgba(30,80,200,0.18), inset 0 0 40px rgba(0,0,30,0.6);
+    }
+    #earth-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+    #earth-canvas:focus-visible { outline: 2px solid #5090ff; outline-offset: -2px; }
+    #particle-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+    .mode-badge {
+      position: absolute; top: 14px; left: 16px;
+      background: rgba(0,8,30,0.72); backdrop-filter: blur(8px);
+      border: 1px solid rgba(80,140,255,0.3);
+      border-radius: 999px; padding: 5px 14px;
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em;
+      color: #a8c8ff; pointer-events: none;
+    }
+    .drag-hint {
+      position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+      font-size: 0.7rem; color: rgba(160,190,255,0.45); pointer-events: none;
+      white-space: nowrap;
+    }
+    .data-badge {
+      position: absolute; bottom: 14px; right: 14px;
+      background: rgba(0,8,30,0.65); backdrop-filter: blur(6px);
+      border: 1px solid rgba(80,200,255,0.25);
+      border-radius: 6px; padding: 4px 10px;
+      font-size: 0.65rem; color: rgba(120,200,255,0.7); pointer-events: none;
+      display: none;
+    }
+
+    /* ── Control Panel ── */
+    .ctrl-panel {
+      display: flex; flex-direction: column; gap: 1rem;
+    }
+
+    /* Mode Tabs */
+    .mode-tabs {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+      background: rgba(0,10,30,0.6);
+      border: 1px solid rgba(60,100,220,0.2);
+      border-radius: 14px; padding: 6px;
+    }
+    .mode-tab {
+      border: none; border-radius: 10px; padding: 8px 4px;
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.02em;
+      cursor: pointer; transition: background 0.22s, color 0.22s;
+      background: transparent; color: rgba(160,190,255,0.55);
+    }
+    .mode-tab:hover { background: rgba(80,120,255,0.12); color: #a8c8ff; }
+    .mode-tab.active { background: rgba(60,120,255,0.22); color: #c8e0ff; border: 1px solid rgba(100,160,255,0.3); }
+
+    /* Scenario presets */
+    .preset-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .preset-btn {
+      border: 1px solid rgba(60,100,220,0.25); border-radius: 10px; padding: 7px 4px;
+      font-size: 0.64rem; font-weight: 700; letter-spacing: 0.01em; text-align: center;
+      line-height: 1.25; cursor: pointer; background: rgba(0,10,30,0.5);
+      color: rgba(160,190,255,0.7); transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .preset-btn:hover { background: rgba(80,120,255,0.15); color: #c8e0ff; border-color: rgba(100,160,255,0.4); }
+    @media (max-width: 520px) { .preset-row { grid-template-columns: repeat(2, 1fr); } }
+
+    /* Params */
+    .ctrl-card {
+      background:
+        repeating-linear-gradient(rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 3px),
+        rgba(0,10,30,0.55);
+      border: 1px solid rgba(60,100,200,0.2);
+      border-radius: 16px; padding: 1rem 1.1rem;
+    }
+    .ctrl-card h3 {
+      font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em;
+      color: rgba(160,190,255,0.55); text-transform: uppercase; margin: 0 0 0.9rem;
+    }
+    .param-row { margin-bottom: 0.85rem; }
+    .param-row:last-child { margin-bottom: 0; }
+    .param-label {
+      display: flex; justify-content: space-between;
+      font-size: 0.78rem; color: rgba(200,220,255,0.75); margin-bottom: 5px;
+    }
+    .param-label strong { color: #a8d4ff; font-variant-numeric: tabular-nums; font-family: var(--font-mono, ui-monospace, monospace); }
+    input[type=range] {
+      width: 100%; height: 4px; border-radius: 999px;
+      background: rgba(60,100,220,0.25); outline: none; cursor: pointer;
+      -webkit-appearance: none; appearance: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 14px; height: 14px;
+      border-radius: 50%; background: #5090ff;
+      border: 2px solid #a0c8ff; box-shadow: 0 0 6px rgba(80,144,255,0.5);
+    }
+    input[type=range]::-moz-range-thumb {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: #5090ff; border: 2px solid #a0c8ff;
+    }
+    .range-ends {
+      display: flex; justify-content: space-between;
+      font-size: 0.62rem; color: rgba(140,170,220,0.4); margin-top: 3px;
+    }
+
+    /* Readouts */
+    .readout-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    }
+    .readout-card {
+      background: rgba(0,10,40,0.6);
+      border: 1px solid rgba(60,100,200,0.2);
+      border-radius: 12px; padding: 10px 12px;
+      display: flex; flex-direction: column; gap: 3px;
+    }
+    .readout-lbl { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; color: rgba(140,170,220,0.55); text-transform: uppercase; }
+    .readout-val {
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: 1.1rem; font-weight: 800; letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+      transition: color 0.6s;
+    }
+    .readout-val.neutral { color: #60c060; }
+    .readout-val.warm    { color: #f0c040; }
+    .readout-val.hot     { color: #ff6030; }
+    .readout-val.critical{ color: #ff2020; }
+    .readout-val.blue    { color: #60b8ff; }
+    .readout-val.acid    { color: #ff9040; }
+
+    /* Alert bar — restyled as a "Threat Level" HUD headline */
+    .alert-bar {
+      border-radius: 10px; padding: 8px 12px;
+      display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+      font-size: 0.74rem; line-height: 1.4; text-align: left;
+      transition: background 0.5s, color 0.5s, border-color 0.5s;
+      border: 1px solid transparent;
+    }
+    .alert-dot {
+      width: 7px; height: 7px; border-radius: 50%; background: currentColor;
+      box-shadow: 0 0 6px currentColor; flex: none; align-self: center;
+      animation: alertPulse 1.6s ease-in-out infinite;
+    }
+    .alert-label {
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-weight: 800; letter-spacing: 0.05em; white-space: nowrap;
+    }
+    .alert-detail { color: inherit; opacity: 0.82; }
+    @keyframes alertPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .alert-bar.safe     { background: rgba(40,160,80,0.12); color: #60d080; border-color: rgba(60,180,80,0.25); }
+    .alert-bar.warning  { background: rgba(240,180,40,0.12); color: #f0c040; border-color: rgba(240,180,40,0.3); }
+    .alert-bar.danger   { background: rgba(255,80,30,0.12);  color: #ff7040; border-color: rgba(255,80,30,0.3); }
+    .alert-bar.critical { background: rgba(255,20,20,0.14);  color: #ff4040; border-color: rgba(255,20,20,0.35); }
+
+    /* Status report */
+    .status-lines { display: flex; flex-direction: column; gap: 7px; }
+    .status-line { display: flex; align-items: baseline; gap: 8px; font-size: 0.74rem; line-height: 1.4; }
+    .status-tag {
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-weight: 800; font-size: 0.62rem; letter-spacing: 0.05em;
+      text-transform: uppercase; flex: none; min-width: 4.4em;
+    }
+    .status-text { color: rgba(200,220,255,0.75); }
+    .status-tag.neutral  { color: #60c060; }
+    .status-tag.warm     { color: #f0c040; }
+    .status-tag.hot      { color: #ff6030; }
+    .status-tag.critical { color: #ff2020; }
+    .status-tag.blue     { color: #60b8ff; }
+    .status-tag.acid     { color: #ff9040; }
+
+    /* Info section */
+    .cs-info {
+      max-width: min(1400px, calc(100% - 2.4rem));
+      margin: 0 auto; padding: 0 1.2rem 3rem;
+    }
+    .info-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin-top: 1rem; }
+    @media (max-width: 700px) { .info-grid { grid-template-columns: 1fr; } }
+    .info-card {
+      background: rgba(0,10,30,0.55);
+      border: 1px solid rgba(60,100,200,0.18);
+      border-radius: 14px; padding: 1.1rem;
+    }
+    .info-card h4 { font-size: 0.82rem; font-weight: 700; color: #a8c8ff; margin: 0 0 0.45rem; }
+    .info-card p  { font-size: 0.78rem; color: rgba(180,205,255,0.65); margin: 0; line-height: 1.55; }
+
+    /* SVG particle styles */
+    .p-co2 { fill: rgba(255,140,50,0.85); }
+    .p-co2-ring { fill: none; stroke: rgba(255,140,50,0.5); stroke-width: 1; }
+    .p-h2o { fill: rgba(140,200,255,0.8); }
+    .p-storm-arm { fill: none; stroke-linecap: round; }
+    .p-heat { fill: none; }
+
+    @keyframes floatUp   { 0%{opacity:.85;transform:translate(0,0) scale(1)} 100%{opacity:0;transform:translate(var(--dx,0px),var(--dy,-70px)) scale(.4)} }
+    @keyframes rainDrop  { 0%{opacity:.7;transform:translateY(0)} 100%{opacity:0;transform:translateY(55px)} }
+    @keyframes stormSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    @keyframes heatRing  { 0%,100%{opacity:.08;r:8} 50%{opacity:.45;r:22} }
+    @keyframes leafSway  { 0%,100%{transform:rotate(-8deg) scale(1)} 50%{transform:rotate(8deg) scale(1.05)} }
+    @keyframes wavePulse { 0%{opacity:.6;transform:scaleX(1)} 50%{opacity:.2;transform:scaleX(1.3)} 100%{opacity:.6;transform:scaleX(1)} }
+
+    /* ── Geoscape-lite HUD accents (subtle — layered on the existing rounded
+       dark-blue shell, not a replacement of it) ── */
+    .hud-corners { position: relative; }
+    .hud-corners::before, .hud-corners::after {
+      content: ''; position: absolute; width: 14px; height: 14px; pointer-events: none;
+      border: 1.5px solid rgba(120,170,255,0.4);
+    }
+    .hud-corners::before { top: 8px; left: 8px; border-right: none; border-bottom: none; }
+    .hud-corners::after  { bottom: 8px; right: 8px; border-left: none; border-top: none; }
+    .globe-outer.hud-corners::before,
+    .globe-outer.hud-corners::after { width: 20px; height: 20px; border-color: rgba(140,190,255,0.5); }
+
+    .radar-sweep {
+      position: absolute; inset: 0; pointer-events: none;
+      background: conic-gradient(from 0deg, rgba(130,195,255,0.16), transparent 16%, transparent 100%);
+      mix-blend-mode: screen;
+      animation: radarSpin 9s linear infinite;
+      opacity: 0.6;
+    }
+    @keyframes radarSpin { to { transform: rotate(360deg); } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .radar-sweep { animation: none; opacity: 0.25; }
+      .alert-dot { animation: none; }
+    }
+
+    /* ── Lesson-specific ll-viewport theming ── */
+    .ll-viewport {
+      --ll-panel-bg:      rgba(0, 8, 20, 0.97);
+      --ll-panel-border:  rgba(60, 120, 220, 0.22);
+      --ll-tab-color:     rgba(160, 190, 255, 0.55);
+      --ll-tab-active-bg: rgba(60, 120, 255, 0.18);
+      --ll-tab-active:    #a8c8ff;
+      --ll-toggle-bg:     rgba(0, 8, 20, 0.97);
+    }
+    /* Constrain globe to viewport height */
+    .globe-outer {
+      max-height: calc(100dvh - 140px);
+    }
+    /* Remove the old 2-column grid wrapper; globe goes full-width in ll-sim */
+    .cs-wrap {
+      display: block;
+      padding: 0 1.2rem 0.5rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    /* Compact hero inside the new layout */
+    .cs-hero {
+      padding: 0.8rem 1.5rem 0.6rem;
+    }
+  </style>
+</head>
+<body>
+<div class="ll-viewport ll-dark">
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <!-- Topbar -->
+  <nav class="cs-topbar ll-topbar">
+    <div class="cs-topbar-inner">
+      <a href="../../steam-lessons.html">← Earth Science</a>
+      <span class="cs-topbar-title">Climate Modeling Simulator</span>
+      <a href="../../index.html">ClassroomOS</a>
+    </div>
+  </nav>
+
+  <div class="ll-stage">
+
+    <div class="ll-sim">
+      <main id="main-content">
+        <!-- Hero -->
+        <header class="cs-hero">
+          <h1>🌍 Climate Modeling Simulator</h1>
+          <p>Adjust CO₂, solar irradiance, ice coverage, deforestation, and methane to model Earth's climate system. Watch particle-animated weather patterns, carbon cycles, and temperature shifts respond in real-time on a 3D globe.</p>
+        </header>
+
+        <!-- App -->
+        <div class="cs-wrap">
+
+        <!-- Globe -->
+        <div class="globe-outer hud-corners" id="globe-outer">
+      <canvas id="earth-canvas" tabindex="0" aria-label="3D interactive Earth climate model — drag or use arrow keys to rotate, scroll or +/- to zoom"></canvas>
+      <div class="radar-sweep" aria-hidden="true"></div>
+      <svg id="particle-svg" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="softglow" x="-80%" y="-80%" width="260%" height="260%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <g id="particle-root"></g>
+      </svg>
+      <div class="mode-badge" id="mode-badge">🌪️ Weather Patterns</div>
+      <div class="drag-hint">Drag to rotate · Scroll to zoom</div>
+      <div class="data-badge" id="rb-badge">Rayleigh-Bénard · The Well (NeurIPS 2024)</div>
+    </div>
+
+        </div><!-- .cs-wrap -->
+        <section class="p3-lab" style="--p3-accent:#59d4ff;--p3-bg:#061027;--p3-highlight:#ffd166" aria-labelledby="climate-compare-title"><h2 id="climate-compare-title">Compare climate paths through 2100</h2><p>A globe shows one moment. This chart shows response over time, including ocean lag. Choose a baseline and candidate; the shaded band represents simplified model uncertainty.</p><div class="p3-actions" id="climate-p3-actions"><button type="button" data-climate-path="preindustrial">Pre-industrial</button><button type="button" data-climate-path="today" aria-pressed="true">Current trajectory</button><button type="button" data-climate-path="paris">Paris-aligned</button><button type="button" data-climate-path="bau">High emissions</button></div><div class="p3-two"><canvas class="p3-chart" id="climate-p3-chart" width="800" height="250" aria-label="Temperature anomaly comparison from 2020 through 2100"></canvas><div><h3>Model boundaries</h3><ul class="p3-assumptions"><li>Illustrative energy-balance response, not a forecast.</li><li>Ocean inertia delays the full temperature response.</li><li>The band summarizes parameter uncertainty, not every Earth-system risk.</li><li>Preset values are scenarios, not predictions of policy.</li></ul><p class="p3-status" id="climate-p3-status" role="status"></p></div></div></section>
+      </main>
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="cs-pane-params">Parameters</button>
+          <button class="ll-tab" aria-selected="false" data-pane="cs-pane-guide">Guide</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="cs-pane-params">
+          <!-- Mode -->
+          <div class="ctrl-panel">
+
+            <div class="ctrl-card" style="padding:0.7rem 0.8rem;">
+              <h3 style="margin-bottom:0.5rem;">Scenarios</h3>
+              <div class="preset-row" id="preset-row">
+                <button class="preset-btn" data-preset="preindustrial" title="1850: CO₂ 280 ppm, full ice cover, no deforestation">Pre-industrial</button>
+                <button class="preset-btn" data-preset="today" title="2026: CO₂ 429 ppm, current observed conditions">Today</button>
+                <button class="preset-btn" data-preset="paris" title="A ~1.5°C-aligned stabilization path">Paris path</button>
+                <button class="preset-btn" data-preset="bau" title="High-emissions, business-as-usual 2100 case">Business as usual</button>
+              </div>
+            </div>
+
+            <div class="mode-tabs" id="mode-tabs">
+              <button class="mode-tab active" data-mode="weather">🌪️ Weather</button>
+              <button class="mode-tab" data-mode="carbon">♻️ Carbon</button>
+              <button class="mode-tab" data-mode="temperature">🌡️ Heat Map</button>
+            </div>
+
+            <!-- Parameters -->
+            <div class="ctrl-card">
+              <h3>Parameters</h3>
+
+              <div class="param-row">
+                <div class="param-label">CO₂ Concentration <strong id="v-co2">429 ppm</strong></div>
+                <input type="range" id="s-co2" min="280" max="700" value="429" step="5" />
+                <div class="range-ends"><span>280 pre-industrial</span><span>700 crisis</span></div>
+              </div>
+
+              <div class="param-row">
+                <div class="param-label">Solar Irradiance <strong id="v-solar">100%</strong></div>
+                <input type="range" id="s-solar" min="95" max="105" value="100" step="0.1" />
+                <div class="range-ends"><span>95% dim</span><span>105% bright</span></div>
+              </div>
+
+              <div class="param-row">
+                <div class="param-label">Ice / Albedo Cover <strong id="v-ice">60%</strong></div>
+                <input type="range" id="s-ice" min="0" max="100" value="60" step="1" />
+                <div class="range-ends"><span>0% none</span><span>100% max</span></div>
+              </div>
+
+              <div class="param-row">
+                <div class="param-label">Deforestation <strong id="v-deforest">30%</strong></div>
+                <input type="range" id="s-deforest" min="0" max="100" value="30" step="1" />
+                <div class="range-ends"><span>0% pristine</span><span>100% barren</span></div>
+              </div>
+
+              <div class="param-row">
+                <div class="param-label">Methane CH₄ <strong id="v-ch4">1 930 ppb</strong></div>
+                <input type="range" id="s-ch4" min="700" max="4000" value="1930" step="50" />
+                <div class="range-ends"><span>700 ppb natural</span><span>4 000 ppb extreme</span></div>
+              </div>
+
+              <div class="param-row">
+                <div class="param-label">Ocean Heat Absorption <strong id="v-ocean">70%</strong></div>
+                <input type="range" id="s-ocean" min="0" max="100" value="70" step="1" />
+                <div class="range-ends"><span>0% none</span><span>100% max</span></div>
+              </div>
+            </div>
+
+            <!-- Readouts -->
+            <div class="ctrl-card hud-corners">
+              <h3>Climate Projections</h3>
+              <div class="readout-grid">
+                <div class="readout-card">
+                  <span class="readout-lbl">Temp Anomaly</span>
+                  <span class="readout-val neutral" id="out-temp">+1.2°C</span>
+                </div>
+                <div class="readout-card">
+                  <span class="readout-lbl">Sea Level</span>
+                  <span class="readout-val blue" id="out-sea">+0.28 m</span>
+                </div>
+                <div class="readout-card">
+                  <span class="readout-lbl">Ocean pH</span>
+                  <span class="readout-val neutral" id="out-ph">8.07</span>
+                </div>
+                <div class="readout-card">
+                  <span class="readout-lbl">Storm Index</span>
+                  <span class="readout-val neutral" id="out-storm">1.2×</span>
+                </div>
+                <div class="readout-card">
+                  <span class="readout-lbl">Radiative Forcing</span>
+                  <span class="readout-val warm" id="out-forcing">+2.1 W/m²</span>
+                </div>
+                <div class="readout-card">
+                  <span class="readout-lbl">Polar Ice Left</span>
+                  <span class="readout-val blue" id="out-icecover">58%</span>
+                </div>
+              </div>
+              <div class="alert-bar safe" id="alert-bar" style="margin-top:10px"></div>
+            </div>
+
+            <!-- Reactive status report -->
+            <div class="ctrl-card hud-corners">
+              <h3>Status Report</h3>
+              <div class="status-lines" id="status-lines"></div>
+            </div>
+
+          </div><!-- .ctrl-panel -->
+        </div><!-- #cs-pane-params -->
+
+        <div class="ll-pane" id="cs-pane-guide">
+          <div class="ctrl-card" style="margin-bottom:1rem">
+            <h3>About This Model</h3>
+            <div class="info-grid" style="margin-top:0.7rem">
+              <div class="info-card">
+                <h4>🌿 Carbon Cycle</h4>
+                <p>CO₂ and CH₄ trap outgoing infrared radiation. The model uses the classic Myhre et al. (1998) radiative forcing formula: <em>ΔF = 5.35 × ln(C/C₀)</em> for CO₂, scaled by the methane forcing contribution. IPCC AR6 now uses a refined version of this relationship (Etminan et al. 2016, via Meinshausen et al. 2020) — the logarithmic form here is a close, teachable approximation of it. Forests remove ~2.6 Gt CO₂/yr — deforestation reduces this sink.</p>
+              </div>
+              <div class="info-card">
+                <h4>☀️ Energy Balance</h4>
+                <p>Earth's temperature is set by the balance of incoming solar energy and outgoing thermal radiation. Ice and snow reflect sunlight (high albedo). As ice melts, the darker ocean absorbs more heat — a positive feedback loop that amplifies warming.</p>
+              </div>
+              <div class="info-card">
+                <h4>🌊 Ocean Systems</h4>
+                <p>Oceans absorb ~90% of excess heat and ~30% of CO₂ emissions, slowing surface warming but causing acidification. As pH drops below 8.0, coral reefs and shellfish are threatened. Warmer seas fuel more intense hurricanes and alter global currents.</p>
+              </div>
+            </div>
+          </div>
+          <div class="ctrl-card">
+            <h3>Go Deeper</h3>
+            <p style="font-size:0.82rem;line-height:1.6;color:inherit;">This simulator's weather and convection patterns are a simplified, hand-tuned model. Real climate scientists train machine learning models on physical simulations like the <strong>Rayleigh-Bénard convection</strong> runs in <a href="https://polymathic-ai.org/the_well/" target="_blank" rel="noopener noreferrer" style="color:#7ab8ff;">The Well</a> — a free 15TB collection of fluid dynamics, turbulence, and other physics simulation datasets released by Polymathic AI for training and testing ML models on physical systems.</p>
+          </div>
+        </div><!-- #cs-pane-guide -->
+
+      </div><!-- .ll-panel-body -->
+    </aside><!-- .ll-panel -->
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+
+  <!-- Three.js (shared vendored bundle — see assets/vendor/three-bundle.min.js) -->
+  <script src="../../assets/js/sim-kit.js"></script>
+  <script type="module">
+  import { THREE, OrbitControls } from '../../assets/vendor/three-bundle.min.js';
+  import { createScene } from '../../assets/js/sim-kit-three.mjs';
+  (function () {
+    'use strict';
+
+    /* ══════════════════════════════════════════
+       NOISE  (value fBm — no external deps)
+    ══════════════════════════════════════════ */
+    function hashN(n) {
+      const s = Math.sin(n * 127.1 + 311.7) * 43758.5453123;
+      return s - Math.floor(s);
+    }
+    function hash2(x, y) { return hashN(x + y * 57.0); }
+    function smoothstep(t) { return t * t * (3 - 2 * t); }
+    function lerp(a, b, t) { return a + (b - a) * t; }
+
+    function valueNoise(x, y) {
+      const ix = Math.floor(x), iy = Math.floor(y);
+      const fx = x - ix, fy = y - iy;
+      const ux = smoothstep(fx), uy = smoothstep(fy);
+      const a = hash2(ix, iy), b = hash2(ix + 1, iy);
+      const c = hash2(ix, iy + 1), d = hash2(ix + 1, iy + 1);
+      return lerp(lerp(a, b, ux), lerp(c, d, ux), uy);
+    }
+
+    function fbm(x, y, oct) {
+      let v = 0, a = 0.5, f = 1;
+      for (let i = 0; i < oct; i++) { v += a * valueNoise(x * f, y * f); a *= 0.5; f *= 2; }
+      return v;
+    }
+
+    /* ══════════════════════════════════════════
+       EARTH TEXTURES & SHADER
+    ══════════════════════════════════════════ */
+    let earthMesh, cloudMesh, atmMesh, atmUniforms, earthUniforms;
+
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+    // Tiny procedural day texture — shown instantly while NASA image loads
+    function makeFallbackDayTex() {
+      const W = 128, H = 64;
+      const cnv = document.createElement('canvas');
+      cnv.width = W; cnv.height = H;
+      const ctx = cnv.getContext('2d');
+      const img = ctx.createImageData(W, H);
+      const d = img.data;
+      for (let i = 0; i < W * H; i++) {
+        const nx = (i % W) / W, ny = Math.floor(i / W) / H;
+        const v = fbm(nx * 3.2 + 10, ny * 1.8 + 20, 4);
+        const isLand = v > 0.525;
+        const idx = i * 4;
+        d[idx]   = isLand ? 55  : 12;
+        d[idx+1] = isLand ? 105 : 55;
+        d[idx+2] = isLand ? 40  : 130;
+        d[idx+3] = 255;
+      }
+      ctx.putImageData(img, 0, 0);
+      return new THREE.CanvasTexture(cnv);
+    }
+
+    // Tiny dark night texture — shown until Black Marble loads
+    function makeFallbackNightTex() {
+      const W = 64, H = 32;
+      const cnv = document.createElement('canvas');
+      cnv.width = W; cnv.height = H;
+      const ctx = cnv.getContext('2d');
+      ctx.fillStyle = '#020408';
+      ctx.fillRect(0, 0, W, H);
+      // Approximate city clusters
+      [[0.78,0.34],[0.14,0.38],[0.53,0.35],[0.47,0.35],[0.59,0.35],
+       [0.87,0.27],[0.87,0.33],[0.39,0.40],[0.72,0.40],[0.30,0.45]].forEach(([nx, ny]) => {
+        ctx.fillStyle = 'rgba(255,220,120,0.9)';
+        ctx.fillRect(Math.round(nx * W), Math.round(ny * H), 1, 1);
+      });
+      return new THREE.CanvasTexture(cnv);
+    }
+
+    function buildCloudTexture() {
+      const W = 1024, H = 512;
+      const cnv = document.createElement('canvas');
+      cnv.width = W; cnv.height = H;
+      const ctx = cnv.getContext('2d');
+      const img = ctx.createImageData(W, H);
+      const d = img.data;
+      for (let py = 0; py < H; py++) {
+        const ny = py / H;
+        const lat = (0.5 - ny) * 180;
+        const absLat = Math.abs(lat);
+        // Realistic cloud band structure (ITCZ, storm tracks, polar fronts, dry belts)
+        const itcz       = Math.exp(-Math.pow((absLat -  4) /  9, 2)) * 0.38;
+        const stormTrack = Math.exp(-Math.pow((absLat - 52) / 10, 2)) * 0.28;
+        const polarFront = Math.exp(-Math.pow((absLat - 68) /  7, 2)) * 0.20;
+        const dryBelt    = Math.exp(-Math.pow((absLat - 28) /  5, 2)) * 0.22;
+        const latBias = (itcz + stormTrack + polarFront) * (1 - dryBelt) + 0.05;
+        for (let px = 0; px < W; px++) {
+          const nx = px / W;
+          const v = fbm(nx * 6 + 1000, ny * 3 + 500, 5);
+          const alpha = clamp((v - 0.46 + latBias * 0.18) / 0.22 * (0.65 + latBias * 0.6), 0, 1);
+          const idx = (py * W + px) * 4;
+          d[idx] = 255; d[idx + 1] = 255; d[idx + 2] = 255; d[idx + 3] = Math.round(alpha * 210);
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      return cnv;
+    }
+
+    /* ══════════════════════════════════════════
+       THREE.JS SCENE
+    ══════════════════════════════════════════ */
+    const canvas = document.getElementById('earth-canvas');
+    const globe = document.getElementById('globe-outer');
+
+    const { renderer, scene, camera, syncSize } = createScene(canvas, {
+      THREE, fov: 42, near: 0.1, far: 1000, maxDpr: 2, antialias: true, alpha: true
+    });
+    let camDist = 5.2;
+    camera.position.set(0, 0, camDist);
+    camera.lookAt(0, 0, 0);
+
+    // Stars — multiple groups with varying sizes and warm/cool color tints
+    (function () {
+      const groups = [
+        { count: 2200, size: 0.13, color: 0xffffff, opacity: 0.80 },
+        { count: 700,  size: 0.24, color: 0xfff8e8, opacity: 0.65 },
+        { count: 400,  size: 0.09, color: 0xaad0ff, opacity: 0.55 },
+        { count: 200,  size: 0.32, color: 0xffe0a0, opacity: 0.50 },
+      ];
+      groups.forEach(({ count, size, color, opacity }) => {
+        const geo = new THREE.BufferGeometry();
+        const verts = [];
+        for (let i = 0; i < count; i++) {
+          const theta = Math.random() * Math.PI * 2;
+          const phi = Math.acos(2 * Math.random() - 1);
+          const r = 90 + Math.random() * 30;
+          verts.push(r * Math.sin(phi) * Math.cos(theta), r * Math.cos(phi), r * Math.sin(phi) * Math.sin(theta));
+        }
+        geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+        scene.add(new THREE.Points(geo, new THREE.PointsMaterial({ color, size, transparent: true, opacity })));
+      });
+    })();
+
+    // Lighting
+    const sunLight = new THREE.DirectionalLight(0xfff5e8, 1.4);
+    sunLight.position.set(5, 2, 4);
+    scene.add(sunLight);
+    scene.add(new THREE.AmbientLight(0x1a2850, 0.6));
+    const fillLight = new THREE.DirectionalLight(0x4466cc, 0.25);
+    fillLight.position.set(-4, -1, -3);
+    scene.add(fillLight);
+
+    // Earth — GPU ShaderMaterial; climate overlays run on GPU via uniforms (zero CPU cost)
+    const earthGeo = new THREE.SphereGeometry(2, 80, 40);
+    earthUniforms = {
+      dayMap:       { value: makeFallbackDayTex() },
+      nightMap:     { value: makeFallbackNightTex() },
+      sunDir:       { value: new THREE.Vector3(5, 2, 4).normalize() },
+      sunIntensity: { value: 0.88 },
+      sunColor:     { value: new THREE.Color(1.0, 0.96, 0.91) },
+      iceLevel:     { value: 0.60 },
+      tempAnomaly:  { value: 1.2 },
+      deforest:     { value: 0.30 },
+      heatMap:      { value: 0.0 },
+    };
+    const earthMat = new THREE.ShaderMaterial({
+      uniforms: earthUniforms,
+      vertexShader: `
+        varying vec2 vUv;
+        varying vec3 vWorldNormal;
+        void main() {
+          vUv = uv;
+          vWorldNormal = normalize(mat3(modelMatrix) * normal);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        precision mediump float;
+        uniform sampler2D dayMap;
+        uniform sampler2D nightMap;
+        uniform vec3  sunDir;
+        uniform float sunIntensity;
+        uniform vec3  sunColor;
+        uniform float iceLevel;
+        uniform float tempAnomaly;
+        uniform float deforest;
+        uniform float heatMap;
+        varying vec2 vUv;
+        varying vec3 vWorldNormal;
+        void main() {
+          vec3  norm   = normalize(vWorldNormal);
+          float sunDot = dot(norm, sunDir);
+          float dayMix = smoothstep(-0.15, 0.25, sunDot);
+
+          vec4 dayTex    = texture2D(dayMap,   vUv);
+          vec4 nightTex  = texture2D(nightMap, vUv);
+          // Clamped Lambertian + ambient — total never exceeds 1.0
+          float NdotL    = max(0.0, sunDot);
+          float shade    = clamp(NdotL * sunIntensity + 0.10, 0.0, 1.0);
+          vec4  litDay   = vec4(dayTex.rgb * sunColor * shade, 1.0);
+          vec4  litNight = vec4(nightTex.rgb * 1.05, 1.0);
+          vec4  base     = mix(litNight, litDay, dayMix);
+
+          // Ice caps — soft edge, clamped brightness
+          // iceLatDeg: latitude where ice begins (degrees). Default ~64°, extends to ~50° at max ice.
+          // Higher temperature retreats ice toward poles; higher ice slider expands it equatorward.
+          float pole      = abs(vUv.y * 2.0 - 1.0);
+          float iceLatDeg = 75.0 - iceLevel * 25.0 + tempAnomaly * 3.5;
+          float iceEdge   = clamp(iceLatDeg / 90.0, 0.05, 0.98);
+          float iceMask   = smoothstep(iceEdge - 0.12, iceEdge + 0.06, pole); // 0.18 wide — soft gradient
+          float iceLit    = clamp(NdotL * sunIntensity * 1.05 + 0.14, 0.0, 1.0);
+          vec3  iceCol    = vec3(0.87, 0.93, 1.0) * iceLit;
+          base.rgb = mix(base.rgb, iceCol, iceMask * dayMix);
+
+          // Deforestation — shift tropical/temperate greens toward brown (extends to ~60° lat).
+          // Heat stress (tempAnomaly) compounds this: hot + dry vegetation browns even at
+          // moderate deforestation, echoing real heat-drought dieback.
+          float tropics    = max(0.0, 1.0 - pole * 1.5);
+          float heatStress = clamp(tempAnomaly / 6.0, 0.0, 1.0);
+          float dfShift    = clamp(deforest + heatStress * 0.35, 0.0, 1.0) * tropics * 0.30;
+          base.r = min(1.0, base.r + dfShift * 0.55);
+          base.g = max(0.0, base.g - dfShift * 0.28);
+          base.b = max(0.0, base.b - dfShift * 0.20);
+
+          // Heat map — multiply + additive warm tint; ice excluded so it stays white
+          if (heatMap > 0.5 && tempAnomaly > 0.0) {
+            float heat   = clamp(tempAnomaly / 8.0, 0.0, 1.0) * (1.0 - pole * 0.70);
+            vec3 warmGlow= vec3(heat * 0.18, 0.0, 0.0);
+            vec3 tintMul = vec3(mix(1.0, 1.30, heat), mix(0.95, 0.48, heat), mix(0.75, 0.18, heat));
+            vec3 tinted  = clamp(base.rgb * tintMul + warmGlow, 0.0, 1.0);
+            base.rgb     = mix(base.rgb, tinted, heat * 0.60 * (1.0 - iceMask));
+          }
+
+          gl_FragColor = base;
+        }
+      `,
+    });
+    earthMesh = new THREE.Mesh(earthGeo, earthMat);
+    scene.add(earthMesh);
+
+    // Load NASA textures (non-blocking — fallbacks shown until files are present)
+    const texLoader = new THREE.TextureLoader();
+    const maxAniso = renderer.capabilities.getMaxAnisotropy();
+    texLoader.load('../../assets/textures/earth/blue-marble.jpg',
+      tex => { tex.anisotropy = maxAniso; earthUniforms.dayMap.value = tex; }, undefined, () => {}
+    );
+    texLoader.load('../../assets/textures/earth/black-marble.jpg',
+      tex => { tex.anisotropy = maxAniso; earthUniforms.nightMap.value = tex; }, undefined, () => {}
+    );
+
+    // Clouds
+    const cloudGeo = new THREE.SphereGeometry(2.028, 60, 30);
+    const cloudMat = new THREE.MeshPhongMaterial({ transparent: true, opacity: 0.55, depthWrite: false });
+    cloudMesh = new THREE.Mesh(cloudGeo, cloudMat);
+    scene.add(cloudMesh);
+    // Procedural cloud texture immediately; swap for NASA version if available
+    cloudMat.alphaMap = new THREE.CanvasTexture(buildCloudTexture());
+    cloudMat.needsUpdate = true;
+    texLoader.load('../../assets/textures/earth/clouds.jpg',
+      tex => { tex.anisotropy = maxAniso; cloudMat.alphaMap = tex; cloudMat.needsUpdate = true; }, undefined, () => {}
+    );
+
+    // Atmosphere — true Fresnel limb-glow via ShaderMaterial (realistic atmospheric scattering)
+    const atmGeo = new THREE.SphereGeometry(2.16, 48, 24);
+    atmUniforms = {
+      atmColor:    { value: new THREE.Color(0x2266ff) },
+      rimStrength: { value: 0.72 },
+    };
+    const atmMat = new THREE.ShaderMaterial({
+      uniforms: atmUniforms,
+      vertexShader: `
+        varying vec3 vNormal;
+        varying vec3 vViewDir;
+        void main() {
+          vNormal = normalize(normalMatrix * normal);
+          vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+          vViewDir = normalize(-mvPos.xyz);
+          gl_Position = projectionMatrix * mvPos;
+        }
+      `,
+      fragmentShader: `
+        uniform vec3  atmColor;
+        uniform float rimStrength;
+        varying vec3  vNormal;
+        varying vec3  vViewDir;
+        void main() {
+          float rim = 1.0 - abs(dot(vNormal, vViewDir));
+          rim = pow(rim, 3.2);
+          gl_FragColor = vec4(atmColor * rimStrength, rim * 0.9);
+        }
+      `,
+      transparent: true,
+      side: THREE.FrontSide,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    atmMesh = new THREE.Mesh(atmGeo, atmMat);
+    scene.add(atmMesh);
+
+    // City lights — additive Points parented to earthMesh so they rotate with it
+    (function () {
+      const CITIES = [
+        [40.7,-74.0],[51.5,-0.1],[48.8,2.3],[52.5,13.4],[55.7,37.6],
+        [35.7,139.7],[31.2,121.5],[28.7,77.2],[19.1,72.9],[22.3,114.2],
+        [37.6,127.0],[1.3,103.8],[-33.9,151.2],[-23.5,-46.6],[-34.6,-58.4],
+        [6.5,3.4],[30.0,31.2],[24.7,46.7],[25.2,55.3],[19.4,-99.1],
+        [34.0,-118.2],[41.9,12.5],[59.9,30.3],[39.9,116.4],[13.8,100.5],
+        [45.5,-73.6],[43.7,-79.4],[33.7,-84.4],[29.8,-95.4],[41.8,-87.6],
+        [47.6,-122.3],[37.8,-122.4],[32.7,-117.2],[36.2,-115.2],[50.4,30.5],
+        [59.3,18.1],[55.7,12.6],[52.4,4.9],[48.2,16.4],[41.0,29.0],
+      ];
+      const R = 2.02;
+      const verts = [];
+      CITIES.forEach(([lat, lon]) => {
+        const phi   = (90 - lat) * Math.PI / 180;
+        const theta = lon * Math.PI / 180;
+        verts.push(R * Math.sin(phi) * Math.cos(theta), R * Math.cos(phi), R * Math.sin(phi) * Math.sin(theta));
+      });
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+      const mat = new THREE.PointsMaterial({
+        color: 0xffee88, size: 0.028, transparent: true, opacity: 0.9,
+        blending: THREE.AdditiveBlending, sizeAttenuation: true, depthWrite: false
+      });
+      earthMesh.add(new THREE.Points(geo, mat));
+    })();
+
+    // Polar auroras — torus rings that pulse with ice coverage
+    const auroraNorth = (() => {
+      const geo = new THREE.TorusGeometry(0.62, 0.045, 8, 80);
+      const mat = new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+      const m = new THREE.Mesh(geo, mat);
+      m.position.set(0, 1.90, 0); m.rotation.x = Math.PI / 2;
+      scene.add(m);
+      return { mesh: m, mat };
+    })();
+    const auroraSouth = (() => {
+      const geo = new THREE.TorusGeometry(0.62, 0.045, 8, 80);
+      const mat = new THREE.MeshBasicMaterial({ color: 0x44aaff, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+      const m = new THREE.Mesh(geo, mat);
+      m.position.set(0, -1.90, 0); m.rotation.x = Math.PI / 2;
+      scene.add(m);
+      return { mesh: m, mat };
+    })();
+
+    // Ice melt-front — a thin pulsing ring sitting right at each hemisphere's ice
+    // edge latitude (same iceLatDeg math as the earthMat fragment shader above),
+    // so retreat/advance reads as an active process rather than a static line.
+    // Torus is unit-radius; updateMeltFront() rescales it in the local X/Z plane
+    // (rotation.x below just tips it flat — scale isn't affected by that axis).
+    const meltFrontGeo = new THREE.TorusGeometry(1, 0.008, 6, 72);
+    const meltFrontNorth = new THREE.Mesh(meltFrontGeo, new THREE.MeshBasicMaterial({
+      color: 0xcdeaff, transparent: true, opacity: 0.45, depthWrite: false, blending: THREE.AdditiveBlending
+    }));
+    meltFrontNorth.rotation.x = Math.PI / 2;
+    scene.add(meltFrontNorth);
+    const meltFrontSouth = new THREE.Mesh(meltFrontGeo, meltFrontNorth.material.clone());
+    meltFrontSouth.rotation.x = Math.PI / 2;
+    scene.add(meltFrontSouth);
+
+    function updateMeltFront(iceLevel01, tempAnomaly) {
+      const iceLatDeg = clamp(75 - iceLevel01 * 25 + tempAnomaly * 3.5, 5, 89);
+      const latRad = iceLatDeg * Math.PI / 180;
+      const ringR = 2.01 * Math.cos(latRad);
+      const y = 2.01 * Math.sin(latRad);
+      meltFrontNorth.scale.set(ringR, ringR, 1);
+      meltFrontNorth.position.y = y;
+      meltFrontSouth.scale.set(ringR, ringR, 1);
+      meltFrontSouth.position.y = -y;
+    }
+
+    // Sun glow — radial gradient sprite at the light source position
+    const sunGlowSprite = (() => {
+      const cnv = document.createElement('canvas');
+      cnv.width = 64; cnv.height = 64;
+      const ctx2d = cnv.getContext('2d');
+      const grad = ctx2d.createRadialGradient(32, 32, 0, 32, 32, 32);
+      grad.addColorStop(0,   'rgba(255,245,190,1)');
+      grad.addColorStop(0.2, 'rgba(255,210,90,0.7)');
+      grad.addColorStop(0.6, 'rgba(255,150,25,0.2)');
+      grad.addColorStop(1,   'rgba(255,100,0,0)');
+      ctx2d.fillStyle = grad;
+      ctx2d.fillRect(0, 0, 64, 64);
+      const tex = new THREE.CanvasTexture(cnv);
+      const mat = new THREE.SpriteMaterial({ map: tex, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false });
+      const sprite = new THREE.Sprite(mat);
+      sprite.scale.set(7, 7, 1);
+      sprite.position.copy(new THREE.Vector3(5, 2, 4).normalize().multiplyScalar(88));
+      scene.add(sprite);
+      return sprite;
+    })();
+
+    /* ══════════════════════════════════════════
+       ORBIT CONTROLS (shared three-bundle helper)
+    ══════════════════════════════════════════ */
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.enablePan = false;
+    controls.minDistance = 2.6;
+    controls.maxDistance = 10;
+    controls.minPolarAngle = 0.28;
+    controls.maxPolarAngle = Math.PI - 0.28;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.6; // tuned to roughly match the previous 0.06 rad/s idle rotation
+    controls.target.set(0, 0, 0);
+
+    // Keyboard access: OrbitControls' built-in keys pan rather than orbit, so
+    // arrow keys/+-/ are handled manually via the same spherical coordinates
+    // OrbitControls itself uses internally (see updatePersistentPositions /
+    // geoToSVG below, which read camera.position each frame either way).
+    canvas.addEventListener('keydown', e => {
+      const rotateStep = 0.12, zoomStep = 0.4;
+      const offset = camera.position.clone().sub(controls.target);
+      const spherical = new THREE.Spherical().setFromVector3(offset);
+      let handled = true;
+      switch (e.key) {
+        case 'ArrowLeft':  spherical.theta -= rotateStep; break;
+        case 'ArrowRight': spherical.theta += rotateStep; break;
+        case 'ArrowUp':    spherical.phi = clamp(spherical.phi - rotateStep, controls.minPolarAngle, controls.maxPolarAngle); break;
+        case 'ArrowDown':  spherical.phi = clamp(spherical.phi + rotateStep, controls.minPolarAngle, controls.maxPolarAngle); break;
+        case '+': case '=': spherical.radius = clamp(spherical.radius - zoomStep, controls.minDistance, controls.maxDistance); break;
+        case '-': case '_': spherical.radius = clamp(spherical.radius + zoomStep, controls.minDistance, controls.maxDistance); break;
+        default: handled = false;
+      }
+      if (!handled) return;
+      e.preventDefault();
+      spherical.makeSafe();
+      offset.setFromSpherical(spherical);
+      camera.position.copy(controls.target).add(offset);
+      controls.update();
+    });
+
+    /* ══════════════════════════════════════════
+       RESIZE
+    ══════════════════════════════════════════ */
+    function onResize() {
+      syncSize();
+      svgW = globe.clientWidth; svgH = globe.clientHeight;
+    }
+    window.addEventListener('resize', onResize);
+    requestAnimationFrame(onResize);
+
+    /* ══════════════════════════════════════════
+       CLIMATE MODEL
+    ══════════════════════════════════════════ */
+    function computeClimate(co2, solar, ice, deforest, ch4, ocean) {
+      const C0 = 280;
+      const co2Force = 5.35 * Math.log(co2 / C0);
+      const ch4Force = 0.036 * (Math.sqrt(ch4) - Math.sqrt(722));
+      const solarForce = (solar - 100) * 0.17;
+      const albedoForce = -(ice - 60) * 0.02;
+      const defoForce = deforest * 0.008;
+      const oceanBuffer = ocean * 0.005;
+
+      const totalForcing = co2Force + ch4Force + solarForce + albedoForce + defoForce - oceanBuffer;
+      // 0.78 K per W/m² implies ~2.9°C warming per CO2 doubling (3.7 W/m² forcing) —
+      // inside IPCC AR6's central equilibrium climate sensitivity estimate of 3°C
+      // (likely range 2.5-4°C). Don't "round it up" without re-checking that range.
+      const tempAnomaly = totalForcing * 0.78;
+      const seaLevel = clamp(tempAnomaly * 0.26, 0, 12);
+      const oceanPH = 8.1 - 0.0003 * (co2 - 280);
+      // Warmer, more heat-absorbing oceans fuel stronger storms — small ocean-heat
+      // term on top of the temperature-driven base, same range as before at ocean=0.
+      const stormIdx = 1 + Math.max(0, tempAnomaly * 0.14) + (ocean / 100) * 0.05 * Math.max(0, tempAnomaly);
+      const iceLeft = clamp(ice - tempAnomaly * 3, 0, 100);
+
+      return { totalForcing, tempAnomaly, seaLevel, oceanPH, stormIdx, iceLeft };
+    }
+
+    /* ══════════════════════════════════════════
+       SVG PARTICLE SYSTEM
+    ══════════════════════════════════════════ */
+    const pRoot = document.getElementById('particle-root');
+    const svg = document.getElementById('particle-svg');
+    let svgW = 800, svgH = 600;
+    let mode = 'weather';
+    let particles = [];
+    let particleId = 0;
+
+    // Key geographic points [lat, lon, label, type]
+    const geoPoints = {
+      industry: [
+        { lat: 35, lon: 115, label: 'China' },
+        { lat: 40, lon: -88, label: 'Midwest' },
+        { lat: 52, lon: 10,  label: 'Europe' },
+        { lat: 20, lon: 80,  label: 'India' },
+        { lat: -24, lon: -46, label: 'S.America' },
+        { lat: -26, lon: 28, label: 'Africa' },
+      ],
+      sinks: [
+        { lat: -3, lon: -60 },
+        { lat: 0,  lon: 25  },
+        { lat: 55, lon: 100 },
+        { lat: 0,  lon: 145 },
+        { lat: 0,  lon: -170 },
+      ],
+      storms: [
+        { lat: 18, lon: -73 },  // Caribbean
+        { lat: 14, lon: 90  },  // Bay of Bengal
+        { lat: 16, lon: 138 },  // W Pacific
+        { lat: -15, lon: 80 },  // S Indian Ocean
+        { lat: 25, lon: -40 },  // N Atlantic
+        { lat: 22, lon: -95 },  // Gulf of Mexico
+        { lat: -18, lon: 178 }, // Coral Sea
+        { lat: 12, lon: -115 }, // E Pacific
+        { lat: 20, lon: 125 },  // Philippine Sea
+      ],
+      heat: [
+        { lat: 5, lon: 30 },
+        { lat: 0, lon: -55 },
+        { lat: 5, lon: 100 },
+        { lat: 20, lon: 50 },
+      ]
+    };
+
+    // Project lat/lon on rotating globe to SVG screen coords
+    function geoToSVG(lat, lon) {
+      const phi = (90 - lat) * Math.PI / 180;
+      const theta = (lon * Math.PI / 180) + earthMesh.rotation.y;
+
+      const x3 = -2 * Math.sin(phi) * Math.cos(theta);
+      const y3 =  2 * Math.cos(phi);
+      const z3 =  2 * Math.sin(phi) * Math.sin(theta);
+
+      const vec = new THREE.Vector3(x3, y3, z3);
+
+      // Visibility: dot product of position and camera direction
+      const camDir = camera.position.clone().normalize();
+      const surfNorm = vec.clone().normalize();
+      if (surfNorm.dot(camDir) < 0.08) return null; // behind globe
+
+      vec.project(camera);
+
+      return {
+        x: (vec.x + 1) * svgW / 2,
+        y: (-vec.y + 1) * svgH / 2,
+        depth: surfNorm.dot(camDir) // 0..1 visibility
+      };
+    }
+
+    // Create SVG element helpers
+    function svgEl(tag, attrs) {
+      const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+      for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+      return el;
+    }
+
+    function makeCO2Particle(x, y, size = 1) {
+      const g = svgEl('g', { transform: `translate(${x},${y})`, filter: 'url(#glow)' });
+      const angle = Math.random() * 360;
+      g.innerHTML = `
+        <circle r="${3 * size}" fill="rgba(255,130,40,0.9)"/>
+        <circle cx="${5.5*size}" cy="${-2*size}" r="${2*size}" fill="rgba(255,100,20,0.75)"/>
+        <circle cx="${-5.5*size}" cy="${-2*size}" r="${2*size}" fill="rgba(255,100,20,0.75)"/>
+        <circle cx="0" cy="${-6*size}" r="${1.5*size}" fill="rgba(255,160,60,0.6)"/>
+      `;
+      const dx = (Math.random() - 0.5) * 30;
+      const dur = 2.5 + Math.random() * 2;
+      g.style.cssText = `animation: floatUp ${dur}s ease-out forwards; --dx:${dx}px; --dy:${-55 - Math.random() * 40}px;`;
+      return g;
+    }
+
+    function makeRainParticle(x, y) {
+      const g = svgEl('g', { transform: `translate(${x},${y})` });
+      g.innerHTML = `<ellipse rx="1.5" ry="4" fill="rgba(140,200,255,0.75)" transform="rotate(-10)"/>`;
+      const dur = 0.8 + Math.random() * 0.6;
+      g.style.cssText = `animation: rainDrop ${dur}s linear forwards;`;
+      return g;
+    }
+
+    // Shared HUD-style hotspot accent: dashed ring + N/E/S/W tick marks, echoed
+    // across storm/heat/carbon markers so every "point of interest" reads the
+    // same tactical-console way (see the Geoscape-lite HUD accents).
+    function reticleMarkup(r, color, withCircle = true) {
+      const t = Math.max(2, r * 0.22);
+      const circle = withCircle
+        ? `<circle r="${r}" fill="none" stroke="${color}" stroke-width="1" stroke-dasharray="2,3" opacity="0.55"/>`
+        : '';
+      return `
+        ${circle}
+        <line x1="0" y1="${-r-t}" x2="0" y2="${-r+t}" stroke="${color}" stroke-width="1"/>
+        <line x1="0" y1="${r-t}" x2="0" y2="${r+t}" stroke="${color}" stroke-width="1"/>
+        <line x1="${-r-t}" y1="0" x2="${-r+t}" y2="0" stroke="${color}" stroke-width="1"/>
+        <line x1="${r-t}" y1="0" x2="${r+t}" y2="0" stroke="${color}" stroke-width="1"/>
+      `;
+    }
+
+    // intensity: 0 (mild) .. 1 (severe) — scales band count, radius, spin speed,
+    // and color from cool blue toward hot orange as climate.stormIdx rises.
+    function makeStormParticle(x, y, scale, intensity = 0) {
+      const g = svgEl('g', { transform: `translate(${x},${y})`, filter: 'url(#softglow)' });
+      const r = (12 + intensity * 9) * scale;
+      const bands = 2 + Math.round(intensity * 2);
+      const spinDur = (2.6 - intensity * 1.3) + Math.random() * 0.6;
+      const color = `hsla(${210 - intensity * 170}, 85%, ${72 - intensity * 14}%, 0.85)`;
+      let bandPaths = '';
+      for (let i = 0; i < bands; i++) {
+        const br = r * (0.55 + i * 0.22);
+        const rot = i * (140 / bands);
+        const op = (0.85 - i * 0.18).toFixed(2);
+        bandPaths += `<path d="M0,-${br} C${br*0.6},-${br*0.6} ${br},0 ${br*0.5},${br*0.5} C${br*0.1},${br} -${br*0.4},${br*0.8} -${br},${br*0.2} C-${br*0.9},-${br*0.4} -${br*0.4},-${br*0.9} 0,-${br}"
+          fill="none" stroke="${color}" stroke-width="${(2 - i * 0.3).toFixed(1)}" stroke-linecap="round" opacity="${op}"
+          transform="rotate(${rot})"/>`;
+      }
+      g.innerHTML = `
+        <g style="animation:stormSpin ${spinDur}s linear infinite; transform-origin:0 0">
+          ${bandPaths}
+          <circle r="${(2 + intensity * 1.5).toFixed(1)}" fill="rgba(255,255,255,0.85)"/>
+        </g>
+        ${reticleMarkup(r * 0.6, 'rgba(160,200,255,0.4)')}
+      `;
+      return g;
+    }
+
+    function makeHeatRing(x, y, scale) {
+      const g = svgEl('g', { transform: `translate(${x},${y})` });
+      const dur = 1.6 + Math.random();
+      const delay = Math.random() * 2;
+      g.innerHTML = `
+        <circle r="6" fill="rgba(255,80,20,0.0)" stroke="rgba(255,100,30,0.6)" stroke-width="1.5"
+                style="animation:heatRing ${dur}s ease-in-out ${delay}s infinite"/>
+        <circle r="12" fill="rgba(255,60,10,0.0)" stroke="rgba(255,80,20,0.3)" stroke-width="1"
+                style="animation:heatRing ${dur+0.4}s ease-in-out ${delay+0.2}s infinite"/>
+        ${reticleMarkup(9 * scale, 'rgba(255,140,70,0.4)', false)}
+      `;
+      return g;
+    }
+
+    function makeCarbonSink(x, y, scale) {
+      const g = svgEl('g', { transform: `translate(${x},${y})`, filter: 'url(#glow)' });
+      g.innerHTML = `
+        <g style="animation:leafSway 2.5s ease-in-out infinite; transform-origin:0 4px">
+          <ellipse rx="${7*scale}" ry="${5*scale}" fill="rgba(50,180,60,0.7)" transform="rotate(-30)"/>
+          <line x1="0" y1="0" x2="0" y2="${6*scale}" stroke="rgba(40,140,50,0.8)" stroke-width="1"/>
+        </g>
+        ${reticleMarkup(9 * scale, 'rgba(100,220,120,0.35)', false)}
+      `;
+      return g;
+    }
+
+    function makeOceanCurrent(x, y) {
+      const g = svgEl('g', { transform: `translate(${x},${y})` });
+      const w = 28 + Math.random() * 20;
+      g.innerHTML = `
+        <path d="M-${w/2},0 Q0,-8 ${w/2},0 Q0,8 -${w/2},0" fill="none"
+              stroke="rgba(80,180,255,0.5)" stroke-width="1.5"
+              style="animation:wavePulse 2.5s ease-in-out infinite"/>
+      `;
+      return g;
+    }
+
+    // Persistent particles (storms, heat rings, sinks)
+    let persistentParticles = [];
+
+    function clearParticles() {
+      while (pRoot.firstChild) pRoot.removeChild(pRoot.firstChild);
+      particles = [];
+      persistentParticles = [];
+    }
+
+    function spawnPersistent(climate) {
+      clearParticles();
+
+      if (mode === 'weather') {
+        const stormIntensity = clamp((climate.stormIdx - 1) / 2, 0, 1);
+        const stormCount = Math.min(geoPoints.storms.length, Math.ceil(climate.stormIdx * 2));
+        geoPoints.storms.slice(0, stormCount).forEach(pt => {
+          const jLat = pt.lat + (Math.random() - 0.5) * 4;
+          const jLon = pt.lon + (Math.random() - 0.5) * 4;
+          const pos = geoToSVG(jLat, jLon);
+          if (!pos) return;
+          const el = makeStormParticle(pos.x, pos.y, 0.6 + pos.depth * 0.6, stormIntensity);
+          pRoot.appendChild(el);
+          persistentParticles.push({ el, lat: jLat, lon: jLon, type: 'storm' });
+        });
+        geoPoints.sinks.forEach(pt => {
+          const pos = geoToSVG(pt.lat, pt.lon);
+          if (!pos) return;
+          const el = makeOceanCurrent(pos.x, pos.y);
+          pRoot.appendChild(el);
+          persistentParticles.push({ el, lat: pt.lat, lon: pt.lon, type: 'current' });
+        });
+
+      } else if (mode === 'carbon') {
+        geoPoints.sinks.forEach(pt => {
+          const pos = geoToSVG(pt.lat, pt.lon);
+          if (!pos) return;
+          const el = makeCarbonSink(pos.x, pos.y, 0.7 + pos.depth * 0.5);
+          pRoot.appendChild(el);
+          persistentParticles.push({ el, lat: pt.lat, lon: pt.lon, type: 'sink' });
+        });
+
+      } else if (mode === 'temperature') {
+        geoPoints.heat.forEach(pt => {
+          const pos = geoToSVG(pt.lat, pt.lon);
+          if (!pos) return;
+          const el = makeHeatRing(pos.x, pos.y, 0.7 + pos.depth * 0.6);
+          pRoot.appendChild(el);
+          persistentParticles.push({ el, lat: pt.lat, lon: pt.lon, type: 'heat' });
+        });
+        geoPoints.industry.forEach(pt => {
+          const pos = geoToSVG(pt.lat, pt.lon);
+          if (!pos) return;
+          const el = makeHeatRing(pos.x, pos.y, 0.5);
+          pRoot.appendChild(el);
+          persistentParticles.push({ el, lat: pt.lat, lon: pt.lon, type: 'heat' });
+        });
+      }
+    }
+
+    // Update persistent particle positions each frame (they track the globe)
+    function updatePersistentPositions() {
+      persistentParticles.forEach(p => {
+        const pos = geoToSVG(p.lat, p.lon);
+        if (pos) {
+          p.el.setAttribute('transform', `translate(${pos.x.toFixed(1)},${pos.y.toFixed(1)})`);
+          p.el.style.opacity = (pos.depth * 0.9 + 0.1).toFixed(2);
+        } else {
+          p.el.style.opacity = '0';
+        }
+      });
+    }
+
+    // Spawn transient particles (CO2 plumes, rain) at regular intervals
+    let spawnTimer = 0;
+    function spawnTransient(climate, dt) {
+      spawnTimer += dt;
+      if (spawnTimer < 0.18) return;
+      spawnTimer = 0;
+
+      if (mode === 'weather') {
+        // Rain near storms
+        if (climate.stormIdx > 1.1) {
+          const pt = geoPoints.storms[Math.floor(Math.random() * 3)];
+          const pos = geoToSVG(pt.lat + (Math.random() - 0.5) * 8, pt.lon + (Math.random() - 0.5) * 8);
+          if (pos) {
+            const el = makeRainParticle(pos.x, pos.y);
+            pRoot.appendChild(el);
+            setTimeout(() => { try { pRoot.removeChild(el); } catch(e){} }, 1400);
+          }
+        }
+
+      } else if (mode === 'carbon') {
+        // CO2 plumes from industry
+        const co2Rate = clamp((state.co2 - 280) / 300, 0, 1);
+        if (Math.random() < co2Rate * 0.85 + 0.1) {
+          const src = geoPoints.industry[Math.floor(Math.random() * geoPoints.industry.length)];
+          const pos = geoToSVG(src.lat + (Math.random() - 0.5) * 5, src.lon + (Math.random() - 0.5) * 5);
+          if (pos) {
+            const el = makeCO2Particle(pos.x, pos.y, 0.6 + pos.depth * 0.5);
+            pRoot.appendChild(el);
+            setTimeout(() => { try { pRoot.removeChild(el); } catch(e){} }, 4500);
+          }
+        }
+      }
+    }
+
+    /* ══════════════════════════════════════════
+       UI STATE & BINDINGS
+    ══════════════════════════════════════════ */
+    const state = { co2: 429, solar: 100, ice: 60, deforest: 30, ch4: 1930, ocean: 70 };
+    let climate = computeClimate(state.co2, state.solar, state.ice, state.deforest, state.ch4, state.ocean);
+
+    const labels = {
+      co2: document.getElementById('v-co2'),
+      solar: document.getElementById('v-solar'),
+      ice: document.getElementById('v-ice'),
+      deforest: document.getElementById('v-deforest'),
+      ch4: document.getElementById('v-ch4'),
+      ocean: document.getElementById('v-ocean'),
+    };
+    const outs = {
+      temp: document.getElementById('out-temp'),
+      sea:  document.getElementById('out-sea'),
+      ph:   document.getElementById('out-ph'),
+      storm: document.getElementById('out-storm'),
+      forcing: document.getElementById('out-forcing'),
+      icecover: document.getElementById('out-icecover'),
+    };
+    const alertBar = document.getElementById('alert-bar');
+    const statusLinesEl = document.getElementById('status-lines');
+    const modeBadge = document.getElementById('mode-badge');
+
+    function setAlert(cls, label, detail) {
+      alertBar.className = 'alert-bar ' + cls;
+      alertBar.innerHTML = `<span class="alert-dot"></span><span class="alert-label">${label}</span><span class="alert-detail">${detail}</span>`;
+    }
+
+    function statusLine(tag, cls, text) {
+      return `<div class="status-line"><span class="status-tag ${cls}">${tag}</span><span class="status-text">${text}</span></div>`;
+    }
+
+    // Reactive status report — narrates the live climate state from the same
+    // computeClimate() fields the readouts already use, no new physics.
+    function updateStatusPanel(c) {
+      const lines = [];
+
+      if (c.iceLeft > 70) lines.push(statusLine('Ice', 'blue', 'Polar ice sheets stable.'));
+      else if (c.iceLeft > 40) lines.push(statusLine('Ice', 'warm', 'Arctic sea ice retreating faster than seasonal norms.'));
+      else if (c.iceLeft > 15) lines.push(statusLine('Ice', 'hot', 'Major ice loss — summer sea ice near collapse.'));
+      else lines.push(statusLine('Ice', 'critical', 'Polar ice sheets in critical decline.'));
+
+      const stormCount = Math.max(1, Math.round(c.stormIdx * 3));
+      if (c.stormIdx < 1.2) lines.push(statusLine('Storms', 'neutral', 'Tropical cyclone activity within historical range.'));
+      else if (c.stormIdx < 1.6) lines.push(statusLine('Storms', 'warm', `Elevated cyclone activity — ${stormCount} systems tracked.`));
+      else lines.push(statusLine('Storms', 'hot', `Severe storm intensification — ${stormCount} active systems.`));
+
+      if (c.oceanPH > 8.0) lines.push(statusLine('Ocean', 'neutral', 'Ocean chemistry stable; reef ecosystems unstressed.'));
+      else if (c.oceanPH > 7.9) lines.push(statusLine('Ocean', 'warm', 'Rising acidification — coral calcification slowing.'));
+      else lines.push(statusLine('Ocean', 'acid', 'Severe acidification — reef and shellfish collapse risk.'));
+
+      const bioStress = state.deforest + clamp(c.tempAnomaly / 6, 0, 1) * 35;
+      if (bioStress < 30) lines.push(statusLine('Biome', 'neutral', 'Terrestrial ecosystems intact.'));
+      else if (bioStress < 60) lines.push(statusLine('Biome', 'warm', 'Deforestation and heat stress reducing carbon-sink capacity.'));
+      else lines.push(statusLine('Biome', 'hot', 'Severe biome degradation — carbon sinks failing.'));
+
+      if (c.seaLevel < 0.5) lines.push(statusLine('Coast', 'blue', 'Sea level rise within adaptive range.'));
+      else if (c.seaLevel < 2) lines.push(statusLine('Coast', 'warm', 'Coastal infrastructure under growing threat.'));
+      else lines.push(statusLine('Coast', 'critical', 'Catastrophic sea level rise — coastal displacement imminent.'));
+
+      statusLinesEl.innerHTML = lines.join('');
+    }
+
+    function fmt(n, dec = 1) { return n.toFixed(dec); }
+    function fmtSign(n, dec = 1) { return (n >= 0 ? '+' : '') + n.toFixed(dec); }
+
+    function updateReadouts() {
+      const c = climate;
+      const t = c.tempAnomaly;
+
+      outs.temp.textContent = fmtSign(t) + '°C';
+      outs.sea.textContent  = fmtSign(c.seaLevel, 2) + ' m';
+      outs.ph.textContent   = fmt(c.oceanPH, 2);
+      outs.storm.textContent = fmt(c.stormIdx, 1) + '×';
+      outs.forcing.textContent = fmtSign(c.totalForcing, 1) + ' W/m²';
+      outs.icecover.textContent = fmt(c.iceLeft, 0) + '%';
+
+      // Colour
+      const tempClass = t < 1.5 ? 'neutral' : t < 2.5 ? 'warm' : t < 4 ? 'hot' : 'critical';
+      outs.temp.className = 'readout-val ' + tempClass;
+      outs.ph.className   = 'readout-val ' + (c.oceanPH > 8.0 ? 'neutral' : c.oceanPH > 7.9 ? 'warm' : 'acid');
+      outs.storm.className = 'readout-val ' + (c.stormIdx < 1.3 ? 'neutral' : c.stormIdx < 1.6 ? 'warm' : 'hot');
+      outs.icecover.className = 'readout-val ' + (c.iceLeft > 50 ? 'blue' : c.iceLeft > 25 ? 'warm' : 'hot');
+      outs.forcing.className  = 'readout-val ' + (c.totalForcing < 2 ? 'neutral' : c.totalForcing < 4 ? 'warm' : 'hot');
+
+      // Threat-level headline
+      if (t < 1.5) {
+        setAlert('safe', 'Threat Level: Nominal', 'Climate within manageable range — action can prevent escalation.');
+      } else if (t < 2.5) {
+        setAlert('warning', 'Threat Level: Elevated', 'Approaching 2°C threshold — significant impacts expected.');
+      } else if (t < 4) {
+        setAlert('danger', 'Threat Level: Severe', 'Severe climate disruption — irreversible tipping points likely.');
+      } else {
+        setAlert('critical', 'Threat Level: Critical', 'Catastrophic warming — ecosystem collapse cascading.');
+      }
+
+      updateStatusPanel(c);
+    }
+
+    function onParamChange() {
+      climate = computeClimate(state.co2, state.solar, state.ice, state.deforest, state.ch4, state.ocean);
+      updateReadouts();
+
+      // Push climate state to GPU — no CPU texture rebuild needed
+      earthUniforms.iceLevel.value    = state.ice / 100;
+      earthUniforms.tempAnomaly.value = climate.tempAnomaly;
+      earthUniforms.deforest.value    = state.deforest / 100;
+
+      // Atmosphere color shifts with temperature
+      const t = clamp(climate.tempAnomaly / 6, 0, 1);
+      atmUniforms.atmColor.value.setRGB(lerp(0.13, 0.67, t), lerp(0.40, 0.20, t), lerp(1.0, 0.0, t));
+      atmUniforms.rimStrength.value = lerp(0.72, 1.15, t);
+
+      updateMeltFront(state.ice / 100, climate.tempAnomaly);
+      cloudMat.opacity = cloudOpacityFor(climate, state.ocean);
+
+      spawnPersistent(climate);
+    }
+
+    // Cloud cover reacts to instability (storm activity) and ocean heat, so a
+    // calm scenario reads visibly clearer and a storm-heavy one reads cloudier.
+    function cloudOpacityFor(climate, ocean) {
+      const instability = clamp((climate.stormIdx - 1) / 2, 0, 1) * 0.5 + (ocean / 100) * 0.15;
+      return clamp(0.32 + instability * 0.4, 0.25, 0.75);
+    }
+
+    function bindSlider(id, key, fmt, unit = '') {
+      const el = document.getElementById('s-' + id);
+      const lbl = labels[id];
+      el.addEventListener('input', () => {
+        state[key] = parseFloat(el.value);
+        lbl.textContent = fmt(state[key]) + unit;
+        onParamChange();
+      });
+    }
+
+    bindSlider('co2',     'co2',     v => Math.round(v),     ' ppm');
+    bindSlider('solar',   'solar',   v => v.toFixed(1),      '%');
+    bindSlider('ice',     'ice',     v => Math.round(v),     '%');
+    bindSlider('deforest','deforest',v => Math.round(v),     '%');
+    bindSlider('ch4',     'ch4',     v => Math.round(v).toLocaleString(), ' ppb');
+    bindSlider('ocean',   'ocean',   v => Math.round(v),     '%');
+
+    // Scenario presets — snap all sliders to canonical published values, then
+    // dispatch 'input' on each so the existing bindSlider listeners do the rest.
+    const PRESETS = {
+      preindustrial: { co2: 280, solar: 100, ice: 100, deforest: 0,  ch4: 722,  ocean: 70 },
+      today:         { co2: 429, solar: 100, ice: 60,  deforest: 30, ch4: 1930, ocean: 70 },
+      paris:         { co2: 450, solar: 100, ice: 50,  deforest: 40, ch4: 2000, ocean: 70 },
+      bau:           { co2: 700, solar: 100, ice: 20,  deforest: 70, ch4: 3200, ocean: 55 },
+    };
+    document.getElementById('preset-row').addEventListener('click', e => {
+      const btn = e.target.closest('.preset-btn');
+      if (!btn) return;
+      const preset = PRESETS[btn.dataset.preset];
+      if (!preset) return;
+      Object.keys(preset).forEach(id => {
+        const el = document.getElementById('s-' + id);
+        el.value = preset[id];
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    });
+
+    // Mode switching
+    document.getElementById('mode-tabs').addEventListener('click', e => {
+      const btn = e.target.closest('.mode-tab');
+      if (!btn) return;
+      document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      mode = btn.dataset.mode;
+
+      const modeLabels = { weather: '🌪️ Weather Patterns', carbon: '♻️ Carbon Cycle', temperature: '🌡️ Heat Map' };
+      modeBadge.textContent = modeLabels[mode];
+
+      earthUniforms.heatMap.value = mode === 'temperature' ? 1.0 : 0.0;
+      spawnPersistent(climate);
+    });
+
+    /* ══════════════════════════════════════════
+       ANIMATION LOOP
+    ══════════════════════════════════════════ */
+    function animate(dtRaw, ts) {
+      const dt = Math.min(dtRaw, 0.05);
+      controls.update();
+
+      // Globe self-rotation (different from camera)
+      earthMesh.rotation.y += dt * 0.015;
+      cloudMesh.rotation.y += dt * 0.02;
+      cloudMesh.rotation.x = 0.04;
+
+      // Solar irradiance — update scene light and Earth shader each frame
+      const solarFactor = state.solar / 100;
+      sunLight.intensity = 1.4 * solarFactor;
+      sunLight.color.setHSL(0.1, 0.15 * (1 - (solarFactor - 1) * 5), 0.95);
+      earthUniforms.sunIntensity.value = 0.88 * solarFactor;
+      earthUniforms.sunColor.value.setHSL(0.1, 0.15 * (1 - (solarFactor - 1) * 5), 0.95);
+
+      // Aurora — pulses with ice coverage; color shifts slowly over time
+      const iceNorm = clamp(state.ice / 100, 0, 1);
+      const auroraPulse = iceNorm * 0.30 * (0.55 + 0.45 * Math.sin(ts * 0.0011));
+      auroraNorth.mat.opacity = auroraPulse;
+      auroraSouth.mat.opacity = auroraPulse * 0.75;
+      const auroraHue = (ts * 0.00004) % 1;
+      auroraNorth.mat.color.setHSL(auroraHue * 0.35 + 0.28, 1.0, 0.65);
+      auroraSouth.mat.color.setHSL(auroraHue * 0.30 + 0.55, 1.0, 0.65);
+
+      // Melt-front ring — slow pulse so the ice edge reads as active, not static
+      const meltPulse = 0.30 + 0.25 * Math.sin(ts * 0.0018);
+      meltFrontNorth.material.opacity = meltPulse;
+      meltFrontSouth.material.opacity = meltPulse * 0.85;
+
+      // Time-delayed effect: High deforestation naturally increases CO2 over time
+      if (state.deforest > 50) {
+        const co2IncreaseRate = ((state.deforest - 50) / 50) * 8.0; // up to 8 ppm per second
+        state.co2 = Math.min(700, state.co2 + co2IncreaseRate * dt);
+        const currentSliderVal = parseInt(document.getElementById('s-co2').value);
+        if (Math.floor(state.co2) > currentSliderVal) {
+          document.getElementById('s-co2').value = state.co2;
+          labels.co2.textContent = Math.round(state.co2) + ' ppm';
+          climate = computeClimate(state.co2, state.solar, state.ice, state.deforest, state.ch4, state.ocean);
+          updateReadouts();
+          // Sync GPU shader with drifting temperature
+          earthUniforms.tempAnomaly.value = climate.tempAnomaly;
+          const td = clamp(climate.tempAnomaly / 6, 0, 1);
+          atmUniforms.atmColor.value.setRGB(lerp(0.13, 0.67, td), lerp(0.40, 0.20, td), lerp(1.0, 0.0, td));
+          atmUniforms.rimStrength.value = lerp(0.72, 1.15, td);
+        }
+      }
+
+      // Particles
+      updatePersistentPositions();
+      spawnTransient(climate, dt);
+
+      renderer.render(scene, camera);
+    }
+
+    /* ══════════════════════════════════════════
+       INIT
+    ══════════════════════════════════════════ */
+    updateReadouts();
+    spawnPersistent(climate);
+    updateMeltFront(state.ice / 100, climate.tempAnomaly);
+    cloudMat.opacity = cloudOpacityFor(climate, state.ocean);
+    SimKit.loop(animate);
+
+  })();
+  </script>
+  <script src="../../assets/js/theme-registry.js"></script>
+  <script src="../../assets/js/classroom-animations.js"></script>
+  <script src="../../assets/js/lesson-layout.js"></script>
+
+</div><!-- .ll-viewport -->
+<script src="../../assets/js/lesson-print-button.js"></script>
+<script src="../../assets/js/lessons/climate-path-compare.js"></script>
+</body>
+</html>

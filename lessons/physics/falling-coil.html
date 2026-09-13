@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Falling Magnet in a Conductive Tube · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Physics Lesson 09 — explore electromagnetic induction with a falling magnet in copper, aluminum, plastic, or iron tubes inspired by an EJS simulation model." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../assets/css/electricity-path.css" />
+  <link rel="stylesheet" href="../../assets/css/lessons/falling-coil.css" />
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="fc-page">
+
+        <section class="hero fc-hero">
+          <p class="eyebrow">Physics · Lesson 09</p>
+          <h1>Falling Magnet in a Conductive Tube</h1>
+          <div class="fc-meta">
+            <span>Electromagnetism</span><span class="dot"></span>
+            <span>Induction</span><span class="dot"></span>
+            <span>Lenz's Law</span><span class="dot"></span>
+            <span>Eddy Currents</span>
+          </div>
+          <p class="fc-lede">This lesson borrows from the Easy Java/JavaScript Simulation source you shared for a magnet falling through different tube materials. Motion changes magnetic flux, flux change induces current, and that induced current pushes back on the magnet.</p>
+        </section>
+
+        <section class="fc-card" style="--card-accent:#ffcc00;">
+          <h2>The Big Idea</h2>
+          <p>As a magnet falls through a conducting tube, the magnetic field threading each ring of the tube changes over time. By Faraday's Law, that changing flux induces an emf. In materials like copper and aluminum, the induced emf drives circulating currents in the tube walls.</p>
+          <div class="fc-callout purple">
+            <strong>Lenz's Law:</strong> The induced current opposes the change that caused it. Since the magnet is moving downward, the induced magnetic field acts upward on the magnet, producing a braking force.
+          </div>
+          <h3>What Happens Step by Step</h3>
+          <ol class="fc-steps">
+            <li>The magnet begins to fall and the flux through nearby loops of the tube changes.</li>
+            <li>That changing flux induces a voltage in each conducting loop.</li>
+            <li>The tube material determines how much current can actually flow.</li>
+            <li>The induced currents create their own magnetic field that opposes the magnet's motion.</li>
+            <li>The magnet falls slowly in good conductors and nearly free-falls in nonconductors.</li>
+          </ol>
+          <div class="fc-compare">
+            <div class="fc-compare-card">
+              <strong>Good conductors</strong>
+              <span>Copper and aluminum support stronger induced currents, so the braking effect is larger.</span>
+            </div>
+            <div class="fc-compare-card">
+              <strong>Poor conductors</strong>
+              <span>Plastic produces almost no induced current, so the magnet behaves much more like ordinary free fall.</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="fc-card" style="--card-accent:#5856d6;">
+          <h2>Simulator</h2>
+          <p class="fc-muted-note">Press Drop to release the magnet. Compare copper, aluminum, plastic, iron, or no tube at all to see how material properties change the braking force.</p>
+          <div class="fc-sim-grid">
+            <div>
+              <div class="fc-canvas-wrap">
+                <canvas id="fc-canvas" aria-label="Falling magnet in conductive tube simulation"></canvas>
+              </div>
+            </div>
+            <div>
+              <div class="fc-canvas-wrap">
+                <canvas id="fc-graph-canvas" aria-label="Real-time line graph of magnet velocity and induced current"></canvas>
+              </div>
+              <p class="fc-graph-caption">Live graph: purple shows velocity and orange shows induced current. Each drop traces how the tube material changes the magnet's motion over time.</p>
+            </div>
+          </div>
+          <div class="fc-meters">
+            <div class="fc-meter"><span class="fc-meter-label">Magnet Velocity</span><span class="fc-meter-val" id="fc-vel">0.00 m/s</span></div>
+            <div class="fc-meter"><span class="fc-meter-label">Induced Current</span><span class="fc-meter-val" id="fc-cur">0.00 A</span></div>
+          </div>
+          <div class="fc-btn-row">
+            <button class="fc-btn" id="fc-drop-btn" onclick="fcDrop()">Drop Magnet</button>
+            <button class="fc-btn secondary" onclick="fcReset()">Reset</button>
+          </div>
+          <p class="fc-note">Adapted from the EJS model features: selectable tube material, magnet strength, and a multi-loop tube representation.</p>
+        </section>
+
+        <section class="fc-card" style="--card-accent:#34c759;">
+          <h2>Real-World Applications</h2>
+          <div class="fc-apps">
+            <div class="fc-app"><div class="fc-app-icon">💡</div><strong>Electric Generators</strong><small>Changing magnetic flux in rotating machines induces current and converts mechanical motion into electrical energy.</small></div>
+            <div class="fc-app"><div class="fc-app-icon">🚂</div><strong>Magnetic Brakes</strong><small>Trains and roller coasters can use eddy-current braking to slow motion without physical contact between moving parts.</small></div>
+            <div class="fc-app"><div class="fc-app-icon">📱</div><strong>Wireless Charging</strong><small>A changing magnetic field in the charger pad induces current in a receiver coil inside the device.</small></div>
+            <div class="fc-app"><div class="fc-app-icon">🧲</div><strong>Material Testing</strong><small>Engineers use induction-based methods to compare conductivity, detect flaws, and inspect metal components.</small></div>
+          </div>
+        </section>
+
+        <section class="fc-card" style="--card-accent:#007aff;">
+          <h2>Practice Problems</h2>
+          <p class="fc-muted-note">Think about conductivity, flux change, and how induced currents affect the magnet's motion.</p>
+          <div class="fc-practice">
+            <div class="fc-problem">
+              <p><span class="diff-easy">Easy</span>1. A magnet falls into a copper tube and speeds up downward. What direction is the magnetic force from the induced currents on the magnet?</p>
+              <div class="fc-problem-row">
+                <select class="fc-ans-input" id="fcans-1" style="width:130px;">
+                  <option value="">Choose…</option>
+                  <option value="upward">Upward</option>
+                  <option value="downward">Downward</option>
+                </select>
+                <button class="fc-check-btn" onclick="fcCheckText(1,'upward')">Check</button>
+                <span class="fc-feedback" id="fcfb-1"></span>
+              </div>
+              <div class="fc-hint" id="fchint-1">Hint: Lenz's Law says the induced effect opposes the change. The magnet is moving downward, so the braking force must be upward.</div>
+            </div>
+
+            <div class="fc-problem">
+              <p><span class="diff-easy">Easy</span>2. Which tube should produce the weakest induced-current braking effect?</p>
+              <div class="fc-problem-row">
+                <select class="fc-ans-input" id="fcans-2" style="width:150px;">
+                  <option value="">Choose…</option>
+                  <option value="plastic">Plastic</option>
+                  <option value="copper">Copper</option>
+                  <option value="aluminum">Aluminum</option>
+                </select>
+                <button class="fc-check-btn" onclick="fcCheckText(2,'plastic')">Check</button>
+                <span class="fc-feedback" id="fcfb-2"></span>
+              </div>
+              <div class="fc-hint" id="fchint-2">Hint: A poor conductor cannot support strong eddy currents.</div>
+            </div>
+
+            <div class="fc-problem">
+              <p><span class="diff-mid">Medium</span>3. If the magnet falls faster through the same tube, what happens to the induced emf?</p>
+              <div class="fc-problem-row">
+                <select class="fc-ans-input" id="fcans-3" style="width:160px;">
+                  <option value="">Choose…</option>
+                  <option value="increase">It increases</option>
+                  <option value="decrease">It decreases</option>
+                  <option value="same">It stays the same</option>
+                </select>
+                <button class="fc-check-btn" onclick="fcCheckText(3,'increase')">Check</button>
+                <span class="fc-feedback" id="fcfb-3"></span>
+              </div>
+              <div class="fc-hint" id="fchint-3">Hint: Faster motion means flux changes more quickly, so the induced emf grows.</div>
+            </div>
+
+            <div class="fc-problem">
+              <p><span class="diff-hard">Challenge</span>4. A 21-loop tube model experiences a flux change of 0.04 Wb per loop in 0.10 s. Estimate the induced emf magnitude using EMF = N × ΔΦ/Δt.</p>
+              <div class="fc-problem-row">
+                <input type="number" class="fc-ans-input" id="fcans-4" step="0.1" placeholder="V" />
+                <button class="fc-check-btn" onclick="fcCheck(4,8.4,0.3)">Check</button>
+                <span class="fc-feedback" id="fcfb-4"></span>
+              </div>
+              <div class="fc-hint" id="fchint-4">Hint: EMF = 21 × 0.04 / 0.10 = 8.4 V</div>
+            </div>
+          </div>
+        </section>
+
+        <section style="margin: 0 0 1rem; padding: 0.85rem 1.1rem; background: rgba(255,255,255,0.8); border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.04);">
+          <p style="margin: 0 0 0.45rem; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted, #64748b);">Innovator Profile · See Also</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 0.45rem;">
+            <a href="nikola-tesla.html" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.28rem 0.7rem; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 7px; font-size: 0.81rem; font-weight: 600; color: #3730a3; text-decoration: none;">⚡ Nikola Tesla — AC Motor &amp; Electromagnetic Induction</a>
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../index.html">Home</a> · <a href="../../steam-lessons.html">Lessons</a></p>
+        </footer>
+      </main>
+    </div>
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true" data-pane="fc-pane-sim">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="fc-pane-guide">Guide</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="fc-pane-sim">
+          <span class="ll-label">Magnet Strength</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Dipole Moment <span id="fc-b-val">1.2 A·m²</span></label>
+            <input type="range" class="nl-slider" id="fc-b-slider" min="4" max="16" value="12" style="width:100%;" />
+          </div>
+          <span class="ll-label">Tube Loops</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">N <span id="fc-n-val">21</span></label>
+            <input type="range" class="nl-slider" id="fc-n-slider" min="5" max="40" value="21" style="width:100%;" />
+          </div>
+          <span class="ll-label">Tube Material</span>
+          <div>
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Material <span id="fc-r-val">Copper</span></label>
+            <select class="fc-ans-input" id="fc-material" style="width:100%;">
+              <option value="none">None</option>
+              <option value="copper" selected>Copper</option>
+              <option value="aluminum">Aluminum</option>
+              <option value="plastic">Plastic</option>
+              <option value="iron">Iron</option>
+            </select>
+          </div>
+        </div>
+        <div class="ll-pane" id="fc-pane-guide">
+          <div class="ll-info"><strong>Faraday's Law</strong>EMF = −N × dΦ/dt. Changing flux through the tube induces voltage.</div>
+          <div class="ll-info"><strong>Lenz's Law</strong>The induced current creates a magnetic effect that opposes the falling magnet's motion.</div>
+          <div class="ll-info"><strong>Conductivity</strong>Better conductors allow larger currents and therefore stronger magnetic braking.</div>
+          <div class="ll-info"><strong>EJS inspiration</strong>The source model compares copper, aluminum, plastic, iron, and no tube with multiple loops along the tube.</div>
+        </div>
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+  </div>
+</div>
+
+<script src="../../assets/js/theme-registry.js"></script>
+<script src="../../assets/js/nav-mobile.js"></script>
+<script>
+(function () {
+  const canvas = document.getElementById('fc-canvas');
+  const ctx = canvas.getContext('2d');
+  const graphCanvas = document.getElementById('fc-graph-canvas');
+  const graphCtx = graphCanvas.getContext('2d');
+
+  const g = 9.81;
+  const magnetMass = 0.0118;
+  const tubeHeightPx = 210;
+  const magnetHeightPx = 26;
+  const startY = 20;
+  const scalePxPerMeter = 240;
+
+  let magnetY = startY;
+  let magnetVel = 0;
+  let running = false;
+  let raf = null;
+  let lastTime = null;
+  let currentA = 0;
+  let simTime = 0;
+  let graphPoints = [];
+
+  const materialMap = {
+    none: { label: "None", conductivity: 0.00, muFactor: 1.0, color: "rgba(220,220,225,0.18)", stroke: "rgba(160,160,170,0.8)" },
+    copper: { label: "Copper", conductivity: 1.00, muFactor: 1.0, color: "rgba(255,128,0,0.34)", stroke: "rgba(194,106,33,0.95)" },
+    aluminum: { label: "Aluminum", conductivity: 0.62, muFactor: 1.0, color: "rgba(180,180,185,0.34)", stroke: "rgba(130,130,140,0.95)" },
+    plastic: { label: "Plastic", conductivity: 0.02, muFactor: 1.0, color: "rgba(120,120,130,0.22)", stroke: "rgba(120,120,130,0.85)" },
+    iron: { label: "Iron", conductivity: 0.35, muFactor: 2.0, color: "rgba(40,40,46,0.4)", stroke: "rgba(15,15,18,0.95)" }
+  };
+
+  function getMagnetStrength() {
+    return parseInt(document.getElementById('fc-b-slider').value, 10) / 10;
+  }
+
+  function getLoopCount() {
+    return parseInt(document.getElementById('fc-n-slider').value, 10);
+  }
+
+  function getMaterial() {
+    return materialMap[document.getElementById('fc-material').value] || materialMap.copper;
+  }
+
+  function tubeRegion() {
+    return { top: 54, bottom: 54 + tubeHeightPx };
+  }
+
+  function fieldProfile(centerY) {
+    const region = tubeRegion();
+    const normalized = (centerY - region.top) / (region.bottom - region.top);
+    const shaped = Math.max(0, Math.sin(Math.PI * Math.min(1, Math.max(0, normalized))));
+    return shaped;
+  }
+
+  function computeCurrent() {
+    const material = getMaterial();
+    const centerY = magnetY + magnetHeightPx / 2;
+    const inTube = centerY >= tubeRegion().top && centerY <= tubeRegion().bottom;
+    if (!inTube || material.conductivity <= 0) return 0;
+    const loops = getLoopCount();
+    const strength = getMagnetStrength();
+    const profile = fieldProfile(centerY);
+    return magnetVel * loops * strength * material.conductivity * material.muFactor * profile * 0.055;
+  }
+
+  function computeBrakeForce() {
+    const material = getMaterial();
+    const loops = getLoopCount();
+    const strength = getMagnetStrength();
+    return Math.abs(currentA) * strength * loops * material.muFactor * 0.0018;
+  }
+
+  function resizeGraphCanvas() {
+    const W = graphCanvas.offsetWidth || 320;
+    graphCanvas.width = W;
+    graphCanvas.height = 320;
+  }
+
+  function pushGraphPoint() {
+    graphPoints.push({
+      t: simTime,
+      velocity: magnetVel,
+      current: currentA
+    });
+
+    const cutoff = Math.max(6, simTime - 8);
+    while (graphPoints.length > 2 && graphPoints[1].t < cutoff) {
+      graphPoints.shift();
+    }
+  }
+
+  function drawGraph() {
+    resizeGraphCanvas();
+
+    const W = graphCanvas.width;
+    const H = graphCanvas.height;
+    const pad = { left: 46, right: 14, top: 20, bottom: 34 };
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+    const maxTime = Math.max(6, simTime, graphPoints.length ? graphPoints[graphPoints.length - 1].t : 0);
+    const maxVel = Math.max(1, ...graphPoints.map((point) => Math.abs(point.velocity)), Math.abs(magnetVel));
+    const maxCur = Math.max(0.4, ...graphPoints.map((point) => Math.abs(point.current)), Math.abs(currentA));
+
+    graphCtx.clearRect(0, 0, W, H);
+    graphCtx.fillStyle = '#f7f8fa';
+    graphCtx.fillRect(0, 0, W, H);
+
+    graphCtx.strokeStyle = 'rgba(88,86,214,0.12)';
+    graphCtx.lineWidth = 1;
+    for (let i = 0; i <= 4; i += 1) {
+      const y = pad.top + (plotH / 4) * i;
+      graphCtx.beginPath();
+      graphCtx.moveTo(pad.left, y);
+      graphCtx.lineTo(W - pad.right, y);
+      graphCtx.stroke();
+    }
+
+    graphCtx.strokeStyle = 'rgba(31,41,55,0.22)';
+    graphCtx.lineWidth = 1.4;
+    graphCtx.beginPath();
+    graphCtx.moveTo(pad.left, pad.top);
+    graphCtx.lineTo(pad.left, H - pad.bottom);
+    graphCtx.lineTo(W - pad.right, H - pad.bottom);
+    graphCtx.stroke();
+
+    graphCtx.font = '11px Inter,sans-serif';
+    graphCtx.fillStyle = '#64748b';
+    graphCtx.textAlign = 'center';
+    graphCtx.fillText('Time (s)', pad.left + plotW / 2, H - 10);
+
+    graphCtx.save();
+    graphCtx.translate(14, pad.top + plotH / 2);
+    graphCtx.rotate(-Math.PI / 2);
+    graphCtx.fillText('Velocity / Current', 0, 0);
+    graphCtx.restore();
+
+    graphCtx.textAlign = 'right';
+    graphCtx.fillText(maxVel.toFixed(1) + ' v', pad.left - 8, pad.top + 10);
+    graphCtx.fillText('0', pad.left - 8, H - pad.bottom + 4);
+
+    graphCtx.textAlign = 'left';
+    graphCtx.fillStyle = '#ff9500';
+    graphCtx.fillText(maxCur.toFixed(1) + ' A', W - pad.right - 32, pad.top + 10);
+
+    graphCtx.fillStyle = '#64748b';
+    graphCtx.textAlign = 'center';
+    for (let i = 0; i <= 3; i += 1) {
+      const t = (maxTime / 3) * i;
+      const x = pad.left + (plotW / 3) * i;
+      graphCtx.fillText(t.toFixed(1), x, H - pad.bottom + 18);
+    }
+
+    const xForTime = (t) => pad.left + (t / maxTime) * plotW;
+    const yForVelocity = (v) => H - pad.bottom - (Math.max(0, v) / maxVel) * plotH;
+    const yForCurrent = (i) => H - pad.bottom - (Math.abs(i) / maxCur) * plotH;
+
+    if (graphPoints.length > 1) {
+      graphCtx.lineWidth = 2.4;
+
+      graphCtx.strokeStyle = '#5856d6';
+      graphCtx.beginPath();
+      graphPoints.forEach((point, index) => {
+        const x = xForTime(point.t);
+        const y = yForVelocity(point.velocity);
+        if (index === 0) graphCtx.moveTo(x, y);
+        else graphCtx.lineTo(x, y);
+      });
+      graphCtx.stroke();
+
+      graphCtx.strokeStyle = '#ff9500';
+      graphCtx.beginPath();
+      graphPoints.forEach((point, index) => {
+        const x = xForTime(point.t);
+        const y = yForCurrent(point.current);
+        if (index === 0) graphCtx.moveTo(x, y);
+        else graphCtx.lineTo(x, y);
+      });
+      graphCtx.stroke();
+    }
+
+    graphCtx.fillStyle = '#5856d6';
+    graphCtx.fillRect(pad.left + 4, pad.top + 4, 10, 3);
+    graphCtx.fillStyle = '#1d1d1f';
+    graphCtx.textAlign = 'left';
+    graphCtx.fillText('Velocity', pad.left + 20, pad.top + 10);
+
+    graphCtx.fillStyle = '#ff9500';
+    graphCtx.fillRect(pad.left + 92, pad.top + 4, 10, 3);
+    graphCtx.fillStyle = '#1d1d1f';
+    graphCtx.fillText('Current', pad.left + 108, pad.top + 10);
+  }
+
+  function drawArrowV(x, y, len, color, label) {
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x, y + len);
+    ctx.stroke();
+    const dir = len < 0 ? -1 : 1;
+    ctx.beginPath();
+    ctx.moveTo(x, y + len);
+    ctx.lineTo(x - 6, y + len - dir * 10);
+    ctx.lineTo(x + 6, y + len - dir * 10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.font = '11px Inter,sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(label, x + 8, y + len + (dir < 0 ? 2 : 4));
+  }
+
+  function drawTube(x, y, w, h, material) {
+    if (material.label === "None") return;
+    ctx.fillStyle = material.color;
+    ctx.strokeStyle = material.stroke;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, 12);
+    ctx.fill();
+    ctx.stroke();
+
+    const loops = getLoopCount();
+    ctx.strokeStyle = 'rgba(88,86,214,0.18)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < loops; i += 1) {
+      const yy = y + (h / loops) * i;
+      ctx.beginPath();
+      ctx.moveTo(x + 8, yy);
+      ctx.lineTo(x + w - 8, yy);
+      ctx.stroke();
+    }
+  }
+
+  function drawMagnet(x, y, w, h) {
+    const grad = ctx.createLinearGradient(x, y, x + w, y);
+    grad.addColorStop(0, '#ff3b30');
+    grad.addColorStop(0.5, '#c0392b');
+    grad.addColorStop(1, '#007aff');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, 8);
+    ctx.fill();
+
+    ctx.font = 'bold 12px Inter,sans-serif';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('N', x + w * 0.2, y + h / 2);
+    ctx.fillText('S', x + w * 0.8, y + h / 2);
+    ctx.textBaseline = 'alphabetic';
+  }
+
+  function drawScene(brakeForce) {
+    const W = canvas.offsetWidth || 500;
+    const H = 320;
+    canvas.width = W;
+    canvas.height = H;
+
+    const tube = tubeRegion();
+    const tubeW = Math.min(110, W * 0.24);
+    const tubeX = (W - tubeW) / 2;
+    const magnetW = tubeW * 0.82;
+    const magnetX = (W - magnetW) / 2;
+    const material = getMaterial();
+
+    ctx.clearRect(0, 0, W, H);
+
+    ctx.fillStyle = '#f7f4ee';
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.fillStyle = 'rgba(88,86,214,0.08)';
+    ctx.fillRect(tubeX - 28, tube.top, tubeW + 56, tube.bottom - tube.top);
+
+    drawTube(tubeX, tube.top, tubeW, tube.bottom - tube.top, material);
+    drawMagnet(magnetX, magnetY, magnetW, magnetHeightPx);
+
+    ctx.font = '600 12px Inter,sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#5856d6';
+    ctx.fillText('v = ' + magnetVel.toFixed(2) + ' m/s', 12, 22);
+    ctx.fillText('I = ' + currentA.toFixed(2) + ' A', 12, 40);
+    ctx.fillText('Tube: ' + material.label, 12, 58);
+
+    if (Math.abs(currentA) > 0.01) {
+      drawArrowV(W * 0.83, magnetY + magnetHeightPx / 2, -Math.min(44, brakeForce * 2500), '#ff9500', 'Brake');
+    }
+    drawArrowV(W * 0.14, magnetY + magnetHeightPx / 2, 28, '#5856d6', 'Gravity');
+
+    document.getElementById('fc-vel').textContent = magnetVel.toFixed(2) + ' m/s';
+    document.getElementById('fc-cur').textContent = currentA.toFixed(2) + ' A';
+    drawGraph();
+  }
+
+  function step(ts) {
+    if (!lastTime) lastTime = ts;
+    const dt = Math.min((ts - lastTime) / 1000, 0.03);
+    lastTime = ts;
+    simTime += dt;
+
+    currentA = computeCurrent();
+    const brakeForce = computeBrakeForce();
+    const accel = g - (brakeForce / magnetMass) * (magnetVel >= 0 ? 1 : -1);
+
+    magnetVel += accel * dt;
+    magnetY += magnetVel * dt * scalePxPerMeter;
+    pushGraphPoint();
+
+    if (magnetY > canvas.height + 30) {
+      running = false;
+      document.getElementById('fc-drop-btn').disabled = false;
+    }
+
+    drawScene(brakeForce);
+    if (running) raf = requestAnimationFrame(step);
+  }
+
+  window.fcDrop = function () {
+    fcReset();
+    running = true;
+    lastTime = null;
+    document.getElementById('fc-drop-btn').disabled = true;
+    raf = requestAnimationFrame(step);
+  };
+
+  window.fcReset = function () {
+    running = false;
+    if (raf) cancelAnimationFrame(raf);
+    magnetY = startY;
+    magnetVel = 0;
+    currentA = 0;
+    simTime = 0;
+    graphPoints = [{ t: 0, velocity: 0, current: 0 }];
+    lastTime = null;
+    document.getElementById('fc-drop-btn').disabled = false;
+    drawScene(0);
+  };
+
+  document.getElementById('fc-b-slider').addEventListener('input', function (e) {
+    document.getElementById('fc-b-val').textContent = (parseInt(e.target.value, 10) / 10).toFixed(1) + ' A·m²';
+    if (!running) drawScene(0);
+  });
+
+  document.getElementById('fc-n-slider').addEventListener('input', function (e) {
+    document.getElementById('fc-n-val').textContent = e.target.value;
+    if (!running) drawScene(0);
+  });
+
+  document.getElementById('fc-material').addEventListener('input', function (e) {
+    document.getElementById('fc-r-val').textContent = materialMap[e.target.value].label;
+    if (!running) drawScene(0);
+  });
+
+  window.addEventListener('resize', function () {
+    if (!running) fcReset();
+  });
+
+  fcReset();
+
+  window.fcCheck = function (n, ans, tol) {
+    const val = parseFloat(document.getElementById('fcans-' + n).value);
+    const fb = document.getElementById('fcfb-' + n);
+    const hint = document.getElementById('fchint-' + n);
+    if (isNaN(val)) {
+      fb.textContent = 'Enter a number.';
+      fb.className = 'fc-feedback err';
+      return;
+    }
+    if (Math.abs(val - ans) <= tol) {
+      fb.textContent = '✓ Correct!';
+      fb.className = 'fc-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.';
+      fb.className = 'fc-feedback err';
+      hint.style.display = 'block';
+    }
+  };
+
+  window.fcCheckText = function (n, ans) {
+    const el = document.getElementById('fcans-' + n);
+    const fb = document.getElementById('fcfb-' + n);
+    const hint = document.getElementById('fchint-' + n);
+    if (el.value === ans) {
+      fb.textContent = '✓ Correct!';
+      fb.className = 'fc-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.';
+      fb.className = 'fc-feedback err';
+      hint.style.display = 'block';
+    }
+  };
+})();
+</script>
+<script src="../../assets/js/classroom-animations.js"></script>
+  <script src="../../assets/js/lesson-layout.js"></script>
+<script src="../../assets/js/electricity-path.js"></script>
+<script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

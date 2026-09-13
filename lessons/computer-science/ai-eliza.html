@@ -1,0 +1,1288 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Experience ELIZA (1966) · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Experience ELIZA in a focused 1966 DOCTOR-script terminal simulation." />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lessons/ai-eliza.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport {
+      --ll-panel-bg: rgba(16, 26, 20, 0.98);
+      --ll-panel-border: rgba(178, 230, 196, 0.20);
+      --ll-tab-color: rgba(200, 230, 205, 0.55);
+      --ll-tab-active-bg: rgba(100, 220, 150, 0.14);
+      --ll-tab-active: #7dffb0;
+      --ll-toggle-bg: rgba(16, 26, 20, 0.97);
+    }
+
+    .theme-eliza1966 {
+      --bg0: #0b120f;
+      --bg1: #101a16;
+      --ink: #f1fff5;
+      --ink-dim: #d4ead7;
+      --line: rgba(178, 230, 196, 0.34);
+      --glow: rgba(120, 255, 190, 0.25);
+      --warn: rgba(255, 210, 120, 0.9);
+      --shadow: rgba(0, 0, 0, 0.55);
+      background: var(--bg0);
+      color: var(--ink);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      letter-spacing: 0.18px;
+      line-height: 1.68;
+      animation: none;
+    }
+
+    .theme-eliza1966 a {
+      color: var(--ink);
+      text-decoration: none;
+      border-bottom: 1px dotted var(--line);
+    }
+
+    .theme-eliza1966 a:hover {
+      border-bottom-style: solid;
+    }
+
+    .theme-eliza1966 h1,
+    .theme-eliza1966 h2,
+    .theme-eliza1966 h3 {
+      color: var(--ink);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .theme-eliza1966 .eliza-page {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 22px 16px 60px;
+    }
+
+    .theme-eliza1966 .eliza-page section,
+    .theme-eliza1966 .eliza-page .panel,
+    .theme-eliza1966 .eliza-page .card {
+      background: linear-gradient(180deg, rgba(10, 14, 11, 0.92), rgba(6, 9, 7, 0.92));
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 18px 60px var(--shadow), inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+    }
+
+    .theme-eliza1966::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        repeating-linear-gradient(
+          to bottom,
+          rgba(255, 255, 255, 0.02) 0px,
+          rgba(255, 255, 255, 0.02) 1px,
+          rgba(0, 0, 0, 0) 3px
+        ),
+        radial-gradient(120% 100% at 50% 40%, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.15) 100%);
+      opacity: 0.1;
+      mix-blend-mode: overlay;
+      z-index: 9999;
+    }
+
+    @keyframes elizaFlicker {
+      0%,
+      100% {
+        filter: brightness(1);
+      }
+      48% {
+        filter: brightness(0.98);
+      }
+      50% {
+        filter: brightness(1.03);
+      }
+      52% {
+        filter: brightness(0.99);
+      }
+    }
+
+    .theme-eliza1966 select,
+    .theme-eliza1966 textarea,
+    .theme-eliza1966 input[type="text"] {
+      background: rgba(2, 4, 3, 0.9);
+      color: var(--ink);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      outline: none;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+    }
+
+    .theme-eliza1966 textarea {
+      min-height: 110px;
+    }
+
+    .theme-eliza1966 button {
+      background: rgba(3, 7, 5, 0.9);
+      color: var(--ink);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .theme-eliza1966 button:hover {
+      box-shadow: 0 0 0 2px rgba(120, 255, 190, 0.12), 0 0 18px var(--glow);
+    }
+
+    .theme-eliza1966 .eliza1966-terminal {
+      position: relative;
+      padding: 18px;
+    }
+
+    .theme-eliza1966 .eliza1966-terminal::before {
+      content: "MIT AI LAB TERMINAL / TELETYPER CONSOLE / 1966";
+      display: block;
+      margin: -6px 0 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.28);
+      color: var(--ink-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: 12px;
+    }
+
+    .theme-eliza1966 .eliza1966-screen,
+    .theme-eliza1966 #eliza-chat-log {
+      background: rgba(15, 25, 20, 0.85);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.35);
+    }
+
+    .theme-eliza1966 .eliza1966-message-body {
+      line-height: 1.6;
+    }
+
+    .theme-eliza1966 .eliza1966-message[data-role="YOU"] {
+      color: var(--warn);
+    }
+
+    .theme-eliza1966 .eliza1966-message[data-role="ELIZA"] {
+      color: var(--ink);
+    }
+
+    .theme-eliza1966 .eliza1966-message[data-role="SYSTEM"] {
+      color: var(--ink-dim);
+      opacity: 0.9;
+    }
+
+    .theme-eliza1966 details {
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: rgba(0, 0, 0, 0.18);
+    }
+
+    .theme-eliza1966 summary {
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--ink-dim);
+    }
+
+    .theme-eliza1966 .eliza1966-starters button {
+      border-style: dashed;
+    }
+
+    :root {
+      --eliza-bg: #080808;
+      --eliza-panel: #101010;
+      --eliza-border: #4f5e54;
+      --eliza-text: #effaf0;
+      --eliza-muted: #c8d5c9;
+      --eliza-accent: #b5ffbf;
+      --eliza-you: #213525;
+      --eliza-eliza: #16221a;
+      --eliza-focus: #8dd4ff;
+    }
+
+    .eliza1966-wrap {
+      width: min(980px, 100%);
+      margin: 0 auto;
+      font-family: "Courier New", "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    }
+
+    .crt-shell {
+      position: relative;
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    .crt-frame {
+      position: absolute;
+      inset: -18px;
+      border-radius: 26px;
+      background:
+        radial-gradient(120% 90% at 50% 0%, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0) 55%),
+        linear-gradient(180deg, rgba(20, 20, 20, 1), rgba(8, 8, 8, 1));
+      box-shadow:
+        0 18px 60px rgba(0, 0, 0, 0.45),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+        inset 0 -18px 40px rgba(0, 0, 0, 0.45);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .crt-screen {
+      position: relative;
+      border-radius: 18px;
+      padding: 18px;
+      overflow: hidden;
+      background:
+        radial-gradient(120% 90% at 50% 0%, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0) 60%),
+        radial-gradient(140% 120% at 50% 120%, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0) 55%),
+        #070b08;
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+        inset 0 0 30px rgba(0, 0, 0, 0.55),
+        0 0 0 1px rgba(0, 0, 0, 0.35);
+      transform: perspective(1400px) rotateX(0.6deg);
+      z-index: 1;
+    }
+
+    /* ── Scanlines — enhanced raster pass ───────────────────── */
+    .crt-screen::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(
+          0deg,
+          rgba(0, 0, 0, 0)    0px,
+          rgba(0, 0, 0, 0)    2px,
+          rgba(0, 0, 0, 0.20) 2px,
+          rgba(0, 0, 0, 0.20) 4px
+        );
+      mix-blend-mode: multiply;
+      opacity: 1;
+      pointer-events: none;
+      z-index: 200;
+    }
+
+    /* ── Phosphor bloom + edge darkening ─────────────────────── */
+    .crt-screen::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 90% 65% at 50% 28%, rgba(60, 255, 120, 0.06) 0%, transparent 65%),
+        radial-gradient(ellipse 100% 80% at 50% -8%, rgba(255, 255, 255, 0.04), transparent 55%),
+        radial-gradient(ellipse 130% 100% at 50% 115%, rgba(0, 0, 0, 0.45), transparent 52%);
+      pointer-events: none;
+      z-index: 150;
+    }
+
+    .crt-screen > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .eliza1966-terminal {
+      border: 1px solid #2f2f2f;
+      border-radius: 0;
+      background: var(--eliza-bg);
+      color: var(--eliza-text);
+      box-shadow: none;
+    }
+
+    .eliza1966-topline {
+      margin: 0;
+      padding: 0.7rem 0.9rem;
+      border-bottom: 1px solid var(--eliza-border);
+      color: var(--eliza-text);
+      font-size: 0.9rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .eliza1966-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.7rem 1rem;
+      padding: 0.65rem 0.9rem;
+      border-bottom: 1px solid var(--eliza-border);
+      background: var(--eliza-panel);
+      color: var(--eliza-text);
+      font-size: 0.96rem;
+    }
+
+    .eliza1966-toolbar label,
+    .eliza1966-toolbar legend {
+      font-size: 0.95rem;
+      color: var(--eliza-muted);
+    }
+
+    .eliza1966-toolbar select,
+    .eliza1966-toolbar button {
+      border: 1px solid #6f8072;
+      border-radius: 0;
+      background: #000;
+      color: var(--eliza-text);
+      font: inherit;
+      padding: 0.44rem 0.6rem;
+      box-shadow: none;
+    }
+
+    .eliza1966-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      color: var(--eliza-text);
+    }
+
+    .eliza1966-disclaimer {
+      margin: 0;
+      padding: 0.7rem 0.9rem;
+      border-bottom: 1px solid var(--eliza-border);
+      color: #d9e7da;
+      font-size: 0.95rem;
+      line-height: 1.55;
+      background: #0f1110;
+    }
+
+    .eliza1966-screen {
+      min-height: min(50vh, 28rem);
+      max-height: min(58vh, 34rem);
+      overflow-y: auto;
+      padding: 0.85rem;
+      background: #020302;
+      color: var(--eliza-text);
+      border-bottom: 1px solid var(--eliza-border);
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .eliza1966-message {
+      margin: 0;
+      max-width: 92%;
+      border: 1px solid #5a6c5f;
+      padding: 0.65rem 0.75rem;
+      line-height: 1.52;
+      color: var(--eliza-text);
+      background: #0b0f0c;
+    }
+
+    .eliza1966-message[data-role="YOU"] {
+      align-self: flex-end;
+      background: var(--eliza-you);
+    }
+
+    .eliza1966-message[data-role="ELIZA"] {
+      align-self: flex-start;
+      background: var(--eliza-eliza);
+    }
+
+    .eliza1966-message[data-role="SYSTEM"] {
+      align-self: stretch;
+      max-width: 100%;
+      background: #0d0d0d;
+      color: #d8e0d8;
+    }
+
+    .eliza1966-message-head {
+      display: block;
+      margin-bottom: 0.28rem;
+      color: var(--eliza-accent);
+      font-size: 0.86rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .eliza1966-message-body {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 1.04rem;
+      line-height: 1.62;
+    }
+
+    .eliza1966-why {
+      margin-top: 0.45rem;
+      border-top: 1px dashed var(--eliza-border);
+      padding-top: 0.4rem;
+      font-size: 0.82rem;
+      color: var(--eliza-muted);
+    }
+
+    .eliza1966-why summary {
+      cursor: pointer;
+      color: var(--eliza-accent);
+    }
+
+    .eliza1966-typing {
+      min-height: 1.2rem;
+      padding: 0.45rem 0.85rem;
+      color: #d0ddcf;
+      font-size: 0.9rem;
+      border-bottom: 1px solid var(--eliza-border);
+    }
+
+    .eliza1966-controls {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.45rem;
+      align-items: end;
+      padding: 0.65rem 0.85rem 0.8rem;
+      background: #000;
+      color: var(--eliza-text);
+    }
+
+    #eliza-input {
+      width: 100%;
+      min-height: 2.9rem;
+      max-height: 8rem;
+      resize: vertical;
+      border: 1px solid #718273;
+      border-radius: 0;
+      background: #000;
+      color: var(--eliza-text);
+      box-shadow: none;
+      padding: 0.6rem 0.62rem;
+      line-height: 1.5;
+      font: inherit;
+      font-size: 1.04rem;
+    }
+
+    #eliza-input::placeholder {
+      color: #9dc49d;
+    }
+
+    .eliza1966-send {
+      border: 1px solid #738374;
+      border-radius: 0;
+      background: #101010;
+      color: var(--eliza-text);
+      font: inherit;
+      font-size: 0.98rem;
+      padding: 0.62rem 0.95rem;
+      box-shadow: none;
+    }
+
+    .eliza1966-send:hover,
+    .eliza1966-toolbar button:hover,
+    .eliza1966-toolbar select:hover {
+      filter: none;
+      background: #151816;
+      color: #f2faf2;
+    }
+
+    #eliza-input:focus-visible,
+    .eliza1966-send:focus-visible,
+    .eliza1966-toolbar button:focus-visible,
+    .eliza1966-toolbar select:focus-visible,
+    .eliza1966-starter:focus-visible,
+    summary:focus-visible {
+      outline: 2px solid var(--eliza-focus);
+      outline-offset: 2px;
+    }
+
+    .eliza1966-onboarding {
+      border-top: 1px solid var(--eliza-border);
+      padding: 0.85rem 0.9rem 0.95rem;
+      background: #080808;
+      color: var(--eliza-text);
+    }
+
+    .eliza1966-onboarding h2 {
+      margin: 0 0 0.45rem;
+      font-size: 1rem;
+      letter-spacing: 0.01em;
+      color: var(--eliza-muted);
+      text-transform: uppercase;
+    }
+
+    .eliza1966-starters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.42rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .eliza1966-starter {
+      border: 1px solid #3f3f3f;
+      background: #0d0d0d;
+      color: var(--eliza-text);
+      font: inherit;
+      font-size: 0.84rem;
+      padding: 0.38rem 0.58rem;
+      border-radius: 0;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .eliza1966-how {
+      margin: 0;
+      font-size: 0.98rem;
+      color: #d5e6d7;
+      line-height: 1.6;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .theme-eliza1966 {
+        animation: none;
+      }
+    }
+
+    .eliza1966-how-details {
+      margin-top: 0.5rem;
+      border-top: 1px dashed var(--eliza-border);
+      padding-top: 0.45rem;
+    }
+
+    .eliza1966-how-details details {
+      margin-top: 0.5rem;
+    }
+
+    .eliza1966-how-details summary {
+      cursor: pointer;
+      color: var(--eliza-accent);
+    }
+
+    .eliza1966-context,
+    .eliza1966-history {
+      width: min(980px, 100%);
+      margin: 1.15rem auto 0;
+      border: 1px solid #d2d2d7;
+      border-radius: 0;
+      background: #fff;
+      box-shadow: none;
+      padding: 1rem;
+    }
+
+    .eliza1966-context h2,
+    .eliza1966-history h2 {
+      margin: 0 0 0.7rem;
+      letter-spacing: -0.01em;
+    }
+
+    .eliza1966-context h3,
+    .eliza1966-history h3 {
+      margin: 1rem 0 0.45rem;
+      font-size: 1rem;
+    }
+
+    .eliza1966-context p,
+    .eliza1966-history p {
+      margin: 0.45rem 0;
+      color: #3a3a3c;
+    }
+
+    .eliza1966-accordion details {
+      border-top: 1px solid #d8d8dc;
+      padding: 0.62rem 0;
+    }
+
+    .eliza1966-accordion details:first-of-type {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .eliza1966-accordion summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: #1d1d1f;
+    }
+
+    .eliza1966-context ul,
+    .eliza1966-history ul,
+    .eliza1966-history ol {
+      margin: 0.45rem 0 0.4rem;
+      padding-left: 1.15rem;
+      color: #3a3a3c;
+    }
+
+    .eliza1966-examples {
+      margin: 0.5rem 0 0;
+      padding: 0.65rem;
+      border: 1px solid #d2d2d7;
+      border-radius: 0;
+      background: #fafafc;
+      color: #1d1d1f;
+      font-family: "Courier New", "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+      line-height: 1.35;
+      white-space: pre-wrap;
+    }
+
+    .eliza1966-timeline li {
+      margin-bottom: 0.42rem;
+    }
+
+    @media (max-width: 760px) {
+      .crt-frame {
+        inset: -10px;
+      }
+
+      .crt-screen {
+        padding: 12px;
+      }
+
+      .eliza1966-toolbar {
+        align-items: flex-start;
+      }
+
+      .eliza1966-controls {
+        grid-template-columns: 1fr;
+      }
+
+      .eliza1966-message {
+        max-width: 100%;
+      }
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       COOL-RETRO-TERM CRT EFFECT SUITE
+       Phosphor glow · power-on · flicker · burn-in · noise
+       Inspired by https://github.com/Swordfish90/cool-retro-term
+    ══════════════════════════════════════════════════════════ */
+
+    /* ── CRT power-on startup animation ─────────────────────── */
+    @keyframes crt-poweron {
+      0%   { opacity: 0;
+             transform: perspective(1400px) rotateX(0.6deg) scaleY(0);
+             filter: brightness(0); }
+      5%   { opacity: 1;
+             transform: perspective(1400px) rotateX(0.6deg) scaleY(0.002);
+             filter: brightness(9) saturate(0) blur(2px); }
+      10%  { transform: perspective(1400px) rotateX(0.6deg) scaleY(0.005);
+             filter: brightness(5) blur(1px); }
+      18%  { transform: perspective(1400px) rotateX(0.6deg) scaleY(0.025);
+             filter: brightness(2.5); }
+      35%  { transform: perspective(1400px) rotateX(0.6deg) scaleY(0.65);
+             filter: brightness(1.7); }
+      52%  { transform: perspective(1400px) rotateX(0.6deg) scaleY(1.018);
+             filter: brightness(1.12); }
+      67%  { transform: perspective(1400px) rotateX(0.6deg) scaleY(0.994);
+             filter: brightness(0.94); }
+      82%  { transform: perspective(1400px) rotateX(0.6deg) scaleY(1.004);
+             filter: brightness(1.03); }
+      100% { transform: perspective(1400px) rotateX(0.6deg) scaleY(1);
+             filter: brightness(1); }
+    }
+
+    /* ── Phosphor screen flicker ─────────────────────────────── */
+    @keyframes crt-flicker {
+      0%,  17%, 19%, 22%, 27%, 52%, 56%, 96%, 100% { filter: brightness(1); }
+      18%  { filter: brightness(0.88); }
+      20%  { filter: brightness(1.07); }
+      23%  { filter: brightness(0.93); }
+      25%  { filter: brightness(1.02); }
+      53%  { filter: brightness(0.91); }
+      54%  { filter: brightness(0.97); }
+      55%  { filter: brightness(1.05); }
+      97%  { filter: brightness(0.95); }
+      98%  { filter: brightness(1.04); }
+    }
+
+    /* Apply power-on + persistent flicker to the screen */
+    .crt-screen {
+      animation:
+        crt-poweron 1.8s cubic-bezier(0.22, 0.61, 0.36, 1) both,
+        crt-flicker 13s 1.9s infinite;
+      transform-origin: center center;
+      /* Enhanced corner shadows for curvature illusion */
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+        inset 0 0 80px rgba(0, 0, 0, 0.65),
+        inset 50px 0 80px rgba(0, 0, 0, 0.22),
+        inset -50px 0 80px rgba(0, 0, 0, 0.22),
+        inset 0 50px 80px rgba(0, 0, 0, 0.18),
+        inset 0 -50px 80px rgba(0, 0, 0, 0.28),
+        0 0 0 1px rgba(0, 0, 0, 0.35);
+    }
+
+    /* ── Canvas overlay (noise, sweep, vignette) ─────────────── */
+    #crt-overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 100;
+      border-radius: 18px;
+      display: block;
+    }
+
+    /* ── Phosphor glow on ELIZA messages — green phosphor ─────── */
+    .eliza1966-message[data-role="ELIZA"] .eliza1966-message-body {
+      text-shadow:
+        -0.65px 0    rgba(255,  45,  45, 0.20),
+         0.65px 0    rgba( 45,  45, 255, 0.20),
+         0  0   4px  rgba( 65, 255, 125, 0.95),
+         0  0  12px  rgba( 65, 255, 125, 0.55),
+         0  0  28px  rgba( 65, 255, 125, 0.18),
+         0  0  52px  rgba( 65, 255, 125, 0.06);
+    }
+
+    .eliza1966-message[data-role="ELIZA"] .eliza1966-message-head {
+      text-shadow:
+        0 0  4px rgba(110, 255, 180, 1),
+        0 0 14px rgba(110, 255, 180, 0.6),
+        0 0 30px rgba(110, 255, 180, 0.22);
+    }
+
+    /* ── Phosphor glow on YOU messages — amber phosphor ─────── */
+    .eliza1966-message[data-role="YOU"] .eliza1966-message-body {
+      text-shadow:
+        -0.65px 0    rgba(255,  45,  45, 0.18),
+         0.65px 0    rgba( 45,  45, 255, 0.18),
+         0  0   4px  rgba(255, 212,  75, 0.98),
+         0  0  12px  rgba(255, 200,  55, 0.52),
+         0  0  28px  rgba(255, 185,  35, 0.18),
+         0  0  50px  rgba(255, 170,  20, 0.06);
+    }
+
+    .eliza1966-message[data-role="YOU"] .eliza1966-message-head {
+      text-shadow:
+        0 0  4px rgba(255, 225, 105, 1),
+        0 0 14px rgba(255, 212,  75, 0.55);
+    }
+
+    /* ── SYSTEM messages — dim green ─────────────────────────── */
+    .eliza1966-message[data-role="SYSTEM"] .eliza1966-message-body {
+      text-shadow:
+        0 0  3px rgba(155, 220, 165, 0.75),
+        0 0 10px rgba(110, 195, 135, 0.32);
+    }
+
+    /* ── Topline header glow ─────────────────────────────────── */
+    .eliza1966-topline {
+      text-shadow:
+        0 0  6px rgba(75, 255, 135, 0.8),
+        0 0 20px rgba(75, 255, 135, 0.35),
+        0 0 40px rgba(75, 255, 135, 0.12);
+    }
+
+    /* ── Input glow + custom caret ───────────────────────────── */
+    #eliza-input {
+      text-shadow: 0 0 4px rgba(75, 255, 135, 0.6);
+      caret-color: #7dffb0;
+    }
+
+    /* ── Burn-in / phosphor persistence on old messages ─────── */
+    .eliza1966-message.crt-old {
+      opacity: 0.76;
+      filter: blur(0.15px) brightness(0.85);
+      transition: opacity 0.8s ease, filter 0.8s ease;
+    }
+
+    .eliza1966-message.crt-older {
+      opacity: 0.52;
+      filter: blur(0.28px) brightness(0.70);
+      transition: opacity 0.8s ease, filter 0.8s ease;
+    }
+
+    /* ── Typing indicator — phosphor blink ───────────────────── */
+    @keyframes crt-blink {
+      0%,  49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+
+    .eliza1966-typing:not([hidden]) {
+      animation: crt-blink 1.05s step-end infinite;
+      text-shadow: 0 0 6px rgba(75, 255, 135, 0.7);
+    }
+
+    /* ── Outer frame ambient phosphor bleed ──────────────────── */
+    .crt-frame {
+      box-shadow:
+        0  18px 60px  rgba(0,  0,  0, 0.60),
+        inset 0  0  0 1px rgba(255, 255, 255, 0.07),
+        inset 0 -18px 40px rgba(0,  0,  0, 0.52),
+        0  0  90px rgba(35, 255, 90, 0.05),
+        0  0 200px rgba(35, 255, 90, 0.025);
+    }
+
+    /* ── Onboarding section subtle glow ─────────────────────── */
+    .eliza1966-starter {
+      transition: text-shadow 0.15s, background 0.15s;
+    }
+
+    .eliza1966-starter:hover {
+      text-shadow: 0 0 6px rgba(75, 255, 135, 0.65), 0 0 14px rgba(75, 255, 135, 0.28);
+    }
+
+    /* ── Reduced-motion: preserve layout, remove animation ──── */
+    @media (prefers-reduced-motion: reduce) {
+      .crt-screen {
+        animation: none !important;
+        transform: perspective(1400px) rotateX(0.6deg);
+        filter: none !important;
+      }
+      .eliza1966-message.crt-old,
+      .eliza1966-message.crt-older {
+        opacity: 1;
+        filter: none;
+        transition: none;
+      }
+      .eliza1966-typing:not([hidden]) {
+        animation: none;
+      }
+    }
+  </style>
+</head>
+<body class="theme-eliza1966">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport ll-dark">
+    <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="eliza-page">
+          <h1 class="sr-only">AI Origins: ELIZA Chatbot</h1>
+
+          <section id="live-demo" class="section eliza1966-wrap crt-shell" aria-label="Live ELIZA Demo">
+            <div class="crt-frame" aria-hidden="true"></div>
+            <div class="crt-screen">
+            <!-- CRT canvas overlay: noise · sweep line · vignette · jitter -->
+            <canvas id="crt-overlay" aria-hidden="true"></canvas>
+            <article class="eliza1966-terminal" id="eliza-lab">
+              <p class="eliza1966-topline">LESSON 07 · LIVE ELIZA DEMO</p>
+              <div class="eliza1966-toolbar" role="group" aria-label="ELIZA controls">
+                <label for="eliza-script">Script</label>
+                <select id="eliza-script" name="script" aria-label="Select ELIZA script">
+                  <option value="DOCTOR">DOCTOR (1966)</option>
+                  <option value="NEUTRAL">NEUTRAL mirror</option>
+                </select>
+                <label class="eliza1966-toggle" for="eliza-show-why">
+                  <input id="eliza-show-why" name="show-why" type="checkbox" />
+                  Show Why (Rules)
+                </label>
+                <button id="eliza-clear" type="button" aria-label="Clear chat transcript">Clear</button>
+                <button id="eliza-reset" type="button" aria-label="Reset saved ELIZA state">Reset</button>
+              </div>
+              <p class="eliza1966-disclaimer">
+                ELIZA is a historical classroom simulation of keyword and pattern reflection. It is not a real therapist and should not be used for mental health advice.
+              </p>
+              <div id="eliza-chat-log" class="eliza1966-screen" role="log" aria-live="polite" aria-label="ELIZA conversation transcript"></div>
+              <div id="eliza-typing" class="eliza1966-typing" aria-live="polite" hidden>ELIZA is typing...</div>
+              <form id="eliza-form" class="eliza1966-controls" autocomplete="off">
+                <label class="sr-only" for="eliza-input">Type a message for ELIZA</label>
+                <textarea
+                  id="eliza-input"
+                  name="message"
+                  maxlength="480"
+                  rows="2"
+                  placeholder="Type your message. Press Enter to send, Shift+Enter for a new line."
+                  spellcheck="true"
+                  required
+                  aria-label="Message input for ELIZA"
+                ></textarea>
+                <button class="eliza1966-send" type="submit" aria-label="Send message to ELIZA">Send</button>
+              </form>
+              <section class="eliza1966-onboarding" aria-labelledby="eliza-prompts-title">
+                <h2 id="eliza-prompts-title">Try these prompts</h2>
+                <div class="eliza1966-starters" id="eliza-starters" role="list" aria-label="Starter prompts">
+                  <button class="eliza1966-starter" type="button" data-prompt="I feel nervous about a test tomorrow.">I feel nervous about a test tomorrow.</button>
+                  <button class="eliza1966-starter" type="button" data-prompt="School has been busy this week.">School has been busy this week.</button>
+                  <button class="eliza1966-starter" type="button" data-prompt="I had a disagreement with a friend.">I had a disagreement with a friend.</button>
+                  <button class="eliza1966-starter" type="button" data-prompt="I am proud of a project I finished.">I am proud of a project I finished.</button>
+                  <button class="eliza1966-starter" type="button" data-prompt="I think my team can communicate better.">I think my team can communicate better.</button>
+                  <button class="eliza1966-starter" type="button" data-prompt="My family helps me stay motivated.">My family helps me stay motivated.</button>
+                  <button class="eliza1966-starter" type="button" data-prompt="I want to get better at coding.">I want to get better at coding.</button>
+                  <button class="eliza1966-starter" type="button" data-prompt="I am excited about robotics club.">I am excited about robotics club.</button>
+                </div>
+                <p class="eliza1966-how">ELIZA uses simple rules: it scans for words and sentence patterns, then reflects parts of your sentence back using a scripted template.</p>
+                <div class="eliza1966-how-details">
+                  <details>
+                    <summary>Show details</summary>
+                    <p>When a rule matches (for example, "I feel..."), ELIZA applies a fixed response template and may swap pronouns like "my" to "your." If no rule matches, it uses a fallback response. This is scripted pattern matching, not modern AI reasoning.</p>
+                  </details>
+                </div>
+              </section>
+            </article>
+            </div>
+          </section>
+
+          <section class="section eliza1966-context" aria-labelledby="eliza-context-title">
+            <h2 id="eliza-context-title">What ELIZA Is &mdash; and Is Not</h2>
+            <div class="eliza1966-accordion">
+              <details open>
+                <summary>Historical Context</summary>
+                <ul>
+                  <li>ELIZA was created between 1964 and 1966 at MIT.</li>
+                  <li>It was developed by Joseph Weizenbaum.</li>
+                  <li>The most famous script, DOCTOR, simulated Rogerian psychotherapy prompts.</li>
+                </ul>
+                <p>The DOCTOR script used psychotherapy patterns because reflective conversation is easy to model with simple keyword rules.</p>
+              </details>
+
+              <details>
+                <summary>What ELIZA Is</summary>
+                <ul>
+                  <li>ELIZA matches keywords and sentence patterns.</li>
+                  <li>It substitutes and reflects phrases using predefined rules.</li>
+                  <li>It keeps only limited programmed slots, not deep semantic memory.</li>
+                </ul>
+              </details>
+
+              <details>
+                <summary>What ELIZA Is Not</summary>
+                <ul>
+                  <li>ELIZA does not understand language in a human sense.</li>
+                  <li>ELIZA is not trained on a dataset.</li>
+                  <li>ELIZA does not think.</li>
+                  <li>ELIZA is not a licensed therapist and should not be used for mental health advice.</li>
+                </ul>
+              </details>
+
+              <details>
+                <summary>Contrast With Modern AI</summary>
+                <ul>
+                  <li>Modern large language models use statistical pattern learning.</li>
+                  <li>They are trained on very large datasets.</li>
+                  <li>They generate probabilistic responses rather than fixed scripts.</li>
+                </ul>
+              </details>
+
+              <details>
+                <summary>How to Talk to ELIZA (1966 style)</summary>
+                <ul>
+                  <li>Use simple declarative sentences.</li>
+                  <li>Avoid slang.</li>
+                  <li>Avoid abstract philosophical questions.</li>
+                  <li>Speak as if interacting with a psychotherapy terminal.</li>
+                </ul>
+                <p class="eliza1966-examples">"I feel anxious."
+"My father upsets me."
+"I am worried about school."</p>
+              </details>
+            </div>
+          </section>
+
+          <section class="section eliza1966-history" id="history-panel" aria-labelledby="eliza-history-title">
+            <h2 id="eliza-history-title">History Panel: ELIZA in AI Timeline</h2>
+            <p>ELIZA occupies a foundational moment in natural language processing history and public perception of machine conversation.</p>
+
+            <h3>Timeline</h3>
+            <ol class="eliza1966-timeline">
+              <li><strong>1950:</strong> Alan Turing proposes the imitation game.</li>
+              <li><strong>1957:</strong> Perceptron research begins.</li>
+              <li><strong>1964-1966:</strong> ELIZA is built at MIT; DOCTOR script is demonstrated in 1966.</li>
+              <li><strong>1970s:</strong> Expert systems expand symbolic AI.</li>
+              <li><strong>2010s-present:</strong> Large-scale statistical and neural language models become dominant.</li>
+            </ol>
+          </section>
+
+        <section style="margin: 0 0 1rem; padding: 0.85rem 1.1rem; background: rgba(255,255,255,0.8); border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.04);">
+          <p style="margin: 0 0 0.45rem; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted, #64748b);">Innovator Profile · See Also</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 0.45rem;">
+            <a href="ada-lovelace.html" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.28rem 0.7rem; background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 7px; font-size: 0.81rem; font-weight: 600; color: #0f5952; text-decoration: none;">💡 Ada Lovelace — First Algorithm &amp; Symbolic Computation</a>
+          </div>
+        </section>
+        </main>
+
+        <footer class="site-footer">
+          <p><a href="../../steam-lessons.html">Back to Lessons</a></p>
+        </footer>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs">
+            <button class="ll-tab" aria-selected="true" data-pane="eliza-params">Controls</button>
+            <button class="ll-tab" aria-selected="false" data-pane="eliza-guide">Guide</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="eliza-params">
+            <span class="ll-label">Script Mode</span>
+            <div class="ll-presets">
+              <button class="ll-preset ll-active" data-preset="doctor" onclick="var s=document.getElementById('eliza-script');if(s){s.value='DOCTOR';s.dispatchEvent(new Event('change'))}">DOCTOR</button>
+              <button class="ll-preset" data-preset="neutral" onclick="var s=document.getElementById('eliza-script');if(s){s.value='NEUTRAL';s.dispatchEvent(new Event('change'))}">NEUTRAL</button>
+            </div>
+
+            <span class="ll-label">Options</span>
+            <div class="ll-info">
+              <strong>Show Why (Rules)</strong>
+              Toggle in the toolbar above the chat to reveal which keyword pattern triggered each response.
+            </div>
+
+            <span class="ll-label">Quick Actions</span>
+            <button type="button" style="width:100%;margin-bottom:0.4rem;background:rgba(3,7,5,0.9);color:#effaf0;border:1px solid rgba(178,230,196,0.34);border-radius:8px;padding:0.5rem;font:inherit;font-size:0.82rem;cursor:pointer;text-transform:uppercase;letter-spacing:0.06em;" onclick="document.getElementById('eliza-clear').click()">Clear Chat</button>
+            <button type="button" style="width:100%;background:rgba(3,7,5,0.9);color:#effaf0;border:1px solid rgba(178,230,196,0.34);border-radius:8px;padding:0.5rem;font:inherit;font-size:0.82rem;cursor:pointer;text-transform:uppercase;letter-spacing:0.06em;" onclick="document.getElementById('eliza-reset').click()">Reset State</button>
+
+            <hr class="ll-hr" />
+            <span class="ll-label">Personality Tips</span>
+            <div class="ll-info">
+              <strong>DOCTOR script</strong>
+              Simulates Rogerian psychotherapy. Start sentences with "I feel…" or "My…" for the most realistic responses.
+            </div>
+            <div class="ll-info">
+              <strong>NEUTRAL mirror</strong>
+              Less role-specific. Reflects statements back without therapeutic framing.
+            </div>
+          </div>
+          <div class="ll-pane" id="eliza-guide">
+            <span class="ll-label">About ELIZA</span>
+            <div class="ll-info">
+              <strong>Created 1964–1966</strong>
+              Joseph Weizenbaum built ELIZA at MIT. The DOCTOR script went public in 1966 and became the first widely discussed conversational AI.
+            </div>
+            <div class="ll-info">
+              <strong>How It Works</strong>
+              ELIZA scans input for keyword patterns. When matched, it fills a response template — often reflecting your own words back. No understanding, only substitution.
+            </div>
+            <div class="ll-info">
+              <strong>The ELIZA Effect</strong>
+              Users attributed feelings and understanding to the program even after being told it was scripted. This shaped early debates about AI anthropomorphism.
+            </div>
+            <div class="ll-info">
+              <strong>vs. Modern LLMs</strong>
+              Large language models are trained on billions of tokens and generate probabilistic responses. ELIZA has a fixed rule list and no training data at all.
+            </div>
+            <hr class="ll-hr" />
+            <span class="ll-label">AI Timeline</span>
+            <div class="ll-info">
+              <strong>1950</strong>
+              Turing proposes the imitation game — the conceptual backdrop for ELIZA's demo value.
+            </div>
+            <div class="ll-info">
+              <strong>1966</strong>
+              ELIZA DOCTOR script demonstrated. First program to pass informal Turing-test conditions with naive users.
+            </div>
+            <div class="ll-info">
+              <strong>1970s</strong>
+              Expert systems expand symbolic AI beyond scripted dialogue.
+            </div>
+          </div>
+        </div>
+      </aside>
+      <button class="ll-open-btn" aria-label="Open panel">
+        <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+      </button>
+    </div>
+  </div>
+
+  <script type="module" src="../../assets/js/lessons/eliza-demo.js"></script>
+  <script src="../../assets/js/theme-registry.js"></script>
+  <script src="../../assets/js/nav-mobile.js"></script>
+  <script src="../../assets/js/classroom-animations.js"></script>
+  <script src="../../assets/js/lesson-layout.js"></script>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       COOL-RETRO-TERM CRT EFFECTS ENGINE
+       Canvas overlay: phosphor grain · sweep line · chromatic
+       aberration edge shift · flicker · vignette · burn-in aging
+       Inspired by github.com/Swordfish90/cool-retro-term
+  ════════════════════════════════════════════════════════════ -->
+  <script>
+  (function initCRT() {
+    'use strict';
+
+    const overlay = document.getElementById('crt-overlay');
+    if (!overlay) return;
+    const ctx = overlay.getContext('2d');
+
+    let w = 1, h = 1, t = 0;
+    let flickerVal = 1, flickerDown = 200;
+
+    /* ── Canvas size sync ──────────────────────────────────── */
+    function resize() {
+      const dpr  = Math.min(window.devicePixelRatio || 1, 2);
+      const rect = overlay.parentElement.getBoundingClientRect();
+      overlay.width  = Math.round(rect.width  * dpr);
+      overlay.height = Math.round(rect.height * dpr);
+      overlay.style.width  = rect.width  + 'px';
+      overlay.style.height = rect.height + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      w = rect.width;
+      h = rect.height;
+    }
+
+    try {
+      new ResizeObserver(resize).observe(overlay.parentElement);
+    } catch (_) {}
+    window.addEventListener('resize', resize, { passive: true });
+    resize();
+
+    /* ── Pre-bake phosphor noise frames ────────────────────── */
+    /* Each frame is a 384×384 canvas of sparse green-tinted grain,
+       matching the phosphor spectral output of a P31 green screen. */
+    const NFRAMES = 6, NSIZE = 384;
+    const noiseFrames = [];
+
+    function bakeNoiseFrame() {
+      const oc  = document.createElement('canvas');
+      oc.width  = NSIZE;
+      oc.height = NSIZE;
+      const oc2 = oc.getContext('2d');
+      const id  = oc2.createImageData(NSIZE, NSIZE);
+      const d   = id.data;
+      for (let i = 0; i < d.length; i += 4) {
+        if (Math.random() < 0.038) {                    // sparse
+          const v  = (Math.random() * 210 + 45) | 0;
+          d[i]     = (v * 0.05)  | 0;                  // R  near-zero
+          d[i + 1] = (v * 0.88)  | 0;                  // G  dominant (phosphor)
+          d[i + 2] = (v * 0.08)  | 0;                  // B  faint
+          d[i + 3] = (Math.random() * 30 + 5) | 0;     // α  very transparent
+        }
+      }
+      oc2.putImageData(id, 0, 0);
+      return oc;
+    }
+
+    for (let f = 0; f < NFRAMES; f++) noiseFrames.push(bakeNoiseFrame());
+
+    let noiseIdx = 0, noiseTick = 0;
+
+    /* ── Main render loop ──────────────────────────────────── */
+    function loop() {
+      requestAnimationFrame(loop);
+      t += 1 / 60;
+
+      ctx.clearRect(0, 0, w, h);
+
+      /* ── 1. Phosphor noise grain ─────────────────────────── */
+      /* Cycle through pre-baked frames, random tile offset    */
+      noiseTick++;
+      if (noiseTick % 2 === 0) {
+        noiseIdx = (noiseIdx + 1) % NFRAMES;
+      }
+
+      const pat = ctx.createPattern(noiseFrames[noiseIdx], 'repeat');
+      if (pat) {
+        const nx = (Math.random() * NSIZE) | 0;
+        const ny = (Math.random() * NSIZE) | 0;
+        pat.setTransform(new DOMMatrix().translateSelf(-nx, -ny));
+        ctx.globalAlpha = 0.42;
+        ctx.fillStyle   = pat;
+        ctx.fillRect(0, 0, w, h);
+        ctx.globalAlpha = 1;
+      }
+
+      /* ── 2. Phosphor sweep line (electron gun scan) ──────── */
+      /* Slow-moving bright band simulating the CRT raster scan */
+      const sweepY = ((t * 0.065) % 1) * h;
+      const sg = ctx.createLinearGradient(0, sweepY - 50, 0, sweepY + 50);
+      sg.addColorStop(0,    'rgba(65, 255, 125, 0)');
+      sg.addColorStop(0.35, 'rgba(65, 255, 125, 0.022)');
+      sg.addColorStop(0.5,  'rgba(65, 255, 125, 0.052)');
+      sg.addColorStop(0.65, 'rgba(65, 255, 125, 0.022)');
+      sg.addColorStop(1,    'rgba(65, 255, 125, 0)');
+      ctx.fillStyle = sg;
+      ctx.fillRect(0, sweepY - 50, w, 100);
+
+      /* ── 3. Horizontal sync jitter (rare interference) ───── */
+      /* Simulates momentary loss of horizontal sync signal     */
+      if (Math.random() < 0.003) {
+        const jy  = Math.random() * h;
+        const jw  = w * (0.15 + Math.random() * 0.7);
+        const jx  = Math.random() * (w - jw);
+        ctx.fillStyle = 'rgba(65, 255, 125, 0.055)';
+        ctx.fillRect(jx, jy, jw, 1);
+        ctx.fillStyle = 'rgba(65, 255, 125, 0.022)';
+        ctx.fillRect(jx * 0.8, jy + 1, jw * 1.1, 1.5);
+      }
+
+      /* ── 4. Flicker (phosphor phosphorescence decay) ──────── */
+      /* Random brightness drop + overshoot, eases back to 1   */
+      if (--flickerDown <= 0) {
+        flickerVal  = 0.91 + Math.random() * 0.18;      // 0.91 – 1.09
+        flickerDown = (Math.random() * 350 + 55) | 0;
+      }
+      flickerVal += (1 - flickerVal) * 0.15;            // ease back
+
+      if (flickerVal < 1) {
+        ctx.fillStyle = `rgba(0,0,0,${(1 - flickerVal) * 0.62})`;
+        ctx.fillRect(0, 0, w, h);
+      } else if (flickerVal > 1) {
+        ctx.fillStyle = `rgba(65,255,125,${(flickerVal - 1) * 0.20})`;
+        ctx.fillRect(0, 0, w, h);
+      }
+
+      /* ── 5. Vignette ─────────────────────────────────────── */
+      const vg = ctx.createRadialGradient(
+        w * 0.5, h * 0.5, Math.min(w, h) * 0.22,
+        w * 0.5, h * 0.5, Math.max(w, h) * 0.74
+      );
+      vg.addColorStop(0, 'rgba(0,0,0,0)');
+      vg.addColorStop(1, 'rgba(0,0,0,0.75)');
+      ctx.fillStyle = vg;
+      ctx.fillRect(0, 0, w, h);
+
+      /* ── 6. Chromatic aberration edge shift ──────────────── */
+      /* Red fringe on left edge, blue fringe on right edge —  */
+      /* replicates imperfect electron beam convergence         */
+      const em = Math.min(w * 0.055, 28);
+
+      const lg = ctx.createLinearGradient(0, 0, em, 0);
+      lg.addColorStop(0, 'rgba(255, 0, 0, 0.038)');
+      lg.addColorStop(1, 'rgba(255, 0, 0, 0)');
+      ctx.fillStyle = lg;
+      ctx.fillRect(0, 0, em, h);
+
+      const rg = ctx.createLinearGradient(w, 0, w - em, 0);
+      rg.addColorStop(0, 'rgba(0, 0, 255, 0.038)');
+      rg.addColorStop(1, 'rgba(0, 0, 255, 0)');
+      ctx.fillStyle = rg;
+      ctx.fillRect(w - em, 0, em, h);
+
+      /* Top edge — very faint red fringe (convergence artefact) */
+      const tg = ctx.createLinearGradient(0, 0, 0, Math.min(h * 0.04, 18));
+      tg.addColorStop(0, 'rgba(255, 0, 0, 0.022)');
+      tg.addColorStop(1, 'rgba(255, 0, 0, 0)');
+      ctx.fillStyle = tg;
+      ctx.fillRect(0, 0, w, Math.min(h * 0.04, 18));
+    }
+
+    loop();
+
+    /* ── Burn-in: phosphor persistence aging ──────────────── */
+    /* Older messages fade and blur slightly, simulating       */
+    /* the slow decay of phosphor excitation over time         */
+    function applyBurnIn() {
+      const log  = document.getElementById('eliza-chat-log');
+      if (!log) return;
+      const msgs = Array.from(log.querySelectorAll('.eliza1966-message'));
+      const n    = msgs.length;
+      msgs.forEach(function(m, i) {
+        const age = n - 1 - i;
+        m.classList.toggle('crt-older', age >= 8);
+        m.classList.toggle('crt-old',   age >= 4 && age < 8);
+      });
+    }
+
+    const chatLog = document.getElementById('eliza-chat-log');
+    if (chatLog) {
+      new MutationObserver(applyBurnIn)
+        .observe(chatLog, { childList: true, subtree: false });
+    }
+
+  })();
+  </script>
+<script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-/* Print-in-Place Fidgets — the two design labs on lessons/print-fidgets.html.
+/* Print-in-Place Fidgets — the two design labs on lessons/applied-physics-materials/print-fidgets.html.
  *
  *  1. Clearance Lab (2D)  — a cross-section of two neighbouring walls, drawn
  *     bead by bead, so students can see the moment a designed gap stops being

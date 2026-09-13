@@ -1,0 +1,2646 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Breadboard Basics · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Learn breadboard connections, power planning, bypassing, pull resistors, safe power-up, measurement, debugging, and circuit prototyping." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../assets/css/lessons/phase3-labs.css" />
+  <link rel="stylesheet" href="../../assets/css/electricity-path.css" />
+  <link rel="stylesheet" href="../../assets/css/circuit-playground.css" />
+  <link rel="stylesheet" href="../../assets/css/circuit-playground-snap.css" />
+  <script type="module" src="../../assets/js/vendor/model-viewer.min.js"></script>
+  <style>
+    /* ── Page wrapper ──────────────────────────────────── */
+    .bb-page { padding-bottom: 3.5rem; }
+
+    /* ── Hero ──────────────────────────────────────────── */
+    .bb-hero {
+      padding: 0.4rem 0 1.35rem;
+      text-align: left;
+    }
+    .bb-hero h1 {
+      max-width: 20ch;
+      margin-left: 0;
+      margin-right: 0;
+      font-size: clamp(1.65rem, 3.7vw, 2.4rem);
+    }
+    .bb-hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.35rem 0.5rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted, #6e6e73);
+      margin: 0.55rem 0 0.75rem;
+    }
+    .bb-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; }
+    .bb-lede {
+      max-width: 68ch;
+      font-size: clamp(0.95rem, 1.6vw, 1.05rem);
+      color: var(--text-muted, #6e6e73);
+      margin: 0 0 1rem;
+      line-height: 1.65;
+    }
+    .bb-back-link {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--accent, #007aff);
+      text-decoration: none;
+    }
+    .bb-back-link:hover { text-decoration: underline; }
+
+    /* ── Cards ─────────────────────────────────────────── */
+    .bb-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--bb-accent, #007aff);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
+      padding: 1.4rem 1.6rem;
+      margin-bottom: 1rem;
+    }
+    .bb-card h2 {
+      font-size: clamp(1.05rem, 2vw, 1.25rem);
+      font-weight: 700;
+      margin: 0 0 0.7rem;
+    }
+    .bb-card p { margin: 0 0 0.7rem; font-size: 0.95rem; line-height: 1.65; }
+    .bb-card p:last-child { margin-bottom: 0; }
+
+    /* ── Callout box (inside cards) ─────────────────────── */
+    .bb-callout {
+      background: var(--surface, #f5f5f7);
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      margin: 0.8rem 0;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+    .bb-callout strong { display: block; margin-bottom: 0.25rem; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #6e6e73); }
+
+    /* ── 3D anatomy model ───────────────────────────────── */
+    .bb-model-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(230px, 0.7fr);
+      gap: 1rem;
+      align-items: stretch;
+      margin-top: 1rem;
+    }
+    .bb-model-stage {
+      position: relative;
+      min-height: 430px;
+      overflow: hidden;
+      border: 1px solid #cbd5e1;
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at 50% 35%, rgba(255,255,255,.96), rgba(226,232,240,.65) 50%, rgba(203,213,225,.7)),
+        linear-gradient(145deg, #f8fafc, #dbe4ef);
+    }
+    .bb-model-viewer {
+      width: 100%;
+      height: 430px;
+      display: block;
+      --poster-color: transparent;
+      --progress-bar-color: #2563eb;
+    }
+    .bb-model-viewer:not(:defined) .bb-model-fallback { display: grid; }
+    .bb-model-fallback {
+      display: none;
+      position: absolute;
+      inset: 0;
+      place-items: center;
+      padding: 2rem;
+      text-align: center;
+      color: #475569;
+    }
+    .bb-model-badge {
+      position: absolute;
+      top: 0.75rem;
+      left: 0.75rem;
+      z-index: 2;
+      padding: 0.38rem 0.65rem;
+      border-radius: 999px;
+      background: rgba(15,23,42,.84);
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+    .bb-hotspot {
+      border: 0;
+      border-radius: 999px;
+      background: #0f172a;
+      color: #fff;
+      box-shadow: 0 3px 12px rgba(15,23,42,.3);
+      padding: .34rem .55rem;
+      font: 700 .7rem/1.2 Inter, sans-serif;
+      cursor: pointer;
+      pointer-events: auto;
+      white-space: nowrap;
+      transition: transform .18s ease, background .18s ease;
+    }
+    .bb-hotspot:hover,
+    .bb-hotspot:focus-visible { background: #2563eb; transform: scale(1.06); }
+    .bb-model-controls {
+      position: absolute;
+      z-index: 2;
+      left: 50%;
+      bottom: .75rem;
+      display: flex;
+      gap: .3rem;
+      padding: .3rem;
+      border: 1px solid rgba(148,163,184,.55);
+      border-radius: 10px;
+      background: rgba(255,255,255,.9);
+      box-shadow: 0 5px 16px rgba(15,23,42,.13);
+      transform: translateX(-50%);
+      backdrop-filter: blur(8px);
+    }
+    .bb-view-btn {
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: #475569;
+      cursor: pointer;
+      padding: .48rem .68rem;
+      font: 700 .76rem/1 Inter, sans-serif;
+      white-space: nowrap;
+    }
+    .bb-view-btn:hover { background: #e2e8f0; color: #0f172a; }
+    .bb-view-btn.is-active { background: #2563eb; color: #fff; }
+    .bb-drag-hint {
+      position: absolute;
+      z-index: 2;
+      top: .85rem;
+      right: .85rem;
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+      color: #475569;
+      font-size: .7rem;
+      font-weight: 700;
+      pointer-events: none;
+    }
+    .bb-drag-hint::before { content: "↔"; font-size: 1rem; }
+    .bb-model-guide {
+      display: flex;
+      flex-direction: column;
+      gap: .6rem;
+    }
+    .bb-model-rule {
+      flex: 1;
+      border: 1px solid #dbe2ea;
+      border-radius: 12px;
+      background: #f8fafc;
+      padding: .8rem .9rem;
+      font-size: .84rem;
+      line-height: 1.5;
+      color: inherit;
+      text-align: left;
+    }
+    button.bb-model-rule {
+      appearance: none;
+      width: 100%;
+      cursor: pointer;
+      font-family: inherit;
+      transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+    }
+    button.bb-model-rule:hover { border-color: var(--rule-color); transform: translateY(-1px); }
+    button.bb-model-rule:focus-visible { outline: 3px solid color-mix(in srgb, var(--rule-color), transparent 65%); outline-offset: 2px; }
+    button.bb-model-rule.is-active {
+      border-color: var(--rule-color);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--rule-color), transparent 82%);
+    }
+    button.bb-model-rule.is-explored::after {
+      content: "Explored ✓";
+      display: block;
+      width: max-content;
+      margin-top: .45rem;
+      color: #15803d;
+      font-size: .7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .bb-model-rule span {
+      display: inline-grid;
+      width: 1.45rem;
+      height: 1.45rem;
+      margin-right: .35rem;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--rule-color, #2563eb);
+      color: #fff;
+      font-size: .72rem;
+      font-weight: 800;
+    }
+    .bb-model-rule strong { color: #0f172a; }
+    .bb-one-rule {
+      grid-column: 1 / -1;
+      border-radius: 12px;
+      background: #0f172a;
+      color: #f8fafc;
+      padding: .85rem 1rem;
+      font-size: .9rem;
+      line-height: 1.55;
+      text-align: center;
+    }
+    .bb-one-rule strong { color: #fbbf24; }
+    .bb-model-feedback {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: .75rem 1rem;
+      align-items: center;
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      background: #eff6ff;
+      padding: .8rem 1rem;
+    }
+    .bb-model-feedback h3 { margin: 0 0 .15rem; color: #1e3a8a; font-size: .92rem; }
+    .bb-model-feedback p { margin: 0; color: #475569; font-size: .82rem; line-height: 1.5; }
+    .bb-model-progress {
+      padding: .35rem .6rem;
+      border-radius: 999px;
+      background: #dbeafe;
+      color: #1d4ed8;
+      font-size: .72rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    /* ── Connection rule table ──────────────────────────── */
+    .bb-conn-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 0.8rem 0;
+    }
+    .bb-conn-table th {
+      text-align: left;
+      font-weight: 700;
+      padding: 0.45rem 0.6rem;
+      border-bottom: 2px solid var(--line, #d2d2d7);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted, #6e6e73);
+    }
+    .bb-conn-table td {
+      padding: 0.45rem 0.6rem;
+      border-bottom: 1px solid var(--line, #d2d2d7);
+      vertical-align: top;
+    }
+    .bb-conn-table tr:last-child td { border-bottom: none; }
+    .bb-swatch {
+      display: inline-block;
+      width: 10px; height: 10px;
+      border-radius: 3px;
+      vertical-align: middle;
+      margin-right: 5px;
+    }
+
+    /* ── Component chips ────────────────────────────────── */
+    .bb-comp-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.75rem;
+      margin: 0.8rem 0;
+    }
+    .bb-comp-chip {
+      background: var(--surface, #f5f5f7);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 10px;
+      padding: 0.65rem 0.85rem;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+    .bb-comp-chip strong { display: block; font-size: 0.9rem; margin-bottom: 0.15rem; }
+
+    /* ── Explorer section ───────────────────────────────── */
+    .bb-explorer {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
+      padding: 1.4rem 1.6rem;
+      margin-bottom: 1rem;
+    }
+    .bb-explorer h2 {
+      font-size: clamp(1.05rem, 2vw, 1.25rem);
+      font-weight: 700;
+      margin: 0 0 0.35rem;
+    }
+    .bb-explorer-desc {
+      font-size: 0.88rem;
+      color: var(--text-muted, #6e6e73);
+      margin: 0 0 0.9rem;
+    }
+    .bb-canvas-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 10px;
+      border: 1px solid var(--line, #d2d2d7);
+      background: #e8edf5;
+    }
+    .bb-explorer-shell {
+      background: linear-gradient(180deg, #f8fafc 0%, #eef4ff 100%);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .bb-explorer-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.95rem 1rem;
+      background: #111827;
+      color: #f8fafc;
+    }
+    .bb-explorer-kicker {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #93c5fd;
+      margin: 0 0 0.2rem;
+    }
+    .bb-explorer-topbar h3 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 800;
+    }
+    .bb-explorer-topbar p {
+      margin: 0.15rem 0 0;
+      font-size: 0.8rem;
+      color: #cbd5e1;
+    }
+    .bb-xray-toggle {
+      appearance: none;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.08);
+      color: #f8fafc;
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 0.55rem 0.85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+      white-space: nowrap;
+    }
+    .bb-xray-toggle:hover {
+      background: rgba(59, 130, 246, 0.22);
+      border-color: rgba(147, 197, 253, 0.6);
+    }
+    .bb-xray-toggle.is-on {
+      background: #2563eb;
+      border-color: #60a5fa;
+    }
+    .bb-board-frame {
+      padding: 1rem;
+      background: #e2e8f0;
+    }
+    .bb-board-svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-width: 1000px;
+      margin: 0 auto;
+      filter: drop-shadow(0 18px 24px rgba(15, 23, 42, 0.12));
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    .bb-hole-hitbox {
+      fill: transparent;
+      cursor: pointer;
+    }
+    .bb-hole-visual {
+      fill: #334155;
+      transition: fill 0.18s ease, stroke 0.18s ease, transform 0.18s ease;
+      transform-origin: center;
+      pointer-events: none;
+    }
+    .bb-hole-hitbox:hover + .bb-hole-visual,
+    .bb-hole-hitbox:focus-visible + .bb-hole-visual {
+      fill: #2563eb;
+      stroke: #bfdbfe;
+      stroke-width: 2px;
+    }
+    .bb-hole-group.is-selected .bb-hole-visual {
+      fill: #2563eb;
+      stroke: #bfdbfe;
+      stroke-width: 2px;
+    }
+    .bb-internal-metal {
+      opacity: 0;
+      transition: opacity 0.25s ease, fill 0.25s ease, stroke 0.25s ease;
+      pointer-events: none;
+    }
+    .bb-internal-metal.is-visible { opacity: 0.42; }
+    .bb-internal-metal.is-active { opacity: 0.9; }
+    .bb-flow-line {
+      opacity: 0;
+      pointer-events: none;
+      stroke-linecap: round;
+      stroke-dasharray: 10 10;
+      animation: bb-flow 0.8s linear infinite;
+      transition: opacity 0.25s ease;
+    }
+    .bb-flow-line.is-visible { opacity: 0.28; }
+    .bb-flow-line.is-active { opacity: 0.95; }
+    @keyframes bb-flow {
+      from { stroke-dashoffset: 20; }
+      to { stroke-dashoffset: 0; }
+    }
+    @keyframes bb-flux {
+      from { opacity: 0.48; }
+      to { opacity: 0.88; }
+    }
+    .bb-internal-metal.is-active,
+    .bb-flow-line.is-active {
+      animation-duration: 0.8s;
+      animation-iteration-count: infinite;
+      animation-direction: alternate;
+    }
+    .bb-internal-metal.is-active { animation-name: bb-flux; }
+    .bb-rail-label,
+    .bb-col-label {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-weight: 700;
+      pointer-events: none;
+    }
+    .bb-inspector {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr);
+      gap: 1rem;
+      padding: 1rem;
+      background: #f8fafc;
+      border-top: 1px solid var(--line, #d2d2d7);
+    }
+    .bb-inspector-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.28rem 0.6rem;
+      border-radius: 999px;
+      background: #dbeafe;
+      color: #1d4ed8;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 0.6rem;
+    }
+    .bb-inspector-copy h3 {
+      margin: 0 0 0.35rem;
+      font-size: 1.05rem;
+      font-weight: 800;
+    }
+    .bb-inspector-copy p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--text-muted, #6e6e73);
+      line-height: 1.6;
+    }
+    .bb-signal-card {
+      background: #fff;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 12px;
+      padding: 0.9rem 1rem;
+    }
+    .bb-signal-card h4 {
+      margin: 0 0 0.6rem;
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted, #6e6e73);
+    }
+    .bb-signal-row {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: #475569;
+    }
+    .bb-signal-dot {
+      width: 0.7rem;
+      height: 0.7rem;
+      border-radius: 999px;
+      background: #cbd5e1;
+      flex-shrink: 0;
+      transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .bb-signal-dot.is-live {
+      background: #2563eb;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+    }
+    .bb-signal-bar {
+      height: 0.42rem;
+      margin-top: 0.7rem;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .bb-signal-bar span {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #3b82f6, #60a5fa);
+      transition: width 0.35s ease;
+      border-radius: inherit;
+    }
+
+    /* ── Challenges section ─────────────────────────────── */
+    .bb-challenges {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
+      padding: 1.4rem 1.6rem;
+      margin-bottom: 1rem;
+    }
+    .bb-challenges h2 {
+      font-size: clamp(1.05rem, 2vw, 1.25rem);
+      font-weight: 700;
+      margin: 0 0 0.3rem;
+    }
+    .bb-challenges-desc {
+      font-size: 0.88rem;
+      color: var(--text-muted, #6e6e73);
+      margin: 0 0 1rem;
+    }
+    .bb-challenge-workbench {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, 310px);
+      gap: 0.85rem;
+      align-items: stretch;
+    }
+    .bb-challenge-board { min-width: 0; }
+    .bb-bench-status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+      color: var(--text-muted, #6e6e73);
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+    .bb-bench-status span:first-child::before {
+      content: "";
+      display: inline-block;
+      width: 0.55rem;
+      height: 0.55rem;
+      margin-right: 0.4rem;
+      border-radius: 50%;
+      background: #34c759;
+      box-shadow: 0 0 0 4px rgba(52, 199, 89, 0.13);
+      vertical-align: -0.04rem;
+    }
+    .bb-bench-coordinates {
+      padding: 0.22rem 0.42rem;
+      border-radius: 6px;
+      background: #334155;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: #f8fafc;
+    }
+    .bb-challenge-controls {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      padding: 1rem;
+      border: 1px solid #dbe2ea;
+      border-radius: 12px;
+      background: #f8fafc;
+    }
+    .bb-control-label {
+      display: block;
+      margin-bottom: 0.45rem;
+      color: #64748b;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .bb-control-rule {
+      width: 100%;
+      height: 1px;
+      margin: 0.75rem 0;
+      border: 0;
+      background: #dbe2ea;
+    }
+    .bb-control-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.45rem;
+      margin-top: auto;
+      padding-top: 0.25rem;
+    }
+    .bb-challenge-controls .bb-callout {
+      margin: 0.75rem 0 0;
+      padding: 0.75rem;
+      background: #fff7df;
+      border: 1px solid #f1d78d;
+      color: #5f4700;
+      font-size: 0.78rem;
+    }
+
+    /* Challenge step indicator */
+    .bb-steps {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.1rem;
+      flex-wrap: wrap;
+    }
+    .bb-step-pip {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      background: var(--surface, #f5f5f7);
+      color: var(--text-muted, #6e6e73);
+      border: 1.5px solid transparent;
+      transition: all 0.2s;
+    }
+    .bb-step-pip.is-active {
+      background: #007aff14;
+      color: #007aff;
+      border-color: #007aff40;
+    }
+    .bb-step-pip.is-done {
+      background: #34c75914;
+      color: #34c759;
+      border-color: #34c75940;
+    }
+
+    /* Challenge layout */
+    .bb-challenge-area {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1rem;
+      align-items: start;
+    }
+    @media (max-width: 680px) {
+      .bb-challenge-area { grid-template-columns: 1fr; }
+    }
+    .bb-challenge-info {}
+    .bb-challenge-goal {
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted, #6e6e73);
+      margin: 0 0 0.25rem;
+    }
+    .bb-challenge-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+    }
+    .bb-challenge-instruction {
+      font-size: 0.88rem;
+      color: var(--text-muted, #6e6e73);
+      margin: 0 0 0.85rem;
+      line-height: 1.6;
+    }
+
+    /* Palette */
+    .bb-palette {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 0.75rem;
+    }
+    .bb-palette-btn {
+      padding: 0.38rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border: 2px solid var(--line, #d2d2d7);
+      background: var(--surface, #f5f5f7);
+      color: var(--text, #1d1d1f);
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .bb-palette-btn:hover { border-color: #007aff; }
+    .bb-palette-btn:focus-visible,
+    .bb-next-btn:focus-visible,
+    .bb-reset-btn:focus-visible {
+      outline: 3px solid rgba(0, 122, 255, 0.25);
+      outline-offset: 2px;
+    }
+    .bb-palette-btn:disabled { opacity: 0.42; cursor: not-allowed; }
+    .bb-palette-btn.is-selected {
+      background: #007aff;
+      color: #fff;
+      border-color: #007aff;
+    }
+    .bb-palette-btn[data-tool="wire-red"].is-selected { background: #ff3b30; border-color: #ff3b30; }
+    .bb-palette-btn[data-tool="wire-black"].is-selected { background: #1c1c1e; border-color: #1c1c1e; }
+    .bb-palette-btn[data-tool="resistor"].is-selected { background: #ff9500; border-color: #ff9500; }
+    .bb-palette-btn[data-tool="led"].is-selected { background: #34c759; border-color: #34c759; }
+
+    /* Challenge canvas */
+    .bb-chal-canvas-wrap {
+      overflow: hidden;
+      border-radius: 10px;
+      border: 1px solid var(--line, #d2d2d7);
+      background: #1a1a2e;
+    }
+    #bb-chal-canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      cursor: crosshair;
+      touch-action: manipulation;
+    }
+
+    /* Feedback bar */
+    .bb-chal-feedback {
+      min-height: 2rem;
+      margin-top: 0.65rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 0.4rem 0.75rem;
+      border-radius: 8px;
+      display: none;
+    }
+    .bb-chal-feedback.correct {
+      display: block;
+      background: #34c75914;
+      color: #34c759;
+      border: 1px solid #34c75940;
+    }
+    .bb-chal-feedback.wrong {
+      display: block;
+      background: #ff3b3014;
+      color: #ff3b30;
+      border: 1px solid #ff3b3040;
+    }
+    .bb-chal-feedback.info {
+      display: block;
+      background: #007aff14;
+      color: #007aff;
+      border: 1px solid #007aff40;
+    }
+
+    /* Next challenge button */
+    .bb-next-btn {
+      margin-top: 0.75rem;
+      padding: 0.5rem 1.25rem;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      background: #007aff;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      display: none;
+    }
+    .bb-next-btn:hover { background: #0066d6; }
+    .bb-next-btn.visible { display: inline-block; }
+
+    /* Reset button */
+    .bb-reset-btn {
+      margin-top: 0.5rem;
+      padding: 0.38rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: transparent;
+      color: var(--text-muted, #6e6e73);
+      border: 1.5px solid var(--line, #d2d2d7);
+      cursor: pointer;
+    }
+    .bb-reset-btn:hover { border-color: #ff3b30; color: #ff3b30; }
+
+    /* Panel (side info) */
+    .bb-panel {
+      width: 200px;
+      flex-shrink: 0;
+      background: var(--surface, #f5f5f7);
+      border-radius: 10px;
+      padding: 0.85rem;
+      font-size: 0.82rem;
+      line-height: 1.55;
+    }
+    .bb-panel strong { display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #6e6e73); margin-bottom: 0.3rem; }
+    @media (max-width: 680px) { .bb-panel { width: 100%; } }
+
+    /* ── Quiz section ───────────────────────────────────── */
+    .bb-quiz {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
+      padding: 1.4rem 1.6rem;
+      margin-bottom: 1rem;
+    }
+    .bb-quiz h2 {
+      font-size: clamp(1.05rem, 2vw, 1.25rem);
+      font-weight: 700;
+      margin: 0 0 1rem;
+    }
+    .bb-question { margin-bottom: 1.25rem; }
+    .bb-question:last-child { margin-bottom: 0; }
+    .bb-question p { font-size: 0.92rem; font-weight: 600; margin: 0 0 0.5rem; }
+    .bb-options { display: flex; flex-direction: column; gap: 0.35rem; }
+    .bb-option {
+      padding: 0.45rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.87rem;
+      font-weight: 500;
+      border: 1.5px solid var(--line, #d2d2d7);
+      background: var(--surface, #f5f5f7);
+      color: var(--text, #1d1d1f);
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 0.15s;
+    }
+    .bb-option:hover:not(:disabled) { border-color: #007aff; }
+    .bb-option.is-correct { background: #34c75914; border-color: #34c759; color: #34c759; }
+    .bb-option.is-wrong   { background: #ff3b3014; border-color: #ff3b30; color: #ff3b30; }
+    .bb-q-feedback { margin-top: 0.4rem; font-size: 0.82rem; font-weight: 600; min-height: 1rem; color: var(--text-muted,#6e6e73); }
+
+    /* ── Real-world grid ────────────────────────────────── */
+    .bb-uses-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 0.75rem;
+      margin: 0.8rem 0;
+    }
+    .bb-use-tile {
+      background: var(--surface, #f5f5f7);
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+    .bb-use-tile strong { display: block; font-size: 0.9rem; margin-bottom: 0.2rem; }
+
+    /* ── Tips list ──────────────────────────────────────── */
+    .bb-tips {
+      list-style: none;
+      padding: 0;
+      margin: 0.5rem 0 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .bb-tips li {
+      display: flex;
+      gap: 0.6rem;
+      align-items: flex-start;
+      font-size: 0.88rem;
+      line-height: 1.55;
+    }
+    .bb-tips li::before {
+      content: "→";
+      font-weight: 700;
+      color: #007aff;
+      flex-shrink: 0;
+      margin-top: 0.05rem;
+    }
+
+    /* ── Dark mode ──────────────────────────────────────── */
+    [data-lighting="night"] .bb-card,
+    [data-theme="vaporwave"] .bb-card,
+    [data-theme="bark"] .bb-card,
+    [data-lighting="night"] .bb-explorer,
+    [data-theme="vaporwave"] .bb-explorer,
+    [data-theme="bark"] .bb-explorer,
+    [data-lighting="night"] .bb-challenges,
+    [data-theme="vaporwave"] .bb-challenges,
+    [data-theme="bark"] .bb-challenges,
+    [data-lighting="night"] .bb-quiz,
+    [data-theme="vaporwave"] .bb-quiz,
+    [data-theme="bark"] .bb-quiz {
+      background: var(--white, #1c1c1e);
+      border-color: var(--line, #3a3a3c);
+    }
+    [data-lighting="night"] .bb-callout,
+    [data-theme="vaporwave"] .bb-callout,
+    [data-theme="bark"] .bb-callout,
+    [data-lighting="night"] .bb-comp-chip,
+    [data-theme="vaporwave"] .bb-comp-chip,
+    [data-theme="bark"] .bb-comp-chip,
+    [data-lighting="night"] .bb-use-tile,
+    [data-theme="vaporwave"] .bb-use-tile,
+    [data-theme="bark"] .bb-use-tile,
+    [data-lighting="night"] .bb-panel,
+    [data-theme="vaporwave"] .bb-panel,
+    [data-theme="bark"] .bb-panel { background: #2c2c2e; border-color: #3a3a3c; }
+    [data-lighting="night"] .bb-palette-btn,
+    [data-theme="vaporwave"] .bb-palette-btn,
+    [data-theme="bark"] .bb-palette-btn,
+    [data-lighting="night"] .bb-option,
+    [data-theme="vaporwave"] .bb-option,
+    [data-theme="bark"] .bb-option { background: #2c2c2e; border-color: #3a3a3c; color: #f5f5f7; }
+    [data-lighting="night"] .bb-model-rule,
+    [data-theme="vaporwave"] .bb-model-rule,
+    [data-theme="bark"] .bb-model-rule { background: #242b36; border-color: #3a4554; }
+    [data-lighting="night"] .bb-model-rule strong,
+    [data-theme="vaporwave"] .bb-model-rule strong,
+    [data-theme="bark"] .bb-model-rule strong { color: #f8fafc; }
+    [data-lighting="night"] .bb-model-feedback,
+    [data-theme="vaporwave"] .bb-model-feedback,
+    [data-theme="bark"] .bb-model-feedback { background: #172033; border-color: #334b78; }
+    [data-lighting="night"] .bb-model-feedback h3,
+    [data-theme="vaporwave"] .bb-model-feedback h3,
+    [data-theme="bark"] .bb-model-feedback h3 { color: #bfdbfe; }
+    [data-lighting="night"] .bb-model-feedback p,
+    [data-theme="vaporwave"] .bb-model-feedback p,
+    [data-theme="bark"] .bb-model-feedback p { color: #cbd5e1; }
+    [data-lighting="night"] .bb-challenge-controls,
+    [data-theme="vaporwave"] .bb-challenge-controls,
+    [data-theme="bark"] .bb-challenge-controls {
+      background: #20252e;
+      border-color: #3a4554;
+    }
+    [data-lighting="night"] .bb-control-rule,
+    [data-theme="vaporwave"] .bb-control-rule,
+    [data-theme="bark"] .bb-control-rule { background: #3a4554; }
+
+    /* ── LED glow animation ─────────────────────────────── */
+    @keyframes bb-led-glow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.55; }
+    }
+
+    /* ── Responsive ─────────────────────────────────────── */
+    @media (max-width: 480px) {
+      .bb-card, .bb-explorer, .bb-challenges, .bb-quiz { padding: 1rem 1rem; }
+    }
+    @media (max-width: 720px) {
+      .bb-inspector {
+        grid-template-columns: 1fr;
+      }
+      .bb-explorer-topbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .bb-model-layout { grid-template-columns: 1fr; }
+      .bb-model-stage, .bb-model-viewer { min-height: 360px; height: 360px; }
+      .bb-drag-hint { display: none; }
+      .bb-model-feedback { grid-template-columns: 1fr; }
+      .bb-model-progress { width: max-content; }
+      .bb-challenge-workbench { grid-template-columns: 1fr; }
+      .bb-chal-canvas-wrap { overflow-x: auto; }
+      #bb-chal-canvas { min-width: 560px; }
+    }
+
+    /* ── Layout overrides ─────────────────────────────── */
+    .ll-viewport {
+      --ll-tab-active: #007aff;
+      --ll-tab-active-bg: rgba(0,122,255,0.10);
+    }
+    .bb-board-svg,
+    #bb-chal-canvas { max-height: calc(100dvh - 140px); }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+<div class="ll-viewport">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+  <div class="ll-sim">
+  <main id="main-content" class="bb-page">
+
+    <!-- ── Hero ─────────────────────────────────────────── -->
+    <section class="hero bb-hero">
+      <p class="eyebrow">Engineering · Lesson 02</p>
+      <h1>Breadboard Basics</h1>
+      <div class="bb-hero-meta">
+        <span>Electricity</span>
+        <span class="dot"></span>
+        <span>Circuits</span>
+        <span class="dot"></span>
+        <span>Prototyping</span>
+        <span class="dot"></span>
+        <span>Electronics</span>
+      </div>
+      <p class="bb-lede">Before you solder a single wire, you prototype. A breadboard lets you snap components in and out, test ideas in seconds, and fix mistakes without a soldering iron. Understanding how its hidden connections work is the first real skill in electronics.</p>
+      <a class="bb-back-link" href="../../steam-lessons.html#module-engineering">&larr; Back to Engineering</a>
+    </section>
+
+    <!-- ── What Is a Breadboard? ──────────────────────── -->
+    <section class="bb-card" style="--bb-accent:#ff9500;">
+      <h2>What Is a Breadboard?</h2>
+      <p>A <strong>breadboard</strong> (also called a <em>solderless breadboard</em>) is a rectangular plastic board covered in small holes. Underneath those holes are spring-loaded metal clips that grip component leads and wire ends. Because nothing is soldered, you can build a circuit in minutes and tear it down just as fast.</p>
+      <div class="bb-callout">
+        <strong>Why "breadboard"?</strong>
+        Early electronics hobbyists literally nailed components onto a wooden cutting board and ran wires between them. The name stuck even as the design evolved into the plastic form we use today.
+      </div>
+      <p>Breadboards are the standard tool for <strong>prototyping</strong> — the stage where you test whether a circuit idea works before committing it to a permanent design. Professional engineers, hobbyists, and students all use them.</p>
+    </section>
+
+    <!-- ── Anatomy ──────────────────────────────────────── -->
+    <section class="bb-card" style="--bb-accent:#34c759;">
+      <h2>See the Hidden Connections in 3D</h2>
+      <p>The plastic top is lifted in this cutaway so you can see the gold metal clips underneath. Drag to rotate, scroll or pinch to zoom, then use the view buttons to compare the top with the hidden underside.</p>
+
+      <div class="bb-model-layout">
+        <div class="bb-model-stage">
+          <span class="bb-model-badge">Interactive exploded view</span>
+          <span class="bb-drag-hint">Drag to rotate · pinch to zoom</span>
+          <model-viewer
+            id="bb-model"
+            class="bb-model-viewer"
+            src="../../assets/models/breadboard-cutaway.glb"
+            alt="Exploded 3D model of a solderless breadboard with its plastic shell raised above the hidden gold metal connection strips"
+            camera-controls
+            touch-action="pan-y"
+            interaction-prompt="auto"
+            interpolation-decay="100"
+            shadow-intensity="1"
+            shadow-softness=".8"
+            environment-image="neutral"
+            exposure="1.05"
+            camera-orbit="35deg 58deg 16m"
+            min-camera-orbit="auto 15deg 10m"
+            max-camera-orbit="auto 165deg 23m"
+            camera-target="0m .65m 0m">
+            <button class="bb-hotspot" slot="hotspot-rail" data-rule="rail" data-position="-4.5 1.82 3.35" data-normal="0 1 0" aria-label="Explore the long power rail">Long power rail</button>
+            <button class="bb-hotspot" slot="hotspot-five" data-rule="five" data-position="2.5 .35 1.85" data-normal="0 1 0" aria-label="Explore a five-hole group">5-hole group</button>
+            <button class="bb-hotspot" slot="hotspot-gap" data-rule="gap" data-position="0 1.82 0" data-normal="0 1 0" aria-label="Explore the center gap">Center gap</button>
+            <div class="bb-model-fallback">Loading the interactive breadboard model…</div>
+          </model-viewer>
+          <div class="bb-model-controls" role="group" aria-label="Choose a breadboard model view">
+            <button class="bb-view-btn is-active" type="button" aria-pressed="true" data-view="cutaway" data-orbit="35deg 58deg 16m">Cutaway</button>
+            <button class="bb-view-btn" type="button" aria-pressed="false" data-view="top" data-orbit="0deg 2deg 17m">Top</button>
+            <button class="bb-view-btn" type="button" aria-pressed="false" data-view="underneath" data-orbit="25deg 138deg 17m">Underneath</button>
+          </div>
+        </div>
+
+        <div class="bb-model-guide" aria-label="Three breadboard connection rules">
+          <button class="bb-model-rule" type="button" data-rule="rail" style="--rule-color:#ef4444;"><span>1</span><strong>Power rails run lengthwise.</strong><br>Every hole along one red or blue line shares the same long metal strip.</button>
+          <button class="bb-model-rule" type="button" data-rule="five" style="--rule-color:#16a34a;"><span>2</span><strong>Main holes connect in groups of five.</strong><br>One short gold clip joins five holes in a column—not the whole row.</button>
+          <button class="bb-model-rule" type="button" data-rule="gap" style="--rule-color:#f59e0b;"><span>3</span><strong>The center gap breaks the connection.</strong><br>The five holes above it and the five below it are separate groups.</button>
+        </div>
+
+        <div class="bb-model-feedback" aria-live="polite">
+          <div>
+            <h3 id="bb-model-feedback-title">Start with the cutaway</h3>
+            <p id="bb-model-feedback-text">Click a numbered rule or a label on the model. The camera will move to the best view and explain what to notice.</p>
+          </div>
+          <span class="bb-model-progress" id="bb-model-progress">0 of 3 ideas explored</span>
+        </div>
+        <div class="bb-one-rule"><strong>One rule to remember:</strong> holes connect only when the same gold strip touches them underneath.</div>
+      </div>
+    </section>
+
+    <!-- ── How Connections Work ─────────────────────────── -->
+    <section class="bb-card" style="--bb-accent:#007aff;">
+      <h2>How the Connections Work</h2>
+      <p>Under each section of the breadboard, strips of phosphor-bronze metal run in one direction. When you push a component lead into a hole, the metal strip grips it. Anything else pushed into the <em>same strip</em> makes electrical contact — no solder, no glue, just pressure.</p>
+
+      <table class="bb-conn-table" aria-label="Breadboard connection rules">
+        <thead>
+          <tr>
+            <th>Zone</th>
+            <th>Which holes connect?</th>
+            <th>Direction of strip</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="bb-swatch" style="background:#ff3b30;"></span>Power rail (+)</td>
+            <td>Every hole in the + row, across the full length of the board</td>
+            <td>Horizontal ↔</td>
+          </tr>
+          <tr>
+            <td><span class="bb-swatch" style="background:#007aff;"></span>Ground rail (−)</td>
+            <td>Every hole in the − row, across the full length of the board</td>
+            <td>Horizontal ↔</td>
+          </tr>
+          <tr>
+            <td><span class="bb-swatch" style="background:#34c759;"></span>Tie-points a–e</td>
+            <td>All 5 holes in the same column (e.g. column 7, rows a through e)</td>
+            <td>Vertical ↕</td>
+          </tr>
+          <tr>
+            <td><span class="bb-swatch" style="background:#30d158;"></span>Tie-points f–j</td>
+            <td>All 5 holes in the same column (e.g. column 7, rows f through j)</td>
+            <td>Vertical ↕</td>
+          </tr>
+          <tr>
+            <td><span class="bb-swatch" style="background:#ff9500;"></span>Center gap</td>
+            <td>Nothing — the gap separates the top and bottom halves</td>
+            <td>No strip here</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="bb-callout">
+        <strong>The Golden Rule</strong>
+        Two components share a node if and only if at least one of their leads sits in the same connected strip. Different columns = different nodes. Same column, different half = different nodes. Same column, same half = same node.
+      </div>
+    </section>
+
+    <!-- ── Common Components ────────────────────────────── -->
+    <section class="bb-card" style="--bb-accent:#af52de;">
+      <h2>Common Components &amp; How to Place Them</h2>
+      <p>Here are the parts you will use most often on a breadboard:</p>
+      <div class="bb-comp-grid">
+        <div class="bb-comp-chip">
+          <strong>🔴 LED</strong>
+          Two leads: <em>anode</em> (+, longer lead) and <em>cathode</em> (−, shorter lead). The longer lead must connect toward positive voltage. LEDs need a resistor in series or they burn out.
+        </div>
+        <div class="bb-comp-chip">
+          <strong>🟡 Resistor</strong>
+          Limits current. No polarity — place either end in either hole. Color bands on the body tell you the resistance value (e.g. 220 Ω is red-red-brown).
+        </div>
+        <div class="bb-comp-chip">
+          <strong>🔵 Jumper Wire</strong>
+          A short insulated wire with bare ends. Used to connect holes that are not already in the same strip — e.g. to bring power from a rail to a tie-point row.
+        </div>
+        <div class="bb-comp-chip">
+          <strong>🟢 IC Chip (DIP package)</strong>
+          Straddles the center gap so each pin is in a different half. This keeps the two rows of pins from shorting together, and gives you 5 extra holes to connect to each pin.
+        </div>
+        <div class="bb-comp-chip">
+          <strong>🔋 Battery / Power Supply</strong>
+          Connect the positive terminal to the + power rail and the negative terminal to the − (ground) rail using jumper wires. Everything else draws from those rails.
+        </div>
+        <div class="bb-comp-chip">
+          <strong>🔘 Pushbutton</strong>
+          Straddles the center gap like an IC. Pressing the button connects the two sides. Releasing it opens the circuit again.
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Connection Explorer ──────────────────────────── -->
+    <section class="bb-explorer" id="bb-explorer-section">
+      <h2>Connection Explorer</h2>
+      <p class="bb-explorer-desc">Tap any socket to reveal the exact hidden strip underneath it. The board now uses one shared coordinate grid for both holes and metal clips, so the highlight stays aligned on phones, tablets, and laptops.</p>
+      <div class="bb-explorer-shell">
+        <div class="bb-explorer-topbar">
+          <div>
+            <p class="bb-explorer-kicker">Calibration Profile v2.1</p>
+            <h3>Precision-Calibrated Breadboard X-Ray</h3>
+            <p>Single-source-of-truth grid, larger tap targets, and animated signal flow.</p>
+          </div>
+          <button class="bb-xray-toggle" id="bb-xray-toggle" type="button" aria-pressed="false">Enable X-Ray</button>
+        </div>
+        <div class="bb-board-frame bb-canvas-wrap">
+          <svg id="bb-board-svg" class="bb-board-svg" viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg" aria-label="Interactive breadboard x-ray diagram">
+            <rect x="0" y="0" width="1000" height="560" rx="20" fill="#ffffff"></rect>
+            <rect x="0" y="280" width="1000" height="12" fill="#f1f5f9"></rect>
+            <line x1="80" y1="52" x2="906.5" y2="52" stroke="#ef4444" stroke-width="2" stroke-opacity="0.35"></line>
+            <line x1="80" y1="96" x2="906.5" y2="96" stroke="#3b82f6" stroke-width="2" stroke-opacity="0.35"></line>
+            <line x1="80" y1="474" x2="906.5" y2="474" stroke="#ef4444" stroke-width="2" stroke-opacity="0.35"></line>
+            <line x1="80" y1="518" x2="906.5" y2="518" stroke="#3b82f6" stroke-width="2" stroke-opacity="0.35"></line>
+            <g id="bb-metal-layer"></g>
+            <g id="bb-hole-layer"></g>
+            <g id="bb-label-layer">
+              <text x="34" y="58" class="bb-rail-label" fill="#ef4444" font-size="16">+</text>
+              <text x="34" y="102" class="bb-rail-label" fill="#3b82f6" font-size="16">-</text>
+              <text x="34" y="480" class="bb-rail-label" fill="#ef4444" font-size="16">+</text>
+              <text x="34" y="524" class="bb-rail-label" fill="#3b82f6" font-size="16">-</text>
+            </g>
+          </svg>
+        </div>
+        <div class="bb-inspector">
+          <div class="bb-inspector-copy">
+            <div class="bb-inspector-tag">Connectivity Inspector</div>
+            <h3 id="bb-inspector-title">Ready to Probe</h3>
+            <p id="bb-inspector-desc">Click any socket on the board to visualize the hidden metal strip that connects it to the rest of the circuit.</p>
+          </div>
+          <div class="bb-signal-card">
+            <h4>Signal Flow Logic</h4>
+            <div class="bb-signal-row">
+              <span id="bb-signal-dot" class="bb-signal-dot"></span>
+              <span id="bb-signal-text">Circuit inactive</span>
+            </div>
+            <div class="bb-signal-bar" aria-hidden="true">
+              <span id="bb-signal-bar-fill"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Circuit Challenges ───────────────────────────── -->
+    <section class="bb-challenges" id="bb-challenges-section">
+      <h2>Circuit Challenges</h2>
+      <p class="bb-challenges-desc">Build a working LED circuit step by step. Choose a part, then click its first and second connection points on the board.</p>
+
+      <div class="bb-steps" id="bb-steps" aria-label="Challenge progress">
+        <div class="bb-step-pip is-active" id="pip-1">1 · Power the rails</div>
+        <div class="bb-step-pip" id="pip-2">2 · Add a resistor</div>
+        <div class="bb-step-pip" id="pip-3">3 · Place the LED</div>
+        <div class="bb-step-pip" id="pip-4">4 · Close the loop</div>
+      </div>
+
+      <div class="bb-challenge-workbench">
+        <div class="bb-challenge-board">
+          <div class="bb-bench-status" aria-hidden="true">
+            <span>12-column practice board</span>
+            <span class="bb-bench-coordinates">rows a–j · rails + / − · scroll ↔</span>
+          </div>
+          <div class="bb-chal-canvas-wrap">
+            <canvas id="bb-chal-canvas" width="760" height="440" aria-label="Interactive breadboard circuit builder"></canvas>
+          </div>
+          <div class="bb-chal-feedback info" id="bb-chal-feedback" role="status" aria-live="polite">Choose the red wire to begin powering the positive rail.</div>
+        </div>
+
+        <div class="bb-challenge-controls">
+          <span class="bb-control-label">Current task</span>
+          <p class="bb-challenge-goal" id="chal-goal">Challenge 1 of 4</p>
+          <p class="bb-challenge-title" id="chal-title">Power Up the Rails</p>
+          <p class="bb-challenge-instruction" id="chal-instruction">
+            Connect the battery to the breadboard. Select <strong>Red Wire</strong>, then connect the battery <strong>+</strong> terminal to the <strong>+ power rail</strong>. Use <strong>Black Wire</strong> from battery <strong>−</strong> to the <strong>− rail</strong>.
+          </p>
+          <hr class="bb-control-rule">
+          <span class="bb-control-label">Choose a part</span>
+          <div class="bb-palette" id="bb-palette">
+            <button class="bb-palette-btn" data-tool="wire-red" aria-pressed="false">🔴 Red Wire</button>
+            <button class="bb-palette-btn" data-tool="wire-black" aria-pressed="false">⚫ Black Wire</button>
+            <button class="bb-palette-btn" data-tool="resistor" aria-pressed="false" disabled>🟡 Resistor</button>
+            <button class="bb-palette-btn" data-tool="led" aria-pressed="false" disabled>💡 LED</button>
+          </div>
+          <div class="bb-callout" id="bb-chal-hint">
+            <strong>Bench hint</strong>
+            <span id="bb-hint-text">A complete circuit needs power. Connect + (red) to the + rail, and − (black) to the − rail.</span>
+          </div>
+          <div class="bb-control-actions">
+            <button class="bb-next-btn" id="bb-next-btn">Next Step →</button>
+            <button class="bb-reset-btn" id="bb-reset-btn">↺ Start Over</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <circuit-playground data-profile="breadboard"></circuit-playground>
+
+    <section class="p3-lab" style="--p3-accent:#51d879;--p3-bg:#17231c;--p3-highlight:#ffe083" aria-labelledby="bb-diagnose-title"><h2 id="bb-diagnose-title">Fault bench: diagnose before rebuilding</h2><p>Select a broken circuit, inspect the board and meter, then choose the first test that isolates the fault.</p><div class="p3-faults" id="bb-p3-faults"><button type="button" data-bb-fault="polarity">Reversed LED</button><button type="button" data-bb-fault="rail">Split power rail</button><button type="button" data-bb-fault="resistor">Missing resistor</button><button type="button" data-bb-fault="ground">Missing ground</button></div><div class="p3-board" id="bb-p3-board"><div class="p3-rail"></div><div class="p3-rail blue"></div><div class="p3-led" aria-hidden="true"></div><div class="p3-meter" id="bb-p3-meter">5.0 V</div></div><div class="p3-diagnosis" id="bb-p3-tests"><button type="button" data-bb-test="polarity">Check LED polarity</button><button type="button" data-bb-test="continuity">Power off; test rail continuity</button><button type="button" data-bb-test="resistance">Measure series resistance</button><button type="button" data-bb-test="ground">Measure voltage to ground</button></div><p class="p3-status" id="bb-p3-status" role="status">Choose a fault to begin.</p></section>
+
+    <section class="bb-card" style="--bb-accent:#5856d6;">
+      <h2>Build Like a Hardware Engineer</h2>
+      <p>A reliable prototype is easy to inspect, easy to measure, and difficult to connect incorrectly. The goal is not merely to make the circuit work once—it is to make the result explainable and repeatable.</p>
+      <ul class="bb-tips">
+        <li><strong>Plan the power tree:</strong> choose the supply voltage and current limit first. Mark which rails are 5 V, 3.3 V, and ground; never assume a rail's color proves its voltage.</li>
+        <li><strong>Check split rails:</strong> many long breadboards break each rail near the middle. Use continuity mode with power off to discover whether a jumper must bridge the break.</li>
+        <li><strong>Use local bypassing:</strong> place a 0.1 µF ceramic capacitor close to each IC's power and ground pins to give fast current changes a short local path.</li>
+        <li><strong>Control floating inputs:</strong> use pull-up or pull-down resistors so an unpressed switch or disconnected sensor has a defined HIGH or LOW state.</li>
+        <li><strong>Separate noisy loads:</strong> motors, relays, and servos can disturb logic power. Use a suitable driver, flyback protection for coils, adequate supply current, and a planned common ground.</li>
+        <li><strong>Keep test nodes reachable:</strong> short, color-consistent wires and open probe points make faults visible and reduce accidental shorts.</li>
+      </ul>
+      <h3>Power-Up and Debug Protocol</h3>
+      <ol class="bb-tips">
+        <li><strong>Inspect unpowered.</strong> Compare every connection with the schematic; check polarity, IC orientation, and power-to-ground resistance.</li>
+        <li><strong>Continuity-test the rails.</strong> Confirm intended rail segments connect and verify that power is not shorted to ground.</li>
+        <li><strong>Set a current limit.</strong> If using a bench supply, begin low enough to protect the circuit while allowing normal startup.</li>
+        <li><strong>Power only the rails.</strong> Verify the correct voltage at the far end of each rail before inserting sensitive modules.</li>
+        <li><strong>Add one block at a time.</strong> Test the input, processing, and output sections separately instead of debugging everything at once.</li>
+        <li><strong>Measure by nodes.</strong> Keep the black probe at circuit ground and compare each signal node with its predicted voltage.</li>
+      </ol>
+      <div class="bb-callout warn"><strong>Stop immediately</strong> if a part becomes hot, the supply enters current limit unexpectedly, or you smell overheated material. Disconnect power, then inspect for reversed polarity, misplaced IC pins, and rail shorts.</div>
+      <h3>Design Challenge: Sensor-to-Output Prototype</h3>
+      <p>Build a low-voltage circuit in which a button, potentiometer, or light sensor controls an LED or buzzer. Submit a schematic, a labeled breadboard photo, predicted node voltages, actual measurements, and one documented fault you found. Success means another student can rebuild the circuit from your evidence—not only that the output turns on.</p>
+    </section>
+
+    <!-- ── Pro Tips ─────────────────────────────────────── -->
+    <section class="bb-card" style="--bb-accent:#30b0c7;">
+      <h2>Pro Tips for Breadboarding</h2>
+      <ul class="bb-tips">
+        <li>Keep wires short and flat against the board. Long dangling wires fall out and make debugging harder.</li>
+        <li>Use color coding: red for power, black for ground, other colors for signals. Future-you will thank present-you.</li>
+        <li>Always disconnect the power supply before rearranging components.</li>
+        <li>If an LED doesn't light up, flip it — polarity is the most common mistake.</li>
+        <li>Always use a current-limiting resistor with an LED. Without one, the LED draws too much current and burns out instantly.</li>
+        <li>Push component leads firmly all the way down. A half-seated lead creates an intermittent connection — the bane of debugging sessions.</li>
+        <li>Test one sub-circuit at a time. Add power → rails → one component → test → add next component → test.</li>
+      </ul>
+    </section>
+
+    <!-- ── Real-World Prototyping ───────────────────────── -->
+    <section class="bb-card" style="--bb-accent:#ff375f;">
+      <h2>Where Breadboarding Leads</h2>
+      <p>Once a circuit works on a breadboard, the next step is usually to move it to a more permanent form:</p>
+      <div class="bb-uses-grid">
+        <div class="bb-use-tile">
+          <strong>Perfboard / Stripboard</strong>
+          A PCB-like board where you solder components at fixed hole positions. More permanent than a breadboard but still hand-built.
+        </div>
+        <div class="bb-use-tile">
+          <strong>Custom PCB</strong>
+          Design software (like KiCad or EasyEDA) lets you lay out a printed circuit board. You can order them manufactured for a few dollars.
+        </div>
+        <div class="bb-use-tile">
+          <strong>Arduino / Microcontroller</strong>
+          Add a programmable brain to your breadboard circuit. LEDs, sensors, motors — all controlled by code you write.
+        </div>
+        <div class="bb-use-tile">
+          <strong>TinkerCAD Circuits</strong>
+          A free online simulator by Autodesk. Design and test breadboard circuits in a browser before touching any physical component.
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Quick Check ──────────────────────────────────── -->
+    <section class="bb-quiz">
+      <h2>Quick Check</h2>
+
+      <div class="bb-question" data-answer="b" data-explanation="Tie-point rows are vertical — all 5 holes in the same column (e.g. a5 through e5) are connected.">
+        <p>1. On a breadboard, which holes are connected to each other in the tie-point section?</p>
+        <div class="bb-options" role="group">
+          <button class="bb-option" data-choice="a">All holes in the same row (e.g. every column in row a)</button>
+          <button class="bb-option" data-choice="b">All holes in the same column within the same half (e.g. rows a–e in column 5)</button>
+          <button class="bb-option" data-choice="c">All holes on the entire board</button>
+          <button class="bb-option" data-choice="d">Only adjacent holes horizontally</button>
+        </div>
+        <div class="bb-q-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="bb-question" data-answer="c" data-explanation="The center gap physically separates the two halves of the tie-point section. A DIP IC is placed so its two rows of pins straddle this gap, keeping each pin on its own separate node.">
+        <p>2. Why do IC chips (DIP packages) straddle the center gap?</p>
+        <div class="bb-options" role="group">
+          <button class="bb-option" data-choice="a">To make them easier to remove later</button>
+          <button class="bb-option" data-choice="b">Because one side is positive and the other is negative</button>
+          <button class="bb-option" data-choice="c">So each row of pins is isolated from the other — no short circuit between them</button>
+          <button class="bb-option" data-choice="d">The chip is too big to fit on one side</button>
+        </div>
+        <div class="bb-q-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="bb-question" data-answer="a" data-explanation="Without a current-limiting resistor, an LED has almost no resistance and will draw far more current than it can handle — burning out in a fraction of a second.">
+        <p>3. Why must you always use a resistor in series with an LED?</p>
+        <div class="bb-options" role="group">
+          <button class="bb-option" data-choice="a">To limit the current flowing through the LED and prevent it from burning out</button>
+          <button class="bb-option" data-choice="b">To make the LED glow brighter</button>
+          <button class="bb-option" data-choice="c">To give the circuit a return path to ground</button>
+          <button class="bb-option" data-choice="d">LEDs do not need resistors — this is a common myth</button>
+        </div>
+        <div class="bb-q-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="bb-question" data-answer="d" data-explanation="Power rails run horizontally across the full length of the board. This makes it easy to distribute one voltage level to any column.">
+        <p>4. In which direction do the internal metal strips run under the power rails?</p>
+        <div class="bb-options" role="group">
+          <button class="bb-option" data-choice="a">Vertically, like the tie-point strips</button>
+          <button class="bb-option" data-choice="b">Diagonally across the board</button>
+          <button class="bb-option" data-choice="c">They are not strips — each hole is isolated</button>
+          <button class="bb-option" data-choice="d">Horizontally, connecting all holes in the same rail row end-to-end</button>
+        </div>
+        <div class="bb-q-feedback" aria-live="polite"></div>
+      </div>
+    </section>
+
+  </main>
+  </div><!-- /.ll-sim -->
+
+  <aside class="ll-panel" aria-hidden="false">
+    <div class="ll-panel-head">
+      <div class="ll-tabs">
+        <button class="ll-tab" aria-selected="true" data-pane="bb-guide">Breadboard Guide</button>
+      </div>
+      <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+    </div>
+    <div class="ll-panel-body">
+      <div class="ll-pane ll-active" id="bb-guide">
+        <div class="ll-info">
+          <strong>Connection rule</strong>
+          Tie-point strips run vertically. All 5 holes in the same column and same half (a–e or f–j) share one node.
+        </div>
+        <div class="ll-info">
+          <strong>Power rails</strong>
+          Run horizontally across the full board. Every hole in the + row connects to every other hole in that row.
+        </div>
+        <div class="ll-info">
+          <strong>Center gap</strong>
+          No connections cross the center gap. ICs straddle it so each pin stays isolated.
+        </div>
+        <div class="ll-info">
+          <strong>LED polarity</strong>
+          Long lead (anode) toward positive. Always use a resistor in series or the LED burns out instantly.
+        </div>
+        <div class="ll-info">
+          <strong>Wire colors</strong>
+          Red = power (+). Black = ground (−). Other colors = signals. Keep wires short and flat.
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <button class="ll-open-btn" aria-label="Open panel">
+    <span class="ll-open-dot"></span>
+    <span class="ll-open-dot"></span>
+    <span class="ll-open-dot"></span>
+  </button>
+  </div><!-- /.ll-stage -->
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../index.html">Home</a> · <a href="../../steam-lessons.html">Lessons</a></p>
+  </footer>
+</div><!-- /.ll-viewport -->
+
+  <script src="../../assets/js/theme-registry.js"></script>
+  <script src="../../assets/js/nav-mobile.js"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    /* ═══════════════════════════════════════════════════════
+       BREADBOARD CONSTANTS & HELPERS
+    ═══════════════════════════════════════════════════════ */
+    const COLS = 20;              // number of columns shown
+    const HOLE_R = 6;             // hole radius px
+    const COL_SP = 26;            // column spacing px
+    const ROW_SP = 24;            // row spacing px
+    const LEFT_PAD = 44;          // left margin (for row labels)
+    const RIGHT_PAD = 18;
+
+    // Y coordinates for each zone
+    const Y = {
+      'rail-top-plus':  22,
+      'rail-top-minus': 46,
+      'a': 92, 'b': 116, 'c': 140, 'd': 164, 'e': 188,
+      'gap': 213,
+      'f': 234, 'g': 258, 'h': 282, 'i': 306, 'j': 330,
+      'rail-bot-minus': 360,
+      'rail-bot-plus':  384,
+    };
+
+    // Row metadata
+    const ROW_META = {
+      'rail-top-plus':  { type: 'rail', rail: 'top-plus',  color: '#ff3b30', label: '+' },
+      'rail-top-minus': { type: 'rail', rail: 'top-minus', color: '#0a84ff', label: '−' },
+      'a': { type: 'tie', half: 'top', color: '#34c759', label: 'a' },
+      'b': { type: 'tie', half: 'top', color: '#34c759', label: 'b' },
+      'c': { type: 'tie', half: 'top', color: '#34c759', label: 'c' },
+      'd': { type: 'tie', half: 'top', color: '#34c759', label: 'd' },
+      'e': { type: 'tie', half: 'top', color: '#34c759', label: 'e' },
+      'f': { type: 'tie', half: 'bot', color: '#30d158', label: 'f' },
+      'g': { type: 'tie', half: 'bot', color: '#30d158', label: 'g' },
+      'h': { type: 'tie', half: 'bot', color: '#30d158', label: 'h' },
+      'i': { type: 'tie', half: 'bot', color: '#30d158', label: 'i' },
+      'j': { type: 'tie', half: 'bot', color: '#30d158', label: 'j' },
+      'rail-bot-minus': { type: 'rail', rail: 'bot-minus', color: '#0a84ff', label: '−' },
+      'rail-bot-plus':  { type: 'rail', rail: 'bot-plus',  color: '#ff3b30', label: '+' },
+    };
+
+    const TIE_ROWS_TOP = ['a','b','c','d','e'];
+    const TIE_ROWS_BOT = ['f','g','h','i','j'];
+    const RAIL_ROWS = ['rail-top-plus','rail-top-minus','rail-bot-minus','rail-bot-plus'];
+
+    function holeX(col) { return LEFT_PAD + (col - 1) * COL_SP; }
+    function holeY(row) { return Y[row]; }
+
+    // Get all holes connected to (row, col)
+    function getConnected(row, col) {
+      const meta = ROW_META[row];
+      if (!meta) return [];
+      if (meta.type === 'rail') {
+        // All columns on same rail
+        return Array.from({ length: COLS }, (_, i) => ({ row, col: i + 1 }));
+      }
+      if (meta.type === 'tie') {
+        // Same column, same half
+        const group = meta.half === 'top' ? TIE_ROWS_TOP : TIE_ROWS_BOT;
+        return group.map(r => ({ row: r, col }));
+      }
+      return [];
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       CALIBRATED EXPLORER
+    ═══════════════════════════════════════════════════════ */
+    const explorerSvg = document.getElementById('bb-board-svg');
+    const explorerMetalLayer = document.getElementById('bb-metal-layer');
+    const explorerHoleLayer = document.getElementById('bb-hole-layer');
+    const explorerTitle = document.getElementById('bb-inspector-title');
+    const explorerDesc = document.getElementById('bb-inspector-desc');
+    const explorerSignalText = document.getElementById('bb-signal-text');
+    const explorerSignalDot = document.getElementById('bb-signal-dot');
+    const explorerSignalBar = document.getElementById('bb-signal-bar-fill');
+    const explorerXrayToggle = document.getElementById('bb-xray-toggle');
+
+    const EXPLORER_CONFIG = {
+      cols: 30,
+      startX: 80,
+      spacing: 28.5,
+      railYs: {
+        topPos: 52,
+        topNeg: 96,
+        bottomPos: 474,
+        bottomNeg: 518,
+      },
+      tieRowsTop: ['a', 'b', 'c', 'd', 'e'],
+      tieRowsBottom: ['f', 'g', 'h', 'i', 'j'],
+      tieYs: {
+        a: 156,
+        b: 184.5,
+        c: 213,
+        d: 241.5,
+        e: 270,
+        f: 320,
+        g: 348.5,
+        h: 377,
+        i: 405.5,
+        j: 434,
+      },
+      selectedHole: null,
+      selectedStripId: null,
+      xray: false,
+    };
+
+    const explorerStripMeta = new Map();
+    const explorerHoleGroups = [];
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function createSvgEl(tag, attrs) {
+      const el = document.createElementNS(SVG_NS, tag);
+      Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, value));
+      return el;
+    }
+
+    function explorerColumnX(colIndex) {
+      return EXPLORER_CONFIG.startX + (colIndex * EXPLORER_CONFIG.spacing);
+    }
+
+    function explorerSetStripState(stripId, state) {
+      const strip = explorerStripMeta.get(stripId);
+      if (!strip) return;
+      strip.metal.classList.remove('is-active', 'is-visible');
+      strip.flow.classList.remove('is-active', 'is-visible');
+      if (state === 'active') {
+        strip.metal.classList.add('is-active');
+        strip.flow.classList.add('is-active');
+      } else if (state === 'visible') {
+        strip.metal.classList.add('is-visible');
+        strip.flow.classList.add('is-visible');
+      }
+    }
+
+    function explorerClearSelection() {
+      explorerHoleGroups.forEach(group => group.classList.remove('is-selected'));
+      explorerStripMeta.forEach((_, stripId) => {
+        explorerSetStripState(stripId, EXPLORER_CONFIG.xray ? 'visible' : 'hidden');
+      });
+      EXPLORER_CONFIG.selectedHole = null;
+      EXPLORER_CONFIG.selectedStripId = null;
+      explorerTitle.textContent = 'Ready to Probe';
+      explorerDesc.textContent = 'Click any socket on the board to visualize the hidden metal strip that connects it to the rest of the circuit.';
+      explorerSignalText.textContent = 'Circuit inactive';
+      explorerSignalDot.classList.remove('is-live');
+      explorerSignalBar.style.width = '0%';
+    }
+
+    function explorerSelect(stripId, holeGroup, type) {
+      if (EXPLORER_CONFIG.selectedStripId === stripId) {
+        explorerClearSelection();
+        return;
+      }
+
+      explorerHoleGroups.forEach(group => group.classList.remove('is-selected'));
+      explorerStripMeta.forEach((_, id) => {
+        explorerSetStripState(id, EXPLORER_CONFIG.xray ? 'visible' : 'hidden');
+      });
+
+      holeGroup.classList.add('is-selected');
+      explorerSetStripState(stripId, 'active');
+      EXPLORER_CONFIG.selectedHole = holeGroup;
+      EXPLORER_CONFIG.selectedStripId = stripId;
+      explorerSignalDot.classList.add('is-live');
+      explorerSignalBar.style.width = '100%';
+
+      if (type === 'pos') {
+        explorerTitle.textContent = 'Positive Power Rail';
+        explorerDesc.textContent = 'This full horizontal rail shares one metal strip. Use it to distribute positive voltage to components anywhere along the row.';
+        explorerSignalText.textContent = 'VCC potential shared across the rail';
+      } else if (type === 'neg') {
+        explorerTitle.textContent = 'Ground Rail';
+        explorerDesc.textContent = 'This rail is the return path back to the power source. All of these holes are electrically the same ground node.';
+        explorerSignalText.textContent = '0V ground reference active';
+      } else {
+        explorerTitle.textContent = 'Vertical Terminal Group';
+        explorerDesc.textContent = 'In the tie-point area, the five holes in one column share a single hidden metal clip. Components connect by bridging between different strips.';
+        explorerSignalText.textContent = 'Shared local node detected';
+      }
+    }
+
+    function explorerCreateStrip(stripId, points, color, flowColor) {
+      const xs = points.map(point => point.x);
+      const ys = points.map(point => point.y);
+      const minX = Math.min(...xs);
+      const maxX = Math.max(...xs);
+      const minY = Math.min(...ys);
+      const maxY = Math.max(...ys);
+      const isHorizontal = (maxX - minX) >= (maxY - minY);
+      const metal = createSvgEl('rect', {
+        x: String(minX - 11),
+        y: String(minY - 11),
+        width: String(Math.max(maxX - minX, 0) + 22),
+        height: String(Math.max(maxY - minY, 0) + 22),
+        rx: '7',
+        fill: color,
+        class: 'bb-internal-metal',
+      });
+      const flow = createSvgEl('line', {
+        x1: String(isHorizontal ? minX : points[0].x),
+        y1: String(isHorizontal ? points[0].y : minY),
+        x2: String(isHorizontal ? maxX : points[0].x),
+        y2: String(isHorizontal ? points[0].y : maxY),
+        stroke: flowColor,
+        'stroke-width': isHorizontal ? '7' : '6',
+        class: 'bb-flow-line',
+      });
+      explorerMetalLayer.appendChild(metal);
+      explorerMetalLayer.appendChild(flow);
+      explorerStripMeta.set(stripId, { metal, flow });
+    }
+
+    function explorerCreateHole(point, stripId, type) {
+      const group = createSvgEl('g', { class: 'bb-hole-group' });
+      const hitbox = createSvgEl('circle', {
+        cx: String(point.x),
+        cy: String(point.y),
+        r: '13',
+        class: 'bb-hole-hitbox',
+        tabindex: '0',
+        role: 'button',
+        'aria-label': point.label,
+      });
+      const visual = createSvgEl('circle', {
+        cx: String(point.x),
+        cy: String(point.y),
+        r: '5',
+        class: 'bb-hole-visual',
+      });
+
+      const activate = () => explorerSelect(stripId, group, type);
+      hitbox.addEventListener('click', activate);
+      hitbox.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          activate();
+        }
+      });
+
+      group.appendChild(hitbox);
+      group.appendChild(visual);
+      explorerHoleLayer.appendChild(group);
+      explorerHoleGroups.push(group);
+    }
+
+    function initExplorer() {
+      if (!explorerSvg || !explorerMetalLayer || !explorerHoleLayer) return;
+
+      const railDefinitions = [
+        { id: 'rail-top-pos', key: 'topPos', type: 'pos', color: '#fecaca', flow: '#ef4444', label: 'Top positive rail' },
+        { id: 'rail-top-neg', key: 'topNeg', type: 'neg', color: '#bfdbfe', flow: '#2563eb', label: 'Top ground rail' },
+        { id: 'rail-bottom-pos', key: 'bottomPos', type: 'pos', color: '#fecaca', flow: '#ef4444', label: 'Bottom positive rail' },
+        { id: 'rail-bottom-neg', key: 'bottomNeg', type: 'neg', color: '#bfdbfe', flow: '#2563eb', label: 'Bottom ground rail' },
+      ];
+
+      railDefinitions.forEach(definition => {
+        const points = Array.from({ length: EXPLORER_CONFIG.cols }, (_, index) => ({
+          x: explorerColumnX(index),
+          y: EXPLORER_CONFIG.railYs[definition.key],
+          label: `${definition.label}, hole ${index + 1}`,
+        }));
+        explorerCreateStrip(definition.id, points, definition.color, definition.flow);
+        points.forEach(point => explorerCreateHole(point, definition.id, definition.type));
+      });
+
+      for (let col = 0; col < EXPLORER_CONFIG.cols; col += 1) {
+        const topStripId = `terminal-top-${col}`;
+        const bottomStripId = `terminal-bottom-${col}`;
+        const topPoints = EXPLORER_CONFIG.tieRowsTop.map(row => ({
+          x: explorerColumnX(col),
+          y: EXPLORER_CONFIG.tieYs[row],
+          label: `Column ${col + 1}, row ${row}`,
+        }));
+        const bottomPoints = EXPLORER_CONFIG.tieRowsBottom.map(row => ({
+          x: explorerColumnX(col),
+          y: EXPLORER_CONFIG.tieYs[row],
+          label: `Column ${col + 1}, row ${row}`,
+        }));
+        explorerCreateStrip(topStripId, topPoints, '#dcfce7', '#16a34a');
+        explorerCreateStrip(bottomStripId, bottomPoints, '#dcfce7', '#16a34a');
+        topPoints.forEach(point => explorerCreateHole(point, topStripId, 'terminal'));
+        bottomPoints.forEach(point => explorerCreateHole(point, bottomStripId, 'terminal'));
+      }
+
+      const labelLayer = document.getElementById('bb-label-layer');
+      if (labelLayer) {
+        for (let col = 0; col < EXPLORER_CONFIG.cols; col += 2) {
+          labelLayer.appendChild(createSvgEl('text', {
+            x: String(explorerColumnX(col)),
+            y: '546',
+            class: 'bb-col-label',
+            'text-anchor': 'middle',
+            'font-size': '10',
+            fill: '#94a3b8',
+          })).textContent = String(col + 1);
+        }
+      }
+
+      explorerClearSelection();
+    }
+
+    if (explorerXrayToggle) {
+      explorerXrayToggle.addEventListener('click', function () {
+        EXPLORER_CONFIG.xray = !EXPLORER_CONFIG.xray;
+        explorerXrayToggle.classList.toggle('is-on', EXPLORER_CONFIG.xray);
+        explorerXrayToggle.setAttribute('aria-pressed', EXPLORER_CONFIG.xray ? 'true' : 'false');
+        explorerXrayToggle.textContent = EXPLORER_CONFIG.xray ? 'Disable X-Ray' : 'Enable X-Ray';
+        explorerStripMeta.forEach((_, stripId) => {
+          const state = stripId === EXPLORER_CONFIG.selectedStripId ? 'active' : (EXPLORER_CONFIG.xray ? 'visible' : 'hidden');
+          explorerSetStripState(stripId, state);
+        });
+      });
+    }
+
+    initExplorer();
+
+    /* ═══════════════════════════════════════════════════════
+       CIRCUIT CHALLENGE ENGINE
+    ═══════════════════════════════════════════════════════ */
+    const chalCanvas  = document.getElementById('bb-chal-canvas');
+    const chalCtx     = chalCanvas ? chalCanvas.getContext('2d') : null;
+    const chalFeedback = document.getElementById('bb-chal-feedback');
+    const nextBtn     = document.getElementById('bb-next-btn');
+    const resetBtn    = document.getElementById('bb-reset-btn');
+    const palette     = document.getElementById('bb-palette');
+    const hintText    = document.getElementById('bb-hint-text');
+    const chalGoal    = document.getElementById('chal-goal');
+    const chalTitle   = document.getElementById('chal-title');
+    const chalInstr   = document.getElementById('chal-instruction');
+
+    // Challenge breadboard uses 12 columns, same row layout
+    const CHAL_COLS  = 12;
+    const CHAL_LEFT  = 70;
+    const CHAL_COL_SP = 58;
+
+    function chalHoleX(col) { return CHAL_LEFT + (col - 1) * CHAL_COL_SP; }
+    function chalHoleY(row) { return Y[row]; }
+
+    // ── State ──────────────────────────────────────────────
+    const state = {
+      challenge: 1,          // 1-4
+      selectedTool: null,    // 'wire-red' | 'wire-black' | 'resistor' | 'led'
+      pendingFrom: null,     // { row, col } — first click
+      placedComponents: [],  // { type, from:{row,col}, to:{row,col} }
+      chalComplete: [false, false, false, false], // per challenge
+      ledOn: false,
+    };
+
+    function pointMatches(point, expected) {
+      if (!point || !expected) return false;
+      if (expected.special) return point.special === expected.special;
+      return point.row === expected.row && (expected.col == null || point.col === expected.col);
+    }
+
+    function connects(comp, first, second) {
+      return (pointMatches(comp.from, first) && pointMatches(comp.to, second))
+        || (pointMatches(comp.from, second) && pointMatches(comp.to, first));
+    }
+
+    function hasPoweredRails(comps) {
+      const red = comps.some(c => c.type === 'wire-red'
+        && connects(c, { special: 'bat+' }, { row: 'rail-top-plus' }));
+      const black = comps.some(c => c.type === 'wire-black'
+        && connects(c, { special: 'bat-' }, { row: 'rail-top-minus' }));
+      return red && black;
+    }
+
+    function hasResistor(comps) {
+      return comps.some(c => c.type === 'resistor'
+        && connects(c, { row: 'a', col: 3 }, { row: 'a', col: 6 }));
+    }
+
+    function hasLed(comps) {
+      return comps.some(c => c.type === 'led'
+        && pointMatches(c.from, { row: 'b', col: 6 })
+        && pointMatches(c.to, { row: 'b', col: 9 }));
+    }
+
+    function hasLoopWires(comps) {
+      const input = comps.some(c => c.type === 'wire-red'
+        && connects(c, { row: 'rail-top-plus' }, { row: 'a', col: 3 }));
+      const output = comps.some(c => c.type === 'wire-black'
+        && connects(c, { row: 'rail-top-minus' }, { row: 'a', col: 9 }));
+      return input && output;
+    }
+
+    function allowedEndpoints(challenge, tool) {
+      if (challenge === 1 && tool === 'wire-red') {
+        return [{ special: 'bat+' }, { row: 'rail-top-plus' }];
+      }
+      if (challenge === 1 && tool === 'wire-black') {
+        return [{ special: 'bat-' }, { row: 'rail-top-minus' }];
+      }
+      if (challenge === 2 && tool === 'resistor') {
+        return [{ row: 'a', col: 3 }, { row: 'a', col: 6 }];
+      }
+      if (challenge === 3 && tool === 'led') {
+        return [{ row: 'b', col: 6 }];
+      }
+      if (challenge === 4 && tool === 'wire-red') {
+        return [{ row: 'rail-top-plus' }, { row: 'a', col: 3 }];
+      }
+      if (challenge === 4 && tool === 'wire-black') {
+        return [{ row: 'rail-top-minus' }, { row: 'a', col: 9 }];
+      }
+      return [];
+    }
+
+    function isAllowedStart(point) {
+      return allowedEndpoints(state.challenge, state.selectedTool)
+        .some(expected => pointMatches(point, expected));
+    }
+
+    function isAllowedPlacement(from, to) {
+      const test = { type: state.selectedTool, from, to };
+      if (state.challenge === 1 && state.selectedTool === 'wire-red') {
+        return connects(test, { special: 'bat+' }, { row: 'rail-top-plus' });
+      }
+      if (state.challenge === 1 && state.selectedTool === 'wire-black') {
+        return connects(test, { special: 'bat-' }, { row: 'rail-top-minus' });
+      }
+      if (state.challenge === 2 && state.selectedTool === 'resistor') {
+        return connects(test, { row: 'a', col: 3 }, { row: 'a', col: 6 });
+      }
+      if (state.challenge === 3 && state.selectedTool === 'led') {
+        return pointMatches(from, { row: 'b', col: 6 })
+          && pointMatches(to, { row: 'b', col: 9 });
+      }
+      if (state.challenge === 4 && state.selectedTool === 'wire-red') {
+        return connects(test, { row: 'rail-top-plus' }, { row: 'a', col: 3 });
+      }
+      if (state.challenge === 4 && state.selectedTool === 'wire-black') {
+        return connects(test, { row: 'rail-top-minus' }, { row: 'a', col: 9 });
+      }
+      return false;
+    }
+
+    // ── Challenge definitions ──────────────────────────────
+    const CHALLENGES = [
+      {
+        id: 1,
+        goal: 'Challenge 1 of 4',
+        title: 'Power Up the Rails',
+        instruction: 'Connect the battery to the breadboard. Select <strong>Red Wire</strong>, click the battery <strong>+ terminal</strong> (glowing red dot, top-left), then click anywhere on the <strong>+ power rail</strong>. Then select <strong>Black Wire</strong> and connect the battery <strong>−</strong> to the <strong>− rail</strong>.',
+        hint: 'A complete circuit needs power. The battery terminals are the two dots to the left of the board. Connect + (red) to the + rail, and − (black) to the − rail.',
+        availableTools: ['wire-red', 'wire-black'],
+        // Validate: need wire-red from battery+ to rail-top-plus, wire-black from battery- to rail-top-minus
+        validate(comps) {
+          return hasPoweredRails(comps);
+        }
+      },
+      {
+        id: 2,
+        goal: 'Challenge 2 of 4',
+        title: 'Add the Resistor',
+        instruction: 'Select <strong>Resistor</strong> from the palette. Click hole <strong>row a, column 3</strong> as the first lead, then click <strong>row a, column 6</strong> as the second lead. This places a 220 Ω current-limiting resistor.',
+        hint: 'A resistor limits the current flowing to the LED. Place it flat across the board — both leads in the same half (rows a–e), connecting column 3 to column 6.',
+        availableTools: ['wire-red', 'wire-black', 'resistor'],
+        validate(comps) {
+          return hasResistor(comps);
+        }
+      },
+      {
+        id: 3,
+        goal: 'Challenge 3 of 4',
+        title: 'Place the LED',
+        instruction: 'Select <strong>LED</strong>. Click <strong>row b, column 6</strong> for the anode (+), then <strong>row b, column 9</strong> for the cathode (−). Rows a–e share each column, so the LED joins the resistor through column 6 without sharing a hole.',
+        hint: 'Polarity matters: place the LED anode at b6 and cathode at b9. The hidden vertical strips connect a6 to b6 and a9 to b9.',
+        availableTools: ['wire-red', 'wire-black', 'resistor', 'led'],
+        validate(comps) {
+          return hasLed(comps);
+        }
+      },
+      {
+        id: 4,
+        goal: 'Challenge 4 of 4',
+        title: 'Close the Loop',
+        instruction: 'Finish both sides of the loop. Use <strong>Red Wire</strong> from the <strong>+ rail</strong> to <strong>a3</strong>. Then use <strong>Black Wire</strong> from <strong>a9</strong> to the <strong>− rail</strong>.',
+        hint: 'Current must have a complete path: + rail → wire → resistor → LED → wire → − rail. Without both wires the circuit is open and the LED stays dark.',
+        availableTools: ['wire-red', 'wire-black', 'resistor', 'led'],
+        validate(comps) {
+          return hasPoweredRails(comps) && hasResistor(comps) && hasLed(comps) && hasLoopWires(comps);
+        }
+      },
+    ];
+
+    // ── Battery terminal positions (special anchors left of board) ──
+    const BAT_PLUS_X  = 28;
+    const BAT_PLUS_Y  = chalHoleY('rail-top-plus');
+    const BAT_MINUS_X = 28;
+    const BAT_MINUS_Y = chalHoleY('rail-top-minus');
+
+    // ── Drawing the challenge board ────────────────────────
+    let ledGlowPhase = 0;
+    let animFrame = null;
+
+    function drawChalBoard() {
+      if (!chalCtx) return;
+      const W = chalCanvas.width;
+      const H = chalCanvas.height;
+      chalCtx.clearRect(0, 0, W, H);
+
+      // Background
+      chalCtx.fillStyle = '#1a1a2e';
+      chalCtx.beginPath();
+      if (chalCtx.roundRect) chalCtx.roundRect(0, 0, W, H, 10);
+      else chalCtx.rect(0, 0, W, H);
+      chalCtx.fill();
+
+      // Board body
+      chalCtx.fillStyle = '#2d2d1e';
+      chalCtx.beginPath();
+      if (chalCtx.roundRect) chalCtx.roundRect(6, 6, W - 12, H - 12, 8);
+      else chalCtx.rect(6, 6, W - 12, H - 12);
+      chalCtx.fill();
+
+      // Rail bands
+      function railBand(row, color) {
+        const y = chalHoleY(row);
+        chalCtx.fillStyle = color + '22';
+        chalCtx.fillRect(CHAL_LEFT - 4, y - HOLE_R - 5, (CHAL_COLS - 1) * CHAL_COL_SP + 8, HOLE_R * 2 + 10);
+      }
+      railBand('rail-top-plus', '#ff3b30');
+      railBand('rail-top-minus', '#0a84ff');
+      railBand('rail-bot-minus', '#0a84ff');
+      railBand('rail-bot-plus', '#ff3b30');
+
+      // Center gap
+      chalCtx.fillStyle = '#ff950033';
+      chalCtx.fillRect(CHAL_LEFT - 4, Y['gap'] - 2, (CHAL_COLS - 1) * CHAL_COL_SP + 8, 14);
+
+      // Draw placed components (wires / resistor / LED)
+      state.placedComponents.forEach(comp => drawComponent(comp));
+
+      // Pending wire preview (from source)
+      if (state.pendingFrom) {
+        const pf = state.pendingFrom;
+        const fx = pf.special === 'bat+' ? BAT_PLUS_X  :
+                   pf.special === 'bat-' ? BAT_MINUS_X :
+                   chalHoleX(pf.col);
+        const fy = pf.special === 'bat+' ? BAT_PLUS_Y  :
+                   pf.special === 'bat-' ? BAT_MINUS_Y :
+                   chalHoleY(pf.row);
+        chalCtx.strokeStyle = state.selectedTool === 'wire-red' ? '#ff3b30aa' : '#b8b8beaa';
+        chalCtx.lineWidth = 2;
+        chalCtx.setLineDash([4, 4]);
+        chalCtx.beginPath();
+        chalCtx.arc(fx, fy, HOLE_R + 4, 0, Math.PI * 2);
+        chalCtx.stroke();
+        chalCtx.setLineDash([]);
+      }
+
+      // Row labels
+      const rowKeys = Object.keys(ROW_META);
+      rowKeys.forEach(row => {
+        if (row === 'gap') return;
+        const meta = ROW_META[row];
+        const y = chalHoleY(row);
+        chalCtx.fillStyle = meta.color + 'cc';
+        chalCtx.font = 'bold 9px Inter, sans-serif';
+        chalCtx.textAlign = 'right';
+        chalCtx.fillText(meta.label, CHAL_LEFT - 8, y + 3);
+      });
+
+      // Holes
+      rowKeys.forEach(row => {
+        if (row === 'gap') return;
+        const meta = ROW_META[row];
+        const y = chalHoleY(row);
+        for (let col = 1; col <= CHAL_COLS; col++) {
+          const x = chalHoleX(col);
+          const isTarget = isTargetHole(row, col);
+          const isPending = state.pendingFrom &&
+                            !state.pendingFrom.special &&
+                            state.pendingFrom.row === row &&
+                            state.pendingFrom.col === col;
+          // Outer
+          chalCtx.beginPath();
+          chalCtx.arc(x, y, HOLE_R + 1, 0, Math.PI * 2);
+          chalCtx.fillStyle = isPending ? '#ffcc00' : isTarget ? '#ffd60a66' : '#ffffff11';
+          chalCtx.fill();
+          // Metal face
+          chalCtx.beginPath();
+          chalCtx.arc(x, y, HOLE_R, 0, Math.PI * 2);
+          chalCtx.fillStyle = isPending ? '#ffcc00' : isTarget ? '#ffd60a' : meta.color + '99';
+          chalCtx.fill();
+          // Inner
+          chalCtx.beginPath();
+          chalCtx.arc(x, y, HOLE_R - 2.5, 0, Math.PI * 2);
+          chalCtx.fillStyle = '#111118';
+          chalCtx.fill();
+        }
+      });
+
+      // Column numbers
+      chalCtx.fillStyle = '#ffffff33';
+      chalCtx.font = '8px Inter, sans-serif';
+      chalCtx.textAlign = 'center';
+      for (let col = 1; col <= CHAL_COLS; col++) {
+        chalCtx.fillText(String(col), chalHoleX(col), H - 8);
+      }
+
+      // Battery terminals
+      drawBatteryTerminals();
+
+      // LED glow if on
+      if (state.ledOn) {
+        drawLEDGlow();
+      }
+    }
+
+    function drawBatteryTerminals() {
+      function drawTargetRing(special, x, y) {
+        const point = { special };
+        const isTarget = state.pendingFrom
+          ? isAllowedPlacement(state.pendingFrom, point)
+          : (state.selectedTool && isAllowedStart(point));
+        if (!isTarget) return;
+        chalCtx.beginPath();
+        chalCtx.arc(x, y, 14, 0, Math.PI * 2);
+        chalCtx.strokeStyle = '#ffd60a';
+        chalCtx.lineWidth = 3;
+        chalCtx.stroke();
+      }
+
+      drawTargetRing('bat+', BAT_PLUS_X, BAT_PLUS_Y);
+      drawTargetRing('bat-', BAT_MINUS_X, BAT_MINUS_Y);
+
+      // + terminal
+      chalCtx.beginPath();
+      chalCtx.arc(BAT_PLUS_X, BAT_PLUS_Y, 9, 0, Math.PI * 2);
+      chalCtx.fillStyle = '#ff3b30';
+      chalCtx.fill();
+      chalCtx.fillStyle = '#fff';
+      chalCtx.font = 'bold 11px Inter, sans-serif';
+      chalCtx.textAlign = 'center';
+      chalCtx.fillText('+', BAT_PLUS_X, BAT_PLUS_Y + 4);
+
+      // − terminal
+      chalCtx.beginPath();
+      chalCtx.arc(BAT_MINUS_X, BAT_MINUS_Y, 9, 0, Math.PI * 2);
+      chalCtx.fillStyle = '#0a84ff';
+      chalCtx.fill();
+      chalCtx.fillStyle = '#fff';
+      chalCtx.font = 'bold 14px Inter, sans-serif';
+      chalCtx.textAlign = 'center';
+      chalCtx.fillText('−', BAT_MINUS_X, BAT_MINUS_Y + 4);
+
+      // Battery label
+      chalCtx.fillStyle = '#ffffff66';
+      chalCtx.font = '8px Inter, sans-serif';
+      chalCtx.textAlign = 'center';
+      chalCtx.fillText('BAT', BAT_PLUS_X, BAT_PLUS_Y - 14);
+    }
+
+    function drawComponent(comp) {
+      const { type, from, to } = comp;
+      const fx = from.special === 'bat+' ? BAT_PLUS_X  :
+                 from.special === 'bat-' ? BAT_MINUS_X :
+                 chalHoleX(from.col);
+      const fy = from.special === 'bat+' ? BAT_PLUS_Y  :
+                 from.special === 'bat-' ? BAT_MINUS_Y :
+                 chalHoleY(from.row);
+      const tx = to.special === 'bat+' ? BAT_PLUS_X  :
+                 to.special === 'bat-' ? BAT_MINUS_X :
+                 chalHoleX(to.col);
+      const ty = to.special === 'bat+' ? BAT_PLUS_Y  :
+                 to.special === 'bat-' ? BAT_MINUS_Y :
+                 chalHoleY(to.row);
+
+      if (type === 'wire-red' || type === 'wire-black') {
+        chalCtx.strokeStyle = type === 'wire-red' ? '#ff3b30' : '#a1a1aa';
+        chalCtx.lineWidth = 3.5;
+        chalCtx.lineCap = 'round';
+        chalCtx.shadowColor = type === 'wire-red' ? '#ff3b3066' : '#ffffff33';
+        chalCtx.shadowBlur = 6;
+        chalCtx.beginPath();
+        chalCtx.moveTo(fx, fy);
+        // Slight curve for visual interest
+        const mx = (fx + tx) / 2;
+        const my = (fy + ty) / 2 - 8;
+        chalCtx.quadraticCurveTo(mx, my, tx, ty);
+        chalCtx.stroke();
+        chalCtx.shadowBlur = 0;
+      } else if (type === 'resistor') {
+        drawResistor(fx, fy, tx, ty);
+      } else if (type === 'led') {
+        drawLED(fx, fy, tx, ty);
+      }
+    }
+
+    function drawResistor(fx, fy, tx, ty) {
+      // Lead lines
+      chalCtx.strokeStyle = '#c8a84b';
+      chalCtx.lineWidth = 2;
+      const cx = (fx + tx) / 2;
+      const bw = Math.abs(tx - fx) * 0.45;
+      const bh = 7;
+
+      chalCtx.beginPath();
+      chalCtx.moveTo(fx, fy);
+      chalCtx.lineTo(cx - bw, fy);
+      chalCtx.stroke();
+      chalCtx.beginPath();
+      chalCtx.moveTo(tx, ty);
+      chalCtx.lineTo(cx + bw, ty);
+      chalCtx.stroke();
+
+      // Body
+      chalCtx.fillStyle = '#d4a017';
+      chalCtx.strokeStyle = '#a07808';
+      chalCtx.lineWidth = 1.5;
+      chalCtx.beginPath();
+      if (chalCtx.roundRect) chalCtx.roundRect(cx - bw, fy - bh, bw * 2, bh * 2, 3);
+      else chalCtx.rect(cx - bw, fy - bh, bw * 2, bh * 2);
+      chalCtx.fill();
+      chalCtx.stroke();
+
+      // Color bands (220Ω: red-red-brown)
+      const bands = ['#cc0000', '#cc0000', '#7b3f00', '#c0a000'];
+      bands.forEach((color, i) => {
+        const bx = cx - bw + 4 + i * ((bw * 2 - 8) / 3.5);
+        chalCtx.fillStyle = color;
+        chalCtx.fillRect(bx, fy - bh + 1, 3.5, bh * 2 - 2);
+      });
+
+      // Label
+      chalCtx.fillStyle = '#ffffff88';
+      chalCtx.font = '7px Inter, sans-serif';
+      chalCtx.textAlign = 'center';
+      chalCtx.fillText('220Ω', cx, fy - bh - 3);
+    }
+
+    function drawLED(fx, fy, tx, ty) {
+      // Leads
+      const cx = (fx + tx) / 2;
+      const sw = Math.abs(tx - fx) * 0.35;
+      chalCtx.strokeStyle = '#aaa';
+      chalCtx.lineWidth = 1.5;
+      chalCtx.beginPath();
+      chalCtx.moveTo(fx, fy);
+      chalCtx.lineTo(cx - sw, fy);
+      chalCtx.stroke();
+      chalCtx.beginPath();
+      chalCtx.moveTo(tx, ty);
+      chalCtx.lineTo(cx + sw, ty);
+      chalCtx.stroke();
+
+      // Triangle (diode body)
+      const h = 9;
+      chalCtx.fillStyle = state.ledOn ? '#34c759' : '#2d5a3d';
+      chalCtx.strokeStyle = state.ledOn ? '#30d158' : '#3a7a50';
+      chalCtx.lineWidth = 1.5;
+      chalCtx.beginPath();
+      chalCtx.moveTo(cx - sw, fy - h);
+      chalCtx.lineTo(cx - sw, fy + h);
+      chalCtx.lineTo(cx + sw, fy);
+      chalCtx.closePath();
+      chalCtx.fill();
+      chalCtx.stroke();
+
+      // Cathode bar
+      chalCtx.strokeStyle = state.ledOn ? '#30d158' : '#3a7a50';
+      chalCtx.lineWidth = 2.5;
+      chalCtx.beginPath();
+      chalCtx.moveTo(cx + sw, fy - h);
+      chalCtx.lineTo(cx + sw, fy + h);
+      chalCtx.stroke();
+
+      // Light rays when on
+      if (state.ledOn) {
+        const alpha = 0.4 + 0.3 * Math.sin(ledGlowPhase);
+        const rays = [[1, -1], [1.4, -0.5], [1.4, 0.5]];
+        rays.forEach(([dx, dy]) => {
+          chalCtx.strokeStyle = `rgba(52,199,89,${alpha})`;
+          chalCtx.lineWidth = 1.5;
+          chalCtx.beginPath();
+          chalCtx.moveTo(cx + sw + 4, fy + dy * 3);
+          chalCtx.lineTo(cx + sw + 4 + dx * 8, fy + dy * 10);
+          chalCtx.stroke();
+        });
+      }
+
+      // Label
+      chalCtx.fillStyle = state.ledOn ? '#34c759' : '#ffffff55';
+      chalCtx.font = '7px Inter, sans-serif';
+      chalCtx.textAlign = 'center';
+      chalCtx.fillText('LED', cx, fy - h - 3);
+    }
+
+    function drawLEDGlow() {
+      // Large ambient glow around LED position
+      const cx = chalHoleX(6) + (chalHoleX(9) - chalHoleX(6)) / 2;
+      const cy = chalHoleY('b');
+      const alpha = 0.15 + 0.1 * Math.sin(ledGlowPhase);
+      const grad = chalCtx.createRadialGradient(cx, cy, 5, cx, cy, 45);
+      grad.addColorStop(0, `rgba(52,199,89,${alpha + 0.2})`);
+      grad.addColorStop(1, 'rgba(52,199,89,0)');
+      chalCtx.fillStyle = grad;
+      chalCtx.beginPath();
+      chalCtx.arc(cx, cy, 45, 0, Math.PI * 2);
+      chalCtx.fill();
+    }
+
+    function animateGlow(ts) {
+      ledGlowPhase = ts / 600;
+      drawChalBoard();
+      if (state.ledOn) animFrame = requestAnimationFrame(animateGlow);
+    }
+
+    // ── Target hole highlighting ───────────────────────────
+    function isTargetHole(row, col) {
+      if (!state.selectedTool) return false;
+      const point = { row, col };
+      return state.pendingFrom
+        ? isAllowedPlacement(state.pendingFrom, point)
+        : isAllowedStart(point);
+    }
+
+    // ── Palette selection ──────────────────────────────────
+    if (palette) {
+      palette.addEventListener('click', function (e) {
+        const btn = e.target.closest('.bb-palette-btn');
+        if (!btn || btn.disabled) return;
+        const tool = btn.dataset.tool;
+        if (state.selectedTool === tool) {
+          state.selectedTool = null;
+          btn.classList.remove('is-selected');
+          btn.setAttribute('aria-pressed', 'false');
+        } else {
+          palette.querySelectorAll('.bb-palette-btn').forEach(b => {
+            b.classList.remove('is-selected');
+            b.setAttribute('aria-pressed', 'false');
+          });
+          state.selectedTool = tool;
+          btn.classList.add('is-selected');
+          btn.setAttribute('aria-pressed', 'true');
+        }
+        state.pendingFrom = null;
+        if (state.selectedTool) showFeedback('Part selected. Click its first highlighted connection point.', 'info');
+        drawChalBoard();
+      });
+    }
+
+    // ── Hit test on challenge canvas ───────────────────────
+    function hitTestChal(mx, my) {
+      // Check battery terminals first
+      if (Math.hypot(mx - BAT_PLUS_X, my - BAT_PLUS_Y) <= 12)  return { special: 'bat+' };
+      if (Math.hypot(mx - BAT_MINUS_X, my - BAT_MINUS_Y) <= 12) return { special: 'bat-' };
+
+      // Check board holes
+      const rowKeys = Object.keys(ROW_META);
+      for (const row of rowKeys) {
+        if (row === 'gap') continue;
+        const y = chalHoleY(row);
+        for (let col = 1; col <= CHAL_COLS; col++) {
+          const x = chalHoleX(col);
+          if (Math.hypot(mx - x, my - y) <= HOLE_R + 5) return { row, col };
+        }
+      }
+      return null;
+    }
+
+    // ── Canvas click handler ───────────────────────────────
+    if (chalCanvas) {
+      chalCanvas.addEventListener('click', function (e) {
+        if (state.chalComplete[state.challenge - 1]) {
+          showFeedback('This step is complete. Choose Next Step to continue.', 'correct');
+          return;
+        }
+        if (!state.selectedTool) {
+          showFeedback('Select a component from the palette first.', 'info');
+          return;
+        }
+        const rect = chalCanvas.getBoundingClientRect();
+        const scaleX = chalCanvas.width  / rect.width;
+        const scaleY = chalCanvas.height / rect.height;
+        const mx = (e.clientX - rect.left) * scaleX;
+        const my = (e.clientY - rect.top)  * scaleY;
+        const hit = hitTestChal(mx, my);
+        if (!hit) return;
+
+        if (!state.pendingFrom) {
+          if (!isAllowedStart(hit)) {
+            showFeedback('That point is not used for this part in the current step. Check the task card and try again.', 'wrong');
+            return;
+          }
+          // First click — set source
+          state.pendingFrom = hit;
+          showFeedback('First connection selected. The valid destination is highlighted in yellow.', 'info');
+          drawChalBoard();
+        } else {
+          // Second click — complete placement
+          const from = state.pendingFrom;
+          const to   = hit;
+          state.pendingFrom = null;
+
+          // Avoid placing on same hole
+          if (from.row === to.row && from.col === to.col && !from.special && !to.special) {
+            showFeedback('Pick two different holes.', 'wrong');
+            drawChalBoard();
+            return;
+          }
+
+          if (!isAllowedPlacement(from, to)) {
+            showFeedback('That connection does not match this step. No part was placed—follow the yellow target and try again.', 'wrong');
+            drawChalBoard();
+            return;
+          }
+
+          // Place the component
+          state.placedComponents.push({ type: state.selectedTool, from, to });
+
+          // Validate challenge
+          const ch = CHALLENGES[state.challenge - 1];
+          if (ch.validate(state.placedComponents)) {
+            state.chalComplete[state.challenge - 1] = true;
+            updateStepPip(state.challenge, 'done');
+            if (state.challenge === 4) {
+              // All done — light the LED!
+              state.ledOn = true;
+              showFeedback('🎉 Circuit complete! The LED is lit — you did it!', 'correct');
+              if (animFrame) cancelAnimationFrame(animFrame);
+              animFrame = requestAnimationFrame(animateGlow);
+              nextBtn.textContent = '↺ Try Again';
+              nextBtn.classList.add('visible');
+            } else {
+              showFeedback('✓ Correct connection! Move to the next step.', 'correct');
+              nextBtn.textContent = 'Next Step →';
+              nextBtn.classList.add('visible');
+            }
+          } else {
+            showFeedback('Placed! Keep adding connections to complete this step.', 'info');
+          }
+          drawChalBoard();
+        }
+      });
+    }
+
+    function showFeedback(msg, type) {
+      if (!chalFeedback) return;
+      chalFeedback.textContent = msg;
+      chalFeedback.className = 'bb-chal-feedback ' + type;
+    }
+
+    function updateStepPip(step, status) {
+      const pip = document.getElementById('pip-' + step);
+      if (!pip) return;
+      pip.classList.remove('is-active', 'is-done');
+      if (status === 'done')   pip.classList.add('is-done');
+      if (status === 'active') pip.classList.add('is-active');
+    }
+
+    // ── Next / Reset buttons ───────────────────────────────
+    if (nextBtn) {
+      nextBtn.addEventListener('click', function () {
+        if (state.challenge === 4) {
+          // Reset all
+          resetChallenge(1);
+          return;
+        }
+        state.challenge++;
+        loadChallenge(state.challenge);
+        nextBtn.classList.remove('visible');
+      });
+    }
+
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function () {
+        resetChallenge(1);
+      });
+    }
+
+    function resetChallenge(toStep) {
+      state.selectedTool = null;
+      state.pendingFrom = null;
+      state.placedComponents = [];
+      state.ledOn = false;
+      state.chalComplete = [false, false, false, false];
+      if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+
+      if (palette) {
+        palette.querySelectorAll('.bb-palette-btn').forEach(b => {
+          b.classList.remove('is-selected');
+          b.setAttribute('aria-pressed', 'false');
+        });
+      }
+      nextBtn.classList.remove('visible');
+      chalFeedback.className = 'bb-chal-feedback info';
+      chalFeedback.textContent = 'Choose the red wire to begin powering the positive rail.';
+
+      // Reset pips
+      for (let i = 1; i <= 4; i++) {
+        const pip = document.getElementById('pip-' + i);
+        if (pip) { pip.classList.remove('is-active','is-done'); }
+      }
+
+      loadChallenge(toStep);
+    }
+
+    function loadChallenge(num) {
+      state.challenge = num;
+      state.selectedTool = null;
+      state.pendingFrom = null;
+      const ch = CHALLENGES[num - 1];
+      if (!ch) return;
+
+      if (chalGoal)  chalGoal.textContent   = ch.goal;
+      if (chalTitle) chalTitle.textContent  = ch.title;
+      if (chalInstr) chalInstr.innerHTML    = ch.instruction;
+      if (hintText)  hintText.textContent   = ch.hint;
+
+      // Enable / disable palette buttons
+      if (palette) {
+        palette.querySelectorAll('.bb-palette-btn').forEach(btn => {
+          const tool = btn.dataset.tool;
+          btn.disabled = !ch.availableTools.includes(tool);
+          btn.classList.remove('is-selected');
+          btn.setAttribute('aria-pressed', 'false');
+        });
+      }
+
+      updateStepPip(num, 'active');
+      if (num > 1) showFeedback('Choose the part named in the task card to continue building.', 'info');
+      drawChalBoard();
+    }
+
+    // ── Init ───────────────────────────────────────────────
+    if (chalCanvas) {
+      loadChallenge(1);
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       3D BREADBOARD VIEW PRESETS
+    ═══════════════════════════════════════════════════════ */
+    const breadboardModel = document.getElementById('bb-model');
+    const modelViewButtons = document.querySelectorAll('.bb-view-btn');
+    const modelRuleButtons = document.querySelectorAll('.bb-model-rule[data-rule]');
+    const modelFeedbackTitle = document.getElementById('bb-model-feedback-title');
+    const modelFeedbackText = document.getElementById('bb-model-feedback-text');
+    const modelProgress = document.getElementById('bb-model-progress');
+    const exploredRules = new Set();
+    const modelViews = {
+      cutaway: {
+        title: 'Cutaway view: match holes to clips',
+        text: 'The raised plastic shell lets you trace each dark socket straight down to the gold strip that grips it.'
+      },
+      top: {
+        title: 'Top view: where components are placed',
+        text: 'From above you see the layout printed on a real board. Rotate back to the cutaway whenever you need to check what connects underneath.'
+      },
+      underneath: {
+        title: 'Underside view: the hidden circuit map',
+        text: 'Long gold strips distribute power. Short gold strips join groups of five. Empty space at the center keeps the two halves separate.'
+      }
+    };
+    const modelRules = {
+      rail: {
+        orbit: '18deg 112deg 15m',
+        view: 'underneath',
+        title: 'Power rail: one long connection',
+        text: 'Follow one gold strip from left to right. Every socket directly above that strip is electrically connected—even when the holes are far apart.'
+      },
+      five: {
+        orbit: '325deg 66deg 14m',
+        view: 'cutaway',
+        title: 'Tie points: one group of five',
+        text: 'This short gold clip sits below five sockets in one column. A lead in any one of those five can connect to a lead in any of the other four.'
+      },
+      gap: {
+        orbit: '0deg 24deg 15m',
+        view: 'top',
+        title: 'Center gap: a deliberate break',
+        text: 'No metal crosses the trench. A chip straddles it so pins on opposite sides do not accidentally share the same connection.'
+      }
+    };
+
+    function setModelCamera(orbit, viewName) {
+      if (breadboardModel) breadboardModel.setAttribute('camera-orbit', orbit);
+      modelViewButtons.forEach(function (button) {
+        const isActive = button.dataset.view === viewName;
+        button.classList.toggle('is-active', isActive);
+        button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+    }
+
+    function activateModelRule(ruleName) {
+      const rule = modelRules[ruleName];
+      if (!rule) return;
+      setModelCamera(rule.orbit, rule.view);
+      exploredRules.add(ruleName);
+      modelRuleButtons.forEach(function (button) {
+        const isCurrent = button.dataset.rule === ruleName;
+        button.classList.toggle('is-active', isCurrent);
+        button.setAttribute('aria-pressed', isCurrent ? 'true' : 'false');
+        if (exploredRules.has(button.dataset.rule)) button.classList.add('is-explored');
+      });
+      if (modelFeedbackTitle) modelFeedbackTitle.textContent = rule.title;
+      if (modelFeedbackText) modelFeedbackText.textContent = rule.text;
+      if (modelProgress) {
+        modelProgress.textContent = exploredRules.size === 3
+          ? 'All 3 ideas explored ✓'
+          : `${exploredRules.size} of 3 ideas explored`;
+      }
+    }
+
+    modelViewButtons.forEach(function (button) {
+      button.addEventListener('click', function () {
+        setModelCamera(button.dataset.orbit, button.dataset.view);
+        modelRuleButtons.forEach(function (ruleButton) {
+          ruleButton.classList.remove('is-active');
+          ruleButton.setAttribute('aria-pressed', 'false');
+        });
+        const view = modelViews[button.dataset.view];
+        if (view && modelFeedbackTitle) modelFeedbackTitle.textContent = view.title;
+        if (view && modelFeedbackText) modelFeedbackText.textContent = view.text;
+      });
+    });
+    modelRuleButtons.forEach(function (button) {
+      button.setAttribute('aria-pressed', 'false');
+      button.addEventListener('click', function () { activateModelRule(button.dataset.rule); });
+    });
+    document.querySelectorAll('.bb-hotspot[data-rule]').forEach(function (button) {
+      button.addEventListener('click', function () { activateModelRule(button.dataset.rule); });
+    });
+
+    /* ═══════════════════════════════════════════════════════
+       QUICK CHECK QUIZ
+    ═══════════════════════════════════════════════════════ */
+    document.querySelectorAll('.bb-question').forEach(function (question) {
+      const answer      = question.dataset.answer;
+      const explanation = question.dataset.explanation;
+      const feedback    = question.querySelector('.bb-q-feedback');
+      const options     = question.querySelectorAll('.bb-option');
+
+      options.forEach(function (opt) {
+        opt.addEventListener('click', function () {
+          if (opt.disabled) return;
+          options.forEach(function (o) {
+            o.disabled = true;
+            o.classList.remove('is-correct', 'is-wrong');
+            if (o.dataset.choice === answer) o.classList.add('is-correct');
+          });
+          if (opt.dataset.choice !== answer) opt.classList.add('is-wrong');
+
+          if (opt.dataset.choice === answer) {
+            feedback.textContent = '✓ Correct. ' + explanation;
+            feedback.style.color = '#34c759';
+          } else {
+            feedback.textContent = '✗ Not quite. ' + explanation;
+            feedback.style.color = '#ff3b30';
+          }
+        });
+      });
+    });
+
+  })();
+  </script>
+  <script src="../../assets/js/circuit-playground.js"></script>
+  <script src="../../assets/js/classroom-animations.js"></script>
+  <script src="../../assets/js/lesson-layout.js"></script>
+<script src="../../assets/js/electricity-path.js"></script>
+<script src="../../assets/js/lesson-print-button.js"></script>
+<script src="../../assets/js/lessons/breadboard-fault-bench.js"></script>
+</body>
+</html>

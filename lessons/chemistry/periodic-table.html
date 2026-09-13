@@ -1,0 +1,2330 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Periodic Table of Elements · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Chemistry Lesson 01 — an interactive lesson on the periodic table of elements with atomic structure, families, periods, and animated Bohr models." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport {
+      --ll-panel-bg:      rgba(250, 250, 252, 0.98);
+      --ll-panel-border:  rgba(0, 0, 0, 0.09);
+      --ll-tab-color: var(--text-muted, #64748b);
+      --ll-tab-active-bg: rgba(0, 113, 227, 0.10);
+      --ll-tab-active:    #0071e3;
+      --ll-toggle-bg:     rgba(250, 250, 252, 0.97);
+    }
+
+    /* ── Page ─────────────────────────────────────────── */
+    .pt-page { padding-bottom: 3rem; }
+
+    /* ── Hero ─────────────────────────────────────────── */
+    .pt-hero { padding: 0.4rem 0 1.3rem; text-align: center; display: flex; flex-direction: column; align-items: center; }
+    .pt-hero h1 { max-width: 28ch; margin: 0 auto;
+      font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .pt-hero-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+      gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .pt-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%;
+      background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .pt-lede { margin: 0.65rem auto 0; max-width: 68ch; color: var(--text-secondary, #3f4f65);
+      font-size: 0.96rem; line-height: 1.62; }
+    [data-lighting="night"] .pt-lede,
+    [data-theme="vaporwave"] .pt-lede,
+    [data-theme="bark"] .pt-lede { color: rgba(245,245,247,0.7); }
+
+    /* ── Lesson primer ───────────────────────────────── */
+    .pt-primer {
+      display: grid;
+      gap: 0.9rem;
+      margin-bottom: 1rem;
+    }
+    .pt-primer-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.8rem;
+    }
+    .pt-primer-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1rem;
+    }
+    .pt-primer-card h2,
+    .pt-primer-card h3 {
+      margin: 0 0 0.35rem;
+      letter-spacing: -0.02em;
+    }
+    .pt-primer-card h2 {
+      font-size: 1.15rem;
+    }
+    .pt-primer-card h3 {
+      font-size: 0.98rem;
+    }
+    .pt-primer-card p {
+      margin: 0;
+      color: var(--text-secondary, #3f4f65);
+      font-size: 0.86rem;
+      line-height: 1.58;
+    }
+    [data-lighting="night"] .pt-primer-card,
+    [data-theme="vaporwave"] .pt-primer-card,
+    [data-theme="bark"] .pt-primer-card {
+      background: var(--white, #2c2c2e);
+    }
+    [data-lighting="night"] .pt-primer-card p,
+    [data-theme="vaporwave"] .pt-primer-card p,
+    [data-theme="bark"] .pt-primer-card p {
+      color: rgba(245,245,247,0.72);
+    }
+    .pt-diagram-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.8rem;
+    }
+    .pt-diagram-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 0.88rem;
+      display: grid;
+      gap: 0.55rem;
+      min-width: 0;
+    }
+    .pt-diagram-card h3 {
+      margin: 0;
+      color: var(--text, #1d1d1f);
+      font-size: 0.9rem;
+      letter-spacing: -0.01em;
+    }
+    .pt-diagram-card p {
+      margin: 0;
+      color: var(--text-secondary, #3f4f65);
+      font-size: 0.74rem;
+      line-height: 1.5;
+    }
+    .pt-mini-table {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      grid-template-rows: repeat(5, 1fr);
+      gap: 3px;
+      min-height: 132px;
+      padding: 0.45rem;
+      border-radius: 12px;
+      background: rgba(248,250,252,0.9);
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+    .pt-mini-cell {
+      border-radius: 5px;
+      background: rgba(100,116,139,0.13);
+      border: 1px solid rgba(100,116,139,0.12);
+      min-width: 0;
+    }
+    .pt-mini-cell.is-highlight {
+      background: rgba(0,113,227,0.22);
+      border-color: rgba(0,113,227,0.42);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.55);
+    }
+    .pt-mini-cell.is-metal { background: rgba(16,185,129,0.26); border-color: rgba(16,185,129,0.42); }
+    .pt-mini-cell.is-metalloid { background: rgba(245,158,11,0.3); border-color: rgba(245,158,11,0.48); }
+    .pt-mini-cell.is-nonmetal { background: rgba(99,102,241,0.24); border-color: rgba(99,102,241,0.42); }
+    .pt-mini-cell.is-family-a { background: rgba(239,68,68,0.28); border-color: rgba(239,68,68,0.48); }
+    .pt-mini-cell.is-family-b { background: rgba(14,165,233,0.25); border-color: rgba(14,165,233,0.44); }
+    .pt-mini-cell.is-family-c { background: rgba(168,85,247,0.24); border-color: rgba(168,85,247,0.42); }
+    .pt-mini-key {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.28rem;
+      align-items: center;
+    }
+    .pt-mini-key span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.22rem;
+      color: var(--text-muted, #64748b);
+      font-size: 0.62rem;
+      font-weight: 800;
+    }
+    .pt-mini-key span::before {
+      content: "";
+      width: 0.56rem;
+      height: 0.56rem;
+      border-radius: 3px;
+      background: rgba(0,113,227,0.22);
+      border: 1px solid rgba(0,113,227,0.42);
+    }
+    .pt-mini-key .metal::before { background: rgba(16,185,129,0.26); border-color: rgba(16,185,129,0.42); }
+    .pt-mini-key .metalloid::before { background: rgba(245,158,11,0.3); border-color: rgba(245,158,11,0.48); }
+    .pt-mini-key .nonmetal::before { background: rgba(99,102,241,0.24); border-color: rgba(99,102,241,0.42); }
+    .pt-mini-key .family-a::before { background: rgba(239,68,68,0.28); border-color: rgba(239,68,68,0.48); }
+    .pt-mini-key .family-b::before { background: rgba(14,165,233,0.25); border-color: rgba(14,165,233,0.44); }
+    .pt-mini-key .family-c::before { background: rgba(168,85,247,0.24); border-color: rgba(168,85,247,0.42); }
+    [data-lighting="night"] .pt-diagram-card,
+    [data-theme="vaporwave"] .pt-diagram-card,
+    [data-theme="bark"] .pt-diagram-card {
+      background: var(--white, #2c2c2e);
+    }
+    [data-lighting="night"] .pt-diagram-card p,
+    [data-theme="vaporwave"] .pt-diagram-card p,
+    [data-theme="bark"] .pt-diagram-card p,
+    [data-lighting="night"] .pt-mini-key span,
+    [data-theme="vaporwave"] .pt-mini-key span,
+    [data-theme="bark"] .pt-mini-key span {
+      color: rgba(245,245,247,0.72);
+    }
+    [data-lighting="night"] .pt-mini-table,
+    [data-theme="vaporwave"] .pt-mini-table,
+    [data-theme="bark"] .pt-mini-table {
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(255,255,255,0.1);
+    }
+
+    /* ── History timeline ─────────────────────────────── */
+    .pt-history {
+      display: grid;
+      gap: 0.9rem;
+      margin: 0 0 1rem;
+    }
+    .pt-history-head {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1rem;
+    }
+    .pt-history-founder {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 176px;
+      gap: 1rem;
+      align-items: center;
+    }
+    .pt-founder-figure {
+      margin: 0;
+      display: grid;
+      gap: 0.4rem;
+    }
+    .pt-founder-figure img {
+      width: 100%;
+      aspect-ratio: 4 / 5;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.08);
+      background: rgba(0,0,0,0.04);
+    }
+    .pt-founder-figure figcaption {
+      color: var(--text-muted, #64748b);
+      font-size: 0.66rem;
+      line-height: 1.35;
+    }
+    .pt-history-head h2 { margin: 0 0 0.35rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .pt-history-head p { margin: 0; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.62; }
+    .pt-history-link { color: #0b58d6; font-weight: 800; text-decoration: none; }
+    .pt-history-link:hover { text-decoration: underline; }
+    .pt-origin-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.7rem;
+    }
+    .pt-origin-card {
+      border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.82);
+      padding: 0.88rem;
+      display: grid;
+      gap: 0.35rem;
+    }
+    .pt-origin-card h3 {
+      margin: 0;
+      color: var(--text, #1d1d1f);
+      font-size: 0.92rem;
+      letter-spacing: -0.01em;
+    }
+    .pt-origin-card p {
+      margin: 0;
+      color: var(--text-muted, #64748b);
+      font-size: 0.76rem;
+      line-height: 1.5;
+    }
+    .pt-evidence-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+    .pt-evidence-card {
+      border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.82);
+      overflow: hidden;
+      display: grid;
+      min-width: 0;
+    }
+    .pt-evidence-card img {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+      background: rgba(248,250,252,0.92);
+    }
+    .pt-evidence-card img.pt-evidence-contain {
+      object-fit: contain;
+      padding: 0.35rem;
+      box-sizing: border-box;
+    }
+    .pt-evidence-card figcaption {
+      display: grid;
+      gap: 0.18rem;
+      margin: 0;
+      padding: 0.78rem;
+      color: var(--text-muted, #64748b);
+      font-size: 0.74rem;
+      line-height: 1.46;
+    }
+    .pt-evidence-card figcaption strong {
+      color: var(--text, #1d1d1f);
+      font-size: 0.82rem;
+      line-height: 1.25;
+    }
+    .pt-phase-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.28rem;
+      margin-top: 0.08rem;
+    }
+    .pt-phase {
+      border-radius: 999px;
+      border: 1px solid rgba(0,113,227,0.18);
+      background: rgba(0,113,227,0.07);
+      color: #0b58d6;
+      padding: 0.18rem 0.48rem;
+      font-size: 0.64rem;
+      font-weight: 800;
+    }
+    .pt-timeline {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.7rem;
+    }
+    .pt-timeline-item {
+      border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.82);
+      padding: 0.85rem;
+      display: grid;
+      gap: 0.35rem;
+      min-width: 0;
+    }
+    .pt-era {
+      color: #0b58d6;
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .pt-timeline-item strong { color: var(--text, #1d1d1f); font-size: 0.9rem; line-height: 1.25; }
+    .pt-timeline-item p { margin: 0; color: var(--text-muted, #64748b); font-size: 0.76rem; line-height: 1.5; }
+    .pt-discovery-strip {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0.45rem;
+    }
+    .pt-discovery-chip {
+      border-radius: 12px;
+      border: 1px solid rgba(0,113,227,0.16);
+      background: rgba(0,113,227,0.06);
+      padding: 0.68rem;
+      min-width: 0;
+    }
+    .pt-discovery-chip span { display: block; color: #0b58d6; font-size: 0.64rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; }
+    .pt-discovery-chip strong { display: block; margin-top: 0.18rem; color: var(--text, #1d1d1f); font-size: 0.82rem; }
+    .pt-discovery-chip small { display: block; margin-top: 0.18rem; color: var(--text-muted, #64748b); font-size: 0.7rem; line-height: 1.4; }
+    [data-lighting="night"] .pt-history-head,
+    [data-theme="vaporwave"] .pt-history-head,
+    [data-theme="bark"] .pt-history-head,
+    [data-lighting="night"] .pt-timeline-item,
+    [data-theme="vaporwave"] .pt-timeline-item,
+    [data-theme="bark"] .pt-timeline-item,
+    [data-lighting="night"] .pt-origin-card,
+    [data-theme="vaporwave"] .pt-origin-card,
+    [data-theme="bark"] .pt-origin-card,
+    [data-lighting="night"] .pt-evidence-card,
+    [data-theme="vaporwave"] .pt-evidence-card,
+    [data-theme="bark"] .pt-evidence-card,
+    [data-lighting="night"] .pt-discovery-chip,
+    [data-theme="vaporwave"] .pt-discovery-chip,
+    [data-theme="bark"] .pt-discovery-chip { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+    [data-lighting="night"] .pt-history-head p,
+    [data-theme="vaporwave"] .pt-history-head p,
+    [data-theme="bark"] .pt-history-head p,
+    [data-lighting="night"] .pt-timeline-item p,
+    [data-theme="vaporwave"] .pt-timeline-item p,
+    [data-theme="bark"] .pt-timeline-item p,
+    [data-lighting="night"] .pt-origin-card p,
+    [data-theme="vaporwave"] .pt-origin-card p,
+    [data-theme="bark"] .pt-origin-card p,
+    [data-lighting="night"] .pt-evidence-card figcaption,
+    [data-theme="vaporwave"] .pt-evidence-card figcaption,
+    [data-theme="bark"] .pt-evidence-card figcaption,
+    [data-lighting="night"] .pt-founder-figure figcaption,
+    [data-theme="vaporwave"] .pt-founder-figure figcaption,
+    [data-theme="bark"] .pt-founder-figure figcaption,
+    [data-lighting="night"] .pt-discovery-chip small,
+    [data-theme="vaporwave"] .pt-discovery-chip small,
+    [data-theme="bark"] .pt-discovery-chip small { color: rgba(245,245,247,0.68); }
+
+    /* ── Controls ─────────────────────────────────────── */
+    .pt-controls { display: flex; flex-wrap: wrap; gap: 0.5rem;
+      align-items: center; margin-bottom: 0.9rem; }
+    .pt-filter-btn { padding: 5px 11px; border-radius: 999px; border: 1.5px solid;
+      font-size: 0.74rem; font-weight: 700; cursor: pointer; background: transparent;
+      transition: opacity 0.15s, background 0.15s, color 0.15s; font-family: inherit; }
+    .pt-filter-btn:hover { opacity: 0.85; }
+    .pt-filter-btn.pt-btn-active { color: #fff !important; }
+    .pt-filter-btn.pt-btn-dimmed { opacity: 0.28; }
+    .pt-search { margin-left: auto; padding: 6px 13px; border: 1.5px solid var(--line, #d2d2d7);
+      border-radius: 999px; font-size: 0.82rem; background: var(--white, #fff);
+      color: var(--text, #1d1d1f); width: 165px; outline: none; font-family: inherit; }
+    .pt-search:focus { border-color: var(--blue, #0071e3); }
+    .pt-temp-card,
+    .pt-lens-card {
+      display: grid;
+      gap: 0.7rem;
+      padding: 0.9rem;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.82);
+    }
+    .pt-temp-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+    }
+    .pt-temp-readout {
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text, #1d1d1f);
+    }
+    .pt-temp-state {
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted, #64748b);
+    }
+    .pt-temp-slider {
+      width: 100%;
+      accent-color: var(--blue, #0071e3);
+    }
+    .pt-temp-scale {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0.35rem;
+      font-size: 0.64rem;
+      font-weight: 700;
+      color: #7b8a9c;
+      text-transform: uppercase;
+    }
+    .pt-temp-scale span:nth-child(2),
+    .pt-temp-scale span:nth-child(3),
+    .pt-temp-scale span:nth-child(4) {
+      text-align: center;
+    }
+    .pt-temp-scale span:last-child {
+      text-align: right;
+    }
+    .pt-heatmap-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+    .pt-heat-btn,
+    .pt-command-btn,
+    .pt-command-item {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.86);
+      color: var(--text, #1d1d1f);
+      font: inherit;
+      cursor: pointer;
+      transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+    }
+    .pt-heat-btn,
+    .pt-command-btn {
+      min-height: 2.5rem;
+      padding: 0.65rem 0.8rem;
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-align: left;
+    }
+    .pt-heat-btn:hover,
+    .pt-command-btn:hover,
+    .pt-command-item:hover {
+      transform: translateY(-1px);
+      border-color: rgba(0,113,227,0.34);
+      box-shadow: 0 10px 20px rgba(15,23,42,0.08);
+    }
+    .pt-heat-btn.is-active {
+      background: rgba(0,113,227,0.12);
+      border-color: rgba(0,113,227,0.46);
+      color: #0b58d6;
+    }
+    .pt-command-status,
+    .pt-data-note {
+      margin: 0;
+      font-size: 0.75rem;
+      line-height: 1.55;
+      color: var(--text-muted, #64748b);
+    }
+    .pt-data-note.is-ready {
+      color: #0f766e;
+    }
+
+    /* ── Table container ──────────────────────────────── */
+    .pt-table-note {
+      display: none;
+      margin: 0 0 0.45rem;
+      color: var(--text-muted, #64748b);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .pt-wrap { background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7);
+      border-radius: var(--radius, 18px); box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1rem 1rem 1.2rem; overflow-x: auto; }
+    .pt-grid { display: grid;
+      grid-template-columns: repeat(18, minmax(40px, 1fr));
+      grid-template-rows: repeat(7, 46px) 24px repeat(2, 46px);
+      gap: 2px; min-width: 740px; }
+
+    /* ── Element cell ─────────────────────────────────── */
+    .el { border-radius: 5px; padding: 3px 3px 4px; display: flex; flex-direction: column;
+      justify-content: space-between; cursor: pointer; user-select: none;
+      border: 1.5px solid transparent; transition: transform 0.13s, box-shadow 0.13s, opacity 0.2s;
+      font-family: inherit; text-align: left; }
+    .el:hover { transform: scale(1.14) translateZ(0); z-index: 20;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.22); }
+    .el.el-selected { border-color: rgba(0,0,0,0.45) !important;
+      transform: scale(1.1); z-index: 20; }
+    .el.el-dimmed { opacity: 0.15; pointer-events: none; }
+    .el.el-isolated-out {
+      filter: blur(2px) grayscale(50%);
+      opacity: 0.22;
+    }
+    .el.el-command-match {
+      box-shadow:
+        0 0 0 2px rgba(255, 204, 0, 0.48),
+        0 8px 18px rgba(255, 204, 0, 0.18);
+    }
+    .el-num  { font-size: 0.52rem; font-weight: 700; opacity: 0.75; line-height: 1; }
+    .el-sym  { font-size: 1rem;    font-weight: 800; line-height: 1.1; text-align: center; }
+    .el-name { font-size: 0.42rem; text-align: center; opacity: 0.8;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .el-mass { font-size: 0.42rem; text-align: center; opacity: 0.6; }
+    .el-phase {
+      font-size: 0.34rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-align: center;
+      opacity: 0.7;
+    }
+
+    /* ── f-block placeholder ──────────────────────────── */
+    .pt-ph { border-radius: 5px; background: rgba(0,0,0,0.04);
+      border: 1px dashed rgba(0,0,0,0.15); display: flex; align-items: center;
+      justify-content: center; font-size: 0.48rem; font-weight: 700;
+      color: #888; cursor: default; }
+    [data-lighting="night"] .pt-ph,
+    [data-theme="vaporwave"] .pt-ph,
+    [data-theme="bark"] .pt-ph { background: rgba(255,255,255,0.04);
+      border-color: rgba(255,255,255,0.12); color: #aaa; }
+
+    /* ── f-block divider row ──────────────────────────── */
+    .pt-frow { grid-column: 1 / -1; grid-row: 8; display: flex; align-items: center;
+      gap: 0.4rem; padding: 0 2px; }
+    .pt-frow-line { flex: 1; height: 1px; background: rgba(0,0,0,0.1); }
+    .pt-frow-label { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: #aaa; white-space: nowrap; }
+    [data-lighting="night"] .pt-frow-line,
+    [data-theme="vaporwave"] .pt-frow-line,
+    [data-theme="bark"] .pt-frow-line { background: rgba(255,255,255,0.1); }
+
+    /* ── Legend ───────────────────────────────────────── */
+    .pt-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 0.8rem;
+      margin-top: 0.9rem; padding-top: 0.75rem;
+      border-top: 1px solid var(--line, #d2d2d7); }
+    .pt-legend-item { display: inline-flex; align-items: center; gap: 0.3rem;
+      font-size: 0.7rem; font-weight: 600; color: var(--text, #1d1d1f);
+      border: 1px solid transparent; border-radius: 999px; background: transparent;
+      padding: 0.2rem 0.45rem; cursor: pointer; font-family: inherit; }
+    .pt-legend-item:hover { border-color: rgba(0,113,227,0.18); background: rgba(0,113,227,0.06); }
+    .pt-legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+    /* ── Element detail panel ─────────────────────────── */
+    .el-panel { margin-top: 1rem; background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7); border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      display: none; gap: 1.2rem; padding: 1.4rem 1.6rem; align-items: start; }
+    .el-panel.ep-open { display: grid; grid-template-columns: auto 1fr;
+      animation: epSlide 0.28s cubic-bezier(0.4,0,0.2,1); }
+    @keyframes epSlide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    .ep-visuals {
+      display: grid;
+      gap: 0.9rem;
+      width: min(100%, 270px);
+    }
+    .ep-card {
+      border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(244,247,253,0.86));
+      padding: 0.95rem;
+    }
+    .ep-card h3 {
+      margin: 0 0 0.3rem;
+      font-size: 0.84rem;
+      letter-spacing: -0.01em;
+    }
+    .ep-card p {
+      margin: 0;
+      color: #58677a;
+      font-size: 0.74rem;
+      line-height: 1.5;
+    }
+
+    /* ── Bohr SVG ─────────────────────────────────────── */
+    .bohr-svg { display: block; }
+    .ep-model-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.6rem;
+      margin-bottom: 0.35rem;
+    }
+    .ep-model-head h3 { margin: 0; }
+    .ep-model-toggle {
+      display: inline-flex;
+      gap: 2px;
+      padding: 2px;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.72);
+    }
+    .ep-model-btn {
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text-muted, #64748b);
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.62rem;
+      font-weight: 800;
+      padding: 0.34rem 0.5rem;
+      text-transform: uppercase;
+    }
+    .ep-model-btn[aria-pressed="true"] {
+      background: rgba(0,113,227,0.12);
+      color: #0b58d6;
+    }
+    .qm-cloud {
+      transform-origin: center;
+      animation: qmPulse 5.8s ease-in-out infinite alternate;
+    }
+    .qm-cloud:nth-of-type(2n) { animation-duration: 7.2s; }
+    @keyframes qmPulse {
+      from { opacity: 0.68; transform: scale(0.98); }
+      to { opacity: 0.94; transform: scale(1.025); }
+    }
+    .orbit-ring { fill: none; stroke: rgba(0,0,0,0.1); stroke-width: 1; }
+    [data-lighting="night"] .orbit-ring,
+    [data-theme="vaporwave"] .orbit-ring,
+    [data-theme="bark"] .orbit-ring { stroke: rgba(255,255,255,0.13); }
+    @keyframes orb-cw  { to { transform: rotate(360deg);  } }
+    @keyframes orb-ccw { to { transform: rotate(-360deg); } }
+
+    /* ── Panel info ───────────────────────────────────── */
+    .ep-info { display: flex; flex-direction: column; gap: 0.7rem; min-width: 0; }
+    .ep-top  { display: flex; align-items: flex-start; gap: 0.7rem; }
+    .ep-header { display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; }
+    .ep-sym  { font-size: 2.8rem; font-weight: 900; line-height: 1; letter-spacing: -0.02em; }
+    .ep-name { font-size: 1.45rem; font-weight: 800; letter-spacing: -0.01em;
+      color: var(--text, #1d1d1f); }
+    .ep-meta { display: flex; flex-wrap: wrap; gap: 0.35rem 0.85rem;
+      font-size: 0.8rem; color: var(--text-muted, #64748b); }
+    .ep-meta strong { color: var(--text, #1d1d1f); font-weight: 700; }
+    .ep-pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      align-items: center;
+    }
+    .ep-badge,
+    .ep-state,
+    .ep-crystal-tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 1.8rem;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      width: fit-content;
+    }
+    .ep-badge { color: #fff; }
+    .ep-state,
+    .ep-crystal-tag {
+      border: 1px solid rgba(0,0,0,0.08);
+      background: rgba(0,0,0,0.04);
+      color: #334155;
+    }
+    .ep-config { font-size: 0.8rem; font-family: 'SF Mono', monospace;
+      background: rgba(0,0,0,0.04); padding: 7px 11px; border-radius: 8px;
+      color: var(--text, #1d1d1f); letter-spacing: 0.01em; }
+    [data-lighting="night"] .ep-config,
+    [data-theme="vaporwave"] .ep-config,
+    [data-theme="bark"] .ep-config { background: rgba(255,255,255,0.07); }
+    [data-lighting="night"] .ep-model-toggle,
+    [data-theme="vaporwave"] .ep-model-toggle,
+    [data-theme="bark"] .ep-model-toggle {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.11);
+    }
+    .ep-desc { font-size: 0.87rem; line-height: 1.65; color: var(--text-secondary, #3f4f65); max-width: 60ch; }
+    [data-lighting="night"] .ep-desc,
+    [data-theme="vaporwave"] .ep-desc,
+    [data-theme="bark"] .ep-desc { color: rgba(245,245,247,0.7); }
+    .ep-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.7rem;
+    }
+    .ep-stat {
+      border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 14px;
+      padding: 0.8rem;
+      background: rgba(255,255,255,0.8);
+      min-width: 0;
+    }
+    .ep-stat-label {
+      display: block;
+      font-size: 0.64rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted, #64748b);
+      margin-bottom: 0.28rem;
+    }
+    .ep-stat-value {
+      display: block;
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--text, #1d1d1f);
+      line-height: 1.25;
+    }
+    .ep-stat-sub {
+      display: block;
+      margin-top: 0.15rem;
+      color: var(--text-muted, #64748b);
+      font-size: 0.72rem;
+      line-height: 1.45;
+    }
+    .ep-usage-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.7rem;
+    }
+    .ep-usage-item {
+      border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 14px;
+      padding: 0.85rem;
+      background: rgba(255,255,255,0.8);
+      display: grid;
+      gap: 0.25rem;
+      min-width: 0;
+    }
+    .ep-usage-icon {
+      font-size: 1.35rem;
+      line-height: 1;
+    }
+    .ep-usage-title {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--text, #1d1d1f);
+    }
+    .ep-usage-copy {
+      font-size: 0.72rem;
+      line-height: 1.45;
+      color: var(--text-muted, #64748b);
+    }
+    .ep-earth-card {
+      border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 14px;
+      padding: 0.9rem;
+      background: rgba(255,255,255,0.78);
+      display: grid;
+      gap: 0.65rem;
+    }
+    .ep-earth-title {
+      margin: 0;
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: var(--text, #1d1d1f);
+    }
+    .ep-source-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0.4rem;
+    }
+    .ep-source-pill {
+      min-height: 3.2rem;
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.07);
+      background: rgba(248,250,252,0.82);
+      color: var(--text-muted, #64748b);
+      display: grid;
+      place-items: center;
+      gap: 0.08rem;
+      padding: 0.45rem 0.25rem;
+      text-align: center;
+      font-size: 0.58rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .ep-source-pill.is-active {
+      color: #0b58d6;
+      border-color: rgba(0,113,227,0.28);
+      background: rgba(0,113,227,0.09);
+    }
+    .ep-source-icon {
+      font-size: 1.05rem;
+      line-height: 1;
+    }
+    .ep-flow {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.45rem;
+    }
+    .ep-flow-step {
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 12px;
+      padding: 0.62rem;
+      background: rgba(255,255,255,0.72);
+      min-width: 0;
+    }
+    .ep-flow-label {
+      display: block;
+      color: var(--text-muted, #64748b);
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.18rem;
+    }
+    .ep-flow-value {
+      display: block;
+      color: var(--text, #1d1d1f);
+      font-size: 0.72rem;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+    .ep-media-note {
+      border-radius: 12px;
+      border: 1px dashed rgba(0,113,227,0.26);
+      background: rgba(0,113,227,0.06);
+      padding: 0.7rem;
+      color: #35506d;
+      font-size: 0.72rem;
+      line-height: 1.5;
+    }
+    .ep-close { background: none; border: 1px solid var(--line, #d2d2d7);
+      border-radius: 8px; padding: 4px 10px; font-size: 0.76rem; cursor: pointer;
+      color: #777; font-family: inherit; margin-left: auto; flex-shrink: 0; }
+    .ep-close:hover { background: var(--line, #d2d2d7); }
+    .crystal-svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* ── Command palette ─────────────────────────────── */
+    .pt-command {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 8vh 1rem 1rem;
+    }
+    .pt-command.is-open { display: flex; }
+    .pt-command-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(15,23,42,0.42);
+      backdrop-filter: blur(6px);
+    }
+    .pt-command-dialog {
+      position: relative;
+      z-index: 1;
+      width: min(620px, calc(100vw - 2rem));
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.95);
+      box-shadow: 0 30px 80px rgba(15,23,42,0.22);
+      overflow: hidden;
+    }
+    .pt-command-head {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.8rem;
+      padding: 1rem;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+    .pt-command-input {
+      width: 100%;
+      border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 12px;
+      padding: 0.82rem 0.95rem;
+      font: inherit;
+      font-size: 0.95rem;
+      outline: none;
+    }
+    .pt-command-input:focus {
+      border-color: rgba(0,113,227,0.42);
+    }
+    .pt-command-close {
+      border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.9);
+      padding: 0.75rem 0.95rem;
+      font: inherit;
+      cursor: pointer;
+    }
+    .pt-command-list {
+      display: grid;
+      gap: 0.35rem;
+      padding: 0.8rem;
+      max-height: min(56vh, 420px);
+      overflow: auto;
+    }
+    .pt-command-item {
+      display: grid;
+      gap: 0.18rem;
+      padding: 0.8rem 0.9rem;
+      text-align: left;
+    }
+    .pt-command-item strong {
+      font-size: 0.84rem;
+      color: var(--text, #1d1d1f);
+    }
+    .pt-command-item small {
+      color: var(--text-muted, #64748b);
+      font-size: 0.74rem;
+      line-height: 1.45;
+    }
+    .pt-command-empty {
+      padding: 1rem;
+      color: var(--text-muted, #64748b);
+      font-size: 0.82rem;
+    }
+
+    @media (max-width: 700px) {
+      .el-panel.ep-open { grid-template-columns: 1fr; }
+      .bohr-svg { margin: 0 auto; }
+      .pt-primer-grid { grid-template-columns: 1fr; }
+      .ep-stat-grid,
+      .ep-usage-grid,
+      .ep-source-grid,
+      .ep-flow,
+      .pt-diagram-grid,
+      .pt-origin-grid,
+      .pt-evidence-grid,
+      .pt-timeline,
+      .pt-discovery-strip,
+      .pt-heatmap-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .pt-table-note {
+        display: block;
+      }
+    }
+    @media (max-width: 560px) {
+      .ep-stat-grid,
+      .ep-usage-grid,
+      .ep-source-grid,
+      .ep-flow,
+      .pt-diagram-grid,
+      .pt-origin-grid,
+      .pt-evidence-grid,
+      .pt-timeline,
+      .pt-discovery-strip,
+      .pt-heatmap-row {
+        grid-template-columns: 1fr;
+      }
+      .pt-history-founder {
+        grid-template-columns: 1fr;
+      }
+      .pt-founder-figure {
+        max-width: 220px;
+      }
+      .pt-command-head {
+        grid-template-columns: 1fr;
+      }
+    }
+    [data-lighting="night"] .pt-wrap,
+    [data-theme="vaporwave"] .pt-wrap,
+    [data-theme="bark"] .pt-wrap,
+    [data-lighting="night"] .el-panel,
+    [data-theme="vaporwave"] .el-panel,
+    [data-theme="bark"] .el-panel { background: var(--white, #2c2c2e); }
+    [data-lighting="night"] .pt-table-note,
+    [data-theme="vaporwave"] .pt-table-note,
+    [data-theme="bark"] .pt-table-note { color: rgba(245,245,247,0.68); }
+    [data-lighting="night"] .el,
+    [data-theme="vaporwave"] .el,
+    [data-theme="bark"] .el { background: rgba(255,255,255,0.06) !important; }
+    [data-lighting="night"] .pt-temp-card,
+    [data-theme="vaporwave"] .pt-temp-card,
+    [data-theme="bark"] .pt-temp-card,
+    [data-lighting="night"] .pt-lens-card,
+    [data-theme="vaporwave"] .pt-lens-card,
+    [data-theme="bark"] .pt-lens-card,
+    [data-lighting="night"] .ep-card,
+    [data-theme="vaporwave"] .ep-card,
+    [data-theme="bark"] .ep-card,
+    [data-lighting="night"] .ep-stat,
+    [data-theme="vaporwave"] .ep-stat,
+    [data-theme="bark"] .ep-stat,
+    [data-lighting="night"] .ep-usage-item,
+    [data-theme="vaporwave"] .ep-usage-item,
+    [data-theme="bark"] .ep-usage-item,
+    [data-lighting="night"] .ep-earth-card,
+    [data-theme="vaporwave"] .ep-earth-card,
+    [data-theme="bark"] .ep-earth-card,
+    [data-lighting="night"] .pt-history-head,
+    [data-theme="vaporwave"] .pt-history-head,
+    [data-theme="bark"] .pt-history-head,
+    [data-lighting="night"] .pt-timeline-item,
+    [data-theme="vaporwave"] .pt-timeline-item,
+    [data-theme="bark"] .pt-timeline-item,
+    [data-lighting="night"] .pt-discovery-chip,
+    [data-theme="vaporwave"] .pt-discovery-chip,
+    [data-theme="bark"] .pt-discovery-chip,
+    [data-lighting="night"] .ep-flow-step,
+    [data-theme="vaporwave"] .ep-flow-step,
+    [data-theme="bark"] .ep-flow-step,
+    [data-lighting="night"] .ep-source-pill,
+    [data-theme="vaporwave"] .ep-source-pill,
+    [data-theme="bark"] .ep-source-pill,
+    [data-lighting="night"] .pt-command-dialog,
+    [data-theme="vaporwave"] .pt-command-dialog,
+    [data-theme="bark"] .pt-command-dialog,
+    [data-lighting="night"] .pt-command-item,
+    [data-theme="vaporwave"] .pt-command-item,
+    [data-theme="bark"] .pt-command-item,
+    [data-lighting="night"] .pt-command-btn,
+    [data-theme="vaporwave"] .pt-command-btn,
+    [data-theme="bark"] .pt-command-btn,
+    [data-lighting="night"] .pt-heat-btn,
+    [data-theme="vaporwave"] .pt-heat-btn,
+    [data-theme="bark"] .pt-heat-btn {
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(255,255,255,0.1);
+      color: var(--text, #f5f5f7);
+    }
+    [data-lighting="night"] .pt-command-input,
+    [data-theme="vaporwave"] .pt-command-input,
+    [data-theme="bark"] .pt-command-input {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.1);
+      color: var(--text, #f5f5f7);
+    }
+    [data-lighting="night"] .pt-command-status,
+    [data-theme="vaporwave"] .pt-command-status,
+    [data-theme="bark"] .pt-command-status,
+    [data-lighting="night"] .pt-data-note,
+    [data-theme="vaporwave"] .pt-data-note,
+    [data-theme="bark"] .pt-data-note,
+    [data-lighting="night"] .pt-temp-state,
+    [data-theme="vaporwave"] .pt-temp-state,
+    [data-theme="bark"] .pt-temp-state,
+    [data-lighting="night"] .ep-card p,
+    [data-theme="vaporwave"] .ep-card p,
+    [data-theme="bark"] .ep-card p,
+    [data-lighting="night"] .ep-stat-sub,
+    [data-theme="vaporwave"] .ep-stat-sub,
+    [data-theme="bark"] .ep-stat-sub,
+    [data-lighting="night"] .ep-usage-copy,
+    [data-theme="vaporwave"] .ep-usage-copy,
+    [data-theme="bark"] .ep-usage-copy,
+    [data-lighting="night"] .ep-flow-label,
+    [data-theme="vaporwave"] .ep-flow-label,
+    [data-theme="bark"] .ep-flow-label,
+    [data-lighting="night"] .ep-media-note,
+    [data-theme="vaporwave"] .ep-media-note,
+    [data-theme="bark"] .ep-media-note,
+    [data-lighting="night"] .ep-stat-label,
+    [data-theme="vaporwave"] .ep-stat-label,
+    [data-theme="bark"] .ep-stat-label,
+    [data-lighting="night"] .pt-temp-scale,
+    [data-theme="vaporwave"] .pt-temp-scale,
+    [data-theme="bark"] .pt-temp-scale,
+    [data-lighting="night"] .pt-command-item small,
+    [data-theme="vaporwave"] .pt-command-item small,
+    [data-theme="bark"] .pt-command-item small {
+      color: rgba(245,245,247,0.68);
+    }
+    [data-lighting="night"] .ep-state,
+    [data-theme="vaporwave"] .ep-state,
+    [data-theme="bark"] .ep-state,
+    [data-lighting="night"] .ep-crystal-tag,
+    [data-theme="vaporwave"] .ep-crystal-tag,
+    [data-theme="bark"] .ep-crystal-tag {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.12);
+      color: rgba(245,245,247,0.86);
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+<a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport">
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+  <div class="ll-sim" id="main-content">
+  <main class="pt-page">
+    <section class="hero pt-hero">
+      <p class="eyebrow">Chemistry · Lesson 01</p>
+      <h1>Periodic Table of Elements</h1>
+      <div class="pt-hero-meta">
+        <span>118 elements</span>
+        <span class="dot"></span>
+        <span>Temperature states</span>
+        <span class="dot"></span>
+        <span>Property lenses</span>
+        <span class="dot"></span>
+        <span>Animated shell models</span>
+      </div>
+      <p class="pt-lede">Every substance in the universe is built from atoms of pure elements. Use the temperature slider, category filters, and property lenses to read the table like a living map, then click any element to inspect its shell model, matter state, crystal behavior, and real-world uses. For the structure of atoms themselves, use the companion <a class="pt-history-link" href="feynman-atoms.html">Atoms lesson</a>.</p>
+    </section>
+
+    <section class="pt-primer" aria-label="How to read the periodic table">
+      <div class="pt-primer-card">
+        <h2>How to read the table</h2>
+        <p>The periodic table is arranged by atomic number. That means every step to the right adds one proton, and the layout reveals repeating patterns in chemical behavior.</p>
+      </div>
+      <div class="pt-primer-grid">
+        <article class="pt-primer-card">
+          <h3>Periods</h3>
+          <p>Rows are called periods. As you move across a row, atomic number increases and properties shift in a regular way.</p>
+        </article>
+        <article class="pt-primer-card">
+          <h3>Groups</h3>
+          <p>Columns are groups. Elements in the same group often have similar outer electron patterns, so they react in related ways.</p>
+        </article>
+        <article class="pt-primer-card">
+          <h3>Families</h3>
+          <p>Labels like alkali metals, halogens, and noble gases help chemists predict reactivity, bonding, and other shared traits.</p>
+        </article>
+        <article class="pt-primer-card">
+          <h3>Patterns</h3>
+          <p>Metals mostly appear on the left, nonmetals cluster on the right, and the staircase region between them holds the metalloids.</p>
+        </article>
+      </div>
+      <div class="pt-diagram-grid" aria-label="Visual definitions for periods, groups, families, and patterns">
+        <article class="pt-diagram-card">
+          <h3>Periods are rows</h3>
+          <div class="pt-mini-table" aria-hidden="true">
+            <span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span>
+            <span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span>
+            <span class="pt-mini-cell is-highlight"></span><span class="pt-mini-cell is-highlight"></span><span class="pt-mini-cell is-highlight"></span><span class="pt-mini-cell is-highlight"></span><span class="pt-mini-cell is-highlight"></span><span class="pt-mini-cell is-highlight"></span><span class="pt-mini-cell is-highlight"></span><span class="pt-mini-cell is-highlight"></span>
+            <span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span>
+            <span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span>
+          </div>
+          <p>A period runs left to right. Atomic number increases by one each step, so each next element has one more proton.</p>
+          <div class="pt-mini-key"><span>One period</span></div>
+        </article>
+        <article class="pt-diagram-card">
+          <h3>Groups are columns</h3>
+          <div class="pt-mini-table" aria-hidden="true">
+            <span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell is-highlight"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span>
+            <span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell is-highlight"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span>
+            <span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell is-highlight"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span>
+            <span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell is-highlight"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span>
+            <span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell is-highlight"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span>
+          </div>
+          <p>A group runs top to bottom. Elements in a group often have similar outer electrons, which makes their chemistry similar.</p>
+          <div class="pt-mini-key"><span>One group</span></div>
+        </article>
+        <article class="pt-diagram-card">
+          <h3>Families show shared behavior</h3>
+          <div class="pt-mini-table" aria-hidden="true">
+            <span class="pt-mini-cell is-family-a"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell is-family-b"></span><span class="pt-mini-cell is-family-c"></span>
+            <span class="pt-mini-cell is-family-a"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell is-family-b"></span><span class="pt-mini-cell is-family-c"></span>
+            <span class="pt-mini-cell is-family-a"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell is-family-b"></span><span class="pt-mini-cell is-family-c"></span>
+            <span class="pt-mini-cell is-family-a"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell is-family-b"></span><span class="pt-mini-cell is-family-c"></span>
+            <span class="pt-mini-cell is-family-a"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell"></span><span class="pt-mini-cell is-family-b"></span><span class="pt-mini-cell is-family-c"></span>
+          </div>
+          <p>Families are named groups or regions, such as alkali metals, halogens, and noble gases. Family names are shortcuts for predicting properties.</p>
+          <div class="pt-mini-key"><span class="family-a">Alkali metals</span><span class="family-b">Halogens</span><span class="family-c">Noble gases</span></div>
+        </article>
+        <article class="pt-diagram-card">
+          <h3>Patterns repeat across the table</h3>
+          <div class="pt-mini-table" aria-hidden="true">
+            <span class="pt-mini-cell is-metal"></span><span class="pt-mini-cell is-metal"></span><span class="pt-mini-cell is-metal"></span><span class="pt-mini-cell is-metal"></span><span class="pt-mini-cell is-metalloid"></span><span class="pt-mini-cell is-nonmetal"></span><span class="pt-mini-cell is-nonmetal"></span><span class="pt-mini-cell is-nonmetal"></span>
+            <span class="pt-mini-cell is-metal"></span><span class="pt-mini-cell is-metal"></span><span class="pt-mini-cell is-metal"></span><span class="pt-mini-cell is-metal"></span><span class="pt-mini-cell is-metalloid"></span><span class="pt-mini-cell is-nonmetal"></span><span class="pt-mini-cell is-nonmetal"></span><span class="pt-mini-cell is-nonmetal"></span>
+            <span class="pt-mini-cell is-metal"></span><span class="pt-mini-cell is-metal"></span><span class="pt-mini-cell is-metal"></span><span class="pt-mini-cell is-metalloid"></span><span class="pt-mini-cell is-nonmetal"></span><span class="pt-mini-cell is-nonmetal"></span><span class="pt-mini-cell is-nonmetal"></span><span class="pt-mini-cell is-nonmetal"></span>
+            <span class="pt-mini-cell is-metal"></span><span class="pt-mini-cell is-metal"></span><span class="pt-mini-cell is-metal"></span><span class="pt-mini-cell is-metalloid"></span><span class="pt-mini-cell is-metalloid"></span><span class="pt-mini-cell is-nonmetal"></span><span class="pt-mini-cell is-nonmetal"></span><span class="pt-mini-cell is-nonmetal"></span>
+            <span class="pt-mini-cell is-metal"></span><span class="pt-mini-cell is-metal"></span><span class="pt-mini-cell is-metal"></span><span class="pt-mini-cell is-metal"></span><span class="pt-mini-cell is-metalloid"></span><span class="pt-mini-cell is-metalloid"></span><span class="pt-mini-cell is-nonmetal"></span><span class="pt-mini-cell is-nonmetal"></span>
+          </div>
+          <p>The left side is mostly metallic, the right side is mostly nonmetallic, and the staircase region marks the metalloids.</p>
+          <div class="pt-mini-key"><span class="metal">Metals</span><span class="metalloid">Metalloids</span><span class="nonmetal">Nonmetals</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="pt-history" aria-label="History and evolution of the periodic table">
+      <div class="pt-history-head">
+        <div class="pt-history-founder">
+          <div>
+            <h2>History and evolution of the periodic table</h2>
+            <p>Dmitri Mendeleev is usually called the founder of the periodic table because in 1869 he arranged known elements by repeating properties, left gaps for missing elements, and made predictions that were later confirmed. This lesson focuses on how elements are organized; the companion <a class="pt-history-link" href="feynman-atoms.html">Atoms lesson</a> focuses on protons, neutrons, electrons, and why atomic number gives each element its identity.</p>
+          </div>
+          <figure class="pt-founder-figure">
+            <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Medeleeff_by_repin.jpg?width=420" alt="Portrait of Dmitri Mendeleev by Ilya Repin" loading="lazy" />
+            <figcaption>Dmitri Mendeleev, portrait by Ilya Repin. Image via Wikimedia Commons.</figcaption>
+          </figure>
+        </div>
+      </div>
+      <div class="pt-origin-grid" aria-label="Early ideas about matter and elements">
+        <article class="pt-origin-card">
+          <span class="pt-era">Before chemistry</span>
+          <h3>People first sorted matter by experience</h3>
+          <p>Early cultures knew metals, salts, pigments, stone, charcoal, sulfur, glass, medicines, and poisons long before they knew atoms. The first element systems were attempts to explain change: burning, melting, rusting, dissolving, healing, and decay.</p>
+        </article>
+        <article class="pt-origin-card">
+          <span class="pt-era">Greek four elements</span>
+          <h3>Earth, water, air, and fire</h3>
+          <p>The familiar four-element model is Greek, especially associated with Empedocles and later Aristotle. It treated visible behaviors as combinations of basic qualities such as hot, cold, wet, and dry, not as modern chemical elements.</p>
+          <div class="pt-phase-row" aria-label="Greek four elements">
+            <span class="pt-phase">Earth</span><span class="pt-phase">Water</span><span class="pt-phase">Air</span><span class="pt-phase">Fire</span>
+          </div>
+        </article>
+        <article class="pt-origin-card">
+          <span class="pt-era">Ancient China</span>
+          <h3>Wood, fire, earth, metal, and water</h3>
+          <p>Ancient Chinese thought often used Wu Xing, a five-part cycle of phases or agents. Wood, fire, earth, metal, and water described change in nature, medicine, seasons, music, politics, and cosmology. In this lesson, treat it as a different historical framework for explaining matter and change.</p>
+          <div class="pt-phase-row" aria-label="Chinese five phases">
+            <span class="pt-phase">Wood</span><span class="pt-phase">Fire</span><span class="pt-phase">Earth</span><span class="pt-phase">Metal</span><span class="pt-phase">Water</span>
+          </div>
+        </article>
+        <article class="pt-origin-card">
+          <span class="pt-era">Egypt to alchemy</span>
+          <h3>Alchemy grew from craft, mystery, and metalwork</h3>
+          <p>Alchemy became popular because it joined practical workshop knowledge with spiritual symbolism: dyeing, glassmaking, medicine, metallurgy, and the dream of transforming matter. The word reaches English through Arabic <em>al-kimiya</em>; older writers connected <em>khemia</em> with Egypt, sometimes called Khem, the black land of the Nile.</p>
+        </article>
+        <article class="pt-origin-card">
+          <span class="pt-era">Philosopher's stone</span>
+          <h3>The myth of perfect transformation</h3>
+          <p>The philosopher's stone was imagined as a hidden substance that could turn base metals such as lead into gold and sometimes produce an elixir of life. The myth mattered because it kept generations experimenting with furnaces, acids, minerals, distillation, and purification.</p>
+        </article>
+        <article class="pt-origin-card">
+          <span class="pt-era">Modern chemistry</span>
+          <h3>Elements became testable substances</h3>
+          <p>By the 1600s and 1700s, chemists increasingly demanded measurement and repeatable tests. Boyle challenged old element lists; Lavoisier defined elements as substances not decomposed by chemical methods; Dalton connected elements to atoms; Mendeleev organized them into a predictive table.</p>
+        </article>
+      </div>
+      <div class="pt-evidence-grid" aria-label="Archaeological evidence and historical depictions of element ideas">
+        <figure class="pt-evidence-card">
+          <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Casting%20Metal%2C%20Tomb%20of%20Rekhmire%20MET%2033.8.5%20EGDP017259.jpg?width=420" alt="Ancient Egyptian tomb painting showing metal casting" loading="lazy" />
+          <figcaption><strong>Egyptian metalworking</strong>Tomb art records furnaces, tools, and molten metal, showing that early ideas about matter grew from craft evidence.</figcaption>
+        </figure>
+        <figure class="pt-evidence-card">
+          <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Colored_four_elements.jpg?width=420" alt="Historical diagram of earth, water, air, and fire" loading="lazy" />
+          <figcaption><strong>Greek four elements</strong>Later diagrams preserved the classical model of earth, water, air, and fire as a way to explain visible change.</figcaption>
+        </figure>
+        <figure class="pt-evidence-card">
+          <img class="pt-evidence-contain" src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Wuxing.svg/500px-Wuxing.svg.png" alt="Wu Xing cycle diagram showing wood, fire, earth, metal, and water" loading="lazy" />
+          <figcaption><strong>Wu Xing cycle</strong>Chinese five-phase diagrams show a process model: wood, fire, earth, metal, and water interact in cycles.</figcaption>
+        </figure>
+        <figure class="pt-evidence-card">
+          <img class="pt-evidence-contain" src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Papyrus_Holmiensis.png/500px-Papyrus_Holmiensis.png" alt="Papyrus Holmiensis manuscript page about early chemical recipes" loading="lazy" />
+          <figcaption><strong>Alchemy recipes</strong>Papyrus Holmiensis preserves ancient recipes for dyes, minerals, and metal-like materials, linking workshop practice to alchemy.</figcaption>
+        </figure>
+        <figure class="pt-evidence-card">
+          <img class="pt-evidence-contain" src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Dalton%27s_Element_List.jpg/500px-Dalton%27s_Element_List.jpg" alt="John Dalton's early list of elements and atomic symbols" loading="lazy" />
+          <figcaption><strong>Dalton's atoms</strong>Dalton's symbols show the shift from old element philosophies toward measurable atoms and compounds.</figcaption>
+        </figure>
+        <figure class="pt-evidence-card">
+          <img class="pt-evidence-contain" src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Mendeleev%27s_1869_periodic_table.png/500px-Mendeleev%27s_1869_periodic_table.png" alt="Mendeleev's 1869 periodic table" loading="lazy" />
+          <figcaption><strong>Mendeleev's table</strong>The 1869 table turned element knowledge into a predictive pattern that could point to undiscovered elements.</figcaption>
+        </figure>
+      </div>
+      <div class="pt-timeline">
+        <article class="pt-timeline-item"><span class="pt-era">Ancient to 1700s</span><strong>Elements as basic substances</strong><p>Carbon, sulfur, copper, silver, tin, gold, mercury, lead, and iron were known long before modern chemistry, but there was no reliable atomic explanation yet.</p></article>
+        <article class="pt-timeline-item"><span class="pt-era">1789</span><strong>Lavoisier lists elements</strong><p>Antoine Lavoisier helped replace alchemy with chemistry by defining elements as substances that could not be decomposed by chemical methods.</p></article>
+        <article class="pt-timeline-item"><span class="pt-era">1829</span><strong>Dobereiner triads</strong><p>Johann Dobereiner noticed groups of three elements with related properties, an early clue that element behavior followed a pattern.</p></article>
+        <article class="pt-timeline-item"><span class="pt-era">1864</span><strong>Newlands octaves</strong><p>John Newlands arranged elements by atomic mass and noticed that properties repeated roughly every eighth element.</p></article>
+        <article class="pt-timeline-item"><span class="pt-era">1869</span><strong>Mendeleev predicts gaps</strong><p>Mendeleev organized elements by mass and chemical behavior, then boldly left empty spaces for elements not yet discovered.</p></article>
+        <article class="pt-timeline-item"><span class="pt-era">1875-1886</span><strong>Predictions confirmed</strong><p>Gallium, scandium, and germanium matched Mendeleev predictions, making the table a powerful scientific model instead of a memorization chart.</p></article>
+        <article class="pt-timeline-item"><span class="pt-era">1913</span><strong>Moseley orders by protons</strong><p>Henry Moseley showed that atomic number, not atomic mass, is the true organizing principle. Each step adds one proton.</p></article>
+        <article class="pt-timeline-item"><span class="pt-era">1940s-today</span><strong>Modern synthetic elements</strong><p>Seaborg reorganized the actinides, and laboratories extended the table to superheavy elements such as nihonium, moscovium, tennessine, and oganesson.</p></article>
+      </div>
+      <div class="pt-discovery-strip" aria-label="Element discovery eras">
+        <div class="pt-discovery-chip"><span>Ancient</span><strong>C, S, Fe, Cu, Ag, Sn, Au, Hg, Pb</strong><small>Known from minerals, metals, pigments, and tools.</small></div>
+        <div class="pt-discovery-chip"><span>1700s</span><strong>H, N, O, Cl, Mn, W</strong><small>Gas chemistry and careful measurement revealed invisible elements.</small></div>
+        <div class="pt-discovery-chip"><span>1800s</span><strong>Na, Mg, Al, Si, K, Ca, Br, I</strong><small>Electrochemistry and spectroscopy unlocked many reactive elements.</small></div>
+        <div class="pt-discovery-chip"><span>1890s</span><strong>He, Ne, Ar, Kr, Xe, Rn, Po, Ra</strong><small>Noble gases and radioactivity changed the shape of the table.</small></div>
+        <div class="pt-discovery-chip"><span>1900s-2016</span><strong>Tc, Pm, Np-Og</strong><small>Reactors and accelerators created elements beyond uranium and completed period 7.</small></div>
+      </div>
+    </section>
+
+    <!-- Table -->
+    <p class="pt-table-note">Swipe sideways to explore the full table.</p>
+    <div class="pt-wrap">
+      <div class="pt-grid" id="pt-grid" role="grid" aria-label="Periodic table of elements"></div>
+      <div class="pt-legend" id="pt-legend" aria-label="Element category legend"></div>
+    </div>
+
+    <!-- Detail Panel -->
+    <div class="el-panel" id="el-panel" role="region" aria-label="Element details" aria-live="polite">
+      <div class="ep-visuals">
+        <section class="ep-card bohr-wrap">
+          <div class="ep-model-head">
+            <h3 id="ep-model-title">Electron Shell Model</h3>
+            <div class="ep-model-toggle" aria-label="Atomic model display">
+              <button class="ep-model-btn" type="button" data-atom-model="bohr" aria-pressed="true">Bohr</button>
+              <button class="ep-model-btn" type="button" data-atom-model="quantum" aria-pressed="false">Quantum</button>
+            </div>
+          </div>
+          <p id="ep-shell-note">Simplified shell model showing electron counts by energy level.</p>
+          <svg class="bohr-svg" id="bohr-svg" viewBox="0 0 280 280" width="210" height="210" aria-hidden="true"></svg>
+        </section>
+        <section class="ep-card">
+          <h3>Crystal Structure Preview</h3>
+          <svg class="crystal-svg" id="crystal-svg" viewBox="0 0 220 140" aria-hidden="true"></svg>
+          <p id="ep-crystal-note">Metals tend to form repeating lattices, while gases spread apart.</p>
+        </section>
+      </div>
+      <div class="ep-info">
+        <div class="ep-top">
+          <div style="flex:1;min-width:0;">
+            <div class="ep-header">
+              <span class="ep-sym" id="ep-sym"></span>
+              <span class="ep-name" id="ep-name"></span>
+            </div>
+            <div class="ep-meta">
+              <span><strong id="ep-num"></strong> protons</span>
+              <span><strong id="ep-mass"></strong> amu</span>
+            </div>
+          </div>
+          <button class="ep-close" id="ep-close" aria-label="Close element panel">✕ Close</button>
+        </div>
+        <div class="ep-pill-row">
+          <span class="ep-badge" id="ep-badge"></span>
+          <span class="ep-state" id="ep-state"></span>
+          <span class="ep-crystal-tag" id="ep-crystal-tag"></span>
+        </div>
+        <div class="ep-stat-grid" id="ep-stats"></div>
+        <div class="ep-config" id="ep-config"></div>
+        <div class="ep-usage-grid" id="ep-usage"></div>
+        <section class="ep-earth-card" id="ep-earth" aria-label="Earth sources and image requirements"></section>
+        <p class="ep-desc" id="ep-desc"></p>
+      </div>
+    </div>
+  </main>
+  </div><!-- /.ll-sim -->
+
+  <aside class="ll-panel" aria-hidden="false">
+    <div class="ll-panel-head">
+      <div class="ll-tabs">
+        <button class="ll-tab" aria-selected="true" data-pane="pt-params">Controls</button>
+        <button class="ll-tab" aria-selected="false" data-pane="pt-guide">Guide</button>
+      </div>
+      <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+    </div>
+    <div class="ll-panel-body">
+
+      <div class="ll-pane ll-active" id="pt-params">
+        <span class="ll-label">Filter by Category</span>
+        <div class="pt-controls" id="pt-controls" role="toolbar" aria-label="Filter elements by category" style="flex-direction:column;align-items:stretch;">
+          <button class="pt-filter-btn" data-cat="all" style="color:#555;border-color:#bbb;" aria-pressed="true">All 118</button>
+        </div>
+        <hr class="ll-hr" />
+        <span class="ll-label">State of Matter</span>
+        <div class="pt-temp-card">
+          <div class="pt-temp-head">
+            <strong class="pt-temp-readout" id="pt-temp-readout">295 K</strong>
+            <span class="pt-temp-state" id="pt-temp-state-readout">Room temperature</span>
+          </div>
+          <input class="pt-temp-slider" id="pt-temp" type="range" min="0" max="4000" step="1" value="295" aria-label="Set global temperature in Kelvin" />
+          <div class="pt-temp-scale" aria-hidden="true">
+            <span>0 K</span>
+            <span>Cold</span>
+            <span>Room</span>
+            <span>Forge</span>
+            <span>4000 K</span>
+          </div>
+        </div>
+        <hr class="ll-hr" />
+        <span class="ll-label">Property Lens</span>
+        <div class="pt-heatmap-row" id="pt-heatmap" aria-label="Highlight table by property"></div>
+        <hr class="ll-hr" />
+        <span class="ll-label">Discovery Commands</span>
+        <button class="pt-command-btn" id="pt-command-open" type="button">Open command palette</button>
+        <p class="pt-command-status" id="pt-command-status">Try “batteries”, “balloons”, or “chips”.</p>
+        <hr class="ll-hr" />
+        <span class="ll-label">Search</span>
+        <input class="pt-search" type="search" placeholder="Search elements…" id="pt-search" aria-label="Search elements by name, symbol, or number" style="margin-left:0;width:100%;box-sizing:border-box;" />
+        <p class="pt-data-note" id="pt-data-note">Loading property data…</p>
+      </div>
+
+      <div class="ll-pane" id="pt-guide">
+        <div class="ll-info">
+          <strong>How to Read the Table</strong>
+          The periodic table is arranged by atomic number. Every step to the right adds one proton, and the layout reveals repeating patterns in chemical behavior.
+        </div>
+        <div class="ll-info">
+          <strong>Periods</strong>
+          Rows are called periods. As you move across a row, atomic number increases and properties shift in a regular way.
+        </div>
+        <div class="ll-info">
+          <strong>Groups</strong>
+          Columns are groups. Elements in the same group share similar outer electron patterns and often react in related ways.
+        </div>
+        <div class="ll-info">
+          <strong>Families</strong>
+          Labels like alkali metals, halogens, and noble gases help chemists predict reactivity, bonding, and other shared traits.
+        </div>
+        <div class="ll-info">
+          <strong>Patterns</strong>
+          Metals mostly appear on the left, nonmetals cluster on the right, and metalloids sit along the staircase between them.
+        </div>
+        <div class="ll-info">
+          <strong>Founder and Timeline</strong>
+          Mendeleev founded the predictive periodic table in 1869. Moseley later showed that atomic number, the number of protons, is the true order.
+        </div>
+        <div class="ll-info">
+          <strong>Companion Lesson</strong>
+          Use <a href="feynman-atoms.html">Atoms</a> when students need the structure of protons, neutrons, electrons, and electron clouds.
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <button class="ll-open-btn" aria-label="Open panel">
+    <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+  </button>
+
+  </div><!-- /.ll-stage -->
+</div><!-- /.ll-viewport -->
+
+  <div class="pt-command" id="pt-command" aria-hidden="true">
+    <div class="pt-command-backdrop" id="pt-command-backdrop"></div>
+    <div class="pt-command-dialog" role="dialog" aria-modal="true" aria-labelledby="pt-command-input">
+      <div class="pt-command-head">
+        <input class="pt-command-input" id="pt-command-input" type="text" placeholder="Search commands like batteries, balloons, chips…" />
+        <button class="pt-command-close" id="pt-command-close" type="button">Close</button>
+      </div>
+      <div class="pt-command-list" id="pt-command-list"></div>
+    </div>
+  </div>
+
+  <footer class="site-footer" style="display:none;" aria-hidden="true">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../index.html">Home</a> · <a href="../../steam-lessons.html">Lessons</a></p>
+  </footer>
+
+  <script src="../../assets/js/theme-registry.js"></script>
+  <script src="../../assets/js/nav-mobile.js"></script>
+  <script>
+  (function () {
+    /* ── Categories ───────────────────────────────────── */
+    const CATS = {
+      ak: { label: 'Alkali Metal',     color: '#c0392b' },
+      ae: { label: 'Alkaline Earth',   color: '#d35400' },
+      tm: { label: 'Transition Metal', color: '#b7791f' },
+      pt: { label: 'Post-Transition',  color: '#27ae60' },
+      ml: { label: 'Metalloid',        color: '#2471a3' },
+      nm: { label: 'Nonmetal',         color: '#1a5276' },
+      ha: { label: 'Halogen',          color: '#7d3c98' },
+      ng: { label: 'Noble Gas',        color: '#b03a78' },
+      ln: { label: 'Lanthanide',       color: '#148f77' },
+      ac: { label: 'Actinide',         color: '#7e5109' },
+    };
+
+    /* ── Element data ─────────────────────────────────── */
+    /* [z, sym, name, mass, cat, shells[], col, row, description] */
+    const EL = [
+      [1,'H','Hydrogen',1.008,'nm',[1],1,1,'The lightest and most abundant element in the universe, making up about 75% of all visible matter. It fuels stars through nuclear fusion and is a key ingredient in water (H₂O).'],
+      [2,'He','Helium',4.003,'ng',[2],18,1,'The second most abundant element in the universe. So light it escapes Earth\'s gravity into space. Used in balloons, MRI machines, and as a coolant for rocket fuel.'],
+      [3,'Li','Lithium',6.941,'ak',[2,1],1,2,'The lightest metal on Earth — light enough to float on water. Powers rechargeable batteries in phones, laptops, and electric vehicles.'],
+      [4,'Be','Beryllium',9.012,'ae',[2,2],2,2,'An extremely stiff, lightweight metal used in aerospace and X-ray equipment. Its low density and high stiffness make it ideal for spacecraft structures.'],
+      [5,'B','Boron',10.811,'ml',[2,3],13,2,'A tough metalloid used in heat-resistant Pyrex glass, ceramics, and detergents. Boron compounds give fireworks a brilliant green color.'],
+      [6,'C','Carbon',12.011,'nm',[2,4],14,2,'The basis of all life on Earth. Depending on arrangement, carbon atoms form soft graphite, brilliant diamond, or the ultra-strong buckminsterfullerene (C₆₀).'],
+      [7,'N','Nitrogen',14.007,'nm',[2,5],15,2,'Makes up 78% of the air we breathe. Every amino acid and DNA molecule contains nitrogen. Liquid nitrogen at −196°C is used to freeze and preserve biological samples.'],
+      [8,'O','Oxygen',15.999,'nm',[2,6],16,2,'Essential for breathing and combustion. The third most abundant element in the universe. Makes up about 21% of Earth\'s atmosphere and 65% of the human body by mass.'],
+      [9,'F','Fluorine',18.998,'ha',[2,7],17,2,'The most reactive and electronegative of all elements. Found in toothpaste (fluoride protects teeth) and non-stick cookware (PTFE/Teflon).'],
+      [10,'Ne','Neon',20.180,'ng',[2,8],18,2,'A noble gas that glows bright orange-red in electric discharge tubes — the original "neon sign." Rare on Earth but the fifth most abundant element in the universe.'],
+      [11,'Na','Sodium',22.990,'ak',[2,8,1],1,3,'A soft, silvery metal that reacts violently with water. Combined with chlorine it forms table salt (NaCl), essential for flavor and life itself.'],
+      [12,'Mg','Magnesium',24.305,'ae',[2,8,2],2,3,'A lightweight structural metal found in smartphones, car parts, and airplane bodies. Burns with a brilliant white flame — used in flares and fireworks.'],
+      [13,'Al','Aluminum',26.982,'pt',[2,8,3],13,3,'The most abundant metal in Earth\'s crust. Lightweight, strong, and highly recyclable — used in aircraft, cans, foil, and construction worldwide.'],
+      [14,'Si','Silicon',28.086,'ml',[2,8,4],14,3,'The foundation of modern electronics. Silicon semiconductors power every computer chip, solar cell, and smartphone processor on the planet.'],
+      [15,'P','Phosphorus',30.974,'nm',[2,8,5],15,3,'Critical for life — forms the backbone of DNA and ATP (the cell\'s energy currency). White phosphorus glows in the dark and ignites spontaneously in air.'],
+      [16,'S','Sulfur',32.06,'nm',[2,8,6],16,3,'A bright yellow solid found near volcanoes. Used in fertilizers, rubber vulcanization, and medicine. Responsible for the smell of rotten eggs (H₂S).'],
+      [17,'Cl','Chlorine',35.45,'ha',[2,8,7],17,3,'A yellow-green toxic gas used to disinfect drinking water and swimming pools. Combined with sodium it forms completely harmless table salt.'],
+      [18,'Ar','Argon',39.948,'ng',[2,8,8],18,3,'The third most abundant gas in Earth\'s atmosphere (about 1%). Used to fill incandescent light bulbs and to create inert atmospheres for welding.'],
+      [19,'K','Potassium',39.098,'ak',[2,8,8,1],1,4,'An essential mineral that regulates heartbeat and muscle function in the human body. Bananas are a famous dietary source of potassium.'],
+      [20,'Ca','Calcium',40.078,'ae',[2,8,8,2],2,4,'The most abundant mineral in the human body, forming bones and teeth. Also critical for muscle contraction, nerve signaling, and blood clotting.'],
+      [21,'Sc','Scandium',44.956,'tm',[2,8,9,2],3,4,'A rare silvery-white metal used in aerospace alloys and sports equipment. Even tiny amounts added to aluminum dramatically increase its strength.'],
+      [22,'Ti','Titanium',47.867,'tm',[2,8,10,2],4,4,'As strong as steel but 45% lighter. Highly resistant to corrosion. Used in aircraft engines, medical implants, spacecraft, and bicycle frames.'],
+      [23,'V','Vanadium',50.942,'tm',[2,8,11,2],5,4,'A hard metal that strengthens steel for tools and construction. Vanadium flow batteries are promising for large-scale renewable energy storage.'],
+      [24,'Cr','Chromium',51.996,'tm',[2,8,13,1],6,4,'Gives stainless steel its resistance to rust. Also responsible for the vivid colors in rubies (red) and emeralds (green).'],
+      [25,'Mn','Manganese',54.938,'tm',[2,8,13,2],7,4,'Essential for making steel and aluminum alloys. Also a vital trace mineral involved in human metabolism, bone formation, and antioxidant defense.'],
+      [26,'Fe','Iron',55.845,'tm',[2,8,14,2],8,4,'The most commonly used metal on Earth and the main component of our planet\'s core. The iron atom in hemoglobin carries oxygen through our bloodstream.'],
+      [27,'Co','Cobalt',58.933,'tm',[2,8,15,2],9,4,'Used in high-strength alloys, rechargeable batteries (lithium cobalt oxide), and blue pigments. An essential component of vitamin B12.'],
+      [28,'Ni','Nickel',58.693,'tm',[2,8,16,2],10,4,'Highly corrosion-resistant. Used in stainless steel, coins, and rechargeable batteries. The US 5-cent coin is actually 75% copper and only 25% nickel.'],
+      [29,'Cu','Copper',63.546,'tm',[2,8,18,1],11,4,'One of humanity\'s first metals, used for over 10,000 years. The best electrical conductor among common metals — the basis of nearly all electrical wiring.'],
+      [30,'Zn','Zinc',65.38,'tm',[2,8,18,2],12,4,'Used to galvanize (coat) steel to prevent rust. An essential trace mineral for immune function and wound healing in the human body.'],
+      [31,'Ga','Gallium',69.723,'pt',[2,8,18,3],13,4,'A metal that melts in your hand (melting point 29.8°C). Used in semiconductors, LEDs, and solar panels. Gallium arsenide powers smartphone amplifiers.'],
+      [32,'Ge','Germanium',72.63,'ml',[2,8,18,4],14,4,'A semiconductor used in fiber optic cables and infrared optics. Mendeleev predicted its existence before it was discovered — a triumph for the periodic table.'],
+      [33,'As','Arsenic',74.922,'ml',[2,8,18,5],15,4,'A toxic metalloid historically used as a poison. Today used in semiconductors, pesticides, and to strengthen lead and copper alloys.'],
+      [34,'Se','Selenium',78.971,'nm',[2,8,18,6],16,4,'Conducts electricity better in light than in the dark — useful in solar cells and photocopiers. An essential trace mineral for thyroid function.'],
+      [35,'Br','Bromine',79.904,'ha',[2,8,18,7],17,4,'One of only two elements that is liquid at room temperature. A dark reddish-brown, pungent liquid used in flame retardants and water purification.'],
+      [36,'Kr','Krypton',83.798,'ng',[2,8,18,8],18,4,'A noble gas used in high-powered lasers and photographic flash lamps. The krypton-86 atom was once the international standard definition of the meter.'],
+      [37,'Rb','Rubidium',85.468,'ak',[2,8,18,8,1],1,5,'A soft, silvery alkali metal so reactive it ignites spontaneously in air. Used in atomic clocks that power GPS and internet time synchronization.'],
+      [38,'Sr','Strontium',87.62,'ae',[2,8,18,8,2],2,5,'Its compounds burn with a brilliant crimson-red flame — a staple of fireworks and emergency flares. Strontium-90 is a hazardous radioactive fallout product.'],
+      [39,'Y','Yttrium',88.906,'tm',[2,8,18,9,2],3,5,'Used in phosphors for LED displays to produce red color, and in YAG lasers used in medicine and manufacturing. Also strengthens aluminum and magnesium alloys.'],
+      [40,'Zr','Zirconium',91.224,'tm',[2,8,18,10,2],4,5,'Extremely heat and corrosion-resistant. Used as nuclear reactor fuel rod cladding. Cubic zirconia (ZrO₂) is a popular, affordable diamond simulant.'],
+      [41,'Nb','Niobium',92.906,'tm',[2,8,18,12,1],5,5,'Added to steel to produce high-strength structural alloys for pipelines, cars, and buildings. A superconductor at very low temperatures. Most comes from Brazil.'],
+      [42,'Mo','Molybdenum',95.96,'tm',[2,8,18,13,1],6,5,'Adds strength and toughness to steel alloys for aircraft and missiles. Also an essential trace element for plant nitrogen fixation, vital for agriculture.'],
+      [43,'Tc','Technetium',98,'tm',[2,8,18,13,2],7,5,'The lightest element with no stable isotopes — every form is radioactive. Technetium-99m is the most widely used radiotracer in medical diagnostic imaging.'],
+      [44,'Ru','Ruthenium',101.07,'tm',[2,8,18,15,1],8,5,'A hard, rare platinum-group metal used in electrical contacts and as a catalyst. Ruthenium dioxide coatings give titanium extraordinary corrosion resistance.'],
+      [45,'Rh','Rhodium',102.906,'tm',[2,8,18,16,1],9,5,'One of the rarest and most expensive metals on Earth. Used in catalytic converters to convert harmful car exhaust gases into less toxic emissions.'],
+      [46,'Pd','Palladium',106.42,'tm',[2,8,18,18],10,5,'Can absorb up to 900 times its own volume of hydrogen gas. Used in catalytic converters, electronics, and jewelry. Has recently exceeded the price of gold.'],
+      [47,'Ag','Silver',107.868,'tm',[2,8,18,18,1],11,5,'The best electrical and thermal conductor of all elements. Used in electronics, mirrors, and photography. Natural antimicrobial properties make it useful in medicine.'],
+      [48,'Cd','Cadmium',112.411,'tm',[2,8,18,18,2],12,5,'A toxic heavy metal used in NiCd rechargeable batteries and as a yellow pigment. It bioaccumulates in food chains and poses serious environmental risks.'],
+      [49,'In','Indium',114.818,'pt',[2,8,18,18,3],13,5,'Indium tin oxide (ITO) forms the transparent conductive layer in every touchscreen and LCD display. Indium is rarer than silver and mostly recovered from zinc smelting.'],
+      [50,'Sn','Tin',118.710,'pt',[2,8,18,18,4],14,5,'One of the earliest metals used by humans — combined with copper to make bronze. Used to coat steel cans for food preservation and in solder for electronics.'],
+      [51,'Sb','Antimony',121.760,'ml',[2,8,18,18,5],15,5,'A brittle metalloid used in flame retardants and lead-acid batteries. Ancient Egyptians used antimony sulfide (stibnite) as kohl eye makeup.'],
+      [52,'Te','Tellurium',127.60,'ml',[2,8,18,18,6],16,5,'A rare metalloid used in thin-film solar panels, rewritable DVDs, and to improve metal machinability. Earth\'s crust contains less tellurium than gold.'],
+      [53,'I','Iodine',126.904,'ha',[2,8,18,18,7],17,5,'Essential for thyroid hormone production. Iodized salt prevents iodine deficiency disorders affecting 2 billion people worldwide. Also a common antiseptic.'],
+      [54,'Xe','Xenon',131.293,'ng',[2,8,18,18,8],18,5,'Used in flash lamps, high-intensity film projector bulbs, and ion thrusters that propel spacecraft. The first noble gas shown to form chemical compounds (1962).'],
+      [55,'Cs','Cesium',132.905,'ak',[2,8,18,18,8,1],1,6,'Cesium atomic clocks lose less than 1 second per 300 million years — the most accurate timekeepers ever made. They are the foundation of GPS and internet time.'],
+      [56,'Ba','Barium',137.327,'ae',[2,8,18,18,8,2],2,6,'Barium sulfate is swallowed as a "barium meal" to make the digestive tract visible on X-rays. Barium compounds also produce vibrant green colors in fireworks.'],
+      [57,'La','Lanthanum',138.905,'ln',[2,8,18,18,9,2],3,9,'The first lanthanide. Used in camera and telescope lenses for exceptional optical clarity. Also used in hybrid car batteries and hydrogen storage materials.'],
+      [58,'Ce','Cerium',140.116,'ln',[2,8,18,19,9,2],4,9,'The most abundant rare earth element. Used in catalytic converters, self-cleaning oven linings (CeO₂), and as a yellow/orange colorant in glass and ceramics.'],
+      [59,'Pr','Praseodymium',140.908,'ln',[2,8,18,21,8,2],5,9,'Creates ultra-strong neodymium-praseodymium permanent magnets for electric motors and wind turbines. Gives glass and enamel a striking yellow-green color.'],
+      [60,'Nd','Neodymium',144.242,'ln',[2,8,18,22,8,2],6,9,'Makes the strongest permanent magnets known. Neodymium magnets are in every set of headphones, hard drive, electric car motor, and MRI machine in the world.'],
+      [61,'Pm','Promethium',145,'ln',[2,8,18,23,8,2],7,9,'The only lanthanide with no stable isotopes. Used in nuclear-powered pacemakers and miniature batteries for spacecraft where solar power is unavailable.'],
+      [62,'Sm','Samarium',150.36,'ln',[2,8,18,24,8,2],8,9,'Samarium-cobalt magnets withstand much higher temperatures than neodymium magnets — essential for jet engines, military equipment, and high-temperature motors.'],
+      [63,'Eu','Europium',151.964,'ln',[2,8,18,25,8,2],9,9,'The most reactive lanthanide. Its unique phosphorescence is used as an anti-counterfeiting feature in euro banknotes and in energy-efficient fluorescent lamps.'],
+      [64,'Gd','Gadolinium',157.25,'ln',[2,8,18,25,9,2],10,9,'A key MRI contrast agent that makes blood vessels and tumors visible on scans. Has extraordinary magnetic properties near room temperature.'],
+      [65,'Tb','Terbium',158.925,'ln',[2,8,18,27,8,2],11,9,'Produces green phosphorescence in energy-saving fluorescent lamps and color TV screens. Expands and contracts in magnetic fields — a property called magnetostriction.'],
+      [66,'Dy','Dysprosium',162.500,'ln',[2,8,18,28,8,2],12,9,'Essential for neodymium magnets to maintain strength at high temperatures, enabling electric vehicles to have powerful, heat-resistant motors.'],
+      [67,'Ho','Holmium',164.930,'ln',[2,8,18,29,8,2],13,9,'Has the highest magnetic moment of any natural element. Used in powerful magnets for MRI machines and in lasers for minimally invasive surgery.'],
+      [68,'Er','Erbium',167.259,'ln',[2,8,18,30,8,2],14,9,'Erbium-doped fiber amplifiers (EDFAs) are the technology that makes long-distance fiber optic internet possible. Gives glass a distinctive pink-red color.'],
+      [69,'Tm','Thulium',168.934,'ln',[2,8,18,31,8,2],15,9,'The least abundant naturally occurring lanthanide. Used in portable X-ray devices and in surgical lasers for precise, minimally invasive medical procedures.'],
+      [70,'Yb','Ytterbium',173.045,'ln',[2,8,18,32,8,2],16,9,'Used in the world\'s most precise optical atomic clocks. Could one day detect gravitational waves from colliding black holes. Also used in medical X-ray sources.'],
+      [71,'Lu','Lutetium',174.967,'ln',[2,8,18,32,9,2],17,9,'The heaviest and hardest lanthanide. Lutetium oxyorthosilicate crystals are used in PET scanners that detect cancer by imaging radioactive tracers in the body.'],
+      [72,'Hf','Hafnium',178.49,'tm',[2,8,18,32,10,2],4,6,'Used in nuclear reactor control rods because it absorbs neutrons extremely well. Intel uses hafnium oxide in modern transistor gates to reduce energy leakage.'],
+      [73,'Ta','Tantalum',180.948,'tm',[2,8,18,32,11,2],5,6,'Extraordinarily corrosion-resistant. Used in tiny capacitors inside virtually every smartphone, tablet, and laptop — a critical material for mobile technology.'],
+      [74,'W','Tungsten',183.84,'tm',[2,8,18,32,12,2],6,6,'Has the highest melting point of any element (3,422°C). Used in light bulb filaments, X-ray tube anodes, and the tips of ballpoint pens.'],
+      [75,'Re','Rhenium',186.207,'tm',[2,8,18,32,13,2],7,6,'One of the rarest elements on Earth. Used in superalloys for jet engine turbine blades that must operate at temperatures above 1,000°C.'],
+      [76,'Os','Osmium',190.23,'tm',[2,8,18,32,14,2],8,6,'The densest naturally occurring element. A cube the size of a sugar cube weighs nearly as much as a can of soda. Used in electrical contacts and fountain pen tips.'],
+      [77,'Ir','Iridium',192.217,'tm',[2,8,18,32,15,2],9,6,'The most corrosion-resistant metal known. A worldwide layer of iridium-rich clay marks the exact moment 66 million years ago when an asteroid caused mass extinction.'],
+      [78,'Pt','Platinum',195.084,'tm',[2,8,18,32,17,1],10,6,'A precious, highly unreactive metal used in catalytic converters, fuel cells, and laboratory equipment. Platinum-based drugs like cisplatin treat several cancers.'],
+      [79,'Au','Gold',196.967,'tm',[2,8,18,32,18,1],11,6,'One of the least reactive metals. Its rarity, luster, and resistance to tarnish made gold the global standard for currency and wealth for thousands of years.'],
+      [80,'Hg','Mercury',200.592,'tm',[2,8,18,32,18,2],12,6,'The only metal liquid at room temperature. Used in thermometers and barometers, but now recognized as highly toxic to the nervous system and environment.'],
+      [81,'Tl','Thallium',204.383,'pt',[2,8,18,32,18,3],13,6,'Extremely toxic — historically used as a "poison of choice" in murders. Today used in heart stress tests (thallium scans) and infrared optical lenses.'],
+      [82,'Pb','Lead',207.2,'pt',[2,8,18,32,18,4],14,6,'One of the earliest metals used by humans. Widely used in paint and plumbing pipes until the 20th century, when its severe neurotoxic effects on children were established.'],
+      [83,'Bi','Bismuth',208.980,'pt',[2,8,18,32,18,5],15,6,'Forms stunning rainbow-colored staircase crystals. Used in cosmetics, Pepto-Bismol stomach medicine, and as a lead substitute in ammunition and fishing sinkers.'],
+      [84,'Po','Polonium',209,'ml',[2,8,18,32,18,6],16,6,'Highly radioactive. Discovered by Marie Curie in 1898 and named after her homeland Poland. Used in anti-static devices and tragically in a 2006 assassination.'],
+      [85,'At','Astatine',210,'ha',[2,8,18,32,18,7],17,6,'The rarest naturally occurring element on Earth — at any moment, less than 28 grams exist in the entire crust. Highly radioactive with a half-life of only 8.1 hours.'],
+      [86,'Rn','Radon',222,'ng',[2,8,18,32,18,8],18,6,'A colorless, odorless radioactive gas that seeps from rocks and soil into buildings. The second leading cause of lung cancer in the US, after cigarette smoking.'],
+      [87,'Fr','Francium',223,'ak',[2,8,18,32,18,8,1],1,7,'The most unstable naturally occurring element and one of the rarest. At any time, only about 20–30 grams exist in Earth\'s entire crust. Decays in minutes.'],
+      [88,'Ra','Radium',226,'ae',[2,8,18,32,18,8,2],2,7,'Discovered by Marie and Pierre Curie in 1898. Glows faintly blue from its own intense radioactivity. Once painted on watch dials — causing fatal illness in workers.'],
+      [89,'Ac','Actinium',227,'ac',[2,8,18,32,18,9,2],3,10,'The first actinide, giving its name to the series. Glows blue in the dark from intense radioactivity. Actinium-225 is used in targeted alpha-particle cancer therapy.'],
+      [90,'Th','Thorium',232.038,'ac',[2,8,18,32,18,10,2],4,10,'A radioactive metal considered a potential fuel for safer nuclear reactors — more abundant than uranium and producing far less long-lived radioactive waste.'],
+      [91,'Pa','Protactinium',231.036,'ac',[2,8,18,32,20,9,2],5,10,'One of the rarest and most toxic radioactive elements. Has few practical applications due to its extreme scarcity, radioactivity, and toxicity.'],
+      [92,'U','Uranium',238.029,'ac',[2,8,18,32,21,9,2],6,10,'The primary fuel for nuclear power plants, which provide about 10% of the world\'s electricity. Uranium-235 atoms split (fission), releasing enormous energy.'],
+      [93,'Np','Neptunium',237,'ac',[2,8,18,32,22,9,2],7,10,'The first transuranic element — made in a lab, not found in nature (in significant amounts). Named after Neptune. Tiny traces form naturally in uranium ores.'],
+      [94,'Pu','Plutonium',244,'ac',[2,8,18,32,24,8,2],8,10,'Used in nuclear weapons and as reactor fuel. Plutonium-238 generates heat through radioactive decay, powering the Voyager and New Horizons spacecraft.'],
+      [95,'Am','Americium',243,'ac',[2,8,18,32,25,8,2],9,10,'Found in household smoke detectors — a tiny amount of Am-241 ionizes air to detect smoke particles. Named after the Americas where it was first produced.'],
+      [96,'Cm','Curium',247,'ac',[2,8,18,32,25,9,2],10,10,'Named after Marie and Pierre Curie. The alpha-particle X-ray spectrometer on Mars rovers uses curium to analyze the elemental composition of Martian rocks.'],
+      [97,'Bk','Berkelium',247,'ac',[2,8,18,32,27,8,2],11,10,'Named after Berkeley, California. Has limited uses outside of fundamental nuclear research due to its extreme scarcity and rapid radioactive decay.'],
+      [98,'Cf','Californium',251,'ac',[2,8,18,32,28,8,2],12,10,'An intense neutron emitter used to start up nuclear reactors and in portable devices for oil well surveying and cancer treatment.'],
+      [99,'Es','Einsteinium',252,'ac',[2,8,18,32,29,8,2],13,10,'Named after Albert Einstein. First discovered in the radioactive debris of the first hydrogen bomb test (Ivy Mike, 1952). No practical applications.'],
+      [100,'Fm','Fermium',257,'ac',[2,8,18,32,30,8,2],14,10,'Named after Enrico Fermi, father of the nuclear reactor. Also first found in H-bomb fallout. Too rare and radioactive for any practical application.'],
+      [101,'Md','Mendelevium',258,'ac',[2,8,18,32,31,8,2],15,10,'Named after Dmitri Mendeleev, creator of the periodic table. Produced one atom at a time in particle accelerators and decays within hours.'],
+      [102,'No','Nobelium',259,'ac',[2,8,18,32,32,8,2],16,10,'Named after Alfred Nobel, inventor of dynamite and founder of the Nobel Prize. Produced in tiny quantities and decays in seconds to minutes.'],
+      [103,'Lr','Lawrencium',266,'ac',[2,8,18,32,32,8,3],17,10,'Named after Ernest O. Lawrence, inventor of the cyclotron accelerator. The last actinide, completing the f-block of the periodic table.'],
+      [104,'Rf','Rutherfordium',267,'tm',[2,8,18,32,32,10,2],4,7,'The first transactinide, named after Ernest Rutherford who discovered the nucleus. Decays in seconds and is studied only in physics research facilities.'],
+      [105,'Db','Dubnium',268,'tm',[2,8,18,32,32,11,2],5,7,'Named after Dubna, Russia. A synthetic element that exists for only a few seconds before decaying into lighter elements.'],
+      [106,'Sg','Seaborgium',269,'tm',[2,8,18,32,32,12,2],6,7,'Named after Glenn T. Seaborg, who synthesized 10 new elements and won the Nobel Prize. The first element named after a living person at the time of naming.'],
+      [107,'Bh','Bohrium',270,'tm',[2,8,18,32,32,13,2],7,7,'Named after Niels Bohr, pioneer of the atomic model and quantum mechanics. Only a few atoms have ever been created; each decays within seconds.'],
+      [108,'Hs','Hassium',277,'tm',[2,8,18,32,32,14,2],8,7,'Named after Hesse, Germany. A synthetic, radioactive element produced in particle accelerators with a half-life measured in seconds.'],
+      [109,'Mt','Meitnerium',278,'tm',[2,8,18,32,32,15,2],9,7,'Named after Lise Meitner, physicist who co-discovered nuclear fission. She was controversially excluded from the Nobel Prize awarded for that work.'],
+      [110,'Ds','Darmstadtium',281,'tm',[2,8,18,32,32,16,2],10,7,'Named after Darmstadt, Germany. A synthetic element with no known uses outside fundamental research. Half-life ranges from microseconds to minutes.'],
+      [111,'Rg','Roentgenium',282,'tm',[2,8,18,32,32,17,2],11,7,'Named after Wilhelm Röntgen, who discovered X-rays. An extremely unstable synthetic element — only a handful of atoms have ever been observed.'],
+      [112,'Cn','Copernicium',285,'tm',[2,8,18,32,32,18,2],12,7,'Named after Nicolaus Copernicus. Relativistic effects are so strong in this heavy element that it may behave more like a gas than a metal at room temperature.'],
+      [113,'Nh','Nihonium',286,'pt',[2,8,18,32,32,18,3],13,7,'Named after "Nihon" (Japan in Japanese), making it the first element discovered in Asia. Officially confirmed and named in 2016.'],
+      [114,'Fl','Flerovium',289,'pt',[2,8,18,32,32,18,4],14,7,'Named after the Flerov Laboratory in Russia. May be a gas or volatile liquid at room temperature — potentially the most inert metal if it is a metal at all.'],
+      [115,'Mc','Moscovium',290,'pt',[2,8,18,32,32,18,5],15,7,'Named after Moscow Oblast. First synthesized in 2003 by a Russian-American collaboration. Decays in milliseconds into nihonium.'],
+      [116,'Lv','Livermorium',293,'pt',[2,8,18,32,32,18,6],16,7,'Named after Lawrence Livermore National Laboratory in California. One of the heaviest elements ever created. Decays almost instantly into flerovium.'],
+      [117,'Ts','Tennessine',294,'ha',[2,8,18,32,32,18,7],17,7,'Named after Tennessee, home to Oak Ridge National Laboratory, Vanderbilt, and UT. First synthesized in 2010 and officially named by IUPAC in 2016. Only a handful of atoms have ever been observed.'],
+      [118,'Og','Oganesson',294,'ng',[2,8,18,32,32,18,8],18,7,'Named after physicist Yuri Oganessian. The heaviest confirmed element and the only period-7 noble gas. May actually be a solid at room temperature.'],
+    ];
+
+    const PROPERTY_SOURCE_URL = 'https://raw.githubusercontent.com/Bowserinator/Periodic-Table-JSON/master/PeriodicTableJSON.json';
+    const PROPERTY_CACHE_KEY = 'classroomos-periodic-ref-v1';
+    const HEATMAPS = {
+      none: { label: 'Category', tint: 'rgba(0,113,227,0.12)' },
+      density: { label: 'Density', tint: 'hsla(205, 100%, 52%, VAR)' },
+      electronegativity: { label: 'Electronegativity', tint: 'hsla(286, 92%, 58%, VAR)' },
+      rarity: { label: 'Rarity', tint: 'hsla(44, 100%, 52%, VAR)' }
+    };
+    const COMMANDS = [
+      { label: 'batteries', note: 'Lithium, cobalt, nickel, and manganese power modern battery chemistry.', symbols: ['Li', 'Co', 'Ni', 'Mn', 'C'] },
+      { label: 'balloons', note: 'Helium is the classic lift gas because it is inert and lighter than air.', symbols: ['He'] },
+      { label: 'chips', note: 'Silicon, gallium, germanium, copper, and gold connect the computing world.', symbols: ['Si', 'Ga', 'Ge', 'Cu', 'Au'] },
+      { label: 'lightbulbs', note: 'Tungsten filaments and argon atmospheres let bulbs run hot without burning up.', symbols: ['W', 'Ar'] },
+      { label: 'bones', note: 'Calcium, phosphorus, magnesium, and oxygen build hard mineral structure.', symbols: ['Ca', 'P', 'Mg', 'O'] },
+      { label: 'water', note: 'Hydrogen and oxygen combine into one of the most important molecules on Earth.', symbols: ['H', 'O'] },
+      { label: 'fireworks', note: 'Strontium, barium, copper, sodium, and magnesium shape fireworks color and brightness.', symbols: ['Sr', 'Ba', 'Cu', 'Na', 'Mg'] },
+      { label: 'stainless steel', note: 'Iron, chromium, and nickel make corrosion-resistant structural alloys.', symbols: ['Fe', 'Cr', 'Ni'] },
+      { label: 'nuclear', note: 'Uranium, plutonium, thorium, cadmium, and hafnium anchor reactor technology.', symbols: ['U', 'Pu', 'Th', 'Cd', 'Hf'] }
+    ];
+    const CATEGORY_APPLICATIONS = {
+      ak: [{ icon: '🔋', title: 'Reactive power', copy: 'Single valence electrons make these metals energy-rich and easy to ionize.' }],
+      ae: [{ icon: '🦴', title: 'Structure', copy: 'These metals strengthen minerals, alloys, and many biological systems.' }],
+      tm: [{ icon: '🏗️', title: 'Engineering metal', copy: 'Transition metals dominate tools, wiring, engines, and catalysts.' }],
+      pt: [{ icon: '🧰', title: 'Useful alloying', copy: 'Post-transition metals are often soft, conductive, and easy to shape.' }],
+      ml: [{ icon: '💻', title: 'Semiconductor bridge', copy: 'Metalloids sit between metals and nonmetals, making electronics possible.' }],
+      nm: [{ icon: '🧬', title: 'Life chemistry', copy: 'Nonmetals often build molecules, fuels, biomolecules, and gases.' }],
+      ha: [{ icon: '🧪', title: 'Reactive chemistry', copy: 'Halogens are strong oxidizers used in sanitation, lighting, and synthesis.' }],
+      ng: [{ icon: '🎈', title: 'Inert atmosphere', copy: 'Noble gases resist bonding and protect other materials from reaction.' }],
+      ln: [{ icon: '🧲', title: 'Rare-earth magnetics', copy: 'Lanthanides power magnets, lasers, phosphors, and precision optics.' }],
+      ac: [{ icon: '☢️', title: 'Radiation science', copy: 'Actinides dominate nuclear energy, radiotherapy, and isotope research.' }]
+    };
+    const SOURCE_DEFS = {
+      crust: { label: "Crust", icon: "rock" },
+      ocean: { label: "Ocean", icon: "water" },
+      air: { label: "Air", icon: "gas" },
+      life: { label: "Life", icon: "bio" },
+      synthetic: { label: "Synthetic", icon: "lab" }
+    };
+    const SOURCE_ICONS = { rock: "◆", water: "≈", gas: "○", bio: "✚", lab: "⚗" };
+    const CATEGORY_EARTH = {
+      ak: { sources: ["crust", "ocean"], forms: ["salts and reactive minerals"], extraction: "Separated from mineral salts or molten compounds", occurrence: "Too reactive to occur as pure metal in nature", mediaPrompt: "Photograph a mineral salt, stored metal sample, or everyday battery use." },
+      ae: { sources: ["crust", "ocean", "life"], forms: ["carbonates, sulfates, silicates"], extraction: "Mined from minerals, then refined chemically or electrolytically", occurrence: "Commonly locked inside rocks, shells, bones, or seawater salts", mediaPrompt: "Photograph a mineral, shell, bone-safe classroom model, or refined sample." },
+      tm: { sources: ["crust"], forms: ["ores, native metals, alloys"], extraction: "Mined as ore, concentrated, smelted, and refined", occurrence: "Usually found in oxide, sulfide, or carbonate ores", mediaPrompt: "Photograph an ore specimen, native metal, alloy, or engineered object." },
+      pt: { sources: ["crust"], forms: ["ores, oxides, sulfides, alloys"], extraction: "Recovered from ores or as byproducts of other metal refining", occurrence: "Often found dispersed through crustal minerals", mediaPrompt: "Photograph an ore, refined sample, crystal, or common product." },
+      ml: { sources: ["crust"], forms: ["silicates, oxides, sulfides, semiconductors"], extraction: "Mined from minerals and purified for glass, alloy, or semiconductor use", occurrence: "Concentrated in specific minerals rather than pure deposits", mediaPrompt: "Photograph a mineral, wafer, glass, or semiconductor form." },
+      nm: { sources: ["crust", "air", "ocean", "life"], forms: ["gases, minerals, biomolecules, molecular solids"], extraction: "Collected from air, mined compounds, water, or biological materials depending on the element", occurrence: "Often cycles through air, water, rocks, and living systems", mediaPrompt: "Photograph a pure sample where safe, mineral form, gas container, or biological/common form." },
+      ha: { sources: ["crust", "ocean"], forms: ["salts and halide minerals"], extraction: "Separated from brines, seawater, or halide minerals", occurrence: "Highly reactive, so natural forms are usually compounds", mediaPrompt: "Photograph a safe salt, mineral, antiseptic, or sealed sample." },
+      ng: { sources: ["air"], forms: ["trace atmospheric gases"], extraction: "Separated by fractional distillation of liquefied air", occurrence: "Mostly found as individual atoms in the atmosphere", mediaPrompt: "Photograph a discharge tube, lighting use, gas cylinder, or balloon context." },
+      ln: { sources: ["crust"], forms: ["rare-earth minerals such as monazite and bastnasite"], extraction: "Mined from rare-earth ores, then separated by solvent extraction and ion exchange", occurrence: "Not usually rare individually, but hard to separate from similar neighbors", mediaPrompt: "Photograph a rare-earth mineral, magnet, phosphor, lens, or refined oxide." },
+      ac: { sources: ["crust", "synthetic"], forms: ["radioactive minerals, reactor products, accelerator-made atoms"], extraction: "Recovered from uranium/thorium ores or produced in reactors and accelerators", occurrence: "Heavy actinides are radioactive; many are synthetic or exist only in trace amounts", mediaPrompt: "Use public-domain lab, detector, ore, or reactor-context images instead of unsafe samples." }
+    };
+    const ELEMENT_EARTH = {
+      H: { sources: ["ocean", "air", "life"], forms: ["water, hydrocarbons, organic molecules"], extraction: "Produced from water electrolysis or natural gas reforming", occurrence: "Earth holds most hydrogen bound in water and organic compounds", mediaPrompt: "Use water, a fuel cell, or a gas discharge tube image." },
+      He: { sources: ["air", "crust"], forms: ["natural gas deposits, trace atmosphere"], extraction: "Recovered from helium-rich natural gas", occurrence: "Light helium escapes the atmosphere, so usable helium comes from underground gas fields", mediaPrompt: "Use a balloon, cryogenic tank, or discharge tube image." },
+      C: { sources: ["crust", "air", "life"], forms: ["graphite, diamond, carbon dioxide, limestone, living tissue"], extraction: "Mined as graphite or diamond, and cycled biologically as carbon compounds", occurrence: "Carbon moves through rocks, air, oceans, and living organisms", mediaPrompt: "Use graphite, diamond, charcoal, limestone, or plant matter." },
+      O: { sources: ["air", "ocean", "crust", "life"], forms: ["oxygen gas, water, oxides, silicates"], extraction: "Separated from liquefied air or produced by electrolysis of water", occurrence: "The most abundant element in Earth crust by mass and essential in water and air", mediaPrompt: "Use liquid oxygen, water, oxide minerals, or breathing/medical oxygen imagery." },
+      Na: { sources: ["ocean", "crust"], forms: ["halite, seawater salts, sodium minerals"], extraction: "Produced by electrolysis of molten sodium chloride", occurrence: "Common in seawater and evaporite salt deposits", mediaPrompt: "Use halite, table salt, or a sealed sodium sample." },
+      Al: { sources: ["crust"], forms: ["bauxite, aluminosilicate minerals"], extraction: "Refined from bauxite to alumina, then electrolyzed by the Hall-Heroult process", occurrence: "The most abundant metal in Earth crust, but almost never native", mediaPrompt: "Use bauxite, aluminum metal, foil, aircraft, or cans." },
+      Si: { sources: ["crust"], forms: ["quartz, sand, silicate rocks, silicon wafers"], extraction: "Reduced from silica and purified for electronics or solar cells", occurrence: "Extremely abundant in rocks and sand as silicate minerals", mediaPrompt: "Use quartz, sand, a wafer, solar cell, or chip image." },
+      Fe: { sources: ["crust"], forms: ["hematite, magnetite, iron meteorites, steel"], extraction: "Smelted from iron ore in blast furnaces or direct-reduction systems", occurrence: "Common in crustal ores and dominant in Earth core", mediaPrompt: "Use hematite, magnetite, steel, rust, or meteorite images." },
+      Cu: { sources: ["crust"], forms: ["native copper, chalcopyrite, malachite, copper wiring"], extraction: "Mined from sulfide and oxide ores, then smelted or leached", occurrence: "Found in ore bodies and sometimes as native metal", mediaPrompt: "Use native copper, malachite, chalcopyrite, or wiring." },
+      Au: { sources: ["crust"], forms: ["native gold, placer deposits, quartz veins"], extraction: "Mined from hard-rock veins or placer sediments, then refined", occurrence: "Often found as native metal because it resists reaction", mediaPrompt: "Use native gold, flakes, nuggets, or electronics contacts." },
+      Hg: { sources: ["crust"], forms: ["cinnabar ore, liquid mercury"], extraction: "Roasted from cinnabar ore and condensed as liquid metal", occurrence: "Mostly found as mercury sulfide; toxic forms can move through ecosystems", mediaPrompt: "Use cinnabar or sealed educational/sample imagery only." },
+      U: { sources: ["crust"], forms: ["uraninite, carnotite, uranium oxides"], extraction: "Mined from uranium ores, milled, converted, and enriched for some uses", occurrence: "Naturally radioactive and dispersed through crustal rocks", mediaPrompt: "Use uranium ore, fuel pellet diagrams, or public-domain lab images." }
+    };
+
+    const ELEMENT_APPLICATIONS = {
+      H: [{ icon: '🚀', title: 'Rocket fuel', copy: 'Hydrogen powers fuel cells and high-efficiency propulsion systems.' }],
+      He: [{ icon: '🎈', title: 'Party balloon', copy: 'Helium lifts balloons and cools MRI magnets without reacting.' }],
+      Li: [{ icon: '📱', title: 'Smartphone battery', copy: 'Lithium-ion chemistry stores a huge amount of energy per kilogram.' }],
+      C: [{ icon: '💎', title: 'Diamond and graphite', copy: 'Carbon shifts from pencil graphite to diamond depending on structure.' }],
+      O: [{ icon: '🫁', title: 'Breathing and combustion', copy: 'Oxygen keeps metabolism and fire going.' }],
+      Si: [{ icon: '💻', title: 'Computer chip', copy: 'Silicon wafers host the transistors inside modern processors.' }],
+      P: [{ icon: '🧬', title: 'DNA backbone', copy: 'Phosphorus links the sugar-phosphate rails of DNA and ATP.' }],
+      Cl: [{ icon: '🏊', title: 'Pool sanitation', copy: 'Chlorine compounds disinfect water by damaging microbes.' }],
+      Fe: [{ icon: '🏗️', title: 'Steel beam', copy: 'Iron is the backbone of structural steel and machinery.' }],
+      Co: [{ icon: '🔋', title: 'Battery cathode', copy: 'Cobalt helps stabilize high-energy rechargeable battery chemistry.' }],
+      Ni: [{ icon: '🪙', title: 'Stainless and coins', copy: 'Nickel improves corrosion resistance and strength.' }],
+      Cu: [{ icon: '⚡', title: 'Electrical wiring', copy: 'Copper moves electric current with very low resistance.' }],
+      Ga: [{ icon: '🤲', title: 'Melts in your hand', copy: 'Gallium becomes liquid near room temperature and powers LEDs.' }],
+      Br: [{ icon: '🧴', title: 'Liquid halogen', copy: 'Bromine is one of the only elements that is liquid near room temperature.' }],
+      Ag: [{ icon: '📷', title: 'Photography and electronics', copy: 'Silver reflects light well and conducts electricity better than any other metal.' }],
+      I: [{ icon: '🧂', title: 'Iodized salt', copy: 'Iodine protects thyroid health in tiny but essential doses.' }],
+      Xe: [{ icon: '🚀', title: 'Ion thruster', copy: 'Xenon is used as a propellant in spacecraft ion engines.' }],
+      Nd: [{ icon: '🎧', title: 'Permanent magnet', copy: 'Neodymium magnets power speakers, motors, and wind turbines.' }],
+      W: [{ icon: '💡', title: 'Lightbulb filament', copy: 'Tungsten survives extreme heat without melting.' }],
+      Au: [{ icon: '💍', title: 'Corrosion-proof conductor', copy: 'Gold protects contacts and jewelry because it barely reacts.' }],
+      Hg: [{ icon: '🌡️', title: 'Liquid metal', copy: 'Mercury stays liquid at room temperature, unlike almost every metal.' }],
+      U: [{ icon: '⚛️', title: 'Nuclear fuel', copy: 'Uranium stores enormous energy in its atomic nucleus.' }],
+      Pu: [{ icon: '🛰️', title: 'Space power', copy: 'Plutonium isotopes can power spacecraft far from the Sun.' }],
+      Am: [{ icon: '🚨', title: 'Smoke detector', copy: 'Americium helps ionization smoke alarms sense combustion particles.' }]
+    };
+
+    const grid = document.getElementById('pt-grid');
+    const legend = document.getElementById('pt-legend');
+    const ctrl = document.getElementById('pt-controls');
+    const tempInput = document.getElementById('pt-temp');
+    const tempReadout = document.getElementById('pt-temp-readout');
+    const tempStateReadout = document.getElementById('pt-temp-state-readout');
+    const heatmapWrap = document.getElementById('pt-heatmap');
+    const searchInput = document.getElementById('pt-search');
+    const dataNote = document.getElementById('pt-data-note');
+    const commandStatus = document.getElementById('pt-command-status');
+    const commandOpen = document.getElementById('pt-command-open');
+    const commandRoot = document.getElementById('pt-command');
+    const commandBackdrop = document.getElementById('pt-command-backdrop');
+    const commandInput = document.getElementById('pt-command-input');
+    const commandClose = document.getElementById('pt-command-close');
+    const commandList = document.getElementById('pt-command-list');
+    const detailPanel = document.getElementById('el-panel');
+    const atomModelButtons = Array.from(document.querySelectorAll('[data-atom-model]'));
+
+    const BASE_ELEMENTS = EL.map(([number, symbol, name, mass, cat, shells, col, row, description]) => ({ number, symbol, name, mass, cat, shells, col, row, description }));
+
+    let propertyRefBySymbol = {};
+    let elements = [];
+    let selectedSymbol = null;
+    let activeCat = 'all';
+    let isolatedCat = null;
+    let searchQ = '';
+    let activeHeatmap = 'none';
+    let currentTemp = Number(tempInput.value || 295);
+    let commandMatches = new Set();
+    let atomModel = 'bohr';
+
+    function hexToRgb(hex) {
+      const clean = String(hex || '').replace('#', '');
+      const expanded = clean.length === 3 ? clean.split('').map((ch) => ch + ch).join('') : clean;
+      const int = parseInt(expanded, 16);
+      return { r: (int >> 16) & 255, g: (int >> 8) & 255, b: int & 255 };
+    }
+
+    function rgba(hex, alpha) {
+      const { r, g, b } = hexToRgb(hex);
+      return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+    }
+
+    function normalizeValue(value) {
+      return Number.isFinite(Number(value)) ? Number(value) : null;
+    }
+
+    function simplifyRemoteData(payload) {
+      const out = {};
+      (payload.elements || []).forEach((element) => {
+        if (!element || !element.symbol || element.number > 118) return;
+        out[element.symbol] = {
+          melt: normalizeValue(element.melt),
+          boil: normalizeValue(element.boil),
+          density: normalizeValue(element.density),
+          electronegativity: normalizeValue(element.electronegativity_pauling),
+          electronConfig: String(element.electron_configuration_semantic || element.electron_configuration || '').replace(/^\*/, ''),
+          phase: element.phase ? String(element.phase).toLowerCase() : null,
+          appearance: element.appearance || '',
+          summary: element.summary || ''
+        };
+      });
+      return out;
+    }
+
+    async function loadReferenceData() {
+      try {
+        const cached = localStorage.getItem(PROPERTY_CACHE_KEY);
+        if (cached) {
+          propertyRefBySymbol = JSON.parse(cached);
+          dataNote.textContent = 'Using cached lab property data.';
+          dataNote.classList.add('is-ready');
+          rebuildElements();
+          renderAll();
+        }
+      } catch (error) {
+        dataNote.textContent = 'Property cache unavailable. Using built-in lesson data.';
+      }
+
+      try {
+        const response = await fetch(PROPERTY_SOURCE_URL, { cache: 'force-cache' });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const json = await response.json();
+        propertyRefBySymbol = simplifyRemoteData(json);
+        try { localStorage.setItem(PROPERTY_CACHE_KEY, JSON.stringify(propertyRefBySymbol)); } catch (error) {}
+        dataNote.textContent = 'Lab property data loaded: temperature, density, and electronegativity are live.';
+        dataNote.classList.add('is-ready');
+      } catch (error) {
+        if (!Object.keys(propertyRefBySymbol).length) {
+          dataNote.textContent = 'Could not load extended chemistry data. Core lesson mode is still available.';
+          dataNote.classList.remove('is-ready');
+        }
+      }
+
+      rebuildElements();
+      renderAll();
+    }
+
+    function estimateRarity(base, ref) {
+      if (base.number >= 93) return 1;
+      if (base.cat === 'ln' || base.cat === 'ac') return 0.78;
+      if (['Rh', 'Ir', 'Os', 'Re', 'Pt', 'Au', 'Te'].includes(base.symbol)) return 0.86;
+      if (['H', 'C', 'N', 'O', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'K', 'Ca', 'Fe'].includes(base.symbol)) return 0.14;
+      if (ref && typeof ref.summary === 'string' && /rare|rarest|synthetic/i.test(ref.summary)) return 0.82;
+      return Math.min(0.68, 0.18 + base.number / 180);
+    }
+
+    function getApplications(symbol, cat) {
+      return [].concat(ELEMENT_APPLICATIONS[symbol] || [], CATEGORY_APPLICATIONS[cat] || []).slice(0, 3);
+    }
+
+    function getCrystalProfile(symbol, cat) {
+      if (['He', 'Ne', 'Ar', 'Kr', 'Xe', 'Rn', 'Og'].includes(symbol)) return { label: 'Atomic cloud', note: 'Noble gases stay far apart and only condense at very low temperatures.', mode: 'gas' };
+      if (['C', 'Si', 'B'].includes(symbol) || cat === 'ml') return { label: 'Network solid', note: 'Covalent bonds connect atoms into repeating, rigid frameworks.', mode: 'network' };
+      if (cat === 'nm' || cat === 'ha') return { label: 'Molecular packing', note: 'Discrete molecules pack together with weaker attractions than metallic lattices.', mode: 'molecular' };
+      return { label: 'Metal lattice', note: 'Positive metal ions sit in a repeating lattice with mobile electrons flowing around them.', mode: 'metal' };
+    }
+
+    function getEarthProfile(symbol, cat) {
+      const fallback = CATEGORY_EARTH[cat] || CATEGORY_EARTH.tm;
+      const specific = ELEMENT_EARTH[symbol] || {};
+      const sources = specific.sources || fallback.sources || [];
+      const forms = specific.forms || fallback.forms || [];
+      return {
+        sources,
+        forms,
+        extraction: specific.extraction || fallback.extraction,
+        occurrence: specific.occurrence || fallback.occurrence,
+        mediaPrompt: specific.mediaPrompt || fallback.mediaPrompt,
+        imageStatus: specific.image ? "ready" : "needed",
+        image: specific.image || null,
+        imageCredit: specific.imageCredit || "Image sourcing required in the licensed media phase",
+        imageLicense: specific.imageLicense || "Pending"
+      };
+    }
+
+    function rebuildElements() {
+      elements = BASE_ELEMENTS.map((base) => {
+        const ref = propertyRefBySymbol[base.symbol] || {};
+        return Object.assign({}, base, {
+          melt: normalizeValue(ref.melt),
+          boil: normalizeValue(ref.boil),
+          density: normalizeValue(ref.density),
+          electronegativity: normalizeValue(ref.electronegativity),
+          electronConfig: ref.electronConfig || base.shells.map((count, index) => 'n' + (index + 1) + ':' + count).join(' · '),
+          phase: ref.phase || null,
+          appearance: ref.appearance || '',
+          summary: ref.summary || base.description,
+          applications: getApplications(base.symbol, base.cat),
+          crystal: getCrystalProfile(base.symbol, base.cat),
+          earth: getEarthProfile(base.symbol, base.cat),
+          rarity: estimateRarity(base, ref)
+        });
+      });
+    }
+
+    function getState(element, temperature) {
+      if (Number.isFinite(element.melt) && temperature < element.melt) return 'solid';
+      if (Number.isFinite(element.boil) && temperature < element.boil && (!Number.isFinite(element.melt) || temperature >= element.melt)) return 'liquid';
+      if (Number.isFinite(element.boil) && temperature >= element.boil) return 'gas';
+      return element.phase || 'unknown';
+    }
+
+    function getStateLabel(state) {
+      return state === 'solid' || state === 'liquid' || state === 'gas' ? state : 'predicted';
+    }
+
+    function getStateSubtitle() {
+      if (currentTemp <= 80) return 'Cryogenic range';
+      if (currentTemp < 260) return 'Cold lab';
+      if (currentTemp < 330) return 'Room temperature';
+      if (currentTemp < 900) return 'Hot plate';
+      if (currentTemp < 1800) return 'Foundry range';
+      return 'Stellar-hot lab';
+    }
+
+    function getHeatmapValue(element) {
+      if (activeHeatmap === 'density') return element.density;
+      if (activeHeatmap === 'electronegativity') return element.electronegativity;
+      if (activeHeatmap === 'rarity') return element.rarity;
+      return null;
+    }
+
+    function getHeatmapIntensity(element) {
+      if (activeHeatmap === 'none') return 0;
+      const values = elements.map(getHeatmapValue).filter((value) => Number.isFinite(value));
+      if (!values.length) return 0;
+      const max = Math.max.apply(null, values);
+      const value = getHeatmapValue(element);
+      if (!Number.isFinite(value) || max <= 0) return 0;
+      return Math.pow(value / max, 0.72);
+    }
+
+    function getCellBackground(element, state) {
+      const base = CATS[element.cat].color;
+      const intensity = getHeatmapIntensity(element);
+      const heatOverlay = intensity > 0 ? HEATMAPS[activeHeatmap].tint.replace('VAR', (0.18 + intensity * 0.6).toFixed(3)) : null;
+      const layers = [];
+      if (heatOverlay) layers.push(heatOverlay);
+      if (state === 'liquid') {
+        layers.push('linear-gradient(180deg, rgba(255,255,255,0.86), rgba(59,130,246,0.22))');
+        layers.push('linear-gradient(135deg, rgba(56,189,248,0.34), rgba(14,165,233,0.18))');
+      } else if (state === 'gas') {
+        layers.push('radial-gradient(circle at 50% 35%, rgba(255,255,255,0.9), rgba(255,255,255,0.12) 55%, rgba(255,255,255,0.02) 100%)');
+        layers.push('linear-gradient(180deg, rgba(255,255,255,0.32), rgba(255,255,255,0.05))');
+      } else if (state === 'unknown') {
+        layers.push('linear-gradient(180deg, rgba(255,255,255,0.76), ' + rgba(base, 0.14) + ')');
+      } else {
+        layers.push('linear-gradient(180deg, rgba(255,255,255,0.88), ' + rgba(base, 0.18) + ')');
+        layers.push('linear-gradient(135deg, ' + rgba(base, 0.1) + ', rgba(255,255,255,0.2))');
+      }
+      return layers.join(', ');
+    }
+
+    function matchesFilters(element) {
+      const matchesCat = activeCat === 'all' || element.cat === activeCat;
+      const matchesSearch = !searchQ || element.symbol.toLowerCase().includes(searchQ) || element.name.toLowerCase().includes(searchQ) || String(element.number).startsWith(searchQ);
+      return matchesCat && matchesSearch;
+    }
+
+    function renderCategoryControls() {
+      ctrl.innerHTML = '';
+      const defs = [['all', { label: 'All 118', color: '#555' }]].concat(Object.entries(CATS));
+      defs.forEach(([key, meta]) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'pt-filter-btn';
+        btn.dataset.cat = key;
+        btn.textContent = meta.label;
+        btn.style.color = meta.color;
+        btn.style.borderColor = key === 'all' ? '#bbb' : meta.color;
+        const active = activeCat === key;
+        btn.classList.toggle('pt-btn-active', active && key !== 'all');
+        btn.classList.toggle('pt-btn-dimmed', activeCat !== 'all' && !active);
+        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        if (active && key !== 'all') {
+          btn.style.background = meta.color;
+          btn.style.color = '#fff';
+        }
+        btn.addEventListener('mouseenter', () => { if (key !== 'all') { isolatedCat = key; renderGrid(); } });
+        btn.addEventListener('mouseleave', () => { if (isolatedCat === key) { isolatedCat = null; renderGrid(); } });
+        btn.addEventListener('click', () => { activeCat = key; renderAll(); });
+        ctrl.appendChild(btn);
+      });
+    }
+
+    function renderLegend() {
+      legend.innerHTML = '';
+      Object.entries(CATS).forEach(([key, meta]) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'pt-legend-item';
+        item.innerHTML = '<span class="pt-legend-dot" style="background:' + meta.color + '25;border:1.5px solid ' + meta.color + ';"></span>' + meta.label;
+        item.addEventListener('mouseenter', () => { isolatedCat = key; renderGrid(); });
+        item.addEventListener('mouseleave', () => { isolatedCat = null; renderGrid(); });
+        item.addEventListener('click', () => { activeCat = key; renderAll(); });
+        legend.appendChild(item);
+      });
+    }
+
+    function renderHeatmapControls() {
+      heatmapWrap.innerHTML = '';
+      Object.entries(HEATMAPS).forEach(([key, meta]) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'pt-heat-btn';
+        btn.textContent = meta.label;
+        btn.classList.toggle('is-active', activeHeatmap === key);
+        btn.addEventListener('click', () => { activeHeatmap = key; renderAll(); });
+        heatmapWrap.appendChild(btn);
+      });
+    }
+
+    function renderGrid() {
+      grid.innerHTML = '';
+      const frow = document.createElement('div');
+      frow.className = 'pt-frow';
+      frow.setAttribute('aria-hidden', 'true');
+      frow.innerHTML = '<div class="pt-frow-line"></div><span class="pt-frow-label">f-block</span><div class="pt-frow-line"></div>';
+      grid.appendChild(frow);
+      [[3, 6, '57–71'], [3, 7, '89–103']].forEach(([col, row, label]) => {
+        const ph = document.createElement('div');
+        ph.className = 'pt-ph';
+        ph.style.gridColumn = col;
+        ph.style.gridRow = row;
+        ph.textContent = label;
+        ph.setAttribute('aria-hidden', 'true');
+        grid.appendChild(ph);
+      });
+      elements.forEach((element) => {
+        const color = CATS[element.cat].color;
+        const state = getState(element, currentTemp);
+        const cell = document.createElement('button');
+        cell.type = 'button';
+        cell.className = 'el';
+        cell.dataset.z = String(element.number);
+        cell.dataset.cat = element.cat;
+        cell.style.gridColumn = element.col;
+        cell.style.gridRow = element.row;
+        cell.style.background = getCellBackground(element, state);
+        cell.style.color = state === 'gas' ? '#446072' : color;
+        cell.style.borderColor = state === 'liquid' ? 'rgba(59,130,246,0.32)' : rgba(color, 0.34);
+        cell.classList.toggle('el-selected', selectedSymbol === element.symbol);
+        cell.classList.toggle('el-dimmed', !matchesFilters(element));
+        cell.classList.toggle('el-isolated-out', !!isolatedCat && element.cat !== isolatedCat);
+        cell.classList.toggle('el-command-match', commandMatches.has(element.symbol));
+        cell.setAttribute('aria-label', element.name + ', element ' + element.number + ', ' + getStateLabel(state) + ' at ' + currentTemp + ' Kelvin');
+        cell.innerHTML = '<span class="el-num">' + element.number + '</span>' + '<span class="el-sym">' + element.symbol + '</span>' + '<span class="el-name">' + element.name + '</span>' + '<span class="el-phase">' + getStateLabel(state) + '</span>' + '<span class="el-mass">' + element.mass + '</span>';
+        cell.addEventListener('click', () => showElement(element, true));
+        grid.appendChild(cell);
+      });
+    }
+
+    function buildBohr(shells, color, electronegativity) {
+      const cx = 140;
+      const cy = 140;
+      const rSteps = [34, 58, 82, 102, 120, 136, 150];
+      const orbitBias = Number.isFinite(electronegativity) ? Math.max(0.55, 1.32 - electronegativity * 0.14) : 1;
+      let svg = '<g transform="translate(' + cx + ',' + cy + ')">';
+      shells.forEach((count, index) => {
+        const r = rSteps[index] ?? rSteps[rSteps.length - 1] + (index - 6) * 13;
+        svg += '<circle class="orbit-ring" cx="0" cy="0" r="' + r + '"/>';
+        if (count <= 0) return;
+        const duration = (4.2 + index * 2.4) * orbitBias;
+        const direction = index % 2 === 0 ? 'orb-cw' : 'orb-ccw';
+        const step = (2 * Math.PI) / count;
+        let dots = '';
+        for (let i = 0; i < count; i++) {
+          const angle = step * i;
+          dots += '<circle cx="' + (r * Math.cos(angle)).toFixed(1) + '" cy="' + (r * Math.sin(angle)).toFixed(1) + '" r="4.2" fill="' + color + '" opacity="0.88"/>';
+        }
+        svg += '<g style="transform-origin:0 0;animation:' + direction + ' ' + duration.toFixed(2) + 's linear infinite">' + dots + '</g>';
+      });
+      const total = shells.reduce((sum, count) => sum + count, 0);
+      svg += '<circle cx="0" cy="0" r="' + Math.min(27, 9 + shells.length * 2.2) + '" fill="' + color + '" opacity="0.9"/>';
+      svg += '<text x="0" y="0" style="font-size:' + (total > 99 ? 9 : total > 9 ? 11 : 14) + 'px;font-weight:800;fill:#fff;text-anchor:middle;dominant-baseline:central;">' + total + '</text>';
+      svg += '</g>';
+      return svg;
+    }
+
+
+    function getOrbitalBlock(element) {
+      if (element.cat === 'ln' || element.cat === 'ac') return 'f';
+      if (element.col <= 2 || element.symbol === 'He') return 's';
+      if (element.col >= 13) return 'p';
+      return 'd';
+    }
+
+    function buildQuantumModel(element, color) {
+      const total = element.shells.reduce((sum, count) => sum + count, 0);
+      const block = getOrbitalBlock(element);
+      const valence = element.shells[element.shells.length - 1] || 0;
+      const shellCount = element.shells.length;
+      const lobeSize = 42 + Math.min(44, shellCount * 7 + valence * 1.5);
+      const opacity = Math.min(0.78, 0.22 + total / 170);
+      let svg = '<defs>';
+      svg += '<radialGradient id="qm-core" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="' + color + '" stop-opacity="0.95"/><stop offset="62%" stop-color="' + color + '" stop-opacity="0.28"/><stop offset="100%" stop-color="' + color + '" stop-opacity="0"/></radialGradient>';
+      svg += '<radialGradient id="qm-lobe" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="white" stop-opacity="0.72"/><stop offset="34%" stop-color="' + color + '" stop-opacity="0.52"/><stop offset="100%" stop-color="' + color + '" stop-opacity="0"/></radialGradient>';
+      svg += '</defs>';
+      svg += '<rect x="6" y="6" width="268" height="268" rx="36" fill="' + rgba(color, 0.045) + '" stroke="' + rgba(color, 0.14) + '"/>';
+      element.shells.forEach((count, index) => {
+        const radius = 28 + index * 17;
+        const alpha = Math.min(0.42, 0.08 + count / 80);
+        svg += '<circle class="qm-cloud" cx="140" cy="140" r="' + radius + '" fill="none" stroke="' + rgba(color, alpha) + '" stroke-width="' + Math.max(6, 13 - index) + '"/>';
+      });
+      if (block === 's') {
+        svg += '<circle class="qm-cloud" cx="140" cy="140" r="' + (52 + shellCount * 12) + '" fill="url(#qm-core)" opacity="' + opacity.toFixed(2) + '"/>';
+      } else if (block === 'p') {
+        [[0, -42, 34, lobeSize], [0, 42, 34, lobeSize], [-42, 0, lobeSize, 34], [42, 0, lobeSize, 34]].forEach(([dx, dy, rx, ry]) => {
+          svg += '<ellipse class="qm-cloud" cx="' + (140 + dx) + '" cy="' + (140 + dy) + '" rx="' + rx + '" ry="' + ry + '" fill="url(#qm-lobe)" stroke="' + rgba(color, 0.26) + '" stroke-width="1.5" opacity="0.62"/>';
+        });
+      } else if (block === 'd') {
+        [45, 135, 225, 315].forEach((angle) => {
+          const rad = angle * Math.PI / 180;
+          svg += '<ellipse class="qm-cloud" cx="' + (140 + Math.cos(rad) * 42).toFixed(1) + '" cy="' + (140 + Math.sin(rad) * 42).toFixed(1) + '" rx="31" ry="' + lobeSize + '" fill="url(#qm-lobe)" stroke="' + rgba(color, 0.24) + '" stroke-width="1.4" opacity="0.55" transform="rotate(' + angle + ',140,140)"/>';
+        });
+      } else {
+        [0, 30, 60, 90, 120, 150].forEach((angle, index) => {
+          svg += '<ellipse class="qm-cloud" cx="140" cy="140" rx="' + (36 + index * 2) + '" ry="' + (82 + shellCount * 5) + '" fill="url(#qm-lobe)" stroke="' + rgba(color, 0.2) + '" stroke-width="1.2" opacity="0.34" transform="rotate(' + angle + ',140,140)"/>';
+        });
+      }
+      svg += '<circle cx="140" cy="140" r="18" fill="' + color + '" opacity="0.92"/>';
+      svg += '<text x="140" y="140" font-size="' + (total > 99 ? 9 : 12) + '" font-weight="900" fill="white" text-anchor="middle" dominant-baseline="central">' + element.symbol + '</text>';
+      svg += '<text x="140" y="256" font-size="10" font-weight="800" fill="#64748b" text-anchor="middle">' + block.toUpperCase() + '-block probability cloud - ' + total + ' electrons</text>';
+      return svg;
+    }
+
+    function renderAtomModel(element, color) {
+      const title = document.getElementById('ep-model-title');
+      const note = document.getElementById('ep-shell-note');
+      atomModelButtons.forEach((button) => button.setAttribute('aria-pressed', button.dataset.atomModel === atomModel ? 'true' : 'false'));
+      if (atomModel === 'quantum') {
+        title.textContent = 'Quantum Cloud Model';
+        document.getElementById('bohr-svg').innerHTML = buildQuantumModel(element, color);
+        note.textContent = 'Simplified quantum mode: electron clouds show probability regions by shell count and periodic-table block, not fixed circular paths.';
+        return;
+      }
+      title.textContent = 'Electron Shell Model';
+      document.getElementById('bohr-svg').innerHTML = buildBohr(element.shells, color, element.electronegativity);
+      note.textContent = 'Simplified Bohr model: rings organize electrons by energy level for classroom comparison, not literal electron paths.';
+    }
+
+    function buildCrystalModel(element, state) {
+      const color = state === 'liquid' ? '#38bdf8' : state === 'gas' ? '#c084fc' : CATS[element.cat].color;
+      const nodes = [];
+      for (let row = 0; row < 3; row++) {
+        for (let col = 0; col < 4; col++) nodes.push({ x: 34 + col * 42 + row * 10, y: 32 + row * 28 });
+      }
+      if (element.crystal.mode === 'gas') {
+        return '<rect x="6" y="8" width="208" height="124" rx="18" fill="' + rgba(color, 0.08) + '" stroke="' + rgba(color, 0.22) + '" /><circle cx="58" cy="54" r="11" fill="' + rgba(color, 0.48) + '" /><circle cx="126" cy="78" r="14" fill="' + rgba(color, 0.28) + '" /><circle cx="176" cy="46" r="9" fill="' + rgba(color, 0.42) + '" /><circle cx="92" cy="108" r="8" fill="' + rgba(color, 0.24) + '" />';
+      }
+      const lines = [];
+      nodes.forEach((node, index) => {
+        const next = nodes[index + 1];
+        if (next && (index + 1) % 4 !== 0) lines.push('<line x1="' + node.x + '" y1="' + node.y + '" x2="' + next.x + '" y2="' + next.y + '" stroke="' + rgba(color, 0.28) + '" stroke-width="2"/>');
+        const below = nodes[index + 4];
+        if (below) lines.push('<line x1="' + node.x + '" y1="' + node.y + '" x2="' + below.x + '" y2="' + below.y + '" stroke="' + rgba(color, 0.2) + '" stroke-width="2"/>');
+      });
+      const circles = nodes.map((node) => '<circle cx="' + node.x + '" cy="' + node.y + '" r="' + (element.crystal.mode === 'network' ? 6.2 : 5.1) + '" fill="' + rgba(color, 0.74) + '" stroke="' + rgba(color, 0.9) + '" stroke-width="1.2"/>').join('');
+      const liquidOverlay = state === 'liquid' ? '<path d="M20 100 C48 82, 84 124, 116 98 S176 76, 204 98" fill="none" stroke="' + rgba('#38bdf8', 0.9) + '" stroke-width="8" stroke-linecap="round"/>' : '';
+      return '<rect x="6" y="8" width="208" height="124" rx="18" fill="' + rgba(color, 0.06) + '" stroke="' + rgba(color, 0.22) + '" />' + lines.join('') + circles + liquidOverlay;
+    }
+
+    function formatValue(value, suffix, digits) {
+      if (!Number.isFinite(value)) return 'Unknown';
+      const precision = typeof digits === 'number' ? digits : value >= 100 ? 0 : 2;
+      return Number(value).toFixed(precision) + (suffix || '');
+    }
+
+    function formatStateText(element) {
+      const state = getState(element, currentTemp);
+      if (state === 'solid') return 'Solid below ' + formatValue(element.melt, ' K', 0);
+      if (state === 'liquid') return Number.isFinite(element.boil) ? 'Liquid until ' + formatValue(element.boil, ' K', 0) : 'Liquid in this temperature band';
+      if (state === 'gas') return Number.isFinite(element.boil) ? 'Gas above ' + formatValue(element.boil, ' K', 0) : 'Gas under standard conditions';
+      return 'Predicted state';
+    }
+
+    function renderStats(element) {
+      const state = getState(element, currentTemp);
+      const stats = [
+        { label: 'Current state', value: getStateLabel(state), sub: currentTemp + ' K · ' + formatStateText(element) },
+        { label: 'Melting point', value: formatValue(element.melt, ' K', 0), sub: 'Where the solid begins to loosen.' },
+        { label: 'Boiling point', value: formatValue(element.boil, ' K', 0), sub: 'Where particles escape into gas.' },
+        { label: 'Electronegativity', value: formatValue(element.electronegativity, '', 2), sub: 'Higher values pull shared electrons harder.' },
+        { label: 'Density', value: formatValue(element.density, ' g/cm³', 2), sub: 'Mass packed into a given volume.' },
+        { label: 'Rarity lens', value: Math.round(element.rarity * 100) + ' / 100', sub: 'Higher scores mean rarer or harder-to-find materials.' },
+        { label: 'Electron shells', value: element.shells.join(' · '), sub: element.electronConfig || 'Shell population model' },
+        { label: 'Appearance', value: element.appearance ? element.appearance.split(',')[0] : 'Reference lesson note', sub: 'Observed under ordinary lab conditions.' }
+      ];
+      document.getElementById('ep-stats').innerHTML = stats.map((stat) => '<div class="ep-stat"><span class="ep-stat-label">' + stat.label + '</span><span class="ep-stat-value">' + stat.value + '</span><span class="ep-stat-sub">' + stat.sub + '</span></div>').join('');
+    }
+
+    function renderUsage(element) {
+      document.getElementById('ep-usage').innerHTML = element.applications.map((item) => '<article class="ep-usage-item"><span class="ep-usage-icon">' + item.icon + '</span><span class="ep-usage-title">' + item.title + '</span><span class="ep-usage-copy">' + item.copy + '</span></article>').join('');
+    }
+
+    function renderEarthProfile(element) {
+      const earth = element.earth || getEarthProfile(element.symbol, element.cat);
+      const activeSources = new Set(earth.sources || []);
+      const sourceHtml = Object.entries(SOURCE_DEFS).map(([key, meta]) => {
+        const active = activeSources.has(key);
+        return `<span class=\"ep-source-pill${active ? " is-active" : ""}\"><span class=\"ep-source-icon\">${SOURCE_ICONS[meta.icon]}</span>${meta.label}</span>`;
+      }).join("");
+      const flow = [
+        ["Earth source", earth.occurrence],
+        ["Common forms", (earth.forms || []).join("; ")],
+        ["Production", earth.extraction],
+        ["Media target", earth.mediaPrompt]
+      ].map(([label, value]) => `<div class=\"ep-flow-step\"><span class=\"ep-flow-label\">${label}</span><span class=\"ep-flow-value\">${value}</span></div>`).join("");
+      const mediaNote = earth.imageStatus === "ready"
+        ? `Image ready: ${earth.imageCredit} (${earth.imageLicense}).`
+        : `Image required: source a real-life, licensed photo for this element form. ${earth.imageCredit}.`;
+      document.getElementById("ep-earth").innerHTML = `<h3 class=\"ep-earth-title\">Where it is found on Earth</h3><div class=\"ep-source-grid\">${sourceHtml}</div><div class=\"ep-flow\">${flow}</div><div class=\"ep-media-note\">${mediaNote}</div>`;
+    }
+
+    function showElement(element, shouldScroll) {
+      selectedSymbol = element.symbol;
+      const state = getState(element, currentTemp);
+      const color = CATS[element.cat].color;
+      renderAtomModel(element, color);
+      document.getElementById('crystal-svg').innerHTML = buildCrystalModel(element, state);
+      document.getElementById('ep-crystal-note').textContent = element.crystal.note;
+      document.getElementById('ep-crystal-tag').textContent = element.crystal.label;
+      document.getElementById('ep-sym').textContent = element.symbol;
+      document.getElementById('ep-sym').style.color = color;
+      document.getElementById('ep-name').textContent = element.name;
+      document.getElementById('ep-num').textContent = element.number;
+      document.getElementById('ep-mass').textContent = element.mass;
+      document.getElementById('ep-badge').textContent = CATS[element.cat].label;
+      document.getElementById('ep-badge').style.background = color;
+      document.getElementById('ep-state').textContent = getStateLabel(state) + ' at ' + currentTemp + ' K';
+      document.getElementById('ep-config').textContent = element.electronConfig || element.shells.map((count, index) => 'Shell ' + (index + 1) + ': ' + count + 'e⁻').join(' · ');
+      document.getElementById('ep-desc').textContent = element.summary || element.description;
+      renderStats(element);
+      renderUsage(element);
+      renderEarthProfile(element);
+      detailPanel.classList.remove('ep-open');
+      void detailPanel.offsetWidth;
+      detailPanel.classList.add('ep-open');
+      renderGrid();
+      if (shouldScroll) detailPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function closePanel() {
+      selectedSymbol = null;
+      detailPanel.classList.remove('ep-open');
+      renderGrid();
+    }
+
+    function renderTemperatureReadout() {
+      tempReadout.textContent = currentTemp + ' K';
+      tempStateReadout.textContent = getStateSubtitle();
+    }
+
+    function renderCommandList(filter) {
+      const needle = String(filter || '').trim().toLowerCase();
+      const items = COMMANDS.filter((command) => !needle || command.label.includes(needle) || command.note.toLowerCase().includes(needle));
+      if (!items.length) {
+        commandList.innerHTML = '<div class="pt-command-empty">No command found yet. Try batteries, balloons, chips, or fireworks.</div>';
+        return;
+      }
+      commandList.innerHTML = items.map((command) => '<button class="pt-command-item" type="button" data-command="' + command.label + '"><strong>' + command.label + '</strong><small>' + command.note + '</small></button>').join('');
+    }
+
+    function openCommandPalette() {
+      commandRoot.classList.add('is-open');
+      commandRoot.setAttribute('aria-hidden', 'false');
+      commandInput.value = '';
+      renderCommandList('');
+      setTimeout(() => commandInput.focus(), 0);
+    }
+
+    function closeCommandPalette() {
+      commandRoot.classList.remove('is-open');
+      commandRoot.setAttribute('aria-hidden', 'true');
+    }
+
+    function applyCommand(label) {
+      const command = COMMANDS.find((entry) => entry.label === label);
+      if (!command) return;
+      commandMatches = new Set(command.symbols);
+      commandStatus.textContent = 'Command "' + command.label + '" highlighting ' + command.symbols.join(', ') + '.';
+      const lead = elements.find((entry) => commandMatches.has(entry.symbol));
+      closeCommandPalette();
+      renderGrid();
+      if (lead) showElement(lead, true);
+    }
+
+    function clearCommandHighlight() {
+      commandMatches = new Set();
+      commandStatus.textContent = 'Try “batteries”, “balloons”, or “chips”.';
+      renderGrid();
+    }
+
+    function renderAll() {
+      renderCategoryControls();
+      renderLegend();
+      renderHeatmapControls();
+      renderTemperatureReadout();
+      renderGrid();
+      if (selectedSymbol) {
+        const element = elements.find((entry) => entry.symbol === selectedSymbol);
+        if (element) showElement(element, false);
+      }
+    }
+
+    searchInput.addEventListener('input', (event) => {
+      searchQ = event.target.value.toLowerCase().trim();
+      if (!searchQ) clearCommandHighlight();
+      renderGrid();
+    });
+
+    tempInput.addEventListener('input', (event) => {
+      currentTemp = Number(event.target.value);
+      renderTemperatureReadout();
+      renderGrid();
+      if (selectedSymbol) {
+        const element = elements.find((entry) => entry.symbol === selectedSymbol);
+        if (element) showElement(element, false);
+      }
+    });
+
+    atomModelButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        atomModel = button.dataset.atomModel || 'bohr';
+        if (selectedSymbol) {
+          const element = elements.find((entry) => entry.symbol === selectedSymbol);
+          if (element) renderAtomModel(element, CATS[element.cat].color);
+        } else {
+          atomModelButtons.forEach((entry) => entry.setAttribute('aria-pressed', entry === button ? 'true' : 'false'));
+        }
+      });
+    });
+
+    document.getElementById('ep-close').addEventListener('click', closePanel);
+    commandOpen.addEventListener('click', openCommandPalette);
+    commandClose.addEventListener('click', closeCommandPalette);
+    commandBackdrop.addEventListener('click', closeCommandPalette);
+    commandInput.addEventListener('input', (event) => renderCommandList(event.target.value));
+    commandInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        const first = commandList.querySelector('[data-command]');
+        if (first) applyCommand(first.dataset.command);
+      }
+    });
+    commandList.addEventListener('click', (event) => {
+      const btn = event.target.closest('[data-command]');
+      if (btn) applyCommand(btn.dataset.command);
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        openCommandPalette();
+        return;
+      }
+      if (event.key === 'Escape') {
+        if (commandRoot.classList.contains('is-open')) closeCommandPalette();
+        else if (selectedSymbol) closePanel();
+      }
+    });
+
+    rebuildElements();
+    renderAll();
+    loadReferenceData();
+  })();
+  </script>
+  <script src="../../assets/js/lesson-layout.js"></script>
+  <script src="../../assets/js/classroom-animations.js"></script>
+<script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

@@ -1,0 +1,2219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Plato's Allegory of the Cave · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta
+    name="description"
+    content="A K–12 lesson on Plato's Allegory of the Cave — accessible 3D model viewer, grade-level discussion, and a reflection on truth and discernment."
+  />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <script type="module" src="../../assets/js/vendor/model-viewer.min.js"></script>
+  <style>
+    :root {
+      --cave-bg: #14100e;
+      --cave-panel: rgba(34, 26, 21, 0.94);
+      --cave-panel-2: rgba(28, 21, 17, 0.92);
+      --cave-line: rgba(214, 180, 120, 0.2);
+      --cave-ink: #f3ead8;
+      --cave-muted: #c8b79f;
+      --cave-dim: #9b886f;
+      --cave-accent: #e6a64d;
+      --cave-accent-2: #7fb0a3;
+      --cave-shadow: rgba(0, 0, 0, 0.35);
+      --cave-good: #6ec2a9;
+      --cave-warn: #f0b96b;
+      --cave-bad: #d78272;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--cave-ink);
+      background:
+        radial-gradient(1000px 540px at 0% 0%, rgba(230, 166, 77, 0.14), transparent 55%),
+        radial-gradient(920px 420px at 100% 0%, rgba(127, 176, 163, 0.12), transparent 55%),
+        linear-gradient(180deg, #17110e 0%, #110d0b 45%, #090706 100%);
+    }
+
+    body:has(.ll-viewport) {
+      min-height: 0;
+    }
+
+    .cave-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(16px) saturate(130%);
+      background: rgba(17, 13, 10, 0.84);
+      border-bottom: 1px solid rgba(230, 166, 77, 0.14);
+    }
+    .cave-topbar-inner {
+      width: min(1140px, calc(100% - 2rem));
+      margin: 0 auto;
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .cave-topbar a {
+      color: #f3d2a1;
+      text-decoration: none;
+      font-size: 0.84rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .cave-topbar a:hover { color: #ffe7c5; }
+    .cave-topbar-title {
+      color: #f7eddc;
+      font-size: 0.92rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      text-align: center;
+    }
+
+    .cave-shell {
+      width: min(1140px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 2rem 0 4rem;
+      display: grid;
+      gap: 1.2rem;
+    }
+
+    /* ── Cards ── */
+    .cave-card {
+      border-radius: 22px;
+      border: 1px solid var(--cave-line);
+      background: linear-gradient(180deg, var(--cave-panel), var(--cave-panel-2));
+      box-shadow: 0 24px 54px var(--cave-shadow);
+      overflow: hidden;
+    }
+    .cave-card-body { padding: 2rem; }
+
+    /* ── Hero ── */
+    .cave-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.9fr);
+      gap: 1.2rem;
+      align-items: stretch;
+    }
+    @media (max-width: 760px) {
+      .cave-hero { grid-template-columns: 1fr; }
+      .cave-card-body { padding: 1.35rem; }
+    }
+
+    .cave-eyebrow {
+      margin: 0 0 0.7rem;
+      color: #efbb72;
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .cave-h1 {
+      margin: 0 0 0.9rem;
+      font-size: clamp(2rem, 4.3vw, 3.15rem);
+      line-height: 1.05;
+      letter-spacing: -0.035em;
+      color: #fff5e6;
+    }
+    .cave-h1 em { font-style: normal; color: #ffd188; }
+    .cave-lead {
+      margin: 0 0 1.25rem;
+      max-width: 58ch;
+      font-size: 1rem;
+      line-height: 1.7;
+      color: var(--cave-muted);
+    }
+
+    .cave-tag-row { display: flex; flex-wrap: wrap; gap: 0.55rem; margin-bottom: 1.2rem; }
+    .cave-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.36rem 0.78rem;
+      border-radius: 999px;
+      border: 1px solid rgba(230, 166, 77, 0.24);
+      background: rgba(230, 166, 77, 0.08);
+      color: #f7d2a4;
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .cave-big-idea {
+      border-radius: 18px;
+      border: 1px solid rgba(230, 166, 77, 0.18);
+      background: linear-gradient(135deg, rgba(230, 166, 77, 0.14), rgba(127, 176, 163, 0.08));
+      padding: 1rem 1.1rem;
+    }
+    .cave-big-idea-label {
+      margin: 0 0 0.3rem;
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #ffd188;
+    }
+    .cave-big-idea p { margin: 0; font-size: 0.96rem; line-height: 1.65; color: #f8efdf; }
+
+    /* ── Lesson Map Panel ── */
+    .cave-lesson-map { display: flex; flex-direction: column; gap: 1rem; }
+    .cave-map-box {
+      border-radius: 18px;
+      border: 1px solid rgba(255, 244, 224, 0.08);
+      background: rgba(255, 247, 238, 0.03);
+      padding: 1.1rem 1.1rem 1rem;
+    }
+    .cave-map-title { margin: 0 0 0.35rem; color: #fff1db; font-size: 0.95rem; font-weight: 800; }
+    .cave-map-copy { margin: 0; color: var(--cave-muted); font-size: 0.87rem; line-height: 1.6; }
+    .cave-map-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.7rem; }
+    .cave-map-step { display: grid; grid-template-columns: 34px 1fr; gap: 0.8rem; align-items: start; }
+    .cave-map-num {
+      width: 34px; height: 34px; border-radius: 50%;
+      display: grid; place-items: center;
+      background: rgba(230, 166, 77, 0.16);
+      border: 1px solid rgba(230, 166, 77, 0.2);
+      color: #ffd79e; font-size: 0.85rem; font-weight: 900;
+    }
+    .cave-map-step strong { display: block; margin-bottom: 0.14rem; color: #f8efdf; font-size: 0.88rem; }
+    .cave-map-step span { color: var(--cave-dim); font-size: 0.8rem; line-height: 1.55; }
+
+    /* ── Grade Selector ── */
+    .cave-grade-bar {
+      border-radius: 18px;
+      border: 1px solid rgba(230, 166, 77, 0.18);
+      background: rgba(255, 247, 238, 0.03);
+      padding: 1rem 1.4rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.7rem;
+    }
+    .cave-grade-label {
+      font-size: 0.73rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #efbb72;
+      white-space: nowrap;
+    }
+    .cave-grade-btns { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .cave-grade-btn {
+      border: 1px solid rgba(255, 233, 204, 0.14);
+      background: rgba(255, 247, 238, 0.03);
+      color: var(--cave-muted);
+      border-radius: 999px;
+      padding: 0.42rem 0.85rem;
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .cave-grade-btn:hover { border-color: rgba(230, 166, 77, 0.3); color: #f9ead4; }
+    .cave-grade-btn.active {
+      background: linear-gradient(135deg, rgba(230, 166, 77, 0.22), rgba(127, 176, 163, 0.14));
+      border-color: rgba(230, 166, 77, 0.38);
+      color: #fff4e6;
+    }
+    .cave-grade-hint { font-size: 0.78rem; color: var(--cave-dim); margin: 0; }
+
+    /* Grade-gated content */
+    [data-grade] { display: none; }
+    .grade-all    [data-grade="all"],
+    .grade-all    [data-grade="k2"],
+    .grade-all    [data-grade="35"],
+    .grade-all    [data-grade="68"],
+    .grade-all    [data-grade="912"] { display: block; }
+    .grade-k2     [data-grade="all"],
+    .grade-k2     [data-grade="k2"]  { display: block; }
+    .grade-35     [data-grade="all"],
+    .grade-35     [data-grade="35"]  { display: block; }
+    .grade-68     [data-grade="all"],
+    .grade-68     [data-grade="68"]  { display: block; }
+    .grade-912    [data-grade="all"],
+    .grade-912    [data-grade="912"] { display: block; }
+    /* flex overrides */
+    .grade-all    .cave-grade-bar,
+    .grade-k2     .cave-grade-bar,
+    .grade-35     .cave-grade-bar,
+    .grade-68     .cave-grade-bar,
+    .grade-912    .cave-grade-bar { display: flex; }
+
+    /* ── Section headings ── */
+    .cave-section-head { margin: 0 0 0.45rem; font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; color: #fff3df; }
+    .cave-section-sub  { margin: 0 0 1.2rem; max-width: 70ch; color: var(--cave-muted); font-size: 0.93rem; line-height: 1.7; }
+
+    /* ── Story cards ── */
+    .cave-story-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0.85rem; }
+    .cave-story-card { border-radius: 18px; border: 1px solid rgba(255, 244, 224, 0.07); background: rgba(255, 247, 238, 0.03); padding: 1rem; }
+    .cave-story-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      display: grid; place-items: center; margin-bottom: 0.7rem;
+      background: rgba(127, 176, 163, 0.14);
+      border: 1px solid rgba(127, 176, 163, 0.22);
+      color: #bfe8dd; font-size: 0.82rem; font-weight: 900;
+    }
+    .cave-story-card h3 { margin: 0 0 0.35rem; color: #fff0d6; font-size: 0.96rem; font-weight: 800; }
+    .cave-story-card p  { margin: 0; color: var(--cave-muted); font-size: 0.84rem; line-height: 1.6; }
+
+    /* ── Vocabulary Helper ── */
+    .cave-vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.65rem; }
+    .cave-vocab-item {
+      border-radius: 14px;
+      border: 1px solid rgba(255, 233, 204, 0.1);
+      background: rgba(255, 247, 238, 0.03);
+      padding: 0.85rem 1rem;
+    }
+    .cave-vocab-word { font-size: 0.88rem; font-weight: 800; color: #ffd188; margin: 0 0 0.2rem; }
+    .cave-vocab-def  { font-size: 0.8rem; color: var(--cave-muted); line-height: 1.5; margin: 0; }
+
+    /* ── Sim controls ── */
+    .cave-sim-top {
+      display: flex; flex-wrap: wrap; gap: 0.8rem 1.4rem;
+      align-items: flex-start; justify-content: space-between; margin-bottom: 1rem;
+    }
+    .cave-sim-groups { display: flex; flex-wrap: wrap; gap: 0.9rem 1.3rem; align-items: flex-start; }
+    .cave-sim-group  { display: grid; gap: 0.45rem; }
+    .cave-sim-label  { color: #efbb72; font-size: 0.73rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+    .cave-btn-row    { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+    .cave-pill-row   { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+    .cave-pill {
+      border: 1px solid rgba(255, 233, 204, 0.16);
+      background: rgba(255, 247, 238, 0.04);
+      color: #f1d7ae;
+      border-radius: 999px;
+      padding: 0.42rem 0.78rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+    .cave-sim-goal {
+      margin: 0;
+      color: var(--cave-muted);
+      font-size: 0.84rem;
+      line-height: 1.6;
+      max-width: 28ch;
+    }
+    .cave-choice-btn {
+      border: 1px solid rgba(255, 233, 204, 0.12);
+      background: rgba(255, 247, 238, 0.03);
+      color: var(--cave-muted);
+      border-radius: 999px;
+      padding: 0.55rem 0.9rem;
+      font: inherit; font-size: 0.83rem; font-weight: 700;
+      cursor: pointer;
+      transition: background 0.16s, color 0.16s, border-color 0.16s, transform 0.16s;
+    }
+    .cave-choice-btn:hover { transform: translateY(-1px); border-color: rgba(230, 166, 77, 0.26); color: #f9ead4; }
+    .cave-choice-btn.active {
+      background: linear-gradient(135deg, rgba(230, 166, 77, 0.2), rgba(127, 176, 163, 0.14));
+      border-color: rgba(230, 166, 77, 0.34);
+      color: #fff4e6;
+    }
+    .cave-choice-btn.cave-play-btn {
+      background: rgba(230, 166, 77, 0.2);
+      border-color: rgba(230, 166, 77, 0.5);
+      color: #fff3de;
+    }
+
+    .cave-scene-copy {
+      min-width: 250px; max-width: 360px;
+      border-radius: 18px;
+      border: 1px solid rgba(230, 166, 77, 0.12);
+      background: rgba(255, 247, 238, 0.03);
+      padding: 0.9rem 1rem;
+    }
+    .cave-scene-copy h3 { margin: 0 0 0.18rem; font-size: 1rem; font-weight: 800; color: #fff2de; }
+    .cave-scene-copy p  { margin: 0; color: var(--cave-muted); font-size: 0.84rem; line-height: 1.6; }
+
+    #cave-canvas-wrap {
+      position: relative; border-radius: 18px; overflow: hidden;
+      background: #070605; border: 1px solid rgba(230, 166, 77, 0.15);
+      height: clamp(240px, 45vh, 440px);
+    }
+    #cave-model {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 100%;
+      background:
+        radial-gradient(560px 320px at 50% 24%, rgba(255, 208, 132, 0.18), transparent 58%),
+        linear-gradient(180deg, #2a1f19 0%, #100b08 100%);
+      filter: brightness(1.12) contrast(1.04) saturate(1.06);
+      --poster-color: transparent;
+      --progress-bar-color: #efbb72;
+      --progress-mask: #3b2a1c;
+    }
+    #cave-canvas-wrap.is-shadow-view #cave-model {
+      filter: contrast(1.18) brightness(0.72) saturate(0.84) blur(0.35px);
+    }
+    #cave-canvas-wrap.is-turning #cave-model {
+      filter: contrast(1.12) brightness(0.9) saturate(0.98);
+    }
+    #cave-canvas-wrap.is-awakened #cave-model {
+      filter: contrast(1.02) brightness(1.12) saturate(1.1);
+    }
+    #cave-sim-slot,
+    #cave-sim-stage {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    #cave-canvas-wrap:fullscreen {
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+    }
+    #cave-canvas-wrap:fullscreen #cave-model {
+      height: 100vh;
+    }
+    .cave-model-fallback {
+      padding: 1rem;
+      color: #f5e2c2;
+      font-size: 0.84rem;
+      line-height: 1.6;
+    }
+    .cave-model-fallback a {
+      color: #ffd188;
+    }
+    .cave-model-fallback a:hover {
+      color: #ffe7c5;
+    }
+
+    .cave-perspective-gate {
+      position: absolute;
+      inset: 0;
+      z-index: 6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.2rem;
+      background:
+        radial-gradient(circle at center, rgba(230, 166, 77, 0.12), transparent 36%),
+        rgba(6, 5, 4, 0.8);
+      transition: opacity 420ms ease, transform 420ms ease;
+    }
+    .cave-perspective-gate.is-open {
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(1.04);
+    }
+    .cave-perspective-card {
+      width: min(420px, 100%);
+      border-radius: 22px;
+      border: 1px solid rgba(255, 215, 158, 0.18);
+      background: rgba(20, 15, 12, 0.88);
+      padding: 1.15rem 1.2rem;
+      text-align: center;
+      box-shadow: 0 22px 44px rgba(0, 0, 0, 0.28);
+    }
+    .cave-perspective-card h3 {
+      margin: 0 0 0.45rem;
+      color: #fff4e3;
+      font-size: 1.18rem;
+      font-weight: 800;
+    }
+    .cave-perspective-card p {
+      margin: 0 0 0.95rem;
+      color: var(--cave-muted);
+      font-size: 0.88rem;
+      line-height: 1.65;
+    }
+    .cave-break-btn,
+    .cave-modern-toggle,
+    .cave-stage-btn,
+    .cave-hotspot-btn {
+      border: 1px solid rgba(230, 166, 77, 0.24);
+      background: rgba(230, 166, 77, 0.12);
+      color: #fff2de;
+      border-radius: 999px;
+      padding: 0.56rem 0.92rem;
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.18s, background 0.18s, border-color 0.18s;
+    }
+    .cave-break-btn:hover,
+    .cave-modern-toggle:hover,
+    .cave-stage-btn:hover,
+    .cave-hotspot-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(230, 166, 77, 0.2);
+      border-color: rgba(230, 166, 77, 0.42);
+    }
+    .cave-stage-btn.active,
+    .cave-modern-toggle.active {
+      background: linear-gradient(135deg, rgba(230, 166, 77, 0.24), rgba(127, 176, 163, 0.14));
+      border-color: rgba(230, 166, 77, 0.42);
+      color: #fffaf0;
+    }
+
+    .cave-model-hotspot {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      border: none;
+      background: transparent;
+      color: #fff6e8;
+      cursor: pointer;
+      padding: 0;
+    }
+    .cave-model-hotspot::after {
+      content: "";
+      position: absolute;
+      left: -6px;
+      top: -6px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 209, 136, 0.42);
+      animation: cave-pulse 1.9s infinite;
+    }
+    .cave-hotspot-orb {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 246, 231, 0.9);
+      background: radial-gradient(circle at 35% 35%, #ffd188, #e6a64d 70%);
+      box-shadow: 0 0 12px rgba(230, 166, 77, 0.55);
+      flex: 0 0 auto;
+    }
+    .cave-hotspot-label {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0.26rem 0.58rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 222, 176, 0.18);
+      background: rgba(18, 14, 11, 0.82);
+      font-size: 0.73rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      box-shadow: 0 10px 18px rgba(0, 0, 0, 0.22);
+    }
+    @keyframes cave-pulse {
+      0% { transform: scale(0.8); opacity: 0.65; }
+      70% { transform: scale(1.4); opacity: 0; }
+      100% { transform: scale(1.4); opacity: 0; }
+    }
+
+    .cave-modern-wall,
+    .cave-truth-wall {
+      position: absolute;
+      z-index: 4;
+      pointer-events: none;
+      border-radius: 16px;
+      transition: opacity 240ms ease, transform 240ms ease;
+    }
+    .cave-modern-wall {
+      left: 4%;
+      top: 15%;
+      width: min(270px, 48%);
+      padding: 0.85rem;
+      background: rgba(7, 10, 14, 0.86);
+      border: 1px solid rgba(87, 245, 255, 0.18);
+      box-shadow: 0 18px 32px rgba(0, 0, 0, 0.22);
+      opacity: 0;
+      transform: translateX(-8px) rotate(-2deg);
+    }
+    .cave-modern-wall.is-active {
+      opacity: 1;
+      transform: translateX(0) rotate(-2deg);
+    }
+    .cave-feed-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.65rem;
+      color: #c9f7ff;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .cave-feed-card {
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(201, 247, 255, 0.08);
+      padding: 0.55rem 0.65rem;
+      margin-top: 0.45rem;
+      color: #ddf8ff;
+      font-size: 0.74rem;
+      line-height: 1.45;
+    }
+    .cave-feed-meta {
+      display: block;
+      margin-bottom: 0.2rem;
+      color: #7adff2;
+      font-size: 0.63rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .cave-truth-wall {
+      right: 4%;
+      top: 10%;
+      width: min(260px, 44%);
+      min-height: 120px;
+      padding: 0.9rem;
+      background: rgba(255, 247, 238, 0.08);
+      border: 1px solid rgba(255, 227, 193, 0.14);
+      box-shadow: 0 16px 28px rgba(0, 0, 0, 0.18);
+      opacity: 0.18;
+      transform: rotate(2deg);
+    }
+    .cave-truth-wall strong {
+      display: block;
+      margin-bottom: 0.35rem;
+      color: #fff0d6;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .cave-truth-wall p {
+      margin: 0;
+      color: #f5e2c2;
+      font-size: 0.8rem;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    .cave-hotspot-panel {
+      margin-top: 0.7rem;
+      border-radius: 16px;
+      border: 1px solid rgba(230, 166, 77, 0.16);
+      background: rgba(255, 247, 238, 0.04);
+      padding: 0.85rem 1rem;
+    }
+    .cave-hotspot-panel strong {
+      display: block;
+      margin-bottom: 0.25rem;
+      color: #fff3df;
+      font-size: 0.85rem;
+    }
+    .cave-hotspot-panel p {
+      margin: 0;
+      color: var(--cave-muted);
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+
+    .cave-stage-row {
+      display: grid;
+      gap: 0.45rem;
+      margin-bottom: 0.65rem;
+    }
+
+    .cave-quote-strip {
+      margin-top: 0.7rem;
+      border-radius: 14px;
+      border: 1px solid rgba(127, 176, 163, 0.2);
+      background: rgba(127, 176, 163, 0.08);
+      padding: 0.72rem 0.82rem;
+      font-size: 0.78rem;
+      color: #dff6ef;
+      line-height: 1.6;
+    }
+
+    .cave-caption {
+      margin: 0.9rem 0 0;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 214, 140, 0.18);
+      background: rgba(255, 233, 204, 0.06);
+      padding: 0.75rem 0.9rem;
+      font-size: 0.86rem;
+      color: #f5e2c2;
+      line-height: 1.6;
+    }
+
+    .cave-dialogue {
+      margin-top: 0.7rem;
+      border-radius: 16px;
+      border: 1px solid rgba(127, 176, 163, 0.22);
+      background: rgba(127, 176, 163, 0.08);
+      padding: 0.85rem 1rem;
+      display: none;
+    }
+    .cave-dialogue.is-active { display: block; }
+    .cave-dialogue-name {
+      display: block;
+      color: #bfe8dd;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.35rem;
+    }
+    .cave-dialogue-text {
+      margin: 0;
+      color: #e6f5ef;
+      font-size: 0.86rem;
+      line-height: 1.6;
+    }
+
+    .cave-sim-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(7, 6, 6, 0.94);
+      z-index: 999;
+      padding: 1.2rem;
+    }
+    .cave-sim-overlay.is-active { display: flex; }
+    .cave-sim-overlay-inner {
+      width: min(1200px, 100%);
+      height: min(96vh, 860px);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .cave-sim-overlay-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      color: #f7e6cb;
+      font-size: 0.9rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+    .cave-sim-overlay-close {
+      border: 1px solid rgba(255, 244, 224, 0.18);
+      background: rgba(255, 244, 224, 0.08);
+      color: #fff1d8;
+      padding: 0.45rem 0.8rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+    }
+    .cave-sim-overlay-body {
+      flex: 1;
+      display: grid;
+      gap: 0.75rem;
+    }
+    body.cave-sim-open { overflow: hidden; }
+    body.cave-sim-open #cave-canvas-wrap { height: clamp(220px, 60vh, 640px); }
+
+    .cave-info-grid {
+      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.8rem; margin-top: 1rem;
+    }
+    @media (max-width: 900px) { .cave-info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 560px) { .cave-info-grid { grid-template-columns: 1fr; } }
+    .cave-info-card { border-radius: 16px; border: 1px solid rgba(255, 244, 224, 0.07); background: rgba(255, 247, 238, 0.03); padding: 0.95rem 1rem; }
+    .cave-info-card span { display: block; margin-bottom: 0.35rem; color: #efbb72; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+    .cave-info-card p { margin: 0; color: var(--cave-muted); font-size: 0.84rem; line-height: 1.6; }
+
+    /* ── Two-col ── */
+    .cave-two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.2rem; }
+    @media (max-width: 760px) { .cave-two-col { grid-template-columns: 1fr; } }
+
+    /* ── Mini cards / stack ── */
+    .cave-stack { display: grid; gap: 0.8rem; }
+    .cave-mini-card { border-radius: 16px; border: 1px solid rgba(255, 244, 224, 0.07); background: rgba(255, 247, 238, 0.03); padding: 1rem; }
+    .cave-mini-card h3 { margin: 0 0 0.28rem; font-size: 0.94rem; color: #fff0d6; font-weight: 800; }
+    .cave-mini-card p  { margin: 0; color: var(--cave-muted); font-size: 0.84rem; line-height: 1.62; }
+
+    /* ── Note callout ── */
+    .cave-note {
+      border-radius: 16px;
+      border: 1px solid rgba(127, 176, 163, 0.2);
+      background: rgba(127, 176, 163, 0.08);
+      padding: 0.95rem 1rem;
+      color: #dff6ef; font-size: 0.84rem; line-height: 1.65;
+    }
+    .cave-note strong { color: #f5fffc; }
+
+    /* ── Connections / discuss ── */
+    .cave-connection-grid,
+    .cave-discuss-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.85rem; }
+    .cave-connection,
+    .cave-discuss { border-radius: 18px; border: 1px solid rgba(255, 244, 224, 0.08); background: rgba(255, 247, 238, 0.03); padding: 1rem; }
+    .cave-connection h3,
+    .cave-discuss h3 { margin: 0 0 0.3rem; color: #fff0d7; font-size: 0.95rem; font-weight: 800; }
+    .cave-connection p,
+    .cave-discuss p  { margin: 0; color: var(--cave-muted); font-size: 0.83rem; line-height: 1.6; }
+
+    /* ── Grade-banded discussion tabs ── */
+    .cave-disc-tab-bar { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+    .cave-disc-tab {
+      border: 1px solid rgba(255, 233, 204, 0.14);
+      background: rgba(255, 247, 238, 0.03);
+      color: var(--cave-muted);
+      border-radius: 999px;
+      padding: 0.4rem 0.8rem;
+      font: inherit; font-size: 0.8rem; font-weight: 700;
+      cursor: pointer;
+      transition: background 0.14s, color 0.14s, border-color 0.14s;
+    }
+    .cave-disc-tab:hover { border-color: rgba(230, 166, 77, 0.28); color: #f9ead4; }
+    .cave-disc-tab.active { background: rgba(230, 166, 77, 0.16); border-color: rgba(230, 166, 77, 0.38); color: #fff4e6; }
+    .cave-disc-panel { display: none; }
+    .cave-disc-panel.active { display: block; }
+
+    /* ── Quiz ── */
+    .cave-quiz-q { display: block; margin: 0 0 0.65rem; color: #fff0d7; font-size: 0.96rem; font-weight: 800; }
+    .cave-quiz-options { display: grid; gap: 0.45rem; }
+    .cave-quiz-opt {
+      width: 100%; text-align: left;
+      border-radius: 12px; border: 1px solid rgba(255, 244, 224, 0.09);
+      background: rgba(255, 247, 238, 0.03); color: var(--cave-muted);
+      padding: 0.72rem 0.9rem; font: inherit; font-size: 0.87rem; line-height: 1.5;
+      cursor: pointer; transition: background 0.15s, border-color 0.15s;
+    }
+    .cave-quiz-opt:hover:not(:disabled) { background: rgba(230, 166, 77, 0.08); border-color: rgba(230, 166, 77, 0.2); color: #f6ead8; }
+    .cave-quiz-opt.correct   { background: rgba(110, 194, 169, 0.13); border-color: rgba(110, 194, 169, 0.4); color: #dcfaf1; }
+    .cave-quiz-opt.incorrect { background: rgba(215, 130, 114, 0.12); border-color: rgba(215, 130, 114, 0.34); color: #ffe2dc; }
+    .cave-quiz-feedback { display: none; margin-top: 0.5rem; padding: 0.7rem 0.85rem; border-radius: 12px; font-size: 0.83rem; line-height: 1.6; }
+    .cave-quiz-feedback.show { display: block; }
+    .cave-quiz-feedback.good { border: 1px solid rgba(110, 194, 169, 0.36); background: rgba(110, 194, 169, 0.12); color: #dffcf3; }
+    .cave-quiz-feedback.bad  { border: 1px solid rgba(215, 130, 114, 0.3);  background: rgba(215, 130, 114, 0.12); color: #ffe5df; }
+    .cave-quiz-divider { border: none; border-top: 1px solid rgba(255, 244, 224, 0.08); margin: 1.2rem 0; }
+
+    /* ── Reflect ── */
+    .cave-reflect-textarea {
+      width: 100%; min-height: 118px;
+      border-radius: 14px; border: 1px solid rgba(255, 244, 224, 0.12);
+      background: rgba(255, 247, 238, 0.04); color: var(--cave-ink);
+      padding: 0.9rem 1rem; font: inherit; font-size: 0.9rem; line-height: 1.6;
+      resize: vertical; outline: none;
+    }
+    .cave-reflect-textarea:focus { border-color: rgba(230, 166, 77, 0.34); box-shadow: 0 0 0 3px rgba(230, 166, 77, 0.08); }
+    .cave-reflect-textarea::placeholder { color: #7f6d5a; }
+    .cave-reflect-note { margin: 0.45rem 0 0; color: var(--cave-dim); font-size: 0.78rem; }
+
+    /* ── Closing Devotional ── */
+    .cave-closing {
+      border-radius: 22px;
+      border: 1px solid rgba(127, 176, 163, 0.28);
+      background: linear-gradient(160deg, rgba(127, 176, 163, 0.12), rgba(230, 166, 77, 0.06));
+      padding: 1.8rem 2rem;
+      text-align: center;
+    }
+    .cave-closing-icon { font-size: 2rem; display: block; margin-bottom: 0.7rem; }
+    .cave-closing h2   { margin: 0 0 0.8rem; font-size: 1.2rem; font-weight: 800; color: #fff3df; letter-spacing: -0.01em; }
+    .cave-closing p    { margin: 0 0 0.65rem; font-size: 0.92rem; line-height: 1.68; color: var(--cave-muted); max-width: 60ch; margin-left: auto; margin-right: auto; }
+    .cave-closing p:last-child { margin-bottom: 0; }
+    .cave-closing strong { color: #f8efdf; }
+
+    /* ── Footer ── */
+    .cave-footer { text-align: center; padding: 1rem 1rem 3rem; color: #8d785f; font-size: 0.8rem; }
+    .cave-footer a { color: #efbb72; text-decoration: none; }
+    .cave-footer a:hover { color: #ffe7c5; }
+
+    /* ═══ SINGLE-VIEWPORT OVERHAUL ═══════════════════════════ */
+
+    .ll-viewport {
+      --ll-panel-bg:      rgba(20, 15, 12, 0.97);
+      --ll-panel-border:  rgba(214, 180, 120, 0.15);
+      --ll-tab-color:     rgba(200, 183, 159, 0.55);
+      --ll-tab-active-bg: rgba(230, 166, 77, 0.15);
+      --ll-tab-active:    #efbb72;
+      --ll-toggle-bg:     rgba(20, 15, 12, 0.97);
+      --ll-panel-w:       340px;
+    }
+
+    /* Sim area: flex column so canvas fills height */
+    .cave-sim-area {
+      display: flex;
+      flex-direction: column;
+      background:
+        radial-gradient(600px 400px at 30% 20%, rgba(230,166,77,0.06), transparent),
+        linear-gradient(180deg, #17110e, #0a0807);
+    }
+
+    /* Compact header replacing the big hero */
+    .cave-sim-header {
+      flex-shrink: 0;
+      padding: 0.45rem 1rem 0.35rem;
+      text-align: center;
+      border-bottom: 1px solid rgba(214,180,120,0.1);
+    }
+    .cave-sim-header h1 {
+      margin: 0; font-size: 0.95rem; font-weight: 800;
+      color: #fff5e6; letter-spacing: -0.02em;
+    }
+    .cave-sim-header p {
+      margin: 0.1rem 0 0; font-size: 0.74rem; color: var(--cave-dim);
+    }
+
+    /* Canvas fills remaining viewport height */
+    .cave-sim-area #cave-canvas-wrap {
+      flex: 0 0 auto;
+      min-height: clamp(320px, 58vh, 680px);
+      height: clamp(320px, 58vh, 680px);
+      border-radius: 0;
+      border: none;
+      border-bottom: 1px solid rgba(230,166,77,0.1);
+    }
+    @media (max-width: 680px) {
+      .cave-sim-area #cave-canvas-wrap {
+        min-height: clamp(280px, 46vh, 520px);
+        height: clamp(280px, 46vh, 520px);
+      }
+    }
+
+    /* Caption + dialogue flush at bottom of canvas */
+    .cave-sim-area .cave-caption {
+      flex-shrink: 0; margin: 0; border-radius: 0;
+      padding: 0.4rem 0.8rem; border: none;
+      border-bottom: 1px solid rgba(255,214,140,0.1);
+      font-size: 0.8rem;
+    }
+    .cave-sim-area .cave-dialogue {
+      flex-shrink: 0; margin: 0; border-radius: 0;
+      border: none; border-bottom: 1px solid rgba(127,176,163,0.15);
+      padding: 0.45rem 0.8rem;
+    }
+
+    /* Zone info readouts — compact strip */
+    .cave-sim-area .cave-info-grid {
+      flex-shrink: 0; margin: 0;
+      padding: 0.35rem 0.5rem; gap: 0.4rem;
+    }
+    @media (max-width: 680px) {
+      .cave-sim-area .cave-info-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .cave-sim-area .cave-info-card { padding: 0.55rem 0.65rem; border-radius: 10px; }
+    .cave-sim-area .cave-info-card span { font-size: 0.6rem; margin-bottom: 0.15rem; }
+    .cave-sim-area .cave-info-card p { font-size: 0.75rem; line-height: 1.45; }
+
+    /* Panel content: force single-column grids */
+    .ll-panel-body .cave-story-grid,
+    .ll-panel-body .cave-vocab-grid,
+    .ll-panel-body .cave-connection-grid,
+    .ll-panel-body .cave-discuss-grid { grid-template-columns: 1fr; gap: 0.55rem; }
+    .ll-panel-body .cave-two-col { grid-template-columns: 1fr; gap: 0.7rem; }
+    .ll-panel-body .cave-hero { grid-template-columns: 1fr; }
+    .ll-panel-body .cave-info-grid { grid-template-columns: 1fr; }
+
+    /* Compact cards inside panel */
+    .ll-panel-body .cave-card { border-radius: 14px; box-shadow: none; margin-bottom: 0.6rem; }
+    .ll-panel-body .cave-card-body { padding: 0.8rem 0.85rem; }
+    .ll-panel-body .cave-section-head { font-size: 1rem; margin-bottom: 0.25rem; }
+    .ll-panel-body .cave-section-sub { font-size: 0.8rem; margin-bottom: 0.7rem; }
+    .ll-panel-body .cave-closing { border-radius: 14px; padding: 0.9rem; }
+    .ll-panel-body .cave-closing h2 { font-size: 0.95rem; }
+    .ll-panel-body .cave-closing p { font-size: 0.8rem; }
+    .ll-panel-body .cave-mini-card { padding: 0.7rem; }
+    .ll-panel-body .cave-note { padding: 0.7rem 0.8rem; }
+
+    /* Explore button (inline play) */
+    .cave-explore-btn {
+      border: 1px solid rgba(230,166,77,0.35);
+      background: rgba(230,166,77,0.15);
+      color: #fff3de; border-radius: 10px;
+      padding: 0.5rem 0.8rem; font: inherit;
+      font-size: 0.8rem; font-weight: 700;
+      cursor: pointer; width: 100%;
+      margin-bottom: 0.45rem;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .cave-explore-btn:hover { background: rgba(230,166,77,0.25); border-color: rgba(230,166,77,0.5); }
+    .cave-explore-btn.active { background: rgba(230,166,77,0.35); border-color: rgba(230,166,77,0.6); color: #fff; }
+
+    #cave-model:focus { outline: 2px solid var(--cave-accent); outline-offset: -2px; }
+
+    /* Panel action row */
+    .cave-action-row {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 0.35rem; margin-bottom: 0.45rem;
+    }
+    .cave-action-btn {
+      border: 1px solid rgba(255,233,204,0.12);
+      background: rgba(255,247,238,0.03);
+      color: var(--cave-muted); border-radius: 10px;
+      padding: 0.45rem 0.5rem; font: inherit;
+      font-size: 0.72rem; font-weight: 700;
+      cursor: pointer; text-align: center;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .cave-action-btn:hover { border-color: rgba(230,166,77,0.3); color: #f9ead4; }
+
+    /* Key reference in controls panel */
+    .cave-ctrl-keys {
+      display: flex; flex-wrap: wrap; gap: 0.35rem;
+      margin-bottom: 0.5rem;
+    }
+    .cave-ctrl-key {
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      padding: 0.25rem 0.5rem; border-radius: 7px;
+      border: 1px solid rgba(214,180,120,0.15);
+      background: rgba(255,247,238,0.03);
+      color: var(--cave-muted); font-size: 0.7rem; font-weight: 600;
+    }
+    .cave-ctrl-key kbd { font-family: inherit; font-weight: 800; color: #f1d7ae; }
+
+    /* Lesson pane section dividers */
+    .cave-lesson-divider {
+      border: none; border-top: 1px solid rgba(214,180,120,0.1);
+      margin: 0.9rem 0;
+    }
+
+    /* Scene readout in controls pane */
+    .cave-scene-readout { margin-bottom: 0.6rem; }
+    .cave-scene-readout h3 { margin: 0 0 0.15rem; font-size: 0.9rem; font-weight: 800; color: #fff2de; }
+    .cave-scene-readout p { margin: 0; color: var(--cave-muted); font-size: 0.78rem; line-height: 1.5; }
+
+    /* Loading feedback for the large interactive scene. */
+    .cave-model-fallback { display: none; }
+    #cave-model:not(:defined) .cave-model-fallback,
+    #cave-model.model-error .cave-model-fallback { display: block; }
+    .cave-load-status {
+      position: absolute;
+      left: 50%;
+      bottom: 0.8rem;
+      z-index: 8;
+      width: min(300px, calc(100% - 2rem));
+      transform: translateX(-50%);
+      padding: 0.55rem 0.7rem;
+      border: 1px solid rgba(255, 215, 158, 0.24);
+      border-radius: 12px;
+      background: rgba(12, 9, 7, 0.88);
+      color: #f7e6cb;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-align: center;
+      transition: opacity 180ms ease;
+    }
+    .cave-load-status.is-ready { opacity: 0; pointer-events: none; }
+    .cave-load-track {
+      display: block;
+      height: 4px;
+      margin-top: 0.4rem;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .cave-load-fill {
+      display: block;
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--cave-accent), #ffd188);
+      transition: width 120ms linear;
+    }
+
+    .cave-source-card {
+      margin-bottom: 0.8rem;
+      padding: 0.8rem;
+      border: 1px solid rgba(127, 176, 163, 0.2);
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(127, 176, 163, 0.1), rgba(230, 166, 77, 0.06));
+    }
+    .cave-source-card strong { display: block; margin-bottom: 0.3rem; color: #e9fff9; font-size: 0.8rem; }
+    .cave-source-card p { margin: 0; color: var(--cave-muted); font-size: 0.78rem; line-height: 1.55; }
+    .cave-target-list { margin: 0.55rem 0 0; padding-left: 1.1rem; color: #f3e7d5; font-size: 0.78rem; line-height: 1.6; }
+
+    .cave-source-lab {
+      margin-bottom: 1rem;
+      padding: 0.85rem;
+      border: 1px solid rgba(230, 166, 77, 0.18);
+      border-radius: 16px;
+      background: rgba(230, 166, 77, 0.06);
+    }
+    .cave-source-lab h3 { margin: 0 0 0.3rem; color: #fff0d7; font-size: 0.92rem; }
+    .cave-source-lab > p { margin: 0 0 0.65rem; color: var(--cave-muted); font-size: 0.8rem; line-height: 1.55; }
+    .cave-source-steps { display: grid; gap: 0.42rem; }
+    .cave-source-step {
+      width: 100%;
+      border: 1px solid rgba(255, 233, 204, 0.12);
+      border-radius: 11px;
+      background: rgba(255, 247, 238, 0.035);
+      color: var(--cave-muted);
+      padding: 0.62rem 0.7rem;
+      font: inherit;
+      font-size: 0.77rem;
+      line-height: 1.45;
+      text-align: left;
+      cursor: pointer;
+    }
+    .cave-source-step:hover,
+    .cave-source-step.is-checked { border-color: rgba(127, 176, 163, 0.38); color: #e9fff9; background: rgba(127, 176, 163, 0.1); }
+    .cave-source-step.is-checked::before { content: "✓ "; color: var(--cave-good); font-weight: 900; }
+    .cave-source-verdict { margin-top: 0.65rem; padding: 0.65rem 0.72rem; border-radius: 11px; background: rgba(7, 6, 5, 0.4); color: #f4e8d5; font-size: 0.78rem; line-height: 1.55; }
+
+    .cave-quiz-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.7rem;
+      margin-bottom: 0.85rem;
+      padding: 0.65rem 0.75rem;
+      border: 1px solid rgba(127, 176, 163, 0.2);
+      border-radius: 12px;
+      background: rgba(127, 176, 163, 0.08);
+      color: #e9fff9;
+      font-size: 0.78rem;
+    }
+    .cave-quiz-reset,
+    .cave-reflect-clear {
+      border: 1px solid rgba(255, 233, 204, 0.15);
+      border-radius: 999px;
+      background: rgba(255, 247, 238, 0.04);
+      color: #f5e2c2;
+      padding: 0.38rem 0.65rem;
+      font: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .cave-reflect-meta { display: flex; align-items: center; justify-content: space-between; gap: 0.7rem; margin-top: 0.45rem; }
+    .cave-reflect-meta .cave-reflect-note { margin: 0; }
+
+    @media (max-width: 680px) {
+      /* The sim is scrollable above the bottom drawer. Do not shrink its first
+         child and let the prompt overflow into the readout cards. */
+      #cave-sim-slot { flex: 0 0 auto; }
+      .cave-sim-area #cave-canvas-wrap {
+        min-height: clamp(260px, 42vh, 430px);
+        height: clamp(260px, 42vh, 430px);
+      }
+      .cave-sim-area .cave-dialogue { min-height: 0; }
+      .cave-sim-area .cave-info-grid { padding-bottom: 0.75rem; }
+      .cave-truth-wall { display: none; }
+      .cave-perspective-gate { padding: 0.75rem; }
+      .cave-perspective-card { padding: 0.95rem; }
+      .cave-perspective-card h3 { font-size: 1.02rem; }
+      .cave-perspective-card p { font-size: 0.8rem; }
+    }
+
+    /* ═══ PARCHMENT / ANCIENT SCROLL THEME ══════════════════ */
+    body {
+      color: #3d2918;
+      background:
+        radial-gradient(circle at 14% 18%, rgba(111, 68, 31, 0.12) 0 1px, transparent 2px),
+        radial-gradient(circle at 82% 72%, rgba(111, 68, 31, 0.08) 0 1px, transparent 2px),
+        repeating-linear-gradient(4deg, rgba(111, 68, 31, 0.025) 0 1px, transparent 1px 5px),
+        #d6b77c;
+      background-size: 31px 29px, 43px 37px, auto, auto;
+    }
+    .ll-viewport {
+      --cave-ink: #3d2918;
+      --cave-muted: #624a34;
+      --cave-dim: #7b6247;
+      --cave-panel: rgba(244, 226, 184, 0.98);
+      --cave-panel-2: rgba(226, 199, 145, 0.98);
+      --cave-line: rgba(104, 66, 31, 0.28);
+      --cave-shadow: rgba(68, 39, 16, 0.2);
+      --ll-panel-bg: #ead3a2;
+      --ll-panel-border: rgba(91, 55, 26, 0.34);
+      --ll-tab-color: #735333;
+      --ll-tab-active-bg: rgba(113, 70, 31, 0.15);
+      --ll-tab-active: #633c1d;
+      --ll-toggle-bg: #e1bd7d;
+      font-family: Georgia, "Times New Roman", serif;
+      background: #d4b274;
+    }
+
+    .cave-topbar {
+      color: #f5e5bd;
+      background:
+        linear-gradient(180deg, rgba(75, 43, 22, 0.98), rgba(55, 31, 17, 0.98)),
+        #432613;
+      border-bottom: 3px double #b98a49;
+      box-shadow: 0 5px 16px rgba(62, 35, 15, 0.24);
+      backdrop-filter: none;
+    }
+    .cave-topbar a { color: #f1d7a0; }
+    .cave-topbar a:hover { color: #fff4d5; }
+    .cave-topbar-title { color: #fff0c8; font-family: Georgia, "Times New Roman", serif; }
+
+    .cave-sim-area {
+      background:
+        radial-gradient(ellipse at 50% 20%, rgba(255, 247, 216, 0.82), transparent 52%),
+        repeating-linear-gradient(2deg, rgba(101, 64, 30, 0.025) 0 1px, transparent 1px 6px),
+        linear-gradient(180deg, #dec38e 0%, #cda76a 100%);
+      color: #3d2918;
+    }
+    .cave-sim-header {
+      background: linear-gradient(180deg, #f2dfb2, #dfbf83);
+      border-bottom: 3px double rgba(103, 63, 29, 0.42);
+      box-shadow: 0 4px 12px rgba(89, 52, 22, 0.12);
+    }
+    .cave-sim-header h1 { color: #432817; text-shadow: 0 1px rgba(255, 244, 210, 0.8); }
+    .cave-sim-header p { color: #735437; }
+
+    .cave-sim-area #cave-canvas-wrap {
+      background:
+        radial-gradient(ellipse at 50% 34%, rgba(255, 244, 205, 0.9), transparent 58%),
+        linear-gradient(180deg, #d9bd86, #b98d55);
+      border-bottom: 3px double rgba(92, 55, 25, 0.42);
+      box-shadow: inset 0 0 46px rgba(83, 48, 20, 0.2);
+    }
+    #cave-model {
+      background:
+        radial-gradient(ellipse at 50% 28%, rgba(255, 246, 216, 0.92), transparent 58%),
+        linear-gradient(180deg, #ddc38f 0%, #bd925b 100%);
+      filter: brightness(1.08) contrast(1.02) saturate(1.02);
+      --progress-bar-color: #7a4a24;
+      --progress-mask: #d8b87c;
+    }
+    #cave-canvas-wrap.is-shadow-view #cave-model { filter: sepia(0.18) contrast(1.08) brightness(0.92); }
+    #cave-canvas-wrap.is-turning #cave-model { filter: sepia(0.08) contrast(1.04) brightness(1.02); }
+    #cave-canvas-wrap.is-awakened #cave-model { filter: contrast(1.01) brightness(1.16) saturate(1.05); }
+
+    .cave-perspective-gate {
+      background:
+        radial-gradient(circle at center, rgba(255, 239, 191, 0.34), transparent 42%),
+        rgba(85, 53, 27, 0.2);
+    }
+    .cave-perspective-card {
+      color: #3b2515;
+      border: 2px solid rgba(103, 63, 29, 0.52);
+      outline: 1px solid rgba(255, 242, 204, 0.72);
+      outline-offset: -7px;
+      background:
+        linear-gradient(90deg, rgba(109, 66, 29, 0.08), transparent 14% 86%, rgba(109, 66, 29, 0.08)),
+        #eed7a4;
+      box-shadow: 0 20px 42px rgba(66, 38, 17, 0.24);
+    }
+    .cave-perspective-card h3 { color: #422716; }
+    .cave-perspective-card p { color: #64492f; }
+    .cave-break-btn,
+    .cave-modern-toggle,
+    .cave-stage-btn,
+    .cave-hotspot-btn {
+      color: #f9e8bd;
+      border-color: #75451f;
+      background: linear-gradient(180deg, #85532a, #613718);
+      box-shadow: inset 0 1px rgba(255, 233, 182, 0.25);
+    }
+    .cave-break-btn:hover,
+    .cave-modern-toggle:hover,
+    .cave-stage-btn:hover,
+    .cave-hotspot-btn:hover { background: linear-gradient(180deg, #9a6334, #71401d); }
+    .cave-stage-btn.active,
+    .cave-modern-toggle.active { color: #fff2cf; background: linear-gradient(180deg, #6e6140, #4f422a); border-color: #3f321f; }
+
+    .cave-load-status {
+      color: #f8e8bd;
+      border-color: rgba(91, 53, 24, 0.58);
+      background: rgba(72, 43, 22, 0.9);
+    }
+    .cave-load-fill { background: linear-gradient(90deg, #d69b46, #ffe1a2); }
+
+    .cave-sim-area .cave-caption {
+      color: #432a18;
+      background: #e8cb91;
+      border-bottom: 1px solid rgba(95, 57, 27, 0.34);
+    }
+    .cave-sim-area .cave-dialogue {
+      color: #3c2b1e;
+      background: #efe0b7;
+      border-bottom: 3px double rgba(95, 57, 27, 0.32);
+    }
+    .cave-dialogue-name { color: #4f6147; }
+    .cave-dialogue-text { color: #354034; }
+    .cave-sim-area .cave-info-grid { background: rgba(199, 158, 96, 0.42); }
+    .cave-info-card {
+      border-color: rgba(99, 60, 27, 0.28);
+      background: linear-gradient(180deg, rgba(248, 232, 193, 0.94), rgba(227, 199, 145, 0.94));
+      box-shadow: 0 2px 6px rgba(75, 43, 19, 0.1);
+    }
+    .cave-info-card span { color: #78451f; }
+    .cave-info-card p { color: #4a3321; }
+
+    .cave-truth-wall {
+      color: #44301f;
+      border-color: rgba(102, 63, 30, 0.36);
+      background: rgba(244, 225, 182, 0.92);
+      box-shadow: 0 10px 24px rgba(72, 41, 18, 0.18);
+      opacity: 0;
+      pointer-events: none;
+    }
+    .cave-truth-wall.has-reflection { opacity: 0.9; }
+    .cave-truth-wall strong { color: #70401e; }
+    .cave-truth-wall p { color: #523a25; }
+    .cave-modern-wall { background: rgba(70, 45, 29, 0.94); border-color: rgba(230, 194, 126, 0.42); }
+
+    .ll-panel {
+      color: #3d2918;
+      background:
+        linear-gradient(90deg, rgba(103, 63, 29, 0.08), transparent 7% 93%, rgba(103, 63, 29, 0.1)),
+        repeating-linear-gradient(3deg, rgba(103, 63, 29, 0.025) 0 1px, transparent 1px 5px),
+        #ead3a2;
+      border-left-color: rgba(87, 51, 23, 0.38);
+      box-shadow: -8px 0 22px rgba(73, 43, 20, 0.14);
+    }
+    .ll-panel-head { background: rgba(126, 81, 37, 0.1); border-bottom-color: rgba(87, 51, 23, 0.34); }
+    .ll-tab { color: #735333; }
+    .ll-tab:hover { color: #462b18; background: rgba(112, 68, 30, 0.1); }
+    .ll-tab[aria-selected="true"] { color: #f8e8bd; background: #70431f; }
+    .ll-panel-close { color: #68492e; background: rgba(107, 65, 29, 0.12); }
+    .ll-panel-body { scrollbar-color: #9b7140 transparent; }
+    .ll-label { color: #765333; opacity: 1; }
+    .ll-hr,
+    .cave-lesson-divider,
+    .cave-quiz-divider { border-color: rgba(91, 54, 24, 0.24); }
+
+    .cave-scene-readout h3,
+    .cave-section-head,
+    .cave-mini-card h3,
+    .cave-story-card h3,
+    .cave-discuss h3,
+    .cave-connection h3,
+    .cave-source-lab h3,
+    .cave-quiz-q { color: #452918; }
+    .cave-scene-readout p,
+    .cave-section-sub,
+    .cave-mini-card p,
+    .cave-story-card p,
+    .cave-discuss p,
+    .cave-connection p,
+    .cave-source-lab > p { color: #634a33; }
+    .cave-big-idea,
+    .cave-source-card,
+    .cave-note,
+    .cave-hotspot-panel,
+    .cave-quote-strip,
+    .cave-mini-card,
+    .cave-story-card,
+    .cave-discuss,
+    .cave-connection,
+    .cave-vocab-item,
+    .cave-source-lab {
+      color: #3d2918;
+      border-color: rgba(96, 58, 26, 0.26);
+      background: rgba(248, 232, 193, 0.68);
+      box-shadow: 0 2px 5px rgba(73, 42, 18, 0.08);
+    }
+    .cave-big-idea-label,
+    .cave-vocab-word,
+    .cave-story-num { color: #74431f; }
+    .cave-big-idea p,
+    .cave-source-card p,
+    .cave-target-list,
+    .cave-note,
+    .cave-vocab-def,
+    .cave-hotspot-panel p,
+    .cave-quote-strip { color: #503824; }
+    .cave-source-card strong,
+    .cave-hotspot-panel strong { color: #432817; }
+
+    .cave-choice-btn,
+    .cave-grade-btn,
+    .cave-disc-tab,
+    .cave-action-btn,
+    .cave-source-step,
+    .cave-quiz-opt,
+    .cave-quiz-reset,
+    .cave-reflect-clear {
+      color: #5c4029;
+      border-color: rgba(96, 58, 26, 0.3);
+      background: rgba(248, 232, 193, 0.65);
+    }
+    .cave-grade-btn:hover,
+    .cave-disc-tab:hover,
+    .cave-action-btn:hover,
+    .cave-source-step:hover,
+    .cave-quiz-opt:hover:not(:disabled) { color: #3d2616; border-color: #855127; background: rgba(255, 241, 205, 0.88); }
+    .cave-grade-btn.active,
+    .cave-disc-tab.active { color: #fff0c9; border-color: #5c3519; background: #774821; }
+    .cave-source-step.is-checked { color: #334132; border-color: #66765a; background: rgba(209, 219, 186, 0.72); }
+    .cave-source-verdict,
+    .cave-quiz-summary { color: #374333; border-color: rgba(78, 95, 67, 0.35); background: rgba(210, 220, 190, 0.65); }
+
+    .cave-quiz-opt.correct { color: #30412f; border-color: #5f805c; background: #d7e3c8; }
+    .cave-quiz-opt.incorrect { color: #65362f; border-color: #a16b5e; background: #ead0bf; }
+    .cave-quiz-feedback.good { color: #30412f; border-color: #698a64; background: #d7e3c8; }
+    .cave-quiz-feedback.bad { color: #65362f; border-color: #a16b5e; background: #ead0bf; }
+    .cave-reflect-textarea {
+      color: #382617;
+      border-color: rgba(91, 54, 24, 0.35);
+      background: rgba(255, 243, 210, 0.78);
+    }
+    .cave-reflect-textarea::placeholder { color: #80674c; }
+    .cave-reflect-note { color: #765c40; }
+    .cave-closing {
+      border-color: rgba(89, 105, 69, 0.38);
+      background: linear-gradient(160deg, rgba(217, 224, 190, 0.78), rgba(239, 213, 161, 0.78));
+    }
+    .cave-closing h2,
+    .cave-closing strong { color: #3d2918; }
+    .cave-closing p { color: #59432e; }
+
+    @media (max-width: 680px) {
+      .ll-panel { border-top: 3px double rgba(87, 51, 23, 0.42); }
+      .cave-sim-area .cave-info-grid { background: rgba(190, 145, 78, 0.5); }
+    }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport ll-dark">
+
+  <nav class="cave-topbar ll-topbar" aria-label="Lesson navigation">
+    <div class="cave-topbar-inner">
+      <a href="../../steam-lessons.html">← Lessons</a>
+      <span class="cave-topbar-title">Plato's Allegory of the Cave</span>
+      <a href="../../steam-lessons.html#module-systems">Systems &amp; Society</a>
+    </div>
+  </nav>
+
+  <div class="ll-stage" id="main-content">
+
+    <!-- ══ SIM: 3D cave model viewer fills viewport ══ -->
+    <div class="ll-sim cave-sim-area">
+
+      <div class="cave-sim-header">
+        <h1>Plato's Allegory of the Cave</h1>
+        <p>Enter a gentle fable about three friends, a shadow show, and a glowing path toward a wider world.</p>
+      </div>
+
+      <div id="cave-sim-slot">
+        <div id="cave-sim-stage">
+          <div id="cave-canvas-wrap">
+            <model-viewer
+              id="cave-model"
+              src="../../assets/models/allegory_of_the_cave.glb"
+              autoplay
+              alt="Animated 3D fable scene showing three friends seated on the cave floor, a projected knight and fire-breathing dragon, two matching shadow cutouts, and a sunny world outside."
+              touch-action="pan-y"
+              interaction-prompt="auto"
+              shadow-intensity="0.75"
+              environment-image="neutral"
+              environment-intensity="2.2"
+              exposure="1"
+              camera-orbit="0deg 78deg 11m"
+              camera-target="-5.1m 2m 0m"
+              field-of-view="38deg"
+              min-camera-orbit="auto 40deg 5m"
+              max-camera-orbit="auto 100deg 60m">
+              <div class="cave-model-fallback">
+                Your browser can't display the interactive model.
+                <a href="../../assets/models/allegory_of_the_cave.glb">Download the GLB file instead</a>.
+              </div>
+            </model-viewer>
+            <div class="cave-load-status" id="modelLoadStatus" role="status" aria-live="polite">
+              <span id="modelLoadText">Preparing the cave…</span>
+              <span class="cave-load-track" aria-hidden="true"><span class="cave-load-fill" id="modelLoadFill"></span></span>
+            </div>
+            <div class="cave-perspective-gate" id="storyGate">
+              <div class="cave-perspective-card">
+                <h3>The Shadow Story Begins</h3>
+                <p>Three friends watch a shining knight face a fire-breathing dragon in a shadow story. Follow your curiosity to find exactly how each shadow is made.</p>
+                <button class="cave-break-btn" id="followCuriosityBtn" type="button">Follow Your Curiosity</button>
+              </div>
+            </div>
+            <div class="cave-modern-wall" id="modernWall" aria-hidden="true">
+              <div class="cave-feed-head"><span>Modern Cave</span><span>For You</span></div>
+              <div class="cave-feed-card"><span class="cave-feed-meta">Clip 1</span>Everybody thinks this, so it must be true.</div>
+              <div class="cave-feed-card"><span class="cave-feed-meta">Clip 2</span>Fast takes, half context, and outrage shadows projected all day long.</div>
+              <div class="cave-feed-card"><span class="cave-feed-meta">Clip 3</span>The wall glows brighter, but the source stays hidden.</div>
+            </div>
+            <div class="cave-truth-wall" id="truthWall" aria-live="polite">
+              <strong>Outside Reflection</strong>
+              <p id="truthWallText">When you write in the reflection box, your words appear here like notes carried into the light.</p>
+            </div>
+          </div>
+
+          <p class="cave-caption" id="cave-caption">The friends watch a knight and dragon appear as shadows. What objects are making them?</p>
+
+          <div class="cave-dialogue" id="cave-dialogue" aria-live="polite">
+            <span class="cave-dialogue-name" id="cave-dialogue-name">Fable Guide</span>
+            <p class="cave-dialogue-text" id="cave-dialogue-text">A shadow can tell part of a story without showing the whole thing.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="cave-info-grid">
+        <article class="cave-info-card">
+          <span>What To Find</span>
+          <p id="scene-sees">Compare the knight and dragon shadows with the matching cutouts held by the two artists.</p>
+        </article>
+        <article class="cave-info-card">
+          <span>What To Notice</span>
+          <p id="scene-reality">The lesson changes when you lose the god-view. Perspective shapes what feels true.</p>
+        </article>
+        <article class="cave-info-card">
+          <span>Main Lesson</span>
+          <p id="scene-lesson">A limited point of view can feel complete when it is all you have ever known.</p>
+        </article>
+        <article class="cave-info-card">
+          <span>Scripture Echo</span>
+          <p id="scene-scripture">Psalm 119:105 — "Your word is a lamp to my feet and a light to my path."</p>
+        </article>
+      </div>
+
+    </div><!-- .ll-sim -->
+
+    <!-- ══ PANEL: 3-tab sidebar ══ -->
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="cave-controls">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="cave-lesson">Lesson</button>
+          <button class="ll-tab" aria-selected="false" data-pane="cave-activity">Activity</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+
+      <div class="ll-panel-body">
+
+        <!-- ── CONTROLS PANE ── -->
+        <div class="ll-pane ll-active" id="cave-controls">
+
+          <div class="cave-scene-readout">
+            <h3 id="scene-title">Perspective Analysis Lab</h3>
+            <p id="scene-sub">Move through the allegory in stages instead of seeing the whole map at once.</p>
+          </div>
+          <hr class="ll-hr">
+
+          <button class="cave-explore-btn" type="button" id="cave-explore">Follow Your Curiosity</button>
+
+          <div class="cave-action-row">
+            <button class="cave-action-btn" type="button" id="cave-play">Full Screen</button>
+            <button class="cave-action-btn" type="button" id="cave-reset">Reset View</button>
+          </div>
+          <hr class="ll-hr">
+
+          <span class="ll-label">Journey Stages</span>
+          <div class="cave-stage-row">
+            <button class="cave-stage-btn active" type="button" data-stage="shadows">The Shadows</button>
+            <button class="cave-stage-btn" type="button" data-stage="the_turn">Behind the Show</button>
+            <button class="cave-stage-btn" type="button" data-stage="the_light">The Light</button>
+          </div>
+
+          <span class="ll-label">Modern Bridge</span>
+          <button class="cave-modern-toggle" type="button" id="modernCaveToggle">Show Modern Cave Overlay</button>
+
+          <div class="cave-hotspot-panel">
+            <strong id="hotspotTitle">Symbol Tracker</strong>
+            <p id="hotspotCopy">Match the knight and dragon shadows to the artists' cutouts, then follow the lantern light toward the sunny world.</p>
+          </div>
+
+          <div class="cave-quote-strip" id="socratesQuote">
+            A wise learner asks, “What else can I discover?”
+          </div>
+
+          <hr class="ll-hr">
+
+          <span class="ll-label">Viewer Controls</span>
+          <div class="cave-ctrl-keys">
+            <span class="cave-ctrl-key"><kbd>Drag</kbd> Rotate</span>
+            <span class="cave-ctrl-key"><kbd>Scroll</kbd> Zoom</span>
+            <span class="cave-ctrl-key"><kbd>Pinch</kbd> Zoom</span>
+          </div>
+          <p style="margin:0 0 0.5rem; font-size:0.72rem; color:var(--cave-dim); line-height:1.5;">Begin by looking at the shadow wall. Follow your curiosity to rotate freely and explore how the little light makes each shape.</p>
+          <hr class="ll-hr">
+
+          <span class="ll-label">Grade Band</span>
+          <div class="cave-grade-bar" style="border:none; background:none; padding:0; border-radius:0; margin-bottom:0.4rem;">
+            <div class="cave-grade-btns">
+              <button class="cave-grade-btn active" type="button" data-band="all" aria-pressed="true">All</button>
+              <button class="cave-grade-btn" type="button" data-band="k2" aria-pressed="false">K–2</button>
+              <button class="cave-grade-btn" type="button" data-band="35" aria-pressed="false">3–5</button>
+              <button class="cave-grade-btn" type="button" data-band="68" aria-pressed="false">6–8</button>
+              <button class="cave-grade-btn" type="button" data-band="912" aria-pressed="false">9–12</button>
+            </div>
+          </div>
+
+        </div><!-- #cave-controls -->
+
+        <!-- ── LESSON PANE ── -->
+        <div class="ll-pane" id="cave-lesson">
+          <div id="main-shell" class="grade-all">
+
+          <div class="cave-source-card">
+            <strong>Start with the source</strong>
+            <p>This allegory appears in <cite>Plato's Republic</cite>, Book VII, as a dialogue between Socrates and Glaucon. Plato is asking what education does to a person—not merely whether eyesight can be fooled.</p>
+            <ul class="cave-target-list">
+              <li>Retell the friends' journey from a shadow story to sunlight.</li>
+              <li>Explain what the cave, shadow artists, little light, and sun represent.</li>
+              <li>Apply the allegory without treating every disagreement as deception.</li>
+            </ul>
+          </div>
+
+          <!-- Big Idea -->
+          <div class="cave-big-idea" style="margin-bottom:0.9rem">
+            <p class="cave-big-idea-label">Big Idea</p>
+            <p>People often mistake a limited view for the whole truth. Wise learners slow down, ask questions, and stay humble enough to change when they see more clearly.</p>
+          </div>
+
+          <!-- The Story -->
+          <h2 class="cave-section-head">The Cave in Plain English</h2>
+          <p class="cave-section-sub">Understand the story before any deeper meaning.</p>
+
+          <div data-grade="k2" style="margin-bottom:0.8rem">
+            <div class="cave-note">
+              <strong>The Fable (K–2):</strong> Three friends visit a cozy cave where the shadow of a shining knight meets a fire-breathing dragon. One friend wonders, “What makes them move?” They find matching cutouts, friendly artists, a little light, and a bright path leading to trees, colors, and sky. The friend returns to share the discovery: <strong>every picture may have more to explore.</strong>
+            </div>
+          </div>
+
+          <div class="cave-story-grid">
+            <article class="cave-story-card">
+              <div class="cave-story-num">1</div>
+              <h3>Friends find a shadow show</h3>
+              <p>Three curious friends sit on cushions and enjoy shapes dancing across a cave wall.</p>
+            </article>
+            <article class="cave-story-card">
+              <div class="cave-story-num">2</div>
+              <h3>They watch shadows</h3>
+              <p>The pictures seem complete until one friend wonders what might be making them.</p>
+            </article>
+            <article class="cave-story-card">
+              <div class="cave-story-num">3</div>
+              <h3>One friend looks behind the show</h3>
+              <p>The friend discovers artists using simple shapes and a little light to make the pictures.</p>
+            </article>
+            <article class="cave-story-card">
+              <div class="cave-story-num">4</div>
+              <h3>The friend follows a glowing path</h3>
+              <p>Outside are trees, colors, sky, and many details the shadows could not show.</p>
+            </article>
+            <article class="cave-story-card">
+              <div class="cave-story-num">5</div>
+              <h3>The friends explore together</h3>
+              <p>The discovery is shared kindly, and everyone learns to ask what may be beyond the first picture.</p>
+            </article>
+          </div>
+
+          <hr class="cave-lesson-divider">
+
+          <!-- Vocabulary K-2 -->
+          <section data-grade="k2">
+            <h2 class="cave-section-head">Word Helper</h2>
+            <div class="cave-vocab-grid">
+              <div class="cave-vocab-item"><p class="cave-vocab-word">Allegory</p><p class="cave-vocab-def">A story that means something bigger — like a parable.</p></div>
+              <div class="cave-vocab-item"><p class="cave-vocab-word">Shadow</p><p class="cave-vocab-def">Something that looks real but is only a copy of the truth.</p></div>
+              <div class="cave-vocab-item"><p class="cave-vocab-word">Curiosity</p><p class="cave-vocab-def">Wanting to learn more by looking, wondering, and asking good questions.</p></div>
+              <div class="cave-vocab-item"><p class="cave-vocab-word">Truth</p><p class="cave-vocab-def">What is actually real — not just what looks real at first.</p></div>
+              <div class="cave-vocab-item"><p class="cave-vocab-word">Discernment</p><p class="cave-vocab-def">Telling what is true from what is false. The Bible says God helps us with this.</p></div>
+              <div class="cave-vocab-item"><p class="cave-vocab-word">Philosopher</p><p class="cave-vocab-def">Someone who thinks deeply about big questions like "What is real?"</p></div>
+            </div>
+            <hr class="cave-lesson-divider">
+          </section>
+
+          <!-- Vocabulary 3-5 -->
+          <section data-grade="35">
+            <h2 class="cave-section-head">Key Words to Know</h2>
+            <div class="cave-vocab-grid">
+              <div class="cave-vocab-item"><p class="cave-vocab-word">Allegory</p><p class="cave-vocab-def">A story where every detail stands for something bigger.</p></div>
+              <div class="cave-vocab-item"><p class="cave-vocab-word">Perception</p><p class="cave-vocab-def">What your senses tell you. Plato argues our perceptions can mislead us.</p></div>
+              <div class="cave-vocab-item"><p class="cave-vocab-word">Philosopher</p><p class="cave-vocab-def">Someone who pursues wisdom through deep thinking.</p></div>
+              <div class="cave-vocab-item"><p class="cave-vocab-word">Discernment</p><p class="cave-vocab-def">Judging carefully between true and false. A key Christian virtue (1 Thess. 5:21).</p></div>
+              <div class="cave-vocab-item"><p class="cave-vocab-word">The Forms</p><p class="cave-vocab-def">Plato's word for perfect, eternal truths beyond the physical world.</p></div>
+            </div>
+            <hr class="cave-lesson-divider">
+          </section>
+
+          <!-- What Plato Is Saying -->
+          <h2 class="cave-section-head">What Plato Is Saying</h2>
+          <div class="cave-stack" style="gap:0.5rem; margin-bottom:0.8rem">
+            <div class="cave-mini-card"><h3>The cave = a world of assumptions</h3><p>People can live inside a narrow picture of reality without noticing. Not a lie — just not the full story.</p></div>
+            <div class="cave-mini-card"><h3>The shadows = appearances</h3><p>The shadows are not nothing, but not the whole truth. Something can be partly right and dangerously incomplete.</p></div>
+            <div class="cave-mini-card"><h3>Looking behind the show = curiosity</h3><p>Learning grows when we wonder how something works and stay open to a fuller explanation.</p></div>
+            <div class="cave-mini-card"><h3>Sharing the discovery = kindness</h3><p>A wise learner invites others to explore instead of making fun of what they first believed.</p></div>
+          </div>
+          <div class="cave-note"><strong>Nuance:</strong> The point is not "never trust your eyes" — it's "do not stop at first impressions."</div>
+
+          <hr class="cave-lesson-divider">
+
+          <!-- Faith Perspective -->
+          <h2 class="cave-section-head">A Faith Perspective</h2>
+          <div class="cave-stack" style="gap:0.5rem; margin-bottom:0.8rem">
+            <div class="cave-mini-card"><h3>Light helps us see</h3><p>Psalm 119:105 describes God's word as a lamp and a light for our path. Good light helps a learner notice more.</p></div>
+            <div class="cave-mini-card"><h3>Truth is worth chasing</h3><p>Proverbs 2:3–5 — "call out for insight and raise your voice for understanding." Active, not passive.</p></div>
+            <div class="cave-mini-card"><h3>Not every picture is complete</h3><p>1 Thessalonians 5:21 — "test everything; hold fast what is good." Compare what you see with what is actually true.</p></div>
+            <div class="cave-mini-card"><h3>Learning takes humility</h3><p>Even a confident person can be looking at a shadow. That's a reason to stay curious and teachable.</p></div>
+          </div>
+          <div class="cave-note"><strong>A good rule:</strong> Plato is a useful thinking partner, not a theologian. Use his story to sharpen your questions.</div>
+
+          <hr class="cave-lesson-divider">
+
+          <!-- Modern Connections -->
+          <h2 class="cave-section-head">Where Students See "Caves" Today</h2>
+          <div class="cave-connection-grid" style="margin-bottom:0.8rem">
+            <article class="cave-connection"><h3>📱 Social media feeds</h3><p>A curated stream can feel like reality even when it is partial.</p></article>
+            <article class="cave-connection"><h3>💬 Rumors and gossip</h3><p>Hearing one side of a story is like seeing a shadow on the wall.</p></article>
+            <article class="cave-connection"><h3>📰 Headlines without context</h3><p>A headline shapes your reaction before you understand the details.</p></article>
+            <article class="cave-connection"><h3>📺 Advertising</h3><p>Ads show a polished image — not the full truth.</p></article>
+            <article class="cave-connection"><h3>🤔 Stereotypes</h3><p>Reducing people to one label is shadow-thinking (Genesis 1:27).</p></article>
+            <article class="cave-connection"><h3>🤖 AI answers</h3><p>AI can sound confident while being incomplete. Test, don't trust blindly.</p></article>
+          </div>
+
+          <hr class="cave-lesson-divider">
+
+          <!-- Closing Devotional -->
+          <div class="cave-closing">
+            <span class="cave-closing-icon">✝</span>
+            <h2>Closing Thought</h2>
+            <p>In 1604, the engraver Jan Saenredam placed John 3:19 above his depiction of Plato's cave: <em>"Light has come into the world, and people loved darkness rather than light."</em> He saw what Plato could not name.</p>
+            <p>Plato's story reminds us that a first look is not always the whole story. Christians believe the light that guides us is not only an idea but a <strong>Person who lovingly leads us</strong>.</p>
+            <p><strong>What good question can help me see more clearly?</strong></p>
+          </div>
+
+          </div><!-- #main-shell -->
+        </div><!-- #cave-lesson -->
+
+        <!-- ── ACTIVITY PANE ── -->
+        <div class="ll-pane" id="cave-activity">
+
+          <h2 class="cave-section-head">Shadow or Source?</h2>
+          <p class="cave-section-sub">Practice the habit Plato's story demands: move from a confident appearance toward evidence and context.</p>
+          <section class="cave-source-lab" aria-labelledby="source-lab-title">
+            <h3 id="source-lab-title">Claim: “Plato taught that our senses are useless.”</h3>
+            <p>Reveal the checks in order. A responsible verdict should come after the source trail—not before it.</p>
+            <div class="cave-source-steps">
+              <button class="cave-source-step" type="button" data-source-step="1">1. Identify the exact claim instead of reacting to its tone.</button>
+              <button class="cave-source-step" type="button" data-source-step="2">2. Trace it to <cite>Republic</cite>, Book VII—not a repost or summary.</button>
+              <button class="cave-source-step" type="button" data-source-step="3">3. Read the context: education turns the whole person toward better understanding.</button>
+              <button class="cave-source-step" type="button" data-source-step="4">4. Compare the claim with the sun, the return, and Plato's larger argument.</button>
+            </div>
+            <div class="cave-source-verdict" id="sourceVerdict" role="status" aria-live="polite">Complete the four checks to reach a verdict.</div>
+          </section>
+
+          <!-- Discussion Questions -->
+          <h2 class="cave-section-head">Discussion Questions</h2>
+          <p class="cave-section-sub">Select the grade level that fits your class.</p>
+
+          <div class="cave-disc-tab-bar">
+            <button class="cave-disc-tab active" type="button" data-panel="disc-all" aria-pressed="true">All</button>
+            <button class="cave-disc-tab" type="button" data-panel="disc-k2" aria-pressed="false">K–2</button>
+            <button class="cave-disc-tab" type="button" data-panel="disc-35" aria-pressed="false">3–5</button>
+            <button class="cave-disc-tab" type="button" data-panel="disc-68" aria-pressed="false">6–8</button>
+            <button class="cave-disc-tab" type="button" data-panel="disc-912" aria-pressed="false">9–12</button>
+          </div>
+
+          <div class="cave-disc-panel active" id="disc-all">
+            <div class="cave-discuss-grid">
+              <article class="cave-discuss"><h3>Comfort vs. truth</h3><p>Why do people sometimes prefer a comfortable lie over a harder truth?</p></article>
+              <article class="cave-discuss"><h3>Correction and humility</h3><p>How do you tell someone they may be seeing only a shadow — without sounding proud?</p></article>
+              <article class="cave-discuss"><h3>Christian discernment</h3><p>How can a Christian student test ideas, media, and peer pressure thoughtfully?</p></article>
+            </div>
+          </div>
+          <div class="cave-disc-panel" id="disc-k2">
+            <div class="cave-discuss-grid">
+              <article class="cave-discuss"><h3>What is a shadow?</h3><p>Can you think of a time something looked one way but turned out different?</p></article>
+              <article class="cave-discuss"><h3>Who do you trust?</h3><p>If someone told you something surprising, who would you ask to find out if it was true?</p></article>
+              <article class="cave-discuss"><h3>The light outside</h3><p>Can you think of a time learning something new felt uncomfortable at first?</p></article>
+            </div>
+          </div>
+          <div class="cave-disc-panel" id="disc-35">
+            <div class="cave-discuss-grid">
+              <article class="cave-discuss"><h3>Rumors as shadows</h3><p>Have you ever believed a rumor that turned out wrong? How is it like a cave shadow?</p></article>
+              <article class="cave-discuss"><h3>Sharing discoveries</h3><p>How could the curious friend invite the others to look behind the shadow show?</p></article>
+              <article class="cave-discuss"><h3>1 Thessalonians 5:21</h3><p>"Test everything; hold fast to what is good." What does that look like?</p></article>
+            </div>
+          </div>
+          <div class="cave-disc-panel" id="disc-68">
+            <div class="cave-discuss-grid">
+              <article class="cave-discuss"><h3>Social media as a cave</h3><p>How could a social media feed act like the story lantern—showing selected shapes instead of the full scene?</p></article>
+              <article class="cave-discuss"><h3>Romans 12:2</h3><p>"Do not be conformed to this world." What forces shape your thinking without you realizing?</p></article>
+              <article class="cave-discuss"><h3>The cost of honesty</h3><p>Is there a situation where telling the truth might come with a cost?</p></article>
+              <article class="cave-discuss"><h3>Seeking truth</h3><p>What habits help a person move toward truth rather than away from it?</p></article>
+            </div>
+          </div>
+          <div class="cave-disc-panel" id="disc-912">
+            <div class="cave-discuss-grid">
+              <article class="cave-discuss"><h3>The limits of perspective</h3><p>Where in your life are you most likely working from an incomplete picture?</p></article>
+              <article class="cave-discuss"><h3>Epistemic humility</h3><p>Which beliefs might be "shadows" — things that feel true but might be incomplete?</p></article>
+              <article class="cave-discuss"><h3>Wisdom and leadership</h3><p>What qualities should a leader have when different people see different parts of a problem?</p></article>
+              <article class="cave-discuss"><h3>Truth and kindness</h3><p>How can someone share a surprising discovery with courage, humility, and care?</p></article>
+            </div>
+          </div>
+
+          <hr class="cave-lesson-divider">
+
+          <!-- Quiz -->
+          <h2 class="cave-section-head">Check Your Understanding</h2>
+          <div class="cave-quiz-summary" aria-live="polite">
+            <strong id="quizScore">0 of 3 answered</strong>
+            <button class="cave-quiz-reset" id="quizReset" type="button">Try Again</button>
+          </div>
+
+          <p class="cave-quiz-q">1. Why do the friends first think the shadow story shows the whole picture?</p>
+          <div class="cave-quiz-options" id="q1-opts">
+            <button class="cave-quiz-opt" type="button" data-q="1" data-choice="a">A. The shadows are brighter than the sun</button>
+            <button class="cave-quiz-opt" type="button" data-q="1" data-choice="b">B. It is the only part of the show they have explored so far</button>
+            <button class="cave-quiz-opt" type="button" data-q="1" data-choice="c">C. The friends enjoy pretending</button>
+            <button class="cave-quiz-opt" type="button" data-q="1" data-choice="d">D. Plato thinks shadows are evil</button>
+          </div>
+          <div class="cave-quiz-feedback" id="q1-fb"></div>
+          <hr class="cave-quiz-divider" />
+
+          <p class="cave-quiz-q">2. What helps the curious friend learn more?</p>
+          <div class="cave-quiz-options" id="q2-opts">
+            <button class="cave-quiz-opt" type="button" data-q="2" data-choice="a">A. Guessing without looking</button>
+            <button class="cave-quiz-opt" type="button" data-q="2" data-choice="b">B. Asking a question and following the clues</button>
+            <button class="cave-quiz-opt" type="button" data-q="2" data-choice="c">C. Watching the same shape again</button>
+            <button class="cave-quiz-opt" type="button" data-q="2" data-choice="d">D. Deciding the first idea must be complete</button>
+          </div>
+          <div class="cave-quiz-feedback" id="q2-fb"></div>
+          <hr class="cave-quiz-divider" />
+
+          <p class="cave-quiz-q">3. Which response best shows discernment?</p>
+          <div class="cave-quiz-options" id="q3-opts">
+            <button class="cave-quiz-opt" type="button" data-q="3" data-choice="a">A. Believe the first thing matching your opinion</button>
+            <button class="cave-quiz-opt" type="button" data-q="3" data-choice="b">B. Ignore all outside voices and trust only yourself</button>
+            <button class="cave-quiz-opt" type="button" data-q="3" data-choice="c">C. Test what you hear, compare sources, stay humble</button>
+            <button class="cave-quiz-opt" type="button" data-q="3" data-choice="d">D. Reject hard ideas because truth should feel easy</button>
+          </div>
+          <div class="cave-quiz-feedback" id="q3-fb"></div>
+          <hr class="cave-quiz-divider" />
+
+          <label class="cave-quiz-q" for="reflect-box">4. Reflection</label>
+          <p style="margin:0 0 0.6rem; font-size:0.82rem; color:var(--cave-muted); line-height:1.5;">Name one "cave" in your life or culture. What shadows does it show? What is one step toward truth?</p>
+          <textarea id="reflect-box" class="cave-reflect-textarea" placeholder="Example: A possible cave is ... The shadows it shows are ... One step toward truth would be ..."></textarea>
+          <div class="cave-reflect-meta">
+            <p class="cave-reflect-note"><span id="reflectCount">0 words</span> · Saved on this device only.</p>
+            <button class="cave-reflect-clear" id="reflectClear" type="button">Clear</button>
+          </div>
+
+        </div><!-- #cave-activity -->
+
+      </div><!-- .ll-panel-body -->
+    </aside><!-- .ll-panel -->
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+
+</div><!-- .ll-viewport -->
+
+  <script src="../../assets/js/classroom-animations.js"></script>
+  <script src="../../assets/js/lesson-layout.js"></script>
+  <script>
+    /* ── Grade Band Selector ── */
+    (function() {
+      var shell = document.getElementById("main-shell");
+      var btns  = document.querySelectorAll(".cave-grade-btn");
+      function selectBand(band) {
+        var selected = document.querySelector('.cave-grade-btn[data-band="' + band + '"]');
+        if (!selected || !shell) return;
+        btns.forEach(function(b) {
+          var active = b === selected;
+          b.classList.toggle("active", active);
+          b.setAttribute("aria-pressed", active ? "true" : "false");
+        });
+        shell.className = "grade-" + band;
+        var discussionTab = document.querySelector('.cave-disc-tab[data-panel="disc-' + band + '"]');
+        if (discussionTab) {
+          document.querySelectorAll(".cave-disc-tab").forEach(function(tab) {
+            var active = tab === discussionTab;
+            tab.classList.toggle("active", active);
+            tab.setAttribute("aria-pressed", active ? "true" : "false");
+          });
+          document.querySelectorAll(".cave-disc-panel").forEach(function(panel) {
+            panel.classList.toggle("active", panel.id === "disc-" + band);
+          });
+        }
+        try { localStorage.setItem("plato-cave-grade", band); } catch (error) {}
+      }
+      btns.forEach(function(btn) {
+        btn.addEventListener("click", function() { selectBand(btn.getAttribute("data-band")); });
+      });
+      try {
+        var savedBand = localStorage.getItem("plato-cave-grade");
+        if (savedBand) selectBand(savedBand);
+      } catch (error) {}
+    })();
+
+    /* ── Cave Model Viewer ── */
+    (function() {
+      var viewer = document.getElementById("cave-model");
+      if (!viewer) return;
+
+      var captionEl = document.getElementById("cave-caption");
+      var dialogueBox = document.getElementById("cave-dialogue");
+      var dialogueName = document.getElementById("cave-dialogue-name");
+      var dialogueText = document.getElementById("cave-dialogue-text");
+      var resetBtn = document.getElementById("cave-reset");
+      var playBtn = document.getElementById("cave-play");
+      var rotateBtn = document.getElementById("cave-explore");
+      var wrap = document.getElementById("cave-canvas-wrap");
+      var followCuriosityBtn = document.getElementById("followCuriosityBtn");
+      var storyGate = document.getElementById("storyGate");
+      var modernToggle = document.getElementById("modernCaveToggle");
+      var modernWall = document.getElementById("modernWall");
+      var truthWall = document.getElementById("truthWall");
+      var truthWallText = document.getElementById("truthWallText");
+      var reflectBox = document.getElementById("reflect-box");
+      var hotspotTitle = document.getElementById("hotspotTitle");
+      var hotspotCopy = document.getElementById("hotspotCopy");
+      var socratesQuote = document.getElementById("socratesQuote");
+      var stageButtons = document.querySelectorAll(".cave-stage-btn");
+      var loadStatus = document.getElementById("modelLoadStatus");
+      var loadText = document.getElementById("modelLoadText");
+      var loadFill = document.getElementById("modelLoadFill");
+      var defaultTarget = "0.7m 3.5m 0m";
+      var defaultFov = "35deg";
+      var explorationOpen = false;
+      var modernMode = false;
+      var currentStage = "shadows";
+
+      var stages = {
+        shadows: {
+          orbit: "0deg 78deg 13m",
+          target: "-5.1m 2m 0m",
+          fov: "38deg",
+          exposure: "0.95",
+          title: "Chapter 1: The Dancing Shadows",
+          caption: "Three friends sit on the cave floor and watch the shadows of a knight and a fire-breathing dragon.",
+          sees: "Study the knight's shield and sword and the dragon's wings, tail, and flame-shaped breath.",
+          reality: "One view can feel complete before we discover the rest of the story.",
+          lesson: "A first impression can be useful without being the whole picture.",
+          scripture: "Psalm 119:105 — 'Your word is a lamp to my feet and a light to my path.'",
+          quote: "A wise learner asks, “What else can I discover?”",
+          tip: "Every good fable begins with wonder. What objects could make these two detailed shadows?"
+        },
+        the_turn: {
+          orbit: "-8deg 72deg 11m",
+          target: "0m 2.15m 0m",
+          fov: "38deg",
+          exposure: "1.05",
+          title: "Chapter 2: Behind the Shadow Show",
+          caption: "The curious friend finds one artist holding a knight cutout and another holding a matching dragon cutout.",
+          sees: "Match the knight's shield and sword and the dragon's wings and fire breath from cutout to shadow.",
+          reality: "Looking behind an effect can reveal its cause.",
+          lesson: "Growth begins with a good question and the courage to explore it.",
+          scripture: "1 Thessalonians 5:21 — 'Test everything; hold fast what is good.'",
+          quote: "The friend smiled: “The shadows were clues, not the whole story.”",
+          tip: "The mystery becomes clearer when the friend looks at how the shadow show works."
+        },
+        the_light: {
+          orbit: "8deg 68deg 14m",
+          target: "6.8m 4m 0m",
+          fov: "38deg",
+          exposure: "1.15",
+          title: "Chapter 3: The Garden of Many Colors",
+          caption: "The glowing path opens into sunlight, trees, colors, and a world with more detail than any silhouette.",
+          sees: "Look beyond the cave mouth toward the brightest source in the scene.",
+          reality: "A clearer light does not erase the shadows. It explains them.",
+          lesson: "Learning adds color and detail while helping us understand what we saw before.",
+          scripture: "John 3:19 — 'Light has come into the world, and people loved darkness rather than light.'",
+          quote: "The friend returned with a kind invitation: “Come and see what else is here.”",
+          tip: "The fable ends in a bright garden, where curiosity grows into wonder and sharing."
+        }
+      };
+
+      function setCaption(text) {
+        if (captionEl) captionEl.textContent = text;
+      }
+
+      function setTip(text, label) {
+        if (dialogueBox) dialogueBox.classList.add("is-active");
+        if (dialogueName && label) dialogueName.textContent = label;
+        if (dialogueText) dialogueText.textContent = text;
+      }
+
+      function syncButtons() {
+        if (rotateBtn) {
+          rotateBtn.classList.toggle("active", explorationOpen);
+          rotateBtn.textContent = explorationOpen ? "Keep Exploring" : "Follow Your Curiosity";
+        }
+        stageButtons.forEach(function(btn) {
+          btn.classList.toggle("active", btn.getAttribute("data-stage") === currentStage);
+        });
+        if (modernToggle) {
+          modernToggle.classList.toggle("active", modernMode);
+          modernToggle.textContent = modernMode ? "Hide Modern Cave Overlay" : "Show Modern Cave Overlay";
+        }
+      }
+
+      function setControls(enabled) {
+        if (enabled) {
+          viewer.setAttribute("camera-controls", "");
+        } else {
+          viewer.removeAttribute("camera-controls");
+        }
+        explorationOpen = enabled;
+        syncButtons();
+      }
+
+      function updateReadouts(stageKey) {
+        var stage = stages[stageKey];
+        document.getElementById("scene-sees").textContent = stage.sees;
+        document.getElementById("scene-reality").textContent = stage.reality;
+        document.getElementById("scene-lesson").textContent = stage.lesson;
+        document.getElementById("scene-scripture").textContent = stage.scripture;
+        if (socratesQuote) socratesQuote.textContent = stage.quote;
+        document.getElementById("scene-title").textContent = stage.title;
+        document.getElementById("scene-sub").textContent = stage.tip;
+      }
+
+      function setWrapState(stageKey) {
+        wrap.classList.remove("is-shadow-view", "is-turning", "is-awakened");
+        if (stageKey === "shadows") wrap.classList.add("is-shadow-view");
+        else if (stageKey === "the_turn") wrap.classList.add("is-turning");
+        else wrap.classList.add("is-awakened");
+      }
+
+      function setStage(stageKey, opts) {
+        var stage = stages[stageKey];
+        if (!stage) return;
+        currentStage = stageKey;
+        viewer.setAttribute("camera-orbit", stage.orbit);
+        viewer.setAttribute("camera-target", stage.target || defaultTarget);
+        viewer.setAttribute("field-of-view", stage.fov || defaultFov);
+        viewer.setAttribute("exposure", stage.exposure);
+        updateReadouts(stageKey);
+        setCaption(stage.caption);
+        setTip(stage.tip, "Fable Guide");
+        setWrapState(stageKey);
+        syncButtons();
+        if (!(opts && opts.silent) && typeof viewer.jumpCameraToGoal === "function") {
+          window.setTimeout(function() {
+            viewer.jumpCameraToGoal();
+          }, 30);
+        }
+      }
+
+      function resetView() {
+        if (storyGate) storyGate.classList.remove("is-open");
+        setControls(false);
+        modernMode = false;
+        if (modernWall) modernWall.classList.remove("is-active");
+        setStage("shadows");
+        hotspotTitle.textContent = "Symbol Tracker";
+        hotspotCopy.textContent = "Match the knight and dragon shadows to the artists' cutouts, then follow the lantern light toward the sunny world.";
+      }
+
+      function followCuriosity() {
+        if (storyGate) storyGate.classList.add("is-open");
+        setControls(true);
+        setStage("the_turn");
+        setTip("Now you can explore. Find the shadow artists, their little light, and the glowing path into the garden.", "Curiosity Awakened");
+      }
+
+      function toggleModernWall() {
+        modernMode = !modernMode;
+        if (modernWall) modernWall.classList.toggle("is-active", modernMode);
+        syncButtons();
+        if (modernMode) {
+          setTip("The modern cave overlay projects a feed onto the wall to show how algorithmic systems can create today's shadows.", "Modern Cave");
+        }
+      }
+
+      if (rotateBtn) {
+        rotateBtn.addEventListener("click", function() {
+          if (!explorationOpen) {
+            followCuriosity();
+          } else {
+            setTip("You can rotate the model now. Use the chapter buttons to revisit each part of the fable.", "Exploration Open");
+          }
+        });
+      }
+
+      if (resetBtn) {
+        resetBtn.addEventListener("click", resetView);
+      }
+
+      if (playBtn) {
+        playBtn.addEventListener("click", function() {
+          if (!wrap) return;
+          if (document.fullscreenElement === wrap) {
+            document.exitFullscreen();
+            return;
+          }
+          if (typeof wrap.requestFullscreen === "function") {
+            wrap.requestFullscreen();
+          }
+        });
+      }
+
+      stageButtons.forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          var stage = btn.getAttribute("data-stage");
+          if (!explorationOpen && stage !== "shadows") {
+            followCuriosity();
+          }
+          setStage(stage);
+        });
+      });
+
+      if (followCuriosityBtn) {
+        followCuriosityBtn.addEventListener("click", followCuriosity);
+      }
+
+      if (modernToggle) {
+        modernToggle.addEventListener("click", toggleModernWall);
+      }
+
+      if (reflectBox && truthWallText) {
+        reflectBox.addEventListener("input", function() {
+          var value = reflectBox.value.trim();
+          truthWallText.textContent = value || "When you write in the reflection box, your words appear here like notes carried into the light.";
+          if (truthWall) truthWall.classList.toggle("has-reflection", Boolean(value));
+        });
+      }
+
+      function markModelReady() {
+        if (loadText) loadText.textContent = "Cave ready";
+        if (loadFill) loadFill.style.width = "100%";
+        if (loadStatus) window.setTimeout(function() { loadStatus.classList.add("is-ready"); }, 250);
+        resetView();
+      }
+
+      viewer.addEventListener("load", markModelReady);
+
+      viewer.addEventListener("progress", function(event) {
+        var progress = event.detail && Number(event.detail.totalProgress);
+        if (!Number.isFinite(progress)) return;
+        var percent = Math.max(0, Math.min(100, Math.round(progress * 100)));
+        if (loadText) loadText.textContent = "Loading the cave… " + percent + "%";
+        if (loadFill) loadFill.style.width = percent + "%";
+        if (percent === 100 && loadStatus) {
+          window.setTimeout(function() { loadStatus.classList.add("is-ready"); }, 250);
+        }
+      });
+
+      viewer.addEventListener("error", function() {
+        viewer.classList.add("model-error");
+        if (loadText) loadText.textContent = "The 3D scene could not be loaded.";
+        if (loadStatus) loadStatus.classList.remove("is-ready");
+        setCaption("The interactive model could not be loaded here. Use the download link inside the viewer as a fallback.");
+        setTip("If the model does not appear, download the GLB file from the viewer fallback link.", "Model Error");
+      });
+
+      setCaption("Three friends begin with a shadow story and a question: what else might there be to discover?");
+      setTip("Follow your curiosity when you are ready to look behind the show and walk toward the sunny garden.", "Fable Guide");
+      syncButtons();
+      if (viewer.loaded) markModelReady();
+    })();
+
+    /* ── Discussion Tabs ── */
+    (function() {
+      var tabs   = document.querySelectorAll(".cave-disc-tab");
+      var panels = document.querySelectorAll(".cave-disc-panel");
+      tabs.forEach(function(tab) {
+        tab.addEventListener("click", function() {
+          tabs.forEach(function(t) {
+            t.classList.remove("active");
+            t.setAttribute("aria-pressed", "false");
+          });
+          panels.forEach(function(p) { p.classList.remove("active"); });
+          tab.classList.add("active");
+          tab.setAttribute("aria-pressed", "true");
+          var panel = document.getElementById(tab.getAttribute("data-panel"));
+          if (panel) panel.classList.add("active");
+        });
+      });
+    })();
+
+    /* ── Source-Checking Lab ── */
+    (function() {
+      var steps = Array.from(document.querySelectorAll(".cave-source-step"));
+      var verdict = document.getElementById("sourceVerdict");
+      var completed = 0;
+      steps.forEach(function(step, index) {
+        step.addEventListener("click", function() {
+          if (index > completed) {
+            verdict.textContent = "Follow the trail in order: claim, original source, context, then comparison.";
+            return;
+          }
+          step.classList.add("is-checked");
+          step.setAttribute("aria-pressed", "true");
+          completed = Math.max(completed, index + 1);
+          if (completed === steps.length) {
+            verdict.textContent = "Verdict: misleading. Plato warns that appearances can be incomplete, but the allegory argues for disciplined education and a better-grounded view—not the rejection of every sense experience.";
+          } else {
+            verdict.textContent = completed + " of " + steps.length + " checks complete. Keep tracing the claim.";
+          }
+        });
+        step.setAttribute("aria-pressed", "false");
+      });
+    })();
+
+    /* ── Quiz ── */
+    (function() {
+      var ANSWERS = {
+        1: { correct:"b", feedback: { b:"Correct. The friends have explored only the wall so far, so the shadow story seems complete. Curiosity helps them discover more.", default:"Not quite. The friends begin with only one part of the show. A first picture can seem complete until we explore further." } },
+        2: { correct:"b", feedback: { b:"Correct. The friend asks a good question, follows the clues, and discovers how the shadow story works.", default:"Not quite. The fable celebrates asking questions and following clues instead of stopping at the first idea." } },
+        3: { correct:"c", feedback: { c:"Correct. That matches both careful thinking and Christian discernment (1 Thess. 5:21) — test what you hear, compare it with stronger truth, and stay teachable.", default:"Not quite. Wise discernment means testing ideas carefully and staying humble enough to learn — not believing the first loud answer or rejecting everything difficult." } }
+      };
+      var answered = {};
+      var scoreEl = document.getElementById("quizScore");
+      var resetBtn = document.getElementById("quizReset");
+
+      function updateScore() {
+        var keys = Object.keys(answered);
+        var correct = keys.filter(function(key) { return answered[key]; }).length;
+        scoreEl.textContent = keys.length === 3
+          ? correct + " of 3 correct — " + (correct === 3 ? "excellent source thinking." : "review the feedback and try again.")
+          : keys.length + " of 3 answered";
+      }
+
+      document.querySelectorAll(".cave-quiz-opt").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          var qNum   = Number(btn.getAttribute("data-q"));
+          var choice = btn.getAttribute("data-choice");
+          var opts   = document.querySelectorAll("#q" + qNum + "-opts .cave-quiz-opt");
+          var fb     = document.getElementById("q" + qNum + "-fb");
+          var ans    = ANSWERS[qNum];
+          opts.forEach(function(o, i) {
+            o.disabled = true;
+            var letter = ["a","b","c","d"][i];
+            if (letter === ans.correct) o.classList.add("correct");
+            else if (letter === choice && choice !== ans.correct) o.classList.add("incorrect");
+          });
+          fb.textContent = ans.feedback[choice] || ans.feedback.default;
+          fb.className = "cave-quiz-feedback show " + (choice === ans.correct ? "good" : "bad");
+          answered[qNum] = choice === ans.correct;
+          updateScore();
+        });
+      });
+
+      resetBtn.addEventListener("click", function() {
+        answered = {};
+        document.querySelectorAll(".cave-quiz-opt").forEach(function(option) {
+          option.disabled = false;
+          option.classList.remove("correct", "incorrect");
+        });
+        document.querySelectorAll(".cave-quiz-feedback").forEach(function(feedback) {
+          feedback.className = "cave-quiz-feedback";
+          feedback.textContent = "";
+        });
+        updateScore();
+      });
+      updateScore();
+    })();
+
+    /* ── Private Reflection Draft ── */
+    (function() {
+      var box = document.getElementById("reflect-box");
+      var count = document.getElementById("reflectCount");
+      var clear = document.getElementById("reflectClear");
+      var key = "plato-cave-reflection";
+      if (!box || !count || !clear) return;
+
+      function updateCount() {
+        var words = box.value.trim() ? box.value.trim().split(/\s+/).length : 0;
+        count.textContent = words + (words === 1 ? " word" : " words");
+      }
+      try { box.value = localStorage.getItem(key) || ""; } catch (error) {}
+      updateCount();
+      box.dispatchEvent(new Event("input"));
+      box.addEventListener("input", function() {
+        updateCount();
+        try { localStorage.setItem(key, box.value); } catch (error) {}
+      });
+      clear.addEventListener("click", function() {
+        box.value = "";
+        box.dispatchEvent(new Event("input"));
+        box.focus();
+      });
+    })();
+  </script>
+<script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

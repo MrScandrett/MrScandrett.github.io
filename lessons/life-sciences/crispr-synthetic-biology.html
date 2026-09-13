@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CRISPR &amp; Synthetic Biology Lab · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Life Sciences Lesson 03 — use a CRISPR-Cas9 simulator to edit a bacterial genome, exploring guide RNA design, gene knockouts, and bioluminescence." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport {
+      --ll-panel-w: 280px;
+      --ll-accent: #16a34a;
+      --ll-tab-active: #16a34a;
+      --ll-tab-active-bg: rgba(22, 163, 74, 0.12);
+    }
+    /* ── CRISPR Page Tokens ── */
+    .crispr-page {
+      font-family: var(--font-sans);
+      color: #1a2b3e;
+      background:
+        radial-gradient(circle at 10% 12%, rgba(74, 222, 128, 0.2), transparent 26%),
+        radial-gradient(circle at 88% 16%, rgba(168, 85, 247, 0.16), transparent 24%),
+        linear-gradient(180deg, #f5fdf8 0%, #edf7f0 100%);
+    }
+
+    .ll-viewport .ll-topbar {
+      background: rgba(245, 253, 248, 0.84);
+    }
+
+    .crispr-shell {
+      width: min(1140px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.5rem 0 3.6rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .crispr-card {
+      border-radius: 26px;
+      border: 1px solid rgba(74, 222, 128, 0.18);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 20px 50px rgba(16, 42, 30, 0.07);
+      padding: 1.3rem;
+    }
+
+    .crispr-hero {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .crispr-eyebrow {
+      margin: 0 0 0.5rem;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #4a8c64;
+    }
+
+    .crispr-hero h1 {
+      margin: 0;
+      font-size: clamp(1.9rem, 3.8vw, 3rem);
+      line-height: 1.06;
+      letter-spacing: -0.04em;
+      color: #0f2a1c;
+    }
+
+    .crispr-lede {
+      margin: 0.85rem 0 0;
+      font-size: 1.02rem;
+      color: #3d6651;
+      line-height: 1.66;
+    }
+
+    /* ── DNA Sequence Editor ── */
+    .crispr-sequence-wrap {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.85rem;
+      line-height: 1.8;
+      padding: 1rem;
+      border-radius: 14px;
+      background: #0d1f17;
+      color: #a8f0c0;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .crispr-sequence-wrap .highlight-target {
+      background: rgba(251, 191, 36, 0.35);
+      color: #fbbf24;
+      border-radius: 2px;
+    }
+
+    .crispr-sequence-wrap .highlight-cut {
+      background: rgba(239, 68, 68, 0.3);
+      color: #ef4444;
+    }
+
+    /* ── Guide RNA Designer ── */
+    .crispr-grna-panel {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.8rem;
+      align-items: end;
+    }
+
+    .crispr-grna-panel input {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 1rem;
+      padding: 0.6rem 0.8rem;
+      border-radius: 10px;
+      border: 2px solid rgba(74, 222, 128, 0.3);
+      background: #f0fdf4;
+    }
+    .crispr-grna-panel select {
+      min-height: 42px; padding: 0.55rem 0.7rem; border: 1px solid #9bc5aa;
+      border-radius: 10px; background: #fff; color: #254d36; font: inherit;
+    }
+    .crispr-learning-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .crispr-learning-grid h2 { margin-top: 0; font-size: 1.05rem; color: #24553a; }
+    .crispr-learning-grid p, .crispr-learning-grid li { color: #3d6651; line-height: 1.6; }
+    @media (max-width: 700px) { .crispr-learning-grid { grid-template-columns: 1fr; } }
+
+    /* ── Step Cards ── */
+    .crispr-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+
+    .crispr-step-card {
+      padding: 1.1rem;
+      border-radius: 18px;
+      border: 1px solid rgba(74, 222, 128, 0.15);
+      background: #f8fdf9;
+    }
+
+    .crispr-step-card h3 {
+      margin: 0 0 0.4rem;
+      font-size: 1.05rem;
+      color: #0f2a1c;
+    }
+
+    .crispr-step-card p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #3d6651;
+      line-height: 1.6;
+    }
+
+    /* ── Petri Dish Result ── */
+    .crispr-petri {
+      position: relative;
+      width: 280px;
+      height: 280px;
+      margin: 1.5rem auto;
+      border-radius: 50%;
+      background: radial-gradient(circle, #e8f5e9 60%, #c8e6c9 100%);
+      border: 3px solid #a5d6a7;
+      box-shadow: inset 0 4px 20px rgba(0,0,0,0.06);
+    }
+
+    #uvBtn.ll-active {
+      background: #c084fc;
+      color: #fff;
+      border-color: #a855f7;
+    }
+    #ampBtn.ll-active {
+      background: #fca5a5;
+      color: #fff;
+      border-color: #ef4444;
+    }
+
+    @media (max-width: 740px) {
+      .crispr-hero { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+<div class="ll-viewport">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="crispr-page">
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 1 — HERO
+     ════════════════════════════════════════════════════════════ -->
+<div class="crispr-shell">
+
+  <div class="crispr-hero">
+    <div class="crispr-card">
+      <p class="crispr-eyebrow">Life Sciences · Lesson 03</p>
+      <h1>CRISPR &amp; Synthetic Biology Lab</h1>
+      <p class="crispr-lede">
+        CRISPR-Cas9 lets scientists cut DNA at a precise location and rewrite the
+        genetic code. Design a guide RNA, target a gene, and watch your virtual
+        bacteria glow — or resist antibiotics — depending on your edit.
+      </p>
+    </div>
+
+    <div class="crispr-card">
+      <p class="crispr-eyebrow">How It Works</p>
+      <ul style="padding-left:1.1rem; color:#3d6651; line-height:1.7; font-size:0.95rem;">
+        <li><strong>Cas9</strong> — molecular scissors guided to a specific DNA target</li>
+        <li><strong>Guide RNA</strong> — a 20-base sequence that matches the target gene</li>
+        <li><strong>PAM site</strong> — a short motif (NGG) that Cas9 requires to bind</li>
+        <li><strong>Repair</strong> — cell fixes the cut, often disabling (knockout) or inserting new code</li>
+      </ul>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 2 — DNA SEQUENCE VIEWER
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="crispr-card">
+    <p class="crispr-eyebrow">Bacterial Genome Viewer</p>
+    <div class="crispr-sequence-wrap" id="sequenceViewer">
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 3 — GUIDE RNA DESIGNER
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="crispr-card">
+    <p class="crispr-eyebrow">Design Your Guide RNA</p>
+    <div class="crispr-grna-panel">
+      <label for="geneSelect" style="font-weight:700;color:#24553a;">Target gene</label>
+      <select id="geneSelect">
+        <option value="luxA">luxA · bioluminescence</option>
+        <option value="ampR">ampR · antibiotic resistance</option>
+      </select>
+      <label class="sr-only" for="grnaInput">Twenty-base guide RNA sequence</label>
+      <input type="text" id="grnaInput" maxlength="20" aria-describedby="targetHint" placeholder="Enter 20-base guide sequence (A, T, C, G)..." />
+      <button id="cutBtn" style="padding:0.6rem 1.4rem; border-radius:10px; background:#087a32; color:#fff; font-weight:700; border:none; cursor:pointer;">
+        Cut DNA
+      </button>
+      <button id="resetBtn" style="padding:0.6rem 1rem; border-radius:10px; background:#e8f5e9; color:#24553a; font-weight:700; border:1px solid #9bc5aa; cursor:pointer;">Reset</button>
+    </div>
+    <p style="margin:0.6rem 0 0; font-size:0.85rem; color:#6b8f7a;">
+      Your guide RNA must match a sequence adjacent to a PAM site (NGG) to cut successfully.
+    </p>
+    <div id="targetHint" style="margin-top: 0.6rem; font-size: 0.85rem; color: #3d6651;">
+      <strong>Hint:</strong> Target sequence is <code style="background: #e8f5e9; padding: 2px 5px; border-radius: 4px;">GCACTGTTGGAAACGTCGAT</code>. Type its complement (A↔T, C↔G).
+    </div>
+    <div id="crisprFeedback" style="margin-top: 0.8rem; font-size: 0.9rem; font-weight: 700; min-height: 1.2rem;"></div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 4 — PROCESS STEPS
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="crispr-steps">
+    <div class="crispr-step-card">
+      <h3>1. Select Target Gene</h3>
+      <p>Choose which gene to edit: <em>luxA</em> (bioluminescence) or <em>ampR</em> (antibiotic resistance). Each has different PAM sites and outcomes.</p>
+    </div>
+    <div class="crispr-step-card">
+      <h3>2. Design Guide RNA</h3>
+      <p>Type a 20-nucleotide sequence that complements the target. The simulator highlights matches and warns of off-target sites.</p>
+    </div>
+    <div class="crispr-step-card">
+      <h3>3. Cas9 Cuts</h3>
+      <p>If your guide matches a valid PAM-adjacent target, Cas9 creates a double-strand break. Watch the animation of the molecular scissors.</p>
+    </div>
+    <div class="crispr-step-card">
+      <h3>4. Observe the Result</h3>
+      <p>The cell repairs the cut. A knockout disables the gene; an insertion adds new function. Check the petri dish to see if your bacteria glow.</p>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 5 — PETRI DISH RESULT
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="crispr-card" style="text-align:center;">
+    <p class="crispr-eyebrow">Petri Dish — Result</p>
+    <div class="crispr-petri" id="petriDish" style="overflow: hidden;">
+      <canvas id="petriCanvas" width="280" height="280" style="display: block;"></canvas>
+    </div>
+    <div style="display: flex; justify-content: center; gap: 0.8rem; margin-top: 1rem;">
+      <button id="uvBtn" style="padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #4a8c64; background: #e8f5e9; cursor: pointer; font-weight: 700; color: #1a2b3e; transition: all 0.2s;">Toggle UV Light</button>
+      <button id="ampBtn" style="padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #4a8c64; background: #e8f5e9; cursor: pointer; font-weight: 700; color: #1a2b3e; transition: all 0.2s;">Add Ampicillin</button>
+    </div>
+  </div>
+
+  <section class="crispr-learning-grid" aria-label="CRISPR learning guide">
+    <article class="crispr-card">
+      <p class="crispr-eyebrow">Evidence Check</p>
+      <h2>Predict, test, explain</h2>
+      <ol>
+        <li>Predict what the UV and ampicillin tests should show before editing.</li>
+        <li>Make one successful edit and record the evidence in the petri dish.</li>
+        <li>Explain how the guide sequence and PAM site together determine where Cas9 can act.</li>
+      </ol>
+    </article>
+    <article class="crispr-card">
+      <p class="crispr-eyebrow">Model Boundary</p>
+      <h2>What this simulation leaves out</h2>
+      <p>This is a conceptual classroom model, not a laboratory design tool. Real gene editing requires delivery into cells, controls, sequencing to confirm outcomes, screening for unintended edits, biosafety review, and careful statistical analysis.</p>
+    </article>
+    <article class="crispr-card">
+      <p class="crispr-eyebrow">Ethics Discussion</p>
+      <h2>Should every possible edit be made?</h2>
+      <p>Compare an edit that treats a serious disease with an edit intended to enhance a trait. Who bears the risks? Who gives consent? Who gets access? What evidence should be required before a human trial?</p>
+    </article>
+    <article class="crispr-card">
+      <p class="crispr-eyebrow">Exit Ticket</p>
+      <h2>Explain specificity</h2>
+      <p>Use <strong>guide RNA</strong>, <strong>complementary base pairing</strong>, <strong>PAM</strong>, and <strong>off-target</strong> in a four-sentence explanation of how CRISPR finds a target and why mistakes remain possible.</p>
+    </article>
+  </section>
+
+</div><!-- /.crispr-shell -->
+
+<script>
+(function () {
+  'use strict';
+
+  const GENOME = "ATGCGTAACCTGGATTCGAA" +
+                 "GCACTGTTGGAAACGTCGAT" + "AGG" +
+                 "CTTAGCAAGTCCTTGAAACGTGCAGCTAATCGTAGCT" +
+                 "TTCGATGCTAAGCTGATCGG" + "CGG" +
+                 "ATCGATCGACTACGATCGTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCT";
+
+  const viewer = document.getElementById('sequenceViewer');
+  const input = document.getElementById('grnaInput');
+  const cutBtn = document.getElementById('cutBtn');
+  const geneSelect = document.getElementById('geneSelect');
+  const targetHint = document.getElementById('targetHint');
+  const feedback = document.getElementById('crisprFeedback');
+  const uvBtn = document.getElementById('uvBtn');
+  const ampBtn = document.getElementById('ampBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const canvas = document.getElementById('petriCanvas');
+  const ctx = canvas.getContext('2d');
+
+  let edits = { luxA: false, ampR: false };
+  let uvLight = false;
+  let ampicillin = false;
+
+  const colonies = Array.from({length: 60}, () => {
+    const r = Math.random() * 120;
+    const theta = Math.random() * Math.PI * 2;
+    const baseSize = 1.5 + Math.random() * 3.5;
+    return {
+      x: 140 + r * Math.cos(theta),
+      y: 140 + r * Math.sin(theta),
+      size: baseSize,
+      baseSize: baseSize,
+    };
+  });
+
+  function showFeedback(msg, type) {
+    feedback.textContent = msg;
+    feedback.style.color = type === 'error' ? '#ef4444' : '#16a34a';
+  }
+
+  function getComplement(seq) {
+    const map = { 'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C' };
+    return seq.split('').map(c => map[c] || c).join('');
+  }
+
+  function updateViewer() {
+    const val = input.value;
+    const target = getComplement(val);
+    let html = GENOME;
+
+    if (val.length === 20) {
+      const idx = GENOME.indexOf(target);
+      if (idx !== -1) {
+        const before = GENOME.substring(0, idx);
+        const match1 = GENOME.substring(idx, idx + 17);
+        const match2 = GENOME.substring(idx + 17, idx + 20);
+        const pam = GENOME.substring(idx + 20, idx + 23);
+        const after = GENOME.substring(idx + 23);
+        
+        if (pam.length === 3 && pam[1] === 'G' && pam[2] === 'G') {
+          const pamHtml = `<span style="background:rgba(74,222,128,0.3); border-radius:2px; padding:0 2px;">${pam}</span>`;
+          html = `${before}<span class="highlight-target">${match1}</span><span class="highlight-cut">|</span><span class="highlight-target">${match2}</span>${pamHtml}${after}`;
+        } else {
+          html = GENOME.replace(target, `<span style="background:rgba(239,68,68,0.3); border-radius:2px;">${target}</span>`);
+        }
+      }
+    }
+    viewer.innerHTML = html;
+  }
+
+  geneSelect.dispatchEvent(new Event('change'));
+
+  input.addEventListener('input', (e) => {
+    e.target.value = e.target.value.toUpperCase().replace(/[^ATCG]/g, '');
+    feedback.textContent = '';
+    updateViewer();
+  });
+
+  geneSelect.addEventListener('change', (e) => {
+    const targetSeq = e.target.value === 'luxA' ? 'GCACTGTTGGAAACGTCGAT' : 'TTCGATGCTAAGCTGATCGG';
+    targetHint.innerHTML = `<strong>Hint:</strong> Target sequence is <code style="background: #e8f5e9; padding: 2px 5px; border-radius: 4px;">${targetSeq}</code>. Type its complement (A↔T, C↔G).`;
+  });
+
+  cutBtn.addEventListener('click', () => {
+    const val = input.value;
+    if (val.length < 20) {
+      showFeedback('Guide RNA must be exactly 20 bases long.', 'error');
+      return;
+    }
+    const target = getComplement(val);
+    const idx = GENOME.indexOf(target);
+    if (idx !== -1) {
+      const pam = GENOME.substring(idx + 20, idx + 23);
+      if (pam.length === 3 && pam[1] === 'G' && pam[2] === 'G') {
+        if (idx === 20) {
+          edits.luxA = true;
+          showFeedback('Cut successful! The luxA gene (bioluminescence) has been inserted.', 'success');
+        } else if (idx === 80) {
+          edits.ampR = true;
+          showFeedback('Cut successful! The ampR gene (antibiotic resistance) has been knocked out.', 'success');
+        }
+      } else {
+        showFeedback('Match found, but no valid PAM site (NGG) adjacent. Cas9 cannot bind.', 'error');
+      }
+    } else {
+      showFeedback('Guide RNA sequence not found in the target genome.', 'error');
+    }
+  });
+
+  uvBtn.addEventListener('click', () => {
+    uvLight = !uvLight;
+    uvBtn.classList.toggle('ll-active', uvLight);
+  });
+
+  ampBtn.addEventListener('click', () => {
+    ampicillin = !ampicillin;
+    ampBtn.classList.toggle('ll-active', ampicillin);
+    
+    if (!ampicillin) {
+      colonies.forEach(c => c.size = c.baseSize);
+    }
+  });
+
+  resetBtn.addEventListener('click', () => {
+    edits.luxA = false;
+    edits.ampR = false;
+    uvLight = false;
+    ampicillin = false;
+    input.value = '';
+    geneSelect.value = 'luxA';
+    geneSelect.dispatchEvent(new Event('change'));
+    uvBtn.classList.remove('ll-active');
+    ampBtn.classList.remove('ll-active');
+    feedback.textContent = '';
+    colonies.forEach(c => c.size = c.baseSize);
+    updateViewer();
+  });
+
+  function drawPetri() {
+    ctx.clearRect(0, 0, 280, 280);
+
+    if (uvLight) {
+      ctx.fillStyle = 'rgba(15, 5, 30, 0.85)';
+      ctx.fillRect(0, 0, 280, 280);
+    }
+    
+    if (ampicillin) {
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
+      ctx.fillRect(0, 0, 280, 280);
+    }
+
+    const time = Date.now();
+
+    colonies.forEach((c, i) => {
+      if (ampicillin && edits.ampR) {
+        c.size *= 0.95;
+      }
+
+      if (c.size < 0.2) return;
+
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2);
+
+      if (uvLight && edits.luxA) {
+        const localGlow = Math.abs(Math.sin(time / 400 + i));
+        ctx.fillStyle = `rgba(74, 222, 128, ${0.7 + 0.3 * localGlow})`;
+        ctx.shadowColor = '#4ade80';
+        ctx.shadowBlur = 8 + 8 * localGlow;
+      } else {
+        ctx.fillStyle = uvLight ? 'rgba(255, 255, 255, 0.1)' : '#d4e157';
+        ctx.shadowBlur = 0;
+      }
+      
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+
+    requestAnimationFrame(drawPetri);
+  }
+  
+  updateViewer();
+  requestAnimationFrame(drawPetri);
+}());
+</script>
+<script src="../../assets/js/canvas-bg.js"></script>
+<script src="../../assets/js/lesson-print-button.js"></script>
+
+</body>
+</html>

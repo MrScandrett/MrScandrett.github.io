@@ -201,12 +201,12 @@ function buildVolumeFeature(volume) {
   if (volume.id !== "living-earth") return "";
 
   const stops = [
-    ["Cell", "Microscopic", "lessons/types-of-cells.html"],
-    ["Heredity", "Generations", "lessons/dna-heredity.html"],
+    ["Cell", "Microscopic", "lessons/life-sciences/types-of-cells.html"],
+    ["Heredity", "Generations", "lessons/life-sciences/dna-heredity.html"],
     ["Biodiversity", "Tree of life", "lessons/life-sciences/animalia/index.html"],
-    ["Deep time", "541 million years", "lessons/cambrian-explosion.html"],
-    ["Earth cycles", "Water · rock · carbon", "lessons/water-cycle.html"],
-    ["Climate", "Planetary feedback", "lessons/climate-simulator.html"],
+    ["Deep time", "541 million years", "lessons/life-sciences/cambrian-explosion.html"],
+    ["Earth cycles", "Water · rock · carbon", "lessons/earth-science/water-cycle.html"],
+    ["Climate", "Planetary feedback", "lessons/earth-science/climate-simulator.html"],
   ];
   const links = stops.map(([label, scale, href], index) =>
     `<a href="${href}" style="--transect-step:${index}" aria-label="${escapeHtml(label)}: ${escapeHtml(scale)}"><span>${escapeHtml(label)}</span><small>${escapeHtml(scale)}</small></a>`

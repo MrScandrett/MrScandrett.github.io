@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Digital Signal Processing · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Applied Physics Lesson — visualize Fourier transforms, build audio filters, and explore how digital systems decompose complex signals into frequencies." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    /* ── DSP Page Tokens ── */
+    body.dsp-page {
+      font-family: var(--font-sans);
+      color: #14202e;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(6, 182, 212, 0.18), transparent 26%),
+        radial-gradient(circle at 86% 16%, rgba(217, 70, 239, 0.14), transparent 22%),
+        linear-gradient(180deg, #f0fdfa 0%, #e6f7f4 100%);
+    }
+
+    .dsp-page .site-header,
+    .dsp-page .site-footer {
+      background: rgba(240, 253, 250, 0.84);
+      backdrop-filter: blur(18px);
+    }
+
+    .dsp-shell {
+      width: min(1140px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.5rem 0 3.6rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .dsp-card {
+      border-radius: 26px;
+      border: 1px solid rgba(6, 182, 212, 0.16);
+      background: rgba(255, 255, 255, 0.93);
+      box-shadow: 0 20px 50px rgba(10, 30, 40, 0.07);
+      padding: 1.3rem;
+    }
+
+    .dsp-hero {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .dsp-eyebrow {
+      margin: 0 0 0.5rem;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #0891b2;
+    }
+
+    .dsp-hero h1 {
+      margin: 0;
+      font-size: clamp(1.9rem, 3.8vw, 3rem);
+      line-height: 1.06;
+      letter-spacing: -0.04em;
+      color: #14202e;
+    }
+
+    .dsp-lede {
+      margin: 0.85rem 0 0;
+      font-size: 1.02rem;
+      color: #3b6474;
+      line-height: 1.66;
+    }
+
+    /* ── Waveform Canvases ── */
+    .dsp-wave-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .dsp-wave-card {
+      border-radius: 18px;
+      overflow: hidden;
+      background: #0c1e28;
+    }
+
+    .dsp-wave-card canvas {
+      display: block;
+      width: 100%;
+      height: 180px;
+    }
+
+    .dsp-wave-label {
+      padding: 0.5rem 0.8rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #67e8f9;
+      background: #0c1e28;
+    }
+
+    /* ── Frequency Sliders (Additive Synthesis) ── */
+    .dsp-freq-controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.8rem;
+    }
+
+    .dsp-freq-slider {
+      padding: 0.8rem;
+      border-radius: 14px;
+      border: 1px solid rgba(6, 182, 212, 0.15);
+      background: #f0fdfa;
+      text-align: center;
+    }
+
+    .dsp-freq-slider label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #0891b2;
+      margin-bottom: 0.3rem;
+    }
+
+    .dsp-freq-slider .freq-hz {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #14202e;
+    }
+
+    .dsp-freq-slider input[type="range"] {
+      accent-color: #0891b2;
+    }
+
+    /* ── EQ Band Filters ── */
+    .dsp-eq-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 0.6rem;
+      padding: 1rem;
+    }
+
+    .dsp-eq-band {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .dsp-eq-band input[type="range"] {
+      writing-mode: vertical-lr;
+      direction: rtl;
+      height: 120px;
+      accent-color: #0891b2;
+    }
+
+    .dsp-eq-band .eq-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #0891b2;
+    }
+
+    /* ── Theory Cards ── */
+    .dsp-theory-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+
+    .dsp-theory-card {
+      padding: 1.1rem;
+      border-radius: 18px;
+      border: 1px solid rgba(6, 182, 212, 0.12);
+      background: #f0fdfa;
+    }
+
+    .dsp-theory-card h3 {
+      margin: 0 0 0.4rem;
+      font-size: 1.05rem;
+      color: #14202e;
+    }
+
+    .dsp-theory-card p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #3b6474;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 740px) {
+      .dsp-hero { grid-template-columns: 1fr; }
+      .dsp-wave-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam dsp-page">
+<div class="ll-viewport">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content">
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 1 — HERO
+     ════════════════════════════════════════════════════════════ -->
+<div class="dsp-shell">
+
+  <div class="dsp-hero">
+    <div class="dsp-card">
+      <p class="dsp-eyebrow">Applied Physics · Signal Processing</p>
+      <h1>Digital Signal Processing</h1>
+      <p class="dsp-lede">
+        Every sound you hear is a sum of pure sine waves. The <strong>Fourier Transform</strong>
+        decomposes that mixture into its constituent frequencies — the same math
+        behind music EQs, MRI scanners, voice recognition, and Wi-Fi.
+      </p>
+    </div>
+
+    <div class="dsp-card">
+      <p class="dsp-eyebrow">Key Concepts</p>
+      <ul style="padding-left:1.1rem; color:#3b6474; line-height:1.7; font-size:0.95rem;">
+        <li><strong>Time Domain</strong> — amplitude vs. time (the waveform you see)</li>
+        <li><strong>Frequency Domain</strong> — amplitude vs. frequency (the spectrum)</li>
+        <li><strong>Fourier Transform</strong> — the bridge between the two domains</li>
+        <li><strong>Filters</strong> — boost or cut specific frequency bands</li>
+      </ul>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 2 — DUAL WAVEFORM VIEW (Time + Frequency)
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="dsp-card">
+    <p class="dsp-eyebrow">Live Visualizer</p>
+
+    <div style="text-align:center; margin-bottom:1rem;">
+      <button id="micBtn" style="padding:0.6rem 1.4rem; border-radius:10px; background:#0891b2; color:#fff; font-weight:700; border:none; cursor:pointer; margin-right:0.5rem;">
+        Use Microphone
+      </button>
+      <button id="toneBtn" style="padding:0.6rem 1.4rem; border-radius:10px; background:#0e7490; color:#fff; font-weight:700; border:none; cursor:pointer;">
+        Play Test Tone
+      </button>
+    </div>
+
+    <div class="dsp-wave-grid">
+      <div class="dsp-wave-card">
+        <div class="dsp-wave-label">Time Domain (Waveform)</div>
+        <canvas id="waveCanvas"></canvas>
+      </div>
+      <div class="dsp-wave-card">
+        <div class="dsp-wave-label">Frequency Domain (Spectrum)</div>
+        <canvas id="spectrumCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 3 — ADDITIVE SYNTHESIS
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="dsp-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+      <p class="dsp-eyebrow" style="margin: 0;">Additive Synthesis</p>
+      <button id="squarePresetBtn" style="padding:0.3rem 0.8rem; border-radius:8px; background:#0891b2; color:#fff; border:none; font-weight:700; cursor:pointer; font-size:0.75rem; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">Square Wave Approx</button>
+    </div>
+    <div class="dsp-freq-controls">
+      <div class="dsp-freq-slider">
+        <label>Fundamental</label>
+        <div class="freq-hz" id="f0Hz">220</div>
+        <input type="range" id="f0Slider" min="80" max="880" value="220" style="width:100%;" />
+        <input type="range" id="f0Amp" min="0" max="100" value="80" style="width:100%;" />
+        <div style="font-size:0.7rem; color:#3b6474;">Amplitude</div>
+      </div>
+      <div class="dsp-freq-slider">
+        <label>2nd Harmonic</label>
+        <div class="freq-hz" id="f1Hz">440</div>
+        <input type="range" id="f1Amp" min="0" max="100" value="40" style="width:100%;" />
+        <div style="font-size:0.7rem; color:#3b6474;">Amplitude</div>
+      </div>
+      <div class="dsp-freq-slider">
+        <label>3rd Harmonic</label>
+        <div class="freq-hz" id="f2Hz">660</div>
+        <input type="range" id="f2Amp" min="0" max="100" value="20" style="width:100%;" />
+        <div style="font-size:0.7rem; color:#3b6474;">Amplitude</div>
+      </div>
+      <div class="dsp-freq-slider">
+        <label>4th Harmonic</label>
+        <div class="freq-hz" id="f3Hz">880</div>
+        <input type="range" id="f3Amp" min="0" max="100" value="10" style="width:100%;" />
+        <div style="font-size:0.7rem; color:#3b6474;">Amplitude</div>
+      </div>
+    </div>
+    <p style="margin:0.8rem 0 0; font-size:0.88rem; color:#3b6474; text-align:center;">
+      Drag amplitudes to zero to hear how each harmonic shapes the timbre.
+      A square wave ≈ odd harmonics only. A sawtooth ≈ all harmonics.
+    </p>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 4 — EQ / FILTER
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="dsp-card">
+    <p class="dsp-eyebrow">Graphic Equalizer</p>
+    <div class="dsp-eq-wrap">
+      <div class="dsp-eq-band">
+        <input type="range" min="-12" max="12" value="0" class="eqBand" data-freq="60" />
+        <span class="eq-label">60</span>
+      </div>
+      <div class="dsp-eq-band">
+        <input type="range" min="-12" max="12" value="0" class="eqBand" data-freq="250" />
+        <span class="eq-label">250</span>
+      </div>
+      <div class="dsp-eq-band">
+        <input type="range" min="-12" max="12" value="0" class="eqBand" data-freq="1k" />
+        <span class="eq-label">1k</span>
+      </div>
+      <div class="dsp-eq-band">
+        <input type="range" min="-12" max="12" value="0" class="eqBand" data-freq="4k" />
+        <span class="eq-label">4k</span>
+      </div>
+      <div class="dsp-eq-band">
+        <input type="range" min="-12" max="12" value="0" class="eqBand" data-freq="8k" />
+        <span class="eq-label">8k</span>
+      </div>
+      <div class="dsp-eq-band">
+        <input type="range" min="-12" max="12" value="0" class="eqBand" data-freq="16k" />
+        <span class="eq-label">16k</span>
+      </div>
+    </div>
+    <p style="text-align:center; font-size:0.85rem; color:#3b6474;">
+      Boost or cut frequency bands (±12 dB). Watch the spectrum change in real time.
+    </p>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 5 — THEORY CARDS
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="dsp-theory-grid">
+    <div class="dsp-theory-card">
+      <h3>Joseph Fourier (1807)</h3>
+      <p>Proved that any periodic function can be decomposed into a sum of sines and cosines — one of the most powerful ideas in all of mathematics.</p>
+    </div>
+    <div class="dsp-theory-card">
+      <h3>FFT Algorithm</h3>
+      <p>The Fast Fourier Transform (Cooley–Tukey, 1965) computes the frequency decomposition in O(n log n) time — making real-time audio analysis possible.</p>
+    </div>
+    <div class="dsp-theory-card">
+      <h3>Nyquist–Shannon Theorem</h3>
+      <p>To capture a frequency, you must sample at least twice per cycle. CD audio samples at 44.1 kHz, capturing up to ~22 kHz — the limit of human hearing.</p>
+    </div>
+    <div class="dsp-theory-card">
+      <h3>Applications</h3>
+      <p>MP3 compression, noise cancellation, medical imaging (MRI/CT), radar, seismology, and speech recognition all rely on the same DSP fundamentals.</p>
+    </div>
+  </div>
+
+</div><!-- /.dsp-shell -->
+
+      </main>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const micBtn = document.getElementById('micBtn');
+  const toneBtn = document.getElementById('toneBtn');
+  const waveCanvas = document.getElementById('waveCanvas');
+  const specCanvas = document.getElementById('spectrumCanvas');
+  const waveCtx = waveCanvas.getContext('2d');
+  const specCtx = specCanvas.getContext('2d');
+
+  let audioCtx, analyser, masterGain;
+  let eqNodes = [];
+  let oscillators = [];
+  let oscGains = [];
+  let micSource = null;
+  let micStream = null;
+
+  let mode = 'none'; // 'mic', 'tone', 'none'
+
+  // Controls
+  const f0Slider = document.getElementById('f0Slider');
+  const amps = [
+    document.getElementById('f0Amp'),
+    document.getElementById('f1Amp'),
+    document.getElementById('f2Amp'),
+    document.getElementById('f3Amp')
+  ];
+  const hzLabels = [
+    document.getElementById('f0Hz'),
+    document.getElementById('f1Hz'),
+    document.getElementById('f2Hz'),
+    document.getElementById('f3Hz')
+  ];
+  const eqBands = document.querySelectorAll('.eqBand');
+  const squarePresetBtn = document.getElementById('squarePresetBtn');
+
+  function initAudio() {
+    if (audioCtx) return;
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AudioContext();
+
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 2048;
+    analyser.smoothingTimeConstant = 0.8;
+
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.2; // Headroom to prevent clipping when summing 4 oscs
+
+    // Build EQ chain
+    let prevNode = null;
+    eqBands.forEach((slider) => {
+      let eq = audioCtx.createBiquadFilter();
+      eq.type = 'peaking';
+      eq.frequency.value = parseFloat(slider.dataset.freq.replace('k', '000'));
+      eq.Q.value = 1.4;
+      eq.gain.value = parseFloat(slider.value);
+      eqNodes.push(eq);
+
+      if (prevNode) prevNode.connect(eq);
+      prevNode = eq;
+    });
+
+    if (eqNodes.length > 0) {
+      eqNodes[eqNodes.length - 1].connect(masterGain);
+    }
+    masterGain.connect(analyser);
+    analyser.connect(audioCtx.destination);
+  }
+
+  function stopMic() {
+    if (micSource) {
+      micSource.disconnect();
+      micSource = null;
+    }
+    if (micStream) {
+      micStream.getTracks().forEach(t => t.stop());
+      micStream = null;
+    }
+  }
+
+  function stopTone() {
+    oscillators.forEach(o => {
+      try { o.stop(); } catch (e) {}
+      o.disconnect();
+    });
+    oscillators = [];
+    oscGains.forEach(g => g.disconnect());
+    oscGains = [];
+  }
+
+  function updateTone() {
+    if (mode !== 'tone' || !audioCtx) return;
+    const baseFreq = parseFloat(f0Slider.value);
+    for (let i = 0; i < 4; i++) {
+      const freq = baseFreq * (i + 1);
+      hzLabels[i].textContent = Math.round(freq);
+      if (oscillators[i]) {
+        oscillators[i].frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.03);
+        oscGains[i].gain.setTargetAtTime(parseFloat(amps[i].value) / 100, audioCtx.currentTime, 0.03);
+      }
+    }
+  }
+
+  async function startMic() {
+    initAudio();
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+    stopTone();
+    stopMic();
+
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      micSource = audioCtx.createMediaStreamSource(micStream);
+      micSource.connect(eqNodes[0]);
+      mode = 'mic';
+      updateButtons();
+    } catch (e) {
+      alert('Microphone access denied or not available.');
+      mode = 'none';
+      updateButtons();
+    }
+  }
+
+  function startTone() {
+    initAudio();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    stopMic();
+    stopTone();
+
+    const baseFreq = parseFloat(f0Slider.value);
+    for (let i = 0; i < 4; i++) {
+      let osc = audioCtx.createOscillator();
+      let gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = baseFreq * (i + 1);
+      gain.gain.value = parseFloat(amps[i].value) / 100;
+      
+      osc.connect(gain);
+      gain.connect(eqNodes[0]);
+      
+      osc.start();
+      oscillators.push(osc);
+      oscGains.push(gain);
+    }
+    mode = 'tone';
+    updateButtons();
+  }
+
+  function updateButtons() {
+    micBtn.style.background = mode === 'mic' ? '#0891b2' : '#e6f7f4';
+    micBtn.style.color = mode === 'mic' ? '#fff' : '#0891b2';
+    micBtn.style.border = mode === 'mic' ? 'none' : '1px solid #0891b2';
+
+    toneBtn.style.background = mode === 'tone' ? '#0891b2' : '#e6f7f4';
+    toneBtn.style.color = mode === 'tone' ? '#fff' : '#0891b2';
+    toneBtn.style.border = mode === 'tone' ? 'none' : '1px solid #0891b2';
+  }
+
+  micBtn.addEventListener('click', () => {
+    if (mode === 'mic') { stopMic(); mode = 'none'; updateButtons(); }
+    else startMic();
+  });
+
+  toneBtn.addEventListener('click', () => {
+    if (mode === 'tone') { stopTone(); mode = 'none'; updateButtons(); }
+    else startTone();
+  });
+
+  f0Slider.addEventListener('input', () => {
+    const baseFreq = parseFloat(f0Slider.value);
+    for (let i = 0; i < 4; i++) hzLabels[i].textContent = Math.round(baseFreq * (i + 1));
+    updateTone();
+  });
+
+  amps.forEach(amp => amp.addEventListener('input', updateTone));
+
+  if (squarePresetBtn) {
+    squarePresetBtn.addEventListener('click', () => {
+      amps[0].value = 100; // Fundamental (1/1)
+      amps[1].value = 0;   // 2nd harmonic (even)
+      amps[2].value = 33;  // 3rd harmonic (1/3)
+      amps[3].value = 0;   // 4th harmonic (even)
+      updateTone();
+    });
+  }
+
+  eqBands.forEach((slider, i) => {
+    slider.addEventListener('input', (e) => {
+      if (eqNodes[i]) eqNodes[i].gain.setTargetAtTime(parseFloat(e.target.value), audioCtx.currentTime, 0.05);
+    });
+  });
+
+  function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    [waveCanvas, specCanvas].forEach(c => {
+      const rect = c.parentElement.getBoundingClientRect();
+      c.width = rect.width * dpr;
+      c.height = 180 * dpr;
+    });
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  let timeData = new Uint8Array(2048);
+  let freqData = new Uint8Array(1024);
+
+  function draw() {
+    requestAnimationFrame(draw);
+    const W1 = waveCanvas.width, H1 = waveCanvas.height;
+    const W2 = specCanvas.width, H2 = specCanvas.height;
+
+    waveCtx.fillStyle = '#0c1e28';
+    waveCtx.fillRect(0, 0, W1, H1);
+
+    specCtx.fillStyle = '#0c1e28';
+    specCtx.fillRect(0, 0, W2, H2);
+
+    if (!analyser || mode === 'none') {
+      // A representative, silent preview keeps the first frame meaningful on
+      // screen and gives printed handouts a useful simulation thumbnail.
+      const previewAmps = amps.map(input => parseFloat(input.value) / 100);
+      const previewTotal = Math.max(1, previewAmps.reduce((sum, value) => sum + value, 0));
+      waveCtx.beginPath();
+      for (let px = 0; px <= W1; px += 2) {
+        const phase = (px / W1) * Math.PI * 6;
+        let sample = 0;
+        previewAmps.forEach((amplitude, index) => {
+          sample += amplitude * Math.sin(phase * (index + 1));
+        });
+        const y = H1 / 2 - (sample / previewTotal) * H1 * 0.38;
+        if (px === 0) waveCtx.moveTo(px, y);
+        else waveCtx.lineTo(px, y);
+      }
+      waveCtx.strokeStyle = '#67e8f9';
+      waveCtx.lineWidth = 2;
+      waveCtx.stroke();
+
+      const previewGradient = specCtx.createLinearGradient(0, H2, 0, 0);
+      previewGradient.addColorStop(0, '#06b6d4');
+      previewGradient.addColorStop(0.55, '#a855f7');
+      previewGradient.addColorStop(1, '#ec4899');
+      specCtx.fillStyle = previewGradient;
+      specCtx.font = '10px "JetBrains Mono", monospace';
+      specCtx.textAlign = 'center';
+      previewAmps.forEach((amplitude, index) => {
+        const x = W2 * (0.16 + index * 0.22);
+        const height = Math.max(3, amplitude * H2 * 0.72);
+        specCtx.fillRect(x - 10, H2 - height - 18, 20, height);
+        specCtx.fillStyle = 'rgba(255, 255, 255, 0.68)';
+        specCtx.fillText(`${index + 1}f`, x, H2 - 5);
+        specCtx.fillStyle = previewGradient;
+      });
+      return;
+    }
+
+    // Draw Time Domain
+    analyser.getByteTimeDomainData(timeData);
+    waveCtx.lineWidth = 3;
+    waveCtx.strokeStyle = '#67e8f9';
+    waveCtx.beginPath();
+    let sliceWidth = W1 / timeData.length;
+    let x = 0;
+    for (let i = 0; i < timeData.length; i++) {
+      let v = timeData[i] / 128.0;
+      let y = v * (H1 / 2);
+      if (i === 0) waveCtx.moveTo(x, y);
+      else waveCtx.lineTo(x, y);
+      x += sliceWidth;
+    }
+    waveCtx.lineTo(W1, H1 / 2);
+    waveCtx.stroke();
+
+    // Draw Frequency Domain
+    analyser.getByteFrequencyData(freqData);
+    // Display only up to ~11kHz to focus on the active ranges
+    let renderBars = Math.floor(freqData.length * 0.45); 
+    let barWidth = W2 / renderBars;
+    let barHeight;
+    x = 0;
+
+    let grad = specCtx.createLinearGradient(0, H2, 0, 0);
+    grad.addColorStop(0, '#06b6d4');
+    grad.addColorStop(0.5, '#a855f7');
+    grad.addColorStop(1, '#ec4899');
+
+    const sampleRate = audioCtx ? audioCtx.sampleRate : 44100;
+    const nyquist = sampleRate / 2;
+    const hzPerBin = nyquist / freqData.length;
+    const labelFreqs = [250, 1000, 4000, 8000];
+
+    specCtx.lineWidth = 1;
+    specCtx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    specCtx.beginPath();
+    labelFreqs.forEach(freq => {
+      const bin = freq / hzPerBin;
+      if (bin < renderBars) {
+        specCtx.moveTo(bin * barWidth, 0);
+        specCtx.lineTo(bin * barWidth, H2);
+      }
+    });
+    specCtx.stroke();
+
+    specCtx.fillStyle = grad;
+    for (let i = 0; i < renderBars; i++) {
+      barHeight = (freqData[i] / 255.0) * H2;
+      specCtx.fillRect(x, H2 - barHeight, Math.max(1, barWidth - 1), barHeight);
+      x += barWidth;
+    }
+
+    specCtx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    specCtx.font = '10px "JetBrains Mono", monospace';
+    specCtx.textAlign = 'center';
+    labelFreqs.forEach(freq => {
+      const bin = freq / hzPerBin;
+      if (bin < renderBars) {
+        const text = freq >= 1000 ? (freq / 1000) + 'kHz' : freq + 'Hz';
+        specCtx.fillText(text, bin * barWidth, H2 - 6);
+      }
+    });
+  }
+
+  draw();
+  updateButtons();
+}());
+</script>
+<script src="../../assets/js/theme-registry.js"></script>
+<script src="../../assets/js/nav-mobile.js"></script>
+<script src="../../assets/js/classroom-animations.js"></script>
+<script src="../../assets/js/lesson-layout.js"></script>
+<script src="../../assets/js/lesson-print-button.js"></script>
+
+</body>
+</html>

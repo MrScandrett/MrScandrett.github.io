@@ -118,6 +118,31 @@ if (untracked.length === 0) {
   }
 }
 
+// ── Validate: lesson documents opt into standards mode ───────────────────────
+
+function walkHtmlFiles(dir) {
+  const files = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...walkHtmlFiles(fullPath));
+    } else if (entry.name.endsWith(".html")) {
+      files.push(fullPath);
+    }
+  }
+  return files;
+}
+
+let invalidDoctypes = 0;
+for (const filePath of walkHtmlFiles(lessonsDir)) {
+  const source = fs.readFileSync(filePath, "utf8");
+  if (!/^<!doctype html>/i.test(source)) {
+    err(`Lesson must begin with <!doctype html>: ${path.relative(ROOT, filePath)}`);
+    invalidDoctypes++;
+  }
+}
+if (invalidDoctypes === 0) info("All lesson files begin with <!doctype html> ✓");
+
 // ── Cross-check against search-index.json ────────────────────────────────────
 
 let indexData;
@@ -159,10 +184,10 @@ if (shelfUrls.size === liveLessonUrls.size && [...shelfUrls].every((url) => live
   info(`Public shelf and registry agree on ${shelfUrls.size} live lessons ✓`);
 }
 
-const libraryCountPattern = /(<p class="lessons-library-count"[^>]*>)(\d+)(\s+interactive lessons<\/p>)/;
+const libraryCountPattern = /(<p class="lessons-library-count"[^>]*>)(\d+)(\s+available lessons &amp; resources<\/p>)/;
 const libraryCountMatch = steamHtml.match(libraryCountPattern);
 if (!libraryCountMatch) {
-  err("steam-lessons.html is missing its authoritative interactive lesson count");
+  err("steam-lessons.html is missing its authoritative available-resource count or uses an inaccurate resource label");
 } else if (Number(libraryCountMatch[2]) !== liveLessonUrls.size) {
   if (FIX) {
     const updatedSteamHtml = steamHtml.replace(
@@ -176,6 +201,17 @@ if (!libraryCountMatch) {
       `Library count mismatch: heading says ${libraryCountMatch[2]}, registry contains ${liveLessonUrls.size} live lessons`
     );
   }
+}
+
+if (/\b(?:\d+\s+)?interactive lessons\b/i.test(steamHtml)) {
+  err('steam-lessons.html must not describe every catalog entry as an "interactive lesson"');
+}
+
+const descriptionMatch = steamHtml.match(/<meta\s+name="description"\s+content="([^"]+)"/i);
+if (!descriptionMatch) {
+  err("steam-lessons.html is missing its catalog description");
+} else if (/\bevery grade level\b|\bcomplete K(?:–|-|&ndash;)8\b/i.test(descriptionMatch[1])) {
+  err("steam-lessons.html catalog description overstates current grade coverage");
 }
 
 const a11yConfig = JSON.parse(fs.readFileSync(A11Y_PATH, "utf8"));

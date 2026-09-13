@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 234 public lessons and classifies 11 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 261 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -15,7 +15,7 @@ This metadata-only draft organizes 234 public lessons and classifies 11 supporti
 
 # Volume I — Mathematical Thinking, Measurement & Astronomy
 
-Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 35 lessons
+Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 36 lessons
 
 ## Mathematics & Quantitative Reasoning (MAT)
 
@@ -59,7 +59,7 @@ Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 35 lesson
 - **COS-02** — Heliocentrism — The Sun at the Center
 - **COS-03** — Tycho Brahe — The Last Naked-Eye Astronomer
 - **COS-04** — Uraniborg — Astronomy Before the Telescope
-- **COS-05** — Planets Trace Ellipses
+- **COS-05** — Kepler's Laws of Planetary Motion
 
 ### Orbits, Planetary Systems & Exploration
 
@@ -73,9 +73,10 @@ Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 35 lesson
 
 - **COS-11** — Event Horizon Telescope
 - **COS-12** — Universe Expansion
-- **COS-13** — Searching for Extraterrestrial Intelligence
-- **COS-14** — Arecibo Message
-- **COS-15** — Pale Blue Dot — Scale of the Universe
+- **COS-13** — Nancy Grace Roman Space Telescope
+- **COS-14** — Searching for Extraterrestrial Intelligence
+- **COS-15** — Arecibo Message
+- **COS-16** — Pale Blue Dot — Scale of the Universe
 
 # Volume II — Physics, Chemistry, Matter & Energy
 
@@ -85,15 +86,15 @@ Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 45 l
 
 ### Motion, Forces & Machines
 
-- **PHY-01** — Direction is Half the Story
-- **PHY-02** — The Language of Motion
+- **PHY-01** — Vectors
+- **PHY-02** — Kinematics: Motion, Speed & Acceleration
 - **PHY-03** — Newton's Laws of Motion
 - **PHY-04** — 3D Motion
-- **PHY-05** — Momentum is Always Conserved
-- **PHY-06** — Energy is the Universe's Bookkeeping
-- **PHY-07** — The Physics of Sports
-- **PHY-08** — The Lever
-- **PHY-09** — The Wheel and Axle
+- **PHY-05** — Conservation of Momentum
+- **PHY-06** — Conservation of Energy
+- **PHY-07** — Biomechanics: The Physics of Sports
+- **PHY-08** — Levers: The Original Force Multiplier
+- **PHY-09** — Wheel & Axle
 
 ### Gravity, Oscillation & Fluids
 
@@ -127,7 +128,7 @@ Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 45 l
 
 - **PHY-29** — Thermodynamics
 - **PHY-30** — Entropy
-- **PHY-31** — Everything Pushes and Pulls — But How?
+- **PHY-31** — Fundamental Forces
 - **PHY-32** — Electron Microscopes
 - **PHY-33** — World Quantum Day 2026
 
@@ -144,7 +145,7 @@ Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 45 l
 
 - **CHE-01** — Atoms: Structure, Motion & Matter
 - **CHE-02** — Periodic Table of Elements
-- **CHE-03** — Water: H₂O
+- **CHE-03** — Water: The Architecture of H₂O
 - **CHE-04** — Molecular Bonding Lab
 
 ### Reactions, Catalysts & Chemical Systems
@@ -156,7 +157,7 @@ Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 45 l
 
 # Volume III — Living Systems, Earth & Environment
 
-Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 23 lessons
+Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 24 lessons
 
 ## Biology & Life Science (BIO)
 
@@ -172,7 +173,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 - **BIO-05** — Classifying Life: Taxonomy of Every Kingdom — _also indexed in Chemistry & Chemical Systems_
 - **BIO-06** — Entomology: The Science of Insects
 - **BIO-07** — Axolotls & Neoteny
-- **BIO-08** — Slime Molds: Swarm Intelligence Without a Brain
+- **BIO-08** — Slime Molds & Swarm Intelligence
 - **BIO-09** — Cryptozoology: From Footprints to Facts
 
 ### Evolution & Deep Time
@@ -191,18 +192,19 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 - **EAR-04** — Volcano Simulator
 - **EAR-05** — Structural Geology: 3D Subsurface Modeler
 - **EAR-06** — Fossil Fuels: How Coal, Oil & Natural Gas Form
+- **EAR-07** — Pleistocene Field Lab
 
 ### Planetary Systems & Observation
 
-- **EAR-07** — Ocean Zones & Deep-Sea Life
-- **EAR-08** — Climate Modeling Simulator — _also indexed in Chemistry & Chemical Systems_
-- **EAR-09** — Seasons and the Heavens
-- **EAR-10** — Measuring the Earth
-- **EAR-11** — Rainbows
+- **EAR-08** — Ocean Zones & Deep-Sea Life
+- **EAR-09** — Climate Modeling Simulator — _also indexed in Chemistry & Chemical Systems_
+- **EAR-10** — Seasons and the Heavens
+- **EAR-11** — Measuring the Earth
+- **EAR-12** — Rainbows
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 50 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 58 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
@@ -212,30 +214,33 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 - **ENG-02** — Ohm's Law
 - **ENG-03** — Electronic Schematics
 - **ENG-04** — Breadboard Basics
-- **ENG-05** — Inputs: Beyond the Button
-- **ENG-06** — Outputs: Beyond the LED
-- **ENG-07** — Soldering
-- **ENG-08** — Sensor Modules Kit
-- **ENG-09** — The Internet of Things
+- **ENG-05** — Robotics Engineering Intro
+- **ENG-06** — Arduino: The Robot Brain
+- **ENG-07** — Digital Sensors: Actions = Reactions
+- **ENG-08** — Inputs: Beyond the Button
+- **ENG-09** — Outputs: Beyond the LED
+- **ENG-10** — Soldering
+- **ENG-11** — Sensor Modules Kit
+- **ENG-12** — The Internet of Things
 
 ### Mechanisms, Feedback & Control
 
-- **ENG-10** — Mechanisms and Gear Systems
-- **ENG-11** — PID Control & Feedback Loops
-- **ENG-12** — Maglev Train Engineering
-- **ENG-13** — Simple Rules, Complex Walkers
+- **ENG-13** — Mechanisms and Gear Systems
+- **ENG-14** — PID Control & Feedback Loops
+- **ENG-15** — Maglev Train Engineering
+- **ENG-16** — Bug Bots: Genghis & the Insect Robots
 
 ### Structural Design Projects
 
-- **ENG-14** — Bridge Over Troubled Water
-- **ENG-15** — Biomimicry: Engineering Nature's Genius
+- **ENG-17** — Bridge Over Troubled Water
+- **ENG-18** — Biomimicry: Engineering Nature's Genius
 
 ### People Who Changed Engineering
 
-- **ENG-16** — Emily Roebling
-- **ENG-17** — Henry Ford — _also indexed in Design, Materials & Fabrication_
-- **ENG-18** — Rube Goldberg
-- **ENG-19** — Hedy Lamarr
+- **ENG-19** — Emily Roebling
+- **ENG-20** — Henry Ford — _also indexed in Design, Materials & Fabrication_
+- **ENG-21** — Rube Goldberg Machine Lab
+- **ENG-22** — Hedy Lamarr
 
 ## Design, Materials & Fabrication (FAB)
 
@@ -243,31 +248,39 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 
 - **FAB-01** — Camera Controls in 3D CAD
 - **FAB-02** — 3D Printing — Settings, Rules & Perfect Prints
-- **FAB-03** — Bandsaw Design Lab Cuts, Curves & Creative Inventions
+- **FAB-03** — Print-in-Place Fidgets — The Spiral Cone
+- **FAB-04** — Bandsaw Design Lab — Cuts, Curves & Creative Inventions
 
 ### Materials, Fluids & Optics
 
-- **FAB-04** — Viscosimeter
-- **FAB-05** — Squishy Science Lab
-- **FAB-06** — Optics — Mirrors, Lenses & Light — _also indexed in Audio, Lighting & Production Technology_
-- **FAB-07** — Newton's Dispersive Prism
+- **FAB-05** — Viscosimeter
+- **FAB-06** — Squishy Science Lab
+- **FAB-07** — Optics — Mirrors, Lenses & Light — _also indexed in Audio, Lighting & Production Technology_
+- **FAB-08** — Newton's Dispersive Prism
 
 ### Immersive Systems
 
-- **FAB-08** — Virtual Reality — How It Works & How to Build It
-- **FAB-09** — XR: Extended Reality — OpenXR & WebXR
-- **FAB-10** — Steam & VR Launch Protocol — _also indexed in Computer Science & Artificial Intelligence_
+- **FAB-09** — Virtual Reality — How It Works & How to Build It
+- **FAB-10** — XR: Extended Reality — OpenXR & WebXR
+- **FAB-11** — Steam & VR Launch Protocol — _also indexed in Computer Science & Artificial Intelligence_
 
 ### 3D Modeling with Blender
 
-- **FAB-11** — Learn the tool. Then build anything. — _also indexed in Game Design & Development_
-- **FAB-12** — Read the editor. Move with confidence. — _also indexed in Game Design & Development_
-- **FAB-13** — Cut a real hole. Not a painted one. — _also indexed in Game Design & Development_
-- **FAB-14** — Half the shape. Twice the speed. — _also indexed in Game Design & Development_
-- **FAB-15** — Build the kit, not the room. — _also indexed in Game Design & Development_
-- **FAB-16** — Quads bend. Triangles break. — _also indexed in Game Design & Development_
-- **FAB-17** — Machined, not molded. Model it that way. — _also indexed in Game Design & Development_
-- **FAB-18** — Gray plastic, no more. — _also indexed in Game Design & Development_
+- **FAB-12** — Blender Fundamentals Pathway — _also indexed in Game Design & Development_
+- **FAB-13** — Blender Interface & Navigation — _also indexed in Game Design & Development_
+- **FAB-14** — Windows & Doors — _also indexed in Game Design & Development_
+- **FAB-15** — Furniture Design — _also indexed in Game Design & Development_
+- **FAB-16** — Environments & Modular Kits — _also indexed in Game Design & Development_
+- **FAB-17** — Character Modeling — _also indexed in Game Design & Development_
+- **FAB-18** — Props & Hand Tools — _also indexed in Game Design & Development_
+- **FAB-19** — Materials, Lighting & Render — _also indexed in Game Design & Development_
+
+### Blender Workspaces
+
+- **FAB-20** — Blender Workspaces Pathway — _also indexed in Game Design & Development_
+- **FAB-21** — Sculpting — _also indexed in Game Design & Development_
+- **FAB-22** — Geometry Nodes — _also indexed in Game Design & Development_
+- **FAB-23** — Compositing — _also indexed in Game Design & Development_
 
 ## Audio, Lighting & Production Technology (TEC)
 
@@ -295,7 +308,7 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 
 # Volume V — Computer Science, AI & Interactive Media
 
-Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 47 lessons
+Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 59 lessons
 
 ## Computer Science & Artificial Intelligence (CSC)
 
@@ -303,51 +316,66 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 - **CSC-01** — Ada Lovelace — The First Programmer
 - **CSC-02** — Before Computers: Myths, Logic, and AI Imagination
-- **CSC-03** — 🏠 Build Your Student Page
-- **CSC-04** — Ethical Hacking & Cyber Safety
-- **CSC-05** — Blocks World Parser
-- **CSC-06** — N-gram Text Predictor
-- **CSC-07** — Python Foundations — _also indexed in Game Design & Development_
+- **CSC-03** — Build Your Student Page
+- **CSC-04** — GitHub — From Idea to Shared Prototype
+- **CSC-05** — Ethical Hacking & Cyber Safety
+- **CSC-06** — Blocks World Parser
+- **CSC-07** — N-gram Text Predictor
+- **CSC-08** — Python Foundations — _also indexed in Game Design & Development_
 
 ### Algorithms, Structures & Search
 
-- **CSC-08** — Sorting Algorithms
-- **CSC-09** — State Machines
-- **CSC-10** — A* Pathfinding Agent
-- **CSC-11** — Minimum Spanning Tree
-- **CSC-12** — Cryptography & The Enigma
+- **CSC-09** — Sorting Algorithms
+- **CSC-10** — State Machines
+- **CSC-11** — A* Pathfinding Agent
+- **CSC-12** — Minimum Spanning Tree
+- **CSC-13** — Cryptography & The Enigma
 
 ### Simulation & Generative Systems
 
-- **CSC-13** — Life Lab: The Game of Life
-- **CSC-14** — Perlin Noise
-- **CSC-15** — CGI Water: From Physics to Pixels
+- **CSC-14** — Life Lab: The Game of Life
+- **CSC-15** — Perlin Noise
+- **CSC-16** — CGI Water: From Physics to Pixels
 
 ### Artificial Intelligence & Machine Reasoning
 
-- **CSC-16** — Alan Turing and The Turing Test
-- **CSC-17** — AI Origins: ELIZA Chatbot
-- **CSC-18** — Rule Engine Expert System
-- **CSC-19** — Perceptron Lab
-- **CSC-20** — Chess: Origins and How to Play
-- **CSC-21** — 1v1 Game AI: Minimax
-- **CSC-22** — AI Chess Through History
-- **CSC-23** — Deep Blue to AlphaGo: The Go Challenge
+- **CSC-17** — Alan Turing and The Turing Test
+- **CSC-18** — AI Origins: ELIZA Chatbot
+- **CSC-19** — Rule Engine Expert System
+- **CSC-20** — Perceptron Lab
+- **CSC-21** — Chess: Origins and How to Play
+- **CSC-22** — 1v1 Game AI: Minimax
+- **CSC-23** — AI Chess Through History
+- **CSC-24** — Deep Blue to AlphaGo: The Go Challenge
 
 ### People Who Changed Computing
 
-- **CSC-24** — Grace Hopper
-- **CSC-25** — Steve Jobs
+- **CSC-25** — Grace Hopper
+- **CSC-26** — Steve Jobs
+
+### Build Your Own Web Pathway
+
+- **CSC-27** — Build Your Own Web — Web Design Pathway
+- **CSC-28** — Set Up Your First Site
+- **CSC-29** — Give the Page Meaning with HTML
+- **CSC-30** — Design with CSS
+- **CSC-31** — Make It Respond with JavaScript
+- **CSC-32** — Test, Debug, and Include Everyone
+- **CSC-33** — Website Project Studios
+- **CSC-34** — The Flash Era: What Happened to Browser Games
+- **CSC-35** — Build a Home for Interactive Work
+- **CSC-36** — Publish and Maintain Your Website
+- **CSC-37** — Extend into WebXR
 
 ## Game Design & Development (GAM)
 
 ### Design, Tools & First Games
 
 - **GAM-01** — What Makes a Game?
-- **GAM-02** — Build Your Game-Dev Base
+- **GAM-02** — VS Code for Game Dev
 - **GAM-03** — From Scratch: Build a Browser Game
-- **GAM-04** — Build 2D Games Faster
-- **GAM-05** — 🐍 Python & Pygame: The Game Loop
+- **GAM-04** — 2D Game Engines: Kaplay & Phaser
+- **GAM-05** — Python & Pygame: The Game Loop
 
 ### Game Jam Project
 
@@ -355,15 +383,15 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 ### Godot Engine Pathway
 
-- **GAM-07** — Build the loop. Grow the world.
-- **GAM-08** — Think in scenes. Build with nodes.
-- **GAM-09** — Teach nodes what to do.
-- **GAM-10** — Make movement feel intentional.
-- **GAM-11** — Code it. Drop it. Collect it.
-- **GAM-12** — Make an enemy choose.
-- **GAM-13** — Make every event readable.
-- **GAM-14** — Connect moments into a complete loop.
-- **GAM-15** — A game is finished when someone else can play it.
+- **GAM-07** — Godot Game Developer Pathway
+- **GAM-08** — Godot Basics: Your First 3D Room
+- **GAM-09** — GDScript Fundamentals
+- **GAM-10** — Player Controller & Camera
+- **GAM-11** — Collectibles, Signals & UI
+- **GAM-12** — Enemies & Simple AI
+- **GAM-13** — Animation & Game Feel
+- **GAM-14** — Levels & Game State
+- **GAM-15** — Export, Test & Publish
 
 ### Game Asset Studio Pathway
 
@@ -377,19 +405,20 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 34 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 39 lessons
 
 ## Visual Art & Design (DES)
 
 ### Color, Perception & Experience Design
 
 - **DES-01** — Color Theory Lab
-- **DES-02** — Virtual Reality Museum
+- **DES-02** — Dadaism
+- **DES-03** — Virtual Reality Museum
 
 ### People Who Changed Visual Art
 
-- **DES-03** — Vincent van Gogh
-- **DES-04** — Pablo Picasso
+- **DES-04** — Vincent van Gogh
+- **DES-05** — Pablo Picasso
 
 ## Language, Media & Critical Thinking (LAN)
 
@@ -407,20 +436,24 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **SYS-01** — The Roads to Rome
 - **SYS-02** — The Ages
 - **SYS-03** — The School of Athens
-- **SYS-04** — Leonardo da Vinci
-- **SYS-05** — The History of Medicine
+- **SYS-04** — The Quadrivium
+- **SYS-05** — From Rocket Clubs to STEAM
+- **SYS-06** — Leonardo da Vinci
+- **SYS-07** — The History of Medicine
+- **SYS-08** — The Panama Canal — Engineering Two Oceans
 
 ### Institutions, Markets & Shared Resources
 
-- **SYS-06** — The History of Copyright Law
-- **SYS-07** — Tragedy of the Commons
-- **SYS-08** — Stock Exchange Simulator
+- **SYS-09** — The History of Copyright Law
+- **SYS-10** — Tragedy of the Commons
+- **SYS-11** — Stock Exchange Simulator
 
 ### Modern Human Systems
 
-- **SYS-09** — Social Media Algorithms
-- **SYS-10** — The 10-80-10 Productivity Process
-- **SYS-11** — The Psychology of Polymaths
+- **SYS-12** — Social Media Algorithms
+- **SYS-13** — The 10-80-10 Productivity Process
+- **SYS-14** — The Psychology of Polymaths
+- **SYS-15** — The Nobel Prize — Ideas That Changed the World
 
 ## Bible Story, Theology & Christian Formation (BIB)
 
@@ -446,14 +479,15 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 
 These pages remain attached to their parent lesson or module and do not become duplicate canonical lessons.
 
+- `lessons/computer-science/navier-stokes.html` — background-reference; module-appendix; parent: `lessons/computer-science/cgi-water.html`
 - `lessons/life-sciences/animalia/explorer.html` — interactive-extension; parent-appendix; parent: `lessons/life-sciences/animalia/index.html`
 - `lessons/life-sciences/animalia/sorter.html` — practice-extension; parent-appendix; parent: `lessons/life-sciences/animalia/index.html`
-- `lessons/game-tutorials/catch.html` — project-tutorial; module-appendix; parent: `lessons/2d-game-engines.html`
-- `lessons/game-tutorials/clicker.html` — project-tutorial; module-appendix; parent: `lessons/2d-game-engines.html`
-- `lessons/game-tutorials/cyoa.html` — project-tutorial; module-appendix; parent: `lessons/2d-game-engines.html`
-- `lessons/game-tutorials/flappy.html` — project-tutorial; module-appendix; parent: `lessons/2d-game-engines.html`
-- `lessons/game-tutorials/maze.html` — project-tutorial; module-appendix; parent: `lessons/2d-game-engines.html`
-- `lessons/game-tutorials/pong.html` — project-tutorial; module-appendix; parent: `lessons/2d-game-engines.html`
-- `lessons/game-tutorials/quiz.html` — assessment-extension; module-appendix; parent: `lessons/2d-game-engines.html`
-- `lessons/game-tutorials/rhythm.html` — project-tutorial; module-appendix; parent: `lessons/2d-game-engines.html`
-- `lessons/game-tutorials/shooter.html` — project-tutorial; module-appendix; parent: `lessons/2d-game-engines.html`
+- `lessons/computer-science/game-tutorials/catch.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/2d-game-engines.html`
+- `lessons/computer-science/game-tutorials/clicker.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/2d-game-engines.html`
+- `lessons/computer-science/game-tutorials/cyoa.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/2d-game-engines.html`
+- `lessons/computer-science/game-tutorials/flappy.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/2d-game-engines.html`
+- `lessons/computer-science/game-tutorials/maze.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/2d-game-engines.html`
+- `lessons/computer-science/game-tutorials/pong.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/2d-game-engines.html`
+- `lessons/computer-science/game-tutorials/quiz.html` — assessment-extension; module-appendix; parent: `lessons/computer-science/2d-game-engines.html`
+- `lessons/computer-science/game-tutorials/rhythm.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/2d-game-engines.html`
+- `lessons/computer-science/game-tutorials/shooter.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/2d-game-engines.html`

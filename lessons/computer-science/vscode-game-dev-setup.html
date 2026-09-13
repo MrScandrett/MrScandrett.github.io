@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Build Your Game-Dev Base · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="A beginner-friendly VS Code setup quest for grades 6–12. Install the essentials, launch a tiny browser game, and learn how to spot bugs." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .cl-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 300px; }
+    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+    [data-lighting="night"] .cl-lede,
+    [data-theme="vaporwave"] .cl-lede,
+    [data-theme="bark"] .cl-lede { color: rgba(245,245,247,0.7); }
+
+    :root { --acc: #007acc; --acc-soft: rgba(0,122,204,0.1); --acc-border: rgba(0,122,204,0.3); }
+
+    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent, var(--acc)); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .cl-card p  { margin: 0 0 0.6rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .cl-card p:last-child { margin-bottom: 0; }
+    [data-lighting="night"] .cl-card,
+    [data-theme="vaporwave"] .cl-card,
+    [data-theme="bark"] .cl-card { background: var(--white,#2c2c2e); }
+    [data-lighting="night"] .cl-card p,
+    [data-theme="vaporwave"] .cl-card p,
+    [data-theme="bark"] .cl-card p { color: rgba(245,245,247,0.72); }
+
+    /* Extension cards */
+    .ext-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin: 0.8rem 0; }
+    .ext-card { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.85rem 1rem; display: flex; gap: 0.75rem; align-items: flex-start; }
+    .ext-icon { font-size: 1.8rem; flex-shrink: 0; }
+    .ext-info strong { display: block; font-size: 0.88rem; margin-bottom: 0.15rem; }
+    .ext-info .ext-id { font-size: 0.72rem; color: var(--text-muted, #64748b); font-family: 'JetBrains Mono', monospace; margin-bottom: 0.25rem; display: block; }
+    .ext-info small { font-size: 0.78rem; color: var(--text-muted, #64748b); line-height: 1.5; display: block; }
+    @media (max-width:600px) { .ext-grid { grid-template-columns: 1fr; } }
+
+    /* Steps checklist */
+    .steps { list-style: none; margin: 0.7rem 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+    .step { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.65rem 0.8rem; border: 1px solid var(--line,#d2d2d7); border-radius: 10px; cursor: pointer; transition: background 0.18s; }
+    .step.done { background: rgba(0,122,204,0.07); border-color: rgba(0,122,204,0.3); }
+    .step-check { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--acc); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; flex-shrink: 0; transition: background 0.18s, color 0.18s; color: transparent; margin-top: 0.1rem; }
+    .step.done .step-check { background: var(--acc); color: #fff; }
+    .step-text { font-size: 0.86rem; color: var(--text-secondary, #3f4f65); line-height: 1.55; }
+    .step.done .step-text { color: var(--text-muted, #64748b); }
+    [data-lighting="night"] .step-text,
+    [data-theme="vaporwave"] .step-text,
+    [data-theme="bark"] .step-text { color: rgba(245,245,247,0.75); }
+
+    /* Folder tree */
+    .folder-tree { background: #0f172a; border-radius: 12px; padding: 1rem 1.2rem; margin: 0.8rem 0; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.9; color: #e2e8f0; }
+    .folder-tree .folder { color: #60a5fa; }
+    .folder-tree .file   { color: var(--text-muted, #64748b); }
+    .folder-tree .active { color: #4ade80; }
+    .folder-tree .indent1 { padding-left: 1.2rem; }
+    .folder-tree .indent2 { padding-left: 2.4rem; }
+
+    /* Code block */
+    .code-block { background: #0f172a; border-radius: 12px; padding: 0.9rem 1.1rem; margin: 0.7rem 0; overflow-x: auto; }
+    .code-block pre { margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 0.79rem; line-height: 1.7; color: #e2e8f0; white-space: pre; }
+    .code-block .kw  { color: #c084fc; }
+    .code-block .str { color: #4ade80; }
+    .code-block .cm  { color: #94a3b8; font-style: italic; }
+    .code-block .num { color: #fb923c; }
+
+    /* Shortcuts table */
+    .shortcuts { width: 100%; border-collapse: collapse; font-size: 0.83rem; margin: 0.7rem 0; }
+    .shortcuts th { text-align: left; font-weight: 700; font-size: 0.73rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted, #64748b); border-bottom: 1px solid var(--line,#d2d2d7); padding: 0.4rem 0.5rem; }
+    .shortcuts td { padding: 0.5rem 0.5rem; border-bottom: 1px solid rgba(0,0,0,0.05); color: var(--text-secondary, #3f4f65); vertical-align: top; }
+    .shortcuts tr:last-child td { border-bottom: none; }
+    .kbd { background: #f1f5f9; border: 1px solid #cbd5e1; border-bottom-width: 2px; border-radius: 5px; padding: 0.1rem 0.45rem; font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; color: #1e293b; white-space: nowrap; }
+    [data-lighting="night"] .shortcuts td,
+    [data-theme="vaporwave"] .shortcuts td,
+    [data-theme="bark"] .shortcuts td { color: rgba(245,245,247,0.72); }
+    [data-lighting="night"] .kbd,
+    [data-theme="vaporwave"] .kbd,
+    [data-theme="bark"] .kbd { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+
+    .callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
+    .callout.blue { background: rgba(0,122,204,0.09); border-left: 3px solid var(--acc); color: var(--text-secondary, #3f4f65); }
+    [data-lighting="night"] .callout.blue,
+    [data-theme="vaporwave"] .callout.blue,
+    [data-theme="bark"] .callout.blue { color: rgba(245,245,247,0.72); }
+    .callout strong { color: var(--text,#1d1d1f); }
+
+    .progress-bar-wrap { background: rgba(0,0,0,0.07); border-radius: 999px; height: 8px; margin: 0.5rem 0 0.2rem; overflow: hidden; }
+    .progress-bar { height: 100%; border-radius: 999px; background: var(--acc); transition: width 0.35s ease; }
+    .progress-label { font-size: 0.76rem; color: var(--text-muted, #64748b); }
+
+    /* Student-friendly quest UI */
+    .quest-strip { display: grid; grid-template-columns: repeat(4,1fr); gap: 0.55rem; margin: 1rem 0 0; }
+    .quest-chip { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.65rem 0.75rem; font-size: 0.78rem; line-height: 1.35; }
+    .quest-chip strong { display: block; color: var(--acc); font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.18rem; }
+    .mission-tag { display: inline-block; padding: 0.2rem 0.55rem; margin-bottom: 0.45rem; border-radius: 999px; background: var(--acc-soft); color: var(--acc); font-size: 0.7rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+    .choice-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.7rem 0; }
+    .choice-btn { appearance: none; border: 1px solid var(--acc-border); border-radius: 999px; background: transparent; color: var(--text,#1d1d1f); padding: 0.5rem 0.8rem; font: inherit; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .choice-btn:hover, .choice-btn:focus-visible, .choice-btn.correct { background: var(--acc); color: #fff; }
+    .choice-btn.wrong { background: #fee2e2; border-color: #f87171; color: #991b1b; }
+    .quiz-result { min-height: 1.5rem; margin: 0.25rem 0 0 !important; font-weight: 700; }
+    .win-card { text-align: center; border-left-color: #22c55e; background: linear-gradient(135deg,rgba(34,197,94,0.09),rgba(0,122,204,0.08)); }
+    .win-card .big-icon { font-size: 2.6rem; display: block; margin-bottom: 0.2rem; }
+    .tiny-note { font-size: 0.75rem !important; color: var(--text-muted, #64748b) !important; }
+    .step:focus-visible { outline: 3px solid rgba(0,122,204,0.35); outline-offset: 2px; }
+    .step-text code, .callout code, .cl-card p code { font-family: 'JetBrains Mono',monospace; font-size: 0.82em; }
+    .code-heading { display: flex; justify-content: space-between; gap: 1rem; align-items: center; margin: 0.75rem 0 -0.5rem; }
+    .code-heading strong { font-size: 0.82rem; }
+    .copy-btn { appearance: none; border: 1px solid var(--acc-border); border-radius: 8px; background: var(--acc-soft); color: var(--acc); padding: 0.35rem 0.6rem; font: inherit; font-size: 0.72rem; font-weight: 800; cursor: pointer; }
+    @media (max-width:700px) { .quest-strip { grid-template-columns: 1fr 1fr; } }
+    @media (max-width:420px) { .quest-strip { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="cl-page">
+
+        <section class="hero cl-hero">
+          <p class="eyebrow">Game Design &amp; Development · Setup Quest</p>
+          <h1>Build Your Game-Dev Base</h1>
+          <div class="cl-hero-meta">
+            <span>Visual Studio Code</span><span class="dot"></span>
+            <span>Live Server</span><span class="dot"></span>
+            <span>Extensions</span><span class="dot"></span>
+            <span>Project Structure</span><span class="dot"></span>
+            <span>Mini Game</span><span class="dot"></span>
+            <span>No Experience Needed</span>
+          </div>
+          <p class="cl-lede">Your mission: turn a blank folder into a tiny playable game. You’ll install a free code editor, unlock instant browser updates, squash one pretend bug, and earn the title <strong>Game-Dev Ready</strong>.</p>
+          <div class="quest-strip" aria-label="Lesson quest map">
+            <div class="quest-chip"><strong>Mission 1</strong>Gear up</div>
+            <div class="quest-chip"><strong>Mission 2</strong>Build the base</div>
+            <div class="quest-chip"><strong>Mission 3</strong>Launch a game</div>
+            <div class="quest-chip"><strong>Boss battle</strong>Squash a bug</div>
+          </div>
+        </section>
+
+        <!-- Start here -->
+        <section class="cl-card">
+          <span class="mission-tag">Start here · 1 minute</span>
+          <h2>🎒 What You Need</h2>
+          <p>A computer, an internet connection, and permission to install an app. That’s it. If your school device blocks installations, pair up with a classmate or ask your teacher for the pre-installed version.</p>
+          <div class="callout blue">
+            <strong>New coder shield:</strong> You are not expected to recognize every button or word. Follow one step at a time. A red error message is a clue—not a grade.
+          </div>
+        </section>
+
+        <!-- Why VS Code -->
+        <section class="cl-card">
+          <span class="mission-tag">Mission 1 · Gear up</span>
+          <h2>💻 Meet Your Code Cockpit</h2>
+          <p>VS Code is like Google Docs for code—except it predicts what you’re typing, points at mistakes, and connects your files to a live game window.</p>
+          <div class="ext-grid">
+            <div class="ext-card">
+              <span class="ext-icon">🕵️</span>
+              <div class="ext-info">
+                <strong>Bug clues</strong>
+                <small>Red squiggles point toward mistakes while you type.</small>
+              </div>
+            </div>
+            <div class="ext-card">
+              <span class="ext-icon">🧠</span>
+              <div class="ext-info">
+                <strong>Smart suggestions</strong>
+                <small>Autocomplete helps finish names and commands.</small>
+              </div>
+            </div>
+            <div class="ext-card">
+              <span class="ext-icon">⚡</span>
+              <div class="ext-info">
+                <strong>Instant updates</strong>
+                <small>Save your code and watch the browser update.</small>
+              </div>
+            </div>
+            <div class="ext-card">
+              <span class="ext-icon">🧰</span>
+              <div class="ext-info">
+                <strong>Power-ups</strong>
+                <small>Add extensions when you need new tools.</small>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Setup Checklist -->
+        <section class="cl-card">
+          <span class="mission-tag">Mission 2 · Build the base</span>
+          <h2>✅ Seven Quick Checkpoints</h2>
+          <p>Click a checkpoint when it works. Your progress is saved on this device: <span id="done-count">0</span> / <span id="total-count">7</span>.</p>
+          <div class="progress-bar-wrap" id="progress-meter" role="progressbar" aria-valuemin="0" aria-valuemax="7" aria-valuenow="0"><div class="progress-bar" id="prog-bar" style="width:0%"></div></div>
+          <p class="progress-label" id="prog-label">Let's get started!</p>
+
+          <ul class="steps" id="setup-steps">
+            <li class="step" data-step="0">
+              <div class="step-check">✓</div>
+              <div class="step-text"><strong>1. Get VS Code.</strong> Visit <a href="https://code.visualstudio.com/" target="_blank" rel="noopener">code.visualstudio.com</a>, choose your computer type, and run the installer. School device blocked? Ask your teacher.</div>
+            </li>
+            <li class="step" data-step="1">
+              <div class="step-check">✓</div>
+              <div class="step-text"><strong>2. Make your game folder.</strong> Create a folder named <code>my-game</code>. In VS Code choose <strong>File → Open Folder</strong>, then select it.</div>
+            </li>
+            <li class="step" data-step="2">
+              <div class="step-check">✓</div>
+              <div class="step-text"><strong>3. Add Live Server.</strong> Click the Extensions icon (four squares), search <code>Live Server</code> by Ritwick Dey, and choose <strong>Install</strong>.</div>
+            </li>
+            <li class="step" data-step="3">
+              <div class="step-check">✓</div>
+              <div class="step-text"><strong>4. Add Prettier.</strong> Search for <code>Prettier - Code formatter</code> and install it. Prettier keeps your code tidy.</div>
+            </li>
+            <li class="step" data-step="4">
+              <div class="step-check">✓</div>
+              <div class="step-text"><strong>5. Create the launch file.</strong> In the Explorer panel, choose New File and name it exactly <code>index.html</code>.</div>
+            </li>
+            <li class="step" data-step="5">
+              <div class="step-check">✓</div>
+              <div class="step-text"><strong>6. Launch Live Server.</strong> Right-click <code>index.html</code> → <strong>Open with Live Server</strong>. A browser tab should open. A blank page is a win—we haven’t added the game yet!</div>
+            </li>
+            <li class="step" data-step="6">
+              <div class="step-check">✓</div>
+              <div class="step-text"><strong>7. Find the terminal.</strong> Choose <strong>Terminal → New Terminal</strong>. You don’t need to type anything; just find it, then close it with the trash-can icon.</div>
+            </li>
+          </ul>
+          <p class="tiny-note">Tip: You can click a completed checkpoint again to undo it.</p>
+        </section>
+
+        <!-- First launch -->
+        <section class="cl-card">
+          <span class="mission-tag">Mission 3 · Launch a game</span>
+          <h2>🚀 Make Something Move</h2>
+          <p>Replace everything inside <code>index.html</code> with the code below. Save it, click the game, then use the arrow keys. You just built a one-file game!</p>
+          <div class="code-heading"><strong>Paste into index.html</strong><button class="copy-btn" type="button" data-copy="starter-code">Copy code</button></div>
+          <div class="code-block" id="starter-code"><pre>&lt;!doctype html&gt;
+&lt;title&gt;My Tiny Game&lt;/title&gt;
+&lt;style&gt;
+  body { margin: 0; background: #101827; overflow: hidden; }
+  #hero { position: absolute; font-size: 48px; left: 40px; top: 80px; }
+  p { color: white; font: 20px sans-serif; text-align: center; }
+&lt;/style&gt;
+&lt;p&gt;Click here, then use ← and →&lt;/p&gt;
+&lt;div id="hero"&gt;🛸&lt;/div&gt;
+&lt;script&gt;
+  let x = 40;
+  const hero = document.querySelector("#hero");
+  addEventListener("keydown", event =&gt; {
+    if (event.key === "ArrowRight") x += 20;
+    if (event.key === "ArrowLeft") x -= 20;
+    hero.style.left = x + "px";
+  });
+&lt;/script&gt;</pre></div>
+          <div class="callout blue"><strong>Remix challenge:</strong> Swap 🛸 for 🐸, 🐉, 🏎️, or your favorite emoji. Change <code>20</code> to <code>50</code>. What happens?</div>
+        </section>
+
+        <!-- Workflow -->
+        <section class="cl-card">
+          <span class="mission-tag">Core move · Repeat forever</span>
+          <h2>🔁 The Four-Step Game-Dev Loop</h2>
+          <div class="quest-strip">
+            <div class="quest-chip"><strong>1 · Change</strong>Edit one small thing</div>
+            <div class="quest-chip"><strong>2 · Save</strong>Press Ctrl/⌘ + S</div>
+            <div class="quest-chip"><strong>3 · Test</strong>Try it in the browser</div>
+            <div class="quest-chip"><strong>4 · Notice</strong>Keep it or fix it</div>
+          </div>
+          <p style="margin-top:0.8rem;">Test after small changes. Then, if something breaks, you only have one tiny mystery to solve.</p>
+        </section>
+
+        <!-- Debugging boss battle -->
+        <section class="cl-card">
+          <span class="mission-tag">Boss battle · Bug hunt</span>
+          <h2>🐛 Where Is the Best Clue?</h2>
+          <p>Your game suddenly stops moving. Which place should you check first?</p>
+          <div class="choice-row" id="bug-quiz">
+            <button class="choice-btn" type="button" data-correct="false">The weather app</button>
+            <button class="choice-btn" type="button" data-correct="true">Browser DevTools Console</button>
+            <button class="choice-btn" type="button" data-correct="false">The recycle bin</button>
+          </div>
+          <p class="quiz-result" id="quiz-result" aria-live="polite"></p>
+          <div class="callout blue"><strong>How to open it:</strong> In your browser, press <kbd>F12</kbd> or right-click the page → <strong>Inspect</strong> → <strong>Console</strong>. Read the first red message slowly; it often includes the file and line number.</div>
+        </section>
+
+        <!-- Keyboard shortcuts -->
+        <section class="cl-card">
+          <span class="mission-tag">Bonus power-ups</span>
+          <h2>⌨️ Five Shortcuts Worth Learning</h2>
+          <p>Start with Save and Undo. The others can wait until they feel useful.</p>
+          <table class="shortcuts">
+            <thead>
+              <tr><th>Action</th><th>Windows / Linux</th><th>macOS</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Save file</td><td><span class="kbd">Ctrl + S</span></td><td><span class="kbd">⌘ + S</span></td></tr>
+              <tr><td>Undo</td><td><span class="kbd">Ctrl + Z</span></td><td><span class="kbd">⌘ + Z</span></td></tr>
+              <tr><td>Find in file</td><td><span class="kbd">Ctrl + F</span></td><td><span class="kbd">⌘ + F</span></td></tr>
+              <tr><td>Open terminal</td><td><span class="kbd">Ctrl + `</span></td><td><span class="kbd">⌃ + `</span></td></tr>
+              <tr><td>Command palette</td><td><span class="kbd">Ctrl + Shift + P</span></td><td><span class="kbd">⌘ + Shift + P</span></td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="cl-card win-card">
+          <span class="big-icon">🏆</span>
+          <h2>Quest Complete: Game-Dev Ready</h2>
+          <p>You can open a project, edit a file, launch Live Server, test a game, and find bug clues. That is a real development workflow.</p>
+          <p><strong>Exit ticket:</strong> Show a classmate your moving emoji and tell them where you would look for a red error.</p>
+        </section>
+
+      </main>
+    </div><!-- /.ll-sim -->
+
+    <!-- Side panel -->
+    <aside class="ll-panel" aria-label="Guide panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true" data-pane="pane-guide">Guide</button>
+          <button class="ll-tab" aria-selected="false" data-pane="pane-tips">Tips</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="pane-guide">
+          <p class="ll-pane-title">Win Conditions</p>
+          <ul class="ll-guide-list">
+            <li>Install VS Code and Live Server</li>
+            <li>Open a project folder</li>
+            <li>Launch and remix a tiny browser game</li>
+            <li>Use the change-save-test-notice loop</li>
+            <li>Find bug clues in the Console</li>
+          </ul>
+          <p class="ll-pane-title" style="margin-top:1rem;">Mystery Word: localhost</p>
+          <p style="font-size:0.82rem;color: var(--text-muted, #64748b);line-height:1.55;"><code>localhost</code> means “this computer.” Live Server lets your own computer temporarily serve the game to your browser. It is not publishing the game to the internet.</p>
+          <p class="ll-pane-title" style="margin-top:1rem;">Stuck?</p>
+          <p style="font-size:0.82rem;color: var(--text-muted, #64748b);line-height:1.55;">Check spelling and file names first. Then read the first red Console message. Still stuck? Show a partner what you expected and what actually happened.</p>
+        </div>
+        <div class="ll-pane" id="pane-tips">
+          <p class="ll-pane-title">Optional Power-Ups</p>
+          <ul style="font-size:0.81rem;color: var(--text-muted, #64748b);line-height:1.65;padding-left:1.1rem;">
+            <li style="margin-bottom:0.5rem;"><strong>Auto-save:</strong> Enable File → Auto Save so you never forget to save before checking the browser.</li>
+            <li style="margin-bottom:0.5rem;"><strong>Split editor:</strong> Right-click a tab → "Split Right" to see your HTML and JS side-by-side.</li>
+            <li style="margin-bottom:0.5rem;"><strong>Bigger text:</strong> Press <kbd>Ctrl/⌘ + +</kbd> to zoom in if code is hard to read.</li>
+            <li style="margin-bottom:0.5rem;"><strong>Format code:</strong> Right-click in your file → "Format Document" after installing Prettier.</li>
+            <li><strong>Don’t extension-shop:</strong> Live Server and Prettier are enough for today. Build first; add tools when you need them.</li>
+          </ul>
+        </div>
+      </div>
+    </aside>
+    <button class="ll-open-btn" aria-label="Open panel">&#x22EE;</button>
+  </div><!-- /.ll-stage -->
+</div><!-- /.ll-viewport -->
+
+<script>
+  /* Setup checklist */
+  const steps = document.querySelectorAll('.step');
+  const doneCount = document.getElementById('done-count');
+  const totalCount = document.getElementById('total-count');
+  const progBar = document.getElementById('prog-bar');
+  const progLabel = document.getElementById('prog-label');
+  const msgs = ['Ready, player one?','Checkpoint reached!','Gear acquired!','Base taking shape!','More than halfway!','Launch sequence started!','One checkpoint left!','Game-dev base unlocked! 🏆'];
+  totalCount.textContent = steps.length;
+  let completedSteps = [];
+  try {
+    completedSteps = JSON.parse(localStorage.getItem('vscode-setup-steps') || '[]');
+  } catch (error) {
+    completedSteps = [];
+  }
+
+  function updateProgress() {
+    const done = document.querySelectorAll('.step.done').length;
+    doneCount.textContent = done;
+    progBar.style.width = (done / steps.length * 100) + '%';
+    progLabel.textContent = msgs[Math.min(done, msgs.length - 1)];
+    const meter = document.getElementById('progress-meter');
+    meter.setAttribute('aria-valuenow', done);
+    meter.setAttribute('aria-label', `${done} of ${steps.length} checkpoints complete`);
+  }
+
+  steps.forEach(step => {
+    const stepNumber = Number(step.dataset.step);
+    step.setAttribute('role', 'checkbox');
+    step.setAttribute('tabindex', '0');
+    if (completedSteps.includes(stepNumber)) step.classList.add('done');
+    step.setAttribute('aria-checked', step.classList.contains('done'));
+
+    const toggleStep = () => {
+      step.classList.toggle('done');
+      step.setAttribute('aria-checked', step.classList.contains('done'));
+      const saved = [...steps]
+        .filter(item => item.classList.contains('done'))
+        .map(item => Number(item.dataset.step));
+      try { localStorage.setItem('vscode-setup-steps', JSON.stringify(saved)); } catch (error) {}
+      updateProgress();
+    };
+    step.addEventListener('click', toggleStep);
+    step.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        toggleStep();
+      }
+    });
+  });
+  updateProgress();
+
+  /* Copy the starter game */
+  document.querySelectorAll('.copy-btn').forEach(button => {
+    button.addEventListener('click', async () => {
+      const source = document.getElementById(button.dataset.copy);
+      try {
+        await navigator.clipboard.writeText(source.innerText);
+        button.textContent = 'Copied! ✓';
+      } catch (error) {
+        button.textContent = 'Select + copy';
+      }
+      setTimeout(() => { button.textContent = 'Copy code'; }, 1800);
+    });
+  });
+
+  /* Bug-hunt mini quiz */
+  const quizResult = document.getElementById('quiz-result');
+  document.querySelectorAll('#bug-quiz .choice-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      document.querySelectorAll('#bug-quiz .choice-btn').forEach(choice => choice.classList.remove('correct','wrong'));
+      const correct = button.dataset.correct === 'true';
+      button.classList.add(correct ? 'correct' : 'wrong');
+      quizResult.textContent = correct
+        ? 'Boss defeated! The Console turns crashes into clues. 🏆'
+        : 'Funny choice—but that won’t reveal a code error. Try again!';
+    });
+  });
+
+  /* Panel tabs */
+  document.querySelectorAll('.ll-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.ll-tab').forEach(t => t.setAttribute('aria-selected','false'));
+      document.querySelectorAll('.ll-pane').forEach(p => p.classList.remove('ll-active'));
+      tab.setAttribute('aria-selected','true');
+      document.getElementById(tab.dataset.pane).classList.add('ll-active');
+    });
+  });
+  const openBtn = document.querySelector('.ll-open-btn');
+  const closeBtn = document.querySelector('.ll-panel-close');
+  const panel = document.querySelector('.ll-panel');
+  const setPanelOpen = isOpen => {
+    panel.setAttribute('aria-hidden', String(!isOpen));
+    if (openBtn) openBtn.setAttribute('aria-expanded', String(isOpen));
+  };
+  if (window.matchMedia('(max-width: 680px)').matches) setPanelOpen(false);
+  if (openBtn) {
+    openBtn.addEventListener('click', () => setPanelOpen(true));
+  }
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      const isOpen = panel.getAttribute('aria-hidden') !== 'true';
+      setPanelOpen(!isOpen && window.matchMedia('(max-width: 680px)').matches);
+    });
+  }
+</script>
+<script src="../../assets/js/reveal.js"></script>
+<script src="../../assets/js/theme-registry.js"></script>
+<script src="../../assets/js/nav-mobile.js"></script>
+<script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

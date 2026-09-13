@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Arecibo Message · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Space Science Lesson 05 — Decode the 1974 Arecibo Message. 1679 binary digits transmitted toward M13. Explore what humanity chose to say about itself to the cosmos." />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../assets/css/lessons/arecibo-message.css" />
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport ll-dark">
+
+  <nav class="am-topbar ll-topbar" aria-label="Lesson navigation">
+    <div class="am-topbar-inner">
+      <a href="../../steam-lessons.html">← Lessons</a>
+      <span class="am-topbar-title">Space Science · Lesson 05</span>
+      <a href="pale-blue-dot.html">Next: Pale Blue Dot →</a>
+    </div>
+  </nav>
+
+  <div class="ll-stage" id="main-content">
+
+    <div class="ll-sim">
+      <header class="am-hero">
+        <p class="am-eyebrow">Space Science · Lesson 05 · 1974</p>
+        <h1>The Arecibo Message</h1>
+        <p>In 1974, humanity aimed the world's largest radio telescope at a star cluster 25,000 light-years away and broadcast a binary message. Can you decode what we said?</p>
+      </header>
+
+      <div class="am-wrap">
+
+        <!-- ══ Interactive Decoder ══ -->
+        <div style="display:grid;gap:1rem;">
+
+          <!-- Decoder card -->
+          <div class="am-card">
+            <div class="am-card-head">
+              <h2>Message Decoder</h2>
+              <span class="am-badge">Interactive</span>
+            </div>
+            <div class="am-decoder-shell">
+              <div class="am-decoder-controls">
+                <div class="am-btn-group">
+                  <button class="am-btn am-btn--active" id="btnColor" onclick="setMode('color')">Color Sections</button>
+                  <button class="am-btn" id="btnBW" onclick="setMode('bw')">Binary (B&W)</button>
+                  <button class="am-btn" id="btnAnim" onclick="animateDecode()">▶ Decode</button>
+                </div>
+                <div style="flex:1"></div>
+                <div class="am-zoom-row">
+                  <button class="am-btn" onclick="setZoom(-1)">−</button>
+                  <span id="zoomLabel">10×</span>
+                  <button class="am-btn" onclick="setZoom(1)">+</button>
+                </div>
+              </div>
+
+              <div class="am-canvas-wrap">
+                <canvas id="areciboCanvas" width="230" height="730"></canvas>
+              </div>
+              <p class="am-canvas-hint">Click or hover any region to identify it</p>
+
+              <div class="am-section-bar" id="sectionBar">
+                <div class="am-section-dot am-section-dot--idle" id="sectionDot"></div>
+                <div>
+                  <div class="am-section-name" id="sectionName">Hover over the message to explore</div>
+                  <div class="am-section-desc" id="sectionDesc">Each colored section encodes a different fact about life on Earth.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Binary primer -->
+          <div class="am-card">
+            <div class="am-card-head">
+              <h2>Binary Primer</h2>
+              <span class="am-badge">How it works</span>
+            </div>
+            <div style="padding:0.8rem 1.1rem 1rem">
+              <p class="am-prime-note">
+                The message contains only <strong class="am-text-accent">1679 bits</strong> — each either a 1 (transmitted pulse) or a 0 (silence). To read it, you must arrange those bits into a rectangle. Only one arrangement makes an image: <strong class="am-text-accent">23 columns × 73 rows</strong>.
+              </p>
+              <table class="am-binary-table">
+                <thead>
+                  <tr><th>Decimal</th><th>Binary</th><th>Decimal</th><th>Binary</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>1</td><td>1</td><td>6</td><td>110</td></tr>
+                  <tr><td>2</td><td>10</td><td>7</td><td>111</td></tr>
+                  <tr><td>3</td><td>11</td><td>8</td><td>1000</td></tr>
+                  <tr><td>4</td><td>100</td><td>9</td><td>1001</td></tr>
+                  <tr><td>5</td><td>101</td><td>10</td><td>1010</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div><!-- /decoder col -->
+
+      </div><!-- .am-wrap -->
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="am-pane-controls">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="am-pane-info">About</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <!-- Controls pane: interactive/navigational cards -->
+        <div class="ll-pane ll-active" id="am-pane-controls">
+
+          <!-- Section guide -->
+          <div class="am-card">
+            <div class="am-card-head">
+              <h2>Seven Sections</h2>
+            </div>
+            <div class="am-section-list" id="sectionList">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- Key facts -->
+          <div class="am-card" style="margin-top:0.9rem;">
+            <div class="am-card-head"><h2>Key Facts</h2></div>
+            <div class="am-fact-grid">
+              <div class="am-fact">
+                <div class="am-fact-val">1679</div>
+                <div class="am-fact-lbl">Bits transmitted</div>
+              </div>
+              <div class="am-fact">
+                <div class="am-fact-val">23×73</div>
+                <div class="am-fact-lbl">Grid dimensions</div>
+              </div>
+              <div class="am-fact">
+                <div class="am-fact-val">~3 min</div>
+                <div class="am-fact-lbl">Transmission time</div>
+              </div>
+              <div class="am-fact">
+                <div class="am-fact-val">M13</div>
+                <div class="am-fact-lbl">Target: 25,000 ly away</div>
+              </div>
+              <div class="am-fact">
+                <div class="am-fact-val">2.38 GHz</div>
+                <div class="am-fact-lbl">Radio frequency</div>
+              </div>
+              <div class="am-fact">
+                <div class="am-fact-val">~25,000 yr</div>
+                <div class="am-fact-lbl">Travel time (one way)</div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- #am-pane-controls -->
+
+        <!-- About pane: informational/context cards -->
+        <div class="ll-pane" id="am-pane-info">
+
+          <!-- Why prime numbers -->
+          <div class="am-card">
+            <div class="am-card-head"><h2>Why Prime Numbers?</h2></div>
+            <div class="am-prime-body">
+              <strong>1679 = 23 × 73</strong> (both prime). This forces only two possible rectangular arrangements:
+              <span class="am-prime-eq">23 × 73  or  73 × 23</span>
+              Only <strong>73 rows × 23 columns</strong> produces a meaningful image—proving the arrangement is intentional.
+            </div>
+          </div>
+
+          <!-- Context -->
+          <div class="am-card" style="margin-top:0.9rem;">
+            <div class="am-card-head"><h2>The Story</h2></div>
+            <ul class="am-context-list">
+              <li><span>📡</span><span>Broadcast on <strong>November 16, 1974</strong> to celebrate the Arecibo Observatory upgrade in Puerto Rico.</span></li>
+              <li><span>👨‍🔬</span><span>Designed by <strong>Frank Drake</strong> and <strong>Carl Sagan</strong> with Cornell University scientists.</span></li>
+              <li><span>🌌</span><span>Aimed at <strong>M13</strong>, a star cluster in Hercules, 25,000 light-years away.</span></li>
+              <li><span>💬</span><span>The message was largely symbolic—a demonstration that humanity could. Arecibo was decommissioned in 2020.</span></li>
+            </ul>
+          </div>
+
+        </div><!-- #am-pane-info -->
+
+      </div><!-- .ll-panel-body -->
+    </aside><!-- .ll-panel -->
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+
+</div><!-- .ll-viewport -->
+
+  <script>
+  (function () {
+
+    // ── Section definitions ──────────────────────────────────────────────
+    var SECTIONS = [
+      {
+        id: 0, name: "Numbers 1–10", rows: [0, 3],
+        color: "#ffffff",
+        desc: "Numbers 1–10 in binary. A simple proof: the senders understand mathematics."
+      },
+      {
+        id: 1, name: "Atomic Numbers", rows: [4, 9],
+        color: "#cc44ff",
+        desc: "The five elements essential to life: Hydrogen, Carbon, Nitrogen, Oxygen, and Phosphorus—the chemistry of all living things."
+      },
+      {
+        id: 2, name: "DNA Nucleotides", rows: [10, 29],
+        color: "#22dd44",
+        desc: "The four nucleotides (A, G, C, T)—the genetic alphabet that encodes all life on Earth."
+      },
+      {
+        id: 3, name: "DNA Double Helix", rows: [30, 46],
+        color: "#4488ff",
+        desc: "The DNA double-helix structure. The center column displays 4.3 billion—the approximate number of base pairs in the human genome."
+      },
+      {
+        id: 4, name: "Human Figure", rows: [47, 54],
+        color: "#dd2222",
+        desc: "A human figure. Left: Earth's 1974 population. Right: average human height, encoded in wavelength units."
+      },
+      {
+        id: 5, name: "Solar System", rows: [55, 59],
+        color: "#ffdd00",
+        desc: "The nine planets of our solar system, with Earth (shifted upward) marked as the sender."
+      },
+      {
+        id: 6, name: "Arecibo Telescope", rows: [60, 72],
+        color: "#cc44ff",
+        desc: "A schematic of the Arecibo Observatory dish (305 m diameter). The bottom rows encode the dish size in wavelength units."
+      }
+    ];
+
+    // ── Actual 1679-bit Arecibo message ──────────────────────────────────
+    // 21 groups of 80 bits = 1680 chars; trimmed to 1679 (= 23 × 73).
+    // Source: F. Drake & C. Sagan, Arecibo Observatory, Nov 16 1974.
+    var RAW = (
+      "00000010101010000000000001010000010100000001001000100010001001011001010101010101" +
+      "01010010010000000000000000000000000000000000000110000000000000000000110100000000" +
+      "00000000000110100000000000000000010101000000000000000000111110000000000000000000" +
+      "00000000000001100001110001100001100010000000000000110010000110100011000110000110" +
+      "10111110111110111110111110000000000000000000000000010000000000000000010000000000" +
+      "00000000000000000010000000000000000011111100000000000001111100000000000000000000" +
+      "00011000011000011100011000100000001000000000100001101000011000111001101011111011" +
+      "11101111101111100000000000000000000000000100000011000000000100000000000110000000" +
+      "00000000100000110000000000111111000001100000011111000000000011000000000000010000" +
+      "00001000000001000001000000110000000100000001100001100000010000000000110001000011" +
+      "00000000000000011001100000000000001100010000110000000001100001100000010000000100" +
+      "00001000000001000001000000011000000001000100000000110000000010001000000000100000" +
+      "00100000100000001000000010000000100000000000011000000000110000000011000000000100" +
+      "01110101100000000000100000001000000000000001000001111100000000000010000101110100" +
+      "10110110000001001110010011111110111000011100000110111000000000101000001110110010" +
+      "00000101000001111110010000001010000011000000100000110110000000000000000000000000" +
+      "00000000001110000010000000000000011101010001010101010100111000000000101010100000" +
+      "00000000000101000000000000001111100000000000000001111111110000000000001110000000" +
+      "11100000000011000000000001100000001101000000000101100000110011000000011001100001" +
+      "00010100000101000100001000100100010010001000000001000101000100000000000010000100" +
+      "00100000000000010000000001000000000000001001010000000000011110011111010011110001"
+    ).slice(0, 1679);
+
+    // Split into 73 rows of 23 columns
+    var ROWS = [];
+    for (var _r = 0; _r < 73; _r++) ROWS.push(RAW.slice(_r * 23, _r * 23 + 23));
+
+    var NCOLS = 23;
+    var NROWS = 73;
+
+    // Map each row to a section id
+    function sectionForRow(r) {
+      for (var i = 0; i < SECTIONS.length; i++) {
+        if (r >= SECTIONS[i].rows[0] && r <= SECTIONS[i].rows[1]) return i;
+      }
+      return -1;
+    }
+
+    // ── Canvas setup ─────────────────────────────────────────────────────
+    var canvas = document.getElementById("areciboCanvas");
+    var ctx = canvas.getContext("2d");
+    var CELL = 10; // pixels per cell at zoom 1× (canvas units)
+    var ZOOM_LEVELS = [6, 8, 10, 12, 14];
+    var zoomIdx = 2;
+
+    function applyZoom() {
+      CELL = ZOOM_LEVELS[zoomIdx];
+      canvas.width  = NCOLS * CELL;
+      canvas.height = NROWS * CELL;
+      document.getElementById("zoomLabel").textContent = ZOOM_LEVELS[zoomIdx] / 10 * 10 + "×";
+      draw();
+    }
+
+    window.setZoom = function(dir) {
+      zoomIdx = Math.max(0, Math.min(ZOOM_LEVELS.length - 1, zoomIdx + dir));
+      applyZoom();
+    };
+
+    // Mode: 'color' | 'bw'
+    var mode = "color";
+    window.setMode = function(m) {
+      mode = m;
+      document.getElementById("btnColor").classList.toggle("am-btn--active", m === "color");
+      document.getElementById("btnBW").classList.toggle("am-btn--active", m === "bw");
+      if (animating) return;
+      draw();
+    };
+
+    function pixelColor(r, c, bit) {
+      if (!bit || bit === "0") return null;
+      if (mode === "bw") return "#fff";
+      
+      var sid = sectionForRow(r);
+      if (sid < 0) return "#fff";
+      var sec = SECTIONS[sid];
+      
+      // 1. Human Head & Body
+      if ((r === 45 || r === 46) && c === 10) return "#dd2222";
+      if (r >= 47 && r <= 54 && c >= 6 && c <= 14) return "#dd2222";
+      // 2. Human Flanking Data (Population and Height)
+      if (r >= 45 && r <= 54 && (c <= 5 || c >= 15)) return "#ffffff";
+      // 3. DNA Spine (Encodes nucleotide count, spans into Formulas section)
+      if (r >= 26 && r <= 44 && (c === 10 || c === 11)) return "#ffffff";
+      
+      // Telescope: bottom 2 rows = white (diameter encoding); rest matches section color
+      if (sid === 6) return (r >= 71) ? "#ffffff" : sec.color;
+      return sec.color;
+    }
+
+    function draw(revealUpTo) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      var limit = (revealUpTo !== undefined) ? revealUpTo : NROWS * NCOLS;
+      for (var r = 0; r < NROWS; r++) {
+        var rowStr = ROWS[r] || "";
+        for (var c = 0; c < NCOLS; c++) {
+          var idx = r * NCOLS + c;
+          if (idx >= limit) return;
+          var bit = rowStr[c];
+          var col = pixelColor(r, c, bit);
+          if (col) {
+            ctx.fillStyle = col;
+            ctx.fillRect(c * CELL, r * CELL, CELL - 1, CELL - 1);
+          }
+        }
+      }
+    }
+
+    // ── Animate decode ───────────────────────────────────────────────────
+    var animating = false;
+    var animFrame;
+    window.animateDecode = function() {
+      if (animating) return;
+      animating = true;
+      document.getElementById("btnAnim").textContent = "⏸ Decoding…";
+      var total = NROWS * NCOLS;
+      var current = 0;
+      var speed = 12; // bits per frame
+
+      function step() {
+        current += speed;
+        if (current >= total) { current = total; animating = false; document.getElementById("btnAnim").textContent = "▶ Decode"; }
+        draw(current);
+        if (animating) animFrame = requestAnimationFrame(step);
+      }
+      draw(0);
+      animFrame = requestAnimationFrame(step);
+    };
+
+    // ── Hover / click to identify section ────────────────────────────────
+    function getRC(e) {
+      var rect = canvas.getBoundingClientRect();
+      var scaleX = canvas.width  / rect.width;
+      var scaleY = canvas.height / rect.height;
+      var x = (e.clientX - rect.left)  * scaleX;
+      var y = (e.clientY - rect.top)   * scaleY;
+      return { r: Math.floor(y / CELL), c: Math.floor(x / CELL) };
+    }
+
+    function highlightSection(rc) {
+      var sid = sectionForRow(rc.r);
+      if (sid < 0) return;
+      var sec = SECTIONS[sid];
+      document.getElementById("sectionDot").style.background = sec.color;
+      document.getElementById("sectionName").textContent = sec.name;
+      document.getElementById("sectionDesc").textContent = sec.desc;
+      document.getElementById("sectionBar").style.borderColor = sec.color + "55";
+      // Sidebar highlight
+      document.querySelectorAll(".am-section-item").forEach(function(el) {
+        el.classList.toggle("am--selected", +el.dataset.sid === sid);
+        if (+el.dataset.sid === sid) el.style.setProperty("--sc", sec.color);
+      });
+    }
+
+    canvas.addEventListener("mousemove", function(e) { if (!animating) highlightSection(getRC(e)); });
+    canvas.addEventListener("click",     function(e) { highlightSection(getRC(e)); });
+
+    // ── Build sidebar section list ────────────────────────────────────────
+    var list = document.getElementById("sectionList");
+    SECTIONS.forEach(function(sec) {
+      var div = document.createElement("div");
+      div.className = "am-section-item";
+      div.dataset.sid = sec.id;
+      div.innerHTML =
+        '<div class="am-swatch" data-color="' + sec.color + '"></div>' +
+        '<div>' +
+          '<div class="am-section-item-name">' + sec.name + '</div>' +
+          '<div class="am-section-item-sub">Rows ' + (sec.rows[0]+1) + '–' + (sec.rows[1]+1) + '</div>' +
+        '</div>';
+      div.querySelector(".am-swatch").style.background = sec.color;
+      div.addEventListener("click", function() {
+        document.querySelectorAll(".am-section-item").forEach(function(el){ el.classList.remove("am--selected"); });
+        div.classList.add("am--selected");
+        div.style.setProperty("--sc", sec.color);
+        document.getElementById("sectionDot").style.background = sec.color;
+        document.getElementById("sectionName").textContent = sec.name;
+        document.getElementById("sectionDesc").textContent = sec.desc;
+        document.getElementById("sectionBar").style.borderColor = sec.color + "55";
+      });
+      list.appendChild(div);
+    });
+
+    // ── Init ─────────────────────────────────────────────────────────────
+    applyZoom();
+
+  })();
+  </script>
+  <script src="../../assets/js/classroom-animations.js"></script>
+  <script src="../../assets/js/lesson-layout.js"></script>
+<script src="../../assets/js/lesson-print-button.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,1708 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Electronic Components · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta
+    name="description"
+    content="Identify electronic components, decode markings, read ratings and datasheets, use a multimeter safely, and troubleshoot real circuits."
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../assets/css/electricity-path.css" />
+  <link rel="stylesheet" href="../../assets/css/circuit-playground.css" />
+  <link rel="stylesheet" href="../../assets/css/circuit-playground-snap.css" />
+  <style>
+    .ec-page { padding-bottom: 1.5rem; }
+    .ll-viewport { --ll-panel-w: 300px; }
+
+    .ec-hero { padding: 0.4rem 0 1.2rem; text-align: left; }
+    .ec-hero h1 {
+      max-width: 20ch;
+      margin-left: 0;
+      margin-right: 0;
+      font-size: clamp(1.7rem, 3.9vw, 2.5rem);
+    }
+    .ec-hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 0.55rem;
+      margin: 0.55rem 0 0.75rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted, #64748b);
+    }
+    .ec-hero-meta .dot {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: currentColor;
+      align-self: center;
+    }
+    .ec-lede {
+      max-width: 70ch;
+      margin: 0 0 0.95rem;
+      color: #415266;
+      font-size: 0.97rem;
+      line-height: 1.68;
+    }
+    .ec-back-link {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--accent, #007aff);
+      text-decoration: none;
+    }
+    .ec-back-link:hover { text-decoration: underline; }
+
+    .ec-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--ec-accent, #007aff);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
+      padding: 1.35rem 1.55rem;
+      margin-bottom: 1rem;
+    }
+    .ec-card h2 {
+      margin: 0 0 0.55rem;
+      font-size: clamp(1.08rem, 2vw, 1.28rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .ec-card h3 {
+      margin: 0.95rem 0 0.35rem;
+      font-size: 0.98rem;
+    }
+    .ec-card p {
+      margin: 0 0 0.7rem;
+      color: #415266;
+      font-size: 0.9rem;
+      line-height: 1.66;
+    }
+    .ec-card p:last-child { margin-bottom: 0; }
+    [data-lighting="night"] .ec-card p,
+    [data-theme="vaporwave"] .ec-card p,
+    [data-theme="bark"] .ec-card p,
+    [data-lighting="night"] .ec-lede,
+    [data-theme="vaporwave"] .ec-lede,
+    [data-theme="bark"] .ec-lede {
+      color: rgba(245,245,247,0.74);
+    }
+
+    .ec-callout {
+      background: var(--surface, #f5f5f7);
+      border-radius: 12px;
+      padding: 0.9rem 1rem;
+      margin: 0.8rem 0;
+      font-size: 0.86rem;
+      line-height: 1.6;
+    }
+    .ec-callout strong {
+      display: block;
+      margin-bottom: 0.2rem;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted, #64748b);
+    }
+
+    .ec-quick-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.85rem;
+    }
+    .ec-quick-chip {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 12px;
+      padding: 0.8rem 0.9rem;
+      background: rgba(255,255,255,0.75);
+    }
+    .ec-quick-chip strong {
+      display: block;
+      margin-bottom: 0.2rem;
+      font-size: 0.9rem;
+    }
+    .ec-quick-chip small {
+      display: block;
+      color: var(--text-muted, #64748b);
+      font-size: 0.79rem;
+      line-height: 1.55;
+    }
+
+    .ec-resistor-shell {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 16px;
+      overflow: hidden;
+      background: linear-gradient(180deg, #f8fafc 0%, #eef4ff 100%);
+    }
+    .ec-resistor-top {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 1rem;
+      padding: 1rem;
+      align-items: center;
+    }
+    .ec-resistor-display {
+      border-radius: 14px;
+      background: #0f172a;
+      padding: 1rem;
+      color: #f8fafc;
+    }
+    .ec-resistor-display svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .ec-resistor-readout {
+      margin-top: 0.9rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      align-items: baseline;
+    }
+    .ec-resistor-value {
+      font-size: clamp(1.3rem, 3vw, 1.8rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+    .ec-resistor-meta {
+      font-size: 0.82rem;
+      color: #cbd5e1;
+    }
+    .ec-resistor-controls {
+      display: grid;
+      gap: 0.7rem;
+    }
+    .ec-resistor-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.9rem;
+      padding: 1rem 1rem 0;
+    }
+    .ec-band-tabs {
+      display: inline-flex;
+      gap: 0.35rem;
+      padding: 0.28rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.06);
+      border: 1px solid var(--line, #d2d2d7);
+    }
+    .ec-band-tab {
+      border: none;
+      background: transparent;
+      color: #475569;
+      padding: 0.45rem 0.78rem;
+      border-radius: 999px;
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .ec-band-tab.is-active {
+      background: #ffffff;
+      color: #007aff;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+    }
+    .ec-band-help {
+      font-size: 0.79rem;
+      color: var(--text-muted, #64748b);
+    }
+    .ec-field label {
+      display: block;
+      margin-bottom: 0.22rem;
+      font-size: 0.77rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted, #64748b);
+    }
+    .ec-field select {
+      width: 100%;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 10px;
+      padding: 0.62rem 0.75rem;
+      font: inherit;
+      font-size: 0.9rem;
+      background: var(--white, #fff);
+      color: var(--text, #1d1d1f);
+    }
+    .ec-resistor-legend {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 0.55rem;
+      padding: 0 1rem 1rem;
+    }
+    .ec-resistor-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.7rem;
+      margin-top: 0.85rem;
+    }
+    .ec-summary-tile {
+      border: 1px solid rgba(203, 213, 225, 0.22);
+      border-radius: 12px;
+      padding: 0.8rem 0.9rem;
+      background: rgba(255,255,255,0.08);
+    }
+    .ec-summary-tile strong {
+      display: block;
+      margin-bottom: 0.2rem;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #cbd5e1;
+    }
+    .ec-summary-tile span {
+      display: block;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .ec-band-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 999px;
+      padding: 0.38rem 0.55rem;
+      background: rgba(255,255,255,0.78);
+      font-size: 0.78rem;
+      color: #415266;
+    }
+    .ec-band-chip span {
+      width: 0.8rem;
+      height: 0.8rem;
+      border-radius: 999px;
+      border: 1px solid rgba(15,23,42,0.14);
+      flex-shrink: 0;
+    }
+
+    .ec-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.8rem;
+      font-size: 0.84rem;
+    }
+    .ec-table th,
+    .ec-table td {
+      text-align: left;
+      vertical-align: top;
+      padding: 0.6rem 0.65rem;
+      border-bottom: 1px solid var(--line, #d2d2d7);
+    }
+    .ec-table th {
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted, #64748b);
+    }
+    .ec-table tr:last-child td { border-bottom: none; }
+
+    .ec-component-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 0.9rem;
+      margin-top: 0.8rem;
+    }
+    .ec-component-card {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 14px;
+      padding: 1rem;
+      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(245,247,250,0.94));
+    }
+    .ec-component-card h3 {
+      margin: 0 0 0.28rem;
+      font-size: 1rem;
+    }
+    .ec-component-media {
+      margin: 0.2rem 0 0.75rem;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .ec-component-media img {
+      display: block;
+      width: 100%;
+      height: auto;
+      object-fit: cover;
+    }
+    .ec-symbol-panel {
+      display: grid;
+      grid-template-columns: 104px minmax(0, 1fr);
+      gap: 0.75rem;
+      align-items: center;
+      margin: 0 0 0.75rem;
+      padding: 0.72rem;
+      border: 1px solid rgba(0,122,255,0.16);
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(0,122,255,0.06), rgba(255,255,255,0.78));
+    }
+    .ec-symbol-panel svg {
+      width: 104px;
+      height: 72px;
+      display: block;
+      border-radius: 10px;
+      background: #f8fbff;
+      border: 1px solid rgba(0,122,255,0.12);
+    }
+    .ec-symbol-panel line,
+    .ec-symbol-panel path,
+    .ec-symbol-panel polyline,
+    .ec-symbol-panel polygon,
+    .ec-symbol-panel circle {
+      vector-effect: non-scaling-stroke;
+    }
+    .ec-symbol-copy strong {
+      display: block;
+      color: #007aff;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.18rem;
+    }
+    .ec-symbol-copy span {
+      display: block;
+      color: #415266;
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+    .ec-component-tag {
+      display: inline-block;
+      margin-bottom: 0.55rem;
+      padding: 0.22rem 0.52rem;
+      border-radius: 999px;
+      background: rgba(0,122,255,0.1);
+      color: #007aff;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .ec-component-list {
+      margin: 0.7rem 0 0;
+      padding-left: 1rem;
+      color: #415266;
+      font-size: 0.84rem;
+      line-height: 1.58;
+    }
+    .ec-component-list li + li { margin-top: 0.32rem; }
+    .ec-pin-diagram {
+      margin: 0.75rem 0;
+      padding: 0.75rem;
+      border: 1px solid rgba(37,99,235,0.16);
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(37,99,235,0.05), rgba(255,255,255,0.85));
+    }
+    .ec-pin-diagram svg { display: block; width: 100%; height: auto; }
+    .ec-pin-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 1rem;
+      margin-top: 0.6rem;
+      font-size: 0.76rem;
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .ec-pin-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+    .ec-pin-legend i {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      flex: none;
+    }
+    .ec-pin-diagram p {
+      margin: 0.5rem 0 0;
+      color: #415266;
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+    .ec-pin-diagram strong { color: #0f172a; }
+
+    .ec-bench {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(250px, 0.72fr);
+      gap: 1rem;
+      margin-top: 0.85rem;
+      align-items: stretch;
+    }
+    .ec-bench-stage {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at 18% 18%, rgba(255,149,0,0.16), transparent 32%),
+        linear-gradient(180deg, #f8fbff 0%, #edf4fb 100%);
+      padding: 1rem;
+      min-height: 342px;
+      display: grid;
+      gap: 0.85rem;
+      align-content: start;
+    }
+    .ec-bench-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.38rem;
+    }
+    .ec-bench-tab {
+      min-height: 42px;
+      border: 1px solid rgba(15,23,42,0.12);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.78);
+      color: #475569;
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .ec-bench-tab.is-active {
+      background: #0f172a;
+      color: #f8fafc;
+      border-color: #0f172a;
+      box-shadow: 0 8px 20px rgba(15,23,42,0.18);
+    }
+    .ec-bench-visual {
+      border: 1px solid rgba(15,23,42,0.12);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.78);
+      padding: 0.85rem;
+    }
+    .ec-bench-visual svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 220px;
+    }
+    .ec-bench-note {
+      border-left: 3px solid var(--ec-accent, #007aff);
+      padding-left: 0.75rem;
+    }
+    .ec-bench-note strong {
+      display: block;
+      margin-bottom: 0.18rem;
+      font-size: 0.94rem;
+    }
+    .ec-bench-note span {
+      display: block;
+      color: #415266;
+      font-size: 0.84rem;
+      line-height: 1.58;
+    }
+    .ec-toolbox {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.86);
+      padding: 1rem;
+      display: grid;
+      gap: 0.85rem;
+      align-content: start;
+    }
+    .ec-toolbox h3 {
+      margin: 0;
+      font-size: 1rem;
+    }
+    .ec-mini-meter {
+      border-radius: 14px;
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 0.85rem;
+    }
+    .ec-mini-meter strong {
+      display: block;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #cbd5e1;
+      margin-bottom: 0.2rem;
+    }
+    .ec-mini-meter span {
+      display: block;
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+    .ec-cap-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.5rem;
+    }
+    .ec-cap-row input {
+      width: 100%;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 10px;
+      padding: 0.62rem 0.75rem;
+      font: inherit;
+      font-size: 0.9rem;
+      color: var(--text, #1d1d1f);
+      background: var(--white, #fff);
+    }
+    .ec-cap-row button {
+      border: none;
+      border-radius: 10px;
+      padding: 0.62rem 0.78rem;
+      background: #007aff;
+      color: #fff;
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .ec-tool-list {
+      margin: 0;
+      padding-left: 1rem;
+      color: #415266;
+      font-size: 0.82rem;
+      line-height: 1.58;
+    }
+    .ec-tool-list li + li { margin-top: 0.28rem; }
+
+    .ec-trouble-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.8rem;
+    }
+    .ec-trouble-item {
+      border-radius: 14px;
+      padding: 0.9rem 1rem;
+      border: 1px solid var(--line, #d2d2d7);
+      background: rgba(255,255,255,0.75);
+    }
+    .ec-trouble-item strong {
+      display: block;
+      margin-bottom: 0.25rem;
+      font-size: 0.86rem;
+    }
+    .ec-trouble-item small {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--text-muted, #64748b);
+      line-height: 1.55;
+    }
+
+    .ec-quiz {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
+      padding: 1.35rem 1.55rem;
+      margin-bottom: 1rem;
+    }
+    .ec-quiz h2 {
+      margin: 0 0 0.95rem;
+      font-size: clamp(1.08rem, 2vw, 1.26rem);
+    }
+    .ec-question { margin-bottom: 1.1rem; }
+    .ec-question:last-child { margin-bottom: 0; }
+    .ec-question p {
+      margin: 0 0 0.5rem;
+      font-size: 0.91rem;
+      font-weight: 700;
+    }
+    .ec-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .ec-option {
+      padding: 0.48rem 0.75rem;
+      border-radius: 9px;
+      border: 1.5px solid var(--line, #d2d2d7);
+      background: var(--surface, #f5f5f7);
+      color: var(--text, #1d1d1f);
+      font: inherit;
+      font-size: 0.86rem;
+      text-align: left;
+      cursor: pointer;
+    }
+    .ec-option:hover:not(:disabled) { border-color: #007aff; }
+    .ec-option.is-correct {
+      background: #34c75914;
+      border-color: #34c759;
+      color: #248a3d;
+    }
+    .ec-option.is-wrong {
+      background: #ff3b3014;
+      border-color: #ff3b30;
+      color: #c0392b;
+    }
+    .ec-q-feedback {
+      min-height: 1rem;
+      margin-top: 0.35rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-muted, #64748b);
+    }
+
+    @media (max-width: 920px) {
+      .ec-resistor-top { grid-template-columns: 1fr; }
+      .ec-symbol-panel { grid-template-columns: 1fr; }
+      .ec-bench { grid-template-columns: 1fr; }
+      .ec-bench-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="ec-page">
+          <section class="hero ec-hero">
+            <p class="eyebrow">Engineering · Lesson 01</p>
+            <h1>Electronic Components</h1>
+            <div class="ec-hero-meta">
+              <span>Circuits</span><span class="dot"></span>
+              <span>Parts Identification</span><span class="dot"></span>
+              <span>Polarity</span><span class="dot"></span>
+              <span>Component Basics</span>
+            </div>
+            <p class="ec-lede">A breadboard only becomes useful once you can recognize the parts going into it. This module gives you a practical field guide to the foundational components students most often confuse: resistors, LEDs, capacitors, diodes, transistors, and buttons. Sensor boards such as photoresistor modules live in the separate sensor modules kit lesson.</p>
+            <a class="ec-back-link" href="../../steam-lessons.html#module-engineering">&larr; Back to Engineering</a>
+          </section>
+
+          <section class="ec-card" style="--ec-accent:#ff9500;">
+            <h2>How To Read Components Quickly</h2>
+            <p>When you pick up an unknown part, ask four questions in order: <strong>What family is it?</strong> <strong>Does polarity matter?</strong> <strong>What markings or shape give away its value?</strong> <strong>How should it sit on a breadboard?</strong> That simple checklist prevents most beginner mistakes.</p>
+            <div class="ec-quick-grid">
+              <div class="ec-quick-chip">
+                <strong>1. Identify the body</strong>
+                <small>Cylinder, bead, disk, button, and three-legged package shapes each hint at a different component family.</small>
+              </div>
+              <div class="ec-quick-chip">
+                <strong>2. Check polarity</strong>
+                <small>LEDs, electrolytic capacitors, and diodes must face the correct direction. Resistors and most ceramic capacitors do not.</small>
+              </div>
+              <div class="ec-quick-chip">
+                <strong>3. Read the marking</strong>
+                <small>Color bands, printed numbers, flat sides, and longer leads all communicate value or orientation.</small>
+              </div>
+              <div class="ec-quick-chip">
+                <strong>4. Place with intention</strong>
+                <small>Spread leads across separate rows so the component bridges nodes instead of shorting itself into one strip.</small>
+              </div>
+            </div>
+          </section>
+
+          <section class="ec-card" style="--ec-accent:#34c759;">
+            <h2>Resistor Color Code Guide</h2>
+            <p>This upgraded analyzer blends our classroom lesson with the best ideas from a modern resistor-band simulator. You can now decode <strong>4-band, 5-band, and 6-band</strong> resistors, compare beginner parts with precision parts, and watch the decoded meaning update live.</p>
+
+            <div class="ec-symbol-panel">
+              <svg viewBox="0 0 104 72" role="img" aria-label="Resistor schematic symbol">
+                <title>Resistor schematic symbol</title>
+                <line x1="10" y1="36" x2="22" y2="36" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+                <polyline points="22,36 28,24 36,48 44,24 52,48 60,24 68,48 76,36" fill="none" stroke="#0f172a" stroke-width="3" stroke-linejoin="round"></polyline>
+                <line x1="76" y1="36" x2="94" y2="36" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+              </svg>
+              <div class="ec-symbol-copy">
+                <strong>Schematic Symbol</strong>
+                <span>A resistor is drawn as a zig-zag in many classroom diagrams. Its job is to oppose current flow.</span>
+              </div>
+            </div>
+
+            <div class="ec-resistor-shell">
+              <div class="ec-resistor-toolbar">
+                <div class="ec-band-tabs" role="tablist" aria-label="Resistor band count">
+                  <button class="ec-band-tab is-active" type="button" data-band-count="4" aria-selected="true">4 Bands</button>
+                  <button class="ec-band-tab" type="button" data-band-count="5" aria-selected="false">5 Bands</button>
+                  <button class="ec-band-tab" type="button" data-band-count="6" aria-selected="false">6 Bands</button>
+                </div>
+                <div class="ec-band-help" id="resistor-help">Most classroom resistors are 4-band parts.</div>
+              </div>
+              <div class="ec-resistor-top">
+                <div class="ec-resistor-display">
+                  <svg viewBox="0 0 620 180" aria-label="Resistor with four colored bands">
+                    <defs>
+                      <linearGradient id="resistor-lead-grad" x1="0" x2="1" y1="0" y2="0">
+                        <stop offset="0" stop-color="#6b7c91"></stop>
+                        <stop offset="0.28" stop-color="#b8c7d9"></stop>
+                        <stop offset="0.52" stop-color="#e6eef7"></stop>
+                        <stop offset="0.78" stop-color="#8ea2ba"></stop>
+                        <stop offset="1" stop-color="#52657d"></stop>
+                      </linearGradient>
+                      <linearGradient id="resistor-body-grad" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0" stop-color="#e9ddbf"></stop>
+                        <stop offset="0.18" stop-color="#d7c8a4"></stop>
+                        <stop offset="0.48" stop-color="#bcb28f"></stop>
+                        <stop offset="0.7" stop-color="#d1c49f"></stop>
+                        <stop offset="1" stop-color="#817b64"></stop>
+                      </linearGradient>
+                      <linearGradient id="resistor-cap-grad" x1="0" x2="1" y1="0" y2="0">
+                        <stop offset="0" stop-color="#7d7865"></stop>
+                        <stop offset="0.36" stop-color="#d8cdae"></stop>
+                        <stop offset="0.72" stop-color="#aaa283"></stop>
+                        <stop offset="1" stop-color="#67614f"></stop>
+                      </linearGradient>
+                      <filter id="resistor-shadow" x="-20%" y="-30%" width="140%" height="160%">
+                        <feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#020617" flood-opacity="0.38"></feDropShadow>
+                      </filter>
+                      <clipPath id="resistor-body-clip">
+                        <rect x="180" y="42" width="260" height="96" rx="48"></rect>
+                      </clipPath>
+                    </defs>
+                    <text x="310" y="28" text-anchor="middle" fill="#cbd5e1" font-family="Inter,sans-serif" font-size="16" font-weight="700" id="resistor-title">4-Band Resistor</text>
+                    <g filter="url(#resistor-shadow)">
+                      <path d="M42 90 C86 88 122 88 180 90" fill="none" stroke="url(#resistor-lead-grad)" stroke-width="10" stroke-linecap="round"></path>
+                      <path d="M440 90 C498 91 536 91 578 90" fill="none" stroke="url(#resistor-lead-grad)" stroke-width="10" stroke-linecap="round"></path>
+                      <path d="M43 86 C86 84 122 84 180 86" fill="none" stroke="rgba(255,255,255,0.42)" stroke-width="2" stroke-linecap="round"></path>
+                      <path d="M440 86 C498 87 536 87 578 86" fill="none" stroke="rgba(255,255,255,0.42)" stroke-width="2" stroke-linecap="round"></path>
+
+                      <rect x="180" y="42" width="260" height="96" rx="48" fill="url(#resistor-body-grad)"></rect>
+                      <ellipse cx="184" cy="90" rx="34" ry="48" fill="url(#resistor-cap-grad)" opacity="0.96"></ellipse>
+                      <ellipse cx="436" cy="90" rx="34" ry="48" fill="url(#resistor-cap-grad)" opacity="0.96"></ellipse>
+
+                      <g clip-path="url(#resistor-body-clip)">
+                        <rect x="180" y="42" width="260" height="96" rx="48" fill="url(#resistor-body-grad)"></rect>
+                        <rect x="228" y="42" width="18" height="96" rx="3" fill="#111827" id="band-1"></rect>
+                        <rect x="268" y="42" width="18" height="96" rx="3" fill="#ef4444" id="band-2"></rect>
+                        <rect x="316" y="42" width="18" height="96" rx="3" fill="#92400e" id="band-3"></rect>
+                        <rect x="388" y="42" width="18" height="96" rx="3" fill="#d4af37" id="band-4"></rect>
+                        <rect x="410" y="42" width="14" height="96" rx="3" fill="#7c4a21" id="band-5" style="display:none;"></rect>
+                        <rect x="430" y="42" width="12" height="96" rx="3" fill="#2563eb" id="band-6" style="display:none;"></rect>
+                        <path d="M188 55 C248 38 365 38 430 57" fill="none" stroke="rgba(255,255,255,0.36)" stroke-width="12" stroke-linecap="round"></path>
+                        <path d="M196 124 C252 140 363 140 426 123" fill="none" stroke="rgba(15,23,42,0.24)" stroke-width="12" stroke-linecap="round"></path>
+                      </g>
+
+                      <rect x="180" y="42" width="260" height="96" rx="48" fill="none" stroke="#67614f" stroke-width="4"></rect>
+                      <ellipse cx="184" cy="90" rx="34" ry="48" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="2"></ellipse>
+                      <ellipse cx="436" cy="90" rx="34" ry="48" fill="none" stroke="rgba(15,23,42,0.22)" stroke-width="2"></ellipse>
+                    </g>
+                  </svg>
+                  <div class="ec-resistor-readout">
+                    <span class="ec-resistor-value" id="resistor-value">220 Ω</span>
+                    <span class="ec-resistor-meta" id="resistor-meta">digits 22 × 10</span>
+                    <span class="ec-resistor-meta" id="resistor-tolerance">tolerance ±5%</span>
+                  </div>
+                  <div class="ec-resistor-summary">
+                    <div class="ec-summary-tile">
+                      <strong>Decoded Bands</strong>
+                      <span id="resistor-band-labels">Red • Red • Brown • Gold</span>
+                    </div>
+                    <div class="ec-summary-tile">
+                      <strong>Precision Note</strong>
+                      <span id="resistor-ppm">Standard classroom resistor</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="ec-resistor-controls" id="resistor-controls"></div>
+              </div>
+
+              <div class="ec-callout" style="margin:0 1rem 1rem;">
+                <strong>Band Meanings</strong>
+                In 4-band mode the first two bands are digits. In 5-band and 6-band mode the first three bands are digits. The last band is tolerance, and the 6th band adds temperature coefficient in ppm per degree C.
+              </div>
+
+              <div class="ec-resistor-legend" id="resistor-legend"></div>
+            </div>
+
+            <div class="ec-callout">
+              <strong>Orientation Tip</strong>
+              The tolerance band is usually spaced a little farther from the other bands. Hold that band on the right while reading from left to right.
+            </div>
+
+            <table class="ec-table" aria-label="Common resistor color code examples">
+              <thead>
+                <tr>
+                  <th>Colors</th>
+                  <th>Value</th>
+                  <th>Typical Use</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Red, Red, Brown, Gold</td>
+                  <td>220 Ω ±5%</td>
+                  <td>Common LED current-limiting resistor</td>
+                </tr>
+                <tr>
+                  <td>Brown, Black, Red, Gold</td>
+                  <td>1 kΩ ±5%</td>
+                  <td>Pull-up and pull-down circuits</td>
+                </tr>
+                <tr>
+                  <td>Yellow, Violet, Orange, Gold</td>
+                  <td>47 kΩ ±5%</td>
+                  <td>Sensor voltage dividers</td>
+                </tr>
+                <tr>
+                  <td>Brown, Black, Green, Gold</td>
+                  <td>1 MΩ ±5%</td>
+                  <td>High-resistance input circuits</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="ec-card" style="--ec-accent:#007aff;">
+            <h2>Component Field Guide</h2>
+            <p>These are the parts students meet first on a breadboard. Each one has a recognizable shape and a few orientation rules worth memorizing.</p>
+
+            <div class="ec-component-grid">
+              <article class="ec-component-card">
+                <span class="ec-component-tag">Light Emitting Diode</span>
+                <h3>LED</h3>
+                <div class="ec-component-media">
+                  <img src="../../assets/thumbs/LED.jpg" alt="LED example" />
+                </div>
+                <div class="ec-symbol-panel">
+                  <svg viewBox="0 0 104 72" role="img" aria-label="LED schematic symbol">
+                    <title>LED schematic symbol</title>
+                    <line x1="10" y1="36" x2="34" y2="36" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+                    <polygon points="34,20 34,52 58,36" fill="none" stroke="#0f172a" stroke-width="3" stroke-linejoin="round"></polygon>
+                    <line x1="62" y1="20" x2="62" y2="52" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+                    <line x1="62" y1="36" x2="94" y2="36" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+                    <line x1="67" y1="17" x2="83" y2="7" stroke="#007aff" stroke-width="3" stroke-linecap="round"></line>
+                    <polyline points="79,6 84,6 82,11" fill="none" stroke="#007aff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                    <line x1="72" y1="28" x2="91" y2="17" stroke="#007aff" stroke-width="3" stroke-linecap="round"></line>
+                    <polyline points="87,16 92,16 90,21" fill="none" stroke="#007aff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                  </svg>
+                  <div class="ec-symbol-copy">
+                    <strong>Schematic Symbol</strong>
+                    <span>Diode symbol plus outward arrows. The vertical bar marks the cathode side.</span>
+                  </div>
+                </div>
+                <p>An LED allows current to flow in one direction and glows when current passes through it. It is a diode designed to emit light.</p>
+                <ul class="ec-component-list">
+                  <li><strong>How to spot it:</strong> clear or colored plastic bulb with two leads.</li>
+                  <li><strong>Polarity:</strong> longer lead is usually the <em>anode</em> (+), shorter lead and flat edge mark the <em>cathode</em> (-).</li>
+                  <li><strong>Breadboard tip:</strong> place each leg in a different row and always use a resistor in series.</li>
+                  <li><strong>Common mistake:</strong> reversing the LED or connecting it without a resistor.</li>
+                </ul>
+              </article>
+
+              <article class="ec-component-card">
+                <span class="ec-component-tag">Polarized Capacitor</span>
+                <h3>Electrolytic Capacitor</h3>
+                <div class="ec-component-media">
+                  <img loading="lazy" decoding="async" src="../../assets/thumbs/electrolyriccapacitor.jpg" alt="Electrolytic capacitor example" />
+                </div>
+                <div class="ec-symbol-panel">
+                  <svg viewBox="0 0 104 72" role="img" aria-label="Polarized capacitor schematic symbol">
+                    <title>Polarized capacitor schematic symbol</title>
+                    <line x1="10" y1="36" x2="38" y2="36" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+                    <line x1="38" y1="18" x2="38" y2="54" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+                    <path d="M58 18 C48 27 48 45 58 54" fill="none" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></path>
+                    <line x1="58" y1="36" x2="94" y2="36" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+                    <line x1="24" y1="17" x2="24" y2="29" stroke="#007aff" stroke-width="2.4" stroke-linecap="round"></line>
+                    <line x1="18" y1="23" x2="30" y2="23" stroke="#007aff" stroke-width="2.4" stroke-linecap="round"></line>
+                  </svg>
+                  <div class="ec-symbol-copy">
+                    <strong>Schematic Symbol</strong>
+                    <span>Polarized capacitor: one plate is marked positive, and the curved plate is often the negative side.</span>
+                  </div>
+                </div>
+                <p>An electrolytic capacitor stores charge and is useful when you need larger capacitance values for smoothing or timing.</p>
+                <ul class="ec-component-list">
+                  <li><strong>How to spot it:</strong> cylindrical can with printed stripe.</li>
+                  <li><strong>Polarity:</strong> the stripe marks the negative side; the longer lead is often positive.</li>
+                  <li><strong>Breadboard tip:</strong> double-check polarity before powering the circuit.</li>
+                  <li><strong>Common mistake:</strong> inserting it backwards, which can damage the part.</li>
+                </ul>
+              </article>
+
+              <article class="ec-component-card">
+                <span class="ec-component-tag">Non-Polarized Capacitor</span>
+                <h3>Ceramic Capacitor</h3>
+                <div class="ec-component-media">
+                  <img loading="lazy" decoding="async" src="../../assets/thumbs/ceramiccapacitor.jpg" alt="Ceramic capacitor example" />
+                </div>
+                <div class="ec-symbol-panel">
+                  <svg viewBox="0 0 104 72" role="img" aria-label="Non-polarized capacitor schematic symbol">
+                    <title>Non-polarized capacitor schematic symbol</title>
+                    <line x1="10" y1="36" x2="38" y2="36" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+                    <line x1="38" y1="18" x2="38" y2="54" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+                    <line x1="58" y1="18" x2="58" y2="54" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+                    <line x1="58" y1="36" x2="94" y2="36" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+                  </svg>
+                  <div class="ec-symbol-copy">
+                    <strong>Schematic Symbol</strong>
+                    <span>Two equal plates mean non-polarized. Either lead can face either direction.</span>
+                  </div>
+                </div>
+                <p>Ceramic capacitors store small amounts of charge and are often used for filtering noise and stabilizing voltage.</p>
+                <ul class="ec-component-list">
+                  <li><strong>How to spot it:</strong> small disk, bead, or tiny rectangular package.</li>
+                  <li><strong>Polarity:</strong> none, so either lead can go in either direction.</li>
+                  <li><strong>Marking:</strong> printed codes like <code>104</code> often mean 100,000 pF = 0.1 uF.</li>
+                  <li><strong>Common mistake:</strong> assuming the printed code is in microfarads without converting.</li>
+                </ul>
+              </article>
+
+              <article class="ec-component-card">
+                <span class="ec-component-tag">One-Way Current</span>
+                <h3>Diode</h3>
+                <div class="ec-component-media">
+                  <img loading="lazy" decoding="async" src="../../assets/thumbs/Diodes.jpg" alt="Diode example" />
+                </div>
+                <div class="ec-symbol-panel">
+                  <svg viewBox="0 0 104 72" role="img" aria-label="Diode schematic symbol">
+                    <title>Diode schematic symbol</title>
+                    <line x1="10" y1="36" x2="34" y2="36" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+                    <polygon points="34,20 34,52 58,36" fill="none" stroke="#0f172a" stroke-width="3" stroke-linejoin="round"></polygon>
+                    <line x1="62" y1="20" x2="62" y2="52" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+                    <line x1="62" y1="36" x2="94" y2="36" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+                  </svg>
+                  <div class="ec-symbol-copy">
+                    <strong>Schematic Symbol</strong>
+                    <span>The triangle points toward the cathode bar, matching the banded side on many physical diodes.</span>
+                  </div>
+                </div>
+                <p>A regular diode acts like a one-way valve for current. It is used for rectification, polarity protection, and signal steering.</p>
+                <ul class="ec-component-list">
+                  <li><strong>How to spot it:</strong> small cylinder or glass body with a band near one end.</li>
+                  <li><strong>Polarity:</strong> the band marks the <em>cathode</em>.</li>
+                  <li><strong>Breadboard tip:</strong> think of the band as the side current exits toward in simple diagrams.</li>
+                  <li><strong>Common mistake:</strong> mixing up the band direction and blocking current by accident.</li>
+                </ul>
+              </article>
+
+              <article class="ec-component-card">
+                <span class="ec-component-tag">Electronic Switch</span>
+                <h3>Transistor</h3>
+                <div class="ec-component-media">
+                  <img loading="lazy" decoding="async" src="../../assets/thumbs/transistor.jpg" alt="Transistor example" />
+                </div>
+                <div class="ec-symbol-panel">
+                  <svg viewBox="0 0 104 72" role="img" aria-label="NPN transistor schematic symbol">
+                    <title>NPN transistor schematic symbol</title>
+                    <circle cx="52" cy="36" r="23" fill="none" stroke="#cbd5e1" stroke-width="2"></circle>
+                    <line x1="12" y1="36" x2="42" y2="36" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+                    <line x1="42" y1="20" x2="42" y2="52" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+                    <line x1="42" y1="28" x2="72" y2="12" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+                    <line x1="42" y1="44" x2="72" y2="60" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+                    <polyline points="64,58 73,60 68,52" fill="none" stroke="#0f172a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                    <text x="18" y="30" fill="#007aff" font-size="9" font-weight="800" font-family="Inter,sans-serif">B</text>
+                    <text x="74" y="13" fill="#007aff" font-size="9" font-weight="800" font-family="Inter,sans-serif">C</text>
+                    <text x="75" y="64" fill="#007aff" font-size="9" font-weight="800" font-family="Inter,sans-serif">E</text>
+                  </svg>
+                  <div class="ec-symbol-copy">
+                    <strong>Schematic Symbol</strong>
+                    <span>NPN transistor shown here: base, collector, and emitter. The emitter arrow points out.</span>
+                  </div>
+                </div>
+                <p>A transistor uses a small signal to control a larger current. It can work as a switch or as an amplifier.</p>
+                <ul class="ec-component-list">
+                  <li><strong>How to spot it:</strong> usually a black half-cylinder package with three legs.</li>
+                  <li><strong>Pins:</strong> collector, base, emitter or source, gate, drain depending on transistor type.</li>
+                  <li><strong>Breadboard tip:</strong> look up the exact pinout for the part number before wiring it.</li>
+                  <li><strong>Common mistake:</strong> assuming all three-legged packages share the same pin arrangement.</li>
+                </ul>
+              </article>
+
+              <article class="ec-component-card">
+                <span class="ec-component-tag">Momentary Input</span>
+                <h3>Button</h3>
+                <div class="ec-component-media">
+                  <img loading="lazy" decoding="async" src="../../assets/thumbs/buttoncomponent.jpg" alt="Pushbutton component example" />
+                </div>
+                <div class="ec-symbol-panel">
+                  <svg viewBox="0 0 104 72" role="img" aria-label="Normally open pushbutton schematic symbol">
+                    <title>Normally open pushbutton schematic symbol</title>
+                    <line x1="10" y1="46" x2="36" y2="46" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+                    <line x1="68" y1="46" x2="94" y2="46" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+                    <circle cx="38" cy="46" r="3" fill="#0f172a"></circle>
+                    <circle cx="66" cy="46" r="3" fill="#0f172a"></circle>
+                    <line x1="42" y1="36" x2="62" y2="30" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+                    <line x1="52" y1="15" x2="52" y2="30" stroke="#007aff" stroke-width="3" stroke-linecap="round"></line>
+                    <line x1="43" y1="15" x2="61" y2="15" stroke="#007aff" stroke-width="3" stroke-linecap="round"></line>
+                  </svg>
+                  <div class="ec-symbol-copy">
+                    <strong>Schematic Symbol</strong>
+                    <span>Normally open pushbutton: the circuit is open until pressing closes the gap.</span>
+                  </div>
+                </div>
+                <p>A pushbutton opens or closes a connection only while it is being pressed, making it a simple manual input device.</p>
+                <ul class="ec-component-list">
+                  <li><strong>How to spot it:</strong> small square tactile switch with four legs.</li>
+                  <li><strong>Internal behavior:</strong> two legs on each side are already paired; pressing joins the two sides together.</li>
+                  <li><strong>Breadboard tip:</strong> straddle the center gap so the switch bridges two separate halves.</li>
+                  <li><strong>Common mistake:</strong> placing all four legs in connected rows so the button appears permanently on.</li>
+                </ul>
+                <div class="ec-pin-diagram">
+                  <svg viewBox="0 0 400 210" role="img" aria-labelledby="btn-pin-title btn-pin-desc">
+                    <title id="btn-pin-title">Four-pin tactile button, top view</title>
+                    <desc id="btn-pin-desc">The two legs on the left side are always connected to each other, and the two legs on the right side are always connected to each other. Pressing the button bridges the left pair to the right pair.</desc>
+                    <path d="M60 55 H140 M60 155 H140 M60 55 V155" fill="none" stroke="#2563eb" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M340 55 H260 M340 155 H260 M340 55 V155" fill="none" stroke="#2563eb" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <rect x="140" y="35" width="120" height="140" rx="14" fill="#e2e8f0" stroke="#64748b" stroke-width="3"></rect>
+                    <circle cx="200" cy="105" r="46" fill="#cbd5e1" stroke="#64748b" stroke-width="3"></circle>
+                    <path d="M172 105 L188 105 M212 105 L228 105" stroke="#ff3b30" stroke-width="6" stroke-linecap="round"></path>
+                    <path d="M188 105 L212 97" stroke="#ff3b30" stroke-width="6" stroke-linecap="round" stroke-dasharray="1 12"></path>
+                    <circle cx="140" cy="55" r="9" fill="#0f172a"></circle>
+                    <circle cx="140" cy="155" r="9" fill="#0f172a"></circle>
+                    <circle cx="260" cy="55" r="9" fill="#0f172a"></circle>
+                    <circle cx="260" cy="155" r="9" fill="#0f172a"></circle>
+                  </svg>
+                  <div class="ec-pin-legend"><span><i style="background:#2563eb;"></i>Always connected (same side)</span><span><i style="background:#ff3b30;"></i>Only closes when pressed</span></div>
+                  <p><strong>Blue</strong> legs on the same side are wired together inside the case, whether or not the button is pressed. <strong>Red</strong> shows the only connection that changes: pressing the dome joins the left pair to the right pair. That's why the button has to straddle the breadboard's center gap — otherwise both blue pairs land on rows that are already connected, and the switch does nothing.</p>
+                </div>
+              </article>
+            </div>
+
+            <div class="ec-callout">
+              <strong>Sensor handoff:</strong>
+              Photoresistor boards, ultrasonic boards, PIR boards, and other ready-made sensor boards are handled in the <a href="sensor-modules.html">Sensor Modules Kit</a> lesson. This page stays focused on loose foundational components.
+            </div>
+          </section>
+
+          <section class="ec-card" style="--ec-accent:#ff375f;">
+            <h2>Polarity and Placement Bench</h2>
+            <p>Reading a part is only half the job. Use this bench to rehearse the physical clue that tells you which way the component belongs on a breadboard.</p>
+
+            <div class="ec-bench">
+              <div class="ec-bench-stage">
+                <div class="ec-bench-tabs" role="tablist" aria-label="Component placement examples">
+                  <button class="ec-bench-tab is-active" type="button" data-bench-part="led" aria-selected="true">LED</button>
+                  <button class="ec-bench-tab" type="button" data-bench-part="capacitor" aria-selected="false">Capacitor</button>
+                  <button class="ec-bench-tab" type="button" data-bench-part="diode" aria-selected="false">Diode</button>
+                  <button class="ec-bench-tab" type="button" data-bench-part="button" aria-selected="false">Button</button>
+                </div>
+                <div class="ec-bench-visual" id="bench-visual" aria-live="polite"></div>
+                <div class="ec-bench-note">
+                  <strong id="bench-title">LED: longer lead goes toward positive</strong>
+                  <span id="bench-copy">The short lead and flat edge mark the cathode. Put a resistor in series so the LED does not pull too much current.</span>
+                </div>
+              </div>
+
+              <div class="ec-toolbox">
+                <h3>Ceramic Capacitor Code Decoder</h3>
+                <p>Many tiny capacitors use a three-digit code. The first two digits are the value, and the third digit tells how many zeros to add in picofarads.</p>
+                <div class="ec-cap-row">
+                  <input id="cap-code" value="104" inputmode="numeric" maxlength="3" aria-label="Capacitor code" />
+                  <button type="button" id="cap-decode">Decode</button>
+                </div>
+                <div class="ec-mini-meter">
+                  <strong>Decoded Value</strong>
+                  <span id="cap-result">100 nF</span>
+                </div>
+                <ul class="ec-tool-list">
+                  <li><code>104</code> means 10 followed by 4 zeros: 100,000 pF.</li>
+                  <li><code>103</code> means 10,000 pF, which is 10 nF.</li>
+                  <li><code>221</code> means 220 pF.</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <section class="ec-card" style="--ec-accent:#af52de;">
+            <h2>Compare the Parts</h2>
+            <p>Use this table when sorting parts from a mixed electronics kit.</p>
+            <table class="ec-table" aria-label="Electronic components comparison table">
+              <thead>
+                <tr>
+                  <th>Component</th>
+                  <th>Main Job</th>
+                  <th>Polarity?</th>
+                  <th>What to Notice First</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Resistor</td>
+                  <td>Limits current or sets voltage ratios</td>
+                  <td>No</td>
+                  <td>Color bands around a small cylinder</td>
+                </tr>
+                <tr>
+                  <td>LED</td>
+                  <td>Emits light when current flows</td>
+                  <td>Yes</td>
+                  <td>Long and short legs, flat edge</td>
+                </tr>
+                <tr>
+                  <td>Electrolytic Capacitor</td>
+                  <td>Stores larger charge, smooths voltage</td>
+                  <td>Yes</td>
+                  <td>Cylindrical can, negative stripe</td>
+                </tr>
+                <tr>
+                  <td>Ceramic Capacitor</td>
+                  <td>Filters noise, bypasses signals</td>
+                  <td>No</td>
+                  <td>Small disk or bead with a number code</td>
+                </tr>
+                <tr>
+                  <td>Diode</td>
+                  <td>Allows one-way current flow</td>
+                  <td>Yes</td>
+                  <td>Band marking the cathode end</td>
+                </tr>
+                <tr>
+                  <td>Transistor</td>
+                  <td>Switches or amplifies current</td>
+                  <td>Pin order matters</td>
+                  <td>Three-legged package and part number</td>
+                </tr>
+                <tr>
+                  <td>Button</td>
+                  <td>Temporary user input</td>
+                  <td>No, but orientation affects pairing</td>
+                  <td>Four legs in two internal pairs</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <circuit-playground data-profile="components"></circuit-playground>
+
+          <section class="ec-card" style="--ec-accent:#5856d6;">
+            <h2>Beyond the Symbol: Ratings and Datasheets</h2>
+            <p>A component name tells you its job, but its <strong>ratings</strong> tell you whether a particular part can survive the job. Two parts can look identical and still have very different limits. Before substituting a component, read its part number and check the manufacturer datasheet.</p>
+            <table class="ec-table" aria-label="Important electronic component ratings">
+              <thead><tr><th>Component</th><th>Ratings to Check</th><th>Why They Matter</th></tr></thead>
+              <tbody>
+                <tr><td>Resistor</td><td>Resistance, tolerance, power</td><td>A 220 Ω, ¼ W resistor may overheat if it must dissipate more than 0.25 W.</td></tr>
+                <tr><td>LED / diode</td><td>Forward voltage, forward current, reverse voltage</td><td>The forward voltage affects resistor sizing; excess current damages the junction.</td></tr>
+                <tr><td>Capacitor</td><td>Capacitance, voltage, tolerance, polarity, temperature</td><td>The voltage rating must exceed the highest voltage the capacitor will experience.</td></tr>
+                <tr><td>Transistor</td><td>Pinout, maximum voltage/current, gain, power</td><td>Package shape does not guarantee pin order, and a load can exceed the device limit.</td></tr>
+                <tr><td>Switch</td><td>Contact arrangement, voltage/current rating</td><td>A button suitable for a logic input may be unsafe for a motor or power circuit.</td></tr>
+              </tbody>
+            </table>
+            <div class="ec-trouble-grid">
+              <div class="ec-trouble-item"><strong>Tolerance is a range</strong><small>A 1 kΩ ±5% resistor may measure from 950 Ω to 1,050 Ω and still be correct.</small></div>
+              <div class="ec-trouble-item"><strong>Maximum is not a target</strong><small>Design with margin. A 16 V capacitor on a 15 V rail has too little room for spikes or supply variation.</small></div>
+              <div class="ec-trouble-item"><strong>Absolute maximum means danger</strong><small>Datasheet “absolute maximum” values mark the edge of possible damage, not normal operating conditions.</small></div>
+            </div>
+            <h3>Bench Skill: Identify, Predict, Measure</h3>
+            <p>Use this routine before placing an unfamiliar part in a powered circuit.</p>
+            <ol class="ec-tool-list">
+              <li><strong>Identify:</strong> record markings, package, polarity clues, and likely pin names. Search the exact part number when one is printed.</li>
+              <li><strong>Predict:</strong> sketch the expected current path and estimate voltage, current, and power. Choose ratings with headroom.</li>
+              <li><strong>Measure unpowered:</strong> use resistance, continuity, or diode-test mode when appropriate. Never measure resistance on a powered circuit.</li>
+              <li><strong>Power safely:</strong> begin with a current-limited supply when available, then check for heat, smell, or unexpected current.</li>
+              <li><strong>Record:</strong> compare measured values with the prediction and explain differences using tolerance, meter accuracy, or circuit loading.</li>
+            </ol>
+            <div class="ec-callout warn"><strong>Meter safety:</strong> resistance and continuity modes inject their own test signal. Turn power off and discharge capacitors first. Current mode is different: the meter must be inserted in series, and placing it directly across a supply can create a short circuit.</div>
+          </section>
+
+          <section class="ec-card" style="--ec-accent:#30b0c7;">
+            <h2>Common Troubleshooting Checks</h2>
+            <p>When a circuit refuses to work, the problem is often not the idea but the orientation of one small part.</p>
+            <div class="ec-trouble-grid">
+              <div class="ec-trouble-item">
+                <strong>LED is dark</strong>
+                <small>Check polarity first, then confirm the resistor is in series instead of accidentally bypassed.</small>
+              </div>
+              <div class="ec-trouble-item">
+                <strong>Capacitor heats up</strong>
+                <small>Power off immediately and check whether an electrolytic capacitor is reversed.</small>
+              </div>
+              <div class="ec-trouble-item">
+                <strong>Button always reads pressed</strong>
+                <small>The switch is probably rotated the wrong way or sitting in one connected breadboard strip.</small>
+              </div>
+              <div class="ec-trouble-item">
+                <strong>Transistor does nothing</strong>
+                <small>Verify the part number and exact pinout; the flat face alone is not enough to guarantee pin order.</small>
+              </div>
+              <div class="ec-trouble-item">
+                <strong>Current will not pass</strong>
+                <small>Check diode orientation. A single reversed diode can block the whole branch.</small>
+              </div>
+            </div>
+          </section>
+
+          <section class="ec-quiz">
+            <h2>Quick Check</h2>
+
+            <div class="ec-question" data-answer="b" data-explanation="The first two bands give the first two digits, so red-red makes 22 before the multiplier is applied.">
+              <p>1. On a four-band resistor, what do the first two color bands represent?</p>
+              <div class="ec-options" role="group">
+                <button class="ec-option" data-choice="a">Tolerance and power rating</button>
+                <button class="ec-option" data-choice="b">The first two digits of the resistance value</button>
+                <button class="ec-option" data-choice="c">Voltage and current limits</button>
+                <button class="ec-option" data-choice="d">The component manufacturer</button>
+              </div>
+              <div class="ec-q-feedback" aria-live="polite"></div>
+            </div>
+
+            <div class="ec-question" data-answer="c" data-explanation="The negative stripe is the key polarity marker on an electrolytic capacitor.">
+              <p>2. What marking most clearly identifies the negative side of an electrolytic capacitor?</p>
+              <div class="ec-options" role="group">
+                <button class="ec-option" data-choice="a">A color band in the middle</button>
+                <button class="ec-option" data-choice="b">A zig-zag pattern on the face</button>
+                <button class="ec-option" data-choice="c">A printed stripe on the body</button>
+                <button class="ec-option" data-choice="d">A clear plastic lens</button>
+              </div>
+              <div class="ec-q-feedback" aria-live="polite"></div>
+            </div>
+
+            <div class="ec-question" data-answer="a" data-explanation="A diode's band marks the cathode, so reversing it changes whether current can pass in that direction.">
+              <p>3. Why does the band on a diode matter?</p>
+              <div class="ec-options" role="group">
+                <button class="ec-option" data-choice="a">It marks the cathode and therefore the current direction</button>
+                <button class="ec-option" data-choice="b">It shows the resistor value</button>
+                <button class="ec-option" data-choice="c">It tells you the diode is non-polarized</button>
+                <button class="ec-option" data-choice="d">It means the diode can only be used with AC power</button>
+              </div>
+              <div class="ec-q-feedback" aria-live="polite"></div>
+            </div>
+
+            <div class="ec-question" data-answer="d" data-explanation="Most tactile buttons have two legs connected internally on each side. Straddling the breadboard gap keeps the two sides separate until the button is pressed.">
+              <p>4. Why should a four-leg tactile button usually straddle the breadboard center gap?</p>
+              <div class="ec-options" role="group">
+                <button class="ec-option" data-choice="a">So the button becomes polarized</button>
+                <button class="ec-option" data-choice="b">So the button can store charge</button>
+                <button class="ec-option" data-choice="c">So it works like a resistor color code</button>
+                <button class="ec-option" data-choice="d">So the two internal switch sides stay separate until pressed</button>
+              </div>
+              <div class="ec-q-feedback" aria-live="polite"></div>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs">
+            <button class="ll-tab" aria-selected="true" data-pane="ec-outline">Outline</button>
+            <button class="ll-tab" aria-selected="false" data-pane="ec-notes">Field Notes</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="ec-outline">
+            <span class="ll-label">This Module Covers</span>
+            <div class="ll-info">
+              <strong>Resistors</strong>
+              Four-band color code reading and common classroom values.
+            </div>
+            <div class="ll-info">
+              <strong>LEDs and Diodes</strong>
+              Which direction current should flow and how to find the cathode.
+            </div>
+            <div class="ll-info">
+              <strong>Capacitors</strong>
+              The difference between polarized electrolytic and non-polarized ceramic capacitors.
+            </div>
+            <div class="ll-info">
+              <strong>Manual Inputs</strong>
+              Buttons for touch input and breadboard switching practice.
+            </div>
+            <div class="ll-info">
+              <strong>Transistors</strong>
+              Three-legged control components that work like electronic switches.
+            </div>
+          </div>
+
+          <div class="ll-pane" id="ec-notes">
+            <div class="ll-info">
+              <strong>Polarity matters</strong>
+              Reverse LEDs, diodes, and electrolytic capacitors and the circuit may fail immediately.
+            </div>
+            <div class="ll-info">
+              <strong>No-polarity parts</strong>
+              Resistors and ceramic capacitors can usually be placed in either direction.
+            </div>
+            <div class="ll-info">
+              <strong>Sensor modules</strong>
+              Photoresistor, PIR, ultrasonic, and temperature boards belong in the Sensor Modules Kit lesson.
+            </div>
+            <div class="ll-info">
+              <strong>Buttons on breadboards</strong>
+              Tactile switches should usually straddle the center gap so they connect across two separate nodes.
+            </div>
+            <div class="ll-info">
+              <strong>Transistor caution</strong>
+              Always verify the datasheet or pinout for the exact transistor you have in hand.
+            </div>
+            <div class="ll-info">
+              <strong>Best beginner habit</strong>
+              Identify the part, check polarity, then trace both legs before applying power.
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const resistorColors = [
+        { key: 'black', label: 'Black', value: 0, color: '#111111' },
+        { key: 'brown', label: 'Brown', value: 1, color: '#7c4a21' },
+        { key: 'red', label: 'Red', value: 2, color: '#dc2626' },
+        { key: 'orange', label: 'Orange', value: 3, color: '#f97316' },
+        { key: 'yellow', label: 'Yellow', value: 4, color: '#facc15' },
+        { key: 'green', label: 'Green', value: 5, color: '#16a34a' },
+        { key: 'blue', label: 'Blue', value: 6, color: '#2563eb' },
+        { key: 'violet', label: 'Violet', value: 7, color: '#7c3aed' },
+        { key: 'gray', label: 'Gray', value: 8, color: '#94a3b8' },
+        { key: 'white', label: 'White', value: 9, color: '#f8fafc' }
+      ];
+
+      const multipliers = [
+        { key: 'black', label: 'Black ×1', value: 1, color: '#111111' },
+        { key: 'brown', label: 'Brown ×10', value: 10, color: '#7c4a21' },
+        { key: 'red', label: 'Red ×100', value: 100, color: '#dc2626' },
+        { key: 'orange', label: 'Orange ×1k', value: 1000, color: '#f97316' },
+        { key: 'yellow', label: 'Yellow ×10k', value: 10000, color: '#facc15' },
+        { key: 'green', label: 'Green ×100k', value: 100000, color: '#16a34a' },
+        { key: 'blue', label: 'Blue ×1M', value: 1000000, color: '#2563eb' },
+        { key: 'violet', label: 'Violet ×10M', value: 10000000, color: '#7c3aed' },
+        { key: 'gray', label: 'Gray ×100M', value: 100000000, color: '#94a3b8' },
+        { key: 'white', label: 'White ×1G', value: 1000000000, color: '#f8fafc' },
+        { key: 'gold', label: 'Gold ×0.1', value: 0.1, color: '#d4af37' },
+        { key: 'silver', label: 'Silver ×0.01', value: 0.01, color: '#c0c0c0' }
+      ];
+
+      const tolerances = [
+        { key: 'gold', label: 'Gold ±5%', value: 5, color: '#d4af37' },
+        { key: 'silver', label: 'Silver ±10%', value: 10, color: '#c0c0c0' },
+        { key: 'brown', label: 'Brown ±1%', value: 1, color: '#7c4a21' },
+        { key: 'red', label: 'Red ±2%', value: 2, color: '#dc2626' },
+        { key: 'green', label: 'Green ±0.5%', value: 0.5, color: '#16a34a' },
+        { key: 'blue', label: 'Blue ±0.25%', value: 0.25, color: '#2563eb' },
+        { key: 'violet', label: 'Violet ±0.1%', value: 0.1, color: '#7c3aed' },
+        { key: 'gray', label: 'Gray ±0.05%', value: 0.05, color: '#94a3b8' }
+      ];
+      const ppmOptions = [
+        { key: 'brown', label: 'Brown 100 ppm/°C', value: 100, color: '#7c4a21' },
+        { key: 'red', label: 'Red 50 ppm/°C', value: 50, color: '#dc2626' },
+        { key: 'orange', label: 'Orange 15 ppm/°C', value: 15, color: '#f97316' },
+        { key: 'yellow', label: 'Yellow 25 ppm/°C', value: 25, color: '#facc15' },
+        { key: 'blue', label: 'Blue 10 ppm/°C', value: 10, color: '#2563eb' },
+        { key: 'violet', label: 'Violet 5 ppm/°C', value: 5, color: '#7c3aed' }
+      ];
+
+      const defaultBandSets = {
+        4: ['red', 'red', 'brown', 'gold'],
+        5: ['brown', 'black', 'black', 'red', 'brown'],
+        6: ['brown', 'black', 'black', 'red', 'brown', 'blue']
+      };
+      const bandLayouts = {
+        4: ['245', '290', '335', '395'],
+        5: ['230', '270', '310', '350', '405'],
+        6: ['220', '255', '290', '325', '388', '425']
+      };
+      const bandHelp = {
+        4: 'Most classroom resistors are 4-band parts.',
+        5: '5-band resistors add a third significant digit for more precise values.',
+        6: '6-band resistors add temperature coefficient data for precision circuits.'
+      };
+
+      const bandTabs = document.querySelectorAll('.ec-band-tab');
+      const controlsWrap = document.getElementById('resistor-controls');
+      const legend = document.getElementById('resistor-legend');
+      const valueEl = document.getElementById('resistor-value');
+      const metaEl = document.getElementById('resistor-meta');
+      const toleranceEl = document.getElementById('resistor-tolerance');
+      const bandLabelsEl = document.getElementById('resistor-band-labels');
+      const ppmEl = document.getElementById('resistor-ppm');
+      const helpEl = document.getElementById('resistor-help');
+      const titleEl = document.getElementById('resistor-title');
+      let bandCount = 4;
+      let bands = defaultBandSets[4].slice();
+
+      const benchExamples = {
+        led: {
+          title: 'LED: longer lead goes toward positive',
+          copy: 'The short lead and flat edge mark the cathode. Put a resistor in series so the LED does not pull too much current.',
+          svg: '<svg viewBox="0 0 620 230" role="img" aria-label="LED placement diagram"><rect x="42" y="72" width="536" height="118" rx="18" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"></rect><g fill="#e2e8f0"><rect x="80" y="94" width="38" height="12" rx="6"></rect><rect x="80" y="122" width="38" height="12" rx="6"></rect><rect x="80" y="150" width="38" height="12" rx="6"></rect><rect x="502" y="94" width="38" height="12" rx="6"></rect><rect x="502" y="122" width="38" height="12" rx="6"></rect><rect x="502" y="150" width="38" height="12" rx="6"></rect></g><path d="M238 54 C250 20 300 20 314 54 C324 79 306 104 276 104 C246 104 228 79 238 54Z" fill="#ff453a" opacity="0.9" stroke="#b91c1c" stroke-width="3"></path><path d="M260 103 L260 160" stroke="#475569" stroke-width="5" stroke-linecap="round"></path><path d="M294 103 L294 178" stroke="#475569" stroke-width="5" stroke-linecap="round"></path><path d="M294 178 L344 178 L344 150" fill="none" stroke="#475569" stroke-width="5" stroke-linecap="round"></path><text x="245" y="204" fill="#64748b" font-size="16" font-weight="800" font-family="Inter,sans-serif">short cathode</text><text x="342" y="140" fill="#007aff" font-size="16" font-weight="800" font-family="Inter,sans-serif">long anode +</text><path d="M382 136 h96" stroke="#007aff" stroke-width="6" stroke-linecap="round"></path><path d="M469 122 l20 14 -20 14" fill="none" stroke="#007aff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path></svg>'
+        },
+        capacitor: {
+          title: 'Electrolytic capacitor: stripe marks negative',
+          copy: 'The body stripe points to the negative lead. If it is reversed, power off and fix the orientation before testing again.',
+          svg: '<svg viewBox="0 0 620 230" role="img" aria-label="Electrolytic capacitor polarity diagram"><rect x="52" y="78" width="516" height="92" rx="18" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"></rect><rect x="232" y="36" width="132" height="142" rx="26" fill="#2563eb" stroke="#1d4ed8" stroke-width="3"></rect><rect x="250" y="40" width="26" height="134" rx="8" fill="#dbeafe"></rect><text x="263" y="88" fill="#1d4ed8" font-size="28" font-weight="800" font-family="Inter,sans-serif">-</text><text x="263" y="128" fill="#1d4ed8" font-size="28" font-weight="800" font-family="Inter,sans-serif">-</text><path d="M276 178 L276 206" stroke="#475569" stroke-width="5" stroke-linecap="round"></path><path d="M332 178 L332 206" stroke="#475569" stroke-width="5" stroke-linecap="round"></path><text x="215" y="224" fill="#64748b" font-size="16" font-weight="800" font-family="Inter,sans-serif">negative stripe</text><text x="342" y="224" fill="#007aff" font-size="16" font-weight="800" font-family="Inter,sans-serif">positive lead</text><circle cx="456" cy="58" r="20" fill="#ff3b30"></circle><path d="M446 48 l20 20 M466 48 l-20 20" stroke="#fff" stroke-width="5" stroke-linecap="round"></path></svg>'
+        },
+        diode: {
+          title: 'Diode: the painted band is the cathode',
+          copy: 'Match the physical band to the cathode bar in the schematic. Reversing it can block the branch completely.',
+          svg: '<svg viewBox="0 0 620 230" role="img" aria-label="Diode band direction diagram"><rect x="54" y="86" width="512" height="74" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"></rect><path d="M112 123 H232" stroke="#64748b" stroke-width="9" stroke-linecap="round"></path><rect x="232" y="94" width="156" height="58" rx="29" fill="#f8fafc" stroke="#94a3b8" stroke-width="3"></rect><rect x="342" y="94" width="18" height="58" rx="4" fill="#0f172a"></rect><path d="M388 123 H508" stroke="#64748b" stroke-width="9" stroke-linecap="round"></path><path d="M162 48 H452" stroke="#007aff" stroke-width="6" stroke-linecap="round"></path><path d="M438 34 l22 14 -22 14" fill="none" stroke="#007aff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path><text x="226" y="190" fill="#64748b" font-size="16" font-weight="800" font-family="Inter,sans-serif">anode</text><text x="330" y="190" fill="#0f172a" font-size="16" font-weight="800" font-family="Inter,sans-serif">cathode band</text></svg>'
+        },
+        button: {
+          title: 'Button: straddle the breadboard center gap',
+          copy: 'Two legs on each side are already connected internally. Place the switch across the center gap so pressing joins two separate nodes.',
+          svg: '<svg viewBox="0 0 620 230" role="img" aria-label="Button straddling breadboard center gap"><rect x="70" y="52" width="480" height="132" rx="18" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"></rect><rect x="296" y="52" width="28" height="132" fill="#e2e8f0"></rect><g fill="#cbd5e1"><circle cx="118" cy="86" r="7"></circle><circle cx="166" cy="86" r="7"></circle><circle cx="214" cy="86" r="7"></circle><circle cx="406" cy="86" r="7"></circle><circle cx="454" cy="86" r="7"></circle><circle cx="502" cy="86" r="7"></circle><circle cx="118" cy="148" r="7"></circle><circle cx="166" cy="148" r="7"></circle><circle cx="214" cy="148" r="7"></circle><circle cx="406" cy="148" r="7"></circle><circle cx="454" cy="148" r="7"></circle><circle cx="502" cy="148" r="7"></circle></g><rect x="246" y="74" width="128" height="86" rx="18" fill="#111827"></rect><circle cx="310" cy="117" r="28" fill="#334155" stroke="#64748b" stroke-width="4"></circle><path d="M262 74 V54 M358 74 V54 M262 160 V184 M358 160 V184" stroke="#475569" stroke-width="7" stroke-linecap="round"></path><text x="232" y="214" fill="#007aff" font-size="16" font-weight="800" font-family="Inter,sans-serif">legs bridge the gap</text></svg>'
+        }
+      };
+
+      function fillSelect(select, items, selectedKey) {
+        select.innerHTML = '';
+        items.forEach(function (item) {
+          const option = document.createElement('option');
+          option.value = item.key;
+          option.textContent = item.label;
+          if (item.key === selectedKey) option.selected = true;
+          select.appendChild(option);
+        });
+      }
+
+      function findByKey(items, key) {
+        return items.find(function (item) { return item.key === key; });
+      }
+
+      function formatResistance(value) {
+        if (value >= 1000000000) return (value / 1000000000).toFixed(2).replace(/\.00$/, '') + ' GΩ';
+        if (value >= 1000000) return (value / 1000000).toFixed(2).replace(/\.00$/, '') + ' MΩ';
+        if (value >= 1000) return (value / 1000).toFixed(2).replace(/\.00$/, '') + ' kΩ';
+        if (value < 1) return value.toFixed(2).replace(/0+$/, '').replace(/\.$/, '') + ' Ω';
+        return value.toFixed(2).replace(/\.00$/, '') + ' Ω';
+      }
+
+      function setBand(id, color) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.setAttribute('fill', color);
+        el.setAttribute('stroke', color === '#f8fafc' ? '#cbd5e1' : color);
+        el.setAttribute('stroke-width', '1');
+      }
+
+      function renderLegend() {
+        const chips = [
+          { label: 'Black', color: '#111111' },
+          { label: 'Brown', color: '#7c4a21' },
+          { label: 'Red', color: '#dc2626' },
+          { label: 'Orange', color: '#f97316' },
+          { label: 'Yellow', color: '#facc15' },
+          { label: 'Green', color: '#16a34a' },
+          { label: 'Blue', color: '#2563eb' },
+          { label: 'Violet', color: '#7c3aed' },
+          { label: 'Gray', color: '#94a3b8' },
+          { label: 'White', color: '#f8fafc' },
+          { label: 'Gold', color: '#d4af37' },
+          { label: 'Silver', color: '#c0c0c0' }
+        ];
+        chips.forEach(function (chip) {
+          const el = document.createElement('div');
+          el.className = 'ec-band-chip';
+          el.innerHTML = '<span style="background:' + chip.color + ';"></span>' + chip.label;
+          legend.appendChild(el);
+        });
+      }
+
+      function getRoleLabel(index) {
+        if (bandCount === 4) {
+          if (index < 2) return 'Band ' + (index + 1);
+          if (index === 2) return 'Multiplier';
+          return 'Tolerance';
+        }
+        if (bandCount === 5) {
+          if (index < 3) return 'Band ' + (index + 1);
+          if (index === 3) return 'Multiplier';
+          return 'Tolerance';
+        }
+        if (index < 3) return 'Band ' + (index + 1);
+        if (index === 3) return 'Multiplier';
+        if (index === 4) return 'Tolerance';
+        return 'Temp Coefficient';
+      }
+
+      function getBandOptions(index) {
+        if (bandCount === 4) {
+          if (index < 2) return resistorColors;
+          if (index === 2) return multipliers;
+          return tolerances;
+        }
+        if (bandCount === 5) {
+          if (index < 3) return resistorColors;
+          if (index === 3) return multipliers;
+          return tolerances;
+        }
+        if (index < 3) return resistorColors;
+        if (index === 3) return multipliers;
+        if (index === 4) return tolerances;
+        return ppmOptions;
+      }
+
+      function updateBandLayout() {
+        const positions = bandLayouts[bandCount];
+        for (let i = 1; i <= 6; i++) {
+          const bandEl = document.getElementById('band-' + i);
+          if (!bandEl) continue;
+          if (i <= bandCount) {
+            bandEl.style.display = 'block';
+            bandEl.setAttribute('x', positions[i - 1]);
+          } else {
+            bandEl.style.display = 'none';
+          }
+        }
+        titleEl.textContent = bandCount + '-Band Resistor';
+        helpEl.textContent = bandHelp[bandCount];
+      }
+
+      function renderControls() {
+        controlsWrap.innerHTML = '';
+        bands.forEach(function (selectedKey, index) {
+          const field = document.createElement('div');
+          field.className = 'ec-field';
+          const label = document.createElement('label');
+          const select = document.createElement('select');
+          label.setAttribute('for', 'resistor-select-' + index);
+          label.textContent = getRoleLabel(index);
+          select.id = 'resistor-select-' + index;
+          fillSelect(select, getBandOptions(index), selectedKey);
+          select.addEventListener('change', function () {
+            bands[index] = select.value;
+            updateResistor();
+          });
+          field.appendChild(label);
+          field.appendChild(select);
+          controlsWrap.appendChild(field);
+        });
+      }
+
+      function updateResistor() {
+        const sigBands = bandCount === 4 ? 2 : 3;
+        let digitsValue = '';
+        for (let i = 0; i < sigBands; i++) {
+          const digit = findByKey(resistorColors, bands[i]);
+          digitsValue += digit.value;
+          setBand('band-' + (i + 1), digit.color);
+        }
+        const multiplier = findByKey(multipliers, bands[sigBands]);
+        const tolerance = findByKey(tolerances, bands[sigBands + 1]);
+        const resistance = Number(digitsValue) * multiplier.value;
+        setBand('band-' + (sigBands + 1), multiplier.color);
+        setBand('band-' + (sigBands + 2), tolerance.color);
+        if (bandCount === 6) {
+          const ppm = findByKey(ppmOptions, bands[5]);
+          setBand('band-6', ppm.color);
+          ppmEl.textContent = ppm.value + ' ppm/°C temperature coefficient';
+        } else if (bandCount === 5) {
+          ppmEl.textContent = 'Precision resistor with tighter band coding';
+        } else {
+          ppmEl.textContent = 'Standard classroom resistor';
+        }
+        valueEl.textContent = formatResistance(resistance);
+        metaEl.textContent = 'digits ' + digitsValue + ' × ' + multiplier.value.toLocaleString();
+        toleranceEl.textContent = 'tolerance ±' + tolerance.value + '%';
+        bandLabelsEl.textContent = bands.map(function (key) {
+          const item = findByKey(resistorColors, key) || findByKey(multipliers, key) || findByKey(tolerances, key) || findByKey(ppmOptions, key);
+          return item ? item.label.split(' ')[0] : key;
+        }).join(' • ');
+      }
+
+      function setBandCount(nextCount) {
+        bandCount = nextCount;
+        bands = defaultBandSets[nextCount].slice();
+        bandTabs.forEach(function (tab) {
+          const isActive = Number(tab.dataset.bandCount) === nextCount;
+          tab.classList.toggle('is-active', isActive);
+          tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+        updateBandLayout();
+        renderControls();
+        updateResistor();
+      }
+
+      bandTabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          setBandCount(Number(tab.dataset.bandCount));
+        });
+      });
+
+      renderLegend();
+      setBandCount(4);
+
+      const benchVisual = document.getElementById('bench-visual');
+      const benchTitle = document.getElementById('bench-title');
+      const benchCopy = document.getElementById('bench-copy');
+      document.querySelectorAll('.ec-bench-tab').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          const example = benchExamples[tab.dataset.benchPart];
+          document.querySelectorAll('.ec-bench-tab').forEach(function (item) {
+            const active = item === tab;
+            item.classList.toggle('is-active', active);
+            item.setAttribute('aria-selected', active ? 'true' : 'false');
+          });
+          benchVisual.innerHTML = example.svg;
+          benchTitle.textContent = example.title;
+          benchCopy.textContent = example.copy;
+        });
+      });
+      benchVisual.innerHTML = benchExamples.led.svg;
+
+      const capCode = document.getElementById('cap-code');
+      const capDecode = document.getElementById('cap-decode');
+      const capResult = document.getElementById('cap-result');
+      function formatCapacitance(pf) {
+        if (pf >= 1000000) return (pf / 1000000).toFixed(2).replace(/\.00$/, '') + ' uF';
+        if (pf >= 1000) return (pf / 1000).toFixed(2).replace(/\.00$/, '') + ' nF';
+        return pf.toLocaleString() + ' pF';
+      }
+      function decodeCapacitor() {
+        const code = capCode.value.replace(/\D/g, '').slice(0, 3);
+        capCode.value = code;
+        if (code.length !== 3) {
+          capResult.textContent = 'Enter 3 digits';
+          return;
+        }
+        const base = Number(code.slice(0, 2));
+        const zeros = Number(code[2]);
+        capResult.textContent = formatCapacitance(base * Math.pow(10, zeros));
+      }
+      capDecode.addEventListener('click', decodeCapacitor);
+      capCode.addEventListener('input', decodeCapacitor);
+
+      document.querySelectorAll('.ec-question').forEach(function (question) {
+        const answer = question.dataset.answer;
+        const explanation = question.dataset.explanation;
+        const feedback = question.querySelector('.ec-q-feedback');
+        const options = question.querySelectorAll('.ec-option');
+
+        options.forEach(function (option) {
+          option.addEventListener('click', function () {
+            if (option.disabled) return;
+            options.forEach(function (item) {
+              item.disabled = true;
+              item.classList.remove('is-correct', 'is-wrong');
+              if (item.dataset.choice === answer) item.classList.add('is-correct');
+            });
+            if (option.dataset.choice !== answer) option.classList.add('is-wrong');
+            if (option.dataset.choice === answer) {
+              feedback.textContent = 'Correct. ' + explanation;
+              feedback.style.color = '#248a3d';
+            } else {
+              feedback.textContent = 'Not quite. ' + explanation;
+              feedback.style.color = '#c0392b';
+            }
+          });
+        });
+      });
+    })();
+  </script>
+  <script src="../../assets/js/circuit-playground.js"></script>
+  <script src="../../assets/js/classroom-animations.js"></script>
+  <script src="../../assets/js/lesson-layout.js"></script>
+<script src="../../assets/js/electricity-path.js"></script>
+<script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

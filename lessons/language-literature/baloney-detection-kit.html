@@ -1,0 +1,1950 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Truth &amp; Evidence Toolkit · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description"
+    content="An accessible K–12 lesson for checking claims with curiosity, evidence, humility, and care — inspired by Carl Sagan's critical-thinking toolkit." />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    /* ─── BDK colour tokens ─── */
+    :root {
+      color-scheme: dark;
+      --bdk-bg:      #0d1117;
+      --bdk-panel:   rgba(18, 24, 36, 0.97);
+      --bdk-line:    rgba(240, 192, 64, 0.16);
+      --bdk-ink:     #f0e8d8;
+      --bdk-muted:   #c4bbb0;
+      --bdk-dim:     #7a7060;
+      --bdk-amber:   #f0c040;
+      --bdk-amber2:  #e8a020;
+      --bdk-teal:    #4ecdc4;
+      --bdk-red:     #ff6b6b;
+      --bdk-violet:  #a78bfa;
+      --bdk-gold:    #ffd700;
+      --ll-panel-w: 360px;
+      --ll-panel-bg: rgba(13, 17, 26, 0.98);
+      --ll-panel-border: rgba(240, 192, 64, 0.13);
+      --ll-tab-active-bg: rgba(240, 192, 64, 0.13);
+      --ll-tab-active: #f5d870;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--bdk-ink);
+      background:
+        radial-gradient(900px 500px at 5% 0%,  rgba(240,192,64,0.09), transparent 55%),
+        radial-gradient(700px 400px at 95% 10%, rgba(78,205,196,0.05), transparent 50%),
+        linear-gradient(180deg, #0d1117 0%, #080c12 100%);
+      font-family: var(--font-sans);
+    }
+    body:has(.ll-viewport) { min-height: 0; }
+
+    /* ── Topbar ─────────────────────────────────────────────── */
+    .bdk-topbar {
+      position: sticky; top: 0; z-index: 50;
+      backdrop-filter: blur(16px) saturate(130%);
+      background: rgba(10, 13, 20, 0.90);
+      border-bottom: 1px solid rgba(240,192,64,0.12);
+    }
+    .bdk-topbar-inner {
+      width: min(1220px, calc(100% - 2rem));
+      margin: 0 auto;
+      min-height: 54px;
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 1rem;
+    }
+    .bdk-topbar a {
+      color: #f5d880; text-decoration: none;
+      font-size: 0.83rem; font-weight: 700; letter-spacing: 0.02em;
+    }
+    .bdk-topbar a:hover { color: #ffe9a0; }
+    .bdk-topbar-title {
+      color: #f5ead0; font-size: 0.9rem; font-weight: 800;
+      letter-spacing: -0.01em; text-align: center;
+    }
+
+    /* ── Sim: override ll-sim scroll so only tool-area scrolls ── */
+    .ll-sim.bdk-sim-area {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      background:
+        radial-gradient(720px 420px at 14% 2%, rgba(240,192,64,0.09), transparent 56%),
+        radial-gradient(760px 420px at 92% 10%, rgba(78,205,196,0.06), transparent 52%),
+        var(--bdk-bg);
+    }
+
+    /* ── Sim header ─────────────────────────────────────────── */
+    .bdk-sim-header {
+      flex-shrink: 0; padding: 0.8rem 1rem 0.7rem;
+      border-bottom: 1px solid rgba(240,192,64,0.1);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 1rem;
+    }
+    .bdk-sim-header h1 {
+      margin: 0; font-size: clamp(1.05rem, 2.2vw, 1.5rem); font-weight: 900;
+      color: #fff5e0; letter-spacing: -0.02em;
+    }
+    .bdk-sim-header p { margin: 0.2rem 0 0; font-size: 0.78rem; color: var(--bdk-muted); line-height: 1.45; }
+    .bdk-header-copy { min-width: 0; }
+    .bdk-header-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid rgba(78,205,196,0.22);
+      background: rgba(78,205,196,0.07);
+      color: #c8fff8;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    /* ── Claim selector bar ─────────────────────────────────── */
+    .bdk-claim-bar {
+      flex-shrink: 0; padding: 0.55rem 0.9rem;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center;
+    }
+    .bdk-claim-bar-label {
+      font-size: 0.67rem; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--bdk-amber);
+      white-space: nowrap; margin-right: 0.15rem;
+    }
+    .bdk-claim-btn {
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.03);
+      color: var(--bdk-muted); border-radius: 999px;
+      padding: 0.3rem 0.65rem;
+      font: inherit; font-size: 0.72rem; font-weight: 700;
+      cursor: pointer; transition: all 0.14s;
+    }
+    .bdk-claim-btn:hover { border-color: rgba(240,192,64,0.28); color: #f5e8d0; }
+    .bdk-claim-btn.active {
+      background: rgba(240,192,64,0.13);
+      border-color: rgba(240,192,64,0.34); color: #fff4d0;
+    }
+    .bdk-claim-btn.is-verified:hover  { border-color: rgba(78,205,196,0.32); }
+    .bdk-claim-btn.is-verified.active {
+      background: rgba(78,205,196,0.11);
+      border-color: rgba(78,205,196,0.38); color: #d0fff8;
+    }
+    .bdk-claim-btn:focus-visible,
+    .bdk-reveal-btn:focus-visible,
+    .bdk-nav-btn:focus-visible,
+    .bdk-restart-btn:focus-visible,
+    .bdk-grade-btn:focus-visible,
+    .ll-tab:focus-visible,
+    .ll-panel-close:focus-visible,
+    .ll-open-btn:focus-visible {
+      outline: 2px solid rgba(78,205,196,0.85);
+      outline-offset: 2px;
+    }
+
+    /* ── Active claim card ──────────────────────────────────── */
+    .bdk-claim-card {
+      flex-shrink: 0; margin: 0.6rem 0.9rem 0;
+      border-radius: 8px; border: 1px solid rgba(240,192,64,0.14);
+      background:
+        linear-gradient(90deg, rgba(240,192,64,0.11), transparent 44%),
+        rgba(255,255,255,0.025);
+      padding: 0.8rem 0.95rem;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.18);
+    }
+    .bdk-claim-card.is-baloney {
+      border-color: rgba(255,107,107,0.18);
+      background: linear-gradient(135deg, rgba(255,107,107,0.05), rgba(255,255,255,0.02));
+    }
+    .bdk-claim-card.is-verified {
+      border-color: rgba(78,205,196,0.2);
+      background: linear-gradient(135deg, rgba(78,205,196,0.07), rgba(255,255,255,0.02));
+    }
+    .bdk-claim-kicker {
+      font-size: 0.67rem; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--bdk-amber); margin: 0 0 0.3rem;
+    }
+    .is-baloney .bdk-claim-kicker { color: var(--bdk-red); }
+    .is-verified .bdk-claim-kicker { color: var(--bdk-teal); }
+    .bdk-claim-text {
+      font-size: clamp(0.9rem, 1.8vw, 1.08rem); line-height: 1.58;
+      color: #f5ead0; margin: 0 0 0; font-style: italic;
+    }
+    .bdk-claim-warning {
+      display: none; margin-top: 0.45rem; font-size: 0.76rem;
+      color: #f5d870; line-height: 1.5;
+      padding: 0.35rem 0.6rem; border-radius: 8px;
+      background: rgba(240,192,64,0.07); border: 1px solid rgba(240,192,64,0.14);
+    }
+
+    /* ── Tool runner area ───────────────────────────────────── */
+    .bdk-tool-area {
+      flex: 1; overflow-y: auto; min-height: 0;
+      padding: 0.65rem 0.9rem; display: flex;
+      flex-direction: column; gap: 0.6rem;
+    }
+    .bdk-readouts {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+      flex-shrink: 0;
+    }
+    .bdk-readout {
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      border-radius: 8px;
+      padding: 0.62rem 0.7rem;
+      min-width: 0;
+    }
+    .bdk-readout span {
+      display: block;
+      color: var(--bdk-dim);
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      margin-bottom: 0.18rem;
+    }
+    .bdk-readout strong {
+      display: block;
+      color: #f8edd5;
+      font-size: 0.88rem;
+      font-weight: 900;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    /* Progress pips */
+    .bdk-pips { display: flex; gap: 0.28rem; flex-wrap: wrap; }
+    .bdk-pip {
+      flex: 1; min-width: 22px; height: 6px; border-radius: 3px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.06);
+      padding: 0;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .bdk-pip.pip-active { background: var(--bdk-amber); border-color: var(--bdk-amber2); }
+    .bdk-pip.pip-pass   { background: rgba(78,205,196,0.55); border-color: rgba(78,205,196,0.4); }
+    .bdk-pip.pip-fail   { background: rgba(255,107,107,0.55); border-color: rgba(255,107,107,0.4); }
+
+    /* Tool card */
+    .bdk-tool-card {
+      border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018));
+      padding: 1rem 1.05rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .bdk-tool-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 3px;
+      background: linear-gradient(180deg, var(--bdk-amber), rgba(78,205,196,0.5));
+      opacity: 0.8;
+    }
+    .bdk-tool-num-row {
+      display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem;
+    }
+    .bdk-tool-num {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      display: grid; place-items: center;
+      background: rgba(240,192,64,0.13); border: 1px solid rgba(240,192,64,0.22);
+      color: #f5d870; font-size: 0.84rem; font-weight: 900;
+    }
+    .bdk-tool-name { font-size: 0.95rem; font-weight: 800; color: #f5ead0; }
+    .bdk-tool-question {
+      font-size: 0.85rem; line-height: 1.65;
+      color: var(--bdk-muted); margin: 0 0 0.6rem;
+    }
+    .bdk-reveal-btn {
+      width: 100%; padding: 0.62rem 1rem;
+      border-radius: 12px; border: 1px solid rgba(240,192,64,0.22);
+      background: rgba(240,192,64,0.09); color: #f5e0b0;
+      font: inherit; font-size: 0.85rem; font-weight: 700;
+      cursor: pointer; transition: all 0.14s; text-align: center;
+    }
+    .bdk-reveal-btn:hover { background: rgba(240,192,64,0.16); color: #fff4d0; }
+    .bdk-reveal-btn::after {
+      content: "";
+      display: inline-block;
+      width: 0.45rem;
+      height: 0.45rem;
+      margin-left: 0.5rem;
+      border-top: 2px solid currentColor;
+      border-right: 2px solid currentColor;
+      transform: rotate(45deg) translateY(-1px);
+      opacity: 0.75;
+    }
+    .bdk-tool-result {
+      display: none; margin-top: 0.5rem; border-radius: 12px;
+      padding: 0.65rem 0.85rem; font-size: 0.82rem; line-height: 1.62;
+    }
+    .bdk-tool-result.show-result { display: block; }
+    .bdk-tool-result.res-pass {
+      border: 1px solid rgba(78,205,196,0.28);
+      background: rgba(78,205,196,0.07); color: #c8f8f0;
+    }
+    .bdk-tool-result.res-fail {
+      border: 1px solid rgba(255,107,107,0.25);
+      background: rgba(255,107,107,0.06); color: #fde0de;
+    }
+    .bdk-result-label {
+      font-size: 0.68rem; font-weight: 800; letter-spacing: 0.09em;
+      text-transform: uppercase; margin-bottom: 0.22rem; display: block;
+    }
+    .res-pass .bdk-result-label { color: #4ecdc4; }
+    .res-fail .bdk-result-label { color: #ff8888; }
+
+    /* Nav row */
+    .bdk-nav-row {
+      display: flex; gap: 0.45rem;
+      justify-content: space-between; align-items: center;
+    }
+    .bdk-nav-btn {
+      border: 1px solid rgba(255,255,255,0.11);
+      background: rgba(255,255,255,0.04);
+      color: var(--bdk-muted); border-radius: 10px;
+      padding: 0.46rem 0.85rem;
+      font: inherit; font-size: 0.8rem; font-weight: 700;
+      cursor: pointer; transition: all 0.13s;
+    }
+    .bdk-nav-btn:hover:not(:disabled) { border-color: rgba(240,192,64,0.26); color: #f5e0b0; }
+    .bdk-nav-btn:disabled { opacity: 0.32; cursor: default; }
+    .bdk-nav-btn.btn-primary {
+      background: rgba(240,192,64,0.13);
+      border-color: rgba(240,192,64,0.28); color: #f5d870;
+    }
+    .bdk-nav-btn.btn-primary:hover:not(:disabled) { background: rgba(240,192,64,0.2); }
+    .bdk-tool-counter { font-size: 0.74rem; color: var(--bdk-dim); font-weight: 700; }
+
+    /* Verdict */
+    .bdk-verdict {
+      display: none; border-radius: 8px; padding: 1rem;
+    }
+    .bdk-verdict.show-verdict { display: block; }
+    .bdk-verdict.v-baloney {
+      border: 1px solid rgba(255,107,107,0.26);
+      background: rgba(255,107,107,0.06);
+    }
+    .bdk-verdict.v-verified {
+      border: 1px solid rgba(78,205,196,0.26);
+      background: rgba(78,205,196,0.07);
+    }
+    .bdk-verdict-word {
+      font-size: 1.5rem; font-weight: 900;
+      letter-spacing: -0.02em; margin: 0 0 0.3rem;
+    }
+    .v-baloney .bdk-verdict-word { color: #ff8888; }
+    .v-verified .bdk-verdict-word { color: #4ecdc4; }
+    .bdk-verdict p { margin: 0; font-size: 0.84rem; line-height: 1.62; color: var(--bdk-muted); }
+
+    /* Occam box */
+    .bdk-occam-box {
+      display: none; border-radius: 8px;
+      border: 1px solid rgba(78,205,196,0.17);
+      background: rgba(78,205,196,0.05); padding: 0.9rem 1rem;
+    }
+    .bdk-occam-box.show-occam { display: block; }
+    .bdk-occam-lbl {
+      font-size: 0.67rem; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--bdk-teal); margin: 0 0 0.25rem;
+    }
+    .bdk-occam-box h3 { margin: 0 0 0.3rem; font-size: 0.94rem; color: #d0faf4; font-weight: 800; }
+    .bdk-occam-box p  { margin: 0; font-size: 0.82rem; color: var(--bdk-muted); line-height: 1.62; }
+
+    /* ── Baloney / foundation meters ───────────────────────── */
+    .bdk-meter-area {
+      flex-shrink: 0; padding: 0.45rem 0.9rem 0.6rem;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      background: rgba(7,10,15,0.42);
+    }
+    .bdk-meter-row {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 0.35rem;
+    }
+    .bdk-meter-lbl { font-size: 0.67rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: var(--bdk-amber); }
+    .bdk-meter-pct { font-size: 0.73rem; font-weight: 800; color: var(--bdk-amber); }
+    .bdk-meter-track {
+      height: 9px; border-radius: 5px;
+      background: rgba(255,255,255,0.07); overflow: hidden;
+    }
+    .bdk-meter-fill {
+      height: 100%; border-radius: 5px; width: 0%;
+      transition: width 0.4s ease, background 0.4s ease;
+      background: var(--bdk-red);
+    }
+    .bdk-meter-fill.fill-low  { background: linear-gradient(90deg, #f0c040, #e8a020); }
+    .bdk-meter-fill.fill-high { background: linear-gradient(90deg, #ff8888, #ff4444); }
+
+    .bdk-found-row {
+      display: flex; gap: 0.5rem; margin-top: 0.45rem; align-items: center;
+    }
+    .bdk-found-lbl {
+      font-size: 0.67rem; font-weight: 800; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--bdk-dim); white-space: nowrap;
+    }
+    .bdk-found-track {
+      flex: 1; height: 7px; border-radius: 4px;
+      background: rgba(255,255,255,0.06); overflow: hidden;
+    }
+    .bdk-found-fill {
+      height: 100%; border-radius: 4px; width: 0%;
+      transition: width 0.5s ease;
+      background: linear-gradient(90deg, #4ecdc4, #2ed8cc);
+    }
+    .bdk-found-word { font-size: 0.71rem; font-weight: 800; color: var(--bdk-teal); white-space: nowrap; min-width: 50px; text-align: right; }
+
+    #bdk-viewport {
+      --ll-panel-bg: rgba(13, 17, 26, 0.98);
+      --ll-panel-border: rgba(240, 192, 64, 0.13);
+      --ll-tab-color: #a69b8a;
+      --ll-tab-active-bg: rgba(240, 192, 64, 0.13);
+      --ll-tab-active: #f5d870;
+      --ll-toggle-bg: rgba(18, 24, 36, 0.96);
+      --text-strong: #fff3df;
+      --text-body: #c4bbb0;
+      --text-muted: #9a907f;
+      --nav-hover-bg: rgba(255,255,255,0.06);
+      --surface-1: rgba(13, 17, 26, 0.98);
+      --surface-2: rgba(255,255,255,0.035);
+      --border-subtle: rgba(240, 192, 64, 0.13);
+    }
+    #bdk-viewport .ll-panel {
+      background:
+        radial-gradient(420px 260px at 0% 0%, rgba(240,192,64,0.05), transparent 60%),
+        var(--ll-panel-bg);
+      color: var(--bdk-muted);
+    }
+    #bdk-viewport .ll-panel-head {
+      background: rgba(8, 11, 17, 0.62);
+    }
+    #bdk-viewport .ll-label {
+      color: #a69b8a;
+    }
+    #bdk-viewport .ll-tab[aria-selected="true"] {
+      color: #ffe5a0;
+    }
+    #bdk-viewport .ll-panel-close {
+      color: #a69b8a;
+      background: rgba(255,255,255,0.055);
+    }
+
+    .bdk-evidence-log {
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.024);
+      padding: 0.75rem 0.85rem;
+      display: grid;
+      gap: 0.45rem;
+    }
+    .bdk-log-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.6rem;
+      color: #f5ead0;
+      font-size: 0.74rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .bdk-log-title span:last-child {
+      color: var(--bdk-dim);
+      font-variant-numeric: tabular-nums;
+    }
+    .bdk-log-list {
+      display: grid;
+      gap: 0.35rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .bdk-log-list li {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      gap: 0.45rem;
+      align-items: start;
+      color: var(--bdk-muted);
+      font-size: 0.76rem;
+      line-height: 1.45;
+    }
+    .bdk-log-mark {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 0.67rem;
+      font-weight: 900;
+      margin-top: 0.05rem;
+    }
+    .bdk-log-mark.pass { color: #041514; background: var(--bdk-teal); }
+    .bdk-log-mark.fail { color: #210606; background: var(--bdk-red); }
+    .bdk-log-empty {
+      color: var(--bdk-dim);
+      font-size: 0.76rem;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    /* ── Panel lesson / activity content ────────────────────── */
+    .bdk-head     { margin: 0 0 0.35rem; font-size: 1.05rem; font-weight: 800; letter-spacing: -0.02em; color: #fff3df; }
+    .bdk-sub      { margin: 0 0 0.8rem; color: var(--bdk-muted); font-size: 0.83rem; line-height: 1.7; }
+
+    .bdk-callout {
+      border-radius: 13px; padding: 0.75rem 0.9rem; margin-bottom: 0.65rem;
+    }
+    .bdk-callout.ca-amber  { border: 1px solid rgba(240,192,64,0.2);  background: rgba(240,192,64,0.06); }
+    .bdk-callout.ca-teal   { border: 1px solid rgba(78,205,196,0.18); background: rgba(78,205,196,0.05); }
+    .bdk-callout.ca-red    { border: 1px solid rgba(255,107,107,0.18);background: rgba(255,107,107,0.05); }
+    .bdk-callout.ca-violet { border: 1px solid rgba(167,139,250,0.18);background: rgba(167,139,250,0.05); }
+    .bdk-callout-lbl {
+      font-size: 0.67rem; font-weight: 800; letter-spacing: 0.09em;
+      text-transform: uppercase; margin: 0 0 0.2rem;
+    }
+    .ca-amber  .bdk-callout-lbl { color: var(--bdk-amber); }
+    .ca-teal   .bdk-callout-lbl { color: var(--bdk-teal);  }
+    .ca-red    .bdk-callout-lbl { color: var(--bdk-red);   }
+    .ca-violet .bdk-callout-lbl { color: var(--bdk-violet);}
+    .bdk-callout p { margin: 0; font-size: 0.82rem; line-height: 1.62; color: var(--bdk-muted); }
+    .bdk-callout strong { color: #f5ead0; }
+
+    .bdk-mini-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 0.5rem; margin-bottom: 0.75rem;
+    }
+    .bdk-mini-card {
+      border-radius: 12px; border: 1px solid rgba(255,255,255,0.07);
+      background: rgba(255,255,255,0.025); padding: 0.75rem 0.85rem;
+    }
+    .bdk-mini-card h4 { margin: 0 0 0.18rem; font-size: 0.83rem; font-weight: 800; color: #f0e0c0; }
+    .bdk-mini-card p  { margin: 0; font-size: 0.76rem; color: var(--bdk-muted); line-height: 1.55; }
+
+    /* Bias grid */
+    .bdk-bias-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+      gap: 0.45rem; margin-bottom: 0.75rem;
+    }
+    .bdk-bias-card {
+      border-radius: 12px; border: 1px solid rgba(167,139,250,0.14);
+      background: rgba(167,139,250,0.04); padding: 0.65rem 0.8rem;
+    }
+    .bdk-bias-name { font-size: 0.8rem; font-weight: 800; color: #d4bcff; margin: 0 0 0.13rem; }
+    .bdk-bias-def  { font-size: 0.74rem; color: var(--bdk-muted); line-height: 1.5; margin: 0; }
+
+    .bdk-pattern-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .bdk-pattern-card {
+      border-radius: 8px;
+      border: 1px solid rgba(240,192,64,0.12);
+      background: rgba(255,255,255,0.026);
+      padding: 0.7rem 0.8rem;
+    }
+    .bdk-pattern-card h4 {
+      margin: 0 0 0.18rem;
+      color: #f3dfb8;
+      font-size: 0.8rem;
+      font-weight: 900;
+    }
+    .bdk-pattern-card p {
+      margin: 0;
+      color: var(--bdk-muted);
+      font-size: 0.74rem;
+      line-height: 1.5;
+    }
+    .bdk-pattern-rule {
+      border-radius: 8px;
+      border: 1px solid rgba(167,139,250,0.18);
+      background: rgba(167,139,250,0.05);
+      padding: 0.8rem 0.9rem;
+      margin-bottom: 0.75rem;
+    }
+    .bdk-pattern-rule p {
+      margin: 0;
+      color: var(--bdk-muted);
+      font-size: 0.8rem;
+      line-height: 1.65;
+    }
+    .bdk-pattern-rule strong {
+      color: #f5ead0;
+    }
+
+    /* Discussion items */
+    .bdk-discuss {
+      border-radius: 12px; border: 1px solid rgba(255,255,255,0.07);
+      background: rgba(255,255,255,0.025); padding: 0.65rem 0.8rem; margin-bottom: 0.45rem;
+    }
+    .bdk-discuss h4 { margin: 0 0 0.14rem; font-size: 0.83rem; font-weight: 800; color: #f0e0c0; }
+    .bdk-discuss p  { margin: 0; font-size: 0.77rem; color: var(--bdk-muted); line-height: 1.55; }
+
+    /* Occam explanation in lesson pane */
+    .bdk-occam-lesson {
+      border-radius: 14px; border: 1px solid rgba(78,205,196,0.16);
+      background: rgba(78,205,196,0.04); padding: 0.85rem 0.95rem; margin-bottom: 0.7rem;
+    }
+    .bdk-occam-lesson-lbl {
+      font-size: 0.67rem; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--bdk-teal); margin: 0 0 0.2rem;
+    }
+    .bdk-occam-lesson h3 { margin: 0 0 0.28rem; font-size: 0.92rem; color: #d0faf4; font-weight: 800; }
+    .bdk-occam-lesson p  { margin: 0; font-size: 0.81rem; color: var(--bdk-muted); line-height: 1.62; }
+
+    /* Closing card */
+    .bdk-closing {
+      border-radius: 16px;
+      border: 1px solid rgba(78,205,196,0.18);
+      background: linear-gradient(160deg, rgba(78,205,196,0.07), rgba(240,192,64,0.04));
+      padding: 1.1rem 1.2rem; text-align: center; margin-bottom: 0.8rem;
+    }
+    .bdk-closing-icon { font-size: 1.75rem; margin-bottom: 0.45rem; }
+    .bdk-closing h2   { margin: 0 0 0.45rem; font-size: 1.05rem; font-weight: 800; color: #fff3df; letter-spacing: -0.01em; }
+    .bdk-closing p    { margin: 0 0 0.4rem; font-size: 0.84rem; line-height: 1.65; color: var(--bdk-muted); max-width: 55ch; margin-left: auto; margin-right: auto; }
+    .bdk-closing p:last-child { margin-bottom: 0; }
+    .bdk-closing strong { color: #f5ead0; }
+
+    /* Tool ref list (Controls pane) */
+    .bdk-tool-refs { display: grid; gap: 0.42rem; }
+    .bdk-tool-ref {
+      border-radius: 12px; border: 1px solid rgba(255,255,255,0.07);
+      background: rgba(255,255,255,0.025); padding: 0.6rem 0.75rem;
+      display: grid; grid-template-columns: 26px 1fr; gap: 0.55rem; align-items: start;
+    }
+    .bdk-tool-ref-num {
+      width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+      display: grid; place-items: center;
+      background: rgba(240,192,64,0.11); border: 1px solid rgba(240,192,64,0.2);
+      color: #f5d870; font-size: 0.74rem; font-weight: 900;
+    }
+    .bdk-tool-ref h4 { margin: 0 0 0.1rem; font-size: 0.82rem; font-weight: 800; color: #f0e0c0; }
+    .bdk-tool-ref p  { margin: 0; font-size: 0.75rem; color: var(--bdk-muted); line-height: 1.5; }
+
+    /* Reflect textarea */
+    .bdk-reflect-ta {
+      width: 100%; min-height: 100px; border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.03);
+      color: var(--bdk-ink); padding: 0.72rem 0.9rem;
+      font: inherit; font-size: 0.87rem; line-height: 1.6;
+      resize: vertical; outline: none; margin-bottom: 0.3rem;
+    }
+    .bdk-reflect-ta:focus { border-color: rgba(240,192,64,0.3); }
+    .bdk-reflect-ta::placeholder { color: #5c5548; }
+    .bdk-reflect-note { margin: 0 0 0.8rem; color: var(--bdk-dim); font-size: 0.72rem; }
+
+    /* Grade gating */
+    [data-grade] { display: none; }
+    .grade-all  [data-grade="all"],
+    .grade-all  [data-grade="k2"],
+    .grade-all  [data-grade="35"],
+    .grade-all  [data-grade="68"],
+    .grade-all  [data-grade="912"] { display: block; }
+    .grade-k2   [data-grade="all"],
+    .grade-k2   [data-grade="k2"]  { display: block; }
+    .grade-35   [data-grade="all"],
+    .grade-35   [data-grade="35"]  { display: block; }
+    .grade-68   [data-grade="all"],
+    .grade-68   [data-grade="68"]  { display: block; }
+    .grade-912  [data-grade="all"],
+    .grade-912  [data-grade="912"] { display: block; }
+
+    /* Grade bar */
+    .bdk-grade-bar { display: flex; flex-wrap: wrap; gap: 0.32rem; margin-bottom: 0.5rem; }
+    .bdk-grade-btn {
+      border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03);
+      color: var(--bdk-muted); border-radius: 999px; padding: 0.32rem 0.7rem;
+      font: inherit; font-size: 0.76rem; font-weight: 700; cursor: pointer; transition: all 0.13s;
+    }
+    .bdk-grade-btn:hover { border-color: rgba(240,192,64,0.26); color: #f5e0b0; }
+    .bdk-grade-btn.active {
+      background: rgba(240,192,64,0.13); border-color: rgba(240,192,64,0.3); color: #fff4d0;
+    }
+
+    /* Reset/restart button */
+    .bdk-restart-btn {
+      width: 100%; padding: 0.5rem; border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03);
+      color: var(--bdk-dim); font: inherit; font-size: 0.76rem; font-weight: 700;
+      cursor: pointer; transition: all 0.13s; margin-top: 0.3rem;
+    }
+    .bdk-restart-btn:hover { border-color: rgba(240,192,64,0.2); color: var(--bdk-muted); }
+
+    @media (min-width: 980px) {
+      .bdk-tool-area {
+        padding: 0.8rem 1rem;
+      }
+      .bdk-tool-card,
+      .bdk-evidence-log,
+      .bdk-verdict,
+      .bdk-occam-box {
+        max-width: 820px;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .bdk-sim-header {
+        grid-template-columns: 1fr;
+        gap: 0.55rem;
+      }
+      .bdk-header-badge {
+        justify-self: start;
+      }
+      .bdk-readouts {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.35rem;
+      }
+      .bdk-readout {
+        padding: 0.48rem 0.5rem;
+      }
+      .bdk-readout span {
+        font-size: 0.55rem;
+      }
+      .bdk-readout strong {
+        font-size: 0.74rem;
+      }
+      .bdk-topbar-title {
+        display: none;
+      }
+      .bdk-claim-bar {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        scrollbar-width: none;
+      }
+      .bdk-claim-bar::-webkit-scrollbar {
+        display: none;
+      }
+      .bdk-claim-btn {
+        flex: 0 0 auto;
+      }
+    }
+
+    /* ── Readable field-notebook remaster ───────────────────── */
+    :root {
+      --bdk-bg: #f4f0e7;
+      --bdk-panel: #fffaf0;
+      --bdk-line: rgba(92, 76, 47, 0.18);
+      --bdk-ink: #2f2a22;
+      --bdk-muted: #5f574c;
+      --bdk-dim: #817769;
+      --bdk-amber: #9a6500;
+      --bdk-amber2: #c78a11;
+      --bdk-teal: #0d7a72;
+      --bdk-red: #b73939;
+      --bdk-violet: #6d55b6;
+      --bdk-gold: #9a6500;
+      --ll-panel-w: min(430px, 36vw);
+      --ll-drawer-h: 56vh;
+    }
+
+    body {
+      color: var(--bdk-ink);
+      background:
+        linear-gradient(90deg, rgba(13,122,114,0.06) 0 1px, transparent 1px 100%),
+        linear-gradient(180deg, rgba(154,101,0,0.07) 0 1px, transparent 1px 100%),
+        linear-gradient(180deg, #fbf7ee 0%, #efe8d9 100%);
+      background-size: 36px 36px, 36px 36px, auto;
+      font-size: 17px;
+    }
+
+    .bdk-topbar {
+      background: rgba(255, 251, 242, 0.94);
+      border-bottom: 1px solid rgba(92, 76, 47, 0.18);
+      box-shadow: 0 8px 24px rgba(71, 55, 30, 0.08);
+    }
+    .bdk-topbar a,
+    .bdk-topbar-title {
+      color: #4b3920;
+    }
+    .bdk-topbar a:hover {
+      color: #0d7a72;
+    }
+
+    .ll-sim.bdk-sim-area {
+      overflow-y: auto;
+      background:
+        radial-gradient(900px 520px at 0% -10%, rgba(13,122,114,0.10), transparent 54%),
+        radial-gradient(880px 520px at 100% 0%, rgba(154,101,0,0.12), transparent 50%),
+        rgba(250, 246, 237, 0.94);
+    }
+    .bdk-tool-area {
+      overflow: visible;
+      flex: initial;
+      padding: 1rem clamp(1rem, 2.2vw, 1.6rem) 1.2rem;
+      gap: 0.9rem;
+    }
+    .bdk-sim-header {
+      padding: 1.25rem clamp(1rem, 2.3vw, 1.7rem) 1.05rem;
+      background: rgba(255, 251, 242, 0.58);
+      border-bottom: 1px solid rgba(92, 76, 47, 0.13);
+    }
+    .bdk-sim-header h1 {
+      color: #2c2418;
+      font-size: clamp(1.45rem, 3vw, 2.35rem);
+      letter-spacing: -0.02em;
+    }
+    .bdk-sim-header p {
+      color: #5f574c;
+      font-size: 0.98rem;
+      max-width: 78ch;
+    }
+    .bdk-header-badge {
+      border-color: rgba(13,122,114,0.28);
+      background: #e9f5f2;
+      color: #075d57;
+      min-height: 2.25rem;
+    }
+    .bdk-claim-bar {
+      padding: 0.9rem clamp(1rem, 2.2vw, 1.6rem);
+      gap: 0.5rem;
+      background: rgba(255, 251, 242, 0.62);
+      border-bottom: 1px solid rgba(92, 76, 47, 0.12);
+    }
+    .bdk-claim-btn {
+      background: #fffaf0;
+      border-color: rgba(92, 76, 47, 0.18);
+      color: #4e463a;
+      padding: 0.48rem 0.78rem;
+      font-size: 0.82rem;
+      box-shadow: 0 2px 8px rgba(71, 55, 30, 0.05);
+    }
+    .bdk-claim-btn.active {
+      background: #fff0c9;
+      border-color: rgba(154,101,0,0.38);
+      color: #4c3306;
+    }
+    .bdk-claim-btn.is-verified.active {
+      background: #ddf3ef;
+      color: #075d57;
+      border-color: rgba(13,122,114,0.34);
+    }
+    .bdk-claim-card,
+    .bdk-tool-card,
+    .bdk-readout,
+    .bdk-evidence-log,
+    .bdk-verdict,
+    .bdk-occam-box,
+    .bdk-restart-btn {
+      background: rgba(255, 252, 246, 0.94);
+      border-color: rgba(92, 76, 47, 0.16);
+      box-shadow: 0 10px 28px rgba(71, 55, 30, 0.08);
+    }
+    .bdk-claim-card {
+      margin: 1rem clamp(1rem, 2.2vw, 1.6rem) 0;
+      padding: 1.1rem 1.2rem;
+    }
+    .bdk-claim-card.is-baloney {
+      background: linear-gradient(135deg, rgba(183,57,57,0.06), rgba(255,252,246,0.96));
+      border-color: rgba(183,57,57,0.20);
+    }
+    .bdk-claim-card.is-verified {
+      background: linear-gradient(135deg, rgba(13,122,114,0.08), rgba(255,252,246,0.96));
+      border-color: rgba(13,122,114,0.22);
+    }
+    .bdk-claim-text {
+      color: #2f2a22;
+      font-size: clamp(1.02rem, 2vw, 1.28rem);
+      line-height: 1.65;
+    }
+    .bdk-claim-warning {
+      color: #5b321d;
+      background: #fff0dd;
+      border-color: rgba(183,88,36,0.24);
+      font-size: 0.88rem;
+    }
+    .bdk-readouts {
+      gap: 0.75rem;
+    }
+    .bdk-readout {
+      padding: 0.82rem 0.9rem;
+    }
+    .bdk-readout span,
+    .bdk-log-title span:last-child,
+    .bdk-meter-lbl,
+    .bdk-found-lbl {
+      color: #817769;
+    }
+    .bdk-readout strong,
+    .bdk-tool-name,
+    .bdk-log-title,
+    .bdk-closing h2,
+    .bdk-head {
+      color: #2f2a22;
+    }
+    .bdk-pip {
+      height: 8px;
+      background: rgba(92, 76, 47, 0.14);
+      border-color: rgba(92, 76, 47, 0.10);
+    }
+    .bdk-tool-card {
+      padding: 1.25rem 1.35rem;
+      max-width: 920px;
+    }
+    .bdk-tool-num {
+      color: #5d3f08;
+      background: #fff0c9;
+      border-color: rgba(154,101,0,0.28);
+    }
+    .bdk-tool-question,
+    .bdk-log-empty,
+    .bdk-occam-box p,
+    .bdk-verdict p {
+      color: #5f574c;
+      font-size: 0.96rem;
+    }
+    .bdk-reveal-btn,
+    .bdk-nav-btn.btn-primary {
+      background: #fff0c9;
+      color: #4c3306;
+      border-color: rgba(154,101,0,0.28);
+    }
+    .bdk-nav-btn,
+    .bdk-restart-btn {
+      color: #5f574c;
+      background: rgba(255,252,246,0.82);
+      border-color: rgba(92, 76, 47, 0.14);
+    }
+    .bdk-tool-result.res-fail {
+      background: #fff0f0;
+      color: #582020;
+      border-color: rgba(183,57,57,0.25);
+    }
+    .bdk-tool-result.res-pass {
+      background: #e9f7f4;
+      color: #0b514d;
+      border-color: rgba(13,122,114,0.24);
+    }
+    .bdk-meter-area {
+      background: rgba(255, 251, 242, 0.86);
+      border-top: 1px solid rgba(92, 76, 47, 0.14);
+      padding: 0.75rem clamp(1rem, 2.2vw, 1.6rem) 0.9rem;
+    }
+    .bdk-meter-track,
+    .bdk-found-track {
+      background: rgba(92, 76, 47, 0.12);
+    }
+    #bdk-viewport {
+      --ll-panel-bg: #fffaf0;
+      --ll-panel-border: rgba(92, 76, 47, 0.17);
+      --ll-tab-color: #756b5e;
+      --ll-tab-active-bg: #fff0c9;
+      --ll-tab-active: #5d3f08;
+      --ll-toggle-bg: #fffaf0;
+      --text-strong: #2f2a22;
+      --text-body: #5f574c;
+      --text-muted: #756b5e;
+      --nav-hover-bg: rgba(154,101,0,0.10);
+      --surface-1: #fffaf0;
+      --surface-2: #f7efe2;
+      --border-subtle: rgba(92, 76, 47, 0.17);
+    }
+    #bdk-viewport .ll-panel {
+      background:
+        linear-gradient(180deg, rgba(13,122,114,0.05), transparent 220px),
+        #fffaf0;
+      color: #5f574c;
+    }
+    #bdk-viewport .ll-panel-head {
+      background: rgba(255, 246, 225, 0.86);
+    }
+    #bdk-viewport .ll-panel-body {
+      padding: 1.1rem 1.1rem 2rem;
+    }
+    #bdk-viewport .ll-label {
+      color: #817769;
+      font-size: 0.68rem;
+      margin-top: 1.1rem;
+    }
+    #bdk-viewport .ll-tab[aria-selected="true"] {
+      color: #4c3306;
+    }
+    #bdk-viewport .ll-panel-close {
+      color: #756b5e;
+      background: rgba(92,76,47,0.08);
+    }
+    .bdk-tool-ref,
+    .bdk-callout,
+    .bdk-mini-card,
+    .bdk-bias-card,
+    .bdk-pattern-card,
+    .bdk-pattern-rule,
+    .bdk-discuss,
+    .bdk-occam-lesson,
+    .bdk-closing {
+      background: rgba(255, 252, 246, 0.88);
+      border-color: rgba(92, 76, 47, 0.14);
+      box-shadow: 0 4px 16px rgba(71, 55, 30, 0.04);
+    }
+    .bdk-callout.ca-amber {
+      background: #fff4d8;
+      border-color: rgba(154,101,0,0.18);
+    }
+    .bdk-callout.ca-teal,
+    .bdk-occam-lesson,
+    .bdk-closing {
+      background: #eaf6f2;
+      border-color: rgba(13,122,114,0.18);
+    }
+    .bdk-callout.ca-red {
+      background: #fff0f0;
+      border-color: rgba(183,57,57,0.18);
+    }
+    .bdk-callout.ca-violet,
+    .bdk-pattern-rule,
+    .bdk-bias-card {
+      background: #f1edfb;
+      border-color: rgba(109,85,182,0.18);
+    }
+    .bdk-head {
+      font-size: 1.25rem;
+    }
+    .bdk-sub,
+    .bdk-callout p,
+    .bdk-mini-card p,
+    .bdk-bias-def,
+    .bdk-pattern-card p,
+    .bdk-pattern-rule p,
+    .bdk-discuss p,
+    .bdk-occam-lesson p,
+    .bdk-closing p,
+    .bdk-tool-ref p {
+      color: #5f574c;
+      font-size: 0.92rem;
+      line-height: 1.7;
+    }
+    .bdk-callout strong,
+    .bdk-pattern-rule strong,
+    .bdk-closing strong,
+    .bdk-tool-ref h4,
+    .bdk-mini-card h4,
+    .bdk-discuss h4,
+    .bdk-pattern-card h4,
+    .bdk-occam-lesson h3 {
+      color: #2f2a22;
+    }
+    .bdk-reflect-ta {
+      background: #fffdf8;
+      color: #2f2a22;
+      border-color: rgba(92,76,47,0.18);
+      min-height: 150px;
+    }
+    .bdk-grade-btn {
+      background: #fffaf0;
+      color: #5f574c;
+      border-color: rgba(92,76,47,0.17);
+      padding: 0.45rem 0.78rem;
+    }
+    .bdk-grade-btn.active {
+      background: #fff0c9;
+      color: #4c3306;
+      border-color: rgba(154,101,0,0.30);
+    }
+
+    @media (min-width: 980px) {
+      .bdk-tool-card,
+      .bdk-evidence-log,
+      .bdk-verdict,
+      .bdk-occam-box {
+        max-width: 920px;
+      }
+    }
+
+    @media (max-width: 760px) {
+      body {
+        font-size: 16px;
+      }
+      .bdk-tool-area {
+        padding: 0.9rem;
+      }
+      .bdk-readouts {
+        grid-template-columns: 1fr;
+      }
+      .bdk-readout strong {
+        font-size: 0.92rem;
+      }
+    }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport ll-dark grade-35" id="bdk-viewport">
+
+  <nav class="bdk-topbar ll-topbar" aria-label="Lesson navigation">
+    <div class="bdk-topbar-inner">
+      <a href="../../steam-lessons.html">← Lessons</a>
+      <span class="bdk-topbar-title">The Truth &amp; Evidence Toolkit</span>
+      <a href="../../steam-lessons.html#module-systems">Systems &amp; Humanities</a>
+    </div>
+  </nav>
+
+  <div class="ll-stage" id="main-content">
+
+    <!-- ══ MAIN SIM: Claim Analyzer ══════════════════════════ -->
+    <div class="ll-sim bdk-sim-area">
+
+      <div class="bdk-sim-header">
+        <div class="bdk-header-copy">
+          <h1>Pause. Check. Decide.</h1>
+          <p>Choose an example and ask four simple questions. The goal is careful thinking—not embarrassing anyone.</p>
+        </div>
+        <div class="bdk-header-badge" id="bdk-header-badge">Curiosity Mode</div>
+      </div>
+
+      <!-- Claim selector -->
+      <div class="bdk-claim-bar">
+        <span class="bdk-claim-bar-label">Claim:</span>
+        <button class="bdk-claim-btn active"      data-claim="0" type="button">Astrology</button>
+        <button class="bdk-claim-btn"             data-claim="1" type="button">Crystal Cure?</button>
+        <button class="bdk-claim-btn"             data-claim="2" type="button">Hidden Cancer Cure?</button>
+        <button class="bdk-claim-btn"             data-claim="3" type="button">Healing Show?</button>
+        <button class="bdk-claim-btn"             data-claim="4" type="button">Disney Rumor?</button>
+      </div>
+
+      <!-- Active claim display -->
+      <div class="bdk-claim-card is-baloney" id="bdk-claim-card">
+        <p class="bdk-claim-kicker" id="bdk-claim-kicker">Astrology</p>
+        <p class="bdk-claim-text"   id="bdk-claim-text"></p>
+        <p class="bdk-claim-warning" id="bdk-claim-warning"></p>
+      </div>
+
+      <!-- Tool runner -->
+      <div class="bdk-tool-area" id="bdk-tool-area">
+
+        <div class="bdk-readouts" aria-label="Claim status">
+          <div class="bdk-readout">
+            <span>Starting Point</span>
+            <strong id="bdk-readout-type">Needs checking</strong>
+          </div>
+          <div class="bdk-readout">
+            <span>Questions Checked</span>
+            <strong id="bdk-readout-done">0 / 4</strong>
+          </div>
+          <div class="bdk-readout">
+            <span>Best Habit</span>
+            <strong id="bdk-readout-habit">Stay curious</strong>
+          </div>
+        </div>
+
+        <div class="bdk-pips" id="bdk-pips"></div>
+
+        <div class="bdk-tool-card" id="bdk-tool-card">
+          <div class="bdk-tool-num-row">
+            <div class="bdk-tool-num" id="bdk-tool-num">1</div>
+            <span class="bdk-tool-name" id="bdk-tool-name"></span>
+          </div>
+          <p class="bdk-tool-question" id="bdk-tool-question"></p>
+          <button class="bdk-reveal-btn" id="bdk-reveal-btn" type="button">Check this question →</button>
+          <div class="bdk-tool-result" id="bdk-tool-result" aria-live="polite">
+            <span class="bdk-result-label" id="bdk-result-label"></span>
+            <span id="bdk-result-note"></span>
+          </div>
+        </div>
+
+        <div class="bdk-nav-row">
+          <button class="bdk-nav-btn" id="bdk-prev" type="button" disabled>← Prev</button>
+          <span class="bdk-tool-counter" id="bdk-counter">Question 1 of 4</span>
+          <button class="bdk-nav-btn btn-primary" id="bdk-next" type="button" disabled>Next →</button>
+        </div>
+
+        <div class="bdk-verdict" id="bdk-verdict" aria-live="polite">
+          <div class="bdk-verdict-word" id="bdk-verdict-word"></div>
+          <p id="bdk-verdict-note"></p>
+        </div>
+
+        <div class="bdk-occam-box" id="bdk-occam-box">
+          <p class="bdk-occam-lbl">A helpful comparison</p>
+          <h3>Which explanation fits best?</h3>
+          <p id="bdk-occam-text"></p>
+        </div>
+
+        <div class="bdk-evidence-log" aria-live="polite">
+          <div class="bdk-log-title">
+            <span>What We Noticed</span>
+            <span id="bdk-log-count">0 notes</span>
+          </div>
+          <ul class="bdk-log-list" id="bdk-log-list"></ul>
+          <p class="bdk-log-empty" id="bdk-log-empty">Answer a question to begin.</p>
+        </div>
+
+        <button class="bdk-restart-btn" id="bdk-restart" type="button">↺ Start this example again</button>
+
+      </div><!-- .bdk-tool-area -->
+
+      <!-- Baloney / Foundation meters -->
+      <div class="bdk-meter-area">
+        <div class="bdk-meter-row">
+          <span class="bdk-meter-lbl">Checks needing attention</span>
+          <span class="bdk-meter-pct" id="bdk-meter-pct">–</span>
+        </div>
+        <div class="bdk-meter-track">
+          <div class="bdk-meter-fill" id="bdk-meter-fill"></div>
+        </div>
+        <div class="bdk-found-row">
+          <span class="bdk-found-lbl">Evidence strength</span>
+          <div class="bdk-found-track">
+            <div class="bdk-found-fill" id="bdk-found-fill"></div>
+          </div>
+          <span class="bdk-found-word" id="bdk-found-word">–</span>
+        </div>
+      </div>
+
+    </div><!-- .ll-sim.bdk-sim-area -->
+
+    <!-- ══ PANEL: sidebar ══════════════════════════════════════ -->
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="pane-tools">Tools</button>
+          <button class="ll-tab" aria-selected="false" data-pane="pane-lesson">Lesson</button>
+          <button class="ll-tab" aria-selected="false" data-pane="pane-activity">Activity</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+
+      <div class="ll-panel-body">
+
+        <!-- ── TOOLS pane ── -->
+        <div class="ll-pane ll-active" id="pane-tools">
+
+          <span class="ll-label">The 4 Questions</span>
+          <div class="bdk-tool-refs">
+            <div class="bdk-tool-ref">
+              <div class="bdk-tool-ref-num">1</div>
+              <div><h4>Who says so?</h4><p>Can we find the original source and another trustworthy source?</p></div>
+            </div>
+            <div class="bdk-tool-ref">
+              <div class="bdk-tool-ref-num">2</div>
+              <div><h4>What is the evidence?</h4><p>Look for details we can observe, measure, or confirm—not only a confident opinion.</p></div>
+            </div>
+            <div class="bdk-tool-ref">
+              <div class="bdk-tool-ref-num">3</div>
+              <div><h4>What else could explain it?</h4><p>Compare other explanations without mocking the people involved.</p></div>
+            </div>
+            <div class="bdk-tool-ref">
+              <div class="bdk-tool-ref-num">4</div>
+              <div><h4>What should I do next?</h4><p>Pause, check more, ask a trusted adult or expert, and avoid sharing too soon.</p></div>
+            </div>
+          </div>
+
+          <hr class="ll-hr">
+          <span class="ll-label">Grade Band</span>
+          <div class="bdk-grade-bar">
+            <button class="bdk-grade-btn" data-band="k2">K–2</button>
+            <button class="bdk-grade-btn active" data-band="35">3–5</button>
+            <button class="bdk-grade-btn" data-band="68">6–8</button>
+            <button class="bdk-grade-btn" data-band="912">9–12</button>
+          </div>
+
+        </div><!-- #pane-tools -->
+
+        <!-- ── LESSON pane ── -->
+        <div class="ll-pane" id="pane-lesson">
+
+          <!-- K–2 -->
+          <div data-grade="k2">
+            <h3 class="bdk-head">Is It Real or Make-Believe?</h3>
+            <p class="bdk-sub">How do we know when something is true?</p>
+            <div class="bdk-callout ca-amber">
+              <p class="bdk-callout-lbl">Big Idea</p>
+              <p>Before we believe or share something, we can ask: <strong>Who said it, and can someone else check it?</strong></p>
+            </div>
+            <div class="bdk-callout ca-teal">
+              <p class="bdk-callout-lbl">Think About It</p>
+              <p>If a friend said eating grass would make you fly, would you believe it? <strong>What could you do to find out if it was true?</strong></p>
+            </div>
+            <div class="bdk-callout ca-amber">
+              <p class="bdk-callout-lbl">Kind Questions</p>
+              <p>We can question an idea without making fun of the person who shared it.</p>
+            </div>
+          </div>
+
+          <!-- 3–5 -->
+          <div data-grade="35">
+            <h3 class="bdk-head">The Four-Question Check</h3>
+            <p class="bdk-sub">Carl Sagan shared a group of critical-thinking tools that he informally called a “baloney detection kit.” Here we use a more welcoming name and one simple rule: stronger claims need stronger evidence.</p>
+            <div class="bdk-callout ca-amber">
+              <p class="bdk-callout-lbl">Ask About the Claim, Not the Person</p>
+              <p>A horoscope may feel meaningful, but feeling meaningful is different from being supported by repeatable evidence. We can question the claim while treating people who enjoy astrology with kindness.</p>
+            </div>
+            <div class="bdk-mini-grid">
+              <div class="bdk-mini-card"><h4>Sources</h4><p>Find where the claim began. Several posts repeating one source do not count as several sources.</p></div>
+              <div class="bdk-mini-card"><h4>Modern Health Claims</h4><p>A person asking for money for a cure should provide independent medical evidence and must never blame someone who remains ill.</p></div>
+              <div class="bdk-mini-card"><h4>Science</h4><p>Scientific results become dependable when other people can test them, find limits, and correct mistakes.</p></div>
+            </div>
+          </div>
+
+          <!-- 6–8 -->
+          <div data-grade="68">
+            <h3 class="bdk-head">How Do We Know?</h3>
+            <p class="bdk-sub"><em>Epistemology</em> is simply the study of how we know things. It helps us slow down before reacting to viral content.</p>
+            <div class="bdk-callout ca-amber">
+              <p class="bdk-callout-lbl">Cognitive Bias</p>
+              <p>Every brain uses shortcuts. <strong>Confirmation bias</strong> draws our attention to information we already agree with. <strong>The bandwagon effect</strong> can make popularity feel like proof. Having a bias does not make someone foolish; noticing it helps all of us make better choices.</p>
+            </div>
+            <div class="bdk-callout ca-teal">
+              <p class="bdk-callout-lbl">Different Questions Need Different Evidence</p>
+              <p>A chemistry experiment, a historical event, and a personal opinion are different kinds of claims. First identify the kind of question; then choose evidence suited to it.</p>
+            </div>
+            <div class="bdk-callout ca-violet">
+              <p class="bdk-callout-lbl">Uncertainty Is Honest</p>
+              <p>“I do not know yet” is a responsible answer. We can name what is known, what is inferred, and what still needs checking.</p>
+            </div>
+            <div class="bdk-callout ca-red">
+              <p class="bdk-callout-lbl">We Use What We Don't Understand</p>
+              <p>We all use tools—such as medicine, GPS, and smartphones—that no one person fully understands. That is why reliable systems use teams, testing, transparency, and correction. Asking for help is a strength.</p>
+            </div>
+          </div>
+
+          <!-- 9–12 -->
+          <div data-grade="912">
+            <h3 class="bdk-head">What Kind of Mind Does a Healthy Society Require?</h3>
+            <p class="bdk-sub">Healthy communities need people who can evaluate information, revise their views, and disagree without demeaning one another.</p>
+            <div class="bdk-callout ca-violet">
+              <p class="bdk-callout-lbl">Epistemology</p>
+              <p><strong>Observation</strong> gathers evidence. <strong>Reason</strong> compares explanations. <strong>Testimony</strong> records what people report. Each can contribute useful information, and each has limits that careful thinkers should name.</p>
+            </div>
+            <div class="bdk-callout ca-teal">
+              <p class="bdk-callout-lbl">Responsible Expertise</p>
+              <p>Experts deserve attention when they work within their field, explain their evidence, acknowledge uncertainty, and allow qualified peers to review their work. Expertise should guide inquiry, not end it.</p>
+            </div>
+            <div class="bdk-callout ca-red">
+              <p class="bdk-callout-lbl">Modern Media</p>
+              <p><strong>Algorithms</strong> may promote outrage because it drives engagement. <strong>Echo chambers</strong> can create an illusion of consensus. <strong>Deepfakes</strong> make visual evidence harder to trust. These conditions make source-checking especially important.</p>
+            </div>
+            <div class="bdk-callout ca-amber">
+              <p class="bdk-callout-lbl">The Technology Gap &amp; Democratic Risk</p>
+              <p>A democracy needs people who can evaluate evidence and resist manipulation. Because modern tools are complex, we also need trustworthy experts, transparent institutions, independent review, and the humility to ask what we do not yet understand.</p>
+            </div>
+
+            <div class="bdk-callout ca-teal">
+              <p class="bdk-callout-lbl">What History Shows</p>
+              <p>Many cultures and communities have contributed to science, moral reasoning, human-rights traditions, and representative government. Across those traditions, evidence and reason can help hold power accountable. <strong>A firm foundation joins truth-seeking with humility and care for our neighbors.</strong></p>
+            </div>
+          </div>
+
+          <!-- All grades -->
+          <div data-grade="all">
+            <div class="bdk-pattern-rule">
+              <p><strong>The same structure repeats:</strong> pseudoscience borrows scientific or professional language, avoids falsifiability, leans on authority or anecdote, resists correction, and attaches itself to power, identity, fear, or profit.</p>
+            </div>
+
+            <span class="ll-label">Patterns to Notice</span>
+            <div class="bdk-pattern-grid">
+              <div class="bdk-pattern-card"><h4>Only One Source</h4><p>A surprising claim is repeated, but every version leads back to the same unverified post.</p></div>
+              <div class="bdk-pattern-card"><h4>Strong Feelings</h4><p>Fear, hope, or anger can make us want to react before we have checked the details.</p></div>
+              <div class="bdk-pattern-card"><h4>No Room for Questions</h4><p>The speaker treats respectful questions as disloyal instead of explaining the evidence.</p></div>
+              <div class="bdk-pattern-card"><h4>Only the “Hits”</h4><p>Successful predictions are counted, while misses and counterexamples disappear.</p></div>
+            </div>
+
+            <div class="bdk-occam-lesson">
+              <p class="bdk-occam-lesson-lbl">Occam's Razor — William of Ockham</p>
+              <h3>Prefer the Simplest Explanation</h3>
+              <p>William of Ockham was a medieval philosopher. His helpful rule was: when two explanations fit the facts equally well, begin with the one that needs fewer unsupported assumptions. “Simpler” does not automatically mean “correct,” so keep checking.</p>
+            </div>
+
+            <div class="bdk-callout ca-violet">
+              <p class="bdk-callout-lbl">When Christianity Is Challenged: Defending Our Faith with History</p>
+              <p>As Christians, we should not answer every objection with “just believe,” and we should not place the Bible in a test designed for scientific experiments. We can first clarify the challenge: Is the person asking about what a passage means, whether a person or place existed, how a text was preserved, or why Christians believe a theological claim?</p>
+              <p>For questions about Bible history, use historical methods: read passages in context, compare manuscript evidence and translations, consult archaeology and relevant ancient sources, and learn how qualified historians distinguish strong evidence from uncertainty. Do not exaggerate what a discovery proves.</p>
+              <p>History can investigate texts, people, places, customs, and testimony. It cannot repeat a past event in a laboratory or settle every theological conclusion by itself. We can explain the reasons for our faith clearly while listening carefully, admitting what we do not know, and treating the other person with gentleness and respect.</p>
+            </div>
+
+            <div class="bdk-closing">
+              <div class="bdk-closing-icon">🔎</div>
+              <h2>Check Before You Share</h2>
+              <p>A healthy society is built by people who <strong>seek truth with courage, humility, and compassion</strong>. This toolkit is not about winning arguments. It helps us care for our neighbors by checking information before we act or share.</p>
+            </div>
+          </div>
+
+        </div><!-- #pane-lesson -->
+
+        <!-- ── ACTIVITY pane ── -->
+        <div class="ll-pane" id="pane-activity">
+
+          <span class="ll-label">Grade Band</span>
+          <div class="bdk-grade-bar">
+            <button class="bdk-grade-btn" data-band="k2">K–2</button>
+            <button class="bdk-grade-btn active" data-band="35">3–5</button>
+            <button class="bdk-grade-btn" data-band="68">6–8</button>
+            <button class="bdk-grade-btn" data-band="912">9–12</button>
+          </div>
+          <hr class="ll-hr">
+
+          <!-- K–2 -->
+          <div data-grade="k2">
+            <span class="ll-label">K–2 Discussion</span>
+            <div class="bdk-discuss"><h4>The True Story Test</h4><p>How do you know when a story is true? What questions could you ask to find out?</p></div>
+            <div class="bdk-discuss"><h4>Source Detective</h4><p>A classmate repeats a surprising story. What kind questions could help you find where it started?</p></div>
+            <div class="bdk-discuss"><h4>Kind Disagreement</h4><p>Practice saying, “I am not sure yet. Can we check together?” How does that sound different from calling someone wrong?</p></div>
+          </div>
+
+          <!-- 3–5 -->
+          <div data-grade="35">
+            <span class="ll-label">3–5 Discussion</span>
+            <div class="bdk-discuss"><h4>Who Could Check?</h4><p>For each claim in the analyzer, ask: who else could verify this? How exactly would they check it?</p></div>
+            <div class="bdk-discuss"><h4>Astrology vs. Astronomy</h4><p>What is the difference between astrology (reading horoscopes) and astronomy (the science of planets)? Why does the difference matter?</p></div>
+            <div class="bdk-discuss"><h4>One Story or a Pattern?</h4><p>Why can a personal story be important without proving that the same thing happens to everyone?</p></div>
+            <div class="bdk-discuss"><h4>Occam's Razor Practice</h4><p>Your pencil is missing. Option A: your sister took it. Option B: a spy organization stole it in the night. Which explanation needs fewer assumptions? Why is that important?</p></div>
+          </div>
+
+          <!-- 6–8 -->
+          <div data-grade="68">
+            <span class="ll-label">6–8 Discussion</span>
+            <div class="bdk-discuss"><h4>Evidence Standards</h4><p>Why might a health claim require different evidence than an opinion about a movie?</p></div>
+            <div class="bdk-discuss"><h4>Compare Explanations</h4><p>Choose a surprising claim you have heard. List two possible explanations. What evidence would help you compare them fairly?</p></div>
+            <div class="bdk-discuss"><h4>Fact, Inference, or Opinion?</h4><p>Choose a short news post and mark which statements are observable facts, interpretations, or opinions.</p></div>
+            <div class="bdk-discuss"><h4>Social Media Echo Chambers</h4><p>If an algorithm shows you only content you already agree with, what happens to your thinking over time? How is this similar to Plato's cave?</p></div>
+            <div class="bdk-discuss"><h4>Pattern Spotting</h4><p>Pick two examples from the pattern library. How do both borrow professional language, resist correction, or attach to identity, fear, power, or profit?</p></div>
+          </div>
+
+          <!-- 9–12 -->
+          <div data-grade="912">
+            <span class="ll-label">9–12 Discussion</span>
+            <div class="bdk-discuss"><h4>Epistemic Foundation</h4><p>Sagan argued that a civilization that uses science without understanding it is dangerously fragile. What are two historical or contemporary examples where this gap had political consequences?</p></div>
+            <div class="bdk-discuss"><h4>Accountable Institutions</h4><p>Choose an institution and identify one practice that helps it acknowledge mistakes. What evidence would show that the practice is working?</p></div>
+            <div class="bdk-discuss"><h4>Categories of Evidence</h4><p>Compare the evidence used for a repeatable experiment, a past event, and a value judgment. What can each method establish?</p></div>
+            <div class="bdk-discuss"><h4>The Ethics of Sharing</h4><p>You reach 500 people online and encounter an unconfirmed health claim. What is your ethical obligation before sharing it?</p></div>
+            <div class="bdk-discuss"><h4>Evidence and Power</h4><p>History includes cases where leaders used scientific-sounding claims to support prejudice or political power. What safeguards help researchers challenge bias and correct error?</p></div>
+          </div>
+
+          <!-- All grades -->
+          <div data-grade="all">
+            <hr class="ll-hr">
+            <span class="ll-label">Personal Reflection</span>
+            <p style="font-size:0.79rem; color:var(--bdk-muted); margin:0 0 0.5rem; line-height:1.6;">Think of a time you changed your mind after learning more. What helped you feel safe enough to reconsider? Which of the four questions could help next time?</p>
+            <textarea class="bdk-reflect-ta" placeholder="Write your reflection here…" aria-label="Personal reflection"></textarea>
+            <p class="bdk-reflect-note">Your reflection stays private on this device.</p>
+
+            <hr class="ll-hr">
+            <span class="ll-label">Four Thinking Shortcuts</span>
+            <div class="bdk-bias-grid">
+              <div class="bdk-bias-card"><p class="bdk-bias-name">Confirmation Bias</p><p class="bdk-bias-def">We seek evidence confirming what we already believe and dismiss what doesn't fit.</p></div>
+              <div class="bdk-bias-card"><p class="bdk-bias-name">Anecdotal Evidence</p><p class="bdk-bias-def">A personal story can matter, but one story alone cannot show how often something happens.</p></div>
+              <div class="bdk-bias-card"><p class="bdk-bias-name">Appeal to Authority</p><p class="bdk-bias-def">Expertise matters, but responsible experts explain evidence, limits, and uncertainty.</p></div>
+              <div class="bdk-bias-card"><p class="bdk-bias-name">False Dilemma</p><p class="bdk-bias-def">A claim gives only two choices when other reasonable possibilities exist.</p></div>
+            </div>
+          </div>
+
+        </div><!-- #pane-activity -->
+
+      </div><!-- .ll-panel-body -->
+    </aside><!-- .ll-panel -->
+
+    <button class="ll-open-btn" id="bdk-open-panel" aria-label="Open panel">
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+
+</div><!-- .ll-viewport -->
+
+<script>
+/* ═══════════════════════════════════════
+   CLAIM DATA
+═══════════════════════════════════════ */
+function patternClaim(config) {
+  const {
+    label,
+    category,
+    text,
+    warning = null,
+    simpler,
+    specific,
+    stakes,
+    correction,
+    occam,
+    verdictNote,
+    foundationScore = 4
+  } = config;
+
+  return {
+    label,
+    category,
+    type: 'baloney',
+    text,
+    warning,
+    tools: [
+      { name:'Independent Confirmation', q:'Have independent investigators reproduced or confirmed the claim?', pass:false, note:`No reliable independent confirmation supports this claim. ${specific}` },
+      { name:'Open Debate', q:'Are ordinary competing explanations seriously considered?', pass:false, note:`The claim tends to protect itself from ordinary explanations. ${simpler}` },
+      { name:'Authority Scrutiny', q:'Is professional language being used to invite testing or to end the conversation?', pass:false, note:`Scientific or professional language is doing too much work here. Credentials, jargon, or institutions are used as shields instead of openings for scrutiny.` },
+      { name:'Occam\'s Razor', q:'What explanation requires the fewest extra assumptions?', pass:false, note:occam },
+      { name:'Falsifiability', q:'What evidence would make supporters revise or abandon the claim?', pass:false, note:`The claim resists correction: ${correction}` },
+      { name:'Quantification', q:'Are the core effects measured clearly enough to test?', pass:false, note:'The key terms are vague, the measurements are missing or selective, or the claimed effect disappears when tested under controlled conditions.' },
+      { name:'Cherry-Picking Check', q:'Are failures, counterexamples, and failed replications included?', pass:false, note:`Failures are minimized while memorable anecdotes are elevated. ${stakes}` }
+    ],
+    occam,
+    verdict: 'BALONEY',
+    verdictNote,
+    foundationScore
+  };
+}
+
+const CLAIMS = [
+  {
+    label: 'Astrology', category: 'Astrology', type: 'baloney',
+    text: '"Mercury is in retrograde, so communication problems are inevitable this week."',
+    warning: null,
+    tools: [
+      { name:'Independent Confirmation', q:'Has anyone outside the original source — with no financial stake — verified this claim?', pass:false, note:'Controlled research has not shown a dependable link between Mercury\'s apparent motion and human communication problems.' },
+      { name:'Open Debate', q:'Are competing explanations for communication problems taken seriously?', pass:false, note:'Astrologers never consider that miscommunication has countless mundane causes: stress, distraction, fatigue, or poor wording. No alternative is entertained.' },
+      { name:'Authority Scrutiny', q:'Does the source invite outside examination, or discourage questions?', pass:false, note:'Astrologers present themselves as specialists whose interpretive system is closed to outside review. Questioning the framework is framed as missing the point.' },
+      { name:'Occam\'s Razor', q:'What is the simplest explanation for communication problems this week?', pass:false, note:'Stress, distraction, fatigue, and unclear wording offer ordinary explanations we can investigate first.' },
+      { name:'Falsifiability', q:'Is there any outcome that would prove astrology wrong?', pass:false, note:'When predictions fail, astrologers adjust interpretations rather than revise the system. A framework that cannot be disproven is not science — it is unfalsifiable belief.' },
+      { name:'Quantification', q:'Are error rates measured before and after Mercury retrograde with real data?', pass:false, note:'This version of the claim gives no before-and-after rate or other measurement we could compare.' },
+      { name:'Cherry-Picking Check', q:'Are periods of smooth communication during Mercury retrograde documented and studied?', pass:false, note:'People naturally remember striking matches more easily than ordinary non-matches. A fair check would count both.' }
+    ],
+    occam: 'Mercury\'s retrograde is an optical illusion — Earth passing it in orbit makes it appear to move backward. Mercury exerts less gravitational pull on your body than a nearby building does. Communication problems have abundant, entirely ordinary explanations.',
+    verdict: 'BALONEY',
+    verdictNote: 'This claim needs stronger evidence before we rely on it. That conclusion evaluates the claim, not the intelligence or character of a person who enjoys astrology.',
+    foundationScore: 4
+  },
+  {
+    label: 'Crystal Cure?', category: 'Health Claim', type: 'baloney',
+    text: '"This quartz crystal channels healing energy and can cure serious illness — hold it and believe."',
+    warning: null,
+    tools: [
+      { name:'Independent Confirmation', q:'Have researchers with no stake in crystals confirmed healing effects?', pass:false, note:'Reliable clinical evidence has not shown that crystals cure serious illness. A calming ritual may still feel comforting, but comfort and medical treatment are different claims.' },
+      { name:'Open Debate', q:'Are conventional medical options seriously considered alongside crystals?', pass:false, note:'Crystal healing is typically presented as a replacement for medicine. This is dangerous when serious illness is involved.' },
+      { name:'Authority Scrutiny', q:'Do crystal healers invite independent medical examination of their results?', pass:false, note:'"The energy doesn\'t show up in lab tests" is a way of making the claim immune to examination. This is not humility — it is the design of an unfalsifiable claim.' },
+      { name:'Occam\'s Razor', q:'What is the simplest explanation for any improvement people report?', pass:false, note:'Expectation, supportive attention, natural recovery, and medical care are explanations to compare before attributing a change to a crystal.' },
+      { name:'Falsifiability', q:'What evidence would prove crystal healing doesn\'t work?', pass:false, note:'"If you don\'t believe hard enough, it won\'t work" shifts the burden to the sick person and makes the claim completely immune to testing or failure.' },
+      { name:'Quantification', q:'Is there a proposed physical mechanism for healing that can be measured?', pass:false, note:'The phrase “healing energy” is not defined in a way that lets researchers measure a dose or health effect.' },
+      { name:'Cherry-Picking Check', q:'Are failures in crystal healing documented?', pass:false, note:'A fair evaluation must include times the approach did not help as well as positive stories. Serious symptoms should be discussed with a qualified health professional.' }
+    ],
+    occam: 'Quartz is silicon dioxide. It has no known biological mechanism for interacting with human tissue. Any improvement is almost certainly the placebo effect, natural recovery, or regression to the mean — all well-documented phenomena that require no crystals.',
+    verdict: 'BALONEY',
+    verdictNote: 'Crystals may be personally meaningful or calming, but this claim does not provide enough evidence for treating serious illness. Personal practices should not replace appropriate medical care.',
+    foundationScore: 4
+  },
+  {
+    label: 'Hidden Cancer Cure?', category: 'Health Conspiracy Claim', type: 'baloney',
+    text: '"Pharmaceutical companies have a cure for cancer but suppress it to protect their profits."',
+    warning: null,
+    tools: [
+      { name:'Independent Confirmation', q:'Has any independent journalist, foreign government, or scientist confirmed a suppressed cure?', pass:false, note:'This broad claim does not identify independently authenticated documents or a specific hidden treatment that researchers can examine.' },
+      { name:'Open Debate', q:'Is the simpler explanation — that cancer is genuinely hard to cure — considered?', pass:false, note:'Cancer is not one disease. It is hundreds of distinct genetic mutations. This biological complexity is never engaged. The conspiracy replaces hard reality with a simple villain.' },
+      { name:'Authority Scrutiny', q:'What credentials or evidence do those claiming the conspiracy offer?', pass:false, note:'The claim relies on wholesale distrust of tens of thousands of scientists across rival nations, without naming specific actors, documents, compounds, or dates.' },
+      { name:'Occam\'s Razor', q:'Which needs fewer assumptions: cancer is hard, or millions of scientists in competing countries maintain a perfect secret for decades?', pass:false, note:'Cancer describes many diseases with different causes and treatments. That known complexity requires fewer unsupported assumptions than worldwide, long-term coordination around one cure.' },
+      { name:'Falsifiability', q:'What evidence would convince you the conspiracy does not exist?', pass:false, note:'When cancer survival rates improve — and they have improved dramatically — this is reinterpreted as a small concession. Any counter-evidence is absorbed into the conspiracy. It cannot be falsified.' },
+      { name:'Quantification', q:'Which specific companies, compounds, and suppressed studies are named?', pass:false, note:'This version gives no specific treatment, study, document, date, or responsible party that an independent investigator could check.' },
+      { name:'Cherry-Picking Check', q:'Is the dramatic improvement in cancer survival rates over the past 50 years acknowledged?', pass:false, note:'A fair review would include both serious problems in health systems and documented progress in prevention, diagnosis, and treatment.' }
+    ],
+    occam: 'Cancer is hundreds of different genetic diseases. Curing each requires understanding unique mutations. Progress is real but slow — because biology is genuinely difficult, not because of coordinated global suppression. A researcher who found a universal cure would win a Nobel Prize and be celebrated as one of history\'s greatest heroes.',
+    verdict: 'BALONEY',
+    verdictNote: 'This sweeping claim needs specific, independently checkable evidence. We can still examine real concerns about medical costs, research priorities, access, and institutional trust without assuming a single hidden cure.',
+    foundationScore: 7
+  },
+  {
+    label: 'Healing Show?', category: 'Public Healing Claim', type: 'baloney',
+    text: '"This televangelist healer cures diseases on stage — believers are instantly healed by divine power."',
+    warning: 'This example examines a public medical claim presented during a show. It does not make a judgment about a participant’s beliefs or character.',
+    tools: [
+      { name:'Independent Confirmation', q:'Do independent physicians examine patients before and after with medical records?', pass:false, note:'The example provides no independent diagnosis, medical record, or later follow-up. Those checks would be needed to support a public medical claim.' },
+      { name:'Open Debate', q:'Are psychological and theatrical explanations for observed responses considered?', pass:false, note:'The emotional environment, adrenaline, pre-selected participants, and well-documented crowd psychology are never discussed as alternative explanations for what is observed.' },
+      { name:'Authority Scrutiny', q:'Can the healer\'s claims be examined without questions being dismissed as disrespectful?', pass:false, note:'A medical claim should remain open to respectful questions and independent review, regardless of who presents it.' },
+      { name:'Occam\'s Razor', q:'What is the simpler explanation: miraculous healing, or stage techniques and crowd psychology?', pass:false, note:'Before reaching a conclusion, compare medical change with other possibilities such as temporary pain relief, heightened emotion, participant selection, or performance techniques.' },
+      { name:'Falsifiability', q:'If a healing does not last, is the original claim reconsidered?', pass:false, note:'Blaming a participant when an outcome does not last protects the claim from correction and can harm people who remain ill or disabled.' },
+      { name:'Quantification', q:'How many healings have been independently documented and medically followed up?', pass:false, note:'This example gives no total number of participants, confirmed diagnoses, lasting outcomes, or independent medical follow-up.' },
+      { name:'Cherry-Picking Check', q:'What happens to those not healed? Are their outcomes tracked and published?', pass:false, note:'A responsible evaluation must include everyone who participated, protect ill and disabled people from blame, and report both positive and negative outcomes.' }
+    ],
+    occam: 'Before concluding that a lasting medical change occurred, compare the claim with temporary pain relief, heightened emotion, participant selection, performance techniques, and the person’s later medical records.',
+    verdict: 'BALONEY',
+    verdictNote: 'A public claim of medical healing needs independent follow-up, transparent records, and care for people who remain ill. Questioning the claim is not the same as judging the people involved.',
+    foundationScore: 4
+  },
+  patternClaim({
+    label: 'Disney Rumor?', category: 'Celebrity Rumor',
+    text: '"Walt Disney was secretly cryonically frozen so future scientists could bring him back."',
+    specific: 'Disney died in 1966 and was cremated. The frozen-body story survives as a celebrity rumor, not as documented evidence.',
+    simpler: 'A famous person died, was cremated, and later became the subject of a futuristic urban legend.',
+    correction: 'contradictory records are treated as part of the cover-up or ignored because the story is more interesting than the paperwork.',
+    stakes: 'The claim attaches to celebrity mystery and our fear of death, which makes it emotionally sticky.',
+    occam: 'The simplest explanation is that Walt Disney died and was cremated, while cryonics rumors grew because Disney was associated with futurism, animation, and technological imagination.',
+    verdictNote: 'This is a classic rumor pattern: futuristic language, celebrity aura, no independent documentation, and a story too satisfying to die easily.'
+  }),
+  patternClaim({
+    label: 'Scientific Racism', category: 'Dark Modernity',
+    text: '"Human racial groups can be ranked scientifically by intelligence, moral worth, or fitness to rule."',
+    warning: 'This case examines a historically destructive pseudoscience. Its claims were used to justify oppression, eugenics, and genocide.',
+    specific: 'The measurements and categories were shaped by social prejudice, bad sampling, and political goals rather than neutral inquiry.',
+    simpler: 'Differences among people are better explained by genetics, environment, history, nutrition, education, and culture without inventing racial hierarchies of worth.',
+    correction: 'contrary evidence was dismissed because the claim was attached to empire, slavery, segregation, eugenics, and nationalist identity.',
+    stakes: 'This is pseudoscience fused with power. It borrowed charts and credentials to make cruelty look rational.',
+    occam: 'The simplest explanation is not that humanity is arranged in a hierarchy of worth. It is that biased societies created biased measurements to defend arrangements they already wanted.',
+    verdictNote: 'Scientific racism shows the darkest version of baloney: professional language used to bless power, identity, and violence while resisting moral and empirical correction.',
+    foundationScore: 1
+  }),
+  patternClaim({
+    label: 'Homeopathy', category: 'Medical Pseudoscience',
+    text: '"A remedy becomes more powerful the more it is diluted, even when no molecules of the original substance remain."',
+    specific: 'Controlled studies do not show effects beyond placebo, and extreme dilutions often contain no active ingredient.',
+    simpler: 'Placebo effects, regression to the mean, and natural recovery explain many positive stories without requiring water to remember vanished ingredients.',
+    correction: 'failed trials are explained away by saying the remedy was chosen incorrectly or the patient was not treated holistically enough.',
+    stakes: 'It uses medical language and can become profitable, especially when people distrust ordinary medicine.',
+    occam: 'The simplest explanation is that homeopathic benefits come from placebo, attention, time, and natural recovery, not from physically absent ingredients gaining power through dilution.',
+    verdictNote: 'Homeopathy borrows the tone of medicine while avoiding the central discipline of medicine: measurable effects that survive controlled testing.'
+  }),
+  patternClaim({
+    label: 'Anti-Vax', category: 'Health Misinformation',
+    text: '"Vaccines are more dangerous than the diseases they prevent, and public health agencies are hiding the truth."',
+    warning: 'This claim can cause real-world harm by reducing protection for children, elders, and medically vulnerable people.',
+    specific: 'Vaccine safety is tracked across huge populations by many independent systems. Rare risks exist, but they are measured against much larger disease risks.',
+    simpler: 'Anecdotes after vaccination can feel causal even when timing is coincidental. Population-level data is needed because individual stories cannot measure risk by themselves.',
+    correction: 'large safety datasets are dismissed as corrupt, while emotionally powerful anecdotes are treated as decisive proof.',
+    stakes: 'Fear for children, distrust of institutions, online identity, and profit from alternative products all reinforce the movement.',
+    occam: 'The simplest explanation is that vaccines, like all medical interventions, have measurable risks and much larger measurable benefits; conspiracy claims require a vast hidden coordination across countries, hospitals, researchers, and regulators.',
+    verdictNote: 'Anti-vaccination movements are a live example of anecdote defeating statistics when fear, identity, and mistrust become stronger than correction.',
+    foundationScore: 5
+  }),
+  patternClaim({
+    label: 'Perpetual Motion', category: 'Fraudulent Machines',
+    text: '"This machine produces endless energy without fuel, violating no laws because experts just do not understand it yet."',
+    specific: 'Independent tests do not show net energy production once hidden batteries, measurement errors, friction, and external inputs are controlled.',
+    simpler: 'Mis-measurement, concealed power, or misunderstanding energy accounting explains the demonstrations without overturning thermodynamics.',
+    correction: 'builders often refuse sealed, independent testing or claim that skeptical measurement interferes with the device.',
+    stakes: 'Unlimited energy promises attention, investment, fame, and sometimes fraud.',
+    occam: 'The simplest explanation is that conservation of energy still holds and the machine is powered by hidden input, error, or deception.',
+    verdictNote: 'Perpetual motion is baloney in machine form: dramatic demonstration, weak measurement, and refusal to submit to independent accounting.',
+    foundationScore: 2
+  }),
+  patternClaim({
+    label: 'Cold Fusion', category: 'Failed Replication',
+    text: '"Room-temperature nuclear fusion has been achieved on a tabletop, but mainstream science refuses to accept it."',
+    specific: 'The famous 1989 cold-fusion announcement failed when other laboratories could not reliably reproduce the claimed excess heat and nuclear signatures.',
+    simpler: 'Experimental error, measurement artifacts, and premature announcement explain the case better than a world-changing discovery that only appears inconsistently.',
+    correction: 'failed replications are recast as establishment resistance instead of evidence that the original claim was not reliable.',
+    stakes: 'The promise of clean, cheap energy gives the claim enormous emotional, financial, and political appeal.',
+    occam: 'The simplest explanation is that the original room-temperature fusion evidence was not strong enough: if tabletop fusion worked reliably, independent labs would reproduce it and the world would reorganize around it.',
+    verdictNote: 'Cold fusion is a useful caution: science is allowed to be surprising, but surprise must survive replication.',
+    foundationScore: 8
+  })
+];
+
+/* Keep the student experience short. The full source material contains seven
+   checks; this view combines them into four memorable questions. */
+const SIMPLE_CHECKS = [
+  { sourceIndex: 0, name: 'Who says so?', q: 'Can we find the original source and a second trustworthy source?' },
+  { sourceIndex: 5, name: 'What is the evidence?', q: 'What details can be observed, measured, or confirmed?' },
+  { sourceIndex: 3, name: 'What else could explain it?', q: 'Which explanation fits the evidence with the fewest extra assumptions?' },
+  { sourceIndex: 6, name: 'What should I do next?', q: 'Should I share, pause, ask for help, or look for more information?' }
+];
+
+const CHECK_COUNT = SIMPLE_CHECKS.length;
+
+function checksFor(claim) {
+  return SIMPLE_CHECKS.map(check => ({
+    ...claim.tools[check.sourceIndex],
+    name: check.name,
+    q: check.q
+  }));
+}
+
+/* ═══════════════════════════════════════
+   STATE
+═══════════════════════════════════════ */
+let activeClaim = 0;
+let activeTool  = 0;
+let revealed    = [];
+
+/* ═══════════════════════════════════════
+   ELEMENTS
+═══════════════════════════════════════ */
+const viewport    = document.getElementById('bdk-viewport');
+const headerBadge = document.getElementById('bdk-header-badge');
+const claimCard   = document.getElementById('bdk-claim-card');
+const claimKicker = document.getElementById('bdk-claim-kicker');
+const claimText   = document.getElementById('bdk-claim-text');
+const claimWarn   = document.getElementById('bdk-claim-warning');
+const pipsWrap    = document.getElementById('bdk-pips');
+const toolNum     = document.getElementById('bdk-tool-num');
+const toolName    = document.getElementById('bdk-tool-name');
+const toolQ       = document.getElementById('bdk-tool-question');
+const revealBtn   = document.getElementById('bdk-reveal-btn');
+const toolResult  = document.getElementById('bdk-tool-result');
+const resultLabel = document.getElementById('bdk-result-label');
+const resultNote  = document.getElementById('bdk-result-note');
+const prevBtn     = document.getElementById('bdk-prev');
+const nextBtn     = document.getElementById('bdk-next');
+const counter     = document.getElementById('bdk-counter');
+const verdictEl   = document.getElementById('bdk-verdict');
+const verdictWord = document.getElementById('bdk-verdict-word');
+const verdictNote = document.getElementById('bdk-verdict-note');
+const occamBox    = document.getElementById('bdk-occam-box');
+const occamText   = document.getElementById('bdk-occam-text');
+const restartBtn  = document.getElementById('bdk-restart');
+const meterFill   = document.getElementById('bdk-meter-fill');
+const meterPct    = document.getElementById('bdk-meter-pct');
+const foundFill   = document.getElementById('bdk-found-fill');
+const foundWord   = document.getElementById('bdk-found-word');
+const readoutType = document.getElementById('bdk-readout-type');
+const readoutDone = document.getElementById('bdk-readout-done');
+const readoutHabit = document.getElementById('bdk-readout-habit');
+const logList     = document.getElementById('bdk-log-list');
+const logEmpty    = document.getElementById('bdk-log-empty');
+const logCount    = document.getElementById('bdk-log-count');
+
+/* ═══════════════════════════════════════
+   LOAD CLAIM
+═══════════════════════════════════════ */
+function loadClaim(idx) {
+  activeClaim = idx;
+  activeTool  = 0;
+  revealed    = new Array(CHECK_COUNT).fill(false);
+
+  const c = CLAIMS[idx];
+
+  claimCard.className = 'bdk-claim-card is-' + c.type;
+  claimKicker.textContent = c.category;
+  claimText.textContent   = c.text;
+  headerBadge.textContent = 'Curiosity Mode';
+  readoutType.textContent = 'Needs checking';
+  readoutHabit.textContent = 'Stay curious';
+  if (c.warning) {
+    claimWarn.textContent    = c.warning;
+    claimWarn.style.display  = 'block';
+  } else {
+    claimWarn.style.display = 'none';
+  }
+
+  document.querySelectorAll('.bdk-claim-btn').forEach(b =>
+    b.classList.toggle('active', Number(b.dataset.claim) === idx)
+  );
+
+  verdictEl.className  = 'bdk-verdict';
+  occamBox.className   = 'bdk-occam-box';
+
+  buildPips();
+  renderTool();
+  updateMeters();
+  updateEvidenceLog();
+}
+
+/* ═══════════════════════════════════════
+   PIPS
+═══════════════════════════════════════ */
+function buildPips() {
+  pipsWrap.innerHTML = '';
+  const tools = checksFor(CLAIMS[activeClaim]);
+  for (let i = 0; i < CHECK_COUNT; i++) {
+    const pip = document.createElement('button');
+    pip.type = 'button';
+    pip.setAttribute('aria-label', `Go to question ${i + 1}: ${tools[i].name}`);
+    pip.className = 'bdk-pip' + (i === 0 ? ' pip-active' : '');
+    pip.title = tools[i].name;
+    pip.addEventListener('click', () => { activeTool = i; renderTool(); });
+    pipsWrap.appendChild(pip);
+  }
+}
+
+function refreshPips() {
+  pipsWrap.querySelectorAll('.bdk-pip').forEach((pip, i) => {
+    pip.className = 'bdk-pip';
+    if (i === activeTool) {
+      pip.classList.add('pip-active');
+    } else if (revealed[i]) {
+      pip.classList.add(checksFor(CLAIMS[activeClaim])[i].pass ? 'pip-pass' : 'pip-fail');
+    }
+  });
+}
+
+/* ═══════════════════════════════════════
+   RENDER TOOL
+═══════════════════════════════════════ */
+function renderTool() {
+  const t = checksFor(CLAIMS[activeClaim])[activeTool];
+
+  toolNum.textContent  = activeTool + 1;
+  toolName.textContent = t.name;
+  toolQ.textContent    = t.q;
+  counter.textContent  = `Question ${activeTool + 1} of ${CHECK_COUNT}`;
+
+  prevBtn.disabled = activeTool === 0;
+
+  if (revealed[activeTool]) {
+    revealBtn.style.display = 'none';
+    toolResult.className = 'bdk-tool-result show-result ' + (t.pass ? 'res-pass' : 'res-fail');
+    resultLabel.textContent = t.pass ? 'SUPPORTED ✓' : 'CHECK MORE';
+    resultNote.textContent  = t.note;
+    // Next available if not on last tool
+    nextBtn.disabled    = false;
+    nextBtn.textContent = activeTool < CHECK_COUNT - 1 ? 'Next →' : 'Done';
+    nextBtn.classList.add('btn-primary');
+  } else {
+    revealBtn.style.display = 'block';
+    toolResult.className = 'bdk-tool-result';
+    nextBtn.disabled = true;
+    nextBtn.textContent = 'Next →';
+  }
+
+  refreshPips();
+}
+
+/* ═══════════════════════════════════════
+   METERS
+═══════════════════════════════════════ */
+function updateMeters() {
+  const c = CLAIMS[activeClaim];
+  const done  = revealed.filter(Boolean).length;
+  readoutDone.textContent = `${done} / ${CHECK_COUNT}`;
+  if (done === 0) {
+    meterFill.style.width = '0%';
+    meterPct.textContent  = '–';
+    foundFill.style.width = '0%';
+    foundWord.textContent = '–';
+    return;
+  }
+  const tools  = checksFor(c);
+  const fails  = revealed.reduce((n, r, i) => r && !tools[i].pass ? n + 1 : n, 0);
+  const passes = revealed.reduce((n, r, i) => r &&  tools[i].pass ? n + 1 : n, 0);
+  const pct    = Math.round(fails / done * 100);
+  const fPct   = Math.min(Math.round(c.foundationScore * passes / CHECK_COUNT * 1.08), 100);
+
+  meterFill.style.width = pct + '%';
+  meterFill.className   = 'bdk-meter-fill ' + (pct > 60 ? 'fill-high' : 'fill-low');
+  meterPct.textContent  = pct + '% need more checking';
+
+  foundFill.style.width = fPct + '%';
+  foundWord.textContent =
+    fPct < 15 ? 'Limited' :
+    fPct < 40 ? 'Developing' :
+    fPct < 70 ? 'Mixed' : 'Strong';
+}
+
+/* ═══════════════════════════════════════
+   EVIDENCE LOG
+═══════════════════════════════════════ */
+function updateEvidenceLog() {
+  const c = CLAIMS[activeClaim];
+  const entries = checksFor(c)
+    .map((tool, i) => ({ tool, i }))
+    .filter(entry => revealed[entry.i]);
+
+  logList.innerHTML = '';
+  logEmpty.style.display = entries.length ? 'none' : 'block';
+  logCount.textContent = `${entries.length} ${entries.length === 1 ? 'note' : 'notes'}`;
+
+  entries.forEach(({ tool, i }) => {
+    const li = document.createElement('li');
+    const mark = document.createElement('span');
+    const text = document.createElement('span');
+    mark.className = 'bdk-log-mark ' + (tool.pass ? 'pass' : 'fail');
+    mark.textContent = tool.pass ? '✓' : '!';
+    text.textContent = `${i + 1}. ${tool.name}: ${tool.pass ? 'supported' : 'check more'}`;
+    li.append(mark, text);
+    logList.appendChild(li);
+  });
+}
+
+/* ═══════════════════════════════════════
+   VERDICT
+═══════════════════════════════════════ */
+function showVerdict() {
+  const c = CLAIMS[activeClaim];
+  verdictEl.className   = 'bdk-verdict show-verdict v-' + c.type;
+  verdictWord.textContent = 'PAUSE & CHECK';
+  verdictNote.textContent = c.verdictNote;
+  occamBox.className    = 'bdk-occam-box show-occam';
+  occamText.textContent = c.occam;
+  // scroll verdict into view
+  verdictEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+/* ═══════════════════════════════════════
+   EVENTS
+═══════════════════════════════════════ */
+revealBtn.addEventListener('click', () => {
+  revealed[activeTool] = true;
+  renderTool();
+  updateMeters();
+  updateEvidenceLog();
+  if (revealed.every(Boolean)) showVerdict();
+});
+
+nextBtn.addEventListener('click', () => {
+  if (activeTool < CHECK_COUNT - 1) {
+    activeTool++;
+    renderTool();
+  }
+});
+
+prevBtn.addEventListener('click', () => {
+  if (activeTool > 0) { activeTool--; renderTool(); }
+});
+
+restartBtn.addEventListener('click', () => loadClaim(activeClaim));
+
+document.querySelectorAll('.bdk-claim-btn').forEach(btn =>
+  btn.addEventListener('click', () => loadClaim(Number(btn.dataset.claim)))
+);
+
+/* ═══════════════════════════════════════
+   GRADE BUTTONS (sync all instances)
+═══════════════════════════════════════ */
+document.querySelectorAll('.bdk-grade-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const band = btn.dataset.band;
+    // Update all grade buttons
+    document.querySelectorAll('.bdk-grade-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.band === band)
+    );
+    // Update viewport grade class
+    viewport.className = viewport.className.replace(/\bgrade-\S+/g, '').trim() + ' grade-' + band;
+  });
+});
+
+/* ═══════════════════════════════════════
+   PANEL TABS
+═══════════════════════════════════════ */
+document.querySelectorAll('.ll-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.ll-tab').forEach(t => t.setAttribute('aria-selected', 'false'));
+    document.querySelectorAll('.ll-pane').forEach(p => p.classList.remove('ll-active'));
+    tab.setAttribute('aria-selected', 'true');
+    document.getElementById(tab.dataset.pane).classList.add('ll-active');
+  });
+});
+
+/* ── Panel open/close ── */
+const panel   = document.querySelector('.ll-panel');
+const closeBtn = document.querySelector('.ll-panel-close');
+const openBtn  = document.getElementById('bdk-open-panel');
+const mobilePanelQuery = window.matchMedia('(max-width: 680px)');
+
+function syncPanelForViewport(event) {
+  if (event.matches) {
+    panel.setAttribute('aria-hidden', 'true');
+  } else {
+    panel.setAttribute('aria-hidden', 'false');
+  }
+}
+
+syncPanelForViewport(mobilePanelQuery);
+mobilePanelQuery.addEventListener?.('change', syncPanelForViewport);
+closeBtn?.addEventListener('click', () => panel.setAttribute('aria-hidden', 'true'));
+openBtn?.addEventListener('click',  () => panel.setAttribute('aria-hidden', 'false'));
+
+/* ═══════════════════════════════════════
+   INIT
+═══════════════════════════════════════ */
+loadClaim(0);
+</script>
+<script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

@@ -1386,7 +1386,7 @@ async function handleUploadModel(req, res) {
 
     const links = [
       { label: "Virtual Reality Museum", url: "/apps/virtual-reality-museum/" },
-      { label: "Upload Another", url: "/lessons/virtual-reality-museum-upload.html" },
+      { label: "Upload Another", url: "/lessons/design/virtual-reality-museum-upload.html" },
     ];
 
     sendHtml(res, 200, renderResult("Museum Model Uploaded", notes, links));
