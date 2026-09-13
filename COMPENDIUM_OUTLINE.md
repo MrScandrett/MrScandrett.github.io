@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 261 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 262 public lessons and classifies 11 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -80,7 +80,7 @@ Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 36 lesson
 
 # Volume II — Physics, Chemistry, Matter & Energy
 
-Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 45 lessons
+Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 46 lessons
 
 ## Physics & Physical Systems (PHY)
 
@@ -101,43 +101,44 @@ Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 45 l
 - **PHY-10** — Universal Gravitation
 - **PHY-11** — The Pendulum
 - **PHY-12** — Archimedes' Principle
+- **PHY-13** — Navier-Stokes Equations
 
 ### Waves, Light & Sound
 
-- **PHY-13** — Point Wave — _also indexed in Audio, Lighting & Production Technology_
-- **PHY-14** — Huygens' Principle
-- **PHY-15** — Physics of Music — _also indexed in Audio, Lighting & Production Technology_
-- **PHY-16** — Do Atoms Make Music?
-- **PHY-17** — The Speed of Light
-- **PHY-18** — Digital Signal Processing — _also indexed in Engineering Systems & Electronics, Audio, Lighting & Production Technology_
+- **PHY-14** — Point Wave — _also indexed in Audio, Lighting & Production Technology_
+- **PHY-15** — Huygens' Principle
+- **PHY-16** — Physics of Music — _also indexed in Audio, Lighting & Production Technology_
+- **PHY-17** — Do Atoms Make Music?
+- **PHY-18** — The Speed of Light
+- **PHY-19** — Digital Signal Processing — _also indexed in Engineering Systems & Electronics, Audio, Lighting & Production Technology_
 
 ### Electricity, Magnetism & Fields
 
-- **PHY-19** — Coulomb's Law
-- **PHY-20** — Van de Graaff Balloon
-- **PHY-21** — Van de Graaff Generator
-- **PHY-22** — Faraday Cage
-- **PHY-23** — The Falling Coil
-- **PHY-24** — Faraday's Law
-- **PHY-25** — James Clerk Maxwell
-- **PHY-26** — AC vs. DC Electricity — _also indexed in Engineering Systems & Electronics_
-- **PHY-27** — Cathode Ray Tube
-- **PHY-28** — What Is Electricity?
+- **PHY-20** — Coulomb's Law
+- **PHY-21** — Van de Graaff Balloon
+- **PHY-22** — Van de Graaff Generator
+- **PHY-23** — Faraday Cage
+- **PHY-24** — The Falling Coil
+- **PHY-25** — Faraday's Law
+- **PHY-26** — James Clerk Maxwell
+- **PHY-27** — AC vs. DC Electricity — _also indexed in Engineering Systems & Electronics_
+- **PHY-28** — Cathode Ray Tube
+- **PHY-29** — What Is Electricity?
 
 ### Heat, Matter & Modern Physics
 
-- **PHY-29** — Thermodynamics
-- **PHY-30** — Entropy
-- **PHY-31** — Fundamental Forces
-- **PHY-32** — Electron Microscopes
-- **PHY-33** — World Quantum Day 2026
+- **PHY-30** — Thermodynamics
+- **PHY-31** — Entropy
+- **PHY-32** — Fundamental Forces
+- **PHY-33** — Electron Microscopes
+- **PHY-34** — World Quantum Day 2026
 
 ### People Who Changed Physics
 
-- **PHY-34** — Nikola Tesla
-- **PHY-35** — Marie Curie — _also indexed in Chemistry & Chemical Systems_
-- **PHY-36** — Albert Einstein
-- **PHY-37** — Benjamin Franklin
+- **PHY-35** — Nikola Tesla
+- **PHY-36** — Marie Curie — _also indexed in Chemistry & Chemical Systems_
+- **PHY-37** — Albert Einstein
+- **PHY-38** — Benjamin Franklin
 
 ## Chemistry & Chemical Systems (CHE)
 
@@ -479,7 +480,6 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 
 These pages remain attached to their parent lesson or module and do not become duplicate canonical lessons.
 
-- `lessons/computer-science/navier-stokes.html` — background-reference; module-appendix; parent: `lessons/computer-science/cgi-water.html`
 - `lessons/life-sciences/animalia/explorer.html` — interactive-extension; parent-appendix; parent: `lessons/life-sciences/animalia/index.html`
 - `lessons/life-sciences/animalia/sorter.html` — practice-extension; parent-appendix; parent: `lessons/life-sciences/animalia/index.html`
 - `lessons/computer-science/game-tutorials/catch.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/2d-game-engines.html`
