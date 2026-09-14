@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 262 public lessons and classifies 11 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 265 public lessons and classifies 11 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -158,7 +158,7 @@ Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 46 l
 
 # Volume III — Living Systems, Earth & Environment
 
-Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 24 lessons
+Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 25 lessons
 
 ## Biology & Life Science (BIO)
 
@@ -168,20 +168,21 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 - **BIO-02** — DNA & Heredity — _also indexed in Chemistry & Chemical Systems_
 - **BIO-03** — Amino Acids & Proteins
 - **BIO-04** — CRISPR & Synthetic Biology Lab
+- **BIO-05** — Connectomics: Mapping the Brain
 
 ### Diversity, Classification & Adaptation
 
-- **BIO-05** — Classifying Life: Taxonomy of Every Kingdom — _also indexed in Chemistry & Chemical Systems_
-- **BIO-06** — Entomology: The Science of Insects
-- **BIO-07** — Axolotls & Neoteny
-- **BIO-08** — Slime Molds & Swarm Intelligence
-- **BIO-09** — Cryptozoology: From Footprints to Facts
+- **BIO-06** — Classifying Life: Taxonomy of Every Kingdom — _also indexed in Chemistry & Chemical Systems_
+- **BIO-07** — Entomology: The Science of Insects
+- **BIO-08** — Axolotls & Neoteny
+- **BIO-09** — Slime Molds & Swarm Intelligence
+- **BIO-10** — Cryptozoology: From Footprints to Facts
 
 ### Evolution & Deep Time
 
-- **BIO-10** — Life Invented the Animal — _also indexed in Chemistry & Chemical Systems_
-- **BIO-11** — The K-Pg Extinction
-- **BIO-12** — The Evolution of Wood
+- **BIO-11** — Life Invented the Animal — _also indexed in Chemistry & Chemical Systems_
+- **BIO-12** — The K-Pg Extinction
+- **BIO-13** — The Evolution of Wood
 
 ## Earth & Environmental Science (EAR)
 
@@ -205,7 +206,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 58 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 60 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
@@ -217,31 +218,33 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 - **ENG-04** — Breadboard Basics
 - **ENG-05** — Robotics Engineering Intro
 - **ENG-06** — Arduino: The Robot Brain
-- **ENG-07** — Digital Sensors: Actions = Reactions
-- **ENG-08** — Inputs: Beyond the Button
-- **ENG-09** — Outputs: Beyond the LED
-- **ENG-10** — Soldering
-- **ENG-11** — Sensor Modules Kit
-- **ENG-12** — The Internet of Things
+- **ENG-07** — Arduino Board Anatomy Lab
+- **ENG-08** — Digital Sensors: Actions = Reactions
+- **ENG-09** — Inputs: Beyond the Button
+- **ENG-10** — Arduino Programming: Variables, Functions & Libraries
+- **ENG-11** — Outputs: Beyond the LED
+- **ENG-12** — Soldering
+- **ENG-13** — Sensor Modules Kit
+- **ENG-14** — The Internet of Things
 
 ### Mechanisms, Feedback & Control
 
-- **ENG-13** — Mechanisms and Gear Systems
-- **ENG-14** — PID Control & Feedback Loops
-- **ENG-15** — Maglev Train Engineering
-- **ENG-16** — Bug Bots: Genghis & the Insect Robots
+- **ENG-15** — Mechanisms and Gear Systems
+- **ENG-16** — PID Control & Feedback Loops
+- **ENG-17** — Maglev Train Engineering
+- **ENG-18** — Bug Bots: Genghis & the Insect Robots
 
 ### Structural Design Projects
 
-- **ENG-17** — Bridge Over Troubled Water
-- **ENG-18** — Biomimicry: Engineering Nature's Genius
+- **ENG-19** — Bridge Over Troubled Water
+- **ENG-20** — Biomimicry: Engineering Nature's Genius
 
 ### People Who Changed Engineering
 
-- **ENG-19** — Emily Roebling
-- **ENG-20** — Henry Ford — _also indexed in Design, Materials & Fabrication_
-- **ENG-21** — Rube Goldberg Machine Lab
-- **ENG-22** — Hedy Lamarr
+- **ENG-21** — Emily Roebling
+- **ENG-22** — Henry Ford — _also indexed in Design, Materials & Fabrication_
+- **ENG-23** — Rube Goldberg Machine Lab
+- **ENG-24** — Hedy Lamarr
 
 ## Design, Materials & Fabrication (FAB)
 

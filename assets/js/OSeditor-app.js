@@ -167,6 +167,7 @@ const visualOverlayScript = `
     if (wasSelected) selectBlock(null);
   }
   function wireBlock(block) {
+    block.querySelectorAll(':scope > .oe-handle').forEach(function (el) { el.remove(); });
     block.setAttribute("data-oe-block", "");
     block.setAttribute("draggable", "true");
     var handle = doc.createElement("div");
@@ -429,7 +430,22 @@ const visualOverlayScript = `
     sync();
   }
   window.addEventListener("message", function (event) {
+    if (event.source !== parent) return;
     if (!event.data || event.data.type !== "oe-command") return;
+    if (event.data.cmd === "add-block") {
+      var section = doc.createElement("section");
+      section.style.cssText = "padding:32px;margin:16px 0;border:1px solid #b8c7d5;border-radius:12px;background:#ffffff;color:#203040";
+      var heading = doc.createElement("h2");
+      heading.textContent = "Your new section";
+      var paragraph = doc.createElement("p");
+      paragraph.textContent = "Click this text and tell your story.";
+      section.appendChild(heading); section.appendChild(paragraph);
+      var selected = getSelectedBlock();
+      if (selected) selected.after(section);
+      else (doc.querySelector("main") || doc.body).appendChild(section);
+      markEditable(section); wireBlock(section); selectBlock(section); sync();
+      return;
+    }
     var handler = commandMap[event.data.cmd];
     if (handler) handler(event.data.value);
   });
@@ -548,6 +564,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       ? "Editor ready. Choose a page to begin; source writing requires your password."
       : "Editor ready. Choose a page to begin; source writing is currently disabled.");
     await restoreAutosave();
+    setEditMode("visual");
   } catch (error) {
     console.error("OSeditor failed to start", error);
   }
@@ -932,6 +949,7 @@ function handleVisualSyncMessage(event) {
   if (!elements.frame || event.source !== elements.frame.contentWindow) return;
   if (!event.data || event.data.type !== "oe-sync") return;
   if (!previewEntryPath) return;
+  if (editMode !== "visual" || typeof event.data.html !== "string") return;
 
   const html = `<!doctype html>\n${event.data.html}`;
   drafts.set(previewEntryPath, html);
@@ -951,6 +969,7 @@ function sendDesignCommand(cmd, value) {
 }
 
 function wireDesignToolbar() {
+  document.getElementById("dt-add-section").addEventListener("click", () => sendDesignCommand("add-block"));
   const toolbar = elements.designToolbar;
   if (!toolbar) return;
 

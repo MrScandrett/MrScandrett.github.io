@@ -57,9 +57,15 @@
   }
 
   /* ── Theme-aware accent colour ───────────────────────────────── */
+  // Falls back to the Day theme's accent when this page never loaded
+  // theme-registry.js (canvas-bg.js gets injected onto pages — some lesson
+  // templates — that don't otherwise need the theme registry).
+  var DAY_ACCENT_RGB = [0, 113, 227];
+
   function accentRGB() {
     var theme = document.documentElement.dataset.theme || 'day';
-    return window.ClassroomOSThemeRegistry.getAccentRGB(theme);
+    var registry = window.ClassroomOSThemeRegistry;
+    return registry ? registry.getAccentRGB(theme) : DAY_ACCENT_RGB;
   }
 
   function rgba(rgb, a) {

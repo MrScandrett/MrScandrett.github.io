@@ -5,14 +5,17 @@ const APOD_API_KEY = "DEMO_KEY";
 const APOD_API_URL = `https://api.nasa.gov/planetary/apod?api_key=${APOD_API_KEY}`;
 const APOD_CACHE_KEY = "apod_cache";
 
+// Local copy avoids a blank "fallback" when the classroom is offline.
+// NASA/JPL/Caltech, 1990 — public domain, reprocessed 2020 by the Planetary Society.
 const APOD_FALLBACK = {
   title: "Pale Blue Dot",
   explanation: "Look again at that dot. That's here. That's home. That's us. On it everyone you love, everyone you know, everyone you ever heard of, every human being who ever was, lived out their lives.",
-  url: "https://upload.wikimedia.org/wikipedia/commons/7/73/Pale_Blue_Dot.png",
-  hdurl: "https://upload.wikimedia.org/wikipedia/commons/7/73/Pale_Blue_Dot.png",
+  url: "assets/thumbs/pale-blue-dot.png",
+  hdurl: "assets/thumbs/pale-blue-dot.png",
   date: "1990-02-14",
   media_type: "image",
   copyright: "NASA / JPL / Carl Sagan",
+  offline: true,
 };
 
 function withTimeout(ms = 8000) {
@@ -80,7 +83,9 @@ function renderApod(data) {
   const copyEl    = document.getElementById("apod-copyright");
   const hdLink    = document.getElementById("apod-hd");
   const expandBtn = document.getElementById("apod-expand");
+  const badgeEl   = document.getElementById("apod-offline-badge");
 
+  if (badgeEl) badgeEl.hidden = !d.offline;
   if (dateEl)  dateEl.textContent = formatApodDate(d.date);
   if (titleEl) titleEl.textContent = d.title || "Today's Image";
   if (copyEl)  copyEl.textContent = d.copyright ? `© ${d.copyright.trim()}` : "NASA / Public Domain";
@@ -120,12 +125,26 @@ function renderApod(data) {
   }
 }
 
+// Show useful content fast: render the local fallback if the live fetch hasn't
+// resolved within SKELETON_BUDGET, but let the fetch keep running underneath so
+// a fast-but-not-instant response still replaces it with today's real image.
+const SKELETON_BUDGET = 1800;
+
 async function initApod() {
+  let settled = false;
+  const fallbackTimer = setTimeout(() => {
+    if (!settled) renderApod(APOD_FALLBACK);
+  }, SKELETON_BUDGET);
+
   try {
     const data = await fetchApod();
+    settled = true;
+    clearTimeout(fallbackTimer);
     renderApod(data);
   } catch (err) {
     console.warn("[apod] Falling back to static image:", err);
+    settled = true;
+    clearTimeout(fallbackTimer);
     renderApod(APOD_FALLBACK);
   }
 }

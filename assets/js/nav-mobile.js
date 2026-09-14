@@ -1047,10 +1047,14 @@
   ];
 
   /* Which nav link labels get a dropdown, and what goes inside */
+  // Root-absolute so these resolve correctly from any nesting depth (this
+  // repo is a username.github.io repo, served at the domain root — a bare
+  // "showcase.html" instead 404s when this dropdown opens from e.g.
+  // lessons/cosmology/arecibo-message.html).
   var DROPDOWN_CONFIG = {
     "Showcase": {
       items: [
-        { label: "🎨 Browse All",    href: "showcase.html" },
+        { label: "🎨 Browse All",    href: "/showcase.html" },
         { label: "🏫 Class Groups",  action: "cohort-picker" },
         { label: "📐 Tinkercad",     action: "tinkercad-picker" }
       ]
@@ -1065,16 +1069,16 @@
         { divider: true },
         { label: "📐 Tinkercad class…", action: "tinkercad-picker" },
         { divider: true },
-        { label: "⬇️ Downloads",      href: "class-downloads.html" },
-        { label: "View all apps →",  href: "applications.html" }
+        { label: "⬇️ Downloads",      href: "/class-downloads.html" },
+        { label: "View all apps →",  href: "/applications.html" }
       ]
     },
     "Library": {
       items: [
-        { label: "📖 Recipe Book",   href: "recipe-book.html" },
-        { label: "📚 Classics",      href: "recipe-book.html#section-classics" },
+        { label: "📖 Recipe Book",   href: "/recipe-book.html" },
+        { label: "📚 Classics",      href: "/recipe-book.html#section-classics" },
         { divider: true },
-        { label: "🎬 Video Library", href: "video-library.html" }
+        { label: "🎬 Video Library", href: "/video-library.html" }
       ]
     }
   };
@@ -1095,8 +1099,9 @@
       return;
     }
 
-    /* Fallback: navigate to showcase.html and let it open the modal via hash */
-    window.location.href = "showcase.html#" + action;
+    /* Fallback: navigate to showcase.html and let it open the modal via hash.
+       Root-absolute so this still resolves correctly from a nested lesson page. */
+    window.location.href = "/showcase.html#" + action;
   }
 
   function openTinkercadOverlay() {

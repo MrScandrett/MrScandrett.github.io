@@ -6,6 +6,40 @@ const NEWS_CACHE_TTL = 30 * 60 * 1000;
 
 const feed = document.getElementById("science-news-feed");
 const refreshButton = document.getElementById("science-news-refresh");
+const editionBadge = document.getElementById("science-news-edition-badge");
+
+// Shown instantly if a classroom has no connection and no prior cache yet —
+// evergreen enough to stay useful, and honest that it isn't today's headlines.
+const CURATED_FALLBACK = [
+  {
+    title: "Why do vaccines need booster shots?",
+    summary: "Immunity can fade as antibody levels drop over time. Boosters remind the immune system what to watch for, which is why some vaccines call for more than one dose.",
+    url: "https://www.snexplores.org/",
+    date: "",
+    topic: "Health",
+  },
+  {
+    title: "What actually happens inside a black hole?",
+    summary: "Nobody has seen inside one directly, but gravity's pull grows so strong that not even light can escape past the event horizon — the boundary where our physics runs out of answers.",
+    url: "https://www.snexplores.org/",
+    date: "",
+    topic: "Space",
+  },
+  {
+    title: "How do scientists know Earth's climate is warming?",
+    summary: "Independent records — ocean buoys, ice cores, satellite readings, weather stations — all point the same direction, which is why climate scientists treat the trend as settled.",
+    url: "https://www.snexplores.org/",
+    date: "",
+    topic: "Earth",
+  },
+  {
+    title: "Why can octopuses change color so fast?",
+    summary: "Their skin is packed with pigment sacs called chromatophores, controlled directly by nerves rather than hormones — letting an octopus shift its look in a fraction of a second.",
+    url: "https://www.snexplores.org/",
+    date: "",
+    topic: "Life",
+  },
+];
 
 function plainText(html = "") {
   const documentFragment = new DOMParser().parseFromString(html, "text/html");
@@ -45,6 +79,7 @@ function normalizeStory(post) {
 }
 
 function formatDate(value) {
+  if (!value) return "Reference";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Latest report";
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
@@ -111,29 +146,18 @@ function buildStory(story, index) {
   return article;
 }
 
-function renderStories(stories, savedEdition = false) {
+const EDITION_LABELS = { saved: "Saved edition", offline: "Offline edition" };
+
+function renderStories(stories, edition = "live") {
   if (!feed) return;
   feed.replaceChildren(...stories.slice(0, 4).map(buildStory));
   feed.setAttribute("aria-busy", "false");
-  feed.dataset.edition = savedEdition ? "saved" : "live";
-}
-
-function renderError() {
-  if (!feed) return;
-  const panel = document.createElement("div");
-  panel.className = "science-news-error";
-  const title = document.createElement("strong");
-  title.textContent = "The science desk could not connect.";
-  const copy = document.createElement("span");
-  copy.textContent = "Check your connection or read the latest stories at the source.";
-  const link = document.createElement("a");
-  link.href = "https://www.snexplores.org/";
-  link.target = "_blank";
-  link.rel = "noreferrer noopener";
-  link.textContent = "Open Science News Explores ↗";
-  panel.append(title, copy, link);
-  feed.replaceChildren(panel);
-  feed.setAttribute("aria-busy", "false");
+  feed.dataset.edition = edition;
+  if (editionBadge) {
+    const label = EDITION_LABELS[edition];
+    editionBadge.textContent = label || "";
+    editionBadge.hidden = !label;
+  }
 }
 
 async function fetchStories() {
@@ -151,6 +175,12 @@ async function fetchStories() {
   }
 }
 
+// Show something useful fast: a fresh cache renders immediately, but a live
+// fetch only gets SKELETON_BUDGET before stale cache (or the curated set) is
+// shown in its place. The fetch keeps running underneath and, if it succeeds
+// after that point, quietly upgrades the feed to the live edition.
+const SKELETON_BUDGET = 1800;
+
 async function loadStories(forceRefresh = false) {
   if (!feed) return;
   const cached = forceRefresh ? null : readCache();
@@ -165,15 +195,25 @@ async function loadStories(forceRefresh = false) {
     refreshButton.setAttribute("aria-label", "Checking for new science stories");
   }
 
+  let settled = false;
+  const fallbackTimer = window.setTimeout(() => {
+    if (settled) return;
+    const savedStories = readCache(true);
+    renderStories(savedStories || CURATED_FALLBACK, savedStories ? "saved" : "offline");
+  }, SKELETON_BUDGET);
+
   try {
     const stories = await fetchStories();
+    settled = true;
+    window.clearTimeout(fallbackTimer);
     saveCache(stories);
     renderStories(stories);
   } catch (error) {
     console.warn("[science-news] Live feed unavailable:", error);
+    settled = true;
+    window.clearTimeout(fallbackTimer);
     const savedStories = readCache(true);
-    if (savedStories) renderStories(savedStories, true);
-    else renderError();
+    renderStories(savedStories || CURATED_FALLBACK, savedStories ? "saved" : "offline");
   } finally {
     if (refreshButton) {
       refreshButton.disabled = false;
