@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sensor to Webpage · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Wire a sensor to Arduino, print live readings to the Serial Monitor, then build a simple webpage that displays the sensor's value in real time as it changes." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      --s2w-ink: #14202a;
+      --s2w-paper: #eaf1f6;
+      --s2w-panel: #fffdfa;
+      --s2w-blue: #2b6ea3;
+      --s2w-navy: #1b2e3f;
+      --s2w-amber: #f2a53f;
+      --s2w-lime: #7ec850;
+      --s2w-red: #d9534b;
+      --s2w-line: rgba(20, 32, 42, 0.18);
+      --s2w-grid: rgba(43, 110, 163, 0.08);
+    }
+    body.theme-steam { font-family: "IBM Plex Sans", Inter, sans-serif; }
+    .s2w-page { padding-bottom: 1.5rem; color: var(--s2w-ink); }
+    .ll-viewport { --ll-panel-w: 310px; }
+    .s2w-page button, .s2w-page select, .s2w-page input { font: inherit; }
+    .s2w-page button { touch-action: manipulation; cursor: pointer; }
+    .s2w-page :focus-visible { outline: 3px solid #0b83b1; outline-offset: 3px; }
+
+    .s2w-hero { position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(300px, .95fr); gap: clamp(1.2rem, 4vw, 3.2rem); align-items: center; margin: .45rem 0 1rem; padding: clamp(1.35rem, 4vw, 2.8rem); border: 1px solid var(--s2w-line); border-radius: 10px; background-color: var(--s2w-paper); background-image: linear-gradient(var(--s2w-grid) 1px, transparent 1px), linear-gradient(90deg, var(--s2w-grid) 1px, transparent 1px); background-size: 22px 22px; box-shadow: 0 18px 48px rgba(20,32,42,.12); }
+    .s2w-hero::before { content: "WEEK 7 · ENR1-07B"; position: absolute; right: -2.6rem; top: 1.2rem; transform: rotate(7deg); color: rgba(43,110,163,.13); font: 800 clamp(2rem, 6vw, 4.4rem)/.78 "Barlow Condensed", sans-serif; letter-spacing: .04em; pointer-events: none; }
+    .s2w-kicker, .s2w-label { font: 700 .73rem/1.2 "IBM Plex Mono", monospace; letter-spacing: .09em; text-transform: uppercase; }
+    .s2w-kicker { color: var(--s2w-blue); }
+    .s2w-hero h1 { max-width: 14ch; margin: .3rem 0 .75rem; font: 800 clamp(2.1rem, 5.6vw, 4rem)/.88 "Barlow Condensed", sans-serif; letter-spacing: -.03em; text-transform: uppercase; }
+    .s2w-hero h1 span { display: block; color: var(--s2w-amber); }
+    .s2w-lede { max-width: 58ch; margin: 0 0 1rem; font-size: 1rem; line-height: 1.7; }
+    .s2w-meta { display: flex; flex-wrap: wrap; gap: .45rem; margin: .8rem 0 1.05rem; }
+    .s2w-meta span { padding: .28rem .52rem; border: 1px solid var(--s2w-line); background: rgba(255,255,255,.56); font: 600 .7rem/1.2 "IBM Plex Mono", monospace; }
+    .s2w-back { color: var(--s2w-blue); font-weight: 700; text-decoration: none; }
+    .s2w-back:hover { text-decoration: underline; }
+
+    .s2w-hero-board { position: relative; z-index: 1; display: grid; grid-template-rows: auto auto auto; align-items: center; gap: .6rem; min-height: 220px; padding: 1rem; border: 3px solid #1b2e3f; border-radius: 12px; background: #16283a; color: #dcecf5; }
+    .s2w-hero-readout { display: grid; place-items: center; gap: .2rem; padding: .9rem; border: 2px solid #2b6ea3; border-radius: 8px; background: #0e1a22; }
+    .s2w-hero-value { font: 800 2.2rem/1 "Barlow Condensed", sans-serif; color: #7bd88f; }
+    .s2w-hero-unit { font: 600 .68rem "IBM Plex Mono", monospace; color: #a9c3d4; letter-spacing: .06em; text-transform: uppercase; }
+    .s2w-hero-bar-track { height: 14px; border: 1px solid #2b6ea3; border-radius: 7px; overflow: hidden; background: #0e1a22; }
+    .s2w-hero-bar-fill { height: 100%; width: 40%; background: linear-gradient(90deg, #f2a53f, #f6ca4d); transition: width .3s ease; }
+    .s2w-hero-slider { width: 100%; }
+    .s2w-hero-caption { margin: 0; text-align: center; font: 600 .74rem "IBM Plex Mono", monospace; color: #a9c3d4; }
+
+    .s2w-card { margin-bottom: 1rem; padding: clamp(1.1rem, 3vw, 1.65rem); border: 1px solid var(--s2w-line); border-top: 5px solid var(--s2w-accent, var(--s2w-blue)); border-radius: 9px; background: var(--s2w-panel); box-shadow: 0 8px 24px rgba(20,32,42,.07); }
+    .s2w-card h2 { margin: 0 0 .5rem; font: 800 clamp(1.55rem, 3.8vw, 2.2rem)/.95 "Barlow Condensed", sans-serif; text-transform: uppercase; letter-spacing: -.015em; }
+    .s2w-card h3 { margin: 0 0 .35rem; font: 700 1.2rem/1 "Barlow Condensed", sans-serif; text-transform: uppercase; }
+    .s2w-card p { margin: 0 0 .75rem; line-height: 1.67; }
+    .s2w-card > p { max-width: 78ch; }
+    .s2w-steps { margin: 0 0 .75rem; padding-left: 1.2rem; line-height: 1.7; }
+    .s2w-steps li { margin-bottom: .3rem; }
+
+    .s2w-wiring { display: grid; grid-template-columns: minmax(280px, 1.1fr) minmax(260px, .9fr); gap: 1rem; margin-top: 1rem; }
+    .s2w-diagram { padding: 1rem; border: 1px solid var(--s2w-line); background: #f2f6f8; }
+    .s2w-diagram svg { display: block; width: 100%; height: auto; }
+    .s2w-code { margin: 0; overflow: auto; padding: 1rem; border-radius: 4px; background: #17272f; color: #e7f0e8; font: 500 .77rem/1.62 "IBM Plex Mono", monospace; }
+    .s2w-code .c { color: #a8c86e; } .s2w-code .k { color: #70c8e5; } .s2w-code .n { color: #f2bf3f; } .s2w-code .f { color: #dcdcaa; } .s2w-code .s { color: #e8a2a0; }
+
+    .s2w-flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: .5rem; margin-top: 1rem; }
+    .s2w-flow-step { flex: 1 1 150px; padding: .8rem; border: 1px solid var(--s2w-line); border-radius: 6px; background: #f2f6f8; }
+    .s2w-flow-step b { display: block; font: 700 .8rem "Barlow Condensed", sans-serif; text-transform: uppercase; letter-spacing: .02em; color: var(--s2w-blue); margin-bottom: .25rem; }
+    .s2w-flow-step p { margin: 0; font-size: .82rem; line-height: 1.5; }
+    .s2w-flow-arrow { display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: var(--s2w-blue); }
+
+    .s2w-build { display: grid; grid-template-columns: minmax(220px, .8fr) minmax(280px, 1.2fr); gap: 1rem; margin-top: 1rem; align-items: start; }
+    .s2w-build-panel { display: grid; place-items: center; gap: .8rem; padding: 1.2rem; border: 3px solid #1b2e3f; border-radius: 12px; background: #16283a; }
+    .s2w-build-slider { width: 90%; }
+    .s2w-build-caption { color: #cfe4e0; font: 600 .7rem "IBM Plex Mono", monospace; text-align: center; }
+    .s2w-build-page { border: 2px solid #1b2e3f; border-radius: 8px; overflow: hidden; background: white; }
+    .s2w-build-page-bar { padding: .35rem .6rem; background: #1b2e3f; color: #a9c3d4; font: 600 .68rem "IBM Plex Mono", monospace; }
+    .s2w-build-page-body { padding: 1rem; text-align: center; }
+    .s2w-build-page-label { font: 600 .72rem "IBM Plex Mono", monospace; color: #64748b; text-transform: uppercase; letter-spacing: .06em; }
+    .s2w-build-page-value { font: 800 2.6rem/1.1 "Barlow Condensed", sans-serif; color: var(--s2w-blue); margin: .2rem 0; }
+    .s2w-build-page-gauge { height: 18px; border: 1px solid var(--s2w-line); border-radius: 9px; overflow: hidden; background: #eaf1f6; margin-top: .4rem; }
+    .s2w-build-page-gauge-fill { height: 100%; width: 40%; background: linear-gradient(90deg, #7ec850, #f2a53f); transition: width .2s ease; }
+
+    .s2w-quiz { display: grid; gap: .85rem; margin-top: 1rem; }
+    .s2w-question { padding: 1rem; border: 1px solid var(--s2w-line); background: #f2f6f8; }
+    .s2w-question > p { font-weight: 700; }
+    .s2w-options { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+    .s2w-option { padding: .65rem; border: 1px solid var(--s2w-line); background: white; color: var(--s2w-ink); text-align: left; cursor: pointer; transition: border-color .15s ease, background .15s ease; }
+    .s2w-option:not(:disabled):hover { border-color: var(--s2w-blue); background: #e6f0f6; }
+    .s2w-option.is-correct { border-color: #5a7c18; background: #edf7d2; }
+    .s2w-option.is-wrong { border-color: #b5352e; background: #ffe2dc; }
+    .s2w-feedback { min-height: 1.4em; margin: .55rem 0 0; font-size: .82rem; font-weight: 600; }
+
+    [data-lighting="night"] .s2w-page, [data-theme="vaporwave"] .s2w-page, [data-theme="bark"] .s2w-page { --s2w-ink: #eaf2f5; --s2w-panel: #142228; --s2w-paper: #16262f; --s2w-line: rgba(234,242,245,.2); --s2w-grid: rgba(43,110,163,.12); }
+    [data-lighting="night"] .s2w-diagram, [data-lighting="night"] .s2w-flow-step, [data-lighting="night"] .s2w-question,
+    [data-theme="vaporwave"] .s2w-diagram, [data-theme="vaporwave"] .s2w-flow-step, [data-theme="vaporwave"] .s2w-question,
+    [data-theme="bark"] .s2w-diagram, [data-theme="bark"] .s2w-flow-step, [data-theme="bark"] .s2w-question { background: rgba(255,255,255,.04); }
+    [data-lighting="night"] .s2w-option, [data-theme="vaporwave"] .s2w-option, [data-theme="bark"] .s2w-option { background: #1a2f39; color: #eef6f3; }
+    [data-lighting="night"] .s2w-build-page, [data-theme="vaporwave"] .s2w-build-page, [data-theme="bark"] .s2w-build-page { background: #0e1a22; }
+    [data-lighting="night"] .s2w-build-page-value, [data-theme="vaporwave"] .s2w-build-page-value, [data-theme="bark"] .s2w-build-page-value { color: #7bd88f; }
+
+    @media (max-width: 900px) {
+      .s2w-hero, .s2w-wiring, .s2w-build { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .s2w-hero { padding: 1rem; }
+      .s2w-hero h1 { font-size: 2.4rem; }
+      .s2w-options { grid-template-columns: 1fr; }
+      .s2w-card { padding: 1rem; }
+      .s2w-flow { flex-direction: column; }
+      .s2w-flow-arrow { transform: rotate(90deg); }
+    }
+    @media print { .s2w-hero-board, .s2w-build-panel, .ll-panel, .ll-open-btn { display: none !important; } .s2w-card { break-inside: avoid; box-shadow: none; } }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary"><ul>
+          <li><a href="../../index.html">Home</a></li><li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li><li><a href="../../paths.html">Paths</a></li><li><a href="../../showcase.html">Showcase</a></li><li><a href="../../applications.html">Apps</a></li><li><a href="../../recipe-book.html">Library</a></li><li><a href="../../about.html">About</a></li>
+        </ul></nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="s2w-page">
+          <section class="s2w-hero" aria-labelledby="s2w-title">
+            <div>
+              <p class="s2w-kicker">Engineering · Arduino · Web Serial</p>
+              <h1 id="s2w-title">Sensor to <span>Webpage</span></h1>
+              <p class="s2w-lede">Newton had to compute orbits with pen and paper. You're going to make a hidden physical quantity — light, temperature, distance — show up live on a screen in about twenty minutes. Read a sensor, print it to Serial, then let a simple webpage read that same stream and display it as it changes.</p>
+              <div class="s2w-meta"><span>Grades 6–12</span><span>45–60 minutes</span><span>Build + web page</span><span>Arduino + sensor required</span></div>
+              <a class="s2w-back" href="../../steam-lessons.html#module-engineering">← Back to Engineering</a>
+            </div>
+            <div class="s2w-hero-board" id="hero-board" aria-label="Simulated live sensor readout">
+              <div class="s2w-hero-readout"><span class="s2w-hero-value" id="hero-value">512</span><span class="s2w-hero-unit">Analog reading (0–1023)</span></div>
+              <div class="s2w-hero-bar-track"><div class="s2w-hero-bar-fill" id="hero-bar"></div></div>
+              <input type="range" class="s2w-hero-slider" id="hero-slider" min="0" max="1023" value="512" aria-label="Drag to simulate the sensor changing">
+              <p class="s2w-hero-caption">Drag the slider — this is standing in for a photoresistor, potentiometer, or temperature sensor changing in real time.</p>
+            </div>
+          </section>
+
+          <section class="s2w-card" style="--s2w-accent:var(--s2w-blue);">
+            <p class="s2w-label">Core idea</p><h2>Voltage is invisible until you print it</h2>
+            <p>A sensor turns a physical quantity — light level, temperature, distance — into a voltage between 0V and 5V. Arduino's <code>analogRead()</code> converts that voltage into a number from 0 to 1023. On its own, that number lives only inside the chip. The build below makes it visible in two places at once: the Serial Monitor, and a webpage running in a browser on the same computer.</p>
+            <div class="s2w-flow">
+              <div class="s2w-flow-step"><b>1. Sensor</b><p>Light, heat, or distance changes a voltage on an analog pin.</p></div>
+              <div class="s2w-flow-arrow" aria-hidden="true">→</div>
+              <div class="s2w-flow-step"><b>2. Arduino</b><p><code>analogRead()</code> converts that voltage into a number, 0–1023.</p></div>
+              <div class="s2w-flow-arrow" aria-hidden="true">→</div>
+              <div class="s2w-flow-step"><b>3. Serial</b><p><code>Serial.println()</code> sends the number over USB as plain text.</p></div>
+              <div class="s2w-flow-arrow" aria-hidden="true">→</div>
+              <div class="s2w-flow-step"><b>4. Webpage</b><p>Web Serial reads the same USB stream and updates the page live.</p></div>
+            </div>
+          </section>
+
+          <section class="s2w-card" style="--s2w-accent:var(--s2w-amber);">
+            <p class="s2w-label">Step 1 — wire it up</p><h2>Sensor into an analog pin</h2>
+            <p>Any analog sensor works the same way here: a photoresistor (LDR), a potentiometer, or a temperature sensor like a TMP36 all output a variable voltage that <code>A0</code> can read. Wire the sensor's signal leg to <code>A0</code>, power to 5V, and ground to GND.</p>
+            <div class="s2w-wiring">
+              <div class="s2w-diagram">
+                <svg viewBox="0 0 620 260" role="img" aria-labelledby="s2w-wiring-title s2w-wiring-desc">
+                  <title id="s2w-wiring-title">Analog sensor wired to the A0 pin on an Arduino</title><desc id="s2w-wiring-desc">The sensor's signal leg connects to analog pin A0, with power from 5V and a shared ground.</desc>
+                  <rect x="40" y="30" width="230" height="190" rx="10" fill="#dbe6ec" stroke="#1b2e3f" stroke-width="3"/>
+                  <text x="155" y="58" text-anchor="middle" font-family="IBM Plex Mono" font-size="15" font-weight="700" fill="#1b2e3f">ARDUINO</text>
+                  <circle cx="270" cy="90" r="8" fill="#c65e2e"/><text x="238" y="78" text-anchor="end" font-family="IBM Plex Mono" font-size="13" fill="#1b2e3f">5V</text>
+                  <circle cx="270" cy="130" r="8" fill="#2b6ea3"/><text x="238" y="118" text-anchor="end" font-family="IBM Plex Mono" font-size="13" fill="#1b2e3f">A0</text>
+                  <circle cx="270" cy="170" r="8" fill="#12202a"/><text x="238" y="158" text-anchor="end" font-family="IBM Plex Mono" font-size="13" fill="#1b2e3f">GND</text>
+                  <rect x="440" y="70" width="90" height="110" rx="6" fill="#f2a53f" stroke="#8a5a1e" stroke-width="2"/>
+                  <text x="485" y="130" text-anchor="middle" font-family="IBM Plex Mono" font-size="12" font-weight="700" fill="#3a2708">SENSOR</text>
+                  <path d="M270 90H400V80H440" fill="none" stroke="#c65e2e" stroke-width="4"/>
+                  <path d="M270 130H400V125H440" fill="none" stroke="#2b6ea3" stroke-width="4"/>
+                  <path d="M270 170H400V180H440" fill="none" stroke="#12202a" stroke-width="4"/>
+                  <text x="405" y="72" font-family="IBM Plex Mono" font-size="11" fill="#8a3d20">power</text>
+                  <text x="405" y="117" font-family="IBM Plex Mono" font-size="11" fill="#1a5a8a">signal</text>
+                  <text x="405" y="200" font-family="IBM Plex Mono" font-size="11" fill="#1b2e3f">ground</text>
+                </svg>
+              </div>
+              <pre class="s2w-code" aria-label="Arduino sensor read and Serial print example"><code><span class="k">const int</span> sensorPin = A0;
+
+<span class="k">void</span> <span class="f">setup</span>() {
+  Serial.begin(<span class="n">9600</span>);
+}
+
+<span class="k">void</span> <span class="f">loop</span>() {
+  <span class="k">int</span> reading = analogRead(sensorPin);
+  Serial.println(reading);
+  delay(<span class="n">200</span>);
+}
+
+<span class="c">// reading is 0-1023: 0 = 0V, 1023 = 5V</span>
+<span class="c">// one line of text per reading, ~5 per second</span></code></pre>
+            </div>
+            <p style="margin-top:.9rem;"><a class="s2w-back" href="sensor-modules.html">Go deeper → choosing and calibrating a sensor module</a></p>
+          </section>
+
+          <section class="s2w-card" style="--s2w-accent:var(--s2w-blue);">
+            <p class="s2w-label">Step 2 — read it in the browser</p><h2>Web Serial: the same stream, on a webpage</h2>
+            <p>Chrome and Edge can talk directly to a USB serial port from JavaScript using the <strong>Web Serial API</strong> — no server, no extra software. The page below asks the user to pick the Arduino's port once, then reads whatever <code>Serial.println()</code> sends and updates the display every time a new line arrives.</p>
+            <pre class="s2w-code" aria-label="Minimal Web Serial reader page"><code><span class="c">&lt;button id="connect"&gt;Connect to Arduino&lt;/button&gt;</span>
+<span class="c">&lt;div id="value"&gt;--&lt;/div&gt;</span>
+
+<span class="k">&lt;script&gt;</span>
+connect.addEventListener(<span class="s">'click'</span>, <span class="k">async</span> () =&gt; {
+  <span class="k">const</span> port = <span class="k">await</span> navigator.serial.requestPort();
+  <span class="k">await</span> port.open({ baudRate: <span class="n">9600</span> });
+
+  <span class="k">const</span> reader = port.readable
+    .pipeThrough(<span class="k">new</span> TextDecoderStream())
+    .pipeThrough(<span class="k">new</span> TransformStream(<span class="k">new</span> LineBreakTransformer()))
+    .getReader();
+
+  <span class="k">while</span> (<span class="k">true</span>) {
+    <span class="k">const</span> { value, done } = <span class="k">await</span> reader.read();
+    <span class="k">if</span> (done) <span class="k">break</span>;
+    value.textContent = value.trim(); <span class="c">// update the page</span>
+  }
+});
+<span class="k">&lt;/script&gt;</span></code></pre>
+            <p>That's the whole loop: <strong>request the port once, then read lines forever.</strong> Everything else — turning that number into a bar graph, a color, or a gauge — is just regular HTML/CSS/JS reacting to a variable that now updates five times a second from the real world.</p>
+          </section>
+
+          <section class="s2w-card" style="--s2w-accent:var(--s2w-lime);">
+            <p class="s2w-label">Try it</p><h2>Sensor value, live on a page</h2>
+            <p>Drag the panel slider to stand in for the physical sensor changing. Watch the "webpage" on the right update instantly — this is exactly what your build should do once the Arduino is plugged in and the browser is connected over Web Serial.</p>
+            <div class="s2w-build">
+              <div class="s2w-build-panel">
+                <input type="range" class="s2w-build-slider" id="build-slider" min="0" max="1023" value="300" aria-label="Simulated sensor value">
+                <span class="s2w-build-caption" id="build-caption">A0 reading: 300</span>
+              </div>
+              <div class="s2w-build-page">
+                <div class="s2w-build-page-bar">localhost — sensor-reading.html</div>
+                <div class="s2w-build-page-body">
+                  <div class="s2w-build-page-label">Live Sensor Reading</div>
+                  <div class="s2w-build-page-value" id="build-page-value">300</div>
+                  <div class="s2w-build-page-gauge"><div class="s2w-build-page-gauge-fill" id="build-page-gauge"></div></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="s2w-card" style="--s2w-accent:var(--s2w-blue);">
+            <p class="s2w-label">Quick check</p><h2>Trace the signal</h2>
+            <div class="s2w-quiz">
+              <div class="s2w-question" data-answer="b" data-explanation="analogRead() maps a 0V-5V voltage onto the range 0-1023, one of 1024 possible steps."><p>1. What range of numbers does <code>analogRead()</code> return?</p><div class="s2w-options"><button class="s2w-option" data-choice="a">-1 to 1</button><button class="s2w-option" data-choice="b">0 to 1023</button><button class="s2w-option" data-choice="c">0 to 5</button><button class="s2w-option" data-choice="d">0 to 255</button></div><div class="s2w-feedback" aria-live="polite"></div></div>
+              <div class="s2w-question" data-answer="c" data-explanation="Serial.println() sends the reading as plain text over the same USB cable used to upload the sketch, one line per call."><p>2. How does the sensor reading get from the Arduino to the computer?</p><div class="s2w-options"><button class="s2w-option" data-choice="a">Bluetooth, automatically</button><button class="s2w-option" data-choice="b">Wi-Fi</button><button class="s2w-option" data-choice="c">Serial.println() over the USB cable</button><button class="s2w-option" data-choice="d">It's read directly by the webpage's camera</button></div><div class="s2w-feedback" aria-live="polite"></div></div>
+              <div class="s2w-question" data-answer="a" data-explanation="Web Serial lets JavaScript open a serial port directly in a supporting browser, with no server or extra software needed."><p>3. What browser feature lets a webpage read the USB serial data directly, with no extra server?</p><div class="s2w-options"><button class="s2w-option" data-choice="a">The Web Serial API</button><button class="s2w-option" data-choice="b">Cookies</button><button class="s2w-option" data-choice="c">CSS Grid</button><button class="s2w-option" data-choice="d">The Fetch API</button></div><div class="s2w-feedback" aria-live="polite"></div></div>
+              <div class="s2w-question" data-answer="d" data-explanation="delay(200) pauses for 200ms each loop, so roughly 1000/200 = 5 readings print per second."><p>4. If the Arduino loop calls <code>delay(200)</code> after each reading, about how many readings print per second?</p><div class="s2w-options"><button class="s2w-option" data-choice="a">200</button><button class="s2w-option" data-choice="b">20</button><button class="s2w-option" data-choice="c">1</button><button class="s2w-option" data-choice="d">5</button></div><div class="s2w-feedback" aria-live="polite"></div></div>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head"><div class="ll-tabs"><button class="ll-tab" aria-selected="true" data-pane="s2w-plan">Lesson</button><button class="ll-tab" aria-selected="false" data-pane="s2w-teacher">Teacher</button></div><button class="ll-panel-close" type="button" aria-label="Close panel">×</button></div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="s2w-plan">
+            <span class="ll-label">Learning goals</span>
+            <div class="ll-info"><strong>Read an analog sensor</strong>Wire a sensor to A0 and explain what <code>analogRead()</code> returns.</div>
+            <div class="ll-info"><strong>Print to Serial</strong>Use <code>Serial.println()</code> to send readings over USB as plain text.</div>
+            <div class="ll-info"><strong>Read serial in a browser</strong>Explain what the Web Serial API does and why no server is needed.</div>
+            <div class="ll-info"><strong>Build the loop</strong>Connect a webpage to the Arduino and display a live, updating reading.</div>
+            <div class="ll-info"><strong>Make it visible</strong>Turn the raw number into a bar, gauge, or color that a viewer can read at a glance.</div>
+          </div>
+          <div class="ll-pane" id="s2w-teacher">
+            <span class="ll-label">Materials</span>
+            <div class="ll-info"><strong>Core kit</strong>One Arduino Uno (or compatible board) and one analog sensor (photoresistor, potentiometer, or TMP36) per pair, plus a Chrome or Edge browser.</div>
+            <div class="ll-info"><strong>Launch question</strong>"NASA engineers used to need a whole lab to display a live sensor reading. What's stopping you from doing it on a $30 board in twenty minutes?"</div>
+            <div class="ll-info"><strong>Web Serial note</strong>Requires Chrome or Edge (not Safari or Firefox) and a page served over HTTPS or from localhost — a plain double-clicked HTML file won't have permission to request a port in some setups, so serve it with a simple local server if requestPort() fails silently.</div>
+            <div class="ll-info"><strong>Common snag</strong>If the browser can't see the port, the Serial Monitor in the Arduino IDE is probably still holding it open — close the IDE's Serial Monitor before connecting from the page.</div>
+            <div class="ll-info"><strong>Assessment</strong>A working circuit that prints changing sensor values to Serial, plus a webpage that connects over Web Serial and visibly updates as the sensor changes.</div>
+            <div class="ll-info"><strong>Safety</strong>Low-voltage USB power only.</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      // ── Hero slider demo ──
+      var heroSlider = document.getElementById('hero-slider');
+      var heroValue = document.getElementById('hero-value');
+      var heroBar = document.getElementById('hero-bar');
+      function setHero(val) {
+        heroValue.textContent = val;
+        heroBar.style.width = (val / 1023 * 100) + '%';
+      }
+      heroSlider.addEventListener('input', function () { setHero(heroSlider.value); });
+      setHero(heroSlider.value);
+
+      // ── Build lab: slider drives the simulated webpage ──
+      var buildSlider = document.getElementById('build-slider');
+      var buildCaption = document.getElementById('build-caption');
+      var buildPageValue = document.getElementById('build-page-value');
+      var buildPageGauge = document.getElementById('build-page-gauge');
+      function setBuild(val) {
+        buildCaption.textContent = 'A0 reading: ' + val;
+        buildPageValue.textContent = val;
+        buildPageGauge.style.width = (val / 1023 * 100) + '%';
+      }
+      buildSlider.addEventListener('input', function () { setBuild(buildSlider.value); });
+      setBuild(buildSlider.value);
+    })();
+
+    // ── Shared quiz handler ──
+    document.querySelectorAll('.s2w-question').forEach(function (question) {
+      question.querySelectorAll('.s2w-option').forEach(function (option) {
+        option.addEventListener('click', function () {
+          if (question.dataset.locked) return;
+          question.dataset.locked = 'true';
+          question.querySelectorAll('.s2w-option').forEach(function (item) {
+            item.disabled = true;
+            if (item.dataset.choice === question.dataset.answer) item.classList.add('is-correct');
+          });
+          var correct = option.dataset.choice === question.dataset.answer;
+          if (!correct) option.classList.add('is-wrong');
+          question.querySelector('.s2w-feedback').textContent = (correct ? 'Correct. ' : 'Not quite. ') + question.dataset.explanation;
+        });
+      });
+    });
+  </script>
+  <script src="../../assets/js/classroom-animations.js"></script>
+  <script src="../../assets/js/lesson-layout.js"></script>
+  <script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
