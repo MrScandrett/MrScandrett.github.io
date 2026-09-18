@@ -22,10 +22,17 @@
     }
 
     /* ── Page ─────────────────────────────────────────── */
-    .pt-page { padding-bottom: 3rem; }
+    .pt-page {
+      --pt-ink: #172235;
+      --pt-paper: rgba(255,255,255,0.94);
+      --pt-rule: rgba(27,45,72,0.12);
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 3rem;
+    }
 
     /* ── Hero ─────────────────────────────────────────── */
-    .pt-hero { padding: 0.4rem 0 1.3rem; text-align: center; display: flex; flex-direction: column; align-items: center; }
+    .pt-hero { order: 1; padding: 0.65rem 0 1.15rem; text-align: center; display: flex; flex-direction: column; align-items: center; }
     .pt-hero h1 { max-width: 28ch; margin: 0 auto;
       font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
     .pt-hero-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
@@ -40,6 +47,7 @@
 
     /* ── Lesson primer ───────────────────────────────── */
     .pt-primer {
+      order: 5;
       display: grid;
       gap: 0.9rem;
       margin-bottom: 1rem;
@@ -188,6 +196,7 @@
 
     /* ── History timeline ─────────────────────────────── */
     .pt-history {
+      order: 6;
       display: grid;
       gap: 0.9rem;
       margin: 0 0 1rem;
@@ -488,7 +497,50 @@
     }
 
     /* ── Table container ──────────────────────────────── */
+    .pt-lab-intro {
+      order: 2;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: 1rem;
+      margin: 0 0 0.72rem;
+      padding: 0 0.2rem;
+    }
+    .pt-lab-intro h2 {
+      margin: 0;
+      color: var(--text, var(--pt-ink));
+      font-size: clamp(1.18rem, 2vw, 1.55rem);
+      letter-spacing: -0.025em;
+    }
+    .pt-lab-intro p {
+      max-width: 64ch;
+      margin: 0.25rem 0 0;
+      color: var(--text-secondary, #3f4f65);
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+    .pt-orientation-key {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.42rem;
+      min-height: 2.1rem;
+      padding: 0.38rem 0.62rem;
+      border: 1px solid var(--pt-rule);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.66);
+      color: var(--text-muted, #64748b);
+      font-size: 0.7rem;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+    .pt-orientation-key::before {
+      content: "18 × 7";
+      color: #0b58d6;
+      font-size: 0.74rem;
+      font-weight: 900;
+    }
     .pt-table-note {
+      order: 2;
       display: none;
       margin: 0 0 0.45rem;
       color: var(--text-muted, #64748b);
@@ -497,16 +549,26 @@
       letter-spacing: 0.04em;
       text-transform: uppercase;
     }
-    .pt-wrap { background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7);
-      border-radius: var(--radius, 18px); box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
-      padding: 1rem 1rem 1.2rem; overflow-x: auto; }
+    .pt-wrap { order: 2; position: relative; background: var(--pt-paper); border: 1px solid var(--pt-rule);
+      border-radius: 18px; box-shadow: 0 18px 46px rgba(30,50,78,0.10);
+      padding: 1rem 1rem 1.1rem; overflow-x: auto; scrollbar-color: rgba(0,113,227,0.45) transparent;
+      scrollbar-width: thin; overscroll-behavior-inline: contain; }
+    .pt-wrap::before {
+      content: "atomic number increases →";
+      display: block;
+      margin: 0 0 0.55rem;
+      color: var(--text-muted, #64748b);
+      font-size: 0.64rem;
+      font-weight: 800;
+      letter-spacing: 0.045em;
+    }
     .pt-grid { display: grid;
-      grid-template-columns: repeat(18, minmax(40px, 1fr));
-      grid-template-rows: repeat(7, 46px) 24px repeat(2, 46px);
-      gap: 2px; min-width: 740px; }
+      grid-template-columns: repeat(18, minmax(42px, 1fr));
+      grid-template-rows: repeat(7, 50px) 25px repeat(2, 50px);
+      gap: 3px; min-width: 790px; }
 
     /* ── Element cell ─────────────────────────────────── */
-    .el { border-radius: 5px; padding: 3px 3px 4px; display: flex; flex-direction: column;
+    .el { border-radius: 6px; padding: 4px 3px; display: flex; flex-direction: column;
       justify-content: space-between; cursor: pointer; user-select: none;
       border: 1.5px solid transparent; transition: transform 0.13s, box-shadow 0.13s, opacity 0.2s;
       font-family: inherit; text-align: left; }
@@ -570,11 +632,11 @@
     .pt-legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
 
     /* ── Element detail panel ─────────────────────────── */
-    .el-panel { margin-top: 1rem; background: var(--white, #fff);
+    .el-panel { order: 3; margin-top: 1rem; background: var(--white, #fff);
       border: 1px solid var(--line, #d2d2d7); border-radius: var(--radius, 18px);
       box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
       display: none; gap: 1.2rem; padding: 1.4rem 1.6rem; align-items: start; }
-    .el-panel.ep-open { display: grid; grid-template-columns: auto 1fr;
+    .el-panel.ep-open { display: grid; grid-template-columns: minmax(0, 270px) minmax(0, 1fr);
       animation: epSlide 0.28s cubic-bezier(0.4,0,0.2,1); }
     @keyframes epSlide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
     .ep-visuals {
@@ -765,6 +827,116 @@
       line-height: 1.45;
       color: var(--text-muted, #64748b);
     }
+    .ep-story {
+      border: 1px solid rgba(161,98,7,0.22);
+      border-left: 4px solid #d69e2e;
+      border-radius: 12px;
+      padding: 0.85rem 0.95rem;
+      background: linear-gradient(115deg, rgba(255,247,220,0.92), rgba(255,255,255,0.74));
+    }
+    .ep-story[hidden] { display: none; }
+    .ep-story-kicker {
+      display: block;
+      margin-bottom: 0.2rem;
+      color: #8a5a00;
+      font-size: 0.68rem;
+      font-weight: 850;
+    }
+    .ep-story h3 {
+      margin: 0;
+      color: var(--text, #1d1d1f);
+      font-size: 0.94rem;
+      letter-spacing: -0.01em;
+    }
+    .ep-story p {
+      margin: 0.32rem 0 0;
+      color: var(--text-secondary, #3f4f65);
+      font-size: 0.79rem;
+      line-height: 1.58;
+    }
+    .ep-story a {
+      display: inline-block;
+      margin-top: 0.42rem;
+      color: #0b58d6;
+      font-size: 0.69rem;
+      font-weight: 800;
+      text-decoration: none;
+    }
+    .ep-story a:hover { text-decoration: underline; }
+    [data-lighting="night"] .ep-story,
+    [data-theme="vaporwave"] .ep-story,
+    [data-theme="bark"] .ep-story {
+      background: linear-gradient(115deg, rgba(214,158,46,0.13), rgba(255,255,255,0.04));
+      border-color: rgba(251,191,36,0.28);
+    }
+    [data-lighting="night"] .ep-story-kicker,
+    [data-theme="vaporwave"] .ep-story-kicker,
+    [data-theme="bark"] .ep-story-kicker { color: #f6c85f; }
+    [data-lighting="night"] .ep-story p,
+    [data-theme="vaporwave"] .ep-story p,
+    [data-theme="bark"] .ep-story p { color: rgba(245,245,247,0.76); }
+    /* ── Discovery map + history ──────────────────────── */
+    .ep-history-card {
+      grid-column: 1 / -1;
+      border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 14px;
+      padding: 0.9rem;
+      background: rgba(255,255,255,0.78);
+      display: grid;
+      gap: 0.7rem;
+    }
+    .ep-history-title { margin: 0; font-size: 0.88rem; font-weight: 800; color: var(--text, #1d1d1f); }
+    .ep-map-wrap { position: relative; border-radius: 12px; overflow: hidden; border: 1px solid rgba(0,0,0,0.08); background: linear-gradient(180deg, #dbeafe, #eff6ff); }
+    .ep-map { display: block; width: 100%; height: auto; max-height: 460px; }
+    .ep-map-land { fill: #a9b8a4; stroke: #7c8f78; stroke-width: 0.4; }
+    .ep-map-grid { stroke: rgba(30,64,120,0.14); stroke-width: 0.4; fill: none; }
+    .ep-map-eq { stroke: rgba(30,64,120,0.28); stroke-dasharray: 3 3; }
+    .ep-ping-core { fill: var(--ping, #e5484d); stroke: #fff; stroke-width: 1.4; }
+    .ep-ping-ring { fill: none; stroke: var(--ping, #e5484d); stroke-width: 1.6; transform-box: fill-box; transform-origin: center; animation: epPing 2s ease-out infinite; }
+    .ep-ping-ring.r2 { animation-delay: 1s; }
+    .ep-ping-approx .ep-ping-ring { stroke-dasharray: 3 2; }
+    @keyframes epPing { from { transform: scale(0.4); opacity: 0.9; } to { transform: scale(3.2); opacity: 0; } }
+    .ep-map-label { font: 700 13px system-ui, sans-serif; fill: #1d2b45; paint-order: stroke; stroke: rgba(255,255,255,0.9); stroke-width: 3px; }
+    .ep-history-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.4rem; }
+    .ep-history-fact { border: 1px solid rgba(0,0,0,0.07); border-radius: 10px; padding: 0.45rem 0.55rem; background: rgba(255,255,255,0.6); }
+    .ep-history-fact span { display: block; color: #0b58d6; font-size: 0.62rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; }
+    .ep-history-fact strong { display: block; margin-top: 0.15rem; font-size: 0.8rem; line-height: 1.35; color: var(--text, #1d1d1f); }
+    .ep-history-text h4 { margin: 0.2rem 0 0.2rem; font-size: 0.78rem; letter-spacing: 0.01em; color: var(--text, #1d1d1f); }
+    .ep-history-text p { margin: 0 0 0.4rem; font-size: 0.8rem; line-height: 1.6; color: var(--text-secondary, #3f4f65); }
+    .ep-history-note { margin: 0; font-size: 0.7rem; color: var(--text-muted, #64748b); }
+    @media (max-width: 640px) { .ep-history-facts { grid-template-columns: 1fr; } }
+    @media (prefers-reduced-motion: reduce) { .ep-ping-ring { animation: none; opacity: 0.5; transform: scale(1.8); } }
+    [data-lighting="night"] .ep-history-card,
+    [data-theme="vaporwave"] .ep-history-card,
+    [data-theme="bark"] .ep-history-card { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+    [data-lighting="night"] .ep-map-wrap,
+    [data-theme="vaporwave"] .ep-map-wrap,
+    [data-theme="bark"] .ep-map-wrap { background: linear-gradient(180deg, #0f2140, #172a4d); border-color: rgba(255,255,255,0.12); }
+    [data-lighting="night"] .ep-map-land,
+    [data-theme="vaporwave"] .ep-map-land,
+    [data-theme="bark"] .ep-map-land { fill: #4b5d6e; stroke: #71869a; }
+    [data-lighting="night"] .ep-map-grid,
+    [data-theme="vaporwave"] .ep-map-grid,
+    [data-theme="bark"] .ep-map-grid { stroke: rgba(255,255,255,0.12); }
+    [data-lighting="night"] .ep-map-label,
+    [data-theme="vaporwave"] .ep-map-label,
+    [data-theme="bark"] .ep-map-label { fill: #f5f5f7; stroke: rgba(10,20,40,0.85); }
+    [data-lighting="night"] .ep-history-title,
+    [data-theme="vaporwave"] .ep-history-title,
+    [data-theme="bark"] .ep-history-title,
+    [data-lighting="night"] .ep-history-fact strong,
+    [data-theme="vaporwave"] .ep-history-fact strong,
+    [data-theme="bark"] .ep-history-fact strong,
+    [data-lighting="night"] .ep-history-text h4,
+    [data-theme="vaporwave"] .ep-history-text h4,
+    [data-theme="bark"] .ep-history-text h4 { color: #f5f5f7; }
+    [data-lighting="night"] .ep-history-fact,
+    [data-theme="vaporwave"] .ep-history-fact,
+    [data-theme="bark"] .ep-history-fact { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+    [data-lighting="night"] .ep-history-text p,
+    [data-theme="vaporwave"] .ep-history-text p,
+    [data-theme="bark"] .ep-history-text p { color: rgba(245,245,247,0.78); }
+
     .ep-earth-card {
       border: 1px solid rgba(0,0,0,0.07);
       border-radius: 14px;
@@ -938,6 +1110,9 @@
     }
 
     @media (max-width: 700px) {
+      .pt-lab-intro { grid-template-columns: 1fr; gap: 0.55rem; }
+      .pt-orientation-key { justify-self: start; }
+      .pt-wrap { margin-inline: -0.15rem; padding: 0.75rem 0.7rem 0.9rem; border-radius: 14px; }
       .el-panel.ep-open { grid-template-columns: 1fr; }
       .bohr-svg { margin: 0 auto; }
       .pt-primer-grid { grid-template-columns: 1fr; }
@@ -957,7 +1132,21 @@
         display: block;
       }
     }
+    @media (max-width: 700px) and (orientation: landscape) {
+      .pt-grid {
+        grid-template-columns: repeat(18, minmax(38px, 1fr));
+        grid-template-rows: repeat(7, 43px) 22px repeat(2, 43px);
+        min-width: 710px;
+      }
+      .pt-table-note { display: none; }
+    }
     @media (max-width: 560px) {
+      .pt-hero { padding-top: 0.25rem; }
+      .pt-hero h1 { font-size: clamp(1.45rem, 7.4vw, 1.8rem); }
+      .pt-hero-meta { gap: 0.3rem 0.52rem; font-size: 0.72rem; }
+      .pt-lede { margin-top: 0.5rem; font-size: 0.86rem; line-height: 1.48; }
+      .pt-lab-intro { margin-top: 0.1rem; }
+      .pt-lab-intro p { font-size: 0.78rem; }
       .ep-stat-grid,
       .ep-usage-grid,
       .ep-source-grid,
@@ -989,6 +1178,9 @@
     [data-lighting="night"] .pt-table-note,
     [data-theme="vaporwave"] .pt-table-note,
     [data-theme="bark"] .pt-table-note { color: rgba(245,245,247,0.68); }
+    [data-lighting="night"] .pt-orientation-key,
+    [data-theme="vaporwave"] .pt-orientation-key,
+    [data-theme="bark"] .pt-orientation-key { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
     [data-lighting="night"] .el,
     [data-theme="vaporwave"] .el,
     [data-theme="bark"] .el { background: rgba(255,255,255,0.06) !important; }
@@ -1305,7 +1497,14 @@
       </div>
     </section>
 
-    <!-- Table -->
+    <!-- Interactive table -->
+    <section class="pt-lab-intro" aria-labelledby="pt-lab-title">
+      <div>
+        <h2 id="pt-lab-title">Explore the living table</h2>
+        <p>Select an element for its atomic model and origin story. Use the controls panel to filter families, change temperature, or compare chemical properties.</p>
+      </div>
+      <span class="pt-orientation-key" aria-label="The table is organized into 18 groups and 7 periods">groups × periods</span>
+    </section>
     <p class="pt-table-note">Swipe sideways to explore the full table.</p>
     <div class="pt-wrap">
       <div class="pt-grid" id="pt-grid" role="grid" aria-label="Periodic table of elements"></div>
@@ -1354,9 +1553,11 @@
         <div class="ep-stat-grid" id="ep-stats"></div>
         <div class="ep-config" id="ep-config"></div>
         <div class="ep-usage-grid" id="ep-usage"></div>
+        <aside class="ep-story" id="ep-story" aria-live="polite" hidden></aside>
         <section class="ep-earth-card" id="ep-earth" aria-label="Earth sources and image requirements"></section>
         <p class="ep-desc" id="ep-desc"></p>
       </div>
+      <section class="ep-history-card" id="ep-history" aria-label="Where and when this element was first discovered"></section>
     </div>
   </main>
   </div><!-- /.ll-sim -->
@@ -1463,6 +1664,8 @@
 
   <script src="../../assets/js/theme-registry.js"></script>
   <script src="../../assets/js/nav-mobile.js"></script>
+  <script src="../../assets/js/lessons/world-land-path.js"></script>
+  <script src="../../assets/js/lessons/periodic-table-history.js"></script>
   <script>
   (function () {
     /* ── Categories ───────────────────────────────────── */
@@ -1693,6 +1896,35 @@
       U: [{ icon: '⚛️', title: 'Nuclear fuel', copy: 'Uranium stores enormous energy in its atomic nucleus.' }],
       Pu: [{ icon: '🛰️', title: 'Space power', copy: 'Plutonium isotopes can power spacecraft far from the Sun.' }],
       Am: [{ icon: '🚨', title: 'Smoke detector', copy: 'Americium helps ionization smoke alarms sense combustion particles.' }]
+    };
+
+    const PORCELAIN_STORY = {
+      kicker: 'Material mystery',
+      title: 'China’s porcelain secret crossed continents',
+      copy: 'Chinese craftspeople developed proto-porcelain more than three thousand years ago and refined the hard, white, translucent material over many centuries. Its strength came from carefully firing kaolin with mineral-rich porcelain stone; feldspar and related minerals supply potassium, sodium, aluminum, silicon, and oxygen and help the body partly vitrify. Porcelain reached Europe long before Europeans could reproduce true hard-paste porcelain. After generations of costly experiments, the Meissen workshop succeeded in the early 1700s—turning a once-guarded material recipe into Europe’s own “white gold.”',
+      source: 'Smithsonian: how porcelain developed',
+      url: 'https://asia-archive.si.edu/learn/for-educators/teaching-china-with-the-smithsonian/videos/porcelain/'
+    };
+    const ELEMENT_STORIES = {
+      K: PORCELAIN_STORY,
+      Na: PORCELAIN_STORY,
+      Al: PORCELAIN_STORY,
+      Si: PORCELAIN_STORY,
+      O: PORCELAIN_STORY,
+      Ga: {
+        kicker: 'Tea-table chemistry',
+        title: 'The disappearing spoon trick',
+        copy: 'Gallium melts at about 29.8°C—cool enough for a cast gallium spoon to look perfectly ordinary at first, then slump into a silvery puddle when it stirs hot tea. The famous prank is really a compact phase-change demonstration: the metal has not vanished or dissolved; the drink simply warmed it past its melting point. Use laboratory gallium only, never an unknown low-melting alloy, because some look-alikes contain toxic lead or cadmium.',
+        source: 'University of Toledo: gallium display',
+        url: 'https://www.utoledo.edu/nsm/ic/elements/gallium.html'
+      },
+      Hg: {
+        kicker: 'Expedition medicine',
+        title: 'Lewis and Clark swallowed mercury medicine',
+        copy: 'The Corps of Discovery carried roughly 600 of Dr. Benjamin Rush’s powerful laxative pills. The pills contained calomel, a mercury chloride, and were used so often as a near cure-all that mercury remaining in expedition latrines has helped archaeologists confirm campsite locations. They were not drinking liquid elemental mercury, but they were swallowing a mercury compound—a sharp reminder that accepted medicine in 1803 could be dangerous by modern standards.',
+        source: 'National Park Service: medicine on the expedition',
+        url: 'https://home.nps.gov/articles/000/medicine-on-the-lewis-and-clark-expedition.htm'
+      }
     };
 
     const grid = document.getElementById('pt-grid');
@@ -2152,6 +2384,47 @@
       document.getElementById('ep-usage').innerHTML = element.applications.map((item) => '<article class="ep-usage-item"><span class="ep-usage-icon">' + item.icon + '</span><span class="ep-usage-title">' + item.title + '</span><span class="ep-usage-copy">' + item.copy + '</span></article>').join('');
     }
 
+    function renderStory(element) {
+      const host = document.getElementById('ep-story');
+      const story = ELEMENT_STORIES[element.symbol];
+      if (!story) {
+        host.hidden = true;
+        host.innerHTML = '';
+        return;
+      }
+      host.hidden = false;
+      host.innerHTML = '<span class="ep-story-kicker">' + story.kicker + '</span>'
+        + '<h3>' + story.title + '</h3>'
+        + '<p>' + story.copy + '</p>'
+        + '<a href="' + story.url + '" target="_blank" rel="noopener noreferrer">' + story.source + '</a>';
+    }
+
+    function renderHistory(element) {
+      const host = document.getElementById('ep-history');
+      const h = (window.ELEMENT_HISTORY || {})[element.symbol];
+      if (!h || !window.WORLD_LAND_PATH) { host.hidden = true; return; }
+      host.hidden = false;
+      const [year, who, place, lat, lon, approx, before, story] = h;
+      const x = ((lon + 180) / 360 * 720).toFixed(1);
+      const y = ((90 - lat) / 180 * 360).toFixed(1);
+      const color = CATS[element.cat].color;
+      let grid = '';
+      for (let lo = -150; lo <= 180; lo += 30) { const gx = (lo + 180) / 360 * 720; grid += '<line x1="' + gx + '" y1="0" x2="' + gx + '" y2="360"/>'; }
+      for (let la = -60; la <= 60; la += 30) { const gy = (90 - la) / 180 * 360; grid += '<line x1="0" y1="' + gy + '" x2="720" y2="' + gy + '"' + (la === 0 ? ' class="ep-map-eq"' : '') + '/>'; }
+      const flip = Number(x) > 480;
+      const label = '<text class="ep-map-label" x="' + (flip ? Number(x) - 12 : Number(x) + 12) + '" y="' + (Number(y) + 4) + '" text-anchor="' + (flip ? 'end' : 'start') + '">' + element.symbol + ' · ' + year + '</text>';
+      const svg = '<svg class="ep-map" viewBox="0 0 720 360" role="img" aria-label="World map with a marker at ' + place + '">'
+        + '<g class="ep-map-grid">' + grid + '</g><path class="ep-map-land" d="' + window.WORLD_LAND_PATH + '"/>'
+        + '<g class="' + (approx ? 'ep-ping-approx' : '') + '" style="--ping:' + color + '"><circle class="ep-ping-ring" cx="' + x + '" cy="' + y + '" r="7"/><circle class="ep-ping-ring r2" cx="' + x + '" cy="' + y + '" r="7"/><circle class="ep-ping-core" cx="' + x + '" cy="' + y + '" r="5.5"/></g>' + label + '</svg>';
+      const facts = [[approx ? 'Earliest use' : 'First found', year], ['By', who], ['Where', place]]
+        .map(([k, v]) => '<div class="ep-history-fact"><span>' + k + '</span><strong>' + v + '</strong></div>').join('');
+      const note = approx
+        ? 'Known since antiquity, so no single discovery moment exists. The ping marks a famous early source or the earliest well-documented use.'
+        : 'The ping marks where the element was first identified or isolated as a distinct substance.';
+      host.innerHTML = '<h3 class="ep-history-title">Where it was first discovered</h3><div class="ep-map-wrap">' + svg + '</div><div class="ep-history-facts">' + facts + '</div>'
+        + '<div class="ep-history-text"><h4>Before it had a name: ancient history and uses</h4><p>' + before + '</p><h4>Discovery and classification</h4><p>' + story + '</p></div><p class="ep-history-note">' + note + '</p>';
+    }
+
     function renderEarthProfile(element) {
       const earth = element.earth || getEarthProfile(element.symbol, element.cat);
       const activeSources = new Set(earth.sources || []);
@@ -2191,6 +2464,8 @@
       document.getElementById('ep-desc').textContent = element.summary || element.description;
       renderStats(element);
       renderUsage(element);
+      renderStory(element);
+      renderHistory(element);
       renderEarthProfile(element);
       detailPanel.classList.remove('ep-open');
       void detailPanel.offsetWidth;

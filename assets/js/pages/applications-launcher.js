@@ -37,7 +37,7 @@ function parentGroupOf(folderId) {
   return Object.keys(FOLDER_GROUPS).find((groupId) => FOLDER_GROUPS[groupId].includes(folderId)) || null;
 }
 
-const QUICK_START_IDS = ["scratch", "beepbox", "twine", "piskel", "mlc-geoboard", "phet", "tinkercad", "codeorg"];
+const QUICK_START_IDS = ["tinkercad", "printables", "scratch", "clever"];
 const ICON_COLORS = ["#3f68dc", "#d84e67", "#2d9c72", "#7c59c7", "#d87932", "#168d9c", "#52617c", "#b64993"];
 
 const tools = steamGalaxyNodes.filter((node) => node.type === "tool" && node.link);

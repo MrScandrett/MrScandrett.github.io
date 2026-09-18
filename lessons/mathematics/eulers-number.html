@@ -1,0 +1,853 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>How 𝑒 Was Discovered · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Discover Euler's number e ≈ 2.71828 — the compound-interest problem that revealed it, why it's the only number equal to its own growth rate, and where it shows up in money, biology, and computing." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 300px; --ll-accent: #0a84ff; --ll-tab-active: #0a84ff; --ll-tab-active-bg: rgba(10,132,255,0.12); }
+    .en-page { padding-bottom: 3.5rem; }
+
+    /* ── Hero ─────────────────────────────────────────── */
+    .en-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .en-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0;
+      font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .en-hero-meta { display: flex; flex-wrap: wrap; align-items: center;
+      gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .en-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%;
+      background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .en-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-secondary, #3f4f65);
+      font-size: 0.96rem; line-height: 1.62; }
+    .en-back-link { display: inline-block; margin-top: 0.7rem; font-size: 0.82rem; font-weight: 700;
+      color: #0a84ff; text-decoration: none; }
+    .en-back-link:hover { text-decoration: underline; }
+    [data-lighting="night"] .en-lede,
+    [data-theme="vaporwave"] .en-lede,
+    [data-theme="bark"] .en-lede { color: rgba(245,245,247,0.7); }
+
+    /* ── Section card ─────────────────────────────────── */
+    .en-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--card-accent, #0a84ff);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.4rem;
+      margin-bottom: 1rem;
+    }
+    .en-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .en-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; letter-spacing: -0.01em; }
+    .en-card p  { margin: 0 0 0.6rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .en-card p:last-child { margin-bottom: 0; }
+    [data-lighting="night"] .en-card,
+    [data-theme="vaporwave"] .en-card,
+    [data-theme="bark"] .en-card { background: var(--white, #2c2c2e); }
+    [data-lighting="night"] .en-card p,
+    [data-theme="vaporwave"] .en-card p,
+    [data-theme="bark"] .en-card p { color: rgba(245,245,247,0.72); }
+
+    /* ── e symbol display ─────────────────────────────── */
+    .en-symbol-row {
+      display: flex; align-items: center; justify-content: center;
+      gap: 1.4rem; flex-wrap: wrap;
+      background: linear-gradient(135deg, rgba(10,132,255,0.07), rgba(52,199,89,0.07));
+      border: 1px solid rgba(10,132,255,0.2);
+      border-radius: 14px; padding: 1.1rem 1.4rem; margin: 0.8rem 0;
+    }
+    .en-big { font-size: clamp(3rem,8vw,5rem); font-weight: 900; color: #0a84ff;
+      font-style: italic; line-height: 1; letter-spacing: -0.02em; }
+    .en-approx { font-size: clamp(1.1rem,3vw,1.6rem); font-weight: 800;
+      color: var(--text,#1d1d1f); letter-spacing: -0.02em; }
+    .en-label { font-size: 0.8rem; color: var(--text-muted, #64748b); max-width: 24ch; text-align: center; line-height: 1.5; }
+
+    /* ── Formulas ─────────────────────────────────────── */
+    .en-formulas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin: 0.8rem 0; }
+    .en-formula-box {
+      background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7);
+      border-radius: 12px; padding: 0.9rem; text-align: center;
+    }
+    [data-lighting="night"] .en-formula-box,
+    [data-theme="vaporwave"] .en-formula-box,
+    [data-theme="bark"] .en-formula-box { background: rgba(255,255,255,0.04); }
+    .en-formula-box .label { font-size: 0.72rem; font-weight: 700; color: var(--text-muted, #64748b);
+      letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.4rem; display: block; }
+    .en-formula-box .formula { font-size: 1.1rem; font-weight: 900; letter-spacing: -0.02em;
+      color: var(--text,#1d1d1f); }
+    .en-formula-box .sub { font-size: 0.74rem; color: var(--text-muted, #64748b); margin-top: 0.35rem; display: block; }
+
+    /* ── Interactive lab shell ────────────────────────── */
+    .en-lab {
+      background:
+        radial-gradient(circle at 18% 0%, rgba(122,196,255,0.16), transparent 32%),
+        linear-gradient(145deg, #10233c 0%, #0c1a2c 60%, #081422 100%);
+      border: 1px solid rgba(122,196,255,0.22);
+      border-radius: 18px;
+      box-shadow: 0 18px 44px rgba(3, 7, 18, 0.28);
+      color: #eaf3ff;
+      padding: 1.35rem 1.4rem;
+      margin-bottom: 1rem;
+    }
+    .en-lab p { color: rgba(234,243,255,0.78); }
+    .en-lab-kicker { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase;
+      color: #7ac4ff; display: block; margin-bottom: 0.25rem; }
+    .en-lab h2 { color: #fff; margin: 0 0 0.35rem; font-size: 1.18rem; }
+    .en-lab-sub { max-width: 62ch; font-size: 0.87rem; line-height: 1.6; }
+    .en-lab-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.1rem; margin-top: 1rem; align-items: start; }
+    .en-canvas-wrap {
+      background: rgba(4,10,20,0.55); border: 1px solid rgba(122,196,255,0.2);
+      border-radius: 14px; padding: 0.7rem; position: relative;
+    }
+    .en-canvas-wrap canvas { display: block; width: 100%; height: 220px; border-radius: 8px; }
+    .en-controls { display: flex; flex-direction: column; gap: 0.75rem; }
+    .en-control-row { display: flex; flex-direction: column; gap: 0.35rem; }
+    .en-control-row label { font-size: 0.78rem; font-weight: 700; color: #cfe4ff; display: flex; justify-content: space-between; }
+    .en-control-row input[type="range"] { width: 100%; accent-color: #7ac4ff; }
+    .en-readout {
+      background: rgba(122,196,255,0.1); border: 1px solid rgba(122,196,255,0.28);
+      border-radius: 12px; padding: 0.7rem 0.85rem; font-family: "IBM Plex Mono","SF Mono",ui-monospace,monospace;
+      font-size: 0.86rem; line-height: 1.7;
+    }
+    .en-readout strong { color: #7ac4ff; }
+    .en-badge {
+      display: none; align-items: center; gap: 0.4rem; margin-top: 0.5rem;
+      background: rgba(52,199,89,0.16); border: 1px solid rgba(52,199,89,0.4);
+      color: #6fe08c; border-radius: 999px; padding: 5px 12px; font-size: 0.78rem; font-weight: 800; width: fit-content;
+    }
+    .en-badge.visible { display: inline-flex; }
+    .en-legend { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; margin-top: 0.6rem; font-size: 0.76rem; color: rgba(234,243,255,0.68); }
+    .en-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+    .en-legend i { width: 12px; height: 3px; border-radius: 2px; display: inline-block; }
+
+    /* ── History timeline ─────────────────────────────── */
+    .en-timeline { list-style: none; padding: 0; margin: 0.7rem 0 0;
+      display: flex; flex-direction: column; gap: 0.6rem; }
+    .en-timeline li { display: flex; gap: 0.75rem; align-items: flex-start;
+      font-size: 0.86rem; color: var(--text-secondary, #3f4f65); line-height: 1.55; }
+    [data-lighting="night"] .en-timeline li,
+    [data-theme="vaporwave"] .en-timeline li,
+    [data-theme="bark"] .en-timeline li { color: rgba(245,245,247,0.72); }
+    .en-timeline-year { flex-shrink: 0; min-width: 78px; font-weight: 800;
+      color: #0a84ff; font-size: 0.82rem; padding-top: 0.05rem; }
+
+    /* ── e in the world ───────────────────────────────── */
+    .en-world-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; margin-top: 0.7rem; }
+    .en-world-card {
+      background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7);
+      border-radius: 12px; padding: 0.85rem; display: flex; gap: 0.7rem; align-items: flex-start;
+    }
+    [data-lighting="night"] .en-world-card,
+    [data-theme="vaporwave"] .en-world-card,
+    [data-theme="bark"] .en-world-card { background: rgba(255,255,255,0.04); }
+    .en-world-icon { font-size: 1.55rem; line-height: 1; flex-shrink: 0; }
+    .en-world-text strong { display: block; font-size: 0.86rem; margin-bottom: 0.18rem; }
+    .en-world-text small  { font-size: 0.78rem; color: var(--text-muted, #64748b); line-height: 1.5; display: block; }
+
+    /* ── Practice problems ────────────────────────────── */
+    .en-practice { display: flex; flex-direction: column; gap: 0.9rem; margin-top: 0.8rem; }
+    .en-problem {
+      background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7);
+      border-radius: 12px; padding: 0.9rem 1rem;
+    }
+    [data-lighting="night"] .en-problem,
+    [data-theme="vaporwave"] .en-problem,
+    [data-theme="bark"] .en-problem { background: rgba(255,255,255,0.04); }
+    .en-problem p { margin: 0 0 0.5rem; font-size: 0.87rem;
+      color: var(--text,#1d1d1f); font-weight: 600; }
+    .en-problem-row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+    .en-ans-input {
+      width: 96px; padding: 6px 10px; border: 1.5px solid var(--line,#d2d2d7);
+      border-radius: 8px; font-size: 0.88rem; font-family: inherit;
+      background: var(--white,#fff); color: var(--text,#1d1d1f); outline: none;
+    }
+    .en-ans-input:focus { border-color: #0a84ff; }
+    .en-check-btn {
+      padding: 6px 14px; border-radius: 8px; border: none;
+      background: #0a84ff; color: #fff;
+      font-size: 0.82rem; font-weight: 700; cursor: pointer; font-family: inherit;
+      transition: opacity 0.15s;
+    }
+    .en-check-btn:hover { opacity: 0.85; }
+    .en-feedback {
+      font-size: 0.8rem; font-weight: 700; padding: 4px 10px;
+      border-radius: 999px; display: none;
+    }
+    .en-feedback.correct { background: rgba(52,199,89,0.15); color: #1a7a2e; display: inline-block; }
+    .en-feedback.wrong   { background: rgba(255,59,48,0.12); color: #c0392b; display: inline-block; }
+    [data-lighting="night"] .en-feedback.correct,
+    [data-theme="vaporwave"] .en-feedback.correct,
+    [data-theme="bark"] .en-feedback.correct { color: #34c759; }
+    [data-lighting="night"] .en-feedback.wrong,
+    [data-theme="vaporwave"] .en-feedback.wrong,
+    [data-theme="bark"] .en-feedback.wrong   { color: #ff6b6b; }
+    .en-hint { font-size: 0.77rem; color: var(--text-muted, #64748b); margin-top: 0.35rem; display: none; }
+    .en-hint.visible { display: block; }
+
+    /* ── Quick check ───────────────────────────────────── */
+    .en-quiz-options { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0; }
+    .en-quiz-btn {
+      padding: 7px 14px; border-radius: 999px; border: 1.5px solid var(--line,#d2d2d7);
+      background: var(--white,#fff); color: var(--text,#1d1d1f);
+      font-size: 0.82rem; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .en-quiz-btn.right { background: rgba(52,199,89,0.18); border-color: #34c759; }
+    .en-quiz-btn.wrong { background: rgba(255,59,48,0.14); border-color: #ff3b30; }
+
+    @media (max-width: 780px) {
+      .en-lab-grid { grid-template-columns: 1fr; }
+      .en-formulas { grid-template-columns: 1fr; }
+      .en-world-grid { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .en-check-btn, .en-quiz-btn { transition: none; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+  <div class="ll-sim">
+  <main id="main-content" class="en-page">
+
+    <!-- ── Hero ── -->
+    <section class="hero en-hero">
+      <p class="eyebrow">Mathematics · Advanced Systems</p>
+      <h1>How 𝑒 Was Discovered</h1>
+      <div class="en-hero-meta">
+        <span>𝑒 ≈ 2.71828…</span>
+        <span class="dot"></span>
+        <span>Compound growth</span>
+        <span class="dot"></span>
+        <span>Self-derivative</span>
+        <span class="dot"></span>
+        <span>3 interactive labs</span>
+      </div>
+      <p class="en-lede">Euler's number, 𝑒, wasn't invented on a chalkboard for its own sake — it fell out of a 17th-century question about money. It went on to become the natural rate of growth for everything from bacteria to bank accounts to the shape of a bell curve. In this lesson you'll rediscover 𝑒 the way it was first found, see why calculus can't live without it, and find it hiding in the world around you.</p>
+      <a class="en-back-link" href="../../steam-lessons.html#module-math">&larr; Back to Mathematics</a>
+    </section>
+
+    <!-- ── What is e? ── -->
+    <section class="en-card" style="--card-accent:#0a84ff;">
+      <h2>What Is 𝑒?</h2>
+      <p><strong>𝑒</strong> is a number, just like π — a fixed decimal that never ends and never repeats. It doesn't measure circles; it measures <strong>growth</strong>. Specifically, 𝑒 is the base of "natural" exponential growth: growth that compounds continuously, at every possible instant, rather than in chunky yearly or monthly steps.</p>
+
+      <div class="en-symbol-row" role="img" aria-label="e equals approximately 2.71828">
+        <span class="en-big">𝑒</span>
+        <div>
+          <div class="en-approx">≈ 2.71828 18284 59…</div>
+          <div style="font-size:0.8rem;color: var(--text-muted, #64748b);margin-top:0.25rem;">the limit of continuous compounding</div>
+        </div>
+        <div class="en-label">Like π, 𝑒 is <strong>irrational</strong> — and even <strong>transcendental</strong>, meaning no algebra equation with whole-number coefficients can ever produce it exactly.</div>
+      </div>
+
+      <p>Unlike π, 𝑒 has no simple geometric picture like "circumference over diameter." It shows up instead as the answer to a question: <em>if something grows in proportion to how big it already is, and it grows continuously instead of in steps, what number describes that growth?</em> The answer is always 𝑒.</p>
+    </section>
+
+    <!-- ── Discovery: Compound Interest ── -->
+    <section class="en-lab" aria-labelledby="en-compound-title">
+      <span class="en-lab-kicker">Discovery Lab 1 · Bernoulli's Question, 1683</span>
+      <h2 id="en-compound-title">Squeeze more compounding out of a loan</h2>
+      <p class="en-lab-sub">Jacob Bernoulli was studying compound interest: start with $1 at 100% annual interest. Interest normally gets added once a year — but what if the bank split the year into smaller and smaller pieces, compounding more often? Drag the slider to compound more frequently and watch what your dollar becomes.</p>
+
+      <div class="en-lab-grid">
+        <div class="en-canvas-wrap">
+          <canvas id="en-compound-canvas" aria-label="Bar chart of (1 + 1/n) to the n power as n increases, approaching e"></canvas>
+        </div>
+        <div class="en-controls">
+          <div class="en-control-row">
+            <label for="en-compound-slider"><span>Compounding periods per year</span> <span id="en-compound-n-label">1 (yearly)</span></label>
+            <input type="range" id="en-compound-slider" min="0" max="7" step="1" value="0" />
+          </div>
+          <div class="en-readout" aria-live="polite">
+            (1 + 1/𝑛)<sup>𝑛</sup> = <strong id="en-compound-value">2.00000</strong><br>
+            Distance from 𝑒: <strong id="en-compound-diff">0.71828</strong>
+          </div>
+          <div class="en-badge" id="en-compound-badge">✓ As 𝑛 → ∞, this can never pass 𝑒 — but it gets arbitrarily close</div>
+        </div>
+      </div>
+      <div class="en-legend">
+        <span><i style="background:#7ac4ff;"></i>(1 + 1/𝑛)ⁿ</span>
+        <span><i style="background:#ff9f0a; height:2px; border-top:2px dashed #ff9f0a; background:none;"></i>𝑒 ≈ 2.71828</span>
+      </div>
+    </section>
+
+    <section class="en-card" style="--card-accent:#34c759;">
+      <h2>Why That Formula Converges</h2>
+      <p>Compounding once a year at 100% doubles your dollar: (1 + 1)<sup>1</sup> = 2. Compound twice a year at 50% each time and you get (1 + 0.5)² = 2.25 — splitting the interest into smaller, more frequent pieces actually earns <em>more</em>, because you start earning interest on interest sooner.</p>
+      <p>Bernoulli noticed the pattern kept climbing — 2, 2.25, 2.37, 2.44 — but it didn't run away to infinity. It crept toward a ceiling and never crossed it. That ceiling is 𝑒. Fifty years later, Leonhard Euler proved it rigorously and gave the number its name.</p>
+      <div class="en-formulas">
+        <div class="en-formula-box">
+          <span class="label">The limit</span>
+          <div class="formula">𝑒 = lim<sub>𝑛→∞</sub> (1 + 1/𝑛)<sup>𝑛</sup></div>
+          <span class="sub">compounding infinitely often</span>
+        </div>
+        <div class="en-formula-box">
+          <span class="label">As a series</span>
+          <div class="formula">𝑒 = 1 + 1/1! + 1/2! + 1/3! + …</div>
+          <span class="sub">Euler's fast-converging sum</span>
+        </div>
+        <div class="en-formula-box">
+          <span class="label">Continuous growth</span>
+          <div class="formula">𝐴 = 𝑃𝑒<sup>𝑟𝑡</sup></div>
+          <span class="sub">P = start, r = rate, t = time</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── History ── -->
+    <section class="en-card" style="--card-accent:#ff9500;">
+      <h2>A 350-Year Hunt for a Hidden Number</h2>
+      <p>𝑒 was found, lost, and rediscovered several times before anyone realized it deserved a name of its own.</p>
+      <ul class="en-timeline">
+        <li>
+          <span class="en-timeline-year">1618</span>
+          <span>John Napier's tables of logarithms, published to speed up navigation and astronomy calculations, contain a constant that is — in hindsight — 𝑒, though Napier never identified it as a number in its own right.</span>
+        </li>
+        <li>
+          <span class="en-timeline-year">1683</span>
+          <span>Swiss mathematician <strong>Jacob Bernoulli</strong> studies compound interest and discovers that (1 + 1/𝑛)ⁿ approaches a fixed value between 2 and 3 as 𝑛 grows — the first real "sighting" of 𝑒, though he never named it.</span>
+        </li>
+        <li>
+          <span class="en-timeline-year">1731</span>
+          <span><strong>Leonhard Euler</strong> uses the letter <strong>𝑒</strong> for the constant in a letter to Christian Goldbach — likely because it was simply the next available vowel after 𝑎, not (as popular legend has it) for "Euler."</span>
+        </li>
+        <li>
+          <span class="en-timeline-year">1748</span>
+          <span>In <em>Introductio in Analysin Infinitorum</em>, Euler calculates 𝑒 to 18 decimal places, proves it equals the infinite sum 1 + 1/1! + 1/2! + 1/3! + …, and shows it is irrational — cementing 𝑒 as one of mathematics' fundamental constants.</span>
+        </li>
+        <li>
+          <span class="en-timeline-year">1873</span>
+          <span>French mathematician Charles Hermite proves 𝑒 is <strong>transcendental</strong> — it cannot be the solution to any polynomial equation with whole-number coefficients, making it "more irrational" than numbers like √2.</span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- ── Why e is special: self-derivative ── -->
+    <section class="en-lab" aria-labelledby="en-slope-title">
+      <span class="en-lab-kicker">Discovery Lab 2 · The One Curve That Matches Its Own Slope</span>
+      <h2 id="en-slope-title">Find the base whose growth rate equals its height</h2>
+      <p class="en-lab-sub">Every exponential curve 𝑏<sup>𝑥</sup> has a slope at 𝑥 = 0 equal to ln(𝑏) — the "natural log" of its base. Drag the base slider and watch the tangent line at 𝑥 = 0 tilt. Only one base makes that slope exactly 1, so the curve's steepness always matches its own height.</p>
+
+      <div class="en-lab-grid">
+        <div class="en-canvas-wrap">
+          <canvas id="en-slope-canvas" aria-label="Graph of b to the x power with a tangent line at x=0 that tilts as the base b changes"></canvas>
+        </div>
+        <div class="en-controls">
+          <div class="en-control-row">
+            <label for="en-slope-slider"><span>Base 𝑏</span> <span id="en-slope-b-label">2.00</span></label>
+            <input type="range" id="en-slope-slider" min="1.20" max="4.00" step="0.01" value="2.00" />
+          </div>
+          <div class="en-readout" aria-live="polite">
+            Slope at 𝑥 = 0: <strong id="en-slope-value">ln(2.00) = 0.693</strong><br>
+            Curve: <strong id="en-slope-fn">𝑦 = 2.00ˣ</strong>
+          </div>
+          <div class="en-badge" id="en-slope-badge">✓ 𝑏 = 𝑒 — slope now equals height, everywhere on the curve</div>
+        </div>
+      </div>
+      <div class="en-legend">
+        <span><i style="background:#7ac4ff;"></i>𝑦 = 𝑏ˣ</span>
+        <span><i style="background:#ff375f;"></i>tangent line at 𝑥 = 0</span>
+      </div>
+    </section>
+
+    <section class="en-card" style="--card-accent:#8b5cf6;">
+      <h2>The Self-Derivative Property</h2>
+      <p>This is the property that makes calculus fall in love with 𝑒: the function 𝑒<sup>𝑥</sup> is its <strong>own derivative</strong>. Its slope, at every single point, equals its height at that point. No other function does this.</p>
+      <div class="en-formulas" style="grid-template-columns: repeat(2, 1fr);">
+        <div class="en-formula-box">
+          <span class="label">The defining property</span>
+          <div class="formula">𝑑/𝑑𝑥 (𝑒<sup>𝑥</sup>) = 𝑒<sup>𝑥</sup></div>
+          <span class="sub">rate of change = the value itself</span>
+        </div>
+        <div class="en-formula-box">
+          <span class="label">An equivalent definition</span>
+          <div class="formula">∫<sub>1</sub><sup>𝑒</sup> (1/𝑥) 𝑑𝑥 = 1</div>
+          <span class="sub">the area under 1/𝑥 from 1 to 𝑒 is exactly 1</span>
+        </div>
+      </div>
+      <p>That second formula is worth seeing with your own eyes — try the lab below.</p>
+    </section>
+
+    <!-- ── Area under 1/x ── -->
+    <section class="en-lab" aria-labelledby="en-area-title">
+      <span class="en-lab-kicker">Discovery Lab 3 · The Area That Defines 𝑒</span>
+      <h2 id="en-area-title">Slide the edge until the shaded area equals exactly 1</h2>
+      <p class="en-lab-sub">Here's a third, completely different route to the same number. Shade the region under the curve 𝑦 = 1/𝑥, starting at 𝑥 = 1. Slide the right edge outward and watch the area grow. There's exactly one place where that area hits 1.000 — and it isn't a round number.</p>
+
+      <div class="en-lab-grid">
+        <div class="en-canvas-wrap">
+          <canvas id="en-area-canvas" aria-label="Graph of 1 over x with a shaded region from x=1 to a movable edge"></canvas>
+        </div>
+        <div class="en-controls">
+          <div class="en-control-row">
+            <label for="en-area-slider"><span>Right edge, 𝑏</span> <span id="en-area-b-label">1.00</span></label>
+            <input type="range" id="en-area-slider" min="1.00" max="4.00" step="0.01" value="1.00" />
+          </div>
+          <div class="en-readout" aria-live="polite">
+            Area from 1 to 𝑏: <strong id="en-area-value">0.000</strong>
+          </div>
+          <div class="en-badge" id="en-area-badge">✓ 𝑏 = 𝑒 — the shaded area equals exactly 1</div>
+        </div>
+      </div>
+      <div class="en-legend">
+        <span><i style="background:#7ac4ff;"></i>𝑦 = 1/𝑥</span>
+        <span><i style="background:rgba(122,196,255,0.45);height:10px;"></i>shaded area = ∫ 1/𝑥 𝑑𝑥</span>
+      </div>
+    </section>
+
+    <!-- ── e in the real world ── -->
+    <section class="en-card" style="--card-accent:#3b82f6;">
+      <h2>𝑒 in the Real World</h2>
+      <p>Any time something grows or shrinks continuously, proportionally to its current size, 𝑒 is quietly running the math underneath.</p>
+      <div class="en-world-grid">
+        <div class="en-world-card">
+          <span class="en-world-icon">💰</span>
+          <div class="en-world-text">
+            <strong>Compound Interest &amp; Loans</strong>
+            <small>Banks, mortgages, and investment growth all use A = Pe^(rt) for continuous compounding — the same idea Bernoulli was chasing in 1683.</small>
+          </div>
+        </div>
+        <div class="en-world-card">
+          <span class="en-world-icon">🦠</span>
+          <div class="en-world-text">
+            <strong>Population &amp; Bacteria Growth</strong>
+            <small>Cell cultures, bacteria, and unchecked population growth all follow exponential curves built on 𝑒 — and so, in reverse, does an epidemic curve flattening out.</small>
+          </div>
+        </div>
+        <div class="en-world-card">
+          <span class="en-world-icon">☢️</span>
+          <div class="en-world-text">
+            <strong>Radioactive Decay &amp; Carbon Dating</strong>
+            <small>Half-life formulas use 𝑒 with a negative exponent. Archaeologists date fossils and artifacts by measuring how far carbon-14 has decayed along that curve.</small>
+          </div>
+        </div>
+        <div class="en-world-card">
+          <span class="en-world-icon">📊</span>
+          <div class="en-world-text">
+            <strong>The Bell Curve</strong>
+            <small>The normal distribution — grades, heights, measurement error — is built from 𝑒<sup>−𝑥²</sup>. Statistics quite literally cannot be written without 𝑒.</small>
+          </div>
+        </div>
+        <div class="en-world-card">
+          <span class="en-world-icon">💻</span>
+          <div class="en-world-text">
+            <strong>Computing &amp; Algorithms</strong>
+            <small>Natural logarithms (base 𝑒) appear in information theory, machine-learning loss functions, and the "37% rule" for optimal stopping — all rooted in 𝑒.</small>
+          </div>
+        </div>
+        <div class="en-world-card">
+          <span class="en-world-icon">✨</span>
+          <div class="en-world-text">
+            <strong>Euler's Identity</strong>
+            <small>e^(iπ) + 1 = 0 links 𝑒, π, 𝑖, 1, and 0 — the five most important constants in mathematics — in a single equation often called the most beautiful in all of math.</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Quick check ── -->
+    <section class="en-card" style="--card-accent:#f59e0b;">
+      <h2>Quick Check</h2>
+      <p>Which statement best explains why 𝑒 is special among exponential bases?</p>
+      <div class="en-quiz-options" role="group" aria-label="Quick check answers">
+        <button type="button" class="en-quiz-btn" data-correct="false">It is the largest possible base for an exponential function.</button>
+        <button type="button" class="en-quiz-btn" data-correct="true">It is the only base whose curve's slope always equals its own height.</button>
+        <button type="button" class="en-quiz-btn" data-correct="false">It was chosen because it is a whole number.</button>
+      </div>
+      <p id="en-quiz-feedback" aria-live="polite" style="font-weight:700;font-size:0.85rem;"></p>
+    </section>
+
+    <!-- ── Practice Problems ── -->
+    <section class="en-card" style="--card-accent:#ff9500;">
+      <h2>Practice Problems</h2>
+      <p style="color: var(--text-muted, #64748b);font-size:0.84rem;">Use 𝑒 ≈ 2.71828. Round answers to two decimal places unless it works out exactly.</p>
+      <div class="en-practice">
+
+        <div class="en-problem">
+          <p>1. You invest $100 at a continuous interest rate of 5% for 10 years. Using A = Pe^(rt), what is A?</p>
+          <div class="en-problem-row">
+            <input type="number" class="en-ans-input" id="eans-1" step="0.01" placeholder="A = ?" />
+            <button class="en-check-btn" onclick="enCheck(1, 164.87, 0.5)">Check</button>
+            <span class="en-feedback" id="efb-1" aria-live="polite"></span>
+          </div>
+          <div class="en-hint" id="ehint-1">Hint: A = 100 × e^(0.05 × 10) = 100 × e^0.5 ≈ 164.87</div>
+        </div>
+
+        <div class="en-problem">
+          <p>2. What is 𝑒<sup>0</sup>?</p>
+          <div class="en-problem-row">
+            <input type="number" class="en-ans-input" id="eans-2" step="0.01" placeholder="e^0 = ?" />
+            <button class="en-check-btn" onclick="enCheck(2, 1, 0.01)">Check</button>
+            <span class="en-feedback" id="efb-2" aria-live="polite"></span>
+          </div>
+          <div class="en-hint" id="ehint-2">Hint: any nonzero number raised to the power 0 equals 1 — including 𝑒.</div>
+        </div>
+
+        <div class="en-problem">
+          <p>3. A bacteria culture of 500 cells grows continuously at a rate of 8% per hour. Using P = P₀e^(rt), how many cells after 6 hours?</p>
+          <div class="en-problem-row">
+            <input type="number" class="en-ans-input" id="eans-3" step="1" placeholder="P = ?" />
+            <button class="en-check-btn" onclick="enCheck(3, 807.5, 3)">Check</button>
+            <span class="en-feedback" id="efb-3" aria-live="polite"></span>
+          </div>
+          <div class="en-hint" id="ehint-3">Hint: P = 500 × e^(0.08 × 6) = 500 × e^0.48 ≈ 807.5</div>
+        </div>
+
+        <div class="en-problem">
+          <p>4. What is the slope of the curve 𝑦 = 𝑒<sup>𝑥</sup> at the point where 𝑥 = 0?</p>
+          <div class="en-problem-row">
+            <input type="number" class="en-ans-input" id="eans-4" step="0.01" placeholder="slope = ?" />
+            <button class="en-check-btn" onclick="enCheck(4, 1, 0.02)">Check</button>
+            <span class="en-feedback" id="efb-4" aria-live="polite"></span>
+          </div>
+          <div class="en-hint" id="ehint-4">Hint: 𝑒<sup>𝑥</sup> is its own derivative, and 𝑒<sup>0</sup> = 1 — so the slope at 𝑥 = 0 is 1.</div>
+        </div>
+
+        <div class="en-problem">
+          <p>5. In the compound interest lab, what value does (1 + 1/𝑛)<sup>𝑛</sup> approach as 𝑛 gets very large?</p>
+          <div class="en-problem-row">
+            <input type="number" class="en-ans-input" id="eans-5" step="0.01" placeholder="limit = ?" />
+            <button class="en-check-btn" onclick="enCheck(5, 2.71828, 0.01)">Check</button>
+            <span class="en-feedback" id="efb-5" aria-live="polite"></span>
+          </div>
+          <div class="en-hint" id="ehint-5">Hint: that limit is the definition of 𝑒 itself.</div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+  </div><!-- /ll-sim -->
+  </div><!-- /ll-stage -->
+</div><!-- /ll-viewport -->
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../index.html">Home</a> · <a href="../../steam-lessons.html">Lessons</a></p>
+  </footer>
+
+  <script src="../../assets/js/theme-registry.js"></script>
+  <script src="../../assets/js/nav-mobile.js"></script>
+  <script>
+  (function () {
+    const E = Math.E;
+
+    function setupCanvas(canvas) {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const w = Math.max(rect.width, 240);
+      const h = Math.max(rect.height, 200);
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { ctx, w, h };
+    }
+
+    // ── Lab 1: compound interest ─────────────────────────────────
+    const compoundCanvas = document.getElementById('en-compound-canvas');
+    const compoundSlider = document.getElementById('en-compound-slider');
+    const compoundNLabel = document.getElementById('en-compound-n-label');
+    const compoundValue = document.getElementById('en-compound-value');
+    const compoundDiff = document.getElementById('en-compound-diff');
+    const compoundBadge = document.getElementById('en-compound-badge');
+    const compoundSteps = [
+      { n: 1, label: '1 (yearly)' },
+      { n: 2, label: '2 (half-yearly)' },
+      { n: 4, label: '4 (quarterly)' },
+      { n: 12, label: '12 (monthly)' },
+      { n: 52, label: '52 (weekly)' },
+      { n: 365, label: '365 (daily)' },
+      { n: 8760, label: '8,760 (hourly)' },
+      { n: 1000000, label: '1,000,000 (near-continuous)' }
+    ];
+
+    function drawCompound(activeIndex) {
+      const { ctx, w, h } = setupCanvas(compoundCanvas);
+      ctx.clearRect(0, 0, w, h);
+      const pad = { l: 34, r: 12, t: 14, b: 30 };
+      const plotW = w - pad.l - pad.r;
+      const plotH = h - pad.t - pad.b;
+      const maxVal = E * 1.06;
+      const baseline = pad.t + plotH;
+
+      function yFor(v) { return baseline - (v / maxVal) * plotH; }
+
+      // gridlines
+      ctx.strokeStyle = 'rgba(234,243,255,0.12)';
+      ctx.lineWidth = 1;
+      [2.0, 2.2, 2.4, 2.6, 2.71828].forEach((v) => {
+        const y = yFor(v);
+        ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
+      });
+
+      // e reference line
+      ctx.strokeStyle = '#ff9f0a';
+      ctx.setLineDash([5, 4]);
+      ctx.lineWidth = 1.6;
+      const eY = yFor(E);
+      ctx.beginPath(); ctx.moveTo(pad.l, eY); ctx.lineTo(w - pad.r, eY); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#ff9f0a';
+      ctx.font = '11px Inter, sans-serif';
+      ctx.fillText('e ≈ 2.71828', pad.l + 4, eY - 5);
+
+      // bars up to and including activeIndex
+      const barCount = activeIndex + 1;
+      const barGap = 8;
+      const barW = (plotW - barGap * (barCount - 1 || 0)) / Math.max(barCount, 1) * (compoundSteps.length / barCount > 3 ? 1 : 1);
+      const slotW = plotW / compoundSteps.length;
+
+      for (let i = 0; i < barCount; i++) {
+        const n = compoundSteps[i].n;
+        const v = Math.pow(1 + 1 / n, n);
+        const x = pad.l + i * slotW + slotW * 0.18;
+        const bw = slotW * 0.64;
+        const y = yFor(v);
+        const isActive = i === activeIndex;
+        ctx.fillStyle = isActive ? '#7ac4ff' : 'rgba(122,196,255,0.45)';
+        ctx.fillRect(x, y, bw, baseline - y);
+      }
+
+      // axis
+      ctx.strokeStyle = 'rgba(234,243,255,0.3)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(pad.l, baseline); ctx.lineTo(w - pad.r, baseline); ctx.stroke();
+    }
+
+    function updateCompound() {
+      const idx = parseInt(compoundSlider.value, 10);
+      const step = compoundSteps[idx];
+      const v = Math.pow(1 + 1 / step.n, step.n);
+      compoundNLabel.textContent = step.label;
+      compoundValue.textContent = v.toFixed(5);
+      compoundDiff.textContent = (E - v).toFixed(5);
+      compoundBadge.classList.toggle('visible', idx === compoundSteps.length - 1);
+      drawCompound(idx);
+    }
+    compoundSlider.addEventListener('input', updateCompound);
+
+    // ── Lab 2: tangent slope matcher ─────────────────────────────
+    const slopeCanvas = document.getElementById('en-slope-canvas');
+    const slopeSlider = document.getElementById('en-slope-slider');
+    const slopeBLabel = document.getElementById('en-slope-b-label');
+    const slopeValue = document.getElementById('en-slope-value');
+    const slopeFn = document.getElementById('en-slope-fn');
+    const slopeBadge = document.getElementById('en-slope-badge');
+
+    function drawSlope(b) {
+      const { ctx, w, h } = setupCanvas(slopeCanvas);
+      ctx.clearRect(0, 0, w, h);
+      const pad = { l: 30, r: 12, t: 14, b: 24 };
+      const plotW = w - pad.l - pad.r;
+      const plotH = h - pad.t - pad.b;
+      const xMin = -2, xMax = 2;
+      const yMin = 0, yMax = Math.pow(4, 2) * 1.05;
+
+      function xFor(x) { return pad.l + ((x - xMin) / (xMax - xMin)) * plotW; }
+      function yFor(y) { return pad.t + plotH - ((y - yMin) / (yMax - yMin)) * plotH; }
+
+      // gridlines
+      ctx.strokeStyle = 'rgba(234,243,255,0.1)';
+      ctx.lineWidth = 1;
+      for (let gx = -2; gx <= 2; gx++) {
+        const x = xFor(gx);
+        ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + plotH); ctx.stroke();
+      }
+      // x axis at y=0
+      ctx.strokeStyle = 'rgba(234,243,255,0.3)';
+      ctx.beginPath(); ctx.moveTo(pad.l, yFor(0)); ctx.lineTo(pad.l + plotW, yFor(0)); ctx.stroke();
+
+      // curve
+      ctx.strokeStyle = '#7ac4ff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i <= 200; i++) {
+        const x = xMin + (i / 200) * (xMax - xMin);
+        const y = Math.min(Math.pow(b, x), yMax);
+        const px = xFor(x), py = yFor(y);
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+
+      // point at x=0
+      const slope = Math.log(b);
+      const y0 = 1;
+      const p0x = xFor(0), p0y = yFor(y0);
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(p0x, p0y, 3.5, 0, Math.PI * 2); ctx.fill();
+
+      // tangent line: y = 1 + slope*(x-0)
+      ctx.strokeStyle = '#ff375f';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      const tx1 = -1.4, tx2 = 1.4;
+      ctx.moveTo(xFor(tx1), yFor(Math.max(0, 1 + slope * tx1)));
+      ctx.lineTo(xFor(tx2), yFor(Math.max(0, 1 + slope * tx2)));
+      ctx.stroke();
+    }
+
+    function updateSlope() {
+      const b = parseFloat(slopeSlider.value);
+      slopeBLabel.textContent = b.toFixed(2);
+      const slope = Math.log(b);
+      slopeValue.textContent = 'ln(' + b.toFixed(2) + ') = ' + slope.toFixed(3);
+      slopeFn.textContent = 'y = ' + b.toFixed(2) + 'ˣ';
+      slopeBadge.classList.toggle('visible', Math.abs(b - E) < 0.03);
+      drawSlope(b);
+    }
+    slopeSlider.addEventListener('input', updateSlope);
+
+    // ── Lab 3: area under 1/x ────────────────────────────────────
+    const areaCanvas = document.getElementById('en-area-canvas');
+    const areaSlider = document.getElementById('en-area-slider');
+    const areaBLabel = document.getElementById('en-area-b-label');
+    const areaValue = document.getElementById('en-area-value');
+    const areaBadge = document.getElementById('en-area-badge');
+
+    function integralOneOverX(b) {
+      if (b <= 1) return 0;
+      const steps = 800;
+      const dx = (b - 1) / steps;
+      let sum = 0;
+      for (let i = 0; i < steps; i++) {
+        const x0 = 1 + i * dx;
+        const x1 = x0 + dx;
+        sum += 0.5 * (1 / x0 + 1 / x1) * dx;
+      }
+      return sum;
+    }
+
+    function drawArea(b) {
+      const { ctx, w, h } = setupCanvas(areaCanvas);
+      ctx.clearRect(0, 0, w, h);
+      const pad = { l: 30, r: 12, t: 14, b: 24 };
+      const plotW = w - pad.l - pad.r;
+      const plotH = h - pad.t - pad.b;
+      const xMin = 0.4, xMax = 4.2;
+      const yMin = 0, yMax = 1 / xMin;
+
+      function xFor(x) { return pad.l + ((x - xMin) / (xMax - xMin)) * plotW; }
+      function yFor(y) { return pad.t + plotH - ((y - yMin) / (yMax - yMin)) * plotH; }
+
+      // shaded area from 1 to b
+      ctx.fillStyle = 'rgba(122,196,255,0.35)';
+      ctx.beginPath();
+      ctx.moveTo(xFor(1), yFor(0));
+      for (let i = 0; i <= 100; i++) {
+        const x = 1 + (i / 100) * (b - 1);
+        ctx.lineTo(xFor(x), yFor(1 / x));
+      }
+      ctx.lineTo(xFor(b), yFor(0));
+      ctx.closePath();
+      ctx.fill();
+
+      // curve
+      ctx.strokeStyle = '#7ac4ff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i <= 200; i++) {
+        const x = xMin + (i / 200) * (xMax - xMin);
+        const px = xFor(x), py = yFor(1 / x);
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+
+      // x axis
+      ctx.strokeStyle = 'rgba(234,243,255,0.3)';
+      ctx.beginPath(); ctx.moveTo(pad.l, yFor(0)); ctx.lineTo(pad.l + plotW, yFor(0)); ctx.stroke();
+    }
+
+    function updateArea() {
+      const b = parseFloat(areaSlider.value);
+      areaBLabel.textContent = b.toFixed(2);
+      const area = integralOneOverX(b);
+      areaValue.textContent = area.toFixed(3);
+      areaBadge.classList.toggle('visible', Math.abs(b - E) < 0.03);
+      drawArea(b);
+    }
+    areaSlider.addEventListener('input', updateArea);
+
+    // ── Quick check ───────────────────────────────────────────────
+    document.querySelectorAll('.en-quiz-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const correct = btn.dataset.correct === 'true';
+        document.querySelectorAll('.en-quiz-btn').forEach((b) => b.classList.remove('right', 'wrong'));
+        const feedback = document.getElementById('en-quiz-feedback');
+        if (correct) {
+          btn.classList.add('right');
+          feedback.textContent = '✓ Correct — 𝑒 is the only base where the curve’s slope matches its height at every point.';
+          feedback.style.color = '#1a7a2e';
+        } else {
+          btn.classList.add('wrong');
+          feedback.textContent = '✗ Not quite — try again.';
+          feedback.style.color = '#c0392b';
+        }
+      });
+    });
+
+    // ── Practice problems ────────────────────────────────────────
+    window.enCheck = function (num, correct, tol) {
+      const input = document.getElementById('eans-' + num);
+      const fb = document.getElementById('efb-' + num);
+      const hint = document.getElementById('ehint-' + num);
+      const val = parseFloat(input.value);
+
+      fb.className = 'en-feedback';
+      if (isNaN(val)) {
+        fb.textContent = 'Enter a number.';
+        fb.classList.add('wrong');
+        return;
+      }
+
+      if (Math.abs(val - correct) <= tol) {
+        fb.textContent = '✓ Correct!';
+        fb.classList.add('correct');
+        hint.classList.remove('visible');
+        input.style.borderColor = '#34c759';
+      } else {
+        fb.textContent = '✗ Try again';
+        fb.classList.add('wrong');
+        hint.classList.add('visible');
+        input.style.borderColor = '#ff3b30';
+      }
+    };
+
+    function resizeAll() {
+      updateCompound();
+      updateSlope();
+      updateArea();
+    }
+    window.addEventListener('resize', resizeAll);
+    resizeAll();
+  })();
+  </script>
+  <script src="../../assets/js/classroom-animations.js"></script>
+  <script src="../../assets/js/lesson-layout.js"></script>
+  <script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

@@ -800,126 +800,15 @@ function startPiano(note, velocity) {
 }
 
 // ───── Drum synthesis ─────
-let sharedNoiseBuffer = null;
-
-function getNoiseBuffer() {
-  if (sharedNoiseBuffer) return sharedNoiseBuffer;
-  if (!audioCtx) return null;
-  // Create a reusable 2-second noise buffer
-  const buf  = audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate * 2.0), audioCtx.sampleRate);
-  const data = buf.getChannelData(0);
-  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-  sharedNoiseBuffer = buf;
-  return buf;
-}
-
-function drumKick(time) {
-  const now  = time;
-  const osc  = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(140, now);
-  osc.frequency.exponentialRampToValueAtTime(45, now + 0.12);
-  gain.gain.setValueAtTime(0.8, now);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
-  osc.connect(gain); gain.connect(master);
-  osc.start(now); osc.stop(now + 0.2);
-}
-
-function drumSnare(time) {
-  const now    = time;
-  const noise  = audioCtx.createBufferSource();
-  noise.buffer = getNoiseBuffer();
-  const filter = audioCtx.createBiquadFilter();
-  filter.type  = 'highpass'; filter.frequency.value = 1200;
-  const gain   = audioCtx.createGain();
-  gain.gain.setValueAtTime(0.6, now);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
-  noise.connect(filter); filter.connect(gain); gain.connect(master);
-  noise.start(now); noise.stop(now + 0.14);
-}
-
-function drumHat(time) {
-  const now    = time;
-  const noise  = audioCtx.createBufferSource();
-  noise.buffer = getNoiseBuffer();
-  const filter = audioCtx.createBiquadFilter();
-  filter.type  = 'highpass'; filter.frequency.value = 6000;
-  const gain   = audioCtx.createGain();
-  gain.gain.setValueAtTime(0.35, now);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
-  noise.connect(filter); filter.connect(gain); gain.connect(master);
-  noise.start(now); noise.stop(now + 0.06);
-}
-
-function drumClap(time) {
-  const now = time;
-  for (const dt of [0, 0.015, 0.03]) {
-    const noise  = audioCtx.createBufferSource();
-    noise.buffer = getNoiseBuffer();
-    const filter = audioCtx.createBiquadFilter();
-    filter.type  = 'bandpass'; filter.frequency.value = 2000; filter.Q.value = 0.7;
-    const gain   = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.35, now + dt);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + dt + 0.05);
-    noise.connect(filter); filter.connect(gain); gain.connect(master);
-    noise.start(now + dt); noise.stop(now + dt + 0.06);
-  }
-}
-
-function drumTom(freq, time) {
-  const now  = time;
-  const osc  = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(freq, now);
-  gain.gain.setValueAtTime(0.55, now);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
-  osc.connect(gain); gain.connect(master);
-  osc.start(now); osc.stop(now + 0.24);
-}
-
-function drumPerc(time) {
-  const now  = time;
-  const osc  = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'square';
-  osc.frequency.setValueAtTime(520, now);
-  osc.frequency.exponentialRampToValueAtTime(220, now + 0.08);
-  gain.gain.setValueAtTime(0.25, now);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
-  osc.connect(gain); gain.connect(master);
-  osc.start(now); osc.stop(now + 0.12);
-}
-
-function drumCrash(time) {
-  const now    = time;
-  const noise  = audioCtx.createBufferSource();
-  noise.buffer = getNoiseBuffer();
-  const filter = audioCtx.createBiquadFilter();
-  filter.type  = 'highpass'; filter.frequency.value = 3000;
-  const gain   = audioCtx.createGain();
-  gain.gain.setValueAtTime(0.25, now);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
-  noise.connect(filter); filter.connect(gain); gain.connect(master);
-  noise.start(now); noise.stop(now + 0.6);
-}
+// Voices live in assets/js/drum-engine.js (shared with the Drum Lab lesson).
+let drumEngine = null;
 
 function triggerDrum(name, time) {
-  if (!audioCtx) return;
+  if (!audioCtx || !window.DrumEngine) return;
   if (audioCtx.state !== 'running') audioCtx.resume();
+  if (!drumEngine) drumEngine = window.DrumEngine.create(audioCtx, master);
   const t = (time !== undefined) ? time : audioCtx.currentTime;
-  switch (name) {
-    case 'kick':  drumKick(t);       break;
-    case 'snare': drumSnare(t);      break;
-    case 'hat':   drumHat(t);        break;
-    case 'clap':  drumClap(t);       break;
-    case 'tom1':  drumTom(180, t);   break;
-    case 'tom2':  drumTom(120, t);   break;
-    case 'perc':  drumPerc(t);       break;
-    case 'crash': drumCrash(t);      break;
-    default:      drumPerc(t);       break;
-  }
+  drumEngine.hit(name, t, 0.85);
 }
 
 // ───── Stop voice (uses ADSR release) ─────
@@ -1262,7 +1151,7 @@ function onMidiMessage(ev) {
     }
 
     if (preset === 'drums') {
-      const map = { 36:'kick',38:'snare',42:'hat',39:'clap',45:'tom1',41:'tom2',49:'crash',51:'crash' };
+      const map = { 36:'kick',38:'snare',42:'hat',44:'hat',46:'ohat',39:'clap',45:'tom1',47:'tomMid',41:'tom2',43:'tom2',49:'crash',57:'crash',51:'ride',59:'ride' };
       triggerDrum(map[note] || 'perc');
       return;
     }

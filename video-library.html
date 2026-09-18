@@ -277,7 +277,7 @@
       overflow: hidden;
     }
     .vl-card:hover .vl-play-icon { opacity: 1; }
-    .vl-card:hover .vl-thumb { opacity: 0.88; transform: scale(1.03); }
+    .vl-card:hover .vl-thumb-art { transform: scale(1.025); }
     .vl-card:focus-visible {
       outline: 3px solid var(--focus-ring, #5aa7ff);
       outline-offset: 3px;
@@ -300,12 +300,33 @@
       border-bottom: 1px solid var(--glass-stroke-soft, rgba(15, 46, 90, 0.08));
       overflow: hidden;
     }
-    .vl-thumb {
+    .vl-thumb-art {
       width: 100%;
       height: 100%;
-      object-fit: cover;
-      display: block;
-      transition: opacity 0.15s, transform 0.25s ease;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 72% 22%, color-mix(in srgb, var(--vl-card-accent) 52%, transparent), transparent 20%),
+        linear-gradient(145deg, color-mix(in srgb, var(--vl-card-accent) 35%, #07111f), #07111f 68%);
+      color: rgba(255, 255, 255, 0.92);
+      transition: transform 0.25s ease;
+    }
+    .vl-thumb-art::before {
+      content: attr(data-symbol);
+      font: 800 clamp(2.8rem, 8vw, 4.6rem) / 1 var(--font-sans);
+      letter-spacing: -0.08em;
+      text-shadow: 0 12px 36px rgba(0, 0, 0, 0.38);
+    }
+    .vl-provider-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      padding: 0.28rem 0.48rem;
+      border-radius: 999px;
+      background: rgba(3, 8, 17, 0.78);
+      color: #fff;
+      font: 700 0.62rem var(--font-sans);
+      z-index: 2;
     }
     .vl-play-icon {
       position: absolute;
@@ -349,7 +370,7 @@
       display: none;
     }
     .vl-card--watched .vl-watched-badge { display: block; }
-    .vl-card--watched .vl-thumb { opacity: 0.7; }
+    .vl-card--watched .vl-thumb-art { opacity: 0.72; }
     .vl-card-body { padding: 0.95rem 1.1rem 1rem; }
     .vl-kicker {
       margin: 0 0 0.2rem;
@@ -438,13 +459,40 @@
       padding: 1rem 0.8rem 1rem 1rem;
       border-right: 1px solid rgba(154, 193, 255, 0.08);
     }
-    .vl-modal video {
+    .vl-embed-shell,
+    .vl-embed-frame {
       display: block;
       width: 100%;
       aspect-ratio: 16 / 9;
       background: #000;
       border-radius: 16px;
     }
+    .vl-embed-shell { position: relative; overflow: hidden; }
+    .vl-embed-frame { border: 0; }
+    .vl-embed-consent {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-content: center;
+      gap: 0.85rem;
+      padding: clamp(1rem, 5vw, 2.5rem);
+      text-align: center;
+      color: #eaf2ff;
+      background: radial-gradient(circle at top, rgba(49, 101, 177, 0.32), transparent 52%), #07101e;
+    }
+    .vl-embed-consent p { max-width: 54ch; margin: 0 auto; line-height: 1.55; }
+    .vl-load-embed {
+      justify-self: center;
+      min-height: 44px;
+      border: 0;
+      border-radius: 999px;
+      padding: 0.7rem 1.15rem;
+      background: #fff;
+      color: #07101e;
+      font: 800 0.86rem var(--font-sans);
+      cursor: pointer;
+    }
+    .vl-load-embed:focus-visible { outline: 3px solid #80b8ff; outline-offset: 3px; }
     .vl-now-playing {
       display: flex;
       justify-content: space-between;
@@ -558,48 +606,6 @@
       .vl-modal-side { max-height: none; }
     }
 
-    /* ── Auto-advance ── */
-    .vl-autonext {
-      display: none;
-      position: absolute;
-      bottom: 3.1rem;
-      right: 0.8rem;
-      background: rgba(6, 14, 28, 0.92);
-      border: 1px solid rgba(154, 193, 255, 0.22);
-      border-radius: 14px;
-      padding: 0.58rem 0.82rem;
-      color: #d4e6ff;
-      font-size: 0.78rem;
-      gap: 0.68rem;
-      align-items: center;
-      z-index: 10;
-      backdrop-filter: blur(8px);
-      max-width: 260px;
-    }
-    .vl-autonext.visible { display: flex; }
-    .vl-autonext-label {
-      font: 700 0.6rem var(--font-mono);
-      letter-spacing: 0.09em;
-      text-transform: uppercase;
-      color: rgba(130, 175, 255, 0.8);
-      display: block;
-      margin-bottom: 0.12rem;
-    }
-    .vl-autonext-title { color: #f0f8ff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
-    .vl-autonext-cancel {
-      flex-shrink: 0;
-      border: 1px solid rgba(154, 193, 255, 0.26);
-      background: transparent;
-      color: #d4e6ff;
-      border-radius: 8px;
-      padding: 0.26rem 0.5rem;
-      font: 700 0.64rem var(--font-mono);
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.15s;
-    }
-    .vl-autonext-cancel:hover { background: rgba(255, 255, 255, 0.08); }
-
     /* ── Suppress main padding for full-bleed hero ── */
     body.theme-liquid-woodland.theme-video-library main {
       padding-top: 0;
@@ -707,17 +713,10 @@
       <button class="vl-modal-close" id="vl-modal-close" aria-label="Close video">✕</button>
       <div class="vl-modal-stage">
         <div class="vl-player-wrap">
-          <video id="vl-modal-video" controls crossorigin="anonymous"></video>
+          <div class="vl-embed-shell" id="vl-embed-shell"></div>
           <div class="vl-now-playing">
-            <span>Now Playing</span>
-            <strong id="vl-modal-hud">00:00 / 00:00</strong>
-          </div>
-          <div class="vl-autonext" id="vl-autonext" aria-live="polite">
-            <div>
-              <span class="vl-autonext-label">Up Next</span>
-              <span class="vl-autonext-title" id="vl-autonext-title"></span>
-            </div>
-            <button class="vl-autonext-cancel" id="vl-autonext-cancel" type="button">Cancel (5)</button>
+            <span>Curated external video</span>
+            <strong id="vl-modal-hud">Not loaded</strong>
           </div>
         </div>
         <div class="vl-modal-side">
@@ -730,6 +729,8 @@
             <strong>Teacher Insight</strong>
             <p id="vl-modal-insight"></p>
           </div>
+          <p class="vl-modal-desc" id="vl-modal-source"></p>
+          <a class="vl-load-embed" id="vl-provider-link" target="_blank" rel="noreferrer noopener">Open on provider</a>
           <div>
             <p class="vl-chapters-label">Quick Jumps</p>
             <div class="vl-chapters" id="vl-modal-chapters"></div>
@@ -745,443 +746,6 @@
 
   <script src="assets/js/reveal.js"></script>
   <script src="assets/js/nav-mobile.js"></script>
-  <script>
-    const VIDEOS = [
-      // ── Science & Wonder ──
-      {
-        src: 'assets/videos/carl-sagan-pale-blue-dot.mp4',
-        title: 'Carl Sagan — Pale Blue Dot',
-        category: 'Science',
-        group: 'science',
-        desc: 'Carl Sagan reflects on a photograph of Earth taken from 3.7 billion miles away, and what it means for how we treat each other and our world.',
-        seekTo: 30,
-        insight: 'Objective: Use scale to deepen humility. This selection invites students to think about perspective, stewardship, and how scientific imagery can change ethics.',
-        chapters: { 8: 'The Image', 48: 'Perspective', 102: 'Responsibility' }
-      },
-      {
-        src: 'assets/videos/carl-sagan-kids-questions.mp4',
-        title: 'Carl Sagan — Encourage Kids to Ask Questions',
-        category: 'Science',
-        group: 'science',
-        desc: 'In this 1977 Tonight Show appearance, Carl Sagan makes a passionate case for nurturing curiosity — why asking questions is the foundation of all science.',
-        seekTo: 15,
-        insight: 'Objective: Model curiosity as a habit, not a personality trait. A good anchor for discussion about inquiry, wonder, and intellectual courage.',
-        chapters: { 10: 'Ask Questions', 58: 'How Science Starts', 122: 'Protect Wonder' }
-      },
-      {
-        src: 'assets/videos/powers-of-ten.mp4',
-        title: 'Powers of Ten (1977)',
-        category: 'Scale & Space',
-        group: 'science',
-        desc: 'The classic Eames film that zooms from a picnic on Earth to the edge of the observable universe, then dives inward to the structure of matter.',
-        seekTo: 10,
-        insight: 'Objective: Train scale intuition. Students can use this to think about exponents, scientific notation, and how scale changes what counts as important.',
-        chapters: { 10: 'From Earth', 92: 'Cosmic Scale', 250: 'Into the Atom' }
-      },
-      {
-        src: 'assets/videos/nature-by-numbers.mp4',
-        title: 'Nature by Numbers',
-        category: 'Math & Pattern',
-        group: 'science',
-        desc: 'A beautifully animated short film exploring the golden ratio, Fibonacci spirals, and the geometry hidden inside shells, flowers, and growth patterns.',
-        seekTo: 6,
-        insight: 'Objective: Help students see mathematics as a visual language. Works especially well for pattern, proportion, and the overlap between math and artistic beauty.',
-        chapters: { 6: 'Patterns in Nature', 42: 'Golden Ratio', 88: 'Geometry as Art' }
-      },
-      // ── Technology ──
-      {
-        src: 'assets/videos/what-is-the-internet.mp4',
-        title: 'What Is the Internet?',
-        category: 'Technology',
-        group: 'tech',
-        desc: 'An exploration of how the internet works — from fiber optic cables and servers to protocols and packets. A foundational video for understanding digital infrastructure.',
-        seekTo: 15,
-        insight: 'Objective: Help students understand that the internet is a system, not magic. Notice the layers of abstraction and physical hardware beneath the digital experience.',
-        chapters: { 15: 'Physical Network', 60: 'How Data Moves', 120: 'Protocols' }
-      },
-      {
-        src: 'assets/videos/internet-buster.mp4',
-        title: 'Internet Buster',
-        category: 'Technology',
-        group: 'tech',
-        desc: 'A fun and energetic debunking of internet myths and misconceptions. Great for critical thinking about what students believe about technology.',
-        seekTo: 8,
-        insight: 'Objective: Encourage skepticism about "tech facts." Students can identify which internet myths they believed and why misinformation spreads online.',
-        chapters: { 8: 'Common Myths', 35: 'Why We Believe It', 65: 'The Truth' }
-      },
-      // ── Purpose & Voice ──
-      {
-        src: 'assets/videos/steve-jobs-on-failure.mp4',
-        title: 'Steve Jobs on Failure',
-        category: 'Interview',
-        group: 'purpose',
-        desc: 'A rare interview clip where Steve Jobs reflects on failure, resilience, and what it really means to build something that matters.',
-        seekTo: 30,
-        insight: 'Objective: Notice how setbacks can become design fuel. Helps students reflect on resilience, iteration, and the difference between quitting and revising.',
-        chapters: { 12: 'Failure', 44: 'Resilience', 86: 'Build Again' }
-      },
-      {
-        src: 'assets/videos/steve-jobs-life.mp4',
-        title: 'Steve Jobs on Life',
-        category: 'Interview',
-        group: 'purpose',
-        desc: 'Steve Jobs shares his perspective on life, purpose, and the importance of following what you love — even when the path isn\'t clear.',
-        seekTo: 30,
-        insight: 'Objective: Connect personal purpose to long-term craft. Students can listen for the parts about curiosity, identity, and choosing meaningful work.',
-        chapters: { 18: 'Purpose', 62: 'Following Love', 114: 'What Matters' }
-      },
-      {
-        src: 'assets/videos/deadpoetsociety.mp4',
-        title: 'Dead Poets Society',
-        category: 'Film',
-        group: 'purpose',
-        desc: 'A memorable clip from Dead Poets Society focused on voice, courage, and the challenge of thinking for yourself.',
-        seekTo: 15,
-        insight: 'Objective: Help students identify moments where conformity and courage collide. Works well when discussing voice, pressure, and independent thought.',
-        chapters: { 15: 'Set the Scene', 52: 'Voice', 96: 'Think for Yourself' }
-      },
-      {
-        src: 'assets/videos/makeyourlifespectacular.mp4',
-        title: 'Make Your Life Spectacular',
-        category: 'Motivation',
-        group: 'purpose',
-        desc: 'An inspirational video about living with purpose, bringing energy to your work, and making your life mean something.',
-        seekTo: 15,
-        insight: 'Objective: Push reflection beyond hype. Students can track which ideas are emotionally persuasive and which become actionable choices.',
-        chapters: { 12: 'Purpose', 47: 'Energy', 92: 'Action' }
-      }
-    ];
-
-    const GROUPS = {
-      science: { groupId: 'vl-group-science', gridId: 'vl-grid-science', countId: 'vl-count-science' },
-      tech:    { groupId: 'vl-group-tech',    gridId: 'vl-grid-tech',    countId: 'vl-count-tech'    },
-      purpose: { groupId: 'vl-group-purpose', gridId: 'vl-grid-purpose', countId: 'vl-count-purpose' }
-    };
-
-    // ── DOM refs ──
-    const filterRow    = document.getElementById('vl-filter-row');
-    const backdrop     = document.getElementById('vl-modal-backdrop');
-    const modal        = backdrop.querySelector('.vl-modal');
-    const closeBtn     = document.getElementById('vl-modal-close');
-    const modalVideo   = document.getElementById('vl-modal-video');
-    const modalCat     = document.getElementById('vl-modal-category');
-    const modalTitle   = document.getElementById('vl-modal-title');
-    const modalDesc    = document.getElementById('vl-modal-desc');
-    const modalInsight = document.getElementById('vl-modal-insight');
-    const modalChaps   = document.getElementById('vl-modal-chapters');
-    const modalHud     = document.getElementById('vl-modal-hud');
-    const theaterGlow  = document.getElementById('vl-theater-glow');
-    const autonextEl   = document.getElementById('vl-autonext');
-    const autonextTitle = document.getElementById('vl-autonext-title');
-    const autonextCancel = document.getElementById('vl-autonext-cancel');
-    const searchInput  = document.getElementById('vl-search');
-    const noResults    = document.getElementById('vl-no-results');
-    const watchedCtrls = document.getElementById('vl-watched-controls');
-    const watchedCount = document.getElementById('vl-watched-count');
-    const clearWatched = document.getElementById('vl-clear-watched');
-
-    const FOCUSABLE = 'button,[href],input,select,textarea,video[controls],[tabindex]:not([tabindex="-1"])';
-    let lastFocused = null, ambientFrame = null, ambientCanvas = null, ambientCtx = null;
-    let activeVideo = null, currentIndex = -1, activeCard = null, autonextTimer = null;
-    let activeFilter = 'all', searchQuery = '';
-    const allCards = [];
-
-    // ── Watch history ──
-    const WATCH_KEY = 'vl-watched-v2';
-    function getWatched() {
-      try { return JSON.parse(localStorage.getItem(WATCH_KEY) || '{}'); } catch { return {}; }
-    }
-    function markWatched(src) {
-      if (!src) return;
-      const w = getWatched(); w[src] = true;
-      localStorage.setItem(WATCH_KEY, JSON.stringify(w));
-      syncWatchedUI();
-    }
-    function syncWatchedUI() {
-      const w = getWatched();
-      const n = Object.keys(w).length;
-      allCards.forEach(({ card, v }) => card.classList.toggle('vl-card--watched', !!w[v.src]));
-      if (n > 0) {
-        watchedCtrls.style.display = 'flex';
-        watchedCount.textContent = `${n} watched`;
-      } else {
-        watchedCtrls.style.display = 'none';
-      }
-    }
-
-    // ── Hero setup ──
-    const featured = VIDEOS[0];
-    document.getElementById('vl-hero-title').textContent = featured.title;
-    document.getElementById('vl-hero-desc').textContent = featured.desc;
-    const statEl = document.getElementById('vl-stat-row');
-    if (statEl) statEl.textContent = `${VIDEOS.length} films · 3 collections`;
-
-    // Capture hero background thumbnail
-    const heroBg = document.getElementById('vl-cinema-bg');
-    (function captureHeroBg() {
-      const v = document.createElement('video');
-      v.muted = true; v.preload = 'metadata'; v.src = featured.src;
-      v.addEventListener('loadedmetadata', () => { v.currentTime = Math.min(featured.seekTo, v.duration - 1); });
-      v.addEventListener('seeked', () => {
-        const c = document.createElement('canvas');
-        c.width = v.videoWidth || 1280; c.height = v.videoHeight || 720;
-        c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
-        const img = new Image(); img.alt = ''; img.src = c.toDataURL('image/jpeg', 0.88);
-        heroBg.appendChild(img);
-        v.src = '';
-      }, { once: true });
-    })();
-
-    document.getElementById('vl-hero-play').addEventListener('click', () => {
-      lastFocused = document.getElementById('vl-hero-play');
-      openVideo(0);
-    });
-
-    // ── Filter buttons ──
-    const categories = ['all', ...[...new Set(VIDEOS.map(v => v.category))]];
-    categories.forEach(cat => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'vl-filter-btn' + (cat === 'all' ? ' active' : '');
-      btn.textContent = cat === 'all' ? 'All' : cat;
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.vl-filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        activeFilter = cat;
-        applyFilters();
-      });
-      filterRow.appendChild(btn);
-    });
-
-    // ── Search ──
-    searchInput.addEventListener('input', () => {
-      searchQuery = searchInput.value.trim().toLowerCase();
-      applyFilters();
-    });
-
-    function applyFilters() {
-      const counts = { science: 0, tech: 0, purpose: 0 };
-      allCards.forEach(({ card, v }) => {
-        const matchFilter = activeFilter === 'all' || v.category === activeFilter;
-        const matchSearch = !searchQuery ||
-          v.title.toLowerCase().includes(searchQuery) ||
-          v.category.toLowerCase().includes(searchQuery) ||
-          v.desc.toLowerCase().includes(searchQuery);
-        const show = matchFilter && matchSearch;
-        card.style.display = show ? '' : 'none';
-        if (show) counts[v.group]++;
-      });
-      let anyVisible = false;
-      Object.entries(GROUPS).forEach(([key, g]) => {
-        const groupEl = document.getElementById(g.groupId);
-        const countEl = document.getElementById(g.countId);
-        const visible = counts[key] > 0;
-        groupEl.style.display = visible ? '' : 'none';
-        if (visible) { anyVisible = true; countEl.textContent = `${counts[key]} film${counts[key] === 1 ? '' : 's'}`; }
-      });
-      noResults.classList.toggle('visible', !anyVisible);
-    }
-
-    // ── Thumbnail helpers ──
-    function fmtDuration(s) {
-      if (!s || !isFinite(s)) return '';
-      return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
-    }
-    function captureThumbnail(src, seekTo, imgEl, durEl) {
-      const vid = document.createElement('video');
-      vid.muted = true; vid.preload = 'metadata'; vid.src = src;
-      vid.addEventListener('loadedmetadata', () => {
-        if (durEl) durEl.textContent = fmtDuration(vid.duration);
-        vid.currentTime = Math.min(seekTo, vid.duration - 1);
-      });
-      vid.addEventListener('seeked', () => {
-        const c = document.createElement('canvas');
-        c.width = vid.videoWidth || 640; c.height = vid.videoHeight || 360;
-        c.getContext('2d').drawImage(vid, 0, 0, c.width, c.height);
-        imgEl.src = c.toDataURL('image/jpeg', 0.85);
-        vid.src = '';
-      }, { once: true });
-    }
-
-    const thumbObserver = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (!entry.isIntersecting) return;
-        const card = entry.target;
-        const img = card.querySelector('.vl-thumb');
-        const dur = card.querySelector('.vl-duration');
-        const v = VIDEOS[parseInt(card.dataset.index)];
-        if (v && img && !img.src) captureThumbnail(v.src, v.seekTo, img, dur);
-        thumbObserver.unobserve(card);
-      });
-    }, { rootMargin: '280px' });
-
-    // ── Build cards ──
-    VIDEOS.forEach((v, index) => {
-      const g = GROUPS[v.group];
-      const grid = document.getElementById(g.gridId);
-      if (!grid) return;
-
-      const card = document.createElement('button');
-      card.className = 'vl-card reveal';
-      card.type = 'button';
-      card.dataset.index = String(index);
-      card.setAttribute('aria-label', `Play: ${v.title}`);
-
-      const thumbWrap = document.createElement('div');
-      thumbWrap.className = 'vl-thumb-wrap';
-
-      const img = document.createElement('img');
-      img.className = 'vl-thumb'; img.alt = `Thumbnail for ${v.title}`;
-
-      const playIcon = document.createElement('div');
-      playIcon.className = 'vl-play-icon';
-      playIcon.innerHTML = `<svg viewBox="0 0 56 56" fill="none" aria-hidden="true">
-        <circle cx="28" cy="28" r="28" fill="white" fill-opacity="0.93"/>
-        <polygon points="22,16 44,28 22,40" fill="#0a0f1c"/>
-      </svg>`;
-
-      const dur = document.createElement('span'); dur.className = 'vl-duration';
-      const badge = document.createElement('span'); badge.className = 'vl-watched-badge'; badge.textContent = '✓ Watched';
-
-      thumbWrap.append(img, playIcon, dur, badge);
-
-      const body = document.createElement('div');
-      body.className = 'vl-card-body';
-      body.innerHTML = `<p class="vl-kicker">${v.category}</p><p class="vl-title">${v.title}</p><p class="vl-sub">Mr. Scandrett · Class film</p>`;
-
-      card.append(thumbWrap, body);
-      grid.appendChild(card);
-      thumbObserver.observe(card);
-      allCards.push({ card, v });
-
-      card.addEventListener('mousemove', e => {
-        const r = card.getBoundingClientRect();
-        const px = (e.clientX - r.left) / r.width;
-        const py = (e.clientY - r.top) / r.height;
-        card.style.transform = `perspective(900px) rotateX(${(0.5 - py) * 6}deg) rotateY(${(px - 0.5) * 6}deg)`;
-      });
-      card.addEventListener('mouseleave', () => { card.style.transform = ''; });
-      card.addEventListener('click', () => { lastFocused = card; cancelAutonext(); openVideo(index); });
-    });
-
-    // Initial group counts
-    Object.entries(GROUPS).forEach(([key, g]) => {
-      const n = VIDEOS.filter(v => v.group === key).length;
-      document.getElementById(g.countId).textContent = `${n} films`;
-    });
-
-    syncWatchedUI();
-
-    // ── Modal focus trap ──
-    function focusableEls(root) {
-      return Array.from(root.querySelectorAll(FOCUSABLE)).filter(el =>
-        !el.disabled && el.getAttribute('aria-hidden') !== 'true' &&
-        (el.offsetParent !== null || el === document.activeElement)
-      );
-    }
-    function moveFocusIn() {
-      const els = focusableEls(backdrop);
-      (els[0] || modal).focus();
-    }
-    function trapFocus(e) {
-      if (e.key !== 'Tab' || !backdrop.classList.contains('open')) return;
-      const els = focusableEls(backdrop);
-      if (!els.length) { e.preventDefault(); modal.focus(); return; }
-      const first = els[0], last = els[els.length - 1], active = document.activeElement;
-      if (e.shiftKey) { if (active === first || !backdrop.contains(active)) { e.preventDefault(); last.focus(); } }
-      else            { if (active === last) { e.preventDefault(); first.focus(); } }
-    }
-
-    // ── HUD ──
-    function fmtCode(s) { return isFinite(s) ? `${Math.floor(s/60).toString().padStart(2,'0')}:${Math.floor(s%60).toString().padStart(2,'0')}` : '00:00'; }
-    function updateHud() { modalHud.textContent = `${fmtCode(modalVideo.currentTime)} / ${fmtCode(modalVideo.duration)}`; }
-
-    // ── Ambient light ──
-    function stopAmbient() { if (ambientFrame) { cancelAnimationFrame(ambientFrame); ambientFrame = null; } theaterGlow.style.background = ''; }
-    function startAmbient(videoEl) {
-      if (!ambientCanvas) { ambientCanvas = document.createElement('canvas'); ambientCanvas.width = ambientCanvas.height = 1; ambientCtx = ambientCanvas.getContext('2d', { willReadFrequently: true }); }
-      function tick() {
-        if (videoEl !== activeVideo || videoEl.paused || videoEl.ended || videoEl.readyState < 2) { ambientFrame = null; return; }
-        try {
-          ambientCtx.drawImage(videoEl, 0, 0, 1, 1);
-          const d = ambientCtx.getImageData(0, 0, 1, 1).data;
-          const [r, g, b] = [d[0], d[1], d[2]];
-          theaterGlow.style.background = `radial-gradient(circle at 28% 24%, rgba(${r},${g},${b},0.3) 0%, transparent 56%), radial-gradient(circle at 72% 74%, rgba(${Math.min(255,r+14)},${Math.min(255,g+14)},${Math.min(255,b+14)},0.2) 0%, transparent 58%)`;
-        } catch { stopAmbient(); return; }
-        ambientFrame = requestAnimationFrame(tick);
-      }
-      stopAmbient(); ambientFrame = requestAnimationFrame(tick);
-    }
-
-    // ── Chapters ──
-    function renderChapters(chapters) {
-      const entries = Object.entries(chapters || {});
-      modalChaps.innerHTML = '';
-      if (!entries.length) { modalChaps.innerHTML = '<button type="button" disabled>No chapters</button>'; return; }
-      entries.forEach(([t, label]) => {
-        const btn = document.createElement('button'); btn.type = 'button'; btn.textContent = label;
-        btn.addEventListener('click', () => { modalVideo.currentTime = Number(t); updateHud(); });
-        modalChaps.appendChild(btn);
-      });
-    }
-
-    function cancelAutonext() { if (autonextTimer) { clearInterval(autonextTimer); autonextTimer = null; } autonextEl.classList.remove('visible'); }
-
-    function openVideo(index) {
-      const v = VIDEOS[index]; if (!v) return;
-      if (activeCard) activeCard.classList.remove('vl-card--playing');
-      activeCard = document.querySelector(`.vl-card[data-index="${index}"]`);
-      if (activeCard) activeCard.classList.add('vl-card--playing');
-      currentIndex = index; activeVideo = modalVideo;
-      modalVideo.src = v.src;
-      modalCat.textContent = v.category; modalTitle.textContent = v.title;
-      modalDesc.textContent = v.desc; modalInsight.textContent = v.insight;
-      renderChapters(v.chapters); updateHud();
-      backdrop.classList.add('open'); theaterGlow.classList.add('open');
-      window.setTimeout(moveFocusIn, 0);
-      const p = modalVideo.play(); if (p?.catch) p.catch(() => {});
-    }
-
-    function closeModal() {
-      backdrop.classList.remove('open'); theaterGlow.classList.remove('open');
-      stopAmbient(); cancelAutonext();
-      if (activeCard) { activeCard.classList.remove('vl-card--playing'); activeCard = null; }
-      activeVideo = null; currentIndex = -1;
-      modalVideo.pause(); modalVideo.src = '';
-      modalChaps.innerHTML = ''; modalHud.textContent = '00:00 / 00:00';
-      if (lastFocused && document.contains(lastFocused)) lastFocused.focus();
-    }
-
-    // ── Auto-advance ──
-    modalVideo.addEventListener('ended', () => {
-      markWatched(VIDEOS[currentIndex]?.src);
-      stopAmbient();
-      const next = currentIndex + 1; if (next >= VIDEOS.length) return;
-      let cd = 5;
-      autonextTitle.textContent = VIDEOS[next].title;
-      autonextCancel.textContent = `Cancel (${cd})`;
-      autonextEl.classList.add('visible');
-      autonextTimer = setInterval(() => {
-        autonextCancel.textContent = `Cancel (${--cd})`;
-        if (cd <= 0) { cancelAutonext(); openVideo(next); }
-      }, 1000);
-    });
-
-    modalVideo.addEventListener('timeupdate', updateHud);
-    modalVideo.addEventListener('loadedmetadata', updateHud);
-    modalVideo.addEventListener('play', () => { activeVideo = modalVideo; startAmbient(modalVideo); });
-    modalVideo.addEventListener('pause', stopAmbient);
-
-    autonextCancel.addEventListener('click', cancelAutonext);
-    closeBtn.addEventListener('click', closeModal);
-    backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
-    document.addEventListener('keydown', e => {
-      if (!backdrop.classList.contains('open')) return;
-      if (e.key === 'Escape') { e.preventDefault(); closeModal(); return; }
-      trapFocus(e);
-    });
-
-    clearWatched.addEventListener('click', () => { localStorage.removeItem(WATCH_KEY); syncWatchedUI(); });
-  </script>
+  <script src="assets/js/pages/video-library.js"></script>
 </body>
 </html>
