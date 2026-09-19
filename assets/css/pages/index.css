@@ -3210,6 +3210,19 @@ body.theme-liquid-woodland.theme-home .sidepanel-component .vod-inner {
   transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
 }
 
+/* Several sibling sections (.weather-solar, .weather-forecast,
+   .home-weather-dashboard, etc.) carry their own z-index:1 to sit above the
+   shell's decorative background layer, which makes each one a stacking
+   context in its own right. Without this, an open panel's z-index:4000
+   drawer is trapped inside its panel's (and, for panels nested under
+   .home-weather-dashboard, that wrapper's) stacking context and gets
+   painted under whichever z:1 sibling section comes later in the DOM,
+   instead of floating above the whole widget. */
+.home-widget--weather .weather-learning-panel.is-open,
+.home-widget--weather .home-weather-dashboard:has(.weather-learning-panel.is-open) {
+  z-index: 5000;
+}
+
 .home-widget--weather .weather-learning-panel:focus-visible {
   outline: 2px solid var(--weather-cyan);
   outline-offset: 3px;
@@ -3291,7 +3304,12 @@ body.theme-liquid-woodland.theme-home .sidepanel-component .vod-inner {
   min-height: 0;
   padding: 0.85rem 1rem 0.95rem;
   border-radius: 10px;
-  background: var(--weather-panel-bg);
+  /* Opaque on purpose: this card floats via position:fixed, detached from
+     the shell's own backdrop, so it sits directly over whatever page
+     content is behind it. The shell's --weather-panel-bg is only ~92-96%
+     opaque, which is fine when nested inside the shell's already-opaque
+     background but lets neighboring panels bleed through here. */
+  background: linear-gradient(180deg, #070f1c, #0d192b);
   border: 1px solid var(--weather-panel-border);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
@@ -5805,7 +5823,15 @@ body.theme-liquid-woodland[data-lighting="night"] .science-news-refresh {
 }
 
 .cos-home .home-widget--weather .weather-learning-drawer-inner {
-  background: var(--weather-surface-raised);
+  /* Fully opaque, unlike --weather-surface-raised (used elsewhere nested
+     inside the shell's own opaque backdrop) — this card is position:fixed
+     and floats directly over other panels, so any transparency here lets
+     their text bleed through underneath it. */
+  /* --surface-panel-alt is ~95-99% opaque, fine when nested inside an
+     already-opaque parent but not when floating position:fixed over
+     arbitrary content. Layer it over the theme's own opaque --bg so no
+     underlying panel text can bleed through. */
+  background: linear-gradient(var(--surface-panel-alt, #f8fafc), var(--surface-panel-alt, #f8fafc)) var(--bg, #fff);
   border-color: var(--weather-line);
   box-shadow: 0 18px 38px rgba(16, 29, 48, 0.18), inset 0 1px 0 color-mix(in srgb, white 48%, transparent);
 }
