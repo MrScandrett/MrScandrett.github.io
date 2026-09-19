@@ -554,21 +554,61 @@ document.addEventListener("DOMContentLoaded", async () => {
     elements.save.disabled = true;
     elements.save.title = config.saveEnabled
       ? "Save this file to the repository"
-      : "Restart the local server with ADMIN_PASS set to enable saving";
+      : "Saving to the repository is turned off in this session";
     elements.download.disabled = false;
     populateProjectSelect();
     elements.modeBanner.textContent = config.saveEnabled
       ? "Edits stay temporary until downloaded or written to source with your password. Review Git changes before committing."
-      : "Edits stay temporary. Download a workspace ZIP to keep them; restart with ADMIN_PASS to enable Write to source.";
+      : "Edits stay temporary. Download a workspace ZIP to keep them.";
     setStatus(config.saveEnabled
       ? "Editor ready. Choose a page to begin; source writing requires your password."
       : "Editor ready. Choose a page to begin; source writing is currently disabled.");
     await restoreAutosave();
     setEditMode("visual");
+    await openRequestedPage();
   } catch (error) {
     console.error("OSeditor failed to start", error);
   }
 });
+
+// The Settings > Editor tab links here as OSeditor.html?page=/path/of/the/page/being-viewed.
+// Built apps live in /apps/<slug>/ (generated output); data/app-sources.json, written by
+// build-showcase.js, maps each slug back to the student source file that should be edited.
+async function resolveRequestedPage(pagePath) {
+  const clean = pagePath.split(/[?#]/)[0];
+  const slugMatch = clean.match(/^\/apps\/([^/]+)\//);
+  if (slugMatch) {
+    let sourcePath = null;
+    try {
+      const response = await fetch("/data/app-sources.json", { cache: "no-store" });
+      if (response.ok) sourcePath = (await response.json())[slugMatch[1]] || null;
+    } catch (error) {
+      console.error("Could not read app source map", error);
+    }
+    if (!sourcePath) return { error: `${clean} is not part of the current build (it may be an old generated folder), so there is no source to open. Choose a page from the list instead.` };
+    const filePath = `/${sourcePath}`;
+    if (!availableFiles.includes(filePath)) {
+      return { error: `${clean} is built from ${sourcePath}, which is not an editable page. Choose a page from the list instead.` };
+    }
+    return { path: filePath };
+  }
+  const candidates = [clean];
+  if (clean.endsWith("/")) candidates.push(`${clean}index.html`);
+  else if (!/\.[a-z0-9]+$/i.test(clean)) candidates.push(`${clean}.html`, `${clean}/index.html`);
+  const direct = candidates.find((candidate) => availableFiles.includes(candidate));
+  return direct ? { path: direct } : { error: `Could not find editable source for ${clean}. Choose a page from the list to begin.` };
+}
+
+async function openRequestedPage() {
+  const requested = new URLSearchParams(window.location.search).get("page");
+  if (!requested) return;
+  const resolved = await resolveRequestedPage(requested);
+  if (resolved.error) {
+    setStatus(resolved.error);
+    return;
+  }
+  await activateProject(resolved.path);
+}
 
 function setStatus(message) {
   elements.status.textContent = message;
@@ -627,7 +667,7 @@ async function loadFiles() {
   } catch (error) {
     console.error("Failed to load files", error);
     elements.tree.innerHTML = '<li class="file-message">Files could not be loaded.</li>';
-    setStatus("Files could not be loaded. Is serve-local.js running?");
+    setStatus("Files could not be loaded. OSeditor only works from the local teacher setup.");
   }
 }
 

@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Radioactive Decay: Alpha, Beta &amp; Gamma · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Chemistry Lesson — Why some nuclei are unstable, how alpha, beta and gamma decay change (or don't change) an element, half-life, decay chains, and radiocarbon dating. Three interactive simulations." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --rd-panel: rgba(10, 16, 26, 0.88);
+      --rd-line: rgba(160, 210, 240, 0.14);
+      --rd-text: #dceaf8;
+      --rd-muted: rgba(220, 234, 248, 0.72);
+      --rd-dim: rgba(220, 234, 248, 0.45);
+      --rd-alpha: #ff7a94;
+      --rd-beta: #38bdf8;
+      --rd-gamma: #f6c35b;
+      --rd-pos: #4fdc9a;
+      --rd-violet: #b09fff;
+      --rd-radius: 8px;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; min-height: 100vh;
+      font-family: var(--font-sans, 'Inter', sans-serif);
+      color: var(--rd-text);
+      background:
+        linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px),
+        linear-gradient(180deg, #070c14 0%, #0d1420 46%, #07090f 100%);
+      background-size: 38px 38px, 38px 38px, auto;
+    }
+    .rd-shell { width: min(1180px, calc(100% - 2rem)); margin: 0 auto; padding: 1rem 0 4rem; display: grid; gap: 1rem; }
+    .rd-topbar { position: sticky; top: 0; z-index: 30; backdrop-filter: blur(18px); background: rgba(7,9,15,0.9); border-bottom: 1px solid var(--rd-line); }
+    .rd-topbar-inner { width: min(1180px, calc(100% - 2rem)); min-height: 56px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .rd-topbar a { color: #b0d4ef; text-decoration: none; font-size: 0.83rem; font-weight: 700; }
+    .rd-topbar a:hover { color: #fff; }
+    .rd-brand { color: #eef6ff; font-size: 0.92rem; font-weight: 800; white-space: nowrap; }
+    .rd-nav { display: flex; gap: 0.2rem; overflow-x: auto; scrollbar-width: none; }
+    .rd-nav a { padding: 0.35rem 0.6rem; border-radius: 6px; white-space: nowrap; }
+    .rd-nav a:hover { background: rgba(255,255,255,0.07); }
+    .rd-pill { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.72rem; font-weight: 800; border: 1px solid var(--rd-line); color: #b0d4ef; }
+    .rd-hero { border: 1px solid var(--rd-line); border-radius: var(--rd-radius); padding: clamp(1.2rem, 4vw, 2.4rem); background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(255,122,148,0.07) 60%, rgba(246,195,91,0.06)); }
+    .rd-eyebrow { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--rd-beta); margin: 0 0 0.5rem; }
+    h1 { font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.05; margin: 0 0 0.8rem; letter-spacing: -0.03em; }
+    h1 em { font-style: normal; background: linear-gradient(90deg, var(--rd-alpha), var(--rd-beta), var(--rd-gamma)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    h2 { font-size: clamp(1.3rem, 2.6vw, 1.75rem); margin: 0 0 0.6rem; letter-spacing: -0.02em; }
+    h3 { font-size: 1.02rem; margin: 1rem 0 0.4rem; }
+    p { line-height: 1.72; color: var(--rd-muted); margin: 0 0 0.9rem; max-width: 78ch; }
+    .rd-lede { font-size: clamp(0.98rem, 1.6vw, 1.1rem); }
+    .rd-card { background: var(--rd-panel); border: 1px solid var(--rd-line); border-radius: var(--rd-radius); padding: clamp(1rem, 2.6vw, 1.6rem); scroll-margin-top: 72px; }
+    .rd-kicker { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 0.4rem; color: var(--rd-beta); }
+    .rd-grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.8rem; margin: 0.9rem 0; }
+    .rd-mode { border: 1px solid var(--rd-line); border-top: 4px solid var(--c); border-radius: var(--rd-radius); padding: 0.9rem 1rem; background: rgba(255,255,255,0.03); }
+    .rd-mode h3 { margin: 0 0 0.3rem; color: var(--c); }
+    .rd-mode p { font-size: 0.86rem; margin: 0 0 0.5rem; }
+    .rd-mode code, .rd-eq { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: #e8f3ff; }
+    .rd-callout { border-left: 4px solid var(--rd-gamma); background: rgba(246,195,91,0.07); padding: 0.8rem 1rem; border-radius: 0 var(--rd-radius) var(--rd-radius) 0; margin: 0.9rem 0; }
+    .rd-callout p { margin: 0; }
+    .rd-callout a, .rd-p a, .rd-links a { color: #9cecff; font-weight: 700; }
+    figure { margin: 1rem 0; }
+    figure img { width: 100%; height: auto; border-radius: var(--rd-radius); border: 1px solid var(--rd-line); display: block; }
+    figcaption { font-size: 0.82rem; color: var(--rd-muted); margin-top: 0.4rem; line-height: 1.5; }
+    figcaption strong { color: var(--rd-text); }
+    /* sims */
+    .rd-sim { border: 1px solid var(--rd-line); border-radius: var(--rd-radius); margin: 1rem 0; overflow: hidden; background: rgba(0,0,0,0.25); }
+    .rd-sim-head { padding: 0.8rem 1.1rem; border-bottom: 1px solid var(--rd-line); display: flex; flex-direction: column; gap: 0.15rem; }
+    .rd-sim-title { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--rd-beta); }
+    .rd-sim-sub { font-size: 0.82rem; color: var(--rd-dim); }
+    .rd-sim-body { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, 1fr); gap: 1rem; padding: 1rem; }
+    @media (max-width: 820px) { .rd-sim-body { grid-template-columns: 1fr; } }
+    .rd-controls { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: flex-end; margin-bottom: 0.7rem; }
+    .rd-ctrl { display: flex; flex-direction: column; gap: 0.25rem; min-width: 140px; }
+    .rd-ctrl label { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rd-dim); }
+    select, input[type=range] { accent-color: var(--rd-beta); }
+    select { background: #0f1a29; color: var(--rd-text); border: 1px solid var(--rd-line); border-radius: 6px; padding: 0.45rem 0.5rem; font: inherit; font-size: 0.86rem; }
+    .rd-btn { border: 1px solid var(--c, var(--rd-line)); background: rgba(255,255,255,0.05); color: var(--rd-text); border-radius: 6px; padding: 0.5rem 0.85rem; font: inherit; font-weight: 800; font-size: 0.85rem; cursor: pointer; }
+    .rd-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--c, #fff) 22%, transparent); }
+    .rd-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .rd-btn:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+    .rd-btn.a { --c: var(--rd-alpha); } .rd-btn.b { --c: var(--rd-beta); } .rd-btn.p { --c: var(--rd-pos); } .rd-btn.g { --c: var(--rd-gamma); }
+    .rd-chart { width: 100%; height: auto; background: #08101b; border: 1px solid var(--rd-line); border-radius: 6px; display: block; }
+    .rd-readout { border: 1px solid var(--rd-line); border-radius: 6px; padding: 0.8rem 0.9rem; background: rgba(255,255,255,0.03); font-size: 0.86rem; line-height: 1.6; min-height: 9rem; }
+    .rd-readout .eq { font-family: 'JetBrains Mono', monospace; font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: 0.4rem; word-break: break-word; }
+    .rd-ok { color: var(--rd-pos); font-weight: 800; } .rd-no { color: var(--rd-alpha); font-weight: 800; }
+    .rd-stats { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.6rem; }
+    .rd-stat { border: 1px solid var(--rd-line); border-radius: 6px; padding: 0.3rem 0.6rem; }
+    .rd-stat span { display: block; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--rd-dim); }
+    .rd-stat b { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+    canvas { width: 100%; height: auto; display: block; background: #08101b; border: 1px solid var(--rd-line); border-radius: 6px; }
+    .rd-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 0.6rem 0; }
+    .rd-table th, .rd-table td { text-align: left; padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--rd-line); }
+    .rd-table th { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rd-dim); }
+    .rd-quiz details { border: 1px solid var(--rd-line); border-radius: 6px; padding: 0.6rem 0.9rem; margin: 0.5rem 0; background: rgba(255,255,255,0.03); }
+    .rd-quiz summary { cursor: pointer; font-weight: 700; }
+    .rd-quiz details p { margin: 0.5rem 0 0; }
+    .rd-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 0.7rem; margin-top: 0.8rem; }
+    .rd-link { display: block; text-decoration: none; border: 1px solid var(--rd-line); border-radius: var(--rd-radius); padding: 0.8rem 1rem; background: rgba(255,255,255,0.03); }
+    .rd-link:hover { border-color: var(--rd-beta); background: rgba(56,189,248,0.08); }
+    .rd-link strong { display: block; color: #fff; font-size: 0.92rem; }
+    .rd-link small { color: var(--rd-muted); font-size: 0.8rem; line-height: 1.5; }
+    .rd-link em { font-style: normal; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--rd-beta); }
+    .rd-footer { text-align: center; padding: 1.5rem 1rem; color: var(--rd-dim); font-size: 0.8rem; border-top: 1px solid var(--rd-line); }
+    .skip-link { position: absolute; left: -999px; } .skip-link:focus { left: 1rem; top: 1rem; z-index: 99; background: #fff; color: #000; padding: 0.5rem 1rem; }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="rd-topbar">
+  <div class="rd-topbar-inner">
+    <a href="../../steam-lessons.html">← Lessons</a>
+    <span class="rd-brand">Mr. Scandrett's ClassroomOS</span>
+    <nav class="rd-nav" aria-label="Lesson sections">
+      <a href="#why">Why Decay?</a>
+      <a href="#modes">Alpha·Beta·Gamma</a>
+      <a href="#lab">Decay Lab</a>
+      <a href="#halflife">Half-Life</a>
+      <a href="#chain">Chain</a>
+      <a href="#shield">Shielding</a>
+      <a href="#connections">Connections</a>
+    </nav>
+    <span class="rd-pill">Gr. 8–12</span>
+  </div>
+</div>
+
+<main class="rd-shell" id="main-content">
+
+  <header class="rd-hero">
+    <p class="rd-eyebrow">Chemistry · Nuclear Chemistry · Level 3–4</p>
+    <h1>Radioactive <em>Decay</em></h1>
+    <p class="rd-lede">The periodic table says an element is defined by its protons. Radioactive decay is the exception that proves how deep that rule goes: when a nucleus changes its proton count, it becomes a <strong>different element</strong>. Alpha, beta and gamma are the three ways an unstable nucleus gets to a calmer arrangement — and each one moves the atom to a different spot on the table, or none at all.</p>
+    <p class="rd-lede" style="margin:0;">Prerequisite: <a href="periodic-table.html" style="color:#9cecff;font-weight:700;">Periodic Table of Elements</a> (atomic number, isotopes) and <a href="feynman-atoms.html" style="color:#9cecff;font-weight:700;">Atoms: Structure, Motion &amp; Matter</a>. Historical story: <a href="../physics/marie-curie.html" style="color:#9cecff;font-weight:700;">Marie Curie</a>.</p>
+  </header>
+
+  <section class="rd-card" id="why" aria-labelledby="why-h">
+    <p class="rd-kicker">1 · The problem</p>
+    <h2 id="why-h">Why would a nucleus fall apart?</h2>
+    <p>Inside a nucleus, protons repel each other with the electric force, while the <strong>strong nuclear force</strong> glues every proton and neutron to its close neighbors. Neutrons add glue without adding repulsion, so light elements are happiest with about as many neutrons as protons. Heavier nuclei need <em>more</em> neutrons than protons to stay together, because the repulsion reaches across the whole nucleus but the glue only reaches nearby.</p>
+    <p>Plot every nuclide with neutrons on one axis and protons on the other and the stable ones form a narrow band — the <strong>line of stability</strong>. Stray too far from it, or grow too big (beyond lead, Z = 82, nothing is fully stable), and the nucleus is unstable. It <em>will</em> change; when is a matter of chance, described by the half-life.</p>
+    <div class="rd-callout"><p><strong>Same element, different isotope.</strong> Carbon-12 and carbon-14 both have 6 protons (so both are carbon on the <a href="periodic-table.html">periodic table</a>) but C-14 has 8 neutrons, which puts it off the line of stability. That is why C-14 is radioactive and C-12 is not.</p></div>
+  </section>
+
+  <section class="rd-card" id="modes" aria-labelledby="modes-h">
+    <p class="rd-kicker">2 · The three radiations</p>
+    <h2 id="modes-h">Alpha, beta and gamma</h2>
+    <div class="rd-grid3">
+      <div class="rd-mode" style="--c:var(--rd-alpha)">
+        <h3>Alpha (α)</h3>
+        <p>The nucleus ejects a helium-4 nucleus: 2 protons and 2 neutrons. Common in heavy nuclei that are simply too big.</p>
+        <p><code>Z − 2, A − 4</code><br>Two boxes <strong>left</strong> on the table.</p>
+      </div>
+      <div class="rd-mode" style="--c:var(--rd-beta)">
+        <h3>Beta (β⁻ / β⁺)</h3>
+        <p>β⁻: a neutron turns into a proton and emits an electron (plus an antineutrino). Too many neutrons. β⁺: a proton turns into a neutron and emits a positron. Too many protons. This is the <strong>weak force</strong> at work.</p>
+        <p><code>β⁻: Z + 1, A same</code><br><code>β⁺: Z − 1, A same</code></p>
+      </div>
+      <div class="rd-mode" style="--c:var(--rd-gamma)">
+        <h3>Gamma (γ)</h3>
+        <p>A high-energy photon, released when a nucleus drops from an excited state (marked with *) to a lower one. It usually follows an alpha or beta decay.</p>
+        <p><code>Z same, A same</code><br>The atom does <strong>not</strong> move on the table.</p>
+      </div>
+    </div>
+    <figure data-zoomable data-lightbox-group="decay">
+      <img src="../../assets/images/lessons/decay-modes.svg" alt="Diagram of alpha, beta-minus and gamma decay with parent nucleus, emitted particle and daughter nucleus" loading="lazy" />
+      <figcaption><strong>Read the numbers, not the words.</strong> Alpha removes 4 mass units; beta keeps the mass number but changes the element; gamma changes nothing but the energy. Bottom and top numbers must balance on both sides of every arrow.</figcaption>
+    </figure>
+    <p>Two bookkeeping rules make every decay equation checkable: the <strong>mass numbers (A)</strong> on both sides add up, and the <strong>atomic numbers (Z)</strong> add up (an electron counts as −1, a positron as +1).</p>
+  </section>
+
+  <section class="rd-card" id="lab" aria-labelledby="lab-h">
+    <p class="rd-kicker">3 · Simulation 1</p>
+    <h2 id="lab-h">Decay Lab: predict, then test</h2>
+    <div class="rd-sim">
+      <div class="rd-sim-head">
+        <span class="rd-sim-title">Nuclide chart · Decay Lab</span>
+        <span class="rd-sim-sub">Pick a nuclide, choose a decay mode, and watch it move on the chart. Only the real mode is “observed” — try the others and see why they don't happen.</span>
+      </div>
+      <div class="rd-sim-body">
+        <div><svg id="lab-chart" class="rd-chart" viewBox="0 0 560 420" role="img" aria-label="Chart of nuclides showing the parent and daughter of the chosen decay"></svg></div>
+        <div>
+          <div class="rd-controls">
+            <div class="rd-ctrl"><label for="lab-nuc">Parent nuclide</label><select id="lab-nuc"></select></div>
+          </div>
+          <div class="rd-controls" role="group" aria-label="Decay mode">
+            <button class="rd-btn a" data-mode="alpha">α alpha</button>
+            <button class="rd-btn b" data-mode="beta-">β⁻ beta</button>
+            <button class="rd-btn p" data-mode="beta+">β⁺ positron</button>
+            <button class="rd-btn g" data-mode="gamma">γ gamma</button>
+          </div>
+          <div class="rd-readout" id="lab-out" aria-live="polite">Choose a decay mode.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="rd-card" id="halflife" aria-labelledby="hl-h">
+    <p class="rd-kicker">4 · Simulation 2</p>
+    <h2 id="hl-h">Half-life: chance in each atom, law in the crowd</h2>
+    <p>No one can say <em>when</em> one particular atom will decay — each has the same chance every moment. But with millions of atoms, exactly half are gone after one half-life, half of the rest after the next, and so on. The decay is <strong>exponential</strong>: N = N₀ · (½)<sup>t / t½</sup>, the same curve built on <a href="../mathematics/eulers-number.html">Euler's number <em>e</em></a>.</p>
+    <div class="rd-sim">
+      <div class="rd-sim-head">
+        <span class="rd-sim-title">Half-life simulator · 400 atoms</span>
+        <span class="rd-sim-sub">Each dot is one atom. Blue = still radioactive, dark = decayed. The white line is the ideal curve; the colored line is this random run.</span>
+      </div>
+      <div class="rd-sim-body">
+        <div>
+          <canvas id="hl-atoms" width="400" height="400" aria-label="Grid of 400 atoms, decayed atoms turn dark"></canvas>
+        </div>
+        <div>
+          <canvas id="hl-graph" width="420" height="260" aria-label="Graph of atoms remaining over time compared with the ideal decay curve"></canvas>
+          <div class="rd-controls" style="margin-top:0.7rem;">
+            <div class="rd-ctrl"><label for="hl-t">Half-life: <span id="hl-tv">5</span> s</label><input id="hl-t" type="range" min="1" max="10" value="5" /></div>
+            <button class="rd-btn b" id="hl-run">▶ Start</button>
+            <button class="rd-btn" id="hl-reset">↺ Reset</button>
+          </div>
+          <div class="rd-stats">
+            <div class="rd-stat"><span>Time</span><b id="hl-time">0.0 s</b></div>
+            <div class="rd-stat"><span>Half-lives</span><b id="hl-n">0.00</b></div>
+            <div class="rd-stat"><span>Remaining</span><b id="hl-left">400</b></div>
+            <div class="rd-stat"><span>Ideal</span><b id="hl-ideal">400</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Use it: radiocarbon dating</h3>
+    <p>Living things keep swapping carbon with the air, so their carbon-14 fraction matches the atmosphere. At death the swapping stops and C-14 (half-life 5,730 years) decays by β⁻ into nitrogen-14. Measure how much is left and count the half-lives.</p>
+    <div class="rd-sim">
+      <div class="rd-sim-body" style="grid-template-columns:1fr;">
+        <div class="rd-controls">
+          <div class="rd-ctrl" style="min-width:260px;"><label for="c14-pct">C-14 remaining: <span id="c14-pv">50</span>%</label><input id="c14-pct" type="range" min="1" max="100" value="50" /></div>
+        </div>
+        <div class="rd-readout" id="c14-out" aria-live="polite" style="min-height:0;"></div>
+      </div>
+    </div>
+    <p>After about 10 half-lives (~57,000 years) less than 0.1% is left, which is why radiocarbon dating doesn't work on dinosaur bones — other isotope clocks with far longer half-lives, like uranium-238 (4.47 billion years), are used for those. See it applied in <a href="../earth-science/pleistocene-epoch.html">The Pleistocene Epoch</a>.</p>
+  </section>
+
+  <section class="rd-card" id="chain" aria-labelledby="chain-h">
+    <p class="rd-kicker">5 · Simulation 3</p>
+    <h2 id="chain-h">A decay chain: uranium-238 walks down to lead</h2>
+    <p>The daughter of a decay is often radioactive too, so the atom keeps stepping until it lands on a stable nuclide. Uranium-238 takes 14 steps to become lead-206. Notice how alpha steps go down-left and beta steps go up-left on the chart.</p>
+    <div class="rd-sim">
+      <div class="rd-sim-head">
+        <span class="rd-sim-title">U-238 decay series</span>
+        <span class="rd-sim-sub">Press Next decay to take one step. Each step shows the real half-life of the atom you're holding.</span>
+      </div>
+      <div class="rd-sim-body">
+        <div><svg id="chain-chart" class="rd-chart" viewBox="0 0 560 420" role="img" aria-label="Chart of nuclides showing the uranium-238 decay path to lead-206"></svg></div>
+        <div>
+          <div class="rd-controls">
+            <button class="rd-btn b" id="chain-next">Next decay →</button>
+            <button class="rd-btn" id="chain-reset">↺ Restart</button>
+          </div>
+          <div class="rd-readout" id="chain-out" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+    <p>Radon-222 sits in the middle of that chain. It is the gas that seeps out of rock and basements — the reason radon testing exists. It is also why the <a href="periodic-table.html">periodic table</a> lists radon as a noble gas with a health warning.</p>
+  </section>
+
+  <section class="rd-card" id="shield" aria-labelledby="shield-h">
+    <p class="rd-kicker">6 · Safety</p>
+    <h2 id="shield-h">Penetrating power and shielding</h2>
+    <figure data-zoomable data-lightbox-group="decay">
+      <img src="../../assets/images/lessons/penetration.svg" alt="Alpha stopped by paper, beta stopped by aluminum, gamma weakened but not stopped by lead" loading="lazy" />
+      <figcaption><strong>Big, slow, charged = easily stopped.</strong> Alpha particles are heavy and doubly charged so they lose energy fast: paper stops them, but swallowed or inhaled they do the most damage in tissue. Gamma has no charge or mass, so it goes farthest — each layer of lead only cuts it by a fraction.</figcaption>
+    </figure>
+    <table class="rd-table">
+      <thead><tr><th>Radiation</th><th>What it is</th><th>Stopped by</th><th>Main hazard</th></tr></thead>
+      <tbody>
+        <tr><td style="color:var(--rd-alpha)"><b>α</b></td><td>Helium-4 nucleus</td><td>Paper, skin</td><td>Inhaled or swallowed source (e.g. radon, polonium-210)</td></tr>
+        <tr><td style="color:var(--rd-beta)"><b>β</b></td><td>Electron / positron</td><td>A few mm of aluminum</td><td>Skin burns, internal exposure</td></tr>
+        <tr><td style="color:var(--rd-gamma)"><b>γ</b></td><td>High-energy photon</td><td>Thick lead or concrete (reduces, never fully stops)</td><td>Whole-body exposure from outside</td></tr>
+      </tbody>
+    </table>
+    <p>The three protections: <strong>time</strong> (less exposure), <strong>distance</strong> (intensity falls with the square of distance), and <strong>shielding</strong>. Radiation is also useful — PET scans use β⁺ emitters, and the technetium-99m used in medical imaging is a pure gamma emitter with a 6-hour half-life, chosen because it disappears quickly.</p>
+  </section>
+
+  <section class="rd-card rd-quiz" id="check" aria-labelledby="check-h">
+    <p class="rd-kicker">7 · Check yourself</p>
+    <h2 id="check-h">Quick checks</h2>
+    <details><summary>Radium-226 (Z = 88) emits an alpha particle. What are the daughter's Z and A?</summary><p>Z = 86, A = 222 → radon-222. Alpha: Z − 2, A − 4.</p></details>
+    <details><summary>Carbon-14 does β⁻ decay. What element results, and why does the mass number stay 14?</summary><p>Nitrogen-14. A neutron turned into a proton (Z 6 → 7); the total number of nucleons is unchanged.</p></details>
+    <details><summary>A sample has a half-life of 3 days. What fraction remains after 9 days?</summary><p>9 days = 3 half-lives, so (½)³ = 1/8.</p></details>
+    <details><summary>Does gamma decay change which element an atom is?</summary><p>No. Z and A are unchanged, only the nucleus's energy drops.</p></details>
+  </section>
+
+  <section class="rd-card" id="connections" aria-labelledby="conn-h">
+    <p class="rd-kicker">Connections</p>
+    <h2 id="conn-h">Where this lesson connects</h2>
+    <div class="rd-links">
+      <a class="rd-link" href="periodic-table.html"><em>Chemistry · before</em><strong>Periodic Table of Elements</strong><small>Atomic number, isotopes, and where each daughter element lands.</small></a>
+      <a class="rd-link" href="feynman-atoms.html"><em>Chemistry · before</em><strong>Atoms: Structure, Motion &amp; Matter</strong><small>Protons, neutrons and electrons — the parts that decay rearranges.</small></a>
+      <a class="rd-link" href="../physics/marie-curie.html"><em>Physics · story</em><strong>Marie Curie</strong><small>The discovery of polonium and radium, plus a decay-chain simulator.</small></a>
+      <a class="rd-link" href="../physics/fundamental-forces.html"><em>Physics · why</em><strong>Fundamental Forces</strong><small>The strong force holds nuclei together; the weak force drives beta decay.</small></a>
+      <a class="rd-link" href="../mathematics/eulers-number.html"><em>Math · the curve</em><strong>Euler's Number</strong><small>Exponential decay and half-life are built on <em style="text-transform:none;letter-spacing:0">e</em>.</small></a>
+      <a class="rd-link" href="../earth-science/pleistocene-epoch.html"><em>Earth science · use</em><strong>The Pleistocene Epoch</strong><small>Radiocarbon and isotope evidence dating Ice Age remains.</small></a>
+      <a class="rd-link" href="../physics/albert-einstein.html"><em>Physics · energy</em><strong>Albert Einstein</strong><small>E = mc²: the tiny mass lost in each decay becomes the radiation's energy.</small></a>
+    </div>
+  </section>
+
+  <footer class="rd-footer">Radioactive Decay · Chemistry Lesson · Diagrams are original to this lesson. Nuclide half-lives and decay modes from standard nuclear data tables (values rounded).</footer>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  var NS = 'http://www.w3.org/2000/svg';
+  var SYM = [''].concat(['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn', 'Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U']);
+  var COLOR = {alpha:'#ff7a94','beta-':'#38bdf8','beta+':'#4fdc9a',gamma:'#f6c35b'};
+  var MODE_NAME = {alpha:'alpha (α)','beta-':'beta-minus (β⁻)','beta+':'beta-plus (β⁺)',gamma:'gamma (γ)'};
+  var EMIT = {alpha:'⁴₂He','beta-':'⁰₋₁e + ν̄','beta+':'⁰₊₁e + ν',gamma:'γ'};
+  var SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹', SUB = '₀₁₂₃₄₅₆₇₈₉';
+  function digits(n, map) { return String(n).split('').map(function (d) { return map[+d]; }).join(''); }
+  function nuc(z, a, tag) { return digits(a, SUP) + (tag || '') + (SYM[z] || '?'); }
+  function label(z, a, tag) { return (SYM[z] || '?') + '-' + a + (tag || ''); }
+
+  function step(z, a, mode) {
+    if (mode === 'alpha') return [z - 2, a - 4];
+    if (mode === 'beta-') return [z + 1, a];
+    if (mode === 'beta+') return [z - 1, a];
+    return [z, a];
+  }
+  function svgEl(tag, attrs, text) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  /* ---------- Nuclide chart (N on x, Z on y) ---------- */
+  function drawChart(svg, trail, opts) {
+    opts = opts || {};
+    var W = 560, H = 420, pad = 44;
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var fr = opts.frame || trail;
+    var ns = fr.map(function (t) { return t.a - t.z; }), zs = fr.map(function (t) { return t.z; });
+    var margin = opts.margin || 3;
+    var minN = Math.min.apply(null, ns) - margin, maxN = Math.max.apply(null, ns) + margin;
+    var minZ = Math.min.apply(null, zs) - margin, maxZ = Math.max.apply(null, zs) + margin;
+    minN = Math.max(0, minN); minZ = Math.max(0, minZ);
+    var spanN = Math.max(maxN - minN, 12), spanZ = Math.max(maxZ - minZ, 10);
+    var cell = Math.min((W - pad * 1.5) / spanN, (H - pad * 1.5) / spanZ);
+    function X(n) { return pad + (n - minN) * cell; }
+    function Y(z) { return H - pad - (z - minZ) * cell; }
+    svg.appendChild(svgEl('rect', {x: 0, y: 0, width: W, height: H, fill: '#08101b'}));
+    // grid
+    var gs = spanN > 60 ? 10 : spanN > 30 ? 5 : 1;
+    for (var n = Math.ceil(minN / gs) * gs; n <= minN + spanN; n += gs) {
+      svg.appendChild(svgEl('line', {x1: X(n), y1: Y(minZ), x2: X(n), y2: Y(minZ + spanZ), stroke: 'rgba(160,210,240,0.09)'}));
+      svg.appendChild(svgEl('text', {x: X(n), y: H - pad + 16, 'text-anchor': 'middle', 'font-size': 10, fill: 'rgba(220,234,248,0.55)'}, n));
+    }
+    for (var z = Math.ceil(minZ / gs) * gs; z <= minZ + spanZ; z += gs) {
+      svg.appendChild(svgEl('line', {x1: X(minN), y1: Y(z), x2: X(minN + spanN), y2: Y(z), stroke: 'rgba(160,210,240,0.09)'}));
+      svg.appendChild(svgEl('text', {x: pad - 8, y: Y(z) + 3, 'text-anchor': 'end', 'font-size': 10, fill: 'rgba(220,234,248,0.55)'}, z));
+    }
+    svg.appendChild(svgEl('text', {x: W / 2, y: H - 6, 'text-anchor': 'middle', 'font-size': 12, fill: '#b0d4ef'}, 'Neutrons (N) →'));
+    svg.appendChild(svgEl('text', {x: 12, y: H / 2, 'font-size': 12, fill: '#b0d4ef', transform: 'rotate(-90 12 ' + H / 2 + ')', 'text-anchor': 'middle'}, 'Protons (Z) →'));
+    // approximate line of stability: N = Z + 0.0060 Z^2 (rough)
+    var pts = [];
+    for (var zz = Math.max(1, Math.floor(minZ)); zz <= minZ + spanZ; zz += 0.5) {
+      var nn = zz + 0.006 * zz * zz;
+      if (nn >= minN - 2 && nn <= minN + spanN + 2) pts.push(X(nn) + ',' + Y(zz));
+    }
+    if (pts.length > 1) svg.appendChild(svgEl('polyline', {points: pts.join(' '), fill: 'none', stroke: 'rgba(255,255,255,0.35)', 'stroke-width': 8, 'stroke-linecap': 'round', opacity: 0.35}));
+    svg.appendChild(svgEl('text', {x: W - pad, y: 22, 'text-anchor': 'end', 'font-size': 10, fill: 'rgba(255,255,255,0.55)'}, 'faint band = approximate line of stability'));
+    // arrows + nodes
+    var marker = svgEl('defs', {});
+    Object.keys(COLOR).forEach(function (m) {
+      var mk = svgEl('marker', {id: 'ar-' + svg.id + '-' + m.replace(/[^a-z]/g, 'x'), viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto-start-reverse'});
+      mk.appendChild(svgEl('path', {d: 'M0 0L10 5L0 10z', fill: COLOR[m]}));
+      marker.appendChild(mk);
+    });
+    svg.appendChild(marker);
+    for (var i = 1; i < trail.length; i++) {
+      var p = trail[i - 1], q = trail[i], m = q.mode;
+      if (p.z === q.z && p.a === q.a) {
+        svg.appendChild(svgEl('circle', {cx: X(q.a - q.z), cy: Y(q.z), r: 14, fill: 'none', stroke: COLOR[m], 'stroke-width': 2, 'stroke-dasharray': '3 3'}));
+        continue;
+      }
+      svg.appendChild(svgEl('line', {x1: X(p.a - p.z), y1: Y(p.z), x2: X(q.a - q.z), y2: Y(q.z), stroke: COLOR[m], 'stroke-width': 2.5, 'marker-end': 'url(#ar-' + svg.id + '-' + m.replace(/[^a-z]/g, 'x') + ')'}));
+    }
+    trail.forEach(function (t, i) {
+      var cx = X(t.a - t.z), cy = Y(t.z), last = i === trail.length - 1;
+      svg.appendChild(svgEl('circle', {cx: cx, cy: cy, r: last ? 7 : 4.5, fill: last ? '#fff' : '#b09fff', stroke: '#08101b', 'stroke-width': 1.5}));
+      if (last || trail.length <= 4 || opts.labelAll) svg.appendChild(svgEl('text', {x: cx + 10, y: cy - 8, 'font-size': 11, 'font-weight': 700, fill: '#eef6ff'}, label(t.z, t.a)));
+    });
+  }
+
+  /* ---------- Simulation 1: Decay Lab ---------- */
+  var LAB = [
+    {z: 92, a: 238, real: 'alpha', hl: '4.47 billion years'},
+    {z: 88, a: 226, real: 'alpha', hl: '1,600 years'},
+    {z: 84, a: 210, real: 'alpha', hl: '138 days'},
+    {z: 6,  a: 14,  real: 'beta-', hl: '5,730 years'},
+    {z: 19, a: 40,  real: 'beta-', hl: '1.25 billion years'},
+    {z: 27, a: 60,  real: 'beta-', hl: '5.27 years', note: 'Then Ni-60* releases two gamma rays.'},
+    {z: 11, a: 22,  real: 'beta+', hl: '2.6 years'},
+    {z: 43, a: 99,  real: 'gamma', hl: '6 hours', tag: 'm', note: 'Tc-99m is a metastable (excited) state — the medical-imaging isotope.'}
+  ];
+  var labSel = document.getElementById('lab-nuc'), labOut = document.getElementById('lab-out'), labChart = document.getElementById('lab-chart');
+  LAB.forEach(function (n, i) {
+    var o = document.createElement('option'); o.value = i;
+    o.textContent = label(n.z, n.a, n.tag || '') + ' (' + (SYM[n.z]) + ', Z=' + n.z + ')';
+    labSel.appendChild(o);
+  });
+  function labReset() {
+    var n = LAB[labSel.value];
+    drawChart(labChart, [{z: n.z, a: n.a}], {margin: 5});
+    labOut.innerHTML = '<div class="eq">' + label(n.z, n.a, n.tag || '') + '</div>Half-life: <b>' + n.hl + '</b><br>Choose how you think it decays. Hint: too heavy? too many neutrons? too many protons? excited?';
+  }
+  function labTry(mode) {
+    var n = LAB[labSel.value], d = step(n.z, n.a, mode), ok = mode === n.real;
+    var trail = [{z: n.z, a: n.a}, {z: d[0], a: d[1], mode: mode}];
+    drawChart(labChart, trail, {margin: 5});
+    var html = '<div class="eq">' + nuc(n.z, n.a, n.tag || '') + ' → ' + nuc(d[0], d[1]) + ' + ' + EMIT[mode] + '</div>';
+    html += 'Check: A ' + n.a + ' → ' + d[1] + (mode === 'alpha' ? ' + 4' : '') + '; Z ' + n.z + ' → ' + d[0] + (mode === 'alpha' ? ' + 2' : mode === 'beta-' ? ' + (−1)' : mode === 'beta+' ? ' + (+1)' : '') + '<br>';
+    if (d[0] < 1 || !SYM[d[0]]) { html += '<span class="rd-no">No such element.</span><br>'; }
+    else if (mode === 'gamma') html += 'Same element, lower energy.<br>';
+    else html += 'Daughter: <b>' + label(d[0], d[1]) + '</b> — the atom moved ' + (d[0] < n.z ? (n.z - d[0]) + (n.z - d[0] === 1 ? ' box' : ' boxes') + ' left' : '1 box right') + ' on the periodic table.<br>';
+    if (ok) html += '<span class="rd-ok">✓ This is how ' + label(n.z, n.a, n.tag || '') + ' really decays.</span>' + (n.note ? '<br>' + n.note : '');
+    else html += '<span class="rd-no">✗ Not observed.</span> ' + label(n.z, n.a, n.tag || '') + ' decays by <b>' + MODE_NAME[n.real] + '</b>. ' + why(n, mode);
+    labOut.innerHTML = html;
+  }
+  function why(n, mode) {
+    var N = n.a - n.z;
+    if (mode === 'alpha') return n.z < 82 ? 'Alpha decay needs a heavy nucleus (usually Z > 82).' : 'It has the size for alpha, but this nuclide decays another way.';
+    if (mode === 'beta-') return N > n.z ? 'It has plenty of neutrons, but this isn’t its route.' : 'It has few neutrons, so turning one into a proton would move it the wrong way.';
+    if (mode === 'beta+') return 'β⁺ helps a proton-rich nucleus; this one has enough neutrons already.';
+    return 'Gamma only applies to an excited nucleus.';
+  }
+  labSel.addEventListener('change', labReset);
+  Array.prototype.forEach.call(document.querySelectorAll('[data-mode]'), function (b) { b.addEventListener('click', function () { labTry(b.getAttribute('data-mode')); }); });
+  labReset();
+
+  /* ---------- Simulation 2: half-life ---------- */
+  var cvA = document.getElementById('hl-atoms'), cvG = document.getElementById('hl-graph');
+  var cA = cvA.getContext('2d'), cG = cvG.getContext('2d');
+  var N0 = 400, atoms, elapsed, hist, timer = null, half = 5, DT = 0.1, TMAX = 40;
+  var el = function (id) { return document.getElementById(id); };
+  function hlReset() {
+    atoms = new Array(N0).fill(true); elapsed = 0; hist = [[0, N0]];
+    if (timer) { clearInterval(timer); timer = null; el('hl-run').textContent = '▶ Start'; }
+    hlDraw();
+  }
+  function hlStep() {
+    var p = 1 - Math.pow(0.5, DT / half), left = 0;
+    for (var i = 0; i < N0; i++) if (atoms[i] && Math.random() < p) atoms[i] = false;
+    for (i = 0; i < N0; i++) if (atoms[i]) left++;
+    elapsed += DT; hist.push([elapsed, left]);
+    hlDraw();
+    if (left === 0 || elapsed >= TMAX) { clearInterval(timer); timer = null; el('hl-run').textContent = '▶ Start'; }
+  }
+  function hlDraw() {
+    var left = hist[hist.length - 1][1], s = 20;
+    cA.fillStyle = '#08101b'; cA.fillRect(0, 0, 400, 400);
+    for (var i = 0; i < N0; i++) {
+      var x = (i % 20) * s + s / 2, y = Math.floor(i / 20) * s + s / 2;
+      cA.beginPath(); cA.arc(x, y, atoms[i] ? 6.5 : 2.5, 0, 6.283);
+      cA.fillStyle = atoms[i] ? '#38bdf8' : '#243244'; cA.fill();
+    }
+    var W = 420, H = 260, L = 40, B = 28, T = 10, R = 10;
+    cG.fillStyle = '#08101b'; cG.fillRect(0, 0, W, H);
+    cG.strokeStyle = 'rgba(160,210,240,0.15)'; cG.fillStyle = 'rgba(220,234,248,0.6)'; cG.font = '10px Inter,sans-serif'; cG.lineWidth = 1;
+    var tmax = Math.min(TMAX, half * 6);
+    for (var k = 0; k <= 4; k++) {
+      var yy = T + (H - T - B) * (1 - k / 4);
+      cG.beginPath(); cG.moveTo(L, yy); cG.lineTo(W - R, yy); cG.stroke();
+      cG.fillText(String(N0 * k / 4), 6, yy + 3);
+    }
+    for (var h = 0; h <= 6; h++) {
+      var xx = L + (W - L - R) * (h * half / tmax);
+      if (xx > W - R) break;
+      cG.fillText(h + 't½', xx - 6, H - 10);
+    }
+    function X(t) { return L + (W - L - R) * t / tmax; }
+    function Y(n) { return T + (H - T - B) * (1 - n / N0); }
+    cG.strokeStyle = '#fff'; cG.lineWidth = 1.5; cG.beginPath();
+    for (var t = 0; t <= tmax; t += tmax / 100) { var v = N0 * Math.pow(0.5, t / half); t === 0 ? cG.moveTo(X(t), Y(v)) : cG.lineTo(X(t), Y(v)); }
+    cG.stroke();
+    cG.strokeStyle = '#ff7a94'; cG.lineWidth = 2; cG.beginPath();
+    hist.forEach(function (p, i) { if (p[0] > tmax) return; i === 0 ? cG.moveTo(X(p[0]), Y(p[1])) : cG.lineTo(X(p[0]), Y(p[1])); });
+    cG.stroke();
+    el('hl-time').textContent = elapsed.toFixed(1) + ' s';
+    el('hl-n').textContent = (elapsed / half).toFixed(2);
+    el('hl-left').textContent = left;
+    el('hl-ideal').textContent = Math.round(N0 * Math.pow(0.5, elapsed / half));
+  }
+  el('hl-run').addEventListener('click', function () {
+    if (timer) { clearInterval(timer); timer = null; this.textContent = '▶ Start'; return; }
+    if (hist[hist.length - 1][1] === 0 || elapsed >= TMAX) hlReset();
+    timer = setInterval(hlStep, 50); this.textContent = '⏸ Pause';
+  });
+  el('hl-reset').addEventListener('click', hlReset);
+  el('hl-t').addEventListener('input', function () { half = +this.value; el('hl-tv').textContent = half; hlReset(); });
+  hlReset();
+
+  /* Radiocarbon */
+  function c14() {
+    var pct = +el('c14-pct').value, hlv = Math.log(100 / pct) / Math.log(2), age = hlv * 5730;
+    el('c14-pv').textContent = pct;
+    el('c14-out').innerHTML = '<div class="eq">t = 5,730 × log₂(100 / ' + pct + ') = ' + Math.round(age).toLocaleString() + ' years</div>' +
+      hlv.toFixed(2) + ' half-lives have passed. ' + (pct <= 2 ? '<span class="rd-no">Near the practical limit (~50,000 years) — measurement error dominates.</span>' : 'At death, this sample had 100%.');
+  }
+  el('c14-pct').addEventListener('input', c14); c14();
+
+  /* ---------- Simulation 3: U-238 chain ---------- */
+  var CH = [
+    {z: 92, a: 238, hl: '4.47 billion years'}, {z: 90, a: 234, mode: 'alpha', hl: '24.1 days'}, {z: 91, a: 234, mode: 'beta-', hl: '1.17 minutes'},
+    {z: 92, a: 234, mode: 'beta-', hl: '245,000 years'}, {z: 90, a: 230, mode: 'alpha', hl: '75,400 years'}, {z: 88, a: 226, mode: 'alpha', hl: '1,600 years'},
+    {z: 86, a: 222, mode: 'alpha', hl: '3.82 days'}, {z: 84, a: 218, mode: 'alpha', hl: '3.1 minutes'}, {z: 82, a: 214, mode: 'alpha', hl: '26.8 minutes'},
+    {z: 83, a: 214, mode: 'beta-', hl: '19.9 minutes'}, {z: 84, a: 214, mode: 'beta-', hl: '164 microseconds'}, {z: 82, a: 210, mode: 'alpha', hl: '22.2 years'},
+    {z: 83, a: 210, mode: 'beta-', hl: '5.01 days'}, {z: 84, a: 210, mode: 'beta-', hl: '138 days'}, {z: 82, a: 206, mode: 'alpha', hl: 'stable'}
+  ];
+  var ci = 0, chChart = el('chain-chart');
+  function chDraw() {
+    var trail = CH.slice(0, ci + 1);
+    drawChart(chChart, trail, {frame: [CH[0], CH[CH.length - 1]], margin: 4});
+    var c = CH[ci], out = '';
+    if (ci === 0) out = '<div class="eq">' + label(c.z, c.a) + '</div>Start here. Half-life: <b>' + c.hl + '</b>.';
+    else {
+      var p = CH[ci - 1];
+      out = '<div class="eq">' + nuc(p.z, p.a) + ' → ' + nuc(c.z, c.a) + ' + ' + EMIT[c.mode] + '</div>' + MODE_NAME[c.mode] + ' · step ' + ci + ' of ' + (CH.length - 1) + '<br>Now holding <b>' + label(c.z, c.a) + '</b> · half-life <b>' + c.hl + '</b>' + (ci === CH.length - 1 ? '<br><span class="rd-ok">✓ Stable lead-206. The chain ends.</span>' : '');
+    }
+    el('chain-out').innerHTML = out;
+    el('chain-next').disabled = ci >= CH.length - 1;
+  }
+  el('chain-next').addEventListener('click', function () { if (ci < CH.length - 1) { ci++; chDraw(); } });
+  el('chain-reset').addEventListener('click', function () { ci = 0; chDraw(); });
+  chDraw();
+})();
+</script>
+<script src="../../assets/js/photo-lightbox.js"></script>
+<script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

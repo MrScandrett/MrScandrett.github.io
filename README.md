@@ -14,7 +14,9 @@ Open <http://localhost:8080/>.
 
 ### Local OSeditor
 
-Open <http://localhost:8080/OSeditor.html> to edit and preview site files. Student
+Open any page on <http://localhost:8080/>, then choose **Settings → Editor → Edit this page**
+to open that page in OSeditor (the editor's page picker lets you switch pages once inside;
+`/OSeditor.html?page=/path/to/page.html` is the underlying link). Edit and preview site files there. Student
 workspace downloads are always available. Writing back to the repository is
 disabled by default; start the server with an explicit password to enable the
 **Write to source** button:

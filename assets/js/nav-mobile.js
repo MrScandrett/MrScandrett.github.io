@@ -277,6 +277,37 @@
   }
   injectNavA11yStyles();
 
+  function injectSettingsTabStyles() {
+    if (document.getElementById("classroomos-settings-tabs-style")) return;
+    var st = document.createElement("style");
+    st.id = "classroomos-settings-tabs-style";
+    st.textContent =
+      '.nav-settings-panel { max-height: min(88vh, 720px); }' +
+      '.nav-settings-tabs { display: flex; gap: 0.3rem; margin: 0.6rem 0 0.8rem; padding: 0.22rem; border: 1px solid var(--line, rgba(125,136,154,.3)); border-radius: 999px; background: rgba(125,136,154,.1); }' +
+      '.nav-settings-tab { flex: 1 1 0; min-height: 2.25rem; padding: 0.3rem 0.5rem; border: 0; border-radius: 999px; background: transparent; color: inherit; font: inherit; font-size: 0.8rem; font-weight: 700; cursor: pointer; opacity: 0.78; }' +
+      '.nav-settings-tab:hover { opacity: 1; background: rgba(125,136,154,.16); }' +
+      '.nav-settings-tab[aria-selected="true"] { opacity: 1; background: var(--theme-accent, #0071e3); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.25); }' +
+      '.nav-settings-tab:focus-visible { outline: 2px solid var(--focus-ring, #0071e3); outline-offset: 2px; }' +
+      '.nav-settings-pane[hidden] { display: none !important; }' +
+      '.nav-editor-link { display: inline-flex; align-items: center; justify-content: center; min-height: 2.5rem; padding: 0.5rem 1.1rem; border-radius: 999px; background: var(--theme-accent, #0071e3); color: #fff; font-weight: 700; text-decoration: none; margin-top: 0.4rem; }' +
+      '.nav-editor-link:hover { filter: brightness(1.1); }' +
+      '.nav-editor-link:focus-visible { outline: 2px solid var(--focus-ring, #0071e3); outline-offset: 2px; }' +
+      '.nav-editor-link[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }' +
+      '.nav-editor-status { margin: 0.5rem 0 0; font-size: 0.8rem; opacity: 0.85; }' +
+      '@media (max-width: 680px) { .nav-settings-panel { bottom: auto !important; max-height: var(--nav-settings-max-height, calc(100dvh - 5rem)) !important; } }' +
+      '.nav-settings-pane .nav-settings-note { margin-block: 0.2rem 0.5rem; }' +
+      '.nav-settings-pane .nav-theme-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.45rem; }' +
+      '.nav-settings-pane .nav-theme-grid .nav-theme-chip { min-height: 0; padding: 0.55rem 0.5rem; gap: 0.4rem; grid-template-columns: auto 1fr; border-radius: 14px; }' +
+      '.nav-settings-pane .nav-theme-grid .nav-theme-label small { display: none; }' +
+      '.nav-settings-pane .nav-theme-grid .nav-theme-tone { display: none; }' +
+      '.nav-settings-pane .nav-theme-grid .nav-theme-label strong { font-size: 0.78rem; }' +
+      '.nav-settings-pane .nav-canvas-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.45rem; }' +
+      '.nav-settings-pane .nav-canvas-grid .nav-theme-chip { min-height: 0; padding: 0.6rem 0.6rem; gap: 0.5rem; border-radius: 14px; grid-template-columns: auto 1fr; }' +
+      '@media (max-width: 420px) { .nav-settings-pane .nav-theme-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .nav-settings-pane .nav-canvas-grid { grid-template-columns: 1fr; } }';
+    document.head.appendChild(st);
+  }
+  injectSettingsTabStyles();
+
   var ICON_MENU = '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">' +
     '<rect x="2" y="4"  width="16" height="2" rx="1" fill="currentColor"/>' +
     '<rect x="2" y="9"  width="16" height="2" rx="1" fill="currentColor"/>' +
@@ -586,6 +617,8 @@
     settingsContainer.className = "nav-settings nav-settings--lighting";
 
     var panelId = nav.id + "-settings-panel";
+    /* OSeditor only exists on the local dev server; never offer it on the published site. */
+    var isLocalDev = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname);
     settingsContainer.innerHTML =
       '<button type="button" class="nav-settings-toggle" aria-expanded="false" aria-haspopup="dialog" aria-controls="' + panelId + '">' +
         ICON_SETTINGS +
@@ -598,9 +631,15 @@
           '<p class="nav-settings-eyebrow">Theme Controller</p>' +
           '<p class="nav-settings-current" aria-live="polite"></p>' +
         "</div>" +
+        '<div class="nav-settings-tabs" role="tablist" aria-label="Settings sections">' +
+          '<button type="button" role="tab" class="nav-settings-tab" id="' + panelId + '-tab-theme" data-tab="theme" aria-controls="' + panelId + '-pane-theme" aria-selected="true">Theme</button>' +
+          '<button type="button" role="tab" class="nav-settings-tab" id="' + panelId + '-tab-background" data-tab="background" aria-controls="' + panelId + '-pane-background" aria-selected="false" tabindex="-1">Background</button>' +
+          '<button type="button" role="tab" class="nav-settings-tab" id="' + panelId + '-tab-access" data-tab="access" aria-controls="' + panelId + '-pane-access" aria-selected="false" tabindex="-1">Access</button>' +
+          (isLocalDev ? '<button type="button" role="tab" class="nav-settings-tab" id="' + panelId + '-tab-editor" data-tab="editor" aria-controls="' + panelId + '-pane-editor" aria-selected="false" tabindex="-1">Editor</button>' : '') +
+        '</div>' +
+        '<div class="nav-settings-pane" role="tabpanel" data-pane="theme" id="' + panelId + '-pane-theme" aria-labelledby="' + panelId + '-tab-theme">' +
         '<div class="nav-settings-section">' +
           '<p class="nav-settings-eyebrow">Lighting</p>' +
-          '<p class="nav-settings-note">Move between automatic lighting, quick day or night tones, and the full palette without leaving the page.</p>' +
           '<div class="nav-settings-mode" role="group" aria-label="Theme mode">' +
             '<button type="button" class="nav-mode-pill" data-mode="auto" aria-pressed="false">Auto</button>' +
             '<button type="button" class="nav-mode-pill" data-mode="manual" aria-pressed="false">Manual</button>' +
@@ -617,18 +656,19 @@
             '</button>' +
           '</div>' +
         '</div>' +
-        '<div class="nav-settings-divider"></div>' +
         '<div class="nav-settings-section">' +
           '<p class="nav-settings-eyebrow">Palette</p>' +
           '<div class="nav-theme-grid" role="list"></div>' +
         '</div>' +
-        '<div class="nav-settings-divider"></div>' +
+        '</div>' +
+        '<div class="nav-settings-pane" role="tabpanel" data-pane="background" id="' + panelId + '-pane-background" aria-labelledby="' + panelId + '-tab-background" hidden>' +
         '<div class="nav-settings-section">' +
           '<p class="nav-settings-eyebrow">Page Background</p>' +
           '<p class="nav-settings-note">Animated canvas behind the site. The choice follows you across shared pages.</p>' +
           '<div class="nav-canvas-grid" role="list"></div>' +
         '</div>' +
-        '<div class="nav-settings-divider"></div>' +
+        '</div>' +
+        '<div class="nav-settings-pane" role="tabpanel" data-pane="access" id="' + panelId + '-pane-access" aria-labelledby="' + panelId + '-tab-access" hidden>' +
         '<div class="nav-settings-section">' +
           '<p class="nav-settings-eyebrow">Accessibility</p>' +
           '<label class="nav-motion-toggle">' +
@@ -640,6 +680,17 @@
             '</span>' +
           '</label>' +
         '</div>' +
+        '</div>' +
+        (isLocalDev ? (
+        '<div class="nav-settings-pane" role="tabpanel" data-pane="editor" id="' + panelId + '-pane-editor" aria-labelledby="' + panelId + '-tab-editor" hidden>' +
+        '<div class="nav-settings-section">' +
+          '<p class="nav-settings-eyebrow">OSeditor</p>' +
+          '<p class="nav-settings-note">Open the visual editor on the page you are viewing. Once inside, you can switch to any other page from the editor\'s page picker.</p>' +
+          '<a class="nav-editor-link" href="/OSeditor.html">Edit this page</a>' +
+          '<p class="nav-editor-status" role="status" aria-live="polite"></p>' +
+        '</div>' +
+        '</div>'
+        ) : '') +
       "</div>";
 
     /* Settings always lives in the nav-wrap row, never inside the hamburger */
@@ -665,6 +716,7 @@
       optionBtn.setAttribute("role", "listitem");
       optionBtn.setAttribute("aria-label", option.label + " theme \u2014 " + option.detail);
       optionBtn.setAttribute("aria-pressed", "false");
+      optionBtn.setAttribute("data-hint", option.label + " \u2014 " + option.detail);
       var toneSymbol = option.tone === "dark" ? "\u25d0" : "\u25cb"; // \u25d0 dark, \u25cb light
       optionBtn.innerHTML =
         '<span class="nav-theme-swatch" aria-hidden="true"></span>' +
@@ -761,6 +813,52 @@
       canvasGrid.appendChild(btn);
     });
 
+    // Settings tabs (Theme / Background / Access): one section visible at a time, no long scroll.
+    var TAB_KEY = "classroomos-settings-tab";
+    var tabButtons = Array.prototype.slice.call(settingsContainer.querySelectorAll(".nav-settings-tab"));
+    var tabPanes = Array.prototype.slice.call(settingsContainer.querySelectorAll(".nav-settings-pane"));
+    function selectSettingsTab(name, focus) {
+      tabButtons.forEach(function (tab) {
+        var on = tab.getAttribute("data-tab") === name;
+        tab.setAttribute("aria-selected", on ? "true" : "false");
+        tab.tabIndex = on ? 0 : -1;
+        if (on && focus) tab.focus();
+      });
+      tabPanes.forEach(function (pane) { pane.hidden = pane.getAttribute("data-pane") !== name; });
+      writeStorage(TAB_KEY, name);
+      if (name === "editor" && editorLink) refreshEditorLink();
+    }
+    var editorLink = settingsContainer.querySelector(".nav-editor-link");
+    var editorStatus = settingsContainer.querySelector(".nav-editor-status");
+    function refreshEditorLink() {
+      var page = window.location.pathname || "/";
+      editorLink.setAttribute("href", "/OSeditor.html?page=" + encodeURIComponent(page));
+      editorLink.textContent = page === "/" || /\/index\.html$/.test(page) ? "Edit this page (Home)" : "Edit this page";
+      editorStatus.textContent = "Checking for the local editor server\u2026";
+      editorLink.removeAttribute("aria-disabled");
+      fetch("/api/editor-config", { cache: "no-store" }).then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        editorStatus.textContent = "";
+      }).catch(function () {
+        editorLink.setAttribute("aria-disabled", "true");
+        editorLink.removeAttribute("href");
+        editorStatus.textContent = "OSeditor runs from the local server. Start it with node serve-local.js, then open this page from localhost.";
+      });
+    }
+    tabButtons.forEach(function (tab, i) {
+      tab.addEventListener("click", function () { selectSettingsTab(tab.getAttribute("data-tab")); });
+      tab.addEventListener("keydown", function (e) {
+        var d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+        if (e.key === "Home") d = -i;
+        if (e.key === "End") d = tabButtons.length - 1 - i;
+        if (!d) return;
+        e.preventDefault();
+        selectSettingsTab(tabButtons[(i + d + tabButtons.length) % tabButtons.length].getAttribute("data-tab"), true);
+      });
+    });
+    var savedTab = readStorage(TAB_KEY);
+    if (savedTab && tabButtons.some(function (t) { return t.getAttribute("data-tab") === savedTab; })) selectSettingsTab(savedTab);
+
     syncCanvasUi();
 
     if (motionCheckbox) {
@@ -800,7 +898,7 @@
       if (e.key !== "Tab" || !settingsPanel || settingsPanel.hidden) return;
       var focusable = Array.prototype.slice.call(
         settingsPanel.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')
-      );
+      ).filter(function (el) { return !el.closest("[hidden]"); });
       if (!focusable.length) return;
       var first = focusable[0];
       var last  = focusable[focusable.length - 1];
@@ -914,7 +1012,8 @@
         button.setAttribute("title", "Switch to Manual mode to change the theme");
       } else {
         button.removeAttribute("aria-disabled");
-        button.removeAttribute("title");
+        var hint = button.getAttribute("data-hint");
+        if (hint) button.setAttribute("title", hint); else button.removeAttribute("title");
       }
     });
   }

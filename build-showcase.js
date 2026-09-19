@@ -2068,6 +2068,23 @@ function applyManifestOverrides(manifest) {
   }
 }
 
+// data/app-sources.json maps each generated /apps/<slug>/ back to the student source it was built
+// from (repo-relative, forward slashes). OSeditor reads it to open the right source for a built app.
+const APP_SOURCES_PATH = path.join(ROOT, "data", "app-sources.json");
+
+async function writeAppSourceMap(pairs) {
+  const map = {};
+  for (const { source, slug } of pairs) {
+    const target = source.projectDir && source.entryHtml
+      ? path.join(source.projectDir, source.entryHtml)
+      : source.filePath || source.projectDir || source.dir;
+    if (target) map[slug] = path.relative(ROOT, target).split(path.sep).join("/");
+  }
+  const sorted = Object.fromEntries(Object.entries(map).sort(([left], [right]) => left.localeCompare(right)));
+  await fs.mkdir(path.dirname(APP_SOURCES_PATH), { recursive: true });
+  await fs.writeFile(APP_SOURCES_PATH, JSON.stringify(sorted, null, 2) + "\n", "utf8");
+}
+
 function ensureUniqueSlugs(projectSources) {
   const used = new Set();
   const pairs = [];
@@ -2160,6 +2177,11 @@ async function main() {
   }
 
   const uniqueProjects = ensureUniqueSlugs(projectSources);
+  await writeAppSourceMap(uniqueProjects);
+  if (process.argv.includes("--sources-only")) {
+    logStep(`Wrote ${APP_SOURCES_PATH} (--sources-only: no apps were rebuilt).`);
+    return;
+  }
   const selectedProjects = onlySlug
     ? uniqueProjects.filter(({ slug }) => slug === onlySlug)
     : uniqueProjects;

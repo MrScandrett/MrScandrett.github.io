@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 265 public lessons and classifies 11 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 279 public lessons and classifies 11 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -15,7 +15,7 @@ This metadata-only draft organizes 265 public lessons and classifies 11 supporti
 
 # Volume I — Mathematical Thinking, Measurement & Astronomy
 
-Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 36 lessons
+Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 46 lessons
 
 ## Mathematics & Quantitative Reasoning (MAT)
 
@@ -23,33 +23,42 @@ Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 36 lesson
 
 - **MAT-01** — The Story of Numbers
 - **MAT-02** — Measuring Length & Every Unit
-- **MAT-03** — Clocks & Telling Time
-- **MAT-04** — PEMDAS & Order of Operations
-- **MAT-05** — Proportional Reasoning
-- **MAT-06** — Touch it. See it. Solve it.
+- **MAT-03** — The Unit Factory
+- **MAT-04** — Clocks & Telling Time
+- **MAT-05** — PEMDAS & Order of Operations
+- **MAT-06** — Proportional Reasoning
+- **MAT-07** — Touch it. See it. Solve it.
 
 ### Geometry, Graphs & Spatial Reasoning
 
-- **MAT-07** — Graphing Calculator
-- **MAT-08** — Pythagoras & Triangles
-- **MAT-09** — Pi & Circles
-- **MAT-10** — The Math of the Rubik's Cube
-- **MAT-11** — Linear Equations & Slope
-- **MAT-12** — Area & Perimeter Playground
-- **MAT-13** — Minecraft Calculus: Terrain & Water Flow
+- **MAT-08** — Where Lines Meet
+- **MAT-09** — Graphing Calculator
+- **MAT-10** — Pythagoras & Triangles
+- **MAT-11** — Pi & Circles
+- **MAT-12** — The Math of the Rubik's Cube
+- **MAT-13** — Exponent Explorer
+- **MAT-14** — Linear Equations & Slope
+- **MAT-15** — Area & Perimeter Playground
+- **MAT-16** — Slope of a Curve
+- **MAT-17** — Minecraft Calculus: Terrain & Water Flow
 
 ### Chance, Patterns & Sequences
 
-- **MAT-14** — Probability Simulator
-- **MAT-15** — Pachinko Probability Lab
-- **MAT-16** — Fibonacci Sequence
-- **MAT-17** — Mean, Median & Mode
+- **MAT-18** — How Spread Out?
+- **MAT-19** — Probability Simulator
+- **MAT-20** — Pachinko Probability Lab
+- **MAT-21** — Fibonacci Sequence
+- **MAT-22** — Mean, Median & Mode
 
 ### Advanced Patterns & Open Questions
 
-- **MAT-18** — Completing the Square
-- **MAT-19** — Fourier Series & Transform — _also indexed in Audio, Lighting & Production Technology_
-- **MAT-20** — Riemann Hypothesis
+- **MAT-23** — The Unit Circle & Waves
+- **MAT-24** — Algebra Tiles: Factoring
+- **MAT-25** — Completing the Square
+- **MAT-26** — Fourier Series & Transform — _also indexed in Audio, Lighting & Production Technology_
+- **MAT-27** — How 𝑒 Was Discovered
+- **MAT-28** — Riemann Hypothesis
+- **MAT-29** — The Equations Iceberg
 
 ## Astronomy & Space Science (COS)
 
@@ -72,15 +81,16 @@ Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 36 lesson
 ### Cosmology & Humanity's Place in Space
 
 - **COS-11** — Event Horizon Telescope
-- **COS-12** — Universe Expansion
-- **COS-13** — Nancy Grace Roman Space Telescope
-- **COS-14** — Searching for Extraterrestrial Intelligence
-- **COS-15** — Arecibo Message
-- **COS-16** — Pale Blue Dot — Scale of the Universe
+- **COS-12** — In the Beginning: Origins of the Universe
+- **COS-13** — Universe Expansion
+- **COS-14** — Nancy Grace Roman Space Telescope
+- **COS-15** — Searching for Extraterrestrial Intelligence
+- **COS-16** — Arecibo Message
+- **COS-17** — Pale Blue Dot — Scale of the Universe
 
 # Volume II — Physics, Chemistry, Matter & Energy
 
-Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 46 lessons
+Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 47 lessons
 
 ## Physics & Physical Systems (PHY)
 
@@ -146,15 +156,16 @@ Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 46 l
 
 - **CHE-01** — Atoms: Structure, Motion & Matter
 - **CHE-02** — Periodic Table of Elements
-- **CHE-03** — Water: The Architecture of H₂O
-- **CHE-04** — Molecular Bonding Lab
+- **CHE-03** — Radioactive Decay: Alpha, Beta & Gamma
+- **CHE-04** — Water: The Architecture of H₂O
+- **CHE-05** — Molecular Bonding Lab
 
 ### Reactions, Catalysts & Chemical Systems
 
-- **CHE-05** — Titration
-- **CHE-06** — Catalysts & Activation Energy
-- **CHE-07** — Chemistry of Steam Machines
-- **CHE-08** — Plastics: Polymer Chemistry & Materials
+- **CHE-06** — Titration
+- **CHE-07** — Catalysts & Activation Energy
+- **CHE-08** — Chemistry of Steam Machines
+- **CHE-09** — Plastics: Polymer Chemistry & Materials
 
 # Volume III — Living Systems, Earth & Environment
 
@@ -206,7 +217,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 60 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 62 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
@@ -220,31 +231,32 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 - **ENG-06** — Arduino: The Robot Brain
 - **ENG-07** — Arduino Board Anatomy Lab
 - **ENG-08** — Digital Sensors: Actions = Reactions
-- **ENG-09** — Inputs: Beyond the Button
-- **ENG-10** — Arduino Programming: Variables, Functions & Libraries
-- **ENG-11** — Outputs: Beyond the LED
-- **ENG-12** — Soldering
-- **ENG-13** — Sensor Modules Kit
-- **ENG-14** — The Internet of Things
+- **ENG-09** — Sensor to Webpage
+- **ENG-10** — Inputs: Beyond the Button
+- **ENG-11** — Arduino Programming: Variables, Functions & Libraries
+- **ENG-12** — Outputs: Beyond the LED
+- **ENG-13** — Soldering
+- **ENG-14** — Sensor Modules Kit
+- **ENG-15** — The Internet of Things
 
 ### Mechanisms, Feedback & Control
 
-- **ENG-15** — Mechanisms and Gear Systems
-- **ENG-16** — PID Control & Feedback Loops
-- **ENG-17** — Maglev Train Engineering
-- **ENG-18** — Bug Bots: Genghis & the Insect Robots
+- **ENG-16** — Mechanisms and Gear Systems
+- **ENG-17** — PID Control & Feedback Loops
+- **ENG-18** — Maglev Train Engineering
+- **ENG-19** — Bug Bots: Genghis & the Insect Robots
 
 ### Structural Design Projects
 
-- **ENG-19** — Bridge Over Troubled Water
-- **ENG-20** — Biomimicry: Engineering Nature's Genius
+- **ENG-20** — Bridge Over Troubled Water
+- **ENG-21** — Biomimicry: Engineering Nature's Genius
 
 ### People Who Changed Engineering
 
-- **ENG-21** — Emily Roebling
-- **ENG-22** — Henry Ford — _also indexed in Design, Materials & Fabrication_
-- **ENG-23** — Rube Goldberg Machine Lab
-- **ENG-24** — Hedy Lamarr
+- **ENG-22** — Emily Roebling
+- **ENG-23** — Henry Ford — _also indexed in Design, Materials & Fabrication_
+- **ENG-24** — Rube Goldberg Machine Lab
+- **ENG-25** — Hedy Lamarr
 
 ## Design, Materials & Fabrication (FAB)
 
@@ -308,7 +320,8 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 - **TEC-10** — Guitar Chord Encyclopedia
 - **TEC-11** — Piano Chord Encyclopedia
 - **TEC-12** — Violin Fingerboard Explorer
-- **TEC-13** — Ludwig van Beethoven
+- **TEC-13** — Drum Lab: Kit, Notation, Rudiments & Fills
+- **TEC-14** — Ludwig van Beethoven
 
 # Volume V — Computer Science, AI & Interactive Media
 
@@ -409,7 +422,7 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 39 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 40 lessons
 
 ## Visual Art & Design (DES)
 
@@ -423,6 +436,7 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 
 - **DES-04** — Vincent van Gogh
 - **DES-05** — Pablo Picasso
+- **DES-06** — Charles & Ray Eames
 
 ## Language, Media & Critical Thinking (LAN)
 

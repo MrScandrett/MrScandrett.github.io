@@ -854,32 +854,25 @@ img {
 
 .brand::before {
   content: "";
-  width: 1.85rem;
-  height: 1.85rem;
-  border-radius: 50%;
-  background:
-    radial-gradient(
-      circle at 33% 28%,
-      color-mix(in srgb, var(--theme-accent-strong) 35%, #fff 40%) 0%,
-      var(--theme-accent-strong) 46%,
-      color-mix(in srgb, var(--theme-accent-strong) 60%, #000 30%) 100%
-    );
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  width: 2.1rem;
+  height: 2.1rem;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-accent-strong) 55%, #fff 30%), var(--theme-accent-strong) 55%, color-mix(in srgb, var(--theme-accent-strong) 70%, #000 30%));
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg fill='none' stroke='%23000' stroke-width='1.7'%3E%3Cellipse cx='16' cy='16' rx='14' ry='5.4'/%3E%3Cellipse cx='16' cy='16' rx='14' ry='5.4' transform='rotate(60 16 16)'/%3E%3Cellipse cx='16' cy='16' rx='14' ry='5.4' transform='rotate(120 16 16)'/%3E%3C/g%3E%3Ccircle cx='16' cy='16' r='3.4'/%3E%3Ccircle cx='30' cy='16' r='2.1'/%3E%3Ccircle cx='9' cy='28.1' r='2.1'/%3E%3Ccircle cx='9' cy='3.9' r='2.1'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg fill='none' stroke='%23000' stroke-width='1.7'%3E%3Cellipse cx='16' cy='16' rx='14' ry='5.4'/%3E%3Cellipse cx='16' cy='16' rx='14' ry='5.4' transform='rotate(60 16 16)'/%3E%3Cellipse cx='16' cy='16' rx='14' ry='5.4' transform='rotate(120 16 16)'/%3E%3C/g%3E%3Ccircle cx='16' cy='16' r='3.4'/%3E%3Ccircle cx='30' cy='16' r='2.1'/%3E%3Ccircle cx='9' cy='28.1' r='2.1'/%3E%3Ccircle cx='9' cy='3.9' r='2.1'/%3E%3C/svg%3E") center / contain no-repeat;
   flex-shrink: 0;
+  animation: atom-whirl 14s linear infinite;
 }
 
 .brand::after {
-  content: "";
-  position: absolute;
-  left: -0.24rem;
-  top: 50%;
-  width: 2.32rem;
-  height: 0.85rem;
-  transform: translateY(-50%) rotate(-20deg);
-  border-radius: 50%;
-  border: 0.1rem solid color-mix(in srgb, var(--theme-accent-strong) 45%, #fff 45%);
-  opacity: 0.8;
-  pointer-events: none;
+  content: none;
+}
+
+@keyframes atom-whirl {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand::before { animation: none; }
 }
 
 .site-nav {
@@ -3738,4 +3731,37 @@ body.theme-liquid-woodland .feedback-widget {
   margin-top: 0.8rem;
   display: flex;
   justify-content: flex-end;
+}
+
+/* Header row at collapsed-nav widths: brand on the left, Settings + hamburger grouped on the right. */
+@media (max-width: 1120px) {
+  .nav-wrap > .nav-settings {
+    order: 1;
+    margin-left: auto;
+  }
+
+  .nav-wrap > .nav-toggle {
+    order: 2;
+    margin-left: 0.5rem;
+  }
+}
+
+/* Open menu at collapsed-nav widths: compact wrapped row of links instead of a tall centered column. */
+@media (min-width: 561px) and (max-width: 1120px) {
+  .nav-wrap .site-nav.is-open ul {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 0.35rem 0.5rem;
+  }
+
+  .nav-wrap .site-nav.is-open ul > li {
+    flex: 0 0 auto;
+  }
+
+  .nav-wrap .site-nav.is-open ul > li > a {
+    display: inline-block;
+    padding: 0.5rem 0.9rem;
+  }
 }

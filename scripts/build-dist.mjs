@@ -24,6 +24,12 @@ const EXCLUDE_DIRS = new Set([
 // The repository root also contains authoring tools and internal documentation.
 // Keep public HTML, PDFs, and the standalone Music Lab bundle, but do not ship
 // implementation details that cannot be used by the static site.
+// OSeditor is a local teacher tool (it needs serve-local.js's /api). It must never be published,
+// and app-sources.json maps generated apps back to private student-projects paths.
+const PRIVATE_FILES = new Set([
+  "OSeditor.html", "assets/js/OSeditor-app.js", "assets/css/OSeditor.css", "data/app-sources.json",
+]);
+
 const PUBLIC_ROOT_SCRIPTS = new Set(["music-lab.js"]);
 
 function isPrivateRootFile(relativePath) {
@@ -45,6 +51,7 @@ async function copySite() {
       if (rel === "") return true;
       if (isPrivateRootFile(rel)) return false;
       const posixRel = rel.split(path.sep).join("/");
+      if (PRIVATE_FILES.has(posixRel)) return false;
       for (const excluded of EXCLUDE_DIRS) {
         if (posixRel === excluded || posixRel.startsWith(`${excluded}/`)) return false;
       }

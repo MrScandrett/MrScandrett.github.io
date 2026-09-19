@@ -838,6 +838,8 @@
       background: linear-gradient(115deg, rgba(255,247,220,0.92), rgba(255,255,255,0.74));
     }
     .ep-story[hidden] { display: none; }
+    .ep-decay { border: 1px solid rgba(220,38,38,0.25); border-left: 4px solid #dc2626; border-radius: 12px; padding: 0.75rem 0.95rem; background: rgba(254,226,226,0.55); font-size: 0.88rem; line-height: 1.55; }
+    .ep-decay[hidden] { display: none; }
     .ep-story-kicker {
       display: block;
       margin-bottom: 0.2rem;
@@ -1418,7 +1420,7 @@
         <div class="pt-history-founder">
           <div>
             <h2>History and evolution of the periodic table</h2>
-            <p>Dmitri Mendeleev is usually called the founder of the periodic table because in 1869 he arranged known elements by repeating properties, left gaps for missing elements, and made predictions that were later confirmed. This lesson focuses on how elements are organized; the companion <a class="pt-history-link" href="feynman-atoms.html">Atoms lesson</a> focuses on protons, neutrons, electrons, and why atomic number gives each element its identity.</p>
+            <p>Dmitri Mendeleev is usually called the founder of the periodic table because in 1869 he arranged known elements by repeating properties, left gaps for missing elements, and made predictions that were later confirmed. This lesson focuses on how elements are organized; the companion <a class="pt-history-link" href="feynman-atoms.html">Atoms lesson</a> focuses on protons, neutrons, electrons, and why atomic number gives each element its identity. When an atom's proton count changes through <a class="pt-history-link" href="radioactive-decay.html">radioactive decay</a>, it becomes a different element.</p>
           </div>
           <figure class="pt-founder-figure" data-zoomable>
             <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Medeleeff_by_repin.jpg?width=420" alt="Portrait of Dmitri Mendeleev by Ilya Repin" loading="lazy" />
@@ -1516,7 +1518,7 @@
         <div class="pt-discovery-chip"><span>Ancient</span><strong>C, S, Fe, Cu, Ag, Sn, Au, Hg, Pb</strong><small>Known from minerals, metals, pigments, and tools.</small></div>
         <div class="pt-discovery-chip"><span>1700s</span><strong>H, N, O, Cl, Mn, W</strong><small>Gas chemistry and careful measurement revealed invisible elements.</small></div>
         <div class="pt-discovery-chip"><span>1800s</span><strong>Na, Mg, Al, Si, K, Ca, Br, I</strong><small>Electrochemistry and spectroscopy unlocked many reactive elements.</small></div>
-        <div class="pt-discovery-chip"><span>1890s</span><strong>He, Ne, Ar, Kr, Xe, Rn, Po, Ra</strong><small>Noble gases and radioactivity changed the shape of the table.</small></div>
+        <div class="pt-discovery-chip"><span>1890s</span><strong>He, Ne, Ar, Kr, Xe, Rn, Po, Ra</strong><small>Noble gases and radioactivity changed the shape of the table. <a href="radioactive-decay.html">How decay works →</a></small></div>
         <div class="pt-discovery-chip"><span>1900s-2016</span><strong>Tc, Pm, Np-Og</strong><small>Reactors and accelerators created elements beyond uranium and completed period 7.</small></div>
       </div>
     </section>
@@ -1578,6 +1580,7 @@
         <div class="ep-config" id="ep-config"></div>
         <div class="ep-usage-grid" id="ep-usage"></div>
         <aside class="ep-story" id="ep-story" aria-live="polite" hidden></aside>
+        <aside class="ep-decay" id="ep-decay" hidden></aside>
         <section class="ep-gallery" id="ep-gallery" aria-label="Photos and images for this element" hidden></section>
         <section class="ep-earth-card" id="ep-earth" aria-label="Earth sources and image requirements"></section>
         <p class="ep-desc" id="ep-desc"></p>
@@ -1659,6 +1662,10 @@
         <div class="ll-info">
           <strong>Companion Lesson</strong>
           Use <a href="feynman-atoms.html">Atoms</a> when students need the structure of protons, neutrons, electrons, and electron clouds.
+        </div>
+        <div class="ll-info">
+          <strong>Next Lesson: Radioactive Decay</strong>
+          Unstable nuclei change their proton count, so the atom moves to a different element. Use <a href="radioactive-decay.html">Radioactive Decay</a> for alpha, beta, gamma, and half-life.
         </div>
       </div>
 
@@ -2431,6 +2438,18 @@
         + '<a href="' + story.url + '" target="_blank" rel="noopener noreferrer">' + story.source + '</a>';
     }
 
+    function renderDecayLink(element) {
+      const host = document.getElementById('ep-decay');
+      const z = element.number;
+      const allUnstable = z === 43 || z === 61 || z >= 84;
+      const special = { 6: 'Carbon-14 is radioactive and is the basis of radiocarbon dating.', 19: 'Potassium-40 is a naturally radioactive isotope inside your body and in bananas.' };
+      if (!allUnstable && !special[z]) { host.hidden = true; host.innerHTML = ''; return; }
+      host.hidden = false;
+      host.innerHTML = '<strong>\u2622 Radioactive decay</strong><br>'
+        + (allUnstable ? 'Every isotope of ' + element.name + ' is unstable. ' : special[z] + ' ')
+        + 'See how alpha, beta and gamma decay move an atom around this table in <a href="radioactive-decay.html">Radioactive Decay</a>.';
+    }
+
     function renderHistory(element) {
       const host = document.getElementById('ep-history');
       const h = (window.ELEMENT_HISTORY || {})[element.symbol];
@@ -2514,6 +2533,7 @@
       renderStats(element);
       renderUsage(element);
       renderStory(element);
+      renderDecayLink(element);
       renderHistory(element);
       renderEarthProfile(element);
       renderGallery(element);

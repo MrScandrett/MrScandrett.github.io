@@ -9,6 +9,7 @@ const FORBIDDEN = [
   "node_modules", "portal", "scripts", "student-projects", "student-projects-review",
   "package.json", "package-lock.json", "build-showcase.js", "publish_to_pages.js",
   "serve-local.js", ".pa11yci.json", "AGENTS.md", "CLAUDE.md", "README.md",
+  "OSeditor.html", "assets/js/OSeditor-app.js", "assets/css/OSeditor.css", "data/app-sources.json",
 ];
 const MAX_BYTES = 340 * 1024 * 1024;
 // A single oversized thumbnail (a full-resolution photo dropped in instead of
