@@ -13,6 +13,15 @@
     document.head.appendChild(guard);
   }
 
+  function loadRelatedLinks() {
+    if (document.querySelector('script[data-lesson-related="true"]')) return;
+    var related = document.createElement('script');
+    related.src = script && script.src ? new URL('lesson-related.js', script.src).href : '/assets/js/lesson-related.js';
+    related.defer = true;
+    related.dataset.lessonRelated = 'true';
+    document.head.appendChild(related);
+  }
+
   function cleanText(value) {
     return String(value || '').replace(/\s+/g, ' ').trim().slice(0, 220);
   }
@@ -102,6 +111,7 @@
     document.head.appendChild(stylesheet);
   }
   ensureContrastGuard();
+  loadRelatedLinks();
 
   function createActions() {
     var wrapper = document.createElement('div');

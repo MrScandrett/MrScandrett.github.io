@@ -18,3 +18,14 @@ The source PNG filenames are `orion.png`, `ursa-major.png`, `cassiopeia.png`,
 `cygnus.png`, `aries.png`, `taurus.png`, `gemini.png`, `cancer.png`, `leo.png`,
 `virgo.png`, `libra.png`, `scorpius.png`, `sagittarius.png`, `capricornus.png`,
 `aquarius.png`, and `pisces.png`.
+
+## Photos and myth art (`photos/`)
+
+Downloaded from Wikimedia Commons, resized to about 1100 px wide and saved as WebP.
+Per-image credits and license links are in `assets/js/lessons/constellation-media.js`
+and shown under each picture in the lesson.
+
+- `*-sky.webp`: "<Constellation> (Annotated)" photographs from the IAU / NOIRLab series
+  by Eckhard Slawik (NOIRLab/NSF/AURA/M. Zamani), CC BY 4.0.
+- `*-myth.webp`: Sidney Hall, *Urania's Mirror* (1824) star-cards, public domain
+  (Commons restorations by Adam Cuerden where noted).

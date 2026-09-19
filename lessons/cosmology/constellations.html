@@ -364,7 +364,7 @@
     /* ── FIELD NOTES PANEL ── */
     #obs-notes {
       position: fixed; right: 0; top: 46px; bottom: 72px;
-      width: 360px;
+      width: min(440px, 100vw);
       background: var(--surface);
       backdrop-filter: blur(20px);
       border-left: 1px solid var(--border);
@@ -424,6 +424,165 @@
     .notes-tile small {
       font-size: 0.67rem; color: var(--muted); line-height: 1.4;
     }
+
+    /* ── ALL-SKY MODE ── */
+    .mode-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem; }
+    .mode-btn {
+      font-family: var(--mono); font-size: 0.6rem; font-weight: 700; letter-spacing: 0.05em;
+      color: var(--muted); background: rgba(8,16,32,0.7); border: 1px solid var(--border);
+      border-radius: 7px; padding: 0.5rem 0.3rem; cursor: pointer; line-height: 1.3;
+    }
+    .mode-btn:hover { color: var(--text); border-color: rgba(45,212,191,0.5); }
+    .mode-btn[aria-pressed="true"] { color: #04121a; background: var(--accent); border-color: var(--accent); }
+    .mode-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    #allsky-panel[hidden] { display: none; }
+    .as-legend { list-style: none; margin: 0.4rem 0 0; padding: 0; font-size: 0.66rem; line-height: 1.45; color: rgba(200,216,240,0.82); }
+    .as-legend li { display: flex; gap: 0.45rem; align-items: baseline; margin-bottom: 0.2rem; }
+    .as-sw { flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%; display: inline-block; transform: translateY(1px); }
+    .as-credit { margin-top: 0.5rem; font-size: 0.58rem; line-height: 1.45; color: var(--muted); }
+    .as-credit a { color: #9ab0ff; }
+    .as-accuracy {
+      margin: 0.5rem 0 0; padding: 0.5rem 0.55rem;
+      border-left: 2px solid rgba(246,183,60,0.72);
+      background: rgba(246,183,60,0.07);
+      font-size: 0.61rem; line-height: 1.45; color: rgba(222,226,232,0.88);
+    }
+    .as-accuracy strong { color: #f4ce84; }
+    body.allsky-mode .detail-only, body.allsky-mode #obs-guide, body.allsky-mode #obs-tooltip { display: none !important; }
+    .as-card {
+      position: fixed; left: 226px; bottom: 84px; width: min(330px, calc(100vw - 2rem));
+      max-height: calc(100vh - 220px); overflow-y: auto;
+      background: rgba(3,8,20,0.94); backdrop-filter: blur(14px);
+      border: 1px solid rgba(45,212,191,0.4); border-radius: 12px;
+      padding: 0.8rem 0.95rem 0.9rem; z-index: 30; box-shadow: 0 10px 40px rgba(0,0,0,0.55);
+    }
+    .as-card[hidden] { display: none; }
+    body.panel-collapsed .as-card { left: 1rem; }
+    .as-close { position: absolute; top: 0.4rem; right: 0.5rem; background: none; border: 0; color: var(--muted); font-size: 0.85rem; cursor: pointer; padding: 0.2rem 0.35rem; }
+    .as-close:hover { color: var(--text); }
+    .as-portrait {
+      position: relative; margin: 0 0 0.7rem; overflow: hidden;
+      border: 1px solid rgba(150,180,220,0.2); border-radius: 9px;
+      background: #010308;
+    }
+    .as-portrait img, .as-portrait canvas {
+      display: block; width: 100%; height: 156px; object-fit: contain;
+    }
+    .as-portrait figcaption {
+      padding: 0.42rem 0.55rem 0.5rem; border-top: 1px solid rgba(150,180,220,0.14);
+      font-size: 0.58rem; line-height: 1.45; color: rgba(174,194,217,0.82);
+    }
+    .as-portrait .as-caption-lead { color: #d9e4ef; font-weight: 600; }
+    .as-portrait figcaption a { color: #9ab0ff; }
+    .as-portrait[data-zoomable] { cursor: zoom-in; }
+    .as-kind { font-family: var(--mono); font-size: 0.56rem; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 0.15rem; padding-right: 1.5rem; }
+    .as-title { font-size: 1.05rem; font-weight: 700; color: var(--text); margin: 0 0 0.15rem; }
+    .as-sub { font-size: 0.7rem; color: var(--amber); margin: 0 0 0.4rem; line-height: 1.45; }
+    .as-body { font-size: 0.76rem; line-height: 1.55; color: rgba(200,216,240,0.9); margin: 0 0 0.5rem; }
+    .as-h { font-family: var(--mono); font-size: 0.56rem; letter-spacing: 0.1em; text-transform: uppercase; color: #9ab0ff; margin: 0.5rem 0 0.25rem; }
+    .as-list { margin: 0 0 0.5rem 1rem; padding: 0; font-size: 0.72rem; line-height: 1.5; color: rgba(200,216,240,0.85); }
+    .as-list strong { color: var(--text); }
+    .as-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.4rem; }
+    .as-btn { font-family: var(--mono); font-size: 0.6rem; font-weight: 700; color: var(--accent); background: rgba(45,212,191,0.08); border: 1px solid rgba(45,212,191,0.4); border-radius: 6px; padding: 0.35rem 0.55rem; cursor: pointer; }
+    .as-btn:hover { background: rgba(45,212,191,0.2); }
+    .as-btn-main { color: #04121a; background: var(--accent); }
+    .as-btn-main:hover { background: #5eead4; }
+    .as-link { display: inline-block; font-size: 0.72rem; color: #9ab0ff; margin-top: 0.15rem; }
+    #as-hover {
+      position: fixed; z-index: 35; pointer-events: none; display: none;
+      background: rgba(3,8,20,0.9); border: 1px solid rgba(124,156,255,0.35); border-radius: 6px;
+      padding: 0.2rem 0.5rem; font-size: 0.7rem; color: var(--text);
+    }
+    @media (max-width: 768px) { .as-card { left: 0.5rem; bottom: 70px; width: calc(100vw - 1rem); max-height: 45vh; } }
+
+    /* ── DOSSIER + LESSON SECTIONS ── */
+    .dossier-title {
+      font-size: 1.05rem; font-weight: 700; color: var(--text);
+      margin: 0 0 0.15rem;
+    }
+    .dossier-sub {
+      font-family: var(--mono); font-size: 0.6rem; color: var(--amber);
+      letter-spacing: 0.06em; margin-bottom: 0.6rem;
+    }
+    .notes-h3 {
+      font-family: var(--mono); font-size: 0.58rem; font-weight: 700;
+      color: #9ab0ff; letter-spacing: 0.1em; text-transform: uppercase;
+      margin: 0.85rem 0 0.35rem;
+    }
+    .dossier-obj { margin: 0 0 0.5rem; font-size: 0.74rem; line-height: 1.55; color: rgba(200,216,240,0.82); }
+    .dossier-obj strong { color: var(--text); display: block; font-size: 0.75rem; }
+    .dossier-star {
+      border: 1px solid rgba(124,156,255,0.18);
+      border-radius: 8px; margin-bottom: 0.4rem;
+      background: rgba(124,156,255,0.05);
+    }
+    .dossier-star[open] { background: rgba(124,156,255,0.1); }
+    .dossier-star.picked { border-color: var(--accent); }
+    .dossier-star summary {
+      cursor: pointer; padding: 0.45rem 0.6rem;
+      font-size: 0.76rem; font-weight: 600; color: var(--text);
+      list-style: none;
+    }
+    .dossier-star summary::-webkit-details-marker { display: none; }
+    .dossier-star summary::before { content: '▸ '; color: var(--accent); }
+    .dossier-star[open] summary::before { content: '▾ '; }
+    .dossier-star summary small {
+      display: block; font-family: var(--mono); font-size: 0.58rem;
+      font-weight: 400; color: var(--muted); margin-top: 0.1rem;
+    }
+    .dossier-star summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .dossier-body { padding: 0 0.65rem 0.6rem; font-size: 0.72rem; line-height: 1.55; color: rgba(200,216,240,0.85); }
+    .dossier-body p { margin: 0 0 0.4rem; }
+    .dossier-body b { color: #9ab0ff; font-family: var(--mono); font-size: 0.56rem; letter-spacing: 0.08em; text-transform: uppercase; display: block; }
+    .dossier-tips { margin: 0 0 0.5rem 1.05rem; font-size: 0.74rem; line-height: 1.55; color: rgba(200,216,240,0.85); }
+    .dossier-tips li { margin-bottom: 0.3rem; }
+    .spec-table { width: 100%; border-collapse: collapse; margin: 0.45rem 0 0.7rem; font-size: 0.68rem; }
+    .spec-table th, .spec-table td {
+      text-align: left; vertical-align: top; padding: 0.3rem 0.4rem;
+      border-bottom: 1px solid rgba(50,120,190,0.2);
+    }
+    .spec-table th { font-family: var(--mono); font-size: 0.56rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+    .spec-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; }
+    .timeline { list-style: none; margin: 0.3rem 0 0.7rem; padding: 0 0 0 0.85rem; border-left: 2px solid rgba(45,212,191,0.35); }
+    .timeline li { position: relative; margin-bottom: 0.5rem; font-size: 0.73rem; line-height: 1.5; color: rgba(200,216,240,0.85); }
+    .timeline li::before {
+      content: ''; position: absolute; left: -1.27rem; top: 0.42rem;
+      width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+    }
+    .timeline strong { color: var(--text); font-family: var(--mono); font-size: 0.62rem; display: block; }
+    .notes-links { list-style: none; margin: 0 0 0.6rem; padding: 0; }
+    .notes-links li { margin-bottom: 0.4rem; }
+    .notes-links a {
+      display: block; padding: 0.5rem 0.65rem;
+      border: 1px solid rgba(124,156,255,0.22); border-radius: 8px;
+      background: rgba(124,156,255,0.06);
+      color: #c8d8f0; text-decoration: none; font-size: 0.72rem; line-height: 1.45;
+    }
+    .notes-links a:hover, .notes-links a:focus-visible { border-color: var(--accent); background: rgba(45,212,191,0.1); }
+    .notes-links strong { display: block; color: #9ab0ff; font-size: 0.75rem; }
+    .info-dossier-btn {
+      margin-top: 0.3rem; font-family: var(--mono); font-size: 0.6rem; font-weight: 700;
+      color: var(--accent); background: rgba(45,212,191,0.08);
+      border: 1px solid rgba(45,212,191,0.4); border-radius: 6px;
+      padding: 0.2rem 0.5rem; cursor: pointer; letter-spacing: 0.06em; pointer-events: auto;
+    }
+    .info-dossier-btn:hover { background: rgba(45,212,191,0.18); }
+    .tt-spec { color: #ffd98a; }
+    .dossier-gallery { display: grid; gap: 0.55rem; margin: 0.2rem 0 0.7rem; }
+    .dossier-fig { margin: 0; border: 1px solid rgba(124,156,255,0.22); border-radius: 9px; overflow: hidden; background: rgba(4,11,24,0.6); }
+    .dossier-fig img { display: block; width: 100%; height: auto; max-height: 400px; object-fit: contain; background: #05070d; }
+    .dossier-fig[data-kind="myth"] img { object-fit: contain; background: #efe6d2; }
+    .dossier-fig figcaption { padding: 0.5rem 0.65rem 0.6rem; font-size: 0.7rem; line-height: 1.5; color: rgba(200,216,240,0.88); }
+    .fig-kind { display: block; font-family: var(--mono); font-size: 0.56rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.15rem; }
+    .fig-credit { display: block; margin-top: 0.3rem; font-size: 0.6rem; color: var(--muted); }
+    .fig-credit a { color: #9ab0ff; }
+    .fig-zoom { display: block; font-family: var(--mono); font-size: 0.55rem; color: var(--muted); margin-top: 0.15rem; }
+    .culture-box { border: 1px solid rgba(246,183,60,0.4); border-left-width: 4px; border-radius: 0 9px 9px 0; background: rgba(246,183,60,0.07); padding: 0.6rem 0.75rem; margin: 0.4rem 0 0.7rem; }
+    .culture-box h3 { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--amber); margin: 0 0 0.4rem; }
+    .culture-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0 0 0.45rem; padding: 0; list-style: none; }
+    .culture-tags li { font-size: 0.62rem; font-weight: 700; color: #ffe2a3; background: rgba(246,183,60,0.16); border: 1px solid rgba(246,183,60,0.4); border-radius: 999px; padding: 0.12rem 0.5rem; }
+    .culture-box p { font-size: 0.73rem; line-height: 1.58; color: rgba(200,216,240,0.9); margin: 0; }
+    .tt-more { margin-top: 0.3rem; font-family: var(--mono); font-size: 0.55rem; color: var(--accent); }
 
     /* ── QUIZ ── */
     .quiz-q { margin-bottom: 0.6rem; }
@@ -609,6 +768,36 @@
   <!-- Side panel -->
   <aside id="obs-panel" aria-label="Constellation selector">
     <div class="obs-panel-section">
+      <div class="obs-section-label">View</div>
+      <div class="mode-switch" role="group" aria-label="Map mode">
+        <button class="mode-btn" id="mode-detail" type="button" aria-pressed="true">◉ DETAILED<br>SKY</button>
+        <button class="mode-btn" id="mode-allsky" type="button" aria-pressed="false">✦ ALL-SKY<br>MAP · 88</button>
+      </div>
+    </div>
+    <div class="obs-panel-section" id="allsky-panel" hidden>
+      <div class="obs-section-label">All-sky layers</div>
+      <label class="obs-toggle-row"><input type="checkbox" data-as-layer="bounds" checked /> IAU boundaries</label>
+      <label class="obs-toggle-row"><input type="checkbox" data-as-layer="figures" checked /> Star patterns</label>
+      <label class="obs-toggle-row"><input type="checkbox" data-as-layer="names" checked /> Constellation names</label>
+      <label class="obs-toggle-row"><input type="checkbox" data-as-layer="stars" checked /> Stars</label>
+      <label class="obs-toggle-row"><input type="checkbox" data-as-layer="deep" checked /> Galaxies &amp; nebulae</label>
+      <label class="obs-toggle-row"><input type="checkbox" data-as-layer="planets" checked /> Sun, Moon &amp; planets</label>
+      <label class="obs-toggle-row"><input type="checkbox" data-as-layer="anomalies" checked /> Anomalies</label>
+      <label class="obs-toggle-row"><input type="checkbox" data-as-layer="milky" checked /> Milky Way</label>
+      <label class="obs-toggle-row"><input type="checkbox" data-as-layer="ecliptic" checked /> Ecliptic &amp; zodiac band</label>
+      <label class="obs-toggle-row"><input type="checkbox" data-as-layer="grid" /> RA / Dec grid</label>
+      <ul class="as-legend" aria-label="Legend">
+        <li><span class="as-sw" style="background:#c4a0ff"></span>Galaxy</li>
+        <li><span class="as-sw" style="background:#ffe58a"></span>Open cluster · <span class="as-sw" style="background:#ffb070"></span>globular</li>
+        <li><span class="as-sw" style="background:#ff8fc7"></span>Nebula · <span class="as-sw" style="background:#7dffb0"></span>planetary · <span class="as-sw" style="background:#ff7a7a"></span>remnant</li>
+        <li><span class="as-sw" style="background:#ff9d3c"></span>Black hole · <span class="as-sw" style="background:#5ee7ff"></span>pulsar</li>
+        <li><span class="as-sw" style="background:#ff8f8f"></span>Supernova · <span class="as-sw" style="background:#c99bff"></span>X-ray · <span class="as-sw" style="background:#ffd75e"></span>quasar</li>
+        <li><span class="as-sw" style="background:#ffb454"></span>Odd star · <span class="as-sw" style="background:#7dffb0"></span>exoplanets · <span class="as-sw" style="background:#ff7bd0"></span>signal</li>
+      </ul>
+      <p class="as-accuracy"><strong>How to read this map:</strong> positions and star brightness order are meaningful. Planet discs, nebula colors, galaxy shapes, and marker sizes are enlarged or enhanced so a class can recognize them; they are not to scale.</p>
+      <p class="as-credit">Boundaries, figures and stars: <a href="https://github.com/ofrohn/d3-celestial" target="_blank" rel="noopener">d3-celestial</a> (BSD-3). Deep-sky objects: <a href="https://github.com/mattiaverga/OpenNGC" target="_blank" rel="noopener">OpenNGC</a> (CC BY-SA 4.0). Planet positions are computed for the current time.</p>
+    </div>
+    <div class="obs-panel-section">
       <div class="obs-section-label">Featured sky patterns</div>
       <button class="obs-const-btn active" data-const="orion">Orion<span class="btn-myth">The Hunter</span></button>
       <button class="obs-const-btn" data-const="ursa">Ursa Major<span class="btn-myth">The Great Bear</span></button>
@@ -630,7 +819,7 @@
       <button class="obs-const-btn" data-const="aquarius">Aquarius<span class="btn-myth">The Water-Bearer</span></button>
       <button class="obs-const-btn" data-const="pisces">Pisces<span class="btn-myth">The Fishes</span></button>
     </div>
-    <div class="obs-panel-section">
+    <div class="obs-panel-section detail-only">
       <div class="obs-section-label">Optics</div>
       <div class="obs-ctrl-row">
         <div class="obs-ctrl-label">Brightness <span class="obs-ctrl-val" id="val-brightness">100%</span></div>
@@ -641,7 +830,7 @@
         <input type="range" id="ctrl-bgstars" min="0" max="100" value="70" aria-label="Background star density" />
       </div>
     </div>
-    <div class="obs-panel-section">
+    <div class="obs-panel-section detail-only">
       <div class="obs-section-label">Overlays</div>
       <label class="obs-toggle-row"><input type="checkbox" id="ctrl-lines" checked /> Pattern lines</label>
       <label class="obs-toggle-row"><input type="checkbox" id="ctrl-names" checked /> Star names</label>
@@ -653,6 +842,9 @@
       </div>
     </div>
   </aside>
+
+  <aside id="allsky-card" class="as-card" hidden aria-label="Selected object"></aside>
+  <div id="as-hover" aria-hidden="true"></div>
 
   <!-- HUD -->
   <div id="obs-hud" role="status" aria-live="polite" aria-label="Observatory readout">
@@ -671,8 +863,10 @@
     <div class="tt-row"><span>Dec. (J2000)</span><span class="tt-val" id="tt-dec">—</span></div>
     <div class="tt-row"><span>Magnitude</span><span class="tt-val" id="tt-mag">—</span></div>
     <div class="tt-row"><span>Spectral</span><span class="tt-val" id="tt-type">—</span></div>
+    <div class="tt-row"><span>Spectrum</span><span class="tt-val tt-spec" id="tt-spec">—</span></div>
     <div class="tt-row"><span>Distance</span><span class="tt-val" id="tt-dist">—</span></div>
     <div class="tt-note" id="tt-note">—</div>
+    <div class="tt-more" id="tt-more">Discovery and spectrum notes: Field Notes ▸</div>
   </div>
   <div id="obs-announcer" class="sr-only" role="status" aria-live="polite"></div>
 
@@ -686,6 +880,7 @@
     <div class="info-meta">
       <div id="info-count">7 named stars</div>
       <div class="info-myth" id="info-myth">The Hunter</div>
+      <button class="info-dossier-btn" id="btn-dossier" type="button" aria-controls="obs-notes">FULL DOSSIER ▸</button>
     </div>
   </div>
 
@@ -695,6 +890,8 @@
   <!-- Field notes panel -->
   <aside id="obs-notes" aria-label="Lesson field notes">
     <h1 class="notes-h1">Field Notes · Constellations</h1>
+
+    <section id="dossier" aria-label="Constellation dossier"></section>
 
     <h2 class="notes-h2">What Is a Constellation?</h2>
     <p class="notes-p">A constellation is not usually a real cluster of nearby stars — it is a <span class="notes-em">pattern seen from Earth's perspective</span>. Two stars may look adjacent even when one is 80 light-years away and the other is 800.</p>
@@ -706,6 +903,16 @@
       <div class="notes-tile"><strong>Season</strong><small>Night constellations shift as Earth orbits the Sun.</small></div>
       <div class="notes-tile"><strong>Map</strong><small>Astronomers use them as sky addresses.</small></div>
     </div>
+
+    <h2 class="notes-h2">The Whole Sky at Once: All-Sky Map</h2>
+    <p class="notes-p">Switch <span class="notes-em">View → All-sky map</span> to see every constellation together. The gray lines are the <span class="notes-em">official IAU boundaries</span> drawn in 1930: every point in the sky belongs to exactly one region, including the faint ones with no bright stars.</p>
+    <ul class="dossier-tips">
+      <li><strong>Ancient and modern:</strong> 48 of the constellations come from Ptolemy (about 150 CE). The other 40 were added between 1536 and the 1750s, mostly to fill the southern sky that European astronomers had not yet charted. Click a region to see which it is.</li>
+      <li><strong>The ecliptic:</strong> the dashed amber line is the Sun’s yearly path; the shaded band around it is the zodiac. The Sun, Moon and planets, drawn where they are <em>right now</em>, always stay inside it.</li>
+      <li><strong>Galaxies, nebulae and clusters:</strong> the Messier objects and other showpieces, colored by kind. The Andromeda Galaxy (M31) is the most distant thing most people can see without a telescope.</li>
+      <li><strong>Anomalies:</strong> black holes, pulsars, supernovae, the first quasar, oddball stars, exoplanet systems, and the 1977 Wow! signal, each linked to the lesson that explains it.</li>
+    </ul>
+    <div class="notes-callout"><strong>Try this:</strong> click the Sun to see which constellation it is in today. It is usually not the constellation of its astrological sign, because precession has shifted the sky since those signs were fixed.</div>
 
     <h2 class="notes-h2">The Zodiac and Ecliptic</h2>
     <p class="notes-p">The twelve traditional zodiac constellations lie along the <span class="notes-em">ecliptic</span>, the Sun’s apparent yearly path across the sky. Because the constellations have unequal sizes, the Sun does not spend one equal month in each region.</p>
@@ -719,9 +926,56 @@
     <p class="notes-p">In the Northern Hemisphere, <span class="notes-em">Polaris</span> sits within 1° of the north celestial pole. Find the Big Dipper's two pointer stars (Dubhe and Merak) and extend the line about 5× their separation — Polaris is there.</p>
     <p class="notes-p">Polaris's altitude above the horizon closely matches your latitude north. Sailors have used this for centuries.</p>
 
+    <h2 class="notes-h2">Naming the Sky: A Short History</h2>
+    <ul class="timeline">
+      <li><strong>~3000–1000 BCE</strong>Mesopotamian scribes record star groups; the MUL.APIN tablets (about 1000 BCE) list constellations and their rising dates.</li>
+      <li><strong>~150 CE</strong>Ptolemy’s Almagest lists 48 constellations and 1,022 stars, the model for two thousand years. It carried on Hipparchus’s work; Hipparchus found precession by comparing Spica with older records (about 127 BCE).</li>
+      <li><strong>~964 CE</strong>Al-Sufi’s Book of Fixed Stars gives Arabic star names, many still used (Betelgeuse, Rigel, Deneb, Altair) and records the Andromeda Galaxy.</li>
+      <li><strong>1572 and 1604</strong>Supernovae in Cassiopeia (Tycho) and Ophiuchus (Kepler) show the sky can change.</li>
+      <li><strong>1603</strong>Bayer’s Uranometria adds Greek-letter names to each constellation’s stars.</li>
+      <li><strong>1609–1610</strong>Galileo’s telescope resolves the Milky Way, Praesepe and the Pleiades into stars.</li>
+      <li><strong>1838</strong>Bessel measures the distance to 61 Cygni. Constellation patterns are seen for the first time as depth in space, not a flat sky.</li>
+      <li><strong>1922–1930</strong>The IAU sets 88 official constellations and Delporte draws their boundaries.</li>
+      <li><strong>1990s–today</strong>Hipparcos and Gaia measure the distances and motions of billions of stars, so we can run the constellations backward and forward in time.</li>
+    </ul>
+
+    <h2 class="notes-h2">Reading Starlight: Spectroscopy</h2>
+    <p class="notes-p">A prism spreads starlight into a rainbow, and dark lines appear in it. <span class="notes-em">Each element absorbs light at its own fixed wavelengths</span>, so the pattern of lines is a fingerprint. That is how we know what stars are made of without visiting them.</p>
+    <ul class="timeline">
+      <li><strong>1666</strong>Newton splits sunlight into a spectrum with a prism.</li>
+      <li><strong>1814</strong>Joseph von Fraunhofer maps hundreds of dark lines in the solar spectrum, then finds that bright stars such as Sirius and Betelgeuse have dark lines of their own, each with a different pattern.</li>
+      <li><strong>1859–60</strong>Kirchhoff and Bunsen match dark lines to laboratory emission lines and prove that sodium, iron, calcium and more exist in the Sun.</li>
+      <li><strong>1864–65</strong>William Huggins shows the Orion Nebula is glowing gas; Huggins and Miller find iron, sodium, calcium and magnesium in Aldebaran and Betelgeuse.</li>
+      <li><strong>1868</strong>A yellow line seen in the Sun during an eclipse matches no known element. Lockyer names it helium (from Greek <i>helios</i>, the Sun); it is found on Earth in 1895.</li>
+      <li><strong>1860s–1900s</strong>Angelo Secchi and then the Harvard “computers” (Williamina Fleming, Annie Jump Cannon) sort hundreds of thousands of spectra into the O B A F G K M sequence.</li>
+      <li><strong>1925</strong>Cecilia Payne shows that the spectral sequence reflects <em>temperature</em>, not composition: nearly all stars are about 3/4 hydrogen and 1/4 helium, with a few percent heavier elements.</li>
+    </ul>
+    <div class="notes-callout"><strong>Doppler bonus:</strong> A line that shifts toward the blue means the star is approaching; toward the red, receding. That is how Mintaka’s interstellar calcium was found, how Mizar became the first spectroscopic binary, and how 51 Pegasi b and other exoplanets tug on their stars.</div>
+    <p class="notes-p">Use the star tooltips and the dossier to compare classes: hot blue Rigel shows helium and hydrogen, orange Aldebaran shows metals and molecules, and red Betelgeuse is dominated by titanium oxide.</p>
+    <div id="spectral-table"></div>
+    <div class="notes-callout"><strong>Composition:</strong> Stars mostly contain hydrogen and helium made in the Big Bang. Nearly everything heavier, including the oxygen you breathe and the iron in your blood, was fused in earlier stars and scattered by winds and supernovae like Cassiopeia A and the Crab.</div>
+
     <h2 class="notes-h2">Stories and Science</h2>
     <p class="notes-p">Ancient cultures across every continent used constellations to preserve stories, signal planting seasons, and teach memory-rich sky maps. Science adds distances, spectra, radial velocities, and proper motions — it layers onto the stories without erasing them.</p>
     <div class="notes-callout"><strong>Connection:</strong> A single constellation can be explored through mythology, geometry, data science, navigation, and physics — all at once.</div>
+
+    <h2 class="notes-h2">Continue Exploring</h2>
+    <ul class="notes-links">
+      <li><a href="tycho-brahe.html"><strong>Tycho Brahe →</strong>The 1572 supernova in Cassiopeia and the birth of precision astronomy.</a></li>
+      <li><a href="uraniborg.html"><strong>Uraniborg →</strong>The island observatory where the stars were measured without a telescope.</a></li>
+      <li><a href="heliocentrism.html"><strong>Heliocentrism →</strong>How the “fixed stars” helped prove that the Earth moves.</a></li>
+      <li><a href="keplers-laws.html"><strong>Kepler’s Laws →</strong>The planets’ paths through the zodiac.</a></li>
+      <li><a href="../earth-science/seasons-and-the-heavens.html"><strong>Seasons and the Heavens →</strong>Precession, the zodiac and why the sky changes with the seasons.</a></li>
+      <li><a href="../physics/speed-of-light.html"><strong>The Speed of Light →</strong>Why every star you see is a snapshot from the past.</a></li>
+      <li><a href="../chemistry/periodic-table.html"><strong>Periodic Table →</strong>The elements whose fingerprints show up in starlight.</a></li>
+      <li><a href="origins-of-the-universe.html"><strong>Origins of the Universe →</strong>Where hydrogen, helium and the heavy elements came from.</a></li>
+      <li><a href="universe-expansion.html"><strong>Universe Expansion →</strong>Redshift, the Virgo Cluster and 3C 273.</a></li>
+      <li><a href="event-horizon-telescope.html"><strong>Event Horizon Telescope →</strong>The black holes in Virgo (M87) and Sagittarius (Sgr A*).</a></li>
+      <li><a href="seti-search.html"><strong>SETI →</strong>The Wow! signal from Sagittarius.</a></li>
+      <li><a href="kuiper-belt.html"><strong>Kuiper Belt →</strong>Pluto’s discovery in Gemini.</a></li>
+      <li><a href="planetary-system.html"><strong>Planetary System →</strong>Uranus’s discovery in Gemini and the ecliptic.</a></li>
+      <li><a href="roman-space-telescope.html"><strong>Roman Space Telescope →</strong>Exoplanet hunting in Cygnus, Aquarius and Cancer.</a></li>
+    </ul>
 
     <h2 class="notes-h2">Check Understanding</h2>
     <div>
@@ -743,12 +997,26 @@
           <option value="sirius">Sirius</option>
         </select>
       </div>
+      <div class="quiz-q">
+        <label class="quiz-label" for="q3">3. What can the dark lines in a star’s spectrum tell us?</label>
+        <select class="quiz-select" id="q3">
+          <option value="">Choose an answer</option>
+          <option value="fingerprint">Which elements are in its atmosphere, and how hot it is.</option>
+          <option value="name">What the ancient astronomers called it.</option>
+          <option value="size">Only how large the constellation is.</option>
+        </select>
+      </div>
       <button class="quiz-btn" id="btn-check">CHECK ANSWERS</button>
       <div class="quiz-feedback" id="quiz-feedback" aria-live="polite"></div>
     </div>
   </aside>
 
   <script src="../../assets/js/lessons/constellation-patterns.js"></script>
+  <script src="../../assets/js/lessons/constellation-lore.js"></script>
+  <script src="../../assets/js/lessons/constellation-media.js"></script>
+  <script src="../../assets/js/lessons/allsky-extras.js"></script>
+  <script src="../../assets/js/lessons/allsky.js"></script>
+  <script src="../../assets/js/photo-lightbox.js"></script>
   <script>
   (function () {
     'use strict';
@@ -957,14 +1225,15 @@
         name: 'Aquarius', myth: 'The Water-Bearer',
         season: 'Best seen: August–October',
         story: "Aquarius is a large, mostly faint constellation. Sadalmelik and Sadalsuud lead toward the Water Jar, while a chain of stars pours southward toward the bright star Fomalhaut in Piscis Austrinus.",
-        hud: { ra: '22h 05m', dec: "-07° 00'", alt: '—', az: '—' },
+        hud: { ra: '22h 02m', dec: "-10° 00'", alt: '—', az: '—' },
         stars: [
-          { name:'Sadalmelik', ra:331.44598, dec:-0.31985,  mag:2.94, type:'G', dist:'660 ly', note:'Alpha Aquarii, a yellow supergiant' },
+          { name:'Sadalmelik', ra:331.44598, dec:-0.31985,  mag:2.94, type:'G', dist:'~520–660 ly', note:'Alpha Aquarii, a yellow supergiant' },
           { name:'Sadalsuud',  ra:322.88972, dec:-5.57117,  mag:2.89, type:'G', dist:'546 ly', note:'Beta Aquarii, Aquarius’s brightest star' },
-          { name:'Skat',       ra:343.66253, dec:-15.82082, mag:3.28, type:'A', dist:'141 ly', note:'Delta Aquarii, in the stream of water' },
-          { name:'Albali',     ra:311.91896, dec:-9.49578,  mag:3.77, type:'B', dist:'244 ly', note:'Epsilon Aquarii, western water-bearer star' },
-          { name:'Ancha',      ra:334.20849, dec:-7.78329,  mag:4.16, type:'G', dist:'191 ly', note:'Theta Aquarii, the hip of the figure' },
-          { name:'Situla',     ra:339.43909, dec:-4.22805,  mag:5.03, type:'K', dist:'222 ly', note:'Kappa Aquarii, part of the Water Jar' }
+          { name:'Skat',       ra:343.66253, dec:-15.82082, mag:3.28, type:'A', dist:'~160 ly', note:'Delta Aquarii, in the stream of water' },
+          { name:'Albali',     ra:311.91896, dec:-9.49578,  mag:3.77, type:'A', dist:'244 ly', note:'Epsilon Aquarii, western water-bearer star' },
+          { name:'Sadachbia',  ra:335.41405, dec:-1.38735, mag:3.84, type:'A', dist:'~160 ly', note:'Gamma Aquarii, in the Water Jar' },
+          { name:'Ancha',      ra:334.20849, dec:-7.78329,  mag:4.16, type:'G', dist:'~180 ly', note:'Theta Aquarii, the hip of the figure' },
+          { name:'Situla',     ra:339.43909, dec:-4.22805,  mag:5.03, type:'K', dist:'222 ly', note:'Kappa Aquarii, named for the water bucket' }
         ],
         lines: [[3,1],[1,0],[0,5],[5,4],[4,2]]
       },
@@ -1057,7 +1326,8 @@
           return Object.assign({}, catalogStar, nearest, {
             hip: catalogStar.hip,
             ra: catalogStar.ra,
-            dec: catalogStar.dec
+            dec: catalogStar.dec,
+            label: nearest.label !== false
           });
         }
         return catalogStar;
@@ -1090,6 +1360,7 @@
     var tooltipPinned = false;
 
     var hitStars = [];
+    var allsky = null;
 
     var figureImages = {};
     Object.keys(CONSTS).forEach(function(key) {
@@ -1462,11 +1733,157 @@
         lineProgress = Math.min(1, (ts - lineAnimStart) / LINE_MS);
         if (lineProgress >= 1) lineAnimStart = null;
       }
+      if (allsky && allsky.active) {
+        allsky.draw(ctx, W, H, ts, allskyFrame());
+        requestAnimationFrame(loop);
+        return;
+      }
       drawSky();
       drawMilkyWay();
       drawBgStars(t);
       drawConstellation(lineProgress);
       requestAnimationFrame(loop);
+    }
+
+    // ── Lore: tooltip details and per-constellation dossier ───────────────
+    var LORE = window.CONSTELLATION_LORE || { types: {}, general: {} };
+
+    function starLore(star) {
+      var entry = LORE[activeKey] && LORE[activeKey].stars && LORE[activeKey].stars[star.name];
+      var t = LORE.types[star.type] || { temp: '', look: '' };
+      if (entry) {
+        return { known: true, spec: entry.spec, history: entry.history, physics: entry.physics, bayer: entry.bayer };
+      }
+      return { known: false, spec: star.type + '-type · ' + t.temp, history: '', physics: t.look, bayer: '' };
+    }
+
+    function el(tag, cls, text) {
+      var node = document.createElement(tag);
+      if (cls) node.className = cls;
+      if (text) node.textContent = text;
+      return node;
+    }
+
+    var MEDIA = window.CONSTELLATION_MEDIA || {};
+
+    function figureFor(key, kind, label, m) {
+      var fig = el('figure', 'dossier-fig');
+      fig.dataset.zoomable = '';
+      fig.dataset.kind = kind;
+      fig.dataset.lightboxGroup = 'const-' + key;
+      var img = el('img');
+      img.src = '../../' + m.src;
+      img.alt = m.alt;
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      fig.appendChild(img);
+      var cap = el('figcaption');
+      cap.appendChild(el('span', 'fig-kind', label));
+      cap.appendChild(document.createTextNode(m.caption));
+      var credit = el('span', 'fig-credit');
+      credit.appendChild(document.createTextNode('Credit: ' + m.artist + ' · '));
+      var a = el('a', '', m.license);
+      a.href = m.page; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      credit.appendChild(a);
+      cap.appendChild(credit);
+      fig.appendChild(cap);
+      return fig;
+    }
+
+    function renderDossier(key) {
+      var host = document.getElementById('dossier');
+      var c = CONSTS[key];
+      var lore = LORE[key];
+      host.textContent = '';
+      if (!lore) return;
+
+      host.appendChild(el('h2', 'dossier-title', 'Dossier: ' + c.name));
+      host.appendChild(el('div', 'dossier-sub', c.myth.toUpperCase() + ' · ' + c.season.replace(/^Best seen: /, '')));
+      var media = MEDIA[key];
+      if (media) {
+        host.appendChild(el('p', 'fig-zoom', 'Click a picture to enlarge it for the class.'));
+        var gallery = el('div', 'dossier-gallery');
+        gallery.appendChild(figureFor(key, 'sky', 'In the real sky', media.sky));
+        gallery.appendChild(figureFor(key, 'myth', 'The myth behind it', media.myth));
+        host.appendChild(gallery);
+      }
+      host.appendChild(el('h3', 'notes-h3', 'Origins'));
+      host.appendChild(el('p', 'notes-p', lore.origin));
+      host.appendChild(el('p', 'notes-p', lore.modern));
+
+      if (media && media.culture) {
+        var box = el('div', 'culture-box');
+        box.appendChild(el('h3', '', 'Why it mattered to history and culture'));
+        var tags = el('ul', 'culture-tags');
+        media.culture.tags.forEach(function(t) { tags.appendChild(el('li', '', t)); });
+        box.appendChild(tags);
+        box.appendChild(el('p', '', media.culture.text));
+        host.appendChild(box);
+      }
+
+      host.appendChild(el('h3', 'notes-h3', 'Discoveries and deep-sky objects'));
+      lore.objects.forEach(function(o) {
+        var d = el('div', 'dossier-obj');
+        d.appendChild(el('strong', '', o[0]));
+        d.appendChild(document.createTextNode(o[1]));
+        host.appendChild(d);
+      });
+
+      host.appendChild(el('h3', 'notes-h3', 'Stars: history and spectra'));
+      c.stars.forEach(function(star) {
+        var info = starLore(star);
+        if (!info.known) return;
+        var d = el('details', 'dossier-star');
+        d.dataset.star = star.name;
+        var sum = el('summary', '', star.name + (info.bayer ? ' · ' + info.bayer : ''));
+        sum.appendChild(el('small', '', info.spec));
+        d.appendChild(sum);
+        var body = el('div', 'dossier-body');
+        var hp = el('p'); hp.appendChild(el('b', '', 'When it entered the record')); hp.appendChild(document.createTextNode(info.history));
+        var pp = el('p'); pp.appendChild(el('b', '', 'Spectrum and composition')); pp.appendChild(document.createTextNode(info.physics));
+        body.appendChild(hp); body.appendChild(pp);
+        d.appendChild(body);
+        host.appendChild(d);
+      });
+
+      host.appendChild(el('h3', 'notes-h3', 'Did you know?'));
+      var ul = el('ul', 'dossier-tips');
+      lore.tidbits.forEach(function(t) { ul.appendChild(el('li', '', t)); });
+      host.appendChild(ul);
+    }
+
+    function highlightDossierStar(name) {
+      document.querySelectorAll('#dossier .dossier-star').forEach(function(d) {
+        d.classList.toggle('picked', d.dataset.star === name);
+        if (d.dataset.star === name && tooltipPinned) d.open = true;
+      });
+    }
+
+    function renderSpectralTable() {
+      var host = document.getElementById('spectral-table');
+      var table = el('table', 'spec-table');
+      table.appendChild(el('caption', 'sr-only', 'Spectral classes with temperature and typical spectral features'));
+      var head = el('tr');
+      ['Class', 'Temp.', 'What the spectrum shows'].forEach(function(h) {
+        var th = el('th', '', h); th.scope = 'col'; head.appendChild(th);
+      });
+      table.appendChild(head);
+      ['O', 'B', 'A', 'F', 'G', 'K', 'M'].forEach(function(k) {
+        var t = LORE.types[k];
+        if (!t) return;
+        var row = el('tr');
+        var cell = el('th');
+        cell.scope = 'row';
+        var dot = el('span', 'spec-dot');
+        dot.style.background = TYPE_COLOR[k];
+        cell.appendChild(dot);
+        cell.appendChild(document.createTextNode(k));
+        row.appendChild(cell);
+        row.appendChild(el('td', '', t.temp));
+        row.appendChild(el('td', '', t.look));
+        table.appendChild(row);
+      });
+      host.appendChild(table);
     }
 
     // ── Constellation switch ───────────────────────────────────────────────
@@ -1490,6 +1907,7 @@
       document.getElementById('hud-dec').textContent = c.hud.dec;
       document.getElementById('hud-alt').textContent = c.hud.alt;
       document.getElementById('hud-az').textContent = c.hud.az;
+      renderDossier(key);
       document.querySelectorAll('.obs-const-btn').forEach(function(btn) {
         btn.classList.toggle('active', btn.dataset.const === key);
         btn.setAttribute('aria-pressed', btn.dataset.const === key ? 'true' : 'false');
@@ -1546,6 +1964,10 @@
       document.getElementById('tt-type').textContent = star.type + '-type';
       document.getElementById('tt-dist').textContent = star.dist;
       document.getElementById('tt-note').textContent = star.note;
+      var lore = starLore(star);
+      document.getElementById('tt-spec').textContent = lore.spec;
+      document.getElementById('tt-more').style.display = lore.known ? 'block' : 'none';
+      highlightDossierStar(star.name);
       tooltip.style.display = 'block';
       tooltip.setAttribute('aria-hidden', 'false');
 
@@ -1554,18 +1976,20 @@
       var ty = anchorY - 12;
       if (tx + tooltipWidth > W - 8) tx = anchorX - tooltipWidth - 12;
       if (tx < 8) tx = 8;
-      if (ty + 178 > H - 8) ty = H - 186;
+      if (ty + 212 > H - 8) ty = H - 220;
       if (ty < 52) ty = 52;
       tooltip.style.left = tx + 'px';
       tooltip.style.top = ty + 'px';
 
       if (announce) {
         announcer.textContent = star.name + '. Magnitude ' + star.mag +
-          '. Spectral type ' + star.type + '. Distance ' + star.dist + '. ' + star.note + '.';
+          '. Spectral type ' + star.type + '. Distance ' + star.dist + '. ' + star.note + '. ' +
+          (lore.known ? lore.history + ' ' + lore.physics : '');
       }
     }
 
     canvas.addEventListener('mousemove', function(e) {
+      if (allsky && allsky.active) return;
       var mx = e.clientX, my = e.clientY;
       var hit = findHit(mx, my);
       if (hit) {
@@ -1578,24 +2002,28 @@
     });
 
     canvas.addEventListener('mouseleave', function() {
+      if (allsky && allsky.active) return;
       if (!tooltipPinned) hideTooltip();
     });
 
     canvas.addEventListener('mousedown', function(e) {
+      if (allsky && allsky.active) return;
       isDragging = true; dragSX = e.clientX; dragSY = e.clientY;
       panSX = panX; panSY = panY; canvas.style.cursor = 'grabbing';
       dismissGuide();
     });
     window.addEventListener('mouseup', function() {
+      if (allsky && allsky.active) return;
       isDragging = false; canvas.style.cursor = 'crosshair';
     });
     window.addEventListener('mousemove', function(e) {
-      if (!isDragging) return;
+      if (!isDragging || (allsky && allsky.active)) return;
       panX = panSX + e.clientX - dragSX;
       panY = panSY + e.clientY - dragSY;
     });
 
     canvas.addEventListener('click', function(e) {
+      if (allsky && allsky.active) return;
       var moved = Math.hypot(e.clientX - dragSX, e.clientY - dragSY) > 5;
       if (moved) return;
       var hit = findHit(e.clientX, e.clientY);
@@ -1612,6 +2040,7 @@
     });
 
     canvas.addEventListener('keydown', function(e) {
+      if (allsky && allsky.active) return;
       var stars = CONSTS[activeKey].renderStars || CONSTS[activeKey].stars;
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
         selectedStarIndex = (selectedStarIndex + 1 + stars.length) % stars.length;
@@ -1641,6 +2070,7 @@
     // Touch pan
     var touchId = null, touchSX, touchSY;
     canvas.addEventListener('touchstart', function(e) {
+      if (allsky && allsky.active) return;
       if (e.touches.length === 1) {
         touchId = e.touches[0].identifier;
         touchSX = e.touches[0].clientX; touchSY = e.touches[0].clientY;
@@ -1649,6 +2079,7 @@
       }
     }, { passive: true });
     canvas.addEventListener('touchmove', function(e) {
+      if (allsky && allsky.active) return;
       for (var i = 0; i < e.touches.length; i++) {
         if (e.touches[i].identifier === touchId) {
           panX = panSX + e.touches[i].clientX - touchSX;
@@ -1658,6 +2089,7 @@
       }
     }, { passive: false });
     canvas.addEventListener('touchend', function(e) {
+      if (allsky && allsky.active) return;
       var touch = e.changedTouches[0];
       if (!touch || Math.hypot(touch.clientX - touchSX, touch.clientY - touchSY) > 8) return;
       var hit = findHit(touch.clientX, touch.clientY);
@@ -1673,6 +2105,7 @@
       btn.setAttribute('aria-pressed', btn.dataset.const === 'orion' ? 'true' : 'false');
       btn.addEventListener('click', function() {
         setConst(btn.dataset.const);
+        if (allsky && allsky.active) { allsky.focusFeatured(btn.dataset.const); setAllSkyInfo(); }
         if (window.innerWidth <= 768) setPanelOpen(false);
       });
     });
@@ -1691,6 +2124,7 @@
     document.getElementById('ctrl-milkyway').addEventListener('change', function(e) { showMilkyWay = e.target.checked; });
 
     document.getElementById('btn-center').addEventListener('click', function() {
+      if (allsky && allsky.active) { allsky.reset(); return; }
       panX = 0;
       panY = 0;
       selectedStarIndex = -1;
@@ -1720,6 +2154,79 @@
       announcer.textContent = 'Observatory settings reset.';
     });
 
+    // ── All-sky mode ─────────────────────────────────────────────────────
+    var allskyHover = document.getElementById('as-hover');
+    allsky = window.AllSkyMap.create({
+      canvas: canvas,
+      card: document.getElementById('allsky-card'),
+      dataUrl: '../../assets/data/sky/allsky.json',
+      announce: function(text) { announcer.textContent = text; },
+      onCursor: function(ra, dec) {
+        document.getElementById('hud-ra').textContent = formatRa(ra);
+        document.getElementById('hud-dec').textContent = formatDec(dec);
+      },
+      onHover: function(text, p) {
+        if (!text) { allskyHover.style.display = 'none'; return; }
+        allskyHover.textContent = text;
+        allskyHover.style.display = 'block';
+        allskyHover.style.left = Math.min(W - 180, p.x + 14) + 'px';
+        allskyHover.style.top = (p.y + 14) + 'px';
+      },
+      onOpenDetail: function(key) { setMode(false); setConst(key); }
+    });
+
+    function allskyFrame() {
+      var mobile = window.innerWidth <= 768;
+      return {
+        left: (panelOpen && !mobile) ? panel.offsetWidth : 0,
+        right: (notesOpen && !mobile) ? notes.offsetWidth : 0,
+        top: 46,
+        bottom: infobar.offsetHeight || 72
+      };
+    }
+
+    function setAllSkyInfo() {
+      var now = new Date();
+      document.getElementById('info-name').textContent = 'All-sky map';
+      document.getElementById('info-season').textContent = now.toUTCString().slice(5, 22) + ' UTC';
+      document.getElementById('info-story').textContent =
+        'All 88 official constellations with their IAU boundaries. Drag to pan, scroll to zoom, click a region, galaxy, planet or anomaly. ' + allsky.todaySummary();
+      document.getElementById('info-count').textContent = '88 constellations · 89 regions';
+      document.getElementById('info-myth').textContent = 'Right ascension runs east ← west';
+    }
+
+    function setMode(on, focusKey) {
+      document.body.classList.toggle('allsky-mode', on);
+      document.getElementById('mode-allsky').setAttribute('aria-pressed', on ? 'true' : 'false');
+      document.getElementById('mode-detail').setAttribute('aria-pressed', on ? 'false' : 'true');
+      document.getElementById('allsky-panel').hidden = !on;
+      allskyHover.style.display = 'none';
+      hideTooltip();
+      tooltipPinned = false;
+      allsky.setActive(on, focusKey);
+      if (on) {
+        canvas.setAttribute('aria-label', 'Interactive all-sky map of every constellation. Drag to pan, scroll or plus and minus to zoom.');
+        document.getElementById('map-instructions').textContent = 'All-sky map. Drag to pan the sky, scroll or use plus and minus keys to zoom, arrow keys to move, click a constellation, deep-sky object, planet or anomaly for details, Escape to close the card.';
+        allsky.load().then(setAllSkyInfo);
+        document.getElementById('hud-alt').textContent = '—';
+        document.getElementById('hud-az').textContent = '—';
+        setAllSkyInfo();
+        canvas.style.cursor = 'grab';
+      } else {
+        canvas.setAttribute('aria-label', 'Interactive star map of the night sky');
+        document.getElementById('map-instructions').textContent = 'Drag to pan the sky. Use the left and right arrow keys to move between named stars. Press Enter to hear details for the selected star.';
+        setConst(activeKey);
+        canvas.style.cursor = 'crosshair';
+      }
+      announcer.textContent = on ? 'All-sky map of every constellation.' : 'Detailed sky view.';
+    }
+
+    document.getElementById('mode-allsky').addEventListener('click', function() { setMode(true, activeKey); });
+    document.getElementById('mode-detail').addEventListener('click', function() { setMode(false); });
+    document.querySelectorAll('[data-as-layer]').forEach(function(box) {
+      box.addEventListener('change', function() { allsky.layers[box.dataset.asLayer] = box.checked; });
+    });
+
     // Panel toggle
     var panel = document.getElementById('obs-panel');
     var infobar = document.getElementById('obs-infobar');
@@ -1730,6 +2237,7 @@
       panelOpen = open;
       panel.classList.toggle('hidden', !panelOpen);
       infobar.classList.toggle('panel-hidden', !panelOpen);
+      document.body.classList.toggle('panel-collapsed', !panelOpen);
       ptBtn.classList.toggle('panel-closed', !panelOpen);
       ptBtn.setAttribute('aria-expanded', panelOpen ? 'true' : 'false');
     }
@@ -1751,6 +2259,11 @@
       notesBtn.setAttribute('aria-expanded', notesOpen ? 'true' : 'false');
     });
 
+    document.getElementById('btn-dossier').addEventListener('click', function() {
+      if (!notesOpen) notesBtn.click();
+      notes.scrollTop = 0;
+    });
+
     document.addEventListener('keydown', function(e) {
       if (e.key !== 'Escape') return;
       if (notesOpen) {
@@ -1767,11 +2280,12 @@
       var score = 0;
       if (document.getElementById('q1').value === 'far') score++;
       if (document.getElementById('q2').value === 'polaris') score++;
+      if (document.getElementById('q3').value === 'fingerprint') score++;
       var fb = document.getElementById('quiz-feedback');
-      fb.className = 'quiz-feedback ' + (score === 2 ? 'quiz-ok' : 'quiz-try');
-      fb.textContent = score === 2
-        ? '✓ Correct — you understand the sky-map idea.'
-        : score + '/2 correct. Revisit perspective and Polaris, then try again.';
+      fb.className = 'quiz-feedback ' + (score === 3 ? 'quiz-ok' : 'quiz-try');
+      fb.textContent = score === 3
+        ? '✓ Correct — you understand the sky-map idea and how starlight is read.'
+        : score + '/3 correct. Revisit perspective, Polaris and spectroscopy, then try again.';
     });
 
     // Live UTC clock in HUD
@@ -1789,6 +2303,7 @@
     window.addEventListener('resize', resize);
     genBgStars();
     resize();
+    renderSpectralTable();
     setConst('orion');
     requestAnimationFrame(loop);
   }());
