@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Exponent Explorer · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Exponents, scientific notation, logarithms, and compound growth: fold paper to the Moon, see why the exponent rules work, place an atom and the Sun on one ruler, and find how long money takes to double." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 304px; --ll-accent: #2563eb; --ll-tab-active: #2563eb; --ll-tab-active-bg: rgba(37,99,235,0.12); }
+    .tc-page { padding-bottom: 3.5rem; --sin: #2563eb; --cos: #ea580c; --tan: #16a34a; }
+    .tc-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .tc-hero h1 { max-width: 28ch; margin: 0; font-size: clamp(1.55rem, 3.5vw, 2.35rem); }
+    .tc-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.55rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .tc-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45; }
+    .tc-lede { max-width: 70ch; margin: 0.7rem 0 0; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+
+    .tc-card { background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7); border-left: 3.5px solid var(--card-accent, #2563eb); border-radius: var(--radius, 18px); box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .tc-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .tc-card h3 { margin: 0.95rem 0 0.35rem; font-size: 1rem; }
+    .tc-card p, .tc-card li { color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .tc-card p { margin: 0 0 0.62rem; }
+    .tc-card p:last-child { margin-bottom: 0; }
+    .tc-sin { color: var(--sin); font-weight: 700; }
+    .tc-cos { color: var(--cos); font-weight: 700; }
+    .tc-tan { color: var(--tan); font-weight: 700; }
+    .tc-mono { font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; }
+
+    .tc-canvases { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.8rem; margin: 0.8rem 0; }
+    .tc-cv { position: relative; height: 320px; border: 1px solid var(--line, #d2d2d7); border-radius: 12px; overflow: hidden; }
+    .tc-cv.short { height: 280px; }
+    .tc-cv canvas { display: block; touch-action: none; }
+    .tc-cv.drag canvas { cursor: grab; }
+
+    .tc-controls { display: flex; flex-wrap: wrap; gap: 0.6rem 1.2rem; align-items: center; margin: 0.5rem 0; }
+    .tc-controls label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; font-weight: 600; color: var(--text-main, #1d1d1f); }
+    .tc-controls input[type=range] { width: min(240px, 60vw); accent-color: var(--card-accent, #2563eb); }
+    .tc-btns { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.5rem 0; }
+    .tc-btn { padding: 0.32rem 0.7rem; border: 1px solid var(--line, #d2d2d7); border-radius: 999px; background: transparent; color: var(--text-main, #1d1d1f); font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+    .tc-btn:hover, .tc-btn:focus-visible { border-color: var(--card-accent, #2563eb); }
+    .tc-btn.primary { background: var(--card-accent, #2563eb); border-color: var(--card-accent, #2563eb); color: #fff; }
+
+    .tc-read { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem; margin: 0.6rem 0; }
+    .tc-read div { padding: 0.5rem 0.65rem; border: 1px solid var(--line, #d2d2d7); border-radius: 10px; font-size: 0.72rem; color: var(--text-muted, #64748b); }
+    .tc-read strong { display: block; margin-top: 0.1rem; font-size: 1rem; color: var(--text-main, #1d1d1f); font-family: "IBM Plex Mono", ui-monospace, monospace; }
+    .tc-status { min-height: 1.4em; margin: 0.4rem 0 0; font-size: 0.85rem; font-weight: 700; }
+    .tc-status.ok { color: #15803d; }
+
+    .tc-table { width: 100%; border-collapse: collapse; margin: 0.6rem 0; font-size: 0.8rem; }
+    .tc-table th, .tc-table td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--line, #d2d2d7); text-align: center; color: var(--text-secondary, #3f4f65); }
+    .tc-table th { color: var(--text-main, #1d1d1f); }
+
+    .tc-practice-item { display: grid; grid-template-columns: 1fr auto auto; gap: 0.6rem; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--line, #d2d2d7); }
+    .tc-practice-item:last-child { border-bottom: 0; }
+    .tc-practice-item p { margin: 0; }
+    .tc-practice-item input { width: 5.5rem; padding: 0.3rem 0.45rem; border: 1px solid var(--line, #d2d2d7); border-radius: 8px; background: transparent; color: var(--text-main, #1d1d1f); font: inherit; }
+    .tc-practice-item .fb { grid-column: 1 / -1; font-size: 0.8rem; font-weight: 700; }
+    .tc-practice-item .fb.ok { color: #15803d; }
+    .tc-practice-item .fb.no { color: #b45309; }
+    @media (max-width: 520px) { .tc-practice-item { grid-template-columns: 1fr; } }
+
+    [data-lighting="night"] .tc-lede, [data-theme="vaporwave"] .tc-lede, [data-theme="bark"] .tc-lede,
+    [data-lighting="night"] .tc-card p, [data-theme="vaporwave"] .tc-card p, [data-theme="bark"] .tc-card p,
+    [data-lighting="night"] .tc-card li, [data-theme="vaporwave"] .tc-card li, [data-theme="bark"] .tc-card li { color: rgba(245,245,247,0.72); }
+    [data-lighting="night"] .tc-card, [data-theme="vaporwave"] .tc-card, [data-theme="bark"] .tc-card { background: var(--white, #2c2c2e); }
+    [data-lighting="night"] .tc-controls label, [data-theme="vaporwave"] .tc-controls label, [data-theme="bark"] .tc-controls label,
+    [data-lighting="night"] .tc-read strong, [data-theme="vaporwave"] .tc-read strong, [data-theme="bark"] .tc-read strong,
+    [data-lighting="night"] .tc-btn, [data-theme="vaporwave"] .tc-btn, [data-theme="bark"] .tc-btn,
+    [data-lighting="night"] .tc-table th, [data-theme="vaporwave"] .tc-table th, [data-theme="bark"] .tc-table th,
+    [data-lighting="night"] .tc-practice-item input, [data-theme="vaporwave"] .tc-practice-item input, [data-theme="bark"] .tc-practice-item input { color: rgba(245,245,247,0.92); }
+    [data-lighting="night"] .tc-btn.primary, [data-theme="vaporwave"] .tc-btn.primary, [data-theme="bark"] .tc-btn.primary { color: #fff; }
+    [data-lighting="night"] .tc-table td, [data-theme="vaporwave"] .tc-table td, [data-theme="bark"] .tc-table td { color: rgba(245,245,247,0.72); }
+
+    .ex-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; margin: 0.35rem 0; }
+    .ex-chip { display: inline-grid; place-items: center; min-width: 1.7rem; height: 1.7rem; padding: 0 0.3rem; border-radius: 8px; background: rgba(100,116,139,0.2); color: var(--text-main, #1d1d1f); font: 700 0.85rem "IBM Plex Mono", monospace; }
+    .ex-chip.b { background: rgba(37,99,235,0.22); }
+    .ex-chip.o { background: rgba(234,88,12,0.22); }
+    .ex-chip.x { text-decoration: line-through; opacity: 0.45; }
+    .ex-op, .ex-one { font: 700 0.9rem "IBM Plex Mono", monospace; color: var(--text-muted, #64748b); padding: 0 0.3rem; }
+    .ex-one { color: var(--text-main, #1d1d1f); }
+    .ex-group { display: inline-flex; gap: 0.2rem; padding: 0.2rem 0.35rem; border: 1.5px solid var(--line, #94a3b8); border-radius: 12px; }
+    .ex-frac { display: inline-block; margin: 0.35rem 0; }
+    .ex-bar { height: 2px; background: var(--text-muted, #64748b); margin: 0.15rem 0; }
+    [data-lighting="night"] .ex-chip, [data-theme="vaporwave"] .ex-chip, [data-theme="bark"] .ex-chip, [data-lighting="night"] .ex-one, [data-theme="vaporwave"] .ex-one, [data-theme="bark"] .ex-one { color: rgba(245,245,247,0.92); }
+    [data-lighting="night"] .tc-page, [data-theme="vaporwave"] .tc-page, [data-theme="bark"] .tc-page { --sin: #7fb0ff; --cos: #ff9f5f; --tan: #4ade80; }
+    [data-lighting="night"] .tc-status.ok, [data-theme="vaporwave"] .tc-status.ok, [data-theme="bark"] .tc-status.ok,
+    [data-lighting="night"] .tc-practice-item .fb.ok, [data-theme="vaporwave"] .tc-practice-item .fb.ok, [data-theme="bark"] .tc-practice-item .fb.ok { color: #4ade80; }
+    [data-lighting="night"] .tc-practice-item .fb.no, [data-theme="vaporwave"] .tc-practice-item .fb.no, [data-theme="bark"] .tc-practice-item .fb.no { color: #fbbf24; }
+    [data-lighting="night"] .tc-tan-g, [data-theme="vaporwave"] .tc-tan-g, [data-theme="bark"] .tc-tan-g { color: #4ade80; }
+    [data-lighting="night"] .tc-neg, [data-theme="vaporwave"] .tc-neg, [data-theme="bark"] .tc-neg { color: #f87171; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="tc-page">
+        <section class="hero tc-hero">
+          <p class="eyebrow">Mathematics · Exponents &amp; Logarithms</p>
+          <h1>Exponent Explorer</h1>
+          <div class="tc-meta">
+            <span>Repeated multiplication</span><span class="dot"></span>
+            <span>Exponent rules</span><span class="dot"></span>
+            <span>Scientific notation</span><span class="dot"></span>
+            <span>Logarithms</span><span class="dot"></span>
+            <span>Compound growth</span>
+          </div>
+          <p class="tc-lede">Adding grows by steps. Multiplying grows by leaps. Exponents are the mathematics of leaps: a folded sheet of paper reaching the Moon, a virus and a galaxy on the same ruler, money that doubles while you sleep. Explore each idea with your hands, then learn the shorthand that scientists use to tame very large and very small numbers.</p>
+        </section>
+
+        <section class="tc-card">
+          <h2>Learning Targets</h2>
+          <ul>
+            <li>Explain an exponent as repeated multiplication, and why <span class="tc-mono">a⁰ = 1</span> and <span class="tc-mono">a⁻ⁿ = 1/aⁿ</span>.</li>
+            <li>Use the product, quotient, and power rules and say why each one works.</li>
+            <li>Write and read numbers in scientific notation, and compare sizes across the universe.</li>
+            <li>Explain a logarithm as the question “what exponent gives this number?”</li>
+            <li>Tell exponential growth from linear growth, and use the Rule of 72.</li>
+          </ul>
+          <p>Prerequisites: <a href="pemdas.html">PEMDAS</a> and <a href="proportional-reasoning.html">Proportional Reasoning</a>. This lesson prepares you for <a href="measuring-length.html">Measuring Length</a> and <a href="eulers-number.html">How e Was Discovered</a>.</p>
+        </section>
+
+        <section class="tc-card" id="growth" style="--card-accent:#2563eb;">
+          <h2>Lab 1 · Leaps vs Steps</h2>
+          <p>Two ways to grow. <span class="tc-cos">Steps:</span> add 2 each time. <span class="tc-sin">Leaps:</span> double each time. Slide the number of steps and watch who wins. Then switch to a <strong>log scale</strong>, where each gridline is 1000 times the last. Doubling becomes a straight line.</p>
+          <div class="tc-cv" id="gr-box"><canvas id="gr-canvas" aria-label="Linear growth compared with doubling"></canvas></div>
+          <div class="tc-controls">
+            <label>Steps <input id="gr-n" type="range" min="0" max="45" step="1" value="10" aria-label="Number of steps" /> <span id="gr-nv" class="tc-mono">10</span></label>
+            <label><input id="gr-log" type="checkbox" /> Log scale</label>
+          </div>
+          <div class="tc-read">
+            <div><span class="tc-cos">Steps (+2)</span><strong id="gr-lin">21</strong></div>
+            <div><span class="tc-sin">Leaps (×2)</span><strong id="gr-exp">1,024</strong></div>
+            <div>Leaps ÷ steps<strong id="gr-ratio">49×</strong></div>
+          </div>
+          <h3>The paper-folding puzzle</h3>
+          <p>A sheet of paper is about 0.1 mm thick. Every fold doubles the thickness, so after <span id="gr-fold-n" class="tc-mono">10</span> folds the stack would be <strong id="gr-thick">10.2 cm</strong> thick. <span id="gr-land"></span></p>
+          <p><strong>Predict first:</strong> how many folds do you think it takes to reach the Moon? Then drag the slider and find out.</p>
+        </section>
+
+        <section class="tc-card" id="rules" style="--card-accent:#ea580c;">
+          <h2>Lab 2 · Why the Rules Work</h2>
+          <p>You never need to memorize exponent rules if you can see the factors. Each chip is one copy of the base. Choose a rule and change the exponents.</p>
+          <div class="tc-btns" id="ru-modes" role="group" aria-label="Choose a rule">
+            <button class="tc-btn primary" type="button" data-mode="product">Product: aᵐ · aⁿ</button>
+            <button class="tc-btn" type="button" data-mode="quotient">Quotient: aᵐ ÷ aⁿ</button>
+            <button class="tc-btn" type="button" data-mode="power">Power: (aᵐ)ⁿ</button>
+            <button class="tc-btn" type="button" data-mode="zero">Zero: a⁰</button>
+            <button class="tc-btn" type="button" data-mode="negative">Negative: a⁻ⁿ</button>
+          </div>
+          <div class="tc-controls">
+            <label>Base a <input id="ru-a" type="range" min="2" max="9" step="1" value="2" style="--card-accent:#ea580c" /> <span id="ru-av" class="tc-mono">2</span></label>
+            <label>m <input id="ru-m" type="range" min="0" max="6" step="1" value="3" style="--card-accent:#ea580c" /> <span id="ru-mv" class="tc-mono">3</span></label>
+            <label>n <input id="ru-n" type="range" min="0" max="6" step="1" value="2" style="--card-accent:#ea580c" /> <span id="ru-nv" class="tc-mono">2</span></label>
+          </div>
+          <div class="ex-chips" id="ru-vis" aria-live="polite"></div>
+          <p class="tc-mono" id="ru-rule"></p>
+          <p class="tc-mono" id="ru-check"></p>
+        </section>
+
+        <section class="tc-card" id="scale" style="--card-accent:#16a34a;">
+          <h2>Lab 3 · Scientific Notation &amp; the Size of Everything</h2>
+          <p>Scientists write a number as <span class="tc-mono">m × 10ⁿ</span> with 1 ≤ m &lt; 10. The exponent n tells you the “order of magnitude.” Slide along the ruler: every tick is ten times bigger than the one before. An atom and a galaxy fit on the same line.</p>
+          <div class="tc-cv short" id="sc-box"><canvas id="sc-canvas" aria-label="Logarithmic ruler of sizes from atoms to the Sun"></canvas></div>
+          <div class="tc-controls">
+            <label>Size <input id="sc-slider" type="range" min="-11" max="17" step="0.05" value="0" style="--card-accent:#16a34a" aria-label="Size on a log scale" /></label>
+          </div>
+          <div class="tc-read">
+            <div>Meters (scientific)<strong id="sc-sci">1 × 10⁰</strong></div>
+            <div>Plain number<strong id="sc-plain">1</strong></div>
+            <div>Nearest thing<strong id="sc-near" style="font-size:.85rem">human</strong></div>
+          </div>
+          <h3>Try a number</h3>
+          <div class="tc-controls">
+            <label>Number <input id="sc-input" type="number" step="any" value="45000000" style="width:11rem;padding:.3rem .45rem;border:1px solid var(--line,#d2d2d7);border-radius:8px;background:transparent;color:inherit;font:inherit;" /></label>
+            <span class="tc-mono" id="sc-out"></span>
+          </div>
+          <p><strong>Move the decimal:</strong> a large number gets a positive exponent (count the places you moved left); a small number gets a negative exponent. Multiplying by 10 adds 1 to the exponent, which is why the ruler above is so compact.</p>
+        </section>
+
+        <section class="tc-card" id="logs" style="--card-accent:#7c3aed;">
+          <h2>Lab 4 · Logarithms: The Exponent Question</h2>
+          <p>A logarithm asks: <em>what exponent do I need?</em> <span class="tc-mono">log₂ 32 = 5</span> means <span class="tc-mono">2⁵ = 32</span>. Choose a base and a target. The dashed line goes across to the curve <span class="tc-mono">y = bˣ</span> and drops down to the answer.</p>
+          <div class="tc-cv short" id="lg-box"><canvas id="lg-canvas" aria-label="Exponential curve with logarithm marked"></canvas></div>
+          <div class="tc-btns" id="lg-bases" role="group" aria-label="Base">
+            <button class="tc-btn primary" type="button" data-base="2" style="background:#7c3aed;border-color:#7c3aed;">base 2</button>
+            <button class="tc-btn" type="button" data-base="3">base 3</button>
+            <button class="tc-btn" type="button" data-base="10">base 10</button>
+            <button class="tc-btn" type="button" data-base="e">base e (ln)</button>
+          </div>
+          <div class="tc-controls">
+            <label>Target N <input id="lg-n" type="range" min="1" max="1000" step="1" value="32" style="--card-accent:#7c3aed" aria-label="Target number" /> <span id="lg-nv" class="tc-mono">32</span></label>
+          </div>
+          <div class="tc-read">
+            <div>Question<strong id="lg-q" style="font-size:.85rem">2^? = 32</strong></div>
+            <div>Answer (log)<strong id="lg-a">5.000</strong></div>
+            <div>Check: base^answer<strong id="lg-c">32</strong></div>
+          </div>
+          <table class="tc-table" aria-label="Logarithms in everyday science">
+            <tr><th>Scale</th><th>What it measures</th><th>Meaning</th></tr>
+            <tr><td>Decibels</td><td>Sound loudness</td><td>+10 dB = 10× the sound power</td></tr>
+            <tr><td>pH</td><td>Acidity</td><td>pH 3 is 10× more acidic than pH 4</td></tr>
+            <tr><td>Richter</td><td>Earthquake size</td><td>+1 is about 32× the energy</td></tr>
+            <tr><td>Digits</td><td>How big a number is</td><td>log₁₀ N ≈ digits − 1</td></tr>
+          </table>
+        </section>
+
+        <section class="tc-card" id="money" style="--card-accent:#db2777;">
+          <h2>Lab 5 · Compound Growth &amp; the Rule of 72</h2>
+          <p>Put $1,000 in an account. <span class="tc-cos">Simple interest</span> adds the same amount every year (a straight line). <span class="tc-sin">Compound interest</span> earns interest on the interest (an exponential). Pick a rate and slide through time.</p>
+          <div class="tc-cv short" id="mo-box"><canvas id="mo-canvas" aria-label="Simple versus compound interest"></canvas></div>
+          <div class="tc-controls">
+            <label>Rate <input id="mo-r" type="range" min="1" max="20" step="0.5" value="7" style="--card-accent:#db2777" /> <span id="mo-rv" class="tc-mono">7%</span></label>
+            <label>Years <input id="mo-t" type="range" min="0" max="60" step="1" value="30" style="--card-accent:#db2777" /> <span id="mo-tv" class="tc-mono">30</span></label>
+          </div>
+          <div class="tc-read">
+            <div><span class="tc-cos">Simple</span><strong id="mo-s">$3,100</strong></div>
+            <div><span class="tc-sin">Compound</span><strong id="mo-c">$7,612</strong></div>
+            <div>Doubling time (exact)<strong id="mo-d">10.24 yr</strong></div>
+            <div>Rule of 72 (72 ÷ rate)<strong id="mo-72">10.29 yr</strong></div>
+          </div>
+          <p>The exact doubling time solves <span class="tc-mono">(1 + r)ᵗ = 2</span>, which needs a logarithm: <span class="tc-mono">t = log 2 ÷ log(1 + r)</span>. The Rule of 72 is a mental shortcut that lands within a few percent. Push continuous compounding all the way and you meet the number <em>e</em> in <a href="eulers-number.html">How e Was Discovered</a>.</p>
+        </section>
+
+        <section class="tc-card" id="practice" style="--card-accent:#0ea5e9;">
+          <h2>Practice</h2>
+          <p>Answers within 0.05 count. Use a calculator when you need one.</p>
+          <div id="tc-practice">
+            <div class="tc-practice-item" data-answer="1024" data-hint="Multiply 2 by itself ten times, or square 2⁵ = 32."><p>1. What is 2¹⁰?</p><input type="number" step="any" aria-label="Answer 1" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="729" data-hint="Product rule: add the exponents. 3⁴ · 3² = 3⁶."><p>2. What is 3⁴ · 3²?</p><input type="number" step="any" aria-label="Answer 2" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="1" data-hint="Any nonzero number to the power 0 is 1: divide aⁿ by aⁿ."><p>3. What is 5⁰?</p><input type="number" step="any" aria-label="Answer 3" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="0.125" data-hint="2⁻³ = 1 ÷ 2³ = 1 ÷ 8."><p>4. What is 2⁻³ as a decimal?</p><input type="number" step="any" aria-label="Answer 4" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="6200" data-hint="Move the decimal 3 places to the right."><p>5. Write 6.2 × 10³ as an ordinary number.</p><input type="number" step="any" aria-label="Answer 5" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="3" data-hint="10 to what power is 1000?"><p>6. What is log₁₀ 1000?</p><input type="number" step="any" aria-label="Answer 6" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="6" data-hint="2 to what power is 64? 2, 4, 8, 16, 32, 64."><p>7. What is log₂ 64?</p><input type="number" step="any" aria-label="Answer 7" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="12" data-hint="Rule of 72: 72 ÷ 6."><p>8. About how many years for money to double at 6% compound interest?</p><input type="number" step="any" aria-label="Answer 8" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+          </div>
+        </section>
+
+        <section class="tc-card" style="--card-accent:#dc2626;">
+          <h2>Exit Ticket</h2>
+          <ul>
+            <li>Why does 2⁰ equal 1 and not 0? Use the quotient rule to explain.</li>
+            <li>The Sun is about 1.4 × 10⁹ m across and a virus is about 1 × 10⁻⁷ m. About how many orders of magnitude apart are they?</li>
+            <li>Explain the difference between adding 5 each year and growing 5% each year, using a graph or a table.</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+
+    <aside class="ll-panel" aria-label="Lesson panel">
+      <div class="ll-panel-inner">
+        <div class="ll-tabs" role="tablist" aria-label="Exponent panel tabs">
+          <button class="ll-tab active" type="button" data-ll-tab="guide">Guide</button>
+          <button class="ll-tab" type="button" data-ll-tab="controls">Teacher</button>
+        </div>
+        <div class="ll-pane active" data-ll-panel="guide">
+          <span class="ll-label">Exponent Rules</span>
+          <div class="ll-info"><strong>aᵐ · aⁿ</strong> = aᵐ⁺ⁿ</div>
+          <div class="ll-info"><strong>aᵐ ÷ aⁿ</strong> = aᵐ⁻ⁿ</div>
+          <div class="ll-info"><strong>(aᵐ)ⁿ</strong> = aᵐⁿ</div>
+          <div class="ll-info"><strong>a⁰</strong> = 1</div>
+          <div class="ll-info"><strong>a⁻ⁿ</strong> = 1 ÷ aⁿ</div>
+          <span class="ll-label">Logarithms</span>
+          <div class="ll-info"><strong>log_b N = x</strong> means bˣ = N</div>
+          <div class="ll-info"><strong>Rule of 72</strong> doubling time ≈ 72 ÷ rate (%)</div>
+        </div>
+        <div class="ll-pane" data-ll-panel="controls">
+          <span class="ll-label">Lesson Flow</span>
+          <div class="ll-info"><strong>Warm-up</strong> Ask: how many folds to reach the Moon? Collect guesses before Lab 1.</div>
+          <div class="ll-info"><strong>Lab 2</strong> Have students predict the result of each rule before checking the chips.</div>
+          <div class="ll-info"><strong>Lab 3</strong> Ask students to place an object of their choice on the ruler.</div>
+          <div class="ll-info"><strong>Lab 4–5</strong> Connect logs to the “how long until it doubles” question.</div>
+          <div class="ll-info"><strong>Close</strong> Bridge to Measuring Length and Euler's number.</div>
+        </div>
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+  </div>
+</div>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../index.html">Home</a> · <a href="../../steam-lessons.html">Lessons</a></p>
+  </footer>
+
+  <script src="../../assets/js/theme-registry.js"></script>
+  <script src="../../assets/js/nav-mobile.js"></script>
+  <script src="../../assets/js/sim-kit.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var TAU = Math.PI * 2;
+    var SIN = "#2563eb", COS = "#ea580c", GRN = "#16a34a", PUR = "#7c3aed", PINK = "#db2777";
+    function $(id) { return document.getElementById(id); }
+    function col() { return SimKit.theme.colors(); }
+    function big(n) { return Math.round(n).toLocaleString("en-US"); }
+    function num(x) {
+      if (Math.abs(x) >= 1e6 || (x !== 0 && Math.abs(x) < 1e-4)) return x.toExponential(3);
+      return Number.isInteger(x) ? x.toLocaleString("en-US") : String(+x.toPrecision(6));
+    }
+    function sciHtml(v) {
+      if (!isFinite(v) || v === 0) return "0";
+      var e = v.toExponential(2).split("e");
+      return parseFloat(e[0]) + " × 10<sup>" + parseInt(e[1], 10) + "</sup>";
+    }
+    function line(ctx, x1, y1, x2, y2, color, w, dash) {
+      ctx.beginPath(); ctx.setLineDash(dash || []); ctx.strokeStyle = color; ctx.lineWidth = w || 1;
+      ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
+    }
+    function dot(ctx, x, y, r, color) { ctx.beginPath(); ctx.fillStyle = color; ctx.arc(x, y, r, 0, TAU); ctx.fill(); }
+    function label(ctx, t, x, y, color, align, size) {
+      ctx.fillStyle = color; ctx.font = "600 " + (size || 11) + "px 'IBM Plex Mono', monospace";
+      ctx.textAlign = align || "left"; ctx.textBaseline = "middle"; ctx.fillText(t, x, y);
+    }
+    function mk(id, boxId, draw) { return SimKit.canvas2d($(id), { box: $(boxId), onResize: function () { draw(); } }); }
+
+    /* ── Lab 1: leaps vs steps ──────────────────────────── */
+    var grKit, NMAX = 45;
+    var LAND = [["a person", 1.7], ["Mount Everest", 8849], ["the International Space Station's orbit", 4.0e5], ["the Moon", 3.844e8], ["the Sun", 1.496e11]];
+    function lenText(m) {
+      if (m < 0.01) return (m * 1000).toFixed(m < 0.001 ? 2 : 1) + " mm";
+      if (m < 1) return (m * 100).toFixed(1) + " cm";
+      if (m < 1000) return m.toFixed(1) + " m";
+      return Math.round(m / 1000).toLocaleString("en-US") + " km";
+    }
+    function drawGrowth() {
+      if (!grKit) return;
+      var c = col(), ctx = grKit.ctx, w = grKit.width, h = grKit.height, n = +$("gr-n").value, log = $("gr-log").checked;
+      var L = 52, R = 14, T = 12, B = 28, top = Math.pow(2, NMAX);
+      function X(k) { return L + k / NMAX * (w - L - R); }
+      function Y(v) { return log ? h - B - Math.log10(Math.max(v, 1)) / Math.log10(top) * (h - T - B) : h - B - v / top * (h - T - B); }
+      ctx.clearRect(0, 0, w, h);
+      line(ctx, L, h - B, w - R, h - B, c.textMuted, 1);
+      line(ctx, L, T, L, h - B, c.textMuted, 1);
+      if (log) {
+        for (var p = 0; p <= 12; p += 3) { line(ctx, L, Y(Math.pow(10, p)), w - R, Y(Math.pow(10, p)), c.textMuted, 0.4, [3, 4]); label(ctx, "10^" + p, L - 6, Y(Math.pow(10, p)), c.textMuted, "right", 10); }
+      } else {
+        label(ctx, "0", L - 6, h - B, c.textMuted, "right", 10);
+        label(ctx, "35 trillion", L - 6, T + 4, c.textMuted, "right", 10);
+      }
+      for (var k = 0; k <= NMAX; k += 5) label(ctx, "" + k, X(k), h - B + 14, c.textMuted, "center", 10);
+      function plot(fn, color) {
+        ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 3;
+        for (var i = 0; i <= NMAX; i++) { var x = X(i), y = Y(fn(i)); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+        ctx.stroke();
+      }
+      plot(function (i) { return 2 * i + 1; }, COS);
+      plot(function (i) { return Math.pow(2, i); }, SIN);
+      line(ctx, X(n), T, X(n), h - B, c.accent, 1.5, [4, 3]);
+      dot(ctx, X(n), Y(2 * n + 1), 6, COS);
+      dot(ctx, X(n), Y(Math.pow(2, n)), 6, SIN);
+    }
+    function updateGrowth() {
+      var n = +$("gr-n").value, lin = 2 * n + 1, ex = Math.pow(2, n);
+      $("gr-nv").textContent = n; $("gr-fold-n").textContent = n;
+      $("gr-lin").textContent = big(lin); $("gr-exp").textContent = big(ex);
+      $("gr-ratio").textContent = ex / lin < 10 ? (ex / lin).toFixed(1) + "×" : big(ex / lin) + "×";
+      var t = 1e-4 * ex; $("gr-thick").textContent = lenText(t);
+      var best = null; LAND.forEach(function (p) { if (p[1] <= t) best = p; });
+      $("gr-land").textContent = best ? "That is taller than " + best[0] + "." : "Still thinner than a person.";
+      drawGrowth();
+    }
+    grKit = mk("gr-canvas", "gr-box", drawGrowth);
+    $("gr-n").addEventListener("input", updateGrowth);
+    $("gr-log").addEventListener("change", updateGrowth);
+
+    /* ── Lab 2: exponent rules ──────────────────────────── */
+    var ruMode = "product";
+    function sup(a, e) { return a + "<sup>" + e + "</sup>"; }
+    function chips(k, cls, a) { var s = ""; for (var i = 0; i < k; i++) s += '<span class="ex-chip ' + (cls || "") + '">' + a + "</span>"; return s || '<span class="ex-one">1</span>'; }
+    function updateRules() {
+      var a = +$("ru-a").value, m = +$("ru-m").value, n = +$("ru-n").value, vis, rule, l, r;
+      $("ru-av").textContent = a; $("ru-mv").textContent = m; $("ru-nv").textContent = n;
+      if (ruMode === "product") {
+        vis = '<div class="ex-row">' + chips(m, "b", a) + '<span class="ex-op">×</span>' + chips(n, "o", a) + '</div><div class="ex-row"><span class="ex-op">=</span>' + chips(m + n, "", a) + "</div>";
+        rule = sup(a, m) + " · " + sup(a, n) + " = " + sup(a, m + "+" + n) + " = " + sup(a, m + n);
+        l = Math.pow(a, m) * Math.pow(a, n); r = Math.pow(a, m + n);
+      } else if (ruMode === "quotient") {
+        var k = Math.min(m, n), rest = Math.abs(m - n);
+        var top = chips(k, "x", a) + (m > n ? chips(rest, "b", a) : ""), bot = chips(k, "x", a) + (n > m ? chips(rest, "o", a) : "");
+        vis = '<div class="ex-frac"><div class="ex-row">' + (m ? top : '<span class="ex-one">1</span>') + '</div><div class="ex-bar"></div><div class="ex-row">' + (n ? bot : '<span class="ex-one">1</span>') + "</div></div>" +
+          '<div class="ex-row"><span class="ex-op">Cancel matching pairs:</span>' + (m >= n ? chips(rest, "", a) : '<span class="ex-one">1 ÷</span>' + chips(rest, "", a)) + "</div>";
+        rule = sup(a, m) + " ÷ " + sup(a, n) + " = " + sup(a, m + "−" + n) + " = " + sup(a, m - n);
+        l = Math.pow(a, m) / Math.pow(a, n); r = Math.pow(a, m - n);
+      } else if (ruMode === "power") {
+        var g = ""; for (var i = 0; i < n; i++) g += '<span class="ex-group">' + chips(m, i % 2 ? "o" : "b", a) + "</span>";
+        vis = '<div class="ex-row">' + (n ? g : '<span class="ex-one">no groups: 1</span>') + '</div><div class="ex-row"><span class="ex-op">= ' + n + " groups of " + m + " =</span>" + chips(m * n, "", a) + "</div>";
+        rule = "(" + sup(a, m) + ")" + "<sup>" + n + "</sup> = " + sup(a, m + "×" + n) + " = " + sup(a, m * n);
+        l = Math.pow(Math.pow(a, m), n); r = Math.pow(a, m * n);
+      } else if (ruMode === "zero") {
+        vis = '<div class="ex-frac"><div class="ex-row">' + chips(n, "x", a) + '</div><div class="ex-bar"></div><div class="ex-row">' + chips(n, "x", a) + '</div></div><div class="ex-row"><span class="ex-op">Everything cancels, leaving:</span><span class="ex-one">1</span></div>';
+        rule = sup(a, n) + " ÷ " + sup(a, n) + " = " + sup(a, n + "−" + n) + " = " + sup(a, 0) + " = 1";
+        l = Math.pow(a, n) / Math.pow(a, n); r = Math.pow(a, 0);
+      } else {
+        vis = '<div class="ex-frac"><div class="ex-row"><span class="ex-one">1</span></div><div class="ex-bar"></div><div class="ex-row">' + chips(n, "o", a) + '</div></div>';
+        rule = sup(a, "−" + n) + " = 1 ÷ " + sup(a, n) + " = 1 ÷ " + num(Math.pow(a, n));
+        l = Math.pow(a, -n); r = 1 / Math.pow(a, n);
+      }
+      $("ru-vis").innerHTML = vis;
+      $("ru-rule").innerHTML = rule;
+      $("ru-check").textContent = "Left side = " + num(l) + "   Right side = " + num(r) + (Math.abs(l - r) < 1e-9 * Math.max(1, Math.abs(l)) ? "   ✔ equal" : "   ✘ not equal");
+    }
+    $("ru-modes").addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      ruMode = b.dataset.mode;
+      this.querySelectorAll("button").forEach(function (x) { x.classList.toggle("primary", x === b); });
+      updateRules();
+    });
+    ["a", "m", "n"].forEach(function (k) { $("ru-" + k).addEventListener("input", updateRules); });
+
+    /* ── Lab 3: scientific notation & scale ────────────── */
+    var scKit;
+    var OBJ = [["atom", -10], ["virus", -7], ["red blood cell", -5.1], ["hair width", -4.15], ["ant", -2.5], ["human", 0.23], ["Everest", 3.95], ["Earth", 7.1], ["Sun", 9.14], ["light-year", 15.98]];
+    var XMIN = -11, XMAX = 17;
+    function drawScale() {
+      if (!scKit) return;
+      var c = col(), ctx = scKit.ctx, w = scKit.width, h = scKit.height, cy = h * 0.52, x0 = 18, x1 = w - 18, cur = +$("sc-slider").value;
+      function X(e) { return x0 + (e - XMIN) / (XMAX - XMIN) * (x1 - x0); }
+      ctx.clearRect(0, 0, w, h);
+      line(ctx, x0, cy, x1, cy, c.text, 2);
+      for (var e = XMIN; e <= XMAX; e++) {
+        line(ctx, X(e), cy - (e % 4 === 0 ? 8 : 4), X(e), cy + (e % 4 === 0 ? 8 : 4), c.textMuted, 1);
+        if (e % 4 === 0) label(ctx, "10^" + e, X(e), cy + 22, c.textMuted, "center", 10);
+      }
+      OBJ.forEach(function (o, i) {
+        var up = i % 2 === 0, lvl = Math.floor(i / 2) % 2, y = cy + (up ? -1 : 1) * (36 + lvl * 26 + (up ? 0 : 14));
+        line(ctx, X(o[1]), cy, X(o[1]), y, GRN, 1);
+        dot(ctx, X(o[1]), cy, 4, GRN);
+        var tx = Math.max(30, Math.min(w - 30, X(o[1])));
+        label(ctx, o[0], tx, y + (up ? -8 : 8), c.text, "center", 10);
+      });
+      line(ctx, X(cur), 6, X(cur), h - 6, c.accent, 2);
+      dot(ctx, X(cur), cy, 7, c.accent);
+    }
+    function updateScale() {
+      var e = +$("sc-slider").value, v = Math.pow(10, e);
+      $("sc-sci").innerHTML = sciHtml(v);
+      $("sc-plain").textContent = v >= 1 ? v.toLocaleString("en-US", { maximumSignificantDigits: 3 }) : v.toFixed(Math.min(20, Math.ceil(-e) + 2)).replace(/0+$/, "");
+      var best = OBJ[0]; OBJ.forEach(function (o) { if (Math.abs(o[1] - e) < Math.abs(best[1] - e)) best = o; });
+      var d = e - best[1];
+      $("sc-near").textContent = Math.abs(d) < 0.15 ? best[0] : Math.pow(10, Math.abs(d)).toPrecision(2) + "× " + (d > 0 ? "bigger" : "smaller") + " than a " + best[0];
+      drawScale();
+    }
+    function updateSciInput() {
+      var v = parseFloat($("sc-input").value);
+      $("sc-out").innerHTML = isFinite(v) && v !== 0 ? "= " + sciHtml(v) : "Enter a nonzero number.";
+    }
+    scKit = mk("sc-canvas", "sc-box", drawScale);
+    $("sc-slider").addEventListener("input", updateScale);
+    $("sc-input").addEventListener("input", updateSciInput);
+
+    /* ── Lab 4: logarithms ──────────────────────────────── */
+    var lgKit, lgBase = 2;
+    function lgName() { return lgBase === Math.E ? "e" : String(lgBase); }
+    function drawLog() {
+      if (!lgKit) return;
+      var c = col(), ctx = lgKit.ctx, w = lgKit.width, h = lgKit.height, N = +$("lg-n").value, Lg = Math.log(N) / Math.log(lgBase);
+      var xmax = Math.max(2, Lg * 1.25 + 0.5), xmin = -0.5, ymax = Math.max(2, N * 1.25);
+      var L = 44, R = 14, T = 12, B = 28;
+      function X(x) { return L + (x - xmin) / (xmax - xmin) * (w - L - R); }
+      function Y(y) { return h - B - y / ymax * (h - T - B); }
+      ctx.clearRect(0, 0, w, h);
+      line(ctx, L, Y(0), w - R, Y(0), c.textMuted, 1);
+      line(ctx, X(0), T, X(0), h - B, c.textMuted, 1);
+      var step = xmax > 12 ? 4 : xmax > 6 ? 2 : 1;
+      for (var k = 0; k <= xmax; k += step) label(ctx, "" + k, X(k), h - B + 14, c.textMuted, "center", 10);
+      for (var q = 1; q <= 4; q++) label(ctx, num(ymax * q / 4 > 10 ? Math.round(ymax * q / 4) : +(ymax * q / 4).toFixed(1)), L - 6, Y(ymax * q / 4), c.textMuted, "right", 10);
+      ctx.beginPath(); ctx.strokeStyle = PUR; ctx.lineWidth = 3;
+      for (var i = 0; i <= 200; i++) { var x = xmin + i / 200 * (xmax - xmin), y = Y(Math.pow(lgBase, x)); i ? ctx.lineTo(X(x), y) : ctx.moveTo(X(x), y); }
+      ctx.stroke();
+      line(ctx, X(0), Y(N), X(Lg), Y(N), COS, 2, [5, 4]);
+      line(ctx, X(Lg), Y(N), X(Lg), Y(0), SIN, 2, [5, 4]);
+      dot(ctx, X(Lg), Y(N), 6, PUR);
+      dot(ctx, X(Lg), Y(0), 5, SIN);
+      label(ctx, "N = " + N, X(0) + 8, Y(N) - 10, COS, "left", 11);
+      label(ctx, "log = " + Lg.toFixed(2), Math.min(w - 60, X(Lg)), Y(0) - 14, SIN, "center", 11);
+    }
+    function updateLog() {
+      var N = +$("lg-n").value, Lg = Math.log(N) / Math.log(lgBase);
+      $("lg-nv").textContent = N;
+      $("lg-q").textContent = lgName() + "^? = " + N;
+      $("lg-a").textContent = Lg.toFixed(3);
+      $("lg-c").textContent = (Math.round(Math.pow(lgBase, Lg) * 1e6) / 1e6).toString();
+      drawLog();
+    }
+    lgKit = mk("lg-canvas", "lg-box", drawLog);
+    $("lg-n").addEventListener("input", updateLog);
+    $("lg-bases").addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      lgBase = b.dataset.base === "e" ? Math.E : +b.dataset.base;
+      this.querySelectorAll("button").forEach(function (x) { var on = x === b; x.classList.toggle("primary", on); x.style.background = on ? PUR : ""; x.style.borderColor = on ? PUR : ""; });
+      updateLog();
+    });
+
+    /* ── Lab 5: compound growth ─────────────────────────── */
+    var moKit;
+    function moVals() {
+      var r = +$("mo-r").value / 100, t = +$("mo-t").value;
+      return { r: r, t: t, simple: 1000 * (1 + r * t), comp: 1000 * Math.pow(1 + r, t) };
+    }
+    function money(v) { return "$" + Math.round(v).toLocaleString("en-US"); }
+    function drawMoney() {
+      if (!moKit) return;
+      var c = col(), ctx = moKit.ctx, w = moKit.width, h = moKit.height, v = moVals();
+      var L = 56, R = 14, T = 12, B = 28, xmax = Math.max(v.t, 2), ymax = Math.max(v.comp, v.simple, 2000) * 1.05;
+      function X(x) { return L + x / xmax * (w - L - R); }
+      function Y(y) { return h - B - y / ymax * (h - T - B); }
+      ctx.clearRect(0, 0, w, h);
+      line(ctx, L, h - B, w - R, h - B, c.textMuted, 1);
+      line(ctx, L, T, L, h - B, c.textMuted, 1);
+      label(ctx, "$0", L - 6, h - B, c.textMuted, "right", 10);
+      label(ctx, money(ymax), L - 6, T + 4, c.textMuted, "right", 10);
+      var xs = Math.max(1, Math.round(xmax / 6));
+      for (var k = 0; k <= xmax; k += xs) label(ctx, k + " yr", X(k), h - B + 14, c.textMuted, "center", 10);
+      line(ctx, L, Y(2000), w - R, Y(2000), c.textMuted, 0.6, [3, 4]);
+      label(ctx, "double", w - R, Y(2000) - 8, c.textMuted, "right", 10);
+      function plot(fn, color) {
+        ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 3;
+        for (var i = 0; i <= 160; i++) { var x = i / 160 * xmax, y = Y(fn(x)); i ? ctx.lineTo(X(x), y) : ctx.moveTo(X(x), y); }
+        ctx.stroke();
+      }
+      plot(function (x) { return 1000 * (1 + v.r * x); }, COS);
+      plot(function (x) { return 1000 * Math.pow(1 + v.r, x); }, SIN);
+      var dbl = Math.log(2) / Math.log(1 + v.r);
+      if (dbl <= xmax) { line(ctx, X(dbl), Y(2000), X(dbl), h - B, PINK, 2, [4, 3]); dot(ctx, X(dbl), Y(2000), 5, PINK); }
+    }
+    function updateMoney() {
+      var v = moVals();
+      $("mo-rv").textContent = (v.r * 100) + "%"; $("mo-tv").textContent = v.t;
+      $("mo-s").textContent = money(v.simple); $("mo-c").textContent = money(v.comp);
+      $("mo-d").textContent = (Math.log(2) / Math.log(1 + v.r)).toFixed(2) + " yr";
+      $("mo-72").textContent = (72 / (v.r * 100)).toFixed(2) + " yr";
+      drawMoney();
+    }
+    moKit = mk("mo-canvas", "mo-box", drawMoney);
+    $("mo-r").addEventListener("input", updateMoney);
+    $("mo-t").addEventListener("input", updateMoney);
+
+    SimKit.theme.onChange(function () { drawGrowth(); drawScale(); drawLog(); drawMoney(); });
+
+    /* ── Practice ───────────────────────────────────────── */
+    document.querySelectorAll(".tc-practice-item").forEach(function (item) {
+      var input = item.querySelector("input"), fb = item.querySelector(".fb");
+      function check() {
+        var v = parseFloat(input.value);
+        if (isNaN(v)) { fb.textContent = "Enter a number."; fb.className = "fb no"; return; }
+        var ok = Math.abs(v - parseFloat(item.dataset.answer)) <= 0.05;
+        fb.textContent = ok ? "✔ Correct." : "Not yet. Hint: " + item.dataset.hint;
+        fb.className = "fb " + (ok ? "ok" : "no");
+      }
+      item.querySelector("button").addEventListener("click", check);
+      input.addEventListener("keydown", function (e) { if (e.key === "Enter") check(); });
+    });
+
+    updateGrowth(); updateRules(); updateScale(); updateSciInput(); updateLog(); updateMoney();
+  })();
+  </script>
+  <script src="../../assets/js/classroom-animations.js"></script>
+  <script src="../../assets/js/lesson-layout.js"></script>
+  <script src="../../assets/js/math-pathway-nav.js"></script>
+<script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

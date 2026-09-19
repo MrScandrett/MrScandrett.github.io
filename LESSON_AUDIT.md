@@ -111,6 +111,7 @@ Each lesson should aim to include:
 - Exit ticket
 - Related lessons
 - Teacher notes or materials when relevant
+- Click-to-enlarge photos: every image is a `data-zoomable` figure using `assets/js/photo-lightbox.js`, with a teaching caption and credit (see the lightbox rule in `CLAUDE.md`)
 
 Not every lesson needs to look identical, but every lesson should answer the same student questions: "What am I learning, what do I do, how do I know I got it, and where does this connect?"
 

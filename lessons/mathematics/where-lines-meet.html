@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Where Lines Meet · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Systems of equations made visible: make two lines cross, parallel, or identical, find the break-even point between phone plans, and solve systems by elimination with a live graph to check." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 304px; --ll-accent: #2563eb; --ll-tab-active: #2563eb; --ll-tab-active-bg: rgba(37,99,235,0.12); }
+    .tc-page { padding-bottom: 3.5rem; --sin: #2563eb; --cos: #ea580c; --tan: #16a34a; }
+    .tc-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .tc-hero h1 { max-width: 28ch; margin: 0; font-size: clamp(1.55rem, 3.5vw, 2.35rem); }
+    .tc-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.55rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .tc-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45; }
+    .tc-lede { max-width: 70ch; margin: 0.7rem 0 0; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+
+    .tc-card { background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7); border-left: 3.5px solid var(--card-accent, #2563eb); border-radius: var(--radius, 18px); box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .tc-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .tc-card h3 { margin: 0.95rem 0 0.35rem; font-size: 1rem; }
+    .tc-card p, .tc-card li { color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .tc-card p { margin: 0 0 0.62rem; }
+    .tc-card p:last-child { margin-bottom: 0; }
+    .tc-sin { color: var(--sin); font-weight: 700; }
+    .tc-cos { color: var(--cos); font-weight: 700; }
+    .tc-tan { color: var(--tan); font-weight: 700; }
+    .tc-mono { font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; }
+
+    .tc-canvases { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.8rem; margin: 0.8rem 0; }
+    .tc-cv { position: relative; height: 320px; border: 1px solid var(--line, #d2d2d7); border-radius: 12px; overflow: hidden; }
+    .tc-cv.short { height: 280px; }
+    .tc-cv canvas { display: block; touch-action: none; }
+    .tc-cv.drag canvas { cursor: grab; }
+
+    .tc-controls { display: flex; flex-wrap: wrap; gap: 0.6rem 1.2rem; align-items: center; margin: 0.5rem 0; }
+    .tc-controls label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; font-weight: 600; color: var(--text-main, #1d1d1f); }
+    .tc-controls input[type=range] { width: min(240px, 60vw); accent-color: var(--card-accent, #2563eb); }
+    .tc-btns { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.5rem 0; }
+    .tc-btn { padding: 0.32rem 0.7rem; border: 1px solid var(--line, #d2d2d7); border-radius: 999px; background: transparent; color: var(--text-main, #1d1d1f); font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+    .tc-btn:hover, .tc-btn:focus-visible { border-color: var(--card-accent, #2563eb); }
+    .tc-btn.primary { background: var(--card-accent, #2563eb); border-color: var(--card-accent, #2563eb); color: #fff; }
+
+    .tc-read { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem; margin: 0.6rem 0; }
+    .tc-read div { padding: 0.5rem 0.65rem; border: 1px solid var(--line, #d2d2d7); border-radius: 10px; font-size: 0.72rem; color: var(--text-muted, #64748b); }
+    .tc-read strong { display: block; margin-top: 0.1rem; font-size: 1rem; color: var(--text-main, #1d1d1f); font-family: "IBM Plex Mono", ui-monospace, monospace; }
+    .tc-status { min-height: 1.4em; margin: 0.4rem 0 0; font-size: 0.85rem; font-weight: 700; }
+    .tc-status.ok { color: #15803d; }
+
+    .tc-table { width: 100%; border-collapse: collapse; margin: 0.6rem 0; font-size: 0.8rem; }
+    .tc-table th, .tc-table td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--line, #d2d2d7); text-align: center; color: var(--text-secondary, #3f4f65); }
+    .tc-table th { color: var(--text-main, #1d1d1f); }
+
+    .tc-practice-item { display: grid; grid-template-columns: 1fr auto auto; gap: 0.6rem; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--line, #d2d2d7); }
+    .tc-practice-item:last-child { border-bottom: 0; }
+    .tc-practice-item p { margin: 0; }
+    .tc-practice-item input { width: 5.5rem; padding: 0.3rem 0.45rem; border: 1px solid var(--line, #d2d2d7); border-radius: 8px; background: transparent; color: var(--text-main, #1d1d1f); font: inherit; }
+    .tc-practice-item .fb { grid-column: 1 / -1; font-size: 0.8rem; font-weight: 700; }
+    .tc-practice-item .fb.ok { color: #15803d; }
+    .tc-practice-item .fb.no { color: #b45309; }
+    @media (max-width: 520px) { .tc-practice-item { grid-template-columns: 1fr; } }
+
+    [data-lighting="night"] .tc-lede, [data-theme="vaporwave"] .tc-lede, [data-theme="bark"] .tc-lede,
+    [data-lighting="night"] .tc-card p, [data-theme="vaporwave"] .tc-card p, [data-theme="bark"] .tc-card p,
+    [data-lighting="night"] .tc-card li, [data-theme="vaporwave"] .tc-card li, [data-theme="bark"] .tc-card li { color: rgba(245,245,247,0.72); }
+    [data-lighting="night"] .tc-card, [data-theme="vaporwave"] .tc-card, [data-theme="bark"] .tc-card { background: var(--white, #2c2c2e); }
+    [data-lighting="night"] .tc-controls label, [data-theme="vaporwave"] .tc-controls label, [data-theme="bark"] .tc-controls label,
+    [data-lighting="night"] .tc-read strong, [data-theme="vaporwave"] .tc-read strong, [data-theme="bark"] .tc-read strong,
+    [data-lighting="night"] .tc-btn, [data-theme="vaporwave"] .tc-btn, [data-theme="bark"] .tc-btn,
+    [data-lighting="night"] .tc-table th, [data-theme="vaporwave"] .tc-table th, [data-theme="bark"] .tc-table th,
+    [data-lighting="night"] .tc-practice-item input, [data-theme="vaporwave"] .tc-practice-item input, [data-theme="bark"] .tc-practice-item input { color: rgba(245,245,247,0.92); }
+    [data-lighting="night"] .tc-btn.primary, [data-theme="vaporwave"] .tc-btn.primary, [data-theme="bark"] .tc-btn.primary { color: #fff; }
+    [data-lighting="night"] .tc-table td, [data-theme="vaporwave"] .tc-table td, [data-theme="bark"] .tc-table td { color: rgba(245,245,247,0.72); }
+
+    .ex-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; margin: 0.35rem 0; }
+    .ex-chip { display: inline-grid; place-items: center; min-width: 1.7rem; height: 1.7rem; padding: 0 0.3rem; border-radius: 8px; background: rgba(100,116,139,0.2); color: var(--text-main, #1d1d1f); font: 700 0.85rem "IBM Plex Mono", monospace; }
+    .ex-chip.b { background: rgba(37,99,235,0.22); }
+    .ex-chip.o { background: rgba(234,88,12,0.22); }
+    .ex-chip.x { text-decoration: line-through; opacity: 0.45; }
+    .ex-op, .ex-one { font: 700 0.9rem "IBM Plex Mono", monospace; color: var(--text-muted, #64748b); padding: 0 0.3rem; }
+    .ex-one { color: var(--text-main, #1d1d1f); }
+    .ex-group { display: inline-flex; gap: 0.2rem; padding: 0.2rem 0.35rem; border: 1.5px solid var(--line, #94a3b8); border-radius: 12px; }
+    .ex-frac { display: inline-block; margin: 0.35rem 0; }
+    .ex-bar { height: 2px; background: var(--text-muted, #64748b); margin: 0.15rem 0; }
+    [data-lighting="night"] .ex-chip, [data-theme="vaporwave"] .ex-chip, [data-theme="bark"] .ex-chip, [data-lighting="night"] .ex-one, [data-theme="vaporwave"] .ex-one, [data-theme="bark"] .ex-one { color: rgba(245,245,247,0.92); }
+    [data-lighting="night"] .tc-page, [data-theme="vaporwave"] .tc-page, [data-theme="bark"] .tc-page { --sin: #7fb0ff; --cos: #ff9f5f; --tan: #4ade80; }
+    [data-lighting="night"] .tc-status.ok, [data-theme="vaporwave"] .tc-status.ok, [data-theme="bark"] .tc-status.ok,
+    [data-lighting="night"] .tc-practice-item .fb.ok, [data-theme="vaporwave"] .tc-practice-item .fb.ok, [data-theme="bark"] .tc-practice-item .fb.ok { color: #4ade80; }
+    [data-lighting="night"] .tc-practice-item .fb.no, [data-theme="vaporwave"] .tc-practice-item .fb.no, [data-theme="bark"] .tc-practice-item .fb.no { color: #fbbf24; }
+    [data-lighting="night"] .tc-tan-g, [data-theme="vaporwave"] .tc-tan-g, [data-theme="bark"] .tc-tan-g { color: #4ade80; }
+    [data-lighting="night"] .tc-neg, [data-theme="vaporwave"] .tc-neg, [data-theme="bark"] .tc-neg { color: #f87171; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="tc-page">
+        <section class="hero tc-hero">
+          <p class="eyebrow">Mathematics · Algebra</p>
+          <h1>Where Lines Meet</h1>
+          <div class="tc-meta">
+            <span>Systems of equations</span><span class="dot"></span>
+            <span>Intersections</span><span class="dot"></span>
+            <span>Break-even</span><span class="dot"></span>
+            <span>Elimination</span><span class="dot"></span>
+            <span>No solution, one, or infinitely many</span>
+          </div>
+          <p class="tc-lede">One equation with two unknowns has endless answers. Two equations can pin down exactly one. Graphically that is two lines crossing at a single point, and that point answers real questions: when does one phone plan become cheaper, and when does a faster runner catch a slower one?</p>
+        </section>
+
+        <section class="tc-card">
+          <h2>Learning Targets</h2>
+          <ul>
+            <li>Explain a solution to a system as the point that makes both equations true, and find it on a graph.</li>
+            <li>Predict from slopes and intercepts whether two lines cross once, never, or are the same line.</li>
+            <li>Model a break-even problem with two linear equations and interpret the crossing point.</li>
+            <li>Solve a system by elimination and check the answer by substitution.</li>
+          </ul>
+          <p>Prerequisites: <a href="linear-equations-slope.html">Linear Equations &amp; Slope</a>. Next: <a href="graphing-calculator.html">Graphing Calculator</a>.</p>
+        </section>
+
+        <section class="tc-card" id="cross" style="--card-accent:#2563eb;">
+          <h2>Lab 1 · Make Two Lines Cross</h2>
+          <p>Each line is <span class="tc-mono">y = mx + b</span>. Change the slope m and the y-intercept b of both lines. The point where they cross is the <strong>solution</strong>: the only (x, y) that works in both equations. Try to make the lines <em>parallel</em>. Try to make them <em>the same line</em>.</p>
+          <div class="tc-cv" id="ln-box" style="height:360px;"><canvas id="ln-canvas" aria-label="Two lines on a coordinate plane and their intersection"></canvas></div>
+          <div class="tc-controls">
+            <label><span class="tc-sin">Line 1</span> slope m <input id="ln-m1" type="range" min="-4" max="4" step="0.5" value="1" /> <span id="ln-m1v" class="tc-mono">1</span></label>
+            <label>intercept b <input id="ln-b1" type="range" min="-8" max="8" step="1" value="-2" /> <span id="ln-b1v" class="tc-mono">-2</span></label>
+          </div>
+          <div class="tc-controls">
+            <label><span class="tc-cos">Line 2</span> slope m <input id="ln-m2" type="range" min="-4" max="4" step="0.5" value="-0.5" style="--card-accent:#ea580c" /> <span id="ln-m2v" class="tc-mono">-0.5</span></label>
+            <label>intercept b <input id="ln-b2" type="range" min="-8" max="8" step="1" value="4" style="--card-accent:#ea580c" /> <span id="ln-b2v" class="tc-mono">4</span></label>
+          </div>
+          <p class="tc-mono" id="ln-eq"></p>
+          <p class="tc-status" id="ln-case" aria-live="polite"></p>
+          <table class="tc-table" aria-label="Three possibilities">
+            <tr><th>Slopes</th><th>Intercepts</th><th>Lines</th><th>Solutions</th></tr>
+            <tr><td>Different</td><td>Any</td><td>Cross once</td><td>Exactly one</td></tr>
+            <tr><td>Same</td><td>Different</td><td>Parallel</td><td>None</td></tr>
+            <tr><td>Same</td><td>Same</td><td>Identical</td><td>Infinitely many</td></tr>
+          </table>
+        </section>
+
+        <section class="tc-card" id="breakeven" style="--card-accent:#ea580c;">
+          <h2>Lab 2 · Break-Even: Which Plan Wins?</h2>
+          <p>Plan A costs a fixed <strong>$20</strong> plus <strong>$3</strong> per gigabyte. Plan B has a different fixed fee and a different price per gigabyte. Set Plan B's numbers. The lines show the total cost for each amount of data, and the crossing is the <em>break-even</em> amount where both plans cost the same.</p>
+          <div class="tc-cv short" id="be-box"><canvas id="be-canvas" aria-label="Cost of two phone plans versus gigabytes used"></canvas></div>
+          <div class="tc-controls">
+            <label>Plan B fee ($) <input id="be-f" type="range" min="0" max="60" step="1" value="50" style="--card-accent:#ea580c" /> <span id="be-fv" class="tc-mono">50</span></label>
+            <label>Plan B per GB ($) <input id="be-r" type="range" min="0" max="6" step="0.5" value="1" style="--card-accent:#ea580c" /> <span id="be-rv" class="tc-mono">1</span></label>
+          </div>
+          <p id="be-out" aria-live="polite" style="font-weight:600;"></p>
+          <p><strong>Discuss:</strong> a student uses 8 GB a month. Which plan should they choose? What if they use 20 GB? The crossing point is a decision boundary, and businesses design prices around it.</p>
+        </section>
+
+        <section class="tc-card" id="solve" style="--card-accent:#16a34a;">
+          <h2>Lab 3 · Solve by Elimination</h2>
+          <p>Graphing gives an approximate answer. Algebra gives an exact one. In <strong>elimination</strong> you scale the equations so one variable cancels when you subtract, then solve for the other. Press “New system” and try it yourself first. The lines are drawn so you can see the answer, and “Show steps” walks through the algebra.</p>
+          <div class="tc-btns">
+            <button class="tc-btn primary" id="el-new" type="button" style="background:#16a34a;border-color:#16a34a;">🎲 New system</button>
+            <button class="tc-btn" id="el-steps" type="button" aria-expanded="false">Show steps</button>
+          </div>
+          <p class="tc-mono" id="el-sys" style="font-size:1rem;font-weight:700;"></p>
+          <div class="tc-cv short" id="el-box"><canvas id="el-canvas" aria-label="Graph of the system"></canvas></div>
+          <div class="tc-controls">
+            <label>x = <input id="el-x" type="number" step="any" style="width:5rem;padding:.3rem .45rem;border:1px solid var(--line,#d2d2d7);border-radius:8px;background:transparent;color:inherit;font:inherit;" /></label>
+            <label>y = <input id="el-y" type="number" step="any" style="width:5rem;padding:.3rem .45rem;border:1px solid var(--line,#d2d2d7);border-radius:8px;background:transparent;color:inherit;font:inherit;" /></label>
+            <button class="tc-btn" id="el-check" type="button">Check</button>
+          </div>
+          <p class="tc-status" id="el-status" aria-live="polite"></p>
+          <div id="el-work" class="tc-mono" hidden style="line-height:1.9;font-size:.85rem;"></div>
+        </section>
+
+        <section class="tc-card" style="--card-accent:#7c3aed;">
+          <h2>Three Ways to Solve a System</h2>
+          <ul>
+            <li><strong>Graphing:</strong> quick and visual, but only as exact as your eye.</li>
+            <li><strong>Substitution:</strong> when one equation says y = something, put that in the other. Setting <span class="tc-mono">2x + 1 = −x + 7</span> gives x = 2.</li>
+            <li><strong>Elimination:</strong> add or subtract the equations so a variable cancels. Best when both are in the form ax + by = c.</li>
+          </ul>
+          <p><strong>Always check</strong> by putting your (x, y) back into <em>both</em> original equations. If either fails, there is an arithmetic slip.</p>
+        </section>
+
+        <section class="tc-card" id="practice" style="--card-accent:#0ea5e9;">
+          <h2>Practice</h2>
+          <p>Answers within 0.05 count.</p>
+          <div id="tc-practice">
+            <div class="tc-practice-item" data-answer="2" data-hint="Set 2x + 1 = −x + 7 → 3x = 6."><p>1. y = 2x + 1 and y = −x + 7 cross where x = ?</p><input type="number" step="any" aria-label="Answer 1" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="7" data-hint="Set x + 3 = 2x − 1 → x = 4. Then y = 4 + 3."><p>2. y = x + 3 and y = 2x − 1 cross at a point. What is y?</p><input type="number" step="any" aria-label="Answer 2" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="0" data-hint="Same slope, different intercepts: parallel lines never meet."><p>3. How many solutions do y = 2x + 1 and y = 2x + 5 have?</p><input type="number" step="any" aria-label="Answer 3" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="15" data-hint="Set the costs equal: 20 + 3u = 50 + u → 2u = 30."><p>4. Plan A: $20 + $3 per unit. Plan B: $50 + $1 per unit. At how many units do they cost the same?</p><input type="number" step="any" aria-label="Answer 4" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="6" data-hint="Add the equations: 2x = 12."><p>5. x + y = 10 and x − y = 2. What is x?</p><input type="number" step="any" aria-label="Answer 5" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="3" data-hint="Add: 3x = 12, so x = 4. Then 4 − y = 1, so y = 3."><p>6. 2x + y = 11 and x − y = 1. What is y?</p><input type="number" step="any" aria-label="Answer 6" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="3" data-hint="3x = x + 6 → 2x = 6."><p>7. y = 3x and y = x + 6 cross where x = ?</p><input type="number" step="any" aria-label="Answer 7" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="50" data-hint="8t = 100 + 6t → 2t = 100."><p>8. Runner A starts at 0 ft and runs 8 ft/s. Runner B starts 100 ft ahead and runs 6 ft/s. After how many seconds does A catch B?</p><input type="number" step="any" aria-label="Answer 8" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+          </div>
+        </section>
+
+        <section class="tc-card" style="--card-accent:#dc2626;">
+          <h2>Exit Ticket</h2>
+          <ul>
+            <li>Without graphing, decide how many solutions y = 3x − 2 and y = 3x + 4 have. Explain how you know.</li>
+            <li>Write a system that has the solution (2, 5). Then explain how you can be sure it works.</li>
+            <li>Describe a real decision where the break-even point changes the best choice.</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+
+    <aside class="ll-panel" aria-label="Lesson panel">
+      <div class="ll-panel-inner">
+        <div class="ll-tabs" role="tablist" aria-label="Systems panel tabs">
+          <button class="ll-tab active" type="button" data-ll-tab="guide">Guide</button>
+          <button class="ll-tab" type="button" data-ll-tab="controls">Teacher</button>
+        </div>
+        <div class="ll-pane active" data-ll-panel="guide">
+          <span class="ll-label">Solution Types</span>
+          <div class="ll-info"><strong>Different slopes</strong> one solution</div>
+          <div class="ll-info"><strong>Same slope, different b</strong> no solution</div>
+          <div class="ll-info"><strong>Same slope and b</strong> infinitely many</div>
+          <span class="ll-label">Elimination</span>
+          <div class="ll-info">1. Scale so a variable has matching coefficients.</div>
+          <div class="ll-info">2. Subtract (or add) to cancel it.</div>
+          <div class="ll-info">3. Solve, substitute back, then check both equations.</div>
+        </div>
+        <div class="ll-pane" data-ll-panel="controls">
+          <span class="ll-label">Lesson Flow</span>
+          <div class="ll-info"><strong>Warm-up</strong> Two friends walk toward each other. When do they meet?</div>
+          <div class="ll-info"><strong>Lab 1</strong> Challenge: make parallel lines, then make identical lines. Name the rule.</div>
+          <div class="ll-info"><strong>Lab 2</strong> Have students invent a Plan B where A is always cheaper.</div>
+          <div class="ll-info"><strong>Lab 3</strong> Students solve on paper first, then check with the tool.</div>
+        </div>
+      </div>
+    </aside>
+
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+  </div>
+</div>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../index.html">Home</a> · <a href="../../steam-lessons.html">Lessons</a></p>
+  </footer>
+
+  <script src="../../assets/js/theme-registry.js"></script>
+  <script src="../../assets/js/nav-mobile.js"></script>
+  <script src="../../assets/js/sim-kit.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var TAU = Math.PI * 2;
+    var SIN = "#2563eb", COS = "#ea580c", GRN = "#16a34a";
+    function $(id) { return document.getElementById(id); }
+    function col() { return SimKit.theme.colors(); }
+    function f2(x, d) { return (Math.abs(x) < 0.0005 ? 0 : x).toFixed(d == null ? 2 : d).replace(/\.?0+$/, ""); }
+    function line(ctx, x1, y1, x2, y2, color, w, dash) {
+      ctx.beginPath(); ctx.setLineDash(dash || []); ctx.strokeStyle = color; ctx.lineWidth = w || 1;
+      ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
+    }
+    function dot(ctx, x, y, r, color) { ctx.beginPath(); ctx.fillStyle = color; ctx.arc(x, y, r, 0, TAU); ctx.fill(); }
+    function label(ctx, t, x, y, color, align, size) {
+      ctx.fillStyle = color; ctx.font = "600 " + (size || 11) + "px 'IBM Plex Mono', monospace";
+      ctx.textAlign = align || "left"; ctx.textBaseline = "middle"; ctx.fillText(t, x, y);
+    }
+    function mk(id, boxId, draw) { return SimKit.canvas2d($(id), { box: $(boxId), onResize: function () { draw(); } }); }
+    function sgn(v) { return v < 0 ? "− " + f2(-v) : "+ " + f2(v); }
+
+    /* Coordinate plane, x and y from -10 to 10 with equal scale. */
+    function plane(ctx, w, h, c) {
+      var sc = Math.min(w, h) / 22, cx = w / 2, cy = h / 2;
+      function X(x) { return cx + x * sc; }
+      function Y(y) { return cy - y * sc; }
+      for (var k = -10; k <= 10; k++) {
+        line(ctx, X(k), Y(-10), X(k), Y(10), c.textMuted, k ? 0.3 : 0);
+        line(ctx, X(-10), Y(k), X(10), Y(k), c.textMuted, k ? 0.3 : 0);
+      }
+      line(ctx, X(-10), cy, X(10), cy, c.text, 1.5); line(ctx, cx, Y(-10), cx, Y(10), c.text, 1.5);
+      for (var t = -10; t <= 10; t += 5) if (t) { label(ctx, "" + t, X(t), cy + 12, c.textMuted, "center", 10); label(ctx, "" + t, cx - 6, Y(t), c.textMuted, "right", 10); }
+      return { X: X, Y: Y, sc: sc };
+    }
+    function clipPlane(ctx, P) { ctx.save(); ctx.beginPath(); ctx.rect(P.X(-10), P.Y(10), P.X(10) - P.X(-10), P.Y(-10) - P.Y(10)); ctx.clip(); }
+
+    /* ── Lab 1: two lines ───────────────────────────────── */
+    var lnKit;
+    function L1() { return { m: +$("ln-m1").value, b: +$("ln-b1").value }; }
+    function L2() { return { m: +$("ln-m2").value, b: +$("ln-b2").value }; }
+    function meet() {
+      var a = L1(), b = L2();
+      if (a.m === b.m) return { type: a.b === b.b ? "same" : "parallel" };
+      var x = (b.b - a.b) / (a.m - b.m); return { type: "one", x: x, y: a.m * x + a.b };
+    }
+    function drawLines() {
+      if (!lnKit) return;
+      var c = col(), ctx = lnKit.ctx, w = lnKit.width, h = lnKit.height, P = plane((ctx.clearRect(0, 0, w, h), ctx), w, h, c), a = L1(), b = L2(), r = meet();
+      clipPlane(ctx, P);
+      line(ctx, P.X(-10), P.Y(-10 * a.m + a.b), P.X(10), P.Y(10 * a.m + a.b), SIN, 3);
+      line(ctx, P.X(-10), P.Y(-10 * b.m + b.b), P.X(10), P.Y(10 * b.m + b.b), COS, 3, r.type === "same" ? [8, 6] : null);
+      ctx.restore();
+      if (r.type === "one" && Math.abs(r.x) <= 10 && Math.abs(r.y) <= 10) {
+        dot(ctx, P.X(r.x), P.Y(r.y), 7, c.accent);
+        label(ctx, "(" + f2(r.x) + ", " + f2(r.y) + ")", Math.max(50, Math.min(w - 50, P.X(r.x))), P.Y(r.y) - 16, c.text, "center", 12);
+      }
+    }
+    function updateLines() {
+      var a = L1(), b = L2(), r = meet();
+      $("ln-m1v").textContent = a.m; $("ln-b1v").textContent = a.b; $("ln-m2v").textContent = b.m; $("ln-b2v").textContent = b.b;
+      $("ln-eq").textContent = "y = " + a.m + "x " + sgn(a.b) + "     y = " + b.m + "x " + sgn(b.b);
+      var st = $("ln-case");
+      if (r.type === "one") {
+        var inside = Math.abs(r.x) <= 10 && Math.abs(r.y) <= 10;
+        st.textContent = "One solution: (" + f2(r.x) + ", " + f2(r.y) + ")" + (inside ? "." : ", which is off the edge of the graph.") + " Check: " + f2(a.m * r.x + a.b) + " = " + f2(b.m * r.x + b.b) + " ✔";
+        st.className = "tc-status ok";
+      } else if (r.type === "parallel") { st.textContent = "Parallel: same slope, different intercepts. No solution."; st.className = "tc-status"; }
+      else { st.textContent = "The same line: infinitely many solutions."; st.className = "tc-status ok"; }
+      drawLines();
+    }
+    lnKit = mk("ln-canvas", "ln-box", drawLines);
+    ["ln-m1", "ln-b1", "ln-m2", "ln-b2"].forEach(function (id) { $(id).addEventListener("input", updateLines); });
+
+    /* ── Lab 2: break-even ──────────────────────────────── */
+    var beKit;
+    function drawBreak() {
+      if (!beKit) return;
+      var c = col(), ctx = beKit.ctx, w = beKit.width, h = beKit.height, F = +$("be-f").value, R = +$("be-r").value;
+      var L = 46, Rr = 14, T = 12, B = 28, XM = 20, ym = Math.max(20 + 3 * XM, F + R * XM, 60) * 1.08;
+      function X(x) { return L + x / XM * (w - L - Rr); }
+      function Y(y) { return h - B - y / ym * (h - T - B); }
+      ctx.clearRect(0, 0, w, h);
+      line(ctx, L, h - B, w - Rr, h - B, c.text, 1.5); line(ctx, L, T, L, h - B, c.text, 1.5);
+      for (var k = 0; k <= XM; k += 5) label(ctx, k + " GB", X(k), h - B + 14, c.textMuted, "center", 10);
+      for (var q = 1; q <= 4; q++) label(ctx, "$" + Math.round(ym * q / 4), L - 6, Y(ym * q / 4), c.textMuted, "right", 10);
+      line(ctx, X(0), Y(20), X(XM), Y(20 + 3 * XM), SIN, 3);
+      line(ctx, X(0), Y(F), X(XM), Y(F + R * XM), COS, 3);
+      label(ctx, "Plan A", X(XM) - 4, Y(20 + 3 * XM) - 10, SIN, "right", 11);
+      label(ctx, "Plan B", X(XM) - 4, Y(F + R * XM) + (F + R * XM > 20 + 3 * XM ? -10 : 12), COS, "right", 11);
+      if (R !== 3) {
+        var xs = (F - 20) / (3 - R);
+        if (xs >= 0 && xs <= XM) { dot(ctx, X(xs), Y(20 + 3 * xs), 7, c.accent); label(ctx, xs.toFixed(1) + " GB, $" + f2(20 + 3 * xs, 0), Math.min(w - 70, Math.max(70, X(xs))), Y(20 + 3 * xs) - 16, c.text, "center", 11); }
+      }
+    }
+    function updateBreak() {
+      var F = +$("be-f").value, R = +$("be-r").value, out = $("be-out");
+      $("be-fv").textContent = F; $("be-rv").textContent = R;
+      if (R === 3) out.textContent = F === 20 ? "The plans are identical." : "Same price per GB, so the lines are parallel. Plan " + (F < 20 ? "B" : "A") + " is always cheaper.";
+      else {
+        var xs = (F - 20) / (3 - R), y = 20 + 3 * xs;
+        if (xs < 0) out.textContent = "The lines would cross at a negative amount of data, so for any real use Plan " + (F < 20 ? "B" : "A") + " is always cheaper.";
+        else {
+          var lowCheaper = F > 20 ? "A" : "B", highCheaper = lowCheaper === "A" ? "B" : "A";
+          out.textContent = "Break-even at " + xs.toFixed(1) + " GB (both cost $" + f2(y) + "). Below that Plan " + lowCheaper + " is cheaper. Above it Plan " + highCheaper + " is cheaper." + (xs > 20 ? " (That is off the right side of the graph.)" : "");
+        }
+      }
+      drawBreak();
+    }
+    beKit = mk("be-canvas", "be-box", drawBreak);
+    $("be-f").addEventListener("input", updateBreak);
+    $("be-r").addEventListener("input", updateBreak);
+
+    /* ── Lab 3: elimination ─────────────────────────────── */
+    var elKit, sys = null;
+    function n(v) { return v < 0 ? "−" + (-v) : "" + v; }
+    function term(v, name, first) {
+      var mag = Math.abs(v) === 1 ? "" : Math.abs(v);
+      return (first ? (v < 0 ? "−" : "") : (v < 0 ? " − " : " + ")) + mag + name;
+    }
+    function eq(a, b, c) { return term(a, "x", true) + term(b, "y", false) + " = " + n(c); }
+    function rnd(lo, hi) { return lo + Math.floor(Math.random() * (hi - lo + 1)); }
+    function nz() { var v = 0; while (!v) v = rnd(-5, 5); return v; }
+    function newSystem() {
+      var s;
+      do {
+        s = { x: rnd(-5, 5), y: rnd(-5, 5), a1: nz(), b1: nz(), a2: nz(), b2: nz() };
+      } while (s.a1 * s.b2 - s.a2 * s.b1 === 0 || Math.abs(s.a1 * s.b2 - s.a2 * s.b1) > 20);
+      s.c1 = s.a1 * s.x + s.b1 * s.y; s.c2 = s.a2 * s.x + s.b2 * s.y;
+      sys = s;
+      $("el-sys").textContent = eq(s.a1, s.b1, s.c1) + "      " + eq(s.a2, s.b2, s.c2);
+      $("el-x").value = ""; $("el-y").value = ""; $("el-status").textContent = ""; $("el-status").className = "tc-status";
+      renderWork(); drawElim();
+    }
+    function renderWork() {
+      var s = sys, det = s.a1 * s.b2 - s.a2 * s.b1, yc = s.b1 * s.b2;
+      var lines = [
+        "1. Make the y-coefficients match: multiply equation 1 by " + n(s.b2) + " and equation 2 by " + n(s.b1) + ".",
+        "   " + term(s.a1 * s.b2, "x", true) + term(yc, "y", false) + " = " + n(s.c1 * s.b2) + "      " + term(s.a2 * s.b1, "x", true) + term(yc, "y", false) + " = " + n(s.c2 * s.b1),
+        "2. Subtract the second from the first so y cancels:",
+        "   " + n(det) + "x = " + n(s.c1 * s.b2 - s.c2 * s.b1) + "   so   x = " + n(s.x),
+        "3. Substitute x = " + n(s.x) + " into equation 1:  " + eq(s.a1, s.b1, s.c1).replace("x", "(" + n(s.x) + ")") + "   so   y = " + n(s.y),
+        "4. Check in equation 2:  " + n(s.a2) + "(" + n(s.x) + ") " + (s.b2 < 0 ? "− " : "+ ") + Math.abs(s.b2) + "(" + n(s.y) + ") = " + n(s.c2) + " ✔"
+      ];
+      var box = $("el-work"); box.innerHTML = ""; lines.forEach(function (t) { var d = document.createElement("div"); d.textContent = t; d.style.whiteSpace = "pre-wrap"; box.appendChild(d); });
+    }
+    function drawElim() {
+      if (!elKit || !sys) return;
+      var c = col(), ctx = elKit.ctx, w = elKit.width, h = elKit.height, s = sys;
+      var P = plane((ctx.clearRect(0, 0, w, h), ctx), w, h, c);
+      clipPlane(ctx, P);
+      [[s.a1, s.b1, s.c1, SIN], [s.a2, s.b2, s.c2, COS]].forEach(function (e) {
+        line(ctx, P.X(-10), P.Y((e[2] - e[0] * -10) / e[1]), P.X(10), P.Y((e[2] - e[0] * 10) / e[1]), e[3], 3);
+      });
+      ctx.restore();
+      dot(ctx, P.X(s.x), P.Y(s.y), 6, c.accent);
+    }
+    $("el-check").addEventListener("click", function () {
+      var x = parseFloat($("el-x").value), y = parseFloat($("el-y").value), st = $("el-status");
+      if (isNaN(x) || isNaN(y)) { st.textContent = "Enter both x and y."; st.className = "tc-status"; return; }
+      var ok = Math.abs(x - sys.x) < 0.01 && Math.abs(y - sys.y) < 0.01;
+      st.textContent = ok ? "✔ Correct! (" + sys.x + ", " + sys.y + ") satisfies both equations." : "Not yet. Substitute your x and y into both equations. Do both come out right?";
+      st.className = "tc-status" + (ok ? " ok" : "");
+    });
+    $("el-steps").addEventListener("click", function () {
+      var box = $("el-work"), open = box.hidden;
+      box.hidden = !open; this.setAttribute("aria-expanded", open ? "true" : "false"); this.textContent = open ? "Hide steps" : "Show steps";
+    });
+    elKit = mk("el-canvas", "el-box", drawElim);
+    $("el-new").addEventListener("click", newSystem);
+
+    SimKit.theme.onChange(function () { drawLines(); drawBreak(); drawElim(); });
+
+    /* ── Practice ───────────────────────────────────────── */
+    document.querySelectorAll(".tc-practice-item").forEach(function (item) {
+      var input = item.querySelector("input"), fb = item.querySelector(".fb");
+      function check() {
+        var v = parseFloat(input.value);
+        if (isNaN(v)) { fb.textContent = "Enter a number."; fb.className = "fb no"; return; }
+        var ok = Math.abs(v - parseFloat(item.dataset.answer)) <= 0.05;
+        fb.textContent = ok ? "✔ Correct." : "Not yet. Hint: " + item.dataset.hint;
+        fb.className = "fb " + (ok ? "ok" : "no");
+      }
+      item.querySelector("button").addEventListener("click", check);
+      input.addEventListener("keydown", function (e) { if (e.key === "Enter") check(); });
+    });
+
+    updateLines(); updateBreak(); newSystem();
+  })();
+  </script>
+  <script src="../../assets/js/classroom-animations.js"></script>
+  <script src="../../assets/js/lesson-layout.js"></script>
+  <script src="../../assets/js/math-pathway-nav.js"></script>
+<script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

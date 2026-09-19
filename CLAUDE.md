@@ -54,6 +54,20 @@ Project metadata (display name, student, tags, thumbnail) comes from
 - `npm run check:themes` — theme contrast
 - `npm run a11y` — pa11y-ci
 
+## Lesson rule: every photo must open in the lightbox
+
+Lessons are presented to a class, so any photo, portrait, or figure in a lesson must be
+click-to-enlarge (centered on screen, large caption) so the class can focus on one image
+and discuss it. This applies to every new lesson and to any lesson you touch.
+
+- Add `<script src="../assets/js/photo-lightbox.js"></script>` (adjust the path to the lesson's depth).
+- Mark each figure `<figure data-zoomable>` with an `<img>` and a `<figcaption>`. Write captions
+  that carry the teaching point, since the lightbox shows the caption at large size.
+- Optional: `data-full="URL"` for a higher-resolution image, and `data-lightbox-group="name"`
+  so the arrow keys (and the on-screen buttons) step through a set. Figures added by JS work too.
+- Always show credit and license for outside images. See `lessons/chemistry/periodic-table.html`
+  (element gallery) for a worked example.
+
 ## Shared sim helpers
 
 New lesson sims should reach for these instead of hand-rolling canvas/Three/Matter

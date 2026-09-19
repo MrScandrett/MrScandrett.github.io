@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Algebra Tiles: Factoring · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Factoring made visible: build x², x, and unit tiles into rectangles, multiply binomials with an area model, factor trinomials with the two-number rule, and see difference of squares by cutting and sliding pieces." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 304px; --ll-accent: #2563eb; --ll-tab-active: #2563eb; --ll-tab-active-bg: rgba(37,99,235,0.12); }
+    .tc-page { padding-bottom: 3.5rem; --sin: #2563eb; --cos: #ea580c; --tan: #16a34a; }
+    .tc-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .tc-hero h1 { max-width: 28ch; margin: 0; font-size: clamp(1.55rem, 3.5vw, 2.35rem); }
+    .tc-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.55rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .tc-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45; }
+    .tc-lede { max-width: 70ch; margin: 0.7rem 0 0; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+
+    .tc-card { background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7); border-left: 3.5px solid var(--card-accent, #2563eb); border-radius: var(--radius, 18px); box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .tc-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .tc-card h3 { margin: 0.95rem 0 0.35rem; font-size: 1rem; }
+    .tc-card p, .tc-card li { color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .tc-card p { margin: 0 0 0.62rem; }
+    .tc-card p:last-child { margin-bottom: 0; }
+    .tc-sin { color: var(--sin); font-weight: 700; }
+    .tc-cos { color: var(--cos); font-weight: 700; }
+    .tc-tan { color: var(--tan); font-weight: 700; }
+    .tc-mono { font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; }
+
+    .tc-canvases { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.8rem; margin: 0.8rem 0; }
+    .tc-cv { position: relative; height: 320px; border: 1px solid var(--line, #d2d2d7); border-radius: 12px; overflow: hidden; }
+    .tc-cv.short { height: 280px; }
+    .tc-cv canvas { display: block; touch-action: none; }
+    .tc-cv.drag canvas { cursor: grab; }
+
+    .tc-controls { display: flex; flex-wrap: wrap; gap: 0.6rem 1.2rem; align-items: center; margin: 0.5rem 0; }
+    .tc-controls label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; font-weight: 600; color: var(--text-main, #1d1d1f); }
+    .tc-controls input[type=range] { width: min(240px, 60vw); accent-color: var(--card-accent, #2563eb); }
+    .tc-btns { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.5rem 0; }
+    .tc-btn { padding: 0.32rem 0.7rem; border: 1px solid var(--line, #d2d2d7); border-radius: 999px; background: transparent; color: var(--text-main, #1d1d1f); font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+    .tc-btn:hover, .tc-btn:focus-visible { border-color: var(--card-accent, #2563eb); }
+    .tc-btn.primary { background: var(--card-accent, #2563eb); border-color: var(--card-accent, #2563eb); color: #fff; }
+
+    .tc-read { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem; margin: 0.6rem 0; }
+    .tc-read div { padding: 0.5rem 0.65rem; border: 1px solid var(--line, #d2d2d7); border-radius: 10px; font-size: 0.72rem; color: var(--text-muted, #64748b); }
+    .tc-read strong { display: block; margin-top: 0.1rem; font-size: 1rem; color: var(--text-main, #1d1d1f); font-family: "IBM Plex Mono", ui-monospace, monospace; }
+    .tc-status { min-height: 1.4em; margin: 0.4rem 0 0; font-size: 0.85rem; font-weight: 700; }
+    .tc-status.ok { color: #15803d; }
+
+    .tc-table { width: 100%; border-collapse: collapse; margin: 0.6rem 0; font-size: 0.8rem; }
+    .tc-table th, .tc-table td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--line, #d2d2d7); text-align: center; color: var(--text-secondary, #3f4f65); }
+    .tc-table th { color: var(--text-main, #1d1d1f); }
+
+    .tc-practice-item { display: grid; grid-template-columns: 1fr auto auto; gap: 0.6rem; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--line, #d2d2d7); }
+    .tc-practice-item:last-child { border-bottom: 0; }
+    .tc-practice-item p { margin: 0; }
+    .tc-practice-item input { width: 5.5rem; padding: 0.3rem 0.45rem; border: 1px solid var(--line, #d2d2d7); border-radius: 8px; background: transparent; color: var(--text-main, #1d1d1f); font: inherit; }
+    .tc-practice-item .fb { grid-column: 1 / -1; font-size: 0.8rem; font-weight: 700; }
+    .tc-practice-item .fb.ok { color: #15803d; }
+    .tc-practice-item .fb.no { color: #b45309; }
+    @media (max-width: 520px) { .tc-practice-item { grid-template-columns: 1fr; } }
+
+    [data-lighting="night"] .tc-lede, [data-theme="vaporwave"] .tc-lede, [data-theme="bark"] .tc-lede,
+    [data-lighting="night"] .tc-card p, [data-theme="vaporwave"] .tc-card p, [data-theme="bark"] .tc-card p,
+    [data-lighting="night"] .tc-card li, [data-theme="vaporwave"] .tc-card li, [data-theme="bark"] .tc-card li { color: rgba(245,245,247,0.72); }
+    [data-lighting="night"] .tc-card, [data-theme="vaporwave"] .tc-card, [data-theme="bark"] .tc-card { background: var(--white, #2c2c2e); }
+    [data-lighting="night"] .tc-controls label, [data-theme="vaporwave"] .tc-controls label, [data-theme="bark"] .tc-controls label,
+    [data-lighting="night"] .tc-read strong, [data-theme="vaporwave"] .tc-read strong, [data-theme="bark"] .tc-read strong,
+    [data-lighting="night"] .tc-btn, [data-theme="vaporwave"] .tc-btn, [data-theme="bark"] .tc-btn,
+    [data-lighting="night"] .tc-table th, [data-theme="vaporwave"] .tc-table th, [data-theme="bark"] .tc-table th,
+    [data-lighting="night"] .tc-practice-item input, [data-theme="vaporwave"] .tc-practice-item input, [data-theme="bark"] .tc-practice-item input { color: rgba(245,245,247,0.92); }
+    [data-lighting="night"] .tc-btn.primary, [data-theme="vaporwave"] .tc-btn.primary, [data-theme="bark"] .tc-btn.primary { color: #fff; }
+    [data-lighting="night"] .tc-table td, [data-theme="vaporwave"] .tc-table td, [data-theme="bark"] .tc-table td { color: rgba(245,245,247,0.72); }
+
+    .ex-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; margin: 0.35rem 0; }
+    .ex-chip { display: inline-grid; place-items: center; min-width: 1.7rem; height: 1.7rem; padding: 0 0.3rem; border-radius: 8px; background: rgba(100,116,139,0.2); color: var(--text-main, #1d1d1f); font: 700 0.85rem "IBM Plex Mono", monospace; }
+    .ex-chip.b { background: rgba(37,99,235,0.22); }
+    .ex-chip.o { background: rgba(234,88,12,0.22); }
+    .ex-chip.x { text-decoration: line-through; opacity: 0.45; }
+    .ex-op, .ex-one { font: 700 0.9rem "IBM Plex Mono", monospace; color: var(--text-muted, #64748b); padding: 0 0.3rem; }
+    .ex-one { color: var(--text-main, #1d1d1f); }
+    .ex-group { display: inline-flex; gap: 0.2rem; padding: 0.2rem 0.35rem; border: 1.5px solid var(--line, #94a3b8); border-radius: 12px; }
+    .ex-frac { display: inline-block; margin: 0.35rem 0; }
+    .ex-bar { height: 2px; background: var(--text-muted, #64748b); margin: 0.15rem 0; }
+    [data-lighting="night"] .ex-chip, [data-theme="vaporwave"] .ex-chip, [data-theme="bark"] .ex-chip, [data-lighting="night"] .ex-one, [data-theme="vaporwave"] .ex-one, [data-theme="bark"] .ex-one { color: rgba(245,245,247,0.92); }
+    [data-lighting="night"] .tc-page, [data-theme="vaporwave"] .tc-page, [data-theme="bark"] .tc-page { --sin: #7fb0ff; --cos: #ff9f5f; --tan: #4ade80; }
+    [data-lighting="night"] .tc-status.ok, [data-theme="vaporwave"] .tc-status.ok, [data-theme="bark"] .tc-status.ok,
+    [data-lighting="night"] .tc-practice-item .fb.ok, [data-theme="vaporwave"] .tc-practice-item .fb.ok, [data-theme="bark"] .tc-practice-item .fb.ok { color: #4ade80; }
+    [data-lighting="night"] .tc-practice-item .fb.no, [data-theme="vaporwave"] .tc-practice-item .fb.no, [data-theme="bark"] .tc-practice-item .fb.no { color: #fbbf24; }
+    [data-lighting="night"] .tc-tan-g, [data-theme="vaporwave"] .tc-tan-g, [data-theme="bark"] .tc-tan-g { color: #4ade80; }
+    [data-lighting="night"] .tc-neg, [data-theme="vaporwave"] .tc-neg, [data-theme="bark"] .tc-neg { color: #f87171; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="tc-page">
+        <section class="hero tc-hero">
+          <p class="eyebrow">Mathematics · Algebra</p>
+          <h1>Algebra Tiles: Factoring</h1>
+          <div class="tc-meta">
+            <span>Area model</span><span class="dot"></span>
+            <span>Multiplying binomials</span><span class="dot"></span>
+            <span>Factoring trinomials</span><span class="dot"></span>
+            <span>Special patterns</span><span class="dot"></span>
+            <span>Toward completing the square</span>
+          </div>
+          <p class="tc-lede">Factoring feels like guesswork until you see it. Every product of two binomials is the area of a rectangle, and factoring is the puzzle of arranging tiles into that rectangle. Build it, spot the pattern, then use the pattern without the tiles.</p>
+        </section>
+
+        <section class="tc-card">
+          <h2>Learning Targets</h2>
+          <ul>
+            <li>Represent <span class="tc-mono">x²</span>, <span class="tc-mono">x</span>, and <span class="tc-mono">1</span> as areas, and multiply binomials with an area model.</li>
+            <li>Factor <span class="tc-mono">x² + bx + c</span> by finding two numbers with product c and sum b.</li>
+            <li>Recognize a difference of squares and a perfect square trinomial.</li>
+            <li>Use factoring to solve a quadratic equation, and see why it sets up completing the square.</li>
+          </ul>
+          <p>Prerequisites: <a href="math-foundations-lab.html#equations">Balance, Variables &amp; Equations</a> and <a href="area-perimeter-playground.html">Area &amp; Perimeter</a>. Next: <a href="completing-the-square.html">Completing the Square</a>.</p>
+        </section>
+
+        <section class="tc-card" id="tiles" style="--card-accent:#2563eb;">
+          <h2>Lab 1 · Meet the Tiles</h2>
+          <p>There are three kinds of tile. The <span class="tc-sin">big square</span> is <strong>x²</strong>, the <span class="tc-cos">long strip</span> is <strong>x</strong>, and the small square is <strong>1</strong>. The strip is exactly as long as the big square's side, but nobody knows how long that is. Drag the slider: the strip and the big square change size together, while the unit tile never does.</p>
+          <div class="tc-cv short" id="ti-box"><canvas id="ti-canvas" aria-label="x squared tile, x strip, and unit tile"></canvas></div>
+          <div class="tc-controls">
+            <label>Length of x <input id="ti-x" type="range" min="1.2" max="4.5" step="0.05" value="2.6" /> <span id="ti-xv" class="tc-mono">2.6</span></label>
+          </div>
+          <div class="tc-read">
+            <div><span class="tc-sin">x²</span> (area)<strong id="ti-a2">6.76</strong></div>
+            <div><span class="tc-cos">x</span> (area)<strong id="ti-a1">2.60</strong></div>
+            <div>1 (area)<strong>1.00</strong></div>
+          </div>
+          <p><strong>Notice:</strong> you can never make an x² tile out of x strips and unit tiles alone, because x is not a whole number. That is why they are different colors: x² and x are different kinds of things.</p>
+        </section>
+
+        <section class="tc-card" id="multiply" style="--card-accent:#ea580c;">
+          <h2>Lab 2 · Multiply with an Area Model</h2>
+          <p>A rectangle that is <span class="tc-mono">(x + a)</span> wide and <span class="tc-mono">(x + b)</span> tall is built from four pieces. Add the areas and you have expanded the product. Change a and b.</p>
+          <div class="tc-cv" id="mu-box" style="height:340px;"><canvas id="mu-canvas" aria-label="Area model of a product of two binomials"></canvas></div>
+          <div class="tc-controls">
+            <label>a <input id="mu-a" type="range" min="1" max="6" step="1" value="2" style="--card-accent:#ea580c" /> <span id="mu-av" class="tc-mono">2</span></label>
+            <label>b <input id="mu-b" type="range" min="1" max="6" step="1" value="3" style="--card-accent:#ea580c" /> <span id="mu-bv" class="tc-mono">3</span></label>
+          </div>
+          <p class="tc-mono" id="mu-eq" aria-live="polite"></p>
+          <p><strong>The pattern:</strong> the middle coefficient is a + b (the x strips from both sides) and the last term is a × b (the unit block). That is the whole trick, read backwards, in Lab 3.</p>
+        </section>
+
+        <section class="tc-card" id="factor" style="--card-accent:#16a34a;">
+          <h2>Lab 3 · Factor by Building the Rectangle</h2>
+          <p>Now go the other way. You are handed a pile of tiles: one x², some x strips, some units. Your job is to arrange them into a rectangle. The sides of that rectangle are the factors. Use the sliders to choose the width and height, and see whether your rectangle uses exactly the tiles in the pile.</p>
+          <div class="tc-btns"><button class="tc-btn primary" id="fa-new" type="button" style="background:#16a34a;border-color:#16a34a;">🎲 New pile</button></div>
+          <p class="tc-mono" id="fa-pile" style="font-size:1rem;font-weight:700;"></p>
+          <div class="tc-cv" id="fa-box" style="height:320px;"><canvas id="fa-canvas" aria-label="Factoring rectangle built from tiles"></canvas></div>
+          <div class="tc-controls">
+            <label>Width x + <input id="fa-p" type="range" min="1" max="9" step="1" value="1" style="--card-accent:#16a34a" /> <span id="fa-pv" class="tc-mono">1</span></label>
+            <label>Height x + <input id="fa-q" type="range" min="1" max="9" step="1" value="1" style="--card-accent:#16a34a" /> <span id="fa-qv" class="tc-mono">1</span></label>
+          </div>
+          <p class="tc-status" id="fa-status" aria-live="polite"></p>
+          <h3>The two-number rule</h3>
+          <p>To factor <span class="tc-mono">x² + bx + c</span>, find two numbers that <strong>multiply to c</strong> and <strong>add to b</strong>. Then the factors are <span class="tc-mono">(x + p)(x + q)</span>. Negative numbers work the same way: for <span class="tc-mono">x² + 2x − 15</span> the numbers are 5 and −3, because 5 × (−3) = −15 and 5 + (−3) = 2.</p>
+          <div class="tc-controls">
+            <label>Try it: b = <input id="tn-b" type="number" value="7" style="width:5rem;padding:.3rem .45rem;border:1px solid var(--line,#d2d2d7);border-radius:8px;background:transparent;color:inherit;font:inherit;" /></label>
+            <label>c = <input id="tn-c" type="number" value="12" style="width:5rem;padding:.3rem .45rem;border:1px solid var(--line,#d2d2d7);border-radius:8px;background:transparent;color:inherit;font:inherit;" /></label>
+          </div>
+          <p class="tc-mono" id="tn-out" aria-live="polite"></p>
+        </section>
+
+        <section class="tc-card" id="special" style="--card-accent:#7c3aed;">
+          <h2>Lab 4 · Two Special Patterns</h2>
+          <p><strong>Difference of squares.</strong> Start with a big square of side x and cut a k × k corner out of it. The L-shaped leftover has area <span class="tc-mono">x² − k²</span>. Cut it, slide the pieces, and it becomes a rectangle that is <span class="tc-mono">(x + k)</span> by <span class="tc-mono">(x − k)</span>. Drag k.</p>
+          <div class="tc-cv" id="sp-box" style="height:300px;"><canvas id="sp-canvas" aria-label="Difference of squares rearranged into a rectangle"></canvas></div>
+          <div class="tc-controls">
+            <label>k <input id="sp-k" type="range" min="1" max="5" step="1" value="2" style="--card-accent:#7c3aed" /> <span id="sp-kv" class="tc-mono">2</span></label>
+            <label><input id="sp-move" type="checkbox" /> Rearrange the pieces</label>
+          </div>
+          <p class="tc-mono" id="sp-eq"></p>
+          <p><strong>Perfect square trinomial.</strong> A square of side <span class="tc-mono">x + k</span> has one x² tile, two strips of k, and a k × k block: <span class="tc-mono">(x + k)² = x² + 2kx + k²</span>. If the middle term is twice the square root of the last, you are looking at one.</p>
+          <table class="tc-table" aria-label="Special patterns">
+            <tr><th>Pattern</th><th>Expanded</th><th>Factored</th></tr>
+            <tr><td>Difference of squares</td><td>x² − k²</td><td>(x − k)(x + k)</td></tr>
+            <tr><td>Perfect square (+)</td><td>x² + 2kx + k²</td><td>(x + k)²</td></tr>
+            <tr><td>Perfect square (−)</td><td>x² − 2kx + k²</td><td>(x − k)²</td></tr>
+          </table>
+        </section>
+
+        <section class="tc-card" style="--card-accent:#db2777;">
+          <h2>A Factoring Checklist</h2>
+          <ol>
+            <li><strong>Pull out the greatest common factor.</strong> 2x² + 8x = 2x(x + 4).</li>
+            <li><strong>Two terms, both squares?</strong> Difference of squares.</li>
+            <li><strong>Three terms?</strong> Look for the two-number rule (or a perfect square).</li>
+            <li><strong>Check</strong> by expanding: the area model should give the original back.</li>
+          </ol>
+          <h3>Why it matters: solving equations</h3>
+          <p>If a product is zero, one of its factors must be zero. So <span class="tc-mono">x² − 5x + 6 = 0</span> becomes <span class="tc-mono">(x − 2)(x − 3) = 0</span>, and x = 2 or x = 3. Those are where the parabola crosses the x-axis. Not every quadratic factors neatly. When it does not, <a href="completing-the-square.html">Completing the Square</a> always works, and it is the same rectangle idea with a missing corner.</p>
+        </section>
+
+        <section class="tc-card" id="practice" style="--card-accent:#0ea5e9;">
+          <h2>Practice</h2>
+          <p>Enter a number. Answers within 0.05 count.</p>
+          <div id="tc-practice">
+            <div class="tc-practice-item" data-answer="4" data-hint="Two numbers that multiply to 12 and add to 7: 3 and 4."><p>1. x² + 7x + 12 = (x + p)(x + q), with p &lt; q. What is q?</p><input type="number" step="any" aria-label="Answer 1" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="5" data-hint="Product −15, sum 2: the numbers are −3 and 5."><p>2. x² + 2x − 15 = (x + p)(x + q). What is the positive number?</p><input type="number" step="any" aria-label="Answer 2" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="3" data-hint="x² − 9 = x² − 3²: difference of squares."><p>3. x² − 9 = (x − 3)(x + k). What is k?</p><input type="number" step="any" aria-label="Answer 3" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="5" data-hint="Middle term 10 = 2 × 5 and last term 25 = 5²."><p>4. x² + 10x + 25 = (x + k)². What is k?</p><input type="number" step="any" aria-label="Answer 4" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="2" data-hint="(x + 4)(x − 2): the x terms are 4x and −2x."><p>5. Expand (x + 4)(x − 2). What is the coefficient of x?</p><input type="number" step="any" aria-label="Answer 5" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="15" data-hint="(−5) × (−3) = 15."><p>6. Expand (x − 5)(x − 3). What is the constant term?</p><input type="number" step="any" aria-label="Answer 6" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="4" data-hint="Pull out 2x from each term: 2x² ÷ 2x = x, 8x ÷ 2x = 4."><p>7. 2x² + 8x = 2x(x + k). What is k?</p><input type="number" step="any" aria-label="Answer 7" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="3" data-hint="x² − 5x + 6 = (x − 2)(x − 3), so x = 2 or 3."><p>8. Solve x² − 5x + 6 = 0. What is the larger solution?</p><input type="number" step="any" aria-label="Answer 8" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+          </div>
+        </section>
+
+        <section class="tc-card" style="--card-accent:#dc2626;">
+          <h2>Exit Ticket</h2>
+          <ul>
+            <li>Draw the area model for (x + 5)(x + 2) and label all four pieces.</li>
+            <li>Why can you not turn one x² tile and some unit tiles into a rectangle of x strips alone?</li>
+            <li>Explain why x² − 16 factors but x² + 16 does not (over the real numbers).</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+
+    <aside class="ll-panel" aria-label="Lesson panel">
+      <div class="ll-panel-inner">
+        <div class="ll-tabs" role="tablist" aria-label="Factoring panel tabs">
+          <button class="ll-tab active" type="button" data-ll-tab="guide">Guide</button>
+          <button class="ll-tab" type="button" data-ll-tab="controls">Teacher</button>
+        </div>
+        <div class="ll-pane active" data-ll-panel="guide">
+          <span class="ll-label">Key Patterns</span>
+          <div class="ll-info"><strong>(x + a)(x + b)</strong> = x² + (a + b)x + ab</div>
+          <div class="ll-info"><strong>x² − k²</strong> = (x − k)(x + k)</div>
+          <div class="ll-info"><strong>x² ± 2kx + k²</strong> = (x ± k)²</div>
+          <span class="ll-label">Two-Number Rule</span>
+          <div class="ll-info"><strong>Product = c</strong>, <strong>sum = b</strong></div>
+          <span class="ll-label">Zero-Product Property</span>
+          <div class="ll-info">If A × B = 0, then A = 0 or B = 0.</div>
+        </div>
+        <div class="ll-pane" data-ll-panel="controls">
+          <span class="ll-label">Lesson Flow</span>
+          <div class="ll-info"><strong>Warm-up</strong> Have students multiply 13 × 14 with an area model (10 + 3)(10 + 4) first.</div>
+          <div class="ll-info"><strong>Lab 1–2</strong> Ask what x² + 5x + 6 would look like as tiles before showing the rectangle.</div>
+          <div class="ll-info"><strong>Lab 3</strong> Have pairs solve three piles without the two-number hint, then discover it.</div>
+          <div class="ll-info"><strong>Lab 4</strong> Ask: why does the middle term disappear in x² − k²?</div>
+          <div class="ll-info"><strong>Close</strong> Bridge to Completing the Square.</div>
+        </div>
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+  </div>
+</div>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../index.html">Home</a> · <a href="../../steam-lessons.html">Lessons</a></p>
+  </footer>
+
+  <script src="../../assets/js/theme-registry.js"></script>
+  <script src="../../assets/js/nav-mobile.js"></script>
+  <script src="../../assets/js/sim-kit.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var TAU = Math.PI * 2;
+    var SIN = "#2563eb", COS = "#ea580c", GRN = "#16a34a", PUR = "#7c3aed";
+    function $(id) { return document.getElementById(id); }
+    function col() { return SimKit.theme.colors(); }
+    function line(ctx, x1, y1, x2, y2, color, w, dash) {
+      ctx.beginPath(); ctx.setLineDash(dash || []); ctx.strokeStyle = color; ctx.lineWidth = w || 1;
+      ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
+    }
+    function label(ctx, t, x, y, color, align, size) {
+      ctx.fillStyle = color; ctx.font = "600 " + (size || 12) + "px 'IBM Plex Mono', monospace";
+      ctx.textAlign = align || "left"; ctx.textBaseline = "middle"; ctx.fillText(t, x, y);
+    }
+    function mk(id, boxId, draw) { return SimKit.canvas2d($(id), { box: $(boxId), onResize: function () { draw(); } }); }
+    function rect(ctx, x, y, w, h, fill, stroke, dash) {
+      ctx.fillStyle = fill; ctx.fillRect(x, y, w, h);
+      ctx.setLineDash(dash || []); ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1); ctx.setLineDash([]);
+    }
+    var F_SQ = "rgba(37,99,235,0.35)", F_ST = "rgba(234,88,12,0.35)", F_UN = "rgba(22,163,74,0.35)";
+
+    /* Area model: x² block, a vertical strips, b horizontal strips, a×b unit cells. */
+    function areaModel(ctx, ox, oy, u, xl, a, b, c, showLabels) {
+      rect(ctx, ox, oy, xl * u, xl * u, F_SQ, SIN);
+      var i, j;
+      for (i = 0; i < a; i++) rect(ctx, ox + (xl + i) * u, oy, u, xl * u, F_ST, COS);
+      for (j = 0; j < b; j++) rect(ctx, ox, oy + (xl + j) * u, xl * u, u, F_ST, COS);
+      for (i = 0; i < a; i++) for (j = 0; j < b; j++) rect(ctx, ox + (xl + i) * u, oy + (xl + j) * u, u, u, F_UN, GRN);
+      if (showLabels) {
+        label(ctx, "x²", ox + xl * u / 2, oy + xl * u / 2, SIN, "center", 15);
+        if (a) label(ctx, "x", ox + (xl + a / 2) * u, oy - 10, c.text, "center", 12);
+        label(ctx, "x", ox + xl * u / 2, oy - 10, c.text, "center", 12);
+        if (a) label(ctx, "+" + a, ox + (xl + a / 2) * u, oy - 24, c.text, "center", 11);
+        label(ctx, "x + " + a, ox + (xl + a) * u / 2, oy + (xl + b) * u + 16, c.text, "center", 12);
+        label(ctx, "x + " + b, ox - 8, oy + (xl + b) * u / 2, c.text, "right", 12);
+      }
+    }
+
+    /* ── Lab 1: meet the tiles ──────────────────────────── */
+    var tiKit;
+    function drawTiles() {
+      if (!tiKit) return;
+      var c = col(), ctx = tiKit.ctx, w = tiKit.width, h = tiKit.height, xl = +$("ti-x").value;
+      var u = Math.min(34, (w - 60) / (2 * 4.5 + 1 + 2), (h - 60) / 4.6);
+      var totalW = (xl * 2 + 1) * u + 60, ox = Math.max(10, (w - totalW) / 2), oy = 26;
+      ctx.clearRect(0, 0, w, h);
+      rect(ctx, ox, oy, xl * u, xl * u, F_SQ, SIN);
+      label(ctx, "x²", ox + xl * u / 2, oy + xl * u / 2, SIN, "center", 16);
+      var sx = ox + xl * u + 30;
+      rect(ctx, sx, oy, xl * u, u, F_ST, COS);
+      label(ctx, "x", sx + xl * u / 2, oy + u / 2, COS, "center", 14);
+      var ux = sx + xl * u + 30;
+      rect(ctx, ux, oy, u, u, F_UN, GRN);
+      label(ctx, "1", ux + u / 2, oy + u / 2, GRN, "center", 14);
+      line(ctx, ox, oy - 10, ox + xl * u, oy - 10, c.textMuted, 1);
+      label(ctx, "x", ox + xl * u / 2, oy - 18, c.textMuted, "center", 11);
+      line(ctx, ox - 10, oy, ox - 10, oy + xl * u, c.textMuted, 1);
+      label(ctx, "x", ox - 16, oy + xl * u / 2, c.textMuted, "right", 11);
+      label(ctx, "1 × 1", ux + u / 2, oy + u + 14, c.textMuted, "center", 11);
+    }
+    function updateTiles() {
+      var x = +$("ti-x").value;
+      $("ti-xv").textContent = x.toFixed(2); $("ti-a2").textContent = (x * x).toFixed(2); $("ti-a1").textContent = x.toFixed(2);
+      drawTiles();
+    }
+    tiKit = mk("ti-canvas", "ti-box", drawTiles);
+    $("ti-x").addEventListener("input", updateTiles);
+
+    /* ── Lab 2: multiply ────────────────────────────────── */
+    var muKit;
+    function drawMul() {
+      if (!muKit) return;
+      var c = col(), ctx = muKit.ctx, w = muKit.width, h = muKit.height, a = +$("mu-a").value, b = +$("mu-b").value, xl = 4.3;
+      var u = Math.min((w - 90) / (xl + 6), (h - 70) / (xl + 6)), ox = (w - (xl + a) * u) / 2 + 12, oy = 40;
+      ctx.clearRect(0, 0, w, h);
+      areaModel(ctx, ox, oy, u, xl, a, b, c, true);
+      if (a > 1 || b > 1) {
+        label(ctx, "a·b = " + a * b, ox + (xl + a / 2) * u, oy + (xl + b / 2) * u, GRN, "center", 12);
+      }
+    }
+    function updateMul() {
+      var a = +$("mu-a").value, b = +$("mu-b").value;
+      $("mu-av").textContent = a; $("mu-bv").textContent = b;
+      $("mu-eq").textContent = "(x + " + a + ")(x + " + b + ") = x² + " + a + "x + " + b + "x + " + a * b + " = x² + " + (a + b) + "x + " + a * b;
+      drawMul();
+    }
+    muKit = mk("mu-canvas", "mu-box", drawMul);
+    $("mu-a").addEventListener("input", updateMul);
+    $("mu-b").addEventListener("input", updateMul);
+
+    /* ── Lab 3: factor ──────────────────────────────────── */
+    var faKit, pile = { b: 7, c: 12 };
+    function drawFactor() {
+      if (!faKit) return;
+      var c = col(), ctx = faKit.ctx, w = faKit.width, h = faKit.height, p = +$("fa-p").value, q = +$("fa-q").value, xl = 3.6;
+      var u = Math.min((w - 90) / (xl + 9), (h - 70) / (xl + 9)), ox = (w - (xl + p) * u) / 2 + 12, oy = 40;
+      ctx.clearRect(0, 0, w, h);
+      areaModel(ctx, ox, oy, u, xl, p, q, c, true);
+    }
+    function nextPile() {
+      var p = 1 + Math.floor(Math.random() * 9), q = 1 + Math.floor(Math.random() * 9);
+      pile = { b: p + q, c: p * q };
+      $("fa-pile").textContent = "The pile: 1 x², " + pile.b + " x, " + pile.c + " units  (x² + " + pile.b + "x + " + pile.c + ")";
+      updateFactor();
+    }
+    function updateFactor() {
+      var p = +$("fa-p").value, q = +$("fa-q").value;
+      $("fa-pv").textContent = p; $("fa-qv").textContent = q;
+      var st = $("fa-status"), ok = p + q === pile.b && p * q === pile.c;
+      st.textContent = ok
+        ? "✔ It fits exactly! x² + " + pile.b + "x + " + pile.c + " = (x + " + p + ")(x + " + q + "). Product " + pile.c + ", sum " + pile.b + "."
+        : "Your rectangle uses 1 x², " + (p + q) + " x, " + p * q + " units. The pile has 1 x², " + pile.b + " x, " + pile.c + " units. Keep adjusting.";
+      st.className = "tc-status" + (ok ? " ok" : "");
+      drawFactor();
+    }
+    function factorText(p) { return p >= 0 ? "(x + " + p + ")" : "(x − " + (-p) + ")"; }
+    function updateTwoNumber() {
+      var b = parseInt($("tn-b").value, 10), c = parseInt($("tn-c").value, 10), out = $("tn-out");
+      if (isNaN(b) || isNaN(c)) { out.textContent = "Enter whole numbers for b and c."; return; }
+      for (var p = -200; p <= 200; p++) {
+        var q = b - p;
+        if (p <= q && p * q === c) {
+          out.textContent = "x² " + (b < 0 ? "− " + (-b) : "+ " + b) + "x " + (c < 0 ? "− " + (-c) : "+ " + c) + " = " + (p === q ? factorText(p) + "²" : factorText(p) + factorText(q)) + "   (" + p + " × " + q + " = " + c + ",  " + p + " + " + q + " = " + b + ")";
+          return;
+        }
+      }
+      out.textContent = "No two whole numbers multiply to " + c + " and add to " + b + ". It does not factor over the integers. Try completing the square.";
+    }
+    faKit = mk("fa-canvas", "fa-box", drawFactor);
+    $("fa-p").addEventListener("input", updateFactor);
+    $("fa-q").addEventListener("input", updateFactor);
+    $("fa-new").addEventListener("click", nextPile);
+    $("tn-b").addEventListener("input", updateTwoNumber);
+    $("tn-c").addEventListener("input", updateTwoNumber);
+
+    /* ── Lab 4: difference of squares ───────────────────── */
+    var spKit, X = 6;
+    function drawSpecial() {
+      if (!spKit) return;
+      var c = col(), ctx = spKit.ctx, w = spKit.width, h = spKit.height, k = +$("sp-k").value, moved = $("sp-move").checked;
+      var u = Math.min((w - 60) / (X + 12), (h - 70) / X), lx = 16, ly = 30, rx = lx + X * u + 32, ry = ly + k * u, n = X - k;
+      ctx.clearRect(0, 0, w, h);
+      rect(ctx, lx + n * u, ly, k * u, k * u, "rgba(148,163,184,0.12)", c.textMuted, [4, 4]);
+      label(ctx, "k²", lx + (n + k / 2) * u, ly + k * u / 2, c.textMuted, "center", 11);
+      rect(ctx, lx, ly, n * u, k * u, F_UN, GRN);
+      rect(ctx, lx, ly + k * u, n * u, n * u, F_SQ, SIN);
+      rect(ctx, lx + n * u, ly + k * u, k * u, n * u, F_ST, COS);
+      label(ctx, "x² − k²", lx + X * u / 2, ly + X * u + 18, c.text, "center", 12);
+      if (moved) {
+        rect(ctx, rx, ry, n * u, n * u, F_SQ, SIN);
+        rect(ctx, rx + n * u, ry, k * u, n * u, F_ST, COS);
+        rect(ctx, rx + X * u, ry, k * u, n * u, F_UN, GRN);
+      } else {
+        rect(ctx, rx, ry, (X + k) * u, n * u, "rgba(148,163,184,0.08)", c.textMuted, [4, 4]);
+        label(ctx, "?", rx + (X + k) * u / 2, ry + n * u / 2, c.textMuted, "center", 14);
+      }
+      label(ctx, "(x + k)", rx + (X + k) * u / 2, ry + n * u + 18, c.text, "center", 12);
+      label(ctx, "(x − k)", rx + (X + k) * u + 6, ry + n * u / 2, c.text, "left", 12);
+    }
+    function updateSpecial() {
+      var k = +$("sp-k").value;
+      $("sp-kv").textContent = k;
+      $("sp-eq").textContent = "With x = " + X + ": x² − k² = " + (X * X) + " − " + (k * k) + " = " + (X * X - k * k) + "   and (x − k)(x + k) = " + (X - k) + " × " + (X + k) + " = " + (X - k) * (X + k);
+      drawSpecial();
+    }
+    spKit = mk("sp-canvas", "sp-box", drawSpecial);
+    $("sp-k").addEventListener("input", updateSpecial);
+    $("sp-move").addEventListener("change", drawSpecial);
+
+    SimKit.theme.onChange(function () { drawTiles(); drawMul(); drawFactor(); drawSpecial(); });
+
+    /* ── Practice ───────────────────────────────────────── */
+    document.querySelectorAll(".tc-practice-item").forEach(function (item) {
+      var input = item.querySelector("input"), fb = item.querySelector(".fb");
+      function check() {
+        var v = parseFloat(input.value);
+        if (isNaN(v)) { fb.textContent = "Enter a number."; fb.className = "fb no"; return; }
+        var ok = Math.abs(v - parseFloat(item.dataset.answer)) <= 0.05;
+        fb.textContent = ok ? "✔ Correct." : "Not yet. Hint: " + item.dataset.hint;
+        fb.className = "fb " + (ok ? "ok" : "no");
+      }
+      item.querySelector("button").addEventListener("click", check);
+      input.addEventListener("keydown", function (e) { if (e.key === "Enter") check(); });
+    });
+
+    updateTiles(); updateMul(); nextPile(); updateTwoNumber(); updateSpecial();
+  })();
+  </script>
+  <script src="../../assets/js/classroom-animations.js"></script>
+  <script src="../../assets/js/lesson-layout.js"></script>
+  <script src="../../assets/js/math-pathway-nav.js"></script>
+<script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

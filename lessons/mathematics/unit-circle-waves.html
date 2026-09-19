@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Unit Circle &amp; Waves · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Trigonometry from the ground up: drag a point around the unit circle, watch sine and cosine become waves, learn radians, SOH-CAH-TOA, and build waves that lead to Fourier series." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 304px; --ll-accent: #2563eb; --ll-tab-active: #2563eb; --ll-tab-active-bg: rgba(37,99,235,0.12); }
+    .tc-page { padding-bottom: 3.5rem; --sin: #2563eb; --cos: #ea580c; --tan: #16a34a; }
+    .tc-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .tc-hero h1 { max-width: 28ch; margin: 0; font-size: clamp(1.55rem, 3.5vw, 2.35rem); }
+    .tc-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.55rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .tc-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45; }
+    .tc-lede { max-width: 70ch; margin: 0.7rem 0 0; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+
+    .tc-card { background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7); border-left: 3.5px solid var(--card-accent, #2563eb); border-radius: var(--radius, 18px); box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .tc-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .tc-card h3 { margin: 0.95rem 0 0.35rem; font-size: 1rem; }
+    .tc-card p, .tc-card li { color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .tc-card p { margin: 0 0 0.62rem; }
+    .tc-card p:last-child { margin-bottom: 0; }
+    .tc-sin { color: var(--sin); font-weight: 700; }
+    .tc-cos { color: var(--cos); font-weight: 700; }
+    .tc-tan { color: var(--tan); font-weight: 700; }
+    .tc-mono { font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; }
+
+    .tc-canvases { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.8rem; margin: 0.8rem 0; }
+    .tc-cv { position: relative; height: 320px; border: 1px solid var(--line, #d2d2d7); border-radius: 12px; overflow: hidden; }
+    .tc-cv.short { height: 280px; }
+    .tc-cv canvas { display: block; touch-action: none; }
+    .tc-cv.drag canvas { cursor: grab; }
+
+    .tc-controls { display: flex; flex-wrap: wrap; gap: 0.6rem 1.2rem; align-items: center; margin: 0.5rem 0; }
+    .tc-controls label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; font-weight: 600; color: var(--text-main, #1d1d1f); }
+    .tc-controls input[type=range] { width: min(240px, 60vw); accent-color: var(--card-accent, #2563eb); }
+    .tc-btns { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.5rem 0; }
+    .tc-btn { padding: 0.32rem 0.7rem; border: 1px solid var(--line, #d2d2d7); border-radius: 999px; background: transparent; color: var(--text-main, #1d1d1f); font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+    .tc-btn:hover, .tc-btn:focus-visible { border-color: var(--card-accent, #2563eb); }
+    .tc-btn.primary { background: var(--card-accent, #2563eb); border-color: var(--card-accent, #2563eb); color: #fff; }
+
+    .tc-read { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem; margin: 0.6rem 0; }
+    .tc-read div { padding: 0.5rem 0.65rem; border: 1px solid var(--line, #d2d2d7); border-radius: 10px; font-size: 0.72rem; color: var(--text-muted, #64748b); }
+    .tc-read strong { display: block; margin-top: 0.1rem; font-size: 1rem; color: var(--text-main, #1d1d1f); font-family: "IBM Plex Mono", ui-monospace, monospace; }
+    .tc-status { min-height: 1.4em; margin: 0.4rem 0 0; font-size: 0.85rem; font-weight: 700; }
+    .tc-status.ok { color: #15803d; }
+
+    .tc-table { width: 100%; border-collapse: collapse; margin: 0.6rem 0; font-size: 0.8rem; }
+    .tc-table th, .tc-table td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--line, #d2d2d7); text-align: center; color: var(--text-secondary, #3f4f65); }
+    .tc-table th { color: var(--text-main, #1d1d1f); }
+
+    .tc-practice-item { display: grid; grid-template-columns: 1fr auto auto; gap: 0.6rem; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--line, #d2d2d7); }
+    .tc-practice-item:last-child { border-bottom: 0; }
+    .tc-practice-item p { margin: 0; }
+    .tc-practice-item input { width: 5.5rem; padding: 0.3rem 0.45rem; border: 1px solid var(--line, #d2d2d7); border-radius: 8px; background: transparent; color: var(--text-main, #1d1d1f); font: inherit; }
+    .tc-practice-item .fb { grid-column: 1 / -1; font-size: 0.8rem; font-weight: 700; }
+    .tc-practice-item .fb.ok { color: #15803d; }
+    .tc-practice-item .fb.no { color: #b45309; }
+    @media (max-width: 520px) { .tc-practice-item { grid-template-columns: 1fr; } }
+
+    [data-lighting="night"] .tc-lede, [data-theme="vaporwave"] .tc-lede, [data-theme="bark"] .tc-lede,
+    [data-lighting="night"] .tc-card p, [data-theme="vaporwave"] .tc-card p, [data-theme="bark"] .tc-card p,
+    [data-lighting="night"] .tc-card li, [data-theme="vaporwave"] .tc-card li, [data-theme="bark"] .tc-card li { color: rgba(245,245,247,0.72); }
+    [data-lighting="night"] .tc-card, [data-theme="vaporwave"] .tc-card, [data-theme="bark"] .tc-card { background: var(--white, #2c2c2e); }
+    [data-lighting="night"] .tc-controls label, [data-theme="vaporwave"] .tc-controls label, [data-theme="bark"] .tc-controls label,
+    [data-lighting="night"] .tc-read strong, [data-theme="vaporwave"] .tc-read strong, [data-theme="bark"] .tc-read strong,
+    [data-lighting="night"] .tc-btn, [data-theme="vaporwave"] .tc-btn, [data-theme="bark"] .tc-btn,
+    [data-lighting="night"] .tc-table th, [data-theme="vaporwave"] .tc-table th, [data-theme="bark"] .tc-table th,
+    [data-lighting="night"] .tc-practice-item input, [data-theme="vaporwave"] .tc-practice-item input, [data-theme="bark"] .tc-practice-item input { color: rgba(245,245,247,0.92); }
+    [data-lighting="night"] .tc-btn.primary, [data-theme="vaporwave"] .tc-btn.primary, [data-theme="bark"] .tc-btn.primary { color: #fff; }
+    [data-lighting="night"] .tc-table td, [data-theme="vaporwave"] .tc-table td, [data-theme="bark"] .tc-table td { color: rgba(245,245,247,0.72); }
+    [data-lighting="night"] .tc-page, [data-theme="vaporwave"] .tc-page, [data-theme="bark"] .tc-page { --sin: #7fb0ff; --cos: #ff9f5f; --tan: #4ade80; }
+    [data-lighting="night"] .tc-status.ok, [data-theme="vaporwave"] .tc-status.ok, [data-theme="bark"] .tc-status.ok,
+    [data-lighting="night"] .tc-practice-item .fb.ok, [data-theme="vaporwave"] .tc-practice-item .fb.ok, [data-theme="bark"] .tc-practice-item .fb.ok { color: #4ade80; }
+    [data-lighting="night"] .tc-practice-item .fb.no, [data-theme="vaporwave"] .tc-practice-item .fb.no, [data-theme="bark"] .tc-practice-item .fb.no { color: #fbbf24; }
+    [data-lighting="night"] .tc-tan-g, [data-theme="vaporwave"] .tc-tan-g, [data-theme="bark"] .tc-tan-g { color: #4ade80; }
+    [data-lighting="night"] .tc-neg, [data-theme="vaporwave"] .tc-neg, [data-theme="bark"] .tc-neg { color: #f87171; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="tc-page">
+        <section class="hero tc-hero">
+          <p class="eyebrow">Mathematics · Trigonometry</p>
+          <h1>The Unit Circle &amp; Waves</h1>
+          <div class="tc-meta">
+            <span>Unit circle</span><span class="dot"></span>
+            <span>Radians</span><span class="dot"></span>
+            <span>SOH-CAH-TOA</span><span class="dot"></span>
+            <span>Sine waves</span><span class="dot"></span>
+            <span>Toward Fourier</span>
+          </div>
+          <p class="tc-lede">Spin a point around a circle and its height traces a wave. That single picture is trigonometry: triangles, rotation, sound, light, and every repeating pattern in nature are the same idea seen from different sides. Build it with your hands, then use it.</p>
+        </section>
+
+        <section class="tc-card">
+          <h2>Learning Targets</h2>
+          <ul>
+            <li>Read <span class="tc-cos">cosine</span> as the x-coordinate and <span class="tc-sin">sine</span> as the y-coordinate of a point on the unit circle.</li>
+            <li>Explain why <span class="tc-mono">sin²θ + cos²θ = 1</span> using the Pythagorean theorem.</li>
+            <li>Convert between degrees and radians and say what a radian actually measures.</li>
+            <li>Use SOH-CAH-TOA to find a missing side of a right triangle.</li>
+            <li>Write a wave as <span class="tc-mono">y = A sin(B(x − C)) + D</span> and say what each letter does.</li>
+          </ul>
+          <p>Prerequisites: <a href="pythagoras.html">Pythagoras &amp; Triangles</a> and <a href="pi.html">Pi &amp; Circles</a>.</p>
+        </section>
+
+        <section class="tc-card" id="unit-circle" style="--card-accent:#2563eb;">
+          <h2>Lab 1 · The Unit Circle</h2>
+          <p>The unit circle has radius 1. Drag the point (or use the slider) and watch. The <span class="tc-cos">orange</span> segment is how far right the point is: <strong>cos θ</strong>. The <span class="tc-sin">blue</span> segment is how high it is: <strong>sin θ</strong>. On the right, the wave records both as the angle grows from 0 to 360°.</p>
+          <div class="tc-canvases">
+            <div class="tc-cv drag" id="uc-circle-box"><canvas id="uc-circle" aria-label="Unit circle with draggable point"></canvas></div>
+            <div class="tc-cv" id="uc-wave-box"><canvas id="uc-wave" aria-label="Sine and cosine waves for the current angle"></canvas></div>
+          </div>
+          <div class="tc-controls">
+            <label>Angle <input id="uc-slider" type="range" min="0" max="360" step="1" value="45" aria-label="Angle in degrees" /></label>
+            <label><input id="uc-tan" type="checkbox" /> Show <span class="tc-tan">tangent</span></label>
+            <button class="tc-btn primary" id="uc-play" type="button">▶ Spin</button>
+          </div>
+          <div class="tc-btns" id="uc-snaps" aria-label="Special angles"></div>
+          <div class="tc-read">
+            <div>Angle<strong id="uc-deg">45°</strong></div>
+            <div>Radians<strong id="uc-rad">π/4</strong></div>
+            <div><span class="tc-cos">cos θ</span> (x)<strong id="uc-cos">0.707</strong></div>
+            <div><span class="tc-sin">sin θ</span> (y)<strong id="uc-sin">0.707</strong></div>
+            <div><span class="tc-tan">tan θ</span> (sin ÷ cos)<strong id="uc-tanv">1.000</strong></div>
+            <div>sin² + cos²<strong id="uc-id">1.000</strong></div>
+          </div>
+          <p class="tc-mono" id="uc-exact" aria-live="polite"></p>
+          <h3>Why sin² + cos² = 1</h3>
+          <p>The point, its shadow on the x-axis, and the origin make a right triangle. Its legs are cos θ and sin θ. Its hypotenuse is the radius, which is 1. Pythagoras says <span class="tc-mono">cos²θ + sin²θ = 1²</span>. Try any angle: the last readout never leaves 1.</p>
+          <p><strong>Notice:</strong> Which quadrants make cosine negative? Which make sine negative? Drag around and write down the pattern before you read the table below.</p>
+          <table class="tc-table" aria-label="Signs by quadrant">
+            <tr><th>Quadrant</th><th>Angle</th><th>cos (x)</th><th>sin (y)</th><th>tan</th></tr>
+            <tr><td>I</td><td>0°–90°</td><td>+</td><td>+</td><td>+</td></tr>
+            <tr><td>II</td><td>90°–180°</td><td>−</td><td>+</td><td>−</td></tr>
+            <tr><td>III</td><td>180°–270°</td><td>−</td><td>−</td><td>+</td></tr>
+            <tr><td>IV</td><td>270°–360°</td><td>+</td><td>−</td><td>−</td></tr>
+          </table>
+        </section>
+
+        <section class="tc-card" id="radians" style="--card-accent:#ea580c;">
+          <h2>Lab 2 · What Is a Radian?</h2>
+          <p>Degrees are a human choice (360 came from the Babylonians). Radians come from the circle itself: <strong>one radian is the angle whose arc is exactly as long as the radius.</strong> Slide the angle and watch radius-length pieces peel off the arc onto the ruler below. The full circle takes a little more than six of them: 2π ≈ 6.28.</p>
+          <div class="tc-cv" id="rad-box" style="height:340px;"><canvas id="rad-canvas" aria-label="Arc length in radius units"></canvas></div>
+          <div class="tc-controls">
+            <label>Angle (radians) <input id="rad-slider" type="range" min="0" max="6.2832" step="0.01" value="1" aria-label="Angle in radians" style="--card-accent:#ea580c" /></label>
+          </div>
+          <div class="tc-btns" id="rad-snaps"></div>
+          <div class="tc-read">
+            <div>Radians<strong id="rad-r">1.00</strong></div>
+            <div>Degrees<strong id="rad-d">57.3°</strong></div>
+            <div>Radius-lengths of arc<strong id="rad-n">1.00</strong></div>
+          </div>
+          <p><strong>The conversion:</strong> a half circle is π radians = 180°, so <span class="tc-mono">radians = degrees × π/180</span> and <span class="tc-mono">degrees = radians × 180/π</span>. Arc length is simply <span class="tc-mono">s = rθ</span>, with no extra constants, which is why science and engineering use radians.</p>
+        </section>
+
+        <section class="tc-card" id="triangles" style="--card-accent:#16a34a;">
+          <h2>Lab 3 · SOH-CAH-TOA</h2>
+          <p>Any right triangle is a scaled copy of a unit-circle triangle. That is why the ratios of its sides depend only on the angle, not the size. Change the angle and the hypotenuse; the ratios barely notice the size.</p>
+          <div class="tc-cv short" id="tri-box"><canvas id="tri-canvas" aria-label="Right triangle with adjustable angle and hypotenuse"></canvas></div>
+          <div class="tc-controls">
+            <label>Angle θ <input id="tri-angle" type="range" min="5" max="85" step="1" value="35" aria-label="Triangle angle in degrees" style="--card-accent:#16a34a" /> <span id="tri-angle-v" class="tc-mono">35°</span></label>
+            <label>Hypotenuse <input id="tri-hyp" type="range" min="2" max="10" step="0.5" value="8" aria-label="Hypotenuse length" style="--card-accent:#16a34a" /> <span id="tri-hyp-v" class="tc-mono">8</span></label>
+          </div>
+          <div class="tc-btns" id="tri-modes" role="group" aria-label="Highlight a ratio">
+            <button class="tc-btn primary" type="button" data-mode="sin">SOH · sin θ = opp ÷ hyp</button>
+            <button class="tc-btn" type="button" data-mode="cos">CAH · cos θ = adj ÷ hyp</button>
+            <button class="tc-btn" type="button" data-mode="tan">TOA · tan θ = opp ÷ adj</button>
+          </div>
+          <div class="tc-read">
+            <div>Opposite<strong id="tri-opp">4.59</strong></div>
+            <div>Adjacent<strong id="tri-adj">6.55</strong></div>
+            <div>Hypotenuse<strong id="tri-h">8</strong></div>
+            <div>Highlighted ratio<strong id="tri-ratio">0.574</strong></div>
+          </div>
+          <p><strong>Use it:</strong> to find a side, pick the ratio that contains the side you know and the side you want, then solve. Opposite = hyp × sin θ. Adjacent = hyp × cos θ. Opposite = adjacent × tan θ.</p>
+        </section>
+
+        <section class="tc-card" id="waves" style="--card-accent:#7c3aed;">
+          <h2>Lab 4 · Build a Wave</h2>
+          <p>Every repeating pattern can be written as <span class="tc-mono">y = A sin(B(x − C)) + D</span>. Each letter changes one visible thing:</p>
+          <ul>
+            <li><strong>A</strong> amplitude: how tall the wave is.</li>
+            <li><strong>B</strong> frequency: how many cycles fit in 2π (period = 2π ÷ B).</li>
+            <li><strong>C</strong> phase shift: slides the wave sideways.</li>
+            <li><strong>D</strong> midline: slides the wave up or down.</li>
+          </ul>
+          <div class="tc-cv short" id="wv-box"><canvas id="wv-canvas" aria-label="Adjustable sine wave and target wave"></canvas></div>
+          <div class="tc-controls">
+            <label>A <input id="wv-A" type="range" min="0.5" max="3" step="0.25" value="1" style="--card-accent:#7c3aed" /> <span id="wv-A-v" class="tc-mono"></span></label>
+            <label>B <input id="wv-B" type="range" min="0.5" max="4" step="0.5" value="1" style="--card-accent:#7c3aed" /> <span id="wv-B-v" class="tc-mono"></span></label>
+            <label>C <input id="wv-C" type="range" min="-3" max="3" step="0.25" value="0" style="--card-accent:#7c3aed" /> <span id="wv-C-v" class="tc-mono"></span></label>
+            <label>D <input id="wv-D" type="range" min="-2" max="2" step="0.25" value="0" style="--card-accent:#7c3aed" /> <span id="wv-D-v" class="tc-mono"></span></label>
+          </div>
+          <p class="tc-mono" id="wv-eq"></p>
+          <div class="tc-btns">
+            <button class="tc-btn primary" id="wv-target" type="button" style="background:#7c3aed;border-color:#7c3aed;">🎯 New target wave</button>
+            <button class="tc-btn" id="wv-clear" type="button">Hide target</button>
+          </div>
+          <p class="tc-status" id="wv-status" aria-live="polite">Press “New target wave”, then match the dashed wave with your four sliders.</p>
+        </section>
+
+        <section class="tc-card" id="fourier" style="--card-accent:#db2777;">
+          <h2>Lab 5 · Waves Add Up (a Preview of Fourier)</h2>
+          <p>Here is the surprise that makes trig matter: add sine waves of different sizes and you can build almost any shape. Start with the recipe below and watch a square wave appear from nothing but curves.</p>
+          <div class="tc-cv short" id="sum-box"><canvas id="sum-canvas" aria-label="Sum of odd harmonics"></canvas></div>
+          <div class="tc-controls" id="sum-sliders"></div>
+          <div class="tc-btns">
+            <button class="tc-btn primary" id="sum-square" type="button" style="background:#db2777;border-color:#db2777;">Square-wave recipe (1, ⅓, ⅕, 1⁄7)</button>
+            <button class="tc-btn" id="sum-reset" type="button">Just sin x</button>
+          </div>
+          <p>Each slider is one harmonic: sin x, sin 3x, sin 5x, sin 7x. Add more of them and the corners get sharper. Continue this idea to infinity and you have the <a href="fourier-series.html">Fourier Series</a>, which powers audio compression, JPEG, and every equalizer.</p>
+        </section>
+
+        <section class="tc-card" style="--card-accent:#0ea5e9;">
+          <h2>Where Trigonometry Lives</h2>
+          <ul>
+            <li><strong>Games and graphics:</strong> rotating a sprite by θ uses (cos θ, sin θ).</li>
+            <li><strong>Sound:</strong> a pure tone is a sine wave; pitch is B, loudness is A.</li>
+            <li><strong>Surveying and navigation:</strong> tan θ turns an angle and a distance into a height.</li>
+            <li><strong>Engineering and physics:</strong> springs, pendulums, AC power, and light are all waves.</li>
+          </ul>
+        </section>
+
+        <section class="tc-card" id="practice" style="--card-accent:#0ea5e9;">
+          <h2>Practice</h2>
+          <p>Round to two decimal places where needed. Answers within 0.05 count.</p>
+          <div id="tc-practice">
+            <div class="tc-practice-item" data-answer="0.5" data-hint="Use the unit circle at 30°, or a 30-60-90 triangle."><p>1. What is sin 30°?</p><input type="number" step="any" aria-label="Answer 1" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="5" data-hint="Opposite = hypotenuse × sin θ."><p>2. A ramp is 10 m long and rises at 30°. How high does it reach (m)?</p><input type="number" step="any" aria-label="Answer 2" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="6.93" data-hint="The wall is opposite the 60° angle at the ground; the ladder is the hypotenuse."><p>3. An 8 m ladder leans against a wall at 60° to the ground. How high up the wall does it touch (m)?</p><input type="number" step="any" aria-label="Answer 3" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="20" data-hint="tan 45° = 1."><p>4. The Sun is 45° above the horizon and a tree casts a 20 m shadow. How tall is the tree (m)?</p><input type="number" step="any" aria-label="Answer 4" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="0.8" data-hint="sin² + cos² = 1, so sin² = 1 − 0.36. Take the positive root (quadrant I)."><p>5. In quadrant I, cos θ = 0.6. What is sin θ?</p><input type="number" step="any" aria-label="Answer 5" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="270" data-hint="Multiply by 180/π: (3π/2) × 180/π."><p>6. Convert 3π/2 radians to degrees.</p><input type="number" step="any" aria-label="Answer 6" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="3.14" data-hint="Period = 2π ÷ B."><p>7. What is the period of y = sin(2x)? (Give a decimal.)</p><input type="number" step="any" aria-label="Answer 7" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+          </div>
+        </section>
+
+        <section class="tc-card" style="--card-accent:#dc2626;">
+          <h2>Exit Ticket</h2>
+          <ul>
+            <li>Explain in a sentence why the point at 90° has cos θ = 0 and sin θ = 1.</li>
+            <li>A wave has amplitude 3, completes 2 cycles in 2π, and its midline is y = 1. Write its equation.</li>
+            <li>Why is a radian a more “natural” unit than a degree?</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+
+    <aside class="ll-panel" aria-label="Lesson panel">
+      <div class="ll-panel-inner">
+        <div class="ll-tabs" role="tablist" aria-label="Unit circle panel tabs">
+          <button class="ll-tab active" type="button" data-ll-tab="guide">Guide</button>
+          <button class="ll-tab" type="button" data-ll-tab="controls">Teacher</button>
+        </div>
+        <div class="ll-pane active" data-ll-panel="guide">
+          <span class="ll-label">Key Facts</span>
+          <div class="ll-info"><strong>cos θ</strong> x-coordinate on the unit circle.</div>
+          <div class="ll-info"><strong>sin θ</strong> y-coordinate on the unit circle.</div>
+          <div class="ll-info"><strong>tan θ</strong> sin θ ÷ cos θ, the slope of the radius.</div>
+          <div class="ll-info"><strong>π rad</strong> = 180°</div>
+          <div class="ll-info"><strong>sin² + cos²</strong> = 1</div>
+          <span class="ll-label">Special Angles</span>
+          <div class="ll-info"><strong>30°</strong> sin ½, cos √3⁄2</div>
+          <div class="ll-info"><strong>45°</strong> sin = cos = √2⁄2</div>
+          <div class="ll-info"><strong>60°</strong> sin √3⁄2, cos ½</div>
+        </div>
+        <div class="ll-pane" data-ll-panel="controls">
+          <span class="ll-label">Lesson Flow</span>
+          <div class="ll-info"><strong>Warm-up</strong> Have students predict sin 90° before touching Lab 1.</div>
+          <div class="ll-info"><strong>Lab 1–2</strong> Let students drag first, then name the pattern in the signs table.</div>
+          <div class="ll-info"><strong>Lab 3</strong> Ask: what changes when the hypotenuse doubles? (Nothing in the ratios.)</div>
+          <div class="ll-info"><strong>Lab 4</strong> Pair challenge: match three targets, and say which slider moved first and why.</div>
+          <div class="ll-info"><strong>Close</strong> Lab 5 leads to the Fourier lesson.</div>
+        </div>
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+  </div>
+</div>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../index.html">Home</a> · <a href="../../steam-lessons.html">Lessons</a></p>
+  </footer>
+
+  <script src="../../assets/js/theme-registry.js"></script>
+  <script src="../../assets/js/nav-mobile.js"></script>
+  <script src="../../assets/js/sim-kit.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var TAU = Math.PI * 2;
+    var SIN = "#2563eb", COS = "#ea580c", TAN = "#16a34a";
+    function $(id) { return document.getElementById(id); }
+    function fmt(n, d) { return (Math.abs(n) < 0.0005 ? 0 : n).toFixed(d == null ? 3 : d); }
+    function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+    function col() { return SimKit.theme.colors(); }
+    function line(ctx, x1, y1, x2, y2, color, w, dash) {
+      ctx.beginPath(); ctx.setLineDash(dash || []); ctx.strokeStyle = color; ctx.lineWidth = w || 1;
+      ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
+    }
+    function dot(ctx, x, y, r, color) { ctx.beginPath(); ctx.fillStyle = color; ctx.arc(x, y, r, 0, TAU); ctx.fill(); }
+    function label(ctx, t, x, y, color, align, size) {
+      ctx.fillStyle = color; ctx.font = "600 " + (size || 12) + "px 'IBM Plex Mono', monospace";
+      ctx.textAlign = align || "left"; ctx.textBaseline = "middle"; ctx.fillText(t, x, y);
+    }
+    function mk(id, boxId, draw) {
+      var kit = SimKit.canvas2d($(id), { box: $(boxId), onResize: function () { draw(); } });
+      return kit;
+    }
+    function piText(rad) {
+      var deg = Math.round(rad * 180 / Math.PI);
+      if (Math.abs(rad * 180 / Math.PI - deg) > 0.01) return rad.toFixed(3);
+      if (deg === 0) return "0";
+      var g = gcd(deg, 180), n = deg / g, d = 180 / g;
+      return (n === 1 ? "π" : n + "π") + (d > 1 ? "/" + d : "");
+    }
+
+    /* ── Lab 1: unit circle ─────────────────────────────── */
+    var theta = Math.PI / 4, playing = false, dragging = false;
+    var ucCircle, ucWave;
+    var EX = { 0: "0", 30: "1/2", 45: "√2/2", 60: "√3/2", 90: "1" };
+    function exact(deg) {
+      var d = ((Math.round(deg) % 360) + 360) % 360;
+      if (d % 15 !== 0 || (d % 30 !== 0 && d % 45 !== 0)) return null;
+      var ref = d <= 90 ? d : d <= 180 ? 180 - d : d <= 270 ? d - 180 : 360 - d;
+      var sinRef = EX[ref], cosRef = EX[90 - ref];
+      if (sinRef === undefined) return null;
+      var sinNeg = d > 180, cosNeg = d > 90 && d < 270;
+      return { s: (sinNeg && sinRef !== "0" ? "−" : "") + sinRef, c: (cosNeg && cosRef !== "0" ? "−" : "") + cosRef };
+    }
+    function geom(kit) {
+      var w = kit.width, h = kit.height;
+      return { w: w, h: h, cx: w / 2, cy: h / 2, r: Math.max(20, Math.min(w / 2 - 44, h / 2 - 36)) };
+    }
+    function drawCircle() {
+      if (!ucCircle) return;
+      var c = col(), g = geom(ucCircle), ctx = ucCircle.ctx, cs = Math.cos(theta), sn = Math.sin(theta);
+      ctx.clearRect(0, 0, g.w, g.h);
+      line(ctx, g.cx - g.r - 24, g.cy, g.cx + g.r + 24, g.cy, c.textMuted, 1);
+      line(ctx, g.cx, g.cy - g.r - 24, g.cx, g.cy + g.r + 24, c.textMuted, 1);
+      ctx.beginPath(); ctx.strokeStyle = c.text; ctx.lineWidth = 2; ctx.arc(g.cx, g.cy, g.r, 0, TAU); ctx.stroke();
+      var px = g.cx + g.r * cs, py = g.cy - g.r * sn;
+      if ($("uc-tan").checked && Math.abs(cs) > 0.02) {
+        var ty = Math.max(-g.h, Math.min(g.h, g.cy - g.r * Math.tan(theta)));
+        var side = cs > 0 ? 1 : -1;
+        var tx = g.cx + side * g.r, tyy = g.cy - side * g.r * Math.tan(theta);
+        tyy = Math.max(6, Math.min(g.h - 6, tyy));
+        line(ctx, g.cx, g.cy, tx, tyy, TAN, 1, [4, 4]);
+        line(ctx, tx, g.cy, tx, tyy, TAN, 3);
+      }
+      ctx.beginPath(); ctx.strokeStyle = c.accent; ctx.lineWidth = 2; ctx.arc(g.cx, g.cy, 22, 0, -theta, true); ctx.stroke();
+      line(ctx, g.cx, g.cy, px, py, c.text, 2);
+      line(ctx, g.cx, g.cy, px, g.cy, COS, 4);
+      line(ctx, px, g.cy, px, py, SIN, 4);
+      line(ctx, px, py, px, g.cy, SIN, 4);
+      dot(ctx, px, py, 8, c.accent);
+      label(ctx, "1", g.cx + g.r * cs / 2 - 10 * sn, g.cy - g.r * sn / 2 - 10 * cs, c.textMuted, "center", 11);
+      label(ctx, "cos", (g.cx + px) / 2, g.cy + (sn >= 0 ? 14 : -14), COS, "center", 11);
+      label(ctx, "sin", px + (cs >= 0 ? 16 : -16), (g.cy + py) / 2, SIN, "center", 11);
+      label(ctx, "(" + fmt(cs, 2) + ", " + fmt(sn, 2) + ")", Math.max(50, Math.min(g.w - 50, px)), py + (sn >= 0 ? -18 : 18), c.text, "center", 11);
+    }
+    function drawWave() {
+      if (!ucWave) return;
+      var c = col(), ctx = ucWave.ctx, w = ucWave.width, h = ucWave.height;
+      var g = geom(ucCircle || ucWave), r = g.r, cy = h / 2, x0 = 30, x1 = w - 16;
+      function X(t) { return x0 + t / TAU * (x1 - x0); }
+      ctx.clearRect(0, 0, w, h);
+      line(ctx, x0, cy, x1, cy, c.textMuted, 1);
+      for (var k = 0; k <= 4; k++) {
+        var tx = X(k * Math.PI / 2);
+        line(ctx, tx, cy - 5, tx, cy + 5, c.textMuted, 1);
+        label(ctx, ["0", "π/2", "π", "3π/2", "2π"][k], tx, cy + 18, c.textMuted, k === 0 ? "left" : k === 4 ? "right" : "center", 10);
+      }
+      [1, -1].forEach(function (v) { line(ctx, x0, cy - v * r, x1, cy - v * r, c.textMuted, 0.6, [3, 4]); label(ctx, v > 0 ? "1" : "−1", 4, cy - v * r, c.textMuted, "left", 10); });
+      [[Math.cos, COS], [Math.sin, SIN]].forEach(function (p) {
+        ctx.beginPath(); ctx.strokeStyle = p[1]; ctx.lineWidth = 2.5;
+        for (var i = 0; i <= 160; i++) { var t = i / 160 * TAU, y = cy - r * p[0](t); i ? ctx.lineTo(X(t), y) : ctx.moveTo(X(t), y); }
+        ctx.stroke();
+      });
+      line(ctx, X(theta), cy - r - 10, X(theta), cy + r + 10, c.accent, 1.5, [4, 3]);
+      dot(ctx, X(theta), cy - r * Math.cos(theta), 6, COS);
+      dot(ctx, X(theta), cy - r * Math.sin(theta), 6, SIN);
+      label(ctx, "cos", x1, 12, COS, "right", 12);
+      label(ctx, "sin", x1 - 40, 12, SIN, "right", 12);
+    }
+    function updateUC(fromSlider) {
+      var deg = theta * 180 / Math.PI, cs = Math.cos(theta), sn = Math.sin(theta);
+      if (!fromSlider) $("uc-slider").value = Math.round(deg);
+      $("uc-deg").textContent = Math.round(deg) + "°";
+      $("uc-rad").textContent = piText(theta);
+      $("uc-cos").textContent = fmt(cs);
+      $("uc-sin").textContent = fmt(sn);
+      $("uc-tanv").textContent = Math.abs(cs) < 0.001 ? "undefined" : fmt(sn / cs);
+      $("uc-id").textContent = fmt(sn * sn + cs * cs);
+      var ex = exact(deg);
+      $("uc-exact").textContent = ex ? "Exact values: cos = " + ex.c + ", sin = " + ex.s : "";
+      drawCircle(); drawWave();
+    }
+    ucCircle = mk("uc-circle", "uc-circle-box", drawCircle);
+    ucWave = mk("uc-wave", "uc-wave-box", drawWave);
+    var snaps = [0, 30, 45, 60, 90, 120, 135, 150, 180, 225, 270, 315, 360];
+    snaps.forEach(function (d) {
+      var b = document.createElement("button"); b.type = "button"; b.className = "tc-btn"; b.textContent = d + "°";
+      b.addEventListener("click", function () { theta = d * Math.PI / 180; updateUC(); });
+      $("uc-snaps").appendChild(b);
+    });
+    $("uc-slider").addEventListener("input", function (e) { theta = e.target.value * Math.PI / 180; updateUC(true); });
+    $("uc-tan").addEventListener("change", drawCircle);
+    $("uc-play").addEventListener("click", function () {
+      playing = !playing; this.textContent = playing ? "⏸ Pause" : "▶ Spin";
+    });
+    function pointerAngle(e) {
+      var rect = ucCircle.ctx.canvas.getBoundingClientRect();
+      var a = Math.atan2(-(e.clientY - rect.top - rect.height / 2), e.clientX - rect.left - rect.width / 2);
+      theta = (a + TAU) % TAU; updateUC();
+    }
+    var cv1 = $("uc-circle");
+    cv1.addEventListener("pointerdown", function (e) { dragging = true; playing = false; $("uc-play").textContent = "▶ Spin"; try { cv1.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ } pointerAngle(e); });
+    cv1.addEventListener("pointermove", function (e) { if (dragging) pointerAngle(e); });
+    cv1.addEventListener("pointerup", function () { dragging = false; });
+    cv1.addEventListener("pointercancel", function () { dragging = false; });
+    SimKit.loop(function (dt) { if (playing) { theta = (theta + dt * 0.9) % TAU; updateUC(); } });
+    SimKit.theme.onChange(function () { drawCircle(); drawWave(); drawRad(); drawTri(); drawWv(); drawSum(); });
+
+    /* ── Lab 2: radians ─────────────────────────────────── */
+    var rad = 1, radKit;
+    function drawRad() {
+      if (!radKit) return;
+      var c = col(), ctx = radKit.ctx, w = radKit.width, h = radKit.height;
+      var rr = Math.max(14, Math.min((w - 48) / 6.6, h * 0.26)), cx = w / 2, cy = h * 0.4 - 4, by = h - 34, bx = (w - TAU * rr) / 2;
+      ctx.clearRect(0, 0, w, h);
+      ctx.beginPath(); ctx.strokeStyle = c.textMuted; ctx.lineWidth = 1; ctx.arc(cx, cy, rr, 0, TAU); ctx.stroke();
+      line(ctx, cx - rr - 16, cy, cx + rr + 16, cy, c.textMuted, 1);
+      // radius reference
+      line(ctx, cx, cy, cx + rr, cy, COS, 3);
+      label(ctx, "r", cx + rr / 2, cy + 13, COS, "center", 12);
+      // arc
+      ctx.beginPath(); ctx.strokeStyle = SIN; ctx.lineWidth = 5; ctx.arc(cx, cy, rr, 0, -rad, true); ctx.stroke();
+      line(ctx, cx, cy, cx + rr * Math.cos(rad), cy - rr * Math.sin(rad), c.text, 2);
+      for (var k = 1; k <= Math.floor(rad); k++) dot(ctx, cx + rr * Math.cos(k), cy - rr * Math.sin(k), 3.5, COS);
+      // ruler
+      line(ctx, bx, by, bx + TAU * rr, by, c.textMuted, 1, [2, 4]);
+      for (var i = 0; i < 7; i++) {
+        var a = i * rr, b = Math.min((i + 1) * rr, rad * rr);
+        if (i * rr >= rad * rr) break;
+        ctx.fillStyle = i % 2 ? "rgba(37,99,235,0.85)" : "rgba(37,99,235,0.55)";
+        ctx.fillRect(bx + a, by - 8, b - a, 16);
+        if (b - a >= rr - 0.5) label(ctx, "r", bx + a + rr / 2, by, "#fff", "center", 12);
+      }
+      label(ctx, "arc unrolled: " + fmt(rad, 2) + " r", bx, by + 22, c.textMuted, "left", 11);
+      label(ctx, "2π r", bx + TAU * rr, by + 22, c.textMuted, "right", 11);
+    }
+    function updateRad(v) {
+      rad = v; $("rad-slider").value = v;
+      $("rad-r").textContent = fmt(rad, 2);
+      $("rad-d").textContent = fmt(rad * 180 / Math.PI, 1) + "°";
+      $("rad-n").textContent = fmt(rad, 2);
+      drawRad();
+    }
+    radKit = mk("rad-canvas", "rad-box", drawRad);
+    $("rad-slider").addEventListener("input", function (e) { updateRad(+e.target.value); });
+    [["1 radian", 1], ["π/2", Math.PI / 2], ["π", Math.PI], ["3π/2", 1.5 * Math.PI], ["2π", TAU]].forEach(function (p) {
+      var b = document.createElement("button"); b.type = "button"; b.className = "tc-btn"; b.textContent = p[0];
+      b.addEventListener("click", function () { updateRad(p[1]); });
+      $("rad-snaps").appendChild(b);
+    });
+
+    /* ── Lab 3: SOH-CAH-TOA ─────────────────────────────── */
+    var triKit, triMode = "sin";
+    function drawTri() {
+      if (!triKit) return;
+      var c = col(), ctx = triKit.ctx, w = triKit.width, h = triKit.height;
+      var a = +$("tri-angle").value * Math.PI / 180, H = +$("tri-hyp").value;
+      var s = Math.min((w - 90) / 10, (h - 80) / 10) , opp = H * Math.sin(a), adj = H * Math.cos(a);
+      var x0 = (w - adj * s) / 2, y0 = h - 40;
+      var A = [x0, y0], B = [x0 + adj * s, y0], C = [B[0], y0 - opp * s];
+      ctx.clearRect(0, 0, w, h);
+      function side(p, q, color, on) { line(ctx, p[0], p[1], q[0], q[1], on ? color : c.textMuted, on ? 5 : 2.5); }
+      var hi = { sin: ["opp", "hyp"], cos: ["adj", "hyp"], tan: ["opp", "adj"] }[triMode];
+      side(A, B, COS, hi.indexOf("adj") >= 0);
+      side(B, C, SIN, hi.indexOf("opp") >= 0);
+      side(A, C, c.text, hi.indexOf("hyp") >= 0);
+      var q = 12; ctx.strokeStyle = c.textMuted; ctx.lineWidth = 1.5; ctx.strokeRect(B[0] - q, B[1] - q, q, q);
+      ctx.beginPath(); ctx.strokeStyle = c.accent; ctx.lineWidth = 2; ctx.arc(A[0], A[1], 30, 0, -a, true); ctx.stroke();
+      label(ctx, "θ", A[0] + 40, A[1] - 8, c.accent, "left", 14);
+      label(ctx, "adjacent", (A[0] + B[0]) / 2, y0 + 18, COS, "center", 12);
+      label(ctx, "opposite", B[0] + 10, (B[1] + C[1]) / 2, SIN, w - B[0] < 90 ? "right" : "left", 12);
+      label(ctx, "hypotenuse", (A[0] + C[0]) / 2 - 12, (A[1] + C[1]) / 2 - 14, c.text, "right", 12);
+    }
+    function updateTri() {
+      var deg = +$("tri-angle").value, H = +$("tri-hyp").value, a = deg * Math.PI / 180;
+      var opp = H * Math.sin(a), adj = H * Math.cos(a);
+      $("tri-angle-v").textContent = deg + "°"; $("tri-hyp-v").textContent = H;
+      $("tri-opp").textContent = fmt(opp, 2); $("tri-adj").textContent = fmt(adj, 2); $("tri-h").textContent = H;
+      $("tri-ratio").textContent = fmt(triMode === "sin" ? opp / H : triMode === "cos" ? adj / H : opp / adj);
+      drawTri();
+    }
+    triKit = mk("tri-canvas", "tri-box", drawTri);
+    $("tri-angle").addEventListener("input", updateTri);
+    $("tri-hyp").addEventListener("input", updateTri);
+    $("tri-modes").addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      triMode = b.dataset.mode;
+      this.querySelectorAll("button").forEach(function (x) { x.classList.toggle("primary", x === b); });
+      updateTri();
+    });
+
+    /* ── Lab 4: build a wave ────────────────────────────── */
+    var wvKit, target = null;
+    function wvParams() { return { A: +$("wv-A").value, B: +$("wv-B").value, C: +$("wv-C").value, D: +$("wv-D").value }; }
+    function wave(p, x) { return p.A * Math.sin(p.B * (x - p.C)) + p.D; }
+    function drawWv() {
+      if (!wvKit) return;
+      var c = col(), ctx = wvKit.ctx, w = wvKit.width, h = wvKit.height, cy = h / 2, sy = (h - 24) / 10, x0 = 26, x1 = w - 12, XR = 2 * TAU;
+      function X(x) { return x0 + x / XR * (x1 - x0); }
+      ctx.clearRect(0, 0, w, h);
+      for (var v = -4; v <= 4; v++) { line(ctx, x0, cy - v * sy, x1, cy - v * sy, c.textMuted, v ? 0.4 : 1.2); if (v) label(ctx, "" + v, 4, cy - v * sy, c.textMuted, "left", 10); }
+      for (var k = 0; k <= 4; k++) { var tx = X(k * Math.PI); line(ctx, tx, cy - 4, tx, cy + 4, c.textMuted, 1); if (k) label(ctx, k === 1 ? "π" : k + "π", tx, cy + 15, c.textMuted, "center", 10); }
+      function plot(p, color, wdt, dash) {
+        ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = wdt; ctx.setLineDash(dash || []);
+        for (var i = 0; i <= 240; i++) { var x = i / 240 * XR, y = cy - wave(p, x) * sy; i ? ctx.lineTo(X(x), y) : ctx.moveTo(X(x), y); }
+        ctx.stroke(); ctx.setLineDash([]);
+      }
+      if (target) plot(target, c.textMuted, 2.5, [6, 5]);
+      plot(wvParams(), "#7c3aed", 3);
+    }
+    function updateWv() {
+      var p = wvParams();
+      $("wv-A-v").textContent = p.A; $("wv-B-v").textContent = p.B; $("wv-C-v").textContent = p.C; $("wv-D-v").textContent = p.D;
+      $("wv-eq").textContent = "y = " + p.A + " sin(" + p.B + "(x " + (p.C < 0 ? "+ " + (-p.C) : "− " + p.C) + ")) " + (p.D < 0 ? "− " + (-p.D) : "+ " + p.D);
+      var st = $("wv-status");
+      if (target) {
+        var ok = p.A === target.A && p.B === target.B && p.D === target.D &&
+          (Math.abs(p.C - target.C) < 0.01 || (Math.abs(p.B * (p.C - target.C)) % TAU) < 0.01 || Math.abs((p.B * (p.C - target.C)) % TAU - TAU) < 0.01);
+        st.textContent = ok ? "✔ Matched! Same wave. Which slider did you move first, and why?" : "Keep adjusting: match the height, the number of cycles, the slide, and the midline.";
+        st.className = "tc-status" + (ok ? " ok" : "");
+      }
+      drawWv();
+    }
+    function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+    wvKit = mk("wv-canvas", "wv-box", drawWv);
+    ["A", "B", "C", "D"].forEach(function (k) { $("wv-" + k).addEventListener("input", updateWv); });
+    $("wv-target").addEventListener("click", function () {
+      target = { A: pick([1, 1.5, 2, 2.5]), B: pick([1, 2, 3]), C: pick([-1, -0.5, 0.5, 1, 1.5]), D: pick([-1, 0, 1]) };
+      updateWv();
+    });
+    $("wv-clear").addEventListener("click", function () {
+      target = null; $("wv-status").textContent = "Target hidden. Build any wave you like."; $("wv-status").className = "tc-status"; drawWv();
+    });
+    updateWv();
+
+    /* ── Lab 5: sum of harmonics ────────────────────────── */
+    var sumKit, harmonics = [1, 3, 5, 7], amps = [1, 0, 0, 0];
+    function drawSum() {
+      if (!sumKit) return;
+      var c = col(), ctx = sumKit.ctx, w = sumKit.width, h = sumKit.height, cy = h / 2, sy = (h - 30) / 3.4, x0 = 22, x1 = w - 12;
+      function X(t) { return x0 + t / TAU * (x1 - x0); }
+      ctx.clearRect(0, 0, w, h);
+      line(ctx, x0, cy, x1, cy, c.textMuted, 1);
+      [1, -1].forEach(function (v) { line(ctx, x0, cy - v * sy, x1, cy - v * sy, c.textMuted, 0.5, [3, 4]); });
+      harmonics.forEach(function (n, j) {
+        if (!amps[j]) return;
+        ctx.beginPath(); ctx.strokeStyle = "rgba(219,39,119,0.35)"; ctx.lineWidth = 1.5;
+        for (var i = 0; i <= 200; i++) { var t = i / 200 * TAU, y = cy - amps[j] * Math.sin(n * t) * sy; i ? ctx.lineTo(X(t), y) : ctx.moveTo(X(t), y); }
+        ctx.stroke();
+      });
+      ctx.beginPath(); ctx.strokeStyle = "#db2777"; ctx.lineWidth = 3;
+      for (var i = 0; i <= 300; i++) {
+        var t = i / 300 * TAU, s = 0;
+        harmonics.forEach(function (n, j) { s += amps[j] * Math.sin(n * t); });
+        var y = cy - s * sy; i ? ctx.lineTo(X(t), y) : ctx.moveTo(X(t), y);
+      }
+      ctx.stroke();
+    }
+    function setAmps(a) { amps = a.slice(); harmonics.forEach(function (_, j) { $("sum-s" + j).value = amps[j]; $("sum-v" + j).textContent = (+amps[j]).toFixed(2); }); drawSum(); }
+    harmonics.forEach(function (n, j) {
+      var l = document.createElement("label");
+      l.innerHTML = "sin " + (n === 1 ? "" : n) + "x <input id=\"sum-s" + j + "\" type=\"range\" min=\"0\" max=\"1\" step=\"0.01\" value=\"" + amps[j] + "\" style=\"--card-accent:#db2777\" /> <span class=\"tc-mono\" id=\"sum-v" + j + "\">" + amps[j].toFixed(2) + "</span>";
+      $("sum-sliders").appendChild(l);
+      l.querySelector("input").addEventListener("input", function (e) { amps[j] = +e.target.value; $("sum-v" + j).textContent = amps[j].toFixed(2); drawSum(); });
+    });
+    sumKit = mk("sum-canvas", "sum-box", drawSum);
+    $("sum-square").addEventListener("click", function () { setAmps([1, 1 / 3, 1 / 5, 1 / 7]); });
+    $("sum-reset").addEventListener("click", function () { setAmps([1, 0, 0, 0]); });
+
+    /* ── Practice ───────────────────────────────────────── */
+    document.querySelectorAll(".tc-practice-item").forEach(function (item) {
+      var input = item.querySelector("input"), fb = item.querySelector(".fb");
+      function check() {
+        var v = parseFloat(input.value);
+        if (isNaN(v)) { fb.textContent = "Enter a number."; fb.className = "fb no"; return; }
+        var ok = Math.abs(v - parseFloat(item.dataset.answer)) <= 0.05;
+        fb.textContent = ok ? "✔ Correct." : "Not yet. Hint: " + item.dataset.hint;
+        fb.className = "fb " + (ok ? "ok" : "no");
+      }
+      item.querySelector("button").addEventListener("click", check);
+      input.addEventListener("keydown", function (e) { if (e.key === "Enter") check(); });
+    });
+
+    updateUC(); updateRad(1); updateTri();
+  })();
+  </script>
+  <script src="../../assets/js/classroom-animations.js"></script>
+  <script src="../../assets/js/lesson-layout.js"></script>
+  <script src="../../assets/js/math-pathway-nav.js"></script>
+<script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

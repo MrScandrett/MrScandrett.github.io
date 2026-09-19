@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Slope of a Curve · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Zoom into a curve until it looks straight, watch secant lines converge on the tangent, graph the slope function, and discover the power rule: the bridge from linear slope to calculus." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 304px; --ll-accent: #2563eb; --ll-tab-active: #2563eb; --ll-tab-active-bg: rgba(37,99,235,0.12); }
+    .tc-page { padding-bottom: 3.5rem; --sin: #2563eb; --cos: #ea580c; --tan: #16a34a; }
+    .tc-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .tc-hero h1 { max-width: 28ch; margin: 0; font-size: clamp(1.55rem, 3.5vw, 2.35rem); }
+    .tc-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.55rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .tc-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45; }
+    .tc-lede { max-width: 70ch; margin: 0.7rem 0 0; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+
+    .tc-card { background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7); border-left: 3.5px solid var(--card-accent, #2563eb); border-radius: var(--radius, 18px); box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .tc-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .tc-card h3 { margin: 0.95rem 0 0.35rem; font-size: 1rem; }
+    .tc-card p, .tc-card li { color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .tc-card p { margin: 0 0 0.62rem; }
+    .tc-card p:last-child { margin-bottom: 0; }
+    .tc-sin { color: var(--sin); font-weight: 700; }
+    .tc-cos { color: var(--cos); font-weight: 700; }
+    .tc-tan { color: var(--tan); font-weight: 700; }
+    .tc-mono { font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; }
+
+    .tc-canvases { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.8rem; margin: 0.8rem 0; }
+    .tc-cv { position: relative; height: 320px; border: 1px solid var(--line, #d2d2d7); border-radius: 12px; overflow: hidden; }
+    .tc-cv.short { height: 280px; }
+    .tc-cv canvas { display: block; touch-action: none; }
+    .tc-cv.drag canvas { cursor: grab; }
+
+    .tc-controls { display: flex; flex-wrap: wrap; gap: 0.6rem 1.2rem; align-items: center; margin: 0.5rem 0; }
+    .tc-controls label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; font-weight: 600; color: var(--text-main, #1d1d1f); }
+    .tc-controls input[type=range] { width: min(240px, 60vw); accent-color: var(--card-accent, #2563eb); }
+    .tc-btns { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.5rem 0; }
+    .tc-btn { padding: 0.32rem 0.7rem; border: 1px solid var(--line, #d2d2d7); border-radius: 999px; background: transparent; color: var(--text-main, #1d1d1f); font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+    .tc-btn:hover, .tc-btn:focus-visible { border-color: var(--card-accent, #2563eb); }
+    .tc-btn.primary { background: var(--card-accent, #2563eb); border-color: var(--card-accent, #2563eb); color: #fff; }
+
+    .tc-read { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem; margin: 0.6rem 0; }
+    .tc-read div { padding: 0.5rem 0.65rem; border: 1px solid var(--line, #d2d2d7); border-radius: 10px; font-size: 0.72rem; color: var(--text-muted, #64748b); }
+    .tc-read strong { display: block; margin-top: 0.1rem; font-size: 1rem; color: var(--text-main, #1d1d1f); font-family: "IBM Plex Mono", ui-monospace, monospace; }
+    .tc-status { min-height: 1.4em; margin: 0.4rem 0 0; font-size: 0.85rem; font-weight: 700; }
+    .tc-status.ok { color: #15803d; }
+
+    .tc-table { width: 100%; border-collapse: collapse; margin: 0.6rem 0; font-size: 0.8rem; }
+    .tc-table th, .tc-table td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--line, #d2d2d7); text-align: center; color: var(--text-secondary, #3f4f65); }
+    .tc-table th { color: var(--text-main, #1d1d1f); }
+
+    .tc-practice-item { display: grid; grid-template-columns: 1fr auto auto; gap: 0.6rem; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--line, #d2d2d7); }
+    .tc-practice-item:last-child { border-bottom: 0; }
+    .tc-practice-item p { margin: 0; }
+    .tc-practice-item input { width: 5.5rem; padding: 0.3rem 0.45rem; border: 1px solid var(--line, #d2d2d7); border-radius: 8px; background: transparent; color: var(--text-main, #1d1d1f); font: inherit; }
+    .tc-practice-item .fb { grid-column: 1 / -1; font-size: 0.8rem; font-weight: 700; }
+    .tc-practice-item .fb.ok { color: #15803d; }
+    .tc-practice-item .fb.no { color: #b45309; }
+    @media (max-width: 520px) { .tc-practice-item { grid-template-columns: 1fr; } }
+
+    [data-lighting="night"] .tc-lede, [data-theme="vaporwave"] .tc-lede, [data-theme="bark"] .tc-lede,
+    [data-lighting="night"] .tc-card p, [data-theme="vaporwave"] .tc-card p, [data-theme="bark"] .tc-card p,
+    [data-lighting="night"] .tc-card li, [data-theme="vaporwave"] .tc-card li, [data-theme="bark"] .tc-card li { color: rgba(245,245,247,0.72); }
+    [data-lighting="night"] .tc-card, [data-theme="vaporwave"] .tc-card, [data-theme="bark"] .tc-card { background: var(--white, #2c2c2e); }
+    [data-lighting="night"] .tc-controls label, [data-theme="vaporwave"] .tc-controls label, [data-theme="bark"] .tc-controls label,
+    [data-lighting="night"] .tc-read strong, [data-theme="vaporwave"] .tc-read strong, [data-theme="bark"] .tc-read strong,
+    [data-lighting="night"] .tc-btn, [data-theme="vaporwave"] .tc-btn, [data-theme="bark"] .tc-btn,
+    [data-lighting="night"] .tc-table th, [data-theme="vaporwave"] .tc-table th, [data-theme="bark"] .tc-table th,
+    [data-lighting="night"] .tc-practice-item input, [data-theme="vaporwave"] .tc-practice-item input, [data-theme="bark"] .tc-practice-item input { color: rgba(245,245,247,0.92); }
+    [data-lighting="night"] .tc-btn.primary, [data-theme="vaporwave"] .tc-btn.primary, [data-theme="bark"] .tc-btn.primary { color: #fff; }
+    [data-lighting="night"] .tc-table td, [data-theme="vaporwave"] .tc-table td, [data-theme="bark"] .tc-table td { color: rgba(245,245,247,0.72); }
+
+    .ex-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; margin: 0.35rem 0; }
+    .ex-chip { display: inline-grid; place-items: center; min-width: 1.7rem; height: 1.7rem; padding: 0 0.3rem; border-radius: 8px; background: rgba(100,116,139,0.2); color: var(--text-main, #1d1d1f); font: 700 0.85rem "IBM Plex Mono", monospace; }
+    .ex-chip.b { background: rgba(37,99,235,0.22); }
+    .ex-chip.o { background: rgba(234,88,12,0.22); }
+    .ex-chip.x { text-decoration: line-through; opacity: 0.45; }
+    .ex-op, .ex-one { font: 700 0.9rem "IBM Plex Mono", monospace; color: var(--text-muted, #64748b); padding: 0 0.3rem; }
+    .ex-one { color: var(--text-main, #1d1d1f); }
+    .ex-group { display: inline-flex; gap: 0.2rem; padding: 0.2rem 0.35rem; border: 1.5px solid var(--line, #94a3b8); border-radius: 12px; }
+    .ex-frac { display: inline-block; margin: 0.35rem 0; }
+    .ex-bar { height: 2px; background: var(--text-muted, #64748b); margin: 0.15rem 0; }
+    [data-lighting="night"] .ex-chip, [data-theme="vaporwave"] .ex-chip, [data-theme="bark"] .ex-chip, [data-lighting="night"] .ex-one, [data-theme="vaporwave"] .ex-one, [data-theme="bark"] .ex-one { color: rgba(245,245,247,0.92); }
+
+    .tc-tan-g { color: #16a34a; font-weight: 700; }
+    .tc-neg { color: #dc2626; font-weight: 700; }
+    [data-lighting="night"] .tc-page, [data-theme="vaporwave"] .tc-page, [data-theme="bark"] .tc-page { --sin: #7fb0ff; --cos: #ff9f5f; --tan: #4ade80; }
+    [data-lighting="night"] .tc-status.ok, [data-theme="vaporwave"] .tc-status.ok, [data-theme="bark"] .tc-status.ok,
+    [data-lighting="night"] .tc-practice-item .fb.ok, [data-theme="vaporwave"] .tc-practice-item .fb.ok, [data-theme="bark"] .tc-practice-item .fb.ok { color: #4ade80; }
+    [data-lighting="night"] .tc-practice-item .fb.no, [data-theme="vaporwave"] .tc-practice-item .fb.no, [data-theme="bark"] .tc-practice-item .fb.no { color: #fbbf24; }
+    [data-lighting="night"] .tc-tan-g, [data-theme="vaporwave"] .tc-tan-g, [data-theme="bark"] .tc-tan-g { color: #4ade80; }
+    [data-lighting="night"] .tc-neg, [data-theme="vaporwave"] .tc-neg, [data-theme="bark"] .tc-neg { color: #f87171; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="tc-page">
+        <section class="hero tc-hero">
+          <p class="eyebrow">Mathematics · Rate of Change</p>
+          <h1>Slope of a Curve</h1>
+          <div class="tc-meta">
+            <span>Zooming in</span><span class="dot"></span>
+            <span>Secant lines</span><span class="dot"></span>
+            <span>Instantaneous rate</span><span class="dot"></span>
+            <span>The slope function</span><span class="dot"></span>
+            <span>Toward calculus</span>
+          </div>
+          <p class="tc-lede">A line has one slope everywhere. A curve has a different slope at every point, so what does “the slope at this exact spot” even mean? Zoom in far enough and every smooth curve looks like a straight line. That one observation is the heart of calculus, and you can see it happen.</p>
+        </section>
+
+        <section class="tc-card">
+          <h2>Learning Targets</h2>
+          <ul>
+            <li>Explain why a smooth curve looks straight under enough magnification.</li>
+            <li>Compute an average rate of change from a secant line, and watch it approach an instantaneous rate as the gap shrinks.</li>
+            <li>Read the sign of the slope as “rising, falling, or flat” and find peaks and valleys.</li>
+            <li>Discover the power rule from numbers, and connect it to speed.</li>
+          </ul>
+          <p>Prerequisites: <a href="linear-equations-slope.html">Linear Equations &amp; Slope</a> and <a href="graphing-calculator.html">Graphing Calculator</a>. Next: <a href="minecraft-calculus-terrain.html">Minecraft Calculus</a> and <a href="eulers-number.html">How e Was Discovered</a>.</p>
+        </section>
+
+        <section class="tc-card" id="zoom" style="--card-accent:#2563eb;">
+          <h2>Lab 1 · Zoom Until It Is Straight</h2>
+          <p>Choose a curve and a point on it. Then turn up the magnification. The window shrinks around the point, and the same scale is used horizontally and vertically, so the slope you see is the real slope. Watch the <span class="tc-sin">curve</span> settle onto the <span class="tc-cos">tangent line</span>.</p>
+          <div class="tc-btns" id="zm-fns" role="group" aria-label="Choose a curve"></div>
+          <div class="tc-cv" id="zm-box" style="height:320px;"><canvas id="zm-canvas" aria-label="Curve magnified around a point"></canvas></div>
+          <div class="tc-controls">
+            <label>Point x₀ <input id="zm-x" type="range" min="-2" max="2" step="0.05" value="1" /> <span id="zm-xv" class="tc-mono">1.00</span></label>
+            <label>Zoom <input id="zm-z" type="range" min="0" max="100" step="1" value="0" /> <span id="zm-zv" class="tc-mono">×1</span></label>
+            <label><input id="zm-tan" type="checkbox" checked /> Show tangent line</label>
+          </div>
+          <p class="tc-mono" id="zm-note" aria-live="polite"></p>
+        </section>
+
+        <section class="tc-card" id="secant" style="--card-accent:#ea580c;">
+          <h2>Lab 2 · From Average to Instantaneous</h2>
+          <p>Slope needs two points, but at a single instant there is only one. The fix: take a second point a small distance <strong>h</strong> away and draw the <span class="tc-cos">secant line</span> through both. That slope is the <em>average</em> rate of change over the gap. Now shrink h and watch it settle on a single number.</p>
+          <div class="tc-btns" id="se-fns" role="group" aria-label="Choose a curve"></div>
+          <div class="tc-cv" id="se-box" style="height:320px;"><canvas id="se-canvas" aria-label="Secant line approaching the tangent"></canvas></div>
+          <div class="tc-controls">
+            <label>Point x₀ <input id="se-x" type="range" min="-2" max="2" step="0.05" value="1" style="--card-accent:#ea580c" /> <span id="se-xv" class="tc-mono">1.00</span></label>
+            <label>Gap h <input id="se-h" type="range" min="0" max="3" step="0.02" value="0" style="--card-accent:#ea580c" aria-label="Gap size on a log scale" /> <span id="se-hv" class="tc-mono">2</span></label>
+          </div>
+          <div class="tc-read">
+            <div>Secant slope<br /><span class="tc-mono" style="font-size:.7rem">(f(x₀+h) − f(x₀)) ÷ h</span><strong id="se-sec">0</strong></div>
+            <div>Tangent slope<strong id="se-tan">0</strong></div>
+            <div>Difference<strong id="se-diff">0</strong></div>
+          </div>
+          <p><strong>Notice:</strong> you never set h to zero (that would be 0 ÷ 0), yet the secant slope has a clear target. The <em>limit</em> of the secant slope as h → 0 is the derivative.</p>
+        </section>
+
+        <section class="tc-card" id="slopefn" style="--card-accent:#16a34a;">
+          <h2>Lab 3 · The Slope Function</h2>
+          <p>Do this at every point and you get a new function, the <strong>slope function</strong> (derivative). Drag the point along the curve. The top graph is f. The bottom graph is the slope of f at each x. Where the curve rises the slope is <span class="tc-tan-g">positive</span>. Where it falls the slope is <span class="tc-neg">negative</span>. At a peak or valley the slope is <strong>zero</strong>.</p>
+          <div class="tc-btns" id="sf-fns" role="group" aria-label="Choose a curve"></div>
+          <div class="tc-cv" id="sf-box" style="height:400px;"><canvas id="sf-canvas" aria-label="A function above its slope function"></canvas></div>
+          <div class="tc-controls">
+            <label>Point x₀ <input id="sf-x" type="range" min="-3" max="3" step="0.02" value="-1" style="--card-accent:#16a34a" /> <span id="sf-xv" class="tc-mono">-1.00</span></label>
+          </div>
+          <div class="tc-read">
+            <div>f(x₀)<strong id="sf-f">0</strong></div>
+            <div>Slope at x₀<strong id="sf-d">0</strong></div>
+            <div>The curve is<strong id="sf-dir" style="font-size:.85rem">rising</strong></div>
+          </div>
+          <p class="tc-mono" id="sf-rule" aria-live="polite"></p>
+          <p><strong>Try eˣ:</strong> its slope function is <em>itself</em>. Everywhere its height equals its slope. That is the property that makes e special in <a href="eulers-number.html">How e Was Discovered</a>.</p>
+        </section>
+
+        <section class="tc-card" id="power" style="--card-accent:#7c3aed;">
+          <h2>Lab 4 · Discover the Power Rule</h2>
+          <p>For f(x) = xⁿ, the computer below finds the slope at x₀ by brute force (a tiny secant, h = 0.00001). Compare it with the guess <span class="tc-mono">n · x₀ⁿ⁻¹</span>. Change n and x₀ and see whether the guess ever fails.</p>
+          <div class="tc-controls">
+            <label>Power n <input id="pw-n" type="range" min="0" max="6" step="1" value="3" style="--card-accent:#7c3aed" /> <span id="pw-nv" class="tc-mono">3</span></label>
+            <label>Point x₀ <input id="pw-x" type="range" min="-3" max="3" step="0.25" value="2" style="--card-accent:#7c3aed" /> <span id="pw-xv" class="tc-mono">2</span></label>
+          </div>
+          <div class="tc-read">
+            <div>Measured slope<strong id="pw-m">0</strong></div>
+            <div>Guess n · x₀ⁿ⁻¹<strong id="pw-g">0</strong></div>
+            <div>Match?<strong id="pw-ok" style="font-size:.85rem">yes</strong></div>
+          </div>
+          <table class="tc-table" aria-label="Power rule examples">
+            <tr><th>f(x)</th><th>slope function</th><th>Reading</th></tr>
+            <tr><td>x²</td><td>2x</td><td>Steeper as x grows</td></tr>
+            <tr><td>x³</td><td>3x²</td><td>Never negative, flat at 0</td></tr>
+            <tr><td>x</td><td>1</td><td>A line has constant slope</td></tr>
+            <tr><td>constant</td><td>0</td><td>Nothing changes</td></tr>
+          </table>
+        </section>
+
+        <section class="tc-card" style="--card-accent:#db2777;">
+          <h2>Where This Shows Up</h2>
+          <ul>
+            <li><strong>Speed:</strong> the slope of a position graph is velocity, and the slope of a velocity graph is acceleration.</li>
+            <li><strong>Optimization:</strong> maximum profit or minimum material is where the slope is zero.</li>
+            <li><strong>Terrain and games:</strong> steepness of a hill decides which way water flows. See <a href="minecraft-calculus-terrain.html">Minecraft Calculus</a>.</li>
+            <li><strong>Machine learning:</strong> training follows the slope downhill to reduce error.</li>
+          </ul>
+        </section>
+
+        <section class="tc-card" id="practice" style="--card-accent:#0ea5e9;">
+          <h2>Practice</h2>
+          <p>Answers within 0.05 count.</p>
+          <div id="tc-practice">
+            <div class="tc-practice-item" data-answer="3" data-hint="For a line y = mx + b the slope is m."><p>1. What is the slope of y = 3x + 2?</p><input type="number" step="any" aria-label="Answer 1" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="4" data-hint="(f(3) − f(1)) ÷ 2 = (9 − 1) ÷ 2."><p>2. Average slope of f(x) = x² between x = 1 and x = 3?</p><input type="number" step="any" aria-label="Answer 2" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="6" data-hint="Slope function of x² is 2x. At x = 3 that is 6."><p>3. Slope of f(x) = x² at x = 3?</p><input type="number" step="any" aria-label="Answer 3" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="0" data-hint="2x at x = 0."><p>4. Slope of f(x) = x² at x = 0?</p><input type="number" step="any" aria-label="Answer 4" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="32" data-hint="Power rule: 4 · 2³ = 4 · 8."><p>5. Slope of f(x) = x⁴ at x = 2?</p><input type="number" step="any" aria-label="Answer 5" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="1" data-hint="Use Lab 3: sine starts out rising at a 45° angle."><p>6. Slope of f(x) = sin x at x = 0?</p><input type="number" step="any" aria-label="Answer 6" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="2" data-hint="Slope function of −x² + 4x is −2x + 4. Set it to 0."><p>7. At what x does f(x) = −x² + 4x have slope 0?</p><input type="number" step="any" aria-label="Answer 7" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="1" data-hint="eˣ has slope equal to its own value, and e⁰ = 1."><p>8. Slope of f(x) = eˣ at x = 0?</p><input type="number" step="any" aria-label="Answer 8" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+          </div>
+        </section>
+
+        <section class="tc-card" style="--card-accent:#dc2626;">
+          <h2>Exit Ticket</h2>
+          <ul>
+            <li>Explain in your own words why the secant slope becomes the tangent slope as h shrinks.</li>
+            <li>A ball's height is graphed against time. What does the slope at the top of its flight equal, and why?</li>
+            <li>Why does the slope of x² change sign at x = 0 while the slope of x³ does not?</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+
+    <aside class="ll-panel" aria-label="Lesson panel">
+      <div class="ll-panel-inner">
+        <div class="ll-tabs" role="tablist" aria-label="Slope of a curve panel tabs">
+          <button class="ll-tab active" type="button" data-ll-tab="guide">Guide</button>
+          <button class="ll-tab" type="button" data-ll-tab="controls">Teacher</button>
+        </div>
+        <div class="ll-pane active" data-ll-panel="guide">
+          <span class="ll-label">Key Ideas</span>
+          <div class="ll-info"><strong>Secant slope</strong> (f(x+h) − f(x)) ÷ h, average over a gap.</div>
+          <div class="ll-info"><strong>Tangent slope</strong> the value the secant slope approaches as h → 0.</div>
+          <div class="ll-info"><strong>Derivative</strong> the slope at every point, as a function.</div>
+          <span class="ll-label">Power Rule</span>
+          <div class="ll-info"><strong>xⁿ</strong> has slope function <strong>n·xⁿ⁻¹</strong></div>
+          <span class="ll-label">Reading Slope</span>
+          <div class="ll-info"><strong>+</strong> rising · <strong>−</strong> falling · <strong>0</strong> peak, valley, or flat</div>
+        </div>
+        <div class="ll-pane" data-ll-panel="controls">
+          <span class="ll-label">Lesson Flow</span>
+          <div class="ll-info"><strong>Warm-up</strong> Ask: what is your speed at exactly 3:00 pm? Discuss why “speed” needs a time interval.</div>
+          <div class="ll-info"><strong>Lab 1</strong> Zoom to maximum, then ask students to describe the curve in one word.</div>
+          <div class="ll-info"><strong>Lab 2</strong> Have students record secant slopes for h = 2, 1, 0.5, 0.1 and predict the limit.</div>
+          <div class="ll-info"><strong>Lab 3</strong> Have students sketch the slope graph before revealing it.</div>
+          <div class="ll-info"><strong>Close</strong> Bridge to Minecraft Calculus and Euler's number.</div>
+        </div>
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+  </div>
+</div>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../index.html">Home</a> · <a href="../../steam-lessons.html">Lessons</a></p>
+  </footer>
+
+  <script src="../../assets/js/theme-registry.js"></script>
+  <script src="../../assets/js/nav-mobile.js"></script>
+  <script src="../../assets/js/sim-kit.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var TAU = Math.PI * 2;
+    var SIN = "#2563eb", COS = "#ea580c", GRN = "#16a34a", RED = "#dc2626";
+    function $(id) { return document.getElementById(id); }
+    function col() { return SimKit.theme.colors(); }
+    function f2(x) { return (Math.abs(x) < 0.0005 ? 0 : x).toFixed(3).replace(/\.?0+$/, ""); }
+    function line(ctx, x1, y1, x2, y2, color, w, dash) {
+      ctx.beginPath(); ctx.setLineDash(dash || []); ctx.strokeStyle = color; ctx.lineWidth = w || 1;
+      ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
+    }
+    function dot(ctx, x, y, r, color) { ctx.beginPath(); ctx.fillStyle = color; ctx.arc(x, y, r, 0, TAU); ctx.fill(); }
+    function label(ctx, t, x, y, color, align, size) {
+      ctx.fillStyle = color; ctx.font = "600 " + (size || 11) + "px 'IBM Plex Mono', monospace";
+      ctx.textAlign = align || "left"; ctx.textBaseline = "middle"; ctx.fillText(t, x, y);
+    }
+    function mk(id, boxId, draw) { return SimKit.canvas2d($(id), { box: $(boxId), onResize: function () { draw(); } }); }
+
+    var FNS = [
+      { name: "x²", f: function (x) { return x * x; }, d: function (x) { return 2 * x; }, rule: "slope of x² is 2x" },
+      { name: "x³ − 3x", f: function (x) { return x * x * x - 3 * x; }, d: function (x) { return 3 * x * x - 3; }, rule: "slope of x³ − 3x is 3x² − 3" },
+      { name: "sin x", f: Math.sin, d: Math.cos, rule: "slope of sin x is cos x" },
+      { name: "eˣ", f: Math.exp, d: Math.exp, rule: "slope of eˣ is eˣ, the function itself" }
+    ];
+    function picker(containerId, onPick) {
+      var box = $(containerId), state = { fn: FNS[0] };
+      FNS.forEach(function (fn, i) {
+        var b = document.createElement("button"); b.type = "button"; b.className = "tc-btn" + (i === 0 ? " primary" : ""); b.textContent = "f(x) = " + fn.name;
+        b.addEventListener("click", function () {
+          state.fn = fn;
+          box.querySelectorAll("button").forEach(function (x) { x.classList.toggle("primary", x === b); });
+          onPick();
+        });
+        box.appendChild(b);
+      });
+      return state;
+    }
+    function rangeOf(fn, a, b) {
+      var lo = Infinity, hi = -Infinity;
+      for (var i = 0; i <= 200; i++) { var y = fn(a + (b - a) * i / 200); if (y < lo) lo = y; if (y > hi) hi = y; }
+      var pad = Math.max((hi - lo) * 0.1, 0.2); return [lo - pad, hi + pad];
+    }
+
+    /* ── Lab 1: zoom ────────────────────────────────────── */
+    var zmKit, zm = picker("zm-fns", function () { updateZoom(); });
+    function zoomFactor() { return Math.pow(10, +$("zm-z").value / 25); }
+    function drawZoom() {
+      if (!zmKit) return;
+      var c = col(), ctx = zmKit.ctx, w = zmKit.width, h = zmKit.height, fn = zm.fn, x0 = +$("zm-x").value, y0 = fn.f(x0), d = fn.d(x0);
+      var W = 2 / zoomFactor(), ppu = w / (2 * W);
+      function X(x) { return w / 2 + (x - x0) * ppu; }
+      function Y(y) { return h / 2 - (y - y0) * ppu; }
+      ctx.clearRect(0, 0, w, h);
+      line(ctx, 0, h / 2, w, h / 2, c.textMuted, 0.5, [3, 4]);
+      line(ctx, w / 2, 0, w / 2, h, c.textMuted, 0.5, [3, 4]);
+      if ($("zm-tan").checked) line(ctx, 0, Y(y0 + d * (x0 - W - x0)), w, Y(y0 + d * W), COS, 2, [6, 4]);
+      ctx.beginPath(); ctx.strokeStyle = SIN; ctx.lineWidth = 3;
+      for (var px = 0; px <= w; px += 2) {
+        var x = x0 + (px - w / 2) / ppu, y = Y(fn.f(x));
+        px ? ctx.lineTo(px, y) : ctx.moveTo(px, y);
+      }
+      ctx.stroke();
+      dot(ctx, w / 2, h / 2, 6, c.accent);
+      label(ctx, "window is " + f2(2 * W) + " units wide", 10, 14, c.textMuted, "left", 11);
+    }
+    function updateZoom() {
+      var x0 = +$("zm-x").value, z = zoomFactor(), fn = zm.fn, W = 2 / z, ppu = 1;
+      $("zm-xv").textContent = x0.toFixed(2); $("zm-zv").textContent = "×" + (z < 10 ? z.toFixed(1) : Math.round(z).toLocaleString("en-US"));
+      var box = $("zm-box"), pxPerUnit = box.clientWidth / (2 * W);
+      var dev = Math.abs(fn.f(x0 + W) - fn.f(x0) - fn.d(x0) * W) * pxPerUnit;
+      $("zm-note").textContent = "Slope at x₀ = " + f2(fn.d(x0)) + ".  Gap between curve and tangent at the window edge: " + (dev < 0.5 ? "under half a pixel, so it looks perfectly straight" : dev.toFixed(1) + " px");
+      drawZoom();
+    }
+    zmKit = mk("zm-canvas", "zm-box", drawZoom);
+    $("zm-x").addEventListener("input", updateZoom);
+    $("zm-z").addEventListener("input", updateZoom);
+    $("zm-tan").addEventListener("change", drawZoom);
+
+    /* ── Lab 2: secant ──────────────────────────────────── */
+    var seKit, se = picker("se-fns", function () { updateSecant(); });
+    function gap() { return 2 * Math.pow(10, -(+$("se-h").value)); }
+    function drawSecant() {
+      if (!seKit) return;
+      var c = col(), ctx = seKit.ctx, w = seKit.width, h = seKit.height, fn = se.fn, x0 = +$("se-x").value, hh = gap();
+      var xa = -3, xb = 5, r = rangeOf(fn.f, xa, xb), L = 30, R = 10, T = 10, B = 24;
+      function X(x) { return L + (x - xa) / (xb - xa) * (w - L - R); }
+      function Y(y) { return h - B - (y - r[0]) / (r[1] - r[0]) * (h - T - B); }
+      ctx.clearRect(0, 0, w, h);
+      if (r[0] < 0 && r[1] > 0) line(ctx, L, Y(0), w - R, Y(0), c.textMuted, 1);
+      line(ctx, X(0), T, X(0), h - B, c.textMuted, 1);
+      for (var k = -2; k <= 4; k += 2) label(ctx, "" + k, X(k), h - B + 12, c.textMuted, "center", 10);
+      ctx.beginPath(); ctx.strokeStyle = SIN; ctx.lineWidth = 3;
+      for (var i = 0; i <= 240; i++) { var x = xa + (xb - xa) * i / 240, y = Y(fn.f(x)); i ? ctx.lineTo(X(x), y) : ctx.moveTo(X(x), y); }
+      ctx.stroke();
+      var y0 = fn.f(x0), y1 = fn.f(x0 + hh), m = (y1 - y0) / hh;
+      var a = xa, b = xb;
+      ctx.save(); ctx.beginPath(); ctx.rect(L, T, w - L - R, h - T - B); ctx.clip();
+      line(ctx, X(a), Y(y0 + m * (a - x0)), X(b), Y(y0 + m * (b - x0)), COS, 2.5);
+      ctx.restore();
+      line(ctx, X(x0), Y(y0), X(x0 + hh), Y(y0), "rgba(234,88,12,0.6)", 1.5, [3, 3]);
+      line(ctx, X(x0 + hh), Y(y0), X(x0 + hh), Y(y1), "rgba(234,88,12,0.6)", 1.5, [3, 3]);
+      dot(ctx, X(x0), Y(y0), 6, c.accent);
+      dot(ctx, X(x0 + hh), Y(y1), 5, COS);
+    }
+    function updateSecant() {
+      var fn = se.fn, x0 = +$("se-x").value, hh = gap(), sec = (fn.f(x0 + hh) - fn.f(x0)) / hh, tan = fn.d(x0);
+      $("se-xv").textContent = x0.toFixed(2); $("se-hv").textContent = +hh.toPrecision(3);
+      $("se-sec").textContent = f2(sec); $("se-tan").textContent = f2(tan); $("se-diff").textContent = f2(sec - tan);
+      drawSecant();
+    }
+    seKit = mk("se-canvas", "se-box", drawSecant);
+    $("se-x").addEventListener("input", updateSecant);
+    $("se-h").addEventListener("input", updateSecant);
+
+    /* ── Lab 3: slope function ──────────────────────────── */
+    var sfKit, sf = picker("sf-fns", function () { updateSF(); });
+    function drawSF() {
+      if (!sfKit) return;
+      var c = col(), ctx = sfKit.ctx, w = sfKit.width, h = sfKit.height, fn = sf.fn, x0 = +$("sf-x").value;
+      var xa = -3, xb = 3, L = 34, R = 10, gapPx = 18, hh = (h - gapPx) / 2;
+      var rf = rangeOf(fn.f, xa, xb), rd = rangeOf(fn.d, xa, xb);
+      function X(x) { return L + (x - xa) / (xb - xa) * (w - L - R); }
+      function YT(y) { return 8 + (rf[1] - y) / (rf[1] - rf[0]) * (hh - 22); }
+      function YB(y) { return hh + gapPx + (rd[1] - y) / (rd[1] - rd[0]) * (hh - 22); }
+      ctx.clearRect(0, 0, w, h);
+      label(ctx, "f(x)", 4, 10, c.text, "left", 11);
+      label(ctx, "slope of f", 4, hh + gapPx + 2, c.text, "left", 11);
+      [[YT, rf, 0], [YB, rd, 1]].forEach(function (p) {
+        var Y = p[0], r = p[1];
+        if (r[0] < 0 && r[1] > 0) line(ctx, L, Y(0), w - R, Y(0), c.textMuted, 1, p[2] ? [] : [3, 4]);
+      });
+      line(ctx, X(0), 8, X(0), h - 4, c.textMuted, 0.5, [3, 4]);
+      for (var k = -3; k <= 3; k++) label(ctx, "" + k, X(k), h - 2, c.textMuted, "center", 9);
+      var N = 300, prevD = null;
+      for (var i = 0; i < N; i++) {
+        var xs = xa + (xb - xa) * i / N, xe = xa + (xb - xa) * (i + 1) / N, dm = fn.d((xs + xe) / 2);
+        var colr = Math.abs(dm) < 0.04 ? c.textMuted : dm > 0 ? GRN : RED;
+        line(ctx, X(xs), YT(fn.f(xs)), X(xe), YT(fn.f(xe)), colr, 3);
+        line(ctx, X(xs), YB(fn.d(xs)), X(xe), YB(fn.d(xe)), colr, 3);
+        var dEnd = fn.d(xe);
+        if (prevD !== null && prevD * dEnd < 0) {
+          var xz = xs;
+          dot(ctx, X(xz), YT(fn.f(xz)), 5, c.text); dot(ctx, X(xz), YB(fn.d(xz)), 4, c.text);
+        }
+        prevD = dEnd;
+      }
+      var y0 = fn.f(x0), d0 = fn.d(x0), seg = 0.7;
+      line(ctx, X(x0 - seg), YT(y0 - d0 * seg), X(x0 + seg), YT(y0 + d0 * seg), COS, 2.5);
+      line(ctx, X(x0), 8, X(x0), h - 12, c.accent, 1.5, [4, 3]);
+      dot(ctx, X(x0), YT(y0), 6, c.accent);
+      dot(ctx, X(x0), YB(d0), 6, c.accent);
+    }
+    function updateSF() {
+      var fn = sf.fn, x0 = +$("sf-x").value, h = 1e-5, d = (fn.f(x0 + h) - fn.f(x0 - h)) / (2 * h);
+      $("sf-xv").textContent = x0.toFixed(2); $("sf-f").textContent = f2(fn.f(x0)); $("sf-d").textContent = f2(d);
+      $("sf-dir").textContent = d > 0.05 ? "rising" : d < -0.05 ? "falling" : "flat (peak, valley, or pause)";
+      $("sf-rule").textContent = fn.rule + "  (at x₀ this gives " + f2(fn.d(x0)) + ")";
+      drawSF();
+    }
+    sfKit = mk("sf-canvas", "sf-box", drawSF);
+    $("sf-x").addEventListener("input", updateSF);
+
+    /* ── Lab 4: power rule ──────────────────────────────── */
+    function updatePower() {
+      var n = +$("pw-n").value, x = +$("pw-x").value, h = 1e-5;
+      var m = (Math.pow(x + h, n) - Math.pow(x - h, n)) / (2 * h), g = n === 0 ? 0 : n * Math.pow(x, n - 1);
+      $("pw-nv").textContent = n; $("pw-xv").textContent = x;
+      $("pw-m").textContent = f2(m); $("pw-g").textContent = f2(g);
+      $("pw-ok").textContent = Math.abs(m - g) < 1e-3 * Math.max(1, Math.abs(g)) ? "yes ✔" : "no";
+    }
+    $("pw-n").addEventListener("input", updatePower);
+    $("pw-x").addEventListener("input", updatePower);
+
+    SimKit.theme.onChange(function () { drawZoom(); drawSecant(); drawSF(); });
+
+    /* ── Practice ───────────────────────────────────────── */
+    document.querySelectorAll(".tc-practice-item").forEach(function (item) {
+      var input = item.querySelector("input"), fb = item.querySelector(".fb");
+      function check() {
+        var v = parseFloat(input.value);
+        if (isNaN(v)) { fb.textContent = "Enter a number."; fb.className = "fb no"; return; }
+        var ok = Math.abs(v - parseFloat(item.dataset.answer)) <= 0.05;
+        fb.textContent = ok ? "✔ Correct." : "Not yet. Hint: " + item.dataset.hint;
+        fb.className = "fb " + (ok ? "ok" : "no");
+      }
+      item.querySelector("button").addEventListener("click", check);
+      input.addEventListener("keydown", function (e) { if (e.key === "Enter") check(); });
+    });
+
+    updateZoom(); updateSecant(); updateSF(); updatePower();
+  })();
+  </script>
+  <script src="../../assets/js/classroom-animations.js"></script>
+  <script src="../../assets/js/lesson-layout.js"></script>
+  <script src="../../assets/js/math-pathway-nav.js"></script>
+<script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

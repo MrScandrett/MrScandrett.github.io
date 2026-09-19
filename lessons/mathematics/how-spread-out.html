@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>How Spread Out? · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Drag data points and watch range, IQR, box plots, and standard deviation respond. Compare teams with the same mean, then place values on a bell curve with the 68-95-99.7 rule and z-scores." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 304px; --ll-accent: #2563eb; --ll-tab-active: #2563eb; --ll-tab-active-bg: rgba(37,99,235,0.12); }
+    .tc-page { padding-bottom: 3.5rem; --sin: #2563eb; --cos: #ea580c; --tan: #16a34a; }
+    .tc-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .tc-hero h1 { max-width: 28ch; margin: 0; font-size: clamp(1.55rem, 3.5vw, 2.35rem); }
+    .tc-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.55rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .tc-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45; }
+    .tc-lede { max-width: 70ch; margin: 0.7rem 0 0; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+
+    .tc-card { background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7); border-left: 3.5px solid var(--card-accent, #2563eb); border-radius: var(--radius, 18px); box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .tc-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .tc-card h3 { margin: 0.95rem 0 0.35rem; font-size: 1rem; }
+    .tc-card p, .tc-card li { color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .tc-card p { margin: 0 0 0.62rem; }
+    .tc-card p:last-child { margin-bottom: 0; }
+    .tc-sin { color: var(--sin); font-weight: 700; }
+    .tc-cos { color: var(--cos); font-weight: 700; }
+    .tc-tan { color: var(--tan); font-weight: 700; }
+    .tc-mono { font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; }
+
+    .tc-canvases { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.8rem; margin: 0.8rem 0; }
+    .tc-cv { position: relative; height: 320px; border: 1px solid var(--line, #d2d2d7); border-radius: 12px; overflow: hidden; }
+    .tc-cv.short { height: 280px; }
+    .tc-cv canvas { display: block; touch-action: none; }
+    .tc-cv.drag canvas { cursor: grab; }
+
+    .tc-controls { display: flex; flex-wrap: wrap; gap: 0.6rem 1.2rem; align-items: center; margin: 0.5rem 0; }
+    .tc-controls label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; font-weight: 600; color: var(--text-main, #1d1d1f); }
+    .tc-controls input[type=range] { width: min(240px, 60vw); accent-color: var(--card-accent, #2563eb); }
+    .tc-btns { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.5rem 0; }
+    .tc-btn { padding: 0.32rem 0.7rem; border: 1px solid var(--line, #d2d2d7); border-radius: 999px; background: transparent; color: var(--text-main, #1d1d1f); font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+    .tc-btn:hover, .tc-btn:focus-visible { border-color: var(--card-accent, #2563eb); }
+    .tc-btn.primary { background: var(--card-accent, #2563eb); border-color: var(--card-accent, #2563eb); color: #fff; }
+
+    .tc-read { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem; margin: 0.6rem 0; }
+    .tc-read div { padding: 0.5rem 0.65rem; border: 1px solid var(--line, #d2d2d7); border-radius: 10px; font-size: 0.72rem; color: var(--text-muted, #64748b); }
+    .tc-read strong { display: block; margin-top: 0.1rem; font-size: 1rem; color: var(--text-main, #1d1d1f); font-family: "IBM Plex Mono", ui-monospace, monospace; }
+    .tc-status { min-height: 1.4em; margin: 0.4rem 0 0; font-size: 0.85rem; font-weight: 700; }
+    .tc-status.ok { color: #15803d; }
+
+    .tc-table { width: 100%; border-collapse: collapse; margin: 0.6rem 0; font-size: 0.8rem; }
+    .tc-table th, .tc-table td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--line, #d2d2d7); text-align: center; color: var(--text-secondary, #3f4f65); }
+    .tc-table th { color: var(--text-main, #1d1d1f); }
+
+    .tc-practice-item { display: grid; grid-template-columns: 1fr auto auto; gap: 0.6rem; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--line, #d2d2d7); }
+    .tc-practice-item:last-child { border-bottom: 0; }
+    .tc-practice-item p { margin: 0; }
+    .tc-practice-item input { width: 5.5rem; padding: 0.3rem 0.45rem; border: 1px solid var(--line, #d2d2d7); border-radius: 8px; background: transparent; color: var(--text-main, #1d1d1f); font: inherit; }
+    .tc-practice-item .fb { grid-column: 1 / -1; font-size: 0.8rem; font-weight: 700; }
+    .tc-practice-item .fb.ok { color: #15803d; }
+    .tc-practice-item .fb.no { color: #b45309; }
+    @media (max-width: 520px) { .tc-practice-item { grid-template-columns: 1fr; } }
+
+    [data-lighting="night"] .tc-lede, [data-theme="vaporwave"] .tc-lede, [data-theme="bark"] .tc-lede,
+    [data-lighting="night"] .tc-card p, [data-theme="vaporwave"] .tc-card p, [data-theme="bark"] .tc-card p,
+    [data-lighting="night"] .tc-card li, [data-theme="vaporwave"] .tc-card li, [data-theme="bark"] .tc-card li { color: rgba(245,245,247,0.72); }
+    [data-lighting="night"] .tc-card, [data-theme="vaporwave"] .tc-card, [data-theme="bark"] .tc-card { background: var(--white, #2c2c2e); }
+    [data-lighting="night"] .tc-controls label, [data-theme="vaporwave"] .tc-controls label, [data-theme="bark"] .tc-controls label,
+    [data-lighting="night"] .tc-read strong, [data-theme="vaporwave"] .tc-read strong, [data-theme="bark"] .tc-read strong,
+    [data-lighting="night"] .tc-btn, [data-theme="vaporwave"] .tc-btn, [data-theme="bark"] .tc-btn,
+    [data-lighting="night"] .tc-table th, [data-theme="vaporwave"] .tc-table th, [data-theme="bark"] .tc-table th,
+    [data-lighting="night"] .tc-practice-item input, [data-theme="vaporwave"] .tc-practice-item input, [data-theme="bark"] .tc-practice-item input { color: rgba(245,245,247,0.92); }
+    [data-lighting="night"] .tc-btn.primary, [data-theme="vaporwave"] .tc-btn.primary, [data-theme="bark"] .tc-btn.primary { color: #fff; }
+    [data-lighting="night"] .tc-table td, [data-theme="vaporwave"] .tc-table td, [data-theme="bark"] .tc-table td { color: rgba(245,245,247,0.72); }
+
+    .ex-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; margin: 0.35rem 0; }
+    .ex-chip { display: inline-grid; place-items: center; min-width: 1.7rem; height: 1.7rem; padding: 0 0.3rem; border-radius: 8px; background: rgba(100,116,139,0.2); color: var(--text-main, #1d1d1f); font: 700 0.85rem "IBM Plex Mono", monospace; }
+    .ex-chip.b { background: rgba(37,99,235,0.22); }
+    .ex-chip.o { background: rgba(234,88,12,0.22); }
+    .ex-chip.x { text-decoration: line-through; opacity: 0.45; }
+    .ex-op, .ex-one { font: 700 0.9rem "IBM Plex Mono", monospace; color: var(--text-muted, #64748b); padding: 0 0.3rem; }
+    .ex-one { color: var(--text-main, #1d1d1f); }
+    .ex-group { display: inline-flex; gap: 0.2rem; padding: 0.2rem 0.35rem; border: 1.5px solid var(--line, #94a3b8); border-radius: 12px; }
+    .ex-frac { display: inline-block; margin: 0.35rem 0; }
+    .ex-bar { height: 2px; background: var(--text-muted, #64748b); margin: 0.15rem 0; }
+    [data-lighting="night"] .ex-chip, [data-theme="vaporwave"] .ex-chip, [data-theme="bark"] .ex-chip, [data-lighting="night"] .ex-one, [data-theme="vaporwave"] .ex-one, [data-theme="bark"] .ex-one { color: rgba(245,245,247,0.92); }
+
+    .tc-controls[hidden] { display: none; }
+    [data-lighting="night"] .tc-page, [data-theme="vaporwave"] .tc-page, [data-theme="bark"] .tc-page { --sin: #7fb0ff; --cos: #ff9f5f; --tan: #4ade80; }
+    [data-lighting="night"] .tc-status.ok, [data-theme="vaporwave"] .tc-status.ok, [data-theme="bark"] .tc-status.ok,
+    [data-lighting="night"] .tc-practice-item .fb.ok, [data-theme="vaporwave"] .tc-practice-item .fb.ok, [data-theme="bark"] .tc-practice-item .fb.ok { color: #4ade80; }
+    [data-lighting="night"] .tc-practice-item .fb.no, [data-theme="vaporwave"] .tc-practice-item .fb.no, [data-theme="bark"] .tc-practice-item .fb.no { color: #fbbf24; }
+    [data-lighting="night"] .tc-tan-g, [data-theme="vaporwave"] .tc-tan-g, [data-theme="bark"] .tc-tan-g { color: #4ade80; }
+    [data-lighting="night"] .tc-neg, [data-theme="vaporwave"] .tc-neg, [data-theme="bark"] .tc-neg { color: #f87171; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="tc-page">
+        <section class="hero tc-hero">
+          <p class="eyebrow">Mathematics · Statistics</p>
+          <h1>How Spread Out?</h1>
+          <div class="tc-meta">
+            <span>Range</span><span class="dot"></span>
+            <span>Quartiles &amp; IQR</span><span class="dot"></span>
+            <span>Box plots</span><span class="dot"></span>
+            <span>Standard deviation</span><span class="dot"></span>
+            <span>The bell curve</span>
+          </div>
+          <p class="tc-lede">Two basketball players both average 10 points a game. One scores 10 every night. The other scores 0 one night and 20 the next. The average cannot tell them apart. Spread can. Drag data points around, watch the numbers respond, and learn the measures statisticians use to describe consistency.</p>
+        </section>
+
+        <section class="tc-card">
+          <h2>Learning Targets</h2>
+          <ul>
+            <li>Compute and interpret the range, quartiles, and interquartile range (IQR).</li>
+            <li>Read a box plot and spot outliers with the 1.5 × IQR rule.</li>
+            <li>Explain standard deviation as a typical distance from the mean, and see how it responds to changing the data.</li>
+            <li>Use the 68–95–99.7 rule and a z-score to place a value on a bell curve.</li>
+          </ul>
+          <p>Prerequisites: <a href="mean-median-mode.html">Mean, Median &amp; Mode</a>. Next: <a href="probability-pachinko.html">Pachinko Probability Lab</a>, where a bell curve emerges from falling balls.</p>
+        </section>
+
+        <section class="tc-card" id="dots" style="--card-accent:#2563eb;">
+          <h2>Lab 1 · Drag the Data</h2>
+          <p>Each dot is one value on a number line from 0 to 20. <strong>Drag any dot left or right.</strong> The <span class="tc-cos">orange line</span> is the mean, the <span class="tc-sin">blue band</span> reaches one standard deviation either side, and the box plot underneath is built from the quartiles. Dots beyond the outlier fences turn red.</p>
+          <div class="tc-btns" id="dp-presets">
+            <button class="tc-btn primary" type="button" data-set="even">Evenly spread</button>
+            <button class="tc-btn" type="button" data-set="tight">Tight cluster</button>
+            <button class="tc-btn" type="button" data-set="split">Two groups</button>
+            <button class="tc-btn" type="button" data-set="outlier">One outlier</button>
+          </div>
+          <div class="tc-cv drag" id="dp-box" style="height:300px;"><canvas id="dp-canvas" aria-label="Draggable dot plot with mean, standard deviation band, and box plot"></canvas></div>
+          <div class="tc-read">
+            <div>Mean<strong id="dp-mean">10</strong></div>
+            <div>Median<strong id="dp-med">10</strong></div>
+            <div>Range<strong id="dp-range">0</strong></div>
+            <div>Q1 · Q3<strong id="dp-q">0 · 0</strong></div>
+            <div>IQR<strong id="dp-iqr">0</strong></div>
+            <div>Std deviation (σ)<strong id="dp-sd">0</strong></div>
+          </div>
+          <p id="dp-note" aria-live="polite" style="font-weight:600;"></p>
+          <div class="tc-controls"><label><input id="dp-keyboard" type="checkbox" /> Keyboard mode: choose a dot and nudge it</label></div>
+          <div class="tc-controls" id="dp-kb" hidden>
+            <label>Dot <input id="dp-idx" type="range" min="1" max="9" step="1" value="1" /> <span id="dp-idxv" class="tc-mono">1</span></label>
+            <label>Value <input id="dp-val" type="range" min="0" max="20" step="0.5" value="10" /> <span id="dp-valv" class="tc-mono">10</span></label>
+          </div>
+          <h3>How each measure is found</h3>
+          <ul>
+            <li><strong>Range</strong> = largest − smallest. Simple, but one wild value ruins it.</li>
+            <li><strong>Q1, median, Q3</strong> cut the sorted data into four equal-sized groups. <strong>IQR</strong> = Q3 − Q1, the spread of the middle half.</li>
+            <li><strong>Standard deviation</strong>: find each value's distance from the mean, square them, average the squares, then take the square root. It is the “typical” distance from the mean. (Here we treat these dots as the whole population.)</li>
+          </ul>
+          <p><strong>Try:</strong> drag one dot far away. Which changes more, the IQR or the standard deviation? Which one would you trust with an outlier in the data?</p>
+        </section>
+
+        <section class="tc-card" id="compare" style="--card-accent:#ea580c;">
+          <h2>Lab 2 · Same Mean, Different Story</h2>
+          <p>Team A and Team B both average 10 points. Team A is steady. Use the slider to change how spread out Team B is, and see how the story changes even though the mean never does.</p>
+          <div class="tc-cv short" id="cp-box"><canvas id="cp-canvas" aria-label="Two dot plots with the same mean and different spread"></canvas></div>
+          <div class="tc-controls">
+            <label>Team B spread <input id="cp-sd" type="range" min="0.5" max="6" step="0.1" value="4" style="--card-accent:#ea580c" /> <span id="cp-sdv" class="tc-mono">4.0</span></label>
+          </div>
+          <div class="tc-read">
+            <div>Team A: mean · σ<strong id="cp-a">10 · 1.5</strong></div>
+            <div>Team B: mean · σ<strong id="cp-b">10 · 4.0</strong></div>
+          </div>
+          <p><strong>Discuss:</strong> which team would you pick to score at least 8 in a must-win game? Which would you pick if you needed 18 and were willing to gamble?</p>
+        </section>
+
+        <section class="tc-card" id="bell" style="--card-accent:#16a34a;">
+          <h2>Lab 3 · The Bell Curve &amp; the 68–95–99.7 Rule</h2>
+          <p>Many measurements pile up in a bell shape: heights, test scores, measurement errors, the balls in a pachinko board. For a bell curve, about <strong>68%</strong> of values fall within 1 σ of the mean, <strong>95%</strong> within 2 σ, and <strong>99.7%</strong> within 3 σ. Change the mean and σ and see where the bands land.</p>
+          <div class="tc-cv short" id="bc-box"><canvas id="bc-canvas" aria-label="Bell curve with one, two, and three standard deviation bands"></canvas></div>
+          <div class="tc-controls">
+            <label>Mean μ <input id="bc-mu" type="range" min="40" max="100" step="1" value="70" style="--card-accent:#16a34a" /> <span id="bc-muv" class="tc-mono">70</span></label>
+            <label>Spread σ <input id="bc-sg" type="range" min="2" max="20" step="1" value="10" style="--card-accent:#16a34a" /> <span id="bc-sgv" class="tc-mono">10</span></label>
+          </div>
+          <div class="tc-read">
+            <div>68% of values<strong id="bc-1">60 – 80</strong></div>
+            <div>95% of values<strong id="bc-2">50 – 90</strong></div>
+            <div>99.7% of values<strong id="bc-3">40 – 100</strong></div>
+          </div>
+          <h3>z-scores: how many σ from the mean?</h3>
+          <div class="tc-controls">
+            <label>A value <input id="bc-x" type="number" step="any" value="85" style="width:6rem;padding:.3rem .45rem;border:1px solid var(--line,#d2d2d7);border-radius:8px;background:transparent;color:inherit;font:inherit;" /></label>
+            <span class="tc-mono" id="bc-z" aria-live="polite"></span>
+          </div>
+          <p>A z-score lets you compare things measured on different scales. A 85 on a test with μ = 70 and σ = 10 has z = 1.5. Whether that beats a 28 on a test with μ = 20 and σ = 4 (z = 2) is a question about how far from typical, not about raw points. That is the practice question below.</p>
+        </section>
+
+        <section class="tc-card" id="practice" style="--card-accent:#0ea5e9;">
+          <h2>Practice</h2>
+          <p>Answers within 0.05 count.</p>
+          <div id="tc-practice">
+            <div class="tc-practice-item" data-answer="12" data-hint="Range = max − min = 15 − 3."><p>1. Data: 3, 5, 8, 10, 15. What is the range?</p><input type="number" step="any" aria-label="Answer 1" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="4" data-hint="Q1 = 2 (median of 1, 2, 3) and Q3 = 6 (median of 5, 6, 7). IQR = 6 − 2."><p>2. Data: 1, 2, 3, 4, 5, 6, 7. The median is 4. Q1 is the median of 1, 2, 3 and Q3 is the median of 5, 6, 7. What is the IQR?</p><input type="number" step="any" aria-label="Answer 2" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="2.24" data-hint="Distances from 5: 3, 1, 1, 3. Squares: 9, 1, 1, 9. Average: 5. Square root of 5 ≈ 2.24."><p>3. Data: 2, 4, 6, 8 (mean 5). What is the standard deviation, to two decimal places?</p><input type="number" step="any" aria-label="Answer 3" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="80" data-hint="μ + σ = 70 + 10."><p>4. Scores have μ = 70 and σ = 10. What is the top of the middle 68%?</p><input type="number" step="any" aria-label="Answer 4" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="95" data-hint="Within 2 σ is about 95%."><p>5. About what percent of a bell-curve data set lies within 2 standard deviations of the mean?</p><input type="number" step="any" aria-label="Answer 5" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="1.5" data-hint="z = (85 − 70) ÷ 10."><p>6. z-score of 85 when μ = 70 and σ = 10?</p><input type="number" step="any" aria-label="Answer 6" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="2" data-hint="z = (28 − 20) ÷ 4. Compare with 1.5."><p>7. Test B has μ = 20 and σ = 4. What is the z-score of a 28? (The bigger z is the more impressive result.)</p><input type="number" step="any" aria-label="Answer 7" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="18" data-hint="IQR = 12 − 8 = 4, so the fence is 12 + 1.5 × 4 = 18."><p>8. Q1 = 8 and Q3 = 12. Values above what number count as outliers? (Upper fence = Q3 + 1.5 × IQR.)</p><input type="number" step="any" aria-label="Answer 8" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+          </div>
+        </section>
+
+        <section class="tc-card" style="--card-accent:#dc2626;">
+          <h2>Exit Ticket</h2>
+          <ul>
+            <li>Two data sets have the same mean and median. How could one still be much more spread out than the other?</li>
+            <li>A single extreme value is added. Which changes more: the IQR or the standard deviation, and why?</li>
+            <li>Describe a real situation where consistency (small σ) matters more than the average.</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+
+    <aside class="ll-panel" aria-label="Lesson panel">
+      <div class="ll-panel-inner">
+        <div class="ll-tabs" role="tablist" aria-label="Spread panel tabs">
+          <button class="ll-tab active" type="button" data-ll-tab="guide">Guide</button>
+          <button class="ll-tab" type="button" data-ll-tab="controls">Teacher</button>
+        </div>
+        <div class="ll-pane active" data-ll-panel="guide">
+          <span class="ll-label">Measures of Spread</span>
+          <div class="ll-info"><strong>Range</strong> max − min</div>
+          <div class="ll-info"><strong>IQR</strong> Q3 − Q1, the middle half</div>
+          <div class="ll-info"><strong>σ</strong> typical distance from the mean</div>
+          <span class="ll-label">Outlier Fences</span>
+          <div class="ll-info"><strong>Low</strong> Q1 − 1.5 × IQR</div>
+          <div class="ll-info"><strong>High</strong> Q3 + 1.5 × IQR</div>
+          <span class="ll-label">Bell Curve</span>
+          <div class="ll-info"><strong>68 · 95 · 99.7</strong> within 1, 2, 3 σ</div>
+          <div class="ll-info"><strong>z</strong> = (value − μ) ÷ σ</div>
+        </div>
+        <div class="ll-pane" data-ll-panel="controls">
+          <span class="ll-label">Lesson Flow</span>
+          <div class="ll-info"><strong>Warm-up</strong> The two-player scoring story: same mean, different nights.</div>
+          <div class="ll-info"><strong>Lab 1</strong> Have students make σ as large as possible, then as small as possible, before naming the rule.</div>
+          <div class="ll-info"><strong>Lab 1 (outlier)</strong> Compare how IQR and σ react. Discuss which to report.</div>
+          <div class="ll-info"><strong>Lab 3</strong> Pair with the Pachinko lab so students see the bell curve emerge.</div>
+        </div>
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+  </div>
+</div>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../index.html">Home</a> · <a href="../../steam-lessons.html">Lessons</a></p>
+  </footer>
+
+  <script src="../../assets/js/theme-registry.js"></script>
+  <script src="../../assets/js/nav-mobile.js"></script>
+  <script src="../../assets/js/sim-kit.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var TAU = Math.PI * 2;
+    var SIN = "#2563eb", COS = "#ea580c", GRN = "#16a34a", RED = "#dc2626";
+    function $(id) { return document.getElementById(id); }
+    function col() { return SimKit.theme.colors(); }
+    function f2(x, d) { return (Math.abs(x) < 0.0005 ? 0 : x).toFixed(d == null ? 2 : d).replace(/\.?0+$/, ""); }
+    function line(ctx, x1, y1, x2, y2, color, w, dash) {
+      ctx.beginPath(); ctx.setLineDash(dash || []); ctx.strokeStyle = color; ctx.lineWidth = w || 1;
+      ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
+    }
+    function dot(ctx, x, y, r, color, stroke) { ctx.beginPath(); ctx.fillStyle = color; ctx.arc(x, y, r, 0, TAU); ctx.fill(); if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; ctx.stroke(); } }
+    function label(ctx, t, x, y, color, align, size) {
+      ctx.fillStyle = color; ctx.font = "600 " + (size || 11) + "px 'IBM Plex Mono', monospace";
+      ctx.textAlign = align || "left"; ctx.textBaseline = "middle"; ctx.fillText(t, x, y);
+    }
+    function mk(id, boxId, draw) { return SimKit.canvas2d($(id), { box: $(boxId), onResize: function () { draw(); } }); }
+
+    function mean(a) { return a.reduce(function (s, v) { return s + v; }, 0) / a.length; }
+    function sd(a) { var m = mean(a); return Math.sqrt(mean(a.map(function (v) { return (v - m) * (v - m); }))); }
+    function median(a) { var n = a.length, m = Math.floor(n / 2); return n % 2 ? a[m] : (a[m - 1] + a[m]) / 2; }
+    function stats(vals) {
+      var s = vals.slice().sort(function (a, b) { return a - b; }), n = s.length, h = Math.floor(n / 2);
+      var q1 = median(s.slice(0, h)), q3 = median(s.slice(n - h)), iqr = q3 - q1;
+      return { s: s, mean: mean(s), med: median(s), min: s[0], max: s[n - 1], q1: q1, q3: q3, iqr: iqr, sd: sd(s), lo: q1 - 1.5 * iqr, hi: q3 + 1.5 * iqr };
+    }
+
+    /* ── Lab 1: draggable dot plot ──────────────────────── */
+    var PRE = {
+      even: [2, 4, 6, 8, 10, 12, 14, 16, 18],
+      tight: [9, 9.5, 10, 10, 10, 10.5, 10, 11, 9],
+      split: [3, 3.5, 4, 4, 3, 16, 16.5, 17, 17],
+      outlier: [9, 9.5, 10, 10, 10.5, 11, 10, 9.5, 19]
+    };
+    var vals = PRE.even.slice(), dpKit, pos = [], dragging = -1;
+    function layout(w, h) {
+      var L = 24, R = 24, base = h - 104, r = 9, counts = {}, out = [];
+      function X(v) { return L + v / 20 * (w - L - R); }
+      vals.forEach(function (v, i) {
+        var key = Math.round(v * 2); var k = counts[key] || 0; counts[key] = k + 1;
+        out.push({ x: X(v), y: base - r - k * (2 * r + 1), r: r, i: i });
+      });
+      return { X: X, pts: out, base: base, L: L, R: R };
+    }
+    function drawDots() {
+      if (!dpKit) return;
+      var c = col(), ctx = dpKit.ctx, w = dpKit.width, h = dpKit.height, st = stats(vals), g = layout(w, h);
+      pos = g.pts; ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = "rgba(37,99,235,0.13)";
+      ctx.fillRect(g.X(Math.max(0, st.mean - st.sd)), 6, g.X(Math.min(20, st.mean + st.sd)) - g.X(Math.max(0, st.mean - st.sd)), g.base - 2);
+      line(ctx, g.L, g.base + 2, w - g.R, g.base + 2, c.text, 1.5);
+      for (var t = 0; t <= 20; t += 2) { line(ctx, g.X(t), g.base + 2, g.X(t), g.base + 7, c.textMuted, 1); label(ctx, "" + t, g.X(t), g.base + 17, c.textMuted, "center", 10); }
+      line(ctx, g.X(st.mean), 6, g.X(st.mean), g.base + 2, COS, 2, [5, 4]);
+      label(ctx, "mean " + f2(st.mean), g.X(st.mean) + 5, 14, COS, "left", 11);
+      g.pts.forEach(function (p) {
+        var out = vals[p.i] < st.lo || vals[p.i] > st.hi;
+        dot(ctx, p.x, p.y, p.r, out ? RED : SIN, p.i === dragging ? c.text : null);
+      });
+      var by = h - 40;
+      var inl = st.s.filter(function (v) { return v >= st.lo && v <= st.hi; });
+      var wl = inl[0], wh = inl[inl.length - 1];
+      line(ctx, g.X(wl), by, g.X(wh), by, c.text, 1.5);
+      line(ctx, g.X(wl), by - 7, g.X(wl), by + 7, c.text, 1.5); line(ctx, g.X(wh), by - 7, g.X(wh), by + 7, c.text, 1.5);
+      ctx.fillStyle = "rgba(22,163,74,0.3)"; ctx.fillRect(g.X(st.q1), by - 12, g.X(st.q3) - g.X(st.q1), 24);
+      ctx.strokeStyle = GRN; ctx.lineWidth = 2; ctx.strokeRect(g.X(st.q1), by - 12, g.X(st.q3) - g.X(st.q1), 24);
+      line(ctx, g.X(st.med), by - 12, g.X(st.med), by + 12, c.text, 3);
+      st.s.forEach(function (v) { if (v < st.lo || v > st.hi) dot(ctx, g.X(v), by, 4, RED); });
+      label(ctx, "box plot", 4, h - 8, c.textMuted, "left", 10);
+    }
+    function updateDots() {
+      var st = stats(vals);
+      $("dp-mean").textContent = f2(st.mean); $("dp-med").textContent = f2(st.med); $("dp-range").textContent = f2(st.max - st.min);
+      $("dp-q").textContent = f2(st.q1) + " · " + f2(st.q3); $("dp-iqr").textContent = f2(st.iqr); $("dp-sd").textContent = f2(st.sd);
+      var outs = st.s.filter(function (v) { return v < st.lo || v > st.hi; });
+      $("dp-note").textContent = outs.length ? "Outlier" + (outs.length > 1 ? "s" : "") + " (beyond " + f2(st.lo) + " and " + f2(st.hi) + "): " + outs.map(function (v) { return f2(v); }).join(", ") + ". Notice how far σ moved compared with the IQR." : "No outliers by the 1.5 × IQR rule (fences at " + f2(st.lo) + " and " + f2(st.hi) + ").";
+      drawDots();
+    }
+    dpKit = mk("dp-canvas", "dp-box", drawDots);
+    var cvd = $("dp-canvas");
+    function valueAt(e) {
+      var rect = cvd.getBoundingClientRect(), w = rect.width, L = 24, R = 24;
+      return Math.max(0, Math.min(20, Math.round((e.clientX - rect.left - L) / (w - L - R) * 20 * 2) / 2));
+    }
+    cvd.addEventListener("pointerdown", function (e) {
+      var rect = cvd.getBoundingClientRect(), mx = e.clientX - rect.left, my = e.clientY - rect.top, best = -1, bd = 24;
+      pos.forEach(function (p) { var d = Math.hypot(p.x - mx, p.y - my); if (d < bd) { bd = d; best = p.i; } });
+      if (best >= 0) { dragging = best; try { cvd.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ } }
+    });
+    cvd.addEventListener("pointermove", function (e) { if (dragging >= 0) { vals[dragging] = valueAt(e); updateDots(); } });
+    function endDrag() { dragging = -1; updateDots(); }
+    cvd.addEventListener("pointerup", endDrag); cvd.addEventListener("pointercancel", endDrag);
+    $("dp-presets").addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      vals = PRE[b.dataset.set].slice();
+      this.querySelectorAll("button").forEach(function (x) { x.classList.toggle("primary", x === b); });
+      syncKb(); updateDots();
+    });
+    function syncKb() { var i = +$("dp-idx").value - 1; $("dp-idxv").textContent = i + 1; $("dp-val").value = vals[i]; $("dp-valv").textContent = vals[i]; }
+    $("dp-keyboard").addEventListener("change", function () { $("dp-kb").hidden = !this.checked; syncKb(); });
+    $("dp-idx").addEventListener("input", syncKb);
+    $("dp-val").addEventListener("input", function () { vals[+$("dp-idx").value - 1] = +this.value; $("dp-valv").textContent = this.value; updateDots(); });
+
+    /* ── Lab 2: same mean, different spread ─────────────── */
+    var cpKit, Z = [-1.6, -1.1, -0.8, -0.5, -0.2, 0.2, 0.5, 0.8, 1.1, 1.6];
+    (function () { var m = mean(Z), s = sd(Z.map(function (z) { return z - m; })); Z = Z.map(function (z) { return (z - m) / s; }); })();
+    function teamVals(s) { return Z.map(function (z) { return 10 + s * z; }); }
+    function drawCompare() {
+      if (!cpKit) return;
+      var c = col(), ctx = cpKit.ctx, w = cpKit.width, h = cpKit.height, L = 24, R = 24, sB = +$("cp-sd").value;
+      function X(v) { return L + (v + 2) / 24 * (w - L - R); }
+      ctx.clearRect(0, 0, w, h);
+      [["Team A", teamVals(1.5), 1.5, h * 0.3, SIN], ["Team B", teamVals(sB), sB, h * 0.72, COS]].forEach(function (t) {
+        var y = t[3];
+        line(ctx, X(-2), y + 14, X(22), y + 14, c.textMuted, 1);
+        ctx.fillStyle = t[4] === SIN ? "rgba(37,99,235,0.12)" : "rgba(234,88,12,0.12)"; ctx.fillRect(X(10 - t[2]), y - 34, X(10 + t[2]) - X(10 - t[2]), 46);
+        var counts = {};
+        t[1].forEach(function (v) { var key = Math.round(v * 2), k = counts[key] || 0; counts[key] = k + 1; dot(ctx, X(v), y + 6 - k * 13, 6, t[4]); });
+        label(ctx, t[0], 4, y - 32, c.text, "left", 11);
+      });
+      line(ctx, X(10), 6, X(10), h - 10, c.text, 1.5, [5, 4]);
+      for (var v = 0; v <= 20; v += 5) label(ctx, "" + v, X(v), h - 2, c.textMuted, "center", 10);
+    }
+    function updateCompare() {
+      var s = +$("cp-sd").value;
+      $("cp-sdv").textContent = s.toFixed(1);
+      $("cp-a").textContent = "10 · " + f2(sd(teamVals(1.5)), 1);
+      $("cp-b").textContent = "10 · " + f2(sd(teamVals(s)), 1);
+      drawCompare();
+    }
+    cpKit = mk("cp-canvas", "cp-box", drawCompare);
+    $("cp-sd").addEventListener("input", updateCompare);
+
+    /* ── Lab 3: bell curve ──────────────────────────────── */
+    var bcKit;
+    function erf(x) {
+      var s = x < 0 ? -1 : 1, t = 1 / (1 + 0.3275911 * Math.abs(x)); x = Math.abs(x);
+      return s * (1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x));
+    }
+    function cdf(z) { return 0.5 * (1 + erf(z / Math.SQRT2)); }
+    function drawBell() {
+      if (!bcKit) return;
+      var c = col(), ctx = bcKit.ctx, w = bcKit.width, h = bcKit.height, mu = +$("bc-mu").value, sg = +$("bc-sg").value, xv = parseFloat($("bc-x").value);
+      var L = 16, R = 16, T = 24, B = 30, span = 4;
+      function X(z) { return L + (z + span) / (2 * span) * (w - L - R); }
+      function Y(z) { return h - B - Math.exp(-z * z / 2) * (h - T - B); }
+      ctx.clearRect(0, 0, w, h);
+      [[3, "rgba(22,163,74,0.14)"], [2, "rgba(22,163,74,0.22)"], [1, "rgba(22,163,74,0.38)"]].forEach(function (b) {
+        ctx.beginPath(); ctx.moveTo(X(-b[0]), h - B);
+        for (var i = 0; i <= 80; i++) { var z = -b[0] + 2 * b[0] * i / 80; ctx.lineTo(X(z), Y(z)); }
+        ctx.lineTo(X(b[0]), h - B); ctx.closePath(); ctx.fillStyle = b[1]; ctx.fill();
+      });
+      ctx.beginPath(); ctx.strokeStyle = GRN; ctx.lineWidth = 3;
+      for (var j = 0; j <= 200; j++) { var zz = -span + 2 * span * j / 200; j ? ctx.lineTo(X(zz), Y(zz)) : ctx.moveTo(X(zz), Y(zz)); }
+      ctx.stroke();
+      line(ctx, L, h - B, w - R, h - B, c.text, 1.5);
+      for (var k = -3; k <= 3; k++) { line(ctx, X(k), h - B, X(k), h - B + 5, c.text, 1); label(ctx, f2(mu + k * sg, 0), X(k), h - B + 16, c.textMuted, "center", 10); }
+      label(ctx, "68%", X(0), Y(0.5), c.text, "center", 12);
+      label(ctx, "95%", X(1.5), h - B - 14, c.textMuted, "center", 11); label(ctx, "95%", X(-1.5), h - B - 14, c.textMuted, "center", 11);
+      label(ctx, "99.7%", X(2.5), h - B - 14, c.textMuted, "center", 10); label(ctx, "99.7%", X(-2.5), h - B - 14, c.textMuted, "center", 10);
+      if (isFinite(xv)) { var z = (xv - mu) / sg; if (Math.abs(z) <= span) { line(ctx, X(z), T - 8, X(z), h - B, COS, 2, [4, 3]); dot(ctx, X(z), Y(z), 6, COS); } }
+    }
+    function updateBell() {
+      var mu = +$("bc-mu").value, sg = +$("bc-sg").value, xv = parseFloat($("bc-x").value);
+      $("bc-muv").textContent = mu; $("bc-sgv").textContent = sg;
+      $("bc-1").textContent = (mu - sg) + " – " + (mu + sg); $("bc-2").textContent = (mu - 2 * sg) + " – " + (mu + 2 * sg); $("bc-3").textContent = (mu - 3 * sg) + " – " + (mu + 3 * sg);
+      if (isFinite(xv)) {
+        var z = (xv - mu) / sg;
+        $("bc-z").textContent = "z = " + z.toFixed(2) + " (" + Math.abs(z).toFixed(2) + " σ " + (z >= 0 ? "above" : "below") + " the mean), about " + (cdf(z) * 100).toFixed(1) + "% of values are below.";
+      } else $("bc-z").textContent = "Enter a number.";
+      drawBell();
+    }
+    bcKit = mk("bc-canvas", "bc-box", drawBell);
+    ["bc-mu", "bc-sg", "bc-x"].forEach(function (id) { $(id).addEventListener("input", updateBell); });
+
+    SimKit.theme.onChange(function () { drawDots(); drawCompare(); drawBell(); });
+
+    /* ── Practice ───────────────────────────────────────── */
+    document.querySelectorAll(".tc-practice-item").forEach(function (item) {
+      var input = item.querySelector("input"), fb = item.querySelector(".fb");
+      function check() {
+        var v = parseFloat(input.value);
+        if (isNaN(v)) { fb.textContent = "Enter a number."; fb.className = "fb no"; return; }
+        var ok = Math.abs(v - parseFloat(item.dataset.answer)) <= 0.05;
+        fb.textContent = ok ? "✔ Correct." : "Not yet. Hint: " + item.dataset.hint;
+        fb.className = "fb " + (ok ? "ok" : "no");
+      }
+      item.querySelector("button").addEventListener("click", check);
+      input.addEventListener("keydown", function (e) { if (e.key === "Enter") check(); });
+    });
+
+    syncKb(); updateDots(); updateCompare(); updateBell();
+  })();
+  </script>
+  <script src="../../assets/js/classroom-animations.js"></script>
+  <script src="../../assets/js/lesson-layout.js"></script>
+  <script src="../../assets/js/math-pathway-nav.js"></script>
+<script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
