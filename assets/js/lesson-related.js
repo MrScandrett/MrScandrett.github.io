@@ -25,7 +25,7 @@
     'cosmology/arecibo-message.html': [[CONSTELLATIONS, 'Constellations: learn the sky it was aimed into', 'Practice star-hopping across the northern sky with an interactive map.']],
     'cosmology/pale-blue-dot.html': [[CONSTELLATIONS, 'Constellations: the neighborhood of the pale blue dot', 'Every star in a constellation is another sun. Find their distances, temperatures and histories.']],
     'earth-science/seasons-and-the-heavens.html': [[CONSTELLATIONS, 'Constellations: the zodiac, precession and Spica', 'See how the equinox point has drifted from Aries into Pisces, and how Hipparchus discovered precession from Spica.']],
-    'physics/speed-of-light.html': [[CONSTELLATIONS, 'Constellations: every star is a look back in time', 'Betelgeuse is about 700 ly away, Deneb about 2,600. Click stars to see the age of the light you’re seeing.']],
+    'physics/modern-and-thermal/speed-of-light.html': [[CONSTELLATIONS, 'Constellations: every star is a look back in time', 'Betelgeuse is about 700 ly away, Deneb about 2,600. Click stars to see the age of the light you’re seeing.']],
     'chemistry/periodic-table.html': [[CONSTELLATIONS, 'Constellations: elements in starlight', 'Helium was found in the Sun before Earth. Read the spectra of Betelgeuse, Rigel, Cassiopeia A and more.']]
   };
 

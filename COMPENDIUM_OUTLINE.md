@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 279 public lessons and classifies 11 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 285 public lessons and classifies 11 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -422,7 +422,7 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 40 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 46 lessons
 
 ## Visual Art & Design (DES)
 
@@ -446,6 +446,12 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **LAN-02** — The Tower of Babel, the Library of Alexandria, and the Internet
 - **LAN-03** — The Baloney Detection Kit
 - **LAN-04** — Plato's Allegory of the Cave
+- **LAN-05** — William Blake: Songs of Innocence and of Experience
+- **LAN-06** — Dylan Thomas: An Annotated Reading Compendium
+- **LAN-07** — Dante’s Inferno: A Journey Through the Nine Circles
+- **LAN-08** — John Milton’s Paradise Lost
+- **LAN-09** — John Bunyan’s The Pilgrim’s Progress
+- **LAN-10** — Tolkien and the Art of Worldbuilding
 
 ## History, Economics & Social Systems (SYS)
 
@@ -499,12 +505,12 @@ These pages remain attached to their parent lesson or module and do not become d
 
 - `lessons/life-sciences/animalia/explorer.html` — interactive-extension; parent-appendix; parent: `lessons/life-sciences/animalia/index.html`
 - `lessons/life-sciences/animalia/sorter.html` — practice-extension; parent-appendix; parent: `lessons/life-sciences/animalia/index.html`
-- `lessons/computer-science/game-tutorials/catch.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/2d-game-engines.html`
-- `lessons/computer-science/game-tutorials/clicker.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/2d-game-engines.html`
-- `lessons/computer-science/game-tutorials/cyoa.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/2d-game-engines.html`
-- `lessons/computer-science/game-tutorials/flappy.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/2d-game-engines.html`
-- `lessons/computer-science/game-tutorials/maze.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/2d-game-engines.html`
-- `lessons/computer-science/game-tutorials/pong.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/2d-game-engines.html`
-- `lessons/computer-science/game-tutorials/quiz.html` — assessment-extension; module-appendix; parent: `lessons/computer-science/2d-game-engines.html`
-- `lessons/computer-science/game-tutorials/rhythm.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/2d-game-engines.html`
-- `lessons/computer-science/game-tutorials/shooter.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/2d-game-engines.html`
+- `lessons/computer-science/graphics-and-games/game-tutorials/catch.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/graphics-and-games/2d-game-engines.html`
+- `lessons/computer-science/graphics-and-games/game-tutorials/clicker.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/graphics-and-games/2d-game-engines.html`
+- `lessons/computer-science/graphics-and-games/game-tutorials/cyoa.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/graphics-and-games/2d-game-engines.html`
+- `lessons/computer-science/graphics-and-games/game-tutorials/flappy.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/graphics-and-games/2d-game-engines.html`
+- `lessons/computer-science/graphics-and-games/game-tutorials/maze.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/graphics-and-games/2d-game-engines.html`
+- `lessons/computer-science/graphics-and-games/game-tutorials/pong.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/graphics-and-games/2d-game-engines.html`
+- `lessons/computer-science/graphics-and-games/game-tutorials/quiz.html` — assessment-extension; module-appendix; parent: `lessons/computer-science/graphics-and-games/2d-game-engines.html`
+- `lessons/computer-science/graphics-and-games/game-tutorials/rhythm.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/graphics-and-games/2d-game-engines.html`
+- `lessons/computer-science/graphics-and-games/game-tutorials/shooter.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/graphics-and-games/2d-game-engines.html`

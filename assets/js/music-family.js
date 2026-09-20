@@ -18,8 +18,8 @@
     { file: 'music-lab.html', label: 'Music Lab' }
   ];
   var SCIENCE = [
-    { file: 'lessons/physics/physics-of-music.html', label: 'Physics of Music' },
-    { file: 'lessons/physics/do-atoms-make-music.html', label: 'Do Atoms Make Music?' },
+    { file: 'lessons/physics/waves-and-sound/physics-of-music.html', label: 'Physics of Music' },
+    { file: 'lessons/physics/waves-and-sound/do-atoms-make-music.html', label: 'Do Atoms Make Music?' },
     { file: 'lessons/technical-elements/cymatics.html', label: 'Cymatics' }
   ];
 

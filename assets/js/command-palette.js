@@ -9,7 +9,7 @@
   // ── Path detection ──────────────────────────────────────────────
   var path = location.pathname;
   // Count directory segments between root and the current file (e.g.
-  // /lessons/physics/pendulum.html -> 2), so BASE works regardless of how
+  // /lessons/physics/mechanics/pendulum.html -> 2), so BASE works regardless of how
   // deeply nested a page is (lessons/<category>/file.html, lessons/<category>/sub/file.html, ...).
   var segments = path.split('/').filter(Boolean);
   if (segments.length && /\.[a-z0-9]+$/i.test(segments[segments.length - 1])) segments.pop();

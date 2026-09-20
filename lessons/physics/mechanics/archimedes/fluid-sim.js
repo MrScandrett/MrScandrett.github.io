@@ -272,7 +272,7 @@ class FluidSimulation {
       this.khCanvas = c;
     };
     // Path works from both /lessons/ and local dev server roots
-    img.src = '../../assets/data/kelvin-helmholtz.png';
+    img.src = '../../../../assets/data/kelvin-helmholtz.png';
   }
 
   step(dt) {
