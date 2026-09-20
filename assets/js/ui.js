@@ -88,6 +88,7 @@ export function createProjectCard(project, options = {}) {
   const article = document.createElement("article");
   article.className = "project-card reveal";
   article.dataset.id = project.id;
+  article.dataset.creatorGroup = project.creatorGroup || "student";
   article.dataset.category = project.category;
   article.dataset.difficulty = project.difficulty;
   article.dataset.type = project.type;

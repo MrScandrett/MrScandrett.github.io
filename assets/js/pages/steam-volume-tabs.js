@@ -92,6 +92,13 @@
         });
         if (activeTab) activeTab.focus();
       }
+
+      window.dispatchEvent(new CustomEvent("compendiumvolumechange", {
+        detail: {
+          volume: selected,
+          userInitiated: Boolean(options && options.userInitiated)
+        }
+      }));
     }
 
     window.setCompendiumVolume = selectVolume;
@@ -101,7 +108,7 @@
         if (tab.dataset.volumeFilter !== "all") {
           setVolumeCollapsed(tab.dataset.volumeFilter, false);
         }
-        selectVolume(tab.dataset.volumeFilter);
+        selectVolume(tab.dataset.volumeFilter, { userInitiated: true });
       });
 
       tab.addEventListener("keydown", function (event) {
@@ -112,7 +119,7 @@
         if (event.key === "End") nextIndex = tabs.length - 1;
         if (nextIndex === null) return;
         event.preventDefault();
-        selectVolume(tabs[nextIndex].dataset.volumeFilter, { focus: true });
+        selectVolume(tabs[nextIndex].dataset.volumeFilter, { focus: true, userInitiated: true });
       });
     });
 

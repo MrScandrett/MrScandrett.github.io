@@ -53,6 +53,12 @@ function titleFromSlug(slug) {
     .join(" ");
 }
 
+function creatorGroupFor(student, explicitGroup) {
+  const supplied = String(explicitGroup || "").trim().toLowerCase();
+  if (supplied === "teacher" || supplied === "student") return supplied;
+  return /^mr\.?\s+scandrett$/i.test(String(student || "").trim()) ? "teacher" : "student";
+}
+
 function normalizeProjects(projects) {
   return projects
     .slice()
@@ -62,6 +68,7 @@ function normalizeProjects(projects) {
         id: p.id,
         title: p.title || "Untitled Project",
         student: p.student || "Student",
+        creatorGroup: creatorGroupFor(p.student, p.creatorGroup),
         year: p.year || new Date().getFullYear(),
         term: p.term || "Q1",
         program: p.program || "Independent",
@@ -127,6 +134,7 @@ function normalizeManifestApps(payload) {
         id: `app-${slug}`,
         title,
         student: prettyStudent,
+        creatorGroup: creatorGroupFor(prettyStudent, item.creatorGroup),
         year,
         term,
         program,

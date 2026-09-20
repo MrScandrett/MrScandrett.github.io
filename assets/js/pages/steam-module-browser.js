@@ -24,6 +24,7 @@
     technical: "#8750b5", technology: "#5269d4", art: "#c84782", bridge: "#2b827b"
   };
   var activeId = "";
+  var selectedVolume = "all";
 
   function text(node, selector) {
     var match = node.querySelector(selector);
@@ -104,6 +105,15 @@
   function showModule(id, shouldScroll) {
     var section = document.getElementById(id);
     if (!section || !section.classList.contains("module-section")) return;
+    // A subject is a complete shelf. Clear the older volume filter before
+    // opening it so previous/next navigation can never land on a hidden shelf.
+    var selectedVolumeTab = document.querySelector(".compendium-volume-tab.is-active[data-volume-filter]");
+    if (typeof window.setCompendiumVolume === "function" &&
+        selectedVolumeTab && selectedVolumeTab.dataset.volumeFilter !== "all") {
+      window.setCompendiumVolume("all", { source: "module-browser" });
+    }
+    section.hidden = false;
+    section.classList.remove("volume-collapsed");
     activeId = id;
     document.body.classList.remove("catalog-directory-view");
     document.body.classList.add("catalog-module-view");
@@ -118,7 +128,9 @@
       if (button.dataset.moduleTarget === id) button.setAttribute("aria-current", "true");
       else button.removeAttribute("aria-current");
     });
-    status.textContent = text(section, ".module-banner-title") + " is open. " + text(section, ".module-banner-count") + ".";
+    var volume = section.dataset.compendiumVolume;
+    var volumeTitle = volumeNames[volume] ? volumeNames[volume][0] : "Lesson library";
+    status.textContent = volumeTitle + " → " + text(section, ".module-banner-title") + " · " + text(section, ".module-banner-count") + ".";
     var activeIndex = sections.indexOf(section);
     var previous = sections[(activeIndex - 1 + sections.length) % sections.length];
     var next = sections[(activeIndex + 1) % sections.length];
@@ -141,12 +153,15 @@
     var selectedTheme = subject ? subject.value : "all";
     var visibleButtons = 0;
     directory.querySelectorAll(".catalog-module-button").forEach(function (button) {
-      var visible = selectedTheme === "all" || button.dataset.themeArea === selectedTheme;
+      var row = button.closest(".catalog-volume-row");
+      var volumeMatches = selectedVolume === "all" || (row && row.dataset.catalogVolume === selectedVolume);
+      var visible = volumeMatches && (selectedTheme === "all" || button.dataset.themeArea === selectedTheme);
       button.hidden = !visible;
       if (visible) visibleButtons += 1;
     });
     directory.querySelectorAll(".catalog-volume-row").forEach(function (row) {
-      row.hidden = !row.querySelector(".catalog-module-button:not([hidden])");
+      var volumeMatches = selectedVolume === "all" || row.dataset.catalogVolume === selectedVolume;
+      row.hidden = !volumeMatches || !row.querySelector(".catalog-module-button:not([hidden])");
     });
     if (activeId) {
       var activeButton = directory.querySelector('[data-module-target="' + activeId + '"]');
@@ -165,9 +180,9 @@
         }
       }
     } else {
-      status.textContent = visibleButtons === sections.length
-        ? "Choose a subject below. Only that lesson shelf will open."
-        : visibleButtons + " subject " + (visibleButtons === 1 ? "shelf matches" : "shelves match") + " your filters.";
+      var selectedVolumeTitle = volumeNames[selectedVolume] ? volumeNames[selectedVolume][0] : "All six volumes";
+      status.textContent = selectedVolumeTitle + " · " + visibleButtons + " subject " +
+        (visibleButtons === 1 ? "shelf" : "shelves") + ". Choose one to open its lessons.";
     }
   }
 
@@ -178,6 +193,14 @@
     var hashId = location.hash.indexOf("#module-") === 0 ? location.hash.slice(1) : "";
     if (hashId && document.getElementById(hashId)) showModule(hashId, false);
     else if (!location.hash) showDirectory(false);
+  });
+  window.addEventListener("compendiumvolumechange", function (event) {
+    selectedVolume = event.detail && event.detail.volume ? String(event.detail.volume) : "all";
+    if (event.detail && event.detail.userInitiated && activeId) {
+      showDirectory(false);
+      browser.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    refreshView();
   });
   window.refreshCatalogModuleView = refreshView;
 

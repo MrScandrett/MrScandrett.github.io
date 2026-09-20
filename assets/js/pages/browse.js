@@ -10,6 +10,18 @@ import {
 } from "../ui.js";
 
 const FILTER_KEYS = ["category", "tech", "difficulty", "year", "term", "type", "program", "cohort"];
+const CREATOR_GROUPS = {
+  student: {
+    title: "Student Gallery",
+    plural: "student projects",
+    instruction: "Choose what you want to play, explore, or watch."
+  },
+  teacher: {
+    title: "Teacher Studio",
+    plural: "teacher projects",
+    instruction: "Browse classroom examples and original projects by Mr. Scandrett."
+  }
+};
 
 // Fixed display order for the cohort picker (School Year before Camp), not alphabetical.
 const COHORT_ORDER = ["25-26 School Year", "2026 Summer Camp"];
@@ -25,16 +37,20 @@ const FILTER_LABELS = {
 };
 
 const COLLECTION_DESCRIPTIONS = {
-  Games: "Play student-built adventures, puzzles, racers, and arcade experiments.",
+  Games: "Play adventures, puzzles, racers, and arcade experiments.",
   "3D Worlds": "Explore interactive models, environments, and three-dimensional creations.",
-  Simulations: "Try systems, experiments, and interactive ideas built by students.",
-  Animation: "Watch student stories, motion studies, and animated scenes.",
+  Simulations: "Try systems, experiments, and interactive ideas.",
+  Animation: "Watch stories, motion studies, and animated scenes.",
   Music: "Open playable music projects, rhythm tools, and sound experiments.",
   "Web & Art": "Browse websites, visual designs, and creative digital work.",
-  Everything: "Browse every published student project in one place.",
+  Everything: "Browse every published project in this gallery.",
   "Find a project": "Search every collection by project name, student, tool, or tag.",
   "Project results": "Your saved search and filter choices are ready."
 };
+
+function readCreatorFromQuery() {
+  return new URLSearchParams(window.location.search).get("creator") === "teacher" ? "teacher" : "student";
+}
 
 function blankState() {
   return {
@@ -69,8 +85,9 @@ function readStateFromQuery() {
   return state;
 }
 
-function writeStateToQuery(state) {
+function writeStateToQuery(state, creatorGroup) {
   const params = new URLSearchParams();
+  if (creatorGroup === "teacher") params.set("creator", "teacher");
   if (state.q) params.set("q", state.q);
   if (state.sort && state.sort !== "newest") params.set("sort", state.sort);
   FILTER_KEYS.forEach((key) => {
@@ -146,6 +163,8 @@ function init() {
     filterPanel: document.getElementById("filter-panel"),
     groups: document.getElementById("filter-groups"),
     activeSummary: document.getElementById("active-filter-summary"),
+    creatorPresets: [...document.querySelectorAll("[data-creator-preset]")],
+    creatorCounts: [...document.querySelectorAll("[data-creator-count]")],
     categoryPresets: [...document.querySelectorAll("[data-category-preset]")],
     grid: document.getElementById("browse-grid"),
     count: document.getElementById("result-count"),
@@ -161,8 +180,12 @@ function init() {
     instruction: document.getElementById("showcase-instruction"),
     resultsTitle: document.getElementById("showcase-results-title"),
     resultsDescription: document.getElementById("showcase-results-description"),
+    resultsContext: document.getElementById("showcase-results-context"),
     resultsSymbol: document.getElementById("showcase-results-symbol"),
     location: document.getElementById("showcase-location"),
+    collectionTitle: document.getElementById("showcase-collection-title"),
+    collectionDescription: document.getElementById("showcase-collection-description"),
+    launcher: document.querySelector(".showcase-launcher"),
     makerTools: document.getElementById("showcase-maker-tools"),
   };
 
@@ -187,6 +210,7 @@ function init() {
   }
 
   const state = readStateFromQuery();
+  let activeCreator = readCreatorFromQuery();
   renderLoadingSkeletons();
   dom.count.textContent = "Loading projects…";
 
@@ -204,92 +228,112 @@ function init() {
         dom.grid.appendChild(card);
       });
 
-      dom.categoryPresets.forEach((button) => {
-        const values = (button.dataset.categoryPreset || "")
-          .split(",")
-          .map((value) => value.trim())
-          .filter(Boolean);
-        const matches = values.length === 0
-          ? projects
-          : projects.filter((project) => values.includes(project.category));
-        const representativeMatches = matches
-          .slice()
-          .sort((left, right) => {
-            const thumbnailScore = (project) => {
-              const path = String(project.thumbnail || "");
-              const slug = String(project.id || "").replace(/^app-/, "");
-              if (path.includes("/assets/thumbs/showcase/avatar-")) return 0;
-              if (project.category === "3D" && path.includes("/assets/thumbs/showcase/") && slug && !path.includes(slug)) return 0;
-              if (/\/apps\/[^/]+\/assets\/thumb\.svg$/i.test(path)) return 1;
-              if (path.includes("/assets/thumbs/showcase/")) return 3;
-              return 2;
-            };
-            return thumbnailScore(right) - thumbnailScore(left);
-          });
-        const preview = button.querySelector(".showcase-folder-preview");
-        if (preview) {
-          preview.replaceChildren();
-          representativeMatches.slice(0, 4).forEach((project) => {
-            const image = document.createElement("img");
-            image.src = project.thumbnail;
-            image.alt = "";
-            image.loading = "eager";
-            image.decoding = "async";
-            preview.appendChild(image);
-          });
-          preview.dataset.items = String(preview.children.length);
-        }
-        const count = button.querySelector("small");
-        if (count) count.textContent = `${matches.length} project${matches.length === 1 ? "" : "s"}`;
-        const title = button.dataset.folderTitle || button.querySelector("strong")?.textContent || "Projects";
-        button.setAttribute("aria-label", `${title} collection, ${matches.length} projects`);
-      });
-      if (dom.location) dom.location.textContent = `${projects.length} projects in 7 collections`;
+      const projectsForActiveCreator = () => projects.filter((project) => project.creatorGroup === activeCreator);
 
-      const categoryValues = uniqueValues(projects, "category").sort();
-      const techValues = uniqueValues(projects, "tech").sort();
-      const difficultyValues = uniqueValues(projects, "difficulty").sort((a, b) => {
-        const order = { Beginner: 0, Intermediate: 1, Advanced: 2 };
-        return (order[a] ?? 99) - (order[b] ?? 99);
-      });
-      const yearValues = uniqueValues(projects, "year")
-        .map((value) => String(value))
-        .sort((a, b) => Number(b) - Number(a));
-      const termValues = uniqueValues(projects, "term").sort();
-      const typeValues = uniqueValues(projects, "type").sort();
-      const programValues = uniqueValues(projects, "program").sort();
-      const cohortValues = uniqueValues(projects, "cohort").sort((a, b) => {
-        const order = COHORT_ORDER.indexOf(a) - COHORT_ORDER.indexOf(b);
-        return order !== 0 ? order : a.localeCompare(b);
+      dom.creatorCounts.forEach((count) => {
+        const creator = count.dataset.creatorCount;
+        const total = projects.filter((project) => project.creatorGroup === creator).length;
+        count.textContent = `${total} project${total === 1 ? "" : "s"}`;
       });
 
-      // Render filter panels once on load
-      dom.groups.innerHTML = "";
-      const filterConfig = [
-        { title: "Class / Camp", key: "cohort", values: cohortValues },
-        { title: "Category", key: "category", values: categoryValues },
-        { title: "Tech", key: "tech", values: techValues },
-        { title: "Difficulty", key: "difficulty", values: difficultyValues },
-        { title: "Year", key: "year", values: yearValues },
-        { title: "Term", key: "term", values: termValues },
-        { title: "Solo / Team", key: "type", values: typeValues },
-        { title: "Program", key: "program", values: programValues }
-      ];
-
-      filterConfig.forEach(cfg => {
-        renderChipGroup({
-          mount: dom.groups,
-          title: cfg.title,
-          filterKey: cfg.key,
-          values: cfg.values,
-          selectedSet: state[cfg.key],
-          onToggle: (value, enabled) => {
-            if (enabled) state[cfg.key].add(value);
-            else state[cfg.key].delete(value);
-            apply(true);
+      function renderCollectionFolders() {
+        const creatorProjects = projectsForActiveCreator();
+        let visibleCollections = 0;
+        dom.categoryPresets.forEach((button) => {
+          const values = (button.dataset.categoryPreset || "")
+            .split(",")
+            .map((value) => value.trim())
+            .filter(Boolean);
+          const matches = values.length === 0
+            ? creatorProjects
+            : creatorProjects.filter((project) => values.includes(project.category));
+          button.hidden = matches.length === 0;
+          if (!button.hidden) visibleCollections += 1;
+          const representativeMatches = matches
+            .slice()
+            .sort((left, right) => {
+              const thumbnailScore = (project) => {
+                const path = String(project.thumbnail || "");
+                const slug = String(project.id || "").replace(/^app-/, "");
+                if (path.includes("/assets/thumbs/showcase/avatar-")) return 0;
+                if (project.category === "3D" && path.includes("/assets/thumbs/showcase/") && slug && !path.includes(slug)) return 0;
+                if (/\/apps\/[^/]+\/assets\/thumb\.svg$/i.test(path)) return 1;
+                if (path.includes("/assets/thumbs/showcase/")) return 3;
+                return 2;
+              };
+              return thumbnailScore(right) - thumbnailScore(left);
+            });
+          const preview = button.querySelector(".showcase-folder-preview");
+          if (preview) {
+            preview.replaceChildren();
+            representativeMatches.slice(0, 4).forEach((project) => {
+              const image = document.createElement("img");
+              image.src = project.thumbnail;
+              image.alt = "";
+              image.loading = "eager";
+              image.decoding = "async";
+              preview.appendChild(image);
+            });
+            preview.dataset.items = String(preview.children.length);
           }
+          const count = button.querySelector("small");
+          if (count) count.textContent = `${matches.length} project${matches.length === 1 ? "" : "s"}`;
+          const title = button.dataset.folderTitle || button.querySelector("strong")?.textContent || "Projects";
+          button.setAttribute("aria-label", `${title} collection in ${CREATOR_GROUPS[activeCreator].title}, ${matches.length} projects`);
         });
-      });
+
+        dom.creatorPresets.forEach((button) => {
+          button.setAttribute("aria-pressed", button.dataset.creatorPreset === activeCreator ? "true" : "false");
+        });
+        if (dom.launcher) dom.launcher.dataset.gallery = activeCreator;
+        if (dom.grid) dom.grid.setAttribute("aria-label", `${CREATOR_GROUPS[activeCreator].title} projects`);
+        if (dom.collectionTitle) dom.collectionTitle.textContent = `${CREATOR_GROUPS[activeCreator].title} collections`;
+        if (dom.collectionDescription) dom.collectionDescription.textContent = CREATOR_GROUPS[activeCreator].instruction;
+        if (dom.location) {
+          dom.location.textContent = `${creatorProjects.length} ${CREATOR_GROUPS[activeCreator].plural} in ${visibleCollections} collections`;
+        }
+      }
+
+      function renderAdvancedFilters() {
+        const source = projectsForActiveCreator();
+        const difficultyValues = uniqueValues(source, "difficulty").sort((a, b) => {
+          const order = { Beginner: 0, Intermediate: 1, Advanced: 2 };
+          return (order[a] ?? 99) - (order[b] ?? 99);
+        });
+        const cohortValues = uniqueValues(source, "cohort").sort((a, b) => {
+          const order = COHORT_ORDER.indexOf(a) - COHORT_ORDER.indexOf(b);
+          return order !== 0 ? order : a.localeCompare(b);
+        });
+        const filterConfig = [
+          { title: "Class / Camp", key: "cohort", values: cohortValues },
+          { title: "Category", key: "category", values: uniqueValues(source, "category").sort() },
+          { title: "Tech", key: "tech", values: uniqueValues(source, "tech").sort() },
+          { title: "Difficulty", key: "difficulty", values: difficultyValues },
+          { title: "Year", key: "year", values: uniqueValues(source, "year").map(String).sort((a, b) => Number(b) - Number(a)) },
+          { title: "Term", key: "term", values: uniqueValues(source, "term").sort() },
+          { title: "Solo / Team", key: "type", values: uniqueValues(source, "type").sort() },
+          { title: "Program", key: "program", values: uniqueValues(source, "program").sort() }
+        ];
+
+        dom.groups.innerHTML = "";
+        filterConfig.filter((cfg) => cfg.values.length > 0).forEach((cfg) => {
+          renderChipGroup({
+            mount: dom.groups,
+            title: cfg.title,
+            filterKey: cfg.key,
+            values: cfg.values,
+            selectedSet: state[cfg.key],
+            onToggle: (value, enabled) => {
+              if (enabled) state[cfg.key].add(value);
+              else state[cfg.key].delete(value);
+              apply(true);
+            }
+          });
+        });
+      }
+
+      renderCollectionFolders();
+      renderAdvancedFilters();
 
       function updateChipsFromState() {
         const chips = dom.groups.querySelectorAll(".chip");
@@ -337,6 +381,7 @@ function init() {
         if (dom.pageTitle) dom.pageTitle.textContent = title;
         if (dom.instruction) dom.instruction.textContent = "Tap a project to open it.";
         if (dom.resultsTitle) dom.resultsTitle.textContent = title;
+        if (dom.resultsContext) dom.resultsContext.textContent = CREATOR_GROUPS[activeCreator].title;
         if (dom.resultsSymbol) dom.resultsSymbol.textContent = symbol;
         if (dom.resultsDescription) dom.resultsDescription.textContent = description || COLLECTION_DESCRIPTIONS[title] || "Tap a picture to open the project.";
       }
@@ -355,10 +400,22 @@ function init() {
         if (dom.back) dom.back.hidden = true;
         if (dom.makerTools) dom.makerTools.hidden = false;
         if (dom.pageTitle) dom.pageTitle.textContent = "Choose a collection.";
-        if (dom.instruction) dom.instruction.textContent = "Then tap a project to play, explore, or watch it.";
+        if (dom.instruction) dom.instruction.textContent = CREATOR_GROUPS[activeCreator].instruction;
         if (dom.toolbar) dom.toolbar.open = false;
         apply(true);
-        if (focus) dom.categoryPresets[0]?.focus();
+        if (focus) dom.categoryPresets.find((button) => !button.hidden)?.focus();
+      }
+
+      function switchCreator(creator, { focus = true } = {}) {
+        if (!CREATOR_GROUPS[creator]) return;
+        activeCreator = creator;
+        resetState();
+        renderCollectionFolders();
+        renderAdvancedFilters();
+        showHome({ focus: false });
+        if (focus) {
+          dom.creatorPresets.find((button) => button.dataset.creatorPreset === creator)?.focus();
+        }
       }
 
       function openCollection(button) {
@@ -439,7 +496,7 @@ function init() {
       function apply(resetLimit = false) {
         if (resetLimit) visibleLimit = PAGE_SIZE;
         updateControlsFromState(state, dom);
-        const filteredSorted = filterAndSort(projects, state);
+        const filteredSorted = filterAndSort(projectsForActiveCreator(), state);
         const displayedProjects = filteredSorted.slice(0, visibleLimit);
         const visibleIds = new Set(displayedProjects.map((project) => project.id));
 
@@ -480,7 +537,7 @@ function init() {
           dom.empty.hidden = true;
         }
 
-        writeStateToQuery(state);
+        writeStateToQuery(state, activeCreator);
         updateChipsFromState();
         updateCategoryPresets();
         renderActiveSummary();
@@ -491,6 +548,12 @@ function init() {
       dom.categoryPresets.forEach((button) => {
         button.addEventListener("click", () => {
           openCollection(button);
+        });
+      });
+
+      dom.creatorPresets.forEach((button) => {
+        button.addEventListener("click", () => {
+          switchCreator(button.dataset.creatorPreset);
         });
       });
 
