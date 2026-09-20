@@ -264,32 +264,37 @@ import {
   scene.add(rimGlow);
 
   // ------------------------------------------------------------ holes
-  const holeGeo = new THREE.CylinderGeometry(HOLE_SIZE * 0.42, HOLE_SIZE * 0.36, 0.12, 16);
+  const holeGeo = new THREE.CylinderGeometry(HOLE_SIZE * 0.4, HOLE_SIZE * 0.34, 0.14, 20);
   const holeMat = new THREE.MeshStandardMaterial({
-    color: 0x07040f,
-    emissive: 0x251344,
-    emissiveIntensity: 0.42,
-    roughness: 0.86,
-    metalness: 0.12
+    color: 0x160d25,
+    emissive: 0x6f45a8,
+    emissiveIntensity: 0.82,
+    roughness: 0.72,
+    metalness: 0.18
   });
-  const holeRimGeo = new THREE.TorusGeometry(HOLE_SIZE * 0.38, HOLE_SIZE * 0.055, 8, 20);
-  holeRimGeo.rotateX(Math.PI / 2);
+  const holeRimGeo = new THREE.RingGeometry(HOLE_SIZE * 0.29, HOLE_SIZE * 0.46, 28);
+  // RingGeometry faces +Z by default. Rotate toward +Y for the tabletop.
+  holeRimGeo.rotateX(-Math.PI / 2);
   const holeRimMat = new THREE.MeshBasicMaterial({
-    color: 0xc8b5ff,
-    toneMapped: false
+    color: 0xd9caff,
+    toneMapped: false,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.84
   });
   const holeMeshes = [];
   for (const hole of BOARD.values()) {
     const [px, pz] = cubeToWorld(hole.c);
     const cup = new THREE.Mesh(holeGeo, holeMat);
-    cup.position.set(px, -0.025, -pz);
+    cup.position.set(px, 0.015, -pz);
     cup.receiveShadow = true;
     cup.userData.cube = hole.c;
     scene.add(cup);
     holeMeshes.push(cup);
 
     const rim = new THREE.Mesh(holeRimGeo, holeRimMat);
-    rim.position.set(px, 0.045, -pz);
+    rim.position.set(px, 0.22, -pz);
+    rim.renderOrder = 1;
     scene.add(rim);
   }
 
@@ -446,6 +451,9 @@ import {
     composer.setSize(w, h);
     bloom.setSize(w, h);
     camera.aspect = w / h;
+    // A wider field of view keeps the six-point board fully visible in the
+    // deliberately tall mobile play surface.
+    camera.fov = camera.aspect < 0.9 ? 56 : 42;
     camera.updateProjectionMatrix();
   }
   new ResizeObserver(resize).observe(canvas);
