@@ -127,6 +127,9 @@
     (scope || document).querySelectorAll('[data-zoomable] img:not([tabindex]), img[data-zoomable]:not([tabindex])').forEach(function (i) {
       i.tabIndex = 0;
       i.setAttribute('role', 'button');
+      // role="button" overrides the img's native name computation from alt,
+      // so mirror it into aria-label to keep an accessible name (WCAG H91).
+      if (i.alt && !i.hasAttribute('aria-label')) i.setAttribute('aria-label', i.alt);
     });
   }
   enhance();

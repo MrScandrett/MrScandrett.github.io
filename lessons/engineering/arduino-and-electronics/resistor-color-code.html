@@ -1,0 +1,953 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Resistor Color Code Guide · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta
+    name="description"
+    content="Decode 4-band, 5-band, and 6-band resistors with an interactive analyzer, read the tolerance and temperature-coefficient bands, and practice with common classroom values."
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <style>
+    .ec-page { padding-bottom: 1.5rem; }
+    .ll-viewport { --ll-panel-w: 300px; }
+
+    .ec-hero { padding: 0.4rem 0 1.2rem; text-align: left; }
+    .ec-hero h1 {
+      max-width: 20ch;
+      margin-left: 0;
+      margin-right: 0;
+      font-size: clamp(1.7rem, 3.9vw, 2.5rem);
+    }
+    .ec-hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 0.55rem;
+      margin: 0.55rem 0 0.75rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted, #64748b);
+    }
+    .ec-hero-meta .dot {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: currentColor;
+      align-self: center;
+    }
+    .ec-lede {
+      max-width: 70ch;
+      margin: 0 0 0.95rem;
+      color: #415266;
+      font-size: 0.97rem;
+      line-height: 1.68;
+    }
+    .ec-back-link {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--accent, #007aff);
+      text-decoration: none;
+    }
+    .ec-back-link:hover { text-decoration: underline; }
+
+    .ec-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--ec-accent, #007aff);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
+      padding: 1.35rem 1.55rem;
+      margin-bottom: 1rem;
+    }
+    .ec-card h2 {
+      margin: 0 0 0.55rem;
+      font-size: clamp(1.08rem, 2vw, 1.28rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .ec-card p {
+      margin: 0 0 0.7rem;
+      color: #415266;
+      font-size: 0.9rem;
+      line-height: 1.66;
+    }
+    .ec-card p:last-child { margin-bottom: 0; }
+    [data-lighting="night"] .ec-card p,
+    [data-theme="vaporwave"] .ec-card p,
+    [data-theme="bark"] .ec-card p,
+    [data-lighting="night"] .ec-lede,
+    [data-theme="vaporwave"] .ec-lede,
+    [data-theme="bark"] .ec-lede {
+      color: rgba(245,245,247,0.74);
+    }
+
+    .ec-callout {
+      background: var(--surface, #f5f5f7);
+      border-radius: 12px;
+      padding: 0.9rem 1rem;
+      margin: 0.8rem 0;
+      font-size: 0.86rem;
+      line-height: 1.6;
+    }
+    .ec-callout strong {
+      display: block;
+      margin-bottom: 0.2rem;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted, #64748b);
+    }
+
+    .ec-resistor-shell {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 16px;
+      overflow: hidden;
+      background: linear-gradient(180deg, #f8fafc 0%, #eef4ff 100%);
+    }
+    .ec-resistor-top {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 1rem;
+      padding: 1rem;
+      align-items: center;
+    }
+    .ec-resistor-display {
+      border-radius: 14px;
+      background: #0f172a;
+      padding: 1rem;
+      color: #f8fafc;
+    }
+    .ec-resistor-display svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .ec-resistor-readout {
+      margin-top: 0.9rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      align-items: baseline;
+    }
+    .ec-resistor-value {
+      font-size: clamp(1.3rem, 3vw, 1.8rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+    .ec-resistor-meta {
+      font-size: 0.82rem;
+      color: #cbd5e1;
+    }
+    .ec-resistor-controls {
+      display: grid;
+      gap: 0.7rem;
+    }
+    .ec-resistor-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.9rem;
+      padding: 1rem 1rem 0;
+    }
+    .ec-band-tabs {
+      display: inline-flex;
+      gap: 0.35rem;
+      padding: 0.28rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.06);
+      border: 1px solid var(--line, #d2d2d7);
+    }
+    .ec-band-tab {
+      border: none;
+      background: transparent;
+      color: #475569;
+      padding: 0.45rem 0.78rem;
+      border-radius: 999px;
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .ec-band-tab.is-active {
+      background: #ffffff;
+      color: #007aff;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+    }
+    .ec-band-help {
+      font-size: 0.79rem;
+      color: var(--text-muted, #64748b);
+    }
+    .ec-field label {
+      display: block;
+      margin-bottom: 0.22rem;
+      font-size: 0.77rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted, #64748b);
+    }
+    .ec-field select {
+      width: 100%;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 10px;
+      padding: 0.62rem 0.75rem;
+      font: inherit;
+      font-size: 0.9rem;
+      background: var(--white, #fff);
+      color: var(--text, #1d1d1f);
+    }
+    .ec-resistor-legend {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 0.55rem;
+      padding: 0 1rem 1rem;
+    }
+    .ec-resistor-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.7rem;
+      margin-top: 0.85rem;
+    }
+    .ec-summary-tile {
+      border: 1px solid rgba(203, 213, 225, 0.22);
+      border-radius: 12px;
+      padding: 0.8rem 0.9rem;
+      background: rgba(255,255,255,0.08);
+    }
+    .ec-summary-tile strong {
+      display: block;
+      margin-bottom: 0.2rem;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #cbd5e1;
+    }
+    .ec-summary-tile span {
+      display: block;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .ec-band-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 999px;
+      padding: 0.38rem 0.55rem;
+      background: rgba(255,255,255,0.78);
+      font-size: 0.78rem;
+      color: #415266;
+    }
+    .ec-band-chip span {
+      width: 0.8rem;
+      height: 0.8rem;
+      border-radius: 999px;
+      border: 1px solid rgba(15,23,42,0.14);
+      flex-shrink: 0;
+    }
+
+    .ec-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.8rem;
+      font-size: 0.84rem;
+    }
+    .ec-table th,
+    .ec-table td {
+      text-align: left;
+      vertical-align: top;
+      padding: 0.6rem 0.65rem;
+      border-bottom: 1px solid var(--line, #d2d2d7);
+    }
+    .ec-table th {
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted, #64748b);
+    }
+    .ec-table tr:last-child td { border-bottom: none; }
+
+    .ec-symbol-panel {
+      display: grid;
+      grid-template-columns: 104px minmax(0, 1fr);
+      gap: 0.75rem;
+      align-items: center;
+      margin: 0 0 0.75rem;
+      padding: 0.72rem;
+      border: 1px solid rgba(0,122,255,0.16);
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(0,122,255,0.06), rgba(255,255,255,0.78));
+    }
+    .ec-symbol-panel svg {
+      width: 104px;
+      height: 72px;
+      display: block;
+      border-radius: 10px;
+      background: #f8fbff;
+      border: 1px solid rgba(0,122,255,0.12);
+    }
+    .ec-symbol-panel line,
+    .ec-symbol-panel path,
+    .ec-symbol-panel polyline,
+    .ec-symbol-panel polygon,
+    .ec-symbol-panel circle {
+      vector-effect: non-scaling-stroke;
+    }
+    .ec-symbol-copy strong {
+      display: block;
+      color: #007aff;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.18rem;
+    }
+    .ec-symbol-copy span {
+      display: block;
+      color: #415266;
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+
+    .ec-quiz {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
+      padding: 1.35rem 1.55rem;
+      margin-bottom: 1rem;
+    }
+    .ec-quiz h2 {
+      margin: 0 0 0.95rem;
+      font-size: clamp(1.08rem, 2vw, 1.26rem);
+    }
+    .ec-question { margin-bottom: 1.1rem; }
+    .ec-question:last-child { margin-bottom: 0; }
+    .ec-question p {
+      margin: 0 0 0.5rem;
+      font-size: 0.91rem;
+      font-weight: 700;
+    }
+    .ec-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .ec-option {
+      padding: 0.48rem 0.75rem;
+      border-radius: 9px;
+      border: 1.5px solid var(--line, #d2d2d7);
+      background: var(--surface, #f5f5f7);
+      color: var(--text, #1d1d1f);
+      font: inherit;
+      font-size: 0.86rem;
+      text-align: left;
+      cursor: pointer;
+    }
+    .ec-option:hover:not(:disabled) { border-color: #007aff; }
+    .ec-option.is-correct {
+      background: #34c75914;
+      border-color: #34c759;
+      color: #248a3d;
+    }
+    .ec-option.is-wrong {
+      background: #ff3b3014;
+      border-color: #ff3b30;
+      color: #c0392b;
+    }
+    .ec-q-feedback {
+      min-height: 1rem;
+      margin-top: 0.35rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-muted, #64748b);
+    }
+
+    @media (max-width: 920px) {
+      .ec-resistor-top { grid-template-columns: 1fr; }
+      .ec-symbol-panel { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../recipe-book.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="ec-page">
+          <section class="hero ec-hero">
+            <p class="eyebrow">Engineering · Circuit Math</p>
+            <h1>Resistor Color Code Guide</h1>
+            <div class="ec-hero-meta">
+              <span>Resistors</span><span class="dot"></span>
+              <span>Color Bands</span><span class="dot"></span>
+              <span>Tolerance</span><span class="dot"></span>
+              <span>Precision Parts</span>
+            </div>
+            <p class="ec-lede">Every resistor tells you its value in a color code printed right on the body. This module is a focused, interactive decoder: read 4-band, 5-band, and 6-band resistors, understand what each band means, and practice with the values you'll actually pull out of a parts bin.</p>
+            <a class="ec-back-link" href="../../../steam-lessons.html#module-engineering">&larr; Back to Engineering</a>
+          </section>
+
+          <section class="ec-card" style="--ec-accent:#34c759;">
+            <h2>Resistor Color Code Guide</h2>
+            <p>Decode <strong>4-band, 5-band, and 6-band</strong> resistors with the analyzer below, compare beginner parts with precision parts, and watch the decoded meaning update live as you change each band.</p>
+
+            <div class="ec-symbol-panel">
+              <svg viewBox="0 0 104 72" role="img" aria-label="Resistor schematic symbol">
+                <title>Resistor schematic symbol</title>
+                <line x1="10" y1="36" x2="22" y2="36" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+                <polyline points="22,36 28,24 36,48 44,24 52,48 60,24 68,48 76,36" fill="none" stroke="#0f172a" stroke-width="3" stroke-linejoin="round"></polyline>
+                <line x1="76" y1="36" x2="94" y2="36" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
+              </svg>
+              <div class="ec-symbol-copy">
+                <strong>Schematic Symbol</strong>
+                <span>A resistor is drawn as a zig-zag in many classroom diagrams. Its job is to oppose current flow.</span>
+              </div>
+            </div>
+
+            <div class="ec-resistor-shell">
+              <div class="ec-resistor-toolbar">
+                <div class="ec-band-tabs" role="tablist" aria-label="Resistor band count">
+                  <button class="ec-band-tab is-active" type="button" data-band-count="4" aria-selected="true">4 Bands</button>
+                  <button class="ec-band-tab" type="button" data-band-count="5" aria-selected="false">5 Bands</button>
+                  <button class="ec-band-tab" type="button" data-band-count="6" aria-selected="false">6 Bands</button>
+                </div>
+                <div class="ec-band-help" id="resistor-help">Most classroom resistors are 4-band parts.</div>
+              </div>
+              <div class="ec-resistor-top">
+                <div class="ec-resistor-display">
+                  <svg viewBox="0 0 620 180" aria-label="Resistor with four colored bands">
+                    <defs>
+                      <linearGradient id="resistor-lead-grad" x1="0" x2="1" y1="0" y2="0">
+                        <stop offset="0" stop-color="#6b7c91"></stop>
+                        <stop offset="0.28" stop-color="#b8c7d9"></stop>
+                        <stop offset="0.52" stop-color="#e6eef7"></stop>
+                        <stop offset="0.78" stop-color="#8ea2ba"></stop>
+                        <stop offset="1" stop-color="#52657d"></stop>
+                      </linearGradient>
+                      <linearGradient id="resistor-body-grad" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0" stop-color="#e9ddbf"></stop>
+                        <stop offset="0.18" stop-color="#d7c8a4"></stop>
+                        <stop offset="0.48" stop-color="#bcb28f"></stop>
+                        <stop offset="0.7" stop-color="#d1c49f"></stop>
+                        <stop offset="1" stop-color="#817b64"></stop>
+                      </linearGradient>
+                      <linearGradient id="resistor-cap-grad" x1="0" x2="1" y1="0" y2="0">
+                        <stop offset="0" stop-color="#7d7865"></stop>
+                        <stop offset="0.36" stop-color="#d8cdae"></stop>
+                        <stop offset="0.72" stop-color="#aaa283"></stop>
+                        <stop offset="1" stop-color="#67614f"></stop>
+                      </linearGradient>
+                      <filter id="resistor-shadow" x="-20%" y="-30%" width="140%" height="160%">
+                        <feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#020617" flood-opacity="0.38"></feDropShadow>
+                      </filter>
+                      <clipPath id="resistor-body-clip">
+                        <rect x="180" y="42" width="260" height="96" rx="48"></rect>
+                      </clipPath>
+                    </defs>
+                    <text x="310" y="28" text-anchor="middle" fill="#cbd5e1" font-family="Inter,sans-serif" font-size="16" font-weight="700" id="resistor-title">4-Band Resistor</text>
+                    <g filter="url(#resistor-shadow)">
+                      <path d="M42 90 C86 88 122 88 180 90" fill="none" stroke="url(#resistor-lead-grad)" stroke-width="10" stroke-linecap="round"></path>
+                      <path d="M440 90 C498 91 536 91 578 90" fill="none" stroke="url(#resistor-lead-grad)" stroke-width="10" stroke-linecap="round"></path>
+                      <path d="M43 86 C86 84 122 84 180 86" fill="none" stroke="rgba(255,255,255,0.42)" stroke-width="2" stroke-linecap="round"></path>
+                      <path d="M440 86 C498 87 536 87 578 86" fill="none" stroke="rgba(255,255,255,0.42)" stroke-width="2" stroke-linecap="round"></path>
+
+                      <rect x="180" y="42" width="260" height="96" rx="48" fill="url(#resistor-body-grad)"></rect>
+                      <ellipse cx="184" cy="90" rx="34" ry="48" fill="url(#resistor-cap-grad)" opacity="0.96"></ellipse>
+                      <ellipse cx="436" cy="90" rx="34" ry="48" fill="url(#resistor-cap-grad)" opacity="0.96"></ellipse>
+
+                      <g clip-path="url(#resistor-body-clip)">
+                        <rect x="180" y="42" width="260" height="96" rx="48" fill="url(#resistor-body-grad)"></rect>
+                        <rect x="228" y="42" width="18" height="96" rx="3" fill="#111827" id="band-1"></rect>
+                        <rect x="268" y="42" width="18" height="96" rx="3" fill="#ef4444" id="band-2"></rect>
+                        <rect x="316" y="42" width="18" height="96" rx="3" fill="#92400e" id="band-3"></rect>
+                        <rect x="388" y="42" width="18" height="96" rx="3" fill="#d4af37" id="band-4"></rect>
+                        <rect x="410" y="42" width="14" height="96" rx="3" fill="#7c4a21" id="band-5" style="display:none;"></rect>
+                        <rect x="430" y="42" width="12" height="96" rx="3" fill="#2563eb" id="band-6" style="display:none;"></rect>
+                        <path d="M188 55 C248 38 365 38 430 57" fill="none" stroke="rgba(255,255,255,0.36)" stroke-width="12" stroke-linecap="round"></path>
+                        <path d="M196 124 C252 140 363 140 426 123" fill="none" stroke="rgba(15,23,42,0.24)" stroke-width="12" stroke-linecap="round"></path>
+                      </g>
+
+                      <rect x="180" y="42" width="260" height="96" rx="48" fill="none" stroke="#67614f" stroke-width="4"></rect>
+                      <ellipse cx="184" cy="90" rx="34" ry="48" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="2"></ellipse>
+                      <ellipse cx="436" cy="90" rx="34" ry="48" fill="none" stroke="rgba(15,23,42,0.22)" stroke-width="2"></ellipse>
+                    </g>
+                  </svg>
+                  <div class="ec-resistor-readout">
+                    <span class="ec-resistor-value" id="resistor-value">220 Ω</span>
+                    <span class="ec-resistor-meta" id="resistor-meta">digits 22 × 10</span>
+                    <span class="ec-resistor-meta" id="resistor-tolerance">tolerance ±5%</span>
+                  </div>
+                  <div class="ec-resistor-summary">
+                    <div class="ec-summary-tile">
+                      <strong>Decoded Bands</strong>
+                      <span id="resistor-band-labels">Red • Red • Brown • Gold</span>
+                    </div>
+                    <div class="ec-summary-tile">
+                      <strong>Precision Note</strong>
+                      <span id="resistor-ppm">Standard classroom resistor</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="ec-resistor-controls" id="resistor-controls"></div>
+              </div>
+
+              <div class="ec-callout" style="margin:0 1rem 1rem;">
+                <strong>Band Meanings</strong>
+                In 4-band mode the first two bands are digits. In 5-band and 6-band mode the first three bands are digits. The last band is tolerance, and the 6th band adds temperature coefficient in ppm per degree C.
+              </div>
+
+              <div class="ec-resistor-legend" id="resistor-legend"></div>
+            </div>
+
+            <div class="ec-callout">
+              <strong>Orientation Tip</strong>
+              The tolerance band is usually spaced a little farther from the other bands. Hold that band on the right while reading from left to right.
+            </div>
+
+            <table class="ec-table" aria-label="Common resistor color code examples">
+              <thead>
+                <tr>
+                  <th>Colors</th>
+                  <th>Value</th>
+                  <th>Typical Use</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Red, Red, Brown, Gold</td>
+                  <td>220 Ω ±5%</td>
+                  <td>Common LED current-limiting resistor</td>
+                </tr>
+                <tr>
+                  <td>Brown, Black, Red, Gold</td>
+                  <td>1 kΩ ±5%</td>
+                  <td>Pull-up and pull-down circuits</td>
+                </tr>
+                <tr>
+                  <td>Yellow, Violet, Orange, Gold</td>
+                  <td>47 kΩ ±5%</td>
+                  <td>Sensor voltage dividers</td>
+                </tr>
+                <tr>
+                  <td>Brown, Black, Green, Gold</td>
+                  <td>1 MΩ ±5%</td>
+                  <td>High-resistance input circuits</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="ec-quiz">
+            <h2>Quick Check</h2>
+
+            <div class="ec-question" data-answer="b" data-explanation="The first two bands give the first two digits, so red-red makes 22 before the multiplier is applied.">
+              <p>1. On a four-band resistor, what do the first two color bands represent?</p>
+              <div class="ec-options" role="group">
+                <button class="ec-option" data-choice="a">Tolerance and power rating</button>
+                <button class="ec-option" data-choice="b">The first two digits of the resistance value</button>
+                <button class="ec-option" data-choice="c">Voltage and current limits</button>
+                <button class="ec-option" data-choice="d">The component manufacturer</button>
+              </div>
+              <div class="ec-q-feedback" aria-live="polite"></div>
+            </div>
+
+            <div class="ec-question" data-answer="c" data-explanation="A 5-band resistor adds a third significant digit before the multiplier band, giving a more precise reading than a 4-band part.">
+              <p>2. What does a fifth band add on a 5-band resistor?</p>
+              <div class="ec-options" role="group">
+                <button class="ec-option" data-choice="a">A second tolerance rating</button>
+                <button class="ec-option" data-choice="b">The power rating in watts</button>
+                <button class="ec-option" data-choice="c">A third significant digit for more precision</button>
+                <button class="ec-option" data-choice="d">Nothing — it is decorative</button>
+              </div>
+              <div class="ec-q-feedback" aria-live="polite"></div>
+            </div>
+
+            <div class="ec-question" data-answer="a" data-explanation="Gold means ±5% tolerance, so the true resistance could be anywhere from 950 Ω to 1,050 Ω and still be within spec.">
+              <p>3. A resistor decodes to 1 kΩ with a gold tolerance band. What range could its true resistance fall in?</p>
+              <div class="ec-options" role="group">
+                <button class="ec-option" data-choice="a">950 Ω to 1,050 Ω</button>
+                <button class="ec-option" data-choice="b">Exactly 1,000 Ω, no variation</button>
+                <button class="ec-option" data-choice="c">0 Ω to 2,000 Ω</button>
+                <button class="ec-option" data-choice="d">1,000 Ω to 1,100 Ω only</button>
+              </div>
+              <div class="ec-q-feedback" aria-live="polite"></div>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs">
+            <button class="ll-tab" aria-selected="true" data-pane="ec-outline">Outline</button>
+            <button class="ll-tab" aria-selected="false" data-pane="ec-notes">Field Notes</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="ec-outline">
+            <span class="ll-label">This Module Covers</span>
+            <div class="ll-info">
+              <strong>4-Band Resistors</strong>
+              The classroom standard: two digits, a multiplier, and a tolerance.
+            </div>
+            <div class="ll-info">
+              <strong>5-Band Resistors</strong>
+              A third significant digit for tighter precision.
+            </div>
+            <div class="ll-info">
+              <strong>6-Band Resistors</strong>
+              Adds a temperature coefficient band in ppm/°C.
+            </div>
+            <div class="ll-info">
+              <strong>Tolerance</strong>
+              How far the true value can drift from the decoded value.
+            </div>
+          </div>
+
+          <div class="ll-pane" id="ec-notes">
+            <div class="ll-info">
+              <strong>Reading direction</strong>
+              The tolerance band sits farther from the others — keep it on the right.
+            </div>
+            <div class="ll-info">
+              <strong>Common values</strong>
+              220 Ω, 1 kΩ, and 10 kΩ show up constantly in beginner circuits.
+            </div>
+            <div class="ll-info">
+              <strong>Related lesson</strong>
+              For the rest of the parts bin — LEDs, capacitors, diodes, transistors, buttons — see the Component &amp; Schematic Field Guide.
+            </div>
+            <div class="ll-info">
+              <strong>Next step</strong>
+              Once you can read a value, Ohm's Law lets you calculate what value you actually need.
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const resistorColors = [
+        { key: 'black', label: 'Black', value: 0, color: '#111111' },
+        { key: 'brown', label: 'Brown', value: 1, color: '#7c4a21' },
+        { key: 'red', label: 'Red', value: 2, color: '#dc2626' },
+        { key: 'orange', label: 'Orange', value: 3, color: '#f97316' },
+        { key: 'yellow', label: 'Yellow', value: 4, color: '#facc15' },
+        { key: 'green', label: 'Green', value: 5, color: '#16a34a' },
+        { key: 'blue', label: 'Blue', value: 6, color: '#2563eb' },
+        { key: 'violet', label: 'Violet', value: 7, color: '#7c3aed' },
+        { key: 'gray', label: 'Gray', value: 8, color: '#94a3b8' },
+        { key: 'white', label: 'White', value: 9, color: '#f8fafc' }
+      ];
+
+      const multipliers = [
+        { key: 'black', label: 'Black ×1', value: 1, color: '#111111' },
+        { key: 'brown', label: 'Brown ×10', value: 10, color: '#7c4a21' },
+        { key: 'red', label: 'Red ×100', value: 100, color: '#dc2626' },
+        { key: 'orange', label: 'Orange ×1k', value: 1000, color: '#f97316' },
+        { key: 'yellow', label: 'Yellow ×10k', value: 10000, color: '#facc15' },
+        { key: 'green', label: 'Green ×100k', value: 100000, color: '#16a34a' },
+        { key: 'blue', label: 'Blue ×1M', value: 1000000, color: '#2563eb' },
+        { key: 'violet', label: 'Violet ×10M', value: 10000000, color: '#7c3aed' },
+        { key: 'gray', label: 'Gray ×100M', value: 100000000, color: '#94a3b8' },
+        { key: 'white', label: 'White ×1G', value: 1000000000, color: '#f8fafc' },
+        { key: 'gold', label: 'Gold ×0.1', value: 0.1, color: '#d4af37' },
+        { key: 'silver', label: 'Silver ×0.01', value: 0.01, color: '#c0c0c0' }
+      ];
+
+      const tolerances = [
+        { key: 'gold', label: 'Gold ±5%', value: 5, color: '#d4af37' },
+        { key: 'silver', label: 'Silver ±10%', value: 10, color: '#c0c0c0' },
+        { key: 'brown', label: 'Brown ±1%', value: 1, color: '#7c4a21' },
+        { key: 'red', label: 'Red ±2%', value: 2, color: '#dc2626' },
+        { key: 'green', label: 'Green ±0.5%', value: 0.5, color: '#16a34a' },
+        { key: 'blue', label: 'Blue ±0.25%', value: 0.25, color: '#2563eb' },
+        { key: 'violet', label: 'Violet ±0.1%', value: 0.1, color: '#7c3aed' },
+        { key: 'gray', label: 'Gray ±0.05%', value: 0.05, color: '#94a3b8' }
+      ];
+      const ppmOptions = [
+        { key: 'brown', label: 'Brown 100 ppm/°C', value: 100, color: '#7c4a21' },
+        { key: 'red', label: 'Red 50 ppm/°C', value: 50, color: '#dc2626' },
+        { key: 'orange', label: 'Orange 15 ppm/°C', value: 15, color: '#f97316' },
+        { key: 'yellow', label: 'Yellow 25 ppm/°C', value: 25, color: '#facc15' },
+        { key: 'blue', label: 'Blue 10 ppm/°C', value: 10, color: '#2563eb' },
+        { key: 'violet', label: 'Violet 5 ppm/°C', value: 5, color: '#7c3aed' }
+      ];
+
+      const defaultBandSets = {
+        4: ['red', 'red', 'brown', 'gold'],
+        5: ['brown', 'black', 'black', 'red', 'brown'],
+        6: ['brown', 'black', 'black', 'red', 'brown', 'blue']
+      };
+      const bandLayouts = {
+        4: ['245', '290', '335', '395'],
+        5: ['230', '270', '310', '350', '405'],
+        6: ['220', '255', '290', '325', '388', '425']
+      };
+      const bandHelp = {
+        4: 'Most classroom resistors are 4-band parts.',
+        5: '5-band resistors add a third significant digit for more precise values.',
+        6: '6-band resistors add temperature coefficient data for precision circuits.'
+      };
+
+      const bandTabs = document.querySelectorAll('.ec-band-tab');
+      const controlsWrap = document.getElementById('resistor-controls');
+      const legend = document.getElementById('resistor-legend');
+      const valueEl = document.getElementById('resistor-value');
+      const metaEl = document.getElementById('resistor-meta');
+      const toleranceEl = document.getElementById('resistor-tolerance');
+      const bandLabelsEl = document.getElementById('resistor-band-labels');
+      const ppmEl = document.getElementById('resistor-ppm');
+      const helpEl = document.getElementById('resistor-help');
+      const titleEl = document.getElementById('resistor-title');
+      let bandCount = 4;
+      let bands = defaultBandSets[4].slice();
+
+      function fillSelect(select, items, selectedKey) {
+        select.innerHTML = '';
+        items.forEach(function (item) {
+          const option = document.createElement('option');
+          option.value = item.key;
+          option.textContent = item.label;
+          if (item.key === selectedKey) option.selected = true;
+          select.appendChild(option);
+        });
+      }
+
+      function findByKey(items, key) {
+        return items.find(function (item) { return item.key === key; });
+      }
+
+      function formatResistance(value) {
+        if (value >= 1000000000) return (value / 1000000000).toFixed(2).replace(/\.00$/, '') + ' GΩ';
+        if (value >= 1000000) return (value / 1000000).toFixed(2).replace(/\.00$/, '') + ' MΩ';
+        if (value >= 1000) return (value / 1000).toFixed(2).replace(/\.00$/, '') + ' kΩ';
+        if (value < 1) return value.toFixed(2).replace(/0+$/, '').replace(/\.$/, '') + ' Ω';
+        return value.toFixed(2).replace(/\.00$/, '') + ' Ω';
+      }
+
+      function setBand(id, color) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.setAttribute('fill', color);
+        el.setAttribute('stroke', color === '#f8fafc' ? '#cbd5e1' : color);
+        el.setAttribute('stroke-width', '1');
+      }
+
+      function renderLegend() {
+        const chips = [
+          { label: 'Black', color: '#111111' },
+          { label: 'Brown', color: '#7c4a21' },
+          { label: 'Red', color: '#dc2626' },
+          { label: 'Orange', color: '#f97316' },
+          { label: 'Yellow', color: '#facc15' },
+          { label: 'Green', color: '#16a34a' },
+          { label: 'Blue', color: '#2563eb' },
+          { label: 'Violet', color: '#7c3aed' },
+          { label: 'Gray', color: '#94a3b8' },
+          { label: 'White', color: '#f8fafc' },
+          { label: 'Gold', color: '#d4af37' },
+          { label: 'Silver', color: '#c0c0c0' }
+        ];
+        chips.forEach(function (chip) {
+          const el = document.createElement('div');
+          el.className = 'ec-band-chip';
+          el.innerHTML = '<span style="background:' + chip.color + ';"></span>' + chip.label;
+          legend.appendChild(el);
+        });
+      }
+
+      function getRoleLabel(index) {
+        if (bandCount === 4) {
+          if (index < 2) return 'Band ' + (index + 1);
+          if (index === 2) return 'Multiplier';
+          return 'Tolerance';
+        }
+        if (bandCount === 5) {
+          if (index < 3) return 'Band ' + (index + 1);
+          if (index === 3) return 'Multiplier';
+          return 'Tolerance';
+        }
+        if (index < 3) return 'Band ' + (index + 1);
+        if (index === 3) return 'Multiplier';
+        if (index === 4) return 'Tolerance';
+        return 'Temp Coefficient';
+      }
+
+      function getBandOptions(index) {
+        if (bandCount === 4) {
+          if (index < 2) return resistorColors;
+          if (index === 2) return multipliers;
+          return tolerances;
+        }
+        if (bandCount === 5) {
+          if (index < 3) return resistorColors;
+          if (index === 3) return multipliers;
+          return tolerances;
+        }
+        if (index < 3) return resistorColors;
+        if (index === 3) return multipliers;
+        if (index === 4) return tolerances;
+        return ppmOptions;
+      }
+
+      function updateBandLayout() {
+        const positions = bandLayouts[bandCount];
+        for (let i = 1; i <= 6; i++) {
+          const bandEl = document.getElementById('band-' + i);
+          if (!bandEl) continue;
+          if (i <= bandCount) {
+            bandEl.style.display = 'block';
+            bandEl.setAttribute('x', positions[i - 1]);
+          } else {
+            bandEl.style.display = 'none';
+          }
+        }
+        titleEl.textContent = bandCount + '-Band Resistor';
+        helpEl.textContent = bandHelp[bandCount];
+      }
+
+      function renderControls() {
+        controlsWrap.innerHTML = '';
+        bands.forEach(function (selectedKey, index) {
+          const field = document.createElement('div');
+          field.className = 'ec-field';
+          const label = document.createElement('label');
+          const select = document.createElement('select');
+          label.setAttribute('for', 'resistor-select-' + index);
+          label.textContent = getRoleLabel(index);
+          select.id = 'resistor-select-' + index;
+          fillSelect(select, getBandOptions(index), selectedKey);
+          select.addEventListener('change', function () {
+            bands[index] = select.value;
+            updateResistor();
+          });
+          field.appendChild(label);
+          field.appendChild(select);
+          controlsWrap.appendChild(field);
+        });
+      }
+
+      function updateResistor() {
+        const sigBands = bandCount === 4 ? 2 : 3;
+        let digitsValue = '';
+        for (let i = 0; i < sigBands; i++) {
+          const digit = findByKey(resistorColors, bands[i]);
+          digitsValue += digit.value;
+          setBand('band-' + (i + 1), digit.color);
+        }
+        const multiplier = findByKey(multipliers, bands[sigBands]);
+        const tolerance = findByKey(tolerances, bands[sigBands + 1]);
+        const resistance = Number(digitsValue) * multiplier.value;
+        setBand('band-' + (sigBands + 1), multiplier.color);
+        setBand('band-' + (sigBands + 2), tolerance.color);
+        if (bandCount === 6) {
+          const ppm = findByKey(ppmOptions, bands[5]);
+          setBand('band-6', ppm.color);
+          ppmEl.textContent = ppm.value + ' ppm/°C temperature coefficient';
+        } else if (bandCount === 5) {
+          ppmEl.textContent = 'Precision resistor with tighter band coding';
+        } else {
+          ppmEl.textContent = 'Standard classroom resistor';
+        }
+        valueEl.textContent = formatResistance(resistance);
+        metaEl.textContent = 'digits ' + digitsValue + ' × ' + multiplier.value.toLocaleString();
+        toleranceEl.textContent = 'tolerance ±' + tolerance.value + '%';
+        bandLabelsEl.textContent = bands.map(function (key) {
+          const item = findByKey(resistorColors, key) || findByKey(multipliers, key) || findByKey(tolerances, key) || findByKey(ppmOptions, key);
+          return item ? item.label.split(' ')[0] : key;
+        }).join(' • ');
+      }
+
+      function setBandCount(nextCount) {
+        bandCount = nextCount;
+        bands = defaultBandSets[nextCount].slice();
+        bandTabs.forEach(function (tab) {
+          const isActive = Number(tab.dataset.bandCount) === nextCount;
+          tab.classList.toggle('is-active', isActive);
+          tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+        updateBandLayout();
+        renderControls();
+        updateResistor();
+      }
+
+      bandTabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          setBandCount(Number(tab.dataset.bandCount));
+        });
+      });
+
+      renderLegend();
+      setBandCount(4);
+
+      document.querySelectorAll('.ec-question').forEach(function (question) {
+        const answer = question.dataset.answer;
+        const explanation = question.dataset.explanation;
+        const feedback = question.querySelector('.ec-q-feedback');
+        const options = question.querySelectorAll('.ec-option');
+
+        options.forEach(function (option) {
+          option.addEventListener('click', function () {
+            if (option.disabled) return;
+            options.forEach(function (item) {
+              item.disabled = true;
+              item.classList.remove('is-correct', 'is-wrong');
+              if (item.dataset.choice === answer) item.classList.add('is-correct');
+            });
+            if (option.dataset.choice !== answer) option.classList.add('is-wrong');
+            if (option.dataset.choice === answer) {
+              feedback.textContent = 'Correct. ' + explanation;
+              feedback.style.color = '#248a3d';
+            } else {
+              feedback.textContent = 'Not quite. ' + explanation;
+              feedback.style.color = '#c0392b';
+            }
+          });
+        });
+      });
+    })();
+  </script>
+  <script src="../../../assets/js/classroom-animations.js"></script>
+  <script src="../../../assets/js/lesson-layout.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
+</body>
+</html>

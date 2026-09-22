@@ -3,7 +3,7 @@
  * Settings panel (nav-mobile.js) writes the preference; this file reads it
  * and renders the selected background behind shared ClassroomOS pages.
  *
- * Modes: 'none' | 'mesh' | 'particles' | 'aurora' | 'petals' | 'hive'
+ * Modes: 'none' | 'mesh' | 'particles' | 'aurora' | 'petals' | 'hive' | 'mandelbrot'
  * Storage key: classroomos-canvas-bg
  * Change event: classroomos:canvasbgchange  →  { detail: { bg: 'mesh' } }
  */
@@ -21,12 +21,12 @@
   var canvas, ctx, raf;
   var w = 0, h = 0, t = 0;
   var currentBg = 'none';
-  var blobs = null, pts = null, petals = null, bees = null;
+  var blobs = null, pts = null, petals = null, bees = null, mandel = null;
   var beeImg = null, beeImgReady = false;
 
   /* Theme → the falling/crawling background it debuts with, until a
    * visitor picks their own from the settings panel (for that theme). */
-  var THEME_DEFAULT_BG = { sakura: 'petals', topaz: 'hive' };
+  var THEME_DEFAULT_BG = { sakura: 'petals', topaz: 'hive', mandelbrot: 'mandelbrot' };
 
   /* ── Storage ─────────────────────────────────────────────────── */
   function currentTheme() {
@@ -70,6 +70,39 @@
 
   function rgba(rgb, a) {
     return 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',' + a + ')';
+  }
+
+  function hexToRgb(hex) {
+    hex = hex.replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map(function (c) { return c + c; }).join('');
+    var num = parseInt(hex, 16);
+    return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+  }
+
+  /* Falls back to the Mandelbrot theme's own palette when this page never
+   * loaded theme-registry.js — same reasoning as accentRGB() above. */
+  var MANDELBROT_PALETTE_HEX = ['#05010f', '#6a0dad', '#ff8c00', '#ffd23f'];
+
+  function themePalette() {
+    var theme = document.documentElement.dataset.theme || 'day';
+    var registry = window.ClassroomOSThemeRegistry;
+    var swatch = (registry && registry.getSwatch(theme)) || MANDELBROT_PALETTE_HEX;
+    if (swatch.length < 3) swatch = MANDELBROT_PALETTE_HEX;
+    return swatch.map(hexToRgb);
+  }
+
+  function paletteColor(pal, tt) {
+    var n = pal.length;
+    var scaled = ((tt % 1) + 1) % 1 * n;
+    var i = Math.floor(scaled) % n;
+    var j = (i + 1) % n;
+    var f = scaled - Math.floor(scaled);
+    var a = pal[i], b = pal[j];
+    return [
+      a[0] + (b[0] - a[0]) * f,
+      a[1] + (b[1] - a[1]) * f,
+      a[2] + (b[2] - a[2]) * f
+    ];
   }
 
   /* ── Texture scroll equilibrium ──────────────────────────────── */
@@ -387,6 +420,86 @@
     }
   }
 
+  /* ── Mandelbrot (live escape-time fractal, lava-lamp drift) ────
+   * Rendered into a small offscreen buffer (real per-pixel escape-time
+   * math, not a decorative gradient) and scaled up onto the visible
+   * canvas with a soft blur — full-resolution per frame would be too
+   * slow, and the blur turns the low-res pixelation into smooth liquid
+   * blobs instead of a static picture. The view point drifts along a
+   * slow Lissajous path near the fractal boundary while breathing
+   * in and out and gently turning, so self-similar detail keeps folding
+   * into new shapes rather than just spinning a fixed picture. */
+  var MANDEL_MAX_ITER = 60;
+  var MANDEL_CENTER_X = -0.745;
+  var MANDEL_CENTER_Y = 0.115;
+  var MANDEL_ZOOM = 2.4;
+
+  function makeMandelbrot() {
+    var cw = Math.max(80, Math.min(220, Math.round(w / 5.5)));
+    var ch = Math.max(56, Math.min(160, Math.round(h / 5.5)));
+    var off = document.createElement('canvas');
+    off.width = cw;
+    off.height = ch;
+    mandel = { cw: cw, ch: ch, octx: off.getContext('2d'), canvas: off };
+  }
+
+  function drawMandelbrot() {
+    if (!mandel) makeMandelbrot();
+    var cw = mandel.cw, ch = mandel.ch, octx = mandel.octx;
+    var img = octx.createImageData(cw, ch);
+    var data = img.data;
+    var pal = themePalette();
+
+    var angle = t * 0.00055;
+    var cosA = Math.cos(angle), sinA = Math.sin(angle);
+    var zoomPulse = 1 + Math.sin(t * 0.00023) * 0.4 + Math.sin(t * 0.00061) * 0.15;
+    var scale = (MANDEL_ZOOM / cw) / zoomPulse;
+    var driftX = Math.sin(t * 0.00037) * 0.16 + Math.sin(t * 0.00081) * 0.06;
+    var driftY = Math.cos(t * 0.00029) * 0.13 + Math.cos(t * 0.00068) * 0.05;
+    var colorPhase = t * 0.0011;
+
+    for (var py = 0; py < ch; py++) {
+      for (var px = 0; px < cw; px++) {
+        var nx = (px - cw / 2) * scale;
+        var ny = (py - ch / 2) * scale;
+        var rx = nx * cosA - ny * sinA;
+        var ry = nx * sinA + ny * cosA;
+        var cx = MANDEL_CENTER_X + driftX + rx;
+        var cy = MANDEL_CENTER_Y + driftY + ry;
+
+        var x = 0, y = 0, x2 = 0, y2 = 0, iter = 0;
+        while (x2 + y2 <= 4 && iter < MANDEL_MAX_ITER) {
+          y = 2 * x * y + cy;
+          x = x2 - y2 + cx;
+          x2 = x * x;
+          y2 = y * y;
+          iter++;
+        }
+
+        var idx = (py * cw + px) * 4;
+        var col;
+        if (iter >= MANDEL_MAX_ITER) {
+          col = pal[0];
+          data[idx] = col[0] * 0.4; data[idx + 1] = col[1] * 0.4; data[idx + 2] = col[2] * 0.4;
+        } else {
+          var logZn = Math.log(x2 + y2) / 2;
+          var nu = Math.log(logZn / Math.LN2) / Math.LN2;
+          var smooth = (iter + 1 - nu) / MANDEL_MAX_ITER;
+          col = paletteColor(pal, smooth * 2.2 + colorPhase);
+          data[idx] = col[0]; data[idx + 1] = col[1]; data[idx + 2] = col[2];
+        }
+        data[idx + 3] = 255;
+      }
+    }
+
+    octx.putImageData(img, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    ctx.imageSmoothingEnabled = true;
+    if ('filter' in ctx) ctx.filter = 'blur(3px)';
+    ctx.drawImage(mandel.canvas, 0, 0, cw, ch, 0, 0, w, h);
+    if ('filter' in ctx) ctx.filter = 'none';
+  }
+
   /* ── Animation loop ──────────────────────────────────────────── */
   function tick() {
     t++;
@@ -395,6 +508,7 @@
     else if (currentBg === 'aurora')    drawAurora();
     else if (currentBg === 'petals')    drawPetals();
     else if (currentBg === 'hive')      drawHive();
+    else if (currentBg === 'mandelbrot') drawMandelbrot();
     raf = requestAnimationFrame(tick);
   }
 
@@ -419,6 +533,7 @@
     if (bg === 'particles') { pts    = null; makeParticles(); }
     if (bg === 'petals')    { petals = null; makePetals();    }
     if (bg === 'hive')      { bees   = null; makeHive();      }
+    if (bg === 'mandelbrot') { mandel = null; makeMandelbrot(); }
 
     raf = requestAnimationFrame(tick);
   }
@@ -473,6 +588,7 @@
       if (currentBg === 'particles') { pts    = null; makeParticles(); }
       if (currentBg === 'petals')    { petals = null; makePetals();    }
       if (currentBg === 'hive')      { bees   = null; makeHive();      }
+      if (currentBg === 'mandelbrot') { mandel = null; makeMandelbrot(); }
     });
 
     // Pause when tab is backgrounded (battery / CPU)

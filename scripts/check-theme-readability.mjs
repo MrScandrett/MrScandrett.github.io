@@ -18,6 +18,7 @@ const THEMES = [
   "goldfish",
   "cobblestone",
   "bark",
+  "mandelbrot",
 ];
 const EXCLUDED_DIRECTORIES = new Set([
   ".git",

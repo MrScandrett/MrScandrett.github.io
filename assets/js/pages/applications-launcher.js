@@ -77,7 +77,7 @@ const state = {
   group: null,
   query: "",
   grade: "all",
-  access: "no-account",
+  access: "all",
   pendingTool: null,
   lastFocused: null
 };
@@ -402,7 +402,7 @@ function launchTool(tool) {
 function restoreFromHash() {
   const params = new URLSearchParams(location.hash.slice(1));
   const access = params.get("access");
-  state.access = Object.hasOwn(ACCESS_HELP, access) ? access : "no-account";
+  state.access = Object.hasOwn(ACCESS_HELP, access) ? access : "all";
   elements.access.value = state.access;
   elements.accessExplanation.textContent = ACCESS_HELP[state.access];
   state.grade = "all";

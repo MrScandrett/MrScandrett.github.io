@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Inputs: Beyond the Button · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
-  <meta name="description" content="Design buttons, switches, touch controls, pressure pads, beam breaks, and other creative physical inputs, then learn pull-ups, debouncing, feedback, and accessible interaction design." />
+  <meta name="description" content="Design buttons, switches, touch controls, pressure pads, beam breaks, and other creative physical inputs, learn pull-ups, debouncing, feedback, and accessible interaction design, then build a binary communication system with buttons and LEDs." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -244,6 +244,24 @@
     .ib-principles b { display: block; color: var(--ib-blue); }
     .ib-principles p { margin: .3rem 0 0; font-size: .86rem; }
 
+    .ib-binary { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+    .ib-station { padding: 1rem; border: 1px solid var(--ib-line); background: #f4f8f6; }
+    .ib-station h3 { text-align: center; }
+    .ib-bitrow { display: flex; justify-content: center; gap: .5rem; margin: .8rem 0; }
+    .ib-bit-btn { width: 52px; height: 52px; border-radius: 50%; border: 2px solid #12202a; background: #dfe8ec; color: var(--ib-ink); font: 700 .8rem "IBM Plex Mono", monospace; }
+    .ib-bit-btn[aria-pressed="true"] { background: var(--ib-red); border-color: var(--ib-red); color: white; }
+    .ib-bit-led { width: 44px; height: 44px; border-radius: 50%; background: #2a2118; box-shadow: inset 0 0 6px rgba(0,0,0,.5); transition: background .1s, box-shadow .1s; }
+    .ib-bit-led.is-on { background: #f6ca4d; box-shadow: 0 0 18px #f6ca4d; }
+    .ib-station-value { text-align: center; font: 700 1.15rem "Barlow Condensed", sans-serif; text-transform: uppercase; margin: .6rem 0 0; }
+    .ib-station-value b { color: var(--ib-blue); font-size: 1.5rem; }
+    .ib-send-btn { display: block; margin: .8rem auto 0; padding: .55rem 1.2rem; border: 2px solid var(--ib-blue); background: var(--ib-blue); color: white; font-weight: 700; cursor: pointer; }
+    .ib-legend-note { margin-top: 1rem; font-size: .82rem; }
+    .ib-legend-table { width: 100%; margin-top: .6rem; border-collapse: collapse; font-size: .78rem; }
+    .ib-legend-table th, .ib-legend-table td { padding: .35rem .5rem; border: 1px solid var(--ib-line); text-align: center; }
+    .ib-legend-table th { background: #e5efec; }
+    [data-lighting="night"] .ib-bit-btn, [data-theme="vaporwave"] .ib-bit-btn, [data-theme="bark"] .ib-bit-btn { background: #20343d; color: #eef6f3; }
+    [data-lighting="night"] .ib-legend-table th, [data-theme="vaporwave"] .ib-legend-table th, [data-theme="bark"] .ib-legend-table th { background: #29414a; }
+
     .ib-quiz { display: grid; gap: .85rem; margin-top: 1rem; }
     .ib-question { padding: 1rem; border: 1px solid var(--ib-line); background: #f5f8f4; }
     .ib-question > p { font-weight: 700; }
@@ -264,7 +282,7 @@
     [data-lighting="night"] .ib-safety, [data-theme="vaporwave"] .ib-safety, [data-theme="bark"] .ib-safety { background: rgba(217,75,65,.13); }
 
     @media (max-width: 900px) {
-      .ib-hero, .ib-switch-lab, .ib-wiring, .ib-debounce, .ib-forge { grid-template-columns: 1fr; }
+      .ib-hero, .ib-switch-lab, .ib-wiring, .ib-debounce, .ib-forge, .ib-binary { grid-template-columns: 1fr; }
       .ib-gallery { grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 600px) {
@@ -303,7 +321,7 @@
               <p class="ib-kicker">Engineering · Physical Computing · Design Lab</p>
               <h1 id="ib-title">Inputs: <span>Beyond the Button</span></h1>
               <p class="ib-lede">A button is not a plastic circle. It is a decision made physical. Turn touch, pressure, distance, light, motion, sound—or almost any change in the world—into a clear, reliable command.</p>
-              <div class="ib-meta"><span>Grades 6–12</span><span>60–90 minutes</span><span>Build + code</span><span>No solder required</span></div>
+              <div class="ib-meta"><span>Grades 6–12</span><span>75–100 minutes</span><span>Build + code</span><span>No solder required</span></div>
               <a class="ib-back" href="../../../steam-lessons.html#module-engineering">← Back to Engineering</a>
             </div>
             <div class="ib-demo-board" aria-label="Interactive input demonstration board">
@@ -489,6 +507,30 @@
             </div>
           </section>
 
+          <section class="ib-card" style="--ib-accent:var(--ib-lime);">
+            <p class="ib-label">Group challenge</p><h2>Design a binary communication system</h2>
+            <p>Digital inputs only ever say HIGH or LOW — but stack four of them together and you can say a lot more. Using only push buttons and LEDs, two stations can send whole messages to each other with no words, just patterns of on and off. Each button is one <strong>bit</strong>: pressed = 1, released = 0. Four buttons can represent any number from 0 to 15.</p>
+            <div class="ib-binary">
+              <div class="ib-station">
+                <h3>Sender station</h3>
+                <div class="ib-bitrow" id="sender-bits" role="group" aria-label="Four sender buttons, most significant bit first"></div>
+                <p class="ib-station-value">Binary <b id="sender-binary">0000</b> = Decimal <b id="sender-decimal">0</b></p>
+                <button class="ib-send-btn" id="send-btn" type="button">Send pattern →</button>
+              </div>
+              <div class="ib-station">
+                <h3>Receiver station</h3>
+                <div class="ib-bitrow" id="receiver-leds" aria-label="Four receiver LEDs, most significant bit first"></div>
+                <p class="ib-station-value">Received: <b id="receiver-decimal">—</b></p>
+                <p class="ib-legend-note" id="receiver-meaning">Waiting for a signal…</p>
+              </div>
+            </div>
+            <div class="ib-legend-note">
+              <strong>Team challenge:</strong> agree on a legend before you start sending. One idea — map 0–9 to digits, and reserve three more codes as commands:
+              <table class="ib-legend-table"><thead><tr><th>0000–1001</th><th>1010</th><th>1011</th><th>1100</th></tr></thead><tbody><tr><td>Digits 0–9</td><td>SPACE</td><td>YES</td><td>NO</td></tr></tbody></table>
+              Spell a short number or send a YES/NO answer to a partner using only the sender panel above — they read the receiver panel without looking at your buttons.
+            </div>
+          </section>
+
           <section class="ib-card" style="--ib-accent:var(--ib-yellow);">
             <p class="ib-label">Quick check</p><h2>Can you read the input?</h2>
             <div class="ib-quiz">
@@ -496,6 +538,7 @@
               <div class="ib-question" data-answer="d" data-explanation="With an internal pull-up, pressing connects the pin to ground, so the active reading is LOW."><p>2. A button wired from pin 2 to ground uses <code>INPUT_PULLUP</code>. What reading means “pressed”?</p><div class="ib-options"><button class="ib-option" data-choice="a">1023</button><button class="ib-option" data-choice="b">Floating</button><button class="ib-option" data-choice="c">HIGH</button><button class="ib-option" data-choice="d">LOW</button></div><div class="ib-feedback" aria-live="polite"></div></div>
               <div class="ib-question" data-answer="a" data-explanation="Contact bounce produces rapid transitions that software can mistakenly count as several presses."><p>3. Why debounce a mechanical switch?</p><div class="ib-options"><button class="ib-option" data-choice="a">One physical press may create several rapid electrical transitions</button><button class="ib-option" data-choice="b">Buttons consume too much voltage</button><button class="ib-option" data-choice="c">Analog sensors cannot use wires</button><button class="ib-option" data-choice="d">It makes the button physically softer</button></div><div class="ib-feedback" aria-live="polite"></div></div>
               <div class="ib-question" data-answer="c" data-explanation="The best input fits the intended human action, sensing method, feedback, and access needs—not merely the most advanced sensor."><p>4. What makes a creative input successful?</p><div class="ib-options"><button class="ib-option" data-choice="a">It uses the most expensive sensor</button><button class="ib-option" data-choice="b">It is hidden from first-time users</button><button class="ib-option" data-choice="c">Its action feels natural and its feedback is clear</button><button class="ib-option" data-choice="d">It triggers differently every time</button></div><div class="ib-feedback" aria-live="polite"></div></div>
+              <div class="ib-question" data-answer="c" data-explanation="Four bits (buttons) can represent 2^4 = 16 distinct values, 0 through 15."><p>5. With 4 buttons as binary bits, how many distinct values can you send?</p><div class="ib-options"><button class="ib-option" data-choice="a">4</button><button class="ib-option" data-choice="b">8</button><button class="ib-option" data-choice="c">16</button><button class="ib-option" data-choice="d">Unlimited</button></div><div class="ib-feedback" aria-live="polite"></div></div>
             </div>
           </section>
         </main>
@@ -511,6 +554,7 @@
             <div class="ll-info"><strong>Wire reliably</strong>Use a pull-up and explain why pressed can equal LOW.</div>
             <div class="ll-info"><strong>Design for people</strong>Pair a natural action with sensing and immediate feedback.</div>
             <div class="ll-info"><strong>Build + iterate</strong>Measure missed and false triggers, then improve one variable.</div>
+            <div class="ll-info"><strong>Think in binary</strong>Represent a number 0–15 as four button/LED bits and agree on a shared legend.</div>
           </div>
           <div class="ll-pane" id="ib-teacher">
             <span class="ll-label">Materials</span>
@@ -662,6 +706,46 @@
         document.getElementById('forge-note').innerHTML = `<strong>Prototype test:</strong> Can people discover the ${a[1].toLowerCase()} action without instructions? Does the ${f[0].toLowerCase()} feedback work for more than one sense or access need?`;
       }
       forgeFields.forEach(field => field.addEventListener('change', updateForge)); updateForge();
+
+      const senderBitsEl = document.getElementById('sender-bits');
+      const receiverLedsEl = document.getElementById('receiver-leds');
+      const senderBinaryEl = document.getElementById('sender-binary');
+      const senderDecimalEl = document.getElementById('sender-decimal');
+      const receiverDecimalEl = document.getElementById('receiver-decimal');
+      const receiverMeaningEl = document.getElementById('receiver-meaning');
+      const bits = [0, 0, 0, 0];
+      const BINARY_LEGEND = { 0:'Digit 0',1:'Digit 1',2:'Digit 2',3:'Digit 3',4:'Digit 4',5:'Digit 5',6:'Digit 6',7:'Digit 7',8:'Digit 8',9:'Digit 9',10:'SPACE',11:'YES',12:'NO',13:'(unassigned)',14:'(unassigned)',15:'(unassigned)' };
+      const receiverLeds = [];
+      for (let i = 0; i < 4; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'ib-bit-btn';
+        btn.type = 'button';
+        btn.setAttribute('aria-pressed', 'false');
+        btn.textContent = Math.pow(2, 3 - i);
+        btn.addEventListener('click', () => {
+          bits[i] = bits[i] ? 0 : 1;
+          btn.setAttribute('aria-pressed', String(!!bits[i]));
+          updateSender();
+        });
+        senderBitsEl.appendChild(btn);
+
+        const led = document.createElement('div');
+        led.className = 'ib-bit-led';
+        receiverLeds.push(led);
+        receiverLedsEl.appendChild(led);
+      }
+      function updateSender() {
+        const binaryStr = bits.join('');
+        senderBinaryEl.textContent = binaryStr;
+        senderDecimalEl.textContent = String(parseInt(binaryStr, 2));
+      }
+      document.getElementById('send-btn').addEventListener('click', () => {
+        const decimal = parseInt(bits.join(''), 2);
+        bits.forEach((b, index) => receiverLeds[index].classList.toggle('is-on', !!b));
+        receiverDecimalEl.textContent = String(decimal);
+        receiverMeaningEl.textContent = 'Decoded as: ' + (BINARY_LEGEND[decimal] || 'unassigned code');
+      });
+      updateSender();
 
       document.querySelectorAll('.ib-question').forEach(question => {
         question.querySelectorAll('.ib-option').forEach(option => option.addEventListener('click', () => {

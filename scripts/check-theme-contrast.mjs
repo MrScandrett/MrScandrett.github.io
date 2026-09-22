@@ -13,6 +13,7 @@ const themes = [
   { name: "goldfish", selector: 'html[data-theme="goldfish"]' },
   { name: "cobblestone", selector: 'html[data-theme="cobblestone"]' },
   { name: "bark", selector: 'html[data-theme="bark"]' },
+  { name: "mandelbrot", selector: 'html[data-theme="mandelbrot"]' },
 ];
 
 const pairs = [

@@ -347,6 +347,7 @@
       <div class="ll-panel-head">
         <div class="ll-tabs">
           <button class="ll-tab" aria-selected="true"  data-pane="pg-pane-guide">Guide</button>
+          <button class="ll-tab" aria-selected="false" data-pane="pg-pane-vocab">Vocab</button>
           <button class="ll-tab" aria-selected="false" data-pane="pg-pane-starter">Starter Code</button>
         </div>
         <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
@@ -386,6 +387,29 @@
             </div>
           </div>
         </div><!-- #pg-pane-guide -->
+
+        <div class="ll-pane" id="pg-pane-vocab">
+          <div class="pg-card" style="margin-bottom:1rem">
+            <h3>Glossary — Look Up Any Word In the Code</h3>
+            <div class="info-card" style="margin-bottom:0.7rem">
+              <p>Every comment in <code>catch.py</code> tells you <em>what</em> a line does. This tab is for when you need to know what a <em>word</em> means — check here any time a term in the code or guide doesn't ring a bell yet.</p>
+            </div>
+          </div>
+          <div class="ll-info"><strong>Game loop</strong>The <code>while running:</code> block that repeats forever, once per frame, running INPUT → UPDATE → RENDER in order.</div>
+          <div class="ll-info"><strong>Frame</strong>One single pass through the game loop — one input check, one update, one redraw. A "60 FPS" game does this 60 times a second.</div>
+          <div class="ll-info"><strong>pygame.init()</strong>Starts up every pygame subsystem (graphics, sound, input) — the first line of almost every pygame program.</div>
+          <div class="ll-info"><strong>Surface</strong>Pygame's word for anything you can draw on. The <code>screen</code> returned by <code>set_mode()</code> is a Surface; so is every image you load.</div>
+          <div class="ll-info"><strong>Event queue</strong>A list pygame builds of everything that happened since the last frame — key presses, clicks, the window's close button. <code>pygame.event.get()</code> reads and empties it.</div>
+          <div class="ll-info"><strong>Rect</strong>Short for "rectangle." Stores an object's x, y, width, and height, and gives you <code>.left .right .top .bottom .colliderect()</code> for free.</div>
+          <div class="ll-info"><strong>Clock</strong><code>pygame.time.Clock()</code> — an object that measures how much real time has passed between frames.</div>
+          <div class="ll-info"><strong>clock.tick(60)</strong>Pauses just long enough to cap the loop at 60 frames per second, then returns how many milliseconds the last frame actually took.</div>
+          <div class="ll-info"><strong>dt (delta time)</strong>Short for "delta time" — the length of the last frame, in seconds. Multiplying speeds by <code>dt</code> keeps movement the same real-world speed no matter how fast or slow the computer runs.</div>
+          <div class="ll-info"><strong>Collision detection</strong>Code that checks whether two objects are touching — in this lesson, <code>player.colliderect(ball)</code>.</div>
+          <div class="ll-info"><strong>AABB</strong>"Axis-Aligned Bounding Box" — the fast rectangle-overlap test <code>colliderect()</code> runs under the hood: four true/false comparisons, all four must pass for a hit.</div>
+          <div class="ll-info"><strong>screen.fill()</strong>Paints the entire window one solid color, erasing last frame's drawing before the new one is drawn.</div>
+          <div class="ll-info"><strong>pygame.display.flip()</strong>Shows everything drawn so far on the actual screen. Nothing the player sees updates until <code>flip()</code> runs.</div>
+          <div class="ll-info"><strong>State</strong>All the values that describe the game right now — player position, ball position, score. UPDATE changes it; RENDER just draws whatever it currently is.</div>
+        </div><!-- #pg-pane-vocab -->
 
         <div class="ll-pane" id="pg-pane-starter">
           <div class="pg-card" style="margin-bottom:1rem">
@@ -434,42 +458,42 @@
   ══════════════════════════════════════════ */
   function py(parts) { return parts; }
   const CODE = [
-    ['',       '<span class="k">import</span> <span class="va">pygame</span>'],
+    ['',       '<span class="k">import</span> <span class="va">pygame</span>  <span class="cm"># load the pygame library</span>'],
     ['',       ''],
-    ['',       '<span class="va">pygame</span>.<span class="fn">init</span>()'],
-    ['',       '<span class="va">screen</span> = <span class="va">pygame</span>.display.<span class="fn">set_mode</span>((<span class="nm">640</span>, <span class="nm">480</span>))'],
-    ['',       '<span class="va">clock</span>  = <span class="va">pygame</span>.time.<span class="fn">Clock</span>()'],
-    ['',       '<span class="va">player</span> = <span class="va">pygame</span>.<span class="fn">Rect</span>(<span class="nm">280</span>, <span class="nm">440</span>, <span class="nm">80</span>, <span class="nm">16</span>)'],
-    ['',       '<span class="va">ball</span>   = <span class="va">pygame</span>.<span class="fn">Rect</span>(<span class="nm">80</span>, <span class="nm">60</span>, <span class="nm">24</span>, <span class="nm">24</span>)'],
-    ['',       '<span class="va">vx</span>, <span class="va">vy</span>, <span class="va">score</span>, <span class="va">dt</span> = <span class="nm">200</span>, <span class="nm">160</span>, <span class="nm">0</span>, <span class="nm">0</span>'],
+    ['',       '<span class="va">pygame</span>.<span class="fn">init</span>()  <span class="cm"># start up all of pygame\'s subsystems</span>'],
+    ['',       '<span class="va">screen</span> = <span class="va">pygame</span>.display.<span class="fn">set_mode</span>((<span class="nm">640</span>, <span class="nm">480</span>))  <span class="cm"># open a 640×480 game window</span>'],
+    ['',       '<span class="va">clock</span>  = <span class="va">pygame</span>.time.<span class="fn">Clock</span>()  <span class="cm"># tracks time so we can measure each frame</span>'],
+    ['',       '<span class="va">player</span> = <span class="va">pygame</span>.<span class="fn">Rect</span>(<span class="nm">280</span>, <span class="nm">440</span>, <span class="nm">80</span>, <span class="nm">16</span>)  <span class="cm"># paddle: x, y, width, height</span>'],
+    ['',       '<span class="va">ball</span>   = <span class="va">pygame</span>.<span class="fn">Rect</span>(<span class="nm">80</span>, <span class="nm">60</span>, <span class="nm">24</span>, <span class="nm">24</span>)  <span class="cm"># ball: x, y, width, height</span>'],
+    ['',       '<span class="va">vx</span>, <span class="va">vy</span>, <span class="va">score</span>, <span class="va">dt</span> = <span class="nm">200</span>, <span class="nm">160</span>, <span class="nm">0</span>, <span class="nm">0</span>  <span class="cm"># ball speed, score, frame time</span>'],
     ['',       ''],
-    ['',       '<span class="va">running</span> = <span class="k">True</span>'],
-    ['',       '<span class="k">while</span> <span class="va">running</span>:'],
+    ['',       '<span class="va">running</span> = <span class="k">True</span>  <span class="cm"># stays True until the player quits</span>'],
+    ['',       '<span class="k">while</span> <span class="va">running</span>:  <span class="cm"># the game loop — repeats every single frame</span>'],
     ['input',  '    <span class="cm"># ── 1 · INPUT ──────────────────────</span>'],
-    ['input',  '    <span class="k">for</span> <span class="va">event</span> <span class="k">in</span> <span class="va">pygame</span>.event.<span class="fn">get</span>():'],
-    ['input',  '        <span class="k">if</span> <span class="va">event</span>.type == <span class="va">pygame</span>.QUIT:'],
-    ['input',  '            <span class="va">running</span> = <span class="k">False</span>'],
-    ['input',  '    <span class="va">keys</span> = <span class="va">pygame</span>.key.<span class="fn">get_pressed</span>()'],
+    ['input',  '    <span class="k">for</span> <span class="va">event</span> <span class="k">in</span> <span class="va">pygame</span>.event.<span class="fn">get</span>():  <span class="cm"># drain every event since last frame</span>'],
+    ['input',  '        <span class="k">if</span> <span class="va">event</span>.type == <span class="va">pygame</span>.QUIT:  <span class="cm"># did the player click the ✕ button?</span>'],
+    ['input',  '            <span class="va">running</span> = <span class="k">False</span>  <span class="cm"># stop the loop next time it checks</span>'],
+    ['input',  '    <span class="va">keys</span> = <span class="va">pygame</span>.key.<span class="fn">get_pressed</span>()  <span class="cm"># snapshot of every key held right now</span>'],
     ['',       ''],
     ['update', '    <span class="cm"># ── 2 · UPDATE ─────────────────────</span>'],
-    ['update', '    <span class="k">if</span> <span class="va">keys</span>[<span class="va">pygame</span>.K_LEFT]:  <span class="va">player</span>.x -= <span class="nm">300</span> * <span class="va">dt</span>'],
-    ['update', '    <span class="k">if</span> <span class="va">keys</span>[<span class="va">pygame</span>.K_RIGHT]: <span class="va">player</span>.x += <span class="nm">300</span> * <span class="va">dt</span>'],
-    ['update', '    <span class="va">ball</span>.x += <span class="va">vx</span> * <span class="va">dt</span>'],
-    ['update', '    <span class="va">ball</span>.y += <span class="va">vy</span> * <span class="va">dt</span>'],
-    ['update', '    <span class="k">if</span> <span class="va">ball</span>.left &lt; <span class="nm">0</span> <span class="k">or</span> <span class="va">ball</span>.right &gt; <span class="nm">640</span>: <span class="va">vx</span> = -<span class="va">vx</span>'],
-    ['update', '    <span class="k">if</span> <span class="va">ball</span>.top &lt; <span class="nm">0</span>: <span class="va">vy</span> = -<span class="va">vy</span>'],
-    ['update', '    <span class="k">if</span> <span class="va">player</span>.<span class="fn">colliderect</span>(<span class="va">ball</span>):'],
-    ['update', '        <span class="va">score</span> += <span class="nm">1</span>'],
-    ['update', '        <span class="va">ball</span>.topleft = (<span class="nm">80</span>, <span class="nm">60</span>)'],
+    ['update', '    <span class="k">if</span> <span class="va">keys</span>[<span class="va">pygame</span>.K_LEFT]:  <span class="va">player</span>.x -= <span class="nm">300</span> * <span class="va">dt</span>  <span class="cm"># left held → slide paddle left</span>'],
+    ['update', '    <span class="k">if</span> <span class="va">keys</span>[<span class="va">pygame</span>.K_RIGHT]: <span class="va">player</span>.x += <span class="nm">300</span> * <span class="va">dt</span>  <span class="cm"># right held → slide paddle right</span>'],
+    ['update', '    <span class="va">ball</span>.x += <span class="va">vx</span> * <span class="va">dt</span>  <span class="cm"># move the ball horizontally this frame</span>'],
+    ['update', '    <span class="va">ball</span>.y += <span class="va">vy</span> * <span class="va">dt</span>  <span class="cm"># move the ball vertically this frame</span>'],
+    ['update', '    <span class="k">if</span> <span class="va">ball</span>.left &lt; <span class="nm">0</span> <span class="k">or</span> <span class="va">ball</span>.right &gt; <span class="nm">640</span>: <span class="va">vx</span> = -<span class="va">vx</span>  <span class="cm"># hit a side wall → bounce sideways</span>'],
+    ['update', '    <span class="k">if</span> <span class="va">ball</span>.top &lt; <span class="nm">0</span>: <span class="va">vy</span> = -<span class="va">vy</span>  <span class="cm"># hit the ceiling → bounce down</span>'],
+    ['update', '    <span class="k">if</span> <span class="va">player</span>.<span class="fn">colliderect</span>(<span class="va">ball</span>):  <span class="cm"># did the paddle just touch the ball?</span>'],
+    ['update', '        <span class="va">score</span> += <span class="nm">1</span>  <span class="cm"># point scored</span>'],
+    ['update', '        <span class="va">ball</span>.topleft = (<span class="nm">80</span>, <span class="nm">60</span>)  <span class="cm"># reset the ball to its start spot</span>'],
     ['',       ''],
     ['render', '    <span class="cm"># ── 3 · RENDER ─────────────────────</span>'],
-    ['render', '    <span class="va">screen</span>.<span class="fn">fill</span>((<span class="nm">15</span>, <span class="nm">18</span>, <span class="nm">32</span>))'],
-    ['render', '    <span class="va">pygame</span>.draw.<span class="fn">rect</span>(<span class="va">screen</span>, (<span class="nm">55</span>, <span class="nm">118</span>, <span class="nm">171</span>), <span class="va">player</span>)'],
-    ['render', '    <span class="va">pygame</span>.draw.<span class="fn">ellipse</span>(<span class="va">screen</span>, (<span class="nm">255</span>, <span class="nm">212</span>, <span class="nm">59</span>), <span class="va">ball</span>)'],
-    ['render', '    <span class="va">pygame</span>.display.<span class="fn">flip</span>()'],
-    ['render', '    <span class="va">dt</span> = <span class="va">clock</span>.<span class="fn">tick</span>(<span class="nm">60</span>) / <span class="nm">1000</span>'],
+    ['render', '    <span class="va">screen</span>.<span class="fn">fill</span>((<span class="nm">15</span>, <span class="nm">18</span>, <span class="nm">32</span>))  <span class="cm"># wipe the whole screen before redrawing</span>'],
+    ['render', '    <span class="va">pygame</span>.draw.<span class="fn">rect</span>(<span class="va">screen</span>, (<span class="nm">55</span>, <span class="nm">118</span>, <span class="nm">171</span>), <span class="va">player</span>)  <span class="cm"># draw the paddle</span>'],
+    ['render', '    <span class="va">pygame</span>.draw.<span class="fn">ellipse</span>(<span class="va">screen</span>, (<span class="nm">255</span>, <span class="nm">212</span>, <span class="nm">59</span>), <span class="va">ball</span>)  <span class="cm"># draw the ball</span>'],
+    ['render', '    <span class="va">pygame</span>.display.<span class="fn">flip</span>()  <span class="cm"># show this finished frame on screen</span>'],
+    ['render', '    <span class="va">dt</span> = <span class="va">clock</span>.<span class="fn">tick</span>(<span class="nm">60</span>) / <span class="nm">1000</span>  <span class="cm"># cap at 60 FPS, measure this frame\'s time</span>'],
     ['',       ''],
-    ['',       '<span class="va">pygame</span>.<span class="fn">quit</span>()'],
+    ['',       '<span class="va">pygame</span>.<span class="fn">quit</span>()  <span class="cm"># clean up pygame when the loop ends</span>'],
   ];
 
   const codeBody = document.getElementById('code-body');

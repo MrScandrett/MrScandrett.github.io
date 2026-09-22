@@ -23,7 +23,9 @@
   }
 
   function loadSiteGlossary() {
-    if (window.ClassroomOSGlossary || document.querySelector('script[data-classroomos-glossary="true"]')) return;
+    if (window.ClassroomOSGlossary
+      || document.querySelector('script[data-classroomos-glossary="true"]')
+      || document.querySelector('script[src*="site-glossary.js"]')) return;
     var glossary = document.createElement('script');
     glossary.src = script && script.src ? new URL('site-glossary.js', script.src).href : '/assets/js/site-glossary.js';
     glossary.defer = true;

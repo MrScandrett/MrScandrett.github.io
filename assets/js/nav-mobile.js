@@ -333,10 +333,11 @@
     { id: "particles", label: "Particles", detail: "Connected floating dots.",    icon: "⁕" },
     { id: "aurora",    label: "Aurora",    detail: "Flowing light bands.",        icon: "≋" },
     { id: "petals",    label: "Petals",    detail: "Falling blossoms drifting on the wind.", icon: "❀" },
-    { id: "hive",      label: "Bee Hive",  detail: "Bees crawling the hive walls.", icon: "🐝" }
+    { id: "hive",      label: "Bee Hive",  detail: "Bees crawling the hive walls.", icon: "🐝" },
+    { id: "mandelbrot", label: "Mandelbrot", detail: "A live fractal, slowly revolving.", icon: "◈" }
   ];
 
-  var CANVAS_THEME_DEFAULT = { sakura: "petals", topaz: "hive" };
+  var CANVAS_THEME_DEFAULT = { sakura: "petals", topaz: "hive", mandelbrot: "mandelbrot" };
 
   var STORAGE_CANVAS = "classroomos-canvas-bg";
   var CANVAS_EVENT   = "classroomos:canvasbgchange";

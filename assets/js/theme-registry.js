@@ -17,7 +17,8 @@
     { id: "cobblestone", label: "Cobblestone", detail: "Light grey stone tones — quiet and understated.",        tone: "light", swatch: ["#f3f2f1", "#8a8d91"],                     accentRGB: [138, 141, 145] },
     { id: "bark",        label: "Bark",        detail: "Warm dark wood tones with a rough bark texture.",        tone: "dark",  swatch: ["#241a12", "#d99a54"],                     accentRGB: [217, 154, 84] },
     { id: "night",       label: "Night",       detail: "Easy on the eyes after dark — full dark mode.",          tone: "dark",  swatch: ["#445c93", "#111827"],                     accentRGB: [105, 168, 255] },
-    { id: "vaporwave",   label: "Vaporwave",   detail: "Neon magenta and cyan — retro synthwave vibes.",         tone: "dark",  swatch: ["#050505", "#ff00ff", "#00ffff"],          accentRGB: [255, 0, 255] }
+    { id: "vaporwave",   label: "Vaporwave",   detail: "Neon magenta and cyan — retro synthwave vibes.",         tone: "dark",  swatch: ["#050505", "#ff00ff", "#00ffff"],          accentRGB: [255, 0, 255] },
+    { id: "mandelbrot",  label: "Mandelbrot",  detail: "A slowly revolving fractal spiral in violet and molten gold.", tone: "dark",  swatch: ["#05010f", "#6a0dad", "#ff8c00"],  accentRGB: [255, 140, 0] }
   ];
 
   /* Retired/renamed ids that may still be sitting in a visitor's localStorage
