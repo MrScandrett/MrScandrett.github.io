@@ -1440,3 +1440,14 @@
   s.dataset.classroomosContrastGuard = 'true';
   document.head.appendChild(s);
 }());
+
+// Add the shared, classroom-friendly glossary to every page using the site shell.
+(function () {
+  if (window.ClassroomOSGlossary || document.querySelector('script[data-classroomos-glossary="true"]')) return;
+  var s = document.createElement('script');
+  var baseScript = document.currentScript && document.currentScript.src;
+  s.src = baseScript ? new URL('site-glossary.js', baseScript).href : '/assets/js/site-glossary.js';
+  s.defer = true;
+  s.dataset.classroomosGlossary = 'true';
+  document.head.appendChild(s);
+}());

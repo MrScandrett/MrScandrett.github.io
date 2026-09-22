@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-glossary-manual>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -633,6 +633,116 @@
       padding: 0.2rem 0.45rem; cursor: pointer; font-family: inherit; }
     .pt-legend-item:hover { border-color: rgba(0,113,227,0.18); background: rgba(0,113,227,0.06); }
     .pt-legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+    /* ── Dashboard layout (wide screens): table + inspector + pattern finder in one view ── */
+    .ep-tabs { display: none; }
+    @media (min-width: 1180px) {
+      .pt-page { max-width: min(1760px, 100%); width: 100%; margin-inline: auto; padding-inline: 1rem; }
+      .pt-hero { padding: 0.2rem 0 0.5rem; }
+      .pt-hero .pt-hero-meta, .pt-hero .eyebrow { display: none; }
+      .pt-hero h1 { font-size: 1.6rem; margin: 0; }
+      .pt-dash > .pt-wrap .pt-grid { grid-template-rows: repeat(7, 44px) 20px repeat(2, 44px); }
+      .pt-dash > .pt-wrap .pt-legend { margin-top: 0.4rem; gap: 0.25rem 0.7rem; }
+      .pt-page > .lesson-related { order: 9; max-width: none; margin: 1rem 0; }
+      .pt-hero .pt-lede { display: none; }
+      .pt-dash { order: 2; display: grid; gap: 0.8rem 1rem; align-items: start;
+        grid-template-columns: minmax(0, 1.75fr) minmax(400px, 1fr);
+        grid-template-areas: "intro inspector" "table inspector" "finder inspector"; }
+      .pt-dash > .pt-lab-intro { grid-area: intro; margin: 0; }
+      .pt-dash > .pt-lab-intro p, .pt-dash > .pt-table-note { display: none; }
+      .pt-dash > .pt-wrap { grid-area: table; order: 0; padding: 0.6rem 0.7rem 0.7rem; }
+      .pt-dash > .pt-wrap::before { display: none; }
+      .pt-dash > .pt-finder { grid-area: finder; order: 0; margin: 0; padding: 0.8rem 1rem; gap: 0.55rem; }
+      .pt-finder-lead { display: none; }
+      .pt-finder h2 { font-size: 1rem; }
+      .pt-finder-out { max-height: 11.5rem; overflow-y: auto; }
+      .pt-dash > .el-panel, .pt-dash > .el-panel.ep-open {
+        grid-area: inspector; order: 0; margin: 0; display: flex; flex-direction: column; gap: 0.6rem;
+        position: sticky; top: 0.5rem; max-height: calc(100vh - 5.5rem); overflow-y: auto; padding: 0.9rem 1rem; }
+      .el-panel .ep-info { display: contents; }
+      .el-panel [data-tab] { order: 4; }
+      .el-panel .ep-top { order: 1; }
+      .el-panel .ep-pill-row { order: 2; }
+      .el-panel .ep-tabs { order: 3; display: flex; flex-wrap: wrap; gap: 0.3rem; position: sticky; top: -0.9rem;
+        background: var(--white, #fff); padding: 0.35rem 0; z-index: 5; }
+      .el-panel .ep-close { display: none; }
+      .el-panel .ep-visuals { display: contents; }
+      .el-panel[data-tab-active="atom"] [data-tab]:not([data-tab="atom"]),
+      .el-panel[data-tab-active="crystal"] [data-tab]:not([data-tab="crystal"]),
+      .el-panel[data-tab-active="stats"] [data-tab]:not([data-tab="stats"]),
+      .el-panel[data-tab-active="uses"] [data-tab]:not([data-tab="uses"]),
+      .el-panel[data-tab-active="earth"] [data-tab]:not([data-tab="earth"]),
+      .el-panel[data-tab-active="history"] [data-tab]:not([data-tab="history"]),
+      .el-panel[data-tab-active="photos"] [data-tab]:not([data-tab="photos"]) { display: none !important; }
+      .el-panel .bohr-svg { display: block; margin-inline: auto; }
+      .el-panel .ep-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .el-panel .ep-stat-sub { display: none; }
+      .ep-tab-btn { padding: 4px 11px; border-radius: 999px; border: 1.5px solid var(--line, #b8bec8); background: transparent;
+        color: var(--text, #1d1d1f); font: inherit; font-size: 0.76rem; font-weight: 700; cursor: pointer; }
+      .ep-tab-btn[aria-selected="true"] { background: var(--blue, #0071e3); border-color: var(--blue, #0071e3); color: #fff; }
+      [data-lighting="night"] .el-panel .ep-tabs, [data-theme="vaporwave"] .el-panel .ep-tabs,
+      [data-theme="bark"] .el-panel .ep-tabs { background: var(--white, #2c2c2e); }
+    }
+
+    /* ── Model explainers ─────────────────────────────── */
+    .ep-explain { border: 1px solid var(--line, #d2d2d7); border-left: 4px solid #d9822b; border-radius: 10px; padding: 0.55rem 0.8rem;
+      background: rgba(217,130,43,0.07); font-size: 0.78rem; line-height: 1.55; color: var(--text-secondary, #3f4f65); }
+    .ep-explain > summary { cursor: pointer; font-weight: 800; color: var(--text, #1d1d1f); font-size: 0.8rem; }
+    .ep-explain h4 { margin: 0.6rem 0 0.15rem; font-size: 0.74rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text, #1d1d1f); }
+    .ep-explain p, .ep-explain ul { margin: 0; }
+    .ep-explain ul { padding-left: 1.1rem; display: grid; gap: 0.15rem; }
+    [data-lighting="night"] .ep-explain, [data-theme="vaporwave"] .ep-explain, [data-theme="bark"] .ep-explain { color: rgba(245,245,247,0.78); background: rgba(217,130,43,0.12); }
+    [data-lighting="night"] .ep-explain > summary, [data-lighting="night"] .ep-explain h4,
+    [data-theme="vaporwave"] .ep-explain > summary, [data-theme="vaporwave"] .ep-explain h4,
+    [data-theme="bark"] .ep-explain > summary, [data-theme="bark"] .ep-explain h4 { color: #f5f5f7; }
+
+    /* ── Crystal viewer ───────────────────────────────── */
+    .cv { display: grid; gap: 0.5rem; }
+    .cv-stage { position: relative; border-radius: 12px; border: 1px solid var(--line, #d2d2d7); overflow: hidden;
+      background: radial-gradient(circle at 50% 35%, rgba(255,255,255,0.9), rgba(120,140,170,0.14)); color: var(--text, #1d1d1f); }
+    .cv-canvas { display: block; width: 100%; cursor: grab; outline-offset: -3px; }
+    .cv-canvas.is-drag { cursor: grabbing; }
+    .cv-stage.is-empty .cv-canvas { display: none; }
+    .cv-msg { padding: 1.4rem 1rem; font-size: 0.84rem; line-height: 1.5; text-align: center; color: var(--text-secondary, #3f4f65); }
+    .cv-ctl, .cv-row { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+    .cv-seg { display: inline-flex; gap: 0.15rem; }
+    .cv-btn { padding: 3px 9px; border-radius: 999px; border: 1.5px solid var(--line, #b8bec8); background: transparent; color: var(--text, #1d1d1f);
+      font: inherit; font-size: 0.72rem; font-weight: 700; cursor: pointer; }
+    .cv-btn:hover { border-color: var(--blue, #0071e3); }
+    .cv-btn[aria-pressed="true"] { background: var(--blue, #0071e3); border-color: var(--blue, #0071e3); color: #fff; }
+    .cv-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.3rem 0.8rem; margin: 0; }
+    .cv-info div { display: grid; }
+    .cv-info dt { font-size: 0.66rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-secondary, #5a6a80); }
+    .cv-info dd { margin: 0; font-size: 0.8rem; font-weight: 700; }
+    .cv-note, .cv-status { margin: 0; font-size: 0.78rem; line-height: 1.5; color: var(--text-secondary, #3f4f65); }
+    .cv-status:empty { display: none; }
+    [data-lighting="night"] .cv-stage, [data-theme="vaporwave"] .cv-stage, [data-theme="bark"] .cv-stage {
+      background: radial-gradient(circle at 50% 35%, rgba(255,255,255,0.12), rgba(0,0,0,0.25)); color: #f5f5f7; }
+    [data-lighting="night"] .cv-note, [data-lighting="night"] .cv-status, [data-lighting="night"] .cv-msg,
+    [data-theme="vaporwave"] .cv-note, [data-theme="vaporwave"] .cv-status, [data-theme="bark"] .cv-note, [data-theme="bark"] .cv-status { color: rgba(245,245,247,0.72); }
+
+    /* ── Pattern finder ───────────────────────────────── */
+    .pt-finder { order: 4; margin: 1rem 0; display: grid; gap: 0.8rem; background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7); border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08)); padding: 1.1rem 1.2rem; }
+    .pt-finder h2 { margin: 0; font-size: 1.15rem; letter-spacing: -0.02em; }
+    .pt-finder-lead { margin: 0; font-size: 0.86rem; line-height: 1.58; color: var(--text-secondary, #3f4f65); }
+    .pt-finder-row { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .pt-finder-btn { padding: 5px 12px; border-radius: 999px; border: 1.5px solid var(--line, #b8bec8);
+      background: transparent; color: var(--text, #1d1d1f); font: inherit; font-size: 0.78rem; font-weight: 700; cursor: pointer; }
+    .pt-finder-btn:hover { border-color: var(--blue, #0071e3); }
+    .pt-finder-btn[aria-pressed="true"] { background: var(--blue, #0071e3); border-color: var(--blue, #0071e3); color: #fff; }
+    .pt-finder-tabs .pt-finder-btn { font-size: 0.85rem; }
+    .pt-finder-out { border-left: 4px solid var(--blue, #0071e3); padding: 0.2rem 0 0.2rem 0.9rem; display: grid; gap: 0.45rem; }
+    .pt-finder-out h3 { margin: 0; font-size: 1rem; }
+    .pt-finder-out p, .pt-finder-out li { margin: 0; font-size: 0.86rem; line-height: 1.58; color: var(--text-secondary, #3f4f65); }
+    .pt-finder-out ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.25rem; }
+    .pt-finder-out .pt-finder-how { font-weight: 700; color: var(--text, #1d1d1f); }
+    [data-lighting="night"] .pt-finder, [data-theme="vaporwave"] .pt-finder, [data-theme="bark"] .pt-finder { background: var(--white, #2c2c2e); }
+    [data-lighting="night"] .pt-finder p, [data-lighting="night"] .pt-finder li,
+    [data-theme="vaporwave"] .pt-finder p, [data-theme="vaporwave"] .pt-finder li,
+    [data-theme="bark"] .pt-finder p, [data-theme="bark"] .pt-finder li { color: rgba(245,245,247,0.72); }
+    .pt-finder .pt-finder-clear { margin-left: auto; }
 
     /* ── Element detail panel ─────────────────────────── */
     .el-panel { order: 3; margin-top: 1rem; background: var(--white, #fff);
@@ -1337,30 +1447,30 @@
         <span class="dot"></span>
         <span>Animated shell models</span>
       </div>
-      <p class="pt-lede">Every substance in the universe is built from atoms of pure elements. Use the temperature slider, category filters, and property lenses to read the table like a living map, then click any element to inspect its shell model, matter state, crystal behavior, and real-world uses. For the structure of atoms themselves, use the companion <a class="pt-history-link" href="feynman-atoms.html">Atoms lesson</a>.</p>
+      <p class="pt-lede">Every substance in the universe is built from <span data-glossary="atom">atoms</span> of pure <span data-glossary="element">elements</span>. Use the temperature slider, category filters, and property lenses to read the table like a living map, then click any element to inspect its shell model, matter state, crystal behavior, and real-world uses. For the structure of atoms themselves, use the companion <a class="pt-history-link" href="feynman-atoms.html">Atoms lesson</a>.</p>
     </section>
 
     <section class="pt-primer" aria-label="How to read the periodic table">
       <div class="pt-primer-card">
         <h2>How to read the table</h2>
-        <p>The periodic table is arranged by atomic number. That means every step to the right adds one proton, and the layout reveals repeating patterns in chemical behavior.</p>
+        <p>The <span data-glossary="periodic table">periodic table</span> is arranged by <span data-glossary="atomic number">atomic number</span>. That means every step to the right adds one <span data-glossary="proton">proton</span>, and the layout reveals repeating patterns in chemical behavior.</p>
       </div>
       <div class="pt-primer-grid">
         <article class="pt-primer-card">
           <h3>Periods</h3>
-          <p>Rows are called periods. As you move across a row, atomic number increases and properties shift in a regular way.</p>
+          <p>Rows are called <span data-glossary="period">periods</span>. As you move across a row, atomic number increases and properties shift in a regular way.</p>
         </article>
         <article class="pt-primer-card">
           <h3>Groups</h3>
-          <p>Columns are groups. Elements in the same group often have similar outer electron patterns, so they react in related ways.</p>
+          <p>Columns are <span data-glossary="group">groups</span>. Elements in the same group often have similar <span data-glossary="valence electron">outer electron</span> patterns, so they react in related ways.</p>
         </article>
         <article class="pt-primer-card">
           <h3>Families</h3>
-          <p>Labels like alkali metals, halogens, and noble gases help chemists predict reactivity, bonding, and other shared traits.</p>
+          <p>Labels like <span data-glossary="alkali metal">alkali metals</span>, <span data-glossary="halogen">halogens</span>, and <span data-glossary="noble gas">noble gases</span> help chemists predict <span data-glossary="reactivity">reactivity</span>, <span data-glossary="chemical bond">bonding</span>, and other shared traits.</p>
         </article>
         <article class="pt-primer-card">
           <h3>Patterns</h3>
-          <p>Metals mostly appear on the left, nonmetals cluster on the right, and the staircase region between them holds the metalloids.</p>
+          <p>Metals mostly appear on the left, nonmetals cluster on the right, and the staircase region between them holds the <span data-glossary="metalloid">metalloids</span>.</p>
         </article>
       </div>
       <div class="pt-diagram-grid" aria-label="Visual definitions for periods, groups, families, and patterns">
@@ -1523,6 +1633,7 @@
       </div>
     </section>
 
+    <div class="pt-dash" id="pt-dash">
     <!-- Interactive table -->
     <section class="pt-lab-intro" aria-labelledby="pt-lab-title">
       <div>
@@ -1538,9 +1649,9 @@
     </div>
 
     <!-- Detail Panel -->
-    <div class="el-panel" id="el-panel" role="region" aria-label="Element details" aria-live="polite">
+    <div class="el-panel" id="el-panel" data-tab-active="stats" role="region" aria-label="Element details" aria-live="polite">
       <div class="ep-visuals">
-        <section class="ep-card bohr-wrap">
+        <section class="ep-card bohr-wrap" data-tab="atom">
           <div class="ep-model-head">
             <h3 id="ep-model-title">Electron Shell Model</h3>
             <div class="ep-model-toggle" aria-label="Atomic model display">
@@ -1550,15 +1661,33 @@
           </div>
           <p id="ep-shell-note">Simplified shell model showing electron counts by energy level.</p>
           <svg class="bohr-svg" id="bohr-svg" viewBox="0 0 280 280" width="210" height="210" aria-hidden="true"></svg>
+          <details class="ep-explain" id="ep-atom-explain" open></details>
         </section>
-        <section class="ep-card">
+        <section class="ep-card" data-tab="crystal">
           <h3>Crystal Structure Preview</h3>
-          <svg class="crystal-svg" id="crystal-svg" viewBox="0 0 220 140" aria-hidden="true"></svg>
-          <p id="ep-crystal-note">Metals tend to form repeating lattices, while gases spread apart.</p>
-        </section>
+          <div id="crystal-host"></div>
+          <details class="ep-explain" open>
+            <summary>A model of an ideal crystal, not a photograph</summary>
+            <h4>What you are viewing</h4>
+            <ul>
+              <li>The <strong data-glossary="unit cell">unit cell</strong>: the smallest box that, repeated in all three directions, builds the whole crystal. “Crystal” mode repeats it into a small block.</li>
+              <li>Atom positions and box dimensions come from <strong data-glossary="X-ray diffraction">X-ray diffraction</strong> results (lattice constants in Å, 1 Å = 0.1 nm), usually at room temperature. Here they were entered from memory of standard tables, so check them before citing.</li>
+              <li>The structure shown is that of the <strong>solid</strong>. Liquids and gases have no repeating lattice, even when the temperature slider says so.</li>
+            </ul>
+            <h4>What is simplified</h4>
+            <ul>
+              <li>Atoms are not hard balls. “Packed” sizes each sphere to half the nearest-neighbour distance so they just touch; real <span data-glossary="electron cloud">electron clouds</span> have no sharp edge, and in covalent solids the bonds are shared electrons, not sticks.</li>
+              <li>The crystal is <strong>perfect and single-grain</strong>. Real metals and minerals are made of many tiny grains and contain missing atoms, dislocations and impurities, and these flaws control strength.</li>
+              <li>Vibration is illustrative: amplitude follows the Lindemann rule (atoms move about 10% of the neighbour distance at melting), not a real phonon simulation.</li>
+              <li>Some elements adopt other structures at different temperatures or pressures, and large low-symmetry cells are not drawn.</li>
+            </ul>
+            <h4>Why it matters</h4>
+            <p>Arrangement decides properties. Carbon as diamond-cubic is the hardest natural material; as graphite sheets it is soft and conducts. Face-centred cubic metals such as Cu, Al and Au are ductile because atomic layers slip easily; hexagonal metals such as Zn and Mg deform less easily. Structure sets density, melting behaviour, how alloys mix and how X-rays identify a mineral, so engineers, chip makers and geologists all reason with these models.</p>
+          </details>
+                  </section>
       </div>
       <div class="ep-info">
-        <div class="ep-top">
+        <div class="ep-top" data-fixed="1">
           <div style="flex:1;min-width:0;">
             <div class="ep-header">
               <span class="ep-sym" id="ep-sym"></span>
@@ -1571,22 +1700,32 @@
           </div>
           <button class="ep-close" id="ep-close" aria-label="Close element panel">✕ Close</button>
         </div>
-        <div class="ep-pill-row">
+        <div class="ep-pill-row" data-fixed="1">
           <span class="ep-badge" id="ep-badge"></span>
           <span class="ep-state" id="ep-state"></span>
           <span class="ep-crystal-tag" id="ep-crystal-tag"></span>
         </div>
-        <div class="ep-stat-grid" id="ep-stats"></div>
-        <div class="ep-config" id="ep-config"></div>
-        <div class="ep-usage-grid" id="ep-usage"></div>
-        <aside class="ep-story" id="ep-story" aria-live="polite" hidden></aside>
-        <aside class="ep-decay" id="ep-decay" hidden></aside>
-        <section class="ep-gallery" id="ep-gallery" aria-label="Photos and images for this element" hidden></section>
-        <section class="ep-earth-card" id="ep-earth" aria-label="Earth sources and image requirements"></section>
-        <p class="ep-desc" id="ep-desc"></p>
+        <div class="ep-stat-grid" id="ep-stats" data-tab="stats"></div>
+        <div class="ep-config" id="ep-config" data-tab="stats"></div>
+        <div class="ep-usage-grid" id="ep-usage" data-tab="uses"></div>
+        <aside class="ep-story" id="ep-story" data-tab="uses" aria-live="polite" hidden></aside>
+        <aside class="ep-decay" id="ep-decay" data-tab="uses" hidden></aside>
+        <section class="ep-gallery" id="ep-gallery" data-tab="photos" aria-label="Photos and images for this element" hidden></section>
+        <section class="ep-earth-card" id="ep-earth" data-tab="earth" aria-label="Earth sources and image requirements"></section>
+        <section class="ep-earth-card" id="ep-supply" data-tab="earth" aria-label="Supply and sustainability"></section>
+        <p class="ep-desc" id="ep-desc" data-tab="stats"></p>
       </div>
-      <section class="ep-history-card" id="ep-history" aria-label="Where and when this element was first discovered"></section>
+      <section class="ep-history-card" id="ep-history" data-tab="history" aria-label="Where and when this element was first discovered"></section>
     </div>
+      <!-- Pattern finder -->
+    <section class="pt-finder" id="pt-finder" aria-labelledby="pt-finder-title">
+      <h2 id="pt-finder-title">Pattern finder: periods, groups, blocks, families and trends</h2>
+      <p class="pt-finder-lead">Pick a lens, then pick an item. The matching elements light up on the table above and the rest fade. Each lens explains why the pattern matters and how to spot it on any periodic table.</p>
+      <div class="pt-finder-row pt-finder-tabs" id="pt-finder-tabs" role="tablist" aria-label="Pattern lens"></div>
+      <div class="pt-finder-row" id="pt-finder-items" aria-label="Choose an item to highlight"></div>
+      <div class="pt-finder-out" id="pt-finder-out" aria-live="polite"></div>
+    </section>
+    </div><!-- /.pt-dash -->
   </main>
   </div><!-- /.ll-sim -->
 
@@ -1695,10 +1834,13 @@
   </footer>
 
   <script src="../../assets/js/theme-registry.js"></script>
+  <script src="../../assets/js/site-glossary.js" data-glossary-src="../../data/periodic-table-glossary.json"></script>
   <script src="../../assets/js/nav-mobile.js"></script>
   <script src="../../assets/js/lessons/world-land-path.js"></script>
   <script src="../../assets/js/lessons/periodic-table-history.js"></script>
   <script src="../../assets/js/lessons/periodic-table-images.js"></script>
+  <script src="../../assets/js/lessons/periodic-table-supply.js"></script>
+  <script src="../../assets/js/crystal-viewer.js"></script>
   <script src="../../assets/js/photo-lightbox.js"></script>
   <script>
   (function () {
@@ -1992,6 +2134,7 @@
     let currentTemp = Number(tempInput.value || 295);
     let commandMatches = new Set();
     let atomModel = 'bohr';
+    let patternFilter = null;
 
     function hexToRgb(hex) {
       const clean = String(hex || '').replace('#', '');
@@ -2179,7 +2322,7 @@
     function matchesFilters(element) {
       const matchesCat = activeCat === 'all' || element.cat === activeCat;
       const matchesSearch = !searchQ || element.symbol.toLowerCase().includes(searchQ) || element.name.toLowerCase().includes(searchQ) || String(element.number).startsWith(searchQ);
-      return matchesCat && matchesSearch;
+      return matchesCat && matchesSearch && (!patternFilter || patternFilter(element));
     }
 
     function renderCategoryControls() {
@@ -2354,10 +2497,29 @@
       return svg;
     }
 
+    function renderAtomExplain(element) {
+      const host = document.getElementById('ep-atom-explain');
+      const quantum = atomModel === 'quantum';
+      host.innerHTML = '<summary>A teaching model, not a picture of a real atom</summary>'
+        + '<h4>What you are viewing</h4><ul>'
+        + '<li>' + (quantum
+          ? 'Fuzzy <strong>probability clouds</strong> arranged by shell and by block (s, p, d, f). A cloud shows where an electron is <em>likely</em> to be found, not where it is.'
+          : 'A <strong>nucleus</strong> (' + element.number + ' protons) and rings showing how many electrons sit in each energy shell: ' + element.shells.join(' \u00B7 ') + '.') + '</li>'
+        + '<li>The electron counts per shell are real data for the ground state. Everything else about the drawing is a convenient picture.</li></ul>'
+        + '<h4>What is simplified</h4><ul>'
+        + (quantum
+          ? '<li>Shapes and spread are schematic. Real orbitals come from solving the Schr\u00F6dinger equation, have distinct lobes and nodes, and have no hard edge.</li>'
+          : '<li>Electrons do <strong>not</strong> orbit on circular tracks like planets. Niels Bohr\u2019s 1913 picture works well for hydrogen only and fails for multi-electron atoms.</li>')
+        + '<li>Not to scale: the nucleus is about 100,000 times smaller than the atom. If the atom were a stadium, the nucleus would be a pea.</li>'
+        + '<li>Electrons are not dots: they behave as waves and particles, and they cannot be pinned to an exact position and speed at once.</li></ul>'
+        + '<h4>Why it matters</h4><p>The shell count tells you the <strong>period</strong>, and the electrons in the outermost shell (the valence electrons) set the <strong>group</strong>, bonding and reactivity. That is why ' + element.name + ' behaves like its column neighbours. Chemists use these models as bookkeeping to predict bonds and reactions, then switch to quantum models when precision matters.</p>';
+    }
+
     function renderAtomModel(element, color) {
       const title = document.getElementById('ep-model-title');
       const note = document.getElementById('ep-shell-note');
       atomModelButtons.forEach((button) => button.setAttribute('aria-pressed', button.dataset.atomModel === atomModel ? 'true' : 'false'));
+      renderAtomExplain(element);
       if (atomModel === 'quantum') {
         title.textContent = 'Quantum Cloud Model';
         document.getElementById('bohr-svg').innerHTML = buildQuantumModel(element, color);
@@ -2369,25 +2531,11 @@
       note.textContent = 'Simplified Bohr model: rings organize electrons by energy level for classroom comparison, not literal electron paths.';
     }
 
-    function buildCrystalModel(element, state) {
-      const color = state === 'liquid' ? '#38bdf8' : state === 'gas' ? '#c084fc' : CATS[element.cat].color;
-      const nodes = [];
-      for (let row = 0; row < 3; row++) {
-        for (let col = 0; col < 4; col++) nodes.push({ x: 34 + col * 42 + row * 10, y: 32 + row * 28 });
-      }
-      if (element.crystal.mode === 'gas') {
-        return '<rect x="6" y="8" width="208" height="124" rx="18" fill="' + rgba(color, 0.08) + '" stroke="' + rgba(color, 0.22) + '" /><circle cx="58" cy="54" r="11" fill="' + rgba(color, 0.48) + '" /><circle cx="126" cy="78" r="14" fill="' + rgba(color, 0.28) + '" /><circle cx="176" cy="46" r="9" fill="' + rgba(color, 0.42) + '" /><circle cx="92" cy="108" r="8" fill="' + rgba(color, 0.24) + '" />';
-      }
-      const lines = [];
-      nodes.forEach((node, index) => {
-        const next = nodes[index + 1];
-        if (next && (index + 1) % 4 !== 0) lines.push('<line x1="' + node.x + '" y1="' + node.y + '" x2="' + next.x + '" y2="' + next.y + '" stroke="' + rgba(color, 0.28) + '" stroke-width="2"/>');
-        const below = nodes[index + 4];
-        if (below) lines.push('<line x1="' + node.x + '" y1="' + node.y + '" x2="' + below.x + '" y2="' + below.y + '" stroke="' + rgba(color, 0.2) + '" stroke-width="2"/>');
-      });
-      const circles = nodes.map((node) => '<circle cx="' + node.x + '" cy="' + node.y + '" r="' + (element.crystal.mode === 'network' ? 6.2 : 5.1) + '" fill="' + rgba(color, 0.74) + '" stroke="' + rgba(color, 0.9) + '" stroke-width="1.2"/>').join('');
-      const liquidOverlay = state === 'liquid' ? '<path d="M20 100 C48 82, 84 124, 116 98 S176 76, 204 98" fill="none" stroke="' + rgba('#38bdf8', 0.9) + '" stroke-width="8" stroke-linecap="round"/>' : '';
-      return '<rect x="6" y="8" width="208" height="124" rx="18" fill="' + rgba(color, 0.06) + '" stroke="' + rgba(color, 0.22) + '" />' + lines.join('') + circles + liquidOverlay;
+    let crystalViewer = null;
+    function renderCrystal(element, color) {
+      if (!window.CrystalViewer) return;
+      if (!crystalViewer) crystalViewer = window.CrystalViewer.mount(document.getElementById('crystal-host'));
+      crystalViewer.setElement({ symbol: element.symbol, name: element.name, number: element.number, color: color, mass: Number(element.mass), density: element.density, melt: element.melt, temp: currentTemp });
     }
 
     function formatValue(value, suffix, digits) {
@@ -2496,6 +2644,27 @@
       document.getElementById("ep-earth").innerHTML = `<h3 class=\"ep-earth-title\">Where it is found on Earth</h3><div class=\"ep-source-grid\">${sourceHtml}</div><div class=\"ep-flow\">${flow}</div><div class=\"ep-media-note\">${mediaNote}</div>`;
     }
 
+    function renderSupply(element) {
+      const d = (window.ELEMENT_SUPPLY || {})[element.symbol] || {};
+      const U = 'Unknown';
+      const num = (v, suffix) => (v === undefined || v === null || v === '') ? U : (typeof v === 'number' ? v.toLocaleString(undefined, { maximumFractionDigits: 7 }) : String(v)) + (suffix || '');
+      const list = (a) => Array.isArray(a) && a.length ? a.join(', ') : U;
+      const rows = [
+        ['Relative supply risk', num(d.supplyRisk)],
+        ['Crustal abundance (ppm)', num(d.crust)],
+        ['Recycling rate (%)', num(d.recycling)],
+        ['Substitutability', num(d.substitutability)],
+        ['Production concentration (%)', num(d.prodConcentration)],
+        ['Reserve distribution (%)', num(d.reserveDistribution)],
+        ['Top 3 producers', list(d.producers)],
+        ['Top 3 reserve holders', list(d.reserveHolders)],
+        ['Political stability of top producer', num(d.stabilityProducer)],
+        ['Political stability of top reserve holder', num(d.stabilityReserve)]
+      ];
+      document.getElementById('ep-supply').innerHTML = '<h3 class="ep-earth-title">Supply and sustainability</h3><div class="ep-flow">'
+        + rows.map(([k, v]) => '<div class="ep-flow-step"><span class="ep-flow-label">' + k + '</span><span class="ep-flow-value">' + v + '</span></div>').join('') + '</div>' + (d.history ? '<div class="ep-media-note"><strong>Through history:</strong> ' + d.history + '</div>' : '') + '<div class="ep-media-note">' + (window.ELEMENT_SUPPLY_ASOF || '') + '</div>';
+    }
+
     function renderGallery(element) {
       const host = document.getElementById('ep-gallery');
       const items = (window.ELEMENT_IMAGES || {})[element.symbol] || [];
@@ -2512,13 +2681,112 @@
       }).join('') + '</div>';
     }
 
+    /* ── Pattern finder ───────────────────────────────── */
+    const finderTabs = document.getElementById('pt-finder-tabs');
+    const finderItems = document.getElementById('pt-finder-items');
+    const finderOut = document.getElementById('pt-finder-out');
+    const PERIOD_ENDS = [2, 10, 18, 36, 54, 86, 118];
+    const ordinal = (n) => n + (n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th');
+    const isF = (e) => e.cat === 'ln' || e.cat === 'ac';
+    const periodOf = (e) => e.shells.length;
+    const groupOf = (e) => (isF(e) ? null : e.col);
+    const blockOf = (e) => {
+      if (isF(e)) return 'f';
+      if (e.symbol === 'He' || e.col <= 2) return 's';
+      return e.col <= 12 ? 'd' : 'p';
+    };
+    const FAMILIES = {
+      alkali: { label: 'Alkali metals (group 1)', test: (e) => e.col === 1 && e.number !== 1 && !isF(e), body: 'Soft, shiny, low-density metals with one outer electron. They lose it easily, so they react violently with water and are never found as pure metal in nature. Reactivity grows going down: Li fizzes, Na skitters and burns, K bursts into lilac flame, Cs explodes.', how: 'Look at the far-left column, skipping hydrogen (a nonmetal that only sits there because it has one outer electron).' },
+      alkaline: { label: 'Alkaline earth metals (group 2)', test: (e) => e.col === 2 && !isF(e), body: 'Two outer electrons. Harder and denser than the alkali metals and a little less reactive. Calcium and magnesium build bones, shells and rocks; strontium and barium colour fireworks red and green.', how: 'Second column from the left.' },
+      transition: { label: 'Transition metals (groups 3–12)', test: (e) => e.cat === 'tm', body: 'The central block of hard, dense, conductive metals: iron, copper, gold, titanium. Their d electrons let them form several charges and coloured compounds, which is why they make good catalysts, pigments and alloys.', how: 'The wide middle block, groups 3–12.' },
+      pnictogen: { label: 'Pnictogens (group 15)', test: (e) => e.col === 15 && !isF(e), body: 'Five outer electrons. The group runs from nonmetals (N, P) through metalloids (As, Sb) to a metal (Bi), so one column can hold very different behaviour.', how: 'Nitrogen’s column, group 15.' },
+      chalcogen: { label: 'Chalcogens (group 16)', test: (e) => e.col === 16 && !isF(e), body: 'Six outer electrons; they grab two more to fill the shell. Oxygen and sulfur are the “ore-formers”: most metal ores are oxides or sulfides.', how: 'Oxygen’s column, group 16.' },
+      halogen: { label: 'Halogens (group 17)', test: (e) => e.cat === 'ha', body: 'One electron short of a full shell, so they are the most reactive nonmetals. “Halogen” means salt-former: they pair with alkali metals to make salts like NaCl. Reactivity falls going down: fluorine is fiercest, iodine is mild.', how: 'Second column from the right, group 17.' },
+      noble: { label: 'Noble gases (group 18)', test: (e) => e.cat === 'ng', body: 'Full outer shells, so they almost never bond. That makes them ideal for lighting, welding shields and balloons. Their stability is the target every other element “wants” to reach by gaining, losing or sharing electrons.', how: 'The far-right column, group 18.' },
+      metalloid: { label: 'Metalloids (the staircase)', test: (e) => e.cat === 'ml', body: 'B, Si, Ge, As, Sb, Te sit on the diagonal staircase between metals and nonmetals. They are semiconductors, so they make chips and solar cells possible.', how: 'Trace the zig-zag line from boron down to astatine; elements touching it are metalloids.' },
+      lanthanide: { label: 'Lanthanides (rare earths, period 6)', test: (e) => e.cat === 'ln', body: 'Fifteen near-identical metals (La–Lu) because extra electrons go into an inner f subshell, not the outer shell. That similarity makes them hard to separate, and useful in magnets, lasers and phosphors.', how: 'The detached row at the bottom, upper strip.' },
+      actinide: { label: 'Actinides (period 7)', test: (e) => e.cat === 'ac', body: 'Fifteen radioactive metals (Ac–Lr) including uranium and plutonium. All are unstable; the heavy ones exist only in laboratories.', how: 'The detached row at the bottom, lower strip.' }
+    };
+    const TRENDS = {
+      across: { label: 'Across period 3 (Na → Ar)', symbols: ['Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar'], body: 'Moving left to right, each atom adds a proton and an electron in the same shell. The stronger pull shrinks the atom, so atomic radius falls, while ionization energy and electronegativity rise. Metallic character fades: sodium is a soft reactive metal, silicon a semiconductor, chlorine a reactive nonmetal, argon an inert gas.', how: 'Ask: “Is it further right?” then expect smaller, more electron-hungry, less metallic.' },
+      down: { label: 'Down group 1 (Li → Cs)', symbols: ['Li', 'Na', 'K', 'Rb', 'Cs'], body: 'Moving down a group, each element adds a whole new shell. Outer electrons sit farther out and are shielded by inner shells, so radius grows and ionization energy and electronegativity fall. For metals that means easier electron loss and higher reactivity; for halogens, the reverse (fluorine is most reactive).', how: 'Ask: “Is it further down?” then expect bigger, looser outer electrons.' },
+      extremes: { label: 'The extremes', symbols: ['F', 'He', 'Cs', 'Fr'], body: 'Fluorine is the most electronegative element; helium has the highest ionization energy; caesium and francium sit at the bottom left as the largest atoms with the most weakly held electrons. The corners of the table are where trends peak.', how: 'Trends push toward the upper right (electron-hungry, tight, small) and the lower left (big, generous, reactive metal).' },
+      diagonal: { label: 'Diagonal look-alikes', symbols: ['Li', 'Mg', 'Be', 'Al', 'B', 'Si'], body: 'Stepping one right and one down cancels two trends, so diagonal neighbours resemble each other: Li and Mg, Be and Al, B and Si. Beryllium and aluminium both form protective oxide layers and amphoteric compounds.', how: 'Look one step down-and-right of a small element for a chemical cousin.' }
+    };
+    let finderLens = null;
+    let finderItem = null;
+
+    function finderDefs(lens) {
+      if (lens === 'period') {
+        return [1, 2, 3, 4, 5, 6, 7].map((n) => {
+          const first = n === 1 ? 1 : PERIOD_ENDS[n - 2] + 1, last = PERIOD_ENDS[n - 1];
+          return { key: String(n), label: 'Period ' + n, test: (e) => periodOf(e) === n,
+            title: 'Period ' + n + ': ' + (last - first + 1) + ' elements (' + (elements[first - 1] || {}).symbol + '–' + (elements[last - 1] || {}).symbol + ')',
+            body: 'Every element in this row has its outer electrons in shell ' + n + ', so the period number equals the number of electron shells. Across the row, protons are added one at a time and the outer shell fills up: the row starts with a reactive metal and finishes with a noble gas' + (n === 1 ? ' (only H and He, since shell 1 holds just 2 electrons)' : n <= 3 ? ' (short row: 2 or 8 elements)' : n <= 5 ? ' (the d-block inserts ten transition metals, making the row 18 long)' : ' (the f-block inserts fourteen more, making the row 32 long)') + '.',
+            how: 'Count the rows from the top, or count the electron shells in the atom model: shells = period.' };
+        });
+      }
+      if (lens === 'group') {
+        return Array.from({ length: 18 }, (_, i) => i + 1).map((g) => {
+          const valence = g <= 2 ? g : g >= 13 ? g - 10 : null;
+          return { key: String(g), label: 'Group ' + g, test: (e) => groupOf(e) === g,
+            title: 'Group ' + g + (valence ? ': ' + valence + ' outer electron' + (valence > 1 ? 's' : '') : ': d-block transition metals'),
+            body: valence
+              ? 'Every element in this column has ' + (g === 18 ? '8 outer electrons (2 for helium)' : valence + ' outer (valence) electron' + (valence > 1 ? 's' : '')) + ', and valence electrons decide how an atom bonds. That is why the whole column reacts in a related way and forms similar compounds, for example NaCl and KCl, or H₂O and H₂S.'
+              : 'Transition metals fill an inner d subshell, so neighbours are similar and the group number does not simply equal the outer electron count. Columns still share traits such as common charges and similar compounds.',
+            how: 'Read the column number (1–18). Main-group shortcut: groups 1–2 have that many valence electrons; groups 13–18 have (group − 10). Older tables label these IA–VIIIA.' };
+        });
+      }
+      if (lens === 'block') {
+        const B = { s: ['s-block', 'Groups 1–2 plus helium. The last electron enters an s subshell. Two columns wide, because an s subshell holds 2 electrons.'],
+          p: ['p-block', 'Groups 13–18. The last electron enters a p subshell (6 electrons, so six columns). Contains nearly every nonmetal, all the metalloids and the halogens and noble gases.'],
+          d: ['d-block', 'Groups 3–12, the transition metals. A d subshell holds 10 electrons, so the block is ten columns wide.'],
+          f: ['f-block', 'Lanthanides and actinides. An f subshell holds 14 electrons, so each row has 14 (15 counting La/Ac or Lu/Lr, which sit in group 3 on some tables). Drawn detached to keep the table narrow.'] };
+        return ['s', 'p', 'd', 'f'].map((b) => ({ key: b, label: B[b][0], test: (e) => blockOf(e) === b, title: B[b][0], body: B[b][1],
+          how: 'Block letters name the subshell being filled. Widths 2, 6, 10 and 14 are the subshell capacities, which sets the shape of the whole table.' }));
+      }
+      if (lens === 'family') {
+        return Object.entries(FAMILIES).map(([key, f]) => ({ key, label: f.label.split(' (')[0], test: f.test, title: f.label, body: f.body, how: f.how }));
+      }
+      return Object.entries(TRENDS).map(([key, t]) => ({ key, label: t.label, test: (e) => t.symbols.indexOf(e.symbol) >= 0, title: t.label, body: t.body, how: t.how }));
+    }
+
+    function renderFinder() {
+      const lenses = [['period', 'Periods (rows)'], ['group', 'Groups (columns)'], ['block', 'Blocks'], ['family', 'Families'], ['trend', 'Trends']];
+      finderTabs.innerHTML = '';
+      lenses.forEach(([key, label]) => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'pt-finder-btn'; b.textContent = label;
+        b.setAttribute('aria-pressed', finderLens === key ? 'true' : 'false');
+        b.addEventListener('click', () => { finderLens = finderLens === key ? null : key; finderItem = null; applyFinder(); });
+        finderTabs.appendChild(b);
+      });
+      finderItems.innerHTML = '';
+      const defs = finderLens ? finderDefs(finderLens) : [];
+      defs.forEach((d) => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'pt-finder-btn'; b.textContent = d.label;
+        b.setAttribute('aria-pressed', finderItem === d.key ? 'true' : 'false');
+        b.addEventListener('click', () => { finderItem = finderItem === d.key ? null : d.key; applyFinder(); });
+        finderItems.appendChild(b);
+      });
+      const cur = defs.find((d) => d.key === finderItem);
+      patternFilter = cur ? cur.test : null;
+      if (cur) {
+        const count = elements.filter(cur.test).length;
+        finderOut.innerHTML = '<h3>' + cur.title + '</h3><p>' + cur.body + '</p><p><span class="pt-finder-how">How to identify it:</span> ' + cur.how + '</p><p>' + count + ' element' + (count === 1 ? '' : 's') + ' highlighted on the table.</p>';
+      } else {
+        finderOut.innerHTML = '<p>' + (finderLens ? 'Choose an item above.' : 'Start with a lens above. <strong>Periods</strong> are rows (same number of shells), <strong>groups</strong> are columns (same outer electrons), <strong>blocks</strong> are the subshell being filled, <strong>families</strong> are named regions of similar behaviour, and <strong>trends</strong> are gradual changes in size, reactivity and electron-grabbing power across and down the table.') + '</p>';
+      }
+    }
+    function applyFinder() { renderFinder(); renderGrid(); }
+
     function showElement(element, shouldScroll) {
       selectedSymbol = element.symbol;
       const state = getState(element, currentTemp);
       const color = CATS[element.cat].color;
       renderAtomModel(element, color);
-      document.getElementById('crystal-svg').innerHTML = buildCrystalModel(element, state);
-      document.getElementById('ep-crystal-note').textContent = element.crystal.note;
+      renderCrystal(element, color);
       document.getElementById('ep-crystal-tag').textContent = element.crystal.label;
       document.getElementById('ep-sym').textContent = element.symbol;
       document.getElementById('ep-sym').style.color = color;
@@ -2536,6 +2804,7 @@
       renderDecayLink(element);
       renderHistory(element);
       renderEarthProfile(element);
+      renderSupply(element);
       renderGallery(element);
       detailPanel.classList.remove('ep-open');
       void detailPanel.offsetWidth;
@@ -2595,16 +2864,41 @@
       renderGrid();
     }
 
+    /* ── Inspector tabs + default selection (wide-screen dashboard) ── */
+    const dashQuery = window.matchMedia('(min-width: 1180px)');
+    (function buildInspectorTabs() {
+      const tabs = [['stats', 'Stats'], ['crystal', 'Crystal'], ['atom', 'Atom'], ['uses', 'Uses'], ['earth', 'Earth & supply'], ['history', 'History'], ['photos', 'Photos']];
+      const bar = document.createElement('div');
+      bar.className = 'ep-tabs'; bar.setAttribute('role', 'tablist'); bar.setAttribute('aria-label', 'Element detail sections');
+      tabs.forEach(([key, label]) => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'ep-tab-btn'; b.textContent = label; b.setAttribute('role', 'tab');
+        b.setAttribute('aria-selected', key === 'stats' ? 'true' : 'false');
+        b.addEventListener('click', () => {
+          detailPanel.dataset.tabActive = key;
+          bar.querySelectorAll('.ep-tab-btn').forEach((x) => x.setAttribute('aria-selected', x === b ? 'true' : 'false'));
+        });
+        bar.appendChild(b);
+      });
+      detailPanel.insertBefore(bar, detailPanel.firstChild);
+    })();
+    function ensureDefaultSelection() {
+      if (dashQuery.matches && !selectedSymbol && elements.length) showElement(elements.find((e) => e.symbol === 'Fe') || elements[0], false);
+    }
+    dashQuery.addEventListener('change', ensureDefaultSelection);
+
     function renderAll() {
       renderCategoryControls();
       renderLegend();
       renderHeatmapControls();
       renderTemperatureReadout();
+      renderFinder();
       renderGrid();
       if (selectedSymbol) {
         const element = elements.find((entry) => entry.symbol === selectedSymbol);
         if (element) showElement(element, false);
       }
+      ensureDefaultSelection();
     }
 
     searchInput.addEventListener('input', (event) => {

@@ -380,6 +380,83 @@
             </p>
           </section>
 
+          <!-- GRAPH THEORY: CAYLEY GRAPH -->
+          <section class="rc-card" id="rc-graph" style="--card-accent:#06b6d4;">
+            <h2>Graph Theory — The Cube as a Map</h2>
+            <p>
+              Group theory says <em>what</em> the moves are. Graph theory lets us <em>see</em> them.
+              Make every possible cube state a <strong>vertex</strong>, and draw an
+              <strong>edge</strong> between two states whenever one quarter turn turns one into the other.
+              This picture is called the <strong>Cayley graph</strong> of the cube group.
+              It has 43 quintillion vertices, and every vertex has exactly 12 edges
+              (U, U&prime;, D, D&prime;, R, R&prime;, L, L&prime;, F, F&prime;, B, B&prime;).
+            </p>
+            <div class="rc-fact-row">
+              <span class="rc-fact">Vertices = cube states</span>
+              <span class="rc-fact">Edges = quarter turns</span>
+              <span class="rc-fact">Solving = shortest path to the solved vertex</span>
+              <span class="rc-fact">God's number = the graph's diameter</span>
+            </div>
+
+            <div class="rcg-panel">
+              <div class="rcg-tabs" role="group" aria-label="Graph view">
+                <button type="button" class="rcg-tab" data-rcg-mode="ball" aria-pressed="true">Neighborhood of solved</button>
+                <button type="button" class="rcg-tab" data-rcg-mode="cycle" aria-pressed="false">Cycle of a sequence</button>
+              </div>
+
+              <canvas id="rcg-canvas" role="img" aria-label="Cayley graph of the Rubik's Cube group" tabindex="-1"></canvas>
+
+              <div id="rcg-ball-ui">
+                <div class="rcg-row">
+                  <label for="rcg-depth">Radius: <strong id="rcg-depth-out">2</strong> turns</label>
+                  <input type="range" id="rcg-depth" min="1" max="3" value="2" />
+                </div>
+                <p class="rcg-hint">Green = solved. Colored edges match the face turned. Hover a vertex to see its shortest route home; click it to send the walker there. Or turn faces yourself:</p>
+                <div id="rcg-gens" class="rcg-gens"></div>
+                <div class="rcg-row">
+                  <button type="button" class="rcg-mini" id="rcg-undo">Undo</button>
+                  <button type="button" class="rcg-mini" id="rcg-reset">Back to solved</button>
+                </div>
+                <table class="rcg-table">
+                  <caption>States at each distance (quarter-turn metric)</caption>
+                  <thead><tr><th scope="col">Distance</th><th scope="col">States</th><th scope="col">Growth</th></tr></thead>
+                  <tbody id="rcg-counts"></tbody>
+                </table>
+              </div>
+
+              <div id="rcg-cycle-ui" hidden>
+                <div class="rcg-row">
+                  <label for="rcg-preset">Try:</label>
+                  <select id="rcg-preset">
+                    <option value="R U R' U'">R U R' U' (order 6)</option>
+                    <option value="U">U (order 4)</option>
+                    <option value="U2">U2 (order 2)</option>
+                    <option value="R U">R U (order 105)</option>
+                    <option value="R U2 D' B D'">R U2 D' B D' (order 1260)</option>
+                    <option value="">Custom below…</option>
+                  </select>
+                  <input type="text" id="rcg-seq" value="R U R' U'" aria-label="Move sequence" spellcheck="false" autocomplete="off" />
+                  <button type="button" class="rcg-mini" id="rcg-run">Draw cycle</button>
+                </div>
+                <p id="rcg-seq-err" class="rcg-err" role="alert"></p>
+                <p id="rcg-cycle-info" class="rcg-hint"></p>
+              </div>
+              <p id="rcg-info" class="rcg-info" aria-live="polite"></p>
+            </div>
+
+            <h3>What the graph shows</h3>
+            <ul class="rcg-list">
+              <li><strong>Growth is exponential.</strong> Each ring holds roughly 9&ndash;10 times more states than the last (1, 12, 114, 1,068, &hellip;) until the graph starts to fold back on itself. That is why the ball must swallow all 43 quintillion states by radius 26.</li>
+              <li><strong>Squares mean commuting.</strong> U then D lands on the same vertex as D then U, so those two edges close a 4-cycle. Turns of <em>opposite faces</em> commute; turns of adjacent faces (like R and U) never do. Zoom to radius 2 and count the squares.</li>
+              <li><strong>Every cycle is a relation.</strong> Any closed loop is a move sequence that does nothing: U U U U, or (R U R&prime; U&prime;) six times. The loop's length is the element's <em>order</em>.</li>
+              <li><strong>Solving is pathfinding.</strong> A scramble is a vertex; a solution is a path to green. God's number, 20 in the half-turn metric (26 in quarter turns), is the largest distance any vertex sits from solved: the diameter.</li>
+              <li><strong>Every vertex looks the same.</strong> Because a group acts the same from every state, the graph looks identical from every vertex. Graph theorists call this <em>vertex-transitive</em>.</li>
+            </ul>
+            <div class="rc-callout rc-callout--purple">
+              <strong>Try to reason with it:</strong> Why must the graph be bipartite (can you color every state black or white so each turn switches color)? Hint: each quarter turn is an <em>odd</em> permutation of the 8 corners (a 4-cycle), so it flips their parity. That also means no cycle can have an odd length.
+            </div>
+          </section>
+
           <!-- NOTATION & ALGORITHMS -->
           <section class="rc-card" style="--card-accent:#f59e0b;">
             <h2>Notation &amp; Algorithms</h2>
@@ -606,6 +683,7 @@
   <!-- CUBE MODEL, SOLVER, AND THE INTERACTIVE LAB -->
   <script src="../../../assets/js/lessons/rubiks-cube-solver.js"></script>
   <script src="../../../assets/js/lessons/rubiks-cube-lab.js"></script>
+  <script src="../../../assets/js/lessons/rubiks-cube-graph.js"></script>
 
   <!-- PRACTICE PROBLEMS -->
   <script>
