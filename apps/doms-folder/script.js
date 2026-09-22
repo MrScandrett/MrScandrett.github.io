@@ -29,19 +29,19 @@ const worldHeight = 2000;
 // SPRITE
 // =========================
 const godzillaImg = new Image();
-godzillaImg.src = "/assets/sprites/godzilla.png";
+godzillaImg.src = "assets/sprites/godzilla.png";
 
 const kongImg = new Image();
-kongImg.src = "/assets/sprites/kong.png";
+kongImg.src = "assets/sprites/kong.png";
 
 const mothraImg = new Image();
-mothraImg.src = "/assets/sprites/mothra.png";
+mothraImg.src = "assets/sprites/mothra.png";
 
 const rodanImg = new Image();
-rodanImg.src = "/assets/sprites/rodan.png";
+rodanImg.src = "assets/sprites/rodan.png";
 
 const mechaImg = new Image();
-mechaImg.src = "/assets/sprites/mecha.png";
+mechaImg.src = "assets/sprites/mecha.png";
 
 // =========================
 // ENTITY

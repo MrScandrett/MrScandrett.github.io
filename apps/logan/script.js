@@ -18,10 +18,10 @@ let coins, score, scoreText;
 let jumpsLeft, maxJumps = 2;
 
 function preload() {
-    this.load.image('ground', 'https://labs.phaser.io/assets/sprites/platform.png');
-    this.load.spritesheet('knight', 'https://labs.phaser.io/assets/sprites/dude.png', { frameWidth: 32, frameHeight: 48 });
-    this.load.image('bgFar', 'https://labs.phaser.io/assets/skies/space2.png');
-    this.load.image('bgMid', 'https://labs.phaser.io/assets/skies/nebula.png');
+    this.load.image('ground', 'assets/platform.png');
+    this.load.spritesheet('knight', 'assets/dude.png', { frameWidth: 32, frameHeight: 48 });
+    this.load.image('bgFar', 'assets/space2.png');
+    this.load.image('bgMid', 'assets/space3.png');
 }
 
 function create() {

@@ -516,6 +516,7 @@
           <div class="phys-tabs" role="tablist" aria-label="Sandbox mode">
             <button class="phys-tab is-active" id="ptab-draw" role="tab" aria-selected="true" aria-controls="ppanel-draw" type="button"><span aria-hidden="true">✏️</span> Design</button>
             <button class="phys-tab" id="ptab-phys" role="tab" aria-selected="false" aria-controls="ppanel-phys" type="button"><span aria-hidden="true">⚡</span> Simulate</button>
+            <button class="phys-tab" id="ptab-rider" role="tab" aria-selected="false" aria-controls="ppanel-rider" type="button"><span aria-hidden="true">🛷</span> Line Rider</button>
           </div>
           <span class="phys-lab-status"><span class="phys-status-light" aria-hidden="true"></span> Lab online</span>
         </div>
@@ -623,6 +624,36 @@
             <span class="phys-metric" id="pphys-object-count">0 bodies</span>
             <span class="phys-metric" id="pphys-energy">0.0 J</span>
             <span class="phys-eq-live" id="pphys-readout" aria-live="polite"></span>
+          </div>
+        </div>
+
+        <!-- Line Rider panel -->
+        <div class="phys-panel" id="ppanel-rider" role="tabpanel" aria-labelledby="ptab-rider">
+          <div class="phys-toolbar" role="toolbar" aria-label="Line Rider tools">
+            <button class="ptool is-active" data-rtool="track" title="Draw track (T)" type="button">✏️</button>
+            <button class="ptool" data-rtool="accel" title="Boost line — speeds up any rider that crosses it (A)" type="button">⚡</button>
+            <button class="ptool" data-rtool="erase" title="Erase track (E)" type="button">⬜</button>
+            <button class="ptool" data-rtool="start" title="Place a rider start point (S)" type="button">🛷</button>
+            <span class="ptool-sep" aria-hidden="true"></span>
+            <button class="ptool" id="prider-undo" title="Undo last track line (Ctrl+Z)" type="button">↩</button>
+            <button class="ptool ptool-clear" id="prider-clear" title="Clear course" type="button">🗑️</button>
+            <span class="ptool-sep" aria-hidden="true"></span>
+            <button class="ptool ptool-wide" id="prider-run" title="Start the race" type="button">▶ Run</button>
+            <button class="ptool ptool-wide" id="prider-reset" title="Send riders back to their start points" type="button">↺ Reset</button>
+          </div>
+          <div class="phys-canvas-wrap">
+            <canvas id="prider-canvas" class="phys-canvas" aria-label="Line Rider course — draw a track, place start points, then run the race"></canvas>
+            <div class="phys-canvas-coach" id="prider-coach" aria-hidden="true">
+              <span>Draw a course, drop a start point</span>
+              <small>Then hit Run and watch gravity do the rest</small>
+            </div>
+          </div>
+          <div class="phys-info-bar">
+            <span class="phys-eq-pill" title="Component of gravity along the slope">a = g·sin(θ)</span>
+            <span class="phys-eq-pill" title="Newton's Second Law">F = ma</span>
+            <span class="phys-metric" id="prider-count">0 riders</span>
+            <span class="phys-metric" id="prider-best">best 0.0 m/s</span>
+            <span class="phys-eq-live" id="prider-readout" aria-live="polite"></span>
           </div>
         </div>
       </div>
@@ -1920,8 +1951,9 @@
         tab.classList.add('is-active'); tab.setAttribute('aria-selected', 'true');
         var panel = document.getElementById(tab.getAttribute('aria-controls'));
         if (panel) panel.classList.add('is-active');
-        if (tab.id === 'ptab-phys') { resizeP(); startPhys(); }
-        else { stopPhys(); resizeD(); }
+        if (tab.id === 'ptab-phys') { stopPhys(); resizeP(); startPhys(); }
+        else if (tab.id === 'ptab-rider') { stopPhys(); resizeR(); startRider(); }
+        else { stopPhys(); stopRider(); resizeD(); }
       });
     });
 
@@ -2517,8 +2549,293 @@
     document.getElementById('ptab-phys') && document.getElementById('ptab-phys').addEventListener('click', function () { resizeP(); startPhys(); });
     document.getElementById('ptab-draw') && document.getElementById('ptab-draw').addEventListener('click', function () { stopPhys(); resizeD(); });
 
+    // ══════════════════════════════════════════════════════
+    // LINE RIDER MODE — draw a course, drop sleds, race gravity
+    // ══════════════════════════════════════════════════════
+    var riderCanvas = document.getElementById('prider-canvas');
+    var rCtx = riderCanvas ? riderCanvas.getContext('2d') : null;
+    if (riderCanvas && rCtx) {
+      var rTool = 'track';
+      var rStrokes = [];       // { type:'track'|'accel', pts:[{x,y}] }
+      var curRStroke = null, rDrawing = false;
+      var rSegs = [];          // flattened { x1,y1,x2,y2, type }
+      var startPts = [];       // { x, y }
+      var riders = [];
+      var riderRunning = false;
+      var riderRafId = null, riderLastT = null;
+      var riderLiveMsg = '';
+      var bestSpeed = 0;
+      var RIDER_COLORS = ['#ef4444','#3b82f6','#22c55e','#f59e0b','#8b5cf6','#ec4899'];
+      var riderCoach = document.getElementById('prider-coach');
+
+      function resizeR() {
+        var w = riderCanvas.offsetWidth, h = window.innerWidth <= 560 ? 320 : 480;
+        riderCanvas.width  = Math.round(w * DPR);
+        riderCanvas.height = Math.round(h * DPR);
+        riderCanvas.style.height = h + 'px';
+        rCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        drawRider();
+      }
+      function RW() { return riderCanvas.offsetWidth; }
+      function RH() { return riderCanvas.offsetHeight; }
+      function rPos(e) {
+        var r = riderCanvas.getBoundingClientRect();
+        var src = e.touches ? e.touches[0] : e;
+        return { x: src.clientX - r.left, y: src.clientY - r.top };
+      }
+
+      function rebuildSegs() {
+        rSegs = [];
+        rStrokes.forEach(function (s) {
+          for (var i = 0; i < s.pts.length - 1; i++) {
+            rSegs.push({ x1: s.pts[i].x, y1: s.pts[i].y, x2: s.pts[i+1].x, y2: s.pts[i+1].y, type: s.type });
+          }
+        });
+      }
+
+      function updateRiderUi() {
+        var hasCourse = rStrokes.length > 0 || startPts.length > 0;
+        if (riderCoach) riderCoach.classList.toggle('is-hidden', hasCourse || rDrawing);
+      }
+
+      // ── Course editing ──────────────────────────────────
+      function rDown(e) {
+        e.preventDefault();
+        var p = rPos(e);
+        if (rTool === 'track' || rTool === 'accel') {
+          rDrawing = true;
+          curRStroke = { type: rTool, pts: [p] };
+          updateRiderUi();
+        } else if (rTool === 'erase') {
+          rDrawing = true;
+          eraseNear(p);
+        } else if (rTool === 'start') {
+          var near = startPts.findIndex(function (sp) { return Math.hypot(sp.x - p.x, sp.y - p.y) < 14; });
+          if (near >= 0) startPts.splice(near, 1);
+          else if (startPts.length < 6) startPts.push(p);
+          drawRider(); updateRiderUi();
+        }
+      }
+      function rMove(e) {
+        if (!rDrawing) return;
+        e.preventDefault();
+        var p = rPos(e);
+        if (rTool === 'track' || rTool === 'accel') { curRStroke.pts.push(p); drawRider(); }
+        else if (rTool === 'erase') eraseNear(p);
+      }
+      function rUp() {
+        if (!rDrawing) return;
+        rDrawing = false;
+        if (curRStroke && curRStroke.pts.length > 1) { rStrokes.push(curRStroke); rebuildSegs(); }
+        curRStroke = null;
+        drawRider(); updateRiderUi();
+      }
+      function eraseNear(p) {
+        var before = rStrokes.length;
+        rStrokes = rStrokes.filter(function (s) {
+          return !s.pts.some(function (pt) { return Math.hypot(pt.x - p.x, pt.y - p.y) < 16; });
+        });
+        if (rStrokes.length !== before) { rebuildSegs(); drawRider(); updateRiderUi(); }
+      }
+
+      riderCanvas.addEventListener('mousedown', rDown);
+      riderCanvas.addEventListener('mousemove', rMove);
+      riderCanvas.addEventListener('mouseup', rUp);
+      riderCanvas.addEventListener('mouseleave', rUp);
+      riderCanvas.addEventListener('touchstart', rDown, { passive: false });
+      riderCanvas.addEventListener('touchmove', rMove, { passive: false });
+      riderCanvas.addEventListener('touchend', rUp);
+
+      document.querySelectorAll('#ppanel-rider .ptool[data-rtool]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          document.querySelectorAll('#ppanel-rider .ptool[data-rtool]').forEach(function (b) { b.classList.remove('is-active'); });
+          btn.classList.add('is-active'); rTool = btn.dataset.rtool;
+        });
+      });
+      document.getElementById('prider-undo') && document.getElementById('prider-undo').addEventListener('click', function () {
+        if (rStrokes.length) { rStrokes.pop(); rebuildSegs(); drawRider(); updateRiderUi(); }
+      });
+      document.getElementById('prider-clear') && document.getElementById('prider-clear').addEventListener('click', function () {
+        rStrokes = []; rSegs = []; startPts = []; riders = []; riderRunning = false; riderLiveMsg = '';
+        setRiderRunLabel();
+        drawRider(); updateRiderUi();
+      });
+
+      document.addEventListener('keydown', function (e) {
+        if (!document.getElementById('ppanel-rider').classList.contains('is-active')) return;
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); document.getElementById('prider-undo').click(); return; }
+        var map = { t: 'track', a: 'accel', e: 'erase', s: 'start' };
+        var t = map[e.key.toLowerCase()];
+        if (t) { var btn = document.querySelector('#ppanel-rider .ptool[data-rtool="'+t+'"]'); if (btn) btn.click(); }
+      });
+
+      // ── Sled physics: circle vs. drawn-line collision ────
+      var RG = 9.8 * PPM;
+
+      function closestOnSeg(px, py, x1, y1, x2, y2) {
+        var dx = x2-x1, dy = y2-y1, len2 = dx*dx+dy*dy;
+        var t = len2 ? Math.max(0, Math.min(1, ((px-x1)*dx+(py-y1)*dy)/len2)) : 0;
+        return { x: x1+dx*t, y: y1+dy*t };
+      }
+
+      function spawnRiders() {
+        var pts = startPts.length ? startPts : [{ x: 40, y: 40 }];
+        riders = pts.map(function (pt, i) {
+          return { x: pt.x, y: pt.y, vx: 0, vy: 0, r: 11, color: RIDER_COLORS[i % RIDER_COLORS.length], trail: [], offCourse: false, lastBoost: 0 };
+        });
+        bestSpeed = 0;
+        var coach = document.getElementById('prider-coach'); if (coach) coach.classList.add('is-hidden');
+      }
+
+      function stepRiders(dt, now) {
+        riders.forEach(function (rd) {
+          if (rd.offCourse) return;
+          rd.vy += RG * dt;
+          rd.vx *= 0.9998; rd.vy *= 0.9998;
+          rd.x += rd.vx * dt; rd.y += rd.vy * dt;
+
+          rSegs.forEach(function (seg) {
+            var cp = closestOnSeg(rd.x, rd.y, seg.x1, seg.y1, seg.x2, seg.y2);
+            var dx = rd.x-cp.x, dy = rd.y-cp.y, d = Math.hypot(dx, dy);
+            if (seg.type === 'accel') {
+              if (d < rd.r + 10 && now - rd.lastBoost > 260) {
+                var tlen = Math.hypot(seg.x2-seg.x1, seg.y2-seg.y1) || 1;
+                var tx = (seg.x2-seg.x1)/tlen, ty = (seg.y2-seg.y1)/tlen;
+                var sign = (rd.vx*tx+rd.vy*ty) >= 0 ? 1 : -1;
+                rd.vx += tx*sign*260; rd.vy += ty*sign*260;
+                rd.lastBoost = now;
+                riderLiveMsg = 'Boost! v = '+(Math.hypot(rd.vx,rd.vy)/PPM).toFixed(1)+' m/s';
+              }
+              return;
+            }
+            if (d >= rd.r || d < 0.0001) return;
+            var nx = dx/d, ny = dy/d;
+            rd.x += nx*(rd.r-d); rd.y += ny*(rd.r-d);
+            var tlen2 = Math.hypot(seg.x2-seg.x1, seg.y2-seg.y1) || 1;
+            var tx2 = (seg.x2-seg.x1)/tlen2, ty2 = (seg.y2-seg.y1)/tlen2;
+            var vt = rd.vx*tx2 + rd.vy*ty2;
+            var vn = rd.vx*nx + rd.vy*ny;
+            if (vn < 0) vn = 0;
+            vt *= 0.999;
+            rd.vx = vt*tx2 + vn*nx; rd.vy = vt*ty2 + vn*ny;
+          });
+
+          var v = Math.hypot(rd.vx, rd.vy) / PPM;
+          if (v > bestSpeed) bestSpeed = v;
+          if (rd.y > RH()+220 || rd.x < -220 || rd.x > RW()+220) rd.offCourse = true;
+        });
+        for (var i = 0; i < riders.length; i++) for (var j = i+1; j < riders.length; j++) {
+          var a = riders[i], b = riders[j];
+          if (a.offCourse || b.offCourse) continue;
+          var dxc = b.x-a.x, dyc = b.y-a.y, dc = Math.hypot(dxc, dyc), min = a.r+b.r;
+          if (dc >= min || dc < 0.0001) continue;
+          var nxc = dxc/dc, nyc = dyc/dc, ov = min-dc;
+          a.x -= nxc*ov*0.5; a.y -= nyc*ov*0.5; b.x += nxc*ov*0.5; b.y += nyc*ov*0.5;
+          var dvx = a.vx-b.vx, dvy = a.vy-b.vy, dot = dvx*nxc+dvy*nyc;
+          if (dot <= 0) continue;
+          var imp = dot*0.5;
+          a.vx -= imp*nxc; a.vy -= imp*nyc; b.vx += imp*nxc; b.vy += imp*nyc;
+        }
+      }
+
+      function drawRider() {
+        var W = RW(), H = RH();
+        rCtx.clearRect(0, 0, W, H);
+        drawGrid(rCtx, W, H);
+
+        rStrokes.forEach(paintRStroke);
+        if (curRStroke) paintRStroke(curRStroke);
+
+        startPts.forEach(function (pt, i) {
+          rCtx.save();
+          rCtx.fillStyle = RIDER_COLORS[i % RIDER_COLORS.length];
+          rCtx.beginPath(); rCtx.arc(pt.x, pt.y, 7, 0, Math.PI*2); rCtx.fill();
+          rCtx.strokeStyle = 'rgba(255,255,255,0.9)'; rCtx.lineWidth = 2; rCtx.stroke();
+          rCtx.fillStyle = 'rgba(0,0,0,0.55)'; rCtx.font = 'bold 9px monospace'; rCtx.textAlign = 'center';
+          rCtx.fillText('S'+(i+1), pt.x, pt.y-12);
+          rCtx.restore();
+        });
+
+        riders.forEach(function (rd) {
+          {
+            var last = rd.trail[rd.trail.length-1];
+            if (!last || Math.hypot(rd.x-last.x, rd.y-last.y) > 3) { rd.trail.push({x:rd.x,y:rd.y}); if (rd.trail.length>50) rd.trail.shift(); }
+            if (rd.trail.length > 1) {
+              rCtx.save(); rCtx.strokeStyle = rd.color; rCtx.globalAlpha = rd.offCourse ? 0.12 : 0.3; rCtx.lineWidth = 2;
+              rCtx.beginPath();
+              rd.trail.forEach(function (pt,i) { i?rCtx.lineTo(pt.x,pt.y):rCtx.moveTo(pt.x,pt.y); });
+              rCtx.stroke(); rCtx.restore();
+            }
+          }
+          if (rd.offCourse) return;
+          rCtx.save();
+          rCtx.globalAlpha = 1;
+          var grad = rCtx.createRadialGradient(rd.x-rd.r*0.3, rd.y-rd.r*0.3, rd.r*0.05, rd.x, rd.y, rd.r);
+          grad.addColorStop(0, lighten(rd.color, 0.5)); grad.addColorStop(1, rd.color);
+          rCtx.fillStyle = grad; rCtx.strokeStyle = 'rgba(0,0,0,0.2)'; rCtx.lineWidth = 1.5;
+          rCtx.beginPath(); rCtx.arc(rd.x, rd.y, rd.r, 0, Math.PI*2); rCtx.fill(); rCtx.stroke();
+          var v = Math.hypot(rd.vx, rd.vy) / PPM;
+          rCtx.fillStyle = 'rgba(255,255,255,0.95)'; rCtx.font = 'bold 9px monospace'; rCtx.textAlign = 'center';
+          rCtx.fillText('v='+v.toFixed(1)+'m/s', rd.x, rd.y-rd.r-4);
+          rCtx.restore();
+        });
+
+        var count = document.getElementById('prider-count');
+        var best = document.getElementById('prider-best');
+        var ro = document.getElementById('prider-readout');
+        var onCourse = riders.filter(function (rd) { return !rd.offCourse; }).length;
+        if (count) count.textContent = (riderRunning ? onCourse : startPts.length) + ' ' + (riderRunning ? 'racing' : 'riders');
+        if (best) best.textContent = 'best ' + bestSpeed.toFixed(1) + ' m/s';
+        if (ro) ro.textContent = riderLiveMsg || (riderRunning ? 'Racing — watch the slope accelerate each sled' : (startPts.length ? 'Ready — press Run' : 'Draw a course, then drop a start point'));
+      }
+      function paintRStroke(s) {
+        rCtx.save();
+        rCtx.lineCap = 'round'; rCtx.lineJoin = 'round';
+        if (s.type === 'accel') {
+          rCtx.strokeStyle = '#f59e0b'; rCtx.lineWidth = 5; rCtx.setLineDash([10,6]);
+        } else {
+          rCtx.strokeStyle = '#1f2937'; rCtx.lineWidth = 4; rCtx.setLineDash([]);
+        }
+        rCtx.beginPath();
+        s.pts.forEach(function (p, i) { i ? rCtx.lineTo(p.x, p.y) : rCtx.moveTo(p.x, p.y); });
+        rCtx.stroke();
+        rCtx.restore();
+      }
+
+      function riderLoop(ts) {
+        if (!riderLastT) riderLastT = ts;
+        var dt = Math.min((ts-riderLastT)/1000, 0.05); riderLastT = ts;
+        if (riderRunning) for (var s = 0; s < 3; s++) stepRiders(dt/3, ts);
+        drawRider();
+        riderRafId = requestAnimationFrame(riderLoop);
+      }
+      function startRider() { if (!riderRafId) { riderLastT = null; riderRafId = requestAnimationFrame(riderLoop); } }
+      function stopRider()  { if (riderRafId)  { cancelAnimationFrame(riderRafId); riderRafId = null; riderLastT = null; } }
+
+      function setRiderRunLabel() {
+        var btn = document.getElementById('prider-run');
+        if (btn) btn.innerHTML = riderRunning ? '⏸ Pause' : '▶ Run';
+      }
+      document.getElementById('prider-run') && document.getElementById('prider-run').addEventListener('click', function () {
+        if (!riders.length) spawnRiders();
+        riderRunning = !riderRunning;
+        riderLiveMsg = riderRunning ? '' : riderLiveMsg;
+        setRiderRunLabel();
+      });
+      document.getElementById('prider-reset') && document.getElementById('prider-reset').addEventListener('click', function () {
+        riderRunning = false; riderLiveMsg = '';
+        spawnRiders();
+        setRiderRunLabel();
+        drawRider();
+      });
+
+      document.getElementById('ptab-rider') && document.getElementById('ptab-rider').addEventListener('click', function () { stopPhys(); resizeR(); startRider(); });
+    }
+
     window.addEventListener('resize', function () {
       if (document.getElementById('ppanel-draw').classList.contains('is-active')) resizeD();
+      else if (document.getElementById('ppanel-rider') && document.getElementById('ppanel-rider').classList.contains('is-active')) resizeR();
       else resizeP();
     });
 

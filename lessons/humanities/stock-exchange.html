@@ -804,6 +804,7 @@
   <script src="../../assets/js/lesson-layout.js"></script>
   <script src="../../assets/js/theme-registry.js"></script>
   <script src="../../assets/js/nav-mobile.js"></script>
+  <script src="../../assets/js/sim-kit.js"></script>
   <script>
   /* ════════════════════════════════════════════════════
      STOCK EXCHANGE SIMULATOR
@@ -1260,8 +1261,6 @@
 
   /* ── Render all ──────────────────────────────────── */
   function renderAll() {
-    const dark = document.documentElement.dataset.theme === 'night';
-
     // Clock
     document.getElementById('sx-clock-day').textContent  = 'Day ' + (state.day + 1) + ' · ' + DAYS[state.day];
     document.getElementById('sx-clock-time').textContent = HOURS[state.hour];
@@ -1348,19 +1347,29 @@
     }
   }
 
+  /* ── Canvas Setup ────────────────────────────────── */
+  let chartSimCanvas = null;
+  chartSimCanvas = SimKit.canvas2d(document.getElementById('sx-chart'), { height: 160, dpr: 2, onResize: () => drawChart(state.selected) });
+  const sparkCanvases = {};
+  TICKERS.forEach(t => {
+    sparkCanvases[t] = SimKit.canvas2d(document.getElementById('sx-spark-' + t), { height: 28, dpr: 2 });
+  });
+
   /* ── Chart drawing ───────────────────────────────── */
   function drawChart(ticker) {
-    const canvas = document.getElementById('sx-chart');
-    const ctx = canvas.getContext('2d');
+    if (!chartSimCanvas) return;
+    const ctx = chartSimCanvas.ctx;
     const c = state.companies[ticker];
+    if (!c) return;
     const hist = c.ohlcHistory.slice(-MAX_CANDLES);
-    const W = canvas.width, H = canvas.height;
+    const W = chartSimCanvas.width, H = chartSimCanvas.height;
     const PADR = 8, PADL = 48, PADT = 12, PADB = 18;
-    const dark = document.documentElement.dataset.theme === 'night';
+    const colors = SimKit.theme.colors();
 
     ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = dark ? '#1a1a1c' : '#f9f9fb';
-    ctx.fillRect(0, 0, W, H);
+    // Background via CSS, or fill with bg
+    // ctx.fillStyle = colors.bg;
+    // ctx.fillRect(0, 0, W, H);
 
     if (hist.length < 2) return;
     const allPrices = hist.flatMap(d => [d.h, d.l]);
@@ -1375,22 +1384,28 @@
     for (let g = 0; g < 4; g++) {
       const p = minP + (g / 3) * rng;
       const y = fy(p);
-      ctx.strokeStyle = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+      ctx.globalAlpha = 0.08;
+      ctx.strokeStyle = colors.text;
       ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(PADL, y); ctx.lineTo(W - PADR, y); ctx.stroke();
-      ctx.fillStyle = dark ? 'rgba(255,255,255,0.38)' : '#94a3b8';
+      
+      ctx.globalAlpha = 0.6;
+      ctx.fillStyle = colors.textMuted;
       ctx.font = '10px Inter, sans-serif';
       ctx.textAlign = 'right';
       ctx.fillText('$' + p.toFixed(0), PADL - 4, y + 3.5);
     }
+    ctx.globalAlpha = 1.0;
 
     // Start price dashed line
     const startY = fy(c.start);
-    ctx.strokeStyle = dark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.18)';
+    ctx.globalAlpha = 0.2;
+    ctx.strokeStyle = colors.text;
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 3]);
     ctx.beginPath(); ctx.moveTo(PADL, startY); ctx.lineTo(W - PADR, startY); ctx.stroke();
     ctx.setLineDash([]);
+    ctx.globalAlpha = 1.0;
 
     const candleWidth = Math.max(6, (W - PADL - PADR) / hist.length - 3);
     hist.forEach((d, i) => {
@@ -1414,8 +1429,9 @@
 
   /* ── Sparkline drawing ───────────────────────────── */
   function drawSparkline(ticker) {
-    const canvas = document.getElementById('sx-spark-' + ticker);
-    const ctx = canvas.getContext('2d');
+    if (!sparkCanvases[ticker]) return;
+    const canvas = sparkCanvases[ticker];
+    const ctx = canvas.ctx;
     const c = state.companies[ticker];
     const hist = c.sparkHistory.slice(-22);
     const W = canvas.width, H = canvas.height;
@@ -1439,10 +1455,11 @@
   }
 
   /* ── Theme observer (redraw on dark mode toggle) ─── */
-  new MutationObserver(renderAll).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  SimKit.theme.onChange(renderAll);
 
   /* ── Init ─────────────────────────────────────────── */
-  renderAll();
+  // renderAll() is already called by SimKit.theme.onChange(renderAll) on init,
+  // but selectTicker is also needed.
   selectTicker(state.selected);
   </script>
 <script src="../../assets/js/lesson-print-button.js"></script>
