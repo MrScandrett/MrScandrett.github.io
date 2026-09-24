@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/algorithms-ai-module.css" />
   <style>
     .ll-viewport { --ll-panel-w: 300px; --ll-accent: #134c97; --ll-tab-active: #1c6ed7; --ll-tab-active-bg: rgba(28,110,215,0.10); }
 
@@ -1166,6 +1167,52 @@
           </div>
         </section>
 
+        <section class="section" aria-labelledby="minimax-backend-title">
+          <div class="section-head">
+            <h2 id="minimax-backend-title">Under the Hood: The Backend Code</h2>
+            <p>How do we translate this mathematical theory into actual code? The engine relies heavily on a concept called recursion.</p>
+          </div>
+          <article class="card minimax-explain">
+            <p>At the core of the engine is a recursive function—a function that repeatedly calls itself. When the AI needs to make a move, it calls a <code>minimax()</code> function to evaluate every available spot on the board.</p>
+            <p>The code logic looks roughly like this:</p>
+            <pre style="background:#f4f8ff; padding:1rem; border-radius:8px; overflow-x:auto; border:1px solid #dce5f2; font-family:'SFMono-Regular', Menlo, Consolas, monospace; font-size:0.85rem; color:#1f3048; line-height:1.45;">
+function minimax(board, isMaximizingPlayer) {
+  // 1. Base Case: Is the game over?
+  let score = evaluateBoard(board);
+  if (score === 1) return score;  // Maximizer won
+  if (score === -1) return score; // Minimizer won
+  if (isBoardFull(board)) return 0; // Draw
+
+  // 2. Recursive Step
+  if (isMaximizingPlayer) {
+    let bestVal = -Infinity;
+    for (let move of getAvailableMoves(board)) {
+      board.makeMove(move, "X");
+      let value = minimax(board, false); // Opponent's turn
+      board.undoMove(move);
+      bestVal = Math.max(bestVal, value);
+    }
+    return bestVal;
+  } else {
+    let bestVal = Infinity;
+    for (let move of getAvailableMoves(board)) {
+      board.makeMove(move, "O");
+      let value = minimax(board, true); // Opponent's turn
+      board.undoMove(move);
+      bestVal = Math.min(bestVal, value);
+    }
+    return bestVal;
+  }
+}</pre>
+            <div style="margin-top:1.2rem; display:grid; gap:0.75rem;">
+              <p><strong>Base Case (Terminal State)</strong>: Before making a move, the function checks if the game is over. If the board has reached a terminal state (win, loss, or draw), it immediately returns a fixed score (+1, -1, or 0) instead of digging deeper into the game tree.</p>
+              <p><strong>The Recursive Call</strong>: If the game isn't over, the function simulates a move in its imagination (<code>board.makeMove()</code>), and asks itself, "What would the opponent do now?" by calling <code>minimax()</code> again with the turn flipped.</p>
+              <p><strong>Backtracking</strong>: Crucially, after evaluating a simulated move, the AI must <code>undoMove()</code> to return the board to its original state so it can safely try the next node without leaving phantom pieces on the board.</p>
+              <p><strong>Minimizing and Maximizing</strong>: The maximizer starts with a baseline of <code>-Infinity</code> and looks for any score that is higher. The minimizer starts at <code>Infinity</code> and seeks anything lower. This exhaustive search explores every possible branch up to the specified depth.</p>
+            </div>
+          </article>
+        </section>
+
         <section class="section">
           <div class="section-head">
             <h2>Other von Neumann Projects</h2>
@@ -1354,6 +1401,8 @@
     </defs>
   </svg>
 <script src="../../../assets/js/lesson-print-button.js"></script>
+<script src="../../../assets/js/lessons/algorithms-ai-module.js"></script>
 <script src="../../../assets/js/photo-lightbox.js"></script>
+<script src="../../../assets/js/site-glossary.js"></script>
 </body>
 </html>

@@ -5,32 +5,864 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Natural Selection Lab · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
-  <meta name="description" content="Life Science Lesson — explore Natural Selection Lab." />
+  <meta name="description" content="Run a virtual moth population through generations of predation, drought, or cold and watch a heritable trait shift in real time — a hands-on model of variation, heritability, and differential survival." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
-</head>
-<body>
-  <div class="ll-viewport">
-    <div class="cl-page">
-      <div class="cl-hero">
-        <h1>Natural Selection Lab</h1>
-        <p class="cl-lede">Foundational STEAM lesson for Natural Selection Lab.</p>
-      </div>
+  <style>
+    .ll-viewport {
+      --ll-accent: #3f7d52;
+      --ll-tab-active: #3f7d52;
+      --ll-tab-active-bg: rgba(63, 125, 82, 0.14);
+    }
 
-      <div class="cl-card">
-        <h2>Overview</h2>
-        <p>This is the foundation for the Natural Selection Lab lesson. Add interactive simulations and content here.</p>
-        <figure data-zoomable>
-          <!-- Add image here -->
-          <figcaption>Placeholder image caption for Natural Selection Lab</figcaption>
-        </figure>
+    /* ── Natural Selection Lab Page Tokens ── */
+    .ns-page {
+      font-family: 'Inter', sans-serif;
+      color: #22301f;
+      background:
+        radial-gradient(circle at 6% 8%, rgba(169, 133, 48, 0.14), transparent 26%),
+        radial-gradient(circle at 92% 12%, rgba(63, 125, 82, 0.16), transparent 26%),
+        linear-gradient(180deg, #f7f6ee 0%, #eef2e6 100%);
+    }
+
+    .ns-shell {
+      width: min(1140px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.5rem 0 3.6rem;
+      display: grid;
+      gap: 1.1rem;
+    }
+
+    .ns-card {
+      border-radius: 22px;
+      border: 1px solid rgba(63, 125, 82, 0.18);
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 18px 46px rgba(24, 44, 26, 0.07);
+      padding: 1.4rem 1.5rem;
+    }
+
+    .ns-hero {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .ns-eyebrow {
+      margin: 0 0 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #3f7d52;
+    }
+
+    .ns-hero h1 {
+      margin: 0;
+      font-size: clamp(1.9rem, 3.6vw, 2.85rem);
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+      color: #1c3320;
+    }
+
+    .ns-lede {
+      margin: 0.9rem 0 0;
+      font-size: 1.02rem;
+      color: #3c4a37;
+      line-height: 1.68;
+    }
+    .ns-lede strong { color: #1c3320; }
+
+    .ns-idlist {
+      margin: 0;
+      padding-left: 1.1rem;
+      color: #3c4a37;
+      line-height: 1.8;
+      font-size: 0.94rem;
+    }
+    .ns-idlist li strong { color: #1c3320; }
+
+    .ns-h2 {
+      margin: 0 0 0.7rem;
+      font-size: 1.3rem;
+      color: #1c3320;
+      letter-spacing: -0.01em;
+    }
+
+    .ns-p {
+      margin: 0 0 0.7rem;
+      font-size: 0.95rem;
+      line-height: 1.68;
+      color: #37452f;
+    }
+    .ns-p:last-child { margin-bottom: 0; }
+    .ns-p strong { color: #1c3320; }
+
+    /* ── Three requirements ── */
+    .ns-req-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.9rem;
+      margin-top: 0.9rem;
+    }
+    .ns-req {
+      padding: 1rem 1.05rem;
+      border-radius: 16px;
+      background: #f2f7ee;
+      border: 1px solid rgba(63, 125, 82, 0.22);
+      position: relative;
+    }
+    .ns-req .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #3f7d52;
+      color: #fff;
+      font-size: 0.76rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+    }
+    .ns-req h3 {
+      margin: 0 0 0.35rem;
+      font-size: 0.98rem;
+      color: #1c3320;
+    }
+    .ns-req p {
+      margin: 0;
+      font-size: 0.87rem;
+      color: #45543e;
+      line-height: 1.58;
+    }
+
+    /* ── Real-world example cards ── */
+    .ns-example-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin-top: 0.9rem;
+    }
+    .ns-example {
+      padding: 1.1rem;
+      border-radius: 18px;
+      border: 1px solid rgba(169, 133, 48, 0.28);
+      background: #fbf7ea;
+      position: relative;
+    }
+    .ns-example .tag {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #fff;
+      background: #a98530;
+      border-radius: 999px;
+      padding: 0.18rem 0.6rem;
+      margin-bottom: 0.55rem;
+    }
+    .ns-example h3 {
+      margin: 0 0 0.4rem;
+      font-size: 1rem;
+      color: #4a3a10;
+    }
+    .ns-example p {
+      margin: 0;
+      font-size: 0.88rem;
+      color: #5a4a24;
+      line-height: 1.62;
+    }
+
+    /* ── Simulation ── */
+    .ns-sim-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 250px;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .ns-canvas-wrap {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #201a10;
+      border: 1px solid rgba(169, 133, 48, 0.3);
+      box-shadow: inset 0 0 30px rgba(0,0,0,0.35);
+      height: 480px;
+    }
+    .ns-canvas-wrap canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .ns-canvas-hint {
+      position: absolute;
+      left: 0.7rem;
+      bottom: 0.6rem;
+      font-size: 0.7rem;
+      color: rgba(255, 244, 214, 0.75);
+      background: rgba(0,0,0,0.35);
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      pointer-events: none;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .ns-controls {
+      display: grid;
+      gap: 0.7rem;
+      align-content: start;
+    }
+    .ns-control-group {
+      display: grid;
+      gap: 0.3rem;
+    }
+    .ns-control-group label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #3c4a37;
+      display: flex;
+      justify-content: space-between;
+    }
+    .ns-control-group select {
+      font-family: inherit;
+      font-size: 0.8rem;
+      padding: 0.4rem 0.5rem;
+      border-radius: 8px;
+      border: 1px solid rgba(63, 125, 82, 0.35);
+      background: #fff;
+      color: #1c3320;
+    }
+    .ns-control-group input[type="range"] {
+      width: 100%;
+      accent-color: #3f7d52;
+    }
+    .ns-btn {
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.55rem 0.7rem;
+      border-radius: 10px;
+      border: 1px solid rgba(63, 125, 82, 0.4);
+      background: #f2f7ee;
+      color: #1c3320;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .ns-btn:hover { background: #e2eed9; }
+    .ns-btn.primary {
+      background: #2e5f3d;
+      color: #fff;
+      border-color: #234a30;
+    }
+    .ns-btn.primary:hover { background: #234a30; }
+    .ns-btn.rust {
+      background: #b3462c;
+      color: #fff;
+      border-color: #96371f;
+    }
+    .ns-btn.rust:hover { background: #96371f; }
+
+    .ns-stats {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.76rem;
+      color: #3c4a37;
+      line-height: 1.7;
+      margin-top: 0.2rem;
+      padding-top: 0.7rem;
+      border-top: 1px dashed rgba(63, 125, 82, 0.3);
+    }
+    .ns-stats strong { color: #1c3320; }
+
+    .ns-legend {
+      font-size: 0.78rem;
+      color: #3c4a37;
+      line-height: 1.6;
+      margin-top: 0.6rem;
+      padding-top: 0.7rem;
+      border-top: 1px dashed rgba(63, 125, 82, 0.3);
+    }
+    .ns-legend strong { color: #1c3320; }
+
+    /* ── Reflection ── */
+    .ns-reflect-list {
+      display: grid;
+      gap: 0.6rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .ns-reflect-list li {
+      padding: 0.75rem 0.9rem;
+      border-radius: 12px;
+      background: #f2f7ee;
+      border-left: 3px solid #3f7d52;
+      font-size: 0.92rem;
+      color: #1c3320;
+      line-height: 1.55;
+    }
+    .ns-assess {
+      margin-top: 1rem;
+      padding: 1rem 1.1rem;
+      border-radius: 14px;
+      background: #fbf7ea;
+      border: 1px solid rgba(169, 133, 48, 0.3);
+    }
+    .ns-assess h3 {
+      margin: 0 0 0.5rem;
+      font-size: 0.95rem;
+      color: #4a3a10;
+    }
+    .ns-assess p {
+      margin: 0;
+      font-size: 0.88rem;
+      color: #5a4a24;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 900px) {
+      .ns-req-grid { grid-template-columns: 1fr 1fr; }
+      .ns-sim-layout { grid-template-columns: 1fr; }
+      .ns-canvas-wrap { height: 420px; }
+    }
+    @media (max-width: 740px) {
+      .ns-hero { grid-template-columns: 1fr; }
+      .ns-req-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="ns-page">
+<div class="ll-viewport">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="cl-page">
+    <main id="main-content">
+<div class="ns-shell">
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 1 — HERO
+     ════════════════════════════════════════════════════════════ -->
+  <div class="ns-hero">
+    <div class="ns-card">
+      <p class="ns-eyebrow">Life Sciences · Evolution</p>
+      <h1>Natural Selection Lab</h1>
+      <p class="ns-lede">
+        In 1811, almost every peppered moth resting on English tree bark was pale
+        and speckled — perfect camouflage against lichen-covered trunks. A century
+        of coal smoke later, soot had blackened the trees, and in the worst
+        industrial cities nearly every peppered moth was dark. No moth "decided"
+        to change color. Birds simply found the mismatched moths easier to see —
+        and eat. <strong>Natural selection isn't something a population chooses to
+        do; it's what happens automatically whenever some heritable traits survive
+        and reproduce better than others.</strong> Below, you'll run that exact
+        process yourself, generation by generation, on a virtual population.
+      </p>
+    </div>
+
+    <div class="ns-card">
+      <p class="ns-eyebrow">Quick ID</p>
+      <ul class="ns-idlist">
+        <li>Natural selection is <strong>not</strong> an organism trying to adapt</li>
+        <li>It needs three ingredients: <strong>variation, heritability, differential success</strong></li>
+        <li>It acts on populations <strong>over generations</strong>, not individuals in a lifetime</li>
+        <li>It can be driven by predators, climate, food supply, disease, or mates</li>
+        <li>The result: allele and trait frequencies shift over time — <strong>evolution</strong></li>
+      </ul>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 2 — THREE REQUIREMENTS
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="ns-card">
+    <h2 class="ns-h2">The Three Requirements for Natural Selection</h2>
+    <p class="ns-p">
+      Charles Darwin and Alfred Russel Wallace independently pieced together the
+      same logical chain in the 1850s. If these three things are all true of a
+      population, natural selection is <em>guaranteed</em> to happen — it isn't
+      optional, and it doesn't need anyone to intend it.
+    </p>
+    <div class="ns-req-grid">
+      <div class="ns-req">
+        <span class="num">1</span>
+        <h3>Variation</h3>
+        <p>Individuals in a population differ from one another — in color, size, speed, chemistry, behavior. No two individuals are identical.</p>
+      </div>
+      <div class="ns-req">
+        <span class="num">2</span>
+        <h3>Heritability</h3>
+        <p>At least some of that variation is passed from parent to offspring through genes, not just picked up from the environment during life.</p>
+      </div>
+      <div class="ns-req">
+        <span class="num">3</span>
+        <h3>Differential Survival &amp; Reproduction</h3>
+        <p>Some variants survive and reproduce more successfully than others, given the current environment — a predator, a climate, a food supply.</p>
       </div>
     </div>
   </div>
-  <script src="../../assets/js/photo-lightbox.js"></script>
-  <script src="../../assets/js/lesson-layout.js"></script>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 3 — REAL-WORLD EXAMPLES
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="ns-card">
+    <h2 class="ns-h2">Natural Selection in the Real World</h2>
+    <div class="ns-example-grid">
+      <div class="ns-example">
+        <span class="tag">Industrial Melanism</span>
+        <h3>Peppered Moths (Biston betularia)</h3>
+        <p>Pale speckled moths camouflaged well on clean lichen-covered bark. As coal smoke darkened trees across industrial England, dark ("melanic") moths — once rare — became common in polluted cities because birds could no longer spot them as easily. As air quality improved after the Clean Air Act, pale moths rebounded. The trait never disappeared; only its <em>frequency</em> changed with the environment.</p>
+      </div>
+      <div class="ns-example">
+        <span class="tag">Galápagos, 1970s–present</span>
+        <h3>Darwin's Finches</h3>
+        <p>Peter and Rosemary Grant tracked beak size in medium ground finches for decades. A single severe drought that killed off small, easy-to-crack seeds left only tough, large seeds behind — and birds with slightly deeper, stronger beaks survived to breed. Average beak depth measurably increased in a single generation, then shifted back after wetter years favored smaller beaks again.</p>
+      </div>
+      <div class="ns-example">
+        <span class="tag">Ongoing, worldwide</span>
+        <h3>Antibiotic Resistance</h3>
+        <p>A bacterial population already contains huge genetic variation. An antibiotic kills nearly all of them — except the rare cells whose genes happen to confer resistance. Those survivors reproduce freely with no competition, and within days the population is dominated by resistant bacteria. This is natural selection acting in real time, on a scale of hours instead of centuries.</p>
+      </div>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 4 — INTERACTIVE SIMULATION
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="ns-card">
+    <h2 class="ns-h2">Lab: Run a Population Through Generations</h2>
+    <p class="ns-p">
+      This is a population of 160 virtual moths. Each one carries a single
+      heritable trait — body color, from pale (0.0) to dark (1.0) — shown as a dot
+      color. Pick a selection pressure, set how strong it is, then step the
+      population forward one generation at a time (or press Play) and watch the
+      color histogram and trend line shift as the trait that survives best becomes
+      more common.
+    </p>
+    <div class="ns-sim-layout">
+      <div class="ns-canvas-wrap">
+        <canvas id="nsCanvas"></canvas>
+        <span class="ns-canvas-hint">Top: population · middle: trait histogram · bottom: generation trend</span>
+      </div>
+      <div class="ns-controls">
+        <div class="ns-control-group">
+          <label for="pressureSelect">Selection Pressure</label>
+          <select id="pressureSelect">
+            <option value="predation">Predation (camouflage vs. bark)</option>
+            <option value="drought">Drought (favors pale, heat-reflecting)</option>
+            <option value="cold">Cold Snap (favors dark, heat-absorbing)</option>
+            <option value="none">None (genetic drift only)</option>
+          </select>
+        </div>
+        <div class="ns-control-group">
+          <label>Bark / Target Tone <span id="envVal">50%</span></label>
+          <input type="range" id="envSlider" min="0" max="100" step="1" value="50" />
+        </div>
+        <div class="ns-control-group">
+          <label>Selection Strength <span id="strengthVal">60%</span></label>
+          <input type="range" id="strengthSlider" min="0" max="100" step="1" value="60" />
+        </div>
+        <div class="ns-control-group">
+          <label>Mutation Rate <span id="mutVal">3%</span></label>
+          <input type="range" id="mutSlider" min="0" max="10" step="1" value="3" />
+        </div>
+        <button class="ns-btn primary" id="stepBtn">Run 1 Generation</button>
+        <button class="ns-btn rust" id="playBtn">Play</button>
+        <button class="ns-btn" id="resetBtn">Reset Population</button>
+        <div class="ns-stats" id="nsStats">
+          Generation <strong>0</strong><br />
+          Mean trait <strong>0.50</strong><br />
+          Dark morph <strong>~50%</strong><br />
+          Last step: <strong>—</strong>
+        </div>
+        <div class="ns-legend">
+          <strong>Reading the sim:</strong> dots that closely match the bark/target
+          tone are hardest to select against and survive at higher rates. Every
+          generation, survivors' offspring inherit a trait close to their
+          parent's — plus a little random mutation — refilling the population back
+          to 160.
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 5 — REFLECTION & FORMATIVE ASSESSMENT
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="ns-card">
+    <h2 class="ns-h2">Discussion Prompts</h2>
+    <ul class="ns-reflect-list">
+      <li>Set Selection Strength to 0% and run 30 generations. Does the trait still drift around? What does this tell you about the difference between natural selection and random genetic drift?</li>
+      <li>Switch from Predation to Cold Snap partway through a run. How many generations does it take the population to visibly shift toward the new optimum? Would a slower-reproducing species (like elephants) shift as quickly as this simulation?</li>
+      <li>Set Mutation Rate to 0%, run the population to an extreme, then flip the target tone to the opposite side. What happens, and why does that matter for real populations facing sudden environmental change?</li>
+      <li>The peppered moth story is sometimes summarized as "moths turned dark to hide from birds." Rewrite that sentence so it accurately describes what natural selection actually did.</li>
+    </ul>
+    <div class="ns-assess">
+      <h3>Formative Check</h3>
+      <p>In two or three sentences, explain why a population of moths that all have <em>identical</em> genes for color could never undergo natural selection for color, no matter how many birds hunted them. Name which of the three requirements is missing.</p>
+    </div>
+  </div>
+
+</div><!-- /.ns-shell -->
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../index.html">Home</a> · <a href="../../steam-lessons.html">Lessons</a></p>
+  </footer>
+</div>
+
+<script src="../../assets/js/photo-lightbox.js"></script>
+<script src="../../assets/js/lesson-layout.js"></script>
+<script src="../../assets/js/sim-kit.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var canvas = document.getElementById('nsCanvas');
+  var box = canvas.parentElement;
+  var N = 160;
+  var MUT_BASE = 0.03;
+
+  var generation = 0;
+  var moths = [];
+  var history = []; // mean trait per generation
+  var lastStepText = '—';
+  var running = false;
+  var playTimer = null;
+
+  var pressureSelect = document.getElementById('pressureSelect');
+  var envSlider = document.getElementById('envSlider');
+  var strengthSlider = document.getElementById('strengthSlider');
+  var mutSlider = document.getElementById('mutSlider');
+  var envVal = document.getElementById('envVal');
+  var strengthVal = document.getElementById('strengthVal');
+  var mutVal = document.getElementById('mutVal');
+  var statsBox = document.getElementById('nsStats');
+  var stepBtn = document.getElementById('stepBtn');
+  var playBtn = document.getElementById('playBtn');
+  var resetBtn = document.getElementById('resetBtn');
+
+  function rand() { return Math.random(); }
+
+  function gaussian(std) {
+    // Box-Muller
+    var u = 1 - Math.random();
+    var v = Math.random();
+    var z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    return z * std;
+  }
+
+  function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+
+  function makeMoth(trait) {
+    return {
+      trait: trait,
+      x: rand(),
+      y: rand(),
+      phase: rand() * Math.PI * 2,
+      died: false
+    };
+  }
+
+  function seedPopulation() {
+    moths = [];
+    for (var i = 0; i < N; i++) moths.push(makeMoth(rand()));
+    generation = 0;
+    history = [meanTrait()];
+    lastStepText = '—';
+  }
+
+  function meanTrait() {
+    var s = 0;
+    for (var i = 0; i < moths.length; i++) s += moths[i].trait;
+    return moths.length ? s / moths.length : 0.5;
+  }
+
+  function envTarget() {
+    return clamp01(parseInt(envSlider.value, 10) / 100);
+  }
+  function strength() {
+    return clamp01(parseInt(strengthSlider.value, 10) / 100);
+  }
+  function mutationStd() {
+    return (parseInt(mutSlider.value, 10) / 100);
+  }
+
+  function applyPreset(kind) {
+    if (kind === 'predation') {
+      envSlider.value = 50;
+    } else if (kind === 'drought') {
+      envSlider.value = 15;
+    } else if (kind === 'cold') {
+      envSlider.value = 85;
+    } else if (kind === 'none') {
+      strengthSlider.value = 0;
+    }
+    syncLabels();
+  }
+
+  function syncLabels() {
+    envVal.textContent = envSlider.value + '%';
+    strengthVal.textContent = strengthSlider.value + '%';
+    mutVal.textContent = mutSlider.value + '%';
+  }
+
+  function stepGeneration() {
+    var target = envTarget();
+    var str = pressureSelect.value === 'none' ? 0 : strength();
+    var mut = MUT_BASE * 0 + mutationStd();
+
+    // Determine survivors
+    var survivors = [];
+    for (var i = 0; i < moths.length; i++) {
+      var m = moths[i];
+      var mismatch = Math.abs(m.trait - target); // 0 = perfectly matched
+      var deathChance = clamp01(str * mismatch * 2.2 + 0.015); // small baseline drift risk
+      if (rand() > deathChance) survivors.push(m);
+    }
+    if (survivors.length < 4) {
+      // avoid extinction: keep the best-matched individuals
+      var sorted = moths.slice().sort(function (a, b) {
+        return Math.abs(a.trait - target) - Math.abs(b.trait - target);
+      });
+      survivors = sorted.slice(0, Math.max(4, Math.floor(moths.length * 0.1)));
+    }
+
+    var died = moths.length - survivors.length;
+
+    // Repopulate to N via reproduction with mutation
+    var next = [];
+    for (var j = 0; j < N; j++) {
+      var parent = survivors[Math.floor(rand() * survivors.length)];
+      var offspringTrait = clamp01(parent.trait + gaussian(mut));
+      next.push(makeMoth(offspringTrait));
+    }
+    moths = next;
+    generation++;
+    history.push(meanTrait());
+    if (history.length > 400) history.shift();
+    lastStepText = died + ' of ' + (survivors.length + died) + ' died, ' + survivors.length + ' survived to breed';
+
+    updateStats();
+  }
+
+  function updateStats() {
+    var mt = meanTrait();
+    var darkPct = 0;
+    for (var i = 0; i < moths.length; i++) if (moths[i].trait > 0.5) darkPct++;
+    darkPct = Math.round((darkPct / moths.length) * 100);
+    statsBox.innerHTML =
+      'Generation <strong>' + generation + '</strong><br />' +
+      'Mean trait <strong>' + mt.toFixed(2) + '</strong><br />' +
+      'Dark morph <strong>~' + darkPct + '%</strong><br />' +
+      'Last step: <strong>' + lastStepText + '</strong>';
+  }
+
+  /* ── Rendering ── */
+  function traitColor(t) {
+    // pale cream -> mid tan -> dark umber
+    var stops = [
+      [237, 227, 200],
+      [176, 138, 82],
+      [92, 62, 30],
+      [42, 28, 14]
+    ];
+    var seg = clamp01(t) * (stops.length - 1);
+    var i0 = Math.min(stops.length - 2, Math.floor(seg));
+    var lt = seg - i0;
+    var c0 = stops[i0], c1 = stops[i0 + 1];
+    var r = c0[0] + (c1[0] - c0[0]) * lt;
+    var g = c0[1] + (c1[1] - c0[1]) * lt;
+    var b = c0[2] + (c1[2] - c0[2]) * lt;
+    return 'rgb(' + (r | 0) + ',' + (g | 0) + ',' + (b | 0) + ')';
+  }
+
+  function barkColor(t) {
+    var pale = [214, 201, 168];
+    var dark = [46, 36, 24];
+    var r = pale[0] + (dark[0] - pale[0]) * t;
+    var g = pale[1] + (dark[1] - pale[1]) * t;
+    var b = pale[2] + (dark[2] - pale[2]) * t;
+    return 'rgb(' + (r | 0) + ',' + (g | 0) + ',' + (b | 0) + ')';
+  }
+
+  function draw(ctx, w, h) {
+    var target = envTarget();
+
+    var scatterH = h * 0.5;
+    var histH = h * 0.32;
+    var trendH = h - scatterH - histH;
+
+    // ── Scatter band (population on bark) ──
+    ctx.fillStyle = barkColor(target);
+    ctx.fillRect(0, 0, w, scatterH);
+
+    var t = performance.now() / 1000;
+    var r = Math.max(3, Math.min(6, w / 140));
+    for (var i = 0; i < moths.length; i++) {
+      var m = moths[i];
+      var px = 20 + m.x * (w - 40) + Math.sin(t * 0.6 + m.phase) * 2;
+      var py = 16 + m.y * (scatterH - 32) + Math.cos(t * 0.5 + m.phase) * 2;
+      ctx.beginPath();
+      ctx.arc(px, py, r, 0, Math.PI * 2);
+      ctx.fillStyle = traitColor(m.trait);
+      ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+      ctx.lineWidth = 1;
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    // ── Histogram band ──
+    var histY = scatterH;
+    ctx.fillStyle = '#150f0a';
+    ctx.fillRect(0, histY, w, histH);
+
+    var bins = 12;
+    var counts = new Array(bins).fill(0);
+    for (var j = 0; j < moths.length; j++) {
+      var bi = Math.min(bins - 1, Math.floor(moths[j].trait * bins));
+      counts[bi]++;
+    }
+    var maxCount = Math.max(1, Math.max.apply(null, counts));
+    var padX = 14;
+    var barGap = 3;
+    var barW = (w - padX * 2 - barGap * (bins - 1)) / bins;
+    var baseline = histY + histH - 10;
+    var maxBarH = histH - 22;
+    for (var bIdx = 0; bIdx < bins; bIdx++) {
+      var bh = (counts[bIdx] / maxCount) * maxBarH;
+      var bx = padX + bIdx * (barW + barGap);
+      var by = baseline - bh;
+      ctx.fillStyle = traitColor((bIdx + 0.5) / bins);
+      ctx.fillRect(bx, by, barW, bh);
+    }
+    // target marker on histogram
+    var markerX = padX + target * (w - padX * 2);
+    ctx.strokeStyle = '#b3462c';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(markerX, histY + 6);
+    ctx.lineTo(markerX, baseline);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,244,214,0.85)';
+    ctx.font = '600 11px IBM Plex Mono, monospace';
+    ctx.fillText('trait distribution (pale → dark)', padX, histY + 16);
+
+    // ── Trend band ──
+    var trendY = histY + histH;
+    ctx.fillStyle = '#0f0c08';
+    ctx.fillRect(0, trendY, w, trendH);
+    ctx.fillStyle = 'rgba(255,244,214,0.85)';
+    ctx.font = '600 11px IBM Plex Mono, monospace';
+    ctx.fillText('mean trait over generations', padX, trendY + 14);
+
+    var histLen = history.length;
+    var plotTop = trendY + 20;
+    var plotH = trendH - 28;
+    var visibleN = Math.min(histLen, 120);
+    var startIdx = histLen - visibleN;
+    if (visibleN > 1) {
+      ctx.beginPath();
+      for (var k = 0; k < visibleN; k++) {
+        var val = history[startIdx + k];
+        var hx = padX + (k / (visibleN - 1)) * (w - padX * 2);
+        var hy = plotTop + (1 - val) * plotH;
+        if (k === 0) ctx.moveTo(hx, hy);
+        else ctx.lineTo(hx, hy);
+      }
+      ctx.strokeStyle = '#5cad74';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+    // target reference line on trend
+    var targetY = plotTop + (1 - target) * plotH;
+    ctx.strokeStyle = 'rgba(179,70,44,0.6)';
+    ctx.setLineDash([4, 3]);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padX, targetY);
+    ctx.lineTo(w - padX, targetY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  var sk = SimKit.canvas2d(canvas, {
+    box: box,
+    dpr: 2,
+    onResize: function (ctx, w, h) { draw(ctx, w, h); }
+  });
+
+  SimKit.loop(function () {
+    draw(sk.ctx, sk.width, sk.height);
+  });
+
+  /* ── Controls ── */
+  pressureSelect.addEventListener('change', function (e) {
+    applyPreset(e.target.value);
+  });
+  envSlider.addEventListener('input', syncLabels);
+  strengthSlider.addEventListener('input', syncLabels);
+  mutSlider.addEventListener('input', syncLabels);
+
+  stepBtn.addEventListener('click', function () {
+    stepGeneration();
+  });
+
+  playBtn.addEventListener('click', function () {
+    running = !running;
+    playBtn.textContent = running ? 'Pause' : 'Play';
+    if (running) {
+      playTimer = setInterval(stepGeneration, 550);
+    } else {
+      clearInterval(playTimer);
+      playTimer = null;
+    }
+  });
+
+  resetBtn.addEventListener('click', function () {
+    seedPopulation();
+    updateStats();
+    if (running) {
+      running = false;
+      playBtn.textContent = 'Play';
+      clearInterval(playTimer);
+      playTimer = null;
+    }
+  });
+
+  syncLabels();
+  seedPopulation();
+  updateStats();
+}());
+</script>
+<script src="../../assets/js/theme-registry.js"></script>
+<script src="../../assets/js/nav-mobile.js"></script>
+<script src="../../assets/js/lesson-print-button.js"></script>
 </body>
 </html>

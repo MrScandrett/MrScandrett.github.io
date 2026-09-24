@@ -2,8 +2,16 @@
 (function () {
   'use strict';
 
-  var PITCHES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  var PITCHES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+  var ROOTS = [
+    { label: 'C', pc: 0 }, { label: 'C♯', pc: 1 }, { label: 'D', pc: 2 },
+    { label: 'E♭', pc: 3 }, { label: 'E', pc: 4 }, { label: 'F', pc: 5 },
+    { label: 'F♯', pc: 6 }, { label: 'G', pc: 7 }, { label: 'A♭', pc: 8 },
+    { label: 'A', pc: 9 }, { label: 'B♭', pc: 10 }, { label: 'B', pc: 11 }
+  ];
   var LETTER_STEP = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6 };
+  var LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+  var NATURAL_PCS = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 
   /* Standard tuning, perfect 5ths apart, low to high. */
   var STRINGS = [
@@ -14,19 +22,19 @@
   ];
 
   var FULL_SPAN = 24;   /* two octaves shown per string on the full neck */
-  var FIRST_SPAN = 7;   /* first-position span: open (0) through the octave-adjacent 4th finger (7) */
+  var FIRST_SPAN = 7;   /* first position: open string through 4th finger, a perfect fifth higher */
 
   var INTERVAL_LABELS = ['R', '♭2', '2', '♭3', '3', '4', '♯4', '5', '♭6', '6', '♭7', '7'];
 
   var PATTERNS = [
-    { id: 'major', name: 'Major scale', kind: 'Scale', intervals: [0, 2, 4, 5, 7, 9, 11] },
-    { id: 'natminor', name: 'Natural minor scale', kind: 'Scale', intervals: [0, 2, 3, 5, 7, 8, 10] },
-    { id: 'harmminor', name: 'Harmonic minor scale', kind: 'Scale', intervals: [0, 2, 3, 5, 7, 8, 11] },
-    { id: 'melminor', name: 'Melodic minor scale (ascending)', kind: 'Scale', intervals: [0, 2, 3, 5, 7, 9, 11] },
-    { id: 'majtriad', name: 'Major triad', kind: 'Arpeggio', intervals: [0, 4, 7] },
-    { id: 'mintriad', name: 'Minor triad', kind: 'Arpeggio', intervals: [0, 3, 7] },
-    { id: 'dim7', name: 'Diminished 7th', kind: 'Arpeggio', intervals: [0, 3, 6, 9] },
-    { id: 'dom7', name: 'Dominant 7th', kind: 'Arpeggio', intervals: [0, 4, 7, 10] }
+    { id: 'major', name: 'Major scale', kind: 'Scale', intervals: [0, 2, 4, 5, 7, 9, 11], degrees: [0, 1, 2, 3, 4, 5, 6], labels: ['R', '2', '3', '4', '5', '6', '7'] },
+    { id: 'natminor', name: 'Natural minor scale', kind: 'Scale', intervals: [0, 2, 3, 5, 7, 8, 10], degrees: [0, 1, 2, 3, 4, 5, 6], labels: ['R', '2', '♭3', '4', '5', '♭6', '♭7'] },
+    { id: 'harmminor', name: 'Harmonic minor scale', kind: 'Scale', intervals: [0, 2, 3, 5, 7, 8, 11], degrees: [0, 1, 2, 3, 4, 5, 6], labels: ['R', '2', '♭3', '4', '5', '♭6', '7'] },
+    { id: 'melminor', name: 'Melodic minor scale (classical)', kind: 'Scale', intervals: [0, 2, 3, 5, 7, 9, 11], descendingIntervals: [10, 8, 7, 5, 3, 2, 0], descendingDegrees: [6, 5, 4, 3, 2, 1, 0], descendingLabels: ['♭7', '♭6', '5', '4', '♭3', '2', 'R'], degrees: [0, 1, 2, 3, 4, 5, 6], labels: ['R', '2', '♭3', '4', '5', '6', '7'] },
+    { id: 'majtriad', name: 'Major triad', kind: 'Arpeggio', intervals: [0, 4, 7], degrees: [0, 2, 4], labels: ['R', '3', '5'] },
+    { id: 'mintriad', name: 'Minor triad', kind: 'Arpeggio', intervals: [0, 3, 7], degrees: [0, 2, 4], labels: ['R', '♭3', '5'] },
+    { id: 'dim7', name: 'Diminished 7th chord', kind: 'Arpeggio', intervals: [0, 3, 6, 9], degrees: [0, 2, 4, 6], labels: ['R', '♭3', '♭5', '𝄫7'] },
+    { id: 'dom7', name: 'Dominant 7th chord', kind: 'Arpeggio', intervals: [0, 4, 7, 10], degrees: [0, 2, 4, 6], labels: ['R', '3', '5', '♭7'] }
   ];
 
   function mod12(n) { return ((n % 12) + 12) % 12; }
@@ -38,17 +46,28 @@
   function semitoneFrac(n) { return 1 - Math.pow(2, -n / 12); }
   function fracToSemitone(f) { return -12 * (Math.log(1 - f) / Math.LN2); }
 
-  /* Which finger (0=open .. 4) lands on a given scale/arpeggio degree in first position.
-     Major-shaped patterns (whole-whole-half-whole from the open string) use one slot map;
-     everything with a lowered 3rd (natural/harmonic/melodic minor, minor triad, dim7) uses
-     the "low 2nd/3rd finger" slot map real players learn for minor keys. Degrees that don't
-     land on a first-position slot (e.g. a dim7's b5) simply get no finger badge. */
-  var MAJOR_FINGER_SLOTS = [0, 2, 4, 5, 7];
-  var MINOR_FINGER_SLOTS = [0, 2, 3, 5, 7];
-  function fingerForInterval(patternId, iv) {
-    var slots = (patternId === 'major' || patternId === 'majtriad' || patternId === 'dom7') ? MAJOR_FINGER_SLOTS : MINOR_FINGER_SLOTS;
-    var idx = slots.indexOf(iv);
-    return idx === -1 ? null : idx;
+  /* First-position finger choice depends on distance from the open string, not scale degree.
+     L/H mean a finger is placed a semitone below/above its usual natural-note location. */
+  var FIRST_POSITION_FINGERS = ['0', 'L1', '1', 'L2', '2', '3', 'H3', '4'];
+  function fingerForOffset(offset) { return FIRST_POSITION_FINGERS[offset] || null; }
+
+  function accidentalFor(delta) {
+    if (delta === -2) return '𝄫';
+    if (delta === -1) return '♭';
+    if (delta === 1) return '♯';
+    if (delta === 2) return '𝄪';
+    return '';
+  }
+
+  function spellPattern(root, pattern) {
+    var rootLetterIndex = LETTERS.indexOf(root.label.charAt(0));
+    return pattern.intervals.map(function (interval, idx) {
+      var letter = LETTERS[(rootLetterIndex + pattern.degrees[idx]) % LETTERS.length];
+      var targetPc = mod12(root.pc + interval);
+      var delta = mod12(targetPc - NATURAL_PCS[letter]);
+      if (delta > 6) delta -= 12;
+      return letter + accidentalFor(delta);
+    });
   }
 
   function pcInfo(midi) {
@@ -75,6 +94,7 @@
 
   var ViolinTheory = {
     PITCHES: PITCHES,
+    ROOTS: ROOTS,
     STRINGS: STRINGS,
     FULL_SPAN: FULL_SPAN,
     FIRST_SPAN: FIRST_SPAN,
@@ -84,7 +104,9 @@
     pcInfo: pcInfo,
     noteName: noteName,
     freqOfMidi: freqOfMidi,
-    diatonicStep: diatonicStep
+    diatonicStep: diatonicStep,
+    fingerForOffset: fingerForOffset,
+    spellPattern: spellPattern
   };
   window.ViolinTheory = ViolinTheory;
 
@@ -401,6 +423,8 @@
         var tick = document.createElement('div');
         tick.className = 'vln-tick' + (i === 0 ? ' vln-tick-open' : '');
         tick.style.top = posPct + '%';
+        tick.setAttribute('data-semitones', String(i));
+        tick.setAttribute('data-midi', String(midi));
 
         var mark = document.createElement('span');
         mark.className = 'vln-tick-mark';
@@ -412,11 +436,12 @@
           tick.classList.add('is-hl');
           var deg = document.createElement('span');
           deg.className = 'vln-degree';
-          deg.textContent = INTERVAL_LABELS[hlIv];
+          var degreeIndex = self.highlight.pattern.intervals.indexOf(hlIv);
+          deg.textContent = self.highlight.pattern.labels[degreeIndex];
           tick.appendChild(deg);
 
           if (self.span === FIRST_SPAN) {
-            var finger = fingerForInterval(self.highlight.pattern.id, hlIv);
+            var finger = fingerForOffset(i);
             if (finger !== null) {
               var fingerEl = document.createElement('span');
               fingerEl.className = 'vln-finger';
@@ -459,30 +484,38 @@
     this.render();
   };
 
-  /* The order a violinist actually plays a highlighted scale/arpeggio: ascend each string
-     in turn (low string to high), skipping a note that's the exact same pitch as the one
-     that ended the previous string (a first-position 4th finger often lands on the same
-     note as the next string's open note), then mirror back down for the descent. */
+  /* Build one coherent octave, then choose a practical displayed location for each pitch.
+     Prefer first-position and open-string choices; never jump backward in pitch. */
   FingerboardWidget.prototype.getHighlightSequence = function () {
     if (!this.highlight) return [];
     var self = this;
     var rootPC = this.highlight.rootPC;
     var pattern = this.highlight.pattern;
-    var wanted = {};
-    pattern.intervals.forEach(function (iv) { wanted[mod12(rootPC + iv)] = true; });
+    var lowest = STRINGS[0].openMidi;
+    var rootMidi = lowest + mod12(rootPC - mod12(lowest));
+    var targets = pattern.intervals.map(function (iv) { return rootMidi + iv; });
+    targets.push(rootMidi + 12);
 
-    var seq = [];
-    var lastMidi = null;
-    STRINGS.forEach(function (str) {
-      for (var i = 0; i <= self.span; i++) {
-        var midi = str.openMidi + i;
-        if (!wanted[mod12(midi)]) continue;
-        if (midi === lastMidi) continue;
-        seq.push({ label: str.label, offset: i, midi: midi });
-        lastMidi = midi;
-      }
-    });
-    var down = seq.slice(0, -1).reverse();
+    function chooseLocation(midi) {
+      var choices = [];
+      STRINGS.forEach(function (str, stringIndex) {
+        var offset = midi - str.openMidi;
+        if (offset >= 0 && offset <= self.span) {
+          choices.push({ label: str.label, offset: offset, midi: midi, stringIndex: stringIndex });
+        }
+      });
+      choices.sort(function (a, b) {
+        var aShift = a.offset > FIRST_SPAN ? 1 : 0;
+        var bShift = b.offset > FIRST_SPAN ? 1 : 0;
+        return aShift - bShift || a.offset - b.offset || b.stringIndex - a.stringIndex;
+      });
+      return choices[0];
+    }
+
+    var seq = targets.map(chooseLocation).filter(Boolean);
+    var down = pattern.descendingIntervals
+      ? pattern.descendingIntervals.map(function (iv) { return chooseLocation(rootMidi + iv); }).filter(Boolean)
+      : seq.slice(0, -1).reverse();
     return seq.concat(down);
   };
 
@@ -580,7 +613,8 @@ document.addEventListener('DOMContentLoaded', function () {
     VT.STRINGS.forEach(function (str) {
       var s = board.played[str.label];
       if (s === undefined) return;
-      parts.push(str.label + ' ' + VT.noteName(str.openMidi + s));
+      var placement = s <= VT.FIRST_SPAN ? ' · common fingering ' + VT.fingerForOffset(s) : ' · +' + s + ' semitones';
+      parts.push(str.label + ' string · ' + VT.noteName(str.openMidi + s) + placement);
     });
     if (readout) readout.textContent = parts.length ? parts.join('  ·  ') : 'Click, tap, or drag a string to place a note.';
   };
@@ -592,6 +626,7 @@ document.addEventListener('DOMContentLoaded', function () {
     btn.addEventListener('click', function () {
       spanBtns.forEach(function (b) { b.classList.remove('is-active'); });
       btn.classList.add('is-active');
+      spanBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(b === btn)); });
       stopPlayback();
       board.setSpan(btn.getAttribute('data-vln-span') === 'first' ? VT.FIRST_SPAN : VT.FULL_SPAN);
     });
@@ -615,12 +650,12 @@ document.addEventListener('DOMContentLoaded', function () {
   var highlightOff = document.getElementById('vlnHighlightOff');
   var formulaOut = document.getElementById('vlnFormula');
   var playBtn = document.getElementById('vlnPlayPattern');
-  var currentRoot = 7; /* G, matches the violin's lowest open string */
+  var currentRoot = VT.ROOTS[7]; /* G, matches the violin's lowest open string */
   var currentPattern = VT.PATTERNS[0];
   var highlightOn = false;
   var playTimer = null;
 
-  function playLabel() { return highlightOn ? '▶ Play ' + currentPattern.kind.toLowerCase() : '▶ Play'; }
+  function playLabel() { return highlightOn ? '▶ Play one octave' : '▶ Play'; }
 
   function stopPlayback() {
     if (playTimer) { clearInterval(playTimer); playTimer = null; }
@@ -653,34 +688,45 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function applyHighlight() {
     stopPlayback();
-    board.setHighlight(highlightOn ? { rootPC: currentRoot, pattern: currentPattern } : null);
+    board.setHighlight(highlightOn ? { rootPC: currentRoot.pc, pattern: currentPattern } : null);
     if (playBtn) {
       playBtn.disabled = !highlightOn;
       playBtn.textContent = playLabel();
     }
+    if (highlightOff) highlightOff.setAttribute('aria-pressed', String(!highlightOn));
     if (formulaOut) {
       if (!highlightOn) {
         formulaOut.textContent = 'Pick a root and a pattern to highlight it across all four strings.';
       } else {
-        var degs = currentPattern.intervals.map(function (iv) { return VT.INTERVAL_LABELS[iv]; }).join(' – ');
-        formulaOut.textContent = VT.PITCHES[currentRoot] + ' ' + currentPattern.name + ' — ' + degs + ' (' + currentPattern.intervals.join(', ') + ' semitones)';
+        var pitches = VT.spellPattern(currentRoot, currentPattern);
+        var formulaHtml = '<strong>' + currentRoot.label + ' ' + currentPattern.name + '</strong>';
+        if (currentPattern.descendingIntervals) {
+          var descending = VT.spellPattern(currentRoot, { intervals: currentPattern.descendingIntervals, degrees: currentPattern.descendingDegrees });
+          formulaHtml += '<span>Up: ' + pitches.join(' · ') + '</span><span>Down: ' + descending.join(' · ') + '</span><small>Board highlights the ascending form; playback lowers 6 and 7 on the way down.</small>';
+        } else {
+          formulaHtml += '<span>' + pitches.join(' · ') + '</span><small>Degrees: ' + currentPattern.labels.join(' – ') + '</small>';
+        }
+        formulaOut.innerHTML = formulaHtml;
       }
     }
   }
 
   if (rootPicker) {
-    VT.PITCHES.forEach(function (name, idx) {
+    VT.ROOTS.forEach(function (root, idx) {
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'vln-pick-btn';
-      btn.textContent = name;
-      if (idx === currentRoot) btn.classList.add('is-active');
+      btn.textContent = root.label;
+      btn.setAttribute('aria-pressed', idx === 7 ? 'true' : 'false');
+      if (idx === 7) btn.classList.add('is-active');
       btn.addEventListener('click', function () {
-        currentRoot = idx;
+        currentRoot = root;
         highlightOn = true;
-        Array.prototype.forEach.call(rootPicker.children, function (c) { c.classList.remove('is-active'); });
+        Array.prototype.forEach.call(rootPicker.children, function (c) { c.classList.remove('is-active'); c.setAttribute('aria-pressed', 'false'); });
         btn.classList.add('is-active');
+        btn.setAttribute('aria-pressed', 'true');
         if (highlightOff) highlightOff.classList.remove('is-active');
+        if (highlightOff) highlightOff.setAttribute('aria-pressed', 'false');
         applyHighlight();
       });
       rootPicker.appendChild(btn);
@@ -692,13 +738,16 @@ document.addEventListener('DOMContentLoaded', function () {
       btn.type = 'button';
       btn.className = 'vln-pick-btn vln-pattern-btn';
       btn.textContent = pt.name;
+      btn.setAttribute('aria-pressed', idx === 0 ? 'true' : 'false');
       if (idx === 0) btn.classList.add('is-active');
       btn.addEventListener('click', function () {
         currentPattern = pt;
         highlightOn = true;
-        Array.prototype.forEach.call(patternPicker.children, function (c) { c.classList.remove('is-active'); });
+        Array.prototype.forEach.call(patternPicker.children, function (c) { c.classList.remove('is-active'); c.setAttribute('aria-pressed', 'false'); });
         btn.classList.add('is-active');
+        btn.setAttribute('aria-pressed', 'true');
         if (highlightOff) highlightOff.classList.remove('is-active');
+        if (highlightOff) highlightOff.setAttribute('aria-pressed', 'false');
         applyHighlight();
       });
       patternPicker.appendChild(btn);
@@ -708,8 +757,8 @@ document.addEventListener('DOMContentLoaded', function () {
     highlightOff.addEventListener('click', function () {
       highlightOn = false;
       highlightOff.classList.add('is-active');
-      if (rootPicker) Array.prototype.forEach.call(rootPicker.children, function (c) { c.classList.remove('is-active'); });
-      if (patternPicker) Array.prototype.forEach.call(patternPicker.children, function (c) { c.classList.remove('is-active'); });
+      if (rootPicker) Array.prototype.forEach.call(rootPicker.children, function (c) { c.classList.remove('is-active'); c.setAttribute('aria-pressed', 'false'); });
+      if (patternPicker) Array.prototype.forEach.call(patternPicker.children, function (c) { c.classList.remove('is-active'); c.setAttribute('aria-pressed', 'false'); });
       applyHighlight();
     });
   }
@@ -722,16 +771,39 @@ document.addEventListener('DOMContentLoaded', function () {
   /* Tabs */
   var tabBtns = document.querySelectorAll('.vln-tab');
   var panes = document.querySelectorAll('.vln-pane');
-  tabBtns.forEach(function (btn) {
+  function activateTab(btn, moveFocus) {
+    tabBtns.forEach(function (b) {
+      var active = b === btn;
+      b.classList.toggle('is-active', active);
+      b.setAttribute('aria-selected', String(active));
+      b.tabIndex = active ? 0 : -1;
+    });
+    panes.forEach(function (p) {
+      var active = p.id === 'pane-' + btn.getAttribute('data-tab');
+      p.classList.toggle('is-active', active);
+      p.hidden = !active;
+    });
+    if (moveFocus) btn.focus();
+  }
+
+  tabBtns.forEach(function (btn, index) {
+    btn.setAttribute('aria-controls', 'pane-' + btn.getAttribute('data-tab'));
+    btn.tabIndex = btn.classList.contains('is-active') ? 0 : -1;
     btn.addEventListener('click', function () {
-      tabBtns.forEach(function (b) { b.classList.remove('is-active'); b.setAttribute('aria-selected', 'false'); });
-      btn.classList.add('is-active');
-      btn.setAttribute('aria-selected', 'true');
-      panes.forEach(function (p) { p.classList.remove('is-active'); });
-      var target = document.getElementById('pane-' + btn.getAttribute('data-tab'));
-      if (target) target.classList.add('is-active');
+      activateTab(btn, false);
+    });
+    btn.addEventListener('keydown', function (event) {
+      var next = null;
+      if (event.key === 'ArrowRight') next = (index + 1) % tabBtns.length;
+      else if (event.key === 'ArrowLeft') next = (index - 1 + tabBtns.length) % tabBtns.length;
+      else if (event.key === 'Home') next = 0;
+      else if (event.key === 'End') next = tabBtns.length - 1;
+      if (next === null) return;
+      event.preventDefault();
+      activateTab(tabBtns[next], true);
     });
   });
+  panes.forEach(function (pane) { pane.hidden = !pane.classList.contains('is-active'); });
 
   /* Quiz */
   var checkBtn = document.getElementById('vlnCheckQuiz');
@@ -741,9 +813,12 @@ document.addEventListener('DOMContentLoaded', function () {
     var correct = 0;
     quiz.querySelectorAll('fieldset').forEach(function (fs) {
       var picked = fs.querySelector('input:checked');
-      if (picked && picked.value === 'correct') correct++;
+      var isCorrect = picked && picked.value === 'correct';
+      if (isCorrect) correct++;
+      fs.classList.toggle('is-correct', Boolean(isCorrect));
+      fs.classList.toggle('is-incorrect', !isCorrect);
     });
     var out = document.getElementById('vlnQuizResult');
-    out.textContent = correct === total ? 'All ' + total + ' correct!' : correct + ' of ' + total + ' correct — try again.';
+    out.textContent = correct === total ? 'All ' + total + ' correct. Your map of the fingerboard is in tune.' : correct + ' of ' + total + ' correct. Review the highlighted questions and try again.';
   });
 });

@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Materials Selection Lab · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="A capstone materials-selection lab: pick real materials against design constraints — weight, strength, heat safety, flexibility, and cost — for a bike frame, a pan handle, and a phone case." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .cl-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 300px; }
+
+    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .cl-hero h1 { max-width: 32ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+    [data-lighting="night"] .cl-lede,
+    [data-theme="vaporwave"] .cl-lede,
+    [data-theme="bark"] .cl-lede { color: rgba(245,245,247,0.7); }
+
+    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#5856d6); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .cl-card p  { margin: 0 0 0.6rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .cl-card p:last-child { margin-bottom: 0; }
+    [data-lighting="night"] .cl-card,
+    [data-theme="vaporwave"] .cl-card,
+    [data-theme="bark"] .cl-card { background: var(--white,#2c2c2e); }
+    [data-lighting="night"] .cl-card p,
+    [data-theme="vaporwave"] .cl-card p,
+    [data-theme="bark"] .cl-card p { color: rgba(245,245,247,0.72); }
+
+    .msl-scenario-btns { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin-bottom: 0.8rem; }
+    .msl-scenario-btn { padding: 0.6rem 0.4rem; border: 1px solid var(--line,#d2d2d7); border-radius: 10px; font-size: 0.82rem; font-weight: 700; cursor: pointer; background: var(--white,#fff); color: var(--text,#1d1d1f); text-align: center; }
+    .msl-scenario-btn.selected { background: #5856d6; color: #fff; border-color: #5856d6; }
+
+    .msl-lab { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; padding: 1rem; margin: 0.8rem 0; background: #f7f8fa; }
+    [data-lighting="night"] .msl-lab,
+    [data-theme="vaporwave"] .msl-lab,
+    [data-theme="bark"] .msl-lab { background: #1c1c1e; }
+
+    .msl-brief { font-size: 0.85rem; margin-bottom: 0.8rem; padding: 0.6rem 0.8rem; border-radius: 10px; background: rgba(88,86,214,0.08); border: 1px solid rgba(88,86,214,0.2); }
+    .msl-brief strong { color: #5856d6; }
+
+    .msl-mat-btns { display: grid; grid-template-columns: repeat(4,1fr); gap: 0.4rem; margin-bottom: 0.9rem; }
+    .msl-mat-btn { padding: 0.5rem 0.3rem; border: 1px solid var(--line,#d2d2d7); border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; background: var(--white,#fff); color: var(--text,#1d1d1f); text-align: center; }
+    .msl-mat-btn.selected { background: #5856d6; color: #fff; border-color: #5856d6; }
+
+    .msl-constraint { margin-bottom: 0.6rem; }
+    .msl-constraint-label { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .msl-bar-track { height: 10px; border-radius: 999px; background: rgba(0,0,0,0.08); overflow: hidden; }
+    .msl-bar-fill { height: 100%; border-radius: 999px; background: #94a3b8; transition: width 0.3s ease, background 0.3s ease; }
+    .msl-bar-fill.pass { background: #34c759; }
+    .msl-bar-fill.fail { background: #ff3b30; }
+
+    .msl-verdict { margin-top: 0.8rem; padding: 0.7rem 0.9rem; border-radius: 10px; font-weight: 700; font-size: 0.88rem; }
+    .msl-verdict.pass { background: rgba(52,199,89,0.14); color: #248a3d; }
+    .msl-verdict.fail { background: rgba(255,59,48,0.12); color: #c0392b; }
+
+    .msl-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin: 0.8rem 0; }
+    .msl-table th { text-align: center; padding: 0.35rem 0.4rem; background: rgba(88,86,214,0.08); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted, #64748b); }
+    .msl-table th:first-child, .msl-table td:first-child { text-align: left; }
+    .msl-table td { padding: 0.35rem 0.4rem; border-top: 1px solid var(--line,#d2d2d7); color: var(--text-secondary, #3f4f65); text-align: center; }
+    .msl-table tr.selected-row td { background: rgba(88,86,214,0.08); font-weight: 700; }
+
+    .cl-practice .cl-problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .cl-practice .cl-problem p { margin-bottom: 0.5rem; }
+    .cl-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .cl-ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 220px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .cl-check-btn { background: #5856d6; color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .cl-check-btn:hover { background: #423fc4; }
+    .cl-feedback { font-size: 0.82rem; font-weight: 600; }
+    .cl-feedback.ok  { color: #34c759; }
+    .cl-feedback.err { color: #ff3b30; }
+    .cl-hint { font-size: 0.78rem; color: var(--text-muted, #64748b); margin-top: 0.4rem; display: none; }
+    .diff-easy { background: rgba(52,199,89,0.15);  color: #248a3d; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-mid  { background: rgba(255,149,0,0.15);  color: #c07000; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-hard { background: rgba(255,59,48,0.12);  color: #c0392b; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="cl-page">
+
+        <section class="hero cl-hero">
+          <p class="eyebrow">Design, Materials &amp; Fabrication · Capstone · Grades 10–12</p>
+          <h1>Materials Selection Lab</h1>
+          <div class="cl-hero-meta">
+            <span>Tradeoffs</span><span class="dot"></span>
+            <span>Constraints</span><span class="dot"></span>
+            <span>Weight &amp; Strength</span><span class="dot"></span>
+            <span>Thermal &amp; Cost</span>
+          </div>
+          <p class="cl-lede">There is no single "best" material — only the material that best fits a specific job's constraints. This lab pulls together everything else in this module: the viscosity, elasticity, and conductivity you've already tested are exactly the kind of properties real engineers weigh against each other, every time they choose what to build with.</p>
+        </section>
+
+        <section class="cl-card" style="--card-accent:#5856d6;">
+          <h2>Every Choice Is a Tradeoff</h2>
+          <p>No material wins on every property at once. Steel is incredibly strong, but heavy. Silicone is light and flexible, but weak. A good engineer doesn't ask "what's the best material?" — they ask "what does <em>this specific job</em> actually require, and which material satisfies those constraints without wasting money on properties nobody needs?"</p>
+        </section>
+
+        <section class="cl-card" style="--card-accent:#f97316;">
+          <h2>Interactive: Pick a Material for the Job</h2>
+          <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Choose a design brief, then test materials against it. Green bars mean that constraint is satisfied.</p>
+
+          <div class="msl-scenario-btns">
+            <button class="msl-scenario-btn selected" data-scenario="bike" onclick="mslSetScenario('bike')">🚲 Bike Frame</button>
+            <button class="msl-scenario-btn" data-scenario="pan" onclick="mslSetScenario('pan')">🍳 Pan Handle</button>
+            <button class="msl-scenario-btn" data-scenario="phone" onclick="mslSetScenario('phone')">📱 Phone Case</button>
+          </div>
+
+          <div class="msl-lab">
+            <div class="msl-brief" id="msl-brief"></div>
+
+            <div class="msl-mat-btns" id="msl-mat-btns"></div>
+
+            <div id="msl-constraints"></div>
+            <div class="msl-verdict" id="msl-verdict">Pick a material above to test it against this brief.</div>
+          </div>
+
+          <table class="msl-table" id="msl-table">
+            <thead>
+              <tr><th>Material</th><th>Weight</th><th>Strength</th><th>Heat Safe</th><th>Flexible</th><th>Cost</th></tr>
+            </thead>
+            <tbody id="msl-table-body"></tbody>
+          </table>
+          <p style="font-size:0.74rem;color:var(--text-muted,#64748b);">Scores are 1–5. Weight: higher = lighter. Heat Safe: higher = stays cooler/safer to touch. Cost: higher = more expensive.</p>
+        </section>
+
+        <!-- Practice Problems -->
+        <section class="cl-card" style="--card-accent:#007aff;">
+          <h2>Practice Problems</h2>
+          <div class="cl-practice">
+
+            <div class="cl-problem">
+              <p><span class="diff-easy">Easy</span>1. A phone case needs to absorb drops without adding much weight. Which two properties matter most?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="mslans-1">
+                  <option value="">Choose…</option>
+                  <option value="flex-weight">Flexibility and weight</option>
+                  <option value="cost-heat">Cost and heat safety</option>
+                  <option value="strength-cost">Strength and cost</option>
+                </select>
+                <button class="cl-check-btn" onclick="mslCheckText(1,'flex-weight')">Check</button>
+                <span class="cl-feedback" id="mslfb-1"></span>
+              </div>
+              <div class="cl-hint" id="mslhint-1">Hint: Absorbing an impact without breaking is flexibility; "not adding much weight" is the weight score.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-easy">Easy</span>2. Why would steel be a poor choice for a pan handle?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="mslans-2" style="width:260px;">
+                  <option value="">Choose…</option>
+                  <option value="hot">It gets too hot to hold safely</option>
+                  <option value="expensive">It's always too expensive</option>
+                  <option value="light">It's too light to hold food</option>
+                </select>
+                <button class="cl-check-btn" onclick="mslCheckText(2,'hot')">Check</button>
+                <span class="cl-feedback" id="mslfb-2"></span>
+              </div>
+              <div class="cl-hint" id="mslhint-2">Hint: Steel conducts heat well — great for the cooking surface, dangerous for the handle.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-mid">Medium</span>3. Aluminum scores 4/5 weight and 4/5 strength. Why is it a common choice for bike frames instead of steel (1/5 weight, 5/5 strength)?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="mslans-3" style="width:300px;">
+                  <option value="">Choose…</option>
+                  <option value="balance">It balances "light enough" with "strong enough"</option>
+                  <option value="strongest">It's the strongest option available</option>
+                  <option value="cheapest">It's always the cheapest option</option>
+                </select>
+                <button class="cl-check-btn" onclick="mslCheckText(3,'balance')">Check</button>
+                <span class="cl-feedback" id="mslfb-3"></span>
+              </div>
+              <div class="cl-hint" id="mslhint-3">Hint: A bike frame doesn't need steel's extra strength badly enough to justify carrying its extra weight.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-mid">Medium</span>4. Silicone and ceramic both score 5/5 on heat safety. Why is silicone used for pot holders while ceramic is used for pan handles' decorative knobs, not the whole handle?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="mslans-4" style="width:280px;">
+                  <option value="">Choose…</option>
+                  <option value="strength">Ceramic is weak and can crack under stress; silicone flexes instead</option>
+                  <option value="cost">Ceramic is simply too cheap to trust</option>
+                  <option value="weight">Silicone is heavier than ceramic</option>
+                </select>
+                <button class="cl-check-btn" onclick="mslCheckText(4,'strength')">Check</button>
+                <span class="cl-feedback" id="mslfb-4"></span>
+              </div>
+              <div class="cl-hint" id="mslhint-4">Hint: Ceramic scores only 2/5 on strength — same heat safety, very different toughness under repeated stress.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-hard">Challenge</span>5. Copper conducts electricity better than steel and is a decent structural metal, but it's rarely used for tool handles or bike frames. Using the table above, name the property that rules it out for those jobs.</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="mslans-5" style="width:220px;">
+                  <option value="">Choose…</option>
+                  <option value="cost">Cost — it scores 4/5, the most expensive option</option>
+                  <option value="heat">Heat safety — it scores 5/5</option>
+                  <option value="flex">Flexibility — it scores 5/5</option>
+                </select>
+                <button class="cl-check-btn" onclick="mslCheckText(5,'cost')">Check</button>
+                <span class="cl-feedback" id="mslfb-5"></span>
+              </div>
+              <div class="cl-hint" id="mslhint-5">Hint: Copper's high cost is the main reason it's reserved for wiring and plumbing, not general structural parts.</div>
+            </div>
+
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../index.html">Home</a> · <a href="../../steam-lessons.html">Lessons</a></p>
+        </footer>
+      </main>
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="msl-pane-sim">Brief</button>
+          <button class="ll-tab" aria-selected="false" data-pane="msl-pane-guide">Summary</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="msl-pane-sim">
+          <div class="ll-info"><strong>How to use this lab</strong> Pick a design brief in the main panel, then click through every material to see which ones satisfy both constraint bars.</div>
+          <div class="ll-info"><strong>There's rarely one right answer</strong> Some briefs have more than one material that passes — the practice problems ask you to explain the tradeoff, not just pick an answer.</div>
+        </div>
+
+        <div class="ll-pane" id="msl-pane-guide">
+          <div class="ll-info"><strong>Weight</strong> Higher score = lighter material. Matters most for anything carried or worn.</div>
+          <div class="ll-info"><strong>Strength</strong> Resistance to bending, cracking, or breaking under load.</div>
+          <div class="ll-info"><strong>Heat Safe</strong> Higher score = stays cooler and safer to touch near heat.</div>
+          <div class="ll-info"><strong>Flexible</strong> Higher score = bends or absorbs impact instead of shattering.</div>
+          <div class="ll-info"><strong>Cost</strong> Higher score = more expensive — a real constraint on every real project.</div>
+        </div>
+
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+</div><!-- .ll-viewport -->
+
+<script src="../../assets/js/theme-registry.js"></script>
+<script src="../../assets/js/nav-mobile.js"></script>
+<script>
+  var MSL_MATERIALS = {
+    aluminum: { label: 'Aluminum',    weight: 4, strength: 4, heatSafe: 1, flex: 2, cost: 3 },
+    steel:    { label: 'Steel',       weight: 1, strength: 5, heatSafe: 1, flex: 1, cost: 2 },
+    wood:     { label: 'Wood',        weight: 3, strength: 2, heatSafe: 4, flex: 2, cost: 2 },
+    abs:      { label: 'ABS Plastic', weight: 5, strength: 2, heatSafe: 3, flex: 4, cost: 1 },
+    silicone: { label: 'Silicone',    weight: 5, strength: 1, heatSafe: 5, flex: 5, cost: 2 },
+    copper:   { label: 'Copper',      weight: 2, strength: 3, heatSafe: 1, flex: 2, cost: 4 },
+    ceramic:  { label: 'Ceramic',     weight: 2, strength: 2, heatSafe: 5, flex: 1, cost: 3 }
+  };
+
+  var MSL_SCENARIOS = {
+    bike: {
+      brief: '<strong>Bike Frame:</strong> Needs to be light enough to pedal uphill, and strong enough to hold a rider’s weight over rough roads.',
+      constraints: [
+        { key: 'weight',   label: 'Light enough (weight ≥ 4/5)', min: 4 },
+        { key: 'strength', label: 'Strong enough (strength ≥ 4/5)', min: 4 }
+      ]
+    },
+    pan: {
+      brief: '<strong>Pan Handle:</strong> Sits inches from a hot cooking surface — it must stay safe to grip bare-handed.',
+      constraints: [
+        { key: 'heatSafe', label: 'Stays cool enough to grip (heat safe ≥ 4/5)', min: 4 },
+        { key: 'strength', label: 'Won’t crack from daily use (strength ≥ 2/5)', min: 2 }
+      ]
+    },
+    phone: {
+      brief: '<strong>Phone Case:</strong> Has to survive being dropped, without making the phone bulky and heavy.',
+      constraints: [
+        { key: 'flex',   label: 'Absorbs impact (flexible ≥ 4/5)', min: 4 },
+        { key: 'weight', label: 'Stays light (weight ≥ 4/5)', min: 4 }
+      ]
+    }
+  };
+
+  var mslCurrentScenario = 'bike';
+  var mslCurrentMaterial = null;
+
+  function mslRenderTable() {
+    var body = document.getElementById('msl-table-body');
+    body.innerHTML = '';
+    Object.keys(MSL_MATERIALS).forEach(function (key) {
+      var m = MSL_MATERIALS[key];
+      var row = document.createElement('tr');
+      row.dataset.mat = key;
+      row.innerHTML = '<td>' + m.label + '</td><td>' + m.weight + '</td><td>' + m.strength + '</td><td>' + m.heatSafe + '</td><td>' + m.flex + '</td><td>' + m.cost + '</td>';
+      body.appendChild(row);
+    });
+  }
+
+  function mslRenderMatButtons() {
+    var wrap = document.getElementById('msl-mat-btns');
+    wrap.innerHTML = '';
+    Object.keys(MSL_MATERIALS).forEach(function (key) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'msl-mat-btn';
+      btn.dataset.mat = key;
+      btn.textContent = MSL_MATERIALS[key].label;
+      btn.addEventListener('click', function () { mslSetMaterial(key); });
+      wrap.appendChild(btn);
+    });
+  }
+
+  function mslSetScenario(id) {
+    mslCurrentScenario = id;
+    document.querySelectorAll('.msl-scenario-btn').forEach(function (b) {
+      b.classList.toggle('selected', b.dataset.scenario === id);
+    });
+    document.getElementById('msl-brief').innerHTML = MSL_SCENARIOS[id].brief;
+    mslCurrentMaterial = null;
+    document.querySelectorAll('.msl-mat-btn').forEach(function (b) { b.classList.remove('selected'); });
+    document.querySelectorAll('#msl-table-body tr').forEach(function (r) { r.classList.remove('selected-row'); });
+    mslRenderConstraints(null);
+  }
+
+  function mslSetMaterial(key) {
+    mslCurrentMaterial = key;
+    document.querySelectorAll('.msl-mat-btn').forEach(function (b) {
+      b.classList.toggle('selected', b.dataset.mat === key);
+    });
+    document.querySelectorAll('#msl-table-body tr').forEach(function (r) {
+      r.classList.toggle('selected-row', r.dataset.mat === key);
+    });
+    mslRenderConstraints(key);
+  }
+
+  function mslRenderConstraints(matKey) {
+    var scenario = MSL_SCENARIOS[mslCurrentScenario];
+    var wrap = document.getElementById('msl-constraints');
+    var verdict = document.getElementById('msl-verdict');
+    wrap.innerHTML = '';
+
+    var allPass = true;
+    scenario.constraints.forEach(function (c) {
+      var score = matKey ? MSL_MATERIALS[matKey][c.key] : 0;
+      var pct = (score / 5) * 100;
+      var passed = matKey ? score >= c.min : null;
+      if (!passed) allPass = false;
+
+      var row = document.createElement('div');
+      row.className = 'msl-constraint';
+      row.innerHTML =
+        '<div class="msl-constraint-label"><span>' + c.label + '</span><span>' + (matKey ? score + '/5' : '—') + '</span></div>' +
+        '<div class="msl-bar-track"><div class="msl-bar-fill ' + (matKey ? (passed ? 'pass' : 'fail') : '') + '" style="width:' + pct + '%;"></div></div>';
+      wrap.appendChild(row);
+    });
+
+    if (!matKey) {
+      verdict.textContent = 'Pick a material above to test it against this brief.';
+      verdict.className = 'msl-verdict';
+      return;
+    }
+    var label = MSL_MATERIALS[matKey].label;
+    if (allPass) {
+      verdict.textContent = '✓ ' + label + ' satisfies every constraint for this job.';
+      verdict.className = 'msl-verdict pass';
+    } else {
+      verdict.textContent = '✗ ' + label + ' falls short of at least one constraint for this job.';
+      verdict.className = 'msl-verdict fail';
+    }
+  }
+
+  function mslCheckText(n, correct) {
+    var sel = document.getElementById('mslans-' + n);
+    var fb = document.getElementById('mslfb-' + n);
+    var hint = document.getElementById('mslhint-' + n);
+    if (!sel.value) { fb.textContent = 'Pick an answer first.'; fb.className = 'cl-feedback err'; return; }
+    if (sel.value === correct) {
+      fb.textContent = '✓ Correct!'; fb.className = 'cl-feedback ok'; hint.style.display = 'none';
+    } else {
+      fb.textContent = '✗ Not quite — check the hint below.'; fb.className = 'cl-feedback err'; hint.style.display = 'block';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    mslRenderTable();
+    mslRenderMatButtons();
+    mslSetScenario('bike');
+  });
+</script>
+<script src="../../assets/js/classroom-animations.js"></script>
+<script src="../../assets/js/lesson-layout.js"></script>
+<script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Engineering Design Process Studio · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta name="description" content="A capstone engineering lesson: walk the Define, Model, Prototype, Test, and Iterate design loop against a real constraint-driven rescue-drone brief." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <style>
+    .cl-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 300px; }
+
+    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .cl-hero h1 { max-width: 34ch; margin-left: 0; margin-right: 0; font-size: clamp(1.5rem, 3.5vw, 2.2rem); }
+    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+    [data-lighting="night"] .cl-lede,
+    [data-theme="vaporwave"] .cl-lede,
+    [data-theme="bark"] .cl-lede { color: rgba(245,245,247,0.7); }
+
+    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#5856d6); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .cl-card p  { margin: 0 0 0.6rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .cl-card p:last-child { margin-bottom: 0; }
+    [data-lighting="night"] .cl-card,
+    [data-theme="vaporwave"] .cl-card,
+    [data-theme="bark"] .cl-card { background: var(--white,#2c2c2e); }
+    [data-lighting="night"] .cl-card p,
+    [data-theme="vaporwave"] .cl-card p,
+    [data-theme="bark"] .cl-card p { color: rgba(245,245,247,0.72); }
+
+    .eds-stage-btns { display: grid; grid-template-columns: repeat(5,1fr); gap: 0.4rem; margin-bottom: 0.8rem; }
+    .eds-stage-btn { padding: 0.5rem 0.2rem; border: 1px solid var(--line,#d2d2d7); border-radius: 10px; font-size: 0.74rem; font-weight: 700; cursor: pointer; background: var(--white,#fff); color: var(--text,#1d1d1f); text-align: center; }
+    .eds-stage-btn.selected { background: #5856d6; color: #fff; border-color: #5856d6; }
+    .eds-stage-btn.done::after { content: ' ✓'; }
+
+    .eds-panel { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; padding: 1rem; margin: 0.8rem 0; background: #f7f8fa; }
+    [data-lighting="night"] .eds-panel,
+    [data-theme="vaporwave"] .eds-panel,
+    [data-theme="bark"] .eds-panel { background: #1c1c1e; }
+
+    .eds-brief-list { list-style: none; margin: 0.6rem 0 0; padding: 0; display: grid; gap: 0.5rem; }
+    .eds-brief-list li { display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.86rem; padding: 0.5rem 0.7rem; border-radius: 10px; background: rgba(88,86,214,0.08); border: 1px solid rgba(88,86,214,0.2); }
+
+    .eds-choice-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin-bottom: 0.7rem; }
+    .eds-choice-card { border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.6rem; cursor: pointer; text-align: center; background: var(--white,#fff); }
+    .eds-choice-card.selected { border-color: #5856d6; box-shadow: 0 0 0 2px rgba(88,86,214,0.25); }
+    .eds-choice-card strong { display: block; font-size: 0.82rem; margin-bottom: 0.3rem; }
+    .eds-choice-card small { font-size: 0.72rem; color: var(--text-muted, #64748b); line-height: 1.4; display: block; }
+
+    .eds-readouts { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin: 0.7rem 0; }
+    .eds-readout { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.7rem; text-align: center; }
+    [data-lighting="night"] .eds-readout,
+    [data-theme="vaporwave"] .eds-readout,
+    [data-theme="bark"] .eds-readout { background: rgba(255,255,255,0.06); }
+    .eds-readout-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #64748b); display: block; margin-bottom: 0.2rem; }
+    .eds-readout-val { font-size: 0.92rem; font-weight: 700; color: #5856d6; }
+
+    .eds-constraint { margin-bottom: 0.6rem; }
+    .eds-constraint-label { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .eds-bar-track { height: 10px; border-radius: 999px; background: rgba(0,0,0,0.08); overflow: hidden; }
+    .eds-bar-fill { height: 100%; border-radius: 999px; background: #94a3b8; transition: width 0.3s ease, background 0.3s ease; }
+    .eds-bar-fill.pass { background: #34c759; }
+    .eds-bar-fill.fail { background: #ff3b30; }
+    .eds-verdict { margin-top: 0.8rem; padding: 0.7rem 0.9rem; border-radius: 10px; font-weight: 700; font-size: 0.88rem; }
+    .eds-verdict.pass { background: rgba(52,199,89,0.14); color: #248a3d; }
+    .eds-verdict.fail { background: rgba(255,59,48,0.12); color: #c0392b; }
+
+    .eds-log { font-size: 0.84rem; line-height: 1.7; }
+    .eds-log dt { font-weight: 700; color: #5856d6; }
+    .eds-log dd { margin: 0 0 0.5rem; }
+
+    .eds-textarea { width: 100%; min-height: 110px; border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.6rem 0.8rem; font-family: inherit; font-size: 0.88rem; resize: vertical; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+
+    .cl-practice .cl-problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .cl-practice .cl-problem p { margin-bottom: 0.5rem; }
+    .cl-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .cl-ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 260px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .cl-check-btn { background: #5856d6; color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .cl-check-btn:hover { background: #423fc4; }
+    .cl-feedback { font-size: 0.82rem; font-weight: 600; }
+    .cl-feedback.ok  { color: #34c759; }
+    .cl-feedback.err { color: #ff3b30; }
+    .cl-hint { font-size: 0.78rem; color: var(--text-muted, #64748b); margin-top: 0.4rem; display: none; }
+    .diff-easy { background: rgba(52,199,89,0.15);  color: #248a3d; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-mid  { background: rgba(255,149,0,0.15);  color: #c07000; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-hard { background: rgba(255,59,48,0.12);  color: #c0392b; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../recipe-book.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="cl-page">
+
+        <section class="hero cl-hero">
+          <p class="eyebrow">Engineering Systems &amp; Electronics · Capstone · Grades 11–12</p>
+          <h1>Engineering Design Process Studio</h1>
+          <div class="cl-hero-meta">
+            <span>Define</span><span class="dot"></span>
+            <span>Model</span><span class="dot"></span>
+            <span>Prototype</span><span class="dot"></span>
+            <span>Test</span><span class="dot"></span>
+            <span>Iterate</span>
+          </div>
+          <p class="cl-lede">Every lesson in this module has been one piece of the engineering process: reading parts, wiring circuits, tuning feedback loops, sizing structures. This capstone walks the whole loop at once, against one real, constraint-driven brief — and asks you to defend the tradeoffs you make, not just pick an answer.</p>
+        </section>
+
+        <section class="cl-card" style="--card-accent:#5856d6;">
+          <h2>The Design Loop</h2>
+          <p>Real engineering isn't a straight line from idea to finished product — it's a loop. You define the problem, build a model of a solution, prototype it, test it against reality, and use what you learn to go back and improve it. Work through all five stages below for one brief: a drone rig built to drop emergency supplies to a stranded hiker.</p>
+        </section>
+
+        <section class="cl-card" style="--card-accent:#f97316;">
+          <h2>Studio: Design a Rescue-Supply Drone Rig</h2>
+
+          <div class="eds-stage-btns">
+            <button class="eds-stage-btn selected" data-stage="define" onclick="edsSetStage('define')">1. Define</button>
+            <button class="eds-stage-btn" data-stage="model" onclick="edsSetStage('model')">2. Model</button>
+            <button class="eds-stage-btn" data-stage="prototype" onclick="edsSetStage('prototype')">3. Prototype</button>
+            <button class="eds-stage-btn" data-stage="test" onclick="edsSetStage('test')">4. Test</button>
+            <button class="eds-stage-btn" data-stage="iterate" onclick="edsSetStage('iterate')">5. Iterate</button>
+          </div>
+
+          <div class="eds-panel">
+            <!-- Define -->
+            <div id="eds-pane-define">
+              <p style="font-size:0.86rem;"><strong>Brief:</strong> A hiker is stranded on a ridge no vehicle can reach. Your rig must hang below a delivery drone and release a supply pack remotely, without landing.</p>
+              <ul class="eds-brief-list">
+                <li>📦 Payload (supply pack) must not exceed <strong>500 g</strong></li>
+                <li>⚖️ Total rig weight (frame + release mechanism, empty) must not exceed <strong>700 g</strong> so the drone can still carry the payload within its lift limit</li>
+                <li>💥 The rig must survive a <strong>2 m drop test</strong> onto rock without breaking</li>
+                <li>📡 The release must be triggerable remotely — no manual pin-pulling</li>
+              </ul>
+            </div>
+
+            <!-- Model -->
+            <div id="eds-pane-model" style="display:none;">
+              <p style="font-size:0.86rem;">Choose a frame material. Every material trades weight against durability.</p>
+              <div class="eds-choice-grid" id="eds-frame-choices"></div>
+            </div>
+
+            <!-- Prototype -->
+            <div id="eds-pane-prototype" style="display:none;">
+              <p style="font-size:0.86rem;">Choose a release mechanism. It has to work by remote signal — no exceptions.</p>
+              <div class="eds-choice-grid" id="eds-mech-choices"></div>
+              <div class="eds-readouts">
+                <div class="eds-readout"><span class="eds-readout-label">Frame</span><span class="eds-readout-val" id="eds-r-frame">—</span></div>
+                <div class="eds-readout"><span class="eds-readout-label">Mechanism</span><span class="eds-readout-val" id="eds-r-mech">—</span></div>
+                <div class="eds-readout"><span class="eds-readout-label">Rig Weight</span><span class="eds-readout-val" id="eds-r-weight">—</span></div>
+              </div>
+            </div>
+
+            <!-- Test -->
+            <div id="eds-pane-test" style="display:none;">
+              <p style="font-size:0.86rem;">Testing your prototype against every constraint from the brief.</p>
+              <div id="eds-constraints"></div>
+              <div class="eds-verdict" id="eds-verdict">Finish Model and Prototype first.</div>
+            </div>
+
+            <!-- Iterate -->
+            <div id="eds-pane-iterate" style="display:none;">
+              <dl class="eds-log" id="eds-log"></dl>
+              <p style="font-size:0.86rem;"><strong>Iterate:</strong> Whether your design passed or failed, a real engineer writes down what they'd change next and why. Do that now.</p>
+              <textarea class="eds-textarea" id="eds-reflection" placeholder="If this rig failed a constraint, what would you change first — and why that one thing? If it passed, what would you improve to make it lighter, cheaper, or more reliable anyway?"></textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- Practice Problems -->
+        <section class="cl-card" style="--card-accent:#007aff;">
+          <h2>Practice Problems</h2>
+          <div class="cl-practice">
+
+            <div class="cl-problem">
+              <p><span class="diff-easy">Easy</span>1. Put the design loop in order: Test, Define, Iterate, Model, Prototype.</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="edsans-1" style="width:340px;">
+                  <option value="">Choose…</option>
+                  <option value="correct">Define → Model → Prototype → Test → Iterate</option>
+                  <option value="wrong1">Model → Define → Test → Prototype → Iterate</option>
+                  <option value="wrong2">Prototype → Test → Define → Model → Iterate</option>
+                </select>
+                <button class="cl-check-btn" onclick="edsCheckText(1,'correct')">Check</button>
+                <span class="cl-feedback" id="edsfb-1"></span>
+              </div>
+              <div class="cl-hint" id="edshint-1">Hint: You can't build a model of a problem you haven't defined yet, and you can't test something that doesn't exist.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-easy">Easy</span>2. Why is "Iterate" a loop back to earlier stages instead of a final step?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="edsans-2" style="width:300px;">
+                  <option value="">Choose…</option>
+                  <option value="loop">Testing usually reveals something to redesign</option>
+                  <option value="done">It just means the project is finished</option>
+                  <option value="skip">It lets you skip the Define stage next time</option>
+                </select>
+                <button class="cl-check-btn" onclick="edsCheckText(2,'loop')">Check</button>
+                <span class="cl-feedback" id="edsfb-2"></span>
+              </div>
+              <div class="cl-hint" id="edshint-2">Hint: Real designs are rarely right on the first try — that's exactly why it's a loop, not a line.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-mid">Medium</span>3. In this studio, why does the brief cap the empty rig weight at 700 g instead of just capping the payload?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="edsans-3" style="width:320px;">
+                  <option value="">Choose…</option>
+                  <option value="lift">The drone's total lift capacity has to cover rig weight AND payload together</option>
+                  <option value="cost">Heavier rigs are always more expensive</option>
+                  <option value="looks">It's only a rule about appearance</option>
+                </select>
+                <button class="cl-check-btn" onclick="edsCheckText(3,'lift')">Check</button>
+                <span class="cl-feedback" id="edsfb-3"></span>
+              </div>
+              <div class="cl-hint" id="edshint-3">Hint: A drone doesn't distinguish "rig weight" from "payload weight" — it just has one total weight limit.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-mid">Medium</span>4. If a lightweight frame fails the drop test, what's the most useful next step?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="edsans-4" style="width:320px;">
+                  <option value="">Choose…</option>
+                  <option value="tradeoff">Go back to Model and weigh a tougher frame against the weight it adds</option>
+                  <option value="quit">Abandon the whole brief</option>
+                  <option value="ignore">Ignore the drop test requirement</option>
+                </select>
+                <button class="cl-check-btn" onclick="edsCheckText(4,'tradeoff')">Check</button>
+                <span class="cl-feedback" id="edsfb-4"></span>
+              </div>
+              <div class="cl-hint" id="edshint-4">Hint: This is the loop in action — a failed Test sends you back to Model to weigh a new tradeoff, not to give up.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-hard">Challenge</span>5. Why does the brief require a remote release instead of allowing a simple manual pin a rescuer pulls by hand?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="edsans-5" style="width:340px;">
+                  <option value="">Choose…</option>
+                  <option value="noland">The whole point is releasing supplies without landing near the hiker</option>
+                  <option value="cheap">Manual pins are always more expensive</option>
+                  <option value="random">There's no real reason — it's an arbitrary rule</option>
+                </select>
+                <button class="cl-check-btn" onclick="edsCheckText(5,'noland')">Check</button>
+                <span class="cl-feedback" id="edsfb-5"></span>
+              </div>
+              <div class="cl-hint" id="edshint-5">Hint: Re-read the brief — the drone isn't landing, so nobody is there to pull a pin.</div>
+            </div>
+
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../../index.html">Home</a> · <a href="../../../steam-lessons.html">Lessons</a></p>
+        </footer>
+      </main>
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="eds-pane-help">Guide</button>
+          <button class="ll-tab" aria-selected="false" data-pane="eds-pane-summary">Loop</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="eds-pane-help">
+          <div class="ll-info"><strong>How to use this studio</strong> Work through the 5 stage tabs in order. Model and Prototype set up your design; Test tells you if it survives the brief; Iterate is where you reflect.</div>
+          <div class="ll-info"><strong>There's more than one valid design</strong> Several frame/mechanism combinations can pass — the practice problems and reflection ask you to defend the tradeoff, not just find "the" answer.</div>
+        </div>
+
+        <div class="ll-pane" id="eds-pane-summary">
+          <div class="ll-info"><strong>1. Define</strong> What problem, and what constraints must any solution satisfy?</div>
+          <div class="ll-info"><strong>2. Model</strong> Choose the pieces of a solution and weigh their tradeoffs on paper.</div>
+          <div class="ll-info"><strong>3. Prototype</strong> Commit to a real, buildable combination.</div>
+          <div class="ll-info"><strong>4. Test</strong> Check the prototype against every constraint from Define — honestly.</div>
+          <div class="ll-info"><strong>5. Iterate</strong> Use what Test revealed to improve the design, then loop back.</div>
+        </div>
+
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+</div><!-- .ll-viewport -->
+
+<script src="../../../assets/js/theme-registry.js"></script>
+<script src="../../../assets/js/nav-mobile.js"></script>
+<script>
+  var EDS_FRAMES = {
+    carbon: { label: 'Carbon Fiber', weight: 220, drop: 5, note: 'Very light, very tough. Expensive.' },
+    aluminum: { label: 'Aluminum', weight: 340, drop: 4, note: 'Solid middle ground on weight and strength.' },
+    pla: { label: '3D-Printed PLA', weight: 260, drop: 2, note: 'Cheap and light, but brittle on impact.' }
+  };
+  var EDS_MECHS = {
+    servo: { label: 'Servo Latch', weight: 45, remote: true, note: 'Reliable, moderate weight, easy to wire to a receiver.' },
+    magnet: { label: 'Electromagnet', weight: 90, remote: true, note: 'Very reliable release, but heavier and draws more power.' },
+    spring: { label: 'Spring + Manual Pin', weight: 20, remote: false, note: 'Lightest option — but needs a hand nearby to pull the pin.' }
+  };
+
+  var edsState = { stage: 'define', frame: null, mech: null };
+
+  function edsRenderChoices(containerId, data, selectedKey, onPick) {
+    var wrap = document.getElementById(containerId);
+    wrap.innerHTML = '';
+    Object.keys(data).forEach(function (key) {
+      var item = data[key];
+      var card = document.createElement('div');
+      card.className = 'eds-choice-card' + (key === selectedKey ? ' selected' : '');
+      card.innerHTML = '<strong>' + item.label + '</strong><small>' + item.note + '</small>';
+      card.addEventListener('click', function () { onPick(key); });
+      wrap.appendChild(card);
+    });
+  }
+
+  function edsSetStage(stage) {
+    edsState.stage = stage;
+    document.querySelectorAll('.eds-stage-btn').forEach(function (b) {
+      b.classList.toggle('selected', b.dataset.stage === stage);
+    });
+    ['define', 'model', 'prototype', 'test', 'iterate'].forEach(function (s) {
+      document.getElementById('eds-pane-' + s).style.display = (s === stage) ? 'block' : 'none';
+    });
+    if (stage === 'model') edsRenderChoices('eds-frame-choices', EDS_FRAMES, edsState.frame, edsPickFrame);
+    if (stage === 'prototype') { edsRenderChoices('eds-mech-choices', EDS_MECHS, edsState.mech, edsPickMech); edsUpdatePrototypeReadout(); }
+    if (stage === 'test') edsRenderTest();
+    if (stage === 'iterate') edsRenderLog();
+  }
+
+  function edsPickFrame(key) {
+    edsState.frame = key;
+    document.querySelector('.eds-stage-btn[data-stage="model"]').classList.add('done');
+    edsRenderChoices('eds-frame-choices', EDS_FRAMES, edsState.frame, edsPickFrame);
+  }
+
+  function edsPickMech(key) {
+    edsState.mech = key;
+    document.querySelector('.eds-stage-btn[data-stage="prototype"]').classList.add('done');
+    edsRenderChoices('eds-mech-choices', EDS_MECHS, edsState.mech, edsPickMech);
+    edsUpdatePrototypeReadout();
+  }
+
+  function edsUpdatePrototypeReadout() {
+    var frame = edsState.frame ? EDS_FRAMES[edsState.frame] : null;
+    var mech = edsState.mech ? EDS_MECHS[edsState.mech] : null;
+    document.getElementById('eds-r-frame').textContent = frame ? frame.label : '—';
+    document.getElementById('eds-r-mech').textContent = mech ? mech.label : '—';
+    var weight = (frame ? frame.weight : 0) + (mech ? mech.weight : 0);
+    document.getElementById('eds-r-weight').textContent = (frame && mech) ? weight + ' g' : '—';
+  }
+
+  function edsRenderTest() {
+    var wrap = document.getElementById('eds-constraints');
+    var verdict = document.getElementById('eds-verdict');
+    wrap.innerHTML = '';
+    if (!edsState.frame || !edsState.mech) {
+      verdict.textContent = 'Finish Model and Prototype first.';
+      verdict.className = 'eds-verdict';
+      return;
+    }
+    var frame = EDS_FRAMES[edsState.frame];
+    var mech = EDS_MECHS[edsState.mech];
+    var weight = frame.weight + mech.weight;
+
+    var checks = [
+      { label: 'Rig weight ≤ 700 g (currently ' + weight + ' g)', pass: weight <= 700 },
+      { label: 'Survives 2 m drop test (frame drop rating ' + frame.drop + 'm)', pass: frame.drop >= 2 },
+      { label: 'Releases remotely, no manual pin', pass: mech.remote === true }
+    ];
+
+    var allPass = true;
+    checks.forEach(function (c) {
+      if (!c.pass) allPass = false;
+      var row = document.createElement('div');
+      row.className = 'eds-constraint';
+      row.innerHTML =
+        '<div class="eds-constraint-label"><span>' + c.label + '</span><span>' + (c.pass ? '✓' : '✗') + '</span></div>' +
+        '<div class="eds-bar-track"><div class="eds-bar-fill ' + (c.pass ? 'pass' : 'fail') + '" style="width:' + (c.pass ? 100 : 35) + '%;"></div></div>';
+      wrap.appendChild(row);
+    });
+
+    if (allPass) {
+      verdict.textContent = '✓ This prototype passes every constraint in the brief.';
+      verdict.className = 'eds-verdict pass';
+    } else {
+      verdict.textContent = '✗ This prototype fails at least one constraint — go back to Model or Prototype and try a different combination.';
+      verdict.className = 'eds-verdict fail';
+    }
+  }
+
+  function edsRenderLog() {
+    var dl = document.getElementById('eds-log');
+    if (!edsState.frame || !edsState.mech) {
+      dl.innerHTML = '<dt>Design Log</dt><dd>Complete Model and Prototype to generate your design log.</dd>';
+      return;
+    }
+    var frame = EDS_FRAMES[edsState.frame];
+    var mech = EDS_MECHS[edsState.mech];
+    var weight = frame.weight + mech.weight;
+    var pass = weight <= 700 && frame.drop >= 2 && mech.remote;
+    dl.innerHTML =
+      '<dt>Frame chosen</dt><dd>' + frame.label + ' (' + frame.weight + ' g, survives a ' + frame.drop + ' m drop)</dd>' +
+      '<dt>Release mechanism chosen</dt><dd>' + mech.label + ' (' + mech.weight + ' g, ' + (mech.remote ? 'remote-triggered' : 'manual pin — not remote') + ')</dd>' +
+      '<dt>Total rig weight</dt><dd>' + weight + ' g</dd>' +
+      '<dt>Test result</dt><dd>' + (pass ? 'Passed every constraint.' : 'Failed at least one constraint.') + '</dd>';
+  }
+
+  function edsCheckText(n, correct) {
+    var sel = document.getElementById('edsans-' + n);
+    var fb = document.getElementById('edsfb-' + n);
+    var hint = document.getElementById('edshint-' + n);
+    if (!sel.value) { fb.textContent = 'Pick an answer first.'; fb.className = 'cl-feedback err'; return; }
+    if (sel.value === correct) {
+      fb.textContent = '✓ Correct!'; fb.className = 'cl-feedback ok'; hint.style.display = 'none';
+    } else {
+      fb.textContent = '✗ Not quite — check the hint below.'; fb.className = 'cl-feedback err'; hint.style.display = 'block';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function () { edsSetStage('define'); });
+</script>
+<script src="../../../assets/js/classroom-animations.js"></script>
+<script src="../../../assets/js/lesson-layout.js"></script>
+<script src="../../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

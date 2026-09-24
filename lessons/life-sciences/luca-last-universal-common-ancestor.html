@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>LUCA: Last Universal Common Ancestor · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
-  <meta name="description" content="Life Science Lesson — explore LUCA, the Last Universal Common Ancestor." />
+  <meta name="description" content="Life Sciences Lesson — meet LUCA, the Last Universal Common Ancestor of every living thing, and explore the universal traits (DNA, ribosomes, ATP) that prove it. Click through an interactive tree of life to trace any domain of life back to its root." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -91,9 +91,88 @@
       border: 2px solid #a3c9ea;
       border-radius: 16px;
       position: relative;
-      margin: 2rem 0;
+      margin: 2rem 0 1rem;
       overflow: hidden;
       box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .tree-info {
+      background: #f8fbff;
+      border: 1px solid #cfe0f2;
+      border-left: 4px solid #f0ad4e;
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      min-height: 3.5rem;
+    }
+    .tree-info-hint {
+      margin: 0;
+      color: #5a7086;
+      font-style: italic;
+      font-size: 0.95rem;
+    }
+    .tree-info h3 {
+      margin: 0 0 0.35rem;
+      color: #2a6496;
+      font-size: 1.15rem;
+    }
+    .tree-info p {
+      margin: 0 0 0.5rem;
+      line-height: 1.6;
+      font-size: 0.98rem;
+      color: #333;
+    }
+    .tree-info .tree-path {
+      margin: 0;
+      font-size: 0.85rem;
+      color: #2a6496;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .trait-checklist {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+    }
+    .trait-item {
+      display: flex;
+      gap: 0.85rem;
+      align-items: flex-start;
+      background: #f8fbff;
+      border: 1px solid #dce8f5;
+      border-radius: 10px;
+      padding: 0.9rem 1rem;
+      cursor: pointer;
+    }
+    .trait-item input[type="checkbox"] {
+      width: 1.15rem;
+      height: 1.15rem;
+      margin-top: 0.2rem;
+      flex-shrink: 0;
+      accent-color: #2a6496;
+    }
+    .trait-item.is-checked {
+      background: #eef8ef;
+      border-color: #bfe3c4;
+    }
+    .trait-item label {
+      cursor: pointer;
+    }
+    .trait-item strong {
+      display: block;
+      color: #2a6496;
+      margin-bottom: 0.2rem;
+    }
+    .trait-item span {
+      font-size: 0.92rem;
+      color: #333;
+      line-height: 1.5;
+    }
+    .trait-summary {
+      margin-top: 1rem;
+      font-weight: 600;
+      color: #2a6496;
     }
   </style>
 </head>
@@ -130,7 +209,7 @@
 
       <figure data-zoomable>
         <img src="https://images.unsplash.com/photo-1582298538104-efa9cb1023c3?w=1200&q=80" alt="Deep sea hydrothermal vent" />
-        <figcaption>Deep-sea hydrothermal vents like this one are believed to be similar to the extreme environments where LUCA thrived billions of years ago. (Photo by Unsplash)</figcaption>
+        <figcaption>Deep-sea hydrothermal vents like this one are believed to be similar to the extreme environments where LUCA thrived billions of years ago. Photo via Unsplash, free to use under the Unsplash License.</figcaption>
       </figure>
 
       <div class="luca-section">
@@ -155,13 +234,22 @@
 
       <div class="luca-section">
         <h2>Interactive Evolutionary Tree</h2>
-        <p>Explore the Tree of Life! Drag to pan around and see how all three domains of life branch out from LUCA at the center.</p>
-        
+        <p>Explore the Tree of Life! Drag to pan around, then <strong>click any branch</strong> to trace its lineage back to LUCA at the root. Every path you trace — no matter which domain it starts in — ends at the same single ancestor.</p>
+
         <div class="sim-container" id="simBox">
           <canvas id="treeCanvas"></canvas>
         </div>
+        <div class="tree-info" id="treeInfo" aria-live="polite">
+          <p class="tree-info-hint">Click a node above to trace its lineage back to LUCA.</p>
+        </div>
       </div>
-      
+
+      <div class="luca-section">
+        <h2>Shared Universal Traits Checklist</h2>
+        <p>If two organisms share a trait just because it's <em>useful</em>, that's not proof of a common ancestor — it could have evolved independently (this is called <strong>convergent evolution</strong>, like wings evolving separately in insects, bats, and birds). But if all three domains of life share an <em>arbitrary</em> solution — one of many equally workable options — that's strong evidence they inherited it from a single shared ancestor rather than inventing it three separate times. Check off each universal trait below and think about whether it looks arbitrary or inevitable.</p>
+        <div class="trait-checklist" id="traitChecklist"></div>
+      </div>
+
       <div class="luca-section">
         <h2>Reflection Questions</h2>
         <ol>
@@ -181,9 +269,7 @@
     (function() {
       const box = document.getElementById('simBox');
       const canvas = document.getElementById('treeCanvas');
-      
-      const { ctx, resize } = SimKit.canvas2d(canvas, { box, dpr: 2, onResize: draw });
-      
+
       // Node structure for the tree
       const nodes = [
         { id: 'luca', label: 'LUCA', x: 400, y: 400, color: '#f0ad4e', radius: 40 },
@@ -217,24 +303,122 @@
         ['eukarya', 'fungi'],
         ['eukarya', 'animals']
       ];
-      
+
+      // Teaching content shown when a node is clicked, plus its parent
+      // for walking the lineage back to LUCA.
+      const nodeInfo = {
+        luca: {
+          parent: null,
+          title: 'LUCA — the root of every path',
+          text: 'Every branch on this tree, no matter which domain it starts in, traces back to this single point. LUCA was a single-celled microbe living roughly 3.5–3.8 billion years ago.'
+        },
+        bacteria: {
+          parent: 'luca',
+          title: 'Domain Bacteria',
+          text: 'The most diverse and ancient-looking domain, including E. coli, Streptococcus, and the cyanobacteria that first filled Earth\'s atmosphere with oxygen.'
+        },
+        cyanobacteria: {
+          parent: 'bacteria',
+          title: 'Cyanobacteria',
+          text: 'Photosynthetic bacteria that invented oxygen-producing photosynthesis, triggering the Great Oxidation Event about 2.4 billion years ago.'
+        },
+        firmicutes: {
+          parent: 'bacteria',
+          title: 'Firmicutes',
+          text: 'A huge bacterial group with thick cell walls, including Lactobacillus (used to make yogurt) and Clostridium.'
+        },
+        archaea: {
+          parent: 'luca',
+          title: 'Domain Archaea',
+          text: 'Look like bacteria under a microscope, but their cell membranes and genetic machinery are built differently — many thrive in extreme heat, salt, or acid, similar to the conditions LUCA may have lived in.'
+        },
+        crenarchaeota: {
+          parent: 'archaea',
+          title: 'Crenarchaeota',
+          text: 'Many species in this group are extreme thermophiles, living in boiling hot springs and deep-sea vents.'
+        },
+        euryarchaeota: {
+          parent: 'archaea',
+          title: 'Euryarchaeota',
+          text: 'Includes methanogens — organisms that produce methane gas as a waste product, and thrive without any oxygen at all.'
+        },
+        eukarya: {
+          parent: 'luca',
+          title: 'Domain Eukarya',
+          text: 'Cells with a nucleus and internal compartments. Plants, fungi, animals, and every protist belong here. Eukaryotic cells likely arose when one microbe engulfed another, which evolved into mitochondria.'
+        },
+        plants: {
+          parent: 'eukarya',
+          title: 'Plants',
+          text: 'Eukaryotes that capture sunlight using chloroplasts — organelles that were once free-living cyanobacteria, engulfed and kept as permanent partners.'
+        },
+        fungi: {
+          parent: 'eukarya',
+          title: 'Fungi',
+          text: 'Eukaryotes that digest food outside their bodies and absorb the nutrients. Genetically, fungi are actually closer relatives of animals than of plants.'
+        },
+        animals: {
+          parent: 'eukarya',
+          title: 'Animals',
+          text: 'Multicellular eukaryotes that eat other organisms for energy — from sponges to blue whales to you.'
+        }
+      };
+
+      function getNode(id) { return nodes.find(n => n.id === id); }
+
+      // Build the lineage path (leaf ... LUCA) for a clicked node.
+      function pathToLuca(id) {
+        const path = [];
+        let current = id;
+        while (current) {
+          path.push(current);
+          current = nodeInfo[current] ? nodeInfo[current].parent : null;
+        }
+        return path;
+      }
+
+      let selectedPath = [];
+      const treeInfo = document.getElementById('treeInfo');
+
+      function showNodeInfo(id) {
+        const info = nodeInfo[id];
+        if (!info) return;
+        selectedPath = pathToLuca(id);
+        const readableChain = selectedPath.map(pid => getNode(pid).label).join(' → ');
+        treeInfo.innerHTML =
+          '<h3>' + info.title + '</h3>' +
+          '<p>' + info.text + '</p>' +
+          '<p class="tree-path">Lineage traced back to LUCA: ' + readableChain + '</p>';
+      }
+
       let initialized = false;
       let panX = 0;
       let panY = 0;
       let isPanning = false;
       let lastPanPoint = { x: 0, y: 0 };
-      
-      function drawArrow(fromNode, toNode) {
+      let ctx = null;
+
+      function isEdgeOnPath(fromId, toId) {
+        for (let i = 0; i < selectedPath.length - 1; i++) {
+          if ((selectedPath[i] === fromId && selectedPath[i + 1] === toId) ||
+              (selectedPath[i] === toId && selectedPath[i + 1] === fromId)) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      function drawArrow(fromNode, toNode, highlighted) {
         ctx.beginPath();
         ctx.moveTo(fromNode.x + panX, fromNode.y + panY);
         ctx.lineTo(toNode.x + panX, toNode.y + panY);
-        ctx.strokeStyle = '#ddd';
-        ctx.lineWidth = 3;
+        ctx.strokeStyle = highlighted ? '#f0ad4e' : '#ddd';
+        ctx.lineWidth = highlighted ? 5 : 3;
         ctx.stroke();
       }
       
       function draw() {
-        if (!canvas.width) return;
+        if (!ctx || !canvas.width) return;
         
         const cw = canvas.width / (window.devicePixelRatio || 2);
         const ch = canvas.height / (window.devicePixelRatio || 2);
@@ -261,26 +445,32 @@
             ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
         }
         
-        // Draw edges
+        // Draw edges (path back to LUCA drawn on top, highlighted)
         edges.forEach(([fromId, toId]) => {
           const fromNode = nodes.find(n => n.id === fromId);
           const toNode = nodes.find(n => n.id === toId);
-          if (fromNode && toNode) drawArrow(fromNode, toNode);
+          if (fromNode && toNode && !isEdgeOnPath(fromId, toId)) drawArrow(fromNode, toNode, false);
         });
-        
+        edges.forEach(([fromId, toId]) => {
+          const fromNode = nodes.find(n => n.id === fromId);
+          const toNode = nodes.find(n => n.id === toId);
+          if (fromNode && toNode && isEdgeOnPath(fromId, toId)) drawArrow(fromNode, toNode, true);
+        });
+
         // Draw nodes
         nodes.forEach(n => {
           const nx = n.x + panX;
           const ny = n.y + panY;
-          
+          const onPath = selectedPath.indexOf(n.id) !== -1;
+
           ctx.beginPath();
           ctx.arc(nx, ny, n.radius, 0, Math.PI * 2);
           ctx.fillStyle = n.color;
           ctx.fill();
-          ctx.strokeStyle = '#fff';
-          ctx.lineWidth = 3;
+          ctx.strokeStyle = onPath ? '#f0ad4e' : '#fff';
+          ctx.lineWidth = onPath ? 5 : 3;
           ctx.stroke();
-          
+
           ctx.fillStyle = (n.id === 'luca') ? '#fff' : '#333';
           if (n.id === 'luca') {
              ctx.font = '700 16px Inter, sans-serif';
@@ -299,8 +489,16 @@
           }
         });
       }
-      
-      // Pan events
+
+      // Wire up the canvas last, once every value draw() touches (nodes,
+      // initialized, panX/panY, ctx itself) is declared — SimKit.canvas2d
+      // calls onResize synchronously during setup, so declaring this any
+      // earlier throws a "cannot access before initialization" error and
+      // silently aborts the whole script before the pan/click listeners
+      // below are ever attached.
+      SimKit.canvas2d(canvas, { box, dpr: 2, onResize: function (c) { ctx = c; draw(); } });
+
+      // Pan + click events
       function getMousePos(e) {
         const rect = canvas.getBoundingClientRect();
         return {
@@ -308,21 +506,47 @@
           y: e.clientY - rect.top
         };
       }
-      
+
+      // Find the node under a canvas-space point (accounting for pan).
+      function nodeAtPoint(pos) {
+        for (let i = nodes.length - 1; i >= 0; i--) {
+          const n = nodes[i];
+          const dx = pos.x - (n.x + panX);
+          const dy = pos.y - (n.y + panY);
+          if (Math.sqrt(dx * dx + dy * dy) <= n.radius + 4) return n;
+        }
+        return null;
+      }
+
+      let downPoint = null;
+      const DRAG_THRESHOLD = 6;
+
       canvas.addEventListener('mousedown', e => {
         isPanning = true;
         lastPanPoint = getMousePos(e);
+        downPoint = lastPanPoint;
         canvas.style.cursor = 'grabbing';
       });
-      
-      window.addEventListener('mouseup', () => {
+
+      window.addEventListener('mouseup', e => {
+        if (isPanning && downPoint) {
+          const pos = getMousePos(e);
+          const dx = pos.x - downPoint.x;
+          const dy = pos.y - downPoint.y;
+          if (Math.sqrt(dx * dx + dy * dy) < DRAG_THRESHOLD) {
+            const hit = nodeAtPoint(pos);
+            if (hit) showNodeInfo(hit.id);
+          }
+        }
         isPanning = false;
+        downPoint = null;
         canvas.style.cursor = 'grab';
       });
-      
+
       canvas.addEventListener('mousemove', e => {
         if (!isPanning) {
-           canvas.style.cursor = 'grab';
+           const pos = getMousePos(e);
+           canvas.style.cursor = nodeAtPoint(pos) ? 'pointer' : 'grab';
            return;
         }
         const pos = getMousePos(e);
@@ -330,15 +554,16 @@
         panY += (pos.y - lastPanPoint.y);
         lastPanPoint = pos;
       });
-      
+
       canvas.addEventListener('touchstart', e => {
         const touch = e.touches[0];
         const rect = canvas.getBoundingClientRect();
         isPanning = true;
         lastPanPoint = { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+        downPoint = lastPanPoint;
         e.preventDefault();
       }, { passive: false });
-      
+
       canvas.addEventListener('touchmove', e => {
         if (!isPanning) return;
         const touch = e.touches[0];
@@ -349,15 +574,93 @@
         lastPanPoint = pos;
         e.preventDefault();
       }, { passive: false });
-      
-      canvas.addEventListener('touchend', () => {
+
+      canvas.addEventListener('touchend', e => {
+        if (downPoint) {
+          const touch = (e.changedTouches && e.changedTouches[0]) || null;
+          if (touch) {
+            const rect = canvas.getBoundingClientRect();
+            const pos = { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+            const dx = pos.x - downPoint.x;
+            const dy = pos.y - downPoint.y;
+            if (Math.sqrt(dx * dx + dy * dy) < DRAG_THRESHOLD) {
+              const hit = nodeAtPoint(pos);
+              if (hit) showNodeInfo(hit.id);
+            }
+          }
+        }
         isPanning = false;
+        downPoint = null;
       });
 
       canvas.style.cursor = 'grab';
 
       SimKit.loop(() => draw());
 
+    })();
+  </script>
+  <script>
+    (function() {
+      const traits = [
+        {
+          id: 'genetic-code',
+          title: 'The genetic code',
+          text: 'DNA is built from the same 4 bases (A, T, C, G), and the code that translates 3-base "codons" into amino acids is nearly identical in every organism ever tested. There are billions of possible codes that would work just as well — sharing this exact one is a strong sign of common ancestry.'
+        },
+        {
+          id: 'ribosomes',
+          title: 'Ribosomes',
+          text: 'Every domain of life builds proteins using ribosomes — molecular machines made of RNA and protein that read messenger RNA and link amino acids together in order.'
+        },
+        {
+          id: 'atp',
+          title: 'ATP as energy currency',
+          text: 'From bacteria to blue whales, cells power their chemistry with the same molecule, ATP (adenosine triphosphate), rather than any of the many other molecules that could plausibly do the job.'
+        },
+        {
+          id: 'cell-membrane',
+          title: 'Lipid cell membranes',
+          text: 'Every cell is wrapped in a membrane built from lipids, keeping its chemistry separate from the outside world while letting it selectively trade materials and energy.'
+        },
+        {
+          id: 'left-handed-amino-acids',
+          title: 'Left-handed amino acids only',
+          text: 'Amino acids can form in two mirror-image ("chiral") versions, left- and right-handed. Life on Earth uses almost exclusively left-handed amino acids — an arbitrary choice with no chemical reason to favor one over the other, yet every domain agrees.'
+        }
+      ];
+
+      const list = document.getElementById('traitChecklist');
+      if (!list) return;
+
+      traits.forEach(trait => {
+        const item = document.createElement('div');
+        item.className = 'trait-item';
+        item.innerHTML =
+          '<input type="checkbox" id="trait-' + trait.id + '" />' +
+          '<label for="trait-' + trait.id + '"><strong>' + trait.title + '</strong><span>' + trait.text + '</span></label>';
+        list.appendChild(item);
+
+        const checkbox = item.querySelector('input');
+        checkbox.addEventListener('change', () => {
+          item.classList.toggle('is-checked', checkbox.checked);
+          updateSummary();
+        });
+      });
+
+      const summary = document.createElement('p');
+      summary.className = 'trait-summary';
+      list.appendChild(summary);
+
+      function updateSummary() {
+        const checked = list.querySelectorAll('input:checked').length;
+        if (checked === 0) {
+          summary.textContent = '';
+        } else if (checked === traits.length) {
+          summary.textContent = 'All ' + traits.length + ' traits checked — that’s five independent, arbitrary solutions every domain of life shares. Independent origins would be extraordinarily unlikely to land on the same answer five times by chance.';
+        } else {
+          summary.textContent = checked + ' of ' + traits.length + ' universal traits checked so far.';
+        }
+      }
     })();
   </script>
 

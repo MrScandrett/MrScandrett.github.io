@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ecosystems &amp; Food Webs · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
-  <meta name="description" content="Life Science Lesson — explore Ecosystems & Food Webs." />
+  <meta name="description" content="Life Sciences Lesson — trace energy from producers to apex predators, click a species out of an interactive food web to watch the cascade, and run a predator-prey population simulator to see boom-and-bust cycles play out." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -100,6 +100,99 @@
       font-size: 0.95rem;
     }
 
+    .eco-sim-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 2;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #1a7f4b;
+      background: #fff;
+      border: 1px solid #a3d9b8;
+      border-radius: 999px;
+      padding: 0.4rem 0.9rem;
+      cursor: pointer;
+    }
+    .eco-sim-btn:hover {
+      background: #eafaf0;
+    }
+    .eco-sim-status {
+      margin: 0.75rem 0 0;
+      font-size: 0.95rem;
+      color: #2a5a40;
+      font-weight: 500;
+      min-height: 1.4em;
+    }
+
+    .pp-controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+      margin: 1.5rem 0;
+    }
+    .pp-control label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #1a3a2a;
+      margin-bottom: 0.35rem;
+    }
+    .pp-control label span.pp-val {
+      font-weight: 700;
+      color: #1a7f4b;
+    }
+    .pp-control input[type="range"] {
+      width: 100%;
+      accent-color: #1a7f4b;
+    }
+    .pp-actions {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .pp-actions button {
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #fff;
+      background: #1a7f4b;
+      border: none;
+      border-radius: 10px;
+      padding: 0.6rem 1.2rem;
+      cursor: pointer;
+    }
+    .pp-actions button.pp-secondary {
+      color: #1a7f4b;
+      background: #fff;
+      border: 1px solid #a3d9b8;
+    }
+    .pp-actions button:hover {
+      filter: brightness(0.95);
+    }
+    .pp-readout {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      margin: 0.75rem 0 0.5rem;
+      font-size: 0.95rem;
+    }
+    .pp-readout strong {
+      font-variant-numeric: tabular-nums;
+    }
+    .pp-rabbit { color: #2a6bd6; }
+    .pp-fox { color: #d9534f; }
+    .pp-message {
+      margin: 0.5rem 0 0;
+      font-size: 0.9rem;
+      color: #8c564b;
+      font-weight: 600;
+      min-height: 1.3em;
+    }
+
   </style>
 </head>
 <body class="eco-page">
@@ -144,7 +237,7 @@
 
       <figure data-zoomable>
         <img src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1200&q=80" alt="Lush green forest ecosystem" />
-        <figcaption>A forest ecosystem depends on abiotic factors like sunlight and rain to support complex webs of biotic life. (Photo by Unsplash)</figcaption>
+        <figcaption>A forest ecosystem depends on abiotic factors like sunlight and rain to support complex webs of biotic life. Photo via Unsplash, free to use under the Unsplash License.</figcaption>
       </figure>
 
       <div class="eco-section">
@@ -178,11 +271,13 @@
 
       <div class="eco-section">
         <h2>Interactive Food Web</h2>
-        <p>Drag the organisms to organize them! Notice the arrows pointing in the direction of energy flow (from the organism being eaten <em>to</em> the organism that eats it).</p>
-        
+        <p>Drag the organisms to rearrange them, or <strong>click one to remove it from the ecosystem</strong>. Arrows point in the direction of energy flow (from the organism being eaten <em>to</em> the organism that eats it) — watch what happens to everything downstream when a species disappears.</p>
+
         <div class="sim-container" id="simBox">
           <canvas id="fwCanvas"></canvas>
+          <button type="button" id="fwReset" class="eco-sim-btn">Reset web</button>
         </div>
+        <p id="fwStatus" class="eco-sim-status" aria-live="polite">Every species is present. Click one to remove it.</p>
       </div>
 
       <div class="eco-section">
@@ -191,11 +286,60 @@
       </div>
       
       <div class="eco-section">
+        <h2>Predator-Prey Population Simulator</h2>
+        <p>Populations don't just grow forever or crash to zero — predators and prey chase each other in cycles. When rabbits are plentiful, foxes have plenty to eat and their numbers climb. More foxes means more hunting, so rabbits decline — which then starves the foxes, letting rabbits recover, and the cycle repeats. Adjust the sliders and watch the boom-and-bust rhythm unfold on the chart below.</p>
+
+        <div class="pp-actions">
+          <button type="button" id="ppToggle">Pause</button>
+          <button type="button" id="ppReset" class="pp-secondary">Reset</button>
+        </div>
+
+        <div class="pp-controls">
+          <div class="pp-control">
+            <label for="ppRabbits">Starting rabbits <span class="pp-val" id="ppRabbitsVal">40</span></label>
+            <input type="range" id="ppRabbits" min="5" max="150" step="5" value="40" />
+          </div>
+          <div class="pp-control">
+            <label for="ppFoxes">Starting foxes <span class="pp-val" id="ppFoxesVal">8</span></label>
+            <input type="range" id="ppFoxes" min="1" max="40" step="1" value="8" />
+          </div>
+          <div class="pp-control">
+            <label for="ppRabbitRepro">Rabbit reproduction rate <span class="pp-val" id="ppRabbitReproVal">1.10</span></label>
+            <input type="range" id="ppRabbitRepro" min="0.4" max="2.5" step="0.05" value="1.10" />
+          </div>
+          <div class="pp-control">
+            <label for="ppPredation">Predation rate <span class="pp-val" id="ppPredationVal">0.045</span></label>
+            <input type="range" id="ppPredation" min="0.005" max="0.12" step="0.005" value="0.045" />
+          </div>
+          <div class="pp-control">
+            <label for="ppFoxGrowth">Fox reproduction efficiency <span class="pp-val" id="ppFoxGrowthVal">0.020</span></label>
+            <input type="range" id="ppFoxGrowth" min="0.005" max="0.06" step="0.005" value="0.020" />
+          </div>
+          <div class="pp-control">
+            <label for="ppFoxDeath">Fox death rate <span class="pp-val" id="ppFoxDeathVal">0.90</span></label>
+            <input type="range" id="ppFoxDeath" min="0.2" max="2.0" step="0.05" value="0.90" />
+          </div>
+        </div>
+
+        <div class="pp-readout">
+          <span>Rabbits: <strong class="pp-rabbit" id="ppRabbitCount">40</strong></span>
+          <span>Foxes: <strong class="pp-fox" id="ppFoxCount">8</strong></span>
+          <span>Time: <strong id="ppTime">0.0</strong></span>
+        </div>
+
+        <div class="sim-container" id="ppBox" style="height: 340px;">
+          <canvas id="ppCanvas"></canvas>
+        </div>
+        <p class="pp-message" id="ppMessage"></p>
+      </div>
+
+      <div class="eco-section">
         <h2>Reflection Questions</h2>
         <ol>
           <li>If a disease wiped out all the producers in an ecosystem, what would happen to the consumers?</li>
           <li>Why does the arrow in a food web point <em>towards</em> the predator, rather than the prey?</li>
           <li>Based on the 10% rule, why are there rarely more than four or five trophic levels in an ecosystem?</li>
+          <li>In the population simulator, why does the fox population keep rising for a while <em>after</em> the rabbit population has already started to fall?</li>
         </ol>
       </div>
 
@@ -217,6 +361,15 @@
       let hoveredNode = null;
       let dragOffsetX = 0;
       let dragOffsetY = 0;
+      let clickCandidate = null;
+      let downX = 0;
+      let downY = 0;
+      let touchDownPos = null;
+
+      // Species the player has removed, and the set that cascades into
+      // starvation because every one of their food sources is gone.
+      const removed = new Set();
+      const statusEl = document.getElementById('fwStatus');
 
       // Define organisms
       const nodes = [
@@ -249,7 +402,50 @@
       const ctx = canvas.getContext('2d');
       const { resize } = SimKit.canvas2d(canvas, { box, dpr: 2, onResize: draw });
 
-      function drawArrow(fromNode, toNode) {
+      // A consumer starves once every one of its food sources is removed
+      // or has itself already starved — that's the cascade.
+      function computeStarving() {
+        const starving = new Set();
+        let changed = true;
+        while (changed) {
+          changed = false;
+          nodes.forEach(n => {
+            if (removed.has(n.id) || starving.has(n.id)) return;
+            const incoming = edges.filter(([, toId]) => toId === n.id);
+            if (incoming.length === 0) return; // producer: unaffected unless directly removed
+            const allGone = incoming.every(([fromId]) => removed.has(fromId) || starving.has(fromId));
+            if (allGone) {
+              starving.add(n.id);
+              changed = true;
+            }
+          });
+        }
+        return starving;
+      }
+
+      function toggleRemoved(n) {
+        if (removed.has(n.id)) removed.delete(n.id);
+        else removed.add(n.id);
+        updateStatus();
+      }
+
+      function updateStatus() {
+        if (!statusEl) return;
+        if (removed.size === 0) {
+          statusEl.textContent = 'Every species is present. Click one to remove it.';
+          return;
+        }
+        const starving = computeStarving();
+        const removedNames = [...removed].map(id => nodes.find(n => n.id === id).label);
+        let msg = 'Removed: ' + removedNames.join(', ') + '.';
+        if (starving.size > 0) {
+          const starvingNames = [...starving].map(id => nodes.find(n => n.id === id).label);
+          msg += ' Starving because their food is gone: ' + starvingNames.join(', ') + '.';
+        }
+        statusEl.textContent = msg;
+      }
+
+      function drawArrow(fromNode, toNode, dimmed) {
         const dx = toNode.x - fromNode.x;
         const dy = toNode.y - fromNode.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -267,29 +463,33 @@
         const endX = toNode.x - dirX * r;
         const endY = toNode.y - dirY * r;
         
+        ctx.save();
+        if (dimmed) ctx.setLineDash([5, 5]);
         ctx.beginPath();
         ctx.moveTo(startX, startY);
         ctx.lineTo(endX, endY);
-        ctx.strokeStyle = '#aaa';
+        ctx.strokeStyle = dimmed ? '#e2b8b8' : '#aaa';
         ctx.lineWidth = 2;
         ctx.stroke();
-        
+
         // Arrowhead
         const arrowSize = 10;
+        ctx.setLineDash([]);
         ctx.beginPath();
         ctx.moveTo(endX, endY);
         ctx.lineTo(endX - dirX * arrowSize - dirY * arrowSize, endY - dirY * arrowSize + dirX * arrowSize);
         ctx.lineTo(endX - dirX * arrowSize + dirY * arrowSize, endY - dirY * arrowSize - dirX * arrowSize);
-        ctx.fillStyle = '#aaa';
+        ctx.fillStyle = dimmed ? '#e2b8b8' : '#aaa';
         ctx.fill();
+        ctx.restore();
       }
-      
+
       function draw() {
         if (!canvas.width) return;
-        
+
         const cw = canvas.width / (window.devicePixelRatio || 2);
         const ch = canvas.height / (window.devicePixelRatio || 2);
-        
+
         if (!initialized && cw > 0) {
            const cx = cw / 2;
            // Shift nodes a bit to center
@@ -300,31 +500,61 @@
         }
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
+
+        const starving = computeStarving();
+
         // Draw edges
         edges.forEach(([fromId, toId]) => {
           const fromNode = nodes.find(n => n.id === fromId);
           const toNode = nodes.find(n => n.id === toId);
           if (fromNode && toNode) {
-            drawArrow(fromNode, toNode);
+            const dimmed = removed.has(fromId) || starving.has(fromId);
+            drawArrow(fromNode, toNode, dimmed);
           }
         });
-        
+
         // Draw nodes
         nodes.forEach(n => {
+          const isRemoved = removed.has(n.id);
+          const isStarving = starving.has(n.id);
+
+          ctx.save();
+          if (isRemoved) ctx.globalAlpha = 0.3;
+
           ctx.beginPath();
           ctx.arc(n.x, n.y, 35, 0, Math.PI * 2);
           ctx.fillStyle = n.color;
           ctx.fill();
-          ctx.strokeStyle = (n === hoveredNode || n === draggedNode) ? '#333' : '#fff';
-          ctx.lineWidth = (n === hoveredNode || n === draggedNode) ? 3 : 2;
+
+          if (isStarving) {
+            ctx.strokeStyle = '#d9534f';
+            ctx.lineWidth = 4;
+          } else {
+            ctx.strokeStyle = (n === hoveredNode || n === draggedNode) ? '#333' : '#fff';
+            ctx.lineWidth = (n === hoveredNode || n === draggedNode) ? 3 : 2;
+          }
           ctx.stroke();
-          
+
           ctx.fillStyle = '#fff';
           ctx.font = '500 12px Inter, sans-serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(n.label, n.x, n.y);
+          ctx.restore();
+
+          if (isRemoved) {
+            ctx.save();
+            ctx.strokeStyle = '#8c1f1f';
+            ctx.lineWidth = 4;
+            const r = 25;
+            ctx.beginPath();
+            ctx.moveTo(n.x - r, n.y - r);
+            ctx.lineTo(n.x + r, n.y + r);
+            ctx.moveTo(n.x + r, n.y - r);
+            ctx.lineTo(n.x - r, n.y + r);
+            ctx.stroke();
+            ctx.restore();
+          }
         });
       }
       
@@ -368,21 +598,32 @@
       canvas.addEventListener('mousedown', e => {
         if (hoveredNode) {
           draggedNode = hoveredNode;
+          clickCandidate = hoveredNode;
           const pos = getMousePos(e);
           dragOffsetX = pos.x - draggedNode.x;
           dragOffsetY = pos.y - draggedNode.y;
+          downX = pos.x;
+          downY = pos.y;
+        } else {
+          clickCandidate = null;
         }
       });
-      
-      window.addEventListener('mouseup', () => {
+
+      window.addEventListener('mouseup', e => {
+        if (clickCandidate) {
+          const pos = getMousePos(e);
+          const dist = Math.hypot(pos.x - downX, pos.y - downY);
+          if (dist < 6) toggleRemoved(clickCandidate);
+        }
         draggedNode = null;
+        clickCandidate = null;
       });
-      
+
       canvas.addEventListener('touchstart', e => {
         const touch = e.touches[0];
         const rect = canvas.getBoundingClientRect();
         const pos = { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
-        
+
         for (let i = nodes.length - 1; i >= 0; i--) {
           const n = nodes[i];
           const dx = pos.x - n.x;
@@ -391,6 +632,7 @@
             draggedNode = n;
             dragOffsetX = pos.x - n.x;
             dragOffsetY = pos.y - n.y;
+            touchDownPos = pos;
             e.preventDefault();
             break;
           }
@@ -407,15 +649,238 @@
         }
       }, { passive: false });
       
-      canvas.addEventListener('touchend', () => {
+      canvas.addEventListener('touchend', e => {
+        if (draggedNode && touchDownPos) {
+          const touch = e.changedTouches[0];
+          const rect = canvas.getBoundingClientRect();
+          const pos = { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+          const dist = Math.hypot(pos.x - touchDownPos.x, pos.y - touchDownPos.y);
+          if (dist < 6) toggleRemoved(draggedNode);
+        }
         draggedNode = null;
+        touchDownPos = null;
       });
+
+      const resetBtn = document.getElementById('fwReset');
+      if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+          removed.clear();
+          updateStatus();
+        });
+      }
+
+      updateStatus();
 
       // Use SimKit.loop to constantly redraw (so it updates smoothly during dragging)
       SimKit.loop(() => {
         draw();
       });
 
+    })();
+  </script>
+
+  <script>
+    (function() {
+      const box = document.getElementById('ppBox');
+      const canvas = document.getElementById('ppCanvas');
+      if (!box || !canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      const els = {
+        rabbits: document.getElementById('ppRabbits'),
+        foxes: document.getElementById('ppFoxes'),
+        rabbitRepro: document.getElementById('ppRabbitRepro'),
+        predation: document.getElementById('ppPredation'),
+        foxGrowth: document.getElementById('ppFoxGrowth'),
+        foxDeath: document.getElementById('ppFoxDeath'),
+        rabbitsVal: document.getElementById('ppRabbitsVal'),
+        foxesVal: document.getElementById('ppFoxesVal'),
+        rabbitReproVal: document.getElementById('ppRabbitReproVal'),
+        predationVal: document.getElementById('ppPredationVal'),
+        foxGrowthVal: document.getElementById('ppFoxGrowthVal'),
+        foxDeathVal: document.getElementById('ppFoxDeathVal'),
+        rabbitCount: document.getElementById('ppRabbitCount'),
+        foxCount: document.getElementById('ppFoxCount'),
+        time: document.getElementById('ppTime'),
+        toggle: document.getElementById('ppToggle'),
+        reset: document.getElementById('ppReset'),
+        message: document.getElementById('ppMessage')
+      };
+
+      // Lotka-Volterra predator-prey state. R = rabbits, F = foxes.
+      let R = Number(els.rabbits.value);
+      let F = Number(els.foxes.value);
+      let t = 0;
+      let running = true;
+      let history = []; // { t, R, F }
+      const HISTORY_WINDOW = 80; // time units shown on the chart
+
+      function params() {
+        return {
+          a: Number(els.rabbitRepro.value), // rabbit reproduction rate
+          b: Number(els.predation.value),   // predation rate
+          c: Number(els.foxGrowth.value),   // fox growth from eating rabbits
+          d: Number(els.foxDeath.value)     // fox death rate
+        };
+      }
+
+      function syncLabels() {
+        els.rabbitsVal.textContent = els.rabbits.value;
+        els.foxesVal.textContent = els.foxes.value;
+        els.rabbitReproVal.textContent = Number(els.rabbitRepro.value).toFixed(2);
+        els.predationVal.textContent = Number(els.predation.value).toFixed(3);
+        els.foxGrowthVal.textContent = Number(els.foxGrowth.value).toFixed(3);
+        els.foxDeathVal.textContent = Number(els.foxDeath.value).toFixed(2);
+      }
+
+      function resetSim() {
+        R = Number(els.rabbits.value);
+        F = Number(els.foxes.value);
+        t = 0;
+        history = [{ t, R, F }];
+        running = true;
+        els.toggle.textContent = 'Pause';
+        els.message.textContent = '';
+        syncLabels();
+        updateReadout();
+      }
+
+      function updateReadout() {
+        els.rabbitCount.textContent = Math.round(R);
+        els.foxCount.textContent = Math.round(F);
+        els.time.textContent = t.toFixed(1);
+      }
+
+      // Semi-implicit (symplectic) Euler integration — far more stable than
+      // plain Euler for oscillating predator-prey systems at classroom-sized
+      // time steps, so the cycle doesn't blow up into NaNs.
+      function step(dt) {
+        if (!running) return;
+        const { a, b, c, d } = params();
+        const subSteps = 8;
+        const h = dt / subSteps;
+        for (let i = 0; i < subSteps; i++) {
+          const dR = (a * R - b * R * F) * h;
+          R = Math.max(0, R + dR);
+          const dF = (c * R * F - d * F) * h;
+          F = Math.max(0, F + dF);
+          t += h;
+        }
+        history.push({ t, R, F });
+        while (history.length && history[0].t < t - HISTORY_WINDOW) history.shift();
+
+        if (R <= 0.05 && F <= 0.05) {
+          els.message.textContent = 'Both populations collapsed to zero. Try lowering the predation rate or raising the reproduction rate, then reset.';
+          running = false;
+          els.toggle.textContent = 'Play';
+        } else if (F <= 0.05) {
+          els.message.textContent = 'The foxes died out — with no predators left, rabbits will now grow unchecked.';
+        } else if (R <= 0.05) {
+          els.message.textContent = 'The rabbits died out, so the foxes have nothing left to eat.';
+        } else {
+          els.message.textContent = '';
+        }
+
+        updateReadout();
+      }
+
+      function niceMax(v) {
+        if (v <= 0) return 10;
+        const mag = Math.pow(10, Math.floor(Math.log10(v)));
+        const n = v / mag;
+        const step = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
+        return step * mag;
+      }
+
+      function draw() {
+        if (!canvas.width) return;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const cw = canvas.width / dpr;
+        const ch = canvas.height / dpr;
+
+        ctx.clearRect(0, 0, cw, ch);
+
+        const padL = 46, padR = 16, padT = 16, padB = 28;
+        const plotW = cw - padL - padR;
+        const plotH = ch - padT - padB;
+        if (plotW <= 0 || plotH <= 0 || history.length < 2) return;
+
+        const tMin = history[0].t;
+        const tMax = Math.max(history[history.length - 1].t, tMin + 1);
+        const maxPop = Math.max(10, ...history.map(p => Math.max(p.R, p.F)));
+        const yMax = niceMax(maxPop * 1.1);
+
+        function xFor(pt) { return padL + ((pt - tMin) / (tMax - tMin)) * plotW; }
+        function yFor(pop) { return padT + plotH - (pop / yMax) * plotH; }
+
+        // Gridlines + y-axis labels
+        ctx.strokeStyle = '#e3ede6';
+        ctx.lineWidth = 1;
+        ctx.fillStyle = '#6b8577';
+        ctx.font = '500 11px Inter, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        const gridLines = 4;
+        for (let i = 0; i <= gridLines; i++) {
+          const pop = (yMax / gridLines) * i;
+          const y = yFor(pop);
+          ctx.beginPath();
+          ctx.moveTo(padL, y);
+          ctx.lineTo(padL + plotW, y);
+          ctx.stroke();
+          ctx.fillText(Math.round(pop), padL - 8, y);
+        }
+
+        function drawLine(color, key) {
+          ctx.beginPath();
+          history.forEach((p, i) => {
+            const x = xFor(p.t);
+            const y = yFor(p[key]);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2.5;
+          ctx.stroke();
+        }
+
+        drawLine('#2a6bd6', 'R');
+        drawLine('#d9534f', 'F');
+
+        // Legend
+        ctx.textAlign = 'left';
+        ctx.font = '600 12px Inter, sans-serif';
+        ctx.fillStyle = '#2a6bd6';
+        ctx.fillText('— Rabbits', padL, padT + 4);
+        ctx.fillStyle = '#d9534f';
+        ctx.fillText('— Foxes', padL + 90, padT + 4);
+      }
+
+      SimKit.canvas2d(canvas, { box, dpr: 2, onResize: draw });
+
+      Object.keys(els).forEach(key => {
+        const el = els[key];
+        if (el && el.tagName === 'INPUT') {
+          el.addEventListener('input', syncLabels);
+        }
+      });
+      [els.rabbits, els.foxes].forEach(el => {
+        el.addEventListener('change', resetSim);
+      });
+
+      els.toggle.addEventListener('click', () => {
+        running = !running;
+        els.toggle.textContent = running ? 'Pause' : 'Play';
+      });
+      els.reset.addEventListener('click', resetSim);
+
+      resetSim();
+
+      const TIME_SCALE = 2; // simulated time units per real second, so a cycle is watchable in a few seconds
+      SimKit.loop(dt => {
+        step(Math.min(dt, 0.1) * TIME_SCALE);
+        draw();
+      });
     })();
   </script>
 

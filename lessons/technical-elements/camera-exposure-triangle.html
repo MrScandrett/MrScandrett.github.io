@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Camera Exposure Triangle · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Balance aperture, shutter speed, and ISO to feel the camera exposure triangle — and the depth-of-field, motion-blur, and noise trade-offs hiding behind each setting." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .cl-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 300px; }
+
+    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .cl-hero h1 { max-width: 32ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+    [data-lighting="night"] .cl-lede, [data-theme="vaporwave"] .cl-lede, [data-theme="bark"] .cl-lede { color: rgba(245,245,247,0.7); }
+
+    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#c084fc); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .cl-card p  { margin: 0 0 0.6rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .cl-card p:last-child { margin-bottom: 0; }
+    [data-lighting="night"] .cl-card, [data-theme="vaporwave"] .cl-card, [data-theme="bark"] .cl-card { background: var(--white,#2c2c2e); }
+    [data-lighting="night"] .cl-card p, [data-theme="vaporwave"] .cl-card p, [data-theme="bark"] .cl-card p { color: rgba(245,245,247,0.72); }
+
+    .cet-triangle-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.7rem; margin: 0.8rem 0; }
+    .cet-corner { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.8rem; text-align: center; }
+    .cet-corner-icon { font-size: 1.6rem; margin-bottom: 0.3rem; }
+    .cet-corner strong { display: block; font-size: 0.88rem; margin-bottom: 0.2rem; }
+    .cet-corner small { font-size: 0.76rem; color: var(--text-muted, #64748b); line-height: 1.5; display: block; }
+
+    .cet-lab { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; padding: 1rem; margin: 0.8rem 0; background: #f7f8fa; }
+    [data-lighting="night"] .cet-lab, [data-theme="vaporwave"] .cet-lab, [data-theme="bark"] .cet-lab { background: #1c1c1e; }
+
+    .cet-preview { height: 120px; border-radius: 12px; margin-bottom: 0.9rem; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.95rem; color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,0.5); transition: background 0.25s ease; }
+
+    .cet-slider-row { margin: 0.7rem 0; }
+    .cet-slider-row label { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .cet-slider-row input[type="range"] { width: 100%; }
+
+    .cet-effects { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin: 0.8rem 0; }
+    .cet-effect { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.6rem; text-align: center; }
+    [data-lighting="night"] .cet-effect, [data-theme="vaporwave"] .cet-effect, [data-theme="bark"] .cet-effect { background: rgba(255,255,255,0.06); }
+    .cet-effect-label { font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #64748b); display: block; margin-bottom: 0.2rem; }
+    .cet-effect-val { font-size: 0.86rem; font-weight: 700; color: #a855f7; }
+
+    .cet-meter-track { height: 16px; border-radius: 999px; background: linear-gradient(90deg, #1e293b, #64748b, #e2e8f0, #64748b, #1e293b); position: relative; margin: 0.6rem 0; }
+    .cet-meter-marker { position: absolute; top: -6px; width: 4px; height: 28px; background: #a855f7; border-radius: 2px; transition: left 0.2s ease; }
+    .cet-meter-labels { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted, #64748b); }
+    .cet-verdict { margin-top: 0.6rem; padding: 0.6rem 0.8rem; border-radius: 10px; font-weight: 700; font-size: 0.86rem; text-align: center; }
+    .cet-verdict.good { background: rgba(52,199,89,0.14); color: #248a3d; }
+    .cet-verdict.under { background: rgba(30,41,59,0.14); color: #1e293b; }
+    .cet-verdict.over { background: rgba(255,59,48,0.12); color: #c0392b; }
+    [data-lighting="night"] .cet-verdict.under, [data-theme="vaporwave"] .cet-verdict.under, [data-theme="bark"] .cet-verdict.under { color: #cbd5e1; }
+
+    .cl-practice .cl-problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .cl-practice .cl-problem p { margin-bottom: 0.5rem; }
+    .cl-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .cl-ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 220px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .cl-check-btn { background: #a855f7; color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .cl-check-btn:hover { background: #9333ea; }
+    .cl-feedback { font-size: 0.82rem; font-weight: 600; }
+    .cl-feedback.ok  { color: #34c759; }
+    .cl-feedback.err { color: #ff3b30; }
+    .cl-hint { font-size: 0.78rem; color: var(--text-muted, #64748b); margin-top: 0.4rem; display: none; }
+    .diff-easy { background: rgba(52,199,89,0.15);  color: #248a3d; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-mid  { background: rgba(255,149,0,0.15);  color: #c07000; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-hard { background: rgba(255,59,48,0.12);  color: #c0392b; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="cl-page">
+
+        <section class="hero cl-hero">
+          <p class="eyebrow">Audio, Lighting &amp; Production Technology · Grades 9–12</p>
+          <h1>Camera Exposure Triangle</h1>
+          <div class="cl-hero-meta">
+            <span>Aperture</span><span class="dot"></span>
+            <span>Shutter Speed</span><span class="dot"></span>
+            <span>ISO</span><span class="dot"></span>
+            <span>Depth of Field · Motion · Noise</span>
+          </div>
+          <p class="cl-lede">Every correctly exposed shot balances three controls at once. Push one, and you have to pull another to keep the same brightness — but each one drags a side effect along with it. Feel that three-way trade-off below before you ever touch a real camera.</p>
+        </section>
+
+        <section class="cl-card" style="--card-accent:#c084fc;">
+          <h2>The Three Corners</h2>
+          <div class="cet-triangle-grid">
+            <div class="cet-corner">
+              <div class="cet-corner-icon">🔘</div>
+              <strong>Aperture</strong>
+              <small>How wide the lens opens (f-stop). Wider = more light, but a shallower zone in focus.</small>
+            </div>
+            <div class="cet-corner">
+              <div class="cet-corner-icon">⏱️</div>
+              <strong>Shutter Speed</strong>
+              <small>How long the sensor is exposed. Slower = more light, but motion blurs.</small>
+            </div>
+            <div class="cet-corner">
+              <div class="cet-corner-icon">📶</div>
+              <strong>ISO</strong>
+              <small>How much the sensor amplifies light. Higher = brighter in the dark, but grainier.</small>
+            </div>
+          </div>
+        </section>
+
+        <section class="cl-card" style="--card-accent:#a855f7;">
+          <h2>Interactive: Balance the Triangle</h2>
+          <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Move any slider and watch the exposure meter and preview shift. Try to land the marker in the center — then notice what changed with it.</p>
+          <div class="cet-lab">
+            <div class="cet-preview" id="cet-preview">Preview</div>
+
+            <div class="cet-slider-row">
+              <label><span>Aperture</span><span id="cet-aperture-val">f/5.6</span></label>
+              <input type="range" min="0" max="6" value="3" id="cet-aperture" oninput="cetUpdate()" />
+            </div>
+            <div class="cet-slider-row">
+              <label><span>Shutter Speed</span><span id="cet-shutter-val">1/125s</span></label>
+              <input type="range" min="0" max="8" value="4" id="cet-shutter" oninput="cetUpdate()" />
+            </div>
+            <div class="cet-slider-row">
+              <label><span>ISO</span><span id="cet-iso-val">400</span></label>
+              <input type="range" min="0" max="6" value="2" id="cet-iso" oninput="cetUpdate()" />
+            </div>
+
+            <div class="cet-meter-track"><div class="cet-meter-marker" id="cet-meter-marker" style="left:50%;"></div></div>
+            <div class="cet-meter-labels"><span>−3 EV</span><span>Correct</span><span>+3 EV</span></div>
+            <div class="cet-verdict" id="cet-verdict">Correctly exposed</div>
+
+            <div class="cet-effects">
+              <div class="cet-effect"><span class="cet-effect-label">Depth of Field</span><span class="cet-effect-val" id="cet-e-dof">Medium</span></div>
+              <div class="cet-effect"><span class="cet-effect-label">Motion</span><span class="cet-effect-val" id="cet-e-motion">Frozen</span></div>
+              <div class="cet-effect"><span class="cet-effect-label">Noise</span><span class="cet-effect-val" id="cet-e-noise">Low</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="cl-card" style="--card-accent:#34c759;">
+          <h2>Go Deeper: Exposure Value (EV)</h2>
+          <p>Exposure is really just "how much total light reached the sensor." Aperture, shutter speed, and ISO each add or subtract light in fixed steps called <strong>stops</strong>. One full stop always doubles or halves the light — which means you can always trade one control for another and land on the exact same exposure, just with different side effects. That's the whole triangle in one sentence: same brightness, different trade-offs.</p>
+        </section>
+
+        <!-- Practice Problems -->
+        <section class="cl-card" style="--card-accent:#007aff;">
+          <h2>Practice Problems</h2>
+          <div class="cl-practice">
+
+            <div class="cl-problem">
+              <p><span class="diff-easy">Easy</span>1. You need to freeze a fast-moving basketball. Which control matters most?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="cetans-1">
+                  <option value="">Choose…</option>
+                  <option value="shutter">Fast shutter speed</option>
+                  <option value="aperture">Wide aperture only</option>
+                  <option value="iso">Low ISO only</option>
+                </select>
+                <button class="cl-check-btn" onclick="cetCheckText(1,'shutter')">Check</button>
+                <span class="cl-feedback" id="cetfb-1"></span>
+              </div>
+              <div class="cl-hint" id="cethint-1">Hint: A slow shutter is what causes motion blur — speeding it up freezes action.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-easy">Easy</span>2. Widening the aperture (a smaller f-number) does what to depth of field?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="cetans-2" style="width:240px;">
+                  <option value="">Choose…</option>
+                  <option value="shallow">Makes it shallower (more blurry background)</option>
+                  <option value="deep">Makes it deeper (more in focus)</option>
+                  <option value="none">Has no effect on focus at all</option>
+                </select>
+                <button class="cl-check-btn" onclick="cetCheckText(2,'shallow')">Check</button>
+                <span class="cl-feedback" id="cetfb-2"></span>
+              </div>
+              <div class="cl-hint" id="cethint-2">Hint: Portrait photographers open the aperture wide specifically to blur the background.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-mid">Medium</span>3. Raising ISO to shoot in a dark room brightens the image, but at what cost?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="cetans-3" style="width:200px;">
+                  <option value="">Choose…</option>
+                  <option value="noise">More visible noise/grain</option>
+                  <option value="blur">More motion blur</option>
+                  <option value="nothing">No cost at all</option>
+                </select>
+                <button class="cl-check-btn" onclick="cetCheckText(3,'noise')">Check</button>
+                <span class="cl-feedback" id="cetfb-3"></span>
+              </div>
+              <div class="cl-hint" id="cethint-3">Hint: ISO doesn't add real light — it amplifies the signal, and amplifying noise along with it.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-mid">Medium</span>4. You open the aperture one full stop (more light). To keep exposure exactly the same, what should you do to shutter speed or ISO?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="cetans-4" style="width:260px;">
+                  <option value="">Choose…</option>
+                  <option value="reduce">Cut shutter speed or ISO by one stop</option>
+                  <option value="increase">Raise shutter speed or ISO by one stop</option>
+                  <option value="nochange">Leave everything unchanged</option>
+                </select>
+                <button class="cl-check-btn" onclick="cetCheckText(4,'reduce')">Check</button>
+                <span class="cl-feedback" id="cetfb-4"></span>
+              </div>
+              <div class="cl-hint" id="cethint-4">Hint: If one corner adds a stop of light, another corner has to give a stop back to stay balanced.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-hard">Challenge</span>5. A student wants a blurry background AND frozen action in bright daylight. Why is that combination hard, and what's the usual fix?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="cetans-5" style="width:320px;">
+                  <option value="">Choose…</option>
+                  <option value="ndfilter">Wide aperture + fast shutter overexposes; add an ND filter to cut light</option>
+                  <option value="iso">Just raise ISO as high as possible</option>
+                  <option value="impossible">It's simply impossible in any light</option>
+                </select>
+                <button class="cl-check-btn" onclick="cetCheckText(5,'ndfilter')">Check</button>
+                <span class="cl-feedback" id="cetfb-5"></span>
+              </div>
+              <div class="cl-hint" id="cethint-5">Hint: Wide aperture + fast shutter both want low light already — in bright sun that combo lets in too much. A neutral-density filter blocks light without changing focus or motion.</div>
+            </div>
+
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../index.html">Home</a> · <a href="../../steam-lessons.html">Lessons</a></p>
+        </footer>
+      </main>
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="cet-pane-sim">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="cet-pane-guide">Summary</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="cet-pane-sim">
+          <div class="ll-info"><strong>Try this</strong> Push ISO all the way up in the dark, then bring shutter speed back down to compensate — watch the meter stay centered while noise climbs.</div>
+          <div class="ll-info"><strong>Try this too</strong> Open the aperture as wide as it goes and watch depth of field shrink to "Very Shallow."</div>
+        </div>
+        <div class="ll-pane" id="cet-pane-guide">
+          <div class="ll-info"><strong>Aperture</strong> Wider (smaller f-number) = more light + shallower focus.</div>
+          <div class="ll-info"><strong>Shutter Speed</strong> Slower = more light + more motion blur.</div>
+          <div class="ll-info"><strong>ISO</strong> Higher = brighter in the dark + more visible noise.</div>
+          <div class="ll-info"><strong>The trade</strong> Every stop you gain in one corner has to come from another corner to keep exposure the same.</div>
+        </div>
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+</div><!-- .ll-viewport -->
+
+<script src="../../assets/js/theme-registry.js"></script>
+<script src="../../assets/js/nav-mobile.js"></script>
+<script>
+  var CET_APERTURES = ['f/1.4','f/2','f/2.8','f/5.6','f/8','f/11','f/16'];
+  var CET_SHUTTERS = ['1/2000s','1/1000s','1/500s','1/250s','1/125s','1/60s','1/30s','1/15s','1/2s'];
+  var CET_ISOS = [100,200,400,800,1600,3200,6400];
+
+  function cetUpdate() {
+    var aIdx = Number(document.getElementById('cet-aperture').value);
+    var sIdx = Number(document.getElementById('cet-shutter').value);
+    var iIdx = Number(document.getElementById('cet-iso').value);
+
+    document.getElementById('cet-aperture-val').textContent = CET_APERTURES[aIdx];
+    document.getElementById('cet-shutter-val').textContent = CET_SHUTTERS[sIdx];
+    document.getElementById('cet-iso-val').textContent = CET_ISOS[iIdx];
+
+    // Each index step is roughly one stop of light. Balanced point: a=3, s=4, i=2.
+    var ev = (aIdx - 3) * -1 + (sIdx - 4) * -1 + (iIdx - 2);
+    // Wider aperture (lower index) = more light, so invert aperture's contribution.
+    ev = (3 - aIdx) + (sIdx - 4) + (iIdx - 2);
+    ev = Math.max(-3, Math.min(3, ev));
+
+    var pct = ((ev + 3) / 6) * 100;
+    document.getElementById('cet-meter-marker').style.left = pct + '%';
+
+    var verdict = document.getElementById('cet-verdict');
+    var preview = document.getElementById('cet-preview');
+    var brightness = 30 + ((ev + 3) / 6) * 55;
+    preview.style.background = 'hsl(260, 25%, ' + brightness + '%)';
+    preview.textContent = ev <= -1 ? 'Underexposed' : ev >= 1 ? 'Overexposed' : 'Correctly Exposed';
+
+    if (ev <= -1) { verdict.textContent = 'Underexposed — too dark. Open the aperture, slow the shutter, or raise ISO.'; verdict.className = 'cet-verdict under'; }
+    else if (ev >= 1) { verdict.textContent = 'Overexposed — too bright. Close the aperture, speed up the shutter, or lower ISO.'; verdict.className = 'cet-verdict over'; }
+    else { verdict.textContent = 'Correctly exposed.'; verdict.className = 'cet-verdict good'; }
+
+    var dofLabels = ['Very Shallow','Shallow','Shallow','Medium','Deep','Deep','Very Deep'];
+    document.getElementById('cet-e-dof').textContent = dofLabels[aIdx];
+
+    var motionLabels = ['Frozen','Frozen','Frozen','Frozen','Sharp','Slight Blur','Blurry','Blurry','Very Blurry'];
+    document.getElementById('cet-e-motion').textContent = motionLabels[sIdx];
+
+    var noiseLabels = ['Very Low','Low','Low','Medium','Medium-High','High','Very High'];
+    document.getElementById('cet-e-noise').textContent = noiseLabels[iIdx];
+  }
+
+  function cetCheckText(n, correct) {
+    var sel = document.getElementById('cetans-' + n);
+    var fb = document.getElementById('cetfb-' + n);
+    var hint = document.getElementById('cethint-' + n);
+    if (!sel.value) { fb.textContent = 'Pick an answer first.'; fb.className = 'cl-feedback err'; return; }
+    if (sel.value === correct) {
+      fb.textContent = '✓ Correct!'; fb.className = 'cl-feedback ok'; hint.style.display = 'none';
+    } else {
+      fb.textContent = '✗ Not quite — check the hint below.'; fb.className = 'cl-feedback err'; hint.style.display = 'block';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', cetUpdate);
+</script>
+<script src="../../assets/js/classroom-animations.js"></script>
+<script src="../../assets/js/lesson-layout.js"></script>
+<script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

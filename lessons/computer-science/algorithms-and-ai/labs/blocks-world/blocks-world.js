@@ -329,12 +329,12 @@
     const text = normalizeCommand(raw);
     if (!text) return { error: "Type a command first. Example: move A onto B" };
 
-    let match = text.match(/^move\s+([a-z])\s+onto\s+([a-z])$/i);
+    let match = text.match(/^(?:move|put)\s+([a-z])\s+(?:onto|on)\s+([a-z])$/i);
     if (match) {
       return { intent: "move_onto", x: match[1].toUpperCase(), y: match[2].toUpperCase(), raw: text };
     }
 
-    match = text.match(/^move\s+([a-z])\s+to\s+table$/i);
+    match = text.match(/^(?:move|put)\s+([a-z])\s+to\s+(?:the\s+)?table$/i);
     if (match) {
       return { intent: "move_table", x: match[1].toUpperCase(), raw: text };
     }
@@ -360,7 +360,7 @@
 
     return {
       error:
-        "Command not recognized. Try: move A onto B, move A to table, stack A on B, unstack A from B, clear B, show state"
+        "Command not recognized. Try: move A onto B, put A on B, move A to table, put A to table, unstack A from B, clear B, show state"
     };
   }
 

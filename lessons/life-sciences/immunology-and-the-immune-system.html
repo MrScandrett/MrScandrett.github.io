@@ -5,32 +5,714 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Immunology &amp; the Immune System · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
-  <meta name="description" content="Life Science Lesson — explore Immunology & the Immune System." />
+  <meta name="description" content="Life Sciences Lesson — follow the body's three layered defenses (barriers, innate immunity, adaptive immunity), then run an infection simulator that compares a first exposure to a vaccinated, memory-primed response." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
-</head>
-<body>
-  <div class="ll-viewport">
-    <div class="cl-page">
-      <div class="cl-hero">
-        <h1>Immunology &amp; the Immune System</h1>
-        <p class="cl-lede">Foundational STEAM lesson for Immunology &amp; the Immune System.</p>
-      </div>
+  <style>
+    .ll-viewport {
+      --ll-panel-w: 280px;
+      --ll-accent: #0f8b8d;
+      --ll-tab-active: #0f8b8d;
+      --ll-tab-active-bg: rgba(15, 139, 141, 0.13);
+    }
 
-      <div class="cl-card">
-        <h2>Overview</h2>
-        <p>This is the foundation for the Immunology &amp; the Immune System lesson. Add interactive simulations and content here.</p>
-        <figure data-zoomable>
-          <!-- Add image here -->
-          <figcaption>Placeholder image caption for Immunology &amp; the Immune System</figcaption>
-        </figure>
+    /* ── Immunology Page Tokens ── */
+    .imm-page {
+      font-family: var(--font-sans);
+      color: #0f2b2c;
+      background:
+        radial-gradient(circle at 8% 10%, rgba(15, 139, 141, 0.16), transparent 26%),
+        radial-gradient(circle at 90% 14%, rgba(251, 113, 133, 0.14), transparent 24%),
+        linear-gradient(180deg, #f2fbfa 0%, #e9f6f4 100%);
+    }
+
+    .ll-viewport .ll-topbar {
+      background: rgba(242, 251, 250, 0.86);
+    }
+
+    .imm-shell {
+      width: min(1140px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.5rem 0 3.6rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .imm-card {
+      border-radius: 24px;
+      border: 1px solid rgba(15, 139, 141, 0.18);
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 20px 50px rgba(9, 41, 42, 0.08);
+      padding: 1.3rem;
+    }
+
+    .imm-hero {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .imm-eyebrow {
+      margin: 0 0 0.5rem;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #0f7274;
+    }
+
+    .imm-hero h1 {
+      margin: 0;
+      font-size: clamp(1.9rem, 3.6vw, 2.9rem);
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+      color: #0a2223;
+    }
+
+    .imm-lede {
+      margin: 0.85rem 0 0;
+      font-size: 1.02rem;
+      color: #2b5152;
+      line-height: 1.66;
+    }
+
+    .imm-idlist {
+      margin: 0;
+      padding-left: 1.1rem;
+      color: #2b5152;
+      line-height: 1.75;
+      font-size: 0.94rem;
+    }
+    .imm-idlist li strong { color: #0a2223; }
+
+    .imm-h2 {
+      margin: 0 0 0.7rem;
+      font-size: 1.3rem;
+      color: #0a2223;
+      letter-spacing: -0.01em;
+    }
+
+    .imm-p {
+      margin: 0 0 0.7rem;
+      font-size: 0.95rem;
+      line-height: 1.68;
+      color: #24484a;
+    }
+    .imm-p:last-child { margin-bottom: 0; }
+    .imm-p strong { color: #0f2b2c; }
+
+    /* ── Three lines of defense ── */
+    .imm-defense-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.9rem;
+    }
+    .imm-defense-card {
+      padding: 1.05rem;
+      border-radius: 18px;
+      background: #eefaf8;
+      border: 1px solid rgba(15, 139, 141, 0.2);
+      display: grid;
+      gap: 0.35rem;
+      align-content: start;
+    }
+    .imm-defense-card.line-2 { background: #eef6fb; border-color: rgba(46, 107, 186, 0.22); }
+    .imm-defense-card.line-3 { background: #fdf1f2; border-color: rgba(251, 113, 133, 0.25); }
+    .imm-defense-card .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: #0f8b8d;
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+    .imm-defense-card.line-2 .num { background: #2e6bba; }
+    .imm-defense-card.line-3 .num { background: #e0405a; }
+    .imm-defense-card h3 {
+      margin: 0.15rem 0 0;
+      font-size: 1rem;
+      color: #0a2223;
+    }
+    .imm-defense-card p {
+      margin: 0;
+      font-size: 0.85rem;
+      color: #2b5152;
+      line-height: 1.58;
+    }
+    .imm-defense-card ul {
+      margin: 0.2rem 0 0;
+      padding-left: 1.05rem;
+      font-size: 0.83rem;
+      color: #2b5152;
+      line-height: 1.55;
+    }
+
+    /* ── Simulation ── */
+    .imm-sim-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 250px;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .imm-canvas-wrap {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #06161a;
+      border: 1px solid rgba(15, 139, 141, 0.3);
+      box-shadow: inset 0 0 30px rgba(0,0,0,0.45);
+    }
+    .imm-canvas-wrap canvas {
+      display: block;
+      width: 100%;
+      height: 320px;
+    }
+    .imm-readout {
+      position: absolute;
+      top: 0.6rem;
+      left: 0.7rem;
+      display: flex;
+      gap: 0.9rem;
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.85);
+      background: rgba(0,0,0,0.32);
+      padding: 0.35rem 0.65rem;
+      border-radius: 999px;
+      pointer-events: none;
+    }
+    .imm-readout span { display: flex; align-items: center; gap: 0.3rem; }
+    .imm-readout i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+    .imm-controls {
+      display: grid;
+      gap: 0.65rem;
+      align-content: start;
+    }
+    .imm-btn {
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.6rem 0.7rem;
+      border-radius: 10px;
+      border: 1px solid rgba(15, 139, 141, 0.4);
+      background: #eefaf8;
+      color: #0a2223;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .imm-btn:hover { background: #d9f1ee; }
+    .imm-btn.primary {
+      background: #0f8b8d;
+      color: #fff;
+      border-color: #0c7072;
+    }
+    .imm-btn.primary:hover { background: #0c7072; }
+    .imm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .imm-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #24484a;
+      padding: 0.5rem 0.7rem;
+      border-radius: 10px;
+      background: #eefaf8;
+      border: 1px solid rgba(15, 139, 141, 0.2);
+    }
+    .imm-toggle input { accent-color: #0f8b8d; width: 17px; height: 17px; }
+
+    .imm-memory-meter {
+      font-size: 0.76rem;
+      color: #2b5152;
+      display: grid;
+      gap: 0.3rem;
+    }
+    .imm-memory-bar {
+      height: 8px;
+      border-radius: 999px;
+      background: #d9f1ee;
+      overflow: hidden;
+    }
+    .imm-memory-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #0f8b8d, #2e6bba);
+      transition: width 0.2s ease;
+    }
+
+    .imm-legend {
+      font-size: 0.78rem;
+      color: #2b5152;
+      line-height: 1.6;
+      margin-top: 0.4rem;
+      padding-top: 0.7rem;
+      border-top: 1px dashed rgba(15, 139, 141, 0.3);
+    }
+    .imm-legend strong { color: #0a2223; }
+
+    /* ── Vaccine / examples grid ── */
+    .imm-fact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 0.9rem;
+    }
+    .imm-fact {
+      padding: 1rem 1.05rem;
+      border-radius: 16px;
+      background: #eefaf8;
+      border: 1px solid rgba(15, 139, 141, 0.2);
+    }
+    .imm-fact h3 {
+      margin: 0 0 0.35rem;
+      font-size: 0.98rem;
+      color: #0a2223;
+    }
+    .imm-fact p {
+      margin: 0;
+      font-size: 0.87rem;
+      color: #2b5152;
+      line-height: 1.6;
+    }
+
+    /* ── Reflection ── */
+    .imm-reflect-list {
+      display: grid;
+      gap: 0.6rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .imm-reflect-list li {
+      padding: 0.75rem 0.9rem;
+      border-radius: 12px;
+      background: #eefaf8;
+      border-left: 3px solid #0f8b8d;
+      font-size: 0.92rem;
+      color: #0a2223;
+      line-height: 1.55;
+    }
+
+    @media (max-width: 900px) {
+      .imm-defense-grid { grid-template-columns: 1fr; }
+      .imm-sim-layout { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 740px) {
+      .imm-hero { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+<div class="ll-viewport">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="imm-page">
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 1 — HERO
+     ════════════════════════════════════════════════════════════ -->
+<div class="imm-shell">
+
+  <div class="imm-hero">
+    <div class="imm-card">
+      <p class="imm-eyebrow">Life Sciences · Bridge · Advanced Biology (11–12)</p>
+      <h1>Immunology &amp; the Immune System</h1>
+      <p class="imm-lede">
+        Every second, your body is a target: bacteria on your skin, viruses in the
+        air you breathe, parasites in your food. Almost none of them ever make you
+        sick, and that is not luck — it's the immune system, a distributed network
+        of barriers, cells, and chemical signals with no central brain, working at
+        every scale from a mucus membrane to a single reprogrammed white blood
+        cell. It isn't one system so much as three, stacked in layers: fast,
+        general defenses that buy time, and a slower, highly specific defense that
+        <em>learns</em> your enemies and remembers them for years. That memory is
+        also the exact mechanism vaccines exploit — training your adaptive immune
+        system to recognize a threat before it ever meets the real thing.
+      </p>
+    </div>
+
+    <div class="imm-card">
+      <p class="imm-eyebrow">Quick ID</p>
+      <ul class="imm-idlist">
+        <li><strong>Line 1</strong> — physical &amp; chemical barriers</li>
+        <li><strong>Line 2</strong> — innate immunity, minutes to hours, non-specific</li>
+        <li><strong>Line 3</strong> — adaptive immunity, days, highly specific + memory</li>
+        <li>Key cells: <strong>macrophages, T cells, B cells</strong></li>
+        <li>Key molecules: <strong>antibodies, cytokines, antigens</strong></li>
+      </ul>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 2 — THREE LINES OF DEFENSE
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="imm-card">
+    <h2 class="imm-h2">Three Lines of Defense</h2>
+    <p class="imm-p">
+      Immunologists usually describe the body's defenses as three layers, each one
+      slower and more targeted than the last. A pathogen has to get through all
+      three to actually cause disease — and most never make it past the first.
+    </p>
+    <div class="imm-defense-grid">
+      <div class="imm-defense-card">
+        <span class="num">1</span>
+        <h3>Barriers</h3>
+        <p>Physical and chemical walls that stop pathogens before they ever get inside.</p>
+        <ul>
+          <li>Skin — a dead, keratin-packed layer few microbes can cross</li>
+          <li>Mucus membranes trap particles in the airway and gut</li>
+          <li>Stomach acid (pH ~2) and enzymes in tears and saliva</li>
+          <li>Cilia sweep trapped debris out of the lungs</li>
+          <li>Resident "good" bacteria compete for space and nutrients</li>
+        </ul>
+      </div>
+      <div class="imm-defense-card line-2">
+        <span class="num">2</span>
+        <h3>Innate Immunity</h3>
+        <p>Fast, generic responders that attack anything flagged as "not self," within minutes.</p>
+        <ul>
+          <li><strong>Macrophages &amp; neutrophils</strong> engulf pathogens (phagocytosis)</li>
+          <li><strong>Inflammation</strong> — redness, heat, swelling as vessels dilate and leak fluid, bringing in more immune cells</li>
+          <li><strong>Fever</strong> raises body temperature to slow pathogen reproduction and speed immune cell activity</li>
+          <li>No memory — responds the same way every single time</li>
+        </ul>
+      </div>
+      <div class="imm-defense-card line-3">
+        <span class="num">3</span>
+        <h3>Adaptive Immunity</h3>
+        <p>Slow the first time, precisely targeted, and — critically — able to remember.</p>
+        <ul>
+          <li><strong>B cells</strong> mature into plasma cells that mass-produce <strong>antibodies</strong>, Y-shaped proteins that tag a specific antigen</li>
+          <li><strong>T cells</strong> — helper T cells coordinate the response; cytotoxic T cells destroy infected cells directly</li>
+          <li><strong>Memory B and T cells</strong> persist for years, ready to react fast the next time</li>
+          <li>Takes ~1–2 weeks to fully ramp up on a first exposure</li>
+        </ul>
       </div>
     </div>
   </div>
-  <script src="../../assets/js/photo-lightbox.js"></script>
-  <script src="../../assets/js/lesson-layout.js"></script>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 3 — INTERACTIVE SIMULATION
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="imm-card">
+    <h2 class="imm-h2">Lab: Infection &amp; Immune Response Simulator</h2>
+    <p class="imm-p">
+      This model tracks a pathogen population against two immune responses over
+      simulated time. Innate immunity ramps up fast but stays moderate. Adaptive
+      immunity is slow to mount the first time a pathogen is seen — but every
+      exposure builds <strong>immunological memory</strong>. Vaccinate first (a
+      safe, simulated pre-exposure) and the next real infection is cleared
+      before you'd ever feel sick.
+    </p>
+    <div class="imm-sim-layout">
+      <div class="imm-canvas-wrap">
+        <canvas id="immCanvas"></canvas>
+        <div class="imm-readout">
+          <span><i style="background:#f0546b"></i>Pathogen</span>
+          <span><i style="background:#3fb6e0"></i>Innate</span>
+          <span><i style="background:#ffd166"></i>Adaptive / Antibodies</span>
+        </div>
+      </div>
+      <div class="imm-controls">
+        <button class="imm-btn primary" id="infectBtn">Trigger Infection</button>
+        <button class="imm-btn" id="vaccinateBtn">Vaccinate (safe pre-exposure)</button>
+        <button class="imm-btn" id="resetBtn">Reset Immune History</button>
+
+        <label class="imm-toggle">
+          Innate response active
+          <input type="checkbox" id="innateToggle" checked />
+        </label>
+        <label class="imm-toggle">
+          Adaptive response active
+          <input type="checkbox" id="adaptiveToggle" checked />
+        </label>
+
+        <div class="imm-memory-meter">
+          <span>Immunological memory <strong id="memoryVal">0%</strong></span>
+          <div class="imm-memory-bar"><div class="imm-memory-fill" id="memoryFill"></div></div>
+        </div>
+
+        <div class="imm-legend">
+          <strong>Try this:</strong> trigger a first infection and watch how long
+          adaptive immunity takes to catch up. Reset, then vaccinate before
+          infecting — the adaptive curve should now rise almost as fast as
+          innate immunity, and the pathogen count should barely register. Turn
+          off adaptive immunity to see what chronic disease looks like without it.
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 4 — VACCINES
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="imm-card">
+    <h2 class="imm-h2">How Vaccines Work</h2>
+    <p class="imm-p">
+      A vaccine shows the adaptive immune system an <strong>antigen</strong> — a
+      weakened or inactivated pathogen, a single viral protein, or instructions
+      (mRNA) for your own cells to build one — without the disease attached to
+      it. B cells and T cells respond to that antigen exactly as they would to a
+      real infection: they proliferate, produce antibodies, and — most
+      importantly — leave behind a population of memory cells. If the real
+      pathogen shows up later, that memory triggers a <strong>secondary
+      response</strong>: faster, larger, and higher-affinity than any first
+      exposure could be, often clearing the pathogen before symptoms appear at
+      all. That's the same curve you can compare directly in the simulator above
+      by running an infection with and without a prior "vaccination."
+    </p>
+    <div class="imm-fact-grid">
+      <div class="imm-fact">
+        <h3>🧑‍🤝‍🧑 Herd Immunity</h3>
+        <p>When enough of a population is immune — through vaccination or prior infection — a pathogen struggles to find a new host before it dies out, indirectly protecting people who can't be vaccinated (infants, immunocompromised patients).</p>
+      </div>
+      <div class="imm-fact">
+        <h3>⚠️ Autoimmune Disease</h3>
+        <p>Sometimes adaptive immunity misfires and treats the body's own cells as antigens. Type 1 diabetes (insulin-producing cells attacked), rheumatoid arthritis, and multiple sclerosis are all cases of the immune system targeting "self."</p>
+      </div>
+      <div class="imm-fact">
+        <h3>🤧 Allergies</h3>
+        <p>An allergy is an adaptive response aimed at something harmless — pollen, peanut protein, pet dander. The immune system overreacts to a non-threat, and the resulting inflammation is the allergic symptoms themselves.</p>
+      </div>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 5 — REFLECTION / FORMATIVE ASSESSMENT
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="imm-card">
+    <h2 class="imm-h2">Discussion &amp; Exit Ticket</h2>
+    <ul class="imm-reflect-list">
+      <li>Explain, in your own words, why a first-time infection makes you feel sick for days before you recover, while a vaccinated person exposed to the same pathogen may never notice.</li>
+      <li>Innate immunity has no memory and reacts identically every time. What would happen to your body if you only had innate immunity and no adaptive system? Use the simulator (turn off adaptive) to test your prediction.</li>
+      <li>Autoimmune disease and allergies are both cases of adaptive immunity "getting it wrong." How are they different failures of the same system?</li>
+      <li><strong>Exit ticket:</strong> in four sentences, use the terms <strong>antigen</strong>, <strong>antibody</strong>, <strong>memory cell</strong>, and <strong>secondary response</strong> to explain why a vaccinated immune system responds faster than an unvaccinated one.</li>
+    </ul>
+  </div>
+
+</div><!-- /.imm-shell -->
+
+<script src="../../assets/js/sim-kit.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var canvas = document.getElementById('immCanvas');
+  var cv2d = SimKit.canvas2d(canvas, { height: 320 });
+
+  // ── Simulation state ──────────────────────────────────────────
+  var SIM_SPEED = 6;          // sim-hours per real second
+  var HISTORY_HOURS = 220;    // rolling chart window
+  var SAMPLE_EVERY = 0.6;     // sim-hours between chart samples
+
+  var pathogen = 0;
+  var innate = 0;
+  var adaptive = 0;
+  var memory = 0;             // 0..100, persists across infections
+  var infectionActive = false;
+  var simTime = 0;
+  var sinceLastSample = 0;
+
+  var innateOn = true;
+  var adaptiveOn = true;
+
+  var history = []; // { t, p, i, a }
+
+  var infectBtn = document.getElementById('infectBtn');
+  var vaccinateBtn = document.getElementById('vaccinateBtn');
+  var resetBtn = document.getElementById('resetBtn');
+  var innateToggle = document.getElementById('innateToggle');
+  var adaptiveToggle = document.getElementById('adaptiveToggle');
+  var memoryVal = document.getElementById('memoryVal');
+  var memoryFill = document.getElementById('memoryFill');
+
+  function beginInfection(startLevel) {
+    pathogen = Math.max(pathogen, startLevel);
+    infectionActive = true;
+  }
+
+  infectBtn.addEventListener('click', function () {
+    beginInfection(4);
+  });
+
+  vaccinateBtn.addEventListener('click', function () {
+    // A vaccine is a safe, low-grade simulated exposure: it trains memory
+    // without the large, symptomatic pathogen surge a real infection causes.
+    beginInfection(1.2);
+  });
+
+  resetBtn.addEventListener('click', function () {
+    pathogen = 0;
+    innate = 0;
+    adaptive = 0;
+    memory = 0;
+    infectionActive = false;
+    simTime = 0;
+    sinceLastSample = 0;
+    history = [];
+  });
+
+  innateToggle.addEventListener('change', function (e) {
+    innateOn = e.target.checked;
+  });
+  adaptiveToggle.addEventListener('change', function (e) {
+    adaptiveOn = e.target.checked;
+  });
+
+  function stepSim(simDt) {
+    simTime += simDt;
+
+    // Pathogen: logistic growth, suppressed by immune killing.
+    var growthRate = 0.10;
+    var carryingCapacity = 100;
+    var innateKill = innateOn ? 0.0022 : 0;
+    var adaptiveKill = adaptiveOn ? 0.0065 : 0;
+
+    if (pathogen > 0.01) {
+      var growth = growthRate * pathogen * (1 - pathogen / carryingCapacity);
+      var killed = (innateKill * innate + adaptiveKill * adaptive) * pathogen;
+      pathogen += (growth - killed) * simDt;
+      if (pathogen < 0.05) { pathogen = 0; infectionActive = false; }
+      pathogen = Math.max(0, Math.min(carryingCapacity, pathogen));
+    }
+
+    // Innate: rises fast toward a moderate plateau whenever pathogen present.
+    var innateTarget = pathogen > 0.3 ? 70 : 0;
+    var innateTau = innateTarget > innate ? 6 : 14;
+    innate += (innateTarget - innate) / innateTau * simDt;
+    innate = Math.max(0, innate);
+
+    // Adaptive: rises toward a high plateau, but how *fast* and how *high*
+    // depends on existing memory — this is the primary vs. secondary response.
+    var memoryFactor = memory / 100; // 0 = naive, 1 = fully primed
+    var adaptiveTarget = pathogen > 0.3 ? (60 + 40 * memoryFactor) : Math.max(memory * 0.15, 0);
+    var riseTau = pathogen > 0.3 ? (36 - 28 * memoryFactor) : 30; // naive: ~36h, primed: ~8h
+    var fallTau = 40;
+    var tau = adaptiveTarget > adaptive ? riseTau : fallTau;
+    adaptive += (adaptiveTarget - adaptive) / tau * simDt;
+    adaptive = Math.max(0, adaptive);
+
+    // Memory builds whenever an adaptive response is meaningfully engaged,
+    // and decays extremely slowly (it does not decay away on this timescale).
+    if (adaptive > 15) {
+      memory = Math.min(100, memory + (adaptive / 100) * 0.35 * simDt);
+    }
+
+    memoryVal.textContent = Math.round(memory) + '%';
+    memoryFill.style.width = Math.round(memory) + '%';
+
+    sinceLastSample += simDt;
+    if (sinceLastSample >= SAMPLE_EVERY) {
+      sinceLastSample = 0;
+      history.push({ t: simTime, p: pathogen, i: innate, a: adaptive });
+      var cutoff = simTime - HISTORY_HOURS;
+      while (history.length && history[0].t < cutoff) history.shift();
+    }
+  }
+
+  function drawLine(ctx, w, h, tMin, tMax, valueKey, color, maxVal) {
+    if (history.length < 2) return;
+    ctx.beginPath();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = color;
+    for (var idx = 0; idx < history.length; idx++) {
+      var pt = history[idx];
+      var x = ((pt.t - tMin) / (tMax - tMin)) * w;
+      var y = h - (pt[valueKey] / maxVal) * (h - 14) - 6;
+      if (idx === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  function render() {
+    var ctx = cv2d.ctx;
+    var w = cv2d.width;
+    var h = cv2d.height;
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#06161a';
+    ctx.fillRect(0, 0, w, h);
+
+    // gridlines
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    for (var gy = 1; gy < 4; gy++) {
+      var yy = (h / 4) * gy;
+      ctx.beginPath();
+      ctx.moveTo(0, yy);
+      ctx.lineTo(w, yy);
+      ctx.stroke();
+    }
+
+    var tMax = Math.max(simTime, HISTORY_HOURS);
+    var tMin = tMax - HISTORY_HOURS;
+
+    drawLine(ctx, w, h, tMin, tMax, 'p', '#f0546b', 100);
+    drawLine(ctx, w, h, tMin, tMax, 'i', '#3fb6e0', 100);
+    drawLine(ctx, w, h, tMin, tMax, 'a', '#ffd166', 100);
+
+    if (!infectionActive && pathogen === 0 && history.length === 0) {
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.font = '13px "Manrope", sans-serif';
+      ctx.fillText('Click "Trigger Infection" to begin — optionally vaccinate first.', 16, h / 2);
+    }
+  }
+
+  SimKit.loop(function (dt) {
+    var simDt = dt * SIM_SPEED;
+    // Cap the per-frame step so a backgrounded/slow tab doesn't jump wildly.
+    simDt = Math.min(simDt, 3);
+    if (pathogen > 0 || adaptive > 0.1 || innate > 0.1 || memory > 0) {
+      stepSim(simDt);
+    } else {
+      simTime += simDt;
+    }
+    render();
+  });
+}());
+</script>
+<script src="../../assets/js/canvas-bg.js"></script>
+
+      </main>
+    </div>
+  </div>
+</div>
+<script src="../../assets/js/photo-lightbox.js"></script>
+<script src="../../assets/js/lesson-layout.js"></script>
+<script src="../../assets/js/lesson-print-button.js"></script>
 </body>
 </html>

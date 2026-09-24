@@ -5,32 +5,820 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Homeostasis &amp; Body Systems · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
-  <meta name="description" content="Life Science Lesson — explore Homeostasis & Body Systems." />
+  <meta name="description" content="Life Sciences Lesson — how the circulatory, respiratory, and nervous systems team up through negative feedback loops to hold body temperature, blood gases, and blood sugar steady. Includes a live thermoregulation feedback-loop simulator." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
-</head>
-<body>
-  <div class="ll-viewport">
-    <div class="cl-page">
-      <div class="cl-hero">
-        <h1>Homeostasis &amp; Body Systems</h1>
-        <p class="cl-lede">Foundational STEAM lesson for Homeostasis &amp; Body Systems.</p>
-      </div>
+  <style>
+    .ll-viewport {
+      --ll-panel-w: 280px;
+      --ll-accent: #c23b3b;
+      --ll-tab-active: #c23b3b;
+      --ll-tab-active-bg: rgba(194, 59, 59, 0.14);
+    }
 
-      <div class="cl-card">
-        <h2>Overview</h2>
-        <p>This is the foundation for the Homeostasis &amp; Body Systems lesson. Add interactive simulations and content here.</p>
-        <figure data-zoomable>
-          <!-- Add image here -->
-          <figcaption>Placeholder image caption for Homeostasis &amp; Body Systems</figcaption>
-        </figure>
+    /* ── Homeostasis Page Tokens ── */
+    .homeo-page {
+      font-family: var(--font-sans);
+      color: #2b1e1e;
+      background:
+        radial-gradient(circle at 8% 8%, rgba(194, 59, 59, 0.14), transparent 26%),
+        radial-gradient(circle at 92% 12%, rgba(43, 96, 156, 0.16), transparent 26%),
+        linear-gradient(180deg, #fdf7f5 0%, #f6eeee 100%);
+    }
+
+    .ll-viewport .ll-topbar {
+      background: rgba(253, 247, 245, 0.86);
+    }
+
+    .homeo-shell {
+      width: min(1140px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.5rem 0 3.6rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .homeo-card {
+      border-radius: 24px;
+      border: 1px solid rgba(194, 59, 59, 0.18);
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 20px 50px rgba(80, 30, 25, 0.08);
+      padding: 1.3rem;
+    }
+
+    .homeo-hero {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .homeo-eyebrow {
+      margin: 0 0 0.5rem;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #a12f2f;
+    }
+
+    .homeo-hero h1 {
+      margin: 0;
+      font-size: clamp(1.9rem, 3.6vw, 2.9rem);
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+      color: #3a1f1f;
+    }
+
+    .homeo-lede {
+      margin: 0.85rem 0 0;
+      font-size: 1.02rem;
+      color: #5a3a3a;
+      line-height: 1.66;
+    }
+
+    .homeo-idlist {
+      margin: 0;
+      padding-left: 1.1rem;
+      color: #5a3a3a;
+      line-height: 1.75;
+      font-size: 0.94rem;
+    }
+    .homeo-idlist li strong { color: #3a1f1f; }
+
+    .homeo-h2 {
+      margin: 0 0 0.7rem;
+      font-size: 1.3rem;
+      color: #3a1f1f;
+      letter-spacing: -0.01em;
+    }
+
+    .homeo-p {
+      margin: 0 0 0.7rem;
+      font-size: 0.95rem;
+      line-height: 1.68;
+      color: #4d3535;
+    }
+    .homeo-p:last-child { margin-bottom: 0; }
+    .homeo-p strong { color: #2b1e1e; }
+
+    /* ── Feedback loop diagram ── */
+    .homeo-loop {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.7rem;
+      margin: 0.9rem 0 0.6rem;
+    }
+    .homeo-loop-step {
+      padding: 0.85rem 0.75rem;
+      border-radius: 14px;
+      background: #fbe9e5;
+      border: 1px solid rgba(194, 59, 59, 0.22);
+      text-align: center;
+      position: relative;
+    }
+    .homeo-loop-step .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #a12f2f;
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 800;
+      margin-bottom: 0.4rem;
+    }
+    .homeo-loop-step strong {
+      display: block;
+      font-size: 0.82rem;
+      color: #3a1f1f;
+      margin-bottom: 0.25rem;
+    }
+    .homeo-loop-step span {
+      font-size: 0.74rem;
+      color: #6b4a4a;
+      line-height: 1.4;
+      display: block;
+    }
+    .homeo-loop-note {
+      font-size: 0.82rem;
+      color: #7a4d4d;
+      text-align: center;
+      margin: 0.2rem 0 0;
+    }
+
+    /* ── System collaboration grid ── */
+    .homeo-fact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 0.9rem;
+    }
+    .homeo-fact {
+      padding: 1rem 1.05rem;
+      border-radius: 16px;
+      background: #eef4fb;
+      border: 1px solid rgba(43, 96, 156, 0.22);
+    }
+    .homeo-fact h3 {
+      margin: 0 0 0.35rem;
+      font-size: 0.98rem;
+      color: #1f3f63;
+    }
+    .homeo-fact p {
+      margin: 0;
+      font-size: 0.87rem;
+      color: #3a5578;
+      line-height: 1.6;
+    }
+
+    /* ── Clinical example cards ── */
+    .homeo-case-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+    .homeo-case-card {
+      padding: 1.1rem;
+      border-radius: 18px;
+      border: 1px solid rgba(194, 59, 59, 0.18);
+      background: #fff8f6;
+      position: relative;
+    }
+    .homeo-case-card .tag {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #fff;
+      background: #c23b3b;
+      border-radius: 999px;
+      padding: 0.18rem 0.6rem;
+      margin-bottom: 0.55rem;
+    }
+    .homeo-case-card h3 {
+      margin: 0 0 0.4rem;
+      font-size: 1rem;
+      color: #3a1f1f;
+    }
+    .homeo-case-card p {
+      margin: 0;
+      font-size: 0.88rem;
+      color: #5a3a3a;
+      line-height: 1.62;
+    }
+
+    /* ── Simulation ── */
+    .homeo-sim-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 260px;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .homeo-canvas-wrap {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #1a1210;
+      border: 1px solid rgba(194, 59, 59, 0.28);
+      box-shadow: inset 0 0 30px rgba(0,0,0,0.5);
+    }
+    .homeo-canvas-wrap canvas {
+      display: block;
+      width: 100%;
+      height: 360px;
+    }
+    .homeo-readout {
+      position: absolute;
+      left: 0.8rem;
+      top: 0.7rem;
+      font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+      font-size: 0.78rem;
+      color: #ffe3d9;
+      background: rgba(0,0,0,0.4);
+      padding: 0.4rem 0.65rem;
+      border-radius: 10px;
+      line-height: 1.5;
+      pointer-events: none;
+    }
+    .homeo-readout .big {
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+    .homeo-readout .stable { color: #8fe3a1; }
+    .homeo-readout .high { color: #ff9a8a; }
+    .homeo-readout .low { color: #8ac4ff; }
+
+    .homeo-controls {
+      display: grid;
+      gap: 0.7rem;
+      align-content: start;
+    }
+    .homeo-control-group {
+      display: grid;
+      gap: 0.3rem;
+    }
+    .homeo-control-group label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #5a3a3a;
+      display: flex;
+      justify-content: space-between;
+    }
+    .homeo-control-group input[type="range"] {
+      width: 100%;
+      accent-color: #c23b3b;
+    }
+    .homeo-btn {
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.55rem 0.7rem;
+      border-radius: 10px;
+      border: 1px solid rgba(194, 59, 59, 0.4);
+      background: #fbe9e5;
+      color: #3a1f1f;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .homeo-btn:hover { background: #f3d3cb; }
+    .homeo-btn.primary {
+      background: #8f2323;
+      color: #fff;
+      border-color: #a12f2f;
+    }
+    .homeo-btn.primary:hover { background: #741c1c; }
+
+    .homeo-legend {
+      font-size: 0.78rem;
+      color: #5a3a3a;
+      line-height: 1.6;
+      margin-top: 0.9rem;
+      padding-top: 0.8rem;
+      border-top: 1px dashed rgba(194, 59, 59, 0.3);
+    }
+    .homeo-legend strong { color: #3a1f1f; }
+    .homeo-legend .swatch {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      margin-right: 0.3rem;
+    }
+
+    /* ── Reflection ── */
+    .homeo-reflect-list {
+      display: grid;
+      gap: 0.6rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .homeo-reflect-list li {
+      padding: 0.75rem 0.9rem;
+      border-radius: 12px;
+      background: #fbe9e5;
+      border-left: 3px solid #c23b3b;
+      font-size: 0.92rem;
+      color: #3a1f1f;
+      line-height: 1.55;
+    }
+
+    @media (max-width: 900px) {
+      .homeo-loop { grid-template-columns: repeat(2, 1fr); }
+      .homeo-sim-layout { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 740px) {
+      .homeo-hero { grid-template-columns: 1fr; }
+      .homeo-loop { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+<div class="ll-viewport">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="homeo-page">
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 1 — HERO
+     ════════════════════════════════════════════════════════════ -->
+<div class="homeo-shell">
+
+  <div class="homeo-hero">
+    <div class="homeo-card">
+      <p class="homeo-eyebrow">Life Sciences · Biological Systems (9–10)</p>
+      <h1>Homeostasis &amp; Body Systems</h1>
+      <p class="homeo-lede">
+        Right now, without you doing anything on purpose, your body is holding its
+        core temperature within about half a degree Celsius, keeping your blood
+        just slightly alkaline, and topping up the oxygen in your blood roughly
+        four times a second. None of that is an accident — it's
+        <strong>homeostasis</strong>: the body's constant, automatic work of
+        keeping its internal conditions inside a narrow livable range, no matter
+        what the outside world throws at it. Walk into a cold gym, sprint a lap,
+        skip breakfast — your circulatory, respiratory, and nervous systems
+        instantly start negotiating with each other to pull things back to normal.
+        This lesson pulls back the curtain on that negotiation.
+      </p>
+    </div>
+
+    <div class="homeo-card">
+      <p class="homeo-eyebrow">Quick ID</p>
+      <ul class="homeo-idlist">
+        <li><strong>Homeostasis</strong> = stability of the internal environment</li>
+        <li>Maintained by <strong>negative feedback loops</strong></li>
+        <li>Main players: <strong>circulatory, respiratory, nervous</strong> systems</li>
+        <li>Regulated variables: temperature, blood O₂/CO₂, blood pressure, blood sugar</li>
+        <li>Loops fail → <strong>illness</strong> (fever, hyperventilation, diabetes)</li>
+      </ul>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 2 — THE NEGATIVE FEEDBACK LOOP
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="homeo-card">
+    <h2 class="homeo-h2">The Negative Feedback Loop: The Body's Thermostat Logic</h2>
+    <p class="homeo-p">
+      Almost every homeostatic system in the body — no matter which variable it's
+      guarding — runs on the same four-step loop. It's the same logic as a house
+      thermostat: notice a change, compare it to a target, trigger a response, and
+      shut the response off once the target is met again. Biologists call it
+      <strong>negative feedback</strong> because the response always pushes
+      <em>against</em> the direction of the original change, cancelling it out
+      rather than amplifying it.
+    </p>
+    <div class="homeo-loop">
+      <div class="homeo-loop-step">
+        <span class="num">1</span>
+        <strong>Stimulus</strong>
+        <span>Something pushes a variable away from its normal range — you step outside into the cold.</span>
+      </div>
+      <div class="homeo-loop-step">
+        <span class="num">2</span>
+        <strong>Sensor</strong>
+        <span>A receptor detects the change — thermoreceptors in your skin and hypothalamus sense falling temperature.</span>
+      </div>
+      <div class="homeo-loop-step">
+        <span class="num">3</span>
+        <strong>Control Center</strong>
+        <span>The hypothalamus compares the reading to its setpoint (~37°C) and decides a correction is needed.</span>
+      </div>
+      <div class="homeo-loop-step">
+        <span class="num">4</span>
+        <strong>Effector &amp; Response</strong>
+        <span>Muscles shiver, blood vessels narrow — heat is generated and conserved until the setpoint is restored.</span>
+      </div>
+    </div>
+    <p class="homeo-loop-note">
+      Once the response corrects the variable, the sensor reports "back to normal," and the control center switches the effector back off — that shut-off step is what makes it <em>negative</em> feedback, not a runaway loop.
+    </p>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 3 — SYSTEMS WORKING TOGETHER
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="homeo-card">
+    <h2 class="homeo-h2">Three Systems, One Job: Staying Stable</h2>
+    <p class="homeo-p">
+      No single organ system runs homeostasis alone. The <strong>nervous
+      system</strong> senses and decides, the <strong>circulatory system</strong>
+      delivers and redistributes, and the <strong>respiratory system</strong>
+      exchanges gases — and all three are constantly cross-talking to hold the
+      body's internal conditions steady.
+    </p>
+    <div class="homeo-fact-grid">
+      <div class="homeo-fact">
+        <h3>🧠 Nervous System — Sensor &amp; Control Center</h3>
+        <p>The hypothalamus acts as the body's master thermostat and command center. Chemoreceptors and baroreceptors constantly report blood chemistry and pressure; the autonomic nervous system fires off the correction — sweating, shivering, changing heart rate — often before you're consciously aware anything changed.</p>
+      </div>
+      <div class="homeo-fact">
+        <h3>❤️ Circulatory System — Delivery &amp; Redistribution</h3>
+        <p>Blood vessels widen (vasodilation) to dump heat at the skin when you're hot, and narrow (vasoconstriction) to conserve it when you're cold. Heart rate and blood pressure adjust moment to moment to keep oxygen-rich blood reaching every cell, whether you're asleep or sprinting.</p>
+      </div>
+      <div class="homeo-fact">
+        <h3>🫁 Respiratory System — Gas Exchange</h3>
+        <p>Breathing rate is tuned by CO₂ levels in the blood, not oxygen — a rise in CO₂ (from exercise, or from carbonic acid making blood too acidic) triggers faster, deeper breaths within seconds to blow off the excess and restore normal blood pH.</p>
+      </div>
+      <div class="homeo-fact">
+        <h3>🔗 Where They Meet: Exercise</h3>
+        <p>Start running and the loop fires all at once: muscles produce CO₂ and heat → chemoreceptors and thermoreceptors alert the hypothalamus → heart rate and breathing rate both climb, and skin blood vessels dilate to shed heat as sweat. Three systems, one coordinated correction.</p>
+      </div>
+      <div class="homeo-fact">
+        <h3>🩸 Blood Pressure Loop</h3>
+        <p>Baroreceptors in major arteries sense pressure changes; the nervous system adjusts heart rate and vessel diameter within a heartbeat or two — the fastest homeostatic loop in the body.</p>
+      </div>
+      <div class="homeo-fact">
+        <h3>🍬 Blood Glucose Loop</h3>
+        <p>Not run by nerves or blood vessels alone — the pancreas senses blood sugar directly and releases insulin or glucagon, a purely hormonal (endocrine) negative feedback loop that keeps glucose in a narrow band between meals.</p>
       </div>
     </div>
   </div>
-  <script src="../../assets/js/photo-lightbox.js"></script>
-  <script src="../../assets/js/lesson-layout.js"></script>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 4 — INTERACTIVE SIMULATION
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="homeo-card">
+    <h2 class="homeo-h2">Lab: Thermoregulation Feedback Loop</h2>
+    <p class="homeo-p">
+      This simulation models a simplified hypothalamus watching one variable —
+      core body temperature — against a <strong>37°C setpoint</strong>. Drag the
+      environment and exercise sliders to push the body's temperature off target,
+      then watch the automatic responses (shivering, sweating, vasoconstriction,
+      vasodilation) fire and pull it back. Toggle "Feedback Loop" off to see what
+      happens to temperature when the control system stops responding — pure
+      drift with no correction at all.
+    </p>
+    <div class="homeo-sim-layout">
+      <div class="homeo-canvas-wrap">
+        <canvas id="thermoCanvas" width="760" height="360"></canvas>
+        <div class="homeo-readout" id="thermoReadout">
+          Core Temp <span class="big" id="tempVal">37.0°C</span><br/>
+          Status: <span id="statusVal">Stable</span><br/>
+          Response: <span id="responseVal">None</span>
+        </div>
+      </div>
+      <div class="homeo-controls">
+        <div class="homeo-control-group">
+          <label>Ambient Temp <span id="ambientLbl">20°C</span></label>
+          <input type="range" id="ambientSlider" min="-10" max="45" step="1" value="20" />
+        </div>
+        <div class="homeo-control-group">
+          <label>Exercise Intensity <span id="exerciseLbl">0%</span></label>
+          <input type="range" id="exerciseSlider" min="0" max="100" step="5" value="0" />
+        </div>
+        <div class="homeo-control-group">
+          <label>Clothing / Insulation <span id="clothingLbl">Medium</span></label>
+          <input type="range" id="clothingSlider" min="0" max="2" step="1" value="1" />
+        </div>
+        <button class="homeo-btn primary" id="feedbackToggleBtn">Feedback Loop: ON</button>
+        <button class="homeo-btn" id="pausePlayBtn">Pause</button>
+        <button class="homeo-btn" id="resetThermoBtn">Reset Simulation</button>
+        <div class="homeo-legend">
+          <span class="swatch" style="background:#c23b3b"></span><strong>Line</strong>: core temperature<br/>
+          <span class="swatch" style="background:rgba(143,227,161,0.35)"></span><strong>Band</strong>: healthy setpoint range (36.5–37.5°C)<br/>
+          Push temperature far enough past the band and the readout will flag
+          <strong>hyperthermia</strong> or <strong>hypothermia</strong> — the
+          points where the feedback loop is losing the fight.
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 5 — CLINICAL / REAL-WORLD EXAMPLES
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="homeo-card">
+    <h2 class="homeo-h2">When Loops Strain — or Fail</h2>
+    <div class="homeo-case-grid">
+      <div class="homeo-case-card">
+        <span class="tag">Immune Response</span>
+        <h3>Fever: A Loop With a New Setpoint</h3>
+        <p>An infection doesn't break the thermostat — it resets it. Chemicals called pyrogens tell the hypothalamus to raise its setpoint from 37°C to, say, 39°C. Your body then shivers and vasoconstricts to <em>climb</em> to the new target, which is why you feel cold and shiver even while your temperature is rising. It's homeostasis working perfectly, just aimed at a temporarily higher goal that makes it harder for pathogens to reproduce.</p>
+      </div>
+      <div class="homeo-case-card">
+        <span class="tag">Respiratory-Nervous Loop</span>
+        <h3>Hyperventilation: An Overcorrected Loop</h3>
+        <p>Rapid, anxious breathing blows off CO₂ faster than the body produces it. Since CO₂ dissolved in blood is what keeps blood pH in range, losing too much makes the blood too alkaline — causing dizziness and tingling. The classic "breathe into a paper bag" fix works by raising inhaled CO₂, giving the feedback loop the signal it needs to reset.</p>
+      </div>
+      <div class="homeo-case-card">
+        <span class="tag">Endocrine Loop</span>
+        <h3>Diabetes: A Broken Sensor or Effector</h3>
+        <p>In Type 1 diabetes, the pancreas can't produce insulin — the effector is missing. In Type 2, cells stop responding to insulin normally — the effector ignores the signal. Either way, the negative feedback loop that should pull blood glucose back down after a meal can't complete, and glucose stays elevated. Treatment (insulin injections, medication) works by manually restoring the missing piece of the loop.</p>
+      </div>
+      <div class="homeo-case-card">
+        <span class="tag">Circulatory-Nervous Loop</span>
+        <h3>Fainting: A Blood Pressure Overshoot</h3>
+        <p>Standing up too fast can briefly outrun the baroreceptor reflex, so blood pressure to the brain drops before the heart rate/vessel response catches up — the momentary "head rush" or, in extreme cases, fainting, is the visible gap between stimulus and a feedback loop that hasn't caught up yet.</p>
+      </div>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 6 — REFLECTION / FORMATIVE ASSESSMENT
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="homeo-card">
+    <h2 class="homeo-h2">Discussion &amp; Formative Check</h2>
+    <ul class="homeo-reflect-list">
+      <li>Label the four steps of the negative feedback loop (stimulus, sensor, control center, effector) for what happens when you get overheated during recess. What plays each role?</li>
+      <li>In the simulation, what happened to core temperature when you switched "Feedback Loop" to OFF? Why does that show homeostasis is an <em>active</em> process, not something that happens automatically just because you're alive?</li>
+      <li>A fever is technically the hypothalamus working correctly, just aimed at a new target. Does that change how you'd explain fevers to a younger student who thinks a fever means the body is "broken"?</li>
+      <li>Pick one clinical example above (fever, hyperventilation, diabetes, fainting) and identify which single part of the loop — sensor, control center, or effector — is disrupted.</li>
+      <li><strong>Exit ticket:</strong> in two sentences, explain why the circulatory, respiratory, and nervous systems have to cooperate to regulate body temperature, rather than any one system doing it alone.</li>
+    </ul>
+  </div>
+
+</div><!-- /.homeo-shell -->
+
+<script src="../../assets/js/sim-kit.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var canvas = document.getElementById('thermoCanvas');
+  var wrap = canvas.parentElement;
+  var tempValEl = document.getElementById('tempVal');
+  var statusValEl = document.getElementById('statusVal');
+  var responseValEl = document.getElementById('responseVal');
+
+  var SETPOINT = 37.0;
+  var BAND_LOW = 36.5;
+  var BAND_HIGH = 37.5;
+  var HYPER_LIMIT = 40.0;
+  var HYPO_LIMIT = 34.0;
+
+  var ambientTemp = 20;
+  var exercise = 0;      // 0-100
+  var clothing = 1;      // 0=light, 1=medium, 2=heavy
+  var feedbackOn = true;
+  var running = true;
+
+  var coreTemp = 37.0;
+  var history = [];       // {t, temp}
+  var elapsed = 0;
+  var responseLabel = 'None';
+
+  var clothingLabels = ['Light', 'Medium', 'Heavy'];
+  var clothingInsulation = [0.4, 1.0, 1.7]; // multiplier that dampens heat loss/gain to ambient
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  function stepSimulation(dt) {
+    // Simulated "minutes" pass faster than real seconds for a livelier chart.
+    var simDt = dt * 6;
+    elapsed += simDt;
+
+    // Passive heat exchange with environment (Newton's law of cooling style)
+    var insulation = clothingInsulation[clothing];
+    var ambientPull = (ambientTemp - coreTemp) * 0.02 / insulation;
+
+    // Metabolic heat from exercise
+    var exerciseHeat = (exercise / 100) * 0.09;
+
+    var delta = ambientPull + exerciseHeat;
+
+    if (feedbackOn) {
+      var error = coreTemp - SETPOINT;
+      if (error > 0.15) {
+        // Too hot: sweating + vasodilation resist further rise and pull down
+        var strength = clamp(error * 0.35, 0, 0.14);
+        delta -= strength;
+        responseLabel = error > 1.5 ? 'Heavy sweating + vasodilation' : 'Sweating + vasodilation';
+      } else if (error < -0.15) {
+        // Too cold: shivering + vasoconstriction generate/conserve heat
+        var strength2 = clamp(-error * 0.35, 0, 0.14);
+        delta += strength2;
+        responseLabel = error < -1.5 ? 'Shivering hard + vasoconstriction' : 'Mild shivering + vasoconstriction';
+      } else {
+        responseLabel = 'None (within setpoint band)';
+      }
+    } else {
+      responseLabel = 'Disabled — no correction';
+    }
+
+    coreTemp = clamp(coreTemp + delta * simDt, 25, 45);
+
+    history.push({ t: elapsed, temp: coreTemp });
+    var maxHistorySeconds = 180;
+    while (history.length && (elapsed - history[0].t) > maxHistorySeconds) {
+      history.shift();
+    }
+  }
+
+  function statusFor(temp) {
+    if (temp >= HYPER_LIMIT) return { label: 'Hyperthermia', cls: 'high' };
+    if (temp > BAND_HIGH) return { label: 'Elevated', cls: 'high' };
+    if (temp <= HYPO_LIMIT) return { label: 'Hypothermia', cls: 'low' };
+    if (temp < BAND_LOW) return { label: 'Low', cls: 'low' };
+    return { label: 'Stable', cls: 'stable' };
+  }
+
+  function updateReadout() {
+    var st = statusFor(coreTemp);
+    tempValEl.textContent = coreTemp.toFixed(1) + '°C';
+    tempValEl.className = 'big ' + st.cls;
+    statusValEl.textContent = st.label;
+    statusValEl.className = st.cls;
+    responseValEl.textContent = responseLabel;
+  }
+
+  function render(ctx, w, h) {
+    var colors = SimKit.theme.colors();
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#1a1210';
+    ctx.fillRect(0, 0, w, h);
+
+    var padL = 46, padR = 14, padT = 14, padB = 26;
+    var plotW = w - padL - padR;
+    var plotH = h - padT - padB;
+
+    var tMin = 20, tMax = 42;
+    function yForTemp(temp) {
+      var t = clamp((temp - tMin) / (tMax - tMin), 0, 1);
+      return padT + (1 - t) * plotH;
+    }
+
+    // Gridlines + axis labels
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.fillStyle = 'rgba(255,225,215,0.55)';
+    ctx.font = '10px IBM Plex Mono, monospace';
+    ctx.textAlign = 'right';
+    for (var gt = 20; gt <= 42; gt += 4) {
+      var gy = yForTemp(gt);
+      ctx.beginPath();
+      ctx.moveTo(padL, gy);
+      ctx.lineTo(w - padR, gy);
+      ctx.stroke();
+      ctx.fillText(gt + '°', padL - 6, gy + 3);
+    }
+
+    // Healthy band
+    ctx.fillStyle = 'rgba(143, 227, 161, 0.18)';
+    var yHigh = yForTemp(BAND_HIGH);
+    var yLow = yForTemp(BAND_LOW);
+    ctx.fillRect(padL, yHigh, plotW, yLow - yHigh);
+    ctx.strokeStyle = 'rgba(143, 227, 161, 0.5)';
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    ctx.moveTo(padL, yForTemp(SETPOINT));
+    ctx.lineTo(w - padR, yForTemp(SETPOINT));
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Danger zones
+    ctx.fillStyle = 'rgba(255, 138, 118, 0.10)';
+    ctx.fillRect(padL, padT, plotW, yForTemp(HYPER_LIMIT) - padT);
+    ctx.fillRect(padL, yForTemp(HYPO_LIMIT), plotW, (padT + plotH) - yForTemp(HYPO_LIMIT));
+
+    // Temperature trace
+    if (history.length > 1) {
+      var tStart = history[0].t;
+      var tEnd = history[history.length - 1].t;
+      var span = Math.max(1, tEnd - tStart);
+      ctx.beginPath();
+      for (var i = 0; i < history.length; i++) {
+        var pt = history[i];
+        var x = padL + ((pt.t - tStart) / span) * plotW;
+        var y = yForTemp(pt.temp);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = '#c23b3b';
+      ctx.lineWidth = 2.4;
+      ctx.stroke();
+
+      // Current point marker
+      var last = history[history.length - 1];
+      var lx = padL + plotW;
+      var ly = yForTemp(last.temp);
+      ctx.beginPath();
+      ctx.arc(lx, ly, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffd9cc';
+      ctx.fill();
+    }
+
+    // Axis caption
+    ctx.fillStyle = 'rgba(255,225,215,0.45)';
+    ctx.textAlign = 'left';
+    ctx.font = '10px IBM Plex Mono, monospace';
+    ctx.fillText('Core temperature over time →', padL, h - 8);
+  }
+
+  var sk = SimKit.canvas2d(canvas, { box: wrap, dpr: 2, height: 360, onResize: render });
+
+  SimKit.loop(function (dt) {
+    if (running) stepSimulation(dt);
+    updateReadout();
+    render(sk.ctx, sk.width, sk.height);
+  });
+
+  document.getElementById('ambientSlider').addEventListener('input', function (e) {
+    ambientTemp = parseInt(e.target.value, 10);
+    document.getElementById('ambientLbl').textContent = ambientTemp + '°C';
+  });
+
+  document.getElementById('exerciseSlider').addEventListener('input', function (e) {
+    exercise = parseInt(e.target.value, 10);
+    document.getElementById('exerciseLbl').textContent = exercise + '%';
+  });
+
+  document.getElementById('clothingSlider').addEventListener('input', function (e) {
+    clothing = parseInt(e.target.value, 10);
+    document.getElementById('clothingLbl').textContent = clothingLabels[clothing];
+  });
+
+  document.getElementById('feedbackToggleBtn').addEventListener('click', function (e) {
+    feedbackOn = !feedbackOn;
+    e.target.textContent = 'Feedback Loop: ' + (feedbackOn ? 'ON' : 'OFF');
+    e.target.classList.toggle('primary', feedbackOn);
+  });
+
+  document.getElementById('pausePlayBtn').addEventListener('click', function (e) {
+    running = !running;
+    e.target.textContent = running ? 'Pause' : 'Play';
+  });
+
+  document.getElementById('resetThermoBtn').addEventListener('click', function () {
+    coreTemp = 37.0;
+    history = [];
+    elapsed = 0;
+    running = true;
+    feedbackOn = true;
+    ambientTemp = 20;
+    exercise = 0;
+    clothing = 1;
+    document.getElementById('ambientSlider').value = 20;
+    document.getElementById('ambientLbl').textContent = '20°C';
+    document.getElementById('exerciseSlider').value = 0;
+    document.getElementById('exerciseLbl').textContent = '0%';
+    document.getElementById('clothingSlider').value = 1;
+    document.getElementById('clothingLbl').textContent = 'Medium';
+    document.getElementById('pausePlayBtn').textContent = 'Pause';
+    var fbBtn = document.getElementById('feedbackToggleBtn');
+    fbBtn.textContent = 'Feedback Loop: ON';
+    fbBtn.classList.add('primary');
+  });
+}());
+</script>
+<script src="../../assets/js/canvas-bg.js"></script>
+
+      </main>
+    </div>
+  </div>
+</div>
+<script src="../../assets/js/photo-lightbox.js"></script>
+<script src="../../assets/js/lesson-layout.js"></script>
+<script src="../../assets/js/lesson-print-button.js"></script>
 </body>
 </html>

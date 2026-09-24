@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Alexander von Humboldt · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta name="description" content="Explore the life and legacy of Alexander von Humboldt, the father of ecology — his climb of Chimborazo, the invention of isotherms, and the idea that climate, geology, and life form one connected web. Includes an interactive vegetation-zone explorer." />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      --hv-green: #166534;
+      --hv-terra: #b45309;
+      --hv-teal: #0e7490;
+      --hv-violet: #6d28d9;
+      --hv-forest: #15803d;
+      --hv-ink: #1a2e1a;
+      --hv-muted: #475569;
+      --hv-line: #e2e8f0;
+    }
+
+    .hv-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 280px; }
+
+    .hv-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .hv-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .hv-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .hv-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .hv-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+    [data-lighting="night"] .hv-lede,
+    [data-theme="vaporwave"] .hv-lede,
+    [data-theme="bark"] .hv-lede { color: rgba(245,245,247,0.7); }
+
+    .hv-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#166534); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .hv-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .hv-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .hv-card p  { margin: 0 0 0.6rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .hv-card p:last-child { margin-bottom: 0; }
+    [data-lighting="night"] .hv-card,
+    [data-theme="vaporwave"] .hv-card,
+    [data-theme="bark"] .hv-card { background: var(--white,#2c2c2e); }
+    [data-lighting="night"] .hv-card p,
+    [data-theme="vaporwave"] .hv-card p,
+    [data-theme="bark"] .hv-card p { color: rgba(245,245,247,0.72); }
+
+    .hv-callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
+    .hv-callout.green  { background: rgba(22,101,52,0.09);  border-left: 3px solid var(--hv-green); }
+    .hv-callout.teal   { background: rgba(14,116,144,0.10); border-left: 3px solid var(--hv-teal); }
+    .hv-callout.terra  { background: rgba(180,83,9,0.09);   border-left: 3px solid var(--hv-terra); }
+
+    /* Timeline */
+    .hv-timeline { list-style: none; padding: 0 0 0 36px; margin: 0.7rem 0; position: relative; }
+    .hv-timeline::before { content: ''; position: absolute; left: 16px; top: 0; bottom: 0; width: 2px; background: var(--hv-violet); opacity: 0.3; border-radius: 2px; }
+    .hv-tl-item { position: relative; margin-bottom: 0.75rem; font-size: 0.87rem; color: var(--text-secondary, #3f4f65); line-height: 1.55; }
+    [data-lighting="night"] .hv-tl-item,
+    [data-theme="vaporwave"] .hv-tl-item,
+    [data-theme="bark"] .hv-tl-item { color: rgba(245,245,247,0.72); }
+    .hv-tl-item::before { content: ''; position: absolute; left: -24px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--hv-violet); border: 2px solid #fff; box-shadow: 0 0 0 2px var(--hv-violet); }
+    .hv-tl-year { display: inline-block; background: var(--hv-violet); color: #fff; font-size: 0.72rem; font-weight: 700; border-radius: 5px; padding: 0.05rem 0.4rem; margin-right: 0.4rem; vertical-align: middle; }
+
+    /* Canvas / readouts */
+    .hv-canvas-wrap { position: relative; border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #04160f; height: 380px; cursor: pointer; }
+    #hv-canvas { width: 100%; height: 100%; display: block; }
+    .hv-canvas-hint { position: absolute; right: 0.6rem; top: 0.5rem; z-index: 2; background: rgba(4,22,15,0.72); color: rgba(255,255,255,0.75); font-size: 0.66rem; font-weight: 600; letter-spacing: 0.03em; padding: 0.22rem 0.5rem; border-radius: 999px; pointer-events: none; }
+
+    .hv-readouts { display: grid; grid-template-columns: repeat(5,1fr); gap: 0.5rem; margin: 0.6rem 0; }
+    .hv-readout { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.55rem; text-align: center; }
+    [data-lighting="night"] .hv-readout,
+    [data-theme="vaporwave"] .hv-readout,
+    [data-theme="bark"] .hv-readout { background: rgba(255,255,255,0.06); }
+    .hv-readout-label { font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #64748b); display: block; margin-bottom: 0.2rem; }
+    .hv-readout-val   { font-size: 0.94rem; font-weight: 700; color: var(--hv-green); }
+
+    .hv-species-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.6rem 0 0.2rem; }
+    .hv-species-chip { display: inline-flex; align-items: center; gap: 0.35rem; background: rgba(22,101,52,0.08); border: 1px solid var(--line,#d2d2d7); border-radius: 999px; padding: 0.28rem 0.6rem 0.28rem 0.4rem; font-size: 0.78rem; color: var(--text-secondary, #3f4f65); }
+    [data-lighting="night"] .hv-species-chip,
+    [data-theme="vaporwave"] .hv-species-chip,
+    [data-theme="bark"] .hv-species-chip { background: rgba(255,255,255,0.07); color: rgba(245,245,247,0.8); }
+    .hv-species-chip .icon { font-size: 0.95rem; }
+    .hv-analog { font-size: 0.8rem; font-style: italic; color: var(--text-muted, #64748b); margin: 0.5rem 0 0; }
+
+    /* Grids */
+    .hv-grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.75rem; }
+
+    /* Figures */
+    .hv-figure-full { margin: 0.9rem 0; text-align: center; }
+    .hv-figure-full img { width: 100%; height: auto; display: block; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.14); cursor: zoom-in; }
+    .hv-figure-full figcaption { font-size: 0.76rem; color: var(--text-muted, #64748b); margin-top: 0.45rem; line-height: 1.5; }
+    .hv-figure-full figcaption a { color: inherit; }
+    .hv-photo-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.85rem; margin: 0.8rem 0 0.2rem; }
+    .hv-photo-grid figure { margin: 0; }
+    .hv-photo-grid img { width: 100%; height: 160px; object-fit: cover; display: block; border-radius: 10px; cursor: zoom-in; box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
+    .hv-photo-grid figcaption { font-size: 0.72rem; color: var(--text-muted, #64748b); margin-top: 0.35rem; line-height: 1.45; }
+    .hv-photo-grid figcaption strong { display: block; color: var(--hv-ink); font-size: 0.78rem; margin-bottom: 0.1rem; }
+    [data-lighting="night"] .hv-photo-grid figcaption strong,
+    [data-theme="vaporwave"] .hv-photo-grid figcaption strong,
+    [data-theme="bark"] .hv-photo-grid figcaption strong { color: rgba(245,245,247,0.9); }
+    @media (max-width: 620px) {
+      .hv-photo-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 420px) {
+      .hv-photo-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Discovery cards */
+    .hv-invention-card { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.85rem; }
+    .hv-invention-icon { font-size: 1.6rem; margin-bottom: 0.35rem; }
+    .hv-invention-card strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; color: var(--hv-ink); }
+    .hv-invention-card p { font-size: 0.77rem; color: var(--text-muted, #64748b); line-height: 1.5; margin: 0; }
+    [data-lighting="night"] .hv-invention-card strong,
+    [data-theme="vaporwave"] .hv-invention-card strong,
+    [data-theme="bark"] .hv-invention-card strong { color: rgba(245,245,247,0.9); }
+
+    /* Practice problems */
+    .hv-practice .hv-problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .hv-practice .hv-problem p { margin-bottom: 0.5rem; font-size: 0.88rem; color: var(--text-secondary, #3f4f65); line-height: 1.6; }
+    [data-lighting="night"] .hv-problem p,
+    [data-theme="vaporwave"] .hv-problem p,
+    [data-theme="bark"] .hv-problem p { color: rgba(245,245,247,0.72); }
+    .hv-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .hv-ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 130px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .hv-check-btn { background: var(--hv-green); color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .hv-check-btn:hover { background: #14532d; }
+    .hv-feedback { font-size: 0.82rem; font-weight: 600; }
+    .hv-feedback.ok  { color: #34c759; }
+    .hv-feedback.err { color: #dc2626; }
+    .hv-hint { font-size: 0.78rem; color: var(--text-muted, #64748b); margin-top: 0.4rem; display: none; }
+    .diff-easy { background: rgba(52,199,89,0.15);  color: #248a3d; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-mid  { background: rgba(255,149,0,0.15);  color: #c07000; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-hard { background: rgba(255,59,48,0.12);  color: #c0392b; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+
+    @media (max-width: 560px) {
+      .hv-grid-2 { grid-template-columns: 1fr; }
+      .hv-readouts { grid-template-columns: repeat(2,1fr); }
+      .hv-canvas-wrap { height: 300px; }
+    }
+    @media (min-width: 561px) and (max-width: 760px) {
+      .hv-readouts { grid-template-columns: repeat(3,1fr); }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport">
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../recipe-book.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="hv-page">
+
+        <!-- Hero -->
+        <section class="hero hv-hero">
+          <p class="eyebrow">Ecology · Biogeography · History of Science</p>
+          <h1>Alexander von Humboldt</h1>
+          <div class="hv-hero-meta">
+            <span>The Father of Ecology</span><span class="dot"></span>
+            <span>Biogeography</span><span class="dot"></span>
+            <span>Isotherms</span><span class="dot"></span>
+            <span>The Web of Life</span>
+          </div>
+          <p class="hv-lede">Born in Berlin in 1769, Alexander von Humboldt was the first scientist to describe nature as a single interconnected web rather than a list of separate species. His five-year expedition across Latin America — and his death-defying climb up Chimborazo — produced the idea that climate, geology, plants, and animals all shape one another. That idea is the root of the word "ecology," and Humboldt is why we still call him its father.</p>
+        </section>
+
+        <!-- Biography -->
+        <section class="hv-card" style="--card-accent:#b45309;">
+          <h2>Who Was Alexander von Humboldt?</h2>
+          <figure data-zoomable data-lightbox-group="humboldt" style="float:right;width:200px;margin:0 0 0.6rem 1.1rem;text-align:center;">
+            <img src="../../../assets/thumbs/alexander-von-humboldt-weitsch-1806.jpg" width="1000" height="1352" alt="Portrait of Alexander von Humboldt" style="width:100%;display:block;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.14);" />
+            <figcaption style="font-size:0.72rem;color: var(--text-muted, #64748b);margin-top:0.35rem;">Alexander von Humboldt, portrait by S. Friedländer, 1857. Public domain.</figcaption>
+          </figure>
+          <p>Alexander von Humboldt was born September 14, 1769, in Berlin, into a wealthy Prussian family. He trained in geology and mining, but what he really wanted was to travel and measure the natural world firsthand. In 1799, at age 29, he used his inheritance to fund an expedition to Spanish America with the French botanist <strong>Aimé Bonpland</strong> — a journey that would last five years and reshape science.</p>
+          <p>Humboldt and Bonpland paddled hundreds of miles up the <strong>Orinoco River</strong>, confirming a natural waterway connecting the Orinoco and Amazon basins, and collected over 60,000 plant specimens, many entirely new to European science. But the expedition's defining moment came in 1802, when the pair attempted to climb <strong>Mount Chimborazo</strong> in present-day Ecuador, then believed to be the tallest mountain on Earth. Without modern climbing gear, in thin air and freezing wind, they reached roughly <strong>5,878 meters (19,286 feet)</strong> — a world altitude record that stood for nearly 30 years.</p>
+
+          <figure data-zoomable data-lightbox-group="humboldt" class="hv-figure-full" data-full="../../../assets/thumbs/humboldt-bonpland-chimborazo-weitsch-1806.jpg">
+            <img src="../../../assets/thumbs/humboldt-bonpland-chimborazo-weitsch-1806.jpg" width="1280" height="917" alt="Painting of Alexander von Humboldt and Aimé Bonpland at the foot of Mount Chimborazo, examining plant specimens with local guides, the snow-capped volcano rising behind them" loading="lazy" />
+            <figcaption><strong>Humboldt and Bonpland at the Foot of Chimborazo</strong>, oil painting by Friedrich Georg Weitsch, 1806 — painted from Humboldt's own field sketches and notes soon after he returned to Europe. Public domain, via <a href="https://commons.wikimedia.org/wiki/File:Humboldt-Bonpland_Chimborazo.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>.</figcaption>
+          </figure>
+
+          <p>What made the climb scientifically historic wasn't the altitude record — it was what Humboldt did with it. As he climbed, he recorded temperature, air pressure, humidity, and exactly which plants and animals appeared and disappeared at each elevation. At the base: palms and orchids. Partway up: oaks and ferns. Higher still: grasses and lichen. At the top: bare rock and snow. He realized the vegetation bands he saw climbing one tropical mountain mirrored the bands you'd cross traveling from the equator to the Arctic — climate, not geography alone, was organizing life into visible, predictable zones.</p>
+          <p>Back in Europe, Humboldt spent decades turning that insight into a new way of doing science. He invented <strong>isotherms</strong> — lines on a map connecting points of equal temperature — to show climate patterns at a glance, a tool still used on every weather map today. His multi-volume work <em>Cosmos</em> attempted something no one had tried before: a single unified picture of nature, from geology to astronomy to biology, all connected. He died in Berlin on May 6, 1859, celebrated across the world; more places on Earth are named after Humboldt than after any other person in history.</p>
+        </section>
+
+        <!-- Timeline -->
+        <section class="hv-card" style="--card-accent:#6d28d9;">
+          <h2>A Life of Exploration</h2>
+          <ol class="hv-timeline">
+            <li class="hv-tl-item"><span class="hv-tl-year">1769</span> Born Friedrich Wilhelm Heinrich Alexander von Humboldt on September 14 in Berlin, Prussia.</li>
+            <li class="hv-tl-item"><span class="hv-tl-year">1799</span> Sets sail for Spanish America with botanist Aimé Bonpland, funded by his own inheritance.</li>
+            <li class="hv-tl-item"><span class="hv-tl-year">1800</span> Paddles the Orinoco River and confirms its natural link to the Amazon basin, the Casiquiare canal.</li>
+            <li class="hv-tl-item"><span class="hv-tl-year">1802</span> Climbs Chimborazo to roughly 5,878 m — a world altitude record — and sketches the first cross-section showing vegetation changing by elevation.</li>
+            <li class="hv-tl-item"><span class="hv-tl-year">1804</span> Returns to Europe after five years, bringing back over 60,000 plant specimens and thousands of pages of measurements.</li>
+            <li class="hv-tl-item"><span class="hv-tl-year">1817</span> Publishes the first modern isotherm map, plotting lines of equal temperature across the globe.</li>
+            <li class="hv-tl-item"><span class="hv-tl-year">1829</span> Undertakes a second major expedition, this time across Russia and Siberia at age 59.</li>
+            <li class="hv-tl-item"><span class="hv-tl-year">1845</span> Begins publishing <em>Cosmos</em>, a multi-volume attempt to describe the entire natural world as one connected system.</li>
+            <li class="hv-tl-item"><span class="hv-tl-year">1859</span> Dies May 6 in Berlin at age 89. Charles Darwin, on hearing the news, called him "the greatest scientific traveller who ever lived."</li>
+            <li class="hv-tl-item"><span class="hv-tl-year">1866</span> German biologist Ernst Haeckel coins the word <strong>"ecology"</strong> for the study of organisms and their environment — a field built directly on Humboldt's ideas.</li>
+          </ol>
+        </section>
+
+        <!-- Concept explainer -->
+        <section class="hv-card" style="--card-accent:#0e7490;">
+          <h2>The Web of Life: Biogeography &amp; Isotherms</h2>
+          <p>Before Humboldt, most naturalists studied living things the way a collector fills a cabinet: catalog a species, name it, move to the next. Humboldt asked a different question — <strong>why does a plant grow where it grows, and not somewhere else?</strong> His answer connected climate, altitude, latitude, and geology into a single explanation, a field now called <strong>biogeography</strong>.</p>
+
+          <h3>Naturgemälde: One Picture of an Entire Mountain</h3>
+          <p>After Chimborazo, Humboldt drew what may be the single most influential scientific illustration of the 19th century: a cross-section of the mountain from base to summit, with every measurement he had taken — temperature, air pressure, plant and animal life, even the boiling point of water — plotted at the correct elevation. He called it a <em>Naturgemälde</em>, a "painting of nature." It was the first time anyone had shown, in one image, that a single mountain contains a compressed model of Earth's entire climate system, from tropical jungle to polar ice.</p>
+
+          <figure data-zoomable data-lightbox-group="humboldt" class="hv-figure-full" data-full="../../../assets/thumbs/humboldt-naturgemalde-1807.jpg">
+            <img src="../../../assets/thumbs/humboldt-naturgemalde-1807.jpg" width="1920" height="1307" alt="Humboldt and Bonpland's 1807 Naturgemälde: a hand-colored cross-section of Chimborazo and a neighboring volcano, with columns of handwritten data on temperature, air pressure, plant zones, and animal life running down both sides of the mountain image" loading="lazy" />
+            <figcaption><strong>The original Naturgemälde</strong> — "Geographie der Pflanzen in den Tropen-Ländern, ein Naturgemälde der Anden" (Geography of Plants in the Tropics, a Nature Painting of the Andes), Humboldt &amp; Bonpland, 1807. Every column of tiny handwritten text is real field data — temperature, barometric pressure, humidity, and species — plotted at the elevation Humboldt measured it. Public domain, via <a href="https://commons.wikimedia.org/wiki/File:Zentralbibliothek_Z%C3%BCrich_-_Ideen_zu_einer_Geographie_der_Pflanzen_nebst_einem_Naturgem%C3%A4lde_der_Tropenl%C3%A4nder_-_000012142.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a> / Zentralbibliothek Zürich.</figcaption>
+          </figure>
+
+          <figure data-zoomable data-lightbox-group="humboldt" class="hv-figure-full" style="max-width:360px;margin-left:auto;margin-right:auto;" data-full="../../../assets/thumbs/humboldt-letter-1815.jpg">
+            <img src="../../../assets/thumbs/humboldt-letter-1815.jpg" width="506" height="709" alt="A handwritten letter by Alexander von Humboldt, dated January 7, 1815, in German cursive script, signed with his name at the bottom" loading="lazy" />
+            <figcaption>Humboldt's own handwriting: a letter to the painter Wilhelm Ternite, January 7, 1815, signed "Humboldt" at bottom right. Public domain, via <a href="https://commons.wikimedia.org/wiki/File:Brief_Alexander_von_Humboldt_an_Wilhelm_Ternite_1815-01-07.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>.</figcaption>
+          </figure>
+
+          <h3>Isotherms: Making Climate Visible</h3>
+          <p>To compare climates across the whole planet, Humboldt invented the <strong>isotherm</strong> — an imaginary line connecting every point that shares the same average temperature. Plotting isotherms revealed that temperature doesn't just depend on distance from the equator; ocean currents, elevation, and continental position bend those lines dramatically. Every weather map you've ever seen with colored temperature bands descends from this idea.</p>
+
+          <div class="hv-callout teal">
+            <strong>The lapse rate:</strong> Air temperature drops as you climb, roughly <strong>6.5°C for every 1,000 meters</strong> of elevation gained (the environmental lapse rate). This single number explains why a tropical mountain can have snow on its summit while its base sits in a rainforest — exactly what Humboldt measured climbing Chimborazo.
+          </div>
+          <div class="hv-callout green">
+            <strong>From Humboldt to "ecology":</strong> In 1866, German biologist Ernst Haeckel coined the word <em>Ökologie</em> ("ecology") for the study of how organisms relate to their environment — and cited Humboldt's holistic view of nature as his direct inspiration. That's the whole case for calling Humboldt ecology's father: he did the science decades before the field had a name.
+          </div>
+        </section>
+
+        <!-- Interactive -->
+        <section class="hv-card" style="--card-accent:#166534;">
+          <h2>Chimborazo Vegetation-Zone Explorer</h2>
+          <figure data-zoomable data-lightbox-group="humboldt" class="hv-figure-full" style="max-width:520px;margin-left:auto;margin-right:auto;" data-full="../../../assets/thumbs/chimborazo-mountain.jpg">
+            <img src="../../../assets/thumbs/chimborazo-mountain.jpg" width="1280" height="851" alt="Modern photograph of Mount Chimborazo's snow-capped summit rising above brown páramo grassland, taken from the valley below" loading="lazy" />
+            <figcaption>Chimborazo today, seen from the páramo grassland at its base. Photo: Bernard Gagnon, 2013, <a href="https://commons.wikimedia.org/wiki/File:Chimborazo_01.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>, CC BY-SA 3.0.</figcaption>
+          </figure>
+          <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Drag the altitude slider in the side panel (or use a preset) — or click straight on the mountain — to climb Chimborazo the way Humboldt did. Watch the vegetation zone, temperature, and typical life change as elevation increases, and see the sea-level latitude that matches each zone's climate. That match is Humboldt's real discovery: one tropical mountain compresses the climate of the whole planet, equator to pole, into a single day's climb.</p>
+          <div class="hv-canvas-wrap">
+            <span class="hv-canvas-hint" aria-hidden="true">Click to set altitude</span>
+            <canvas id="hv-canvas" tabindex="0" role="slider" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="6263" aria-valuenow="200" aria-label="Altitude on Mount Chimborazo. Click a point on the mountain, drag the slider below, or use arrow keys, to change elevation and see the vegetation zone, temperature, and equivalent sea-level latitude update."></canvas>
+          </div>
+          <div class="hv-readouts" aria-live="polite">
+            <div class="hv-readout"><span class="hv-readout-label">Elevation</span><span class="hv-readout-val" id="hv-r-alt">200 m</span></div>
+            <div class="hv-readout"><span class="hv-readout-label">Temperature</span><span class="hv-readout-val" id="hv-r-temp">25.7°C</span></div>
+            <div class="hv-readout"><span class="hv-readout-label">Zone</span><span class="hv-readout-val" id="hv-r-zone" style="font-size:0.8rem;">Tierra Caliente</span></div>
+            <div class="hv-readout"><span class="hv-readout-label">Water Boils At</span><span class="hv-readout-val" id="hv-r-boil" style="font-size:0.86rem;">100.0°C</span></div>
+            <div class="hv-readout"><span class="hv-readout-label">Equiv. Latitude</span><span class="hv-readout-val" id="hv-r-lat" style="font-size:0.86rem;">~0°</span></div>
+          </div>
+          <p id="hv-r-desc" style="font-size:0.84rem;color: var(--text-secondary, #3f4f65);">Hot, humid tropical rainforest. Palms, orchids, monkeys, and macaws thrive in the dense lowland canopy.</p>
+          <p class="hv-analog" id="hv-r-analog">At sea level, this climate matches the equatorial tropics — think the heart of the Amazon or Congo basin.</p>
+          <div class="hv-species-row" id="hv-r-species" aria-hidden="true"></div>
+        </section>
+
+        <!-- Wildlife gallery -->
+        <section class="hv-card" style="--card-accent:#15803d;">
+          <h2>Wildlife of the Andean Slopes</h2>
+          <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Three of the species Humboldt recorded on his way up Chimborazo, each living at a different elevation zone in the explorer above.</p>
+          <div class="hv-photo-grid">
+            <figure data-zoomable data-lightbox-group="humboldt" data-full="../../../assets/thumbs/andean-condor.jpg">
+              <img src="../../../assets/thumbs/andean-condor.jpg" width="960" height="640" alt="An Andean condor soaring with wings fully outstretched against a clear blue sky above Peru's Colca Canyon" loading="lazy" />
+              <figcaption><strong>Andean Condor</strong>Alpine desert &amp; páramo, 4,000+ m. Photo: Hans Brian Brandsberg Berg, 2006, <a href="https://commons.wikimedia.org/wiki/File:C%C3%B3ndor_volando_sobre_el_Ca%C3%B1%C3%B3n_del_Colca.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>, CC BY 2.0.</figcaption>
+            </figure>
+            <figure data-zoomable data-lightbox-group="humboldt" data-full="../../../assets/thumbs/vicuna.jpg">
+              <img src="../../../assets/thumbs/vicuna.jpg" width="960" height="1054" alt="A young vicuña, a wild relative of the llama with tan and white wool, resting on bare ground" loading="lazy" />
+              <figcaption><strong>Vicuña</strong>Páramo grassland, 3,800–4,500 m. Photo: Kitty Terwolbeck / USFWS, 2014, <a href="https://commons.wikimedia.org/wiki/File:Vicugna_vicugna_(29055158034).jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>, CC BY 2.0.</figcaption>
+            </figure>
+            <figure data-zoomable data-lightbox-group="humboldt" data-full="../../../assets/thumbs/spectacled-bear.jpg">
+              <img src="../../../assets/thumbs/spectacled-bear.jpg" width="960" height="640" alt="A spectacled bear walking through a field of tall frailejón plants on an Andean mountainside" loading="lazy" />
+              <figcaption><strong>Spectacled Bear</strong>Cloud forest &amp; sub-páramo, 2,300–3,800 m, shown here among frailejón plants. Photo: Diego Gómez-Hoyos, 2018, <a href="https://commons.wikimedia.org/wiki/File:Oso_Andino_-_Tremarctos_ornatus.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>, CC BY 4.0.</figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <!-- Key Discoveries -->
+        <section class="hv-card" style="--card-accent:#b45309;">
+          <h2>Key Ideas &amp; Contributions</h2>
+          <div class="hv-grid-2">
+
+            <div class="hv-invention-card">
+              <div class="hv-invention-icon">&#127956;</div>
+              <strong>Biogeography</strong>
+              <p>Showed that where a species lives is explained by climate, elevation, and geology working together — not chance. Founded the field of plant and animal geography.</p>
+            </div>
+
+            <div class="hv-invention-card">
+              <div class="hv-invention-icon">&#127777;&#65039;</div>
+              <strong>Isotherms (1817)</strong>
+              <p>Invented lines connecting points of equal temperature, letting scientists compare climates across continents at a glance. Still used on every weather map today.</p>
+            </div>
+
+            <div class="hv-invention-card">
+              <div class="hv-invention-icon">&#127956;</div>
+              <strong>The Naturgemälde</strong>
+              <p>His illustrated cross-section of Chimborazo plotted temperature, pressure, and species together by elevation — the first infographic connecting climate and life.</p>
+            </div>
+
+            <div class="hv-invention-card">
+              <div class="hv-invention-icon">&#128506;&#65039;</div>
+              <strong>Chimborazo Expedition (1802)</strong>
+              <p>Reached roughly 5,878 m without modern gear, a 30-year altitude record, while recording the first systematic altitude-vs-life-zone data.</p>
+            </div>
+
+            <div class="hv-invention-card">
+              <div class="hv-invention-icon">&#128218;</div>
+              <strong><em>Cosmos</em> (1845–1862)</strong>
+              <p>A five-volume attempt to describe the entire universe — geology, biology, astronomy, climate — as one connected, unified system.</p>
+            </div>
+
+            <div class="hv-invention-card">
+              <div class="hv-invention-icon">&#127981;&#65039;</div>
+              <strong>Inspiring "Ecology" (1866)</strong>
+              <p>Ernst Haeckel coined the word "ecology" citing Humboldt's holistic view of nature as the direct foundation for the new science.</p>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Legacy -->
+        <section class="hv-card" style="--card-accent:#166534;">
+          <h2>Humboldt's Legacy Today</h2>
+          <p>Charles Darwin carried Humboldt's <em>Personal Narrative</em> aboard HMS Beagle and later wrote that reading it as a young man had shaped the entire direction of his life — Darwin called Humboldt "the greatest scientific traveller who ever lived." Naturalists like Henry David Thoreau and John Muir, who both wrote about nature as an interconnected whole rather than a collection of parts, were working in a tradition Humboldt began.</p>
+          <p>Modern <strong>ecosystem science</strong> — tracing how energy and nutrients move between organisms and their environment, the same connections you can explore in this site's <a href="../ecosystems-and-food-webs.html">Ecosystems &amp; Food Webs</a> lesson — descends directly from Humboldt's insight that living things cannot be studied apart from their surroundings.</p>
+          <p>More places on Earth are named after Alexander von Humboldt than after any other person: the Humboldt Current off the coast of South America, Humboldt County in California, glaciers, mountain ranges, a penguin species, a squid, dozens of plants, and even a crater on the Moon. That naming pattern reflects how thoroughly his way of seeing nature — as one connected system — reshaped science after him.</p>
+          <div class="hv-callout terra">
+            <strong>A record that stood for decades:</strong> No one climbed higher than Humboldt's Chimborazo altitude until 1831. He never reached the true summit (6,263 m) — no one would until 1880 — but the data he gathered on the way up mattered more than the peak itself.
+          </div>
+        </section>
+
+        <!-- Practice Problems -->
+        <section class="hv-card" style="--card-accent:#0e7490;">
+          <h2>Practice Problems</h2>
+          <p style="color: var(--text-muted, #64748b);font-size:0.84rem;">Use the environmental lapse rate: temperature drops about 6.5°C per 1,000 m of elevation gained.</p>
+          <div class="hv-practice">
+
+            <div class="hv-problem">
+              <p><span class="diff-easy">Easy</span>1. What did Humboldt invent to connect points of equal temperature on a map?</p>
+              <div class="hv-problem-row">
+                <select class="hv-ans-input" id="hvans-1" style="width:180px;">
+                  <option value="">Choose…</option>
+                  <option value="isobars">Isobars</option>
+                  <option value="isotherms">Isotherms</option>
+                  <option value="contour lines">Contour lines</option>
+                  <option value="meridians">Meridians</option>
+                </select>
+                <button class="hv-check-btn" onclick="hvCheckText(1,'isotherms')">Check</button>
+                <span class="hv-feedback" id="hvfb-1"></span>
+              </div>
+              <div class="hv-hint" id="hvhint-1">Hint: The word starts with "iso-" (equal) and refers to temperature, not pressure.</div>
+            </div>
+
+            <div class="hv-problem">
+              <p><span class="diff-easy">Easy</span>2. Which word, coined in 1866 by Ernst Haeckel and inspired directly by Humboldt's work, is now used for the study of organisms and their environment?</p>
+              <div class="hv-problem-row">
+                <select class="hv-ans-input" id="hvans-2" style="width:200px;">
+                  <option value="">Choose…</option>
+                  <option value="biology">Biology</option>
+                  <option value="ecology">Ecology</option>
+                  <option value="geology">Geology</option>
+                  <option value="taxonomy">Taxonomy</option>
+                </select>
+                <button class="hv-check-btn" onclick="hvCheckText(2,'ecology')">Check</button>
+                <span class="hv-feedback" id="hvfb-2"></span>
+              </div>
+              <div class="hv-hint" id="hvhint-2">Hint: This is the word this whole lesson has been building toward.</div>
+            </div>
+
+            <div class="hv-problem">
+              <p><span class="diff-mid">Medium</span>3. Using the lapse rate of 6.5°C per 1,000 m, and a sea-level temperature of 27°C, estimate the temperature at <strong>3,500 m</strong> elevation. (Round to the nearest whole degree.)</p>
+              <div class="hv-problem-row">
+                <input type="number" class="hv-ans-input" id="hvans-3" step="1" placeholder="°C" />
+                <button class="hv-check-btn" onclick="hvCheck(3, 4, 1)">Check</button>
+                <span class="hv-feedback" id="hvfb-3"></span>
+              </div>
+              <div class="hv-hint" id="hvhint-3">Hint: Drop = 6.5 × 3.5 = 22.75°C. Temperature = 27 − 22.75 ≈ 4°C.</div>
+            </div>
+
+            <div class="hv-problem">
+              <p><span class="diff-mid">Medium</span>4. Roughly how high did Humboldt and Bonpland climb on Chimborazo in 1802 — a world altitude record at the time?</p>
+              <div class="hv-problem-row">
+                <select class="hv-ans-input" id="hvans-4" style="width:260px;">
+                  <option value="">Choose…</option>
+                  <option value="a">2,400 m</option>
+                  <option value="b">5,878 m</option>
+                  <option value="c">8,849 m (the height of Everest)</option>
+                  <option value="d">1,000 m</option>
+                </select>
+                <button class="hv-check-btn" onclick="hvCheckText(4,'b')">Check</button>
+                <span class="hv-feedback" id="hvfb-4"></span>
+              </div>
+              <div class="hv-hint" id="hvhint-4">Hint: They came close to the summit (6,263 m) but stopped short — still, no one climbed higher for almost 30 years.</div>
+            </div>
+
+            <div class="hv-problem">
+              <p><span class="diff-hard">Challenge</span>5. Which famous naturalist carried Humboldt's <em>Personal Narrative</em> aboard his ship and later called Humboldt "the greatest scientific traveller who ever lived"?</p>
+              <div class="hv-problem-row">
+                <select class="hv-ans-input" id="hvans-5" style="width:280px;">
+                  <option value="">Choose…</option>
+                  <option value="a">Charles Darwin</option>
+                  <option value="b">Isaac Newton</option>
+                  <option value="c">Gregor Mendel</option>
+                  <option value="d">Carl Linnaeus</option>
+                </select>
+                <button class="hv-check-btn" onclick="hvCheckText(5,'a')">Check</button>
+                <span class="hv-feedback" id="hvfb-5"></span>
+              </div>
+              <div class="hv-hint" id="hvhint-5">Hint: He sailed on HMS Beagle and later developed the theory of natural selection.</div>
+            </div>
+
+          </div>
+        </section>
+
+        <p style="font-size:0.82rem;color:var(--text-muted,#64748b);margin:0 0 1rem;">Related lessons: <a href="../ecosystems-and-food-webs.html">Ecosystems &amp; Food Webs</a> · <a href="../entomology.html">Entomology: The Science of Insects</a>.</p>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../../index.html">Home</a> · <a href="../../../steam-lessons.html">Lessons</a></p>
+        </footer>
+      </main>
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="hv-pane-sim">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="hv-pane-guide">Summary</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="hv-pane-sim">
+          <span class="ll-label">Elevation</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Altitude <span id="hv-alt-val">200 m</span></label>
+            <input type="range" class="nl-slider" id="hv-alt-slider" min="0" max="6263" value="200" step="1" style="width:100%;" />
+          </div>
+          <hr class="ll-hr">
+          <button class="ll-preset" onclick="hvPreset(200)"  style="width:100%;margin-bottom:0.4rem;">Orinoco basin (sea level)</button>
+          <button class="ll-preset" onclick="hvPreset(1500)" style="width:100%;margin-bottom:0.4rem;">Foothill forest</button>
+          <button class="ll-preset" onclick="hvPreset(2600)" style="width:100%;margin-bottom:0.4rem;">Andean cloud forest</button>
+          <button class="ll-preset" onclick="hvPreset(4200)" style="width:100%;margin-bottom:0.4rem;">Páramo grassland</button>
+          <button class="ll-preset" onclick="hvPreset(5878)" style="width:100%;margin-bottom:0.4rem;">Humboldt's 1802 high point</button>
+          <button class="ll-preset" onclick="hvPreset(200)"  style="width:100%;">Reset</button>
+        </div>
+
+        <div class="ll-pane" id="hv-pane-guide">
+          <div class="ll-info"><strong>Biogeography</strong>The study of why species live where they live. Humboldt showed climate, elevation, and geology together explain the pattern, not chance.</div>
+          <div class="ll-info"><strong>Isotherms</strong>Lines connecting points of equal average temperature. Humboldt's 1817 map was the first to plot them globally — the ancestor of every weather map today.</div>
+          <div class="ll-info"><strong>Lapse Rate</strong>Temperature falls about 6.5°C per 1,000 m of elevation gained. This is why a single tropical mountain can hold every climate zone from jungle to permanent snow.</div>
+          <div class="ll-info"><strong>Naturgemälde</strong>Humboldt's illustrated cross-section of Chimborazo, plotting climate and species together by elevation — arguably the first data-driven infographic in science.</div>
+          <div class="ll-info"><strong>Ecology's Root</strong>Ernst Haeckel coined "ecology" in 1866, explicitly building on Humboldt's view of nature as one connected system.</div>
+        </div>
+
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+</div><!-- .ll-viewport -->
+
+<script src="../../../assets/js/theme-registry.js"></script>
+<script src="../../../assets/js/nav-mobile.js"></script>
+<script src="../../../assets/js/sim-kit.js"></script>
+<script>
+(function () {
+  // ── Panel tab logic ───────────────────────────────────────────────────────
+  document.querySelectorAll('.ll-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pane = btn.dataset.pane;
+      document.querySelectorAll('.ll-tab').forEach(b => b.setAttribute('aria-selected','false'));
+      btn.setAttribute('aria-selected','true');
+      document.querySelectorAll('.ll-pane').forEach(p => p.classList.remove('ll-active'));
+      document.getElementById(pane).classList.add('ll-active');
+    });
+  });
+
+  document.querySelector('.ll-panel-close')?.addEventListener('click', () => {
+    document.querySelector('.ll-panel')?.classList.add('ll-panel-hidden');
+    document.querySelector('.ll-open-btn')?.classList.add('ll-visible');
+  });
+  document.querySelector('.ll-open-btn')?.addEventListener('click', () => {
+    document.querySelector('.ll-panel')?.classList.remove('ll-panel-hidden');
+    document.querySelector('.ll-open-btn')?.classList.remove('ll-visible');
+  });
+
+  // ── Practice check functions ──────────────────────────────────────────────
+  window.hvCheck = function (n, correct, tol) {
+    const val  = parseFloat(document.getElementById('hvans-' + n).value);
+    const fb   = document.getElementById('hvfb-' + n);
+    const hint = document.getElementById('hvhint-' + n);
+    if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.className = 'hv-feedback err'; return; }
+    if (Math.abs(val - correct) <= tol) {
+      fb.textContent = '✓ Correct!'; fb.className = 'hv-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.';  fb.className = 'hv-feedback err';
+      if (hint) hint.style.display = 'block';
+    }
+  };
+
+  window.hvCheckText = function (n, correct) {
+    const el   = document.getElementById('hvans-' + n);
+    const val  = el.value.toString().toLowerCase().trim();
+    const fb   = document.getElementById('hvfb-' + n);
+    const hint = document.getElementById('hvhint-' + n);
+    if (val === correct.toLowerCase()) {
+      fb.textContent = '✓ Correct!'; fb.className = 'hv-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.'; fb.className = 'hv-feedback err';
+      if (hint) hint.style.display = 'block';
+    }
+  };
+
+  // ── Chimborazo vegetation-zone explorer ───────────────────────────────────
+  (function() {
+    const canvas = document.getElementById('hv-canvas');
+    const wrap   = canvas.closest('.hv-canvas-wrap');
+    const SUMMIT = 6263;          // true summit, matches the "Legacy" callout
+    const HIGH_POINT = 5878;      // Humboldt & Bonpland's 1802 turnaround
+    const BASE_TEMP = 27;         // approx. sea-level temp at the equator, °C
+    const LAPSE = 6.5;            // environmental lapse rate, °C per 1000 m
+    // Rough teaching model: sea-level temperature falls ~0.52°C per degree
+    // of latitude from the equator to the poles (27°C equator to roughly
+    // -20°C at the poles). Solving BASE_TEMP - LAPSE*alt/1000 = BASE_TEMP -
+    // 0.52*lat for lat gives the "equivalent latitude" below — the sea-level
+    // trip that would land you in the same average temperature as climbing
+    // to that altitude on a tropical mountain. This is a simplified model,
+    // not a precise climate calculation, but it demonstrates Humboldt's
+    // actual insight: a single mountain compresses equator-to-pole climate.
+    const LAT_PER_ALT = (LAPSE / 1000) / 0.52;
+
+    const zones = [
+      { max: 1000, name: 'Tierra Caliente', color: '#1a5c2a', snowy: false,
+        desc: 'Hot, humid tropical rainforest. Palms, orchids, monkeys, and macaws thrive in the dense lowland canopy.',
+        species: [['🌴','Palms'], ['🦜','Macaws'], ['🐒','Howler monkeys']] },
+      { max: 2000, name: 'Tierra Templada', color: '#3f7d2e', snowy: false,
+        desc: 'Subtropical forest. Coffee, ferns, and broadleaf trees replace lowland jungle as the air cools.',
+        species: [['☕','Coffee shrubs'], ['🦋','Cloud butterflies'], ['🌿','Broadleaf trees']] },
+      { max: 3000, name: 'Tierra Fría — Cloud Forest', color: '#4f8c5c', snowy: false,
+        desc: 'Cool, mist-covered cloud forest. Oaks, mosses, and epiphytes cling to slopes wrapped in fog most days.',
+        species: [['🌳','Andean oaks'], ['🍄','Mosses & epiphytes'], ['🐻','Spectacled bear']] },
+      { max: 3800, name: 'Sub-páramo', color: '#7a9c5e', snowy: false,
+        desc: 'Stunted, wind-bent dwarf forest and shrubland. Polylepis trees — the world’s highest-growing trees — take hold here.',
+        species: [['🌲','Polylepis dwarf trees'], ['🐿️','Mountain tapir']] },
+      { max: 4500, name: 'Páramo', color: '#a3a15a', snowy: false,
+        desc: 'High Andean grassland. Frailejones and tussock grasses survive intense UV, night frost, and thin air.',
+        species: [['🌾','Frailejones & tussock grass'], ['🦙','Vicuña'], ['🦅','Andean condor']] },
+      { max: 5000, name: 'Alpine Desert', color: '#8a8378', snowy: false,
+        desc: 'Bare rock, gravel, and lichen. Almost no plant life survives the cold and thin oxygen.',
+        species: [['🪨','Lichen on bare rock'], ['🦅','Condor overhead']] },
+      { max: SUMMIT, name: 'Nieves Perpetuas', color: '#f4f8fb', snowy: true,
+        desc: 'Permanent snow and glacial ice. Humboldt and Bonpland turned back at ' + HIGH_POINT.toLocaleString() + ' m in 1802, just short of the true summit.',
+        species: [['❄️','Permanent snow & ice'], ['🚫','No plant life survives here']] }
+    ];
+
+    function zoneFor(alt) {
+      for (const z of zones) if (alt <= z.max) return z;
+      return zones[zones.length - 1];
+    }
+
+    function tempFor(alt) {
+      return BASE_TEMP - (LAPSE * alt / 1000);
+    }
+
+    function boilFor(alt) {
+      // Water's boiling point drops roughly 1°C per ~300 m of elevation.
+      return Math.max(68, 100 - alt / 300);
+    }
+
+    function latFor(alt) {
+      return Math.min(90, LAT_PER_ALT * alt);
+    }
+
+    function analogFor(lat) {
+      if (lat < 5)  return 'the equatorial tropics — think the heart of the Amazon or Congo basin.';
+      if (lat < 23) return 'the subtropics — similar latitudes to central Mexico or the Sahara\'s southern edge.';
+      if (lat < 40) return 'the warm temperate zone — similar to the Mediterranean coast or the southeastern U.S.';
+      if (lat < 55) return 'the cool temperate zone — similar to New England or Germany.';
+      if (lat < 66) return 'the subarctic — similar to the boreal taiga of Canada or Siberia.';
+      if (lat < 80) return 'the Arctic tundra — similar to northern Alaska or Svalbard.';
+      return 'the polar ice caps — similar to the edge of the Antarctic ice sheet.';
+    }
+
+    // DPR-aware sizing via shared sim helper (see assets/js/sim-kit.js).
+    // `useKit`/`ctx` are resolved *before* SimKit.canvas2d is constructed,
+    // because SimKit invokes onResize (which calls draw) synchronously
+    // during construction — any `const` draw() depends on that isn't fully
+    // assigned yet would throw a temporal-dead-zone error at that point.
+    const useKit = !!(window.SimKit && SimKit.canvas2d);
+    const ctx = canvas.getContext('2d');
+
+    function dims() {
+      return { W: wrap.clientWidth || 600, H: wrap.clientHeight || 380 };
+    }
+
+    function currentAlt() {
+      return parseInt(document.getElementById('hv-alt-slider').value, 10);
+    }
+
+    // Smooth mountain silhouette: width tapers with a gentle concave curve
+    // rather than a straight-line trapezoid, so the peak actually looks
+    // like a summit instead of a stack of boxes.
+    function widthFrac(t) {
+      return 0.26 + 0.66 * Math.pow(1 - t, 1.2);
+    }
+
+    function draw(alt) {
+      if (!useKit) { canvas.width = canvas.offsetWidth || 600; canvas.height = 380; }
+      const { W, H } = dims();
+      ctx.clearRect(0, 0, W, H);
+
+      const padTop = 16, padBottom = 16;
+      const usableH = H - padTop - padBottom;
+      const cx = W / 2;
+
+      // Sky gradient: warm haze near the base, cold deep blue near the summit
+      const sky = ctx.createLinearGradient(0, 0, 0, H);
+      sky.addColorStop(0, '#0c1830');
+      sky.addColorStop(0.55, '#0a1a22');
+      sky.addColorStop(1, '#04160f');
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, W, H);
+
+      // Zone bands, mountain-shaped (narrower near the summit)
+      let prevMax = 0;
+      zones.forEach(z => {
+        const t0 = prevMax / SUMMIT, t1 = z.max / SUMMIT;
+        const y0 = padTop + usableH * (1 - t0);
+        const y1 = padTop + usableH * (1 - t1);
+        const wBot = widthFrac(t0), wTop = widthFrac(t1);
+        const grad = ctx.createLinearGradient(0, y1, 0, y0);
+        grad.addColorStop(0, z.color);
+        grad.addColorStop(1, z.color);
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(cx - (W * wBot) / 2, y0);
+        ctx.lineTo(cx + (W * wBot) / 2, y0);
+        ctx.lineTo(cx + (W * wTop) / 2, y1);
+        ctx.lineTo(cx - (W * wTop) / 2, y1);
+        ctx.closePath();
+        ctx.fill();
+        // subtle top-edge highlight between bands for definition
+        ctx.strokeStyle = 'rgba(0,0,0,0.14)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        prevMax = z.max;
+      });
+
+      // Cloud layer drifting across the cloud-forest band (~2000–3000 m)
+      const cloudZ = zones[2];
+      const cy0 = padTop + usableH * (1 - (cloudZ.max - 400) / SUMMIT);
+      const cy1 = padTop + usableH * (1 - cloudZ.max / SUMMIT);
+      ctx.save();
+      ctx.globalAlpha = 0.32;
+      ctx.fillStyle = '#ffffff';
+      for (let i = 0; i < 5; i++) {
+        const fx = cx + (Math.sin(i * 2.1) * W * 0.28);
+        const fy = cy1 + (cy0 - cy1) * ((i + 1) / 6);
+        ctx.beginPath();
+        ctx.ellipse(fx, fy, W * 0.09, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // Snow-cap sparkle near the summit
+      ctx.save();
+      ctx.globalAlpha = 0.55;
+      ctx.fillStyle = '#ffffff';
+      const peakY = padTop + usableH * (1 - 0.985);
+      ctx.beginPath();
+      ctx.ellipse(cx, peakY, W * widthFrac(0.99) * 0.32, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Marker line + icon for the current altitude
+      const markY = padTop + usableH * (1 - alt / SUMMIT);
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(8, markY);
+      ctx.lineTo(W - 8, markY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const zone = zoneFor(alt);
+      const labelIcon = zone.species[0][0];
+      ctx.font = '16px sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(labelIcon, W - 12, Math.max(20, markY - 8));
+
+      ctx.fillStyle = '#fffbea';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(Math.round(alt) + ' m', 12, Math.max(14, markY - 6));
+
+      // Reference line + label for Humboldt's 1802 high point
+      if (alt < HIGH_POINT - 40 || alt > HIGH_POINT + 40) {
+        const hy = padTop + usableH * (1 - HIGH_POINT / SUMMIT);
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([2, 3]);
+        ctx.beginPath();
+        ctx.moveTo(8, hy);
+        ctx.lineTo(W - 8, hy);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(255,255,255,0.55)';
+        ctx.font = '9px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Humboldt\'s 1802 high point', 12, hy - 4);
+      }
+
+      // Elevation axis labels
+      ctx.fillStyle = 'rgba(255,255,255,0.65)';
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('0 m', W - 8, padTop + usableH - 4);
+      ctx.fillText(SUMMIT.toLocaleString() + ' m (summit)', W - 8, padTop + 12);
+    }
+
+    const kit = useKit
+      ? SimKit.canvas2d(canvas, { box: wrap, onResize: () => draw(currentAlt()) })
+      : null;
+
+    function update() {
+      const alt  = currentAlt();
+      const zone = zoneFor(alt);
+      const temp = tempFor(alt);
+      const lat  = latFor(alt);
+      document.getElementById('hv-alt-val').textContent = alt + ' m';
+      document.getElementById('hv-r-alt').textContent = alt + ' m';
+      document.getElementById('hv-r-temp').textContent = temp.toFixed(1) + '°C';
+      document.getElementById('hv-r-zone').textContent = zone.name;
+      document.getElementById('hv-r-boil').textContent = boilFor(alt).toFixed(1) + '°C';
+      document.getElementById('hv-r-lat').textContent = '~' + lat.toFixed(0) + '°';
+      document.getElementById('hv-r-desc').textContent = zone.desc;
+      document.getElementById('hv-r-analog').textContent = 'At sea level, this climate matches ' + analogFor(lat);
+      document.getElementById('hv-r-species').innerHTML = zone.species
+        .map(([icon, name]) => '<span class="hv-species-chip"><span class="icon">' + icon + '</span>' + name + '</span>')
+        .join('');
+      canvas.setAttribute('aria-valuenow', alt);
+      canvas.setAttribute('aria-valuetext', alt + ' meters, ' + zone.name);
+      draw(alt);
+    }
+
+    document.getElementById('hv-alt-slider').addEventListener('input', update);
+    if (!kit) window.addEventListener('resize', update);
+
+    function setAltFromClientY(clientY) {
+      const rect = canvas.getBoundingClientRect();
+      const padTop = 16, padBottom = 16;
+      const usableH = rect.height - padTop - padBottom;
+      const frac = 1 - Math.min(1, Math.max(0, (clientY - rect.top - padTop) / usableH));
+      const alt = Math.round((frac * SUMMIT) / 10) * 10;
+      document.getElementById('hv-alt-slider').value = Math.min(SUMMIT, Math.max(0, alt));
+      update();
+    }
+    canvas.addEventListener('click', (e) => setAltFromClientY(e.clientY));
+    canvas.addEventListener('keydown', (e) => {
+      const slider = document.getElementById('hv-alt-slider');
+      const step = e.shiftKey ? 500 : 100;
+      if (e.key === 'ArrowUp' || e.key === 'ArrowRight') { slider.value = Math.min(SUMMIT, currentAlt() + step); update(); e.preventDefault(); }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') { slider.value = Math.max(0, currentAlt() - step); update(); e.preventDefault(); }
+    });
+
+    window.hvPreset = function(alt) {
+      document.getElementById('hv-alt-slider').value = alt;
+      update();
+    };
+
+    update();
+  })();
+
+})();
+</script>
+<script src="../../../assets/js/lesson-print-button.js"></script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
+</body>
+</html>

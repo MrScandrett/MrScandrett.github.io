@@ -30,11 +30,12 @@
     <main id="main-content" class="vln-appgrid">
       <section class="vln-main" aria-label="Interactive fingerboard">
         <div class="vln-main-head">
-          <p><strong>Click and hold, then drag</strong> up or down a string to slide through a real glissando — the label locks onto a note only once you're in tune. Tap a colored header to hear and mark that string open.</p>
+          <p class="vln-coach"><span aria-hidden="true">1</span><strong>Choose a string.</strong> Tap its colored open-string header, or drag along the string to hear pitch change continuously.</p>
+          <p class="vln-coach"><span aria-hidden="true">2</span><strong>Find the center.</strong> The floating label turns red when you are within 14 cents of an equal-tempered note.</p>
           <div class="vln-controls-row">
             <div class="vln-seg" role="group" aria-label="Fingerboard span">
-              <button type="button" data-vln-span="full" class="is-active">Full neck</button>
-              <button type="button" data-vln-span="first">First position</button>
+              <button type="button" data-vln-span="full" class="is-active" aria-pressed="true">Two-octave span</button>
+              <button type="button" data-vln-span="first" aria-pressed="false">First position</button>
             </div>
             <button type="button" class="vln-btn" id="vlnClear">Clear</button>
           </div>
@@ -84,34 +85,35 @@
           </div>
         </div>
 
-        <p class="vln-readout" id="vlnReadout"></p>
+        <p class="vln-readout" id="vlnReadout" aria-live="polite"></p>
       </section>
 
       <aside class="vln-side" aria-label="Reference panels">
         <div class="vln-tabs" role="tablist">
-          <button type="button" class="vln-tab is-active" data-tab="highlight" role="tab" aria-selected="true">Highlight</button>
-          <button type="button" class="vln-tab" data-tab="range" role="tab" aria-selected="false">Range</button>
-          <button type="button" class="vln-tab" data-tab="glossary" role="tab" aria-selected="false">Glossary</button>
-          <button type="button" class="vln-tab" data-tab="songbank" role="tab" aria-selected="false">Songs</button>
-          <button type="button" class="vln-tab" data-tab="check" role="tab" aria-selected="false">Check</button>
+          <button type="button" id="tab-highlight" class="vln-tab is-active" data-tab="highlight" role="tab" aria-selected="true">Patterns</button>
+          <button type="button" id="tab-range" class="vln-tab" data-tab="range" role="tab" aria-selected="false">Notation</button>
+          <button type="button" id="tab-glossary" class="vln-tab" data-tab="glossary" role="tab" aria-selected="false">Terms</button>
+          <button type="button" id="tab-songbank" class="vln-tab" data-tab="songbank" role="tab" aria-selected="false">Repertoire</button>
+          <button type="button" id="tab-check" class="vln-tab" data-tab="check" role="tab" aria-selected="false">Check</button>
         </div>
 
         <div class="vln-panes">
-          <div class="vln-pane is-active" id="pane-highlight" role="tabpanel">
+          <div class="vln-pane is-active" id="pane-highlight" role="tabpanel" aria-labelledby="tab-highlight">
             <h2>Scales &amp; arpeggios</h2>
-            <p class="vln-pane-lede">Highlight a pattern across all four strings at once, live on the fingerboard. In first position each note also gets its real finger number (0 = open), and Play walks the pattern in the order and on the strings a violinist actually uses.</p>
-            <div class="vln-pick-row"><button type="button" class="vln-btn is-active" id="vlnHighlightOff">Off — free explore</button></div>
+            <p class="vln-pane-lede">Choose a root and pattern to map its pitch classes everywhere they occur. Play follows one octave in pitch order and favors open strings and first-position choices.</p>
+            <div class="vln-pick-row"><button type="button" class="vln-btn is-active" id="vlnHighlightOff" aria-pressed="true">Free explore</button></div>
             <p class="vln-pick-label">Root note</p>
             <div class="vln-pick-row" id="vlnRootPicker"></div>
             <p class="vln-pick-label">Scale / arpeggio</p>
             <div class="vln-pick-row" id="vlnPatternPicker"></div>
-            <p class="vln-formula" id="vlnFormula"></p>
+            <p class="vln-formula" id="vlnFormula" aria-live="polite"></p>
+            <p class="vln-finger-key"><strong>First-position badges:</strong> 0 = open; L = low finger; H = high finger. These are common choices based on distance from each open string, not scale degree; your teacher may choose an alternate fingering.</p>
             <div class="vln-pick-row"><button type="button" class="vln-btn" id="vlnPlayPattern" disabled>▶ Play</button></div>
           </div>
 
-          <div class="vln-pane" id="pane-range" role="tabpanel">
-            <h2>Range &amp; treble clef</h2>
-            <p class="vln-pane-lede">Each note head is color-matched to a string. Pale band = full 2-octave range; solid band = first position only.</p>
+          <div class="vln-pane" id="pane-range" role="tabpanel" aria-labelledby="tab-range">
+            <h2>Displayed span &amp; treble clef</h2>
+            <p class="vln-pane-lede">Each note head is color-matched to a string. Pale band = the explorer's two-octave-per-string span; solid band = open string through fourth finger in first position. This is a practice map, not the violin's complete playable range.</p>
             <div class="vln-staff-wrap">
               <div id="vlnStaff"></div>
               <div class="vln-legend">
@@ -123,7 +125,7 @@
             </div>
           </div>
 
-          <div class="vln-pane" id="pane-glossary" role="tabpanel">
+          <div class="vln-pane" id="pane-glossary" role="tabpanel" aria-labelledby="tab-glossary">
             <h2>Glossary</h2>
             <details class="vln-acc" open>
               <summary>Bowing (right hand)</summary>
@@ -131,11 +133,11 @@
                 <div class="vln-gloss-row"><b>Arco</b><span>Played with the bow — the default, unless a piece says otherwise.</span></div>
                 <div class="vln-gloss-row"><b>Pizzicato (pizz.)</b><span>Plucked with a finger instead of bowed, until "arco" returns.</span></div>
                 <div class="vln-gloss-row"><b>Détaché</b><span>Smooth, separate bow strokes — one note per bow direction.</span></div>
-                <div class="vln-gloss-row"><b>Legato</b><span>Notes slurred smoothly under one continuous bow stroke.</span></div>
-                <div class="vln-gloss-row"><b>Staccato</b><span>Short, separated notes, usually on one bow but stopped between.</span></div>
+                <div class="vln-gloss-row"><b>Legato</b><span>Notes connected smoothly. A slur often asks a string player to connect several notes in one bow.</span></div>
+                <div class="vln-gloss-row"><b>Staccato</b><span>Short, clearly separated notes. They may use separate bows or several stopped strokes in one bow.</span></div>
                 <div class="vln-gloss-row"><b>Spiccato</b><span>A bouncing bow stroke where the bow leaves the string.</span></div>
-                <div class="vln-gloss-row"><b>Tremolo</b><span>Very fast, unmeasured back-and-forth strokes on one note.</span></div>
-                <div class="vln-gloss-row"><b>Sul ponticello / sul tasto</b><span>Bowing near the bridge (glassy) or over the fingerboard (hollow).</span></div>
+                <div class="vln-gloss-row"><b>Tremolo</b><span>Rapidly repeated bow strokes on one note; notation may specify a measured rhythm or an unmeasured shimmer.</span></div>
+                <div class="vln-gloss-row"><b>Sul ponticello / sul tasto</b><span>Bowing near the bridge for a bright, glassy color, or over the fingerboard for a soft, flute-like color.</span></div>
               </div>
             </details>
             <details class="vln-acc">
@@ -155,8 +157,8 @@
               <summary>Instrument &amp; setup</summary>
               <div class="vln-acc-body">
                 <div class="vln-gloss-row"><b>Bridge</b><span>The upright piece strings pass over, driving the body's vibration.</span></div>
-                <div class="vln-gloss-row"><b>Soundpost</b><span>A dowel inside the body, under the bridge, carrying vibration to the back.</span></div>
-                <div class="vln-gloss-row"><b>F-holes</b><span>The f-shaped openings that let the body's resonant sound escape.</span></div>
+                <div class="vln-gloss-row"><b>Soundpost</b><span>A fitted dowel inside the body near the treble foot of the bridge; it couples the top and back plates and shapes resonance.</span></div>
+                <div class="vln-gloss-row"><b>F-holes</b><span>The f-shaped openings that help the top plate flex and help set the body's air resonance.</span></div>
                 <div class="vln-gloss-row"><b>Fine tuners</b><span>Small tailpiece screws for precise pitch adjustment.</span></div>
                 <div class="vln-gloss-row"><b>Rosin</b><span>Resin rubbed on the bow hair so it grips the string.</span></div>
                 <div class="vln-gloss-row"><b>Chin/shoulder rest</b><span>Supports that balance the violin, freeing the left hand.</span></div>
@@ -164,9 +166,9 @@
             </details>
           </div>
 
-          <div class="vln-pane" id="pane-songbank" role="tabpanel">
+          <div class="vln-pane" id="pane-songbank" role="tabpanel" aria-labelledby="tab-songbank">
             <h2>Song bank</h2>
-            <p class="vln-pane-lede">A sequenced repertoire spectrum — roughly the order most method tracks follow.</p>
+            <p class="vln-pane-lede">A suggested progression, not a universal grading system. Editions and teachers introduce techniques in different orders.</p>
             <details class="vln-acc" open>
               <summary>Lvl 1 · Open strings &amp; rhythm</summary>
               <div class="vln-acc-body">
@@ -182,22 +184,22 @@
                 <div class="vln-song-row"><b>Lightly Row</b><span>Trad.</span><em>Slurs across the bow</em></div>
                 <div class="vln-song-row"><b>Go Tell Aunt Rhody</b><span>Trad.</span><em>Low 2nd finger pattern</em></div>
                 <div class="vln-song-row"><b>The Happy Farmer</b><span>R. Schumann</span><em>Faster string crossings</em></div>
-                <div class="vln-song-row"><b>French Folk Song</b><span>Trad.</span><em>Compound (6/8) rhythm</em></div>
+                <div class="vln-song-row"><b>French Folk Song</b><span>Trad.</span><em>Bow changes, stepwise motion, phrase shape</em></div>
               </div>
             </details>
             <details class="vln-acc">
               <summary>Lvl 3 · Early intermediate</summary>
               <div class="vln-acc-body">
                 <div class="vln-song-row"><b>Gavotte</b><span>L. Becker</span><em>Third-position introduction</em></div>
-                <div class="vln-song-row"><b>Minuet No. 1–3</b><span>J. S. Bach</span><em>Independent fingers, ornamentation</em></div>
+                <div class="vln-song-row"><b>Minuets 1–3 (Suzuki Book 1)</b><span>Bach-family notebook sources; one attributed to C. Petzold</span><em>Dance pulse, bow retakes, phrase shape</em></div>
                 <div class="vln-song-row"><b>Humoresque (simplified)</b><span>A. Dvořák</span><em>Rhythmic snap, expressive phrasing</em></div>
-                <div class="vln-song-row"><b>Perpetual Motion</b><span>Suzuki repertoire</span><em>Sixteenth-note bow endurance</em></div>
+                <div class="vln-song-row"><b>Perpetual Motion</b><span>S. Suzuki</span><em>Even detaché strokes and steady pulse</em></div>
               </div>
             </details>
             <details class="vln-acc">
               <summary>Lvl 4 · Intermediate</summary>
               <div class="vln-acc-body">
-                <div class="vln-song-row"><b>Minuet in G</b><span>J. S. Bach</span><em>Multiple positions in one piece</em></div>
+                <div class="vln-song-row"><b>Gavotte from <cite>Mignon</cite></b><span>A. Thomas</span><em>Articulation, hooked bows, longer form</em></div>
                 <div class="vln-song-row"><b>Student Concerto No. 2 &amp; 5</b><span>F. Seitz</span><em>Concerto form, accompaniment</em></div>
                 <div class="vln-song-row"><b>Concerto in A minor, RV 356 (mvt. 1)</b><span>A. Vivaldi</span><em>Double stops, arpeggios</em></div>
                 <div class="vln-song-row"><b>Air Varié</b><span>C. Dancla</span><em>Theme-and-variations technique</em></div>
@@ -224,7 +226,7 @@
             </details>
           </div>
 
-          <div class="vln-pane" id="pane-check" role="tabpanel">
+          <div class="vln-pane" id="pane-check" role="tabpanel" aria-labelledby="tab-check">
             <h2>Exit ticket</h2>
             <div class="vln-quiz" id="vlnQuiz">
               <fieldset><legend>Why can a violinist play the "same" note in two places?</legend><label><input type="radio" name="q1" value="wrong" /> Violins have hidden frets</label><label><input type="radio" name="q1" value="correct" /> Strings are tuned a fifth apart, so ranges overlap</label><label><input type="radio" name="q1" value="wrong" /> Only with electronic tuners</label></fieldset>

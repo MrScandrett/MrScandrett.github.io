@@ -156,6 +156,27 @@
       line-height: 1.6;
     }
 
+    /* ── Cas9 Cut Animation ── */
+    .crispr-cutanim-wrap {
+      position: relative;
+      margin-top: 1rem;
+      border-radius: 14px;
+      background: #0d1f17;
+      overflow: hidden;
+    }
+    .crispr-cutanim-wrap canvas {
+      display: block;
+      width: 100%;
+      height: 170px;
+    }
+    .crispr-cutanim-caption {
+      margin: 0.5rem 0 0;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #24553a;
+      min-height: 1.2rem;
+    }
+
     /* ── Petri Dish Result ── */
     .crispr-petri {
       position: relative;
@@ -271,6 +292,10 @@
       <strong>Hint:</strong> Target sequence is <code style="background: #e8f5e9; padding: 2px 5px; border-radius: 4px;">GCACTGTTGGAAACGTCGAT</code>. Type its complement (A↔T, C↔G).
     </div>
     <div id="crisprFeedback" style="margin-top: 0.8rem; font-size: 0.9rem; font-weight: 700; min-height: 1.2rem;"></div>
+    <div class="crispr-cutanim-wrap">
+      <canvas id="casAnimCanvas" aria-hidden="true"></canvas>
+    </div>
+    <p class="crispr-cutanim-caption" id="casAnimCaption">Cas9 idle — design a matching guide RNA and click Cut DNA to watch it act.</p>
   </div>
 
 <!-- ════════════════════════════════════════════════════════════
@@ -340,6 +365,7 @@
 
 </div><!-- /.crispr-shell -->
 
+<script src="../../assets/js/sim-kit.js"></script>
 <script>
 (function () {
   'use strict';
@@ -361,10 +387,15 @@
   const resetBtn = document.getElementById('resetBtn');
   const canvas = document.getElementById('petriCanvas');
   const ctx = canvas.getContext('2d');
+  const casCanvas = document.getElementById('casAnimCanvas');
+  const casCaption = document.getElementById('casAnimCaption');
+  const casSim = SimKit.canvas2d(casCanvas, { height: 170 });
+  const casCtx = casSim.ctx;
 
   let edits = { luxA: false, ampR: false };
   let uvLight = false;
   let ampicillin = false;
+  let casAnim = null; // { t, phase, idx, outcome, applied }
 
   const colonies = Array.from({length: 60}, () => {
     const r = Math.random() * 120;
@@ -438,19 +469,187 @@
       const pam = GENOME.substring(idx + 20, idx + 23);
       if (pam.length === 3 && pam[1] === 'G' && pam[2] === 'G') {
         if (idx === 20) {
-          edits.luxA = true;
-          showFeedback('Cut successful! The luxA gene (bioluminescence) has been inserted.', 'success');
+          showFeedback('Cut successful! Watch Cas9 act, then the luxA gene (bioluminescence) will be inserted.', 'success');
+          startCasAnimation(idx, 'insert', () => { edits.luxA = true; });
         } else if (idx === 80) {
-          edits.ampR = true;
-          showFeedback('Cut successful! The ampR gene (antibiotic resistance) has been knocked out.', 'success');
+          showFeedback('Cut successful! Watch Cas9 act, then the ampR gene (antibiotic resistance) will be knocked out.', 'success');
+          startCasAnimation(idx, 'knockout', () => { edits.ampR = true; });
+        } else {
+          showFeedback('Cut successful, but this site is not one of the two engineered targets.', 'success');
+          startCasAnimation(idx, 'insert', () => {});
         }
       } else {
         showFeedback('Match found, but no valid PAM site (NGG) adjacent. Cas9 cannot bind.', 'error');
+        startCasAnimation(idx, 'nopam', () => {});
       }
     } else {
       showFeedback('Guide RNA sequence not found in the target genome.', 'error');
     }
   });
+
+  // ── Cas9 cut animation ──────────────────────────────────────────
+  // Phases: seek (Cas9 scans the genome to the target) → bind (guide RNA
+  // pairs, PAM is checked) → cut (blades close, DNA backbone snips) →
+  // repair (insert new code, or leave a knockout gap) for successful edits.
+  // 'nopam' plays seek + bind, then shows Cas9 disengaging without cutting.
+  const CAS_DURATIONS = {
+    insert:   { seek: 1.0, bind: 0.8, cut: 0.7, repair: 1.1 },
+    knockout: { seek: 1.0, bind: 0.8, cut: 0.7, repair: 1.1 },
+    nopam:    { seek: 1.0, bind: 0.8, cut: 0.5, repair: 0 },
+  };
+
+  function startCasAnimation(idx, outcome, onApply) {
+    casAnim = { t: 0, idx, outcome, onApply, applied: false };
+  }
+
+  function casPhaseAt(t, outcome) {
+    const d = CAS_DURATIONS[outcome];
+    if (t < d.seek) return { phase: 'seek', p: t / d.seek };
+    if (t < d.seek + d.bind) return { phase: 'bind', p: (t - d.seek) / d.bind };
+    if (t < d.seek + d.bind + d.cut) return { phase: 'cut', p: (t - d.seek - d.bind) / d.cut };
+    if (d.repair > 0 && t < d.seek + d.bind + d.cut + d.repair) {
+      return { phase: 'repair', p: (t - d.seek - d.bind - d.cut) / d.repair };
+    }
+    return { phase: 'done', p: 1 };
+  }
+
+  const CAS_CAPTIONS = {
+    seek: 'Cas9 scans the genome for a matching guide RNA sequence…',
+    bind: 'Guide RNA pairs with the target — checking for a PAM site (NGG)…',
+    cut: { insert: 'PAM confirmed — Cas9 cuts both DNA strands!', knockout: 'PAM confirmed — Cas9 cuts both DNA strands!', nopam: 'No PAM site — Cas9 cannot activate its blades.' },
+    repair: { insert: 'Repair pathway inserts the luxA bioluminescence gene.', knockout: 'Repair pathway seals the cut — ampR is knocked out.' },
+    done: { insert: 'Edit complete. Check the petri dish under UV light.', knockout: 'Edit complete. Check the petri dish with ampicillin.', nopam: 'Cas9 disengages — try a different guide RNA.' },
+  };
+
+  function updateCasCaption(phase, outcome) {
+    const entry = CAS_CAPTIONS[phase];
+    casCaption.textContent = typeof entry === 'string' ? entry : (entry[outcome] || '');
+  }
+
+  function drawCasAnim(dt) {
+    const w = casSim.width || 700;
+    const h = casSim.height || 170;
+    casCtx.clearRect(0, 0, w, h);
+
+    // Backbone baseline (two strands of the double helix, flattened for clarity)
+    const midY = h / 2;
+    const strandGap = 16;
+
+    if (!casAnim) {
+      casCtx.strokeStyle = 'rgba(168, 240, 192, 0.35)';
+      casCtx.lineWidth = 2;
+      [midY - strandGap, midY + strandGap].forEach((y) => {
+        casCtx.beginPath();
+        casCtx.moveTo(20, y);
+        casCtx.lineTo(w - 20, y);
+        casCtx.stroke();
+      });
+      casCtx.fillStyle = 'rgba(168, 240, 192, 0.5)';
+      casCtx.font = '12px "IBM Plex Mono", monospace';
+      casCtx.fillText('bacterial genome — idle', 20, midY - strandGap - 8);
+      return;
+    }
+
+    casAnim.t += dt;
+    const { phase, p } = casPhaseAt(casAnim.t, casAnim.outcome);
+    if (phase !== casAnim.lastPhase) {
+      updateCasCaption(phase, casAnim.outcome);
+      casAnim.lastPhase = phase;
+    }
+
+    const targetX = 20 + (casAnim.idx / GENOME.length) * (w - 40);
+    const cutGap = phase === 'cut' ? p * 22 : (phase === 'repair' || phase === 'done') && casAnim.outcome !== 'nopam' ? 22 : 0;
+    const isFail = casAnim.outcome === 'nopam';
+
+    // Draw the two backbone strands, splitting apart at the cut site once cut/repair begins.
+    casCtx.lineWidth = 2.5;
+    [midY - strandGap, midY + strandGap].forEach((y) => {
+      casCtx.strokeStyle = 'rgba(168, 240, 192, 0.55)';
+      casCtx.beginPath();
+      casCtx.moveTo(20, y);
+      casCtx.lineTo(targetX - cutGap, y);
+      casCtx.stroke();
+      casCtx.beginPath();
+      casCtx.moveTo(targetX + cutGap, y);
+      casCtx.lineTo(w - 20, y);
+      casCtx.stroke();
+    });
+
+    // Guide RNA track appears from the bind phase onward.
+    if (phase === 'bind' || phase === 'cut' || phase === 'repair' || phase === 'done') {
+      const glow = phase === 'bind' ? p : 1;
+      casCtx.strokeStyle = `rgba(96, 165, 250, ${0.85 * glow})`;
+      casCtx.lineWidth = 4;
+      casCtx.setLineDash([4, 3]);
+      casCtx.beginPath();
+      casCtx.moveTo(targetX - 24, midY - strandGap);
+      casCtx.lineTo(targetX - 24, midY + strandGap);
+      casCtx.stroke();
+      casCtx.setLineDash([]);
+    }
+
+    // Repaired code: green insert for luxA, or a visibly open/frayed gap for the ampR knockout.
+    if ((phase === 'repair' || phase === 'done') && !isFail) {
+      if (!casAnim.applied) { casAnim.applied = true; casAnim.onApply(); }
+      if (casAnim.outcome === 'insert') {
+        const slide = Math.min(1, phase === 'done' ? 1 : p * 1.3);
+        casCtx.fillStyle = `rgba(74, 222, 128, ${0.9 * slide})`;
+        casCtx.shadowColor = '#4ade80';
+        casCtx.shadowBlur = 10 * slide;
+        casCtx.fillRect(targetX - 20 * slide, midY - strandGap, 40 * slide, strandGap * 2);
+        casCtx.shadowBlur = 0;
+        if (slide > 0.5) {
+          casCtx.fillStyle = '#e8fff0';
+          casCtx.font = 'bold 10px "IBM Plex Mono", monospace';
+          casCtx.textAlign = 'center';
+          casCtx.fillText('luxA', targetX, midY + 3);
+          casCtx.textAlign = 'left';
+        }
+      } else {
+        casCtx.strokeStyle = 'rgba(239, 68, 68, 0.75)';
+        casCtx.lineWidth = 2;
+        [midY - strandGap, midY + strandGap].forEach((y) => {
+          casCtx.beginPath();
+          casCtx.moveTo(targetX - cutGap, y); casCtx.lineTo(targetX - cutGap + 6, y - 6);
+          casCtx.moveTo(targetX + cutGap, y); casCtx.lineTo(targetX + cutGap - 6, y - 6);
+          casCtx.stroke();
+        });
+      }
+    }
+
+    // Cas9 protein: a body with two blade triangles that close during the cut phase.
+    let cx = targetX;
+    if (phase === 'seek') cx = 20 + p * (targetX - 20);
+    else if (phase === 'done' && isFail) cx = targetX - Math.min(1, (casAnim.t - CAS_DURATIONS.nopam.seek - CAS_DURATIONS.nopam.bind - CAS_DURATIONS.nopam.cut)) * 60;
+    const cy = midY;
+    const bladeOpen = phase === 'seek' || phase === 'bind' ? 16 : phase === 'cut' ? 16 * (1 - p) : (isFail ? 16 : 2);
+    const bodyColor = isFail && (phase === 'cut' || phase === 'done') ? '#ef4444' : phase === 'seek' ? '#c084fc' : '#22c55e';
+
+    casCtx.fillStyle = bodyColor;
+    casCtx.beginPath();
+    casCtx.arc(cx, cy - 26, 9, 0, Math.PI * 2);
+    casCtx.fill();
+    casCtx.strokeStyle = bodyColor;
+    casCtx.lineWidth = 3;
+    casCtx.beginPath();
+    casCtx.moveTo(cx - bladeOpen, cy - strandGap - 2);
+    casCtx.lineTo(cx, cy - 18);
+    casCtx.lineTo(cx + bladeOpen, cy - strandGap - 2);
+    casCtx.stroke();
+
+    // Spark burst at the moment of the cut.
+    if (phase === 'cut' && !isFail && p < 1) {
+      const sparks = 6;
+      casCtx.fillStyle = `rgba(251, 191, 36, ${1 - p})`;
+      for (let i = 0; i < sparks; i++) {
+        const a = (i / sparks) * Math.PI * 2;
+        const r = 10 + p * 18;
+        casCtx.beginPath();
+        casCtx.arc(cx + Math.cos(a) * r, cy + Math.sin(a) * r, 1.6, 0, Math.PI * 2);
+        casCtx.fill();
+      }
+    }
+  }
 
   uvBtn.addEventListener('click', () => {
     uvLight = !uvLight;
@@ -478,6 +677,8 @@
     ampBtn.classList.remove('ll-active');
     feedback.textContent = '';
     colonies.forEach(c => c.size = c.baseSize);
+    casAnim = null;
+    casCaption.textContent = 'Cas9 idle — design a matching guide RNA and click Cut DNA to watch it act.';
     updateViewer();
   });
 
@@ -519,12 +720,13 @@
       ctx.fill();
       ctx.shadowBlur = 0;
     });
-
-    requestAnimationFrame(drawPetri);
   }
-  
+
   updateViewer();
-  requestAnimationFrame(drawPetri);
+  SimKit.loop((dt) => {
+    drawPetri();
+    drawCasAnim(dt);
+  });
 }());
 </script>
 <script src="../../assets/js/canvas-bg.js"></script>

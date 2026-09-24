@@ -5,6 +5,7 @@
 let audioCtx = null;
 let master   = null;
 let analyser = null;
+let pianoNoiseBuffer = null;
 
 // ───── Modular Patchbay ─────
 const modular = {
@@ -301,6 +302,15 @@ function createPracticeRoomImpulse(ctx) {
     }
   }
   return impulse;
+}
+
+function getNoiseBuffer() {
+  if (pianoNoiseBuffer) return pianoNoiseBuffer;
+  const length = audioCtx.sampleRate * 2;
+  pianoNoiseBuffer = audioCtx.createBuffer(1, length, audioCtx.sampleRate);
+  const data = pianoNoiseBuffer.getChannelData(0);
+  for (let i = 0; i < length; i += 1) data[i] = (Math.random() * 2) - 1;
+  return pianoNoiseBuffer;
 }
 
 // ───── Audio initialisation ─────
@@ -840,8 +850,8 @@ function stopVoice(note) {
 }
 
 // ───── Note on / off (from UI or MIDI) ─────
-function noteOnFromUi(note, velocity) {
-  if (!noteAllowed(note)) return;
+function noteOnFromUi(note, velocity, respectScale = true) {
+  if (respectScale && !noteAllowed(note)) return;
   if (velocity === undefined) velocity = 0.82;
   ensureAudio();
   if (audioCtx.state !== 'running') audioCtx.resume();
@@ -876,11 +886,12 @@ function os_triggerNote(midi, velocity, options) {
     scrollTheory: true,
     hudLabel: noteName(midi),
     solfege: '',
+    respectScale: true,
   }, options || {});
 
-  if (!noteAllowed(midi)) return;
+  if (config.respectScale && !noteAllowed(midi)) return;
 
-  noteOnFromUi(midi, velocity);
+  noteOnFromUi(midi, velocity, config.respectScale);
   bridgeState.activeNotes.add(midi);
   if (config.highlightPiano) setKeyActive(midi, true);
   if (config.highlightTheory) highlightTheoryNotes(Array.from(bridgeState.activeNotes), config.scrollTheory);
@@ -911,13 +922,14 @@ function os_triggerChord(notes, options) {
     duration: 700,
     label: 'Chord',
     solfege: '',
+    respectScale: true,
   }, options || {});
 
-  const playableNotes = notes.filter((note) => noteAllowed(note));
+  const playableNotes = config.respectScale ? notes.filter((note) => noteAllowed(note)) : notes;
   if (!playableNotes.length) return;
 
   playableNotes.forEach((note) => {
-    noteOnFromUi(note, 0.68);
+    noteOnFromUi(note, 0.68, config.respectScale);
     bridgeState.activeNotes.add(note);
     setKeyActive(note, true);
   });
@@ -2495,17 +2507,59 @@ const CHORD_FORMULAS = {
 };
 
 const CHORD_DESCRIPTIONS = {
-  major:     'Bright, happy. Root + Major 3rd (4 semitones) + Perfect 5th (7 semitones)',
-  minor:     'Sad, dark. Root + Minor 3rd (3 semitones) + Perfect 5th (7 semitones)',
-  diminished: 'Tense, unstable. Root + Minor 3rd (3) + Diminished 5th (6 semitones)',
-  augmented:  'Dreamlike, unresolved. Root + Major 3rd (4) + Augmented 5th (8 semitones)',
-  dom7:      'Tension + resolution. Major triad + Minor 7th (10 semitones). Pulls toward the next chord.',
-  maj7:      'Sophisticated, dreamy. Major triad + Major 7th (11 semitones)',
-  min7:      'Soulful, mellow. Minor triad + Minor 7th (10 semitones)',
-  minmaj7:   'Rare, sophisticated. Minor triad + Major 7th (11 semitones)',
-  sus2:      'Suspended, unresolved. Replace the 3rd with a 2nd',
-  sus4:      'Suspended, unresolved. Replace the 3rd with a 4th',
+  major:     'Root + major 3rd (4 semitones) + perfect 5th (7 semitones)',
+  minor:     'Root + minor 3rd (3 semitones) + perfect 5th (7 semitones)',
+  diminished: 'Root + minor 3rd (3) + diminished 5th (6); two stacked minor thirds',
+  augmented:  'Root + major 3rd (4) + augmented 5th (8); two stacked major thirds',
+  dom7:      'Major triad + minor 7th (10); V7 commonly resolves toward I in tonal harmony',
+  maj7:      'Major triad + major 7th (11 semitones)',
+  min7:      'Minor triad + minor 7th (10 semitones)',
+  minmaj7:   'Minor triad + major 7th (11 semitones)',
+  sus2:      'The major 2nd replaces the 3rd',
+  sus4:      'The perfect 4th replaces the 3rd',
 };
+
+function initEarLab() {
+  const buttons = Array.from(document.querySelectorAll('[data-ear-semitones]'));
+  const feedback = document.getElementById('earLabFeedback');
+  if (!buttons.length || !feedback) return;
+  let playbackTimers = [];
+
+  buttons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const semitones = Number(button.dataset.earSemitones);
+      const name = button.dataset.earName;
+      const tonic = 60 + currentNotationKey().root;
+      const upper = tonic + semitones;
+      const tonicName = getTheoryNote(tonic).pitchLabel;
+      const intervalLetterSteps = { 3: 2, 4: 2, 6: 3, 7: 4 };
+      const tonicLetterIndex = LETTER_TO_INDEX[notationState.key[0]];
+      const upperLetter = NOTE_LETTERS[(tonicLetterIndex + intervalLetterSteps[semitones]) % 7];
+      const upperName = spellChordTone(upper % 12, upperLetter);
+
+      buttons.forEach((item) => item.classList.toggle('is-active', item === button));
+      playbackTimers.forEach((timer) => window.clearTimeout(timer));
+      playbackTimers = [];
+      os_triggerNote(tonic, 0.72, {
+        duration: 620,
+        hudLabel: `${tonicName} · tonic`,
+        respectScale: false,
+      });
+      playbackTimers.push(window.setTimeout(() => os_triggerNote(upper, 0.72, {
+        duration: 620,
+        hudLabel: `${upperName} · ${name}`,
+        respectScale: false,
+      }), 720));
+      playbackTimers.push(window.setTimeout(() => os_triggerChord([tonic, upper], {
+        duration: 1500,
+        label: `${tonicName}–${upperName} ${name}`,
+        respectScale: false,
+      }), 1440));
+
+      feedback.textContent = `${currentNotationKey().label}: ${tonicName} to ${upperName} is a ${name} (${semitones} semitones). First hear the notes separately; then notice how the distance sounds when they ring together.`;
+    });
+  });
+}
 
 const INTERVAL_NAMES = {
   0: 'Root',
@@ -2584,5 +2638,6 @@ initCircleOfFifths();
 initTheoryMap();
 initQwertyKeyboard();
 buildChordTheoryUI();
+initEarLab();
 readAdsr();   // set initial display values from slider defaults
 setStatus();
