@@ -40,6 +40,9 @@
     { suffix: '6', name: 'Major 6th', intervals: [0, 4, 7, 9] },
     { suffix: 'm6', name: 'Minor 6th', intervals: [0, 3, 7, 9] },
     { suffix: 'add9', name: 'Add 9', intervals: [0, 4, 7, 2] },
+    { suffix: 'm7b5', name: 'Half-diminished 7th', intervals: [0,3,6,10] },
+    { suffix: 'dim7', name: 'Diminished 7th', intervals: [0,3,6,9] },
+    { suffix: '7sus4', name: 'Dominant 7sus4', intervals: [0,5,7,10] },
     { suffix: '5', name: 'Power Chord', intervals: [0, 7] }
   ];
 
@@ -183,17 +186,35 @@
     { key: 'mixolydian', name: 'Mixolydian', intervals: [0, 2, 4, 5, 7, 9, 10], degrees: ['1', '2', '3', '4', '5', '6', '♭7'], mode: 5, desc: 'Major with a lowered 7th — bluesy and unresolved, the dominant-7th sound.' },
     { key: 'aeolian', name: 'Minor (Aeolian)', intervals: [0, 2, 3, 5, 7, 8, 10], degrees: ['1', '2', '♭3', '4', '5', '♭6', '♭7'], mode: 6, desc: 'The natural minor scale — dark and resolved, the minor-key equivalent of Ionian.' },
     { key: 'locrian', name: 'Locrian', intervals: [0, 1, 3, 5, 6, 8, 10], degrees: ['1', '♭2', '♭3', '4', '♭5', '♭6', '♭7'], mode: 7, desc: 'Tense and unstable — even the chord built on its root is diminished.' },
-    { key: 'majorPent', name: 'Major Pentatonic', intervals: [0, 2, 4, 7, 9], degrees: ['1', '2', '3', '5', '6'], mode: null, desc: 'The major scale with the 4th and 7th removed — no half-steps, so it always sounds consonant.' },
+    { key: 'majorPent', name: 'Major Pentatonic', intervals: [0, 2, 4, 7, 9], degrees: ['1', '2', '3', '5', '6'], mode: null, desc: 'The major scale with the 4th and 7th removed — no half-steps within the scale; consonance still depends on the chord beneath it.' },
     { key: 'minorPent', name: 'Minor Pentatonic', intervals: [0, 3, 5, 7, 10], degrees: ['1', '♭3', '4', '5', '♭7'], mode: null, desc: 'The natural minor scale with the 2nd and 6th removed — the rock and blues soloing staple.' },
     { key: 'blues', name: 'Blues', intervals: [0, 3, 5, 6, 7, 10], degrees: ['1', '♭3', '4', '♭5', '5', '♭7'], mode: null, desc: 'Minor pentatonic plus a chromatic ♭5 "blue note" passing between the 4th and 5th.' },
-    { key: 'harmonicMinor', name: 'Harmonic Minor', intervals: [0, 2, 3, 5, 7, 8, 11], degrees: ['1', '2', '♭3', '4', '5', '♭6', '7'], mode: null, desc: 'Natural minor with a raised 7th, opening a dramatic step-and-a-half gap right before the root.' },
-    { key: 'melodicMinor', name: 'Melodic Minor', intervals: [0, 2, 3, 5, 7, 9, 11], degrees: ['1', '2', '♭3', '4', '5', '6', '7'], mode: null, desc: 'Natural minor with a raised 6th and 7th — smooths out harmonic minor’s awkward gap.' }
+    { key: 'harmonicMinor', name: 'Harmonic Minor', intervals: [0, 2, 3, 5, 7, 8, 11], degrees: ['1', '2', '♭3', '4', '5', '♭6', '7'], mode: null, desc: 'Natural minor with a raised 7th, opening a dramatic step-and-a-half gap between the sixth and seventh degrees.' },
+    { key: 'melodicMinor', name: 'Melodic Minor', intervals: [0, 2, 3, 5, 7, 9, 11], degrees: ['1', '2', '♭3', '4', '5', '6', '7'], mode: null, desc: 'Natural minor with a raised 6th and 7th — the jazz form uses these notes both ways; classical melodic minor commonly descends as natural minor.' }
   ];
+
+  [
+    {base:[0,2,3,5,7,8,11], prefix:'hm', names:['Harmonic minor','Locrian ♮6','Ionian ♯5','Dorian ♯4','Phrygian dominant','Lydian ♯2','Ultralocrian']},
+    {base:[0,2,3,5,7,9,11], prefix:'mm', names:['Jazz melodic minor','Dorian ♭2','Lydian augmented','Lydian dominant','Mixolydian ♭6','Locrian ♮2','Altered (super Locrian)']}
+  ].forEach(function(family) {
+    for(var m=1;m<7;m++) {
+      var intervals=family.base.map(function(_,i) { return (family.base[(i+m)%7]-family.base[m]+12)%12; });
+      var major=[0,2,4,5,7,9,11];
+      var degrees=intervals.map(function(iv,i) { var diff=iv-major[i]; return (diff<0?'♭'.repeat(-diff):'♯'.repeat(diff))+(i+1); });
+      SCALE_TYPES.push({key:family.prefix+m,name:family.names[m],intervals:intervals,degrees:degrees,mode:null,desc:'Mode '+(m+1)+' of '+family.names[0]+'. Establish the selected tonic as home; practice its distinctive altered degrees slowly.'});
+    }
+  });
+  SCALE_TYPES.push(
+    {key:'wholeTone',name:'Whole tone',intervals:[0,2,4,6,8,10],degrees:['1','2','3','♯4','♯5','♭7'],desc:'Six equally spaced notes, a whole step apart.'},
+    {key:'diminishedHW',name:'Diminished (half–whole)',intervals:[0,1,3,4,6,7,9,10],degrees:['1','♭2','♭3','3','♯4','5','6','♭7'],desc:'Alternate half steps and whole steps; often used over altered dominant harmony.'},
+    {key:'diminishedWH',name:'Diminished (whole–half)',intervals:[0,2,3,5,6,8,9,11],degrees:['1','2','♭3','4','♭5','♭6','6','7'],desc:'Alternate whole steps and half steps; relates to diminished seventh harmony.'},
+    {key:'chromatic',name:'Chromatic',intervals:[0,1,2,3,4,5,6,7,8,9,10,11],degrees:['1','♭2','2','♭3','3','4','♯4','5','♭6','6','♭7','7'],desc:'All twelve pitch classes. Use a shift when a route exceeds one hand position.'}
+  );
 
   function mod12(n) { return ((n % 12) + 12) % 12; }
 
   function sortedIntervals(chordType) {
-    return chordType.intervals.slice().sort(function (a, b) { return a - b; });
+    return chordType.intervals.slice(); // harmonic order: an added ninth follows the triad
   }
 
   var INVERSION_LABELS = ['Root position', '1st inversion', '2nd inversion', '3rd inversion'];
@@ -224,54 +245,50 @@
      hand can actually play — a bass note at fret 9 with other tones computed at fret
      1. Both are avoided here. */
   function autoVoiceInversion(rootPC, chordType, inversionIndex) {
-    var ivs = sortedIntervals(chordType);
-    var bassPC = mod12(rootPC + ivs[inversionIndex % ivs.length]);
-    var frets = TUNING.map(function () { return 'x'; });
-    var MAX_FRET = 15;
+    return findVoicings(rootPC, chordType, inversionIndex)[0] || TUNING.map(function () { return 'x'; });
+  }
 
-    var bassFret = null;
-    for (var f = 0; f <= 11; f++) {
-      if (mod12(TUNING[0].openPC + f) === bassPC) { bassFret = f; break; }
+  // Enumerate compact grips; validate actual pitch order, coverage and finger use.
+  var voicingCache = {};
+  function findVoicings(rootPC, chordType, inversionIndex, kind) {
+    kind = kind || 'any';
+    var key = [rootPC, chordType.suffix, inversionIndex, kind].join('|');
+    if (voicingCache[key]) return voicingCache[key];
+    var ivs = sortedIntervals(chordType), bass = mod12(rootPC + ivs[inversionIndex]);
+    var pcs = ivs.map(function (iv) { return mod12(rootPC + iv); });
+    var found = [], seen = {};
+    for (var start = 1; start <= 12; start++) {
+      var choices = TUNING.map(function (t) {
+        var out = ['x'];
+        for (var f = 0; f <= 15; f++) {
+          if (f && (f < start || f > start + 3)) continue;
+          if (pcs.indexOf(mod12(t.openPC + f)) >= 0) out.push(f);
+        }
+        return out;
+      });
+      function visit(grip) {
+        if (grip.length < 6) { choices[grip.length].forEach(function (f) { visit(grip.concat(f)); }); return; }
+        var id = grip.join(','); if (seen[id]) return; seen[id] = true;
+        var notes = grip.map(function (f, i) { return typeof f === 'number' ? [40,45,50,55,59,64][i] + f : null; }).filter(function (n) { return n !== null; }).sort(function (a,b) { return a-b; });
+        if (!notes.length || mod12(notes[0]) !== bass) return;
+        if (!pcs.every(function (pc) { return notes.some(function (n) { return mod12(n) === pc; }); })) return;
+        if (computeFingering(grip).indexOf('?') >= 0) return;
+        if (kind === 'close' && (notes.length !== pcs.length || notes[notes.length-1]-notes[0] >= 12)) return;
+        if (kind === 'drop2' || kind === 'drop3') {
+          if (notes.length !== 4 || pcs.length !== 4) return;
+          var restored = notes.slice(1).concat(notes[0]+12).sort(function (a,b) { return a-b; });
+          var rank = kind === 'drop2' ? 2 : 1;
+          if (restored[rank] !== notes[0]+12 || restored[3]-restored[0] >= 12) return;
+        }
+        var fretted = grip.filter(function (f) { return typeof f === 'number' && f > 0; });
+        var span = fretted.length ? Math.max.apply(null,fretted)-Math.min.apply(null,fretted) : 0;
+        var score = span*8 + (fretted.length ? Math.max.apply(null,fretted) : 0) + notes.length*2;
+        found.push({grip:grip,score:score});
+      }
+      visit([]);
     }
-    if (bassFret === null) return frets;
-    frets[0] = bassFret;
-
-    var chordPCs = ivs.map(function (iv) { return mod12(rootPC + iv); });
-    var remainingPCs = ivs.filter(function (iv, i) { return i !== inversionIndex; }).map(function (iv) { return mod12(rootPC + iv); });
-    var openStrings = [1, 2, 3, 4, 5];
-
-    /* Every (tone, string) pairing at the fret closest to the bass fret, sorted
-       so the pairing needing the least stretch from the bass claims its string
-       first, before any string is left to double up. */
-    var pairs = [];
-    remainingPCs.forEach(function (pc) {
-      openStrings.forEach(function (s) {
-        var fret = nearestFretForPC(TUNING[s].openPC, pc, bassFret, MAX_FRET);
-        if (fret !== null) pairs.push({ pc: pc, s: s, fret: fret, dist: Math.abs(fret - bassFret) });
-      });
-    });
-    pairs.sort(function (a, b) { return a.dist - b.dist; });
-    var assignedPCs = {};
-    pairs.forEach(function (p) {
-      if (assignedPCs[p.pc] || frets[p.s] !== 'x') return;
-      frets[p.s] = p.fret;
-      assignedPCs[p.pc] = true;
-    });
-
-    /* Any string left over (more strings than distinct chord tones) doubles
-       whichever chord tone it can reach closest to the bass fret, so the extra
-       notes stay in the same hand position as the rest of the chord. */
-    openStrings.forEach(function (s) {
-      if (frets[s] !== 'x') return;
-      var bestFret = null;
-      chordPCs.forEach(function (pc) {
-        var fret = nearestFretForPC(TUNING[s].openPC, pc, bassFret, MAX_FRET);
-        if (fret !== null && (bestFret === null || Math.abs(fret - bassFret) < Math.abs(bestFret - bassFret))) bestFret = fret;
-      });
-      frets[s] = bestFret;
-    });
-
-    return frets;
+    found.sort(function(a,b) { return a.score-b.score; });
+    return voicingCache[key] = found.map(function(x) { return x.grip; });
   }
 
   /* Slide a CAGED barre template so its root lands on rootPC — shift every fretted
@@ -351,21 +368,25 @@
     return 'major';
   }
 
-  /* Assign finger numbers 1-4 to fretted notes by rank of distinct fret value
-     (lowest fret = finger 1). Repeated frets share a finger, implying a barre. */
+  // A barre may cross higher fretted notes, but never an open/lower note.
+  // Separate equal-fret groups need separate fingers; never clamp to finger 4.
   function computeFingering(frets) {
-    var fretted = frets.filter(function (f) { return typeof f === 'number' && f > 0; });
-    var unique = [];
-    fretted.forEach(function (f) { if (unique.indexOf(f) === -1) unique.push(f); });
-    unique.sort(function (a, b) { return a - b; });
-    return frets.map(function (f) {
-      if (f === 'x' || f === null || f === undefined) return 'x';
-      if (f === 0) return 'o';
-      return Math.min(unique.indexOf(f) + 1, 4);
+    var groups = [];
+    frets.forEach(function(f, i) {
+      if (typeof f !== 'number' || f === 0) return;
+      var group = groups.find(function(g) {
+        return g.fret === f && frets.slice(g.last+1,i).every(function(v) { return v === 'x' || v >= f; });
+      });
+      if (group) { group.strings.push(i); group.last=i; }
+      else groups.push({fret:f,last:i,strings:[i]});
     });
+    groups.sort(function(a,b) { return a.fret-b.fret || a.last-b.last; });
+    var result = frets.map(function(f) { return f === 0 ? 'o' : 'x'; });
+    groups.forEach(function(g,i) { g.strings.forEach(function(n) { result[n] = groups.length > 4 ? '?' : i+1; }); });
+    return result;
   }
 
-  function getChordShape(rootPC, chordType, inversionIndex, formKey) {
+  function rawChordShape(rootPC, chordType, inversionIndex, formKey) {
     inversionIndex = inversionIndex || 0;
     var key = PITCHES[rootPC] + chordType.suffix;
     if (inversionIndex === 0 && formKey && CAGED_REF_PC.hasOwnProperty(formKey)) {
@@ -395,6 +416,19 @@
     return { frets: frets, fingers: computeFingering(frets), source: 'computed', key: key, inversionIndex: inversionIndex };
   }
 
+  function getChordShape(rootPC, chordType, inversionIndex, formKey) {
+    var shape = rawChordShape(rootPC,chordType,inversionIndex,formKey);
+    var nums = shape.frets.filter(function(f) { return typeof f === 'number' && f>0; });
+    var fingers = computeFingering(shape.frets);
+    var detected = detectChords(shape.frets);
+    var expected = mod12(rootPC + sortedIntervals(chordType)[inversionIndex || 0]);
+    if (fingers.indexOf('?')>=0 || (nums.length && Math.max.apply(null,nums)-Math.min.apply(null,nums)>3) || detected.bassPC !== expected) {
+      shape.frets = autoVoiceInversion(rootPC,chordType,inversionIndex || 0);
+      shape.fingers = computeFingering(shape.frets); shape.source = 'computed';
+    }
+    return shape;
+  }
+
   function chordDisplayName(rootPC, chordType) {
     return PITCHES[rootPC] + (chordType.suffix === '' ? '' : chordType.suffix);
   }
@@ -412,7 +446,7 @@
     var uniquePCs = [];
     notes.forEach(function (n) { if (uniquePCs.indexOf(n.pc) === -1) uniquePCs.push(n.pc); });
 
-    var bassPC = notes[0].pc; /* lowest string with a note = bass note */
+    var bassPC = notes.reduce(function(a,b) { return noteFreq(a.stringIndex,a.fret) < noteFreq(b.stringIndex,b.fret) ? a : b; }).pc;
 
     var matches = [];
     uniquePCs.forEach(function (root) {
@@ -454,6 +488,7 @@
   }
 
   window.GuitarTheory = {
+    findVoicings: findVoicings,
     PITCHES: PITCHES,
     TUNING: TUNING,
     STRINGS_TOPDOWN: STRINGS_TOPDOWN,
@@ -481,7 +516,8 @@
 (function () {
   'use strict';
 
-  var ctx = null;
+  var ctx = null, sources = new Set(), volume = 0.45;
+  function stop() { sources.forEach(function(src) { try { src.stop(); } catch(e) {} }); sources.clear(); }
   function getContext() {
     var AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return null;
@@ -528,7 +564,7 @@
     body.frequency.value = Math.min(9000, freq * 9 + 1200);
 
     var gain = audioCtx.createGain();
-    var peak = opts.gain != null ? opts.gain : 0.32;
+    var peak = (opts.gain != null ? opts.gain : 0.32) * volume;
     gain.gain.setValueAtTime(0.0001, now);
     gain.gain.linearRampToValueAtTime(peak, now + 0.006);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
@@ -536,6 +572,8 @@
     src.connect(body);
     body.connect(gain);
     gain.connect(audioCtx.destination);
+    sources.add(src);
+    src.onended = function() { sources.delete(src); src.disconnect(); body.disconnect(); gain.disconnect(); };
     src.start(now);
     src.stop(now + duration + 0.05);
   }
@@ -558,7 +596,7 @@
     });
   }
 
-  window.GuitarAudio = { pluck: pluck, strum: strum, sequence: sequence, getContext: getContext };
+  window.GuitarAudio = { stop: stop, setVolume: function(v) { volume = v; }, pluck: pluck, strum: strum, sequence: sequence, getContext: getContext };
 })();
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -775,6 +813,7 @@ document.addEventListener('DOMContentLoaded', function () {
      direction), 'updown' (up then back down without repeating the top note). */
   function playFrets(frets, mode) {
     if (!window.GuitarAudio) return;
+    window.GuitarAudio.stop();
     var freqs = fretsToFreqs(frets);
     if (!freqs.length) return;
     if (mode === 'strum') window.GuitarAudio.strum(freqs);
@@ -789,6 +828,23 @@ document.addEventListener('DOMContentLoaded', function () {
   var builderBoard = document.getElementById('gcBuilderBoard');
   var builderResult = document.getElementById('gcBuilderResult');
   var builderNotes = document.getElementById('gcBuilderNotes');
+  var challengeBtn = document.getElementById('gcChallengeBuilder');
+  var challengeReadout = document.getElementById('gcChallengeReadout');
+  var challenge = null; /* {root, type} while a build challenge is open */
+
+  /* Did the student's grip spell the challenge chord (any inversion counts)? */
+  function challengeStatus(detection) {
+    if (!challenge || !detection.notes.length) return '';
+    var hit = detection.matches.some(function (m) { return m.root === challenge.root && m.chordType === challenge.type; });
+    if (hit) return '<p class="gc-challenge-status is-solved" role="status"><strong>Challenge solved:</strong> that is ' + GT.chordDisplayName(challenge.root, challenge.type) + '. Strum it, then ask for another.</p>';
+    var need = challenge.type.intervals.map(function (iv) { return GT.mod12(challenge.root + iv); });
+    var missing = need.filter(function (pc) { return detection.uniquePCs.indexOf(pc) < 0; });
+    var extra = detection.uniquePCs.filter(function (pc) { return need.indexOf(pc) < 0; });
+    var parts = [];
+    if (missing.length) parts.push('still missing ' + missing.map(function (pc) { return GT.PITCHES[pc]; }).join(', '));
+    if (extra.length) parts.push('remove or mute ' + extra.map(function (pc) { return GT.PITCHES[pc]; }).join(', '));
+    return '<p class="gc-challenge-status" role="status"><strong>Not yet:</strong> ' + parts.join('; ') + '.</p>';
+  }
 
   function renderBuilder() {
     if (!builderBoard) return;
@@ -826,16 +882,17 @@ document.addEventListener('DOMContentLoaded', function () {
     detection = detection || GT.detectChords(builderState);
 
     if (detection.notes.length === 0) {
-      builderResult.innerHTML = '<p class="gc-result-empty">Click frets on the board above to place notes. Click a string\'s label to toggle it between muted (&times;) and open.</p>';
+      builderResult.innerHTML = (challenge ? '<p class="gc-challenge-status">Place notes to build ' + GT.chordDisplayName(challenge.root, challenge.type) + '.</p>' : '') + '<p class="gc-result-empty">Click frets on the board above to place notes. Click a string\'s label to toggle it between muted (&times;) and open.</p>';
       if (builderNotes) builderNotes.textContent = '';
       return;
     }
 
+    var status = challengeStatus(detection);
     var noteNames = detection.notes.map(function (n) { return GT.PITCHES[n.pc]; });
     if (builderNotes) builderNotes.textContent = 'Notes played (low to high): ' + noteNames.join(' – ');
 
     if (detection.matches.length === 0) {
-      builderResult.innerHTML = '<p class="gc-result-none"><strong>Not a standard chord in our dictionary.</strong> That\'s OK — not every combination of notes has a name. Try matching it against the chord types below, or clear and try again.</p>';
+      builderResult.innerHTML = '<p class="gc-result-none"><strong>Not a standard chord in our dictionary.</strong> That\'s OK — not every combination of notes has a name. Compare it with the chord formulas above, or clear and try again.</p>' + status;
       return;
     }
 
@@ -853,7 +910,7 @@ document.addEventListener('DOMContentLoaded', function () {
       });
       html += '</ul></div>';
     }
-    builderResult.innerHTML = html;
+    builderResult.innerHTML = status + html;
   }
 
   var clearBtn = document.getElementById('gcClearBuilder');
@@ -862,15 +919,26 @@ document.addEventListener('DOMContentLoaded', function () {
     renderBuilder();
   });
 
-  var challengeBtn = document.getElementById('gcChallengeBuilder');
-  var challengeReadout = document.getElementById('gcChallengeReadout');
   if (challengeBtn) challengeBtn.addEventListener('click', function () {
-    var root = Math.floor(Math.random() * 12);
-    var typeList = [GT.CHORD_TYPES[0], GT.CHORD_TYPES[1], GT.CHORD_TYPES[2], GT.CHORD_TYPES[3], GT.CHORD_TYPES[4]];
-    var type = typeList[Math.floor(Math.random() * typeList.length)];
-    if (challengeReadout) {
-      challengeReadout.textContent = 'Build a ' + GT.chordDisplayName(root, type) + ' (' + type.name + '). Place notes so the intervals from your lowest note match: ' + type.intervals.join(', ') + ' semitones.';
-    }
+    var root, type;
+    do {
+      root = Math.floor(Math.random() * 12);
+      type = GT.CHORD_TYPES[Math.floor(Math.random() * 5)];
+    } while (challenge && challenge.root === root && challenge.type === type);
+    challenge = { root: root, type: type };
+    var tones = type.intervals.map(function (iv) { return GT.PITCHES[GT.mod12(root + iv)]; });
+    challengeReadout.textContent = 'Build ' + GT.chordDisplayName(root, type) + ' (' + type.name + '): intervals ' +
+      type.intervals.join(', ') + ' semitones above the root. Hint: you need ' + tones.join(', ') + '.';
+    challengeBtn.textContent = 'Give me a different chord';
+    updateBuilderResult();
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-load-grip]'), function (btn) {
+    btn.addEventListener('click', function () {
+      builderState = btn.getAttribute('data-load-grip').split(',').map(function (f) { return f === 'x' ? 'x' : Number(f); });
+      renderBuilder();
+      playFrets(builderState, 'strum');
+    });
   });
 
   var builderPlayStrum = document.getElementById('gcPlayStrum');
@@ -995,7 +1063,7 @@ document.addEventListener('DOMContentLoaded', function () {
       var formKey = source.slice(6);
       return 'Movable ' + FORM_LABELS[formKey] + ' barre — slide the whole shape to any fret';
     }
-    return 'Computed voicing — built around the bass note';
+    return 'Compact computed grip — check comfort slowly; mute every × string';
   }
 
   function renderEncyclopedia() {
@@ -1018,15 +1086,16 @@ document.addEventListener('DOMContentLoaded', function () {
       var detection = GT.detectChords(shape.frets);
       var notesLine = detection.notes.map(function (n) { return GT.PITCHES[n.pc]; }).join(' – ');
       var invLabel = GT.INVERSION_LABELS[encCurrentInversion] || (encCurrentInversion + 'th inversion');
-      var bassNote = detection.notes.length ? GT.PITCHES[detection.notes[0].pc] : '';
+      var bassNote = detection.notes.length ? GT.PITCHES[detection.bassPC] : '';
       var degreeLine = degrees.filter(function (d) { return d; }).map(function (d) { return d.label; }).join(' – ');
       encMeta.innerHTML = '<h3>' + name + (encCurrentInversion === 0 ? '' : ' / ' + bassNote) + '</h3>' +
         '<p class="gc-enc-tag">' + tag + '</p>' +
         '<p class="gc-enc-notes"><strong>' + invLabel + '</strong> — bass note ' + bassNote + '</p>' +
         '<p class="gc-enc-notes">Notes: ' + notesLine + '</p>' +
         '<p class="gc-enc-notes">Intervals from the root (low string → high string): ' + degreeLine + '</p>' +
-        '<p class="gc-enc-notes">Fingering (low string → high string): ' + fingerSummary(shape.fingers) + '</p>' +
-        '<p class="gc-enc-formula">Formula: root' + encCurrentType.intervals.slice(1).map(function (i) { return ' + ' + i; }).join('') + ' semitones from ' + name.replace(encCurrentType.suffix, '') + '</p>';
+        '<p class="gc-enc-notes">Suggested fingers (low string → high string): ' + fingerSummary(shape.fingers) + '</p>' +
+        '<p class="gc-enc-notes">Frets (low E → high e): ' + shape.frets.join(' – ') + '. Repeated finger numbers indicate a barre. A compact grip is not a guarantee of individual comfort.</p>' +
+        '<p class="gc-enc-formula">Formula: root' + encCurrentType.intervals.slice(1).map(function (i) { return ' + ' + i; }).join('') + ' semitones from ' + GT.PITCHES[encCurrentRoot] + '</p>';
     }
   }
 
@@ -1118,14 +1187,19 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  renderLadderStrip('gcLadderStrip0', 0);
-  renderLadderStrip('gcLadderStrip1', 1);
-  renderLadderStrip('gcLadderStrip2', 2);
-
-  Array.prototype.forEach.call(document.querySelectorAll('.gc-ladder-play'), function (btn) {
+  var ladderInversion = 0;
+  renderLadderStrip('gcLadderStrip', ladderInversion);
+  var ladderInvPicker = document.getElementById('gcLadderInvPicker');
+  if (ladderInvPicker) Array.prototype.forEach.call(ladderInvPicker.children, function (btn) {
     btn.addEventListener('click', function () {
-      playChordSequence(ladderShapes(parseInt(btn.getAttribute('data-inversion'), 10)), LADDER_CHORD_GAP);
+      ladderInversion = parseInt(btn.getAttribute('data-inversion'), 10);
+      Array.prototype.forEach.call(ladderInvPicker.children, function (c) { c.classList.toggle('is-active', c === btn); });
+      renderLadderStrip('gcLadderStrip', ladderInversion);
     });
+  });
+  var ladderPlay = document.getElementById('gcLadderPlay');
+  if (ladderPlay) ladderPlay.addEventListener('click', function () {
+    playChordSequence(ladderShapes(ladderInversion), LADDER_CHORD_GAP);
   });
 
   var ladderPlayAll = document.getElementById('gcLadderPlayAll');
@@ -1135,11 +1209,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
   var ladderAddPractice = document.getElementById('gcLadderAddPractice');
   if (ladderAddPractice) ladderAddPractice.addEventListener('click', function () {
+    var count = 0;
     [0, 1, 2].forEach(function (inv) {
       DIATONIC_TRIADS.slice(0, 7).forEach(function (entry) {
-        addPracticeItem({ kind: 'chord', rootPC: entry.root, typeSuffix: entry.suffix, inversionIndex: inv, formKey: null });
+        if (addPracticeItem({ kind: 'chord', rootPC: entry.root, typeSuffix: entry.suffix, inversionIndex: inv, formKey: null })) count++;
       });
     });
+    flashButton(ladderAddPractice, count ? '✓ Added ' + count + ' chords' : 'Already in your list');
   });
 
   /* ---------- Scales & modes ---------- */
@@ -1290,7 +1366,30 @@ document.addEventListener('DOMContentLoaded', function () {
         scaleRootPicker.appendChild(btn);
       });
     }
-    if (scaleTypePicker) {
+    if (scaleTypePicker && scaleTypePicker.tagName === 'SELECT') {
+      var groups = [
+        ['Major-scale modes', function (st) { return !!st.mode; }],
+        ['Pentatonic & blues', function (st) { return /Pent|blues/.test(st.key); }],
+        ['Minor variations', function (st) { return st.key === 'harmonicMinor' || st.key === 'melodicMinor'; }],
+        ['Modes of harmonic minor', function (st) { return /^hm\d/.test(st.key); }],
+        ['Modes of melodic minor', function (st) { return /^mm\d/.test(st.key); }],
+        ['Symmetric scales', function (st) { return /wholeTone|diminished|chromatic/.test(st.key); }]
+      ];
+      groups.forEach(function (g) {
+        var og = document.createElement('optgroup');
+        og.label = g[0];
+        GT.SCALE_TYPES.filter(g[1]).forEach(function (st) {
+          var o = document.createElement('option');
+          o.value = st.key; o.textContent = st.name;
+          og.appendChild(o);
+        });
+        scaleTypePicker.appendChild(og);
+      });
+      scaleTypePicker.addEventListener('change', function () {
+        scaleCurrentType = GT.SCALE_TYPES.filter(function (st) { return st.key === scaleTypePicker.value; })[0];
+        renderScales();
+      });
+    } else if (scaleTypePicker) {
       GT.SCALE_TYPES.forEach(function (st, idx) {
         var btn = document.createElement('button');
         btn.type = 'button';
@@ -1359,6 +1458,43 @@ document.addEventListener('DOMContentLoaded', function () {
     renderScales();
   });
 
+  function makeScaleRoute(root,scale) {
+    var opens=[40,45,50,55,59,64], tonic=40+GT.mod12(root-4);
+    var pitches=scale.intervals.concat(12).map(function(iv) { return tonic+iv; });
+    var paths=[{notes:[],cost:0}];
+    pitches.forEach(function(midi) {
+      var next=[];
+      opens.forEach(function(open,string) {
+        var fret=midi-open; if(fret<0 || fret>15) return;
+        var best=null;
+        paths.forEach(function(path) {
+          var prev=path.notes[path.notes.length-1];
+          if(prev && string<prev.string) return;
+          var cost=path.cost+fret*.1+(prev ? Math.abs(fret-prev.fret)+Math.abs(string-prev.string)*2 : fret*.2);
+          if(!best || cost<best.cost) best={notes:path.notes.concat({string:string,fret:fret,midi:midi}),cost:cost};
+        });
+        if(best) next.push(best);
+      });
+      paths=next;
+    });
+    paths.sort(function(a,b) { return a.cost-b.cost; });
+    return paths[0].notes;
+  }
+  function renderScaleRoute() {
+    var host=document.getElementById('studioScaleRoute');
+    if(!host) { host=document.createElement('div'); host.id='studioScaleRoute'; scaleBoard.parentElement.parentElement.appendChild(host); }
+    var route=makeScaleRoute(scaleCurrentRoot,scaleCurrentType);
+    host.replaceChildren();
+    var h=document.createElement('h3'); h.textContent='Play this one-octave route'; host.appendChild(h);
+    var p=document.createElement('p'); p.textContent='One note per click or playback step, ending on the tonic. This route is independent of the map window above. Numbers are frets. Shift your hand when needed; use finger 1 for a new position, then fingers 2–4 for the next three frets.'; host.appendChild(p);
+    var pre=document.createElement('pre'); pre.className='studio-tab';
+    pre.textContent=[5,4,3,2,1,0].map(function(string) { return GT.TUNING[string].label+' |'+route.map(function(n) { return n.string===string ? String(n.fret).padStart(2,'-')+'--' : '----'; }).join('')+'|'; }).join('\n');
+    host.appendChild(pre);
+    var row=document.createElement('div'); row.className='gc-pick-row';
+    route.forEach(function(n,i) { var b=document.createElement('button'); b.type='button'; b.className='gc-btn'; b.textContent=(i+1)+'. String '+(6-n.string)+', fret '+n.fret; b.onclick=function() { window.GuitarAudio.stop(); window.GuitarAudio.pluck(GT.noteFreq(n.string,n.fret)); }; row.appendChild(b); });
+    host.appendChild(row);
+  }
+
   function renderScales() {
     if (!scaleBoard) return;
     var toneMap = buildToneMap(scaleCurrentRoot, scaleCurrentType);
@@ -1371,6 +1507,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var span = scaleViewMode === 'position' ? (posEnd - startFret) : SCALE_SPAN;
     renderScaleBoard(scaleBoard, { startFret: startFret, span: span, toneMap: toneMap });
     updatePositionControls();
+    renderScaleRoute();
 
     if (scaleMeta) {
       var name = GT.PITCHES[scaleCurrentRoot] + ' ' + scaleCurrentType.name;
@@ -1384,7 +1521,7 @@ document.addEventListener('DOMContentLoaded', function () {
       html += '<p class="gc-enc-notes">Scale degrees: ' + scaleCurrentType.degrees.join(' – ') + '</p>';
       if (scaleCurrentType.mode) {
         var parentRoot = GT.mod12(scaleCurrentRoot - GT.SCALE_TYPES[0].intervals[scaleCurrentType.mode - 1]);
-        html += '<p class="gc-enc-notes">' + MODE_ORDINALS[scaleCurrentType.mode] + ' mode of the major scale — the same seven notes as <strong>' + GT.PITCHES[parentRoot] + ' Major</strong>, just starting from ' + GT.PITCHES[scaleCurrentRoot] + '.</p>';
+        html += '<p class="gc-enc-notes">' + MODE_ORDINALS[scaleCurrentType.mode] + ' mode of the major scale — the same seven notes as <strong>' + GT.PITCHES[parentRoot] + ' Major</strong>, with ' + GT.PITCHES[scaleCurrentRoot] + ' as the tonal center.</p>';
       }
       html += '<p class="gc-enc-formula">' + scaleCurrentType.desc + '</p>';
       scaleMeta.innerHTML = html;
@@ -1400,10 +1537,7 @@ document.addEventListener('DOMContentLoaded', function () {
      particular string/position, so it sounds the same no matter which window
      of the neck is currently shown. */
   function scaleFrequencies(rootPC, scaleType) {
-    var base = 220 * Math.pow(2, (rootPC - 9) / 12); /* root landed near guitar's mid register */
-    var freqs = scaleType.intervals.map(function (iv) { return base * Math.pow(2, iv / 12); });
-    freqs.push(base * 2); /* close the phrase by resolving back to the root, an octave up */
-    return freqs;
+    return makeScaleRoute(rootPC,scaleType).map(function(n) { return GT.noteFreq(n.string,n.fret); });
   }
 
   var scalePlayUp = document.getElementById('gcScalePlayUp');
@@ -1419,6 +1553,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   if (scalePlayUpDown) scalePlayUpDown.addEventListener('click', function () {
     if (!window.GuitarAudio) return;
+    window.GuitarAudio.stop();
     var freqs = scaleFrequencies(scaleCurrentRoot, scaleCurrentType);
     window.GuitarAudio.sequence(freqs.concat(freqs.slice(0, -1).reverse()), { interval: 0.22 });
   });
@@ -1446,10 +1581,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function addPracticeItem(item) {
     var key = practiceItemKey(item);
-    if (practiceList.some(function (p) { return practiceItemKey(p) === key; })) return;
+    if (practiceList.some(function (p) { return practiceItemKey(p) === key; })) return false;
     practiceList.push(item);
     savePracticeList();
     renderPracticeListUI();
+    return true;
+  }
+
+  /* Brief confirmation on the button itself — the practice panel is often closed. */
+  function flashButton(btn, msg) {
+    if (!btn) return;
+    if (!btn.dataset.label) btn.dataset.label = btn.textContent;
+    btn.textContent = msg;
+    clearTimeout(btn._flash);
+    btn._flash = setTimeout(function () { btn.textContent = btn.dataset.label; }, 1600);
+    var live = document.getElementById('gcLiveStatus');
+    if (live) live.textContent = msg;
   }
 
   function removePracticeItem(index) {
@@ -1495,22 +1642,28 @@ document.addEventListener('DOMContentLoaded', function () {
     var printBtnEl = document.getElementById('gcPrintPractice');
     if (clearBtnEl) clearBtnEl.disabled = practiceList.length === 0;
     if (printBtnEl) printBtnEl.disabled = practiceList.length === 0;
+    var emptyEl = document.getElementById('gcPracticeEmpty');
+    if (emptyEl) emptyEl.hidden = practiceList.length > 0;
+    var tab = document.querySelector('.ll-tab[data-pane="pane-practice"]');
+    if (tab) tab.textContent = 'Practice list' + (practiceList.length ? ' (' + practiceList.length + ')' : '');
   }
 
   var addChordToPracticeBtn = document.getElementById('gcAddChordToPractice');
   if (addChordToPracticeBtn) addChordToPracticeBtn.addEventListener('click', function () {
-    addPracticeItem({
+    var added = addPracticeItem({
       kind: 'chord',
       rootPC: encCurrentRoot,
       typeSuffix: encCurrentType.suffix,
       inversionIndex: encCurrentInversion,
       formKey: encCurrentForm
     });
+    flashButton(addChordToPracticeBtn, added ? '✓ Added to practice list' : 'Already in your list');
   });
 
   var addScaleToPracticeBtn = document.getElementById('gcAddScaleToPractice');
   if (addScaleToPracticeBtn) addScaleToPracticeBtn.addEventListener('click', function () {
-    addPracticeItem({ kind: 'scale', rootPC: scaleCurrentRoot, scaleKey: scaleCurrentType.key });
+    var added = addPracticeItem({ kind: 'scale', rootPC: scaleCurrentRoot, scaleKey: scaleCurrentType.key });
+    flashButton(addScaleToPracticeBtn, added ? '✓ Added to practice list' : 'Already in your list');
   });
 
   var clearPracticeBtn = document.getElementById('gcClearPractice');
@@ -1598,9 +1751,462 @@ document.addEventListener('DOMContentLoaded', function () {
     var correct = 0;
     quiz.querySelectorAll('fieldset').forEach(function (fs) {
       var picked = fs.querySelector('input:checked');
-      if (picked && picked.value === 'correct') correct++;
+      var ok = picked && picked.value === 'correct';
+      if (ok) correct++;
+      fs.classList.toggle('is-correct', !!ok);
+      fs.classList.toggle('is-wrong', !!picked && !ok);
+      fs.classList.toggle('is-unanswered', !picked);
     });
     var out = document.getElementById('gcQuizResult');
-    out.textContent = correct === total ? 'All ' + total + ' correct — you can read a chord like a fretboard now.' : correct + ' of ' + total + ' correct. Review the sections above and try again.';
+    out.textContent = correct === total ? 'All ' + total + ' correct — you can read a chord like a fretboard now.' : correct + ' of ' + total + ' correct. Questions marked in red need another look; unanswered ones are outlined.';
   });
+  /* Practice studio: one transport, exact grips, and playable scale routes. */
+  var studioTimers = [], progression = [], voiceGrips = [], voiceIndex = 0, progressionPlaying = false;
+  var $ = function(id) { return document.getElementById(id); };
+  function studioStop() {
+    studioTimers.forEach(clearTimeout); studioTimers = [];
+    window.GuitarAudio.stop();
+    document.querySelectorAll('.studio-playing').forEach(function(el) { el.classList.remove('studio-playing'); });
+    if (progressionPlaying) $('studioTransport').textContent = 'Stopped. Press Play progression to start again from bar 1.';
+    progressionPlaying = false;
+    $('studioPlay').textContent = 'Play progression';
+  }
+  function later(fn, ms) { studioTimers.push(setTimeout(fn, ms)); }
+  function option(select, value, label) { var o = document.createElement('option'); o.value=value; o.textContent=label; select.appendChild(o); }
+  ['studioKey','studioVoiceRoot'].forEach(function(id) { GT.PITCHES.forEach(function(n,i) { option($(id),i,n); }); });
+  GT.CHORD_TYPES.filter(function(ct) { return ct.intervals.length === 3 || ct.intervals.length === 4; }).forEach(function(ct) { option($('studioVoiceType'),ct.suffix,ct.name); });
+  $('studioStop').onclick = studioStop;
+  $('studioVolume').oninput = function() { window.GuitarAudio.setVolume(Number(this.value)/100); };
+  $('studioSize').onchange = function() { document.body.classList.toggle('studio-large',this.value === 'large'); };
+  document.addEventListener('visibilitychange',function() { if (document.hidden) studioStop(); });
+  window.addEventListener('pagehide',studioStop);
+  document.addEventListener('keydown',function(e) { if (e.key==='Escape' && !e.target.closest('dialog, [role=dialog]')) studioStop(); });
+  // Stop the previous demonstration before starting a new one anywhere on the page.
+  document.addEventListener('click',function(e) {
+    var button=e.target.closest('button');
+    if (button && button.id!=='studioPlay' && (/Play|Strum|Arp|Hear/i.test(button.textContent) || button.classList.contains('gc-cell') || button.hasAttribute('data-load-grip'))) studioStop();
+  },true);
+  function chordType(suffix) { return GT.CHORD_TYPES.find(function(ct) { return ct.suffix===suffix; }); }
+  function addProgression(name,frets) {
+    studioStop();
+    if (progression.length>=32) { $('studioTransport').textContent='32 bars is the limit. Remove a bar to add another.'; return false; }
+    progression.push({name:name,frets:frets.slice()}); renderProgression();
+    $('studioTransport').textContent='Added '+name+' as bar '+progression.length+'.';
+    return true;
+  }
+  function showNowPlaying(entry) {
+    var host=$('studioNowBoard'); if(!host) return;
+    if(!entry) { host.hidden=true; return; }
+    host.hidden=false;
+    var nums=entry.frets.filter(function(f) { return typeof f==='number' && f>0; });
+    var start=nums.length && Math.max.apply(null,nums)>5 ? Math.max(0,Math.min.apply(null,nums)-1) : 0;
+    var title=document.createElement('p'); title.className='studio-now-title'; title.textContent='Now: '+entry.name;
+    var board=document.createElement('div');
+    host.replaceChildren(title,board);
+    renderBoard(board,{startFret:start,span:5,frets:entry.frets,fingers:GT.computeFingering(entry.frets),interactive:false,playable:false});
+  }
+  $('studioAddChord').onclick=function() {
+    var shape=GT.getChordShape(encCurrentRoot,encCurrentType,encCurrentInversion,encCurrentForm);
+    var bass=GT.detectChords(shape.frets).bassPC;
+    if (addProgression(GT.chordDisplayName(encCurrentRoot,encCurrentType)+(bass!==encCurrentRoot ? '/'+GT.PITCHES[bass] : ''),shape.frets)) flashButton(this,'✓ Added as bar '+progression.length);
+  };
+  function renderProgression() {
+    var list=$('studioProgression'); list.replaceChildren();
+    progression.forEach(function(entry,i) {
+      var li=document.createElement('li');
+      var title=document.createElement('strong'); title.textContent='Bar '+(i+1)+' · '+entry.name; li.appendChild(title);
+      var tab=document.createElement('p'); tab.textContent='Low E → high e: '+entry.frets.join(' · '); li.appendChild(tab);
+      function control(label,action,disabled) { var b=document.createElement('button'); b.type='button'; b.className='gc-btn'; b.textContent=label; b.setAttribute('aria-label',label+' bar '+(i+1)+' '+entry.name); b.disabled=!!disabled; b.onclick=function() { studioStop(); action(); }; li.appendChild(b); }
+      control('Hear',function() { playFrets(entry.frets,'strum'); });
+      control('Earlier',function() { var item=progression.splice(i,1)[0]; progression.splice(i-1,0,item); renderProgression(); },i===0);
+      control('Later',function() { var item=progression.splice(i,1)[0]; progression.splice(i+1,0,item); renderProgression(); },i===progression.length-1);
+      control('Remove',function() { progression.splice(i,1); renderProgression(); });
+      list.appendChild(li);
+    });
+    $('studioPlay').disabled=!progression.length;
+    $('studioClear').disabled=!progression.length;
+    $('studioProgression').setAttribute('data-empty','Your progression is empty. Load a pattern above, or add a grip from the Encyclopedia or Voicings.'); 
+    try { localStorage.setItem('guitar-studio-progression-v1',JSON.stringify(progression)); } catch(e) {}
+  }
+  function loadPreset() {
+    studioStop(); progression=[];
+    var root=Number($('studioKey').value), pattern=$('studioPreset').value;
+    var entries=pattern==='easy' ? [[4,'m','Em'],[9,'m','Am']] : pattern==='pop' ? [[0,'','I'],[7,'','V'],[9,'m','vi'],[5,'','IV']] : pattern==='cadence' ? [[2,'m','ii'],[7,'','V'],[0,'','I']] : [[0,'7','I7'],[0,'7','I7'],[0,'7','I7'],[0,'7','I7'],[5,'7','IV7'],[5,'7','IV7'],[0,'7','I7'],[0,'7','I7'],[7,'7','V7'],[5,'7','IV7'],[0,'7','I7'],[7,'7','V7']];
+    entries.forEach(function(e) { var pc=pattern==='easy' ? e[0] : GT.mod12(root+e[0]), ct=chordType(e[1]); progression.push({name:GT.chordDisplayName(pc,ct)+(pattern==='easy'?'':' ('+e[2]+')'),frets:GT.getChordShape(pc,ct,0,null).frets}); });
+    renderProgression(); $('studioTransport').textContent='Pattern ready. Four beats per bar; start slowly.';
+  }
+  $('studioLoad').onclick=loadPreset;
+  $('studioClear').onclick=function() { studioStop(); progression=[]; renderProgression(); $('studioTransport').textContent='Empty. Load a pattern or add a grip from an explorer.'; };
+  $('studioPlay').onclick=function() {
+    var wasPlaying=progressionPlaying;
+    studioStop();
+    if (wasPlaying) return; /* the same button toggles playback off */
+    if (!window.GuitarAudio.getContext()) { $('studioTransport').textContent='Audio is unavailable in this browser. Use the printed fret numbers to play on guitar.'; return; }
+    var bpm=Math.max(40,Math.min(180,Number($('studioTempo').value)||72)); $('studioTempo').value=bpm;
+    var beat=60/bpm, style=$('studioStyle').value;
+    progressionPlaying=true; $('studioPlay').textContent='■ Stop progression';
+    function cycle() {
+      progression.forEach(function(entry,i) {
+        var freqs=fretsToFreqs(entry.frets);
+        for (var b=0;b<4;b++) {
+          var when=(i*4+b)*beat;
+          if (style==='arp') window.GuitarAudio.pluck(freqs[b%freqs.length],{delay:when,duration:beat*.95});
+          else if (style==='strum' || b===0) freqs.forEach(function(f,j) { window.GuitarAudio.pluck(f,{delay:when+j*.018,duration:style==='sustain'?beat*3.8:beat*.85}); });
+          (function(bar,pulse,delay) { later(function() {
+            document.querySelectorAll('#studioProgression li').forEach(function(el,n) { el.classList.toggle('studio-playing',n===bar); });
+            if (pulse===0) showNowPlaying(entry);
+            $('studioTransport').textContent='Bar '+(bar+1)+' of '+progression.length+' · '+entry.name+' · beat '+(pulse+1)+' of 4';
+          },delay*1000); })(i,b,when);
+        }
+      });
+      later(function() { if ($('studioLoop').checked) cycle(); else { studioStop(); $('studioTransport').textContent='Finished. Repeat slowly, then try playing along.'; } },progression.length*4*beat*1000);
+      /* cycle() schedules a whole pass of audio up front; later() owns the timing. */
+    }
+    cycle();
+  };
+  try {
+    var saved=JSON.parse(localStorage.getItem('guitar-studio-progression-v1')||'null');
+    if (Array.isArray(saved)) progression=saved.slice(0,32).filter(function(e) { return typeof e.name==='string' && e.name.length<100 && Array.isArray(e.frets) && e.frets.length===6 && e.frets.some(function(f) { return typeof f==='number'; }) && e.frets.every(function(f) { return f==='x' || (Number.isInteger(f)&&f>=0&&f<=24); }); });
+  } catch(e) {}
+  if (progression.length) renderProgression(); else loadPreset();
+  function voiceType() {
+    var original=chordType($('studioVoiceType').value);
+    if ($('studioVoiceKind').value!=='shell') return original;
+    if (original.intervals.indexOf(10)<0 && original.intervals.indexOf(11)<0 && original.suffix!=='dim7') return null;
+    return {suffix:original.suffix+'-shell',intervals:original.intervals.filter(function(iv) { return iv!==7 && iv!==6; })};
+  }
+  function voiceBassOptions() {
+    $('studioVoiceBass').replaceChildren();
+    var ct=voiceType();
+    if(ct) GT.sortedIntervals(ct).forEach(function(iv,i) { option($('studioVoiceBass'),i,(iv===0?'Root':GT.intervalLabel(iv,true))+' in bass'); });
+  }
+  var VOICE_KIND_LABELS={close:'close',drop2:'drop 2',drop3:'drop 3',shell:'shell'};
+  function voiceName(grip) {
+    var root=Number($('studioVoiceRoot').value), bass=GT.detectChords(grip).bassPC;
+    return GT.PITCHES[root]+$('studioVoiceType').value+(bass!==root ? '/'+GT.PITCHES[bass] : '');
+  }
+  function updateVoice(refresh) {
+    var ct=voiceType(),root=Number($('studioVoiceRoot').value),kind=$('studioVoiceKind').value;
+    if(refresh) { voiceIndex=0; voiceGrips=ct ? GT.findVoicings(root,ct,Number($('studioVoiceBass').value),kind==='shell'?'any':kind) : []; }
+    var grip=voiceGrips[voiceIndex]; $('studioVoiceBoard').replaceChildren();
+    ['studioVoicePlay','studioVoiceAdd','studioVoiceNext'].forEach(function(id) { $(id).disabled=!grip || (id==='studioVoiceNext' && voiceGrips.length<2); });
+    if(!grip) { $('studioVoiceInfo').textContent='No compact grip for this choice. Try another bass position or family. Drop voicings require four distinct tones; shells here require a seventh chord.'; return; }
+    var nums=grip.filter(function(f) { return typeof f==='number' && f>0; });
+    var start=nums.length ? Math.max(0,Math.min.apply(null,nums)-1) : 0;
+    renderBoard($('studioVoiceBoard'),{startFret:start,span:4,frets:grip,fingers:GT.computeFingering(grip),degrees:GT.computeDegrees(root,ct,grip),interactive:false});
+    $('studioVoiceInfo').textContent=voiceName(grip)+' · '+VOICE_KIND_LABELS[kind]+' voicing · '+$('studioVoiceBass').selectedOptions[0].textContent+' · location '+(voiceIndex+1)+' of '+voiceGrips.length+'. Low E → high e frets: '+grip.join(' · ')+'. Fingers: '+fingerSummary(GT.computeFingering(grip))+'.'+(kind==='shell'?' Fifth omitted.':' All formula tones included.');
+  }
+  ['studioVoiceRoot','studioVoiceType','studioVoiceKind'].forEach(function(id) { $(id).onchange=function() { studioStop(); voiceBassOptions(); updateVoice(true); }; });
+  $('studioVoiceBass').onchange=function() { studioStop(); updateVoice(true); };
+  $('studioVoiceNext').onclick=function() { studioStop(); voiceIndex=(voiceIndex+1)%voiceGrips.length; updateVoice(false); };
+  $('studioVoicePlay').onclick=function() { playFrets(voiceGrips[voiceIndex],'strum'); };
+  $('studioVoiceAdd').onclick=function() { var grip=voiceGrips[voiceIndex]; if (addProgression(voiceName(grip)+' ('+VOICE_KIND_LABELS[$('studioVoiceKind').value]+')',grip)) flashButton(this,'✓ Added as bar '+progression.length); };
+  voiceBassOptions(); updateVoice(true);
+
+  function syncPressed() {
+    document.querySelectorAll('.gc-pick-row .gc-pick-btn').forEach(function(b) { b.setAttribute('aria-pressed', b.classList.contains('is-active') ? 'true' : 'false'); });
+  }
+  document.addEventListener('click', function(e) { if (e.target.closest('.gc-pick-btn')) syncPressed(); });
+
+  /* ---------- Shared: correctly spelled notes and formula strips ---------- */
+  var LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'], LETTER_PC = [0, 2, 4, 5, 7, 9, 11];
+  var ROOT_SPELL = ['C', 'D♭', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
+  function spell(rootPC, iv, degree) {
+    var li = (LETTERS.indexOf(ROOT_SPELL[rootPC][0]) + degree - 1) % 7;
+    var diff = GT.mod12(rootPC + iv - LETTER_PC[li]);
+    if (diff > 6) diff -= 12;
+    return LETTERS[li] + (diff > 0 ? '♯'.repeat(diff) : '♭'.repeat(-diff));
+  }
+  function degreeOf(label, suffix, iv) {
+    if (label === 'R') return 1;
+    if (suffix === 'dim7' && iv === 9) return 7; /* the diminished 7th is spelled 𝄫7, not 6 */
+    var n = parseInt(label.replace(/[♭♯#]/g, ''), 10);
+    return n > 7 ? n - 7 : n;
+  }
+  function toneFreq(rootPC, semis) { return 196 * Math.pow(2, (GT.mod12(rootPC - 7) + semis) / 12); } /* roots G3..F♯4 */
+  /* Semitones above the root in playing order: an add9's "2" sounds an octave up. */
+  function stackedSemis(intervals) {
+    var out = [];
+    intervals.forEach(function (iv) { var v = iv; while (out.length && v <= out[out.length - 1]) v += 12; out.push(v); });
+    return out;
+  }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+  function formulaCard(ct, rootPC, blurb) {
+    var hasThird = ct.intervals.indexOf(3) >= 0 || ct.intervals.indexOf(4) >= 0;
+    var card = el('article', 'gt-formula');
+    var head = el('header');
+    var h = el('h3'); h.appendChild(el('span', 'gt-formula-sym', ROOT_SPELL[rootPC] + ct.suffix)); h.appendChild(document.createTextNode(' ' + ct.name));
+    head.appendChild(h); head.appendChild(el('code', null, ct.intervals.join(' · ')));
+    card.appendChild(head);
+    var strip = el('div', 'gt-strip'); strip.setAttribute('role', 'group'); strip.setAttribute('aria-label', ct.name + ' formula on a one-octave fret strip');
+    var semis = stackedSemis(ct.intervals);
+    for (var c = 0; c < 12; c++) {
+      var idx = ct.intervals.indexOf(c);
+      var cell = el(idx >= 0 ? 'button' : 'span', 'gt-cell');
+      if (idx >= 0) {
+        var label = GT.intervalLabel(c, hasThird);
+        cell.type = 'button';
+        cell.classList.add('is-tone');
+        cell.setAttribute('data-quality', c === 0 ? 'root' : GT.degreeQuality(label));
+        cell.appendChild(el('b', null, label));
+        cell.setAttribute('aria-label', label + ', ' + spell(rootPC, c, degreeOf(label, ct.suffix, c)) + ', ' + c + ' semitones up. Play');
+        (function (semi) { cell.addEventListener('click', function () { studioStop(); window.GuitarAudio.pluck(toneFreq(rootPC, semi)); }); })(semis[idx]);
+      }
+      cell.appendChild(el('small', null, c));
+      strip.appendChild(cell);
+    }
+    card.appendChild(strip);
+    var notes = ct.intervals.map(function (iv) { return spell(rootPC, iv, degreeOf(GT.intervalLabel(iv, hasThird), ct.suffix, iv)); });
+    card.appendChild(el('p', 'gt-notes', notes.join(' – ')));
+    if (blurb) card.appendChild(el('p', 'gt-blurb', blurb));
+    var actions = el('div', 'gt-formula-actions');
+    var freqs = semis.map(function (v) { return toneFreq(rootPC, v); });
+    var strum = el('button', 'gc-btn gc-btn-primary', '▶ Strum'); strum.type = 'button';
+    strum.setAttribute('aria-label', 'Strum ' + ROOT_SPELL[rootPC] + ct.suffix);
+    strum.onclick = function () { window.GuitarAudio.strum(freqs, { spread: .04 }); };
+    var arp = el('button', 'gc-btn', 'Arpeggio ↑'); arp.type = 'button';
+    arp.setAttribute('aria-label', 'Arpeggio ' + ROOT_SPELL[rootPC] + ct.suffix);
+    arp.onclick = function () { window.GuitarAudio.sequence(freqs, { interval: .32 }); };
+    actions.appendChild(strum); actions.appendChild(arp);
+    card.appendChild(actions);
+    return card;
+  }
+
+  /* ---------- 01: string figure ---------- */
+  var gtStrings = $('gtStrings');
+  if (gtStrings) GT.STRINGS_TOPDOWN.forEach(function (str) {
+    var i = GT.TUNING.indexOf(str);
+    var row = el('button', 'gt-string-row'); row.type = 'button';
+    row.style.setProperty('--thick', (1 + (5 - i) * .55) + 'px');
+    row.setAttribute('aria-label', 'String ' + str.num + ', ' + str.label + ', play open');
+    row.innerHTML = '<span class="gt-string-num">' + str.num + '</span><span class="gt-string-name">' + str.label + '</span><span class="gt-string-line"></span><span class="gt-string-pitch">' +
+      ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'][i] + (i === 5 ? ' · thinnest' : i === 0 ? ' · thickest' : '') + '</span>';
+    row.dataset.stringIndex = i;
+    row.onclick = function () {
+      if (strumSuppressClick) return;
+      studioStop(); ringString(row, i, 0.32);
+    };
+    gtStrings.appendChild(row);
+  });
+
+  function ringString(row, i, gain) {
+    window.GuitarAudio.pluck(GT.noteFreq(i, 0), { gain: gain, duration: 2.4 });
+    row.classList.remove('is-ringing'); void row.offsetWidth; row.classList.add('is-ringing');
+  }
+
+  /* Hold and drag (mouse, pen or finger) across the figure to strum: a string
+     sounds each time the pointer crosses its line, louder for faster swipes.
+     A string re-arms once the pointer moves a few px away, so jitter on a line
+     doesn't machine-gun it. Plain clicks and keyboard still use row.onclick. */
+  var strumSuppressClick = false;
+  if (gtStrings) (function () {
+    var active = null;
+    function lines() {
+      return Array.prototype.map.call(gtStrings.querySelectorAll('.gt-string-row'), function (row) {
+        var r = row.querySelector('.gt-string-line').getBoundingClientRect();
+        return { row: row, i: +row.dataset.stringIndex, y: r.top + r.height / 2, armed: true };
+      });
+    }
+    gtStrings.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      studioStop();
+      active = { id: e.pointerId, y: e.clientY, t: e.timeStamp, strings: lines(), moved: false };
+      try { gtStrings.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+      /* Pressing directly on a string plucks it, like touching it with a pick. */
+      var hit = active.strings.reduce(function (best, s) { return Math.abs(s.y - e.clientY) < Math.abs(best.y - e.clientY) ? s : best; });
+      if (Math.abs(hit.y - e.clientY) < 10) { ringString(hit.row, hit.i, 0.3); hit.armed = false; }
+    });
+    gtStrings.addEventListener('pointermove', function (e) {
+      if (!active || e.pointerId !== active.id) return;
+      var y0 = active.y, y1 = e.clientY, dt = Math.max(1, e.timeStamp - active.t);
+      if (Math.abs(y1 - y0) < 0.5) return;
+      active.moved = true;
+      var speed = Math.abs(y1 - y0) / dt; /* px per ms */
+      var gain = Math.min(0.42, 0.14 + speed * 0.12);
+      var down = y1 > y0;
+      var crossed = active.strings.filter(function (s) {
+        return s.armed && (down ? (y0 < s.y && y1 >= s.y) : (y0 > s.y && y1 <= s.y));
+      });
+      if (!down) crossed.reverse();
+      crossed.forEach(function (s, k) {
+        /* Space crossings within one fast move so they still sound as a strum, not a block chord. */
+        setTimeout(function () { ringString(s.row, s.i, gain); }, k * Math.min(18, dt / crossed.length));
+        s.armed = false;
+      });
+      active.strings.forEach(function (s) { if (!s.armed && Math.abs(y1 - s.y) > 6) s.armed = true; });
+      active.y = y1; active.t = e.timeStamp;
+    });
+    function end(e) {
+      if (!active || e.pointerId !== active.id) return;
+      active = null;
+      /* The browser still fires a click after the pointer lifts; the strum already played. */
+      strumSuppressClick = true;
+      setTimeout(function () { strumSuppressClick = false; }, 0);
+    }
+    gtStrings.addEventListener('pointerup', end);
+    gtStrings.addEventListener('pointercancel', end);
+  })();
+
+  /* ---------- 01: interactive tab reader ---------- */
+  /* Notes are [string low→high, fret, finger]; one inner array per beat. */
+  var EM = [[0,0,0],[1,2,2],[2,2,3],[3,0,0],[4,0,0],[5,0,0]], AM = [[1,0,0],[2,2,2],[3,2,3],[4,1,1],[5,0,0]];
+  var TAB_EXAMPLES = [
+    { name: 'Single notes', beats: [[[5,0,0]],[[5,1,1]],[[5,3,3]],[[5,0,0]]] },
+    { name: 'Across strings', beats: [[[0,0,0]],[[0,3,3]],[[1,0,0]],[[1,2,2]],[[2,0,0]],[[2,2,2]],[[3,0,0]],[[3,2,2]]] },
+    { name: 'Stacked = chord', beats: [EM, EM, AM, AM] },
+    { name: 'Picked arpeggio', beats: [[[1,0,0]],[[2,2,2]],[[3,2,3]],[[4,1,1]],[[5,0,0]],[[4,1,1]],[[3,2,3]],[[2,2,2]]] }
+  ];
+  var tabExample = TAB_EXAMPLES[0], tabBeat = -1;
+  var STRING_WORD = ['6 (low E)', '5 (A)', '4 (D)', '3 (G)', '2 (B)', '1 (high e)'];
+  function renderTab() {
+    var host = $('gtTab'); if (!host) return;
+    host.replaceChildren();
+    host.style.setProperty('--beats', tabExample.beats.length);
+    host.appendChild(el('span', 'gt-tab-label gt-tab-headcell', 'Beat'));
+    tabExample.beats.forEach(function (_, b) {
+      var hb = el('button', 'gt-tab-headcell gt-tab-beat', b + 1); hb.type = 'button'; hb.setAttribute('data-beat', b);
+      hb.setAttribute('aria-label', 'Play beat ' + (b + 1));
+      hb.onclick = function () { studioStop(); showTabBeat(b, true); };
+      host.appendChild(hb);
+    });
+    [5, 4, 3, 2, 1, 0].forEach(function (s) {
+      host.appendChild(el('span', 'gt-tab-label', GT.TUNING[s].label + ' |'));
+      tabExample.beats.forEach(function (notes, b) {
+        var n = notes.filter(function (x) { return x[0] === s; })[0];
+        var cell = el('span', 'gt-tab-cell'); cell.setAttribute('data-beat', b);
+        if (n) {
+          var btn = el('button', 'gt-tab-note', n[1]); btn.type = 'button';
+          btn.setAttribute('aria-label', 'Beat ' + (b + 1) + ', string ' + STRING_WORD[s] + ', ' + (n[1] ? 'fret ' + n[1] : 'open'));
+          btn.onclick = function () { studioStop(); showTabBeat(b, true); };
+          cell.appendChild(btn);
+        }
+        host.appendChild(cell);
+      });
+    });
+    showTabBeat(-1);
+  }
+  function showTabBeat(b, sound) {
+    tabBeat = b;
+    document.querySelectorAll('#gtTab [data-beat]').forEach(function (c) { c.classList.toggle('studio-playing', +c.getAttribute('data-beat') === b); });
+    var frets = [null, null, null, null, null, null], fingers = ['x', 'x', 'x', 'x', 'x', 'x'];
+    var notes = b >= 0 ? tabExample.beats[b] : [];
+    notes.forEach(function (n) { frets[n[0]] = n[1]; fingers[n[0]] = n[2] || 'o'; });
+    renderBoard($('gtTabBoard'), { startFret: 0, span: 4, frets: frets, fingers: fingers, interactive: false });
+    var status = $('studioTabStatus');
+    if (b < 0) status.textContent = 'Click any column in the tab, or press play.';
+    else if (notes.length === 1) status.textContent = 'Beat ' + (b + 1) + ': string ' + STRING_WORD[notes[0][0]] + ', ' + (notes[0][1] ? 'fret ' + notes[0][1] + ' — press with finger ' + notes[0][2] : 'open — no finger needed') + '.';
+    else status.textContent = 'Beat ' + (b + 1) + ': ' + notes.length + ' numbers stacked in one column, so strum them together' + (notes === EM ? ' — that is E minor.' : notes === AM ? ' — that is A minor.' : '.');
+    if (sound && notes.length) {
+      var fr = notes.map(function (n) { return GT.noteFreq(n[0], n[1]); });
+      if (fr.length > 1) window.GuitarAudio.strum(fr); else window.GuitarAudio.pluck(fr[0]);
+    }
+  }
+  if ($('gtTabExamples')) {
+    TAB_EXAMPLES.forEach(function (ex, i) {
+      var btn = el('button', 'gc-pick-btn gc-type-btn' + (i ? '' : ' is-active'), ex.name); btn.type = 'button';
+      btn.onclick = function () {
+        studioStop(); tabExample = ex;
+        Array.prototype.forEach.call(btn.parentNode.children, function (c) { c.classList.toggle('is-active', c === btn); });
+        renderTab();
+      };
+      $('gtTabExamples').appendChild(btn);
+    });
+    renderTab();
+    $('studioTabPlay').onclick = function () {
+      tabExample.beats.forEach(function (_, b) { later(function () { showTabBeat(b, true); }, b * 650); });
+      later(function () { showTabBeat(-1); }, tabExample.beats.length * 650 + 600);
+    };
+    $('gtTabNext').onclick = function () { studioStop(); showTabBeat((tabBeat + 1) % tabExample.beats.length, true); };
+    $('gtTabPrev').onclick = function () { studioStop(); showTabBeat(tabBeat <= 0 ? tabExample.beats.length - 1 : tabBeat - 1, true); };
+  }
+
+  /* ---------- 02: semitone ruler, interval cards, major/minor compare ---------- */
+  var INTERVALS = [
+    ['P1', 'Unison', 1], ['m2', 'Minor second', 2], ['M2', 'Major second', 2], ['m3', 'Minor third', 3], ['M3', 'Major third', 3],
+    ['P4', 'Perfect fourth', 4], ['TT', 'Tritone (augmented fourth / diminished fifth)', 4], ['P5', 'Perfect fifth', 5],
+    ['m6', 'Minor sixth', 6], ['M6', 'Major sixth', 6], ['m7', 'Minor seventh', 7], ['M7', 'Major seventh', 7], ['P8', 'Octave', 1]
+  ];
+  var INTERVAL_QUALITY = ['root', 'minor', 'major', 'minor', 'major', 'perfect', 'diminished', 'perfect', 'minor', 'major', 'minor', 'major', 'root'];
+  var intervalRoot = 0, intervalN = 4;
+  function intervalNote(n) { return spell(intervalRoot, n % 12, INTERVALS[n][2]); }
+  function renderRuler() {
+    var host = $('gtRuler'); if (!host) return;
+    host.replaceChildren();
+    INTERVALS.forEach(function (iv, n) {
+      var b = el('button', 'gt-ruler-cell'); b.type = 'button';
+      if (n === 0) b.classList.add('is-root');
+      if (n > 0 && n <= intervalN) b.classList.add('in-range');
+      if (n === intervalN && n) b.classList.add('is-target');
+      b.setAttribute('data-quality', INTERVAL_QUALITY[n]);
+      b.setAttribute('aria-pressed', n === intervalN ? 'true' : 'false');
+      b.setAttribute('aria-label', n + ' semitones: ' + iv[1] + ', ' + intervalNote(n));
+      b.innerHTML = '<span class="gt-ruler-note">' + intervalNote(n) + '</span><b>' + n + '</b><small>' + iv[0] + '</small>';
+      b.onclick = function () { studioStop(); intervalN = n || intervalN; if (n) { renderRuler(); } playInterval(n, 'both'); };
+      host.appendChild(b);
+    });
+    $('studioIntervalText').innerHTML = '<strong>' + intervalN + ' semitone' + (intervalN === 1 ? '' : 's') + ' = ' + INTERVALS[intervalN][1] + '</strong> · ' +
+      intervalN + ' fret' + (intervalN === 1 ? '' : 's') + ' up the same string · ' + ROOT_SPELL[intervalRoot] + ' → ' + intervalNote(intervalN) +
+      (intervalN === 3 || intervalN === 4 ? '. Compare 3 and 4 to hear minor versus major thirds.' : '.');
+  }
+  function playInterval(n, how) {
+    var a = toneFreq(intervalRoot, 0), b = toneFreq(intervalRoot, n);
+    if (how !== 'together') { window.GuitarAudio.pluck(a, { duration: 1.2 }); if (n) window.GuitarAudio.pluck(b, { delay: .6, duration: 1.2 }); }
+    /* 'both' = melodic pair, then the same two notes together as a harmonic interval. */
+    var d = how === 'both' ? 1.3 : 0;
+    if (how !== 'apart' && n) { window.GuitarAudio.pluck(a, { delay: d, duration: 1.8 }); window.GuitarAudio.pluck(b, { delay: d, duration: 1.8 }); }
+  }
+  if ($('gtRuler')) {
+    ROOT_SPELL.forEach(function (n, i) { option($('studioIntervalRoot'), i, n); });
+    $('studioIntervalRoot').onchange = function () { intervalRoot = +this.value; renderRuler(); renderCompare(); };
+    $('studioIntervalApart').onclick = function () { playInterval(intervalN, 'apart'); };
+    $('studioIntervalTogether').onclick = function () { playInterval(intervalN, 'together'); };
+    renderRuler();
+  }
+  document.querySelectorAll('[data-hear-interval]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var n = +btn.getAttribute('data-hear-interval');
+      if (n) { intervalN = n; renderRuler(); }
+      playInterval(n, 'both');
+    });
+  });
+  function renderCompare() {
+    var host = $('gtCompare'); if (!host) return;
+    host.replaceChildren(
+      formulaCard(chordType(''), intervalRoot, 'Root + major 3rd (4) + perfect 5th (7). Bright.'),
+      el('p', 'gt-compare-arrow', 'Only the 3rd moves — down one fret'),
+      formulaCard(chordType('m'), intervalRoot, 'Root + minor 3rd (3) + perfect 5th (7). Darker.')
+    );
+  }
+  renderCompare();
+
+  /* ---------- 03: formula strips for every chord family ---------- */
+  var FAMILY_BLURBS = [
+    ['', 'Bright, resolved.'], ['m', 'Darker, moodier.'], ['7', 'Wants to resolve somewhere.'], ['maj7', 'Dreamy, jazzy.'],
+    ['m7', 'Smooth, mellow.'], ['sus2', 'No 3rd — a 2nd instead. Neither major nor minor; open and unresolved.'],
+    ['sus4', 'No 3rd — a 4th instead. Leans hard toward resolving back to the 3rd.'],
+    ['dim', 'Tense, unstable. Two stacked minor thirds.'], ['5', 'Just root and 5th — no 3rd, so it’s neither major nor minor.']
+  ];
+  var MORE_BLURBS = [
+    ['aug', 'Two stacked major thirds — restless and dreamlike.'], ['6', 'Major plus a 6th — sweet and vintage.'],
+    ['m6', 'Minor with a bright 6th — bittersweet, film-noir.'], ['add9', 'Major plus the 9th (a 2nd, an octave up) — open and shimmering. No 7th.'],
+    ['m7b5', 'Diminished triad plus ♭7 — tense but softer than dim7.'], ['dim7', 'Four stacked minor thirds — symmetric, maximum tension.'],
+    ['7sus4', 'Dominant 7th with a 4th instead of the 3rd — open, gospel and funk.']
+  ];
+  function renderFormulas() {
+    var root = +($('gtFormulaRoot') ? $('gtFormulaRoot').value : 0);
+    [['gtFormulaGrid', FAMILY_BLURBS], ['gtFormulaGridMore', MORE_BLURBS]].forEach(function (g) {
+      var host = $(g[0]); if (!host) return;
+      host.replaceChildren.apply(host, g[1].map(function (f) { return formulaCard(chordType(f[0]), root, f[1]); }));
+    });
+  }
+  if ($('gtFormulaRoot')) {
+    ROOT_SPELL.forEach(function (n, i) { option($('gtFormulaRoot'), i, n); });
+    $('gtFormulaRoot').onchange = renderFormulas;
+    renderFormulas();
+  }
+
+  syncPressed();
+
 });
