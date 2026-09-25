@@ -6,7 +6,7 @@
   'use strict';
 
   /* ------------------------------------------------------------------ audio */
-  var ctx = null, kit = null;
+  var ctx = null, kit = null, volume = 0.7;
 
   function ensureAudio() {
     if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return true; }
@@ -37,18 +37,28 @@
 
   function hitNow(inst, vel, opts) {
     if (!ensureAudio()) return;
-    kit.hit(inst, ctx.currentTime + 0.01, vel, opts);
+    kit.hit(inst, ctx.currentTime + 0.01, vel * volume, opts);
   }
 
-  function click(t, accent) {
+  /* level: true/'strong' = downbeat, 'mid' = other accented beat, false/'weak' = subdivision */
+  var CLICK_LEVEL = {
+    strong: { freq: 1900, peak: 0.16 },
+    mid:    { freq: 1600, peak: 0.13 },
+    weak:   { freq: 1300, peak: 0.1 }
+  };
+  function click(t, level) {
+    var lv = CLICK_LEVEL[level === true ? 'strong' : level === false ? 'weak' : level] || CLICK_LEVEL.weak;
     var o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = 'square'; o.frequency.value = accent ? 1900 : 1300;
+    o.type = 'square'; o.frequency.value = lv.freq;
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.linearRampToValueAtTime(accent ? 0.16 : 0.1, t + 0.002);
+    g.gain.linearRampToValueAtTime(lv.peak * volume, t + 0.002);
     g.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
     o.connect(g); g.connect(ctx.destination);
     o.start(t); o.stop(t + 0.06);
   }
+
+  /* Stop every playing groove and, on Escape/visibility-loss, silence the page. */
+  function stopAll() { allPlayers.forEach(function (p) { p.stop(); }); }
 
   /* ------------------------------------------------------------ instruments */
   // step = diatonic position on the 5-line staff: 0 = bottom line (E4), 1 = first space (F4) ...
@@ -465,6 +475,11 @@
     var countLab = htmlEl('label', 'dr-check', null, bar);
     var countIn = document.createElement('input'); countIn.type = 'checkbox'; countIn.checked = true;
     countLab.appendChild(countIn); htmlEl('span', null, 'Count-in', countLab);
+    if (cfg.setKey) {
+      var addBtn = htmlEl('button', 'dr-mini dr-add-practice', '+ Add to practice list', bar);
+      addBtn.type = 'button';
+      addBtn.addEventListener('click', function () { addPracticeItem(cfg.setKey, idx, addBtn); });
+    }
     var chipRow = htmlEl('div', 'dr-chip-row', null, root);
     var chips = htmlEl('div', 'dr-chips', null, chipRow);
     chips.setAttribute('aria-hidden', 'true');
@@ -527,11 +542,11 @@
       var N = view.N, kk = k % N.total, hits = [];
       ORDER.forEach(function (inst) {
         var v = VEL[N.tracks[inst][kk]];
-        if (v) { kit.hit(inst, t, v); hits.push(inst); }
+        if (v) { kit.hit(inst, t, v * volume); hits.push(inst); }
       });
       var gr = P.grace && P.grace[kk];
       if (gr) {
-        for (var j = 0; j < gr; j++) kit.hit('snare', t - (gr - j) * 0.036, 0.32);
+        for (var j = 0; j < gr; j++) kit.hit('snare', t - (gr - j) * 0.036, 0.32 * volume);
         hits.push('snare');
       }
       if (hits.length) queue.push({ t: t, hits: hits });
@@ -715,9 +730,276 @@
     return self;
   }
 
-  document.addEventListener('visibilitychange', function () {
-    if (document.hidden) allPlayers.forEach(function (p) { p.stop(); });
-  });
+  /* -------------------------------------------------- meter / count-in trainer */
+  var METERS = [
+    { key: '4-4', label: '4/4', top: 4, bottom: 4, type: 'simple', beats: 4,
+      desc: 'Four quarter-note beats per bar — count “1 2 3 4”. The default meter for most pop, rock and hip-hop.' },
+    { key: '3-4', label: '3/4', top: 3, bottom: 4, type: 'simple', beats: 3,
+      desc: 'Three quarter-note beats per bar — count “1 2 3”. Waltzes and many ballads.' },
+    { key: '2-4', label: '2/4', top: 2, bottom: 4, type: 'simple', beats: 2,
+      desc: 'Two quarter-note beats per bar — count “1 2”. Marches and polkas.' },
+    { key: 'cut', label: 'Cut time', top: 2, bottom: 2, type: 'simple', beats: 2,
+      desc: 'Alla breve: the same length bar as 4/4, but felt in two half-note beats instead of four quarter-note beats — count “1 2”, twice as fast a feel at the same tempo number.' },
+    { key: '5-4', label: '5/4', top: 5, bottom: 4, type: 'simple', beats: 5, accent: [3, 2],
+      desc: 'Five quarter-note beats, usually felt as a group of three plus a group of two — count “1 2 3 4 5”, leaning on beats 1 and 4. (Think “Take Five”.)' },
+    { key: '6-8', label: '6/8', top: 6, bottom: 8, type: 'compound', groups: [3, 3],
+      desc: 'Two dotted-quarter beats, each split into three eighth notes — count “1 & a 2 & a”.' },
+    { key: '12-8', label: '12/8', top: 12, bottom: 8, type: 'compound', groups: [3, 3, 3, 3],
+      desc: 'Four dotted-quarter beats, each split into three eighth notes — count “1 & a 2 & a 3 & a 4 & a”. The classic 12/8 blues-shuffle meter.' },
+    { key: '7-8', label: '7/8', top: 7, bottom: 8, type: 'compound', groups: [2, 2, 3],
+      desc: 'An irregular meter built from two two-note groups and one three-note group — count “1 2 3 4 5 6 7”, leaning on beats 1, 3 and 5 (“ONE two ONE two ONE two three”).' }
+  ];
+
+  function meterPulses(m) { return m.type === 'compound' ? m.groups.reduce(function (a, b) { return a + b; }, 0) : m.beats; }
+
+  function meterGroupOf(m, i) {
+    var pos = i, g = 0;
+    while (pos >= m.groups[g]) { pos -= m.groups[g]; g++; }
+    return { group: g, pos: pos };
+  }
+
+  function meterLabel(m, i) {
+    if (m.type !== 'compound') return '' + (i + 1);
+    var loc = meterGroupOf(m, i), uniform3 = m.groups.every(function (x) { return x === 3; });
+    if (!uniform3) return '' + (i + 1);
+    return loc.pos === 0 ? '' + (loc.group + 1) : (loc.pos === 1 ? '&' : 'a');
+  }
+
+  function meterIsAccent(m, i) {
+    if (m.type !== 'compound') {
+      var accents = m.accent || [m.beats], pos = 0;
+      for (var g = 0; g < accents.length; g++) { if (i === pos) return true; pos += accents[g]; }
+      return false;
+    }
+    return meterGroupOf(m, i).pos === 0;
+  }
+
+  function initMeterTrainer() {
+    var picker = document.getElementById('drMeterPicker');
+    var sigEl = document.getElementById('drMeterSig');
+    var descEl = document.getElementById('drMeterDesc');
+    var rowEl = document.getElementById('drMeterRow');
+    var sayEl = document.getElementById('drMeterSay');
+    var playBtn = document.getElementById('drMeterPlay');
+    var tempoIn = document.getElementById('drMeterTempo');
+    var tempoOut = document.getElementById('drMeterTempoOut');
+    if (!picker || !rowEl || !playBtn || !tempoIn) return;
+
+    var meter = METERS[0], tempo = +tempoIn.value;
+    var cellEls = [], total = 4, playing = false, timer = 0, raf = 0;
+    var anchorTime = 0, nextPulse = 0, pulseDur = 0.5, queue = [];
+    var self = { stop: stop };
+    allPlayers.push(self);
+
+    function render() {
+      sigEl.innerHTML = '<b>' + meter.top + '</b><b>' + meter.bottom + '</b>';
+      descEl.textContent = meter.desc;
+      rowEl.innerHTML = ''; cellEls = [];
+      total = meterPulses(meter);
+      var labels = [];
+      for (var i = 0; i < total; i++) {
+        var cell = document.createElement('span');
+        var lab = meterLabel(meter, i);
+        labels.push(lab);
+        cell.className = 'dr-meter-cell' + (meterIsAccent(meter, i) ? ' is-accent' : '');
+        cell.textContent = lab;
+        rowEl.appendChild(cell);
+        cellEls.push(cell);
+      }
+      sayEl.textContent = 'Say: ' + labels.join('  ');
+    }
+
+    function buildPicker() {
+      picker.innerHTML = '';
+      METERS.forEach(function (m, i) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'dr-pick'; b.textContent = m.label;
+        b.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
+        b.addEventListener('click', function () {
+          stop(); meter = m;
+          Array.prototype.forEach.call(picker.children, function (btn, j) { btn.setAttribute('aria-pressed', j === i ? 'true' : 'false'); });
+          render();
+        });
+        picker.appendChild(b);
+      });
+    }
+
+    function tick() {
+      var horizon = ctx.currentTime + 0.14;
+      while (anchorTime + nextPulse * pulseDur < horizon) {
+        var t = anchorTime + nextPulse * pulseDur, idx = nextPulse % total;
+        click(t, idx === 0 ? 'strong' : (meterIsAccent(meter, idx) ? 'mid' : 'weak'));
+        queue.push({ t: t, idx: idx });
+        nextPulse++;
+      }
+    }
+    function frame() {
+      if (!playing) return;
+      while (queue.length && queue[0].t <= ctx.currentTime) {
+        var q = queue.shift();
+        cellEls.forEach(function (c, i) { c.classList.toggle('is-now', i === q.idx); });
+      }
+      raf = requestAnimationFrame(frame);
+    }
+
+    function start() {
+      if (!ensureAudio()) return;
+      if (activePlayer && activePlayer !== self) activePlayer.stop();
+      activePlayer = self;
+      playing = true;
+      var mainBeatDur = 60 / tempo;
+      pulseDur = meter.type === 'compound' ? mainBeatDur / 3 : mainBeatDur;
+      anchorTime = ctx.currentTime + 0.08;
+      nextPulse = 0; queue = [];
+      playBtn.innerHTML = '<span aria-hidden="true">■</span> Stop';
+      playBtn.setAttribute('aria-pressed', 'true');
+      tick(); timer = setInterval(tick, 25); raf = requestAnimationFrame(frame);
+    }
+    function stop() {
+      if (!playing) return;
+      playing = false;
+      clearInterval(timer); cancelAnimationFrame(raf);
+      cellEls.forEach(function (c) { c.classList.remove('is-now'); });
+      playBtn.innerHTML = '<span aria-hidden="true">▶</span> Play';
+      playBtn.setAttribute('aria-pressed', 'false');
+      if (activePlayer === self) activePlayer = null;
+    }
+
+    playBtn.addEventListener('click', function () { if (playing) stop(); else start(); });
+    tempoIn.addEventListener('input', function () {
+      tempo = +tempoIn.value; tempoOut.textContent = tempo + ' BPM';
+      if (playing) { var mainBeatDur = 60 / tempo; pulseDur = meter.type === 'compound' ? mainBeatDur / 3 : mainBeatDur; }
+    });
+    tempoOut.textContent = tempo + ' BPM';
+    buildPicker();
+    render();
+  }
+
+  document.addEventListener('visibilitychange', function () { if (document.hidden) stopAll(); });
+  window.addEventListener('pagehide', stopAll);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !e.target.closest('dialog, [role=dialog]')) stopAll(); });
+
+  /* ---------------------------------------------------------- studio bar: stop all, volume, size */
+  function initStudioBar() {
+    var stopBtn = document.getElementById('drStopAll');
+    var volIn = document.getElementById('drVolume');
+    var sizeSel = document.getElementById('drNotationSize');
+    if (stopBtn) stopBtn.addEventListener('click', stopAll);
+    if (volIn) volIn.addEventListener('input', function () { volume = Number(volIn.value) / 100; });
+    if (sizeSel) sizeSel.addEventListener('change', function () { document.body.classList.toggle('dr-large', sizeSel.value === 'large'); });
+  }
+
+  /* ---------------------------------------------------- practice list: pick patterns, print a sheet */
+  var SET_LABEL = { beats: 'Beat', rudiments: 'Rudiment', fills: 'Fill' };
+  var practiceList = [];
+  try {
+    var savedPractice = JSON.parse(localStorage.getItem('drPracticeList') || '[]');
+    if (Array.isArray(savedPractice)) practiceList = savedPractice;
+  } catch (e) { practiceList = []; }
+
+  function savePracticeList() {
+    try { localStorage.setItem('drPracticeList', JSON.stringify(practiceList)); } catch (e) { /* ignore */ }
+  }
+
+  function practiceItemKey(item) { return item.set + '|' + item.index; }
+
+  function flashButton(btn, msg) {
+    if (!btn) return;
+    if (!btn.dataset.label) btn.dataset.label = btn.textContent;
+    btn.textContent = msg;
+    clearTimeout(btn._flash);
+    btn._flash = setTimeout(function () { btn.textContent = btn.dataset.label; }, 1600);
+    var live = document.getElementById('drLiveStatus');
+    if (live) live.textContent = msg;
+  }
+
+  function addPracticeItem(set, index, btn) {
+    var item = { set: set, index: index };
+    var key = practiceItemKey(item);
+    var already = practiceList.some(function (p) { return practiceItemKey(p) === key; });
+    if (!already) { practiceList.push(item); savePracticeList(); renderPracticeListUI(); }
+    flashButton(btn, already ? 'Already in your list' : '✓ Added to practice list');
+  }
+
+  function removePracticeItem(i) { practiceList.splice(i, 1); savePracticeList(); renderPracticeListUI(); }
+
+  function renderPracticeListUI() {
+    var ui = document.getElementById('drPracticeListUI');
+    if (!ui) return;
+    ui.innerHTML = '';
+    practiceList.forEach(function (item, index) {
+      var pattern = SETS[item.set] && SETS[item.set][item.index];
+      if (!pattern) return;
+      var li = document.createElement('li');
+      li.className = 'dr-practice-item';
+      var info = document.createElement('div');
+      info.className = 'dr-practice-item-info';
+      info.innerHTML = '<span class="dr-practice-item-name">' + pattern.name + '</span><span class="dr-practice-item-sub">' + SET_LABEL[item.set] + ' · ' + (pattern.tempo || 100) + ' BPM</span>';
+      var removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'dr-practice-remove';
+      removeBtn.setAttribute('aria-label', 'Remove ' + pattern.name + ' from practice list');
+      removeBtn.textContent = '×';
+      removeBtn.addEventListener('click', function () { removePracticeItem(index); });
+      li.appendChild(info); li.appendChild(removeBtn);
+      ui.appendChild(li);
+    });
+    var clearBtn = document.getElementById('drClearPractice');
+    var printBtn = document.getElementById('drPrintPractice');
+    if (clearBtn) clearBtn.disabled = practiceList.length === 0;
+    if (printBtn) printBtn.disabled = practiceList.length === 0;
+    var emptyEl = document.getElementById('drPracticeEmpty');
+    if (emptyEl) emptyEl.hidden = practiceList.length > 0;
+    var tab = document.querySelector('.ll-tab[data-pane="pane-practice"]');
+    if (tab) tab.textContent = 'Practice list' + (practiceList.length ? ' (' + practiceList.length + ')' : '');
+  }
+
+  /* Re-render each listed pattern's notation into the print-only sheet with
+     the same renderStaff() used on the live page, so it always matches. */
+  function buildPracticeSheet() {
+    var sheet = document.getElementById('drPracticeSheetPrint');
+    if (!sheet) return;
+    sheet.innerHTML = '';
+    var head = document.createElement('div');
+    head.className = 'dr-sheet-head';
+    head.innerHTML = '<h1>Drum practice sheet</h1><p>' + practiceList.length + ' item' + (practiceList.length === 1 ? '' : 's') + ' — from Drum Lab</p>';
+    sheet.appendChild(head);
+    var grid = document.createElement('div');
+    grid.className = 'dr-sheet-grid';
+    practiceList.forEach(function (item) {
+      var pattern = SETS[item.set] && SETS[item.set][item.index];
+      if (!pattern) return;
+      var cell = document.createElement('div');
+      cell.className = 'dr-sheet-item';
+      var titleEl = document.createElement('h3');
+      titleEl.textContent = SET_LABEL[item.set] + ': ' + pattern.name;
+      var descEl = document.createElement('p');
+      descEl.textContent = pattern.desc || '';
+      var tempoEl = document.createElement('p');
+      tempoEl.textContent = 'Tempo: ' + (pattern.tempo || 100) + ' BPM' + (pattern.sticking ? ' · sticking shown under the notes' : '');
+      cell.appendChild(titleEl); cell.appendChild(descEl); cell.appendChild(tempoEl);
+      var boardHost = document.createElement('div');
+      var view = renderStaff(pattern);
+      boardHost.appendChild(view.svg);
+      cell.appendChild(boardHost);
+      grid.appendChild(cell);
+    });
+    sheet.appendChild(grid);
+  }
+
+  function initPractice() {
+    var clearBtn = document.getElementById('drClearPractice');
+    var printBtn = document.getElementById('drPrintPractice');
+    if (clearBtn) clearBtn.addEventListener('click', function () { practiceList = []; savePracticeList(); renderPracticeListUI(); });
+    if (printBtn) printBtn.addEventListener('click', function () {
+      if (!practiceList.length) return;
+      buildPracticeSheet();
+      document.body.classList.add('dr-printing-practice');
+      window.print();
+    });
+    window.addEventListener('afterprint', function () { document.body.classList.remove('dr-printing-practice'); });
+    renderPracticeListUI();
+  }
 
   /* ---------------------------------------------------------- kit explorer */
   var KIT_INFO = {
@@ -964,10 +1246,10 @@
           tracks: { hat: start.tracks.hat, snare: start.tracks.snare, kick: start.tracks.kick }
         }] });
       } else if (SETS[name]) {
-        createPlayer(root, { patterns: SETS[name] });
+        createPlayer(root, { patterns: SETS[name], setKey: name !== 'values' ? name : null });
       }
     });
-    initKit(); initAnatomy(); initTuning(); initKey(); initFlashcards(); initQuiz();
+    initKit(); initAnatomy(); initTuning(); initKey(); initFlashcards(); initQuiz(); initMeterTrainer(); initStudioBar(); initPractice();
   }
 
   window.DrumLab = { renderStaff: renderStaff, SETS: SETS };

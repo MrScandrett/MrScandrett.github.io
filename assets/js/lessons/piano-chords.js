@@ -261,13 +261,19 @@
 (function () {
   'use strict';
 
-  var ctx = null;
+  var ctx = null, volume = 0.75, activeOscillators = new Set();
   function getContext() {
     var AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return null;
     if (!ctx) ctx = new AC();
     if (ctx.state === 'suspended') ctx.resume();
     return ctx;
+  }
+
+  function setVolume(v) { volume = v; }
+  function stop() {
+    activeOscillators.forEach(function (o) { try { o.stop(); } catch (e) { /* already stopped */ } });
+    activeOscillators.clear();
   }
 
   /* Fundamental plus a handful of decreasingly-loud harmonics, all under one
@@ -285,7 +291,7 @@
     if (!audioCtx || !freq) return;
     var now = audioCtx.currentTime + (opts.delay || 0);
     var duration = opts.duration || 2.4;
-    var peak = opts.gain != null ? opts.gain : 0.28;
+    var peak = (opts.gain != null ? opts.gain : 0.28) * volume;
 
     var master = audioCtx.createGain();
     master.gain.setValueAtTime(0.0001, now);
@@ -309,6 +315,8 @@
       g.connect(master);
       osc.start(now);
       osc.stop(now + duration + 0.05);
+      activeOscillators.add(osc);
+      osc.onended = function () { activeOscillators.delete(osc); };
     });
   }
 
@@ -327,7 +335,7 @@
     });
   }
 
-  window.PianoAudio = { tone: tone, block: block, broken: broken, getContext: getContext };
+  window.PianoAudio = { tone: tone, block: block, broken: broken, getContext: getContext, stop: stop, setVolume: setVolume };
 })();
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -1014,6 +1022,317 @@ document.addEventListener('DOMContentLoaded', function () {
     window.PianoAudio.broken(full.map(function (idx) { return PT.noteFreq(idx); }), { interval: 0.22 });
   });
 
+  /* ---------- Studio bar: stop all audio, volume, keyboard size ---------- */
+  var studioTimers = [];
+  function laterTimer(fn, ms) { studioTimers.push(setTimeout(fn, ms)); }
+  function studioStop() {
+    studioTimers.forEach(clearTimeout); studioTimers = [];
+    if (window.PianoAudio) window.PianoAudio.stop();
+    document.querySelectorAll('.studio-playing').forEach(function (el) { el.classList.remove('studio-playing'); });
+    if (typeof stopProgression === 'function') stopProgression();
+  }
+  var pcStopBtn = document.getElementById('pcStop');
+  var pcVolumeIn = document.getElementById('pcVolume');
+  var pcSizeSel = document.getElementById('pcSize');
+  if (pcStopBtn) pcStopBtn.addEventListener('click', studioStop);
+  if (pcVolumeIn) pcVolumeIn.addEventListener('input', function () { if (window.PianoAudio) window.PianoAudio.setVolume(Number(pcVolumeIn.value) / 100); });
+  if (pcSizeSel) pcSizeSel.addEventListener('change', function () { document.body.classList.toggle('pc-large', pcSizeSel.value === 'large'); });
+  document.addEventListener('visibilitychange', function () { if (document.hidden) studioStop(); });
+  window.addEventListener('pagehide', studioStop);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !e.target.closest('dialog, [role=dialog]')) studioStop(); });
+
+  /* ---------- Voicings: close vs. open (spread) position ---------- */
+  var voiceRootPicker = document.getElementById('pcVoiceRootPicker');
+  var voiceTypePicker = document.getElementById('pcVoiceTypePicker');
+  var voiceInversionPicker = document.getElementById('pcVoiceInversionPicker');
+  var voiceKindPicker = document.getElementById('pcVoiceKindPicker');
+  var voiceBoard = document.getElementById('pcVoiceBoard');
+  var voiceMeta = document.getElementById('pcVoiceMeta');
+  var VOICE_TYPES = PT.CHORD_TYPES.filter(function (ct) { return ct.intervals.length === 3 || ct.intervals.length === 4; });
+  var voiceCurrentRoot = 0, voiceCurrentType = VOICE_TYPES[0], voiceCurrentInversion = 0, voiceCurrentKind = 'close';
+
+  /* Same pitch classes as the close voicing, but the top note jumps up an
+     octave when there's room — opens a gap in the middle of the chord. */
+  function openVoicing(abs) {
+    var sorted = abs.slice().sort(function (a, b) { return a - b; });
+    if (sorted.length < 2) return null;
+    var bumped = sorted[sorted.length - 1] + 12;
+    if (bumped > PT.KEY_SPAN) return null;
+    return sorted.slice(0, -1).concat(bumped);
+  }
+
+  function currentVoiceAbs() {
+    var close = PT.voiceChord(voiceCurrentRoot, voiceCurrentType, voiceCurrentInversion);
+    if (voiceCurrentKind === 'close') return close;
+    return openVoicing(close) || close;
+  }
+
+  function buildVoicePickers() {
+    if (voiceRootPicker) {
+      PT.PITCHES.forEach(function (name, idx) {
+        var btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'pc-pick-btn';
+        btn.textContent = name;
+        if (idx === voiceCurrentRoot) btn.classList.add('is-active');
+        btn.addEventListener('click', function () {
+          voiceCurrentRoot = idx;
+          Array.prototype.forEach.call(voiceRootPicker.children, function (c) { c.classList.remove('is-active'); });
+          btn.classList.add('is-active');
+          renderVoicing();
+        });
+        voiceRootPicker.appendChild(btn);
+      });
+    }
+    if (voiceTypePicker) {
+      VOICE_TYPES.forEach(function (ct, idx) {
+        var btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'pc-pick-btn pc-type-btn';
+        btn.textContent = ct.name;
+        if (idx === 0) btn.classList.add('is-active');
+        btn.addEventListener('click', function () {
+          voiceCurrentType = ct; voiceCurrentInversion = 0;
+          Array.prototype.forEach.call(voiceTypePicker.children, function (c) { c.classList.remove('is-active'); });
+          btn.classList.add('is-active');
+          buildVoiceInversionPicker();
+          renderVoicing();
+        });
+        voiceTypePicker.appendChild(btn);
+      });
+    }
+    if (voiceKindPicker) {
+      [['close', 'Close'], ['open', 'Open']].forEach(function (pair) {
+        var btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'pc-pick-btn pc-type-btn';
+        btn.textContent = pair[1];
+        if (pair[0] === voiceCurrentKind) btn.classList.add('is-active');
+        btn.addEventListener('click', function () {
+          voiceCurrentKind = pair[0];
+          Array.prototype.forEach.call(voiceKindPicker.children, function (c) { c.classList.remove('is-active'); });
+          btn.classList.add('is-active');
+          renderVoicing();
+        });
+        voiceKindPicker.appendChild(btn);
+      });
+    }
+  }
+
+  function buildVoiceInversionPicker() {
+    if (!voiceInversionPicker) return;
+    voiceInversionPicker.innerHTML = '';
+    var toneCount = voiceCurrentType.intervals.length;
+    for (var i = 0; i < toneCount; i++) {
+      (function (idx) {
+        var btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'pc-pick-btn pc-inv-btn';
+        btn.textContent = PT.INVERSION_LABELS[idx] || (idx + 'th inversion');
+        if (idx === voiceCurrentInversion) btn.classList.add('is-active');
+        btn.addEventListener('click', function () {
+          voiceCurrentInversion = idx;
+          Array.prototype.forEach.call(voiceInversionPicker.children, function (c) { c.classList.remove('is-active'); });
+          btn.classList.add('is-active');
+          renderVoicing();
+        });
+        voiceInversionPicker.appendChild(btn);
+      })(i);
+    }
+  }
+
+  function renderVoicing() {
+    if (!voiceBoard) return;
+    var close = PT.voiceChord(voiceCurrentRoot, voiceCurrentType, voiceCurrentInversion);
+    var open = openVoicing(close);
+    var abs = voiceCurrentKind === 'close' ? close : (open || close);
+    var sortedAbs = abs.slice().sort(function (a, b) { return a - b; });
+    var name = PT.chordDisplayName(voiceCurrentRoot, voiceCurrentType);
+    var active = {};
+    abs.forEach(function (idx) { active[idx] = true; });
+    var fingerMap = buildFingerMap(sortedAbs);
+    var qualityMap = buildQualityMap(voiceCurrentRoot, voiceCurrentType, sortedAbs);
+    renderKeyboard(voiceBoard, { active: active, fingerMap: fingerMap, qualityMap: qualityMap, interactive: false });
+    if (voiceMeta) {
+      var span = sortedAbs[sortedAbs.length - 1] - sortedAbs[0];
+      var notesLine = sortedAbs.map(function (idx) { return PT.noteLabel(idx); }).join(' – ');
+      var kindLabel = voiceCurrentKind === 'close' ? 'Close position' : (open ? 'Open / spread position' : 'Open position (no room to spread — showing close)');
+      voiceMeta.innerHTML = '<h3>' + name + '</h3>' +
+        '<p class="pc-enc-notes"><strong>' + kindLabel + '</strong> — ' + PT.INVERSION_LABELS[voiceCurrentInversion] + '</p>' +
+        '<p class="pc-enc-notes">Notes: ' + notesLine + '</p>' +
+        '<p class="pc-enc-notes">Span: ' + span + ' semitones (' + (span > 12 ? 'wider than an octave' : 'within an octave') + ')</p>';
+    }
+  }
+
+  function currentVoiceIndices() { return currentVoiceAbs(); }
+  var voicePlayBlock = document.getElementById('pcVoicePlayBlock');
+  var voicePlayBrokenUp = document.getElementById('pcVoicePlayBrokenUp');
+  var voicePlayBrokenDown = document.getElementById('pcVoicePlayBrokenDown');
+  var voicePlayBrokenUpDown = document.getElementById('pcVoicePlayBrokenUpDown');
+  if (voicePlayBlock) voicePlayBlock.addEventListener('click', function () { studioStop(); playIndices(currentVoiceIndices(), 'block'); });
+  if (voicePlayBrokenUp) voicePlayBrokenUp.addEventListener('click', function () { studioStop(); playIndices(currentVoiceIndices(), 'brokenUp'); });
+  if (voicePlayBrokenDown) voicePlayBrokenDown.addEventListener('click', function () { studioStop(); playIndices(currentVoiceIndices(), 'brokenDown'); });
+  if (voicePlayBrokenUpDown) voicePlayBrokenUpDown.addEventListener('click', function () { studioStop(); playIndices(currentVoiceIndices(), 'brokenUpDown'); });
+
+  var voiceSendToBuilder = document.getElementById('pcVoiceSendToBuilder');
+  if (voiceSendToBuilder) voiceSendToBuilder.addEventListener('click', function () {
+    builderActive = {};
+    currentVoiceIndices().forEach(function (idx) { builderActive[idx] = true; });
+    renderBuilder();
+    var target = document.getElementById('builder');
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  buildVoicePickers();
+  buildVoiceInversionPicker();
+  renderVoicing();
+
+  /* ---------- Progressions: build a chord chart, play it back with a moving cursor ---------- */
+  var pcProgression = [], pcProgressionPlaying = false;
+  var progList = document.getElementById('pcProgression');
+  var progTransport = document.getElementById('pcTransport');
+  var progNowBoard = document.getElementById('pcNowBoard');
+  var progPlayBtn = document.getElementById('pcPlayProg');
+
+  function progressionChordType(suffix) { return PT.CHORD_TYPES.filter(function (c) { return c.suffix === suffix; })[0]; }
+
+  function saveProgression() {
+    try { localStorage.setItem('piano-studio-progression-v1', JSON.stringify(pcProgression)); } catch (e) { /* ignore */ }
+  }
+
+  function addProgressionEntry(name, abs) {
+    studioStop();
+    if (pcProgression.length >= 32) { if (progTransport) progTransport.textContent = '32 bars is the limit. Remove a bar to add another.'; return false; }
+    pcProgression.push({ name: name, abs: abs.slice() });
+    renderProgression();
+    if (progTransport) progTransport.textContent = 'Added ' + name + ' as bar ' + pcProgression.length + '.';
+    return true;
+  }
+
+  function showNowPlaying(entry) {
+    if (!progNowBoard) return;
+    if (!entry) { progNowBoard.hidden = true; return; }
+    progNowBoard.hidden = false;
+    var title = document.createElement('p'); title.className = 'studio-now-title'; title.textContent = 'Now: ' + entry.name;
+    var board = document.createElement('div');
+    progNowBoard.replaceChildren(title, board);
+    var active = {};
+    entry.abs.forEach(function (idx) { active[idx] = true; });
+    renderKeyboard(board, { active: active, interactive: false, playable: false });
+  }
+
+  function renderProgression() {
+    if (!progList) return;
+    progList.replaceChildren();
+    pcProgression.forEach(function (entry, i) {
+      var li = document.createElement('li');
+      var title = document.createElement('strong'); title.textContent = 'Bar ' + (i + 1) + ' · ' + entry.name; li.appendChild(title);
+      var notes = document.createElement('p'); notes.textContent = 'Notes: ' + entry.abs.slice().sort(function (a, b) { return a - b; }).map(function (idx) { return PT.noteLabel(idx); }).join(' – '); li.appendChild(notes);
+      function control(label, action, disabled) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'pc-btn'; b.textContent = label;
+        b.setAttribute('aria-label', label + ' bar ' + (i + 1) + ' ' + entry.name);
+        b.disabled = !!disabled;
+        b.onclick = function () { studioStop(); action(); };
+        li.appendChild(b);
+      }
+      control('Hear', function () { playIndices(entry.abs, 'block'); });
+      control('Earlier', function () { var item = pcProgression.splice(i, 1)[0]; pcProgression.splice(i - 1, 0, item); renderProgression(); }, i === 0);
+      control('Later', function () { var item = pcProgression.splice(i, 1)[0]; pcProgression.splice(i + 1, 0, item); renderProgression(); }, i === pcProgression.length - 1);
+      control('Remove', function () { pcProgression.splice(i, 1); renderProgression(); });
+      progList.appendChild(li);
+    });
+    if (progPlayBtn) progPlayBtn.disabled = !pcProgression.length;
+    var clearProgBtn = document.getElementById('pcClearProg');
+    if (clearProgBtn) clearProgBtn.disabled = !pcProgression.length;
+    if (progList) progList.setAttribute('data-empty', 'Your progression is empty. Load a pattern above, or add a voicing from the Encyclopedia or Voicings.');
+    saveProgression();
+  }
+
+  function loadProgressionPreset() {
+    studioStop(); pcProgression = [];
+    var root = Number(document.getElementById('pcKey').value), pattern = document.getElementById('pcPreset').value;
+    var entries = pattern === 'easy' ? [[4, '', 'Em'], [9, 'm', 'Am']]
+      : pattern === 'pop' ? [[0, '', 'I'], [7, '', 'V'], [9, 'm', 'vi'], [5, '', 'IV']]
+      : pattern === 'cadence' ? [[2, 'm', 'ii'], [7, '', 'V'], [0, '', 'I']]
+      : [[0, '7', 'I7'], [0, '7', 'I7'], [0, '7', 'I7'], [0, '7', 'I7'], [5, '7', 'IV7'], [5, '7', 'IV7'], [0, '7', 'I7'], [0, '7', 'I7'], [7, '7', 'V7'], [5, '7', 'IV7'], [0, '7', 'I7'], [7, '7', 'V7']];
+    /* the "easy" pattern is fixed Em–Am regardless of key, matching how a
+       true beginner meets their first chord change before transposing */
+    entries.forEach(function (e) {
+      var pc = pattern === 'easy' ? e[0] : PT.mod12(root + e[0]);
+      var ct = progressionChordType(e[1]);
+      var abs = PT.voiceChord(pc, ct, 0);
+      pcProgression.push({ name: PT.chordDisplayName(pc, ct) + (pattern === 'easy' ? '' : ' (' + e[2] + ')'), abs: abs });
+    });
+    renderProgression();
+    if (progTransport) progTransport.textContent = 'Pattern ready. Four beats per bar; start slowly.';
+  }
+
+  function stopProgression() {
+    if (!pcProgressionPlaying) return;
+    pcProgressionPlaying = false;
+    if (progTransport) progTransport.textContent = 'Stopped. Press Play progression to start again from bar 1.';
+    if (progPlayBtn) progPlayBtn.textContent = 'Play progression';
+  }
+
+  var pcKeySel = document.getElementById('pcKey');
+  if (pcKeySel) PT.PITCHES.forEach(function (name, idx) { var o = document.createElement('option'); o.value = idx; o.textContent = name; pcKeySel.appendChild(o); });
+  var pcLoadBtn = document.getElementById('pcLoad');
+  if (pcLoadBtn) pcLoadBtn.addEventListener('click', loadProgressionPreset);
+  var pcClearProgBtn = document.getElementById('pcClearProg');
+  if (pcClearProgBtn) pcClearProgBtn.addEventListener('click', function () { studioStop(); pcProgression = []; renderProgression(); if (progTransport) progTransport.textContent = 'Empty. Load a pattern or add a voicing from an explorer.'; });
+
+  if (progPlayBtn) progPlayBtn.addEventListener('click', function () {
+    var wasPlaying = pcProgressionPlaying;
+    studioStop();
+    if (wasPlaying) return; /* the same button toggles playback off */
+    if (!window.PianoAudio || !window.PianoAudio.getContext()) { if (progTransport) progTransport.textContent = 'Audio is unavailable in this browser.'; return; }
+    var bpm = Math.max(40, Math.min(180, Number(document.getElementById('pcTempo').value) || 76));
+    document.getElementById('pcTempo').value = bpm;
+    var beat = 60 / bpm, style = document.getElementById('pcStyle').value;
+    var loopCheck = document.getElementById('pcLoop');
+    pcProgressionPlaying = true; progPlayBtn.textContent = '■ Stop progression';
+    function cycle() {
+      pcProgression.forEach(function (entry, i) {
+        var freqs = entry.abs.slice().sort(function (a, b) { return a - b; }).map(function (idx) { return PT.noteFreq(idx); });
+        for (var b = 0; b < 4; b++) {
+          var when = (i * 4 + b) * beat;
+          if (style === 'arp') window.PianoAudio.tone(freqs[b % freqs.length], { delay: when, duration: beat * 0.95 });
+          else if (b === 0) freqs.forEach(function (f, j) { window.PianoAudio.tone(f, { delay: when + j * 0.012, duration: style === 'sustain' ? beat * 3.8 : beat * 0.85 }); });
+          (function (bar, pulse, delay) {
+            laterTimer(function () {
+              document.querySelectorAll('#pcProgression li').forEach(function (el, n) { el.classList.toggle('studio-playing', n === bar); });
+              if (pulse === 0) showNowPlaying(entry);
+              if (progTransport) progTransport.textContent = 'Bar ' + (bar + 1) + ' of ' + pcProgression.length + ' · ' + entry.name + ' · beat ' + (pulse + 1) + ' of 4';
+            }, delay * 1000);
+          })(i, b, when);
+        }
+      });
+      laterTimer(function () {
+        if (loopCheck && loopCheck.checked) cycle();
+        else { studioStop(); if (progTransport) progTransport.textContent = 'Finished. Repeat slowly, then try playing along.'; }
+      }, pcProgression.length * 4 * beat * 1000);
+    }
+    cycle();
+  });
+
+  var addChordToProgressionBtn = document.getElementById('pcAddChordToProgression');
+  if (addChordToProgressionBtn) addChordToProgressionBtn.addEventListener('click', function () {
+    var abs = currentEncIndices();
+    if (addProgressionEntry(PT.chordDisplayName(encCurrentRoot, encCurrentType), abs)) flashButton(addChordToProgressionBtn, '✓ Added as bar ' + pcProgression.length);
+  });
+  var voiceAddToProgressionBtn = document.getElementById('pcVoiceAddToProgression');
+  if (voiceAddToProgressionBtn) voiceAddToProgressionBtn.addEventListener('click', function () {
+    if (addProgressionEntry(PT.chordDisplayName(voiceCurrentRoot, voiceCurrentType), currentVoiceIndices())) flashButton(voiceAddToProgressionBtn, '✓ Added as bar ' + pcProgression.length);
+  });
+
+  try {
+    var savedProg = JSON.parse(localStorage.getItem('piano-studio-progression-v1') || 'null');
+    if (Array.isArray(savedProg)) {
+      pcProgression = savedProg.filter(function (e) {
+        return typeof e.name === 'string' && e.name.length < 100 && Array.isArray(e.abs) && e.abs.length &&
+          e.abs.every(function (v) { return Number.isInteger(v) && v >= 0 && v <= PT.KEY_SPAN; });
+      }).slice(0, 32);
+    }
+  } catch (e) { /* ignore */ }
+  renderProgression();
+
   /* ---------- Practice list: pick specific chords/scales, print a worksheet ---------- */
 
   var practiceList = [];
@@ -1037,10 +1356,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function addPracticeItem(item) {
     var key = practiceItemKey(item);
-    if (practiceList.some(function (p) { return practiceItemKey(p) === key; })) return;
+    if (practiceList.some(function (p) { return practiceItemKey(p) === key; })) return false;
     practiceList.push(item);
     savePracticeList();
     renderPracticeListUI();
+    return true;
+  }
+
+  /* Brief confirmation on the button itself — the practice panel is often closed. */
+  function flashButton(btn, msg) {
+    if (!btn) return;
+    if (!btn.dataset.label) btn.dataset.label = btn.textContent;
+    btn.textContent = msg;
+    clearTimeout(btn._flash);
+    btn._flash = setTimeout(function () { btn.textContent = btn.dataset.label; }, 1600);
+    var live = document.getElementById('pcLiveStatus');
+    if (live) live.textContent = msg;
   }
 
   function removePracticeItem(index) {
@@ -1085,21 +1416,27 @@ document.addEventListener('DOMContentLoaded', function () {
     var printBtnEl = document.getElementById('pcPrintPractice');
     if (clearBtnEl) clearBtnEl.disabled = practiceList.length === 0;
     if (printBtnEl) printBtnEl.disabled = practiceList.length === 0;
+    var emptyEl = document.getElementById('pcPracticeEmpty');
+    if (emptyEl) emptyEl.hidden = practiceList.length > 0;
+    var tab = document.querySelector('.ll-tab[data-pane="pane-practice"]');
+    if (tab) tab.textContent = 'Practice list' + (practiceList.length ? ' (' + practiceList.length + ')' : '');
   }
 
   var addChordToPracticeBtn = document.getElementById('pcAddChordToPractice');
   if (addChordToPracticeBtn) addChordToPracticeBtn.addEventListener('click', function () {
-    addPracticeItem({
+    var added = addPracticeItem({
       kind: 'chord',
       rootPC: encCurrentRoot,
       typeSuffix: encCurrentType.suffix,
       inversionIndex: encCurrentInversion
     });
+    flashButton(addChordToPracticeBtn, added ? '✓ Added to practice list' : 'Already in your list');
   });
 
   var addScaleToPracticeBtn = document.getElementById('pcAddScaleToPractice');
   if (addScaleToPracticeBtn) addScaleToPracticeBtn.addEventListener('click', function () {
-    addPracticeItem({ kind: 'scale', rootPC: scaleCurrentRoot, scaleKey: scaleCurrentType.key });
+    var added = addPracticeItem({ kind: 'scale', rootPC: scaleCurrentRoot, scaleKey: scaleCurrentType.key });
+    flashButton(addScaleToPracticeBtn, added ? '✓ Added to practice list' : 'Already in your list');
   });
 
   var clearPracticeBtn = document.getElementById('pcClearPractice');

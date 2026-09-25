@@ -566,6 +566,7 @@
   </div>
 </div>
 
+<script src="../../../assets/js/sim-kit.js"></script>
 <script>
 (function() {
   let audioCtx = null;
@@ -820,7 +821,6 @@
     spectrumCtx.font = '700 11px Inter, sans-serif';
     spectrumCtx.fillText(analyser && audioCtx ? 'log frequency axis' : 'ideal harmonic amplitudes', 10, 16);
     spectrumCtx.fillText('level', Math.max(90, fw * 0.72), 16);
-    requestAnimationFrame(drawAudioPanels);
   }
 
   waveButtons.forEach((btn) => {
@@ -835,7 +835,7 @@
   document.getElementById('audio-play').addEventListener('click', () => playWave(activeWave));
   document.getElementById('audio-stop').addEventListener('click', stopAudio);
   document.getElementById('audio-mic').addEventListener('click', useMic);
-  drawAudioPanels();
+  SimKit.loop(drawAudioPanels);
 
   const canvas = document.getElementById('music-canvas');
   const ctx = canvas.getContext('2d');
@@ -1113,15 +1113,10 @@
     drawHarmonicBars();
   }
 
-  let lastStringFrame = performance.now();
-  function animateString(now) {
-    const dt = Math.min(0.05, Math.max(0, (now - lastStringFrame) / 1000));
-    lastStringFrame = now;
-    draw(dt);
+  SimKit.loop((dt) => {
+    draw(Math.min(0.05, Math.max(0, dt)));
     t += 1;
-    requestAnimationFrame(animateString);
-  }
-  requestAnimationFrame(animateString);
+  });
 
   const interferenceCanvas = document.getElementById('interference-canvas');
   const interferenceCtx = interferenceCanvas.getContext('2d');
@@ -1146,7 +1141,6 @@
   let oscV = 0;
   let drivePhase = 0;
   let responseEnvelope = 0;
-  let lastOscTime = performance.now();
 
   function stepDrivenOscillator(realDt) {
     const omega0 = NATURAL_FREQ * OSC_VIS;
@@ -1163,10 +1157,8 @@
     responseEnvelope = responseEnvelope * 0.985 + Math.abs(oscX / peak) * 0.015;
   }
 
-  function drawInterference() {
-    const nowMs = performance.now();
-    stepDrivenOscillator(Math.min(0.05, Math.max(0, (nowMs - lastOscTime) / 1000)));
-    lastOscTime = nowMs;
+  function drawInterference(realDt) {
+    stepDrivenOscillator(Math.min(0.05, Math.max(0, realDt)));
     sizeCanvas(interferenceCanvas, interferenceCtx);
     const w = interferenceCanvas.clientWidth;
     const h = interferenceCanvas.clientHeight;
@@ -1241,9 +1233,8 @@
     interferenceCtx.fillText('wave addition: blue + red = orange', 12, 18);
     interferenceCtx.fillText(`resonance curve, natural frequency ${NATURAL_FREQ} Hz — teal dot = theory, white ring = live integrated oscillator`, 12, bottomTop - 8);
     resonanceReadout.textContent = `${Math.round(response * 100)}% theory · ${Math.round(Math.min(115, responseEnvelope * 100))}% measured at ${drive} Hz`;
-    requestAnimationFrame(drawInterference);
   }
-  drawInterference();
+  SimKit.loop(drawInterference);
 
   window.musicCheck = function(n, answer, tol) {
     const input = document.getElementById(`music-ans-${n}`);
