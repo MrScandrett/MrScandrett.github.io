@@ -511,6 +511,19 @@
         });
     }
 
+    const colormaps = {};
+    const texLoader = new THREE.TextureLoader();
+    function fetchColormap(id) {
+        if (colormaps[id]) return Promise.resolve(colormaps[id]);
+        return new Promise((resolve) => {
+            texLoader.load(`../../assets/images/lessons/volcano-simulator/${id}-color.jpg`, (tex) => {
+                tex.encoding = THREE.sRGBEncoding;
+                colormaps[id] = tex;
+                resolve(tex);
+            }, undefined, () => resolve(null));
+        });
+    }
+
     'use strict';
 
     /* ══════════════════════════════════════════
@@ -965,15 +978,20 @@
       const geo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, TERRAIN_SEGS, TERRAIN_SEGS);
       geo.rotateX(-Math.PI / 2);
 
+      const mapTex = colormaps[activeEruption] || rockTex;
       const mat = new THREE.MeshStandardMaterial({
         vertexColors: true,
-        map: rockTex,
+        map: mapTex,
         bumpMap: gritTex,
         bumpScale: 0.08,
         roughnessMap: gritTex,
         roughness: 0.9,
         metalness: 0.02
       });
+      
+      // We don't want vertexColors mixing with the satellite imagery unless there's lava/snow
+      // Actually, we can keep vertexColors:true, but we should make baseColor white if we have a colormap!
+
       terrainMesh = new THREE.Mesh(geo, mat);
       terrainMesh.receiveShadow = true;
       terrainMesh.castShadow = true;
@@ -1515,7 +1533,10 @@
     }
 
     function rebuildTerrain() {
-      fetchHeightmap(activeEruption).then(() => {
+      Promise.all([
+        fetchHeightmap(activeEruption),
+        fetchColormap(activeEruption)
+      ]).then(() => {
         const lavaI = (1 - state.viscosity / 100) * (state.intensity / 100);
         buildTerrain(state.vtype, lavaI);
       });
