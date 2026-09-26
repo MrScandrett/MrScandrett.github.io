@@ -130,11 +130,22 @@
     .we-atom-nucleus {
       position: absolute;
       top: 50%; left: 50%;
-      width: 30px; height: 30px;
-      border-radius: 50%;
+      width: 1px; height: 1px;
       transform: translate(-50%, -50%);
+      filter: drop-shadow(0 0 8px rgba(217,72,15,0.35));
+    }
+    .we-atom-nucleus .nucleon {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 11px; height: 11px;
+      border-radius: 50%;
+      transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy)));
+    }
+    .we-atom-nucleus .nucleon.proton {
       background: radial-gradient(circle at 35% 30%, #ff9500, #d9480f);
-      box-shadow: 0 0 14px rgba(217,72,15,0.55);
+    }
+    .we-atom-nucleus .nucleon.neutron {
+      background: radial-gradient(circle at 35% 30%, #cbd5e1, #7d8ba1);
     }
     .we-atom-orbit {
       position: absolute;
@@ -175,7 +186,8 @@
       color: var(--text-muted, #64748b);
     }
     .we-atom-legend .swatch { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
-    .we-atom-legend .swatch.n { background: #d9480f; }
+    .we-atom-legend .swatch.p { background: linear-gradient(135deg, #ff9500, #d9480f); }
+    .we-atom-legend .swatch.n { background: linear-gradient(135deg, #cbd5e1, #7d8ba1); }
     .we-atom-legend .swatch.e { background: #007aff; }
 
     /* ── Cards ── */
@@ -297,51 +309,18 @@
     }
     .we-balloon-stage {
       position: relative;
-      height: 190px;
+      height: 230px;
       display: flex;
-      align-items: flex-end;
+      align-items: center;
       justify-content: center;
-      overflow: hidden;
     }
-    .we-balloon {
-      position: relative;
-      width: 92px;
-      height: 112px;
-      border-radius: 50% 50% 46% 46%;
-      background: radial-gradient(circle at 34% 28%, #ff8a80, #e0331f 78%);
-      box-shadow: 0 10px 22px rgba(224,51,31,0.28);
-      transition: transform 0.6s ease;
+    .we-balloon-stage canvas {
+      width: 100%;
+      height: 100%;
+      max-width: 260px;
+      cursor: grab;
     }
-    .we-balloon::after {
-      content: '';
-      position: absolute;
-      left: 50%; bottom: -14px;
-      width: 3px; height: 16px;
-      background: #b3271a;
-      transform: translateX(-50%);
-    }
-    .we-static-demo.is-charged .we-balloon { transform: translateY(-6px) rotate(-2deg); }
-    .we-hair {
-      position: absolute;
-      bottom: 8px;
-      width: 3px;
-      height: 46px;
-      border-radius: 3px;
-      background: linear-gradient(180deg, #8a5a2b, #c98a4a);
-      transform-origin: bottom center;
-      transition: transform 0.6s ease;
-    }
-    .we-hair:nth-child(1) { left: calc(50% - 26px); }
-    .we-hair:nth-child(2) { left: calc(50% - 14px); }
-    .we-hair:nth-child(3) { left: calc(50% - 2px); }
-    .we-hair:nth-child(4) { left: calc(50% + 10px); }
-    .we-hair:nth-child(5) { left: calc(50% + 22px); }
-    .we-static-demo.is-charged .we-hair { transform: rotate(var(--tilt, 0deg)) scaleY(1.15); }
-    .we-static-demo.is-charged .we-hair:nth-child(1) { --tilt: 22deg; }
-    .we-static-demo.is-charged .we-hair:nth-child(2) { --tilt: 12deg; }
-    .we-static-demo.is-charged .we-hair:nth-child(3) { --tilt: 0deg; }
-    .we-static-demo.is-charged .we-hair:nth-child(4) { --tilt: -12deg; }
-    .we-static-demo.is-charged .we-hair:nth-child(5) { --tilt: -22deg; }
+    .we-balloon-stage canvas:active { cursor: grabbing; }
     .we-static-btn {
       display: inline-flex;
       align-items: center;
@@ -377,13 +356,34 @@
       text-align: center;
     }
     .we-circuit-demo svg { width: 100%; max-width: 420px; height: auto; }
-    .we-circuit-loop { fill: none; stroke: #94a3b8; stroke-width: 5; stroke-linejoin: round; }
+    .we-circuit-loop {
+      fill: none;
+      stroke: #94a3b8;
+      stroke-width: 5;
+      stroke-linejoin: round;
+      stroke-linecap: round;
+      transition: stroke 0.4s ease;
+    }
+    .we-circuit-demo.is-on .we-circuit-loop { stroke: #60a5fa; }
+    .we-circuit-battery-plate { stroke: #248a3d; stroke-linecap: round; }
+    .we-circuit-switch-post { fill: #64748b; }
+    .we-circuit-switch-lever {
+      stroke: #64748b;
+      stroke-width: 4;
+      stroke-linecap: round;
+      transform-origin: 95px 25px;
+      transform: rotate(-38deg);
+      transition: transform 0.45s cubic-bezier(.34,1.4,.64,1);
+    }
+    .we-circuit-demo.is-on .we-circuit-switch-lever { transform: rotate(0deg); }
     .we-circuit-bulb-glow { fill: #ffe58a; opacity: 0; transition: opacity 0.5s ease; }
     .we-circuit-demo.is-on .we-circuit-bulb-glow { opacity: 1; }
     .we-circuit-bulb { fill: #cbd5e1; stroke: #64748b; stroke-width: 2; transition: fill 0.5s ease; }
     .we-circuit-demo.is-on .we-circuit-bulb { fill: #ffd60a; }
+    .we-circuit-filament { fill: none; stroke: #94a3b8; stroke-width: 1.4; stroke-linecap: round; transition: stroke 0.5s ease; }
+    .we-circuit-demo.is-on .we-circuit-filament { stroke: #b45309; }
     .we-charge-dot {
-      offset-path: path('M20,120 L20,20 L200,20 L200,120 L20,120');
+      offset-path: path('M30,125 L30,25 L210,25 L210,125 L30,125');
       offset-distance: 0%;
       offset-rotate: 0deg;
       fill: #007aff;
@@ -420,6 +420,123 @@
       margin-left: auto;
       margin-right: auto;
     }
+    .we-sim-note {
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--text-muted, #64748b);
+    }
+    .we-sim-note a { color: #007aff; font-weight: 700; text-decoration: none; }
+    .we-sim-note a:hover { text-decoration: underline; }
+
+    /* ── Water analogy demo ── */
+    .we-water-demo {
+      margin: 0.9rem 0;
+      padding: 1rem;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(245,247,250,0.96));
+      text-align: center;
+    }
+    .we-water-demo svg { width: 100%; max-width: 420px; height: auto; }
+    .we-water-pipe { fill: none; stroke: #94a3b8; stroke-width: 10; stroke-linejoin: round; }
+    .we-water-tower-tank { fill: #bfe3ff; stroke: #007aff; stroke-width: 2; }
+    .we-water-tower-legs { stroke: #64748b; stroke-width: 3; }
+    .we-water-valve-jaw { fill: #64748b; transition: d 0.3s ease; }
+    .we-water-wheel-hub { fill: #cbd5e1; stroke: #64748b; stroke-width: 2; }
+    .we-water-wheel-spokes {
+      stroke: #64748b;
+      stroke-width: 2.5;
+      transform-origin: 212px 72px;
+      animation: we-water-spin 2s linear infinite;
+    }
+    @keyframes we-water-spin { to { transform: rotate(360deg); } }
+    .we-drop {
+      offset-path: path('M28,128 L28,30 L100,30 L136,30 L212,30 L212,128 L28,128');
+      offset-distance: 0%;
+      fill: #38bdf8;
+      animation: we-flow linear infinite;
+      animation-duration: 1.8s;
+    }
+    .we-drop.d2 { animation-delay: -0.6s; }
+    .we-drop.d3 { animation-delay: -1.2s; }
+    @media (prefers-reduced-motion: reduce) {
+      .we-drop { animation: none; opacity: 0.6; }
+      .we-water-wheel-spokes { animation: none; }
+    }
+    .we-water-controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 0.7rem;
+    }
+    .we-water-controls label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-muted, #64748b);
+    }
+    .we-water-controls input[type="range"] { width: min(280px, 80%); }
+    .we-water-caption {
+      margin-top: 0.5rem;
+      font-size: 0.82rem;
+      color: var(--text-muted, #64748b);
+      max-width: 50ch;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ── Conductor / insulator grid ── */
+    .we-material-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.8rem;
+      margin-top: 0.85rem;
+    }
+    .we-material-card {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 14px;
+      padding: 0.95rem 1rem;
+      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(245,247,250,0.94));
+    }
+    .we-material-card strong { display: block; margin-bottom: 0.3rem; font-size: 0.9rem; }
+    .we-material-card small { display: block; color: var(--text-muted, #64748b); font-size: 0.8rem; line-height: 1.56; }
+    .we-electron-bar { display: flex; gap: 3px; margin: 0 0 0.55rem; }
+    .we-electron-bar span { height: 6px; flex: 1; border-radius: 3px; background: rgba(100,116,139,0.18); }
+    .we-material-card.conductor .we-electron-bar span:nth-child(-n+7) { background: #007aff; }
+    .we-material-card.semiconductor .we-electron-bar span:nth-child(-n+3) { background: #ff9500; }
+
+    /* ── Go further links grid ── */
+    .we-links-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.85rem;
+    }
+    .we-link-card {
+      display: block;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 14px;
+      padding: 0.85rem 1rem;
+      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(245,247,250,0.94));
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.15s ease, transform 0.15s ease;
+    }
+    .we-link-card:hover { border-color: #007aff; transform: translateY(-1px); }
+    .we-link-card strong { display: block; margin-bottom: 0.2rem; font-size: 0.88rem; color: var(--text, #1d1d1f); }
+    .we-link-card small { display: block; color: var(--text-muted, #64748b); font-size: 0.78rem; line-height: 1.5; }
+    .we-link-kind {
+      display: inline-block;
+      margin-bottom: 0.35rem;
+      padding: 0.12rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .we-link-card.lesson .we-link-kind { background: rgba(0,113,227,0.12); color: #005ec3; }
+    .we-link-card.sim .we-link-kind { background: rgba(52,199,89,0.14); color: #248a3d; }
 
     /* ── Timeline ── */
     .we-timeline-nav {
@@ -549,7 +666,15 @@
               <aside class="sm-feature-panel" aria-label="A simple atom model">
                 <div class="we-atom-wrap">
                   <div class="we-atom" aria-hidden="true">
-                    <div class="we-atom-nucleus"></div>
+                    <div class="we-atom-nucleus">
+                      <span class="nucleon proton" style="--dx:0px;--dy:0px"></span>
+                      <span class="nucleon neutron" style="--dx:0px;--dy:-11px"></span>
+                      <span class="nucleon proton" style="--dx:0px;--dy:11px"></span>
+                      <span class="nucleon neutron" style="--dx:-9.5px;--dy:-5.5px"></span>
+                      <span class="nucleon proton" style="--dx:9.5px;--dy:-5.5px"></span>
+                      <span class="nucleon neutron" style="--dx:-9.5px;--dy:5.5px"></span>
+                      <span class="nucleon proton" style="--dx:9.5px;--dy:5.5px"></span>
+                    </div>
                     <div class="we-atom-orbit o1"></div>
                     <div class="we-atom-orbit o2"></div>
                     <div class="we-atom-orbit o3"></div>
@@ -559,8 +684,9 @@
                 <strong>A nucleus with electrons around it</strong>
                 <small>Electricity is what happens when those outer electrons move — either jumping to a new spot (static) or flowing in a steady stream (current).</small>
                 <div class="we-atom-legend" aria-hidden="true">
-                  <span><span class="swatch n"></span>Nucleus (protons + neutrons)</span>
-                  <span><span class="swatch e"></span>Electrons</span>
+                  <span><span class="swatch p"></span>Protons (+)</span>
+                  <span><span class="swatch n"></span>Neutrons</span>
+                  <span><span class="swatch e"></span>Electrons (&minus;)</span>
                 </div>
               </aside>
             </div>
@@ -581,6 +707,88 @@
             </div>
           </section>
 
+          <!-- ── Voltage, current, resistance ── -->
+          <section class="sm-card" style="--sm-accent:#30b0c7;">
+            <h2>The Water Analogy: Voltage, Current, and Resistance</h2>
+            <p>Once you know electricity is moving electrons, the next step is having words for how much is moving and how hard. Physicists and electricians describe electricity with three linked quantities, and the classic way to picture all three at once is water flowing through pipes.</p>
+            <div class="sm-overview-grid">
+              <div class="sm-overview-card">
+                <strong>Voltage (volts, V)</strong>
+                <small>The "push" behind the electrons — like the water pressure created by a tall water tower. A battery's voltage is how hard it shoves electrons around the circuit. No push, no flow, no matter how open the pipe is.</small>
+              </div>
+              <div class="sm-overview-card">
+                <strong>Current (amps, A)</strong>
+                <small>The rate electrons actually flow past a point — like gallons of water passing through a pipe each second. More push (voltage) or a wider pipe (less resistance) both mean more current.</small>
+              </div>
+              <div class="sm-overview-card">
+                <strong>Resistance (ohms, Ω)</strong>
+                <small>How much the pipe fights the flow — like a narrow valve or a kinked hose. Thin wires, long wires, and materials like rubber all add resistance and choke off current for the same push.</small>
+              </div>
+            </div>
+
+            <div class="we-water-demo" id="we-water-demo">
+              <svg viewBox="0 0 240 150" aria-hidden="true">
+                <path class="we-water-pipe" d="M28,128 L28,30 L100,30 L136,30 L212,30 L212,128 L28,128" />
+                <rect class="we-water-tower-tank" x="8" y="4" width="40" height="26" rx="3" />
+                <line class="we-water-tower-legs" x1="12" y1="30" x2="12" y2="44" />
+                <line class="we-water-tower-legs" x1="44" y1="30" x2="44" y2="44" />
+                <text x="28" y="46" font-size="8" font-weight="700" fill="#005ec3" text-anchor="middle">tower</text>
+                <path class="we-water-valve-jaw" id="we-valve-top" d="M100,22 L118,18 L136,22 Z" />
+                <path class="we-water-valve-jaw" id="we-valve-bottom" d="M100,38 L118,42 L136,38 Z" />
+                <text x="118" y="46" font-size="8" font-weight="700" fill="#64748b" text-anchor="middle">valve</text>
+                <circle class="we-water-wheel-hub" cx="212" cy="72" r="14" />
+                <g class="we-water-wheel-spokes" id="we-wheel-spokes">
+                  <line x1="212" y1="60" x2="212" y2="84" />
+                  <line x1="200" y1="72" x2="224" y2="72" />
+                  <line x1="203" y1="63" x2="221" y2="81" />
+                  <line x1="221" y1="63" x2="203" y2="81" />
+                </g>
+                <text x="212" y="102" font-size="8" font-weight="700" fill="#64748b" text-anchor="middle">wheel</text>
+                <circle class="we-drop" r="3.5"></circle>
+                <circle class="we-drop d2" r="3.5"></circle>
+                <circle class="we-drop d3" r="3.5"></circle>
+              </svg>
+              <p class="we-water-caption" style="margin-top:0;"><strong>Tower</strong> = voltage (the push) &nbsp;·&nbsp; <strong>valve</strong> = resistance (how open the path is) &nbsp;·&nbsp; <strong>wheel</strong> = the load, spun by current (the flow)</p>
+              <div class="we-water-controls">
+                <label for="we-water-slider">Valve setting: <span id="we-water-level-label">wide open (low resistance)</span></label>
+                <input type="range" id="we-water-slider" min="0" max="2" step="1" value="0" aria-describedby="we-water-caption" />
+              </div>
+              <p class="we-water-caption" id="we-water-caption">Wide-open valve, same water tower height: water rushes through fast and the wheel spins quickly. That's high current at a fixed voltage, thanks to low resistance.</p>
+            </div>
+
+            <div class="sm-callout info">
+              <strong>The exact relationship</strong>
+              These three aren't just similar — they're locked together by a precise equation, Ohm's Law: voltage = current × resistance (V = IR). Push harder or open the valve wider and current goes up; add resistance and current goes down for the same push. See the full math, with worked examples, in <a href="../../engineering/arduino-and-electronics/ohms-law.html">Ohm's Law</a>.
+            </div>
+          </section>
+
+          <!-- ── Conductors and insulators ── -->
+          <section class="sm-card" style="--sm-accent:#ff9500;">
+            <h2>Why Some Materials Carry Electricity and Others Don't</h2>
+            <p>Resistance isn't the same everywhere — it depends heavily on what a material is made of. In some materials, the outermost electrons are barely attached to their atoms and hop easily from one to the next. In others, every electron is locked tightly in place with nowhere to go.</p>
+            <div class="we-material-grid">
+              <div class="we-material-card conductor">
+                <strong>Conductors</strong>
+                <div class="we-electron-bar" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                <small>Metals like copper, silver, gold, and aluminum have loosely-held outer electrons that move freely between atoms — very low resistance. That's why wires and plug contacts are built from copper and gold-plated metal.</small>
+              </div>
+              <div class="we-material-card semiconductor">
+                <strong>Semiconductors</strong>
+                <div class="we-electron-bar" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                <small>Silicon and germanium sit in between — normally poor conductors, but engineers can precisely control how well they conduct by adding trace impurities. That controllable in-between behavior is the entire basis of transistors and computer chips.</small>
+              </div>
+              <div class="we-material-card insulator">
+                <strong>Insulators</strong>
+                <div class="we-electron-bar" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                <small>Rubber, glass, plastic, and dry wood hold their electrons tightly with almost nowhere to move — extremely high resistance. That's why wires are wrapped in rubber or plastic and power lines hang from glass or ceramic insulators.</small>
+              </div>
+            </div>
+            <div class="sm-callout warn">
+              <strong>Why this matters for safety</strong>
+              Your body is mostly water with dissolved salts, which makes it a decent conductor — much better than dry air, but far worse than copper. That's why standing on dry ground (an insulator) is safer around electricity than standing in a puddle (a much better conductor), and why electricians work on de-energized circuits whenever possible.
+            </div>
+          </section>
+
           <!-- ── Static vs current, with hands-on demo ── -->
           <section class="sm-card" style="--sm-accent:#ff9500;">
             <h2>Two Kinds of Electricity</h2>
@@ -591,18 +799,15 @@
 
             <div class="we-static-demo" id="we-static-demo">
               <div class="we-balloon-stage">
-                <div class="we-hair"></div>
-                <div class="we-hair"></div>
-                <div class="we-hair"></div>
-                <div class="we-hair"></div>
-                <div class="we-hair"></div>
-                <div class="we-balloon"></div>
+                <canvas id="we-balloon-canvas" aria-hidden="true"></canvas>
+                <p id="we-balloon-nowebgl" class="we-sim-note" hidden>3D preview needs WebGL, which isn't available here — the rest of the demo still works below.</p>
               </div>
               <div>
                 <p style="margin:0 0 0.4rem;font-weight:700;font-size:0.9rem;">Try it here</p>
-                <p style="margin:0 0 0.6rem;font-size:0.84rem;color:#415266;">Click the button to "rub" the balloon on the hair below and watch what happens. Then try it for real with an actual balloon — it works best on a dry day.</p>
+                <p style="margin:0 0 0.6rem;font-size:0.84rem;color:#415266;">Click the button to "rub" the balloon on the hair below and watch what happens — drag the 3D scene to look around. Then try it for real with an actual balloon — it works best on a dry day.</p>
                 <button type="button" class="we-static-btn" id="we-static-btn">⚡ Rub the balloon</button>
                 <p class="we-static-caption" id="we-static-caption">The hair hangs straight down — balanced charge, nothing happening yet.</p>
+                <p class="we-sim-note">Want a more detailed version? Try PhET's free <a href="https://phet.colorado.edu/en/simulations/balloons-and-static-electricity" target="_blank" rel="noopener">Balloons and Static Electricity</a> simulation, which shows the actual electrons transferring.</p>
               </div>
             </div>
 
@@ -610,19 +815,40 @@
             <p>A battery uses a chemical reaction to push electrons out one terminal, through a wire, through whatever the wire connects to, and back in the other terminal — a continuous loop. That steady flow is <strong>current</strong>, and it's what powers lights, motors, and every device you own. Unlike a static spark, current can keep flowing for as long as the battery (or power plant) can keep pushing.</p>
 
             <div class="we-circuit-demo" id="we-circuit-demo">
-              <svg viewBox="0 0 220 140" aria-hidden="true">
-                <path class="we-circuit-loop" d="M20,120 L20,20 L200,20 L200,120 L20,120" />
-                <rect x="6" y="52" width="14" height="36" rx="2" fill="#34c759" />
-                <text x="13" y="45" font-size="9" font-weight="700" fill="#248a3d" text-anchor="middle">battery</text>
-                <circle class="we-circuit-bulb-glow" cx="200" cy="72" r="20" />
-                <circle class="we-circuit-bulb" cx="200" cy="72" r="10" />
-                <text x="200" y="102" font-size="9" font-weight="700" fill="#64748b" text-anchor="middle">bulb</text>
+              <svg viewBox="0 0 240 150" aria-hidden="true">
+                <!-- wire: bottom-left corner up to the battery's lower terminal -->
+                <path class="we-circuit-loop" d="M30,125 L30,85" />
+                <!-- wire: battery's upper terminal, up and across to the switch's left post -->
+                <path class="we-circuit-loop" d="M30,65 L30,25 L95,25" />
+                <!-- wire: switch's right post, across, down the right side, and back along the bottom -->
+                <path class="we-circuit-loop" d="M125,25 L210,25 L210,125 L30,125" />
+
+                <!-- battery: long thin plate (+) over a short thick plate (−) -->
+                <line class="we-circuit-battery-plate" x1="18" y1="70" x2="42" y2="70" stroke-width="2" />
+                <line class="we-circuit-battery-plate" x1="22" y1="80" x2="38" y2="80" stroke-width="5.5" />
+                <text x="46" y="72" font-size="8" font-weight="700" fill="#248a3d">+</text>
+                <text x="46" y="86" font-size="9" font-weight="700" fill="#248a3d">&minus;</text>
+                <text x="54" y="79" font-size="8" font-weight="700" fill="#248a3d">battery</text>
+
+                <!-- switch: two posts and a lever that lifts open / lies flat closed -->
+                <circle class="we-circuit-switch-post" cx="95" cy="25" r="3" />
+                <circle class="we-circuit-switch-post" cx="125" cy="25" r="3" />
+                <line class="we-circuit-switch-lever" x1="95" y1="25" x2="125" y2="25" />
+                <text x="110" y="44" font-size="8" font-weight="700" fill="#64748b" text-anchor="middle">switch</text>
+
+                <!-- bulb: glass globe with a glowing filament -->
+                <circle class="we-circuit-bulb-glow" cx="210" cy="75" r="22" />
+                <circle class="we-circuit-bulb" cx="210" cy="75" r="12" />
+                <path class="we-circuit-filament" d="M203,70 L207,80 L211,70 L215,80 L217,75" />
+                <text x="192" y="78" font-size="8" font-weight="700" fill="#64748b" text-anchor="end">bulb</text>
+
                 <circle class="we-charge-dot" r="3.5"></circle>
                 <circle class="we-charge-dot d2" r="3.5"></circle>
                 <circle class="we-charge-dot d3" r="3.5"></circle>
               </svg>
               <button type="button" class="we-circuit-btn" id="we-circuit-btn">🔌 Close the switch</button>
               <p class="we-circuit-caption" id="we-circuit-caption">The switch is open — no path for electrons, so nothing flows and the bulb stays dark.</p>
+              <p class="we-sim-note">Want to build real circuits with batteries, resistors, and switches? Try PhET's free <a href="https://phet.colorado.edu/en/simulations/circuit-construction-kit-dc" target="_blank" rel="noopener">Circuit Construction Kit: DC</a> simulation.</p>
             </div>
 
             <div class="sm-callout warn">
@@ -761,6 +987,84 @@
             </div>
           </section>
 
+          <!-- ── Go further ── -->
+          <section class="sm-card" style="--sm-accent:#007aff;">
+            <h2>Go Further</h2>
+            <p>This lesson is the foundation. Here's where to go next depending on what caught your interest — more lessons on this site, and a few free interactive simulations from PhET (University of Colorado Boulder) worth exploring on your own.</p>
+            <div class="we-links-grid">
+              <a class="we-link-card lesson" href="coulombs-law.html">
+                <span class="we-link-kind">Lesson</span>
+                <strong>Coulomb's Law</strong>
+                <small>The exact math of how strongly two charges attract or repel, depending on distance.</small>
+              </a>
+              <a class="we-link-card lesson" href="../../engineering/arduino-and-electronics/ohms-law.html">
+                <span class="we-link-kind">Lesson</span>
+                <strong>Ohm's Law</strong>
+                <small>Voltage, current, and resistance with real numbers, worked examples, and circuit math.</small>
+              </a>
+              <a class="we-link-card lesson" href="faradays-law.html">
+                <span class="we-link-kind">Lesson</span>
+                <strong>Faraday's Law</strong>
+                <small>The math behind electromagnetic induction — how a moving magnet generates current.</small>
+              </a>
+              <a class="we-link-card lesson" href="ac-vs-dc.html">
+                <span class="we-link-kind">Lesson</span>
+                <strong>AC vs. DC</strong>
+                <small>A deeper look at the two kinds of current and why the grid runs on AC.</small>
+              </a>
+              <a class="we-link-card lesson" href="van-de-graaff-generator.html">
+                <span class="we-link-kind">Lesson</span>
+                <strong>Van de Graaff Generator</strong>
+                <small>A machine that builds up huge static charges on purpose — hair-raising, literally.</small>
+              </a>
+              <a class="we-link-card lesson" href="cathode-ray-tube.html">
+                <span class="we-link-kind">Lesson</span>
+                <strong>Cathode Ray Tube</strong>
+                <small>Free electrons shot through a vacuum — the device that led to the discovery of the electron itself.</small>
+              </a>
+              <a class="we-link-card lesson" href="faraday-cage.html">
+                <span class="we-link-kind">Lesson</span>
+                <strong>Faraday Cage</strong>
+                <small>Why a metal enclosure blocks electric fields — and keeps you safe inside a car during a lightning strike.</small>
+              </a>
+              <a class="we-link-card lesson" href="../../engineering/arduino-and-electronics/breadboard-basics.html">
+                <span class="we-link-kind">Lesson</span>
+                <strong>Breadboard Basics</strong>
+                <small>Build your first real circuit by hand with a battery, switch, and LED.</small>
+              </a>
+              <a class="we-link-card lesson" href="../pioneers/benjamin-franklin.html">
+                <span class="we-link-kind">Lesson</span>
+                <strong>Benjamin Franklin</strong>
+                <small>The kite experiment, and the rest of a life spent well beyond electricity.</small>
+              </a>
+              <a class="we-link-card lesson" href="../pioneers/nikola-tesla.html">
+                <span class="we-link-kind">Lesson</span>
+                <strong>Nikola Tesla</strong>
+                <small>The engineer behind alternating current and the War of the Currents.</small>
+              </a>
+              <a class="we-link-card lesson" href="../pioneers/james-clerk-maxwell.html">
+                <span class="we-link-kind">Lesson</span>
+                <strong>James Clerk Maxwell</strong>
+                <small>The physicist who unified electricity, magnetism, and light into one theory.</small>
+              </a>
+              <a class="we-link-card sim" href="https://phet.colorado.edu/en/simulations/circuit-construction-kit-dc" target="_blank" rel="noopener">
+                <span class="we-link-kind">PhET simulation</span>
+                <strong>Circuit Construction Kit: DC</strong>
+                <small>Build and measure real circuits on-screen with batteries, resistors, and bulbs. (phet.colorado.edu)</small>
+              </a>
+              <a class="we-link-card sim" href="https://phet.colorado.edu/en/simulations/balloons-and-static-electricity" target="_blank" rel="noopener">
+                <span class="we-link-kind">PhET simulation</span>
+                <strong>Balloons and Static Electricity</strong>
+                <small>See individual electrons transfer between a balloon and a sweater. (phet.colorado.edu)</small>
+              </a>
+              <a class="we-link-card sim" href="https://phet.colorado.edu/en/simulations/john-travoltage" target="_blank" rel="noopener">
+                <span class="we-link-kind">PhET simulation</span>
+                <strong>John Travoltage</strong>
+                <small>Build up a static charge by dragging a foot on carpet, then discharge it to a doorknob. (phet.colorado.edu)</small>
+              </a>
+            </div>
+          </section>
+
           <!-- ── Quiz ── -->
           <section class="sm-quiz">
             <h2>Quick Check</h2>
@@ -852,6 +1156,14 @@
               Atoms, electrons, and charge — explained for both first-time learners and students ready for more depth.
             </div>
             <div class="ll-info">
+              <strong>Voltage, current, resistance</strong>
+              The water-tower analogy for the three quantities that describe electricity, with an interactive valve demo.
+            </div>
+            <div class="ll-info">
+              <strong>Conductors &amp; insulators</strong>
+              Why metals carry current easily, why rubber and glass don't, and where semiconductors fit in between.
+            </div>
+            <div class="ll-info">
               <strong>Static vs. current</strong>
               The two forms of electricity, with a hands-on balloon demo and a circuit-flow demo.
             </div>
@@ -876,6 +1188,14 @@
             <div class="ll-info">
               <strong>Electricity = moving electrons</strong>
               Static is a charge imbalance that jumps once. Current is charge flowing continuously in a loop.
+            </div>
+            <div class="ll-info">
+              <strong>V = IR</strong>
+              Voltage is the push (like water pressure), current is the flow rate, resistance is how much the path fights the flow. Ohm's Law links all three exactly.
+            </div>
+            <div class="ll-info">
+              <strong>Conductors vs. insulators</strong>
+              Metals have loose outer electrons (low resistance); rubber, glass, and plastic hold theirs tightly (high resistance). Semiconductors sit in between and power every computer chip.
             </div>
             <div class="ll-info">
               <strong>"Elektron"</strong>
@@ -932,6 +1252,56 @@
           : 'The switch is open — no path for electrons, so nothing flows and the bulb stays dark.';
         circuitBtn.textContent = on ? '🔌 Open the switch' : '🔌 Close the switch';
       });
+
+      // Water analogy demo (voltage / current / resistance)
+      var waterSlider = document.getElementById('we-water-slider');
+      var waterLevelLabel = document.getElementById('we-water-level-label');
+      var waterCaption = document.getElementById('we-water-caption');
+      var valveTop = document.getElementById('we-valve-top');
+      var valveBottom = document.getElementById('we-valve-bottom');
+      var wheelSpokes = document.getElementById('we-wheel-spokes');
+      var waterDrops = document.querySelectorAll('.we-drop');
+      var waterLevels = [
+        {
+          label: 'wide open (low resistance)',
+          gap: 24,
+          duration: 1.8,
+          caption: "Wide-open valve, same water tower height: water rushes through fast and the wheel spins quickly. That's high current at a fixed voltage, thanks to low resistance."
+        },
+        {
+          label: 'partly closed (medium resistance)',
+          gap: 12,
+          duration: 3.4,
+          caption: 'Partly closed valve: the tower is pushing exactly as hard as before, but the narrower path only lets so much through. Current drops even though voltage never changed.'
+        },
+        {
+          label: 'nearly shut (high resistance)',
+          gap: 3,
+          duration: 7,
+          caption: 'Almost shut: the pressure (voltage) hasn\'t changed at all, but the tiny opening chokes the flow to a trickle. High resistance can bring current down to almost nothing.'
+        }
+      ];
+
+      function setWaterLevel(index) {
+        var level = waterLevels[index];
+        var topTipY = 30 - level.gap / 2;
+        var bottomTipY = 30 + level.gap / 2;
+        valveTop.setAttribute('d', 'M100,22 L118,' + topTipY + ' L136,22 Z');
+        valveBottom.setAttribute('d', 'M100,38 L118,' + bottomTipY + ' L136,38 Z');
+        wheelSpokes.style.animationDuration = level.duration + 's';
+        waterDrops.forEach(function (drop) {
+          drop.style.animationDuration = level.duration + 's';
+        });
+        waterLevelLabel.textContent = level.label;
+        waterCaption.textContent = level.caption;
+      }
+
+      if (waterSlider) {
+        setWaterLevel(0);
+        waterSlider.addEventListener('input', function () {
+          setWaterLevel(parseInt(waterSlider.value, 10));
+        });
+      }
 
       // History timeline
       var eras = [
@@ -1025,6 +1395,265 @@
       });
     })();
   </script>
+
+  <!-- ══ Balloon + hair: real lit 3D scene (Three.js) ══ -->
+  <script type="module">
+    import { THREE, OrbitControls } from '../../../assets/vendor/three-bundle.min.js';
+    import { createScene } from '../../../assets/js/sim-kit-three.mjs';
+
+    function hasWebGL() {
+      try {
+        const probe = document.createElement('canvas');
+        return !!(window.WebGLRenderingContext &&
+          (probe.getContext('webgl') || probe.getContext('experimental-webgl')));
+      } catch (_) { return false; }
+    }
+
+    const canvas = document.getElementById('we-balloon-canvas');
+    const noWebGLMsg = document.getElementById('we-balloon-nowebgl');
+    const staticDemo = document.getElementById('we-static-demo');
+
+    if (!hasWebGL()) {
+      canvas.hidden = true;
+      noWebGLMsg.hidden = false;
+      throw new Error('WebGL not supported — balloon 3D scene disabled');
+    }
+
+    const { renderer, scene, camera, syncSize } = createScene(canvas, {
+      THREE, fov: 36, near: 0.1, far: 20, alpha: true, clearAlpha: 0
+    });
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    if ('outputColorSpace' in renderer) renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+    camera.position.set(0, 0.55, 3.5);
+    camera.lookAt(0, 0.35, 0);
+
+    const controls = new OrbitControls(camera, canvas);
+    controls.target.set(0, 0.35, 0);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.enableZoom = false;
+    controls.enablePan = false;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 1.1;
+    controls.minPolarAngle = Math.PI * 0.28;
+    controls.maxPolarAngle = Math.PI * 0.62;
+    controls.update();
+
+    /* ── Lighting: three-point + soft ambient fill ── */
+    scene.add(new THREE.HemisphereLight(0xfff6e6, 0x33291f, 0.55));
+    const key = new THREE.DirectionalLight(0xfff1e0, 1.7);
+    key.position.set(2.2, 3.2, 2.6);
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.camera.near = 0.1;
+    key.shadow.camera.far = 8;
+    key.shadow.camera.left = -1.6;
+    key.shadow.camera.right = 1.6;
+    key.shadow.camera.top = 1.6;
+    key.shadow.camera.bottom = -1.6;
+    key.shadow.radius = 3;
+    scene.add(key);
+    const fill = new THREE.DirectionalLight(0xcfe3ff, 0.5);
+    fill.position.set(-2.6, 1.3, 1.9);
+    scene.add(fill);
+    const rim = new THREE.DirectionalLight(0xffffff, 1.0);
+    rim.position.set(-1.1, 2.6, -2.9);
+    scene.add(rim);
+    const chargeLight = new THREE.PointLight(0x38bdf8, 0, 3);
+    chargeLight.position.set(0, 1.0, 0.7);
+    scene.add(chargeLight);
+
+    /* ── Ground contact shadow ── */
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(4, 4),
+      new THREE.ShadowMaterial({ opacity: 0.22 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.39;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    /* ── Head ── */
+    const head = new THREE.Mesh(
+      new THREE.SphereGeometry(0.55, 32, 32),
+      new THREE.MeshStandardMaterial({ color: 0x93a1b3, roughness: 0.85, metalness: 0.04 })
+    );
+    head.scale.set(1, 0.62, 1);
+    head.position.set(0, -0.05, 0);
+    head.castShadow = true;
+    head.receiveShadow = true;
+    scene.add(head);
+
+    /* ── Balloon (group: sphere + knot + string), lit for real gloss — no painted-on highlights needed ── */
+    const balloonGroup = new THREE.Group();
+    const balloon = new THREE.Mesh(
+      new THREE.SphereGeometry(0.5, 48, 48),
+      new THREE.MeshPhysicalMaterial({ color: 0xe0331f, roughness: 0.26, clearcoat: 1, clearcoatRoughness: 0.12, metalness: 0 })
+    );
+    balloon.scale.set(0.86, 1.05, 0.86);
+    balloon.castShadow = true;
+    balloonGroup.add(balloon);
+
+    const knotMat = new THREE.MeshStandardMaterial({ color: 0xb3271a, roughness: 0.4 });
+    const knot = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.09, 10), knotMat);
+    knot.rotation.x = Math.PI;
+    knot.position.y = -0.53;
+    balloonGroup.add(knot);
+
+    const stringCurve = new THREE.QuadraticBezierCurve3(
+      new THREE.Vector3(0, -0.57, 0),
+      new THREE.Vector3(-0.03, -0.66, 0),
+      new THREE.Vector3(0, -0.75, 0)
+    );
+    const stringMesh = new THREE.Mesh(
+      new THREE.TubeGeometry(stringCurve, 8, 0.008, 6, false),
+      knotMat
+    );
+    balloonGroup.add(stringMesh);
+
+    balloonGroup.position.set(0, 1.05, 0);
+    scene.add(balloonGroup);
+
+    /* ── Hair: 9 real curved, tapered, S-flicked 3D locks (custom Frenet-swept tube geometry) ── */
+    const HAIR_SEG = 16;
+    const HAIR_RAD = 8;
+    const HAIR_COLOR_BASE = new THREE.Color(0x5c3a1e);
+    const HAIR_COLOR_TIP = new THREE.Color(0xe0a35c);
+
+    function buildIndices(segments, radial) {
+      const indices = [];
+      for (let i = 0; i < segments; i++) {
+        for (let j = 0; j < radial; j++) {
+          const a = (radial + 1) * i + j;
+          const b = (radial + 1) * (i + 1) + j;
+          const c = (radial + 1) * (i + 1) + (j + 1);
+          const d = (radial + 1) * i + (j + 1);
+          indices.push(a, b, d, b, c, d);
+        }
+      }
+      return indices;
+    }
+    const hairIndices = buildIndices(HAIR_SEG, HAIR_RAD);
+    const hairVertCount = (HAIR_SEG + 1) * (HAIR_RAD + 1);
+
+    function fillStrandArrays(curve, baseRadius, tipRadius, posArr, normArr, colorArr) {
+      const frames = curve.computeFrenetFrames(HAIR_SEG, false);
+      const tmpColor = new THREE.Color();
+      let vi = 0, ci = 0;
+      for (let i = 0; i <= HAIR_SEG; i++) {
+        const t = i / HAIR_SEG;
+        const point = curve.getPointAt(t);
+        const radius = THREE.MathUtils.lerp(baseRadius, tipRadius, Math.pow(t, 0.6));
+        const N = frames.normals[i], B = frames.binormals[i];
+        tmpColor.copy(HAIR_COLOR_BASE).lerp(HAIR_COLOR_TIP, t);
+        for (let j = 0; j <= HAIR_RAD; j++) {
+          const v = (j / HAIR_RAD) * Math.PI * 2;
+          const sin = Math.sin(v), cos = -Math.cos(v);
+          const nx = cos * N.x + sin * B.x;
+          const ny = cos * N.y + sin * B.y;
+          const nz = cos * N.z + sin * B.z;
+          posArr[vi] = point.x + radius * nx;
+          posArr[vi + 1] = point.y + radius * ny;
+          posArr[vi + 2] = point.z + radius * nz;
+          normArr[vi] = nx; normArr[vi + 1] = ny; normArr[vi + 2] = nz;
+          vi += 3;
+          colorArr[ci] = tmpColor.r; colorArr[ci + 1] = tmpColor.g; colorArr[ci + 2] = tmpColor.b;
+          ci += 3;
+        }
+      }
+    }
+
+    const STRAND_COUNT = 9;
+    const rootXs      = [-0.34, -0.255, -0.17, -0.085, 0,    0.085, 0.17, 0.255, 0.34];
+    const lengths     = [ 0.28,  0.33,   0.38,  0.43,  0.46, 0.43,  0.38, 0.33,  0.28];
+    const restTipOffs = [-0.05, -0.04,  -0.025,-0.01,  0,    0.01,  0.025,0.04,  0.05];
+    const zOffsets    = [ 0.03, -0.025,  0.035,-0.015, 0.03,-0.015, 0.035,-0.025, 0.03];
+    const rootY = 0.30;
+    const hairMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.48, metalness: 0.06 });
+
+    const strands = [];
+    for (let s = 0; s < STRAND_COUNT; s++) {
+      const geometry = new THREE.BufferGeometry();
+      geometry.setIndex(hairIndices);
+      geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(hairVertCount * 3), 3));
+      geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(hairVertCount * 3), 3));
+      geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(hairVertCount * 3), 3));
+      const mesh = new THREE.Mesh(geometry, hairMat);
+      mesh.castShadow = true;
+      scene.add(mesh);
+
+      const rootX = rootXs[s];
+      const z = zOffsets[s];
+      const len = lengths[s];
+      const tipOff = restTipOffs[s];
+      // Rest pose: a gentle S — the strand leans out early, then flicks part-way
+      // back toward vertical near the tip, the way a loose lock of hair falls.
+      strands.push({
+        mesh, geometry, z,
+        root: new THREE.Vector3(rootX, rootY, z),
+        restC1: new THREE.Vector3(rootX + tipOff * 0.9, rootY + len * 0.35, z),
+        restC2: new THREE.Vector3(rootX + tipOff * 0.35, rootY + len * 0.75, z),
+        restTip: new THREE.Vector3(rootX + tipOff, rootY + len, z),
+        // Charged pose: pulled up and inward toward the balloon overhead.
+        chargedC1: new THREE.Vector3(rootX * 0.8, rootY + len * 1.3 * 0.35, z),
+        chargedC2: new THREE.Vector3(rootX * 0.45, rootY + len * 1.3 * 0.75, z),
+        chargedTip: new THREE.Vector3(rootX * 0.28, rootY + len * 1.3, z)
+      });
+    }
+
+    const tmpC1 = new THREE.Vector3();
+    const tmpC2 = new THREE.Vector3();
+    const tmpTip = new THREE.Vector3();
+    function updateStrand(strand, amount) {
+      tmpC1.copy(strand.restC1).lerp(strand.chargedC1, amount);
+      tmpC2.copy(strand.restC2).lerp(strand.chargedC2, amount);
+      tmpTip.copy(strand.restTip).lerp(strand.chargedTip, amount);
+      const curve = new THREE.CubicBezierCurve3(strand.root, tmpC1, tmpC2, tmpTip);
+      fillStrandArrays(
+        curve, 0.021, 0.0032,
+        strand.geometry.attributes.position.array,
+        strand.geometry.attributes.normal.array,
+        strand.geometry.attributes.color.array
+      );
+      strand.geometry.attributes.position.needsUpdate = true;
+      strand.geometry.attributes.normal.needsUpdate = true;
+      strand.geometry.attributes.color.needsUpdate = true;
+      strand.geometry.computeBoundingSphere();
+    }
+
+    /* ── Animate charge amount toward the button's toggled state ── */
+    let chargeAmount = 0;
+    let lastDrawnAmount = -1;
+    const clock = new THREE.Clock();
+
+    function loop() {
+      requestAnimationFrame(loop);
+      const dt = Math.min(clock.getDelta(), 0.1);
+      syncSize();
+      controls.update();
+
+      const target = staticDemo.classList.contains('is-charged') ? 1 : 0;
+      const rate = 3.2;
+      if (chargeAmount < target) chargeAmount = Math.min(target, chargeAmount + dt * rate);
+      else if (chargeAmount > target) chargeAmount = Math.max(target, chargeAmount - dt * rate);
+
+      if (Math.abs(chargeAmount - lastDrawnAmount) > 0.0008) {
+        for (const strand of strands) updateStrand(strand, chargeAmount);
+        balloonGroup.position.y = THREE.MathUtils.lerp(1.05, 0.93, chargeAmount);
+        balloonGroup.rotation.z = THREE.MathUtils.lerp(0, -0.05, chargeAmount);
+        chargeLight.intensity = chargeAmount * 1.4;
+        lastDrawnAmount = chargeAmount;
+      }
+
+      renderer.render(scene, camera);
+    }
+    loop();
+  </script>
+
   <script src="../../../assets/js/classroom-animations.js"></script>
   <script src="../../../assets/js/lesson-layout.js"></script>
 <script src="../../../assets/js/electricity-path.js"></script>

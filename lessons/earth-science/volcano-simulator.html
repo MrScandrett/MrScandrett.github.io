@@ -662,7 +662,7 @@
     scene.fog = new THREE.FogExp2(0x180805, 0.018);
 
     const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 500);
-    let camDist = 18, camTheta = 0.5, camPhi = 1.1;
+    let camDist = 30, camTheta = 0.5, camPhi = 1.1;
 
     function updateCam() {
       camera.position.set(
@@ -734,8 +734,8 @@
     scene.add(sunLight);
     const ambientLight = new THREE.AmbientLight(0x2a150a, 0.85);
     scene.add(ambientLight);
-    const fillLight = new THREE.DirectionalLight(0x4060a0, 0.2);
-    fillLight.position.set(-6, 2, -5);
+    const fillLight = new THREE.DirectionalLight(0x7288c8, 0.2);
+    fillLight.position.set(-5, 10, -4);
     scene.add(fillLight);
 
     // Lava crater glow — PointLight
@@ -780,8 +780,8 @@
           vec3 horizonDay = vec3(0.50, 0.60, 0.72);
           vec3 skyDay = mix(horizonDay, zenithDay, pow(elevation, 0.5));
           
-          // Night cycle
-          vec3 nightTint = vec3(0.01, 0.02, 0.04);
+          // Night cycle — moonlit, not pitch black
+          vec3 nightTint = vec3(0.05, 0.08, 0.14);
           vec3 skyTime = mix(nightTint, skyDay, sunBrightness);
           
           // Eruption Ash gradient
@@ -1577,7 +1577,7 @@
       const tlSlider = document.getElementById('s-timeline');
       if (tlSlider) tlSlider.value = 0;
 
-      document.getElementById('s-intensity').value = ev.intensity;
+      document.getElementById('s-intensity').value = 0;
       document.getElementById('s-column').value    = ev.column;
       document.getElementById('s-viscosity').value = ev.viscosity;
       document.getElementById('s-pyro').value      = ev.pyro;
@@ -1637,7 +1637,13 @@
         state[key] = parseFloat(this.value);
         const vel = document.getElementById('v-' + id);
         if (vel) vel.textContent = fmtFn(state[key]);
-        if (key === 'viscosity' || key === 'intensity') { clearTimeout(rebuildTimer); rebuildTimer = setTimeout(() => updateTerrain(state.vtype, state.intensity, state.timeline), 50); }
+        if (key === 'viscosity' || key === 'intensity') {
+          clearTimeout(rebuildTimer);
+          rebuildTimer = setTimeout(() => {
+            const lavaI = (1 - state.viscosity / 100) * (state.intensity / 100);
+            updateTerrain(state.vtype, lavaI, state.timeline);
+          }, 50);
+        }
         updateReadouts();
         updateSky(state.intensity);
         updateLighting(state.intensity / 100);
@@ -1664,11 +1670,18 @@
           
           state.intensity = simI;
           updateSky(state.intensity);
+
+          const intensitySlider = document.getElementById('s-intensity');
+          const intensityLabel = document.getElementById('v-intensity');
+          if (intensitySlider) intensitySlider.value = simI;
+          if (intensityLabel) intensityLabel.textContent = Math.round(simI) + '%';
        }
-       
-       updateTerrain(state.vtype, state.intensity, state.timeline);
+
+       const lavaI = (1 - state.viscosity / 100) * (state.intensity / 100);
+       updateTerrain(state.vtype, lavaI, state.timeline);
        updateEnvironments(state.timeline);
        updateLighting(state.intensity / 100);
+       updateReadouts();
     });
 
     // Type tab clicks
@@ -1702,13 +1715,13 @@
       const sunH = Math.cos(sunAngle); // 1 at noon, -1 at midnight
       const sunBrightness = clamp(sunH * 2.5 + 0.2, 0.0, 1.0); // 0 at night, 1 at day
       
-      // Make night time drastically darker
+      // Make night time darker, but leave enough moonlight to see by
       const ambientBrightness = sunBrightness * (1.0 - Math.min(t, 1.0) * 0.7);
-      ambientLight.intensity = lerp(0.08, 0.85, ambientBrightness);
+      ambientLight.intensity = lerp(0.5, 0.85, ambientBrightness);
       sunLight.intensity = lerp(1.1, 0.1, t * 0.7) * sunBrightness;
-      fillLight.intensity = lerp(0.2, 0.05, t) * sunBrightness + (1.0 - sunBrightness) * 0.20; // Brighter moonlight // Very faint moonlight
-      
-      scene.fog.color.setHSL(0.6, 0.4, lerp(0.02, 0.06, ambientBrightness)); // Slightly blue, brighter fog at night
+      fillLight.intensity = lerp(0.2, 0.05, t) * sunBrightness + (1.0 - sunBrightness) * 1.4; // Moonlight — brighter, cool-toned fill at night
+
+      scene.fog.color.setHSL(0.6, 0.4, lerp(0.05, 0.08, ambientBrightness)); // Slightly blue, brighter fog at night
       if (skyMat.uniforms.sunBrightness) {
          skyMat.uniforms.sunBrightness.value = sunBrightness;
       }
@@ -1927,6 +1940,7 @@
   <script src="../../assets/js/classroom-animations.js"></script>
   <script src="../../assets/js/lesson-layout.js"></script>
 <script src="../../assets/js/lesson-print-button.js"></script>
+<script src="../../assets/js/photo-lightbox.js"></script>
 
 </body>
 </html>
