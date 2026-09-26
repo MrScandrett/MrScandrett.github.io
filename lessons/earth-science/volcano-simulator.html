@@ -658,7 +658,8 @@
     sunLight.shadow.camera.bottom = -18;
     sunLight.shadow.bias = -0.0004;
     scene.add(sunLight);
-    scene.add(new THREE.AmbientLight(0x2a150a, 0.85));
+    const ambientLight = new THREE.AmbientLight(0x2a150a, 0.85);
+    scene.add(ambientLight);
     const fillLight = new THREE.DirectionalLight(0x4060a0, 0.2);
     fillLight.position.set(-6, 2, -5);
     scene.add(fillLight);
@@ -1615,9 +1616,13 @@
       const sunH = Math.cos(sunAngle); // 1 at noon, -1 at midnight
       const sunBrightness = clamp(sunH * 2.5 + 0.2, 0.0, 1.0); // 0 at night, 1 at day
       
-      sunLight.intensity = lerp(1.1, 0.35, t * 0.7) * sunBrightness;
-      fillLight.intensity = lerp(0.2, 0.05, t) + (1.0 - sunBrightness) * 0.4; // More ambient moonlight at night
+      // Make night time drastically darker
+      const ambientBrightness = sunBrightness * (1.0 - Math.min(t, 1.0) * 0.7);
+      ambientLight.intensity = lerp(0.02, 0.85, ambientBrightness);
+      sunLight.intensity = lerp(1.1, 0.1, t * 0.7) * sunBrightness;
+      fillLight.intensity = lerp(0.2, 0.05, t) * sunBrightness + (1.0 - sunBrightness) * 0.08; // Very faint moonlight
       
+      scene.fog.color.setHSL(0.04, 0.4, lerp(0.002, 0.06, ambientBrightness));
       if (skyMat.uniforms.sunBrightness) {
          skyMat.uniforms.sunBrightness.value = sunBrightness;
       }
@@ -1810,7 +1815,17 @@
 
       // Organic multi-frequency lava pulse
       const pulse = 0.76 + Math.sin(ts * 0.0031) * 0.13 + Math.sin(ts * 0.0079 + 1.4) * 0.07 + Math.sin(ts * 0.0017 + 2.9) * 0.04;
-      lavaLight.intensity = lavaBase * pulse;
+      
+      // Calculate sun brightness based on time of day for night boost
+      let currentHour = 12;
+      const ev = ERUPTIONS.find(e => e.id === activeEruption);
+      if (ev && ev.timeOfDay !== undefined) currentHour = (ev.timeOfDay + state.timeline * ev.duration) % 24;
+      const sunAngle = ((currentHour - 12) / 24) * Math.PI * 2;
+      const sunH = Math.cos(sunAngle);
+      const sunBrightness = clamp(sunH * 2.5 + 0.2, 0.0, 1.0);
+      
+      const nightBoost = 1.0 + (1.0 - sunBrightness) * 4.0; // Glows 5x as bright relative to dark scene at night
+      lavaLight.intensity = lavaBase * pulse * nightBoost;
 
       renderer.render(scene, camera);
     }
