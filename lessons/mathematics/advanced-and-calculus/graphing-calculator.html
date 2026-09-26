@@ -45,6 +45,17 @@
     }
     .gc-back-link { font-size: 0.82rem; font-weight: 600; color: var(--accent, #007aff); text-decoration: none; }
     .gc-back-link:hover { text-decoration: underline; }
+    .gc-mode-toggle {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      margin: 0.6rem 0 0 0.9rem;
+      padding: 0.45rem 0.9rem;
+      border-radius: 999px; border: 1px solid rgba(0,122,255,0.25);
+      background: rgba(0,122,255,0.08); color: var(--accent, #007aff);
+      font-size: 0.82rem; font-weight: 700; cursor: pointer;
+      font-family: inherit;
+    }
+    .gc-mode-toggle:hover { background: rgba(0,122,255,0.14); }
+    html[data-gc-mode="lesson"] .gc-mode-toggle { background: rgba(0,122,255,0.14); }
 
     /* ── Cards ────────────────────────────────────────────── */
     .gc-card {
@@ -499,7 +510,6 @@
       line-height: 1.55;
       color: var(--text-muted, #4a4a51);
     }
-    .gc-detail-section { display: none; }
     .gc-focus-shell {
       position: relative;
       display: grid;
@@ -519,6 +529,26 @@
       flex-direction: column;
       gap: 1rem;
     }
+
+    /* App/Lesson mode — default (and pre-JS paint) is App mode: legacy
+       long-form sections hidden, calculator pulled to the top. */
+    .gc-detail-section { display: none; }
+    html[data-gc-mode="lesson"] .gc-detail-section { display: block; }
+    html[data-gc-mode="lesson"] .gc-focus-shell,
+    html[data-gc-mode="lesson"] .gc-workstage { min-height: 0; }
+    .ll-lesson-steps { display: none; }
+    html[data-gc-mode="lesson"] .ll-lesson-steps { display: flex; }
+
+    .gc-mini-graph {
+      position: relative;
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--line, #d2d2d7);
+      background: var(--surface, #f5f5f7);
+      overflow: hidden;
+      margin-top: 0.5rem;
+    }
+    .gc-mini-graph canvas { display: block; width: 100%; height: 100%; touch-action: none; }
     .gc-dock {
       position: fixed;
       right: 18px;
@@ -1541,9 +1571,28 @@
       <p class="gc-hook-strip">Plot first. Then investigate what changed.</p>
       <p class="gc-lede">Use the calculator immediately, notice a pattern, and open help only when you need an explanation.</p>
       <a class="gc-back-link" href="../../../steam-lessons.html#module-math">&larr; Back to Mathematics</a>
+      <button type="button" id="gc-mode-toggle" class="gc-mode-toggle" aria-pressed="false">
+        <span class="gc-mode-toggle-icon" aria-hidden="true">☰</span>
+        <span class="gc-mode-toggle-label">Switch to Lesson Mode</span>
+      </button>
     </section>
 
-    <section class="gc-card gc-detail-section" style="--gc-accent:#0a84ff;">
+    <nav class="ll-lesson-steps" aria-label="Lesson sections">
+      <a href="#gc-sec-why">Why Graphs Matter</a>
+      <a href="#gc-sec-launchpad">Lesson Launchpad</a>
+      <a href="#gc-sec-what-is">What Is a Graph?</a>
+      <a href="#gc-sec-coordinate-plane">Coordinate Plane</a>
+      <a href="#gc-sec-function-types">Types of Functions</a>
+      <a href="#gc-sec-typing">Typing Equations</a>
+      <a href="#gc-calculator">Graphing Calculator</a>
+      <a href="#gc-sec-explorations">Guided Explorations</a>
+      <a href="#gc-sec-challenges">STEAM Challenges</a>
+      <a href="#gc-sec-connect">Connect</a>
+      <a href="#gc-sec-vocabulary">Key Vocabulary</a>
+      <a href="#gc-sec-quiz">Quick Check</a>
+    </nav>
+
+    <section class="gc-card gc-detail-section" id="gc-sec-why" style="--gc-accent:#0a84ff;">
       <h2>Why Graphs Matter</h2>
       <p>Students often meet graphs as pictures to decode. The deeper idea is stronger: a graph is a model. It compresses a relationship so you can see structure, make predictions, and test whether your equation matches reality.</p>
       <div class="gc-anchor-quote">
@@ -1568,7 +1617,7 @@
     <!-- ── Lesson launchpad ─────────────────────────────── -->
     <div class="gc-focus-shell">
     <div class="gc-workstage">
-    <section class="gc-card gc-detail-section" style="--gc-accent:#30b0c7;">
+    <section class="gc-card gc-detail-section" id="gc-sec-launchpad" style="--gc-accent:#30b0c7;">
       <h2>Lesson Launchpad</h2>
       <p>To make this work across K&ndash;12, the lesson should start visual, stay hands-on, and scale upward into explanation and modeling. For primary learners, use the graph cards and mission buttons as a shape-matching activity; for older students, push toward coefficient analysis and real-world modeling.</p>
       <div class="gc-launch-grid">
@@ -1609,7 +1658,7 @@
     </section>
 
     <!-- ── What is a Graph? ───────────────────────────────── -->
-    <section class="gc-card gc-detail-section" style="--gc-accent:#5856d6;">
+    <section class="gc-card gc-detail-section" id="gc-sec-what-is" style="--gc-accent:#5856d6;">
       <h2>What Is a Graph?</h2>
       <p>A <strong>graph</strong> is a visual picture of a relationship between two quantities. On a standard coordinate plane (also called the Cartesian plane), we use two perpendicular number lines — the horizontal <strong>x-axis</strong> and the vertical <strong>y-axis</strong> — that cross at the <strong>origin</strong> (0, 0).</p>
       <p>Every point on the plane can be described by an ordered pair <strong>(x, y)</strong>. A <strong>function</strong> is a rule that assigns exactly one y-value to each x-value. When you plot all those pairs, you get the graph of the function.</p>
@@ -1617,10 +1666,11 @@
         <strong>Key idea</strong>
         If the rule is y = 2x + 1, then for every x you choose, multiply by 2 and add 1 to get y. Plug in x = 0 → y = 1. Plug in x = 3 → y = 7. Connect all those points and you get a straight line.
       </div>
+      <div class="gc-mini-graph" data-expr="2*x+1" data-view="-5,5,-5,5" data-height="180" aria-label="Live graph of y = 2x + 1"></div>
     </section>
 
     <!-- ── Reading a Graph ────────────────────────────────── -->
-    <section class="gc-card gc-detail-section" style="--gc-accent:#007aff;">
+    <section class="gc-card gc-detail-section" id="gc-sec-coordinate-plane" style="--gc-accent:#007aff;">
       <h2>Reading the Coordinate Plane</h2>
       <p>Before graphing equations, you need to be comfortable reading the plane itself.</p>
 
@@ -1726,7 +1776,7 @@
     </section>
 
     <!-- ── Types of Functions ─────────────────────────────── -->
-    <section class="gc-card gc-detail-section" style="--gc-accent:#34c759;">
+    <section class="gc-card gc-detail-section" id="gc-sec-function-types" style="--gc-accent:#34c759;">
       <h2>Types of Functions</h2>
       <p>Different equation forms produce different graph shapes. Recognising the shape from the equation (and vice versa) is a core algebra skill.</p>
       <div class="gc-fn-grid">
@@ -1734,47 +1784,55 @@
           <strong>Linear</strong>
           <code>y = mx + b</code>
           A straight line. m controls steepness, b sets where it crosses the y-axis.
+          <div class="gc-mini-graph" data-expr="x+1" data-view="-5,5,-5,5" data-height="110" aria-label="Live graph of a linear function"></div>
         </div>
         <div class="gc-fn-chip">
           <strong>Quadratic</strong>
           <code>y = ax² + bx + c</code>
           A U-shaped parabola. Opens up when a &gt; 0, down when a &lt; 0.
+          <div class="gc-mini-graph" data-expr="x^2" data-view="-4,4,-1,8" data-height="110" aria-label="Live graph of a quadratic function"></div>
         </div>
         <div class="gc-fn-chip">
           <strong>Cubic</strong>
           <code>y = ax³ + …</code>
           An S-shaped curve with two bends. Can have up to three x-intercepts.
+          <div class="gc-mini-graph" data-expr="x^3" data-view="-3,3,-10,10" data-height="110" aria-label="Live graph of a cubic function"></div>
         </div>
         <div class="gc-fn-chip">
           <strong>Absolute Value</strong>
           <code>y = abs(x)</code>
           A V-shape. Always non-negative — it flips negative values up.
+          <div class="gc-mini-graph" data-expr="abs(x)" data-view="-5,5,-1,5" data-height="110" aria-label="Live graph of an absolute value function"></div>
         </div>
         <div class="gc-fn-chip">
           <strong>Square Root</strong>
           <code>y = sqrt(x)</code>
           Starts at the origin, curves right. Only defined for x ≥ 0.
+          <div class="gc-mini-graph" data-expr="sqrt(x)" data-view="-1,9,-1,4" data-height="110" aria-label="Live graph of a square root function"></div>
         </div>
         <div class="gc-fn-chip">
           <strong>Sine / Cosine</strong>
           <code>y = sin(x)</code>
           A repeating wave. Period is 2π (~6.28). Oscillates between −1 and 1.
+          <div class="gc-mini-graph" data-expr="sin(x)" data-view="-6.5,6.5,-1.5,1.5" data-height="110" aria-label="Live graph of a sine wave"></div>
         </div>
         <div class="gc-fn-chip">
           <strong>Exponential</strong>
           <code>y = 2^x</code>
           Grows (or decays) at an accelerating rate. Never touches the x-axis.
+          <div class="gc-mini-graph" data-expr="2^x" data-view="-4,4,-1,10" data-height="110" aria-label="Live graph of an exponential function"></div>
         </div>
         <div class="gc-fn-chip">
           <strong>Rational</strong>
           <code>y = 1/x</code>
           Has a vertical asymptote at x = 0 — the curve approaches but never crosses it.
+          <div class="gc-mini-graph" data-expr="1/x" data-view="-5,5,-5,5" data-height="110" aria-label="Live graph of a rational function"></div>
         </div>
       </div>
     </section>
 
     <!-- ── Calculator Syntax ──────────────────────────────── -->
-    <section class="gc-card gc-detail-section" style="--gc-accent:#ff9500;">
+    <section class="gc-card gc-detail-section" id="gc-sec-typing" style="--gc-accent:#ff9500;">
       <h2>How to Type Equations</h2>
       <p>The calculator below uses standard math notation. Here's a quick reference:</p>
       <table class="gc-syntax-table" aria-label="Calculator syntax reference">
@@ -2250,35 +2308,40 @@
     </div>
 
     <!-- ── Guided Explorations ────────────────────────────── -->
-    <section class="gc-card gc-detail-section" style="--gc-accent:#af52de;">
+    <section class="gc-card gc-detail-section" id="gc-sec-explorations" style="--gc-accent:#af52de;">
       <h2>Guided Explorations</h2>
       <p>Use the calculator above to investigate these questions. Each one reveals something important about how functions behave.</p>
       <ol class="gc-explore-list">
         <li>
           <span class="gc-explore-num">1</span>
           <span><strong>Slope &amp; steepness:</strong> Plot <code>x</code>, <code>2*x</code>, and <code>0.5*x</code> together. What does changing the coefficient do to the line? Now try <code>-x</code>. What happens when the slope is negative?</span>
+          <div class="gc-mini-graph" data-expr="x,2*x,0.5*x" data-view="-6,6,-6,6" data-colors="#007aff,#ff9500,#34c759" data-interactive="true" aria-label="Live graph for exploring slope"></div>
         </li>
         <li>
           <span class="gc-explore-num">2</span>
           <span><strong>The y-intercept:</strong> Plot <code>x + 3</code>, <code>x</code>, and <code>x - 3</code>. All three have the same slope. What is the only thing that changes? Which number in the equation controls the vertical shift?</span>
+          <div class="gc-mini-graph" data-expr="x+3,x,x-3" data-view="-6,6,-6,6" data-interactive="true" aria-label="Live graph for exploring the y-intercept"></div>
         </li>
         <li>
           <span class="gc-explore-num">3</span>
           <span><strong>Parabolas &amp; the a-value:</strong> Plot <code>x^2</code>, <code>2*x^2</code>, and <code>0.3*x^2</code>. How does the leading coefficient affect the width? Now try <code>-x^2</code>. What does a negative a-value do?</span>
+          <div class="gc-mini-graph" data-expr="x^2,2*x^2,0.3*x^2" data-view="-4,4,-2,10" data-interactive="true" aria-label="Live graph for exploring parabolas"></div>
         </li>
         <li>
           <span class="gc-explore-num">4</span>
           <span><strong>Finding intersections:</strong> Plot <code>x + 2</code> and <code>x^2</code>. Where do they cross? Hover your mouse near the intersection to read the approximate coordinates. Can you solve it algebraically? Set <code>x + 2 = x²</code> and solve for x.</span>
+          <div class="gc-mini-graph" data-expr="x+2,x^2" data-view="-4,4,-2,8" data-interactive="true" aria-label="Live graph for exploring intersections"></div>
         </li>
         <li>
           <span class="gc-explore-num">5</span>
           <span><strong>Waves:</strong> Plot <code>sin(x)</code> and <code>sin(2*x)</code>. How does multiplying inside the sine change the wave? Try <code>2*sin(x)</code> — what does the multiplier outside change?</span>
+          <div class="gc-mini-graph" data-expr="sin(x),sin(2*x)" data-view="-6.5,6.5,-1.5,1.5" data-interactive="true" aria-label="Live graph for exploring waves"></div>
         </li>
       </ol>
     </section>
 
     <!-- ── STEAM studio ─────────────────────────────────── -->
-    <section class="gc-card gc-detail-section" style="--gc-accent:#ff375f;">
+    <section class="gc-card gc-detail-section" id="gc-sec-challenges" style="--gc-accent:#ff375f;">
       <h2>STEAM Studio Challenges</h2>
       <p>Once students can read the graphs, move quickly into making something, modeling something, or explaining something. That shift is what makes the lesson feel authentically STEAM.</p>
       <div class="gc-steam-grid">
@@ -2305,7 +2368,7 @@
       </div>
     </section>
 
-    <section class="gc-card gc-detail-section" style="--gc-accent:#ff9500;">
+    <section class="gc-card gc-detail-section" id="gc-sec-connect" style="--gc-accent:#ff9500;">
       <h2>Connect This to Other Lessons</h2>
       <p>This calculator works best as a hub. Students should be able to leave one lesson with data or a model idea and continue the reasoning here.</p>
       <div class="gc-link-list">
@@ -2329,7 +2392,7 @@
     </section>
 
     <!-- ── Key Vocabulary ─────────────────────────────────── -->
-    <section class="gc-card gc-detail-section" style="--gc-accent:#30b0c7;">
+    <section class="gc-card gc-detail-section" id="gc-sec-vocabulary" style="--gc-accent:#30b0c7;">
       <h2>Key Vocabulary</h2>
       <div class="gc-vocab-grid">
         <div class="gc-vocab-chip">
@@ -2368,7 +2431,7 @@
     </section>
 
     <!-- ── Quick Check ────────────────────────────────────── -->
-    <section class="gc-quiz gc-detail-section">
+    <section class="gc-quiz gc-detail-section" id="gc-sec-quiz">
       <h2>Quick Check</h2>
       <div class="gc-quiz-toolbar">
         <p class="gc-quiz-score" id="gc-quiz-score" aria-live="polite">0 / 4 correct · 4 to go</p>
@@ -2519,6 +2582,22 @@
   <script>
   (function () {
     'use strict';
+
+    /* ═══════════════════════════════════════════════════════
+       APP / LESSON MODE
+    ═══════════════════════════════════════════════════════ */
+    const GC_MODE_KEY = 'classroomos-graph-mode';
+    function loadMode() {
+      try {
+        const saved = window.localStorage.getItem(GC_MODE_KEY);
+        if (saved === 'app' || saved === 'lesson') return saved;
+      } catch (e) {}
+      return 'app';
+    }
+    function saveMode(mode) {
+      try { window.localStorage.setItem(GC_MODE_KEY, mode); } catch (e) {}
+    }
+    let gcMode = loadMode();
 
     /* ═══════════════════════════════════════════════════════
        MATH EXPRESSION PARSER
@@ -4471,7 +4550,7 @@
     });
 
     document.getElementById('gc-open-full-quiz')?.addEventListener('click', function () {
-      document.querySelector('.gc-quiz')?.classList.remove('gc-detail-section');
+      if (gcMode !== 'lesson') { saveMode('lesson'); applyMode('lesson'); }
       closePanel();
       document.querySelector('.gc-quiz')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
@@ -4542,28 +4621,76 @@
     const focusShell = document.querySelector('.gc-focus-shell');
     const workstage = document.querySelector('.gc-workstage');
     const pageShell = document.querySelector('.gc-page-shell');
+    const modeToggleBtn = document.getElementById('gc-mode-toggle');
 
-    if (workstage && calculatorSection) {
-      workstage.prepend(calculatorSection);
+    /* Snapshot the authored (Lesson-mode) document order once, before any
+       reorder ever runs, using invisible anchor comment nodes — so switching
+       back to Lesson mode after App mode is a reliable replay instead of an
+       algebraic reversal of the App-mode DOM moves. */
+    const authoredOrder = [];
+    function snapshotAuthoredOrder() {
+      if (!pageShell) return;
+      const tracked = [];
+      if (focusShell) tracked.push(focusShell);
+      Array.from(pageShell.querySelectorAll('.gc-detail-section')).forEach(section => tracked.push(section));
+      tracked.forEach(node => {
+        const anchor = document.createComment('gc-anchor');
+        node.parentElement.insertBefore(anchor, node.nextSibling);
+        authoredOrder.push({ node: node, anchor: anchor });
+      });
     }
-
-    if (pageShell && focusShell) {
-      let supportStack = document.getElementById('gc-support-stack');
-      if (!supportStack) {
-        supportStack = document.createElement('div');
-        supportStack.id = 'gc-support-stack';
-        supportStack.className = 'gc-support-stack';
-        focusShell.insertAdjacentElement('afterend', supportStack);
-      }
-
-      Array.from(pageShell.querySelectorAll('.gc-detail-section')).forEach(section => {
-        supportStack.appendChild(section);
+    function restoreAuthoredOrder() {
+      authoredOrder.forEach(function (entry) {
+        if (entry.node.nextSibling !== entry.anchor) {
+          entry.anchor.parentElement.insertBefore(entry.node, entry.anchor);
+        }
       });
     }
 
-    if (heroSection && focusShell) {
-      heroSection.insertAdjacentElement('afterend', focusShell);
+    function reflowForMode(mode) {
+      if (mode === 'app') {
+        if (workstage && calculatorSection && calculatorSection.parentElement !== workstage) {
+          workstage.prepend(calculatorSection);
+        }
+        if (pageShell && focusShell) {
+          let supportStack = document.getElementById('gc-support-stack');
+          if (!supportStack) {
+            supportStack = document.createElement('div');
+            supportStack.id = 'gc-support-stack';
+            supportStack.className = 'gc-support-stack';
+            focusShell.insertAdjacentElement('afterend', supportStack);
+          }
+          Array.from(pageShell.querySelectorAll('.gc-detail-section')).forEach(section => {
+            supportStack.appendChild(section);
+          });
+        }
+        if (heroSection && focusShell && focusShell.previousElementSibling !== heroSection) {
+          heroSection.insertAdjacentElement('afterend', focusShell);
+        }
+      } else {
+        restoreAuthoredOrder();
+      }
     }
+
+    function applyMode(mode) {
+      document.documentElement.setAttribute('data-gc-mode', mode);
+      gcMode = mode;
+      if (modeToggleBtn) {
+        modeToggleBtn.setAttribute('aria-pressed', mode === 'lesson' ? 'true' : 'false');
+        const label = modeToggleBtn.querySelector('.gc-mode-toggle-label');
+        if (label) label.textContent = mode === 'lesson' ? 'Switch to App Mode' : 'Switch to Lesson Mode';
+      }
+      reflowForMode(mode);
+    }
+
+    modeToggleBtn?.addEventListener('click', function () {
+      const next = gcMode === 'lesson' ? 'app' : 'lesson';
+      saveMode(next);
+      applyMode(next);
+    });
+
+    snapshotAuthoredOrder();
+    applyMode(gcMode);
 
     const stage = SimKit.canvas2d(canvas, { box: canvas.parentElement, dpr: false, onResize: function (rCtx) {
       ctx = rCtx;
@@ -4576,6 +4703,125 @@
     renderCalculatorScreen();
     tryAutoImportData();
     window.requestAnimationFrame(animateFrame);
+
+    /* ═══════════════════════════════════════════════════════
+       MINI-GRAPH WIDGET — a small, independent, page-scoped
+       live graph you can drop into any lesson example via
+       <div class="gc-mini-graph" data-expr="..." data-view="...">.
+       Each instance keeps its own view/canvas closure; none of
+       them touch the singleton view/fns/modelState above, which
+       power only #gc-calculator.
+    ═══════════════════════════════════════════════════════ */
+    function mountMiniGraph(container) {
+      const exprs = (container.dataset.expr || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+      if (!exprs.length) return;
+      const viewParts = (container.dataset.view || '-10,10,-10,10').split(',').map(Number);
+      const miniView = { xMin: viewParts[0], xMax: viewParts[1], yMin: viewParts[2], yMax: viewParts[3] };
+      const height = Number(container.dataset.height) || 160;
+      const interactive = container.dataset.interactive === 'true';
+      const userColors = (container.dataset.colors || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+
+      container.classList.add('gc-mini-graph-mounted');
+      container.style.height = height + 'px';
+      const miniCanvas = document.createElement('canvas');
+      container.appendChild(miniCanvas);
+
+      let miniCtx = null, miniWidth = 0, miniHeight = 0;
+
+      function palette() {
+        const theme = SimKit.theme.colors();
+        const fallback = [theme.accent, '#ff9500', '#34c759', '#ff375f'];
+        return exprs.map(function (_, i) { return userColors[i] || fallback[i % fallback.length]; });
+      }
+
+      function toCanvasX(x) { return ((x - miniView.xMin) / (miniView.xMax - miniView.xMin)) * miniWidth; }
+      function toCanvasY(y) { return miniHeight - ((y - miniView.yMin) / (miniView.yMax - miniView.yMin)) * miniHeight; }
+
+      function render() {
+        if (!miniCtx) return;
+        const theme = SimKit.theme.colors();
+        const colors = palette();
+        miniCtx.clearRect(0, 0, miniWidth, miniHeight);
+
+        // Axes (only drawn if they fall within the current view).
+        miniCtx.strokeStyle = theme.textMuted;
+        miniCtx.lineWidth = 1;
+        if (miniView.yMin <= 0 && miniView.yMax >= 0) {
+          const y0 = toCanvasY(0);
+          miniCtx.beginPath(); miniCtx.moveTo(0, y0); miniCtx.lineTo(miniWidth, y0); miniCtx.stroke();
+        }
+        if (miniView.xMin <= 0 && miniView.xMax >= 0) {
+          const x0 = toCanvasX(0);
+          miniCtx.beginPath(); miniCtx.moveTo(x0, 0); miniCtx.lineTo(x0, miniHeight); miniCtx.stroke();
+        }
+
+        exprs.forEach(function (expr, i) {
+          miniCtx.strokeStyle = colors[i];
+          miniCtx.lineWidth = 2;
+          miniCtx.beginPath();
+          let penDown = false;
+          const steps = Math.max(64, Math.floor(miniWidth));
+          for (let s = 0; s <= steps; s++) {
+            const x = miniView.xMin + (s / steps) * (miniView.xMax - miniView.xMin);
+            let y;
+            try { y = evalExpr(expr, x); } catch (e) { y = NaN; }
+            if (!isFinite(y)) { penDown = false; continue; }
+            const cx = toCanvasX(x);
+            const cy = toCanvasY(y);
+            if (!penDown) { miniCtx.moveTo(cx, cy); penDown = true; }
+            else { miniCtx.lineTo(cx, cy); }
+          }
+          miniCtx.stroke();
+        });
+      }
+
+      const miniStage = SimKit.canvas2d(miniCanvas, { box: container, dpr: 2, onResize: function (rCtx, w, h) {
+        miniCtx = rCtx; miniWidth = w; miniHeight = h;
+        render();
+      } });
+
+      SimKit.theme.onChange(render);
+
+      if (interactive) {
+        let dragging = false;
+        let lastX = 0, lastY = 0;
+        miniCanvas.addEventListener('pointerdown', function (e) {
+          dragging = true; lastX = e.clientX; lastY = e.clientY;
+          miniCanvas.setPointerCapture(e.pointerId);
+        });
+        miniCanvas.addEventListener('pointermove', function (e) {
+          if (!dragging) return;
+          const dx = e.clientX - lastX;
+          const dy = e.clientY - lastY;
+          lastX = e.clientX; lastY = e.clientY;
+          const spanX = miniView.xMax - miniView.xMin;
+          const spanY = miniView.yMax - miniView.yMin;
+          const shiftX = -(dx / miniWidth) * spanX;
+          const shiftY = (dy / miniHeight) * spanY;
+          miniView.xMin += shiftX; miniView.xMax += shiftX;
+          miniView.yMin += shiftY; miniView.yMax += shiftY;
+          render();
+        });
+        miniCanvas.addEventListener('pointerup', function () { dragging = false; });
+        miniCanvas.addEventListener('pointercancel', function () { dragging = false; });
+        miniCanvas.addEventListener('wheel', function (e) {
+          e.preventDefault();
+          const factor = e.deltaY > 0 ? 1.1 : 0.9;
+          const cx = (miniView.xMin + miniView.xMax) / 2;
+          const cy = (miniView.yMin + miniView.yMax) / 2;
+          const spanX = (miniView.xMax - miniView.xMin) * factor;
+          const spanY = (miniView.yMax - miniView.yMin) * factor;
+          miniView.xMin = cx - spanX / 2; miniView.xMax = cx + spanX / 2;
+          miniView.yMin = cy - spanY / 2; miniView.yMax = cy + spanY / 2;
+          render();
+        }, { passive: false });
+      }
+    }
+
+    function mountAllMiniGraphs() {
+      document.querySelectorAll('.gc-mini-graph').forEach(mountMiniGraph);
+    }
+    mountAllMiniGraphs();
 
     /* ═══════════════════════════════════════════════════════
        QUICK CHECK QUIZ
@@ -4748,6 +4994,7 @@
   </script>
   <script src="../../../assets/js/classroom-animations.js"></script>
   <script src="../../../assets/js/lesson-layout.js"></script>
+  <script src="../../../assets/js/lesson-content.js"></script>
   <script src="../../../assets/js/math-pathway-nav.js"></script>
 <script src="../../../assets/js/lesson-print-button.js"></script>
 </body>
