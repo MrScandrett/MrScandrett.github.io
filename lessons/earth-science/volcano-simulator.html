@@ -483,8 +483,9 @@
 
 </div><!-- .ll-viewport -->
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js" integrity="sha384-9EQoUIJYrv09/oYhSxnw1VpLcfPw3BM9dE7+D/3wGUPeLLa7F9Z6OAoD+i/M6FK9" crossorigin="anonymous"></script>
-  <script>
+  <script src="../../assets/js/sim-kit.js"></script>
+  <script type="module">
+  import { THREE } from '../../assets/vendor/three-bundle.min.js';
   (function () {
     'use strict';
 
@@ -603,7 +604,7 @@
       camera.aspect = W / H; camera.updateProjectionMatrix();
     }
     window.addEventListener('resize', onResize);
-    requestAnimationFrame(onResize);
+    onResize();
 
     /* ══════════════════════════════════════════
        LIGHTING
@@ -719,6 +720,36 @@
 
     // Volcano profile functions — height in world units
     function volcanoH(x, z, vtype, stage = 0) {
+      const hmap = heightmaps[activeEruption];
+      if (hmap) {
+          // x and z are from -TERRAIN_SIZE/2 to TERRAIN_SIZE/2
+          const u = (x + TERRAIN_SIZE/2) / TERRAIN_SIZE;
+          const v = (z + TERRAIN_SIZE/2) / TERRAIN_SIZE;
+          const px = Math.max(0, Math.min(hmap.width - 1, Math.floor(u * hmap.width)));
+          const py = Math.max(0, Math.min(hmap.height - 1, Math.floor(v * hmap.height)));
+          let val = hmap.data[py * hmap.width + px];
+          
+          // Map to WebGL height space. Procedural strato went up to ~10. 
+          // We can scale it. Yellowstone is high elevation plateau (val~0.8).
+          // Let's normalize it a bit so the mountains fit on screen.
+          // We can just multiply by 15.
+          let h = val * 12.0; 
+          
+          // Allow the procedural St Helens collapse to still subtract from it
+          if (activeEruption === 'sthelenr1980' && stage > 0) {
+             const r = Math.sqrt(x * x + z * z);
+             const R = TERRAIN_SIZE * 0.38;
+             if (z < 0) {
+                const collapse = Math.min(1, Math.max(0, (stage - 0.2) * 2));
+                if (collapse > 0) {
+                   const blastR = r / R;
+                   h -= collapse * 4.5 * Math.max(0, 1 - blastR) * Math.abs(z)/r;
+                }
+             }
+          }
+          return h;
+      }
+
       const r = Math.sqrt(x * x + z * z);
       const R = TERRAIN_SIZE * 0.38;
       const noise = fbm(x * 0.18, z * 0.18, 6) * 0.9;
@@ -1460,8 +1491,10 @@
     }
 
     function rebuildTerrain() {
-      const lavaI = (1 - state.viscosity / 100) * (state.intensity / 100);
-      buildTerrain(state.vtype, lavaI);
+      fetchHeightmap(activeEruption).then(() => {
+        const lavaI = (1 - state.viscosity / 100) * (state.intensity / 100);
+        buildTerrain(state.vtype, lavaI);
+      });
     }
 
     // Slider listeners
@@ -1698,12 +1731,10 @@
     /* ══════════════════════════════════════════
        ANIMATION LOOP
     ══════════════════════════════════════════ */
-    let lastTs = 0, spawnAcc = 0;
+    let spawnAcc = 0;
 
-    function animate(ts) {
-      requestAnimationFrame(animate);
-      const dt = Math.min((ts - lastTs) / 1000, 0.05);
-      lastTs = ts;
+    function animate(dt, ts) {
+      dt = Math.min(dt, 0.05);
 
       if (!isDrag) { camTheta += dt * 0.04; updateCam(); }
 
@@ -1743,7 +1774,7 @@
        INIT
     ══════════════════════════════════════════ */
     loadEruption('vesuvius79');
-    requestAnimationFrame(animate);
+    SimKit.loop(animate);
 
   })();
   </script>
