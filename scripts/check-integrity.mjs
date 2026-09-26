@@ -11,6 +11,7 @@ const SKIP_DIRS = new Set([
   "node_modules",
   "test-results",
   "tmp",
+  "dist",
 ]);
 
 const TEXT_EXTENSIONS = new Set([
@@ -91,6 +92,8 @@ function shouldCheckReference(value) {
   if (isExternalReference(trimmed)) return false;
   if (/^(?:data|mailto|tel|javascript):/i.test(trimmed)) return false;
   if (trimmed.includes("{{") || trimmed.includes("${")) return false;
+  // Ignore local dev server API endpoints
+  if (trimmed.startsWith("/api/")) return false;
   // Ellipsis stand-ins from prose that teaches HTML, e.g. <code>&lt;a href="..."&gt;</code>
   // in build-your-student-page.html. Never a real path, so don't report them missing.
   if (/^[.…]+$/.test(trimmed)) return false;

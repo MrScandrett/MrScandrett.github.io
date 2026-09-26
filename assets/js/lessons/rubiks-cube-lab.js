@@ -7,7 +7,7 @@
  *   · a Three.js cube that mirrors it and animates every turn
  *   · a step-by-step player for the solution the solver hands back
  *
- * Requires rubiks-cube-solver.js and Three.js (r128) to be loaded first.
+ * Requires rubiks-cube-solver.js and window.THREE (the shared vendor bundle) to be loaded first.
  */
 (function () {
   'use strict';
