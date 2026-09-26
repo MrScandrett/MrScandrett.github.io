@@ -9,6 +9,40 @@
   <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
   <style>
+
+    /* Blender Workspace Layout */
+    html, body { overflow: hidden; width: 100%; height: 100%; margin: 0; padding: 0; }
+    .ll-viewport { display: flex; flex-direction: column; height: 100vh; }
+    .ll-stage { flex: 1; position: relative; overflow: hidden; background: #000; }
+    
+    .vs-hero { display: none; }
+    
+    .volcano-outer {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      border-radius: 0; border: none; aspect-ratio: auto; box-shadow: none;
+    }
+    
+    .blender-panel {
+      position: absolute; top: 1rem; bottom: 5rem; width: 340px;
+      background: rgba(8, 4, 2, 0.82); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,120,40,0.25); border-radius: 12px;
+      display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden;
+      z-index: 10; box-shadow: 0 16px 40px rgba(0,0,0,0.8);
+      padding: 1.2rem;
+    }
+    .panel-left { left: 1rem; }
+    .panel-right { right: 1rem; }
+    
+    .blender-panel::-webkit-scrollbar { width: 6px; }
+    .blender-panel::-webkit-scrollbar-thumb { background: rgba(255,120,40,0.3); border-radius: 3px; }
+    
+    .timeline-overlay {
+      position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%);
+      width: clamp(400px, 60vw, 800px); z-index: 10;
+      background: rgba(8, 4, 2, 0.85); border: 1px solid rgba(255,120,40,0.3);
+      padding: 1rem 1.5rem; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.7);
+    }
+
     body { background: #060308; color: #e0d0c0; margin: 0; overflow-x: hidden; }
 
     /* ── Topbar ── */
@@ -344,52 +378,48 @@
     </div>
   </nav>
 
-  <div class="ll-stage" id="main-content">
-
-    <div class="ll-sim">
-      <header class="vs-hero">
-        <h1>🌋 Volcano Simulator</h1>
-        <p>Explore real volcano types and replay history's most notorious eruptions — from Pompeii to Yellowstone. Watch lava flows, ash columns, and pyroclastic surges unfold in 3D.</p>
-      </header>
-
-      <div class="vs-wrap">
-
-        <!-- 3D Canvas -->
-        <div class="volcano-outer" id="vol-outer">
-          <canvas id="vol-canvas"></canvas>
-          <div class="vol-overlay">
-            <span class="vol-badge" id="vol-name-badge">🌋 Mt Vesuvius — 79 AD</span>
-            <span class="vei-badge" id="vei-badge">VEI 5 · Stratovolcano</span>
-          </div>
-          
-          <!-- Timeline Overlay -->
-          <div class="timeline-overlay" id="timeline-overlay">
-            <div class="tl-labels">
-              <span>Pre-eruption</span>
-              <span>During Eruption</span>
-              <span>Aftermath</span>
-            </div>
-            <input type="range" id="s-timeline" min="0" max="1" step="0.01" value="0.5" />
-          </div>
-
-          <div class="drag-hint">Drag to orbit · Scroll to zoom</div>
-        </div>
-
+      <div class="ll-stage" id="main-content">
+    
+    <!-- 3D Canvas (Full Screen) -->
+    <div class="volcano-outer" id="vol-outer">
+      <canvas id="vol-canvas"></canvas>
+      <div class="vol-overlay" style="top: 1rem; left: 1rem;">
+        <span class="vol-badge" id="vol-name-badge">🌋 Mt Vesuvius — 79 AD</span>
+        <span class="vei-badge" id="vei-badge">VEI 5 · Stratovolcano</span>
       </div>
-    </div><!-- .ll-sim -->
+      
+      <div class="drag-hint" style="bottom: 5rem;">Drag to orbit · Scroll to zoom</div>
+    </div>
 
-    <aside class="vs-hud-panel" aria-hidden="false">
-      <div class="vs-hud-body">
-    <!-- Controls -->
-    <div class="vs-panel">
+    <!-- Timeline Overlay (Bottom Center) -->
+    <div class="timeline-overlay" id="timeline-overlay">
+      <div class="tl-labels">
+        <span>Pre-eruption</span>
+        <span>During Eruption</span>
+        <span>Aftermath</span>
+      </div>
+      <input type="range" id="s-timeline" min="0" max="1" step="0.01" value="0.5" />
+    </div>
 
-      <!-- Famous eruptions -->
+    <!-- Blender Left Panel -->
+    <aside class="blender-panel panel-left">
       <div class="vs-card">
         <h3>Famous Eruptions</h3>
         <div class="eruption-scroll" id="eruption-scroll"></div>
       </div>
+      <div class="vs-card" style="margin-top: auto; padding-top: 1rem; border-top: 1px solid rgba(255,120,40,0.2);">
+        <!-- Event description -->
+      <div class="event-desc" id="event-desc">
+      </div>
+      <figure id="event-photo-container" data-zoomable style="margin-top: 1rem; margin-bottom: 0; display: none;">
+        <img id="event-photo" src="" alt="Event visualization" style="width: 100%; border-radius: 4px; object-fit: cover; max-height: 200px;">
+        <figcaption id="event-photo-caption" style="display:none;"></figcaption>
+      </figure>
+      </div>
+    </aside>
 
-      <!-- Volcano type -->
+    <!-- Blender Right Panel -->
+    <aside class="blender-panel panel-right">
       <div class="vs-card">
         <h3>Volcano Type</h3>
         <div class="type-tabs" id="type-tabs">
@@ -399,8 +429,6 @@
           <button class="type-tab" data-vtype="super">💥<br>Super</button>
         </div>
       </div>
-
-      <!-- Sliders -->
       <div class="vs-card">
         <h3>Eruption Controls</h3>
         <div class="param-row">
@@ -424,8 +452,6 @@
           <div class="range-ends"><span>None</span><span>Full surge</span></div>
         </div>
       </div>
-
-      <!-- Readouts -->
       <div class="vs-card">
         <h3>Eruption Data</h3>
         <div class="stat-grid">
@@ -442,45 +468,8 @@
           <div class="vei-labels"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span></div>
         </div>
       </div>
-
-      <!-- Event description -->
-      <div class="event-desc" id="event-desc">
-      </div>
-      <figure id="event-photo-container" data-zoomable style="margin-top: 1rem; margin-bottom: 0; display: none;">
-        <img id="event-photo" src="" alt="Event visualization" style="width: 100%; border-radius: 4px; object-fit: cover; max-height: 200px;">
-        <figcaption id="event-photo-caption" style="display:none;"></figcaption>
-      </figure>
-
-    </div><!-- .vs-panel -->
-        </div><!-- #vs-pane-params -->
-
-        <div class="ll-pane" id="vs-pane-guide">
-          <div class="vs-card" style="margin-bottom:1rem">
-            <h3>Volcanology Essentials</h3>
-            <div class="info-row">
-              <div class="info-card">
-                <h4>🔥 Magma Types</h4>
-                <p><strong>Basaltic</strong> magma (Hawaii) has low silica and is runny — it erupts effusively, creating broad shield volcanoes and flowing lava rivers. <strong>Rhyolitic</strong> magma (Yellowstone) has high silica, is incredibly viscous, and traps gas — leading to explosive, catastrophic eruptions.</p>
-              </div>
-              <div class="info-card">
-                <h4>📊 VEI Scale</h4>
-                <p>The <em>Volcanic Explosivity Index</em> measures eruption magnitude on a 0–8 logarithmic scale. Each step is 10× more powerful. VEI 8 "supereruptions" are rare but can lower global temperatures for years by injecting sulfur dioxide into the stratosphere.</p>
-              </div>
-              <div class="info-card">
-                <h4>💨 Pyroclastic Flows</h4>
-                <p>The most lethal volcanic hazard — dense, fast-moving avalanches of hot gas, ash, and rock fragments travelling at 100–700 km/h at 300–800 °C. No natural shelter can protect against a direct flow. They were responsible for most deaths at Vesuvius and St. Helens.</p>
-              </div>
-            </div>
-          </div>
-          <div class="vs-card">
-            <h3>Go Deeper</h3>
-            <p>This simulator uses simplified rules for plume height, ash spread, and pyroclastic surge. Real volcanologists and physicists model the underlying turbulence and fluid convection with tools like <a href="https://polymathic-ai.org/the_well/" target="_blank" rel="noopener noreferrer" style="color:#f0a060;font-weight:600;">The Well</a>, a free 15TB library of physics simulation datasets — covering turbulence, convection, and shock-driven flows — used to train machine learning models on real physical systems.</p>
-          </div>
-        </div>
-
-      </div>
-    </aside><!-- .vs-hud-panel -->
-
+    </aside>
+    
   </div><!-- .ll-stage -->
 
 </div><!-- .ll-viewport -->
