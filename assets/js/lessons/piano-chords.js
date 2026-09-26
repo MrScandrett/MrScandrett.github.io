@@ -1515,6 +1515,362 @@ document.addEventListener('DOMContentLoaded', function () {
 
   renderPracticeListUI();
 
+  /* ---------- Hand position (five-finger position, both hands) ---------- */
+
+  var HAND_POSITIONS = {
+    right: { fingers: { 0: 1, 2: 2, 4: 3, 5: 4, 7: 5 }, order: [0, 2, 4, 5, 7], label: 'Right hand', desc: 'Thumb (1) on Middle C, pinky (5) on G — the standard beginner "C position."' },
+    left: { fingers: { 0: 5, 2: 4, 4: 3, 5: 2, 7: 1 }, order: [0, 2, 4, 5, 7], label: 'Left hand', desc: 'Pinky (5) on C, thumb (1) on G — mirrored from the right hand. On a real piano this same shape sits an octave or more lower; we show it here on the same five keys so you can compare finger numbers directly.' }
+  };
+  var handBoard = document.getElementById('pcHandBoard');
+  var handMeta = document.getElementById('pcHandMeta');
+  var handCurrent = 'right';
+
+  function renderHandPosition() {
+    if (!handBoard) return;
+    var pos = HAND_POSITIONS[handCurrent];
+    var active = {};
+    pos.order.forEach(function (idx) { active[idx] = true; });
+    renderKeyboard(handBoard, { active: active, fingerMap: pos.fingers, interactive: false });
+    if (handMeta) handMeta.innerHTML = '<h3>' + pos.label + ' — five-finger C position</h3><p class="pc-enc-notes">' + pos.desc + '</p>';
+    Array.prototype.forEach.call(document.querySelectorAll('.pc-hand-toggle'), function (btn) {
+      btn.classList.toggle('is-active', btn.getAttribute('data-hand') === handCurrent);
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.pc-hand-toggle'), function (btn) {
+    btn.addEventListener('click', function () { handCurrent = btn.getAttribute('data-hand'); renderHandPosition(); });
+  });
+  renderHandPosition();
+
+  var handPlayUp = document.getElementById('pcHandPlayUp');
+  var handPlayDown = document.getElementById('pcHandPlayDown');
+  if (handPlayUp) handPlayUp.addEventListener('click', function () {
+    if (!window.PianoAudio) return;
+    var pos = HAND_POSITIONS[handCurrent];
+    window.PianoAudio.broken(pos.order.map(function (idx) { return PT.noteFreq(idx); }), { interval: 0.32 });
+  });
+  if (handPlayDown) handPlayDown.addEventListener('click', function () {
+    if (!window.PianoAudio) return;
+    var pos = HAND_POSITIONS[handCurrent];
+    window.PianoAudio.broken(pos.order.slice().reverse().map(function (idx) { return PT.noteFreq(idx); }), { interval: 0.32 });
+  });
+
+  /* ---------- Staff notation engine ----------
+     A simplified single-clef (treble) engraving: this whole lesson's keyboard
+     never goes below Middle C, so every note that needs drawing lands on or
+     above the treble staff. Vertical placement is computed in "diatonic
+     steps" — one step per natural letter name, independent of accidentals —
+     which is exactly how real engraving spaces lines and spaces evenly
+     regardless of sharps. Reference: E4 (the treble staff's bottom line) = 0. */
+  var LETTER_ORDER = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+  var PC_TO_LETTER = {
+    0: { letter: 'C', acc: 0 }, 1: { letter: 'C', acc: 1 }, 2: { letter: 'D', acc: 0 }, 3: { letter: 'D', acc: 1 },
+    4: { letter: 'E', acc: 0 }, 5: { letter: 'F', acc: 0 }, 6: { letter: 'F', acc: 1 }, 7: { letter: 'G', acc: 0 },
+    8: { letter: 'G', acc: 1 }, 9: { letter: 'A', acc: 0 }, 10: { letter: 'A', acc: 1 }, 11: { letter: 'B', acc: 0 }
+  };
+  var STAFF_REF_STEP = 4 * 7 + 2; /* E4 */
+
+  function diatonicStep(absIndex) {
+    var octave = 4 + Math.floor(absIndex / 12);
+    var pc = PT.mod12(absIndex);
+    var info = PC_TO_LETTER[pc];
+    var letterIndex = LETTER_ORDER.indexOf(info.letter);
+    return (octave * 7 + letterIndex) - STAFF_REF_STEP;
+  }
+
+  var STAFF_SPACE = 9; /* px per diatonic step */
+  var STAFF_TOP_PAD = 46; /* room above the top line for high ledger lines + clef */
+  var STAFF_BOTTOM_PAD = 40;
+  var STAFF_LINE_COUNT = 5;
+
+  /* Renders a horizontal sequence of notes on a single treble staff. `notes`
+     is [{absIndex, dur, dotted}]. opts.showLabels prints the letter name
+     under each note; opts.onNoteClick(index) makes every notehead clickable;
+     opts.currentIndex highlights one note (the playback cursor). */
+  function renderStaff(container, notes, opts) {
+    opts = opts || {};
+    var cellW = opts.cellWidth || 54;
+    var width = Math.max(220, 70 + notes.length * cellW + 30);
+    var bottomLineY = STAFF_TOP_PAD + (STAFF_LINE_COUNT - 1) * STAFF_SPACE * 2;
+    var height = STAFF_TOP_PAD + STAFF_BOTTOM_PAD + (STAFF_LINE_COUNT - 1) * STAFF_SPACE * 2;
+
+    function yForStep(step) { return bottomLineY - step * STAFF_SPACE; }
+
+    var svg = '<svg class="pc-staff-svg" viewBox="0 0 ' + width + ' ' + height + '" width="' + width + '" height="' + height + '" role="img" aria-label="Musical staff">';
+    for (var li = 0; li < STAFF_LINE_COUNT; li++) {
+      var ly = bottomLineY - li * STAFF_SPACE * 2;
+      svg += '<line class="pc-staff-line" x1="8" x2="' + (width - 8) + '" y1="' + ly + '" y2="' + ly + '" />';
+    }
+    svg += '<text class="pc-staff-clef" x="10" y="' + (yForStep(4) + 15) + '" font-size="42">𝄞</text>';
+
+    notes.forEach(function (note, i) {
+      var x = 66 + i * cellW;
+      var step = diatonicStep(note.absIndex);
+      var y = yForStep(step);
+      var info = PC_TO_LETTER[PT.mod12(note.absIndex)];
+      var isHollow = (note.dur || 1) >= 2;
+      var groupClasses = 'pc-note-group' + (opts.currentIndex === i ? ' is-current' : '') + (opts.onNoteClick ? ' is-clickable' : '');
+
+      /* Ledger lines: every staff position strictly outside the 5-line band
+         (steps 0..8) needs one short line per skipped line-step, drawn only
+         at even steps (the actual line positions), from the staff edge out
+         to (and including) this note's step. */
+      var ledgers = '';
+      if (step < 0) {
+        for (var s = -2; s >= step; s -= 2) {
+          ledgers += '<line class="pc-staff-ledger" x1="' + (x - 11) + '" x2="' + (x + 11) + '" y1="' + yForStep(s) + '" y2="' + yForStep(s) + '" />';
+        }
+      } else if (step > 8) {
+        for (var s2 = 10; s2 <= step; s2 += 2) {
+          ledgers += '<line class="pc-staff-ledger" x1="' + (x - 11) + '" x2="' + (x + 11) + '" y1="' + yForStep(s2) + '" y2="' + yForStep(s2) + '" />';
+        }
+      }
+
+      var accidental = info.acc ? '<text class="pc-note-accidental" x="' + (x - 17) + '" y="' + (y + 5) + '">♯</text>' : '';
+      var dot = note.dotted ? '<circle class="pc-note-dot" cx="' + (x + 10) + '" cy="' + (y - 2) + '" r="1.6" />' : '';
+      var stemUp = step < 4;
+      var stem = '<line class="pc-note-stem" x1="' + (x + (stemUp ? 6.2 : -6.2)) + '" x2="' + (x + (stemUp ? 6.2 : -6.2)) + '" y1="' + y + '" y2="' + (stemUp ? y - 30 : y + 30) + '" />';
+      var label = opts.showLabels ? '<text class="pc-note-label" x="' + x + '" y="' + (bottomLineY + 26) + '">' + PT.noteLabel(note.absIndex) + '</text>' : '';
+
+      svg += '<g class="' + groupClasses + '" data-index="' + i + '">' + ledgers +
+        accidental +
+        '<ellipse class="pc-note-head' + (isHollow ? ' is-hollow' : '') + '" cx="' + x + '" cy="' + y + '" rx="6.4" ry="4.8" transform="rotate(-18 ' + x + ' ' + y + ')" />' +
+        dot + stem + label + '</g>';
+    });
+
+    svg += '</svg>';
+    container.innerHTML = svg;
+
+    if (opts.onNoteClick) {
+      Array.prototype.forEach.call(container.querySelectorAll('.pc-note-group'), function (g) {
+        g.addEventListener('click', function () { opts.onNoteClick(Number(g.getAttribute('data-index'))); });
+      });
+    }
+  }
+
+  /* ---------- Reading music: click a key, see it appear on the staff ---------- */
+  var readBoard = document.getElementById('pcReadBoard');
+  var readStaff = document.getElementById('pcReadStaff');
+  var readLabel = document.getElementById('pcReadLabel');
+  var readActive = { 4: true };
+
+  function renderReading() {
+    if (!readBoard) return;
+    renderKeyboard(readBoard, {
+      active: readActive,
+      interactive: true,
+      onToggle: function (absIndex) {
+        readActive = {};
+        readActive[absIndex] = true;
+        renderReading();
+        if (window.PianoAudio) window.PianoAudio.tone(PT.noteFreq(absIndex));
+      }
+    });
+    var idx = Number(Object.keys(readActive)[0]);
+    if (readStaff) renderStaff(readStaff, [{ absIndex: idx, dur: 1 }], { showLabels: false, cellWidth: 90 });
+    if (readLabel) {
+      var info = PC_TO_LETTER[PT.mod12(idx)];
+      var step = diatonicStep(idx);
+      var where = step === 0 ? 'the bottom line' : (Math.abs(step) % 2 === 0 ? 'a line' : 'a space');
+      if (step < -1 || step > 8) where = 'a ledger line ' + (step < 0 ? 'below' : 'above') + ' the staff';
+      readLabel.textContent = PT.noteLabel(idx) + (info.acc ? ' (sharp)' : '') + ' — sits on ' + where + '.';
+    }
+  }
+  renderReading();
+
+  /* ---------- Note-ID flashcard quiz ---------- */
+  var quizStaffEl = document.getElementById('pcQuizStaff');
+  var quizLetters = document.getElementById('pcQuizLetters');
+  var quizResultEl = document.getElementById('pcQuizNoteResult');
+  var quizScoreEl = document.getElementById('pcQuizNoteScore');
+  var quizNextBtn = document.getElementById('pcNoteQuizNext');
+  var quizScore = { right: 0, total: 0 };
+  var quizAnswer = null;
+
+  /* Natural (white-key) notes only, so the quiz never hinges on sharp
+     spelling — the point here is reading lines/spaces, not accidentals. */
+  var QUIZ_POOL = PT.buildKeys().white.map(function (k) { return k.absIndex; });
+
+  function nextQuizNote() {
+    quizAnswer = QUIZ_POOL[Math.floor(Math.random() * QUIZ_POOL.length)];
+    if (quizStaffEl) renderStaff(quizStaffEl, [{ absIndex: quizAnswer, dur: 1 }], { cellWidth: 90 });
+    if (quizResultEl) quizResultEl.textContent = '';
+  }
+
+  if (quizLetters) {
+    LETTER_ORDER.forEach(function (letter) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'pc-btn';
+      btn.textContent = letter;
+      btn.addEventListener('click', function () {
+        if (quizAnswer == null) return;
+        quizScore.total++;
+        var correctLetter = PC_TO_LETTER[PT.mod12(quizAnswer)].letter;
+        if (letter === correctLetter) {
+          quizScore.right++;
+          if (quizResultEl) quizResultEl.textContent = 'Correct — that\'s ' + PT.noteLabel(quizAnswer) + '.';
+        } else if (quizResultEl) {
+          quizResultEl.textContent = 'Not quite — that note is ' + PT.noteLabel(quizAnswer) + '.';
+        }
+        if (window.PianoAudio) window.PianoAudio.tone(PT.noteFreq(quizAnswer));
+        if (quizScoreEl) quizScoreEl.textContent = 'Score: ' + quizScore.right + ' / ' + quizScore.total;
+        setTimeout(nextQuizNote, 1100);
+      });
+      quizLetters.appendChild(btn);
+    });
+  }
+  if (quizNextBtn) quizNextBtn.addEventListener('click', nextQuizNote);
+  nextQuizNote();
+
+  /* ---------- Scales on the staff (companion to the keyboard view above) ---------- */
+  var scaleStaffEl = document.getElementById('pcScaleStaff');
+  var renderScalesBase = renderScales;
+  renderScales = function () {
+    renderScalesBase();
+    if (!scaleStaffEl) return;
+    var notes = scaleCurrentType.intervals.map(function (iv) { return { absIndex: scaleCurrentRoot + iv, dur: 1 }; });
+    notes.push({ absIndex: scaleCurrentRoot + 12, dur: 2 });
+    renderStaff(scaleStaffEl, notes, { showLabels: true, cellWidth: 46 });
+  };
+  renderScales();
+
+  /* ---------- Play a piece: public-domain classical themes & hymn phrases ----------
+     Pitches are the well-known opening phrases (kept short and simple on
+     purpose so the transcription is unambiguous); rhythm is simplified to
+     quarter/half/dotted values that fit easily on one staff line. All works
+     are long out of copyright. */
+  var PIECES = [
+    {
+      id: 'twinkle', title: 'Twinkle, Twinkle, Little Star', composer: 'Traditional (French folk melody, published 1761)',
+      notes: [
+        { absIndex: 0, dur: 1 }, { absIndex: 0, dur: 1 }, { absIndex: 7, dur: 1 }, { absIndex: 7, dur: 1 },
+        { absIndex: 9, dur: 1 }, { absIndex: 9, dur: 1 }, { absIndex: 7, dur: 2 },
+        { absIndex: 5, dur: 1 }, { absIndex: 5, dur: 1 }, { absIndex: 4, dur: 1 }, { absIndex: 4, dur: 1 },
+        { absIndex: 2, dur: 1 }, { absIndex: 2, dur: 1 }, { absIndex: 0, dur: 2 }
+      ]
+    },
+    {
+      id: 'ode', title: 'Ode to Joy (opening theme)', composer: 'Ludwig van Beethoven — Symphony No. 9 (1824)',
+      notes: [
+        { absIndex: 4, dur: 1 }, { absIndex: 4, dur: 1 }, { absIndex: 5, dur: 1 }, { absIndex: 7, dur: 1 },
+        { absIndex: 7, dur: 1 }, { absIndex: 5, dur: 1 }, { absIndex: 4, dur: 1 }, { absIndex: 2, dur: 1 },
+        { absIndex: 0, dur: 1 }, { absIndex: 0, dur: 1 }, { absIndex: 2, dur: 1 }, { absIndex: 4, dur: 1 },
+        { absIndex: 4, dur: 1.5, dotted: true }, { absIndex: 2, dur: 0.5 }, { absIndex: 2, dur: 2 }
+      ]
+    },
+    {
+      id: 'furelise', title: 'Für Elise (opening motif)', composer: 'Ludwig van Beethoven (c. 1810)',
+      notes: [
+        { absIndex: 16, dur: 0.5 }, { absIndex: 15, dur: 0.5 }, { absIndex: 16, dur: 0.5 }, { absIndex: 15, dur: 0.5 },
+        { absIndex: 16, dur: 0.5 }, { absIndex: 11, dur: 0.5 }, { absIndex: 14, dur: 0.5 }, { absIndex: 12, dur: 0.5 },
+        { absIndex: 9, dur: 1.5, dotted: true }
+      ]
+    },
+    {
+      id: 'joytotheworld', title: 'Joy to the World (opening line)', composer: 'Lowell Mason, 1848 — hymn tune "Antioch"',
+      notes: [
+        { absIndex: 12, dur: 1 }, { absIndex: 11, dur: 1 }, { absIndex: 9, dur: 1 }, { absIndex: 7, dur: 1 },
+        { absIndex: 5, dur: 1 }, { absIndex: 4, dur: 1 }, { absIndex: 2, dur: 1 }, { absIndex: 0, dur: 2 }
+      ]
+    },
+    {
+      id: 'amazinggrace', title: 'Amazing Grace (opening phrase)', composer: 'Traditional American hymn tune "New Britain" (19th c.)',
+      notes: [
+        { absIndex: 7, dur: 1.5, dotted: true }, { absIndex: 0, dur: 0.5 }, { absIndex: 4, dur: 1 },
+        { absIndex: 0, dur: 1 }, { absIndex: 4, dur: 1 }, { absIndex: 2, dur: 1 }, { absIndex: 0, dur: 2 }
+      ]
+    }
+  ];
+
+  var pieceRow = document.getElementById('pcPieceRow');
+  var pieceStaff = document.getElementById('pcPieceStaff');
+  var pieceCardEl = document.getElementById('pcPieceCard');
+  var pieceKeyboardEl = document.getElementById('pcPieceKeyboard');
+  var pieceTransport = document.getElementById('pcPieceTransport');
+  var pieceTempoIn = document.getElementById('pcPieceTempo');
+  var pieceTempoOut = document.getElementById('pcPieceTempoOut');
+  var pieceShowNames = document.getElementById('pcPieceShowNames');
+  var piecePlayBtn = document.getElementById('pcPiecePlay');
+  var pieceCurrent = PIECES[0];
+  var piecePlaying = false;
+  var pieceTimers = [];
+
+  function renderPieceStaff(currentIndex) {
+    if (pieceStaff) renderStaff(pieceStaff, pieceCurrent.notes, { showLabels: !!(pieceShowNames && pieceShowNames.checked), cellWidth: 50, currentIndex: currentIndex });
+  }
+
+  function renderPiece() {
+    if (pieceCardEl) pieceCardEl.innerHTML = '<h3>' + pieceCurrent.title + '</h3><p>' + pieceCurrent.composer + ' — public domain.</p>';
+    renderPieceStaff(-1);
+    if (pieceKeyboardEl) renderKeyboard(pieceKeyboardEl, { active: {}, interactive: false, playable: false });
+    if (pieceTransport) pieceTransport.textContent = 'Ready. Press Play to hear it, and watch the note light up on the staff and keyboard.';
+    Array.prototype.forEach.call(document.querySelectorAll('.pc-piece-pick'), function (btn) {
+      btn.classList.toggle('is-active', btn.getAttribute('data-piece') === pieceCurrent.id);
+    });
+  }
+
+  function stopPiece() {
+    piecePlaying = false;
+    pieceTimers.forEach(clearTimeout); pieceTimers = [];
+    if (piecePlayBtn) piecePlayBtn.textContent = '▶ Play';
+    renderPieceStaff(-1);
+  }
+
+  if (pieceRow) {
+    PIECES.forEach(function (piece) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'pc-btn pc-piece-pick';
+      btn.setAttribute('data-piece', piece.id);
+      btn.textContent = piece.title;
+      btn.addEventListener('click', function () {
+        studioStop(); stopPiece();
+        pieceCurrent = piece;
+        renderPiece();
+      });
+      pieceRow.appendChild(btn);
+    });
+  }
+  renderPiece();
+
+  if (pieceShowNames) pieceShowNames.addEventListener('change', function () { renderPieceStaff(-1); });
+  if (pieceTempoIn) pieceTempoIn.addEventListener('input', function () {
+    if (pieceTempoOut) pieceTempoOut.textContent = pieceTempoIn.value + ' BPM';
+  });
+
+  if (piecePlayBtn) piecePlayBtn.addEventListener('click', function () {
+    if (piecePlaying) { studioStop(); stopPiece(); if (pieceTransport) pieceTransport.textContent = 'Stopped.'; return; }
+    if (!window.PianoAudio || !window.PianoAudio.getContext()) { if (pieceTransport) pieceTransport.textContent = 'Audio is unavailable in this browser.'; return; }
+    studioStop();
+    piecePlaying = true;
+    piecePlayBtn.textContent = '■ Stop';
+    var bpm = Math.max(40, Math.min(180, Number(pieceTempoIn ? pieceTempoIn.value : 96) || 96));
+    var beat = 60 / bpm;
+    var t = 0;
+    pieceCurrent.notes.forEach(function (note, i) {
+      var when = t;
+      window.PianoAudio.tone(PT.noteFreq(note.absIndex), { delay: when, duration: note.dur * beat * 0.95 });
+      (function (idx, delay) {
+        pieceTimers.push(setTimeout(function () {
+          renderPieceStaff(idx);
+          if (pieceKeyboardEl) { var active = {}; active[note.absIndex] = true; renderKeyboard(pieceKeyboardEl, { active: active, interactive: false, playable: false }); }
+          if (pieceTransport) pieceTransport.textContent = 'Playing note ' + (idx + 1) + ' of ' + pieceCurrent.notes.length + ' — ' + PT.noteLabel(note.absIndex) + '.';
+        }, delay * 1000));
+      })(i, when);
+      t += note.dur * beat;
+    });
+    pieceTimers.push(setTimeout(function () {
+      piecePlaying = false;
+      if (piecePlayBtn) piecePlayBtn.textContent = '▶ Play';
+      renderPieceStaff(-1);
+      if (pieceKeyboardEl) renderKeyboard(pieceKeyboardEl, { active: {}, interactive: false, playable: false });
+      if (pieceTransport) pieceTransport.textContent = 'Finished. Try a slower tempo, or follow along on a real keyboard.';
+    }, t * 1000));
+  });
+
+  var oldStudioStop = studioStop;
+  studioStop = function () { oldStudioStop(); stopPiece(); };
+
   /* ---------- Quiz ---------- */
   var checkBtn = document.getElementById('pcCheckQuiz');
   if (checkBtn) checkBtn.addEventListener('click', function () {

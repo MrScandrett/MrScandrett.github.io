@@ -1007,53 +1007,35 @@
         bottom: 0.75rem;
       }
     }
+
+    /* Scientific plates: labels remain within the image at every viewport size. */
+    .focus-top, .morph-stage { grid-template-columns: 1fr; }
+    .cell-visual, .cell-visual--morph, .microscope-stage, .specimen-layer {
+      position: relative; inset: auto; min-height: 0; padding: 0; overflow: visible;
+      background: #f8faf9; border-radius: 12px; box-shadow: none;
+    }
+    .cell-visual::before, .cell-visual::after, .microscope-stage::before { display:none; }
+    .cell-figure { margin:0; }
+    .cell-figure img { display:block; width:100%; height:auto; border-radius:10px; }
+    .cell-figure figcaption { padding: .8rem 1rem; color:#38515b; font-size:.88rem; line-height:1.6; background:#f0f4f3; }
+    .enlarge-hint { display:block; font-weight:700; color:#28654a; margin-top:.3rem; }
+    .cell-diagram, .specimen-diagram { display:none; position:static; width:100%; height:auto; opacity:1; transform:none; pointer-events:auto; }
+    .cell-diagram.is-active, .specimen-diagram.is-active { display:block; transform:none; }
+    .focus-panel .cell-diagram.is-active, .morph-stage .cell-diagram.is-active { animation:none; }
+    .cell-inspector { position:static; margin-bottom:1rem; transform:none; box-shadow:none; }
+    .microscope-readout { position:static; margin:1rem; }
+    .specimen-layer { border-radius:0; }
+    .cells-grid--2 { grid-template-columns:1fr; }
+    .special-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .special-card .cell-figure { margin:-.3rem -.3rem .8rem; }
+    .special-card figcaption { font-size:.8rem; }
+    .cell-figure img:focus-visible, .organelle-card:focus-visible { outline:3px solid #216f58; outline-offset:3px; }
+    @media (max-width:700px) { .special-grid { grid-template-columns:1fr; } }
   </style>
 </head>
 <body class="cells-page theme-liquid-woodland theme-steam">
 <a class="skip-link" href="#main-content">Skip to content</a>
-<svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute;overflow:hidden">
-  <defs>
-    <linearGradient id="bacteria-shell" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#d8ff9d"/><stop offset="0.35" stop-color="#5fd48c"/><stop offset="0.72" stop-color="#179a74"/><stop offset="1" stop-color="#096456"/>
-    </linearGradient>
-    <radialGradient id="bacteria-cytoplasm" cx="34%" cy="25%" r="78%">
-      <stop offset="0" stop-color="#f2ffd5" stop-opacity=".95"/><stop offset=".42" stop-color="#b5e58a" stop-opacity=".84"/><stop offset="1" stop-color="#4dbf86" stop-opacity=".72"/>
-    </radialGradient>
-    <linearGradient id="flagellum-line" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#d8ff9d"/><stop offset="1" stop-color="#4bcea0"/></linearGradient>
-    <radialGradient id="dna-mass" cx="38%" cy="30%" r="70%"><stop stop-color="#fff8bc"/><stop offset=".5" stop-color="#ffc85b"/><stop offset="1" stop-color="#d97a2e"/></radialGradient>
-    <radialGradient id="animal-cytoplasm" cx="35%" cy="26%" r="78%">
-      <stop offset="0" stop-color="#dcfff2" stop-opacity=".83"/><stop offset=".34" stop-color="#79d8bb" stop-opacity=".62"/><stop offset=".75" stop-color="#19908a" stop-opacity=".5"/><stop offset="1" stop-color="#0d5c69" stop-opacity=".72"/>
-    </radialGradient>
-    <radialGradient id="nucleus-halo" cx="34%" cy="28%" r="72%"><stop stop-color="#fff7c8" stop-opacity=".8"/><stop offset=".52" stop-color="#e5a75c" stop-opacity=".55"/><stop offset="1" stop-color="#9b593b" stop-opacity=".72"/></radialGradient>
-    <radialGradient id="nucleus-core" cx="32%" cy="26%" r="75%"><stop stop-color="#fff9d9"/><stop offset=".55" stop-color="#f4d483"/><stop offset="1" stop-color="#c98d54"/></radialGradient>
-    <radialGradient id="nucleolus-core" cx="32%" cy="25%" r="70%"><stop stop-color="#ffd67e"/><stop offset=".42" stop-color="#cb7138"/><stop offset="1" stop-color="#7c302e"/></radialGradient>
-    <linearGradient id="mitochondrion-body" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffc68b"/><stop offset=".45" stop-color="#f06f63"/><stop offset="1" stop-color="#9f3141"/></linearGradient>
-    <radialGradient id="lysosome-core" cx="32%" cy="28%" r="72%"><stop stop-color="#ffc5ef"/><stop offset=".5" stop-color="#d95eaa"/><stop offset="1" stop-color="#783a85"/></radialGradient>
-    <linearGradient id="plant-wall-line" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#dfff8e"/><stop offset=".5" stop-color="#6cb54d"/><stop offset="1" stop-color="#2f713b"/></linearGradient>
-    <radialGradient id="plant-cytoplasm" cx="28%" cy="22%" r="86%"><stop stop-color="#efffba" stop-opacity=".65"/><stop offset=".42" stop-color="#85cc69" stop-opacity=".44"/><stop offset="1" stop-color="#226c55" stop-opacity=".68"/></radialGradient>
-    <radialGradient id="vacuole-core" cx="35%" cy="25%" r="78%"><stop stop-color="#e8ffff" stop-opacity=".88"/><stop offset=".5" stop-color="#8edbe5" stop-opacity=".58"/><stop offset="1" stop-color="#2885a2" stop-opacity=".48"/></radialGradient>
-    <linearGradient id="chloroplast-body" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d7ff73"/><stop offset=".42" stop-color="#70c94c"/><stop offset="1" stop-color="#237044"/></linearGradient>
-    <radialGradient id="specimen-tissue" cx="32%" cy="28%" r="78%"><stop stop-color="#e8f5b4" stop-opacity=".7"/><stop offset=".6" stop-color="#8ec069" stop-opacity=".48"/><stop offset="1" stop-color="#4a8052" stop-opacity=".58"/></radialGradient>
-    <radialGradient id="specimen-animal" cx="34%" cy="26%" r="78%"><stop stop-color="#f2ffcf" stop-opacity=".72"/><stop offset=".58" stop-color="#88cfad" stop-opacity=".5"/><stop offset="1" stop-color="#368878" stop-opacity=".6"/></radialGradient>
-    <radialGradient id="specimen-nucleus-core" cx="30%" cy="26%" r="74%"><stop stop-color="#fff4ae"/><stop offset=".5" stop-color="#d6a060"/><stop offset="1" stop-color="#885a49"/></radialGradient>
-    <linearGradient id="neuron-line" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#8cf0cc"/><stop offset="1" stop-color="#42a9b7"/></linearGradient>
-    <radialGradient id="myelin-core" cx="35%" cy="24%" r="75%"><stop stop-color="#ffffff"/><stop offset=".55" stop-color="#c9def4"/><stop offset="1" stop-color="#789bc5"/></radialGradient>
-    <filter id="cell-soft-depth" x="-35%" y="-35%" width="170%" height="170%">
-      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#001a20" flood-opacity=".45"/>
-      <feDropShadow dx="-2" dy="-2" stdDeviation="2" flood-color="#eaffdf" flood-opacity=".25"/>
-    </filter>
-    <filter id="cell-organic-depth" x="-25%" y="-25%" width="150%" height="150%">
-      <feTurbulence type="fractalNoise" baseFrequency=".009 .018" numOctaves="2" seed="8" result="noise"/>
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G" result="wobble"/>
-      <feDropShadow in="wobble" dx="0" dy="8" stdDeviation="7" flood-color="#00141e" flood-opacity=".48"/>
-    </filter>
-    <filter id="specimen-wobble" x="-20%" y="-20%" width="140%" height="140%">
-      <feTurbulence type="fractalNoise" baseFrequency=".018" numOctaves="2" seed="4" result="noise"/>
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.4" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-    <filter id="cell-glow" x="-80%" y="-80%" width="260%" height="260%"><feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="#d8fff0" flood-opacity=".52"/></filter>
-  </defs>
-</svg>
+
 <div class="ll-viewport">
   <header class="site-header">
     <div class="nav-wrap">
@@ -1104,11 +1086,11 @@
         <div class="cells-grid">
           <section class="cells-card">
             <h2>Start Here</h2>
-            <p class="section-copy">A fast rule helps most students immediately: ask whether the cell has a nucleus. If it does not, it is prokaryotic. If it does, it is eukaryotic. Then ask what extra structures you see, like a cell wall or chloroplasts.</p>
+            <p class="section-copy">A nucleus is strong evidence of a eukaryotic cell. Its absence alone is not enough: mature mammalian red blood cells lose their nucleus, and a nucleus may be hard to see under a microscope. Compare several clues, including size, cell walls and chloroplasts.</p>
             <div class="starter-grid">
               <article class="starter-chip">
                 <strong>Prokaryotic</strong>
-                <p>Usually smaller and simpler. DNA floats in the cell instead of being stored in a nucleus.</p>
+                <p>Usually smaller. DNA is organized in a nucleoid region without a surrounding nuclear membrane.</p>
               </article>
               <article class="starter-chip">
                 <strong>Eukaryotic</strong>
@@ -1116,7 +1098,7 @@
               </article>
               <article class="starter-chip">
                 <strong>Plant Cell</strong>
-                <p>A eukaryotic cell with a rigid wall, chloroplasts for photosynthesis, and a large central vacuole.</p>
+                <p>A eukaryotic cell with a cellulose wall and usually a large central vacuole when mature. Photosynthetic cells have chloroplasts; many root cells do not.</p>
               </article>
               <article class="starter-chip">
                 <strong>Animal Cell</strong>
@@ -1126,7 +1108,7 @@
           </section>
 
           <section class="cells-card">
-            <h2>Cell Comparison Lab</h2>
+            <h2>Cell Comparison Lab</h2><p class="section-copy">Original anatomical illustrations with interpretive colors, not photographs. Structures are enlarged for clarity; the three models are not drawn to a shared scale. Anatomy reference: OpenStax Biology 2e, <a href="https://openstax.org/books/biology-2e/pages/4-2-prokaryotic-cells">Prokaryotic Cells</a> and <a href="https://openstax.org/books/biology-2e/pages/4-3-eukaryotic-cells">Eukaryotic Cells</a>.</p>
             <p class="section-copy">Use the buttons to switch the focus model. Watch what changes in the diagram and compare the functions that matter most.</p>
             <div class="compare-toolbar" role="toolbar" aria-label="Choose a cell type">
               <button class="compare-btn" type="button" data-cell="bacteria" aria-pressed="true">Bacterial Cell</button>
@@ -1136,129 +1118,21 @@
 
             <div class="focus-panel">
               <div class="focus-top">
-                <div class="cell-visual" aria-hidden="true">
+                <div class="cell-visual">
                   <div class="cell-focus-ring"></div>
 
-                  <svg class="cell-diagram" data-cell-diagram="bacteria" viewBox="0 0 420 300" preserveAspectRatio="xMidYMid meet">
-                    <path class="organelle-shape bacteria-flagellum" data-organelle="flagellum" d="M338,150 C365,138 378,162 402,150 C384,170 402,180 418,168"/>
-                    <line class="bacteria-pilus" x1="322" y1="108" x2="356" y2="86"/>
-                    <line class="bacteria-pilus" x1="322" y1="192" x2="352" y2="210"/>
-                    <rect class="organelle-shape bacteria-wall" data-organelle="cell-wall" x="60" y="80" width="280" height="140" rx="70"/>
-                    <rect class="bacteria-membrane" x="74" y="94" width="252" height="112" rx="56"/>
-                    <path class="organelle-shape bacteria-nucleoid" data-organelle="nucleoid" d="M138,150 C116,128 150,106 182,118 C214,100 246,124 222,150 C248,168 218,196 186,182 C158,204 122,180 138,150 Z"/>
-                    <circle class="organelle-shape bacteria-plasmid" data-organelle="nucleoid" cx="262" cy="182" r="15"/>
-                    <g class="organelle-shape bacteria-ribosomes" data-organelle="ribosomes">
-                      <circle cx="108" cy="112" r="3"/>
-                      <circle cx="122" cy="196" r="3"/>
-                      <circle cx="98" cy="160" r="3"/>
-                      <circle cx="270" cy="118" r="3"/>
-                      <circle cx="286" cy="150" r="3"/>
-                      <circle cx="252" cy="98" r="3"/>
-                      <circle cx="140" cy="90" r="3"/>
-                      <circle cx="200" cy="200" r="3"/>
-                    </g>
-                    <text x="130" y="76">Cell wall</text>
-                    <text x="150" y="228">Nucleoid (DNA)</text>
-                    <text x="360" y="130">Flagellum</text>
-                  </svg>
+                  <figure class="cell-diagram cell-figure" data-cell-diagram="bacteria" data-zoomable><img src="../../assets/images/lessons/cells/bacteria.svg" alt="A bacterial cell has coiled DNA without a nuclear envelope. The cell wall lies outside the membrane; pili, plasmids and flagella vary among bacteria." width="760" height="500" loading="lazy"/><figcaption>A bacterial cell has coiled DNA without a nuclear envelope. The cell wall lies outside the membrane; pili, plasmids and flagella vary among bacteria. <span class="enlarge-hint">Select image to enlarge.</span></figcaption></figure>
 
-                  <svg class="cell-diagram" data-cell-diagram="animal" viewBox="0 0 400 320" preserveAspectRatio="xMidYMid meet">
-                    <path class="animal-membrane" d="M60,168 C52,96 128,42 200,46 C272,34 352,82 344,166 C350,240 274,288 200,282 C118,292 58,238 60,168 Z"/>
-                    <path class="er-membrane" d="M110,120 C92,110 92,90 110,82 C90,74 92,54 112,46 C94,38 96,20 116,14"/>
-                    <g class="organelle-shape" data-organelle="ribosomes">
-                      <circle class="ribosome-dot" cx="106" cy="118" r="3"/>
-                      <circle class="ribosome-dot" cx="90" cy="98" r="3"/>
-                      <circle class="ribosome-dot" cx="108" cy="80" r="3"/>
-                      <circle class="ribosome-dot" cx="92" cy="60" r="3"/>
-                      <circle class="ribosome-dot" cx="112" cy="42" r="3"/>
-                      <circle class="ribosome-dot" cx="255" cy="245" r="3"/>
-                      <circle class="ribosome-dot" cx="275" cy="255" r="3"/>
-                      <circle class="ribosome-dot" cx="90" cy="230" r="3"/>
-                    </g>
-                    <g class="organelle-shape" data-organelle="mitochondria">
-                      <path class="mito-body" d="M280,86 C312,74 334,96 328,118 C340,140 312,158 288,146 C266,152 258,118 280,86 Z"/>
-                      <path class="mito-crista" d="M282,98 C294,104 300,116 292,128"/>
-                      <path class="mito-crista" d="M292,92 C304,98 312,112 302,124"/>
-                    </g>
-                    <g class="organelle-shape" data-organelle="mitochondria">
-                      <path class="mito-body" d="M96,216 C74,206 72,228 86,240 C74,258 96,274 116,262 C132,272 142,246 122,232 C134,214 112,200 96,216 Z"/>
-                      <path class="mito-crista" d="M92,220 C102,228 102,240 92,248"/>
-                      <path class="mito-crista" d="M104,216 C114,224 114,238 104,248"/>
-                    </g>
-                    <g class="golgi">
-                      <path class="golgi-stack" d="M232,222 C252,216 272,222 288,216"/>
-                      <path class="golgi-stack" d="M238,230 C256,225 274,230 286,225"/>
-                      <path class="golgi-stack" d="M244,238 C258,234 272,238 282,234"/>
-                      <circle class="golgi-vesicle" cx="296" cy="212" r="4"/>
-                      <circle class="golgi-vesicle" cx="222" cy="244" r="4"/>
-                    </g>
-                    <circle class="lysosome" cx="150" cy="250" r="7"/>
-                    <circle class="lysosome" cx="310" cy="180" r="6"/>
-                    <line class="centriole" x1="220" y1="200" x2="234" y2="212"/>
-                    <line class="centriole" x1="228" y1="192" x2="240" y2="206"/>
-                    <g class="organelle-shape" data-organelle="nucleus">
-                      <circle class="nucleus-envelope-outer" cx="195" cy="152" r="58"/>
-                      <circle class="nucleus-envelope-inner" cx="195" cy="152" r="49"/>
-                      <circle class="nucleolus" cx="212" cy="140" r="15"/>
-                    </g>
-                    <text x="150" y="86">Rough ER</text>
-                    <text x="270" y="76">Mitochondrion</text>
-                    <text x="150" y="150">Nucleus</text>
-                    <text x="230" y="256">Golgi apparatus</text>
-                  </svg>
+                  <figure class="cell-diagram cell-figure" data-cell-diagram="animal" data-zoomable><img src="../../assets/images/lessons/cells/animal.svg" alt="A generalized animal cell: the nucleus, rough ER, Golgi apparatus and mitochondria all lie inside the cell membrane." width="760" height="500" loading="lazy"/><figcaption>A generalized animal cell: the nucleus, rough ER, Golgi apparatus and mitochondria all lie inside the cell membrane. <span class="enlarge-hint">Select image to enlarge.</span></figcaption></figure>
 
-                  <svg class="cell-diagram" data-cell-diagram="plant" viewBox="0 0 400 320" preserveAspectRatio="xMidYMid meet">
-                    <rect class="organelle-shape plant-wall-shape" data-organelle="cell-wall" x="40" y="30" width="320" height="260" rx="16"/>
-                    <rect class="plant-membrane" x="56" y="46" width="288" height="228" rx="10"/>
-                    <rect class="organelle-shape vacuole-shape" data-organelle="vacuole" x="130" y="96" width="210" height="164" rx="26"/>
-                    <g class="organelle-shape" data-organelle="nucleus">
-                      <circle class="nucleus-envelope-outer" cx="92" cy="88" r="36"/>
-                      <circle class="nucleus-envelope-inner" cx="92" cy="88" r="30"/>
-                      <circle class="nucleolus" cx="102" cy="80" r="9"/>
-                    </g>
-                    <g class="organelle-shape" data-organelle="mitochondria">
-                      <path class="mito-body" d="M84,220 C64,212 62,232 74,244 C64,258 84,272 100,262 C114,270 122,248 106,236 C116,220 98,208 84,220 Z"/>
-                      <path class="mito-crista" d="M80,224 C88,230 88,240 80,248"/>
-                    </g>
-                    <g class="organelle-shape" data-organelle="chloroplasts">
-                      <ellipse class="chloroplast-shape" cx="88" cy="150" rx="26" ry="16"/>
-                      <line class="thylakoid" x1="70" y1="146" x2="106" y2="146"/>
-                      <line class="thylakoid" x1="70" y1="150" x2="106" y2="150"/>
-                      <line class="thylakoid" x1="70" y1="154" x2="106" y2="154"/>
-                    </g>
-                    <g class="organelle-shape" data-organelle="chloroplasts">
-                      <ellipse class="chloroplast-shape" cx="80" cy="248" rx="24" ry="15" transform="rotate(-18 80 248)"/>
-                      <line class="thylakoid" x1="64" y1="245" x2="96" y2="245" transform="rotate(-18 80 248)"/>
-                      <line class="thylakoid" x1="64" y1="249" x2="96" y2="249" transform="rotate(-18 80 248)"/>
-                    </g>
-                    <g class="organelle-shape" data-organelle="chloroplasts">
-                      <ellipse class="chloroplast-shape" cx="320" cy="90" rx="24" ry="15" transform="rotate(14 320 90)"/>
-                      <line class="thylakoid" x1="304" y1="87" x2="336" y2="87" transform="rotate(14 320 90)"/>
-                      <line class="thylakoid" x1="304" y1="91" x2="336" y2="91" transform="rotate(14 320 90)"/>
-                    </g>
-                    <g class="organelle-shape" data-organelle="chloroplasts">
-                      <ellipse class="chloroplast-shape" cx="322" cy="240" rx="24" ry="15" transform="rotate(-10 322 240)"/>
-                      <line class="thylakoid" x1="306" y1="237" x2="338" y2="237" transform="rotate(-10 322 240)"/>
-                      <line class="thylakoid" x1="306" y1="241" x2="338" y2="241" transform="rotate(-10 322 240)"/>
-                    </g>
-                    <g class="organelle-shape" data-organelle="ribosomes">
-                      <circle class="ribosome-dot" cx="66" cy="60" r="3"/>
-                      <circle class="ribosome-dot" cx="330" cy="140" r="3"/>
-                      <circle class="ribosome-dot" cx="70" cy="190" r="3"/>
-                      <circle class="ribosome-dot" cx="320" cy="190" r="3"/>
-                    </g>
-                    <text x="130" y="42">Cell wall</text>
-                    <text x="180" y="120">Central vacuole</text>
-                    <text x="60" y="70">Nucleus</text>
-                    <text x="286" y="66">Chloroplast</text>
-                  </svg>
+                  <figure class="cell-diagram cell-figure" data-cell-diagram="plant" data-zoomable><img src="../../assets/images/lessons/cells/plant.svg" alt="A mature photosynthetic plant cell: the large central vacuole pushes the nucleus and much of the cytoplasm toward the cell wall. Plants also have mitochondria." width="760" height="500" loading="lazy"/><figcaption>A mature photosynthetic plant cell: the large central vacuole pushes the nucleus and much of the cytoplasm toward the cell wall. Plants also have mitochondria. <span class="enlarge-hint">Select image to enlarge.</span></figcaption></figure>
 
-                  <div class="cell-inspector" id="cell-inspector" aria-live="polite">
+
+                </div>
+                <div class="focus-copy"><div id="structure-controls" class="compare-toolbar" aria-label="Explore structures in this cell"></div>                  <div class="cell-inspector" id="cell-inspector" aria-live="polite">
                     <strong id="cell-inspector-title">Organelle Inspector</strong>
                     <span id="cell-inspector-copy">Select a structure to see its job inside the cell.</span>
                   </div>
-                </div>
-                <div class="focus-copy">
                   <h3 id="focus-title">Bacterial Cell</h3>
                   <p id="focus-description">Bacteria are prokaryotes. They do not have a nucleus, and their DNA is found in a nucleoid region. Even though they are small, they can carry out all the functions of life.</p>
                   <div class="focus-facts">
@@ -1272,7 +1146,7 @@
                     </div>
                     <div>
                       <strong>Usually Found In</strong>
-                      <span id="focus-organism">Bacteria and archaea.</span>
+                      <span id="focus-organism">Bacteria. Archaea are also prokaryotes, but their cell envelopes differ.</span>
                     </div>
                     <div>
                       <strong>Main Idea</strong>
@@ -1300,7 +1174,7 @@
                 <strong>Chloroplasts?</strong>
                 <span>Bacteria: no</span>
                 <span>Animal: no</span>
-                <span>Plant: yes</span>
+                <span>Plant: in photosynthetic cells</span>
               </div>
               <div class="comparison-row">
                 <strong>Typical shape</strong>
@@ -1355,22 +1229,22 @@
             <p class="section-copy">In multicellular organisms, not every cell performs the same task. Structure changes so function can change too.</p>
             <div class="special-grid">
               <article class="special-card">
-                <div class="special-icon">N</div>
+                <figure class="cell-figure"  data-zoomable><img src="../../assets/images/lessons/cells/neuron.svg" alt="Dendrites receive signals; an axon carries signals toward its terminals. Gaps separate the myelin segments. The axon is shortened here." width="760" height="500" loading="lazy"/><figcaption>Dendrites receive signals; an axon carries signals toward its terminals. Gaps separate the myelin segments. The axon is shortened here. <span class="enlarge-hint">Select image to enlarge.</span></figcaption></figure>
                 <h3>Neuron</h3>
                 <p>Long branches let nerve cells send signals quickly across the body.</p>
               </article>
               <article class="special-card">
-                <div class="special-icon">R</div>
+                <figure class="cell-figure"  data-zoomable><img src="../../assets/images/lessons/cells/red-blood-cell.svg" alt="A mature human red blood cell has a thin center and thicker rim, not a hole. The side section shows its biconcave profile." width="760" height="500" loading="lazy"/><figcaption>A mature human red blood cell has a thin center and thicker rim, not a hole. The side section shows its biconcave profile. <span class="enlarge-hint">Select image to enlarge.</span></figcaption></figure>
                 <h3>Red Blood Cell</h3>
                 <p>Its flattened shape increases surface area for carrying oxygen.</p>
               </article>
               <article class="special-card">
-                <div class="special-icon">M</div>
+                <figure class="cell-figure"  data-zoomable><img src="../../assets/images/lessons/cells/muscle.svg" alt="Skeletal muscle fibers are long cells with repeated contractile units and multiple nuclei near their surface." width="760" height="500" loading="lazy"/><figcaption>Skeletal muscle fibers are long cells with repeated contractile units and multiple nuclei near their surface. <span class="enlarge-hint">Select image to enlarge.</span></figcaption></figure>
                 <h3>Muscle Cell</h3>
                 <p>Protein fibers help the cell contract and generate force.</p>
               </article>
               <article class="special-card">
-                <div class="special-icon">P</div>
+                <figure class="cell-figure"  data-zoomable><img src="../../assets/images/lessons/cells/root-hair.svg" alt="The root hair is a continuous extension of one epidermal cell, increasing the surface for absorption. Its large vacuole extends into the hair." width="760" height="500" loading="lazy"/><figcaption>The root hair is a continuous extension of one epidermal cell, increasing the surface for absorption. Its large vacuole extends into the hair. <span class="enlarge-hint">Select image to enlarge.</span></figcaption></figure>
                 <h3>Root Hair Cell</h3>
                 <p>The long extension increases surface area for absorbing water and minerals from soil.</p>
               </article>
@@ -1380,64 +1254,22 @@
               <p>Ask students to finish the sentence <span class="mono">"This shape helps because..."</span> for each specialized cell. That keeps the focus on structure and function instead of isolated vocabulary.</p>
             </div>
             <div class="morph-lab">
-              <h3>Specialization Morph Lab</h3>
-              <p class="section-copy">Start with a generic animal cell, then morph it into a specialist. The visual change should match the job.</p>
-              <div class="morph-toolbar" role="toolbar" aria-label="Morph the cell model">
+              <h3>Specialized Cell Viewer</h3>
+              <p class="section-copy">Compare a generalized animal cell with two specialized forms. These are different cell types, not stages of one cell changing into another.</p>
+              <div class="morph-toolbar" role="toolbar" aria-label="Choose a specialized cell">
                 <button class="morph-btn" type="button" data-morph="animal" aria-pressed="true">Generic Animal</button>
                 <button class="morph-btn" type="button" data-morph="neuron" aria-pressed="false">Neuron</button>
-                <button class="morph-btn" type="button" data-morph="red-blood-cell" aria-pressed="false">Red Blood Cell</button>
+                <button class="morph-btn" type="button" data-morph="red-blood-cell" aria-pressed="false">Human Red Blood Cell</button>
               </div>
               <div class="morph-stage">
-                <div class="cell-visual cell-visual--morph" id="morph-visual" aria-hidden="true">
-                  <svg class="cell-diagram" data-morph-diagram="animal" viewBox="0 0 400 260" preserveAspectRatio="xMidYMid meet">
-                    <path class="animal-membrane" d="M50,138 C44,76 118,32 190,36 C258,26 330,68 324,136 C330,200 262,242 190,236 C116,246 52,198 50,138 Z"/>
-                    <circle class="nucleus-envelope-outer" cx="180" cy="126" r="46"/>
-                    <circle class="nucleus-envelope-inner" cx="180" cy="126" r="38"/>
-                    <circle class="nucleolus" cx="194" cy="116" r="12"/>
-                    <path class="mito-body" d="M262,80 C288,70 306,88 300,106 C310,124 288,138 268,128 C250,134 244,106 262,80 Z"/>
-                    <circle class="ribosome-dot" cx="90" cy="90" r="3"/>
-                    <circle class="ribosome-dot" cx="100" cy="180" r="3"/>
-                    <circle class="ribosome-dot" cx="270" cy="190" r="3"/>
-                  </svg>
-                  <svg class="cell-diagram" data-morph-diagram="neuron" viewBox="0 0 400 260" preserveAspectRatio="xMidYMid meet">
-                    <path class="neuron-soma" d="M150,110 C140,80 170,58 200,64 C226,52 252,74 246,100 C266,110 260,142 234,146 C240,172 208,188 188,166 C162,182 138,160 150,134 C128,124 134,98 150,110 Z"/>
-                    <circle class="nucleus-envelope-inner" cx="195" cy="116" r="24"/>
-                    <path class="neuron-fiber" d="M160,88 C144,74 130,78 116,64"/>
-                    <path class="neuron-fiber" d="M160,88 C150,68 156,52 144,40"/>
-                    <path class="neuron-fiber" d="M232,80 C248,64 242,48 258,36"/>
-                    <path class="neuron-fiber" d="M232,80 C252,72 262,58 278,52"/>
-                    <path class="neuron-axon" d="M240,150 C282,166 322,154 362,176"/>
-                    <ellipse class="myelin" cx="272" cy="162" rx="14" ry="8"/>
-                    <ellipse class="myelin" cx="302" cy="159" rx="14" ry="8"/>
-                    <ellipse class="myelin" cx="332" cy="168" rx="14" ry="8"/>
-                    <path class="neuron-fiber" d="M362,176 C372,182 380,176 390,184"/>
-                    <path class="neuron-fiber" d="M362,176 C374,190 374,200 384,208"/>
-                    <path class="neuron-fiber" d="M362,176 C366,192 358,202 366,212"/>
-                  </svg>
-                  <svg class="cell-diagram" data-morph-diagram="red-blood-cell" viewBox="0 0 400 260" preserveAspectRatio="xMidYMid meet">
-                    <defs>
-                      <radialGradient id="rbcGradient" cx="50%" cy="50%" r="65%">
-                        <stop offset="0%" stop-color="#f2a9a0"/>
-                        <stop offset="35%" stop-color="#e2685a"/>
-                        <stop offset="70%" stop-color="#c23f34"/>
-                        <stop offset="100%" stop-color="#9c2a22"/>
-                      </radialGradient>
-                      <radialGradient id="rbcDepression" cx="48%" cy="42%" r="62%">
-                        <stop offset="0" stop-color="#7f211f" stop-opacity=".9"/>
-                        <stop offset=".5" stop-color="#b93d35" stop-opacity=".68"/>
-                        <stop offset="1" stop-color="#ef7965" stop-opacity="0"/>
-                      </radialGradient>
-                    </defs>
-                    <g filter="url(#cell-organic-depth)">
-                      <ellipse cx="200" cy="130" rx="120" ry="85" fill="url(#rbcGradient)" class="rbc-body"/>
-                      <ellipse class="rbc-depression" cx="200" cy="130" rx="68" ry="42"/>
-                      <path class="rbc-highlight" d="M112 100 C142 48 246 38 293 91"/>
-                    </g>
-                  </svg>
+                <div class="cell-visual cell-visual--morph" id="morph-visual">
+                  <figure class="cell-diagram cell-figure" data-morph-diagram="animal" data-zoomable><img src="../../assets/images/lessons/cells/animal.svg" alt="A generalized animal cell: the nucleus, rough ER, Golgi apparatus and mitochondria all lie inside the cell membrane." width="760" height="500" loading="lazy"/><figcaption>A generalized animal cell: the nucleus, rough ER, Golgi apparatus and mitochondria all lie inside the cell membrane. <span class="enlarge-hint">Select image to enlarge.</span></figcaption></figure>
+                  <figure class="cell-diagram cell-figure" data-morph-diagram="neuron" data-zoomable><img src="../../assets/images/lessons/cells/neuron.svg" alt="Dendrites receive signals; an axon carries signals toward its terminals. Gaps separate the myelin segments. The axon is shortened here." width="760" height="500" loading="lazy"/><figcaption>Dendrites receive signals; an axon carries signals toward its terminals. Gaps separate the myelin segments. The axon is shortened here. <span class="enlarge-hint">Select image to enlarge.</span></figcaption></figure>
+                  <figure class="cell-diagram cell-figure" data-morph-diagram="red-blood-cell" data-zoomable><img src="../../assets/images/lessons/cells/red-blood-cell.svg" alt="A mature human red blood cell has a thin center and thicker rim, not a hole. The side section shows its biconcave profile." width="760" height="500" loading="lazy"/><figcaption>A mature human red blood cell has a thin center and thicker rim, not a hole. The side section shows its biconcave profile. <span class="enlarge-hint">Select image to enlarge.</span></figcaption></figure>
                 </div>
                 <div class="morph-copy">
                   <h3 id="morph-title">Generic Animal Cell</h3>
-                  <p id="morph-copy">A flexible animal cell can be reshaped into many specialist forms. Its membrane supports a wide range of jobs.</p>
+                  <p id="morph-copy">This general model shows shared animal-cell structures. During development, different cell lineages produce specialized cells.</p>
                 </div>
               </div>
             </div>
@@ -1446,72 +1278,14 @@
 
         <section class="cells-card">
           <h2>Microscope Evidence Lab</h2>
-          <p class="section-copy">Classify a mystery specimen the way a biologist would: collect observable evidence first, then make the call. Switch samples and watch the clue list, visual field, and confidence bars update together.</p>
+          <p class="section-copy">Compare illustrated specimens and collect evidence before classifying them. These are microscope interpretations, not micrographs; the root hair is an anatomical diagram. Views are enlarged independently, so displayed size cannot be used to compare cell sizes.</p>
           <div class="evidence-lab">
             <div class="microscope-stage" aria-label="Microscope view of the selected cell sample">
               <div class="specimen-layer" id="specimen-layer">
-                <svg class="specimen-diagram" data-specimen="pond-leaf" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet">
-                  <rect class="specimen-wall" x="8" y="8" width="138" height="138" rx="16"/>
-                  <rect class="specimen-wall" x="154" y="8" width="138" height="138" rx="16"/>
-                  <rect class="specimen-wall" x="8" y="154" width="138" height="138" rx="16"/>
-                  <rect class="specimen-wall" x="154" y="154" width="138" height="138" rx="16"/>
-                  <circle class="specimen-nucleus" cx="50" cy="50" r="16"/>
-                  <circle class="specimen-nucleus" cx="230" cy="45" r="15"/>
-                  <circle class="specimen-nucleus" cx="45" cy="225" r="15"/>
-                  <circle class="specimen-nucleus" cx="225" cy="200" r="16"/>
-                  <ellipse class="specimen-chloroplast" cx="100" cy="110" rx="14" ry="8"/>
-                  <ellipse class="specimen-chloroplast" cx="40" cy="112" rx="11" ry="7"/>
-                  <ellipse class="specimen-chloroplast" cx="190" cy="100" rx="13" ry="8"/>
-                  <ellipse class="specimen-chloroplast" cx="252" cy="118" rx="12" ry="7"/>
-                  <ellipse class="specimen-chloroplast" cx="100" cy="190" rx="13" ry="8"/>
-                  <ellipse class="specimen-chloroplast" cx="62" cy="252" rx="12" ry="7"/>
-                  <ellipse class="specimen-chloroplast" cx="180" cy="248" rx="13" ry="8"/>
-                  <ellipse class="specimen-chloroplast" cx="250" cy="182" rx="12" ry="7"/>
-                </svg>
-                <svg class="specimen-diagram" data-specimen="cheek-swab" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet">
-                  <path class="specimen-blob" d="M40,110 C34,70 90,40 140,44 C190,36 240,66 236,108 C240,150 194,180 140,176 C88,184 42,150 40,110 Z"/>
-                  <path class="specimen-blob" d="M160,150 C154,118 200,94 240,98 C280,92 318,116 314,150 C318,184 280,208 240,204 C198,210 162,182 160,150 Z"/>
-                  <path class="specimen-blob" d="M70,210 C64,182 106,162 140,166 C176,160 208,182 204,210 C208,238 176,258 140,254 C104,260 72,238 70,210 Z"/>
-                  <circle class="nucleus-envelope-outer" cx="130" cy="105" r="26"/>
-                  <circle class="nucleus-envelope-inner" cx="130" cy="105" r="21"/>
-                  <circle class="nucleolus" cx="140" cy="98" r="7"/>
-                  <circle class="nucleus-envelope-outer" cx="235" cy="148" r="24"/>
-                  <circle class="nucleus-envelope-inner" cx="235" cy="148" r="20"/>
-                  <circle class="nucleolus" cx="244" cy="142" r="6"/>
-                  <circle class="nucleus-envelope-outer" cx="138" cy="208" r="22"/>
-                  <circle class="nucleus-envelope-inner" cx="138" cy="208" r="18"/>
-                  <circle class="nucleolus" cx="146" cy="202" r="6"/>
-                </svg>
-                <svg class="specimen-diagram" data-specimen="yogurt-culture" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet">
-                  <defs>
-                    <g id="specimen-rod-unit"><rect class="specimen-rod" x="-7" y="-17" width="14" height="34" rx="7"/></g>
-                    <g id="specimen-coccus-unit"><circle class="specimen-coccus" r="9"/></g>
-                  </defs>
-                  <use href="#specimen-rod-unit" transform="translate(80,90) rotate(20)"/>
-                  <use href="#specimen-rod-unit" transform="translate(80,122) rotate(12)"/>
-                  <use href="#specimen-rod-unit" transform="translate(76,154) rotate(24)"/>
-                  <use href="#specimen-rod-unit" transform="translate(200,60) rotate(-10)"/>
-                  <use href="#specimen-rod-unit" transform="translate(204,92) rotate(-16)"/>
-                  <use href="#specimen-rod-unit" transform="translate(200,124) rotate(-4)"/>
-                  <use href="#specimen-rod-unit" transform="translate(140,225) rotate(64)"/>
-                  <use href="#specimen-rod-unit" transform="translate(235,205) rotate(102)"/>
-                  <use href="#specimen-coccus-unit" transform="translate(60,222)"/>
-                  <use href="#specimen-coccus-unit" transform="translate(76,226)"/>
-                  <use href="#specimen-coccus-unit" transform="translate(92,224)"/>
-                  <use href="#specimen-coccus-unit" transform="translate(108,228)"/>
-                  <use href="#specimen-coccus-unit" transform="translate(178,152)"/>
-                  <use href="#specimen-coccus-unit" transform="translate(194,150)"/>
-                  <use href="#specimen-coccus-unit" transform="translate(210,154)"/>
-                </svg>
-                <svg class="specimen-diagram" data-specimen="root-hair" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet">
-                  <rect class="specimen-wall" x="10" y="90" width="90" height="120" rx="14"/>
-                  <rect class="specimen-wall" x="104" y="90" width="90" height="120" rx="14"/>
-                  <rect class="specimen-wall" x="198" y="90" width="90" height="120" rx="14"/>
-                  <circle class="specimen-nucleus" cx="55" cy="150" r="15"/>
-                  <circle class="specimen-nucleus" cx="149" cy="150" r="15"/>
-                  <path class="specimen-hair" d="M282,110 C300,105 315,115 325,135 C335,155 338,180 330,200 C326,210 318,214 312,206 C318,188 316,168 306,150 C298,135 288,122 282,110 Z"/>
-                  <circle class="specimen-nucleus" cx="318" cy="188" r="10"/>
-                </svg>
+                <figure class="specimen-diagram cell-figure" data-specimen="pond-leaf" data-zoomable><img src="../../assets/images/lessons/cells/pond-leaf.svg" alt="Interpretation of leaf tissue under a light microscope: adjoining walls and many green chloroplasts near cell edges. Fine internal membranes are not resolved." width="760" height="500" loading="lazy"/><figcaption>Interpretation of leaf tissue under a light microscope: adjoining walls and many green chloroplasts near cell edges. Fine internal membranes are not resolved. <span class="enlarge-hint">Select image to enlarge.</span></figcaption></figure>
+                <figure class="specimen-diagram cell-figure" data-specimen="cheek-swab" data-zoomable><img src="../../assets/images/lessons/cells/cheek-swab.svg" alt="Interpretation of stained cheek cells: thin, irregular epithelial cells with darker nuclei. Stains add contrast; these are not natural cell colors." width="760" height="500" loading="lazy"/><figcaption>Interpretation of stained cheek cells: thin, irregular epithelial cells with darker nuclei. Stains add contrast; these are not natural cell colors. <span class="enlarge-hint">Select image to enlarge.</span></figcaption></figure>
+                <figure class="specimen-diagram cell-figure" data-specimen="yogurt-culture" data-zoomable><img src="../../assets/images/lessons/cells/yogurt-culture.svg" alt="Interpretation of a stained yogurt culture: rods and chains of cocci. DNA and ribosomes are too small to distinguish in this view." width="760" height="500" loading="lazy"/><figcaption>Interpretation of a stained yogurt culture: rods and chains of cocci. DNA and ribosomes are too small to distinguish in this view. <span class="enlarge-hint">Select image to enlarge.</span></figcaption></figure>
+                <figure class="specimen-diagram cell-figure" data-specimen="root-hair" data-zoomable><img src="../../assets/images/lessons/cells/root-hair.svg" alt="The root hair is a continuous extension of one epidermal cell, increasing the surface for absorption. Its large vacuole extends into the hair." width="760" height="500" loading="lazy"/><figcaption>The root hair is a continuous extension of one epidermal cell, increasing the surface for absorption. Its large vacuole extends into the hair. <span class="enlarge-hint">Select image to enlarge.</span></figcaption></figure>
               </div>
               <div class="microscope-readout">
                 <strong id="sample-readout-title">Pond Leaf Scrape</strong>
@@ -1552,10 +1326,7 @@
                 <p id="verdict-copy">The cell wall, chloroplast evidence, and boxy shape all support a plant-cell classification.</p>
               </div>
 
-              <div>
-                <span class="evidence-kicker">Classification Confidence</span>
-                <div class="confidence-bars" id="confidence-bars"></div>
-              </div>
+
             </div>
           </div>
         </section>
@@ -1565,7 +1336,7 @@
           <p class="section-copy">Read each clue and choose the best match. The goal is not random guessing. Look for evidence like nucleus, chloroplasts, cell wall, and job.</p>
           <div class="quiz-grid">
             <article class="quiz-card" data-answer="bacteria">
-              <h3>1. This cell has no nucleus and may use a flagellum to move.</h3>
+              <h3>1. This cell has a nucleoid, no membrane-bound organelles, and may have a rotating flagellum.</h3>
               <div class="quiz-options">
                 <button class="quiz-option" type="button" data-choice="bacteria">Bacterial Cell</button>
                 <button class="quiz-option" type="button" data-choice="animal">Animal Cell</button>
@@ -1598,7 +1369,7 @@
               <h3>4. This specialized cell carries oxygen through the bloodstream.</h3>
               <div class="quiz-options">
                 <button class="quiz-option" type="button" data-choice="plant">Root Hair Cell</button>
-                <button class="quiz-option" type="button" data-choice="animal">Red Blood Cell</button>
+                <button class="quiz-option" type="button" data-choice="animal">Human Red Blood Cell</button>
                 <button class="quiz-option" type="button" data-choice="bacteria">Bacterial Cell</button>
               </div>
               <div class="quiz-feedback" aria-live="polite"></div>
@@ -1632,7 +1403,7 @@
           <span class="ll-label">Jump to comparison</span>
           <div class="ll-info">Use the focus buttons to switch between a bacterial cell, an animal cell, and a plant cell.</div>
           <span class="ll-label">Clue words to watch</span>
-          <div class="ll-info"><strong>No nucleus</strong><br />Think prokaryote.</div>
+          <div class="ll-info"><strong>No visible nucleus</strong><br />Check other evidence: some specialized eukaryotic cells lose their nucleus.</div>
           <div class="ll-info"><strong>Chloroplasts</strong><br />Think plant cell.</div>
           <div class="ll-info"><strong>Flexible shape</strong><br />Think animal cell.</div>
           <div class="ll-info"><strong>Specialized job</strong><br />Ask how the cell's shape supports its function.</div>
@@ -1681,7 +1452,7 @@
         description: "Bacteria are prokaryotes. They do not have a nucleus, and their DNA is loosely coiled in a nucleoid region. Even though they are small, they can carry out all the functions of life.",
         type: "Prokaryotic",
         structures: "Cell wall, cell membrane, cytoplasm, ribosomes, a nucleoid region of DNA, often a plasmid, sometimes a flagellum.",
-        organism: "Bacteria and archaea.",
+        organism: "Bacteria. Archaea are also prokaryotes, but their cell envelopes differ.",
         idea: "Simple does not mean weak. These cells are efficient survival machines.",
         diagram: "bacteria",
         defaultOrganelle: "ribosomes"
@@ -1708,7 +1479,7 @@
       }
     };
 
-    const compareButtons = Array.from(document.querySelectorAll(".compare-btn"));
+    const compareButtons = Array.from(document.querySelectorAll(".compare-btn[data-cell]"));
     const cellDiagrams = Array.from(document.querySelectorAll(".focus-panel .cell-diagram"));
     const inspector = document.getElementById("cell-inspector");
     const inspectorTitle = document.getElementById("cell-inspector-title");
@@ -1726,7 +1497,7 @@
     const clueList = document.getElementById("clue-list");
     const verdictTitle = document.getElementById("verdict-title");
     const verdictCopy = document.getElementById("verdict-copy");
-    const confidenceBars = document.getElementById("confidence-bars");
+
 
     const ORGANELLE_INFO = {
       nucleus: {
@@ -1766,7 +1537,7 @@
     const MORPH_DATA = {
       animal: {
         title: "Generic Animal Cell",
-        copy: "A flexible animal cell can be reshaped into many specialist forms. Its membrane supports a wide range of jobs."
+        copy: "This general model shows shared animal-cell structures. During development, different cell lineages produce specialized cells."
       },
       neuron: {
         title: "Neuron",
@@ -1774,7 +1545,7 @@
       },
       "red-blood-cell": {
         title: "Red Blood Cell",
-        copy: "The nucleus is removed and the cell flattens into a biconcave disc, leaving more room to carry oxygen."
+        copy: "During mammalian red blood cell development, precursors lose their nucleus and mitochondria. The mature biconcave disc contains oxygen-binding hemoglobin."
       }
     };
 
@@ -1785,26 +1556,23 @@
         specimen: "pond-leaf",
         verdict: "Verdict: Plant Cell",
         verdictCopy: "The cell wall, chloroplast evidence, and boxy shape all support a plant-cell classification.",
-        clues: ["Box-like outline", "Rigid cell wall visible", "Green chloroplast structures", "Nucleus present"],
-        confidence: { Plant: 94, Animal: 18, Bacteria: 8 }
+        clues: ["Box-like outline", "Rigid cell wall visible", "Green chloroplast structures", "Nucleus not resolved in this illustration"]
       },
       "cheek-swab": {
         title: "Cheek Swab",
-        copy: "Rounded, flexible cells with nuclei and no cell wall fit the animal-cell pattern.",
+        copy: "Flattened, irregular cheek cells with stained nuclei and no cell wall fit the animal-cell pattern.",
         specimen: "cheek-swab",
         verdict: "Verdict: Animal Cell",
         verdictCopy: "A nucleus is present, but there is no rigid wall or chloroplast evidence, so animal cell is the strongest match.",
-        clues: ["Nucleus present", "Flexible membrane", "No cell wall", "No chloroplasts"],
-        confidence: { Animal: 92, Plant: 28, Bacteria: 10 }
+        clues: ["Nucleus present", "Flexible membrane", "No cell wall", "No chloroplasts"]
       },
       "yogurt-culture": {
         title: "Yogurt Culture",
-        copy: "Rod-shaped cells and short chains of round cells, both with DNA regions but no nuclei, point toward bacteria.",
+        copy: "Rod-shaped cells and short chains of round cells, shown without visible internal structures, point toward bacteria.",
         specimen: "yogurt-culture",
         verdict: "Verdict: Bacterial Cell",
-        verdictCopy: "The rod and chain shapes and lack of a nucleus are the key clues for prokaryotic bacterial cells (a Lactobacillus and Streptococcus pair, typical of yogurt).",
-        clues: ["No nucleus", "Very small cells", "Rod-shaped and round bodies", "DNA region instead of nucleus"],
-        confidence: { Bacteria: 96, Animal: 12, Plant: 6 }
+        verdictCopy: "Rods and chains of cocci are consistent with bacteria commonly used in yogurt cultures. Shape alone does not identify a species, and the absence of a nucleus cannot be established from this illustration alone.",
+        clues: ["Internal structures not resolved", "Yogurt culture source", "Rod-shaped and round bodies", "DNA cannot be resolved in this view"]
       },
       "root-hair": {
         title: "Root Hair Cell",
@@ -1812,8 +1580,7 @@
         specimen: "root-hair",
         verdict: "Verdict: Specialized Plant Cell",
         verdictCopy: "The cell wall says plant, the long extension shows specialization for absorption, and the missing chloroplasts fit a cell that lives underground.",
-        clues: ["Cell wall visible", "Large surface-area extension", "Nucleus present near the tip", "No chloroplasts (no sunlight underground)"],
-        confidence: { Plant: 90, Animal: 22, Bacteria: 9 }
+        clues: ["Cell wall visible", "Large surface-area extension", "One continuous cell with a nucleus", "No chloroplasts (no sunlight underground)"]
       }
     };
 
@@ -1841,7 +1608,7 @@
 
     function renderSample(sampleKey) {
       const data = SAMPLE_DATA[sampleKey];
-      if (!data || !clueList || !confidenceBars) return;
+      if (!data || !clueList) return;
 
       specimenDiagrams.forEach((svg) => {
         svg.classList.toggle("is-active", svg.dataset.specimen === data.specimen);
@@ -1857,29 +1624,6 @@
         chip.className = "clue-chip";
         chip.textContent = clue;
         clueList.append(chip);
-      });
-
-      confidenceBars.replaceChildren();
-      Object.entries(data.confidence).forEach(([label, value]) => {
-        const row = document.createElement("div");
-        row.className = "confidence-row";
-
-        const labelNode = document.createElement("span");
-        labelNode.textContent = label;
-
-        const track = document.createElement("span");
-        track.className = "confidence-track";
-
-        const fill = document.createElement("span");
-        fill.className = "confidence-fill";
-        fill.style.setProperty("--value", `${value}%`);
-
-        const valueNode = document.createElement("span");
-        valueNode.textContent = `${value}%`;
-
-        track.append(fill);
-        row.append(labelNode, track, valueNode);
-        confidenceBars.append(row);
       });
 
       sampleButtons.forEach((button) => {
@@ -1917,6 +1661,17 @@
         button.setAttribute("aria-pressed", active ? "true" : "false");
       });
 
+      const structureKeys = { bacteria: ["cell-wall", "nucleoid", "ribosomes", "flagellum"], animal: ["nucleus", "mitochondria", "ribosomes"], plant: ["cell-wall", "nucleus", "chloroplasts", "mitochondria", "vacuole"] };
+      const controls = document.getElementById("structure-controls");
+      controls.replaceChildren();
+      structureKeys[cellKey].forEach((key) => {
+        const button = document.createElement("button");
+        button.className = "compare-btn";
+        button.type = "button";
+        button.textContent = ORGANELLE_INFO[key].title;
+        button.addEventListener("click", () => { setInspector(key); setLinkedOrganelle(key); });
+        controls.append(button);
+      });
       resetLinkedOrganelle();
       setInspector(data.defaultOrganelle);
     }
@@ -1935,6 +1690,9 @@
     });
 
     organelleCards.forEach((card) => {
+      card.tabIndex = 0;
+      card.setAttribute("role", "button");
+      card.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); card.click(); } });
       card.addEventListener("mouseenter", () => {
         const organelleKey = card.dataset.organelle;
         if (!organelleKey) return;
@@ -1985,5 +1743,6 @@
   })();
 </script>
 <script src="../../assets/js/lesson-print-button.js"></script>
+<script src="../../assets/js/photo-lightbox.js"></script>
 </body>
 </html>

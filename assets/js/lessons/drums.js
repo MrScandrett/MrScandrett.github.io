@@ -1046,7 +1046,7 @@
   };
 
   function initKit() {
-    var host = document.getElementById('drKit');
+    var host = document.getElementById('drKitPicker');
     var info = document.getElementById('drKitInfo');
     if (!host || !info) return;
     var parts = host.querySelectorAll('.kit-part');
