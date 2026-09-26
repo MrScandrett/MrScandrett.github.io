@@ -487,6 +487,30 @@
   <script type="module">
   import { THREE } from '../../assets/vendor/three-bundle.min.js';
   (function () {
+
+    /* ══════════════════════════════════════════
+       REAL HEIGHTMAPS
+    ══════════════════════════════════════════ */
+    const heightmaps = {};
+    const imgLoader = new THREE.ImageLoader();
+    
+    function fetchHeightmap(id) {
+        if (heightmaps[id]) return Promise.resolve(heightmaps[id]);
+        return new Promise((resolve) => {
+            imgLoader.load(`../../assets/images/lessons/volcano-simulator/${id}-height.png`, (img) => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width; canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                const data = ctx.getImageData(0, 0, img.width, img.height).data;
+                const hData = new Float32Array(img.width * img.height);
+                for (let i=0; i<data.length; i+=4) hData[i/4] = data[i]/255.0;
+                heightmaps[id] = { width: img.width, height: img.height, data: hData };
+                resolve(heightmaps[id]);
+            }, undefined, () => resolve(null));
+        });
+    }
+
     'use strict';
 
     /* ══════════════════════════════════════════
