@@ -2515,6 +2515,7 @@
 
   <script src="../../../assets/js/theme-registry.js"></script>
   <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/sim-kit.js"></script>
   <script>
   (function () {
     'use strict';
@@ -2719,10 +2720,10 @@
        CANVAS & VIEW STATE
     ═══════════════════════════════════════════════════════ */
     const canvas   = document.getElementById('gc-canvas');
-    const ctx      = canvas ? canvas.getContext('2d') : null;
+    let ctx        = null;
     const coordsEl = document.getElementById('gc-coords');
 
-    if (!ctx) return;
+    if (!canvas) return;
 
     // View state
     const view = { xMin: -10, xMax: 10, yMin: -7.5, yMax: 7.5 };
@@ -2776,14 +2777,7 @@
     }
 
     /* ─── Resize handler ────────────────────────────────── */
-    function resizeCanvas() {
-      const wrap = canvas.parentElement;
-      const w = wrap.clientWidth;
-      const h = Math.round(w * 0.75); // 4:3
-      canvas.width  = w;
-      canvas.height = h;
-      draw();
-    }
+    function resizeCanvas() { stage.resize(); }
 
     /* ─── Drawing ───────────────────────────────────────── */
     function draw() {
@@ -4571,10 +4565,10 @@
       heroSection.insertAdjacentElement('afterend', focusShell);
     }
 
-    const ro = window.ResizeObserver ? new ResizeObserver(resizeCanvas) : null;
-    if (ro) ro.observe(canvas.parentElement);
-    else    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
+    const stage = SimKit.canvas2d(canvas, { box: canvas.parentElement, dpr: false, onResize: function (rCtx) {
+      ctx = rCtx;
+      draw();
+    } });
 
     updateModelFunction();
     loadSharedGraph();

@@ -1144,6 +1144,7 @@
 
   <script src="../../../assets/js/theme-registry.js"></script>
   <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/sim-kit.js"></script>
   <script src="../../../assets/js/lessons/pi-digits-100k.js"></script>
   <script>
   (function () {
@@ -1177,9 +1178,17 @@
     let isAutoRolling = false;
 
     const polyCanvas = document.getElementById('pi-poly-canvas');
-    const polyCtx = polyCanvas.getContext('2d');
+    let polyCtx, polyW = 480, polyH = 220;
+    const polyStage = SimKit.canvas2d(polyCanvas, { height: 220, onResize: function (rCtx, w, h) {
+      polyCtx = rCtx; polyW = w; polyH = h;
+      drawPolygon();
+    } });
     const sliceCanvas = document.getElementById('pi-slice-canvas');
-    const sliceCtx = sliceCanvas.getContext('2d');
+    let sliceCtx, sliceW = 480, sliceCanvasH = 220;
+    const sliceStage = SimKit.canvas2d(sliceCanvas, { height: 220, onResize: function (rCtx, w, h) {
+      sliceCtx = rCtx; sliceW = w; sliceCanvasH = h;
+      drawSlices();
+    } });
 
     const digitsDisplay = document.getElementById('pi-digits-display');
     const digitQuery = document.getElementById('pi-digit-query');
@@ -1261,8 +1270,8 @@
 
     function drawPolygon() {
       const n = Number(polySlider.value);
-      const width = polyCanvas.width;
-      const height = polyCanvas.height;
+      const width = polyW;
+      const height = polyH;
       const cx = width / 2;
       const cy = height / 2;
       const radius = Math.min(width, height) * 0.22;
@@ -1325,8 +1334,8 @@
 
     function drawSlices() {
       const slices = Number(sliceSlider.value);
-      const width = sliceCanvas.width;
-      const height = sliceCanvas.height;
+      const width = sliceW;
+      const height = sliceCanvasH;
       const leftCx = width * 0.27;
       const leftCy = height * 0.54;
       const radius = Math.min(width, height) * 0.22;
@@ -1486,20 +1495,9 @@
       drawSlices();
     }
 
-    function sizeCanvasToDisplay(canvas) {
-      const ratio = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      const width = Math.max(240, Math.round(rect.width * ratio));
-      const height = Math.max(160, Math.round(rect.height * ratio));
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-      }
-    }
-
     function resizeCanvases() {
-      sizeCanvasToDisplay(polyCanvas);
-      sizeCanvasToDisplay(sliceCanvas);
+      polyStage.resize();
+      sliceStage.resize();
       updateAll();
     }
 

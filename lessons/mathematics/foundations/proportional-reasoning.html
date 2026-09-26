@@ -317,8 +317,8 @@
     </div>
   </header>
 
-  <div class="ll-shell">
-    <div class="ll-main">
+  <div class="ll-stage">
+    <div class="ll-sim">
       <main id="main-content" class="pr-page">
 
         <!-- ── Hero ── -->
@@ -668,7 +668,11 @@ scaled value = original × scale factor<br />
         </section>
 
       </main>
-    </div><!-- /.ll-main -->
+
+      <footer class="site-footer">
+        <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../../index.html">Home</a> · <a href="../../../steam-lessons.html">Lessons</a></p>
+      </footer>
+    </div><!-- /.ll-sim -->
 
     <!-- ── Side Panel ── -->
     <aside class="ll-panel" aria-label="Lesson panel">
@@ -717,12 +721,9 @@ scaled value = original × scale factor<br />
   </div>
 </div>
 
-  <footer class="site-footer">
-    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../../index.html">Home</a> · <a href="../../../steam-lessons.html">Lessons</a></p>
-  </footer>
-
   <script src="../../../assets/js/theme-registry.js"></script>
   <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/sim-kit.js"></script>
   <script>
   (function () {
     /* ── Scale Lab ── */
@@ -815,18 +816,16 @@ scaled value = original × scale factor<br />
     const ratioVerdict = document.getElementById('pr-ratio-verdict');
     const simFactorLabel = document.getElementById('pr-sim-factor-label');
     const canvas     = document.getElementById('pr-sim-canvas');
-    const ctx        = canvas.getContext('2d');
     const BASE_W     = 60;
     const BASE_H     = 38;
+    let ctx, cw = 380, ch = 180;
+    SimKit.canvas2d(canvas, { box: canvas.parentElement, height: 180, onResize: function (rCtx, rw, rh) {
+      ctx = rCtx; cw = rw; ch = rh;
+      drawSim();
+    } });
 
     function drawSim() {
       const sf = Number(simSlider.value) / 10;
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width  = canvas.offsetWidth  * dpr || 380 * dpr;
-      canvas.height = canvas.offsetHeight * dpr || 180 * dpr;
-      ctx.scale(dpr, dpr);
-      const cw = canvas.offsetWidth  || 380;
-      const ch = canvas.offsetHeight || 180;
       ctx.clearRect(0, 0, cw, ch);
 
       const lw = BASE_W * sf;
@@ -874,8 +873,6 @@ scaled value = original × scale factor<br />
     }
 
     simSlider.addEventListener('input', drawSim);
-    drawSim();
-    window.addEventListener('resize', drawSim);
 
     /* ── Guided Practice ── */
     document.querySelectorAll('.pr-practice-item').forEach(function (item) {

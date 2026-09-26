@@ -2190,6 +2190,7 @@
 
   <!-- Shared figure library — must load before the lesson scripts below. -->
   <script src="../../../assets/js/lessons/lesson-figures.js"></script>
+  <script src="../../../assets/js/sim-kit.js"></script>
 
   <!-- ── SCALE EXPLORER SCRIPT ──────────────────────── -->
   <script>
@@ -2303,7 +2304,7 @@
     const noteEl = document.getElementById('ml-scale-note');
     const visualEl = document.getElementById('ml-scale-visual');
     const canvasEl = document.getElementById('ml-scale-canvas');
-    const ctx = canvasEl.getContext('2d');
+    let ctx;
     const objectEl = document.getElementById('ml-scale-object');
     const ghostsEl = document.getElementById('ml-scale-ghosts');
     const markersEl = document.getElementById('ml-scale-markers');
@@ -2354,17 +2355,10 @@
       return `rgba(${rgb.r},${rgb.g},${rgb.b},${alpha})`;
     }
 
-    function resizeCanvas() {
-      const rect = visualEl.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvasW = Math.max(1, Math.floor(rect.width));
-      canvasH = Math.max(1, Math.floor(rect.height));
-      canvasEl.width = Math.floor(canvasW * dpr);
-      canvasEl.height = Math.floor(canvasH * dpr);
-      canvasEl.style.width = `${canvasW}px`;
-      canvasEl.style.height = `${canvasH}px`;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
+    const scaleStage = SimKit.canvas2d(canvasEl, { box: visualEl, onResize: function (rCtx, w, h) {
+      ctx = rCtx; canvasW = w; canvasH = h;
+    } });
+    function resizeCanvas() { scaleStage.resize(); }
 
     function drawGrid(time, accent) {
       ctx.save();

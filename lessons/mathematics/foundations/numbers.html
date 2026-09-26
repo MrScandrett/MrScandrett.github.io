@@ -2215,7 +2215,10 @@
       <ul class="num-timeline">
         <li>
           <span class="num-tl-year">~30,000 BC</span>
-          <div class="num-tl-thumb"><img data-zoomable data-lightbox-group="numbers" src="../../../assets/thumbs/lebombo-650x366.jpg" alt="Lebombo Bone"></div>
+          <div class="num-tl-thumb"><figure data-zoomable>
+  <img data-lightbox-group="numbers" src="../../../assets/thumbs/lebombo-650x366.jpg" alt="Lebombo Bone">
+  <figcaption>Lebombo Bone</figcaption>
+</figure></div>
           <div class="num-tl-content">
             <span class="num-tl-tag">Counting</span>
             <div><strong>Tally bones.</strong> The <em>Lebombo Bone</em> found in Swaziland has 29 notches carved into it — likely a counting tool or lunar calendar. Humans were tracking quantities before writing fully existed.</div>
@@ -2224,7 +2227,10 @@
         <li>
           <span class="num-tl-year">~3,000 BC</span>
           <div class="num-tl-thumb num-tl-thumb--babylon">
-            <img data-zoomable data-lightbox-group="numbers" loading="lazy" decoding="async" src="../../../assets/thumbs/babylonianB60.jpg" alt="Babylonian base-60 tablet">
+            <figure data-zoomable>
+  <img data-lightbox-group="numbers" loading="lazy" decoding="async" src="../../../assets/thumbs/babylonianB60.jpg" alt="Babylonian base-60 tablet">
+  <figcaption>Babylonian base-60 tablet</figcaption>
+</figure>
             <div class="num-babylon-popup" aria-hidden="true">
               <svg viewBox="0 0 420 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Babylonian base-60 numeral system diagram">
                 <!-- Tablet background -->
@@ -2280,7 +2286,10 @@
         </li>
         <li>
           <span class="num-tl-year">~300 BC</span>
-          <div class="num-tl-thumb"><img data-zoomable data-lightbox-group="numbers" loading="lazy" decoding="async" src="../../../assets/thumbs/euclid.jpg" alt="Euclid"></div>
+          <div class="num-tl-thumb"><figure data-zoomable>
+  <img data-lightbox-group="numbers" loading="lazy" decoding="async" src="../../../assets/thumbs/euclid.jpg" alt="Euclid">
+  <figcaption>Euclid</figcaption>
+</figure></div>
           <div class="num-tl-content">
             <span class="num-tl-tag">Proof &amp; Primes</span>
             <div><strong>Greek number theory.</strong> Euclid proved there are infinitely many prime numbers. The Greeks had no symbol for zero — they considered it philosophically absurd to have a "number of nothing."</div>
@@ -2288,7 +2297,10 @@
         </li>
         <li>
           <span class="num-tl-year">628 AD</span>
-          <div class="num-tl-thumb"><img data-zoomable data-lightbox-group="numbers" loading="lazy" decoding="async" src="../../../assets/thumbs/brahmagupta.jpeg" alt="Brahmagupta"></div>
+          <div class="num-tl-thumb"><figure data-zoomable>
+  <img data-lightbox-group="numbers" loading="lazy" decoding="async" src="../../../assets/thumbs/brahmagupta.jpeg" alt="Brahmagupta">
+  <figcaption>Brahmagupta</figcaption>
+</figure></div>
           <div class="num-tl-content">
             <span class="num-tl-tag">The Concept of Zero</span>
             <div><strong>Zero becomes a number.</strong> Indian mathematician <strong>Brahmagupta</strong> was the first to treat zero as a real number with arithmetic rules — including what happens when you add, subtract, and multiply with it. Revolutionary.</div>
@@ -2320,7 +2332,10 @@
         </li>
         <li>
           <span class="num-tl-year">~1200 AD</span>
-          <div class="num-tl-thumb"><img data-zoomable data-lightbox-group="numbers" loading="lazy" decoding="async" src="../../../assets/thumbs/liberabaci.jpeg" alt="Liber Abaci manuscript"></div>
+          <div class="num-tl-thumb"><figure data-zoomable>
+  <img data-lightbox-group="numbers" loading="lazy" decoding="async" src="../../../assets/thumbs/liberabaci.jpeg" alt="Liber Abaci manuscript">
+  <figcaption>Liber Abaci manuscript</figcaption>
+</figure></div>
           <div class="num-tl-content">
             <span class="num-tl-tag">Base-10 System</span>
             <div><strong>Hindu-Arabic numerals reach Europe.</strong> Fibonacci's <em>Liber Abaci</em> introduced Europeans to the 0–9 system we use today. Before this, Europe used Roman numerals — try doing long division with IV, XII, and XLVIII.</div>
@@ -3139,6 +3154,7 @@
 
   <script src="../../../assets/js/theme-registry.js"></script>
   <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/sim-kit.js"></script>
   <script>
     /* ── Number type details ── */
     const typeInfo = {};
@@ -4244,8 +4260,7 @@ ${!prime ? `<div style="margin-top:0.45rem;font-size:0.82rem;color: var(--text-m
       n: 180,
       multiplier: 2,
       targetMultiplier: 2,
-      speed: 0.35,
-      rafId: null
+      speed: 0.35
     };
 
     function updateModControls() {
@@ -4269,20 +4284,16 @@ ${!prime ? `<div style="margin-top:0.45rem;font-size:0.82rem;color: var(--text-m
       document.getElementById('num-mod-multiplier-val').textContent = modState.targetMultiplier.toFixed(2);
     }
 
-    function drawModPattern(time) {
-      const canvas = document.getElementById('num-mod-canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      const rect = canvas.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const width = Math.max(360, Math.round(rect.width || 720));
-      const height = Math.max(360, Math.round(rect.height || 420));
-      if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
-        canvas.width = width * dpr;
-        canvas.height = height * dpr;
-      }
+    const modCanvas = document.getElementById('num-mod-canvas');
+    let modCtx, modWidth = 720, modHeight = 420;
+    SimKit.canvas2d(modCanvas, { onResize: function (rCtx, w, h) {
+      modCtx = rCtx; modWidth = w; modHeight = h;
+    } });
 
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    function drawModPattern(dt, time) {
+      const ctx = modCtx;
+      const width = modWidth;
+      const height = modHeight;
       ctx.clearRect(0, 0, width, height);
       ctx.fillStyle = '#090b10';
       ctx.fillRect(0, 0, width, height);
@@ -4326,30 +4337,26 @@ ${!prime ? `<div style="margin-top:0.45rem;font-size:0.82rem;color: var(--text-m
         modState.targetMultiplier = Math.max(1, Math.min(20, base + 1));
         document.getElementById('num-mod-multiplier').value = modState.targetMultiplier.toFixed(2);
       }
-
-      modState.rafId = requestAnimationFrame(drawModPattern);
     }
 
     updateModControls();
     setManualMultiplier(document.getElementById('num-mod-multiplier').value);
-    modState.rafId = requestAnimationFrame(drawModPattern);
+    SimKit.loop(drawModPattern);
 
     /* ── Infinite number line ── */
     const numberLineState = { level: 0, center: 0.5 };
 
+    const lineCanvas = document.getElementById('num-line-canvas');
+    let lineCtx, lineWidth = 900;
+    const lineStage = SimKit.canvas2d(lineCanvas, { height: 180, onResize: function (rCtx, w) {
+      lineCtx = rCtx; lineWidth = w;
+      renderNumberLine();
+    } });
+
     function renderNumberLine() {
-      const canvas = document.getElementById('num-line-canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      const rect = canvas.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const width = Math.max(500, Math.round(rect.width || 900));
+      const ctx = lineCtx;
+      const width = lineWidth;
       const height = 180;
-      if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
-        canvas.width = width * dpr;
-        canvas.height = height * dpr;
-      }
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, width, height);
 
       const span = 1 / Math.pow(2, numberLineState.level);
@@ -4403,8 +4410,6 @@ ${!prime ? `<div style="margin-top:0.45rem;font-size:0.82rem;color: var(--text-m
       numberLineState.level = Math.max(0, Math.min(7, numberLineState.level + direction));
       renderNumberLine();
     }
-    renderNumberLine();
-    window.addEventListener('resize', renderNumberLine);
 
     /* ── Divide by zero demo ── */
     function updateZero() {

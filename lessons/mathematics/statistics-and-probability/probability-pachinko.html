@@ -736,10 +736,12 @@
     </div>
   </div>
 
+  <script src="../../../assets/js/sim-kit.js"></script>
   <script>
     (function () {
       var canvas = document.getElementById('pk-canvas');
-      var ctx = canvas.getContext('2d');
+      var ctx;
+      var boardWidth = 900, boardHeight = 560;
       var scenarioSelect = document.getElementById('pk-scenario');
       var rowsInput = document.getElementById('pk-rows');
       var ballsInput = document.getElementById('pk-balls');
@@ -879,8 +881,8 @@
       }
 
       function getBoardGeometry() {
-        var width = canvas.width;
-        var height = canvas.height;
+        var width = boardWidth;
+        var height = boardHeight;
         var rows = Number(rowsInput.value);
         var top = 58;
         var bottom = height - 84;
@@ -1115,7 +1117,10 @@
           runSample(Number(ballsInput.value));
         });
       });
-      window.addEventListener('resize', drawBoard);
+      SimKit.canvas2d(canvas, { onResize: function (rCtx, w, h) {
+        ctx = rCtx; boardWidth = w; boardHeight = h;
+        drawBoard();
+      } });
 
       reset();
       runSample(1000);

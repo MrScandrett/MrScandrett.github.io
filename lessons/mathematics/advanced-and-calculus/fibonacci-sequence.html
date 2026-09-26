@@ -191,7 +191,8 @@
     }
     .fib-nature-zoom { font-size: 0.67rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #6ee7b7; }
     .fib-nature-card h3 { margin: 0; color: #f8fafc; font-size: 1rem; letter-spacing: -0.02em; }
-    .fib-nature-canvas { width: 100%; aspect-ratio: 1; border-radius: 10px; display: block; cursor: default; }
+    .fib-nature-canvas-wrap { width: 100%; aspect-ratio: 1; border-radius: 10px; overflow: hidden; }
+    .fib-nature-canvas { width: 100%; height: 100%; display: block; cursor: default; }
     #fib-sunflower { cursor: pointer; }
     .fib-nature-key { font-size: 0.72rem; font-family: "IBM Plex Mono", monospace; color: #6ee7b7; font-weight: 700; margin: 0; }
     .fib-nature-desc { color: rgba(226,232,240,0.75); font-size: 0.82rem; line-height: 1.58; margin: 0; flex: 1; }
@@ -401,7 +402,7 @@
               <div class="fib-nature-card">
                 <div class="fib-nature-zoom">👁 Human scale · mm to m</div>
                 <h3>Phyllotaxis</h3>
-                <canvas id="fib-sunflower" class="fib-nature-canvas" title="Click to replay" aria-label="Animated sunflower seed phyllotaxis pattern"></canvas>
+                <div class="fib-nature-canvas-wrap"><canvas id="fib-sunflower" class="fib-nature-canvas" title="Click to replay" aria-label="Animated sunflower seed phyllotaxis pattern"></canvas></div>
                 <p class="fib-nature-key">Golden angle 137.508° · 233 seeds</p>
                 <p class="fib-nature-desc">
                   Plants place each new leaf or seed at the golden angle (≈ 137.5°) from the last.
@@ -421,7 +422,7 @@
               <div class="fib-nature-card">
                 <div class="fib-nature-zoom">🔬 Microscale · 10–500 μm</div>
                 <h3>Diatom Symmetry</h3>
-                <canvas id="fib-diatom" class="fib-nature-canvas" aria-label="Diatom frustule with Fibonacci pore rings"></canvas>
+                <div class="fib-nature-canvas-wrap"><canvas id="fib-diatom" class="fib-nature-canvas" aria-label="Diatom frustule with Fibonacci pore rings"></canvas></div>
                 <p class="fib-nature-key">Pore rings: 5 · 8 · 13 · 21</p>
                 <p class="fib-nature-desc">
                   Diatoms are single-celled algae that build glassy silica shells called frustules.
@@ -440,7 +441,7 @@
               <div class="fib-nature-card">
                 <div class="fib-nature-zoom">🌌 Galactic scale · 10 000 ly</div>
                 <h3>Spiral Galaxies</h3>
-                <canvas id="fib-galaxy" class="fib-nature-canvas" aria-label="Two-arm logarithmic spiral galaxy simulation"></canvas>
+                <div class="fib-nature-canvas-wrap"><canvas id="fib-galaxy" class="fib-nature-canvas" aria-label="Two-arm logarithmic spiral galaxy simulation"></canvas></div>
                 <p class="fib-nature-key">Logarithmic spiral · pitch ≈ 14°</p>
                 <p class="fib-nature-desc">
                   Spiral galaxy arms follow logarithmic spirals — the continuous version of the
@@ -691,20 +692,16 @@
       renderSequence();
     })();
   </script>
+  <script src="../../../assets/js/sim-kit.js"></script>
   <script>
     (function () {
       /* ── Sunflower phyllotaxis ── */
       function initSunflower() {
         const canvas = document.getElementById('fib-sunflower');
         if (!canvas) return;
-        const W = 260, H = 260;
-        canvas.width = W; canvas.height = H;
-        const ctx = canvas.getContext('2d');
         const goldenAngle = Math.PI * (3 - Math.sqrt(5)); // ≈ 137.508°
-        const cx = W / 2, cy = H / 2;
         const maxN = 233;
-        const maxR = cx * 0.88;
-        const c = maxR / Math.sqrt(maxN);
+        let W = 260, H = 260, ctx, cx = 130, cy = 130, maxR = 114.4, c = maxR / Math.sqrt(maxN);
         let n = 0, rafId = null;
 
         function drawBg() {
@@ -737,18 +734,20 @@
           rafId = requestAnimationFrame(step);
         }
 
+        SimKit.canvas2d(canvas, { onResize: function (rCtx, w, h) {
+          ctx = rCtx; W = w; H = h;
+          cx = W / 2; cy = H / 2; maxR = cx * 0.88; c = maxR / Math.sqrt(maxN);
+          restart();
+        } });
+
         canvas.addEventListener('click', restart);
-        drawBg();
-        rafId = requestAnimationFrame(step);
       }
 
       /* ── Diatom frustule ── */
       function initDiatom() {
         const canvas = document.getElementById('fib-diatom');
         if (!canvas) return;
-        const W = 260, H = 260;
-        canvas.width = W; canvas.height = H;
-        const ctx = canvas.getContext('2d');
+        SimKit.canvas2d(canvas, { onResize: function (ctx, W, H) {
         const cx = W / 2, cy = H / 2;
         const R = cx * 0.84;
 
@@ -813,15 +812,14 @@
         cg.addColorStop(1, 'transparent');
         ctx.fillStyle = cg;
         ctx.beginPath(); ctx.arc(cx, cy, R * 0.13, 0, Math.PI * 2); ctx.fill();
+        } });
       }
 
       /* ── Spiral galaxy ── */
       function initGalaxy() {
         const canvas = document.getElementById('fib-galaxy');
         if (!canvas) return;
-        const W = 260, H = 260;
-        canvas.width = W; canvas.height = H;
-        const ctx = canvas.getContext('2d');
+        SimKit.canvas2d(canvas, { onResize: function (ctx, W, H) {
         const cx = W / 2, cy = H / 2;
         const maxR = cx * 0.9;
 
@@ -878,6 +876,7 @@
         bulge.addColorStop(1, 'transparent');
         ctx.fillStyle = bulge;
         ctx.beginPath(); ctx.arc(cx, cy, maxR * 0.28, 0, Math.PI * 2); ctx.fill();
+        } });
       }
 
       initSunflower();

@@ -195,6 +195,8 @@
       </nav>
     </div>
   </header>
+  <div class="ll-stage">
+  <div class="ll-sim">
     <div class="cl-page">
       <div class="luca-hero">
         <h1>Meet LUCA</h1>
@@ -260,7 +262,6 @@
       </div>
 
     </div>
-  </div>
 
   <script src="../../assets/js/photo-lightbox.js"></script>
   <script src="../../assets/js/lesson-layout.js"></script>
@@ -424,8 +425,15 @@
         const ch = canvas.height / (window.devicePixelRatio || 2);
         
         if (!initialized && cw > 0) {
-           panX = (cw / 2) - 400; // center LUCA at X
-           panY = (ch / 2) - 300; // center slightly lower
+           // Center the tree's actual bounding box (nodes + label space
+           // below each) instead of a hardcoded offset, so the topmost
+           // node (Fungi) never gets clipped by the container edge.
+           const treeMinX = Math.min.apply(null, nodes.map(n => n.x - n.radius));
+           const treeMaxX = Math.max.apply(null, nodes.map(n => n.x + n.radius));
+           const treeMinY = Math.min.apply(null, nodes.map(n => n.y - n.radius));
+           const treeMaxY = Math.max.apply(null, nodes.map(n => n.y + n.radius + 20)); // + label height
+           panX = (cw - (treeMinX + treeMaxX)) / 2;
+           panY = (ch - (treeMinY + treeMaxY)) / 2;
            initialized = true;
         }
 
@@ -667,6 +675,9 @@
   <footer class="site-footer">
     <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../index.html">Home</a> · <a href="../../steam-lessons.html">Lessons</a></p>
   </footer>
+  </div><!-- /.ll-sim -->
+  </div><!-- /.ll-stage -->
+  </div><!-- /.ll-viewport -->
   <script src="../../assets/js/theme-registry.js"></script>
   <script src="../../assets/js/nav-mobile.js"></script>
 </body>
