@@ -445,9 +445,11 @@
 
       <!-- Event description -->
       <div class="event-desc" id="event-desc">
-        <strong>Mt Vesuvius — 79 AD · Italy</strong>
-        Pyroclastic surges reaching 300 °C buried Pompeii and Herculaneum under 4–6 m of ash and pumice. 16,000–20,000 people perished. The eruption lasted 18 hours and ejected 3 km³ of material.
       </div>
+      <figure id="event-photo-container" data-zoomable style="margin-top: 1rem; margin-bottom: 0; display: none;">
+        <img id="event-photo" src="" alt="Event visualization" style="width: 100%; border-radius: 4px; object-fit: cover; max-height: 200px;">
+        <figcaption id="event-photo-caption" style="display:none;"></figcaption>
+      </figure>
 
     </div><!-- .vs-panel -->
         </div><!-- #vs-pane-params -->
@@ -551,21 +553,21 @@
        FAMOUS ERUPTION PRESETS
     ══════════════════════════════════════════ */
     const ERUPTIONS = [
-      { id:'vesuvius79',  flag:'🇮🇹', name:'Mt Vesuvius', year:'Aug 24, 79 AD · 1:00 PM', timeOfDay: 13.0, duration: 18, vei:5, vtype:'strato',  intensity:82, column:27, viscosity:70, pyro:80,
+      { id:'vesuvius79',  flag:'🇮🇹', name:'Mt Vesuvius', year:'Aug 24, 79 AD · 1:00 PM', timeOfDay: 13.0, duration: 18, vei:5, vtype:'strato',  intensity:82, column:27, viscosity:70, pyro:80, photoCaption: "A dramatic painting of the eruption of Mount Vesuvius in 79 AD. The massive Plinian column and pyroclastic surges devastated Pompeii.",
         desc:'<strong>Mt Vesuvius — 79 AD · Italy</strong>Pyroclastic surges at 300 °C buried Pompeii and Herculaneum under 4–6 m of ash. 16,000–20,000 killed. Eruption lasted 18 hours, ejecting 3 km³ of material.' },
-      { id:'tambora1815', flag:'🇮🇩', name:'Tambora',     year:'Apr 10, 1815 · 7:00 PM', timeOfDay: 19.0, duration: 48, vei:7, vtype:'caldera', intensity:100, column:43, viscosity:80, pyro:95,
+      { id:'tambora1815', flag:'🇮🇩', name:'Tambora',     year:'Apr 10, 1815 · 7:00 PM', timeOfDay: 19.0, duration: 48, vei:7, vtype:'caldera', intensity:100, column:43, viscosity:80, pyro:95, photoCaption: "Mount Tambora's 1815 eruption remains the largest in recorded human history. It caused a global volcanic winter.",
         desc:'<strong>Tambora — 1815 · Indonesia</strong>Deadliest eruption in recorded history. 71,000+ killed. Ejected 160 km³ of material. Caused "Year Without Summer" in 1816, triggering crop failures and famine worldwide.' },
-      { id:'krakatoa1883',flag:'🇮🇩', name:'Krakatoa',    year:'Aug 27, 1883 · 10:02 AM', timeOfDay: 10.0, duration: 12, vei:6, vtype:'caldera', intensity:95, column:36, viscosity:75, pyro:90,
+      { id:'krakatoa1883',flag:'🇮🇩', name:'Krakatoa',    year:'Aug 27, 1883 · 10:02 AM', timeOfDay: 10.0, duration: 12, vei:6, vtype:'caldera', intensity:95, column:36, viscosity:75, pyro:90, photoCaption: "A contemporary lithograph of the 1883 eruption of Krakatoa, which collapsed the island and generated massive tsunamis.",
         desc:'<strong>Krakatoa — 1883 · Indonesia</strong>Explosion heard 4,800 km away — the loudest sound in recorded history. Tsunamis up to 30 m killed 36,000. The island largely collapsed into its magma chamber.' },
-      { id:'sthelenr1980',flag:'🇺🇸', name:'Mt St Helens',year:'May 18, 1980 · 8:32 AM', timeOfDay: 8.5, duration: 9, vei:5, vtype:'strato',  intensity:78, column:24, viscosity:65, pyro:72,
+      { id:'sthelenr1980',flag:'🇺🇸', name:'Mt St Helens',year:'May 18, 1980 · 8:32 AM', timeOfDay: 8.5, duration: 9, vei:5, vtype:'strato',  intensity:78, column:24, viscosity:65, pyro:72, photoCaption: "The spectacular ash column from the May 18, 1980 eruption of Mount St. Helens, following its catastrophic lateral blast.",
         desc:'<strong>Mt St Helens — 1980 · USA</strong>A lateral blast removed the north face in seconds. 57 deaths. Ash column reached 24 km. Lahars and pyroclastic flows devastated 600 km² of forest.' },
-      { id:'pinatubo1991', flag:'🇵🇭', name:'Pinatubo',   year:'Jun 15, 1991 · 1:42 PM', timeOfDay: 13.7, duration: 9, vei:6, vtype:'strato',  intensity:92, column:35, viscosity:78, pyro:88,
+      { id:'pinatubo1991', flag:'🇵🇭', name:'Pinatubo',   year:'Jun 15, 1991 · 1:42 PM', timeOfDay: 13.7, duration: 9, vei:6, vtype:'strato',  intensity:92, column:35, viscosity:78, pyro:88, photoCaption: "The explosive 1991 eruption of Mount Pinatubo in the Philippines. It injected millions of tons of sulfur dioxide into the stratosphere.",
         desc:'<strong>Pinatubo — 1991 · Philippines</strong>Second-largest 20th-century eruption. Injected 20 Mt of SO₂ into the stratosphere, cooling the Earth by ~0.5 °C for 2 years. 800 deaths.' },
-      { id:'eyja2010',     flag:'🇮🇸', name:'Eyjafjallajökull',year:'Apr 14, 2010 · 11:00 AM', timeOfDay: 11.0, duration: 144, vei:4, vtype:'strato',  intensity:48, column:10, viscosity:40, pyro:18,
+      { id:'eyja2010',     flag:'🇮🇸', name:'Eyjafjallajökull',year:'Apr 14, 2010 · 11:00 AM', timeOfDay: 11.0, duration: 144, vei:4, vtype:'strato',  intensity:48, column:10, viscosity:40, pyro:18, photoCaption: "Eyjafjallajökull's 2010 subglacial eruption mixed glacial meltwater with magma, creating a fine ash that grounded European aviation.",
         desc:'<strong>Eyjafjallajökull — 2010 · Iceland</strong>Subglacial eruption melted the ice cap, sending meltwater floods. Fine ash cloud grounded 100,000 flights across Europe for 6 days.' },
-      { id:'maunaloa2022', flag:'🇺🇸', name:'Mauna Loa',  year:'Nov 27, 2022 · 11:30 PM', timeOfDay: 23.5, duration: 300, vei:1, vtype:'shield',  intensity:38, column:4,  viscosity:10, pyro:5,
+      { id:'maunaloa2022', flag:'🇺🇸', name:'Mauna Loa',  year:'Nov 27, 2022 · 11:30 PM', timeOfDay: 23.5, duration: 300, vei:1, vtype:'shield',  intensity:38, column:4,  viscosity:10, pyro:5, photoCaption: "Mauna Loa's 2022 eruption featured incredible lava fountains and flows of highly fluid basalt down its massive shield slopes.",
         desc:'<strong>Mauna Loa — 2022 · Hawaii, USA</strong>Earth\'s largest active volcano erupted for the first time since 1984. Spectacular lava fountains and low-viscosity basaltic flows moved toward populated areas.' },
-      { id:'yellowstone',  flag:'🇺🇸', name:'Yellowstone',year:'Hypothetical · Golden Hour', timeOfDay: 17.5, duration: 720, vei:8, vtype:'super', intensity:100, column:45, viscosity:95, pyro:100,
+      { id:'yellowstone',  flag:'🇺🇸', name:'Yellowstone',year:'Hypothetical · Golden Hour', timeOfDay: 17.5, duration: 720, vei:8, vtype:'super', intensity:100, column:45, viscosity:95, pyro:100, photoCaption: "The Grand Prismatic Spring at Yellowstone National Park. The park sits atop a massive caldera capable of supereruptions.",
         desc:'<strong>Yellowstone — Hypothetical Supereruption</strong>A full VEI 8 eruption would bury North America in metres of ash and inject enough SO₂ to trigger a decade-long volcanic winter. Last occurred 640,000 years ago.' },
     ];
 
@@ -1519,6 +1521,18 @@
       document.getElementById('vol-name-badge').textContent = ev.flag + ' ' + ev.name + ' — ' + ev.year;
       document.getElementById('event-desc').innerHTML = ev.desc;
 
+      const photoContainer = document.getElementById('event-photo-container');
+      const photoImg = document.getElementById('event-photo');
+      const photoCaption = document.getElementById('event-photo-caption');
+      
+      if (ev.photoCaption) {
+         photoImg.src = `../../assets/images/lessons/volcano-simulator/${id}-photo.jpg`;
+         photoCaption.innerHTML = ev.photoCaption;
+         photoContainer.style.display = 'block';
+      } else {
+         photoContainer.style.display = 'none';
+      }
+
       rebuildTerrain();
       updateReadouts();
       updateSky(state.intensity);
@@ -1618,11 +1632,11 @@
       
       // Make night time drastically darker
       const ambientBrightness = sunBrightness * (1.0 - Math.min(t, 1.0) * 0.7);
-      ambientLight.intensity = lerp(0.02, 0.85, ambientBrightness);
+      ambientLight.intensity = lerp(0.08, 0.85, ambientBrightness);
       sunLight.intensity = lerp(1.1, 0.1, t * 0.7) * sunBrightness;
-      fillLight.intensity = lerp(0.2, 0.05, t) * sunBrightness + (1.0 - sunBrightness) * 0.08; // Very faint moonlight
+      fillLight.intensity = lerp(0.2, 0.05, t) * sunBrightness + (1.0 - sunBrightness) * 0.20; // Brighter moonlight // Very faint moonlight
       
-      scene.fog.color.setHSL(0.04, 0.4, lerp(0.002, 0.06, ambientBrightness));
+      scene.fog.color.setHSL(0.6, 0.4, lerp(0.02, 0.06, ambientBrightness)); // Slightly blue, brighter fog at night
       if (skyMat.uniforms.sunBrightness) {
          skyMat.uniforms.sunBrightness.value = sunBrightness;
       }
