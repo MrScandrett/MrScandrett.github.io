@@ -43,6 +43,11 @@ const xorAngle = document.getElementById("p-xor-angle");
 const xorOffset = document.getElementById("p-xor-offset");
 const xorProofText = document.getElementById("p-xor-proof-text");
 
+const mlpToggle = document.getElementById("p-mlp-toggle");
+const mlpPanel = document.getElementById("p-mlp-proof");
+const mlpCanvas = document.getElementById("p-mlp-canvas");
+const mlpProofText = document.getElementById("p-mlp-proof-text");
+
 const eqTermW1 = document.getElementById("p-eq-term-w1");
 const eqTermW2 = document.getElementById("p-eq-term-w2");
 const eqTermBias = document.getElementById("p-eq-term-bias");
@@ -110,6 +115,10 @@ const required = [
   xorAngle,
   xorOffset,
   xorProofText,
+  mlpToggle,
+  mlpPanel,
+  mlpCanvas,
+  mlpProofText,
   eqTermW1,
   eqTermW2,
   eqTermBias,
@@ -238,6 +247,7 @@ const state = {
   gradeMode: "starter",
   eraMode: "1958",
   showXorProof: false,
+  showMlpProof: false,
   highContrast: false,
   dyslexicFont: false,
   activeSampleIndex: null,
@@ -558,6 +568,85 @@ function drawGraph(params, evaluation) {
   }
 }
 
+const MLP_OR_UNIT = { w1: 1, w2: 1, bias: -0.5 };
+const MLP_NAND_UNIT = { w1: -1, w2: -1, bias: 1.5 };
+
+function mlpPredict(x1, x2) {
+  const h1 = predict(x1, x2, MLP_OR_UNIT).yHat;
+  const h2 = predict(x1, x2, MLP_NAND_UNIT).yHat;
+  const y = h1 === 1 && h2 === 1 ? 1 : 0;
+  return { h1, h2, y };
+}
+
+function drawDashedBoundary(ctx, params, w, h, pad, color) {
+  const pts = boundaryIntersections(params);
+  if (pts.length !== 2) return;
+  const p0 = toCanvas(pts[0], w, h, pad);
+  const p1 = toCanvas(pts[1], w, h, pad);
+  ctx.save();
+  ctx.setLineDash([6, 5]);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(p0.x, p0.y);
+  ctx.lineTo(p1.x, p1.y);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawMlpProof() {
+  if (mlpPanel.hidden) return;
+
+  const ctx = mlpCanvas.getContext("2d");
+  const w = mlpCanvas.width;
+  const h = mlpCanvas.height;
+  const pad = 20;
+
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = "#f9fafc";
+  ctx.fillRect(0, 0, w, h);
+
+  const cols = 30;
+  const rows = 24;
+  for (let gx = 0; gx < cols; gx += 1) {
+    for (let gy = 0; gy < rows; gy += 1) {
+      const x = (gx + 0.5) / cols;
+      const y = (gy + 0.5) / rows;
+      const { y: yHat } = mlpPredict(x, y);
+      ctx.fillStyle = yHat === 1 ? "rgba(67, 145, 87, 0.17)" : "rgba(183, 76, 76, 0.10)";
+      const p = toCanvas({ x: gx / cols, y: (gy + 1) / rows }, w, h, pad);
+      const q = toCanvas({ x: (gx + 1) / cols, y: gy / rows }, w, h, pad);
+      ctx.fillRect(p.x, p.y, q.x - p.x + 1, q.y - p.y + 1);
+    }
+  }
+
+  ctx.strokeStyle = "#a7afb9";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(pad, pad, w - pad * 2, h - pad * 2);
+
+  drawDashedBoundary(ctx, MLP_OR_UNIT, w, h, pad, "#1f9d8a");
+  drawDashedBoundary(ctx, MLP_NAND_UNIT, w, h, pad, "#c9860a");
+
+  let mis = 0;
+  for (const sample of DATASETS.xor.samples) {
+    const point = toCanvas({ x: sample.x1, y: sample.x2 }, w, h, pad);
+    const { y: pred } = mlpPredict(sample.x1, sample.x2);
+    const wrong = pred !== sample.y;
+    if (wrong) mis += 1;
+
+    ctx.fillStyle = wrong ? "#d32222" : sample.y === 1 ? "#1b5fcb" : "#2f3b47";
+    if (sample.y === 1) {
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 6, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillRect(point.x - 6, point.y - 6, 12, 12);
+    }
+  }
+
+  mlpProofText.textContent = `Two lines get ${4 - mis} / 4 XOR points right. OR AND NAND overlap exactly where XOR should fire.`;
+}
+
 function xorLineParams() {
   const theta = (Number(xorAngle.value) * Math.PI) / 180;
   const offset = Number(xorOffset.value);
@@ -689,6 +778,7 @@ function renderAll({ save = true } = {}) {
   renderTable(evaluation.rows);
   drawGraph(params, evaluation);
   drawXorProof();
+  drawMlpProof();
 
   if (save) saveState();
 }
@@ -805,6 +895,7 @@ function saveState() {
     gradeMode: state.gradeMode,
     eraMode: state.eraMode,
     showXorProof: state.showXorProof,
+    showMlpProof: state.showMlpProof,
     highContrast: state.highContrast,
     dyslexicFont: state.dyslexicFont,
     compactPanel: state.compactPanel,
@@ -839,6 +930,7 @@ function loadState() {
 
     state.epochs = Number.isFinite(saved.epochs) ? saved.epochs : 0;
     state.showXorProof = Boolean(saved.showXorProof);
+    state.showMlpProof = Boolean(saved.showMlpProof);
     state.highContrast = Boolean(saved.highContrast);
     state.dyslexicFont = Boolean(saved.dyslexicFont);
 
@@ -952,6 +1044,22 @@ xorToggle.addEventListener("click", () => {
   saveState();
 });
 
+mlpToggle.addEventListener("click", () => {
+  state.showMlpProof = !state.showMlpProof;
+  mlpPanel.hidden = !state.showMlpProof;
+  mlpToggle.textContent = state.showMlpProof ? "Hide the two-layer solution" : "Reveal the two-layer solution";
+  if (state.showMlpProof) {
+    setCompactPanel("learn", { save: false });
+  }
+  drawMlpProof();
+  setLiveStatus(
+    state.showMlpProof
+      ? "Two-layer solution revealed. A hidden OR unit and a hidden NAND unit combine with AND to solve XOR."
+      : "Two-layer solution hidden."
+  );
+  saveState();
+});
+
 xorAngle.addEventListener("input", () => {
   drawXorProof();
   saveState();
@@ -1006,6 +1114,9 @@ updateControlClasses();
 
 xorPanel.hidden = !state.showXorProof;
 xorToggle.textContent = state.showXorProof ? "Hide XOR proof" : "Show why XOR fails";
+
+mlpPanel.hidden = !state.showMlpProof;
+mlpToggle.textContent = state.showMlpProof ? "Hide the two-layer solution" : "Reveal the two-layer solution";
 
 if (diagnosticsSummary) {
   diagnosticsSummary.textContent = diagnostics.open ? "CLOSE LAB LOG + DIAGNOSTICS" : "OPEN LAB LOG + DIAGNOSTICS";

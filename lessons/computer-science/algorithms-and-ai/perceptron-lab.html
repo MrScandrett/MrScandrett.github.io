@@ -236,6 +236,26 @@
                 </div>
               </div>
             </section>
+
+            <section id="two-layer-solver" class="perceptron-xor-zone perceptron-mlp-zone perceptron-tab-panel" data-compact-panel-group="learn">
+              <div class="perceptron-xor-copy">
+                <span class="perceptron-panel-kicker">The fix</span>
+                <h3>Two lines beat XOR</h3>
+                <p>One straight boundary can't split XOR. Two can — if you combine them the right way. This is what a hidden layer buys you.</p>
+                <button id="p-mlp-toggle" type="button">Reveal the two-layer solution <span aria-hidden="true">→</span></button>
+              </div>
+              <div id="p-mlp-proof" class="perceptron-xor-proof" hidden>
+                <canvas id="p-mlp-canvas" width="360" height="230" aria-label="Two-layer XOR solution graph" style="max-width:100%;height:auto;"></canvas>
+                <div class="perceptron-xor-controls">
+                  <ul class="perceptron-mlp-units">
+                    <li><strong>Hidden unit A</strong> learns OR — the dashed teal line. It fires (1) for every point except (0,0).</li>
+                    <li><strong>Hidden unit B</strong> learns NAND — the dashed amber line. It fires (1) for every point except (1,1).</li>
+                    <li><strong>Output unit</strong> fires only when <em>both</em> hidden units fire — A AND B. That overlap is exactly the two XOR corners that should be class 1.</li>
+                  </ul>
+                  <p id="p-mlp-proof-text" class="perceptron-proof-text perceptron-proof-text--ok"></p>
+                </div>
+              </div>
+            </section>
           </div>
         </article>
       </section>
@@ -270,18 +290,41 @@
       <section class="section" id="mark-i-history">
         <div class="section-head">
           <h2>History Panel: Mark I Perceptron (1958)</h2>
-          <p>The specific machine demonstrated in 1958 was the Mark I Perceptron.</p>
+          <p>The specific machine demonstrated in 1958 was the Mark I Perceptron — and the idea it introduced never left. It's still the basic unit inside every modern neural network you use today.</p>
         </div>
         <div class="columns history-columns">
           <article class="card history-card">
             <h3>Machine Context</h3>
             <ul class="rhythm">
               <li><span>Scientist</span><strong>Frank Rosenblatt</strong></li>
-              <li><span>Institution</span><strong>Cornell University</strong></li>
-              <li><span>Hardware Context</span><strong>Implemented on an IBM 704 computer</strong></li>
+              <li><span>Institution</span><strong>Cornell Aeronautical Laboratory</strong></li>
+              <li><span>Funded By</span><strong>U.S. Office of Naval Research</strong></li>
+              <li><span>Hardware Context</span><strong>Simulated first on an IBM 704, then built as a physical machine</strong></li>
               <li><span>Physical Machine</span><strong>Mark I Perceptron</strong></li>
             </ul>
             <p class="history-note">Perceptron is the model. Mark I Perceptron was the physical machine.</p>
+          </article>
+
+          <article class="card history-card">
+            <h3>How It Was Actually Built</h3>
+            <p><strong>Eyes:</strong> a 20×20 grid of 400 photocells, wired randomly to input units, acted as its "retina."</p>
+            <p><strong>Weights:</strong> not numbers in software — physical potentiometers, one per connection. <strong>Learning:</strong> electric motors turned those potentiometer dials whenever a guess was wrong, mechanically carrying out the same <code>w = w + η × error × x</code> rule you used above.</p>
+            <p><strong>Task:</strong> tell simple shapes apart, like a square from a triangle held in front of the camera.</p>
+            <p class="history-note">Every slider you dragged above stands in for a motor that once physically turned a dial.</p>
+          </article>
+
+          <article class="card history-card">
+            <h3>The Hype — and the Limit That Stopped It</h3>
+            <p>In 1958 the <em>New York Times</em> reported the Navy expected the perceptron to eventually "walk, talk, see, write, reproduce itself and be conscious of its existence." Funding poured in.</p>
+            <p>In 1969, Marvin Minsky and Seymour Papert published <em>Perceptrons</em>, mathematically proving that a single-layer perceptron can never solve a problem like XOR — the exact limit you just tested in the XOR challenge tab above. Funders read it as a verdict on neural networks generally, funding dried up, and the field entered what's now called the <strong>first AI winter</strong>, lasting into the early 1980s.</p>
+            <p class="history-note">The book was right about single-layer perceptrons — but wrong that the idea was a dead end. It just needed more than one layer.</p>
+          </article>
+
+          <article class="card history-card">
+            <h3>How It's Used to Your Advantage Today</h3>
+            <p>The fix hiding in plain sight was the one you already built: stack perceptron-like units into layers, like the OR-and-NAND combination in the two-layer XOR solver. Every layer draws its own boundaries; combined, they carve out shapes no single line could.</p>
+            <p>That single idea, scaled up, is the basic unit of every modern neural network — image recognizers sorting photos, voice assistants parsing speech, recommendation engines, and the large language models behind tools like this one. Each is millions of perceptron-style units (weighted sum → threshold-like activation) arranged in many layers, trained with <strong>backpropagation</strong>: a generalization of the exact error-driven update rule you trained with above, just spread across every layer instead of one.</p>
+            <p class="history-note">You didn't just simulate a 1958 artifact — you rebuilt the smallest working piece of the systems training today's AI.</p>
           </article>
 
           <article class="card timeline-card">
@@ -300,8 +343,16 @@
                 <div><strong>ELIZA demonstrates scripted NLP conversation</strong></div>
               </li>
               <li>
+                <time datetime="1969">1969</time>
+                <div><strong>Minsky &amp; Papert's <em>Perceptrons</em> triggers the first AI winter</strong></div>
+              </li>
+              <li>
                 <time datetime="1970">1970s</time>
                 <div><strong>Expert systems expand symbolic AI</strong></div>
+              </li>
+              <li>
+                <time datetime="1986">1986</time>
+                <div><strong>Backpropagation popularized for training multi-layer networks</strong></div>
               </li>
               <li>
                 <time datetime="2012">2012</time>
@@ -324,10 +375,10 @@
             <small>Use the built-in Mark I Perceptron emulator on this page</small>
           </a>
 
-          <a class="tile" href="#" aria-disabled="true">
+          <a class="tile" href="#two-layer-solver">
             <span class="tile-kicker">Extension</span>
-            <strong>Implement a two-layer XOR solver and compare traces</strong>
-            <small>Optional challenge for advanced students</small>
+            <strong>See the two-layer XOR solver and compare traces</strong>
+            <small>Open the XOR challenge tab, then reveal the two-layer solution</small>
           </a>
 
           <a class="tile" href="../../../steam-lessons.html">

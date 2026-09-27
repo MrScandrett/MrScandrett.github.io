@@ -1,0 +1,846 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rescue Grid: The A* Mission · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta name="description" content="Rescue Grid: a mission simulator for A* pathfinding in the AI Origins unit." />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/pathfinding.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/algorithms-ai-module.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 300px; --ll-accent: #d45a00; --ll-tab-active: #e06b00; --ll-tab-active-bg: rgba(212,90,0,0.10); }
+
+    /* A* Rescue Grid Lab Styles */
+    .astar-mission-lab {
+      background: var(--glass-fill-strong, #ffffff);
+      border: 1px solid var(--line, rgba(0,0,0,0.1));
+      border-radius: 20px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    [data-lighting="night"] .astar-mission-lab,
+    [data-theme="vaporwave"] .astar-mission-lab,
+    [data-theme="bark"] .astar-mission-lab {
+      background: #111827;
+      border-color: rgba(255,255,255,0.08);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+    .astar-control-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--line, rgba(0,0,0,0.08));
+    }
+    [data-lighting="night"] .astar-control-bar,
+    [data-theme="vaporwave"] .astar-control-bar,
+    [data-theme="bark"] .astar-control-bar { border-color: rgba(255,255,255,0.1); }
+    
+    .astar-control-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .astar-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted, #64748b);
+      margin-right: 0.25rem;
+    }
+    .astar-tool {
+      background: rgba(0,0,0,0.03);
+      border: 1px solid var(--line, rgba(0,0,0,0.1));
+      color: #334155;
+      padding: 0.45rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    [data-lighting="night"] .astar-tool,
+    [data-theme="vaporwave"] .astar-tool,
+    [data-theme="bark"] .astar-tool {
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(255,255,255,0.1);
+      color: #e2e8f0;
+    }
+    .astar-tool:hover {
+      background: rgba(0,0,0,0.06);
+    }
+    [data-lighting="night"] .astar-tool:hover,
+    [data-theme="vaporwave"] .astar-tool:hover,
+    [data-theme="bark"] .astar-tool:hover { background: rgba(255,255,255,0.1); }
+    .astar-tool.is-active {
+      background: var(--ll-active-bg, #fff4e6);
+      border-color: var(--ll-accent, #d45a00);
+      color: var(--ll-accent, #d45a00);
+      box-shadow: 0 0 10px rgba(212, 90, 0, 0.15);
+    }
+    [data-lighting="night"] .astar-tool.is-active,
+    [data-theme="vaporwave"] .astar-tool.is-active,
+    [data-theme="bark"] .astar-tool.is-active {
+      background: var(--ll-accent, #d45a00);
+      color: #fff;
+    }
+    
+    .astar-grid-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      gap: 1.5rem;
+      align-items: start;
+    }
+    .astar-grid-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .astar-grid-canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #f1f5f9;
+      border-radius: 8px;
+      cursor: crosshair;
+      touch-action: none;
+    }
+    [data-lighting="night"] .astar-grid-canvas,
+    [data-theme="vaporwave"] .astar-grid-canvas,
+    [data-theme="bark"] .astar-grid-canvas {
+      background: #1e293b;
+    }
+    
+    .astar-status {
+      margin: 0;
+      padding: 0.85rem 1rem;
+      background: rgba(0,0,0,0.04);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      color: #475569;
+    }
+    [data-lighting="night"] .astar-status,
+    [data-theme="vaporwave"] .astar-status,
+    [data-theme="bark"] .astar-status { background: rgba(255,255,255,0.05); color: #cbd5e1; }
+    
+    .astar-legend {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      font-size: 0.8rem;
+      color: var(--text-muted, #64748b);
+    }
+    .astar-legend li { display: flex; align-items: center; gap: 0.4rem; }
+    .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+    .swatch.rover { background: #3b82f6; border-radius: 50%; }
+    .swatch.beacon { background: #22c55e; clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
+    .swatch.debris { background: #475569; }
+    [data-lighting="night"] .swatch.debris,
+    [data-theme="vaporwave"] .swatch.debris,
+    [data-theme="bark"] .swatch.debris { background: #94a3b8; }
+    .swatch.sand { background: #fcd34d; }
+    [data-lighting="night"] .swatch.sand,
+    [data-theme="vaporwave"] .swatch.sand,
+    [data-theme="bark"] .swatch.sand { background: #ca8a04; }
+    .swatch.open { background: rgba(59, 130, 246, 0.2); }
+    .swatch.closed { background: rgba(148, 163, 184, 0.3); }
+    .swatch.path { background: #a855f7; border-radius: 50%; }
+    
+    .astar-side-panel {
+      display: grid;
+      gap: 1rem;
+    }
+    .astar-panel {
+      background: #f8fafc;
+      border: 1px solid var(--line, rgba(0,0,0,0.1));
+      border-radius: 12px;
+      padding: 1.2rem;
+    }
+    [data-lighting="night"] .astar-panel,
+    [data-theme="vaporwave"] .astar-panel,
+    [data-theme="bark"] .astar-panel {
+      background: rgba(255,255,255,0.03);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .astar-panel h3 {
+      margin: 0 0 1rem;
+      font-size: 0.9rem;
+      color: #1e293b;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    [data-lighting="night"] .astar-panel h3,
+    [data-theme="vaporwave"] .astar-panel h3,
+    [data-theme="bark"] .astar-panel h3 { color: #f1f5f9; }
+    
+    .astar-instrument-list,
+    .astar-metric-list {
+      list-style: none;
+      padding: 0; margin: 0;
+      display: flex; flex-direction: column; gap: 0.75rem;
+    }
+    .astar-instrument-list li,
+    .astar-metric-list li {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.85rem; color: #475569;
+    }
+    [data-lighting="night"] .astar-instrument-list li,
+    [data-theme="vaporwave"] .astar-instrument-list li,
+    [data-theme="bark"] .astar-instrument-list li,
+    [data-lighting="night"] .astar-metric-list li,
+    [data-theme="vaporwave"] .astar-metric-list li,
+    [data-theme="bark"] .astar-metric-list li { color: #cbd5e1; }
+    
+    .astar-instrument-list strong,
+    .astar-metric-list strong {
+      font-family: 'IBM Plex Mono', monospace;
+      color: #3b82f6;
+      font-size: 0.95rem;
+      background: rgba(0,0,0,0.05);
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      text-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+      animation: crt-flicker 4s infinite;
+    }
+    [data-lighting="night"] .astar-instrument-list strong,
+    [data-theme="vaporwave"] .astar-instrument-list strong,
+    [data-theme="bark"] .astar-instrument-list strong,
+    [data-lighting="night"] .astar-metric-list strong,
+    [data-theme="vaporwave"] .astar-metric-list strong,
+    [data-theme="bark"] .astar-metric-list strong { color: #60a5fa; background: rgba(255,255,255,0.05); }
+
+    @keyframes crt-flicker {
+      0% { opacity: 1; }
+      5% { opacity: 0.8; }
+      10% { opacity: 1; }
+      15% { opacity: 0.9; }
+      20% { opacity: 1; }
+      100% { opacity: 1; }
+    }
+    
+    .astar-panel-note {
+      font-size: 0.8rem; color: var(--text-muted, #64748b); margin: 0 0 0.75rem;
+    }
+    
+    .astar-table-wrap { overflow-x: auto; }
+    .astar-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: left; }
+    .astar-table th { color: var(--text-muted, #64748b); font-weight: 600; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(0,0,0,0.1); }
+    [data-lighting="night"] .astar-table th,
+    [data-theme="vaporwave"] .astar-table th,
+    [data-theme="bark"] .astar-table th { border-bottom-color: rgba(255,255,255,0.1); }
+    .astar-table td { padding: 0.5rem 0; color: #334155; border-bottom: 1px solid rgba(0,0,0,0.05); }
+    [data-lighting="night"] .astar-table td,
+    [data-theme="vaporwave"] .astar-table td,
+    [data-theme="bark"] .astar-table td { color: #e2e8f0; border-bottom-color: rgba(255,255,255,0.05); }
+    .astar-table tbody tr:last-child td { border-bottom: none; }
+    
+    @media (max-width: 960px) {
+      .astar-grid-layout { grid-template-columns: 1fr; }
+    }
+
+    /* Scrubber styling */
+    .astar-scrubber-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 1rem 0;
+      padding: 0.5rem 1rem;
+      background: rgba(0,0,0,0.03);
+      border: 1px solid var(--line, rgba(0,0,0,0.08));
+      border-radius: 10px;
+      transition: all 0.2s ease;
+    }
+    [data-lighting="night"] .astar-scrubber-bar,
+    [data-theme="vaporwave"] .astar-scrubber-bar,
+    [data-theme="bark"] .astar-scrubber-bar {
+      background: rgba(255,255,255,0.03);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .astar-scrubber-bar input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(0,0,0,0.1);
+      outline: none;
+      transition: background 0.2s ease;
+    }
+    [data-lighting="night"] .astar-scrubber-bar input[type="range"],
+    [data-theme="vaporwave"] .astar-scrubber-bar input[type="range"],
+    [data-theme="bark"] .astar-scrubber-bar input[type="range"] {
+      background: rgba(255,255,255,0.15);
+    }
+    .astar-scrubber-bar input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--ll-accent, #d45a00);
+      cursor: pointer;
+      border: 2px solid var(--glass-fill-strong, #fff);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+      transition: transform 0.1s ease;
+    }
+    .astar-scrubber-bar input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+    .astar-scrubber-bar input[type="range"]:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .astar-scrubber-bar input[type="range"]:disabled::-webkit-slider-thumb {
+      background: #94a3b8;
+      cursor: not-allowed;
+      transform: none;
+    }
+    #astar-decision-inspector {
+      color: #334155;
+    }
+    [data-lighting="night"] #astar-decision-inspector,
+    [data-theme="vaporwave"] #astar-decision-inspector,
+    [data-theme="bark"] #astar-decision-inspector {
+      color: #e2e8f0;
+    }
+
+    /* Historical/real-world photos in the reading sections */
+    .path-photo {
+      margin: 0 0 0.9rem;
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(0,0,0,0.03);
+      border: 1px solid var(--line, rgba(0,0,0,0.08));
+    }
+    [data-lighting="night"] .path-photo,
+    [data-theme="vaporwave"] .path-photo,
+    [data-theme="bark"] .path-photo {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .path-photo img {
+      display: block;
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      cursor: zoom-in;
+    }
+    .path-photo figcaption {
+      padding: 0.5rem 0.75rem 0.7rem;
+      font-size: 0.78rem;
+      color: var(--text-muted, #64748b);
+    }
+    .path-photo figcaption strong { display: block; color: #1e293b; font-size: 0.85rem; margin-bottom: 0.15rem; }
+    [data-lighting="night"] .path-photo figcaption strong,
+    [data-theme="vaporwave"] .path-photo figcaption strong,
+    [data-theme="bark"] .path-photo figcaption strong { color: #f1f5f9; }
+    .path-photo-credit { display: block; margin-top: 0.25rem; font-size: 0.72rem; opacity: 0.8; }
+    @media (max-width: 640px) {
+      .path-photo img { height: 130px; }
+    }
+  </style>
+  <link rel="stylesheet" href="../../../assets/css/lessons/pathfinding-ux.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../recipe-book.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <main class="ll-sim" id="main-content">
+
+      <div class="ll-hero astar-hero">
+        <div class="astar-orbit" aria-hidden="true"><span class="astar-orbit-start">R</span><span class="astar-orbit-goal">✦</span><i></i><b></b></div>
+        <p class="eyebrow">Pathfinding lab · Grades 6–12</p>
+        <h1 id="astar-mission-title">Rescue Grid: The A* Mission</h1>
+        <p id="astar-mission-subtitle">Guide the rover to the beacon using A* while terrain, fuel pressure, and mission rules change in real time.</p>
+      </div>
+
+      <section class="section" id="astar-live">
+        <article class="card astar-mission-lab" aria-label="Interactive A* mission simulator">
+
+          <header class="astar-launch">
+            <h2>Can you find the cheapest route?</h2>
+            <p>The map is ready. Predict a route, then <strong>Run search</strong> to test it. The rover moves up, down, left, or right. <span class="astar-rule">Open ground <b>1</b></span> <span class="astar-rule rule-sand">Sand <b>3</b></span> <span class="astar-rule rule-rock">Craters <b>Blocked</b></span></p>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;">
+            <button id="astar-run" type="button" style="flex:1;min-width:80px;padding:7px 8px;border-radius:8px;border:1px solid var(--ll-panel-border);font:inherit;cursor:pointer;font-weight:700;">Run search</button>
+            <button id="astar-step" type="button" disabled style="flex:1;min-width:80px;padding:7px 8px;border-radius:8px;border:1px solid var(--ll-panel-border);font:inherit;cursor:pointer;">Next step</button>
+            <button id="astar-clear-search" type="button" style="flex:1 0 100%;padding:7px;border-radius:8px;border:1px solid var(--ll-panel-border);font:inherit;cursor:pointer;">Clear results</button>
+          </div><details class="astar-edit-instructions"><summary>How to edit the map · mouse, touch, or keyboard</summary><p class="astar-help" id="astar-edit-help">To change the map, choose a tool and tap or drag across tiles. Keyboard: focus the map, use arrow keys to choose a tile, then Enter to paint. Pause the search before editing.</p></details>
+          </header>
+          <div class="astar-scenarios" role="group" aria-label="Load a challenge map">
+            <span>Choose a map</span>
+            <button type="button" data-scenario="starter"><span aria-hidden="true">↗</span><strong>First contact</strong><small>Find your first route</small></button>
+            <button type="button" data-scenario="detour"><span aria-hidden="true">↱</span><strong>The detour</strong><small>Go around the ridge</small></button>
+            <button type="button" data-scenario="sand"><span aria-hidden="true">≋</span><strong>Sand shortcut</strong><small>Fewer steps or less cost?</small></button>
+          </div>
+          <div class="astar-control-bar">
+            <div class="astar-control-group" role="group" aria-label="Node placement tools">
+              <span class="astar-label">Paint Tool</span>
+              <button id="astar-tool-start" type="button" class="astar-tool is-active" data-tool="start" aria-pressed="true">Rover</button>
+              <button id="astar-tool-goal" type="button" class="astar-tool" data-tool="goal" aria-pressed="false">Beacon</button>
+              <button id="astar-tool-blocked" type="button" class="astar-tool" data-tool="blocked" aria-pressed="false">Debris</button>
+              <button id="astar-tool-sand" type="button" class="astar-tool" data-tool="sand" aria-pressed="false">Sand (Cost 3)</button>
+              <button type="button" class="astar-tool" data-tool="clear" aria-pressed="false">Erase</button>
+            </div>
+          </div>
+
+          <div class="astar-grid-layout">
+            <section class="astar-grid-panel" aria-label="Mission map simulation panel">
+              <div class="astar-map-heading"><span><strong>Mission map</strong> <span id="astar-map-size">12 × 8</span></span><span id="astar-phase">Ready to explore</span></div>
+              <canvas id="astar-grid" class="astar-grid-canvas" tabindex="0" aria-label="Editable rescue mission grid" aria-describedby="astar-edit-help astar-cell-description"></canvas>
+              <p id="astar-cell-description" class="astar-cell-description" aria-live="polite"></p>
+              <p id="astar-status" class="astar-status" aria-live="polite">Build your grid, then run the mission.</p>
+
+              <div class="astar-scrubber-bar">
+                <button id="astar-play-pause" type="button" class="astar-tool" style="padding:0.3rem 0.6rem;font-size:0.8rem;min-width:32px;" title="Play Mission" disabled>▶</button>
+                <input aria-label="Search replay position" id="astar-scrubber" type="range" min="0" max="0" value="0" step="1" style="flex:1;cursor:pointer;" disabled />
+                <span id="astar-scrubber-label" style="font-family:'IBM Plex Mono',monospace;font-size:0.8rem;min-width:70px;text-align:right;">0 / 0</span>
+              </div>
+
+              <ul class="astar-legend" aria-label="Grid legend">
+                <li><span class="swatch rover"></span> <span id="astar-legend-start">Rover (Start)</span></li>
+                <li><span class="swatch beacon"></span> <span id="astar-legend-goal">Beacon (Goal)</span></li>
+                <li><span class="swatch debris"></span> <span id="astar-legend-blocked">Debris (Blocked)</span></li>
+                <li><span class="swatch sand"></span> <span id="astar-legend-slow">Sand (Cost 3)</span></li>
+                <li><span class="swatch open"></span> To explore · ring</li>
+                <li><span class="swatch closed"></span> Checked · dot</li>
+                <li><span class="swatch path"></span> Final path</li><li><span class="swatch current"></span> Checking now · crosshair</li>
+              </ul>
+            </section>
+
+            <aside class="astar-side-panel">
+              <section class="astar-panel">
+                <h3>How A* chooses</h3><p class="astar-formula"><span>Cost so far</span><b>+</b><span>Estimate left</span><b>=</b><span>Priority</span></p>
+                <ul class="astar-instrument-list">
+                  <li><span>Cost so far · g</span><strong id="astar-g">0.00</strong></li>
+                  <li><span>Estimate left · h</span><strong id="astar-h">0.00</strong></li>
+                  <li><span>Estimated total · g + h</span><strong id="astar-f">0.00</strong></li>
+                </ul>
+              </section>
+
+              <section class="astar-panel">
+                <h3>Decision Inspector</h3>
+                <div id="astar-decision-inspector">
+                  <p id="astar-decision-why" style="margin:0 0 0.5rem;font-weight:600;color:var(--ll-accent,#d45a00);">Ready to inspect</p>
+                  <p id="astar-decision-detail" style="margin:0;color: var(--text-muted, #64748b);">Choose "Run search" or step through the search to analyze the algorithm's decisions in real time.</p>
+                </div>
+              </section>
+
+              <section class="astar-panel">
+                <h3>Search results</h3>
+                <ul class="astar-metric-list">
+                  <li><span>Cells checked</span><strong id="astar-nodes-expanded">0</strong></li>
+                  <li><span>Final Path Cost</span><strong id="astar-path-cost">--</strong></li>
+                  <li><span>Time to Solve</span><strong id="astar-time">--</strong></li>
+                  <li><span>Optimality Check</span><strong id="astar-optimality">Pending</strong></li>
+                </ul>
+              </section>
+
+              <section class="astar-panel">
+                <h3>Heuristic Comparison</h3>
+                <p class="astar-panel-note">Same map, three estimates. Compare cost and cells checked. Timing varies by device; it excludes animation.</p>
+                <div class="astar-table-wrap">
+                  <table class="astar-table">
+                    <thead>
+                      <tr>
+                        <th scope="col">Heuristic</th>
+                        <th scope="col">Nodes</th>
+                        <th scope="col">Cost</th>
+                        <th scope="col">Time</th>
+                      </tr>
+                    </thead>
+                    <tbody id="astar-compare-body">
+                      <tr>
+                        <td>Manhattan</td>
+                        <td>--</td>
+                        <td>--</td>
+                        <td>--</td>
+                      </tr>
+                      <tr>
+                        <td>Euclidean</td>
+                        <td>--</td>
+                        <td>--</td>
+                        <td>--</td>
+                      </tr>
+                      <tr>
+                        <td>Zero (Dijkstra)</td>
+                        <td>--</td>
+                        <td>--</td>
+                        <td>--</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </aside>
+          </div>
+        </article>
+      </section>
+
+      <details class="astar-reading"><summary>What Is Pathfinding?</summary><section class="section">
+        <div class="section-head">
+          <h2>What Is Pathfinding?</h2>
+          <p><strong>Pathfinding</strong> is the problem of finding a route between two points through a space that has obstacles, costs, or rules attached to it. That space might be a grid on a screen, a road network, a warehouse floor, or the inside of a computer chip — the algorithm doesn't care what the "space" represents, only how it's connected.</p>
+        </div>
+        <div class="columns">
+          <article class="card">
+            <h3>In Software</h3>
+            <p>Every time a map app reroutes you around traffic, a game character walks toward you around a wall, or a delivery app schedules stops on a route, pathfinding is running underneath. It's also inside tools you wouldn't expect: network routers use pathfinding-style algorithms to decide how a data packet hops from server to server, and chip designers use it to route the microscopic wires connecting a processor's components without letting any two cross.</p>
+          </article>
+          <article class="card">
+            <h3>In Hardware</h3>
+            <p>A warehouse robot planning a route between shelves, a robot vacuum mapping a room, a drone weaving between obstacles, and a factory arm avoiding a collision are all solving a pathfinding problem — but now a wrong answer costs real time, real hardware, or a real collision instead of a wasted frame. Hardware pathfinding also usually has to run continuously as the world changes, not just once at the start.</p>
+            <figure class="path-photo" data-zoomable data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Curiosity_Self-Portrait_at_%27Big_Sky%27_Drilling_Site.jpg?width=1400">
+              <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Curiosity_Self-Portrait_at_%27Big_Sky%27_Drilling_Site.jpg?width=500" alt="NASA's Curiosity rover self-portrait on the Martian surface at the Big Sky drilling site" loading="lazy" />
+              <figcaption><strong>A real rover on real terrain</strong>NASA's Curiosity rover plans safe routes across Martian rock and sand — the same rover-and-terrain idea behind this lab's Mars theme. <span class="path-photo-credit">NASA/JPL-Caltech/MSSS · public domain · <a href="https://commons.wikimedia.org/wiki/File:Curiosity_Self-Portrait_at_%27Big_Sky%27_Drilling_Site.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></span></figcaption>
+            </figure>
+          </article>
+          <article class="card">
+            <h3>Biomimicry: Borrowing From Nature</h3>
+            <p>Some of the best pathfinding ideas were discovered by biologists, not computer scientists. Ants leave pheromone trails that evaporate over time, so shorter round-trips get reinforced faster than long ones — a decentralized way for a whole colony to converge on an efficient path, now used in <strong>ant colony optimization</strong> for shipping and network routing. Slime mold, given oat flakes arranged like a map's cities, grows a network of tubes that closely mirrors real-world rail systems, because it prunes inefficient connections as it grows. Flocking birds and schooling fish navigate collision-free as a group using only simple local rules, which is the same idea behind "boid" simulations that give game crowds and swarms of robots believable, coordinated movement without any one member planning the whole route.</p>
+            <figure class="path-photo" data-zoomable data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Ant_queens_on_brood_(Pheidole_dentata)_(42171519822).jpg?width=1400">
+              <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Ant_queens_on_brood_(Pheidole_dentata)_(42171519822).jpg?width=500" alt="Close-up photo of ants tending brood in a colony" loading="lazy" />
+              <figcaption><strong>No single ant plans the route</strong>An ant colony finds efficient paths through the shared, decentralized behavior of many individual ants, not a leader plotting a course. <span class="path-photo-credit">Insects Unlocked, UT Austin · CC0 (public domain dedication) · <a href="https://commons.wikimedia.org/wiki/File:Ant_queens_on_brood_(Pheidole_dentata)_(42171519822).jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></span></figcaption>
+            </figure>
+          </article>
+        </div>
+      </section></details>
+
+      <details class="astar-reading"><summary>The Evolution of Pathfinding: Games and Real Life</summary><section class="section">
+        <div class="section-head">
+          <h2>The Evolution of Pathfinding: Games and Real Life</h2>
+          <p>Pathfinding has gotten steadily smarter as hardware got faster and the problems it needed to solve got harder.</p>
+        </div>
+        <div class="columns">
+          <article class="card">
+            <h3>Video Games: From Grids to Navmeshes</h3>
+            <p><em>Pac-Man</em>'s ghosts (1980) used simple, almost hard-coded chase rules on a small maze grid — there wasn't enough processing power for much else. By the 1990s and 2000s, real-time strategy games like <em>StarCraft</em> and <em>Age of Empires</em> needed dozens of units pathfinding across large maps simultaneously without freezing the game, which pushed developers toward more efficient search and shared, precomputed route data. Modern 3D games mostly don't search a grid at all — they search a <strong>navigation mesh</strong>, a set of connected walkable polygons draped over the 3D level, which is far faster to search than checking every tiny tile.</p>
+          </article>
+          <article class="card">
+            <h3>Real Life: From Paper Maps to Live Rerouting</h3>
+            <p>Early car navigation and mainframe route planning (1960s–1980s) could only compute a static shortest path on a fixed map, computed once, well ahead of time. Consumer GPS navigation in the 1990s–2000s brought this to a dashboard, but still assumed the road network didn't change mid-trip. Today's map apps continuously re-run pathfinding using live traffic data, treating slow roads as temporarily higher-cost edges — the same g(n)/h(n) idea in this lab, just rerun every few seconds on a vastly bigger graph.</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+              <figure class="path-photo" data-zoomable data-lightbox-group="path-history" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/GPS_Satellite_NASA_art-iif.jpg?width=1400">
+                <img src="https://commons.wikimedia.org/wiki/Special:FilePath/GPS_Satellite_NASA_art-iif.jpg?width=500" alt="Artist's illustration of a GPS Block II-F satellite in Earth orbit" loading="lazy" />
+                <figcaption><strong>Live position data from orbit</strong>GPS satellites give every device on the ground the position data that turns a static map into a live-rerouting one. <span class="path-photo-credit">NASA · public domain · <a href="https://commons.wikimedia.org/wiki/File:GPS_Satellite_NASA_art-iif.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></span></figcaption>
+              </figure>
+              <figure class="path-photo" data-zoomable data-lightbox-group="path-history" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/The_winner,_2005_DARPA_Grand_Challenge_-Stanford%27s_Stanley.tiff?width=1400">
+                <img src="https://commons.wikimedia.org/wiki/Special:FilePath/The_winner,_2005_DARPA_Grand_Challenge_-Stanford%27s_Stanley.tiff?width=500" alt="Stanford's self-driving car Stanley, winner of the 2005 DARPA Grand Challenge" loading="lazy" />
+                <figcaption><strong>Planning a route with no driver</strong>Stanley, Stanford's autonomous car, won the 2005 DARPA Grand Challenge by planning and replanning its own desert route in real time. <span class="path-photo-credit">DARPA · public domain · <a href="https://commons.wikimedia.org/wiki/File:The_winner,_2005_DARPA_Grand_Challenge_-Stanford%27s_Stanley.tiff" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></span></figcaption>
+              </figure>
+            </div>
+          </article>
+        </div>
+      </section></details>
+
+      <details class="astar-reading"><summary>The Future of AI Pathfinding</summary><section class="section">
+        <div class="section-head">
+          <h2>The Future of AI Pathfinding</h2>
+          <p>Classic algorithms like A* guarantee a correct answer, but they still search a known map with a hand-designed heuristic. The active research now is about what happens when the map is huge, unknown, shared by many agents, or changing faster than a search can keep up with.</p>
+        </div>
+        <div class="columns">
+          <article class="card">
+            <h3>Learned Heuristics</h3>
+            <p>Instead of a programmer designing h(n) by hand — Manhattan distance, Euclidean distance, or zero — machine learning models can be trained on millions of past searches to predict a much better estimate of remaining cost, letting A*-style search check far fewer nodes on huge, complex maps like real city road networks.</p>
+          </article>
+          <article class="card">
+            <h3>Reinforcement Learning</h3>
+            <p>Rather than searching a graph at all, an agent can learn a movement policy directly by trial and error in a simulated environment — useful when the "cost" of a path is hard to define in advance, like a robot arm avoiding a fragile object or a legged robot crossing rubble.</p>
+          </article>
+          <article class="card">
+            <h3>Multi-Agent Coordination</h3>
+            <p>Warehouses like Amazon's run hundreds of robots on the same floor at once, where the hard problem isn't finding any one robot's path — it's finding paths for all of them that don't collide or deadlock each other, which needs its own family of algorithms on top of A*.</p>
+          </article>
+        </div>
+        <p>The core idea from this lab — balance what you already know against your best guess of what's ahead — keeps showing up at every layer of this progress, from a single rover on a grid to a fleet of self-driving cars.</p>
+      </section></details>
+
+      <details class="astar-reading"><summary>Why Pathfinding?</summary><section class="section">
+        <div class="section-head">
+          <h2>Why Pathfinding?</h2>
+          <p>Pathfinding shows up any time something needs to move — or spread — intelligently through a space. It's one of the most common sources of real complexity in a student game project, and it's rarely just one question.</p>
+        </div>
+        <div class="columns">
+          <article class="card">
+            <h3>Five Different Questions</h3>
+            <p>"Pathfinding" is really a family of related problems, and picking the right one saves a lot of wasted effort:</p>
+            <ul class="rhythm">
+              <li><span>Connectivity</span><strong>Are these two locations connected at all?</strong></li>
+              <li><span>Reachability</span><strong>What are all the locations connected to this one?</strong></li>
+              <li><span>Any path</span><strong>Find some path between two locations — it doesn't need to be good.</strong></li>
+              <li><span>Fewest steps</span><strong>Find the path between two locations with the fewest steps.</strong></li>
+              <li><span>Lowest cost</span><strong>Find the path between two locations with the lowest total cost, when steps aren't all equal.</strong></li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Case Study: Pac-Man</h3>
+            <p>Ghosts chasing Pac-Man, creepers in Minecraft, or units routing between cities in a strategy game all need one or more pathfinding algorithms just to move believably. This is usually baked into the "minimum viable product" for any game with intelligent enemies — it isn't an optional extra.</p>
+          </article>
+          <article class="card">
+            <h3>Case Study: Floodfill</h3>
+            <p>Not every use of pathfinding looks like a maze. In a bubble-shooter game, popping a bubble destroys every same-colored bubble connected to it — and separately checks whether any bubbles are still connected to the ceiling. Both checks are pathfinding in disguise. The same idea is the paint-bucket tool in an image editor: "fill everything connected to this pixel" is a reachability search, usually called <strong>floodfill</strong>.</p>
+          </article>
+        </div>
+      </section></details>
+
+      <details class="astar-reading"><summary>Graphs: The Map Behind the Maze</summary><section class="section">
+        <div class="section-head">
+          <h2>Graphs: The Map Behind the Maze</h2>
+          <p>Every pathfinding algorithm searches a <strong>graph</strong> — a set of <strong>nodes</strong> (locations) connected by <strong>edges</strong> (connections between them). How you build that graph from your actual problem determines which algorithm fits.</p>
+        </div>
+        <div class="columns">
+          <article class="card">
+            <h3>Directed vs. Undirected</h3>
+            <p>An edge is <strong>undirected</strong> when it works both ways — like a hallway you can walk down in either direction. It's <strong>directed</strong> when it only works one way, like a one-way street.</p>
+          </article>
+          <article class="card">
+            <h3>Weighted vs. Unweighted</h3>
+            <p>A graph is <strong>unweighted</strong> when every edge costs the same to cross. It's <strong>weighted</strong> when some edges cost more than others — a longer street, a slower terrain, a pricier flight.</p>
+          </article>
+          <article class="card">
+            <h3>Same Idea, Different Graphs</h3>
+            <ul class="rhythm">
+              <li><span>Train routes between cities</span><strong>Undirected + weighted — trains run both ways, but routes differ in length.</strong></li>
+              <li><span>Pac-Man's maze</span><strong>Undirected + unweighted — any two open cells without a wall between them cost the same one step.</strong></li>
+              <li><span>Bubble-shooter connections</span><strong>Undirected + unweighted — same-colored neighboring bubbles are simply connected or not.</strong></li>
+              <li><span>City streets</span><strong>Directed + weighted — one-way streets exist, and block lengths vary.</strong></li>
+            </ul>
+            <p>This rover grid allows movement both ways between neighbors. The cost depends on the tile you enter: 1 for open ground or 3 for sand.</p>
+          </article>
+        </div>
+      </section></details>
+
+      <section class="section">
+        <div class="section-head">
+          <h2>Mission Brief</h2>
+          <p>You are testing how A* makes decisions under different constraints and mission rules.</p>
+        </div>
+        <div class="columns">
+          <article class="card">
+            <h3>Narrative Context</h3>
+            <p id="astar-mission-narrative">Navigate across the Martian surface to reach the rescue beacon while avoiding craters and slow sand zones.</p>
+          </article>
+          <article class="card">
+            <h3>What To Experiment With</h3>
+            <ul class="rhythm">
+              <li><span>Heuristics</span><strong>Compare speed and expansions across Manhattan, Euclidean, and Dijkstra.</strong></li>
+              <li><span>Mode Rules</span><strong>Test Fuel Critical and see when a valid route becomes impossible.</strong></li>
+              <li><span>Step Reasoning</span><strong>Use Step Mode to inspect how open and closed sets evolve node by node.</strong></li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <details class="astar-reading"><summary>The Algorithm Family: DFS → BFS → Dijkstra → A*</summary><section class="section">
+        <div class="section-head">
+          <h2>The Algorithm Family: DFS → BFS → Dijkstra → A*</h2>
+          <p>A* didn't appear from nowhere — it's the last step in a short chain of increasingly smart search strategies. Each one solves the previous one's biggest limitation.</p>
+        </div>
+        <div class="columns">
+          <article class="card">
+            <h3>Depth First Search (DFS)</h3>
+            <p>Picks a direction and commits, backtracking only when it hits a dead end — the same idea as recursive backtracking. Great for solving a maze, finding <em>any</em> path, or floodfill. Doesn't care whether the path it finds is short.</p>
+          </article>
+          <article class="card">
+            <h3>Breadth First Search (BFS)</h3>
+            <p>Visits the start node's neighbors, then their neighbors, then theirs — radiating outward one full ring at a time. Whichever ring reaches the goal first has, by construction, the fewest steps. Guarantees the shortest path <em>only</em> when every edge costs the same — an unweighted graph.</p>
+          </article>
+          <article class="card">
+            <h3>Dijkstra's Algorithm</h3>
+            <p>BFS's fix for weighted graphs. Instead of expanding ring by ring, it always expands whichever unvisited node currently has the cheapest known distance from the start — and it will happily revise a node's best-known cost if a cheaper route to it turns up later. Guarantees the lowest-cost path with nonnegative movement costs, but explores in every direction equally, with no sense of where the goal actually is.</p>
+          </article>
+          <article class="card">
+            <h3>A* Algorithm</h3>
+            <p>A small but powerful upgrade to Dijkstra: it adds a heuristic — an estimate of remaining distance to the goal — so it expands nodes that seem to be heading the right way first. With a consistent estimate, as on this rover grid, it finds the lowest-cost path and can check fewer cells than Dijkstra. That's exactly <strong>f(n) = g(n) + h(n)</strong> in the How A* chooses above: cost-so-far plus estimated-distance-remaining.</p>
+          </article>
+        </div>
+        <article class="card">
+          <h3>Building Up: Try Them in Order</h3>
+          <p>If you're implementing any of this yourself, don't start with A*. Build Dijkstra first — it only needs loops and a couple of data structures to track distances and parents — and confirm it finds correct lowest-cost paths. <em>Then</em> add a heuristic to turn it into A*. Trying to write A* from scratch first means debugging two ideas — shortest-path search and heuristic guidance — at once.</p>
+        </article>
+      </section></details>
+
+      <section class="section astar-challenges" aria-labelledby="challenge-title">
+        <h2 id="challenge-title">Try it. Change it. Explain it.</h2>
+        <div class="columns">
+          <article class="card"><div class="astar-mini-map mini-detour" aria-hidden="true"><i></i><b>R</b><span>✦</span></div><h3>Start here · Find a detour</h3><p>Run the starter map and note its route cost. Add one crater on the route, then run again. Which way did the rover go? Explain why its cost changed.</p></article>
+          <article class="card"><div class="astar-mini-map mini-sand" aria-hidden="true"><i></i><b>R</b><span>✦</span></div><h3>Go further · Steps or cost?</h3><p>Paint several sand tiles along a short route. Can you make a longer route cheaper? Count 1 for each ordinary tile entered and 3 for each sand tile.</p></article>
+          <article class="card"><div class="astar-mini-map mini-search" aria-hidden="true"><i></i><b>R</b><span>✦</span></div><h3>Stretch · Test the estimate</h3><p>Keep your map the same. Compare Manhattan with Zero (Dijkstra) in the results table. Do they find the same cost? Which checks fewer cells? Use your numbers as evidence.</p></article>
+        </div>
+        <details class="astar-reading"><summary>Ready for a bigger challenge?</summary><p>Try Fuel Critical mode: set a budget below your route cost, then raise it. In Dynamic Obstacles mode, watch the map change and the search restart. How could reusing earlier work help a real robot?</p><p>The platformer theme adds gravity and jumps, so its movement rules and estimates differ from the rover grid. Compare its results with Zero (Dijkstra) before assuming a route is cheapest.</p></details>
+        <p>Explain your result: “I changed ___. The route cost changed from ___ to ___. I think this happened because ___.”</p>
+        <p>Explore the ideas behind this lab: <a href="https://www.redblobgames.com/pathfinding/a-star/introduction.html">Red Blob Games’ illustrated guide to A*</a>.</p>
+      </section>
+
+      <footer class="site-footer">
+        <p><a href="../../../steam-lessons.html">Back to Lessons</a></p>
+      </footer>
+    </main><!-- /.ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true" data-pane="astar-params">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="astar-guide">Guide</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="astar-params">
+          <span class="ll-label">Grid Size</span>
+          <div class="ll-param">
+            <div style="display:flex;gap:6px;align-items:center;">
+              <label for="astar-grid-width" style="font-size:0.72rem;color:var(--ll-tab-color);white-space:nowrap;">Width</label>
+              <select id="astar-grid-width" style="flex:1;font:inherit;padding:4px 6px;border-radius:8px;border:1px solid var(--ll-panel-border);">
+                <option value="10">10</option>
+                <option value="12" selected>12</option>
+                <option value="14">14</option>
+                <option value="16">16</option>
+                <option value="18">18</option>
+              </select>
+              <label for="astar-grid-height" style="font-size:0.72rem;color:var(--ll-tab-color);white-space:nowrap;">Height</label>
+              <select id="astar-grid-height" style="flex:1;font:inherit;padding:4px 6px;border-radius:8px;border:1px solid var(--ll-panel-border);">
+                <option value="8" selected>8</option>
+                <option value="10">10</option>
+                <option value="12">12</option>
+              </select>
+            </div>
+          </div>
+
+          <label class="ll-label" for="astar-theme">Theme</label>
+          <div class="ll-param">
+            <select id="astar-theme" style="width:100%;font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--ll-panel-border);">
+              <option value="mars" selected>Mars Rover</option>
+              <option value="restaurant">Robot Waiter</option>
+              <option value="car">Self-Driving Car</option>
+              <option value="drone">Delivery Drone</option>
+              <option value="firefighter">Firefighter Rescue</option>
+              <option value="hospital">Hospital Robot</option>
+              <option value="treasure">Treasure Hunter</option>
+              <option value="mario">Mario Adventure</option>
+            </select>
+          </div>
+
+          <label class="ll-label" for="astar-ai-name">Name Your AI</label>
+          <div class="ll-param">
+            <input id="astar-ai-name" type="text" maxlength="24" value="Byte" style="width:100%;font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--ll-panel-border);box-sizing:border-box;" />
+          </div>
+
+          <div class="ll-param">
+            <button id="astar-build-grid" type="button" style="width:100%;padding:7px;border-radius:8px;border:1px solid var(--ll-panel-border);font:inherit;cursor:pointer;font-weight:700;">Restore starter map</button>
+          </div>
+
+          <hr class="ll-hr" />
+
+          <label class="ll-label" for="astar-mode">Mode</label>
+          <div class="ll-param">
+            <select id="astar-mode" style="width:100%;font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--ll-panel-border);">
+              <option value="classic" selected>Classic Mode</option>
+              <option value="fuel">Fuel Critical Mode</option>
+              <option value="dynamic">Dynamic Obstacles Mode</option>
+              <option value="step">Step Mode</option>
+            </select>
+          </div>
+
+          <label for="astar-fuel-limit" id="astar-fuel-label" hidden>
+            <span class="ll-label">Max Mission Cost</span>
+          </label>
+          <input id="astar-fuel-limit" type="number" min="1" max="999" value="24" hidden />
+
+          <label class="ll-label" for="astar-heuristic">Distance estimate (heuristic)</label>
+          <div class="ll-param">
+            <select id="astar-heuristic" style="width:100%;font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--ll-panel-border);">
+              <option value="manhattan" selected>Grid steps (Manhattan)</option>
+              <option value="euclidean">Straight line (Euclidean)</option>
+              <option value="zero">Zero Heuristic (Dijkstra)</option>
+            </select>
+          </div>
+          <div class="ll-param" style="display:flex;align-items:center;gap:8px;margin-top:6px;margin-bottom:12px;">
+            <input id="astar-show-heatmap" type="checkbox" style="cursor:pointer;" />
+            <label for="astar-show-heatmap" style="font-size:0.8rem;color:var(--ll-tab-color);cursor:pointer;user-select:none;">Show Heuristic Heatmap</label>
+          </div>
+
+          <label class="ll-label" for="astar-speed">Animation Speed</label>
+          <div class="ll-param">
+            <input id="astar-speed" type="range" min="40" max="240" step="10" value="90" style="width:100%;" />
+            <div class="ll-param-ends"><span>Fast</span><span>Slow</span></div>
+          </div>
+
+          <hr class="ll-hr" />
+
+
+        </div><!-- /#astar-params -->
+
+        <div class="ll-pane" id="astar-guide">
+          <div class="ll-info">
+            <strong>A* (A-Star) Algorithm</strong>
+            A* finds the shortest path by combining g(n) — actual cost from start — with h(n) — a heuristic estimate to the goal. It always expands the node with the lowest f(n) = g(n) + h(n).
+          </div>
+          <div class="ll-info">
+            <strong>Manhattan Heuristic</strong>
+            Counts horizontal + vertical steps to the goal. Best for grid movement with no diagonals. Typically expands fewer nodes than Euclidean on axis-aligned grids.
+          </div>
+          <div class="ll-info">
+            <strong>Euclidean Heuristic</strong>
+            Straight-line distance to the goal. On this four-direction rover grid, it never exceeds the true remaining cost, but usually gives a lower estimate than Manhattan.
+          </div>
+          <div class="ll-info">
+            <strong>Zero Heuristic (Dijkstra)</strong>
+            Setting h(n) = 0 turns A* into Dijkstra's algorithm: guaranteed optimal but explores many more nodes since it has no directional guidance.
+          </div>
+          <div class="ll-info">
+            <strong>Fuel Critical Mode</strong>
+            Adds a maximum cost budget. If no path exists within the fuel limit, the mission fails — showing how real-world constraints change planning.
+          </div>
+          <div class="ll-info">
+            <strong>Step Mode</strong>
+            Advance one node expansion at a time. Watch how the open set (frontier) and closed set (visited) grow — this is the core of how A* "thinks."
+          </div>
+        </div><!-- /#astar-guide -->
+
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+  </div><!-- /.ll-stage -->
+</div><!-- /.ll-viewport -->
+
+  <script type="module" src="../../../assets/js/lessons/a-star-lab.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/classroom-animations.js"></script>
+  <script src="../../../assets/js/lesson-layout.js"></script>
+<script src="../../../assets/js/lesson-print-button.js"></script>
+<script src="../../../assets/js/lessons/algorithms-ai-module.js"></script>
+</body>
+</html>

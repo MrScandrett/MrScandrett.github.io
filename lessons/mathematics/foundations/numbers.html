@@ -1325,7 +1325,7 @@
     [data-lighting="night"] .num-prime-cell.is-crossed,
     [data-theme="vaporwave"] .num-prime-cell.is-crossed,
     [data-theme="bark"] .num-prime-cell.is-crossed { background: rgba(255,255,255,0.03); }
-    details[open] summary span { transform: rotate(90deg); display: inline-block; }
+    details[open] summary .num-caret { transform: rotate(90deg); display: inline-block; }
     [data-lighting="night"] details > div,
     [data-theme="vaporwave"] details > div,
     [data-theme="bark"] details > div { color: rgba(245,245,247,0.75); }
@@ -1603,7 +1603,9 @@
       text-transform: uppercase;
     }
     .num-proof-studio h2 { margin-bottom: 0.4rem; color: #fff; font-size: clamp(1.35rem,3vw,1.8rem); }
-    .num-proof-studio .num-proof-lede { max-width: 72ch; margin: 0; color: rgba(248,250,252,0.72); font-size: 0.88rem; }
+    .num-proof-studio .num-proof-lede { max-width: 72ch; margin: 0.9rem 0 0; color: rgba(248,250,252,0.72); font-size: 0.88rem; }
+    .num-proof-studio .num-exhibit-preview { color: rgba(248,250,252,0.55); }
+    .num-proof-studio .num-exhibit-caret { border-color: rgba(255,184,77,0.5); color: #ffb84d; }
     .num-proof-grid {
       position: relative;
       z-index: 1;
@@ -1651,9 +1653,8 @@
     }
     .num-proof-steps { display: grid; gap: 0.55rem; margin: 0; padding: 0; list-style: none; counter-reset: proofstep; }
     .num-proof-steps li {
-      display: grid;
-      grid-template-columns: 1.4rem 1fr;
-      gap: 0.55rem;
+      position: relative;
+      padding-left: 1.95rem;
       color: rgba(248,250,252,0.75);
       font-size: 0.78rem;
       line-height: 1.55;
@@ -1661,8 +1662,11 @@
     }
     .num-proof-steps li::before {
       content: counter(proofstep);
+      position: absolute;
+      left: 0;
+      top: 0;
       color: #ffb84d;
-      font: 800 0.68rem/1.5 "IBM Plex Mono", monospace;
+      font: 800 0.68rem/1.55 "IBM Plex Mono", monospace;
     }
     .num-proof-conclusion {
       margin-top: 0.75rem;
@@ -1904,10 +1908,9 @@
       display: block;
       color: var(--math-ink);
       font-family: "STIX Two Text", Georgia, serif;
-      font-size: clamp(2rem,4vw,3.25rem);
+      font-size: clamp(1.5rem,2.6vw,2.1rem);
       font-weight: 600;
       line-height: 1.2;
-      white-space: nowrap;
     }
     .num-hero-formula span {
       display: block;
@@ -1947,8 +1950,7 @@
       line-height: 1.1;
       letter-spacing: -0.025em;
     }
-    .num-page > .num-card > h2::before,
-    .num-page > .num-card > .num-proof-head h2::before {
+    .num-page > .num-card h2::before {
       content: counter(num-section, decimal-leading-zero) " / ";
       color: var(--math-red);
       font-family: "IBM Plex Mono", ui-monospace, monospace;
@@ -1957,6 +1959,49 @@
       letter-spacing: 0.04em;
       vertical-align: 0.12em;
     }
+
+    /* Exhibits: every top-level .num-card is a <details> — collapsed by
+       default with a one-line preview, so the page reads as a shelf of
+       closed exhibits instead of one long scroll. */
+    .num-card > summary.num-exhibit-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      cursor: pointer;
+      list-style: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .num-card > summary.num-exhibit-head::-webkit-details-marker { display: none; }
+    .num-exhibit-head-text { min-width: 0; }
+    .num-exhibit-head-text h2 { margin-bottom: 0; }
+    .num-exhibit-preview {
+      margin: 0.4rem 0 0;
+      color: var(--math-blue);
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.74rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      line-height: 1.5;
+    }
+    .num-card[open] .num-exhibit-preview { display: none; }
+    .num-exhibit-caret {
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      width: 1.9rem;
+      height: 1.9rem;
+      margin-top: 0.1rem;
+      border: 1px solid var(--math-rule);
+      border-radius: 50%;
+      color: var(--math-blue);
+      font: 800 1.1rem/1 "IBM Plex Mono", monospace;
+    }
+    .num-exhibit-caret::before { content: "+"; }
+    .num-card[open] .num-exhibit-caret::before { content: "\2212"; }
+    .num-exhibit-body { margin-top: clamp(1.1rem,2.3vw,1.65rem); padding-top: clamp(1.1rem,2.3vw,1.65rem); border-top: 1px solid var(--math-rule); }
+    .num-exhibit-body > :first-child { margin-top: 0; }
+    .num-exhibit-body > :last-child { margin-bottom: 0; }
     .num-card h3 {
       margin-top: 1.15rem;
       color: var(--math-ink);
@@ -2175,7 +2220,6 @@
       .num-hero > :not(.num-hero-formula),
       .num-hero-formula { grid-column: 1; }
       .num-hero-formula { grid-row: auto; min-height: 0; margin-top: 0.65rem; }
-      .num-hero-formula strong { white-space: normal; }
       .num-card { padding: 1rem; }
     }
 
@@ -2249,8 +2293,15 @@
     </nav>
 
     <!-- ── 1. History ── -->
-    <section class="num-card" id="num-sec-history" style="--card-accent:#ff9500;">
-      <h2>Where Numbers Come From</h2>
+    <details class="num-card" id="num-sec-history" style="--card-accent:#ff9500;">
+      <summary class="num-exhibit-head">
+        <span class="num-exhibit-head-text">
+          <h2>Where Numbers Come From</h2>
+          <p class="num-exhibit-preview">Tally bones to binary — the milestones that built today's number system over 30,000 years.</p>
+        </span>
+        <span class="num-exhibit-caret" aria-hidden="true"></span>
+      </summary>
+      <div class="num-exhibit-body">
       <p>Numbers weren't invented all at once. They evolved over thousands of years, each civilisation adding another piece. Here are the biggest milestones:</p>
 
       <ul class="num-timeline">
@@ -2392,11 +2443,19 @@
         </li>
       </ul>
       <p class="num-history-bridge">Each civilisation didn't just invent new symbols — it invented a new <em>kind</em> of number the previous one couldn't express. The Babylonians needed place value to write large quantities; Brahmagupta needed zero to write "nothing" and "debt"; Fibonacci's Hindu-Arabic digits made arithmetic fast enough for trade. That expansion didn't stop — it's the same expansion you're about to explore below.</p>
-    </section>
+      </div>
+    </details>
 
     <!-- ── 2. Number Zoo ── -->
-    <section class="num-card" id="num-sec-system" style="--card-accent:#ff9500;">
-      <h2>The Number System</h2>
+    <details class="num-card" id="num-sec-system" style="--card-accent:#ff9500;">
+      <summary class="num-exhibit-head">
+        <span class="num-exhibit-head-text">
+          <h2>The Number System</h2>
+          <p class="num-exhibit-preview">Integers, fractions, decimals, and ratios — the families every number belongs to, with a lab for each.</p>
+        </span>
+        <span class="num-exhibit-caret" aria-hidden="true"></span>
+      </summary>
+      <div class="num-exhibit-body">
       <p>Every number on that timeline still exists today, sorted into families. Mathematics organises them by what they can express — and knowing which family a number belongs to tells you a lot about how it behaves. Click any card to learn more.</p>
 
       <div class="num-type-grid" role="tablist" aria-label="Number types">
@@ -2636,11 +2695,19 @@
           These families nest inside each other. Every <strong>integer</strong> is also a <strong>fraction</strong> (5 = 5/1), and every terminating fraction is also a <strong>decimal</strong> (¼ = 0.25). Numbers are more related than they first appear.
         </div>
       </div>
-    </section>
+      </div>
+    </details>
 
     <!-- ── 3. Primes ── -->
-    <section class="num-card" id="num-sec-primes" style="--card-accent:#ff9500;">
-      <h2>Prime Numbers</h2>
+    <details class="num-card" id="num-sec-primes" style="--card-accent:#ff9500;">
+      <summary class="num-exhibit-head">
+        <span class="num-exhibit-head-text">
+          <h2>Prime Numbers</h2>
+          <p class="num-exhibit-preview">The atoms of math: numbers with no factors but 1 and themselves — try the sieve.</p>
+        </span>
+        <span class="num-exhibit-caret" aria-hidden="true"></span>
+      </summary>
+      <div class="num-exhibit-body">
       <p>Integers were the first family you met above — now zoom into just one piece of that family: the whole numbers greater than 1. Some of them can be broken into smaller factors; some can't. A <strong>prime number</strong> is a whole number greater than 1 that can only be divided evenly by <strong>1 and itself</strong>. That makes primes the "atoms" of mathematics — every other whole number is built from primes multiplied together.</p>
 
       <div class="num-callout orange">
@@ -2675,18 +2742,26 @@
 
       <details style="margin-top:0.8rem;">
         <summary style="cursor:pointer;font-weight:700;font-size:0.88rem;color: var(--text-muted, #64748b);list-style:none;display:flex;align-items:center;gap:0.4rem;">
-          <span>▶</span> Why primes matter
+          <span class="num-caret">▶</span> Why primes matter
         </summary>
         <div style="margin-top:0.5rem;font-size:0.84rem;line-height:1.6;color: var(--text-secondary, #3f4f65);">
           <p style="margin:0 0 0.5rem;"><strong>Encryption:</strong> When you buy online, your card is protected because factoring a huge number back into primes is computationally impossible — a 2048-bit key uses a ~600-digit number no computer can crack.</p>
           <p style="margin:0;"><strong>Nature:</strong> Cicadas emerge on 13- or 17-year prime cycles to minimise overlap with predator population spikes. Nature discovered primes before mathematicians did.</p>
         </div>
       </details>
-    </section>
+      </div>
+    </details>
 
     <!-- ── 4. Factors & Multiples ── -->
-    <section class="num-card" id="num-sec-factors" style="--card-accent:#ff9500;">
-      <h2>Factors &amp; Multiples</h2>
+    <details class="num-card" id="num-sec-factors" style="--card-accent:#ff9500;">
+      <summary class="num-exhibit-head">
+        <span class="num-exhibit-head-text">
+          <h2>Factors &amp; Multiples</h2>
+          <p class="num-exhibit-preview">Two sides of the same coin — enter any number and see what divides it.</p>
+        </span>
+        <span class="num-exhibit-caret" aria-hidden="true"></span>
+      </summary>
+      <div class="num-exhibit-body">
       <p>Primes are the atoms — factors and multiples are how you find them inside any other number. The two ideas are two sides of the same coin, and understanding them makes fractions, algebra, and even music theory much easier.</p>
 
       <div class="num-type-grid" style="margin:0.75rem 0;">
@@ -2717,15 +2792,20 @@
           <strong>Factors in music:</strong> A guitar string vibrates not just at its base frequency, but at all whole-number multiples of it (harmonics). That's why a piano and a guitar playing the same note sound different — it's which multiples dominate the sound.
         </div>
       </div>
-    </section>
+      </div>
+    </details>
 
     <!-- ── 5. Proof Studio ── -->
-    <section class="num-card num-proof-studio" id="num-sec-proofs" aria-labelledby="num-proof-title">
-      <div class="num-proof-head">
-        <span class="num-proof-kicker">Open-textbook proof studio</span>
-        <h2 id="num-proof-title">Don’t just trust the rule. See why it must be true.</h2>
-        <p class="num-proof-lede">You've now met primes, factors, fractions, and decimals as facts to use. This section asks a harder question: how do we <em>know</em> those facts are true? A proof is a chain in which every link can be checked. Open each argument, follow the picture, and look for the moment where the opposite claim becomes impossible.</p>
-      </div>
+    <details class="num-card num-proof-studio" id="num-sec-proofs">
+      <summary class="num-proof-head num-exhibit-head">
+        <span class="num-exhibit-head-text">
+          <span class="num-proof-kicker">Open-textbook proof studio</span>
+          <h2 id="num-proof-title">Don’t just trust the rule. See why it must be true.</h2>
+          <p class="num-exhibit-preview">Four classic results, proved from scratch: primes never end, √2 isn't a fraction, and more.</p>
+        </span>
+        <span class="num-exhibit-caret" aria-hidden="true"></span>
+      </summary>
+      <p class="num-proof-lede" style="padding:0 1.5rem;">You've now met primes, factors, fractions, and decimals as facts to use. This section asks a harder question: how do we <em>know</em> those facts are true? A proof is a chain in which every link can be checked. Open each argument, follow the picture, and look for the moment where the opposite claim becomes impossible.</p>
 
       <div class="num-proof-grid">
         <details class="num-proof" open>
@@ -2863,11 +2943,18 @@
           </div>
         </details>
       </div>
-    </section>
+    </details>
 
     <!-- ── 6. Modular arithmetic ── -->
-    <section class="num-card" id="num-sec-modular" style="--card-accent:#ff9500;">
-      <h2>Modular Arithmetic — Pattern Math</h2>
+    <details class="num-card" id="num-sec-modular" style="--card-accent:#ff9500;">
+      <summary class="num-exhibit-head">
+        <span class="num-exhibit-head-text">
+          <h2>Modular Arithmetic — Pattern Math</h2>
+          <p class="num-exhibit-preview">Clock math: numbers that wrap around instead of counting forever — drag the multiplier to make string art.</p>
+        </span>
+        <span class="num-exhibit-caret" aria-hidden="true"></span>
+      </summary>
+      <div class="num-exhibit-body">
       <p>The proofs above showed numbers behaving in fixed, provable ways. Modular arithmetic bends that a little: instead of counting forever in one direction, numbers wrap around and repeat — like a clock face. Clock math is just the beginning. When a number wraps around a circle and gets multiplied again and again, modular arithmetic turns into geometry. The result is string art made from pure remainders.</p>
 
       <div class="num-callout orange">
@@ -2920,7 +3007,7 @@
       <div class="num-type-grid" style="margin:0.6rem 0;">
         <div class="num-type-card" style="cursor:default;">
           <div class="num-type-name">🔐 Cryptography</div>
-          <div class="num-type-desc">RSA encryption — the system behind HTTPS — is built almost entirely on modular arithmetic with huge primes.</div>
+          <div class="num-type-desc">RSA encryption — the system behind HTTPS — is built almost entirely on modular arithmetic with huge primes. Try it yourself in the <a href="../../computer-science/security/cryptography-enigma.html">Cryptography &amp; The Enigma lesson</a>.</div>
         </div>
         <div class="num-type-card" style="cursor:default;">
           <div class="num-type-name">📅 Calendars</div>
@@ -2935,10 +3022,18 @@
           <div class="num-type-desc">Computers store data using mod: slot = hash(item) mod table_size. Every dictionary in code uses this.</div>
         </div>
       </div>
-    </section>
+      </div>
+    </details>
 
-    <section class="num-card" id="num-sec-zoom" style="--card-accent:#ff9500;">
-      <h2>The Infinite Zoom Number Line</h2>
+    <details class="num-card" id="num-sec-zoom" style="--card-accent:#ff9500;">
+      <summary class="num-exhibit-head">
+        <span class="num-exhibit-head-text">
+          <h2>The Infinite Zoom Number Line</h2>
+          <p class="num-exhibit-preview">Between any two fractions there's always another — zoom in forever and see why.</p>
+        </span>
+        <span class="num-exhibit-caret" aria-hidden="true"></span>
+      </summary>
+      <div class="num-exhibit-body">
       <p>Modular arithmetic wraps numbers into a loop; this number line does the opposite — it keeps unfolding. Between 0 and 1 there is no “next” fraction. Zoom in and the line keeps revealing new rational waypoints: halves, quarters, eighths, sixteenths. Density is the point.</p>
 
       <div class="num-line-wrap">
@@ -2957,11 +3052,19 @@
         </div>
         <p class="num-mod-caption">Each zoom step halves the window around the centre. New fractions appear because number lines are not made of isolated pebbles; they are dense with structure.</p>
       </div>
-    </section>
+      </div>
+    </details>
 
     <!-- ── 8. Division by zero ── -->
-    <section class="num-card" id="num-sec-divzero" style="--card-accent:#ff3b30;">
-      <h2>Why Division by Zero Is Undefined</h2>
+    <details class="num-card" id="num-sec-divzero" style="--card-accent:#ff3b30;">
+      <summary class="num-exhibit-head">
+        <span class="num-exhibit-head-text">
+          <h2>Why Division by Zero Is Undefined</h2>
+          <p class="num-exhibit-preview">The one operation math refuses to define — drag the divisor toward zero and watch why.</p>
+        </span>
+        <span class="num-exhibit-caret" aria-hidden="true"></span>
+      </summary>
+      <div class="num-exhibit-body">
       <p>You just watched the number line zoom in forever without ever running out of room. This section asks what happens at the one place division genuinely breaks. Every rule in mathematics exists for a reason — and nowhere is this clearer than the rule you've probably heard since primary school: <strong>you cannot divide by zero.</strong></p>
       <p>Division asks for the number that reverses a multiplication. So <strong>10 ÷ 2 = 5</strong> because <strong>2 × 5 = 10</strong>. But <strong>10 ÷ 0</strong> would require some answer <em>q</em> for which <strong>0 × q = 10</strong>. Every product with zero is zero, so that answer does not exist.</p>
 
@@ -2993,12 +3096,20 @@
           <strong>Programming connection:</strong> Software checks a denominator before dividing. A safe program handles <span class="num-data">b === 0</span> as a separate case instead of inventing a quotient. That guard prevents invalid values from spreading through later calculations.
         </div>
       </div>
-    </section>
+      </div>
+    </details>
 
     <!-- ── 9. Open textbook shelf ── -->
-    <section class="num-card num-source-shelf" id="num-sec-sources" aria-labelledby="num-source-title">
-      <span class="num-source-kicker">Read, inspect, reuse</span>
-      <h2 id="num-source-title">Open Textbook Shelf</h2>
+    <details class="num-card num-source-shelf" id="num-sec-sources">
+      <summary class="num-exhibit-head">
+        <span class="num-exhibit-head-text">
+          <span class="num-source-kicker">Read, inspect, reuse</span>
+          <h2 id="num-source-title">Open Textbook Shelf</h2>
+          <p class="num-exhibit-preview">Where the definitions, visual models, and proofs above actually came from.</p>
+        </span>
+        <span class="num-exhibit-caret" aria-hidden="true"></span>
+      </summary>
+      <div class="num-exhibit-body">
       <p>Before you test what you've learned, here's where the definitions, visual models, and proofs above actually came from. These free chapters support this lesson — follow a cover to see the original diagrams, worked examples, exercises, author credits, and full license information.</p>
 
       <div class="num-source-grid">
@@ -3040,11 +3151,19 @@
       </div>
 
       <p class="num-source-note"><strong>Attribution note:</strong> Proof wording and SVG diagrams on this page are original classroom reconstructions informed by the linked sources; they are not copied textbook figures. OpenStax attribution: Marecek, Anthony-Smith, and Mathis, <em>Prealgebra 2e</em>, OpenStax (2020). License details are published in the book’s <a href="https://openstax.org/books/prealgebra-2e/pages/preface" target="_blank" rel="noopener">preface</a>.</p>
-    </section>
+      </div>
+    </details>
 
     <!-- ── 10. Practice ── -->
-    <section class="num-card" id="num-sec-practice" style="--card-accent:#ff9500;">
-      <h2>Practice Problems</h2>
+    <details class="num-card" id="num-sec-practice" style="--card-accent:#ff9500;">
+      <summary class="num-exhibit-head">
+        <span class="num-exhibit-head-text">
+          <h2>Practice Problems</h2>
+          <p class="num-exhibit-preview">Five questions pulling together everything from this lesson.</p>
+        </span>
+        <span class="num-exhibit-caret" aria-hidden="true"></span>
+      </summary>
+      <div class="num-exhibit-body">
       <p>You've traced numbers from tally bones to zero to the density of the number line. Now put it to work — five questions pulling from every idea in this lesson.</p>
       <div id="num-score-bar" class="num-score-bar">
         <span class="num-score-label">Score</span>
@@ -3106,7 +3225,8 @@
         </div>
 
       </div>
-    </section>
+      </div>
+    </details>
 
   </main>
   </div><!-- /ll-sim -->

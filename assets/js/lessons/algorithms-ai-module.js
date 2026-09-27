@@ -15,7 +15,7 @@
       title: 'Algorithms & search',
       lessons: [
         ['sorting-algorithms', 'Sorting', 'Compare how sorting strategies trade time, memory, and predictability.', 'When does the shape of the input change the best algorithm?'],
-        ['a-star-pathfinding', 'A* pathfinding', 'Trace how cost-so-far and a heuristic guide a search toward a goal.', 'When can a helpful shortcut become a misleading guess?'],
+        ['pathfinding', 'A* pathfinding', 'Trace how cost-so-far and a heuristic guide a search toward a goal.', 'When can a helpful shortcut become a misleading guess?'],
         ['minimum-spanning-tree', 'Minimum spanning tree', 'Build a lowest-cost network without cycles.', 'Why is connecting everything different from finding one shortest route?'],
         ['life-lab', 'Cellular automata', 'Show how complex patterns can emerge from local rules and repeated updates.', 'Does surprising behavior require a complicated designer?']
       ]

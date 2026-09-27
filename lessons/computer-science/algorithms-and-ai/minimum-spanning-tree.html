@@ -117,6 +117,32 @@
       .cl-apps { grid-template-columns: 1fr; }
       .cl-bio  { flex-direction: column; align-items: center; text-align: center; }
     }
+
+    /* Algorithm toggle */
+    .cl-algo-toggle { display: flex; gap: 0.5rem; margin: 0.7rem 0 0.9rem; flex-wrap: wrap; }
+    .cl-algo-btn { flex: 1; min-width: 140px; border: 1px solid var(--line,#d2d2d7); background: var(--white,#fff); color: var(--text,#1d1d1f); border-radius: 10px; padding: 0.55rem 0.8rem; font-size: 0.86rem; font-weight: 700; font-family: inherit; cursor: pointer; text-align: center; }
+    [data-lighting="night"] .cl-algo-btn,
+    [data-theme="vaporwave"] .cl-algo-btn,
+    [data-theme="bark"] .cl-algo-btn { background: #2c2c2e; color: #f5f5f7; }
+    .cl-algo-btn.is-active { background: #ff9f0a; border-color: #ff9f0a; color: #fff; }
+    .cl-algo-btn small { display: block; font-weight: 500; font-size: 0.72rem; opacity: 0.85; margin-top: 0.1rem; }
+
+    /* Two-path narrative photos */
+    .cl-photo-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin: 0.9rem 0 0.2rem; }
+    .cl-photo { margin: 0; border-radius: 12px; overflow: hidden; background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7); }
+    [data-lighting="night"] .cl-photo,
+    [data-theme="vaporwave"] .cl-photo,
+    [data-theme="bark"] .cl-photo { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+    .cl-photo img { display: block; width: 100%; height: 140px; object-fit: cover; cursor: zoom-in; }
+    .cl-photo figcaption { padding: 0.5rem 0.7rem 0.65rem; font-size: 0.76rem; color: var(--text-muted, #64748b); line-height: 1.5; }
+    .cl-photo figcaption strong { display: block; color: var(--text,#1d1d1f); font-size: 0.82rem; margin-bottom: 0.15rem; }
+    [data-lighting="night"] .cl-photo figcaption strong,
+    [data-theme="vaporwave"] .cl-photo figcaption strong,
+    [data-theme="bark"] .cl-photo figcaption strong { color: #f5f5f7; }
+    .cl-photo-credit { display: block; margin-top: 0.25rem; font-size: 0.68rem; opacity: 0.8; }
+    @media (max-width: 600px) {
+      .cl-photo-row { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -192,26 +218,45 @@
             <li><span class="cl-step-num">5</span>Stop when n−1 edges have been added. All nodes are now connected.</li>
           </ul>
 
-          <p>This is a <strong>greedy algorithm</strong> — it always makes the locally cheapest choice at each step. Remarkably, this greedy strategy is provably globally optimal for spanning trees.</p>
+          <h3>Prim's Algorithm — Step by Step</h3>
+          <ul class="cl-steps">
+            <li><span class="cl-step-num">1</span>Start with a single node as the whole "tree so far."</li>
+            <li><span class="cl-step-num">2</span>Look at every edge that connects a node already in the tree to a node that isn't.</li>
+            <li><span class="cl-step-num">3</span>Add the cheapest of those crossing edges to the tree (shown in green), pulling in one new node.</li>
+            <li><span class="cl-step-num">4</span>Edges that now sit entirely inside the tree are no longer useful — they're marked rejected (shown in red).</li>
+            <li><span class="cl-step-num">5</span>Repeat until every node has joined the tree.</li>
+          </ul>
+
+          <p>Both are <strong>greedy algorithms</strong> — they always make the locally cheapest choice available. Kruskal's thinks in terms of the whole edge list at once; Prim's grows outward one connected blob at a time, like a snowball rolling through the graph. Remarkably, both strategies are provably globally optimal — try both below and you'll always end up with the same total cost.</p>
         </section>
 
         <!-- Simulator -->
         <section class="cl-card" style="--card-accent:#ff9f0a;">
-          <h2>Kruskal's Algorithm Visualiser</h2>
-          <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Click <strong>Step</strong> to add one edge at a time, or <strong>Run All</strong> to complete instantly. Green edges are in the MST; red edges were rejected (would create a cycle); grey edges have not yet been considered.</p>
+          <h2>MST Visualiser</h2>
+          <div class="cl-algo-toggle" role="group" aria-label="Choose an algorithm">
+            <button type="button" class="cl-algo-btn is-active" id="mst-algo-kruskal" aria-pressed="true">Kruskal's<small>Sort all edges, add the cheapest safe one</small></button>
+            <button type="button" class="cl-algo-btn" id="mst-algo-prim" aria-pressed="false">Prim's<small>Grow one connected tree outward</small></button>
+          </div>
+          <p style="font-size:0.84rem;color: var(--text-muted, #64748b);" id="mst-sim-instructions">Click <strong>Step</strong> to add one edge at a time, or <strong>Run All</strong> to complete instantly. Green edges are in the MST; red edges were rejected (would create a cycle); grey edges have not yet been considered.</p>
           <div class="cl-canvas-wrap">
-            <canvas id="mst-canvas" aria-label="Minimum spanning tree Kruskal's algorithm visualiser"></canvas>
+            <canvas id="mst-canvas" aria-label="Minimum spanning tree algorithm visualiser"></canvas>
           </div>
           <div class="cl-readouts">
             <div class="cl-readout"><span class="cl-readout-label">Total Cost</span><span class="cl-readout-val" id="mst-r-cost">—</span></div>
             <div class="cl-readout"><span class="cl-readout-label">Edges Added</span><span class="cl-readout-val" id="mst-r-added">0</span></div>
             <div class="cl-readout"><span class="cl-readout-label">Considered</span><span class="cl-readout-val" id="mst-r-considered">0</span></div>
           </div>
-          <div class="cl-legend" aria-label="Edge colour legend">
+          <div class="cl-legend" aria-label="Edge colour legend" id="mst-legend-kruskal">
             <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#34c759;height:4px;"></span>Added to MST</span>
             <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#ff3b30;height:4px;"></span>Rejected (cycle)</span>
             <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#d2d2d7;height:4px;"></span>Not yet considered</span>
             <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#ff9f0a;height:4px;"></span>Currently examining</span>
+          </div>
+          <div class="cl-legend" aria-label="Edge colour legend" id="mst-legend-prim" style="display:none;">
+            <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#34c759;height:4px;"></span>Added to MST</span>
+            <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#007aff;height:4px;"></span>Frontier (crosses the tree's edge)</span>
+            <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#ff3b30;height:4px;"></span>No longer useful (both ends inside)</span>
+            <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#d2d2d7;height:4px;"></span>Not adjacent yet</span>
           </div>
         </section>
 
@@ -239,6 +284,17 @@
               <strong>Machine Learning Clustering</strong>
               <small>In single-linkage hierarchical clustering, the MST of a dataset's similarity graph defines which data points are most closely related — used in genomics, image segmentation, and market analysis.</small>
             </div>
+          </div>
+
+          <div class="cl-photo-row">
+            <figure class="cl-photo" data-zoomable data-lightbox-group="mst-real-world" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Testing_cable_on_Cable_Ship_%22Faraday%22_laying_trans-Tasman_submarine_cable_-_King_Island_(30965149433).jpg?width=1400">
+              <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Testing_cable_on_Cable_Ship_%22Faraday%22_laying_trans-Tasman_submarine_cable_-_King_Island_(30965149433).jpg?width=500" alt="Crew testing cable aboard the CS Faraday while laying a trans-Tasman submarine cable" loading="lazy" />
+              <figcaption><strong>Laying a real backbone cable</strong>Every metre of undersea cable is expensive to lay, so planners look for a minimum-cost network — exactly the problem an MST solves. <span class="cl-photo-credit">State Library of New South Wales collection · no known restrictions · <a href="https://commons.wikimedia.org/wiki/File:Testing_cable_on_Cable_Ship_%22Faraday%22_laying_trans-Tasman_submarine_cable_-_King_Island_(30965149433).jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></span></figcaption>
+            </figure>
+            <figure class="cl-photo" data-zoomable data-lightbox-group="mst-real-world" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Transmission_towers_at_sunset_in_East_Texas.jpg?width=1400">
+              <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Transmission_towers_at_sunset_in_East_Texas.jpg?width=500" alt="Row of high-voltage electricity transmission towers at sunset" loading="lazy" />
+              <figcaption><strong>Connecting a grid for the least steel</strong>Utilities route transmission towers between substations to minimise total line length — an MST on a map of possible tower sites. <span class="cl-photo-credit">Matthew T Rader · CC BY-SA 4.0 · <a href="https://commons.wikimedia.org/wiki/File:Transmission_towers_at_sunset_in_East_Texas.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></span></figcaption>
+            </figure>
           </div>
         </section>
 
@@ -350,6 +406,7 @@
         <div class="ll-pane" id="mst-pane-guide">
           <div class="ll-info"><strong>Spanning Tree</strong>A subgraph connecting all n nodes using exactly n−1 edges with no cycles.</div>
           <div class="ll-info"><strong>Kruskal's Algorithm</strong>Sort edges by weight. Add the cheapest edge that doesn't create a cycle. Repeat until n−1 edges are added.</div>
+          <div class="ll-info"><strong>Prim's Algorithm</strong>Start from one node. Repeatedly add the cheapest edge connecting the growing tree to a node outside it, until every node is included.</div>
           <div class="ll-info"><strong>Cycle Detection</strong>Union-Find (disjoint set) data structure checks in near-constant time whether adding an edge would create a cycle.</div>
           <div class="ll-info"><strong>Greedy correctness</strong>The cut property guarantees: the minimum-weight edge crossing any cut of the graph is always safe to include in the MST.</div>
         </div>
@@ -368,19 +425,45 @@
 <script src="../../../assets/js/nav-mobile.js"></script>
 <script>
 (function () {
-  /* ── MST Visualiser (Kruskal's Algorithm) ─────────── */
+  /* ── MST Visualiser (Kruskal's + Prim's) ─────────── */
   const canvas   = document.getElementById('mst-canvas');
   const ctx      = canvas.getContext('2d');
   const rCost    = document.getElementById('mst-r-cost');
   const rAdded   = document.getElementById('mst-r-added');
   const rConsid  = document.getElementById('mst-r-considered');
   const nodeSlider = document.getElementById('mst-node-count');
+  const btnKruskal = document.getElementById('mst-algo-kruskal');
+  const btnPrim     = document.getElementById('mst-algo-prim');
+  const instructions = document.getElementById('mst-sim-instructions');
+  const legendKruskal = document.getElementById('mst-legend-kruskal');
+  const legendPrim    = document.getElementById('mst-legend-prim');
 
+  let algoMode = 'kruskal'; // 'kruskal' | 'prim'
   let nodes = [], edges = [], sortedEdges = [];
-  let edgeStatus = []; // 'none' | 'examining' | 'added' | 'rejected'
+  let edgeStatus = []; // 'none' | 'examining' | 'added' | 'rejected' | 'frontier'
   let parent = [], rank = [];
+  let inTree = new Set();
   let stepIdx = 0, totalCost = 0, addedCount = 0, consideredCount = 0;
   let done = false;
+
+  const INSTR = {
+    kruskal: 'Click <strong>Step</strong> to add one edge at a time, or <strong>Run All</strong> to complete instantly. Green edges are in the MST; red edges were rejected (would create a cycle); grey edges have not yet been considered.',
+    prim: 'Click <strong>Step</strong> to grow the tree by one node, or <strong>Run All</strong> to complete instantly. Green edges are in the MST; blue edges are the current frontier (crossing the tree\'s boundary); red edges are no longer useful once both ends are inside.'
+  };
+
+  function setAlgoMode(mode) {
+    algoMode = mode;
+    btnKruskal.classList.toggle('is-active', mode === 'kruskal');
+    btnKruskal.setAttribute('aria-pressed', mode === 'kruskal');
+    btnPrim.classList.toggle('is-active', mode === 'prim');
+    btnPrim.setAttribute('aria-pressed', mode === 'prim');
+    instructions.innerHTML = INSTR[mode];
+    legendKruskal.style.display = mode === 'kruskal' ? '' : 'none';
+    legendPrim.style.display = mode === 'prim' ? '' : 'none';
+    if (nodes.length) window.mstReset();
+  }
+  btnKruskal.addEventListener('click', () => setAlgoMode('kruskal'));
+  btnPrim.addEventListener('click', () => setAlgoMode('prim'));
 
   /* ── Union-Find ── */
   function ufInit(n) {
@@ -455,6 +538,7 @@
 
     // reset state
     ufInit(N);
+    inTree = new Set([0]);
     stepIdx = 0; totalCost = 0; addedCount = 0; consideredCount = 0; done = false;
     rCost.textContent = '—';
     rAdded.textContent = '0';
@@ -502,6 +586,7 @@
       if (status === 'added')    { color = '#34c759'; lw = 3; }
       else if (status === 'rejected') { color = '#ff3b30'; lw = 2; }
       else if (status === 'examining') { color = '#ff9f0a'; lw = 3; }
+      else if (status === 'frontier') { color = '#007aff'; lw = 2; }
       else { color = isDark ? 'rgba(255,255,255,0.15)' : '#d2d2d7'; lw = 1.5; }
 
       ctx.strokeStyle = color;
@@ -514,7 +599,7 @@
       // Weight label
       const mx = (nodes[e.a].x + nodes[e.b].x) / 2;
       const my = (nodes[e.a].y + nodes[e.b].y) / 2;
-      const labelColor = status === 'added' ? '#1a7a2e' : status === 'rejected' ? '#c0392b' : status === 'examining' ? '#b35900' : (isDark ? 'rgba(255,255,255,0.4)' : '#94a3b8');
+      const labelColor = status === 'added' ? '#1a7a2e' : status === 'rejected' ? '#c0392b' : status === 'examining' ? '#b35900' : status === 'frontier' ? '#0060d0' : (isDark ? 'rgba(255,255,255,0.4)' : '#94a3b8');
       ctx.fillStyle = isDark ? (status !== 'none' ? labelColor : 'rgba(255,255,255,0.35)') : labelColor;
       ctx.font = `${status !== 'none' ? '700' : '500'} 10px Inter,sans-serif`;
       ctx.textAlign = 'center';
@@ -591,6 +676,41 @@
     draw();
   }
 
+  /* ── Prim's Step ── */
+  function primStep() {
+    if (done || nodes.length === 0) return;
+    if (inTree.size >= nodes.length) { done = true; draw(); return; }
+
+    // Find edges crossing the cut between inTree and the rest; mark edges now fully inside as no longer useful.
+    const frontierIdx = [];
+    edges.forEach((e, i) => {
+      if (edgeStatus[i] === 'added') return;
+      const aIn = inTree.has(e.a), bIn = inTree.has(e.b);
+      if (aIn !== bIn) { edgeStatus[i] = 'frontier'; frontierIdx.push(i); }
+      else if (aIn && bIn) { edgeStatus[i] = 'rejected'; }
+    });
+    consideredCount += frontierIdx.length;
+    rConsid.textContent = consideredCount;
+
+    if (frontierIdx.length === 0) { done = true; draw(); return; }
+
+    let bestIdx = frontierIdx[0];
+    frontierIdx.forEach(i => { if (edges[i].w < edges[bestIdx].w) bestIdx = i; });
+
+    const e = edges[bestIdx];
+    edgeStatus[bestIdx] = 'added';
+    totalCost += e.w;
+    addedCount++;
+    rAdded.textContent = addedCount;
+    rCost.textContent = totalCost;
+    inTree.add(e.a);
+    inTree.add(e.b);
+
+    if (addedCount === nodes.length - 1) done = true;
+
+    draw();
+  }
+
   /* ── Public controls ── */
   window.mstGenerate = function() {
     resize();
@@ -599,20 +719,23 @@
 
   window.mstStep = function() {
     if (nodes.length === 0) { resize(); generateGraph(); return; }
-    kruskalStep();
+    if (algoMode === 'prim') primStep(); else kruskalStep();
   };
 
   window.mstRunAll = function() {
     if (nodes.length === 0) { resize(); generateGraph(); }
-    while (!done && stepIdx < sortedEdges.length + 1) kruskalStep();
+    const step = algoMode === 'prim' ? primStep : kruskalStep;
+    let guard = 0;
+    while (!done && guard++ < edges.length + 1) step();
     draw();
   };
 
   window.mstReset = function() {
     if (nodes.length === 0) return;
-    // Reset edge statuses and union-find without regenerating
+    // Reset edge statuses, union-find, and Prim's tree without regenerating
     edgeStatus = new Array(edges.length).fill('none');
     ufInit(nodes.length);
+    inTree = new Set([0]);
     stepIdx = 0; totalCost = 0; addedCount = 0; consideredCount = 0; done = false;
     rCost.textContent = '—';
     rAdded.textContent = '0';
@@ -663,6 +786,7 @@
 
 })();
 </script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
 <script src="../../../assets/js/classroom-animations.js"></script>
   <script src="../../../assets/js/lesson-layout.js"></script>
 <script src="../../../assets/js/lesson-print-button.js"></script>

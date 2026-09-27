@@ -78,6 +78,41 @@
     [data-theme="bark"] .cl-canvas-wrap { background: #1c1c1e; }
     #sa-canvas { width: 100%; height: 200px; display: block; }
 
+    /* Legend */
+    .cl-legend { display: flex; flex-wrap: wrap; gap: 0.9rem; font-size: 0.78rem; color: var(--text-muted, #64748b); margin: 0.5rem 0 0; }
+    .cl-legend .cl-swatch { display: inline-block; width: 0.65rem; height: 0.65rem; border-radius: 3px; margin-right: 0.35rem; vertical-align: middle; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+    /* Mode toggle */
+    .cl-mode-toggle { display: flex; gap: 0.4rem; margin-bottom: 0.7rem; }
+    .cl-mode-toggle .ll-preset { flex: 1; text-align: center; }
+
+    /* Race view */
+    .cl-race-note { font-size: 0.8rem; color: var(--text-muted, #64748b); margin: 0 0 0.7rem; }
+    .cl-race-lane { margin-bottom: 0.6rem; }
+    .cl-race-lane-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.8rem; margin-bottom: 0.3rem; }
+    .cl-race-name { font-weight: 700; color: var(--text, #1d1d1f); }
+    [data-lighting="night"] .cl-race-name,
+    [data-theme="vaporwave"] .cl-race-name,
+    [data-theme="bark"] .cl-race-name { color: rgba(245,245,247,0.92); }
+    .cl-race-stat { color: var(--text-muted, #64748b); font-variant-numeric: tabular-nums; }
+    .cl-race-canvas-wrap { margin: 0; }
+    .cl-race-canvas-wrap canvas { width: 100%; height: 78px; display: block; }
+    .cl-race-lane.is-done .cl-race-name::after { content: " \2713"; color: #34c759; }
+
+    .cl-race-result { margin-top: 1rem; padding-top: 0.9rem; border-top: 1px dashed var(--line,#d2d2d7); }
+    .cl-race-headline { font-size: 0.9rem; font-weight: 600; color: var(--text, #1d1d1f); margin: 0 0 0.7rem; }
+    [data-lighting="night"] .cl-race-headline,
+    [data-theme="vaporwave"] .cl-race-headline,
+    [data-theme="bark"] .cl-race-headline { color: rgba(245,245,247,0.92); }
+    .cl-race-bar-row { display: grid; grid-template-columns: 72px 1fr 64px; align-items: center; gap: 0.6rem; margin-bottom: 0.45rem; font-size: 0.78rem; }
+    .cl-race-bar-track { background: rgba(0,0,0,0.06); border-radius: 6px; height: 14px; overflow: hidden; }
+    [data-lighting="night"] .cl-race-bar-track,
+    [data-theme="vaporwave"] .cl-race-bar-track,
+    [data-theme="bark"] .cl-race-bar-track { background: rgba(255,255,255,0.08); }
+    .cl-race-bar-fill { height: 100%; border-radius: 6px; transition: width 0.6s ease; }
+    .cl-race-bar-label { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-muted, #64748b); }
+
     /* Readouts */
     .cl-readouts { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin: 0.6rem 0; }
     .cl-readout { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.7rem; text-align: center; }
@@ -227,15 +262,47 @@
         <!-- Simulator -->
         <section class="cl-card" style="--card-accent:#5856d6;">
           <h2>Sorting Visualiser</h2>
-          <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Select an algorithm and click Start. Bars being compared are shown in orange; sorted bars turn green. Use the panel controls to change algorithm, speed, and array size.</p>
-          <div class="cl-canvas-wrap">
-            <canvas id="sa-canvas" aria-label="Animated sorting algorithm visualiser"></canvas>
+
+          <div id="sa-single-view">
+            <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Select an algorithm and click Start. Bars being compared are shown in orange; sorted bars turn green. Use the panel controls to change algorithm, speed, and array size.</p>
+            <div class="cl-canvas-wrap">
+              <canvas id="sa-canvas" aria-label="Animated sorting algorithm visualiser"></canvas>
+            </div>
           </div>
-          <div class="cl-readouts">
+
+          <div id="sa-race-view" hidden>
+            <p class="cl-race-note">All three algorithms sort the <strong>same shuffled array</strong> at the same time, so you can watch the O(n²) vs. O(n log n) gap happen instead of just reading it in a table.</p>
+
+            <div class="cl-race-lane" id="race-lane-bubble" data-algo="bubble">
+              <div class="cl-race-lane-head"><span class="cl-race-name">Bubble Sort</span><span class="cl-race-stat" id="race-stat-bubble">0 comparisons</span></div>
+              <div class="cl-canvas-wrap cl-race-canvas-wrap"><canvas id="race-canvas-bubble" aria-label="Bubble sort race lane"></canvas></div>
+            </div>
+            <div class="cl-race-lane" id="race-lane-merge" data-algo="merge">
+              <div class="cl-race-lane-head"><span class="cl-race-name">Merge Sort</span><span class="cl-race-stat" id="race-stat-merge">0 comparisons</span></div>
+              <div class="cl-canvas-wrap cl-race-canvas-wrap"><canvas id="race-canvas-merge" aria-label="Merge sort race lane"></canvas></div>
+            </div>
+            <div class="cl-race-lane" id="race-lane-quick" data-algo="quick">
+              <div class="cl-race-lane-head"><span class="cl-race-name">Quicksort</span><span class="cl-race-stat" id="race-stat-quick">0 comparisons</span></div>
+              <div class="cl-canvas-wrap cl-race-canvas-wrap"><canvas id="race-canvas-quick" aria-label="Quicksort race lane"></canvas></div>
+            </div>
+
+            <div class="cl-race-result" id="sa-race-result" hidden>
+              <p class="cl-race-headline" id="sa-race-headline"></p>
+              <div id="sa-race-bars"></div>
+            </div>
+          </div>
+
+          <div class="cl-legend">
+            <span><i class="cl-swatch" style="background:#7b79e0;"></i>Unsorted</span>
+            <span><i class="cl-swatch" style="background:#ff9500;"></i>Comparing</span>
+            <span><i class="cl-swatch" style="background:#34c759;"></i>Sorted</span>
+          </div>
+          <div class="cl-readouts" id="sa-readouts">
             <div class="cl-readout"><span class="cl-readout-label">Algorithm</span><span class="cl-readout-val" id="sa-r-algo">Bubble</span></div>
             <div class="cl-readout"><span class="cl-readout-label">Steps</span><span class="cl-readout-val" id="sa-r-steps">0</span></div>
             <div class="cl-readout"><span class="cl-readout-label">Comparisons</span><span class="cl-readout-val" id="sa-r-comps">0</span></div>
           </div>
+          <p class="sr-only" id="sa-r-done" aria-live="polite"></p>
         </section>
 
         <!-- Real-World Applications -->
@@ -349,11 +416,18 @@
       <div class="ll-panel-body">
 
         <div class="ll-pane ll-active" id="sa-pane-sim">
-          <span class="ll-label">Algorithm</span>
-          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.9rem;">
-            <button class="ll-preset" id="sa-btn-bubble" onclick="saSetAlgo('bubble')" style="background:#5856d6;color:#fff;">Bubble</button>
-            <button class="ll-preset" id="sa-btn-merge"  onclick="saSetAlgo('merge')">Merge</button>
-            <button class="ll-preset" id="sa-btn-quick"  onclick="saSetAlgo('quick')">Quick</button>
+          <span class="ll-label">Mode</span>
+          <div class="cl-mode-toggle">
+            <button class="ll-preset" id="sa-mode-single" onclick="saSetMode('single')" style="background:#5856d6;color:#fff;">Single</button>
+            <button class="ll-preset" id="sa-mode-race" onclick="saSetMode('race')">Race all 3</button>
+          </div>
+          <div id="sa-algo-picker">
+            <span class="ll-label">Algorithm</span>
+            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.9rem;">
+              <button class="ll-preset" id="sa-btn-bubble" onclick="saSetAlgo('bubble')" style="background:#5856d6;color:#fff;">Bubble</button>
+              <button class="ll-preset" id="sa-btn-merge"  onclick="saSetAlgo('merge')">Merge</button>
+              <button class="ll-preset" id="sa-btn-quick"  onclick="saSetAlgo('quick')">Quick</button>
+            </div>
           </div>
           <hr class="ll-hr">
           <span class="ll-label">Speed</span>
@@ -364,7 +438,7 @@
           <span class="ll-label">Array Size</span>
           <div style="margin-bottom:0.9rem;">
             <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Bars <span id="sa-size-val">20</span></label>
-            <input type="range" class="nl-slider" id="sa-size" min="10" max="30" value="20" style="width:100%;" />
+            <input type="range" class="nl-slider" id="sa-size" min="10" max="60" value="20" style="width:100%;" />
           </div>
           <hr class="ll-hr">
           <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
@@ -403,15 +477,40 @@
   const speedEl = document.getElementById('sa-speed');
   const sizeEl  = document.getElementById('sa-size');
   const startBtn= document.getElementById('sa-start-btn');
+  const rDone   = document.getElementById('sa-r-done');
 
-  let arr = [], N = 20, algo = 'bubble';
+  const RACE_KEYS  = ['bubble', 'merge', 'quick'];
+  const RACE_NAMES = { bubble: 'Bubble Sort', merge: 'Merge Sort', quick: 'Quicksort' };
+  const RACE_COLORS= { bubble: '#ff3b30', merge: '#34c759', quick: '#5856d6' };
+  const raceCanvases = {};
+  const raceCtx = {};
+  RACE_KEYS.forEach(k => {
+    raceCanvases[k] = document.getElementById('race-canvas-' + k);
+    raceCtx[k] = raceCanvases[k].getContext('2d');
+  });
+
+  let arr = [], N = 20, algo = 'bubble', mode = 'single';
   let steps = [], stepIdx = 0, comparisons = 0, stepCount = 0;
   let running = false, rafId = null, lastTime = 0;
 
-  function resize() {
-    canvas.width  = canvas.offsetWidth  || 560;
-    canvas.height = canvas.offsetHeight || 200;
+  let raceSteps = { bubble: [], merge: [], quick: [] };
+  let raceIdx = { bubble: 0, merge: 0, quick: 0 };
+  let raceComparisons = { bubble: 0, merge: 0, quick: 0 };
+  let raceDone = { bubble: false, merge: false, quick: false };
+  let raceRunning = false, raceRafId = null, raceLastTime = 0;
+
+  function isDarkTheme() {
+    const html = document.documentElement;
+    const theme = html.getAttribute('data-theme');
+    return html.getAttribute('data-lighting') === 'night' || theme === 'vaporwave' || theme === 'bark';
   }
+
+  function resizeCanvas(cv) {
+    cv.width  = cv.offsetWidth  || 560;
+    cv.height = cv.offsetHeight || 200;
+  }
+
+  function resize() { resizeCanvas(canvas); }
 
   function randomArr(n) {
     const a = [];
@@ -520,15 +619,14 @@
     rComps.textContent = '0';
   }
 
-  function draw(state) {
-    resize();
-    const W = canvas.width, H = canvas.height;
-    const pad = 4, barW = (W - pad * 2) / N - 1;
-    ctx.clearRect(0, 0, W, H);
+  function drawBars(targetCtx, targetCanvas, n, state) {
+    const W = targetCanvas.width, H = targetCanvas.height;
+    const pad = 4, barW = (W - pad * 2) / n - 1;
+    targetCtx.clearRect(0, 0, W, H);
 
-    const isDark = document.documentElement.getAttribute('data-theme') === 'night';
-    ctx.fillStyle = isDark ? '#1c1c1e' : '#f7f8fa';
-    ctx.fillRect(0, 0, W, H);
+    const isDark = isDarkTheme();
+    targetCtx.fillStyle = isDark ? '#1c1c1e' : '#f7f8fa';
+    targetCtx.fillRect(0, 0, W, H);
 
     const maxVal = Math.max(...state.arr);
     state.arr.forEach((v, i) => {
@@ -540,11 +638,98 @@
       if (state.sorted && state.sorted.has(i)) color = '#34c759';
       if (state.comparing && state.comparing.includes(i)) color = '#ff9500';
 
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.roundRect(x, y, barW, h, 2);
-      ctx.fill();
+      targetCtx.fillStyle = color;
+      targetCtx.beginPath();
+      targetCtx.roundRect(x, y, barW, h, 2);
+      targetCtx.fill();
     });
+  }
+
+  function draw(state) {
+    resize();
+    drawBars(ctx, canvas, N, state);
+  }
+
+  // ── Race mode: run all three on the identical array ──
+  function buildRaceSteps() {
+    raceSteps.bubble = generateBubbleSteps(arr);
+    raceSteps.merge  = generateMergeSteps(arr);
+    raceSteps.quick  = generateQuickSteps(arr);
+    RACE_KEYS.forEach(k => {
+      raceIdx[k] = 0;
+      raceComparisons[k] = 0;
+      raceDone[k] = false;
+      document.getElementById('race-lane-' + k).classList.remove('is-done');
+      document.getElementById('race-stat-' + k).textContent = '0 comparisons';
+    });
+    document.getElementById('sa-race-result').hidden = true;
+  }
+
+  function drawRaceState(k, state) {
+    resizeCanvas(raceCanvases[k]);
+    drawBars(raceCtx[k], raceCanvases[k], N, state);
+  }
+
+  function drawRaceInitial() {
+    RACE_KEYS.forEach(k => drawRaceState(k, { arr: arr.slice(), comparing: [], sorted: new Set() }));
+  }
+
+  function raceTick(ts) {
+    if (!raceRunning) return;
+    const delay = (11 - parseInt(speedEl.value)) * 30;
+    if (ts - raceLastTime < delay) { raceRafId = requestAnimationFrame(raceTick); return; }
+    raceLastTime = ts;
+
+    let allDone = true;
+    RACE_KEYS.forEach(k => {
+      if (raceDone[k]) return;
+      const laneSteps = raceSteps[k];
+      if (raceIdx[k] >= laneSteps.length) {
+        raceDone[k] = true;
+        document.getElementById('race-lane-' + k).classList.add('is-done');
+        return;
+      }
+      allDone = false;
+      const state = laneSteps[raceIdx[k]];
+      drawRaceState(k, state);
+      if (state.comparing && state.comparing.length > 0) raceComparisons[k]++;
+      document.getElementById('race-stat-' + k).textContent = raceComparisons[k] + ' comparisons';
+      raceIdx[k]++;
+    });
+
+    if (allDone) {
+      raceRunning = false;
+      startBtn.textContent = 'Start';
+      showRaceResult();
+      return;
+    }
+    raceRafId = requestAnimationFrame(raceTick);
+  }
+
+  function showRaceResult() {
+    const max = Math.max(raceComparisons.bubble, raceComparisons.merge, raceComparisons.quick, 1);
+    const fastestKey = RACE_KEYS.reduce((a, b) => raceComparisons[b] < raceComparisons[a] ? b : a);
+    const ratio = fastestKey !== 'bubble' && raceComparisons[fastestKey] > 0
+      ? (raceComparisons.bubble / raceComparisons[fastestKey]).toFixed(1)
+      : null;
+
+    const headline = document.getElementById('sa-race-headline');
+    headline.textContent = ratio
+      ? 'On this array of ' + N + ' items, Bubble Sort needed ' + raceComparisons.bubble + ' comparisons — ' + ratio + '× more than ' + RACE_NAMES[fastestKey] + '’s ' + raceComparisons[fastestKey] + '.'
+      : 'Final comparisons — Bubble: ' + raceComparisons.bubble + ', Merge: ' + raceComparisons.merge + ', Quick: ' + raceComparisons.quick + '.';
+
+    const barsEl = document.getElementById('sa-race-bars');
+    barsEl.innerHTML = RACE_KEYS.map(k => {
+      const pct = Math.max(2, Math.round(raceComparisons[k] / max * 100));
+      return '<div class="cl-race-bar-row">' +
+        '<span>' + RACE_NAMES[k].split(' ')[0] + '</span>' +
+        '<div class="cl-race-bar-track"><div class="cl-race-bar-fill" style="width:' + pct + '%;background:' + RACE_COLORS[k] + ';"></div></div>' +
+        '<span class="cl-race-bar-label">' + raceComparisons[k] + '</span>' +
+      '</div>';
+    }).join('');
+
+    document.getElementById('sa-race-result').hidden = false;
+    rDone.textContent = headline.textContent;
   }
 
   function tick(ts) {
@@ -557,6 +742,7 @@
       running = false;
       startBtn.textContent = 'Start';
       if (steps.length > 0) draw(steps[steps.length - 1]);
+      rDone.textContent = 'Sort complete after ' + stepCount + ' steps and ' + comparisons + ' comparisons.';
       return;
     }
 
@@ -580,24 +766,66 @@
     });
     rAlgo.textContent = name.charAt(0).toUpperCase() + name.slice(1);
     saStop();
+    rDone.textContent = '';
     buildSteps();
     draw(steps[0] || { arr: arr.slice(), comparing: [], sorted: new Set() });
+  };
+
+  window.saSetMode = function(name) {
+    if (mode === name) return;
+    saStop();
+    mode = name;
+
+    document.getElementById('sa-mode-single').style.background = name === 'single' ? '#5856d6' : '';
+    document.getElementById('sa-mode-single').style.color = name === 'single' ? '#fff' : '';
+    document.getElementById('sa-mode-race').style.background = name === 'race' ? '#5856d6' : '';
+    document.getElementById('sa-mode-race').style.color = name === 'race' ? '#fff' : '';
+
+    document.getElementById('sa-single-view').hidden = name !== 'single';
+    document.getElementById('sa-race-view').hidden = name !== 'race';
+    document.getElementById('sa-algo-picker').hidden = name === 'race';
+    document.getElementById('sa-readouts').hidden = name === 'race';
+    rDone.textContent = '';
+
+    if (name === 'race') {
+      buildRaceSteps();
+      drawRaceInitial();
+    } else {
+      buildSteps();
+      draw(steps[0] || { arr: arr.slice(), comparing: [], sorted: new Set() });
+    }
   };
 
   window.saShuffle = function() {
     saStop();
     N = parseInt(sizeEl.value);
     arr = randomArr(N);
-    buildSteps();
-    draw({ arr: arr.slice(), comparing: [], sorted: new Set() });
+    if (mode === 'race') {
+      buildRaceSteps();
+      drawRaceInitial();
+    } else {
+      buildSteps();
+      draw({ arr: arr.slice(), comparing: [], sorted: new Set() });
+    }
   };
 
   window.saToggle = function() {
+    if (mode === 'race') {
+      if (raceRunning) { saStop(); return; }
+      if (RACE_KEYS.every(k => raceIdx[k] >= raceSteps[k].length)) buildRaceSteps();
+      rDone.textContent = '';
+      raceRunning = true;
+      startBtn.textContent = 'Pause';
+      raceLastTime = 0;
+      raceRafId = requestAnimationFrame(raceTick);
+      return;
+    }
     if (running) { saStop(); }
     else {
       if (stepIdx >= steps.length) {
         buildSteps();
       }
+      rDone.textContent = '';
       running = true;
       startBtn.textContent = 'Pause';
       lastTime = 0;
@@ -607,7 +835,9 @@
 
   function saStop() {
     running = false;
+    raceRunning = false;
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    if (raceRafId) { cancelAnimationFrame(raceRafId); raceRafId = null; }
     startBtn.textContent = 'Start';
   }
 
@@ -616,11 +846,16 @@
   });
   sizeEl.addEventListener('input', () => {
     document.getElementById('sa-size-val').textContent = sizeEl.value;
-    if (!running) {
+    if (!running && !raceRunning) {
       N = parseInt(sizeEl.value);
       arr = randomArr(N);
-      buildSteps();
-      draw({ arr: arr.slice(), comparing: [], sorted: new Set() });
+      if (mode === 'race') {
+        buildRaceSteps();
+        drawRaceInitial();
+      } else {
+        buildSteps();
+        draw({ arr: arr.slice(), comparing: [], sorted: new Set() });
+      }
     }
   });
 
@@ -631,9 +866,22 @@
   buildSteps();
   resize();
   draw({ arr: arr.slice(), comparing: [], sorted: new Set() });
-  window.addEventListener('resize', () => {
-    if (steps.length > 0 && stepIdx > 0) draw(steps[Math.max(0, stepIdx-1)]);
-    else draw({ arr: arr.slice(), comparing: [], sorted: new Set() });
+  function redrawCurrent() {
+    if (mode === 'race') {
+      RACE_KEYS.forEach(k => {
+        const idx = Math.max(0, raceIdx[k] - 1);
+        const state = raceSteps[k][idx] || { arr: arr.slice(), comparing: [], sorted: new Set() };
+        drawRaceState(k, state);
+      });
+    } else if (steps.length > 0 && stepIdx > 0) {
+      draw(steps[Math.max(0, stepIdx-1)]);
+    } else {
+      draw({ arr: arr.slice(), comparing: [], sorted: new Set() });
+    }
+  }
+  window.addEventListener('resize', redrawCurrent);
+  new MutationObserver(redrawCurrent).observe(document.documentElement, {
+    attributes: true, attributeFilter: ['data-theme', 'data-lighting']
   });
 
   /* ── Practice checkers ────────────────────────────── */

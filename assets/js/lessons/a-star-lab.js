@@ -14,7 +14,7 @@ const speedEl = document.getElementById("astar-speed");
 const runBtn = document.getElementById("astar-run");
 const stepBtn = document.getElementById("astar-step");
 const clearBtn = document.getElementById("astar-clear-search");
-const toolButtons = Array.from(document.querySelectorAll(".astar-tool"));
+const toolButtons = Array.from(document.querySelectorAll(".astar-tool[data-tool]"));
 const toolStartBtn = document.getElementById("astar-tool-start");
 const toolGoalBtn = document.getElementById("astar-tool-goal");
 const toolBlockedBtn = document.getElementById("astar-tool-blocked");
@@ -110,7 +110,7 @@ const PLATFORMER = {
 const THEMES = {
   mars: {
     title: "Rescue Grid: The A* Mission",
-    subtitle: "Guide the rover to the beacon using A* while terrain, fuel pressure, and mission rules change in real time.",
+    subtitle: "Find a route, test your prediction, and discover how A* (say “A-star”) chooses where to look next.",
     startLabel: "Rover",
     goalLabel: "Beacon",
     blockedLabel: "Craters",
@@ -244,7 +244,7 @@ const state = {
   cells: [],
   start: { x: 1, y: 1 },
   goal: { x: 10, y: 6 },
-  tool: "start",
+  tool: "blocked",
   mode: modeEl.value,
   theme: themeEl.value,
   aiName: aiNameEl.value.trim(),
@@ -282,7 +282,7 @@ function modeCopy(mode) {
     return `${ai} in Dynamic Obstacles mode: ${lowerStart} path may change while searching.`;
   }
   if (mode === "step") {
-    return `${ai} in Step mode: press Step Expansion to advance one node at a time.`;
+    return `${ai} in Step mode: press Next step to advance one node at a time.`;
   }
   return `${ai} in Classic mode: balanced route planning.`;
 }
@@ -992,7 +992,7 @@ function stopAnimation() {
     state.timer = null;
   }
   if (playPauseBtn) {
-    playPauseBtn.textContent = "▶";
+    playPauseBtn.textContent = "Play";
     playPauseBtn.title = "Play Mission";
   }
 }
@@ -1010,7 +1010,7 @@ function updateDecisionInspector(frame) {
 
   if (!frame) {
     whyEl.textContent = "Ready to inspect";
-    detailEl.textContent = "Click 'Run Mission' or step through the search to analyze the algorithm's decisions in real time.";
+    detailEl.textContent = "Click 'Run search' or step through the search to analyze the algorithm's decisions in real time.";
     return;
   }
 
@@ -1038,7 +1038,6 @@ function updateDecisionInspector(frame) {
     } else {
       whyEl.textContent = `🔍 Expanding Cell: ${cellName}`;
       
-      const heuristicName = HEURISTIC_LABEL[state.heuristic] || state.heuristic;
       let heuristicExplanation = "";
       if (state.heuristic === "zero") {
         heuristicExplanation = "Dijkstra's algorithm has no directional heuristic (h = 0), so it expands cells in radial rings of uniform cost.";
@@ -1048,11 +1047,7 @@ function updateDecisionInspector(frame) {
         heuristicExplanation = "Euclidean distance measures the direct straight-line distance, like a drone flying.";
       }
 
-      detailEl.innerHTML = `
-        ${ai} selected <strong>${cellName}</strong> because it has the lowest total cost in the Open Set:
-        <br/><strong style="color: #3b82f6;">f(n) = ${frame.f.toFixed(2)}</strong> (g: ${frame.g.toFixed(2)} + h: ${frame.h.toFixed(2)}).
-        <br/><span style="font-size: 0.85rem; color: #64748b;">${heuristicExplanation}</span>
-      `;
+      detailEl.textContent = `${ai} chose ${cellName}, one of the waiting cells with the lowest estimated total: ${frame.g.toFixed(1)} cost so far + ${frame.h.toFixed(1)} estimated remaining = ${frame.f.toFixed(1)}. ${heuristicExplanation}`;
     }
   }
 }
@@ -1070,6 +1065,9 @@ function clearSearchOverlay() {
   solveTimeEl.textContent = "--";
   optimalityEl.textContent = "Pending";
   resetInstruments();
+  for (const row of compareBodyEl.rows) {
+    for (const cell of Array.from(row.cells).slice(1)) cell.textContent = "—";
+  }
 
   if (scrubberEl) {
     scrubberEl.max = 0;
@@ -1078,7 +1076,7 @@ function clearSearchOverlay() {
   }
   if (playPauseBtn) {
     playPauseBtn.disabled = true;
-    playPauseBtn.textContent = "▶";
+    playPauseBtn.textContent = "Play";
     playPauseBtn.title = "Play Mission";
   }
   if (scrubberLabelEl) {
@@ -1106,9 +1104,7 @@ function applyFrame(rawFrame) {
     nodeScores: rawFrame.nodeScores || new Map()
   };
 
-  if (frame.type === "event" && state.pendingDynamicGrid) {
-    state.cells = state.pendingDynamicGrid.slice();
-  }
+  if (frame.cells) state.cells = frame.cells.slice();
 
   state.currentFrame = frame;
 
@@ -1137,7 +1133,7 @@ function playAnimation() {
 
   state.running = true;
   if (playPauseBtn) {
-    playPauseBtn.textContent = "⏸";
+    playPauseBtn.textContent = "Pause";
     playPauseBtn.title = "Pause Mission";
   }
 
@@ -1149,7 +1145,7 @@ function playAnimation() {
       if (state.lastResult?.success) {
         updateStatus(`${ai} reached the ${theme.goalLabel.toLowerCase()}. Mission complete.`);
       } else {
-        updateStatus(`${ai} could not find a valid route.`);
+        updateStatus(`${ai} could not find a route. Erase a blocking tile or, in Fuel Critical mode, raise the cost budget and try again.`);
       }
       return;
     }
@@ -1238,6 +1234,9 @@ function runMission() {
   const baseCells = state.cells.slice();
 
   resetInstruments();
+  for (const row of compareBodyEl.rows) {
+    for (const cell of Array.from(row.cells).slice(1)) cell.textContent = "—";
+  }
   nodesExpandedEl.textContent = "0";
   pathCostEl.textContent = "--";
   solveTimeEl.textContent = "--";
@@ -1272,6 +1271,12 @@ function runMission() {
 
   const solveMs = performance.now() - solveStartedAt;
 
+  let replayCells = baseCells;
+  for (const frame of missionFrames) {
+    if (frame.type === "event") replayCells = finalCells;
+    frame.cells = replayCells;
+  }
+  state.currentFrame = null;
   state.frames = missionFrames;
   state.frameIndex = 0;
   state.lastResult = result;
@@ -1301,9 +1306,9 @@ function runMission() {
     scrubberLabelEl.textContent = missionFrames.length > 0 ? `1 / ${missionFrames.length}` : "0 / 0";
   }
 
-  if (state.mode === "step") {
+  if (state.mode === "step" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     renderGrid();
-    updateStatus(`${ai} is ready in Step mode. Press Step Expansion to advance.`);
+    updateStatus(`${ai} is ready in Step mode. Press Next step to advance.`);
     return;
   }
 
@@ -1313,10 +1318,12 @@ function runMission() {
 function stepMission() {
   const ai = getAiName();
   const theme = getTheme();
-  if (state.mode !== "step") return;
+  stopAnimation();
 
   if (!state.frames.length || state.frameIndex >= state.frames.length) {
     runMission();
+    stopAnimation();
+    state.frameIndex = 0;
     if (!state.frames.length) return;
   }
 
@@ -1355,8 +1362,7 @@ function updateModeUI() {
   fuelLabelEl.hidden = !fuelVisible;
   fuelInputEl.hidden = !fuelVisible;
 
-  const stepActive = state.mode === "step";
-  stepBtn.disabled = !stepActive;
+  stepBtn.disabled = false;
 
   updateStatus(modeCopy(state.mode));
 }
@@ -1500,21 +1506,52 @@ function describeCell(x, y, terrain, frame) {
   return desc;
 }
 
+function drawMarsLandmark(ctx, x, y, size, kind) {
+  ctx.save();
+  ctx.translate(x + size / 2, y + size * .57);
+  ctx.scale(size / 60, size / 60);
+  if (kind === "crater") {
+    ctx.fillStyle = "#66758a";
+    ctx.beginPath(); ctx.ellipse(0, 1, 21, 14, -.25, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#3e4d63";
+    ctx.beginPath(); ctx.ellipse(0, 0, 14, 8, -.25, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = "#d4dbe4"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(0, 1, 21, 14, -.25, Math.PI, Math.PI * 1.8); ctx.stroke();
+  } else if (kind === "rover") {
+    ctx.fillStyle = "#233c58";
+    for (const wheel of [-15, 0, 15]) { ctx.beginPath(); ctx.arc(wheel, 12, 5, 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = "#1859a3"; ctx.fillRect(-20, -7, 40, 15);
+    ctx.fillStyle = "#bde8ff"; ctx.fillRect(-14, -5, 10, 8); ctx.fillRect(2, -5, 10, 8);
+    ctx.strokeStyle = "#233c58"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(10, -6); ctx.lineTo(10, -20); ctx.lineTo(17, -20); ctx.stroke();
+    ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(18, -20, 4, 0, Math.PI * 2); ctx.fill();
+  } else {
+    ctx.strokeStyle = "#176647"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(0, -18); ctx.lineTo(0, 15); ctx.moveTo(-12, 15); ctx.lineTo(12, 15); ctx.stroke();
+    ctx.fillStyle = "#176647"; ctx.beginPath(); ctx.moveTo(2, -19); ctx.lineTo(21, -12); ctx.lineTo(2, -5); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = "#389365"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, -18, 12, Math.PI * 1.1, Math.PI * 1.8); ctx.stroke();
+  }
+  ctx.restore();
+}
+
 function renderGrid(frame = state.currentFrame) {
   if (!gridEl.getContext) return;
   const ctx = gridEl.getContext("2d");
   const theme = getTheme();
-  const isNight = getComputedStyle(document.body).getPropertyValue('--is-night-theme') === 'true';
+  document.getElementById("astar-map-size").textContent = `${state.width} × ${state.height}`;
+  document.getElementById("astar-phase").textContent = frame?.type === "path" ? "Tracing the route" : frame?.type === "event" ? "Map changed · replanning" : frame ? `Checking ${String.fromCharCode(65 + coordsFromKey(frame.currentKey || "0,0").x)}${coordsFromKey(frame.currentKey || "0,0").y + 1}` : "Ready to explore";
+  const isNight = document.documentElement.dataset.lighting === "night" || document.body.dataset.lighting === "night" || ["bark", "vaporwave", "night"].includes(document.documentElement.dataset.theme);
 
   const dpr = window.devicePixelRatio || 1;
   const rect = gridEl.getBoundingClientRect();
-  const cWidth = rect.width;
-  const cHeight = (rect.width / state.width) * state.height;
+  const cWidth = gridEl.clientWidth;
+  const cHeight = (cWidth / state.width) * state.height;
 
   if (gridEl.width !== Math.round(cWidth * dpr) || gridEl.height !== Math.round(cHeight * dpr)) {
     gridEl.width = Math.round(cWidth * dpr);
     gridEl.height = Math.round(cHeight * dpr);
-    gridEl.style.height = `${cHeight}px`;
+    gridEl.style.height = `${cHeight + 6}px`;
   }
 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1523,7 +1560,7 @@ function renderGrid(frame = state.currentFrame) {
 
   const cellW = cWidth / state.width;
   
-  const gap = 2;
+  const gap = 3;
   const size = cellW - gap;
   const maxH = heuristicValue(state.heuristic, 0, 0, state.goal.x, state.goal.y) || 1;
   
@@ -1541,9 +1578,9 @@ function renderGrid(frame = state.currentFrame) {
       let bgColor = isNight ? "#1e293b" : "#f1f5f9";
       
       if (terrain === "blocked") {
-        bgColor = isNight ? "#475569" : "#94a3b8"; 
+        bgColor = isNight ? "#53627a" : "#b1bac7"; 
       } else if (terrain === "sand") {
-        bgColor = isNight ? "#ca8a04" : "#fcd34d"; 
+        bgColor = isNight ? "#ac7428" : "#f3cc80"; 
       } else {
         if (state.showHeatmap) {
           const hVal = heuristicValue(state.heuristic, x, y, state.goal.x, state.goal.y);
@@ -1563,19 +1600,26 @@ function renderGrid(frame = state.currentFrame) {
         ctx.fillRect(cx, cy, size, size);
       }
 
-      // Draw grid coordinates in a very subtle font
+      // Terrain texture stays legible when search overlays appear.
       ctx.save();
-      ctx.fillStyle = isNight ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.15)";
-      ctx.font = `${Math.max(8, Math.floor(size * 0.22))}px 'IBM Plex Mono', monospace`;
-      ctx.textAlign = "left";
-      ctx.textBaseline = "top";
-      const colLetter = String.fromCharCode(65 + x);
-      const rowNum = y + 1;
-      ctx.fillText(`${colLetter}${rowNum}`, cx + 4, cy + 4);
+      ctx.strokeStyle = terrain === "sand" ? (isNight ? "#efcb80" : "#b27a29") : (isNight ? "#e8b68c33" : "#b46e3630");
+      ctx.lineWidth = 1;
+      if (terrain === "sand") {
+        for (let stripe = 1; stripe < 4; stripe++) {
+          ctx.beginPath();
+          ctx.moveTo(cx + size * .12, cy + size * stripe / 4);
+          ctx.bezierCurveTo(cx + size * .4, cy + size * (stripe / 4 - .12), cx + size * .6, cy + size * (stripe / 4 + .12), cx + size * .88, cy + size * stripe / 4);
+          ctx.stroke();
+        }
+      } else if (terrain === "clear" && state.theme === "mars") {
+        ctx.beginPath();
+        ctx.ellipse(cx + size * .7, cy + size * .72, size * .16, size * .06, -.3, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       ctx.restore();
 
-      if (frame?.closedSet?.has(key) || state.lastResult?.closedSet?.has(key)) {
-        ctx.fillStyle = isNight ? "rgba(148, 163, 184, 0.3)" : "rgba(148, 163, 184, 0.5)";
+      if (frame?.closedSet?.has(key)) {
+        ctx.fillStyle = isNight ? "rgba(63, 132, 177, 0.35)" : "rgba(122, 182, 218, 0.4)";
         if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(cx, cy, size, size, 4); ctx.fill(); } 
         else { ctx.fillRect(cx, cy, size, size); }
       }
@@ -1600,8 +1644,35 @@ function renderGrid(frame = state.currentFrame) {
         ctx.restore();
       }
 
-      const parentKey = frame?.cameFrom?.get(key) || state.lastResult?.cameFrom?.get(key);
-      if (parentKey && (frame?.closedSet?.has(key) || state.lastResult?.closedSet?.has(key)) && !isStart(x, y) && !isGoal(x, y)) {
+      ctx.save();
+      ctx.strokeStyle = isNight ? "#99d7ff" : "#175f99";
+      ctx.fillStyle = ctx.strokeStyle;
+      ctx.lineWidth = Math.max(1.5, size * .035);
+      if (frame?.openSet?.has(key)) {
+        ctx.beginPath(); ctx.arc(cx + size * .75, cy + size * .75, size * .09, 0, Math.PI * 2); ctx.stroke();
+      } else if (frame?.closedSet?.has(key)) {
+        ctx.beginPath(); ctx.arc(cx + size * .75, cy + size * .75, size * .055, 0, Math.PI * 2); ctx.fill();
+      }
+      if (frame?.currentKey === key) {
+        ctx.strokeStyle = "#794a0b";
+        ctx.strokeRect(cx + 3, cy + 3, size - 6, size - 6);
+        ctx.beginPath(); ctx.moveTo(cx + size / 2, cy); ctx.lineTo(cx + size / 2, cy + size * .14);
+        ctx.moveTo(cx, cy + size / 2); ctx.lineTo(cx + size * .14, cy + size / 2); ctx.stroke();
+      }
+      ctx.restore();
+      // Draw grid coordinates in a very subtle font
+      ctx.save();
+      ctx.fillStyle = isNight ? "#f1f5f9" : "#334155";
+      ctx.font = `${Math.max(8, Math.floor(size * 0.22))}px 'IBM Plex Mono', monospace`;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      const colLetter = String.fromCharCode(65 + x);
+      const rowNum = y + 1;
+      ctx.fillText(`${colLetter}${rowNum}`, cx + 4, cy + 4);
+      ctx.restore();
+
+      const parentKey = frame?.cameFrom?.get(key);
+      if (parentKey && (frame?.closedSet?.has(key)) && !isStart(x, y) && !isGoal(x, y)) {
         const { x: px, y: py } = coordsFromKey(parentKey);
         const pcx = px * cellW + cellW / 2;
         const pcy = py * cellW + cellW / 2;
@@ -1623,14 +1694,16 @@ function renderGrid(frame = state.currentFrame) {
       else if (terrain === "blocked") symbol = theme.blockedSymbol;
       else if (terrain === "sand") symbol = theme.slowSymbol;
       
-      if (symbol) {
+      if (state.theme === "mars" && (isStart(x, y) || isGoal(x, y) || terrain === "blocked")) {
+        drawMarsLandmark(ctx, cx, cy, size, isStart(x, y) ? "rover" : isGoal(x, y) ? "beacon" : "crater");
+      } else if (symbol && !(state.theme === "mars" && terrain === "sand")) {
         ctx.fillStyle = isNight ? "rgba(255, 255, 255, 0.9)" : "rgba(0, 0, 0, 0.8)";
         ctx.fillText(symbol, cx + size/2, cy + size/2 + (size * 0.05));
       }
     }
   }
 
-  const path = Array.isArray(frame?.pathArray) && frame.pathArray.length > 0 ? frame.pathArray : (state.lastResult?.path || []);
+  const path = frame?.pathArray || [];
   if (path.length > 0) {
     ctx.beginPath();
     ctx.strokeStyle = "#a855f7";
@@ -1650,12 +1723,18 @@ function renderGrid(frame = state.currentFrame) {
     }
     ctx.stroke();
     ctx.shadowBlur = 0;
+    const tip = coordsFromKey(path[path.length - 1]);
+    ctx.beginPath(); ctx.arc((tip.x + .5) * cellW, (tip.y + .5) * cellW, Math.max(5, size * .14), 0, Math.PI * 2);
+    ctx.fillStyle = "#fff"; ctx.fill(); ctx.strokeStyle = "#7134ae"; ctx.lineWidth = 3; ctx.stroke();
   }
 
   if (state.hoveredCell && inBounds(state.hoveredCell.x, state.hoveredCell.y)) {
     const { x, y } = state.hoveredCell;
     const key = keyOf(x, y);
-    const scores = frame?.nodeScores?.get(key) || state.lastResult?.nodeScores?.get(key);
+    ctx.strokeStyle = "#1859a3";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(x * cellW + 2, y * cellW + 2, cellW - 4, cellW - 4);
+    const scores = frame?.nodeScores?.get(key);
     
     if (scores) {
       const cx = x * cellW + gap / 2;
@@ -1703,10 +1782,35 @@ function renderGrid(frame = state.currentFrame) {
   ctx.restore();
 }
 
+let keyboardCell = { x: 0, y: 0 };
+function announceKeyboardCell() {
+  state.hoveredCell = keyboardCell;
+  cellDescriptionEl.textContent = describeCell(keyboardCell.x, keyboardCell.y, terrainAt(state.cells, keyboardCell.x, keyboardCell.y), state.currentFrame);
+  renderGrid();
+}
+gridEl.addEventListener("focus", announceKeyboardCell);
+gridEl.addEventListener("keydown", (event) => {
+  const moves = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+  if (moves[event.key]) {
+    event.preventDefault();
+    const [dx, dy] = moves[event.key];
+    keyboardCell = { x: clamp(keyboardCell.x + dx, 0, state.width - 1), y: clamp(keyboardCell.y + dy, 0, state.height - 1) };
+  } else if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    if (state.running) { updateStatus("Pause the search before editing the map."); return; }
+    if (updateCellByTool(keyboardCell.x, keyboardCell.y)) {
+      clearSearchOverlay();
+      updateStatus("Map changed. Run search to test your new route.");
+    }
+  } else return;
+  announceKeyboardCell();
+});
+
 buildGridBtn.addEventListener("click", () => {
   const ai = getAiName();
   stopAnimation();
   createDefaultGrid();
+  keyboardCell = { x: 0, y: 0 };
   clearSearchOverlay();
   renderGrid();
   updateStatus(`New mission grid ready. ${ai} is waiting for instructions.`);
@@ -1729,7 +1833,7 @@ function handlePointer(event) {
   if (updateCellByTool(x, y)) {
     clearSearchOverlay();
     if (event.type === "pointerdown") {
-      updateStatus(`${getAiName()} found a new map setup. Run Mission to test the route.`);
+      updateStatus(`${getAiName()} found a new map setup. Run search to test the route.`);
     }
   }
 }
@@ -1824,7 +1928,7 @@ clearBtn.addEventListener("click", () => {
 scrubberEl.addEventListener("input", (event) => {
   stopAnimation();
   const index = Number(event.target.value);
-  state.frameIndex = index;
+  state.frameIndex = index + 1;
   applyFrame(state.frames[index]);
   if (scrubberLabelEl) {
     scrubberLabelEl.textContent = `${index + 1} / ${state.frames.length}`;
@@ -1854,4 +1958,37 @@ applyThemeUI();
 createDefaultGrid();
 updateModeUI();
 clearSearchOverlay();
-updateStatus(`${getAiName()} is ready. Place start/goal tiles or press Run Mission.`);
+updateStatus(`The starter map is ready. Predict the route, then choose Run search.`);
+
+// Keep the shared unit introduction available after the first experiment.
+const unitMission = document.querySelector(".aai-mission");
+if (unitMission) {
+  unitMission.open = false;
+  document.getElementById("astar-live").insertAdjacentElement("afterend", unitMission);
+}
+
+new ResizeObserver(() => renderGrid()).observe(gridEl);
+new MutationObserver(() => renderGrid()).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "data-lighting"] });
+
+for (const button of document.querySelectorAll("[data-scenario]")) {
+  button.addEventListener("click", () => {
+    stopAnimation();
+    themeEl.value = "mars"; state.theme = "mars";
+    modeEl.value = "classic"; updateModeUI();
+    widthEl.value = "12"; heightEl.value = "8";
+    createDefaultGrid();
+    const scenario = button.dataset.scenario;
+    if (scenario !== "starter") {
+      state.cells.fill("clear");
+      if (scenario === "detour") {
+        for (let y = 2; y < 8; y++) state.cells[cellIndex(6, y)] = "blocked";
+      } else {
+        for (let x = 3; x < 9; x++) state.cells[cellIndex(x, 4)] = "sand";
+      }
+    }
+    keyboardCell = { ...state.start };
+    state.hoveredCell = null;
+    applyThemeUI(); clearSearchOverlay(); setTool("start");
+    updateStatus(scenario === "sand" ? "Predict: is the straight route through sand cheaper than going around it? Run search to find out." : scenario === "detour" ? "Predict: where can the rover get around this ridge? Run search to test your idea." : "First contact: follow the search from rover to beacon.");
+  });
+}
