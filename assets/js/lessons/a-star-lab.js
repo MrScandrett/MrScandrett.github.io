@@ -232,11 +232,22 @@ const THEMES = {
 
 const FALLBACK_AI_NAME = "Byte";
 
-const HEURISTIC_LABEL = {
-  manhattan: "Manhattan",
-  euclidean: "Euclidean",
-  zero: "Zero (Dijkstra)"
+// Every strategy is the same best-first loop with a different priority:
+// priority = wg * (cost so far) + wh * (estimate left). BFS ranks by steps
+// taken instead of terrain cost, so it ignores sand when choosing.
+const STRATEGY = {
+  manhattan: { label: "A* · grid steps", h: "manhattan", wg: 1, wh: 1 },
+  euclidean: { label: "A* · straight line", h: "euclidean", wg: 1, wh: 1 },
+  zero: { label: "Dijkstra", h: "zero", wg: 1, wh: 1 },
+  greedy: { label: "Greedy best-first", h: "manhattan", wg: 0, wh: 1 },
+  bfs: { label: "Breadth-first (BFS)", h: "zero", wg: 1, wh: 1, unitSteps: true }
 };
+const STRATEGY_ORDER = ["manhattan", "euclidean", "zero", "greedy", "bfs"];
+const HEURISTIC_LABEL = Object.fromEntries(STRATEGY_ORDER.map((key) => [key, STRATEGY[key].label]));
+
+function strategyOf(kind) {
+  return STRATEGY[kind] || STRATEGY.manhattan;
+}
 
 const state = {
   width: Number(widthEl.value),
@@ -359,6 +370,7 @@ function cloneFrame(frame) {
 }
 
 function heuristicValue(kind, x, y, gx, gy) {
+  kind = strategyOf(kind).h;
   if (state.theme === "mario") {
     return platformerHeuristicValue(kind, x, y, gx, gy);
   }
@@ -426,6 +438,7 @@ function reconstructPath(cameFrom, goalKey) {
 function runGridAStar(cells, start, goal, options) {
   const theme = getTheme();
   const heuristic = options.heuristic || "manhattan";
+  const strategy = strategyOf(heuristic);
   const fuelLimit = Number.isFinite(options.fuelLimit) ? options.fuelLimit : Infinity;
   const recordFrames = options.recordFrames !== false;
 
@@ -439,16 +452,19 @@ function runGridAStar(cells, start, goal, options) {
   const frames = [];
 
   const startH = heuristicValue(heuristic, start.x, start.y, goal.x, goal.y);
+  const startF = strategy.wh * startH;
   openMap.set(startKey, {
     key: startKey,
     x: start.x,
     y: start.y,
     g: 0,
+    rankG: 0,
     h: startH,
-    f: startH
+    f: startF
   });
   gScore.set(startKey, 0);
-  nodeScores.set(startKey, { g: 0, h: startH, f: startH });
+  const rankScore = new Map([[startKey, 0]]);
+  nodeScores.set(startKey, { g: 0, h: startH, f: startF });
 
   let expandedCount = 0;
   let success = false;
@@ -502,11 +518,13 @@ function runGridAStar(cells, start, goal, options) {
       const tentativeG = current.g + stepCost;
       if (tentativeG > fuelLimit) continue;
 
-      const previousG = gScore.get(neighborKey);
-      if (previousG !== undefined && tentativeG >= previousG) continue;
+      const tentativeRank = current.rankG + (strategy.unitSteps ? 1 : stepCost);
+      const previousRank = rankScore.get(neighborKey);
+      if (previousRank !== undefined && tentativeRank >= previousRank) continue;
 
       cameFrom.set(neighborKey, current.key);
       gScore.set(neighborKey, tentativeG);
+      rankScore.set(neighborKey, tentativeRank);
 
       const h = heuristicValue(heuristic, nx, ny, goal.x, goal.y);
       const candidate = {
@@ -514,8 +532,9 @@ function runGridAStar(cells, start, goal, options) {
         x: nx,
         y: ny,
         g: tentativeG,
+        rankG: tentativeRank,
         h,
-        f: tentativeG + h
+        f: strategy.wg * tentativeRank + strategy.wh * h
       };
 
       openMap.set(neighborKey, candidate);
@@ -722,6 +741,7 @@ function simulatePlatformerStep(cells, node, action) {
 function runMarioAStar(cells, start, goal, options) {
   const theme = getTheme();
   const heuristic = options.heuristic || "manhattan";
+  const strategy = strategyOf(heuristic);
   const fuelLimit = Number.isFinite(options.fuelLimit) ? options.fuelLimit : Infinity;
   const recordFrames = options.recordFrames !== false;
 
@@ -742,12 +762,14 @@ function runMarioAStar(cells, start, goal, options) {
     vy: 0,
     trail: [keyOf(start.x, start.y)],
     g: 0,
+    rankG: 0,
     h: heuristicValue(heuristic, start.x, start.y, goal.x, goal.y),
-    f: heuristicValue(heuristic, start.x, start.y, goal.x, goal.y)
+    f: strategy.wh * heuristicValue(heuristic, start.x, start.y, goal.x, goal.y)
   };
 
   openMap.set(startKey, startNode);
   gScore.set(startKey, 0);
+  const rankScore = new Map([[startKey, 0]]);
   stateByKey.set(startKey, startNode);
 
   let expandedCount = 0;
@@ -794,19 +816,22 @@ function runMarioAStar(cells, start, goal, options) {
       const tentativeG = current.g + neighbor.cost;
       if (tentativeG > fuelLimit) continue;
 
-      const previousG = gScore.get(neighbor.key);
-      if (previousG !== undefined && tentativeG >= previousG) continue;
+      const tentativeRank = current.rankG + (strategy.unitSteps ? 1 : neighbor.cost);
+      const previousRank = rankScore.get(neighbor.key);
+      if (previousRank !== undefined && tentativeRank >= previousRank) continue;
 
       const h = heuristicValue(heuristic, neighbor.x, neighbor.y, goal.x, goal.y);
       const candidate = {
         ...neighbor,
         g: tentativeG,
+        rankG: tentativeRank,
         h,
-        f: tentativeG + h
+        f: strategy.wg * tentativeRank + strategy.wh * h
       };
 
       cameFrom.set(candidate.key, current.key);
       gScore.set(candidate.key, tentativeG);
+      rankScore.set(candidate.key, tentativeRank);
       openMap.set(candidate.key, candidate);
       stateByKey.set(candidate.key, candidate);
     }
@@ -1030,24 +1055,23 @@ function updateDecisionInspector(frame) {
 
   if (frame.type === "path") {
     whyEl.textContent = `📍 Path Node: ${cellName}`;
-    detailEl.textContent = `This cell is confirmed as part of the optimal path to the ${theme.goalLabel.toLowerCase()}. Cost so far g(n) = ${frame.g.toFixed(2)}.`;
+    detailEl.textContent = `This cell is part of the route found to the ${theme.goalLabel.toLowerCase()}. Cost so far g(n) = ${frame.g.toFixed(2)}.`;
   } else if (frame.type === "search") {
     if (frame.currentKey === keyOf(state.goal.x, state.goal.y)) {
       whyEl.textContent = `🏁 Goal Reached at ${cellName}!`;
-      detailEl.textContent = `A* has successfully found the target. It will now backtrack using parent pointers to draw the optimal path.`;
+      detailEl.textContent = `${HEURISTIC_LABEL[state.heuristic]} has found the target. It will now backtrack using parent pointers to draw the optimal path.`;
     } else {
       whyEl.textContent = `🔍 Expanding Cell: ${cellName}`;
       
-      let heuristicExplanation = "";
-      if (state.heuristic === "zero") {
-        heuristicExplanation = "Dijkstra's algorithm has no directional heuristic (h = 0), so it expands cells in radial rings of uniform cost.";
-      } else if (state.heuristic === "manhattan") {
-        heuristicExplanation = "Manhattan distance measures horizontal + vertical steps. It assumes no diagonal movement.";
-      } else if (state.heuristic === "euclidean") {
-        heuristicExplanation = "Euclidean distance measures the direct straight-line distance, like a drone flying.";
-      }
+      const why = {
+        manhattan: `one of the waiting cells with the lowest total: ${frame.g.toFixed(1)} cost so far + ${frame.h.toFixed(1)} grid steps left = ${frame.f.toFixed(1)}.`,
+        euclidean: `one of the waiting cells with the lowest total: ${frame.g.toFixed(1)} cost so far + ${frame.h.toFixed(1)} straight-line distance left = ${frame.f.toFixed(1)}. The straight line underestimates more than grid steps, so the search spreads wider.`,
+        zero: `the waiting cell with the lowest cost so far (${frame.g.toFixed(1)}). Dijkstra has no estimate (h = 0), so it spreads out evenly in every direction.`,
+        greedy: `the waiting cell that looks closest to the ${theme.goalLabel.toLowerCase()} (${frame.h.toFixed(1)} steps away). Greedy ignores the cost so far, so it is fast but can walk into expensive terrain.`,
+        bfs: `a waiting cell only ${frame.f.toFixed(0)} steps from the start. BFS counts steps, not terrain cost, so sand looks the same as open ground.`
+      }[state.heuristic] || "";
 
-      detailEl.textContent = `${ai} chose ${cellName}, one of the waiting cells with the lowest estimated total: ${frame.g.toFixed(1)} cost so far + ${frame.h.toFixed(1)} estimated remaining = ${frame.f.toFixed(1)}. ${heuristicExplanation}`;
+      detailEl.textContent = `${ai} chose ${cellName}, ${why}`;
     }
   }
 }
@@ -1166,15 +1190,28 @@ function playAnimation() {
   tick();
 }
 
+function formatCost(value) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
 function fillComparisonTable(resultByHeuristic, selectedHeuristic) {
-  const heuristicOrder = ["manhattan", "euclidean", "zero"];
-  const rows = heuristicOrder
+  const best = resultByHeuristic.zero.result;
+  const mostChecked = Math.max(1, ...STRATEGY_ORDER.map((key) => resultByHeuristic[key].result.expandedCount));
+  const rows = STRATEGY_ORDER
     .map((key) => {
-      const item = resultByHeuristic[key];
-      const cost = item.result.success ? item.result.finalCost.toFixed(2) : "--";
-      const elapsed = `${item.ms.toFixed(1)} ms`;
+      const { result } = resultByHeuristic[key];
+      const cost = result.success ? formatCost(result.finalCost) : "No route";
+      let verdict = "—";
+      if (result.success && best.success) {
+        const extra = result.finalCost - best.finalCost;
+        verdict = extra < 1e-9 ? "✓ Cheapest" : `+${formatCost(extra)} extra`;
+      }
+      const verdictClass = verdict.startsWith("✓") ? "is-best" : verdict.startsWith("+") ? "is-worse" : "";
+      const pct = Math.round((result.expandedCount / mostChecked) * 100);
       const selectedMark = key === selectedHeuristic ? " class=\"is-selected\"" : "";
-      return `<tr${selectedMark}><td>${HEURISTIC_LABEL[key]}</td><td>${item.result.expandedCount}</td><td>${cost}</td><td>${elapsed}</td></tr>`;
+      return `<tr${selectedMark}><th scope="row"><button type="button" data-strategy="${key}" aria-pressed="${key === selectedHeuristic}">${HEURISTIC_LABEL[key]}</button></th>`
+        + `<td><span class="race-bar"><i style="width:${pct}%"></i></span><span class="race-num">${result.expandedCount}</span></td>`
+        + `<td>${cost}</td><td class="${verdictClass}">${verdict}</td></tr>`;
     })
     .join("");
 
@@ -1185,10 +1222,10 @@ function computeOptimalityLabel(selectedResult, dijkstraResult) {
   if (selectedResult.success && dijkstraResult.success) {
     const diff = selectedResult.finalCost - dijkstraResult.finalCost;
     if (Math.abs(diff) < 1e-9) {
-      return "Optimal (matches Dijkstra)";
+      return "Cheapest possible";
     }
     if (diff > 0) {
-      return `Higher than Dijkstra by ${diff.toFixed(2)}`;
+      return `${formatCost(diff)} more than cheapest`;
     }
     return "Lower than Dijkstra (check configuration)";
   }
@@ -1198,7 +1235,7 @@ function computeOptimalityLabel(selectedResult, dijkstraResult) {
   }
 
   if (!selectedResult.success && dijkstraResult.success) {
-    return "Selected heuristic/mode missed a feasible route";
+    return "Missed a route that exists";
   }
 
   return "Feasible route found";
@@ -1206,9 +1243,7 @@ function computeOptimalityLabel(selectedResult, dijkstraResult) {
 
 function computeHeuristicComparison(cells, options) {
   const summary = {};
-  const order = ["manhattan", "euclidean", "zero"];
-
-  for (const kind of order) {
+  for (const kind of STRATEGY_ORDER) {
     const startedAt = performance.now();
     const result = runAStar(cells, state.start, state.goal, {
       heuristic: kind,
@@ -1282,7 +1317,7 @@ function runMission() {
   state.lastResult = result;
 
   nodesExpandedEl.textContent = String(result.expandedCount);
-  pathCostEl.textContent = result.success ? result.finalCost.toFixed(2) : "--";
+  pathCostEl.textContent = result.success ? formatCost(result.finalCost) : "No route";
   solveTimeEl.textContent = `${solveMs.toFixed(1)} ms`;
 
   const comparison = computeHeuristicComparison(finalCells, { fuelLimit });
@@ -1890,7 +1925,16 @@ modeEl.addEventListener("change", () => {
 heuristicEl.addEventListener("change", () => {
   state.heuristic = heuristicEl.value;
   clearSearchOverlay();
-  updateStatus(`${getAiName()} switched to ${HEURISTIC_LABEL[state.heuristic]} heuristic.`);
+  updateStatus(`${getAiName()} switched to ${HEURISTIC_LABEL[state.heuristic]}. Run search to watch it explore.`);
+});
+
+// Race rows double as a quick way to watch any strategy explore the same map.
+compareBodyEl.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-strategy]");
+  if (!button) return;
+  heuristicEl.value = button.dataset.strategy;
+  state.heuristic = heuristicEl.value;
+  runMission();
 });
 
 themeEl.addEventListener("change", () => {

@@ -378,49 +378,66 @@
         <div class="astar-orbit" aria-hidden="true"><span class="astar-orbit-start">R</span><span class="astar-orbit-goal">✦</span><i></i><b></b></div>
         <p class="eyebrow">Pathfinding lab · Grades 6–12</p>
         <h1 id="astar-mission-title">Rescue Grid: The A* Mission</h1>
-        <p id="astar-mission-subtitle">Guide the rover to the beacon using A* while terrain, fuel pressure, and mission rules change in real time.</p>
+        <p id="astar-mission-subtitle">Guide the rover to the beacon, then race five search strategies on the same map to see which one finds the cheapest route — and how much work each one does.</p>
+        <p id="astar-mission-narrative" class="astar-narrative">Navigate across the Martian surface to reach the rescue beacon while avoiding craters and slow sand zones.</p>
       </div>
 
       <section class="section" id="astar-live">
-        <article class="card astar-mission-lab" aria-label="Interactive A* mission simulator">
+        <article class="card astar-mission-lab" aria-label="Interactive pathfinding simulator">
 
           <header class="astar-launch">
             <h2>Can you find the cheapest route?</h2>
-            <p>The map is ready. Predict a route, then <strong>Run search</strong> to test it. The rover moves up, down, left, or right. <span class="astar-rule">Open ground <b>1</b></span> <span class="astar-rule rule-sand">Sand <b>3</b></span> <span class="astar-rule rule-rock">Craters <b>Blocked</b></span></p>
-          <div style="display:flex;flex-wrap:wrap;gap:5px;">
-            <button id="astar-run" type="button" style="flex:1;min-width:80px;padding:7px 8px;border-radius:8px;border:1px solid var(--ll-panel-border);font:inherit;cursor:pointer;font-weight:700;">Run search</button>
-            <button id="astar-step" type="button" disabled style="flex:1;min-width:80px;padding:7px 8px;border-radius:8px;border:1px solid var(--ll-panel-border);font:inherit;cursor:pointer;">Next step</button>
-            <button id="astar-clear-search" type="button" style="flex:1 0 100%;padding:7px;border-radius:8px;border:1px solid var(--ll-panel-border);font:inherit;cursor:pointer;">Clear results</button>
-          </div><details class="astar-edit-instructions"><summary>How to edit the map · mouse, touch, or keyboard</summary><p class="astar-help" id="astar-edit-help">To change the map, choose a tool and tap or drag across tiles. Keyboard: focus the map, use arrow keys to choose a tile, then Enter to paint. Pause the search before editing.</p></details>
+            <p>Predict a route, then <strong>Run search</strong>. The rover moves up, down, left, or right. Each tile entered costs: <span class="astar-rule">Open ground <b>1</b></span> <span class="astar-rule rule-sand">Sand <b>3</b></span> <span class="astar-rule rule-rock">Craters <b>Blocked</b></span></p>
           </header>
+
           <div class="astar-scenarios" role="group" aria-label="Load a challenge map">
             <span>Choose a map</span>
             <button type="button" data-scenario="starter"><span aria-hidden="true">↗</span><strong>First contact</strong><small>Find your first route</small></button>
             <button type="button" data-scenario="detour"><span aria-hidden="true">↱</span><strong>The detour</strong><small>Go around the ridge</small></button>
             <button type="button" data-scenario="sand"><span aria-hidden="true">≋</span><strong>Sand shortcut</strong><small>Fewer steps or less cost?</small></button>
           </div>
+
+          <div class="astar-actions">
+            <label class="astar-strategy">
+              <span>Search strategy</span>
+              <select id="astar-heuristic">
+                <option value="manhattan" selected>A* · grid steps (Manhattan)</option>
+                <option value="euclidean">A* · straight line (Euclidean)</option>
+                <option value="zero">Dijkstra (no estimate)</option>
+                <option value="greedy">Greedy best-first (estimate only)</option>
+                <option value="bfs">Breadth-first search (counts steps)</option>
+              </select>
+            </label>
+            <div class="astar-run-buttons">
+              <button id="astar-run" type="button" class="astar-btn astar-btn-primary">Run search</button>
+              <button id="astar-step" type="button" class="astar-btn">Next step</button>
+              <button id="astar-clear-search" type="button" class="astar-btn">Clear results</button>
+            </div>
+          </div>
+
           <div class="astar-control-bar">
-            <div class="astar-control-group" role="group" aria-label="Node placement tools">
-              <span class="astar-label">Paint Tool</span>
+            <div class="astar-control-group" role="group" aria-label="Map painting tools">
+              <span class="astar-label">Paint</span>
               <button id="astar-tool-start" type="button" class="astar-tool is-active" data-tool="start" aria-pressed="true">Rover</button>
               <button id="astar-tool-goal" type="button" class="astar-tool" data-tool="goal" aria-pressed="false">Beacon</button>
               <button id="astar-tool-blocked" type="button" class="astar-tool" data-tool="blocked" aria-pressed="false">Debris</button>
               <button id="astar-tool-sand" type="button" class="astar-tool" data-tool="sand" aria-pressed="false">Sand (Cost 3)</button>
               <button type="button" class="astar-tool" data-tool="clear" aria-pressed="false">Erase</button>
             </div>
+            <details class="astar-edit-instructions"><summary>How to edit the map</summary><p class="astar-help" id="astar-edit-help">Choose a tool, then tap or drag across tiles. Keyboard: focus the map, use the arrow keys to choose a tile, then press Enter to paint. Pause the search before editing.</p></details>
           </div>
 
           <div class="astar-grid-layout">
-            <section class="astar-grid-panel" aria-label="Mission map simulation panel">
+            <section class="astar-grid-panel" aria-label="Mission map">
               <div class="astar-map-heading"><span><strong>Mission map</strong> <span id="astar-map-size">12 × 8</span></span><span id="astar-phase">Ready to explore</span></div>
               <canvas id="astar-grid" class="astar-grid-canvas" tabindex="0" aria-label="Editable rescue mission grid" aria-describedby="astar-edit-help astar-cell-description"></canvas>
               <p id="astar-cell-description" class="astar-cell-description" aria-live="polite"></p>
               <p id="astar-status" class="astar-status" aria-live="polite">Build your grid, then run the mission.</p>
 
               <div class="astar-scrubber-bar">
-                <button id="astar-play-pause" type="button" class="astar-tool" style="padding:0.3rem 0.6rem;font-size:0.8rem;min-width:32px;" title="Play Mission" disabled>▶</button>
-                <input aria-label="Search replay position" id="astar-scrubber" type="range" min="0" max="0" value="0" step="1" style="flex:1;cursor:pointer;" disabled />
-                <span id="astar-scrubber-label" style="font-family:'IBM Plex Mono',monospace;font-size:0.8rem;min-width:70px;text-align:right;">0 / 0</span>
+                <button id="astar-play-pause" type="button" class="astar-tool" title="Play Mission" disabled>Play</button>
+                <input aria-label="Search replay position" id="astar-scrubber" type="range" min="0" max="0" value="0" step="1" disabled />
+                <span id="astar-scrubber-label">0 / 0</span>
               </div>
 
               <ul class="astar-legend" aria-label="Grid legend">
@@ -428,80 +445,84 @@
                 <li><span class="swatch beacon"></span> <span id="astar-legend-goal">Beacon (Goal)</span></li>
                 <li><span class="swatch debris"></span> <span id="astar-legend-blocked">Debris (Blocked)</span></li>
                 <li><span class="swatch sand"></span> <span id="astar-legend-slow">Sand (Cost 3)</span></li>
-                <li><span class="swatch open"></span> To explore · ring</li>
+                <li><span class="swatch open"></span> Waiting to check · ring</li>
                 <li><span class="swatch closed"></span> Checked · dot</li>
-                <li><span class="swatch path"></span> Final path</li><li><span class="swatch current"></span> Checking now · crosshair</li>
+                <li><span class="swatch path"></span> Final route</li>
+                <li><span class="swatch current"></span> Checking now · crosshair</li>
               </ul>
             </section>
 
             <aside class="astar-side-panel">
               <section class="astar-panel">
-                <h3>How A* chooses</h3><p class="astar-formula"><span>Cost so far</span><b>+</b><span>Estimate left</span><b>=</b><span>Priority</span></p>
+                <h3>How A* chooses</h3>
+                <p class="astar-formula"><span>Cost so far</span><b>+</b><span>Estimate left</span><b>=</b><span>Priority</span></p>
                 <ul class="astar-instrument-list">
                   <li><span>Cost so far · g</span><strong id="astar-g">0.00</strong></li>
                   <li><span>Estimate left · h</span><strong id="astar-h">0.00</strong></li>
-                  <li><span>Estimated total · g + h</span><strong id="astar-f">0.00</strong></li>
+                  <li><span>Priority · f</span><strong id="astar-f">0.00</strong></li>
                 </ul>
               </section>
 
               <section class="astar-panel">
-                <h3>Decision Inspector</h3>
+                <h3>Why this cell?</h3>
                 <div id="astar-decision-inspector">
-                  <p id="astar-decision-why" style="margin:0 0 0.5rem;font-weight:600;color:var(--ll-accent,#d45a00);">Ready to inspect</p>
-                  <p id="astar-decision-detail" style="margin:0;color: var(--text-muted, #64748b);">Choose "Run search" or step through the search to analyze the algorithm's decisions in real time.</p>
+                  <p id="astar-decision-why">Ready to inspect</p>
+                  <p id="astar-decision-detail">Choose Run search or Next step to see why each cell gets checked.</p>
                 </div>
               </section>
 
               <section class="astar-panel">
-                <h3>Search results</h3>
+                <h3>This run</h3>
                 <ul class="astar-metric-list">
                   <li><span>Cells checked</span><strong id="astar-nodes-expanded">0</strong></li>
-                  <li><span>Final Path Cost</span><strong id="astar-path-cost">--</strong></li>
-                  <li><span>Time to Solve</span><strong id="astar-time">--</strong></li>
-                  <li><span>Optimality Check</span><strong id="astar-optimality">Pending</strong></li>
+                  <li><span>Route cost</span><strong id="astar-path-cost">--</strong></li>
+                  <li><span>Is it the cheapest?</span><strong id="astar-optimality">Pending</strong></li>
+                  <li><span>Time to solve</span><strong id="astar-time">--</strong></li>
                 </ul>
-              </section>
-
-              <section class="astar-panel">
-                <h3>Heuristic Comparison</h3>
-                <p class="astar-panel-note">Same map, three estimates. Compare cost and cells checked. Timing varies by device; it excludes animation.</p>
-                <div class="astar-table-wrap">
-                  <table class="astar-table">
-                    <thead>
-                      <tr>
-                        <th scope="col">Heuristic</th>
-                        <th scope="col">Nodes</th>
-                        <th scope="col">Cost</th>
-                        <th scope="col">Time</th>
-                      </tr>
-                    </thead>
-                    <tbody id="astar-compare-body">
-                      <tr>
-                        <td>Manhattan</td>
-                        <td>--</td>
-                        <td>--</td>
-                        <td>--</td>
-                      </tr>
-                      <tr>
-                        <td>Euclidean</td>
-                        <td>--</td>
-                        <td>--</td>
-                        <td>--</td>
-                      </tr>
-                      <tr>
-                        <td>Zero (Dijkstra)</td>
-                        <td>--</td>
-                        <td>--</td>
-                        <td>--</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
               </section>
             </aside>
           </div>
+
+          <section class="astar-race" aria-labelledby="astar-race-title">
+            <div class="astar-race-head">
+              <h3 id="astar-race-title">Algorithm race: same map, five strategies</h3>
+              <p>Every run races all five strategies on your current map. Shorter bars mean less work. Only some strategies promise the cheapest route. Choose a name to watch that strategy explore.</p>
+            </div>
+            <div class="astar-table-wrap">
+              <table class="astar-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Strategy</th>
+                    <th scope="col">Cells checked</th>
+                    <th scope="col">Route cost</th>
+                    <th scope="col">Cheapest?</th>
+                  </tr>
+                </thead>
+                <tbody id="astar-compare-body">
+                  <tr><th scope="row">A* · grid steps</th><td>—</td><td>—</td><td>—</td></tr>
+                  <tr><th scope="row">A* · straight line</th><td>—</td><td>—</td><td>—</td></tr>
+                  <tr><th scope="row">Dijkstra</th><td>—</td><td>—</td><td>—</td></tr>
+                  <tr><th scope="row">Greedy best-first</th><td>—</td><td>—</td><td>—</td></tr>
+                  <tr><th scope="row">Breadth-first (BFS)</th><td>—</td><td>—</td><td>—</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
         </article>
       </section>
+
+      <section class="section astar-challenges" aria-labelledby="challenge-title">
+        <h2 id="challenge-title">Try it. Change it. Explain it.</h2>
+        <div class="columns">
+          <article class="card"><div class="astar-mini-map mini-detour" aria-hidden="true"><i></i><b>R</b><span>✦</span></div><h3>1 · Find a detour</h3><p>Run <em>First contact</em> and write down the route cost. Paint one crater on the route, then run again. Which way did the rover go? Why did the cost change?</p></article>
+          <article class="card"><div class="astar-mini-map mini-sand" aria-hidden="true"><i></i><b>R</b><span>✦</span></div><h3>2 · Steps or cost?</h3><p>Load <em>Sand shortcut</em>. Look at the race: BFS finds the route with the fewest steps, but is it the cheapest? Count the cost of each route by hand to explain the difference. Then erase the sand. Does BFS catch up?</p></article>
+          <article class="card"><div class="astar-mini-map mini-search" aria-hidden="true"><i></i><b>R</b><span>✦</span></div><h3>3 · Fast or right?</h3><p>Greedy usually checks the fewest cells. Build a map where Greedy's route costs <em>more</em> than A*'s. (Hint: put a wall with a gap on the far side.) What does A* do that Greedy doesn't?</p></article>
+        </div>
+        <details class="astar-reading"><summary>Ready for a bigger challenge?</summary><p>Open the <strong>Controls</strong> panel. In Fuel Critical mode, set a cost budget below your route cost, then raise it until a route appears. In Dynamic Obstacles mode, watch the map change and the search start again. How could reusing earlier work help a real robot?</p><p>The Mario theme adds gravity and jumps, so its movement rules and estimates differ from the rover grid. Compare its results with Dijkstra before assuming a route is cheapest.</p></details>
+        <p class="astar-sentence-frame">Explain your result: “I changed ___. With ___, the route cost changed from ___ to ___ and it checked ___ cells. I think this happened because ___.”</p>
+      </section>
+
+      <h2 class="astar-reading-title">Go deeper</h2>
 
       <details class="astar-reading"><summary>What Is Pathfinding?</summary><section class="section">
         <div class="section-head">
@@ -531,56 +552,6 @@
           </article>
         </div>
       </section></details>
-
-      <details class="astar-reading"><summary>The Evolution of Pathfinding: Games and Real Life</summary><section class="section">
-        <div class="section-head">
-          <h2>The Evolution of Pathfinding: Games and Real Life</h2>
-          <p>Pathfinding has gotten steadily smarter as hardware got faster and the problems it needed to solve got harder.</p>
-        </div>
-        <div class="columns">
-          <article class="card">
-            <h3>Video Games: From Grids to Navmeshes</h3>
-            <p><em>Pac-Man</em>'s ghosts (1980) used simple, almost hard-coded chase rules on a small maze grid — there wasn't enough processing power for much else. By the 1990s and 2000s, real-time strategy games like <em>StarCraft</em> and <em>Age of Empires</em> needed dozens of units pathfinding across large maps simultaneously without freezing the game, which pushed developers toward more efficient search and shared, precomputed route data. Modern 3D games mostly don't search a grid at all — they search a <strong>navigation mesh</strong>, a set of connected walkable polygons draped over the 3D level, which is far faster to search than checking every tiny tile.</p>
-          </article>
-          <article class="card">
-            <h3>Real Life: From Paper Maps to Live Rerouting</h3>
-            <p>Early car navigation and mainframe route planning (1960s–1980s) could only compute a static shortest path on a fixed map, computed once, well ahead of time. Consumer GPS navigation in the 1990s–2000s brought this to a dashboard, but still assumed the road network didn't change mid-trip. Today's map apps continuously re-run pathfinding using live traffic data, treating slow roads as temporarily higher-cost edges — the same g(n)/h(n) idea in this lab, just rerun every few seconds on a vastly bigger graph.</p>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
-              <figure class="path-photo" data-zoomable data-lightbox-group="path-history" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/GPS_Satellite_NASA_art-iif.jpg?width=1400">
-                <img src="https://commons.wikimedia.org/wiki/Special:FilePath/GPS_Satellite_NASA_art-iif.jpg?width=500" alt="Artist's illustration of a GPS Block II-F satellite in Earth orbit" loading="lazy" />
-                <figcaption><strong>Live position data from orbit</strong>GPS satellites give every device on the ground the position data that turns a static map into a live-rerouting one. <span class="path-photo-credit">NASA · public domain · <a href="https://commons.wikimedia.org/wiki/File:GPS_Satellite_NASA_art-iif.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></span></figcaption>
-              </figure>
-              <figure class="path-photo" data-zoomable data-lightbox-group="path-history" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/The_winner,_2005_DARPA_Grand_Challenge_-Stanford%27s_Stanley.tiff?width=1400">
-                <img src="https://commons.wikimedia.org/wiki/Special:FilePath/The_winner,_2005_DARPA_Grand_Challenge_-Stanford%27s_Stanley.tiff?width=500" alt="Stanford's self-driving car Stanley, winner of the 2005 DARPA Grand Challenge" loading="lazy" />
-                <figcaption><strong>Planning a route with no driver</strong>Stanley, Stanford's autonomous car, won the 2005 DARPA Grand Challenge by planning and replanning its own desert route in real time. <span class="path-photo-credit">DARPA · public domain · <a href="https://commons.wikimedia.org/wiki/File:The_winner,_2005_DARPA_Grand_Challenge_-Stanford%27s_Stanley.tiff" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></span></figcaption>
-              </figure>
-            </div>
-          </article>
-        </div>
-      </section></details>
-
-      <details class="astar-reading"><summary>The Future of AI Pathfinding</summary><section class="section">
-        <div class="section-head">
-          <h2>The Future of AI Pathfinding</h2>
-          <p>Classic algorithms like A* guarantee a correct answer, but they still search a known map with a hand-designed heuristic. The active research now is about what happens when the map is huge, unknown, shared by many agents, or changing faster than a search can keep up with.</p>
-        </div>
-        <div class="columns">
-          <article class="card">
-            <h3>Learned Heuristics</h3>
-            <p>Instead of a programmer designing h(n) by hand — Manhattan distance, Euclidean distance, or zero — machine learning models can be trained on millions of past searches to predict a much better estimate of remaining cost, letting A*-style search check far fewer nodes on huge, complex maps like real city road networks.</p>
-          </article>
-          <article class="card">
-            <h3>Reinforcement Learning</h3>
-            <p>Rather than searching a graph at all, an agent can learn a movement policy directly by trial and error in a simulated environment — useful when the "cost" of a path is hard to define in advance, like a robot arm avoiding a fragile object or a legged robot crossing rubble.</p>
-          </article>
-          <article class="card">
-            <h3>Multi-Agent Coordination</h3>
-            <p>Warehouses like Amazon's run hundreds of robots on the same floor at once, where the hard problem isn't finding any one robot's path — it's finding paths for all of them that don't collide or deadlock each other, which needs its own family of algorithms on top of A*.</p>
-          </article>
-        </div>
-        <p>The core idea from this lab — balance what you already know against your best guess of what's ahead — keeps showing up at every layer of this progress, from a single rover on a grid to a fleet of self-driving cars.</p>
-      </section></details>
-
       <details class="astar-reading"><summary>Why Pathfinding?</summary><section class="section">
         <div class="section-head">
           <h2>Why Pathfinding?</h2>
@@ -608,7 +579,6 @@
           </article>
         </div>
       </section></details>
-
       <details class="astar-reading"><summary>Graphs: The Map Behind the Maze</summary><section class="section">
         <div class="section-head">
           <h2>Graphs: The Map Behind the Maze</h2>
@@ -635,31 +605,9 @@
           </article>
         </div>
       </section></details>
-
-      <section class="section">
+      <details class="astar-reading"><summary>The Algorithm Family: DFS → BFS → Dijkstra → Greedy → A*</summary><section class="section">
         <div class="section-head">
-          <h2>Mission Brief</h2>
-          <p>You are testing how A* makes decisions under different constraints and mission rules.</p>
-        </div>
-        <div class="columns">
-          <article class="card">
-            <h3>Narrative Context</h3>
-            <p id="astar-mission-narrative">Navigate across the Martian surface to reach the rescue beacon while avoiding craters and slow sand zones.</p>
-          </article>
-          <article class="card">
-            <h3>What To Experiment With</h3>
-            <ul class="rhythm">
-              <li><span>Heuristics</span><strong>Compare speed and expansions across Manhattan, Euclidean, and Dijkstra.</strong></li>
-              <li><span>Mode Rules</span><strong>Test Fuel Critical and see when a valid route becomes impossible.</strong></li>
-              <li><span>Step Reasoning</span><strong>Use Step Mode to inspect how open and closed sets evolve node by node.</strong></li>
-            </ul>
-          </article>
-        </div>
-      </section>
-
-      <details class="astar-reading"><summary>The Algorithm Family: DFS → BFS → Dijkstra → A*</summary><section class="section">
-        <div class="section-head">
-          <h2>The Algorithm Family: DFS → BFS → Dijkstra → A*</h2>
+          <h2>The Algorithm Family: DFS → BFS → Dijkstra → Greedy → A*</h2>
           <p>A* didn't appear from nowhere — it's the last step in a short chain of increasingly smart search strategies. Each one solves the previous one's biggest limitation.</p>
         </div>
         <div class="columns">
@@ -676,8 +624,12 @@
             <p>BFS's fix for weighted graphs. Instead of expanding ring by ring, it always expands whichever unvisited node currently has the cheapest known distance from the start — and it will happily revise a node's best-known cost if a cheaper route to it turns up later. Guarantees the lowest-cost path with nonnegative movement costs, but explores in every direction equally, with no sense of where the goal actually is.</p>
           </article>
           <article class="card">
+            <h3>Greedy Best-First Search</h3>
+            <p>The opposite extreme: it ignores the cost so far and always expands whichever cell <em>looks</em> closest to the goal. On an open map it races straight there, checking very few cells. But it has no memory of how expensive the trip has been, so a wall or a patch of sand can lead it down a costly route it never reconsiders.</p>
+          </article>
+          <article class="card">
             <h3>A* Algorithm</h3>
-            <p>A small but powerful upgrade to Dijkstra: it adds a heuristic — an estimate of remaining distance to the goal — so it expands nodes that seem to be heading the right way first. With a consistent estimate, as on this rover grid, it finds the lowest-cost path and can check fewer cells than Dijkstra. That's exactly <strong>f(n) = g(n) + h(n)</strong> in the How A* chooses above: cost-so-far plus estimated-distance-remaining.</p>
+            <p>A small but powerful upgrade to Dijkstra: it adds a heuristic — an estimate of remaining distance to the goal — so it expands nodes that seem to be heading the right way first. With a consistent estimate, as on this rover grid, it finds the lowest-cost path and can check fewer cells than Dijkstra. That's exactly <strong>f(n) = g(n) + h(n)</strong> in the How A* chooses panel: cost so far (Dijkstra's half) plus estimate left (Greedy's half). Use the algorithm race above to see both halves at work on the same map.</p>
           </article>
         </div>
         <article class="card">
@@ -685,18 +637,54 @@
           <p>If you're implementing any of this yourself, don't start with A*. Build Dijkstra first — it only needs loops and a couple of data structures to track distances and parents — and confirm it finds correct lowest-cost paths. <em>Then</em> add a heuristic to turn it into A*. Trying to write A* from scratch first means debugging two ideas — shortest-path search and heuristic guidance — at once.</p>
         </article>
       </section></details>
-
-      <section class="section astar-challenges" aria-labelledby="challenge-title">
-        <h2 id="challenge-title">Try it. Change it. Explain it.</h2>
-        <div class="columns">
-          <article class="card"><div class="astar-mini-map mini-detour" aria-hidden="true"><i></i><b>R</b><span>✦</span></div><h3>Start here · Find a detour</h3><p>Run the starter map and note its route cost. Add one crater on the route, then run again. Which way did the rover go? Explain why its cost changed.</p></article>
-          <article class="card"><div class="astar-mini-map mini-sand" aria-hidden="true"><i></i><b>R</b><span>✦</span></div><h3>Go further · Steps or cost?</h3><p>Paint several sand tiles along a short route. Can you make a longer route cheaper? Count 1 for each ordinary tile entered and 3 for each sand tile.</p></article>
-          <article class="card"><div class="astar-mini-map mini-search" aria-hidden="true"><i></i><b>R</b><span>✦</span></div><h3>Stretch · Test the estimate</h3><p>Keep your map the same. Compare Manhattan with Zero (Dijkstra) in the results table. Do they find the same cost? Which checks fewer cells? Use your numbers as evidence.</p></article>
+      <details class="astar-reading"><summary>The Evolution of Pathfinding: Games and Real Life</summary><section class="section">
+        <div class="section-head">
+          <h2>The Evolution of Pathfinding: Games and Real Life</h2>
+          <p>Pathfinding has gotten steadily smarter as hardware got faster and the problems it needed to solve got harder.</p>
         </div>
-        <details class="astar-reading"><summary>Ready for a bigger challenge?</summary><p>Try Fuel Critical mode: set a budget below your route cost, then raise it. In Dynamic Obstacles mode, watch the map change and the search restart. How could reusing earlier work help a real robot?</p><p>The platformer theme adds gravity and jumps, so its movement rules and estimates differ from the rover grid. Compare its results with Zero (Dijkstra) before assuming a route is cheapest.</p></details>
-        <p>Explain your result: “I changed ___. The route cost changed from ___ to ___. I think this happened because ___.”</p>
-        <p>Explore the ideas behind this lab: <a href="https://www.redblobgames.com/pathfinding/a-star/introduction.html">Red Blob Games’ illustrated guide to A*</a>.</p>
-      </section>
+        <div class="columns">
+          <article class="card">
+            <h3>Video Games: From Grids to Navmeshes</h3>
+            <p><em>Pac-Man</em>'s ghosts (1980) used simple, almost hard-coded chase rules on a small maze grid — there wasn't enough processing power for much else. By the 1990s and 2000s, real-time strategy games like <em>StarCraft</em> and <em>Age of Empires</em> needed dozens of units pathfinding across large maps simultaneously without freezing the game, which pushed developers toward more efficient search and shared, precomputed route data. Modern 3D games mostly don't search a grid at all — they search a <strong>navigation mesh</strong>, a set of connected walkable polygons draped over the 3D level, which is far faster to search than checking every tiny tile.</p>
+          </article>
+          <article class="card">
+            <h3>Real Life: From Paper Maps to Live Rerouting</h3>
+            <p>Early car navigation and mainframe route planning (1960s–1980s) could only compute a static shortest path on a fixed map, computed once, well ahead of time. Consumer GPS navigation in the 1990s–2000s brought this to a dashboard, but still assumed the road network didn't change mid-trip. Today's map apps continuously re-run pathfinding using live traffic data, treating slow roads as temporarily higher-cost edges — the same g(n)/h(n) idea in this lab, just rerun every few seconds on a vastly bigger graph.</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+              <figure class="path-photo" data-zoomable data-lightbox-group="path-history" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/GPS_Satellite_NASA_art-iif.jpg?width=1400">
+                <img src="https://commons.wikimedia.org/wiki/Special:FilePath/GPS_Satellite_NASA_art-iif.jpg?width=500" alt="Artist's illustration of a GPS Block II-F satellite in Earth orbit" loading="lazy" />
+                <figcaption><strong>Live position data from orbit</strong>GPS satellites give every device on the ground the position data that turns a static map into a live-rerouting one. <span class="path-photo-credit">NASA · public domain · <a href="https://commons.wikimedia.org/wiki/File:GPS_Satellite_NASA_art-iif.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></span></figcaption>
+              </figure>
+              <figure class="path-photo" data-zoomable data-lightbox-group="path-history" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/The_winner,_2005_DARPA_Grand_Challenge_-Stanford%27s_Stanley.tiff?width=1400">
+                <img src="https://commons.wikimedia.org/wiki/Special:FilePath/The_winner,_2005_DARPA_Grand_Challenge_-Stanford%27s_Stanley.tiff?width=500" alt="Stanford's self-driving car Stanley, winner of the 2005 DARPA Grand Challenge" loading="lazy" />
+                <figcaption><strong>Planning a route with no driver</strong>Stanley, Stanford's autonomous car, won the 2005 DARPA Grand Challenge by planning and replanning its own desert route in real time. <span class="path-photo-credit">DARPA · public domain · <a href="https://commons.wikimedia.org/wiki/File:The_winner,_2005_DARPA_Grand_Challenge_-Stanford%27s_Stanley.tiff" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></span></figcaption>
+              </figure>
+            </div>
+          </article>
+        </div>
+      </section></details>
+      <details class="astar-reading"><summary>The Future of AI Pathfinding</summary><section class="section">
+        <div class="section-head">
+          <h2>The Future of AI Pathfinding</h2>
+          <p>Classic algorithms like A* guarantee a correct answer, but they still search a known map with a hand-designed heuristic. The active research now is about what happens when the map is huge, unknown, shared by many agents, or changing faster than a search can keep up with.</p>
+        </div>
+        <div class="columns">
+          <article class="card">
+            <h3>Learned Heuristics</h3>
+            <p>Instead of a programmer designing h(n) by hand — Manhattan distance, Euclidean distance, or zero — machine learning models can be trained on millions of past searches to predict a much better estimate of remaining cost, letting A*-style search check far fewer nodes on huge, complex maps like real city road networks.</p>
+          </article>
+          <article class="card">
+            <h3>Reinforcement Learning</h3>
+            <p>Rather than searching a graph at all, an agent can learn a movement policy directly by trial and error in a simulated environment — useful when the "cost" of a path is hard to define in advance, like a robot arm avoiding a fragile object or a legged robot crossing rubble.</p>
+          </article>
+          <article class="card">
+            <h3>Multi-Agent Coordination</h3>
+            <p>Warehouses like Amazon's run hundreds of robots on the same floor at once, where the hard problem isn't finding any one robot's path — it's finding paths for all of them that don't collide or deadlock each other, which needs its own family of algorithms on top of A*.</p>
+          </article>
+        </div>
+        <p>The core idea from this lab — balance what you already know against your best guess of what's ahead — keeps showing up at every layer of this progress, from a single rover on a grid to a fleet of self-driving cars.</p>
+      </section></details>
+      <p class="astar-further">Explore the ideas behind this lab: <a href="https://www.redblobgames.com/pathfinding/a-star/introduction.html">Red Blob Games’ illustrated guide to A*</a>.</p>
 
       <footer class="site-footer">
         <p><a href="../../../steam-lessons.html">Back to Lessons</a></p>
@@ -774,14 +762,6 @@
           </label>
           <input id="astar-fuel-limit" type="number" min="1" max="999" value="24" hidden />
 
-          <label class="ll-label" for="astar-heuristic">Distance estimate (heuristic)</label>
-          <div class="ll-param">
-            <select id="astar-heuristic" style="width:100%;font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--ll-panel-border);">
-              <option value="manhattan" selected>Grid steps (Manhattan)</option>
-              <option value="euclidean">Straight line (Euclidean)</option>
-              <option value="zero">Zero Heuristic (Dijkstra)</option>
-            </select>
-          </div>
           <div class="ll-param" style="display:flex;align-items:center;gap:8px;margin-top:6px;margin-bottom:12px;">
             <input id="astar-show-heatmap" type="checkbox" style="cursor:pointer;" />
             <label for="astar-show-heatmap" style="font-size:0.8rem;color:var(--ll-tab-color);cursor:pointer;user-select:none;">Show Heuristic Heatmap</label>
@@ -801,7 +781,15 @@
         <div class="ll-pane" id="astar-guide">
           <div class="ll-info">
             <strong>A* (A-Star) Algorithm</strong>
-            A* finds the shortest path by combining g(n) — actual cost from start — with h(n) — a heuristic estimate to the goal. It always expands the node with the lowest f(n) = g(n) + h(n).
+            A* finds the cheapest path by combining g(n) — actual cost from start — with h(n) — an estimate of the cost left to the goal. It always expands the cell with the lowest f(n) = g(n) + h(n).
+          </div>
+          <div class="ll-info">
+            <strong>Greedy Best-First</strong>
+            Uses only h(n). Fast when the way is clear, but it never weighs the cost so far, so it can pick an expensive route.
+          </div>
+          <div class="ll-info">
+            <strong>Breadth-First Search (BFS)</strong>
+            Expands cells in rings by number of steps. It finds the fewest-steps route, which is only the cheapest when every tile costs the same.
           </div>
           <div class="ll-info">
             <strong>Manhattan Heuristic</strong>
@@ -821,7 +809,7 @@
           </div>
           <div class="ll-info">
             <strong>Step Mode</strong>
-            Advance one node expansion at a time. Watch how the open set (frontier) and closed set (visited) grow — this is the core of how A* "thinks."
+            Advance one cell at a time. Watch how the waiting cells (rings) and checked cells (dots) grow — this is the core of how a search "thinks."
           </div>
         </div><!-- /#astar-guide -->
 
