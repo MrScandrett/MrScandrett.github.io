@@ -9,6 +9,9 @@ const seedSelect = document.getElementById("seedSelect");
 const speedRange = document.getElementById("speedRange");
 const speedValue = document.getElementById("speedValue");
 const liveColorInput = document.getElementById("liveColorInput");
+const customRuleWrap = document.getElementById("customRuleWrap");
+const customRuleInput = document.getElementById("customRuleInput");
+const customRuleStatus = document.getElementById("customRuleStatus");
 
 const rule2dWrap = document.getElementById("rule2dWrap");
 const rule3dWrap = document.getElementById("rule3dWrap");
@@ -121,6 +124,22 @@ let universalityShown = false;
 
 const PATTERN_COORDS = {
   none: [],
+  block: [[0, 0], [0, 1], [1, 0], [1, 1]],
+  beehive: [[0, 1], [0, 2], [1, 0], [1, 3], [2, 1], [2, 2]],
+  loaf: [[0, 1], [0, 2], [1, 0], [1, 3], [2, 1], [2, 3], [3, 2]],
+  boat: [[0, 0], [0, 1], [1, 0], [1, 2], [2, 1]],
+  blinker: [[0, -1], [0, 0], [0, 1]],
+  toad: [[0, 0], [0, 1], [0, 2], [1, -1], [1, 0], [1, 1]],
+  beacon: [[0, 0], [0, 1], [1, 0], [1, 1], [2, 2], [2, 3], [3, 2], [3, 3]],
+  pentadecathlon: [
+    [-1, 2], [-1, 7],
+    [0, 0], [0, 1], [0, 3], [0, 4], [0, 5], [0, 6], [0, 8], [0, 9],
+    [1, 2], [1, 7]
+  ],
+  rpentomino: [[0, 1], [0, 2], [1, 0], [1, 1], [2, 1]],
+  acorn: [[0, 1], [1, 3], [2, 0], [2, 1], [2, 4], [2, 5], [2, 6]],
+  dot: [[0, 0]],
+  diehard: [[0, 6], [1, 0], [1, 1], [2, 1], [2, 5], [2, 6], [2, 7]],
   glider: [
     [0, 1],
     [1, 2],
@@ -173,6 +192,14 @@ function parseRulePart(partText) {
 
   const digits = part.match(/\d/g) || [];
   return new Set(digits.map(Number));
+}
+
+const RULE_PATTERN = /^B[0-8]*\/S[0-8]*$/i;
+
+function currentRule2d() {
+  if (ruleSelect.value !== "custom") return ruleSelect.value;
+  const typed = (customRuleInput?.value || "").replace(/\s+/g, "");
+  return RULE_PATTERN.test(typed) ? typed : "B3/S23";
 }
 
 function parseRule(rule) {
@@ -533,7 +560,7 @@ function neighbors2d(r, c, wrapMode) {
 function step2d() {
   const next = makeGrid2d(rows, cols);
   const nextAge = makeAgeGrid2d(rows, cols);
-  const { births, survives } = parseRule(ruleSelect.value);
+  const { births, survives } = parseRule(currentRule2d());
   const wrapMode = LEVELS[levelSelect.value].wrap2d;
 
   for (let r = 0; r < rows; r += 1) {
@@ -1170,3 +1197,80 @@ switchMode("2d").catch((error) => {
 
 setLearningMode(document.body.classList.contains("mode-advanced") ? "advanced" : "beginner");
 setActivePattern("none");
+
+// Custom birth/survival rule typed by the student (e.g. B36/S23).
+function syncCustomRuleUi() {
+  const isCustom = ruleSelect.value === "custom";
+  customRuleWrap?.classList.toggle("hidden", !isCustom);
+  if (!isCustom || !customRuleInput || !customRuleStatus) return;
+  const typed = customRuleInput.value.replace(/\s+/g, "");
+  const ok = RULE_PATTERN.test(typed);
+  customRuleInput.setAttribute("aria-invalid", ok ? "false" : "true");
+  customRuleStatus.textContent = ok
+    ? `Running ${typed.toUpperCase()}.`
+    : "Use the form B…/S… with digits 0–8, like B36/S23. Falling back to B3/S23.";
+}
+
+ruleSelect.addEventListener("change", syncCustomRuleUi);
+customRuleInput?.addEventListener("input", syncCustomRuleUi);
+syncCustomRuleUi();
+
+// Lesson hooks: buttons in the teaching sections load a named pattern into
+// the studio, centered by its bounding box so wide patterns (the gun) fit.
+const PATTERN_LEVEL = { dot: "advanced", gosper: "advanced", pentadecathlon: "advanced", rpentomino: "advanced", acorn: "advanced", diehard: "advanced" };
+
+async function loadLessonPattern(name, { rule = null, level = null } = {}) {
+  const isRandom = name === "random";
+  const coords = isRandom ? [] : PATTERN_COORDS[name];
+  if (!coords) return;
+  if (mode !== "2d") {
+    modeSelect.value = "2d";
+    await switchMode("2d");
+  }
+  if (rule) {
+    const known = Array.from(ruleSelect.options).some((opt) => opt.value === rule);
+    if (known) {
+      ruleSelect.value = rule;
+    } else if (customRuleInput) {
+      ruleSelect.value = "custom";
+      customRuleInput.value = rule;
+    }
+    syncCustomRuleUi();
+  }
+  const targetLevel = level || PATTERN_LEVEL[name] || "intermediate";
+  levelSelect.value = targetLevel;
+  applyLevel(targetLevel);
+  resetGrid2d();
+  let minR = Infinity; let maxR = -Infinity; let minC = Infinity; let maxC = -Infinity;
+  for (const [r, c] of coords) {
+    minR = Math.min(minR, r); maxR = Math.max(maxR, r);
+    minC = Math.min(minC, c); maxC = Math.max(maxC, c);
+  }
+  const offR = Math.floor(rows / 2) - Math.round((minR + maxR) / 2);
+  const offC = Math.floor(cols / 2) - Math.round((minC + maxC) / 2);
+  for (const [r, c] of coords) {
+    const nr = r + offR;
+    const nc = c + offC;
+    if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+      grid2d[nr][nc] = 1;
+      ageGrid2d[nr][nc] = 1;
+    }
+  }
+  if (isRandom) {
+    randomize2d();
+  } else {
+    generation = 0;
+    entropyHistory = [];
+    previousLiveCount = countLive2d();
+    drawGrid2d();
+    updateStats();
+  }
+  document.getElementById("simulator")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+window.LifeLab = { loadPattern: loadLessonPattern, patterns: PATTERN_COORDS };
+document.addEventListener("click", (evt) => {
+  const btn = evt.target.closest("[data-load-pattern]");
+  if (!btn) return;
+  loadLessonPattern(btn.dataset.loadPattern, { rule: btn.dataset.rule || null, level: btn.dataset.level || null });
+});

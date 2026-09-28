@@ -91,7 +91,7 @@
     logEl.innerHTML = "";
     resetTrace();
     updateMission();
-    setOutput("Ready! Start with Step 1 below.", "success");
+    setOutput("Inspect the command, then run it to check the world.", "success");
   }
 
   function predicateLines() {
@@ -184,7 +184,7 @@
     table.className = "bw-table";
 
     worldEl.append(hand, stacksWrap, table);
-    const stackDescription = stacks.map((stack) => stack.join(" on ")).join("; ");
+    const stackDescription = stacks.map((stack) => stack.slice().reverse().join(" on ")).join("; ");
     worldEl.setAttribute(
       "aria-label",
       `Blocks world. ${stackDescription || "No blocks on the table"}. ${hand.textContent}.`
@@ -213,12 +213,8 @@
     traceObjectsEl.textContent = parsed.error
       ? "—"
       : [parsed.x, parsed.y].filter(Boolean).join(", ") || "none";
-    traceDecisionEl.textContent = parsed.error
-      ? "The robot needs a command it knows"
-      : result.ok
-        ? "The way is clear, so the block moved"
-        : "Something is in the way, so nothing moved";
-    traceStatusEl.textContent = parsed.error || !result.ok ? "Not moved" : "Moved";
+    traceDecisionEl.textContent = parsed.error ? "Syntax failed; execution skipped." : result.message;
+    traceStatusEl.textContent = parsed.error ? "Syntax error" : !result.ok ? "Execution blocked" : "Executed";
     traceStatusEl.className = `bw-trace-status ${parsed.error || !result.ok ? "is-error" : "is-success"}`;
   }
 
@@ -325,43 +321,54 @@
     logEl.prepend(item);
   }
 
+  const grammarRules = [
+    { pattern: /^(?:move|put) ([a-z]) (?:onto|on) ([a-z])$/, intent: "move_onto", label: "move|put + source + onto|on + destination", roles: ["action", "source", "relation", "destination"] },
+    { pattern: /^(?:move|put) ([a-z]) to (?:the )?table$/, intent: "move_table", label: "move|put + source + to + [the] + table", roles: ["action", "source", "relation", "destination", "destination"] },
+    { pattern: /^stack ([a-z]) on ([a-z])$/, intent: "move_onto", label: "stack + source + on + destination", roles: ["action", "source", "relation", "destination"] },
+    { pattern: /^unstack ([a-z]) from ([a-z])$/, intent: "unstack_from", label: "unstack + source + from + support", roles: ["action", "source", "relation", "support"] },
+    { pattern: /^clear ([a-z])$/, intent: "clear", label: "clear + target", roles: ["action", "target"] },
+    { pattern: /^show state$/, intent: "show_state", label: "show + state", roles: ["action", "query"] }
+  ];
+
   function parseCommand(raw) {
     const text = normalizeCommand(raw);
     if (!text) return { error: "Type a command first. Example: move A onto B" };
-
-    let match = text.match(/^(?:move|put)\s+([a-z])\s+(?:onto|on)\s+([a-z])$/i);
-    if (match) {
-      return { intent: "move_onto", x: match[1].toUpperCase(), y: match[2].toUpperCase(), raw: text };
+    for (const rule of grammarRules) {
+      const match = text.match(rule.pattern);
+      if (match) return {
+        intent: rule.intent, x: match[1]?.toUpperCase(), y: match[2]?.toUpperCase(),
+        raw: text, rule
+      };
     }
+    return { error: "No grammar match. Try: move A onto B, move A to table, stack A on B, unstack A from B, clear B, or show state. Use word order exactly; leave off punctuation." };
+  }
 
-    match = text.match(/^(?:move|put)\s+([a-z])\s+to\s+(?:the\s+)?table$/i);
-    if (match) {
-      return { intent: "move_table", x: match[1].toUpperCase(), raw: text };
-    }
-
-    match = text.match(/^stack\s+([a-z])\s+on\s+([a-z])$/i);
-    if (match) {
-      return { intent: "move_onto", x: match[1].toUpperCase(), y: match[2].toUpperCase(), raw: text };
-    }
-
-    match = text.match(/^unstack\s+([a-z])\s+from\s+([a-z])$/i);
-    if (match) {
-      return { intent: "unstack_from", x: match[1].toUpperCase(), y: match[2].toUpperCase(), raw: text };
-    }
-
-    match = text.match(/^clear\s+([a-z])$/i);
-    if (match) {
-      return { intent: "clear", x: match[1].toUpperCase(), raw: text };
-    }
-
-    if (text === "show state") {
-      return { intent: "show_state", raw: text };
-    }
-
-    return {
-      error:
-        "Command not recognized. Try: move A onto B, put A on B, move A to table, put A to table, unstack A from B, clear B, show state"
-    };
+  function inspectCommand() {
+    const raw = commandInput.value;
+    const parsed = parseCommand(raw);
+    const words = normalizeCommand(raw).split(" ").filter(Boolean);
+    const tokens = document.getElementById("bw-tokens");
+    tokens.replaceChildren();
+    words.forEach((word, index) => {
+      const token = document.createElement("li");
+      const role = parsed.rule?.roles[index] || "unmatched";
+      token.dataset.role = role;
+      const value = document.createElement("strong");
+      value.textContent = word;
+      const label = document.createElement("small");
+      label.textContent = `${index + 1}. ${role}`;
+      token.append(value, label);
+      tokens.append(token);
+    });
+    document.getElementById("bw-grammar").textContent = parsed.rule?.label || "No rule matched. Arrange the words as: move + source + onto + destination.";
+    const record = parsed.error ? null : { action: parsed.intent };
+    if (record && parsed.x) record[parsed.intent === "clear" ? "target" : "source"] = parsed.x;
+    if (record && parsed.y) record[parsed.intent === "unstack_from" ? "support" : "destination"] = parsed.y;
+    if (record && parsed.intent === "move_table") record.destination = "table";
+    document.getElementById("bw-parse-record").textContent = record ? JSON.stringify(record, null, 2) : "No instruction built.";
+    document.getElementById("bw-parse-feedback").textContent = parsed.error
+      ? "Syntax: no match. Nothing will execute. Check word order, missing words, and punctuation."
+      : "Syntax: matched. The instruction is ready. Run command to check block names and world rules.";
   }
 
   function fail(steps, message) {
@@ -628,6 +635,7 @@
   }
 
   function runCommand(rawInput) {
+    inspectCommand();
     const parsed = parseCommand(rawInput);
 
     if (parsed.error) {
@@ -644,7 +652,7 @@
     renderStateText();
     if (result.ok && parsed.x) {
       const movedBlock = worldEl.querySelector(`[data-block="${parsed.x}"]`);
-      if (movedBlock && typeof movedBlock.animate === "function") {
+      if (movedBlock && typeof movedBlock.animate === "function" && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
         movedBlock.animate(
           [
             { transform: "translateY(-12px) scale(1.06)", offset: 0 },
@@ -672,7 +680,8 @@
 
   resetBtn.addEventListener("click", () => {
     resetWorld();
-    commandInput.value = "";
+    commandInput.value = "move A to table";
+    inspectCommand();
     commandInput.focus();
   });
 
@@ -681,6 +690,7 @@
     if (!btn) return;
     const cmd = btn.getAttribute("data-example") || "";
     commandInput.value = cmd;
+    inspectCommand();
     commandInput.focus();
   });
 
@@ -705,14 +715,16 @@
 
       const correct = selected.value === card.dataset.answer;
       const explanations = {
-        "bw-q1": "A clear block has nothing sitting on top of it, so it is ready to move.",
-        "bw-q2": "The robot checks for a block in the way before it tries to move anything.",
-        "bw-q3": "The robot follows a small list of commands. It cannot guess what a new command means."
+        "bw-q1": "B follows onto, so B fills the destination slot. A fills the source slot.",
+        "bw-q2": "The grammar expects a source block after move. Wrong word order stops parsing before execution.",
+        "bw-q3": "Parsing checks structure. Execution separately checks block names and the current world."
       };
       feedback.textContent = `${correct ? "Correct. " : "Not yet. "}${explanations[selected.name]}`;
       feedback.className = `bw-check-feedback ${correct ? "is-correct" : "is-error"}`;
     });
   });
 
+  commandInput.addEventListener("input", inspectCommand);
   resetWorld();
+  inspectCommand();
 })();
