@@ -1,0 +1,356 @@
+<!doctype html>
+<html data-glossary-manual lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Audio Compression: Taming Dynamics · Technical Elements</title>
+  <meta name="description" content="Interactive lesson on dynamic range compression: threshold, ratio, knee, attack, release, makeup gain, limiters, and how to hear over-compression." />
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lessons/technical-elements.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-print.css" media="print" />
+  <style>
+    .cmp-views { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.9fr); gap: .75rem; }
+    .cmp-views .te-canvas-wrap canvas { aspect-ratio: auto; }
+    .cmp-gr { display: flex; align-items: center; gap: .6rem; margin-top: .75rem; font: 720 .72rem ui-monospace, monospace; color: #c9d2dc; }
+    .cmp-gr-track { flex: 1; height: 12px; border-radius: 6px; background: #0c1119; border: 1px solid rgba(255,255,255,.1); overflow: hidden; display: flex; justify-content: flex-end; }
+    .cmp-gr-fill { width: 0; background: linear-gradient(90deg, #ff766c, #f0b448); transition: width 60ms linear; }
+    .cmp-legend { display: flex; flex-wrap: wrap; gap: .4rem 1rem; margin-top: .6rem; font-size: .76rem; color: #b9c4ce; }
+    .cmp-legend i { display: inline-block; width: 18px; height: 3px; margin-right: .35rem; vertical-align: middle; border-radius: 2px; }
+    .cmp-types { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .7rem; }
+    .cmp-types .te-brief { margin: 0; }
+    .cmp-quiz { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-top: .6rem; }
+    .cmp-quiz input { width: 7rem; min-height: 40px; padding: .4rem .6rem; color: var(--te-text); background: #0c1119; border: 1px solid var(--te-line); border-radius: 9px; font: inherit; }
+    .cmp-challenge { border-top: 1px solid rgba(255,255,255,.08); padding-top: .8rem; margin-top: .8rem; }
+    .cmp-challenge:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
+    @media (max-width: 760px) { .cmp-views { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body class="te-page">
+  <nav class="te-topbar">
+    <a href="../../steam-lessons.html#module-technical-elements">← Technical Elements</a>
+    <span>Phase 1 · Core Audio Engineering · Lesson 5</span>
+    <a href="stage-lighting-design-lab.html">Next: Stage Lighting →</a>
+  </nav>
+  <main class="te-shell" data-glossary-root>
+    <header class="te-hero">
+      <div class="te-kicker">Dynamics · Threshold · Ratio · Attack &amp; Release · Critical Listening</div>
+      <h1>Audio Compression: Taming Dynamics</h1>
+      <p>A <span data-glossary="audio compressor">compressor</span> is an automatic volume control. When a sound gets louder than a set level, the compressor turns it down, so the quiet parts and loud parts end up closer together. Set the controls, watch the level drop in real time, and learn to hear the difference between gentle control and a squashed mix.</p>
+      <div class="te-meta"><span class="te-chip">Grades 7–12</span><span class="te-chip">60–75 minutes</span><span class="te-chip">Interactive listening lab</span><span class="te-chip">Use headphones at a safe level</span></div>
+    </header>
+
+    <div class="te-grid">
+      <div class="te-stack">
+        <section class="te-card">
+          <h2>1. Compressor workbench</h2>
+          <p>The left graph is the compressor's <strong>transfer curve</strong>: input level across, output level up. The right graph shows the same sound over time: the <em>input</em>, the <em>output</em>, and how much the compressor turned it down (<span data-glossary="gain reduction">gain reduction</span>). Press <strong>Play</strong> and toggle <strong>Bypass</strong> to compare before and after.</p>
+          <div class="cmp-views">
+            <div class="te-canvas-wrap"><canvas id="curve" width="420" height="420" role="img" aria-label="Transfer curve graph of input level versus output level, bending at the threshold"></canvas></div>
+            <div class="te-canvas-wrap"><canvas id="timeline" width="820" height="420" role="img" aria-label="Level over time for input, output, and gain reduction across a four-second loop"></canvas></div>
+          </div>
+          <div class="cmp-legend" aria-label="Graph key">
+            <span><i style="background:#6f7f8f"></i>Input level</span><span><i style="background:#59c8d8"></i>Output level</span><span><i style="background:#ff766c"></i>Gain reduction</span><span><i style="background:#f0b448"></i>Threshold</span>
+          </div>
+          <div class="te-button-row">
+            <button class="te-button primary" id="play" type="button">▶ Play</button>
+            <button class="te-button" id="bypass" type="button" aria-pressed="false">Bypass (hear original)</button>
+          </div>
+          <div class="cmp-gr" aria-hidden="true"><span>GR</span><div class="cmp-gr-track"><div class="cmp-gr-fill" id="gr-fill"></div></div><span id="gr-live">0.0 dB</span></div>
+          <div class="te-stat-grid">
+            <div class="te-stat"><span>Input range (loud − quiet)</span><strong id="in-range">—</strong></div>
+            <div class="te-stat"><span>Output range</span><strong id="out-range">—</strong></div>
+            <div class="te-stat"><span>Peak gain reduction</span><strong id="peak-gr">—</strong></div>
+            <div class="te-stat"><span>Output peak</span><strong id="out-peak">—</strong></div>
+          </div>
+          <div class="te-readout" id="readout" aria-live="polite"></div>
+        </section>
+
+        <section class="te-card">
+          <h2>2. The six controls</h2>
+          <div class="cmp-types">
+            <div class="te-brief"><h3><span data-glossary="compressor threshold">Threshold</span></h3><p>The level where compression starts. Sound below the threshold passes through unchanged. Lower the threshold and more of the sound gets compressed.</p></div>
+            <div class="te-brief"><h3><span data-glossary="compression ratio">Ratio</span></h3><p>How strongly the compressor turns down sound above the threshold. At 4:1, a signal 8 dB over the threshold comes out only 2 dB over. At 1:1 nothing changes.</p></div>
+            <div class="te-brief"><h3><span data-glossary="compressor knee">Knee</span></h3><p>How gradually compression starts. A hard knee starts it all at once at the threshold. A soft knee eases in across a range of levels, so it's harder to hear.</p></div>
+            <div class="te-brief"><h3><span data-glossary="attack time">Attack</span></h3><p>How quickly the compressor reacts once the sound crosses the threshold. A slow attack lets the first hit of a drum through before it clamps down, which keeps the punch.</p></div>
+            <div class="te-brief"><h3><span data-glossary="release time">Release</span></h3><p>How quickly the compressor lets go once the sound drops back down. Too fast and it can flutter or distort. Too slow and it's still turning down the next quiet note.</p></div>
+            <div class="te-brief"><h3><span data-glossary="makeup gain">Makeup gain</span></h3><p>Compression makes the loud parts quieter, so the whole track ends up quieter. Makeup gain turns everything back up afterward. Always compare at equal loudness: louder almost always sounds "better" at first.</p></div>
+          </div>
+        </section>
+
+        <section class="te-card">
+          <h2>3. Engineer challenges</h2>
+          <div class="cmp-challenge">
+            <h3>A. Even out the singer</h3>
+            <p>The vocalist whispers one phrase and belts the next. Make the phrases sit together: <strong>output range ≤ 10 dB</strong>, <strong>peak gain reduction ≤ 15 dB</strong> (don't crush it), and the loudest output between <strong>−6 and 0 dBFS</strong>.</p>
+            <div class="te-button-row"><button class="te-button" type="button" data-load="vocal">Load singer</button><button class="te-button primary" type="button" data-check="vocal">Check mix</button></div>
+            <div class="te-readout" id="check-vocal">Load the singer, then shape the controls.</div>
+          </div>
+          <div class="cmp-challenge">
+            <h3>B. Keep the drum punch</h3>
+            <p>The drummer wants the kit controlled, not flattened. Get <strong>3–10 dB of peak gain reduction</strong> while letting the first hit through: <strong>attack ≥ 20 ms</strong>. Listen for the "smack" at the start of each hit.</p>
+            <div class="te-button-row"><button class="te-button" type="button" data-load="drums">Load drums</button><button class="te-button primary" type="button" data-check="drums">Check mix</button></div>
+            <div class="te-readout" id="check-drums">Load the drums, then shape the controls.</div>
+          </div>
+          <div class="cmp-challenge">
+            <h3>C. Build a brickwall limiter</h3>
+            <p>A <span data-glossary="audio limiter">limiter</span> is a compressor with a very high ratio and a very fast attack, used to guarantee nothing goes above a ceiling. Protect the stream: <strong>ratio 20:1</strong>, <strong>knee ≤ 3 dB</strong>, <strong>attack ≤ 1 ms</strong>, <strong>output peak ≤ −1 dBFS</strong>, with the threshold no lower than <strong>−12 dB</strong> so the music keeps its life.</p>
+            <div class="te-button-row"><button class="te-button" type="button" data-load="bass">Load bass</button><button class="te-button primary" type="button" data-check="limiter">Check limiter</button></div>
+            <div class="te-readout" id="check-limiter">Any source works. Try the bass.</div>
+          </div>
+        </section>
+
+        <section class="te-card">
+          <h2>4. Do the math</h2>
+          <p>Above the threshold, only a fraction of the overshoot comes out:</p>
+          <code class="te-formula">output = threshold + (input − threshold) ÷ ratio</code>
+          <p id="quiz-q"></p>
+          <div class="cmp-quiz">
+            <label for="quiz-a">Output (dB)</label><input id="quiz-a" type="number" step="0.5" inputmode="decimal" />
+            <button class="te-button primary" id="quiz-check" type="button">Check</button>
+            <button class="te-button" id="quiz-new" type="button">New problem</button>
+          </div>
+          <div class="te-readout" id="quiz-out" aria-live="polite">Work it out, then check. Bonus: how many dB of gain reduction is that?</div>
+        </section>
+
+        <section class="te-card">
+          <h2>5. Hear the mistakes</h2>
+          <div class="cmp-types">
+            <div class="te-brief"><h3>Pumping</h3><p>With a low threshold and fast release on drums, the whole mix swells back up between hits. Try threshold −40, ratio 10:1, release 60 ms.</p></div>
+            <div class="te-brief"><h3>Dull transients</h3><p>With a very fast attack, the front edge of each hit gets clamped and drums go soft. Try attack 0 ms on the drum loop, then 30 ms.</p></div>
+            <div class="te-brief"><h3>Noise lift</h3><p>Heavy compression plus makeup gain also turns up breaths, room hum, and hiss in the quiet gaps. Compression can't tell the music from the noise.</p></div>
+            <div class="te-brief"><h3>Loudness trap</h3><p>Pushing makeup gain feels exciting because louder sounds better. Bypass at matched loudness before deciding compression actually helped.</p></div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="te-stack">
+        <section class="te-card">
+          <h2>Compressor controls</h2>
+          <div class="te-controls">
+            <div class="te-control"><label for="source">Source</label><select id="source"><option value="vocal">Singer (uneven phrases)</option><option value="drums">Drum loop</option><option value="bass">Bass guitar</option></select></div>
+            <div class="te-control"><label for="threshold">Threshold <output id="threshold-out"></output></label><input id="threshold" type="range" min="-60" max="0" step="1" value="-20" /></div>
+            <div class="te-control"><label for="ratio">Ratio <output id="ratio-out"></output></label><input id="ratio" type="range" min="1" max="20" step="0.5" value="4" /></div>
+            <div class="te-control"><label for="knee">Knee <output id="knee-out"></output></label><input id="knee" type="range" min="0" max="24" step="1" value="6" /></div>
+            <div class="te-control"><label for="attack">Attack <output id="attack-out"></output></label><input id="attack" type="range" min="0" max="200" step="1" value="10" /></div>
+            <div class="te-control"><label for="release">Release <output id="release-out"></output></label><input id="release" type="range" min="10" max="1000" step="10" value="200" /></div>
+            <div class="te-control"><label for="makeup">Makeup gain <output id="makeup-out"></output></label><input id="makeup" type="range" min="0" max="24" step="0.5" value="0" /></div>
+          </div>
+          <div class="te-button-row"><button class="te-button" id="reset" type="button">Reset to gentle</button></div>
+        </section>
+
+        <section class="te-card">
+          <h2>Starting points</h2>
+          <p class="te-source-note">Rules of thumb, not recipes. Always trust your ears and the gain-reduction meter.</p>
+          <div class="te-brief"><h3>Vocals</h3><p>3:1–4:1, medium attack (5–15 ms), release around 100–250 ms, 3–6 dB of gain reduction on the loud phrases.</p></div>
+          <div class="te-brief"><h3>Drums</h3><p>4:1, attack 20–40 ms to keep the hit, release timed to the tempo so it recovers before the next beat.</p></div>
+          <div class="te-brief"><h3>Bass</h3><p>4:1–6:1 to keep every note equally strong under the mix.</p></div>
+          <div class="te-brief"><h3>Limiter</h3><p>20:1 or higher, near-instant attack, ceiling around −1 dBFS to prevent <span data-glossary="clipping">clipping</span>.</p></div>
+        </section>
+
+        <section class="te-card">
+          <h2>Kinds of compressors</h2>
+          <div class="te-brief"><h3>VCA</h3><p>Clean and precise. The workhorse on mixing consoles and drum buses.</p></div>
+          <div class="te-brief"><h3>FET</h3><p>Very fast and aggressive with some grit. Classic on rock vocals and drums.</p></div>
+          <div class="te-brief"><h3>Optical</h3><p>A lamp and light sensor set the gain, so it reacts smoothly and a little slowly. Gentle on vocals and bass.</p></div>
+          <div class="te-brief"><h3>Multiband</h3><p>Splits the sound into frequency bands and compresses each one separately. A de-esser is a one-band version that only reacts to harsh "s" sounds.</p></div>
+          <div class="te-brief"><h3><span data-glossary="sidechain">Sidechain</span></h3><p>The compressor listens to a <em>different</em> signal. Ducking music under a DJ's voice, or bass under the kick, uses a sidechain.</p></div>
+        </section>
+
+        <section class="te-card">
+          <h2>Not the same "compression"</h2>
+          <p>MP3, AAC, and ZIP files use <strong>data compression</strong>: they make the <em>file</em> smaller. This lesson is about <span data-glossary="dynamic range">dynamic range</span> compression, which changes the <em>volume</em> of the sound. A WAV file can be heavily compressed dynamically, and a quiet classical MP3 can have almost no dynamic compression at all.</p>
+        </section>
+      </aside>
+    </div>
+    <div class="te-footer-nav"><a href="eq-problem-frequency.html">← Audio Equalizers</a><a href="stage-lighting-design-lab.html">Stage Lighting →</a></div>
+  </main>
+
+  <script>
+  (()=>{
+    const $=id=>document.getElementById(id);
+    const SR=22050, DUR=4, BLOCK=0.005, NB=Math.round(DUR/BLOCK);
+    const TAU=Math.PI*2;
+
+    // ---- Synthetic sources (deterministic so every class hears the same loop) ----
+    function rng(seed){return()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296*2-1;};}
+    const db2a=d=>Math.pow(10,d/20), a2db=a=>20*Math.log10(Math.max(a,1e-6));
+    function makeVocal(){
+      const d=new Float32Array(SR*DUR);
+      const phrases=[[0.05,0.9,220,-24],[1.0,1.9,262,-5],[2.0,2.9,196,-19],[3.0,3.9,247,-3]];
+      for(const [t0,t1,f,lv] of phrases){
+        const a=db2a(lv), s0=Math.floor(t0*SR), s1=Math.floor(t1*SR);let ph=0;
+        for(let i=s0;i<s1;i++){
+          const t=(i-s0)/SR, len=t1-t0, env=Math.min(1,t/0.06)*Math.min(1,(len-t)/0.12)*(0.8+0.2*Math.sin(TAU*1.7*t));
+          ph+=TAU*f*(1+0.008*Math.sin(TAU*5.5*t))/SR;
+          let v=0;for(let h=1;h<=8;h++)v+=Math.sin(ph*h)/h*(h===2||h===3?1.6:1);
+          d[i]+=v*0.42*a*env;
+        }
+      }
+      return{data:d,regions:phrases.map(p=>[p[0]+0.1,p[1]-0.15])};
+    }
+    function makeDrums(){
+      const d=new Float32Array(SR*DUR), r=rng(7);
+      const hits=[];for(let b=0;b<16;b++){const t=b*0.25;hits.push(['h',t,-20]);if(b%4===0)hits.push(['k',t,b%8===0?-2:-6]);if(b%4===2)hits.push(['s',t,b===6||b===14?-3:-9]);}
+      for(const [k,t0,lv] of hits){
+        const a=db2a(lv), s0=Math.floor(t0*SR);let ph=0,prev=0;
+        for(let i=0;i<SR*0.35&&s0+i<d.length;i++){
+          const t=i/SR;let v=0;
+          if(k==='k'){ph+=TAU*(45+80*Math.exp(-t*30))/SR;v=Math.sin(ph)*Math.exp(-t*9);}
+          else if(k==='s'){v=(r()*0.8+Math.sin(TAU*185*t)*0.5)*Math.exp(-t*18);}
+          else{const n=r();v=(n-prev)*0.5*Math.exp(-t*60);prev=n;}
+          d[s0+i]+=v*a;
+        }
+      }
+      return{data:d,regions:[]};
+    }
+    function makeBass(){
+      const d=new Float32Array(SR*DUR);
+      const notes=[[0,55,-4],[0.5,55,-16],[1,73.4,-8],[1.5,65.4,-20],[2,55,-3],[2.5,82.4,-14],[3,73.4,-6],[3.5,61.7,-18]];
+      for(const [t0,f,lv] of notes){
+        const a=db2a(lv), s0=Math.floor(t0*SR);
+        for(let i=0;i<SR*0.48;i++){const t=i/SR,env=Math.min(1,t/0.004)*Math.exp(-t*3.5);let v=0;for(let h=1;h<=6;h++)v+=Math.sin(TAU*f*h*t)/(h*h)*1.3;d[s0+i]+=v*0.55*a*env;}
+      }
+      return{data:d,regions:[]};
+    }
+    const sources={vocal:makeVocal(),drums:makeDrums(),bass:makeBass()};
+    for(const s of Object.values(sources)){
+      const per=Math.round(BLOCK*SR);s.level=new Float32Array(NB);
+      for(let b=0;b<NB;b++){let pk=0;for(let i=b*per;i<(b+1)*per;i++)pk=Math.max(pk,Math.abs(s.data[i]));s.level[b]=Math.max(-72,a2db(pk));}
+    }
+
+    // ---- Compressor model: soft-knee gain computer + attack/release smoothing ----
+    function params(){return{T:+$('threshold').value,R:+$('ratio').value,W:+$('knee').value,A:+$('attack').value/1000,Rl:+$('release').value/1000,M:+$('makeup').value};}
+    function curve(x,p){
+      const o=x-p.T;
+      if(2*o<-p.W)return x;
+      if(p.W>0&&2*Math.abs(o)<=p.W)return x+(1/p.R-1)*(o+p.W/2)**2/(2*p.W);
+      return p.T+o/p.R;
+    }
+    function simulate(src,p){
+      const out=new Float32Array(NB),gr=new Float32Array(NB);let g=0;
+      const ca=p.A>0?Math.exp(-BLOCK/p.A):0, cr=Math.exp(-BLOCK/p.Rl);
+      for(let pass=0;pass<2;pass++)for(let b=0;b<NB;b++){ // second pass so the loop starts in steady state
+        const x=src.level[b], target=curve(x,p)-x, c=target<g?ca:cr;g=c*g+(1-c)*target;
+        if(pass){gr[b]=g;out[b]=x+g+p.M;}
+      }
+      return{out,gr};
+    }
+    function stats(src,sim){
+      const loudBlocks=a=>{ // "musical" level: 90th percentile of active blocks per region
+        const regs=src.regions.length?src.regions:[[0,DUR]];
+        return regs.map(([t0,t1])=>{const v=[];for(let b=Math.floor(t0/BLOCK);b<Math.floor(t1/BLOCK);b++)if(src.level[b]>-50)v.push(a[b]);v.sort((m,n)=>m-n);return v.length?v[Math.floor(v.length*.9)]:-72;});
+      };
+      let inR,outR;
+      if(src.regions.length){const i=loudBlocks(src.level),o=loudBlocks(sim.out);inR=Math.max(...i)-Math.min(...i);outR=Math.max(...o)-Math.min(...o);}
+      else{ // per-hit peaks: max level in each 0.25 s / 0.5 s window
+        const win=src===sources.bass?0.5:0.25,peaks=(a)=>{const r=[];for(let t=0;t<DUR;t+=win){let m=-99;for(let b=Math.floor(t/BLOCK);b<Math.floor((t+win)/BLOCK);b++)m=Math.max(m,a[b]);r.push(m);}return r;};
+        const i=peaks(src.level),o=peaks(sim.out);inR=Math.max(...i)-Math.min(...i);outR=Math.max(...o)-Math.min(...o);
+      }
+      let pk=-99,pg=0;for(let b=0;b<NB;b++){pk=Math.max(pk,sim.out[b]);pg=Math.min(pg,sim.gr[b]);}
+      return{inR,outR,outPeak:pk,peakGR:-pg};
+    }
+
+    // ---- Drawing ----
+    const cv=$('curve'),cx=cv.getContext('2d'),tl=$('timeline'),tx=tl.getContext('2d');
+    let playPos=null, liveGR=0;
+    function drawCurve(p,src){
+      const W=cv.width,H=cv.height,m=56,S=W-m-16,lo=-60,X=d=>m+(d-lo)/(-lo)*S,Y=d=>H-m-(d-lo)/(-lo)*S;
+      cx.fillStyle='#0a1018';cx.fillRect(0,0,W,H);
+      cx.strokeStyle='rgba(255,255,255,.07)';cx.lineWidth=1;cx.font="15px ui-monospace, monospace";cx.fillStyle='#8492a0';
+      for(let d=lo;d<=0;d+=10){cx.beginPath();cx.moveTo(X(d),Y(lo));cx.lineTo(X(d),Y(0));cx.moveTo(X(lo),Y(d));cx.lineTo(X(0),Y(d));cx.stroke();cx.textAlign='center';cx.fillText(d,X(d),H-m+16);cx.textAlign='right';cx.fillText(d,m-6,Y(d)+4);}
+      cx.textAlign='center';cx.fillStyle='#b9c4ce';cx.font="700 14px system-ui";cx.fillText('INPUT dB',m+S/2,H-8);
+      cx.save();cx.translate(12,Y(lo)-S/2);cx.rotate(-Math.PI/2);cx.fillText('OUTPUT dB',0,0);cx.restore();
+      cx.setLineDash([5,5]);cx.strokeStyle='rgba(255,255,255,.25)';cx.beginPath();cx.moveTo(X(lo),Y(lo));cx.lineTo(X(0),Y(0));cx.stroke();
+      cx.strokeStyle='rgba(240,180,72,.7)';cx.beginPath();cx.moveTo(X(p.T),Y(lo));cx.lineTo(X(p.T),Y(0));cx.stroke();cx.setLineDash([]);
+      if(p.W>0){cx.fillStyle='rgba(240,180,72,.08)';cx.fillRect(X(p.T-p.W/2),Y(0),X(p.T+p.W/2)-X(p.T-p.W/2),S);}
+      cx.strokeStyle='#59c8d8';cx.lineWidth=3;cx.beginPath();
+      for(let d=lo;d<=0;d+=.25){const y=Math.min(0,curve(d,p)+p.M);d===lo?cx.moveTo(X(d),Y(y)):cx.lineTo(X(d),Y(Math.max(lo,y)));}
+      cx.stroke();
+      cx.fillStyle='#f0b448';cx.font="800 14px system-ui";cx.textAlign='left';cx.fillText(`T ${p.T} dB · ${p.R}:1`,X(p.T)+6,Y(lo)-8);
+      if(playPos!==null){const b=Math.min(NB-1,Math.floor(playPos/BLOCK)),x=src.level[b];if(x>-60){const y=curve(x,p)+p.M;cx.beginPath();cx.arc(X(x),Y(Math.max(lo,Math.min(0,y))),7,0,TAU);cx.fillStyle='#fff';cx.fill();cx.strokeStyle='#59c8d8';cx.lineWidth=3;cx.stroke();}}
+    }
+    function drawTimeline(p,src,sim){
+      const W=tl.width,H=tl.height,m=48,top=16,bot=H-40,lo=-60,X=b=>m+b/NB*(W-m-12),Y=d=>top+(Math.max(lo,Math.min(0,d))/lo)*(bot-top);
+      tx.fillStyle='#0a1018';tx.fillRect(0,0,W,H);
+      tx.font="15px ui-monospace, monospace";tx.strokeStyle='rgba(255,255,255,.07)';tx.fillStyle='#8492a0';tx.lineWidth=1;
+      for(let d=0;d>=lo;d-=12){tx.beginPath();tx.moveTo(m,Y(d));tx.lineTo(W-12,Y(d));tx.stroke();tx.textAlign='right';tx.fillText(d,m-6,Y(d)+4);}
+      for(let s=0;s<=DUR;s++){tx.textAlign='center';tx.fillText(s+'s',X(s/BLOCK),H-14);}
+      tx.setLineDash([5,5]);tx.strokeStyle='rgba(240,180,72,.7)';tx.beginPath();tx.moveTo(m,Y(p.T));tx.lineTo(W-12,Y(p.T));tx.stroke();tx.setLineDash([]);
+      tx.fillStyle='rgba(111,127,143,.35)';tx.beginPath();tx.moveTo(X(0),Y(lo));for(let b=0;b<NB;b++)tx.lineTo(X(b),Y(src.level[b]));tx.lineTo(X(NB),Y(lo));tx.fill();
+      tx.strokeStyle='#59c8d8';tx.lineWidth=1.6;tx.beginPath();for(let b=0;b<NB;b++){const y=src.level[b]>-70?sim.out[b]:lo;b?tx.lineTo(X(b),Y(y)):tx.moveTo(X(b),Y(y));}tx.stroke();
+      tx.fillStyle='rgba(255,118,108,.55)';for(let b=0;b<NB;b++){const g=-sim.gr[b];if(g>.05)tx.fillRect(X(b),top,Math.max(1,X(1)-X(0)),g/(-lo)*(bot-top));}
+      tx.fillStyle='#ff766c';tx.font="800 13px system-ui";tx.textAlign='left';tx.fillText('▼ GAIN REDUCTION',m+6,top+12);
+      if(playPos!==null){const x=X(playPos/BLOCK);tx.strokeStyle='#fff';tx.lineWidth=2;tx.beginPath();tx.moveTo(x,top);tx.lineTo(x,bot);tx.stroke();}
+    }
+
+    // ---- Audio: real Web Audio compressor mirrors the model ----
+    let ac=null,node=null,comp=null,wet=null,dry=null,makeup=null,startT=0,bypass=false,raf=0;
+    function audioSync(p){
+      if(!comp)return;const t=ac.currentTime;
+      comp.threshold.setTargetAtTime(p.T,t,.02);comp.ratio.setTargetAtTime(p.R,t,.02);comp.knee.setTargetAtTime(p.W,t,.02);
+      comp.attack.setTargetAtTime(Math.max(.0001,p.A),t,.02);comp.release.setTargetAtTime(p.Rl,t,.02);
+      // DynamicsCompressorNode adds its own automatic makeup (0.6 × curve at 0 dBFS); cancel it so what you hear matches the graph.
+      const auto=-0.6*(curve(0,p)-0);makeup.gain.setTargetAtTime(db2a(p.M-auto),t,.02);
+      wet.gain.setTargetAtTime(bypass?0:1,t,.03);dry.gain.setTargetAtTime(bypass?1:0,t,.03);
+    }
+    function start(){
+      const AC=window.AudioContext||window.webkitAudioContext;if(!AC){$('readout').textContent='This browser cannot play Web Audio. The graphs still work.';return;}
+      ac=new AC();const src=sources[$('source').value],buf=ac.createBuffer(1,src.data.length,SR);buf.copyToChannel?buf.copyToChannel(src.data,0):buf.getChannelData(0).set(src.data);
+      node=ac.createBufferSource();node.buffer=buf;node.loop=true;
+      comp=ac.createDynamicsCompressor();makeup=ac.createGain();wet=ac.createGain();dry=ac.createGain();const master=ac.createGain();master.gain.value=.6;
+      node.connect(comp);comp.connect(makeup);makeup.connect(wet);wet.connect(master);node.connect(dry);dry.connect(master);master.connect(ac.destination);
+      audioSync(params());startT=ac.currentTime+.05;node.start(startT);
+      $('play').textContent='■ Stop';tick();
+    }
+    function stop(){if(ac){ac.close();ac=null;comp=null;}cancelAnimationFrame(raf);playPos=null;liveGR=0;$('play').textContent='▶ Play';$('gr-fill').style.width='0';$('gr-live').textContent='0.0 dB';update();}
+    function tick(){
+      if(!ac)return;playPos=Math.max(0,(ac.currentTime-startT)%DUR);
+      liveGR=bypass?0:(typeof comp.reduction==='number'?comp.reduction:comp.reduction.value||0);
+      $('gr-fill').style.width=Math.min(100,-liveGR/24*100)+'%';$('gr-live').textContent=liveGR.toFixed(1)+' dB';
+      render();raf=requestAnimationFrame(tick);
+    }
+
+    // ---- UI ----
+    let last=null;
+    function render(){const p=params(),src=sources[$('source').value];if(!last)last=simulate(src,p);drawCurve(p,src);drawTimeline(p,src,last);}
+    function update(){
+      const p=params(),src=sources[$('source').value];
+      $('threshold-out').value=p.T+' dB';$('ratio-out').value=(p.R>=20?'20:1 (limit)':p.R+':1');$('knee-out').value=p.W?p.W+' dB soft':'hard';
+      $('attack-out').value=(p.A*1000).toFixed(0)+' ms';$('release-out').value=(p.Rl*1000).toFixed(0)+' ms';$('makeup-out').value='+'+p.M+' dB';
+      last=simulate(src,p);const s=stats(src,last);
+      $('in-range').textContent=s.inR.toFixed(1)+' dB';$('out-range').textContent=s.outR.toFixed(1)+' dB';$('peak-gr').textContent=s.peakGR.toFixed(1)+' dB';$('out-peak').textContent=s.outPeak.toFixed(1)+' dBFS';
+      const o=$('readout');
+      if(s.outPeak>0){o.className='te-readout bad';o.innerHTML='<strong>Clipping!</strong> The output goes above 0 dBFS. Lower the makeup gain or the threshold.';}
+      else if(p.R<=1||s.peakGR<.5){o.className='te-readout';o.innerHTML='<strong>Barely touching it.</strong> The sound rarely crosses the threshold, so almost nothing changes. Lower the threshold until the red gain-reduction bars appear.';}
+      else if(s.peakGR>15){o.className='te-readout warn';o.innerHTML=`<strong>Heavy squash: ${s.peakGR.toFixed(0)} dB of reduction.</strong> The range is ${s.outR.toFixed(1)} dB now, but listen for pumping and lifeless peaks. Is this an effect you want, or control?`;}
+      else{o.className='te-readout good';o.innerHTML=`<strong>Controlled.</strong> The loud-to-quiet range went from ${s.inR.toFixed(1)} dB to ${s.outR.toFixed(1)} dB with ${s.peakGR.toFixed(1)} dB of peak reduction. ${p.M===0?'Try makeup gain to bring the level back up.':'Bypass to compare at similar loudness.'}`;}
+      audioSync(p);render();return s;
+    }
+    const ids=['threshold','ratio','knee','attack','release','makeup'];
+    ids.forEach(id=>$(id).addEventListener('input',update));
+    $('source').addEventListener('change',()=>{const was=!!ac;if(was)stop();update();if(was)start();});
+    $('play').addEventListener('click',()=>ac?stop():start());
+    $('bypass').addEventListener('click',e=>{bypass=!bypass;e.currentTarget.setAttribute('aria-pressed',bypass);e.currentTarget.textContent=bypass?'Bypass ON (original)':'Bypass (hear original)';audioSync(params());});
+    const gentle={threshold:-20,ratio:4,knee:6,attack:10,release:200,makeup:0};
+    $('reset').addEventListener('click',()=>{for(const k in gentle)$(k).value=gentle[k];update();});
+    document.querySelectorAll('[data-load]').forEach(b=>b.addEventListener('click',()=>{$('source').value=b.dataset.load;$('source').dispatchEvent(new Event('change'));for(const k in gentle)$(k).value=k==='ratio'?1:gentle[k];update();}));
+    const checks={
+      vocal(){if($('source').value!=='vocal')return[false,'Load the singer first.'];const s=update(),e=[];if(s.outR>10)e.push(`output range is ${s.outR.toFixed(1)} dB (need ≤ 10)`);if(s.peakGR>15)e.push(`peak reduction is ${s.peakGR.toFixed(1)} dB (need ≤ 15)`);if(s.outPeak<-6||s.outPeak>0)e.push(`loudest output is ${s.outPeak.toFixed(1)} dBFS (need −6 to 0)`);return e.length?[false,'Not yet: '+e.join('; ')+'.']:[true,'Nice mix! Every phrase now sits in the same zone. Which control did the most work: threshold, ratio, or makeup?'];},
+      drums(){if($('source').value!=='drums')return[false,'Load the drums first.'];const s=update(),p=params(),e=[];if(s.peakGR<3||s.peakGR>10)e.push(`peak reduction is ${s.peakGR.toFixed(1)} dB (need 3–10)`);if(p.A<.02)e.push(`attack is ${(p.A*1000).toFixed(0)} ms (need ≥ 20 so the hit gets through)`);if(s.outPeak>0)e.push('the output clips');return e.length?[false,'Not yet: '+e.join('; ')+'.']:[true,'Punchy and controlled. Look at the timeline: each hit spikes above the threshold before the red reduction catches up. That spike is the punch.'];},
+      limiter(){const s=update(),p=params(),e=[];if(p.R<20)e.push('ratio must be 20:1');if(p.W>3)e.push('knee must be ≤ 3 dB');if(p.A>.001)e.push('attack must be ≤ 1 ms');if(p.T<-12)e.push('threshold is below −12 dB, which squashes the music');if(s.outPeak>-1)e.push(`output peak is ${s.outPeak.toFixed(1)} dBFS (need ≤ −1)`);return e.length?[false,'Not yet: '+e.join('; ')+'.']:[true,'Brickwall built. Nothing gets past the ceiling. Streaming services and broadcasters use limiters exactly like this.'];}
+    };
+    document.querySelectorAll('[data-check]').forEach(b=>b.addEventListener('click',()=>{const k=b.dataset.check,[ok,msg]=checks[k](),o=$('check-'+k);o.className='te-readout '+(ok?'good':'bad');o.textContent=msg;}));
+
+    // ---- Math practice ----
+    let q;
+    function newQ(){const R=[2,3,4,5,8,10][Math.floor(Math.random()*6)],T=-6*(2+Math.floor(Math.random()*4)),over=R*(1+Math.floor(Math.random()*4));q={R,T,x:T+over,y:T+over/R};$('quiz-q').innerHTML=`A snare hits at <strong>${q.x} dB</strong>. The threshold is <strong>${q.T} dB</strong> and the ratio is <strong>${q.R}:1</strong>. What level comes out?`;$('quiz-a').value='';$('quiz-out').className='te-readout';$('quiz-out').textContent='Work it out, then check. Bonus: how many dB of gain reduction is that?';}
+    $('quiz-new').addEventListener('click',newQ);
+    $('quiz-check').addEventListener('click',()=>{const a=parseFloat($('quiz-a').value),o=$('quiz-out');if(Math.abs(a-q.y)<.26){o.className='te-readout good';o.innerHTML=`<strong>Correct: ${q.y} dB.</strong> It was ${q.x-q.T} dB over; ${q.x-q.T} ÷ ${q.R} = ${(q.x-q.T)/q.R} dB over. Gain reduction = ${q.x} − (${q.y}) = <strong>${q.x-q.y} dB</strong>.`;}else{o.className='te-readout bad';o.innerHTML=`Not quite. First find how far over the threshold it is: ${q.x} − (${q.T}) = ? Then divide that by the ratio and add it back to the threshold.`;}});
+    newQ();update();
+  })();
+  </script>
+  <script src="../../assets/js/site-glossary.js"></script>
+  <script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
