@@ -38,116 +38,68 @@
       <header class="showcase-launcher-topbar">
         <div>
           <p class="showcase-eyebrow">Classroom project gallery</p>
-          <h1 id="showcase-title">Choose a gallery.</h1>
-          <p id="showcase-instruction">Student work and teacher-built examples have their own spaces.</p>
+          <h1 id="showcase-title">Project Showcase</h1>
+          <p id="showcase-instruction">Games, 3D worlds, music, and experiments made by students, plus classroom examples by Mr. Scandrett.</p>
         </div>
         <div class="showcase-launcher-actions">
-          <button id="showcase-back" class="showcase-back" type="button" hidden><span aria-hidden="true">‹</span> Collections</button>
-          <button id="showcase-find" class="showcase-find" type="button">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
-            <span>Find a project</span>
-          </button>
           <a id="upload-cta" class="showcase-upload" href="#" hidden>Upload</a>
         </div>
       </header>
 
-      <section id="showcase-home" class="showcase-home" aria-label="Project collections">
-        <div class="showcase-gallery-switcher" role="group" aria-label="Choose whose projects to browse">
-          <button type="button" class="showcase-gallery-choice gallery-students" data-creator-preset="student" aria-pressed="true">
-            <span class="showcase-gallery-mark" aria-hidden="true">✦</span>
-            <span><strong>Student Gallery</strong><small>Games, models, art, music, and experiments made by students.</small></span>
-            <span class="showcase-gallery-count" data-creator-count="student">Loading…</span>
-          </button>
-          <button type="button" class="showcase-gallery-choice gallery-teacher" data-creator-preset="teacher" aria-pressed="false">
-            <span class="showcase-gallery-mark" aria-hidden="true">⌁</span>
-            <span><strong>Teacher Studio</strong><small>Classroom examples and original projects made by Mr. Scandrett.</small></span>
-            <span class="showcase-gallery-count" data-creator-count="teacher">Loading…</span>
-          </button>
+      <div class="sc-controls" role="search" aria-label="Find projects">
+        <div class="sc-toolbar-row">
+          <label class="sc-search-field">
+            <span>Find a project</span>
+            <input id="search-input" type="search" placeholder="Name, student, tool, or tag…" aria-label="Search projects" />
+          </label>
+          <label class="sc-sort-field">
+            <span>Sort by</span>
+            <select id="sort-select" aria-label="Sort projects">
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="az">Title A–Z</option>
+              <option value="featured">Featured first</option>
+              <option value="most-tags">Most tags</option>
+            </select>
+          </label>
+          <button id="filter-toggle" type="button" class="secondary sc-btn" aria-expanded="false" aria-controls="filter-panel">More filters ▾</button>
+          <button id="clear-filters" type="button" class="secondary sc-btn sc-reset" aria-label="Reset search, sorting, and filters">Start over</button>
         </div>
-        <div class="showcase-collection-heading">
-          <div>
-            <h2 id="showcase-collection-title">Student Gallery collections</h2>
-            <p id="showcase-collection-description">Choose what you want to play, explore, or watch.</p>
+
+        <div class="sc-pill-rows">
+          <div class="sc-pills sc-creator-pills" role="group" aria-label="Whose projects">
+            <button type="button" class="sc-pill" data-creator-preset="student" aria-pressed="true">Students <span data-creator-count="student"></span></button>
+            <button type="button" class="sc-pill" data-creator-preset="teacher" aria-pressed="false">Teacher Studio <span data-creator-count="teacher"></span></button>
           </div>
-          <p class="showcase-location" id="showcase-location" aria-live="polite">Loading collections…</p>
+          <div class="sc-pills" id="collection-pills" role="group" aria-label="Collection"></div>
         </div>
-        <div class="showcase-folder-grid" role="group" aria-label="Project collections">
-          <button type="button" class="showcase-folder folder-games" data-category-preset="Game" data-folder-title="Games" data-folder-symbol="🎮" aria-pressed="false">
-            <span class="showcase-folder-shape"><span class="showcase-folder-preview"></span></span><strong>Games</strong><small>Loading…</small>
-          </button>
-          <button type="button" class="showcase-folder folder-models" data-category-preset="3D" data-folder-title="3D Worlds" data-folder-symbol="🧊" aria-pressed="false">
-            <span class="showcase-folder-shape"><span class="showcase-folder-preview"></span></span><strong>3D Worlds</strong><small>Loading…</small>
-          </button>
-          <button type="button" class="showcase-folder folder-simulations" data-category-preset="Simulation" data-folder-title="Simulations" data-folder-symbol="⚙️" aria-pressed="false">
-            <span class="showcase-folder-shape"><span class="showcase-folder-preview"></span></span><strong>Simulations</strong><small>Loading…</small>
-          </button>
-          <button type="button" class="showcase-folder folder-animation" data-category-preset="Animation" data-folder-title="Animation" data-folder-symbol="▶" aria-pressed="false">
-            <span class="showcase-folder-shape"><span class="showcase-folder-preview"></span></span><strong>Animation</strong><small>Loading…</small>
-          </button>
-          <button type="button" class="showcase-folder folder-music" data-category-preset="Music" data-folder-title="Music" data-folder-symbol="♫" aria-pressed="false">
-            <span class="showcase-folder-shape"><span class="showcase-folder-preview"></span></span><strong>Music</strong><small>Loading…</small>
-          </button>
-          <button type="button" class="showcase-folder folder-web" data-category-preset="Web,Art" data-folder-title="Web & Art" data-folder-symbol="✦" aria-pressed="false">
-            <span class="showcase-folder-shape"><span class="showcase-folder-preview"></span></span><strong>Web & Art</strong><small>Loading…</small>
-          </button>
-          <button type="button" class="showcase-folder folder-all" data-category-preset="" data-folder-title="Everything" data-folder-symbol="★" aria-pressed="false">
-            <span class="showcase-folder-shape"><span class="showcase-folder-preview"></span></span><strong>Everything</strong><small>Loading…</small>
-          </button>
+
+        <div id="active-filter-summary" class="active-filter-summary" aria-live="polite" hidden></div>
+
+        <div id="filter-panel" class="sc-filter-panel" hidden>
+          <div class="filter-panel-heading"><strong>More ways to choose</strong><span>You can pick more than one.</span></div>
+          <div id="filter-groups" class="filter-group-wrap" aria-label="Additional project filters"></div>
         </div>
-      </section>
+      </div>
+
+      <div id="showcase-shelves" class="showcase-shelves" aria-busy="true"></div>
 
       <section class="showcase-results" id="showcase-results" aria-labelledby="showcase-results-title" hidden>
         <div class="showcase-results-heading">
-          <span class="showcase-results-symbol" id="showcase-results-symbol" aria-hidden="true">★</span>
           <div>
-            <p class="showcase-results-context" id="showcase-results-context">Student Gallery</p>
-            <h2 id="showcase-results-title">Everything</h2>
-            <p id="showcase-results-description">Tap a picture to open the project.</p>
+            <p class="showcase-results-context" id="showcase-results-context">Students</p>
+            <h2 id="showcase-results-title">Results</h2>
           </div>
           <p class="sc-count" id="result-count" aria-live="polite">Loading projects…</p>
         </div>
-
-      <details class="sc-toolbar-wrap">
-        <summary>Search, sort, or filter</summary>
-        <div class="sc-toolbar-inner" aria-label="Search and filter projects">
-          <div class="sc-toolbar-row">
-            <label class="sc-search-field">
-              <span>Find a project</span>
-              <input id="search-input" type="search" placeholder="Type a name…" aria-label="Search projects" />
-            </label>
-
-            <label class="sc-sort-field">
-              <span>Sort by</span>
-              <select id="sort-select" aria-label="Sort projects">
-                <option value="newest">Newest first</option>
-                <option value="oldest">Oldest first</option>
-                <option value="az">Title A–Z</option>
-                <option value="featured">Featured first</option>
-                <option value="most-tags">Most tags</option>
-              </select>
-            </label>
-
-            <button id="filter-toggle" type="button" class="secondary sc-btn" aria-expanded="false" aria-controls="filter-panel">More choices</button>
-            <button id="clear-filters" type="button" class="secondary sc-btn sc-reset" aria-label="Reset search, sorting, and filters">Start over</button>
-          </div>
-
-          <div id="active-filter-summary" class="active-filter-summary" aria-live="polite" hidden></div>
-
-          <div id="filter-panel" class="sc-filter-panel" hidden>
-            <div class="filter-panel-heading"><strong>More ways to choose</strong><span>You can pick more than one.</span></div>
-            <div id="filter-groups" class="filter-group-wrap" aria-label="Additional project filters"></div>
-          </div>
+        <section id="browse-empty" class="empty-state showcase-empty" hidden>
+          <strong>No projects match those choices.</strong>
+          <span>Shorten your search, pick another collection, or press Start over.</span>
+        </section>
+        <section id="browse-grid" class="project-grid" aria-label="Showcase projects"></section>
+        <div class="showcase-more-wrap" id="showcase-more-wrap" hidden>
+          <button class="secondary sc-btn showcase-more" id="showcase-more" type="button">Show more projects</button>
         </div>
-      </details>
-
-      <section id="browse-empty" class="empty-state showcase-empty" hidden>
-        <strong>No projects match those choices.</strong>
-        <span>Try another collection, shorten your search, or reset the filters.</span>
-      </section>
-      <section id="browse-grid" class="project-grid" aria-label="Showcase projects"></section>
-      <div class="showcase-more-wrap" id="showcase-more-wrap" hidden>
-        <button class="secondary sc-btn showcase-more" id="showcase-more" type="button">Show more projects</button>
-      </div>
       </section>
 
       <details class="showcase-maker-tools" id="showcase-maker-tools">

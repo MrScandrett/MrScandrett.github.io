@@ -131,7 +131,7 @@ export function createProjectCard(project, options = {}) {
   image.alt = `${project.title} thumbnail`;
   thumb.appendChild(image);
 
-  if (is3DModelProject(project)) {
+  if (options.modelPreview !== false && is3DModelProject(project)) {
     const preview = document.createElement("iframe");
     preview.className = "card-model-preview";
     preview.dataset.src = project.appUrl;

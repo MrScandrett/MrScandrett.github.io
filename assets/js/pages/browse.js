@@ -9,19 +9,26 @@ import {
   uniqueValues,
 } from "../ui.js";
 
+// One scrolling page: with no search/filters the page shows a shelf per collection;
+// any search, filter, or collection pick swaps the shelves for a single results grid.
+
 const FILTER_KEYS = ["category", "tech", "difficulty", "year", "term", "type", "program", "cohort"];
 const CREATOR_GROUPS = {
-  student: {
-    title: "Student Gallery",
-    plural: "student projects",
-    instruction: "Choose what you want to play, explore, or watch."
-  },
-  teacher: {
-    title: "Teacher Studio",
-    plural: "teacher projects",
-    instruction: "Browse classroom examples and original projects by Mr. Scandrett."
-  }
+  student: { title: "Students", plural: "student projects" },
+  teacher: { title: "Teacher Studio", plural: "teacher projects" },
 };
+
+// Collections map display names onto manifest `category` values.
+const COLLECTIONS = [
+  { title: "Games", symbol: "🎮", categories: ["Game"], description: "Adventures, puzzles, racers, and arcade experiments." },
+  { title: "3D Worlds", symbol: "🧊", categories: ["3D"], description: "Interactive models, environments, and 3D creations." },
+  { title: "Simulations", symbol: "⚙️", categories: ["Simulation"], description: "Systems, experiments, and interactive ideas." },
+  { title: "Animation", symbol: "▶", categories: ["Animation"], description: "Stories, motion studies, and animated scenes." },
+  { title: "Music", symbol: "♫", categories: ["Music"], description: "Playable instruments, rhythm tools, and sound experiments." },
+  { title: "Web & Art", symbol: "✦", categories: ["Web", "Art"], description: "Websites, visual designs, and creative digital work." },
+];
+const SHELF_SIZE = 4;
+const PAGE_SIZE = 12;
 
 // Fixed display order for the cohort picker (School Year before Camp), not alphabetical.
 const COHORT_ORDER = ["25-26 School Year", "2026 Summer Camp"];
@@ -36,35 +43,14 @@ const FILTER_LABELS = {
   cohort: "Class",
 };
 
-const COLLECTION_DESCRIPTIONS = {
-  Games: "Play adventures, puzzles, racers, and arcade experiments.",
-  "3D Worlds": "Explore interactive models, environments, and three-dimensional creations.",
-  Simulations: "Try systems, experiments, and interactive ideas.",
-  Animation: "Watch stories, motion studies, and animated scenes.",
-  Music: "Open playable music projects, rhythm tools, and sound experiments.",
-  "Web & Art": "Browse websites, visual designs, and creative digital work.",
-  Everything: "Browse every published project in this gallery.",
-  "Find a project": "Search every collection by project name, student, tool, or tag.",
-  "Project results": "Your saved search and filter choices are ready."
-};
-
 function readCreatorFromQuery() {
   return new URLSearchParams(window.location.search).get("creator") === "teacher" ? "teacher" : "student";
 }
 
 function blankState() {
-  return {
-    q: "",
-    sort: "newest",
-    category: new Set(),
-    tech: new Set(),
-    difficulty: new Set(),
-    year: new Set(),
-    term: new Set(),
-    type: new Set(),
-    program: new Set(),
-    cohort: new Set(),
-  };
+  const state = { q: "", sort: "newest" };
+  FILTER_KEYS.forEach((key) => { state[key] = new Set(); });
+  return state;
 }
 
 function readStateFromQuery() {
@@ -73,14 +59,11 @@ function readStateFromQuery() {
   state.q = params.get("q") || "";
   state.sort = params.get("sort") || "newest";
   FILTER_KEYS.forEach((key) => {
-    const value = params.get(key);
-    if (value) {
-      value
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean)
-        .forEach((item) => state[key].add(item));
-    }
+    (params.get(key) || "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .forEach((item) => state[key].add(item));
   });
   return state;
 }
@@ -91,21 +74,19 @@ function writeStateToQuery(state, creatorGroup) {
   if (state.q) params.set("q", state.q);
   if (state.sort && state.sort !== "newest") params.set("sort", state.sort);
   FILTER_KEYS.forEach((key) => {
-    if (state[key].size > 0) {
-      params.set(key, Array.from(state[key]).join(","));
-    }
+    if (state[key].size > 0) params.set(key, Array.from(state[key]).join(","));
   });
   const query = params.toString();
   const next = query ? `${window.location.pathname}?${query}` : window.location.pathname;
-  window.history.replaceState({}, "", next);
+  window.history.replaceState({}, "", next + window.location.hash);
 }
 
-function applySelectValue(select, value) {
-  if ([...select.options].some((opt) => opt.value === value)) {
-    select.value = value;
-  } else {
-    select.value = "newest";
-  }
+function plural(count, word = "project") {
+  return `${count} ${word}${count === 1 ? "" : "s"}`;
+}
+
+function setsMatch(left, right) {
+  return left.size === right.size && [...left].every((value) => right.has(value));
 }
 
 function makeChip(value, selected, onToggle) {
@@ -115,10 +96,7 @@ function makeChip(value, selected, onToggle) {
   button.textContent = value;
   button.setAttribute("aria-pressed", selected ? "true" : "false");
   button.dataset.value = value;
-  button.addEventListener("click", () => {
-    const wasActive = button.getAttribute("aria-pressed") === "true";
-    onToggle(!wasActive);
-  });
+  button.addEventListener("click", () => onToggle(button.getAttribute("aria-pressed") !== "true"));
   return button;
 }
 
@@ -128,28 +106,15 @@ function renderChipGroup({ mount, title, filterKey, values, selectedSet, onToggl
   const heading = document.createElement("h3");
   heading.textContent = title;
   group.appendChild(heading);
-
   const chips = document.createElement("div");
   chips.className = "chips";
   values.forEach((value) => {
-    const chip = makeChip(value, selectedSet.has(String(value)), (enabled) => {
-      onToggle(String(value), enabled);
-    });
+    const chip = makeChip(value, selectedSet.has(String(value)), (enabled) => onToggle(String(value), enabled));
     chip.dataset.filter = filterKey;
     chips.appendChild(chip);
   });
   group.appendChild(chips);
   mount.appendChild(group);
-}
-
-function updateControlsFromState(state, dom) {
-  dom.search.value = state.q;
-  applySelectValue(dom.sort, state.sort);
-}
-
-function filterAndSort(projects, state) {
-  const filtered = projects.filter((project) => projectMatches(project, state));
-  return sortProjects(filtered, state.sort);
 }
 
 function init() {
@@ -165,157 +130,117 @@ function init() {
     activeSummary: document.getElementById("active-filter-summary"),
     creatorPresets: [...document.querySelectorAll("[data-creator-preset]")],
     creatorCounts: [...document.querySelectorAll("[data-creator-count]")],
-    categoryPresets: [...document.querySelectorAll("[data-category-preset]")],
+    collectionPills: document.getElementById("collection-pills"),
+    shelves: document.getElementById("showcase-shelves"),
+    results: document.getElementById("showcase-results"),
+    resultsTitle: document.getElementById("showcase-results-title"),
+    resultsContext: document.getElementById("showcase-results-context"),
     grid: document.getElementById("browse-grid"),
     count: document.getElementById("result-count"),
     empty: document.getElementById("browse-empty"),
     moreWrap: document.getElementById("showcase-more-wrap"),
     more: document.getElementById("showcase-more"),
-    toolbar: document.querySelector(".sc-toolbar-wrap"),
-    home: document.getElementById("showcase-home"),
-    results: document.getElementById("showcase-results"),
-    back: document.getElementById("showcase-back"),
-    find: document.getElementById("showcase-find"),
-    pageTitle: document.getElementById("showcase-title"),
-    instruction: document.getElementById("showcase-instruction"),
-    resultsTitle: document.getElementById("showcase-results-title"),
-    resultsDescription: document.getElementById("showcase-results-description"),
-    resultsContext: document.getElementById("showcase-results-context"),
-    resultsSymbol: document.getElementById("showcase-results-symbol"),
-    location: document.getElementById("showcase-location"),
-    collectionTitle: document.getElementById("showcase-collection-title"),
-    collectionDescription: document.getElementById("showcase-collection-description"),
     launcher: document.querySelector(".showcase-launcher"),
-    makerTools: document.getElementById("showcase-maker-tools"),
   };
 
-  if (!dom.grid) return;
+  if (!dom.grid || !dom.shelves) return;
 
-  function renderLoadingSkeletons(count = 6) {
-    dom.grid.innerHTML = "";
-    dom.grid.setAttribute("aria-busy", "true");
-    for (let index = 0; index < count; index += 1) {
-      dom.grid.appendChild(createProjectCardSkeleton());
-    }
-  }
-
-  // Filter panel toggle
-  if (dom.filterToggle && dom.filterPanel) {
-    dom.filterToggle.addEventListener("click", () => {
-      const isOpen = !dom.filterPanel.hidden;
-      dom.filterPanel.hidden = isOpen;
-      dom.filterToggle.setAttribute("aria-expanded", isOpen ? "false" : "true");
-      dom.filterToggle.textContent = isOpen ? "More filters \u25be" : "More filters \u25b4";
-    });
+  for (let index = 0; index < SHELF_SIZE * 2; index += 1) {
+    dom.shelves.appendChild(createProjectCardSkeleton());
   }
 
   const state = readStateFromQuery();
   let activeCreator = readCreatorFromQuery();
-  renderLoadingSkeletons();
-  dom.count.textContent = "Loading projects…";
+  let visibleLimit = PAGE_SIZE;
+
+  dom.filterToggle?.addEventListener("click", () => {
+    const isOpen = !dom.filterPanel.hidden;
+    dom.filterPanel.hidden = isOpen;
+    dom.filterToggle.setAttribute("aria-expanded", isOpen ? "false" : "true");
+    updateFilterToggle();
+  });
+
+  function advancedFilterCount() {
+    return FILTER_KEYS.filter((key) => key !== "category").reduce((sum, key) => sum + state[key].size, 0);
+  }
+
+  function hasCustomState() {
+    return Boolean(state.q) || state.sort !== "newest" || FILTER_KEYS.some((key) => state[key].size > 0);
+  }
+
+  function updateFilterToggle() {
+    if (!dom.filterToggle || !dom.filterPanel) return;
+    const count = advancedFilterCount();
+    dom.filterToggle.textContent = `More filters${count ? ` (${count})` : ""} ${dom.filterPanel.hidden ? "▾" : "▴"}`;
+  }
+
+  function resetState() {
+    const reset = blankState();
+    state.q = reset.q;
+    state.sort = reset.sort;
+    FILTER_KEYS.forEach((key) => state[key].clear());
+  }
 
   loadProjects()
     .then((projects) => {
-      dom.grid.innerHTML = "";
-      dom.grid.setAttribute("aria-busy", "false");
-      const cardsById = new Map();
-      const PAGE_SIZE = 12;
-      let visibleLimit = PAGE_SIZE;
-      projects.forEach((project) => {
-        const card = createProjectCard(project, { showFeatured: true, directLaunch: true, showDetailsLink: true });
+      dom.shelves.setAttribute("aria-busy", "false");
+      const cardFor = (project) => {
+        const card = createProjectCard(project, { showFeatured: true, directLaunch: true, showDetailsLink: true, modelPreview: false });
         card.classList.add("is-visible");
-        cardsById.set(project.id, card);
-        dom.grid.appendChild(card);
+        return card;
+      };
+      // Results-grid cards are built once and reordered; shelves build their own small set.
+      const gridCards = new Map(projects.map((project) => [project.id, cardFor(project)]));
+      dom.grid.append(...gridCards.values());
+
+      const byCreator = (creator) => projects.filter((project) => project.creatorGroup === creator);
+      const inCollection = (list, collection) => list.filter((project) => collection.categories.includes(project.category));
+      const activeCollection = () => COLLECTIONS.find((c) => setsMatch(state.category, new Set(c.categories)));
+
+      dom.creatorCounts.forEach((el) => {
+        el.textContent = byCreator(el.dataset.creatorCount).length;
       });
 
-      const projectsForActiveCreator = () => projects.filter((project) => project.creatorGroup === activeCreator);
-
-      dom.creatorCounts.forEach((count) => {
-        const creator = count.dataset.creatorCount;
-        const total = projects.filter((project) => project.creatorGroup === creator).length;
-        count.textContent = `${total} project${total === 1 ? "" : "s"}`;
-      });
-
-      function renderCollectionFolders() {
-        const creatorProjects = projectsForActiveCreator();
-        let visibleCollections = 0;
-        dom.categoryPresets.forEach((button) => {
-          const values = (button.dataset.categoryPreset || "")
-            .split(",")
-            .map((value) => value.trim())
-            .filter(Boolean);
-          const matches = values.length === 0
-            ? creatorProjects
-            : creatorProjects.filter((project) => values.includes(project.category));
-          button.hidden = matches.length === 0;
-          if (!button.hidden) visibleCollections += 1;
-          const representativeMatches = matches
-            .slice()
-            .sort((left, right) => {
-              const thumbnailScore = (project) => {
-                const path = String(project.thumbnail || "");
-                const slug = String(project.id || "").replace(/^app-/, "");
-                if (path.includes("/assets/thumbs/showcase/avatar-")) return 0;
-                if (project.category === "3D" && path.includes("/assets/thumbs/showcase/") && slug && !path.includes(slug)) return 0;
-                if (/\/apps\/[^/]+\/assets\/thumb\.svg$/i.test(path)) return 1;
-                if (path.includes("/assets/thumbs/showcase/")) return 3;
-                return 2;
-              };
-              return thumbnailScore(right) - thumbnailScore(left);
-            });
-          const preview = button.querySelector(".showcase-folder-preview");
-          if (preview) {
-            preview.replaceChildren();
-            representativeMatches.slice(0, 4).forEach((project) => {
-              const image = document.createElement("img");
-              image.src = project.thumbnail;
-              image.alt = "";
-              image.loading = "eager";
-              image.decoding = "async";
-              preview.appendChild(image);
-            });
-            preview.dataset.items = String(preview.children.length);
-          }
-          const count = button.querySelector("small");
-          if (count) count.textContent = `${matches.length} project${matches.length === 1 ? "" : "s"}`;
-          const title = button.dataset.folderTitle || button.querySelector("strong")?.textContent || "Projects";
-          button.setAttribute("aria-label", `${title} collection in ${CREATOR_GROUPS[activeCreator].title}, ${matches.length} projects`);
+      function renderCollectionPills() {
+        const source = byCreator(activeCreator);
+        dom.collectionPills.replaceChildren();
+        const options = [{ title: "All", categories: [] }, ...COLLECTIONS];
+        options.forEach((collection) => {
+          const count = collection.categories.length ? inCollection(source, collection).length : source.length;
+          if (count === 0) return;
+          const pill = document.createElement("button");
+          pill.type = "button";
+          pill.className = "sc-pill";
+          pill.dataset.categories = collection.categories.join(",");
+          pill.innerHTML = `${collection.symbol ? `<span aria-hidden="true">${collection.symbol}</span> ` : ""}${collection.title} <span class="sc-pill-count">${count}</span>`;
+          pill.addEventListener("click", () => selectCollection(collection));
+          dom.collectionPills.appendChild(pill);
         });
+      }
 
+      function updatePills() {
         dom.creatorPresets.forEach((button) => {
           button.setAttribute("aria-pressed", button.dataset.creatorPreset === activeCreator ? "true" : "false");
         });
-        if (dom.launcher) dom.launcher.dataset.gallery = activeCreator;
-        if (dom.grid) dom.grid.setAttribute("aria-label", `${CREATOR_GROUPS[activeCreator].title} projects`);
-        if (dom.collectionTitle) dom.collectionTitle.textContent = `${CREATOR_GROUPS[activeCreator].title} collections`;
-        if (dom.collectionDescription) dom.collectionDescription.textContent = CREATOR_GROUPS[activeCreator].instruction;
-        if (dom.location) {
-          dom.location.textContent = `${creatorProjects.length} ${CREATOR_GROUPS[activeCreator].plural} in ${visibleCollections} collections`;
-        }
+        dom.collectionPills.querySelectorAll(".sc-pill").forEach((pill) => {
+          const values = new Set((pill.dataset.categories || "").split(",").filter(Boolean));
+          pill.setAttribute("aria-pressed", setsMatch(state.category, values) ? "true" : "false");
+        });
       }
 
       function renderAdvancedFilters() {
-        const source = projectsForActiveCreator();
-        const difficultyValues = uniqueValues(source, "difficulty").sort((a, b) => {
-          const order = { Beginner: 0, Intermediate: 1, Advanced: 2 };
-          return (order[a] ?? 99) - (order[b] ?? 99);
-        });
-        const cohortValues = uniqueValues(source, "cohort").sort((a, b) => {
-          const order = COHORT_ORDER.indexOf(a) - COHORT_ORDER.indexOf(b);
-          return order !== 0 ? order : a.localeCompare(b);
-        });
+        const source = byCreator(activeCreator);
+        const difficultyOrder = { Beginner: 0, Intermediate: 1, Advanced: 2 };
         const filterConfig = [
-          { title: "Class / Camp", key: "cohort", values: cohortValues },
-          { title: "Category", key: "category", values: uniqueValues(source, "category").sort() },
+          { title: "Class / Camp", key: "cohort", values: uniqueValues(source, "cohort").sort((a, b) => (COHORT_ORDER.indexOf(a) - COHORT_ORDER.indexOf(b)) || a.localeCompare(b)) },
           { title: "Tech", key: "tech", values: uniqueValues(source, "tech").sort() },
-          { title: "Difficulty", key: "difficulty", values: difficultyValues },
+          { title: "Difficulty", key: "difficulty", values: uniqueValues(source, "difficulty").sort((a, b) => (difficultyOrder[a] ?? 99) - (difficultyOrder[b] ?? 99)) },
           { title: "Year", key: "year", values: uniqueValues(source, "year").map(String).sort((a, b) => Number(b) - Number(a)) },
           { title: "Term", key: "term", values: uniqueValues(source, "term").sort() },
           { title: "Solo / Team", key: "type", values: uniqueValues(source, "type").sort() },
-          { title: "Program", key: "program", values: uniqueValues(source, "program").sort() }
+          { title: "Program", key: "program", values: uniqueValues(source, "program").sort() },
         ];
-
-        dom.groups.innerHTML = "";
+        dom.groups.replaceChildren();
         filterConfig.filter((cfg) => cfg.values.length > 0).forEach((cfg) => {
           renderChipGroup({
             mount: dom.groups,
@@ -327,243 +252,186 @@ function init() {
               if (enabled) state[cfg.key].add(value);
               else state[cfg.key].delete(value);
               apply(true);
-            }
+            },
           });
         });
       }
 
-      renderCollectionFolders();
-      renderAdvancedFilters();
+      function buildShelf({ id, title, symbol, description, list, total, seeAllLabel, onSeeAll, variant }) {
+        const shelf = document.createElement("section");
+        shelf.className = `showcase-shelf${variant ? ` shelf-${variant}` : ""}`;
+        shelf.setAttribute("aria-labelledby", id);
+        const head = document.createElement("header");
+        head.className = "shelf-head";
+        head.innerHTML = `<div><h2 id="${id}"><span class="shelf-symbol" aria-hidden="true">${symbol}</span>${title}</h2><p>${description}</p></div>`;
+        if (onSeeAll && total > list.length) {
+          const more = document.createElement("button");
+          more.type = "button";
+          more.className = "shelf-see-all";
+          more.textContent = `${seeAllLabel || "See all"} ${total} →`;
+          more.setAttribute("aria-label", `See all ${total} ${title} projects`);
+          more.addEventListener("click", onSeeAll);
+          head.appendChild(more);
+        }
+        const row = document.createElement("div");
+        row.className = "project-grid shelf-row";
+        row.append(...list.map(cardFor));
+        shelf.append(head, row);
+        return shelf;
+      }
 
-      function updateChipsFromState() {
-        const chips = dom.groups.querySelectorAll(".chip");
-        chips.forEach((chip) => {
-          const key = chip.dataset.filter;
-          const val = chip.dataset.value;
-          const selected = state[key].has(val);
-          chip.setAttribute("aria-pressed", selected ? "true" : "false");
+      function renderShelves() {
+        const source = sortProjects(byCreator(activeCreator), "newest");
+        const frag = document.createDocumentFragment();
+        const creatorLabel = activeCreator === "teacher" ? "teacher" : "student";
+
+        frag.appendChild(buildShelf({
+          id: "shelf-newest",
+          title: "Just added",
+          symbol: "★",
+          description: `The newest ${creatorLabel} projects.`,
+          list: source.slice(0, SHELF_SIZE),
+          total: source.length,
+          seeAllLabel: "Browse all",
+          onSeeAll: () => selectCollection({ categories: [] }, { forceGrid: true }),
+          variant: "newest",
+        }));
+
+        COLLECTIONS.forEach((collection, index) => {
+          const list = inCollection(source, collection);
+          if (!list.length) return;
+          frag.appendChild(buildShelf({
+            id: `shelf-${index}`,
+            title: collection.title,
+            symbol: collection.symbol,
+            description: collection.description,
+            list: list.slice(0, SHELF_SIZE),
+            total: list.length,
+            onSeeAll: () => selectCollection(collection),
+          }));
         });
+
+        if (activeCreator === "student") {
+          const teacher = sortProjects(byCreator("teacher"), "newest");
+          if (teacher.length) {
+            frag.appendChild(buildShelf({
+              id: "shelf-teacher",
+              title: "Teacher Studio",
+              symbol: "⌁",
+              description: "Classroom examples and original projects made by Mr. Scandrett.",
+              list: teacher.slice(0, SHELF_SIZE),
+              total: teacher.length,
+              onSeeAll: () => switchCreator("teacher"),
+              variant: "teacher",
+            }));
+          }
+        }
+        dom.shelves.replaceChildren(frag);
       }
 
-      function categoryPresetValues(button) {
-        return new Set(
-          (button.dataset.categoryPreset || "")
-            .split(",")
-            .map((value) => value.trim())
-            .filter(Boolean)
-        );
-      }
+      // "Browse all" with nothing else set would otherwise fall straight back to shelves.
+      let forceGrid = false;
 
-      function setsMatch(left, right) {
-        return left.size === right.size && [...left].every((value) => right.has(value));
-      }
-
-      function updateCategoryPresets() {
-        dom.categoryPresets.forEach((button) => {
-          const selected = setsMatch(state.category, categoryPresetValues(button));
-          button.setAttribute("aria-pressed", selected ? "true" : "false");
-        });
-      }
-
-      function advancedFilterCount() {
-        return FILTER_KEYS.filter((key) => key !== "category").reduce((sum, key) => sum + state[key].size, 0);
-      }
-
-      function hasCustomState() {
-        return Boolean(state.q) || state.sort !== "newest" || FILTER_KEYS.some((key) => state[key].size > 0);
-      }
-
-      function openResultsShell(title, symbol, description) {
-        if (dom.home) dom.home.hidden = true;
-        if (dom.results) dom.results.hidden = false;
-        if (dom.back) dom.back.hidden = false;
-        if (dom.makerTools) dom.makerTools.hidden = true;
-        if (dom.pageTitle) dom.pageTitle.textContent = title;
-        if (dom.instruction) dom.instruction.textContent = "Tap a project to open it.";
-        if (dom.resultsTitle) dom.resultsTitle.textContent = title;
-        if (dom.resultsContext) dom.resultsContext.textContent = CREATOR_GROUPS[activeCreator].title;
-        if (dom.resultsSymbol) dom.resultsSymbol.textContent = symbol;
-        if (dom.resultsDescription) dom.resultsDescription.textContent = description || COLLECTION_DESCRIPTIONS[title] || "Tap a picture to open the project.";
-      }
-
-      function resetState() {
-        const reset = blankState();
-        state.q = reset.q;
-        state.sort = reset.sort;
-        FILTER_KEYS.forEach((key) => state[key].clear());
-      }
-
-      function showHome({ focus = true } = {}) {
-        resetState();
-        if (dom.home) dom.home.hidden = false;
-        if (dom.results) dom.results.hidden = true;
-        if (dom.back) dom.back.hidden = true;
-        if (dom.makerTools) dom.makerTools.hidden = false;
-        if (dom.pageTitle) dom.pageTitle.textContent = "Choose a collection.";
-        if (dom.instruction) dom.instruction.textContent = CREATOR_GROUPS[activeCreator].instruction;
-        if (dom.toolbar) dom.toolbar.open = false;
+      function selectCollection(collection, { forceGrid: force = false } = {}) {
+        state.category.clear();
+        collection.categories.forEach((value) => state.category.add(value));
+        forceGrid = force;
         apply(true);
-        if (focus) dom.categoryPresets.find((button) => !button.hidden)?.focus();
+        dom.launcher.querySelector(".sc-controls")?.scrollIntoView({ behavior: "smooth", block: "start" });
       }
 
-      function switchCreator(creator, { focus = true } = {}) {
-        if (!CREATOR_GROUPS[creator]) return;
+      function switchCreator(creator) {
+        if (!CREATOR_GROUPS[creator] || creator === activeCreator) return;
         activeCreator = creator;
         resetState();
-        renderCollectionFolders();
+        forceGrid = false;
+        renderCollectionPills();
         renderAdvancedFilters();
-        showHome({ focus: false });
-        if (focus) {
-          dom.creatorPresets.find((button) => button.dataset.creatorPreset === creator)?.focus();
-        }
-      }
-
-      function openCollection(button) {
-        resetState();
-        categoryPresetValues(button).forEach((value) => state.category.add(value));
-        const title = button.dataset.folderTitle || button.querySelector("strong")?.textContent || "Projects";
-        const symbol = button.dataset.folderSymbol || "★";
-        openResultsShell(title, symbol, COLLECTION_DESCRIPTIONS[title]);
+        renderShelves();
         apply(true);
-        dom.back?.focus();
-        dom.results?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-
-      function updateFilterToggle() {
-        if (!dom.filterToggle || !dom.filterPanel) return;
-        const count = advancedFilterCount();
-        const direction = dom.filterPanel.hidden ? "\u25be" : "\u25b4";
-        dom.filterToggle.textContent = `More filters${count ? ` (${count})` : ""} ${direction}`;
+        dom.launcher.querySelector(".sc-controls")?.scrollIntoView({ behavior: "smooth", block: "start" });
       }
 
       function renderActiveSummary() {
-        if (!dom.activeSummary) return;
-        dom.activeSummary.innerHTML = "";
-
-        const label = document.createElement("span");
-        label.className = "active-filter-label";
-        label.textContent = "Active:";
-        dom.activeSummary.appendChild(label);
-
-        if (state.q) {
-          const searchTag = document.createElement("button");
-          searchTag.type = "button";
-          searchTag.className = "active-filter-tag";
-          searchTag.textContent = `Search: “${state.q}” ×`;
-          searchTag.setAttribute("aria-label", `Remove search for ${state.q}`);
-          searchTag.addEventListener("click", () => {
-            state.q = "";
-            apply(true);
-            dom.search.focus();
-          });
-          dom.activeSummary.appendChild(searchTag);
-        }
-
-        if (state.category.size > 0) {
-          const matchingPreset = dom.categoryPresets.find((button) => setsMatch(state.category, categoryPresetValues(button)));
-          const categoryTag = document.createElement("button");
-          categoryTag.type = "button";
-          categoryTag.className = "active-filter-tag";
-          const categoryLabel = matchingPreset?.querySelector("strong")?.textContent || [...state.category].join(", ");
-          categoryTag.textContent = `Collection: ${categoryLabel} ×`;
-          categoryTag.setAttribute("aria-label", `Remove collection filter ${categoryLabel}`);
-          categoryTag.addEventListener("click", () => {
-            state.category.clear();
-            apply(true);
-          });
-          dom.activeSummary.appendChild(categoryTag);
-        }
-
+        dom.activeSummary.replaceChildren();
+        const addTag = (text, ariaLabel, onRemove) => {
+          const tag = document.createElement("button");
+          tag.type = "button";
+          tag.className = "active-filter-tag";
+          tag.textContent = `${text} ×`;
+          tag.setAttribute("aria-label", ariaLabel);
+          tag.addEventListener("click", () => { onRemove(); apply(true); });
+          dom.activeSummary.appendChild(tag);
+        };
+        if (state.q) addTag(`Search: “${state.q}”`, `Remove search for ${state.q}`, () => { state.q = ""; });
         FILTER_KEYS.filter((key) => key !== "category").forEach((key) => {
           state[key].forEach((value) => {
-            const tag = document.createElement("button");
-            tag.type = "button";
-            tag.className = "active-filter-tag";
-            tag.textContent = `${FILTER_LABELS[key]}: ${value} ×`;
-            tag.setAttribute("aria-label", `Remove ${FILTER_LABELS[key]} filter ${value}`);
-            tag.addEventListener("click", () => {
-              state[key].delete(value);
-              apply(true);
-            });
-            dom.activeSummary.appendChild(tag);
+            addTag(`${FILTER_LABELS[key]}: ${value}`, `Remove ${FILTER_LABELS[key]} filter ${value}`, () => state[key].delete(value));
           });
         });
-
-        const hasTags = dom.activeSummary.querySelector(".active-filter-tag");
-        dom.activeSummary.hidden = !hasTags;
+        if (dom.activeSummary.children.length) {
+          const label = document.createElement("span");
+          label.className = "active-filter-label";
+          label.textContent = "Active:";
+          dom.activeSummary.prepend(label);
+        }
+        dom.activeSummary.hidden = !dom.activeSummary.children.length;
       }
 
       function apply(resetLimit = false) {
         if (resetLimit) visibleLimit = PAGE_SIZE;
-        updateControlsFromState(state, dom);
-        const filteredSorted = filterAndSort(projectsForActiveCreator(), state);
-        const displayedProjects = filteredSorted.slice(0, visibleLimit);
-        const visibleIds = new Set(displayedProjects.map((project) => project.id));
+        dom.search.value = state.q;
+        dom.sort.value = [...dom.sort.options].some((opt) => opt.value === state.sort) ? state.sort : "newest";
 
-        const frag = document.createDocumentFragment();
+        const showGrid = forceGrid || hasCustomState();
+        dom.shelves.hidden = showGrid;
+        dom.results.hidden = !showGrid;
+        if (dom.launcher) dom.launcher.dataset.gallery = activeCreator;
 
-        displayedProjects.forEach((project) => {
-          const card = cardsById.get(project.id);
-          if (!card) return;
-          card.hidden = false;
-          card.removeAttribute("aria-hidden");
-          frag.appendChild(card);
-        });
+        if (showGrid) {
+          const matches = sortProjects(byCreator(activeCreator).filter((project) => projectMatches(project, state)), state.sort);
+          const shown = matches.slice(0, visibleLimit);
+          const shownIds = new Set(shown.map((project) => project.id));
+          const frag = document.createDocumentFragment();
+          shown.forEach((project) => {
+            const card = gridCards.get(project.id);
+            card.hidden = false;
+            card.removeAttribute("aria-hidden");
+            frag.appendChild(card);
+          });
+          gridCards.forEach((card, id) => {
+            if (shownIds.has(id)) return;
+            card.hidden = true;
+            card.setAttribute("aria-hidden", "true");
+            frag.appendChild(card);
+          });
+          dom.grid.appendChild(frag);
 
-        projects.forEach((project) => {
-          if (visibleIds.has(project.id)) return;
-          const card = cardsById.get(project.id);
-          if (!card) return;
-          card.hidden = true;
-          card.setAttribute("aria-hidden", "true");
-          frag.appendChild(card);
-        });
-
-        dom.grid.appendChild(frag);
-
-        dom.count.textContent = filteredSorted.length > visibleLimit
-          ? `Showing ${displayedProjects.length} of ${filteredSorted.length} projects`
-          : `${filteredSorted.length} project${filteredSorted.length === 1 ? "" : "s"}`;
-
-        if (dom.moreWrap && dom.more) {
-          const remaining = Math.max(0, filteredSorted.length - displayedProjects.length);
-          dom.moreWrap.hidden = remaining === 0;
+          const collection = activeCollection();
+          dom.resultsContext.textContent = CREATOR_GROUPS[activeCreator].title;
+          dom.resultsTitle.textContent = state.q ? `Results for “${state.q}”` : collection ? collection.title : "All projects";
+          dom.grid.setAttribute("aria-label", `${CREATOR_GROUPS[activeCreator].title}: ${dom.resultsTitle.textContent}`);
+          dom.count.textContent = matches.length > shown.length
+            ? `Showing ${shown.length} of ${matches.length}`
+            : plural(matches.length);
+          const remaining = matches.length - shown.length;
+          dom.moreWrap.hidden = remaining <= 0;
           dom.more.textContent = `Show more projects (${remaining} left)`;
-        }
-
-        if (filteredSorted.length === 0) {
-          dom.empty.hidden = false;
-        } else {
-          dom.empty.hidden = true;
+          dom.empty.hidden = matches.length > 0;
         }
 
         writeStateToQuery(state, activeCreator);
-        updateChipsFromState();
-        updateCategoryPresets();
+        dom.groups.querySelectorAll(".chip").forEach((chip) => {
+          chip.setAttribute("aria-pressed", state[chip.dataset.filter].has(chip.dataset.value) ? "true" : "false");
+        });
+        updatePills();
         renderActiveSummary();
         updateFilterToggle();
-        dom.clear.disabled = !hasCustomState();
+        dom.clear.disabled = !(hasCustomState() || forceGrid);
       }
 
-      dom.categoryPresets.forEach((button) => {
-        button.addEventListener("click", () => {
-          openCollection(button);
-        });
-      });
-
       dom.creatorPresets.forEach((button) => {
-        button.addEventListener("click", () => {
-          switchCreator(button.dataset.creatorPreset);
-        });
-      });
-
-      dom.back?.addEventListener("click", () => showHome());
-      dom.find?.addEventListener("click", () => {
-        resetState();
-        openResultsShell("Find a project", "⌕", COLLECTION_DESCRIPTIONS["Find a project"]);
-        if (dom.toolbar) dom.toolbar.open = true;
-        apply(true);
-        requestAnimationFrame(() => dom.search.focus());
+        button.addEventListener("click", () => switchCreator(button.dataset.creatorPreset));
       });
 
       dom.search.addEventListener("input", () => {
@@ -577,46 +445,30 @@ function init() {
       });
 
       dom.clear.addEventListener("click", () => {
-        const reset = blankState();
-        state.q = reset.q;
-        state.sort = reset.sort;
-        FILTER_KEYS.forEach((key) => {
-          state[key].clear();
-        });
+        resetState();
+        forceGrid = false;
         apply(true);
       });
 
-      if (dom.more) {
-        dom.more.addEventListener("click", () => {
-          visibleLimit += PAGE_SIZE;
-          apply(false);
-          const firstNewCard = dom.grid.querySelector(`.project-card:nth-child(${Math.max(1, visibleLimit - PAGE_SIZE + 1)})`);
-          if (firstNewCard) firstNewCard.scrollIntoView({ behavior: "smooth", block: "center" });
-        });
-      }
+      dom.more.addEventListener("click", () => {
+        visibleLimit += PAGE_SIZE;
+        apply(false);
+        dom.grid.querySelector(`.project-card:nth-child(${visibleLimit - PAGE_SIZE + 1})`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
 
-      if (advancedFilterCount() > 0 && dom.filterPanel && dom.filterToggle) {
+      renderCollectionPills();
+      renderAdvancedFilters();
+      renderShelves();
+
+      if (advancedFilterCount() > 0) {
         dom.filterPanel.hidden = false;
         dom.filterToggle.setAttribute("aria-expanded", "true");
       }
-
-      const restoredState = hasCustomState();
-      if (dom.toolbar && restoredState) {
-        dom.toolbar.open = true;
-      }
-
-      if (restoredState) {
-        openResultsShell("Project results", "⌕", COLLECTION_DESCRIPTIONS["Project results"]);
-      }
-
       apply(true);
     })
     .catch((error) => {
-      dom.grid.innerHTML = "";
-      dom.grid.setAttribute("aria-busy", "false");
-      dom.grid.appendChild(createEmptyState(error.message));
-      dom.empty.hidden = true;
-      dom.count.textContent = "0 projects";
+      dom.shelves.setAttribute("aria-busy", "false");
+      dom.shelves.replaceChildren(createEmptyState(error.message));
     });
 }
 
