@@ -1,0 +1,284 @@
+/* River Crossing: shared puzzle-exhibit layout plus this game's board. */
+
+:root {
+  --bg1: #1d3d4d;
+  --bg2: #10242e;
+  --bg3: #071116;
+  --text: #eef7fa;
+  --muted: #b5d0da;
+  --accent: #5ee1c1;
+  --on-accent: #04241c;
+  --glow: rgba(94,225,193,0.4);
+  --panel: rgba(16,38,48,0.88);
+  --border: rgba(120,210,220,0.25);
+  --button: #163746;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(ellipse at 50% -10%, var(--bg1) 0%, var(--bg2) 50%, var(--bg3) 100%);
+  font-family: "Segoe UI", "Trebuchet MS", system-ui, sans-serif;
+  color: var(--text);
+  padding: 20px 16px 40px;
+}
+
+.wrap {
+  max-width: 1060px;
+  margin: 0 auto;
+}
+
+h1 {
+  margin: 0 0 4px;
+  text-align: center;
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 16px var(--glow);
+}
+
+h2 {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+}
+
+.subtitle {
+  margin: 0 auto 20px;
+  max-width: 700px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.play {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.card {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
+}
+
+.small {
+  margin: 6px 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0;
+  font-weight: 600;
+}
+
+.field input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+select,
+button {
+  font: inherit;
+  color: var(--text);
+  background: var(--button);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+button.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+  font-weight: 700;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 4px;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.stats > div {
+  flex: 1 1 90px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.stats strong {
+  font-size: 1.25rem;
+}
+
+.status {
+  margin: 0;
+  min-height: 2.8em;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+}
+
+.status[data-tone="warn"] {
+  border-color: rgba(235, 80, 80, 0.7);
+  background: rgba(235, 80, 80, 0.14);
+}
+
+.status[data-tone="win"] {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.1);
+  font-weight: 700;
+}
+
+.about {
+  margin-top: 22px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+
+.about summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.about p {
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.solved-glow {
+  box-shadow: 0 0 0 3px var(--accent), 0 0 34px var(--glow) !important;
+}
+
+@media (max-width: 820px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------------------------------------------------------------- river-crossing */
+
+.river {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1fr;
+  min-height: 280px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.5);
+}
+
+.bank {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 6px;
+  background: linear-gradient(180deg, #7fbf6a, #4f8f3f);
+}
+
+.water {
+  position: relative;
+  background: repeating-linear-gradient(170deg, #2f8fc8 0 14px, #3a9ed6 14px 28px);
+}
+
+.boat {
+  position: absolute;
+  top: 50%;
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+  width: 58%;
+  min-height: 64px;
+  padding: 6px;
+  border-radius: 0 0 40px 40px;
+  background: #8b5a2b;
+  border-top: 5px solid #5e3a17;
+  transform: translateY(-50%);
+  transition: left 0.6s ease-in-out;
+}
+
+.boat.side-0 {
+  left: 4%;
+}
+
+.boat.side-1 {
+  left: 38%;
+}
+
+.traveler {
+  border: 0;
+  border-radius: 12px;
+  padding: 2px 6px;
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  line-height: 1.2;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.traveler:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.traveler.eaten {
+  filter: grayscale(1);
+  opacity: 0.4 !important;
+}
+
+.center {
+  justify-content: center;
+}

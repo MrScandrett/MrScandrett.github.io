@@ -1,6 +1,9 @@
-import { newGame, topDisk, canMove, move, isSolved, minimumMoves, bestMove } from "./rules.js";
+import { newGame, topDisk, canMove, move, isSolved, bestMove, solveFourPegs, fewestMoves } from "./rules.js";
 
 const disksEl = document.getElementById("disks");
+const pegsEl = document.getElementById("pegs");
+const stageEl = document.getElementById("stage");
+const solveNoteEl = document.getElementById("solveNote");
 const moveCountEl = document.getElementById("moveCount");
 const minMovesEl = document.getElementById("minMoves");
 const undoBtn = document.getElementById("undoBtn");
@@ -9,13 +12,15 @@ const restartBtn = document.getElementById("restartBtn");
 const solveBtn = document.getElementById("solveBtn");
 const speedEl = document.getElementById("speed");
 const statusEl = document.getElementById("status");
-const pegEls = [...document.querySelectorAll(".peg")];
+let pegEls = [];
 const growthBody = document.querySelector("#growth tbody");
 
 // rainbow from the biggest disk (red) to the smallest (violet)
 const DISK_COLORS = ["#8e44ad", "#3867d6", "#0fb9b1", "#20bf6b", "#f7b731", "#fa8231", "#eb3b5a", "#b33939"];
 
 const game = {
+  pegs: 3,
+  plan: null, // queued moves while showing the four-peg solution
   disks: 4,
   state: newGame(4),
   history: [],
@@ -29,6 +34,20 @@ const game = {
 function setStatus(text, tone = "") {
   statusEl.textContent = text;
   statusEl.dataset.tone = tone;
+}
+
+function buildPegs() {
+  stageEl.innerHTML = "";
+  stageEl.style.setProperty("--pegs", game.pegs);
+  pegEls = [];
+  for (let p = 0; p < game.pegs; p += 1) {
+    const peg = document.createElement("button");
+    peg.type = "button";
+    peg.className = `peg${p === game.pegs - 1 ? " target" : ""}`;
+    peg.addEventListener("click", () => clickPeg(p));
+    stageEl.appendChild(peg);
+    pegEls.push(peg);
+  }
 }
 
 function render() {
@@ -55,13 +74,13 @@ function render() {
     const top = topDisk(state, p);
     pegEl.setAttribute(
       "aria-label",
-      `Peg ${p + 1}${p === 2 ? " (goal)" : ""}: ${state[p].length ? `${state[p].length} disks, top disk ${top}` : "empty"}`
+      `Peg ${p + 1}${p === game.pegs - 1 ? " (goal)" : ""}: ${state[p].length ? `${state[p].length} disks, top disk ${top}` : "empty"}`
     );
   });
   moveCountEl.textContent = String(game.history.length);
-  minMovesEl.textContent = minimumMoves(game.disks).toLocaleString();
+  minMovesEl.textContent = fewestMoves(game.disks, game.pegs).toLocaleString();
   undoBtn.disabled = !game.history.length || game.solving;
-  hintBtn.disabled = game.solving || isSolved(state, disks);
+  hintBtn.disabled = game.solving || isSolved(state, disks) || game.pegs === 4;
 }
 
 function doMove(from, to) {
@@ -75,7 +94,7 @@ function doMove(from, to) {
 function checkWin() {
   if (!isSolved(game.state, game.disks)) return false;
   const used = game.history.length;
-  const best = minimumMoves(game.disks);
+  const best = fewestMoves(game.disks, game.pegs);
   setStatus(
     used === best
       ? `Solved in ${used} moves, the fewest possible! Try ${game.disks < 8 ? game.disks + 1 : "fewer"} disks next.`
@@ -114,6 +133,7 @@ function clickPeg(p) {
     return;
   }
   const disk = topDisk(game.state, from);
+  game.plan = null; // a hand move means the four-peg demo must start over
   doMove(from, p);
   render();
   if (!checkWin()) setStatus(`Moved disk ${disk} to peg ${p + 1}.`);
@@ -122,13 +142,21 @@ function clickPeg(p) {
 function restart() {
   stopSolving();
   game.disks = Number(disksEl.value);
-  game.state = newGame(game.disks);
+  game.pegs = Number(pegsEl.value);
+  game.state = newGame(game.disks, game.pegs);
+  game.plan = null;
+  buildPegs();
+  solveNoteEl.textContent =
+    game.pegs === 4
+      ? "With four pegs it shows the Frame–Stewart method from the start: park the small disks, move the big ones with three pegs, then bring the small ones back."
+      : "It solves from wherever the disks are now, always choosing a move on the shortest path to the goal.";
+  solveBtn.textContent = game.pegs === 4 ? "▶ Watch Frame–Stewart" : "▶ Solve from here";
   game.history = [];
   game.selected = null;
   game.hint = null;
   game.lastMoved = null;
   document.getElementById("stage").classList.remove("solved");
-  setStatus(`Move all ${game.disks} disks to peg 3. The fewest possible moves is ${minimumMoves(game.disks)}.`);
+  setStatus(`Move all ${game.disks} disks to peg ${game.pegs}. The fewest possible moves is ${fewestMoves(game.disks, game.pegs)}.`);
   render();
 }
 
@@ -148,7 +176,7 @@ function delay() {
 }
 
 function solveStep() {
-  const hint = bestMove(game.state, game.disks);
+  const hint = game.pegs === 4 ? game.plan.shift() : bestMove(game.state, game.disks);
   if (!hint) {
     stopSolving();
     checkWin();
@@ -167,7 +195,7 @@ function solveStep() {
 function stopSolving() {
   game.solving = false;
   window.clearTimeout(game.timer);
-  solveBtn.textContent = "▶ Solve from here";
+  solveBtn.textContent = game.pegs === 4 ? "▶ Watch Frame–Stewart" : "▶ Solve from here";
   render();
 }
 
@@ -178,6 +206,11 @@ solveBtn.addEventListener("click", () => {
     return;
   }
   if (isSolved(game.state, game.disks)) restart();
+  if (game.pegs === 4 && !game.plan) {
+    // the four-peg method is shown from the starting position
+    restart();
+    game.plan = [...solveFourPegs(game.disks)];
+  }
   game.solving = true;
   game.selected = null;
   solveBtn.textContent = "⏸ Pause";
@@ -186,10 +219,10 @@ solveBtn.addEventListener("click", () => {
 
 // ---------- controls ----------
 
-pegEls.forEach((pegEl, p) => pegEl.addEventListener("click", () => clickPeg(p)));
 undoBtn.addEventListener("click", () => {
   if (!game.history.length || game.solving) return;
   game.state = game.history.pop();
+  game.plan = null;
   game.selected = null;
   game.hint = null;
   game.lastMoved = null;
@@ -200,11 +233,12 @@ undoBtn.addEventListener("click", () => {
 hintBtn.addEventListener("click", showHint);
 restartBtn.addEventListener("click", restart);
 disksEl.addEventListener("change", restart);
+pegsEl.addEventListener("change", restart);
 
 document.addEventListener("keydown", (event) => {
   if (event.target.closest("select, input")) return;
-  const p = ["1", "2", "3"].indexOf(event.key);
-  if (p >= 0) clickPeg(p);
+  const p = ["1", "2", "3", "4"].indexOf(event.key);
+  if (p >= 0 && p < game.pegs) clickPeg(p);
   if (event.key === "Escape" && game.selected !== null) {
     game.selected = null;
     render();

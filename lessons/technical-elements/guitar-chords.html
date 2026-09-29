@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Guitar practice studio · Mr. Scandrett's ClassroomOS</title>
-  <meta name="description" content="Learn how guitar chords are built from intervals, then place your own notes on an interactive fretboard to see what chord you made. Includes a full 12-root chord encyclopedia." />
+  <meta name="description" content="Map diatonic triads and arpeggios onto the guitar fretboard. Hear I–ii–V–I in every major key, connect chord tones, read playable tab, and build your own harmonic route." />
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -31,16 +31,16 @@
           <section class="gtr-hero">
             <div class="hero-copy">
               <p class="eyebrow">Guitar practice studio · Grades 6–12 · Learn over several sessions</p>
-              <h1>Read it. Play it. Hear how it fits.</h1>
-              <p class="hero-lede">Start with one string and one clean note. Learn the numbers, hear intervals, find a comfortable chord, then connect it to a melody and a progression. Return to the library whenever you need a shape.</p>
+              <h1>Follow the chords through the key.</h1>
+              <p class="hero-lede">Turn a scale into triads, then turn those triads into a melody. See where each chord lives on the neck, hear I–ii–V–I, and connect your next note to the changing harmony. New to guitar? Start with the string and fret essentials below.</p>
               <div class="hero-actions">
-                <a class="primary-action" href="#anatomy">Start with the essentials</a>
-                <a class="secondary-action" href="#encyclopedia">Browse the chord encyclopedia</a>
+                <a class="primary-action" href="#arpeggios">Explore triad routes</a>
+                <a class="secondary-action" href="#anatomy">Learn strings &amp; frets</a>
               </div>
             </div>
             <div class="gtr-hero-visual gtr-session-plan">
               <h2>Your first 15 minutes</h2>
-              <ol><li><a href="#anatomy">5 minutes: read strings, frets and fingers</a></li><li><a href="#intervals">5 minutes: hear a third, then build Em</a></li><li><a href="#progressions">5 minutes: change between Em and Am</a></li></ol>
+              <ol><li><a href="#anatomy">5 minutes: read strings, frets and fingers</a></li><li><a href="#intervals">5 minutes: hear a third, then build Em</a></li><li><a href="#arpeggios">5 minutes: trace I–ii–V–I arpeggios</a></li></ol>
               <p>Next session: scales and modes. Later: inversions, voicings and your own arrangement. A clean, relaxed change matters more than speed.</p>
             </div>
           </section>
@@ -51,8 +51,9 @@
             <a href="#chordtypes"><b>03</b> Chord types</a>
             <a href="#builder"><b>04</b> Builder</a>
             <a href="#encyclopedia"><b>05</b> Encyclopedia</a>
-            <a href="#scales"><b>06</b> Scales &amp; modes</a>
-            <a href="#voicings"><b>07</b> Voicings</a><a href="#progressions"><b>08</b> Progressions</a><a href="#check"><b>09</b> Reflect</a>
+            <a href="#arpeggios"><b>06</b> Triad routes</a>
+            <a href="#scales"><b>07</b> Scales &amp; modes</a>
+            <a href="#voicings"><b>08</b> Voicings</a><a href="#progressions"><b>09</b> Progressions</a><a href="#check"><b>10</b> Reflect</a>
           </nav>
 
           <div class="gc-display-bar" id="gcDisplayBar">
@@ -261,8 +262,48 @@
             </div>
           </section>
 
+          <section class="lesson-section" id="arpeggios">
+            <div class="section-label"><span>06</span><p>Triad routes</p></div>
+            <div class="section-content">
+              <h2>Find the chord inside the scale.</h2>
+              <p>A <strong>scale</strong> moves through the key’s seven notes. A <strong>triad</strong> takes every other scale note: a root, a third and a fifth. An <strong>arpeggio</strong> plays those chord tones one at a time. Keep the key, but change the three notes you aim for as the harmony changes.</p>
+              <p class="micro-task"><strong>First experiment:</strong> leave C major and I–ii–V–I selected. Play the route, then select ii. Notice that D–F–A are <em>2–4–6 in C major</em> but <em>1–♭3–5 relative to D</em>. The chord’s root is not always the key’s tonic.</p>
+              <div class="arp-workbench">
+                <div class="arp-controls">
+                  <label>Major key<select id="arpKey"></select></label>
+                  <label>Harmonic route<select id="arpRoute"><option value="cadence">I–ii–V–I</option><option value="251">ii–V–I</option><option value="turnaround">I–vi–ii–V–I</option><option value="pop">I–V–vi–IV–I</option><option value="ladder">I–ii–iii–IV–V–vi–vii°–I</option><option value="custom">My own route</option></select></label>
+                  <label>Fret window<select id="arpPosition"><option value="0">Open–4</option><option value="4">4–8</option><option value="8">8–12</option></select></label>
+                  <label>Note path<select id="arpPath"><option value="root">Root–third–fifth–octave</option><option value="third">Third–fifth–root–third (octave)</option><option value="fifth">Fifth–root–third–fifth (octave)</option><option value="connected">Nearest entry into next triad</option></select></label>
+                  <label>Tempo (quarter notes/min)<input id="arpTempo" type="number" min="40" max="180" step="5" value="80" /></label>
+                  <label class="arp-checkbox"><input id="arpContext" type="checkbox" checked /> Show other notes in the key</label>
+                </div>
+                <h3 id="arpKeyHeading">Seven notes, seven triads</h3>
+                <div id="arpScale" class="arp-scale" aria-label="Notes and degrees of the major scale"></div>
+                <p class="arp-hint">Select any triad to explore it. Uppercase = major; lowercase = minor; ° = diminished. These qualities stay the same when you change major key.</p>
+                <div id="arpFamily" class="arp-family" role="group" aria-label="Diatonic triads"></div>
+                <div id="arpCustom" hidden><label>Choose a triad to append<select id="arpAppendDegree"></select></label><button class="gc-btn" type="button" id="arpAppend">Add triad</button><button class="gc-btn" type="button" id="arpRemove">Remove last</button><button class="gc-btn" type="button" id="arpReset">Reset to I–ii–V–I</button><p>Build up to eight bars. Repeats are welcome.</p></div>
+                <h3>Your harmonic route</h3>
+                <div id="arpTimeline" class="arp-timeline" role="group" aria-label="Bars in the arpeggio route"></div>
+                <div class="gc-builder-controls arp-transport"><button class="gc-btn gc-btn-primary" type="button" id="arpPlayRoute">Play route</button><button class="gc-btn" type="button" id="arpPlayChord">Play selected arpeggio</button><button class="gc-btn" type="button" id="arpPlayScale">Play key’s scale</button><button class="gc-btn" type="button" id="arpStop">Stop / reset playback</button><button class="gc-btn" type="button" id="arpToStudio">Add route to progression studio</button></div>
+                <p id="arpStatus" class="arp-status" role="status">Ready. Each bar plays four quarter notes.</p>
+                <div class="arp-detail"><h3 id="arpChordHeading"></h3><p id="arpFormula"></p><div id="arpToneTable" class="arp-tone-table"></div></div>
+                <p class="arp-legend"><span class="arp-role-root">Root / 1</span><span class="arp-role-third">Third / 3 or ♭3</span><span class="arp-role-fifth">Fifth / 5 or ♭5</span><span>Outlined notes = other scale tones</span></p>
+                <div class="arp-board-scroll" tabindex="0" role="region" aria-label="Playable guitar fretboard; scroll horizontally on a small screen"><div id="arpBoard" class="arp-board"></div></div>
+                <p id="arpBoardHelp" class="arp-hint"></p>
+                <h3>Four notes you can play</h3><p class="arp-hint">Read left to right. Each column is one quarter note. Numbers on strings are frets, including 0 for an open string; they are not finger numbers. Click a note to hear it.</p>
+                <div id="arpTab" class="arp-tab"></div>
+                <h3>Connect the change</h3><div id="arpConnections" class="arp-connections"></div>
+                <p class="arp-hint">“Nearest entry” minimizes the pitch jump into the next arpeggio within this fret window. It may begin on the third or fifth. This is a melodic entry choice; a chord inversion depends on the harmony’s lowest sounding note. It is not a claim that every full chord voice moves by a step.</p>
+                <div class="arp-challenge"><h3>Find the next target</h3><p id="arpQuestion"></p><div id="arpAnswers" class="gc-pick-row" role="group" aria-label="Choose a target chord tone"></div><p id="arpFeedback" role="status"></p><button type="button" id="arpNextQuestion" class="gc-btn">Try another chord change</button></div>
+              </div>
+              <ol class="arp-practice"><li><strong>Hear the difference.</strong> Play the scale, then I’s arpeggio. Say which scale notes the arpeggio skips.</li><li><strong>Name two systems.</strong> Select ii and V. Read each note as a key degree, then as a chord tone.</li><li><strong>Trace a route.</strong> Play I–ii–V–I at 60. Follow the highlighted tab and say the chord name on beat one.</li><li><strong>Connect and transpose.</strong> Choose “Nearest entry,” identify shared tones, then move to G or F major. Keep the Roman route and rebuild the notes.</li><li><strong>Make a melody.</strong> On your guitar, land on a chord tone as each bar changes. Add nearby scale notes between targets; listen for tension and resolution.</li></ol>
+              <p>In a major key, I can establish home, ii can prepare V, and V can lead back to I. Other routes are possible. Here V is a <strong>three-note major triad</strong>; adding a seventh makes V7, a separate chord type. Explore <a href="../../music-lab.html">Music Lab</a> or <a href="piano-chords.html">the piano chord lesson</a> to transfer the same relationships.</p>
+              <p class="arp-hint">Theory reference: <a href="https://musictheory.pugetsound.edu/mt21c/DiatonicChordsInMajor.html" target="_blank" rel="noopener">Music Theory for the 21st-Century Classroom: diatonic chords in major</a>. This workbench focuses on major keys; minor-key harmony has a different chord family.</p>
+            </div>
+          </section>
+
           <section class="lesson-section" id="scales">
-            <div class="section-label"><span>06</span><p>Scales &amp; modes</p></div>
+            <div class="section-label"><span>07</span><p>Scales &amp; modes</p></div>
             <div class="section-content">
               <p class="section-kicker">The palette chords are picked from</p>
               <h2>A scale is a chord's whole family of notes.</h2>
@@ -296,7 +337,7 @@
             </div>
           </section>
 
-          <section class="lesson-section" id="voicings"><div class="section-label"><span>07</span><p>Voicings</p></div><div class="section-content">
+          <section class="lesson-section" id="voicings"><div class="section-label"><span>08</span><p>Voicings</p></div><div class="section-content">
             <h2>Same harmony. Different arrangement.</h2>
             <p><strong>Inversion</strong> tells you which chord tone is lowest. <strong>Voicing</strong> tells you the register, spacing, order and doubling of all the notes. C–E–G and C–G–E are both root position if C is lowest. Triads have three bass positions; seventh chords have four.</p>
             <h3 class="gt-subhead">Choose a voicing for a musical job</h3><div class="gt-voicing-cards"><article><h3>Close</h3><p>Distinct chord tones fit within an octave.</p><p class="gt-practice"><b>Try:</b> Learn a three-string triad; compare every bass position.</p></article><article><h3>Spread / open spacing</h3><p>Chord tones span more than an octave. This does not mean open strings.</p><p class="gt-practice"><b>Try:</b> Let bass and melody stand apart.</p></article><article><h3>Drop 2 / drop 3</h3><p>From four close voices, lower the second / third voice from the top by an octave.</p><p class="gt-practice"><b>Try:</b> Compare the resulting bass position and string skips.</p></article><article><h3>Shell</h3><p>Use root, third and seventh; omit the fifth.</p><p class="gt-practice"><b>Try:</b> Leave room for another instrument.</p></article><article><h3>Rootless</h3><p>Omit the root when a bass player or context supplies it.</p><p class="gt-practice"><b>Try:</b> Cmaj7 can use E–G–B; alone this also sounds like Em.</p></article><article><h3>Extensions / alterations</h3><p>9 = 2 + octave, 11 = 4 + octave, 13 = 6 + octave; ♭/♯ alters a tone.</p><p class="gt-practice"><b>Try:</b> C9 includes B♭; Cadd9 does not. C13 often uses C–E–B♭–A, omitting fifth, ninth and eleventh.</p></article></div>
@@ -305,7 +346,7 @@
             <div id="studioVoiceBoard"></div><p id="studioVoiceInfo" aria-live="polite"></p><div class="gc-builder-controls"><button type="button" class="gc-btn" id="studioVoiceNext">Another playable location</button><button type="button" class="gc-btn" id="studioVoicePlay">Hear voicing</button><button type="button" class="gc-btn" id="studioVoiceAdd">Add voicing to progression</button></div></div>
             <p class="micro-task"><strong>Practice:</strong> choose C major, close voicing. Play root, first and second inversion. Sing the bass note each time. Then try Cmaj7 drop 2. Arpeggiate slowly to check every intended string rings.</p>
           </div></section>
-          <section class="lesson-section" id="progressions"><div class="section-label"><span>08</span><p>Progressions</p></div><div class="section-content">
+          <section class="lesson-section" id="progressions"><div class="section-label"><span>09</span><p>Progressions</p></div><div class="section-content">
             <h2>Turn shapes into a piece of music.</h2>
             <p>In major keys, the triads are <strong>I · ii · iii · IV · V · vi · vii°</strong>. Capitals mean major; lowercase means minor; ° means diminished. I is home, IV and ii often lead away, and V often leads back. These are useful tendencies, not rules every song must follow.</p>
             <p>Start with Em–Am, one chord per bar. Count “1, 2, 3, 4.” Change on the next 1. Then try a numbered pattern, or add exact grips from either chord explorer. Move chords earlier or later and listen to how the ending changes.</p>
@@ -317,7 +358,7 @@
           </div></section>
 
           <section class="lesson-section" id="check">
-            <div class="section-label"><span>09</span><p>Reflect</p></div>
+            <div class="section-label"><span>10</span><p>Reflect</p></div>
             <div class="section-content">
               <p class="section-kicker">Exit ticket</p>
               <h2>Can you think in intervals now?</h2>
@@ -329,6 +370,7 @@
                 <fieldset><legend>4. What's the difference between D Ionian and D Dorian?</legend><label><input type="radio" name="q4" value="wrong" /> D Dorian uses a different root note</label><label><input type="radio" name="q4" value="correct" /> D Dorian lowers D Ionian’s third and seventh, with D still the tonic</label><label><input type="radio" name="q4" value="wrong" /> Dorian has one more note than Ionian</label></fieldset>
                 <button type="button" id="gcCheckQuiz">Check my answers</button><p id="gcQuizResult" aria-live="polite"></p>
               </div>
+              <p class="micro-task"><strong>Triad route exit ticket:</strong> in C major, name ii’s notes and their key degrees. Which note do ii and V share? Which note do V and I share? Transpose I–ii–V–I to G major, then play the route using only chord tones.</p>
               <div class="finish-line">
                 <div><p class="section-kicker">You now know the pattern</p><h3>Same shape, different root.</h3><p>A fully fretted shape can move as a unit; open-string notes must move too, usually with a barre or capo. Slide the F major barre shape up two frets and it becomes G major — nothing else changes. Try building chords in a song you know using only the encyclopedia above.</p></div>
                 <div class="finish-actions"><a href="piano-chords.html">Try it on piano →</a><a href="../physics/waves-and-sound/physics-of-music.html">Physics of Music →</a></div>
@@ -342,12 +384,12 @@
         <div class="ll-panel-head"><div class="ll-tabs"><button class="ll-tab" aria-selected="true" data-pane="pane-guide">Guide</button><button class="ll-tab" aria-selected="false" data-pane="pane-vocab">Vocab</button><button class="ll-tab" aria-selected="false" data-pane="pane-practice">Practice list</button></div><button class="ll-panel-close" aria-label="Close guide panel">&#x2715;</button></div>
         <div class="ll-panel-body">
           <div class="ll-pane ll-active" id="pane-guide">
-            <p class="ll-pane-title">Learning goals</p><ul class="ll-guide-list"><li>Read a fretboard chord diagram</li><li>Explain intervals as semitone distances</li><li>Build major, minor, and 7th chords from a formula</li><li>Recognize inversions and slash chords</li><li>Use a movable shape to find a chord in any key</li></ul>
+            <p class="ll-pane-title">Learning goals</p><ul class="ll-guide-list"><li>Read a fretboard chord diagram</li><li>Explain intervals as semitone distances</li><li>Build major, minor, and 7th chords from a formula</li><li>Recognize inversions and slash chords</li><li>Use a movable shape to find a chord in any key</li><li>Map triad chord tones to degrees of a major key</li><li>Play and transpose I–ii–V–I arpeggio routes</li></ul>
             <p class="ll-pane-title panel-gap">Materials</p><ul class="ll-guide-list"><li>This browser tab</li><li>A guitar, if you have one — optional</li></ul>
             <p class="ll-pane-title panel-gap">Extension</p><p class="panel-copy">Compare the chord you built to its relative — an Am7 and a C6 share every note. Find another pair like it in the encyclopedia.</p>
           </div>
           <div class="ll-pane" id="pane-vocab">
-            <p class="ll-pane-title">Key vocabulary</p><dl class="vocab-list"><dt>Root</dt><dd>The note a chord is named after.</dd><dt>Interval</dt><dd>The semitone distance between two notes.</dd><dt>Triad</dt><dd>A three-note chord: root, 3rd, and 5th.</dd><dt>Inversion</dt><dd>A chord with a chord tone other than the root as its lowest sounding note.</dd><dt>Slash chord</dt><dd>Notation like C/E — a C chord with E in the bass.</dd><dt>Barre chord</dt><dd>A shape where one finger presses multiple strings, movable to any fret.</dd><dt>Open chord</dt><dd>A chord that uses at least one unfretted string.</dd><dt>Voicing</dt><dd>One specific arrangement of a chord's notes on the neck.</dd></dl>
+            <p class="ll-pane-title">Key vocabulary</p><dl class="vocab-list"><dt>Root</dt><dd>The note a chord is named after.</dd><dt>Interval</dt><dd>The semitone distance between two notes.</dd><dt>Triad</dt><dd>A three-note chord: root, 3rd, and 5th.</dd><dt>Inversion</dt><dd>A chord with a chord tone other than the root as its lowest sounding note.</dd><dt>Slash chord</dt><dd>Notation like C/E — a C chord with E in the bass.</dd><dt>Barre chord</dt><dd>A shape where one finger presses multiple strings, movable to any fret.</dd><dt>Open chord</dt><dd>A chord that uses at least one unfretted string.</dd><dt>Diatonic</dt><dd>Built from the notes of the selected key.</dd><dt>Arpeggio</dt><dd>Chord tones played one at a time.</dd><dt>Key degree</dt><dd>A note’s place in the key’s scale, counted from the tonic.</dd><dt>Common tone</dt><dd>A note shared by two chords.</dd><dt>Voicing</dt><dd>One specific arrangement of a chord's notes on the neck.</dd></dl>
           </div>
           <div class="ll-pane" id="pane-practice">
             <p class="ll-pane-title">Your practice list</p>
@@ -369,6 +411,7 @@
   <p id="gcLiveStatus" class="visually-hidden" role="status" aria-live="polite"></p>
 
   <script src="../../assets/js/lessons/guitar-chords.js"></script>
+  <script src="../../assets/js/lessons/guitar-arpeggios.js"></script>
   <script src="../../assets/js/photo-lightbox.js"></script>
   <script src="../../assets/js/reveal.js"></script>
   <script src="../../assets/js/theme-registry.js"></script>

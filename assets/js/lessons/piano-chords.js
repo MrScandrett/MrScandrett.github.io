@@ -745,9 +745,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   /* ---------- Diatonic triad ladder (root / 1st inv / 2nd inv walk-up) ----------
      The seven triads built on each degree of the C major scale, root-to-root —
-     the classic piano method-book voice-leading drill: play them root position
-     (big hand jumps), then the same seven chords in 1st and 2nd inversion (each
-     neighbor barely moves, since only one note changes). The 8th entry repeats
+     compare the bass in root position, first inversion and second inversion.
+     Adjacent scale-degree triads need not share tones; movement depends on
+     the actual voicings. The 8th entry repeats
      the tonic to close the ladder back home. */
   var DIATONIC_TRIADS = [
     { root: 0, suffix: '' }, { root: 2, suffix: 'm' }, { root: 4, suffix: 'm' },
@@ -1026,6 +1026,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var studioTimers = [];
   function laterTimer(fn, ms) { studioTimers.push(setTimeout(fn, ms)); }
   function studioStop() {
+    window.dispatchEvent(new Event('piano-studio-stop'));
     studioTimers.forEach(clearTimeout); studioTimers = [];
     if (window.PianoAudio) window.PianoAudio.stop();
     document.querySelectorAll('.studio-playing').forEach(function (el) { el.classList.remove('studio-playing'); });
@@ -1034,12 +1035,19 @@ document.addEventListener('DOMContentLoaded', function () {
   var pcStopBtn = document.getElementById('pcStop');
   var pcVolumeIn = document.getElementById('pcVolume');
   var pcSizeSel = document.getElementById('pcSize');
-  if (pcStopBtn) pcStopBtn.addEventListener('click', studioStop);
+  if (pcStopBtn) pcStopBtn.addEventListener('click', function () { studioStop(); });
   if (pcVolumeIn) pcVolumeIn.addEventListener('input', function () { if (window.PianoAudio) window.PianoAudio.setVolume(Number(pcVolumeIn.value) / 100); });
   if (pcSizeSel) pcSizeSel.addEventListener('change', function () { document.body.classList.toggle('pc-large', pcSizeSel.value === 'large'); });
   document.addEventListener('visibilitychange', function () { if (document.hidden) studioStop(); });
-  window.addEventListener('pagehide', studioStop);
+  window.addEventListener('pagehide', function () { studioStop(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !e.target.closest('dialog, [role=dialog]')) studioStop(); });
+
+  // A new demonstration stops the previous synth schedule and visual cursor.
+  document.addEventListener('click', function (event) {
+    var btn = event.target.closest('button');
+    if (btn && btn.id !== 'pcPlayProg' && btn.id !== 'pcPiecePlay' &&
+        (/Play|Broken|Hear/i.test(btn.textContent) || btn.classList.contains('pc-key'))) studioStop();
+  }, true);
 
   /* ---------- Voicings: close vs. open (spread) position ---------- */
   var voiceRootPicker = document.getElementById('pcVoiceRootPicker');
@@ -1204,6 +1212,12 @@ document.addEventListener('DOMContentLoaded', function () {
     if (progTransport) progTransport.textContent = 'Added ' + name + ' as bar ' + pcProgression.length + '.';
     return true;
   }
+
+  window.addEventListener('piano-add-route', function (event) {
+    event.detail.entries.forEach(function (entry) {
+      if (addProgressionEntry(entry.name, entry.abs)) event.detail.added++;
+    });
+  });
 
   function showNowPlaying(entry) {
     if (!progNowBoard) return;
@@ -1604,9 +1618,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     notes.forEach(function (note, i) {
       var x = 66 + i * cellW;
-      var step = diatonicStep(note.absIndex);
+      var spelling = note.spelling && /^([A-G])([♭♯]?)([0-9])$/.exec(note.spelling);
+      var step = spelling ? Number(spelling[3]) * 7 + LETTER_ORDER.indexOf(spelling[1]) - STAFF_REF_STEP : diatonicStep(note.absIndex);
       var y = yForStep(step);
-      var info = PC_TO_LETTER[PT.mod12(note.absIndex)];
+      var info = spelling ? { acc: spelling[2] === '♭' ? -1 : spelling[2] === '♯' ? 1 : 0 } : PC_TO_LETTER[PT.mod12(note.absIndex)];
       var isHollow = (note.dur || 1) >= 2;
       var groupClasses = 'pc-note-group' + (opts.currentIndex === i ? ' is-current' : '') + (opts.onNoteClick ? ' is-clickable' : '');
 
@@ -1625,11 +1640,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       }
 
-      var accidental = info.acc ? '<text class="pc-note-accidental" x="' + (x - 17) + '" y="' + (y + 5) + '">♯</text>' : '';
+      var accidental = info.acc ? '<text class="pc-note-accidental" x="' + (x - 17) + '" y="' + (y + 5) + '">' + (info.acc < 0 ? '♭' : '♯') + '</text>' : '';
       var dot = note.dotted ? '<circle class="pc-note-dot" cx="' + (x + 10) + '" cy="' + (y - 2) + '" r="1.6" />' : '';
       var stemUp = step < 4;
       var stem = '<line class="pc-note-stem" x1="' + (x + (stemUp ? 6.2 : -6.2)) + '" x2="' + (x + (stemUp ? 6.2 : -6.2)) + '" y1="' + y + '" y2="' + (stemUp ? y - 30 : y + 30) + '" />';
-      var label = opts.showLabels ? '<text class="pc-note-label" x="' + x + '" y="' + (bottomLineY + 26) + '">' + PT.noteLabel(note.absIndex) + '</text>' : '';
+      var label = opts.showLabels ? '<text class="pc-note-label" x="' + x + '" y="' + (bottomLineY + 26) + '">' + (spelling ? note.spelling : PT.noteLabel(note.absIndex)) + '</text>' : '';
 
       svg += '<g class="' + groupClasses + '" data-index="' + i + '">' + ledgers +
         accidental +
@@ -1646,6 +1661,8 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     }
   }
+
+  PT.renderStaff = renderStaff;
 
   /* ---------- Reading music: click a key, see it appear on the staff ---------- */
   var readBoard = document.getElementById('pcReadBoard');
@@ -1810,10 +1827,13 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function stopPiece() {
+    var wasPlaying = piecePlaying;
     piecePlaying = false;
     pieceTimers.forEach(clearTimeout); pieceTimers = [];
     if (piecePlayBtn) piecePlayBtn.textContent = '▶ Play';
     renderPieceStaff(-1);
+    if (pieceKeyboardEl) renderKeyboard(pieceKeyboardEl, { active: {}, interactive: false, playable: false });
+    if (wasPlaying && pieceTransport) pieceTransport.textContent = 'Stopped. Replay starts at the first note.';
   }
 
   if (pieceRow) {

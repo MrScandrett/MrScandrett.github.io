@@ -51,7 +51,14 @@
     $('chapter-progress').textContent = visited.size + ' of 12 chapters explored.';
     if (mark) save();
   }
-  chapters.forEach((c, i) => { const b = document.createElement('button'); b.type = 'button'; b.dataset.chapter = i; b.textContent = (i + 1) + '. ' + c[0]; b.addEventListener('click', () => openChapter(i)); $(i < 6 ? 'story-buttons' : 'vision-buttons').append(b); });
+  chapters.forEach((c, i) => { const b = document.createElement('button'); b.type = 'button'; b.dataset.chapter = i; b.textContent = (i + 1) + '. ' + c[0]; b.addEventListener('click', () => {
+      openChapter(i);
+      if (window.matchMedia('(max-width: 650px)').matches) {
+        $('chapter-heading').setAttribute('tabindex', '-1');
+        $('chapter-heading').focus({preventScroll: true});
+        document.querySelector('.dan-panel').scrollIntoView({block: 'start', behavior: 'instant'});
+      }
+    }); $(i < 6 ? 'story-buttons' : 'vision-buttons').append(b); });
   $('chapter-prev').addEventListener('click', () => openChapter(currentChapter - 1));
   $('chapter-next').addEventListener('click', () => openChapter(currentChapter + 1));
   document.querySelectorAll('[data-jump-chapter]').forEach(b => b.addEventListener('click', () => {

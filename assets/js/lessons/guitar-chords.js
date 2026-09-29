@@ -1127,9 +1127,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   /* ---------- Diatonic triad ladder (root / 1st inv / 2nd inv walk-up) ----------
      The seven triads built on each degree of the C major scale, root-to-root —
-     the classic voice-leading drill: play them root position (big jumps), then
-     the same seven chords in 1st and 2nd inversion (each neighbor barely moves,
-     since only one note changes). The 8th entry repeats the tonic to close the
+     compare the bass in root position, first inversion, and second inversion.
+     Adjacent scale-degree triads need not share tones; actual movement depends
+     on the chosen voicings. The 8th entry repeats the tonic to close the
      ladder back home. */
   var DIATONIC_TRIADS = [
     { root: 0, suffix: '' }, { root: 2, suffix: 'm' }, { root: 4, suffix: 'm' },
@@ -1764,6 +1764,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var studioTimers = [], progression = [], voiceGrips = [], voiceIndex = 0, progressionPlaying = false;
   var $ = function(id) { return document.getElementById(id); };
   function studioStop() {
+    window.dispatchEvent(new Event('guitar-studio-stop'));
     studioTimers.forEach(clearTimeout); studioTimers = [];
     window.GuitarAudio.stop();
     document.querySelectorAll('.studio-playing').forEach(function(el) { el.classList.remove('studio-playing'); });
@@ -1794,6 +1795,10 @@ document.addEventListener('DOMContentLoaded', function () {
     $('studioTransport').textContent='Added '+name+' as bar '+progression.length+'.';
     return true;
   }
+  window.addEventListener('guitar-add-route', function(event) {
+    studioStop();
+    event.detail.entries.forEach(function(entry) { if (addProgression(entry.name, entry.frets)) event.detail.added++; });
+  });
   function showNowPlaying(entry) {
     var host=$('studioNowBoard'); if(!host) return;
     if(!entry) { host.hidden=true; return; }

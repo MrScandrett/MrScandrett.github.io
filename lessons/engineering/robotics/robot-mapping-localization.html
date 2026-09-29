@@ -5,13 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Where Am I? Robot Mapping &amp; Localization · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
-  <meta name="description" content="Drive a LiDAR robot that builds an occupancy grid map, watch odometry drift smear the map, then localize the robot on a known map with a particle filter. An introduction to SLAM." />
+  <meta name="description" content="Drive a LiDAR robot that builds an occupancy grid map, watch odometry drift smear the map, then localize the robot on a known map with a particle filter. Recreate mapping in class with ELEGOO ultrasonic sensors, Arduino code, a scan notebook, or paper and tape measures." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../assets/css/lessons/robot-autonomy.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/robot-mapping-classroom.css" />
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -32,8 +33,9 @@
             <div>
               <p class="ra-kicker">Engineering · Robot Autonomy · Perception</p>
               <h1 id="ra-title">Where Am I? <span>Mapping &amp; Localization</span></h1>
-              <p class="ra-lede">A robot dropped into a new building knows nothing: not where the walls are, and not where <em>it</em> is. Every self-driving car, warehouse robot, and robot vacuum has to answer two questions at once — <strong>what does the world look like?</strong> and <strong>where am I in it?</strong> Build a map from laser scans, watch small wheel errors wreck it, then use a cloud of guesses to find a lost robot.</p>
-              <div class="ra-meta"><span>Grades 7–12</span><span>50–60 minutes</span><span>Two live sims</span><span>Probability</span></div>
+              <p class="ra-lede">A robot dropped into a new building knows nothing: not where the walls are, and not where <em>it</em> is. Every self-driving car, warehouse robot, and robot vacuum has to answer two questions at once — <strong>what does the world look like?</strong> and <strong>where am I in it?</strong> Build a map from laser scans, then recreate the experiment with an ELEGOO ultrasonic sensor or a tape measure. Watch position errors distort a map and use a cloud of guesses to find a lost robot.</p>
+              <div class="ra-meta"><span>Grades 7–12</span><span>1–2 class periods</span><span>Sim + classroom builds</span><span>No electronics required</span></div>
+              <nav class="rm-jumps" aria-label="Lesson activities"><a href="#classroom-build">Choose a classroom build</a><a href="#scan-notebook">Plot your measurements</a><a href="#mapping-sim">Explore the simulation</a></nav>
               <a class="ra-back" href="../../../steam-lessons.html#module-engineering">← Back to Engineering</a>
             </div>
             <svg class="ra-hero-art" viewBox="0 0 320 220" role="img" aria-labelledby="hero-art-title">
@@ -57,7 +59,104 @@
             </div>
           </section>
 
-          <section class="ra-card" style="--ra-accent:var(--ra-lime);">
+          <section class="ra-card rm-build" id="classroom-build" style="--ra-accent:var(--ra-blue);">
+            <p class="ra-label">Classroom fieldwork</p><h2>Build a map of your own</h2>
+            <p>Start with a tabletop room made from upright cardboard walls. Mark a sensor station on graph paper, then measure distances in several directions. You can reproduce the key ideas without buying a LiDAR or building a driving robot.</p>
+            <div class="ra-cols rm-routes">
+              <article><h3><a href="#paper-mapping">Paper + tape measure</a></h3><p>20–30 minutes · No electronics. Students act as sensor, mapper, and position tracker. Best first encounter with free, occupied, and unknown space.</p></article>
+              <article><h3><a href="#sonar-mapping">ELEGOO sonar station</a></h3><p>45–60 minutes after setup · UNO R3, HC-SR04, optional positional servo. Collect real echoes and plot them in the scan notebook below.</p></article>
+              <article><h3><a href="#car-mapping">Robot-car extension</a></h3><p>One extra class · Stop at marked stations and scan. Compare measured position with a motion estimate to reveal drift.</p></article>
+            </div>
+            <p class="rm-note"><strong>What we are modeling:</strong> these activities use known or manually measured sensor positions. They demonstrate mapping and localization separately; they do not run a complete SLAM algorithm. Ultrasound spreads into a cone, so its echoes are less precise in direction than the sim’s laser rays.</p>
+
+            <details id="paper-mapping" open>
+              <summary>Paper + tape measure: become the robot</summary>
+              <p><strong>Gather:</strong> graph paper, ruler or tape measure, protractor, pencil, cardboard walls, and three colored pencils. Work in teams of three: sensor operator, mapper, and checker. Use a 10 cm grid for a tabletop room or a larger taped floor grid.</p>
+              <ol>
+                <li><strong>Predict:</strong> put a paper robot at a marked station facing the top of the page. Predict which parts of the room one scan can reveal.</li>
+                <li><strong>Measure:</strong> at 30°, 60°, 90°, 120°, and 150°, measure from the robot’s center to the first wall. Here 90° is straight ahead, 0° is right, and 180° is left. Do not measure through an obstacle.</li>
+                <li><strong>Map:</strong> draw each measurement to scale. Mark the endpoint occupied, cells crossed before it free, and everything behind it unknown. Leave unmeasured gaps unknown, too.</li>
+                <li><strong>Test drift:</strong> move the robot 20 cm right. First plot the new scan as if it moved 25 cm; then plot it using the measured 20 cm. Which walls agree?</li>
+                <li><strong>Compare:</strong> overlay the map on the cardboard room. Label one area the sensor never saw. Explain why “unknown” does not mean “empty.”</li>
+              </ol>
+              <p><strong>DIY variations:</strong> rotate a ruler around a paper protractor for a tiny desk model, or use taut string and a tape measure for a floor map. Keep students’ eyes open; the mapper can face away from the room and receive only angle/distance reports.</p>
+            </details>
+
+            <details id="sonar-mapping" open>
+              <summary>ELEGOO UNO R3 + HC-SR04: map with sound</summary>
+              <p><strong>Gather:</strong> a 5 V UNO R3-compatible board (such as ELEGOO), USB cable, HC-SR04 ultrasonic module, breadboard, jumper wires, cardboard walls, and a protractor. Optional: an SG90-style <em>positional</em> servo and a regulated 5 V servo supply. Check your kit inventory; not every ELEGOO kit contains these parts.</p>
+              <p>Mount the sensor level with the walls. Tape its base down at a known station. Start with large, flat targets 20–100 cm away; keep fabric and narrow table legs out of the first test. Aim from the midpoint between the two transducers.</p>
+              <div class="rm-table-wrap"><table class="rm-table"><caption>Stationary scanner wiring · UNO R3 only</caption><thead><tr><th scope="col">Component lead</th><th scope="col">Connect to</th><th scope="col">Reason</th></tr></thead><tbody>
+                <tr><td>HC-SR04 VCC / GND</td><td>UNO 5 V / GND</td><td>Sensor power and reference</td></tr>
+                <tr><td>HC-SR04 TRIG / ECHO</td><td>D7 / D8</td><td>Send a pulse / time the returning echo</td></tr>
+                <tr><td>Servo signal (often orange/yellow)</td><td>D9</td><td>Command the scan angle</td></tr>
+                <tr><td>Servo + (often red)</td><td>External regulated 5 V +</td><td>Supply rated for the servo’s current</td></tr>
+                <tr><td>Servo ground (often brown/black)</td><td>Supply − and UNO GND</td><td>All grounds share a reference</td></tr>
+              </tbody></table></div>
+              <p class="rm-note">Disconnect power while wiring. Check pin labels and servo documentation rather than trusting wire color. Do not connect the external supply’s positive lead to the UNO 5 V pin while USB powers the board. An HC-SR04’s 5 V ECHO must be level-shifted for a 3.3 V board. This wiring and sketch are for a standalone UNO, not a robot-car shield.</p>
+              <ol>
+                <li><strong>Upload:</strong> <a href="../../../assets/downloads/robotics/classroom-sonar/classroom-sonar.ino" download>download the classroom-sonar Arduino sketch</a>. Save it in a folder named <code>classroom-sonar</code>, open it in Arduino IDE, choose the UNO board and port, and upload. It uses the standard Servo library.</li>
+                <li><strong>Align:</strong> the sketch centers the servo at 90°. Disconnect power, mount the sensor facing forward, then reconnect. Confirm that 30° points right and 150° left. If reversed, set <code>REVERSE_ANGLE = true</code>. Avoid the servo’s mechanical stops.</li>
+                <li><strong>No servo?</strong> set <code>USE_SERVO = false</code>. Place the sensor over a protractor; the sketch prompts for each angle. Turn it by hand and send <code>n</code> when ready.</li>
+                <li><strong>Calibrate:</strong> open Serial Monitor at <strong>9600 baud</strong>. Send <code>s</code> to take one scan. Compare the 90° reading with a ruler at 20, 50, and 100 cm. Repeat three times and record the spread before mapping.</li>
+                <li><strong>Collect:</strong> copy the angle/distance rows into the notebook below. The sketch takes three echoes per angle and reports their median only if all three are valid. <code>NA</code> means unknown; never turn a timeout into a zero-distance wall.</li>
+                <li><strong>Repeat:</strong> move to a second marked station, measure its x/y position and heading, and add its scan. Change one thing at a time: target material, angle spacing, or estimated position.</li>
+              </ol>
+              <p><strong>Echo math:</strong> distance in cm ≈ echo time in microseconds × 0.0343 ÷ 2. We divide by two because the sound travels to the object and back. The sketch waits at least 65 ms between pings and accepts 2–200 cm for this classroom experiment.</p>
+              <p><strong>Troubleshoot:</strong> repeated NA → check pins, common ground, and a broad flat target. Board resets or a jittering servo → check the servo supply. Slanted walls can reflect sound away; cloth can weaken echoes. Two sensors pinging together can interfere, so run one station at a time or stagger scans.</p>
+              <p>Build support: <a href="https://www.elegoo.com/blogs/arduino-projects">ELEGOO kit downloads</a>, <a href="https://docs.arduino.cc/learn/electronics/servo-motors/">Arduino servo wiring and power</a>, and <a href="https://docs.arduino.cc/language-reference/en/functions/advanced-io/pulseIn/">Arduino echo pulse timing</a>.</p>
+            </details>
+
+            <details id="car-mapping">
+              <summary>Robot car: stop, scan, move, repeat</summary>
+              <p><strong>Gather:</strong> your assembled ELEGOO car or DIY chassis with a distance sensor, a taped course, ruler, and paper heading marks. Use the manufacturer’s example to verify the sensor and motors first. Car versions use different shields and pin assignments; do not upload the standalone scanner sketch unchanged.</p>
+              <ol>
+                <li>Make a small cardboard room and tape three stations 20–30 cm apart. Keep the car on the floor and the course clear.</li>
+                <li>For the first map, move the car by hand between stations with its motors disabled. Stop completely to scan; record the sensor’s position, not just the wheel axle.</li>
+                <li>Next, run a short low-speed drive between stations using your car’s own control example. Record the predicted motion and measure the actual displacement and heading.</li>
+                <li>Plot identical scans twice: once with the predicted pose and once with the measured pose. Compare the mismatch at a wall seen from both stations.</li>
+                <li>Return to the first station. Use a recognizable corner to correct the pose manually. Explain how this models the purpose of loop closure.</li>
+              </ol>
+              <p><strong>Extensions:</strong> wheel encoders estimate distance from turns (distance ≈ turns × wheel circumference); compare against a ruler to reveal slip. An IMU can help estimate turning, but a gyro’s bias also drifts. A line sensor can detect a taped checkpoint; it does not measure the distance to a room wall.</p>
+              <p><strong>Limit:</strong> motor-on time is only a rough motion estimate, not measured wheel odometry. Autonomous SLAM needs a pose estimator and repeated scan matching or another correction method. Use <a href="https://www.elegoo.com/blogs/arduino-projects/elegoo-smart-robot-car-kit-v4-0-tutorial">ELEGOO’s V4.0 documentation</a> only if that is your car version; find other versions in the download center.</p>
+            </details>
+          </section>
+
+          <section class="ra-card rm-notebook" id="scan-notebook" style="--ra-accent:var(--ra-yellow);">
+            <p class="ra-label">From measurement to map</p><h2>Your scan notebook</h2>
+            <p>Paste a sensor scan or type tape-measure readings. Set the <strong>pose</strong> (position + heading) where the scan was taken, then add it to the plot. Add a second scan to see whether the walls line up. This draws measured endpoints and approximate beam paths, not a probabilistic occupancy grid.</p>
+            <div class="rm-workbench">
+              <div>
+                <div class="rm-plot"><canvas id="scan-canvas" aria-label="Measured scan plot, 600 by 600 centimeters; blue first scan, orange later scans. Coordinate details appear in the table below."></canvas></div>
+                <p class="rm-key">Blue = first scan · orange = later scans · dot = possible surface · line = approximate sound path. Blank areas remain unknown.</p>
+              </div>
+              <form id="scan-form" class="rm-form">
+                <fieldset><legend>Sensor pose (cm)</legend><div class="rm-pose">
+                  <label>x <input id="scan-x" type="number" min="0" max="600" step="any" value="300" required></label>
+                  <label>y <input id="scan-y" type="number" min="0" max="600" step="any" value="100" required></label>
+                  <label>Heading ° <input id="scan-heading" type="number" min="-360" max="360" step="any" value="0" required></label>
+                </div></fieldset>
+                <p class="rm-key">Origin is bottom left. x goes right, y goes up. Heading 0° faces up; positive headings turn left. Scan angle 90° faces forward.</p>
+                <label for="scan-data">Angle °, distance cm (one pair per line)</label>
+                <textarea id="scan-data" rows="10" spellcheck="false" placeholder="30,80&#10;90,100&#10;150,NA" required></textarea>
+                <p class="rm-key">Angles: 0–180°. Distances: 2–200 cm. Headers and # comments are accepted. NA is skipped.</p>
+                <div class="ra-btns"><button type="submit" class="ra-btn">Add scan</button><button id="scan-example" type="button" class="ra-btn">Load example</button><button id="scan-undo" type="button" class="ra-btn">Undo last</button><button id="scan-clear" type="button" class="ra-btn">Clear notebook</button><button id="scan-export" type="button" class="ra-btn">Export CSV</button></div>
+                <p id="scan-status" role="status">No scans yet. Load an example or enter your measurements.</p>
+              </form>
+            </div>
+            <details><summary>See endpoint coordinates</summary><div class="rm-table-wrap"><table class="rm-table"><caption>Notebook measurements (not saved after reloading)</caption><thead><tr><th scope="col">Scan</th><th scope="col">Angle °</th><th scope="col">Range cm</th><th scope="col">Endpoint x</th><th scope="col">Endpoint y</th></tr></thead><tbody id="scan-rows"></tbody></table></div></details>
+            <p class="rm-note"><strong>Try a position error:</strong> add the example at x = 300. Change x to 325 and add the same readings again. The surfaces separate by 25 cm although the readings did not change. Clear the notebook and repeat with scans from two measured stations.</p>
+            <p><strong>Math bridge:</strong> endpoint x = sensor x + distance × cos(heading + scan angle); endpoint y = sensor y + distance × sin(heading + scan angle). Convert degrees to radians when using code. A sonar echo can come from anywhere within its beam; the endpoint dot is a convenient approximation, not a pinpoint measurement.</p>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-copper);">
+            <p class="ra-label">Localization you can hold</p><h2>Find the hidden station</h2>
+            <p>Draw a known room map and mark four possible sensor stations with the same heading. The teacher chooses one and reports three tape-measure or sonar distances. Put a counter at every candidate station; predict the three readings from each position.</p>
+            <ol><li><strong>Score:</strong> compare predicted and measured distances. Keep more counters at stations with smaller mismatches; allow a few centimeters of sensor error.</li><li><strong>Resample:</strong> make a new set of ten counters by copying well-matching stations more often. This is a simplified, discrete version of the particle filter.</li><li><strong>Move:</strong> announce a 20 cm move and shift each candidate position. Take a new scan to distinguish stations that initially looked alike.</li><li><strong>Kidnap:</strong> secretly choose a new station. Repeat with and without two fresh random guesses. Which group can recover?</li></ol>
+            <p><strong>Exit ticket:</strong> submit two scans with pose labels, a map showing free/occupied/unknown space, one repeated-measurement comparison, and a sentence explaining whether your activity performed mapping, localization, or full SLAM.</p>
+          </section>
+
+          <section class="ra-card" id="mapping-sim" style="--ra-accent:var(--ra-lime);">
             <p class="ra-label">Sim 1 · Occupancy grid mapping</p><h2>Paint the map with lasers</h2>
             <p>The robot wanders and scans ten times a second. Along each laser ray, cells the beam passed <em>through</em> get a vote for "free"; the cell where it <em>stopped</em> gets a vote for "wall." Votes add up, so one noisy reading can't ruin the map — but many consistent readings make a cell nearly certain. Click anywhere to send the robot there.</p>
             <div class="ra-sim">
@@ -188,15 +287,18 @@
             <div class="ll-info"><strong>Define SLAM</strong>Explain why mapping and localization depend on each other.</div>
             <div class="ll-info"><strong>Read a grid map</strong>Describe how free/occupied votes build an occupancy grid from noisy scans.</div>
             <div class="ll-info"><strong>Explain drift</strong>Show why small odometry errors accumulate and distort a map.</div>
+            <div class="ll-info"><strong>Measure and compare</strong>Build a map from classroom readings and explain its uncertainty.</div>
             <div class="ll-info"><strong>Model belief</strong>Describe the move–score–resample cycle of a particle filter.</div>
           </div>
           <div class="ll-pane" id="ra-teacher">
             <span class="ll-label">Teaching notes</span>
-            <div class="ll-info"><strong>Launch</strong>Blindfold a volunteer, spin them, and walk them three steps. "Where are you?" Let them touch one wall. What changed?</div>
+            <div class="ll-info"><strong>Class pacing</strong>Day 1: 10 min sim prediction, 25 min paper mapping, 15 min hidden-station challenge. Day 2: 10 min setup/calibration, 25 min sonar scans, 15 min comparison and exit ticket. Pre-wire hardware if time is short.</div>
+            <div class="ll-info"><strong>Team roles</strong>Sensor operator, pose tracker, mapper/checker. Rotate each scan. One kit can serve a demonstration while teams use paper measurements.</div>
+            <div class="ll-info"><strong>Launch</strong>Show a cardboard room and one distance reading. Ask which possible sensor stations fit it. Add another reading: what changed?</div>
             <div class="ll-info"><strong>Sim 1 talk</strong>With drift on, point at the doubled walls: the laser was right, the <em>position</em> was wrong.</div>
             <div class="ll-info"><strong>Sim 2 talk</strong>Pause when the cloud has two clumps. Ask the class to vote which one is right and why the robot can't tell yet.</div>
             <div class="ll-info"><strong>Math link</strong>Grades 9–12: cells store log-odds, so evidence adds. Connect to Bayes' rule.</div>
-            <div class="ll-info"><strong>Assessment</strong>Students sketch an occupancy grid for the classroom from three imagined scans and label free, occupied, and unknown cells.</div>
+            <div class="ll-info"><strong>Assessment</strong>Collect two scans, compare repeated readings, and explain a position error. Students label free, occupied, and unknown cells; distinguish mapping from full SLAM.</div>
           </div>
         </div>
       </aside>
@@ -206,6 +308,7 @@
   <script src="../../../assets/js/sim-kit.js"></script>
   <script src="../../../assets/js/lessons/robot-autonomy-common.js"></script>
   <script src="../../../assets/js/lessons/robot-mapping-localization.js"></script>
+  <script src="../../../assets/js/lessons/robot-mapping-classroom.js"></script>
   <script src="../../../assets/js/classroom-animations.js"></script>
   <script src="../../../assets/js/lesson-layout.js"></script>
   <script src="../../../assets/js/photo-lightbox.js"></script>

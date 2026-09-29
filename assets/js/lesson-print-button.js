@@ -22,6 +22,15 @@
     document.head.appendChild(related);
   }
 
+  function loadExhibitLinks() {
+    if (document.querySelector('script[data-lesson-exhibits="true"]')) return;
+    var exhibits = document.createElement('script');
+    exhibits.src = script && script.src ? new URL('lesson-exhibits.js', script.src).href : '/assets/js/lesson-exhibits.js';
+    exhibits.defer = true;
+    exhibits.dataset.lessonExhibits = 'true';
+    document.head.appendChild(exhibits);
+  }
+
   function loadSiteGlossary() {
     if (window.ClassroomOSGlossary
       || document.querySelector('script[data-classroomos-glossary="true"]')
@@ -123,6 +132,7 @@
   }
   ensureContrastGuard();
   loadRelatedLinks();
+  loadExhibitLinks();
   loadSiteGlossary();
 
   function createActions() {

@@ -1,9 +1,16 @@
 import { flatDistance } from './creatures.js';
-import { buildHouse, buildStable, markCache, removeProp } from './world.js';
+import { buildHouse, buildStable, markCache, untrackProp } from './world.js';
 
 export const COSTS = {
   house: { wood: 20 },
   stable: { wood: 10, quartz: 5 },
+};
+
+/** Swings it takes to bring each prop down, and what it drops. */
+export const HARVEST = {
+  tree: { hits: 3, resource: 'wood' },
+  quartz: { hits: 4, resource: 'quartz' },
+  hay: { hits: 1, resource: 'feed' },
 };
 
 /** How much trust one handful of feed buys, before temperament is applied. */
@@ -31,6 +38,7 @@ export function createGame(world) {
     stabled: false,
     day: 1,
     won: false,
+    riding: false,
   };
 }
 
@@ -45,6 +53,26 @@ function pay(game, cost) {
 // --- Interactions ---------------------------------------------------------
 
 /**
+ * One swing at a tree, rock or bale. Nothing is added to the inventory here:
+ * a felled prop spills loot onto the ground, and the player has to walk over
+ * it — see collect().
+ */
+export function strikeProp(game, prop) {
+  const rule = HARVEST[prop.userData.type];
+  if (!rule) return null;
+  prop.userData.hits = (prop.userData.hits ?? 0) + 1;
+  const left = rule.hits - prop.userData.hits;
+  if (left > 0) return { felled: false, left };
+  untrackProp(game.world, prop);
+  return { felled: true, resource: rule.resource, drops: prop.userData.yields };
+}
+
+/** Loot picked up off the ground. */
+export function collect(game, resource, amount = 1) {
+  game[resource] += amount;
+}
+
+/**
  * Resolve a click on a world prop. Returns a log line, or null if the object
  * is not something the player can act on.
  */
@@ -53,21 +81,6 @@ export function interactWithProp(game, object) {
   const type = prop?.userData?.type;
 
   switch (type) {
-    case 'tree':
-      game.wood += prop.userData.yields;
-      removeProp(game.world, prop);
-      return `Chopped a tree. +${prop.userData.yields} wood.`;
-
-    case 'quartz':
-      game.quartz += prop.userData.yields;
-      removeProp(game.world, prop);
-      return `Mined a quartz seam. +${prop.userData.yields} quartz.`;
-
-    case 'hay':
-      game.feed += prop.userData.yields;
-      removeProp(game.world, prop);
-      return `Gathered hay. +${prop.userData.yields} feed.`;
-
     case 'bed':
       return null; // Handled by the caller, which owns the day/night clock.
 
@@ -158,6 +171,7 @@ function offerFeed(game, horse, player) {
   }
 
   game.feed -= 1;
+  horse.lastFed = performance.now();
   // Bolder horses take longer to bond — the trade-off for letting you near.
   horse.trust = Math.min(100, horse.trust + FEED_TRUST / horse.boldness / 2);
 
@@ -247,15 +261,20 @@ export function canRide(game) {
   );
 }
 
+/** Mount or dismount. The first ride is the win; after that the field is yours. */
 export function ride(game) {
-  if (game.won || !canRide(game)) return null;
+  if (!canRide(game)) return null;
+  game.riding = !game.riding;
+  game.horse.ridden = game.riding;
+  if (!game.riding) return `You slide down and pat ${game.horseName}'s neck.`;
+  if (game.won) return `You swing up onto ${game.horseName}.`;
   game.won = true;
-  return `You tack up ${game.horseName} and ride out across the field. That's the whole game — well done.`;
+  return `You tack up ${game.horseName} and ride out across the field. You did it! Shift to gallop, R to dismount.`;
 }
 
 /** The next thing the player should be doing, shown in the HUD. */
 export function nextObjective(game) {
-  if (game.won) return 'You did it.';
+  if (game.won) return game.riding ? 'Ride anywhere — Shift to gallop, R to dismount' : 'Press R to ride again';
   if (!game.horse) {
     if (game.feed < 1) return 'Gather hay (or milk a cow) to get feed';
     return 'Walk — do not run — up to a wild horse and offer feed';
@@ -264,5 +283,5 @@ export function nextObjective(game) {
   if (!game.saddle) return 'Find the saddle — follow a circling toucan and dig';
   if (!game.bridle) return 'Find the bridle — follow a circling toucan and dig';
   if (!game.world.buildings.stable) return 'Build a stable (10 wood, 5 quartz)';
-  return 'Ride!';
+  return 'Press R to ride!';
 }
