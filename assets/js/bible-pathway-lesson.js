@@ -739,6 +739,7 @@
     return String(value).replace(/[&<>\"]/g, function (char) { return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[char]; });
   }
   function link(item, direction) {
+    if ((id === 'elijah' && direction === 'next') || (id === 'world-of-jesus' && direction === 'prev')) item = { id: 'daniel', title: 'Daniel: Faithfulness in Exile' };
     if (!item) return '<span></span>';
     return '<a href="' + item.id + '.html">' + (direction === 'prev' ? '&larr; ' : '') + esc(item.title) + (direction === 'next' ? ' &rarr;' : '') + '</a>';
   }

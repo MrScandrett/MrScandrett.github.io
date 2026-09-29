@@ -1,3 +1,5 @@
+import { createGoRules, createSearch, PASS } from "./go-mcts.js";
+
 const SIZE = 9;
 const EMPTY = 0;
 const BLACK = 1;
@@ -6,11 +8,13 @@ const KOMI = 6.5;
 const GO_COLUMNS = ["A", "B", "C", "D", "E", "F", "G", "H", "J"];
 const STAR_POINTS = new Set(["2,2", "2,6", "4,4", "6,2", "6,6"]);
 const DIRS = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+// strength = how many simulated games White runs before each move
 const AI_LEVELS = {
-  easy: { candidates: 8, playouts: 5, depth: 42, label: "Curious" },
-  standard: { candidates: 16, playouts: 10, depth: 62, label: "Strategic" },
-  hard: { candidates: 24, playouts: 16, depth: 82, label: "Relentless" },
+  easy: { playouts: 800, label: "Curious" },
+  standard: { playouts: 4000, label: "Strategic" },
+  hard: { playouts: 12000, label: "Relentless" },
 };
+const mctsRules = createGoRules(SIZE, KOMI);
 
 const byId = (id) => document.getElementById(id);
 
@@ -215,75 +219,45 @@ function tacticalValue(value, color, row, col, forbiddenHash) {
   );
 }
 
-function randomPlayout(startBoard, color, forbiddenHash, maxDepth) {
-  let simulationBoard = cloneBoard(startBoard);
-  let simulationKoHash = forbiddenHash;
-  let passes = 0;
+let searchToken = 0;
 
-  for (let step = 0; step < maxDepth; step++) {
-    const sampled = [];
-    for (let attempt = 0; attempt < 18; attempt++) {
-      const row = Math.floor(Math.random() * SIZE);
-      const col = Math.floor(Math.random() * SIZE);
-      if (simulationBoard[row][col] !== EMPTY) continue;
-      const result = evaluateMove(simulationBoard, color, row, col, simulationKoHash);
-      if (result.ok) sampled.push({ row, col, result });
-      if (sampled.length === 4) break;
+// run MCTS in small slices so the page stays responsive; calls done(move|null, search)
+function searchBestMove(value, color, forbiddenHash, done) {
+  const token = ++searchToken;
+  const rootMoves = getLegalMoves(value, color, forbiddenHash).map(([row, col]) => row * SIZE + col);
+  const search = createSearch({
+    rules: mctsRules,
+    board: value.flat(),
+    toPlay: color,
+    rootMoves,
+    lastMove: lastPlaced ? lastPlaced[0] * SIZE + lastPlaced[1] : -1,
+  });
+  const target = AI_LEVELS[aiLevel].playouts;
+
+  const step = () => {
+    if (token !== searchToken) return; // game was reset or undone
+    const started = performance.now();
+    while (search.playouts < target && performance.now() - started < 30) search.run(50);
+    setStatus(`${AI_LEVELS[aiLevel].label} AI is searching… ${search.playouts.toLocaleString()} / ${target.toLocaleString()} simulated games`);
+    if (search.playouts < target) {
+      aiTimer = window.setTimeout(step, 0);
+      return;
     }
-
-    if (!sampled.length) {
-      passes += 1;
-      if (passes >= 2) break;
-    } else {
-      passes = 0;
-      const choice = sampled[Math.floor(Math.random() * sampled.length)];
-      const oldHash = boardHash(simulationBoard);
-      simulationBoard = choice.result.board;
-      simulationKoHash = oldHash;
-    }
-    color = color === BLACK ? WHITE : BLACK;
-  }
-
-  const { black, white } = scoreBoard(simulationBoard);
-  return black - white;
+    const move = search.best();
+    done(move === PASS ? null : [Math.floor(move / SIZE), move % SIZE], search);
+  };
+  step();
 }
 
-function chooseBestMove(value, color, forbiddenHash) {
-  const settings = AI_LEVELS[aiLevel];
-  let moves = getLegalMoves(value, color, forbiddenHash);
-  if (!moves.length) return null;
-
-  moves = moves
-    .map(([row, col]) => ({
-      row,
-      col,
-      tactical: tacticalValue(value, color, row, col, forbiddenHash) + Math.random() * 4,
-    }))
-    .sort((a, b) => b.tactical - a.tactical)
-    .slice(0, settings.candidates);
-
-  let bestMove = moves[0];
-  let bestScore = -Infinity;
-
-  for (const candidate of moves) {
-    const placed = evaluateMove(value, color, candidate.row, candidate.col, forbiddenHash);
-    if (!placed.ok) continue;
-    let total = candidate.tactical * 1.8;
-    const oldHash = boardHash(value);
-    const opponent = color === BLACK ? WHITE : BLACK;
-
-    for (let playout = 0; playout < settings.playouts; playout++) {
-      const score = randomPlayout(placed.board, opponent, oldHash, settings.depth);
-      total += color === BLACK ? score : -score;
-    }
-
-    if (total > bestScore) {
-      bestScore = total;
-      bestMove = candidate;
-    }
-  }
-
-  return [bestMove.row, bestMove.col];
+function reportSearch(search) {
+  const top = search.ranked().slice(0, 3);
+  const report = byId("go-mcts-report");
+  if (!report || !top.length) return;
+  const parts = top.map(({ move, visits, winRate }) => {
+    const label = move === PASS ? "pass" : formatMoveLabel(Math.floor(move / SIZE), move % SIZE);
+    return `${label} (${visits.toLocaleString()} visits, White won ${Math.round(winRate * 100)}%)`;
+  });
+  report.textContent = `White simulated ${search.playouts.toLocaleString()} games. Most explored: ${parts.join(" · ")}.`;
 }
 
 function formatMoveLabel(row, col) {
@@ -531,8 +505,8 @@ function triggerAI() {
   setStatus(`${AI_LEVELS[aiLevel].label} AI is evaluating the board…`);
   renderBoard();
 
-  aiTimer = window.setTimeout(() => {
-    const move = chooseBestMove(board, WHITE, koHash);
+  aiTimer = window.setTimeout(() => searchBestMove(board, WHITE, koHash, (move, search) => {
+    reportSearch(search);
     if (!move) {
       consecutivePasses += 1;
       aiThinking = false;
@@ -572,7 +546,7 @@ function triggerAI() {
     setStatus(result.captured
       ? `White captured ${result.captured} stone${result.captured === 1 ? "" : "s"} at ${formatMoveLabel(row, col)}. Your turn.`
       : `White played ${formatMoveLabel(row, col)}. Your turn.`);
-  }, 90);
+  }), 90);
 }
 
 function showHint() {
@@ -635,6 +609,7 @@ function setAiLevel(value) {
 
 function resetGame() {
   window.clearTimeout(aiTimer);
+  searchToken += 1;
   board = createBoard();
   koHash = null;
   blackCaps = 0;

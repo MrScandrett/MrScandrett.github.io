@@ -181,6 +181,7 @@
 
             <div class="go-side">
               <p class="go-status" id="go-status" aria-live="polite"></p>
+              <p class="go-status" id="go-mcts-report">White's search report will appear here after its first move.</p>
 
               <div class="go-game-controls" aria-label="Game controls">
                 <label class="go-difficulty">
@@ -237,12 +238,14 @@
 
               <details class="go-ai-explainer">
                 <summary>Show how this AI works</summary>
+                <p>White runs real Monte Carlo Tree Search, the method behind Crazy Stone and MoGo (2006&ndash;07) and the search half of AlphaGo. It repeats four steps thousands of times:</p>
                 <ol class="go-mini-list">
-                  <li>Generate legal candidate moves.</li>
-                  <li>Test random continuations from each move.</li>
-                  <li>Keep the moves that win more often in simulation.</li>
-                  <li>Play the candidate with the strongest playout score.</li>
+                  <li><strong>Select:</strong> walk down the tree of moves, favoring ones that have won often but also trying ones it has barely explored.</li>
+                  <li><strong>Expand:</strong> add a new move to the tree.</li>
+                  <li><strong>Simulate:</strong> play the game out to the end with fast, mostly random moves (it captures or escapes atari when it sees one, and never fills its own eyes).</li>
+                  <li><strong>Back up:</strong> record the win or loss in every move on the path.</li>
                 </ol>
+                <p>Then it plays the move it explored most. Like MoGo, it also uses RAVE, which shares results between the same move played at different times. It has no neural network. After each White move, the report above the board shows how many games it simulated and its top choices.</p>
               </details>
 
               <div class="go-move-log-wrap">
@@ -503,7 +506,7 @@
           </div>
           <div class="ll-info">
             <strong>Monte Carlo Tree Search</strong>
-            This classroom AI runs random playouts from candidate moves and keeps moves that win more often. No neural network — pure simulation-based estimation.
+            White runs real MCTS (UCT with RAVE, like MoGo in 2007): thousands of simulated games, with more of them spent on the moves that look promising. No neural network — pure simulation-based estimation.
           </div>
           <div class="ll-info">
             <strong>AlphaGo's Stack</strong>

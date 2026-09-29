@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en" data-glossary-manual>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Beyond A*: Motion Planning Lab · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta name="description" content="Race RRT, RRT*, potential fields, and the Dynamic Window Approach on one obstacle course, then drive a differential-drive robot to see how kinematics limits every plan." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/robot-autonomy.css" />
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary"><ul>
+          <li><a href="../../../index.html">Home</a></li><li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li><li><a href="../../../paths.html">Paths</a></li><li><a href="../../../showcase.html">Showcase</a></li><li><a href="../../../applications.html">Apps</a></li><li><a href="../../../recipe-book.html">Library</a></li><li><a href="../../../about.html">About</a></li>
+        </ul></nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="ra-page" data-glossary-root>
+          <section class="ra-hero" aria-labelledby="ra-title">
+            <div>
+              <p class="ra-kicker">Engineering · Robot Autonomy · Planning</p>
+              <h1 id="ra-title">Beyond A*: <span>Motion Planning</span></h1>
+              <p class="ra-lede">A* finds the best route on a grid. But a robot arm has six joints, a drone flies in 3D, and a delivery robot shares the sidewalk with people who move. Real robots mix planners: one that finds <em>a</em> way through a huge space, one that reacts in milliseconds, and a model of what the wheels can physically do. Race four of them on the same obstacle course.</p>
+              <div class="ra-meta"><span>Grades 7–12</span><span>50–70 minutes</span><span>Four planners</span><span>Kinematics</span></div>
+              <a class="ra-back" href="../../../steam-lessons.html#module-engineering">← Back to Engineering</a>
+            </div>
+            <svg class="ra-hero-art" viewBox="0 0 320 220" role="img" aria-labelledby="hero-art-title">
+              <title id="hero-art-title">A random tree of blue branches spreading from a start point around orange obstacles, with a yellow path reaching the goal</title>
+              <rect width="320" height="220" fill="#0f1d23"/>
+              <g fill="#c65e2e"><circle cx="120" cy="80" r="26"/><circle cx="170" cy="160" r="22"/><circle cx="230" cy="70" r="18"/></g>
+              <g stroke="#70c8e5" stroke-opacity=".6" fill="none"><path d="M30 110l20-15 18 8 16-20 20-10M50 95l-6-24 10-20M68 103l12 22 24 10 22 5M80 125l-6 24 8 20M104 135l22-20 30 3 20-6 24-2M176 112l14 20 22 8M200 106l18-18 24 0M242 88l12 16 20 6"/></g>
+              <path d="M30 110l20-15 18 8 12 22 24 10 22 5 30-3 20-6 24-2 18 16 26 6" stroke="#f2bf3f" stroke-width="4" fill="none"/>
+              <circle cx="30" cy="110" r="9" fill="#146b8c"/><circle cx="290" cy="130" r="9" fill="#b8d84b"/>
+            </svg>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-blue);">
+            <p class="ra-label">Why A* isn't enough</p><h2>Global plans and local reactions</h2>
+            <p><a class="ra-more" href="../../computer-science/algorithms-and-ai/pathfinding.html">A*</a> checks every cell it needs to, which is perfect for a 2D floor plan. A robot arm's "map" is every combination of its joint angles — a six-dimensional space. Split each joint into just 100 steps and you get 100<sup>6</sup> = a trillion cells. Nobody searches that cell by cell.</p>
+            <div class="ra-cols">
+              <article><h3>Sampling planners</h3><p>Throw random darts into the space and connect the ones that work. <strong><span data-glossary="rapidly-exploring random tree">RRT</span></strong> finds a path in huge spaces fast. RRT* keeps refining it toward the shortest.</p></article>
+              <article><h3>Reactive planners</h3><p>Don't plan the whole trip — just decide the next move from what the sensors see <em>right now</em>. <strong><span data-glossary="artificial potential field">Potential fields</span></strong> and the <strong><span data-glossary="dynamic window approach">Dynamic Window Approach</span></strong> work this way.</p></article>
+              <article><h3>The usual combo</h3><p>A global planner (A* or RRT*) draws the route from the map. A local planner (DWA) follows it, dodging the dog that walked in front of the robot a moment ago.</p></article>
+            </div>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-lime);">
+            <p class="ra-label">Sim · Planner race</p><h2>Four planners, one course</h2>
+            <p>Pick a planner. <strong>Drag</strong> S or G to move the start or goal. <strong>Click</strong> empty space to drop an obstacle; click an obstacle to remove it. The faint ring around each obstacle is the robot's radius: the planner keeps the robot's <em>center</em> out of it.</p>
+            <div class="ra-sim">
+              <div class="ra-sim-grid">
+                <div>
+                  <canvas id="mp-canvas" width="640" height="400" aria-label="Motion planning simulator. Drag start and goal markers; click to add or remove obstacles."></canvas>
+                  <p class="ra-readout" id="mp-readout" aria-live="off"></p>
+                </div>
+                <div class="ra-controls">
+                  <fieldset><legend>Planner</legend>
+                    <div class="ra-btns">
+                      <button class="ra-btn" type="button" data-mp-mode="rrt" aria-pressed="true">RRT</button>
+                      <button class="ra-btn" type="button" data-mp-mode="rrtstar" aria-pressed="false">RRT*</button>
+                      <button class="ra-btn" type="button" data-mp-mode="field" aria-pressed="false">Potential field</button>
+                      <button class="ra-btn" type="button" data-mp-mode="dwa" aria-pressed="false">DWA</button>
+                    </div>
+                  </fieldset>
+                  <fieldset><legend>Course</legend>
+                    <div class="ra-btns">
+                      <button class="ra-btn" type="button" data-mp-preset="forest">Random forest</button>
+                      <button class="ra-btn" type="button" data-mp-preset="slalom">Slalom</button>
+                      <button class="ra-btn" type="button" data-mp-preset="trap">U-trap</button>
+                      <button class="ra-btn" type="button" data-mp-preset="empty">Empty</button>
+                    </div>
+                  </fieldset>
+                  <fieldset id="mp-field-opts" hidden><legend>Potential field</legend>
+                    <label>Obstacle push: <output id="mp-rep-out">3</output><input id="mp-rep" type="range" min="0.5" max="10" step="0.5" value="3"></label>
+                    <label class="ra-check"><input id="mp-field" type="checkbox" checked> Show force arrows</label>
+                  </fieldset>
+                  <fieldset id="mp-dwa-opts" hidden><legend>Dynamic window</legend>
+                    <label class="ra-check"><input id="mp-global" type="checkbox" checked> Follow an A* global route</label>
+                    <label class="ra-check"><input id="mp-moving" type="checkbox"> Obstacles move</label>
+                  </fieldset>
+                  <div class="ra-btns"><button class="ra-btn" id="mp-run" type="button">Pause</button><button class="ra-btn" id="mp-restart" type="button">Restart</button></div>
+                  <p class="ra-hint" id="mp-explain"></p>
+                </div>
+              </div>
+            </div>
+            <div class="ra-cols">
+              <article style="--ra-accent:var(--ra-blue);"><h3>RRT vs. RRT*</h3><p>Run RRT on the slalom three times. Is the path the same each time? Now run RRT* and let it go. How much shorter does the path get?</p></article>
+              <article style="--ra-accent:var(--ra-copper);"><h3>Trap the field</h3><p>Load the U-trap and choose Potential field. Where does the robot stop, and why? Turn up the push. Does it help or hurt?</p></article>
+              <article style="--ra-accent:var(--ra-lime);"><h3>Dodge</h3><p>Choose DWA with the random forest and turn on moving obstacles. The red arcs are rejected. Why does it slow down near obstacles? Then turn off the A* route on the slalom. What goes wrong without a global plan?</p></article>
+            </div>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-copper);">
+            <p class="ra-label">How each one thinks</p><h2>Under the hood</h2>
+            <div class="ra-cols">
+              <article><h3>RRT (1998)</h3><p>Steven LaValle's Rapidly-exploring Random Tree. Random samples land most often in big empty regions, so the tree is pulled outward into unexplored space.</p><p>It is <em>probabilistically complete</em>: if a path exists, the chance of finding it approaches 100% as it keeps sampling.</p></article>
+              <article><h3>RRT* (2011)</h3><p>Karaman and Frazzoli added two steps: pick the cheapest nearby parent, and rewire neighbors if going through the new node is cheaper. Given enough samples, the path approaches the shortest possible.</p></article>
+              <article><h3>Potential fields (1986)</h3><p>Oussama Khatib's idea: treat the robot like a charged particle. Goal = opposite charge (attracts). Obstacles = same charge (repel). Add the forces and follow them.</p><p>Weakness: <strong>local minima</strong>, spots where forces cancel and the robot freezes short of the goal.</p></article>
+              <article><h3>Dynamic Window (1997)</h3><p>Fox, Burgard and Thrun built it for museum-tour robots. Only consider speeds the motors can reach in the next instant (the "window"), predict each arc, drop any that would hit something, then score the rest on heading, clearance, and speed.</p></article>
+            </div>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-yellow);">
+            <p class="ra-label">Sim · Kinematics</p><h2>Two wheels, one body</h2>
+            <p>A plan is useless if the robot can't physically drive it. Most classroom robots (and robot vacuums) use <strong><span data-glossary="differential drive">differential drive</span></strong>: two independently powered wheels, no steering. The <strong><span data-glossary="kinematics">kinematic model</span></strong> converts wheel speeds into how the whole robot moves:</p>
+            <p style="font-family:'IBM Plex Mono',monospace;font-size:1rem;">v = (v<sub>R</sub> + v<sub>L</sub>) / 2 &nbsp;&nbsp;·&nbsp;&nbsp; ω = (v<sub>R</sub> − v<sub>L</sub>) / L</p>
+            <p>v is forward speed, ω (omega) is turning speed, and L is the distance between the wheels. It can spin in place, but it can't slide sideways — that is why the DWA above only tries arcs.</p>
+            <div class="ra-sim">
+              <div class="ra-sim-grid">
+                <div><canvas id="kin-canvas" width="640" height="300" aria-label="Differential drive robot tracing a path from two wheel speeds"></canvas>
+                <p class="ra-readout" id="kin-readout" aria-live="off"></p></div>
+                <div class="ra-controls">
+                  <fieldset><legend>Wheels</legend>
+                    <label>Left wheel v<sub>L</sub>: <output id="kin-left-out">60</output> px/s<input id="kin-left" type="range" min="-100" max="100" value="60"></label>
+                    <label>Right wheel v<sub>R</sub>: <output id="kin-right-out">80</output> px/s<input id="kin-right" type="range" min="-100" max="100" value="80"></label>
+                    <label>Wheel spacing L: <output id="kin-base-out">40</output> px<input id="kin-base" type="range" min="16" max="80" value="40"></label>
+                  </fieldset>
+                  <div class="ra-btns">
+                    <button class="ra-btn" type="button" data-kin="70,70">Straight</button>
+                    <button class="ra-btn" type="button" data-kin="-50,50">Spin</button>
+                    <button class="ra-btn" type="button" data-kin="0,60">Pivot</button>
+                    <button class="ra-btn" id="kin-reset" type="button">Reset</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="ra-cols">
+              <article><h3>Predict first</h3><p>Before pressing Pivot (left wheel stopped), predict: what point does the robot circle around?</p></article>
+              <article><h3>Dynamics</h3><p>Kinematics ignores mass. <strong>Dynamics</strong> adds it: motors can only change speed so fast. That acceleration limit is what makes DWA's "window" small.</p></article>
+              <article><h3>Close the loop</h3><p>Commanding 60 px/s doesn't guarantee 60 px/s. A <a class="ra-more" href="../arduino-and-electronics/pid-control.html">PID controller</a> on each wheel reads the encoder and corrects the motor power.</p></article>
+            </div>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-copper);">
+            <p class="ra-label">Where you’ll see it</p><h2>Planners with real bodies</h2>
+            <p>Click any photo to enlarge it.</p>
+            <div class="ra-figs">
+              <figure data-zoomable data-lightbox-group="motion">
+                <img src="../../../assets/images/lessons/robotics/sri-shakey-robot-1969-computer-history-museum.jpg" alt="Shakey the robot, a tall wheeled cabinet with a camera and range finder on top, in a museum case" loading="lazy" />
+                <figcaption><strong>Shakey, 1969</strong> The first mobile robot to plan its own routes. A* was invented for it. Shakey took minutes to plan each move — today’s planners replan many times a second.<small class="photo-credit">Photo: The wub · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a> · <a href="https://commons.wikimedia.org/wiki/File:SRI_Shakey_robot,_1969,_Computer_History_Museum.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></small></figcaption>
+              </figure>
+              <figure data-zoomable data-lightbox-group="motion">
+                <img src="../../../assets/images/lessons/robotics/iss-50-canadarm2-with-dextre-robot-iss050-e-029710.jpg" alt="The Canadarm2 robotic arm on the International Space Station holding the Dextre robot" loading="lazy" />
+                <figcaption><strong>Canadarm2 with Dextre</strong> The space station’s arm has 7 joints, and Dextre on its end adds two more arms. Planning a collision-free move for all those joints is a high-dimensional problem, exactly where sampling planners like RRT shine.<small class="photo-credit">Photo: NASA · Public domain · <a href="https://commons.wikimedia.org/wiki/File:ISS-50_Canadarm2_with_Dextre_robot_(ISS050-E-029710,_crop).jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></small></figcaption>
+              </figure>
+              <figure data-zoomable data-lightbox-group="motion">
+                <img src="../../../assets/images/lessons/robotics/kuka-industrial-robotic-arm-performing-the-beach-b.jpg" alt="An orange KUKA industrial robot arm raking patterns in sand" loading="lazy" />
+                <figcaption><strong>A six-joint arm</strong> Every pose of this KUKA arm is a point in a six-dimensional space. A grid over that space would have about a trillion cells.<small class="photo-credit">Photo: Oleg Yunakov · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a> · <a href="https://commons.wikimedia.org/wiki/File:KUKA_industrial_robotic_arm_performing_%22The_Beach%22_by_Roy_Nachum_-_03.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></small></figcaption>
+              </figure>
+              <figure data-zoomable data-lightbox-group="motion">
+                <img src="../../../assets/images/lessons/robotics/quadcopter-camera-drone-in-flight.jpg" alt="A white quadcopter camera drone hovering in the air" loading="lazy" />
+                <figcaption><strong>Drones plan in 3D</strong> A quadcopter flying through trees needs a global route plus fast local reactions to branches and wind, the same two-layer idea as A* + DWA.<small class="photo-credit">Photo: Josh Sorenson · <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener noreferrer">CC0</a> · <a href="https://commons.wikimedia.org/wiki/File:Quadcopter_camera_drone_in_flight.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></small></figcaption>
+              </figure>
+            </div>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-blue);">
+            <p class="ra-label">Robot autonomy series</p><h2>Sense · Think · Act</h2>
+            <nav class="ra-series" aria-label="Robot autonomy lessons">
+              <a href="../mechanical-and-civil-design/robotics-engineering-intro.html"><b>Robotics Intro</b>Sensor, controller, actuator, feedback</a>
+              <a href="robot-mapping-localization.html"><b>Mapping &amp; Localization</b>Occupancy grids, particle filters, SLAM</a>
+              <a href="sensor-fusion.html"><b>Sensor Fusion</b>Complementary &amp; Kalman filters</a>
+              <a href="../../computer-science/algorithms-and-ai/pathfinding.html"><b>A* Pathfinding</b>Global route on a grid</a>
+              <a href="motion-planning.html" aria-current="page"><b>Motion Planning</b>RRT, potential fields, DWA, kinematics</a>
+              <a href="../arduino-and-electronics/pid-control.html"><b>PID Control</b>Hold a target with feedback</a>
+              <a href="../../computer-science/algorithms-and-ai/state-machines.html"><b>State Machines</b>Organize robot behaviors</a>
+              <a href="robot-reinforcement-learning.html"><b>Reinforcement Learning</b>Learn a policy from rewards</a>
+            </nav>
+          </section>
+
+          
+          <section class="ra-card" style="--ra-accent:var(--ra-red);">
+            <p class="ra-label">Quick check</p><h2>Lock it in</h2>
+            <div class="ra-quiz">
+              <div class="ra-question" data-answer="c" data-explanation="Sampling avoids building the full grid, so RRT scales to high-dimensional spaces like robot arms."><p>1. Why use RRT instead of A* for a six-joint robot arm?</p><div class="ra-options"><button class="ra-option" data-choice="a">RRT always finds the shortest path</button><button class="ra-option" data-choice="b">A* can't handle obstacles</button><button class="ra-option" data-choice="c">A grid over six joints has far too many cells to search</button><button class="ra-option" data-choice="d">RRT doesn't need to know where obstacles are</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-answer="a" data-explanation="Where the goal's pull and the obstacles' push cancel out, the net force is zero and the robot stops."><p>2. What is a local minimum in a potential field?</p><div class="ra-options"><button class="ra-option" data-choice="a">A spot where the forces cancel, so the robot stops short of the goal</button><button class="ra-option" data-choice="b">The goal itself</button><button class="ra-option" data-choice="c">The smallest obstacle</button><button class="ra-option" data-choice="d">The slowest safe speed</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-answer="d" data-explanation="The window is limited by how fast the motors can accelerate in the next time step."><p>3. In the Dynamic Window Approach, what limits the "window" of speeds?</p><div class="ra-options"><button class="ra-option" data-choice="a">The size of the map</button><button class="ra-option" data-choice="b">The number of obstacles</button><button class="ra-option" data-choice="c">The goal's distance</button><button class="ra-option" data-choice="d">How much the motors can speed up or slow down right now</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-answer="b" data-explanation="ω = (vR − vL)/L = (50 − (−50))/L, which is nonzero, while v = (50 + −50)/2 = 0. It spins in place."><p>4. The left wheel runs at −50 and the right at +50. What does the robot do?</p><div class="ra-options"><button class="ra-option" data-choice="a">Drives straight</button><button class="ra-option" data-choice="b">Spins in place</button><button class="ra-option" data-choice="c">Slides sideways</button><button class="ra-option" data-choice="d">Stays still</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head"><div class="ll-tabs"><button class="ll-tab" aria-selected="true" data-pane="ra-plan">Lesson</button><button class="ll-tab" aria-selected="false" data-pane="ra-teacher">Teacher</button></div><button class="ll-panel-close" type="button" aria-label="Close panel">×</button></div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="ra-plan">
+            <span class="ll-label">Learning goals</span>
+            <div class="ll-info"><strong>Compare planners</strong>Contrast grid search (A*), sampling (RRT/RRT*), and reactive planning (potential fields, DWA).</div>
+            <div class="ll-info"><strong>Explain trade-offs</strong>Describe when RRT* is worth the extra time and why potential fields get stuck.</div>
+            <div class="ll-info"><strong>Model motion</strong>Use v = (vR + vL)/2 and ω = (vR − vL)/L to predict a differential-drive path.</div>
+            <div class="ll-info"><strong>Combine layers</strong>Explain why real robots pair a global planner with a local planner.</div>
+          </div>
+          <div class="ll-pane" id="ra-teacher">
+            <span class="ll-label">Teaching notes</span>
+            <div class="ll-info"><strong>Launch</strong>Hand a student a 6-knob "robot arm" (six rulers taped together). "Describe every pose it can make." Why grids fail in high dimensions.</div>
+            <div class="ll-info"><strong>Demo order</strong>RRT on slalom (run it three times) → RRT* → U-trap with potential field → DWA with moving obstacles.</div>
+            <div class="ll-info"><strong>Kinesthetic</strong>Two students link arms as wheels and walk the Pivot and Spin settings.</div>
+            <div class="ll-info"><strong>Extension</strong>Grades 10–12: why does RRT* need a neighbor radius that shrinks as the tree grows?</div>
+            <div class="ll-info"><strong>Assessment</strong>Students pick a robot (vacuum, drone, arm, warehouse cart) and justify which global and local planner they would use.</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script src="../../../assets/js/sim-kit.js"></script>
+  <script src="../../../assets/js/lessons/robot-autonomy-common.js"></script>
+  <script src="../../../assets/js/lessons/motion-planning.js"></script>
+  <script src="../../../assets/js/classroom-animations.js"></script>
+  <script src="../../../assets/js/lesson-layout.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
+  <script src="../../../assets/js/site-glossary.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

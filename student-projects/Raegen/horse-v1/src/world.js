@@ -85,7 +85,7 @@ function scatterTrees(world) {
     tree.position.copy(spot);
     tree.rotation.y = Math.random() * Math.PI;
     tree.scale.setScalar(0.8 + Math.random() * 0.5);
-    tree.userData = { type: 'tree', yields: 2 };
+    tree.userData = { type: 'tree', yields: 3 };
 
     world.scene.add(tree);
     world.trees.push(tree);
@@ -103,7 +103,7 @@ function scatterQuartz(world) {
     rock.rotation.set(Math.random(), Math.random(), Math.random());
     rock.scale.setScalar(0.7 + Math.random() * 0.7);
     rock.castShadow = true;
-    rock.userData = { type: 'quartz', yields: 1 };
+    rock.userData = { type: 'quartz', yields: 2 };
 
     world.scene.add(rock);
     world.quartz.push(rock);
@@ -128,9 +128,8 @@ function scatterHay(world) {
   }
 }
 
-/** Remove a harvested prop from the scene and every list that tracks it. */
-export function removeProp(world, object) {
-  world.scene.remove(object);
+/** Stop tracking a harvested prop; the caller animates it out of the scene. */
+export function untrackProp(world, object) {
   for (const list of [world.trees, world.quartz, world.hay, world.interactables]) {
     const index = list.indexOf(object);
     if (index !== -1) list.splice(index, 1);

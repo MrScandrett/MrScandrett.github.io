@@ -218,6 +218,7 @@ function updateHorse(creature, ctx, delta) {
   const distance = flatDistance(creature.mesh.position, player.position);
 
   if (creature.tamed) {
+    if (creature.ridden) return; // main.js carries it under the player
     // A tamed horse trails the player at a polite distance.
     if (distance > 30) {
       tmpVec.copy(player.position).sub(creature.mesh.position).setY(0).normalize();

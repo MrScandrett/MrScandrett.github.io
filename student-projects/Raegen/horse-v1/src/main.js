@@ -4,9 +4,11 @@ import { loadAllSpecies } from './assets.js';
 import { SPECIES, populate, updateCreatures, flatDistance } from './creatures.js';
 import { buildWorld, WORLD_RADIUS } from './world.js';
 import { enableTouchLook } from './touch-look.js';
+import { createAudio, createFx, createGhost, createHands, createTrustBar } from './feel.js';
 import {
   advanceDay,
   canRide,
+  collect,
   createGame,
   dig,
   interactWithCreature,
@@ -14,6 +16,7 @@ import {
   nameHorse,
   nextObjective,
   ride,
+  strikeProp,
   tryBuildHouse,
   tryBuildStable,
 } from './game.js';
@@ -22,6 +25,10 @@ const DAY_LENGTH = 150; // seconds for a full day/night cycle
 const WALK_SPEED = 22;
 const RUN_SPEED = 46;
 const EYE_HEIGHT = 12;
+const RIDE_HEIGHT = 21;
+const RIDE_SPEED = 44;
+const GALLOP_SPEED = 90;
+const REACH = 34; // how far a swing reaches
 
 const dom = {
   blocker: document.getElementById('blocker'),
@@ -46,6 +53,7 @@ const dom = {
     house: document.getElementById('btn-house'),
     stable: document.getElementById('btn-stable'),
     ride: document.getElementById('btn-ride'),
+    dig: document.getElementById('btn-dig'),
   },
 };
 
@@ -122,6 +130,18 @@ let ready = false;
 let inventoryOpen = false;
 let soakedUntil = 0;
 let promptTimer = 0;
+let swingCooldown = 0;
+let strideDistance = 0;
+let placing = null; // { kind, ghost } while choosing a build spot
+
+const audio = createAudio();
+const fx = createFx(scene, camera, document.getElementById('popups'));
+const hands = createHands(camera);
+const ghosts = {
+  house: createGhost(60, 60),
+  stable: createGhost(62, 50),
+};
+scene.add(ghosts.house, ghosts.stable);
 
 // --- Boot -----------------------------------------------------------------
 
@@ -131,12 +151,19 @@ const templates = await loadAllSpecies(SPECIES, (done, total) => {
 
 creatures = populate(world, templates);
 game.cacheBirds = creatures.filter((creature) => creature.kind === 'toucan');
+for (const creature of creatures) {
+  if (creature.kind !== 'horse') continue;
+  creature.trustBar = createTrustBar();
+  creature.trustBar.visible = false;
+  scene.add(creature.trustBar);
+}
 ready = true;
 dom.loading.style.display = 'none';
 dom.blocker.classList.remove('hidden');
 
 log('You arrive at the field. Somewhere out here is a horse worth keeping.');
 log('Hold Shift to run. Horses bolt from a runner — walk when you get close.');
+log('Trees take a few chops. Walk over what falls out to pick it up.');
 updateHud();
 
 // --- Input ----------------------------------------------------------------
@@ -155,7 +182,10 @@ dom.instructions.addEventListener('click', () => {
   if (!touchLook) controls.lock();
 });
 
-controls.addEventListener('lock', () => dom.blocker.classList.add('hidden'));
+controls.addEventListener('lock', () => {
+  dom.blocker.classList.add('hidden');
+  audio.unlock();
+});
 controls.addEventListener('unlock', () => {
   if (inventoryOpen || !dom.namePanel.classList.contains('hidden')) return;
   dom.blocker.classList.remove('hidden');
@@ -165,33 +195,31 @@ document.addEventListener('keydown', (event) => {
   if (event.target instanceof HTMLInputElement) return;
   keys.add(event.code);
 
+  if (event.repeat) return;
   if (event.code === 'KeyE') interact();
-  if (event.code === 'KeyF') log(dig(game, player.position));
+  if (event.code === 'KeyF') doDig();
   if (event.code === 'KeyI') toggleInventory();
+  if (event.code === 'KeyR') toggleRide();
+  if (event.code === 'KeyB') startPlacing('house');
+  if (event.code === 'KeyN') startPlacing('stable');
+  if (event.code === 'KeyM') log(audio.toggleMute() ? 'Sound off.' : 'Sound on.');
 });
 
 document.addEventListener('keyup', (event) => keys.delete(event.code));
 
 renderer.domElement.addEventListener('mousedown', (event) => {
-  if (event.button === 0 && controls.isLocked) interact();
+  if (!controls.isLocked) return;
+  if (event.button === 2 && placing) cancelPlacing();
+  else if (event.button === 0) interact();
 });
+renderer.domElement.addEventListener('contextmenu', (event) => event.preventDefault());
 
-dom.buttons.house.addEventListener('click', () => {
-  log(tryBuildHouse(game, placementSpot()));
-  updateHud();
-});
-
-dom.buttons.stable.addEventListener('click', () => {
-  log(tryBuildStable(game, placementSpot()));
-  updateHud();
-});
-
-dom.buttons.ride.addEventListener('click', () => {
-  const message = ride(game);
-  if (message) {
-    log(message);
-    updateHud();
-  }
+dom.buttons.house.addEventListener('click', () => startPlacing('house'));
+dom.buttons.stable.addEventListener('click', () => startPlacing('stable'));
+dom.buttons.ride.addEventListener('click', toggleRide);
+dom.buttons.dig.addEventListener('click', () => {
+  setLocked(true);
+  doDig();
 });
 
 dom.nameSubmit.addEventListener('click', submitName);
@@ -231,14 +259,26 @@ function pickUnderCrosshair() {
 
 function interact() {
   if (!ready || !controls.isLocked) return;
+  if (placing) {
+    confirmPlacing();
+    return;
+  }
+  if (game.riding) return;
   const hit = pickUnderCrosshair();
-  if (!hit) return;
+  if (!hit) {
+    hands.swing();
+    return;
+  }
 
   const creature = creatureForObject(hit.object);
   if (creature) {
-    log(interactWithCreature(game, creature, player));
-    if (game.horse && !game.horseName) openNamePanel();
-    updateHud();
+    interactCreature(creature, hit.point);
+    return;
+  }
+
+  const target = hit.object.userData.type ? hit.object : hit.object.parent;
+  if (['tree', 'quartz', 'hay'].includes(target?.userData?.type)) {
+    swingAt(target, hit);
     return;
   }
 
@@ -265,6 +305,299 @@ function placementSpot() {
   direction.y = 0;
   direction.normalize();
   return player.position.clone().addScaledVector(direction, 80);
+}
+
+/** One swing of the axe / pickaxe / a scoop of hay. */
+function swingAt(prop, hit) {
+  if (swingCooldown > 0) return;
+  if (hit.distance > REACH) {
+    hands.swing();
+    log('Too far to reach — step closer.');
+    return;
+  }
+  swingCooldown = 0.32;
+  hands.swing();
+  const type = prop.userData.type;
+  const result = strikeProp(game, prop);
+  const at = hit.point.clone();
+
+  if (type === 'tree') {
+    audio.play('chop');
+    fx.burst(at, 'wood', 6, 14);
+    fx.burst(prop.position.clone().setY(28), 'leaf', 4, 8);
+    fx.addShake(0.15);
+  } else if (type === 'quartz') {
+    audio.play('clink');
+    fx.burst(at, 'quartz', 5, 14);
+    fx.addShake(0.1);
+  } else {
+    audio.play('rustle');
+    fx.burst(at, 'feed', 10, 12);
+  }
+
+  if (!result.felled) {
+    fx.wobble(prop, type === 'tree' ? 0.08 : 0.05);
+    fx.popup(at, '•'.repeat(result.left), '#ffffff');
+    return;
+  }
+
+  const spill = () => {
+    for (let i = 0; i < result.drops; i += 1) {
+      const from = type === 'tree'
+        ? prop.position.clone().add(new THREE.Vector3((Math.random() - 0.5) * 20, 4, (Math.random() - 0.5) * 20))
+        : prop.position.clone().setY(4);
+      fx.drop(from, result.resource, pickUp);
+    }
+  };
+
+  if (type === 'tree') {
+    audio.play('timber');
+    fx.topple(prop, player.position, () => {
+      spill();
+      fx.burst(prop.position.clone().setY(2), 'dust', 14, 16);
+    });
+    log('Timber! Walk over the logs to pick them up.');
+  } else {
+    if (type === 'quartz') audio.play('shatter');
+    fx.crumble(prop);
+    spill();
+  }
+}
+
+function pickUp(resource) {
+  collect(game, resource);
+  audio.play('pickup');
+  const label = { wood: 'wood', quartz: 'quartz', feed: 'feed' }[resource];
+  fx.popup(player.position.clone().setY(2).add(lookAhead(10)), `+1 ${label}`);
+  bumpStat(resource);
+  updateHud();
+}
+
+function lookAhead(distance) {
+  const direction = new THREE.Vector3();
+  camera.getWorldDirection(direction);
+  direction.y = 0;
+  return direction.normalize().multiplyScalar(distance);
+}
+
+function interactCreature(creature, point) {
+  const before = { feed: game.feed, quartz: game.quartz, trust: creature.trust };
+  const message = interactWithCreature(game, creature, player);
+  log(message);
+
+  switch (creature.kind) {
+    case 'horse':
+      if (game.feed < before.feed) {
+        hands.use('hay', 0.8);
+        hands.swing('offer');
+        audio.play('munch');
+        fx.burst(creature.mesh.position.clone().setY(16), 'heart', 3, 6);
+        fx.popup(creature.mesh.position, `♥ ${Math.round(creature.trust)}`, '#ff8fa6');
+        if (creature.tamed) {
+          audio.play('whinny');
+          fx.burst(creature.mesh.position.clone().setY(16), 'heart', 12, 10);
+        }
+      } else if (creature === game.horse) {
+        audio.play('whinny');
+        fx.burst(creature.mesh.position.clone().setY(16), 'heart', 2, 6);
+      } else {
+        audio.play('deny');
+      }
+      break;
+    case 'cow':
+      if (game.feed > before.feed) {
+        audio.play('munch');
+        fx.popup(creature.mesh.position, `+${game.feed - before.feed} feed`);
+        bumpStat('feed');
+      }
+      break;
+    case 'salamander':
+      if (game.quartz > before.quartz) {
+        hands.use('pickaxe', 0.6);
+        hands.swing();
+        audio.play('shatter');
+        fx.burst(creature.mesh.position.clone().setY(2), 'quartz', 12, 16);
+        fx.popup(creature.mesh.position, `+${game.quartz - before.quartz} quartz`);
+        bumpStat('quartz');
+      }
+      break;
+    case 'komodo':
+      if (creature.scaredFor > 0) {
+        audio.play('shout');
+        fx.burst(creature.mesh.position.clone().setY(2), 'dust', 16, 20);
+        fx.addShake(0.3);
+      }
+      break;
+    case 'snail':
+      if (creature.collected) {
+        audio.play('pickup');
+        fx.popup(point ?? creature.mesh.position, `snail ${game.snails}/6`, '#b8f0ff');
+        bumpStat('snails');
+        if (game.snails === 6) audio.play('treasure');
+      }
+      break;
+    case 'dolphin':
+    case 'crocodile':
+    case 'shark':
+      audio.play('splash');
+      break;
+    default:
+      break;
+  }
+
+  if (game.horse && !game.horseName) openNamePanel();
+  updateHud();
+}
+
+function doDig() {
+  if (!ready || !controls.isLocked || game.riding) return;
+  if (swingCooldown > 0) return;
+  swingCooldown = 0.45;
+  hands.use('shovel', 0.7);
+  hands.swing();
+  audio.play('dig');
+  const spot = player.position.clone().setY(1).add(lookAhead(6));
+  fx.burst(spot, 'dirt', 12, 16);
+
+  const before = { saddle: game.saddle, bridle: game.bridle, quartz: game.quartz, wood: game.wood };
+  const message = dig(game, player.position);
+  log(message);
+  const found = ['saddle', 'bridle', 'quartz', 'wood'].find((k) => game[k] !== before[k]);
+  if (found) {
+    audio.play('treasure');
+    fx.addShake(0.3);
+    fx.burst(spot, 'dirt', 24, 26);
+    const chest = makeChest();
+    chest.position.copy(spot).setY(-4);
+    scene.add(chest);
+    fx.tween(0.8, (t) => {
+      chest.position.y = -4 + t * 5;
+      chest.children[1].rotation.x = -t * 1.6;
+    });
+    fx.popup(spot, found === 'saddle' ? 'SADDLE!' : found === 'bridle' ? 'BRIDLE!' : `+${game[found] - before[found]} ${found}`);
+    bumpStat(found === 'saddle' || found === 'bridle' ? 'gear' : found);
+    updateHud();
+  }
+}
+
+function makeChest() {
+  const chest = new THREE.Group();
+  const woodMat = new THREE.MeshLambertMaterial({ color: 0x7a4f2a });
+  const base = new THREE.Mesh(new THREE.BoxGeometry(6, 3.5, 4), woodMat);
+  base.position.y = 1.75;
+  chest.add(base);
+  const lidPivot = new THREE.Group();
+  lidPivot.position.set(0, 3.5, -2);
+  const lid = new THREE.Mesh(new THREE.BoxGeometry(6, 1.2, 4), new THREE.MeshLambertMaterial({ color: 0x9a6a3a }));
+  lid.position.set(0, 0.6, 2);
+  lidPivot.add(lid);
+  chest.add(lidPivot);
+  chest.rotation.y = Math.random() * Math.PI;
+  return chest;
+}
+
+// --- Building placement ----------------------------------------------------
+
+function startPlacing(kind) {
+  if (!ready || world.buildings[kind]) return;
+  const enough = kind === 'house' ? game.wood >= 20 : game.wood >= 10 && game.quartz >= 5;
+  if (!enough) {
+    audio.play('deny');
+    log(kind === 'house' ? 'Not enough wood (20 needed).' : 'Not enough materials (10 wood, 5 quartz).');
+    return;
+  }
+  cancelPlacing();
+  placing = { kind, ghost: ghosts[kind] };
+  placing.ghost.visible = true;
+  log(`Choose a spot for the ${kind}. Click to build, right-click to cancel.`);
+  if (!controls.isLocked) setLocked(true);
+}
+
+function cancelPlacing() {
+  if (!placing) return;
+  placing.ghost.visible = false;
+  placing = null;
+}
+
+function confirmPlacing() {
+  const { kind, ghost } = placing;
+  const spot = ghost.position.clone();
+  cancelPlacing();
+  const message = kind === 'house' ? tryBuildHouse(game, spot) : tryBuildStable(game, spot);
+  log(message);
+  const building = world.buildings[kind];
+  if (building) {
+    building.rotation.y = ghost.rotation.y;
+    fx.rise(building);
+    fx.burst(spot.clone().setY(2), 'dust', 30, 26);
+    audio.play('build');
+  }
+  updateHud();
+}
+
+function updatePlacing() {
+  if (!placing) return;
+  const spot = placementSpot();
+  placing.ghost.position.set(spot.x, 0, spot.z);
+  // Face the building's doorway (+Z) back toward the player.
+  placing.ghost.rotation.y = Math.atan2(player.position.x - spot.x, player.position.z - spot.z);
+}
+
+// --- Riding ---------------------------------------------------------------
+
+function toggleRide() {
+  if (!ready) return;
+  if (!canRide(game)) {
+    if (game.horse) {
+      audio.play('deny');
+      log(`Not ready to ride: ${nextObjective(game).toLowerCase()}.`);
+    }
+    return;
+  }
+  const horse = game.horse;
+  if (!game.riding && flatDistance(horse.mesh.position, player.position) > 60) {
+    log(`${game.horseName} is too far away — walk over to them first.`);
+    return;
+  }
+  const message = ride(game);
+  log(message);
+  audio.play('whinny');
+  if (game.riding) {
+    cancelPlacing();
+    player.position.x = horse.mesh.position.x;
+    player.position.z = horse.mesh.position.z;
+    hands.setVisible(false);
+    if (message.includes('did it')) {
+      fx.burst(horse.mesh.position.clone().setY(20), 'heart', 20, 12);
+      fx.popup(horse.mesh.position, 'YOU DID IT!', '#9fe08a');
+    }
+  } else {
+    horse.mesh.position.y = 0;
+    horse.mesh.rotation.x = 0;
+    horse.mesh.position.add(lookAhead(-14).applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2));
+    hands.setVisible(true);
+  }
+  updateHud();
+}
+
+function carryHorse(moving, running) {
+  const horse = game.horse;
+  const dir = lookAhead(1);
+  horse.mesh.position.set(player.position.x - dir.x * 3, 0, player.position.z - dir.z * 3);
+  horse.mesh.rotation.y = Math.atan2(dir.x, dir.z) + Math.PI + horse.yaw;
+  const gait = moving ? (running ? 11 : 7) : 0;
+  const bounce = moving ? Math.abs(Math.sin(elapsed * gait)) * (running ? 2.2 : 1) : Math.sin(elapsed * 1.5) * 0.15;
+  horse.mesh.position.y = bounce;
+  horse.mesh.rotation.x = moving ? Math.sin(elapsed * gait) * (running ? 0.08 : 0.03) : 0;
+  player.position.y = RIDE_HEIGHT + bounce * 0.8;
+}
+
+function bumpStat(key) {
+  const el = dom.stats[key];
+  if (!el) return;
+  el.parentElement.classList.remove('bump');
+  void el.parentElement.offsetWidth; // restart the CSS animation
+  el.parentElement.classList.add('bump');
 }
 
 // Touch mode has no real pointer lock, so flip the flag the game reads instead.
@@ -321,7 +654,8 @@ function updateHud() {
 
   dom.buttons.house.disabled = game.wood < 20 || Boolean(world.buildings.house);
   dom.buttons.stable.disabled = game.wood < 10 || game.quartz < 5 || Boolean(world.buildings.stable);
-  dom.buttons.ride.disabled = game.won || !canRide(game);
+  dom.buttons.ride.disabled = !canRide(game);
+  dom.buttons.ride.textContent = game.riding ? '[R] Dismount' : '[R] Ride';
 
   dom.objective.textContent = nextObjective(game);
 }
@@ -332,14 +666,24 @@ function updatePrompt() {
     dom.prompt.textContent = '';
     return;
   }
-
-  const hit = pickUnderCrosshair();
-  if (!hit) {
+  if (placing) {
+    dom.prompt.textContent = `[Click] Build ${placing.kind} here · [Right-click] cancel`;
+    return;
+  }
+  if (game.riding) {
     dom.prompt.textContent = '';
     return;
   }
 
+  const hit = pickUnderCrosshair();
+  if (!hit) {
+    dom.prompt.textContent = '';
+    hands.hold(null);
+    return;
+  }
+
   const creature = creatureForObject(hit.object);
+  hands.hold(creature ? (creature.kind === 'horse' && game.feed > 0 ? 'hay' : creature.kind === 'salamander' ? 'pickaxe' : null) : null);
   if (creature) {
     if (creature.kind === 'horse' && !creature.tamed) {
       dom.prompt.textContent = `[E] Offer feed — ${creature.coat} horse, trust ${Math.round(creature.trust)}/100`;
@@ -354,14 +698,19 @@ function updatePrompt() {
   }
 
   const prop = hit.object.userData.type ? hit.object : hit.object.parent;
+  const tool = { tree: 'axe', quartz: 'pickaxe', hay: 'hay' }[prop?.userData?.type] ?? null;
+  hands.hold(tool);
+  const hits = prop?.userData?.hits ?? 0;
   const labels = {
-    tree: '[E] Chop for wood',
-    quartz: '[E] Mine quartz',
-    hay: '[E] Gather feed',
+    tree: hits ? `[E] Chop — ${3 - hits} more` : '[E] Chop for wood',
+    quartz: hits ? `[E] Mine — ${4 - hits} more` : '[E] Mine quartz',
+    hay: '[E] Scoop hay',
     bed: '[E] Sleep',
     trough: '[E] Stable your horse',
   };
-  dom.prompt.textContent = labels[prop?.userData?.type] ?? '';
+  dom.prompt.textContent = tool && tool !== 'hay' && hit.distance > REACH
+    ? `${labels[prop.userData.type]} — walk closer`
+    : labels[prop?.userData?.type] ?? '';
 }
 
 // --- Simulation -----------------------------------------------------------
@@ -434,15 +783,20 @@ function updateSky(delta) {
 
 function updateMovement(delta) {
   const running = keys.has('ShiftLeft') || keys.has('ShiftRight');
-  const target = running ? RUN_SPEED : WALK_SPEED;
+  const target = game.riding ? (running ? GALLOP_SPEED : RIDE_SPEED) : running ? RUN_SPEED : WALK_SPEED;
 
   const forward =
     Number(keys.has('KeyW') || keys.has('ArrowUp')) - Number(keys.has('KeyS') || keys.has('ArrowDown'));
   const strafe =
     Number(keys.has('KeyD') || keys.has('ArrowRight')) - Number(keys.has('KeyA') || keys.has('ArrowLeft'));
 
-  if (!controls.isLocked || (forward === 0 && strafe === 0)) {
+  const moving = controls.isLocked && (forward !== 0 || strafe !== 0);
+  hands.update(delta, moving, target);
+  if (game.riding) carryHorse(moving, running);
+
+  if (!moving) {
     player.speed *= Math.max(0, 1 - delta * 8);
+    if (!game.riding) player.position.y = EYE_HEIGHT;
     return;
   }
 
@@ -450,7 +804,17 @@ function updateMovement(delta) {
   const step = target * delta;
   controls.moveForward((forward / magnitude) * step);
   controls.moveRight((strafe / magnitude) * step);
-  player.speed = target;
+  // While riding, horses see a calm rider, not a sprinting stranger.
+  player.speed = game.riding ? 0 : target;
+
+  // Footsteps (or hoofbeats) and a little head bob.
+  strideDistance += target * delta;
+  const stride = game.riding ? (running ? 9 : 12) : running ? 11 : 9;
+  if (strideDistance > stride) {
+    strideDistance = 0;
+    audio.play(game.riding ? 'hoof' : 'step');
+    if (game.riding && running) audio.play('hoof');
+  }
 
   // Keep the player on the field.
   const flat = new THREE.Vector2(player.position.x, player.position.z);
@@ -459,7 +823,7 @@ function updateMovement(delta) {
     player.position.x = flat.x;
     player.position.z = flat.y;
   }
-  player.position.y = EYE_HEIGHT;
+  if (!game.riding) player.position.y = EYE_HEIGHT + Math.abs(Math.sin(strideDistance / stride * Math.PI)) * (running ? 0.9 : 0.5);
 }
 
 function updateHazards() {
@@ -489,13 +853,17 @@ function animate() {
   const delta = Math.min(clock.getDelta(), 0.1);
   elapsed += delta;
 
+  swingCooldown = Math.max(0, swingCooldown - delta);
   updateMovement(delta);
+  updatePlacing();
+  fx.update(delta, player.position);
   updateSky(delta);
   updateWeather(delta);
 
   if (ready) {
     updateCreatures(creatures, { player, world, weather }, delta, elapsed);
     updateHazards();
+    updateTrustBars();
   }
 
   promptTimer -= delta;
@@ -504,7 +872,25 @@ function animate() {
     updatePrompt();
   }
 
+  const shakeX = fx.shakeOffset();
+  const shakeY = fx.shakeOffset();
+  camera.position.x += shakeX;
+  camera.position.y += shakeY;
   renderer.render(scene, camera);
+  camera.position.x -= shakeX;
+  camera.position.y -= shakeY;
+}
+
+function updateTrustBars() {
+  for (const creature of creatures) {
+    const bar = creature.trustBar;
+    if (!bar) continue;
+    const near = flatDistance(creature.mesh.position, player.position) < 140;
+    bar.visible = !creature.tamed && near && (creature.trust > 0 || creature.spooked > 0);
+    if (!bar.visible) continue;
+    bar.position.copy(creature.mesh.position).setY(18);
+    bar.userData.set(creature.trust, creature.spooked > 0);
+  }
 }
 
 renderer.setAnimationLoop(animate);

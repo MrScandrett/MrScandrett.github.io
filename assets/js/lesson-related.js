@@ -11,6 +11,8 @@
   var CONSTELLATIONS = 'cosmology/constellations.html';
 
   var LINKS = {
+    'cosmology/apollo-moon-landing.html': [['computer-science/pioneers/margaret-hamilton.html', 'Margaret Hamilton: Software for the Moon', 'Investigate Apollo guidance software and compare overload recovery policies in a computer workload lab.']],
+    'computer-science/pioneers/grace-hopper.html': [['computer-science/pioneers/margaret-hamilton.html', 'Margaret Hamilton: Software for the Moon', 'Continue from programming languages to dependable real-time flight software.']],
     'cosmology/tycho-brahe.html': [[CONSTELLATIONS, 'Constellations: Cassiopeia and SN 1572', 'Find Cassiopeia on the star map, see where Tycho’s “new star” blazed in 1572, and read about the supernova remnant it left behind.']],
     'cosmology/uraniborg.html': [[CONSTELLATIONS, 'Constellations: the sky Brahe measured', 'Explore the star patterns Brahe catalogued, plus the Cassiopeia supernova of 1572.']],
     'cosmology/keplers-laws.html': [[CONSTELLATIONS, 'Constellations: the zodiac and the ecliptic', 'The planets Kepler tracked wander along the ecliptic through the twelve zodiac constellations.']],

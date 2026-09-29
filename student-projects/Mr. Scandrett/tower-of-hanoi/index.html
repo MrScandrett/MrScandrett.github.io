@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tower of Hanoi</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <h1>Tower of Hanoi</h1>
+    <p class="subtitle">Move the whole tower to the right-hand peg. Move one disk at a time, and never put a bigger disk on a smaller one.</p>
+
+    <div class="toolbar">
+      <label class="field">
+        <span>Disks</span>
+        <select id="disks">
+          <option value="3">3</option>
+          <option value="4" selected>4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+        </select>
+      </label>
+      <div class="counter">
+        <span class="stat-label">Moves</span>
+        <strong id="moveCount">0</strong>
+      </div>
+      <div class="counter">
+        <span class="stat-label">Fewest possible</span>
+        <strong id="minMoves">15</strong>
+      </div>
+      <div class="toolbar-buttons">
+        <button type="button" id="undoBtn">↶ Undo</button>
+        <button type="button" id="hintBtn">💡 Hint</button>
+        <button type="button" id="restartBtn">⟲ Restart</button>
+      </div>
+    </div>
+
+    <div class="stage" id="stage">
+      <button type="button" class="peg" data-peg="0" aria-label="Peg 1"></button>
+      <button type="button" class="peg" data-peg="1" aria-label="Peg 2"></button>
+      <button type="button" class="peg target" data-peg="2" aria-label="Peg 3, the goal"></button>
+    </div>
+    <p class="status" id="status" aria-live="polite">Click a peg to pick up its top disk, then click where to put it. Keys 1, 2, and 3 work too.</p>
+
+    <div class="lower">
+      <section class="card">
+        <h2>Watch the computer solve it</h2>
+        <p class="small">It solves from wherever the disks are now, always choosing a move on the shortest path to the goal.</p>
+        <div class="buttons">
+          <button type="button" id="solveBtn" class="primary">▶ Solve from here</button>
+          <label class="field speed">
+            <span>Speed</span>
+            <input type="range" id="speed" min="1" max="100" value="40" />
+          </label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>The recursive idea</h2>
+        <p class="small">To move a tower of <em>n</em> disks from peg A to peg C:</p>
+        <ol class="small recipe">
+          <li>Move the top <em>n</em> − 1 disks from A to B (using C as the spare).</li>
+          <li>Move the biggest disk from A to C.</li>
+          <li>Move the <em>n</em> − 1 disks from B onto C (using A as the spare).</li>
+        </ol>
+        <p class="small">Steps 1 and 3 are the same puzzle with one fewer disk. Each extra disk doubles the work, plus one move, so <em>n</em> disks need 2<sup><em>n</em></sup> − 1 moves.</p>
+      </section>
+
+      <section class="card">
+        <h2>How long would it take?</h2>
+        <table class="growth" id="growth">
+          <thead><tr><th>Disks</th><th>Fewest moves</th><th>At 1 move per second</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </div>
+
+    <details class="about">
+      <summary>About the puzzle</summary>
+      <p>The French mathematician Édouard Lucas invented the puzzle in 1883 and sold it as a toy. It came with a made-up legend: in a temple, priests move 64 golden disks between three diamond needles, and when they finish, the world will end.</p>
+      <p>At one move per second with no mistakes, 64 disks take 2<sup>64</sup> − 1 = 18,446,744,073,709,551,615 moves: about 585 billion years, over 40 times the age of the universe.</p>
+      <p>The puzzle is a favorite first example of recursion in computer science: a problem solved by solving smaller copies of itself.</p>
+    </details>
+  </div>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>

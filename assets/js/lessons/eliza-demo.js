@@ -1,3 +1,6 @@
+import { createEliza } from "./eliza-engine.js";
+import { DOCTOR_1966 } from "./eliza-doctor-1966.js";
+
 const chatLog = document.getElementById("eliza-chat-log");
 const form = document.getElementById("eliza-form");
 const input = document.getElementById("eliza-input");
@@ -12,7 +15,7 @@ if (!chatLog || !form || !input || !clearButton || !resetButton || !scriptSelect
   throw new Error("ELIZA demo could not initialize. Missing expected DOM elements.");
 }
 
-const STORAGE_KEY = "classroomos:eliza1966:v2";
+const STORAGE_KEY = "classroomos:eliza1966:v3";
 
 const reflections = {
   AM: "ARE",
@@ -39,218 +42,19 @@ const state = {
   pendingCount: 0
 };
 
+const doctorTranscriptNote =
+  "Running Weizenbaum's original 1966 DOCTOR script (CACM, January 1966) on a faithful port of the ELIZA algorithm.";
+
+let doctor = createEliza(DOCTOR_1966);
+
 const scripts = {
   DOCTOR: {
-    welcome: "Please state your problem.",
-    scriptLabel: "DOCTOR",
-    fallbackReplies: [
-      "Please go on.",
-      "Tell me more.",
-      "Why do you say that?",
-      "How does that make you feel?",
-      "What comes to mind when you say that?",
-      "Can you elaborate on that?"
-    ],
-    rules: [
-      {
-        id: "doctor-name",
-        keyword: "MY NAME IS",
-        template: "PERSONALIZATION",
-        pattern: /\bMY NAME IS\s+([A-Z][A-Z '\-]*)/,
-        reply(match) {
-          state.name = cleanCapture(match[1]);
-          return {
-            text: `How do you feel today, ${state.name}?`,
-            substitutions: []
-          };
-        }
-      },
-      {
-        id: "doctor-topic",
-        keyword: "TOPIC",
-        template: "TOPIC SLOT",
-        pattern: /\b(?:I WANT TO TALK ABOUT|LET US TALK ABOUT|THE TOPIC IS)\s+(.+)/,
-        reply(match) {
-          state.topic = cleanCapture(match[1]);
-          return {
-            text: `We shall discuss ${state.topic}. What about it troubles you?`,
-            substitutions: []
-          };
-        }
-      },
-      {
-        id: "doctor-feel",
-        keyword: "I FEEL",
-        template: "REFLECTION",
-        pattern: /\bI FEEL\s+(.+)/,
-        reply(match) {
-          const reflected = reflectWithMeta(cleanCapture(match[1]));
-          return {
-            text: `Do you often feel ${reflected.text}?`,
-            substitutions: reflected.substitutions
-          };
-        }
-      },
-      {
-        id: "doctor-i-am",
-        keyword: "I AM",
-        template: "REFLECTION",
-        pattern: /\bI AM\s+(.+)/,
-        reply(match) {
-          const reflected = reflectWithMeta(cleanCapture(match[1]));
-          return {
-            text: `How long have you been ${reflected.text}?`,
-            substitutions: reflected.substitutions
-          };
-        }
-      },
-      {
-        id: "doctor-i-think",
-        keyword: "I THINK",
-        template: "REFLECTION",
-        pattern: /\bI THINK\s+(.+)/,
-        reply(match) {
-          const reflected = reflectWithMeta(cleanCapture(match[1]));
-          return {
-            text: `What leads you to think ${reflected.text}?`,
-            substitutions: reflected.substitutions
-          };
-        }
-      },
-      {
-        id: "doctor-because",
-        keyword: "BECAUSE",
-        template: "REPHRASE",
-        pattern: /\bBECAUSE\s+(.+)/,
-        reply(match) {
-          const reflected = reflectWithMeta(cleanCapture(match[1]));
-          return {
-            text: `Is ${reflected.text} the real reason?`,
-            substitutions: reflected.substitutions
-          };
-        }
-      },
-      {
-        id: "doctor-family",
-        keyword: "FAMILY",
-        template: "CATEGORY PROMPT",
-        pattern: /\b(?:MOTHER|FATHER|MOM|DAD|FAMILY)\b/,
-        reply() {
-          return {
-            text: "Tell me more about your family.",
-            substitutions: []
-          };
-        }
-      },
-      {
-        id: "doctor-sorry",
-        keyword: "SORRY",
-        template: "REASSURANCE",
-        pattern: /\b(?:SORRY|APOLOGIZE)\b/,
-        reply() {
-          return {
-            text: "There is no need to apologize.",
-            substitutions: []
-          };
-        }
-      },
-      {
-        id: "doctor-always-never",
-        keyword: "ALWAYS/NEVER",
-        template: "SPECIFICITY CHECK",
-        pattern: /\b(?:ALWAYS|NEVER)\b/,
-        reply() {
-          return {
-            text: "Can you think of a specific example?",
-            substitutions: []
-          };
-        }
-      },
-      {
-        id: "doctor-can-you",
-        keyword: "CAN YOU",
-        template: "QUESTION REFLECTION",
-        pattern: /\bCAN YOU\s+(.+)/,
-        reply(match) {
-          const reflected = reflectWithMeta(cleanCapture(match[1]));
-          return {
-            text: `What would it mean if I could ${reflected.text}?`,
-            substitutions: reflected.substitutions
-          };
-        }
-      },
-      {
-        id: "doctor-why-dont-you",
-        keyword: "WHY DON'T YOU",
-        template: "QUESTION REFLECTION",
-        pattern: /\bWHY DON'T YOU\s+(.+)/,
-        reply(match) {
-          const reflected = reflectWithMeta(cleanCapture(match[1]));
-          return {
-            text: `Do you believe I do not ${reflected.text}?`,
-            substitutions: reflected.substitutions
-          };
-        }
-      },
-      {
-        id: "doctor-yes",
-        keyword: "YES",
-        template: "CERTAINTY CHECK",
-        pattern: /\b(?:YES|YEAH)\b/,
-        reply() {
-          return {
-            text: "You seem quite certain.",
-            substitutions: []
-          };
-        }
-      },
-      {
-        id: "doctor-no",
-        keyword: "NO",
-        template: "PROBE",
-        pattern: /\b(?:NO|NOPE)\b/,
-        reply() {
-          return {
-            text: "Why not?",
-            substitutions: []
-          };
-        }
-      },
-      {
-        id: "doctor-remember",
-        keyword: "REMEMBER",
-        template: "CONTEXT CALLBACK",
-        pattern: /\b(?:REMEMBER|YOU SAID)\b/,
-        reply() {
-          if (state.topic) {
-            return {
-              text: `We were discussing ${state.topic}. What about it is most important?`,
-              substitutions: []
-            };
-          }
-          return {
-            text: "What would you like me to remember?",
-            substitutions: []
-          };
-        }
-      },
-      {
-        id: "doctor-question",
-        keyword: "QUESTION",
-        template: "QUESTION DEFLECTION",
-        pattern: /\?$/,
-        reply() {
-          return {
-            text: "What answer would satisfy you?",
-            substitutions: []
-          };
-        }
-      }
-    ]
+    welcome: doctor.opening,
+    scriptLabel: "DOCTOR (1966 original)"
   },
   NEUTRAL: {
     welcome: "Hello. I am a rule-based conversation mirror. Share a thought.",
-    scriptLabel: "NEUTRAL",
+    scriptLabel: "NEUTRAL (modern classroom rules, not historical)",
     fallbackReplies: [
       "I hear you. Say a little more.",
       "That sounds important to you.",
@@ -527,6 +331,21 @@ function generateElizaReply(text, scriptName) {
     };
   }
 
+  if (scriptName === "DOCTOR") {
+    const { text: replyText, trace } = doctor.respond(text);
+    return {
+      replyText,
+      debug: {
+        matchedKeyword: trace.keystack.length ? trace.keystack.join(", ") : "none",
+        ruleId: trace.source,
+        template: trace.steps.join(" | "),
+        substitutions: trace.substitutions,
+        fallback: false,
+        doctor: true
+      }
+    };
+  }
+
   const scriptConfig = getScriptConfig(scriptName);
   for (const rule of scriptConfig.rules) {
     const match = normalized.match(rule.pattern);
@@ -598,11 +417,15 @@ function createWhyPanel(debug) {
   why.appendChild(summary);
 
   const matched = document.createElement("p");
-  matched.textContent = `Matched keyword/pattern: ${debug.fallback ? "Fallback response used." : debug.matchedKeyword}`;
+  matched.textContent = debug.doctor
+    ? `Keyword stack (rank): ${debug.matchedKeyword} · reply from: ${debug.ruleId}`
+    : `Matched keyword/pattern: ${debug.fallback ? "Fallback response used." : debug.matchedKeyword}`;
   why.appendChild(matched);
 
   const template = document.createElement("p");
-  template.textContent = `Transformation template: ${debug.template || "N/A"}`;
+  template.textContent = debug.doctor
+    ? `Script steps: ${debug.template || "N/A"}`
+    : `Transformation template: ${debug.template || "N/A"}`;
   why.appendChild(template);
 
   const substitutions = document.createElement("p");
@@ -682,12 +505,14 @@ function clearChat(shouldPersist = true) {
   state.pendingTimers = [];
   state.pendingCount = 0;
   setTyping(false);
+  doctor = createEliza(DOCTOR_1966);
   state.name = null;
   state.topic = null;
   state.turn = 0;
   state.transcript = [];
   chatLog.innerHTML = "";
   addSystemMessage(`ELIZA ${getScriptConfig(state.script).scriptLabel} script loaded.`, shouldPersist);
+  if (state.script === "DOCTOR") addSystemMessage(doctorTranscriptNote, shouldPersist);
   appendMessage("ELIZA", getScriptConfig(state.script).welcome, null, shouldPersist);
   if (shouldPersist) saveState();
 }
@@ -762,6 +587,10 @@ function initialize() {
   showWhyToggle.checked = state.showWhy;
 
   if (restored && state.transcript.length) {
+    // rebuild DOCTOR's memory queue and reply rotation from the saved conversation
+    for (const message of state.transcript) {
+      if (message.role === "YOU") doctor.respond(message.text);
+    }
     renderTranscript();
     setTyping(false);
     return;

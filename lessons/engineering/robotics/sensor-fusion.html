@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en" data-glossary-manual>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sensor Fusion: Gyro + Accelerometer · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta name="description" content="Estimate a robot&#39;s tilt from a drifting gyroscope and a noisy accelerometer, then fuse them with a complementary filter and a Kalman filter and compare the errors live." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/robot-autonomy.css" />
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary"><ul>
+          <li><a href="../../../index.html">Home</a></li><li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li><li><a href="../../../paths.html">Paths</a></li><li><a href="../../../showcase.html">Showcase</a></li><li><a href="../../../applications.html">Apps</a></li><li><a href="../../../recipe-book.html">Library</a></li><li><a href="../../../about.html">About</a></li>
+        </ul></nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="ra-page" data-glossary-root>
+          <section class="ra-hero" aria-labelledby="ra-title">
+            <div>
+              <p class="ra-kicker">Engineering · Robot Autonomy · Perception</p>
+              <h1 id="ra-title">Sensor Fusion: <span>Two Liars, One Truth</span></h1>
+              <p class="ra-lede">A gyroscope is smooth and quick, but it slowly drifts off. An accelerometer never drifts, but it jitters and gets fooled by every bump. Neither can be trusted alone. <strong><span data-glossary="sensor fusion">Sensor fusion</span></strong> blends them so each covers the other's weakness. It's how a phone knows which way is up, a drone stays level, and a self-balancing robot stays upright.</p>
+              <div class="ra-meta"><span>Grades 8–12</span><span>45–60 minutes</span><span>Live IMU sim</span><span>Filters</span></div>
+              <a class="ra-back" href="../../../steam-lessons.html#module-engineering">← Back to Engineering</a>
+            </div>
+            <svg class="ra-hero-art" viewBox="0 0 320 220" role="img" aria-labelledby="hero-art-title">
+              <title id="hero-art-title">Three traces over time: a drifting orange gyro line, a jagged blue accelerometer line, and a smooth green fused line that follows the true angle</title>
+              <rect width="320" height="220" fill="#0f1d23"/>
+              <path d="M20 110h280" stroke="rgba(112,200,229,.2)"/>
+              <path d="M20 110l14-12 10 18 10-26 12 30 10-22 12 16 10-20 14 24 10-18 12 20 12-26 10 22 12-14 14 18 10-24 12 20 14-16 12 12 12-20 14 14 10-8 12 10" stroke="#70c8e5" stroke-width="1.5" fill="none" opacity=".8"/>
+              <path d="M20 110c40-30 80 20 120-10s80 18 160-2" stroke="#e8f6fb" stroke-width="4" fill="none"/>
+              <path d="M20 110c40-34 80 10 120-24s80 0 160-38" stroke="#c65e2e" stroke-width="2.5" fill="none"/>
+              <path d="M20 110c40-29 80 19 120-9s80 16 160-3" stroke="#b8d84b" stroke-width="2.5" fill="none" stroke-dasharray="6 4"/>
+              <text x="160" y="200" fill="#d4e0df" font-family="IBM Plex Mono, monospace" font-size="11" text-anchor="middle">gyro drifts · accel jitters · fused follows</text>
+            </svg>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-blue);">
+            <p class="ra-label">Meet the sensors</p><h2>Every sensor lies a little</h2>
+            <p>An <strong><span data-glossary="inertial measurement unit">IMU</span></strong> (inertial measurement unit) is a tiny chip holding a gyroscope and an accelerometer — the same chip as in the <a class="ra-more" href="../arduino-and-electronics/sensor-modules.html">MPU-6050 module in your sensor kit</a>. To find tilt, you can use either one. Both are wrong, in <em>opposite</em> ways.</p>
+            <div class="ra-cols">
+              <article style="--ra-accent:var(--ra-copper);"><h3>Gyroscope</h3><p>Measures <em>how fast</em> you're rotating. Add up (integrate) the rate over time to get the angle.</p><p><strong>Good:</strong> smooth, instant, ignores bumps. <strong>Bad:</strong> a tiny constant error (bias) gets added every step, so the angle <strong>drifts</strong> away forever.</p></article>
+              <article style="--ra-accent:#70c8e5;"><h3>Accelerometer</h3><p>Measures which way gravity pulls. Gravity points down, so its direction gives the tilt directly.</p><p><strong>Good:</strong> never drifts. <strong>Bad:</strong> noisy, and any shove, bump, or turn looks like tilt.</p></article>
+              <article style="--ra-accent:var(--ra-lime);"><h3>Fusion</h3><p>Trust the gyro for fast changes. Trust the accelerometer for the long-run average. Blend the two continuously.</p><p>Robots fuse many more: wheel encoders, GPS, cameras, LiDAR, and compass.</p></article>
+            </div>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-lime);">
+            <p class="ra-label">Sim · Tilt estimator</p><h2>Fuse a gyro and an accelerometer</h2>
+            <p>The blue robot body wobbles. Its IMU reads 100 times a second. Each line is a different way to <em>estimate</em> the tilt. The white line is the truth, which a real robot never gets to see. Watch the scoreboard below the chart.</p>
+            <div class="ra-sim">
+              <div class="ra-sim-grid">
+                <div>
+                  <canvas id="sf-canvas" width="640" height="320" aria-label="Tilt estimation chart comparing gyro, accelerometer, complementary filter, and Kalman filter against the true angle"></canvas>
+                  <p class="ra-readout" id="sf-readout" aria-live="off"></p>
+                  <div class="ra-controls"><fieldset><legend>Show</legend><div class="ra-btns" style="gap:.3rem .9rem;">
+                    <label class="ra-check"><input type="checkbox" data-sf-show="truth" checked> <span style="color:#e8f6fb">True</span></label>
+                    <label class="ra-check"><input type="checkbox" data-sf-show="gyro" checked> <span style="color:#ff9a6b">Gyro only</span></label>
+                    <label class="ra-check"><input type="checkbox" data-sf-show="accel" checked> <span style="color:#70c8e5">Accel only</span></label>
+                    <label class="ra-check"><input type="checkbox" data-sf-show="comp" checked> <span style="color:#b8d84b">Complementary</span></label>
+                    <label class="ra-check"><input type="checkbox" data-sf-show="kalman"> <span style="color:#f2bf3f">Kalman</span></label>
+                  </div></fieldset></div>
+                </div>
+                <div class="ra-controls">
+                  <fieldset><legend>Motion</legend>
+                    <label>Robot movement<select id="sf-motion"><option value="wobble">Wobble on its own</option><option value="manual">I control the tilt</option><option value="still">Hold still</option></select></label>
+                    <label>Tilt: <output id="sf-tilt-out">0</output>°<input id="sf-tilt" type="range" min="-40" max="40" value="0" disabled></label>
+                    <label class="ra-check"><input id="sf-bumps" type="checkbox"> Bumpy floor (shakes the accelerometer)</label>
+                  </fieldset>
+                  <fieldset><legend>Sensor flaws</legend>
+                    <label>Gyro bias: <output id="sf-bias-out">3.0</output> °/s<input id="sf-bias" type="range" min="0" max="10" step="0.5" value="3"></label>
+                    <label>Accel noise: <output id="sf-noise-out">6</output>°<input id="sf-noise" type="range" min="0" max="20" step="1" value="6"></label>
+                  </fieldset>
+                  <fieldset><legend>Complementary filter</legend>
+                    <label>α (gyro trust): <output id="sf-alpha-out">0.980</output><input id="sf-alpha" type="range" min="0.5" max="0.999" step="0.001" value="0.98"></label>
+                  </fieldset>
+                  <div class="ra-btns"><button class="ra-btn" id="sf-run" type="button" aria-pressed="false">Pause</button><button class="ra-btn" id="sf-reset" type="button">Reset estimates</button></div>
+                </div>
+              </div>
+            </div>
+            <div class="ra-cols">
+              <article><h3>1 · Drift</h3><p>Set movement to <strong>Hold still</strong> and wait. What happens to the gyro-only line? Set the bias to 0. Does the drift stop?</p></article>
+              <article><h3>2 · Tune α</h3><p>Drag α to 0.5, then 0.999. Which extreme looks like the accelerometer, and which like the gyro? Find the α with the lowest error.</p></article>
+              <article><h3>3 · Bumps</h3><p>Turn on the bumpy floor. Which estimate gets fooled most? Turn on Kalman and compare it to your best α.</p></article>
+            </div>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-copper);">
+            <p class="ra-label">The math, one line each</p><h2>Two classic filters</h2>
+            <div class="ra-cols">
+              <article><h3>Complementary filter</h3><p><code>angle = α·(angle + gyro·dt) + (1 − α)·accel</code></p><p>Each step: move the old angle by the gyro, then nudge it a tiny bit (1 − α) toward the accelerometer. The nudges are too small to pass noise through, but they add up enough to cancel drift. Five lines of Arduino code.</p></article>
+              <article><h3>Kalman filter</h3><p>Rudolf Kálmán (1960). It keeps a best guess <em>and how uncertain it is</em>. It predicts with the gyro (uncertainty grows), then corrects with the accelerometer. Its weight is set by comparing the two uncertainties, not by hand.</p><p>This version also <strong>estimates the gyro's bias</strong> and subtracts it.</p></article>
+              <article><h3>Where it flew</h3><p>A <span data-glossary="Kalman filter">Kalman filter</span> helped guide Apollo to the Moon. It fused the spacecraft's inertial sensors with radar and star sightings. Today it runs in every GPS receiver, phone, drone, and self-driving car.</p></article>
+            </div>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-yellow);">
+            <p class="ra-label">Why it matters</p><h2>Fusion feeds everything else</h2>
+            <p>A balancing robot's <a class="ra-more" href="../arduino-and-electronics/pid-control.html">PID controller</a> can only be as good as the angle it's given. Feed it the gyro-only line and it slowly leans until it falls. Feed it the raw accelerometer and it shudders. Feed it the fused angle and it stands. The same goes for position: <a class="ra-more" href="robot-mapping-localization.html">localization</a> fuses wheel odometry with LiDAR scans.</p>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-copper);">
+            <p class="ra-label">Where you’ll see it</p><h2>Fusion hardware, from Apollo to your pocket</h2>
+            <p>Click any photo to enlarge it.</p>
+            <div class="ra-figs">
+              <figure data-zoomable data-lightbox-group="fusion">
+                <img src="../../../assets/images/lessons/robotics/inertial-measurement-unit-apollo-guidance-and-navi.jpg" alt="The Apollo inertial measurement unit, a metal sphere-shaped gyroscope assembly, in a museum case" loading="lazy" />
+                <figcaption><strong>Apollo’s IMU</strong> Spinning gyroscopes inside this sphere tracked the spacecraft’s orientation on the way to the Moon. Its drift was corrected with star sightings, and a Kalman filter did the blending.<small class="photo-credit">Photo: Daderot · <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener noreferrer">CC0</a> · <a href="https://commons.wikimedia.org/wiki/File:Inertial_Measurement_Unit,_Apollo_Guidance_and_Navigation_System,_fabricated_for_vibration_testing,_1961-1966,_view_1_-_MIT_Museum_-_Cambridge,_MA_-_DSC09135.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></small></figcaption>
+              </figure>
+              <figure data-zoomable data-lightbox-group="fusion">
+                <img src="../../../assets/images/lessons/robotics/gy-521-mpu-6050-module-3-axis-gyroscope-accelerome.jpg" alt="A small blue GY-521 circuit board with an MPU-6050 chip and labeled pins" loading="lazy" />
+                <figcaption><strong>The same job, on your bench</strong> The GY-521 module in your sensor kit holds an MPU-6050: a 3-axis gyroscope and a 3-axis accelerometer on one chip, for a few dollars.<small class="photo-credit">Photo: Nevit Dilmen · <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 3.0</a> · <a href="https://commons.wikimedia.org/wiki/File:GY-521_MPU-6050_Module_3_Axis_Gyroscope_%2B_Accelerometer_0487.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></small></figcaption>
+              </figure>
+              <figure data-zoomable data-lightbox-group="fusion">
+                <img src="../../../assets/images/lessons/robotics/mpu6050-big-hd.jpg" alt="A magnified die photo of the MPU-6050 chip showing its microscopic structures" loading="lazy" />
+                <figcaption><strong>Inside the chip</strong> This die photo shows the MPU-6050’s microscopic moving parts (MEMS). Tiny springs and masses shift as the chip tilts or turns, and the change is measured electrically.<small class="photo-credit">Photo: ZeptoBars · <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener noreferrer">CC BY 3.0</a> · <a href="https://commons.wikimedia.org/wiki/File:Mpu6050-big-HD.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></small></figcaption>
+              </figure>
+              <figure data-zoomable data-lightbox-group="fusion">
+                <img src="../../../assets/images/lessons/robotics/mastcam-z-gives-ingenuity-a-close-up.jpg" alt="NASA’s Ingenuity helicopter standing on the red surface of Mars" loading="lazy" />
+                <figcaption><strong>Ingenuity on Mars</strong> NASA’s helicopter combined an IMU, a laser altimeter, and a downward camera to stay level and know where it was. Radio signals take too long to reach Earth, so no one could fly it by hand.<small class="photo-credit">Photo: NASA/JPL-Caltech/ASU/MSSS · Public domain · <a href="https://commons.wikimedia.org/wiki/File:Mastcam-Z_Gives_Ingenuity_a_Close-up.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></small></figcaption>
+              </figure>
+            </div>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-blue);">
+            <p class="ra-label">Robot autonomy series</p><h2>Sense · Think · Act</h2>
+            <nav class="ra-series" aria-label="Robot autonomy lessons">
+              <a href="../mechanical-and-civil-design/robotics-engineering-intro.html"><b>Robotics Intro</b>Sensor, controller, actuator, feedback</a>
+              <a href="robot-mapping-localization.html"><b>Mapping &amp; Localization</b>Occupancy grids, particle filters, SLAM</a>
+              <a href="sensor-fusion.html" aria-current="page"><b>Sensor Fusion</b>Complementary &amp; Kalman filters</a>
+              <a href="../../computer-science/algorithms-and-ai/pathfinding.html"><b>A* Pathfinding</b>Global route on a grid</a>
+              <a href="motion-planning.html"><b>Motion Planning</b>RRT, potential fields, DWA, kinematics</a>
+              <a href="../arduino-and-electronics/pid-control.html"><b>PID Control</b>Hold a target with feedback</a>
+              <a href="../../computer-science/algorithms-and-ai/state-machines.html"><b>State Machines</b>Organize robot behaviors</a>
+              <a href="robot-reinforcement-learning.html"><b>Reinforcement Learning</b>Learn a policy from rewards</a>
+            </nav>
+          </section>
+
+          
+          <section class="ra-card" style="--ra-accent:var(--ra-red);">
+            <p class="ra-label">Quick check</p><h2>Lock it in</h2>
+            <div class="ra-quiz">
+              <div class="ra-question" data-answer="b" data-explanation="Integrating the rate adds the small bias every step, so the error grows without limit."><p>1. Why does a gyro-only angle drift even when the robot sits still?</p><div class="ra-options"><button class="ra-option" data-choice="a">Gravity pulls on the gyro</button><button class="ra-option" data-choice="b">A small bias is added up every time step</button><button class="ra-option" data-choice="c">The accelerometer interferes with it</button><button class="ra-option" data-choice="d">The battery runs down</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-answer="d" data-explanation="Driving, braking, and bumps are accelerations too, and the sensor can't tell them apart from gravity."><p>2. Why do bumps fool the accelerometer?</p><div class="ra-options"><button class="ra-option" data-choice="a">They change gravity</button><button class="ra-option" data-choice="b">They reset the chip</button><button class="ra-option" data-choice="c">They make the gyro drift</button><button class="ra-option" data-choice="d">Any push is an acceleration that looks like tilt</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-answer="a" data-explanation="With α = 0.98, 98% of each update comes from the gyro path; only 2% leans toward the accelerometer."><p>3. In a complementary filter with α = 0.98, which sensor handles fast changes?</p><div class="ra-options"><button class="ra-option" data-choice="a">The gyroscope</button><button class="ra-option" data-choice="b">The accelerometer</button><button class="ra-option" data-choice="c">Both equally</button><button class="ra-option" data-choice="d">Neither</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-answer="c" data-explanation="A Kalman filter tracks uncertainty and computes the blend from it, and can estimate hidden values like gyro bias."><p>4. What does a Kalman filter do that a basic complementary filter doesn't?</p><div class="ra-options"><button class="ra-option" data-choice="a">Uses only one sensor</button><button class="ra-option" data-choice="b">Ignores noise</button><button class="ra-option" data-choice="c">Tracks its own uncertainty and sets the blend from it</button><button class="ra-option" data-choice="d">Needs no math</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head"><div class="ll-tabs"><button class="ll-tab" aria-selected="true" data-pane="ra-plan">Lesson</button><button class="ll-tab" aria-selected="false" data-pane="ra-teacher">Teacher</button></div><button class="ll-panel-close" type="button" aria-label="Close panel">×</button></div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="ra-plan">
+            <span class="ll-label">Learning goals</span>
+            <div class="ll-info"><strong>Name the flaws</strong>Explain gyro drift (bias) and accelerometer noise and why neither works alone.</div>
+            <div class="ll-info"><strong>Blend sensors</strong>Describe how a complementary filter combines fast and slow sensors with one weight, α.</div>
+            <div class="ll-info"><strong>Tune with data</strong>Use the error readout to choose an α and justify it.</div>
+            <div class="ll-info"><strong>Connect systems</strong>Explain why a PID controller or localizer depends on a good fused estimate.</div>
+          </div>
+          <div class="ll-pane" id="ra-teacher">
+            <span class="ll-label">Teaching notes</span>
+            <div class="ll-info"><strong>Launch</strong>Ask two students to estimate the room temperature: one "fast but biased" (adds 3° every guess), one "right on average but random." Whose answer do you want? Both.</div>
+            <div class="ll-info"><strong>Hardware tie-in</strong>With an MPU-6050 and Arduino, print raw gyro angle and accelerometer angle side by side in the Serial Plotter, then add the five-line complementary filter.</div>
+            <div class="ll-info"><strong>Discussion</strong>Why does the phone screen sometimes rotate the wrong way when you lie down? (Only the accelerometer is used.)</div>
+            <div class="ll-info"><strong>Extension</strong>Grades 11–12: relate α to a time constant τ = α·dt / (1 − α). What τ does α = 0.98 at 100 Hz give?</div>
+            <div class="ll-info"><strong>Assessment</strong>Students write, in their own words, the rule "trust the gyro short-term, the accelerometer long-term" and point to the chart as evidence.</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script src="../../../assets/js/sim-kit.js"></script>
+  <script src="../../../assets/js/lessons/robot-autonomy-common.js"></script>
+  <script src="../../../assets/js/lessons/sensor-fusion.js"></script>
+  <script src="../../../assets/js/classroom-animations.js"></script>
+  <script src="../../../assets/js/lesson-layout.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
+  <script src="../../../assets/js/site-glossary.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

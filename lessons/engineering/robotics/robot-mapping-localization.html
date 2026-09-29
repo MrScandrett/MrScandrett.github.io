@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en" data-glossary-manual>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Where Am I? Robot Mapping &amp; Localization · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta name="description" content="Drive a LiDAR robot that builds an occupancy grid map, watch odometry drift smear the map, then localize the robot on a known map with a particle filter. An introduction to SLAM." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/robot-autonomy.css" />
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary"><ul>
+          <li><a href="../../../index.html">Home</a></li><li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li><li><a href="../../../paths.html">Paths</a></li><li><a href="../../../showcase.html">Showcase</a></li><li><a href="../../../applications.html">Apps</a></li><li><a href="../../../recipe-book.html">Library</a></li><li><a href="../../../about.html">About</a></li>
+        </ul></nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="ra-page" data-glossary-root>
+          <section class="ra-hero" aria-labelledby="ra-title">
+            <div>
+              <p class="ra-kicker">Engineering · Robot Autonomy · Perception</p>
+              <h1 id="ra-title">Where Am I? <span>Mapping &amp; Localization</span></h1>
+              <p class="ra-lede">A robot dropped into a new building knows nothing: not where the walls are, and not where <em>it</em> is. Every self-driving car, warehouse robot, and robot vacuum has to answer two questions at once — <strong>what does the world look like?</strong> and <strong>where am I in it?</strong> Build a map from laser scans, watch small wheel errors wreck it, then use a cloud of guesses to find a lost robot.</p>
+              <div class="ra-meta"><span>Grades 7–12</span><span>50–60 minutes</span><span>Two live sims</span><span>Probability</span></div>
+              <a class="ra-back" href="../../../steam-lessons.html#module-engineering">← Back to Engineering</a>
+            </div>
+            <svg class="ra-hero-art" viewBox="0 0 320 220" role="img" aria-labelledby="hero-art-title">
+              <title id="hero-art-title">A robot in a room sweeping laser rays that turn grey unknown cells into white free cells and black wall cells</title>
+              <rect width="320" height="220" fill="#34484f"/>
+              <g fill="#e6eeea"><path d="M60 40h180v140H60z"/></g>
+              <g fill="#15232a"><path d="M60 40h180v8H60zM60 172h180v8H60zM60 40h8v140h-8zM232 40h8v70h-8zM150 110h50v10h-50z"/></g>
+              <g stroke="#b8d84b" stroke-opacity=".7"><path d="M120 140L64 60M120 140L150 44M120 140L236 70M120 140L175 110M120 140L236 176M120 140L64 176"/></g>
+              <circle cx="120" cy="140" r="10" fill="#146b8c" stroke="#e8f6fb" stroke-width="2"/><path d="M120 140h14" stroke="#e8f6fb" stroke-width="2"/>
+              <text x="160" y="205" fill="#d4e0df" font-family="IBM Plex Mono, monospace" font-size="11" text-anchor="middle">grey = unknown · white = free · black = wall</text>
+            </svg>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-blue);">
+            <p class="ra-label">The big idea</p><h2>Two questions that need each other</h2>
+            <p>If a robot had a perfect map, it could figure out where it is by comparing what its sensors see against the map. That is <strong><span data-glossary="robot localization">localization</span></strong>. If it knew exactly where it was at every moment, it could build a map by recording what its sensors see from each spot. That is <strong>mapping</strong>. In an unknown place it has neither — so it must do both at once. Engineers call that <strong><span data-glossary="SLAM">SLAM</span></strong>: Simultaneous Localization And Mapping.</p>
+            <div class="ra-cols">
+              <article><h3>Sensing</h3><p>A <strong><span data-glossary="LiDAR">LiDAR</span></strong> spins a laser and times each bounce, giving a ring of distances. Cameras, sonar, and depth sensors do similar jobs.</p><p>Every reading is a little wrong. Noise is normal, not a bug.</p></article>
+              <article><h3>Moving</h3><p><strong><span data-glossary="odometry">Odometry</span></strong> counts wheel turns (encoders) and measures turning (a gyro) to estimate how far the robot moved.</p><p>Tiny errors add up. After a few laps, the robot's belief can be meters off.</p></article>
+              <article><h3>Remembering</h3><p>An <strong><span data-glossary="occupancy grid">occupancy grid</span></strong> splits the floor into cells. Each cell stores the probability it is blocked, starting at "no idea."</p><p>This grid is exactly what a planner like <a class="ra-more" href="../../computer-science/algorithms-and-ai/pathfinding.html">A*</a> searches.</p></article>
+            </div>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-lime);">
+            <p class="ra-label">Sim 1 · Occupancy grid mapping</p><h2>Paint the map with lasers</h2>
+            <p>The robot wanders and scans ten times a second. Along each laser ray, cells the beam passed <em>through</em> get a vote for "free"; the cell where it <em>stopped</em> gets a vote for "wall." Votes add up, so one noisy reading can't ruin the map — but many consistent readings make a cell nearly certain. Click anywhere to send the robot there.</p>
+            <div class="ra-sim">
+              <div class="ra-sim-grid">
+                <div>
+                  <canvas id="map-canvas" width="640" height="400" aria-label="Occupancy grid mapping simulator. Click to send the robot to a spot."></canvas>
+                  <ul class="ra-legend"><li><i style="background:#344850"></i>Unknown</li><li><i style="background:#ebf1ef"></i>Free</li><li><i style="background:#101a1d;border:1px solid #889"></i>Occupied</li><li><i style="background:#146b8c"></i>True robot</li><li><i style="background:#c65e2e"></i>Where the robot thinks it is</li></ul>
+                </div>
+                <div class="ra-controls">
+                  <fieldset><legend>LiDAR</legend>
+                    <label>Beams per scan: <output id="map-rays-out">36</output><input id="map-rays" type="range" min="4" max="90" value="36"></label>
+                    <label>Range noise (px): <output id="map-noise-out">3</output><input id="map-noise" type="range" min="0" max="25" value="3"></label>
+                  </fieldset>
+                  <fieldset><legend>Experiment</legend>
+                    <label class="ra-check"><input id="map-drift" type="checkbox"> Drifting odometry (restarts)</label>
+                    <label class="ra-check"><input id="map-truth" type="checkbox"> Show the real walls</label>
+                  </fieldset>
+                  <div class="ra-btns"><button class="ra-btn" id="map-run" type="button" aria-pressed="false">Pause</button><button class="ra-btn" id="map-reset" type="button">Clear map</button></div>
+                  <p class="ra-readout" id="map-readout" aria-live="off"></p>
+                </div>
+              </div>
+            </div>
+            <div class="ra-cols">
+              <article><h3>Try it</h3><p>Drop the beams to 4. How long does the map take now? Then crank the noise to 25. Do the walls get fuzzier or just slower to appear?</p></article>
+              <article><h3>Break it</h3><p>Turn on <strong>drifting odometry</strong>. The orange robot is where the robot <em>believes</em> it is. Its map is drawn from that belief — watch the walls double and smear.</p></article>
+              <article><h3>Explain it</h3><p>The laser readings were fine in both runs. Why did the map still break? What would the robot need to notice to fix itself?</p></article>
+            </div>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-copper);">
+            <p class="ra-label">Sim 2 · Particle filter</p><h2>A cloud of guesses</h2>
+            <p>Now flip the problem: the robot <em>has</em> the map but has no idea where it is. A <strong><span data-glossary="particle filter">particle filter</span></strong> scatters hundreds of guesses (red dots) across the map. Each cycle it does three things:</p>
+            <ol>
+              <li><strong>Move</strong> every guess the way the wheels say the robot moved, plus a little randomness.</li>
+              <li><strong>Score</strong> every guess: "If the robot were <em>here</em>, what would the laser see?" Guesses whose imagined scan matches the real scan score high.</li>
+              <li><strong>Resample</strong>: draw a new cloud, copying high scorers often and low scorers rarely.</li>
+            </ol>
+            <p>Survival of the fittest guess. The yellow robot appears once the cloud agrees.</p>
+            <div class="ra-sim">
+              <div class="ra-sim-grid">
+                <div>
+                  <canvas id="pf-canvas" width="640" height="400" aria-label="Particle filter localization simulator. Click to send the robot to a spot."></canvas>
+                  <ul class="ra-legend"><li><i style="background:#d94b41"></i>Particles (guesses)</li><li><i style="background:#146b8c"></i>True robot</li><li><i style="background:#f2bf3f"></i>Filter's best estimate</li></ul>
+                </div>
+                <div class="ra-controls">
+                  <fieldset><legend>Filter</legend>
+                    <label>Sensor trust σ (px): <output id="pf-sigma-out">20</output><input id="pf-sigma" type="range" min="4" max="80" value="20"></label>
+                    <label class="ra-check"><input id="pf-inject" type="checkbox" checked> Add 4% random guesses each cycle</label>
+                  </fieldset>
+                  <div class="ra-btns"><button class="ra-btn" id="pf-run" type="button" aria-pressed="false">Pause</button><button class="ra-btn" id="pf-kidnap" type="button">Kidnap robot</button><button class="ra-btn" id="pf-reset" type="button">Scatter again</button></div>
+                  <p class="ra-readout" id="pf-readout" aria-live="off"></p>
+                  <p class="ra-hint">Small σ trusts the laser completely; big σ shrugs at mismatches.</p>
+                </div>
+              </div>
+            </div>
+            <div class="ra-cols">
+              <article><h3>Watch closely</h3><p>Early on, the cloud often splits into two or three clumps. Those are places that <em>look the same</em> to the laser. Which rooms in the map are twins?</p></article>
+              <article><h3>Kidnap</h3><p>Press <strong>Kidnap robot</strong> with random guesses on, then again with them off. Why can't a filter with no fresh guesses recover?</p></article>
+              <article><h3>Trust</h3><p>Set σ to 4. The cloud collapses fast — sometimes onto the wrong spot. Overconfidence is a real engineering failure.</p></article>
+            </div>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-yellow);">
+            <p class="ra-label">Putting it together</p><h2>How real SLAM fixes the smear</h2>
+            <p>Sim 1 showed that mapping with a drifting position ruins the map. Sim 2 showed that matching scans to a map fixes the position. SLAM does both in a loop: it uses the map-so-far to correct its position, then uses the corrected position to extend the map.</p>
+            <div class="ra-cols">
+              <article><h3>Scan matching</h3><p>Slide the new scan around until it lines up with the map built so far. The shift needed is the odometry error — subtract it.</p></article>
+              <article><h3>Loop closure</h3><p>When the robot returns somewhere it has been and <em>recognizes</em> it, it knows its whole path must bend to meet up. The entire map snaps straight.</p></article>
+              <article><h3>Where you'll see it</h3><p>Robot vacuums (LiDAR on top), Mars rovers, VR headsets tracking your room, phone AR apps, and self-driving cars all run some form of SLAM.</p></article>
+            </div>
+            <p style="margin-top:.9rem;"><a class="ra-more" href="sensor-fusion.html">Next → Sensor Fusion: combine noisy wheels, gyros, and accelerometers into one good estimate</a></p>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-copper);">
+            <p class="ra-label">Where you’ll see it</p><h2>Mapping robots in the real world</h2>
+            <p>Click any photo to enlarge it.</p>
+            <div class="ra-figs">
+              <figure data-zoomable data-lightbox-group="mapping">
+                <img src="../../../assets/images/lessons/robotics/stanley2.jpg" alt="Stanford’s Stanley, a blue Volkswagen SUV with sensors on its roof rack, at the 2005 DARPA Grand Challenge" loading="lazy" />
+                <figcaption><strong>Stanley, 2005</strong> Stanford’s robot SUV won DARPA’s 132-mile desert race with no driver. Five laser scanners on the roof built a map of the road ahead, and a probabilistic filter tracked where the car was.<small class="photo-credit">Photo: DARPA · Public domain · <a href="https://commons.wikimedia.org/wiki/File:Stanley2.JPG" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></small></figcaption>
+              </figure>
+              <figure data-zoomable data-lightbox-group="mapping">
+                <img src="../../../assets/images/lessons/robotics/velodyne-high-def-lidar.jpg" alt="A spinning Velodyne 64-beam LiDAR unit on a car roof" loading="lazy" />
+                <figcaption><strong>A spinning LiDAR</strong> This Velodyne unit fires 64 laser beams while it spins, measuring over a million distances a second. Our sim’s robot does the same job with 4–90 beams.<small class="photo-credit">Photo: Steve Jurvetson · <a href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="noopener noreferrer">CC BY 2.0</a> · <a href="https://commons.wikimedia.org/wiki/File:Velodyne_High-Def_LIDAR.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></small></figcaption>
+              </figure>
+              <figure data-zoomable data-lightbox-group="mapping">
+                <img src="../../../assets/images/lessons/robotics/ouster-os1-64-lidar-point-cloud-of-intersection-of.jpg" alt="A colorful top-down point cloud of a city intersection built from lidar scans" loading="lazy" />
+                <figcaption><strong>A map made of dots</strong> About 23 million LiDAR points from 18 seconds of driving, lined up into one map of a San Francisco intersection. Lining up scans like this is the “scan matching” step of SLAM.<small class="photo-credit">Photo: Daniel L. Lu · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a> · <a href="https://commons.wikimedia.org/wiki/File:Ouster_OS1-64_lidar_point_cloud_of_intersection_of_Folsom_and_Dore_St,_San_Francisco.png" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></small></figcaption>
+              </figure>
+              <figure data-zoomable data-lightbox-group="mapping">
+                <img src="../../../assets/images/lessons/robotics/neato-xv-11.jpg" alt="A grey Neato XV-11 robot vacuum with a round LiDAR turret on top" loading="lazy" />
+                <figcaption><strong>SLAM in your living room</strong> The Neato XV-11 robot vacuum has a small spinning laser under the raised bump on top. It maps rooms and cleans in neat rows instead of bouncing around at random.<small class="photo-credit">Photo: Autopilot · <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 3.0</a> · <a href="https://commons.wikimedia.org/wiki/File:Neato_XV-11.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></small></figcaption>
+              </figure>
+            </div>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-blue);">
+            <p class="ra-label">Robot autonomy series</p><h2>Sense · Think · Act</h2>
+            <nav class="ra-series" aria-label="Robot autonomy lessons">
+              <a href="../mechanical-and-civil-design/robotics-engineering-intro.html"><b>Robotics Intro</b>Sensor, controller, actuator, feedback</a>
+              <a href="robot-mapping-localization.html" aria-current="page"><b>Mapping &amp; Localization</b>Occupancy grids, particle filters, SLAM</a>
+              <a href="sensor-fusion.html"><b>Sensor Fusion</b>Complementary &amp; Kalman filters</a>
+              <a href="../../computer-science/algorithms-and-ai/pathfinding.html"><b>A* Pathfinding</b>Global route on a grid</a>
+              <a href="motion-planning.html"><b>Motion Planning</b>RRT, potential fields, DWA, kinematics</a>
+              <a href="../arduino-and-electronics/pid-control.html"><b>PID Control</b>Hold a target with feedback</a>
+              <a href="../../computer-science/algorithms-and-ai/state-machines.html"><b>State Machines</b>Organize robot behaviors</a>
+              <a href="robot-reinforcement-learning.html"><b>Reinforcement Learning</b>Learn a policy from rewards</a>
+            </nav>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-red);">
+            <p class="ra-label">Quick check</p><h2>Lock it in</h2>
+            <div class="ra-quiz">
+              <div class="ra-question" data-answer="b" data-explanation="Mapping needs a known position and localization needs a known map. SLAM solves both at the same time."><p>1. Why is SLAM called a chicken-and-egg problem?</p><div class="ra-options"><button class="ra-option" data-choice="a">Lasers can't see eggs</button><button class="ra-option" data-choice="b">A map needs a position, and a position needs a map</button><button class="ra-option" data-choice="c">The robot must hatch a plan first</button><button class="ra-option" data-choice="d">It only works outdoors</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-answer="c" data-explanation="The beam traveled through those cells without hitting anything, so they are evidence of free space."><p>2. A laser beam travels 3 m before hitting a wall. What do the cells along the first 3 m get?</p><div class="ra-options"><button class="ra-option" data-choice="a">Nothing — only the hit matters</button><button class="ra-option" data-choice="b">A vote for "occupied"</button><button class="ra-option" data-choice="c">A vote for "free"</button><button class="ra-option" data-choice="d">They are deleted</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-answer="a" data-explanation="Each position update adds a small error to the last one, so errors accumulate instead of canceling out."><p>3. Why does odometry drift get worse over time?</p><div class="ra-options"><button class="ra-option" data-choice="a">Each small error builds on the previous estimate</button><button class="ra-option" data-choice="b">Wheels shrink as they spin</button><button class="ra-option" data-choice="c">The map gets bigger</button><button class="ra-option" data-choice="d">The LiDAR gets tired</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-answer="d" data-explanation="Resampling copies guesses in proportion to how well their predicted scans matched the real scan."><p>4. In a particle filter, which guesses get copied most during resampling?</p><div class="ra-options"><button class="ra-option" data-choice="a">The oldest ones</button><button class="ra-option" data-choice="b">The ones closest to the map's center</button><button class="ra-option" data-choice="c">A random few, evenly</button><button class="ra-option" data-choice="d">The ones whose imagined scan best matches the real scan</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head"><div class="ll-tabs"><button class="ll-tab" aria-selected="true" data-pane="ra-plan">Lesson</button><button class="ll-tab" aria-selected="false" data-pane="ra-teacher">Teacher</button></div><button class="ll-panel-close" type="button" aria-label="Close panel">×</button></div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="ra-plan">
+            <span class="ll-label">Learning goals</span>
+            <div class="ll-info"><strong>Define SLAM</strong>Explain why mapping and localization depend on each other.</div>
+            <div class="ll-info"><strong>Read a grid map</strong>Describe how free/occupied votes build an occupancy grid from noisy scans.</div>
+            <div class="ll-info"><strong>Explain drift</strong>Show why small odometry errors accumulate and distort a map.</div>
+            <div class="ll-info"><strong>Model belief</strong>Describe the move–score–resample cycle of a particle filter.</div>
+          </div>
+          <div class="ll-pane" id="ra-teacher">
+            <span class="ll-label">Teaching notes</span>
+            <div class="ll-info"><strong>Launch</strong>Blindfold a volunteer, spin them, and walk them three steps. "Where are you?" Let them touch one wall. What changed?</div>
+            <div class="ll-info"><strong>Sim 1 talk</strong>With drift on, point at the doubled walls: the laser was right, the <em>position</em> was wrong.</div>
+            <div class="ll-info"><strong>Sim 2 talk</strong>Pause when the cloud has two clumps. Ask the class to vote which one is right and why the robot can't tell yet.</div>
+            <div class="ll-info"><strong>Math link</strong>Grades 9–12: cells store log-odds, so evidence adds. Connect to Bayes' rule.</div>
+            <div class="ll-info"><strong>Assessment</strong>Students sketch an occupancy grid for the classroom from three imagined scans and label free, occupied, and unknown cells.</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script src="../../../assets/js/sim-kit.js"></script>
+  <script src="../../../assets/js/lessons/robot-autonomy-common.js"></script>
+  <script src="../../../assets/js/lessons/robot-mapping-localization.js"></script>
+  <script src="../../../assets/js/classroom-animations.js"></script>
+  <script src="../../../assets/js/lesson-layout.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
+  <script src="../../../assets/js/site-glossary.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

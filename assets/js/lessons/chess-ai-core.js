@@ -122,15 +122,16 @@ const PIECE_VALUE = {
 
 const MODEL_PROFILES = {
   turochamp1951: {
-    label: "Turochamp (1951)",
+    label: "Turochamp (1948)",
     logLabel: "Turochamp",
-    summary: "Early rule-based style: shallow lookahead with noisier move choices.",
+    turochamp: true,
+    summary: "Turing's own published rules: every move and reply, captures followed until quiet, material ratio first, position-play points to break ties.",
     themeTitle: "Paper Logic",
-    themeKicker: "1951 · Hand-built rules",
-    themePrompt: "Expect short lookahead, more surprises, and moves that feel clever one turn but shaky the next.",
-    themeTags: ["Shallow search", "Rule-based", "More randomness"],
+    themeKicker: "1948 · Turing's paper machine",
+    themePrompt: "It grabs material eagerly and sees only two moves ahead plus captures, so it walks into quiet threats. It is deterministic: the same position always gets the same move.",
+    themeTags: ["Real 1948 rules", "2 plies + captures", "Material ratio"],
     eraSkin: "turochamp1951",
-    logicNote: "Turing's hand-calculation era. The engine mostly counts pieces and only lightly rewards movement and shape.",
+    logicNote: "Turing's rules: dead-position material ratio (P1 N3 B3.5 R5 Q10) decides; mobility square roots, defended pieces, king safety, pawn advances, and checks break ties.",
     evalWeights: { material: 0.95, mobility: 0.05, position: 0.02, pawnStructure: 0.03, kingSafety: 0.04 },
     baseDepth: 1,
     recommendedBudget: 2,
@@ -144,9 +145,9 @@ const MODEL_PROFILES = {
     thinkDelay: 850
   },
   machack1967: {
-    label: "Mac Hack VI (1967)",
+    label: "Mac Hack VI Style (1967)",
     logLabel: "Mac Hack VI",
-    summary: "Tournament-era search with stronger material play and moderate lookahead.",
+    summary: "An approximation of the tournament era: this lab's alpha-beta engine with material-first settings, not Greenblatt's program.",
     themeTitle: "Mainframe Green",
     themeKicker: "1967 · Tournament-era computing",
     themePrompt: "Watch for steadier material play and fewer obvious mistakes, but not the crushing calculation of later engines.",
@@ -196,7 +197,7 @@ const MODEL_PROFILES = {
     themePrompt: "Look for calmer, cleaner positions and fewer flashy mistakes. The engine should feel more balanced and less chaotic.",
     themeTags: ["Lower randomness", "Better position play", "Deeper practical search"],
     eraSkin: "modern2020s",
-    logicNote: "Modern engines blend raw calculation with broader positional judgment: pawn shape, king shelter, and quiet pressure all matter.",
+    logicNote: "Real modern engines use neural networks; this style mode has none. It tunes the lab's alpha-beta engine toward pawn shape, king shelter, and quiet pressure.",
     evalWeights: { material: 0.35, mobility: 0.2, position: 0.35, pawnStructure: 0.22, kingSafety: 0.18 },
     baseDepth: 3,
     recommendedBudget: 3,
@@ -429,12 +430,61 @@ function maybePromotion(piece, to) {
   return null;
 }
 
-function applyMove(board, move) {
+// Boards are 64-square arrays that also carry two properties:
+//   castle: remaining castling rights, a subset of "KQkq" (White/Black, king/queen side)
+//   ep: the square a pawn may capture onto en passant this turn, or -1
+function copyBoard(board) {
   const next = board.slice();
+  next.castle = board.castle ?? "";
+  next.ep = board.ep ?? -1;
+  return next;
+}
+
+// squares whose piece moving (or being captured) ends a castling right
+const CASTLE_RIGHT_SQUARES = { 60: "KQ", 63: "K", 56: "Q", 4: "kq", 7: "k", 0: "q" };
+
+function applyMove(board, move) {
+  const next = copyBoard(board);
   const movingPiece = next[move.from];
   next[move.from] = null;
   next[move.to] = move.promotion || movingPiece;
+  if (move.enPassant !== undefined) next[move.enPassant] = null;
+  if (move.castle) {
+    next[move.castle.rookTo] = next[move.castle.rookFrom];
+    next[move.castle.rookFrom] = null;
+  }
+  for (const square of [move.from, move.to]) {
+    const lost = CASTLE_RIGHT_SQUARES[square];
+    if (lost) next.castle = [...next.castle].filter((right) => !lost.includes(right)).join("");
+  }
+  next.ep = typeOf(movingPiece) === "P" && Math.abs(move.to - move.from) === 16 ? (move.from + move.to) / 2 : -1;
   return next;
+}
+
+// castling moves for `color`; the king may not castle out of, through, or into check
+function castlingMoves(board, color) {
+  const moves = [];
+  const enemy = opposite(color);
+  const home = color === "W" ? 60 : 4;
+  const king = `${color}K`;
+  const rook = `${color}R`;
+  if (board[home] !== king || isSquareAttacked(board, home, enemy)) return moves;
+  const sides = [
+    { right: color === "W" ? "K" : "k", rookFrom: home + 3, path: [home + 1, home + 2], empty: [home + 1, home + 2] },
+    { right: color === "W" ? "Q" : "q", rookFrom: home - 4, path: [home - 1, home - 2], empty: [home - 1, home - 2, home - 3] }
+  ];
+  for (const side of sides) {
+    if (!(board.castle || "").includes(side.right) || board[side.rookFrom] !== rook) continue;
+    if (side.empty.some((sq) => board[sq])) continue;
+    if (side.path.some((sq) => isSquareAttacked(board, sq, enemy))) continue;
+    moves.push({
+      from: home,
+      to: side.path[1],
+      capture: null,
+      castle: { rookFrom: side.rookFrom, rookTo: side.path[0], side: side.right.toUpperCase() === "K" ? "O-O" : "O-O-O" }
+    });
+  }
+  return moves;
 }
 
 function pushMove(moves, board, from, to, color, allowKingCapture = false) {
@@ -486,6 +536,9 @@ function pseudoMovesForPiece(board, from, piece, attackOnly = false) {
         moves.push({ from, to, capture: target || null });
       } else if (target && colorOf(target) !== color && typeOf(target) !== "K") {
         moves.push({ from, to, capture: target, promotion: maybePromotion(piece, to) });
+      } else if (!target && to === board.ep) {
+        const capturedSquare = idx(row, nextCol);
+        moves.push({ from, to, capture: board[capturedSquare], enPassant: capturedSquare });
       }
     }
 
@@ -546,15 +599,10 @@ function legalMoves(board, color) {
     if (!piece || piece[0] !== color) continue;
 
     const pseudo = pseudoMovesForPiece(board, i, piece, false);
+    if (typeOf(piece) === "K") pseudo.push(...castlingMoves(board, color));
 
     for (const move of pseudo) {
-      const captured = board[move.to];
-      board[move.from] = null;
-      board[move.to] = move.promotion || piece;
-      const isCheck = isInCheck(board, color);
-      board[move.from] = piece;
-      board[move.to] = captured;
-      if (!isCheck) all.push({ ...move, piece });
+      if (!isInCheck(applyMove(board, move), color)) all.push({ ...move, piece });
     }
   }
 
@@ -927,13 +975,7 @@ function minimax(board, turn, depth, alpha, beta, perspective, profile, ply = 0,
 
     for (const move of moves) {
       if (bestMove && searchContext && performance.now() >= searchContext.deadline) break;
-      const captured = board[move.to];
-      const piece = board[move.from];
-      board[move.from] = null;
-      board[move.to] = move.promotion || piece;
-      const result = minimax(board, opposite(turn), depth - 1, alpha, beta, perspective, profile, ply + 1, searchContext);
-      board[move.from] = piece;
-      board[move.to] = captured;
+      const result = minimax(applyMove(board, move), opposite(turn), depth - 1, alpha, beta, perspective, profile, ply + 1, searchContext);
 
       if (result.score > bestScore) {
         bestScore = result.score;
@@ -951,13 +993,7 @@ function minimax(board, turn, depth, alpha, beta, perspective, profile, ply = 0,
 
   for (const move of moves) {
     if (bestMove && searchContext && performance.now() >= searchContext.deadline) break;
-    const captured = board[move.to];
-    const piece = board[move.from];
-    board[move.from] = null;
-    board[move.to] = move.promotion || piece;
-    const result = minimax(board, opposite(turn), depth - 1, alpha, beta, perspective, profile, ply + 1, searchContext);
-    board[move.from] = piece;
-    board[move.to] = captured;
+    const result = minimax(applyMove(board, move), opposite(turn), depth - 1, alpha, beta, perspective, profile, ply + 1, searchContext);
 
     if (result.score < bestScore) {
       bestScore = result.score;
@@ -1014,6 +1050,196 @@ async function getAiCandidateMovesAsync(board, profile, isCancelled) {
   }
 
   scored.sort((a, b) => b.score - a.score);
+  return scored;
+}
+
+// ---------------------------------------------------------------------------
+// Turochamp: Alan Turing & David Champernowne's 1948 "paper machine", following
+// the rules Turing published in "Chess" (Faster Than Thought, 1953).
+//
+// 1. Look at every machine move and every reply (2 plies), then keep following
+//    only "considerable" moves until the position is "dead" (none remain):
+//    recaptures, captures of undefended pieces, captures of a more valuable piece
+//    by a less valuable one, and checkmates.
+// 2. Score dead positions by material ratio: machine material / opponent material,
+//    with P=1, N=3, B=3.5, R=5, Q=10. Minimax picks the best guaranteed ratio.
+// 3. Among moves with the same material result, pick the highest "position-play"
+//    value of the position right after the move (mobility, piece safety, king
+//    mobility and safety, castling, pawn credit, checks and mate threats).
+// ---------------------------------------------------------------------------
+
+const TURING_VALUE = { P: 1, N: 3, B: 3.5, R: 5, Q: 10, K: 0 };
+const TUROCHAMP_MAX_EXTRA_PLIES = 8;
+
+function turingMaterial(board, color) {
+  let total = 0;
+  for (const piece of board) if (piece && piece[0] === color) total += TURING_VALUE[piece[1]];
+  return total;
+}
+
+function countAttackers(board, target, byColor, { skipPawns = false } = {}) {
+  let count = 0;
+  const targetRow = rowOf(target);
+  const targetCol = colOf(target);
+  for (let i = 0; i < board.length; i += 1) {
+    const piece = board[i];
+    if (!piece || piece[0] !== byColor || i === target) continue;
+    const type = piece[1];
+    const fromRow = rowOf(i);
+    const fromCol = colOf(i);
+    if (type === "P") {
+      if (skipPawns) continue;
+      const dir = byColor === "W" ? -1 : 1;
+      if (fromRow + dir === targetRow && Math.abs(fromCol - targetCol) === 1) count += 1;
+    } else if (type === "N") {
+      if (KNIGHT_DELTAS.some(([dr, dc]) => fromRow + dr === targetRow && fromCol + dc === targetCol)) count += 1;
+    } else if (type === "K") {
+      if (Math.max(Math.abs(fromRow - targetRow), Math.abs(fromCol - targetCol)) === 1) count += 1;
+    } else {
+      const dirs = type === "B" ? BISHOP_DIRS : type === "R" ? ROOK_DIRS : QUEEN_DIRS;
+      for (const [dr, dc] of dirs) {
+        let row = fromRow + dr;
+        let col = fromCol + dc;
+        let hit = false;
+        while (inBounds(row, col)) {
+          const square = idx(row, col);
+          if (square === target) {
+            hit = true;
+            break;
+          }
+          if (board[square]) break;
+          row += dr;
+          col += dc;
+        }
+        if (hit) {
+          count += 1;
+          break;
+        }
+      }
+    }
+  }
+  return count;
+}
+
+function isCheckmate(board, color) {
+  return isInCheck(board, color) && legalMoves(board, color).length === 0;
+}
+
+// Turing's "considerable" moves beyond the first two plies
+function considerableMoves(board, color, lastMove) {
+  const enemy = opposite(color);
+  return legalMoves(board, color).filter((move) => {
+    const next = applyMove(board, move);
+    if (isCheckmate(next, enemy)) return true;
+    if (!move.capture) return false;
+    if (lastMove && lastMove.capture && move.to === lastMove.to) return true; // recapture
+    if (countAttackers(board, move.to, enemy) === 0) return true; // undefended piece
+    return TURING_VALUE[move.capture[1]] > TURING_VALUE[move.piece[1]]; // cheaper piece takes dearer one
+  });
+}
+
+// material ratio from the machine's point of view, minimaxed to a dead position
+function turochampValue(board, turn, machine, pliesLeft, extraPlies, lastMove, counter) {
+  counter.nodes += 1;
+  const moves = pliesLeft > 0 ? legalMoves(board, turn) : considerableMoves(board, turn, lastMove);
+
+  if (pliesLeft > 0 && moves.length === 0) {
+    if (!isInCheck(board, turn)) return 1; // stalemate: treat as level
+    return turn === machine ? 0 : 1000; // checkmate
+  }
+  if (!moves.length && isCheckmate(board, turn)) return turn === machine ? 0 : 1000;
+  if (!moves.length || extraPlies >= TUROCHAMP_MAX_EXTRA_PLIES) {
+    const opponentMaterial = turingMaterial(board, opposite(machine));
+    return turingMaterial(board, machine) / Math.max(opponentMaterial, 0.5);
+  }
+
+  const values = moves.map((move) =>
+    turochampValue(
+      applyMove(board, move),
+      opposite(turn),
+      machine,
+      Math.max(0, pliesLeft - 1),
+      pliesLeft > 0 ? extraPlies : extraPlies + 1,
+      move,
+      counter
+    )
+  );
+  return turn === machine ? Math.max(...values) : Math.min(...values);
+}
+
+// Turing's position-play value for the machine's own pieces after its move
+function turochampPositionPlay(board, machine, move) {
+  const enemy = opposite(machine);
+  const myMoves = legalMoves(board, machine);
+  const movesFrom = new Map();
+  for (const m of myMoves) {
+    const list = movesFrom.get(m.from) || [];
+    list.push(m);
+    movesFrom.set(m.from, list);
+  }
+  let score = 0;
+
+  for (let i = 0; i < board.length; i += 1) {
+    const piece = board[i];
+    if (!piece || piece[0] !== machine) continue;
+    const type = piece[1];
+    const moves = movesFrom.get(i) || [];
+    const mobility = moves.reduce((sum, m) => sum + (m.capture ? 2 : 1), 0);
+
+    if ("QRBN".includes(type)) score += Math.sqrt(mobility);
+    if ("RBN".includes(type)) {
+      const defenders = countAttackers(board, i, machine);
+      if (defenders === 1) score += 1;
+      else if (defenders >= 2) score += 1.5;
+    }
+    if (type === "K") {
+      score += Math.sqrt(mobility);
+      // king safety: minus the moves a queen would have from the king's square
+      const asQueen = board.slice();
+      asQueen[i] = `${machine}Q`;
+      score -= pseudoMovesForPiece(asQueen, i, asQueen[i]).length;
+      // castling: +1 if still possible later, +1 more if possible right now
+      // or if this move was the castling move
+      const rights = machine === "W" ? /[KQ]/ : /[kq]/;
+      if (rights.test(board.castle || "")) score += 1;
+      if (move.castle || castlingMoves(board, machine).length) score += 1;
+    }
+    if (type === "P") {
+      const startRow = machine === "W" ? SIZE - 2 : 1;
+      score += 0.2 * Math.abs(rowOf(i) - startRow);
+      if (countAttackers(board, i, machine, { skipPawns: true }) > 0) score += 0.3;
+    }
+  }
+
+  if (isInCheck(board, enemy)) score += 0.5;
+  // threat of mate: could the machine mate if it moved again?
+  if (myMoves.some((m) => isCheckmate(applyMove(board, m), enemy))) score += 1;
+  return score;
+}
+
+async function getTurochampCandidatesAsync(board, isCancelled) {
+  const machine = state.aiColor;
+  const analysis = analyzePosition(board, machine);
+  if (analysis.over) return [];
+  const counter = { nodes: 0 };
+  const scored = [];
+  let sliceStartedAt = performance.now();
+
+  for (const move of analysis.moves) {
+    if (isCancelled()) return [];
+    const next = applyMove(board, move);
+    const material = turochampValue(next, opposite(machine), machine, 1, 0, move, counter);
+    const position = turochampPositionPlay(next, machine, move);
+    // material decides; position-play only separates moves with equal material
+    scored.push({ move, material, position, score: material * 1000 + position });
+    if (performance.now() - sliceStartedAt > 12) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      sliceStartedAt = performance.now();
+    }
+  }
+
+  scored.sort((a, b) => b.score - a.score);
+  state.turochampNodes = counter.nodes;
   return scored;
 }
 
@@ -1153,12 +1379,14 @@ function selectTargets(from) {
 }
 
 function notation(move, movingPiece) {
+  if (move.castle) return `${PIECE_TEXT[movingPiece] || movingPiece} ${move.castle.side} (castles)`;
   const from = toCoord(move.from);
   const to = toCoord(move.to);
   const pieceText = PIECE_TEXT[movingPiece] || movingPiece;
   const captureText = move.capture ? ` x ${PIECE_TEXT[move.capture] || move.capture}` : " ->";
   const promo = move.promotion ? ` = ${PIECE_TEXT[move.promotion]}` : "";
-  return `${pieceText} ${from}${captureText} ${to}${promo}`;
+  const ep = move.enPassant !== undefined ? " (en passant)" : "";
+  return `${pieceText} ${from}${captureText} ${to}${promo}${ep}`;
 }
 
 function pushLog(text) {
@@ -1306,11 +1534,10 @@ async function runAiTurn() {
   renderBoard();
 
   await new Promise((resolve) => requestAnimationFrame(resolve));
-  const candidates = await getAiCandidateMovesAsync(
-    state.board.slice(),
-    model,
-    () => generation !== state.aiGeneration
-  );
+  const isCancelled = () => generation !== state.aiGeneration;
+  const candidates = model.turochamp
+    ? await getTurochampCandidatesAsync(copyBoard(state.board), isCancelled)
+    : await getAiCandidateMovesAsync(copyBoard(state.board), model, isCancelled);
   if (generation !== state.aiGeneration) return;
 
   state.aiPreviewMoves = candidates.slice(0, 3);
@@ -1328,7 +1555,8 @@ async function runAiTurn() {
       return;
     }
 
-    const move = chooseAiMove(candidates, model) || analysis.moves[0];
+    // Turochamp is deterministic: it always plays its top-valued move
+    const move = (model.turochamp ? candidates[0]?.move : chooseAiMove(candidates, model)) || analysis.moves[0];
 
     performMove(move, model.logLabel);
     state.turn = state.humanColor;
@@ -1376,7 +1604,7 @@ function onSquareClick(index) {
   const move = options.find((candidate) => candidate.from === state.selected && candidate.to === index);
   if (!move) return;
 
-  const boardBefore = state.board.slice();
+  const boardBefore = copyBoard(state.board);
   const reviewProfile = activeModel();
   const reviewGeneration = ++state.blunderGeneration;
   state.blunder = {
@@ -1422,6 +1650,8 @@ function freshBoard() {
     board[idx(7, c)] = `W${backRank[c]}`;
   }
 
+  board.castle = "KQkq";
+  board.ep = -1;
   return board;
 }
 
@@ -1448,7 +1678,7 @@ function resetGame() {
   state.log = [
     `New 8x8 game started vs ${model.label}.`,
     `Model note: ${model.summary}`,
-    "Rules in this lab: full piece movement + check/checkmate/stalemate, no castling or en passant."
+    "Rules in this lab: full piece movement, castling, en passant, promotion to a queen, check/checkmate/stalemate."
   ];
 
   updateGameStatus();

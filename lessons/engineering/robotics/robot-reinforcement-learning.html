@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en" data-glossary-manual>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Robot Reinforcement Learning: Q-Learning Lab · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta name="description" content="Train a robot with Q-learning to reach its charger while avoiding the stairs. Tune learning rate, patience, and curiosity, edit the world, and see how deep reinforcement learning scales the idea to real robots." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/robot-autonomy.css" />
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary"><ul>
+          <li><a href="../../../index.html">Home</a></li><li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li><li><a href="../../../paths.html">Paths</a></li><li><a href="../../../showcase.html">Showcase</a></li><li><a href="../../../applications.html">Apps</a></li><li><a href="../../../recipe-book.html">Library</a></li><li><a href="../../../about.html">About</a></li>
+        </ul></nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="ra-page" data-glossary-root>
+          <section class="ra-hero" aria-labelledby="ra-title">
+            <div>
+              <p class="ra-kicker">Engineering · Robot Autonomy · Machine Learning</p>
+              <h1 id="ra-title">Learning by <span>Trial &amp; Error</span></h1>
+              <p class="ra-lede">Nobody programs every step of a robot dog's gait anymore. Instead, engineers write down what counts as <em>good</em> and <em>bad</em>, and let the robot practice — millions of times, usually in simulation. That's <strong>reinforcement learning</strong>. Train a small robot to find its charger without falling down the stairs, and watch its "brain" fill in as it learns.</p>
+              <div class="ra-meta"><span>Grades 7–12</span><span>45–60 minutes</span><span>Live Q-learning</span><span>Editable world</span></div>
+              <a class="ra-back" href="../../../steam-lessons.html#module-engineering">← Back to Engineering</a>
+            </div>
+            <svg class="ra-hero-art" viewBox="0 0 320 220" role="img" aria-labelledby="hero-art-title">
+              <title id="hero-art-title">A grid where arrows point along a learned route from the robot to a lightning-bolt charger, avoiding red stair cells</title>
+              <rect width="320" height="220" fill="#0f1d23"/>
+              <g stroke="rgba(112,200,229,.15)"><path d="M0 44h320M0 88h320M0 132h320M0 176h320M40 0v220M80 0v220M120 0v220M160 0v220M200 0v220M240 0v220M280 0v220"/></g>
+              <rect x="120" y="44" width="40" height="88" fill="#4c6a72"/><rect x="200" y="132" width="40" height="44" fill="#5a1f1b"/>
+              <rect x="240" y="0" width="40" height="44" fill="#3d5a12"/><text x="260" y="30" text-anchor="middle" font-size="22" fill="#f2bf3f">⚡</text>
+              <g stroke="#e8f6fb" stroke-width="3" fill="none" stroke-linecap="round"><path d="M20 198V160M60 154h36M100 154V110M100 66V30M110 22h30M150 22h30M190 22h30"/></g>
+              <circle cx="20" cy="198" r="12" fill="#146b8c" stroke="#e8f6fb" stroke-width="2"/>
+            </svg>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-blue);">
+            <p class="ra-label">The idea</p><h2>Rewards instead of instructions</h2>
+            <p>In <a class="ra-more" href="motion-planning.html">motion planning</a> a person writes the algorithm. In <strong><span data-glossary="reinforcement learning">reinforcement learning</span></strong> (RL), a person writes only the <strong>reward</strong>: +1 for reaching the charger, −1 for the stairs, a small cost for every step. The robot has to figure out the rest by trying.</p>
+            <div class="ra-cols">
+              <article><h3>State</h3><p>What the robot knows right now. Here: which square it's on.</p></article>
+              <article><h3>Action</h3><p>What it can do: move up, right, down, or left.</p></article>
+              <article><h3>Reward</h3><p>The score for what just happened. The robot tries to maximize the <em>total</em> reward, not just the next one.</p></article>
+              <article><h3>Policy</h3><p>The robot's strategy: "in this state, do that." Learning = improving the policy. The arrows in the sim <em>are</em> the policy.</p></article>
+            </div>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-lime);">
+            <p class="ra-label">Sim · Q-learning</p><h2>Train the robot</h2>
+            <p>Press <strong>Train</strong>. At first the robot stumbles randomly. Every move, it updates a number called a <strong><span data-glossary="Q-value">Q-value</span></strong>: "how good is taking this action from this square?" Green squares have learned they lead to the charger; red ones have learned trouble is near. The arrow is the best action the robot knows so far.</p>
+            <div class="ra-sim">
+              <div class="ra-sim-grid">
+                <div>
+                  <canvas id="rl-canvas" width="720" height="480" aria-label="Q-learning grid world. Click squares to edit walls, stairs, and the charger."></canvas>
+                  <canvas id="rl-chart" width="720" height="90" style="margin-top:.5rem;" aria-label="Learning curve: steps per episode"></canvas>
+                  <p class="ra-readout" id="rl-readout" aria-live="off"></p>
+                </div>
+                <div class="ra-controls">
+                  <div class="ra-btns"><button class="ra-btn" id="rl-run" type="button">Train</button><button class="ra-btn" id="rl-greedy" type="button">Test the policy</button></div>
+                  <fieldset><legend>Learning</legend>
+                    <label>Speed: <output id="rl-speed-out">40</output><input id="rl-speed" type="range" min="0" max="100" value="40"></label>
+                    <label>Learning rate α: <output id="rl-alpha-out">0.30</output><input id="rl-alpha" type="range" min="0.01" max="1" step="0.01" value="0.3"></label>
+                    <label>Patience γ (future matters): <output id="rl-gamma-out">0.95</output><input id="rl-gamma" type="range" min="0" max="0.99" step="0.01" value="0.95"></label>
+                    <label>Curiosity ε (random moves): <output id="rl-eps-out">0.20</output><input id="rl-eps" type="range" min="0" max="1" step="0.01" value="0.2"></label>
+                    <label>Wheel slip: <output id="rl-slip-out">0.00</output><input id="rl-slip" type="range" min="0" max="0.4" step="0.01" value="0"></label>
+                    <label class="ra-check"><input id="rl-values" type="checkbox" checked> Show learned values &amp; arrows</label>
+                  </fieldset>
+                  <fieldset><legend>Edit the world (click squares)</legend>
+                    <div class="ra-btns">
+                      <button class="ra-btn" type="button" data-rl-tool="wall" aria-pressed="true">Wall</button>
+                      <button class="ra-btn" type="button" data-rl-tool="pit" aria-pressed="false">Stairs</button>
+                      <button class="ra-btn" type="button" data-rl-tool="goal" aria-pressed="false">Charger</button>
+                      <button class="ra-btn" type="button" data-rl-tool="start" aria-pressed="false">Start</button>
+                      <button class="ra-btn" type="button" data-rl-tool="erase" aria-pressed="false">Erase</button>
+                    </div>
+                  </fieldset>
+                  <div class="ra-btns"><button class="ra-btn" id="rl-reset" type="button">Erase the brain</button><button class="ra-btn" id="rl-layout" type="button">Default world</button></div>
+                </div>
+              </div>
+            </div>
+            <div class="ra-cols">
+              <article><h3>1 · Watch it learn</h3><p>Train at low speed for 30 seconds. Where does green appear first — near the start or near the charger? Why?</p></article>
+              <article><h3>2 · Curiosity</h3><p>Erase the brain, set ε to 0, and train. Then try ε = 0.2. Why does a robot that never explores often get stuck with a bad route?</p></article>
+              <article><h3>3 · Change the world</h3><p>After training, move the charger. Test the policy. The robot still goes to the old spot. How long does relearning take?</p></article>
+              <article><h3>4 · Risk</h3><p>Add wheel slip of 0.2 and retrain. Does the learned route still hug the stairs, or does it keep a safer distance?</p></article>
+            </div>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-copper);">
+            <p class="ra-label">The update rule</p><h2>One line of learning</h2>
+            <p style="font-family:'IBM Plex Mono',monospace;font-size:.95rem;">Q(s, a) ← Q(s, a) + α · [ reward + γ · max Q(s′, ·) − Q(s, a) ]</p>
+            <p>In words: "My old guess for this move, nudged toward what actually happened: the reward I just got, plus the best I think I can do from where I landed." α sets the size of the nudge. γ sets how much future reward matters. Good news slowly flows backward from the charger, one square at a time. That's why green spreads outward from the goal.</p>
+            <div class="ra-cols">
+              <article><h3>Explore vs. exploit</h3><p>With probability ε the robot tries a random move instead of its best one. Too little and it never finds better routes. Too much and it never uses what it knows.</p></article>
+              <article><h3>Reward design</h3><p>Robots do exactly what the reward says, not what you meant. Remove the step cost and a robot may wander forever, since nothing tells it to hurry.</p></article>
+            </div>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-yellow);">
+            <p class="ra-label">From grid to real robots</p><h2>Deep reinforcement learning</h2>
+            <p>This robot has 96 squares × 4 moves = 384 numbers to learn, so a table works. A real walking robot's state is dozens of joint angles, speeds, and camera pixels, which is far too many for any table. <strong>Deep RL</strong> swaps the table for a neural network, built from the same neurons as the <a class="ra-more" href="../../computer-science/algorithms-and-ai/perceptron-lab.html">perceptron</a>, which <em>estimates</em> Q-values or picks actions directly.</p>
+            <div class="ra-cols">
+              <article><h3>Sim-to-real</h3><p>Robots train in physics simulators, running thousands of copies faster than real time. The policy then moves onto the real robot. The simulator randomly changes friction, weight, and lighting so the policy can handle the messy real world.</p></article>
+              <article><h3>Where it works</h3><p>Legged-robot walking and recovery, dexterous robot hands, drone racing, and warehouse grasping. DeepMind's AlphaGo used RL too — see the <a class="ra-more" href="../../computer-science/algorithms-and-ai/go-ai.html">Go AI lesson</a>.</p></article>
+              <article><h3>Where it doesn't (yet)</h3><p>RL needs huge amounts of practice, and practice on real hardware breaks things. That's why most robots still combine learned skills with the classic methods in this series.</p></article>
+            </div>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-copper);">
+            <p class="ra-label">Where you’ll see it</p><h2>Robots that learned by practicing</h2>
+            <p>Click any photo to enlarge it.</p>
+            <div class="ra-figs">
+              <figure data-zoomable data-lightbox-group="rl">
+                <img src="../../../assets/images/lessons/robotics/spot-robot-royal-air-force.jpg" alt="A yellow Boston Dynamics Spot four-legged robot walking beside airmen on a runway" loading="lazy" />
+                <figcaption><strong>Legged robots</strong> Four-legged robots like Spot must balance on ice, stairs, and gravel. Engineers now train walking controllers with reinforcement learning in simulation, then move them to the real robot.<small class="photo-credit">Photo: Senior Airman John Ennis · Public domain · <a href="https://commons.wikimedia.org/wiki/File:Spot_robot_Royal_Air_Force.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></small></figcaption>
+              </figure>
+              <figure data-zoomable data-lightbox-group="rl">
+                <img src="../../../assets/images/lessons/robotics/valkyrie-robot-3.jpg" alt="NASA’s Valkyrie humanoid robot standing against a dark background" loading="lazy" />
+                <figcaption><strong>NASA’s Valkyrie</strong> A 1.8 m humanoid built for the DARPA Robotics Challenge. Humanoids have dozens of joints, far too many states for a Q-table, which is why deep RL uses neural networks.<small class="photo-credit">Photo: NASA/Bill Stafford, James Blair, Regan Geeseman · Public domain · <a href="https://commons.wikimedia.org/wiki/File:Valkyrie-robot-3.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></small></figcaption>
+              </figure>
+              <figure data-zoomable data-lightbox-group="rl">
+                <img src="../../../assets/images/lessons/robotics/lee-sedol-b-vs-alphago-w-game-4.jpg" alt="A diagram of a Go board showing the numbered moves of game 4 between Lee Sedol and AlphaGo" loading="lazy" />
+                <figcaption><strong>Lee Sedol vs. AlphaGo, 2016</strong> AlphaGo learned partly by playing millions of games against itself, using the same reward idea as our robot. Lee Sedol won this game (Game 4), his only win of the match.<small class="photo-credit">Photo: Wesalius · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a> · <a href="https://commons.wikimedia.org/wiki/File:Lee_Sedol_(B)_vs_AlphaGo_(W)_-_Game_4.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></small></figcaption>
+              </figure>
+            </div>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-blue);">
+            <p class="ra-label">Robot autonomy series</p><h2>Sense · Think · Act</h2>
+            <nav class="ra-series" aria-label="Robot autonomy lessons">
+              <a href="../mechanical-and-civil-design/robotics-engineering-intro.html"><b>Robotics Intro</b>Sensor, controller, actuator, feedback</a>
+              <a href="robot-mapping-localization.html"><b>Mapping &amp; Localization</b>Occupancy grids, particle filters, SLAM</a>
+              <a href="sensor-fusion.html"><b>Sensor Fusion</b>Complementary &amp; Kalman filters</a>
+              <a href="../../computer-science/algorithms-and-ai/pathfinding.html"><b>A* Pathfinding</b>Global route on a grid</a>
+              <a href="motion-planning.html"><b>Motion Planning</b>RRT, potential fields, DWA, kinematics</a>
+              <a href="../arduino-and-electronics/pid-control.html"><b>PID Control</b>Hold a target with feedback</a>
+              <a href="../../computer-science/algorithms-and-ai/state-machines.html"><b>State Machines</b>Organize robot behaviors</a>
+              <a href="robot-reinforcement-learning.html" aria-current="page"><b>Reinforcement Learning</b>Learn a policy from rewards</a>
+            </nav>
+          </section>
+
+          
+          <section class="ra-card" style="--ra-accent:var(--ra-red);">
+            <p class="ra-label">Quick check</p><h2>Lock it in</h2>
+            <div class="ra-quiz">
+              <div class="ra-question" data-answer="c" data-explanation="The designer defines rewards; the robot discovers the actions that earn them."><p>1. In reinforcement learning, what does the human designer mainly provide?</p><div class="ra-options"><button class="ra-option" data-choice="a">Every move the robot should make</button><button class="ra-option" data-choice="b">A finished map</button><button class="ra-option" data-choice="c">A reward that scores outcomes</button><button class="ra-option" data-choice="d">Nothing at all</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-answer="b" data-explanation="The +1 reward is first learned next to the charger, then flows backward one square per update through γ · max Q."><p>2. Why do learned values spread outward from the charger?</p><div class="ra-options"><button class="ra-option" data-choice="a">The charger emits a signal</button><button class="ra-option" data-choice="b">Each square learns from the value of the square it moves into</button><button class="ra-option" data-choice="c">The robot starts at the charger</button><button class="ra-option" data-choice="d">Walls push the values</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-answer="a" data-explanation="ε is the chance of trying a random move. Exploration finds better routes the robot doesn't know about yet."><p>3. What does ε (epsilon) control?</p><div class="ra-options"><button class="ra-option" data-choice="a">How often the robot tries a random move to explore</button><button class="ra-option" data-choice="b">How fast the robot drives</button><button class="ra-option" data-choice="c">The size of the grid</button><button class="ra-option" data-choice="d">The reward for the charger</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-answer="d" data-explanation="Real robot states have too many combinations for a table, so a neural network approximates the values."><p>4. Why does deep RL use a neural network instead of a Q-table?</p><div class="ra-options"><button class="ra-option" data-choice="a">Networks never make mistakes</button><button class="ra-option" data-choice="b">Tables can't store negative numbers</button><button class="ra-option" data-choice="c">It removes the need for rewards</button><button class="ra-option" data-choice="d">Real robots have far too many states to list in a table</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head"><div class="ll-tabs"><button class="ll-tab" aria-selected="true" data-pane="ra-plan">Lesson</button><button class="ll-tab" aria-selected="false" data-pane="ra-teacher">Teacher</button></div><button class="ll-panel-close" type="button" aria-label="Close panel">×</button></div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="ra-plan">
+            <span class="ll-label">Learning goals</span>
+            <div class="ll-info"><strong>Define RL</strong>Name state, action, reward, and policy in a robot example.</div>
+            <div class="ll-info"><strong>Explain the update</strong>Describe in words how a Q-value is nudged toward reward + future value.</div>
+            <div class="ll-info"><strong>Balance exploration</strong>Explain the explore/exploit trade-off using evidence from the sim.</div>
+            <div class="ll-info"><strong>Scale up</strong>Explain why deep RL uses neural networks and trains in simulation.</div>
+          </div>
+          <div class="ll-pane" id="ra-teacher">
+            <span class="ll-label">Teaching notes</span>
+            <div class="ll-info"><strong>Launch</strong>Play "hot and cold": a volunteer finds a hidden object with only "warmer/colder" feedback. That feedback is the reward signal.</div>
+            <div class="ll-info"><strong>Pacing</strong>Keep speed low for the first minute so students see individual episodes, then speed up to show convergence.</div>
+            <div class="ll-info"><strong>Misconception</strong>Students often think the robot "sees" the charger. It doesn’t: it only knows its square and its past rewards.</div>
+            <div class="ll-info"><strong>Ethics link</strong>Reward hacking: what could go wrong if a cleaning robot is rewarded for "no visible dirt"?</div>
+            <div class="ll-info"><strong>Assessment</strong>Students design a reward table for a new robot task (e.g. a lawn mower) and predict one way the robot might exploit it.</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script src="../../../assets/js/sim-kit.js"></script>
+  <script src="../../../assets/js/lessons/robot-autonomy-common.js"></script>
+  <script src="../../../assets/js/lessons/robot-reinforcement-learning.js"></script>
+  <script src="../../../assets/js/classroom-animations.js"></script>
+  <script src="../../../assets/js/lesson-layout.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
+  <script src="../../../assets/js/site-glossary.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
