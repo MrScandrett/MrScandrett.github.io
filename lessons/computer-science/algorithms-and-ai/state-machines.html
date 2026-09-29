@@ -154,18 +154,22 @@
             <span>Turing</span><span class="dot"></span>
             <span>Mealy / Moore</span>
           </div>
-          <p class="cl-lede">A state machine is one of computing's most powerful ideas: a system is always in exactly one "state," and events cause it to move to a new state. Traffic lights, vending machines, video game characters, and TCP/IP connections all work this way.</p>
+          <p class="cl-lede">A state machine gives a robot or game character a clear answer to “What am I doing now?” A sensor reading, timer, or button press can move it to its next state. Test that idea with a traffic light, then guide a robot vacuum around an obstacle and back to its dock.</p>
         </section>
 
-        <!-- Bio card -->
+        <!-- Simulator -->
         <section class="cl-card" style="--card-accent:#34c759;">
-          <h2>Turing, Mealy, and Moore</h2>
-          <div class="cl-bio">
-            <div class="cl-bio-portrait" aria-hidden="true">🤖</div>
-            <p class="cl-bio-text">
-              <strong>Alan Turing (1912–1954)</strong> laid the theoretical foundation for all computing with his 1936 paper "On Computable Numbers," introducing the abstract <em>Turing machine</em> — essentially a state machine with infinite memory. In 1955–56, two engineers independently extended his ideas for practical circuits. <strong>George Mealy</strong> described machines whose outputs depend on both the current state and the current input. <strong>Edward Moore</strong> described machines whose outputs depend only on the current state. These three models — Turing, Mealy, and Moore — underpin every digital device built since: from traffic controllers and elevator logic to compilers, CPUs, and network protocols.
-            </p>
+          <h2>State Machine Simulator</h2>
+          <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Choose a demo from the panel. Predict the next state, then fire an event and compare your prediction with the transition log. In Robot Vacuum, try an obstacle before and after the battery runs low.</p>
+          <div class="cl-canvas-wrap">
+            <canvas id="sm-canvas" aria-label="State machine simulator canvas"></canvas>
           </div>
+          <div class="cl-readouts">
+            <div class="cl-readout"><span class="cl-readout-label">Current State</span><span class="cl-readout-val" id="sm-r-state">RED</span></div>
+            <div class="cl-readout"><span class="cl-readout-label">Last Event</span><span class="cl-readout-val" id="sm-r-event">—</span></div>
+            <div class="cl-readout"><span class="cl-readout-label">Steps</span><span class="cl-readout-val" id="sm-r-steps">0</span></div>
+          </div>
+          <div class="sm-log" id="sm-log" aria-live="polite" aria-label="State transition history">Transition log will appear here…</div>
         </section>
 
         <!-- Core concept -->
@@ -199,19 +203,15 @@
           <p>Only three states. Only one active at a time. The transitions are completely deterministic — given the current state and the event, the next state is always exactly predictable.</p>
         </section>
 
-        <!-- Simulator -->
+        <!-- Bio card -->
         <section class="cl-card" style="--card-accent:#34c759;">
-          <h2>State Machine Simulator</h2>
-          <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Choose a demo from the panel. Interact with the action buttons to fire events and watch state transitions happen in real time.</p>
-          <div class="cl-canvas-wrap">
-            <canvas id="sm-canvas" aria-label="State machine simulator canvas"></canvas>
+          <h2>Turing, Mealy, and Moore</h2>
+          <div class="cl-bio">
+            <div class="cl-bio-portrait" aria-hidden="true">🤖</div>
+            <p class="cl-bio-text">
+              <strong>Alan Turing (1912–1954)</strong> laid the theoretical foundation for all computing with his 1936 paper "On Computable Numbers," introducing the abstract <em>Turing machine</em> — essentially a state machine with infinite memory. In 1955–56, two engineers independently extended his ideas for practical circuits. <strong>George Mealy</strong> described machines whose outputs depend on both the current state and the current input. <strong>Edward Moore</strong> described machines whose outputs depend only on the current state. These three models — Turing, Mealy, and Moore — underpin every digital device built since: from traffic controllers and elevator logic to compilers, CPUs, and network protocols.
+            </p>
           </div>
-          <div class="cl-readouts">
-            <div class="cl-readout"><span class="cl-readout-label">Current State</span><span class="cl-readout-val" id="sm-r-state">RED</span></div>
-            <div class="cl-readout"><span class="cl-readout-label">Last Event</span><span class="cl-readout-val" id="sm-r-event">—</span></div>
-            <div class="cl-readout"><span class="cl-readout-label">Steps</span><span class="cl-readout-val" id="sm-r-steps">0</span></div>
-          </div>
-          <div class="sm-log" id="sm-log" aria-live="polite" aria-label="State transition history">Transition log will appear here…</div>
         </section>
 
         <!-- Real-World Applications -->
@@ -241,9 +241,15 @@
             <div class="cl-app">
               <div class="cl-app-icon">🤖</div>
               <strong>Robot Behavior Architecture</strong>
-              <small>A robot vacuum runs Explore → Clean → Low Battery → Return to Dock → Charge. Each state calls different skills: <a href="../../engineering/robotics/robot-mapping-localization.html">mapping</a>, <a href="../../engineering/robotics/motion-planning.html">motion planning</a>, or <a href="pathfinding.html">A*</a> home. Bigger robots use behavior trees, a close cousin.</small>
+              <small>The 2002 iRobot Roomba made autonomous floor cleaning a practical home product. Our simplified classroom model uses Clean → Avoid → Clean, with Low Battery → Dock → Charge as another route. Actual models vary; a robot also needs sensors and motion control. Compare <a href="../../engineering/mechanical-and-civil-design/bug-bots.html#genghis">Roomba's robotics lineage</a> and <a href="../../engineering/arduino-and-electronics/arduino-programming-foundations.html#apf-robot-build">build your own state machine</a>.</small>
             </div>
           </div>
+        </section>
+
+        <section class="cl-card" style="--card-accent:#ff9500;">
+          <h2>Draw the robot's rules before writing code</h2>
+          <p>Use circles for <strong>states</strong> and label every arrow with the <strong>event</strong> that causes it. Start with Clean → Avoid → Clean. Add a low-battery route to Dock and Charge. What should happen if an obstacle is sensed while the robot is docking? Our model ignores that event; a real design must choose a safe rule and test it.</p>
+          <p>Then take the same diagram habit to the <a href="../../engineering/arduino-and-electronics/arduino-programming-foundations.html#apf-robot-build">Arduino bumper robot build</a>. Its physical switch replaces the vacuum's obstacle sensor, and its motors make each state visible.</p>
         </section>
 
         <!-- Practice Problems -->
@@ -349,6 +355,9 @@
             <label style="font-size:0.82rem;display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
               <input type="radio" name="sm-demo" value="lock" onchange="smSetDemo('lock')" /> Door Lock
             </label>
+            <label style="font-size:0.82rem;display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+              <input type="radio" name="sm-demo" value="vacuum" onchange="smSetDemo('vacuum')" /> Robot Vacuum
+            </label>
           </div>
           <hr class="ll-hr">
           <span class="ll-label" id="sm-action-label">Actions</span>
@@ -422,6 +431,25 @@
       ],
       auto: false
     },
+    vacuum: {
+      states: ['Clean', 'Avoid', 'Dock', 'Charge'],
+      start: 'Clean',
+      colors: { Clean: '#34c759', Avoid: '#ff9500', Dock: '#007aff', Charge: '#5856d6' },
+      transitions: {
+        Clean: { obstacle: 'Avoid', lowBattery: 'Dock' },
+        Avoid: { clear: 'Clean', lowBattery: 'Dock' },
+        Dock: { docked: 'Charge' },
+        Charge: { charged: 'Clean' }
+      },
+      actions: [
+        { label: '🧱 Obstacle sensed', event: 'obstacle' },
+        { label: '↪ Path clear', event: 'clear' },
+        { label: '🔋 Battery low', event: 'lowBattery' },
+        { label: '⌂ Dock reached', event: 'docked' },
+        { label: '✓ Charged', event: 'charged' }
+      ],
+      auto: false
+    },
     lock: {
       states: ['Locked', 'Digit1', 'Digit2', 'Unlocked', 'Error'],
       start: 'Locked',
@@ -457,7 +485,14 @@
   function fire(event) {
     const m = getMachine();
     const trans = m.transitions[currentState];
-    if (!trans || !trans[event]) return; // invalid event in this state
+    if (!trans || !trans[event]) {
+      rEvent.textContent = event + ' (no rule)';
+      const line = document.createElement('div');
+      line.textContent = `${currentState}: ${event} has no rule; state stays ${currentState}`;
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+      return;
+    }
     const from = currentState;
     currentState = trans[event];
     stepCount++;

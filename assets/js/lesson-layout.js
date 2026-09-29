@@ -391,9 +391,24 @@
   }
 
   function setPanelInteractivity(panel, open) {
+    var body = panel.querySelector('.ll-panel-body');
     if (open) {
       panel.removeAttribute('inert');
       if ('inert' in panel) panel.inert = false;
+      if (body) {
+        body.removeAttribute('inert');
+        body.removeAttribute('aria-hidden');
+        if ('inert' in body) body.inert = false;
+      }
+    } else if (window.innerWidth <= 680) {
+      // Keep the visible drawer handle interactive on phones; hide its contents.
+      panel.removeAttribute('inert');
+      if ('inert' in panel) panel.inert = false;
+      if (body) {
+        body.setAttribute('inert', '');
+        body.setAttribute('aria-hidden', 'true');
+        if ('inert' in body) body.inert = true;
+      }
     } else {
       panel.setAttribute('inert', '');
       if ('inert' in panel) panel.inert = true;
@@ -416,7 +431,13 @@
     }
 
     setPanelInteractivity(panel, open);
-    panel.setAttribute('aria-hidden', open ? 'false' : 'true');
+    panel.dataset.llCollapsed = open ? 'false' : 'true';
+    panel.setAttribute('aria-hidden', window.innerWidth <= 680 ? 'false' : (open ? 'false' : 'true'));
+    var closeBtn = panel.querySelector('.ll-panel-close');
+    if (closeBtn) {
+      closeBtn.setAttribute('aria-label', open ? 'Collapse panel' : 'Open panel');
+      closeBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
 
     // Animate panel slide if ClassroomAnimations is available
     if (window.ClassroomAnimations) {
@@ -465,7 +486,8 @@
   function initPanel() {
     /* Always start collapsed — panel opens on user demand */
     document.querySelectorAll('.ll-panel').forEach(function (panel) {
-      panel.setAttribute('aria-hidden', 'true');
+      panel.dataset.llCollapsed = 'true';
+      panel.setAttribute('aria-hidden', window.innerWidth <= 680 ? 'false' : 'true');
     });
 
     document.querySelectorAll('.ll-panel').forEach(function (panel) {
@@ -486,12 +508,14 @@
 
     /* Close / collapse button */
     document.querySelectorAll('.ll-panel-close').forEach(function (btn) {
+      btn.setAttribute('aria-label', 'Open panel');
+      btn.setAttribute('aria-expanded', 'false');
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
         var panel = btn.closest('.ll-panel');
         if (!panel) return;
         var isMobile  = window.innerWidth <= 680;
-        var isHidden  = panel.getAttribute('aria-hidden') === 'true';
+        var isHidden  = panel.dataset.llCollapsed === 'true';
         /* on mobile the button is a toggle; on desktop it only closes */
         if (isMobile) {
           setPanel(panel, isHidden);
@@ -520,7 +544,7 @@
         if (e.target.closest('.ll-tab') || e.target.closest('.ll-panel-close')) return;
         var panel = head.closest('.ll-panel');
         if (!panel) return;
-        var isHidden = panel.getAttribute('aria-hidden') === 'true';
+        var isHidden = panel.dataset.llCollapsed === 'true';
         setPanel(panel, isHidden);
       });
     });

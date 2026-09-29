@@ -58,6 +58,15 @@
     .apf-card > p { max-width: 78ch; }
     .apf-code { margin: 0; overflow: auto; padding: .9rem 1rem; border-radius: 4px; background: #1e1e1e; color: #e7e8d8; font: 500 .78rem/1.6 "IBM Plex Mono", monospace; }
     .apf-code .c { color: #6a9955; } .apf-code .k { color: #569cd6; } .apf-code .n { color: #b5cea8; } .apf-code .f { color: #dcdcaa; } .apf-code .t { color: #4ec9b0; }
+    .apf-build-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin: 1rem 0; }
+    .apf-build-grid > div { padding: 1rem; border: 1px solid var(--apf-line); background: #f2f5ea; }
+    .apf-build-grid h3 { margin-bottom: .55rem; }
+    .apf-build-grid ul, .apf-build-grid ol { margin: .35rem 0 0; padding-left: 1.35rem; line-height: 1.6; }
+    .apf-build-grid li + li { margin-top: .3rem; }
+    .apf-state-flow { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; margin: 1rem 0; }
+    .apf-state-flow span { padding: .4rem .6rem; border: 1px solid var(--apf-teal); background: #e6f5f2; font: 700 .8rem "IBM Plex Mono", monospace; }
+    .apf-state-flow small { font: 600 .7rem "IBM Plex Mono", monospace; color: var(--apf-navy); }
+    @media (max-width: 650px) { .apf-build-grid { grid-template-columns: 1fr; } }
 
     /* Data type matcher */
     .apf-match { display: grid; gap: .6rem; margin-top: 1rem; }
@@ -236,6 +245,82 @@ analogWrite(<span class="n">9</span>, brightness);</pre>
             <p style="margin-top:.9rem;">Libraries are installed once (Library Manager) and included once per sketch — but which board you've selected can still matter, since some libraries only work with certain chips (a Wi-Fi library for the ESP32 won't run on an Uno).</p>
           </section>
 
+          <section class="apf-card" id="apf-robot-build" style="--apf-accent:var(--apf-orange);">
+            <p class="apf-label">Class build · sensor + controller + motors</p><h2>Program a bumper robot</h2>
+            <p>Start with the <a href="../../computer-science/algorithms-and-ai/state-machines.html">State Machines simulator</a>: predict what an obstacle event should do. This classroom robot uses a front bumper switch rather than a vacuum's sensors. It drives until the bumper is pressed, reverses briefly, turns, and drives again. The three states are the plan; a switch input triggers the transition, and two motors carry out each state's action.</p>
+            <div class="apf-state-flow" aria-label="Robot state diagram: Drive, bumper press, Back up, 450 milliseconds, Turn, 500 milliseconds, Drive">
+              <span>DRIVE</span><small>→ bumper pressed →</small><span>BACK_UP</span><small>→ 450 ms →</small><span>TURN</span><small>→ 500 ms →</small><span>DRIVE</span>
+            </div>
+            <div class="apf-build-grid">
+              <div>
+                <h3>One specific build</h3>
+                <ul>
+                  <li>Arduino Uno, two DC motors and wheels on a chassis, a normally open bumper switch, and a TB6612FNG dual motor driver.</li>
+                  <li>Bumper: one terminal to D2, the other to GND. <code>INPUT_PULLUP</code> reads HIGH until the switch closes.</li>
+                  <li>Driver: <code>STBY→D4</code>, <code>PWMA→D5</code>, <code>PWMB→D6</code>, <code>AIN1→D7</code>, <code>AIN2→D8</code>, <code>BIN1→D9</code>, <code>BIN2→D10</code>; outputs A and B go to the two motors.</li>
+                  <li>Driver <code>VCC→Uno 5V</code>; driver <code>VM→motor-rated battery +</code>; connect battery −, driver GND, and Uno GND together. Use the motor and driver ratings to choose the battery. Never power motors from an Uno output pin.</li>
+                </ul>
+              </div>
+              <div>
+                <h3>Test in stages</h3>
+                <ol>
+                  <li>Keep motor power disconnected while wiring. Ask a teacher to check polarity, the common ground, and the driver pin labels.</li>
+                  <li>Lift the wheels off the table. Upload the sketch, connect motor power, and check that DRIVE spins both wheels forward. If a wheel reverses, disconnect power before swapping that motor's two leads.</li>
+                  <li>Press the bumper: both wheels should reverse, then turn in opposite directions, then drive forward. Set the bot on a clear floor and repeat from the same starting point.</li>
+                  <li>Run at least ten obstacle tests. Record each success or failure and the condition that changed. <a href="../../mathematics/statistics-and-probability/probability-simulator.html#ps-robot-connection">Use the Probability Simulator</a> to discuss why a few successes do not establish reliability.</li>
+                </ol>
+              </div>
+            </div>
+            <p><strong>Starter sketch for this exact wiring:</strong> <code>state</code> remembers the current behavior, <code>enteredAt</code> remembers when it began, and <code>setMotors()</code> keeps the motor commands in one function. Your kit's shield may have different pins or a different driver; use its own wiring guide before adapting the sketch.</p>
+            <pre class="apf-code"><code>const byte BUMPER = 2, STBY = 4;
+const byte PWMA = 5, PWMB = 6;
+const byte AIN1 = 7, AIN2 = 8, BIN1 = 9, BIN2 = 10;
+enum State { DRIVE, BACK_UP, TURN };
+State state = DRIVE;
+unsigned long enteredAt = 0;
+
+void motor(byte pwm, byte in1, byte in2, int speed) {
+  speed = constrain(speed, -255, 255);
+  digitalWrite(in1, speed &gt; 0 ? HIGH : LOW);
+  digitalWrite(in2, speed &lt; 0 ? HIGH : LOW);
+  analogWrite(pwm, abs(speed));
+}
+
+void setMotors(int left, int right) {
+  motor(PWMA, AIN1, AIN2, left);
+  motor(PWMB, BIN1, BIN2, right);
+}
+
+void setup() {
+  pinMode(BUMPER, INPUT_PULLUP);
+  const byte outputs[] = {STBY, PWMA, PWMB, AIN1, AIN2, BIN1, BIN2};
+  for (byte pin : outputs) pinMode(pin, OUTPUT);
+  digitalWrite(STBY, HIGH);
+  setMotors(0, 0);
+}
+
+void loop() {
+  unsigned long now = millis();
+  if (state == DRIVE) {
+    if (digitalRead(BUMPER) == LOW) {
+      state = BACK_UP;
+      enteredAt = now;
+      setMotors(-150, -150);
+    } else {
+      setMotors(160, 160);
+    }
+  } else if (state == BACK_UP &amp;&amp; now - enteredAt &gt;= 450) {
+    state = TURN;
+    enteredAt = now;
+    setMotors(150, -150);
+  } else if (state == TURN &amp;&amp; now - enteredAt &gt;= 500) {
+    state = DRIVE;
+    setMotors(160, 160);
+  }
+}</code></pre>
+            <p style="margin-top:1rem;"><strong>Improve and explain:</strong> Mark each test on your state diagram, including the bumper event and both timer events. Change one timing or speed value, predict what will happen, and test again. On <a href="../../computer-science/foundations/build-your-student-page.html#robot-lab-entry">your student page</a>, include the diagram, the relevant code, a photo or short video, and what your test data made you change.</p>
+          </section>
+
           <section class="apf-card" style="--apf-accent:var(--apf-green);">
             <p class="apf-label">Quick check</p><h2>Test your vocabulary</h2>
             <div class="apf-quiz">
@@ -258,6 +343,7 @@ analogWrite(<span class="n">9</span>, brightness);</pre>
             <div class="ll-info"><strong>Rescale a reading</strong>Explain what map() does and use it to convert a sensor range into an output range.</div>
             <div class="ll-info"><strong>Write a function</strong>Identify a function's parameter and return value, and trace when it executes relative to loop().</div>
             <div class="ll-info"><strong>Use a library</strong>Explain what #include does and name one reason a library saves work over hand-written code.</div>
+            <div class="ll-info"><strong>Build a state machine</strong>Use a bumper event and timed transitions to control two motors; record repeated tests and explain one revision.</div>
           </div>
           <div class="ll-pane" id="apf-teacher">
             <span class="ll-label">Materials</span>
@@ -265,7 +351,8 @@ analogWrite(<span class="n">9</span>, brightness);</pre>
             <div class="ll-info"><strong>Launch question</strong>"Blink used the number 1000 directly in the code. What's the downside of that, versus storing it in a variable named delayTime?" (Reuse, readability, easy tuning in one place.)</div>
             <div class="ll-info"><strong>Extension</strong>Have students write a second function, e.g. isDark(int reading), that returns a bool, and call it from loop() to decide whether to turn on the LED.</div>
             <div class="ll-info"><strong>Assessment</strong>A working sketch that reads an analog sensor, maps it through a custom function, and drives an LED's brightness with analogWrite().</div>
-            <div class="ll-info"><strong>Safety</strong>USB power only — same as prior Arduino lessons.</div>
+            <div class="ll-info"><strong>Robot extension materials</strong>For the bumper build: Uno, chassis, two DC motors, normally open bumper switch, TB6612FNG driver, and a motor-rated battery. Check the exact board and motor ratings before wiring.</div>
+            <div class="ll-info"><strong>Safety</strong>Use USB for the Uno and a separate motor-rated supply for the motors with a shared ground. Disconnect both before changing wires.</div>
           </div>
         </div>
       </aside>
