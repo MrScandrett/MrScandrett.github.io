@@ -10,100 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../../assets/css/lesson-layout.css" />
-  <style>
-    .cl-page { padding-bottom: 0; }
-    .ll-viewport { --ll-panel-w: 300px; }
-
-    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
-    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
-    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
-    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
-    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
-    [data-lighting="night"] .cl-lede { color: rgba(245,245,247,0.7); }
-
-    :root { --acc: #8b5cf6; --acc-soft: rgba(139,92,246,0.12); --acc-border: rgba(139,92,246,0.3); }
-
-    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent, var(--acc)); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
-    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
-    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
-    .cl-card p  { margin: 0 0 0.6rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
-    .cl-card p:last-child { margin-bottom: 0; }
-    [data-lighting="night"] .cl-card { background: var(--white,#2c2c2e); }
-    [data-lighting="night"] .cl-card p { color: rgba(245,245,247,0.72); }
-
-    .callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
-    .callout.violet { background: rgba(139,92,246,0.09); border-left: 3px solid var(--acc); color: var(--text-secondary, #3f4f65); }
-    [data-lighting="night"] .callout.violet { color: rgba(245,245,247,0.72); }
-    .callout strong { color: var(--text,#1d1d1f); }
-
-    .stages-flow { display: flex; align-items: stretch; gap: 0.55rem; margin: 0.9rem 0; flex-wrap: wrap; }
-    .stages-step { flex: 1 1 150px; border-radius: 14px; padding: 0.9rem 0.85rem; border: 1.5px solid var(--acc-border); background: var(--acc-soft); text-align: center; }
-    .stages-step-icon { font-size: 1.4rem; display: block; margin-bottom: 0.3rem; }
-    .stages-step strong { display: block; font-size: 0.86rem; margin-bottom: 0.25rem; }
-    .stages-step small { font-size: 0.76rem; color: var(--text-muted, #64748b); line-height: 1.45; display: block; }
-    [data-lighting="night"] .stages-step small { color: rgba(245,245,247,0.65); }
-    .stages-arrow { display: flex; align-items: center; justify-content: center; color: var(--text-muted, #64748b); font-size: 1.3rem; }
-    @media (max-width: 700px) { .stages-flow { flex-direction: column; } .stages-arrow { transform: rotate(90deg); } }
-
-    .systems-list { margin: 0.4rem 0 0; padding-left: 1.1rem; font-size: 0.85rem; color: var(--text-secondary, #3f4f65); line-height: 1.7; }
-    [data-lighting="night"] .systems-list { color: rgba(245,245,247,0.72); }
-
-    .game-wrap { border: 2px solid var(--acc-border); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #0a0a0f; position: relative; }
-    #pong-canvas { display: block; width: 100%; max-width: 480px; height: 260px; margin: 0 auto; cursor: none; }
-    #pong-canvas:focus-visible { outline: 3px solid var(--acc); outline-offset: -3px; }
-    .game-focus-hint { text-align: center; font-size: 0.76rem; color: var(--text-muted, #64748b); margin: 0.5rem 0 0; }
-    [data-lighting="night"] .game-focus-hint { color: rgba(245,245,247,0.6); }
-    .game-hud { display: flex; justify-content: space-between; padding: 0.4rem 0.9rem; background: rgba(0,0,0,0.6); font-size: 0.78rem; font-weight: 600; }
-    .game-hud .hud-score { color: #a78bfa; }
-    .game-hud .hud-hint  { color: var(--text-muted, #64748b); }
-    .game-btn { display: block; margin: 0.5rem auto 0; background: var(--acc); color: #fff; border: none; border-radius: 8px; padding: 0.4rem 1.2rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .game-btn:hover { opacity: 0.85; }
-    .game-msg { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 0.5rem; background: rgba(10,10,15,0.82); color: #fff; text-align: center; font-size: 1rem; font-weight: 700; }
-    .game-msg.show { display: flex; }
-    .game-msg span { font-size: 0.78rem; font-weight: 500; color: #cbd5e1; }
-
-    .config-panel { border: 1.5px solid var(--acc-border); border-radius: 16px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; background: var(--acc-soft); }
-    .config-panel h3 { margin: 0 0 0.75rem; font-size: 1rem; color: var(--acc); }
-    .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem 1rem; }
-    @media (max-width: 560px) { .config-grid { grid-template-columns: 1fr; } }
-    .config-field label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary, #3f4f65); margin-bottom: 0.25rem; }
-    [data-lighting="night"] .config-field label { color: rgba(245,245,247,0.75); }
-    .config-field select, .config-field input[type="range"] {
-      width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--line,#d2d2d7); border-radius: 8px;
-      font-size: 0.84rem; font-family: inherit; background: var(--white,#fff); color: var(--text,#1d1d1f); box-sizing: border-box;
-    }
-    .config-field output { font-size: 0.76rem; color: var(--text-muted, #64748b); margin-left: 0.3rem; }
-    .btn-apply { margin-top: 0.9rem; background: var(--acc); color: #fff; border: none; border-radius: 9px; padding: 0.45rem 1.1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .btn-apply:hover { opacity: 0.85; }
-    .config-note { font-size: 0.74rem; color: var(--text-muted, #64748b); margin-top: 0.6rem; }
-
-    .code-block { background: #0f172a; border-radius: 12px; padding: 0.9rem 1.1rem; margin: 0.7rem 0; overflow-x: auto; }
-    .code-block pre { margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 0.79rem; line-height: 1.7; color: #e2e8f0; white-space: pre; }
-    .code-block .kw  { color: #c084fc; }
-    .code-block .fn  { color: #60a5fa; }
-    .code-block .str { color: #4ade80; }
-    .code-block .cm  { color: #94a3b8; font-style: italic; }
-    .code-block .num { color: #fb923c; }
-    .code-tag { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.55rem; border-radius: 999px; margin-bottom: 0.4rem; }
-    .code-tag.editable { background: rgba(34,197,94,0.14); color: #16a34a; }
-    .code-tag.locked   { background: rgba(148,163,184,0.18); color: var(--text-muted, #64748b); }
-
-    .scratch-box { border: 1.5px solid rgba(255,171,25,0.35); border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; background: rgba(255,191,0,0.06); }
-    [data-lighting="night"] .scratch-box { background: rgba(255,191,0,0.09); }
-    .scratch-box h4 { margin: 0 0 0.5rem; font-size: 0.86rem; letter-spacing: -0.01em; color: #b45309; display: flex; align-items: center; gap: 0.4rem; }
-    [data-lighting="night"] .scratch-box h4 { color: #fbbf24; }
-    .scratch-box p { font-size: 0.83rem; color: var(--text-secondary, #3f4f65); margin: 0.5rem 0 0; line-height: 1.55; }
-    [data-lighting="night"] .scratch-box p { color: rgba(245,245,247,0.72); }
-    .scratch-link { display: inline-block; margin-top: 0.6rem; font-size: 0.78rem; font-weight: 700; color: #b45309; text-decoration: none; border-bottom: 1.5px solid rgba(180,83,9,0.4); }
-    [data-lighting="night"] .scratch-link { color: #fbbf24; border-color: rgba(251,191,36,0.4); }
-    .scratch-link:hover { border-color: currentColor; }
-
-    .next-card { display: flex; align-items: center; gap: 0.9rem; border: 1.5px solid var(--acc-border); border-radius: 14px; padding: 0.9rem 1.1rem; margin-top: 0.8rem; text-decoration: none; }
-    .next-card:hover { background: var(--acc-soft); }
-    .next-card-icon { font-size: 1.6rem; flex-shrink: 0; }
-    .next-card strong { display: block; font-size: 0.9rem; color: var(--text,#1d1d1f); }
-    .next-card small { font-size: 0.8rem; color: var(--text-muted, #64748b); }
-  </style>
+  <link rel="stylesheet" href="../../../../assets/css/game-tutorial.css" />
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -129,6 +36,8 @@
   <div class="ll-stage">
     <div class="ll-sim">
       <main id="main-content" class="cl-page">
+
+        <nav class="gt-series" data-gt-series aria-label="Tiny-loop tutorial series"></nav>
 
         <section class="hero cl-hero">
           <p class="eyebrow">Game Design &amp; Development · Tiny-Loop Tutorial · Archetype #6</p>
@@ -170,24 +79,25 @@
         <!-- Play + Customize -->
         <section class="cl-card">
           <h2>🎮 Play &amp; Customize</h2>
-          <p>Move your paddle (left side) with <strong>Arrow Up / Arrow Down</strong>, <strong>W / S</strong>, or the touch buttons below the game. First to the score goal wins the match.</p>
+          <p>You're the left paddle. Move with <strong>↑ / ↓</strong> or <strong>W / S</strong>, point with the mouse, drag on a touchscreen, or use the touch buttons. Where the ball hits your paddle matters: the edges send it off at a steep angle. First to the score goal wins.</p>
 
           <div class="game-wrap">
-            <div class="game-hud" aria-live="polite" aria-atomic="false">
+            <div class="game-hud">
               <span class="hud-score" id="g-score">You 0 — 0 CPU</span>
-              <span class="hud-hint">↑ / ↓ or W / S</span>
+              <span class="hud-group"><span id="g-rally">Rally 0</span><span class="hud-best" id="g-best"></span></span>
             </div>
-            <canvas id="pong-canvas" width="480" height="260" tabindex="0" aria-label="Pong game — use up/down arrows, W/S, or touch buttons to move your paddle"></canvas>
-            <div class="game-msg" id="g-msg" role="status" aria-live="assertive"><span id="g-msg-title"></span><span id="g-msg-sub"></span><button class="game-btn" id="g-restart">Play Again ↺</button></div>
+            <canvas id="pong-canvas" width="480" height="260" aria-label="Pong game. Use up and down arrows, W and S, the mouse, or the touch buttons to move your paddle." aria-describedby="pong-status"></canvas>
           </div>
-          <p class="game-focus-hint">💡 Click inside the game first — that gives it keyboard focus so ↑/↓ move your paddle instead of scrolling the page.</p>
+          <p class="sr-only" id="pong-status" aria-live="polite"></p>
+          <p class="game-focus-hint">Keys only work while the game has focus. Press <kbd>P</kbd> or <kbd>Esc</kbd> to pause.</p>
 
-          <div class="config-panel">
+          <div class="config-panel" id="config-panel">
             <h3>Tune the Game (limited, on purpose)</h3>
+            <p class="config-lede"><strong>Content</strong> settings change how it looks and apply instantly. <strong>Rule</strong> settings change how it plays, so the match restarts.</p>
             <div class="config-grid">
               <div class="config-field">
                 <label for="c-ball">Ball Sprite</label>
-                <select id="c-ball">
+                <select id="c-ball" data-cfg="ball" data-peek="cfg-ball">
                   <option value="🏐">🏐 Volleyball</option>
                   <option value="⚪">⚪ Classic Dot</option>
                   <option value="💎">💎 Gem</option>
@@ -196,72 +106,106 @@
               </div>
               <div class="config-field">
                 <label for="c-bg">Background</label>
-                <select id="c-bg">
+                <select id="c-bg" data-cfg="bg" data-peek="cfg-bg">
                   <option value="space">🌌 Space</option>
                   <option value="forest">🌲 Forest</option>
                   <option value="lab">🧪 Lab</option>
                 </select>
               </div>
               <div class="config-field">
-                <label for="c-speed">Ball Speed <output id="c-speed-out">3</output></label>
-                <input type="range" id="c-speed" min="2" max="6" step="1" value="3" />
+                <label for="c-speed">Ball Speed <output id="c-speed-out" for="c-speed">3</output></label>
+                <input type="range" id="c-speed" min="2" max="6" step="1" value="3" data-cfg="ballSpeed" data-peek="cfg-ballspeed" data-rule />
               </div>
               <div class="config-field">
-                <label for="c-ai">CPU Difficulty <output id="c-ai-out">3</output></label>
-                <input type="range" id="c-ai" min="1" max="6" step="1" value="3" />
+                <label for="c-ai">CPU Difficulty <output id="c-ai-out" for="c-ai">3</output></label>
+                <input type="range" id="c-ai" min="1" max="6" step="1" value="3" data-cfg="aiSpeed" data-peek="cfg-aispeed" data-rule />
               </div>
               <div class="config-field">
-                <label for="c-win">Score to Win <output id="c-win-out">5</output></label>
-                <input type="range" id="c-win" min="3" max="15" step="1" value="5" />
+                <label for="c-win">Score to Win <output id="c-win-out" for="c-win">5</output></label>
+                <input type="range" id="c-win" min="3" max="15" step="1" value="5" data-cfg="winScore" data-peek="cfg-winscore" data-rule />
               </div>
             </div>
-            <button class="btn-apply" id="c-apply">Apply &amp; Restart</button>
-            <p class="config-note">Notice what you <em>can't</em> change here: there's no field for "how bounce reflection works" or "how the CPU tracks the ball." That's the engine — the part every version of this game shares. You're only tuning content, not rewriting architecture. That's the limit, on purpose.</p>
-            <p class="config-note"><strong>What the sliders actually touch in the engine:</strong> <strong>Ball Speed</strong> only sets the ball's starting velocity magnitude (<code>1.5 + ballSpeed × 0.6</code>) each time it resets — the bounce-reflection math (<code>vx *= -1</code>) runs identically regardless. <strong>CPU Difficulty</strong> is the cap on how many pixels per frame the CPU paddle is allowed to close in on the ball (<code>clamp(dy, -aiSpeed, aiSpeed)</code>) — the CPU always tracks the ball's exact position, this only limits how fast it's allowed to react.</p>
+            <div class="config-actions"></div>
+            <p class="config-note">Notice what you <em>can't</em> change here: there's no field for "how bounce reflection works" or "how the CPU tracks the ball." That's the engine, the part every version of this game shares. You're tuning content and a few numbers, not rewriting architecture. That limit is on purpose.</p>
+            <p class="config-note"><strong>What the sliders actually touch in the engine:</strong> <strong>Ball Speed</strong> sets the serve speed (<code>1.5 + ballSpeed × 0.6</code>); every paddle hit then adds 5%, capped at double. <strong>CPU Difficulty</strong> caps how many pixels per tick the CPU paddle may move toward the ball (<code>clamp(dy, -aiSpeed, aiSpeed)</code>). The CPU always knows exactly where the ball is. The cap is the only thing that makes it beatable.</p>
           </div>
         </section>
 
         <!-- Peek at the code -->
         <section class="cl-card">
           <h2>👀 Peek at the Code</h2>
-          <p>The game running above <em>is</em> this code — nothing hidden. It's split into two parts on purpose: a small config object you just edited with the panel, and a locked engine that reads it.</p>
+          <p>The game running above <em>is</em> this code. Nothing is hidden. It's split into two parts on purpose: a small config object that the panel edits, and a locked engine that reads it.</p>
 
-          <span class="code-tag editable">✏️ Config — this is what the panel above edits</span>
+          <span class="code-tag editable">✏️ Config: this is what the panel above edits</span>
           <div class="code-block">
             <pre><span class="kw">const</span> config = {
-  ball:     <span class="str">'<span id="cfg-ball">🏐</span>'</span>,
-  bg:       <span class="str">'<span id="cfg-bg">space</span>'</span>,
+  ball:      <span class="str">'<span id="cfg-ball">🏐</span>'</span>,
+  bg:        <span class="str">'<span id="cfg-bg">space</span>'</span>,
   ballSpeed: <span class="num" id="cfg-ballspeed">3</span>,
   aiSpeed:   <span class="num" id="cfg-aispeed">3</span>,
   winScore:  <span class="num" id="cfg-winscore">5</span>
 };</pre>
           </div>
-          <p class="config-note" style="margin-top:-0.3rem;">👆 This block updates live — hit "Apply &amp; Restart" above and watch the exact values change here. There's no separate "demo" version of the code; this <em>is</em> it.</p>
+          <p class="config-note" style="margin-top:-0.3rem;">👆 This block updates live. Change anything in the panel and the matching value flashes here.</p>
 
-          <span class="code-tag locked">🔒 Engine — locked, shared by every version of this game</span>
+          <span class="code-tag locked">🔒 Engine: locked, shared by every version of this game</span>
           <div class="code-block">
-            <pre><span class="kw">function</span> <span class="fn">update</span>() {
-  <span class="cm">// 1. player paddle follows held keys</span>
-  <span class="kw">if</span> (keys.up)   playerPaddle.y -= <span class="num">5</span>;
-  <span class="kw">if</span> (keys.down) playerPaddle.y += <span class="num">5</span>;
+            <pre><span class="cm">// runs exactly 60 times per second, whatever your screen's refresh rate</span>
+<span class="kw">function</span> <span class="fn">update</span>() {
+  <span class="cm">// 1. INPUT: player paddle follows held keys (or the pointer)</span>
+  <span class="kw">if</span> (keys.up)   player.y -= <span class="num">5</span>;
+  <span class="kw">if</span> (keys.down) player.y += <span class="num">5</span>;
 
-  <span class="cm">// 2. CPU paddle chases the ball, capped at aiSpeed</span>
-  <span class="kw">const</span> dy = ball.y - cpuPaddle.centerY();
-  cpuPaddle.y += <span class="fn">clamp</span>(dy, -config.aiSpeed, config.aiSpeed);
+  <span class="cm">// 2. AI: CPU paddle chases the ball, capped at aiSpeed</span>
+  <span class="kw">const</span> dy = ball.y - cpu.centerY();
+  cpu.y += <span class="fn">clamp</span>(dy, -config.aiSpeed, config.aiSpeed);
 
-  <span class="cm">// 3. ball moves, bounces off walls and paddles</span>
-  ball.x += ball.vx; ball.y += ball.vy;
+  <span class="cm">// 3. PHYSICS: move, bounce off walls, reflect off paddles</span>
+  ball.x += ball.vx;  ball.y += ball.vy;
   <span class="kw">if</span> (ball.y &lt; <span class="num">0</span> || ball.y &gt; H) ball.vy *= -<span class="num">1</span>;
-  <span class="kw">if</span> (<span class="fn">collides</span>(ball, playerPaddle) || <span class="fn">collides</span>(ball, cpuPaddle)) ball.vx *= -<span class="num">1</span>;
+  <span class="kw">if</span> (<span class="fn">collides</span>(ball, player) || <span class="fn">collides</span>(ball, cpu)) {
+    ball.vx *= -<span class="num">1.05</span>;                       <span class="cm">// reflect + speed up 5%</span>
+    ball.vy += (ball.y - paddle.centerY()) * <span class="num">0.05</span>; <span class="cm">// edge hits = steeper angle</span>
+  }
 
-  <span class="cm">// 4. score when the ball fully passes a side, then reset</span>
-  <span class="kw">if</span> (ball.x &lt; <span class="num">0</span>) { cpuScore++; <span class="fn">resetBall</span>(); }
-  <span class="kw">if</span> (ball.x &gt; W)     { playerScore++; <span class="fn">resetBall</span>(); }
+  <span class="cm">// 4. SCORING: ball fully passes a side → point, then re-serve</span>
+  <span class="kw">if</span> (ball.x &lt; <span class="num">0</span>) { cpuScore++;    <span class="fn">serve</span>(); }
+  <span class="kw">if</span> (ball.x &gt; W) { playerScore++; <span class="fn">serve</span>(); }
 }</pre>
           </div>
 
           <div class="callout violet">
-            <strong>This is what "architecture" means in practice:</strong> the config is the part of the design doc you filled out in Lesson 1 (goal, mechanic, feedback). The engine is the part no one writes twice — the same input, AI, physics, and scoring systems power every paddle game from this one to the original 1972 arcade cabinet.
+            <strong>This is what "architecture" means in practice:</strong> the config is the part of the design doc you filled out in Lesson 1 (goal, mechanic, feedback). The engine is the part no one writes twice. The same input, AI, physics, and scoring systems power every paddle game, from this one back to the 1972 arcade cabinet.
+          </div>
+        </section>
+
+        <!-- Remix -->
+        <section class="cl-card">
+          <h2>🧪 Remix Challenges</h2>
+          <p>The panel can only turn the knobs the engine exposes. To change the <em>rules</em>, you have to change the engine. Each challenge below edits exactly one system. Try them in your own copy once you've built it in Lesson 2.</p>
+          <div class="gt-remix">
+            <details>
+              <summary><span class="gt-tier tweak">Tweak</span><span><strong>Shrinking paddles</strong><small>Physics system · one line</small></span></summary>
+              <div class="gt-remix-body">
+                <p>Make every point you score cost you paddle length, so a lead makes the game harder. What does that do to comebacks?</p>
+                <div class="code-block"><pre>player.h = <span class="fn">Math.max</span>(<span class="num">20</span>, <span class="num">50</span> - playerScore * <span class="num">6</span>);</pre></div>
+              </div>
+            </details>
+            <details>
+              <summary><span class="gt-tier twist">Twist</span><span><strong>Two-player mode</strong><small>Swap the AI system for a second input</small></span></summary>
+              <div class="gt-remix-body">
+                <p>Delete system 2 entirely and give the right paddle its own keys. The physics and scoring systems don't change at all. That's the payoff of keeping systems separate.</p>
+                <div class="code-block"><pre><span class="cm">// replaces the AI system</span>
+<span class="kw">if</span> (keys.p2up)   cpu.y -= <span class="num">5</span>;   <span class="cm">// ↑</span>
+<span class="kw">if</span> (keys.p2down) cpu.y += <span class="num">5</span>;   <span class="cm">// ↓  (player 1 keeps W / S)</span></pre></div>
+              </div>
+            </details>
+            <details>
+              <summary><span class="gt-tier transform">Transform</span><span><strong>Turn it into Breakout</strong><small>New system: bricks</small></span></summary>
+              <div class="gt-remix-body">
+                <p>Remove the CPU paddle and fill the right third of the screen with a grid of bricks. When the ball hits a brick, remove the brick, reflect the ball, and add a point. You win when the grid is empty. Which of the four systems survive unchanged? (Hint: more than you'd think.)</p>
+              </div>
+            </details>
           </div>
         </section>
 
@@ -289,13 +233,7 @@
             </span>
           </a>
 
-          <a class="next-card" href="../game-design-thinking.html">
-            <span class="next-card-icon">↩️</span>
-            <span>
-              <strong>Back to the Archetype Grid</strong>
-              <small>Return to What Makes a Game? to try another tiny-loop archetype or the design workshop.</small>
-            </span>
-          </a>
+          <div class="gt-pager" data-gt-pager></div>
         </section>
 
       </main>
@@ -328,186 +266,159 @@
   </div><!-- /.ll-stage -->
 </div><!-- /.ll-viewport -->
 
+<script src="../../../../assets/js/sim-kit.js"></script>
+<script src="../../../../assets/js/game-tutorial-kit.js"></script>
 <script>
   (function () {
-    const canvas = document.getElementById('pong-canvas');
-    const ctx = canvas.getContext('2d');
-    const W = canvas.width, H = canvas.height;
-
+    const W = 480, H = 260;
+    const PADDLE_W = 10, PADDLE_H = 50, BALL_R = 10;
+    const SERVE_TICKS = 40;                       // ~0.66 s pause before each serve
     const bgThemes = { space: '#0a0a1f', forest: '#0c1f14', lab: '#0a1a1f' };
 
-    let config = { ball: '🏐', bg: 'space', ballSpeed: 3, aiSpeed: 3, winScore: 5 };
+    const $ = id => document.getElementById(id);
+    const announce = msg => { $('pong-status').textContent = msg; };
 
-    const PADDLE_W = 10, PADDLE_H = 50;
-    let playerPaddle, cpuPaddle, ball, playerScore, cpuScore, running, ended;
-
-    function reset() {
-      playerPaddle = { x: 14, y: H / 2 - PADDLE_H / 2, w: PADDLE_W, h: PADDLE_H };
-      cpuPaddle = { x: W - 24, y: H / 2 - PADDLE_H / 2, w: PADDLE_W, h: PADDLE_H };
-      playerScore = 0;
-      cpuScore = 0;
-      running = true;
-      ended = false;
-      document.getElementById('g-msg').classList.remove('show');
-      resetBall();
-      updateHUD();
-    }
-
-    function resetBall() {
-      const speed = 1.5 + config.ballSpeed * 0.6;
-      const dir = Math.random() < 0.5 ? -1 : 1;
-      ball = { x: W / 2, y: H / 2, vx: speed * dir, vy: speed * (Math.random() * 2 - 1) };
-    }
-
-    function updateHUD() {
-      document.getElementById('g-score').textContent = `You ${playerScore} — ${cpuScore} CPU`;
-    }
-
-    const keys = {};
-    document.addEventListener('keydown', e => {
-      if (['ArrowUp', 'ArrowDown', 'KeyW', 'KeyS'].includes(e.code)) e.preventDefault();
-      if (e.code === 'ArrowUp' || e.code === 'KeyW') keys.up = true;
-      if (e.code === 'ArrowDown' || e.code === 'KeyS') keys.down = true;
-    });
-    document.addEventListener('keyup', e => {
-      if (e.code === 'ArrowUp' || e.code === 'KeyW') keys.up = false;
-      if (e.code === 'ArrowDown' || e.code === 'KeyS') keys.down = false;
-    });
+    let config;
+    let player, cpu, ball, playerScore, cpuScore, rally, serveTimer, flash;
 
     function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
-    function collides(b, paddle) {
-      return b.x - 10 < paddle.x + paddle.w && b.x + 10 > paddle.x &&
-             b.y - 10 < paddle.y + paddle.h && b.y + 10 > paddle.y;
+    function reset() {
+      player = { x: 14, y: H / 2 - PADDLE_H / 2, w: PADDLE_W, h: PADDLE_H };
+      cpu = { x: W - 24, y: H / 2 - PADDLE_H / 2, w: PADDLE_W, h: PADDLE_H };
+      playerScore = 0;
+      cpuScore = 0;
+      flash = { player: 0, cpu: 0 };
+      serve(Math.random() < 0.5 ? -1 : 1);
+      updateHUD();
     }
 
-    function endGame(playerWon) {
-      running = false;
-      ended = true;
-      document.getElementById('g-msg-title').textContent = playerWon ? '🎉 You Won!' : 'CPU Wins';
-      document.getElementById('g-msg-sub').textContent = `Final score: ${playerScore} — ${cpuScore}`;
-      document.getElementById('g-msg').classList.add('show');
+    function serve(dir) {
+      const speed = 1.5 + config.ballSpeed * 0.6;
+      ball = { x: W / 2, y: H / 2, vx: speed * dir, vy: speed * (Math.random() * 1.4 - 0.7), speed };
+      serveTimer = SERVE_TICKS;
+      rally = 0;
     }
 
-    function update() {
-      if (!running) return;
+    function updateHUD() {
+      $('g-score').textContent = `You ${playerScore} — ${cpuScore} CPU`;
+      $('g-rally').textContent = 'Rally ' + rally;
+      const b = GameTutorial.best('pong', 'rally').best;
+      $('g-best').textContent = b ? 'Best rally ' + b : '';
+    }
 
-      if (keys.up)   playerPaddle.y -= 5;
-      if (keys.down) playerPaddle.y += 5;
-      playerPaddle.y = clamp(playerPaddle.y, 0, H - PADDLE_H);
+    function collides(b, p) {
+      return b.x - BALL_R < p.x + p.w && b.x + BALL_R > p.x &&
+             b.y - BALL_R < p.y + p.h && b.y + BALL_R > p.y;
+    }
 
-      const dy = ball.y - (cpuPaddle.y + PADDLE_H / 2);
-      cpuPaddle.y += clamp(dy, -config.aiSpeed, config.aiSpeed);
-      cpuPaddle.y = clamp(cpuPaddle.y, 0, H - PADDLE_H);
+    function bounceOff(p, dir) {
+      ball.speed = Math.min(ball.speed * 1.05, (1.5 + config.ballSpeed * 0.6) * 2);
+      ball.vx = Math.abs(ball.speed) * dir;
+      ball.vy = clamp(ball.vy + (ball.y - (p.y + p.h / 2)) * 0.05, -ball.speed, ball.speed);
+      rally++;
+      GameTutorial.best('pong', 'rally', rally);
+      updateHUD();
+    }
 
+    function point(toPlayer) {
+      if (toPlayer) { playerScore++; flash.player = 20; } else { cpuScore++; flash.cpu = 20; }
+      announce(toPlayer ? `Your point. ${playerScore} to ${cpuScore}.` : `CPU point. ${playerScore} to ${cpuScore}.`);
+      if (playerScore >= config.winScore || cpuScore >= config.winScore) {
+        const won = playerScore > cpuScore;
+        updateHUD();
+        game.end({ title: won ? '🎉 You Won!' : 'CPU Wins', sub: `Final score: ${playerScore} — ${cpuScore}` });
+        announce(won ? 'You won the match.' : 'The CPU won the match.');
+        return;
+      }
+      serve(toPlayer ? 1 : -1);  // serve toward whoever just lost the point
+      updateHUD();
+    }
+
+    function update(g) {
+      // 1. INPUT
+      if (g.held('up'))   player.y -= 5;
+      if (g.held('down')) player.y += 5;
+      player.y = clamp(player.y, 0, H - PADDLE_H);
+
+      // 2. AI
+      const dy = ball.y - (cpu.y + PADDLE_H / 2);
+      cpu.y = clamp(cpu.y + clamp(dy, -config.aiSpeed, config.aiSpeed), 0, H - PADDLE_H);
+
+      if (flash.player > 0) flash.player--;
+      if (flash.cpu > 0) flash.cpu--;
+      if (serveTimer > 0) { serveTimer--; return; }
+
+      // 3. PHYSICS
       ball.x += ball.vx;
       ball.y += ball.vy;
-      if (ball.y < 0 || ball.y > H) ball.vy *= -1;
+      if (ball.y < BALL_R)     { ball.y = BALL_R;     ball.vy = Math.abs(ball.vy); }
+      if (ball.y > H - BALL_R) { ball.y = H - BALL_R; ball.vy = -Math.abs(ball.vy); }
+      if (ball.vx < 0 && collides(ball, player)) bounceOff(player, 1);
+      if (ball.vx > 0 && collides(ball, cpu))    bounceOff(cpu, -1);
 
-      if (collides(ball, playerPaddle) && ball.vx < 0) {
-        ball.vx *= -1;
-        ball.vy += (ball.y - (playerPaddle.y + PADDLE_H / 2)) * 0.05;
-      }
-      if (collides(ball, cpuPaddle) && ball.vx > 0) {
-        ball.vx *= -1;
-        ball.vy += (ball.y - (cpuPaddle.y + PADDLE_H / 2)) * 0.05;
-      }
-
-      if (ball.x < 0) { cpuScore++; updateHUD(); resetBall(); }
-      if (ball.x > W) { playerScore++; updateHUD(); resetBall(); }
-
-      if (playerScore >= config.winScore) endGame(true);
-      else if (cpuScore >= config.winScore) endGame(false);
+      // 4. SCORING
+      if (ball.x < -BALL_R)    point(false);
+      else if (ball.x > W + BALL_R) point(true);
     }
 
-    function render() {
+    function render(ctx) {
       ctx.fillStyle = bgThemes[config.bg] || '#0a0a1f';
       ctx.fillRect(0, 0, W, H);
 
-      ctx.fillStyle = '#e2e8f0';
-      ctx.fillRect(playerPaddle.x, playerPaddle.y, playerPaddle.w, playerPaddle.h);
-      ctx.fillRect(cpuPaddle.x, cpuPaddle.y, cpuPaddle.w, cpuPaddle.h);
-
       ctx.setLineDash([6, 8]);
-      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-      ctx.beginPath();
-      ctx.moveTo(W / 2, 0);
-      ctx.lineTo(W / 2, H);
-      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+      ctx.beginPath(); ctx.moveTo(W / 2, 0); ctx.lineTo(W / 2, H); ctx.stroke();
       ctx.setLineDash([]);
 
-      ctx.font = '26px sans-serif';
+      // big faint score digits, arcade style
+      ctx.font = '700 44px Inter, system-ui, sans-serif';
       ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = flash.player ? 'rgba(196,181,253,0.55)' : 'rgba(255,255,255,0.1)';
+      ctx.fillText(playerScore, W / 2 - 50, 14);
+      ctx.fillStyle = flash.cpu ? 'rgba(252,165,165,0.55)' : 'rgba(255,255,255,0.1)';
+      ctx.fillText(cpuScore, W / 2 + 50, 14);
+
+      ctx.fillStyle = '#c4b5fd';
+      ctx.fillRect(player.x, player.y, player.w, player.h);
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillRect(cpu.x, cpu.y, cpu.w, cpu.h);
+
+      ctx.font = '24px sans-serif';
       ctx.textBaseline = 'middle';
+      if (serveTimer > 0 && Math.floor(serveTimer / 6) % 2 === 0 && !game.reducedMotion) return;
       ctx.fillText(config.ball, ball.x, ball.y);
     }
 
-    function loop() {
-      update();
-      render();
-      requestAnimationFrame(loop);
-    }
-
-    document.getElementById('g-restart').addEventListener('click', reset);
-    canvas.addEventListener('click', () => canvas.focus());
-
-    document.getElementById('c-speed').addEventListener('input', e => {
-      document.getElementById('c-speed-out').textContent = e.target.value;
-    });
-    document.getElementById('c-ai').addEventListener('input', e => {
-      document.getElementById('c-ai-out').textContent = e.target.value;
-    });
-    document.getElementById('c-win').addEventListener('input', e => {
-      document.getElementById('c-win-out').textContent = e.target.value;
+    config = GameTutorial.bindConfig({
+      panel: $('config-panel'),
+      onChange: (cfg, change) => { if (change.rule) game.restart(); },
+      onRestart: () => game.restart()
     });
 
-    function updateCodePeek() {
-      document.getElementById('cfg-ball').textContent = config.ball;
-      document.getElementById('cfg-bg').textContent = config.bg;
-      document.getElementById('cfg-ballspeed').textContent = config.ballSpeed;
-      document.getElementById('cfg-aispeed').textContent = config.aiSpeed;
-      document.getElementById('cfg-winscore').textContent = config.winScore;
-    }
-
-    document.getElementById('c-apply').addEventListener('click', () => {
-      config = {
-        ball: document.getElementById('c-ball').value,
-        bg: document.getElementById('c-bg').value,
-        ballSpeed: Number(document.getElementById('c-speed').value),
-        aiSpeed: Number(document.getElementById('c-ai').value),
-        winScore: Number(document.getElementById('c-win').value)
-      };
-      updateCodePeek();
-      reset();
-      canvas.focus();
+    const game = GameTutorial.canvasGame({
+      slug: 'pong',
+      canvas: $('pong-canvas'),
+      width: W, height: H,
+      actions: { up: ['ArrowUp', 'KeyW'], down: ['ArrowDown', 'KeyS'] },
+      touch: { buttons: [
+        { label: '▲ Up', aria: 'Move paddle up', action: 'up', hold: true },
+        { label: '▼ Down', aria: 'Move paddle down', action: 'down', hold: true }
+      ] },
+      onPointerMove: (x, y) => { player.y = clamp(y - PADDLE_H / 2, 0, H - PADDLE_H); },
+      readyTitle: '🏓 Pong',
+      readySub: `First to ${config.winScore} wins. The CPU is fast but not perfect.`,
+      keysHint: '<kbd>↑</kbd> <kbd>↓</kbd> or <kbd>W</kbd> <kbd>S</kbd> · mouse · touch',
+      reset, update, render
     });
 
-    updateCodePeek();
-    reset();
-    loop();
+    GameTutorial.mountSeries('pong');
   })();
-
-  /* Panel tabs */
-  document.querySelectorAll('.ll-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      const pane = tab.dataset.pane;
-      document.querySelectorAll('.ll-tab').forEach(t => t.setAttribute('aria-selected','false'));
-      document.querySelectorAll('.ll-pane').forEach(p => p.classList.remove('ll-active'));
-      tab.setAttribute('aria-selected','true');
-      document.getElementById(pane).classList.add('ll-active');
-    });
-  });
-
-  /* Panel toggle */
-  const openBtn = document.querySelector('.ll-open-btn');
-  const closeBtn = document.querySelector('.ll-panel-close');
-  const panel = document.querySelector('.ll-panel');
-  if (openBtn) openBtn.addEventListener('click', () => panel.classList.add('ll-panel--open'));
-  if (closeBtn) closeBtn.addEventListener('click', () => panel.classList.remove('ll-panel--open'));
 </script>
 <script src="../../../../assets/vendor/blockly.min.js"></script>
 <script src="../../../../assets/js/game-tutorial-blockly.js"></script>
-<script src="../../../../assets/js/game-tutorial-controls.js"></script>
+<script src="../../../../assets/js/lesson-layout.js"></script>
 <script src="../../../../assets/js/reveal.js"></script>
 <script src="../../../../assets/js/theme-registry.js"></script>
 <script src="../../../../assets/js/nav-mobile.js"></script>

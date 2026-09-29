@@ -10,107 +10,16 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../../assets/css/game-tutorial.css" />
   <style>
-    .cl-page { padding-bottom: 0; }
-    .ll-viewport { --ll-panel-w: 300px; }
-
-    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
-    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
-    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
-    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
-    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
-    [data-lighting="night"] .cl-lede { color: rgba(245,245,247,0.7); }
-
-    :root { --acc: #8b5cf6; --acc-soft: rgba(139,92,246,0.12); --acc-border: rgba(139,92,246,0.3); }
-
-    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent, var(--acc)); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
-    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
-    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
-    .cl-card p  { margin: 0 0 0.6rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
-    .cl-card p:last-child { margin-bottom: 0; }
-    [data-lighting="night"] .cl-card { background: var(--white,#2c2c2e); }
-    [data-lighting="night"] .cl-card p { color: rgba(245,245,247,0.72); }
-
-    .callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
-    .callout.violet { background: rgba(139,92,246,0.09); border-left: 3px solid var(--acc); color: var(--text-secondary, #3f4f65); }
-    [data-lighting="night"] .callout.violet { color: rgba(245,245,247,0.72); }
-    .callout strong { color: var(--text,#1d1d1f); }
-
-    .stages-flow { display: flex; align-items: stretch; gap: 0.55rem; margin: 0.9rem 0; flex-wrap: wrap; }
-    .stages-step { flex: 1 1 150px; border-radius: 14px; padding: 0.9rem 0.85rem; border: 1.5px solid var(--acc-border); background: var(--acc-soft); text-align: center; }
-    .stages-step-icon { font-size: 1.4rem; display: block; margin-bottom: 0.3rem; }
-    .stages-step strong { display: block; font-size: 0.86rem; margin-bottom: 0.25rem; }
-    .stages-step small { font-size: 0.76rem; color: var(--text-muted, #64748b); line-height: 1.45; display: block; }
-    [data-lighting="night"] .stages-step small { color: rgba(245,245,247,0.65); }
-    .stages-arrow { display: flex; align-items: center; justify-content: center; color: var(--text-muted, #64748b); font-size: 1.3rem; }
-    @media (max-width: 700px) { .stages-flow { flex-direction: column; } .stages-arrow { transform: rotate(90deg); } }
-
-    .systems-list { margin: 0.4rem 0 0; padding-left: 1.1rem; font-size: 0.85rem; color: var(--text-secondary, #3f4f65); line-height: 1.7; }
-    [data-lighting="night"] .systems-list { color: rgba(245,245,247,0.72); }
-
-    .game-wrap { border: 2px solid var(--acc-border); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; position: relative; }
-    .game-stage { min-height: 300px; padding: 1.2rem; box-sizing: border-box; }
-    .game-hud { display: flex; justify-content: space-between; padding: 0.4rem 0.9rem; background: rgba(0,0,0,0.6); font-size: 0.78rem; font-weight: 600; color: #e2e8f0; }
-    .game-hud .hud-score { color: #a78bfa; }
+    .game-stage { min-height: 300px; padding: 1.2rem; display: flex; flex-direction: column; justify-content: center; }
     .quiz-progress-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.12); overflow: hidden; margin-bottom: 1rem; }
-    .quiz-progress-fill { height: 100%; background: var(--acc); border-radius: 3px; transition: width 0.25s ease; }
-    .quiz-avatar { font-size: 2.4rem; text-align: center; margin-bottom: 0.4rem; color: #fff !important; }
-    .quiz-question { color: #e2e8f0 !important; font-size: 1rem; font-weight: 700; text-align: center; margin: 0 0 1rem; line-height: 1.5; }
-    .quiz-choices { display: flex; flex-direction: column; gap: 0.55rem; }
-    .quiz-choice { background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.15); color: #e2e8f0; border-radius: 10px; padding: 0.6rem 0.9rem; font-size: 0.88rem; font-family: inherit; cursor: pointer; text-align: left; transition: background 0.15s, border-color 0.15s; }
-    .quiz-choice:hover { background: rgba(139,92,246,0.16); border-color: var(--acc-border); }
-    .quiz-choice:focus-visible { outline: 3px solid var(--acc); outline-offset: 2px; }
-    .quiz-choice.correct { background: rgba(34,197,94,0.22); border-color: #22c55e; }
-    .quiz-choice.wrong { background: rgba(239,68,68,0.22); border-color: #ef4444; }
-    .quiz-hint { min-height: 1.2rem; text-align: center; font-size: 0.8rem; color: #fbbf24; margin-top: 0.7rem; }
-    .game-btn { display: block; margin: 0.5rem auto 0; background: var(--acc); color: #fff; border: none; border-radius: 8px; padding: 0.4rem 1.2rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .game-btn:hover { opacity: 0.85; }
-    .game-msg { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 0.5rem; background: rgba(10,10,15,0.9); color: #fff; text-align: center; font-size: 1rem; font-weight: 700; padding: 1rem; }
-    .game-msg.show { display: flex; }
-    .game-msg span { font-size: 0.78rem; font-weight: 500; color: #cbd5e1; }
-    .bg-math { background: #0a0a1f; } .bg-science { background: #0c1f14; } .bg-animal { background: #1f150a; }
-
-    .config-panel { border: 1.5px solid var(--acc-border); border-radius: 16px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; background: var(--acc-soft); }
-    .config-panel h3 { margin: 0 0 0.75rem; font-size: 1rem; color: var(--acc); }
-    .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem 1rem; }
-    @media (max-width: 560px) { .config-grid { grid-template-columns: 1fr; } }
-    .config-field label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary, #3f4f65); margin-bottom: 0.25rem; }
-    [data-lighting="night"] .config-field label { color: rgba(245,245,247,0.75); }
-    .config-field select, .config-field input[type="range"] {
-      width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--line,#d2d2d7); border-radius: 8px;
-      font-size: 0.84rem; font-family: inherit; background: var(--white,#fff); color: var(--text,#1d1d1f); box-sizing: border-box;
-    }
-    .config-field output { font-size: 0.76rem; color: var(--text-muted, #64748b); margin-left: 0.3rem; }
-    .btn-apply { margin-top: 0.9rem; background: var(--acc); color: #fff; border: none; border-radius: 9px; padding: 0.45rem 1.1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .btn-apply:hover { opacity: 0.85; }
-    .config-note { font-size: 0.74rem; color: var(--text-muted, #64748b); margin-top: 0.6rem; }
-
-    .code-block { background: #0f172a; border-radius: 12px; padding: 0.9rem 1.1rem; margin: 0.7rem 0; overflow-x: auto; }
-    .code-block pre { margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 0.79rem; line-height: 1.7; color: #e2e8f0; white-space: pre; }
-    .code-block .kw  { color: #c084fc; }
-    .code-block .fn  { color: #60a5fa; }
-    .code-block .str { color: #4ade80; }
-    .code-block .cm  { color: #94a3b8; font-style: italic; }
-    .code-block .num { color: #fb923c; }
-    .code-tag { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.55rem; border-radius: 999px; margin-bottom: 0.4rem; }
-    .code-tag.editable { background: rgba(34,197,94,0.14); color: #16a34a; }
-    .code-tag.locked   { background: rgba(148,163,184,0.18); color: var(--text-muted, #64748b); }
-
-    .scratch-box { border: 1.5px solid rgba(255,171,25,0.35); border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; background: rgba(255,191,0,0.06); }
-    [data-lighting="night"] .scratch-box { background: rgba(255,191,0,0.09); }
-    .scratch-box h4 { margin: 0 0 0.5rem; font-size: 0.86rem; letter-spacing: -0.01em; color: #b45309; display: flex; align-items: center; gap: 0.4rem; }
-    [data-lighting="night"] .scratch-box h4 { color: #fbbf24; }
-    .scratch-box p { font-size: 0.83rem; color: var(--text-secondary, #3f4f65); margin: 0.5rem 0 0; line-height: 1.55; }
-    [data-lighting="night"] .scratch-box p { color: rgba(245,245,247,0.72); }
-    .scratch-link { display: inline-block; margin-top: 0.6rem; font-size: 0.78rem; font-weight: 700; color: #b45309; text-decoration: none; border-bottom: 1.5px solid rgba(180,83,9,0.4); }
-    [data-lighting="night"] .scratch-link { color: #fbbf24; border-color: rgba(251,191,36,0.4); }
-    .scratch-link:hover { border-color: currentColor; }
-
-    .next-card { display: flex; align-items: center; gap: 0.9rem; border: 1.5px solid var(--acc-border); border-radius: 14px; padding: 0.9rem 1.1rem; margin-top: 0.8rem; text-decoration: none; }
-    .next-card:hover { background: var(--acc-soft); }
-    .next-card-icon { font-size: 1.6rem; flex-shrink: 0; }
-    .next-card strong { display: block; font-size: 0.9rem; color: var(--text,#1d1d1f); }
-    .next-card small { font-size: 0.8rem; color: var(--text-muted, #64748b); }
+    .quiz-progress-fill { height: 100%; background: #a78bfa; border-radius: 3px; transition: width 0.25s ease; }
+    .quiz-avatar { font-size: 2.4rem; text-align: center; margin-bottom: 0.4rem; }
+    .cl-card .quiz-question { color: #e2e8f0; font-size: 1rem; font-weight: 700; text-align: center; margin: 0 0 1rem; line-height: 1.5; }
+    .quiz-choices { display: flex; flex-direction: column; gap: 0.55rem; max-width: 420px; width: 100%; margin: 0 auto; }
+    .cl-card .quiz-hint { min-height: 1.3rem; text-align: center; font-size: 0.82rem; color: #fcd34d; margin: 0.75rem 0 0; }
+    @media (prefers-reduced-motion: reduce) { .quiz-progress-fill { transition: none; } }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -137,6 +46,8 @@
   <div class="ll-stage">
     <div class="ll-sim">
       <main id="main-content" class="cl-page">
+
+        <nav class="gt-series" data-gt-series aria-label="Tiny-loop tutorial series"></nav>
 
         <section class="hero cl-hero">
           <p class="eyebrow">Game Design &amp; Development · Tiny-Loop Tutorial · Archetype #9</p>
@@ -169,7 +80,7 @@
           <ol class="systems-list">
             <li><strong>Question display system</strong> — shows the current question's text and its answer choices as buttons.</li>
             <li><strong>Answer-check system</strong> — compares the clicked choice against the question's correct answer.</li>
-            <li><strong>Hint/retry system</strong> — a wrong answer shows a hint and uses up one retry; running out of retries reveals the answer so no one gets stuck.</li>
+            <li><strong>Hint/retry system</strong> — a wrong answer shows a hint and uses up one retry; running out of retries reveals the answer so no one gets stuck. The buttons lock while the game moves on, so a fast double-click can't skip a question.</li>
             <li><strong>Progress system</strong> — a correct (or revealed) answer advances the progress bar to the next question, or ends the quest on the last one.</li>
           </ol>
         </section>
@@ -177,12 +88,12 @@
         <!-- Play + Customize -->
         <section class="cl-card">
           <h2>🎮 Play &amp; Customize</h2>
-          <p>Click an answer. Correct answers advance the quest; wrong answers give you a hint and another try.</p>
+          <p>Click an answer, or press <strong>1</strong>, <strong>2</strong>, or <strong>3</strong>. Correct answers advance the quest, and wrong answers give you a hint and another try. Getting it right on the first try earns a ⭐. The choices are shuffled every time you play.</p>
 
           <div class="game-wrap">
-            <div class="game-hud" aria-live="polite" aria-atomic="false">
+            <div class="game-hud">
               <span class="hud-score" id="g-score">Question 1 of 5</span>
-              <span id="g-lives">3 retries left</span>
+              <span class="hud-group"><span id="g-lives">3 retries left</span><span class="hud-best" id="g-stars"></span></span>
             </div>
             <div class="game-stage" id="g-stage">
               <div class="quiz-progress-bar"><div class="quiz-progress-fill" id="g-progress" style="width:20%"></div></div>
@@ -191,15 +102,15 @@
               <div class="quiz-choices" id="g-choices"></div>
               <p class="quiz-hint" id="g-hint" aria-live="polite"></p>
             </div>
-            <div class="game-msg" id="g-msg" role="status" aria-live="assertive"><span id="g-msg-title"></span><span id="g-msg-sub"></span><button class="game-btn" id="g-restart">Play Again ↺</button></div>
           </div>
 
-          <div class="config-panel">
+          <div class="config-panel" id="config-panel">
             <h3>Tune the Game (limited, on purpose)</h3>
+            <p class="config-lede"><strong>Content</strong> settings change how it looks and apply instantly. <strong>Rule</strong> settings change how it plays, so the round restarts.</p>
             <div class="config-grid">
               <div class="config-field">
                 <label for="c-theme">Question Set</label>
-                <select id="c-theme">
+                <select id="c-theme" data-cfg="theme" data-peek="cfg-theme" data-rule>
                   <option value="math">🔢 Math Dungeon</option>
                   <option value="science">🔬 Science Quest</option>
                   <option value="animal">🐾 Animal Rescue Quiz</option>
@@ -207,7 +118,7 @@
               </div>
               <div class="config-field">
                 <label for="c-avatar">Avatar Sprite</label>
-                <select id="c-avatar">
+                <select id="c-avatar" data-cfg="avatar" data-peek="cfg-avatar">
                   <option value="🧙">🧙 Wizard</option>
                   <option value="🚀">🚀 Astronaut</option>
                   <option value="🦊">🦊 Fox</option>
@@ -215,11 +126,11 @@
                 </select>
               </div>
               <div class="config-field">
-                <label for="c-retries">Retries per Question <output id="c-retries-out">3</output></label>
-                <input type="range" id="c-retries" min="1" max="3" step="1" value="3" />
+                <label for="c-retries">Retries per Question <output id="c-retries-out" for="c-retries">3</output></label>
+                <input type="range" id="c-retries" min="1" max="3" step="1" value="3" data-cfg="retries" data-peek="cfg-retries" data-rule />
               </div>
             </div>
-            <button class="btn-apply" id="c-apply">Apply &amp; Restart</button>
+            <div class="config-actions"></div>
             <p class="config-note">Notice what you <em>can't</em> change here: there's no field for "how answer-checking works" or "how the progress bar advances." That's the engine — the part every version of this game shares. You're only tuning content (and writing questions), not rewriting architecture. That's the limit, on purpose.</p>
             <p class="config-note"><strong>What these actually touch in the engine:</strong> <strong>Retries per Question</strong> only sets the starting value of <code>retriesLeft</code> each time a question renders — the same <code>retriesLeft &lt;= 0</code> check in <code>onChoice()</code> decides when to reveal the answer and advance, whatever that starting number is. <strong>Question Set</strong> swaps in a whole different <code>questions</code> array — <code>onChoice()</code> never looks at whether a question is math, science, or animals, only at <code>choices</code> and <code>correct</code>.</p>
           </div>
@@ -239,15 +150,18 @@
   <span class="cm">// ...more questions</span>
 ];</pre>
           </div>
-          <p class="config-note" style="margin-top:-0.3rem;">👆 The <code>config</code> line updates live — hit "Apply &amp; Restart" above and watch it change. (The <code>questions</code> excerpt always shows the Math Dungeon set as an example; picking a different Question Set swaps in a same-shaped array with different text.)</p>
+          <p class="config-note" style="margin-top:-0.3rem;">👆 This block updates live. Change anything in the panel and the matching value flashes here. There's no separate "demo" version of the code; this <em>is</em> it.</p>
 
           <span class="code-tag locked">🔒 Engine — locked, shared by every version of this game</span>
           <div class="code-block">
             <pre><span class="kw">function</span> <span class="fn">onChoice</span>(choiceIndex) {
   <span class="kw">const</span> q = questions[currentIndex];
 
+  <span class="kw">if</span> (locked) <span class="kw">return</span>;       <span class="cm">// ignore clicks while we're moving on</span>
+
   <span class="cm">// 1. check the answer</span>
   <span class="kw">if</span> (choiceIndex === q.correct) {
+    locked = <span class="kw">true</span>;
     <span class="fn">advance</span>();  <span class="cm">// 2. correct: move to the next question, or win</span>
     <span class="kw">return</span>;
   }
@@ -255,12 +169,39 @@
   <span class="cm">// 3. wrong: show the hint, use up a retry</span>
   retriesLeft--;
   <span class="fn">showHint</span>(q.hint);
-  <span class="kw">if</span> (retriesLeft &lt;= <span class="num">0</span>) <span class="fn">advance</span>();  <span class="cm">// 4. out of retries: reveal & advance anyway</span>
+  <span class="kw">if</span> (retriesLeft &lt;= <span class="num">0</span>) { locked = <span class="kw">true</span>; <span class="fn">advance</span>(); }  <span class="cm">// 4. out of retries: reveal &amp; advance</span>
 }</pre>
           </div>
 
           <div class="callout violet">
             <strong>This is what "architecture" means in practice:</strong> the config here is bigger than usual — it includes the actual questions, because in a Quiz Adventure the <em>writing</em> is the content. The engine is still the part no one writes twice: the same display, check, hint, and progress systems run every quiz you ever build, whatever the subject.
+          </div>
+        </section>
+
+        <!-- Remix -->
+        <section class="cl-card">
+          <h2>🧪 Remix Challenges</h2>
+          <p>The panel can only turn the knobs the engine exposes. To change the <em>rules</em>, you change the engine. Each challenge edits one system. Try them in your own copy once you've built it in Lesson 2.</p>
+          <div class="gt-remix">
+            <details>
+              <summary><span class="gt-tier tweak">Tweak</span><span><strong>Write your own question set</strong><small>Content only · zero engine changes</small></span></summary>
+              <div class="gt-remix-body">
+                <p>Add a fourth entry to <code>questionSets</code> about something you know well. If you follow the same shape (<code>text</code>, <code>choices</code>, <code>correct</code>, <code>hint</code>), the engine runs it without a single change. Writing good hints is harder than it looks: a hint should point at the method, not give away the answer.</p>
+                <div class="code-block"><pre>{ text: <span class="str">'…'</span>, choices: [<span class="str">'A'</span>, <span class="str">'B'</span>, <span class="str">'C'</span>], correct: <span class="num">1</span>, hint: <span class="str">'…'</span> }</pre></div>
+              </div>
+            </details>
+            <details>
+              <summary><span class="gt-tier twist">Twist</span><span><strong>A countdown</strong><small>New system: time pressure</small></span></summary>
+              <div class="gt-remix-body">
+                <p>Give each question 10 seconds. When time runs out, it counts as a wrong answer. Now the game rewards fluency as well as knowledge. Is that what you want for a learning game? Different subjects might answer that differently.</p>
+              </div>
+            </details>
+            <details>
+              <summary><span class="gt-tier transform">Transform</span><span><strong>Branching quest</strong><small>Borrow the Story engine</small></span></summary>
+              <div class="gt-remix-body">
+                <p>Instead of a list, store the questions in a graph like the Choose-Your-Own-Adventure tutorial does: a right answer leads to one room and a wrong answer leads to a "training" room with an easier question. You've combined two archetypes into an adaptive quiz.</p>
+              </div>
+            </details>
           </div>
         </section>
 
@@ -288,13 +229,7 @@
             </span>
           </a>
 
-          <a class="next-card" href="../game-design-thinking.html">
-            <span class="next-card-icon">↩️</span>
-            <span>
-              <strong>Back to the Archetype Grid</strong>
-              <small>Return to What Makes a Game? to try another tiny-loop archetype or the design workshop.</small>
-            </span>
-          </a>
+          <div class="gt-pager" data-gt-pager></div>
         </section>
 
       </main>
@@ -327,14 +262,19 @@
   </div><!-- /.ll-stage -->
 </div><!-- /.ll-viewport -->
 
+<script src="../../../../assets/js/sim-kit.js"></script>
+<script src="../../../../assets/js/game-tutorial-kit.js"></script>
 <script>
   (function () {
-    const stage = document.getElementById('g-stage');
-    const avatarEl = document.getElementById('g-avatar');
-    const questionEl = document.getElementById('g-question');
-    const choicesEl = document.getElementById('g-choices');
-    const hintEl = document.getElementById('g-hint');
-    const progressEl = document.getElementById('g-progress');
+    const $ = id => document.getElementById(id);
+    const stage = $('g-stage');
+    const wrap = stage.closest('.game-wrap');
+    const avatarEl = $('g-avatar');
+    const questionEl = $('g-question');
+    const choicesEl = $('g-choices');
+    const hintEl = $('g-hint');
+    const progressEl = $('g-progress');
+    const overlay = GameTutorial.overlay(wrap);
 
     const questionSets = {
       math: {
@@ -369,124 +309,127 @@
       }
     };
 
-    let config = { theme: 'math', avatar: '🧙', retries: 3 };
-    let questions, currentIndex, retriesLeft, ended;
+    let config;
+    let questions, currentIndex, retriesLeft, firstTry, stars, locked, order;
+
+    const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
     function reset() {
       questions = questionSets[config.theme].questions;
       currentIndex = 0;
-      ended = false;
+      stars = 0;
+      overlay.hide();
       stage.className = 'game-stage bg-' + questionSets[config.theme].bg;
       avatarEl.textContent = config.avatar;
-      document.getElementById('g-msg').classList.remove('show');
-      renderQuestion();
+      renderQuestion(false);
     }
 
-    function renderQuestion() {
+    function setRetriesText() {
+      $('g-lives').textContent = `${Math.max(retriesLeft, 0)} ${retriesLeft === 1 ? 'retry' : 'retries'} left`;
+    }
+
+    function renderQuestion(moveFocus) {
       retriesLeft = config.retries;
+      firstTry = true;
+      locked = false;
       const q = questions[currentIndex];
-      document.getElementById('g-score').textContent = `Question ${currentIndex + 1} of ${questions.length}`;
-      document.getElementById('g-lives').textContent = `${retriesLeft} ${retriesLeft === 1 ? 'retry' : 'retries'} left`;
+      order = shuffle(q.choices.map((_, i) => i));   // display slot → original choice index
+      $('g-score').textContent = `Question ${currentIndex + 1} of ${questions.length}`;
+      $('g-stars').textContent = stars ? '⭐ ' + stars : '';
+      setRetriesText();
       progressEl.style.width = Math.round((currentIndex / questions.length) * 100) + '%';
       questionEl.textContent = q.text;
       hintEl.textContent = '';
       choicesEl.innerHTML = '';
-      q.choices.forEach((choice, i) => {
+      order.forEach((choiceIndex, slot) => {
         const btn = document.createElement('button');
-        btn.className = 'quiz-choice';
-        btn.textContent = choice;
-        btn.addEventListener('click', () => onChoice(i, btn));
+        btn.type = 'button';
+        btn.className = 'gt-choice';
+        btn.dataset.choice = choiceIndex;
+        const key = document.createElement('span');
+        key.className = 'gt-choice-key';
+        key.textContent = slot + 1;
+        key.setAttribute('aria-hidden', 'true');
+        btn.append(key, q.choices[choiceIndex]);
+        btn.addEventListener('click', () => onChoice(choiceIndex, btn));
         choicesEl.appendChild(btn);
       });
+      if (moveFocus) choicesEl.firstChild.focus({ preventScroll: true });
     }
 
     function onChoice(choiceIndex, btn) {
-      if (ended) return;
+      if (locked || btn.disabled) return;          // ignore clicks while we're moving on
+      GameTutorial.markPlayed('quiz');
       const q = questions[currentIndex];
+      const hadFocus = wrap.contains(document.activeElement);
 
+      // 1. check the answer
       if (choiceIndex === q.correct) {
+        locked = true;
         btn.classList.add('correct');
-        setTimeout(advance, 500);
+        if (firstTry) { stars++; hintEl.textContent = '⭐ First try!'; } else hintEl.textContent = '✓ Correct!';
+        setTimeout(() => advance(hadFocus), 650);  // 2. correct: move on, or win
         return;
       }
 
+      // 3. wrong: show the hint, use up a retry
+      firstTry = false;
       btn.classList.add('wrong');
+      btn.disabled = true;
       retriesLeft--;
-      document.getElementById('g-lives').textContent = `${Math.max(retriesLeft, 0)} ${retriesLeft === 1 ? 'retry' : 'retries'} left`;
+      setRetriesText();
 
-      if (retriesLeft <= 0) {
-        hintEl.textContent = `Correct answer: "${q.choices[q.correct]}"`;
-        Array.from(choicesEl.children)[q.correct].classList.add('correct');
-        setTimeout(advance, 900);
+      if (retriesLeft <= 0) {                       // 4. out of retries: reveal & advance
+        locked = true;
+        hintEl.textContent = `The answer is "${q.choices[q.correct]}". ${q.hint}`;
+        choicesEl.querySelector(`[data-choice="${q.correct}"]`).classList.add('correct');
+        setTimeout(() => advance(hadFocus), 1800);
       } else {
         hintEl.textContent = '💡 ' + q.hint;
       }
     }
 
-    function advance() {
+    function advance(moveFocus) {
       currentIndex++;
-      if (currentIndex >= questions.length) {
-        endGame();
-        return;
-      }
-      renderQuestion();
+      if (currentIndex >= questions.length) { endGame(); return; }
+      renderQuestion(moveFocus);
     }
 
     function endGame() {
-      ended = true;
       progressEl.style.width = '100%';
-      document.getElementById('g-msg-title').textContent = '🎉 Quest Complete!';
-      document.getElementById('g-msg-sub').textContent = `Answered all ${questions.length} questions.`;
-      document.getElementById('g-msg').classList.add('show');
+      $('g-stars').textContent = '⭐ ' + stars;
+      const record = GameTutorial.best('quiz', config.theme, stars);
+      const verdict = stars === questions.length ? 'Flawless: every one on the first try!' : `${stars} of ${questions.length} on the first try.`;
+      overlay.show({
+        title: '🎉 Quest Complete!',
+        sub: verdict + (record.isNew && stars > 0 ? ' New best for this set.' : ''),
+        button: 'Play Again ↺',
+        onButton: () => { reset(); choicesEl.firstChild.focus({ preventScroll: true }); }
+      });
+      overlay.focusButton();
     }
 
-    document.getElementById('g-restart').addEventListener('click', reset);
-
-    document.getElementById('c-retries').addEventListener('input', e => {
-      document.getElementById('c-retries-out').textContent = e.target.value;
+    /* 1 / 2 / 3 pick an answer while focus is anywhere inside the game. */
+    wrap.addEventListener('keydown', e => {
+      const n = Number(e.key);
+      if (!n || overlay.visible) return;
+      const btn = choicesEl.children[n - 1];
+      if (btn) { e.preventDefault(); btn.click(); }
     });
 
-    function updateCodePeek() {
-      document.getElementById('cfg-theme').textContent = config.theme;
-      document.getElementById('cfg-avatar').textContent = config.avatar;
-      document.getElementById('cfg-retries').textContent = config.retries;
-    }
-
-    document.getElementById('c-apply').addEventListener('click', () => {
-      config = {
-        theme: document.getElementById('c-theme').value,
-        avatar: document.getElementById('c-avatar').value,
-        retries: Number(document.getElementById('c-retries').value)
-      };
-      updateCodePeek();
-      reset();
+    config = GameTutorial.bindConfig({
+      panel: $('config-panel'),
+      onChange: (cfg, change) => { if (change.rule) reset(); else avatarEl.textContent = cfg.avatar; },
+      onRestart: () => reset()
     });
 
-    updateCodePeek();
     reset();
+    GameTutorial.mountSeries('quiz');
   })();
-
-  /* Panel tabs */
-  document.querySelectorAll('.ll-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      const pane = tab.dataset.pane;
-      document.querySelectorAll('.ll-tab').forEach(t => t.setAttribute('aria-selected','false'));
-      document.querySelectorAll('.ll-pane').forEach(p => p.classList.remove('ll-active'));
-      tab.setAttribute('aria-selected','true');
-      document.getElementById(pane).classList.add('ll-active');
-    });
-  });
-
-  /* Panel toggle */
-  const openBtn = document.querySelector('.ll-open-btn');
-  const closeBtn = document.querySelector('.ll-panel-close');
-  const panel = document.querySelector('.ll-panel');
-  if (openBtn) openBtn.addEventListener('click', () => panel.classList.add('ll-panel--open'));
-  if (closeBtn) closeBtn.addEventListener('click', () => panel.classList.remove('ll-panel--open'));
 </script>
 <script src="../../../../assets/vendor/blockly.min.js"></script>
 <script src="../../../../assets/js/game-tutorial-blockly.js"></script>
-<script src="../../../../assets/js/game-tutorial-controls.js"></script>
+<script src="../../../../assets/js/lesson-layout.js"></script>
 <script src="../../../../assets/js/reveal.js"></script>
 <script src="../../../../assets/js/theme-registry.js"></script>
 <script src="../../../../assets/js/nav-mobile.js"></script>

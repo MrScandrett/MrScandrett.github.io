@@ -10,100 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../../assets/css/lesson-layout.css" />
-  <style>
-    .cl-page { padding-bottom: 0; }
-    .ll-viewport { --ll-panel-w: 300px; }
-
-    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
-    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
-    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
-    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
-    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
-    [data-lighting="night"] .cl-lede { color: rgba(245,245,247,0.7); }
-
-    :root { --acc: #8b5cf6; --acc-soft: rgba(139,92,246,0.12); --acc-border: rgba(139,92,246,0.3); }
-
-    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent, var(--acc)); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
-    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
-    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
-    .cl-card p  { margin: 0 0 0.6rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
-    .cl-card p:last-child { margin-bottom: 0; }
-    [data-lighting="night"] .cl-card { background: var(--white,#2c2c2e); }
-    [data-lighting="night"] .cl-card p { color: rgba(245,245,247,0.72); }
-
-    .callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
-    .callout.violet { background: rgba(139,92,246,0.09); border-left: 3px solid var(--acc); color: var(--text-secondary, #3f4f65); }
-    [data-lighting="night"] .callout.violet { color: rgba(245,245,247,0.72); }
-    .callout strong { color: var(--text,#1d1d1f); }
-
-    .stages-flow { display: flex; align-items: stretch; gap: 0.55rem; margin: 0.9rem 0; flex-wrap: wrap; }
-    .stages-step { flex: 1 1 150px; border-radius: 14px; padding: 0.9rem 0.85rem; border: 1.5px solid var(--acc-border); background: var(--acc-soft); text-align: center; }
-    .stages-step-icon { font-size: 1.4rem; display: block; margin-bottom: 0.3rem; }
-    .stages-step strong { display: block; font-size: 0.86rem; margin-bottom: 0.25rem; }
-    .stages-step small { font-size: 0.76rem; color: var(--text-muted, #64748b); line-height: 1.45; display: block; }
-    [data-lighting="night"] .stages-step small { color: rgba(245,245,247,0.65); }
-    .stages-arrow { display: flex; align-items: center; justify-content: center; color: var(--text-muted, #64748b); font-size: 1.3rem; }
-    @media (max-width: 700px) { .stages-flow { flex-direction: column; } .stages-arrow { transform: rotate(90deg); } }
-
-    .systems-list { margin: 0.4rem 0 0; padding-left: 1.1rem; font-size: 0.85rem; color: var(--text-secondary, #3f4f65); line-height: 1.7; }
-    [data-lighting="night"] .systems-list { color: rgba(245,245,247,0.72); }
-
-    .game-wrap { border: 2px solid var(--acc-border); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #0a0a0f; position: relative; }
-    #maze-canvas { display: block; width: 100%; max-width: 440px; height: 280px; margin: 0 auto; }
-    #maze-canvas:focus-visible { outline: 3px solid var(--acc); outline-offset: -3px; }
-    .game-focus-hint { text-align: center; font-size: 0.76rem; color: var(--text-muted, #64748b); margin: 0.5rem 0 0; }
-    [data-lighting="night"] .game-focus-hint { color: rgba(245,245,247,0.6); }
-    .game-hud { display: flex; justify-content: space-between; padding: 0.4rem 0.9rem; background: rgba(0,0,0,0.6); font-size: 0.78rem; font-weight: 600; }
-    .game-hud .hud-score { color: #a78bfa; }
-    .game-hud .hud-hint  { color: var(--text-muted, #64748b); }
-    .game-btn { display: block; margin: 0.5rem auto 0; background: var(--acc); color: #fff; border: none; border-radius: 8px; padding: 0.4rem 1.2rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .game-btn:hover { opacity: 0.85; }
-    .game-msg { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 0.5rem; background: rgba(10,10,15,0.82); color: #fff; text-align: center; font-size: 1rem; font-weight: 700; }
-    .game-msg.show { display: flex; }
-    .game-msg span { font-size: 0.78rem; font-weight: 500; color: #cbd5e1; }
-
-    .config-panel { border: 1.5px solid var(--acc-border); border-radius: 16px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; background: var(--acc-soft); }
-    .config-panel h3 { margin: 0 0 0.75rem; font-size: 1rem; color: var(--acc); }
-    .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem 1rem; }
-    @media (max-width: 560px) { .config-grid { grid-template-columns: 1fr; } }
-    .config-field label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary, #3f4f65); margin-bottom: 0.25rem; }
-    [data-lighting="night"] .config-field label { color: rgba(245,245,247,0.75); }
-    .config-field select, .config-field input[type="range"] {
-      width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--line,#d2d2d7); border-radius: 8px;
-      font-size: 0.84rem; font-family: inherit; background: var(--white,#fff); color: var(--text,#1d1d1f); box-sizing: border-box;
-    }
-    .config-field output { font-size: 0.76rem; color: var(--text-muted, #64748b); margin-left: 0.3rem; }
-    .btn-apply { margin-top: 0.9rem; background: var(--acc); color: #fff; border: none; border-radius: 9px; padding: 0.45rem 1.1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .btn-apply:hover { opacity: 0.85; }
-    .config-note { font-size: 0.74rem; color: var(--text-muted, #64748b); margin-top: 0.6rem; }
-
-    .code-block { background: #0f172a; border-radius: 12px; padding: 0.9rem 1.1rem; margin: 0.7rem 0; overflow-x: auto; }
-    .code-block pre { margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 0.79rem; line-height: 1.7; color: #e2e8f0; white-space: pre; }
-    .code-block .kw  { color: #c084fc; }
-    .code-block .fn  { color: #60a5fa; }
-    .code-block .str { color: #4ade80; }
-    .code-block .cm  { color: #94a3b8; font-style: italic; }
-    .code-block .num { color: #fb923c; }
-    .code-tag { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.55rem; border-radius: 999px; margin-bottom: 0.4rem; }
-    .code-tag.editable { background: rgba(34,197,94,0.14); color: #16a34a; }
-    .code-tag.locked   { background: rgba(148,163,184,0.18); color: var(--text-muted, #64748b); }
-
-    .scratch-box { border: 1.5px solid rgba(255,171,25,0.35); border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; background: rgba(255,191,0,0.06); }
-    [data-lighting="night"] .scratch-box { background: rgba(255,191,0,0.09); }
-    .scratch-box h4 { margin: 0 0 0.5rem; font-size: 0.86rem; letter-spacing: -0.01em; color: #b45309; display: flex; align-items: center; gap: 0.4rem; }
-    [data-lighting="night"] .scratch-box h4 { color: #fbbf24; }
-    .scratch-box p { font-size: 0.83rem; color: var(--text-secondary, #3f4f65); margin: 0.5rem 0 0; line-height: 1.55; }
-    [data-lighting="night"] .scratch-box p { color: rgba(245,245,247,0.72); }
-    .scratch-link { display: inline-block; margin-top: 0.6rem; font-size: 0.78rem; font-weight: 700; color: #b45309; text-decoration: none; border-bottom: 1.5px solid rgba(180,83,9,0.4); }
-    [data-lighting="night"] .scratch-link { color: #fbbf24; border-color: rgba(251,191,36,0.4); }
-    .scratch-link:hover { border-color: currentColor; }
-
-    .next-card { display: flex; align-items: center; gap: 0.9rem; border: 1.5px solid var(--acc-border); border-radius: 14px; padding: 0.9rem 1.1rem; margin-top: 0.8rem; text-decoration: none; }
-    .next-card:hover { background: var(--acc-soft); }
-    .next-card-icon { font-size: 1.6rem; flex-shrink: 0; }
-    .next-card strong { display: block; font-size: 0.9rem; color: var(--text,#1d1d1f); }
-    .next-card small { font-size: 0.8rem; color: var(--text-muted, #64748b); }
-  </style>
+  <link rel="stylesheet" href="../../../../assets/css/game-tutorial.css" />
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -129,6 +36,8 @@
   <div class="ll-stage">
     <div class="ll-sim">
       <main id="main-content" class="cl-page">
+
+        <nav class="gt-series" data-gt-series aria-label="Tiny-loop tutorial series"></nav>
 
         <section class="hero cl-hero">
           <p class="eyebrow">Game Design &amp; Development · Tiny-Loop Tutorial · Archetype #4</p>
@@ -161,7 +70,7 @@
           <ol class="systems-list">
             <li><strong>Input system</strong> — reads the arrow key pressed and computes the one target tile in that direction.</li>
             <li><strong>Wall collision system</strong> — checks whether the target tile is a wall; if it is, the move is cancelled and the player stays put.</li>
-            <li><strong>Step counter system</strong> — only counts a step when a move actually succeeds (feedback for the player).</li>
+            <li><strong>Step counter system</strong> — only counts a step when a move actually succeeds, and compares your total to <em>par</em>, the shortest possible route.</li>
             <li><strong>Goal detection system</strong> — checks the player's tile against the goal tile every move; matching tiles ends the game.</li>
           </ol>
         </section>
@@ -169,24 +78,25 @@
         <!-- Play + Customize -->
         <section class="cl-card">
           <h2>🎮 Play &amp; Customize</h2>
-          <p>Move one tile at a time with <strong>Arrow keys</strong>, <strong>W A S D</strong>, or the touch D-pad below the game. Walls block you completely — find the path to the goal.</p>
+          <p>Move one tile at a time with the <strong>arrow keys</strong> or <strong>W A S D</strong> (hold to keep moving), or use the touch D-pad. Walls block you completely. Find the path to the goal, and try to match <strong>par</strong>, the fewest steps possible. Your trail shows where you've been.</p>
 
           <div class="game-wrap">
-            <div class="game-hud" aria-live="polite" aria-atomic="false">
+            <div class="game-hud">
               <span class="hud-score" id="g-score">Steps: 0</span>
-              <span class="hud-hint">Arrows / WASD</span>
+              <span class="hud-group"><span id="g-par">Par —</span><span class="hud-best" id="g-best"></span></span>
             </div>
-            <canvas id="maze-canvas" width="440" height="280" tabindex="0" aria-label="Maze game — use arrow keys, WASD, or touch D-pad to move one tile at a time"></canvas>
-            <div class="game-msg" id="g-msg" role="status" aria-live="assertive"><span id="g-msg-title"></span><span id="g-msg-sub"></span><button class="game-btn" id="g-restart">Play Again ↺</button></div>
+            <canvas id="maze-canvas" width="440" height="280" aria-label="Maze game. Use arrow keys, W A S D, or the touch D-pad to move one tile at a time." aria-describedby="maze-status"></canvas>
           </div>
-          <p class="game-focus-hint">💡 Click inside the game first — that gives it keyboard focus so the arrow keys move the player instead of scrolling the page.</p>
+          <p class="sr-only" id="maze-status" aria-live="polite"></p>
+          <p class="game-focus-hint">Keys only work while the game has focus. Click the maze first.</p>
 
-          <div class="config-panel">
+          <div class="config-panel" id="config-panel">
             <h3>Tune the Game (limited, on purpose)</h3>
+            <p class="config-lede"><strong>Content</strong> settings change how it looks and apply instantly. <strong>Rule</strong> settings change how it plays, so the round restarts.</p>
             <div class="config-grid">
               <div class="config-field">
                 <label for="c-player">Player Sprite</label>
-                <select id="c-player">
+                <select id="c-player" data-cfg="player" data-peek="cfg-player">
                   <option value="🤖">🤖 Robot</option>
                   <option value="🐭">🐭 Mouse</option>
                   <option value="🧙">🧙 Wizard</option>
@@ -195,7 +105,7 @@
               </div>
               <div class="config-field">
                 <label for="c-goal">Goal Sprite</label>
-                <select id="c-goal">
+                <select id="c-goal" data-cfg="goal" data-peek="cfg-goal">
                   <option value="🔑">🔑 Key</option>
                   <option value="🧀">🧀 Cheese</option>
                   <option value="💎">💎 Gem</option>
@@ -204,7 +114,7 @@
               </div>
               <div class="config-field">
                 <label for="c-wall">Wall Theme</label>
-                <select id="c-wall">
+                <select id="c-wall" data-cfg="wall" data-peek="cfg-wall">
                   <option value="lab">🧪 Lab Walls</option>
                   <option value="stone">🪨 Stone Walls</option>
                   <option value="hedge">🌳 Hedge Walls</option>
@@ -212,20 +122,20 @@
               </div>
               <div class="config-field">
                 <label for="c-layout">Maze Layout</label>
-                <select id="c-layout">
+                <select id="c-layout" data-cfg="layout" data-peek="cfg-layout" data-rule>
                   <option value="zigzag">Zigzag</option>
                   <option value="branching">Branching</option>
                   <option value="spiral">Spiral</option>
                 </select>
               </div>
               <div class="config-field">
-                <label for="c-speed">Move Animation Speed <output id="c-speed-out">2</output></label>
-                <input type="range" id="c-speed" min="1" max="3" step="1" value="2" />
+                <label for="c-speed">Move Animation Speed <output id="c-speed-out" for="c-speed">2</output></label>
+                <input type="range" id="c-speed" min="1" max="3" step="1" value="2" data-cfg="moveSpeed" data-peek="cfg-movespeed" />
               </div>
             </div>
-            <button class="btn-apply" id="c-apply">Apply &amp; Restart</button>
+            <div class="config-actions"></div>
             <p class="config-note">Notice what you <em>can't</em> change here: there's no field for "how wall collision works" or "how the goal is detected." That's the engine — the part every version of this game shares. You're only tuning content, not rewriting architecture. That's the limit, on purpose.</p>
-            <p class="config-note"><strong>What Move Animation Speed actually touches in the engine:</strong> it only picks a <code>duration</code> from a lookup table (180ms / 110ms / 60ms) that the tile-slide animation plays over — the tile-by-tile logic in <code>tryMove()</code> that checks walls and the goal runs exactly the same either way. The Maze Layout and Wall Theme selects swap which grid string and color pair the locked renderer reads; the renderer never looks at what the strings mean, only where the <code>#</code> characters are.</p>
+            <p class="config-note"><strong>What Move Animation Speed actually touches in the engine:</strong> nothing in the rules, which is why it's tagged <em>content</em>. It only picks a <code>duration</code> from a lookup table (180ms / 110ms / 60ms) that the tile-slide animation plays over — the tile-by-tile logic in <code>tryMove()</code> that checks walls and the goal runs exactly the same either way. The Maze Layout and Wall Theme selects swap which grid string and color pair the locked renderer reads; the renderer never looks at what the strings mean, only where the <code>#</code> characters are.</p>
           </div>
         </section>
 
@@ -244,7 +154,7 @@
   moveSpeed: <span class="num" id="cfg-movespeed">2</span>
 };</pre>
           </div>
-          <p class="config-note" style="margin-top:-0.3rem;">👆 This block updates live — hit "Apply &amp; Restart" above and watch the exact values change here. There's no separate "demo" version of the code; this <em>is</em> it.</p>
+          <p class="config-note" style="margin-top:-0.3rem;">👆 This block updates live. Change anything in the panel and the matching value flashes here. There's no separate "demo" version of the code; this <em>is</em> it.</p>
 
           <span class="code-tag locked">🔒 Engine — locked, shared by every version of this game</span>
           <div class="code-block">
@@ -268,6 +178,35 @@
 
           <div class="callout violet">
             <strong>This is what "architecture" means in practice:</strong> the config is the part of the design doc you filled out in Lesson 1 (goal, mechanic, feedback). The engine is the part no one writes twice — the same movement, wall-collision, and goal-detection systems power every maze game, from this one to the original text-adventure dungeon crawlers.
+          </div>
+        </section>
+
+        <!-- Remix -->
+        <section class="cl-card">
+          <h2>🧪 Remix Challenges</h2>
+          <p>The panel can only turn the knobs the engine exposes. To change the <em>rules</em>, you change the engine. Each challenge edits one system. Try them in your own copy once you've built it in Lesson 2.</p>
+          <div class="gt-remix">
+            <details>
+              <summary><span class="gt-tier tweak">Tweak</span><span><strong>Fog of war</strong><small>Renderer only · one condition</small></span></summary>
+              <div class="gt-remix-body">
+                <p>Only draw tiles within 2 steps of the player. The maze is identical, but it <em>feels</em> completely different, because you've taken away the map. This is a pure rendering change. The engine never knows.</p>
+                <div class="code-block"><pre><span class="kw">if</span> (<span class="fn">Math.abs</span>(c - player.col) + <span class="fn">Math.abs</span>(r - player.row) &gt; <span class="num">2</span>) <span class="kw">continue</span>;</pre></div>
+              </div>
+            </details>
+            <details>
+              <summary><span class="gt-tier twist">Twist</span><span><strong>Keys and doors</strong><small>Wall-collision system</small></span></summary>
+              <div class="gt-remix-body">
+                <p>Add two new characters to the grid strings: <code>k</code> for a key and <code>D</code> for a door. A door acts like a wall until you're holding a key. Now the shortest path might go <em>away</em> from the goal first.</p>
+                <div class="code-block"><pre><span class="kw">if</span> (tile === <span class="str">'D'</span> &amp;&amp; !hasKey) <span class="kw">return</span>;   <span class="cm">// locked</span>
+<span class="kw">if</span> (tile === <span class="str">'k'</span>) hasKey = <span class="kw">true</span>;</pre></div>
+              </div>
+            </details>
+            <details>
+              <summary><span class="gt-tier transform">Transform</span><span><strong>Infinite mazes</strong><small>Replace the layouts with an algorithm</small></span></summary>
+              <div class="gt-remix-body">
+                <p>The three layouts were made by a <em>recursive backtracker</em>: start in a cell, knock down a wall to a random unvisited neighbour, repeat, and back up when you're stuck. Write that function and every game gets a brand-new maze. The "par" number in the HUD comes from a second algorithm, breadth-first search, which finds the shortest path by flooding outward from the start one step at a time.</p>
+              </div>
+            </details>
           </div>
         </section>
 
@@ -295,13 +234,7 @@
             </span>
           </a>
 
-          <a class="next-card" href="../game-design-thinking.html">
-            <span class="next-card-icon">↩️</span>
-            <span>
-              <strong>Back to the Archetype Grid</strong>
-              <small>Return to What Makes a Game? to try another tiny-loop archetype or the design workshop.</small>
-            </span>
-          </a>
+          <div class="gt-pager" data-gt-pager></div>
         </section>
 
       </main>
@@ -334,12 +267,12 @@
   </div><!-- /.ll-stage -->
 </div><!-- /.ll-viewport -->
 
+<script src="../../../../assets/js/sim-kit.js"></script>
+<script src="../../../../assets/js/game-tutorial-kit.js"></script>
 <script>
   (function () {
-    const canvas = document.getElementById('maze-canvas');
-    const ctx = canvas.getContext('2d');
-    const W = canvas.width, H = canvas.height;
-    const TILE = 40;
+    const W = 440, H = 280, TILE = 40;
+    const HOLD_REPEAT = 9;                       // ticks between moves while a key is held
 
     /* Each layout is an 11x7 grid generated with a verified recursive-backtracker maze algorithm. */
     const layouts = {
@@ -371,84 +304,111 @@
         '###########'
       ]
     };
-
     const wallColors = { lab: '#334155', stone: '#4b3f36', hedge: '#1f4d2e' };
     const floorColors = { lab: '#0f2436', stone: '#241d16', hedge: '#0d1f13' };
+    const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 
-    let config = { player: '🤖', goal: '🔑', wall: 'lab', layout: 'zigzag', moveSpeed: 2 };
+    const $ = id => document.getElementById(id);
+    const announce = msg => { $('maze-status').textContent = msg; };
 
-    let maze, player, goal, steps, running, ended;
-    let anim = null; // { fromX, fromY, toX, toY, start, duration }
+    let config;
+    let maze, player, goal, steps, par, trail, anim, bump, won, holdTicks;
+
+    /* Breadth-first search: the fewest steps from start to goal. */
+    function shortestPath(grid, from, to) {
+      const seen = new Set([from.col + ',' + from.row]);
+      let frontier = [from], dist = 0;
+      while (frontier.length) {
+        const next = [];
+        for (const p of frontier) {
+          if (p.col === to.col && p.row === to.row) return dist;
+          for (const [dx, dy] of Object.values(DIRS)) {
+            const c = p.col + dx, r = p.row + dy, k = c + ',' + r;
+            if (grid[r] && grid[r][c] && grid[r][c] !== '#' && !seen.has(k)) { seen.add(k); next.push({ col: c, row: r }); }
+          }
+        }
+        frontier = next;
+        dist++;
+      }
+      return null;
+    }
 
     function reset() {
-      maze = layouts[config.layout];
+      maze = layouts[config.layout] || layouts.zigzag;
       player = { col: 1, row: 1 };
       goal = { col: maze[0].length - 2, row: maze.length - 2 };
       steps = 0;
-      running = true;
-      ended = false;
+      par = shortestPath(maze, player, goal);
+      trail = new Set(['1,1']);
       anim = null;
-      document.getElementById('g-msg').classList.remove('show');
+      bump = null;
+      won = false;
+      holdTicks = 0;
       updateHUD();
     }
 
     function updateHUD() {
-      document.getElementById('g-score').textContent = 'Steps: ' + steps;
+      $('g-score').textContent = 'Steps: ' + steps;
+      $('g-par').textContent = 'Par ' + par;
+      const b = GameTutorial.best('maze', config.layout).best;
+      $('g-best').textContent = b ? 'Best ' + b : '';
     }
+
+    function duration() { return { 1: 180, 2: 110, 3: 60 }[config.moveSpeed] || 110; }
 
     function tryMove(dx, dy) {
-      if (!running || anim) return;
+      if (won || anim) return;
       const tx = player.col + dx, ty = player.row + dy;
-      if (ty < 0 || ty >= maze.length || tx < 0 || tx >= maze[0].length) return;
-      if (maze[ty][tx] === '#') return; // wall collision — move cancelled
-
-      const fromX = player.col, fromY = player.row;
+      // 1. WALL COLLISION: cancel the move if the target tile is a wall
+      if (!maze[ty] || !maze[ty][tx] || maze[ty][tx] === '#') {
+        bump = { dx, dy, start: performance.now() };
+        return;
+      }
+      // 2. MOVE
+      anim = { fromX: player.col, fromY: player.row, toX: tx, toY: ty, start: performance.now(), duration: duration() };
       player.col = tx; player.row = ty;
+      trail.add(tx + ',' + ty);
+      // 3. COUNT only real steps
       steps++;
       updateHUD();
-
-      const duration = { 1: 180, 2: 110, 3: 60 }[config.moveSpeed] || 110;
-      anim = { fromX, fromY, toX: tx, toY: ty, start: performance.now(), duration };
-
+      // 4. GOAL
       if (tx === goal.col && ty === goal.row) {
-        running = false;
-        ended = true;
-        setTimeout(endGame, duration + 30);
+        won = true;
+        const record = GameTutorial.best('maze', config.layout, steps, true);
+        updateHUD();
+        const verdict = steps === par ? 'Perfect route: you matched par!' : `Par is ${par}. Can you find a shorter route?`;
+        setTimeout(() => game.end({
+          title: '🎉 You Reached the Goal!',
+          sub: `Finished in ${steps} steps. ${verdict}` + (record.isNew ? ' New best for this layout.' : '')
+        }), duration() + 60);
+        announce(`Goal reached in ${steps} steps. Par is ${par}.`);
       }
     }
 
-    function endGame() {
-      document.getElementById('g-msg-title').textContent = '🎉 You Reached the Goal!';
-      document.getElementById('g-msg-sub').textContent = `Finished in ${steps} steps.`;
-      document.getElementById('g-msg').classList.add('show');
+    function update(g) {
+      const held = Object.keys(DIRS).find(d => g.held(d));
+      if (!held) { holdTicks = 0; return; }
+      if (++holdTicks >= HOLD_REPEAT && !anim) { holdTicks = 0; tryMove(...DIRS[held]); }
     }
 
-    document.addEventListener('keydown', e => {
-      const map = {
-        ArrowUp: [0, -1], KeyW: [0, -1],
-        ArrowDown: [0, 1], KeyS: [0, 1],
-        ArrowLeft: [-1, 0], KeyA: [-1, 0],
-        ArrowRight: [1, 0], KeyD: [1, 0]
-      };
-      if (map[e.code]) {
-        e.preventDefault();
-        tryMove(map[e.code][0], map[e.code][1]);
-      }
-    });
-
-    function render() {
+    function render(ctx) {
       ctx.fillStyle = floorColors[config.wall] || '#0f2436';
       ctx.fillRect(0, 0, W, H);
-
       const offX = (W - maze[0].length * TILE) / 2;
       const offY = (H - maze.length * TILE) / 2;
+
+      ctx.fillStyle = 'rgba(196,181,253,0.16)';
+      trail.forEach(k => {
+        const [c, r] = k.split(',').map(Number);
+        ctx.beginPath();
+        ctx.arc(offX + c * TILE + TILE / 2, offY + r * TILE + TILE / 2, 5, 0, Math.PI * 2);
+        ctx.fill();
+      });
 
       ctx.fillStyle = wallColors[config.wall] || '#334155';
       for (let r = 0; r < maze.length; r++) {
         for (let c = 0; c < maze[0].length; c++) {
-          if (maze[r][c] === '#') {
-            ctx.fillRect(offX + c * TILE, offY + r * TILE, TILE, TILE);
-          }
+          if (maze[r][c] === '#') ctx.fillRect(offX + c * TILE, offY + r * TILE, TILE, TILE);
         }
       }
 
@@ -458,74 +418,49 @@
       ctx.fillText(config.goal, offX + goal.col * TILE + TILE / 2, offY + goal.row * TILE + TILE / 2);
 
       let px = player.col, py = player.row;
+      const now = performance.now();
       if (anim) {
-        const t = Math.min(1, (performance.now() - anim.start) / anim.duration);
-        px = anim.fromX + (anim.toX - anim.fromX) * t;
-        py = anim.fromY + (anim.toY - anim.fromY) * t;
+        const t = Math.min(1, (now - anim.start) / anim.duration);
+        const e = 1 - (1 - t) * (1 - t);
+        px = anim.fromX + (anim.toX - anim.fromX) * e;
+        py = anim.fromY + (anim.toY - anim.fromY) * e;
         if (t >= 1) anim = null;
+      } else if (bump && !game.reducedMotion) {
+        const t = (now - bump.start) / 140;
+        if (t >= 1) bump = null;
+        else { const k = Math.sin(t * Math.PI) * 0.15; px += bump.dx * k; py += bump.dy * k; }
       }
       ctx.fillText(config.player, offX + px * TILE + TILE / 2, offY + py * TILE + TILE / 2);
     }
 
-    function loop() {
-      render();
-      requestAnimationFrame(loop);
-    }
-
-    document.getElementById('g-restart').addEventListener('click', reset);
-    canvas.addEventListener('click', () => canvas.focus());
-
-    document.getElementById('c-speed').addEventListener('input', e => {
-      document.getElementById('c-speed-out').textContent = e.target.value;
+    config = GameTutorial.bindConfig({
+      panel: $('config-panel'),
+      onChange: (cfg, change) => { if (change.rule) game.restart(); else updateHUD(); },
+      onRestart: () => game.restart()
     });
 
-    function updateCodePeek() {
-      document.getElementById('cfg-player').textContent = config.player;
-      document.getElementById('cfg-goal').textContent = config.goal;
-      document.getElementById('cfg-wall').textContent = config.wall;
-      document.getElementById('cfg-layout').textContent = config.layout;
-      document.getElementById('cfg-movespeed').textContent = config.moveSpeed;
-    }
-
-    document.getElementById('c-apply').addEventListener('click', () => {
-      config = {
-        player: document.getElementById('c-player').value,
-        goal: document.getElementById('c-goal').value,
-        wall: document.getElementById('c-wall').value,
-        layout: document.getElementById('c-layout').value,
-        moveSpeed: Number(document.getElementById('c-speed').value)
-      };
-      updateCodePeek();
-      reset();
-      canvas.focus();
+    const game = GameTutorial.canvasGame({
+      slug: 'maze',
+      canvas: $('maze-canvas'),
+      width: W, height: H,
+      realtime: false,                            // turn-based: no start gate, nothing to pause
+      actions: { up: ['ArrowUp', 'KeyW'], down: ['ArrowDown', 'KeyS'], left: ['ArrowLeft', 'KeyA'], right: ['ArrowRight', 'KeyD'] },
+      onPress: name => { holdTicks = 0; tryMove(...DIRS[name]); },
+      touch: { dpad: true, buttons: [
+        { label: '▲', aria: 'Move up', action: 'up', hold: true },
+        { label: '◀', aria: 'Move left', action: 'left', hold: true },
+        { label: '▶', aria: 'Move right', action: 'right', hold: true },
+        { label: '▼', aria: 'Move down', action: 'down', hold: true }
+      ] },
+      reset, update, render
     });
 
-    updateCodePeek();
-    reset();
-    loop();
+    GameTutorial.mountSeries('maze');
   })();
-
-  /* Panel tabs */
-  document.querySelectorAll('.ll-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      const pane = tab.dataset.pane;
-      document.querySelectorAll('.ll-tab').forEach(t => t.setAttribute('aria-selected','false'));
-      document.querySelectorAll('.ll-pane').forEach(p => p.classList.remove('ll-active'));
-      tab.setAttribute('aria-selected','true');
-      document.getElementById(pane).classList.add('ll-active');
-    });
-  });
-
-  /* Panel toggle */
-  const openBtn = document.querySelector('.ll-open-btn');
-  const closeBtn = document.querySelector('.ll-panel-close');
-  const panel = document.querySelector('.ll-panel');
-  if (openBtn) openBtn.addEventListener('click', () => panel.classList.add('ll-panel--open'));
-  if (closeBtn) closeBtn.addEventListener('click', () => panel.classList.remove('ll-panel--open'));
 </script>
 <script src="../../../../assets/vendor/blockly.min.js"></script>
 <script src="../../../../assets/js/game-tutorial-blockly.js"></script>
-<script src="../../../../assets/js/game-tutorial-controls.js"></script>
+<script src="../../../../assets/js/lesson-layout.js"></script>
 <script src="../../../../assets/js/reveal.js"></script>
 <script src="../../../../assets/js/theme-registry.js"></script>
 <script src="../../../../assets/js/nav-mobile.js"></script>

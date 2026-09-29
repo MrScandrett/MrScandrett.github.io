@@ -10,100 +10,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../../assets/css/game-tutorial.css" />
   <style>
-    .cl-page { padding-bottom: 0; }
-    .ll-viewport { --ll-panel-w: 300px; }
-
-    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
-    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
-    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
-    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
-    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
-    [data-lighting="night"] .cl-lede { color: rgba(245,245,247,0.7); }
-
-    :root { --acc: #8b5cf6; --acc-soft: rgba(139,92,246,0.12); --acc-border: rgba(139,92,246,0.3); }
-
-    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent, var(--acc)); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
-    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
-    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
-    .cl-card p  { margin: 0 0 0.6rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
-    .cl-card p:last-child { margin-bottom: 0; }
-    [data-lighting="night"] .cl-card { background: var(--white,#2c2c2e); }
-    [data-lighting="night"] .cl-card p { color: rgba(245,245,247,0.72); }
-
-    .callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
-    .callout.violet { background: rgba(139,92,246,0.09); border-left: 3px solid var(--acc); color: var(--text-secondary, #3f4f65); }
-    [data-lighting="night"] .callout.violet { color: rgba(245,245,247,0.72); }
-    .callout strong { color: var(--text,#1d1d1f); }
-
-    .stages-flow { display: flex; align-items: stretch; gap: 0.55rem; margin: 0.9rem 0; flex-wrap: wrap; }
-    .stages-step { flex: 1 1 150px; border-radius: 14px; padding: 0.9rem 0.85rem; border: 1.5px solid var(--acc-border); background: var(--acc-soft); text-align: center; }
-    .stages-step-icon { font-size: 1.4rem; display: block; margin-bottom: 0.3rem; }
-    .stages-step strong { display: block; font-size: 0.86rem; margin-bottom: 0.25rem; }
-    .stages-step small { font-size: 0.76rem; color: var(--text-muted, #64748b); line-height: 1.45; display: block; }
-    [data-lighting="night"] .stages-step small { color: rgba(245,245,247,0.65); }
-    .stages-arrow { display: flex; align-items: center; justify-content: center; color: var(--text-muted, #64748b); font-size: 1.3rem; }
-    @media (max-width: 700px) { .stages-flow { flex-direction: column; } .stages-arrow { transform: rotate(90deg); } }
-
-    .systems-list { margin: 0.4rem 0 0; padding-left: 1.1rem; font-size: 0.85rem; color: var(--text-secondary, #3f4f65); line-height: 1.7; }
-    [data-lighting="night"] .systems-list { color: rgba(245,245,247,0.72); }
-
-    .game-wrap { border: 2px solid var(--acc-border); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #0a0a0f; position: relative; }
-    #rhythm-canvas { display: block; width: 100%; max-width: 480px; height: 300px; margin: 0 auto; }
-    #rhythm-canvas:focus-visible { outline: 3px solid var(--acc); outline-offset: -3px; }
-    .game-focus-hint { text-align: center; font-size: 0.76rem; color: var(--text-muted, #64748b); margin: 0.5rem 0 0; }
-    [data-lighting="night"] .game-focus-hint { color: rgba(245,245,247,0.6); }
-    .game-hud { display: flex; justify-content: space-between; padding: 0.4rem 0.9rem; background: rgba(0,0,0,0.6); font-size: 0.78rem; font-weight: 600; }
-    .game-hud .hud-score { color: #a78bfa; }
-    .game-hud .hud-hint  { color: var(--text-muted, #64748b); }
-    .game-btn { display: block; margin: 0.5rem auto 0; background: var(--acc); color: #fff; border: none; border-radius: 8px; padding: 0.4rem 1.2rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .game-btn:hover { opacity: 0.85; }
-    .game-msg { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 0.5rem; background: rgba(10,10,15,0.82); color: #fff; text-align: center; font-size: 1rem; font-weight: 700; }
-    .game-msg.show { display: flex; }
-    .game-msg span { font-size: 0.78rem; font-weight: 500; color: #cbd5e1; }
-
-    .config-panel { border: 1.5px solid var(--acc-border); border-radius: 16px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; background: var(--acc-soft); }
-    .config-panel h3 { margin: 0 0 0.75rem; font-size: 1rem; color: var(--acc); }
-    .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem 1rem; }
-    @media (max-width: 560px) { .config-grid { grid-template-columns: 1fr; } }
-    .config-field label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary, #3f4f65); margin-bottom: 0.25rem; }
-    [data-lighting="night"] .config-field label { color: rgba(245,245,247,0.75); }
-    .config-field select, .config-field input[type="range"] {
-      width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--line,#d2d2d7); border-radius: 8px;
-      font-size: 0.84rem; font-family: inherit; background: var(--white,#fff); color: var(--text,#1d1d1f); box-sizing: border-box;
-    }
-    .config-field output { font-size: 0.76rem; color: var(--text-muted, #64748b); margin-left: 0.3rem; }
-    .btn-apply { margin-top: 0.9rem; background: var(--acc); color: #fff; border: none; border-radius: 9px; padding: 0.45rem 1.1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .btn-apply:hover { opacity: 0.85; }
-    .config-note { font-size: 0.74rem; color: var(--text-muted, #64748b); margin-top: 0.6rem; }
-
-    .code-block { background: #0f172a; border-radius: 12px; padding: 0.9rem 1.1rem; margin: 0.7rem 0; overflow-x: auto; }
-    .code-block pre { margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 0.79rem; line-height: 1.7; color: #e2e8f0; white-space: pre; }
-    .code-block .kw  { color: #c084fc; }
-    .code-block .fn  { color: #60a5fa; }
-    .code-block .str { color: #4ade80; }
-    .code-block .cm  { color: #94a3b8; font-style: italic; }
-    .code-block .num { color: #fb923c; }
-    .code-tag { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.55rem; border-radius: 999px; margin-bottom: 0.4rem; }
-    .code-tag.editable { background: rgba(34,197,94,0.14); color: #16a34a; }
-    .code-tag.locked   { background: rgba(148,163,184,0.18); color: var(--text-muted, #64748b); }
-
-    .scratch-box { border: 1.5px solid rgba(255,171,25,0.35); border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; background: rgba(255,191,0,0.06); }
-    [data-lighting="night"] .scratch-box { background: rgba(255,191,0,0.09); }
-    .scratch-box h4 { margin: 0 0 0.5rem; font-size: 0.86rem; letter-spacing: -0.01em; color: #b45309; display: flex; align-items: center; gap: 0.4rem; }
-    [data-lighting="night"] .scratch-box h4 { color: #fbbf24; }
-    .scratch-box p { font-size: 0.83rem; color: var(--text-secondary, #3f4f65); margin: 0.5rem 0 0; line-height: 1.55; }
-    [data-lighting="night"] .scratch-box p { color: rgba(245,245,247,0.72); }
-    .scratch-link { display: inline-block; margin-top: 0.6rem; font-size: 0.78rem; font-weight: 700; color: #b45309; text-decoration: none; border-bottom: 1.5px solid rgba(180,83,9,0.4); }
-    [data-lighting="night"] .scratch-link { color: #fbbf24; border-color: rgba(251,191,36,0.4); }
-    .scratch-link:hover { border-color: currentColor; }
-    .scratch-links { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; }
-
-    .next-card { display: flex; align-items: center; gap: 0.9rem; border: 1.5px solid var(--acc-border); border-radius: 14px; padding: 0.9rem 1.1rem; margin-top: 0.8rem; text-decoration: none; }
-    .next-card:hover { background: var(--acc-soft); }
-    .next-card-icon { font-size: 1.6rem; flex-shrink: 0; }
-    .next-card strong { display: block; font-size: 0.9rem; color: var(--text,#1d1d1f); }
-    .next-card small { font-size: 0.8rem; color: var(--text-muted, #64748b); }
+    .gt-sound { background: transparent; border: 1px solid rgba(226,232,240,0.3); color: #e2e8f0; border-radius: 999px; padding: 0.12rem 0.55rem; font: 600 0.72rem Inter, system-ui, sans-serif; cursor: pointer; }
+    .gt-sound[aria-pressed="true"] { border-color: #86efac; color: #86efac; }
+    .gt-sound:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -130,6 +41,8 @@
   <div class="ll-stage">
     <div class="ll-sim">
       <main id="main-content" class="cl-page">
+
+        <nav class="gt-series" data-gt-series aria-label="Tiny-loop tutorial series"></nav>
 
         <section class="hero cl-hero">
           <p class="eyebrow">Game Design &amp; Development · Tiny-Loop Tutorial · Archetype #8</p>
@@ -162,51 +75,52 @@
           <ol class="systems-list">
             <li><strong>Spawner system</strong> — every fixed interval, a new note appears in one of three lanes at the top.</li>
             <li><strong>Scroll system</strong> — every note's y position increases each frame, so notes drift toward the target line.</li>
-            <li><strong>Timing-window system</strong> — a key press checks the closest note in that lane against the target line: very close counts as "Perfect," a bit farther counts as "Good," far away or no note counts as a miss.</li>
-            <li><strong>Scoring system</strong> — Perfect and Good hits add different point values; the running score is what you're trying to grow toward the win goal.</li>
+            <li><strong>Timing-window system</strong> — a key press checks the closest note in that lane against the target line: very close counts as "Perfect," a bit farther counts as "Good," far away counts as a miss. A note that falls past the line untouched is a miss too.</li>
+            <li><strong>Scoring system</strong> — Perfect and Good hits add different point values, and every hit in a row grows your combo. A miss resets the combo to zero.</li>
           </ol>
         </section>
 
         <!-- Play + Customize -->
         <section class="cl-card">
           <h2>🎮 Play &amp; Customize</h2>
-          <p>Three lanes, three inputs: <strong>← (left lane), ↓ (middle lane), → (right lane)</strong>, or the matching touch buttons below the game. Press or tap exactly when a note crosses the glowing line.</p>
+          <p>Three lanes, three inputs: <strong>← (left lane), ↓ (middle lane), → (right lane)</strong>, or the matching touch buttons below the game. Press or tap exactly when a note crosses the glowing line. Notes arrive on a steady beat, so listen to the rhythm and don't just watch it. Sound is off by default. Turn it on with the 🔈 button.</p>
 
           <div class="game-wrap">
-            <div class="game-hud" aria-live="polite" aria-atomic="false">
+            <div class="game-hud">
               <span class="hud-score" id="g-score">Score: 0</span>
-              <span class="hud-hint">← ↓ →</span>
+              <span class="hud-group"><span id="g-combo">Combo 0</span><span class="hud-best" id="g-best"></span><button type="button" class="gt-sound" id="g-sound" aria-pressed="false">🔈 Sound off</button></span>
             </div>
-            <canvas id="rhythm-canvas" width="480" height="300" tabindex="0" aria-label="Rhythm tap game — press or tap left, down, or right when a note crosses the line"></canvas>
-            <div class="game-msg" id="g-msg" role="status" aria-live="assertive"><span id="g-msg-title"></span><span id="g-msg-sub"></span><button class="game-btn" id="g-restart">Play Again ↺</button></div>
+            <canvas id="rhythm-canvas" width="480" height="300" aria-label="Rhythm tap game. Press left, down, or right when a note crosses the line in that lane." aria-describedby="rhythm-status"></canvas>
           </div>
-          <p class="game-focus-hint">💡 Click inside the game first — that gives it keyboard focus so ← ↓ → hit notes instead of scrolling the page.</p>
+          <p class="sr-only" id="rhythm-status" aria-live="polite"></p>
+          <p class="game-focus-hint">Keys only work while the game has focus. Press <kbd>P</kbd> or <kbd>Esc</kbd> to pause.</p>
 
-          <div class="config-panel">
+          <div class="config-panel" id="config-panel">
             <h3>Tune the Game (limited, on purpose)</h3>
+            <p class="config-lede"><strong>Content</strong> settings change how it looks and apply instantly. <strong>Rule</strong> settings change how it plays, so the round restarts.</p>
             <div class="config-grid">
               <div class="config-field">
                 <label for="c-theme">Note Theme</label>
-                <select id="c-theme">
+                <select id="c-theme" data-cfg="theme" data-peek="cfg-theme">
                   <option value="drum">🥁 Drum</option>
                   <option value="piano">🎹 Piano</option>
                   <option value="neon">✨ Neon</option>
                 </select>
               </div>
               <div class="config-field">
-                <label for="c-speed">Note Speed <output id="c-speed-out">3</output></label>
-                <input type="range" id="c-speed" min="1" max="6" step="1" value="3" />
+                <label for="c-speed">Note Speed <output id="c-speed-out" for="c-speed">3</output></label>
+                <input type="range" id="c-speed" min="1" max="6" step="1" value="3" data-cfg="speed" data-peek="cfg-speed" data-rule />
               </div>
               <div class="config-field">
-                <label for="c-window">Timing Forgiveness <output id="c-window-out">2</output></label>
-                <input type="range" id="c-window" min="1" max="3" step="1" value="2" />
+                <label for="c-window">Timing Forgiveness <output id="c-window-out" for="c-window">2</output></label>
+                <input type="range" id="c-window" min="1" max="3" step="1" value="2" data-cfg="window" data-peek="cfg-window" data-rule />
               </div>
               <div class="config-field">
-                <label for="c-win">Score to Win <output id="c-win-out">30</output></label>
-                <input type="range" id="c-win" min="15" max="60" step="5" value="30" />
+                <label for="c-win">Score to Win <output id="c-win-out" for="c-win">30</output></label>
+                <input type="range" id="c-win" min="15" max="60" step="5" value="30" data-cfg="winScore" data-peek="cfg-winscore" data-rule />
               </div>
             </div>
-            <button class="btn-apply" id="c-apply">Apply &amp; Restart</button>
+            <div class="config-actions"></div>
             <p class="config-note">Notice what you <em>can't</em> change here: there's no field for "how Perfect vs. Good is decided" or "how notes are spawned." That's the engine — the part every version of this game shares. You're only tuning content, not rewriting architecture. That's the limit, on purpose.</p>
             <p class="config-note"><strong>What the sliders actually touch in the engine:</strong> <strong>Note Speed</strong> feeds two places at once — it shortens the spawn timer (<code>max(70 − speed×6, 30)</code>) and speeds up how fast notes fall (<code>1.2 + speed×0.9</code> pixels/frame) — so faster songs also arrive more often. <strong>Timing Forgiveness</strong> only widens the <code>perfectWindow</code> (<code>10 + window×8</code> pixels) that <code>onKeyPress()</code> compares your tap distance against — the Perfect/Good/Miss scoring math itself never changes.</p>
           </div>
@@ -226,7 +140,7 @@
   winScore: <span class="num" id="cfg-winscore">30</span>
 };</pre>
           </div>
-          <p class="config-note" style="margin-top:-0.3rem;">👆 This block updates live — hit "Apply &amp; Restart" above and watch the exact values change here. There's no separate "demo" version of the code; this <em>is</em> it.</p>
+          <p class="config-note" style="margin-top:-0.3rem;">👆 This block updates live. Change anything in the panel and the matching value flashes here. There's no separate "demo" version of the code; this <em>is</em> it.</p>
 
           <span class="code-tag locked">🔒 Engine — locked, shared by every version of this game</span>
           <div class="code-block">
@@ -245,13 +159,46 @@
   <span class="kw">else if</span> (distance &lt; goodWindow) { score += <span class="num">1</span>; <span class="fn">flash</span>(<span class="str">'Good'</span>); }
   <span class="kw">else</span> { <span class="fn">flash</span>(<span class="str">'Miss'</span>); <span class="kw">return</span>; }
 
-  <span class="cm">// 4. remove the note either way it was hit</span>
+  <span class="cm">// 4. a hit removes the note and grows the combo</span>
   <span class="fn">removeNote</span>(note);
-}</pre>
+  combo++;
+}
+
+<span class="cm">// every tick: a note that falls past the line is a miss</span>
+<span class="kw">if</span> (note.y &gt; targetY + goodWindow) { <span class="fn">removeNote</span>(note); combo = <span class="num">0</span>; <span class="fn">flash</span>(<span class="str">'Miss'</span>); }</pre>
           </div>
 
           <div class="callout violet">
             <strong>This is what "architecture" means in practice:</strong> the config is the part of the design doc you filled out in Lesson 1 (goal, mechanic, feedback). The engine is the part no one writes twice — the same spawn, scroll, and timing-window systems power every rhythm game, from this one to the arcade cabinets that started the genre.
+          </div>
+        </section>
+
+        <!-- Remix -->
+        <section class="cl-card">
+          <h2>🧪 Remix Challenges</h2>
+          <p>The panel can only turn the knobs the engine exposes. To change the <em>rules</em>, you change the engine. Each challenge edits one system. Try them in your own copy once you've built it in Lesson 2.</p>
+          <div class="gt-remix">
+            <details>
+              <summary><span class="gt-tier tweak">Tweak</span><span><strong>Combo multiplier</strong><small>Scoring system · one line</small></span></summary>
+              <div class="gt-remix-body">
+                <p>Make streaks worth more: every 10 hits in a row adds ×1 to each hit's points. Now a single miss hurts a lot more. Is that more fun or just more stressful?</p>
+                <div class="code-block"><pre>score += (perfect ? <span class="num">3</span> : <span class="num">1</span>) * (<span class="num">1</span> + <span class="fn">Math.floor</span>(combo / <span class="num">10</span>));</pre></div>
+              </div>
+            </details>
+            <details>
+              <summary><span class="gt-tier twist">Twist</span><span><strong>Write a real chart</strong><small>Replace the random spawner</small></span></summary>
+              <div class="gt-remix-body">
+                <p>Real rhythm games don't pick lanes at random. A designer writes a <em>chart</em> that lines each note up with a song. Replace <code>spawnNote()</code>'s random lane with the next entry in an array, and you've gone from a game to a level editor.</p>
+                <div class="code-block"><pre><span class="kw">const</span> chart = [<span class="num">0</span>, <span class="num">1</span>, <span class="num">2</span>, <span class="num">1</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">2</span>, <span class="num">2</span>];   <span class="cm">// lane per beat</span>
+<span class="kw">const</span> lane = chart[beat % chart.length];</pre></div>
+              </div>
+            </details>
+            <details>
+              <summary><span class="gt-tier transform">Transform</span><span><strong>Add a way to lose</strong><small>New system: health</small></span></summary>
+              <div class="gt-remix-body">
+                <p>Right now you can't lose, only win slowly. Add a health bar: every miss drains it and every Perfect refills a little. At zero, the song stops. One new system changes the game's whole emotional shape.</p>
+              </div>
+            </details>
           </div>
         </section>
 
@@ -282,13 +229,7 @@
             </span>
           </a>
 
-          <a class="next-card" href="../game-design-thinking.html">
-            <span class="next-card-icon">↩️</span>
-            <span>
-              <strong>Back to the Archetype Grid</strong>
-              <small>Return to What Makes a Game? to try another tiny-loop archetype or the design workshop.</small>
-            </span>
-          </a>
+          <div class="gt-pager" data-gt-pager></div>
         </section>
 
       </main>
@@ -321,45 +262,81 @@
   </div><!-- /.ll-stage -->
 </div><!-- /.ll-viewport -->
 
+<script src="../../../../assets/js/sim-kit.js"></script>
+<script src="../../../../assets/js/game-tutorial-kit.js"></script>
 <script>
   (function () {
-    const canvas = document.getElementById('rhythm-canvas');
-    const ctx = canvas.getContext('2d');
-    const W = canvas.width, H = canvas.height;
-    const TARGET_Y = H - 50;
+    const W = 480, H = 300;
+    const TARGET_Y = H - 56;
     const LANES = [W * 0.25, W * 0.5, W * 0.75];
-    const LANE_KEYS = { ArrowLeft: 0, ArrowDown: 1, ArrowRight: 2 };
-
+    const LANE_KEYS = ['←', '↓', '→'];
+    const PITCH = [262, 330, 392];               // C4 E4 G4 — one note per lane
     const themes = {
-      drum: { note: '🥁', color: '#f97316' },
+      drum:  { note: '🥁', color: '#f97316' },
       piano: { note: '🎹', color: '#60a5fa' },
-      neon: { note: '✨', color: '#e879f9' }
+      neon:  { note: '✨', color: '#e879f9' }
     };
 
-    let config = { theme: 'drum', speed: 3, window: 2, winScore: 30 };
+    const $ = id => document.getElementById(id);
+    const announce = msg => { $('rhythm-status').textContent = msg; };
 
-    let notes, score, spawnTimer, running, ended, flashText, flashTimer;
+    /* Sound: opt-in (a class of 30 laptops), remembered per viewer. */
+    let audio = null;
+    let soundOn = false;
+    try { soundOn = localStorage.getItem('gt-rhythm-sound') === '1'; } catch (e) { /* private mode */ }
+    function syncSoundBtn() {
+      $('g-sound').setAttribute('aria-pressed', String(soundOn));
+      $('g-sound').textContent = soundOn ? '🔊 Sound on' : '🔈 Sound off';
+    }
+    function blip(freq, gain, dur) {
+      if (!soundOn) return;
+      try {
+        audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+        if (audio.state === 'suspended') audio.resume();
+        const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime;
+        o.type = 'triangle';
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(gain, t);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g).connect(audio.destination);
+        o.start(t); o.stop(t + dur);
+      } catch (e) { /* no audio available */ }
+    }
+    $('g-sound').addEventListener('click', () => {
+      soundOn = !soundOn;
+      try { localStorage.setItem('gt-rhythm-sound', soundOn ? '1' : '0'); } catch (e) { /* ignore */ }
+      syncSoundBtn();
+      blip(523, 0.15, 0.12);
+    });
+    syncSoundBtn();
+
+    let config;
+    let notes, score, combo, bestCombo, perfects, goods, misses, spawnTimer, flashText, flashColor, flashTimer, laneGlow, beatPulse;
 
     function reset() {
       notes = [];
       score = 0;
+      combo = 0; bestCombo = 0;
+      perfects = 0; goods = 0; misses = 0;
       spawnTimer = 0;
-      running = true;
-      ended = false;
-      flashText = '';
-      flashTimer = 0;
-      document.getElementById('g-msg').classList.remove('show');
+      flashText = ''; flashTimer = 0;
+      laneGlow = [0, 0, 0];
+      beatPulse = 0;
       updateHUD();
     }
 
+    const fallSpeed = () => 1.2 + config.speed * 0.9;
+    const spawnRate = () => Math.max(70 - config.speed * 6, 30);
+    const perfectWindow = () => 10 + config.window * 8;
+
     function updateHUD() {
-      document.getElementById('g-score').textContent = 'Score: ' + score;
+      $('g-score').textContent = 'Score: ' + score;
+      $('g-combo').textContent = 'Combo ' + combo;
+      const b = GameTutorial.best('rhythm', 'combo').best;
+      $('g-best').textContent = b ? 'Best combo ' + b : '';
     }
 
-    function spawnNote() {
-      const lane = Math.floor(Math.random() * 3);
-      notes.push({ lane, y: -20 });
-    }
+    function flash(text, color) { flashText = text; flashColor = color; flashTimer = 30; }
 
     function closestNoteInLane(lane) {
       let best = null;
@@ -370,157 +347,145 @@
       return best;
     }
 
-    function flash(text) {
-      flashText = text;
-      flashTimer = 30;
+    function miss() {
+      misses++;
+      combo = 0;
+      flash('Miss', '#fca5a5');
+      updateHUD();
     }
 
-    function onKeyPress(lane) {
-      if (!running) return;
+    function onLane(lane) {
+      laneGlow[lane] = 10;
       const note = closestNoteInLane(lane);
       if (!note) return;
-
       const distance = Math.abs(note.y - TARGET_Y);
-      const perfectWindow = 10 + config.window * 8;
-      const goodWindow = perfectWindow * 2;
-
-      if (distance < perfectWindow) { score += 3; flash('Perfect!'); }
-      else if (distance < goodWindow) { score += 1; flash('Good'); }
-      else { flash('Miss'); return; }
-
+      const pw = perfectWindow();
+      if (distance < pw) { score += 3; perfects++; flash('Perfect!', '#fde047'); blip(PITCH[lane] * 2, 0.2, 0.18); }
+      else if (distance < pw * 2) { score += 1; goods++; flash('Good', '#86efac'); blip(PITCH[lane], 0.15, 0.14); }
+      else { miss(); return; }
       notes = notes.filter(n => n !== note);
+      combo++;
+      if (combo > bestCombo) bestCombo = combo;
       updateHUD();
-      if (score >= config.winScore) endGame();
+      if (score >= config.winScore) finish();
     }
 
-    document.addEventListener('keydown', e => {
-      if (e.code in LANE_KEYS) {
-        e.preventDefault();
-        onKeyPress(LANE_KEYS[e.code]);
-      }
-    });
-    canvas.addEventListener('click', () => canvas.focus());
-
-    function endGame() {
-      running = false;
-      ended = true;
-      document.getElementById('g-msg-title').textContent = '🎉 You Won!';
-      document.getElementById('g-msg-sub').textContent = `Reached ${config.winScore} points.`;
-      document.getElementById('g-msg').classList.add('show');
+    function finish() {
+      const record = GameTutorial.best('rhythm', 'combo', bestCombo);
+      updateHUD();
+      const total = perfects + goods + misses;
+      const acc = Math.round((perfects + goods * 0.5) / Math.max(total, 1) * 100);
+      game.end({
+        title: '🎉 Song Cleared!',
+        sub: `${perfects} Perfect · ${goods} Good · ${misses} Miss · ${acc}% accuracy · best combo ${bestCombo}.` + (record.isNew && bestCombo > 0 ? ' New best combo!' : '')
+      });
+      announce(`Song cleared with ${acc} percent accuracy.`);
     }
 
     function update() {
-      if (!running) return;
-
-      spawnTimer++;
-      const spawnRate = Math.max(70 - config.speed * 6, 30);
-      if (spawnTimer > spawnRate) { spawnNote(); spawnTimer = 0; }
-
-      notes.forEach(n => n.y += 1.2 + config.speed * 0.9);
-      notes = notes.filter(n => n.y < H + 20);
+      // 1. SPAWN on a steady beat
+      if (++spawnTimer > spawnRate()) {
+        notes.push({ lane: Math.floor(Math.random() * 3), y: -20 });
+        spawnTimer = 0;
+      }
+      // 2. SCROLL toward the line
+      notes.forEach(n => { n.y += fallSpeed(); });
+      // a note arriving at the line = the beat; pulse it (and tick, if sound is on)
+      notes.forEach(n => {
+        if (!n.beat && n.y >= TARGET_Y) { n.beat = true; beatPulse = 8; blip(110, 0.05, 0.05); }
+      });
+      // 3. anything past the Good window is a miss
+      const late = TARGET_Y + perfectWindow() * 2;
+      notes = notes.filter(n => { if (n.y > late) { miss(); return false; } return true; });
 
       if (flashTimer > 0) flashTimer--;
+      if (beatPulse > 0) beatPulse--;
+      laneGlow = laneGlow.map(v => Math.max(0, v - 1));
     }
 
-    function render() {
+    function render(ctx) {
+      const theme = themes[config.theme] || themes.drum;
       ctx.fillStyle = '#0a0a1f';
       ctx.fillRect(0, 0, W, H);
 
-      const theme = themes[config.theme];
-
-      LANES.forEach(x => {
+      LANES.forEach((x, i) => {
+        if (laneGlow[i]) {
+          const grad = ctx.createLinearGradient(0, 0, 0, TARGET_Y);
+          grad.addColorStop(0, 'rgba(255,255,255,0)');
+          grad.addColorStop(1, `rgba(255,255,255,${laneGlow[i] * 0.015})`);
+          ctx.fillStyle = grad;
+          ctx.fillRect(x - 40, 0, 80, TARGET_Y);
+        }
         ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, H);
-        ctx.stroke();
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
       });
 
+      // Perfect zone band + target line (pulses on the beat)
+      const pw = perfectWindow();
+      ctx.fillStyle = 'rgba(255,255,255,0.05)';
+      ctx.fillRect(20, TARGET_Y - pw, W - 40, pw * 2);
       ctx.strokeStyle = theme.color;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(20, TARGET_Y);
-      ctx.lineTo(W - 20, TARGET_Y);
-      ctx.stroke();
+      ctx.lineWidth = 3 + (game.reducedMotion ? 0 : beatPulse * 0.4);
+      ctx.beginPath(); ctx.moveTo(20, TARGET_Y); ctx.lineTo(W - 20, TARGET_Y); ctx.stroke();
       ctx.lineWidth = 1;
 
-      ctx.font = '26px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
+      ctx.font = '26px sans-serif';
+      ctx.fillStyle = '#fff';                     // emoji glyphs inherit fillStyle's alpha
       notes.forEach(n => ctx.fillText(theme.note, LANES[n.lane], n.y));
+
+      ctx.font = '700 13px Inter, system-ui, sans-serif';
+      LANES.forEach((x, i) => {
+        ctx.fillStyle = laneGlow[i] ? '#fff' : 'rgba(226,232,240,0.45)';
+        ctx.fillText(LANE_KEYS[i], x, H - 22);
+      });
 
       if (flashTimer > 0) {
         ctx.globalAlpha = Math.min(1, flashTimer / 15);
-        ctx.font = 'bold 20px sans-serif';
-        ctx.fillStyle = '#fff';
-        ctx.fillText(flashText, W / 2, TARGET_Y - 40);
+        ctx.font = '800 20px Inter, system-ui, sans-serif';
+        ctx.fillStyle = flashColor;
+        ctx.fillText(flashText, W / 2, TARGET_Y - 48);
+        if (combo >= 5) {
+          ctx.font = '600 12px Inter, system-ui, sans-serif';
+          ctx.fillStyle = '#e2e8f0';
+          ctx.fillText(combo + ' combo', W / 2, TARGET_Y - 28);
+        }
         ctx.globalAlpha = 1;
       }
     }
 
-    function loop() {
-      update();
-      render();
-      requestAnimationFrame(loop);
-    }
-
-    document.getElementById('g-restart').addEventListener('click', reset);
-
-    document.getElementById('c-speed').addEventListener('input', e => {
-      document.getElementById('c-speed-out').textContent = e.target.value;
-    });
-    document.getElementById('c-window').addEventListener('input', e => {
-      document.getElementById('c-window-out').textContent = e.target.value;
-    });
-    document.getElementById('c-win').addEventListener('input', e => {
-      document.getElementById('c-win-out').textContent = e.target.value;
+    config = GameTutorial.bindConfig({
+      panel: $('config-panel'),
+      onChange: (cfg, change) => { if (change.rule) game.restart(); },
+      onRestart: () => game.restart()
     });
 
-    function updateCodePeek() {
-      document.getElementById('cfg-theme').textContent = config.theme;
-      document.getElementById('cfg-speed').textContent = config.speed;
-      document.getElementById('cfg-window').textContent = config.window;
-      document.getElementById('cfg-winscore').textContent = config.winScore;
-    }
-
-    document.getElementById('c-apply').addEventListener('click', () => {
-      config = {
-        theme: document.getElementById('c-theme').value,
-        speed: Number(document.getElementById('c-speed').value),
-        window: Number(document.getElementById('c-window').value),
-        winScore: Number(document.getElementById('c-win').value)
-      };
-      updateCodePeek();
-      reset();
-      canvas.focus();
+    const game = GameTutorial.canvasGame({
+      slug: 'rhythm',
+      canvas: $('rhythm-canvas'),
+      width: W, height: H,
+      actions: { l0: ['ArrowLeft', 'KeyA', 'KeyJ'], l1: ['ArrowDown', 'KeyS', 'KeyK'], l2: ['ArrowRight', 'KeyD', 'KeyL'] },
+      onPress: name => onLane(Number(name.slice(1))),
+      onPointer: x => onLane(x < W / 3 ? 0 : x < W * 2 / 3 ? 1 : 2),
+      touch: { buttons: [
+        { label: '←', aria: 'Left lane', action: 'l0' },
+        { label: '↓', aria: 'Middle lane', action: 'l1' },
+        { label: '→', aria: 'Right lane', action: 'l2' }
+      ] },
+      readyTitle: '🎵 Rhythm Tap',
+      readySub: 'Hit each note as it crosses the line. Perfect = 3, Good = 1.',
+      keysHint: '<kbd>←</kbd> <kbd>↓</kbd> <kbd>→</kbd> · or tap a lane',
+      reset, update, render
     });
 
-    updateCodePeek();
-    reset();
-    loop();
+    GameTutorial.mountSeries('rhythm');
   })();
-
-  /* Panel tabs */
-  document.querySelectorAll('.ll-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      const pane = tab.dataset.pane;
-      document.querySelectorAll('.ll-tab').forEach(t => t.setAttribute('aria-selected','false'));
-      document.querySelectorAll('.ll-pane').forEach(p => p.classList.remove('ll-active'));
-      tab.setAttribute('aria-selected','true');
-      document.getElementById(pane).classList.add('ll-active');
-    });
-  });
-
-  /* Panel toggle */
-  const openBtn = document.querySelector('.ll-open-btn');
-  const closeBtn = document.querySelector('.ll-panel-close');
-  const panel = document.querySelector('.ll-panel');
-  if (openBtn) openBtn.addEventListener('click', () => panel.classList.add('ll-panel--open'));
-  if (closeBtn) closeBtn.addEventListener('click', () => panel.classList.remove('ll-panel--open'));
 </script>
 <script src="../../../../assets/vendor/blockly.min.js"></script>
 <script src="../../../../assets/js/game-tutorial-blockly.js"></script>
-<script src="../../../../assets/js/game-tutorial-controls.js"></script>
+<script src="../../../../assets/js/lesson-layout.js"></script>
 <script src="../../../../assets/js/reveal.js"></script>
 <script src="../../../../assets/js/theme-registry.js"></script>
 <script src="../../../../assets/js/nav-mobile.js"></script>

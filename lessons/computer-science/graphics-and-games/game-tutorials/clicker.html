@@ -10,107 +10,23 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../../assets/css/game-tutorial.css" />
   <style>
-    .cl-page { padding-bottom: 0; }
-    .ll-viewport { --ll-panel-w: 300px; }
-
-    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
-    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
-    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
-    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
-    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
-    [data-lighting="night"] .cl-lede { color: rgba(245,245,247,0.7); }
-
-    :root { --acc: #8b5cf6; --acc-soft: rgba(139,92,246,0.12); --acc-border: rgba(139,92,246,0.3); }
-
-    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent, var(--acc)); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
-    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
-    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
-    .cl-card p  { margin: 0 0 0.6rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
-    .cl-card p:last-child { margin-bottom: 0; }
-    [data-lighting="night"] .cl-card { background: var(--white,#2c2c2e); }
-    [data-lighting="night"] .cl-card p { color: rgba(245,245,247,0.72); }
-
-    .callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
-    .callout.violet { background: rgba(139,92,246,0.09); border-left: 3px solid var(--acc); color: var(--text-secondary, #3f4f65); }
-    [data-lighting="night"] .callout.violet { color: rgba(245,245,247,0.72); }
-    .callout strong { color: var(--text,#1d1d1f); }
-
-    .stages-flow { display: flex; align-items: stretch; gap: 0.55rem; margin: 0.9rem 0; flex-wrap: wrap; }
-    .stages-step { flex: 1 1 150px; border-radius: 14px; padding: 0.9rem 0.85rem; border: 1.5px solid var(--acc-border); background: var(--acc-soft); text-align: center; }
-    .stages-step-icon { font-size: 1.4rem; display: block; margin-bottom: 0.3rem; }
-    .stages-step strong { display: block; font-size: 0.86rem; margin-bottom: 0.25rem; }
-    .stages-step small { font-size: 0.76rem; color: var(--text-muted, #64748b); line-height: 1.45; display: block; }
-    [data-lighting="night"] .stages-step small { color: rgba(245,245,247,0.65); }
-    .stages-arrow { display: flex; align-items: center; justify-content: center; color: var(--text-muted, #64748b); font-size: 1.3rem; }
-    @media (max-width: 700px) { .stages-flow { flex-direction: column; } .stages-arrow { transform: rotate(90deg); } }
-
-    .systems-list { margin: 0.4rem 0 0; padding-left: 1.1rem; font-size: 0.85rem; color: var(--text-secondary, #3f4f65); line-height: 1.7; }
-    [data-lighting="night"] .systems-list { color: rgba(245,245,247,0.72); }
-
-    /* Live game (DOM-based, not canvas) */
-    .game-wrap { border: 2px solid var(--acc-border); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; position: relative; }
-    .game-stage { min-height: 260px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.9rem; padding: 1.2rem; }
-    .game-hud { display: flex; justify-content: space-between; width: 100%; padding: 0.4rem 0.9rem; background: rgba(0,0,0,0.6); font-size: 0.78rem; font-weight: 600; color: #e2e8f0; box-sizing: border-box; }
-    .game-hud .hud-score { color: #a78bfa; }
-    .game-hud .hud-power { color: #4ade80; }
-    .clicker-target { font-size: 5rem; line-height: 1; background: none; border: none; color: #fff; cursor: pointer; transition: transform 0.08s; user-select: none; }
-    .clicker-target:active { transform: scale(0.88); }
+    .game-stage { min-height: 280px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.9rem; }
+    .clicker-goal { width: min(320px, 90%); height: 6px; border-radius: 3px; background: rgba(255,255,255,0.12); overflow: hidden; }
+    .clicker-goal-fill { height: 100%; width: 0; background: #a78bfa; transition: width 0.15s ease; }
+    .clicker-pad { position: relative; }
+    .clicker-target { font-size: 5rem; line-height: 1; background: none; border: none; color: #fff; cursor: pointer; transition: transform 0.08s; -webkit-user-select: none; user-select: none; touch-action: manipulation; border-radius: 50%; padding: 0.2rem; }
+    .clicker-target:active, .clicker-target.is-hit { transform: scale(0.88); }
     .clicker-target:focus-visible, .btn-upgrade:focus-visible { outline: 3px solid var(--acc); outline-offset: 3px; }
-    .upgrade-row { display: flex; align-items: center; gap: 0.7rem; }
-    .btn-upgrade { background: var(--acc); color: #fff; border: none; border-radius: 9px; padding: 0.5rem 1rem; font-size: 0.84rem; font-weight: 700; cursor: pointer; font-family: inherit; }
-    .btn-upgrade:hover:not(:disabled) { opacity: 0.85; }
-    .btn-upgrade:disabled { opacity: 0.4; cursor: not-allowed; }
-    .upgrade-hint { font-size: 0.76rem; color: #cbd5e1 !important; }
-    .game-btn { display: block; margin: 0.3rem auto 0; background: var(--acc); color: #fff; border: none; border-radius: 8px; padding: 0.4rem 1.2rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .game-btn:hover { opacity: 0.85; }
-    .game-msg { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 0.5rem; background: rgba(10,10,15,0.86); color: #fff; text-align: center; font-size: 1rem; font-weight: 700; }
-    .game-msg.show { display: flex; }
-    .game-msg span { font-size: 0.78rem; font-weight: 500; color: #cbd5e1; }
-    .bg-space { background: #0a0a1f; } .bg-forest { background: #0c1f14; } .bg-lab { background: #0a1a1f; }
-
-    /* Config / limits panel */
-    .config-panel { border: 1.5px solid var(--acc-border); border-radius: 16px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; background: var(--acc-soft); }
-    .config-panel h3 { margin: 0 0 0.75rem; font-size: 1rem; color: var(--acc); }
-    .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem 1rem; }
-    @media (max-width: 560px) { .config-grid { grid-template-columns: 1fr; } }
-    .config-field label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary, #3f4f65); margin-bottom: 0.25rem; }
-    [data-lighting="night"] .config-field label { color: rgba(245,245,247,0.75); }
-    .config-field select, .config-field input[type="range"] {
-      width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--line,#d2d2d7); border-radius: 8px;
-      font-size: 0.84rem; font-family: inherit; background: var(--white,#fff); color: var(--text,#1d1d1f); box-sizing: border-box;
-    }
-    .config-field output { font-size: 0.76rem; color: var(--text-muted, #64748b); margin-left: 0.3rem; }
-    .btn-apply { margin-top: 0.9rem; background: var(--acc); color: #fff; border: none; border-radius: 9px; padding: 0.45rem 1.1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .btn-apply:hover { opacity: 0.85; }
-    .config-note { font-size: 0.74rem; color: var(--text-muted, #64748b); margin-top: 0.6rem; }
-
-    .code-block { background: #0f172a; border-radius: 12px; padding: 0.9rem 1.1rem; margin: 0.7rem 0; overflow-x: auto; }
-    .code-block pre { margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 0.79rem; line-height: 1.7; color: #e2e8f0; white-space: pre; }
-    .code-block .kw  { color: #c084fc; }
-    .code-block .fn  { color: #60a5fa; }
-    .code-block .str { color: #4ade80; }
-    .code-block .cm  { color: #94a3b8; font-style: italic; }
-    .code-block .num { color: #fb923c; }
-    .code-tag { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.55rem; border-radius: 999px; margin-bottom: 0.4rem; }
-    .code-tag.editable { background: rgba(34,197,94,0.14); color: #16a34a; }
-    .code-tag.locked   { background: rgba(148,163,184,0.18); color: var(--text-muted, #64748b); }
-
-    .scratch-box { border: 1.5px solid rgba(255,171,25,0.35); border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; background: rgba(255,191,0,0.06); }
-    [data-lighting="night"] .scratch-box { background: rgba(255,191,0,0.09); }
-    .scratch-box h4 { margin: 0 0 0.5rem; font-size: 0.86rem; letter-spacing: -0.01em; color: #b45309; display: flex; align-items: center; gap: 0.4rem; }
-    [data-lighting="night"] .scratch-box h4 { color: #fbbf24; }
-    .scratch-box p { font-size: 0.83rem; color: var(--text-secondary, #3f4f65); margin: 0.5rem 0 0; line-height: 1.55; }
-    [data-lighting="night"] .scratch-box p { color: rgba(245,245,247,0.72); }
-    .scratch-link { display: inline-block; margin-top: 0.6rem; font-size: 0.78rem; font-weight: 700; color: #b45309; text-decoration: none; border-bottom: 1.5px solid rgba(180,83,9,0.4); }
-    [data-lighting="night"] .scratch-link { color: #fbbf24; border-color: rgba(251,191,36,0.4); }
-    .scratch-link:hover { border-color: currentColor; }
-
-    .next-card { display: flex; align-items: center; gap: 0.9rem; border: 1.5px solid var(--acc-border); border-radius: 14px; padding: 0.9rem 1.1rem; margin-top: 0.8rem; text-decoration: none; }
-    .next-card:hover { background: var(--acc-soft); }
-    .next-card-icon { font-size: 1.6rem; flex-shrink: 0; }
-    .next-card strong { display: block; font-size: 0.9rem; color: var(--text,#1d1d1f); }
-    .next-card small { font-size: 0.8rem; color: var(--text-muted, #64748b); }
+    .clicker-pop { position: absolute; left: 50%; top: 10%; pointer-events: none; font: 800 1rem Inter, system-ui, sans-serif; color: #86efac; animation: clicker-pop 0.7s ease-out forwards; }
+    @keyframes clicker-pop { from { opacity: 1; transform: translate(-50%, 0); } to { opacity: 0; transform: translate(-50%, -40px); } }
+    .upgrade-row { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; justify-content: center; }
+    .btn-upgrade { background: var(--acc-solid); color: #fff; border: none; border-radius: 9px; padding: 0.55rem 1rem; min-height: 2.6rem; font-size: 0.84rem; font-weight: 700; cursor: pointer; font-family: inherit; }
+    .btn-upgrade:hover:not(:disabled) { filter: brightness(1.1); }
+    .btn-upgrade:disabled { opacity: 0.45; cursor: not-allowed; }
+    .upgrade-hint { font-size: 0.76rem; color: #cbd5e1; }
+    @media (prefers-reduced-motion: reduce) { .clicker-pop { animation: none; opacity: 0; } .clicker-target { transition: none; } }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -137,6 +53,8 @@
   <div class="ll-stage">
     <div class="ll-sim">
       <main id="main-content" class="cl-page">
+
+        <nav class="gt-series" data-gt-series aria-label="Tiny-loop tutorial series"></nav>
 
         <section class="hero cl-hero">
           <p class="eyebrow">Game Design &amp; Development · Tiny-Loop Tutorial · Archetype #3</p>
@@ -176,29 +94,32 @@
         <!-- Play + Customize -->
         <section class="cl-card">
           <h2>🎮 Play &amp; Customize</h2>
-          <p>Click the sprite to earn points. Buy the upgrade when you can afford it to earn more per click. Reach the score goal to win.</p>
+          <p>Click the sprite (or focus it and press <strong>Space</strong>) to earn points. Buy the upgrade when you can afford it to earn more per click. Reach the goal in as few clicks as you can. <em>When</em> you buy each upgrade is the whole strategy.</p>
 
           <div class="game-wrap">
-            <div class="game-hud" aria-live="polite" aria-atomic="false">
+            <div class="game-hud">
               <span class="hud-score" id="g-score">Score: 0</span>
-              <span class="hud-power" id="g-power">+1 / click</span>
+              <span class="hud-group"><span class="hud-power" id="g-power">+1 / click</span><span id="g-clicks">0 clicks</span><span class="hud-best" id="g-best"></span></span>
             </div>
             <div class="game-stage" id="g-stage">
-              <button class="clicker-target" id="g-target" aria-label="Click to earn points">🍪</button>
+              <div class="clicker-goal" aria-hidden="true"><div class="clicker-goal-fill" id="g-progress"></div></div>
+              <div class="clicker-pad" id="g-pad">
+                <button class="clicker-target" id="g-target" aria-label="Click to earn points">🍪</button>
+              </div>
               <div class="upgrade-row">
                 <button class="btn-upgrade" id="g-upgrade">Buy Upgrade (10 pts)</button>
                 <span class="upgrade-hint" id="g-upgrade-hint">+1 click power</span>
               </div>
             </div>
-            <div class="game-msg" id="g-msg" role="status" aria-live="assertive"><span id="g-msg-title"></span><span id="g-msg-sub"></span><button class="game-btn" id="g-restart">Play Again ↺</button></div>
           </div>
 
-          <div class="config-panel">
+          <div class="config-panel" id="config-panel">
             <h3>Tune the Game (limited, on purpose)</h3>
+            <p class="config-lede"><strong>Content</strong> settings change how it looks and apply instantly. <strong>Rule</strong> settings change how it plays, so the round restarts.</p>
             <div class="config-grid">
               <div class="config-field">
                 <label for="c-target">Target Sprite</label>
-                <select id="c-target">
+                <select id="c-target" data-cfg="target" data-peek="cfg-target">
                   <option value="🍪">🍪 Cookie</option>
                   <option value="💎">💎 Gem</option>
                   <option value="🐷">🐷 Piggy Bank</option>
@@ -207,22 +128,22 @@
               </div>
               <div class="config-field">
                 <label for="c-bg">Background</label>
-                <select id="c-bg">
+                <select id="c-bg" data-cfg="bg" data-peek="cfg-bg">
                   <option value="space">🌌 Space</option>
                   <option value="forest">🌲 Forest</option>
                   <option value="lab">🧪 Lab</option>
                 </select>
               </div>
               <div class="config-field">
-                <label for="c-cost">Starting Upgrade Cost <output id="c-cost-out">10</output></label>
-                <input type="range" id="c-cost" min="5" max="40" step="5" value="10" />
+                <label for="c-cost">Starting Upgrade Cost <output id="c-cost-out" for="c-cost">10</output></label>
+                <input type="range" id="c-cost" min="5" max="40" step="5" value="10" data-cfg="upgradeCost" data-peek="cfg-upgradecost" data-rule />
               </div>
               <div class="config-field">
-                <label for="c-win">Score to Win <output id="c-win-out">100</output></label>
-                <input type="range" id="c-win" min="30" max="300" step="10" value="100" />
+                <label for="c-win">Score to Win <output id="c-win-out" for="c-win">100</output></label>
+                <input type="range" id="c-win" min="30" max="300" step="10" value="100" data-cfg="winScore" data-peek="cfg-winscore" data-rule />
               </div>
             </div>
-            <button class="btn-apply" id="c-apply">Apply &amp; Restart</button>
+            <div class="config-actions"></div>
             <p class="config-note">Notice what you <em>can't</em> change here: there's no field for "how the upgrade math works" or "how clicking is detected." That's the engine — the part every version of this game shares. You're only tuning content, not rewriting architecture. That's the limit, on purpose.</p>
             <p class="config-note"><strong>What the sliders actually touch in the engine:</strong> <strong>Starting Upgrade Cost</strong> only sets the very first value of <code>upgradeCost</code> — the ×1.6 growth per purchase (<code>Math.round(upgradeCost * 1.6)</code>) is fixed either way, so a higher start just means every later upgrade costs proportionally more too. <strong>Score to Win</strong> only changes the number <code>score</code> is compared against; the +1-per-upgrade click power math never changes.</p>
           </div>
@@ -242,7 +163,7 @@
   winScore: <span class="num" id="cfg-winscore">100</span>
 };</pre>
           </div>
-          <p class="config-note" style="margin-top:-0.3rem;">👆 This block updates live — hit "Apply &amp; Restart" above and watch the exact values change here. There's no separate "demo" version of the code; this <em>is</em> it.</p>
+          <p class="config-note" style="margin-top:-0.3rem;">👆 This block updates live. Change anything in the panel and the matching value flashes here. There's no separate "demo" version of the code; this <em>is</em> it.</p>
 
           <span class="code-tag locked">🔒 Engine — locked, shared by every version of this game</span>
           <div class="code-block">
@@ -264,6 +185,34 @@ upgradeBtn.<span class="fn">addEventListener</span>(<span class="str">'click'</s
 
           <div class="callout violet">
             <strong>This is what "architecture" means in practice:</strong> the config is the part of the design doc you filled out in Lesson 1 (goal, mechanic, feedback). The engine is the part no one writes twice — the same click/score/upgrade systems power every clicker game from this one to Cookie Clicker itself.
+          </div>
+        </section>
+
+        <!-- Remix -->
+        <section class="cl-card">
+          <h2>🧪 Remix Challenges</h2>
+          <p>The panel can only turn the knobs the engine exposes. To change the <em>rules</em>, you change the engine. Each challenge edits one system. Try them in your own copy once you've built it in Lesson 2.</p>
+          <div class="gt-remix">
+            <details>
+              <summary><span class="gt-tier tweak">Tweak</span><span><strong>Critical clicks</strong><small>Score system · one line</small></span></summary>
+              <div class="gt-remix-body">
+                <p>Give every click a 10% chance to count double. The average barely changes, but the <em>feel</em> changes a lot. Randomness is one of the cheapest sources of excitement in game design.</p>
+                <div class="code-block"><pre>score += clickPower * (<span class="fn">Math.random</span>() &lt; <span class="num">0.1</span> ? <span class="num">2</span> : <span class="num">1</span>);</pre></div>
+              </div>
+            </details>
+            <details>
+              <summary><span class="gt-tier twist">Twist</span><span><strong>An auto-clicker</strong><small>New upgrade that works over time</small></span></summary>
+              <div class="gt-remix-body">
+                <p>Add a second shop item that earns points every second without clicking. Now there are two things to spend on, and the question becomes "which one first?" That's the whole idle-game genre in one timer.</p>
+                <div class="code-block"><pre><span class="fn">setInterval</span>(() =&gt; { score += autoPower; <span class="fn">updateHUD</span>(); }, <span class="num">1000</span>);</pre></div>
+              </div>
+            </details>
+            <details>
+              <summary><span class="gt-tier transform">Transform</span><span><strong>Prestige</strong><small>A loop around the loop</small></span></summary>
+              <div class="gt-remix-body">
+                <p>When you hit the goal, offer a choice: keep going, or reset everything to zero in exchange for a permanent ×1.5 on all future points. You've built a second, slower core loop that wraps around the first one. Most long-running clicker games are built this way.</p>
+              </div>
+            </details>
           </div>
         </section>
 
@@ -291,13 +240,7 @@ upgradeBtn.<span class="fn">addEventListener</span>(<span class="str">'click'</s
             </span>
           </a>
 
-          <a class="next-card" href="../game-design-thinking.html">
-            <span class="next-card-icon">↩️</span>
-            <span>
-              <strong>Back to the Archetype Grid</strong>
-              <small>Return to What Makes a Game? to try another tiny-loop archetype or the design workshop.</small>
-            </span>
-          </a>
+          <div class="gt-pager" data-gt-pager></div>
         </section>
 
       </main>
@@ -330,110 +273,104 @@ upgradeBtn.<span class="fn">addEventListener</span>(<span class="str">'click'</s
   </div><!-- /.ll-stage -->
 </div><!-- /.ll-viewport -->
 
+<script src="../../../../assets/js/sim-kit.js"></script>
+<script src="../../../../assets/js/game-tutorial-kit.js"></script>
 <script>
   (function () {
-    const stage = document.getElementById('g-stage');
-    const target = document.getElementById('g-target');
-    const upgradeBtn = document.getElementById('g-upgrade');
-    const upgradeHint = document.getElementById('g-upgrade-hint');
+    const $ = id => document.getElementById(id);
+    const stage = $('g-stage');
+    const target = $('g-target');
+    const pad = $('g-pad');
+    const upgradeBtn = $('g-upgrade');
+    const overlay = GameTutorial.overlay(stage.closest('.game-wrap'));
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    let config = { target: '🍪', bg: 'space', upgradeCost: 10, winScore: 100 };
-    let score, clickPower, upgradeCost, ended;
+    let config;
+    let score, clickPower, upgradeCost, clicks, upgrades, ended;
 
     function reset() {
       score = 0;
       clickPower = 1;
       upgradeCost = config.upgradeCost;
+      clicks = 0;
+      upgrades = 0;
       ended = false;
-      target.textContent = config.target;
-      stage.className = 'game-stage bg-' + config.bg;
-      document.getElementById('g-msg').classList.remove('show');
+      overlay.hide();
+      applyLook();
       updateHUD();
     }
 
+    function applyLook() {
+      target.textContent = config.target;
+      stage.className = 'game-stage bg-' + config.bg;
+    }
+
     function updateHUD() {
-      document.getElementById('g-score').textContent = 'Score: ' + score;
-      document.getElementById('g-power').textContent = '+' + clickPower + ' / click';
+      $('g-score').textContent = 'Score: ' + score;
+      $('g-power').textContent = '+' + clickPower + ' / click';
+      $('g-clicks').textContent = clicks + (clicks === 1 ? ' click' : ' clicks');
+      $('g-progress').style.width = Math.min(100, score / config.winScore * 100) + '%';
       upgradeBtn.textContent = 'Buy Upgrade (' + upgradeCost + ' pts)';
       upgradeBtn.disabled = score < upgradeCost || ended;
-      upgradeHint.textContent = '+1 click power';
+      const b = GameTutorial.best('clicker', 'clicks-' + config.winScore + '-' + config.upgradeCost).best;
+      $('g-best').textContent = b ? 'Best ' + b + ' clicks' : '';
+    }
+
+    function popText(text) {
+      if (reducedMotion) return;
+      const el = document.createElement('span');
+      el.className = 'clicker-pop';
+      el.textContent = text;
+      pad.appendChild(el);
+      setTimeout(() => el.remove(), 700);
     }
 
     function endGame() {
       ended = true;
-      document.getElementById('g-msg-title').textContent = '🎉 You Won!';
-      document.getElementById('g-msg-sub').textContent = `Reached ${config.winScore} points.`;
-      document.getElementById('g-msg').classList.add('show');
+      const key = 'clicks-' + config.winScore + '-' + config.upgradeCost;
+      const record = GameTutorial.best('clicker', key, clicks, true);
       updateHUD();
+      overlay.show({
+        title: '🎉 You Won!',
+        sub: `Reached ${config.winScore} points in ${clicks} clicks with ${upgrades} upgrade${upgrades === 1 ? '' : 's'}.` + (record.isNew ? ' New best!' : ' Could a different upgrade timing beat it?'),
+        button: 'Play Again ↺',
+        onButton: () => { reset(); target.focus(); }
+      });
+      overlay.focusButton();
     }
 
     target.addEventListener('click', () => {
       if (ended) return;
-      score += clickPower;
+      GameTutorial.markPlayed('clicker');
+      score += clickPower;            // 1. click adds current power
+      clicks++;
+      popText('+' + clickPower);
       updateHUD();
-      if (score >= config.winScore) endGame();
+      if (score >= config.winScore) endGame();   // 2. check win condition
     });
 
     upgradeBtn.addEventListener('click', () => {
-      if (ended || score < upgradeCost) return;
-      score -= upgradeCost;
-      clickPower += 1;
+      if (ended || score < upgradeCost) return;  // can't afford it yet
+      score -= upgradeCost;                      // 3. spend score
+      clickPower += 1;                           // permanently earn more per click
+      upgrades++;
       upgradeCost = Math.round(upgradeCost * 1.6);
       updateHUD();
     });
 
-    document.getElementById('g-restart').addEventListener('click', reset);
-
-    document.getElementById('c-cost').addEventListener('input', e => {
-      document.getElementById('c-cost-out').textContent = e.target.value;
-    });
-    document.getElementById('c-win').addEventListener('input', e => {
-      document.getElementById('c-win-out').textContent = e.target.value;
+    config = GameTutorial.bindConfig({
+      panel: $('config-panel'),
+      onChange: (cfg, change) => { if (change.rule) reset(); else { applyLook(); } },
+      onRestart: () => reset()
     });
 
-    function updateCodePeek() {
-      document.getElementById('cfg-target').textContent = config.target;
-      document.getElementById('cfg-bg').textContent = config.bg;
-      document.getElementById('cfg-upgradecost').textContent = config.upgradeCost;
-      document.getElementById('cfg-winscore').textContent = config.winScore;
-    }
-
-    document.getElementById('c-apply').addEventListener('click', () => {
-      config = {
-        target: document.getElementById('c-target').value,
-        bg: document.getElementById('c-bg').value,
-        upgradeCost: Number(document.getElementById('c-cost').value),
-        winScore: Number(document.getElementById('c-win').value)
-      };
-      updateCodePeek();
-      reset();
-    });
-
-    updateCodePeek();
     reset();
+    GameTutorial.mountSeries('clicker');
   })();
-
-  /* Panel tabs */
-  document.querySelectorAll('.ll-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      const pane = tab.dataset.pane;
-      document.querySelectorAll('.ll-tab').forEach(t => t.setAttribute('aria-selected','false'));
-      document.querySelectorAll('.ll-pane').forEach(p => p.classList.remove('ll-active'));
-      tab.setAttribute('aria-selected','true');
-      document.getElementById(pane).classList.add('ll-active');
-    });
-  });
-
-  /* Panel toggle */
-  const openBtn = document.querySelector('.ll-open-btn');
-  const closeBtn = document.querySelector('.ll-panel-close');
-  const panel = document.querySelector('.ll-panel');
-  if (openBtn) openBtn.addEventListener('click', () => panel.classList.add('ll-panel--open'));
-  if (closeBtn) closeBtn.addEventListener('click', () => panel.classList.remove('ll-panel--open'));
 </script>
 <script src="../../../../assets/vendor/blockly.min.js"></script>
 <script src="../../../../assets/js/game-tutorial-blockly.js"></script>
-<script src="../../../../assets/js/game-tutorial-controls.js"></script>
+<script src="../../../../assets/js/lesson-layout.js"></script>
 <script src="../../../../assets/js/reveal.js"></script>
 <script src="../../../../assets/js/theme-registry.js"></script>
 <script src="../../../../assets/js/nav-mobile.js"></script>
