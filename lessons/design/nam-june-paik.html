@@ -59,9 +59,7 @@
         <nav class="ll-lesson-steps" aria-label="Lesson sections">
           <a href="#njp-sec-life">From Seoul to the World</a>
           <a href="#njp-sec-fluxus">Music Becomes Video</a>
-          <a href="#njp-sec-magnet">Try It: Magnet TV</a>
-          <a href="#njp-sec-zen">Try It: Zen for TV</a>
-          <a href="#njp-sec-decollage">Try It: Décollage</a>
+          <a href="#njp-sec-lab">Try It: TV Lab</a>
           <a href="#njp-sec-works">Famous Works</a>
           <a href="#njp-sec-legacy">Legacy</a>
           <a href="#njp-sec-practice">Practice</a>
@@ -101,120 +99,145 @@
           </div>
         </section>
 
-        <!-- Magnet TV sim -->
-        <section class="fl-card" id="njp-sec-magnet" style="--card-accent:#db2777;">
-          <h2>Try It: Magnet TV</h2>
-          <p>In 1965 Paik set a huge magnet on top of a TV set and called it <em>Magnet TV</em>. Electrons are electrically charged, so a magnet pushes the moving beam sideways. Near the magnet, the lines of the picture bend and swirl into shapes no TV station ever broadcast. Move the magnet and the picture moves with it. The viewer becomes part of the artwork.</p>
-          <p>Drag the magnet across the screen below. Change its strength, flip its poles, and try turning the picture off to see only the raw scan lines.</p>
-          <div class="njp-tv-box">
-            <div class="njp-tv">
-              <div class="njp-tv-screen" id="njp-screen">
-                <canvas id="njp-canvas" aria-label="Simulated TV screen. Drag to move a magnet that bends the picture." role="img"></canvas>
-              </div>
-            </div>
-            <div class="njp-controls">
-              <label>Magnet strength
-                <input type="range" id="njp-strength" min="0" max="100" value="60" />
-              </label>
-              <button type="button" class="njp-btn" id="njp-flip">Flip poles (N ⇄ S)</button>
-              <label>Picture
-                <select id="njp-source">
-                  <option value="bars">Color bars</option>
-                  <option value="face">Face</option>
-                  <option value="lines">Scan lines only</option>
+        <!-- TV Lab: one workspace for every technique -->
+        <section class="fl-card" id="njp-sec-lab" style="--card-accent:#db2777;">
+          <h2>Try It: Paik's TV Lab</h2>
+          <p>Paik never stopped at one trick. He wired sets together, stacked techniques, and played them live. This lab gives you a wall of TVs and four of his techniques. Switch any technique on for any TV, stack them, and let them move by themselves.</p>
+          <ul class="njp-tech-list">
+            <li><strong>Magnet TV (1965).</strong> Electrons are electrically charged, so a magnet pushes the moving beam sideways. Lines of the picture bend and swirl around the magnet. Flip the poles and the swirl reverses.</li>
+            <li><strong>Zen for TV (1963).</strong> A <span data-glossary="cathode ray tube">cathode ray tube</span> steers its beam with two sets of electromagnets. One sweeps it <em>sideways</em> across every row, the other sweeps it <em>down</em> the screen. Cut the sideways sweep and every row lands in the same column: a single vertical line. Cut the downward sweep too and you get one dot.</li>
+            <li><strong>Décollage.</strong> <span data-glossary="décollage"><em>Décollage</em></span> is the opposite of collage: art made by peeling and tearing away. Artists like Paik's Fluxus friend Wolf Vostell used it for ripped posters that show older layers underneath. Here you peel the top picture to reveal the one below.</li>
+            <li><strong>Signal scramble.</strong> A rewired or damaged set tears rows sideways, rolls the picture up or down, and lets the red, green, and blue layers drift apart. Paik did this on purpose.</li>
+          </ul>
+          <p><strong>To play:</strong> click a TV to select it, switch techniques on in the panel below it, and drag on the screen. The <strong>∿ Modulate</strong> switch on each technique makes it move on its own. Techniques work together: a swirling, peeling, tearing TV is one click each.</p>
+
+          <div class="njp-lab" id="njp-lab">
+            <div class="njp-lab-bar" role="toolbar" aria-label="TV workspace">
+              <button type="button" class="njp-btn" id="njp-lab-add">+ Add TV</button>
+              <button type="button" class="njp-btn njp-btn--ghost" id="njp-lab-dup">Duplicate selected</button>
+              <button type="button" class="njp-btn njp-btn--ghost" id="njp-lab-remove">Remove selected</button>
+              <label class="njp-lab-preset">Start from
+                <select id="njp-lab-preset">
+                  <option value="">Pick a preset…</option>
+                  <option value="plain">Plain TV</option>
+                  <option value="magnet">Magnet TV</option>
+                  <option value="zen">Zen for TV</option>
+                  <option value="decollage">Décollage</option>
+                  <option value="storm">All four at once</option>
                 </select>
               </label>
+              <span class="njp-lab-count" id="njp-lab-count"></span>
             </div>
-            <p class="njp-hint">Drag on the screen, or use the arrow keys after clicking it. Try a strength of 0 and then 100.</p>
+
+            <div class="njp-lab-wall" id="njp-lab-wall" role="group" aria-label="Your TVs. Click one to select it."></div>
+
+            <div class="njp-lab-panel" id="njp-lab-panel" aria-labelledby="njp-lab-panel-title">
+              <div class="njp-lab-panel-head">
+                <h3 id="njp-lab-panel-title">Selected TV</h3>
+                <label>Picture
+                  <select id="njp-lab-source">
+                    <option value="bars">Color bars</option>
+                    <option value="face">Face</option>
+                    <option value="lines">Scan lines only</option>
+                  </select>
+                </label>
+                <label>Modulation speed
+                  <input type="range" id="njp-lab-speed" min="5" max="200" value="40" />
+                </label>
+                <label>Dragging on the screen
+                  <select id="njp-lab-tool">
+                    <option value="magnet">moves the magnet</option>
+                    <option value="peel">peels the picture</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="njp-tech-grid">
+                <div class="njp-tech" data-tech="magnet">
+                  <div class="njp-tech-head">
+                    <button type="button" class="njp-chip" id="njp-on-magnet" aria-pressed="false">Magnet TV</button>
+                    <label class="njp-mod"><input type="checkbox" id="njp-mod-magnet" /> ∿ Modulate</label>
+                  </div>
+                  <fieldset class="njp-tech-body" id="njp-fs-magnet" disabled>
+                    <legend class="sr-only">Magnet TV controls</legend>
+                    <label>Strength <input type="range" id="njp-strength" min="0" max="100" value="60" /></label>
+                    <button type="button" class="njp-btn njp-btn--small" id="njp-flip">Flip poles (N ⇄ S)</button>
+                    <p class="njp-tech-note">Modulate: the magnet circles the screen and its strength swings through zero, so the swirl reverses each cycle.</p>
+                  </fieldset>
+                </div>
+
+                <div class="njp-tech" data-tech="zen">
+                  <div class="njp-tech-head">
+                    <button type="button" class="njp-chip" id="njp-on-zen" aria-pressed="false">Zen for TV</button>
+                    <label class="njp-mod"><input type="checkbox" id="njp-mod-zen" /> ∿ Modulate</label>
+                  </div>
+                  <fieldset class="njp-tech-body" id="njp-fs-zen" disabled>
+                    <legend class="sr-only">Zen for TV controls</legend>
+                    <label>Sideways sweep <input type="range" id="njp-zen-h" min="0" max="100" value="0" /></label>
+                    <label class="njp-check"><input type="checkbox" id="njp-zen-v" checked /> Downward sweep</label>
+                    <p class="njp-tech-note">Modulate: the sweep breathes between the slider setting and a full picture, so the picture folds into the line and opens back out. Leave the slider at 0 for the full range.</p>
+                  </fieldset>
+                </div>
+
+                <div class="njp-tech" data-tech="peel">
+                  <div class="njp-tech-head">
+                    <button type="button" class="njp-chip" id="njp-on-peel" aria-pressed="false">Décollage</button>
+                    <label class="njp-mod"><input type="checkbox" id="njp-mod-peel" /> ∿ Modulate</label>
+                  </div>
+                  <fieldset class="njp-tech-body" id="njp-fs-peel" disabled>
+                    <legend class="sr-only">Décollage controls</legend>
+                    <label>Peel size <input type="range" id="njp-peel-size" min="6" max="40" value="18" /></label>
+                    <label>Self-heal <input type="range" id="njp-peel-heal" min="0" max="100" value="0" /></label>
+                    <button type="button" class="njp-btn njp-btn--small" id="njp-peel-reset">Restore picture</button>
+                    <p class="njp-tech-note">Modulate: an invisible hand wanders across the screen peeling as it goes. Raise self-heal and the picture slowly grows back behind it.</p>
+                  </fieldset>
+                </div>
+
+                <div class="njp-tech" data-tech="scramble">
+                  <div class="njp-tech-head">
+                    <button type="button" class="njp-chip" id="njp-on-scramble" aria-pressed="false">Signal scramble</button>
+                    <label class="njp-mod"><input type="checkbox" id="njp-mod-scramble" /> ∿ Modulate</label>
+                  </div>
+                  <fieldset class="njp-tech-body" id="njp-fs-scramble" disabled>
+                    <legend class="sr-only">Signal scramble controls</legend>
+                    <label>Amount <input type="range" id="njp-scr-amount" min="0" max="100" value="35" /></label>
+                    <p class="njp-tech-note">Modulate: the signal fades in and out like a storm passing through.</p>
+                  </fieldset>
+                </div>
+              </div>
+
+              <div class="njp-lab-actions">
+                <button type="button" class="njp-btn njp-btn--ghost" id="njp-lab-copy">Copy these settings to every TV</button>
+              </div>
+            </div>
+            <p class="njp-hint" id="njp-lab-hint">Drag on a screen, or click it and use the arrow keys (hold Shift to peel).</p>
+            <p class="sr-only" id="njp-lab-status" aria-live="polite"></p>
           </div>
+
           <div class="ll-accordion-group">
             <details class="ll-accordion">
               <summary>Why does flipping the poles make the swirl turn the other way?</summary>
               <div class="ll-accordion-body">The push a magnet gives a moving charge is always sideways, at a right angle to both the motion and the magnetic field. That is why the picture twists around the magnet instead of just sliding away. Reverse the field (flip the poles) and the sideways push reverses too, so the swirl spins the other way. Physicists call this the Lorentz force.</div>
             </details>
             <details class="ll-accordion">
-              <summary>Can I do this to a TV at home?</summary>
-              <div class="ll-accordion-body">No. Paik used old tube TVs, which are almost gone now, and a strong magnet can permanently stain a tube screen with color blotches. Modern flat screens use no electron beam at all, so a magnet does nothing to the picture. You can still see the idea in physics labs that use an old oscilloscope or a small cathode-ray tube.</div>
-            </details>
-          </div>
-        </section>
-
-        <!-- Zen for TV sim -->
-        <section class="fl-card" id="njp-sec-zen" style="--card-accent:#0891b2;">
-          <h2>Try It: Zen for TV</h2>
-          <p>In 1963 Paik showed a TV set whose picture had collapsed into one thin, glowing vertical line. He called it <em>Zen for TV</em>. He did not break the TV. He changed its wiring so only one of the two jobs inside a tube TV still worked.</p>
-          <p>A <span data-glossary="cathode ray tube">cathode ray tube</span> draws a picture by firing a beam of electrons at the glass while two sets of electromagnets steer it. One set sweeps the beam <strong>sideways</strong> across every row. The other sweeps it <strong>down</strong> the screen, row after row. Cut the sideways sweep and every row is squeezed into the same spot. The beam still runs up and down, so you get a vertical line. Cut the downward sweep too and you get a single dot.</p>
-          <p>Slide the sideways sweep toward zero and watch the picture fold into the line. Notice how bright the line gets.</p>
-          <div class="njp-tv-box">
-            <div class="njp-tv">
-              <div class="njp-tv-screen njp-tv-screen--static" id="njp-zen-screen">
-                <canvas id="njp-zen-canvas" aria-label="Simulated TV screen. As the sideways sweep is reduced, the picture squeezes into a single bright vertical line." role="img"></canvas>
-              </div>
-            </div>
-            <div class="njp-controls">
-              <label>Sideways sweep
-                <input type="range" id="njp-zen-h" min="0" max="100" value="100" aria-describedby="njp-zen-readout" />
-              </label>
-              <label>
-                <input type="checkbox" id="njp-zen-v" checked /> Downward sweep
-              </label>
-              <label>Picture
-                <select id="njp-zen-source">
-                  <option value="bars">Color bars</option>
-                  <option value="face">Face</option>
-                  <option value="lines">Scan lines only</option>
-                </select>
-              </label>
-            </div>
-            <p class="njp-hint" id="njp-zen-readout" aria-live="polite">Sideways sweep 100%: a normal picture.</p>
-          </div>
-          <div class="ll-accordion-group">
-            <details class="ll-accordion">
-              <summary>Why does the line get brighter as it gets thinner?</summary>
-              <div class="ll-accordion-body">The beam delivers the same amount of energy no matter where it points. Normally that energy is spread over the whole screen. When the sweep collapses, all of it lands on a thin strip, so each spot on the strip is hit far more often and glows much harder. Cut the downward sweep as well and the whole beam sits on one spot. That can burn a permanent dot into the phosphor, which is why real sets were never left that way.</div>
-            </details>
-            <details class="ll-accordion">
-              <summary>What color is the line?</summary>
-              <div class="ll-accordion-body">Every row is squeezed into the same column, so the line is the blend of all the colors in that column. A picture with many colors blends toward white. Try the face picture and the color bars and compare. The simulation averages each row, so the line shows a soft mix of that row's colors.</div>
+              <summary>Why does the Zen line get brighter as it gets thinner?</summary>
+              <div class="ll-accordion-body">The beam delivers the same amount of energy no matter where it points. Normally that energy is spread over the whole screen. When the sweep collapses, all of it lands on a thin strip, so each spot on the strip glows much harder. Cut the downward sweep as well and the whole beam sits on one spot. That can burn a permanent dot into the screen, which is why real sets were never left that way.</div>
             </details>
             <details class="ll-accordion">
               <summary>Why call it "Zen"?</summary>
               <div class="ll-accordion-body">Paik took away the news, the shows, and the commercials and left one line of light to stare at. Like a Zen garden, it asks you to look at something simple for a long time. The piece turns the most talkative machine in the house into a quiet one.</div>
             </details>
-          </div>
-        </section>
-
-        <!-- Décollage sim -->
-        <section class="fl-card" id="njp-sec-decollage" style="--card-accent:#7c3aed;">
-          <h2>Try It: Décollage</h2>
-          <p><em>Collage</em> means gluing things on. <span data-glossary="décollage"><em>Décollage</em></span> is the opposite: peeling, ripping, and tearing away. Artists like Paik's Fluxus friend Wolf Vostell used the word for ripped posters, where the torn top layer reveals the ads underneath. The picture is made by what goes missing.</p>
-          <p>Paik brought the idea to live TV. He scrambled wires, distorted the signal, and covered or damaged screens, so the broadcast came apart while it was still playing. A TV picture can only be torn apart as fast as it arrives.</p>
-          <p>Drag across the screen to peel away the top picture and reveal the one underneath. Then raise the signal scramble and watch the whole image tear in real time.</p>
-          <div class="njp-tv-box">
-            <div class="njp-tv">
-              <div class="njp-tv-screen" id="njp-dec-screen">
-                <canvas id="njp-dec-canvas" aria-label="Simulated TV screen. Drag to peel away the top picture and reveal the hidden one. A slider scrambles the signal." role="img"></canvas>
-              </div>
-            </div>
-            <div class="njp-controls">
-              <label>Peel size
-                <input type="range" id="njp-dec-brush" min="6" max="40" value="18" />
-              </label>
-              <label>Signal scramble
-                <input type="range" id="njp-dec-scramble" min="0" max="100" value="35" />
-              </label>
-              <button type="button" class="njp-btn" id="njp-dec-reset">Restore picture</button>
-            </div>
-            <p class="njp-hint">Drag on the screen, or click it and use the arrow keys to move the peel point (hold Shift to peel). Try scramble at 0 and at 100.</p>
-          </div>
-          <div class="ll-accordion-group">
             <details class="ll-accordion">
-              <summary>What is the scramble slider doing to the picture?</summary>
-              <div class="ll-accordion-body">Three things real faulty or rewired TVs do. Rows slide sideways by random amounts (the picture tears, because the sideways timing signal is unstable). The picture rolls up or down (the downward timing slips). The red, green, and blue layers drift apart (the three beams stop lining up). Paik did these on purpose.</div>
+              <summary>Does the order of the techniques matter?</summary>
+              <div class="ll-accordion-body">Yes. In this lab the picture is peeled first, then the magnet bends it, then the signal is scrambled, and last the sweep squeezes it. That is roughly the order a signal travels through a real set: picture content, beam steering, then sweep. Try the same four settings on two TVs and change which ones are on. A magnet that bends a peeled picture looks different from a peel that follows a bent one.</div>
+            </details>
+            <details class="ll-accordion">
+              <summary>Can I do this to a TV at home?</summary>
+              <div class="ll-accordion-body">No. Paik used old tube TVs, which are almost gone now, and a strong magnet can permanently stain a tube screen with color blotches. Modern flat screens use no electron beam at all, so a magnet does nothing to the picture. You can still see the idea in physics labs that use an old oscilloscope or a small cathode-ray tube.</div>
             </details>
             <details class="ll-accordion">
               <summary>Is this really décollage, or just a glitch filter?</summary>
-              <div class="ll-accordion-body">Discuss it. A filter you apply and forget is decoration. Décollage is about removing something that was there and leaving the damage visible as the artwork. Which part of this simulation is closest to that idea: the peel, the scramble, or both together?</div>
+              <div class="ll-accordion-body">Discuss it. A filter you apply and forget is decoration. Décollage is about removing something that was there and leaving the damage visible as the artwork. Which part of the lab is closest to that idea: the peel, the scramble, or several together?</div>
             </details>
           </div>
         </section>
@@ -421,8 +444,7 @@
 <script src="../../assets/js/figure-lesson.js"></script>
 <script src="../../assets/js/lesson-print-button.js"></script>
 <script src="../../assets/js/sim-kit.js"></script>
-<script src="../../assets/js/lessons/nam-june-paik.js"></script>
-<script src="../../assets/js/lessons/nam-june-paik-crt.js"></script>
+<script src="../../assets/js/lessons/nam-june-paik-lab.js"></script>
 <script src="../../assets/js/photo-lightbox.js"></script>
 </body>
 </html>
