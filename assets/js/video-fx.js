@@ -5,9 +5,8 @@
 
      picture → peel (décollage) → magnetWarp → scramble → zenDraw (sweep squeeze)
 
-   Used by lessons/computer-science/graphics-and-games/demoscene.html. The Paik
-   TV Lab (assets/js/lessons/nam-june-paik-lab.js) has the same algorithms inline
-   and can migrate to this file whenever that lesson is next touched. */
+   Used by the Paik TV Lab (assets/js/lessons/nam-june-paik-lab.js) and the demoscene
+   Demo Lab (assets/js/lessons/demoscene.js). */
 (function (global) {
   'use strict';
   if (global.VideoFX) return;
