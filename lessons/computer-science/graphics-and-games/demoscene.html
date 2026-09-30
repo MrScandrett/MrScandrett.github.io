@@ -59,6 +59,7 @@
           <a href="#ds-sec-origin">Where It Began</a>
           <a href="#ds-sec-tiny">Tiny Programs</a>
           <a href="#ds-sec-lab">Effects Lab</a>
+          <a href="#ds-sec-paik">From Paik to Pixels</a>
           <a href="#ds-sec-parties">Demoparties</a>
           <a href="#ds-sec-practice">Practice</a>
         </nav>
@@ -78,8 +79,8 @@
               <figcaption><span class="ds-era">1987 · Amiga 500:</span> <span class="ds-cap">The Amiga's custom chips could move graphics and play four-channel sampled music on their own, which made it the demoscene's home in the late 1980s and early '90s. Photo: Bill Bertram. <a href="https://commons.wikimedia.org/wiki/File:Amiga500_system.jpg" target="_blank" rel="noopener noreferrer">CC BY-SA 2.5</a></span></figcaption>
             </figure>
             <figure data-zoomable data-lightbox-group="demoscene" class="ds-photo ds-pixel">
-              <img src="../../../assets/images/lessons/demoscene/byterapers.webp" width="594" height="400" loading="lazy" decoding="async" alt="Blocky, colorful Commodore 64 pixel art: a chrome-style group logo on the left and a swirling rainbow pattern filling the rest of the screen" />
-              <figcaption><span class="ds-era">Commodore 64 demo:</span> <span class="ds-cap">A screen from a C64 demo by the Finnish group Byterapers. Notice the big group logo, which is a leftover habit from cracktros, and the chunky pixels. The C64 had only 16 colors to work with. <a href="https://commons.wikimedia.org/wiki/File:Byterapers-C64-FTS3.png" target="_blank" rel="noopener noreferrer">Public domain</a></span></figcaption>
+              <img src="../../../assets/images/lessons/demoscene/c64-demo.webp" width="594" height="400" loading="lazy" decoding="async" alt="Blocky, colorful Commodore 64 pixel art: a chrome-style group logo on the left and a swirling rainbow pattern filling the rest of the screen" />
+              <figcaption><span class="ds-era">Commodore 64 demo:</span> <span class="ds-cap">A screen from a Finnish C64 demo. Notice the big group logo, which is a leftover habit from cracktros, and the chunky pixels. The C64 had only 16 colors to work with. Public domain.</span></figcaption>
             </figure>
           </div>
           <div class="ll-accordion-group">
@@ -116,8 +117,9 @@
 
         <!-- Effects lab -->
         <section class="fl-card" id="ds-sec-lab" style="--card-accent:#db2777;">
-          <h2>Effects Lab: Classic Demo Effects</h2>
+          <h2>Demo Lab: Effects and Video Treatments</h2>
           <p>Demos are built from a vocabulary of classic <strong>effects</strong>, each one a small formula run for every pixel or object on every frame. Pick one below and watch it run live in your browser. The byte counter shows how big the JavaScript for that effect really is. It is read from the running code, not typed in by hand.</p>
+          <p>Then treat the picture the way video artist <a href="../../design/nam-june-paik.html">Nam June Paik</a> treated a TV, with a magnet, a collapsing beam, a torn poster, or a scrambled signal. Same ideas, but here every one is a few lines of code you can count.</p>
           <div class="ds-lab">
             <div class="ds-tabs" role="tablist" aria-label="Demo effects">
               <button type="button" role="tab" data-fx="plasma" aria-selected="true">Plasma</button>
@@ -127,7 +129,7 @@
               <button type="button" role="tab" data-fx="scroller" aria-selected="false">Sine Scroller</button>
             </div>
             <div class="ds-screen" id="ds-screen">
-              <canvas id="ds-canvas" role="img" aria-label="Live demo effect"></canvas>
+              <canvas id="ds-canvas" tabindex="0" role="img" aria-label="Live demo effect. Drag to move the magnet or tear the picture; arrow keys move, hold Shift to tear."></canvas>
               <span class="ds-bytecount" id="ds-bytes" aria-live="polite"></span>
             </div>
             <div class="ds-controls">
@@ -140,9 +142,92 @@
                   <option value="mono">Green phosphor</option>
                 </select>
               </label>
+              <label>Start from
+                <select id="ds-preset">
+                  <option value="">Choose…</option>
+                  <option value="plain">Plain effect</option>
+                  <option value="magnet">Magnet TV</option>
+                  <option value="zen">Zen for TV</option>
+                  <option value="decollage">Décollage</option>
+                  <option value="cracktro">Cracktro glitch</option>
+                  <option value="storm">Everything at once</option>
+                </select>
+              </label>
               <label class="ds-scroll-label">Scroller text <input type="text" id="ds-text" maxlength="120" value="GREETINGS TO EVERYONE IN MR. SCANDRETT'S CLASS ... THE DEMOSCENE LIVES ... " /></label>
             </div>
+            <div class="ds-treat" role="group" aria-label="Video treatments">
+              <h3>Video treatments <span>(Paik's techniques, stackable)</span></h3>
+              <div class="ds-treat-grid">
+                <div class="ds-tech">
+                  <div class="ds-tech-head">
+                    <button type="button" class="ds-chip" id="ds-on-magnet" aria-pressed="false">Magnet TV</button>
+                    <label class="ds-mod"><input type="checkbox" id="ds-mod-magnet" /> ∿ Modulate</label>
+                  </div>
+                  <fieldset class="ds-tech-body" id="ds-fs-magnet" disabled>
+                    <legend class="sr-only">Magnet TV settings</legend>
+                    <label>Strength <input type="range" id="ds-strength" min="0" max="100" value="60" /></label>
+                    <button type="button" class="ds-btn" id="ds-flip">Flip poles (N ⇄ S)</button>
+                    <p class="ds-note">Each pixel is copied from a spot rotated around the magnet. Drag on the screen to move it.</p>
+                  </fieldset>
+                </div>
+                <div class="ds-tech">
+                  <div class="ds-tech-head">
+                    <button type="button" class="ds-chip" id="ds-on-zen" aria-pressed="false">Zen for TV</button>
+                    <label class="ds-mod"><input type="checkbox" id="ds-mod-zen" /> ∿ Modulate</label>
+                  </div>
+                  <fieldset class="ds-tech-body" id="ds-fs-zen" disabled>
+                    <legend class="sr-only">Zen for TV settings</legend>
+                    <label>Sideways sweep <input type="range" id="ds-zen-sweep" min="0" max="100" value="100" /></label>
+                    <button type="button" class="ds-btn" id="ds-zen-collapse">Collapse it</button>
+                    <p class="ds-note">Every row is squeezed toward the middle column. At 0% the whole picture is one glowing line.</p>
+                  </fieldset>
+                </div>
+                <div class="ds-tech">
+                  <div class="ds-tech-head">
+                    <button type="button" class="ds-chip" id="ds-on-peel" aria-pressed="false">Décollage</button>
+                    <label class="ds-mod"><input type="checkbox" id="ds-mod-peel" /> ∿ Modulate</label>
+                  </div>
+                  <fieldset class="ds-tech-body" id="ds-fs-peel" disabled>
+                    <legend class="sr-only">Décollage settings</legend>
+                    <label>Layer beneath
+                      <select id="ds-under">
+                        <option value="tunnel">Tunnel</option>
+                        <option value="plasma">Plasma</option>
+                        <option value="stars">Starfield</option>
+                        <option value="fire">Fire</option>
+                        <option value="scroller">Sine Scroller</option>
+                      </select>
+                    </label>
+                    <label>Peel size <input type="range" id="ds-peel-size" min="6" max="40" value="18" /></label>
+                    <label>Self-heal <input type="range" id="ds-peel-heal" min="0" max="100" value="0" /></label>
+                    <button type="button" class="ds-btn" id="ds-peel-reset">Restore picture</button>
+                  </fieldset>
+                </div>
+                <div class="ds-tech">
+                  <div class="ds-tech-head">
+                    <button type="button" class="ds-chip" id="ds-on-scr" aria-pressed="false">Signal scramble</button>
+                    <label class="ds-mod"><input type="checkbox" id="ds-mod-scr" /> ∿ Modulate</label>
+                  </div>
+                  <fieldset class="ds-tech-body" id="ds-fs-scr" disabled>
+                    <legend class="sr-only">Signal scramble settings</legend>
+                    <label>Amount <input type="range" id="ds-scr-amount" min="0" max="100" value="35" /></label>
+                    <p class="ds-note">Tears rows sideways, rolls the picture, splits red from blue, adds static.</p>
+                  </fieldset>
+                </div>
+              </div>
+              <div class="ds-controls">
+                <label class="ds-check"><input type="checkbox" id="ds-scan" /> CRT scan lines</label>
+                <label>Drag does
+                  <select id="ds-tool">
+                    <option value="magnet">Move the magnet</option>
+                    <option value="peel">Tear the picture</option>
+                  </select>
+                </label>
+              </div>
+              <p class="ds-note">Keyboard: focus the screen, use arrow keys to move the magnet; hold Shift to tear.</p>
+            </div>
             <div class="ds-explain" id="ds-explain"></div>
+            <p class="sr-only" id="ds-status" aria-live="polite"></p>
           </div>
           <div class="ll-accordion-group">
             <details class="ll-accordion">
@@ -150,8 +235,32 @@
               <div class="ll-accordion-body">A sine wave rises and falls smoothly forever, so feeding the time into <code>sin()</code> gives motion that loops with no jumps. Adding a few sine waves of different sizes and speeds gives patterns that look organic and never quite repeat. The plasma, the scroller's bounce, and the tunnel's twist are all sine waves added together. Old machines were too slow to calculate <code>sin()</code>, so coders precomputed a small table of values once and looked them up every frame.</div>
             </details>
             <details class="ll-accordion">
+              <summary>Why does the byte counter grow when I switch treatments on?</summary>
+              <div class="ll-accordion-body">Each treatment is a real function, and the counter adds up the source length of every one that is running. Notice which are cheap and which are costly. A 4k intro might afford one or two, so a scener has to decide which effect earns its bytes.</div>
+            </details>
+            <details class="ll-accordion">
               <summary>What are "greetings"?</summary>
               <div class="ll-accordion-body">Almost every demo includes a scrolling list of other groups' names, a shout-out to friends and rivals. It is a leftover from cracktros and one of the scene's oldest traditions. Try typing your own greetings into the scroller.</div>
+            </details>
+          </div>
+        </section>
+
+        <!-- Paik bridge -->
+        <section class="fl-card" id="ds-sec-paik" style="--card-accent:#0891b2;">
+          <h2>From Paik's TV to the Pixel Shader</h2>
+          <p>Twenty years before the first cracktro, <a href="../../design/nam-june-paik.html">Nam June Paik</a> was already treating pictures as material to be bent. He worked with electrons and magnets. Demo coders work with numbers. Look closely and they are doing the same four things.</p>
+          <div class="ds-bridge" role="table" aria-label="Paik technique compared with its code version">
+            <div role="row" class="ds-bridge-head"><span role="columnheader">Paik on a TV</span><span role="columnheader">What it does</span><span role="columnheader">In code</span></div>
+            <div role="row"><span role="cell"><strong>Magnet TV</strong> (1965)</span><span role="cell">A magnet bends the electron beam, so lines swirl near it.</span><span role="cell">A <em>displacement map</em>: copy each pixel from a rotated position. Demo coders call it a <em>domain warp</em>.</span></div>
+            <div role="row"><span role="cell"><strong>Zen for TV</strong> (1963)</span><span role="cell">The sideways sweep is cut, so the picture collapses to a line.</span><span role="cell">Scale x toward the center column and average each row's color.</span></div>
+            <div role="row"><span role="cell"><strong>Décollage</strong></span><span role="cell">Tear the top poster to show the layers under it.</span><span role="cell">A <em>mask</em> that chooses between two layers per pixel, the basis of every compositor.</span></div>
+            <div role="row"><span role="cell"><strong>Signal scramble</strong></span><span role="cell">A damaged set tears rows, rolls, and splits its colors.</span><span role="cell">The <em>glitch</em>: shift rows, offset color channels, add noise. Cracktros faked it on purpose.</span></div>
+          </div>
+          <p>The difference is what a mistake costs. Paik could not undo a magnet. A coder changes one number and sees a new picture 60 times a second, so both can play like a musician with an instrument.</p>
+          <div class="ll-accordion-group">
+            <details class="ll-accordion">
+              <summary>Discussion: which is more of an instrument?</summary>
+              <div class="ll-accordion-body">Try the same treatment in the lab, then think about Paik's real magnet. What can the real one do that the code cannot? What can the code do that the magnet cannot? Is an artwork more alive when it can fail in ways you did not plan?</div>
             </details>
           </div>
         </section>
@@ -301,6 +410,32 @@
               <div class="fl-hint" id="flhint-8">Hint: The same kind of list protects folk dances and traditional crafts.</div>
             </div>
 
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="mid">Medium</span>9. In the Demo Lab, the Magnet TV treatment copies each pixel from a position rotated around the magnet. What is that idea called in graphics?</p>
+              <div class="fl-problem-row">
+                <select class="fl-ans-input" id="flans-9" style="width:420px;">
+                  <option value="">Choose…</option>
+                  <option value="a">Compression</option>
+                  <option value="b">A displacement map (domain warp)</option>
+                  <option value="c">A palette swap</option>
+                  <option value="d">Sizecoding</option>
+                </select>
+                <button class="fl-check-btn" onclick="flCheckText(9,'b')">Check</button>
+                <span class="fl-feedback" id="flfb-9"></span>
+              </div>
+              <div class="fl-hint" id="flhint-9">Hint: The output pixel is looked up from somewhere else in the source picture.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="hard">Challenge</span>10. Décollage in the lab uses a mask with one value per pixel. For the 320 × 200 screen, how many mask values are there?</p>
+              <div class="fl-problem-row">
+                <input type="number" class="fl-ans-input" id="flans-10" step="1" placeholder="values" />
+                <button class="fl-check-btn" onclick="flCheck(10, 64000, 0)">Check</button>
+                <span class="fl-feedback" id="flfb-10"></span>
+              </div>
+              <div class="fl-hint" id="flhint-10">Hint: One per pixel, so 320 × 200.</div>
+            </div>
+
           </div>
         </section>
 
@@ -320,6 +455,7 @@
 <script src="../../../assets/js/figure-lesson.js"></script>
 <script src="../../../assets/js/lesson-print-button.js"></script>
 <script src="../../../assets/js/sim-kit.js"></script>
+<script src="../../../assets/js/video-fx.js"></script>
 <script src="../../../assets/js/lessons/demoscene.js"></script>
 <script src="../../../assets/js/photo-lightbox.js"></script>
 </body>
