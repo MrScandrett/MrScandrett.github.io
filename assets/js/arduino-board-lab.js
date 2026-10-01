@@ -57,7 +57,10 @@
   var brain = document.getElementById('abl-brain');
   var trace = document.getElementById('abl-active-trace');
   function text(id, value) { document.getElementById(id).textContent = value; }
-  function inspect(item, x, y, selected) {
+  var conceptKey = 'mcu';
+  function inspect(item, x, y, selected, concept) {
+    conceptKey = concept || 'mcu';
+    document.getElementById('abl-learn-concept').textContent = 'Learn the concept behind ' + item[1];
     text('abl-kind', item[0]); text('abl-name', item[1]); text('abl-meaning', item[2]);
     document.getElementById('abl-use').innerHTML = '<strong>Try it:</strong> ' + item[3];
     text('abl-code', item[4]);
@@ -69,23 +72,60 @@
   function brainInfo() { var b = boards[current]; return ['MAIN COMPUTING BRAIN', b.brainName, current === 'q' ? 'This real-time microcontroller runs Arduino sketches and handles GPIO predictably while the Linux MPU handles heavier work.' : 'This main microcontroller runs your sketch, reads inputs, follows instructions, and changes outputs.', current === 'q' ? 'Use it for motor pulses, sensor timing, and immediate physical control.' : 'Read sensors and control outputs. Larger loads still need a driver and separate power.', 'sketch → ' + b.brainName + ' → GPIO pins']; }
   function pinInfo(pin, group) {
     var clean = pin.replace('~',''), key = group === 1 ? 'analog' : group === 2 ? (clean.indexOf('GND') >= 0 ? 'ground' : clean.indexOf('RESET') >= 0 ? 'reset' : 'power') : group === 3 ? ((clean === 'SDA' || clean === 'SCL') ? 'i2c' : (clean === 'TX' || clean === 'RX') ? 'uart' : (clean === 'COPI' || clean === 'CIPO' || clean === 'SCK') ? 'spi' : 'digital') : 'digital';
-    var item = terms[key].slice(); item[0] = ['DIGITAL PIN','ANALOG PIN','POWER & CONTROL','COMMUNICATION'][group]; item[1] = pin; if (pin.charAt(0) === '~') item[2] += ' This pin also supports PWM.'; item[4] = pin + ' → ' + (key === 'analog' ? 'ADC → ' : '') + boards[current].brainName; return item;
+    if (clean === 'AREF') return ['ANALOG REFERENCE', pin, 'AREF is the analog-to-digital converter reference input, not a power output.', 'Use an external reference only with the correct analogReference configuration and board-specific voltage limits.', 'reference voltage → ADC reference'];
+    if (clean === 'A0/DAC') return ['ANALOG INPUT / DAC OUTPUT', pin, 'On UNO R4, A0 can measure an input voltage or generate a true analog output through the DAC. Choose one role for your circuit.', 'Check the UNO R4 DAC documentation before generating a waveform.', 'RA4M1 ADC / DAC ↔ A0'];
+    if (clean === 'Qwiic') return terms.i2c.slice();
+    if (clean === 'CAN TX/RX') return ['COMMUNICATION', pin, 'CAN TX and RX are controller signals. Connecting to a CAN network requires an external CAN transceiver.', 'Check the UNO R4 pinout and transceiver circuit.', 'RA4M1 CAN → transceiver → CAN bus'];
+    var item = terms[key].slice(); item[0] = ['DIGITAL PIN','ANALOG PIN','POWER & CONTROL','COMMUNICATION'][group]; item[1] = pin; if (pin.charAt(0) === '~') { item[2] += ' This pin also supports PWM.'; item[3] = 'Use digitalRead/digitalWrite for two-state signals, or analogWrite for PWM pulses.'; }
+    if (clean === 'D0/RX' || clean === 'D1/TX') item[2] += ' It also carries UART serial data; on UNO R3 it shares the USB serial connection, so avoid conflicting circuits during uploads.';
+    if (clean === 'A4/SDA' || clean === 'A5/SCL') item[2] += ' This physical pin is also used for I²C. The separate SDA/SCL labels do not add independent GPIO on UNO R3.'; item[4] = pin + ' → ' + (key === 'analog' ? 'ADC → ' : '') + boards[current].brainName; return item;
+  }
+  function pinConcept(pin, group) {
+    if (pin === 'AREF') return 'aref';
+    if (pin.includes('DAC')) return 'dac';
+    if (pin.includes('CAN')) return 'can';
+    if (pin === 'Qwiic') return 'qwiic';
+    if (pin.includes('GND')) return 'ground';
+    if (pin.includes('RESET')) return 'reset';
+    if (pin === 'VIN') return 'vin';
+    if (group === 2) return 'power';
+    if (pin.includes('SDA') || pin.includes('SCL')) return 'i2c';
+    if (pin.includes('TX') || pin.includes('RX')) return 'uart';
+    if (group === 3) return 'spi';
+    if (pin.startsWith('~')) return 'pwm';
+    return group === 1 ? 'analog' : 'digital';
   }
   function renderPins(b) {
     var names = ['Digital GPIO','Analog','Power & control','Communication labels'], root = document.getElementById('abl-pin-groups'); root.innerHTML = '';
-    b.pins.forEach(function (pins, group) { var box = document.createElement('div'), title = document.createElement('strong'), list = document.createElement('div'); box.className = 'abl-pin-group'; list.className = 'abl-pins'; title.textContent = names[group]; pins.forEach(function (pin) { var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'abl-pin'; btn.textContent = pin; btn.setAttribute('aria-label','Inspect pin ' + pin); btn.addEventListener('click', function () { inspect(pinInfo(pin, group), group === 0 ? 86 : 14, group === 2 ? 72 : 30, btn); }); list.appendChild(btn); }); box.appendChild(title); box.appendChild(list); root.appendChild(box); });
+    b.pins.forEach(function (pins, group) { var box = document.createElement('div'), title = document.createElement('strong'), list = document.createElement('div'); box.className = 'abl-pin-group'; list.className = 'abl-pins'; title.textContent = names[group]; pins.forEach(function (pin) { var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'abl-pin'; btn.textContent = pin; btn.setAttribute('aria-label','Inspect pin ' + pin); btn.addEventListener('click', function () { inspect(pinInfo(pin, group), group === 0 ? 86 : 14, group === 2 ? 72 : 30, btn, pinConcept(pin, group)); }); list.appendChild(btn); }); box.appendChild(title); box.appendChild(list); root.appendChild(box); });
   }
   function renderBoard(key) {
     current = key; var b = boards[key]; text('abl-board-name', b.name); text('abl-board-sub', b.sub); text('abl-note', b.note); map.className = 'abl-board ' + (b.className || ''); map.setAttribute('aria-label',(b.credit ? 'Interactive annotated photograph of ' : 'Interactive conceptual top view of ') + b.name); brain.innerHTML = b.brain; brain.style.left = b.brainAt[0] + '%'; brain.style.top = b.brainAt[1] + '%';
     var credit = document.getElementById('abl-credit'), creditLink = document.getElementById('abl-credit-link');
     credit.hidden = !b.credit; document.getElementById('abl-map-note').textContent = b.credit ? 'The photograph shows the real board; the yellow route is a conceptual signal path, not an exact microscopic copper trace.' : 'No openly licensed UNO Q product photograph was verified, so this board remains an honest conceptual map.';
     if (b.credit) { text('abl-credit-name', b.credit[0]); creditLink.textContent = b.credit[1] + ' source'; creditLink.href = b.credit[2]; }
-    document.querySelectorAll('.abl-tab').forEach(function (tab) { tab.setAttribute('aria-selected', String(tab.dataset.board === key)); }); targets.innerHTML = '';
-    b.parts.forEach(function (p) { var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'abl-target' + (p[1].length > 6 ? ' is-wide' : ''); btn.style.left = p[2] + '%'; btn.style.top = p[3] + '%'; btn.textContent = p[1]; btn.setAttribute('aria-label','Inspect ' + p[1]); btn.addEventListener('click', function () { inspect([p[4], p[1], p[5], p[6], p[7]], p[2], p[3], btn); }); targets.appendChild(btn); });
+    var photo = document.getElementById('abl-photo');
+    photo.hidden = !b.credit;
+    if (b.credit) {
+      var files = { uno: 'uno-r3', nano: 'nano-every', r4: 'uno-r4-wifi' };
+      document.getElementById('abl-photo-img').src = '../../../assets/images/lessons/arduino-board-anatomy/' + files[key] + '.webp';
+      document.getElementById('abl-photo-img').alt = b.name + ': enlarge to inspect the physical headers and printed labels';
+      text('abl-photo-caption', b.name + ': read the labels before choosing a wire. The photo shows physical placement; the yellow overlay is conceptual. Photo: ' + b.credit[0] + ' · ' + b.credit[1] + '.');
+    }
+    document.querySelectorAll('.abl-tab').forEach(function (tab) { tab.setAttribute('aria-selected', String(tab.dataset.board === key)); tab.tabIndex = tab.dataset.board === key ? 0 : -1; }); targets.innerHTML = '';
+    b.parts.forEach(function (p) { var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'abl-target' + (p[1].length > 6 ? ' is-wide' : ''); btn.style.left = p[2] + '%'; btn.style.top = p[3] + '%'; btn.textContent = p[1]; btn.setAttribute('aria-label','Inspect ' + p[1]); btn.addEventListener('click', function () { inspect([p[4], p[1], p[5], p[6], p[7]], p[2], p[3], btn, ({usb:"usb",reset:"reset",bridge:"bridge",jack:"vin",reg:"regulator",led:"led",serialled:"led",icsp:"icsp",wifi:"wireless",matrix:"led",qwiic:"qwiic",dac:"dac",mpu:"mpu",rpc:"rpc",wireless:"wireless",carrier:"header"})[p[0]]); }); targets.appendChild(btn); });
     renderPins(b); inspect(brainInfo(), b.brainAt[0], b.brainAt[1], brain);
   }
   document.querySelectorAll('.abl-tab').forEach(function (tab) { tab.addEventListener('click', function () { renderBoard(tab.dataset.board); }); });
+  document.querySelectorAll('.abl-tab').forEach(function (tab, index, tabs) {
+    tab.addEventListener('keydown', function (event) {
+      var next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : null;
+      if (next === null) return;
+      event.preventDefault(); renderBoard(tabs[next].dataset.board); tabs[next].focus();
+    });
+  });
   brain.addEventListener('click', function () { var at = boards[current].brainAt; inspect(brainInfo(), at[0], at[1], brain); });
-  document.querySelectorAll('[data-abl-term]').forEach(function (btn) { btn.addEventListener('click', function () { inspect(terms[btn.dataset.ablTerm], 15, 28, null); document.getElementById('abl-map-wrap').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); }); });
+  document.getElementById('abl-learn-concept').addEventListener('click', function () { window.ArduinoBoardGlossary.open(conceptKey); });
+  document.querySelectorAll('[data-abl-term]').forEach(function (btn) { btn.setAttribute('aria-haspopup', 'dialog'); btn.addEventListener('click', function () { window.ArduinoBoardGlossary.open(btn.dataset.ablTerm); }); });
   renderBoard('uno');
 }());

@@ -113,6 +113,7 @@ async function fetchDailyVerse() {
       reference: String(data.reference).trim(),
       deeplink: String(data.deeplink || DEFAULT_VERSE.deeplink).trim(),
       sourceLabel: String(data.sourceLabel || "YouVersion").trim(),
+      fetchedAt: data.fetchedAt,
     };
   } finally {
     timeout.clear();
@@ -171,6 +172,15 @@ function setLinks(reference, deeplink) {
   yvBtn.href      = deeplink || DEFAULT_VERSE.deeplink;
 }
 
+function status(message) {
+  const el = document.getElementById("votd-status");
+  if (el) el.textContent = message;
+}
+
+function currentReference(reference) {
+  return document.getElementById("votd-ref")?.textContent || reference;
+}
+
 function initListenBtn(text, reference) {
   const btn = document.getElementById("votd-listen");
   if (!btn) return;
@@ -181,16 +191,19 @@ function initListenBtn(text, reference) {
       window.speechSynthesis.cancel();
       btn.innerHTML = '<span aria-hidden="true">▶</span> Listen';
       btn.classList.remove("votd-btn--listening");
+      btn.setAttribute("aria-label", "Listen to verse");
       return;
     }
     const verseEl = document.getElementById("votd-verse");
     const liveText = verseEl ? verseEl.textContent : text;
-    const utterance = new SpeechSynthesisUtterance(`${liveText}. ${reference}`);
+    const utterance = new SpeechSynthesisUtterance(`${liveText}. ${currentReference(reference)}`);
     utterance.rate = 0.88;
-    utterance.onend = () => {
+    utterance.onend = utterance.onerror = () => {
       btn.innerHTML = '<span aria-hidden="true">▶</span> Listen';
       btn.classList.remove("votd-btn--listening");
+      btn.setAttribute("aria-label", "Listen to verse");
     };
+    btn.setAttribute("aria-label", "Stop reading verse");
     window.speechSynthesis.speak(utterance);
     btn.innerHTML = '<span aria-hidden="true">◼</span> Stop';
     btn.classList.add("votd-btn--listening");
@@ -206,14 +219,15 @@ function initCopyBtn(text, reference) {
     try {
       const verseEl = document.getElementById("votd-verse");
       const liveText = verseEl ? verseEl.textContent : text;
-      await navigator.clipboard.writeText(`"${liveText}" — ${reference}`);
+      await navigator.clipboard.writeText(`"${liveText}" — ${currentReference(reference)}`);
       btn.textContent = "Copied!";
+      status("Verse and translation copied.");
       btn.classList.add("votd-btn--copied");
       setTimeout(() => {
-        btn.innerHTML = '<span aria-hidden="true">✦</span> Copy';
+        btn.innerHTML = '<span aria-hidden="true">⧉</span> Copy';
         btn.classList.remove("votd-btn--copied");
       }, 1800);
-    } catch { /* clipboard denied — silent */ }
+    } catch { status("Copy unavailable. Select the verse text to copy it."); }
   });
 }
 
@@ -229,7 +243,7 @@ function initTranslationSwitcher(originalText, reference) {
   let activeCode = "local";
 
   container.innerHTML = TRANSLATIONS.map(t =>
-    `<button class="votd-trans-btn${t.code === "local" ? " votd-trans-btn--active" : ""}" data-code="${t.code}" title="${t.title}" type="button">${t.label}</button>`
+    `<button class="votd-trans-btn${t.code === "local" ? " votd-trans-btn--active" : ""}" aria-pressed="${t.code === "local"}" data-code="${t.code}" title="${t.title}" type="button">${t.label}</button>`
   ).join("");
 
   container.addEventListener("click", async (e) => {
@@ -238,6 +252,11 @@ function initTranslationSwitcher(originalText, reference) {
 
     const code = btn.dataset.code;
 
+    window.speechSynthesis?.cancel();
+    const listen = document.getElementById("votd-listen");
+    if (listen) { listen.innerHTML = '<span aria-hidden="true">▶</span> Listen'; listen.classList.remove("votd-btn--listening"); listen.setAttribute("aria-label", "Listen to verse"); }
+    status("Loading translation…");
+    verseEl.setAttribute("aria-busy", "true");
     // Mark loading state
     container.querySelectorAll(".votd-trans-btn").forEach(b => {
       b.classList.toggle("votd-trans-btn--active", false);
@@ -253,12 +272,18 @@ function initTranslationSwitcher(originalText, reference) {
 
       verseEl.textContent = newText;
       activeCode = code;
+      const translation = TRANSLATIONS.find(t => t.code === code);
+      document.getElementById("votd-ref").textContent = code === "local" ? reference : `${reference.replace(/\s*\(.*\)$/, "")} (${translation.label})`;
+      status(`${translation.label} selected.`);
       btn.classList.add("votd-trans-btn--active");
     } catch (err) {
       console.warn("[votd] Translation fetch failed:", err);
+      status("That translation could not load. Your current verse is still available; try again.");
       btn.classList.add("votd-trans-btn--error");
       setTimeout(() => btn.classList.remove("votd-trans-btn--error"), 2000);
     } finally {
+      verseEl.setAttribute("aria-busy", "false");
+      container.querySelectorAll(".votd-trans-btn").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.code === activeCode)));
       verseEl.classList.remove("votd-verse--fading");
       btn.classList.remove("votd-trans-btn--loading");
       container.querySelectorAll(".votd-trans-btn").forEach(b => { b.disabled = false; });
@@ -285,7 +310,10 @@ function renderVerse(payload) {
   refEl.textContent   = reference;
   if (sourceEl) sourceEl.textContent = sourceLabel;
 
-  if (dateEl) dateEl.textContent = formatVotdDate();
+  if (dateEl) {
+    const fetched = payload?.fetchedAt ? new Date(payload.fetchedAt) : null;
+    dateEl.textContent = fetched && !Number.isNaN(fetched.getTime()) ? fetched.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" }) : "Selected passage";
+  }
 
   if (contextEl) {
     const ctx = getBookContext(reference);

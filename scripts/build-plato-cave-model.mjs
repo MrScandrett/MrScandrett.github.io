@@ -30,7 +30,7 @@ globalThis.FileReader = class FileReader {
 };
 
 const scene = new THREE.Scene();
-scene.name = "Plato Cave Machinima Fable";
+scene.name = "Plato Cave Limestone Cutaway";
 
 const materials = {
   rock: new THREE.MeshStandardMaterial({ color: 0x5a4b3c, roughness: 0.96 }),
@@ -88,89 +88,69 @@ function person({ name, x, y = 0.45, z = 0, clothing, seated = false, facing = 0
   group.position.set(x, y, z);
   group.rotation.y = facing;
 
-  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.25, 0.7, 4, 10), clothing);
-  torso.name = `${name} torso`;
-  torso.position.y = seated ? 1.05 : 1.38;
-  group.add(torso);
-
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 24, 18), materials.skin);
-  head.name = `${name} head`;
-  head.position.y = seated ? 1.82 : 2.18;
-  group.add(head);
-
-  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.247, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), materials.wood);
-  hair.name = `${name} hair`;
-  hair.position.y = (seated ? 1.82 : 2.18) + 0.03;
-  group.add(hair);
-
-  const faceY = seated ? 1.82 : 2.18;
-  for (const eyeX of [-0.085, 0.085]) {
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.027, 10, 8), materials.shadow);
-    eye.name = `${name} eye`;
-    eye.position.set(eyeX, faceY + 0.025, 0.226);
-    group.add(eye);
-  }
-  const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.018, 0.018), materials.shadow);
-  mouth.name = `${name} mouth`;
-  mouth.position.set(0, faceY - 0.085, 0.235);
-  group.add(mouth);
-
-  const limb = (a, b, r, label, material = materials.skin) => {
-    const start = new THREE.Vector3(...a);
-    const end = new THREE.Vector3(...b);
+  // Adult proportions: a shaped ribcage, pelvis and neck replace the capsule.
+  const skin = materials.skin.clone();
+  skin.color.setHex(name.endsWith("2") ? 0xa97050 : name.endsWith("3") ? 0xdbad87 : 0xc98f68);
+  const hairMaterial = new THREE.MeshStandardMaterial({ color: 0x30251e, roughness: 0.98 });
+  const oval = (label, pos, scale, material = skin) => {
+    const part = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 16), material);
+    part.name = `${name} ${label}`;
+    part.position.set(...pos); part.scale.set(...scale); group.add(part);
+    return part;
+  };
+  const limb = (a, b, radius, endRadius, label, material = skin) => {
+    const start = new THREE.Vector3(...a), end = new THREE.Vector3(...b);
     const delta = end.clone().sub(start);
-    const part = new THREE.Mesh(new THREE.CylinderGeometry(r, r, delta.length(), 10), material);
+    const part = new THREE.Mesh(new THREE.CylinderGeometry(endRadius, radius, delta.length(), 16), material);
     part.name = `${name} ${label}`;
     part.position.copy(start).add(end).multiplyScalar(0.5);
     part.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.normalize());
     group.add(part);
   };
+  const hipY = seated ? 0.56 : 0.96;
+  const shoulderY = hipY + 0.63, faceY = shoulderY + 0.37;
+  oval("pelvis", [0, hipY, 0], [0.25, 0.19, 0.16], clothing);
+  oval("ribcage", [0, hipY + 0.37, -0.015], [0.28, 0.37, 0.17], clothing);
+  oval("waist", [0, hipY + 0.12, 0], [0.21, 0.22, 0.15], clothing);
+  limb([0, shoulderY, 0], [0, faceY - 0.13, 0], 0.075, 0.07, "neck");
+  oval("cranium", [0, faceY + 0.035, 0], [0.145, 0.19, 0.145]);
+  oval("jaw", [0, faceY - 0.07, 0.035], [0.115, 0.115, 0.12]);
+  oval("chin", [0, faceY - 0.13, 0.07], [0.065, 0.04, 0.07]);
+  oval("nose bridge", [0, faceY, 0.142], [0.025, 0.063, 0.031]);
+  oval("nose tip", [0, faceY - 0.027, 0.168], [0.032, 0.025, 0.027]);
+  for (const side of [-1, 1]) {
+    oval("ear", [side * 0.145, faceY, 0], [0.024, 0.047, 0.03]);
+    oval("eye", [side * 0.057, faceY + 0.028, 0.133], [0.018, 0.009, 0.008], materials.shadow);
+    oval("brow", [side * 0.057, faceY + 0.05, 0.131], [0.031, 0.006, 0.009], hairMaterial);
+  }
+  oval("lower lip", [0, faceY - 0.082, 0.143], [0.038, 0.008, 0.009]);
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.57), hairMaterial);
+  hair.name = `${name} hair`; hair.position.set(0, faceY + 0.055, -0.008);
+  hair.scale.set(0.151, 0.182, 0.15); group.add(hair);
 
-  const joint = (position, radius, label, material = materials.skin) => {
-    const part = new THREE.Mesh(new THREE.SphereGeometry(radius, 14, 10), material);
-    part.name = `${name} ${label}`;
-    part.position.set(...position);
-    group.add(part);
-  };
-
-  if (seated) {
-    limb([-0.2, 1.5, 0], [-0.38, 1.04, 0.06], 0.09, "left upper arm", clothing);
-    limb([-0.38, 1.04, 0.06], [-0.44, 0.58, 0.16], 0.075, "left forearm");
-    limb([0.2, 1.5, 0], [0.38, 1.04, 0.06], 0.09, "right upper arm", clothing);
-    limb([0.38, 1.04, 0.06], [0.44, 0.58, 0.16], 0.075, "right forearm");
-    joint([-0.38, 1.04, 0.06], 0.095, "left elbow");
-    joint([0.38, 1.04, 0.06], 0.095, "right elbow");
-    limb([-0.13, 0.84, 0], [-0.48, 0.42, 0.2], 0.125, "left thigh", clothing);
-    limb([-0.48, 0.42, 0.2], [0.16, 0.2, 0.3], 0.1, "left crossed shin", clothing);
-    limb([0.13, 0.84, 0], [0.48, 0.42, 0.2], 0.125, "right thigh", clothing);
-    limb([0.48, 0.42, 0.2], [-0.16, 0.2, 0.34], 0.1, "right crossed shin", clothing);
-    joint([-0.48, 0.42, 0.2], 0.13, "left knee", clothing);
-    joint([0.48, 0.42, 0.2], 0.13, "right knee", clothing);
-    for (const [index, hand] of [[-0.44, 0.58, 0.16], [0.44, 0.58, 0.16]].entries()) {
-      const handMesh = new THREE.Mesh(new THREE.SphereGeometry(0.1, 14, 10), materials.skin);
-      handMesh.name = `${name} resting hand ${index + 1}`;
-      handMesh.position.set(...hand);
-      group.add(handMesh);
+  for (const side of [-1, 1]) {
+    const shoulder = [side * 0.25, shoulderY, 0];
+    const elbow = seated ? [side * 0.32, hipY + 0.3, 0.15] : [side * (armsUp ? 0.43 : 0.32), shoulderY - (armsUp ? 0.12 : 0.32), 0.02];
+    const wrist = seated ? [side * 0.32, hipY + 0.08, 0.42] : [side * (armsUp ? 0.51 : 0.34), shoulderY + (armsUp ? 0.2 : -0.61), 0.12];
+    oval("sleeve", shoulder, [0.11, 0.13, 0.12], clothing);
+    limb(shoulder, elbow, 0.093, 0.068, "upper arm", clothing);
+    oval("elbow", elbow, [0.068, 0.073, 0.068]);
+    limb(elbow, wrist, 0.074, 0.042, "forearm");
+    oval("palm", wrist, [0.051, 0.075, 0.029]);
+    for (let finger = 0; finger < 4; finger++) {
+      oval("finger", [wrist[0] + (finger - 1.5) * 0.019, wrist[1] - 0.069, wrist[2]], [0.011, 0.035 - Math.abs(finger - 1.5) * 0.004, 0.014]);
     }
-  } else {
-    const handY = armsUp ? 1.9 : 1.18;
-    const elbowY = armsUp ? 1.72 : 1.34;
-    limb([-0.2, 1.66, 0], [-0.4, elbowY, 0.03], 0.09, "left upper arm", clothing);
-    limb([-0.4, elbowY, 0.03], [-0.58, handY, 0.08], 0.075, "left forearm");
-    limb([0.2, 1.66, 0], [0.4, elbowY, 0.03], 0.09, "right upper arm", clothing);
-    limb([0.4, elbowY, 0.03], [0.58, handY, 0.08], 0.075, "right forearm");
-    joint([-0.4, elbowY, 0.03], 0.095, "left elbow");
-    joint([0.4, elbowY, 0.03], 0.095, "right elbow");
-    joint([-0.58, handY, 0.08], 0.1, "left hand");
-    joint([0.58, handY, 0.08], 0.1, "right hand");
-    limb([-0.12, 0.98, 0], [-0.16, 0.53, 0.02], 0.12, "left thigh", clothing);
-    limb([-0.16, 0.53, 0.02], [-0.2, 0.08, 0.05], 0.105, "left shin", clothing);
-    limb([0.12, 0.98, 0], [0.16, 0.53, 0.02], 0.12, "right thigh", clothing);
-    limb([0.16, 0.53, 0.02], [0.2, 0.08, 0.05], 0.105, "right shin", clothing);
-    joint([-0.16, 0.53, 0.02], 0.12, "left knee", clothing);
-    joint([0.16, 0.53, 0.02], 0.12, "right knee", clothing);
-    joint([-0.2, 0.08, 0.12], 0.13, "left shoe", materials.wood);
-    joint([0.2, 0.08, 0.12], 0.13, "right shoe", materials.wood);
+    oval("thumb", [wrist[0] - side * 0.052, wrist[1] - 0.014, wrist[2] + 0.014], [0.018, 0.039, 0.02]).rotation.z = side * 0.4;
+    const hip = [side * 0.13, hipY, 0];
+    const knee = seated ? [side * 0.39, 0.22, 0.39] : [side * 0.15, 0.5, 0.025];
+    const ankle = seated ? [-side * 0.14, 0.095, 0.49 + side * 0.045] : [side * 0.18, 0.10, 0.025];
+    limb(hip, knee, 0.135, 0.095, "thigh", clothing);
+    oval("knee", knee, [0.097, 0.10, 0.097], clothing);
+    limb(knee, ankle, 0.097, 0.055, "calf", clothing);
+    oval("foot", [ankle[0], 0.07, ankle[2] + 0.085], [0.075, 0.065, 0.16], materials.wood);
+    // Long cloth folds make the tunic read as fabric rather than a plastic shell.
+    const fold = oval("tunic fold", [side * 0.14, hipY + 0.3, 0.146], [0.017, 0.25, 0.025], clothing);
+    fold.rotation.z = side * 0.08;
   }
 
   group.traverse((child) => { if (child.isMesh) child.castShadow = true; });
@@ -244,15 +224,46 @@ function dragonSilhouette({ name, x, y, z, scale, material, flameMaterial = mate
   return group;
 }
 
-// Cave shell — open at the front so the fable's journey remains readable.
+// A geological cutaway: the front stays open for classroom camera views.
+// Seeded variation makes the exported asset reproducible.
+let rockSeed = 514;
+function random() { rockSeed = (1664525 * rockSeed + 1013904223) >>> 0; return rockSeed / 4294967296; }
+function weatheredRock(name, position, scale, light = false) {
+  const geometry = new THREE.IcosahedronGeometry(1, 1);
+  const vertices = geometry.attributes.position;
+  for (let i = 0; i < vertices.count; i++) {
+    const v = new THREE.Vector3().fromBufferAttribute(vertices, i);
+    // Position-based displacement keeps duplicate triangle vertices together.
+    const r = 1 + 0.09 * Math.sin(v.x * 12 + v.y * 7 + v.z * 9);
+    vertices.setXYZ(i, v.x * r, v.y * r, v.z * r);
+  }
+  geometry.computeVertexNormals();
+  const rock = mesh(geometry, light ? materials.rockLight : materials.rock, name, position);
+  rock.scale.set(...scale);
+  rock.rotation.set(random() * .3, random() * .6, random() * .25);
+  return rock;
+}
 mesh(new THREE.BoxGeometry(14.8, 0.42, 6.8), materials.floor, "Cave floor", [-1.1, 0, 0]);
-mesh(new THREE.BoxGeometry(14.8, 5.2, 0.46), materials.rock, "Cave back wall", [-1.1, 2.55, -3.15]);
-mesh(new THREE.BoxGeometry(0.5, 5.3, 6.8), materials.rockLight, "Cave left wall", [-8.5, 2.6, 0]);
-for (let i = 0; i < 13; i += 1) {
-  const x = -7.8 + i * 1.02;
-  const y = 5.2 + Math.sin(i * 1.7) * 0.18;
-  const rock = mesh(new THREE.DodecahedronGeometry(0.85 + (i % 3) * 0.13, 1), i % 2 ? materials.rock : materials.rockLight, "Weathered cave roof", [x, y, -1.7 + (i % 2) * 1.6]);
-  rock.scale.set(1.15, 0.72, 1.45);
+mesh(new THREE.BoxGeometry(14.8, 5.2, 0.46), materials.rock, "Cave back wall", [-1.1, 2.55, -3.35]);
+for (let row = 0; row < 4; row++) {
+  for (let i = 0; i < 12; i++) {
+    weatheredRock("Stratified limestone", [-8 + i * 1.2, .65 + row * 1.3, -3.4],
+      [.8 + random() * .25, .8 + random() * .2, .38 + random() * .2], row % 2 === 0);
+  }
+}
+for (let i = 0; i < 8; i++) {
+  weatheredRock("Cutaway cave edge", [-8.5, .7 + (i % 4) * 1.3, -2.4 + Math.floor(i / 4) * 2.6], [.65, .9, 1.4]);
+}
+for (let i = 0; i < 14; i++) {
+  weatheredRock("Overhanging limestone roof", [-7.8 + i * .96, 5.25 + Math.sin(i) * .12, -2.3], [1, .52, 1.05], i % 2 === 0);
+  if (i % 2 === 0) {
+    mesh(new THREE.ConeGeometry(.14 + random() * .12, .45 + random() * .5, 7), materials.rockLight,
+      "Ceiling stalactite", [-7.8 + i * .96, 4.62, -2.3], [Math.PI, 0, 0]);
+  }
+}
+for (let i = 0; i < 24; i++) {
+  weatheredRock("Loose cave scree", [-8 + random() * 13.5, .26, 1.9 + random() * 1.1],
+    [.08 + random() * .22, .06 + random() * .14, .1 + random() * .2], i % 3 === 0);
 }
 
 // Shadow wall and three friends enjoying the silhouettes.
@@ -274,25 +285,29 @@ cylinderBetween([-1.55, 1.82, -0.85], [-1.55, 2.72, -0.85], 0.035, materials.woo
 knightSilhouette({ name: "Knight cutout held by artist", x: -1.55, y: 3.05, z: -0.85, scale: 0.42, material: materials.truth });
 cylinderBetween([-0.25, 1.82, -0.85], [-0.25, 2.68, -0.85], 0.035, materials.wood, "Dragon projection wand");
 dragonSilhouette({ name: "Dragon cutout held by artist", x: -0.25, y: 3.0, z: -0.85, scale: 0.38, material: materials.truth, flameMaterial: materials.flame });
-mesh(new THREE.CylinderGeometry(0.42, 0.5, 0.25, 16), materials.wood, "Story lantern base", [1.4, 0.38, -0.25]);
-mesh(new THREE.CapsuleGeometry(0.28, 0.62, 5, 14), materials.flameCore, "Story lantern glow", [1.4, 1.02, -0.25]);
-mesh(new THREE.CylinderGeometry(0.34, 0.42, 0.2, 16), materials.wood, "Story lantern cap", [1.4, 1.52, -0.25]);
-mesh(new THREE.TorusGeometry(0.46, 0.045, 8, 20, Math.PI), materials.wood, "Story lantern handle", [1.4, 1.55, -0.25]);
 const lanternLight = new THREE.PointLight(0xffb84d, 7, 8, 2);
 lanternLight.name = "Story lantern light";
 lanternLight.position.set(1.4, 1.15, -0.1);
 scene.add(lanternLight);
 
-// Chunky practical fixtures give the cave a playful machinima-set feeling.
-for (const [index, x] of [-5.2, -1.2, 3.1].entries()) {
-  mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.18, 12), materials.metal, `Ceiling lamp housing ${index + 1}`, [x, 4.72, 1.55]);
-  mesh(new THREE.ConeGeometry(0.46, 0.42, 14, 1, true), materials.metal, `Ceiling lamp shade ${index + 1}`, [x, 4.42, 1.55], [Math.PI, 0, 0]);
-  mesh(new THREE.SphereGeometry(0.16, 16, 10), materials.flameCore, `Ceiling lamp bulb ${index + 1}`, [x, 4.22, 1.55]);
-  const practical = new THREE.PointLight(0xffd3a0, 1.8, 5.5, 2);
-  practical.name = `Warm set light ${index + 1}`;
-  practical.position.set(x, 4.18, 1.55);
-  scene.add(practical);
+// A hearth, rather than modern ceiling lamps, supplies the cave's warm light.
+for (let i = 0; i < 10; i++) {
+  const angle = i * Math.PI * 2 / 10;
+  weatheredRock("Hearth stone", [1.4 + Math.cos(angle) * .65, .32, -.25 + Math.sin(angle) * .65], [.24, .16, .2], true);
 }
+for (let i = 0; i < 4; i++) {
+  const angle = i * Math.PI / 4;
+  cylinderBetween([1.4 - Math.cos(angle) * .48, .38, -.25 - Math.sin(angle) * .48],
+    [1.4 + Math.cos(angle) * .48, .38, -.25 + Math.sin(angle) * .48], .09, materials.wood, "Charred hearth log");
+}
+for (let i = 0; i < 7; i++) {
+  const flame = mesh(new THREE.ConeGeometry(.13, .55 + random() * .45, 9),
+    i % 2 ? materials.flame : materials.flameCore, "Hearth flame",
+    [1.4 + (random() - .5) * .45, .72, -.25 + (random() - .5) * .4]);
+  flame.rotation.z = (random() - .5) * .35;
+}
+// Low stone screen: the carried figures rise above it.
+mesh(new THREE.BoxGeometry(2.7, 1.15, .35), materials.rockLight, "Puppet screen", [-.9, .79, -.48]);
 
 // The ascent — individual steps make the difficult reorientation visible.
 for (let i = 0; i < 7; i += 1) {
@@ -308,6 +323,23 @@ for (const offset of [[0, 0, 0], [-0.45, -0.05, 0], [0.42, 0.04, 0.08], [0, 0.45
   const crown = mesh(new THREE.IcosahedronGeometry(0.72, 1), materials.leaf, "Tree crown", [8.5 + offset[0], 4.75 + offset[1], -0.8 + offset[2]]);
   crown.scale.set(1.15, 0.9, 1.05);
 }
+const water = new THREE.MeshStandardMaterial({ color: 0x65acb5, metalness: .25, roughness: .2 });
+water.name = "Daylight reflection pool";
+const pool = mesh(new THREE.CylinderGeometry(.9, .9, .045, 40), water, "Reflecting pool", [8, 2.9, 1.55]);
+pool.scale.set(1.45, 1, .8);
+for (let i = 0; i < 18; i++) {
+  const angle = i * Math.PI * 2 / 18;
+  weatheredRock("Pool shore pebble", [8 + Math.cos(angle) * 1.4, 2.92, 1.55 + Math.sin(angle) * .78], [.16, .09, .12], true);
+}
+for (const side of [-1, 1]) {
+  cylinderBetween([8.5, 3.65, -.8], [8.5 + side * .5, 4.5, -.8], .08, materials.wood, "Tree branch");
+}
+for (let i = 0; i < 35; i++) {
+  const x = 5.5 + random() * 4.5, z = -2.6 + random() * 5;
+  if (Math.abs(z) < .65 || (x > 6.5 && z > .7)) continue;
+  mesh(new THREE.ConeGeometry(.06, .22 + random() * .2, 4), materials.leaf, "Garden grass", [x, 2.99, z]);
+}
+
 mesh(new THREE.SphereGeometry(0.82, 24, 16), materials.sun, "Sun — source of understanding", [9.15, 7.15, -1.5]);
 for (let i = 0; i < 12; i += 1) {
   const angle = (i / 12) * Math.PI * 2;
@@ -392,7 +424,7 @@ for (const material of document.getRoot().listMaterials()) {
     texture = document.createTexture(filename).setImage(image).setMimeType("image/jpeg");
     textureCache.set(filename, texture);
   }
-  material.setBaseColorFactor([1, 1, 1, 1]).setBaseColorTexture(texture);
+  material.setBaseColorTexture(texture);
   const textureInfo = material.getBaseColorTextureInfo();
   if (textureInfo) textureInfo.setWrapS(10497).setWrapT(10497);
 }

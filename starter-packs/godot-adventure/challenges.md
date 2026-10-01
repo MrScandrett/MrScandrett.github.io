@@ -12,6 +12,8 @@
 - Add a countdown timer with a clear loss state.
 - Add a launch gate that opens only after all cells are collected.
 - Add checkpoints and respawn if the player falls below y = -10.
+- Add a Shift dash with a separate duration and cooldown. The `dash` input
+  action already exists. Reference: `extensions/player_dash.gd`.
 - Replace one code-generated object with your own imported model.
 
 ## Level 3: Game designer

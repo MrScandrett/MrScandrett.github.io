@@ -196,3 +196,9 @@ before, given no instructions, and watched rather than helped.
   plan and the list both work, and you have satisfied the first WebXR
   requirement without writing a line of XR code.
 - Only then add the 3D room, as one more view of the same `EXHIBITS` array.
+
+## Make it a real project
+
+The WebXR Gallery lesson shows how to make this gallery advertise your real projects: your own exhibits, links to the actual work, and publishing over HTTPS so the VR path works on a real headset.
+
+**Lesson:** [WebXR Gallery: Make it your own](https://mrscandrett.github.io/lessons/computer-science/graphics-and-games/webxr-gallery.html#make-it-your-own)

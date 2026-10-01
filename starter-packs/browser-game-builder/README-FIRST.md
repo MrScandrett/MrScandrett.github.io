@@ -20,7 +20,8 @@ You just completed the edit-run-observe loop used by professional developers.
 - `game.js` contains input, update, collision, drawing, and game state.
 - `challenges.md` contains three levels of extensions.
 - `troubleshooting.md` helps diagnose the most common problems.
-- `finished-example/` contains a compact reference build with an extra dash ability.
+- `finished-example/` contains a finished reference build that adds a dash (Shift),
+  three lives, and a best time. Every change is marked `NEW:` in its `game.js`.
 
 ## Guided checkpoints
 
@@ -53,3 +54,9 @@ Find the `state` object. Add a `bestScore` property, then display it in the HUD.
 
 Do not delete all comments immediately. Remove them only after you can explain
 the system in your own words.
+
+## Make it a real project
+
+Game Jam Week turns this starter into a finished game in five days: a one-page design document, a scope check, a day-by-day sprint, playtesting, and a showcase demo to the class. Its checklist includes testing on a second computer and backing the project up.
+
+**Lesson:** [Game Jam Week](https://mrscandrett.github.io/lessons/computer-science/graphics-and-games/game-jam-week.html)

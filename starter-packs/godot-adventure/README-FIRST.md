@@ -24,7 +24,9 @@ created by code so missing assets cannot prevent the first run.
 - `scripts/collectible.gd`: a reusable signal-emitting game object.
 - `challenges.md`: three levels of extensions.
 - `troubleshooting.md`: common editor, scene, input, and collision problems.
-- `extensions/`: commented examples to consult after attempting a challenge.
+- `extensions/player_dash.gd`: a working dash reference to consult after you
+  attempt the dash challenge. To try it, change the `PlayerController` line at the
+  top of `scripts/main.gd` as its comment describes.
 
 ## Tutorial 1: Read the scene as responsibilities
 
@@ -63,3 +65,9 @@ at the same time: prove the smallest useful version of one system first.
 - `WHY`: the architectural or gameplay reason;
 - `TRY THIS`: a safe experiment;
 - `TEST`: visible evidence that the code works.
+
+## Make it a real project
+
+A game is finished when someone else can play it. Lesson 8 of the Godot pathway takes this project to a release build: export templates, a desktop or web build, smoke and fresh-machine tests, a bug report format, and a showcase package that helps a new player start in ten seconds.
+
+**Lesson:** [Export, Test & Publish](https://mrscandrett.github.io/lessons/godot/godot-export-publish.html)

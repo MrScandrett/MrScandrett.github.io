@@ -181,3 +181,9 @@ stops being true is a model you cannot use safely.
   is not.
 - Then read the **Publish** lesson and put the hub on the actual internet, so
   the controls you wrote can finally be read by somebody who is not you.
+
+## Make it a real project
+
+The Website Project Studios lesson turns this pack into a real home for your games and simulations: add your own creation, write its instructions and credits, test it with a visitor, and then publish the hub.
+
+**Lesson:** [Creation hub studio](https://mrscandrett.github.io/lessons/web-design/web-project-studio.html#creation-hub)

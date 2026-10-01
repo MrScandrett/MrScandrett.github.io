@@ -135,6 +135,7 @@
       .arb-serial-line { animation: none; opacity: 1; }
     }
     @media print { .arb-ide, .ll-panel, .ll-open-btn { display: none !important; } .arb-card { break-inside: avoid; box-shadow: none; } }
+    .big-picture{margin:1.3rem 0;padding:clamp(1rem,3vw,2rem);border:2px solid var(--arb-teal);border-radius:16px;background:var(--arb-panel);color:var(--arb-ink)}.big-picture h2{font-size:clamp(1.5rem,3vw,2.2rem);margin:0 0 .6rem}.big-picture p{line-height:1.6;max-width:75ch}.connection-lab{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:1rem}.connection-scene{width:100%;height:auto;background:var(--arb-paper);border:1px solid var(--line,#cbd5e1);border-radius:10px;color:var(--arb-ink)}.connection-scene text{fill:currentColor;font:14px system-ui}.connection-controls label{display:block;font-weight:700;margin:.6rem 0}.connection-controls input{width:100%;accent-color:var(--arb-teal)}.connection-controls button{padding:.65rem .8rem;margin:.3rem .2rem .3rem 0;border:1px solid var(--line,#cbd5e1);border-radius:7px;background:var(--arb-navy);color:white;font:inherit;cursor:pointer}.connection-readout{padding:.7rem;border-left:4px solid var(--arb-teal);font-variant-numeric:tabular-nums}.connection-bridge{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin-top:1rem}.connection-bridge article{border-top:3px solid var(--arb-teal);padding-top:.6rem}.connection-bridge h3{margin:.3rem 0}.connection-bridge p{font-size:.88rem}.connection-sources{font-size:.78rem}.big-picture a{color:inherit;text-decoration:underline}@media(max-width:700px){.connection-lab,.connection-bridge{grid-template-columns:1fr}}@media print{.connection-controls input,.connection-controls button{display:none}.connection-lab{grid-template-columns:1fr 1fr}}
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -186,7 +187,7 @@
   delay(<span class="n">1000</span>);
   digitalWrite(LED, LOW);
   delay(<span class="n">1000</span>);
-}</pre><p style="margin-top:.6rem;font-size:.82rem;">Runs <strong>forever</strong>, immediately repeating from the top the instant it reaches the bottom. This is the robot's feedback loop, made literal.</p></div>
+}</pre><p style="margin-top:.6rem;font-size:.82rem;">Runs <strong>forever</strong>, immediately repeating from the top the instant it reaches the bottom. Repetition makes control possible, but feedback also requires measuring the result of an action.</p></div>
             </div>
             <button class="arb-anatomy-run" id="anatomy-run" type="button">▶ Simulate power-on</button>
             <p class="arb-anatomy-status" id="anatomy-status" aria-live="polite">Ready — press run to trace execution.</p>
@@ -232,38 +233,32 @@ int pattern[] = {dot, gap, dot, gap, dot};
             <div class="arb-morse-chart" id="morse-chart"></div>
           </section>
 
-          <section class="arb-card" style="--arb-accent:var(--arb-lime);">
-            <p class="arb-label">Bigger picture</p><h2>How does neuroscience relate to robotics?</h2>
-            <p>A neuron and a microcontroller solve the same problem: take in signals, decide, and pass a signal on. Compare the diagrams, then check the analogy table.</p>
-            <div class="arb-neuro">
-              <div class="arb-neuro-col"><h3>Neuron</h3><svg viewBox="0 0 260 150" role="img" aria-label="Diagram of a neuron: dendrites receive signals, the cell body integrates them, and the axon fires an output to a synapse">
-                <g stroke="#1b3a4b" stroke-width="3" fill="none"><path d="M20 40 L55 70"/><path d="M20 75 L55 75"/><path d="M20 110 L55 80"/></g>
-                <circle cx="75" cy="75" r="26" fill="#00979d" opacity=".85"/>
-                <path d="M101 75 H180" stroke="#1b3a4b" stroke-width="4"/>
-                <circle cx="195" cy="75" r="10" fill="#ef8354"/>
-                <text x="37" y="30" font-family="IBM Plex Mono" font-size="10" fill="#1b3a4b">dendrites</text>
-                <text x="60" y="115" font-family="IBM Plex Mono" font-size="10" fill="#1b3a4b">cell body</text>
-                <text x="150" y="65" font-family="IBM Plex Mono" font-size="10" fill="#1b3a4b">axon</text>
-                <text x="170" y="105" font-family="IBM Plex Mono" font-size="10" fill="#1b3a4b">synapse</text>
-              </svg></div>
-              <div class="arb-neuro-col"><h3>Microcontroller</h3><svg viewBox="0 0 260 150" role="img" aria-label="Diagram of a microcontroller: sensor pins receive signals, the chip processes them, and an output pin fires a signal to an actuator">
-                <g stroke="#1b3a4b" stroke-width="3" fill="none"><path d="M20 40 L55 70"/><path d="M20 75 L55 75"/><path d="M20 110 L55 80"/></g>
-                <rect x="55" y="52" width="46" height="46" rx="4" fill="#00979d" opacity=".85"/>
-                <path d="M101 75 H180" stroke="#1b3a4b" stroke-width="4"/>
-                <circle cx="195" cy="75" r="10" fill="#ef8354"/>
-                <text x="30" y="30" font-family="IBM Plex Mono" font-size="10" fill="#1b3a4b">sensor pins</text>
-                <text x="45" y="115" font-family="IBM Plex Mono" font-size="10" fill="#1b3a4b">chip / code</text>
-                <text x="145" y="65" font-family="IBM Plex Mono" font-size="10" fill="#1b3a4b">output pin</text>
-                <text x="165" y="105" font-family="IBM Plex Mono" font-size="10" fill="#1b3a4b">actuator</text>
-              </svg></div>
-            </div>
-            <div class="arb-analogy">
-              <div class="arb-analogy-row"><b>Dendrites receive input from other neurons</b><span>≈</span><span>Pins read voltage from sensors</span></div>
-              <div class="arb-analogy-row"><b>A neuron only fires past a threshold voltage</b><span>≈</span><span><code>if (value &gt; threshold)</code> in your code</span></div>
-              <div class="arb-analogy-row"><b>The axon carries one electrical signal onward</b><span>≈</span><span>A single output pin drives an LED or motor</span></div>
-              <div class="arb-analogy-row"><b>Repeated firing strengthens a synapse (learning)</b><span>≈</span><span>Your code doesn't change itself — a program only does what you wrote</span></div>
-            </div>
-          </section>
+      <section class="arb-card big-picture" style="--arb-accent:var(--arb-lime);" id="bigger-picture" aria-labelledby="picture-title">
+        <h2 id="picture-title">The bigger picture: brains, robots &amp; graphics</h2>
+        <p>How do you reach for a cup? You see a target, estimate where it is, move your hand, and use new information to adjust. Neuroscience studies how nervous systems do this. Robotics builds machines that sense and act. Computer graphics draws mathematical worlds that we can see and test.</p>
+        <p><strong>Arduino is the controller in this story:</strong> sensors provide measurements, your sketch chooses an action, and output pins send control signals. A motor driver supplies the current needed by motors. The screen below makes a simplified control loop visible.</p>
+        <div class="connection-lab">
+          <div><svg class="connection-scene" viewBox="0 0 420 290" role="img" aria-labelledby="connection-svg-title connection-svg-desc"><title id="connection-svg-title">Robot and target on a coordinate grid</title><desc id="connection-svg-desc">The robot starts at coordinate 2, 2. Move the target sliders, then take a step to reduce the gap. The dashed line shows the remaining error.</desc><defs><pattern id="connection-grid" width="32" height="32" patternUnits="userSpaceOnUse" x="50" y="30"><path d="M32 0H0V32" fill="none" stroke="currentColor" opacity=".18"/></pattern></defs><rect x="50" y="30" width="320" height="224" fill="url(#connection-grid)"/><path d="M50 30V254H380" stroke="currentColor" fill="none" stroke-width="2"/><text x="44" y="275">0</text><text x="367" y="275">10 · x</text><text x="12" y="37">7 · y</text><line id="connection-error" x1="114" y1="190" x2="306" y2="62" stroke="currentColor" stroke-dasharray="6 5" stroke-width="2"/><g id="connection-target" transform="translate(306 62)"><circle r="13" fill="none" stroke="#b45309" stroke-width="3"/><path d="M-19 0H19M0-19V19" stroke="#b45309" stroke-width="2"/></g><g id="connection-robot" transform="translate(114 190)"><rect x="-13" y="-12" width="26" height="24" rx="5" fill="#4f46e5"/><circle cx="-5" cy="-3" r="2.5" fill="white"/><circle cx="5" cy="-3" r="2.5" fill="white"/><path d="M-6 6H6" stroke="white" stroke-width="2"/></g><text x="65" y="18">One world, represented as numbers and an image</text></svg><p>Each grid square is one unit. The robot is purple; the target is the crosshair. The dashed line connects their positions.</p></div>
+          <div class="connection-controls"><label for="connection-x">Target x: <output id="connection-x-value">8</output><input id="connection-x" type="range" min="0" max="10" value="8" step="1"/></label><label for="connection-y">Target y: <output id="connection-y-value">6</output><input id="connection-y" type="range" min="0" max="7" value="6" step="1"/></label><p><strong>Predict:</strong> if the target is to the left, should the x change be positive or negative?</p><button type="button" id="connection-step">Take one robot step</button><button type="button" id="connection-reset">Reset experiment</button><p class="connection-readout" id="connection-status" aria-live="polite" aria-atomic="true"></p><p>Our rule: move one unit toward the target on each axis that still has a gap. Measure again after every step. Try moving the target halfway through!</p></div>
+        </div>
+        <div class="connection-bridge">
+          <article><h3>Brain: sense &amp; estimate</h3><p>Your nervous system combines sensory information to guide movement. Place cells and grid cells contribute to spatial representation. Their activity is biological; this square grid is a teaching model, not a picture of those cells.</p><p><strong>Math lens:</strong> position, patterns, measurement and uncertainty.</p><a href="../robotics/sensor-fusion.html">Explore sensor fusion</a></article>
+          <article><h3>Robot: compare &amp; correct</h3><p>A controller compares a target with a measured position, then commands a motor. New measurements allow corrections. This is feedback control; a robot can use it without copying a brain.</p><p><strong>Math lens:</strong> target − position = error. A movement rule turns that error into an action.</p><a href="../robotics/robot-mapping-localization.html">Explore robot mapping</a></article>
+          <article><h3>Graphics: represent &amp; render</h3><p>Graphics turns positions and shapes into an image. Here, x moves right and y moves up in our world; the drawing converts them into screen positions. More advanced rendering models cameras, materials and light. Vision works in the other direction: using images to infer a scene.</p><p><strong>Math lens:</strong> coordinates, geometry, transformations and functions.</p><a href="../../computer-science/graphics-and-games/from-scratch-browser-game.html">Build a graphical world</a></article>
+        </div>
+        <h3>From Blink to a robot control loop</h3><p>Blink repeats an output pattern. It does not measure whether a goal was reached, so repetition alone is not feedback. A robot control loop reads a sensor, compares the measurement with a goal, acts, and reads again. In this experiment, each button press represents one loop pass.</p>
+        <pre class="arb-code">// Pseudocode: requires sensors and a motor driver.
+void loop() {
+  position = readPositionSensors();
+  error = target - position;
+  command = chooseMovement(error);
+  sendToMotorDriver(command);
+}</pre>
+        <h3>Where the brain analogy helps—and where it stops</h3><p>Neurons receive inputs, integrate them, and can send signals along an axon when conditions for an action potential are met. An Arduino reads electrical inputs and executes instructions. That input-to-output comparison is useful, but a neuron is not a tiny Arduino: biological signaling, timing, and learning work differently. Synapses can change strength through several mechanisms; repeated firing does not always strengthen them. Your Blink sketch does not learn, though a robot can be programmed with a learning algorithm.</p>
+        <p><strong>Try three investigations:</strong> reach the first target; move it behind the robot and explain the negative error; then move it during a journey and explain why measuring again matters. The graphics is a view of the model, not a sensor reading from a physical Arduino.</p>
+        <p><strong>Discuss:</strong> what happens if a sensor reports the wrong position? Our demo assumes perfect measurements and immediate motion. Real robots and nervous systems must handle noise, delay, and physical limits.</p>
+        <p class="connection-sources">Read the research: <a href="https://www.nobelprize.org/prizes/medicine/2014/advanced-information/">Nobel Prize: place and grid cells</a> · <a href="https://www.nature.com/articles/s41467-022-28487-2">Embodied neuromorphic intelligence</a> · <a href="https://www.graphics.stanford.edu/projects/rendering/">Stanford: rendering research</a>.</p>
+      </section>
 
           <section class="arb-card" style="--arb-accent:var(--arb-teal);">
             <p class="arb-label">Quick check</p><h2>Test your sketch sense</h2>
@@ -271,7 +266,7 @@ int pattern[] = {dot, gap, dot, gap, dot};
               <div class="arb-question" data-answer="b" data-explanation="setup() runs exactly once when the board powers on or resets; loop() repeats forever."><p>1. How many times does <code>setup()</code> run during normal operation?</p><div class="arb-options"><button class="arb-option" data-choice="a">Every time loop() finishes</button><button class="arb-option" data-choice="b">Exactly once, at power-on</button><button class="arb-option" data-choice="c">10 times per second</button><button class="arb-option" data-choice="d">It never runs automatically</button></div><div class="arb-feedback" aria-live="polite"></div></div>
               <div class="arb-question" data-answer="c" data-explanation="delay() takes milliseconds; 1000 ms is one full second."><p>2. In <code>delay(1000)</code>, what does 1000 measure?</p><div class="arb-options"><button class="arb-option" data-choice="a">Volts</button><button class="arb-option" data-choice="b">Pin number</button><button class="arb-option" data-choice="c">Milliseconds</button><button class="arb-option" data-choice="d">Bytes of memory</button></div><div class="arb-feedback" aria-live="polite"></div></div>
               <div class="arb-question" data-answer="a" data-explanation="Serial Monitor reads text your sketch sends with Serial.print() or Serial.println() over the USB connection."><p>3. What does opening the Serial Monitor let you do?</p><div class="arb-options"><button class="arb-option" data-choice="a">Read text messages your sketch sends over USB</button><button class="arb-option" data-choice="b">Change the LED's color</button><button class="arb-option" data-choice="c">Upload code without a cable</button><button class="arb-option" data-choice="d">Increase the board's voltage</button></div><div class="arb-feedback" aria-live="polite"></div></div>
-              <div class="arb-question" data-answer="d" data-explanation="Both a neuron and a microcontroller take in signals, apply a threshold or program, and pass a single output signal onward."><p>4. What do a neuron and a microcontroller have in common?</p><div class="arb-options"><button class="arb-option" data-choice="a">Both run on 120V AC power</button><button class="arb-option" data-choice="b">Both are made of silicon</button><button class="arb-option" data-choice="c">Neither can be reprogrammed</button><button class="arb-option" data-choice="d">Both take in signals, decide, and pass a signal on</button></div><div class="arb-feedback" aria-live="polite"></div></div>
+              <div class="arb-question" data-answer="d" data-explanation="Both can receive inputs and produce outputs. A neuron integrates biological signals; a microcontroller executes a program and can control multiple outputs. This is an analogy, not identical machinery."><p>4. What do a neuron and a microcontroller have in common?</p><div class="arb-options"><button class="arb-option" data-choice="a">Both run on 120V AC power</button><button class="arb-option" data-choice="b">Both are made of silicon</button><button class="arb-option" data-choice="c">Neither can be reprogrammed</button><button class="arb-option" data-choice="d">Both receive inputs and produce outputs</button></div><div class="arb-feedback" aria-live="polite"></div></div>
             </div>
           </section>
         </main>
@@ -286,7 +281,7 @@ int pattern[] = {dot, gap, dot, gap, dot};
             <div class="ll-info"><strong>Read a sketch</strong>Explain why setup() runs once and loop() runs forever.</div>
             <div class="ll-info"><strong>Blink with purpose</strong>Change delay() values and predict the resulting blink rate.</div>
             <div class="ll-info"><strong>Encode a message</strong>Translate a short word into Morse dots and dashes as timed LED flashes.</div>
-            <div class="ll-info"><strong>Draw the analogy</strong>Compare a neuron's fire-or-don't-fire behavior to a microcontroller reading a threshold.</div>
+            <div class="ll-info"><strong>Draw the analogy</strong>Explain sensing, processing and action; distinguish biological neurons from programmed controllers.</div>
           </div>
           <div class="ll-pane" id="arb-teacher">
             <span class="ll-label">Materials</span>
@@ -415,6 +410,8 @@ int pattern[] = {dot, gap, dot, gap, dot};
       });
     })();
   </script>
+  <script src="../../../assets/js/lessons/arduino-brain-connections.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
   <script src="../../../assets/js/classroom-animations.js"></script>
   <script src="../../../assets/js/lesson-layout.js"></script>
   <script src="../../../assets/js/lesson-print-button.js"></script>

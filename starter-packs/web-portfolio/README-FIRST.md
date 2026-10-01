@@ -191,3 +191,9 @@ the honest fix.
   words before you touch the colours.
 - Publish it, then keep it alive: a portfolio is only as good as its most recent
   project.
+
+## Make it a real project
+
+The Website Project Studios lesson turns this pack into a portfolio someone else can actually use: a design brief, three real pieces of your work, a test with a visitor who did not help build it, and a case-study page. Then publish it with the publishing lesson linked at the end of the course.
+
+**Lesson:** [Portfolio studio](https://mrscandrett.github.io/lessons/web-design/web-project-studio.html#portfolio)

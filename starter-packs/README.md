@@ -13,7 +13,7 @@ Every pack includes:
 - credits and licensing guidance; and
 - a finished example or a clearly marked finished mode.
 
-To rebuild the four ZIPs, run:
+To rebuild every ZIP in `downloads/` from these folders, run:
 
 ```bash
 npm run build:starter-packs

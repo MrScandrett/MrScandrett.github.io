@@ -207,3 +207,9 @@ server you have not built yet.
   still on one device only, and still not a server. It is the honest next step.
 - Then learn how a server works at all: what a request is, what JSON is, and why
   the price check has to happen somewhere the customer cannot edit.
+
+## Make it a real project
+
+The Website Project Studios lesson turns this pack into a working prototype store: your own product data, totals checked to the cent, a useful empty state, and a clear list of what a real checkout would require.
+
+**Lesson:** [Store studio](https://mrscandrett.github.io/lessons/web-design/web-project-studio.html#store)

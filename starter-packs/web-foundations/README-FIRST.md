@@ -189,3 +189,9 @@ knowing them now rather than being surprised later.
   `handleSearch` out loud to somebody without looking at the screen.
 - When the site is genuinely yours, publish it with GitHub Pages, then move on to
   the **Web Portfolio** pack, which is about presenting finished work.
+
+## Make it a real project
+
+When your site has your own words in it, put it on the internet. The publishing lesson walks through GitHub Pages, the faults that only appear on a real host, what "public" really means, and how to maintain a live site with a changelog.
+
+**Lesson:** [Publish and maintain a live site](https://mrscandrett.github.io/lessons/web-design/web-publish.html)

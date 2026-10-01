@@ -4,8 +4,11 @@
   var script = document.currentScript;
   var main = document.querySelector("main");
   if (!script || !main) return;
-  var dataUrl = new URL("../../data/math-pathway.json", script.src).href;
-  var lessonFile = location.pathname.split("/").pop() || "index.html";
+  // Steps are site-root paths; resolve them from this script's location so the
+  // links work no matter how deep the lesson sits.
+  var siteRoot = new URL("../../", script.src);
+  var dataUrl = new URL("data/math-pathway.json", siteRoot).href;
+  var lessonPath = location.pathname.slice(siteRoot.pathname.length) || "index.html";
 
   var css = document.createElement("style");
   css.textContent =
@@ -33,14 +36,14 @@
     main.appendChild(nav);
 
     function currentIndex() {
-      var byHash = steps.findIndex(function (s) { return s.page === lessonFile + location.hash; });
+      var byHash = steps.findIndex(function (s) { return s.page === lessonPath + location.hash; });
       if (byHash >= 0) return byHash;
-      return steps.findIndex(function (s) { return s.page.split("#")[0] === lessonFile; });
+      return steps.findIndex(function (s) { return s.page.split("#")[0] === lessonPath; });
     }
 
     function link(step, cls, label) {
       if (!step) return "";
-      return '<a class="' + cls + '" href="' + step.page + '"><small>' + label + "</small><strong>" + step.title + "</strong></a>";
+      return '<a class="' + cls + '" href="' + new URL(step.page, siteRoot).href + '"><small>' + label + "</small><strong>" + step.title + "</strong></a>";
     }
 
     function render() {
@@ -51,7 +54,7 @@
       var bar = steps.map(function (_, n) { return '<i class="' + (n < i ? "done" : n === i ? "here" : "") + '"></i>'; }).join("");
       nav.innerHTML =
         '<div class="math-pathway-head"><span>Math pathway · Level ' + level.id + " " + level.name + " (" + level.grades +
-        ") · Step " + (i + 1) + " of " + steps.length + '</span><a href="../../steam-lessons.html#module-math">All math lessons</a></div>' +
+        ") · Step " + (i + 1) + " of " + steps.length + '</span><a href="' + new URL("steam-lessons.html#module-math", siteRoot).href + '">All math lessons</a></div>' +
         '<div class="math-pathway-bar" aria-hidden="true">' + bar + "</div>" +
         '<div class="math-pathway-links">' + link(steps[i - 1], "prev", "← Previous") + link(steps[i + 1], "next", "Next →") + "</div>";
     }

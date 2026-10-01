@@ -36,3 +36,9 @@ Move with A/D or the arrow keys and catch ten falling sparks. Then find
 - `troubleshooting.md`: common setup and code problems.
 - `finished-example/finished_game.py`: reference with lives and increasing difficulty.
 - `credits.txt`: attribution and a place to log added assets.
+
+## Make it a real project
+
+Game Jam Week turns this starter into a finished game in five days: a one-page design document, a scope check, a day-by-day sprint, playtesting, and a showcase demo to the class. Its checklist includes testing on a second computer, so try running your game on a classmate's machine with Python and Pygame installed.
+
+**Lesson:** [Game Jam Week](https://mrscandrett.github.io/lessons/computer-science/graphics-and-games/game-jam-week.html)

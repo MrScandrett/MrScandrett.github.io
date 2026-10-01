@@ -54,3 +54,9 @@ effects do not automatically make a stronger piece.
 
 Continue with `challenges.md` when you can explain how time, frequency, amplitude,
 and noise each change the composition.
+
+## Make it a real project
+
+The demoscene lesson shows how sceners turn experiments into productions: choose one limit, compose a short piece with a beginning and an end, release it with an info file and a public address, show it at a class compo, and publish a final version after the feedback.
+
+**Lesson:** [Make Your Own Production](https://mrscandrett.github.io/lessons/computer-science/graphics-and-games/demoscene.html#ds-sec-make)

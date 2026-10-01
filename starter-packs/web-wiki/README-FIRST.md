@@ -202,3 +202,9 @@ should write one for every article you add.
   first reason to learn what a server does.
 - Read the "View history" tab on any Wikipedia article. Every line in it is a
   feature this pack does not have, and you will understand what each one costs.
+
+## Make it a real project
+
+The Website Project Studios lesson turns this pack into a wiki that answers real questions: a chosen topic, three original articles with sources, working search and related links, and a review by someone who did not build it.
+
+**Lesson:** [Wiki studio](https://mrscandrett.github.io/lessons/web-design/web-project-studio.html#wiki)

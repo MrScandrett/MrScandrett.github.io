@@ -5,6 +5,8 @@
  * (starter / software / template / guide), `priority: true` puts it under
  * "Start here", and `platforms` drives the device filter ("Web" matches every device).
  * Local files live in downloads/ and get their size from a HEAD request.
+ * Every starter also names a `lesson` that shows how to turn it into a finished,
+ * published project; the same link closes the pack's README-FIRST.md.
  */
 (function () {
   "use strict";
@@ -13,7 +15,7 @@
     {
       id: "project-starter-pack",
       title: "Project Development Starter Pack",
-      description: "Ready-to-code HTML, CSS, and JavaScript files already linked together. Unzip, open in VS Code, and start building.",
+      description: "Three connected files with a one-click check that HTML, CSS, and JavaScript are linked, plus checkpoints, challenges, and a finished example.",
       type: "starter",
       category: "Coding",
       priority: true,
@@ -21,12 +23,13 @@
       platforms: ["Windows", "Mac", "Chromebook", "Web"],
       icon: "PK",
       actionLabel: "Download Starter Pack",
-      url: "downloads/project-starter-pack.zip"
+      url: "downloads/project-starter-pack.zip",
+      lesson: { title: "Publish and maintain a live site", url: "lessons/web-design/web-publish.html" }
     },
     {
       id: "browser-game-builder-starter-pack",
       title: "Browser Game Builder — Guided Starter Pack",
-      description: "A complete canvas game with a README-FIRST tutorial, deeply commented code, checkpoints, graduated challenges, troubleshooting, and a finished core reference.",
+      description: "A complete canvas game with a README-FIRST tutorial, deeply commented code, checkpoints, graduated challenges, troubleshooting, and a finished reference with dash, lives, and a best time.",
       type: "starter",
       category: "Coding",
       priority: true,
@@ -34,7 +37,8 @@
       platforms: ["Windows", "Mac", "Chromebook", "Web"],
       icon: "BG",
       actionLabel: "Download Browser Game Pack",
-      url: "downloads/browser-game-builder-starter-pack.zip"
+      url: "downloads/browser-game-builder-starter-pack.zip",
+      lesson: { title: "Game Jam Week", url: "lessons/computer-science/graphics-and-games/game-jam-week.html" }
     },
     {
       id: "pygame-arcade-starter-pack",
@@ -47,7 +51,8 @@
       platforms: ["Windows", "Mac"],
       icon: "PY",
       actionLabel: "Download Pygame Pack",
-      url: "downloads/pygame-arcade-starter-pack.zip"
+      url: "downloads/pygame-arcade-starter-pack.zip",
+      lesson: { title: "Game Jam Week", url: "lessons/computer-science/graphics-and-games/game-jam-week.html" }
     },
     {
       id: "creative-coding-demoscene-starter-pack",
@@ -60,7 +65,8 @@
       platforms: ["Windows", "Mac", "Chromebook", "Web"],
       icon: "CC",
       actionLabel: "Download Creative Coding Pack",
-      url: "downloads/creative-coding-demoscene-starter-pack.zip"
+      url: "downloads/creative-coding-demoscene-starter-pack.zip",
+      lesson: { title: "Make your own production", url: "lessons/computer-science/graphics-and-games/demoscene.html#ds-sec-make" }
     },
     {
       id: "godot-adventure-starter-pack",
@@ -73,12 +79,13 @@
       platforms: ["Windows", "Mac"],
       icon: "G4",
       actionLabel: "Download Godot Adventure Pack",
-      url: "downloads/godot-adventure-starter-pack.zip"
+      url: "downloads/godot-adventure-starter-pack.zip",
+      lesson: { title: "Export, test & publish", url: "lessons/godot/godot-export-publish.html" }
     },
     {
       id: "kaplay-starter-pack",
-      title: "Kaplay 2D Game Starter Pack",
-      description: "Minimal 2D game project pre-configured with KAPLAY (formerly Kaboom.js). Includes player movement, custom shapes, and platform physics template.",
+      title: "Kaplay 2D Game — Guided Starter Pack",
+      description: "Coin Climb: a complete platformer with the KAPLAY engine bundled so it runs offline, a tutorial on components, challenges, and a finished build with double jump and an enemy.",
       type: "starter",
       category: "Coding",
       priority: true,
@@ -86,12 +93,13 @@
       platforms: ["Windows", "Mac", "Chromebook", "Web"],
       icon: "KP",
       actionLabel: "Download Kaplay Starter",
-      url: "downloads/kaplay-starter-pack.zip"
+      url: "downloads/kaplay-starter-pack.zip",
+      lesson: { title: "Game Jam Week", url: "lessons/computer-science/graphics-and-games/game-jam-week.html" }
     },
     {
       id: "phaser-starter-pack",
-      title: "Phaser 3 Game Starter Pack",
-      description: "Minimal 2D game project pre-configured with Phaser 3. Includes basic platforms setup, keyboard controls, and arcade physics.",
+      title: "Phaser 3 Game — Guided Starter Pack",
+      description: "Star Hop: a complete Phaser 3 platformer with the engine bundled and art drawn by code, a tutorial on scenes and physics, challenges, and a finished build.",
       type: "starter",
       category: "Coding",
       priority: false,
@@ -99,7 +107,8 @@
       platforms: ["Windows", "Mac", "Chromebook", "Web"],
       icon: "PH",
       actionLabel: "Download Phaser Starter",
-      url: "downloads/phaser-starter-pack.zip"
+      url: "downloads/phaser-starter-pack.zip",
+      lesson: { title: "Game Jam Week", url: "lessons/computer-science/graphics-and-games/game-jam-week.html" }
     },
     {
       id: "web-foundations-starter-pack",
@@ -112,7 +121,8 @@
       platforms: ["Windows", "Mac", "Chromebook", "Web"],
       icon: "WF",
       actionLabel: "Download Web Foundations Pack",
-      url: "downloads/web-foundations-starter-pack.zip"
+      url: "downloads/web-foundations-starter-pack.zip",
+      lesson: { title: "Publish and maintain a live site", url: "lessons/web-design/web-publish.html" }
     },
     {
       id: "web-portfolio-starter-pack",
@@ -125,7 +135,8 @@
       platforms: ["Windows", "Mac", "Chromebook", "Web"],
       icon: "WP",
       actionLabel: "Download Portfolio Pack",
-      url: "downloads/web-portfolio-starter-pack.zip"
+      url: "downloads/web-portfolio-starter-pack.zip",
+      lesson: { title: "Portfolio studio", url: "lessons/web-design/web-project-studio.html#portfolio" }
     },
     {
       id: "web-business-starter-pack",
@@ -138,7 +149,8 @@
       platforms: ["Windows", "Mac", "Chromebook", "Web"],
       icon: "WB",
       actionLabel: "Download Business Site Pack",
-      url: "downloads/web-business-starter-pack.zip"
+      url: "downloads/web-business-starter-pack.zip",
+      lesson: { title: "Business studio", url: "lessons/web-design/web-project-studio.html#business" }
     },
     {
       id: "web-store-starter-pack",
@@ -151,7 +163,8 @@
       platforms: ["Windows", "Mac", "Chromebook", "Web"],
       icon: "WS",
       actionLabel: "Download Store Pack",
-      url: "downloads/web-store-starter-pack.zip"
+      url: "downloads/web-store-starter-pack.zip",
+      lesson: { title: "Store studio", url: "lessons/web-design/web-project-studio.html#store" }
     },
     {
       id: "web-wiki-starter-pack",
@@ -164,7 +177,8 @@
       platforms: ["Windows", "Mac", "Chromebook", "Web"],
       icon: "WK",
       actionLabel: "Download Wiki Pack",
-      url: "downloads/web-wiki-starter-pack.zip"
+      url: "downloads/web-wiki-starter-pack.zip",
+      lesson: { title: "Wiki studio", url: "lessons/web-design/web-project-studio.html#wiki" }
     },
     {
       id: "web-creation-hub-starter-pack",
@@ -177,7 +191,8 @@
       platforms: ["Windows", "Mac", "Chromebook", "Web"],
       icon: "CH",
       actionLabel: "Download Creation Hub Pack",
-      url: "downloads/web-creation-hub-starter-pack.zip"
+      url: "downloads/web-creation-hub-starter-pack.zip",
+      lesson: { title: "Creation hub studio", url: "lessons/web-design/web-project-studio.html#creation-hub" }
     },
     {
       id: "webxr-gallery-starter-pack",
@@ -190,12 +205,13 @@
       platforms: ["Windows", "Mac", "Chromebook", "Web"],
       icon: "XR",
       actionLabel: "Download WebXR Gallery Pack",
-      url: "downloads/webxr-gallery-starter-pack.zip"
+      url: "downloads/webxr-gallery-starter-pack.zip",
+      lesson: { title: "WebXR Gallery: make it your own", url: "lessons/computer-science/graphics-and-games/webxr-gallery.html#make-it-your-own" }
     },
     {
       id: "arduino-starter-sketches",
       title: "Arduino Starter Sketches Pack",
-      description: "Essential boilerplate code templates for electronics, robot sensors, and motor controls (non-blocking Blink, analog reading, servo sweeps).",
+      description: "Non-blocking blink, sensor reading, and servo sweep sketches with parts and wiring for each, a setup guide, challenges, and a finished sensor-to-servo example.",
       type: "starter",
       category: "Electronics",
       priority: false,
@@ -203,7 +219,8 @@
       platforms: ["Windows", "Mac", "Chromebook", "Web"],
       icon: "AD",
       actionLabel: "Download Arduino Pack",
-      url: "downloads/arduino-starter-sketches.zip"
+      url: "downloads/arduino-starter-sketches.zip",
+      lesson: { title: "Sensor-to-output prototype", url: "lessons/engineering/arduino-and-electronics/breadboard-basics.html#design-challenge" }
     },
     {
       id: "vr-demo-master",
@@ -216,7 +233,8 @@
       platforms: ["Windows", "Mac"],
       icon: "VR",
       actionLabel: "Download VR Template",
-      url: "https://github.com/MrScandrett/MrScandrett.github.io/releases/download/downloads-v1/vr-demo-master.zip"
+      url: "https://github.com/MrScandrett/MrScandrett.github.io/releases/download/downloads-v1/vr-demo-master.zip",
+      lesson: { title: "Export, test & publish", url: "lessons/godot/godot-export-publish.html" }
     },
     {
       id: "publish-tutorial",
@@ -399,7 +417,7 @@
     if (state.category !== "All" && state.category !== PRIORITY && item.category !== state.category) return false;
     if (state.device !== "Any" && item.platforms.indexOf(state.device) === -1 && item.platforms.indexOf("Web") === -1) return false;
     if (!state.query) return true;
-    var haystack = [item.title, item.description, item.type, item.category, item.platforms.join(" "), item.tags.join(" ")].join(" ").toLowerCase();
+    var haystack = [item.title, item.description, item.type, item.category, item.platforms.join(" "), item.tags.join(" "), item.lesson ? item.lesson.title : ""].join(" ").toLowerCase();
     return state.query.split(/\s+/).every(function (word) { return haystack.indexOf(word) !== -1; });
   }
 
@@ -504,6 +522,16 @@
     card.appendChild(platforms);
     card.appendChild(info);
     card.appendChild(foot);
+    if (item.lesson) {
+      var lesson = el("a", "dl-lesson");
+      lesson.href = item.lesson.url;
+      lesson.appendChild(el("span", "dl-lesson-kicker", "Make it real"));
+      lesson.appendChild(el("span", "dl-lesson-title", item.lesson.title));
+      var lessonArrow = el("span", "dl-lesson-arrow", "→");
+      lessonArrow.setAttribute("aria-hidden", "true");
+      lesson.appendChild(lessonArrow);
+      card.appendChild(lesson);
+    }
     return card;
   }
 

@@ -1,6 +1,8 @@
 extends Node3D
 
 # MAIN — owns level construction, score, win state, and interface.
+# TRY THIS: After the dash challenge, swap in the reference controller:
+# const PlayerController = preload("res://extensions/player_dash.gd")
 const PlayerController = preload("res://scripts/player.gd")
 const CollectibleController = preload("res://scripts/collectible.gd")
 
@@ -38,17 +40,18 @@ func _build_environment() -> void:
 
 
 func _build_floor() -> void:
-    var floor := StaticBody3D.new()
-    floor.name = "Floor"
-    floor.collision_layer = 1
-    add_child(floor)
+    # WHY: Named floor_body, not floor, because floor() is a built-in function.
+    var floor_body := StaticBody3D.new()
+    floor_body.name = "Floor"
+    floor_body.collision_layer = 1
+    add_child(floor_body)
 
     var collider := CollisionShape3D.new()
     var shape := BoxShape3D.new()
     shape.size = Vector3(24, 0.5, 18)
     collider.shape = shape
     collider.position.y = -0.25
-    floor.add_child(collider)
+    floor_body.add_child(collider)
 
     var visible_floor := MeshInstance3D.new()
     var floor_mesh := BoxMesh.new()
@@ -60,15 +63,15 @@ func _build_floor() -> void:
     material.metallic = 0.15
     material.roughness = 0.8
     visible_floor.material_override = material
-    floor.add_child(visible_floor)
+    floor_body.add_child(visible_floor)
 
     # TRY THIS: Turn these decorations into collidable platforms.
-    for position in [Vector3(-8, 0.6, -5), Vector3(7, 0.8, -3), Vector3(5, 0.5, 6)]:
+    for spot in [Vector3(-8, 0.6, -5), Vector3(7, 0.8, -3), Vector3(5, 0.5, 6)]:
         var marker := MeshInstance3D.new()
         var mesh := BoxMesh.new()
         mesh.size = Vector3(2.2, 1.0, 2.2)
         marker.mesh = mesh
-        marker.position = position
+        marker.position = spot
         var marker_material := StandardMaterial3D.new()
         marker_material.albedo_color = Color("285b73")
         marker.material_override = marker_material

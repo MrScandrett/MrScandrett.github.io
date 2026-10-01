@@ -233,3 +233,9 @@ matters, and it is a smaller share of the job than it looks.
   hesitate. Do not defend the design; write down what they did.
 - When you are ready for a form that really receives messages, that is a server
   project, not an HTML one — and now you know the five things it has to handle.
+
+## Make it a real project
+
+The Website Project Studios lesson turns this pack into a site that helps a visitor take a real next step: a design brief, consistent content, a tested enquiry form, and a written plan for what a deployed form would need.
+
+**Lesson:** [Business studio](https://mrscandrett.github.io/lessons/web-design/web-project-studio.html#business)
