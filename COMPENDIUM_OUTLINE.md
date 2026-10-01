@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 313 public lessons and classifies 11 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 317 public lessons and classifies 11 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -169,7 +169,7 @@ Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 47 l
 
 # Volume III — Living Systems, Earth & Environment
 
-Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 33 lessons
+Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 34 lessons
 
 ## Biology & Life Science (BIO)
 
@@ -202,9 +202,10 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 ### Evolution & Deep Time
 
 - **BIO-18** — Natural Selection Lab
-- **BIO-19** — Life Invented the Animal — _also indexed in Chemistry & Chemical Systems_
-- **BIO-20** — The K-Pg Extinction
-- **BIO-21** — The Evolution of Wood
+- **BIO-19** — LUCA: Last Universal Common Ancestor
+- **BIO-20** — Life Invented the Animal — _also indexed in Chemistry & Chemical Systems_
+- **BIO-21** — The K-Pg Extinction
+- **BIO-22** — The Evolution of Wood
 
 ## Earth & Environmental Science (EAR)
 
@@ -228,7 +229,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 76 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 79 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
@@ -343,19 +344,22 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 ### Stage & Visual Production Systems
 
 - **TEC-08** — Stage Lighting Design Lab — _also indexed in Engineering Systems & Electronics_
-- **TEC-09** — Theatre Cue Sheets
-- **TEC-10** — Stage Plotting
-- **TEC-11** — Walt Disney — _also indexed in Visual Art & Design_
-- **TEC-12** — Jim Henson
+- **TEC-09** — Camera Exposure Triangle
+- **TEC-10** — White Balance & Color Temperature
+- **TEC-11** — Projection & Throw-Ratio Lab
+- **TEC-12** — Theatre Cue Sheets
+- **TEC-13** — Stage Plotting
+- **TEC-14** — Walt Disney — _also indexed in Visual Art & Design_
+- **TEC-15** — Jim Henson
 
 ### Music Theory & Instruments
 
-- **TEC-13** — Guitar Triads & Arpeggio Routes — _also indexed in Music: Theory, Instruments & Sound_
-- **TEC-14** — Piano Triads & Arpeggio Routes — _also indexed in Music: Theory, Instruments & Sound_
-- **TEC-15** — Modes: From Greece to Today — _also indexed in Music: Theory, Instruments & Sound_
-- **TEC-16** — Violin Fingerboard Explorer — _also indexed in Music: Theory, Instruments & Sound_
-- **TEC-17** — Drum Lab: Kit, Notation, Rudiments & Fills — _also indexed in Music: Theory, Instruments & Sound_
-- **TEC-18** — Ludwig van Beethoven — _also indexed in Music: Theory, Instruments & Sound_
+- **TEC-16** — Guitar Triads & Arpeggio Routes — _also indexed in Music: Theory, Instruments & Sound_
+- **TEC-17** — Piano Triads & Arpeggio Routes — _also indexed in Music: Theory, Instruments & Sound_
+- **TEC-18** — Modes: From Greece to Today — _also indexed in Music: Theory, Instruments & Sound_
+- **TEC-19** — Violin Fingerboard Explorer — _also indexed in Music: Theory, Instruments & Sound_
+- **TEC-20** — Drum Lab: Kit, Notation, Rudiments & Fills — _also indexed in Music: Theory, Instruments & Sound_
+- **TEC-21** — Ludwig van Beethoven — _also indexed in Music: Theory, Instruments & Sound_
 
 # Volume V — Computer Science, AI & Interactive Media
 
