@@ -689,7 +689,12 @@ async function processProject(source, slug) {
     });
 
     // Keep a compatibility copy for multi-page student projects that still link script.js.
-    await fs.copyFile(sourceScriptPath, path.join(outputDir, "script.js"));
+    // ES-module sources are skipped: their relative imports resolve from student-projects/,
+    // not apps/, so a raw copy is a broken file (app.min.js already has them bundled).
+    const sourceScript = await fs.readFile(sourceScriptPath, "utf8");
+    if (!/^\s*import\s[^;]*\bfrom\s*["']/m.test(sourceScript)) {
+      await fs.copyFile(sourceScriptPath, path.join(outputDir, "script.js"));
+    }
   }
 
   if (hasStyle) {
