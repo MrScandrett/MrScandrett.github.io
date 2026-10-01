@@ -11,6 +11,7 @@
 
   var THEORY = [
     { file: 'lessons/technical-elements/piano-chords.html', label: 'Piano' },
+    { file: 'lessons/technical-elements/music-modes-evolution.html', label: 'Modes' },
     { file: 'lessons/technical-elements/guitar-chords.html', label: 'Guitar' },
     { file: 'lessons/technical-elements/violin-fingerboard.html', label: 'Violin' },
     { file: 'lessons/technical-elements/drums.html', label: 'Drums' },
