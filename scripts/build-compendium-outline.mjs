@@ -73,8 +73,22 @@ for (const item of plan.supportingPages) {
   if (shelfUrls.has(item.url)) errors.push(`Public shelf lesson cannot be supporting-only: ${item.url}.`);
 }
 
+// Planned pages exist on disk but are not public yet: placeholder stubs and unpublished
+// drafts. Listing them keeps every lesson file accounted for without counting them.
+const plannedUrls = new Set();
+const moduleIds = new Set(plan.volumes.flatMap((volume) => volume.modules.map((module) => module.id)));
+for (const item of plan.plannedPages || []) {
+  if (plannedUrls.has(item.url)) errors.push(`Duplicate planned page: ${item.url}.`);
+  plannedUrls.add(item.url);
+  if (!["stub", "draft"].includes(item.status)) errors.push(`Planned page status must be "stub" or "draft": ${item.url}.`);
+  if (!moduleIds.has(item.module)) errors.push(`Planned page module is not in the plan: ${item.url} (${item.module}).`);
+  if (!fs.existsSync(path.join(ROOT, item.url))) errors.push(`Missing planned page: ${item.url}.`);
+  if (seen.has(item.url) || supportingUrls.has(item.url)) errors.push(`Planned page is already classified: ${item.url}.`);
+  if (shelfUrls.has(item.url)) errors.push(`Public shelf links to a planned page; publish it into a unit instead: ${item.url}.`);
+}
+
 const allLessonHtml = walkLessonHtml(path.join(ROOT, "lessons"));
-const classified = new Set([...seen.keys(), ...supportingUrls]);
+const classified = new Set([...seen.keys(), ...supportingUrls, ...plannedUrls]);
 for (const url of allLessonHtml) {
   if (!classified.has(url)) errors.push(`Unclassified lesson HTML file: ${url}.`);
 }
@@ -96,9 +110,11 @@ const index = {
     units: plan.volumes.reduce((sum, volume) => sum + volume.modules.reduce((unitSum, module) => unitSum + module.units.length, 0), 0),
     canonicalLessons: indexLessons.length,
     supportingPages: plan.supportingPages.length,
+    plannedPages: plannedUrls.size,
   },
   lessons: indexLessons,
   supportingPages: plan.supportingPages,
+  plannedPages: plan.plannedPages || [],
 };
 
 if (!checkOnly) {
@@ -106,7 +122,7 @@ if (!checkOnly) {
   fs.writeFileSync(path.join(ROOT, "COMPENDIUM_OUTLINE.md"), buildMarkdown(plan, index));
 }
 
-console.log(`Compendium plan passed: ${index.counts.volumes} volumes, ${index.counts.modules} modules, ${index.counts.units} units, ${index.counts.canonicalLessons} public lessons, ${index.counts.supportingPages} supporting pages.`);
+console.log(`Compendium plan passed: ${index.counts.volumes} volumes, ${index.counts.modules} modules, ${index.counts.units} units, ${index.counts.canonicalLessons} public lessons, ${index.counts.supportingPages} supporting pages, ${index.counts.plannedPages} planned pages.`);
 
 function readShelf(html) {
   const modules = [];

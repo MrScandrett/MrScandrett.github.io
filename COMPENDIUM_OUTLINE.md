@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 285 public lessons and classifies 11 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 313 public lessons and classifies 11 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -46,7 +46,7 @@ Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 46 lesson
 
 - **MAT-18** — How Spread Out?
 - **MAT-19** — Probability Simulator
-- **MAT-20** — Pachinko Probability Lab
+- **MAT-20** — Galton Board & Pachinko Lab
 - **MAT-21** — Fibonacci Sequence
 - **MAT-22** — Mean, Median & Mode
 
@@ -117,10 +117,10 @@ Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 47 l
 
 - **PHY-14** — Point Wave — _also indexed in Audio, Lighting & Production Technology_
 - **PHY-15** — Huygens' Principle
-- **PHY-16** — Physics of Music — _also indexed in Audio, Lighting & Production Technology_
-- **PHY-17** — Do Atoms Make Music?
+- **PHY-16** — Physics of Music — _also indexed in Audio, Lighting & Production Technology, Music: Theory, Instruments & Sound_
+- **PHY-17** — Do Atoms Make Music? — _also indexed in Music: Theory, Instruments & Sound_
 - **PHY-18** — The Speed of Light
-- **PHY-19** — Digital Signal Processing — _also indexed in Engineering Systems & Electronics, Audio, Lighting & Production Technology_
+- **PHY-19** — Digital Signal Processing — _also indexed in Engineering Systems & Electronics, Audio, Lighting & Production Technology, Music: Theory, Instruments & Sound_
 
 ### Electricity, Magnetism & Fields
 
@@ -158,7 +158,7 @@ Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 47 l
 - **CHE-02** — Periodic Table of Elements
 - **CHE-03** — Radioactive Decay: Alpha, Beta & Gamma
 - **CHE-04** — Water: The Architecture of H₂O
-- **CHE-05** — Molecular Bonding Lab
+- **CHE-05** — Molecular Bonding & Compounds Lab
 
 ### Reactions, Catalysts & Chemical Systems
 
@@ -169,7 +169,7 @@ Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 47 l
 
 # Volume III — Living Systems, Earth & Environment
 
-Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 25 lessons
+Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 33 lessons
 
 ## Biology & Life Science (BIO)
 
@@ -178,22 +178,33 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 - **BIO-01** — Types of Cells — _also indexed in Chemistry & Chemical Systems_
 - **BIO-02** — DNA & Heredity — _also indexed in Chemistry & Chemical Systems_
 - **BIO-03** — Amino Acids & Proteins
-- **BIO-04** — CRISPR & Synthetic Biology Lab
-- **BIO-05** — Connectomics: Mapping the Brain
+- **BIO-04** — Life as Information
+- **BIO-05** — CRISPR & Synthetic Biology Lab
+- **BIO-06** — Connectomics: Mapping the Brain
+
+### The Human Body & Health
+
+- **BIO-07** — Anatomy of the Human Ear — _also indexed in Music: Theory, Instruments & Sound_
+- **BIO-08** — Homeostasis & Body Systems
+- **BIO-09** — Immunology & the Immune System
 
 ### Diversity, Classification & Adaptation
 
-- **BIO-06** — Classifying Life: Taxonomy of Every Kingdom — _also indexed in Chemistry & Chemical Systems_
-- **BIO-07** — Entomology: The Science of Insects
-- **BIO-08** — Axolotls & Neoteny
-- **BIO-09** — Slime Molds & Swarm Intelligence
-- **BIO-10** — Cryptozoology: From Footprints to Facts
+- **BIO-10** — Living Things Explorer
+- **BIO-11** — Ecosystems & Food Webs
+- **BIO-12** — Alexander von Humboldt: The Father of Ecology
+- **BIO-13** — Classifying Life: Taxonomy of Every Kingdom — _also indexed in Chemistry & Chemical Systems_
+- **BIO-14** — Entomology: The Science of Insects
+- **BIO-15** — Axolotls & Neoteny
+- **BIO-16** — Slime Molds & Swarm Intelligence
+- **BIO-17** — Cryptozoology: From Footprints to Facts
 
 ### Evolution & Deep Time
 
-- **BIO-11** — Life Invented the Animal — _also indexed in Chemistry & Chemical Systems_
-- **BIO-12** — The K-Pg Extinction
-- **BIO-13** — The Evolution of Wood
+- **BIO-18** — Natural Selection Lab
+- **BIO-19** — Life Invented the Animal — _also indexed in Chemistry & Chemical Systems_
+- **BIO-20** — The K-Pg Extinction
+- **BIO-21** — The Evolution of Wood
 
 ## Earth & Environmental Science (EAR)
 
@@ -217,86 +228,105 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 62 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 76 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
+### Tools & Simple Machines
+
+- **ENG-01** — Tools & Machines Sort
+- **ENG-02** — Simple Machines Lab
+
 ### Electronics Workshop Foundations
 
-- **ENG-01** — Electronic Components
-- **ENG-02** — Ohm's Law
-- **ENG-03** — Electronic Schematics
-- **ENG-04** — Breadboard Basics
-- **ENG-05** — Robotics Engineering Intro
-- **ENG-06** — Arduino: The Robot Brain
-- **ENG-07** — Arduino Board Anatomy Lab
-- **ENG-08** — Digital Sensors: Actions = Reactions
-- **ENG-09** — Sensor to Webpage
-- **ENG-10** — Inputs: Beyond the Button
-- **ENG-11** — Arduino Programming: Variables, Functions & Libraries
-- **ENG-12** — Outputs: Beyond the LED
-- **ENG-13** — Soldering
-- **ENG-14** — Sensor Modules Kit
-- **ENG-15** — The Internet of Things
+- **ENG-03** — Electronic Components
+- **ENG-04** — Resistor Color Code Guide
+- **ENG-05** — Ohm's Law
+- **ENG-06** — Electronic Schematics
+- **ENG-07** — Breadboard Basics
+- **ENG-08** — Robotics Engineering Intro
+- **ENG-09** — Arduino: The Robot Brain
+- **ENG-10** — Arduino Board Anatomy Lab
+- **ENG-11** — Sensor to Webpage
+- **ENG-12** — Inputs: Beyond the Button
+- **ENG-13** — Arduino Programming: Variables, Functions & Libraries
+- **ENG-14** — Outputs: Beyond the LED
+- **ENG-15** — Soldering
+- **ENG-16** — Sensor Modules Kit
+- **ENG-17** — The Internet of Things
 
 ### Mechanisms, Feedback & Control
 
-- **ENG-16** — Mechanisms and Gear Systems
-- **ENG-17** — PID Control & Feedback Loops
-- **ENG-18** — Maglev Train Engineering
-- **ENG-19** — Bug Bots: Genghis & the Insect Robots
+- **ENG-18** — Mechanisms and Gear Systems
+- **ENG-19** — PID Control & Feedback Loops
+- **ENG-20** — Sensor Fusion: Gyro + Accelerometer
+- **ENG-21** — Where Am I? Robot Mapping & Localization
+- **ENG-22** — Beyond A*: Motion Planning Lab
+- **ENG-23** — Robot Reinforcement Learning: Q-Learning Lab
+- **ENG-24** — Maglev Train Engineering
+- **ENG-25** — Bug Bots: Genghis & the Insect Robots
+- **ENG-26** — Engineering Design Process Studio
 
 ### Structural Design Projects
 
-- **ENG-20** — Bridge Over Troubled Water
-- **ENG-21** — Biomimicry: Engineering Nature's Genius
+- **ENG-27** — Bridge Over Troubled Water
+- **ENG-28** — Biomimicry: Engineering Nature's Genius
 
 ### People Who Changed Engineering
 
-- **ENG-22** — Emily Roebling
-- **ENG-23** — Henry Ford — _also indexed in Design, Materials & Fabrication_
-- **ENG-24** — Rube Goldberg Machine Lab
-- **ENG-25** — Hedy Lamarr
+- **ENG-29** — Emily Roebling
+- **ENG-30** — Henry Ford — _also indexed in Design, Materials & Fabrication_
+- **ENG-31** — Rube Goldberg Machine Lab
+- **ENG-32** — Hedy Lamarr
 
 ## Design, Materials & Fabrication (FAB)
 
+### Materials Intuition
+
+- **FAB-01** — Materials Sort
+
 ### Digital & Physical Fabrication
 
-- **FAB-01** — Camera Controls in 3D CAD
-- **FAB-02** — 3D Printing — Settings, Rules & Perfect Prints
-- **FAB-03** — Print-in-Place Fidgets — The Spiral Cone
-- **FAB-04** — Bandsaw Design Lab — Cuts, Curves & Creative Inventions
+- **FAB-02** — Camera Controls in 3D CAD
+- **FAB-03** — 3D Printing — Settings, Rules & Perfect Prints
+- **FAB-04** — Print-in-Place Fidgets — The Spiral Cone
+- **FAB-05** — Bandsaw Design Lab — Cuts, Curves & Creative Inventions
 
 ### Materials, Fluids & Optics
 
-- **FAB-05** — Viscosimeter
-- **FAB-06** — Squishy Science Lab
-- **FAB-07** — Optics — Mirrors, Lenses & Light — _also indexed in Audio, Lighting & Production Technology_
-- **FAB-08** — Newton's Dispersive Prism
+- **FAB-06** — Viscosimeter
+- **FAB-07** — Squishy Science Lab
+- **FAB-08** — Optics — Mirrors, Lenses & Light — _also indexed in Audio, Lighting & Production Technology_
+- **FAB-09** — Newton's Dispersive Prism
 
-### Immersive Systems
+### Electronic Materials
 
-- **FAB-09** — Virtual Reality — How It Works & How to Build It
-- **FAB-10** — XR: Extended Reality — OpenXR & WebXR
-- **FAB-11** — Steam & VR Launch Protocol — _also indexed in Computer Science & Artificial Intelligence_
+- **FAB-10** — Electronic Materials Lab
+
+### Immersive Systems & Materials Selection
+
+- **FAB-11** — Virtual Reality — How It Works & How to Build It
+- **FAB-12** — XR: Extended Reality — OpenXR & WebXR
+- **FAB-13** — Steam & VR Launch Protocol — _also indexed in Computer Science & Artificial Intelligence_
+- **FAB-14** — Materials Selection Lab
 
 ### 3D Modeling with Blender
 
-- **FAB-12** — Blender Fundamentals Pathway — _also indexed in Game Design & Development_
-- **FAB-13** — Blender Interface & Navigation — _also indexed in Game Design & Development_
-- **FAB-14** — Windows & Doors — _also indexed in Game Design & Development_
-- **FAB-15** — Furniture Design — _also indexed in Game Design & Development_
-- **FAB-16** — Environments & Modular Kits — _also indexed in Game Design & Development_
-- **FAB-17** — Character Modeling — _also indexed in Game Design & Development_
-- **FAB-18** — Props & Hand Tools — _also indexed in Game Design & Development_
-- **FAB-19** — Materials, Lighting & Render — _also indexed in Game Design & Development_
+- **FAB-15** — Blender Fundamentals Pathway — _also indexed in Game Design & Development_
+- **FAB-16** — Blender Interface & Navigation — _also indexed in Game Design & Development_
+- **FAB-17** — Windows & Doors — _also indexed in Game Design & Development_
+- **FAB-18** — Furniture Design — _also indexed in Game Design & Development_
+- **FAB-19** — Environments & Modular Kits — _also indexed in Game Design & Development_
+- **FAB-20** — Character Modeling — _also indexed in Game Design & Development_
+- **FAB-21** — Props & Hand Tools — _also indexed in Game Design & Development_
+- **FAB-22** — Materials, Lighting & Render — _also indexed in Game Design & Development_
 
 ### Blender Workspaces
 
-- **FAB-20** — Blender Workspaces Pathway — _also indexed in Game Design & Development_
-- **FAB-21** — Sculpting — _also indexed in Game Design & Development_
-- **FAB-22** — Geometry Nodes — _also indexed in Game Design & Development_
-- **FAB-23** — Compositing — _also indexed in Game Design & Development_
+- **FAB-23** — Blender Workspaces Pathway — _also indexed in Game Design & Development_
+- **FAB-24** — Sculpting — _also indexed in Game Design & Development_
+- **FAB-25** — Geometry Nodes — _also indexed in Game Design & Development_
+- **FAB-26** — Compositing — _also indexed in Game Design & Development_
 
 ## Audio, Lighting & Production Technology (TEC)
 
@@ -305,84 +335,91 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 - **TEC-01** — Microphone Polar Pattern Lab
 - **TEC-02** — Live Audio Signal Chain — _also indexed in Engineering Systems & Electronics_
 - **TEC-03** — EQ: Find the Problem Frequency
-- **TEC-04** — Room Acoustics & Reverb Lab
-- **TEC-05** — Cymatics: The Geometry of Sound — _also indexed in Physics & Physical Systems_
-- **TEC-06** — Analog Mixer Lab: Patch, Gain & FX Bus — _also indexed in Engineering Systems & Electronics_
+- **TEC-04** — Audio Compression: Taming Dynamics — _also indexed in Engineering Systems & Electronics_
+- **TEC-05** — Room Acoustics & Reverb Lab
+- **TEC-06** — Cymatics: The Geometry of Sound — _also indexed in Physics & Physical Systems, Music: Theory, Instruments & Sound_
+- **TEC-07** — Analog Mixer Lab: Patch, Gain & FX Bus — _also indexed in Engineering Systems & Electronics_
 
 ### Stage & Visual Production Systems
 
-- **TEC-07** — Stage Lighting Design Lab — _also indexed in Engineering Systems & Electronics_
-- **TEC-08** — Walt Disney — _also indexed in Visual Art & Design_
-- **TEC-09** — Jim Henson
+- **TEC-08** — Stage Lighting Design Lab — _also indexed in Engineering Systems & Electronics_
+- **TEC-09** — Theatre Cue Sheets
+- **TEC-10** — Stage Plotting
+- **TEC-11** — Walt Disney — _also indexed in Visual Art & Design_
+- **TEC-12** — Jim Henson
 
 ### Music Theory & Instruments
 
-- **TEC-10** — Guitar Chord Encyclopedia
-- **TEC-11** — Piano Chord Encyclopedia
-- **TEC-12** — Violin Fingerboard Explorer
-- **TEC-13** — Drum Lab: Kit, Notation, Rudiments & Fills
-- **TEC-14** — Ludwig van Beethoven
+- **TEC-13** — Guitar Triads & Arpeggio Routes — _also indexed in Music: Theory, Instruments & Sound_
+- **TEC-14** — Piano Triads & Arpeggio Routes — _also indexed in Music: Theory, Instruments & Sound_
+- **TEC-15** — Modes: From Greece to Today — _also indexed in Music: Theory, Instruments & Sound_
+- **TEC-16** — Violin Fingerboard Explorer — _also indexed in Music: Theory, Instruments & Sound_
+- **TEC-17** — Drum Lab: Kit, Notation, Rudiments & Fills — _also indexed in Music: Theory, Instruments & Sound_
+- **TEC-18** — Ludwig van Beethoven — _also indexed in Music: Theory, Instruments & Sound_
 
 # Volume V — Computer Science, AI & Interactive Media
 
-Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 59 lessons
+Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 62 lessons
 
 ## Computer Science & Artificial Intelligence (CSC)
 
 ### Computing Foundations & Representation
 
 - **CSC-01** — Ada Lovelace — The First Programmer
-- **CSC-02** — Before Computers: Myths, Logic, and AI Imagination
-- **CSC-03** — Build Your Student Page
-- **CSC-04** — GitHub — From Idea to Shared Prototype
-- **CSC-05** — Ethical Hacking & Cyber Safety
-- **CSC-06** — Blocks World Parser
-- **CSC-07** — N-gram Text Predictor
-- **CSC-08** — Python Foundations — _also indexed in Game Design & Development_
+- **CSC-02** — ASCII: Text That Became Games
+- **CSC-03** — Before Computers: Myths, Logic, and AI Imagination
+- **CSC-04** — Build Your Student Page
+- **CSC-05** — GitHub — From Idea to Shared Prototype
+- **CSC-06** — Ethical Hacking & Cyber Safety
+- **CSC-07** — Blocks World Parser
+- **CSC-08** — N-gram Text Predictor
+- **CSC-09** — Python Foundations — _also indexed in Game Design & Development_
 
 ### Algorithms, Structures & Search
 
-- **CSC-09** — Sorting Algorithms
-- **CSC-10** — State Machines
-- **CSC-11** — A* Pathfinding Agent
-- **CSC-12** — Minimum Spanning Tree
-- **CSC-13** — Cryptography & The Enigma
+- **CSC-10** — Sorting Algorithms
+- **CSC-11** — State Machines
+- **CSC-12** — A* Pathfinding Agent
+- **CSC-13** — Minimum Spanning Tree
+- **CSC-14** — Cryptography & The Enigma
 
 ### Simulation & Generative Systems
 
-- **CSC-14** — Life Lab: The Game of Life
-- **CSC-15** — Perlin Noise
-- **CSC-16** — CGI Water: From Physics to Pixels
+- **CSC-15** — Life Lab: The Game of Life
+- **CSC-16** — Perlin Noise
+- **CSC-17** — The Demoscene
+- **CSC-18** — CGI Water: From Physics to Pixels
 
 ### Artificial Intelligence & Machine Reasoning
 
-- **CSC-17** — Alan Turing and The Turing Test
-- **CSC-18** — AI Origins: ELIZA Chatbot
-- **CSC-19** — Rule Engine Expert System
-- **CSC-20** — Perceptron Lab
-- **CSC-21** — Chess: Origins and How to Play
-- **CSC-22** — 1v1 Game AI: Minimax
-- **CSC-23** — AI Chess Through History
-- **CSC-24** — Deep Blue to AlphaGo: The Go Challenge
+- **CSC-19** — Alan Turing and The Turing Test
+- **CSC-20** — AI Origins: ELIZA Chatbot
+- **CSC-21** — Rule Engine Expert System
+- **CSC-22** — Perceptron Lab
+- **CSC-23** — Chess: Origins and How to Play
+- **CSC-24** — 1v1 Game AI: Minimax
+- **CSC-25** — AI Chess Through History
+- **CSC-26** — Deep Blue to AlphaGo: The Go Challenge
 
 ### People Who Changed Computing
 
-- **CSC-25** — Grace Hopper
-- **CSC-26** — Steve Jobs
+- **CSC-27** — Grace Hopper
+- **CSC-28** — Margaret Hamilton: Software for the Moon
+- **CSC-29** — Steve Jobs
 
 ### Build Your Own Web Pathway
 
-- **CSC-27** — Build Your Own Web — Web Design Pathway
-- **CSC-28** — Set Up Your First Site
-- **CSC-29** — Give the Page Meaning with HTML
-- **CSC-30** — Design with CSS
-- **CSC-31** — Make It Respond with JavaScript
-- **CSC-32** — Test, Debug, and Include Everyone
-- **CSC-33** — Website Project Studios
-- **CSC-34** — The Flash Era: What Happened to Browser Games
-- **CSC-35** — Build a Home for Interactive Work
-- **CSC-36** — Publish and Maintain Your Website
-- **CSC-37** — Extend into WebXR
+- **CSC-30** — Build Your Own Web — Web Design Pathway
+- **CSC-31** — Set Up Your First Site
+- **CSC-32** — Give the Page Meaning with HTML
+- **CSC-33** — Design with CSS
+- **CSC-34** — Make It Respond with JavaScript
+- **CSC-35** — Test, Debug, and Include Everyone
+- **CSC-36** — Website Project Studios
+- **CSC-37** — The Flash Era: What Happened to Browser Games
+- **CSC-38** — Build a Home for Interactive Work
+- **CSC-39** — Publish and Maintain Your Website
+- **CSC-40** — Extend into WebXR
 
 ## Game Design & Development (GAM)
 
@@ -422,7 +459,7 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 46 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 49 lessons
 
 ## Visual Art & Design (DES)
 
@@ -437,6 +474,7 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **DES-04** — Vincent van Gogh
 - **DES-05** — Pablo Picasso
 - **DES-06** — Charles & Ray Eames
+- **DES-07** — Nam June Paik
 
 ## Language, Media & Critical Thinking (LAN)
 
@@ -486,18 +524,20 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **BIB-01** — Bible Foundations & Pathway
 - **BIB-02** — The World of the Bible
 - **BIB-03** — How the Bible Reached Us
-- **BIB-04** — The Tabernacle
-- **BIB-05** — The Temple & God's Presence
-- **BIB-06** — Kingdoms, Prophets & Exile
-- **BIB-07** — The Feasts of Israel
-- **BIB-08** — Elijah: Prophet of the Living God
-- **BIB-09** — The World of Jesus
-- **BIB-10** — Jesus' Parables Lab
-- **BIB-11** — Holy Week: The Final Days of Jesus
-- **BIB-12** — Acts: Jerusalem to the Nations
-- **BIB-13** — Paul's Missionary Journeys
-- **BIB-14** — Proverbs: Wisdom Decision Lab
-- **BIB-15** — The Sermon on the Mount
+- **BIB-04** — Genesis 10: The Table of Nations
+- **BIB-05** — The Tabernacle
+- **BIB-06** — The Temple & God's Presence
+- **BIB-07** — Kingdoms, Prophets & Exile
+- **BIB-08** — The Feasts of Israel
+- **BIB-09** — Elijah: Prophet of the Living God
+- **BIB-10** — Daniel: Faithfulness in Exile
+- **BIB-11** — The World of Jesus
+- **BIB-12** — Jesus' Parables Lab
+- **BIB-13** — Holy Week: The Final Days of Jesus
+- **BIB-14** — Acts: Jerusalem to the Nations
+- **BIB-15** — Paul's Missionary Journeys
+- **BIB-16** — Proverbs: Wisdom Decision Lab
+- **BIB-17** — The Sermon on the Mount
 
 # Supporting Pages
 
