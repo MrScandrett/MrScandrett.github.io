@@ -7,44 +7,114 @@
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="wrap">
+  <main class="wrap">
     <h1>ASCII CITY</h1>
     <p class="subtitle">A procedural neon city rendered in real 3D &mdash; then shown to you only as letters, numbers and symbols. Every character on screen is one pixel of the 3D frame: denser glyphs for brighter light, tinted by the colour underneath.</p>
 
     <div class="stage">
-      <canvas id="game" width="960" height="620"></canvas>
-      <div class="hud">
+      <canvas id="game" width="960" height="620" role="img" aria-label="A 3D neon city drawn entirely in coloured text characters"></canvas>
+      <div class="hud" aria-live="off">
+        <div class="hud-row"><span class="hud-label">MODE</span><span class="hud-value" id="stat-mode">FLYOVER</span></div>
         <div class="hud-row"><span class="hud-label">SECTOR</span><span class="hud-value" id="stat-sector">00,00</span></div>
         <div class="hud-row"><span class="hud-label">HEADING</span><span class="hud-value" id="stat-heading">N</span></div>
-        <div class="hud-row"><span class="hud-label">MODE</span><span class="hud-value" id="stat-mode">FLYOVER</span></div>
+        <div class="hud-row"><span class="hud-label">GRID</span><span class="hud-value" id="stat-grid">160×62</span></div>
+        <div class="hud-row"><span class="hud-label">SEED</span><span class="hud-value" id="stat-seed">0</span></div>
         <div class="hud-row"><span class="hud-label">FPS</span><span class="hud-value" id="stat-fps">--</span></div>
       </div>
-      <canvas class="minimap" id="minimap" width="150" height="150"></canvas>
+      <canvas class="minimap" id="minimap" width="150" height="150" aria-hidden="true"></canvas>
+      <div class="toast" id="toast" role="status"></div>
       <div class="boot-overlay" id="bootOverlay">
         <div class="boot-text">
           <p>&gt; booting ascii_city.engine&hellip;</p>
-          <p>&gt; city grid generated</p>
+          <p>&gt; city grid generated from seed <span id="bootSeed">0</span></p>
           <p>&gt; glyph shader online</p>
-          <p>&gt; click to enter the city</p>
+          <p class="blink">&gt; click to enter the city_</p>
         </div>
       </div>
     </div>
 
-    <div class="controls">
-      <div class="keys">
-        <strong>Flyover</strong> drag to orbit, scroll to zoom &nbsp;&middot;&nbsp; <strong>Street</strong> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move, <kbd>Q</kbd><kbd>E</kbd> / drag to look, <kbd>Shift</kbd> run
+    <div class="panel">
+      <div class="group" role="group" aria-labelledby="lbl-mode">
+        <span class="group-label" id="lbl-mode">View <kbd>C</kbd></span>
+        <div class="seg">
+          <button type="button" data-group="mode" data-value="orbit">Flyover</button>
+          <button type="button" data-group="mode" data-value="street">Street</button>
+          <button type="button" data-group="mode" data-value="ride">Ride-along</button>
+        </div>
       </div>
-      <div class="keys">
-        <kbd>C</kbd> switch view &nbsp;&middot;&nbsp; <kbd>R</kbd> new city &nbsp;&middot;&nbsp; <kbd>M</kbd> minimap
+
+      <div class="group" role="group" aria-labelledby="lbl-ramp">
+        <span class="group-label" id="lbl-ramp">Glyph ramp <kbd>G</kbd></span>
+        <div class="seg">
+          <button type="button" data-group="ramp" data-value="classic">Classic</button>
+          <button type="button" data-group="ramp" data-value="blocks">Blocks</button>
+          <button type="button" data-group="ramp" data-value="binary">Binary</button>
+          <button type="button" data-group="ramp" data-value="matrix">Matrix</button>
+          <button type="button" data-group="ramp" data-value="custom">Custom</button>
+        </div>
+        <label class="custom-ramp-label">
+          <span>Your own ramp, dark &rarr; bright (sorted by ink for you):</span>
+          <input id="customRamp" type="text" value=" .oO@" spellcheck="false" autocomplete="off" />
+        </label>
       </div>
-      <div class="buttons">
-        <button id="modeBtn" type="button">Walk the Streets</button>
-        <button id="regenBtn" type="button">New City</button>
+
+      <div class="group" role="group" aria-labelledby="lbl-detail">
+        <span class="group-label" id="lbl-detail">Detail <kbd>1</kbd>&ndash;<kbd>4</kbd></span>
+        <div class="seg">
+          <button type="button" data-group="detail" data-value="low">Low</button>
+          <button type="button" data-group="detail" data-value="normal">Normal</button>
+          <button type="button" data-group="detail" data-value="high">High</button>
+          <button type="button" data-group="detail" data-value="max">Max</button>
+        </div>
+      </div>
+
+      <div class="group" role="group" aria-labelledby="lbl-palette">
+        <span class="group-label" id="lbl-palette">Colour <kbd>H</kbd></span>
+        <div class="seg">
+          <button type="button" data-group="palette" data-value="neon">Neon</button>
+          <button type="button" data-group="palette" data-value="phosphor">Phosphor</button>
+          <button type="button" data-group="palette" data-value="amber">Amber</button>
+        </div>
+      </div>
+
+      <div class="group" role="group" aria-labelledby="lbl-view">
+        <span class="group-label" id="lbl-view">Peek behind the glyphs <kbd>P</kbd></span>
+        <div class="seg">
+          <button type="button" data-group="view" data-value="ascii">ASCII</button>
+          <button type="button" data-group="view" data-value="split">Split</button>
+          <button type="button" data-group="view" data-value="pixels">Pixels</button>
+        </div>
+      </div>
+
+      <div class="group" role="group" aria-labelledby="lbl-fx">
+        <span class="group-label" id="lbl-fx">Effects</span>
+        <div class="seg">
+          <button type="button" data-group="edges" data-value="true">Edge glyphs <kbd>X</kbd></button>
+          <button type="button" data-group="rain" data-value="true">Rain <kbd>T</kbd></button>
+        </div>
       </div>
     </div>
 
-    <p class="credit">How it works: Three.js renders the city at just 160&times;62 pixels. Each pixel&rsquo;s brightness picks a character from <code>&nbsp;.'`,:;-~=+*!?%#&amp;$@</code>, and its hue tints that character. See <code>script.js</code>.</p>
-  </div>
+    <div class="ramp-box">
+      <span class="group-label">Current ramp: each glyph stands for one band of brightness</span>
+      <div class="ramp-strip" id="rampStrip"></div>
+    </div>
+
+    <div class="controls">
+      <div class="keys">
+        <strong>Flyover</strong> drag to orbit, scroll to zoom &nbsp;&middot;&nbsp; <strong>Street</strong> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move, click the city then move the mouse to look, <kbd>Shift</kbd> run &nbsp;&middot;&nbsp; <strong>Ride-along</strong> <kbd>Q</kbd><kbd>E</kbd> switch car
+      </div>
+      <div class="keys">
+        <kbd>R</kbd> new city &nbsp;&middot;&nbsp; <kbd>M</kbd> minimap &nbsp;&middot;&nbsp; <kbd>F</kbd> copy frame as text &nbsp;&middot;&nbsp; <kbd>Esc</kbd> release mouse
+      </div>
+      <div class="buttons">
+        <button id="regenBtn" class="pill pink" type="button">New City</button>
+        <button id="copyBtn" class="pill" type="button">Copy Frame as Text</button>
+      </div>
+    </div>
+
+    <p class="credit">How it works: Three.js renders the city at just 160&times;62 pixels (on Normal detail). Each pixel&rsquo;s brightness picks a character from <code>&nbsp;.'`,:;-~=+*!?%#&amp;$@</code>, and its hue tints that character. Edge glyphs run a Sobel filter to find sharp changes in brightness and draw <code>| / - \</code> along them. The seed in the address bar rebuilds the same city for anyone you share it with. See <code>script.js</code>.</p>
+  </main>
 
   <script type="module" src="script.js"></script>
 </body>

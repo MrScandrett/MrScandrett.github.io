@@ -15,7 +15,7 @@ body {
     radial-gradient(ellipse at 50% -10%, #1a0f2e 0%, #0a0714 45%, #050308 100%);
   font-family: "Segoe UI", system-ui, sans-serif;
   color: #cfe8ff;
-  padding: 20px;
+  padding: 20px 16px;
 }
 
 .wrap {
@@ -26,10 +26,10 @@ body {
 
 h1 {
   margin: 0 0 4px;
-  font-size: 2.4rem;
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
   font-weight: 700;
   letter-spacing: 0.3em;
-  color: #7CFCF0;
+  color: #7cfcf0;
   text-shadow:
     0 0 10px rgba(124, 252, 240, 0.65),
     0 0 30px rgba(255, 60, 220, 0.35);
@@ -40,12 +40,14 @@ h1 {
   max-width: 660px;
   font-size: 0.92rem;
   line-height: 1.5;
-  opacity: 0.72;
+  color: #b4c8dc;
 }
 
 .stage {
   position: relative;
-  display: inline-block;
+  display: block;
+  max-width: 960px;
+  margin: 0 auto;
   line-height: 0;
   border-radius: 10px;
   overflow: hidden;
@@ -55,12 +57,13 @@ h1 {
     0 18px 50px rgba(0, 0, 0, 0.6);
 }
 
+/* Scanlines and a faint RGB aperture grille, like an old CRT. */
 .stage::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: 
-    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+  background:
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
     linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
   background-size: 100% 2px, 3px 100%;
   pointer-events: none;
@@ -71,7 +74,6 @@ h1 {
 #game {
   display: block;
   width: 100%;
-  max-width: 960px;
   height: auto;
   background: #000;
   cursor: crosshair;
@@ -90,11 +92,12 @@ h1 {
   font-size: 12px;
   letter-spacing: 0.08em;
   padding: 6px 10px;
-  background: rgba(5, 5, 14, 0.55);
+  background: rgba(5, 5, 14, 0.7);
   border: 1px solid rgba(124, 252, 240, 0.3);
   border-radius: 4px;
   line-height: 1.4;
   pointer-events: none;
+  text-align: left;
 }
 
 .hud-row {
@@ -103,11 +106,12 @@ h1 {
 }
 
 .hud-label {
-  color: rgba(124, 252, 240, 0.65);
+  min-width: 7ch;
+  color: #8fe9df;
 }
 
 .hud-value {
-  color: #ff7ce8;
+  color: #ff8cec;
   font-weight: 700;
 }
 
@@ -124,6 +128,30 @@ h1 {
   display: none;
 }
 
+.toast {
+  position: absolute;
+  left: 50%;
+  top: 14px;
+  transform: translate(-50%, -8px);
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: rgba(5, 5, 14, 0.9);
+  border: 1px solid rgba(124, 252, 240, 0.5);
+  color: #7cfcf0;
+  font-family: "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.3;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 12;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
 .boot-overlay {
   position: absolute;
   inset: 0;
@@ -133,6 +161,7 @@ h1 {
   background: rgba(2, 2, 8, 0.86);
   cursor: pointer;
   transition: opacity 0.35s ease;
+  z-index: 11;
 }
 
 .boot-overlay.hidden {
@@ -142,16 +171,157 @@ h1 {
 
 .boot-text {
   font-family: "Courier New", monospace;
-  font-size: 15px;
+  font-size: clamp(11px, 2.4vw, 15px);
   line-height: 1.9;
   color: #7cff9c;
   text-shadow: 0 0 8px rgba(124, 255, 156, 0.6);
   text-align: left;
+  padding: 0 16px;
 }
 
 .boot-text p {
   margin: 0;
 }
+
+.blink {
+  animation: blink 1.1s steps(2, start) infinite;
+}
+
+@keyframes blink {
+  to { visibility: hidden; }
+}
+
+/* ---- settings panel ---------------------------------------------------- */
+
+.panel {
+  margin: 16px auto 0;
+  max-width: 960px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  text-align: left;
+}
+
+.group,
+.ramp-box {
+  padding: 10px 12px;
+  border: 1px solid rgba(124, 252, 240, 0.18);
+  border-radius: 8px;
+  background: rgba(10, 8, 24, 0.6);
+}
+
+.group-label {
+  display: block;
+  margin-bottom: 8px;
+  font-family: "Courier New", monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8fe9df;
+}
+
+.seg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.seg button {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(124, 252, 240, 0.35);
+  background: rgba(124, 252, 240, 0.06);
+  color: #cfe8ff;
+  font-family: "Courier New", monospace;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.seg button:hover {
+  background: rgba(124, 252, 240, 0.16);
+}
+
+.seg button[aria-pressed="true"] {
+  background: rgba(255, 124, 232, 0.2);
+  border-color: #ff7ce8;
+  color: #ffd6f7;
+  box-shadow: 0 0 10px rgba(255, 124, 232, 0.3);
+}
+
+.seg button kbd {
+  margin: 0 0 0 4px;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid #ffd166;
+  outline-offset: 2px;
+}
+
+.custom-ramp-label {
+  display: none;
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: #b4c8dc;
+}
+
+.group:has(#customRamp.active) .custom-ramp-label,
+.custom-ramp-label:focus-within {
+  display: block;
+}
+
+.custom-ramp-label input {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(124, 252, 240, 0.4);
+  background: #05050e;
+  color: #7cfcf0;
+  font-family: "Courier New", monospace;
+  font-size: 1rem;
+  white-space: pre;
+}
+
+.ramp-box {
+  margin: 12px auto 0;
+  max-width: 960px;
+  text-align: left;
+}
+
+.ramp-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.ramp-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 30px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(124, 252, 240, 0.2);
+  background: #05050e;
+}
+
+.ramp-ch {
+  font-family: "Courier New", monospace;
+  font-size: 18px;
+  line-height: 26px;
+  color: #ffffff;
+}
+
+.ramp-bar {
+  display: block;
+  width: 100%;
+  height: 6px;
+}
+
+/* ---- keys and actions ---------------------------------------------------- */
 
 .controls {
   margin-top: 16px;
@@ -160,53 +330,22 @@ h1 {
   align-items: center;
   gap: 10px;
   font-size: 0.85rem;
-}
-
-.keys {
-  opacity: 0.85;
+  line-height: 1.8;
 }
 
 kbd {
   display: inline-block;
   min-width: 1.4em;
-  padding: 2px 6px;
+  padding: 0 5px;
   margin: 0 2px;
   border-radius: 4px;
   border: 1px solid rgba(124, 252, 240, 0.4);
   background: rgba(124, 252, 240, 0.08);
-  color: #7CFCF0;
+  color: #7cfcf0;
   font-family: "Courier New", monospace;
   font-size: 0.85em;
-}
-
-button#regenBtn {
-  margin-top: 4px;
-  padding: 8px 22px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 124, 232, 0.55);
-  background: rgba(255, 124, 232, 0.12);
-  color: #ff7ce8;
-  font-family: "Courier New", monospace;
-  font-size: 0.85rem;
-  letter-spacing: 0.08em;
-  cursor: pointer;
-  transition: background 0.15s ease, transform 0.15s ease;
-}
-
-button#regenBtn:hover {
-  background: rgba(255, 124, 232, 0.24);
-  transform: translateY(-1px);
-}
-
-.credit {
-  margin: 16px auto 0;
-  max-width: 640px;
-  font-size: 0.78rem;
-  opacity: 0.55;
-}
-
-.credit code {
-  font-family: "Courier New", monospace;
+  line-height: 1.5;
+  text-transform: none;
 }
 
 .buttons {
@@ -216,7 +355,7 @@ button#regenBtn:hover {
   justify-content: center;
 }
 
-button#modeBtn {
+.pill {
   margin-top: 4px;
   padding: 8px 22px;
   border-radius: 999px;
@@ -227,8 +366,38 @@ button#modeBtn {
   font-size: 0.85rem;
   letter-spacing: 0.08em;
   cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
 }
 
-button#modeBtn:hover {
+.pill:hover {
   background: rgba(124, 252, 240, 0.24);
+  transform: translateY(-1px);
+}
+
+.pill.pink {
+  border-color: rgba(255, 124, 232, 0.55);
+  background: rgba(255, 124, 232, 0.12);
+  color: #ff8cec;
+}
+
+.pill.pink:hover {
+  background: rgba(255, 124, 232, 0.24);
+}
+
+.credit {
+  margin: 16px auto 0;
+  max-width: 680px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: #8f9fb4;
+}
+
+.credit code {
+  font-family: "Courier New", monospace;
+  color: #b4c8dc;
+}
+
+@media (max-width: 600px) {
+  .hud { font-size: 10px; padding: 4px 6px; }
+  .minimap { width: 90px; height: 90px; }
 }

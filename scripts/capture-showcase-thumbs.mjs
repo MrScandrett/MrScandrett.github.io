@@ -17,7 +17,7 @@ const [base = "http://localhost:8080", ...only] = process.argv.slice(2);
 export const SKIP = new Set(["josh-b-beat-jumper-v0-1", "simple-paint-studio", "ayden"]);
 const RULES = {
   "luke-d": { click: "#startButton", wait: 4000 },
-  "ascii-city": { click: "body", wait: 4000 },
+  "ascii-city": { click: "#bootOverlay", clip: ".stage", wait: 4000 },
 };
 const ruleFor = (p) => RULES[p.slug] || (p.category === "3D" ? { clip: "#stl-viewport", hide: "#stl-status" } : {});
 
