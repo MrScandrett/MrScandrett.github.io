@@ -1,0 +1,396 @@
+/* Electronic Schematics — lessons/engineering/arduino-and-electronics/electronic-schematics.html
+ * Look: a drafting sheet. Grid paper, zone tags, a title block, and redline notes.
+ * Every inline schematic strokes with --es-ink so the drawings survive night themes.
+ */
+:root {
+  --es-paper: #f1eee4;
+  --es-sheet: #fbfaf6;
+  --es-soft: #f4f2ea;
+  --es-ink: #15263a;
+  --es-muted: #4c5a68;
+  --es-line: rgba(21, 38, 58, 0.2);
+  --es-grid: rgba(31, 95, 153, 0.075);
+  --es-blue: #1d5c94;
+  --es-blue-soft: rgba(29, 92, 148, 0.1);
+  --es-red: #b3361f;
+  --es-red-soft: rgba(179, 54, 31, 0.1);
+  --es-amber: #c98407;
+  --es-current: #e39b0b;
+  --es-green: #237347;
+  --es-green-soft: rgba(35, 115, 71, 0.11);
+  --es-violet: #5b44a4;
+  --es-hl: rgba(227, 155, 11, 0.28);
+}
+[data-lighting="night"], [data-theme="vaporwave"], [data-theme="bark"] {
+  --es-paper: #0f1923;
+  --es-sheet: #14212c;
+  --es-soft: #1a2a37;
+  --es-ink: #e3ecf3;
+  --es-muted: #a6b5c2;
+  --es-line: rgba(227, 236, 243, 0.17);
+  --es-grid: rgba(124, 184, 238, 0.06);
+  --es-blue: #82bdf0;
+  --es-blue-soft: rgba(130, 189, 240, 0.12);
+  --es-red: #f2917f;
+  --es-red-soft: rgba(242, 145, 127, 0.12);
+  --es-amber: #f2b94b;
+  --es-current: #f5bd45;
+  --es-green: #74d6a0;
+  --es-green-soft: rgba(116, 214, 160, 0.12);
+  --es-violet: #b7a6f2;
+  --es-hl: rgba(245, 189, 69, 0.24);
+}
+
+.ll-viewport { --ll-panel-w: 310px; }
+.es-page {
+  --font-sans: "Archivo", Inter, system-ui, sans-serif;
+  --font-display: "Archivo", Inter, system-ui, sans-serif;
+  font-family: var(--font-sans);
+  width: min(100%, 1180px);
+  margin: 0 auto;
+  padding: .6rem clamp(1rem, 3vw, 1.6rem) 2rem;
+  color: var(--es-ink);
+}
+.es-page button { font: inherit; cursor: pointer; touch-action: manipulation; }
+.es-page :focus-visible { outline: 3px solid var(--es-blue); outline-offset: 3px; }
+.es-page .ll-lesson-steps { margin: 0 0 1rem; border-radius: 8px; }
+.es-page code, .es-mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .92em; }
+.es-page a { color: var(--es-blue); }
+
+/* Inline drawings were authored with fixed dark strokes; route them through the theme ink. */
+.es-page svg [stroke="#1d1d1f"], .es-page svg [stroke="#415266"] { stroke: var(--es-ink); }
+.es-page svg [fill="#1d1d1f"], .es-page svg [fill="#415266"] { fill: var(--es-ink); }
+.es-page svg [fill="#64748b"] { fill: var(--es-muted); }
+
+/* ── Hero: a drawing sheet with a live circuit and a title block ── */
+.es-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, .95fr);
+  gap: clamp(1.2rem, 4vw, 2.8rem);
+  align-items: center;
+  margin: .4rem 0 .9rem;
+  padding: clamp(1.4rem, 4vw, 2.6rem);
+  border: 1px solid var(--es-line);
+  border-radius: 6px;
+  background-color: var(--es-paper);
+  background-image:
+    linear-gradient(var(--es-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--es-grid) 1px, transparent 1px);
+  background-size: 20px 20px;
+  box-shadow: inset 0 0 0 7px var(--es-paper), inset 0 0 0 8px var(--es-line), 0 18px 44px rgba(15, 30, 45, .1);
+  overflow: hidden;
+}
+.es-zones { position: absolute; inset: 0; pointer-events: none; font: 600 .62rem "JetBrains Mono", monospace; color: var(--es-muted); opacity: .7; }
+.es-zones span { position: absolute; }
+.es-kicker, .es-tag {
+  font: 700 .72rem/1.2 "JetBrains Mono", monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.es-kicker { color: var(--es-red); margin: 0; }
+.es-hero h1 {
+  margin: .35rem 0 .8rem;
+  font: 800 clamp(2.5rem, 7vw, 4.9rem)/.86 "Archivo", sans-serif;
+  font-stretch: 72%;
+  letter-spacing: -.01em;
+  text-transform: uppercase;
+}
+.es-hero h1 span { display: block; color: var(--es-blue); }
+.es-lede { max-width: 56ch; margin: 0 0 1rem; font-size: 1.02rem; line-height: 1.68; color: var(--es-ink); }
+.es-meta { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 1.1rem; padding: 0; list-style: none; }
+.es-meta li { padding: .26rem .5rem; border: 1px solid var(--es-line); background: var(--es-sheet); font: 600 .7rem/1.2 "JetBrains Mono", monospace; }
+.es-hero-links { display: flex; flex-wrap: wrap; gap: .5rem 1rem; font-weight: 700; font-size: .9rem; }
+.es-hero-links a { text-decoration: none; }
+.es-hero-links a:hover { text-decoration: underline; }
+
+.es-sheet {
+  position: relative;
+  border: 2px solid var(--es-ink);
+  background: var(--es-sheet);
+  box-shadow: 8px 8px 0 rgba(21, 38, 58, .12);
+}
+.es-sheet-draw { padding: .6rem .6rem .2rem; }
+.es-sheet svg { display: block; width: 100%; height: auto; }
+.es-sheet-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; padding: .5rem .75rem .75rem; }
+.es-readout { flex: 1 1 14rem; margin: 0; font: 600 .78rem/1.45 "JetBrains Mono", monospace; color: var(--es-muted); }
+.es-readout b { color: var(--es-ink); }
+.es-titleblock {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr .7fr .7fr;
+  border-top: 2px solid var(--es-ink);
+  font: 600 .64rem/1.2 "JetBrains Mono", monospace;
+}
+.es-titleblock div { padding: .35rem .5rem; border-left: 1px solid var(--es-ink); min-width: 0; }
+.es-titleblock div:first-child { border-left: 0; }
+.es-titleblock small { display: block; color: var(--es-muted); font-size: .56rem; letter-spacing: .08em; text-transform: uppercase; }
+.es-titleblock b { display: block; margin-top: .1rem; font-size: .74rem; letter-spacing: .02em; overflow-wrap: anywhere; }
+
+/* Shared button vocabulary */
+.es-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .35rem;
+  min-height: 2.4rem; padding: .5rem .9rem;
+  border: 2px solid var(--es-ink); border-radius: 4px;
+  background: var(--es-ink); color: var(--es-sheet);
+  font-weight: 800 !important; font-size: .84rem !important; text-decoration: none;
+  box-shadow: 3px 3px 0 var(--es-current);
+  transition: transform .12s, box-shadow .12s;
+}
+.es-btn:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--es-current); }
+.es-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--es-current); }
+.es-btn.is-ghost { background: var(--es-sheet); color: var(--es-ink); box-shadow: 3px 3px 0 var(--es-line); }
+.es-btn[disabled] { opacity: .45; cursor: not-allowed; transform: none; }
+
+/* Live circuit drawing */
+.es-wire { fill: none; stroke: var(--es-ink); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.es-body { fill: var(--es-sheet); stroke: var(--es-ink); stroke-width: 2.4; stroke-linejoin: round; }
+.es-label { fill: var(--es-ink); font: 700 12px "JetBrains Mono", monospace; }
+.es-label.is-muted { fill: var(--es-muted); font-weight: 600; font-size: 10.5px; }
+.es-dot { fill: var(--es-ink); }
+.es-flow {
+  fill: none; stroke: var(--es-current); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 1 15; opacity: 0; transition: opacity .25s;
+}
+.is-live .es-flow { opacity: 1; animation: es-flow 0.9s linear infinite; }
+@keyframes es-flow { to { stroke-dashoffset: -16; } }
+.es-lever { transform-box: view-box; transition: transform .25s cubic-bezier(.3, 1.4, .5, 1); }
+.es-led-glow { fill: #ff4d3d; opacity: 0; transition: opacity .25s; filter: blur(6px); }
+.is-live .es-led-glow { opacity: .55; }
+.es-led-body { fill: var(--es-sheet); transition: fill .25s; }
+.is-live .es-led-body { fill: #ff5a46; }
+@media (prefers-reduced-motion: reduce) {
+  .is-live .es-flow { animation: none; stroke-dasharray: none; stroke-width: 3; opacity: .55; }
+}
+
+/* ── Section cards ── */
+.es-card {
+  position: relative;
+  margin: 0 0 1.1rem;
+  padding: clamp(1.15rem, 3vw, 1.7rem);
+  border: 1px solid var(--es-line);
+  border-top: 4px solid var(--es-accent, var(--es-blue));
+  border-radius: 6px;
+  background: var(--es-sheet);
+  box-shadow: 0 10px 28px rgba(15, 30, 45, .07);
+  scroll-margin-top: 4.5rem;
+}
+.es-tag { display: inline-flex; align-items: center; gap: .45rem; margin: 0 0 .35rem; color: var(--es-accent, var(--es-blue)); }
+.es-tag::before { content: attr(data-zone); padding: .14rem .32rem; border: 1.5px solid currentColor; font-size: .66rem; }
+.es-card h2 {
+  margin: 0 0 .55rem;
+  font: 800 clamp(1.55rem, 3.6vw, 2.25rem)/1.02 "Archivo", sans-serif;
+  font-stretch: 78%;
+  letter-spacing: -.005em;
+}
+.es-card h3 { margin: 1.15rem 0 .4rem; font-size: 1.05rem; font-weight: 800; }
+.es-card > p, .es-prose p { max-width: 74ch; margin: 0 0 .75rem; line-height: 1.68; font-size: .95rem; color: var(--es-ink); }
+.es-card ol, .es-card ul { line-height: 1.65; font-size: .93rem; }
+.es-sub { color: var(--es-muted) !important; }
+
+.es-note {
+  margin: .9rem 0;
+  padding: .8rem 1rem;
+  border-left: 4px solid var(--es-blue);
+  background: var(--es-blue-soft);
+  font-size: .9rem;
+  line-height: 1.6;
+}
+.es-note b:first-child { display: block; margin-bottom: .15rem; font: 700 .7rem "JetBrains Mono", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--es-blue); }
+.es-note.is-red { border-color: var(--es-red); background: var(--es-red-soft); }
+.es-note.is-red b:first-child { color: var(--es-red); }
+.es-note.is-green { border-color: var(--es-green); background: var(--es-green-soft); }
+.es-note.is-green b:first-child { color: var(--es-green); }
+
+.es-grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .75rem; margin: .9rem 0; }
+.es-grid3 article { padding: .9rem 1rem; border: 1px solid var(--es-line); border-radius: 4px; background: var(--es-soft); }
+.es-grid3 b { display: block; margin-bottom: .25rem; font-size: .95rem; }
+.es-grid3 p { margin: 0; font-size: .86rem; line-height: 1.58; color: var(--es-muted); }
+
+/* ── Two drawings, one circuit ── */
+.es-twin { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; margin: 1rem 0 .6rem; }
+.es-twin figure { margin: 0; border: 1px solid var(--es-line); border-radius: 4px; background: var(--es-soft); overflow: hidden; }
+.es-twin figcaption { display: flex; justify-content: space-between; gap: .5rem; padding: .45rem .7rem; border-bottom: 1px solid var(--es-line); font: 700 .7rem "JetBrains Mono", monospace; letter-spacing: .06em; text-transform: uppercase; color: var(--es-muted); }
+.es-twin svg { display: block; width: 100%; height: auto; }
+.es-part { cursor: pointer; outline: none; }
+.es-part .es-hit { fill: transparent; stroke: none; }
+.es-part.is-on .es-hit, .es-part:focus-visible .es-hit { fill: var(--es-hl); stroke: var(--es-current); stroke-width: 2; stroke-dasharray: 5 4; }
+.es-chipbar { display: flex; flex-wrap: wrap; gap: .4rem; margin: .4rem 0 .5rem; }
+.es-chip {
+  padding: .36rem .65rem; border: 1.5px solid var(--es-line); border-radius: 999px;
+  background: var(--es-sheet); color: var(--es-ink);
+  font: 700 .78rem "JetBrains Mono", monospace !important;
+}
+.es-chip[aria-pressed="true"] { border-color: var(--es-current); background: var(--es-hl); }
+.es-twin-info { min-height: 3.4rem; margin: 0; padding: .7rem .9rem; border: 1px dashed var(--es-line); border-radius: 4px; font-size: .92rem; line-height: 1.55; }
+
+/* ── Physical part → symbol cards ── */
+.part-map { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: .8rem; margin-top: .9rem; }
+.part-card { padding: .95rem; border: 1px solid var(--es-line); border-radius: 4px; background: var(--es-soft); }
+.part-visuals { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-bottom: .7rem; }
+.part-view { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .3rem; min-height: 110px; padding: .5rem; border: 1px solid var(--es-line); border-radius: 4px; background: var(--es-sheet); }
+.part-view svg { display: block; max-width: 100%; overflow: visible; }
+.part-view span { font: 700 .6rem "JetBrains Mono", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--es-muted); }
+.part-card h3 { margin: 0 0 .3rem; font-size: 1rem; }
+.part-card p { margin: 0; font-size: .85rem; line-height: 1.55; color: var(--es-muted); }
+.part-clue { margin-top: .6rem; padding: .5rem .6rem; border-left: 3px solid var(--es-blue); background: var(--es-blue-soft); font-size: .8rem; font-weight: 700; line-height: 1.45; }
+
+/* ── Symbol library + drill ── */
+.es-tabs { display: flex; flex-wrap: wrap; gap: .35rem; margin: .9rem 0 .2rem; border-bottom: 2px solid var(--es-ink); }
+.es-tab {
+  margin-bottom: -2px; padding: .5rem .85rem;
+  border: 2px solid transparent; border-bottom: 0; border-radius: 4px 4px 0 0;
+  background: transparent; color: var(--es-muted);
+  font: 700 .78rem "JetBrains Mono", monospace !important; letter-spacing: .03em;
+}
+.es-tab[aria-selected="true"] { border-color: var(--es-ink); background: var(--es-sheet); color: var(--es-ink); }
+.sym-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: .7rem; margin-top: .9rem; }
+.sym-card { display: flex; flex-direction: column; align-items: center; gap: .5rem; padding: .85rem .8rem; border: 1px solid var(--es-line); border-radius: 4px; background: var(--es-soft); text-align: center; }
+.sym-card svg { display: block; overflow: visible; }
+.sym-name { font-size: .88rem; font-weight: 800; line-height: 1.2; }
+.sym-desc { font-size: .78rem; line-height: 1.45; color: var(--es-muted); }
+.sym-unit { padding: .12rem .4rem; border: 1px solid var(--es-blue); color: var(--es-blue); font: 700 .62rem "JetBrains Mono", monospace; letter-spacing: .05em; text-transform: uppercase; }
+
+.es-drill { display: grid; grid-template-columns: minmax(180px, .8fr) 1.2fr; gap: 1rem; align-items: stretch; margin-top: 1rem; padding: 1rem; border: 2px solid var(--es-ink); border-radius: 4px; background: var(--es-paper); }
+.es-drill-stage { display: grid; place-items: center; min-height: 170px; border: 1px solid var(--es-line); background: var(--es-sheet); background-image: linear-gradient(var(--es-grid) 1px, transparent 1px), linear-gradient(90deg, var(--es-grid) 1px, transparent 1px); background-size: 14px 14px; }
+.es-drill-stage svg { width: min(150px, 80%); height: auto; overflow: visible; }
+.es-drill h3 { margin-top: 0; }
+.es-options { display: grid; grid-template-columns: 1fr 1fr; gap: .45rem; margin: .6rem 0; }
+.es-option {
+  padding: .6rem .7rem; border: 2px solid var(--es-line); border-radius: 4px;
+  background: var(--es-sheet); color: var(--es-ink); text-align: left; font-size: .88rem !important; font-weight: 600;
+}
+.es-option:hover:not(:disabled) { border-color: var(--es-ink); }
+.es-option.is-right { border-color: var(--es-green); background: var(--es-green-soft); }
+.es-option.is-wrong { border-color: var(--es-red); background: var(--es-red-soft); }
+.es-score { display: flex; flex-wrap: wrap; gap: .4rem 1rem; font: 700 .76rem "JetBrains Mono", monospace; color: var(--es-muted); }
+.es-score b { color: var(--es-ink); }
+.es-feedback { min-height: 1.4rem; margin: .4rem 0 0; font-size: .9rem; font-weight: 600; line-height: 1.5; }
+.es-feedback.is-right { color: var(--es-green); }
+.es-feedback.is-wrong { color: var(--es-red); }
+
+/* ── Connected-or-not judge ── */
+.es-judge { display: grid; grid-template-columns: minmax(200px, .9fr) 1.1fr; gap: 1rem; margin-top: 1rem; padding: 1rem; border: 2px solid var(--es-ink); border-radius: 4px; background: var(--es-paper); }
+.es-judge-stage { display: grid; place-items: center; min-height: 190px; border: 1px solid var(--es-line); background: var(--es-sheet); }
+.es-judge-stage svg { width: min(230px, 92%); height: auto; }
+.es-judge-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin: .7rem 0; }
+
+/* ── Step-through reader ── */
+.es-reader { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(250px, .85fr); gap: 1rem; margin-top: 1rem; align-items: start; }
+.es-reader-draw { border: 2px solid var(--es-ink); background: var(--es-sheet); background-image: linear-gradient(var(--es-grid) 1px, transparent 1px), linear-gradient(90deg, var(--es-grid) 1px, transparent 1px); background-size: 16px 16px; }
+.es-reader-draw svg { display: block; width: 100%; height: auto; }
+.es-reader-panel { padding: 1rem; border: 1px solid var(--es-line); border-radius: 4px; background: var(--es-soft); }
+.es-reader-panel h3 { margin: .25rem 0 .4rem; }
+.es-reader-panel p { margin: 0 0 .6rem; font-size: .92rem; line-height: 1.6; }
+.es-reader-calc { padding: .55rem .7rem; border-left: 3px solid var(--es-current); background: var(--es-hl); font: 600 .8rem/1.55 "JetBrains Mono", monospace; }
+.es-reader-calc:empty { display: none; }
+.es-reader-nav { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-top: .8rem; }
+.es-pips { display: flex; gap: .3rem; }
+.es-pip { width: .7rem; height: .7rem; padding: 0; border: 2px solid var(--es-ink); border-radius: 50%; background: transparent; }
+.es-pip[aria-current="step"] { background: var(--es-current); border-color: var(--es-current); }
+.es-reader-draw [data-hl] { transition: opacity .2s; }
+.es-reader-draw.is-focus [data-hl] { opacity: .22; }
+.es-reader-draw.is-focus [data-hl].is-hl { opacity: 1; }
+.es-reader-draw .es-hl-path { fill: none; stroke: var(--es-current); stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+.es-reader-draw [data-hl].is-hl .es-hl-path { opacity: .45; }
+.es-badge rect { fill: var(--es-red); }
+.es-badge text { fill: #fff; font: 700 9px "JetBrains Mono", monospace; }
+.es-badge { opacity: 0; transition: opacity .2s; }
+.es-reader-draw.show-badges .es-badge { opacity: 1; }
+
+/* ── Fault finder ── */
+.es-fault { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(250px, .8fr); gap: 1rem; margin-top: 1rem; align-items: start; }
+.es-fault-draw { border: 2px solid var(--es-ink); background: var(--es-sheet); }
+.es-fault-draw svg { display: block; width: 100%; height: auto; }
+.es-tp { cursor: pointer; outline: none; }
+.es-tp circle { fill: var(--es-sheet); stroke: var(--es-red); stroke-width: 2.4; }
+.es-tp text { fill: var(--es-red); font: 800 11px "JetBrains Mono", monospace; text-anchor: middle; }
+.es-tp:hover circle, .es-tp:focus-visible circle { fill: var(--es-red-soft); stroke-width: 3.4; }
+.es-tp.is-probed circle { fill: var(--es-red); }
+.es-tp.is-probed text { fill: #fff; }
+.es-tp-val { fill: var(--es-red); font: 700 11px "JetBrains Mono", monospace; }
+.es-meter {
+  padding: .8rem; border: 3px solid #23313d; border-radius: 10px;
+  background: #e8b923; color: #1a1a1a; box-shadow: 0 6px 0 #23313d;
+}
+.es-meter-lcd { padding: .5rem .7rem; border: 2px solid #23313d; border-radius: 4px; background: #b7c4a3; font: 700 1.9rem/1 "JetBrains Mono", monospace; text-align: right; letter-spacing: .04em; color: #1d2614; }
+.es-meter-lcd small { font-size: .9rem; }
+.es-meter-cap { margin: .4rem 0 0; font: 700 .7rem "JetBrains Mono", monospace; text-transform: uppercase; letter-spacing: .06em; }
+.es-fault-panel { display: grid; gap: .8rem; }
+.es-fault-panel p { margin: 0; font-size: .9rem; line-height: 1.55; }
+.es-suspects { display: flex; flex-wrap: wrap; gap: .4rem; }
+.es-fault-log { margin: 0; padding-left: 1.1rem; font: 600 .78rem/1.55 "JetBrains Mono", monospace; color: var(--es-muted); }
+
+/* ── Tables ── */
+.es-table-wrap { overflow-x: auto; margin-top: .8rem; }
+.sm-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.sm-table th, .sm-table td { padding: .6rem .65rem; border-bottom: 1px solid var(--es-line); text-align: left; vertical-align: middle; }
+.sm-table th { font: 700 .7rem "JetBrains Mono", monospace; letter-spacing: .07em; text-transform: uppercase; color: var(--es-muted); border-bottom: 2px solid var(--es-ink); }
+.sm-table td:first-child { white-space: nowrap; font-weight: 700; }
+.sm-table tr:last-child td { border-bottom: 0; }
+.sm-table svg { display: block; overflow: visible; }
+
+/* ── Buildable projects ── */
+.es-grade-rail { display: flex; flex-wrap: wrap; gap: .45rem; margin: .8rem 0 1rem; }
+.es-grade-rail a { padding: .42rem .7rem; border: 1.5px solid var(--es-ink); border-radius: 4px; background: var(--es-sheet); color: var(--es-ink); font: 700 .76rem "JetBrains Mono", monospace; text-decoration: none; }
+.es-grade-rail a:hover, .es-grade-rail a:focus-visible { background: var(--es-hl); }
+.es-project { margin: 0 0 .9rem; padding: 1.1rem; border: 1px solid var(--es-line); border-left: 5px solid var(--es-blue); border-radius: 4px; background: var(--es-soft); scroll-margin-top: 4.5rem; }
+.es-project-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: start; gap: .6rem; }
+.es-project h3 { margin: 0; font-size: clamp(1.1rem, 2.4vw, 1.35rem); }
+.es-project h4 { margin: .8rem 0 .3rem; font-size: .92rem; }
+.es-project p, .es-project li { font-size: .88rem; line-height: 1.58; }
+.es-project p { margin: .35rem 0 .6rem; }
+.es-project ul { margin: .25rem 0 .5rem; padding-left: 1.2rem; }
+.es-grade { padding: .26rem .5rem; border: 1.5px solid var(--es-blue); color: var(--es-blue); font: 700 .7rem "JetBrains Mono", monospace; white-space: nowrap; }
+.es-project-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(215px, .8fr); gap: 1rem; align-items: start; }
+.es-project figure { margin: .55rem 0; border: 1px solid var(--es-line); border-radius: 4px; overflow: hidden; background: #f5f9fc; }
+.es-project figure img { display: block; width: 100%; height: auto; cursor: zoom-in; }
+.es-project figcaption { padding: .5rem .7rem; font-size: .82rem; line-height: 1.45; background: var(--es-sheet); color: var(--es-ink); border-top: 1px solid var(--es-line); }
+.es-project details { margin: .7rem 0 0; padding: .55rem .75rem; border: 1px solid var(--es-line); border-radius: 4px; background: var(--es-sheet); }
+.es-project summary { cursor: pointer; font-weight: 800; }
+.es-project pre { overflow-x: auto; padding: .75rem; border-radius: 4px; background: #15263a; color: #eef6fb; font: 500 .76rem/1.5 "JetBrains Mono", monospace; }
+
+/* ── Mistakes ── */
+.es-mistakes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .7rem; margin-top: .9rem; counter-reset: mistake; }
+.es-mistakes article { position: relative; padding: .9rem 1rem .9rem 2.9rem; border: 1px solid var(--es-line); border-radius: 4px; background: var(--es-soft); counter-increment: mistake; }
+.es-mistakes article::before { content: counter(mistake); position: absolute; left: .85rem; top: .85rem; display: grid; place-items: center; width: 1.45rem; height: 1.45rem; border: 2px solid var(--es-red); border-radius: 50%; color: var(--es-red); font: 800 .72rem "JetBrains Mono", monospace; }
+.es-mistakes b { display: block; margin-bottom: .2rem; }
+.es-mistakes p { margin: 0; font-size: .85rem; line-height: 1.55; color: var(--es-muted); }
+
+/* ── Quiz ── */
+.sm-question { margin-bottom: 1.2rem; padding-bottom: 1rem; border-bottom: 1px dashed var(--es-line); }
+.sm-question:last-child { margin-bottom: 0; border-bottom: 0; }
+.sm-question > p { margin: 0 0 .5rem; font-size: .95rem; font-weight: 700; line-height: 1.5; }
+.sm-options { display: flex; flex-direction: column; gap: .4rem; }
+.sm-option { padding: .55rem .8rem; border: 2px solid var(--es-line); border-radius: 4px; background: var(--es-sheet); color: var(--es-ink); font-size: .88rem !important; text-align: left; }
+.sm-option:hover:not(:disabled) { border-color: var(--es-ink); }
+.sm-option.is-correct { border-color: var(--es-green); background: var(--es-green-soft); }
+.sm-option.is-wrong { border-color: var(--es-red); background: var(--es-red-soft); }
+.sm-q-feedback { min-height: 1rem; margin-top: .4rem; font-size: .86rem; font-weight: 600; line-height: 1.5; }
+.sm-q-feedback.is-right { color: var(--es-green); }
+.sm-q-feedback.is-wrong { color: var(--es-red); }
+.es-quiz-score { margin: 1rem 0 0; font: 700 .85rem "JetBrains Mono", monospace; }
+
+/* Night: the yellow meter and pale project drawings stay as physical objects. */
+[data-lighting="night"] .es-project figure, [data-theme="vaporwave"] .es-project figure, [data-theme="bark"] .es-project figure { background: #f5f9fc; }
+
+@media (max-width: 860px) {
+  .es-hero, .es-reader, .es-fault, .es-project-grid { grid-template-columns: 1fr; }
+  .es-drill, .es-judge { grid-template-columns: 1fr; }
+}
+@media (max-width: 620px) {
+  .es-twin { grid-template-columns: 1fr; }
+  .es-options { grid-template-columns: 1fr; }
+  .es-titleblock { grid-template-columns: 1fr 1fr; }
+  .es-titleblock div:nth-child(3) { border-left: 0; }
+  .es-titleblock div:nth-child(n+3) { border-top: 1px solid var(--es-ink); }
+  .es-zones { display: none; }
+}
+@media print {
+  .es-hero { box-shadow: none; }
+  .es-drill, .es-judge, .es-fault, circuit-playground { break-inside: avoid; }
+  .es-project details > * { display: block; }
+}
+
+/* Wire highlight in the twin drawings: a fat transparent stroke that tints when selected. */
+.es-hit-line { fill: none; stroke: transparent; stroke-width: 13; stroke-linecap: round; stroke-linejoin: round; }
+.es-part.is-on .es-hit-line, .es-part:focus-visible .es-hit-line { stroke: var(--es-hl); }

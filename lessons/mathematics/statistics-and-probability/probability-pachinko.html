@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-glossary-manual>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pachinko Probability Lab · Mr. Scandrett's ClassroomOS</title>
+  <title>Galton Board &amp; Pachinko Lab · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
-  <meta name="description" content="Mathematics Lesson 05 - explore pachinko-style simulations, binomial distributions, sample size, bias, expected value, and the history of pachinko for K-12 STEM students." />
+  <meta name="description" content="Mathematics Lesson 05 - explore the Galton board and pachinko-style simulations, the bell curve, the central limit theorem, binomial distributions, sample size, bias, expected value, and the history of pachinko for K-12 STEM students." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -420,6 +420,64 @@
     [data-theme="vaporwave"] .pk-source-list,
     [data-theme="bark"] .pk-source-list { color: rgba(245,245,247,0.72); }
     .pk-source-list a { color: #0369a1; font-weight: 700; }
+    .pk-galton-figures {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 0.85rem;
+      margin: 1rem 0;
+    }
+    .pk-figure {
+      margin: 0;
+      background: rgba(255,255,255,0.6);
+      border: 1px solid rgba(15,23,42,0.1);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .pk-figure img {
+      display: block;
+      width: 100%;
+      height: 230px;
+      object-fit: cover;
+      background: #fff;
+    }
+    .pk-figure img.pk-figure-contain { object-fit: contain; padding: 0.4rem; }
+    .pk-figure figcaption {
+      padding: 0.7rem 0.85rem 0.85rem;
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+    .pk-figure figcaption strong { display: block; margin-bottom: 0.2rem; }
+    .pk-figure figcaption small {
+      display: block;
+      margin-top: 0.45rem;
+      font-size: 0.72rem;
+      color: var(--text-secondary, #3f4f65);
+    }
+    .pk-figure figcaption a { color: #0369a1; }
+    [data-lighting="night"] .pk-figure,
+    [data-theme="vaporwave"] .pk-figure,
+    [data-theme="bark"] .pk-figure { background: rgba(15,23,42,0.55); border-color: rgba(226,232,240,0.14); }
+    [data-lighting="night"] .pk-figure figcaption small,
+    [data-theme="vaporwave"] .pk-figure figcaption small,
+    [data-theme="bark"] .pk-figure figcaption small { color: rgba(245,245,247,0.72); }
+    .pk-controls .pk-toggle {
+      font-size: 0.92rem;
+      text-transform: none;
+      letter-spacing: 0;
+      color: rgba(240,249,255,0.9);
+      cursor: pointer;
+    }
+    .pk-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.7rem;
+      font-weight: 600;
+    }
+    .pk-toggle input { width: 1.1rem; height: 1.1rem; accent-color: #22c55e; }
+    .pk-lede .pk-back-link-inline { color: inherit; text-decoration: underline; font-weight: 700; }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -448,9 +506,13 @@
         <main id="main-content" class="pk-page">
           <section class="hero pk-hero">
             <p class="eyebrow">Mathematics · Lesson 05</p>
-            <h1>Pachinko Probability Lab</h1>
+            <h1>Galton Board &amp; Pachinko Lab</h1>
             <div class="pk-hero-meta">
               <span>Probability Sequel</span>
+              <span class="dot"></span>
+              <span>Galton Board</span>
+              <span class="dot"></span>
+              <span>Bell Curve</span>
               <span class="dot"></span>
               <span>Binomial Distributions</span>
               <span class="dot"></span>
@@ -458,7 +520,7 @@
               <span class="dot"></span>
               <span>STEM History</span>
             </div>
-            <p class="pk-lede">A pachinko-style board is a beautiful probability machine: each peg nudges a ball left or right, and many tiny decisions add up to a visible distribution. This sequel moves beyond coins and dice into systems thinking, showing how sample size, bias, design choices, expected value, and data displays can change what students believe about chance.</p>
+            <p class="pk-lede">A <span data-glossary="Galton board">Galton board</span> is a beautiful probability machine: each peg nudges a ball left or right, and many tiny decisions add up to a visible distribution. Part 2 of the probability sequence: the <a class="pk-back-link-inline" href="probability-simulator.html">Probability Simulator</a> studies one coin or die at a time; this lab adds many of those events together and watches a <span data-glossary="bell curve">bell curve</span> appear. It moves beyond coins and dice into systems thinking, showing how sample size, bias, design choices, expected value, and data displays can change what students believe about chance.</p>
             <a class="pk-back-link" href="../../../steam-lessons.html#module-math">&larr; Back to Mathematics</a>
           </section>
 
@@ -471,6 +533,7 @@
                 <ul class="pk-checklist">
                   <li>connect a pachinko board to repeated left-right probability events.</li>
                   <li>explain why a fair board often forms a mound-shaped distribution.</li>
+                  <li>describe how Francis Galton used the board to show the bell curve emerging from many random events.</li>
                   <li>describe how bias, obstacles, and board geometry change outcomes.</li>
                   <li>compare experimental counts with an expected model.</li>
                   <li>use simulations ethically by separating amusement history from mathematical analysis.</li>
@@ -481,7 +544,7 @@
                 <ol class="pk-step-list">
                   <li><span class="pk-step-num">1</span><span>Ask students where one ball is most likely to land: edge, center, or impossible to predict.</span></li>
                   <li><span class="pk-step-num">2</span><span>Run 100 balls on the fair board and let students describe the shape before naming it.</span></li>
-                  <li><span class="pk-step-num">3</span><span>Run 2000 balls and introduce "many small random choices can create a stable pattern."</span></li>
+                  <li><span class="pk-step-num">3</span><span>Run 2000 balls, turn on the bell curve, and introduce "many small random choices can create a stable pattern."</span></li>
                 </ol>
               </div>
             </div>
@@ -507,7 +570,7 @@
           <section class="pk-lab" aria-labelledby="pk-lab-title">
             <div class="pk-lab-badge">Interactive Lab</div>
             <h2 id="pk-lab-title">Run the Pachinko Simulator</h2>
-            <p>Choose a board scenario, change the number of peg rows, and launch a sample. The yellow markers show the expected model; the blue bars show what happened in this run.</p>
+            <p>Choose a board scenario, change the number of peg rows, and launch a sample. The yellow markers show the expected model; the blue bars show what happened in this run. Turn on the bell curve to compare the bins with the smooth normal curve Galton predicted.</p>
             <div class="pk-lab-grid">
               <div class="pk-controls">
                 <label for="pk-scenario">Scenario</label>
@@ -555,6 +618,11 @@
                   <button class="pk-btn-chip" type="button" data-scenario="edge" data-rows="10" data-balls="1200">Edge design</button>
                 </div>
 
+                <label class="pk-toggle" for="pk-bell">
+                  <input id="pk-bell" type="checkbox" checked />
+                  Show the bell curve (normal approximation)
+                </label>
+
                 <div id="pk-model-note" class="pk-model-note">
                   <strong>Current model</strong>
                   A fair board uses the same probability for left and right at every peg. The center bins have more possible paths, so they are expected to fill more often.
@@ -594,9 +662,54 @@
             </div>
           </section>
 
+
+          <section class="pk-card" id="pk-galton" style="--card-accent:#16a34a;">
+            <h2>The Galton Board: Where the Bell Curve Comes From</h2>
+            <p>The simulator above is a digital <span data-glossary="Galton board">Galton board</span>. Sir Francis Galton (1822–1911), an English scientist, built one in the 1870s to show how the <span data-glossary="normal distribution">normal distribution</span> arises. He described it in his 1889 book <em>Natural Inheritance</em>. He called it a <span data-glossary="quincunx">quincunx</span>, after the five-dot pattern on a die, because the pins sit in staggered rows: each pin is centered under the gap between two pins above it.</p>
+            <p>Each ball that falls through the pins makes a string of <span data-glossary="independent events">independent</span> left-or-right bounces. One ball's path is impossible to predict, so you might expect the balls to scatter evenly across the bins. They don't. With enough balls and enough rows, the stacks in the bins always build roughly the same shape: a tall middle that tapers to thin edges, the bell curve.</p>
+            <div class="pk-galton-figures">
+              <figure class="pk-figure" data-zoomable data-lightbox-group="pk-galton" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Galton_box.jpg?width=1600">
+                <img style="object-position: center 78%;" src="https://commons.wikimedia.org/wiki/Special:FilePath/Galton_box.jpg?width=520" alt="A tall wooden Galton board with rows of pins above narrow bins, the balls piled into a bell shape" loading="lazy" />
+                <figcaption><strong>A real Galton board</strong>Hundreds of balls each took their own random path, but together they stacked into a bell curve. Most balls end near the middle; very few reach the edges.<small class="pk-credit">Exhibit by Estes Objethos Atelier, Matemateca IME-USP. Photo: Rodrigo.Argenton, <a href="https://commons.wikimedia.org/wiki/File:Galton_box.jpg">CC BY-SA 4.0</a>, Wikimedia Commons.</small></figcaption>
+              </figure>
+              <figure class="pk-figure" data-zoomable data-lightbox-group="pk-galton" data-full="https://upload.wikimedia.org/wikipedia/commons/7/7f/Quincunx_%28Galton_Box%29_-_Galton_1889_diagram.png">
+                <img class="pk-figure-contain" src="https://upload.wikimedia.org/wikipedia/commons/7/7f/Quincunx_%28Galton_Box%29_-_Galton_1889_diagram.png" alt="Francis Galton's 1889 drawing of the quincunx, pins in staggered rows above a row of bins" loading="lazy" />
+                <figcaption><strong>Galton's own drawing, 1889</strong>From <em>Natural Inheritance</em>. Look at the pin pattern: every pin sits under a gap in the row above, so a ball must go left or right at each row.<small class="pk-credit">Francis Galton, public domain, <a href="https://commons.wikimedia.org/wiki/File:Quincunx_(Galton_Box)_-_Galton_1889_diagram.png">Wikimedia Commons</a>.</small></figcaption>
+              </figure>
+              <figure class="pk-figure" data-zoomable data-lightbox-group="pk-galton" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Francis_Galton_1850s.jpg?width=1200">
+                <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Francis_Galton_1850s.jpg?width=520" alt="Portrait of Francis Galton as a young man in the 1850s" loading="lazy" />
+                <figcaption><strong>Sir Francis Galton (1822–1911)</strong>Galton measured people, weather, and fingerprints, and he helped invent modern statistics. He also founded eugenics, a harmful movement that misused statistics to rank people. Scientists today reject it.<small class="pk-credit">Photographer unknown, 1850s, public domain, <a href="https://commons.wikimedia.org/wiki/File:Francis_Galton_1850s.jpg">Wikimedia Commons</a>.</small></figcaption>
+              </figure>
+            </div>
+            <div class="pk-callout">
+              <strong>The big idea: the central limit theorem</strong>
+              <p>Each ball's landing spot is the <em>sum</em> of many small random bounces. The <span data-glossary="central limit theorem">central limit theorem</span> says that when you add up many independent random pieces, the total piles up in a bell shape. The pieces don't have to be bell-shaped themselves; a single bounce is just "left or right." That is why measurement errors, heights, and test scores so often make bell curves: each one is the sum of many small causes.</p>
+            </div>
+            <div class="pk-scenario-grid">
+              <article class="pk-mini-card">
+                <span class="pk-tag">Try It</span>
+                <strong>Watch the Bell Form</strong>
+                <p>On the fair board, run 50 balls, then 3000. Compare the bins to the green bell curve. The small run is lumpy; the big run hugs the curve.</p>
+              </article>
+              <article class="pk-mini-card">
+                <span class="pk-tag">Try It</span>
+                <strong>More Rows, Smoother Bell</strong>
+                <p>Set 6 rows, then 14. More rows means each ball adds up more bounces, and the bins fit the bell curve more closely.</p>
+              </article>
+              <article class="pk-mini-card">
+                <span class="pk-tag">Think About It</span>
+                <strong>Chaos Hides a Pattern</strong>
+                <p>One ball is unpredictable. Thousands of balls are very predictable. How can both be true at the same time?</p>
+              </article>
+            </div>
+            <ul class="pk-source-list">
+              <li>Teacher background: Francis Galton, <em>Natural Inheritance</em> (1889), chapter 5; <a href="https://en.wikipedia.org/wiki/Galton_board">Galton board</a> and <a href="https://en.wikipedia.org/wiki/Central_limit_theorem">central limit theorem</a> on Wikipedia.</li>
+            </ul>
+          </section>
+
           <section class="pk-card" style="--card-accent:#14b8a6;">
             <h2>Pachinko History, K-12 Framing</h2>
-            <p>Pachinko grew from earlier peg-and-ball amusements such as bagatelle and the Corinth game, which reached Japan in the early 1900s. By the 1930s, pachinko had become associated with amusement halls in Nagoya and later developed into a major Japanese entertainment industry after World War II.</p>
+            <p>Pachinko is the arcade cousin of Galton's board. It grew from earlier peg-and-ball amusements such as bagatelle and the Corinth game, which reached Japan in the early 1900s. By the 1930s, pachinko had become associated with amusement halls in Nagoya and later developed into a major Japanese entertainment industry after World War II.</p>
             <div class="pk-callout">
               <strong>Classroom boundary</strong>
               <p>In this lesson, pachinko is studied as a mechanical design and probability system. Keep discussion focused on culture, engineering, statistics, and responsible analysis rather than gambling behavior.</p>
@@ -664,6 +777,7 @@
             <h2>Teach the Math</h2>
             <p><strong>Independent events:</strong> In the simplest model, each peg collision is treated as a new left-or-right event. The previous bounce does not force the next bounce to compensate.</p>
             <p><strong>Binomial distribution:</strong> If a board has 10 rows, the ball makes 10 left-right decisions and lands in one of 11 bins. The number of right bounces determines the bin.</p>
+            <p><strong>Normal approximation:</strong> As rows increase, the binomial bins match the smooth <span data-glossary="normal distribution">normal curve</span> with mean <em>np</em> and standard deviation √(<em>np</em>(1 − <em>p</em>)). For a fair 10-row board that is mean 5 and standard deviation about 1.58, so about 68% of balls land within 1.58 bins of the center. See <a href="how-spread-out.html#bell">How Spread Out?</a> for the 68–95–99.7 rule.</p>
             <p><strong>Expected value:</strong> If bins have point values, multiply each bin's value by its probability and add the results. Expected value is a long-run average, not a promise for one ball.</p>
             <div class="pk-vocab-grid">
               <article class="pk-mini-card">
@@ -724,6 +838,7 @@
             <h2>Discussion Prompts</h2>
             <div class="pk-question-grid">
               <div class="pk-question">How many different paths can reach an edge bin? How many can reach a middle bin?</div>
+              <div class="pk-question">Galton called the board a quincunx. Why do the pins have to be staggered? What would happen if every pin sat directly under the one above?</div>
               <div class="pk-question">When does a weird result mean "random variation," and when might it be evidence of bias?</div>
               <div class="pk-question">How would you design a pachinko board to make outcomes more predictable?</div>
               <div class="pk-question">Why should a simulator show both experimental data and an expected model?</div>
@@ -757,6 +872,7 @@
       var statMode = document.getElementById('pk-stat-mode');
       var statMean = document.getElementById('pk-stat-mean');
       var statCenter = document.getElementById('pk-stat-center');
+      var bellToggle = document.getElementById('pk-bell');
       var quickButtons = Array.prototype.slice.call(document.querySelectorAll('.pk-btn-chip'));
 
       var counts = [];
@@ -939,23 +1055,47 @@
         drawBins();
       }
 
+      function normalPdf(x, mean, sd) {
+        var z = (x - mean) / sd;
+        return Math.exp(-0.5 * z * z) / (sd * Math.sqrt(2 * Math.PI));
+      }
+
       function drawBins() {
         var g = getBoardGeometry();
-        var maxCount = Math.max(1, Math.max.apply(null, counts.length ? counts : [0]));
+        var total = counts.reduce(function (sum, value) { return sum + value; }, 0);
+        var p = scenarios[scenarioSelect.value].p;
+        var mean = g.rows * p;
+        var sd = Math.sqrt(g.rows * p * (1 - p));
+        var showBell = bellToggle.checked;
+        // Bars and curve share one scale so the curve is the expected count per bin.
+        var scale = Math.max(1, Math.max.apply(null, counts.length ? counts : [0]));
+        if (showBell) scale = Math.max(scale, Math.max(total, 1) * normalPdf(mean, mean, sd));
         var binY = g.bottom + 46;
+        var barMax = 72;
         ctx.font = '700 14px IBM Plex Mono, monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         for (var bin = 0; bin <= g.rows; bin += 1) {
-          var p = pointFor(g.rows, bin);
-          var h = counts[bin] ? 42 * (counts[bin] / maxCount) : 4;
-          ctx.fillStyle = 'rgba(56,189,248,0.18)';
-          ctx.fillRect(p.x - g.stepX * 0.32, binY - 18 - h, g.stepX * 0.64, h);
+          var pt = pointFor(g.rows, bin);
+          var h = counts[bin] ? barMax * (counts[bin] / scale) : 4;
+          ctx.fillStyle = 'rgba(56,189,248,0.42)';
+          ctx.fillRect(pt.x - g.stepX * 0.32, binY - 18 - h, g.stepX * 0.64, h);
           ctx.strokeStyle = 'rgba(226,232,240,0.25)';
-          ctx.strokeRect(p.x - g.stepX * 0.32, binY - 18, g.stepX * 0.64, 30);
+          ctx.strokeRect(pt.x - g.stepX * 0.32, binY - 18, g.stepX * 0.64, 30);
           ctx.fillStyle = 'rgba(240,249,255,0.75)';
-          ctx.fillText(String(bin), p.x, binY - 3);
+          ctx.fillText(String(bin), pt.x, binY - 3);
         }
+        if (!showBell) return;
+        ctx.beginPath();
+        for (var i = 0; i <= 120; i += 1) {
+          var k = -0.6 + (g.rows + 1.2) * i / 120;
+          var x = g.centerX + (k - g.rows / 2) * g.stepX;
+          var y = binY - 18 - barMax * (Math.max(total, 1) * normalPdf(k, mean, sd)) / scale;
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = 'rgba(74,222,128,0.95)';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
       }
 
       function drawAnimatedPaths() {
@@ -1101,6 +1241,7 @@
       scenarioSelect.addEventListener('change', reset);
       rowsInput.addEventListener('input', reset);
       ballsInput.addEventListener('input', updateReadouts);
+      bellToggle.addEventListener('change', function () { drawBoard(); drawAnimatedPaths(); });
       runBtn.addEventListener('click', function () { runSample(Number(ballsInput.value)); });
       oneBtn.addEventListener('click', watchOne);
       resetBtn.addEventListener('click', function () {
@@ -1130,5 +1271,7 @@
   <script src="../../../assets/js/lesson-layout.js"></script>
   <script src="../../../assets/js/math-pathway-nav.js"></script>
 <script src="../../../assets/js/lesson-print-button.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
+  <script src="../../../assets/js/site-glossary.js"></script>
 </body>
 </html>

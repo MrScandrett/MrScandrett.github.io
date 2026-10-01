@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-glossary-manual>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="../../../assets/css/electricity-path.css" />
   <link rel="stylesheet" href="../../../assets/css/circuit-playground.css" />
   <link rel="stylesheet" href="../../../assets/css/circuit-playground-snap.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/ohms-law-lab.css" />
   <style>
     .sm-page {
       width: min(100%, 1180px);
@@ -93,87 +94,6 @@
         rgba(255,255,255,0.82);
       padding: 0.9rem;
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.72);
-    }
-
-    /* ── Formula triangle (the "magic triangle" visual) ── */
-    .ohm-triangle-wrap {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      height: clamp(150px, 24vw, 220px);
-      border-radius: 12px;
-      background:
-        radial-gradient(circle at 30% 20%, rgba(52,199,89,0.22), transparent 38%),
-        linear-gradient(180deg, rgba(255,255,255,0.96), rgba(235,255,242,0.92));
-    }
-    .ohm-triangle-wrap img {
-      display: block;
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      object-position: center;
-      padding: 0.55rem;
-    }
-    .ohm-triangle {
-      position: relative;
-      width: 148px;
-      height: 148px;
-    }
-    /* outer triangle via clip-path */
-    .ohm-tri-bg {
-      position: absolute;
-      inset: 0;
-      background: rgba(52,199,89,0.13);
-      border: 2px solid rgba(52,199,89,0.35);
-      clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
-    }
-    /* divider line: horizontal across the middle */
-    .ohm-tri-divider {
-      position: absolute;
-      left: 25%;
-      right: 25%;
-      top: 50%;
-      height: 2px;
-      background: rgba(52,199,89,0.45);
-      transform: translateY(-50%);
-    }
-    /* labels */
-    .ohm-tri-v {
-      position: absolute;
-      top: 18%;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 1.55rem;
-      font-weight: 800;
-      color: #1d7a46;
-      letter-spacing: -0.02em;
-    }
-    .ohm-tri-i {
-      position: absolute;
-      bottom: 10%;
-      left: 24%;
-      font-size: 1.35rem;
-      font-weight: 800;
-      color: #007aff;
-    }
-    .ohm-tri-r {
-      position: absolute;
-      bottom: 10%;
-      right: 20%;
-      font-size: 1.35rem;
-      font-weight: 800;
-      color: #ff9500;
-    }
-    /* vertical divider in bottom half */
-    .ohm-tri-vdivider {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      bottom: 5%;
-      width: 2px;
-      background: rgba(52,199,89,0.45);
-      transform: translateX(-50%);
     }
 
     .sm-feature-kicker {
@@ -272,8 +192,6 @@
     .sm-callout.info  { background: rgba(0,122,255,0.08);  border-left: 3px solid #007aff; }
     .sm-callout.green { background: rgba(52,199,89,0.10);  border-left: 3px solid #34c759; }
 
-    .ohm-relationship-figure,
-    .ohm-meme-figure,
     .ohm-history-figure {
       margin: 0.95rem 0 0;
       overflow: hidden;
@@ -282,8 +200,6 @@
       background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(235,255,242,0.92));
       box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
     }
-    .ohm-relationship-figure img,
-    .ohm-meme-figure img,
     .ohm-history-figure img {
       display: block;
       width: 100%;
@@ -292,8 +208,6 @@
       object-position: center;
       padding: 0.75rem;
     }
-    .ohm-relationship-figure figcaption,
-    .ohm-meme-figure figcaption,
     .ohm-history-figure figcaption {
       margin: 0;
       padding: 0.72rem 0.9rem;
@@ -536,7 +450,7 @@
 
     <div class="ll-stage">
       <div class="ll-sim">
-        <main id="main-content" class="sm-page">
+        <main id="main-content" class="sm-page" data-glossary-root>
 
           <!-- ── Hero ── -->
           <section class="hero sm-hero">
@@ -550,71 +464,209 @@
                   <span>Resistance</span><span class="dot"></span>
                   <span>Circuits</span>
                 </div>
-                <p class="sm-lede">Ohm's Law is the single most important equation in electronics. It describes the relationship between voltage, current, and resistance in a circuit — and once you understand it, you can predict exactly what every component will do before you ever touch a wire.</p>
+                <p class="sm-lede">Every circuit you will ever build is a tug-of-war between a push and a squeeze. Turn the voltage up, swap the resistor, and watch the current answer. Then use <strong>V = IR</strong> to predict it before you touch a wire.</p>
                 <a class="sm-back-link" href="../../../steam-lessons.html#module-engineering">&larr; Back to Engineering</a>
               </div>
               <aside class="sm-feature-panel" aria-label="Ohm's Law formula triangle">
-                <div class="ohm-triangle-wrap">
-                  <figure data-zoomable>
-  <img data-lightbox-group="ohms-law" src="../../../assets/thumbs/OhmTriangleTransposed.png" alt="Ohm's Law formula triangle showing voltage current and resistance equations" />
-  <figcaption>Ohm's Law formula triangle showing voltage current and resistance equations</figcaption>
-</figure>
+                <div class="ohm-tri" data-ohm-triangle data-covered="I">
+                  <svg viewBox="0 0 200 178" role="img" aria-label="Formula triangle with V on top and I and R side by side underneath.">
+                    <polygon class="ohm-tri__shape" points="100,6 194,170 6,170" />
+                    <line class="ohm-tri__div" x1="48.4" y1="96" x2="151.6" y2="96" />
+                    <line class="ohm-tri__div" x1="100" y1="96" x2="100" y2="170" />
+                    <text class="ohm-tri__letter ohm-tri__letter--v" x="100" y="64">V</text>
+                    <text class="ohm-tri__letter ohm-tri__letter--i" x="66" y="136">I</text>
+                    <text class="ohm-tri__letter ohm-tri__letter--r" x="134" y="136">R</text>
+                    <rect class="ohm-tri__cover ohm-tri__cover--v" x="74" y="38" width="52" height="52" rx="16" />
+                    <rect class="ohm-tri__cover ohm-tri__cover--i" x="40" y="110" width="52" height="52" rx="16" />
+                    <rect class="ohm-tri__cover ohm-tri__cover--r" x="108" y="110" width="52" height="52" rx="16" />
+                  </svg>
+                  <div class="ohm-tri__buttons" role="group" aria-label="Cover a letter">
+                    <button type="button" data-cover="V" aria-pressed="false">Cover V</button>
+                    <button type="button" data-cover="I" aria-pressed="true">Cover I</button>
+                    <button type="button" data-cover="R" aria-pressed="false">Cover R</button>
+                  </div>
+                  <div class="ohm-tri__readout" id="ohm-tri-readout" aria-live="polite"><strong>I = V ÷ R</strong><small>Cover I: V sits over R, so divide.</small></div>
                 </div>
                 <p class="sm-feature-kicker">The Ohm's Law Triangle</p>
                 <strong>Cover what you want to find</strong>
-                <small>Cover V and you see I × R. Cover I and you see V ÷ R. Cover R and you see V ÷ I.</small>
-                <div class="sm-signal-strip" aria-label="Three quantities">
-                  <span>Volts</span>
-                  <span>Amps</span>
-                  <span>Ohms</span>
-                </div>
+                <small>Whatever is left showing is the formula. Side by side means multiply; one over the other means divide.</small>
               </aside>
             </div>
           </section>
 
+          <nav class="ll-lesson-steps" aria-label="Lesson sections">
+            <a href="#ohm-lab">1 · Experiment</a>
+            <a href="#ohm-quantities">2 · Push, flow, resistance</a>
+            <a href="#ohm-law">3 · V = IR</a>
+            <a href="#ohm-solve">4 · Solve it</a>
+            <a href="#ohm-power-sec">5 · Power &amp; heat</a>
+            <a href="#ohm-series">6 · Series &amp; parallel</a>
+            <a href="#ohm-real">7 · Real circuits</a>
+            <a href="#ohm-mistakes">Mistakes</a>
+            <a href="#ohm-reference">Reference</a>
+            <a href="#ohm-quiz">Quick check</a>
+          </nav>
+
+          <section class="ohm-lab" id="ohm-lab" aria-labelledby="ohm-lab-title">
+            <div class="ohm-lab__intro">
+              <p class="ohm-eyebrow">01 / Experiment first</p>
+              <h2 id="ohm-lab-title">Make current move</h2>
+              <p>Start with a battery and a resistor. Change <em>one</em> thing at a time and watch the charges speed up or slow down. Record what you see, and the graph will show you Ohm's Law before you read about it.</p>
+            </div>
+            <div class="ohm-lab__layout">
+              <div class="ohm-lab__panel ohm-lab__bench">
+                <div class="ohm-lab__mode" role="group" aria-label="Circuit type">
+                  <button type="button" data-ohm-mode="resistor" aria-pressed="true">Resistor loop</button>
+                  <button type="button" data-ohm-mode="led" aria-pressed="false">Add an LED</button>
+                </div>
+                <svg class="ohm-lab__diagram" viewBox="0 0 560 290" role="img" aria-labelledby="ohm-diagram-title ohm-diagram-desc">
+                  <title id="ohm-diagram-title">Adjustable series circuit</title>
+                  <desc id="ohm-diagram-desc">A battery, a resistor, an optional LED, and an ammeter in one closed loop. Moving dots show charge flowing; they move faster when the current is larger, and the resistor glows when it gets hot.</desc>
+                  <rect class="ohm-lab__heat" x="195" y="36" width="150" height="48" rx="20" />
+                  <path class="ohm-lab__heat-waves" d="M240 30 c-6 -5 6 -9 0 -15 M270 30 c-6 -5 6 -9 0 -15 M300 30 c-6 -5 6 -9 0 -15" />
+                  <path class="ohm-lab__wire" d="M80 128 V60 H200 M340 60 H480 V230 H80 V150" />
+                  <path class="ohm-lab__flow-path" d="M80 128 V60 H480 V230 H80 V150" />
+                  <path class="ohm-lab__resistor" d="M200 60 l10 -14 l20 28 l20 -28 l20 28 l20 -28 l20 28 l20 -28 l10 14" />
+                  <line class="ohm-lab__battery-long" x1="56" y1="128" x2="104" y2="128" />
+                  <line class="ohm-lab__battery-short" x1="68" y1="150" x2="92" y2="150" />
+                  <text class="ohm-lab__sign" x="116" y="124">+</text>
+                  <text class="ohm-lab__sign" x="116" y="160">−</text>
+                  <g class="ohm-lab__led">
+                    <circle class="ohm-lab__led-glow" cx="480" cy="136" r="30" />
+                    <polygon class="ohm-lab__led-body" points="462,118 498,118 480,150" />
+                    <path class="ohm-lab__led-mark" d="M462 152 H498 M506 128 l12 -10 M508 142 l12 -10" />
+                    <text x="452" y="141" text-anchor="end">LED</text>
+                  </g>
+                  <circle class="ohm-lab__meter" cx="280" cy="230" r="20" />
+                  <text x="280" y="236" text-anchor="middle">A</text>
+                  <g class="ohm-lab__dots" aria-hidden="true"></g>
+                  <text x="270" y="104" text-anchor="middle" data-ohm-resistor-label>220 Ω</text>
+                  <text x="132" y="146" data-ohm-source-label>5 V</text>
+                  <text class="ohm-lab__small" x="280" y="276" text-anchor="middle" data-ohm-meter-label>Ammeter: 22.7 mA</text>
+                </svg>
+                <p class="ohm-lab__model-note">Ideal DC model: the resistor's value never changes, and the LED is treated as a fixed 2 V drop once it lights. Dots show conventional current, flowing from + around to −.</p>
+              </div>
+              <div class="ohm-lab__panel ohm-lab__controls">
+                <label for="ohm-voltage">Supply voltage <output id="ohm-voltage-out" for="ohm-voltage">5 V</output></label>
+                <input id="ohm-voltage" type="range" min="1" max="12" step="0.5" value="5" />
+                <div class="ohm-lab__range"><span>1 V</span><span>12 V</span></div>
+                <label for="ohm-resistance">Series resistor</label>
+                <select id="ohm-resistance">
+                  <option value="100">100 Ω</option>
+                  <option value="150">150 Ω</option>
+                  <option value="220" selected>220 Ω</option>
+                  <option value="330">330 Ω</option>
+                  <option value="470">470 Ω</option>
+                  <option value="680">680 Ω</option>
+                  <option value="1000">1 kΩ</option>
+                  <option value="2200">2.2 kΩ</option>
+                </select>
+                <div class="ohm-lab__predict">
+                  <p><strong>Predict first.</strong> Keep the same resistor and double the voltage. The current will…</p>
+                  <div role="group" aria-label="Your prediction">
+                    <button type="button" data-predict="half" aria-pressed="false">halve</button>
+                    <button type="button" data-predict="same" aria-pressed="false">stay the same</button>
+                    <button type="button" data-predict="double" aria-pressed="false">double</button>
+                  </div>
+                  <p id="ohm-predict-result" role="status" aria-live="polite"></p>
+                </div>
+                <button class="ohm-lab__reset" type="button" id="ohm-reset">Reset circuit</button>
+              </div>
+            </div>
+            <div class="ohm-lab__readings" role="group" aria-label="Calculated readings">
+              <div class="is-i"><span>Current (I)</span><strong id="ohm-current">22.7 mA</strong><small id="ohm-current-formula">I = 5 V ÷ 220 Ω</small></div>
+              <div class="is-v"><span>Voltage across resistor (V)</span><strong id="ohm-resistor-voltage">5 V</strong><small id="ohm-voltage-note">Whole supply lands on the resistor</small></div>
+              <div class="is-p"><span>Resistor power (P)</span><strong id="ohm-power">0.114 W</strong><small id="ohm-power-formula">P = V × I</small></div>
+            </div>
+            <p class="ohm-lab__feedback" id="ohm-feedback" role="status" aria-live="polite"></p>
+
+            <div class="ohm-lab__logger">
+              <div class="ohm-lab__panel">
+                <svg class="ohm-graph" id="ohm-graph" viewBox="0 0 360 262" role="img" aria-labelledby="ohm-graph-title ohm-graph-desc">
+                  <title id="ohm-graph-title">Current versus voltage graph</title>
+                  <desc id="ohm-graph-desc">Each resistor makes a straight line through zero. Bigger resistors make flatter lines. Recorded points appear as rings.</desc>
+                  <g class="ohm-graph__axes"></g>
+                  <rect class="ohm-graph__frame" x="52" y="18" width="292" height="204" />
+                  <g class="ohm-graph__lines"></g>
+                  <g class="ohm-graph__points"></g>
+                  <circle class="ohm-graph__now" r="7" cx="52" cy="222" />
+                  <text class="ohm-graph__title" x="62" y="36" data-ohm-slope-label>220 Ω line</text>
+                  <text x="198" y="256" text-anchor="middle">Voltage across resistor (V)</text>
+                  <text x="14" y="120" text-anchor="middle" transform="rotate(-90 14 120)">Current (mA)</text>
+                </svg>
+              </div>
+              <div class="ohm-lab__panel">
+                <div class="ohm-lab__logger-head">
+                  <h3>Data table</h3>
+                  <div>
+                    <button type="button" class="ohm-lab__record" id="ohm-record">Record point</button>
+                    <button type="button" id="ohm-clear">Clear</button>
+                  </div>
+                </div>
+                <div class="ohm-data-wrap">
+                  <table class="ohm-data" hidden>
+                    <thead><tr><th scope="col">#</th><th scope="col">Resistor</th><th scope="col">V</th><th scope="col">I</th><th scope="col">V ÷ I</th></tr></thead>
+                    <tbody id="ohm-data-body"></tbody>
+                  </table>
+                </div>
+                <p id="ohm-data-empty">No points yet. Pick a resistor, try three or four voltages, and press <strong>Record point</strong> each time. Then switch resistors and do it again.</p>
+                <p class="ohm-lab__insight"><strong>Look at the last column.</strong> For one resistor, V ÷ I comes out the same every time, no matter the voltage. That constant ratio <em>is</em> the resistance. That is Ohm's discovery.</p>
+              </div>
+            </div>
+
+            <div class="ohm-lab__challenge">
+              <div><strong>Design challenge</strong><p>Set the supply to 5 V and add the LED. Pick a resistor that keeps the LED between 10 and 20 mA <em>and</em> keeps the resistor under 0.125 W.</p></div>
+              <button type="button" id="ohm-check">Check my circuit</button>
+              <p id="ohm-challenge-feedback" role="status" aria-live="polite"></p>
+            </div>
+          </section>
+
           <!-- ── The Three Quantities ── -->
-          <section class="sm-card" style="--sm-accent:#007aff;">
-            <h2>First: What Are Voltage, Current, and Resistance?</h2>
-            <p>Before using the equation, get the three ideas straight. Voltage, current, and resistance are different parts of the same circuit story: the push, the flow, and what slows the flow down.</p>
+          <section class="sm-card" id="ohm-quantities" style="--sm-accent:#007aff;">
+            <p class="ohm-eyebrow">02 / Name what you saw</p>
+            <h2>Push, Flow, and Squeeze</h2>
+            <p>In the lab you changed two things and watched a third. Those three quantities are the whole story of a circuit: the push, the flow, and what slows the flow down.</p>
 
             <div class="ohm-unit-grid">
               <div class="ohm-unit-card">
                 <div class="ohm-unit-symbol ohm-v">V</div>
                 <span class="ohm-unit-name">Voltage (Volts, V)</span>
-                <span class="ohm-unit-desc">Voltage is electrical pressure — the push that drives electrons through a circuit. A 9V battery has more push than a 1.5V AA cell. Without voltage, nothing moves. Named after Alessandro Volta.</span>
+                <span class="ohm-unit-desc"><span data-glossary="voltage">Voltage</span> is electrical pressure — the push that drives electrons through a circuit. A 9V battery has more push than a 1.5V AA cell. Without voltage, nothing moves. Named after Alessandro Volta.</span>
               </div>
               <div class="ohm-unit-card">
                 <div class="ohm-unit-symbol ohm-i">I</div>
                 <span class="ohm-unit-name">Current (Amperes, A)</span>
-                <span class="ohm-unit-desc">Current is the flow of electric charge — how much charge passes a point each second. Think of it like the volume of water flowing through a pipe. The symbol is I, and small circuits often use milliamps (mA).</span>
+                <span class="ohm-unit-desc"><span data-glossary="electric current">Current</span> is the flow of electric charge — how much charge passes a point each second. Think of it like the volume of water flowing through a pipe. The symbol is I, and small circuits often use <span data-glossary="milliamp">milliamps</span> (mA).</span>
               </div>
               <div class="ohm-unit-card">
                 <div class="ohm-unit-symbol ohm-r">R</div>
                 <span class="ohm-unit-name">Resistance (Ohms, Ω)</span>
-                <span class="ohm-unit-desc">Resistance is opposition to current flow. A resistor acts like a narrow section of pipe: higher resistance means less current for the same voltage. Measured in ohms (Ω), named after Georg Ohm.</span>
+                <span class="ohm-unit-desc"><span data-glossary="resistance">Resistance</span> is opposition to current flow. A resistor acts like a narrow section of pipe: higher resistance means less current for the same voltage. Measured in <span data-glossary="ohm">ohms</span> (Ω), named after Georg Ohm.</span>
               </div>
             </div>
 
             <div class="sm-callout info">
               <strong>The Water Analogy</strong>
-              Voltage is water pressure. Current is how fast the water flows. Resistance is how narrow the pipe is. A wider pipe (lower resistance) lets more water flow for the same pressure. A higher pressure (more voltage) pushes more water through the same pipe. This analogy breaks down eventually, but it makes the relationships intuitive.
+              Voltage is water pressure. Current is how fast the water flows. Resistance is how narrow the pipe is. A wider pipe (lower resistance) lets more water flow for the same pressure. A higher pressure (more voltage) pushes more water through the same pipe. The analogy breaks down eventually (charges are not used up, and wires are not empty pipes), but it makes the relationships easy to feel.
             </div>
 
-            <figure data-zoomable data-lightbox-group="ohms-law" class="ohm-relationship-figure">
-              <img loading="lazy" decoding="async" src="../../../assets/thumbs/VoltageCurrentResistanceRelationship.jpg" alt="Diagram showing the relationship between voltage, current, and resistance" />
-              <figcaption>Voltage, current, and resistance are connected: more voltage increases current, while more resistance reduces current.</figcaption>
-            </figure>
           </section>
 
           <!-- ── What Is Ohm's Law ── -->
-          <section class="sm-card" style="--sm-accent:#34c759;">
+          <section class="sm-card" id="ohm-law" style="--sm-accent:#34c759;">
+            <p class="ohm-eyebrow">03 / The rule</p>
             <h2>What Is Ohm's Law?</h2>
-            <p>In 1827, German physicist Georg Simon Ohm published a finding that changed electronics forever: the voltage across a conductor is directly proportional to the current flowing through it, as long as temperature stays constant. That relationship is written as one simple equation.</p>
-
+            <div class="ohm-history">
+              <div>
+                <p>In 1827, German schoolteacher and physicist Georg Simon Ohm published the same experiment you just ran. He changed the push on a wire, measured the flow, and found the two rose together in a straight line, as long as the temperature stayed steady.</p>
+                <p>Other scientists did not believe him at first. Careful measurements won the argument, and today the unit of resistance carries his name.</p>
+                <p>Your data table showed the key idea: for one resistor, <strong>V ÷ I</strong> never changes. Call that constant <strong>R</strong>, and you have the law.</p>
+              </div>
             <figure data-zoomable data-lightbox-group="ohms-law" class="ohm-history-figure">
               <img loading="lazy" decoding="async" src="../../../assets/thumbs/GeorgeOhm.jpg" alt="Portrait of German physicist Georg Simon Ohm" />
-              <figcaption>Georg Simon Ohm gave electronics one of its most useful relationships: voltage, current, and resistance move together in a predictable way.</figcaption>
+              <figcaption>Georg Simon Ohm studied the relationship between voltage and current in conductors. Portrait artist unknown; pre-1928, public domain. Source: <a href="../../../assets/IMAGE_SOURCES.md">site image credits</a>.</figcaption>
             </figure>
+            </div>
 
             <div class="ohm-formula-row">
               <div class="ohm-formula-card">
@@ -636,19 +688,16 @@
 
             <div class="sm-callout green">
               <strong>One Equation, Three Unknowns</strong>
-              You only need to know two of the three values to find the third. If you know the voltage of your battery and the resistance of your component, you can calculate the exact current that will flow — before you even build the circuit.
+              You only need to know two of the three values to find the third. If you know the voltage across a resistor and its resistance, you can predict its current before you build the circuit. Real parts and supplies vary, so measure to check your prediction.
             </div>
 
-            <figure data-zoomable data-lightbox-group="ohms-law" class="ohm-meme-figure">
-              <img loading="lazy" decoding="async" src="../../../assets/thumbs/OHMSLAW.jpg" alt="Ohm's Law meme about voltage current and resistance" />
-              <figcaption>A quick memory hook for the relationship between voltage, current, and resistance.</figcaption>
-            </figure>
           </section>
 
           <!-- ── Worked Examples ── -->
-          <section class="sm-card" style="--sm-accent:#ff9500;">
-            <h2>Worked Examples</h2>
-            <p>The best way to understand Ohm's Law is to use it. In every problem, identify what you know and which form of the equation you need.</p>
+          <section class="sm-card" id="ohm-solve" style="--sm-accent:#ff9500;">
+            <p class="ohm-eyebrow">04 / Use it</p>
+            <h2>Solve It</h2>
+            <p>Every problem follows the same three moves: <strong>list what you know</strong>, <strong>convert to base units</strong> (V, A, Ω), then <strong>pick the form of the equation</strong> that solves for the unknown. Try each example on paper before you open the solution.</p>
 
             <div class="ohm-example">
               <div class="ohm-example-head">
@@ -657,10 +706,13 @@
               </div>
               <div class="ohm-example-body">
                 <p class="given"><strong>Situation:</strong> You have a 5V power supply and want to limit current through an LED to 20 mA (0.020 A). The LED drops about 2V across itself. How large a resistor do you need?</p>
+                <details>
+                  <summary>Show solution</summary>
                 <p class="step">The voltage available for the resistor = 5V − 2V = <strong>3V</strong></p>
                 <p class="step">Use <code>R = V ÷ I</code></p>
                 <p class="step"><code>R = 3V ÷ 0.020A = 150 Ω</code></p>
                 <p class="ohm-example-answer">Answer: Use a 150 Ω resistor (or the next standard value up — 180 Ω — to keep the current safely below 20 mA).</p>
+                </details>
               </div>
             </div>
 
@@ -671,9 +723,12 @@
               </div>
               <div class="ohm-example-body">
                 <p class="given"><strong>Situation:</strong> A 9V battery is connected to a 470 Ω resistor. How much current flows?</p>
+                <details>
+                  <summary>Show solution</summary>
                 <p class="step">Use <code>I = V ÷ R</code></p>
                 <p class="step"><code>I = 9V ÷ 470Ω = 0.0191 A ≈ 19.1 mA</code></p>
                 <p class="ohm-example-answer">Answer: About 19 milliamps flow through the resistor.</p>
+                </details>
               </div>
             </div>
 
@@ -684,30 +739,53 @@
               </div>
               <div class="ohm-example-body">
                 <p class="given"><strong>Situation:</strong> You apply 12V to an unknown component and measure 40 mA (0.040 A) of current with a multimeter. What is its resistance?</p>
+                <details>
+                  <summary>Show solution</summary>
                 <p class="step">Use <code>R = V ÷ I</code></p>
                 <p class="step"><code>R = 12V ÷ 0.040A = 300 Ω</code></p>
                 <p class="ohm-example-answer">Answer: The component has a resistance of 300 Ω.</p>
+                </details>
               </div>
             </div>
 
             <div class="ohm-example">
               <div class="ohm-example-head">
                 <span class="ohm-example-badge">Ex 4</span>
-                <span class="ohm-example-title">What voltage does a sensor need?</span>
+                <span class="ohm-example-title">What voltage does a resistor need?</span>
               </div>
               <div class="ohm-example-body">
-                <p class="given"><strong>Situation:</strong> A sensor has an internal resistance of 2,200 Ω and needs exactly 5 mA (0.005 A) to operate correctly. What supply voltage does it need?</p>
+                <p class="given"><strong>Situation:</strong> What voltage across a 2,200 Ω resistor would produce 5 mA (0.005 A)?</p>
+                <details>
+                  <summary>Show solution</summary>
                 <p class="step">Use <code>V = I × R</code></p>
                 <p class="step"><code>V = 0.005A × 2200Ω = 11V</code></p>
-                <p class="ohm-example-answer">Answer: The sensor needs an 11V supply to draw its rated 5 mA.</p>
+                <p class="ohm-example-answer">Answer: The resistor needs 11 V across it to carry 5 mA in this ideal model.</p>
+                </details>
               </div>
+            </div>
+
+            <div class="ohm-solver" id="ohm-solver">
+              <h3>Check your work: Ohm's Law solver</h3>
+              <div class="ohm-solver__for" role="group" aria-label="Solve for">
+                <span>Solve for</span>
+                <button type="button" data-solve-for="V" aria-pressed="false">V</button>
+                <button type="button" data-solve-for="I" aria-pressed="true">I</button>
+                <button type="button" data-solve-for="R" aria-pressed="false">R</button>
+              </div>
+              <div class="ohm-solver__inputs">
+                <div class="ohm-solver__field" data-solver-field><label for="ohm-solver-a">Voltage (V)</label><div><input id="ohm-solver-a" type="number" min="0" step="any" inputmode="decimal" value="9" /><select aria-label="Unit for the first value"></select></div></div>
+                <div class="ohm-solver__field" data-solver-field><label for="ohm-solver-b">Resistance (R)</label><div><input id="ohm-solver-b" type="number" min="0" step="any" inputmode="decimal" value="470" /><select aria-label="Unit for the second value"></select></div></div>
+              </div>
+              <ol id="ohm-solver-steps" aria-live="polite"></ol>
+              <p class="ohm-solver__answer" id="ohm-solver-answer" aria-live="polite"></p>
             </div>
           </section>
 
           <!-- ── Power: the fourth quantity ── -->
-          <section class="sm-card" style="--sm-accent:#af52de;">
+          <section class="sm-card" id="ohm-power-sec" style="--sm-accent:#af52de;">
+            <p class="ohm-eyebrow">05 / Why it gets hot</p>
             <h2>Power: The Fourth Quantity</h2>
-            <p>Ohm's Law deals with V, I, and R — but there is a fourth quantity that goes hand in hand with it: <strong>Power (P)</strong>, measured in <strong>Watts (W)</strong>. Power is the rate at which a component converts electrical energy into heat, light, or motion.</p>
+            <p>Remember the resistor glowing in the lab at 12 V and 100 Ω? Ohm's Law deals with V, I, and R, but a fourth quantity goes hand in hand with it: <strong>Power (P)</strong>, measured in <strong><span data-glossary="watt">watts</span> (W)</strong>. Power is the rate at which a component converts electrical energy into heat, light, or motion.</p>
 
             <div class="ohm-formula-row">
               <div class="ohm-formula-card">
@@ -727,7 +805,7 @@
               </div>
             </div>
 
-            <p>This matters because every component has a power rating. If more power flows through it than it is rated for, the component overheats and can fail — sometimes dramatically. A resistor rated for ¼ W will burn if you run ½ W through it.</p>
+            <p>This matters because every component has a power rating. If it has to get rid of more power than its <span data-glossary="power rating">power rating</span> allows, the component overheats and can fail — sometimes dramatically. A resistor rated for ¼ W will burn if you run ½ W through it.</p>
 
             <div class="ohm-example">
               <div class="ohm-example-head">
@@ -736,25 +814,29 @@
               </div>
               <div class="ohm-example-body">
                 <p class="given"><strong>Situation:</strong> The 150 Ω LED resistor from Example 1 carries 20 mA at 3V. How much power does it dissipate? Is a standard ¼W resistor safe?</p>
+                <details>
+                  <summary>Show solution</summary>
                 <p class="step">Use <code>P = V × I</code></p>
                 <p class="step"><code>P = 3V × 0.020A = 0.06 W</code></p>
                 <p class="ohm-example-answer">Answer: 0.06 W — well under the ¼W (0.25W) rating. A standard resistor is fine. As a rule, keep components at or below 50% of their rated power for long-term reliability.</p>
+                </details>
               </div>
             </div>
 
             <div class="sm-callout warn">
               <strong>Why Resistors Get Hot</strong>
-              Every resistor converts the electrical power it dissipates directly into heat. The higher the power, the hotter it gets. If you pick up a resistor and it's painfully hot, the power through it is too high — either increase resistance, lower voltage, or use a higher-wattage component.
+              A resistor converts electrical energy into heat. Calculate its power before building, and choose a suitable wattage rating with margin. Disconnect power and let parts cool before touching a circuit that may have overheated.
             </div>
           </section>
 
           <!-- ── Series and Parallel ── -->
-          <section class="sm-card" style="--sm-accent:#30b0c7;">
+          <section class="sm-card" id="ohm-series" style="--sm-accent:#30b0c7;">
+            <p class="ohm-eyebrow">06 / More than one part</p>
             <h2>Ohm's Law in Series and Parallel Circuits</h2>
             <p>Real circuits have more than one component. The way components are connected — in series (one after another) or in parallel (side by side) — changes how resistance, voltage, and current behave.</p>
 
             <h3>Series Circuits</h3>
-            <p>In a series circuit, components share the same current. The total resistance is the sum of all individual resistances. Voltage is shared — each component gets a portion of the total.</p>
+            <p>In a <span data-glossary="series circuit">series circuit</span>, components share the same current. The total resistance is the sum of all individual resistances. Voltage is shared — each component gets a portion of the total.</p>
 
             <div class="ohm-example">
               <div class="ohm-example-head">
@@ -772,7 +854,7 @@
             </div>
 
             <h3>Parallel Circuits</h3>
-            <p>In a parallel circuit, components share the same voltage. Each branch carries its own current. Total resistance goes <em>down</em> as you add more parallel branches — more paths for current to flow.</p>
+            <p>In a <span data-glossary="parallel circuit">parallel circuit</span>, components share the same voltage. Each branch carries its own current. Total resistance goes <em>down</em> as you add more parallel branches — more paths for current to flow.</p>
 
             <div class="ohm-example">
               <div class="ohm-example-head">
@@ -826,37 +908,42 @@
             </table>
           </section>
 
-          <circuit-playground data-profile="ohms"></circuit-playground>
+          <section class="sm-card" style="--sm-accent:#30b0c7;" aria-labelledby="ohm-playground-title">
+            <h2 id="ohm-playground-title">Build beyond one loop</h2>
+            <p>Ready to test series and parallel circuits? Use the playground to compare branch currents, voltage drops, and total resistance.</p>
+            <circuit-playground data-profile="ohms"></circuit-playground>
+          </section>
 
           <!-- ── Real-world applications ── -->
-          <section class="sm-card" style="--sm-accent:#5856d6;">
+          <section class="sm-card" id="ohm-real" style="--sm-accent:#5856d6;">
+            <p class="ohm-eyebrow">07 / Out in the world</p>
             <h2>Ohm's Law in the Real World</h2>
             <p>Every electronic device you own uses Ohm's Law — often thousands of times in a single circuit. Here are some places you will see it in action.</p>
 
             <div class="sm-overview-grid">
               <div class="sm-overview-card">
                 <strong>LED current limiting</strong>
-                <small>LEDs will draw as much current as a circuit can provide, and burn out instantly. A resistor calculated with Ohm's Law limits current to a safe value — typically 10–20 mA for standard LEDs.</small>
+                <small>An LED's current rises steeply with voltage. A series resistor limits that current; check the LED's own rating and subtract its <span data-glossary="forward voltage">forward voltage</span> before calculating resistance.</small>
               </div>
               <div class="sm-overview-card">
-                <strong>Voltage dividers</strong>
+                <strong><span data-glossary="voltage divider">Voltage dividers</span></strong>
                 <small>Two resistors in series split a voltage proportionally. This is how sensors like potentiometers and thermistors produce a variable analog voltage that a microcontroller can read.</small>
               </div>
               <div class="sm-overview-card">
                 <strong>Fuse sizing</strong>
-                <small>Fuses protect circuits by melting when current exceeds a safe limit. Engineers use Ohm's Law to predict the maximum current a circuit will draw, then choose a fuse just above that value.</small>
+                <small>Fuses protect wiring from excessive current. Estimate normal and fault current, then choose a fuse for the wire, source, and expected startup behavior; Ohm's Law is one part of that analysis.</small>
               </div>
               <div class="sm-overview-card">
                 <strong>Speaker impedance</strong>
-                <small>Speakers are rated in ohms (4Ω, 8Ω, 16Ω). An amplifier's output voltage and the speaker's impedance determine how much current the amplifier must supply — directly from V = IR.</small>
+                <small>Speakers are rated by nominal impedance (often 4Ω or 8Ω), which changes with frequency. The simple DC resistor model is only a rough starting point for amplifier loading.</small>
               </div>
               <div class="sm-overview-card">
                 <strong>Battery life estimation</strong>
-                <small>A 1000 mAh battery powering a circuit that draws 50 mA will last about 20 hours. Current draw is calculated from Ohm's Law; battery life follows from dividing capacity by draw.</small>
+                <small>A 1000 mAh battery at a steady 50 mA suggests about 20 hours in an ideal estimate. Real capacity and current vary with load, voltage, temperature, and cutoff voltage.</small>
               </div>
               <div class="sm-overview-card">
                 <strong>USB power budgets</strong>
-                <small>USB ports supply 5V and are rated for a maximum current (500 mA for USB 2.0). When you plug in a device, the combined resistance of its circuits determines how much current it actually draws.</small>
+                <small>USB power has voltage and current limits that depend on the port and negotiation. An electronic device can change its current draw while it operates; a single fixed resistance cannot describe it.</small>
               </div>
             </div>
           </section>
@@ -886,7 +973,7 @@
           </section>
 
           <!-- ── Common Mistakes ── -->
-          <section class="sm-card" style="--sm-accent:#ff3b30;">
+          <section class="sm-card" id="ohm-mistakes" style="--sm-accent:#ff3b30;">
             <h2>Common Mistakes</h2>
             <div class="sm-trouble-grid">
               <div class="sm-trouble-card">
@@ -903,21 +990,21 @@
               </div>
               <div class="sm-trouble-card">
                 <strong>Treating LEDs like resistors</strong>
-                <small>LEDs do not obey Ohm's Law — they have a forward voltage drop that must be subtracted from the supply before calculating the current-limiting resistor value.</small>
+                <small>An LED is not a fixed resistance. It has a forward voltage drop that must be subtracted from the supply before calculating the current-limiting resistor value.</small>
               </div>
               <div class="sm-trouble-card">
                 <strong>Adding parallel resistances like series ones</strong>
                 <small>Two 100 Ω resistors in series give 200 Ω. In parallel, they give 50 Ω. Always use the reciprocal formula (1/R_total = 1/R1 + 1/R2) for parallel combinations.</small>
               </div>
               <div class="sm-trouble-card">
-                <strong>Using Ohm's Law for non-ohmic components</strong>
-                <small>Ohm's Law only applies to ohmic (linear) resistors. Capacitors, inductors, diodes, and transistors do not follow V = IR — they each have their own governing equations.</small>
+                <strong>Using one fixed resistance for every component</strong>
+                <small>V = IR describes a resistor at a given operating point. LEDs, lamps, speakers, and other parts have behavior that changes with voltage, temperature, frequency, or time.</small>
               </div>
             </div>
           </section>
 
           <!-- ── Quick Reference ── -->
-          <section class="sm-card" style="--sm-accent:#ff9500;">
+          <section class="sm-card" id="ohm-reference" style="--sm-accent:#ff9500;">
             <h2>Quick Reference</h2>
             <p>Keep this table handy when working through circuit problems.</p>
             <table class="sm-table" aria-label="Ohm's Law quick reference">
@@ -977,16 +1064,16 @@
           </section>
 
           <!-- ── Quiz ── -->
-          <section class="sm-quiz">
+          <section class="sm-quiz" id="ohm-quiz">
             <h2>Quick Check</h2>
 
             <div class="sm-question" data-answer="c" data-explanation="Ohm's Law states V = I × R. Voltage equals current times resistance. With 0.5 A through 40 Ω: V = 0.5 × 40 = 20 V.">
               <p>1. A resistor has a resistance of 40 Ω and 0.5 A of current flows through it. What is the voltage across it?</p>
               <div class="sm-options" role="group">
-                <button class="sm-option" data-choice="a">80 V</button>
-                <button class="sm-option" data-choice="b">0.0125 V</button>
-                <button class="sm-option" data-choice="c">20 V</button>
-                <button class="sm-option" data-choice="d">40.5 V</button>
+                <button class="sm-option" type="button" data-choice="a">80 V</button>
+                <button class="sm-option" type="button" data-choice="b">0.0125 V</button>
+                <button class="sm-option" type="button" data-choice="c">20 V</button>
+                <button class="sm-option" type="button" data-choice="d">40.5 V</button>
               </div>
               <div class="sm-q-feedback" aria-live="polite"></div>
             </div>
@@ -994,10 +1081,10 @@
             <div class="sm-question" data-answer="b" data-explanation="I = V ÷ R. Current = 9V ÷ 1000Ω = 0.009 A = 9 mA.">
               <p>2. A 9V battery is connected to a 1,000 Ω (1 kΩ) resistor. How much current flows?</p>
               <div class="sm-options" role="group">
-                <button class="sm-option" data-choice="a">90 mA</button>
-                <button class="sm-option" data-choice="b">9 mA</button>
-                <button class="sm-option" data-choice="c">0.9 mA</button>
-                <button class="sm-option" data-choice="d">111 mA</button>
+                <button class="sm-option" type="button" data-choice="a">90 mA</button>
+                <button class="sm-option" type="button" data-choice="b">9 mA</button>
+                <button class="sm-option" type="button" data-choice="c">0.9 mA</button>
+                <button class="sm-option" type="button" data-choice="d">111 mA</button>
               </div>
               <div class="sm-q-feedback" aria-live="polite"></div>
             </div>
@@ -1005,10 +1092,10 @@
             <div class="sm-question" data-answer="a" data-explanation="R = V ÷ I. Resistance = 12V ÷ 0.060A = 200 Ω. Remember to convert 60 mA to 0.060 A first.">
               <p>3. A component has 12V across it and draws 60 mA. What is its resistance?</p>
               <div class="sm-options" role="group">
-                <button class="sm-option" data-choice="a">200 Ω</button>
-                <button class="sm-option" data-choice="b">720 Ω</button>
-                <button class="sm-option" data-choice="c">0.005 Ω</button>
-                <button class="sm-option" data-choice="d">2,000 Ω</button>
+                <button class="sm-option" type="button" data-choice="a">200 Ω</button>
+                <button class="sm-option" type="button" data-choice="b">720 Ω</button>
+                <button class="sm-option" type="button" data-choice="c">0.005 Ω</button>
+                <button class="sm-option" type="button" data-choice="d">2,000 Ω</button>
               </div>
               <div class="sm-q-feedback" aria-live="polite"></div>
             </div>
@@ -1016,10 +1103,10 @@
             <div class="sm-question" data-answer="d" data-explanation="In a parallel circuit, both branches share the same voltage — the supply voltage. The current splits between the branches, but each branch sees the full 12V.">
               <p>4. Two resistors are connected in parallel across a 12V supply. What voltage appears across each resistor?</p>
               <div class="sm-options" role="group">
-                <button class="sm-option" data-choice="a">6V each, because the voltage is split equally</button>
-                <button class="sm-option" data-choice="b">Depends on the resistor values — they share it proportionally</button>
-                <button class="sm-option" data-choice="c">0V — parallel components cancel each other out</button>
-                <button class="sm-option" data-choice="d">12V each — parallel components all see the full supply voltage</button>
+                <button class="sm-option" type="button" data-choice="a">6V each, because the voltage is split equally</button>
+                <button class="sm-option" type="button" data-choice="b">Depends on the resistor values — they share it proportionally</button>
+                <button class="sm-option" type="button" data-choice="c">0V — parallel components cancel each other out</button>
+                <button class="sm-option" type="button" data-choice="d">12V each — parallel components all see the full supply voltage</button>
               </div>
               <div class="sm-q-feedback" aria-live="polite"></div>
             </div>
@@ -1027,10 +1114,10 @@
             <div class="sm-question" data-answer="b" data-explanation="P = V × I = 5V × 0.100A = 0.5W. The ¼W (0.25W) resistor is rated for only 0.25W, so 0.5W would exceed its rating and it would overheat and likely burn.">
               <p>5. A 50 Ω resistor has 5V across it and carries 100 mA. How much power does it dissipate, and is a ¼W resistor safe?</p>
               <div class="sm-options" role="group">
-                <button class="sm-option" data-choice="a">0.25W — exactly at the ¼W limit, so it is borderline safe</button>
-                <button class="sm-option" data-choice="b">0.5W — the ¼W resistor is not safe; use a ½W or higher rating</button>
-                <button class="sm-option" data-choice="c">250W — the circuit is dangerously overloaded</button>
-                <button class="sm-option" data-choice="d">0.1W — well within the ¼W rating</button>
+                <button class="sm-option" type="button" data-choice="a">0.25W — exactly at the ¼W limit, so it is borderline safe</button>
+                <button class="sm-option" type="button" data-choice="b">0.5W — the ¼W resistor is not safe; choose a 1W rating for margin</button>
+                <button class="sm-option" type="button" data-choice="c">250W — the circuit is dangerously overloaded</button>
+                <button class="sm-option" type="button" data-choice="d">0.1W — well within the ¼W rating</button>
               </div>
               <div class="sm-q-feedback" aria-live="polite"></div>
             </div>
@@ -1038,10 +1125,10 @@
             <div class="sm-question" data-answer="c" data-explanation="The voltage available for the resistor is 5V − 2V (LED forward voltage) = 3V. R = V ÷ I = 3V ÷ 0.015A = 200 Ω.">
               <p>6. You want to run an LED from a 5V supply at 15 mA. The LED has a forward voltage drop of 2V. What resistor do you need?</p>
               <div class="sm-options" role="group">
-                <button class="sm-option" data-choice="a">333 Ω — use 5V ÷ 0.015A</button>
-                <button class="sm-option" data-choice="b">130 Ω — use 2V ÷ 0.015A</button>
-                <button class="sm-option" data-choice="c">200 Ω — use (5V − 2V) ÷ 0.015A</button>
-                <button class="sm-option" data-choice="d">100 Ω — use 1.5V ÷ 0.015A</button>
+                <button class="sm-option" type="button" data-choice="a">333 Ω — use 5V ÷ 0.015A</button>
+                <button class="sm-option" type="button" data-choice="b">130 Ω — use 2V ÷ 0.015A</button>
+                <button class="sm-option" type="button" data-choice="c">200 Ω — use (5V − 2V) ÷ 0.015A</button>
+                <button class="sm-option" type="button" data-choice="d">100 Ω — use 1.5V ÷ 0.015A</button>
               </div>
               <div class="sm-q-feedback" aria-live="polite"></div>
             </div>
@@ -1064,30 +1151,13 @@
         <div class="ll-panel-body">
           <div class="ll-pane ll-active" id="sm-outline">
             <span class="ll-label">This Module Covers</span>
-            <div class="ll-info">
-              <strong>The formula</strong>
-              V = IR and its three rearrangements — how to solve for any unknown given the other two.
-            </div>
-            <div class="ll-info">
-              <strong>Voltage, current, resistance</strong>
-              What each quantity actually means, its unit, and the water analogy.
-            </div>
-            <div class="ll-info">
-              <strong>Worked examples</strong>
-              LED resistors, unknown resistance, voltage requirements, and power dissipation.
-            </div>
-            <div class="ll-info">
-              <strong>Power (Watts)</strong>
-              P = V × I and how to choose resistor wattage ratings safely.
-            </div>
-            <div class="ll-info">
-              <strong>Series and parallel</strong>
-              How resistance, current, and voltage behave differently in each configuration.
-            </div>
-            <div class="ll-info">
-              <strong>Real-world uses</strong>
-              LED limiting, voltage dividers, fuse sizing, speakers, USB budgets.
-            </div>
+            <div class="ll-info"><strong>1 · Experiment first</strong>Change voltage and resistance, record data, and see the straight-line I–V graph.</div>
+            <div class="ll-info"><strong>2 · Push, flow, squeeze</strong>Voltage, current, resistance, their units, and the water analogy.</div>
+            <div class="ll-info"><strong>3 · V = IR</strong>Georg Ohm's discovery and the three forms of the equation.</div>
+            <div class="ll-info"><strong>4 · Solve it</strong>Try-first worked examples and a solver that shows unit conversions.</div>
+            <div class="ll-info"><strong>5 · Power &amp; heat</strong>P = V × I and choosing resistor wattage with margin.</div>
+            <div class="ll-info"><strong>6 · Series &amp; parallel</strong>How current and voltage split, plus the circuit playground.</div>
+            <div class="ll-info"><strong>7 · Real circuits</strong>Where the ideal model bends, and a predict–measure–explain bench lab.</div>
           </div>
           <div class="ll-pane" id="sm-notes">
             <div class="ll-info">
@@ -1112,7 +1182,7 @@
             </div>
             <div class="ll-info">
               <strong>Ohm's Law limits</strong>
-              Only applies to ohmic (linear) resistors at constant temperature. Does not apply to LEDs, capacitors, inductors, or transistors.
+              A fixed R predicts a linear resistor at roughly constant temperature. LEDs, capacitors, inductors, and transistors need models that account for changing voltage, current, or time.
             </div>
           </div>
         </div>
@@ -1149,11 +1219,14 @@
       });
     })();
   </script>
+  <script src="../../../assets/js/sim-kit.js"></script>
+  <script src="../../../assets/js/lessons/ohms-law-lab.js"></script>
   <script src="../../../assets/js/circuit-playground.js"></script>
   <script src="../../../assets/js/classroom-animations.js"></script>
   <script src="../../../assets/js/lesson-layout.js"></script>
 <script src="../../../assets/js/electricity-path.js"></script>
 <script src="../../../assets/js/lesson-print-button.js"></script>
 <script src="../../../assets/js/photo-lightbox.js"></script>
+<script src="../../../assets/js/site-glossary.js" data-glossary-src="../../../data/electronics-glossary.json"></script>
 </body>
 </html>

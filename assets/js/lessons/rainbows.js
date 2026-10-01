@@ -1,704 +1,1013 @@
-document.addEventListener('DOMContentLoaded', () => {
-    initStepSelector();
-    initDiagrams();
-    initSimulation();
-    initQuiz();
-    initScavengerHunt();
-    initContentsToggle();
-    initSmoothScroll();
-    initKeyboardNavigation();
-});
+/* Rainbows — lessons/earth-science/rainbows.html
+   Three linked sims: a ray-traced raindrop, an exit-angle graph with a
+   "where the light piles up" histogram, and a sky view that paints the bow
+   around the antisolar point. All angles come from Snell's law with a
+   Cauchy fit for water: n(λ) = 1.3247 + 3088 / λ² (λ in nm), which gives
+   n ≈ 1.331 at 700 nm and 1.344 at 400 nm. */
+(function () {
+  'use strict';
 
-const SVG_NS = 'http://www.w3.org/2000/svg';
+  var $ = function (id) { return document.getElementById(id); };
+  var DEG = Math.PI / 180;
 
-function initStepSelector() {
-    const stepButtons = Array.from(document.querySelectorAll('.step-btn'));
-    const chips = Array.from(document.querySelectorAll('.breadcrumb-chip'));
+  /* ── Optics ─────────────────────────────────────────────────────── */
+  function indexOf(lambda) { return 1.3247 + 3088 / (lambda * lambda); }
 
-    function activateStep(stepNumber) {
-        stepButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.step === stepNumber));
-        document.querySelectorAll('.step-explanation').forEach((exp) => {
-            exp.style.display = exp.id === `step-${stepNumber}` ? 'block' : 'none';
+  // Angle (degrees) between the exit ray and the antisolar direction for a
+  // ray hitting at impact parameter b (0..1) after k internal reflections.
+  function exitAngle(b, k, n) {
+    var i = Math.asin(b), r = Math.asin(b / n);
+    var D = 2 * (i - r) + k * (Math.PI - 2 * r);
+    return (k === 1 ? Math.PI - D : D - Math.PI) / DEG;
+  }
+
+  // The turning point has a closed form: cos i = sqrt((n² − 1) / (k(k + 2))).
+  function peak(k, n) {
+    var c = Math.sqrt((n * n - 1) / (k * (k + 2)));
+    var b = Math.sqrt(1 - c * c);
+    return { b: b, theta: exitAngle(b, k, n) };
+  }
+
+  var BOW = [];   // per-wavelength bow radii, 400..700 nm
+  for (var wl = 400; wl <= 700; wl += 2) {
+    var nn = indexOf(wl);
+    BOW.push({ wl: wl, p: peak(1, nn).theta, s: peak(2, nn).theta });
+  }
+  var P_VIOLET = BOW[0].p, P_RED = BOW[BOW.length - 1].p;
+  var S_RED = BOW[BOW.length - 1].s, S_VIOLET = BOW[0].s;
+
+  function wavelengthAt(theta, key) {
+    var best = BOW[0], bestErr = Infinity;
+    BOW.forEach(function (row) {
+      var err = Math.abs(row[key] - theta);
+      if (err < bestErr) { bestErr = err; best = row; }
+    });
+    return best.wl;
+  }
+
+  // Approximate visible-spectrum colour (after Dan Bruton's mapping).
+  function wlRGB(l) {
+    var r = 0, g = 0, b = 0;
+    if (l < 440) { r = -(l - 440) / 60; b = 1; }
+    else if (l < 490) { g = (l - 440) / 50; b = 1; }
+    else if (l < 510) { g = 1; b = -(l - 510) / 20; }
+    else if (l < 580) { r = (l - 510) / 70; g = 1; }
+    else if (l < 645) { r = 1; g = -(l - 645) / 65; }
+    else { r = 1; }
+    var f = l < 420 ? 0.35 + 0.65 * (l - 400) / 20 : l > 680 ? 0.35 + 0.65 * (700 - l) / 20 : 1;
+    f = Math.max(0.35, f);
+    return [Math.round(255 * Math.pow(r * f, 0.8)), Math.round(255 * Math.pow(g * f, 0.8)), Math.round(255 * Math.pow(b * f, 0.8))];
+  }
+  function rgba(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
+  function colorName(l) {
+    if (l >= 625) return 'red';
+    if (l >= 590) return 'orange';
+    if (l >= 565) return 'yellow';
+    if (l >= 500) return 'green';
+    if (l >= 450) return 'blue';
+    return 'violet';
+  }
+
+  var WHITE_SET = [700, 655, 610, 580, 550, 520, 490, 460, 430, 405];
+
+  /* ── Shared lesson state ────────────────────────────────────────── */
+  var state = {
+    b: 0.86,
+    light: 'white',
+    wl: 650,
+    order: 1,
+    bundle: false,
+    normals: true,
+    exaggerate: false
+  };
+
+  /* ── 1 · Raindrop ray tracer ────────────────────────────────────── */
+  var dropCanvas = $('rb-drop-canvas');
+  var drop = null;
+  var pulse = 0;
+
+  function effIndex(lambda) {
+    var n = indexOf(lambda);
+    if (!state.exaggerate) return n;
+    var mid = indexOf(550);
+    return mid + (n - mid) * 6;
+  }
+
+  function dot(a, b) { return a[0] * b[0] + a[1] * b[1]; }
+  function refract(d, N, eta) {         // N must face the incoming ray
+    var ci = -dot(N, d);
+    var k = 1 - eta * eta * (1 - ci * ci);
+    if (k < 0) return null;
+    var f = eta * ci - Math.sqrt(k);
+    return [eta * d[0] + f * N[0], eta * d[1] + f * N[1]];
+  }
+
+  // Trace in canvas coordinates. Primary rays enter the upper half and
+  // secondary rays the lower half, so both leave heading down-left toward
+  // an observer standing below the drop.
+  function traceRay(cx, cy, R, b, k, n) {
+    var side = k === 1 ? -1 : 1;
+    var y = cy + side * b * R;
+    var p = [cx - Math.sqrt(Math.max(0, R * R - (b * R) * (b * R))), y];
+    var pts = [p];
+    var leaks = [];
+    var normals = [];
+    var Nout = [(p[0] - cx) / R, (p[1] - cy) / R];
+    normals.push({ p: p, N: Nout });
+    var d = refract([1, 0], Nout, 1 / n);
+    for (var j = 0; j <= k; j++) {
+      var rel = [p[0] - cx, p[1] - cy];
+      var t = -2 * dot(rel, d);
+      p = [p[0] + t * d[0], p[1] + t * d[1]];
+      pts.push(p);
+      Nout = [(p[0] - cx) / R, (p[1] - cy) / R];
+      normals.push({ p: p, N: Nout });
+      var out = refract(d, [-Nout[0], -Nout[1]], n);
+      if (j < k) {
+        if (out) leaks.push({ p: p, d: out });
+        var q = 2 * dot(d, Nout);
+        d = [d[0] - q * Nout[0], d[1] - q * Nout[1]];
+      } else {
+        d = out;
+      }
+    }
+    return { entryY: y, pts: pts, exit: d, leaks: leaks, normals: normals };
+  }
+
+  function dropGeom(w, h) {
+    var R = Math.min(w * 0.26, h * 0.34);
+    return { R: R, cx: w * 0.62, cy: h * 0.42 };
+  }
+
+  function strokePath(ctx, pts, color, width) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.stroke();
+  }
+
+  function rayToEdge(p, d, w, h) {
+    var t = Infinity;
+    if (d[0] < 0) t = Math.min(t, -p[0] / d[0]);
+    if (d[0] > 0) t = Math.min(t, (w - p[0]) / d[0]);
+    if (d[1] < 0) t = Math.min(t, -p[1] / d[1]);
+    if (d[1] > 0) t = Math.min(t, (h - p[1]) / d[1]);
+    return [p[0] + t * d[0], p[1] + t * d[1]];
+  }
+
+  function drawFullRay(ctx, w, h, g, tr, color, width, alpha) {
+    var pts = [[0, tr.entryY]].concat(tr.pts);
+    ctx.globalAlpha = alpha;
+    strokePath(ctx, pts, color, width);
+    var end = rayToEdge(tr.pts[tr.pts.length - 1], tr.exit, w, h);
+    strokePath(ctx, [tr.pts[tr.pts.length - 1], end], color, width);
+    ctx.globalAlpha = 1;
+    return end;
+  }
+
+  // Draws the shorter arc from angle a0 to a1 and labels its midpoint.
+  function drawArcLabel(ctx, p, a0, a1, r, label, color) {
+    var delta = Math.atan2(Math.sin(a1 - a0), Math.cos(a1 - a0));
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.arc(p[0], p[1], r, a0, a0 + delta, delta < 0);
+    ctx.stroke();
+    var am = a0 + delta / 2;
+    ctx.fillStyle = color;
+    ctx.font = '600 12px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, p[0] + Math.cos(am) * (r + 16), p[1] + Math.sin(am) * (r + 14));
+  }
+
+  function drawDrop() {
+    if (!drop) return;
+    var ctx = drop.ctx, w = drop.width, h = drop.height;
+    var g = dropGeom(w, h);
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+    var bg = ctx.createLinearGradient(0, 0, 0, h);
+    bg.addColorStop(0, '#0d1626');
+    bg.addColorStop(1, '#070b14');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    // Sun label
+    ctx.fillStyle = 'rgba(255, 214, 102, 0.85)';
+    ctx.font = '600 12px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('☀ sunlight →', 10, 10);
+
+    // The drop
+    var dg = ctx.createRadialGradient(g.cx - g.R * 0.3, g.cy - g.R * 0.35, g.R * 0.1, g.cx, g.cy, g.R);
+    dg.addColorStop(0, 'rgba(140, 200, 255, 0.22)');
+    dg.addColorStop(1, 'rgba(40, 110, 200, 0.16)');
+    ctx.fillStyle = dg;
+    ctx.beginPath();
+    ctx.arc(g.cx, g.cy, g.R, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(150, 205, 255, 0.55)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    var k = state.order;
+    ctx.globalCompositeOperation = 'lighter';
+    var main = null;
+
+    if (state.bundle) {
+      var lam = state.light === 'single' ? state.wl : 580;
+      var col = state.light === 'single' ? rgba(wlRGB(lam), 1) : 'rgb(255, 246, 220)';
+      for (var i = 0; i < 30; i++) {
+        var bb = 0.02 + i * (0.97 / 29);
+        var trb = traceRay(g.cx, g.cy, g.R, bb, k, effIndex(lam));
+        drawFullRay(ctx, w, h, g, trb, col, 1, 0.28);
+      }
+      main = traceRay(g.cx, g.cy, g.R, state.b, k, effIndex(lam));
+      drawFullRay(ctx, w, h, g, main, col, 2.6, 0.95);
+    } else if (state.light === 'single') {
+      main = traceRay(g.cx, g.cy, g.R, state.b, k, effIndex(state.wl));
+      main.leaks.forEach(function (lk) {
+        var e = rayToEdge(lk.p, lk.d, w, h);
+        ctx.globalAlpha = 0.22;
+        strokePath(ctx, [lk.p, e], rgba(wlRGB(state.wl), 1), 1.5);
+      });
+      ctx.globalAlpha = 1;
+      drawFullRay(ctx, w, h, g, main, rgba(wlRGB(state.wl), 1), 2.6, 1);
+    } else {
+      WHITE_SET.forEach(function (lam) {
+        var tr = traceRay(g.cx, g.cy, g.R, state.b, k, effIndex(lam));
+        tr.leaks.forEach(function (lk) {
+          var e = rayToEdge(lk.p, lk.d, w, h);
+          ctx.globalAlpha = 0.07;
+          strokePath(ctx, [lk.p, e], rgba(wlRGB(lam), 1), 1.5);
         });
-        chips.forEach((chip, index) => chip.classList.toggle('active', index === Math.min(Number(stepNumber) - 1, chips.length - 1)));
+        drawFullRay(ctx, w, h, g, tr, rgba(wlRGB(lam), 1), 2.2, 0.55);
+      });
+      main = traceRay(g.cx, g.cy, g.R, state.b, k, effIndex(550));
+    }
+    ctx.globalCompositeOperation = 'source-over';
+
+    // Travelling light pulse along the highlighted path
+    var path = [[0, main.entryY]].concat(main.pts);
+    var tail = rayToEdge(main.pts[main.pts.length - 1], main.exit, w, h);
+    path.push(tail);
+    var lens = [], total = 0;
+    for (var s = 1; s < path.length; s++) {
+      var L = Math.hypot(path[s][0] - path[s - 1][0], path[s][1] - path[s - 1][1]);
+      lens.push(L); total += L;
+    }
+    var dist = pulse * total;
+    for (var s2 = 0; s2 < lens.length; s2++) {
+      if (dist <= lens[s2]) {
+        var f = dist / lens[s2];
+        var px = path[s2][0] + (path[s2 + 1][0] - path[s2][0]) * f;
+        var py = path[s2][1] + (path[s2 + 1][1] - path[s2][1]) * f;
+        var glow = ctx.createRadialGradient(px, py, 0, px, py, 12);
+        glow.addColorStop(0, 'rgba(255,255,255,0.95)');
+        glow.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = glow;
+        ctx.beginPath(); ctx.arc(px, py, 12, 0, Math.PI * 2); ctx.fill();
+        break;
+      }
+      dist -= lens[s2];
     }
 
-    stepButtons.forEach((button) => {
-        button.addEventListener('click', () => activateStep(button.dataset.step));
-    });
+    if (state.normals) {
+      var muted = 'rgba(200, 220, 240, 0.55)';
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = muted;
+      ctx.lineWidth = 1;
+      main.normals.forEach(function (nm, idx) {
+        if (idx > 0 && idx < main.normals.length - 1) return;
+        ctx.beginPath();
+        ctx.moveTo(nm.p[0] + nm.N[0] * 46, nm.p[1] + nm.N[1] * 46);
+        ctx.lineTo(nm.p[0] - nm.N[0] * 40, nm.p[1] - nm.N[1] * 40);
+        ctx.stroke();
+      });
+      ctx.setLineDash([]);
 
-    activateStep('1');
-}
+      var n0 = indexOf(state.light === 'single' ? state.wl : 550);
+      var iDeg = Math.asin(state.b) / DEG;
+      var rDeg = Math.asin(state.b / n0) / DEG;
+      var entry = main.normals[0];
+      var outAng = Math.atan2(entry.N[1], entry.N[0]);
+      var inAng = Math.PI;           // direction back toward the Sun
+      if (state.b > 0.05) {
+        drawArcLabel(ctx, entry.p, outAng, inAng, 26, 'i ' + iDeg.toFixed(0) + '°', '#ffd666');
+        var inside = Math.atan2(main.pts[1][1] - entry.p[1], main.pts[1][0] - entry.p[0]);
+        drawArcLabel(ctx, entry.p, inside, outAng + Math.PI, 34, 'r ' + rDeg.toFixed(0) + '°', '#8fd3ff');
+      }
 
-function initDiagrams() {
-    document.querySelectorAll('.interactive-diagram').forEach((svg) => {
-        buildDiagramOverlay(svg);
-        svg.addEventListener('mouseenter', () => svg.classList.add('is-active'));
-        svg.addEventListener('mouseleave', () => svg.classList.remove('is-active'));
-        svg.addEventListener('click', () => animateDiagram(svg));
-    });
-
-    const stepPathButton = document.getElementById('step-light-path-btn');
-    if (stepPathButton) {
-        stepPathButton.addEventListener('click', () => {
-            const active = document.querySelector('.step-btn.active')?.dataset.step;
-            const svg = document.querySelector(`[data-step-diagram="${active}"]`);
-            if (svg) animateDiagram(svg);
-        });
+      // Exit angle measured against a line parallel to the sunlight.
+      var ex = main.pts[main.pts.length - 1];
+      ctx.setLineDash([6, 5]);
+      ctx.strokeStyle = 'rgba(255, 214, 102, 0.55)';
+      ctx.beginPath();
+      ctx.moveTo(ex[0], ex[1]);
+      ctx.lineTo(Math.max(8, ex[0] - 150), ex[1]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      var exAng = Math.atan2(main.exit[1], main.exit[0]);
+      var th = exitAngle(state.b, k, n0);
+      drawArcLabel(ctx, ex, Math.PI, exAng, 70, th.toFixed(1) + '°', '#ffffff');
+      ctx.fillStyle = 'rgba(220, 232, 245, 0.7)';
+      ctx.font = '11px system-ui, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('parallel to the sunlight', ex[0] - 6, ex[1] - 4);
     }
 
-    document.querySelectorAll('[data-diagram-action]').forEach((button) => {
-        button.addEventListener('click', () => {
-            const svg = document.querySelector(`[data-diagram="${button.dataset.diagramAction}"]`);
-            if (svg) animateDiagram(svg);
-        });
-    });
-}
+    // Observer hint
+    ctx.fillStyle = 'rgba(220, 232, 245, 0.75)';
+    ctx.font = '600 12px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('↙ toward you', 10, h - 10);
+    ctx.restore();
+  }
 
-function buildDiagramOverlay(svg) {
-    const box = svg.viewBox.baseVal;
-    const overlay = document.createElementNS(SVG_NS, 'g');
-    overlay.setAttribute('class', 'diagram-overlay');
-    const kind = svg.dataset.stepDiagram || svg.dataset.diagram;
-
-    // Each diagram already carries its own permanent labels drawn in the HTML.
-    // This overlay only adds a traveling dashed line that animates the light's
-    // path through the drop when "Show Light Path" is triggered—no extra text,
-    // so nothing here can collide with the static labels underneath.
-    const paths = {
-        '1': `M 32 35 Q 56 58 80 90`,
-        '2': `M 100 65 Q 116 95 126 130`,
-        '3': `M 100 65 L 125 125 L 95 150`,
-        '4': `M 15 55 L 52 75 L 95 107 L 205 102`,
-        geometry: `M 150 225 L 150 75`,
-        double: `M 200 235 L 200 95`
-    };
-
-    const d = paths[kind];
-    if (!d) return;
-
-    const path = document.createElementNS(SVG_NS, 'path');
-    path.setAttribute('d', d);
-    path.setAttribute('fill', 'none');
-    path.setAttribute('stroke', '#ffffff');
-    path.setAttribute('stroke-width', '4');
-    path.setAttribute('stroke-linecap', 'round');
-    path.setAttribute('stroke-dasharray', '12 8');
-    path.setAttribute('class', 'diagram-overlay-path');
-    overlay.appendChild(path);
-
-    const frame = document.createElementNS(SVG_NS, 'rect');
-    frame.setAttribute('x', 4);
-    frame.setAttribute('y', 4);
-    frame.setAttribute('width', Math.max(0, box.width - 8));
-    frame.setAttribute('height', Math.max(0, box.height - 8));
-    frame.setAttribute('fill', 'none');
-    frame.setAttribute('stroke', '#6ec5ff');
-    frame.setAttribute('stroke-width', '2');
-    frame.setAttribute('rx', '8');
-    frame.setAttribute('opacity', '0.45');
-    frame.setAttribute('class', 'diagram-overlay-path');
-    overlay.appendChild(frame);
-
-    svg.appendChild(overlay);
-}
-
-function animateDiagram(svg) {
-    svg.classList.add('is-active');
-    const path = svg.querySelector('.diagram-overlay-path');
-    if (path) {
-        const length = typeof path.getTotalLength === 'function' ? path.getTotalLength() : 300;
-        path.style.strokeDasharray = `${length}`;
-        path.style.strokeDashoffset = `${length}`;
-        path.animate([{ strokeDashoffset: length }, { strokeDashoffset: 0 }], { duration: 1100, easing: 'ease-out' });
-        setTimeout(() => {
-            path.style.strokeDashoffset = '0';
-        }, 1100);
+  function updateDropReadouts() {
+    var lam = state.light === 'single' ? state.wl : 550;
+    var n = indexOf(lam);
+    var iDeg = Math.asin(state.b) / DEG;
+    var rDeg = Math.asin(state.b / n) / DEG;
+    var D = 2 * (iDeg - rDeg) + state.order * (180 - 2 * rDeg);
+    $('rb-r-i').textContent = iDeg.toFixed(1) + '°';
+    $('rb-r-r').textContent = rDeg.toFixed(1) + '°';
+    $('rb-r-d').textContent = D.toFixed(1) + '°';
+    if (state.light === 'single') {
+      $('rb-r-theta').textContent = exitAngle(state.b, state.order, n).toFixed(1) + '°';
+    } else {
+      $('rb-r-theta').textContent = exitAngle(state.b, state.order, indexOf(700)).toFixed(1) + '° red · ' +
+        exitAngle(state.b, state.order, indexOf(400)).toFixed(1) + '° violet';
     }
-    setTimeout(() => svg.classList.remove('is-active'), 1800);
-}
+    $('rb-drop-tag').textContent = state.order === 1 ? 'Primary bow · 1 internal reflection' : 'Secondary bow · 2 internal reflections';
+  }
 
-function initSimulation() {
-    const canvas = document.getElementById('simulation-canvas');
-    if (!canvas) return;
+  /* ── 2 · Exit-angle graph + histogram ───────────────────────────── */
+  var graphCanvas = $('rb-graph-canvas');
+  var graph = null;
+  var HIST = (function () {
+    // Sunlight lands evenly across the drop's face, so sample b uniformly.
+    var bins1 = new Float32Array(91), bins2 = new Float32Array(91);
+    var n = indexOf(550), N = 6000;
+    for (var i = 0; i < N; i++) {
+      var b = (i + 0.5) / N;
+      var t1 = exitAngle(b, 1, n), t2 = exitAngle(b, 2, n);
+      if (t1 >= 0 && t1 <= 90) bins1[Math.floor(t1)] += 1;
+      if (t2 >= 0 && t2 <= 90) bins2[Math.floor(t2)] += 0.45;
+    }
+    return { p: bins1, s: bins2 };
+  })();
 
-    const elements = {
-        sunHeightSlider: document.getElementById('sun-height-slider'),
-        observerPositionSlider: document.getElementById('observer-position-slider'),
-        rainDensitySlider: document.getElementById('rain-density-slider'),
-        doubleToggle: document.getElementById('double-rainbow-toggle'),
-        labelsToggle: document.getElementById('labels-toggle'),
-        animateBtn: document.getElementById('animate-btn'),
-        resetBtn: document.getElementById('reset-btn'),
-        sunHeightValue: document.getElementById('sun-height-value'),
-        observerPositionValue: document.getElementById('observer-position-value'),
-        rainDensityValue: document.getElementById('rain-density-value'),
-        primaryAngleReadout: document.getElementById('primary-angle-readout'),
-        secondaryAngleReadout: document.getElementById('secondary-angle-readout'),
-        legend: document.getElementById('color-legend-items')
-    };
+  function drawGraph() {
+    if (!graph) return;
+    var ctx = graph.ctx, w = graph.width, h = graph.height;
+    var narrow = w < 520;
+    var m = { l: 46, r: narrow ? 70 : 120, t: 16, b: 40 };
+    var pw = w - m.l - m.r, ph = h - m.t - m.b;
+    var X = function (b) { return m.l + b * pw; };
+    var Y = function (t) { return m.t + ph - (t / 90) * ph; };
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#0a111e';
+    ctx.fillRect(0, 0, w, h);
 
-    const state = {
-        sunHeight: 45,
-        observerPosition: 20,
-        rainDensity: 55,
-        showDouble: false,
-        showLabels: true,
-        isAnimating: false
-    };
+    // Alexander's dark band (between the two turning points)
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    ctx.fillRect(m.l, Y(S_RED), pw + m.r - 8, Y(P_RED) - Y(S_RED));
+    ctx.fillStyle = 'rgba(200, 215, 235, 0.55)';
+    ctx.font = 'italic 11px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(narrow ? 'dark band: no light' : "no light leaves here: Alexander's dark band", m.l + 8, (Y(S_RED) + Y(P_RED)) / 2);
 
-    const dom = createSimulationScene(canvas);
+    // Grid + axes
+    ctx.strokeStyle = 'rgba(160, 190, 220, 0.12)';
+    ctx.lineWidth = 1;
+    ctx.fillStyle = 'rgba(200, 215, 235, 0.7)';
+    ctx.font = '11px system-ui, sans-serif';
+    for (var t = 0; t <= 90; t += 15) {
+      ctx.beginPath(); ctx.moveTo(m.l, Y(t)); ctx.lineTo(m.l + pw, Y(t)); ctx.stroke();
+      ctx.textAlign = 'right';
+      ctx.fillText(t + '°', m.l - 6, Y(t));
+    }
+    for (var bx = 0; bx <= 1.0001; bx += 0.25) {
+      ctx.beginPath(); ctx.moveTo(X(bx), m.t); ctx.lineTo(X(bx), m.t + ph); ctx.stroke();
+      ctx.textAlign = bx > 0.99 ? 'right' : 'center';
+      ctx.fillText(bx.toFixed(2), X(bx) + (bx > 0.99 ? 4 : 0), m.t + ph + 13);
+    }
+    ctx.fillText('where the beam hits the drop (0 = center, 1 = edge)', m.l + pw / 2, h - 10);
+    ctx.save();
+    ctx.translate(12, m.t + ph / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('angle from antisolar point', 0, 0);
+    ctx.restore();
 
-    elements.sunHeightSlider.addEventListener('input', (event) => {
-        state.sunHeight = Number(event.target.value);
-        elements.sunHeightValue.textContent = `${state.sunHeight}`;
-        drawSimulation();
-    });
-    elements.observerPositionSlider.addEventListener('input', (event) => {
-        state.observerPosition = Number(event.target.value);
-        elements.observerPositionValue.textContent = `${state.observerPosition}`;
-        drawSimulation();
-    });
-    elements.rainDensitySlider.addEventListener('input', (event) => {
-        state.rainDensity = Number(event.target.value);
-        elements.rainDensityValue.textContent = `${state.rainDensity}`;
-        drawSimulation();
-    });
-    elements.doubleToggle.addEventListener('change', (event) => {
-        state.showDouble = event.target.checked;
-        drawSimulation();
-    });
-    elements.labelsToggle.addEventListener('change', (event) => {
-        state.showLabels = event.target.checked;
-        drawSimulation();
-    });
-    elements.animateBtn.addEventListener('click', () => {
-        if (!state.isAnimating) animateLightPath(canvas, dom, state, elements.animateBtn);
-    });
-    elements.resetBtn.addEventListener('click', () => {
-        state.sunHeight = 45;
-        state.observerPosition = 20;
-        state.rainDensity = 55;
-        state.showDouble = false;
-        state.showLabels = true;
-        elements.sunHeightSlider.value = '45';
-        elements.observerPositionSlider.value = '20';
-        elements.rainDensitySlider.value = '55';
-        elements.doubleToggle.checked = false;
-        elements.labelsToggle.checked = true;
-        elements.sunHeightValue.textContent = '45';
-        elements.observerPositionValue.textContent = '20';
-        elements.rainDensityValue.textContent = '55';
-        drawSimulation();
-    });
-
-    buildLegend(elements.legend);
-    drawSimulation();
-
-    function drawSimulation() {
-        pulseUpdate(canvas);
-        const centerX = 40 + (state.observerPosition / 100) * 160;
-        const centerY = 302;
-
-        dom.head.setAttribute('cx', `${centerX}`);
-        dom.head.setAttribute('cy', `${centerY - 38}`);
-        dom.body.setAttribute('x1', `${centerX}`);
-        dom.body.setAttribute('y1', `${centerY - 30}`);
-        dom.body.setAttribute('x2', `${centerX}`);
-        dom.body.setAttribute('y2', `${centerY}`);
-        dom.arms.setAttribute('x1', `${centerX - 14}`);
-        dom.arms.setAttribute('y1', `${centerY - 18}`);
-        dom.arms.setAttribute('x2', `${centerX + 14}`);
-        dom.arms.setAttribute('y2', `${centerY - 18}`);
-        dom.legLeft.setAttribute('x1', `${centerX}`);
-        dom.legLeft.setAttribute('y1', `${centerY}`);
-        dom.legLeft.setAttribute('x2', `${centerX - 10}`);
-        dom.legLeft.setAttribute('y2', `${centerY + 18}`);
-        dom.legRight.setAttribute('x1', `${centerX}`);
-        dom.legRight.setAttribute('y1', `${centerY}`);
-        dom.legRight.setAttribute('x2', `${centerX + 10}`);
-        dom.legRight.setAttribute('y2', `${centerY + 18}`);
-        dom.observerLabel.setAttribute('x', `${centerX}`);
-        dom.observerLabel.setAttribute('y', `${centerY + 34}`);
-
-        const sunDistance = 180;
-        const sunAngle = (state.sunHeight * Math.PI) / 180;
-        const sunX = centerX + sunDistance * Math.cos(sunAngle);
-        const sunY = centerY - sunDistance * Math.sin(sunAngle) - 40;
-        dom.sun.setAttribute('cx', `${sunX}`);
-        dom.sun.setAttribute('cy', `${sunY}`);
-        dom.sunLabel.setAttribute('x', `${sunX}`);
-        dom.sunLabel.setAttribute('y', `${sunY + 38}`);
-
-        const rainDrops = Math.max(10, Math.round(state.rainDensity / 3));
-        dom.rainLayer.innerHTML = '';
-        for (let index = 0; index < rainDrops; index += 1) {
-            const drop = document.createElementNS(SVG_NS, 'line');
-            const column = index % 10;
-            const row = Math.floor(index / 10);
-            const x = 250 + column * 22 + (row % 2) * 6;
-            const y = 110 + row * 18;
-            drop.setAttribute('x1', `${x}`);
-            drop.setAttribute('y1', `${y}`);
-            drop.setAttribute('x2', `${x - 5}`);
-            drop.setAttribute('y2', `${y + 18}`);
-            drop.setAttribute('stroke', '#79bceb');
-            drop.setAttribute('stroke-width', `${1 + state.rainDensity / 85}`);
-            drop.setAttribute('opacity', `${0.35 + state.rainDensity / 160}`);
-            dom.rainLayer.appendChild(drop);
+    // Curves (both orders; the active one is bold)
+    [1, 2].forEach(function (k) {
+      [700, 400].forEach(function (lam) {
+        var n = indexOf(lam);
+        ctx.strokeStyle = rgba(wlRGB(lam), k === state.order ? 1 : 0.35);
+        ctx.lineWidth = k === state.order ? 2.4 : 1.4;
+        ctx.beginPath();
+        var started = false;
+        for (var i = 0; i <= 300; i++) {
+          var b = i / 300 * 0.999;
+          var th = exitAngle(b, k, n);
+          if (th > 90) { started = false; continue; }
+          if (!started) { ctx.moveTo(X(b), Y(th)); started = true; }
+          else ctx.lineTo(X(b), Y(th));
         }
+        ctx.stroke();
+      });
+    });
 
-        const colors = getColorSpectrum();
-        const primaryAngles = colors.map(c => ({ ...c, angle: computeRainbowAngle(c.n, 1) }));
-        const secondaryAngles = colors.map(c => ({ ...c, angle: computeRainbowAngle(c.n, 2) }));
+    // Peak markers for the active order
+    [700, 400].forEach(function (lam) {
+      var pk = peak(state.order, indexOf(lam));
+      ctx.setLineDash([3, 4]);
+      ctx.strokeStyle = rgba(wlRGB(lam), 0.6);
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(X(pk.b), Y(pk.theta)); ctx.lineTo(m.l + pw, Y(pk.theta)); ctx.stroke();
+      ctx.setLineDash([]);
+    });
+    var pkLabel = peak(state.order, indexOf(700));
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '600 11px system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'top';
+    ctx.fillText(state.order === 1 ? 'flat top → light piles up' : 'flat bottom → light piles up',
+      X(pkLabel.b) - 10, state.order === 1 ? Y(pkLabel.theta) + 14 : Y(pkLabel.theta) + 8);
 
-        const primaryRadius = 100 + ((55 - state.sunHeight) * 0.7);
-        const secondaryRadius = 155 + ((55 - state.sunHeight) * 0.7);
+    // Current hit point
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.setLineDash([2, 3]);
+    ctx.beginPath(); ctx.moveTo(X(state.b), m.t); ctx.lineTo(X(state.b), m.t + ph); ctx.stroke();
+    ctx.setLineDash([]);
+    [700, 400].forEach(function (lam) {
+      var th = exitAngle(state.b, state.order, indexOf(lam));
+      if (th > 90) return;
+      ctx.fillStyle = rgba(wlRGB(lam), 1);
+      ctx.strokeStyle = '#0a111e';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(X(state.b), Y(th), 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    });
 
-        // Arcs sweep the region overhead (0deg = straight up in polarToCartesian's
-        // convention), not off to the side—that mismatch used to send most of the
-        // bow past the left edge of the canvas, leaving only two disconnected
-        // color fragments visible.
-        dom.primaryBow.setAttribute('d', arcPath(centerX, centerY, primaryRadius, -58, 58));
-        dom.secondaryBow.setAttribute('d', arcPath(centerX, centerY, secondaryRadius, -62, 62));
-        dom.secondaryBow.style.display = state.showDouble ? 'inline' : 'none';
+    // Histogram: how much light leaves at each angle
+    var hx = m.l + pw + 8, hw = m.r - 16;
+    var max = 0;
+    for (var i2 = 0; i2 <= 90; i2++) max = Math.max(max, HIST.p[i2], HIST.s[i2]);
+    for (var a = 0; a < 90; a++) {
+      var vP = HIST.p[a] / max, vS = HIST.s[a] / max;
+      var y0 = Y(a + 1), bh = Math.max(1, Y(a) - Y(a + 1) - 0.5);
+      if (vP > 0) {
+        ctx.fillStyle = 'rgba(255, 236, 190,' + (state.order === 1 ? 0.9 : 0.4) + ')';
+        ctx.fillRect(hx, y0, Math.max(1, Math.sqrt(vP) * hw), bh);
+      }
+      if (vS > 0) {
+        ctx.fillStyle = 'rgba(190, 210, 255,' + (state.order === 2 ? 0.9 : 0.4) + ')';
+        ctx.fillRect(hx, y0, Math.max(1, Math.sqrt(vS) * hw), bh);
+      }
+    }
+    ctx.fillStyle = 'rgba(200, 215, 235, 0.75)';
+    ctx.font = '10px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('light leaving', hx, 2);
+    ctx.fillText('at each angle', hx + 6, m.t + ph + 18);
+  }
 
-        if (dom.darkBand) {
-            const darkStart = 100 + ((55 - state.sunHeight) * 0.7);
-            const darkEnd = 155 + ((55 - state.sunHeight) * 0.7);
-            dom.darkBand.setAttribute('d', arcPath(centerX, centerY, darkStart, -58, 58));
-            dom.darkBand.style.display = 'inline';
+  /* ── 3 · Sky view ───────────────────────────────────────────────── */
+  var skyCanvas = $('rb-sky-canvas');
+  var sky = null;
+  var sk = { sun: 15, walk: 0, rain: 80, secondary: true, guides: true, plane: false, probe: null };
+  var streaks = [];
+  for (var si = 0; si < 140; si++) streaks.push({ x: Math.random(), y: Math.random(), v: 0.6 + Math.random() * 0.6, l: 0.6 + Math.random() * 0.8 });
+  var TREES = [];
+  (function () {
+    var seed = 7;
+    function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+    for (var i = 0; i < 26; i++) TREES.push({ x: -170 + i * 13 + rnd() * 9, s: 0.6 + rnd() * 0.7, row: rnd() < 0.5 ? 0 : 1 });
+  })();
+
+  function skyGeom(w, h) {
+    if (sk.plane) {
+      var ppd = Math.min(w / 2, h / 2) / 57;
+      return { ppd: ppd, ax: w / 2, ay: h / 2, horizon: -1 };
+    }
+    var horizon = h * 0.7;
+    var ppd2 = Math.min(w / 120, horizon / 58);
+    return { ppd: ppd2, ax: w / 2, ay: horizon + sk.sun * ppd2, horizon: horizon };
+  }
+
+  function ring(ctx, x, y, r0, r1) {
+    ctx.beginPath();
+    ctx.arc(x, y, r1, 0, Math.PI * 2);
+    if (r0 > 0) ctx.arc(x, y, r0, 0, Math.PI * 2, true);
+  }
+
+  function drawSky(time) {
+    if (!sky) return;
+    var ctx = sky.ctx, w = sky.width, h = sky.height;
+    var G = skyGeom(w, h);
+    var rain = sk.rain / 100;
+    var lowSun = Math.max(0, 1 - sk.sun / 40);
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+
+    // Sky
+    var sg = ctx.createLinearGradient(0, 0, 0, sk.plane ? h : G.horizon);
+    if (sk.plane) {
+      sg.addColorStop(0, '#5b6b80');
+      sg.addColorStop(1, '#46566c');
+    } else {
+      sg.addColorStop(0, 'rgb(' + Math.round(48 + 20 * (1 - rain)) + ',' + Math.round(62 + 30 * (1 - rain)) + ',' + Math.round(86 + 40 * (1 - rain)) + ')');
+      sg.addColorStop(1, 'rgb(' + Math.round(120 + 40 * lowSun) + ',' + Math.round(132 + 20 * lowSun) + ',' + Math.round(150 - 10 * lowSun) + ')');
+    }
+    ctx.fillStyle = sg;
+    ctx.fillRect(0, 0, w, h);
+
+    // Sky brightness pattern from the drops: brighter inside the bow,
+    // darker between the bows.
+    if (!sk.plane) {
+      ctx.save();
+      ctx.beginPath(); ctx.rect(0, 0, w, G.horizon); ctx.clip();
+    }
+    var r1 = P_VIOLET * G.ppd, r2 = S_RED * G.ppd;
+    ctx.fillStyle = 'rgba(255,255,255,' + (0.13 * rain) + ')';
+    ring(ctx, G.ax, G.ay, 0, r1); ctx.fill('evenodd');
+    ctx.fillStyle = 'rgba(0,0,0,' + (0.16 * rain) + ')';
+    ring(ctx, G.ax, G.ay, P_RED * G.ppd, r2); ctx.fill('evenodd');
+
+    // Rain streaks
+    ctx.strokeStyle = 'rgba(210, 225, 240,' + (0.18 * rain) + ')';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    var count = Math.round(streaks.length * rain);
+    var top = sk.plane ? h : G.horizon;
+    for (var i = 0; i < count; i++) {
+      var s = streaks[i];
+      var y = ((s.y + time * 0.00035 * s.v) % 1) * top;
+      var x = s.x * w;
+      ctx.moveTo(x, y);
+      ctx.lineTo(x - 3 * s.l, y + 14 * s.l);
+    }
+    ctx.stroke();
+
+    // The bows
+    ctx.globalCompositeOperation = 'lighter';
+    // Each wavelength ring is smeared by the Sun's 0.5° disk, so neighbouring
+    // rings overlap. Divide by the overlap count so the primary keeps a fixed
+    // brightness and the secondary stays visibly fainter at any canvas size.
+    var bandW = Math.max(1.5, G.ppd * 0.55);
+    var steps = BOW.length - 1;
+    var overlapP = Math.max(1, bandW / ((P_RED - P_VIOLET) / steps * G.ppd));
+    var overlapS = Math.max(1, bandW / ((S_VIOLET - S_RED) / steps * G.ppd));
+    var alphaP = 0.75 * rain / overlapP, alphaS = 0.3 * rain / overlapS;
+    BOW.forEach(function (row) {
+      var c = wlRGB(row.wl);
+      ctx.strokeStyle = rgba(c, alphaP);
+      ctx.lineWidth = bandW;
+      ctx.beginPath(); ctx.arc(G.ax, G.ay, row.p * G.ppd, 0, Math.PI * 2); ctx.stroke();
+      if (sk.secondary) {
+        ctx.strokeStyle = rgba(c, alphaS);
+        ctx.beginPath(); ctx.arc(G.ax, G.ay, row.s * G.ppd, 0, Math.PI * 2); ctx.stroke();
+      }
+    });
+    ctx.globalCompositeOperation = 'source-over';
+    if (!sk.plane) ctx.restore();
+
+    if (sk.plane) {
+      // Glory + the plane's shadow at the antisolar point
+      ctx.globalCompositeOperation = 'lighter';
+      [[2.2, [120, 180, 255]], [3.0, [255, 220, 120]], [3.8, [255, 120, 140]]].forEach(function (g) {
+        ctx.strokeStyle = rgba(g[1], 0.3);
+        ctx.lineWidth = G.ppd * 0.6;
+        ctx.beginPath(); ctx.arc(G.ax, G.ay, g[0] * G.ppd, 0, Math.PI * 2); ctx.stroke();
+      });
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = 'rgba(20, 28, 40, 0.75)';
+      ctx.save();
+      ctx.translate(G.ax, G.ay);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, G.ppd * 1.6, G.ppd * 0.28, 0, 0, Math.PI * 2);
+      ctx.ellipse(-G.ppd * 0.1, 0, G.ppd * 0.28, G.ppd * 0.9, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    } else {
+      drawGround(ctx, w, h, G);
+    }
+
+    if (sk.guides) drawGuides(ctx, w, h, G);
+    if (sk.probe) drawProbe(ctx, w, h, G);
+
+    // Sun badge
+    ctx.fillStyle = 'rgba(8, 14, 24, 0.7)';
+    var label = sk.plane ? '☀ Sun behind and above you' : '☀ Sun behind you, ' + sk.sun + '° up';
+    ctx.font = '600 12px system-ui, sans-serif';
+    var tw = ctx.measureText(label).width;
+    roundRect(ctx, w - tw - 28, 10, tw + 18, 24, 12); ctx.fill();
+    ctx.fillStyle = '#ffd666';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, w - 19, 22);
+    ctx.restore();
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function drawGround(ctx, w, h, G) {
+    var H = G.horizon;
+    var light = 0.55 + 0.45 * Math.min(1, sk.sun / 30);
+    // Far hills
+    ctx.fillStyle = 'rgb(' + Math.round(52 * light) + ',' + Math.round(82 * light) + ',' + Math.round(70 * light) + ')';
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    for (var x = 0; x <= w; x += 12) {
+      var wx = (x - w / 2) / G.ppd + sk.walk * 0.15;
+      ctx.lineTo(x, H - 6 - 5 * Math.sin(wx * 0.09) - 3 * Math.sin(wx * 0.23 + 1));
+    }
+    ctx.lineTo(w, H); ctx.closePath(); ctx.fill();
+    // Field
+    var fg = ctx.createLinearGradient(0, H, 0, h);
+    fg.addColorStop(0, 'rgb(' + Math.round(70 * light) + ',' + Math.round(110 * light) + ',' + Math.round(62 * light) + ')');
+    fg.addColorStop(1, 'rgb(' + Math.round(96 * light) + ',' + Math.round(140 * light) + ',' + Math.round(70 * light) + ')');
+    ctx.fillStyle = fg;
+    ctx.fillRect(0, H, w, h - H);
+    // Trees slide past as you walk; the bow does not.
+    TREES.forEach(function (t) {
+      var parallax = t.row === 0 ? 1.4 : 2.6;
+      var x = w / 2 + (t.x - sk.walk) * parallax * G.ppd * 0.18;
+      if (x < -30 || x > w + 30) return;
+      var base = H + (t.row === 0 ? 3 : 10);
+      var size = t.s * (t.row === 0 ? 11 : 18) * G.ppd / 6;
+      ctx.fillStyle = 'rgb(' + Math.round(30 * light) + ',' + Math.round(58 * light) + ',' + Math.round(40 * light) + ')';
+      ctx.beginPath();
+      ctx.moveTo(x, base - size * 2.2);
+      ctx.lineTo(x + size * 0.7, base);
+      ctx.lineTo(x - size * 0.7, base);
+      ctx.closePath();
+      ctx.fill();
+    });
+    // Your shadow points at the antisolar point.
+    var feetY = h + 4;
+    var tipY = Math.min(G.ay, h - 4);
+    ctx.fillStyle = 'rgba(10, 20, 14, 0.45)';
+    ctx.beginPath();
+    ctx.moveTo(G.ax - 16, feetY);
+    ctx.lineTo(G.ax + 16, feetY);
+    ctx.lineTo(G.ax + 5, tipY + 6);
+    ctx.lineTo(G.ax - 5, tipY + 6);
+    ctx.closePath();
+    ctx.fill();
+    if (G.ay < h) {
+      ctx.beginPath(); ctx.ellipse(G.ax, tipY, 6, 4, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    // Viewer seen from behind
+    ctx.fillStyle = '#121a26';
+    ctx.beginPath(); ctx.arc(G.ax, h - 46, 11, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(G.ax - 22, h);
+    ctx.quadraticCurveTo(G.ax - 22, h - 34, G.ax, h - 34);
+    ctx.quadraticCurveTo(G.ax + 22, h - 34, G.ax + 22, h);
+    ctx.closePath(); ctx.fill();
+  }
+
+  function drawGuides(ctx, w, h, G) {
+    ctx.save();
+    // Hidden part of the circle, below the horizon
+    if (!sk.plane) {
+      ctx.beginPath(); ctx.rect(0, G.horizon, w, h - G.horizon); ctx.clip();
+      ctx.setLineDash([3, 6]);
+      ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(G.ax, G.ay, 42 * G.ppd, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+      ctx.save();
+    }
+    // Antisolar point marker
+    var vis = G.ay < h - 2;
+    if (vis) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(G.ax - 8, G.ay); ctx.lineTo(G.ax + 8, G.ay);
+      ctx.moveTo(G.ax, G.ay - 8); ctx.lineTo(G.ax, G.ay + 8);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(8, 14, 24, 0.7)';
+      ctx.font = '600 11px system-ui, sans-serif';
+      var t = sk.plane ? 'antisolar point (your shadow)' : 'antisolar point (your head’s shadow)';
+      if (ctx.measureText(t).width + 40 > w / 2) t = 'antisolar point';
+      var tw = ctx.measureText(t).width;
+      roundRect(ctx, G.ax + 12, G.ay - 9, tw + 12, 18, 9); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(t, G.ax + 18, G.ay);
+    }
+    // Radius spokes
+    var spokes = [[42, -Math.PI / 2 - 0.5, '42°']];
+    if (sk.secondary) spokes.push([51, -Math.PI / 2 + 0.5, '51°']);
+    spokes.forEach(function (sp) {
+      var ex = G.ax + Math.cos(sp[1]) * sp[0] * G.ppd, ey = G.ay + Math.sin(sp[1]) * sp[0] * G.ppd;
+      ctx.setLineDash([5, 5]);
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(G.ax, G.ay); ctx.lineTo(ex, ey); ctx.stroke();
+      ctx.setLineDash([]);
+      var mx = G.ax + Math.cos(sp[1]) * sp[0] * G.ppd * 0.55, my = G.ay + Math.sin(sp[1]) * sp[0] * G.ppd * 0.55;
+      if (my > 0 && my < h) {
+        ctx.fillStyle = 'rgba(8, 14, 24, 0.72)';
+        roundRect(ctx, mx - 18, my - 10, 36, 20, 10); ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.font = '700 11px system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(sp[2], mx, my);
+      }
+    });
+    ctx.restore();
+  }
+
+  function probeInfo() {
+    var p = sk.probe;
+    var theta = Math.hypot(p.az, p.el + (sk.plane ? 0 : sk.sun));
+    if (sk.plane) theta = Math.hypot(p.az, p.el);
+    var info = { theta: theta, color: null, text: '' };
+    if (!sk.plane && p.el < 0) {
+      info.text = 'That’s the ground. No raindrops there to light up, so this part of the circle is hidden.';
+      info.ground = true;
+      return info;
+    }
+    if (theta < P_VIOLET) {
+      info.text = 'This drop is ' + theta.toFixed(1) + '° from your shadow, inside the bow. Rays that missed the 42° peak still reach you here, mixed into white light, so the sky inside the bow looks brighter.';
+    } else if (theta <= P_RED) {
+      var wl = wavelengthAt(theta, 'p');
+      info.color = wl;
+      info.text = 'This drop is ' + theta.toFixed(1) + '° from your shadow. It sends you ' + colorName(wl) + ' (about ' + wl + ' nm) from the primary bow. Every other color it sends misses your eye.';
+    } else if (theta < S_RED) {
+      info.text = 'This drop is ' + theta.toFixed(1) + '° from your shadow, in Alexander’s dark band. One-bounce light can’t leave a drop at more than 42.4°, and two-bounce light can’t leave at less than 50.4°, so it sends you almost nothing.';
+    } else if (theta <= S_VIOLET) {
+      var wl2 = wavelengthAt(theta, 's');
+      info.color = wl2;
+      info.text = 'This drop is ' + theta.toFixed(1) + '° from your shadow. After two bounces it sends you ' + colorName(wl2) + ' (about ' + wl2 + ' nm) from the secondary bow.' + (sk.secondary ? '' : ' (Turn on the secondary bow to see it.)');
+    } else {
+      info.text = 'This drop is ' + theta.toFixed(1) + '° from your shadow, outside both bows. Only a little two-bounce light arrives from here, so the sky looks a bit brighter than the dark band but plain.';
+    }
+    return info;
+  }
+
+  function drawProbe(ctx, w, h, G) {
+    var p = sk.probe;
+    var x = G.ax + p.az * G.ppd;
+    var y = sk.plane ? G.ay - p.el * G.ppd : G.horizon - p.el * G.ppd;
+    var info = probeInfo();
+    ctx.save();
+    ctx.setLineDash([2, 4]);
+    ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+    ctx.lineWidth = 1.2;
+    if (!info.ground && G.ay < h + 400) {
+      ctx.beginPath(); ctx.moveTo(G.ax, G.ay); ctx.lineTo(x, y); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    var c = info.color ? wlRGB(info.color) : [235, 240, 248];
+    var gl = ctx.createRadialGradient(x, y, 0, x, y, 16);
+    gl.addColorStop(0, rgba(c, 0.9));
+    gl.addColorStop(1, rgba(c, 0));
+    ctx.fillStyle = gl;
+    ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = rgba(c, 1);
+    ctx.strokeStyle = '#0b1220';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x, y - 9);
+    ctx.quadraticCurveTo(x + 7, y + 1, x, y + 6);
+    ctx.quadraticCurveTo(x - 7, y + 1, x, y - 9);
+    ctx.fill(); ctx.stroke();
+    if (!info.ground) {
+      ctx.fillStyle = 'rgba(8, 14, 24, 0.75)';
+      ctx.font = '700 11px system-ui, sans-serif';
+      var t = info.theta.toFixed(1) + '°';
+      var tw = ctx.measureText(t).width;
+      roundRect(ctx, x + 12, y - 22, tw + 12, 18, 9); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(t, x + 18, y - 13);
+    }
+    ctx.restore();
+  }
+
+  function updateSkyText() {
+    var msg = '';
+    if (sk.plane) {
+      msg = 'Seen from above: with raindrops below you, nothing blocks the lower half, so the bow is a full circle around your plane’s shadow. The small colored rings right around the shadow are a glory, a different, wave-based effect.';
+    } else if (sk.sun > S_VIOLET && sk.secondary) {
+      msg = 'Sun at ' + sk.sun + '°: both bows are below the horizon. No rainbow, however hard it rains.';
+    } else if (sk.sun > P_RED) {
+      msg = 'Sun at ' + sk.sun + '°: higher than 42°, so the whole primary bow is below the horizon.' + (sk.secondary && sk.sun < S_VIOLET ? ' Only the top of the faint secondary bow peeks out.' : '');
+    } else if (sk.rain < 8) {
+      msg = 'No rain, no drops, no rainbow. The angles are still there, but nothing is sitting at them.';
+    } else {
+      msg = 'Top of the bow: ' + (42 - sk.sun).toFixed(0) + '° above the horizon (42° − ' + sk.sun + '° of Sun height).';
+    }
+    $('rb-sky-msg').textContent = msg;
+    var probe = $('rb-probe');
+    if (sk.probe) probe.innerHTML = '<strong>Your drop:</strong> ' + probeInfo().text;
+    else probe.innerHTML = '<strong>Test a drop:</strong> click or tap anywhere in the sky to see what that one raindrop sends to your eye.';
+  }
+
+  /* ── Quiz ───────────────────────────────────────────────────────── */
+  var QUIZ = [
+    { q: 'You see a rainbow late in the afternoon. Where is the Sun?', options: ['In front of you, behind the rain', 'Behind you, low in the sky', 'Directly overhead', 'It doesn’t matter'], a: 1,
+      why: 'The bow is centered on the antisolar point, opposite the Sun. A low Sun behind you puts that point just below the horizon, so most of the bow shows.' },
+    { q: 'Inside a raindrop, what happens to a ray that makes the primary rainbow?', options: ['It reflects once off the front of the drop', 'It refracts in, reflects once off the back, and refracts out', 'It passes straight through without bending', 'It reflects twice and never refracts'], a: 1,
+      why: 'Refraction going in, one internal reflection, then refraction coming out. Two internal reflections make the secondary bow.' },
+    { q: 'Why is the rainbow bright at about 42° and not spread evenly across the sky?', options: ['Raindrops only exist at that height', 'Red light is stronger than other colors', 'Exit angles from a whole band of hit points bunch together near the maximum, so light piles up there', 'Clouds focus the light'], a: 2,
+      why: 'Near the turning point of the exit-angle curve, many hit points give nearly the same angle. That bunching (minimum deviation) concentrates light into a bright ring.' },
+    { q: 'Why is red on the outside of the primary bow and violet on the inside?', options: ['Water bends violet a bit more, so violet’s peak angle is smaller (≈40.5°) than red’s (≈42.4°)', 'Red light is heavier and falls lower', 'Violet light gets absorbed by the rain', 'The Sun gives off more red light'], a: 0,
+      why: 'Dispersion: water’s index of refraction is slightly higher for violet, which lowers violet’s peak angle. So red drops sit farther from your shadow.' },
+    { q: 'What causes Alexander’s dark band between the two bows?', options: ['The shadow of a cloud', 'No light can leave a drop between about 42° and 50° from the antisolar point', 'The colors cancel out to make black', 'Your eyes adjust to the bright bow'], a: 1,
+      why: 'One-bounce light tops out near 42° and two-bounce light bottoms out near 51°. Drops in between have no path to send sunlight to your eye.' },
+    { q: 'You walk 100 m toward a rainbow. What happens?', options: ['You get closer to the end', 'The rainbow moves with you, because a new set of drops sits at 42° from your new shadow', 'The rainbow disappears', 'The colors reverse'], a: 1,
+      why: 'The bow is a direction from your eye, not an object. Move, and different drops do the job.' },
+    { q: 'At noon in summer the Sun is 70° high. Why don’t you see a rainbow even in a sun shower?', options: ['The drops are too warm', 'The antisolar point is 70° below the horizon, so the 42° circle is entirely underground', 'Sunlight is too white at noon', 'Rainbows only happen in the morning'], a: 1,
+      why: 'Top of bow = 42° − Sun height. Above 42° of Sun height, the primary bow is fully below the horizon (though you could still see one from a plane or in a garden-hose spray aimed downward).' }
+  ];
+
+  function buildQuiz() {
+    var el = $('rb-quiz-list');
+    if (!el) return;
+    var answered = 0, correct = 0;
+    el.innerHTML = QUIZ.map(function (item, qi) {
+      return '<div class="rb-q" data-q="' + qi + '"><p>' + (qi + 1) + '. ' + item.q + '</p><div class="rb-q-opts" role="group" aria-label="Question ' + (qi + 1) + ' choices">' +
+        item.options.map(function (o, oi) { return '<button type="button" class="rb-q-opt" data-o="' + oi + '">' + o + '</button>'; }).join('') +
+        '</div><p class="rb-q-fb" aria-live="polite"></p></div>';
+    }).join('');
+    el.addEventListener('click', function (ev) {
+      var btn = ev.target.closest('.rb-q-opt');
+      if (!btn || btn.disabled) return;
+      var box = btn.closest('.rb-q'), item = QUIZ[Number(box.dataset.q)], pick = Number(btn.dataset.o);
+      box.querySelectorAll('.rb-q-opt').forEach(function (b) {
+        b.disabled = true;
+        if (Number(b.dataset.o) === item.a) b.classList.add('right');
+      });
+      if (pick !== item.a) btn.classList.add('wrong'); else correct++;
+      answered++;
+      var fb = box.querySelector('.rb-q-fb');
+      fb.textContent = (pick === item.a ? 'Correct. ' : 'Not quite. ') + item.why;
+      fb.classList.add(pick === item.a ? 'right' : 'wrong');
+      if (answered === QUIZ.length) {
+        $('rb-quiz-score').innerHTML = 'Score: ' + correct + ' of ' + QUIZ.length + '. <button type="button" class="rb-btn" id="rb-quiz-reset">Try again</button>';
+        $('rb-quiz-reset').addEventListener('click', function () { $('rb-quiz-score').textContent = ''; buildQuiz(); });
+      }
+    });
+  }
+
+  /* ── Wiring ─────────────────────────────────────────────────────── */
+  function setPressed(attr, value) {
+    document.querySelectorAll('[data-' + attr + ']').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-' + attr) === String(value)));
+    });
+  }
+
+  function redrawStatic() {
+    updateDropReadouts();
+    drawGraph();
+    if (!visible.drop) drawDrop();
+  }
+
+  var visible = { drop: false, sky: false };
+
+  function init() {
+    if (!window.SimKit) return;
+    drop = SimKit.canvas2d(dropCanvas, { onResize: function () { drawDrop(); } });
+    graph = SimKit.canvas2d(graphCanvas, { onResize: function () { drawGraph(); } });
+    sky = SimKit.canvas2d(skyCanvas, { onResize: function () { drawSky(performance.now()); } });
+
+    $('rb-b').addEventListener('input', function (e) {
+      state.b = Number(e.target.value);
+      $('rb-b-out').textContent = state.b.toFixed(2);
+      redrawStatic();
+    });
+    $('rb-wl').addEventListener('input', function (e) {
+      state.wl = Number(e.target.value);
+      $('rb-wl-out').textContent = state.wl + ' nm · ' + colorName(state.wl);
+      redrawStatic();
+    });
+    document.querySelectorAll('[data-light]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        state.light = btn.getAttribute('data-light');
+        setPressed('light', state.light);
+        $('rb-wl-control').hidden = state.light !== 'single';
+        redrawStatic();
+      });
+    });
+    document.querySelectorAll('[data-order]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        state.order = Number(btn.getAttribute('data-order'));
+        setPressed('order', state.order);
+        // Jump near the new turning point so the bow ray is on screen.
+        var target = state.order === 1 ? 0.86 : 0.95;
+        state.b = target;
+        $('rb-b').value = target;
+        $('rb-b-out').textContent = target.toFixed(2);
+        redrawStatic();
+      });
+    });
+    [['rb-bundle', 'bundle'], ['rb-normals', 'normals'], ['rb-exaggerate', 'exaggerate']].forEach(function (pair) {
+      $(pair[0]).addEventListener('change', function (e) { state[pair[1]] = e.target.checked; redrawStatic(); });
+    });
+    $('rb-wl-out').textContent = state.wl + ' nm · ' + colorName(state.wl);
+
+    // Sky controls
+    function skyChanged() { updateSkyText(); if (!visible.sky) drawSky(performance.now()); }
+    $('rb-sun').addEventListener('input', function (e) {
+      sk.sun = Number(e.target.value);
+      $('rb-sun-out').textContent = sk.sun + '°';
+      skyChanged();
+    });
+    $('rb-walk').addEventListener('input', function (e) {
+      sk.walk = Number(e.target.value);
+      $('rb-walk-out').textContent = (sk.walk > 0 ? '+' : '') + sk.walk + ' m';
+      skyChanged();
+    });
+    $('rb-rain').addEventListener('input', function (e) {
+      sk.rain = Number(e.target.value);
+      $('rb-rain-out').textContent = sk.rain < 8 ? 'none' : sk.rain < 35 ? 'light' : sk.rain < 70 ? 'steady' : 'heavy';
+      skyChanged();
+    });
+    [['rb-secondary', 'secondary'], ['rb-guides', 'guides'], ['rb-plane', 'plane']].forEach(function (pair) {
+      $(pair[0]).addEventListener('change', function (e) {
+        sk[pair[1]] = e.target.checked;
+        if (pair[1] === 'plane') {
+          sk.probe = null;
+          $('rb-sun').disabled = sk.plane;
+          $('rb-walk').disabled = sk.plane;
         }
+        skyChanged();
+      });
+    });
+    skyCanvas.addEventListener('click', function (e) {
+      var rect = skyCanvas.getBoundingClientRect();
+      var x = e.clientX - rect.left, y = e.clientY - rect.top;
+      var G = skyGeom(sky.width, sky.height);
+      sk.probe = {
+        az: (x - G.ax) / G.ppd,
+        el: sk.plane ? (G.ay - y) / G.ppd : (G.horizon - y) / G.ppd
+      };
+      skyChanged();
+    });
+    skyCanvas.addEventListener('keydown', function (e) {
+      var slider = $('rb-sun');
+      if (e.key === 'ArrowUp' || e.key === 'ArrowRight') { slider.value = Math.min(60, sk.sun + 1); }
+      else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') { slider.value = Math.max(0, sk.sun - 1); }
+      else return;
+      e.preventDefault();
+      slider.dispatchEvent(new Event('input'));
+    });
 
-        // Place labels on the arc itself, at 45deg (upper-right), using the same
-        // polar convention as arcPath so they land on the stroke at any radius.
-        const primaryLabelPoint = polarToCartesian(centerX, centerY, primaryRadius, 45);
-        const secondaryLabelPoint = polarToCartesian(centerX, centerY, secondaryRadius, 50);
-        dom.primaryLabel.setAttribute('x', `${primaryLabelPoint.x + 6}`);
-        dom.primaryLabel.setAttribute('y', `${primaryLabelPoint.y}`);
-        dom.secondaryLabel.setAttribute('x', `${secondaryLabelPoint.x + 6}`);
-        dom.secondaryLabel.setAttribute('y', `${secondaryLabelPoint.y}`);
-        dom.secondaryLabel.style.display = state.showDouble && state.showLabels ? 'inline' : 'none';
-
-        const labelDisplay = state.showLabels ? 'inline' : 'none';
-        [dom.sunLabel, dom.observerLabel, dom.primaryLabel, dom.anglePrimary, dom.angleSecondary, dom.rainLabel].forEach((node) => {
-            node.style.display = labelDisplay;
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          if (en.target === dropCanvas) visible.drop = en.isIntersecting;
+          if (en.target === skyCanvas) visible.sky = en.isIntersecting;
         });
-
-        dom.rainLabel.setAttribute('x', '348');
-        dom.rainLabel.setAttribute('y', '300');
-        const anglePrimaryPoint = polarToCartesian(centerX, centerY, primaryRadius, 20);
-        const angleSecondaryPoint = polarToCartesian(centerX, centerY, secondaryRadius, 20);
-        dom.anglePrimary.setAttribute('x', `${anglePrimaryPoint.x + 4}`);
-        dom.anglePrimary.setAttribute('y', `${anglePrimaryPoint.y}`);
-        dom.angleSecondary.setAttribute('x', `${angleSecondaryPoint.x + 4}`);
-        dom.angleSecondary.setAttribute('y', `${angleSecondaryPoint.y}`);
-        dom.angleSecondary.style.display = state.showLabels && state.showDouble ? 'inline' : 'none';
-
-        const primaryRed = primaryAngles[0].angle.toFixed(1);
-        const primaryViolet = primaryAngles[6].angle.toFixed(1);
-        const secondaryRed = secondaryAngles[0].angle.toFixed(1);
-        const secondaryViolet = secondaryAngles[6].angle.toFixed(1);
-
-        elements.primaryAngleReadout.textContent = `${primaryRed}° red, ${primaryViolet}° violet`;
-        elements.secondaryAngleReadout.textContent = state.showDouble ? `${secondaryRed}° violet, ${secondaryViolet}° red (reversed)` : 'Turn on double rainbow to compare';
-    }
-}
-
-function getColorSpectrum() {
-    return [
-        { name: 'Red', hex: '#FF0000', lambda: 650, n: 1.3310 },
-        { name: 'Orange', hex: '#FF7F00', lambda: 600, n: 1.3325 },
-        { name: 'Yellow', hex: '#FFFF00', lambda: 580, n: 1.3330 },
-        { name: 'Green', hex: '#00FF00', lambda: 530, n: 1.3344 },
-        { name: 'Blue', hex: '#0000FF', lambda: 470, n: 1.3356 },
-        { name: 'Indigo', hex: '#4B0082', lambda: 450, n: 1.3361 },
-        { name: 'Violet', hex: '#9400D3', lambda: 400, n: 1.3371 }
-    ];
-}
-
-const rainbowAngleCache = new Map();
-
-// Finds the minimum-deviation angle for light entering a droplet of refractive
-// index n and exiting after `numReflections` internal bounces (1 = primary
-// rainbow, 2 = secondary), then converts it to the angle seen from the
-// antisolar point. This is the actual geometry that produces the classic
-// ~42° primary / ~51° secondary bows, not an approximation of it.
-function computeRainbowAngle(n, numReflections) {
-    const cacheKey = `${n}-${numReflections}`;
-    if (rainbowAngleCache.has(cacheKey)) return rainbowAngleCache.get(cacheKey);
-
-    let minDeviation = Infinity;
-    for (let hundredths = 1; hundredths < 8999; hundredths += 1) {
-        const thetaI = (hundredths / 100) * (Math.PI / 180);
-        const sinThetaR = Math.sin(thetaI) / n;
-        if (sinThetaR >= 1) continue;
-        const thetaR = Math.asin(sinThetaR);
-
-        const deviation = 2 * thetaI - 2 * (numReflections + 1) * thetaR + numReflections * Math.PI;
-        if (deviation < minDeviation) minDeviation = deviation;
+      });
+      io.observe(dropCanvas);
+      io.observe(skyCanvas);
+    } else {
+      visible.drop = visible.sky = true;
     }
 
-    const deviationDeg = minDeviation * (180 / Math.PI);
-    const angle = numReflections === 1 ? 180 - deviationDeg : deviationDeg - 180;
-    rainbowAngleCache.set(cacheKey, angle);
-    return angle;
-}
-
-function createSimulationScene(canvas) {
-    canvas.innerHTML = '';
-    const defs = document.createElementNS(SVG_NS, 'defs');
-    defs.innerHTML = `
-        <linearGradient id="simRainbow" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#ff0000"></stop>
-            <stop offset="16.67%" stop-color="#ff7f00"></stop>
-            <stop offset="33.33%" stop-color="#ffff00"></stop>
-            <stop offset="50%" stop-color="#00ff00"></stop>
-            <stop offset="66.67%" stop-color="#0000ff"></stop>
-            <stop offset="83.33%" stop-color="#4b0082"></stop>
-            <stop offset="100%" stop-color="#9400d3"></stop>
-        </linearGradient>
-        <linearGradient id="simRainbowReverse" x1="100%" y1="0%" x2="0%" y2="0%">
-            <stop offset="0%" stop-color="#9400d3"></stop>
-            <stop offset="16.67%" stop-color="#4b0082"></stop>
-            <stop offset="33.33%" stop-color="#0000ff"></stop>
-            <stop offset="50%" stop-color="#00ff00"></stop>
-            <stop offset="66.67%" stop-color="#ffff00"></stop>
-            <stop offset="83.33%" stop-color="#ff7f00"></stop>
-            <stop offset="100%" stop-color="#ff0000"></stop>
-        </linearGradient>
-    `;
-    canvas.appendChild(defs);
-
-    const sky = svgNode('rect', { x: 0, y: 0, width: 500, height: 400, fill: 'url(#skyGradient)' });
-    sky.setAttribute('fill', '#e8f4f8');
-    const ground = svgNode('rect', { x: 0, y: 320, width: 500, height: 80, fill: '#d5c08a', opacity: 0.45 });
-    const groundLine = svgNode('line', { x1: 0, y1: 320, x2: 500, y2: 320, stroke: '#90784f', 'stroke-width': 3 });
-    const rainLayer = svgNode('g');
-    const darkBand = svgNode('path', { stroke: '#1a1a1a', 'stroke-width': 12, fill: 'none', 'stroke-linecap': 'round', opacity: 0.15 });
-    const primaryBow = svgNode('path', { stroke: 'url(#simRainbow)', 'stroke-width': 14, fill: 'none', 'stroke-linecap': 'round' });
-    const secondaryBow = svgNode('path', { stroke: 'url(#simRainbowReverse)', 'stroke-width': 8, fill: 'none', 'stroke-linecap': 'round', opacity: 0.45, 'stroke-dasharray': '10 8' });
-    const sun = svgNode('circle', { r: 22, fill: '#ffd54f', opacity: 0.95 });
-    const sunLabel = svgNode('text', { 'text-anchor': 'middle', 'font-size': 11, fill: '#333' }, 'Sun');
-    const head = svgNode('circle', { r: 8, fill: '#263238' });
-    const body = svgNode('line', { stroke: '#263238', 'stroke-width': 3 });
-    const arms = svgNode('line', { stroke: '#263238', 'stroke-width': 3 });
-    const legLeft = svgNode('line', { stroke: '#263238', 'stroke-width': 3 });
-    const legRight = svgNode('line', { stroke: '#263238', 'stroke-width': 3 });
-    const observerLabel = svgNode('text', { 'text-anchor': 'middle', 'font-size': 11, fill: '#333' }, 'Observer');
-    const rainLabel = svgNode('text', { 'text-anchor': 'middle', 'font-size': 11, fill: '#333' }, 'Rain zone');
-    const primaryLabel = svgNode('text', { 'font-size': 12, fill: '#ff0000', 'font-weight': 700 }, 'Primary');
-    const secondaryLabel = svgNode('text', { 'font-size': 12, fill: '#5d6d7e', 'font-weight': 700 }, 'Secondary');
-    const anglePrimary = svgNode('text', { 'font-size': 11, fill: '#ff0000', 'font-weight': 700 }, '42.4°');
-    const angleSecondary = svgNode('text', { 'font-size': 11, fill: '#5d6d7e', 'font-weight': 700 }, '50.8°');
-
-    [sky, ground, groundLine, rainLayer, darkBand, primaryBow, secondaryBow, sun, sunLabel, head, body, arms, legLeft, legRight, observerLabel, rainLabel, primaryLabel, secondaryLabel, anglePrimary, angleSecondary].forEach((node) => {
-        canvas.appendChild(node);
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var clock = 0;
+    SimKit.loop(function (dt) {
+      if (!reduceMotion) clock += dt * 1000;
+      if (visible.drop) {
+        if (!reduceMotion) pulse = (pulse + dt / 2.6) % 1;
+        drawDrop();
+      }
+      if (visible.sky) drawSky(clock);
     });
 
-    return { rainLayer, darkBand, primaryBow, secondaryBow, sun, sunLabel, head, body, arms, legLeft, legRight, observerLabel, rainLabel, primaryLabel, secondaryLabel, anglePrimary, angleSecondary };
-}
+    updateDropReadouts();
+    updateSkyText();
+    drawDrop();
+    drawGraph();
+    drawSky(0);
+    buildQuiz();
+  }
 
-function animateLightPath(canvas, dom, state, animateBtn) {
-    state.isAnimating = true;
-    animateBtn.disabled = true;
-    const ray = svgNode('path', {
-        fill: 'none',
-        stroke: '#ffffff',
-        'stroke-width': 4,
-        'stroke-linecap': 'round'
-    });
-    const observerX = 40 + (state.observerPosition / 100) * 160;
-    const observerY = 302;
-    const sunDistance = 180;
-    const sunAngle = (state.sunHeight * Math.PI) / 180;
-    const sunX = observerX + sunDistance * Math.cos(sunAngle);
-    const sunY = observerY - sunDistance * Math.sin(sunAngle) - 40;
-    const dropletX = 328;
-    const dropletY = 180;
-    const pathData = `M ${sunX} ${sunY} Q 320 120 ${dropletX} ${dropletY} Q 300 205 ${observerX + 28} ${observerY - 72}`;
-    ray.setAttribute('d', pathData);
-    canvas.appendChild(ray);
-    const length = ray.getTotalLength();
-    ray.style.strokeDasharray = `${length}`;
-    ray.style.strokeDashoffset = `${length}`;
-
-    ray.animate(
-        [{ strokeDashoffset: length, opacity: 1 }, { strokeDashoffset: 0, opacity: 1 }, { strokeDashoffset: 0, opacity: 0 }],
-        { duration: 2200, easing: 'ease-in-out' }
-    );
-
-    setTimeout(() => {
-        ray.remove();
-        state.isAnimating = false;
-        animateBtn.disabled = false;
-    }, 2200);
-}
-
-function buildLegend(container) {
-    if (!container) return;
-    const colors = getColorSpectrum();
-    const items = colors.map(c => [c.hex, `${c.name} ${computeRainbowAngle(c.n, 1).toFixed(1)}°`]);
-    container.innerHTML = '';
-    items.forEach(([color, label]) => {
-        const chip = document.createElement('div');
-        chip.className = 'legend-chip';
-        chip.innerHTML = `<span class="legend-swatch" style="background:${color}"></span><span>${label}</span>`;
-        container.appendChild(chip);
-    });
-}
-
-function pulseUpdate(canvas) {
-    canvas.classList.add('is-updating');
-    setTimeout(() => canvas.classList.remove('is-updating'), 220);
-}
-
-function initQuiz() {
-    const questions = [
-        {
-            question: 'What must be behind you for you to see a rainbow?',
-            answers: ['The Moon', 'The Sun', 'A mountain', 'A cloud'],
-            correct: 1,
-            explanation: 'A rainbow appears when sunlight is behind you and raindrops are in front of you.'
-        },
-        {
-            question: 'Which color bends the least when entering a raindrop?',
-            answers: ['Violet', 'Blue', 'Red', 'Green'],
-            correct: 2,
-            explanation: 'Red refracts the least, so it ends up on the outside of the primary rainbow.'
-        },
-        {
-            question: 'What is the bending of light called when it enters water?',
-            answers: ['Reflection', 'Refraction', 'Dispersion', 'Absorption'],
-            correct: 1,
-            explanation: 'Refraction is the change in direction caused by light moving between materials.'
-        },
-        {
-            question: 'Why is a secondary rainbow dimmer?',
-            answers: ['It is farther away', 'It needs more reflections', 'It uses moonlight', 'It contains fewer colors'],
-            correct: 1,
-            explanation: 'A secondary rainbow forms after two internal reflections, so more light is lost before it reaches your eyes.'
-        },
-        {
-            question: 'Which acronym helps remember the rainbow colors?',
-            answers: ['ROYGBIV', 'ROYGBV', 'ROGBIV', 'RGBIV'],
-            correct: 0,
-            explanation: 'ROYGBIV stands for red, orange, yellow, green, blue, indigo, violet.'
-        },
-        {
-            question: 'At what angle is the primary rainbow strongest?',
-            answers: ['30°', '42°', '60°', '90°'],
-            correct: 1,
-            explanation: 'Primary rainbow light reaches your eye most strongly at about 42° from the antisolar point.'
-        },
-        {
-            question: 'What is reversed in a secondary rainbow?',
-            answers: ['Brightness', 'Position of the Sun', 'Color order', 'Shape of the arc'],
-            correct: 2,
-            explanation: 'The secondary bow has reversed colors because the light reflects twice inside the droplet.'
-        }
-    ];
-
-    const questionsContainer = document.getElementById('quiz-questions');
-    const resultsContainer = document.getElementById('quiz-results');
-    const scoreCounter = document.getElementById('quiz-score-counter');
-    const progressLabel = document.getElementById('quiz-progress-label');
-    const progressBar = document.getElementById('quiz-progress-bar');
-    const scoreMessage = document.getElementById('score-message');
-    const retakeBtn = document.getElementById('retake-quiz-btn');
-
-    let current = 0;
-    let score = 0;
-    let locked = false;
-
-    function updateHeader() {
-        scoreCounter.textContent = `${score}/${questions.length} correct`;
-        progressLabel.textContent = current < questions.length ? `Question ${current + 1} of ${questions.length}` : 'Quiz complete';
-        progressBar.style.width = `${(current / questions.length) * 100}%`;
-    }
-
-    function renderQuestion() {
-        const item = questions[current];
-        questionsContainer.innerHTML = '';
-        const card = document.createElement('div');
-        card.className = 'quiz-question';
-        card.innerHTML = `<h4>Question ${current + 1}</h4><p>${item.question}</p>`;
-        const answers = document.createElement('div');
-        answers.className = 'answer-options';
-        const feedback = document.createElement('div');
-        feedback.className = 'answer-feedback';
-        feedback.hidden = true;
-
-        item.answers.forEach((answer, index) => {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'answer-btn';
-            button.textContent = answer;
-            button.addEventListener('click', () => {
-                if (locked) return;
-                locked = true;
-                const isCorrect = index === item.correct;
-                if (isCorrect) score += 1;
-                Array.from(answers.children).forEach((child, childIndex) => {
-                    child.disabled = true;
-                    if (childIndex === item.correct) child.classList.add('correct');
-                    if (childIndex === index && !isCorrect) child.classList.add('incorrect');
-                });
-                feedback.hidden = false;
-                feedback.textContent = `${isCorrect ? 'Correct.' : 'Not quite.'} ${item.explanation}`;
-                updateHeader();
-                setTimeout(() => {
-                    current += 1;
-                    locked = false;
-                    if (current < questions.length) {
-                        renderQuestion();
-                        updateHeader();
-                    } else {
-                        showResults();
-                    }
-                }, 1800);
-            });
-            answers.appendChild(button);
-        });
-
-        card.appendChild(answers);
-        card.appendChild(feedback);
-        questionsContainer.appendChild(card);
-    }
-
-    function showResults() {
-        questionsContainer.style.display = 'none';
-        resultsContainer.style.display = 'block';
-        progressBar.style.width = '100%';
-        progressLabel.textContent = 'Quiz complete';
-        const percent = Math.round((score / questions.length) * 100);
-        scoreMessage.textContent = percent === 100
-            ? `Perfect score: ${score}/${questions.length}.`
-            : percent >= 80
-                ? `Excellent work: ${score}/${questions.length}.`
-                : percent >= 60
-                    ? `Nice job: ${score}/${questions.length}. Review the diagrams and try again.`
-                    : `You scored ${score}/${questions.length}. Revisit the simulation and explanations, then retake it.`;
-    }
-
-    retakeBtn?.addEventListener('click', () => {
-        current = 0;
-        score = 0;
-        locked = false;
-        resultsContainer.style.display = 'none';
-        questionsContainer.style.display = 'block';
-        renderQuestion();
-        updateHeader();
-    });
-
-    renderQuestion();
-    updateHeader();
-}
-
-function initScavengerHunt() {
-    const answers = [
-        {
-            test: (value) => includesAll(value, ['sunlight', 'bend', 'bounce', 'color']) || includesAll(value, ['sunlight', 'refraction', 'reflection', 'dispersion']),
-            explanation: 'A strong answer names the sequence: sunlight enters, bends, bounces, and colors separate.'
-        },
-        {
-            test: (value) => value.includes('behind') && value.includes('sun'),
-            explanation: 'The Sun must be behind you while the rain is in front.'
-        },
-        {
-            test: (value) => value.includes('reflect') && (value.includes('twice') || value.includes('more') || value.includes('second')),
-            explanation: 'The secondary bow is dimmer because the light reflects twice, losing intensity.'
-        },
-        {
-            test: (value) => value.includes('violet'),
-            explanation: 'Violet bends the most, which places it on the inside of the primary rainbow.'
-        },
-        {
-            test: (value) => value.includes('violet'),
-            explanation: 'In the secondary rainbow, violet ends up on the outside because the colors reverse.'
-        }
-    ];
-
-    const scoreCounter = document.getElementById('scavenger-score-counter');
-    const progressLabel = document.getElementById('scavenger-progress-label');
-    const progressBar = document.getElementById('scavenger-progress-bar');
-    const solved = new Set();
-
-    document.querySelectorAll('[data-hunt-check]').forEach((button) => {
-        button.addEventListener('click', () => {
-            const index = Number(button.dataset.huntCheck);
-            const input = document.querySelector(`.hunt-input[data-hunt="${index}"]`);
-            const feedback = document.getElementById(`hunt-feedback-${index}`);
-            const value = (input?.value || '').trim().toLowerCase();
-            const correct = answers[index].test(value);
-            feedback.className = `hunt-feedback ${correct ? 'correct' : 'incorrect'}`;
-            feedback.textContent = `${correct ? 'Correct.' : 'Try again.'} ${answers[index].explanation}`;
-            if (correct) solved.add(index);
-            updateScavengerUI(solved.size, answers.length, scoreCounter, progressLabel, progressBar);
-        });
-    });
-
-    updateScavengerUI(0, answers.length, scoreCounter, progressLabel, progressBar);
-}
-
-function updateScavengerUI(score, total, scoreCounter, progressLabel, progressBar) {
-    scoreCounter.textContent = `${score}/${total} correct`;
-    progressLabel.textContent = score === total ? 'All challenges solved' : `Solved ${score} of ${total}`;
-    progressBar.style.width = `${(score / total) * 100}%`;
-}
-
-function initContentsToggle() {
-    const toggle = document.getElementById('toc-toggle');
-    const toc = document.getElementById('rainbow-toc');
-    if (!toggle || !toc) return;
-    toggle.addEventListener('click', () => {
-        const expanded = toggle.getAttribute('aria-expanded') === 'true';
-        toggle.setAttribute('aria-expanded', String(!expanded));
-        toc.classList.toggle('is-open', !expanded);
-    });
-}
-
-function initSmoothScroll() {
-    document.querySelectorAll('.table-of-contents a').forEach((link) => {
-        link.addEventListener('click', (event) => {
-            event.preventDefault();
-            const target = document.querySelector(link.getAttribute('href'));
-            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
-    });
-}
-
-function initKeyboardNavigation() {
-    document.addEventListener('keydown', (event) => {
-        if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
-        const buttons = Array.from(document.querySelectorAll('.step-btn'));
-        const activeIndex = buttons.findIndex((btn) => btn.classList.contains('active'));
-        if (activeIndex === -1) return;
-        const nextIndex = event.key === 'ArrowRight'
-            ? (activeIndex + 1) % buttons.length
-            : (activeIndex - 1 + buttons.length) % buttons.length;
-        buttons[nextIndex].click();
-    });
-}
-
-function arcPath(cx, cy, radius, startDeg, endDeg) {
-    const start = polarToCartesian(cx, cy, radius, endDeg);
-    const end = polarToCartesian(cx, cy, radius, startDeg);
-    return `M ${start.x} ${start.y} A ${radius} ${radius} 0 0 0 ${end.x} ${end.y}`;
-}
-
-function polarToCartesian(cx, cy, radius, angleDeg) {
-    const radians = (angleDeg - 90) * (Math.PI / 180);
-    return { x: cx + radius * Math.cos(radians), y: cy + radius * Math.sin(radians) };
-}
-
-function svgNode(tag, attrs = {}, text = '') {
-    const node = document.createElementNS(SVG_NS, tag);
-    Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, value));
-    if (text) node.textContent = text;
-    return node;
-}
-
-function includesAll(value, parts) {
-    return parts.every((part) => value.includes(part));
-}
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
