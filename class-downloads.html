@@ -5,662 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Class Downloads · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" />
-  <meta name="description" content="Install class apps and download starter packs, templates, guides, and weekly class files from one searchable ClassroomOS hub." />
+  <meta name="description" content="Install class apps and download starter packs, templates, guides, and software for class, grouped by what you are building." />
   <link rel="stylesheet" href="assets/css/main.css" />
   <link rel="stylesheet" href="assets/css/classroom-home.css" />
   <link rel="stylesheet" href="assets/css/pages/class-downloads.css" />
   <script src="assets/js/theme-registry.js"></script>
   <script src="assets/js/theme-lighting.js"></script>
-  <style>
-    :root {
-      --kit-bg: #0b0f14;
-      --kit-panel: #101720;
-      --kit-panel-2: #131d29;
-      --kit-text: #f4f7fb;
-      --kit-muted: #aab8c8;
-      --kit-line: rgba(184, 199, 219, 0.22);
-      --kit-accent: #66b3ff;
-      --kit-accent-2: #7ee0b7;
-      --kit-warn: #ffd166;
-      --kit-danger: #ff7a90;
-      --kit-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
-      --kit-radius: 8px;
-      color-scheme: dark;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body.downloads-page {
-      margin: 0;
-      background:
-        linear-gradient(180deg, rgba(10, 15, 22, 0.82), rgba(10, 15, 22, 0.98)),
-        radial-gradient(circle at 18% 8%, rgba(102, 179, 255, 0.18), transparent 32%),
-        radial-gradient(circle at 88% 0%, rgba(126, 224, 183, 0.14), transparent 26%),
-        var(--kit-bg);
-      color: var(--kit-text);
-      font-family: var(--font-sans);
-    }
-
-    .downloads-page a {
-      color: inherit;
-    }
-
-    .downloads-page :focus-visible {
-      outline: 3px solid var(--kit-warn);
-      outline-offset: 3px;
-    }
-
-    .downloads-shell {
-      width: min(1240px, calc(100% - 32px));
-      margin: 0 auto;
-      padding: 30px 0 56px;
-    }
-
-    .downloads-hero {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
-      gap: 18px;
-      align-items: start;
-      min-height: 310px;
-    }
-
-    .downloads-head,
-    .downloads-controls,
-    .downloads-priority,
-    .downloads-browser,
-    .downloads-card,
-    .downloads-empty {
-      border: 1px solid var(--kit-line);
-      border-radius: var(--kit-radius);
-      background: color-mix(in srgb, var(--kit-panel) 92%, transparent);
-      box-shadow: var(--kit-shadow);
-    }
-
-    .downloads-head {
-      padding: clamp(22px, 4vw, 42px);
-      display: grid;
-      align-content: center;
-      gap: 18px;
-      min-height: 310px;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .downloads-head::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background:
-        linear-gradient(90deg, rgba(102, 179, 255, 0.12), transparent 58%),
-        repeating-linear-gradient(90deg, transparent 0 18px, rgba(255, 255, 255, 0.025) 18px 19px);
-      pointer-events: none;
-    }
-
-    .downloads-head > * {
-      position: relative;
-    }
-
-    .downloads-kicker,
-    .downloads-count,
-    .downloads-card-type,
-    .downloads-section-kicker {
-      margin: 0;
-      color: var(--kit-accent-2);
-      font-size: 0.78rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .downloads-title {
-      max-width: 780px;
-      margin: 0;
-      color: var(--kit-text);
-      font-size: clamp(2.2rem, 6vw, 5.1rem);
-      line-height: 0.95;
-      letter-spacing: 0;
-    }
-
-    .downloads-lede {
-      max-width: 760px;
-      margin: 0;
-      color: var(--kit-muted);
-      font-size: clamp(1rem, 1.8vw, 1.18rem);
-      line-height: 1.55;
-    }
-
-    .downloads-quick {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .downloads-quick a,
-    .downloads-mode,
-    .downloads-cat,
-    .downloads-clear {
-      min-height: 42px;
-      border: 1px solid var(--kit-line);
-      border-radius: var(--kit-radius);
-      background: rgba(255, 255, 255, 0.06);
-      color: var(--kit-text);
-      font: inherit;
-      font-weight: 800;
-      text-decoration: none;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 0.64rem 0.84rem;
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .downloads-quick a:hover,
-    .downloads-mode:hover,
-    .downloads-cat:hover,
-    .downloads-clear:hover {
-      border-color: var(--kit-accent);
-      background: rgba(102, 179, 255, 0.12);
-      transform: translateY(-2px);
-    }
-
-    .downloads-side {
-      display: grid;
-      grid-template-rows: auto 1fr;
-      gap: 18px;
-    }
-
-    .downloads-controls {
-      padding: 16px;
-      display: grid;
-      gap: 14px;
-    }
-
-    .downloads-search-label {
-      display: grid;
-      gap: 8px;
-      color: var(--kit-muted);
-      font-size: 0.86rem;
-      font-weight: 800;
-    }
-
-    .downloads-search {
-      width: 100%;
-      min-height: 48px;
-      border: 1px solid var(--kit-line);
-      border-radius: var(--kit-radius);
-      background: #05080c;
-      color: var(--kit-text);
-      font: inherit;
-      font-size: 1rem;
-      padding: 0 0.9rem;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .downloads-search:focus {
-      outline: none;
-      border-color: var(--kit-accent);
-      box-shadow: 0 0 0 3px rgba(102, 179, 255, 0.25);
-    }
-
-    .downloads-search::placeholder {
-      color: #7f8da0;
-    }
-
-    .downloads-modes {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-    }
-
-    .downloads-mode[aria-pressed="true"] {
-      border-color: var(--kit-accent);
-      background: var(--kit-accent);
-      color: #06111d;
-    }
-
-    .downloads-stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-    }
-
-    .downloads-stat {
-      border: 1px solid var(--kit-line);
-      border-radius: var(--kit-radius);
-      background: rgba(255, 255, 255, 0.045);
-      padding: 10px;
-    }
-
-    .downloads-stat strong {
-      display: block;
-      color: var(--kit-text);
-      font-size: 1.45rem;
-      line-height: 1;
-    }
-
-    .downloads-stat span {
-      display: block;
-      margin-top: 4px;
-      color: var(--kit-muted);
-      font-size: 0.78rem;
-      font-weight: 800;
-    }
-
-    .downloads-priority {
-      padding: 16px;
-      display: grid;
-      align-content: start;
-      gap: 12px;
-      max-height: 340px;
-      overflow: auto;
-      background:
-        linear-gradient(135deg, rgba(255, 209, 102, 0.14), transparent 52%),
-        color-mix(in srgb, var(--kit-panel-2) 94%, transparent);
-    }
-
-    .downloads-priority h2,
-    .downloads-browser h2 {
-      margin: 0;
-      color: var(--kit-text);
-      font-size: 1.18rem;
-      line-height: 1.2;
-      letter-spacing: 0;
-    }
-
-    .downloads-priority-list {
-      display: grid;
-      gap: 10px;
-    }
-
-    .downloads-main-grid {
-      display: grid;
-      grid-template-columns: 238px minmax(0, 1fr);
-      gap: 18px;
-      margin-top: 18px;
-      align-items: start;
-    }
-
-    .downloads-sidebar {
-      position: sticky;
-      top: 78px;
-      border: 1px solid var(--kit-line);
-      border-radius: var(--kit-radius);
-      background: color-mix(in srgb, var(--kit-panel) 92%, transparent);
-      padding: 12px;
-      display: grid;
-      gap: 8px;
-    }
-
-    .downloads-sidebar h2 {
-      margin: 4px 4px 8px;
-      font-size: 0.86rem;
-      color: var(--kit-muted);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .downloads-cat {
-      width: 100%;
-      justify-content: space-between;
-      min-height: 40px;
-      padding-inline: 10px;
-      text-align: left;
-    }
-
-    .downloads-cat[aria-pressed="true"] {
-      border-color: var(--kit-accent-2);
-      background: rgba(126, 224, 183, 0.14);
-      color: var(--kit-text);
-    }
-
-    .downloads-cat small {
-      color: var(--kit-muted);
-      font-weight: 900;
-    }
-
-    .downloads-browser {
-      padding: 18px;
-      min-width: 0;
-    }
-
-    .downloads-browser-head {
-      display: flex;
-      align-items: end;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 16px;
-    }
-
-    .downloads-browser-head p {
-      margin: 5px 0 0;
-      color: var(--kit-muted);
-      line-height: 1.45;
-    }
-
-    .downloads-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
-      gap: 12px;
-    }
-
-    .downloads-card {
-      min-width: 0;
-      padding: 18px;
-      display: grid;
-      grid-template-rows: auto auto 1fr auto;
-      gap: 12px;
-      box-shadow: none;
-      position: relative;
-      overflow: hidden;
-      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-                  border-color 0.25s ease,
-                  box-shadow 0.25s ease,
-                  background-color 0.25s ease;
-    }
-
-    .downloads-page[data-downloads-mode="ide"] .downloads-card:hover {
-      transform: translateY(-4px);
-      border-color: var(--kit-accent);
-      box-shadow: 0 12px 30px rgba(102, 179, 255, 0.08);
-      background: color-mix(in srgb, var(--kit-panel) 96%, #ffffff 4%);
-    }
-
-    .downloads-card[data-priority="true"] {
-      border-color: rgba(255, 209, 102, 0.58);
-      background: linear-gradient(135deg, rgba(255, 209, 102, 0.03), transparent);
-    }
-
-    .downloads-page[data-downloads-mode="ide"] .downloads-card[data-priority="true"]:hover {
-      border-color: var(--kit-warn);
-      box-shadow: 0 12px 30px rgba(255, 209, 102, 0.08);
-    }
-
-    .downloads-card-head {
-      display: grid;
-      grid-template-columns: 46px minmax(0, 1fr);
-      gap: 12px;
-      align-items: center;
-    }
-
-    .downloads-icon {
-      width: 46px;
-      aspect-ratio: 1;
-      display: grid;
-      place-items: center;
-      border: 1px solid var(--kit-line);
-      border-radius: var(--kit-radius);
-      background: rgba(255, 255, 255, 0.07);
-      font-size: 1.45rem;
-    }
-
-    .downloads-card h3 {
-      margin: 2px 0 0;
-      color: var(--kit-text);
-      font-size: 1.08rem;
-      line-height: 1.2;
-      letter-spacing: 0;
-    }
-
-    .downloads-card p {
-      margin: 0;
-      color: var(--kit-muted);
-      line-height: 1.45;
-    }
-
-    .downloads-meta,
-    .downloads-platforms,
-    .downloads-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .downloads-badge {
-      border: 1px solid var(--kit-line);
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.055);
-      color: var(--kit-text);
-      font-size: 0.72rem;
-      font-weight: 900;
-      padding: 0.26rem 0.48rem;
-      white-space: nowrap;
-    }
-
-    .downloads-badge--platform {
-      border-color: rgba(126, 224, 183, 0.42);
-      color: #b9ffe3;
-    }
-
-    .downloads-page .downloads-action {
-      min-height: 44px;
-      border: 1px solid var(--kit-accent);
-      border-radius: var(--kit-radius);
-      background: var(--kit-accent);
-      color: #06111d !important;
-      font-weight: 950;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.7rem 0.9rem;
-      width: 100%;
-      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-                  filter 0.2s ease,
-                  box-shadow 0.2s ease;
-    }
-
-    .downloads-action:hover {
-      filter: brightness(1.15);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(102, 179, 255, 0.35);
-    }
-
-    .downloads-card[data-priority="true"] .downloads-action {
-      border-color: var(--kit-warn);
-      background: var(--kit-warn);
-    }
-
-    .downloads-card[data-priority="true"] .downloads-action:hover {
-      box-shadow: 0 6px 20px rgba(255, 209, 102, 0.35);
-    }
-
-    .downloads-empty {
-      grid-column: 1 / -1;
-      padding: 26px;
-      text-align: center;
-      box-shadow: none;
-    }
-
-    .downloads-empty strong {
-      display: block;
-      color: var(--kit-text);
-      font-size: 1.2rem;
-      margin-bottom: 6px;
-    }
-
-    .downloads-empty p {
-      margin: 0 auto 14px;
-      max-width: 46rem;
-      color: var(--kit-muted);
-    }
-
-    /* Arcade/Game Engine variation */
-    body.downloads-page[data-downloads-mode="arcade"] {
-      --kit-bg: #07070c;
-      --kit-panel: #171226;
-      --kit-panel-2: #211637;
-      --kit-text: #fff9e8;
-      --kit-muted: #d2c6ef;
-      --kit-line: rgba(255, 255, 255, 0.18);
-      --kit-accent: #00f0ff;
-      --kit-accent-2: #ff4fd8;
-      --kit-warn: #fff15c;
-      background:
-        radial-gradient(circle at 12% 0%, rgba(255, 79, 216, 0.26), transparent 30%),
-        radial-gradient(circle at 86% 10%, rgba(0, 240, 255, 0.2), transparent 26%),
-        linear-gradient(180deg, #090814, #10101f 55%, #07070c);
-    }
-
-    body.downloads-page[data-downloads-mode="arcade"] .downloads-head,
-    body.downloads-page[data-downloads-mode="arcade"] .downloads-controls,
-    body.downloads-page[data-downloads-mode="arcade"] .downloads-priority,
-    body.downloads-page[data-downloads-mode="arcade"] .downloads-sidebar,
-    body.downloads-page[data-downloads-mode="arcade"] .downloads-browser,
-    body.downloads-page[data-downloads-mode="arcade"] .downloads-card {
-      border-width: 2px;
-      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.22), 0 18px 0 rgba(0, 0, 0, 0.26);
-    }
-
-    body.downloads-page[data-downloads-mode="arcade"] .downloads-title,
-    body.downloads-page[data-downloads-mode="arcade"] .downloads-browser h2,
-    body.downloads-page[data-downloads-mode="arcade"] .downloads-priority h2 {
-      text-shadow: 0 0 18px rgba(0, 240, 255, 0.36);
-    }
-
-    body.downloads-page[data-downloads-mode="arcade"] .downloads-card {
-      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
-    }
-
-    body.downloads-page[data-downloads-mode="arcade"] .downloads-card:hover {
-      transform: translateY(-5px) scale(1.01);
-      border-color: var(--kit-accent);
-      box-shadow: 0 0 24px rgba(0, 240, 255, 0.18), 0 22px 0 rgba(0, 0, 0, 0.28);
-    }
-
-    body.downloads-page[data-downloads-mode="arcade"] .downloads-section-kicker::before {
-      content: "Quest Log / ";
-      color: var(--kit-warn);
-    }
-
-    /* Focus Terminal variation */
-    body.downloads-page[data-downloads-mode="terminal"] {
-      --kit-bg: #000;
-      --kit-panel: #030704;
-      --kit-panel-2: #050b06;
-      --kit-text: #e8ffe2;
-      --kit-muted: #96bf8c;
-      --kit-line: rgba(123, 255, 92, 0.46);
-      --kit-accent: #9cff6a;
-      --kit-accent-2: #ffd166;
-      --kit-warn: #ffd166;
-      --kit-radius: 0;
-      background: #000;
-      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-    }
-
-    body.downloads-page[data-downloads-mode="terminal"] .downloads-head::before {
-      background: repeating-linear-gradient(180deg, rgba(156, 255, 106, 0.04) 0 1px, transparent 1px 6px);
-    }
-
-    body.downloads-page[data-downloads-mode="terminal"] .downloads-title::before {
-      content: "./";
-      color: var(--kit-accent);
-    }
-
-    body.downloads-page[data-downloads-mode="terminal"] .downloads-cat::before {
-      content: "cd ";
-      color: var(--kit-accent-2);
-    }
-
-    body.downloads-page[data-downloads-mode="terminal"] .downloads-action::before {
-      content: "run ";
-      margin-right: 0.4ch;
-    }
-
-    body.downloads-page[data-downloads-mode="terminal"] .downloads-card {
-      grid-template-rows: auto auto auto;
-    }
-
-    body.downloads-page[data-downloads-mode="terminal"] .downloads-card p,
-    body.downloads-page[data-downloads-mode="terminal"] .downloads-tags,
-    body.downloads-page[data-downloads-mode="terminal"] .downloads-card-type {
-      display: none;
-    }
-
-    @media (max-width: 900px) {
-      .downloads-shell {
-        width: min(100% - 20px, 720px);
-        padding-top: 16px;
-      }
-
-      .downloads-hero,
-      .downloads-main-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .downloads-side {
-        grid-template-rows: auto;
-      }
-
-      .downloads-sidebar {
-        position: static;
-      }
-
-      .downloads-sidebar nav {
-        display: flex;
-        gap: 8px;
-        overflow-x: auto;
-        padding-bottom: 4px;
-        scroll-snap-type: x proximity;
-      }
-
-      .downloads-cat {
-        min-width: max-content;
-        scroll-snap-align: start;
-      }
-
-      .downloads-browser-head {
-        align-items: start;
-        flex-direction: column;
-      }
-    }
-
-    @media (max-width: 560px) {
-      .downloads-shell {
-        width: min(100% - 14px, 480px);
-      }
-
-      .downloads-head,
-      .downloads-controls,
-      .downloads-priority,
-      .downloads-browser {
-        padding: 12px;
-      }
-
-      .downloads-priority {
-        max-height: none;
-      }
-
-      .downloads-modes,
-      .downloads-stats {
-        grid-template-columns: 1fr;
-      }
-
-      .downloads-card-head {
-        grid-template-columns: 40px minmax(0, 1fr);
-      }
-
-      .downloads-icon {
-        width: 40px;
-        font-size: 1.2rem;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *,
-      *::before,
-      *::after {
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
-      }
-    }
-  </style>
 </head>
-<body class="downloads-page" data-downloads-mode="ide">
+<body class="downloads-page">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
   <header class="site-header">
@@ -680,69 +32,37 @@
     </div>
   </header>
 
-  <main id="main-content" class="downloads-shell">
-    <section class="downloads-hero" aria-labelledby="downloads-title">
-      <div class="downloads-head">
-        <p class="downloads-kicker">Starter Kit / Class Downloads</p>
-        <h1 class="downloads-title" id="downloads-title">Class Downloads</h1>
-        <p class="downloads-lede">Find today&apos;s required file, install the right software, or grab a clean starter template without digging through email, drives, or old tabs.</p>
-        <div class="downloads-quick" aria-label="Quick actions">
-          <a href="#downloads-browser" data-quick-filter="__priority">Start Here</a>
-          <a href="#downloads-browser" data-quick-filter="VR Setup">VR Setup</a>
-          <a href="#downloads-browser" data-quick-filter="Coding">Coding</a>
-        </div>
-      </div>
-
-      <div class="downloads-side">
-        <section class="downloads-controls" aria-label="Downloads controls">
-          <label class="downloads-search-label" for="downloads-search">
-            Search everything
-            <input class="downloads-search" id="downloads-search" type="search" autocomplete="off" placeholder="godot, vr, mac, starter..." />
-          </label>
-
-          <div class="downloads-modes" aria-label="Interface style">
-            <button class="downloads-mode" type="button" data-mode="ide" aria-pressed="true">IDE</button>
-            <button class="downloads-mode" type="button" data-mode="arcade" aria-pressed="false">Arcade</button>
-            <button class="downloads-mode" type="button" data-mode="terminal" aria-pressed="false">Terminal</button>
-          </div>
-
-          <div class="downloads-stats" aria-label="Catalog summary">
-            <div class="downloads-stat"><strong id="stat-total">0</strong><span>Total</span></div>
-            <div class="downloads-stat"><strong id="stat-priority">0</strong><span>Start Here</span></div>
-            <div class="downloads-stat"><strong id="stat-platforms">0</strong><span>Platforms</span></div>
-          </div>
-        </section>
-
-        <section class="downloads-priority" aria-labelledby="priority-title">
-          <p class="downloads-section-kicker">Today&apos;s Class Files</p>
-          <h2 id="priority-title">Start Here</h2>
-          <div class="downloads-priority-list" id="priority-list" aria-live="polite"></div>
-        </section>
+  <main id="main-content" class="dl-shell">
+    <section class="dl-hero" aria-labelledby="dl-title">
+      <p class="dl-kicker">Starter kit</p>
+      <h1 id="dl-title">Class Downloads</h1>
+      <p class="dl-lede">Starter projects, guides, and the software you need for class, grouped by what you are building. Pick a group, or search for a tool, platform, or topic.</p>
+      <div class="dl-search">
+        <label for="dl-search">Search downloads</label>
+        <input id="dl-search" type="search" autocomplete="off" placeholder="godot, python, mac, portfolio..." />
       </div>
     </section>
 
-    <div class="downloads-main-grid">
-      <aside class="downloads-sidebar" aria-label="Category filters">
-        <h2>Categories</h2>
-        <nav id="category-list" aria-label="Download categories"></nav>
-      </aside>
-
-      <section class="downloads-browser" id="downloads-browser" aria-labelledby="browser-title">
-        <div class="downloads-browser-head">
-          <div>
-            <p class="downloads-section-kicker">Resource Browser</p>
-            <h2 id="browser-title">Browse Everything</h2>
-            <p id="downloads-status" aria-live="polite">Loading resources...</p>
-          </div>
-          <button class="downloads-clear" type="button" id="clear-filters">Clear Filters</button>
-        </div>
-        <div class="downloads-grid" id="downloads-grid" aria-live="polite"></div>
-      </section>
+    <div class="dl-toolbar">
+      <nav aria-label="Jump to a group"><ul class="dl-jump" id="dl-jump"></ul></nav>
+      <label class="dl-toggle"><input type="checkbox" id="dl-rec" /> Recommended only</label>
     </div>
+
+    <p class="dl-status" id="dl-status" role="status" aria-live="polite">Loading downloads...</p>
+
+    <div id="dl-sections"></div>
+
+    <div class="dl-empty" id="dl-empty" hidden>
+      <p><strong>No downloads match that search.</strong></p>
+      <p>Try a shorter word, or clear the search to see everything.</p>
+      <button class="dl-reset" type="button" id="dl-clear">Clear search and filters</button>
+    </div>
+
+    <noscript><p class="dl-note">This page lists its downloads with JavaScript. You can also browse the <a href="downloads/manifest.json">downloads manifest</a> or the <a href="tutorial/index.html">publishing guide</a> directly.</p></noscript>
   </main>
 
   <footer class="site-footer">
-    <p>Mr. Scandrett&apos;s ClassroomOS - <a href="https://github.com/MrScandrett" target="_blank" rel="noreferrer noopener">GitHub</a></p>
+    <p>Mr. Scandrett&apos;s ClassroomOS - <a href="https://github.com/MrScandrett" target="_blank" rel="noreferrer noopener">GitHub<span class="visually-hidden"> (opens in a new tab)</span></a></p>
   </footer>
 
   <script>
@@ -1087,199 +407,150 @@
       }
     ];
 
-    const state = {
-      category: "All",
-      query: "",
-      priorityOnly: false,
-      mode: "ide"
-    };
+    // Display groups, in page order. Items are assigned by id so classData stays untouched.
+    const GROUPS = [
+      { id: "web", title: "Web projects", blurb: "HTML, CSS, and JavaScript starter packs, plus the guide for publishing your work.", ids: ["project-starter-pack", "web-foundations-starter-pack", "web-portfolio-starter-pack", "web-creation-hub-starter-pack", "web-business-starter-pack", "web-store-starter-pack", "web-wiki-starter-pack", "webxr-gallery-starter-pack", "publish-tutorial"] },
+      { id: "games", title: "Games and creative coding", blurb: "Guided packs for building games and generative art in the browser, Python, and Godot.", ids: ["browser-game-builder-starter-pack", "kaplay-starter-pack", "phaser-starter-pack", "pygame-arcade-starter-pack", "godot-adventure-starter-pack", "creative-coding-demoscene-starter-pack"] },
+      { id: "vr", title: "VR with Godot", blurb: "The VR starter project and everything needed to open it.", ids: ["vr-demo-master", "godot-461-windows", "godot-461-mac", "godot-export-templates"] },
+      { id: "electronics", title: "Electronics", blurb: "Sketches and software for microcontrollers, sensors, and robots.", ids: ["arduino-starter-sketches", "arduino-ide"] },
+      { id: "tools", title: "Software and tools", blurb: "Editors, 3D design, recording, and block coding.", ids: ["vscode", "scratch-desktop", "blender", "tinkercad", "obs-studio"] }
+    ];
 
-    const categoryList = document.getElementById("category-list");
-    const grid = document.getElementById("downloads-grid");
-    const priorityList = document.getElementById("priority-list");
-    const searchInput = document.getElementById("downloads-search");
-    const statusEl = document.getElementById("downloads-status");
-    const clearButton = document.getElementById("clear-filters");
-    const modeButtons = Array.from(document.querySelectorAll(".downloads-mode"));
-    const quickFilters = Array.from(document.querySelectorAll("[data-quick-filter]"));
-    const statTotal = document.getElementById("stat-total");
-    const statPriority = document.getElementById("stat-priority");
-    const statPlatforms = document.getElementById("stat-platforms");
+    const KIND_LABELS = { starter: "Starter pack", guide: "Guide", software: "Software", template: "Template" };
+
+    const state = { query: "", recommendedOnly: false };
+
+    const sectionsEl = document.getElementById("dl-sections");
+    const jumpEl = document.getElementById("dl-jump");
+    const statusEl = document.getElementById("dl-status");
+    const emptyEl = document.getElementById("dl-empty");
+    const searchInput = document.getElementById("dl-search");
+    const recToggle = document.getElementById("dl-rec");
+
+    const itemsById = new Map(classData.map((item) => [item.id, item]));
+
+    // Any item missing from GROUPS still shows up, under "More downloads".
+    const grouped = new Set(GROUPS.flatMap((group) => group.ids));
+    const leftovers = classData.filter((item) => !grouped.has(item.id)).map((item) => item.id);
+    if (leftovers.length) {
+      GROUPS.push({ id: "more", title: "More downloads", blurb: "", ids: leftovers });
+    }
 
     function isExternal(url) {
       return /^https?:\/\//i.test(url);
     }
 
-    function unique(items) {
-      return Array.from(new Set(items));
+    function el(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== undefined) node.textContent = text;
+      return node;
     }
 
-    function matchesSearch(item) {
+    function matches(item) {
+      if (state.recommendedOnly && !item.priority) return false;
       if (!state.query) return true;
-      const searchable = [
-        item.title,
-        item.description,
-        item.type,
-        item.category,
-        item.platforms.join(" "),
-        item.tags.join(" ")
-      ].join(" ").toLowerCase();
-      return searchable.includes(state.query);
+      const haystack = [item.title, item.description, item.type, item.category, item.platforms.join(" "), item.tags.join(" ")].join(" ").toLowerCase();
+      return state.query.split(/\s+/).every((word) => haystack.includes(word));
     }
 
-    function filteredItems() {
-      return classData
-        .filter((item) => !state.priorityOnly || item.priority)
-        .filter((item) => state.category === "All" || item.category === state.category)
-        .filter(matchesSearch)
-        .sort((a, b) => Number(b.priority) - Number(a.priority) || a.category.localeCompare(b.category) || a.title.localeCompare(b.title));
-    }
+    function renderCard(item) {
+      const card = el("li", "dl-card");
+      card.dataset.recommended = String(item.priority);
 
-    function createEl(tag, className, text) {
-      const element = document.createElement(tag);
-      if (className) element.className = className;
-      if (text !== undefined) element.textContent = text;
-      return element;
-    }
-
-    function renderCard(item, context) {
-      const card = createEl("article", "downloads-card");
-      card.dataset.priority = String(item.priority);
-      card.dataset.type = item.type;
-
-      const head = createEl("div", "downloads-card-head");
-      const icon = createEl("span", "downloads-icon", item.icon);
+      const head = el("div", "dl-card-head");
+      const icon = el("span", "dl-icon", item.icon);
       icon.setAttribute("aria-hidden", "true");
-      const titleWrap = createEl("div");
-      titleWrap.appendChild(createEl("p", "downloads-card-type", item.type + " / " + item.category));
-      titleWrap.appendChild(createEl("h3", "", item.title));
-      head.appendChild(icon);
-      head.appendChild(titleWrap);
+      const titles = el("div");
+      titles.appendChild(el("p", "dl-kind", KIND_LABELS[item.type] || item.type));
+      titles.appendChild(el("h3", "", item.title));
+      head.append(icon, titles);
 
-      const description = createEl("p", "", item.description);
-      const platforms = createEl("div", "downloads-platforms");
-      item.platforms.forEach((platform) => platforms.appendChild(createEl("span", "downloads-badge downloads-badge--platform", platform)));
+      const badges = el("ul", "dl-badges");
+      badges.setAttribute("aria-label", "Platforms and status");
+      if (item.priority) badges.appendChild(el("li", "dl-badge dl-badge--rec", "Recommended"));
+      item.platforms.forEach((platform) => badges.appendChild(el("li", "dl-badge", platform)));
 
-      const tags = createEl("div", "downloads-tags");
-      unique([item.category, item.type].concat(item.tags)).slice(0, context === "priority" ? 4 : 6).forEach((tag) => {
-        tags.appendChild(createEl("span", "downloads-badge", tag));
-      });
-
-      const action = createEl("a", "downloads-action", item.actionLabel);
+      const action = el("a", "dl-action", item.actionLabel);
       action.href = item.url;
-      if (!isExternal(item.url) && item.url.startsWith("downloads/")) action.setAttribute("download", "");
       if (isExternal(item.url)) {
         action.target = "_blank";
-        action.rel = "noreferrer";
+        action.rel = "noopener noreferrer";
+        action.appendChild(el("span", "visually-hidden", " (opens in a new tab)"));
+      } else if (item.url.startsWith("downloads/")) {
+        action.setAttribute("download", "");
       }
 
-      card.appendChild(head);
-      card.appendChild(description);
-      card.appendChild(platforms);
-      card.appendChild(tags);
-      card.appendChild(action);
+      card.append(head, el("p", "dl-desc", item.description), badges, action);
       return card;
     }
 
-    function renderCategories() {
-      const counts = classData.reduce((acc, item) => {
-        acc[item.category] = (acc[item.category] || 0) + 1;
-        return acc;
-      }, {});
-      const categories = ["All"].concat(Object.keys(counts).sort((a, b) => a.localeCompare(b)));
-      categoryList.innerHTML = "";
-      categories.forEach((category) => {
-        const button = createEl("button", "downloads-cat");
-        button.type = "button";
-        button.setAttribute("aria-pressed", String(state.category === category && !state.priorityOnly));
-        button.dataset.category = category;
-        button.appendChild(createEl("span", "", category));
-        button.appendChild(createEl("small", "", category === "All" ? classData.length : counts[category]));
-        button.addEventListener("click", () => {
-          state.category = category;
-          state.priorityOnly = false;
-          render();
-        });
-        categoryList.appendChild(button);
+    function renderJump() {
+      jumpEl.innerHTML = "";
+      GROUPS.forEach((group) => {
+        const count = group.ids.filter((id) => itemsById.has(id)).length;
+        const li = el("li");
+        const link = el("a", "", group.title + " ");
+        link.href = "#group-" + group.id;
+        link.appendChild(el("small", "", String(count)));
+        li.appendChild(link);
+        jumpEl.appendChild(li);
       });
     }
 
-    function renderPriority() {
-      priorityList.innerHTML = "";
-      classData.filter((item) => item.priority).forEach((item) => {
-        priorityList.appendChild(renderCard(item, "priority"));
+    function render() {
+      sectionsEl.innerHTML = "";
+      let shown = 0;
+      GROUPS.forEach((group) => {
+        const items = group.ids.map((id) => itemsById.get(id)).filter(Boolean).filter(matches);
+        if (!items.length) return;
+        shown += items.length;
+        const section = el("section", "dl-section");
+        section.id = "group-" + group.id;
+        section.setAttribute("aria-labelledby", "group-" + group.id + "-title");
+        const head = el("div", "dl-section-head");
+        const heading = el("h2", "", group.title);
+        heading.id = "group-" + group.id + "-title";
+        head.appendChild(heading);
+        if (group.blurb) head.appendChild(el("p", "", group.blurb));
+        const list = el("ul", "dl-grid");
+        items.forEach((item) => list.appendChild(renderCard(item)));
+        section.append(head, list);
+        sectionsEl.appendChild(section);
       });
-    }
-
-    function renderGrid() {
-      const items = filteredItems();
-      grid.innerHTML = "";
-      if (!items.length) {
-        const empty = createEl("div", "downloads-empty");
-        empty.appendChild(createEl("strong", "", "No downloads match this search."));
-        empty.appendChild(createEl("p", "", "Try a shorter search, choose All, or clear filters to get back to the full starter kit."));
-        const reset = createEl("button", "downloads-clear", "Reset Browser");
-        reset.type = "button";
-        reset.addEventListener("click", clearFilters);
-        empty.appendChild(reset);
-        grid.appendChild(empty);
-      } else {
-        const fragment = document.createDocumentFragment();
-        items.forEach((item) => fragment.appendChild(renderCard(item, "browser")));
-        grid.appendChild(fragment);
-      }
-      const label = state.priorityOnly ? "priority resources" : state.category === "All" ? "resources" : state.category + " resources";
-      statusEl.textContent = "Showing " + items.length + " " + label + ". Search checks titles, descriptions, type, category, platforms, and tags.";
-    }
-
-    function updateStats() {
-      statTotal.textContent = String(classData.length);
-      statPriority.textContent = String(classData.filter((item) => item.priority).length);
-      statPlatforms.textContent = String(unique(classData.flatMap((item) => item.platforms)).length);
+      emptyEl.hidden = shown > 0;
+      const filtered = state.query || state.recommendedOnly;
+      statusEl.textContent = filtered
+        ? "Showing " + shown + " of " + classData.length + " downloads."
+        : classData.length + " downloads in " + GROUPS.length + " groups.";
     }
 
     function clearFilters() {
-      state.category = "All";
       state.query = "";
-      state.priorityOnly = false;
+      state.recommendedOnly = false;
       searchInput.value = "";
+      recToggle.checked = false;
       render();
       searchInput.focus();
     }
 
-    function render() {
-      document.body.dataset.downloadsMode = state.mode;
-      modeButtons.forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.mode === state.mode)));
-      renderCategories();
-      renderGrid();
-      updateStats();
-    }
-
-    modeButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        state.mode = button.dataset.mode;
-        render();
-      });
-    });
-
-    quickFilters.forEach((link) => {
-      link.addEventListener("click", () => {
-        const filter = link.dataset.quickFilter;
-        state.priorityOnly = filter === "__priority";
-        state.category = state.priorityOnly ? "All" : filter;
-        render();
-      });
-    });
-
     searchInput.addEventListener("input", (event) => {
       state.query = event.target.value.trim().toLowerCase();
-      renderGrid();
+      render();
     });
+    recToggle.addEventListener("change", () => {
+      state.recommendedOnly = recToggle.checked;
+      render();
+    });
+    document.getElementById("dl-clear").addEventListener("click", clearFilters);
 
-    clearButton.addEventListener("click", clearFilters);
-    renderPriority();
+    renderJump();
     render();
-    window.addEventListener("load", () => searchInput.focus());
+    // Honor a #group-... deep link now that the sections exist.
+    if (location.hash) {
+      const target = document.getElementById(location.hash.slice(1));
+      if (target) target.scrollIntoView();
+    }
   </script>
   <script src="assets/js/reveal.js"></script>
   <script src="assets/js/nav-mobile.js"></script>
