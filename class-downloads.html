@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Class Downloads · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" />
-  <meta name="description" content="Install class apps and download starter packs, templates, guides, and software for class, grouped by what you are building." />
+  <meta name="description" content="Install class apps and download starter packs, templates, guides, and weekly class files from one searchable ClassroomOS hub." />
   <link rel="stylesheet" href="assets/css/main.css" />
   <link rel="stylesheet" href="assets/css/classroom-home.css" />
   <link rel="stylesheet" href="assets/css/pages/class-downloads.css" />
@@ -34,524 +34,69 @@
 
   <main id="main-content" class="dl-shell">
     <section class="dl-hero" aria-labelledby="dl-title">
-      <p class="dl-kicker">Starter kit</p>
-      <h1 id="dl-title">Class Downloads</h1>
-      <p class="dl-lede">Starter projects, guides, and the software you need for class, grouped by what you are building. Pick a group, or search for a tool, platform, or topic.</p>
-      <div class="dl-search">
-        <label for="dl-search">Search downloads</label>
-        <input id="dl-search" type="search" autocomplete="off" placeholder="godot, python, mac, portfolio..." />
+      <div class="dl-hero-copy">
+        <p class="dl-kicker">Class Downloads</p>
+        <h1 class="dl-title" id="dl-title">Everything you need to start building.</h1>
+        <p class="dl-lede">Starter packs, the software we use in class, and step-by-step guides. Pick your device, find your file, and get to work.</p>
+      </div>
+
+      <div class="dl-finder">
+        <label class="dl-search-label" for="dl-search">Search downloads</label>
+        <div class="dl-search-wrap">
+          <svg class="dl-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input class="dl-search" id="dl-search" type="search" autocomplete="off" spellcheck="false" placeholder="Try godot, python, portfolio..." aria-describedby="dl-search-hint" />
+          <kbd class="dl-kbd" id="dl-search-hint" title="Press / to search">/</kbd>
+        </div>
+
+        <fieldset class="dl-device">
+          <legend>I&apos;m using a</legend>
+          <div class="dl-device-options" id="dl-device-options"></div>
+        </fieldset>
       </div>
     </section>
 
+    <ol class="dl-steps" aria-label="First time? Three steps">
+      <li class="dl-step">
+        <span class="dl-step-num" aria-hidden="true">1</span>
+        <div>
+          <strong>Get an editor</strong>
+          <span>Install <a href="#dl-item-vscode">VS Code</a>, or use the browser on a Chromebook.</span>
+        </div>
+      </li>
+      <li class="dl-step">
+        <span class="dl-step-num" aria-hidden="true">2</span>
+        <div>
+          <strong>Grab a starter pack</strong>
+          <span>Download the ZIP, unzip it, and open the <em>README-FIRST</em> file.</span>
+        </div>
+      </li>
+      <li class="dl-step">
+        <span class="dl-step-num" aria-hidden="true">3</span>
+        <div>
+          <strong>Publish it</strong>
+          <span>Follow the <a href="tutorial/index.html">GitHub Pages guide</a> to share your work.</span>
+        </div>
+      </li>
+    </ol>
+
     <div class="dl-toolbar">
-      <nav aria-label="Jump to a group"><ul class="dl-jump" id="dl-jump"></ul></nav>
-      <label class="dl-toggle"><input type="checkbox" id="dl-rec" /> Recommended only</label>
+      <div class="dl-chips" id="dl-categories" role="group" aria-label="Filter by category"></div>
+      <div class="dl-toolbar-end">
+        <p class="dl-status" id="dl-status" aria-live="polite">Loading downloads…</p>
+        <button class="dl-clear" type="button" id="dl-clear" hidden>Clear filters</button>
+      </div>
     </div>
 
-    <p class="dl-status" id="dl-status" role="status" aria-live="polite">Loading downloads...</p>
-
-    <div id="dl-sections"></div>
-
-    <div class="dl-empty" id="dl-empty" hidden>
-      <p><strong>No downloads match that search.</strong></p>
-      <p>Try a shorter word, or clear the search to see everything.</p>
-      <button class="dl-reset" type="button" id="dl-clear">Clear search and filters</button>
-    </div>
-
-    <noscript><p class="dl-note">This page lists its downloads with JavaScript. You can also browse the <a href="downloads/manifest.json">downloads manifest</a> or the <a href="tutorial/index.html">publishing guide</a> directly.</p></noscript>
+    <div id="dl-results"></div>
   </main>
 
+  <div class="dl-toast" id="dl-toast" role="status" aria-live="polite"></div>
+
   <footer class="site-footer">
-    <p>Mr. Scandrett&apos;s ClassroomOS - <a href="https://github.com/MrScandrett" target="_blank" rel="noreferrer noopener">GitHub<span class="visually-hidden"> (opens in a new tab)</span></a></p>
+    <p>Mr. Scandrett&apos;s ClassroomOS - <a href="https://github.com/MrScandrett" target="_blank" rel="noreferrer noopener">GitHub</a></p>
   </footer>
 
-  <script>
-    const classData = [
-      {
-        id: "project-starter-pack",
-        title: "Project Development Starter Pack",
-        description: "Ready-to-code HTML, CSS, and JavaScript files already linked together. Unzip, open in VS Code, and start building.",
-        type: "starter",
-        category: "Coding",
-        priority: true,
-        tags: ["starter", "html", "css", "javascript", "web", "publishing"],
-        platforms: ["Windows", "Mac", "Chromebook", "Web"],
-        icon: "PK",
-        actionLabel: "Download Starter Pack",
-        url: "downloads/project-starter-pack.zip"
-      },
-      {
-        id: "browser-game-builder-starter-pack",
-        title: "Browser Game Builder — Guided Starter Pack",
-        description: "A complete canvas game with a README-FIRST tutorial, deeply commented code, checkpoints, graduated challenges, troubleshooting, and a finished core reference.",
-        type: "starter",
-        category: "Coding",
-        priority: true,
-        tags: ["guided", "canvas", "game development", "html", "css", "javascript"],
-        platforms: ["Windows", "Mac", "Chromebook", "Web"],
-        icon: "BG",
-        actionLabel: "Download Browser Game Pack",
-        url: "downloads/browser-game-builder-starter-pack.zip"
-      },
-      {
-        id: "pygame-arcade-starter-pack",
-        title: "Pygame Arcade — Guided Starter Pack",
-        description: "A runnable catch game with commented Python, setup help, checkpoints, challenges, troubleshooting, and a finished lives-and-difficulty reference.",
-        type: "starter",
-        category: "Coding",
-        priority: true,
-        tags: ["guided", "python", "pygame", "game loop", "collision"],
-        platforms: ["Windows", "Mac"],
-        icon: "PY",
-        actionLabel: "Download Pygame Pack",
-        url: "downloads/pygame-arcade-starter-pack.zip"
-      },
-      {
-        id: "creative-coding-demoscene-starter-pack",
-        title: "Creative Coding + Demoscene — Guided Starter Pack",
-        description: "Three interactive generative scenes connecting color theory, sine waves, smooth noise, time, composition, and PNG export.",
-        type: "starter",
-        category: "Creative Coding",
-        priority: true,
-        tags: ["guided", "generative art", "demoscene", "noise", "fourier", "canvas"],
-        platforms: ["Windows", "Mac", "Chromebook", "Web"],
-        icon: "CC",
-        actionLabel: "Download Creative Coding Pack",
-        url: "downloads/creative-coding-demoscene-starter-pack.zip"
-      },
-      {
-        id: "godot-adventure-starter-pack",
-        title: "Godot Adventure — Guided Starter Pack",
-        description: "A dependency-free Godot 4 collection game with player, camera, signals, HUD, win state, guided architecture tutorial, and extension path.",
-        type: "starter",
-        category: "Game Development",
-        priority: true,
-        tags: ["guided", "godot", "gdscript", "3d", "signals", "game development"],
-        platforms: ["Windows", "Mac"],
-        icon: "G4",
-        actionLabel: "Download Godot Adventure Pack",
-        url: "downloads/godot-adventure-starter-pack.zip"
-      },
-      {
-        id: "kaplay-starter-pack",
-        title: "Kaplay 2D Game Starter Pack",
-        description: "Minimal 2D game project pre-configured with KAPLAY (formerly Kaboom.js). Includes player movement, custom shapes, and platform physics template.",
-        type: "starter",
-        category: "Coding",
-        priority: true,
-        tags: ["starter", "kaplay", "game development", "2d", "javascript", "html"],
-        platforms: ["Windows", "Mac", "Chromebook", "Web"],
-        icon: "KP",
-        actionLabel: "Download Kaplay Starter",
-        url: "downloads/kaplay-starter-pack.zip"
-      },
-      {
-        id: "phaser-starter-pack",
-        title: "Phaser 3 Game Starter Pack",
-        description: "Minimal 2D game project pre-configured with Phaser 3. Includes basic platforms setup, keyboard controls, and arcade physics.",
-        type: "starter",
-        category: "Coding",
-        priority: false,
-        tags: ["starter", "phaser", "game development", "2d", "javascript", "html"],
-        platforms: ["Windows", "Mac", "Chromebook", "Web"],
-        icon: "PH",
-        actionLabel: "Download Phaser Starter",
-        url: "downloads/phaser-starter-pack.zip"
-      },
-      {
-        id: "web-foundations-starter-pack",
-        title: "Web Foundations — Guided Starter Pack",
-        description: "A two-page personal website matching the first five Build Your Own Web lessons: commented HTML, CSS and a working project search, with a README-FIRST tutorial, challenges, troubleshooting and a finished reference.",
-        type: "starter",
-        category: "Coding",
-        priority: true,
-        tags: ["guided", "html", "css", "javascript", "web design", "beginner"],
-        platforms: ["Windows", "Mac", "Chromebook", "Web"],
-        icon: "WF",
-        actionLabel: "Download Web Foundations Pack",
-        url: "downloads/web-foundations-starter-pack.zip"
-      },
-      {
-        id: "web-portfolio-starter-pack",
-        title: "Web Portfolio Starter Pack",
-        description: "A filterable portfolio site for showing your own games, simulations and art, with a case-study page and a tutorial that walks you through replacing every placeholder.",
-        type: "starter",
-        category: "Coding",
-        priority: true,
-        tags: ["guided", "portfolio", "html", "css", "javascript", "web design"],
-        platforms: ["Windows", "Mac", "Chromebook", "Web"],
-        icon: "WP",
-        actionLabel: "Download Portfolio Pack",
-        url: "downloads/web-portfolio-starter-pack.zip"
-      },
-      {
-        id: "web-business-starter-pack",
-        title: "Business Website Starter Pack",
-        description: "A fictional local-service website with services, opening information and a validating contact form that previews the message locally and explains what a real deployed form would require.",
-        type: "starter",
-        category: "Coding",
-        priority: false,
-        tags: ["guided", "business", "forms", "html", "css", "javascript"],
-        platforms: ["Windows", "Mac", "Chromebook", "Web"],
-        icon: "WB",
-        actionLabel: "Download Business Site Pack",
-        url: "downloads/web-business-starter-pack.zip"
-      },
-      {
-        id: "web-store-starter-pack",
-        title: "Practice Storefront Starter Pack",
-        description: "A classroom storefront prototype: product data, a working cart with quantities and a total calculated in integer cents. No payments — the README explains exactly what a real store would need.",
-        type: "starter",
-        category: "Coding",
-        priority: false,
-        tags: ["guided", "storefront", "cart", "data", "javascript", "web design"],
-        platforms: ["Windows", "Mac", "Chromebook", "Web"],
-        icon: "WS",
-        actionLabel: "Download Store Pack",
-        url: "downloads/web-store-starter-pack.zip"
-      },
-      {
-        id: "web-wiki-starter-pack",
-        title: "Small Wiki Starter Pack",
-        description: "A static wiki with an article index, searchable articles and related links, plus an honest explanation of what shared editing, accounts and revision history would require.",
-        type: "starter",
-        category: "Coding",
-        priority: false,
-        tags: ["guided", "wiki", "search", "articles", "html", "javascript"],
-        platforms: ["Windows", "Mac", "Chromebook", "Web"],
-        icon: "WK",
-        actionLabel: "Download Wiki Pack",
-        url: "downloads/web-wiki-starter-pack.zip"
-      },
-      {
-        id: "web-creation-hub-starter-pack",
-        title: "Creation Hub Starter Pack",
-        description: "A catalog that gives your games and simulations a home, shipping with a playable keyboard canvas game and a controllable physics simulation you can duplicate and make your own.",
-        type: "starter",
-        category: "Coding",
-        priority: true,
-        tags: ["guided", "canvas", "game development", "simulation", "javascript", "portfolio"],
-        platforms: ["Windows", "Mac", "Chromebook", "Web"],
-        icon: "CH",
-        actionLabel: "Download Creation Hub Pack",
-        url: "downloads/web-creation-hub-starter-pack.zip"
-      },
-      {
-        id: "webxr-gallery-starter-pack",
-        title: "WebXR Gallery Starter Pack",
-        description: "An offline-friendly gallery pack: a fully accessible exhibit list plus a 2D room-plan preview you can edit, with an honest guide to what real WebXR requires.",
-        type: "starter",
-        category: "Coding",
-        priority: false,
-        tags: ["guided", "webxr", "vr", "3d", "gallery", "accessibility"],
-        platforms: ["Windows", "Mac", "Chromebook", "Web"],
-        icon: "XR",
-        actionLabel: "Download WebXR Gallery Pack",
-        url: "downloads/webxr-gallery-starter-pack.zip"
-      },
-      {
-        id: "arduino-starter-sketches",
-        title: "Arduino Starter Sketches Pack",
-        description: "Essential boilerplate code templates for electronics, robot sensors, and motor controls (non-blocking Blink, analog reading, servo sweeps).",
-        type: "starter",
-        category: "Electronics",
-        priority: false,
-        tags: ["starter", "arduino", "robotics", "sensors", "circuits", "c++"],
-        platforms: ["Windows", "Mac", "Chromebook", "Web"],
-        icon: "AD",
-        actionLabel: "Download Arduino Pack",
-        url: "downloads/arduino-starter-sketches.zip"
-      },
-      {
-        id: "vr-demo-master",
-        title: "VR Demo - Godot 4 Starter Project",
-        description: "Ready-to-run Godot 4 VR project with scene, scripts, materials, and OpenXR setup included.",
-        type: "starter",
-        category: "VR Setup",
-        priority: true,
-        tags: ["starter", "godot", "vr", "openxr", "gdscript", "quest"],
-        platforms: ["Windows", "Mac"],
-        icon: "VR",
-        actionLabel: "Download VR Template",
-        url: "https://github.com/MrScandrett/MrScandrett.github.io/releases/download/downloads-v1/vr-demo-master.zip"
-      },
-      {
-        id: "publish-tutorial",
-        title: "GitHub Pages Publishing Guide",
-        description: "Step-by-step classroom guide for editing a project folder and publishing it on GitHub Pages.",
-        type: "guide",
-        category: "Coding",
-        priority: true,
-        tags: ["guide", "github", "pages", "publishing", "html", "css"],
-        platforms: ["Chromebook", "Web", "Windows", "Mac"],
-        icon: "GH",
-        actionLabel: "Open Guide",
-        url: "tutorial/index.html"
-      },
-      {
-        id: "godot-461-windows",
-        title: "Godot 4.6.1 for Windows",
-        description: "Official Godot editor download for opening the VR starter project on Windows classroom machines.",
-        type: "software",
-        category: "VR Setup",
-        priority: false,
-        tags: ["godot", "engine", "vr", "openxr", "game development"],
-        platforms: ["Windows"],
-        icon: "G4",
-        actionLabel: "Download Windows Build",
-        url: "https://github.com/godotengine/godot/releases/download/4.6.1-stable/Godot_v4.6.1-stable_win64.exe.zip"
-      },
-      {
-        id: "godot-461-mac",
-        title: "Godot 4.6.1 for Mac",
-        description: "Official Godot editor download for opening the VR starter project on macOS.",
-        type: "software",
-        category: "VR Setup",
-        priority: false,
-        tags: ["godot", "engine", "vr", "openxr", "game development"],
-        platforms: ["Mac"],
-        icon: "G4",
-        actionLabel: "Download Mac Build",
-        url: "https://github.com/godotengine/godot/releases/download/4.6.1-stable/Godot_v4.6.1-stable_macos.universal.zip"
-      },
-      {
-        id: "godot-export-templates",
-        title: "Godot Export Templates",
-        description: "Install these when you are ready to package a playable Godot build instead of only editing the project.",
-        type: "template",
-        category: "VR Setup",
-        priority: false,
-        tags: ["godot", "export", "template", "build", "game development"],
-        platforms: ["Windows", "Mac"],
-        icon: "EX",
-        actionLabel: "Download Templates",
-        url: "https://github.com/godotengine/godot/releases/download/4.6.1-stable/Godot_v4.6.1-stable_export_templates.tpz"
-      },
-      {
-        id: "vscode",
-        title: "Visual Studio Code",
-        description: "Flexible code editor for HTML, CSS, JavaScript, Python, and project folders used across class.",
-        type: "software",
-        category: "Coding",
-        priority: false,
-        tags: ["vscode", "editor", "html", "css", "javascript", "python"],
-        platforms: ["Windows", "Mac", "Web"],
-        icon: "VS",
-        actionLabel: "Open Download Page",
-        url: "https://code.visualstudio.com/download"
-      },
-      {
-        id: "arduino-ide",
-        title: "Arduino IDE",
-        description: "Programming environment for microcontrollers, robotics, sensors, and electronics builds.",
-        type: "software",
-        category: "Electronics",
-        priority: false,
-        tags: ["arduino", "robotics", "microcontroller", "sensors", "circuits"],
-        platforms: ["Windows", "Mac", "Web"],
-        icon: "AR",
-        actionLabel: "Open Download Page",
-        url: "https://www.arduino.cc/en/software"
-      },
-      {
-        id: "obs-studio",
-        title: "OBS Studio",
-        description: "Screen recording and capture software for demos, tutorials, walkthroughs, and portfolio videos.",
-        type: "software",
-        category: "Media",
-        priority: false,
-        tags: ["obs", "recording", "video", "presentation", "showcase"],
-        platforms: ["Windows", "Mac"],
-        icon: "OB",
-        actionLabel: "Open Download Page",
-        url: "https://obsproject.com/download"
-      },
-      {
-        id: "blender",
-        title: "Blender",
-        description: "Free 3D modeling and animation software for scenes, rendering, and game assets.",
-        type: "software",
-        category: "3D CAD",
-        priority: false,
-        tags: ["blender", "3d", "modeling", "animation", "assets"],
-        platforms: ["Windows", "Mac"],
-        icon: "BL",
-        actionLabel: "Open Download Page",
-        url: "https://www.blender.org/download/"
-      },
-      {
-        id: "tinkercad",
-        title: "Tinkercad Classroom CAD",
-        description: "Browser-based CAD workspace for quick parts, prototypes, classroom 3D design, and circuits practice.",
-        type: "software",
-        category: "3D CAD",
-        priority: false,
-        tags: ["tinkercad", "cad", "3d", "circuits", "browser"],
-        platforms: ["Chromebook", "Web", "Windows", "Mac"],
-        icon: "TC",
-        actionLabel: "Open Tinkercad",
-        url: "https://www.tinkercad.com/"
-      },
-      {
-        id: "scratch-desktop",
-        title: "Scratch Desktop",
-        description: "Offline block coding tool for beginner programmers, quick prototypes, and entry-level STEAM projects.",
-        type: "software",
-        category: "Coding",
-        priority: false,
-        tags: ["scratch", "blocks", "games", "starter", "coding basics"],
-        platforms: ["Windows", "Mac", "Web"],
-        icon: "SC",
-        actionLabel: "Open Download Page",
-        url: "https://scratch.mit.edu/download"
-      }
-    ];
-
-    // Display groups, in page order. Items are assigned by id so classData stays untouched.
-    const GROUPS = [
-      { id: "web", title: "Web projects", blurb: "HTML, CSS, and JavaScript starter packs, plus the guide for publishing your work.", ids: ["project-starter-pack", "web-foundations-starter-pack", "web-portfolio-starter-pack", "web-creation-hub-starter-pack", "web-business-starter-pack", "web-store-starter-pack", "web-wiki-starter-pack", "webxr-gallery-starter-pack", "publish-tutorial"] },
-      { id: "games", title: "Games and creative coding", blurb: "Guided packs for building games and generative art in the browser, Python, and Godot.", ids: ["browser-game-builder-starter-pack", "kaplay-starter-pack", "phaser-starter-pack", "pygame-arcade-starter-pack", "godot-adventure-starter-pack", "creative-coding-demoscene-starter-pack"] },
-      { id: "vr", title: "VR with Godot", blurb: "The VR starter project and everything needed to open it.", ids: ["vr-demo-master", "godot-461-windows", "godot-461-mac", "godot-export-templates"] },
-      { id: "electronics", title: "Electronics", blurb: "Sketches and software for microcontrollers, sensors, and robots.", ids: ["arduino-starter-sketches", "arduino-ide"] },
-      { id: "tools", title: "Software and tools", blurb: "Editors, 3D design, recording, and block coding.", ids: ["vscode", "scratch-desktop", "blender", "tinkercad", "obs-studio"] }
-    ];
-
-    const KIND_LABELS = { starter: "Starter pack", guide: "Guide", software: "Software", template: "Template" };
-
-    const state = { query: "", recommendedOnly: false };
-
-    const sectionsEl = document.getElementById("dl-sections");
-    const jumpEl = document.getElementById("dl-jump");
-    const statusEl = document.getElementById("dl-status");
-    const emptyEl = document.getElementById("dl-empty");
-    const searchInput = document.getElementById("dl-search");
-    const recToggle = document.getElementById("dl-rec");
-
-    const itemsById = new Map(classData.map((item) => [item.id, item]));
-
-    // Any item missing from GROUPS still shows up, under "More downloads".
-    const grouped = new Set(GROUPS.flatMap((group) => group.ids));
-    const leftovers = classData.filter((item) => !grouped.has(item.id)).map((item) => item.id);
-    if (leftovers.length) {
-      GROUPS.push({ id: "more", title: "More downloads", blurb: "", ids: leftovers });
-    }
-
-    function isExternal(url) {
-      return /^https?:\/\//i.test(url);
-    }
-
-    function el(tag, className, text) {
-      const node = document.createElement(tag);
-      if (className) node.className = className;
-      if (text !== undefined) node.textContent = text;
-      return node;
-    }
-
-    function matches(item) {
-      if (state.recommendedOnly && !item.priority) return false;
-      if (!state.query) return true;
-      const haystack = [item.title, item.description, item.type, item.category, item.platforms.join(" "), item.tags.join(" ")].join(" ").toLowerCase();
-      return state.query.split(/\s+/).every((word) => haystack.includes(word));
-    }
-
-    function renderCard(item) {
-      const card = el("li", "dl-card");
-      card.dataset.recommended = String(item.priority);
-
-      const head = el("div", "dl-card-head");
-      const icon = el("span", "dl-icon", item.icon);
-      icon.setAttribute("aria-hidden", "true");
-      const titles = el("div");
-      titles.appendChild(el("p", "dl-kind", KIND_LABELS[item.type] || item.type));
-      titles.appendChild(el("h3", "", item.title));
-      head.append(icon, titles);
-
-      const badges = el("ul", "dl-badges");
-      badges.setAttribute("aria-label", "Platforms and status");
-      if (item.priority) badges.appendChild(el("li", "dl-badge dl-badge--rec", "Recommended"));
-      item.platforms.forEach((platform) => badges.appendChild(el("li", "dl-badge", platform)));
-
-      const action = el("a", "dl-action", item.actionLabel);
-      action.href = item.url;
-      if (isExternal(item.url)) {
-        action.target = "_blank";
-        action.rel = "noopener noreferrer";
-        action.appendChild(el("span", "visually-hidden", " (opens in a new tab)"));
-      } else if (item.url.startsWith("downloads/")) {
-        action.setAttribute("download", "");
-      }
-
-      card.append(head, el("p", "dl-desc", item.description), badges, action);
-      return card;
-    }
-
-    function renderJump() {
-      jumpEl.innerHTML = "";
-      GROUPS.forEach((group) => {
-        const count = group.ids.filter((id) => itemsById.has(id)).length;
-        const li = el("li");
-        const link = el("a", "", group.title + " ");
-        link.href = "#group-" + group.id;
-        link.appendChild(el("small", "", String(count)));
-        li.appendChild(link);
-        jumpEl.appendChild(li);
-      });
-    }
-
-    function render() {
-      sectionsEl.innerHTML = "";
-      let shown = 0;
-      GROUPS.forEach((group) => {
-        const items = group.ids.map((id) => itemsById.get(id)).filter(Boolean).filter(matches);
-        if (!items.length) return;
-        shown += items.length;
-        const section = el("section", "dl-section");
-        section.id = "group-" + group.id;
-        section.setAttribute("aria-labelledby", "group-" + group.id + "-title");
-        const head = el("div", "dl-section-head");
-        const heading = el("h2", "", group.title);
-        heading.id = "group-" + group.id + "-title";
-        head.appendChild(heading);
-        if (group.blurb) head.appendChild(el("p", "", group.blurb));
-        const list = el("ul", "dl-grid");
-        items.forEach((item) => list.appendChild(renderCard(item)));
-        section.append(head, list);
-        sectionsEl.appendChild(section);
-      });
-      emptyEl.hidden = shown > 0;
-      const filtered = state.query || state.recommendedOnly;
-      statusEl.textContent = filtered
-        ? "Showing " + shown + " of " + classData.length + " downloads."
-        : classData.length + " downloads in " + GROUPS.length + " groups.";
-    }
-
-    function clearFilters() {
-      state.query = "";
-      state.recommendedOnly = false;
-      searchInput.value = "";
-      recToggle.checked = false;
-      render();
-      searchInput.focus();
-    }
-
-    searchInput.addEventListener("input", (event) => {
-      state.query = event.target.value.trim().toLowerCase();
-      render();
-    });
-    recToggle.addEventListener("change", () => {
-      state.recommendedOnly = recToggle.checked;
-      render();
-    });
-    document.getElementById("dl-clear").addEventListener("click", clearFilters);
-
-    renderJump();
-    render();
-    // Honor a #group-... deep link now that the sections exist.
-    if (location.hash) {
-      const target = document.getElementById(location.hash.slice(1));
-      if (target) target.scrollIntoView();
-    }
-  </script>
+  <script src="assets/js/pages/class-downloads.js"></script>
   <script src="assets/js/reveal.js"></script>
   <script src="assets/js/nav-mobile.js"></script>
 </body>
