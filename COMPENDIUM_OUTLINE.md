@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 317 public lessons and classifies 11 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 317 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -141,7 +141,7 @@ Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 47 l
 - **PHY-31** — Entropy
 - **PHY-32** — Fundamental Forces
 - **PHY-33** — Electron Microscopes
-- **PHY-34** — World Quantum Day 2026
+- **PHY-34** — Quantum Physics
 
 ### People Who Changed Physics
 
@@ -547,6 +547,7 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 
 These pages remain attached to their parent lesson or module and do not become duplicate canonical lessons.
 
+- `lessons/physics/modern-and-thermal/world-quantum-day-2026.html` — redirect; parent-appendix; parent: `lessons/physics/modern-and-thermal/quantum-physics.html`
 - `lessons/life-sciences/animalia/explorer.html` — interactive-extension; parent-appendix; parent: `lessons/life-sciences/animalia/index.html`
 - `lessons/life-sciences/animalia/sorter.html` — practice-extension; parent-appendix; parent: `lessons/life-sciences/animalia/index.html`
 - `lessons/computer-science/graphics-and-games/game-tutorials/catch.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/graphics-and-games/2d-game-engines.html`

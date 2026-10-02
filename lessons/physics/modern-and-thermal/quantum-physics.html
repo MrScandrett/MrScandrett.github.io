@@ -1,0 +1,1972 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quantum Physics · From Light Quanta to Qubits</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta name="description" content="A complete quantum physics lesson with six interactive labs: the photoelectric effect, double-slit interference, energy levels, the qubit Bloch sphere, entanglement and the Bell test, and quantum tunneling." />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0;
+      color: #e6f2ff;
+      background:
+        radial-gradient(1100px 540px at 10% -10%, rgba(69, 201, 255, 0.16), transparent 54%),
+        radial-gradient(900px 480px at 100% 0%, rgba(101, 120, 255, 0.16), transparent 50%),
+        linear-gradient(180deg, #06111c 0%, #091626 48%, #0d1020 100%);
+    }
+    .quantum-shell {
+      width: min(1380px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.15rem 0 2.2rem;
+    }
+    .quantum-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      backdrop-filter: blur(14px) saturate(145%);
+      background: rgba(7, 14, 25, 0.84);
+      border-bottom: 1px solid rgba(135, 198, 255, 0.14);
+    }
+    .quantum-topbar-inner {
+      width: min(1380px, calc(100% - 2rem));
+      min-height: 54px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .quantum-topbar a {
+      color: #b8ddff;
+      text-decoration: none;
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+    .quantum-topbar a:hover { color: #ffffff; }
+    .quantum-brand {
+      color: #eff8ff;
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .quantum-hero {
+      display: grid;
+      gap: 0.85rem;
+      max-width: 860px;
+      padding: 1rem 0 1.2rem;
+    }
+    .quantum-hero h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4.5vw, 3.4rem);
+      line-height: 0.98;
+      letter-spacing: -0.05em;
+      color: #ffffff;
+    }
+    .quantum-hero p {
+      margin: 0;
+      color: rgba(228, 241, 255, 0.8);
+      line-height: 1.7;
+      max-width: 74ch;
+    }
+    .quantum-eyebrow,
+    .quantum-pill {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      min-height: 1.9rem;
+      padding: 0.3rem 0.78rem;
+      border-radius: 999px;
+      border: 1px solid rgba(145, 220, 255, 0.22);
+      background: rgba(9, 20, 34, 0.72);
+      color: #bcefff;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .quantum-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.24fr) minmax(310px, 0.88fr);
+      gap: 1rem;
+      align-items: start;
+    }
+    @media (max-width: 1040px) {
+      .quantum-layout { grid-template-columns: 1fr; }
+    }
+    .quantum-card,
+    .quantum-info-card {
+      border-radius: 24px;
+      border: 1px solid rgba(136, 196, 255, 0.16);
+      background: rgba(8, 16, 30, 0.76);
+      box-shadow: 0 24px 48px rgba(2, 8, 16, 0.28);
+      backdrop-filter: blur(14px);
+    }
+    .quantum-card { overflow: hidden; }
+    .quantum-stage {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+      min-height: 560px;
+    }
+    @media (max-width: 860px) {
+      .quantum-stage { grid-template-columns: 1fr; }
+    }
+    .quantum-canvas-panel {
+      position: relative;
+      display: grid;
+      align-items: center;
+      min-height: 360px;
+      background:
+        radial-gradient(circle at 50% 18%, rgba(117, 206, 255, 0.14), transparent 34%),
+        linear-gradient(180deg, rgba(6, 25, 44, 0.94), rgba(6, 14, 28, 0.98));
+      border-right: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    @media (max-width: 860px) {
+      .quantum-canvas-panel {
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      }
+    }
+    .quantum-canvas-head {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 2;
+      display: grid;
+      gap: 0.45rem;
+      pointer-events: none;
+    }
+    .quantum-canvas-head p {
+      margin: 0;
+      max-width: 30ch;
+      color: rgba(220, 238, 255, 0.72);
+      font-size: 0.82rem;
+      line-height: 1.45;
+    }
+    #blochCanvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      min-height: 0;
+      aspect-ratio: 7 / 5;
+      max-height: min(600px, 62vh);
+    }
+    @media (max-width: 860px) {
+      #blochCanvas { max-height: 460px; }
+    }
+    @media (max-width: 560px) {
+      #blochCanvas { max-height: 360px; }
+    }
+    .quantum-controls {
+      padding: 1rem;
+      display: grid;
+      gap: 0.95rem;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(123, 118, 255, 0.12), transparent 34%),
+        linear-gradient(180deg, rgba(8, 14, 26, 0.96), rgba(10, 16, 28, 0.98));
+    }
+    .quantum-controls h2,
+    .quantum-info-card h2,
+    .quantum-info-card h3 {
+      margin: 0;
+      color: #f4fbff;
+      letter-spacing: -0.02em;
+    }
+    .quantum-controls p,
+    .quantum-info-card p,
+    .quantum-info-card li {
+      color: rgba(225, 239, 255, 0.8);
+      line-height: 1.65;
+    }
+    .quantum-controls p {
+      margin: 0;
+      font-size: 0.88rem;
+    }
+    .quantum-group {
+      display: grid;
+      gap: 0.6rem;
+      padding: 0.9rem;
+      border-radius: 18px;
+      border: 1px solid rgba(136, 196, 255, 0.12);
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .quantum-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #d7eeff;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .quantum-value {
+      color: #7fe3ff;
+      font-variant-numeric: tabular-nums;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: #58d8ff;
+    }
+    .quantum-button-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+    .quantum-button-grid button,
+    .quantum-actions button {
+      border: 1px solid rgba(132, 199, 255, 0.18);
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(23, 62, 99, 0.86), rgba(11, 29, 47, 0.9));
+      color: #edf8ff;
+      padding: 0.72rem 0.76rem;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+    }
+    .quantum-button-grid button:hover,
+    .quantum-actions button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(140, 232, 255, 0.42);
+      background: linear-gradient(180deg, rgba(35, 85, 134, 0.92), rgba(11, 33, 52, 0.92));
+    }
+    .quantum-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+    .quantum-readout { display: grid; gap: 0.6rem; }
+    .quantum-metric {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-bottom: 0.55rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      font-size: 0.86rem;
+    }
+    .quantum-metric strong {
+      color: #ffffff;
+      font-size: 0.95rem;
+      text-align: right;
+    }
+    .quantum-probabilities { display: grid; gap: 0.6rem; }
+    .quantum-prob-bar {
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      height: 12px;
+    }
+    .quantum-prob-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #6ddcff, #88a7ff);
+      width: 50%;
+      transition: width 0.2s ease;
+    }
+    .quantum-status {
+      margin: 0;
+      padding: 0.8rem 0.9rem;
+      border-radius: 16px;
+      background: rgba(123, 118, 255, 0.12);
+      border: 1px solid rgba(145, 168, 255, 0.16);
+      color: #eef3ff;
+      font-size: 0.84rem;
+    }
+    .quantum-info-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    @media (max-width: 980px) {
+      .quantum-info-grid { grid-template-columns: 1fr; }
+    }
+    .quantum-info-card { padding: 1rem; }
+    .quantum-info-card ul {
+      margin: 0;
+      padding-left: 1rem;
+    }
+    .quantum-footer-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    @media (max-width: 980px) {
+      .quantum-footer-grid { grid-template-columns: 1fr; }
+    }
+    .quantum-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    .quantum-table th,
+    .quantum-table td {
+      padding: 0.6rem 0;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      vertical-align: top;
+    }
+    .quantum-table th {
+      color: #9edfff;
+      font-size: 0.74rem;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+    .quantum-note {
+      color: rgba(205, 230, 255, 0.68);
+      font-size: 0.82rem;
+    }
+
+    /* ── Analogy bridge ── */
+    .quantum-analogy {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    @media (max-width: 860px) { .quantum-analogy { grid-template-columns: 1fr; } }
+    .quantum-analogy-card {
+      border-radius: 20px;
+      border: 1px solid rgba(136, 196, 255, 0.16);
+      background: rgba(8, 16, 30, 0.76);
+      backdrop-filter: blur(14px);
+      padding: 1.1rem;
+      display: grid;
+      gap: 0.55rem;
+    }
+    .quantum-analogy-icon {
+      font-size: 2.2rem;
+      line-height: 1;
+    }
+    .quantum-analogy-card h3 {
+      margin: 0;
+      font-size: 1rem;
+      color: #f4fbff;
+      letter-spacing: -0.02em;
+    }
+    .quantum-analogy-card p {
+      margin: 0;
+      font-size: 0.88rem;
+      color: rgba(225, 239, 255, 0.78);
+      line-height: 1.6;
+    }
+    .quantum-analogy-card .q-bridge {
+      display: flex;
+      gap: 0.5rem;
+      align-items: baseline;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #7fe3ff;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Missions ── */
+    .quantum-missions {
+      display: grid;
+      gap: 0.85rem;
+      margin-top: 1rem;
+    }
+    .quantum-mission {
+      border-radius: 20px;
+      border: 1px solid rgba(136, 196, 255, 0.16);
+      background: rgba(8, 16, 30, 0.76);
+      backdrop-filter: blur(14px);
+      padding: 1.1rem 1.2rem;
+      display: grid;
+      grid-template-columns: 2.8rem 1fr;
+      gap: 0 1rem;
+      align-items: start;
+    }
+    .quantum-mission-num {
+      font-size: 1.55rem;
+      font-weight: 800;
+      line-height: 1;
+      color: #7fe3ff;
+      letter-spacing: -0.04em;
+      padding-top: 0.1rem;
+    }
+    .quantum-mission h3 {
+      margin: 0 0 0.3rem;
+      font-size: 1rem;
+      color: #f4fbff;
+      letter-spacing: -0.02em;
+    }
+    .quantum-mission ol {
+      margin: 0;
+      padding-left: 1.15rem;
+      color: rgba(225, 239, 255, 0.8);
+      font-size: 0.88rem;
+      line-height: 1.7;
+    }
+    .quantum-mission-q {
+      grid-column: 2;
+      margin-top: 0.7rem;
+      padding: 0.7rem 0.9rem;
+      border-radius: 14px;
+      background: rgba(123, 118, 255, 0.1);
+      border: 1px solid rgba(145, 168, 255, 0.18);
+      color: #ddeeff;
+      font-size: 0.84rem;
+      line-height: 1.55;
+    }
+    .quantum-mission-q strong { color: #b8e8ff; }
+
+    /* ── Real-world grid ── */
+    .quantum-real-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    @media (max-width: 860px) { .quantum-real-grid { grid-template-columns: 1fr; } }
+    .quantum-milestone {
+      border-radius: 20px;
+      border: 1px solid rgba(136, 196, 255, 0.16);
+      background: rgba(8, 16, 30, 0.76);
+      backdrop-filter: blur(14px);
+      padding: 1.1rem;
+    }
+    .quantum-milestone h3 {
+      margin: 0 0 0.55rem;
+      font-size: 1rem;
+      color: #f4fbff;
+      letter-spacing: -0.02em;
+    }
+    .quantum-milestone p {
+      margin: 0;
+      font-size: 0.88rem;
+      color: rgba(225, 239, 255, 0.78);
+      line-height: 1.6;
+    }
+    .quantum-milestone .q-chip {
+      display: inline-block;
+      margin-bottom: 0.5rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      background: rgba(80, 170, 255, 0.14);
+      border: 1px solid rgba(100, 190, 255, 0.22);
+      color: #9ad8ff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Can / Can't table ── */
+    .quantum-can-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(136, 196, 255, 0.16);
+      margin-top: 0.75rem;
+    }
+    .quantum-can-col { padding: 0.85rem; }
+    .quantum-can-col:first-child {
+      background: rgba(80, 170, 255, 0.08);
+      border-right: 1px solid rgba(136, 196, 255, 0.14);
+    }
+    .quantum-can-col:last-child { background: rgba(255, 100, 100, 0.06); }
+    .quantum-can-col h4 {
+      margin: 0 0 0.5rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #9ad8ff;
+    }
+    .quantum-can-col:last-child h4 { color: #ffb3b3; }
+    .quantum-can-col ul {
+      margin: 0;
+      padding-left: 1rem;
+      font-size: 0.85rem;
+      color: rgba(225, 239, 255, 0.8);
+      line-height: 1.7;
+    }
+
+    /* ── Quiz ── */
+    .quantum-quiz { display: grid; gap: 1rem; margin-top: 1rem; }
+    .quantum-quiz-q {
+      border-radius: 20px;
+      border: 1px solid rgba(136, 196, 255, 0.16);
+      background: rgba(8, 16, 30, 0.76);
+      backdrop-filter: blur(14px);
+      padding: 1rem 1.1rem;
+    }
+    .quantum-quiz-q p {
+      margin: 0 0 0.7rem;
+      font-weight: 700;
+      color: #eef8ff;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    .quantum-choices { display: grid; gap: 0.42rem; }
+    .quantum-choice {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.6rem 0.85rem;
+      border-radius: 12px;
+      border: 1px solid rgba(136, 196, 255, 0.14);
+      background: rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      font-size: 0.88rem;
+      color: rgba(225, 239, 255, 0.82);
+      transition: border-color 0.14s, background 0.14s;
+      text-align: left;
+      width: 100%;
+      font-family: inherit;
+    }
+    .quantum-choice:hover { border-color: rgba(100, 190, 255, 0.3); background: rgba(80,170,255,0.07); }
+    .quantum-choice.correct { border-color: #6dffb8; background: rgba(60, 200, 130, 0.12); color: #b8ffe0; }
+    .quantum-choice.wrong { border-color: #ff8080; background: rgba(200, 60, 60, 0.1); color: #ffb3b3; }
+    .quantum-choice-dot {
+      width: 18px; height: 18px; flex-shrink: 0;
+      border-radius: 50%;
+      border: 2px solid rgba(136, 196, 255, 0.3);
+      display: grid; place-items: center;
+      font-size: 0.7rem; font-weight: 800;
+    }
+    .quantum-choice.correct .quantum-choice-dot { border-color: #6dffb8; color: #6dffb8; }
+    .quantum-choice.wrong .quantum-choice-dot { border-color: #ff8080; color: #ff8080; }
+    .quantum-quiz-feedback {
+      margin-top: 0.55rem;
+      font-size: 0.82rem;
+      color: rgba(200, 230, 255, 0.7);
+      display: none;
+      line-height: 1.5;
+    }
+    .quantum-quiz-feedback.visible { display: block; }
+
+    /* ── Quantum Physics remaster: parts, sims, timeline ── */
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    .qp-part { margin-top: 2rem; scroll-margin-top: 70px; }
+    .qp-part-head { display: grid; gap: 0.35rem; margin-bottom: 0.85rem; }
+    .qp-part-head h2 { margin: 0; color: #f4fbff; font-size: clamp(1.35rem, 2.6vw, 1.8rem); letter-spacing: -0.03em; }
+    .qp-part-head p { margin: 0; color: rgba(225, 239, 255, 0.78); line-height: 1.65; max-width: 80ch; font-size: 0.95rem; }
+    .qp-nav { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.4rem 0 0; padding: 0; list-style: none; }
+    .qp-nav a { display: inline-block; padding: 0.38rem 0.8rem; border-radius: 999px; border: 1px solid rgba(145, 220, 255, 0.22); background: rgba(9, 20, 34, 0.72); color: #bcefff; font-size: 0.8rem; font-weight: 700; text-decoration: none; }
+    .qp-nav a:hover, .qp-nav a:focus-visible { color: #fff; border-color: rgba(140, 232, 255, 0.5); }
+    .qp-sim { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr); border-radius: 24px; border: 1px solid rgba(136, 196, 255, 0.16); background: rgba(8, 16, 30, 0.76); box-shadow: 0 24px 48px rgba(2, 8, 16, 0.28); overflow: hidden; }
+    @media (max-width: 900px) { .qp-sim { grid-template-columns: 1fr; } }
+    .qp-stage { background: linear-gradient(180deg, rgba(6, 25, 44, 0.94), rgba(6, 14, 28, 0.98)); border-right: 1px solid rgba(255, 255, 255, 0.07); display: grid; align-content: center; }
+    @media (max-width: 900px) { .qp-stage { border-right: none; border-bottom: 1px solid rgba(255, 255, 255, 0.07); } }
+    .qp-stage canvas { display: block; width: 100%; height: auto; }
+    .qp-controls { padding: 1rem; display: grid; gap: 0.8rem; align-content: start; background: linear-gradient(180deg, rgba(8, 14, 26, 0.96), rgba(10, 16, 28, 0.98)); }
+    .qp-controls h3 { margin: 0; color: #f4fbff; font-size: 1.05rem; letter-spacing: -0.02em; }
+    .qp-controls p { margin: 0; color: rgba(225, 239, 255, 0.8); font-size: 0.86rem; line-height: 1.6; }
+    .qp-controls select { width: 100%; padding: 0.55rem 0.6rem; border-radius: 12px; border: 1px solid rgba(132, 199, 255, 0.25); background: #0b1d30; color: #edf8ff; font: inherit; }
+    .qp-btns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+    .qp-btns button, .qp-btn { border: 1px solid rgba(132, 199, 255, 0.18); border-radius: 14px; background: linear-gradient(180deg, rgba(23, 62, 99, 0.86), rgba(11, 29, 47, 0.9)); color: #edf8ff; padding: 0.65rem 0.7rem; font: inherit; font-weight: 700; cursor: pointer; }
+    .qp-btns button:hover, .qp-btn:hover { border-color: rgba(140, 232, 255, 0.42); background: linear-gradient(180deg, rgba(35, 85, 134, 0.92), rgba(11, 33, 52, 0.92)); }
+    .qp-check { display: flex; align-items: center; gap: 0.55rem; font-size: 0.88rem; color: #d7eeff; cursor: pointer; }
+    .qp-check input { width: 18px; height: 18px; accent-color: #58d8ff; }
+    .qp-callout { margin-top: 0.85rem; padding: 0.85rem 1rem; border-radius: 16px; background: rgba(123, 118, 255, 0.1); border: 1px solid rgba(145, 168, 255, 0.18); color: #ddeeff; font-size: 0.88rem; line-height: 1.6; }
+    .qp-callout strong { color: #b8e8ff; }
+    .qp-callout.warn { background: rgba(255, 176, 90, 0.09); border-color: rgba(255, 190, 120, 0.28); }
+    .qp-callout.warn strong { color: #ffd6a6; }
+    .qp-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 0.85rem; }
+    .qp-cards.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @media (max-width: 860px) { .qp-cards, .qp-cards.two { grid-template-columns: 1fr; } }
+    .qp-card { border-radius: 20px; border: 1px solid rgba(136, 196, 255, 0.16); background: rgba(8, 16, 30, 0.76); padding: 1.1rem; }
+    .qp-card h3 { margin: 0 0 0.4rem; font-size: 1rem; color: #f4fbff; letter-spacing: -0.02em; }
+    .qp-card p, .qp-card li { margin: 0; font-size: 0.88rem; color: rgba(225, 239, 255, 0.8); line-height: 1.6; }
+    .qp-card ul { margin: 0; padding-left: 1.1rem; }
+    .qp-math { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #9fe8ff; background: rgba(255, 255, 255, 0.05); padding: 0.1rem 0.4rem; border-radius: 6px; font-size: 0.86em; }
+    .qp-timeline { list-style: none; margin: 0.85rem 0 0; padding: 0 0 0 1.1rem; border-left: 2px solid rgba(110, 200, 255, 0.3); display: grid; gap: 0.75rem; }
+    .qp-timeline li { position: relative; font-size: 0.9rem; color: rgba(225, 239, 255, 0.82); line-height: 1.55; }
+    .qp-timeline li::before { content: ""; position: absolute; left: -1.5rem; top: 0.45rem; width: 11px; height: 11px; border-radius: 50%; background: #58d8ff; box-shadow: 0 0 0 3px rgba(88, 216, 255, 0.18); }
+    .qp-timeline b { color: #8fe3ff; margin-right: 0.4rem; font-variant-numeric: tabular-nums; }
+    .qp-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-top: 0.4rem; }
+    .qp-table th, .qp-table td { padding: 0.55rem 0.6rem 0.55rem 0; text-align: left; border-bottom: 1px solid rgba(255, 255, 255, 0.07); vertical-align: top; color: rgba(225, 239, 255, 0.82); }
+    .qp-table th { color: #9edfff; font-size: 0.74rem; letter-spacing: 0.07em; text-transform: uppercase; }
+    .qp-table-wrap { overflow-x: auto; }
+    .qp-log { font-variant-numeric: tabular-nums; }
+    .qp-ent-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    .qp-photon-svg { width: 100%; height: auto; display: block; }
+    .qp-think { margin-top: 0.7rem; padding: 0.7rem 0.9rem; border-radius: 14px; background: rgba(123, 118, 255, 0.1); border: 1px solid rgba(145, 168, 255, 0.18); color: #ddeeff; font-size: 0.84rem; line-height: 1.55; }
+    .qp-think strong { color: #b8e8ff; }
+    .quantum-h2 { margin: 0 0 0.2rem; color: #f4fbff; font-size: 1.25rem; letter-spacing: -0.03em; }
+    .quantum-sub { margin: 0; color: rgba(225, 239, 255, 0.7); font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="quantum-topbar">
+    <div class="quantum-topbar-inner">
+      <a class="quantum-brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav aria-label="Primary">
+        <a href="../../../index.html">Home</a>
+        <a href="../../../steam-lessons.html" aria-current="page">Lessons</a>
+        <a href="../../../showcase.html">Showcase</a>
+        <a href="../../../about.html">About</a>
+      </nav>
+    </div>
+  </header>
+  <main id="main-content" class="quantum-shell">
+    <section class="quantum-hero">
+      <span class="quantum-eyebrow">Physics · Modern Physics · Quantum Mechanics · Quantum Computing</span>
+      <h1>Quantum Physics: From Light Quanta to Qubits</h1>
+      <p>At the scale of atoms, nature stops behaving like tiny billiard balls. Energy comes in <strong>packets</strong>, particles spread out like <strong>waves</strong>, outcomes are decided by <strong>probability</strong>, and distant particles can share <strong>entangled</strong> fates. This lesson walks the whole story in six parts, each with a simulator you can poke: <strong>light as quanta</strong>, <strong>wave&ndash;particle duality</strong>, <strong>quantization</strong>, the <strong>qubit and Bloch sphere</strong>, <strong>entanglement</strong>, and <strong>tunneling</strong>.</p>
+      <span class="quantum-pill">Start with Part 1, or jump straight to the qubit lab in Part 4</span>
+      <ul class="qp-nav" aria-label="Lesson parts">
+        <li><a href="#part-quanta">1 · Light Quanta</a></li>
+        <li><a href="#part-duality">2 · Wave–Particle</a></li>
+        <li><a href="#part-levels">3 · Quantization</a></li>
+        <li><a href="#part-qubit">4 · The Qubit</a></li>
+        <li><a href="#part-entangle">5 · Entanglement</a></li>
+        <li><a href="#part-tunnel">6 · Tunneling</a></li>
+        <li><a href="#part-world">Real World</a></li>
+        <li><a href="#quiz-heading">Quiz</a></li>
+      </ul>
+    </section>
+
+    <section class="qp-part" id="part-bigideas" aria-labelledby="bigideas-heading" style="margin-top:0.6rem;">
+      <div class="qp-part-head">
+        <h2 id="bigideas-heading">The Five Big Ideas</h2>
+        <p>Every simulator below demonstrates one of these. By the end you should be able to explain each in your own words, with evidence.</p>
+      </div>
+      <div class="qp-cards">
+        <div class="qp-card"><h3>1 · Quantization</h3><p>Some quantities, like the energy of light or of an electron bound in an atom, come in discrete steps, not smooth amounts.</p></div>
+        <div class="qp-card"><h3>2 · Duality</h3><p>Light and matter show wave behavior (interference) when travelling and particle behavior (single hits) when detected.</p></div>
+        <div class="qp-card"><h3>3 · Probability</h3><p>Quantum theory predicts the <em>odds</em> of outcomes very precisely, but not which single outcome occurs.</p></div>
+        <div class="qp-card"><h3>4 · Superposition &amp; measurement</h3><p>A system can be described by a blend of possibilities. Measuring it gives one definite result and updates the state.</p></div>
+        <div class="qp-card"><h3>5 · Entanglement &amp; tunneling</h3><p>Two particles can share one joint state with correlations no classical story can copy. A particle can also cross a barrier it &ldquo;doesn&rsquo;t have the energy&rdquo; to climb.</p></div>
+        <div class="qp-card"><h3>Why it matters</h3><p>The same rules give us lasers, LEDs, transistors, solar cells, MRI, atomic clocks, and now quantum computers.</p></div>
+      </div>
+    </section>
+
+    <!-- ══ Part 1: Photoelectric effect ══ -->
+    <section class="qp-part" id="part-quanta" aria-labelledby="quanta-heading">
+      <div class="qp-part-head">
+        <span class="quantum-eyebrow">Part 1</span>
+        <h2 id="quanta-heading">Light Comes in Packets: The Photoelectric Effect</h2>
+        <p>By 1900 light was understood as a wave. Yet when light hits a metal, electrons pop out in a way waves cannot explain: <strong>dim blue light ejects electrons, but blindingly bright red light ejects none</strong>. In 1905 Einstein explained it by treating light as a stream of <strong>photons</strong>, each carrying energy <span class="qp-math">E = hf</span>. An electron leaves only if one photon carries more than the metal&rsquo;s <strong>work function</strong> &phi;. This work earned Einstein the 1921 Nobel Prize in Physics.</p>
+      </div>
+      <div class="qp-sim">
+        <div class="qp-stage"><canvas id="pePlot" width="840" height="420" role="img" aria-label="Photons striking a metal plate and ejecting electrons"></canvas></div>
+        <div class="qp-controls">
+          <h3>Photoelectric Lab</h3>
+          <p>Choose a metal, tune the wavelength of the light, then change the intensity. Watch what each knob does, and what it doesn&rsquo;t.</p>
+          <div class="quantum-group">
+            <label class="quantum-label" for="peMetal"><span>Metal</span></label>
+            <select id="peMetal">
+              <option value="2.1">Cesium (&phi; ≈ 2.1 eV)</option>
+              <option value="2.3" selected>Sodium (&phi; ≈ 2.3 eV)</option>
+              <option value="4.3">Zinc (&phi; ≈ 4.3 eV)</option>
+              <option value="4.7">Copper (&phi; ≈ 4.7 eV)</option>
+            </select>
+            <label class="quantum-label" for="peWave"><span>Wavelength</span><span id="peWaveVal" class="quantum-value">450 nm</span></label>
+            <input id="peWave" type="range" min="200" max="800" step="5" value="450" />
+            <label class="quantum-label" for="peInt"><span>Intensity (photons/s)</span><span id="peIntVal" class="quantum-value">5</span></label>
+            <input id="peInt" type="range" min="1" max="10" step="1" value="5" />
+          </div>
+          <div class="quantum-group quantum-readout">
+            <div class="quantum-metric"><span>Photon energy</span><strong id="peE">2.76 eV</strong></div>
+            <div class="quantum-metric"><span>Work function &phi;</span><strong id="pePhi">2.30 eV</strong></div>
+            <div class="quantum-metric"><span>Max electron KE</span><strong id="peKE">0.46 eV</strong></div>
+            <div class="quantum-metric"><span>Threshold wavelength</span><strong id="peThr">539 nm</strong></div>
+          </div>
+          <p id="peStatus" class="quantum-status" aria-live="polite"></p>
+        </div>
+      </div>
+      <div class="qp-callout"><strong>Try it:</strong> (1) Set sodium and 450 nm, then slide intensity up and down. The <em>number</em> of electrons changes, but their maximum energy does not. (2) Slide wavelength to 650 nm and set intensity to 10. No electrons, no matter how bright. (3) Switch to zinc and find the longest wavelength that still works. Brightness changes how many photons arrive; wavelength sets how much energy <em>each</em> photon carries. Each electron absorbs one photon at a time, so you can&rsquo;t &ldquo;save up&rdquo; many weak photons.</div>
+      <div class="qp-think"><strong>Think:</strong> A wave model predicts that a bright enough red beam should eventually eject electrons. Which observation in the simulator contradicts that, and how does the photon model fix it?</div>
+    </section>
+
+    <!-- ══ Part 2: Double slit ══ -->
+    <section class="qp-part" id="part-duality" aria-labelledby="duality-heading">
+      <div class="qp-part-head">
+        <span class="quantum-eyebrow">Part 2</span>
+        <h2 id="duality-heading">Waves, Particles, or Both? The Double-Slit Experiment</h2>
+        <p>Send waves through two slits and they overlap into bright and dark <strong>interference fringes</strong>. Send bullets and you get two simple piles. Now send <strong>single electrons or photons, one at a time</strong>. Each lands as one dot, like a particle, yet after thousands of dots the fringes appear, as if each one had passed through <em>both</em> slits as a wave. Electron versions of this experiment have been done since the 1960s (Jönsson, 1961), and with single electrons by Tonomura in 1989. Fire particles below, then ask the which-path question.</p>
+      </div>
+      <div class="qp-sim">
+        <div class="qp-stage"><canvas id="dsCanvas" width="900" height="400" role="img" aria-label="Double slit experiment with accumulating detection dots and histogram"></canvas></div>
+        <div class="qp-controls">
+          <h3>Double-Slit Lab</h3>
+          <p>Each button press fires particles one at a time. Dots appear where the detector screen catches them.</p>
+          <div class="quantum-group">
+            <label class="quantum-label" for="dsSep"><span>Slit separation</span><span id="dsSepVal" class="quantum-value">4.0</span></label>
+            <input id="dsSep" type="range" min="2" max="8" step="0.5" value="4" />
+            <label class="quantum-label" for="dsLam"><span>Wavelength</span><span id="dsLamVal" class="quantum-value">1.0</span></label>
+            <input id="dsLam" type="range" min="0.5" max="2" step="0.1" value="1" />
+            <label class="qp-check"><input id="dsWatch" type="checkbox" /> Detect which slit each particle uses</label>
+          </div>
+          <div class="qp-btns">
+            <button type="button" id="dsFire1">Fire 1</button>
+            <button type="button" id="dsFire100">Fire 100</button>
+            <button type="button" id="dsFire1000">Fire 1000</button>
+            <button type="button" id="dsClear">Clear screen</button>
+          </div>
+          <p id="dsStatus" class="quantum-status" aria-live="polite">0 particles detected. Fire a few and notice they look random, then fire a thousand.</p>
+        </div>
+      </div>
+      <div class="qp-callout"><strong>What to notice:</strong> After a handful of shots the dots look random. After a thousand, fringes emerge. Increase the slit separation and the fringes get closer together; increase the wavelength and they spread apart (spacing &prop; &lambda;/d). Now tick <em>Detect which slit</em> and clear the screen: the fringes vanish and you get the smooth two-slit blob. Learning the path destroys the interference.</div>
+      <div class="qp-callout warn"><strong>Common misconception:</strong> &ldquo;The observer&rdquo; does not mean a person, or consciousness. Any interaction that records which path was taken, such as a detector, a stray molecule, or a photon bouncing off the electron, is enough to wash out the fringes.</div>
+      <div class="qp-think"><strong>Think:</strong> One electron at a time can&rsquo;t be interfering with another electron. So what is it interfering with? Write one sentence that uses the word <em>probability</em>.</div>
+    </section>
+
+    <!-- ══ Part 3: Quantization ══ -->
+    <section class="qp-part" id="part-levels" aria-labelledby="levels-heading">
+      <div class="qp-part-head">
+        <span class="quantum-eyebrow">Part 3</span>
+        <h2 id="levels-heading">Trapped Waves Make Energy Levels: Particle in a Box</h2>
+        <p>If a particle is a wave, then confining it is like plucking a guitar string: only waves that fit between the walls survive. That fitting rule gives <strong>discrete energy levels</strong>, <span class="qp-math">E<sub>n</sub> ∝ n²/L²</span>. This is the same idea that makes atoms emit only certain colors. Real atoms are 3D and more complicated, but the box shows exactly why levels appear, and why squeezing a particle into a smaller space <em>raises</em> its energy.</p>
+      </div>
+      <div class="qp-sim">
+        <div class="qp-stage"><canvas id="boxCanvas" width="900" height="420" role="img" aria-label="Energy levels and wavefunction of an electron in a box"></canvas></div>
+        <div class="qp-controls">
+          <h3>Electron-in-a-Box Lab</h3>
+          <p>Left: the allowed energy ladder. Right: the standing wave (&psi;) and the probability of finding the electron (|&psi;|²) for the level you select.</p>
+          <div class="quantum-group">
+            <label class="quantum-label" for="boxN"><span>Level n</span><span id="boxNVal" class="quantum-value">1</span></label>
+            <input id="boxN" type="range" min="1" max="6" step="1" value="1" />
+            <label class="quantum-label" for="boxL"><span>Box width L</span><span id="boxLVal" class="quantum-value">1.0 nm</span></label>
+            <input id="boxL" type="range" min="0.5" max="3" step="0.1" value="1" />
+            <label class="quantum-label" for="boxM"><span>Drop to level</span></label>
+            <select id="boxM"></select>
+            <button type="button" class="qp-btn" id="boxEmit">Emit a photon</button>
+          </div>
+          <div class="quantum-group quantum-readout">
+            <div class="quantum-metric"><span>Energy E<sub>n</sub></span><strong id="boxE">0.376 eV</strong></div>
+            <div class="quantum-metric"><span>Most likely spots</span><strong id="boxPeaks">center</strong></div>
+            <div class="quantum-metric"><span>Photon wavelength</span><strong id="boxLam">—</strong></div>
+          </div>
+          <p id="boxStatus" class="quantum-status" aria-live="polite">Select a level, then drop to a lower one to see the photon energy that carries off the difference.</p>
+        </div>
+      </div>
+      <div class="qp-cards two">
+        <div class="qp-card"><h3>Three things to find</h3><ul>
+          <li>Level 1 has <em>nonzero</em> energy. There is no zero-energy resting state (&ldquo;zero-point energy&rdquo;).</li>
+          <li>Level <em>n</em> has <em>n</em> humps, and <em>n</em>−1 nodes where the electron is never found.</li>
+          <li>Shrink L from 3 nm to 0.5 nm: every level climbs and the spacing grows.</li>
+        </ul></div>
+        <div class="qp-card"><h3>The uncertainty principle, informally</h3><p>Heisenberg&rsquo;s relation <span class="qp-math">Δx · Δp ≥ ħ/2</span> says the more tightly you pin down where a particle is, the more spread there must be in its momentum. A smaller box means a smaller Δx, so a bigger momentum spread, so higher kinetic energy. It is a property of waves, not a flaw in our instruments.</p></div>
+      </div>
+      <div class="qp-think"><strong>Think:</strong> Use the simulator to find an electron transition that gives <em>visible</em> light (about 400–700 nm). Which L, n, and drop level did you use? Why can&rsquo;t a continuous-energy classical particle emit just one specific color?</div>
+    </section>
+
+    <!-- ══ Part 4 heading ══ -->
+    <section class="qp-part" id="part-qubit" aria-labelledby="qubit-heading" style="margin-bottom:0.9rem;">
+      <div class="qp-part-head">
+        <span class="quantum-eyebrow">Part 4</span>
+        <h2 id="qubit-heading">The Qubit: Superposition You Can Steer</h2>
+        <p>Now we put the pieces together. A <strong>qubit</strong> is any two-level quantum system, such as the spin of an electron or the lowest two energy levels of a tiny superconducting circuit. Unlike a bit, its state is a point on a sphere, the <strong>Bloch sphere</strong>. Rotate it, apply gates, and measure it.</p>
+      </div>
+    </section>
+
+    <section class="quantum-layout" aria-label="Bloch sphere lab">
+      <article class="quantum-card">
+        <div class="quantum-stage">
+          <section class="quantum-canvas-panel">
+            <div class="quantum-canvas-head">
+              <span class="quantum-pill">Interactive Bloch Sphere</span>
+              <p>North pole = |0⟩, south pole = |1⟩. The arrow&rsquo;s height sets measurement chances, and its twist around the sphere tracks relative phase.</p>
+            </div>
+            <canvas id="blochCanvas" width="840" height="600" aria-label="Bloch sphere visualization"></canvas>
+          </section>
+
+          <section class="quantum-controls">
+            <div>
+              <h2>State Controls</h2>
+              <p>Use the sliders to move the qubit directly, then compare that with standard quantum gates.</p>
+            </div>
+
+            <div class="quantum-group">
+              <label class="quantum-label" for="thetaSlider"><span>Polar Angle θ</span><span id="thetaValue" class="quantum-value">90°</span></label>
+              <input id="thetaSlider" type="range" min="0" max="180" step="1" value="90" />
+              <label class="quantum-label" for="phiSlider"><span>Azimuth φ</span><span id="phiValue" class="quantum-value">0°</span></label>
+              <input id="phiSlider" type="range" min="0" max="360" step="1" value="0" />
+            </div>
+
+            <div class="quantum-group">
+              <h3>Preset States</h3>
+              <div class="quantum-button-grid">
+                <button type="button" data-preset="zero">|0⟩</button>
+                <button type="button" data-preset="one">|1⟩</button>
+                <button type="button" data-preset="plus">|+⟩</button>
+                <button type="button" data-preset="minus">|-⟩</button>
+                <button type="button" data-preset="iplus">|i+⟩</button>
+                <button type="button" data-preset="iminus">|i-⟩</button>
+              </div>
+            </div>
+
+            <div class="quantum-group">
+              <h3>Apply Gates</h3>
+              <div class="quantum-button-grid">
+                <button type="button" data-gate="x">X</button>
+                <button type="button" data-gate="y">Y</button>
+                <button type="button" data-gate="z">Z</button>
+                <button type="button" data-gate="h">H</button>
+                <button type="button" data-gate="s">S</button>
+                <button type="button" data-gate="t">T</button>
+              </div>
+              <p class="quantum-note">X flips north to south, Z twists phase, and H turns a basis state into a balanced superposition.</p>
+            </div>
+
+            <div class="quantum-group quantum-readout">
+              <h3>Qubit Readout</h3>
+              <div class="quantum-metric"><span>State Vector</span><strong id="stateVector">|ψ⟩ = 0.707|0⟩ + 0.707e<sup>i0°</sup>|1⟩</strong></div>
+              <div class="quantum-metric"><span>Bloch Coordinates</span><strong id="blochCoords">(x, y, z) = (1.000, 0.000, 0.000)</strong></div>
+              <div class="quantum-probabilities">
+                <div class="quantum-metric"><span>Measure 0</span><strong id="probZero">50.0%</strong></div>
+                <div class="quantum-prob-bar" aria-hidden="true"><div id="probZeroBar" class="quantum-prob-fill"></div></div>
+                <div class="quantum-metric"><span>Measure 1</span><strong id="probOne">50.0%</strong></div>
+                <div class="quantum-prob-bar" aria-hidden="true"><div id="probOneBar" class="quantum-prob-fill"></div></div>
+              </div>
+              <div class="quantum-actions">
+                <button id="measureButton" type="button">Measure Once</button>
+                <button id="resetButton" type="button">Reset to |+⟩</button>
+              </div>
+              <p id="measureStatus" class="quantum-status" aria-live="polite">Balanced superposition loaded. Right now the qubit has a 50/50 chance of collapsing to |0⟩ or |1⟩.</p>
+            </div>
+          </section>
+        </div>
+      </article>
+
+      <aside class="quantum-info-card">
+        <h2>Teacher Lens</h2>
+        <p>This lesson works well as a first bridge between classical bits and quantum information. Students do not need full linear algebra first. The goal is conceptual fluency: <strong>state</strong>, <strong>superposition</strong>, <strong>phase</strong>, <strong>gate</strong>, and <strong>measurement</strong>.</p>
+        <table class="quantum-table" aria-label="Quick teaching guide">
+          <thead>
+            <tr><th>Term</th><th>Student-Friendly Meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Qubit</td><td>A quantum two-state system that can be in a blend of 0 and 1 before measurement.</td></tr>
+            <tr><td>Bloch sphere</td><td>A map that turns one qubit&rsquo;s state into a direction in 3D space.</td></tr>
+            <tr><td>Phase</td><td>A hidden angle that does not change basic 0/1 odds by itself, but matters when gates interact states.</td></tr>
+            <tr><td>Measurement</td><td>The step that forces the qubit to give a classical result, either 0 or 1.</td></tr>
+          </tbody>
+        </table>
+      </aside>
+    </section>
+
+    <!-- ══ Analogy bridge ══ -->
+    <section aria-labelledby="analogy-heading" style="margin-top:1rem;">
+      <h2 id="analogy-heading" style="margin:0 0 0.2rem;color:#f4fbff;font-size:1.25rem;letter-spacing:-0.03em;">Before You Start — Real-World Analogies</h2>
+      <p style="margin:0 0 0;color:rgba(225,239,255,0.7);font-size:0.9rem;">Quantum ideas sound abstract until you connect them to something physical. Use these before touching the simulator.</p>
+      <div class="quantum-analogy">
+        <div class="quantum-analogy-card">
+          <div class="quantum-analogy-icon">🪙</div>
+          <h3>Superposition = Spinning Coin</h3>
+          <p>A coin lying flat is either heads <strong>or</strong> tails — that's a classical bit. A spinning coin is heads <em>and</em> tails at the same time until it lands. The moment it hits the table is <strong>measurement</strong> — and the answer snaps to one definite outcome.</p>
+          <div class="q-bridge"><span>→ Qubit:</span> the spinning coin</div>
+        </div>
+        <div class="quantum-analogy-card">
+          <div class="quantum-analogy-icon">🧭</div>
+          <h3>Phase = Which Way the Coin Faces</h3>
+          <p>Two spinning coins can have the same 50/50 heads-tails odds but face different directions. That direction is <strong>phase</strong> — invisible to a single measurement but critical when you combine two qubits. Phase lets quantum algorithms cancel out wrong answers.</p>
+          <div class="q-bridge"><span>→ Bloch sphere equator:</span> full circle of phases</div>
+        </div>
+        <div class="quantum-analogy-card">
+          <div class="quantum-analogy-icon">🔄</div>
+          <h3>Gates = Precise Flicks</h3>
+          <p>A quantum gate is not an on/off switch — it's a <strong>rotation</strong> of the Bloch sphere arrow. The X gate flips north to south (like flipping a coin). The H gate tilts the arrow 90° to the equator. Apply H twice and you rotate all the way back.</p>
+          <div class="q-bridge"><span>→ Every gate:</span> a rotation, not a switch</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ Guided missions ══ -->
+    <section aria-labelledby="missions-heading" style="margin-top:1.5rem;">
+      <h2 id="missions-heading" style="margin:0 0 0.2rem;color:#f4fbff;font-size:1.25rem;letter-spacing:-0.03em;">Lab Missions — Do These in Order</h2>
+      <p style="margin:0;color:rgba(225,239,255,0.7);font-size:0.9rem;">Open the simulator above and work through each mission. Write down what you observe before reading ahead.</p>
+      <div class="quantum-missions">
+
+        <div class="quantum-mission">
+          <div class="quantum-mission-num">01</div>
+          <div>
+            <h3>Find the Poles — The Classical States</h3>
+            <ol>
+              <li>Click <strong>|0⟩</strong> in Preset States. Note where the arrow points and what the probabilities say.</li>
+              <li>Click gate <strong>X</strong>. Watch the arrow flip to the south pole.</li>
+              <li>Read the probabilities again. Measure Once. What result do you always get?</li>
+            </ol>
+            <div class="quantum-mission-q"><strong>Think:</strong> The north pole |0⟩ and south pole |1⟩ behave exactly like classical bits — 100% one result every time. What does that tell you about classical computers as a special case of quantum?</div>
+          </div>
+        </div>
+
+        <div class="quantum-mission">
+          <div class="quantum-mission-num">02</div>
+          <div>
+            <h3>Create Superposition — The H Gate</h3>
+            <ol>
+              <li>Click <strong>|0⟩</strong> to reset to the north pole.</li>
+              <li>Click gate <strong>H</strong>. The arrow should jump to the equator (|+⟩).</li>
+              <li>Click <strong>Measure Once</strong> six times in a row. Record each result (0 or 1).</li>
+            </ol>
+            <div class="quantum-mission-q"><strong>Think:</strong> Did you get a mix of 0s and 1s? Over many measurements the ratio approaches 50/50 — that's what 50% probability means physically. How is this different from a coin toss in terms of what the qubit was doing <em>before</em> you measured?</div>
+          </div>
+        </div>
+
+        <div class="quantum-mission">
+          <div class="quantum-mission-num">03</div>
+          <div>
+            <h3>Phase Is Hidden From a Single Measurement</h3>
+            <ol>
+              <li>Click preset <strong>|+⟩</strong>. Note the probabilities (both 50%).</li>
+              <li>Click preset <strong>|i+⟩</strong>. Note the probabilities again.</li>
+              <li>Click preset <strong>|-⟩</strong>. Same result?</li>
+            </ol>
+            <div class="quantum-mission-q"><strong>Think:</strong> All three states sit on the equator with identical 50/50 odds, but the arrow points in different directions. Phase is real — it affects how gates interact — but a single measurement can't see it. This is why quantum computing is tricky to test and understand.</div>
+          </div>
+        </div>
+
+        <div class="quantum-mission">
+          <div class="quantum-mission-num">04</div>
+          <div>
+            <h3>Reversible Computing — H Then H Again</h3>
+            <ol>
+              <li>Click <strong>|0⟩</strong> to start at the north pole.</li>
+              <li>Apply gate <strong>H</strong>. You're at the equator.</li>
+              <li>Apply gate <strong>H</strong> again. Where does the arrow go?</li>
+            </ol>
+            <div class="quantum-mission-q"><strong>Think:</strong> H applied twice returns you to |0⟩ with 100% probability. Every quantum gate is reversible — unlike deleting a file, which destroys information. Why might reversibility matter for energy efficiency in future computers?</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ══ Part 5: Entanglement ══ -->
+    <section class="qp-part" id="part-entangle" aria-labelledby="entangle-heading">
+      <div class="qp-part-head">
+        <span class="quantum-eyebrow">Part 5</span>
+        <h2 id="entangle-heading">Entanglement: One Shared State, Two Places</h2>
+        <p>Two photons can be prepared in a single joint state, for example &ldquo;both horizontal <em>or</em> both vertical, with no way to say which.&rdquo; Alice measures one photon and Bob measures the other, possibly kilometers away. Each of them sees a perfectly random stream of results. But when they compare notes, their results are <strong>correlated</strong>, and the correlation depends on the angles of their polarizers. Einstein found this deeply uncomfortable (&ldquo;spooky action at a distance&rdquo;). In 1964 John Bell showed that experiments could decide between &ldquo;pre-agreed hidden instructions&rdquo; and quantum mechanics. The experiments (Clauser, Aspect, Zeilinger, honored with the 2022 Nobel Prize) side with quantum mechanics.</p>
+      </div>
+      <div class="qp-sim">
+        <div class="qp-stage" style="padding:1rem;">
+          <svg class="qp-photon-svg" viewBox="0 0 800 260" role="img" aria-label="Entangled photon source in the middle with Alice and Bob polarizers on each side">
+            <defs><radialGradient id="entGlow"><stop offset="0" stop-color="#9fe8ff"/><stop offset="1" stop-color="#9fe8ff" stop-opacity="0"/></radialGradient></defs>
+            <circle cx="400" cy="130" r="56" fill="url(#entGlow)"/>
+            <circle cx="400" cy="130" r="14" fill="#6ff2ff"/>
+            <text x="400" y="200" text-anchor="middle" fill="#bcefff" font-size="15" font-weight="700">entangled pair source</text>
+            <line x1="414" y1="130" x2="620" y2="130" stroke="#7fe3ff" stroke-width="2" stroke-dasharray="6 6"/>
+            <line x1="386" y1="130" x2="180" y2="130" stroke="#7fe3ff" stroke-width="2" stroke-dasharray="6 6"/>
+            <g transform="translate(150 130)"><circle r="44" fill="rgba(8,16,30,.9)" stroke="#9db8ff" stroke-width="2"/><line id="entLineA" x1="-34" y1="0" x2="34" y2="0" stroke="#fff" stroke-width="5" stroke-linecap="round"/><text y="74" text-anchor="middle" fill="#9db8ff" font-size="16" font-weight="700">Alice</text></g>
+            <g transform="translate(650 130)"><circle r="44" fill="rgba(8,16,30,.9)" stroke="#ffd1a6" stroke-width="2"/><line id="entLineB" x1="-34" y1="0" x2="34" y2="0" stroke="#fff" stroke-width="5" stroke-linecap="round"/><text y="74" text-anchor="middle" fill="#ffd1a6" font-size="16" font-weight="700">Bob</text></g>
+            <text id="entLastA" x="150" y="40" text-anchor="middle" fill="#e6f2ff" font-size="18" font-weight="800">—</text>
+            <text id="entLastB" x="650" y="40" text-anchor="middle" fill="#e6f2ff" font-size="18" font-weight="800">—</text>
+          </svg>
+        </div>
+        <div class="qp-controls">
+          <h3>Entangled-Pair Lab</h3>
+          <p>Each polarizer angle is chosen independently. A result is 0 (photon passes) or 1 (blocked).</p>
+          <div class="quantum-group">
+            <label class="quantum-label" for="entA"><span>Alice angle</span><span id="entAVal" class="quantum-value">0°</span></label>
+            <input id="entA" type="range" min="0" max="180" step="5" value="0" />
+            <label class="quantum-label" for="entB"><span>Bob angle</span><span id="entBVal" class="quantum-value">0°</span></label>
+            <input id="entB" type="range" min="0" max="180" step="5" value="0" />
+          </div>
+          <div class="qp-btns">
+            <button type="button" id="entSend1">Send 1 pair</button>
+            <button type="button" id="entSend200">Send 200 pairs</button>
+            <button type="button" id="entBell" style="grid-column:1 / -1;">Run the Bell test (4 × 2000 pairs)</button>
+          </div>
+          <div class="quantum-group quantum-readout qp-log">
+            <div class="quantum-metric"><span>Pairs sent</span><strong id="entN">0</strong></div>
+            <div class="quantum-metric"><span>Alice sees 0</span><strong id="entA0">—</strong></div>
+            <div class="quantum-metric"><span>Results agree</span><strong id="entAgree">—</strong></div>
+            <div class="quantum-metric"><span>Quantum prediction</span><strong id="entPred">100%</strong></div>
+          </div>
+          <p id="entStatus" class="quantum-status" aria-live="polite">Same angles for both: their results should match every time, even though each one alone is a coin flip.</p>
+        </div>
+      </div>
+      <div class="qp-cards two">
+        <div class="qp-card"><h3>Reading the numbers</h3><p>The chance their results agree is <span class="qp-math">cos²(A − B)</span>. Equal angles: always agree. 90° apart: always disagree. 45° apart: 50% (looks like no relationship!). Alice&rsquo;s column alone is always ~50% zeros, so Alice learns nothing about Bob&rsquo;s setting. That is why entanglement can&rsquo;t send messages faster than light.</p></div>
+        <div class="qp-card"><h3>The Bell test (CHSH)</h3><p>The button runs four angle pairs (Alice 0° or 45°, Bob 22.5° or 67.5°) and combines the correlations into one score <span class="qp-math">S</span>. If particles carried pre-agreed hidden instructions, <strong>S can never exceed 2</strong>. Quantum mechanics predicts <span class="qp-math">2√2 ≈ 2.83</span>. Real labs measure values above 2.</p></div>
+      </div>
+      <div class="qp-callout warn"><strong>Common misconception:</strong> Entanglement is not a hidden wire that carries messages. It is a <em>shared description</em>. You still need an ordinary channel (phone, internet) to compare results and see the correlation. Entanglement is a fuel for quantum computing, secure quantum key distribution, and quantum networks, not for faster-than-light chat.</div>
+      <div class="qp-think"><strong>Think:</strong> Two gloves are sealed in separate boxes. Open one and find a left glove, and you instantly know the other is right. Why is that <em>not</em> enough to explain the Bell test result?</div>
+    </section>
+
+    <!-- ══ Part 6: Tunneling ══ -->
+    <section class="qp-part" id="part-tunnel" aria-labelledby="tunnel-heading">
+      <div class="qp-part-head">
+        <span class="quantum-eyebrow">Part 6</span>
+        <h2 id="tunnel-heading">Tunneling: Leaking Through Walls</h2>
+        <p>A rolling ball with too little energy never crosses a hill. A quantum wave doesn&rsquo;t stop dead at a barrier. Its amplitude <strong>decays exponentially inside</strong>, and if the barrier is thin enough, some wave emerges on the other side. The chance of getting through falls off roughly as <span class="qp-math">e<sup>−2κL</sup></span>, so even a small change in thickness changes the odds enormously. Here the particle is an electron with less energy than the barrier is tall.</p>
+      </div>
+      <div class="qp-sim">
+        <div class="qp-stage"><canvas id="tunCanvas" width="900" height="360" role="img" aria-label="Quantum wave hitting a barrier and decaying inside it"></canvas></div>
+        <div class="qp-controls">
+          <h3>Tunneling Lab</h3>
+          <p>The animated wave shows the real part of &psi;. Taller amplitude on the right means better odds of transmission.</p>
+          <div class="quantum-group">
+            <label class="quantum-label" for="tunL"><span>Barrier width</span><span id="tunLVal" class="quantum-value">0.50 nm</span></label>
+            <input id="tunL" type="range" min="0.1" max="1.5" step="0.05" value="0.5" />
+            <label class="quantum-label" for="tunV"><span>Barrier height</span><span id="tunVVal" class="quantum-value">6.0 eV</span></label>
+            <input id="tunV" type="range" min="5" max="10" step="0.5" value="6" />
+            <label class="quantum-label" for="tunE"><span>Electron energy</span><span id="tunEVal" class="quantum-value">3.0 eV</span></label>
+            <input id="tunE" type="range" min="0.5" max="4" step="0.5" value="3" />
+          </div>
+          <div class="quantum-group quantum-readout">
+            <div class="quantum-metric"><span>Transmission chance</span><strong id="tunT">—</strong></div>
+            <div class="quantum-metric"><span>Roughly 1 in…</span><strong id="tunOdds">—</strong></div>
+          </div>
+          <div class="qp-btns"><button type="button" id="tunFire" style="grid-column:1 / -1;">Fire 100,000 electrons</button></div>
+          <p id="tunStatus" class="quantum-status" aria-live="polite">Make the barrier thinner and watch the odds jump by factors of ten.</p>
+        </div>
+      </div>
+      <div class="qp-cards">
+        <div class="qp-card"><h3>The Sun</h3><p>Protons in the Sun&rsquo;s core don&rsquo;t quite have the energy to overcome their electrical repulsion. Tunneling lets a small fraction fuse anyway, which is why the Sun shines.</p></div>
+        <div class="qp-card"><h3>Scanning tunneling microscope</h3><p>A needle tip hovers a nanometer above a surface. The tunneling current is so sensitive to distance that it maps single atoms (Binnig &amp; Rohrer, Nobel Prize 1986).</p></div>
+        <div class="qp-card"><h3>Flash memory</h3><p>Phone and USB storage writes data by tunneling electrons through an ultra-thin insulating layer onto a floating gate that traps them.</p></div>
+      </div>
+      <div class="qp-think"><strong>Think:</strong> Double the barrier width and predict whether the odds get 2× smaller or much more than that. Check with the slider. Why does a modern chip designer worry about this when transistor insulators shrink to a few atoms thick?</div>
+    </section>
+
+    <!-- ══ Real-world + Can/Can't ══ -->
+    <section aria-labelledby="realworld-heading" style="margin-top:1.5rem;">
+      <h2 id="realworld-heading" style="margin:0 0 0.2rem;color:#f4fbff;font-size:1.25rem;letter-spacing:-0.03em;">Quantum Computers Right Now</h2>
+      <p style="margin:0;color:rgba(225,239,255,0.7);font-size:0.9rem;">The Bloch sphere you just used describes real qubits inside real machines.</p>
+      <div class="quantum-real-grid">
+        <div class="quantum-milestone">
+          <span class="q-chip">December 2024</span>
+          <h3>Google Willow — 105 Qubits</h3>
+          <p>Google's Willow chip solved a benchmark problem in <strong>five minutes</strong> that would take the fastest classical supercomputer <strong>10 septillion years</strong>. Each qubit on that chip has a Bloch sphere just like the one you explored — the difference is the qubits are entangled with each other, which multiplies the computational space exponentially.</p>
+        </div>
+        <div class="quantum-milestone">
+          <span class="q-chip">IBM Quantum</span>
+          <h3>IBM Heron — 133 Qubits, Available Online</h3>
+          <p>IBM lets anyone run real quantum programs on real hardware through <strong>IBM Quantum Platform</strong> (free account). Each job sends gate operations — X, H, CNOT — to a physical chip that manipulates actual superconducting qubits cooled to near absolute zero (−273 °C), colder than outer space.</p>
+        </div>
+
+        <div class="quantum-milestone" style="grid-column: 1 / -1;">
+          <h3>What Quantum Computers Can (and Can't) Do</h3>
+          <div class="quantum-can-grid">
+            <div class="quantum-can-col">
+              <h4>✓ Quantum Advantage</h4>
+              <ul>
+                <li>Simulate molecules for drug discovery and materials science</li>
+                <li>Break certain encryption schemes (Shor's algorithm)</li>
+                <li>Search unsorted databases faster (Grover's algorithm)</li>
+                <li>Optimize massive logistics problems (routes, scheduling)</li>
+              </ul>
+            </div>
+            <div class="quantum-can-col">
+              <h4>✗ Still Needs Classical Computers</h4>
+              <ul>
+                <li>Running your operating system, apps, games</li>
+                <li>Streaming video or browsing the web</li>
+                <li>Storing large amounts of stable data</li>
+                <li>Any task where the answer is already deterministic</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ Quantum is already in your pocket + timeline ══ -->
+    <section class="qp-part" id="part-world" aria-labelledby="pocket-heading">
+      <div class="qp-part-head">
+        <h2 id="pocket-heading">Quantum Physics Is Already in Your Pocket</h2>
+        <p>Quantum computing is the newest application. The older ones are everywhere. Match each device to the big idea behind it.</p>
+      </div>
+      <div class="qp-table-wrap">
+        <table class="qp-table" aria-label="Technologies that rely on quantum physics">
+          <thead><tr><th>Technology</th><th>Quantum idea it uses</th></tr></thead>
+          <tbody>
+            <tr><td>LEDs and lasers</td><td>Electrons drop between discrete energy levels and emit a photon of a precise color (Part 3).</td></tr>
+            <tr><td>Solar panels, camera sensors</td><td>Photons knock electrons loose in a semiconductor, a cousin of the photoelectric effect (Part 1).</td></tr>
+            <tr><td>Transistors and computer chips</td><td>Energy bands in crystals come from wave behavior of electrons, which is why silicon can be tuned from insulator to conductor.</td></tr>
+            <tr><td>Flash memory, scanning tunneling microscope</td><td>Tunneling (Part 6).</td></tr>
+            <tr><td>MRI scanners</td><td>Nuclear spin is a two-level quantum system, essentially a natural qubit, steered by magnetic fields and radio waves.</td></tr>
+            <tr><td>Atomic clocks and GPS</td><td>Atoms switch between two energy levels at an extremely reliable frequency.</td></tr>
+            <tr><td>Electron microscopes</td><td>Electrons behave as waves with tiny wavelengths, so they can image far smaller details than visible light (Part 2).</td></tr>
+            <tr><td>Quantum key distribution</td><td>Measuring a quantum state disturbs it, so eavesdropping leaves evidence (Part 4).</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3 style="margin:1.4rem 0 0;color:#f4fbff;letter-spacing:-0.02em;">A Short History of the Quantum Idea</h3>
+      <ol class="qp-timeline">
+        <li><b>1900</b>Max Planck explains the glow of hot objects by assuming energy is exchanged in tiny packets, <span class="qp-math">E = hf</span>.</li>
+        <li><b>1905</b>Einstein uses light quanta to explain the photoelectric effect.</li>
+        <li><b>1913</b>Niels Bohr proposes that atomic electrons occupy only certain energy levels.</li>
+        <li><b>1924</b>Louis de Broglie suggests that matter has a wavelength.</li>
+        <li><b>1925–27</b>Heisenberg and Schr&ouml;dinger build quantum mechanics. Heisenberg states the uncertainty principle. Davisson and Germer observe electron diffraction.</li>
+        <li><b>1927</b>The Solvay Conference gathers the founders. Bohr and Einstein begin their famous debate about what the theory means.</li>
+        <li><b>1935</b>Einstein, Podolsky and Rosen question whether the theory is complete. Schr&ouml;dinger names &ldquo;entanglement.&rdquo;</li>
+        <li><b>1964</b>John Bell proves a testable limit on hidden-instruction explanations.</li>
+        <li><b>1982</b>Alain Aspect&rsquo;s experiments strongly violate Bell&rsquo;s limit.</li>
+        <li><b>1994</b>Peter Shor shows a quantum computer could factor large numbers efficiently, sparking global interest.</li>
+        <li><b>2022</b>Aspect, Clauser and Zeilinger share the Nobel Prize in Physics for entanglement experiments.</li>
+        <li><b>2024</b>Google&rsquo;s Willow chip demonstrates error rates that fall as more qubits are added, a key step toward useful machines.</li>
+        <li><b>2025</b>The United Nations marks the International Year of Quantum Science and Technology, a century after quantum mechanics was formulated.</li>
+      </ol>
+    </section>
+
+    <!-- ══ Glossary ══ -->
+    <section class="qp-part" aria-labelledby="gloss-heading" style="margin-top:1.5rem;">
+      <div class="qp-part-head"><h2 id="gloss-heading">Vocabulary Checklist</h2></div>
+      <div class="qp-table-wrap">
+        <table class="qp-table" aria-label="Quantum physics vocabulary">
+          <thead><tr><th>Word</th><th>Plain-language meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Quantum</td><td>The smallest indivisible packet of something, like one photon of light.</td></tr>
+            <tr><td>Photon</td><td>One quantum of light with energy <span class="qp-math">E = hf</span>.</td></tr>
+            <tr><td>Work function</td><td>The minimum energy needed to free an electron from a metal surface.</td></tr>
+            <tr><td>Wavefunction (&psi;)</td><td>The mathematical description of a quantum state. The square of its size gives probabilities.</td></tr>
+            <tr><td>Interference</td><td>Waves adding or cancelling. Quantum probabilities do this too.</td></tr>
+            <tr><td>Energy level</td><td>One of the allowed energies of a confined particle or atom.</td></tr>
+            <tr><td>Uncertainty principle</td><td>Position and momentum cannot both be sharply defined at the same time.</td></tr>
+            <tr><td>Superposition</td><td>A state described as a blend of basis states, such as |0⟩ and |1⟩.</td></tr>
+            <tr><td>Decoherence</td><td>Loss of quantum behavior when a system leaks information to its environment.</td></tr>
+            <tr><td>Entanglement</td><td>A joint state of two or more particles that can&rsquo;t be described one particle at a time.</td></tr>
+            <tr><td>Tunneling</td><td>Passing through a barrier that a classical particle could not cross.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ══ Quiz ══ -->
+    <section aria-labelledby="quiz-heading" style="margin-top:1.5rem;">
+      <h2 id="quiz-heading" style="margin:0 0 0.2rem;color:#f4fbff;font-size:1.25rem;letter-spacing:-0.03em;">Check Your Understanding</h2>
+      <p style="margin:0;color:rgba(225,239,255,0.7);font-size:0.9rem;">Answer all ten before comparing with a classmate.</p>
+      <div class="quantum-quiz" id="quizContainer"></div>
+    </section>
+
+    <!-- ══ Exit ticket ══ -->
+    <section style="margin-top:1rem;">
+      <div class="quantum-info-card" style="padding:1.1rem;">
+        <h2 style="margin:0 0 0.5rem;color:#f4fbff;letter-spacing:-0.02em;">Exit Ticket</h2>
+        <p style="margin:0 0 0.7rem;color:rgba(225,239,255,0.8);line-height:1.65;"><strong>Part A (3–4 sentences).</strong> Explain the difference between a qubit before measurement and a classical bit. Your answer must use the words <em>superposition</em>, <em>probability</em>, and <em>phase</em>. Bonus: describe what the H gate does in the spinning-coin analogy.</p>
+        <p style="margin:0 0 0.7rem;color:rgba(225,239,255,0.8);line-height:1.65;"><strong>Part B (pick one).</strong> (1) Use the photoelectric lab to explain why brighter red light can&rsquo;t eject electrons from zinc. (2) Describe what happens to the double-slit pattern when you detect which slit each particle uses, and why. (3) Explain why an electron in a smaller box has higher energy.</p>
+        <p style="margin:0;color:rgba(225,239,255,0.8);line-height:1.65;"><strong>Part C.</strong> Name one technology from this lesson that you use every day, and the quantum idea it depends on.</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const thetaSlider = document.getElementById("thetaSlider");
+      const phiSlider = document.getElementById("phiSlider");
+      const thetaValue = document.getElementById("thetaValue");
+      const phiValue = document.getElementById("phiValue");
+      const stateVector = document.getElementById("stateVector");
+      const blochCoords = document.getElementById("blochCoords");
+      const probZero = document.getElementById("probZero");
+      const probOne = document.getElementById("probOne");
+      const probZeroBar = document.getElementById("probZeroBar");
+      const probOneBar = document.getElementById("probOneBar");
+      const measureStatus = document.getElementById("measureStatus");
+      const canvas = document.getElementById("blochCanvas");
+      const ctx = canvas.getContext("2d");
+
+      const state = { theta: Math.PI / 2, phi: 0 };
+
+      function complex(re, im) { return { re, im }; }
+      function toComplex(value) { return typeof value === "number" ? complex(value, 0) : value; }
+      function cis(angle) { return complex(Math.cos(angle), Math.sin(angle)); }
+      function add(a, b) { return complex(a.re + b.re, a.im + b.im); }
+      function mul(a, b) { return complex(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re); }
+      function magnitudeSquared(a) { return a.re * a.re + a.im * a.im; }
+      function normalizeState(alpha, beta) {
+        const norm = Math.sqrt(magnitudeSquared(alpha) + magnitudeSquared(beta)) || 1;
+        return [complex(alpha.re / norm, alpha.im / norm), complex(beta.re / norm, beta.im / norm)];
+      }
+      function stateFromAngles(theta, phi) {
+        const alpha = complex(Math.cos(theta / 2), 0);
+        const beta = mul(cis(phi), complex(Math.sin(theta / 2), 0));
+        return [alpha, beta];
+      }
+      function anglesFromState(alpha, beta) {
+        const p1 = Math.min(1, Math.max(0, magnitudeSquared(beta)));
+        const theta = 2 * Math.asin(Math.sqrt(p1));
+        const phaseAlpha = Math.atan2(alpha.im, alpha.re);
+        const phaseBeta = Math.atan2(beta.im, beta.re);
+        let phi = phaseBeta - phaseAlpha;
+        while (phi < 0) phi += Math.PI * 2;
+        while (phi >= Math.PI * 2) phi -= Math.PI * 2;
+        return { theta, phi };
+      }
+      function formatPercent(value) { return (value * 100).toFixed(1) + "%"; }
+      function formatSigned(value) { return (value >= 0 ? "+" : "") + value.toFixed(3); }
+      function formatComplex(value) {
+        const re = Math.abs(value.re) < 0.0005 ? 0 : value.re;
+        const im = Math.abs(value.im) < 0.0005 ? 0 : value.im;
+        if (im === 0) return re.toFixed(3);
+        if (re === 0) return im.toFixed(3) + "i";
+        return re.toFixed(3) + (im >= 0 ? "+" : "") + im.toFixed(3) + "i";
+      }
+
+      const gateMatrices = {
+        x: [[0, 1], [1, 0]],
+        y: [[complex(0, 0), complex(0, -1)], [complex(0, 1), complex(0, 0)]],
+        z: [[1, 0], [0, -1]],
+        h: [[1 / Math.sqrt(2), 1 / Math.sqrt(2)], [1 / Math.sqrt(2), -1 / Math.sqrt(2)]],
+        s: [[1, 0], [0, complex(0, 1)]],
+        t: [[1, 0], [0, cis(Math.PI / 4)]]
+      };
+
+      function setAngles(theta, phi) {
+        state.theta = theta;
+        state.phi = phi;
+        thetaSlider.value = Math.round(theta * 180 / Math.PI);
+        phiSlider.value = Math.round(phi * 180 / Math.PI);
+        update();
+      }
+
+      function applyGate(name) {
+        const gate = gateMatrices[name];
+        const [alpha, beta] = stateFromAngles(state.theta, state.phi);
+        const a0 = toComplex(gate[0][0]);
+        const a1 = toComplex(gate[0][1]);
+        const b0 = toComplex(gate[1][0]);
+        const b1 = toComplex(gate[1][1]);
+        const nextAlpha = add(mul(a0, alpha), mul(a1, beta));
+        const nextBeta = add(mul(b0, alpha), mul(b1, beta));
+        const [normAlpha, normBeta] = normalizeState(nextAlpha, nextBeta);
+        const next = anglesFromState(normAlpha, normBeta);
+        setAngles(next.theta, next.phi);
+        measureStatus.textContent = "Applied gate " + name.toUpperCase() + ". Watch the arrow rotate, then compare the probabilities with the phase change.";
+      }
+
+      function setPreset(name) {
+        const presets = {
+          zero: { theta: 0, phi: 0, label: "Loaded |0⟩, the north pole state." },
+          one: { theta: Math.PI, phi: 0, label: "Loaded |1⟩, the south pole state." },
+          plus: { theta: Math.PI / 2, phi: 0, label: "Loaded |+⟩, a balanced superposition on the x-axis." },
+          minus: { theta: Math.PI / 2, phi: Math.PI, label: "Loaded |-⟩, balanced probabilities with opposite phase on the x-axis." },
+          iplus: { theta: Math.PI / 2, phi: Math.PI / 2, label: "Loaded |i+⟩, balanced probabilities with positive phase on the y-axis." },
+          iminus: { theta: Math.PI / 2, phi: 3 * Math.PI / 2, label: "Loaded |i-⟩, balanced probabilities with negative phase on the y-axis." }
+        };
+        const preset = presets[name];
+        if (!preset) return;
+        setAngles(preset.theta, preset.phi);
+        measureStatus.textContent = preset.label;
+      }
+
+      function measure() {
+        const p1 = Math.sin(state.theta / 2) ** 2;
+        const result = Math.random() < p1 ? 1 : 0;
+        setAngles(result === 0 ? 0 : Math.PI, 0);
+        measureStatus.textContent = "Measurement result: |" + result + "⟩. The qubit collapsed to a classical state after the measurement.";
+      }
+
+      function project(point, cx, cy, scale) {
+        const camera = 3.6;
+        const depth = camera / (camera - point.z);
+        return { x: cx + point.x * scale * depth, y: cy - point.y * scale * depth };
+      }
+
+      function drawSphere(vector) {
+        const width = canvas.width;
+        const height = canvas.height;
+        const cx = width * 0.48;
+        const cy = height * 0.55;
+        const radius = Math.min(width, height) * 0.24;
+        ctx.clearRect(0, 0, width, height);
+
+        const bg = ctx.createLinearGradient(0, 0, 0, height);
+        bg.addColorStop(0, "rgba(7, 18, 32, 0.1)");
+        bg.addColorStop(1, "rgba(7, 18, 32, 0.24)");
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        const glow = ctx.createRadialGradient(0, -radius * 0.2, radius * 0.2, 0, 0, radius * 1.15);
+        glow.addColorStop(0, "rgba(103, 214, 255, 0.22)");
+        glow.addColorStop(1, "rgba(103, 214, 255, 0.02)");
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 1.18, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(196, 228, 255, 0.14)";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, radius, radius * 0.34, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(202, 234, 255, 0.26)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.strokeStyle = "rgba(132, 198, 255, 0.2)";
+        ctx.beginPath();
+        ctx.moveTo(0, -radius);
+        ctx.lineTo(0, radius);
+        ctx.moveTo(-radius, 0);
+        ctx.lineTo(radius, 0);
+        ctx.stroke();
+        ctx.restore();
+
+        const axisLength = radius * 1.22;
+        const xTip = project({ x: axisLength, y: 0, z: 0 }, cx, cy, 1);
+        const yTip = project({ x: 0, y: axisLength, z: 0 }, cx, cy, 1);
+        const zTip = project({ x: 0, y: 0, z: axisLength }, cx, cy, 1);
+        const zBottom = project({ x: 0, y: 0, z: -axisLength }, cx, cy, 1);
+
+        function axisLine(to, label, color) {
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(to.x, to.y);
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.fillStyle = color;
+          ctx.font = "700 16px Inter, system-ui, sans-serif";
+          ctx.fillText(label, to.x + 8, to.y + 4);
+        }
+
+        axisLine(xTip, "x", "#7fe3ff");
+        axisLine(yTip, "y", "#9db8ff");
+        axisLine(zTip, "|0⟩", "#b8ffdb");
+        axisLine(zBottom, "|1⟩", "#ffd1a6");
+
+        const tip = project({ x: vector.x * radius, y: vector.y * radius, z: vector.z * radius }, cx, cy, 1);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(tip.x, tip.y);
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(tip.x, tip.y, 9, 0, Math.PI * 2);
+        ctx.fillStyle = "#6ff2ff";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,0.8)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.setLineDash([8, 7]);
+        ctx.moveTo(tip.x, tip.y);
+        ctx.lineTo(tip.x, cy);
+        ctx.strokeStyle = "rgba(166, 202, 255, 0.45)";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = "rgba(233, 245, 255, 0.92)";
+        ctx.font = "700 17px Inter, system-ui, sans-serif";
+        ctx.fillText("θ = " + vector.thetaDeg + "°", 22, 42);
+        ctx.fillText("φ = " + vector.phiDeg + "°", 22, 68);
+        ctx.font = "600 14px Inter, system-ui, sans-serif";
+        ctx.fillStyle = "rgba(215, 232, 255, 0.72)";
+        ctx.fillText("Rotate the arrow to change amplitudes and phase.", 22, height - 28);
+      }
+
+      function update() {
+        const thetaDeg = Math.round(state.theta * 180 / Math.PI);
+        const phiDeg = Math.round(state.phi * 180 / Math.PI);
+        const x = Math.sin(state.theta) * Math.cos(state.phi);
+        const y = Math.sin(state.theta) * Math.sin(state.phi);
+        const z = Math.cos(state.theta);
+        const alpha = complex(Math.cos(state.theta / 2), 0);
+        const beta = mul(cis(state.phi), complex(Math.sin(state.theta / 2), 0));
+        const p0 = magnitudeSquared(alpha);
+        const p1 = magnitudeSquared(beta);
+
+        thetaValue.textContent = thetaDeg + "°";
+        phiValue.textContent = phiDeg + "°";
+        stateVector.innerHTML = "|ψ⟩ = " + formatComplex(alpha) + "|0⟩ + " + Math.abs(Math.sin(state.theta / 2)).toFixed(3) + "e<sup>i" + phiDeg + "°</sup>|1⟩";
+        blochCoords.textContent = "(x, y, z) = (" + formatSigned(x) + ", " + formatSigned(y) + ", " + formatSigned(z) + ")";
+        probZero.textContent = formatPercent(p0);
+        probOne.textContent = formatPercent(p1);
+        probZeroBar.style.width = (p0 * 100).toFixed(1) + "%";
+        probOneBar.style.width = (p1 * 100).toFixed(1) + "%";
+        drawSphere({ x, y, z, thetaDeg, phiDeg });
+      }
+
+      thetaSlider.addEventListener("input", function () {
+        state.theta = Number(thetaSlider.value) * Math.PI / 180;
+        update();
+      });
+      phiSlider.addEventListener("input", function () {
+        state.phi = Number(phiSlider.value) * Math.PI / 180;
+        update();
+      });
+      document.querySelectorAll("[data-preset]").forEach(function (button) {
+        button.addEventListener("click", function () { setPreset(button.dataset.preset); });
+      });
+      document.querySelectorAll("[data-gate]").forEach(function (button) {
+        button.addEventListener("click", function () { applyGate(button.dataset.gate); });
+      });
+      document.getElementById("measureButton").addEventListener("click", measure);
+      document.getElementById("resetButton").addEventListener("click", function () { setPreset("plus"); });
+
+      update();
+    })();
+
+    /* ── Shared helpers for the Part 1–3, 5–6 simulators ── */
+    const QP = (function () {
+      const $ = function (id) { return document.getElementById(id); };
+      const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      function nmToColor(nm) {
+        if (nm < 380) return "#c9b0ff";
+        if (nm > 750) return "#ff7070";
+        let r = 0, g = 0, b = 0;
+        if (nm < 440) { r = (440 - nm) / 60; b = 1; }
+        else if (nm < 490) { g = (nm - 440) / 50; b = 1; }
+        else if (nm < 510) { g = 1; b = (510 - nm) / 20; }
+        else if (nm < 580) { r = (nm - 510) / 70; g = 1; }
+        else if (nm < 645) { r = 1; g = (645 - nm) / 65; }
+        else { r = 1; }
+        const f = nm < 420 ? 0.45 + 0.55 * (nm - 380) / 40 : nm > 700 ? 0.45 + 0.55 * (750 - nm) / 50 : 1;
+        const c = function (v) { return Math.round(255 * Math.pow(Math.max(0, v) * f, 0.8)); };
+        return "rgb(" + c(r) + "," + c(g) + "," + c(b) + ")";
+      }
+      function bandName(nm) { return nm < 380 ? "ultraviolet (invisible)" : nm > 750 ? "infrared (invisible)" : "visible"; }
+      function sup(n) {
+        const map = { "-": "⁻", "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹" };
+        return String(n).split("").map(function (ch) { return map[ch] || ch; }).join("");
+      }
+      function fmtProb(p) {
+        if (p >= 0.01) return (p * 100).toFixed(p >= 0.1 ? 1 : 2) + "%";
+        if (p <= 0) return "0";
+        const e = Math.floor(Math.log10(p));
+        return (p / Math.pow(10, e)).toFixed(1) + " × 10" + sup(e);
+      }
+      function loop(fn) {
+        let last = performance.now();
+        function frame(now) {
+          const dt = Math.min(0.05, (now - last) / 1000);
+          last = now;
+          if (!document.hidden) fn(dt, now / 1000);
+          requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+      }
+      return { $: $, nmToColor: nmToColor, bandName: bandName, fmtProb: fmtProb, loop: loop, reduceMotion: reduceMotion };
+    })();
+
+    /* ── Part 1: Photoelectric effect ── */
+    (function () {
+      const $ = QP.$;
+      const canvas = $("pePlot");
+      const ctx = canvas.getContext("2d");
+      const W = canvas.width, H = canvas.height, plateY = H - 70;
+      let photons = [], electrons = [], carry = 0;
+      let phi = 2.3, lambda = 450, intensity = 5;
+
+      function energy() { return 1239.84 / lambda; }
+      function readout() {
+        const E = energy();
+        const ke = Math.max(0, E - phi);
+        $("peWaveVal").textContent = lambda + " nm";
+        $("peIntVal").textContent = intensity;
+        $("peE").textContent = E.toFixed(2) + " eV";
+        $("pePhi").textContent = phi.toFixed(2) + " eV";
+        $("peKE").textContent = E > phi ? ke.toFixed(2) + " eV" : "none ejected";
+        $("peThr").textContent = Math.round(1239.84 / phi) + " nm";
+        $("peStatus").textContent = E > phi
+          ? "Each photon (" + E.toFixed(2) + " eV) exceeds φ, so electrons leave with up to " + ke.toFixed(2) + " eV. Intensity only changes how many."
+          : "Each photon (" + E.toFixed(2) + " eV) is below φ = " + phi.toFixed(2) + " eV. No electron can absorb enough from one photon, however bright the light.";
+      }
+      function update() {
+        phi = Number($("peMetal").value);
+        lambda = Number($("peWave").value);
+        intensity = Number($("peInt").value);
+        photons.length = 0; electrons.length = 0;
+        readout();
+      }
+      ["peMetal", "peWave", "peInt"].forEach(function (id) { $(id).addEventListener("input", update); });
+
+      QP.loop(function (dt) {
+        const E = energy();
+        carry += intensity * 1.6 * dt;
+        while (carry >= 1) {
+          carry -= 1;
+          photons.push({ x: 90 + Math.random() * (W - 380), y: -8, hit: false });
+        }
+        photons.forEach(function (p) {
+          p.y += 230 * dt;
+          if (!p.hit && p.y >= plateY - 4) {
+            p.hit = true;
+            if (E > phi) electrons.push({ x: p.x, y: plateY - 6, v: 70 + 120 * Math.sqrt(E - phi), a: 1 });
+            else electrons.push({ x: p.x, y: plateY, v: 0, a: 0.7, heat: true });
+          }
+        });
+        photons = photons.filter(function (p) { return !p.hit; });
+        electrons.forEach(function (e) {
+          if (e.heat) { e.a -= dt * 1.4; } else { e.y -= e.v * dt; e.a = Math.max(0, 1 - (plateY - e.y) / 260); }
+        });
+        electrons = electrons.filter(function (e) { return e.a > 0.02; });
+
+        ctx.clearRect(0, 0, W, H);
+        const col = QP.nmToColor(lambda);
+        ctx.fillStyle = "#0b2036"; ctx.fillRect(0, 0, W, H);
+        // metal plate
+        const grad = ctx.createLinearGradient(0, plateY, 0, H);
+        grad.addColorStop(0, "#9fb4c8"); grad.addColorStop(1, "#4b5e72");
+        ctx.fillStyle = grad; ctx.fillRect(40, plateY, W - 320, 38);
+        ctx.fillStyle = "#e6f2ff"; ctx.font = "700 15px Inter, system-ui, sans-serif";
+        ctx.fillText("metal plate (φ = " + phi.toFixed(1) + " eV)", 56, plateY + 25);
+        // photons
+        ctx.fillStyle = col;
+        photons.forEach(function (p) {
+          ctx.globalAlpha = 0.95;
+          ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, 7); ctx.fill();
+          ctx.globalAlpha = 0.25; ctx.fillRect(p.x - 1.5, p.y - 28, 3, 24);
+        });
+        ctx.globalAlpha = 1;
+        electrons.forEach(function (e) {
+          if (e.heat) { ctx.fillStyle = "rgba(255,180,110," + (e.a * 0.5) + ")"; ctx.beginPath(); ctx.arc(e.x, e.y, 9 * (1.3 - e.a), 0, 7); ctx.fill(); return; }
+          ctx.fillStyle = "rgba(120,200,255," + e.a + ")";
+          ctx.beginPath(); ctx.arc(e.x, e.y, 6, 0, 7); ctx.fill();
+          ctx.fillStyle = "rgba(10,30,50," + e.a + ")"; ctx.font = "700 10px system-ui"; ctx.fillText("e−", e.x - 6, e.y + 3.5);
+        });
+        // side key
+        const kx = W - 250;
+        ctx.fillStyle = "rgba(255,255,255,.08)"; ctx.fillRect(kx - 14, 20, 238, 150);
+        ctx.fillStyle = "#e6f2ff"; ctx.font = "700 15px Inter, system-ui, sans-serif";
+        ctx.fillText("Light: " + lambda + " nm", kx, 46);
+        ctx.fillStyle = col; ctx.fillRect(kx, 56, 200, 10);
+        ctx.fillStyle = "rgba(225,239,255,.85)"; ctx.font = "600 13px Inter, system-ui, sans-serif";
+        ctx.fillText(QP.bandName(lambda), kx, 88);
+        ctx.fillText("photon energy " + E.toFixed(2) + " eV", kx, 112);
+        ctx.fillStyle = E > phi ? "#6dffb8" : "#ff9a9a";
+        ctx.font = "800 15px Inter, system-ui, sans-serif";
+        ctx.fillText(E > phi ? "electrons ejected" : "no electrons", kx, 144);
+      });
+      update();
+    })();
+
+    /* ── Part 2: Double slit ── */
+    (function () {
+      const $ = QP.$;
+      const canvas = $("dsCanvas");
+      const ctx = canvas.getContext("2d");
+      const W = canvas.width, H = canvas.height;
+      const cy = H / 2, half = 170, BINS = 100, SLIT_A = 1.6;
+      const screenX = 560, histX = 650, histW = 230, barrierX = 250;
+      let dots = [], bins = new Array(BINS).fill(0), total = 0;
+      let d = 4, lam = 1, watch = false;
+
+      function sinc2(x) { return x === 0 ? 1 : Math.pow(Math.sin(x) / x, 2); }
+      function intensity(y) {
+        const env = sinc2(Math.PI * SLIT_A * y / lam);
+        return watch ? env : Math.pow(Math.cos(Math.PI * d * y / lam), 2) * env;
+      }
+      function sample() {
+        for (let tries = 0; tries < 500; tries++) {
+          const y = Math.random() * 2 - 1;
+          if (Math.random() <= intensity(y)) return y;
+        }
+        return 0;
+      }
+      function fire(n) {
+        for (let i = 0; i < n; i++) {
+          const y = sample();
+          total++;
+          bins[Math.min(BINS - 1, Math.floor((y + 1) / 2 * BINS))]++;
+          if (dots.length < 8000) dots.push([Math.random() * 34, y]);
+        }
+        draw();
+        status();
+      }
+      function status() {
+        $("dsStatus").textContent = total === 0
+          ? "0 particles detected. Fire a few and notice they look random, then fire a thousand."
+          : total + " particle" + (total === 1 ? "" : "s") + " detected. " + (total < 60 ? "Still looks random. Each dot is one whole particle." : watch ? "Smooth two-slit blob: the path is known, so no fringes." : "Fringes are emerging from many individual random hits.");
+      }
+      function clearAll() { dots = []; bins.fill(0); total = 0; draw(); status(); }
+      function readout() { $("dsSepVal").textContent = d.toFixed(1); $("dsLamVal").textContent = lam.toFixed(1); }
+      function params() { d = Number($("dsSep").value); lam = Number($("dsLam").value); watch = $("dsWatch").checked; readout(); clearAll(); }
+
+      function draw() {
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = "rgba(8,24,42,.9)"; ctx.fillRect(0, 0, W, H);
+        const sep = d * 14, gap = 18;
+        const s1 = cy - sep / 2, s2 = cy + sep / 2;
+        // rays
+        ctx.strokeStyle = "rgba(127,227,255,.14)"; ctx.lineWidth = 1;
+        [s1, s2].forEach(function (sy) {
+          ctx.beginPath(); ctx.moveTo(40, cy); ctx.lineTo(barrierX, sy); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(barrierX, sy); ctx.lineTo(screenX, cy - half); ctx.moveTo(barrierX, sy); ctx.lineTo(screenX, cy + half); ctx.stroke();
+        });
+        // source
+        ctx.fillStyle = "#6ff2ff"; ctx.beginPath(); ctx.arc(40, cy, 9, 0, 7); ctx.fill();
+        ctx.fillStyle = "#bcefff"; ctx.font = "700 13px Inter, system-ui, sans-serif"; ctx.fillText("source", 22, cy + 28);
+        // barrier with slits
+        ctx.fillStyle = "#8aa0b8";
+        ctx.fillRect(barrierX - 5, 0, 10, s1 - gap / 2);
+        ctx.fillRect(barrierX - 5, s1 + gap / 2, 10, s2 - s1 - gap);
+        ctx.fillRect(barrierX - 5, s2 + gap / 2, 10, H - (s2 + gap / 2));
+        if (watch) {
+          ctx.strokeStyle = "#ffb86b"; ctx.lineWidth = 3;
+          [s1, s2].forEach(function (sy) { ctx.beginPath(); ctx.arc(barrierX - 22, sy, 11, 0, 7); ctx.stroke(); });
+          ctx.fillStyle = "#ffb86b"; ctx.fillText("which-slit detectors", barrierX - 78, 24);
+        }
+        // screen
+        ctx.fillStyle = "rgba(255,255,255,.07)"; ctx.fillRect(screenX, cy - half, 40, 2 * half);
+        ctx.strokeStyle = "rgba(255,255,255,.4)"; ctx.lineWidth = 2; ctx.strokeRect(screenX, cy - half, 40, 2 * half);
+        ctx.fillStyle = "#bcefff"; ctx.fillText("detector", screenX - 4, cy - half - 10);
+        ctx.fillStyle = "rgba(140,235,255,.8)";
+        dots.forEach(function (p) { ctx.fillRect(screenX + 3 + p[0], cy + p[1] * half, 2, 2); });
+        // histogram
+        ctx.fillStyle = "#bcefff"; ctx.fillText("hits per position", histX + 20, cy - half - 10);
+        const maxBin = Math.max.apply(null, bins);
+        let zz = 0, ivMax = 0; const iv = [];
+        for (let i = 0; i < BINS; i++) { const v = intensity((i + 0.5) / BINS * 2 - 1); iv.push(v); zz += v; if (v > ivMax) ivMax = v; }
+        const scale = Math.max(maxBin, total * ivMax / zz, 10);
+        ctx.fillStyle = "rgba(111,242,255,.6)";
+        for (let i = 0; i < BINS; i++) {
+          const y = cy - half + (i / BINS) * 2 * half;
+          ctx.fillRect(histX, y, bins[i] / scale * histW, 2 * half / BINS);
+        }
+        if (total > 0) {
+          const z = zz;
+          ctx.strokeStyle = "#ffd36b"; ctx.lineWidth = 1.5; ctx.beginPath();
+          for (let i = 0; i < BINS; i++) {
+            const x = histX + (total * iv[i] / z) / scale * histW;
+            const y = cy - half + ((i + 0.5) / BINS) * 2 * half;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+          ctx.fillStyle = "#ffd36b"; ctx.fillText("gold = prediction", histX + 70, cy + half + 22);
+        }
+      }
+      ["dsSep", "dsLam"].forEach(function (id) { $(id).addEventListener("input", params); });
+      $("dsWatch").addEventListener("change", params);
+      $("dsFire1").addEventListener("click", function () { fire(1); });
+      $("dsFire100").addEventListener("click", function () { fire(100); });
+      $("dsFire1000").addEventListener("click", function () { fire(1000); });
+      $("dsClear").addEventListener("click", clearAll);
+      readout(); draw();
+    })();
+
+    /* ── Part 3: Particle in a box ── */
+    (function () {
+      const $ = QP.$;
+      const canvas = $("boxCanvas");
+      const ctx = canvas.getContext("2d");
+      const W = canvas.width, H = canvas.height;
+      const K = 0.376; // h^2 / 8 m_e in eV·nm^2
+      let n = 1, L = 1, photon = null;
+
+      function En(k) { return K * k * k / (L * L); }
+      function fillDrop() {
+        const sel = $("boxM");
+        const prev = Number(sel.value);
+        sel.innerHTML = "";
+        for (let m = 1; m < n; m++) {
+          const o = document.createElement("option");
+          o.value = m; o.textContent = "n = " + m;
+          sel.appendChild(o);
+        }
+        if (n === 1) { const o = document.createElement("option"); o.textContent = "(already lowest)"; sel.appendChild(o); }
+        sel.disabled = n === 1; $("boxEmit").disabled = n === 1;
+        if (prev && prev < n) sel.value = prev; else if (n > 1) sel.value = n - 1;
+      }
+      function update() {
+        n = Number($("boxN").value); L = Number($("boxL").value);
+        $("boxNVal").textContent = n; $("boxLVal").textContent = L.toFixed(1) + " nm";
+        $("boxE").textContent = En(n).toFixed(En(n) < 10 ? 3 : 1) + " eV";
+        $("boxPeaks").textContent = n === 1 ? "1 hump (center)" : n + " humps, " + (n - 1) + " nodes";
+        fillDrop();
+        photon = null; $("boxLam").textContent = "—";
+        draw();
+      }
+      function emit() {
+        const m = Number($("boxM").value);
+        if (!(m >= 1 && m < n)) return;
+        const dE = En(n) - En(m), lam = 1239.84 / dE;
+        photon = { from: n, to: m, lam: lam };
+        $("boxLam").textContent = Math.round(lam) + " nm";
+        $("boxStatus").textContent = "n = " + n + " → " + m + " releases ΔE = " + dE.toFixed(2) + " eV as a photon of " + Math.round(lam) + " nm (" + QP.bandName(lam) + ").";
+        draw();
+      }
+      function draw() {
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = "rgba(8,24,42,.9)"; ctx.fillRect(0, 0, W, H);
+        // ladder
+        const lx = 50, lw = 260, top = 40, bottom = 380;
+        const Emax = En(6) * 1.08;
+        const ey = function (E) { return bottom - (E / Emax) * (bottom - top); };
+        ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(lx - 10, top - 10); ctx.lineTo(lx - 10, bottom); ctx.lineTo(lx + lw, bottom); ctx.stroke();
+        ctx.fillStyle = "#bcefff"; ctx.font = "700 13px Inter, system-ui, sans-serif"; ctx.fillText("Energy", lx - 10, top - 18);
+        for (let k = 1; k <= 6; k++) {
+          const y = ey(En(k)), sel = k === n;
+          ctx.strokeStyle = sel ? "#6ff2ff" : "rgba(160,200,235,.55)"; ctx.lineWidth = sel ? 4 : 2;
+          ctx.beginPath(); ctx.moveTo(lx + 30, y); ctx.lineTo(lx + 150, y); ctx.stroke();
+          ctx.fillStyle = sel ? "#ffffff" : "rgba(200,225,250,.8)";
+          ctx.font = (sel ? "800 " : "600 ") + "13px Inter, system-ui, sans-serif";
+          ctx.fillText("n=" + k + "  " + En(k).toFixed(En(k) < 10 ? 2 : 1) + " eV", lx + 158, y + 4);
+        }
+        if (photon) {
+          const y1 = ey(En(photon.from)), y2 = ey(En(photon.to)), px = lx + 12;
+          ctx.strokeStyle = "#ffd36b"; ctx.lineWidth = 2; ctx.setLineDash([5, 4]);
+          ctx.beginPath(); ctx.moveTo(px, y1); ctx.lineTo(px, y2); ctx.stroke(); ctx.setLineDash([]);
+          const col = QP.nmToColor(photon.lam);
+          ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.beginPath();
+          for (let i = 0; i <= 90; i++) {
+            const t = i / 90, x = lx + 30 + t * 120, y = (y1 + y2) / 2 - 0 + Math.sin(t * 28) * 8 * (1 - t * 0.3) - 40 * t;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+          ctx.fillStyle = col; ctx.font = "800 14px Inter, system-ui, sans-serif"; ctx.fillText("photon " + Math.round(photon.lam) + " nm", lx + 40, (y1 + y2) / 2 - 62);
+        }
+        // well
+        const wx0 = 470, wx1 = 860, wy0 = 40, wy1 = 380, mid = 160, amp = 80;
+        ctx.strokeStyle = "#8aa0b8"; ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.moveTo(wx0, wy0); ctx.lineTo(wx0, wy1); ctx.lineTo(wx1, wy1); ctx.lineTo(wx1, wy0); ctx.stroke();
+        ctx.fillStyle = "#bcefff"; ctx.font = "700 13px Inter, system-ui, sans-serif";
+        ctx.fillText("wavefunction ψ", wx0 + 8, wy0 + 6);
+        ctx.fillText("probability |ψ|²", wx0 + 8, 232);
+        ctx.strokeStyle = "rgba(255,255,255,.18)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(wx0, mid); ctx.lineTo(wx1, mid); ctx.stroke();
+        ctx.strokeStyle = "#7fe3ff"; ctx.lineWidth = 3; ctx.beginPath();
+        const wpx = wx1 - wx0;
+        for (let i = 0; i <= 200; i++) {
+          const t = i / 200, x = wx0 + t * wpx, y = mid - amp * Math.sin(n * Math.PI * t);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(wx0, wy1);
+        for (let i = 0; i <= 200; i++) {
+          const t = i / 200, x = wx0 + t * wpx, y = wy1 - 110 * Math.pow(Math.sin(n * Math.PI * t), 2);
+          ctx.lineTo(x, y);
+        }
+        ctx.lineTo(wx1, wy1); ctx.closePath();
+        ctx.fillStyle = "rgba(111,242,255,.35)"; ctx.fill();
+        ctx.strokeStyle = "#6ff2ff"; ctx.lineWidth = 2; ctx.stroke();
+        // nodes
+        ctx.fillStyle = "#ffb86b";
+        for (let k = 1; k < n; k++) { ctx.beginPath(); ctx.arc(wx0 + (k / n) * wpx, wy1, 6, 0, 7); ctx.fill(); }
+        ctx.fillStyle = "rgba(225,239,255,.85)"; ctx.font = "600 12px Inter, system-ui, sans-serif";
+        ctx.fillText("L = " + L.toFixed(1) + " nm", (wx0 + wx1) / 2 - 30, wy1 + 18);
+        if (n > 1) { ctx.fillStyle = "#ffb86b"; ctx.fillText("orange dots: nodes (never found here)", wx0 + 8, wy1 - 118); }
+      }
+      ["boxN", "boxL"].forEach(function (id) { $(id).addEventListener("input", update); });
+      $("boxEmit").addEventListener("click", emit);
+      $("boxM").addEventListener("change", function () { photon = null; $("boxLam").textContent = "—"; draw(); });
+      update();
+    })();
+
+    /* ── Part 5: Entanglement ── */
+    (function () {
+      const $ = QP.$;
+      let A = 0, B = 0, n = 0, aZero = 0, agree = 0;
+      function rad(x) { return x * Math.PI / 180; }
+      function pAgree() { return Math.pow(Math.cos(rad(A - B)), 2); }
+      function setLine(id, deg) { $(id).setAttribute("transform", "rotate(" + (-deg) + ")"); }
+      function show() {
+        $("entAVal").textContent = A + "°"; $("entBVal").textContent = B + "°";
+        $("entN").textContent = n;
+        $("entA0").textContent = n ? (aZero / n * 100).toFixed(1) + "%" : "—";
+        $("entAgree").textContent = n ? (agree / n * 100).toFixed(1) + "%" : "—";
+        $("entPred").textContent = (pAgree() * 100).toFixed(1) + "%";
+        setLine("entLineA", A); setLine("entLineB", B);
+      }
+      function reset() { A = Number($("entA").value); B = Number($("entB").value); n = aZero = agree = 0; $("entLastA").textContent = "—"; $("entLastB").textContent = "—"; show(); }
+      function pair(a, b) {
+        const ra = Math.random() < 0.5 ? 0 : 1;
+        const same = Math.random() < Math.pow(Math.cos(rad(a - b)), 2);
+        return [ra, same ? ra : 1 - ra];
+      }
+      function send(k) {
+        let last = null;
+        for (let i = 0; i < k; i++) { last = pair(A, B); n++; if (last[0] === 0) aZero++; if (last[0] === last[1]) agree++; }
+        $("entLastA").textContent = last[0]; $("entLastB").textContent = last[1];
+        show();
+        $("entStatus").textContent = n < 20
+          ? "Each result alone is a coin flip. Send more pairs to see how they relate."
+          : "Alice alone: about 50% zeros. Compared with Bob: they agree " + (agree / n * 100).toFixed(0) + "% of the time (prediction " + (pAgree() * 100).toFixed(0) + "%).";
+      }
+      function corr(a, b, N) {
+        let same = 0;
+        for (let i = 0; i < N; i++) { const r = pair(a, b); if (r[0] === r[1]) same++; }
+        return 2 * same / N - 1;
+      }
+      function bell() {
+        const N = 2000;
+        const eAB = corr(0, 22.5, N), eAB2 = corr(0, 67.5, N), eA2B = corr(45, 22.5, N), eA2B2 = corr(45, 67.5, N);
+        const S = eAB - eAB2 + eA2B + eA2B2;
+        $("entStatus").textContent = "CHSH score S = " + S.toFixed(2) + " (E values " + [eAB, eAB2, eA2B, eA2B2].map(function (v) { return v.toFixed(2); }).join(", ") + "). Hidden instructions can never exceed 2. Quantum prediction: 2.83.";
+      }
+      ["entA", "entB"].forEach(function (id) { $(id).addEventListener("input", reset); });
+      $("entSend1").addEventListener("click", function () { send(1); });
+      $("entSend200").addEventListener("click", function () { send(200); });
+      $("entBell").addEventListener("click", bell);
+      reset();
+    })();
+
+    /* ── Part 6: Tunneling ── */
+    (function () {
+      const $ = QP.$;
+      const canvas = $("tunCanvas");
+      const ctx = canvas.getContext("2d");
+      const W = canvas.width, H = canvas.height;
+      const base = H - 40, eScale = 26, bx0 = 330, nmPx = 200;
+      let L = 0.5, V = 6, E = 3, T = 0, kappa = 0;
+      function poisson(mean) { let l = Math.exp(-mean), k = 0, p = 1; do { k++; p *= Math.random(); } while (p > l); return k - 1; }
+      function binom(N, p) {
+        const mean = N * p;
+        if (mean < 30) return Math.min(N, poisson(mean));
+        const g = Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(2 * Math.PI * Math.random());
+        return Math.max(0, Math.round(mean + g * Math.sqrt(mean * (1 - p))));
+      }
+      function update() {
+        L = Number($("tunL").value); V = Number($("tunV").value); E = Number($("tunE").value);
+        kappa = 5.1232 * Math.sqrt(V - E);
+        T = Math.min(1, 16 * (E / V) * (1 - E / V) * Math.exp(-2 * kappa * L));
+        $("tunLVal").textContent = L.toFixed(2) + " nm"; $("tunVVal").textContent = V.toFixed(1) + " eV"; $("tunEVal").textContent = E.toFixed(1) + " eV";
+        $("tunT").textContent = QP.fmtProb(T);
+        $("tunOdds").textContent = T > 0 ? (1 / T >= 1e4 ? (1 / T).toExponential(1).replace("e+", " × 10^") : Math.round(1 / T).toLocaleString()) : "—";
+        $("tunStatus").textContent = "Inside the barrier the wave shrinks by a factor of " + Math.exp(-kappa * L).toExponential(1).replace("e", " × 10^").replace("^-", "^−") + " (decay constant κ = " + kappa.toFixed(1) + " per nm).";
+      }
+      function fire() {
+        const N = 100000, k = binom(N, T);
+        $("tunStatus").textContent = k + " of " + N.toLocaleString() + " electrons tunneled through" + (k === 0 ? ". Try a thinner barrier." : " (expected about " + Math.round(N * T).toLocaleString() + ").");
+      }
+      ["tunL", "tunV", "tunE"].forEach(function (id) { $(id).addEventListener("input", update); });
+      $("tunFire").addEventListener("click", fire);
+      update();
+
+      QP.loop(function (dt, t) {
+        const phase = QP.reduceMotion ? 0 : t * 4;
+        const bx1 = bx0 + L * nmPx;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = "rgba(8,24,42,.9)"; ctx.fillRect(0, 0, W, H);
+        // barrier
+        const top = base - V * eScale;
+        ctx.fillStyle = "rgba(255,140,100,.28)"; ctx.fillRect(bx0, top, bx1 - bx0, base - top);
+        ctx.strokeStyle = "#ff9d6b"; ctx.lineWidth = 3; ctx.strokeRect(bx0, top, bx1 - bx0, base - top);
+        ctx.fillStyle = "#ffcfb3"; ctx.font = "700 13px Inter, system-ui, sans-serif";
+        ctx.fillText("barrier " + V.toFixed(1) + " eV", bx0 - 4, top - 10);
+        // energy line
+        const ey = base - E * eScale;
+        ctx.setLineDash([6, 6]); ctx.strokeStyle = "rgba(160,235,255,.5)"; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(30, ey); ctx.lineTo(W - 20, ey); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = "#9fe8ff"; ctx.fillText("dashed line: electron energy " + E.toFixed(1) + " eV, below the top of the barrier", 40, 28);
+        ctx.strokeStyle = "rgba(255,255,255,.3)"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(20, base); ctx.lineTo(W - 20, base); ctx.stroke();
+        // wave
+        const k = 0.085 * Math.sqrt(E), A = 46, R = Math.sqrt(1 - T), Tr = Math.sqrt(T);
+        ctx.strokeStyle = "#6ff2ff"; ctx.lineWidth = 3; ctx.beginPath();
+        for (let x = 30; x <= W - 20; x += 2) {
+          let y;
+          if (x < bx0) y = A * (Math.cos(k * x - phase) + R * Math.cos(k * x + phase));
+          else if (x <= bx1) y = A * Math.exp(-kappa * (x - bx0) / nmPx) * Math.cos(k * bx0 - phase);
+          else y = Math.max(Tr * A, 1.5) * Math.cos(k * x - phase);
+          const py = ey - y;
+          if (x === 30) ctx.moveTo(x, py); else ctx.lineTo(x, py);
+        }
+        ctx.stroke();
+        ctx.fillStyle = "rgba(225,239,255,.85)"; ctx.font = "600 13px Inter, system-ui, sans-serif";
+        ctx.fillText("incoming + reflected", 60, base + 24);
+        ctx.fillText("decays inside", bx0 + 4, base + 24);
+        ctx.fillText("transmitted (size ∝ √T)", Math.max(bx1 + 20, 620), base + 24);
+      });
+    })();
+
+    /* ── Quiz ── */
+    (function () {
+      const questions = [
+        {
+          q: "A qubit in superposition is measured. What always happens to the superposition after measurement?",
+          choices: ["It stays in superposition but weakens", "It collapses to a definite 0 or 1", "It splits into two separate qubits", "It resets to the |+⟩ state automatically"],
+          answer: 1,
+          explain: "Measurement forces the qubit to 'choose' — it collapses to a classical 0 or 1. The superposition is destroyed. This is called wavefunction collapse."
+        },
+        {
+          q: "You compare |+⟩ and |i+⟩ in the simulator. Both show 50% chance of measuring 0 or 1. What is different between them?",
+          choices: ["Nothing — they are identical states", "The phase angle φ around the equator", "The polar angle θ toward the south pole", "The color of the Bloch sphere arrow"],
+          answer: 1,
+          explain: "Phase (φ) changes which direction around the equator the arrow points. The measurement probability only depends on θ (height), not φ — so phase is invisible to a single measurement but real and important when gates combine states."
+        },
+        {
+          q: "Applying the H gate twice to |0⟩ returns the qubit to |0⟩. What does this reveal about quantum gates?",
+          choices: ["Quantum gates always undo themselves after two applications", "Quantum gates are reversible — they never destroy information", "The H gate is a special case and other gates are not reversible", "Applying any gate twice produces |0⟩"],
+          answer: 1,
+          explain: "Every quantum gate is a unitary (reversible) operation. Unlike classical operations that can destroy information (e.g., AND, OR), quantum gates can always be run backwards. H is its own inverse, but all gates have an inverse."
+        },
+        {
+          q: "Google's Willow chip (2024) has 105 qubits cooled near absolute zero. What is the MAIN reason cooling is required?",
+          choices: ["To make the qubits glow blue so they can be seen", "Thermal energy from room temperature destroys delicate quantum states (decoherence)", "Cold temperatures make the chip run classical programs faster", "Superconductors only conduct electricity at room temperature"],
+          answer: 1,
+          explain: "Quantum states are extremely fragile. Any stray heat, vibration, or electromagnetic noise causes decoherence — the qubit loses its quantum properties and behaves classically. Current superconducting qubits need temperatures around 15 millikelvin (−273.135 °C)."
+        },
+        {
+          q: "Which of the following tasks would a quantum computer have a real advantage at over a classical computer?",
+          choices: ["Streaming a 4K video to millions of users", "Simulating how a new drug molecule interacts with a protein", "Storing and retrieving large database records quickly", "Running a web browser and loading web pages"],
+          answer: 1,
+          explain: "Quantum computers excel at simulating quantum systems (like molecules) because they are quantum systems themselves. Classical computers struggle with molecular simulation because the state space grows exponentially. Streaming, databases, and browsers are deterministic tasks where classical computers are already optimal."
+        },
+        {
+          q: "Red light of any brightness ejects no electrons from zinc, yet dim ultraviolet light does. What is the best explanation?",
+          choices: ["Red light is too slow to reach the metal", "Brighter light always carries more energy per photon", "Each red photon carries less energy than the work function, and an electron absorbs one photon at a time", "Zinc turns red light into heat only"],
+          answer: 2,
+          explain: "Photon energy depends on frequency (E = hf), not brightness. Red photons are below zinc's work function, so none can free an electron alone. Ultraviolet photons are above it, so even a few work."
+        },
+        {
+          q: "Electrons are fired at a double slit one at a time. After thousands of detections, what appears on the screen?",
+          choices: ["An interference pattern of bright and dark fringes", "Two bands directly behind the slits", "One bright spot at the center", "Random dots with no pattern"],
+          answer: 0,
+          explain: "Each electron lands as one dot, yet the accumulated dots form fringes. The wave describes the probability of where each electron can land. If you detect which slit each one used, the fringes disappear."
+        },
+        {
+          q: "An electron in a box is squeezed into half the width. What happens to its lowest energy level (E ∝ 1/L²)?",
+          choices: ["It stays the same", "It is cut in half", "It drops to zero", "It rises to four times its old value"],
+          answer: 3,
+          explain: "Confining a wave to a smaller space requires a shorter wavelength, which means more momentum and more energy. Halving L multiplies the energy by 2², which is 4."
+        },
+        {
+          q: "Alice and Bob measure entangled photons at the same polarizer angle. Each sees a random 50/50 sequence. What is special about the pair?",
+          choices: ["Alice can send Bob a message instantly by choosing her angle", "Their sequences are completely unrelated", "When they compare results afterward, the sequences match every time, yet neither sequence alone reveals anything", "Each photon secretly carries a printed instruction that nobody can read"],
+          answer: 2,
+          explain: "The correlation only shows up when results are compared over an ordinary channel, so no message is sent faster than light. Bell tests show that pre-printed instructions cannot reproduce the full set of quantum correlations."
+        },
+        {
+          q: "Why does the chance of tunneling drop so dramatically when a barrier is made only slightly thicker?",
+          choices: ["The wave inside the barrier decays exponentially with thickness", "Thicker barriers heat the electrons", "Electrons become heavier in thick barriers", "Photons absorb the electrons"],
+          answer: 0,
+          explain: "Inside the barrier the wave amplitude shrinks by a constant factor for every extra bit of thickness, so the probability falls roughly as e^(−2κL). This is why scanning tunneling microscopes can sense changes smaller than one atom."
+        }
+      ];
+
+      const container = document.getElementById("quizContainer");
+      questions.forEach(function (item, qi) {
+        const block = document.createElement("div");
+        block.className = "quantum-quiz-q";
+        const qp = document.createElement("p");
+        qp.textContent = (qi + 1) + ". " + item.q;
+        block.appendChild(qp);
+        const choices = document.createElement("div");
+        choices.className = "quantum-choices";
+        const feedback = document.createElement("p");
+        feedback.className = "quantum-quiz-feedback";
+        item.choices.forEach(function (text, ci) {
+          const btn = document.createElement("button");
+          btn.className = "quantum-choice";
+          btn.innerHTML = '<span class="quantum-choice-dot"></span>' + text;
+          btn.addEventListener("click", function () {
+            if (block.dataset.answered) return;
+            block.dataset.answered = "1";
+            const correct = ci === item.answer;
+            btn.classList.add(correct ? "correct" : "wrong");
+            btn.querySelector(".quantum-choice-dot").textContent = correct ? "✓" : "✗";
+            if (!correct) {
+              choices.querySelectorAll(".quantum-choice")[item.answer].classList.add("correct");
+              choices.querySelectorAll(".quantum-choice")[item.answer].querySelector(".quantum-choice-dot").textContent = "✓";
+            }
+            feedback.textContent = item.explain;
+            feedback.classList.add("visible");
+          });
+          choices.appendChild(btn);
+        });
+        block.appendChild(choices);
+        block.appendChild(feedback);
+        container.appendChild(block);
+      });
+    })();
+  </script>
+<script src="../../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
