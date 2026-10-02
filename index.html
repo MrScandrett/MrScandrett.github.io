@@ -1482,14 +1482,14 @@
         return { name, emoji, illumination };
       }
 
-      function buildSolarSection({ sunrise, sunset }) {
+      function buildSolarSection({ sunrise, sunset, utcOffsetSeconds }) {
         if (!sunrise || !sunset) return '';
         const moon = getMoonPhase(new Date());
         const now = Date.now();
-        const riseMs = new Date(sunrise).getTime();
-        const setMs = new Date(sunset).getTime();
-        const riseStr = new Date(sunrise).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-        const setStr  = new Date(sunset).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        const riseMs = sunrise;
+        const setMs = sunset;
+        const riseStr = formatClockInZone(riseMs, utcOffsetSeconds);
+        const setStr  = formatClockInZone(setMs, utcOffsetSeconds);
         let progress = 0;
         let isDaytime = false;
         if (now >= riseMs && now <= setMs) {
@@ -1529,23 +1529,66 @@
         return `<span class="precip-title">Rain Chance</span><div class="precip-bars">${bars}</div>`;
       }
 
+      const WEATHER_FETCH_TIMEOUT_MS = 8000;
+      const WEATHER_REFRESH_MS = 15 * 60 * 1000;
+      const WEATHER_STALE_MS = 45 * 60 * 1000;
+      const WEATHER_CACHE_KEY = 'home-weather-cache-v1';
+      const WEATHER_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+
+      // Open-Meteo returns local wall-clock strings ("2026-10-02T07:15") for the
+      // forecast location. Convert with the reported UTC offset so sunrise/sunset
+      // are correct no matter where the viewer's own clock is.
+      function localIsoToEpoch(iso, offsetSeconds) {
+        if (!iso) return null;
+        const ms = Date.parse(`${iso}:00Z`);
+        return Number.isNaN(ms) ? null : ms - (offsetSeconds || 0) * 1000;
+      }
+
+      function formatClockInZone(epochMs, offsetSeconds) {
+        const d = new Date(epochMs + (offsetSeconds || 0) * 1000);
+        const h24 = d.getUTCHours();
+        const m = String(d.getUTCMinutes()).padStart(2, '0');
+        return `${h24 % 12 || 12}:${m} ${h24 >= 12 ? 'PM' : 'AM'}`;
+      }
+
+      function readWeatherCache() {
+        try {
+          const cached = JSON.parse(localStorage.getItem(WEATHER_CACHE_KEY));
+          if (cached && cached.data && Date.now() - cached.savedAt < WEATHER_CACHE_MAX_AGE_MS) return cached;
+        } catch (error) { /* storage unavailable or corrupt */ }
+        return null;
+      }
+
+      function writeWeatherCache(data) {
+        try {
+          localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), data }));
+        } catch (error) { /* storage unavailable or full */ }
+      }
+
       async function fetchWeatherForLocation(location) {
         const url = new URL('https://api.open-meteo.com/v1/forecast');
         url.searchParams.set('latitude', location.latitude);
         url.searchParams.set('longitude', location.longitude);
-        url.searchParams.set('current', 'temperature_2m,apparent_temperature,weather_code,relative_humidity_2m,wind_speed_10m,wind_direction_10m');
+        url.searchParams.set('current', 'temperature_2m,apparent_temperature,weather_code,is_day,relative_humidity_2m,wind_speed_10m,wind_direction_10m');
         url.searchParams.set('daily', 'temperature_2m_min,temperature_2m_max,weather_code,uv_index_max,precipitation_probability_max,sunrise,sunset');
         url.searchParams.set('temperature_unit', 'fahrenheit');
         url.searchParams.set('wind_speed_unit', 'mph');
         url.searchParams.set('forecast_days', '5');
         url.searchParams.set('timezone', 'auto');
 
-        const response = await fetch(url.toString());
-        if (!response.ok) {
-          throw new Error(`Weather request failed: ${response.status}`);
+        // A stalled connection would otherwise leave the card on "Loading" forever.
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), WEATHER_FETCH_TIMEOUT_MS);
+        let payload;
+        try {
+          const response = await fetch(url.toString(), { signal: controller.signal });
+          if (!response.ok) {
+            throw new Error(`Weather request failed: ${response.status}`);
+          }
+          payload = await response.json();
+        } finally {
+          clearTimeout(timeoutId);
         }
-
-        const payload = await response.json();
         const current = payload && payload.current;
         const daily = payload && payload.daily;
 
@@ -1554,7 +1597,9 @@
           !daily ||
           !daily.temperature_2m_min ||
           !daily.temperature_2m_max ||
-          !daily.time
+          !daily.time ||
+          !daily.time.length ||
+          current.temperature_2m == null
         ) {
           throw new Error('Incomplete weather payload');
         }
@@ -1574,7 +1619,7 @@
             rainChance
           }),
           condition: weatherLabelFromCode(current.weather_code),
-          currentIcon: weatherIconFromCode(current.weather_code),
+          currentIcon: current.is_day === 0 && current.weather_code <= 1 ? '🌙' : weatherIconFromCode(current.weather_code),
           temperature: current.temperature_2m,
           feelsLike: current.apparent_temperature != null ? current.apparent_temperature : current.temperature_2m,
           wind: current.wind_speed_10m || 0,
@@ -1588,90 +1633,133 @@
           max: daily.temperature_2m_max[0],
           forecast: daily.time.slice(0, 5).map((dateString, index) => ({
             label: formatForecastLabel(dateString),
-            icon: weatherIconFromCode(daily.weather_code[index]),
+            icon: weatherIconFromCode(daily.weather_code ? daily.weather_code[index] : 0),
             max: daily.temperature_2m_max[index]
           })),
           rainChance,
           precipData: (daily.precipitation_probability_max || []).slice(0, 5).map(v => Number(v) || 0),
-          sunrise: (daily.sunrise && daily.sunrise[0]) || null,
-          sunset: (daily.sunset && daily.sunset[0]) || null
+          sunrise: localIsoToEpoch(daily.sunrise && daily.sunrise[0], payload.utc_offset_seconds),
+          sunset: localIsoToEpoch(daily.sunset && daily.sunset[0], payload.utc_offset_seconds),
+          utcOffsetSeconds: payload.utc_offset_seconds || 0
         };
       }
 
-      function getBrowserLocation() {
+      // Only use the browser's location when the visitor has already granted it.
+      // Asking on every page load interrupts a classroom display, and a prompt
+      // nobody answers never settles — the card would sit on "Loading" forever.
+      async function getBrowserLocation() {
+        if (!navigator.geolocation || !navigator.permissions) throw new Error('Geolocation unavailable');
+        const permission = await navigator.permissions.query({ name: 'geolocation' });
+        if (permission.state !== 'granted') throw new Error('Geolocation not granted');
         return new Promise((resolve, reject) => {
-          if (!navigator.geolocation) {
-            reject(new Error('Geolocation unavailable'));
-            return;
-          }
-
           navigator.geolocation.getCurrentPosition(
-            (position) => {
-              resolve({
-                label: 'YOUR AREA',
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude
-              });
-            },
+            (position) => resolve({
+              label: 'YOUR AREA',
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude
+            }),
             reject,
-            {
-              enableHighAccuracy: false,
-              timeout: 5000,
-              maximumAge: 30 * 60 * 1000
-            }
+            { enableHighAccuracy: false, timeout: 5000, maximumAge: 30 * 60 * 1000 }
           );
         });
       }
 
-      (async function initWeatherCard() {
+      let weatherLastUpdated = 0;
+      let weatherRetryDelay = 30 * 1000;
+      let weatherTimer = null;
+      let weatherLoading = false;
+
+      function formatUpdatedTime(epochMs) {
+        return new Date(epochMs).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      }
+
+      function renderWeatherUnavailable() {
+        const dash = '--';
+        weatherEls.city.textContent = DEFAULT_WEATHER.label;
+        weatherEls.station.textContent = DEFAULT_WEATHER.stationId;
+        weatherEls.status.textContent = 'STATUS: STANDBY';
+        weatherEls.shell.dataset.weatherStatus = 'standby';
+        weatherEls.condition.textContent = 'WEATHER UNAVAILABLE';
+        weatherEls.currentIcon.textContent = '—';
+        weatherEls.temp.textContent = `${dash}°`;
+        weatherEls.feels.textContent = `FEELS LIKE ${dash}°`;
+        weatherEls.min.textContent = `${dash}°`;
+        weatherEls.max.textContent = `${dash}°`;
+        weatherEls.wind.textContent = `${dash} MPH`;
+        weatherEls.humidity.textContent = `${dash}%`;
+        weatherEls.uv.textContent = dash;
+        weatherEls.pollen.textContent = dash;
+        weatherEls.uvCard.classList.remove('telemetry-stat--alert');
+        weatherEls.pollenCard.classList.remove('telemetry-stat--alert');
+        weatherEls.forecast.innerHTML = ['LOCAL', 'WAIT', 'TRY', 'AGAIN', 'SOON'].map((label) => `
+          <div class="forecast-slot">
+            <span class="forecast-day">${label}</span>
+            <span class="forecast-icon" aria-hidden="true">--</span>
+            <span class="forecast-temp">--°</span>
+          </div>`).join('');
+        weatherEls.solar.innerHTML = '';
+        weatherEls.precipChart.innerHTML = '';
+        weatherEls.clothing.innerHTML = '<span class="clothing-emoji" aria-hidden="true">📡</span><div class="clothing-body"><p class="clothing-main">Couldn’t reach the weather service. Looking outside is a great backup!</p><p class="clothing-tips"><button type="button" class="weather-retry">Try again</button></p></div>';
+        hydrateWeatherLearningPanels();
+      }
+
+      function scheduleWeatherRefresh(delay) {
+        clearTimeout(weatherTimer);
+        weatherTimer = setTimeout(() => loadWeather(), delay);
+      }
+
+      async function loadWeather() {
+        if (weatherLoading) return;
+        weatherLoading = true;
         try {
+          let weather = null;
           const location = await getBrowserLocation().catch(() => DEFAULT_WEATHER);
-          const weather = await fetchWeatherForLocation(location);
-          setWeatherCard(weather);
-        } catch (error) {
           try {
-            const weather = await fetchWeatherForLocation(DEFAULT_WEATHER);
-            setWeatherCard(weather);
-          } catch (fallbackError) {
-            weatherEls.city.textContent = DEFAULT_WEATHER.label;
-            weatherEls.station.textContent = DEFAULT_WEATHER.stationId;
-            weatherEls.status.textContent = 'STATUS: STANDBY';
-            weatherEls.shell.dataset.weatherStatus = 'standby';
-            weatherEls.condition.textContent = 'WEATHER UNAVAILABLE';
-            weatherEls.currentIcon.textContent = '—';
-            weatherEls.uv.textContent = '--';
-            weatherEls.pollen.textContent = '--';
-            weatherEls.forecast.innerHTML = `
-              <div class="forecast-slot">
-                <span class="forecast-day">LOCAL</span>
-                <span class="forecast-icon" aria-hidden="true">--</span>
-                <span class="forecast-temp">--°</span>
-              </div>
-              <div class="forecast-slot">
-                <span class="forecast-day">WAIT</span>
-                <span class="forecast-icon" aria-hidden="true">--</span>
-                <span class="forecast-temp">--°</span>
-              </div>
-              <div class="forecast-slot">
-                <span class="forecast-day">TRY</span>
-                <span class="forecast-icon" aria-hidden="true">--</span>
-                <span class="forecast-temp">--°</span>
-              </div>
-              <div class="forecast-slot">
-                <span class="forecast-day">AGAIN</span>
-                <span class="forecast-icon" aria-hidden="true">--</span>
-                <span class="forecast-temp">--°</span>
-              </div>
-              <div class="forecast-slot">
-                <span class="forecast-day">SOON</span>
-                <span class="forecast-icon" aria-hidden="true">--</span>
-                <span class="forecast-temp">--°</span>
-              </div>
-            `;
-            hydrateWeatherLearningPanels();
+            weather = await fetchWeatherForLocation(location);
+          } catch (error) {
+            if (location === DEFAULT_WEATHER) throw error;
+            weather = await fetchWeatherForLocation(DEFAULT_WEATHER);
           }
+          // Don't rebuild the panels out from under a student reading a field note.
+          if (weatherOpenPanel) {
+            scheduleWeatherRefresh(30 * 1000);
+            return;
+          }
+          setWeatherCard(weather);
+          writeWeatherCache(weather);
+          weatherLastUpdated = Date.now();
+          weatherRetryDelay = 30 * 1000;
+          scheduleWeatherRefresh(WEATHER_REFRESH_MS);
+        } catch (error) {
+          const cached = readWeatherCache();
+          if (cached) {
+            setWeatherCard(cached.data);
+            weatherEls.status.textContent = `STATUS: STALE · AS OF ${formatUpdatedTime(cached.savedAt)}`;
+            weatherEls.shell.dataset.weatherStatus = 'standby';
+            weatherLastUpdated = cached.savedAt;
+          } else {
+            renderWeatherUnavailable();
+          }
+          scheduleWeatherRefresh(weatherRetryDelay);
+          weatherRetryDelay = Math.min(weatherRetryDelay * 2, WEATHER_REFRESH_MS);
+        } finally {
+          weatherLoading = false;
         }
-      })();
+      }
+
+      weatherEls.shell.addEventListener('click', (event) => {
+        if (!event.target.closest('.weather-retry')) return;
+        event.stopPropagation();
+        weatherEls.status.textContent = 'STATUS: LOADING';
+        loadWeather();
+      }, true);
+
+      // A projector left on all day shouldn't show yesterday's weather.
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && Date.now() - weatherLastUpdated > WEATHER_STALE_MS) loadWeather();
+      });
+
+      loadWeather();
     })();
   </script>
   <!-- =====================================================
