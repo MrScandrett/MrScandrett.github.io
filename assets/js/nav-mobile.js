@@ -1443,12 +1443,20 @@
 }());
 
 // Add the shared, classroom-friendly glossary to every page using the site shell.
+// Waits for parsing to finish so a page's own site-glossary.js tag (with its own
+// data-glossary-src) wins over the shared default glossary.
 (function () {
-  if (window.ClassroomOSGlossary || document.querySelector('script[data-classroomos-glossary="true"]')) return;
-  var s = document.createElement('script');
   var baseScript = document.currentScript && document.currentScript.src;
-  s.src = baseScript ? new URL('site-glossary.js', baseScript).href : '/assets/js/site-glossary.js';
-  s.defer = true;
-  s.dataset.classroomosGlossary = 'true';
-  document.head.appendChild(s);
+  function load() {
+    if (window.ClassroomOSGlossary
+      || document.querySelector('script[data-classroomos-glossary="true"]')
+      || document.querySelector('script[src*="site-glossary.js"]')) return;
+    var s = document.createElement('script');
+    s.src = baseScript ? new URL('site-glossary.js', baseScript).href : '/assets/js/site-glossary.js';
+    s.defer = true;
+    s.dataset.classroomosGlossary = 'true';
+    document.head.appendChild(s);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load, { once: true });
+  else load();
 }());

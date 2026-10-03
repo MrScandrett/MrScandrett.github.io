@@ -133,7 +133,14 @@
   ensureContrastGuard();
   loadRelatedLinks();
   loadExhibitLinks();
-  loadSiteGlossary();
+  // Wait for parsing to finish so a lesson's own site-glossary.js tag (often
+  // placed after this script, with its own data-glossary-src) wins over the
+  // shared default glossary.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadSiteGlossary, { once: true });
+  } else {
+    loadSiteGlossary();
+  }
 
   function createActions() {
     var wrapper = document.createElement('div');
