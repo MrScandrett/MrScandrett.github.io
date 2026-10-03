@@ -381,6 +381,49 @@
       .ec-resistor-top { grid-template-columns: 1fr; }
       .ec-symbol-panel { grid-template-columns: 1fr; }
     }
+
+    .ec-resistor-shell { background: var(--surface, #f5f5f7); }
+    .ec-resistor-display { background: #163044; background-image: linear-gradient(#ffffff08 1px, transparent 1px), linear-gradient(90deg, #ffffff08 1px, transparent 1px); background-size: 24px 24px; }
+    .ec-card, .ec-quiz { box-shadow: none; }
+    .ec-lede { margin-left:0; margin-right:0; }
+    .ec-lede, .ec-card p, .ec-symbol-copy span { color: var(--text); }
+    .ec-band-chip { background: var(--white); color: var(--text); }
+    .ec-lab-actions, .ec-answer-row { display:flex; flex-wrap:wrap; gap:.5rem; }
+    .ec-lab-actions { padding: 0 1rem 1rem; }
+    .ec-practice { padding: 1rem; border-top: 2px solid var(--line); }
+    .ec-practice h3 { margin:0 0 .5rem; }
+    .ec-practice button, .ec-lab-actions button, #quiz-reset { padding:.65rem .85rem; border:1px solid var(--line); border-radius:8px; background:var(--white); color:var(--text); font:inherit; cursor:pointer; }
+    .ec-practice input, .ec-practice select { padding:.6rem; border:1px solid var(--line); border-radius:8px; background:var(--white); color:var(--text); font:inherit; min-width:0; }
+    .ec-practice input { width:9rem; }
+    .ec-practice label { display:block; margin-bottom:.4rem; }
+    .ec-page :focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+    .ec-page [hidden] { display:none !important; }
+    .ec-page button:disabled { opacity:.65; cursor:default; }
+    .range-track { height:8px; background:#91c8e9; margin:.65rem 0; position:relative; }
+    .range-track span { position:absolute; left:50%; top:-4px; height:16px; border-left:3px solid white; }
+    .ec-summary-tile small { color:#cbd5e1; }
+    #practice-cover { color:#f8fafc; }
+    .ec-band-tabs { border-radius:10px; }
+    .ec-field label { text-transform:none; letter-spacing:0; }
+    @media(max-width:600px) { .ec-card,.ec-quiz { padding:.9rem; } .ec-resistor-top { padding:.65rem; } .ec-band-tab { padding:.5rem; } .ec-resistor-summary { grid-template-columns:1fr; } .ec-table th,.ec-table td { padding:.4rem .25rem; overflow-wrap:anywhere; } }
+    @media print { .ec-practice, .ec-lab-actions, #quiz-reset { display:none; } #decoder-answer[hidden] { display:block !important; } }
+
+    .ec-gallery-jump { display:block; margin:.5rem 0; font-weight:700; color:var(--accent); }
+    .ec-field-gallery h3 { margin:1.6rem 0 .65rem; font-size:1.12rem; }
+    .ec-photo-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1.4rem 1rem; margin:1rem 0; }
+    .ec-photo { margin:0; min-width:0; border-bottom:1px solid var(--line); padding-bottom:1rem; break-inside:avoid; }
+    .ec-photo img { display:block; width:100%; height:260px; object-fit:contain; background:#e9edf0; border:1px solid var(--line); border-radius:8px; }
+    .ec-photo figcaption { padding:.75rem .15rem 0; font-size:.88rem; line-height:1.6; }
+    .ec-photo figcaption strong { display:block; font-size:1rem; margin-bottom:.35rem; }
+    .ec-photo-caption { display:block; }
+    .ec-photo-credit { display:block; margin-top:.6rem; font-size:.75rem; color:var(--text-muted); overflow-wrap:anywhere; }
+    .ec-photo-credit a { color:inherit; text-decoration:underline; }
+    .ec-card .ec-gallery-license { font-size:.8rem; color:var(--text-muted); }
+    .ec-giga-note { padding:1rem; border:2px solid var(--accent); border-radius:12px; }
+    .ec-giga-note h3 { margin-top:0; }
+    #load-1g { padding:.7rem .9rem; background:var(--white); color:var(--text); border:1px solid var(--line); border-radius:8px; font:inherit; font-weight:700; cursor:pointer; margin-bottom:.65rem; }
+    @media(max-width:600px) { .ec-photo-grid { grid-template-columns:1fr; } .ec-photo img { height:230px; } }
+    @media print { .ec-gallery-jump, #load-1g { display:none; } .ec-photo-grid { display:block; } .ec-photo img { height:210px; } .ec-photo { margin-bottom:1rem; } }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -410,102 +453,69 @@
           <section class="hero ec-hero">
             <p class="eyebrow">Engineering · Circuit Math</p>
             <h1>Resistor Color Code Guide</h1>
-            <div class="ec-hero-meta">
-              <span>Resistors</span><span class="dot"></span>
-              <span>Color Bands</span><span class="dot"></span>
-              <span>Tolerance</span><span class="dot"></span>
-              <span>Precision Parts</span>
-            </div>
-            <p class="ec-lede">Every resistor tells you its value in a color code printed right on the body. This module is a focused, interactive decoder: read 4-band, 5-band, and 6-band resistors, understand what each band means, and practice with the values you'll actually pull out of a parts bin.</p>
+            <p class="ec-lede">Change a band and watch the value change. Then hide the answer and test your decoding skills.</p>
+            <a class="ec-gallery-jump" href="#real-resistors">See real resistors and wiring photos</a>
             <a class="ec-back-link" href="../../../steam-lessons.html#module-engineering">&larr; Back to Engineering</a>
           </section>
 
           <section class="ec-card" style="--ec-accent:#34c759;">
-            <h2>Resistor Color Code Guide</h2>
-            <p>Decode <strong>4-band, 5-band, and 6-band</strong> resistors with the analyzer below, compare beginner parts with precision parts, and watch the decoded meaning update live as you change each band.</p>
-
-            <div class="ec-symbol-panel">
-              <svg viewBox="0 0 104 72" role="img" aria-label="Resistor schematic symbol">
-                <title>Resistor schematic symbol</title>
-                <line x1="10" y1="36" x2="22" y2="36" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
-                <polyline points="22,36 28,24 36,48 44,24 52,48 60,24 68,48 76,36" fill="none" stroke="#0f172a" stroke-width="3" stroke-linejoin="round"></polyline>
-                <line x1="76" y1="36" x2="94" y2="36" stroke="#0f172a" stroke-width="3" stroke-linecap="round"></line>
-              </svg>
-              <div class="ec-symbol-copy">
-                <strong>Schematic Symbol</strong>
-                <span>A resistor is drawn as a zig-zag in many classroom diagrams. Its job is to oppose current flow.</span>
-              </div>
-            </div>
+            <h2>Explore the parts bin</h2>
+            <p>Read left to right: join the digit bands, multiply, then check the tolerance.</p>
 
             <div class="ec-resistor-shell">
               <div class="ec-resistor-toolbar">
-                <div class="ec-band-tabs" role="tablist" aria-label="Resistor band count">
-                  <button class="ec-band-tab is-active" type="button" data-band-count="4" aria-selected="true">4 Bands</button>
-                  <button class="ec-band-tab" type="button" data-band-count="5" aria-selected="false">5 Bands</button>
-                  <button class="ec-band-tab" type="button" data-band-count="6" aria-selected="false">6 Bands</button>
+                <div class="ec-band-tabs" role="group" aria-label="Resistor band count">
+                  <button class="ec-band-tab is-active" type="button" data-band-count="4" aria-pressed="true">4 Bands</button>
+                  <button class="ec-band-tab" type="button" data-band-count="5" aria-pressed="false">5 Bands</button>
+                  <button class="ec-band-tab" type="button" data-band-count="6" aria-pressed="false">6 Bands</button>
                 </div>
                 <div class="ec-band-help" id="resistor-help">Most classroom resistors are 4-band parts.</div>
               </div>
               <div class="ec-resistor-top">
                 <div class="ec-resistor-display">
-                  <svg viewBox="0 0 620 180" aria-label="Resistor with four colored bands">
+                  <svg id="resistor-picture" viewBox="0 0 620 250" role="img" aria-label="Resistor with four colored bands">
                     <defs>
-                      <linearGradient id="resistor-lead-grad" x1="0" x2="1" y1="0" y2="0">
-                        <stop offset="0" stop-color="#6b7c91"></stop>
-                        <stop offset="0.28" stop-color="#b8c7d9"></stop>
-                        <stop offset="0.52" stop-color="#e6eef7"></stop>
-                        <stop offset="0.78" stop-color="#8ea2ba"></stop>
-                        <stop offset="1" stop-color="#52657d"></stop>
+                      <linearGradient id="resistor-lead-grad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" stop-color="#627887"/><stop offset=".28" stop-color="#f3f8fc"/><stop offset=".48" stop-color="#bdcbd5"/><stop offset=".78" stop-color="#718a9b"/><stop offset="1" stop-color="#314957"/>
                       </linearGradient>
-                      <linearGradient id="resistor-body-grad" x1="0" x2="0" y1="0" y2="1">
-                        <stop offset="0" stop-color="#e9ddbf"></stop>
-                        <stop offset="0.18" stop-color="#d7c8a4"></stop>
-                        <stop offset="0.48" stop-color="#bcb28f"></stop>
-                        <stop offset="0.7" stop-color="#d1c49f"></stop>
-                        <stop offset="1" stop-color="#817b64"></stop>
+                      <linearGradient id="resistor-body-grad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" stop-color="#c5aa77"/><stop offset=".18" stop-color="#f3dfb1"/><stop offset=".4" stop-color="#e3c794"/><stop offset=".65" stop-color="#cfad76"/><stop offset="1" stop-color="#8b6d45"/>
                       </linearGradient>
-                      <linearGradient id="resistor-cap-grad" x1="0" x2="1" y1="0" y2="0">
-                        <stop offset="0" stop-color="#7d7865"></stop>
-                        <stop offset="0.36" stop-color="#d8cdae"></stop>
-                        <stop offset="0.72" stop-color="#aaa283"></stop>
-                        <stop offset="1" stop-color="#67614f"></stop>
+                      <linearGradient id="resistor-rounding" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" stop-color="#081521" stop-opacity=".25"/><stop offset=".23" stop-color="#fff" stop-opacity=".16"/><stop offset=".48" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#081521" stop-opacity=".4"/>
                       </linearGradient>
-                      <filter id="resistor-shadow" x="-20%" y="-30%" width="140%" height="160%">
-                        <feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#020617" flood-opacity="0.38"></feDropShadow>
-                      </filter>
-                      <clipPath id="resistor-body-clip">
-                        <rect x="180" y="42" width="260" height="96" rx="48"></rect>
-                      </clipPath>
+                      <linearGradient id="resistor-gold" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" stop-color="#94701a"/><stop offset=".23" stop-color="#ffe39a"/><stop offset=".45" stop-color="#d4af37"/><stop offset=".7" stop-color="#e5c158"/><stop offset="1" stop-color="#876218"/>
+                      </linearGradient>
+                      <linearGradient id="resistor-silver" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" stop-color="#7a8992"/><stop offset=".23" stop-color="#f2f6f8"/><stop offset=".48" stop-color="#c0c0c0"/><stop offset="1" stop-color="#697880"/>
+                      </linearGradient>
+                      <filter id="resistor-shadow" x="-20%" y="-50%" width="140%" height="200%"><feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#06141e" flood-opacity=".5"/></filter>
+                      <clipPath id="resistor-body-clip"><path d="M150 112 C150 82 160 66 181 66 L205 66 C221 66 224 76 242 76 L378 76 C396 76 399 66 415 66 L439 66 C460 66 470 82 470 112 C470 142 460 158 439 158 L415 158 C399 158 396 148 378 148 L242 148 C224 148 221 158 205 158 L181 158 C160 158 150 142 150 112 Z"/></clipPath>
                     </defs>
-                    <text x="310" y="28" text-anchor="middle" fill="#cbd5e1" font-family="Inter,sans-serif" font-size="16" font-weight="700" id="resistor-title">4-Band Resistor</text>
+                    <text x="310" y="29" text-anchor="middle" fill="#dceaf3" font-family="Inter,sans-serif" font-size="17" font-weight="600" id="resistor-title">4-Band Resistor</text>
                     <g filter="url(#resistor-shadow)">
-                      <path d="M42 90 C86 88 122 88 180 90" fill="none" stroke="url(#resistor-lead-grad)" stroke-width="10" stroke-linecap="round"></path>
-                      <path d="M440 90 C498 91 536 91 578 90" fill="none" stroke="url(#resistor-lead-grad)" stroke-width="10" stroke-linecap="round"></path>
-                      <path d="M43 86 C86 84 122 84 180 86" fill="none" stroke="rgba(255,255,255,0.42)" stroke-width="2" stroke-linecap="round"></path>
-                      <path d="M440 86 C498 87 536 87 578 86" fill="none" stroke="rgba(255,255,255,0.42)" stroke-width="2" stroke-linecap="round"></path>
-
-                      <rect x="180" y="42" width="260" height="96" rx="48" fill="url(#resistor-body-grad)"></rect>
-                      <ellipse cx="184" cy="90" rx="34" ry="48" fill="url(#resistor-cap-grad)" opacity="0.96"></ellipse>
-                      <ellipse cx="436" cy="90" rx="34" ry="48" fill="url(#resistor-cap-grad)" opacity="0.96"></ellipse>
-
+                      <path d="M28 106 Q86 109 157 106 L157 118 Q86 115 28 118 Z" fill="url(#resistor-lead-grad)"/>
+                      <path d="M463 106 Q534 109 592 106 L592 118 Q534 115 463 118 Z" fill="url(#resistor-lead-grad)"/>
+                      <path d="M150 112 C150 82 160 66 181 66 L205 66 C221 66 224 76 242 76 L378 76 C396 76 399 66 415 66 L439 66 C460 66 470 82 470 112 C470 142 460 158 439 158 L415 158 C399 158 396 148 378 148 L242 148 C224 148 221 158 205 158 L181 158 C160 158 150 142 150 112 Z" fill="url(#resistor-body-grad)"/>
                       <g clip-path="url(#resistor-body-clip)">
-                        <rect x="180" y="42" width="260" height="96" rx="48" fill="url(#resistor-body-grad)"></rect>
-                        <rect x="228" y="42" width="18" height="96" rx="3" fill="#111827" id="band-1"></rect>
-                        <rect x="268" y="42" width="18" height="96" rx="3" fill="#ef4444" id="band-2"></rect>
-                        <rect x="316" y="42" width="18" height="96" rx="3" fill="#92400e" id="band-3"></rect>
-                        <rect x="388" y="42" width="18" height="96" rx="3" fill="#d4af37" id="band-4"></rect>
-                        <rect x="410" y="42" width="14" height="96" rx="3" fill="#7c4a21" id="band-5" style="display:none;"></rect>
-                        <rect x="430" y="42" width="12" height="96" rx="3" fill="#2563eb" id="band-6" style="display:none;"></rect>
-                        <path d="M188 55 C248 38 365 38 430 57" fill="none" stroke="rgba(255,255,255,0.36)" stroke-width="12" stroke-linecap="round"></path>
-                        <path d="M196 124 C252 140 363 140 426 123" fill="none" stroke="rgba(15,23,42,0.24)" stroke-width="12" stroke-linecap="round"></path>
+                        <path id="band-1" fill="#d4af37"/>
+                        <path id="band-2" fill="#d4af37"/>
+                        <path id="band-3" fill="#d4af37"/>
+                        <path id="band-4" fill="#d4af37"/>
+                        <path id="band-5" fill="#d4af37"/>
+                        <path id="band-6" fill="#d4af37"/>
+                        <path d="M150 112 C150 82 160 66 181 66 L205 66 C221 66 224 76 242 76 L378 76 C396 76 399 66 415 66 L439 66 C460 66 470 82 470 112 C470 142 460 158 439 158 L415 158 C399 158 396 148 378 148 L242 148 C224 148 221 158 205 158 L181 158 C160 158 150 142 150 112 Z" fill="url(#resistor-rounding)"/>
+                        <path d="M165 84 Q184 72 207 80 Q230 90 253 88 L376 88 Q400 90 415 80 Q439 72 453 84" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="3" stroke-linecap="round"/>
                       </g>
-
-                      <rect x="180" y="42" width="260" height="96" rx="48" fill="none" stroke="#67614f" stroke-width="4"></rect>
-                      <ellipse cx="184" cy="90" rx="34" ry="48" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="2"></ellipse>
-                      <ellipse cx="436" cy="90" rx="34" ry="48" fill="none" stroke="rgba(15,23,42,0.22)" stroke-width="2"></ellipse>
+                      <path d="M150 112 C150 82 160 66 181 66 L205 66 C221 66 224 76 242 76 L378 76 C396 76 399 66 415 66 L439 66 C460 66 470 82 470 112 C470 142 460 158 439 158 L415 158 C399 158 396 148 378 148 L242 148 C224 148 221 158 205 158 L181 158 C160 158 150 142 150 112 Z" fill="none" stroke="#806442" stroke-width="1.5"/>
+                      <path d="M165 87 Q156 112 165 137 M455 87 Q464 112 455 137" fill="none" stroke="#6b5438" stroke-opacity=".4" stroke-width="2"/>
                     </g>
+                    <g id="band-annotations"></g>
+                    <path d="M172 230 H442 M437 225 L442 230 L437 235" stroke="#8baabd" stroke-width="1.5" fill="none"/>
+                    <text x="310" y="246" text-anchor="middle" fill="#cbdde9" font-family="Inter,sans-serif" font-size="12">Reading direction</text>
                   </svg>
-                  <div class="ec-resistor-readout">
+                  <div id="decoder-answer" aria-live="polite"><div class="ec-resistor-readout">
                     <span class="ec-resistor-value" id="resistor-value">220 Ω</span>
                     <span class="ec-resistor-meta" id="resistor-meta">digits 22 × 10</span>
                     <span class="ec-resistor-meta" id="resistor-tolerance">tolerance ±5%</span>
@@ -520,22 +530,28 @@
                       <span id="resistor-ppm">Standard classroom resistor</span>
                     </div>
                   </div>
-                </div>
+                  <div class="ec-summary-tile"><strong>Allowed resistance range</strong><span id="resistor-range"></span><div class="range-track"><span></span></div><small>Low limit · nominal value · high limit</small></div>
+                </div><p id="practice-cover" hidden>Read the colors above and enter your prediction below.</p></div>
 
                 <div class="ec-resistor-controls" id="resistor-controls"></div>
               </div>
 
               <div class="ec-callout" style="margin:0 1rem 1rem;">
                 <strong>Band Meanings</strong>
-                In 4-band mode the first two bands are digits. In 5-band and 6-band mode the first three bands are digits. The last band is tolerance, and the 6th band adds temperature coefficient in ppm per degree C.
+                In 4-band mode the first two bands are digits. In 5-band and 6-band mode the first three bands are digits. Tolerance is band 4 in a four-band part and band 5 in five- and six-band parts. Band 6 gives temperature coefficient in ppm/°C.
               </div>
 
               <div class="ec-resistor-legend" id="resistor-legend"></div>
+              <div class="ec-lab-actions"><button type="button" id="load-220">Load 220 Ω</button><button type="button" id="load-10k">Load 10 kΩ</button><button type="button" id="decoder-reset">Reset decoder</button></div>
+              <section class="ec-practice" aria-labelledby="practice-heading"><h3 id="practice-heading">Can you read it?</h3><p>Start a challenge to hide the decoder. Read the colors from left to right and predict the nominal resistance.</p>
+              <button type="button" id="new-challenge">Start challenge</button>
+              <form id="practice-form" hidden><label for="practice-value">Your resistance</label><div class="ec-answer-row"><input id="practice-value" type="number" min="0" step="any" required inputmode="decimal"><label for="practice-unit" class="sr-only">Unit</label><select id="practice-unit"><option value="1">Ω</option><option value="1000">kΩ</option><option value="1000000">MΩ</option></select><button type="submit">Check answer</button><button type="button" id="practice-hint">Hint</button><button type="button" id="practice-exit">Return to explorer</button></div></form>
+              <p id="practice-feedback" role="status"></p></section>
             </div>
 
             <div class="ec-callout">
               <strong>Orientation Tip</strong>
-              The tolerance band is usually spaced a little farther from the other bands. Hold that band on the right while reading from left to right.
+              The tolerance band is usually spaced a little farther from the other bands. For four- and five-band parts, hold that band on the right while reading from left to right. On six-band parts, a temperature band follows it. Spacing is a clue; if a real part is ambiguous, check its datasheet and measure it with power off, isolated from the circuit.
             </div>
 
             <table class="ec-table" aria-label="Common resistor color code examples">
@@ -571,8 +587,10 @@
             </table>
           </section>
 
+          <section class="ec-card ec-field-gallery" id="real-resistors" aria-labelledby="gallery-heading"><h2 id="gallery-heading">Real resistors: from breadboard to circuit board</h2><p>Compare the model above with real components. Click any photo to enlarge it for a class discussion; use the arrow keys to move through the collection.</p><p class="ec-gallery-license">These photographs are public domain, CC0, or openly licensed Creative Commons works. Each caption identifies the photographer, source, and reuse license.</p><h3>How resistors connect</h3><p>A resistor can lie flat, stand upright, plug into a breadboard, or be soldered to a board. Its two terminals must connect to the intended circuit nodes. Ordinary fixed resistors have no polarity.</p><div class="ec-photo-grid"><figure class="ec-photo" data-zoomable data-lightbox-group="resistor-field-gallery"><img src="../../../assets/images/lessons/resistors/breadboard-placement.jpg" width="629" height="472" loading="lazy" decoding="async" alt="A Raspberry Pi connected to a blue mini breadboard with an axial resistor inserted."><figcaption><strong>Plug in a resistor</strong><span class="ec-photo-caption">An axial resistor bridges two different connection strips on this solderless breadboard. Its leads push into spring contacts. Putting both ends in the same connected strip would bypass the resistor.</span><span class="ec-photo-credit">Photo: David Pride · <a href="https://commons.wikimedia.org/wiki/File:Cjam-buzzwire-step3.jpg">Source</a> · <a href="http://creativecommons.org/publicdomain/zero/1.0/deed.en">CC0</a>. Resized; no content edits.</span></figcaption></figure><figure class="ec-photo" data-zoomable data-lightbox-group="resistor-field-gallery"><img src="../../../assets/images/lessons/resistors/breadboard-led.jpg" width="633" height="474" loading="lazy" decoding="async" alt="A blue breadboard with a resistor, red LED, and jumper wires connected to a Raspberry Pi."><figcaption><strong>Add the LED</strong><span class="ec-photo-caption">The next assembly step adds an LED beside the resistor. The resistor and LED share a breadboard node so they can form a series current path. The resistor can face either way; LED polarity matters.</span><span class="ec-photo-credit">Photo: David Pride · <a href="https://commons.wikimedia.org/wiki/File:Cjam-buzzwire-step4.jpg">Source</a> · <a href="http://creativecommons.org/publicdomain/zero/1.0/deed.en">CC0</a>. Resized; no content edits.</span></figcaption></figure><figure class="ec-photo" data-zoomable data-lightbox-group="resistor-field-gallery"><img src="../../../assets/images/lessons/resistors/breadboard-network.jpg" width="1184" height="888" loading="lazy" decoding="async" alt="Two axial resistors and orange jumpers on a white solderless breadboard."><figcaption><strong>Trace the nodes</strong><span class="ec-photo-caption">Two resistors bridge separate groups of breadboard contacts. Identify every shared metal strip and jumper before deciding whether parts are in series or parallel. Physical closeness does not prove an electrical connection.</span><span class="ec-photo-credit">Photo: Toluaj · <a href="https://commons.wikimedia.org/wiki/File:Breadboard_and_resistors.jpg">Source</a> · <a href="https://creativecommons.org/licenses/by-sa/3.0">CC BY-SA 3.0</a>. Resized; no content edits.</span></figcaption></figure><figure class="ec-photo" data-zoomable data-lightbox-group="resistor-field-gallery"><img src="../../../assets/images/lessons/resistors/through-hole-board.jpg" width="1050" height="1600" loading="lazy" decoding="async" alt="A populated green circuit board with integrated circuits and axial through-hole resistors."><figcaption><strong>Through-hole PCB mounting</strong><span class="ec-photo-caption">Find the color-banded resistors among the chips on this real circuit board. Their bent leads pass through holes; solder joins each lead to a conductive pad. Copper tracks take the place of many breadboard jumpers.</span><span class="ec-photo-credit">Photo: Fil22plm · <a href="https://commons.wikimedia.org/wiki/File:PCB_77622770_components_side_from_United_Peripheral_ltd_removable_Hard_Disk_unit_(1986).jpg">Source</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>. Resized; no content edits.</span></figcaption></figure><figure class="ec-photo" data-zoomable data-lightbox-group="resistor-field-gallery"><img src="../../../assets/images/lessons/resistors/smd-solder-joints.jpg" width="501" height="523" loading="lazy" decoding="async" alt="Close-up of numbered surface-mount resistors and their soldered ends on a green circuit board."><figcaption><strong>Surface-mount solder joints</strong><span class="ec-photo-caption">These chip resistors sit directly on copper pads. The solder at each end makes both a mechanical attachment and an electrical connection. Printed codes replace color bands: 3322 means 332 × 100 = 33.2 kΩ in the four-digit code. This is a real joint close-up, not a solder-quality standard.</span><span class="ec-photo-credit">Photo: Hutschi · <a href="https://commons.wikimedia.org/wiki/File:Surface_Mounted_Device,_soldered.jpg">Source</a> · <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>. Resized; no content edits.</span></figcaption></figure><figure class="ec-photo" data-zoomable data-lightbox-group="resistor-field-gallery"><img src="../../../assets/images/lessons/resistors/soldered-connection.jpg" width="1600" height="1200" loading="lazy" decoding="async" alt="Green power resistors connected with copper wire soldered to their terminal lugs."><figcaption><strong>Wire the terminals</strong><span class="ec-photo-caption">Large power resistors can use solder lugs instead of breadboard-sized leads. The copper wire in this photograph links two lugs. To identify the complete series or parallel circuit, trace every terminal connection.</span><span class="ec-photo-credit">Photo: Jesal.mistry · <a href="https://commons.wikimedia.org/wiki/File:After_soldering_job_was_done.jpg">Source</a> · <a href="https://creativecommons.org/licenses/by-sa/3.0">CC BY-SA 3.0</a>. Resized; no content edits.</span></figcaption></figure></div><div class="ec-callout"><strong>From a temporary connection to a solder joint</strong>On a through-hole PCB, insert the bent leads into the matching holes and solder each lead to its pad. On a surface-mount PCB, solder the metallized ends onto pads. Practice on an unpowered board with teacher supervision, eye protection, ventilation, and an iron stand. A solder bridge between separate pads can create an unintended connection.</div><h3>Different packages, different jobs</h3><p>Compare resistance (Ω), power rating (W), and mounting style separately. A tiny chip may have a high resistance; a large current-sensing shunt may have a very low one.</p><div class="ec-photo-grid"><figure class="ec-photo" data-zoomable data-lightbox-group="resistor-field-gallery"><img src="../../../assets/images/lessons/resistors/axial-resistors.jpg" width="1600" height="1120" loading="lazy" decoding="async" alt="Six beige axial resistors with different color-band codes on a white background."><figcaption><strong>Same shape, different ohms</strong><span class="ec-photo-caption">These six similar-sized resistors have different values: from left to right, 39 kΩ, 47 Ω, 1.5 kΩ, 100 Ω, 2.2 kΩ, and 47 kΩ. All have gold tolerance bands (±5%). Body size alone does not tell you the resistance.</span><span class="ec-photo-credit">Photo: Evan-Amos · <a href="https://commons.wikimedia.org/wiki/File:Electronic-Axial-Lead-Resistors-Array.jpg">Source</a> · <a href="https://commons.wikimedia.org/wiki/File:Electronic-Axial-Lead-Resistors-Array.jpg">Public domain</a>. Resized; no content edits.</span></figcaption></figure><figure class="ec-photo" data-zoomable data-lightbox-group="resistor-field-gallery"><img src="../../../assets/images/lessons/resistors/power-sizes.jpg" width="1600" height="1208" loading="lazy" decoding="async" alt="Three differently sized gold aluminum-housed 100-ohm power resistors."><figcaption><strong>Same ohms, different watts</strong><span class="ec-photo-caption">All three aluminum-housed resistors are 100 Ω. Their model power ratings are 10 W, 50 W, and 100 W. The larger housing helps transfer heat; rated power depends on the manufacturer’s mounting and cooling conditions.</span><span class="ec-photo-credit">Photo: Harke · <a href="https://commons.wikimedia.org/wiki/File:Arcol_High_Power_Resistor.jpg">Source</a> · <a href="https://creativecommons.org/licenses/by-sa/3.0">CC BY-SA 3.0</a>. Resized; no content edits.</span></figcaption></figure><figure class="ec-photo" data-zoomable data-lightbox-group="resistor-field-gallery"><img src="../../../assets/images/lessons/resistors/power-wirewound.jpg" width="1600" height="1200" loading="lazy" decoding="async" alt="A large green cylindrical resistor held in a hand, marked 1.5 kiloohms and 12 watts."><figcaption><strong>A larger wirewound resistor</strong><span class="ec-photo-caption">This green VZR resistor is marked 1.5 kΩ and 12 W. Its large body helps it handle more heat than a small signal resistor. Compare its printed markings with the color bands on the axial parts.</span><span class="ec-photo-credit">Photo: Dmitry G · <a href="https://commons.wikimedia.org/wiki/File:USSR_power_resistor_VZR_12W.JPG">Source</a> · <a href="https://commons.wikimedia.org/wiki/File:USSR_power_resistor_VZR_12W.JPG">Public domain</a>. Resized; no content edits.</span></figcaption></figure><figure class="ec-photo" data-zoomable data-lightbox-group="resistor-field-gallery"><img src="../../../assets/images/lessons/resistors/gigaohm-family.jpg" width="1600" height="857" loading="lazy" decoding="async" alt="Several red cylindrical high-voltage resistors of different lengths, including large threaded-end packages."><figcaption><strong>Into the gigaohm range</strong><span class="ec-photo-caption">These КЭВ carbon-composition resistors belong to a high-voltage family spanning 510 kΩ to 47 GΩ, according to the source description. The pictured parts vary in package size and power rating; not every part shown is a gigaohm resistor. Read each marking or datasheet to identify an individual value.</span><span class="ec-photo-credit">Photo: 155LA3 · <a href="https://commons.wikimedia.org/wiki/File:%D0%9A%D0%AD%D0%92_%D0%BA%D0%BE%D0%BC%D0%BF%D0%BE%D0%B7%D0%B8%D1%86%D0%B8%D0%BE%D0%BD%D0%BD%D1%8B%D0%B5_%D1%8D%D0%BC%D0%B0%D0%BB%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D0%BD%D1%8B%D0%B5_%D0%B2%D1%8B%D1%81%D0%BE%D0%BA%D0%BE%D0%B2%D0%BE%D0%BB%D1%8C%D1%82%D0%BD%D1%8B%D0%B5_%D1%80%D0%B5%D0%B7%D0%B8%D1%81%D1%82%D0%BE%D1%80%D1%8B,_%D0%9C%D0%B8%D0%BA%D0%BE%D0%BD%D0%B4_%D0%A2%D0%B0%D1%88%D0%BA%D0%B5%D0%BD%D1%82_1989,1990_(01).jpg">Source</a> · <a href="https://creativecommons.org/licenses/by/4.0">CC BY 4.0</a>. Resized; no content edits.</span></figcaption></figure><figure class="ec-photo" data-zoomable data-lightbox-group="resistor-field-gallery"><img src="../../../assets/images/lessons/resistors/smd-shunts.jpg" width="932" height="1073" loading="lazy" decoding="async" alt="Two flat copper-ended surface-mount current shunt resistors."><figcaption><strong>At the other extreme: microohms</strong><span class="ec-photo-caption">These two current-sensing shunts are each 200 µΩ (0.0002 Ω). A tiny resistance produces a measurable voltage drop when a large current flows. Their wide metal terminals carry current; a physically substantial resistor can have a very low resistance.</span><span class="ec-photo-credit">Photo: wdwd · <a href="https://commons.wikimedia.org/wiki/File:SMD_Shunt_Resistors.jpg">Source</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>. Resized; no content edits.</span></figcaption></figure><figure class="ec-photo" data-zoomable data-lightbox-group="resistor-field-gallery"><img src="../../../assets/images/lessons/resistors/potentiometer.jpg" width="888" height="1040" loading="lazy" decoding="async" alt="A rotary potentiometer with a metal shaft and three solder terminals."><figcaption><strong>A resistor you can adjust</strong><span class="ec-photo-caption">A potentiometer has two ends of a resistive track and a movable wiper. The knob changes the wiper position. Using all three terminals makes an adjustable voltage divider; a wiper and one end can provide a variable resistance.</span><span class="ec-photo-credit">Photo: Iainf · <a href="https://commons.wikimedia.org/wiki/File:Potentiometer.jpg">Source</a> · <a href="https://creativecommons.org/licenses/by/2.5">CC BY 2.5</a>. Resized; no content edits.</span></figcaption></figure><figure class="ec-photo" data-zoomable data-lightbox-group="resistor-field-gallery"><img src="../../../assets/images/lessons/resistors/photoresistors.jpg" width="1600" height="749" loading="lazy" decoding="async" alt="A row of round photoresistors with visible zigzag tracks placed on a breadboard."><figcaption><strong>Resistance that responds to light</strong><span class="ec-photo-caption">These photoresistors are being sorted on a breadboard. Their exposed zigzag tracks respond to light: for these CdS parts, brighter light generally lowers resistance. A sensor divider can turn that resistance change into a voltage change.</span><span class="ec-photo-credit">Photo: Retired electrician · <a href="https://commons.wikimedia.org/wiki/File:GL5528_photoresistors_01.jpg">Source</a> · <a href="http://creativecommons.org/publicdomain/zero/1.0/deed.en">CC0</a>. Resized; no content edits.</span></figcaption></figure><figure class="ec-photo" data-zoomable data-lightbox-group="resistor-field-gallery"><img src="../../../assets/images/lessons/resistors/thermistors.jpg" width="191" height="166" loading="lazy" decoding="async" alt="An assortment of small bead thermistors with colored coatings and pairs of leads."><figcaption><strong>Resistance that responds to temperature</strong><span class="ec-photo-caption">Thermistors come in small bead packages as well as other shapes. Their resistance changes strongly with temperature: NTC types decrease as temperature rises; PTC types increase. Shape alone does not tell you which type or value you have.</span><span class="ec-photo-credit">Photo: José Carlos González Sánchez · <a href="https://commons.wikimedia.org/wiki/File:Termistor_perla.jpg">Source</a> · <a href="https://commons.wikimedia.org/wiki/File:Termistor_perla.jpg">Public domain</a>. Resized; no content edits.</span></figcaption></figure></div><div class="ec-giga-note"><h3>Gigaohms are a value, not a body size</h3><p><strong>1 GΩ = 1,000 MΩ = 1,000,000 kΩ = 1,000,000,000 Ω.</strong> At 5 V, an ideal 1 GΩ resistor passes only 5 nA. For comparison, 1 kΩ at the same voltage passes 5 mA—one million times as much current.</p><p>Specialist high-resistance parts are real: <a href="https://www.vishay.com/docs/52014/hts.pdf">Vishay’s HTS datasheet</a> lists models up to 100 GΩ. Such parts may use printed values rather than the familiar color bands. Check voltage and power ratings separately; do not copy high-voltage setups from a photograph.</p><button type="button" id="load-1g">Explore a 1 GΩ color-code example</button><p class="ec-gallery-license">This is a decoding example, not a claim that every 1 GΩ part uses color bands. Our photo shows a documented high-resistance family, not a confirmed 1 GΩ specimen.</p></div><div class="ec-callout"><strong>Look, trace, explain</strong>Find a resistor’s two terminals in three different photos. Explain which connections are temporary and which are soldered. Then compare the 100 Ω power resistors with the 200 µΩ shunts: why doesn’t “larger” mean “more ohms”?</div></section>
+          <section class="ec-card"><h2>From a color code to a circuit</h2><p><strong>Resistance is not a power rating.</strong> The bands tell you ohms and tolerance, not how many watts the part can safely dissipate. More digit bands do not by themselves guarantee a tighter tolerance; read the tolerance band.</p><p><strong>Temperature coefficient:</strong> 10 ppm/°C means a change of 10 parts per million per degree. Over a 50 °C change, that is 0.05%, or about 5 Ω for a 10 kΩ part. This is separate from its initial tolerance; the color alone does not tell you the direction of the change.</p><p>Next, use <a href="ohms-law.html">Ohm’s Law</a> to choose a resistance, place it in <a href="breadboard-basics.html">Breadboard Basics</a>, or identify other parts in the <a href="electronic-components.html">Component &amp; Schematic Field Guide</a>.</p><p>Color-code reference: <a href="https://www.ti.com/seclit/eb/slyw038d/slyw038d.pdf">Texas Instruments’ Analog Engineer’s Pocket Reference, resistor color-code table</a>.</p></section>
           <section class="ec-quiz">
-            <h2>Quick Check</h2>
+            <h2>Explain what you found</h2><button type="button" id="quiz-reset">Try the questions again</button>
 
             <div class="ec-question" data-answer="b" data-explanation="The first two bands give the first two digits, so red-red makes 22 before the multiplier is applied.">
               <p>1. On a four-band resistor, what do the first two color bands represent?</p>
@@ -586,7 +604,7 @@
             </div>
 
             <div class="ec-question" data-answer="c" data-explanation="A 5-band resistor adds a third significant digit before the multiplier band, giving a more precise reading than a 4-band part.">
-              <p>2. What does a fifth band add on a 5-band resistor?</p>
+              <p>2. What extra information does a 5-band code include compared with a 4-band code?</p>
               <div class="ec-options" role="group">
                 <button class="ec-option" data-choice="a">A second tolerance rating</button>
                 <button class="ec-option" data-choice="b">The power rating in watts</button>
@@ -642,7 +660,7 @@
           <div class="ll-pane" id="ec-notes">
             <div class="ll-info">
               <strong>Reading direction</strong>
-              The tolerance band sits farther from the others — keep it on the right.
+              On four- and five-band parts, the spaced tolerance band usually goes on the right. Six-band parts add a temperature band after tolerance.
             </div>
             <div class="ll-info">
               <strong>Common values</strong>
@@ -703,6 +721,9 @@
         { key: 'gray', label: 'Gray ±0.05%', value: 0.05, color: '#94a3b8' }
       ];
       const ppmOptions = [
+        { key: 'black', label: 'Black 250 ppm/°C', value: 250, color: '#111111' },
+        { key: 'green', label: 'Green 20 ppm/°C', value: 20, color: '#16a34a' },
+        { key: 'gray', label: 'Gray 1 ppm/°C', value: 1, color: '#94a3b8' },
         { key: 'brown', label: 'Brown 100 ppm/°C', value: 100, color: '#7c4a21' },
         { key: 'red', label: 'Red 50 ppm/°C', value: 50, color: '#dc2626' },
         { key: 'orange', label: 'Orange 15 ppm/°C', value: 15, color: '#f97316' },
@@ -717,9 +738,9 @@
         6: ['brown', 'black', 'black', 'red', 'brown', 'blue']
       };
       const bandLayouts = {
-        4: ['245', '290', '335', '395'],
-        5: ['230', '270', '310', '350', '405'],
-        6: ['220', '255', '290', '325', '388', '425']
+        4: ['215', '263', '311', '404'],
+        5: ['202', '244', '286', '328', '412'],
+        6: ['190', '229', '268', '307', '386', '425']
       };
       const bandHelp = {
         4: 'Most classroom resistors are 4-band parts.',
@@ -737,6 +758,9 @@
       const ppmEl = document.getElementById('resistor-ppm');
       const helpEl = document.getElementById('resistor-help');
       const titleEl = document.getElementById('resistor-title');
+      let currentResistance = 220;
+      let challenge = false;
+      let challengeIndex = 0;
       let bandCount = 4;
       let bands = defaultBandSets[4].slice();
 
@@ -745,7 +769,7 @@
         items.forEach(function (item) {
           const option = document.createElement('option');
           option.value = item.key;
-          option.textContent = item.label;
+          option.textContent = items === resistorColors || items.length === 9 ? item.label + ' = ' + item.value : item.label;
           if (item.key === selectedKey) option.selected = true;
           select.appendChild(option);
         });
@@ -756,18 +780,16 @@
       }
 
       function formatResistance(value) {
-        if (value >= 1000000000) return (value / 1000000000).toFixed(2).replace(/\.00$/, '') + ' GΩ';
-        if (value >= 1000000) return (value / 1000000).toFixed(2).replace(/\.00$/, '') + ' MΩ';
-        if (value >= 1000) return (value / 1000).toFixed(2).replace(/\.00$/, '') + ' kΩ';
-        if (value < 1) return value.toFixed(2).replace(/0+$/, '').replace(/\.$/, '') + ' Ω';
-        return value.toFixed(2).replace(/\.00$/, '') + ' Ω';
+        const scale = value >= 1e9 ? 1e9 : value >= 1e6 ? 1e6 : value >= 1e3 ? 1e3 : 1;
+        const unit = scale === 1e9 ? 'GΩ' : scale === 1e6 ? 'MΩ' : scale === 1e3 ? 'kΩ' : 'Ω';
+        return Number((value / scale).toPrecision(12)).toLocaleString('en-US', {maximumFractionDigits: 8}) + ' ' + unit;
       }
 
       function setBand(id, color) {
         const el = document.getElementById(id);
         if (!el) return;
-        el.setAttribute('fill', color);
-        el.setAttribute('stroke', color === '#f8fafc' ? '#cbd5e1' : color);
+        el.setAttribute('fill', color === '#d4af37' ? 'url(#resistor-gold)' : color === '#c0c0c0' ? 'url(#resistor-silver)' : color);
+        el.setAttribute('stroke', color === '#f8fafc' ? '#cbd5e1' : '#00000020');
         el.setAttribute('stroke-width', '1');
       }
 
@@ -790,22 +812,23 @@
           const el = document.createElement('div');
           el.className = 'ec-band-chip';
           el.innerHTML = '<span style="background:' + chip.color + ';"></span>' + chip.label;
+          if (chips.indexOf(chip) < 10) el.append(' = ' + chips.indexOf(chip));
           legend.appendChild(el);
         });
       }
 
       function getRoleLabel(index) {
         if (bandCount === 4) {
-          if (index < 2) return 'Band ' + (index + 1);
+          if (index < 2) return 'Digit ' + (index + 1);
           if (index === 2) return 'Multiplier';
           return 'Tolerance';
         }
         if (bandCount === 5) {
-          if (index < 3) return 'Band ' + (index + 1);
+          if (index < 3) return 'Digit ' + (index + 1);
           if (index === 3) return 'Multiplier';
           return 'Tolerance';
         }
-        if (index < 3) return 'Band ' + (index + 1);
+        if (index < 3) return 'Digit ' + (index + 1);
         if (index === 3) return 'Multiplier';
         if (index === 4) return 'Tolerance';
         return 'Temp Coefficient';
@@ -813,16 +836,16 @@
 
       function getBandOptions(index) {
         if (bandCount === 4) {
-          if (index < 2) return resistorColors;
+          if (index < 2) return index === 0 ? resistorColors.slice(1) : resistorColors;
           if (index === 2) return multipliers;
           return tolerances;
         }
         if (bandCount === 5) {
-          if (index < 3) return resistorColors;
+          if (index < 3) return index === 0 ? resistorColors.slice(1) : resistorColors;
           if (index === 3) return multipliers;
           return tolerances;
         }
-        if (index < 3) return resistorColors;
+        if (index < 3) return index === 0 ? resistorColors.slice(1) : resistorColors;
         if (index === 3) return multipliers;
         if (index === 4) return tolerances;
         return ppmOptions;
@@ -835,12 +858,25 @@
           if (!bandEl) continue;
           if (i <= bandCount) {
             bandEl.style.display = 'block';
-            bandEl.setAttribute('x', positions[i - 1]);
+            const x = Number(positions[i - 1]);
+            bandEl.setAttribute('d', 'M' + x + ' 62 Q' + (x + 7) + ' 112 ' + x + ' 162 L' + (x + 20) + ' 162 Q' + (x + 27) + ' 112 ' + (x + 20) + ' 62 Z');
           } else {
             bandEl.style.display = 'none';
           }
         }
-        titleEl.textContent = bandCount + '-Band Resistor';
+        const annotations = document.getElementById('band-annotations');
+        annotations.replaceChildren();
+        positions.forEach(function (x, index) {
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', Number(x) + 12); text.setAttribute('y', '185');
+          text.setAttribute('text-anchor', 'middle'); text.setAttribute('fill', '#f8fafc'); text.setAttribute('font-size', '13');
+          text.textContent = index + 1; annotations.appendChild(text);
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          line.setAttribute('d', 'M' + (Number(x) + 12) + ' 160 v10'); line.setAttribute('stroke', '#91afc2'); annotations.appendChild(line);
+          const role = text.cloneNode(); role.setAttribute('y', '207'); role.setAttribute('font-size', '10');
+          role.textContent = getRoleLabel(index).replace('Multiplier', '×').replace('Tolerance', '± %').replace('Temp Coefficient', 'TCR'); annotations.appendChild(role);
+        });
+        titleEl.textContent = bandCount + '-band axial resistor';
         helpEl.textContent = bandHelp[bandCount];
       }
 
@@ -852,7 +888,7 @@
           const label = document.createElement('label');
           const select = document.createElement('select');
           label.setAttribute('for', 'resistor-select-' + index);
-          label.textContent = getRoleLabel(index);
+          label.textContent = (index + 1) + ' · ' + getRoleLabel(index);
           select.id = 'resistor-select-' + index;
           fillSelect(select, getBandOptions(index), selectedKey);
           select.addEventListener('change', function () {
@@ -887,6 +923,8 @@
         } else {
           ppmEl.textContent = 'Standard classroom resistor';
         }
+        currentResistance = resistance;
+        document.getElementById('resistor-range').textContent = formatResistance(resistance * (1 - tolerance.value / 100)) + ' to ' + formatResistance(resistance * (1 + tolerance.value / 100));
         valueEl.textContent = formatResistance(resistance);
         metaEl.textContent = 'digits ' + digitsValue + ' × ' + multiplier.value.toLocaleString();
         toleranceEl.textContent = 'tolerance ±' + tolerance.value + '%';
@@ -894,6 +932,7 @@
           const item = findByKey(resistorColors, key) || findByKey(multipliers, key) || findByKey(tolerances, key) || findByKey(ppmOptions, key);
           return item ? item.label.split(' ')[0] : key;
         }).join(' • ');
+        document.getElementById('resistor-picture').setAttribute('aria-label', bandCount + '-band resistor: ' + bandLabelsEl.textContent);
       }
 
       function setBandCount(nextCount) {
@@ -902,7 +941,7 @@
         bandTabs.forEach(function (tab) {
           const isActive = Number(tab.dataset.bandCount) === nextCount;
           tab.classList.toggle('is-active', isActive);
-          tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+          tab.setAttribute('aria-pressed', isActive ? 'true' : 'false');
         });
         updateBandLayout();
         renderControls();
@@ -915,6 +954,56 @@
         });
       });
 
+      function exitPractice() {
+        challenge = false;
+        document.getElementById('decoder-answer').hidden = false;
+        document.getElementById('practice-cover').hidden = true;
+        document.getElementById('practice-form').hidden = true;
+        controlsWrap.hidden = false;
+        bandTabs.forEach(tab => tab.disabled = false);
+        document.querySelectorAll('.ec-lab-actions button').forEach(button => button.disabled = false);
+        document.getElementById('practice-feedback').textContent = '';
+      }
+      document.getElementById('new-challenge').addEventListener('click', function () {
+        const examples = [[4, ['red','red','brown','gold']], [4, ['yellow','violet','red','gold']], [5, ['brown','black','black','red','brown']], [4, ['brown','black','gold','gold']], [6, ['orange','orange','black','brown','brown','blue']]];
+        const example = examples[challengeIndex++ % examples.length];
+        setBandCount(example[0]); bands = example[1].slice(); renderControls(); updateResistor();
+        challenge = true;
+        document.getElementById('decoder-answer').hidden = true;
+        document.getElementById('practice-cover').hidden = false;
+        document.getElementById('practice-form').hidden = false;
+        controlsWrap.hidden = true;
+        bandTabs.forEach(tab => tab.disabled = true);
+        document.querySelectorAll('.ec-lab-actions button').forEach(button => button.disabled = true);
+        document.getElementById('practice-value').value = '';
+        document.getElementById('practice-unit').value = '1';
+        document.getElementById('practice-feedback').textContent = 'Challenge ' + challengeIndex + ': ' + bandLabelsEl.textContent + '.';
+        this.textContent = 'Next challenge';
+        document.getElementById('practice-value').focus();
+      });
+      document.getElementById('practice-form').addEventListener('submit', function (event) {
+        event.preventDefault(); if (!challenge) return;
+        const guess = Number(document.getElementById('practice-value').value) * Number(document.getElementById('practice-unit').value);
+        const correct = Math.abs(guess - currentResistance) <= currentResistance * 1e-9;
+        document.getElementById('practice-feedback').textContent = correct ? 'Correct! ' + metaEl.textContent + ' = ' + valueEl.textContent + '. ' + toleranceEl.textContent + '.' : 'Try again. Join the digit bands first, then multiply. Check your unit: 1 kΩ = 1,000 Ω.';
+        if (correct) { document.getElementById('decoder-answer').hidden = false; document.getElementById('practice-cover').hidden = true; }
+      });
+      document.getElementById('practice-hint').addEventListener('click', function () {
+        document.getElementById('practice-feedback').textContent = 'Use the first ' + (bandCount === 4 ? 'two' : 'three') + ' bands as digits. ' + bands[bandCount === 4 ? 2 : 3] + ' is the multiplier. Gold multiplies by 0.1; silver by 0.01.';
+      });
+      document.getElementById('practice-exit').addEventListener('click', exitPractice);
+      document.getElementById('decoder-reset').addEventListener('click', function () { exitPractice(); setBandCount(4); });
+      document.getElementById('load-220').addEventListener('click', function () { setBandCount(4); });
+      document.getElementById('load-10k').addEventListener('click', function () { setBandCount(4); bands = ['brown','black','orange','gold']; renderControls(); updateResistor(); });
+      document.getElementById('quiz-reset').addEventListener('click', function () {
+        document.querySelectorAll('.ec-option').forEach(button => { button.disabled = false; button.classList.remove('is-correct','is-wrong'); });
+        document.querySelectorAll('.ec-q-feedback').forEach(el => el.textContent = '');
+      });
+      document.getElementById('load-1g').addEventListener('click', function () {
+        exitPractice(); setBandCount(4); bands = ['brown', 'black', 'gray', 'gold']; renderControls(); updateResistor();
+        document.getElementById('resistor-picture').scrollIntoView({behavior: 'auto', block: 'center'});
+        document.getElementById('resistor-select-0').focus({preventScroll:true});
+      });
       renderLegend();
       setBandCount(4);
 

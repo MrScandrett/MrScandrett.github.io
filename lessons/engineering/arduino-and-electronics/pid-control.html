@@ -155,6 +155,17 @@
       line-height: 1.6;
     }
 
+    .pid-shell > *, .pid-hero > *, .pid-controls > * { min-width:0; }
+    .pid-page canvas { max-width:100%; }
+    .pid-actions { display:flex; flex-wrap:wrap; gap:.6rem; }
+    .pid-page button { padding:.65rem .9rem; border:1px solid #486277; border-radius:10px; background:#eff6ff; color:#163c63; font:inherit; font-weight:600; cursor:pointer; }
+    .pid-page button:focus-visible, .pid-page input:focus-visible, .pid-page textarea:focus-visible { outline:3px solid #0071e3; outline-offset:3px; }
+    .pid-steps { padding-left:1.4rem; }
+    .pid-steps li { margin-bottom:1.6rem; padding-left:.4rem; }
+    .pid-page p, .pid-steps { line-height:1.65; }
+    .pid-readings { font-family:monospace; padding:.8rem; background:#e7f1fc; border-radius:10px; }
+    .pid-page textarea { display:block; width:100%; box-sizing:border-box; margin:.6rem 0 1rem; padding:.8rem; font:inherit; border:1px solid #486277; border-radius:10px; }
+    @media print { .pid-actions, .pid-page input[type=range], .pid-steps button { display:none; } .pid-card { box-shadow:none; } }
     @media (max-width: 740px) {
       .pid-hero { grid-template-columns: 1fr; }
       .pid-controls { grid-template-columns: 1fr; }
@@ -192,51 +203,120 @@
       <p class="pid-eyebrow">Engineering · Lesson 03</p>
       <h1>PID Control &amp; Feedback Loops</h1>
       <p class="pid-lede">
-        Every autopilot, thermostat, and self-driving car relies on the same
-        elegant idea: measure the error, then correct it — <strong>proportionally</strong>,
+        Feedback controllers use a simple idea: measure the error, then correct it — <strong>proportionally</strong>,
         by its <strong>accumulation</strong>, and by its <strong>rate of change</strong>.
-        Tune a virtual drone and feel the math come alive.
+        Investigate one controller term at a time, then use your evidence to hold a virtual drone at its target altitude.
       </p>
     </div>
 
     <div class="pid-card">
-      <p class="pid-eyebrow">Quick Brief</p>
+      <h2 style="margin-top:0">Your engineering mission</h2><p>Hold altitude at 6 m. Explain why pushing harder, remembering error, and slowing motion solve different problems.</p><p><strong>Route:</strong> Understand feedback → meet PID → predict → tune → test. Allow 35–45 minutes; work with a partner and predict before each run.</p><p class="pid-eyebrow">Three tools</p>
       <ul style="padding-left:1.1rem; color:#486277; line-height:1.7; font-size:0.95rem;">
         <li><strong>P</strong> — Proportional: correction scales with current error</li>
-        <li><strong>I</strong> — Integral: corrects accumulated past error (drift)</li>
+        <li><strong>I</strong> — Integral: corrects accumulated past error (a lasting gap)</li>
         <li><strong>D</strong> — Derivative: dampens based on rate of change (overshoot)</li>
-        <li>Together they form the most widely used control algorithm in engineering</li>
+        <li>Together they form a widely used feedback controller</li>
       </ul>
     </div>
   </div>
+
+<section class="pid-card" aria-labelledby="feedback-intro">
+    <p class="pid-eyebrow">Before you fly · Understand the problem</p>
+    <h2 id="feedback-intro">How can a machine keep something steady?</h2>
+    <p>Imagine steering a ship toward a lighthouse. You turn the wheel, but the ship takes time to turn. If you wait until it points exactly at the lighthouse before easing the rudder, it may keep turning past the heading you wanted. Wind can also keep pushing it to one side. Good steering means watching both <strong>where you are</strong> and <strong>how you are moving</strong>, then correcting again and again.</p>
+    <p>A drone faces the same kind of problem vertically. Its motors push upward, gravity pulls downward, and its momentum keeps it moving. One motor command cannot guarantee a steady height. A controller needs to measure what happened and adjust its next command.</p>
+    <div class="pid-theory-grid">
+      <div class="pid-theory-card"><h3>Open loop: give a command</h3><p>“Run the motors at this power.” The command does not change in response to measured altitude. If the payload changes, the drone may rise or fall.</p></div>
+      <div class="pid-theory-card"><h3>Closed loop: check and correct</h3><p>“Keep measuring altitude and adjust power to hold 6 m.” Feeding the measurement back into the next decision creates a <strong>feedback loop</strong>.</p></div>
+    </div>
+    <h3>Follow one trip around the loop</h3>
+    <ol>
+      <li><strong>Setpoint:</strong> the value we want — here, an altitude of 6 m.</li>
+      <li><strong>Sensor measurement:</strong> the value we observe — suppose the drone is at 3 m.</li>
+      <li><strong>Error:</strong> target minus measurement — 6 − 3 = +3 m.</li>
+      <li><strong>Controller:</strong> the rule that turns that error and its history into a motor command.</li>
+      <li><strong>Actuator and system:</strong> motors change thrust; the drone moves; the next measurement starts another trip around the loop.</li>
+    </ol>
+    <p><strong>Think first:</strong> If the drone reaches 7 m, the error is −1 m. Should the controller increase or reduce upward thrust? Reduce it — but reducing thrust does not instantly stop a rising drone.</p>
+  </section>
+
+  <section class="pid-card" aria-labelledby="pid-history">
+    <p class="pid-eyebrow">Where the idea came from</p>
+    <h2 id="pid-history">From ship steering to programmable machines</h2>
+    <p>PID grew out of a practical engineering question: how can a machine make the repeated corrections a skilled human operator makes?</p>
+    <ol>
+      <li><strong>Early 1900s · automatic steering.</strong> Gyrocompasses and powered steering helped make ship autopilots practical. Elmer Sperry filed a gyropilot patent in 1914. Measuring heading was only part of the challenge; the rudder also needed well-timed corrections.</li>
+      <li><strong>1922 · a mathematical explanation.</strong> Nicolas Minorsky published an analysis of automatic ship steering that discussed the three-term controller we now call PID. His work addressed how a ship’s inertia and persistent disturbances affect stable steering. Trials on the battleship <em>New Mexico</em> followed in 1923.</li>
+      <li><strong>1930s onward · adjustable industrial controllers.</strong> Instrument companies developed general-purpose three-term controllers for industrial processes. Engineers could adjust each action to suit the machine instead of relying on one fixed response.</li>
+    </ol>
+    <p>The lesson’s drone replaces the ship, altitude replaces heading, and motor thrust replaces rudder action. The shared problem is keeping a moving system near a target despite disturbances.</p>
+    <p class="pid-source">History source: S. Bennett, <a href="https://skoge.folk.ntnu.no/puublications_others/1984_Bennett-PID%20history.pdf">“Nicolas Minorsky and the Automatic Steering of Ships” (IEEE Control Systems Magazine, 1984; PDF)</a>.</p>
+  </section>
+
+  <section class="pid-card" aria-labelledby="pid-three-questions">
+    <p class="pid-eyebrow">Meet the algorithm</p>
+    <h2 id="pid-three-questions">PID asks three different questions</h2>
+    <p>An <strong>algorithm</strong> is a repeatable set of instructions. PID combines three instructions into one output. Its <strong>gains</strong> — Kp, Ki, and Kd — control how strongly each term contributes. Tuning means choosing those strengths for the system you are controlling.</p>
+    <div class="pid-theory-grid">
+      <div class="pid-theory-card"><h3>P · How far away am I now?</h3><p><strong>Proportional</strong> means the correction scales with present error. Twice the error gives twice the P correction at the same gain. Strong P can move quickly, but momentum can carry the drone past its target.</p></div>
+      <div class="pid-theory-card"><h3>I · Has a gap persisted?</h3><p><strong>Integral</strong> means accumulating error over time. A small error that lasts keeps building a correction. This can supply the extra thrust needed to close a lasting gap, but stored correction can also cause overshoot.</p></div>
+      <div class="pid-theory-card"><h3>D · How fast am I moving?</h3><p><strong>Derivative</strong> uses a rate of change. In this simulator, D opposes measured vertical velocity: rising motion reduces its thrust contribution; falling motion increases it. It helps damp motion rather than waiting for a large error.</p></div>
+    </div>
+    <h3>A worked controller decision</h3>
+    <p>Suppose the target is 6 m, measured altitude is 5 m, accumulated error is 2 m·s, and the drone is rising at 0.5 m/s. With Kp = 3, Ki = 0.5, and Kd = 2:</p>
+    <ul>
+      <li><strong>P:</strong> 3 × (6 − 5) = +3.</li>
+      <li><strong>I:</strong> 0.5 × 2 = +1.</li>
+      <li><strong>D:</strong> −2 × 0.5 = −1.</li>
+      <li><strong>Requested output:</strong> 3 + 1 − 1 = 3 in the model’s thrust units, then limited to the motor range of 0–12.</li>
+    </ul>
+    <p>These numbers request thrust, not a new altitude. The drone still has to move under gravity and air resistance before the next measurement. The gains carry the unit conversions; their numerical values are specific to this model.</p>
+    <p><strong>Why D uses motion here:</strong> A textbook PID often differentiates error. For a fixed target, error changes at minus the measured velocity. Using measured velocity also avoids a sudden derivative spike when you move the target.</p>
+  </section>
+
+  <section class="pid-card" aria-labelledby="pid-preflight">
+    <p class="pid-eyebrow">Preflight check</p>
+    <h2 id="pid-preflight">Predict a correction before you pilot it</h2>
+    <p>The drone is below the target but rising quickly. P asks for more thrust. What should D contribute?</p>
+    <div class="pid-actions"><button type="button" data-preflight="more">More upward thrust</button><button type="button" data-preflight="less">Less upward thrust</button><button type="button" data-preflight="memory">Accumulate the past error</button></div>
+    <p id="preflightFeedback" role="status">Choose a prediction, then connect it to the drone’s motion.</p>
+    <p><strong>Ready to experiment:</strong> You should be able to identify the target, measurement, error, and motor output, and explain P as present error, I as accumulated error, and D as rate of change. The simulator starts paused so you can read its controls before running a trial.</p>
+  </section>
 
 <!-- ════════════════════════════════════════════════════════════
      SECTION 2 — INTERACTIVE SIM (Drone / Inverted Pendulum)
      ════════════════════════════════════════════════════════════ -->
 
   <div class="pid-card">
-    <p class="pid-eyebrow">Live Simulator</p>
+    <h2>1. Measure, predict, then fly</h2>
+    <p><strong>Target − measured altitude = error.</strong> At the start, 6 − 3 = +3 m. Positive error asks for more upward thrust; negative error asks for less. The drone keeps moving while the controller updates its correction.</p>
+    <p>This simplified vertical model includes gravity, limited thrust, and air resistance. Gains belong to this model; they are not settings for a real drone. There is no automatic hover thrust: the controller must supply it.</p>
+    <div class="pid-actions"><button type="button" data-trial="0">Start with no feedback</button><button type="button" id="resetTrial">Restart with my gains</button><button type="button" id="pauseTrial">Resume</button><button type="button" id="gustTrial">Apply downward gust</button></div>
+    <p id="trialStatus" role="status">Paused at 3 m. Choose Resume or load a guided experiment to start.</p>
 
     <!-- Canvas: drone attempting to hold altitude at a red setpoint line -->
     <div class="pid-sim-wrap">
-      <canvas id="pidCanvas"></canvas>
+      <canvas id="pidCanvas" role="img" aria-label="Drone altitude and target line; exact values appear below.">Drone altitude simulator. Use the target slider and live readings below.</canvas>
     </div>
 
     <!-- P / I / D gain sliders -->
     <div class="pid-controls" style="margin-top:1rem;">
       <div class="pid-slider-group">
-        <label>Kp — Proportional <span class="pid-val" id="kpVal">1.0</span></label>
+        <label for="kpSlider">Kp — Proportional <span class="pid-val" id="kpVal">1.0</span></label>
         <input type="range" id="kpSlider" min="0" max="5" step="0.1" value="1.0" />
       </div>
       <div class="pid-slider-group">
-        <label>Ki — Integral <span class="pid-val" id="kiVal">0.0</span></label>
+        <label for="kiSlider">Ki — Integral <span class="pid-val" id="kiVal">0.0</span></label>
         <input type="range" id="kiSlider" min="0" max="2" step="0.05" value="0.0" />
       </div>
       <div class="pid-slider-group">
-        <label>Kd — Derivative <span class="pid-val" id="kdVal">0.0</span></label>
+        <label for="kdSlider">Kd — Derivative <span class="pid-val" id="kdVal">0.0</span></label>
         <input type="range" id="kdSlider" min="0" max="3" step="0.1" value="0.0" />
       </div>
     </div>
+    <div class="pid-slider-group" style="margin-top:1rem"><label for="targetSlider">Target altitude <span id="targetVal">6.0 m</span></label><input id="targetSlider" type="range" min="1" max="9" step="0.1" value="6" /></div>
+    <p id="liveReadings" class="pid-readings">Altitude: 3.00 m · Error: +3.00 m · Time: 0.0 s</p>
+    <p>Drag the red target line or use the target slider. Restart between comparisons so altitude, velocity, elapsed time, and accumulated error start the same.</p>
   </div>
 
 <!-- ════════════════════════════════════════════════════════════
@@ -244,12 +324,12 @@
      ════════════════════════════════════════════════════════════ -->
 
   <div class="pid-card">
-    <p class="pid-eyebrow">Error Over Time</p>
+    <h2>Read the response</h2>
     <div class="pid-graph-wrap">
-      <canvas id="pidGraph"></canvas>
+      <canvas id="pidGraph" role="img" aria-label="Last ten seconds of target and measured altitude. Current error and peak overshoot appear in the live readings."></canvas>
     </div>
     <p style="margin:0.6rem 0 0; font-size:0.88rem; color:#667b90;">
-      Blue = setpoint · Orange = actual position · Shaded area = error
+      Blue = target · Orange = measured altitude · Shaded gap = error · Horizontal window = last 10 seconds; vertical range = 0–10 m. Overshoot is how far the drone rises above the target.
     </p>
   </div>
 
@@ -262,8 +342,7 @@
       <h3>Proportional (P)</h3>
       <p>
         The P term produces an output proportional to the current error.
-        High Kp responds aggressively but can overshoot. Too low and the
-        system is sluggish, never quite reaching the setpoint ("steady-state error").
+        High Kp responds aggressively but can overshoot. In this model, P alone needs a remaining error to supply thrust against gravity; larger Kp reduces that steady-state error.
       </p>
     </div>
     <div class="pid-theory-card">
@@ -278,8 +357,7 @@
       <h3>Derivative (D)</h3>
       <p>
         The D term reacts to the rate of change of the error. It acts as a
-        brake, smoothing out overshoot and damping oscillations. Too much Kd
-        amplifies sensor noise.
+        brake, smoothing out overshoot and damping oscillations. Differentiating noisy measurements can amplify sensor noise; this simulation uses ideal measurements.
       </p>
     </div>
     <div class="pid-theory-card">
@@ -296,13 +374,26 @@
      SECTION 5 — CHALLENGE MODE (placeholder)
      ════════════════════════════════════════════════════════════ -->
 
-  <div class="pid-card" style="text-align:center; padding:2rem;">
-    <p class="pid-eyebrow">Challenge Mode — Coming Soon</p>
-    <p style="color:#486277; font-size:1rem; max-width:520px; margin:0 auto;">
-      Random wind gusts will push your drone off course. Can you tune the PID
-      gains to recover within 2 seconds every time?
-    </p>
-  </div>
+  <section class="pid-card" aria-labelledby="investigations">
+    <h2 id="investigations">2–5. Build your controller with evidence</h2>
+    <p>For each experiment: <strong>predict → load the setup → observe for 15 seconds → explain.</strong> Change one gain at a time and restart. Do not change the target during a comparison.</p>
+    <ol class="pid-steps">
+      <li><h3>2. P: respond to the present</h3><p>Predict what happens with no feedback, then compare Kp = 1 with Kp = 3 (Ki = Kd = 0). Which rises faster? Which overshoots more? Why can a drone stop below its target even while the controller is working?</p><button type="button" data-trial="1">Load P: 1, 0, 0</button> <button type="button" data-trial="2">Compare stronger P: 3, 0, 0</button><p><strong>Explain:</strong> At rest, thrust must balance gravity. P needs a positive error to produce that thrust. With Kp = 1, expect a remaining error near 1.5 m after oscillations decay.</p></li>
+      <li><h3>3. D: slow the approach</h3><p>Keep Kp = 3 and Ki = 0; add Kd = 2. Predict how the peak height changes. Compare with the stronger-P run. Does less overshoot also remove the final gap?</p><button type="button" data-trial="3">Load PD: 3, 0, 2</button><p><strong>Explain:</strong> Here D uses minus the measured vertical velocity. Rising motion reduces thrust; falling motion increases it. At rest D is zero, so it cannot supply the missing hover thrust.</p></li>
+      <li><h3>4. I: remove a lasting gap</h3><p>Keep Kp = 3 and Kd = 2; add Ki = 0.5. Watch the final gap shrink over 15–25 seconds. Then try Ki = 1.5 from the same start. Does accumulating correction faster improve every part of the response?</p><button type="button" data-trial="4">Load PID: 3, 0.5, 2</button><p><strong>Explain:</strong> A small positive error builds up the I term until thrust can balance gravity at the target. Too much accumulation can keep pushing after the target is crossed. This model caps the error integral at ±8 m·s; real systems need appropriate anti-windup logic.</p></li>
+      <li><h3>5. Disturbance challenge: recover and justify</h3><p>Choose your own gains. Restart at 6 m target and let the drone settle, then apply one downward gust. Aim to return within ±0.2 m of the target and stay there for 3 seconds. The live hold timer resets when you leave that band. Compare two gain sets using the same gust; report recovery time and peak overshoot rather than claiming one setting is always best.</p><p><strong>Transfer:</strong> Change the target to 8 m. Does the same tuning still work? Explain what you would retest if the payload or motor changed.</p></li>
+    </ol>
+  </section>
+  <section class="pid-card">
+    <h2>6. Make your tuning recommendation</h2>
+    <p>Record on paper or in the fields below. These notes stay only on this page until you reload; print or copy them to turn in.</p>
+    <label for="trialNotes"><strong>Evidence log</strong> — for two trials, record gains, prediction, peak overshoot, final error, and gust recovery time.</label>
+    <textarea id="trialNotes" rows="5" placeholder="Trial A: Kp / Ki / Kd… Prediction… Evidence…
+Trial B: …"></textarea>
+    <label for="explainNotes"><strong>Exit explanation</strong> — recommend gains and support them with your comparison. Explain why P alone leaves a gap in this model, why D cannot close it, and how I helps.</label>
+    <textarea id="explainNotes" rows="4"></textarea>
+    <p><strong>Arduino connection:</strong> Each loop reads a sensor, computes error, accumulates error × elapsed seconds, estimates motion, and limits motor output. A fixed update interval, consistent units, sensor filtering, and output limits matter. A motor cannot produce unlimited thrust just because the formula asks for it.</p>
+  </section>
 
   <div class="pid-card">
     <p class="pid-eyebrow">Where PID fits in a robot</p>
@@ -318,6 +409,7 @@
 
 <script src="../../../assets/js/theme-registry.js"></script>
 <script src="../../../assets/js/nav-mobile.js"></script>
+<script src="../../../assets/js/sim-kit.js"></script>
 <script>
 (function () {
   'use strict';
@@ -350,7 +442,7 @@
   var velocity = 0;
   var setpoint = 6;
   var integral = 0;
-  var prevError = 0;
+
   var lastThrust = 0;
   var propAngle = 0;
 
@@ -366,26 +458,52 @@
   wireSlider(kdSlider, kdVal, 'kd', 1);
 
   var history = [];
-  var startTime = performance.now();
-
-  var simDims = { width: 0, height: 0 };
-  var graphDims = { width: 0, height: 0 };
-
-  function fitCanvas(c) {
-    var rect = c.getBoundingClientRect();
-    var dpr = window.devicePixelRatio || 1;
-    c.width = Math.max(1, Math.round(rect.width * dpr));
-    c.height = Math.max(1, Math.round(rect.height * dpr));
-    c.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
-    return { width: rect.width, height: rect.height };
+  var elapsed = 0, paused = true, peak = 0, hold = 0, readingClock = 0;
+  var simDims = SimKit.canvas2d(canvas, { height: 360 });
+  var graphDims = SimKit.canvas2d(graphCanvas, { height: 200 });
+  var targetSlider = document.getElementById('targetSlider');
+  function updateTarget(value) {
+    setpoint = value;
+    targetSlider.value = value;
+    document.getElementById('targetVal').textContent = value.toFixed(1) + ' m';
+    peak = 0; hold = 0;
   }
-
-  function resizeAll() {
-    simDims = fitCanvas(canvas);
-    graphDims = fitCanvas(graphCanvas);
+  targetSlider.addEventListener('input', function () { updateTarget(Number(this.value)); });
+  function reset() {
+    altitude = 3; velocity = 0; integral = 0; lastThrust = 0;
+    elapsed = 0; peak = 0; hold = 0; history = []; paused = false;
+    document.getElementById('pauseTrial').textContent = 'Pause';
+    document.getElementById('trialStatus').textContent = 'Restarted at 3 m with zero velocity and cleared integral. Target: ' + setpoint.toFixed(1) + ' m.';
   }
-  window.addEventListener('resize', resizeAll);
-  resizeAll();
+  document.querySelectorAll('[data-preflight]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var messages = {
+        less: 'Correct. Rising velocity makes the D term negative, reducing requested thrust and helping damp the approach. P can still ask for more thrust because the drone is below its target.',
+        more: 'Look at motion as well as position. P already responds to being below target. D opposes the fast upward motion, so its contribution reduces thrust.',
+        memory: 'Accumulating past error is the I term. D responds to current motion: upward velocity produces a negative D contribution.'
+      };
+      document.getElementById('preflightFeedback').textContent = messages[button.dataset.preflight];
+    });
+  });
+  var presets = [[0,0,0], [1,0,0], [3,0,0], [3,0,2], [3,0.5,2]];
+  document.querySelectorAll('[data-trial]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var preset = presets[Number(button.dataset.trial)];
+      [kpSlider, kiSlider, kdSlider].forEach(function (slider, i) {
+        slider.value = preset[i]; slider.dispatchEvent(new Event('input'));
+      });
+      updateTarget(6); reset();
+      document.getElementById('trialStatus').textContent = button.textContent + '. Predict first, then observe for at least 15 seconds.';
+    });
+  });
+  document.getElementById('resetTrial').addEventListener('click', reset);
+  document.getElementById('pauseTrial').addEventListener('click', function () {
+    paused = !paused; this.textContent = paused ? 'Resume' : 'Pause';
+  });
+  document.getElementById('gustTrial').addEventListener('click', function () {
+    velocity -= 2; peak = 0; hold = 0; elapsed = 0; history = [];
+    document.getElementById('trialStatus').textContent = 'Gust applied: vertical velocity decreased by 2 m/s. Time and peak restarted; controller memory retained.';
+  });
 
   // ── Drag the red setpoint line up/down ──
   var dragging = false;
@@ -398,10 +516,10 @@
   }
   canvas.addEventListener('pointerdown', function (e) {
     dragging = true;
-    setpoint = altFromClientY(e.clientY);
+    updateTarget(altFromClientY(e.clientY));
   });
   window.addEventListener('pointermove', function (e) {
-    if (dragging) setpoint = altFromClientY(e.clientY);
+    if (dragging) updateTarget(altFromClientY(e.clientY));
   });
   window.addEventListener('pointerup', function () { dragging = false; });
 
@@ -532,39 +650,43 @@
     gctx.stroke();
   }
 
-  var lastFrame = performance.now();
-
-  function step(now) {
-    var dt = Math.min(0.05, (now - lastFrame) / 1000);
-    lastFrame = now;
+  function step(frameDt) {
+    var dt = paused ? 0 : Math.min(0.05, frameDt);
+    elapsed += dt;
 
     var error = setpoint - altitude;
     integral = Math.max(-8, Math.min(8, integral + error * dt));
-    var derivative = dt > 0 ? (error - prevError) / dt : 0;
-    prevError = error;
+    var derivative = -velocity; // derivative on measurement avoids target-change kick
+
 
     var output = gains.kp * error + gains.ki * integral + gains.kd * derivative;
     var thrust = Math.max(0, Math.min(MAX_THRUST, output));
     lastThrust = thrust;
 
-    velocity += (thrust - GRAVITY) * dt;
+    velocity += (thrust - GRAVITY - 0.35 * velocity) * dt;
     velocity = Math.max(-8, Math.min(8, velocity));
     altitude += velocity * dt;
 
     if (altitude <= 0) { altitude = 0; velocity = Math.max(0, velocity * -0.2); }
     if (altitude >= ALT_MAX) { altitude = ALT_MAX; velocity = Math.min(0, velocity); }
 
-    var t = (now - startTime) / 1000;
-    history.push({ t: t, setpoint: setpoint, altitude: altitude });
+    var t = elapsed;
+    if (!paused) history.push({ t: t, setpoint: setpoint, altitude: altitude });
     while (history.length > 2 && t - history[0].t > 10) history.shift();
 
     drawSim();
     drawGraph();
 
-    requestAnimationFrame(step);
+    peak = Math.max(peak, altitude - setpoint);
+    hold = Math.abs(setpoint - altitude) <= 0.2 ? hold + dt : 0;
+    readingClock += frameDt;
+    if (readingClock >= 0.2) {
+      readingClock = 0;
+      document.getElementById('liveReadings').textContent = 'Altitude: ' + altitude.toFixed(2) + ' m · Error: ' + (setpoint-altitude).toFixed(2) + ' m · Time: ' + elapsed.toFixed(1) + ' s · Peak overshoot: ' + peak.toFixed(2) + ' m · Within ±0.2 m: ' + hold.toFixed(1) + ' s' + (hold >= 3 ? ' — held for 3 seconds' : '');
+    }
   }
 
-  requestAnimationFrame(step);
+  SimKit.loop(step);
 }());
 </script>
 
