@@ -11,7 +11,7 @@ let pianoNoiseBuffer = null;
 const modular = {
   wave: 'sine',
   freq: 220,
-  vca: 0.6,
+  vca: 0.36,
   osc: null,
   vcaNode: null,
   output: null,
@@ -129,7 +129,8 @@ function getTheoryNote(midi) {
   else if (relativePc === 0 && distance >= 12) interval = 'P8';
   else if (relativePc === 0 && distance <= -12) interval = '-P8';
   else if (distance < 0) interval = `↓${interval}`;
-  const octave = Math.floor(midi / 12) - 1;
+  const a = spelling.accidental === '♯' ? 1 : spelling.accidental === '♭' ? -1 : spelling.accidental === '𝄪' ? 2 : spelling.accidental === '𝄫' ? -2 : 0;
+  const octave = MusicNotation.writtenOctave(midi, spelling.letter, a);
   const signatureAccidental = signatureAccidentalForLetter(spelling.letter);
   let displayedAccidental = spelling.accidental;
   if (spelling.accidental === signatureAccidental) displayedAccidental = '';
@@ -431,7 +432,8 @@ function clearBridgeHighlights() {
 }
 
 function getNoteLayout(note, centerMidi) {
-  const steps = note.staffIndex - getTheoryNote(centerMidi).staffIndex;
+  const reference = MusicNotation.fromMidi(centerMidi).diatonic;
+  const steps = note.staffIndex - reference;
   const yBase = 92;
   const stepPx = 5;
   return {
@@ -439,25 +441,6 @@ function getNoteLayout(note, centerMidi) {
     y: yBase - (steps * stepPx)
   };
 }
-
-const KEY_SIGNATURE_MIDIS = {
-  treble: {
-    sharp: [77, 72, 79, 74, 69, 76],
-    flat:  [71, 76, 69, 74, 67, 72],
-  },
-  bass: {
-    sharp: [53, 48, 55, 50, 45, 52],
-    flat:  [47, 52, 45, 50, 43, 48],
-  },
-  alto: {
-    sharp: [65, 60, 67, 62, 57, 64],
-    flat:  [59, 64, 57, 62, 55, 60],
-  },
-  soprano: {
-    sharp: [65, 72, 67, 74, 69, 64],
-    flat:  [71, 64, 69, 62, 67, 60],
-  },
-};
 
 function keySignatureDescription() {
   const key = currentNotationKey();
@@ -467,17 +450,14 @@ function keySignatureDescription() {
 
 function buildStaffChrome(clefKey) {
   const key = currentNotationKey();
-  const targets = KEY_SIGNATURE_MIDIS[clefKey][key.accidental].slice(0, key.signature);
+  const targets = MusicNotation.clefs[clefKey][key.accidental].slice(0, key.signature);
   const symbol = key.accidental === 'flat' ? '♭' : '♯';
-  const signatureMarks = targets.map((midi, index) => {
-    const layout = getNoteLayout(getTheoryNote(midi), CLEF_CONFIG[clefKey].centerMidi);
-    return `<text x="${12 + (index * 15)}" y="${layout.y + 7}" aria-hidden="true">${symbol}</text>`;
-  }).join('');
+  const signatureMarks = targets.map((step, index) => MusicNotation.accidental(symbol, 8 + index * 15, 112 - step * 5, 10)).join('');
   const signatureWidth = Math.max(18, 18 + (targets.length * 15));
   const timeLeft = 92 + (targets.length * 15);
 
   return `
-    <div class="clef-symbol" aria-hidden="true">${CLEF_CONFIG[clefKey].symbol}</div>
+    <svg class="mn-clef-svg" viewBox="0 0 64 162" aria-hidden="true">${MusicNotation.clef(clefKey, 0, 112, 5)}</svg>
     <svg class="staff-key-signature" style="width:${signatureWidth}px" viewBox="0 0 ${signatureWidth} 224"
          role="img" aria-label="${key.label}, ${keySignatureDescription()}">${signatureMarks}</svg>
     <span class="staff-time-signature" style="left:${timeLeft}px" aria-label="Four four time"><span>4</span><span>4</span></span>
@@ -515,7 +495,7 @@ function buildChordSvg(notesInClef, centerMidi) {
     layouts[i].headX = 36;
     if (i > 0 && Math.abs(layouts[i].steps - layouts[i-1].steps) <= 1) {
       if (!currentShift) {
-        layouts[i].headX = 36 + 12;
+        layouts[i].headX = 36 + (stemDown ? -12 : 12);
         currentShift = true;
       } else {
         currentShift = false;
@@ -555,13 +535,13 @@ function buildChordSvg(notesInClef, centerMidi) {
     if (l.note.accidental) {
       const isClose = Math.abs(l.steps - lastAccidentalStep) <= 2;
       const xPos = isClose ? l.headX - 34 : l.headX - 22;
-      svg += `<text class="note-accidental" x="${xPos}" y="${l.y + 6}" aria-hidden="true">${l.note.accidental}</text>`;
+      svg += MusicNotation.accidental(l.note.accidental, xPos, l.y, 10);
       lastAccidentalStep = l.steps;
     }
   });
 
   layouts.forEach((l) => {
-    svg += `<ellipse class="note-head" style="--interval-color:${l.note.intervalColor}" cx="${l.headX}" cy="${l.y}" rx="7" ry="5"></ellipse>`;
+    svg += `<g class="note-head" style="--interval-color:${l.note.intervalColor};color:${notationState.intervalColors ? l.note.intervalColor : "#050505"}">${MusicNotation.glyph("quarter", l.headX - 6, l.y, 10)}</g>`;
   });
 
   svg += '</svg>';
@@ -812,13 +792,14 @@ function startPiano(note, velocity) {
 // ───── Drum synthesis ─────
 // Voices live in assets/js/drum-engine.js (shared with the Drum Lab lesson).
 let drumEngine = null;
+const drumStudio = window.DrumStudio.mount(document.getElementById('drumStudio'), ['kick','snare','hat','clap','tom1','tom2','perc','crash','ohat','ride','tomMid','rim'], (name) => { ensureAudio(); triggerDrum(name); });
 
 function triggerDrum(name, time) {
   if (!audioCtx || !window.DrumEngine) return;
   if (audioCtx.state !== 'running') audioCtx.resume();
   if (!drumEngine) drumEngine = window.DrumEngine.create(audioCtx, master);
   const t = (time !== undefined) ? time : audioCtx.currentTime;
-  drumEngine.hit(name, t, 0.85);
+  drumEngine.hit(name, t, 0.85, drumStudio.options(name));
 }
 
 // ───── Stop voice (uses ADSR release) ─────
@@ -1311,6 +1292,7 @@ function createModularOsc() {
 function setWaveform(wave) {
   modular.wave = wave;
   if (modular.osc) modular.osc.type = wave;
+  updateModularStatus();
   if (els.waveButtons.length) {
     els.waveButtons.forEach((btn) => {
       const active = btn.dataset.waveform === wave;
@@ -1320,20 +1302,60 @@ function setWaveform(wave) {
   }
 }
 
+function updateHardwareKnob(input, value, description) {
+  if (!input) return;
+  input.parentElement.style.setProperty('--knob-angle', `${Number(value) * 2.7 - 135}deg`);
+  input.setAttribute('aria-valuetext', description);
+}
+
+function initHardwareKnob(input, initialValue) {
+  if (!input) return;
+  let drag = null;
+  input.addEventListener('pointerdown', event => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    input.focus();
+    input.setPointerCapture(event.pointerId);
+    drag = { y: event.clientY, value: Number(input.value) };
+  });
+  input.addEventListener('pointermove', event => {
+    if (!drag) return;
+    const change = (drag.y - event.clientY) * (event.shiftKey ? 0.025 : 0.4);
+    input.value = Math.max(0, Math.min(100, drag.value + change));
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    drag = { y: event.clientY, value: Number(input.value) };
+  });
+  input.addEventListener('lostpointercapture', () => { drag = null; });
+  input.addEventListener('pointerup', event => {
+    drag = null;
+    if (input.hasPointerCapture(event.pointerId)) input.releasePointerCapture(event.pointerId);
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  input.addEventListener('dblclick', () => {
+    input.value = initialValue;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+}
+
 function setModularFreq(value) {
-  modular.freq = Number(value);
-  if (els.modularFreqVal) els.modularFreqVal.textContent = `${modular.freq} Hz`;
+  modular.freq = 27.5 * Math.pow(2, Number(value) * 6 / 100);
+  if (els.modularFreqVal) els.modularFreqVal.textContent = `${modular.freq.toFixed(1)} Hz`;
+  updateHardwareKnob(els.modularFreq, value, `${modular.freq.toFixed(1)} hertz`);
   if (modular.osc && audioCtx) {
-    modular.osc.frequency.setValueAtTime(modular.freq, audioCtx.currentTime);
+    modular.osc.frequency.setTargetAtTime(modular.freq, audioCtx.currentTime, 0.015);
   }
+  updateModularStatus();
 }
 
 function setModularVca(value) {
-  modular.vca = Number(value) / 100;
-  if (els.modularVcaVal) els.modularVcaVal.textContent = `${value}%`;
+  modular.vca = Math.pow(Number(value) / 100, 2);
+  const levelText = modular.vca === 0 ? 'Off' : `${(20 * Math.log10(modular.vca)).toFixed(1)} dB`;
+  if (els.modularVcaVal) els.modularVcaVal.textContent = levelText;
+  updateHardwareKnob(els.modularVca, value, levelText === 'Off' ? 'Off' : `${levelText} relative to full level`);
   if (modular.vcaNode && audioCtx) {
-    modular.vcaNode.gain.setValueAtTime(modular.vca, audioCtx.currentTime);
+    modular.vcaNode.gain.setTargetAtTime(modular.vca, audioCtx.currentTime, 0.015);
   }
+  updateModularStatus();
 }
 
 function patchSummary() {
@@ -1342,17 +1364,20 @@ function patchSummary() {
 
   if (!vcaIn && !outIn) return 'no cables';
   if (vcaIn === 'osc-out' && outIn === 'vca-out') return 'Osc → VCA → Output';
-  if (outIn === 'osc-out') return 'Osc → Output';
+  if (outIn === 'osc-out') return 'Osc → Output (VCA bypassed)';
   if (vcaIn === 'osc-out' && !outIn) return 'Osc → VCA (not routed)';
   if (!vcaIn && outIn === 'vca-out') return 'VCA → Output (no source)';
-  if (vcaIn === 'osc-out' && outIn === 'osc-out') return 'Osc → VCA + Output';
   return 'Custom patch';
 }
 
 function updateModularStatus() {
   if (!els.modularStatus) return;
   const patchText = patchSummary();
-  const outputText = modular.isPlaying ? 'Output: playing' : 'Output: silent';
+  const source = modular.connections.get('out-in');
+  const routed = source === 'osc-out' || (source === 'vca-out' && modular.connections.get('vca-in') === 'osc-out');
+  const audible = routed && (source === 'osc-out' || modular.vca > 0);
+  const outputText = !modular.isPlaying ? 'Tone stopped' : !routed ? 'Silent: connect the oscillator to Output' : !audible ? 'Silent: raise the VCA level' : `Tone running: ${modular.freq.toFixed(1)} Hz · ${modular.wave}`;
+  if (els.modularRack) els.modularRack.classList.toggle('is-playing', modular.isPlaying && audible);
   els.modularStatus.textContent = `Patch: ${patchText} · ${outputText}`;
 }
 
@@ -1445,6 +1470,12 @@ function updateJackStates() {
     const connected = isInput ? modular.connections.has(id) : outputsInUse.has(id);
     jack.classList.toggle('is-connected', connected);
     jack.classList.toggle('is-source', modular.pendingOutput === id);
+    const invalid = isInput && modular.pendingOutput === 'vca-out' && id === 'vca-in';
+    jack.classList.toggle('is-target', isInput && !!modular.pendingOutput && !invalid);
+    jack.setAttribute('aria-disabled', invalid ? 'true' : 'false');
+    const source = modular.connections.get(id);
+    jack.title = isInput ? (source ? `Connected to ${source === 'osc-out' ? 'Oscillator' : 'VCA'}. Select to unplug or replace.` : 'Select an output first, then connect here.') : 'Select this source, then an input.';
+    jack.setAttribute('aria-description', jack.title);
     jack.setAttribute('aria-pressed', (isInput ? connected : modular.pendingOutput === id) ? 'true' : 'false');
   });
 }
@@ -1455,9 +1486,14 @@ function handleJackClick(jack) {
   if (type === 'output') {
     modular.pendingOutput = modular.pendingOutput === id ? null : id;
     updateJackStates();
+    setPatchHint(modular.pendingOutput ? `Selected ${id === 'osc-out' ? 'Oscillator' : 'VCA'} output. Choose a highlighted input; Escape cancels.` : 'Selection cancelled. Choose an output to start a cable.');
     return;
   }
 
+  if (modular.pendingOutput === 'vca-out' && id === 'vca-in') {
+    setPatchHint('Connect VCA output to Output. This patchbay does not support feeding a module into itself.');
+    return;
+  }
   if (modular.pendingOutput) {
     modular.connections.set(id, modular.pendingOutput);
     modular.pendingOutput = null;
@@ -1465,6 +1501,7 @@ function handleJackClick(jack) {
     modular.connections.delete(id);
   }
 
+  setPatchHint('Patch updated. Select an output to add or replace a cable; select a connected input to unplug.');
   updateJackStates();
   drawPatchCables();
   applyPatch();
@@ -1495,6 +1532,24 @@ function stopModularTone() {
   modular.osc = null;
   updateModularButtons();
   updateModularStatus();
+}
+
+function setPatchHint(message) {
+  const hint = document.getElementById('patchHint');
+  if (hint) hint.textContent = message;
+}
+
+function loadModularPatch(kind) {
+  modular.pendingOutput = null;
+  modular.connections.clear();
+  if (kind === 'level') {
+    modular.connections.set('vca-in', 'osc-out');
+    modular.connections.set('out-in', 'vca-out');
+  } else if (kind === 'direct') modular.connections.set('out-in', 'osc-out');
+  updateJackStates();
+  drawPatchCables();
+  applyPatch();
+  setPatchHint(kind === 'direct' ? 'Direct sound: the oscillator bypasses the VCA, so its level control has no effect.' : kind === 'level' ? 'Through VCA: follow the cables from the oscillator, through the level control, to Output.' : 'All cables removed. Connect Oscillator out to VCA in, then VCA out to Output in.');
 }
 
 function initModularPatchbay() {
@@ -1964,6 +2019,9 @@ els.adsrD.addEventListener('input', readAdsr);
 els.adsrS.addEventListener('input', readAdsr);
 els.adsrR.addEventListener('input', readAdsr);
 
+initHardwareKnob(els.modularFreq, 50);
+initHardwareKnob(els.modularVca, 60);
+
 if (els.modularPlay) els.modularPlay.addEventListener('click', startModularTone);
 if (els.modularStop) els.modularStop.addEventListener('click', stopModularTone);
 if (els.modularFreq) els.modularFreq.addEventListener('input', (e) => setModularFreq(e.target.value));
@@ -1981,6 +2039,24 @@ if (els.patchJacks.length) {
   });
 }
 
+document.querySelectorAll('[data-patch]').forEach(button => button.addEventListener('click', () => loadModularPatch(button.dataset.patch)));
+document.getElementById('modularReset')?.addEventListener('click', () => {
+  stopModularTone();
+  setWaveform('sine');
+  els.modularFreq.value = 50;
+  els.modularVca.value = 60;
+  setModularFreq(50);
+  setModularVca(60);
+  loadModularPatch('level');
+});
+els.modularRack?.addEventListener('keydown', event => {
+  if (event.key === 'Escape') {
+    modular.pendingOutput = null;
+    updateJackStates();
+    setPatchHint('Selection cancelled. Choose an output to start a cable.');
+  }
+});
+if (els.modularRack) new ResizeObserver(drawPatchCables).observe(els.modularRack);
 window.addEventListener('resize', drawPatchCables);
 
 els.seqPlay.addEventListener('click', () => { seqPlaying ? seqStop() : seqStart(); });
@@ -2245,16 +2321,9 @@ function scalePracticeMidis(twoOctaves) {
 
 function scoreKeySignatureMarks(startX = 70, compact = false) {
   const key = currentNotationKey();
-  const fullY = key.accidental === 'flat'
-    ? [118, 103, 123, 108, 128, 113]
-    : [98, 113, 93, 108, 123, 103];
+  const steps = MusicNotation.clefs.treble[key.accidental];
   const symbol = key.accidental === 'flat' ? '♭' : '♯';
-  return fullY.slice(0, key.signature).map((y, index) => {
-    if (compact) {
-      return `<text class="score-key-mark" style="font-size:18px" x="${startX + (index * 9)}" y="${y - 48}">${symbol}</text>`;
-    }
-    return `<text class="score-key-mark" x="${startX + (index * 15)}" y="${y + 7}">${symbol}</text>`;
-  }).join('');
+  return steps.slice(0, key.signature).map((step, index) => MusicNotation.accidental(symbol, startX + index * (compact ? 9 : 15), (compact ? 85 : 138) - step * 5, 10)).join('');
 }
 
 function scoreLedgerLines(x, y, topLine = 98, bottomLine = 138) {
@@ -2277,7 +2346,7 @@ function buildScaleScoreSvg(midis, rhFingers, lhFingers, direction) {
   const startX = 128 + signatureSpace;
   const width = Math.max(720, startX + 38 + ((midis.length - 1) * 58));
   const spacing = (width - startX - 34) / Math.max(1, midis.length - 1);
-  const b4Index = getTheoryNote(71).staffIndex;
+  const b4Index = MusicNotation.clefs.treble.bottom + 4;
   const lines = [98, 108, 118, 128, 138]
     .map(y => `<line class="score-staff-line" x1="86" x2="${width - 22}" y1="${y}" y2="${y}"></line>`).join('');
 
@@ -2285,15 +2354,14 @@ function buildScaleScoreSvg(midis, rhFingers, lhFingers, direction) {
     const note = getTheoryNote(midi);
     const x = startX + (index * spacing);
     const y = 118 - ((note.staffIndex - b4Index) * 5);
-    const stemDown = y < 118;
+    const stemDown = y <= 118;
     const stemX = x + (stemDown ? -6 : 6);
     const stemEnd = y + (stemDown ? 31 : -31);
     const rhY = Math.min(76, Math.max(18, y - 20));
     const lhY = Math.max(164, Math.min(188, y + 28));
     const fill = notationState.intervalColors ? note.intervalColor : '#050505';
     return `${scoreLedgerLines(x, y)}
-      <line class="score-stem" x1="${stemX}" x2="${stemX}" y1="${y}" y2="${stemEnd}"></line>
-      <ellipse class="score-note-head" cx="${x}" cy="${y}" rx="7" ry="5" fill="${fill}" transform="rotate(-20 ${x} ${y})"></ellipse>
+      <g style="color:${fill}">${MusicNotation.note(x, y, 10, 1, false, !stemDown)}</g>
       <text class="score-finger-rh" text-anchor="middle" x="${x}" y="${rhY}">${rhFingers[index]}</text>
       <text class="score-finger-lh" text-anchor="middle" x="${x}" y="${lhY}">${lhFingers[index]}</text>
       <text class="score-note-name" text-anchor="middle" x="${x}" y="218">${note.pitchLabel}</text>`;
@@ -2305,7 +2373,7 @@ function buildScaleScoreSvg(midis, rhFingers, lhFingers, direction) {
     ${lines}
     <line class="score-barline" x1="86" x2="86" y1="98" y2="138"></line>
     <line class="score-barline" x1="${width - 22}" x2="${width - 22}" y1="98" y2="138"></line>
-    <text class="score-clef" x="20" y="140" aria-hidden="true">𝄞</text>
+    ${MusicNotation.clef("treble", 20, 138, 5)}
     ${scoreKeySignatureMarks(70)}
     <text class="score-hand-label" x="6" y="25">RH</text>
     <text class="score-hand-label" x="6" y="181">LH</text>
@@ -2343,7 +2411,7 @@ function renderScalePractice() {
 }
 
 function buildDiatonicChordScore(midis) {
-  const b4Index = getTheoryNote(71).staffIndex;
+  const b4Index = MusicNotation.clefs.treble.bottom + 4;
   const x = 108;
   const lines = [45, 55, 65, 75, 85]
     .map(y => `<line class="score-staff-line" x1="28" x2="144" y1="${y}" y2="${y}"></line>`).join('');
@@ -2357,15 +2425,15 @@ function buildDiatonicChordScore(midis) {
   const noteMarkup = layouts.map(({ note, x: headX, y }) => {
     const fill = notationState.intervalColors ? note.intervalColor : '#050505';
     return `${scoreLedgerLines(headX, y, 45, 85)}
-      <ellipse class="score-note-head" cx="${headX}" cy="${y}" rx="7" ry="5" fill="${fill}" transform="rotate(-20 ${headX} ${y})"></ellipse>`;
+      <g style="color:${fill}">${MusicNotation.glyph("quarter", headX - 6, y, 10)}</g>`;
   }).join('');
   const minY = Math.min(...layouts.map(layout => layout.y));
   const maxY = Math.max(...layouts.map(layout => layout.y));
   return `<svg class="diatonic-chord-score" viewBox="0 0 152 128" aria-hidden="true" focusable="false">
     ${lines}<line class="score-barline" x1="144" x2="144" y1="45" y2="85"></line>
-    <text class="score-clef" style="font-size:42px" x="0" y="88">𝄞</text>
+    ${MusicNotation.clef("treble", 5, 85, 5)}
     ${scoreKeySignatureMarks(39, true)}
-    <line class="score-stem" x1="114" x2="114" y1="${minY}" y2="${Math.max(maxY + 30, minY + 30)}"></line>
+    <line class="score-stem" x1="102" x2="102" y1="${minY}" y2="${Math.max(maxY + 30, minY + 30)}"></line>
     ${noteMarkup}
   </svg>`;
 }

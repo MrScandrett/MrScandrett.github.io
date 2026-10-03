@@ -554,7 +554,7 @@
       var y = yFor(step);
       svg += '<line x1="46" x2="' + (width - 8) + '" y1="' + y + '" y2="' + y + '" class="vln-staff-line" />';
     }
-    svg += '<text x="49" y="' + (yFor(REF + 2) + 19) + '" class="vln-clef">𝄞</text>';
+    svg += window.MusicNotation.clef('treble', 47, staffBottomY, STEP_PX);
 
     STRINGS.forEach(function (str, idx) {
       var x = laneX0 + idx * laneW + laneW / 2;
@@ -583,8 +583,8 @@
           }
         }
         var info = pcInfo(pt.midi);
-        svg += '<ellipse cx="' + x + '" cy="' + ny + '" rx="' + NOTE_R + '" ry="' + (NOTE_R - 1) + '" class="vln-notehead vln-hue-' + str.hue + '" />';
-        if (info.accidental) svg += '<text x="' + (x - 13) + '" y="' + (ny + 3.5) + '" class="vln-accidental">♯</text>';
+        svg += window.MusicNotation.glyph('quarter', x - 7, ny, LINE_SPACING, 'vln-notehead vln-hue-' + str.hue);
+        if (info.accidental) svg += window.MusicNotation.accidental(1, x - 22, ny, LINE_SPACING);
         svg += '<text x="' + x + '" y="' + (ny - 8) + '" class="vln-note-label">' + noteName(pt.midi) + '</text>';
       });
 

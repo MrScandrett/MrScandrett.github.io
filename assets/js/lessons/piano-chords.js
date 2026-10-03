@@ -41,7 +41,7 @@
     { key: 'minorPent', name: 'Minor Pentatonic', intervals: [0, 3, 5, 7, 10], degrees: ['1', '♭3', '4', '5', '♭7'], mode: null, desc: 'The natural minor scale with the 2nd and 6th removed — the rock and blues soloing staple.' },
     { key: 'blues', name: 'Blues', intervals: [0, 3, 5, 6, 7, 10], degrees: ['1', '♭3', '4', '♭5', '5', '♭7'], mode: null, desc: 'Minor pentatonic plus a chromatic ♭5 "blue note" passing between the 4th and 5th.' },
     { key: 'harmonicMinor', name: 'Harmonic Minor', intervals: [0, 2, 3, 5, 7, 8, 11], degrees: ['1', '2', '♭3', '4', '5', '♭6', '7'], mode: null, desc: 'Natural minor with a raised 7th, opening a dramatic step-and-a-half gap right before the root.' },
-    { key: 'melodicMinor', name: 'Melodic Minor', intervals: [0, 2, 3, 5, 7, 9, 11], degrees: ['1', '2', '♭3', '4', '5', '6', '7'], mode: null, desc: 'Natural minor with a raised 6th and 7th — smooths out harmonic minor’s awkward gap.' }
+    { key: 'melodicMinor', name: 'Melodic Minor (ascending form)', intervals: [0, 2, 3, 5, 7, 9, 11], degrees: ['1', '2', '♭3', '4', '5', '6', '7'], mode: null, desc: 'This ascending form raises the 6th and 7th; here it is played in both directions, as in jazz. Classical descending melodic minor instead uses natural minor.' }
   ];
 
   var INVERSION_LABELS = ['Root position', '1st inversion', '2nd inversion', '3rd inversion'];
@@ -971,6 +971,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  function spelledScale(root, type) {
+    return window.MusicNotation.spellPattern(window.MusicNotation.fromMidi(60+root),type.intervals,type.degrees.map(function(d){return Number(d.replace(/[^0-9]/g,''))-1;}));
+  }
   function renderScales() {
     if (!scaleBoard) return;
     var toneMap = buildScaleToneMap(scaleCurrentRoot, scaleCurrentType);
@@ -978,7 +981,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (scaleMeta) {
       var name = PT.PITCHES[scaleCurrentRoot] + ' ' + scaleCurrentType.name;
-      var noteNames = scaleCurrentType.intervals.map(function (iv) { return PT.PITCHES[PT.mod12(scaleCurrentRoot + iv)]; });
+      var noteNames = spelledScale(scaleCurrentRoot, scaleCurrentType).map(function(n){return n.replace(/-?\d+$/, '');});
       var html = '<h3>' + name + '</h3>';
       html += '<p class="pc-enc-notes">' + scaleCurrentType.degrees.length + '-note scale</p>';
       html += '<p class="pc-enc-notes">Notes: ' + noteNames.join(' – ') + '</p>';
@@ -1602,64 +1605,29 @@ document.addEventListener('DOMContentLoaded', function () {
      opts.currentIndex highlights one note (the playback cursor). */
   function renderStaff(container, notes, opts) {
     opts = opts || {};
-    var cellW = opts.cellWidth || 54;
-    var width = Math.max(220, 70 + notes.length * cellW + 30);
-    var bottomLineY = STAFF_TOP_PAD + (STAFF_LINE_COUNT - 1) * STAFF_SPACE * 2;
-    var height = STAFF_TOP_PAD + STAFF_BOTTOM_PAD + (STAFF_LINE_COUNT - 1) * STAFF_SPACE * 2;
-
-    function yForStep(step) { return bottomLineY - step * STAFF_SPACE; }
-
-    var svg = '<svg class="pc-staff-svg" viewBox="0 0 ' + width + ' ' + height + '" width="' + width + '" height="' + height + '" role="img" aria-label="Musical staff">';
-    for (var li = 0; li < STAFF_LINE_COUNT; li++) {
-      var ly = bottomLineY - li * STAFF_SPACE * 2;
-      svg += '<line class="pc-staff-line" x1="8" x2="' + (width - 8) + '" y1="' + ly + '" y2="' + ly + '" />';
-    }
-    svg += '<text class="pc-staff-clef" x="10" y="' + (yForStep(4) + 15) + '" font-size="42">𝄞</text>';
-
-    notes.forEach(function (note, i) {
-      var x = 66 + i * cellW;
-      var spelling = note.spelling && /^([A-G])([♭♯]?)([0-9])$/.exec(note.spelling);
-      var step = spelling ? Number(spelling[3]) * 7 + LETTER_ORDER.indexOf(spelling[1]) - STAFF_REF_STEP : diatonicStep(note.absIndex);
-      var y = yForStep(step);
-      var info = spelling ? { acc: spelling[2] === '♭' ? -1 : spelling[2] === '♯' ? 1 : 0 } : PC_TO_LETTER[PT.mod12(note.absIndex)];
-      var isHollow = (note.dur || 1) >= 2;
-      var groupClasses = 'pc-note-group' + (opts.currentIndex === i ? ' is-current' : '') + (opts.onNoteClick ? ' is-clickable' : '');
-
-      /* Ledger lines: every staff position strictly outside the 5-line band
-         (steps 0..8) needs one short line per skipped line-step, drawn only
-         at even steps (the actual line positions), from the staff edge out
-         to (and including) this note's step. */
-      var ledgers = '';
-      if (step < 0) {
-        for (var s = -2; s >= step; s -= 2) {
-          ledgers += '<line class="pc-staff-ledger" x1="' + (x - 11) + '" x2="' + (x + 11) + '" y1="' + yForStep(s) + '" y2="' + yForStep(s) + '" />';
-        }
-      } else if (step > 8) {
-        for (var s2 = 10; s2 <= step; s2 += 2) {
-          ledgers += '<line class="pc-staff-ledger" x1="' + (x - 11) + '" x2="' + (x + 11) + '" y1="' + yForStep(s2) + '" y2="' + yForStep(s2) + '" />';
-        }
-      }
-
-      var accidental = info.acc ? '<text class="pc-note-accidental" x="' + (x - 17) + '" y="' + (y + 5) + '">' + (info.acc < 0 ? '♭' : '♯') + '</text>' : '';
-      var dot = note.dotted ? '<circle class="pc-note-dot" cx="' + (x + 10) + '" cy="' + (y - 2) + '" r="1.6" />' : '';
-      var stemUp = step < 4;
-      var stem = '<line class="pc-note-stem" x1="' + (x + (stemUp ? 6.2 : -6.2)) + '" x2="' + (x + (stemUp ? 6.2 : -6.2)) + '" y1="' + y + '" y2="' + (stemUp ? y - 30 : y + 30) + '" />';
-      var label = opts.showLabels ? '<text class="pc-note-label" x="' + x + '" y="' + (bottomLineY + 26) + '">' + (spelling ? note.spelling : PT.noteLabel(note.absIndex)) + '</text>' : '';
-
-      svg += '<g class="' + groupClasses + '" data-index="' + i + '">' + ledgers +
-        accidental +
-        '<ellipse class="pc-note-head' + (isHollow ? ' is-hollow' : '') + '" cx="' + x + '" cy="' + y + '" rx="6.4" ry="4.8" transform="rotate(-18 ' + x + ' ' + y + ')" />' +
-        dot + stem + label + '</g>';
+    var MN = window.MusicNotation, space = 14, hs = space / 2;
+    var cellW = Math.max(42, opts.cellWidth || 54);
+    var spelled = notes.map(function(n) { return n.spelling ? MN.parsePitch(n.spelling) : MN.fromMidi(n.absIndex + 60); });
+    var steps = spelled.map(function(n){return n.diatonic - MN.clefs.treble.bottom;});
+    var top = Math.max(14, Math.max.apply(null, steps)) * hs + 12;
+    var bottom = Math.max(5, -Math.min.apply(null, steps)) * hs + 34;
+    var height = top + bottom, width = Math.max(220, 86 + notes.length * cellW + 30);
+    var svg = '<svg class="pc-staff-svg" viewBox="0 0 ' + width + ' ' + height + '" width="' + width + '" height="' + height + '" role="img" aria-label="Treble staff: ' + MN.escape(notes.map(function(n,i){return n.spelling || PT.noteLabel(n.absIndex);}).join(', ')) + '">';
+    for(var li=0;li<5;li++) svg += '<line class="pc-staff-line" x1="8" x2="' + (width-8) + '" y1="' + (top-li*space) + '" y2="' + (top-li*space) + '"/>';
+    svg += MN.clef('treble', 16, top, hs);
+    notes.forEach(function(n,i) {
+      var x=84+i*cellW, step=steps[i], y=top-step*hs, pitch=spelled[i];
+      svg += '<g class="pc-note-group' + (opts.currentIndex===i?' is-current':'') + (opts.onNoteClick?' is-clickable':'') + '" data-index="' + i + '">';
+      MN.ledgerSteps(step).forEach(function(st){svg += '<line class="pc-staff-ledger" x1="' + (x-13) + '" x2="' + (x+13) + '" y1="' + (top-st*hs) + '" y2="' + (top-st*hs) + '"/>';});
+      // These instructional sequences have no key signature/bar context: spell every altered note,
+      // and explicitly cancel an earlier accidental at the same written pitch.
+      if(pitch.a || spelled.slice(0,i).some(function(prev){return prev.l===pitch.l && prev.o===pitch.o && prev.a;})) svg += MN.accidental(pitch.a,x-26,y,space);
+      svg += '<g class="mn-note">' + MN.note(x,y,space,n.dur||1,!!n.dotted,step<4,'',step%2===0) + '</g>';
+      if(opts.showLabels) svg += '<text class="pc-note-label" x="' + x + '" y="' + (height-10) + '">' + MN.escape(n.spelling || PT.noteLabel(n.absIndex)) + '</text>';
+      svg += '</g>';
     });
-
-    svg += '</svg>';
-    container.innerHTML = svg;
-
-    if (opts.onNoteClick) {
-      Array.prototype.forEach.call(container.querySelectorAll('.pc-note-group'), function (g) {
-        g.addEventListener('click', function () { opts.onNoteClick(Number(g.getAttribute('data-index'))); });
-      });
-    }
+    container.innerHTML=svg+'</svg>';
+    if(opts.onNoteClick) Array.prototype.forEach.call(container.querySelectorAll('.pc-note-group'),function(g){g.addEventListener('click',function(){opts.onNoteClick(Number(g.dataset.index));});});
   }
 
   PT.renderStaff = renderStaff;
@@ -1745,8 +1713,9 @@ document.addEventListener('DOMContentLoaded', function () {
   renderScales = function () {
     renderScalesBase();
     if (!scaleStaffEl) return;
-    var notes = scaleCurrentType.intervals.map(function (iv) { return { absIndex: scaleCurrentRoot + iv, dur: 1 }; });
-    notes.push({ absIndex: scaleCurrentRoot + 12, dur: 2 });
+    var names = spelledScale(scaleCurrentRoot, scaleCurrentType);
+    var notes = scaleCurrentType.intervals.map(function(iv,i){return {absIndex:scaleCurrentRoot+iv,dur:1,spelling:names[i]};});
+    notes.push({absIndex:scaleCurrentRoot+12,dur:2,spelling:window.MusicNotation.spellPattern(window.MusicNotation.fromMidi(60+scaleCurrentRoot),[12],[7])[0]});
     renderStaff(scaleStaffEl, notes, { showLabels: true, cellWidth: 46 });
   };
   renderScales();

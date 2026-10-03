@@ -7,6 +7,7 @@
 
   /* ------------------------------------------------------------------ audio */
   var ctx = null, kit = null, volume = 0.7;
+  var builderStudio = null;
 
   function ensureAudio() {
     if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return true; }
@@ -102,23 +103,12 @@
         stroke: INK, 'stroke-width': 2.2 * s, fill: 'none', 'stroke-linecap': 'round' }, g);
       if (def.open) svgEl('circle', { cx: x, cy: y - 13, r: 3.6, fill: 'none', stroke: INK, 'stroke-width': 1.5 }, g);
     } else {
-      svgEl('ellipse', { cx: x, cy: y, rx: 6.4 * s, ry: 4.6 * s, fill: INK, transform: 'rotate(-18 ' + x + ' ' + y + ')' }, g);
+      g.insertAdjacentHTML('beforeend', window.MusicNotation.glyph('quarter', x - 7 * s, y, 12 * s));
     }
   }
 
   function restGlyph(g, kind, x, yMid) {
-    if (kind === 'q') {
-      svgEl('path', { d: 'M' + (x - 3) + ' ' + (yMid - 15) + 'L' + (x + 4) + ' ' + (yMid - 6) + 'L' + (x - 3) + ' ' + (yMid + 3) +
-        'L' + (x + 4) + ' ' + (yMid + 11) + 'Q' + (x - 6) + ' ' + (yMid + 9) + ' ' + (x - 2) + ' ' + (yMid + 17),
-        stroke: INK, 'stroke-width': 2.6, fill: 'none', 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, g);
-    } else {
-      var dots = kind === 's' ? 2 : 1;
-      for (var i = 0; i < dots; i++) {
-        var oy = yMid - 6 + i * 9, ox = x - i * 2.5;
-        svgEl('circle', { cx: ox - 3, cy: oy, r: 2.4, fill: INK }, g);
-        svgEl('path', { d: 'M' + (ox + 3) + ' ' + (oy - 2) + 'L' + (ox - 2.5) + ' ' + (oy + 10), stroke: INK, 'stroke-width': 1.7, fill: 'none', 'stroke-linecap': 'round' }, g);
-      }
-    }
+    g.insertAdjacentHTML('beforeend', window.MusicNotation.glyph(kind === 'q' ? 'restQuarter' : kind === 's' ? 'rest16' : 'rest8', x - 4, yMid, 12));
   }
 
   /* --------------------------------------------------------- pattern model */
@@ -164,8 +154,7 @@
     for (var r = 0; r < rows; r++) {
       var nb = Math.min(barsPerRow, N.bars - r * barsPerRow), x1 = left - 4 + nb * barW, top = yb(r) - 48;
       for (var l = 0; l < 5; l++) svgEl('line', { x1: 8, x2: x1, y1: top + l * SP, y2: top + l * SP, stroke: INK, 'stroke-width': 1.1 }, g);
-      svgEl('rect', { x: 18, y: top + 12, width: 5, height: 24, fill: INK }, g);
-      svgEl('rect', { x: 29, y: top + 12, width: 5, height: 24, fill: INK }, g);
+      g.insertAdjacentHTML('beforeend', window.MusicNotation.clef('percussion', 18, yb(r), SP / 2));
       svgEl('line', { x1: left - 4, x2: left - 4, y1: top, y2: top + 48, stroke: INK, 'stroke-width': 1.4 }, g);
       for (var b = 1; b <= nb; b++) {
         var bx = left - 4 + b * barW;
@@ -248,11 +237,7 @@
           }
           if (e.dur === 3) svgEl('circle', { cx: pp.x + 12, cy: e.ys[0] + (INST[e.heads[0].inst].step % 2 === 0 ? -3 : 0), r: 1.9, fill: INK }, g);
           if (e.dur < 4 && !grouped) {                                // lone eighth / sixteenth: flags
-            var nFlags = e.dur === 1 ? 2 : 1;
-            for (var f = 0; f < nFlags; f++) {
-              var fy = up ? e.tipY + f * 7 : e.tipY - f * 7, dir = up ? 1 : -1;
-              svgEl('path', { d: 'M' + e.sx + ' ' + fy + 'q9 ' + (7 * dir) + ' 6 ' + (17 * dir), stroke: INK, 'stroke-width': 2.4, fill: 'none', 'stroke-linecap': 'round' }, g);
-            }
+            g.insertAdjacentHTML('beforeend', window.MusicNotation.glyph('flag' + (e.dur === 1 ? '16' : '8') + (up ? 'Up' : 'Down'), e.sx, e.tipY, SP));
           }
           var gr = p.grace && p.grace[e.k];
           if (gr && up) {
@@ -542,7 +527,7 @@
       var N = view.N, kk = k % N.total, hits = [];
       ORDER.forEach(function (inst) {
         var v = VEL[N.tracks[inst][kk]];
-        if (v) { kit.hit(inst, t, v * volume); hits.push(inst); }
+        if (v) { kit.hit(inst, t, v * volume, editable && builderStudio ? builderStudio.options(inst) : undefined); hits.push(inst); }
       });
       var gr = P.grace && P.grace[kk];
       if (gr) {
@@ -641,7 +626,9 @@
 
     /* ---- builder grid (editable mode) ---- */
     if (editable) {
-      var LANES = ['crash', 'hat', 'ohat', 'snare', 'tomHi', 'tomLo', 'kick'];
+      var LANES = ['crash', 'ride', 'hat', 'ohat', 'snare', 'tomHi', 'tomMid', 'tomLo', 'kick'];
+      var studioHost = htmlEl('div', '', null, root);
+      builderStudio = window.DrumStudio.mount(studioHost, LANES, function (inst, opts) { hitNow(inst, .85, opts); });
       gridState = {};
       LANES.forEach(function (inst) { gridState[inst] = P.tracks[inst] ? P.tracks[inst].split('') : '----------------'.split(''); });
       grid = htmlEl('div', 'dr-grid', null, root);
@@ -677,7 +664,7 @@
               gridState[inst][step] = cyc[gridState[inst][step]] || 'x';
               paintCell(inst, step);
               var v = VEL[gridState[inst][step]];
-              if (v && !playing) hitNow(inst, v);
+              if (v && !playing) hitNow(inst, v, builderStudio.options(inst));
               commit();
             });
           })(s2);
@@ -1143,8 +1130,7 @@
   /* ------------------------------------------------ notation key + flashcards */
   function drawMiniStaff(svg, width, top) {
     for (var l = 0; l < 5; l++) svgEl('line', { x1: 8, x2: width - 8, y1: top + l * SP, y2: top + l * SP, stroke: INK, 'stroke-width': 1.1 }, svg);
-    svgEl('rect', { x: 18, y: top + 12, width: 5, height: 24, fill: INK }, svg);
-    svgEl('rect', { x: 29, y: top + 12, width: 5, height: 24, fill: INK }, svg);
+    svg.insertAdjacentHTML('beforeend', window.MusicNotation.clef('percussion', 18, top + 4 * SP, SP / 2));
   }
 
   function initKey() {

@@ -10,6 +10,7 @@
      1. Theory core
      A note is {l: letter 0-6 (C..B), o: octave, a: accidental -2..2}.
      ================================================================ */
+  var MN = window.MusicNotation;
   var LET = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
   var NAT = [0, 2, 4, 5, 7, 9, 11];
   var SOL = ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Ti'];
@@ -122,11 +123,10 @@
   function invName(type, inv) { return INV_NAME[CHORDS[type].seventh ? 'sev' : 'tri'][inv]; }
 
   /* ---- Clefs and key signatures ---- */
-  var CLEFS = {
-    treble: { name: 'Treble', glyph: '𝄞', bottom: 30, refStep: 2, keyS: [8, 5, 9, 6, 3, 7, 4], keyF: [4, 7, 3, 6, 2, 5, 1] },
-    bass: { name: 'Bass', glyph: '𝄢', bottom: 18, refStep: 0, keyS: [6, 3, 7, 4, 1, 5, 2], keyF: [2, 5, 1, 4, 0, 3, -1] },
-    alto: { name: 'Alto', glyph: '𝄡', bottom: 24, refStep: 0, keyS: [7, 4, 8, 5, 2, 6, 3], keyF: [3, 6, 2, 5, 1, 4, 0] }
-  };
+  var CLEFS = {};
+  ['treble','bass','alto'].forEach(function(name){
+    CLEFS[name] = {name:name[0].toUpperCase()+name.slice(1),bottom:MN.clefs[name].bottom};
+  });
   var SHARP_ORDER = ['F', 'C', 'G', 'D', 'A', 'E', 'B'];
   var FLAT_ORDER = ['B', 'E', 'A', 'D', 'G', 'C', 'F'];
   var MAJOR_BY_SC = { '-7': 'C♭', '-6': 'G♭', '-5': 'D♭', '-4': 'A♭', '-3': 'E♭', '-2': 'B♭', '-1': 'F', '0': 'C', '1': 'G', '2': 'D', '3': 'A', '4': 'E', '5': 'B', '6': 'F♯', '7': 'C♯' };
@@ -320,7 +320,7 @@
   }
   function keySigNotes(sig, clef) {
     if (!sig || !sig.n) return [];
-    var steps = sig.t === 'sharp' ? CLEFS[clef].keyS : CLEFS[clef].keyF;
+    var steps = MN.clefs[clef][sig.t];
     return steps.slice(0, sig.n);
   }
   function placeDesc(step) {
@@ -345,14 +345,14 @@
     var slots = o.layout === 'stack' ? 1 : Math.max(o.slots || items.length || 1, 1);
     var span = (endX - startX) / slots;
     function colX(i) { return o.layout === 'stack' ? (startX + endX) / 2 : startX + span * (i + 0.5); }
-    var s = '<svg class="stb-staff" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="false">';
+    var s = '<svg class="stb-staff" data-dense="' + (slots > 6) + '" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="false">';
     var i;
     for (i = 0; i < 5; i++) s += '<line class="stb-line" x1="6" x2="' + (W - 6) + '" y1="' + y(i * 2) + '" y2="' + y(i * 2) + '"/>';
     s += '<line class="stb-bar" x1="6" x2="6" y1="' + y(8) + '" y2="' + y(0) + '"/><line class="stb-bar" x1="' + (W - 6) + '" x2="' + (W - 6) + '" y1="' + y(8) + '" y2="' + y(0) + '"/>';
-    s += '<text class="stb-clef stb-clef-' + o.clef + '" x="14" y="' + y(CLEFS[o.clef].refStep) + '">' + CLEFS[o.clef].glyph + '</text>';
+    s += MN.clef(o.clef, 14, Y0, HS);
     var sym = o.key && o.key.t === 'sharp' ? ACC['1'] : ACC['-1'];
     ks.forEach(function (st, k) {
-      s += '<text class="stb-acc stb-keyacc" x="' + (kx0 + k * kStep) + '" y="' + (y(st) + 6) + '">' + sym + '</text>';
+      s += MN.accidental(sym, kx0 + k * kStep - 5, y(st), HS * 2);
     });
     if (o.slotMarks) {
       for (i = 0; i < slots; i++) s += '<line class="stb-slot" x1="' + colX(i) + '" x2="' + colX(i) + '" y1="' + y(9) + '" y2="' + y(-1) + '"/>';
@@ -372,35 +372,29 @@
         prevStep = st; prevDisp = disp;
         it._disp = disp;
         /* ledger lines */
-        var k;
-        if (st <= -2) for (k = -2; k >= (st % 2 === 0 ? st : st + 1); k -= 2) s += '<line class="stb-ledger" x1="' + (cx - 15) + '" x2="' + (cx + 15 + (disp ? 14 : 0)) + '" y1="' + y(k) + '" y2="' + y(k) + '"/>';
-        if (st >= 10) for (k = 10; k <= (st % 2 === 0 ? st : st - 1); k += 2) s += '<line class="stb-ledger" x1="' + (cx - 15) + '" x2="' + (cx + 15 + (disp ? 14 : 0)) + '" y1="' + y(k) + '" y2="' + y(k) + '"/>';
+        MN.ledgerSteps(st).forEach(function(k){
+          s += '<line class="stb-ledger" x1="' + (cx - 15) + '" x2="' + (cx + 15 + (disp ? 24 : 0)) + '" y1="' + y(k) + '" y2="' + y(k) + '"/>';
+        });
       });
       col.slice().reverse().forEach(function (it) {
-        var st = stepOf(it.n, o.clef), nx = cx + (it._disp ? 15 : 0), ny = y(st);
+        var st = stepOf(it.n, o.clef), nx = cx + (it._disp ? 24 : 0), ny = y(st);
         var fill = it.color || '';
         var cls = 'stb-note ' + (it.cls || '');
-        if (o.layout === 'stack') {
-          s += '<g class="' + cls + '"><ellipse class="stb-head-out" cx="' + nx + '" cy="' + ny + '" rx="8.8" ry="6.5" transform="rotate(-18 ' + nx + ' ' + ny + ')"' + (fill ? ' style="fill:' + fill + '"' : '') + '/>';
-          if (!fill) s += '<ellipse class="stb-head-in" cx="' + nx + '" cy="' + ny + '" rx="4.6" ry="2.9" transform="rotate(-38 ' + nx + ' ' + ny + ')"/>';
-          s += '</g>';
-        } else {
-          var up = st < 4, sx = up ? nx + 7.8 : nx - 7.8;
-          s += '<g class="' + cls + '"><line class="stb-stem" x1="' + sx + '" x2="' + sx + '" y1="' + (ny + (up ? -1 : 1)) + '" y2="' + (up ? ny - 28 : ny + 28) + '"/>' +
-            '<ellipse class="stb-head" cx="' + nx + '" cy="' + ny + '" rx="8.4" ry="6.2" transform="rotate(-20 ' + nx + ' ' + ny + ')"' + (fill ? ' style="fill:' + fill + '"' : '') + '/></g>';
-        }
+        s += '<g class="' + cls + '" style="color:' + (fill || 'var(--stb-note-ink)') + '">' +
+          (o.layout === 'stack' ? MN.glyph('whole', nx - 12, ny, HS * 2) : MN.note(nx, ny, HS * 2, 1, false, st < 4)) + '</g>';
         it._x = cx; it._y = ny;
       });
       /* accidentals, staggered into columns so stacked ones never collide */
       col.slice().reverse().forEach(function (it) {
-        if (!it.n.a) return;
+        // Each exercise note is explicitly spelled; naturals cancel earlier altered letters.
+        if (!it.n.a && !items.some(function(other){ return other.n.l === it.n.l && other.n.o === it.n.o && other.n.a; })) return;
         var st = stepOf(it.n, o.clef), k = 0;
         while (accCols[k] !== undefined && Math.abs(accCols[k] - st) < 6) k++;
         accCols[k] = st;
-        s += '<text class="stb-acc" x="' + (cx - 21 - k * 17) + '" y="' + (y(st) + 6.5) + '">' + ACC[it.n.a] + '</text>';
+        s += MN.accidental(it.n.a, cx - 28 - k * 17, y(st), HS * 2);
       });
     });
-    s += '<g class="stb-ghost" id="stbGhost"></g>';
+    s += '<g class="stb-ghost"></g>';
     s += '</svg>';
     return s;
   }
@@ -413,11 +407,11 @@
     var span = (endX - startX) / slots;
     var cx = o.layout === 'stack' ? (startX + endX) / 2 : startX + span * (slot + 0.5);
     var cy = Y0 - step * HS, s = '';
-    var k;
-    if (step <= -2) for (k = -2; k >= (step % 2 === 0 ? step : step + 1); k -= 2) s += '<line class="stb-ledger" x1="' + (cx - 15) + '" x2="' + (cx + 15) + '" y1="' + (Y0 - k * HS) + '" y2="' + (Y0 - k * HS) + '"/>';
-    if (step >= 10) for (k = 10; k <= (step % 2 === 0 ? step : step - 1); k += 2) s += '<line class="stb-ledger" x1="' + (cx - 15) + '" x2="' + (cx + 15) + '" y1="' + (Y0 - k * HS) + '" y2="' + (Y0 - k * HS) + '"/>';
+    MN.ledgerSteps(step).forEach(function(k){
+      s += '<line class="stb-ledger" x1="' + (cx - 15) + '" x2="' + (cx + 15) + '" y1="' + (Y0 - k * HS) + '" y2="' + (Y0 - k * HS) + '"/>';
+    });
     s += '<ellipse class="stb-head-ghost" cx="' + cx + '" cy="' + cy + '" rx="8.6" ry="6.4" transform="rotate(-18 ' + cx + ' ' + cy + ')"/>';
-    if (acc) s += '<text class="stb-acc stb-acc-ghost" x="' + (cx - 21) + '" y="' + (cy + 6.5) + '">' + ACC[acc] + '</text>';
+    if (acc) s += MN.accidental(acc, cx - 28, cy, HS * 2);
     return s;
   }
 
@@ -763,7 +757,7 @@
       ex.expectNotes = notes;
       ex.solve = function () { return given ? notes.slice(1) : notes.slice(); };
       ex.check = function (placed) { return checkSeq(notes, given ? [notes[0]].concat(placed) : placed, nameStr, key, given); };
-      ex.hint = 'Use the step pattern (' + stepPattern(key) + '): each letter name appears once, so go ' + LET[root.l] + '–' + LET[(root.l + 1) % 7] + '–' + LET[(root.l + 2) % 7] + '… then add the sharps or flats the pattern needs.';
+      ex.hint = 'Use the step pattern (' + stepPattern(key) + '). Follow these written letters: ' + notes.map(function(n){return LET[n.l];}).join('–') + '. Add the sharps or flats the pattern needs; chromatic and blues scales can repeat a letter.';
       ex.hintGhost = true;
     }
     return ex;
@@ -952,22 +946,34 @@
     function item(d) {
       var lock = L.locked && L.locked[d.id];
       var t = drillTitle(d);
-      return '<button type="button" class="stb-drill stb-drill-' + d.group + (d.id === state.drill ? ' is-on' : '') + (lock ? ' is-locked' : '') + '" data-drill="' + d.id + '"' + (lock ? ' aria-disabled="true"' : '') + '>' +
+      return '<button type="button" class="stb-drill stb-drill-' + d.group + (d.id === state.drill ? ' is-on' : '') + (lock ? ' is-locked' : '') + '" data-topic="' + d.drill + '" data-drill="' + d.id + '" aria-pressed="' + (d.id === state.drill) + '"' + (lock ? ' aria-disabled="true"' : '') + '>' +
         '<span class="stb-drill-icon" aria-hidden="true">' + drillIcon(d) + '</span>' +
         '<span class="stb-drill-text"><strong>' + esc(t[0]) + '</strong><small>' + esc(lock ? '🔒 ' + lock : t[1]) + '</small></span></button>';
     }
     function group(gid, title) {
       return '<h3 class="stb-drill-group stb-drill-group-' + gid + '">' + title + '</h3>' + DRILLS.filter(function (d) { return d.group === gid; }).map(item).join('');
     }
-    el.drills.innerHTML = group('id', state.level === 0 ? 'Listen & Look' : 'Staff Identification') + group('build', state.level === 0 ? 'Build It' : 'Staff Construction');
+    var active = state.drill.slice(-5) === 'build' ? 'build' : 'id';
+    var topic = state.drill.split('-')[0];
+    el.drills.innerHTML = '<div class="stb-drill-modes" role="group" aria-label="Practice mode">' +
+      '<button type="button" data-drill="' + topic + '-id" aria-pressed="' + (active === 'id') + '">Look &amp; identify</button>' +
+      '<button type="button" data-drill="' + topic + '-build" aria-pressed="' + (active === 'build') + '">Write &amp; build</button></div>' +
+      group(active, active === 'id' ? 'What do you see?' : 'Make it on the staff');
   }
+  // Topic diagrams share a silhouette across look/build pairs; the badge shows the action.
   function drillIcon(d) {
-    var g = { note: '♯𝅗𝅥', key: '♭♭♭', interval: '', scale: '', chord: '' }[d.drill];
-    if (d.drill === 'note') return '<span class="stb-ic-music">♯</span><span class="stb-ic-oval"></span>';
-    if (d.drill === 'key') return '<span class="stb-ic-music">♭♭♭</span>';
-    if (d.drill === 'interval') return '<span class="stb-ic-oval"></span><span class="stb-ic-oval stb-ic-low"></span>';
-    if (d.drill === 'scale') return '<span class="stb-ic-oval stb-ic-hi"></span><span class="stb-ic-line"></span><span class="stb-ic-oval stb-ic-lo"></span>';
-    return '<span class="stb-ic-oval"></span><span class="stb-ic-oval stb-ic-mid"></span><span class="stb-ic-oval stb-ic-low"></span>';
+    var art = {
+      note: '<circle cx="22" cy="23" r="13"/><circle cx="22" cy="23" r="5" class="stb-icon-fill"/><path d="M22 6v4M22 36v4M5 23h4M35 23h4"/>',
+      key: '<circle cx="17" cy="19" r="9"/><circle cx="17" cy="19" r="3"/><path d="m24 25 13 13h5v-5h-5v-5h-5"/>',
+      interval: '<circle cx="12" cy="33" r="4" class="stb-icon-fill"/><circle cx="35" cy="12" r="4" class="stb-icon-fill"/><path d="M12 24V12h14M18 33h17V21M21 17l5-5-5-5"/>',
+      scale: '<path d="M6 38h8v-8h8v-8h8v-8h8V6"/><circle cx="10" cy="32" r="2" class="stb-icon-fill"/><circle cx="18" cy="24" r="2" class="stb-icon-fill"/><circle cx="26" cy="16" r="2" class="stb-icon-fill"/><circle cx="34" cy="8" r="2" class="stb-icon-fill"/>',
+      chord: '<path d="m6 31 17-9 17 9-17 9zM6 23l17-9 17 9-17 9zM6 15l17-9 17 9-17 9z"/>'
+    };
+    var badge = d.group === 'build'
+      ? '<path d="m3 12 2-5 7-7 4 4-7 7zM10 2l4 4"/>'
+      : '<circle cx="7" cy="7" r="5"/><path d="m11 11 4 4"/>';
+    return '<svg viewBox="0 0 46 46" focusable="false" aria-hidden="true">' + art[d.drill] + '</svg>' +
+      '<span class="stb-icon-action"><svg viewBox="-2 -2 20 20" focusable="false" aria-hidden="true">' + badge + '</svg></span>';
   }
 
   function renderToolbar() {
@@ -1018,6 +1024,7 @@
     state.disp = d;
     el.stage.innerHTML = staffSVG(d);
     var svg = el.stage.querySelector('svg');
+    svg.querySelector('.stb-ghost').id = 'stbGhost';
     svg.setAttribute('role', ex.input === 'staff' ? 'application' : 'img');
     svg.setAttribute('aria-label', stageA11y(ex));
     if (ex.input === 'staff' && !state.answered) { svg.setAttribute('tabindex', '0'); svg.classList.add('is-input'); }

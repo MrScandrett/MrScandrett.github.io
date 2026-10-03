@@ -1,4 +1,4 @@
-/* drum-engine.js — shared synthesized drum kit (Web Audio, no samples).
+/* drum-engine.js — shared drum synthesis and generated PCM sample library.
  *
  * Used by lessons/technical-elements/drums.html and music-lab.html.
  *
@@ -29,7 +29,7 @@
   var METAL = [205.3, 304.4, 369.6, 522.7, 540, 800];       // inharmonic square partials (808-style metal)
   var TOM_DEFAULT = { tomHi: 210, tomMid: 155, tomLo: 105 };
 
-  function create(ctx, out) {
+  function createSynth(ctx, out) {
     var nb = noiseBuffer(ctx);
     var openHatGain = null;
 
@@ -155,7 +155,7 @@
     function hit(name, when, vel, opts) {
       var key = ALIASES[name] || name;
       var voice = voices[key] || voices.perc;
-      if (ctx.state === 'suspended' && ctx.resume) ctx.resume();
+      if (ctx.state === 'suspended' && ctx.resume && !ctx.startRendering) ctx.resume();
       var t = when === undefined ? ctx.currentTime : when;
       voice(t, vel === undefined ? 0.8 : Math.max(0.05, Math.min(1, vel)), opts);
     }
@@ -163,5 +163,71 @@
     return { hit: hit, names: Object.keys(voices), defaultTomPitch: TOM_DEFAULT };
   }
 
-  root.DrumEngine = { create: create };
+  // Locally generated PCM one-shots: no downloads or recording licenses required.
+  var SAMPLES = {
+    kick: ['Round kick', 48, .55, 0], sub: ['Sub kick', 34, 1.1, 0], punch: ['Punch kick', 65, .22, .08],
+    snare: ['Studio snare', 185, .24, .8], tight: ['Tight snare', 240, .12, .75], brush: ['Brush snare', 170, .48, 1],
+    hat: ['Closed hat', 8000, .065, 1], ohat: ['Open hat', 7300, .5, 1], ride: ['Ride cymbal', 4300, 1.2, .65], crash: ['Crash cymbal', 6100, 1.7, .9],
+    clap: ['Hand clap', 1300, .22, 1], rim: ['Rim click', 1600, .075, .12],
+    tomHi: ['High tom', 210, .38, .04], tomMid: ['Mid tom', 155, .45, .04], tomLo: ['Floor tom', 105, .6, .04],
+    perc: ['Cowbell', 587, .3, 0], wood: ['Woodblock', 850, .12, 0], shaker: ['Shaker', 9500, .16, 1], tamb: ['Tambourine', 5400, .3, .85], conga: ['Conga', 280, .25, .03]
+  };
+  var KITS = {
+    studio: { name: 'Studio kit', map: {} },
+    electronic: { name: 'Analog machine', map: { kick: 'sub', snare: 'tight', tomHi: 'conga', tomLo: 'sub', perc: 'wood' } },
+    brush: { name: 'Soft / brushed', map: { kick: 'kick', snare: 'brush', hat: 'shaker', ohat: 'tamb', crash: 'ride', clap: 'rim' } },
+    percussion: { name: 'Hand percussion', map: { kick: 'tomLo', snare: 'conga', hat: 'shaker', ohat: 'tamb', tomHi: 'wood', tomLo: 'conga', crash: 'tamb', clap: 'clap', perc: 'perc' } }
+  };
+  var cache = new WeakMap();
+  function sample(ctx, id, decay) {
+    decay = Math.max(.1, Math.min(2, decay || 1));
+    var cacheKey = id + ":" + decay;
+    var bank = cache.get(ctx); if (!bank) { bank = {}; cache.set(ctx, bank); }
+    if (bank[cacheKey]) return bank[cacheKey];
+    var spec = SAMPLES[id], duration = spec[2] * 5 * decay;
+    var b = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate), d = b.getChannelData(0);
+    var seed = 12345, phase = 0, last = 0;
+    for (var i = 0; i < d.length; i++) {
+      var t = i / ctx.sampleRate;
+      seed = (1664525 * seed + 1013904223) >>> 0;
+      var n = seed / 2147483648 - 1;
+      var high = n - last; last = n;
+      var freq = spec[1] * (1 + (spec[1] < 400 ? 2.5 : .15) * Math.exp(-t * 65));
+      phase += 2 * Math.PI * freq / ctx.sampleRate;
+      var tone = Math.sin(phase);
+      if (id === 'perc' || id === 'wood') tone = (Math.sin(phase) + .5 * Math.sin(phase * 1.44)) / 1.5;
+      var noise = spec[1] > 3000 ? high * .5 : n;
+      var envelope = Math.min(1, t / .0015) * Math.exp(-t / (spec[2] * decay) * 4);
+      if (id === 'clap') envelope *= t < .045 ? .25 + .75 * Math.pow(Math.sin(t * 280), 2) : 1;
+      d[i] = .65 * envelope * (tone * (1 - spec[3]) + noise * spec[3]);
+    }
+    bank[cacheKey] = b; return b;
+  }
+  function create(ctx, out) {
+    var synth = createSynth(ctx, out), open = null;
+    function hit(name, when, vel, opts) {
+      if (!opts || !opts.sample) return synth.hit(name, when, vel, opts);
+      if (opts.level === 0 || vel === 0) return;
+      var id = SAMPLES[opts.sample] ? opts.sample : 'kick';
+      var t = Math.max(ctx.currentTime, when === undefined ? ctx.currentTime : when);
+      if (ctx.state === 'suspended' && !ctx.startRendering) ctx.resume();
+      if ((ALIASES[name] || name) === 'hat' && open) { open.gain.cancelScheduledValues(t); open.gain.setTargetAtTime(.0001, t, .006); }
+      var src = ctx.createBufferSource(); src.buffer = sample(ctx, id, opts.decay);
+      src.playbackRate.value = Math.pow(2, (opts.tune || 0) / 12);
+      var filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = opts.tone || 18000;
+      var drive = ctx.createWaveShaper(), curve = new Float32Array(512), amount = 1 + (opts.drive || 0) * 12;
+      for (var i = 0; i < curve.length; i++) { var x = i * 2 / 511 - 1; curve[i] = opts.drive ? Math.tanh(x * amount) / Math.tanh(amount) : x; }
+      drive.curve = curve; drive.oversample = '2x';
+      var gain = ctx.createGain(), length = src.buffer.duration / src.playbackRate.value;
+      var peak = Math.max(.0001, (vel === undefined ? .8 : vel) * (opts.level === undefined ? 1 : opts.level));
+      gain.gain.setValueAtTime(peak, t); gain.gain.exponentialRampToValueAtTime(.0001, t + Math.max(.02, length));
+      var pan = ctx.createStereoPanner(); pan.pan.value = opts.pan || 0;
+      src.connect(filter); filter.connect(drive); drive.connect(gain); gain.connect(pan); pan.connect(out);
+      if ((ALIASES[name] || name) === 'ohat') open = gain;
+      src.onended = function () { src.disconnect(); filter.disconnect(); drive.disconnect(); gain.disconnect(); pan.disconnect(); if (open === gain) open = null; };
+      src.start(t); src.stop(t + Math.max(.02, length) + .01);
+    }
+    return { hit: hit, names: synth.names, defaultTomPitch: TOM_DEFAULT };
+  }
+  root.DrumEngine = { create: create, samples: SAMPLES, kits: KITS, aliases: ALIASES };
 })(typeof window !== 'undefined' ? window : this);
