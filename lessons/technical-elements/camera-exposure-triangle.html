@@ -290,6 +290,18 @@
 <script src="../../assets/js/theme-registry.js"></script>
 <script src="../../assets/js/nav-mobile.js"></script>
 <script>
+  function readableInk(el, color) {
+    // Black or white, whichever contrasts more with `color` (the target background,
+    // not the computed one, which may still be mid-transition).
+    var ctx = readableInk.ctx || (readableInk.ctx = document.createElement('canvas').getContext('2d'));
+    ctx.fillStyle = '#000'; ctx.fillStyle = color;
+    var hex = ctx.fillStyle, m = /^#([0-9a-f]{6})$/i.exec(hex);
+    if (!m) return;
+    var lum = [0, 2, 4].map(function (i) { var v = parseInt(m[1].slice(i, i + 2), 16) / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+    var L = 0.2126 * lum[0] + 0.7152 * lum[1] + 0.0722 * lum[2];
+    el.style.color = (1.05 / (L + 0.05)) >= ((L + 0.05) / 0.05) ? '#fff' : '#111';
+  }
+
   var CET_APERTURES = ['f/1.4','f/2','f/2.8','f/5.6','f/8','f/11','f/16'];
   var CET_SHUTTERS = ['1/2000s','1/1000s','1/500s','1/250s','1/125s','1/60s','1/30s','1/15s','1/2s'];
   var CET_ISOS = [100,200,400,800,1600,3200,6400];
@@ -316,6 +328,7 @@
     var preview = document.getElementById('cet-preview');
     var brightness = 30 + ((ev + 3) / 6) * 55;
     preview.style.background = 'hsl(260, 25%, ' + brightness + '%)';
+    readableInk(preview, preview.style.background);
     preview.textContent = ev <= -1 ? 'Underexposed' : ev >= 1 ? 'Overexposed' : 'Correctly Exposed';
 
     if (ev <= -1) { verdict.textContent = 'Underexposed — too dark. Open the aperture, slow the shutter, or raise ISO.'; verdict.className = 'cet-verdict under'; }

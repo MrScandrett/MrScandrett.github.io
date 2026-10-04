@@ -1843,6 +1843,18 @@
   <script src="../../assets/js/crystal-viewer.js"></script>
   <script src="../../assets/js/photo-lightbox.js"></script>
   <script>
+  function readableInk(el, color) {
+    // Black or white, whichever contrasts more with `color` (the target background,
+    // not the computed one, which may still be mid-transition).
+    var ctx = readableInk.ctx || (readableInk.ctx = document.createElement('canvas').getContext('2d'));
+    ctx.fillStyle = '#000'; ctx.fillStyle = color;
+    var hex = ctx.fillStyle, m = /^#([0-9a-f]{6})$/i.exec(hex);
+    if (!m) return;
+    var lum = [0, 2, 4].map(function (i) { var v = parseInt(m[1].slice(i, i + 2), 16) / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+    var L = 0.2126 * lum[0] + 0.7152 * lum[1] + 0.0722 * lum[2];
+    el.style.color = (1.05 / (L + 0.05)) >= ((L + 0.05) / 0.05) ? '#fff' : '#111';
+  }
+
   (function () {
     /* ── Categories ───────────────────────────────────── */
     const CATS = {
@@ -2795,6 +2807,7 @@
       document.getElementById('ep-mass').textContent = element.mass;
       document.getElementById('ep-badge').textContent = CATS[element.cat].label;
       document.getElementById('ep-badge').style.background = color;
+      readableInk(document.getElementById('ep-badge'), color);
       document.getElementById('ep-state').textContent = getStateLabel(state) + ' at ' + currentTemp + ' K';
       document.getElementById('ep-config').textContent = element.electronConfig || element.shells.map((count, index) => 'Shell ' + (index + 1) + ': ' + count + 'e⁻').join(' · ');
       document.getElementById('ep-desc').textContent = element.summary || element.description;
