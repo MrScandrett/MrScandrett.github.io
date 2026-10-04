@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reader · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Read public-domain books and NASA e-books inside ClassroomOS." />
+  <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" />
+  <link rel="stylesheet" href="assets/css/pages/reader.css" />
+  <script>
+    try {
+      var m = localStorage.getItem('reader:mode');
+      if (m) document.documentElement.dataset.readerMode = m;
+    } catch (e) {}
+  </script>
+</head>
+<body>
+  <a class="rd-skip" href="#rdPage">Skip to text</a>
+
+  <header class="rd-bar" id="rdBar">
+    <a class="rd-btn rd-back" id="rdBack" href="recipe-book.html#section-classics" aria-label="Back to the library">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg><span>Library</span>
+    </a>
+    <div class="rd-heading">
+      <h1 id="rdTitle">Opening book…</h1>
+      <p id="rdAuthor"></p>
+    </div>
+    <div class="rd-tools">
+      <button type="button" class="rd-btn" id="rdTocBtn" aria-controls="rdToc" aria-expanded="false" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" /></svg><span>Contents</span>
+      </button>
+      <button type="button" class="rd-btn" id="rdSetBtn" aria-controls="rdSettings" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19l5-14h1l5 14M6.5 13h7M17 19l2.5-7 2.5 7M18 17h3" /></svg><span>Display</span>
+      </button>
+    </div>
+    <div class="rd-progress" aria-hidden="true"><span id="rdProgressFill"></span></div>
+  </header>
+
+  <div class="rd-settings" id="rdSettings" hidden>
+    <fieldset>
+      <legend>Page</legend>
+      <div class="rd-seg" role="group">
+        <button type="button" data-mode="paper" aria-pressed="false">Paper</button>
+        <button type="button" data-mode="sepia" aria-pressed="false">Sepia</button>
+        <button type="button" data-mode="night" aria-pressed="false">Night</button>
+      </div>
+    </fieldset>
+    <fieldset data-for="epub">
+      <legend>Text size</legend>
+      <div class="rd-seg" role="group">
+        <button type="button" data-size="-1" aria-label="Smaller text">A−</button>
+        <output id="rdSizeOut">100%</output>
+        <button type="button" data-size="1" aria-label="Larger text">A+</button>
+      </div>
+    </fieldset>
+    <fieldset data-for="epub">
+      <legend>Typeface</legend>
+      <div class="rd-seg" role="group">
+        <button type="button" data-face="serif" aria-pressed="false">Serif</button>
+        <button type="button" data-face="sans" aria-pressed="false">Sans</button>
+      </div>
+    </fieldset>
+    <fieldset data-for="pdf">
+      <legend>Zoom</legend>
+      <div class="rd-seg" role="group">
+        <button type="button" data-zoom="-1" aria-label="Zoom out">−</button>
+        <output id="rdZoomOut">Fit</output>
+        <button type="button" data-zoom="1" aria-label="Zoom in">+</button>
+      </div>
+    </fieldset>
+  </div>
+
+  <nav class="rd-toc" id="rdToc" aria-label="Table of contents" hidden>
+    <div class="rd-toc-head">
+      <h2>Contents</h2>
+      <button type="button" class="rd-btn" id="rdTocClose" aria-label="Close contents">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+      </button>
+    </div>
+    <ol id="rdTocList"></ol>
+  </nav>
+  <div class="rd-scrim" id="rdScrim" hidden></div>
+
+  <main class="rd-stage" id="rdStage">
+    <div class="rd-loading" id="rdLoading" role="status" aria-live="polite">
+      <div class="rd-book-icon" aria-hidden="true"><span></span><span></span><span></span></div>
+      <p id="rdLoadingText">Finding the book…</p>
+      <div class="rd-meter"><span id="rdMeterFill"></span></div>
+    </div>
+    <article class="rd-page" id="rdPage" tabindex="-1" hidden></article>
+    <div class="rd-chapter-nav" id="rdChapterNav" hidden>
+      <button type="button" class="rd-btn" id="rdPrev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg><span>Previous</span></button>
+      <span id="rdChapterPos"></span>
+      <button type="button" class="rd-btn" id="rdNext"><span>Next</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></button>
+    </div>
+    <div class="rd-error" id="rdError" role="alert" hidden>
+      <h2 id="rdErrorTitle">This book couldn’t open here</h2>
+      <p id="rdErrorText"></p>
+      <p class="rd-error-actions">
+        <a class="rd-btn rd-primary" id="rdErrorOut" href="#" target="_blank" rel="noreferrer noopener" hidden>Open at the source ↗</a>
+        <a class="rd-btn" href="recipe-book.html#section-classics">Back to the library</a>
+      </p>
+    </div>
+    <footer class="rd-credit" id="rdCredit" hidden></footer>
+  </main>
+
+  <script src="assets/vendor/jszip.min.js"></script>
+  <script type="module" src="assets/js/reader.mjs"></script>
+</body>
+</html>
