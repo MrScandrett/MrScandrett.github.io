@@ -55,6 +55,8 @@ info(`Loaded ${lessons.length} lesson records from data/lessons.json`);
 
 const compendiumPlan = JSON.parse(fs.readFileSync(COMPENDIUM_PLAN_PATH, "utf8"));
 const supportingUrls = new Set(compendiumPlan.supportingPages.map((item) => item.url));
+// Stubs and drafts parked in the compendium plan: on disk, deliberately not public yet.
+const plannedUrls = new Set((compendiumPlan.plannedPages || []).map((item) => item.url));
 const lessonUrls = new Set(lessons.map((lesson) => lesson.url));
 const liveLessonUrls = new Set(lessons.filter((lesson) => lesson.status === "live").map((lesson) => lesson.url));
 
@@ -104,7 +106,7 @@ function walkLessons(dir, prefix = "") {
     if (!entry.name.endsWith(".html")) continue;
     const relativePath = `${prefix}${entry.name}`;
     const url = `lessons/${relativePath}`;
-    if (!lessonUrls.has(url) && !supportingUrls.has(url)) missing.push(relativePath.replace(/\.html$/, ""));
+    if (!lessonUrls.has(url) && !supportingUrls.has(url) && !plannedUrls.has(url)) missing.push(relativePath.replace(/\.html$/, ""));
   }
   return missing;
 }
@@ -114,7 +116,7 @@ if (untracked.length === 0) {
   info("No untracked lesson files ✓");
 } else {
   for (const id of untracked) {
-    warn(`Lesson file is neither registered nor classified as supporting: "${id}"`);
+    warn(`Lesson file is neither registered nor classified as supporting or planned: "${id}"`);
   }
 }
 

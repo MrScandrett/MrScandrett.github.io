@@ -467,7 +467,7 @@
           <div class="card-shimmer"></div>
           <span class="card-emoji" aria-hidden="true">🗺️</span>
           <strong class="home-launch-title">Learning Paths</strong>
-          <span class="home-launch-desc">Nine curated arcs through the lesson library</span>
+          <span class="home-launch-desc">Curated arcs through the lesson library</span>
         </a>
       </nav>
     </section>
@@ -819,23 +819,16 @@
       const locale = undefined;
       const monStr = monday.toLocaleDateString(locale, fmt);
       const friStr = friday.toLocaleDateString(locale, fmt);
-      const THEMES = [
-        'Exploration + Observation',
-        'Questions + Hypotheses',
-        'Prototypes + Problem-Solving',
-        'Build + Iterate',
-        'Test + Refine',
-        'Present + Reflect',
-        'Create + Publish',
-        'Collaborate + Critique',
-        'Research + Discover',
-        'Design + Engineer',
-        'Debug + Improve',
-        'Launch + Showcase',
-      ];
-      const weekSeed = Math.floor(monday.getTime() / (7 * 24 * 60 * 60 * 1000));
-      const theme = THEMES[weekSeed % THEMES.length];
-      label.textContent = monStr + ' – ' + friStr + ' · ' + theme;
+      // Set a real focus per week, keyed by that week's Monday (YYYY-MM-DD).
+      // Weeks with no entry show only the dates; nothing is invented.
+      const WEEKLY_FOCUS = {
+        // '2026-10-05': 'Build + Iterate',
+      };
+      const key = monday.getFullYear() + '-' +
+        String(monday.getMonth() + 1).padStart(2, '0') + '-' +
+        String(monday.getDate()).padStart(2, '0');
+      const theme = WEEKLY_FOCUS[key];
+      label.textContent = 'Week of ' + monStr + ' – ' + friStr + (theme ? ' · ' + theme : '');
     })();
   </script>
   <script>
@@ -1677,8 +1670,10 @@
         const dash = '--';
         weatherEls.city.textContent = DEFAULT_WEATHER.label;
         weatherEls.station.textContent = DEFAULT_WEATHER.stationId;
-        weatherEls.status.textContent = 'STATUS: STANDBY';
-        weatherEls.shell.dataset.weatherStatus = 'standby';
+        weatherEls.status.textContent = 'STATUS: OFFLINE';
+        // Collapses the data-only panels (CSS) so a blocked service shows one
+        // clear message instead of a grid of dashes.
+        weatherEls.shell.dataset.weatherStatus = 'unavailable';
         weatherEls.condition.textContent = 'WEATHER UNAVAILABLE';
         weatherEls.currentIcon.textContent = '—';
         weatherEls.temp.textContent = `${dash}°`;
@@ -1691,12 +1686,7 @@
         weatherEls.pollen.textContent = dash;
         weatherEls.uvCard.classList.remove('telemetry-stat--alert');
         weatherEls.pollenCard.classList.remove('telemetry-stat--alert');
-        weatherEls.forecast.innerHTML = ['LOCAL', 'WAIT', 'TRY', 'AGAIN', 'SOON'].map((label) => `
-          <div class="forecast-slot">
-            <span class="forecast-day">${label}</span>
-            <span class="forecast-icon" aria-hidden="true">--</span>
-            <span class="forecast-temp">--°</span>
-          </div>`).join('');
+        weatherEls.forecast.innerHTML = '';
         weatherEls.solar.innerHTML = '';
         weatherEls.precipChart.innerHTML = '';
         weatherEls.clothing.innerHTML = '<span class="clothing-emoji" aria-hidden="true">📡</span><div class="clothing-body"><p class="clothing-main">Couldn’t reach the weather service. Looking outside is a great backup!</p><p class="clothing-tips"><button type="button" class="weather-retry">Try again</button></p></div>';
