@@ -1,19 +1,11 @@
 #!/usr/bin/env node
 
 import crypto from "node:crypto";
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
 import { chromium } from "playwright";
+import { findChromium } from "../lib/find-chromium.mjs";
 
 const BASE_URL = process.env.SITE_URL || "http://localhost:8080";
-const CHROME_PATH = [
-  process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
-  path.join(os.homedir(), ".cache/ms-playwright/chromium-1208/chrome-linux64/chrome"),
-  "/usr/bin/google-chrome",
-  "/usr/bin/chromium",
-  "/usr/bin/chromium-browser",
-].find((candidate) => candidate && fs.existsSync(candidate));
+const CHROME_PATH = findChromium(["PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH"]);
 
 function ensure(condition, message) {
   if (!condition) throw new Error(message);

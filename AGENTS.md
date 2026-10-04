@@ -94,7 +94,11 @@ be migrated proactively — migrate opportunistically when touching that lesson 
 ## Verifying game/app changes
 
 Dev server: `node serve-local.js`. Playwright is a devDependency but only the full
-Chromium build is cached, not the headless shell — launch with
-`executablePath: "~/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome"`.
+Chromium build is cached, not the headless shell or Puppeteer's own Chrome.
+`lib/find-chromium.mjs` finds the newest `chromium-NNNN` build in the Playwright cache
+(`$PLAYWRIGHT_BROWSERS_PATH` or `~/.cache/ms-playwright`), so `npm run check:new-games`
+and `npm run a11y` work without pinning a build number; override with
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` / `PUPPETEER_EXECUTABLE_PATH`. Ad-hoc Playwright
+scripts should launch with `executablePath: findChromium()` the same way.
 Driving the real page is the only reliable check for canvas games; a blank canvas
 and a game with no render loop look identical to static inspection.

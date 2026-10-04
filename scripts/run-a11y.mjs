@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 import fs from "node:fs/promises";
-import { existsSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { createRequire } from "node:module";
+import { findChromium } from "../lib/find-chromium.mjs";
 
 const require = createRequire(import.meta.url);
 const pa11y = require("pa11y");
@@ -23,9 +23,7 @@ const config = JSON.parse(await fs.readFile(configPath, "utf8"));
 const configuredUrls = config.urls.map((entry) => typeof entry === "string" ? { url: entry } : entry);
 const urls = matchPattern ? configuredUrls.filter((entry) => entry.url.includes(matchPattern)) : configuredUrls;
 const concurrency = Math.min(urls.length, Math.max(1, Number(process.env.A11Y_CONCURRENCY || config.defaults?.concurrency || 3)));
-const localChromium = "/home/evanscandrett/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome";
-const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH ||
-  (existsSync(localChromium) ? localChromium : await puppeteer.executablePath());
+const executablePath = findChromium(["PUPPETEER_EXECUTABLE_PATH"]) || puppeteer.executablePath();
 
 const launchOptions = {
   executablePath,
