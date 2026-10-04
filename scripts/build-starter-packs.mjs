@@ -23,6 +23,7 @@ const packs = [
   { dir: "my-project", zip: "project-starter-pack.zip" },
   { dir: "kaplay-platformer", zip: "kaplay-starter-pack.zip" },
   { dir: "phaser-platformer", zip: "phaser-starter-pack.zip" },
+  { dir: "pixel-courier" },
   { dir: "arduino-starter-sketches", zip: "arduino-starter-sketches.zip" }
 ];
 const requiredTutorialFiles = ["README-FIRST.md", "challenges.md", "troubleshooting.md", "credits.txt"];

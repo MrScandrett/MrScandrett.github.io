@@ -34,6 +34,8 @@
     { slug: 'cyoa',    num: 10, title: 'Story',       icon: '📖' }
   ];
 
+  var KIT_SRC = document.currentScript && document.currentScript.src;
+
   var STEP = 1 / 60;
   var reducedMotion = global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -103,6 +105,21 @@
         list.appendChild(li);
       });
       strip.appendChild(list);
+    }
+
+    // The shared Game Dev Route: links this tutorial to its history era and the
+    // 2D pathway lessons that explain its theory (data lives in game-dev-route.js).
+    var hero = document.querySelector('.cl-hero');
+    if (hero && !document.querySelector('[data-game-route]')) {
+      var route = el('div');
+      route.setAttribute('data-game-route', 'tutorial:' + slug);
+      hero.parentNode.insertBefore(route, hero.nextSibling);
+      if (global.GameDevRoute) global.GameDevRoute.init();
+      else if (KIT_SRC) {
+        var s = document.createElement('script');
+        s.src = new URL('game-dev-route.js', KIT_SRC).href;
+        document.head.appendChild(s);
+      }
     }
 
     var pager = document.querySelector('[data-gt-pager]');
