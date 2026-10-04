@@ -297,6 +297,17 @@
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 0.001ms !important; }
     }
+    .atom-shell > *, .atom-hero > *, .atom-two-col > * { min-width: 0; }
+    .en-table { table-layout: fixed; overflow-wrap: anywhere; }
+    .en-table th, .en-table td { padding: .5rem .4rem; }
+    .lab-note { padding: .5rem 1.2rem; color: #b6cddd; font-size: .9rem; line-height: 1.6; margin: 0; }
+    .atom-sim-sub, .atom-ctrl label, .atom-readout-label, .chip-desc, .atom-nav a { color: #a7bdcf; }
+    .atom-two-col { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+    .atom-btn { min-height: 44px; }
+    :focus-visible { outline: 3px solid #f6c35b; outline-offset: 4px; }
+    summary { cursor: pointer; padding: .7rem 0; }
+    .atom-card a { color: #7fdeff; }
+    @media(max-width:620px) { .atom-two-col { grid-template-columns:1fr; } .atom-pills { display:none; } }
   </style>
 </head>
 <body>
@@ -328,7 +339,7 @@
       <p class="atom-eyebrow">Chemistry · Molecular Structure · Level 3</p>
       <h1 id="main-content">Water:<br><em>H₂O</em></h1>
       <p class="atom-lede">
-        Two hydrogens. One oxygen. Bent at exactly 104.5°. That tiny kink — just 5° less than a perfect tetrahedron — gives water its polar character, its extraordinary hydrogen-bonding network, and ultimately its power to dissolve, buffer, and sustain all known life on Earth.
+        Two hydrogens. One oxygen. Bent at about 104.5°. That tiny kink — just 5° less than a perfect tetrahedron — gives water its polar character, its extraordinary hydrogen-bonding network, and ultimately its power to dissolve, buffer, and sustain all known life on Earth.
       </p>
       <div class="atom-meta">
         <span class="atom-pill">Grade 6–10</span>
@@ -337,12 +348,36 @@
       </div>
     </div>
     <div class="atom-quote-card">
-      <div class="atom-quote-mark">"</div>
-      <p class="atom-quote-text">
-        Water is the most extraordinary substance! Practically all its properties are anomalous, which enabled life to use it as building material for its machinery.
-      </p>
-      <div class="atom-quote-attr">— Albert Szent-Györgyi<br>Nobel Prize in Physiology, 1937</div>
+      <p class="atom-kicker cyan">Today’s investigation</p>
+      <h2>How does a tiny bend change a whole ocean?</h2>
+      <p>Predict → change the shape → compare the dipoles. Then trace the connection from molecules to melting, boiling, and floating ice.</p>
+      <a class="atom-btn" href="#sim-anatomy">Start with the molecule ↓</a>
     </div>
+  </div>
+
+  <!-- SIM 1: Molecule Viewer -->
+  <div class="atom-sim" id="sim-anatomy">
+    <div class="atom-sim-head">
+      <div class="atom-sim-head-left">
+        <span class="atom-sim-title cyan">🔬 H₂O Molecule Viewer</span>
+        <span class="atom-sim-sub">Three representations of the same molecule — toggle the view mode below</span>
+      </div>
+    </div>
+    <p class="lab-note">Predict: if the bonds were opposite each other, would their pulls cancel? Test the hypothetical linear shape. Real water stays bent.</p><canvas id="cvMolecule" height="380" role="img" aria-label="Water molecule representation with oxygen, two hydrogens, and partial charges"></canvas>
+    <div class="atom-sim-controls">
+      <div class="atom-ctrl">
+        <label>View Mode</label>
+        <div class="atom-control-row">
+          <button class="atom-btn active" data-mol-mode="stick">Ball &amp; Stick</button>
+          <button class="atom-btn" data-mol-mode="density">Charge Map</button>
+          <button class="atom-btn" data-mol-mode="spacefill">Space Fill (CPK)</button>
+        </div>
+      </div>
+      <div class="atom-ctrl"><label for="molAngle">Hypothetical bond angle</label><input id="molAngle" type="range" min="104.5" max="180" step="0.5" value="104.5"></div>
+      <button class="atom-btn" id="molReset">Restore real water</button>
+    </div>
+    <p class="lab-note" id="molEvidence" aria-live="polite"></p>
+    <p class="lab-note">Red = oxygen; white = hydrogen. δ means partial charge, not an ion. Green dots represent lone pairs schematically; the charge map is qualitative, not a computed orbital. Space fill uses approximate atomic radii.</p>
   </div>
 
   <!-- ══ 1 · ANATOMY ══ -->
@@ -388,27 +423,6 @@
     </div>
   </div>
 
-  <!-- SIM 1: Molecule Viewer -->
-  <div class="atom-sim" id="sim-anatomy">
-    <div class="atom-sim-head">
-      <div class="atom-sim-head-left">
-        <span class="atom-sim-title cyan">🔬 H₂O Molecule Viewer</span>
-        <span class="atom-sim-sub">Three representations of the same molecule — toggle the view mode below</span>
-      </div>
-    </div>
-    <canvas id="cvMolecule" height="380"></canvas>
-    <div class="atom-sim-controls">
-      <div class="atom-ctrl">
-        <label>View Mode</label>
-        <div class="atom-control-row">
-          <button class="atom-btn active" data-mol-mode="stick">Ball &amp; Stick</button>
-          <button class="atom-btn" data-mol-mode="density">Electron Density</button>
-          <button class="atom-btn" data-mol-mode="spacefill">Space Fill (CPK)</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- ══ 2 · POLARITY ══ -->
   <div class="atom-card atom-card-accent-violet" id="polarity">
     <p class="atom-kicker violet">Electronegativity · Dipole Moment · Polar Covalent</p>
@@ -443,11 +457,11 @@
         <p>
           Because oxygen pulls shared electrons closer, it acquires a slight <strong>negative charge (δ⁻)</strong>.
           The hydrogens, depleted of electron density, each carry a slight <strong>positive charge (δ⁺)</strong>.
-          These are not full ±1 ionic charges — they're fractional partial charges (roughly δ ≈ ±0.33 for water).
+          These are not full ±1 ionic charges — they're fractional partial charges (model-dependent; oxygen’s negative charge balances both hydrogens’ positive charges).
         </p>
         <p>
           A molecule with separated positive and negative charge centers is called a <strong>dipole</strong>.
-          Water's net dipole moment is <strong>1.85 Debye</strong> — one of the highest of any common small molecule,
+          Water's net dipole moment is <strong>1.85 Debye</strong> for an isolated gas-phase molecule,
           and the root of its extraordinary solvent power.
         </p>
       </div>
@@ -495,16 +509,13 @@
           <li>Van der Waals forces for comparison: ~2 kJ/mol</li>
           <li>Each water molecule can form <strong>up to 4 H-bonds</strong> (2 as donor via its H's, 2 as acceptor via lone pairs)</li>
           <li>Liquid water average: ~3.4 H-bonds per molecule</li>
-          <li>Ice: exactly 4 H-bonds per molecule in a rigid hexagonal lattice</li>
+          <li>Ideal ordinary ice: 4 H-bonds per molecule in an open, three-dimensional lattice</li>
         </ul>
       </div>
       <div>
         <h3>Why They Matter So Much</h3>
         <p>
-          Based on its molar mass and position in Group 16 of the periodic table, water should boil
-          around <strong>−80 °C</strong>. It actually boils at <strong>+100 °C</strong>.
-          That 180-degree gap is entirely due to hydrogen bonds that must be broken before molecules
-          can escape into the gas phase.
+          Water boils at <strong>100 °C at 1 atmosphere</strong>, unusually high for such a small molecule. Hydrogen bonding contributes strongly to the energy needed to separate molecules into vapor. Boiling leaves the O–H covalent bonds intact.
         </p>
         <div class="atom-highlight teal">
           <strong>H-bonds are the thermostat of life</strong>
@@ -526,19 +537,19 @@
         <span class="atom-sim-sub">Water molecules as oriented dipoles — cyan dashed lines show active hydrogen bonds</span>
       </div>
     </div>
-    <canvas id="cvHbond" height="400"></canvas>
+    <p class="lab-note">Compare 2 °C and 100 °C: do molecules move faster? Dashed contacts are a simplified distance-and-angle illustration, not a measured hydrogen-bond count or a phase prediction.</p><canvas id="cvHbond" height="400" role="img" aria-label="Moving water molecules with dashed intermolecular contacts"></canvas>
     <div class="atom-sim-controls">
       <div class="atom-ctrl" style="flex:1;min-width:180px;max-width:320px;">
-        <label>Temperature <span class="atom-ctrl-val" id="hbondTempVal">20 °C</span></label>
+        <label for="hbondTemp">Temperature <span class="atom-ctrl-val" id="hbondTempVal">20 °C</span></label>
         <input type="range" id="hbondTemp" min="0" max="100" value="20" />
       </div>
       <div class="atom-align-end"><button class="atom-btn" id="hbondFreezeBtn">❄️ Near-freeze</button></div>
-      <div class="atom-align-end"><button class="atom-btn" id="hbondBoilBtn">🔥 Boiling (100 °C)</button></div>
+      <div class="atom-align-end"><button class="atom-btn" id="hbondBoilBtn">🔥 Hot (100 °C)</button></div>
     </div>
     <div class="atom-readout">
-      <div class="atom-readout-chip"><span class="atom-readout-label">H-bonds Active</span><span class="atom-readout-val" id="hbondCount">—</span></div>
-      <div class="atom-readout-chip"><span class="atom-readout-label">Avg Speed</span><span class="atom-readout-val" id="hbondSpeed">—</span></div>
-      <div class="atom-readout-chip"><span class="atom-readout-label">State</span><span class="atom-readout-val" id="hbondState">—</span></div>
+      <div class="atom-readout-chip"><span class="atom-readout-label">Illustrated contacts</span><span class="atom-readout-val" id="hbondCount">—</span></div>
+      <div class="atom-readout-chip"><span class="atom-readout-label">Relative motion</span><span class="atom-readout-val" id="hbondSpeed">—</span></div>
+      <div class="atom-readout-chip"><span class="atom-readout-label">Model</span><span class="atom-readout-val" id="hbondState">—</span></div>
     </div>
   </div>
 
@@ -556,29 +567,29 @@
       <div class="water-prop-card">
         <div class="water-prop-icon">🌡️</div>
         <div class="water-prop-title">Unusually High Boiling Point</div>
-        <div class="water-prop-value">+100 °C (expected: −80 °C)</div>
-        <div class="water-prop-desc">The 180° difference is entirely from H-bonds that must be broken to let molecules escape into vapor. No other molecule of similar mass comes close.</div>
+        <div class="water-prop-value">100 °C at 1 atm</div>
+        <div class="water-prop-desc">Strong intermolecular attractions make separating water molecules into vapor energetically costly. The molecules themselves remain H₂O.</div>
         <div class="water-prop-why">→ Keeps oceans liquid across Earth's temperature range.</div>
       </div>
       <div class="water-prop-card">
         <div class="water-prop-icon">🔥</div>
         <div class="water-prop-title">High Heat Capacity</div>
         <div class="water-prop-value">4.18 J/(g·K)</div>
-        <div class="water-prop-desc">Highest of any common liquid. Energy goes into bending and breaking H-bonds rather than raising temperature — water heats and cools much more slowly than other substances.</div>
+        <div class="water-prop-desc">High compared with many everyday liquids. Added energy raises temperature and rearranges the intermolecular network — water heats and cools much more slowly than other substances.</div>
         <div class="water-prop-why">→ Moderates Earth's climate; keeps body temperature stable.</div>
       </div>
       <div class="water-prop-card">
         <div class="water-prop-icon">🫧</div>
         <div class="water-prop-title">Surface Tension</div>
         <div class="water-prop-value">72.8 mN/m</div>
-        <div class="water-prop-desc">Surface molecules are pulled inward by H-bonds to neighbors below but not above, creating a taut "skin." This lets water-strider insects walk on water and drives capillary action in plants.</div>
-        <div class="water-prop-why">→ Enables capillary action, vascular transport in plants, surface ecosystems.</div>
+        <div class="water-prop-desc">Surface molecules are pulled inward by H-bonds to neighbors below but not above, creating a taut "skin." This lets water-strider insects walk on water and contributes to capillary action.</div>
+        <div class="water-prop-why">→ Capillary action also needs adhesion; transpiration helps pull water up plants.</div>
       </div>
       <div class="water-prop-card">
         <div class="water-prop-icon">🧂</div>
-        <div class="water-prop-title">Universal Solvent</div>
-        <div class="water-prop-value">dissolves 70+ ionic cpds</div>
-        <div class="water-prop-desc">Water's dipole surrounds and separates ions: δ⁻ oxygen points toward cations (Na⁺), δ⁺ hydrogens point toward anions (Cl⁻). These hydration shells pull apart ionic crystal lattices.</div>
+        <div class="water-prop-title">A Versatile Solvent</div>
+        <div class="water-prop-value">many ions and polar solutes</div>
+        <div class="water-prop-desc">Water's dipole surrounds and separates ions: δ⁻ oxygen points toward cations (Na⁺), δ⁺ hydrogens point toward anions (Cl⁻). Hydration stabilizes dissolved ions; solubility also depends on the crystal lattice. Water does not dissolve everything, including most oils.</div>
         <div class="water-prop-why">→ Transports nutrients, salts, and metabolic waste in all living cells.</div>
       </div>
       <div class="water-prop-card">
@@ -593,10 +604,7 @@
     <div class="atom-highlight amber">
       <strong>These Properties Are Interdependent</strong>
       <p>
-        As global temperatures rise, ice melts (density anomaly weakens its buffering), the ocean absorbs
-        more heat (heat capacity buffer is finite), evaporation increases (H-bonds break more easily), and
-        weather patterns destabilize. Water's anomalous properties are not chemistry curiosities — they are
-        the levers of Earth's entire climate system.
+        Connect the scales: molecular attractions influence heat storage and evaporation; ice’s open structure makes it float. These properties help shape oceans and climate alongside sunlight, circulation, and many other processes.
       </p>
     </div>
   </div>
@@ -610,26 +618,24 @@
       <div>
         <h3>Ice: The H-Bond Lattice</h3>
         <p>
-          At 0 °C water freezes into hexagonal ice (ice I<sub>h</sub>) — each molecule forms
-          <strong>exactly 4 hydrogen bonds</strong> in a rigid, open lattice. This open geometry explains
+          At about 0 °C and 1 atmosphere, water can freeze into hexagonal ice (ice I<sub>h</sub>) — each molecule forms
+          <strong>4 hydrogen bonds in the ideal crystal interior</strong> in a rigid, open lattice. This open geometry explains
           the density anomaly: liquid water near 4 °C is denser than ice because the H-bond lattice
           is partially broken and molecules pack more tightly.
         </p>
         <p>
           Melting ice requires <strong>334 J/g</strong> of energy (latent heat of fusion) without any
-          temperature increase — every joule goes into breaking H-bonds.
+          temperature increase — energy changes the intermolecular arrangement rather than the temperature.
         </p>
       </div>
       <div>
         <h3>Liquid → Steam: A Giant Energy Barrier</h3>
         <p>
           Boiling liquid water requires <strong>2,260 J/g</strong> (latent heat of vaporization) —
-          the highest of any common liquid. Every joule breaks one more H-bond until molecules finally
-          escape the surface as free steam.
+          at its normal boiling point. Energy separates molecules against intermolecular attractions; it does not split water into hydrogen and oxygen.
         </p>
         <p>
-          This is why sweating cools so effectively: each gram of sweat that evaporates removes 2,260 J
-          from your body — far more than any other biological coolant could achieve at body temperature.
+          This is why sweating cools so effectively: evaporation removes energy from your skin. Near body temperature, water’s vaporization energy is about 2,400 J/g.
         </p>
       </div>
     </div>
@@ -637,38 +643,28 @@
     <div class="atom-highlight rose">
       <strong>Latent Heat — Energy Without Temperature Change</strong>
       <p>
-        Pour heat into boiling water and the temperature stays at 100 °C until <em>all</em> the liquid
-        is gone — every joule breaks H-bonds, none raises the thermometer. This is why steam at 100 °C
+        Pour heat into boiling water and the temperature stays at 100 °C at 1 atmosphere while <em>both</em> liquid and vapor coexist in equilibrium. Added energy changes the phase fraction. This is why steam at 100 °C
         causes much worse burns than liquid water at 100 °C: the steam carries 2,260 J/g of hidden latent
-        energy that releases instantly on contact with skin.
+        energy that is released as it condenses.
       </p>
     </div>
   </div>
 
-  <!-- SIM 3: Phase Transition -->
-  <div class="atom-sim" id="sim-phase">
-    <div class="atom-sim-head">
-      <div class="atom-sim-head-left">
-        <span class="atom-sim-title violet">🧊💧☁️ Phase Transition Simulator</span>
-        <span class="atom-sim-sub">Lennard-Jones particle simulation — drag temperature to watch the phase change in real time</span>
-      </div>
-    </div>
-    <canvas id="cvPhase" height="400"></canvas>
-    <div class="atom-sim-controls">
-      <div class="atom-ctrl" style="flex:1;min-width:180px;max-width:360px;">
-        <label>Temperature <span class="atom-ctrl-val" id="phaseTempVal">50 °C</span></label>
-        <input type="range" id="phaseTemp" min="1" max="500" value="50" />
-      </div>
-      <div class="atom-align-end"><button class="atom-btn" id="phaseIceBtn">❄️ Ice (0 °C)</button></div>
-      <div class="atom-align-end"><button class="atom-btn" id="phaseLiqBtn">💧 Liquid (50 °C)</button></div>
-      <div class="atom-align-end"><button class="atom-btn" id="phaseSteamBtn">☁️ Steam (200 °C)</button></div>
-    </div>
-    <div class="atom-readout">
-      <div class="atom-readout-chip"><span class="atom-readout-label">Phase</span><span class="atom-readout-val" id="phaseLabel">—</span></div>
-      <div class="atom-readout-chip"><span class="atom-readout-label">Avg Kinetic Energy</span><span class="atom-readout-val" id="phaseKE">—</span></div>
-      <div class="atom-readout-chip"><span class="atom-readout-label">Wall Pressure (hits/s)</span><span class="atom-readout-val" id="phasePressure">—</span></div>
-    </div>
-  </div>
+  <section class="atom-sim" id="sim-phase" aria-labelledby="heatTitle">
+    <div class="atom-sim-head"><div class="atom-sim-head-left"><h2 id="heatTitle" class="atom-sim-title violet">Where does the added energy go?</h2><span class="atom-sim-sub">Heating 1 g of water at 1 atmosphere, starting as ice at −20 °C</span></div></div>
+    <p class="lab-note">Predict: does adding energy always raise temperature? Drag through the flat parts of the curve and compare the phase fractions.</p>
+    <canvas id="cvPhase" height="340" role="img" aria-label="Heating curve with melting at zero degrees and boiling at 100 degrees Celsius"></canvas>
+    <div class="atom-sim-controls"><div class="atom-ctrl" style="flex:1"><label for="heatEnergy">Energy added (J)</label><input id="heatEnergy" type="range" min="0" max="3094" value="584" step="1"></div>
+    <button class="atom-btn" data-energy="0">Ice</button><button class="atom-btn" data-energy="209">Melting</button><button class="atom-btn" data-energy="584">Liquid</button><button class="atom-btn" data-energy="1924">Boiling</button><button class="atom-btn" data-energy="3094">Vapor</button></div>
+    <p class="lab-note" id="heatEvidence" aria-live="polite"></p>
+    <p class="lab-note">Idealized equilibrium model: heat capacities ≈ 2.1 (ice), 4.18 (liquid), 2.0 (vapor) J/(g·K); fusion ≈ 334 J/g; vaporization ≈ 2,260 J/g. No heat loss. Pressure changes the transition temperatures. Vapor is invisible; a visible “steam” cloud contains liquid droplets.</p>
+  </section>
+  <section class="atom-card" aria-labelledby="checkTitle"><h2 id="checkTitle">Explain it with evidence</h2>
+    <p>1. Why can a molecule have polar bonds but no net dipole? Use your linear-shape test.</p><p>2. When water boils, which bonds remain intact?</p><p>3. Why does the longer plateau require more energy?</p>
+    <details><summary>Compare your explanation</summary><p>Equal, opposite bond dipoles cancel. Boiling separates H₂O molecules while their O–H covalent bonds remain intact. Vaporization separates molecules much more completely than melting, so it needs more energy per gram.</p></details>
+    <p>Classroom test: compare drops of plain water and water with a little dish soap on two clean coins. Keep drop size and coin surface the same. Predict, count, repeat, and connect your result to surface tension.</p>
+    <p>Read further: <a href="https://openstax.org/books/chemistry/pages/10-3-phase-transitions">OpenStax: phase transitions</a> · <a href="https://openstax.org/books/biology-2e/pages/2-2-water">OpenStax: water properties</a> · <a href="https://cccbdb.nist.gov/diplistx.asp">NIST: experimental dipole moments</a></p>
+  </section>
 
   <!-- ══ 6 · AI EXTENSION ══ -->
   <div class="atom-card atom-card-accent-green">
@@ -701,564 +697,10 @@
 
 </div><!-- /.atom-shell -->
 
-<script>
-/* ── Utilities ── */
-function rand(a, b) { return Math.random() * (b - a) + a; }
-function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-function lerp(a, b, t) { return a + (b - a) * t; }
+<script src="../../assets/js/sim-kit.js"></script>
+<script src="../../assets/js/water-molecule.js"></script>
+<script src="../../assets/js/photo-lightbox.js"></script>
 
-/* ═══════════════════════════════════════════════════════════
-   SIM 1 · MOLECULE ANATOMY VIEWER
-═══════════════════════════════════════════════════════════ */
-(function () {
-  const cv  = document.getElementById('cvMolecule');
-  const ctx = cv.getContext('2d');
-  let mode  = 'stick';
-
-  function resize() { cv.width = cv.parentElement.getBoundingClientRect().width; draw(); }
-
-  function draw() {
-    const W = cv.width, H = cv.height;
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = '#02080f'; ctx.fillRect(0, 0, W, H);
-    ctx.save();
-    ctx.strokeStyle = 'rgba(255,255,255,0.025)'; ctx.lineWidth = 1;
-    for (let x = 0; x < W; x += 26) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-    for (let y = 0; y < H; y += 26) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
-    ctx.restore();
-
-    const cx = W * 0.5, cy = H * 0.44;
-    const sc = Math.min(W, H) / 480;
-    const L  = 100 * sc;
-    const phi = 52.25 * Math.PI / 180;
-
-    const h1x = cx + L * Math.sin(phi), h1y = cy + L * Math.cos(phi);
-    const h2x = cx - L * Math.sin(phi), h2y = cy + L * Math.cos(phi);
-
-    const lpD = L * 0.6, lpA = 38 * Math.PI / 180;
-    const lp1x = cx - lpD * Math.sin(lpA), lp1y = cy - lpD * Math.cos(lpA);
-    const lp2x = cx + lpD * Math.sin(lpA), lp2y = cy - lpD * Math.cos(lpA);
-
-    if (mode === 'stick')     drawStick(W, H, cx, cy, L, phi, h1x, h1y, h2x, h2y, lp1x, lp1y, lp2x, lp2y, sc);
-    else if (mode === 'density')   drawDensity(W, H, cx, cy, L, h1x, h1y, h2x, h2y, sc);
-    else                      drawSpaceFill(W, H, cx, cy, L, h1x, h1y, h2x, h2y, sc);
-  }
-
-  function drawStick(W, H, cx, cy, L, phi, h1x, h1y, h2x, h2y, lp1x, lp1y, lp2x, lp2y, sc) {
-    /* Bonds */
-    ctx.save();
-    ctx.lineWidth = 5 * sc; ctx.lineCap = 'round';
-    ctx.strokeStyle = 'rgba(160,200,240,0.72)';
-    ctx.beginPath();
-    ctx.moveTo(cx,cy); ctx.lineTo(h1x,h1y);
-    ctx.moveTo(cx,cy); ctx.lineTo(h2x,h2y);
-    ctx.stroke(); ctx.restore();
-
-    /* Lone pair dashes */
-    ctx.save();
-    ctx.setLineDash([4*sc, 6*sc]); ctx.lineWidth = 2*sc;
-    ctx.strokeStyle = 'rgba(79,220,154,0.52)';
-    ctx.beginPath();
-    ctx.moveTo(cx,cy); ctx.lineTo(lp1x,lp1y);
-    ctx.moveTo(cx,cy); ctx.lineTo(lp2x,lp2y);
-    ctx.stroke(); ctx.setLineDash([]); ctx.restore();
-
-    /* Bond angle arc */
-    const arcR = L * 0.46;
-    const ang1 = Math.atan2(h1y-cy, h1x-cx);
-    const ang2 = Math.atan2(h2y-cy, h2x-cx);
-    ctx.save();
-    ctx.beginPath(); ctx.arc(cx, cy, arcR, ang1, ang2, false);
-    ctx.strokeStyle = 'rgba(246,195,91,0.80)'; ctx.lineWidth = 2*sc; ctx.stroke();
-    ctx.font = `bold ${clamp(12*sc,9,15)}px "JetBrains Mono",monospace`;
-    ctx.fillStyle = '#f6c35b'; ctx.textAlign = 'center';
-    ctx.fillText('104.5°', cx, cy + arcR + 18*sc);
-    ctx.restore();
-
-    /* Lone pair dots */
-    ctx.save();
-    const lpR = 5*sc, lpOff = L*0.08;
-    [[lp1x,lp1y],[lp2x,lp2y]].forEach(([lx,ly]) => {
-      [-lpOff,lpOff].forEach(d => {
-        ctx.beginPath(); ctx.arc(lx+d, ly, lpR, 0, Math.PI*2);
-        ctx.fillStyle = '#4fdc9a'; ctx.fill();
-      });
-    });
-    ctx.font = `${clamp(10*sc,8,12)}px Inter,sans-serif`;
-    ctx.fillStyle = 'rgba(79,220,154,0.68)'; ctx.textAlign = 'center';
-    ctx.fillText('lone pairs', cx, cy - L*0.6 - 14*sc);
-    ctx.restore();
-
-    /* Oxygen */
-    const oR = L*0.27;
-    ctx.save();
-    const og = ctx.createRadialGradient(cx-oR*0.3,cy-oR*0.3,oR*0.08,cx,cy,oR);
-    og.addColorStop(0,'#ff7070'); og.addColorStop(1,'#7a0000');
-    ctx.beginPath(); ctx.arc(cx,cy,oR,0,Math.PI*2);
-    ctx.fillStyle=og; ctx.fill();
-    ctx.strokeStyle='rgba(255,160,160,0.28)'; ctx.lineWidth=1.5*sc; ctx.stroke();
-    ctx.font=`bold ${clamp(15*sc,12,20)}px Inter,sans-serif`;
-    ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('O',cx,cy); ctx.restore();
-
-    /* Hydrogens */
-    const hR = L*0.14;
-    [[h1x,h1y,1],[h2x,h2y,-1]].forEach(([hx,hy,side]) => {
-      ctx.save();
-      const hg = ctx.createRadialGradient(hx-hR*0.3,hy-hR*0.3,hR*0.08,hx,hy,hR);
-      hg.addColorStop(0,'#fff'); hg.addColorStop(1,'#8ab8d8');
-      ctx.beginPath(); ctx.arc(hx,hy,hR,0,Math.PI*2);
-      ctx.fillStyle=hg; ctx.fill();
-      ctx.strokeStyle='rgba(180,220,255,0.28)'; ctx.lineWidth=1.5*sc; ctx.stroke();
-      ctx.font=`bold ${clamp(10*sc,8,13)}px Inter,sans-serif`;
-      ctx.fillStyle='#334'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText('H',hx,hy); ctx.restore();
-      /* δ⁺ */
-      ctx.save();
-      ctx.font=`bold ${clamp(12*sc,10,15)}px Inter,sans-serif`;
-      ctx.fillStyle='#ff9f7f'; ctx.textAlign=side>0?'left':'right'; ctx.textBaseline='middle';
-      ctx.fillText('δ⁺', hx+side*(hR+7*sc), hy); ctx.restore();
-    });
-
-    /* δ⁻ */
-    ctx.save();
-    ctx.font=`bold ${clamp(13*sc,10,16)}px Inter,sans-serif`;
-    ctx.fillStyle='#5ac8ee'; ctx.textAlign='left'; ctx.textBaseline='middle';
-    ctx.fillText('δ⁻', cx+oR+6*sc, cy); ctx.restore();
-
-    /* Bond length label */
-    const mbx=(cx+h1x)/2, mby=(cy+h1y)/2;
-    const ba=Math.atan2(h1y-cy,h1x-cx);
-    ctx.save(); ctx.translate(mbx,mby); ctx.rotate(ba-Math.PI/2);
-    ctx.font=`${clamp(9*sc,7,11)}px "JetBrains Mono",monospace`;
-    ctx.fillStyle='rgba(200,228,248,0.38)'; ctx.textAlign='center';
-    ctx.fillText('0.96 Å',0,-9*sc); ctx.restore();
-
-    /* Net dipole arrow */
-    const hhMx=(h1x+h2x)/2, hhMy=(h1y+h2y)/2;
-    const ddx=cx-hhMx, ddy=cy-hhMy, ddl=Math.hypot(ddx,ddy);
-    const al=ddl*0.5, ax2=hhMx+ddx/ddl*al, ay2=hhMy+ddy/ddl*al;
-    ctx.save();
-    ctx.strokeStyle='#b09fff'; ctx.lineWidth=2.5*sc; ctx.lineCap='round';
-    ctx.beginPath(); ctx.moveTo(hhMx,hhMy); ctx.lineTo(ax2,ay2); ctx.stroke();
-    const ha=Math.atan2(ddy,ddx), hl=9*sc;
-    ctx.fillStyle='#b09fff'; ctx.beginPath();
-    ctx.moveTo(ax2,ay2);
-    ctx.lineTo(ax2-hl*Math.cos(ha-0.4),ay2-hl*Math.sin(ha-0.4));
-    ctx.lineTo(ax2-hl*Math.cos(ha+0.4),ay2-hl*Math.sin(ha+0.4));
-    ctx.closePath(); ctx.fill();
-    ctx.font=`${clamp(10*sc,8,12)}px Inter,sans-serif`;
-    ctx.fillStyle='#c4b8ff'; ctx.textAlign='center';
-    ctx.fillText('net dipole',hhMx,hhMy+16*sc); ctx.restore();
-  }
-
-  function drawDensity(W, H, cx, cy, L, h1x, h1y, h2x, h2y, sc) {
-    /* O electron cloud — blue (high density) */
-    const oc=ctx.createRadialGradient(cx,cy,0,cx,cy,L*1.3);
-    oc.addColorStop(0,'rgba(10,80,220,0.72)');
-    oc.addColorStop(0.5,'rgba(30,100,255,0.28)');
-    oc.addColorStop(1,'rgba(30,100,255,0)');
-    ctx.beginPath(); ctx.arc(cx,cy,L*1.3,0,Math.PI*2);
-    ctx.fillStyle=oc; ctx.fill();
-
-    /* H clouds — orange (low density) */
-    [h1x,h2x].forEach(hx => {
-      const hy=h1y;
-      const hc=ctx.createRadialGradient(hx,hy,0,hx,hy,L*0.65);
-      hc.addColorStop(0,'rgba(255,170,50,0.58)');
-      hc.addColorStop(0.5,'rgba(255,90,20,0.22)');
-      hc.addColorStop(1,'rgba(255,90,20,0)');
-      ctx.beginPath(); ctx.arc(hx,hy,L*0.65,0,Math.PI*2);
-      ctx.fillStyle=hc; ctx.fill();
-    });
-
-    /* Atom outlines */
-    ctx.save(); ctx.globalAlpha=0.22; ctx.strokeStyle='#fff'; ctx.lineWidth=2*sc;
-    ctx.beginPath(); ctx.arc(cx,cy,L*0.25,0,Math.PI*2); ctx.stroke();
-    [h1x,h2x].forEach(hx => { ctx.beginPath(); ctx.arc(hx,h1y,L*0.12,0,Math.PI*2); ctx.stroke(); });
-    ctx.restore();
-
-    /* Labels */
-    ctx.save();
-    ctx.textAlign='center';
-    ctx.font=`bold ${clamp(13*sc,10,16)}px Inter,sans-serif`;
-    ctx.fillStyle='#80bcff'; ctx.fillText('δ⁻  (high e⁻ density)',cx,cy-L*0.5);
-    ctx.fillStyle='#ffaa60';
-    ctx.fillText('δ⁺',h1x+L*0.3,h1y-5*sc);
-    ctx.fillText('δ⁺',h2x-L*0.3,h2y-5*sc);
-
-    /* Color legend */
-    const lx=W-90*sc, ly=H-55*sc;
-    const leg=ctx.createLinearGradient(lx,ly,lx+68*sc,ly);
-    leg.addColorStop(0,'rgb(255,110,20)');
-    leg.addColorStop(1,'rgb(10,70,220)');
-    ctx.fillStyle=leg; ctx.fillRect(lx,ly,68*sc,9*sc);
-    ctx.font=`${clamp(9*sc,7,11)}px Inter,sans-serif`;
-    ctx.fillStyle='rgba(200,228,248,0.44)';
-    ctx.textAlign='left'; ctx.fillText('δ⁺',lx,ly+22*sc);
-    ctx.textAlign='right'; ctx.fillText('δ⁻',lx+68*sc,ly+22*sc);
-    ctx.restore();
-  }
-
-  function drawSpaceFill(W, H, cx, cy, L, h1x, h1y, h2x, h2y, sc) {
-    const ppa=L/0.96; /* px per angstrom */
-    const oR=1.52*ppa, hR=1.20*ppa;
-
-    /* Hydrogens first (partly behind O) */
-    [h1x,h2x].forEach(hx => {
-      const hy=h1y;
-      const hg=ctx.createRadialGradient(hx-hR*0.3,hy-hR*0.3,hR*0.05,hx,hy,hR);
-      hg.addColorStop(0,'#fff'); hg.addColorStop(0.6,'#c4dced'); hg.addColorStop(1,'#809ab4');
-      ctx.beginPath(); ctx.arc(hx,hy,hR,0,Math.PI*2);
-      ctx.fillStyle=hg; ctx.fill();
-    });
-
-    /* Oxygen */
-    const og=ctx.createRadialGradient(cx-oR*0.28,cy-oR*0.28,oR*0.05,cx,cy,oR);
-    og.addColorStop(0,'#ff5555'); og.addColorStop(0.7,'#cc0000'); og.addColorStop(1,'#800000');
-    ctx.beginPath(); ctx.arc(cx,cy,oR,0,Math.PI*2);
-    ctx.fillStyle=og; ctx.fill();
-
-    /* Labels */
-    ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.font=`bold ${clamp(16*sc,12,22)}px Inter,sans-serif`;
-    ctx.fillStyle='#fff'; ctx.fillText('O',cx,cy);
-    ctx.font=`bold ${clamp(12*sc,9,16)}px Inter,sans-serif`;
-    ctx.fillStyle='#445'; ctx.fillText('H',h1x,h1y); ctx.fillText('H',h2x,h2y);
-    ctx.restore();
-
-    ctx.save();
-    ctx.font=`${clamp(9*sc,7,11)}px "JetBrains Mono",monospace`;
-    ctx.fillStyle='rgba(200,228,248,0.38)'; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
-    ctx.fillText('CPK Model · O = 1.52 Å · H = 1.20 Å (van der Waals radii)',12*sc,H-12*sc);
-    ctx.restore();
-  }
-
-  document.querySelectorAll('[data-mol-mode]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      mode = btn.dataset.molMode;
-      document.querySelectorAll('[data-mol-mode]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      draw();
-    });
-  });
-
-  window.addEventListener('resize', resize);
-  resize();
-})();
-
-
-/* ═══════════════════════════════════════════════════════════
-   SIM 2 · HYDROGEN BOND NETWORK
-═══════════════════════════════════════════════════════════ */
-(function () {
-  const cv        = document.getElementById('cvHbond');
-  const ctx       = cv.getContext('2d');
-  const tempSl    = document.getElementById('hbondTemp');
-  const tempValEl = document.getElementById('hbondTempVal');
-  const countEl   = document.getElementById('hbondCount');
-  const speedEl   = document.getElementById('hbondSpeed');
-  const stateEl   = document.getElementById('hbondState');
-
-  document.getElementById('hbondFreezeBtn').addEventListener('click', () => { tempSl.value = 2; });
-  document.getElementById('hbondBoilBtn').addEventListener('click',   () => { tempSl.value = 100; });
-
-  const N      = 20;
-  const L_VIS  = 14;
-  const PHI    = 52.25 * Math.PI / 180;
-  const OR     = 7, HR = 4;
-  const HBDIST = 30;
-  const REPSIG = 32;
-
-  let mols = [];
-
-  function initMols(W, H) {
-    mols = [];
-    const cols = Math.ceil(Math.sqrt(N)), rows = Math.ceil(N / cols);
-    const pX = W*0.1, pY = H*0.1;
-    const cW = (W-pX*2)/cols, cH = (H-pY*2)/rows;
-    let idx = 0;
-    for (let r = 0; r < rows && idx < N; r++) {
-      for (let c = 0; c < cols && idx < N; c++, idx++) {
-        mols.push({
-          x: pX+c*cW+cW/2+rand(-cW*0.18,cW*0.18),
-          y: pY+r*cH+cH/2+rand(-cH*0.18,cH*0.18),
-          vx: rand(-0.4,0.4), vy: rand(-0.4,0.4),
-          angle: rand(0,Math.PI*2), omega: rand(-0.02,0.02),
-        });
-      }
-    }
-  }
-
-  function getH(m, i) {
-    const a = m.angle + (i===0 ? PHI : -PHI);
-    return { x: m.x + L_VIS * Math.sin(a), y: m.y + L_VIS * Math.cos(a) };
-  }
-
-  function resize() { cv.width = cv.parentElement.getBoundingClientRect().width; initMols(cv.width, cv.height); }
-
-  let rafId;
-  function tick() {
-    const W = cv.width, H = cv.height;
-    const T = Number(tempSl.value);
-    tempValEl.textContent = T + ' °C';
-
-    const tgtSpd   = 0.25 + T * 0.030;
-    const noiseAmt = T * 0.0009;
-
-    mols.forEach(m => {
-      m.vx += rand(-noiseAmt, noiseAmt);
-      m.vy += rand(-noiseAmt, noiseAmt);
-      m.omega += rand(-noiseAmt*0.4, noiseAmt*0.4);
-
-      /* O-O soft repulsion */
-      mols.forEach(o => {
-        if (o===m) return;
-        const dx=m.x-o.x, dy=m.y-o.y, r=Math.hypot(dx,dy);
-        if (r<REPSIG && r>0.5) { const f=0.14*(REPSIG-r)/r; m.vx+=dx*f; m.vy+=dy*f; }
-      });
-
-      /* H-bond alignment torque at low T */
-      if (T<70) {
-        mols.forEach(o => {
-          if (o===m) return;
-          [0,1].forEach(hi => {
-            const h=getH(m,hi);
-            const dx=o.x-h.x, dy=o.y-h.y, r=Math.hypot(dx,dy);
-            if (r<HBDIST*1.6 && r>0.5) {
-              const tAng=Math.atan2(dx,dy)-(hi===0?PHI:-PHI);
-              let da=tAng-m.angle;
-              while(da>Math.PI)da-=Math.PI*2; while(da<-Math.PI)da+=Math.PI*2;
-              m.omega+=da*0.0008*(70-T)/70;
-            }
-          });
-        });
-      }
-
-      /* Speed rescale */
-      const sp=Math.hypot(m.vx,m.vy);
-      if(sp>0.01){const sc=lerp(1,tgtSpd/sp,0.05); m.vx*=sc; m.vy*=sc;}
-      m.omega*=0.96;
-      m.x+=m.vx; m.y+=m.vy; m.angle+=m.omega;
-
-      const mg=18;
-      if(m.x<mg){m.x=mg;m.vx=Math.abs(m.vx);}
-      if(m.x>W-mg){m.x=W-mg;m.vx=-Math.abs(m.vx);}
-      if(m.y<mg){m.y=mg;m.vy=Math.abs(m.vy);}
-      if(m.y>H-mg){m.y=H-mg;m.vy=-Math.abs(m.vy);}
-    });
-
-    /* Draw */
-    ctx.fillStyle='#02080f'; ctx.fillRect(0,0,W,H);
-    ctx.save(); ctx.strokeStyle='rgba(255,255,255,0.02)'; ctx.lineWidth=1;
-    for(let x=0;x<W;x+=26){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-    for(let y=0;y<H;y+=26){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-    ctx.restore();
-
-    /* H-bonds */
-    let hbCnt=0;
-    for(let i=0;i<N;i++){
-      for(let j=0;j<N;j++){
-        if(i===j) continue;
-        const mA=mols[i], mB=mols[j];
-        [0,1].forEach(hi=>{
-          const h=getH(mA,hi);
-          const dx=mB.x-h.x, dy=mB.y-h.y, r=Math.hypot(dx,dy);
-          if(r<HBDIST && r>0.5){
-            const alpha=clamp(1-r/HBDIST,0,1)*0.88;
-            ctx.save(); ctx.setLineDash([4,5]); ctx.lineWidth=1.5;
-            ctx.strokeStyle=`rgba(56,189,248,${alpha})`;
-            ctx.beginPath(); ctx.moveTo(h.x,h.y); ctx.lineTo(mB.x,mB.y); ctx.stroke();
-            ctx.setLineDash([]); ctx.restore();
-            hbCnt++;
-          }
-        });
-      }
-    }
-
-    /* Molecules */
-    mols.forEach(m=>{
-      const h1=getH(m,0), h2=getH(m,1);
-      ctx.save(); ctx.strokeStyle='rgba(155,200,240,0.62)'; ctx.lineWidth=2.5; ctx.lineCap='round';
-      ctx.beginPath(); ctx.moveTo(m.x,m.y); ctx.lineTo(h1.x,h1.y);
-      ctx.moveTo(m.x,m.y); ctx.lineTo(h2.x,h2.y); ctx.stroke(); ctx.restore();
-      [h1,h2].forEach(h=>{
-        const hg=ctx.createRadialGradient(h.x-1,h.y-1,0.5,h.x,h.y,HR);
-        hg.addColorStop(0,'#fff'); hg.addColorStop(1,'#6aa4cc');
-        ctx.beginPath(); ctx.arc(h.x,h.y,HR,0,Math.PI*2); ctx.fillStyle=hg; ctx.fill();
-      });
-      const og=ctx.createRadialGradient(m.x-2,m.y-2,1,m.x,m.y,OR);
-      og.addColorStop(0,'#ff7070'); og.addColorStop(1,'#8b0000');
-      ctx.beginPath(); ctx.arc(m.x,m.y,OR,0,Math.PI*2); ctx.fillStyle=og; ctx.fill();
-    });
-
-    const avgSp=mols.reduce((s,m)=>s+Math.hypot(m.vx,m.vy),0)/N;
-    countEl.textContent=Math.floor(hbCnt/2);
-    speedEl.textContent=avgSp.toFixed(2)+' px/fr';
-    stateEl.textContent=T<8?'Near-frozen':T<55?'Liquid-like':'Steam-like';
-
-    rafId=requestAnimationFrame(tick);
-  }
-
-  window.addEventListener('resize',()=>{cancelAnimationFrame(rafId);resize();tick();});
-  resize(); tick();
-})();
-
-
-/* ═══════════════════════════════════════════════════════════
-   SIM 3 · PHASE TRANSITION (Lennard-Jones)
-═══════════════════════════════════════════════════════════ */
-(function () {
-  const cv       = document.getElementById('cvPhase');
-  const ctx      = cv.getContext('2d');
-  const tempSl   = document.getElementById('phaseTemp');
-  const tempValEl= document.getElementById('phaseTempVal');
-  const phLblEl  = document.getElementById('phaseLabel');
-  const keEl     = document.getElementById('phaseKE');
-  const pressEl  = document.getElementById('phasePressure');
-
-  document.getElementById('phaseIceBtn').addEventListener('click',   ()=>{tempSl.value=3;});
-  document.getElementById('phaseLiqBtn').addEventListener('click',   ()=>{tempSl.value=80;});
-  document.getElementById('phaseSteamBtn').addEventListener('click', ()=>{tempSl.value=350;});
-
-  const N    = 48;
-  const SIG  = 14;
-  const EPS  = 1.2;
-  const RCUT = SIG * 2.5;
-  const DT   = 0.55;
-
-  let pts=[], wallHits=0, lastHitCt=0, lastHitT=0;
-
-  function initPts(W,H){
-    pts=[];
-    const cols=Math.ceil(Math.sqrt(N)), rows=Math.ceil(N/cols);
-    const pX=W*0.07, pY=H*0.07;
-    const cW=(W-pX*2)/cols, cH=(H-pY*2)/rows;
-    let idx=0;
-    for(let r=0;r<rows&&idx<N;r++){
-      for(let c=0;c<cols&&idx<N;c++,idx++){
-        const T0=Number(tempSl.value);
-        const v0=Math.sqrt(2*EPS*T0/500)*0.4;
-        const a=Math.random()*Math.PI*2;
-        pts.push({
-          x:pX+c*cW+cW/2+rand(-cW*0.28,cW*0.28),
-          y:pY+r*cH+cH/2+rand(-cH*0.28,cH*0.28),
-          vx:v0*Math.cos(a), vy:v0*Math.sin(a), ax:0, ay:0
-        });
-      }
-    }
-  }
-
-  function ljForce(r){
-    if(r<0.8||r>RCUT) return 0;
-    const sr=SIG/r, sr6=sr*sr*sr*sr*sr*sr, sr12=sr6*sr6;
-    return clamp(24*EPS/r*(2*sr12-sr6),-80,80);
-  }
-
-  function resize(){cv.width=cv.parentElement.getBoundingClientRect().width;initPts(cv.width,cv.height);}
-
-  let rafId2;
-  function tick(){
-    const W=cv.width, H=cv.height;
-    const T=Number(tempSl.value);
-
-    const degC=T<=5?'0 °C':T<=200?T+' °C':T+' °C';
-    tempValEl.textContent=degC;
-    phLblEl.textContent=T<=10?'ICE ❄️':T<=200?'LIQUID 💧':'STEAM ☁️';
-
-    pts.forEach(p=>{p.ax=0;p.ay=0;});
-
-    for(let i=0;i<N;i++){
-      for(let j=i+1;j<N;j++){
-        const pi=pts[i], pj=pts[j];
-        const dx=pj.x-pi.x, dy=pj.y-pi.y, r=Math.hypot(dx,dy);
-        if(r<0.8||r>RCUT) continue;
-        const f=ljForce(r);
-        const fx=-f*dx/r, fy=-f*dy/r;
-        pi.ax+=fx; pi.ay+=fy; pj.ax-=fx; pj.ay-=fy;
-      }
-    }
-
-    pts.forEach(p=>{
-      p.vx+=p.ax*DT; p.vy+=p.ay*DT;
-      p.x+=p.vx*DT; p.y+=p.vy*DT;
-      const mg=SIG;
-      if(p.x<mg){p.x=mg;p.vx=Math.abs(p.vx);wallHits++;}
-      if(p.x>W-mg){p.x=W-mg;p.vx=-Math.abs(p.vx);wallHits++;}
-      if(p.y<mg){p.y=mg;p.vy=Math.abs(p.vy);wallHits++;}
-      if(p.y>H-mg){p.y=H-mg;p.vy=-Math.abs(p.vy);wallHits++;}
-    });
-
-    /* Thermostat */
-    const tgtKE=N*EPS*(T/100);
-    let curKE=pts.reduce((s,p)=>s+0.5*(p.vx*p.vx+p.vy*p.vy),0);
-    if(curKE>0.001){
-      const sc=Math.sqrt(tgtKE/curKE);
-      const bl=lerp(1,sc,0.05);
-      pts.forEach(p=>{p.vx*=bl;p.vy*=bl;});
-      curKE*=bl*bl;
-    }
-
-    /* Draw */
-    ctx.fillStyle='#02080f'; ctx.fillRect(0,0,W,H);
-    ctx.save(); ctx.strokeStyle='rgba(255,255,255,0.02)'; ctx.lineWidth=1;
-    for(let x=0;x<W;x+=26){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-    for(let y=0;y<H;y+=26){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-    ctx.restore();
-
-    /* H-bond-like lines when cold */
-    if(T<100){
-      ctx.save(); ctx.setLineDash([3,5]); ctx.lineWidth=1;
-      for(let i=0;i<N;i++){
-        for(let j=i+1;j<N;j++){
-          const pi=pts[i],pj=pts[j];
-          const r=Math.hypot(pj.x-pi.x,pj.y-pi.y);
-          if(r<SIG*2.0){
-            const alpha=clamp((SIG*2.0-r)/(SIG*0.7),0,0.55)*(1-T/100);
-            ctx.strokeStyle=`rgba(56,189,248,${alpha})`;
-            ctx.beginPath();ctx.moveTo(pi.x,pi.y);ctx.lineTo(pj.x,pj.y);ctx.stroke();
-          }
-        }
-      }
-      ctx.setLineDash([]); ctx.restore();
-    }
-
-    /* Particles colored by speed */
-    const refSpd=Math.sqrt(2*EPS*5);
-    pts.forEach(p=>{
-      const sp=Math.hypot(p.vx,p.vy);
-      const t=clamp(sp/refSpd,0,1);
-      const r=Math.round(lerp(20,255,t));
-      const g=Math.round(lerp(120,120,t>0.5?1-(t-0.5)*2:t*2));
-      const b=Math.round(lerp(230,20,t));
-      const pr=SIG*0.55;
-      const pg=ctx.createRadialGradient(p.x-pr*0.3,p.y-pr*0.3,pr*0.1,p.x,p.y,pr);
-      pg.addColorStop(0,`rgba(${Math.min(r+80,255)},${Math.min(g+80,255)},${Math.min(b+80,255)},0.95)`);
-      pg.addColorStop(1,`rgba(${r},${g},${b},0.75)`);
-      ctx.beginPath();ctx.arc(p.x,p.y,pr,0,Math.PI*2);
-      ctx.fillStyle=pg;ctx.fill();
-    });
-
-    /* Phase watermark */
-    ctx.save();
-    ctx.font='bold 16px Inter,sans-serif';
-    ctx.fillStyle=T<=10?'rgba(160,215,255,0.28)':T<=200?'rgba(56,189,248,0.22)':'rgba(255,185,70,0.24)';
-    ctx.textAlign='center';
-    ctx.fillText(T<=10?'ICE':T<=200?'LIQUID':'STEAM',W/2,H/2);
-    ctx.restore();
-
-    const now=Date.now();
-    if(now-lastHitT>500){lastHitCt=wallHits*2;wallHits=0;lastHitT=now;}
-    keEl.textContent=(curKE/N).toFixed(3)+' ε';
-    pressEl.textContent=lastHitCt+'/s';
-
-    rafId2=requestAnimationFrame(tick);
-  }
-
-  window.addEventListener('resize',()=>{cancelAnimationFrame(rafId2);resize();tick();});
-  resize(); tick();
-})();
-</script>
 <script src="../../assets/js/lesson-print-button.js"></script>
 
 </body>

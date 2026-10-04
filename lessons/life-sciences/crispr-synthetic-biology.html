@@ -37,7 +37,7 @@
       <h1>CRISPR &amp;<br>Synthetic Biology</h1>
       <p class="cr-lede">A cut is only the beginning.</p>
       <p>Finding DNA, changing DNA, and changing what a cell does are three different problems. Investigate each one with a fictional fluorescent reporter.</p>
-      <a class="cr-start" href="#recognition">Enter the editing lab</a>
+      <a class="cr-start" href="#foundations">Start with the cell</a>
     </div>
     <div class="cr-hero-model" aria-label="CRISPR process overview">
       <div class="cr-molecule"><span>A</span><span>U</span><span>G</span><span>C</span><span>C</span><span>A</span></div>
@@ -48,8 +48,16 @@
   </section>
   <nav class="cr-route" aria-label="Lesson route"><a href="#recognition">1. Recognize a site</a><a href="#repair">2. Compare repairs</a><a href="#circuit">3. Test a circuit</a><a href="#reflection">4. Make a claim</a></nav>
   <section class="cr-intro"><h2>From a bacterial defense to an editing tool</h2><p>CRISPR systems evolved as microbial defenses. Scientists adapted them to target genetic material. Here, <strong>guide RNA</strong> helps a Cas9 protein recognize DNA; the cell’s repair machinery acts after the cut. Synthetic biology goes further: it combines biological parts into systems with a chosen function.</p><a href="dna-heredity.html">Review DNA and complementary base pairing</a></section>
+  <section class="cr-panel" id="foundations">
+    <p class="cr-eyebrow">Before the lab / The causal chain</p><h2>How can a DNA change become a visible change?</h2>
+    <p>A <strong>gene</strong> is a stretch of DNA whose information can help a cell make a functional product. For our reporter gene, the cell copies DNA into RNA (<strong>transcription</strong>), then uses RNA to build a protein (<strong>translation</strong>). A fluorescent reporter protein lets us observe part of this process.</p>
+    <figure data-zoomable><img src="../../assets/images/crispr/information-flow.svg" width="1200" height="460" alt="DNA is transcribed into RNA, RNA is translated into reporter protein, and excitation light makes fluorescence visible." /><figcaption>A DNA edit can affect a protein, but visible fluorescence also depends on the regulatory signal and excitation light. Follow each link before concluding that a dark cell has a disrupted gene. Original ClassroomOS schematic.</figcaption></figure>
+    <div class="cr-vocabulary"><div><h3>Guide RNA: the address</h3><p>Its targeting sequence pairs with DNA. It brings sequence specificity; it does not perform the repair.</p></div><div><h3>Cas9: the cutting protein</h3><p>For this enzyme, a nearby PAM is required before guide pairing can lead to a cut.</p></div><div><h3>Cell repair: the outcome</h3><p>The cell rejoins broken DNA. Repair may disrupt a gene, preserve function, or use a supplied template.</p></div></div>
+    <details><summary>Where did CRISPR come from?</summary><p>In many bacteria and archaea, CRISPR regions store fragments of genetic material from past invaders. RNAs made from these stored sequences help CRISPR-associated proteins recognize matching invader sequences. Scientists adapted this sequence-directed defense for editing. The lab below models one adapted system, SpCas9, rather than every CRISPR system.</p></details>
+  </section>
   <section class="cr-panel" id="recognition">
     <div class="cr-section-heading"><span class="cr-step">1</span><div><h2>Can the guide find its address?</h2><p>Change one condition at a time: the RNA sequence or the adjacent PAM.</p></div></div>
+    <div class="cr-task"><strong>Investigation 1 · Two conditions, one question</strong><p>Predict whether a matching guide will work without a valid PAM. Test the matching guide, one mismatch, and the missing-PAM condition. Explain which condition prevented recognition each time.</p></div>
     <div class="cr-workbench">
       <div class="cr-sequence-panel">
         <p class="cr-label">Fictional DNA window</p>
@@ -59,6 +67,7 @@
         <div class="cr-strand-label">Paired DNA strand, 3′ → 5′</div>
         <div class="cr-sequence"><code>TACGGTATCGAT</code><code class="cr-pam" id="pamComplement">ACC</code></div>
         <div class="cr-strand-label">Guide RNA fragment, 5′ → 3′</div>
+        <p id="pairingStatus" class="cr-small" role="status"></p>
         <div id="guideTiles" class="cr-guide-tiles" aria-label="RNA matching positions"></div>
         <p class="cr-small">RNA pairs with the lower DNA strand: A–U and C–G. Its letters match the upper strand except U replaces T. The PAM is DNA beside the target; it is not part of the guide.</p>
         <p class="cr-legend"><span>Violet: paired base</span><span>Outlined ×: mismatch</span><span>Gold: PAM region</span></p>
@@ -77,6 +86,7 @@
   </section>
   <section class="cr-panel" id="repair">
     <div class="cr-section-heading"><span class="cr-step">2</span><div><h2>A recognized site is not a finished edit</h2><p>Follow the cut, then compare possible repair outcomes in a model cell.</p></div></div>
+    <div class="cr-task"><strong>Investigation 2 · Same cut, different consequences</strong><p>Keep a matching guide and valid PAM. Complete all three repair scenarios. Does every repaired cell lose reporter function? Use the sequence evidence below as well as the dishes.</p></div>
     <div class="cr-repair-grid"><div>
       <ol class="cr-phases" aria-label="Editing stages"><li data-phase="0" aria-current="step">Ready</li><li data-phase="1">Recognize</li><li data-phase="2">Cut</li><li data-phase="3">Repair</li></ol>
       <div class="cr-cut-canvas"><canvas id="cutCanvas" role="img" aria-label="Schematic of DNA recognition, cutting, and repair" aria-describedby="stageCaption"></canvas></div>
@@ -85,12 +95,14 @@
     </div><div class="cr-controls">
       <label for="repairSelect">Compare a possible repair outcome</label><select id="repairSelect"><option value="disrupted">Small change disrupts the reporter</option><option value="unchanged">Repair preserves reporter function</option><option value="template">Supplied template changes the reporter color</option></select>
       <p>These are <strong>chosen teaching scenarios</strong>, not predicted success rates. A cut alone does not guarantee a knockout or an insertion.</p>
+      <div class="cr-evidence"><h3>Illustrative sequence evidence</h3><p id="sequenceEvidence" role="status">No repaired sequence yet. Complete the repair stage to compare evidence.</p><p class="cr-small">These local sequence sketches do not show a whole gene or predict its reading frame. The stated protein effects are assumptions of each scenario.</p></div>
       <p id="repairDescription">A small insertion or deletion can disrupt a gene, but not every small change does.</p>
       <p class="cr-small">Repair pathways vary across organisms and cell types. We do not model delivery, viability, repair chemistry, or editing efficiency.</p>
     </div></div>
   </section>
   <section class="cr-panel" id="circuit">
     <div class="cr-section-heading"><span class="cr-step">3</span><div><h2>Does the change alter the output?</h2><p>Compare a model population carrying the chosen outcome with an unedited control.</p></div></div>
+    <div class="cr-task"><strong>Investigation 3 · Diagnose a dark population</strong><p>With signal and light on, compare each outcome. Then turn off only the light; restore it and turn off only the signal. Can the same visible result have different causes?</p></div>
     <div class="cr-circuit-strip"><span>Signal</span><b aria-hidden="true">→</b><span>Regulatory switch</span><b aria-hidden="true">→</b><span>Reporter protein</span><b aria-hidden="true">→</b><span>Fluorescence</span></div>
     <p>This fictional circuit makes a fluorescent protein when a signal is present. Blue excitation light reveals its fluorescence. Fluorescence needs incoming light; bioluminescence generates light through a chemical reaction.</p>
     <div class="cr-buttons"><button type="button" id="signalBtn" aria-pressed="true">Signal: on</button><button type="button" id="lightBtn" aria-pressed="false">Excitation light: off</button></div>
@@ -100,8 +112,10 @@
     <details><summary>Predict first: can darkness prove a knockout?</summary><p>No. A functional reporter can appear dark if the signal or excitation light is absent. Compare the control under the same conditions, and use DNA sequence evidence to confirm an edit.</p></details>
     <div class="cr-record-heading"><h3>Your comparison record</h3><button id="recordBtn" type="button">Record observation</button></div>
     <div class="cr-table-wrap"><table><caption>Up to six most recent observations in this session</caption><thead><tr><th scope="col">Modeled outcome</th><th scope="col">Signal / light</th><th scope="col">Control / edited</th></tr></thead><tbody id="observations"><tr><td colspan="3">Run a comparison, then record what you see.</td></tr></tbody></table></div>
+    <div class="cr-buttons"><button id="exportBtn" type="button" disabled>Download observations (.txt)</button></div>
     <button id="resetBtn" class="cr-reset" type="button">Reset the whole lab</button>
   </section>
+  <section class="cr-panel" id="checkpoint"><h2>Check your reasoning</h2><label for="claimSelect">Both populations are dark with the excitation light off. What can you conclude?</label><select id="claimSelect"><option value="">Choose a claim…</option><option value="knockout">The edited reporter must be knocked out.</option><option value="light">The viewing conditions cannot reveal fluorescence.</option><option value="failed">Cas9 must have failed to cut.</option></select><button id="claimBtn" type="button">Check my claim</button><p id="claimFeedback" class="cr-feedback" role="status">Choose the conclusion supported by the observation.</p></section>
   <section class="cr-reading" id="reflection">
     <article class="cr-panel"><h2>Specific does not mean infallible</h2><p>This model only accepts an exact match at one fictional site. Real Cas9 may tolerate some mismatches and act at unintended sites. We are not scanning a genome or predicting off-target activity.</p><p><strong>Explain:</strong> Why do both the guide sequence and a PAM matter? What evidence would you need beyond a glowing population?</p></article>
     <article class="cr-panel"><h2>Design a function. Defend a decision.</h2><p>Synthetic biology connects inputs, regulatory parts, and outputs. CRISPR is one possible tool for changing those parts; the two fields are related, but not identical.</p><p>Imagine a cell-based environmental sensor. What should turn it on? What would count as a false alarm? Who should decide where it is used?</p></article>
@@ -112,6 +126,7 @@
 <footer class="site-footer"><p>CRISPR &amp; Synthetic Biology · ClassroomOS</p></footer>
 <script src="../../assets/js/theme-registry.js"></script>
 <script src="../../assets/js/nav-mobile.js"></script>
+<script src="../../assets/js/photo-lightbox.js"></script>
 <script src="../../assets/js/sim-kit.js"></script>
 <script src="../../assets/js/lessons/crispr-synthetic-biology.js"></script>
 <script src="../../assets/js/lesson-print-button.js"></script>

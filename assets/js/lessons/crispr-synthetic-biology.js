@@ -33,6 +33,8 @@
       if (mismatch) { const mark = document.createElement('small'); mark.textContent = '×'; span.append(mark); }
       return span;
     }));
+    const paired = [...$('guideInput').value.slice(0, 12)].filter((base, i) => base === GUIDE[i]).length;
+    $('pairingStatus').textContent = `${paired} of 12 positions paired · ${$('guideInput').value.length} letters entered`;
     $('pamDisplay').textContent = $('pamSelect').value;
     $('pamComplement').textContent = $('pamSelect').value === 'TGG' ? 'ACC' : 'ACT';
   }
@@ -59,18 +61,20 @@
       if (Number(el.dataset.phase) === state.stage) el.setAttribute('aria-current', 'step');
       else el.removeAttribute('aria-current');
     });
+    $('sequenceEvidence').textContent = state.stage === 3 ? ({ disrupted: 'Before: ATGCCATAGCTA → after: ATGCCATA–CTA (one base deleted). In this chosen scenario, reporter function is lost.', unchanged: 'Before: ATGCCATAGCTA → after: ATGCCATAGCTA (original sequence restored). Reporter function is preserved.', template: 'Before: ATGCCATAGCTA → after: ATGCCATCGCTA (template-specified change). The larger, unshown template is assumed to produce a cyan reporter.' })[state.outcome] : 'No repaired sequence yet. Complete the repair stage to compare evidence.';
     dirty = true;
   }
   function invalidate() {
     state.verified = false; state.stage = 0; state.playing = false; state.elapsed = 0; state.outcome = null;
     $('stageCaption').textContent = 'Check a matching guide and valid PAM to unlock the cut model.';
+    $('guideInput').removeAttribute('aria-invalid');
     feedback('Conditions changed. Check recognition again.');
     renderGuide(); renderCircuit(); controls();
   }
   function recognize() {
     invalidate();
     const value = $('guideInput').value;
-    if (!/^[AUCG]{12}$/.test(value)) { feedback('Enter exactly 12 RNA letters: A, U, C, or G. RNA uses U, not T.', true); return; }
+    if (!/^[AUCG]{12}$/.test(value)) { $('guideInput').setAttribute('aria-invalid', 'true'); feedback('Enter exactly 12 RNA letters: A, U, C, or G. RNA uses U, not T.', true); return; }
     if (value !== GUIDE) { feedback('A mismatch is present. This exact-match teaching model rejects it. Real Cas9 can tolerate some mismatches, so this is not an off-target safety prediction.', true); return; }
     if ($('pamSelect').value !== 'TGG') { feedback('The guide matches, but TGA does not fit NGG. Recognition fails in this SpCas9 model.', true); return; }
     state.verified = true;
@@ -95,7 +99,7 @@
   $('matchBtn').addEventListener('click', () => { $('guideInput').value = GUIDE; invalidate(); });
   $('mismatchBtn').addEventListener('click', () => { $('guideInput').value = 'C' + GUIDE.slice(1); invalidate(); });
   $('pamSelect').addEventListener('change', invalidate);
-  $('repairSelect').addEventListener('change', () => { $('repairDescription').textContent = outcomes[$('repairSelect').value].description; invalidate(); });
+  $('repairSelect').addEventListener('change', () => { $('repairDescription').textContent = outcomes[$('repairSelect').value].description; state.stage = 0; state.playing = false; state.elapsed = 0; state.outcome = null; $('stageCaption').textContent = state.verified ? 'New repair scenario ready. Use Next stage or Play stages; guide and PAM remain verified.' : 'Check a matching guide and valid PAM to unlock the cut model.'; controls(); renderCircuit(); });
   $('recognizeBtn').addEventListener('click', recognize);
   $('stepBtn').addEventListener('click', advance);
   $('runBtn').addEventListener('click', () => {
@@ -111,6 +115,7 @@
   $('signalBtn').addEventListener('click', () => { state.signal = !state.signal; renderCircuit(); });
   $('lightBtn').addEventListener('click', () => { state.light = !state.light; renderCircuit(); });
   function renderRecords() {
+    $('exportBtn').disabled = !records.length;
     const tbody = $('observations'); tbody.replaceChildren();
     if (!records.length) { const row = tbody.insertRow(); const cell = row.insertCell(); cell.colSpan = 3; cell.textContent = 'Run a comparison, then record what you see.'; }
     records.forEach(record => { const row = tbody.insertRow(); record.forEach(text => { row.insertCell().textContent = text; }); });
@@ -120,8 +125,17 @@
     records = records.slice(0, 6); renderRecords();
     $('dishStatus').textContent += ' Observation recorded.';
   });
+  $('claimBtn').addEventListener('click', () => {
+    const answer = $('claimSelect').value;
+    $('claimFeedback').textContent = answer === 'light' ? 'Supported. With no excitation light, even a functional reporter is not visibly fluorescent. Restore the light and compare with the control; sequence evidence is needed to confirm an edit.' : answer ? 'That goes beyond the evidence. Darkness without excitation light cannot establish whether cutting or repair occurred. Test the viewing conditions first.' : 'Choose a claim before checking.';
+  });
+  $('exportBtn').addEventListener('click', () => {
+    const content = ['CRISPR classroom model — observation record', 'Chosen scenarios, not measured editing rates. Most recent observation first.', '', ...records.map((r, i) => `${i + 1}. ${r.join(' | ')}`)].join('\n');
+    const url = URL.createObjectURL(new Blob([content], { type: 'text/plain;charset=utf-8' }));
+    const link = document.createElement('a'); link.href = url; link.download = 'crispr-observations.txt'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
   $('resetBtn').addEventListener('click', () => {
-    state.signal = true; state.light = false; records = [];
+    state.signal = true; state.light = false; records = []; $('claimSelect').value = ''; $('claimFeedback').textContent = 'Choose the conclusion supported by the observation.';
     $('guideInput').value = ''; $('pamSelect').value = 'TGG'; $('repairSelect').value = 'disrupted';
     $('repairDescription').textContent = outcomes.disrupted.description;
     invalidate(); renderRecords(); feedback('Lab reset. Load a guide or build your own fragment, then check it.');
