@@ -32,8 +32,9 @@
             <div>
               <p class="ra-kicker">Engineering · Robot Autonomy · Machine Learning</p>
               <h1 id="ra-title">Learning by <span>Trial &amp; Error</span></h1>
-              <p class="ra-lede">Nobody programs every step of a robot dog's gait anymore. Instead, engineers write down what counts as <em>good</em> and <em>bad</em>, and let the robot practice — millions of times, usually in simulation. That's <strong>reinforcement learning</strong>. Train a small robot to find its charger without falling down the stairs, and watch its "brain" fill in as it learns.</p>
-              <div class="ra-meta"><span>Grades 7–12</span><span>45–60 minutes</span><span>Live Q-learning</span><span>Editable world</span></div>
+              <p class="ra-lede" data-ra-for="explorer">How do you teach a robot without telling it every step? You give it points! Points for good things, and “oops” for bad things. The robot tries again and again until it learns the best way to its charger.</p>
+              <p class="ra-lede" data-ra-for="builder engineer">Nobody programs every step of a robot dog's gait anymore. Instead, engineers write down what counts as <em>good</em> and <em>bad</em>, and let the robot practice — millions of times, usually in simulation. That's <strong>reinforcement learning</strong>. Train a small robot to find its charger without falling down the stairs, and watch its "brain" fill in as it learns.</p>
+              <div class="ra-meta"><span>Ages 6–18 · 3 levels</span><span>45–60 minutes</span><span>Live Q-learning</span><span>Editable world</span></div>
               <a class="ra-back" href="../../../steam-lessons.html#module-engineering">← Back to Engineering</a>
             </div>
             <svg class="ra-hero-art" viewBox="0 0 320 220" role="img" aria-labelledby="hero-art-title">
@@ -47,7 +48,31 @@
             </svg>
           </section>
 
-          <section class="ra-card" style="--ra-accent:var(--ra-blue);">
+
+          <section class="ra-card ra-explorer" data-ra-for="explorer" data-ra-say style="--ra-accent:var(--ra-yellow);">
+            <span data-ra-mascot="wow"></span>
+            <div>
+              <p class="ra-label">Explorer · Story time</p><h2>Learning like a puppy</h2>
+              <div data-ra-say-slot></div>
+              <div class="ra-bubble">
+                <p>When you teach a puppy to sit, you don’t explain it with words. When the puppy sits, it gets a treat. Soon it learns: sitting is good!</p>
+                <p>I learn the same way. Nobody tells me the path to my charger. When I reach it, I get <strong>+1 point</strong>. If I roll down the stairs, I get <strong>−1</strong>. Every extra step costs a tiny bit, so I learn to hurry.</p>
+                <p>At first I bump around. But each time, I remember which squares led to good things. Green squares mean “this way is good!” Striped red squares mean “careful, trouble nearby!”</p>
+              </div>
+              <ul class="ra-words" aria-label="Words to know">
+                <li><b>Reward</b> · points for doing well</li><li><b>Try again</b> · practice makes better</li><li><b>Explore</b> · try something new</li><li><b>Learn</b> · remember what worked</li>
+              </ul>
+              <div class="ra-try">
+                <h3>Play it as a class</h3>
+                <ol>
+                  <li><strong>Hot and cold.</strong> Hide an object. One student searches while the class says only “warmer” or “colder.” Those words are rewards! How many tries until they find it?</li>
+                  <li><strong>Floor grid.</strong> Tape a 4 × 4 grid on the floor. Put a “charger” paper in one square and “stairs” in another. The robot student steps one square at a time, and the class gives a thumbs up or down. Write a sticky-note arrow in each square once the robot learns the best way.</li>
+                </ol>
+              </div>
+            </div>
+          </section>
+
+          <section class="ra-card" data-ra-for="builder engineer" style="--ra-accent:var(--ra-blue);">
             <p class="ra-label">The idea</p><h2>Rewards instead of instructions</h2>
             <p>In <a class="ra-more" href="motion-planning.html">motion planning</a> a person writes the algorithm. In <strong><span data-glossary="reinforcement learning">reinforcement learning</span></strong> (RL), a person writes only the <strong>reward</strong>: +1 for reaching the charger, −1 for the stairs, a small cost for every step. The robot has to figure out the rest by trying.</p>
             <div class="ra-cols">
@@ -60,13 +85,16 @@
 
           <section class="ra-card" style="--ra-accent:var(--ra-lime);">
             <p class="ra-label">Sim · Q-learning</p><h2>Train the robot</h2>
-            <p>Press <strong>Train</strong>. At first the robot stumbles randomly. Every move, it updates a number called a <strong><span data-glossary="Q-value">Q-value</span></strong>: "how good is taking this action from this square?" Green squares have learned they lead to the charger; red ones have learned trouble is near. The arrow is the best action the robot knows so far.</p>
+            <p data-ra-for="explorer">Press <strong>Train</strong> and watch the robot practice. Green squares are good places to be. Red striped squares are near trouble. The little arrows show which way the robot has learned to go. When the arrows look good, press <strong>Test the policy</strong> to see if it found the charger!</p>
+            <p data-ra-for="builder engineer">Press <strong>Train</strong>. At first the robot stumbles randomly. Every move, it updates a number called a <strong><span data-glossary="Q-value">Q-value</span></strong>: "how good is taking this action from this square?" Green squares have learned they lead to the charger; red ones have learned trouble is near. The arrow is the best action the robot knows so far.</p>
             <div class="ra-sim">
               <div class="ra-sim-grid">
                 <div>
-                  <canvas id="rl-canvas" width="720" height="480" aria-label="Q-learning grid world. Click squares to edit walls, stairs, and the charger."></canvas>
-                  <canvas id="rl-chart" width="720" height="90" style="margin-top:.5rem;" aria-label="Learning curve: steps per episode"></canvas>
+                  <canvas id="rl-canvas" width="720" height="480" role="application" aria-roledescription="grid world" aria-label="Q-learning grid world, 12 columns by 8 rows. Arrow keys move between squares and read what the robot has learned there. Enter places the selected tool."></canvas>
+                  <canvas id="rl-chart" width="720" height="90" style="margin-top:.5rem;" role="img" aria-label="Learning curve: bars show steps per episode, shorter is better. Green bars reached the charger, red bars did not. The line below gives the numbers."></canvas>
                   <p class="ra-readout" id="rl-readout" aria-live="off"></p>
+                  <ul class="ra-legend" aria-label="Map key"><li><i style="background:#b8d84b"></i>Learned: good</li><li><i style="background:repeating-linear-gradient(135deg,#d94b41 0 3px,#ffd6ce 3px 5px)"></i>Learned: trouble</li><li><i style="background:#4c6a72"></i>Wall</li><li><i style="background:#f2bf3f"></i>Stairs (hazard stripe)</li><li><i style="background:#2f4a0e;border:1px solid #b8d84b"></i>Charger</li></ul>
+                  <p class="ra-keys">Keyboard: Tab into the grid, then <kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> move between squares and read what the robot has learned there. <kbd>Enter</kbd> places the selected tool.</p>
                 </div>
                 <div class="ra-controls">
                   <div class="ra-btns"><button class="ra-btn" id="rl-run" type="button">Train</button><button class="ra-btn" id="rl-greedy" type="button">Test the policy</button></div>
@@ -91,7 +119,12 @@
                 </div>
               </div>
             </div>
-            <div class="ra-cols">
+            <div class="ra-cols" data-ra-for="explorer">
+              <article><h3>1 · Watch</h3><p>Train with the speed slider low. Where do green squares show up first: near the robot, or near the charger?</p></article>
+              <article><h3>2 · Move the charger</h3><p>Pick <strong>Charger</strong> and tap a new square. Press <strong>Test the policy</strong>. Does the robot know about the new spot yet?</p></article>
+              <article><h3>3 · Build a maze</h3><p>Pick <strong>Wall</strong> and build a maze. Press <strong>Erase the brain</strong>, then Train. Can your robot solve it?</p></article>
+            </div>
+            <div class="ra-cols" data-ra-for="builder engineer">
               <article><h3>1 · Watch it learn</h3><p>Train at low speed for 30 seconds. Where does green appear first — near the start or near the charger? Why?</p></article>
               <article><h3>2 · Curiosity</h3><p>Erase the brain, set ε to 0, and train. Then try ε = 0.2. Why does a robot that never explores often get stuck with a bad route?</p></article>
               <article><h3>3 · Change the world</h3><p>After training, move the charger. Test the policy. The robot still goes to the old spot. How long does relearning take?</p></article>
@@ -99,9 +132,9 @@
             </div>
           </section>
 
-          <section class="ra-card" style="--ra-accent:var(--ra-copper);">
+          <section class="ra-card" data-ra-for="builder engineer" style="--ra-accent:var(--ra-copper);">
             <p class="ra-label">The update rule</p><h2>One line of learning</h2>
-            <p style="font-family:'IBM Plex Mono',monospace;font-size:.95rem;">Q(s, a) ← Q(s, a) + α · [ reward + γ · max Q(s′, ·) − Q(s, a) ]</p>
+            <p class="ra-eq">Q(s, a) ← Q(s, a) + α · [ reward + γ · max Q(s′, ·) − Q(s, a) ]</p>
             <p>In words: "My old guess for this move, nudged toward what actually happened: the reward I just got, plus the best I think I can do from where I landed." α sets the size of the nudge. γ sets how much future reward matters. Good news slowly flows backward from the charger, one square at a time. That's why green spreads outward from the goal.</p>
             <div class="ra-cols">
               <article><h3>Explore vs. exploit</h3><p>With probability ε the robot tries a random move instead of its best one. Too little and it never finds better routes. Too much and it never uses what it knows.</p></article>
@@ -109,7 +142,18 @@
             </div>
           </section>
 
-          <section class="ra-card" style="--ra-accent:var(--ra-yellow);">
+
+          <section class="ra-card ra-deep" data-ra-for="engineer" style="--ra-accent:var(--ra-blue);">
+            <p class="ra-label">Engineer deep dive</p><h2>Bellman, discounting, and convergence<span class="ra-badge">Ages 15+</span></h2>
+            <div class="ra-cols">
+              <article><h3>The Bellman optimality equation</h3><p class="ra-eq">Q*(s, a) = E[ r + γ · max<sub>a′</sub> Q*(s′, a′) ]</p><p>Q-learning is a stochastic approximation of this fixed point. It converges to Q* if every state–action pair is visited infinitely often and the learning rate decays so that Σα = ∞ and Σα² &lt; ∞ (Watkins & Dayan, 1992). The sim's fixed α trades guaranteed convergence for faster adaptation.</p></article>
+              <article><h3>Effective horizon</h3><p>A reward k steps away is worth γ<sup>k</sup> now. The rough planning horizon is 1 / (1 − γ): at γ = 0.95 that is 20 steps; at 0.99, 100 steps. Set γ too low and the charger's reward fades before it reaches the start square.</p></article>
+              <article><h3>Off-policy vs. on-policy</h3><p>Q-learning updates toward max Q(s′, ·), the <em>greedy</em> action, even while it explores. That is why it learns the risky edge-of-the-stairs route under slip. <strong>SARSA</strong> updates toward the action it actually takes next, so it learns a safer route that accounts for its own random moves. Try predicting SARSA's route on this map.</p></article>
+              <article><h3>Deep Q-Networks</h3><p>DQN (Mnih et al., 2015) replaces the table with a neural network Q(s, a; θ) and adds two stabilizers: an <strong>experience replay</strong> buffer that breaks correlation between samples, and a slowly updated <strong>target network</strong> for the max Q term. Robot locomotion typically uses policy-gradient methods such as PPO instead.</p></article>
+            </div>
+          </section>
+
+          <section class="ra-card" data-ra-for="builder engineer" style="--ra-accent:var(--ra-yellow);">
             <p class="ra-label">From grid to real robots</p><h2>Deep reinforcement learning</h2>
             <p>This robot has 96 squares × 4 moves = 384 numbers to learn, so a table works. A real walking robot's state is dozens of joint angles, speeds, and camera pixels, which is far too many for any table. <strong>Deep RL</strong> swaps the table for a neural network, built from the same neurons as the <a class="ra-more" href="../../computer-science/algorithms-and-ai/perceptron-lab.html">perceptron</a>, which <em>estimates</em> Q-values or picks actions directly.</p>
             <div class="ra-cols">
@@ -148,6 +192,7 @@
               <a href="motion-planning.html"><b>Motion Planning</b>RRT, potential fields, DWA, kinematics</a>
               <a href="../arduino-and-electronics/pid-control.html"><b>PID Control</b>Hold a target with feedback</a>
               <a href="../../computer-science/algorithms-and-ai/state-machines.html"><b>State Machines</b>Organize robot behaviors</a>
+              <a href="robot-arms.html"><b>Robot Arms</b>Joints, reach, forward &amp; inverse kinematics</a>
               <a href="robot-reinforcement-learning.html" aria-current="page"><b>Reinforcement Learning</b>Learn a policy from rewards</a>
             </nav>
           </section>
@@ -156,10 +201,14 @@
           <section class="ra-card" style="--ra-accent:var(--ra-red);">
             <p class="ra-label">Quick check</p><h2>Lock it in</h2>
             <div class="ra-quiz">
-              <div class="ra-question" data-answer="c" data-explanation="The designer defines rewards; the robot discovers the actions that earn them."><p>1. In reinforcement learning, what does the human designer mainly provide?</p><div class="ra-options"><button class="ra-option" data-choice="a">Every move the robot should make</button><button class="ra-option" data-choice="b">A finished map</button><button class="ra-option" data-choice="c">A reward that scores outcomes</button><button class="ra-option" data-choice="d">Nothing at all</button></div><p class="ra-feedback" aria-live="polite"></p></div>
-              <div class="ra-question" data-answer="b" data-explanation="The +1 reward is first learned next to the charger, then flows backward one square per update through γ · max Q."><p>2. Why do learned values spread outward from the charger?</p><div class="ra-options"><button class="ra-option" data-choice="a">The charger emits a signal</button><button class="ra-option" data-choice="b">Each square learns from the value of the square it moves into</button><button class="ra-option" data-choice="c">The robot starts at the charger</button><button class="ra-option" data-choice="d">Walls push the values</button></div><p class="ra-feedback" aria-live="polite"></p></div>
-              <div class="ra-question" data-answer="a" data-explanation="ε is the chance of trying a random move. Exploration finds better routes the robot doesn't know about yet."><p>3. What does ε (epsilon) control?</p><div class="ra-options"><button class="ra-option" data-choice="a">How often the robot tries a random move to explore</button><button class="ra-option" data-choice="b">How fast the robot drives</button><button class="ra-option" data-choice="c">The size of the grid</button><button class="ra-option" data-choice="d">The reward for the charger</button></div><p class="ra-feedback" aria-live="polite"></p></div>
-              <div class="ra-question" data-answer="d" data-explanation="Real robot states have too many combinations for a table, so a neural network approximates the values."><p>4. Why does deep RL use a neural network instead of a Q-table?</p><div class="ra-options"><button class="ra-option" data-choice="a">Networks never make mistakes</button><button class="ra-option" data-choice="b">Tables can't store negative numbers</button><button class="ra-option" data-choice="c">It removes the need for rewards</button><button class="ra-option" data-choice="d">Real robots have far too many states to list in a table</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="explorer" data-answer="b" data-explanation="A reward is like a treat or points: it tells the robot it did something good."><p>1. What is a reward?</p><div class="ra-options"><button class="ra-option" data-choice="a">A map of the room</button><button class="ra-option" data-choice="b">Points that tell the robot it did well</button><button class="ra-option" data-choice="c">A new wheel</button><button class="ra-option" data-choice="d">A wall</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="explorer" data-answer="d" data-explanation="Like you, the robot gets better with practice. Each try teaches it a little more."><p>2. Why does the robot get better after many tries?</p><div class="ra-options"><button class="ra-option" data-choice="a">Its battery gets bigger</button><button class="ra-option" data-choice="b">Someone draws the path for it</button><button class="ra-option" data-choice="c">The walls disappear</button><button class="ra-option" data-choice="d">It remembers which moves led to rewards</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="explorer" data-answer="a" data-explanation="Trying new things (exploring) helps the robot find a shorter or safer way it didn't know about."><p>3. Why should the robot sometimes try a random move?</p><div class="ra-options"><button class="ra-option" data-choice="a">It might discover a better way</button><button class="ra-option" data-choice="b">To get lost on purpose</button><button class="ra-option" data-choice="c">Random moves are always best</button><button class="ra-option" data-choice="d">To use up its battery</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="builder engineer" data-answer="c" data-explanation="The designer defines rewards; the robot discovers the actions that earn them."><p>1. In reinforcement learning, what does the human designer mainly provide?</p><div class="ra-options"><button class="ra-option" data-choice="a">Every move the robot should make</button><button class="ra-option" data-choice="b">A finished map</button><button class="ra-option" data-choice="c">A reward that scores outcomes</button><button class="ra-option" data-choice="d">Nothing at all</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="builder engineer" data-answer="b" data-explanation="The +1 reward is first learned next to the charger, then flows backward one square per update through γ · max Q."><p>2. Why do learned values spread outward from the charger?</p><div class="ra-options"><button class="ra-option" data-choice="a">The charger emits a signal</button><button class="ra-option" data-choice="b">Each square learns from the value of the square it moves into</button><button class="ra-option" data-choice="c">The robot starts at the charger</button><button class="ra-option" data-choice="d">Walls push the values</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="builder engineer" data-answer="a" data-explanation="ε is the chance of trying a random move. Exploration finds better routes the robot doesn't know about yet."><p>3. What does ε (epsilon) control?</p><div class="ra-options"><button class="ra-option" data-choice="a">How often the robot tries a random move to explore</button><button class="ra-option" data-choice="b">How fast the robot drives</button><button class="ra-option" data-choice="c">The size of the grid</button><button class="ra-option" data-choice="d">The reward for the charger</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="builder engineer" data-answer="d" data-explanation="Real robot states have too many combinations for a table, so a neural network approximates the values."><p>4. Why does deep RL use a neural network instead of a Q-table?</p><div class="ra-options"><button class="ra-option" data-choice="a">Networks never make mistakes</button><button class="ra-option" data-choice="b">Tables can't store negative numbers</button><button class="ra-option" data-choice="c">It removes the need for rewards</button><button class="ra-option" data-choice="d">Real robots have far too many states to list in a table</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="engineer" data-answer="b" data-explanation="SARSA is on-policy: it learns the value of the policy it actually follows, including its random exploratory moves, so it keeps a margin from the stairs."><p>5. With ε = 0.2 exploration, which learns a route that stays further from the stairs?</p><div class="ra-options"><button class="ra-option" data-choice="a">Q-learning, because it is off-policy</button><button class="ra-option" data-choice="b">SARSA, because it accounts for its own exploration</button><button class="ra-option" data-choice="c">Both learn the same route</button><button class="ra-option" data-choice="d">Neither can avoid stairs</button></div><p class="ra-feedback" aria-live="polite"></p></div>
             </div>
           </section>
         </main>
@@ -177,6 +226,8 @@
           </div>
           <div class="ll-pane" id="ra-teacher">
             <span class="ll-label">Teaching notes</span>
+            <div class="ll-info"><strong>Three levels</strong>The Explorer / Builder / Engineer switch at the top changes the words, activities, and quiz. Link to a level with <code>?level=explorer</code> or <code>?level=engineer</code>.</div>
+            <div class="ll-info"><strong>Explorer (K–4)</strong>Play hot-and-cold first; the class's “warmer / colder” is the reward. Then run the sim slowly and let students predict where green appears next.</div>
             <div class="ll-info"><strong>Launch</strong>Play "hot and cold": a volunteer finds a hidden object with only "warmer/colder" feedback. That feedback is the reward signal.</div>
             <div class="ll-info"><strong>Pacing</strong>Keep speed low for the first minute so students see individual episodes, then speed up to show convergence.</div>
             <div class="ll-info"><strong>Misconception</strong>Students often think the robot "sees" the charger. It doesn’t: it only knows its square and its past rewards.</div>

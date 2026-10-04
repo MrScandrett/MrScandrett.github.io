@@ -93,6 +93,13 @@ copy):
   collision instead of independently-moving points. See `lessons/cymatics.html`'s
   sand-grain physics for a worked example.
 
+- `<script src="../assets/js/arduino-art.js"></script>` — the one illustration engine for
+  every Arduino drawn on the site (UNO R3, UNO R4 WiFi, UNO Q, Nano Every). Drop in
+  `<span data-arduino-art="uno-r3"></span>`, or call `ArduinoArt.create(model)` to get an
+  SVG `<g>` plus real pin/part coordinates (`pins['13']`, `pins['GND#2']`, `anchors.usb`)
+  for wiring, hotspots and LED states. Don't hand-draw a new board; add a model there.
+  Schematic symbols ("U1 Arduino Uno" blocks) stay as schematics.
+
 Existing lessons on other Three.js versions or hand-rolled canvas loops don't need to
 be migrated proactively — migrate opportunistically when touching that lesson anyway.
 

@@ -32,6 +32,9 @@ const materials = {
   blue: new THREE.MeshStandardMaterial({ color: 0x2879d8, roughness: 0.58 }),
 };
 
+materials.focusRail = materials.metal.clone();
+materials.focusFive = materials.metal.clone();
+materials.focusGap = materials.metal.clone();
 for (const [name, material] of Object.entries(materials)) material.name = `breadboard-${name}`;
 
 function add(geometry, material, name, position, parent = scene) {
@@ -45,12 +48,13 @@ function add(geometry, material, name, position, parent = scene) {
 }
 
 const board = new THREE.Group();
-board.name = "Plastic shell and sockets";
+board.name = "PlasticShell";
+board.position.y = -1.3;
 scene.add(board);
 
 // The plastic shell is intentionally lifted above the clips: an exploded view
 // makes connections that are normally hidden immediately visible to students.
-add(new THREE.BoxGeometry(12.8, 0.52, 7.4), materials.plastic, "Solderless breadboard shell", [0, 1.35, 0], board);
+add(new THREE.BoxGeometry(12.8, 0.52, 8.3), materials.plastic, "Solderless breadboard shell", [0, 1.35, 0], board);
 add(new THREE.BoxGeometry(12.3, 0.08, 0.34), materials.channel, "Center gap", [0, 1.64, 0], board);
 
 const columnXs = Array.from({ length: 12 }, (_, index) => -5.5 + index);
@@ -89,30 +93,29 @@ scene.add(clips);
 
 // Four long power strips: every socket along one rail shares a strip.
 for (const [index, z] of railRows.entries()) {
-  add(new THREE.BoxGeometry(11.35, 0.18, 0.23), index % 2 === 0 ? materials.metal : materials.metalDark,
+  add(new THREE.BoxGeometry(11.35, 0.18, 0.23), index === 0 ? materials.focusRail : index % 2 === 0 ? materials.metal : materials.metalDark,
     `Horizontal power strip ${index + 1}`, [0, 0.2, z], clips);
 }
 
 // Each column has two separate five-hole terminal clips; the center gap breaks them apart.
 for (const [column, x] of columnXs.entries()) {
-  add(new THREE.BoxGeometry(0.22, 0.18, 2.65), materials.metal,
+  add(new THREE.BoxGeometry(0.22, 0.18, 2.65), column === 8 ? materials.focusFive : column === 5 ? materials.focusGap : materials.metal,
     `Column ${column + 1} upper five-hole clip`, [x, 0.2, 1.85], clips);
-  add(new THREE.BoxGeometry(0.22, 0.18, 2.65), materials.metal,
+  add(new THREE.BoxGeometry(0.22, 0.18, 2.65), column === 5 ? materials.focusGap : materials.metal,
     `Column ${column + 1} lower five-hole clip`, [x, 0.2, -1.85], clips);
 }
 
-// Small supports clarify that the gold clips live directly below the sockets.
-for (const x of [-6.05, 6.05]) {
-  for (const z of [-3.3, 3.3]) {
-    add(new THREE.CylinderGeometry(0.09, 0.09, 1.05, 10), materials.edge, "Exploded-view support", [x, 0.78, z], scene);
-  }
-}
+// Scrubbable assembly motion: the contacts stay fixed as the shell lifts.
+const assembly = new THREE.AnimationClip("Explode", 1, [
+  new THREE.VectorKeyframeTrack("PlasticShell.position", [0, 1], [0, -1.3, 0, 0, 0, 0]),
+]);
 
 const exporter = new GLTFExporter();
 const binary = await exporter.parseAsync(scene, {
   binary: true,
   onlyVisible: true,
-  trs: false,
+  trs: true,
+  animations: [assembly],
 });
 
 await fs.mkdir(path.dirname(OUTPUT), { recursive: true });

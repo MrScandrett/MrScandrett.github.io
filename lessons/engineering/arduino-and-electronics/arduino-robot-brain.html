@@ -52,7 +52,7 @@
     .arb-ide-toolbar { display: flex; gap: .5rem; padding: .4rem .6rem; background: #383838; }
     .arb-ide-btn { padding: .3rem .6rem; border: 1px solid #555; background: #444; color: #ddd; font: 600 .68rem "IBM Plex Mono", monospace; border-radius: 3px; }
     .arb-ide-btn.is-primary { background: var(--arb-teal); border-color: var(--arb-teal); color: #06282a; }
-    .arb-ide-body { padding: 1rem 1.1rem; background: #1e1e1e; color: #d4d4d4; font-size: .8rem; line-height: 1.7; min-height: 170px; }
+    .arb-ide-body { overflow-x: auto; white-space: nowrap; padding: 1rem 1.1rem; background: #1e1e1e; color: #d4d4d4; font-size: .8rem; line-height: 1.7; min-height: 170px; }
     .arb-ide-body .k { color: #569cd6; } .arb-ide-body .f { color: #dcdcaa; } .arb-ide-body .c { color: #6a9955; } .arb-ide-body .n { color: #b5cea8; }
     .arb-ide-serial { padding: .5rem .8rem; background: #101010; color: #7bd88f; font-size: .74rem; border-top: 1px solid #333; min-height: 2.6em; }
 
@@ -62,39 +62,97 @@
     .arb-card p { margin: 0 0 .75rem; line-height: 1.67; }
     .arb-card > p { max-width: 78ch; }
 
-    .arb-anatomy { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
-    .arb-anatomy-col { padding: 1rem; border: 1px solid var(--arb-line); background: #f3f8f7; }
-    .arb-anatomy-col.is-active { border-color: var(--arb-teal); box-shadow: 0 0 0 2px rgba(0,151,157,.25) inset; }
+    /* shared sim chrome */
+    .arb-code { margin: 0; overflow: auto; padding: .8rem 0; border-radius: 6px; background: #1e1e1e; color: #e7f0e8; font: 500 .8rem/1.65 "IBM Plex Mono", monospace; }
+    .arb-code:not(:has(.arb-cl)) { padding: .9rem 1rem; }
+    .arb-code .c { color: #6a9955; } .arb-code .k { color: #569cd6; } .arb-code .n { color: #b5cea8; } .arb-code .f { color: #dcdcaa; } .arb-code .s { color: #ce9178; }
+    .arb-cl { --p: 0; position: relative; display: block; min-height: 1.65em; padding: 0 1rem 0 1.4rem; white-space: pre; transition: background .15s; }
+    .arb-cl.is-pc { background: rgba(0,151,157,.28); box-shadow: inset 3px 0 0 #2fd3d9; }
+    .arb-cl.is-pc::before { content: "▶"; position: absolute; top: 0; left: .35rem; color: #2fd3d9; font-size: .7em; }
+    .arb-cl.is-delay.is-pc { background: linear-gradient(90deg, rgba(0,151,157,.42) calc(var(--p) * 100%), rgba(0,151,157,.16) 0); }
+    .arb-cl.is-flash { animation: arb-flash .5s ease-out; }
+    @keyframes arb-flash { from { background: rgba(255,209,102,.5); } to { background: transparent; } }
+    .arb-btnrow { display: flex; flex-wrap: wrap; justify-content: center; gap: .6rem; margin-top: .9rem; }
+    .arb-btn { padding: .55rem 1rem; border: 2px solid var(--arb-teal); border-radius: 6px; background: transparent; color: var(--arb-teal); font-weight: 700; }
+    .arb-btn:hover { background: rgba(0,151,157,.1); }
+    .arb-btn.is-primary { background: var(--arb-teal); color: #fff; }
+    .arb-btn.is-primary:hover { background: #007e83; }
+
+    /* setup/loop tracer */
+    .arb-flow { display: block; width: 100%; height: auto; margin-top: .8rem; color: var(--arb-ink); }
+    .arb-flow-path { fill: none; stroke: currentColor; stroke-width: 2.5; opacity: .45; }
+    .arb-flow-path.is-loop { stroke-dasharray: 6 5; }
+    .arb-flow-note { fill: currentColor; opacity: .7; font: 600 11px "IBM Plex Mono", monospace; }
+    .arb-node rect { fill: var(--arb-panel); stroke: currentColor; stroke-opacity: .3; stroke-width: 2; transition: fill .2s, stroke .2s; }
+    .arb-node text { fill: currentColor; font: 700 17px "IBM Plex Mono", monospace; }
+    .arb-node text.sub { font: 600 11px "IBM Plex Mono", monospace; opacity: .75; }
+    .arb-node.is-power.is-active rect { fill: #fff1c9; stroke: #e0a100; stroke-opacity: 1; }
+    .arb-node.is-setup.is-active rect { fill: #ffe3d4; stroke: var(--arb-orange); stroke-opacity: 1; }
+    .arb-node.is-loop.is-active rect { fill: #d4f3f2; stroke: var(--arb-teal); stroke-opacity: 1; }
+    .arb-node.is-active text { fill: #0e2224; }
+    .arb-flow-token { fill: #ffd166; stroke: #b07800; stroke-width: 2; opacity: 0; filter: drop-shadow(0 0 6px #ffb02e); }
+    .arb-flow-led { fill: #7a1d12; stroke: #4a0d06; transition: fill .1s; }
+    .arb-flow-led.is-on { fill: #ff6a3d; }
+    .arb-flow-ledglow { fill: #ff7a45; opacity: 0; transition: opacity .1s; filter: blur(6px); }
+    .arb-flow-ledwrap:has(.is-on) .arb-flow-ledglow { opacity: .6; }
+    .arb-anatomy { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: .6rem; }
+    .arb-anatomy-col { padding: 1rem; border: 1px solid var(--arb-line); border-radius: 8px; background: #f3f8f7; }
     .arb-anatomy-col h3 { color: var(--arb-teal); }
-    .arb-code { margin: 0; overflow: auto; padding: .9rem 1rem; border-radius: 4px; background: #1e1e1e; color: #e7f0e8; font: 500 .78rem/1.6 "IBM Plex Mono", monospace; }
-    .arb-code .c { color: #6a9955; } .arb-code .k { color: #569cd6; } .arb-code .n { color: #b5cea8; } .arb-code .f { color: #dcdcaa; }
-    .arb-anatomy-run { display: block; margin: .8rem auto 0; padding: .5rem 1rem; border: 2px solid var(--arb-teal); background: transparent; color: var(--arb-teal); font-weight: 700; }
-    .arb-anatomy-run:hover { background: var(--arb-teal); color: white; }
-    .arb-anatomy-status { margin-top: .6rem; text-align: center; font: 600 .78rem "IBM Plex Mono", monospace; min-height: 1.4em; }
+    .arb-anatomy-col h3 small { margin-left: .4rem; padding: .1rem .4rem; border-radius: 4px; background: var(--arb-teal); color: #fff; font: 700 .65rem "IBM Plex Mono", monospace; vertical-align: middle; }
+    .arb-anatomy-col p { margin: .6rem 0 0; font-size: .85rem; }
+    .arb-anatomy-status { margin: .6rem 0 0; text-align: center; font: 600 .82rem "IBM Plex Mono", monospace; min-height: 1.4em; }
 
-    .arb-blinklab { display: grid; grid-template-columns: minmax(220px, .8fr) minmax(280px, 1.2fr); gap: 1rem; margin-top: 1rem; align-items: start; }
-    .arb-blink-board { display: grid; place-items: center; gap: .8rem; padding: 1.2rem; border: 3px solid #1b3a4b; border-radius: 12px; background: #142c38; }
-    .arb-led-visual { width: 70px; height: 70px; border-radius: 50%; background: #3a2a24; box-shadow: inset 0 0 10px rgba(0,0,0,.5); transition: background .1s, box-shadow .1s; }
-    .arb-led-visual.is-on { background: #ff6a3d; box-shadow: 0 0 34px #ff6a3d, inset 0 0 10px rgba(255,255,255,.3); }
-    .arb-led-caption { color: #cfe4e0; font: 600 .72rem "IBM Plex Mono", monospace; }
-    .arb-field { display: grid; gap: .3rem; padding: .8rem; border: 1px solid var(--arb-line); background: #f3f8f7; }
+    /* bench (SVG board + breadboard) */
+    .arb-bench-wrap { position: relative; margin: 0; padding: .4rem; border-radius: 12px; background: radial-gradient(120% 90% at 30% 20%, #23434f, #10222a 70%); background-color: #142c38; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 10px 26px rgba(14,34,36,.18); overflow: hidden; }
+    .arb-bench-wrap::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px); background-size: 20px 20px; pointer-events: none; }
+    .arb-bench { position: relative; display: block; width: 100%; height: auto; }
+    .arb-bench-cap { position: relative; display: inline-block; margin: 0 0 .2rem .4rem; padding: .25rem .55rem; border-radius: 4px; background: rgba(0,0,0,.45); color: #cfe4e0; font: 600 .72rem "IBM Plex Mono", monospace; }
+    .arb-bench .arb-glow, .arb-bench .arb-halo { transition: opacity .06s; mix-blend-mode: screen; }
+    .arb-svg-bbtext { fill: #57534a; font: 700 8px "IBM Plex Mono", monospace; }
+    .arb-svg-wire { fill: #ffcf9a; font: 600 10px "IBM Plex Mono", monospace; opacity: .9; }
+    .arb-bench.is-high .arb-current { animation: arb-current-flow .45s linear infinite; }
+    .arb-bench .arb-current.is-return { animation-direction: reverse; }
+    @keyframes arb-current-flow { to { stroke-dashoffset: -11; } }
+
+    /* blink lab */
+    .arb-lab { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(250px, 1fr); gap: 1rem; margin-top: 1rem; align-items: start; }
+    .arb-lab-side { display: grid; gap: .8rem; }
+    .arb-field { display: grid; gap: .35rem; padding: .8rem; border: 1px solid var(--arb-line); border-radius: 8px; background: #f3f8f7; }
     .arb-field label { font: 700 .7rem "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: .05em; }
-    .arb-field label b { color: var(--arb-orange); }
+    .arb-field label b { color: var(--arb-orange); font-size: .9rem; }
     .arb-field input[type="range"] { width: 100%; accent-color: var(--arb-teal); }
-    .arb-field p { margin: .35rem 0 0; font-size: .78rem; color: #4d626b; }
-    .arb-serial { padding: .8rem; border: 2px solid #1b3a4b; background: #0e1e22; color: #7bd88f; font: 500 .78rem/1.6 "IBM Plex Mono", monospace; min-height: 110px; max-height: 160px; overflow-y: auto; }
-    .arb-serial-line { opacity: 0; animation: arb-fadein .2s forwards; }
-    @keyframes arb-fadein { to { opacity: 1; } }
+    .arb-readout { margin: 0; font: 500 .78rem/1.5 "IBM Plex Mono", monospace; }
+    .arb-readout b { color: var(--arb-teal); }
+    .arb-field .arb-btn { justify-self: start; padding: .35rem .8rem; font-size: .82rem; }
+    .arb-scope, .arb-monitor { min-width: 0; border-radius: 10px; background: #071417; border: 1px solid #1b3a4b; overflow: hidden; }
+    .arb-scope canvas { display: block; width: 100%; }
+    .arb-scope-head { display: flex; justify-content: space-between; gap: .6rem; margin: 0; padding: .45rem .75rem; background: #10262c; color: #cfe4e0; font: 700 .7rem "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: .06em; }
+    .arb-scope-head > span { color: #7f9aa0; font-weight: 500; text-transform: none; letter-spacing: 0; }
+    .arb-scope-head [data-glossary] { color: inherit; }
+    .arb-serial { height: 132px; padding: .55rem .75rem; overflow-y: auto; color: #7bd88f; font: 500 .76rem/1.6 "IBM Plex Mono", monospace; }
+    .arb-serial-line .ts { color: #7f9aa0; }
+    .arb-serial-line { animation: arb-fadein .2s; }
+    @keyframes arb-fadein { from { opacity: 0; } }
 
-    .arb-morse { display: grid; grid-template-columns: minmax(240px, .85fr) minmax(280px, 1.15fr); gap: 1rem; margin-top: 1rem; align-items: start; }
+    /* morse */
+    .arb-morse { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(0, 1.3fr); gap: 1rem; margin-top: 1rem; align-items: start; }
     .arb-morse-controls { display: grid; gap: .6rem; align-content: start; }
-    .arb-morse-controls input[type="text"] { width: 100%; padding: .6rem .7rem; border: 1px solid var(--arb-line); background: white; color: var(--arb-ink); font: 600 1rem "IBM Plex Mono", monospace; text-transform: uppercase; }
-    .arb-morse-btn { padding: .55rem 1rem; border: 2px solid var(--arb-teal); background: var(--arb-teal); color: white; font-weight: 700; }
-    .arb-morse-hint { margin: 0; font-size: .78rem; color: #4d626b; }
-    .arb-morse-board { display: grid; place-items: center; gap: .7rem; padding: 1.2rem; border: 3px solid #1b3a4b; border-radius: 12px; background: #142c38; min-height: 200px; }
-    .arb-morse-pattern { min-height: 1.6em; color: #cfe4e0; font: 700 1rem "IBM Plex Mono", monospace; letter-spacing: .1em; text-align: center; word-break: break-all; }
-    .arb-morse-chart { margin-top: 1rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: .35rem; font: 600 .72rem "IBM Plex Mono", monospace; }
-    .arb-morse-chart span { display: block; padding: .3rem .4rem; border: 1px solid var(--arb-line); background: #f3f8f7; text-align: center; }
+    .arb-morse-controls input[type="text"] { width: 100%; padding: .6rem .7rem; border: 1px solid var(--arb-line); border-radius: 6px; background: white; color: var(--arb-ink); font: 600 1.1rem "IBM Plex Mono", monospace; letter-spacing: .12em; text-transform: uppercase; }
+    .arb-morse-hint { margin: 0; font-size: .8rem; color: #4d626b; }
+    .arb-morse-stage { display: grid; gap: .7rem; min-width: 0; }
+    .arb-morse-letters { display: flex; flex-wrap: wrap; justify-content: center; gap: .35rem; min-height: 3.4rem; }
+    .arb-morse-letter { display: grid; justify-items: center; min-width: 2.6rem; padding: .3rem .45rem; border: 1px solid var(--arb-line); border-radius: 6px; background: var(--arb-panel); transition: transform .15s, background .15s, border-color .15s; }
+    .arb-morse-letter b { font: 800 1.35rem/1 "Barlow Condensed", sans-serif; }
+    .arb-morse-letter i { font: 700 .72rem "IBM Plex Mono", monospace; font-style: normal; letter-spacing: .08em; color: #a8461a; }
+    [data-lighting="night"] .arb-morse-letter i, [data-theme="vaporwave"] .arb-morse-letter i, [data-theme="bark"] .arb-morse-letter i { color: #ff9a5a; }
+    .arb-morse-letter.is-active i { color: #a8461a; }
+    .arb-morse-letter.is-space { min-width: 1.2rem; border-style: dashed; }
+    .arb-morse-letter.is-active { transform: translateY(-3px); border-color: #e0a100; background: #fff1c9; color: #0e2224; box-shadow: 0 6px 14px rgba(224,161,0,.3); }
+    .arb-code-gen { max-height: 330px; font-size: .7rem; }
+    .arb-morse-chart { margin-top: 1rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: .35rem; font: 600 .74rem "IBM Plex Mono", monospace; }
+    .arb-morse-chart span { display: block; padding: .3rem .4rem; border: 1px solid var(--arb-line); border-radius: 4px; background: #f3f8f7; text-align: center; letter-spacing: .06em; transition: background .15s; }
+    .arb-morse-chart span b { margin-right: .2rem; color: var(--arb-teal); }
+    .arb-morse-chart span.is-active { background: #fff1c9; border-color: #e0a100; color: #0e2224; }
 
     .arb-neuro { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
     .arb-neuro svg { display: block; width: 100%; height: auto; }
@@ -123,7 +181,7 @@
     [data-lighting="night"] .arb-morse-controls input[type="text"], [data-theme="vaporwave"] .arb-morse-controls input[type="text"], [data-theme="bark"] .arb-morse-controls input[type="text"] { background: #16302f; color: #eef6f3; }
 
     @media (max-width: 900px) {
-      .arb-hero, .arb-anatomy, .arb-blinklab, .arb-morse, .arb-neuro { grid-template-columns: 1fr; }
+      .arb-hero, .arb-anatomy, .arb-lab, .arb-morse, .arb-neuro { grid-template-columns: 1fr; }
     }
     @media (max-width: 600px) {
       .arb-hero { padding: 1rem; }
@@ -133,10 +191,54 @@
       .arb-morse-chart { grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); }
     }
     @media (prefers-reduced-motion: reduce) {
-      .arb-serial-line { animation: none; opacity: 1; }
+      .arb-serial-line, .arb-cl.is-flash, .arb-bench.is-high .arb-current { animation: none; }
     }
     @media print { .arb-ide, .ll-panel, .ll-open-btn { display: none !important; } .arb-card { break-inside: avoid; box-shadow: none; } }
     .big-picture{margin:1.3rem 0;padding:clamp(1rem,3vw,2rem);border:2px solid var(--arb-teal);border-radius:16px;background:var(--arb-panel);color:var(--arb-ink)}.big-picture h2{font-size:clamp(1.5rem,3vw,2.2rem);margin:0 0 .6rem}.big-picture p{line-height:1.6;max-width:75ch}.connection-lab{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:1rem}.connection-scene{width:100%;height:auto;background:var(--arb-paper);border:1px solid var(--line,#cbd5e1);border-radius:10px;color:var(--arb-ink)}.connection-scene text{fill:currentColor;font:14px system-ui}.connection-controls label{display:block;font-weight:700;margin:.6rem 0}.connection-controls input{width:100%;accent-color:var(--arb-teal)}.connection-controls button{padding:.65rem .8rem;margin:.3rem .2rem .3rem 0;border:1px solid var(--line,#cbd5e1);border-radius:7px;background:var(--arb-navy);color:white;font:inherit;cursor:pointer}.connection-readout{padding:.7rem;border-left:4px solid var(--arb-teal);font-variant-numeric:tabular-nums}.connection-bridge{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin-top:1rem}.connection-bridge article{border-top:3px solid var(--arb-teal);padding-top:.6rem}.connection-bridge h3{margin:.3rem 0}.connection-bridge p{font-size:.88rem}.connection-sources{font-size:.78rem}.big-picture a{color:inherit;text-decoration:underline}@media(max-width:700px){.connection-lab,.connection-bridge{grid-template-columns:1fr}}@media print{.connection-controls input,.connection-controls button{display:none}.connection-lab{grid-template-columns:1fr 1fr}}
+    /* robot control loop */
+    .connection-lab { align-items: start; }
+    .connection-lab > * { min-width: 0; }
+    .cn-figure { margin: 0; }
+    .cn-figure figcaption { margin-top: .5rem; font-size: .85rem; line-height: 1.5; }
+    .connection-scene { border-color: var(--arb-line); }
+    .cn-floor-a { stop-color: #f4fbfa; } .cn-floor-b { stop-color: #d9ecea; }
+    .cn-gridline { stroke: #0e2224; stroke-opacity: .12; }
+    .cn-axis { fill: none; stroke: currentColor; stroke-width: 2; }
+    .cn-ticks text, .cn-axislabel { fill: currentColor; font: 600 10px "IBM Plex Mono", monospace !important; opacity: .75; }
+    .cn-axislabel { font-size: 13px !important; font-style: italic; opacity: 1; }
+    .cn-trail { fill: none; stroke: #4f46e5; stroke-width: 2; stroke-dasharray: 2 5; stroke-linecap: round; opacity: .55; }
+    .cn-dot { fill: #4f46e5; opacity: .35; }
+    .cn-hyp { stroke: currentColor; stroke-width: 1.5; stroke-dasharray: 5 5; opacity: .3; }
+    .cn-dx { stroke: #e46a1f; stroke-width: 3; stroke-linecap: round; }
+    .cn-dy { stroke: #1f78d1; stroke-width: 3; stroke-linecap: round; }
+    .cn-dlabel { font: 700 11px "IBM Plex Mono", monospace !important; paint-order: stroke; stroke: var(--arb-panel); stroke-width: 3px; }
+    .cn-dlabel.is-x { fill: #c2530f; } .cn-dlabel.is-y { fill: #1764b0; }
+    .cn-ring { fill: none; stroke: #e0a100; stroke-width: 2; }
+    .cn-target-a { fill: #fff; stroke: #d94b41; stroke-width: 3; }
+    .cn-target-b { fill: #d94b41; } .cn-target-c { fill: #fff; }
+    .cn-target-cross { stroke: #b4332a; stroke-width: 2; }
+    .cn-cmd { stroke: #ffd166; stroke-width: 4; stroke-linecap: round; filter: drop-shadow(0 0 3px rgba(176,120,0,.8)); }
+    .cn-ping { fill: none; stroke: #00979d; stroke-width: 2.5; }
+    .cn-shadow { fill: #000; opacity: .18; }
+    .cn-wheel { fill: #1d1f24; } .cn-tread { stroke: #4a4f57; stroke-width: 1.2; }
+    .cn-chassis { fill: #4f46e5; stroke: #2a238f; stroke-width: 1.5; }
+    .cn-mcu { fill: #00979d; stroke: #005357; stroke-width: .8; }
+    .cn-sensor { fill: #1b3a4b; } .cn-eye { fill: #d7dde2; stroke: #7d868e; }
+    .cn-caster { fill: #9aa3ab; }
+    .cn-buttons { display: flex; flex-wrap: wrap; gap: .4rem; }
+    .connection-controls .cn-buttons button { margin: 0; }
+    .connection-controls button:disabled { opacity: .5; cursor: not-allowed; }
+    .connection-controls button[aria-pressed="true"] { background: var(--arb-teal); }
+    .cn-code { margin: .7rem 0; font-size: .74rem; }
+    .connection-readout { display: grid; gap: .25rem; margin: 0; font: 500 .8rem/1.45 "IBM Plex Mono", monospace; }
+    .connection-readout b.is-x { color: #c2530f; } .connection-readout b.is-y { color: #1764b0; }
+    .connection-readout .is-done { color: #3f7a16; font-weight: 700; }
+    [data-lighting="night"] .cn-floor-a, [data-theme="vaporwave"] .cn-floor-a, [data-theme="bark"] .cn-floor-a { stop-color: #18343a; }
+    [data-lighting="night"] .cn-floor-b, [data-theme="vaporwave"] .cn-floor-b, [data-theme="bark"] .cn-floor-b { stop-color: #0f2328; }
+    [data-lighting="night"] .cn-gridline, [data-theme="vaporwave"] .cn-gridline, [data-theme="bark"] .cn-gridline { stroke: #e9f6f4; }
+    [data-lighting="night"] .cn-dlabel.is-x, [data-lighting="night"] .connection-readout b.is-x { fill: #ff9a5a; color: #ff9a5a; }
+    [data-lighting="night"] .cn-dlabel.is-y, [data-lighting="night"] .connection-readout b.is-y { fill: #6fb4ff; color: #6fb4ff; }
+    [data-lighting="night"] .arb-node.is-active text { fill: #0e2224; }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -177,58 +279,70 @@
 
           <section class="arb-card" style="--arb-accent:var(--arb-orange);">
             <p class="arb-label">Sketch anatomy</p><h2><code>setup()</code> vs <code>loop()</code></h2>
-            <p>Every Arduino sketch has exactly two required functions. Press run and watch how many times each one actually executes.</p>
-            <div class="arb-anatomy">
-              <div class="arb-anatomy-col" id="col-setup"><h3>setup()</h3><pre class="arb-code"><span class="k">void</span> <span class="f">setup</span>() {
-  pinMode(LED, OUTPUT);
-  Serial.begin(<span class="n">9600</span>);
-}</pre><p style="margin-top:.6rem;font-size:.82rem;">Runs <strong>once</strong>, the instant the board powers on or resets. Perfect for one-time setup: naming pins, starting Serial, initializing variables.</p></div>
-              <div class="arb-anatomy-col" id="col-loop"><h3>loop()</h3><pre class="arb-code"><span class="k">void</span> <span class="f">loop</span>() {
-  digitalWrite(LED, HIGH);
-  delay(<span class="n">1000</span>);
-  digitalWrite(LED, LOW);
-  delay(<span class="n">1000</span>);
-}</pre><p style="margin-top:.6rem;font-size:.82rem;">Runs <strong>forever</strong>, immediately repeating from the top the instant it reaches the bottom. Repetition makes control possible, but feedback also requires measuring the result of an action.</p></div>
+            <p>Every Arduino sketch has exactly two required functions. Power on the virtual board and follow the glowing token: the highlighted line is the one the processor is running right now. Then press <strong>Reset</strong> and count how many times each function runs.</p>
+            <div class="arb-trace" id="arb-trace">
+              <svg id="arb-flow" class="arb-flow" viewBox="0 0 640 150" role="img" aria-label="Flow of a sketch: power on or reset leads to setup, which runs once, then loop, which repeats forever.">
+                <defs><marker id="arb-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+                <path data-path="p1" class="arb-flow-path" d="M142 96H196" marker-end="url(#arb-arrow)"/>
+                <path data-path="p2" class="arb-flow-path" d="M322 96H376" marker-end="url(#arb-arrow)"/>
+                <path data-path="p3" class="arb-flow-path is-loop" d="M502 82C586 82 572 24 470 24C430 24 420 40 420 62" marker-end="url(#arb-arrow)"/>
+                <text x="440" y="14" text-anchor="middle" class="arb-flow-note">repeats forever ∞</text>
+                <g data-node="power" class="arb-node is-power"><rect x="20" y="66" width="122" height="60" rx="10"/><text x="81" y="92" text-anchor="middle">⚡ POWER ON</text><text x="81" y="111" text-anchor="middle" class="sub">or RESET</text></g>
+                <g data-node="setup" class="arb-node is-setup"><rect x="198" y="66" width="124" height="60" rx="10"/><text x="260" y="92" text-anchor="middle">setup()</text><text x="260" y="111" text-anchor="middle" class="sub">runs: <tspan id="arb-setup-count">0</tspan></text></g>
+                <g data-node="loop" class="arb-node is-loop"><rect x="378" y="66" width="124" height="60" rx="10"/><text x="440" y="92" text-anchor="middle">loop()</text><text x="440" y="111" text-anchor="middle" class="sub">runs: <tspan id="arb-loop-count">0</tspan></text></g>
+                <g class="arb-flow-ledwrap" transform="translate(590 92)"><circle r="26" class="arb-flow-ledglow"/><path id="arb-flow-led" class="arb-flow-led" d="M-9 10V-4a9 9 0 0 1 18 0V10z"/><path d="M-4 10v14M4 10v10" stroke="#9aa3ab" stroke-width="2"/><text y="46" text-anchor="middle" class="arb-flow-note">pin 13</text></g>
+                <circle id="arb-flow-token" class="arb-flow-token" r="7" cx="142" cy="96"/>
+              </svg>
+              <div class="arb-anatomy">
+                <div class="arb-anatomy-col"><h3>setup() <small>once</small></h3><pre class="arb-code"><span class="arb-cl"><span class="k">void</span> <span class="f">setup</span>() {</span><span class="arb-cl" data-line="s1">  pinMode(<span class="n">13</span>, OUTPUT);</span><span class="arb-cl" data-line="s2">  Serial.begin(<span class="n">9600</span>);</span><span class="arb-cl">}</span></pre><p>Runs <strong>once</strong>, the instant the board powers on or resets. Perfect for one-time jobs: naming pins, starting Serial, setting starting values.</p></div>
+                <div class="arb-anatomy-col"><h3>loop() <small>forever</small></h3><pre class="arb-code"><span class="arb-cl"><span class="k">void</span> <span class="f">loop</span>() {</span><span class="arb-cl" data-line="l1">  digitalWrite(<span class="n">13</span>, HIGH);</span><span class="arb-cl" data-line="l2">  delay(<span class="n">1000</span>);</span><span class="arb-cl" data-line="l3">  digitalWrite(<span class="n">13</span>, LOW);</span><span class="arb-cl" data-line="l4">  delay(<span class="n">1000</span>);</span><span class="arb-cl">}</span></pre><p>Runs <strong>forever</strong>, jumping back to the top the instant it reaches the bottom. Repetition makes control possible, but feedback also requires measuring the result of an action.</p></div>
+              </div>
+              <div class="arb-btnrow"><button class="arb-btn is-primary" id="anatomy-run" type="button">▶ Power on</button><button class="arb-btn" id="anatomy-reset" type="button">⟲ Reset</button></div>
+              <p class="arb-anatomy-status" id="anatomy-status" aria-live="polite">Ready — press Power on to trace execution.</p>
             </div>
-            <button class="arb-anatomy-run" id="anatomy-run" type="button">▶ Simulate power-on</button>
-            <p class="arb-anatomy-status" id="anatomy-status" aria-live="polite">Ready — press run to trace execution.</p>
           </section>
 
           <section class="arb-card" style="--arb-accent:var(--arb-teal);">
             <p class="arb-label">Hardware basics</p><h2>Blink: Hello World, but with light</h2>
-            <p><code>delay(1000)</code> pauses for 1000 milliseconds (one second). Drag the slider to change the blink sketch's delay value and watch the simulated board — and its Serial Monitor — respond in real time.</p>
-            <div class="arb-blinklab">
-              <div class="arb-blink-board">
-                <div class="arb-led-visual" id="blink-led"></div>
-                <span class="arb-led-caption" id="blink-caption">LED_BUILTIN · OFF</span>
-              </div>
-              <div style="display:grid;gap:.7rem;">
+            <p><code>delay(1000)</code> pauses for 1000 milliseconds (one second). Here pin 13 drives a red LED on a <span data-glossary="breadboard">breadboard</span> through a 220 Ω <span data-glossary="resistor">resistor</span> — the same pin as the tiny onboard <strong>L</strong> LED (<code>LED_BUILTIN</code>). Drag the slider and watch the board, the running line of code, the <span data-glossary="oscilloscope">oscilloscope</span> trace and the Serial Monitor all respond together.</p>
+            <div class="arb-lab">
+              <figure class="arb-bench-wrap" id="blink-bench"><figcaption class="arb-bench-cap" id="blink-caption" aria-live="off">pin 13 · LOW</figcaption></figure>
+              <div class="arb-lab-side">
+                <pre class="arb-code" id="blink-code" aria-label="Blink sketch loop with the running line highlighted"><span class="arb-cl"><span class="k">void</span> <span class="f">loop</span>() {</span><span class="arb-cl" data-line="w1">  digitalWrite(<span class="n">13</span>, HIGH);</span><span class="arb-cl" data-line="p1">  Serial.println(<span class="s">"LED ON"</span>);</span><span class="arb-cl is-delay" data-line="d1">  delay(<span class="n arb-delay-num">1000</span>);</span><span class="arb-cl" data-line="w2">  digitalWrite(<span class="n">13</span>, LOW);</span><span class="arb-cl" data-line="p2">  Serial.println(<span class="s">"LED OFF"</span>);</span><span class="arb-cl is-delay" data-line="d2">  delay(<span class="n arb-delay-num">1000</span>);</span><span class="arb-cl">}</span></pre>
                 <div class="arb-field">
                   <label for="blink-delay">delay(<b id="blink-delay-value">1000</b>) milliseconds</label>
                   <input type="range" id="blink-delay" min="100" max="2000" step="100" value="1000">
-                  <p>This one number controls both the HIGH delay and the LOW delay in the sketch above.</p>
+                  <p class="arb-readout" id="blink-readout"></p>
+                  <button class="arb-btn" id="blink-pause" type="button" aria-pressed="false">❚❚ Pause</button>
                 </div>
-                <div class="arb-serial" id="blink-serial" aria-live="polite" aria-label="Simulated Serial Monitor output"></div>
+              </div>
+              <div class="arb-scope">
+                <p class="arb-scope-head">Pin 13 voltage over time <span>timing diagram · last 6 s</span></p>
+                <canvas id="blink-scope" role="img" aria-label="Timing diagram: pin 13 switches between 5 volts and 0 volts. Each flat top lasts as long as the delay value."></canvas>
+              </div>
+              <div class="arb-monitor">
+                <p class="arb-scope-head">Serial Monitor <span>9600 <span data-glossary="baud rate">baud</span> · timestamps on</span></p>
+                <div class="arb-serial" id="blink-serial" aria-label="Simulated Serial Monitor output"></div>
               </div>
             </div>
           </section>
 
           <section class="arb-card" style="--arb-accent:var(--arb-red);">
             <p class="arb-label">Challenge</p><h2>Send a message in Morse code</h2>
-            <p>Modify Blink so the delay pattern spells something. A short flash is a <strong>dot</strong>, a long flash is a <strong>dash</strong>. Type a short word (letters and numbers only) and watch your virtual LED blink it out.</p>
+            <p>Modify Blink so the delay pattern spells something. Morse timing is built from one <strong>unit</strong>: a dot is 1 unit on, a dash is 3 units on, the gap inside a letter is 1 unit, between letters 3 units, and between words 7. Type a short message and the sketch is written for you — then watch it run line by line.</p>
             <div class="arb-morse">
               <div class="arb-morse-controls">
                 <label for="morse-input" class="arb-label">Message to send</label>
-                <input type="text" id="morse-input" maxlength="8" placeholder="e.g. SOS" value="SOS">
-                <button class="arb-morse-btn" id="morse-send" type="button">▶ Blink it out</button>
-                <p class="arb-morse-hint">Real code: build an array of dot/dash durations, then loop through it turning the LED on for each duration with a short pause between.</p>
-                <pre class="arb-code">int dot = 200, dash = 600;
-int pattern[] = {dot, gap, dot, gap, dot};
-<span class="c">// … one array per letter of "SOS"</span></pre>
+                <input type="text" id="morse-input" maxlength="12" placeholder="e.g. SOS" value="SOS" autocomplete="off" spellcheck="false">
+                <div class="arb-field"><label for="morse-unit">1 unit = <b id="morse-unit-value">200</b> ms</label><input type="range" id="morse-unit" min="80" max="400" step="20" value="200"></div>
+                <button class="arb-btn is-primary" id="morse-send" type="button">▶ Blink it out</button>
+                <p class="arb-morse-hint" id="morse-status" aria-live="polite">Letters, numbers and spaces only.</p>
+                <pre class="arb-code arb-code-gen" id="morse-code" aria-label="Generated Morse sketch with the running line highlighted"></pre>
               </div>
-              <div class="arb-morse-board">
-                <div class="arb-led-visual" id="morse-led"></div>
-                <div class="arb-morse-pattern" id="morse-pattern">· · ·  – – –  · · ·</div>
+              <div class="arb-morse-stage">
+                <div class="arb-morse-letters" id="morse-letters" aria-hidden="true"></div>
+                <figure class="arb-bench-wrap is-compact" id="morse-bench"></figure>
+                <div class="arb-scope"><p class="arb-scope-head">Your message as a timing diagram <span>yellow line = now</span></p><canvas id="morse-scope" role="img" aria-label="Timing diagram of the whole Morse message: short pulses are dots, long pulses are dashes, labelled by letter."></canvas></div>
               </div>
             </div>
             <div class="arb-morse-chart" id="morse-chart"></div>
@@ -238,23 +352,50 @@ int pattern[] = {dot, gap, dot, gap, dot};
         <h2 id="picture-title">The bigger picture: brains, robots &amp; graphics</h2>
         <p>How do you reach for a cup? You see a target, estimate where it is, move your hand, and use new information to adjust. Neuroscience studies how nervous systems do this. Robotics builds machines that sense and act. Computer graphics draws mathematical worlds that we can see and test.</p>
         <p><strong>Arduino is the controller in this story:</strong> sensors provide measurements, your sketch chooses an action, and output pins send control signals. A <span data-glossary="electric motor">motor</span> driver supplies the current needed by motors. The screen below makes a simplified control loop visible.</p>
+        <h3>From Blink to a robot control loop</h3><p>Blink repeats an output pattern. It does not measure whether a goal was reached, so repetition alone is not feedback. A robot control loop reads a sensor, compares the measurement with a goal, acts, and reads again. Below, each <strong>loop pass</strong> runs those four lines in order — watch the highlighted line and the robot together.</p>
         <div class="connection-lab">
-          <div><svg class="connection-scene" viewBox="0 0 420 290" role="img" aria-labelledby="connection-svg-title connection-svg-desc"><title id="connection-svg-title">Robot and target on a coordinate grid</title><desc id="connection-svg-desc">The robot starts at coordinate 2, 2. Move the target sliders, then take a step to reduce the gap. The dashed line shows the remaining error.</desc><defs><pattern id="connection-grid" width="32" height="32" patternUnits="userSpaceOnUse" x="50" y="30"><path d="M32 0H0V32" fill="none" stroke="currentColor" opacity=".18"/></pattern></defs><rect x="50" y="30" width="320" height="224" fill="url(#connection-grid)"/><path d="M50 30V254H380" stroke="currentColor" fill="none" stroke-width="2"/><text x="44" y="275">0</text><text x="367" y="275">10 · x</text><text x="12" y="37">7 · y</text><line id="connection-error" x1="114" y1="190" x2="306" y2="62" stroke="currentColor" stroke-dasharray="6 5" stroke-width="2"/><g id="connection-target" transform="translate(306 62)"><circle r="13" fill="none" stroke="#b45309" stroke-width="3"/><path d="M-19 0H19M0-19V19" stroke="#b45309" stroke-width="2"/></g><g id="connection-robot" transform="translate(114 190)"><rect x="-13" y="-12" width="26" height="24" rx="5" fill="#4f46e5"/><circle cx="-5" cy="-3" r="2.5" fill="white"/><circle cx="5" cy="-3" r="2.5" fill="white"/><path d="M-6 6H6" stroke="white" stroke-width="2"/></g><text x="65" y="18">One world, represented as numbers and an image</text></svg><p>Each grid square is one unit. The robot is purple; the target is the crosshair. The dashed line connects their positions.</p></div>
-          <div class="connection-controls"><label for="connection-x">Target x: <output id="connection-x-value">8</output><input id="connection-x" type="range" min="0" max="10" value="8" step="1"/></label><label for="connection-y">Target y: <output id="connection-y-value">6</output><input id="connection-y" type="range" min="0" max="7" value="6" step="1"/></label><p><strong>Predict:</strong> if the target is to the left, should the x change be positive or negative?</p><button type="button" id="connection-step">Take one robot step</button><button type="button" id="connection-reset">Reset experiment</button><p class="connection-readout" id="connection-status" aria-live="polite" aria-atomic="true"></p><p>Our rule: move one unit toward the target on each axis that still has a gap. Measure again after every step. Try moving the target halfway through!</p></div>
+          <figure class="cn-figure"><svg class="connection-scene" viewBox="0 0 420 290" role="img" aria-labelledby="connection-svg-title connection-svg-desc"><title id="connection-svg-title">Robot and target on a coordinate grid</title><desc id="connection-svg-desc">The robot starts at coordinate 2, 2. Move the target sliders, then run loop passes to reduce the gap.</desc>
+            <defs>
+              <pattern id="connection-grid" width="32" height="32" patternUnits="userSpaceOnUse" x="50" y="30"><path d="M32 0H0V32" fill="none" class="cn-gridline"/></pattern>
+              <radialGradient id="cn-floor-grad" cx=".5" cy=".45" r=".75"><stop offset="0" class="cn-floor-a"/><stop offset="1" class="cn-floor-b"/></radialGradient>
+              <marker id="cn-arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#ffd166"/></marker>
+            </defs>
+            <rect x="50" y="30" width="320" height="224" fill="url(#cn-floor-grad)"/>
+            <rect x="50" y="30" width="320" height="224" fill="url(#connection-grid)"/>
+            <g id="cn-ticks" class="cn-ticks"></g>
+            <path d="M50 30V254H374" class="cn-axis"/>
+            <text x="384" y="258" class="cn-axislabel">x</text><text x="46" y="22" class="cn-axislabel" text-anchor="end">y</text>
+            <polyline id="cn-trail" class="cn-trail" points=""/>
+            <g id="cn-trail-dots"></g>
+            <line id="connection-error" class="cn-hyp" x1="114" y1="190" x2="306" y2="62"/>
+            <line id="cn-dx" class="cn-dx" x1="0" y1="0" x2="0" y2="0"/><text id="cn-dx-label" class="cn-dlabel is-x"></text>
+            <line id="cn-dy" class="cn-dy" x1="0" y1="0" x2="0" y2="0"/><text id="cn-dy-label" class="cn-dlabel is-y"></text>
+            <g id="connection-target" transform="translate(306 62)"><circle r="20" class="cn-ring"><animate attributeName="r" values="10;24" dur="1.6s" repeatCount="indefinite"/><animate attributeName="opacity" values=".8;0" dur="1.6s" repeatCount="indefinite"/></circle><circle r="13" class="cn-target-a"/><circle r="7" class="cn-target-b"/><circle r="2.5" class="cn-target-c"/><path d="M-19 0H-10M10 0H19M0-19V-10M0 10V19" class="cn-target-cross"/></g>
+            <line id="cn-cmd" class="cn-cmd" opacity="0" x1="0" y1="0" x2="0" y2="0" marker-end="url(#cn-arrow)"/>
+            <circle id="cn-ping" class="cn-ping" r="0" opacity="0"/>
+            <g id="connection-robot" transform="translate(114 190)"><ellipse rx="17" ry="15" class="cn-shadow" transform="translate(2 4)"/><g id="cn-robot-body">
+              <rect x="-11" y="-17" width="20" height="7" rx="2" class="cn-wheel"/><rect x="-11" y="10" width="20" height="7" rx="2" class="cn-wheel"/>
+              <path d="M-7 -17v7M-2 -17v7M3 -17v7M-7 10v7M-2 10v7M3 10v7" class="cn-tread"/>
+              <rect x="-14" y="-11" width="28" height="22" rx="6" class="cn-chassis"/>
+              <rect x="-10" y="-7" width="13" height="14" rx="1.5" class="cn-mcu"/><rect x="-6" y="-2.5" width="6" height="5" fill="#111"/>
+              <rect x="11" y="-10" width="6" height="20" rx="1.5" class="cn-sensor"/><circle cx="15" cy="-5" r="3.4" class="cn-eye"/><circle cx="15" cy="5" r="3.4" class="cn-eye"/>
+              <circle cx="-12" cy="0" r="2.4" class="cn-caster"/>
+            </g></g>
+          </svg><figcaption>Each square is one unit. The robot's sensor (front) <em>measures</em> its position, the orange and blue legs show the error on each axis, and the yellow arrow is the motor command.</figcaption></figure>
+          <div class="connection-controls">
+            <label for="connection-x">Target x: <output id="connection-x-value">8</output><input id="connection-x" type="range" min="0" max="10" value="8" step="1"/></label>
+            <label for="connection-y">Target y: <output id="connection-y-value">6</output><input id="connection-y" type="range" min="0" max="7" value="6" step="1"/></label>
+            <p><strong>Predict:</strong> if the target is to the left, should the x change be positive or negative?</p>
+            <div class="cn-buttons"><button type="button" id="connection-step">Run one loop pass</button><button type="button" id="connection-auto" aria-pressed="false">▶ Auto-run</button><button type="button" id="connection-reset">Reset</button></div>
+            <pre class="arb-code cn-code" aria-label="Robot control loop pseudocode with the running line highlighted"><span class="arb-cl"><span class="c">// Pseudocode: needs sensors + a motor driver</span></span><span class="arb-cl"><span class="k">void</span> <span class="f">loop</span>() {</span><span class="arb-cl" data-cn-line="read">  position = readPositionSensors();</span><span class="arb-cl" data-cn-line="err">  error = target - position;</span><span class="arb-cl" data-cn-line="cmd">  command = chooseMovement(error);</span><span class="arb-cl" data-cn-line="send">  sendToMotorDriver(command);</span><span class="arb-cl">}</span></pre>
+            <p class="connection-readout" id="connection-status" aria-live="polite" aria-atomic="true"></p>
+          </div>
         </div>
         <div class="connection-bridge">
           <article><h3>Brain: sense &amp; estimate</h3><p>Your nervous system combines sensory information to guide movement. Place cells and grid cells contribute to spatial representation. Their activity is biological; this square grid is a teaching model, not a picture of those cells.</p><p><strong>Math lens:</strong> position, patterns, measurement and uncertainty.</p><a href="../robotics/sensor-fusion.html">Explore sensor fusion</a></article>
           <article><h3>Robot: compare &amp; correct</h3><p>A controller compares a target with a measured position, then commands a motor. New measurements allow corrections. This is feedback control; a robot can use it without copying a brain.</p><p><strong>Math lens:</strong> target − position = error. A movement rule turns that error into an action.</p><a href="../robotics/robot-mapping-localization.html">Explore robot mapping</a></article>
           <article><h3>Graphics: represent &amp; render</h3><p>Graphics turns positions and shapes into an image. Here, x moves right and y moves up in our world; the drawing converts them into screen positions. More advanced rendering models cameras, materials and light. Vision works in the other direction: using images to infer a scene.</p><p><strong>Math lens:</strong> coordinates, geometry, transformations and functions.</p><a href="../../computer-science/graphics-and-games/from-scratch-browser-game.html">Build a graphical world</a></article>
         </div>
-        <h3>From Blink to a robot control loop</h3><p>Blink repeats an output pattern. It does not measure whether a goal was reached, so repetition alone is not feedback. A robot control loop reads a sensor, compares the measurement with a goal, acts, and reads again. In this experiment, each button press represents one loop pass.</p>
-        <pre class="arb-code">// Pseudocode: requires sensors and a motor driver.
-void loop() {
-  position = readPositionSensors();
-  error = target - position;
-  command = chooseMovement(error);
-  sendToMotorDriver(command);
-}</pre>
         <h3>Where the brain analogy helps—and where it stops</h3><p>Neurons receive inputs, integrate them, and can send signals along an axon when conditions for an action potential are met. An Arduino reads electrical inputs and executes instructions. That input-to-output comparison is useful, but a neuron is not a tiny Arduino: biological signaling, timing, and learning work differently. Synapses can change strength through several mechanisms; repeated firing does not always strengthen them. Your Blink sketch does not learn, though a robot can be programmed with a learning algorithm.</p>
         <p><strong>Try three investigations:</strong> reach the first target; move it behind the robot and explain the negative error; then move it during a journey and explain why measuring again matters. The graphics is a view of the model, not a sensor reading from a physical Arduino.</p>
         <p><strong>Discuss:</strong> what happens if a sensor reports the wrong position? Our demo assumes perfect measurements and immediate motion. Real robots and nervous systems must handle noise, delay, and physical limits.</p>
@@ -297,120 +438,9 @@ void loop() {
     </div>
   </div>
 
-  <script>
-    (function () {
-      // ── setup/loop trace ──
-      var runBtn = document.getElementById('anatomy-run');
-      var statusEl = document.getElementById('anatomy-status');
-      var setupCol = document.getElementById('col-setup');
-      var loopCol = document.getElementById('col-loop');
-      var traceTimer = null, loopCount = 0;
-      runBtn.addEventListener('click', function () {
-        if (traceTimer) { clearInterval(traceTimer); traceTimer = null; }
-        loopCount = 0;
-        setupCol.classList.add('is-active'); loopCol.classList.remove('is-active');
-        statusEl.textContent = 'Power on → setup() runs once…';
-        setTimeout(function () {
-          setupCol.classList.remove('is-active');
-          traceTimer = setInterval(function () {
-            loopCol.classList.add('is-active');
-            loopCount++;
-            statusEl.textContent = 'loop() pass #' + loopCount + ' — setup() will not run again until reset.';
-            setTimeout(function () { loopCol.classList.remove('is-active'); }, 400);
-            if (loopCount >= 6) { clearInterval(traceTimer); traceTimer = null; statusEl.textContent = 'loop() keeps repeating forever — press run to trace again.'; }
-          }, 700);
-        }, 900);
-      });
-
-      // ── Blink lab ──
-      var blinkLed = document.getElementById('blink-led');
-      var blinkCaption = document.getElementById('blink-caption');
-      var blinkSerial = document.getElementById('blink-serial');
-      var delayInput = document.getElementById('blink-delay');
-      var delayValueEl = document.getElementById('blink-delay-value');
-      var blinkTimer = null, blinkState = false, serialLines = 0;
-      function logSerial(text) {
-        serialLines++;
-        var line = document.createElement('div');
-        line.className = 'arb-serial-line';
-        line.textContent = text;
-        blinkSerial.appendChild(line);
-        blinkSerial.scrollTop = blinkSerial.scrollHeight;
-        while (blinkSerial.children.length > 12) blinkSerial.removeChild(blinkSerial.firstChild);
-      }
-      function tickBlink() {
-        blinkState = !blinkState;
-        blinkLed.classList.toggle('is-on', blinkState);
-        blinkCaption.textContent = 'LED_BUILTIN · ' + (blinkState ? 'ON' : 'OFF');
-        logSerial((blinkState ? 'digitalWrite HIGH' : 'digitalWrite LOW') + '  @ t+' + (serialLines * Number(delayInput.value)) + 'ms');
-      }
-      function restartBlink() {
-        if (blinkTimer) clearInterval(blinkTimer);
-        blinkTimer = setInterval(tickBlink, Number(delayInput.value));
-      }
-      delayInput.addEventListener('input', function () {
-        delayValueEl.textContent = delayInput.value;
-        restartBlink();
-      });
-      logSerial('Hello World!');
-      tickBlink();
-      restartBlink();
-
-      // ── Morse challenge ──
-      var MORSE = { A:'.-',B:'-...',C:'-.-.',D:'-..',E:'.',F:'..-.',G:'--.',H:'....',I:'..',J:'.---',K:'-.-',L:'.-..',M:'--',N:'-.',O:'---',P:'.--.',Q:'--.-',R:'.-.',S:'...',T:'-',U:'..-',V:'...-',W:'.--',X:'-..-',Y:'-.--',Z:'--..','0':'-----','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.' };
-      var morseInput = document.getElementById('morse-input');
-      var morseSend = document.getElementById('morse-send');
-      var morseLed = document.getElementById('morse-led');
-      var morsePattern = document.getElementById('morse-pattern');
-      var morseChart = document.getElementById('morse-chart');
-      Object.keys(MORSE).sort().forEach(function (ch) {
-        var span = document.createElement('span');
-        span.textContent = ch + ' ' + MORSE[ch];
-        morseChart.appendChild(span);
-      });
-      var morsePlayToken = 0;
-      function encode(text) {
-        return text.toUpperCase().split('').filter(function (c) { return MORSE[c]; }).map(function (c) { return MORSE[c]; });
-      }
-      function playMorse() {
-        var myToken = ++morsePlayToken;
-        var letters = encode(morseInput.value || 'SOS');
-        morsePattern.textContent = letters.map(function (l) { return l.replace(/\./g, '· ').replace(/-/g, '– '); }).join(' ');
-        var DOT = 200, DASH = 600, GAP = 200;
-        var t = 0;
-        function schedule(on, duration) {
-          setTimeout(function () { if (morsePlayToken === myToken) morseLed.classList.toggle('is-on', on); }, t);
-          t += duration;
-        }
-        letters.forEach(function (letter) {
-          letter.split('').forEach(function (symbol) {
-            schedule(true, symbol === '.' ? DOT : DASH);
-            schedule(false, GAP);
-          });
-          t += GAP * 2;
-        });
-      }
-      morseSend.addEventListener('click', playMorse);
-      morseInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') playMorse(); });
-
-      // ── Quiz ──
-      document.querySelectorAll('.arb-question').forEach(function (question) {
-        question.querySelectorAll('.arb-option').forEach(function (option) {
-          option.addEventListener('click', function () {
-            if (question.dataset.locked) return;
-            question.dataset.locked = 'true';
-            question.querySelectorAll('.arb-option').forEach(function (item) {
-              item.disabled = true;
-              if (item.dataset.choice === question.dataset.answer) item.classList.add('is-correct');
-            });
-            var correct = option.dataset.choice === question.dataset.answer;
-            if (!correct) option.classList.add('is-wrong');
-            question.querySelector('.arb-feedback').textContent = (correct ? 'Correct. ' : 'Not quite. ') + question.dataset.explanation;
-          });
-        });
-      });
-    })();
-  </script>
+  <script src="../../../assets/js/sim-kit.js"></script>
+  <script src="../../../assets/js/arduino-art.js"></script>
+  <script src="../../../assets/js/lessons/arduino-robot-brain.js"></script>
   <script src="../../../assets/js/lessons/arduino-brain-connections.js"></script>
   <script src="../../../assets/js/photo-lightbox.js"></script>
   <script src="../../../assets/js/classroom-animations.js"></script>

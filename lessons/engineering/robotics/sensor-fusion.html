@@ -32,8 +32,9 @@
             <div>
               <p class="ra-kicker">Engineering · Robot Autonomy · Perception</p>
               <h1 id="ra-title">Sensor Fusion: <span>Two Liars, One Truth</span></h1>
-              <p class="ra-lede">A gyroscope is smooth and quick, but it slowly drifts off. An accelerometer never drifts, but it jitters and gets fooled by every bump. Neither can be trusted alone. <strong><span data-glossary="sensor fusion">Sensor fusion</span></strong> blends them so each covers the other's weakness. It's how a phone knows which way is up, a drone stays level, and a self-balancing robot stays upright.</p>
-              <div class="ra-meta"><span>Grades 8–12</span><span>45–60 minutes</span><span>Live IMU sim</span><span>Filters</span></div>
+              <p class="ra-lede" data-ra-for="explorer">How does a robot know if it is tipping over? It has a tiny chip that feels turning and feels which way is down. Each sense makes mistakes, so the robot listens to both and mixes them together. You do the same thing every time you stand on one foot!</p>
+              <p class="ra-lede" data-ra-for="builder engineer">A gyroscope is smooth and quick, but it slowly drifts off. An accelerometer never drifts, but it jitters and gets fooled by every bump. Neither can be trusted alone. <strong><span data-glossary="sensor fusion">Sensor fusion</span></strong> blends them so each covers the other's weakness. It's how a phone knows which way is up, a drone stays level, and a self-balancing robot stays upright.</p>
+              <div class="ra-meta"><span>Ages 6–18 · 3 levels</span><span>45–60 minutes</span><span>Live IMU sim</span><span>Filters</span></div>
               <a class="ra-back" href="../../../steam-lessons.html#module-engineering">← Back to Engineering</a>
             </div>
             <svg class="ra-hero-art" viewBox="0 0 320 220" role="img" aria-labelledby="hero-art-title">
@@ -48,6 +49,32 @@
             </svg>
           </section>
 
+
+          <section class="ra-card ra-explorer" data-ra-for="explorer" data-ra-say style="--ra-accent:var(--ra-yellow);">
+            <span data-ra-mascot="think"></span>
+            <div>
+              <p class="ra-label">Explorer · Story time</p><h2>Two helpers who both make mistakes</h2>
+              <div data-ra-say-slot></div>
+              <div class="ra-bubble">
+                <p>I’m Bolt, and I balance on one wheel. To stay up, I need to know how much I’m leaning. I have two helpers inside me.</p>
+                <p><strong>Spinny</strong> (the gyroscope) feels every turn. Spinny is smooth and fast, but slowly forgets where “straight up” is.</p>
+                <p><strong>Droppy</strong> (the accelerometer) always knows which way is down, because it feels gravity. But Droppy is jumpy. Every bump makes Droppy shout the wrong answer.</p>
+                <p>So I listen to Spinny for quick moves, and to Droppy a tiny bit, to remember which way is down. Mixing helpers like this is called <strong>sensor fusion</strong>.</p>
+              </div>
+              <ul class="ra-words" aria-label="Words to know">
+                <li><b>Sensor</b> · a part that feels or measures</li><li><b>Tilt</b> · how much something leans</li><li><b>Gravity</b> · the pull toward the ground</li><li><b>Mix / fuse</b> · put together</li>
+              </ul>
+              <div class="ra-try">
+                <h3>Try it with your body</h3>
+                <ol>
+                  <li><strong>Flamingo test.</strong> Stand on one foot with your eyes open. Count to 10. Now close your eyes and try again. Which was harder? Your eyes and your inner ear are two sensors, and your brain fuses them.</li>
+                  <li><strong>Spin and stop.</strong> Spin slowly five times, then stop. The room seems to keep moving! Your inner ear “drifted,” just like Spinny. Look at something still to fix it.</li>
+                  <li><strong>Balance a ruler.</strong> Balance a ruler or broom upright on your hand. You watch the top and move your hand. That is exactly what a balancing robot does, many times a second.</li>
+                </ol>
+              </div>
+            </div>
+          </section>
+
           <section class="ra-card" style="--ra-accent:var(--ra-blue);">
             <p class="ra-label">Meet the sensors</p><h2>Every sensor lies a little</h2>
             <p>An <strong><span data-glossary="inertial measurement unit">IMU</span></strong> (inertial measurement unit) is a tiny chip holding a gyroscope and an accelerometer — the same chip as in the <a class="ra-more" href="../arduino-and-electronics/sensor-modules.html">MPU-6050 module in your sensor kit</a>. To find tilt, you can use either one. Both are wrong, in <em>opposite</em> ways.</p>
@@ -60,18 +87,21 @@
 
           <section class="ra-card" style="--ra-accent:var(--ra-lime);">
             <p class="ra-label">Sim · Tilt estimator</p><h2>Fuse a gyro and an accelerometer</h2>
-            <p>The blue robot body wobbles. Its IMU reads 100 times a second. Each line is a different way to <em>estimate</em> the tilt. The white line is the truth, which a real robot never gets to see. Watch the scoreboard below the chart.</p>
+            <p data-ra-for="explorer">The robot wobbles on its wheel. Each colored line is a guess of how much it leans. The <strong>white</strong> line is the real answer. Turn lines on and off with the checkboxes. Which guess stays closest to white?</p>
+            <p data-ra-for="builder engineer">The blue robot body wobbles. Its IMU reads 100 times a second. Each line is a different way to <em>estimate</em> the tilt. The white line is the truth, which a real robot never gets to see. Watch the scoreboard below the chart.</p>
             <div class="ra-sim">
               <div class="ra-sim-grid">
                 <div>
-                  <canvas id="sf-canvas" width="640" height="320" aria-label="Tilt estimation chart comparing gyro, accelerometer, complementary filter, and Kalman filter against the true angle"></canvas>
-                  <p class="ra-readout" id="sf-readout" aria-live="off"></p>
+                  <canvas id="sf-canvas" width="640" height="320" role="img" aria-label="Left: a balancing robot tilting, with dashed lines for each estimate. Right: a scrolling chart of the true tilt and each estimate over the last 8 seconds. Press Describe the chart for a summary."></canvas>
+                  <p class="ra-readout" id="sf-readout" aria-live="off" data-ra-for="builder engineer"></p>
+                  <div class="ra-btns" style="margin-top:.5rem;"><button class="ra-btn" id="sf-describe" type="button">Describe the chart</button></div>
+                  <p class="ra-readout" id="sf-description"></p>
                   <div class="ra-controls"><fieldset><legend>Show</legend><div class="ra-btns" style="gap:.3rem .9rem;">
-                    <label class="ra-check"><input type="checkbox" data-sf-show="truth" checked> <span style="color:#e8f6fb">True</span></label>
-                    <label class="ra-check"><input type="checkbox" data-sf-show="gyro" checked> <span style="color:#ff9a6b">Gyro only</span></label>
-                    <label class="ra-check"><input type="checkbox" data-sf-show="accel" checked> <span style="color:#70c8e5">Accel only</span></label>
-                    <label class="ra-check"><input type="checkbox" data-sf-show="comp" checked> <span style="color:#b8d84b">Complementary</span></label>
-                    <label class="ra-check"><input type="checkbox" data-sf-show="kalman"> <span style="color:#f2bf3f">Kalman</span></label>
+                    <label class="ra-check"><input type="checkbox" data-sf-show="truth" checked> <span style="color:#e8f6fb">True ━━</span></label>
+                    <label class="ra-check"><input type="checkbox" data-sf-show="gyro" checked> <span style="color:#ff9a6b">Gyro only ╍╍</span></label>
+                    <label class="ra-check"><input type="checkbox" data-sf-show="accel" checked> <span style="color:#70c8e5">Accel only ∿</span></label>
+                    <label class="ra-check"><input type="checkbox" data-sf-show="comp" checked> <span style="color:#b8d84b">Complementary ┈┈</span></label>
+                    <label class="ra-check"><input type="checkbox" data-sf-show="kalman"> <span style="color:#f2bf3f">Kalman ━ · ━</span></label>
                   </div></fieldset></div>
                 </div>
                 <div class="ra-controls">
@@ -91,19 +121,35 @@
                 </div>
               </div>
             </div>
-            <div class="ra-cols">
+            <div class="ra-cols" data-ra-for="explorer">
+              <article><h3>1 · Spinny forgets</h3><p>Choose <strong>Hold still</strong>. Wait 10 seconds. The orange gyro line slowly floats away even though the robot is still!</p></article>
+              <article><h3>2 · Droppy jumps</h3><p>Turn on <strong>Bumpy floor</strong>. Watch the blue line jump with every bump.</p></article>
+              <article><h3>3 · Better together</h3><p>Look at the green line. It is smooth like Spinny but does not float away. Press <strong>Describe the chart</strong> to check which guess is best.</p></article>
+            </div>
+            <div class="ra-cols" data-ra-for="builder engineer">
               <article><h3>1 · Drift</h3><p>Set movement to <strong>Hold still</strong> and wait. What happens to the gyro-only line? Set the bias to 0. Does the drift stop?</p></article>
               <article><h3>2 · Tune α</h3><p>Drag α to 0.5, then 0.999. Which extreme looks like the accelerometer, and which like the gyro? Find the α with the lowest error.</p></article>
               <article><h3>3 · Bumps</h3><p>Turn on the bumpy floor. Which estimate gets fooled most? Turn on Kalman and compare it to your best α.</p></article>
             </div>
           </section>
 
-          <section class="ra-card" style="--ra-accent:var(--ra-copper);">
+          <section class="ra-card" data-ra-for="builder engineer" style="--ra-accent:var(--ra-copper);">
             <p class="ra-label">The math, one line each</p><h2>Two classic filters</h2>
             <div class="ra-cols">
               <article><h3>Complementary filter</h3><p><code>angle = α·(angle + gyro·dt) + (1 − α)·accel</code></p><p>Each step: move the old angle by the gyro, then nudge it a tiny bit (1 − α) toward the accelerometer. The nudges are too small to pass noise through, but they add up enough to cancel drift. Five lines of Arduino code.</p></article>
               <article><h3>Kalman filter</h3><p>Rudolf Kálmán (1960). It keeps a best guess <em>and how uncertain it is</em>. It predicts with the gyro (uncertainty grows), then corrects with the accelerometer. Its weight is set by comparing the two uncertainties, not by hand.</p><p>This version also <strong>estimates the gyro's bias</strong> and subtracts it.</p></article>
               <article><h3>Where it flew</h3><p>A <span data-glossary="Kalman filter">Kalman filter</span> helped guide Apollo to the Moon. It fused the spacecraft's inertial sensors with radar and star sightings. Today it runs in every GPS receiver, phone, drone, and self-driving car.</p></article>
+            </div>
+          </section>
+
+
+          <section class="ra-card ra-deep" data-ra-for="engineer" style="--ra-accent:var(--ra-blue);">
+            <p class="ra-label">Engineer deep dive</p><h2>Filters as frequency and probability<span class="ra-badge">Ages 15+</span></h2>
+            <div class="ra-cols">
+              <article><h3>Why “complementary”</h3><p>The filter is a <strong>high-pass</strong> on the integrated gyro plus a <strong>low-pass</strong> on the accelerometer. The two transfer functions add to exactly 1, so they complement each other:</p><p class="ra-eq">H<sub>gyro</sub>(s) = τs / (τs + 1) &nbsp; H<sub>acc</sub>(s) = 1 / (τs + 1)</p><p>The crossover time constant is τ = α·Δt / (1 − α). With α = 0.98 and Δt = 0.01 s, τ ≈ 0.49 s. Slower than that, trust the accelerometer. Faster, trust the gyro.</p></article>
+              <article><h3>Kalman, in matrices</h3><p>State x = [angle, bias]<sup>T</sup>. Predict, then update:</p><p class="ra-eq">x̂⁻ = F x̂ + B u<br>P⁻ = F P Fᵀ + Q<br>K = P⁻Hᵀ (H P⁻Hᵀ + R)⁻¹<br>x̂ = x̂⁻ + K (z − H x̂⁻)<br>P = (I − K H) P⁻</p><p>Here F = [[1, −Δt], [0, 1]], u = gyro rate, H = [1, 0], z = accelerometer angle. The sim's <code>kalmanStep()</code> is these five lines written out by hand.</p></article>
+              <article><h3>Tuning Q and R</h3><p>R is how noisy you think the accelerometer is; Q is how much you think the true angle and bias can wander. Raise R and K shrinks, so the filter behaves like a high α. The Kalman filter is the <em>optimal</em> linear estimator only when the noise really is Gaussian with those variances.</p></article>
+              <article><h3>Beyond linear</h3><p>Real orientation is 3-D, and rotations don't add like vectors. Drones use quaternions with an <strong>Extended Kalman Filter</strong> (EKF) or the Madgwick/Mahony filters. Self-driving cars fuse LiDAR, GPS, wheel odometry, and IMU in one big EKF or factor graph.</p></article>
             </div>
           </section>
 
@@ -145,6 +191,7 @@
               <a href="motion-planning.html"><b>Motion Planning</b>RRT, potential fields, DWA, kinematics</a>
               <a href="../arduino-and-electronics/pid-control.html"><b>PID Control</b>Hold a target with feedback</a>
               <a href="../../computer-science/algorithms-and-ai/state-machines.html"><b>State Machines</b>Organize robot behaviors</a>
+              <a href="robot-arms.html"><b>Robot Arms</b>Joints, reach, forward &amp; inverse kinematics</a>
               <a href="robot-reinforcement-learning.html"><b>Reinforcement Learning</b>Learn a policy from rewards</a>
             </nav>
           </section>
@@ -153,10 +200,14 @@
           <section class="ra-card" style="--ra-accent:var(--ra-red);">
             <p class="ra-label">Quick check</p><h2>Lock it in</h2>
             <div class="ra-quiz">
-              <div class="ra-question" data-answer="b" data-explanation="Integrating the rate adds the small bias every step, so the error grows without limit."><p>1. Why does a gyro-only angle drift even when the robot sits still?</p><div class="ra-options"><button class="ra-option" data-choice="a">Gravity pulls on the gyro</button><button class="ra-option" data-choice="b">A small bias is added up every time step</button><button class="ra-option" data-choice="c">The accelerometer interferes with it</button><button class="ra-option" data-choice="d">The battery runs down</button></div><p class="ra-feedback" aria-live="polite"></p></div>
-              <div class="ra-question" data-answer="d" data-explanation="Driving, braking, and bumps are accelerations too, and the sensor can't tell them apart from gravity."><p>2. Why do bumps fool the accelerometer?</p><div class="ra-options"><button class="ra-option" data-choice="a">They change gravity</button><button class="ra-option" data-choice="b">They reset the chip</button><button class="ra-option" data-choice="c">They make the gyro drift</button><button class="ra-option" data-choice="d">Any push is an acceleration that looks like tilt</button></div><p class="ra-feedback" aria-live="polite"></p></div>
-              <div class="ra-question" data-answer="a" data-explanation="With α = 0.98, 98% of each update comes from the gyro path; only 2% leans toward the accelerometer."><p>3. In a complementary filter with α = 0.98, which sensor handles fast changes?</p><div class="ra-options"><button class="ra-option" data-choice="a">The gyroscope</button><button class="ra-option" data-choice="b">The accelerometer</button><button class="ra-option" data-choice="c">Both equally</button><button class="ra-option" data-choice="d">Neither</button></div><p class="ra-feedback" aria-live="polite"></p></div>
-              <div class="ra-question" data-answer="c" data-explanation="A Kalman filter tracks uncertainty and computes the blend from it, and can estimate hidden values like gyro bias."><p>4. What does a Kalman filter do that a basic complementary filter doesn't?</p><div class="ra-options"><button class="ra-option" data-choice="a">Uses only one sensor</button><button class="ra-option" data-choice="b">Ignores noise</button><button class="ra-option" data-choice="c">Tracks its own uncertainty and sets the blend from it</button><button class="ra-option" data-choice="d">Needs no math</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="explorer" data-answer="a" data-explanation="The accelerometer feels gravity, the pull toward the ground, so it always knows which way is down."><p>1. Which helper always knows which way is down?</p><div class="ra-options"><button class="ra-option" data-choice="a">Droppy, the accelerometer, because it feels gravity</button><button class="ra-option" data-choice="b">Spinny, the gyroscope</button><button class="ra-option" data-choice="c">The wheel</button><button class="ra-option" data-choice="d">The battery</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="explorer" data-answer="c" data-explanation="Each sensor makes different mistakes. Mixing them lets each one fix the other's mistakes."><p>2. Why does the robot listen to both helpers?</p><div class="ra-options"><button class="ra-option" data-choice="a">Because two is a lucky number</button><button class="ra-option" data-choice="b">Because one helper is always perfect</button><button class="ra-option" data-choice="c">Because each one fixes the other's mistakes</button><button class="ra-option" data-choice="d">It only needs one</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="explorer" data-answer="b" data-explanation="With your eyes closed you lose one sensor, so your brain has less to fuse and balance is harder."><p>3. Why is it harder to stand on one foot with your eyes closed?</p><div class="ra-options"><button class="ra-option" data-choice="a">Your feet get tired</button><button class="ra-option" data-choice="b">Your brain loses one of its sensors</button><button class="ra-option" data-choice="c">Gravity gets stronger</button><button class="ra-option" data-choice="d">It isn't harder</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="builder engineer" data-answer="b" data-explanation="Integrating the rate adds the small bias every step, so the error grows without limit."><p>1. Why does a gyro-only angle drift even when the robot sits still?</p><div class="ra-options"><button class="ra-option" data-choice="a">Gravity pulls on the gyro</button><button class="ra-option" data-choice="b">A small bias is added up every time step</button><button class="ra-option" data-choice="c">The accelerometer interferes with it</button><button class="ra-option" data-choice="d">The battery runs down</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="builder engineer" data-answer="d" data-explanation="Driving, braking, and bumps are accelerations too, and the sensor can't tell them apart from gravity."><p>2. Why do bumps fool the accelerometer?</p><div class="ra-options"><button class="ra-option" data-choice="a">They change gravity</button><button class="ra-option" data-choice="b">They reset the chip</button><button class="ra-option" data-choice="c">They make the gyro drift</button><button class="ra-option" data-choice="d">Any push is an acceleration that looks like tilt</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="builder engineer" data-answer="a" data-explanation="With α = 0.98, 98% of each update comes from the gyro path; only 2% leans toward the accelerometer."><p>3. In a complementary filter with α = 0.98, which sensor handles fast changes?</p><div class="ra-options"><button class="ra-option" data-choice="a">The gyroscope</button><button class="ra-option" data-choice="b">The accelerometer</button><button class="ra-option" data-choice="c">Both equally</button><button class="ra-option" data-choice="d">Neither</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="builder engineer" data-answer="c" data-explanation="A Kalman filter tracks uncertainty and computes the blend from it, and can estimate hidden values like gyro bias."><p>4. What does a Kalman filter do that a basic complementary filter doesn't?</p><div class="ra-options"><button class="ra-option" data-choice="a">Uses only one sensor</button><button class="ra-option" data-choice="b">Ignores noise</button><button class="ra-option" data-choice="c">Tracks its own uncertainty and sets the blend from it</button><button class="ra-option" data-choice="d">Needs no math</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="engineer" data-answer="d" data-explanation="τ = α·Δt/(1 − α) = 0.99 × 0.01 / 0.01 = 0.99 s. Higher α means a slower crossover, so the gyro is trusted for longer."><p>5. A complementary filter runs at 100 Hz with α = 0.99. What is its crossover time constant?</p><div class="ra-options"><button class="ra-option" data-choice="a">0.01 s</button><button class="ra-option" data-choice="b">0.1 s</button><button class="ra-option" data-choice="c">0.49 s</button><button class="ra-option" data-choice="d">About 1 s</button></div><p class="ra-feedback" aria-live="polite"></p></div>
             </div>
           </section>
         </main>
@@ -174,6 +225,8 @@
           </div>
           <div class="ll-pane" id="ra-teacher">
             <span class="ll-label">Teaching notes</span>
+            <div class="ll-info"><strong>Three levels</strong>The Explorer / Builder / Engineer switch at the top changes the words, activities, and quiz. Link to a level with <code>?level=explorer</code> or <code>?level=engineer</code>.</div>
+            <div class="ll-info"><strong>Explorer (K–4)</strong>Start with the flamingo test and spin-and-stop. Spinny and Droppy give young students names for the gyro and accelerometer.</div>
             <div class="ll-info"><strong>Launch</strong>Ask two students to estimate the room temperature: one "fast but biased" (adds 3° every guess), one "right on average but random." Whose answer do you want? Both.</div>
             <div class="ll-info"><strong>Hardware tie-in</strong>With an MPU-6050 and Arduino, print raw gyro angle and accelerometer angle side by side in the Serial Plotter, then add the five-line complementary filter.</div>
             <div class="ll-info"><strong>Discussion</strong>Why does the phone screen sometimes rotate the wrong way when you lie down? (Only the accelerometer is used.)</div>

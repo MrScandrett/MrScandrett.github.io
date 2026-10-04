@@ -167,21 +167,17 @@
             <p>Any analog sensor works the same way here: a photoresistor (LDR), a potentiometer, or a temperature sensor like a TMP36 all output a variable voltage that <code>A0</code> can read. Wire the sensor's signal leg to <code>A0</code>, power to 5V, and <span data-glossary="circuit ground">ground</span> to GND.</p>
             <div class="s2w-wiring">
               <div class="s2w-diagram">
-                <svg viewBox="0 0 620 260" role="img" aria-labelledby="s2w-wiring-title s2w-wiring-desc">
-                  <title id="s2w-wiring-title">Analog sensor wired to the A0 pin on an Arduino</title><desc id="s2w-wiring-desc">The sensor's signal leg connects to analog pin A0, with power from 5V and a shared ground.</desc>
-                  <rect x="40" y="30" width="230" height="190" rx="10" fill="#dbe6ec" stroke="#1b2e3f" stroke-width="3"/>
-                  <text x="155" y="58" text-anchor="middle" font-family="IBM Plex Mono" font-size="15" font-weight="700" fill="#1b2e3f">ARDUINO</text>
-                  <circle cx="270" cy="90" r="8" fill="#c65e2e"/><text x="238" y="78" text-anchor="end" font-family="IBM Plex Mono" font-size="13" fill="#1b2e3f">5V</text>
-                  <circle cx="270" cy="130" r="8" fill="#2b6ea3"/><text x="238" y="118" text-anchor="end" font-family="IBM Plex Mono" font-size="13" fill="#1b2e3f">A0</text>
-                  <circle cx="270" cy="170" r="8" fill="#12202a"/><text x="238" y="158" text-anchor="end" font-family="IBM Plex Mono" font-size="13" fill="#1b2e3f">GND</text>
-                  <rect x="440" y="70" width="90" height="110" rx="6" fill="#f2a53f" stroke="#8a5a1e" stroke-width="2"/>
-                  <text x="485" y="130" text-anchor="middle" font-family="IBM Plex Mono" font-size="12" font-weight="700" fill="#3a2708">SENSOR</text>
-                  <path d="M270 90H400V80H440" fill="none" stroke="#c65e2e" stroke-width="4"/>
-                  <path d="M270 130H400V125H440" fill="none" stroke="#2b6ea3" stroke-width="4"/>
-                  <path d="M270 170H400V180H440" fill="none" stroke="#12202a" stroke-width="4"/>
-                  <text x="405" y="72" font-family="IBM Plex Mono" font-size="11" fill="#8a3d20">power</text>
-                  <text x="405" y="117" font-family="IBM Plex Mono" font-size="11" fill="#1a5a8a">signal</text>
-                  <text x="405" y="200" font-family="IBM Plex Mono" font-size="11" fill="#1b2e3f">ground</text>
+                <svg id="s2w-wiring" viewBox="0 0 620 300" role="img" aria-labelledby="s2w-wiring-title s2w-wiring-desc">
+                  <title id="s2w-wiring-title">Analog sensor wired to the A0 pin on an Arduino Uno</title><desc id="s2w-wiring-desc">The sensor's signal leg connects to analog pin A0, with power from the 5V pin and a shared ground from a GND pin, all on the Uno's bottom headers.</desc>
+                  <g id="s2w-uno" transform="translate(28 10) scale(.92)"></g>
+                  <rect x="460" y="60" width="96" height="120" rx="8" fill="#f2a53f" stroke="#8a5a1e" stroke-width="2"/>
+                  <circle cx="508" cy="104" r="20" fill="#fbe3b9" stroke="#8a5a1e" stroke-width="2"/><path d="M496 104h24M508 92v24" stroke="#8a5a1e" stroke-width="2"/>
+                  <text x="508" y="150" text-anchor="middle" font-family="IBM Plex Mono" font-size="12" font-weight="700" fill="#3a2708">SENSOR</text>
+                  <g font-family="IBM Plex Mono" font-size="10" font-weight="700" fill="#3a2708"><text x="470" y="172">+</text><text x="503" y="172">S</text><text x="536" y="172">−</text></g>
+                  <path id="s2w-w-5v" fill="none" stroke="#c65e2e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path id="s2w-w-a0" fill="none" stroke="#2b6ea3" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path id="s2w-w-gnd" fill="none" stroke="#12202a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                  <g font-family="IBM Plex Mono" font-size="11" font-weight="600"><text x="300" y="241" fill="#8a3d20">power · 5V</text><text x="300" y="259" fill="#1a5a8a">signal · A0</text><text x="300" y="277" fill="#1b2e3f">ground · GND</text></g>
                 </svg>
               </div>
               <pre class="s2w-code" aria-label="Arduino sensor read and Serial print example"><code><span class="k">const int</span> sensorPin = A0;
@@ -327,6 +323,24 @@ connect.addEventListener(<span class="s">'click'</span>, <span class="k">async</
         });
       });
     });
+  </script>
+  <script src="../../../assets/js/arduino-art.js"></script>
+  <script>
+    // Draw the Uno with the shared art engine, then run each wire from its real header pin
+    // (GND#2 is the power-header GND next to 5V; plain GND is the one on the digital header).
+    (function () {
+      var host = document.getElementById('s2w-uno');
+      if (!host || !window.ArduinoArt) return;
+      var uno = ArduinoArt.create('uno-r3');
+      host.appendChild(uno.g);
+      var T = { x: 28, y: 10, s: .92 };
+      function at(pin) { var p = uno.pins[pin]; return [T.x + p[0] * T.s, T.y + p[1] * T.s]; }
+      var dropY = { '5V': 246, A0: 264, 'GND#2': 282 }, laneX = { '5V': 474, A0: 508, 'GND#2': 542 };
+      [['5V', 's2w-w-5v'], ['A0', 's2w-w-a0'], ['GND#2', 's2w-w-gnd']].forEach(function (w) {
+        var p = at(w[0]), y = dropY[w[0]], x = laneX[w[0]];
+        document.getElementById(w[1]).setAttribute('d', 'M' + p[0] + ' ' + p[1] + 'V' + y + 'H' + x + 'V180');
+      });
+    })();
   </script>
   <script src="../../../assets/js/classroom-animations.js"></script>
   <script src="../../../assets/js/lesson-layout.js"></script>

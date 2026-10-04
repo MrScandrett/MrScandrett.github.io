@@ -56,17 +56,30 @@
   var targets = document.getElementById('abl-targets');
   var brain = document.getElementById('abl-brain');
   var trace = document.getElementById('abl-active-trace');
+  trace.setAttribute('vector-effect', 'non-scaling-stroke');
+  var focus = document.createElement('div');
+  focus.className = 'abl-focus'; focus.hidden = true; focus.setAttribute('aria-hidden', 'true');
+  map.appendChild(focus);
+  var labelsBtn = document.createElement('button');
+  labelsBtn.type = 'button'; labelsBtn.className = 'abl-labels-toggle'; labelsBtn.setAttribute('aria-pressed', 'false'); labelsBtn.textContent = 'Show all labels';
+  labelsBtn.addEventListener('click', function () {
+    var on = !map.classList.contains('is-labelled');
+    map.classList.toggle('is-labelled', on);
+    labelsBtn.setAttribute('aria-pressed', String(on));
+    labelsBtn.textContent = on ? 'Hide labels' : 'Show all labels';
+  });
+  map.parentNode.insertBefore(labelsBtn, map.nextSibling);
   function text(id, value) { document.getElementById(id).textContent = value; }
   var conceptKey = 'mcu';
-  function inspect(item, x, y, selected, concept) {
+  // hit: { box: [x0, y0, x1, y1] } in % of the map, or null for "no physical spot"
+  function inspect(item, hit, selected, concept) {
     conceptKey = concept || 'mcu';
     document.getElementById('abl-learn-concept').textContent = 'Learn the concept behind ' + item[1];
     text('abl-kind', item[0]); text('abl-name', item[1]); text('abl-meaning', item[2]);
     document.getElementById('abl-use').innerHTML = '<strong>Try it:</strong> ' + item[3];
     text('abl-code', item[4]);
     document.getElementById('abl-route').innerHTML = item[4].split(' → ').map(function (part, i) { return (i ? '<b>→</b>' : '') + '<span>' + part + '</span>'; }).join('');
-    var brainAt = boards[current].brainAt || [50, 50];
-    trace.setAttribute('d', 'M ' + (x || brainAt[0]) + ' ' + (y || brainAt[1]) + ' L ' + brainAt[0] + ' ' + brainAt[1]);
+    drawRoute(hit, selected === brain);
     document.querySelectorAll('.abl-target,.abl-pin,.abl-brain').forEach(function (el) { el.setAttribute('aria-pressed', String(el === selected)); });
   }
   function brainInfo() { var b = boards[current]; return ['MAIN COMPUTING BRAIN', b.brainName, current === 'q' ? 'This real-time microcontroller runs Arduino sketches and handles GPIO predictably while the Linux MPU handles heavier work.' : 'This main microcontroller runs your sketch, reads inputs, follows instructions, and changes outputs.', current === 'q' ? 'Use it for motor pulses, sensor timing, and immediate physical control.' : 'Read sensors and control outputs. Larger loads still need a driver and separate power.', 'sketch → ' + b.brainName + ' → GPIO pins']; }
@@ -97,12 +110,88 @@
   }
   function renderPins(b) {
     var names = ['Digital GPIO','Analog','Power & control','Communication labels'], root = document.getElementById('abl-pin-groups'); root.innerHTML = '';
-    b.pins.forEach(function (pins, group) { var box = document.createElement('div'), title = document.createElement('strong'), list = document.createElement('div'); box.className = 'abl-pin-group'; list.className = 'abl-pins'; title.textContent = names[group]; pins.forEach(function (pin) { var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'abl-pin'; btn.textContent = pin; btn.setAttribute('aria-label','Inspect pin ' + pin); btn.addEventListener('click', function () { inspect(pinInfo(pin, group), group === 0 ? 86 : 14, group === 2 ? 72 : 30, btn, pinConcept(pin, group)); }); list.appendChild(btn); }); box.appendChild(title); box.appendChild(list); root.appendChild(box); });
+    b.pins.forEach(function (pins, group) { var box = document.createElement('div'), title = document.createElement('strong'), list = document.createElement('div'); box.className = 'abl-pin-group'; list.className = 'abl-pins'; title.textContent = names[group]; pins.forEach(function (pin) { var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'abl-pin'; btn.textContent = pin; btn.setAttribute('aria-label','Inspect pin ' + pin); btn.addEventListener('click', function () { inspect(pinInfo(pin, group), pinHit(pin), btn, pinConcept(pin, group)); }); list.appendChild(btn); }); box.appendChild(title); box.appendChild(list); root.appendChild(box); });
+  }
+  // Board drawings come from the shared ArduinoArt engine; hotspots sit on the drawn parts.
+  var artModels = { uno: 'uno-r3', nano: 'nano-every', r4: 'uno-r4-wifi', q: 'uno-q' };
+  var art = null;
+  function drawArt(key) {
+    var old = map.querySelector('.abl-art');
+    if (old) old.remove();
+    if (!window.ArduinoArt) { art = null; return; }
+    art = window.ArduinoArt.svg(artModels[key], { decorative: true, padding: 6 });
+    art.svg.classList.add('abl-art');
+    map.insertBefore(art.svg, map.firstChild);
+    map.style.aspectRatio = art.viewBox[2] + ' / ' + art.viewBox[3];
+    var box = art.boxes.mcu;
+    if (box) {
+      var a = art.percent([box[0], box[1]]), z = art.percent([box[0] + box[2], box[1] + box[3]]);
+      brain.style.left = ((a[0] + z[0]) / 2) + '%'; brain.style.top = ((a[1] + z[1]) / 2) + '%';
+      brain.style.width = (z[0] - a[0] + 3) + '%'; brain.style.height = (z[1] - a[1] + 5) + '%';
+      boards[key].brainAt = [(a[0] + z[0]) / 2, (a[1] + z[1]) / 2];
+    }
+  }
+  function partAt(p) {
+    var pt = art && art.anchors[p[0]];
+    return pt ? art.percent(pt) : [p[2], p[3]];
+  }
+  function pctBox(b) { var a = art.percent([b[0], b[1]]), z = art.percent([b[0] + b[2], b[1] + b[3]]); return [a[0], a[1], z[0], z[1]]; }
+  // a point-sized part (pin, LED) gets a small box around it so it can be outlined
+  function pointBox(pt, w, h) { var c = art.percent(pt), dw = (w || 7) / art.viewBox[2] * 50, dh = (h || 7) / art.viewBox[3] * 50; return [c[0] - dw, c[1] - dh, c[0] + dw, c[1] + dh]; }
+  function partHit(p) {
+    if (!art) return null;
+    if (art.boxes[p[0]]) return { box: pctBox(art.boxes[p[0]]) };
+    if (art.anchors[p[0]]) return { box: pointBox(art.anchors[p[0]], 12, 12) };
+    return null;
+  }
+  // Map the pin-bank names (D13, ~D3, D0/RX, 3V3, COPI…) onto the drawn header labels.
+  function pinKey(s) {
+    s = String(s).split('/')[0].replace('~', '');
+    if (/^(RX←0|RX0|RX|D0)$/.test(s)) return '0';
+    if (/^(TX→1|TX1|TX|D1)$/.test(s)) return '1';
+    s = s.replace(/ OUT$/, '');
+    if (s === 'RST') return 'RESET';
+    if (s === '3V3') return '3.3V';
+    var m = /^D(\d+)$/.exec(s);
+    return m ? m[1] : s;
+  }
+  var BUS = { COPI: '11', CIPO: '12', SCK: '13', SDA: 'A4', SCL: 'A5' };
+  function pinHit(pin) {
+    if (!art) return null;
+    if (pin === 'Qwiic' && art.boxes.qwiic) return { box: pctBox(art.boxes.qwiic) };
+    var want = pinKey(pin), found = null;
+    art.pinList.forEach(function (p) { if (!found && pinKey(p.label) === want) found = p; });
+    if (!found && BUS[want]) art.pinList.forEach(function (p) { if (!found && pinKey(p.label) === BUS[want]) found = p; });
+    return found ? { box: pointBox([found.x, found.y], 9, 13) } : null;
+  }
+  // where a line from c heading toward t leaves box b (all in %)
+  function edgeOf(b, t) {
+    var cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2, dx = t[0] - cx, dy = t[1] - cy;
+    var hw = (b[2] - b[0]) / 2 + .8, hh = (b[3] - b[1]) / 2 + 1.2;
+    var k = Math.min(dx ? hw / Math.abs(dx) : Infinity, dy ? hh / Math.abs(dy) : Infinity);
+    return k >= 1 ? [cx, cy] : [cx + dx * k, cy + dy * k];
+  }
+  function drawRoute(hit, isBrain) {
+    var mcu = art && art.boxes.mcu ? pctBox(art.boxes.mcu) : null;
+    if (!hit || isBrain || !mcu) { trace.setAttribute('d', ''); focus.hidden = true; return; }
+    var b = hit.box;
+    focus.hidden = false;
+    focus.style.left = b[0] + '%'; focus.style.top = b[1] + '%';
+    focus.style.width = (b[2] - b[0]) + '%'; focus.style.height = (b[3] - b[1]) + '%';
+    var pc = [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2], mc = [(mcu[0] + mcu[2]) / 2, (mcu[1] + mcu[3]) / 2];
+    var from = edgeOf(b, mc), to = edgeOf(mcu, pc);
+    trace.setAttribute('d', 'M ' + from[0] + ' ' + from[1] + ' L ' + to[0] + ' ' + to[1]);
+  }
+  // small corner marker; the name only shows on hover/focus/selection or "Show all labels"
+  function markerAt(p) {
+    if (art && art.boxes[p[0]]) { var b = pctBox(art.boxes[p[0]]); return [b[2] - .4, b[1] + .6]; }
+    if (art && art.anchors[p[0]]) { var q = pointBox(art.anchors[p[0]], 12, 12); return [q[2] + .6, q[1] - .4]; }
+    return partAt(p);
   }
   function renderBoard(key) {
-    current = key; var b = boards[key]; text('abl-board-name', b.name); text('abl-board-sub', b.sub); text('abl-note', b.note); map.className = 'abl-board ' + (b.className || ''); map.setAttribute('aria-label',(b.credit ? 'Interactive annotated photograph of ' : 'Interactive conceptual top view of ') + b.name); brain.innerHTML = b.brain; brain.style.left = b.brainAt[0] + '%'; brain.style.top = b.brainAt[1] + '%';
+    current = key; var b = boards[key]; drawArt(key); text('abl-board-name', b.name); text('abl-board-sub', b.sub); text('abl-note', b.note); map.className = 'abl-board ' + (b.className || '') + (labelsBtn.getAttribute('aria-pressed') === 'true' ? ' is-labelled' : ''); map.setAttribute('aria-label','Interactive illustrated top view of ' + b.name); brain.innerHTML = b.brain; brain.style.left = b.brainAt[0] + '%'; brain.style.top = b.brainAt[1] + '%';
     var credit = document.getElementById('abl-credit'), creditLink = document.getElementById('abl-credit-link');
-    credit.hidden = !b.credit; document.getElementById('abl-map-note').textContent = b.credit ? 'The photograph shows the real board; the yellow route is a conceptual signal path, not an exact microscopic copper trace.' : 'No openly licensed UNO Q product photograph was verified, so this board remains an honest conceptual map.';
+    credit.hidden = !b.credit; document.getElementById('abl-map-note').textContent = b.credit ? 'A simplified drawing of the real board (photo below). Tap a marker or the main chip; the yellow route is a conceptual signal path, not an exact copper trace.' : 'No openly licensed UNO Q product photograph was verified, so this board appears only as a simplified drawing. Part placement is approximate.';
     if (b.credit) { text('abl-credit-name', b.credit[0]); creditLink.textContent = b.credit[1] + ' source'; creditLink.href = b.credit[2]; }
     var photo = document.getElementById('abl-photo');
     photo.hidden = !b.credit;
@@ -110,11 +199,11 @@
       var files = { uno: 'uno-r3', nano: 'nano-every', r4: 'uno-r4-wifi' };
       document.getElementById('abl-photo-img').src = '../../../assets/images/lessons/arduino-board-anatomy/' + files[key] + '.webp';
       document.getElementById('abl-photo-img').alt = b.name + ': enlarge to inspect the physical headers and printed labels';
-      text('abl-photo-caption', b.name + ': read the labels before choosing a wire. The photo shows physical placement; the yellow overlay is conceptual. Photo: ' + b.credit[0] + ' · ' + b.credit[1] + '.');
+      text('abl-photo-caption', b.name + ': read the labels before choosing a wire. Compare it with the drawing above. Photo: ' + b.credit[0] + ' · ' + b.credit[1] + '.');
     }
     document.querySelectorAll('.abl-tab').forEach(function (tab) { tab.setAttribute('aria-selected', String(tab.dataset.board === key)); tab.tabIndex = tab.dataset.board === key ? 0 : -1; }); targets.innerHTML = '';
-    b.parts.forEach(function (p) { var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'abl-target' + (p[1].length > 6 ? ' is-wide' : ''); btn.style.left = p[2] + '%'; btn.style.top = p[3] + '%'; btn.textContent = p[1]; btn.setAttribute('aria-label','Inspect ' + p[1]); btn.addEventListener('click', function () { inspect([p[4], p[1], p[5], p[6], p[7]], p[2], p[3], btn, ({usb:"usb",reset:"reset",bridge:"bridge",jack:"vin",reg:"regulator",led:"led",serialled:"led",icsp:"icsp",wifi:"wireless",matrix:"led",qwiic:"qwiic",dac:"dac",mpu:"mpu",rpc:"rpc",wireless:"wireless",carrier:"header"})[p[0]]); }); targets.appendChild(btn); });
-    renderPins(b); inspect(brainInfo(), b.brainAt[0], b.brainAt[1], brain);
+    b.parts.forEach(function (p) { var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'abl-target'; var at = markerAt(p); btn.style.left = at[0] + '%'; btn.style.top = at[1] + '%'; if (at[0] > 68) btn.classList.add('is-right'); if (at[1] < 16) btn.classList.add('is-low'); var tag = document.createElement('span'); tag.className = 'abl-tag'; tag.textContent = p[1]; btn.appendChild(tag); btn.setAttribute('aria-label','Inspect ' + p[1]); btn.addEventListener('click', function () { inspect([p[4], p[1], p[5], p[6], p[7]], partHit(p), btn, ({usb:"usb",reset:"reset",bridge:"bridge",jack:"vin",reg:"regulator",led:"led",serialled:"led",icsp:"icsp",wifi:"wireless",matrix:"led",qwiic:"qwiic",dac:"dac",mpu:"mpu",rpc:"rpc",wireless:"wireless",carrier:"header"})[p[0]]); }); targets.appendChild(btn); });
+    renderPins(b); inspect(brainInfo(), null, brain);
   }
   document.querySelectorAll('.abl-tab').forEach(function (tab) { tab.addEventListener('click', function () { renderBoard(tab.dataset.board); }); });
   document.querySelectorAll('.abl-tab').forEach(function (tab, index, tabs) {
@@ -124,7 +213,7 @@
       event.preventDefault(); renderBoard(tabs[next].dataset.board); tabs[next].focus();
     });
   });
-  brain.addEventListener('click', function () { var at = boards[current].brainAt; inspect(brainInfo(), at[0], at[1], brain); });
+  brain.addEventListener('click', function () { var at = boards[current].brainAt; inspect(brainInfo(), null, brain); });
   document.getElementById('abl-learn-concept').addEventListener('click', function () { window.ArduinoBoardGlossary.open(conceptKey); });
   document.querySelectorAll('[data-abl-term]').forEach(function (btn) { btn.setAttribute('aria-haspopup', 'dialog'); btn.addEventListener('click', function () { window.ArduinoBoardGlossary.open(btn.dataset.ablTerm); }); });
   renderBoard('uno');

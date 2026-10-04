@@ -158,6 +158,24 @@
       .decision-row { align-items: flex-start; flex-direction: column; gap: .15rem; }
       .decision-row .choice { padding-left: .2rem; }
     }
+
+    .frame-lab { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); gap:1rem; }
+    .lab-stage { position:relative; height:260px; overflow:hidden; background:#edf4ff; border:2px solid #334155; background-image:linear-gradient(#cbd5e155 1px,transparent 1px),linear-gradient(90deg,#cbd5e155 1px,transparent 1px); background-size:10% 26px; }
+    .lab-player { position:absolute; width:28px; height:28px; background:#2563eb; border:3px solid #172554; left:18%; top:30px; }
+    .lab-floor { position:absolute; top:210px; height:50px; width:100%; background:#cbd5e1; border-top:3px solid #334155; color:#172554; padding:8px; font-size:.8rem; }
+    .lab-controls { display:flex; flex-wrap:wrap; gap:.6rem; margin:.8rem 0; align-items:center; }
+    .lab-controls button, .lab-controls select { font:inherit; min-height:44px; padding:.45rem .7rem; background:var(--white,#fff); color:var(--text,#172554); border:1px solid var(--line,#64748b); border-radius:6px; }
+    .lab-controls label { display:flex; gap:.4rem; align-items:center; }
+    .lab-trace { padding:1rem; border-left:4px solid #2563eb; background:var(--acc-soft); }
+    .lab-trace ol { padding-left:1.2rem; line-height:1.7; }
+    .lab-readout { font-family:'JetBrains Mono',monospace; font-size:.85rem; }
+    .lesson-connections { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.8rem; }
+    .lesson-connections a { display:block; padding:.8rem; border:1px solid var(--line,#cbd5e1); border-radius:8px; color:var(--text); text-decoration:none; }
+    .lesson-connections a strong { display:block; text-decoration:underline; }
+    .lesson-connections a span { display:block; margin-top:.3rem; font-size:.87rem; line-height:1.5; }
+    button:focus-visible, select:focus-visible, a:focus-visible { outline:3px solid #2563eb; outline-offset:3px; }
+    @media(max-width:760px) { .frame-lab,.lesson-connections { grid-template-columns:1fr; } }
+    @media print { .lab-controls { display:none; } .lab-stage { print-color-adjust:exact; } }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -205,6 +223,8 @@
         </section>
 
         <nav class="lesson-path" aria-label="Jump to a lesson section">
+          <a href="#frame-lab">Visual lab</a>
+          <a href="#connections">Learning route</a>
           <a href="#quick-answer">Quick answer</a>
           <a href="#engine-tools">Engine tools</a>
           <a href="#compare">Compare</a>
@@ -214,9 +234,47 @@
           <a href="#choose">Choose</a>
         </nav>
 
+
+        <section class="cl-card" id="frame-lab" style="--card-accent:#2563eb;">
+          <h2>Watch the engine do one frame of work</h2>
+          <p><strong>Predict:</strong> if a player has gravity but no solid collision response, will the floor stop it? Test below. Each click advances one slowed teaching frame (0.1 seconds).</p>
+          <div class="frame-lab">
+            <div>
+              <div class="lab-stage" role="img" aria-label="Blue square player above a floor; position is reported below"><div class="lab-player" id="lab-player"></div><div class="lab-floor">Floor at y = 210 · y increases downward</div></div>
+              <div class="lab-controls">
+                <label>Input <select id="lab-input"><option value="0">No movement</option><option value="-1">Left</option><option value="1">Right</option></select></label>
+                <label><input type="checkbox" id="lab-gravity" checked> Gravity</label>
+                <label><input type="checkbox" id="lab-solid" checked> Solid floor</label>
+                <button type="button" id="lab-step">Step one frame</button><button type="button" id="lab-reset">Reset</button>
+              </div>
+              <p class="lab-readout" id="lab-state" aria-live="polite"></p>
+            </div>
+            <div class="lab-trace">
+              <strong>The engine repeats this work</strong>
+              <ol><li>Read the selected input.</li><li>Update velocity and position.</li><li>Resolve solid collisions.</li><li>Draw the new state.</li></ol>
+              <p id="lab-result" aria-live="polite"></p>
+              <p><strong>You still write the rules:</strong> what happens when a coin is collected, how to win, and what makes the game fun.</p>
+            </div>
+          </div>
+          <p><small>This is a simplified teaching model, not a running Kaplay or Phaser game. Real engines manage timing and their own update/physics order.</small></p>
+          <div class="try-it"><span class="icon" aria-hidden="true">🔎</span><strong>Test, compare, explain</strong><span>Step until the square lands. Reset, turn off “Solid floor,” and repeat. Then reset and turn off gravity. Explain which system changed each result. Use <a href="from-scratch-browser-game.html">the browser game loop lesson</a> to see the work an engine replaces.</span></div>
+        </section>
+        <section class="cl-card" id="connections">
+          <h2>Your route from idea to playable game</h2>
+          <p>Use these lessons when you need the next skill. The tutorials teach game mechanics; adapt their rules to your chosen engine.</p>
+          <div class="lesson-connections">
+            <a href="game-design-thinking.html"><strong>1. Design the experience</strong><span>Define the goal, player action, feedback, and challenge before choosing tools.</span></a>
+            <a href="from-scratch-browser-game.html"><strong>2. Understand the browser loop</strong><span>Connect input, update, collision, and drawing to the frame lab.</span></a>
+            <a href="pygame-game-loop.html"><strong>Compare with Python &amp; Pygame</strong><span>The language changes; the repeating input–update–draw pattern remains.</span></a>
+            <a href="game-tutorials/pong.html"><strong>3. Prototype with Pong</strong><span>Practice movement, bouncing, scoring, and a clear win condition.</span></a>
+            <a href="game-tutorials/maze.html"><strong>Build a maze</strong><span>Connect a grid-based level to tilemaps and wall collisions.</span></a>
+            <a href="game-jam-week.html"><strong>4. Plan, playtest, and share</strong><span>Choose a small scope, collect feedback, and finish a demo.</span></a>
+          </div>
+        </section>
+
         <section class="cl-card" id="quick-answer" style="--card-accent:#f59e0b;">
           <h2><span class="section-kicker">0</span>The quick answer</h2>
-          <p>If you are making your first JavaScript game, start with <strong>Kaplay</strong>. If you need bigger levels, maps, or more advanced tools, try <strong>Phaser</strong>.</p>
+          <p>For a first JavaScript prototype, <strong>Kaplay</strong> is a useful starting point. For a project built around tilemaps and scene organization, explore <strong>Phaser 3</strong>. Both can build substantial games; choose based on the features, examples, and code you understand.</p>
           <div class="quick-pick">
             <div class="pick kaplay"><span aria-hidden="true">🌱</span><strong>Kaplay = easier start</strong><small>Shorter code and quick prototypes</small></div>
             <div class="pick phaser"><span aria-hidden="true">🧰</span><strong>Phaser = more tools</strong><small>More setup, but room to build bigger</small></div>
@@ -259,7 +317,7 @@
               </ul>
             </div>
             <div class="engine-card phaser">
-              <h3>Phaser 3 <span class="badge">More Powerful</span></h3>
+              <h3>Phaser 3 <span class="badge">Scene &amp; Map Tools</span></h3>
               <ul>
                 <li>Uses an organized scene system</li>
                 <li>Includes several physics choices</li>
@@ -277,8 +335,8 @@
               <tr><td>Physics quality</td><td><span class="warn">⚠ Basic/Medium</span></td><td><span class="check">✓ Advanced</span></td></tr>
               <tr><td>Documentation</td><td><span class="check">✓ Good</span></td><td><span class="check">✓ Excellent</span></td></tr>
               <tr><td>Community size</td><td><span class="warn">⚠ Medium</span></td><td><span class="check">✓ Large</span></td></tr>
-              <tr><td>Game Jam speed</td><td><span class="check">✓ Best</span></td><td><span class="warn">⚠ Good</span></td></tr>
-              <tr><td>Large projects</td><td><span class="warn">⚠ Good</span></td><td><span class="check">✓ Best</span></td></tr>
+              <tr><td>Game Jam speed</td><td><span class="check">✓ Useful fit</span></td><td><span class="warn">✓ Also possible</span></td></tr>
+              <tr><td>Large projects</td><td><span class="warn">✓ Also possible</span></td><td><span class="check">✓ Useful fit</span></td></tr>
             </tbody>
           </table></div>
         </section>
@@ -286,7 +344,7 @@
         <!-- Scene lifecycle -->
         <section class="cl-card" id="scenes" style="--card-accent:#f97316;">
           <h2><span class="section-kicker">3</span>How a scene starts and runs</h2>
-          <p>A <strong>scene</strong> is one part of a game, such as the menu, a level, or the game-over screen. Phaser runs each scene in three steps:</p>
+          <p>A <strong>scene</strong> is one part of a game, such as the menu, a level, or the game-over screen. A common Phaser 3 scene uses these lifecycle methods (an optional <code>init()</code> can come first). Loading and setup happen when the scene starts; update repeats while it runs:</p>
 
           <div class="lifecycle">
             <div class="lc-box preload">
@@ -312,12 +370,12 @@
         <!-- Code comparison -->
         <section class="cl-card" id="code" style="--card-accent:#3b82f6;">
           <h2><span class="section-kicker">4</span>Compare the code</h2>
-          <p>Both examples make a square player that moves with the arrow keys. Switch tabs and look for what is the same and what is different.</p>
+          <p>These are partial API sketches, not complete playable games: the floor and collision setup are omitted. Switch tabs and match each instruction to the frame lab. Kaplay also needs <code>setGravity()</code> for falling; Phaser needs a floor collider or world bounds for <code>blocked.down</code> to become true.</p>
 
           <div style="margin-top:0.7rem;">
             <div class="code-tabs" role="tablist" aria-label="Game engine code examples">
               <button id="kaplay-tab" class="code-tab kaplay-tab active" type="button" role="tab" aria-selected="true" aria-controls="kaplay-code" onclick="switchTab('kaplay')">Kaplay</button>
-              <button id="phaser-tab" class="code-tab phaser-tab" type="button" role="tab" aria-selected="false" aria-controls="phaser-code" onclick="switchTab('phaser')">Phaser 3</button>
+              <button id="phaser-tab" tabindex="-1" class="code-tab phaser-tab" type="button" role="tab" aria-selected="false" aria-controls="phaser-code" onclick="switchTab('phaser')">Phaser 3</button>
             </div>
             <div id="kaplay-code" class="code-pane active" role="tabpanel" aria-labelledby="kaplay-tab">
               <div class="code-block">
@@ -399,8 +457,8 @@
             <h3>Choose based on your situation:</h3>
             <div class="decision-row"><span class="cond">First time building a game</span><span class="choice">→ Kaplay</span></div>
             <div class="decision-row"><span class="cond">Game Jam with 5-day limit</span><span class="choice">→ Kaplay</span></div>
-            <div class="decision-row"><span class="cond">Platformer with levels and maps</span><span class="choice">→ Phaser 3</span></div>
-            <div class="decision-row"><span class="cond">Want to build a portfolio piece</span><span class="choice">→ Phaser 3</span></div>
+            <div class="decision-row"><span class="cond">Platformer with levels and maps</span><span class="choice">→ Explore Phaser 3; compare needed features</span></div>
+            <div class="decision-row"><span class="cond">Want to build a portfolio piece</span><span class="choice">→ Explore Phaser 3; compare needed features</span></div>
             <div class="decision-row"><span class="cond">Learning how game loops work</span><span class="choice">→ Build from scratch first</span></div>
             <div class="decision-row"><span class="cond">3D game idea</span><span class="choice">→ Use a 3D engine instead</span></div>
           </div>
@@ -410,6 +468,7 @@
           <div class="try-it"><span class="icon" aria-hidden="true">🏆</span><strong>Exit ticket</strong><span>Your idea is a five-level platformer with a map and camera effects. Which engine would you choose, and what evidence from this page supports your choice?</span></div>
         </section>
 
+        <section class="cl-card" id="references"><h2>Check the engine documentation</h2><p>Follow the documentation for the version your project uses. This lesson compares Kaplay’s component approach with Phaser 3 scenes.</p><ul class="concept-list"><li><a href="https://kaplayjs.com/docs/guides/creating_your_first_game/">Kaplay: creating your first game</a> — components, gravity, and jumping.</li><li><a href="https://docs.phaser.io/phaser/concepts/scenes">Phaser: scenes</a> — lifecycle and scene organization.</li><li><a href="https://docs.phaser.io/phaser/getting-started/making-your-first-phaser-game">Phaser: your first game</a> — complete setup, platforms, and collisions.</li></ul></section>
       </main>
     </div><!-- /.ll-sim -->
 
@@ -437,7 +496,7 @@
           <p class="ll-pane-title" style="margin-top:1rem;">Getting Phaser 3</p>
           <p style="font-size:0.82rem;color: var(--text-muted, #64748b);line-height:1.55;"><code style="font-size:0.74rem;word-break:break-all;">&lt;script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"&gt;&lt;/script&gt;</code></p>
           <p class="ll-pane-title" style="margin-top:1rem;">Kaplay in This Classroom</p>
-          <p style="font-size:0.82rem;color: var(--text-muted, #64748b);line-height:1.55;">Mr. Scandrett's summer coding camp uses Kaplay for all 5 game projects. You've already used it! Check the camp folder for working examples.</p>
+          <p style="font-size:0.82rem;color: var(--text-muted, #64748b);line-height:1.55;">Start with <a href="game-tutorials/catch.html">Catch</a> or <a href="game-tutorials/pong.html">Pong</a> to study a small game mechanic, then recreate it using your engine.</p>
         </div>
         <div class="ll-pane" id="pane-vocab">
           <p class="ll-pane-title">Key Vocabulary</p>
@@ -473,6 +532,7 @@
     document.querySelectorAll('.code-tab').forEach(t => {
       t.classList.remove('active');
       t.setAttribute('aria-selected', 'false');
+      t.tabIndex = -1;
     });
     const pane = document.getElementById(engine + '-code');
     const tab = document.querySelector('.' + engine + '-tab');
@@ -480,6 +540,7 @@
     pane.hidden = false;
     tab.classList.add('active');
     tab.setAttribute('aria-selected', 'true');
+    tab.tabIndex = 0;
   }
 
   document.querySelectorAll('.code-tab').forEach((tab, index, tabs) => {
@@ -518,6 +579,8 @@
     if (window.matchMedia('(max-width: 680px)').matches && panel.getAttribute('aria-hidden') === 'true') setPanelOpen(true);
   });
 </script>
+<script src="../../../assets/js/lessons/2d-game-engines.js"></script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
 <script src="../../../assets/js/reveal.js"></script>
 <script src="../../../assets/js/theme-registry.js"></script>
 <script src="../../../assets/js/nav-mobile.js"></script>

@@ -25,7 +25,7 @@
     var mode = 'rrt';
     var start = { x: 50, y: 200 }, goal = { x: 590, y: 200 };
     var obstacles = [];
-    var state = null, drag = null;
+    var state = null, drag = null, cursor = null;
 
     var EXPLAIN = {
       rrt: 'RRT: pick a random point, find the nearest branch, grow one short step toward it. Repeat until a branch reaches the goal. Fast, but the path is wiggly.',
@@ -77,7 +77,7 @@
       if (mode === 'rrt' || mode === 'rrtstar') state = { nodes: [{ x: start.x, y: start.y, parent: -1, cost: 0 }], goalNode: -1, t: 0 };
       else state = { robot: { x: start.x, y: start.y, a: Math.atan2(goal.y - start.y, goal.x - start.x), v: 0, w: 0 }, trail: [], stuckT: 0, lastP: { x: start.x, y: start.y }, done: false, crashed: false, arcs: [], t: 0 };
       state.running = true;
-      ui.run.textContent = 'Pause';
+      ui.run.textContent = 'Pause'; ui.run.setAttribute('aria-pressed', 'false');
     }
 
     /* RRT / RRT* */
@@ -259,6 +259,7 @@
       state.speed = speed;
     }
 
+    var lastMilestone = '';
     function arrow(x, y, dx, dy, len) {
       var m = Math.hypot(dx, dy); if (m < 1e-6) return;
       var ux = dx / m, uy = dy / m, ex = x + ux * len, ey = y + uy * len;
@@ -274,30 +275,42 @@
       for (var gy = 0; gy < H; gy += 32) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); }
 
       if (mode === 'field' && ui.showField.checked) {
-        ctx.strokeStyle = 'rgba(184,216,75,.45)';
+        ctx.strokeStyle = 'rgba(184,216,75,.55)'; ctx.lineWidth = 1.3;
         for (var x = 16; x < W; x += 32) for (var y = 16; y < H; y += 32) {
           if (blocked({ x: x, y: y }, 2)) continue;
           var f = force({ x: x, y: y }); arrow(x, y, f.x, f.y, 11);
         }
+        ctx.lineWidth = 1;
       }
       obstacles.forEach(function (o) {
-        ctx.fillStyle = '#c65e2e'; ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = 'rgba(198,94,46,.25)'; ctx.beginPath(); ctx.arc(o.x, o.y, o.r + R, 0, Math.PI * 2); ctx.stroke();
+        ctx.setLineDash([3, 4]); ctx.strokeStyle = 'rgba(240,138,85,.45)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(o.x, o.y, o.r + R, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+        RA.drawRock(ctx, o.x, o.y, o.r);
       });
 
       var status = '';
       if (mode === 'rrt' || mode === 'rrtstar') {
-        ctx.strokeStyle = 'rgba(112,200,229,.5)'; ctx.lineWidth = 1;
+        // Branches fade from cyan near the start to violet far away, so the
+        // tree's growth outward is visible at a glance.
+        var maxCost = 1;
+        state.nodes.forEach(function (n) { if (n.cost > maxCost) maxCost = n.cost; });
+        ctx.lineWidth = 1.2;
         state.nodes.forEach(function (n) {
           if (n.parent < 0) return;
-          var p = state.nodes[n.parent];
+          var p = state.nodes[n.parent], f = n.cost / maxCost;
+          ctx.strokeStyle = 'hsla(' + Math.round(190 + f * 80) + ',75%,' + Math.round(68 - f * 10) + '%,.6)';
           ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(n.x, n.y); ctx.stroke();
         });
+        ctx.lineWidth = 1;
         if (state.goalNode >= 0) {
           var path = treePath();
-          ctx.strokeStyle = '#f2bf3f'; ctx.lineWidth = 4; ctx.beginPath();
-          path.forEach(function (p, i) { if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); });
-          ctx.stroke(); ctx.lineWidth = 1;
+          ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+          [['rgba(242,191,63,.25)', 10], ['#f2bf3f', 4]].forEach(function (st) {
+            ctx.strokeStyle = st[0]; ctx.lineWidth = st[1]; ctx.beginPath();
+            path.forEach(function (p, i) { if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); });
+            ctx.stroke();
+          });
+          ctx.lineWidth = 1;
           status = 'Path found · length ' + Math.round(state.goalCost) + ' px · tree has ' + state.nodes.length + ' nodes' + (mode === 'rrtstar' ? (state.nodes.length < MAX_NODES ? ' · still improving…' : ' · done') : '');
         } else status = 'Growing… ' + state.nodes.length + ' nodes, no path yet';
       } else {
@@ -318,36 +331,56 @@
         }
         ctx.strokeStyle = '#b8d84b'; ctx.lineWidth = 2; ctx.beginPath();
         state.trail.forEach(function (p, i) { if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); }); ctx.stroke(); ctx.lineWidth = 1;
-        ctx.save(); ctx.translate(rb.x, rb.y); ctx.rotate(rb.a);
-        ctx.fillStyle = '#146b8c'; ctx.strokeStyle = '#e8f6fb'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(R + 5, 0); ctx.stroke(); ctx.restore();
+        RA.drawRobot(ctx, rb.x, rb.y, rb.a, R, { face: state.crashed || state.stuck ? 'oops' : 'happy' });
         if (state.done) status = 'Reached the goal!';
         else if (state.crashed) status = 'Crash! The obstacle moved faster than the robot could react.';
         else if (state.stuck) status = mode === 'field' ? 'Stuck in a local minimum: pull and push cancel out here. The robot has no idea the goal is reachable.' : 'Boxed in — no safe arc toward the goal right now.';
         else status = mode === 'dwa' ? 'v = ' + Math.round(rb.v) + ' px/s · ω = ' + rb.w.toFixed(2) + ' rad/s · ' + state.arcs.filter(function (a) { return !a.hit; }).length + ' of ' + state.arcs.length + ' arcs safe' : 'Following the force downhill…';
       }
-      [[start, '#146b8c', 'S'], [goal, '#b8d84b', 'G']].forEach(function (m) {
-        ctx.fillStyle = m[1]; ctx.beginPath(); ctx.arc(m[0].x, m[0].y, 11, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#0f1d23'; ctx.font = '700 12px IBM Plex Mono, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(m[2], m[0].x, m[0].y + 1);
-      });
+      RA.drawPad(ctx, start.x, start.y, 12, '#3fa6cc', 'S');
+      RA.drawFlag(ctx, goal.x, goal.y, 18, '#b8d84b');
+      ctx.fillStyle = '#e8f6fb'; ctx.font = '700 11px IBM Plex Mono, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('G', goal.x, goal.y + 20);
+      RA.drawCursor(ctx, cursor);
       ui.readout.textContent = status;
+      // Announce milestones (not every frame) for screen-reader users.
+      var milestone = /^Path found/.test(status) ? 'Path found.' : /^(Reached|Crash|Stuck|Boxed)/.test(status) ? status : '';
+      if (milestone && milestone !== lastMilestone) RA.announce(milestone);
+      lastMilestone = milestone;
     }
 
+    function toggleObstacle(p) {
+      var hit = -1;
+      obstacles.forEach(function (o, i) { if (dist(p, o) < o.r) hit = i; });
+      if (hit >= 0) obstacles.splice(hit, 1);
+      else obstacles.push({ x: p.x, y: p.y, r: 22, vx: (Math.random() - .5) * 60, vy: (Math.random() - .5) * 60 });
+      restart();
+      return hit >= 0 ? 'Rock removed.' : 'Rock added.';
+    }
     canvas.addEventListener('pointerdown', function (e) {
       var p = RA.canvasPoint(canvas, e);
       if (dist(p, start) < 16) drag = start;
       else if (dist(p, goal) < 16) drag = goal;
-      else {
-        var hit = -1;
-        obstacles.forEach(function (o, i) { if (dist(p, o) < o.r) hit = i; });
-        if (hit >= 0) obstacles.splice(hit, 1);
-        else obstacles.push({ x: p.x, y: p.y, r: 22, vx: (Math.random() - .5) * 60, vy: (Math.random() - .5) * 60 });
-        restart();
-        return;
-      }
+      else { toggleObstacle(p); return; }
       canvas.setPointerCapture(e.pointerId);
+    });
+    // Keyboard: arrows move a crosshair, Enter/Space toggles a rock, S and G move the markers.
+    cursor = RA.keyCursor(canvas, {
+      step: 20, x: W / 2, y: H / 2,
+      describe: function (c) {
+        var near = obstacles.some(function (o) { return dist(c, o) < o.r; });
+        return 'Cursor at ' + Math.round(c.x / W * 100) + '% across, ' + Math.round(c.y / H * 100) + '% down' + (near ? ', on a rock' : '') + '.';
+      },
+      onKey: function (k, c) {
+        if (k === 'Enter') { RA.announce(toggleObstacle({ x: c.x, y: c.y }), true); return true; }
+        if (k === 's' || k === 'S' || k === 'g' || k === 'G') {
+          var m = /s/i.test(k) ? start : goal;
+          m.x = c.x; m.y = c.y; restart();
+          RA.announce((m === start ? 'Start' : 'Goal') + ' moved to the cursor.', true);
+          return true;
+        }
+        return false;
+      }
     });
     canvas.addEventListener('pointermove', function (e) {
       if (!drag) return;
@@ -368,7 +401,7 @@
       });
     });
     document.querySelectorAll('[data-mp-preset]').forEach(function (b) { b.addEventListener('click', function () { preset(b.dataset.mpPreset); }); });
-    ui.run.addEventListener('click', function () { state.running = !state.running; ui.run.textContent = state.running ? 'Pause' : 'Resume'; });
+    ui.run.addEventListener('click', function () { state.running = !state.running; ui.run.textContent = state.running ? 'Pause' : 'Resume'; ui.run.setAttribute('aria-pressed', String(!state.running)); });
     document.getElementById('mp-restart').addEventListener('click', restart);
     ui.global.addEventListener('change', restart);
     ui.rep.addEventListener('input', function () { document.getElementById('mp-rep-out').textContent = ui.rep.value; restart(); });
@@ -384,22 +417,39 @@
     var ctx = kc.getContext('2d'), KW = kc.width, KH = kc.height;
     var left = document.getElementById('kin-left'), right = document.getElementById('kin-right');
     var base = document.getElementById('kin-base'), out = document.getElementById('kin-readout');
-    var rb, trail;
+    var rb, trail, kinRunning = !RA.reducedMotion;
+    var kinRun = document.getElementById('kin-run'), showIcc = document.getElementById('kin-icc');
+    function syncRun() { if (kinRun) { kinRun.textContent = kinRunning ? 'Pause' : 'Drive'; kinRun.setAttribute('aria-pressed', String(!kinRunning)); } }
+    if (kinRun) kinRun.addEventListener('click', function () { kinRunning = !kinRunning; syncRun(); });
+    syncRun();
     function reset() { rb = { x: KW / 2, y: KH / 2, a: -Math.PI / 2 }; trail = []; }
     function sync() {
       document.getElementById('kin-left-out').textContent = left.value;
       document.getElementById('kin-right-out').textContent = right.value;
       document.getElementById('kin-base-out').textContent = base.value;
     }
-    [left, right, base].forEach(function (el) { el.addEventListener('input', sync); });
+    [left, right, base].forEach(function (el) { el.addEventListener('input', sync); el.addEventListener('change', describeKin); });
+    // Plain-language summary of what the wheel settings do, for screen readers and young readers.
+    function describeKin() {
+      var vl = +left.value, vr = +right.value;
+      var msg = vl === vr ? (vl === 0 ? 'Both wheels stopped: the robot stays still.' : 'Same speed on both wheels: the robot drives ' + (vl > 0 ? 'straight forward.' : 'straight backward.'))
+        : vl === -vr ? 'Wheels spin opposite ways at the same speed: the robot spins in place.'
+        : (vl === 0 || vr === 0) ? 'One wheel stopped: the robot pivots in a circle around that wheel.'
+        : 'The ' + (vr > vl ? 'right' : 'left') + ' wheel is faster, so the robot curves to the ' + (vr > vl ? 'left' : 'right') + '.';
+      RA.announce(msg, true);
+      var plain = document.getElementById('kin-plain');
+      if (plain) plain.textContent = msg;
+    }
+    describeKin();
     document.getElementById('kin-reset').addEventListener('click', reset);
     document.querySelectorAll('[data-kin]').forEach(function (b) {
-      b.addEventListener('click', function () { var v = b.dataset.kin.split(','); left.value = v[0]; right.value = v[1]; sync(); });
+      b.addEventListener('click', function () { var v = b.dataset.kin.split(','); left.value = v[0]; right.value = v[1]; sync(); kinRunning = true; syncRun(); describeKin(); });
     });
     reset(); sync();
     RA.loop(function (dt) {
       var vl = +left.value, vr = +right.value, L = +base.value;
       var v = (vr + vl) / 2, w = (vr - vl) / L;
+      if (!kinRunning) dt = 0;
       // Screen y points down, so a positive (counter-clockwise) ω lowers the angle.
       rb.a -= w * dt; rb.x += Math.cos(rb.a) * v * dt; rb.y += Math.sin(rb.a) * v * dt;
       if (rb.x < 0) rb.x += KW; if (rb.x > KW) rb.x -= KW; if (rb.y < 0) rb.y += KH; if (rb.y > KH) rb.y -= KH;
@@ -408,18 +458,40 @@
       if (trail.length > 900) trail.shift();
 
       ctx.fillStyle = '#0f1d23'; ctx.fillRect(0, 0, KW, KH);
+      ctx.strokeStyle = 'rgba(112,200,229,.07)'; ctx.lineWidth = 1;
+      for (var gx = 0; gx < KW; gx += 32) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, KH); ctx.stroke(); }
+      for (var gy = 0; gy < KH; gy += 32) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(KW, gy); ctx.stroke(); }
+      // Instantaneous centre of curvature: the point the robot is circling right now.
+      var R0 = Math.abs(w) < 1e-3 ? Infinity : v / w;
+      if ((!showIcc || showIcc.checked) && isFinite(R0) && Math.abs(R0) < 2000) {
+        // Positive ω turns left (counter-clockwise on screen with y down = toward -a+90°).
+        var ix = rb.x + Math.cos(rb.a - Math.PI / 2) * R0, iy = rb.y + Math.sin(rb.a - Math.PI / 2) * R0;
+        ctx.setLineDash([5, 5]); ctx.strokeStyle = 'rgba(242,191,63,.55)'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(ix, iy, Math.abs(R0), 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(rb.x, rb.y); ctx.lineTo(ix, iy); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = '#f2bf3f'; ctx.beginPath(); ctx.arc(ix, iy, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.font = '600 11px IBM Plex Mono, monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+        ctx.fillText('turning centre', ix + 8, iy - 4);
+      }
       ctx.strokeStyle = '#b8d84b'; ctx.lineWidth = 2; ctx.beginPath();
       var pen = false;
       trail.forEach(function (p) { if (!p) { pen = false; return; } if (pen) ctx.lineTo(p.x, p.y); else { ctx.moveTo(p.x, p.y); pen = true; } });
       ctx.stroke();
       ctx.save(); ctx.translate(rb.x, rb.y); ctx.rotate(rb.a);
       var half = L / 2;
-      ctx.fillStyle = '#146b8c'; ctx.fillRect(-14, -half, 28, L);
-      ctx.fillStyle = '#f2bf3f'; ctx.fillRect(-9, -half - 5, 18, 6); ctx.fillRect(-9, half - 1, 18, 6);
-      ctx.strokeStyle = '#e8f6fb'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(20, 0); ctx.stroke();
-      // wheel speed arrows (left wheel is on the robot's -y side when facing +x)
-      ctx.strokeStyle = '#f2bf3f';
-      [[-half - 2, vl], [half + 2, vr]].forEach(function (wv) { ctx.beginPath(); ctx.moveTo(0, wv[0]); ctx.lineTo(wv[1] * 0.35, wv[0]); ctx.stroke(); });
+      RA.roundRect(ctx, -16, -half + 2, 32, L - 4, 8); ctx.fillStyle = '#146b8c'; ctx.fill();
+      ctx.strokeStyle = '#e8f6fb'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = '#f2bf3f'; RA.roundRect(ctx, 9, -6, 6, 12, 2); ctx.fill();
+      // wheels (left wheel is on the robot's -y side when facing +x), labelled
+      [[-half - 4, vl, 'L'], [half - 4, vr, 'R']].forEach(function (wv) {
+        ctx.fillStyle = '#0b1418'; RA.roundRect(ctx, -11, wv[0], 22, 8, 3); ctx.fill();
+        ctx.strokeStyle = '#f2bf3f'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+        var ay = wv[0] + 4 + (wv[2] === 'L' ? -9 : 9), len = wv[1] * 0.35;
+        if (Math.abs(len) > 1) {
+          ctx.beginPath(); ctx.moveTo(0, ay); ctx.lineTo(len, ay);
+          ctx.moveTo(len, ay); ctx.lineTo(len - Math.sign(len) * 6, ay - 4); ctx.moveTo(len, ay); ctx.lineTo(len - Math.sign(len) * 6, ay + 4); ctx.stroke();
+        }
+      });
       ctx.restore();
       var radius = Math.abs(w) < 1e-3 ? '∞ (straight line)' : (Math.abs(v / w)).toFixed(0) + ' px';
       out.textContent = 'v = (vR + vL) / 2 = ' + v.toFixed(0) + ' px/s · ω = (vR − vL) / L = ' + w.toFixed(2) + ' rad/s · turn radius = ' + radius;

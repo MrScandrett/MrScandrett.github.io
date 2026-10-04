@@ -55,12 +55,25 @@
   }
 
   function drawRobot(ctx, p, fill, stroke) {
-    ctx.save();
-    ctx.translate(p.x, p.y); ctx.rotate(p.a);
-    ctx.fillStyle = fill; ctx.strokeStyle = stroke; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(0, 0, ROBOT_R, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(ROBOT_R + 4, 0); ctx.stroke();
-    ctx.restore();
+    RA.drawRobot(ctx, p.x, p.y, p.a, ROBOT_R + 1, { body: fill, outline: stroke });
+  }
+
+  // Keyboard: arrows move a crosshair; Enter sends the robot there.
+  function keyTarget(canvas, setTarget) {
+    var cur = RA.keyCursor(canvas, {
+      step: 20, x: W / 2, y: H / 2,
+      describe: function (c) {
+        return 'Crosshair at ' + Math.round(c.x / W * 100) + '% across, ' + Math.round(c.y / H * 100) + '% down' + (RA.hitsRect(c.x, c.y, ROBOT_R, WORLD) ? ', inside a wall.' : '. Press Enter to send the robot here.');
+      },
+      onKey: function (k, c) {
+        if (k !== 'Enter') return false;
+        var ok = !RA.hitsRect(c.x, c.y, ROBOT_R, WORLD);
+        setTarget(ok ? { x: c.x, y: c.y } : null);
+        RA.announce(ok ? 'Robot sent to the crosshair.' : 'That spot is inside a wall. The robot will wander instead.', true);
+        return true;
+      }
+    });
+    return cur;
   }
 
   function drawWorld(ctx, style) {
@@ -162,6 +175,7 @@
       if (target) { ctx.strokeStyle = '#f2bf3f'; ctx.beginPath(); ctx.arc(target.x, target.y, 7, 0, Math.PI * 2); ctx.stroke(); }
       if (ui.drift.checked) drawRobot(ctx, belief, 'rgba(198,94,46,.55)', '#ffb38a');
       drawRobot(ctx, pose, '#146b8c', '#e8f6fb');
+      RA.drawCursor(ctx, mapCursor);
       var err = Math.hypot(pose.x - belief.x, pose.y - belief.y);
       ui.readout.textContent = 'Map explored: ' + Math.round(100 * known / grid.length) + '% of cells · ' + occ + ' cells marked occupied' +
         (ui.drift.checked ? ' · odometry error: ' + (err / 20).toFixed(2) + ' m' : '');
@@ -176,6 +190,7 @@
       ui.run.textContent = running ? 'Pause' : 'Resume';
       ui.run.setAttribute('aria-pressed', String(!running));
     });
+    var mapCursor = keyTarget(canvas, function (t) { target = t; });
     ui.reset.addEventListener('click', reset);
     ui.drift.addEventListener('change', reset);
     [ui.rays, ui.noise].forEach(function (el) {
@@ -287,7 +302,11 @@
       drawRobot(ctx, pose, '#146b8c', '#0b2a36');
       var sure = est.agree > 0.6;
       if (sure) drawRobot(ctx, est, 'rgba(242,191,63,.6)', '#8a6400');
+      RA.drawCursor(ctx, pfCursor, '#12202a');
       var err = Math.hypot(est.x - pose.x, est.y - pose.y);
+      var news = sure ? 'The guesses agree: the robot is localized.' : '';
+      if (news && !wasSure) RA.announce(news);
+      wasSure = sure;
       ui.readout.textContent = 'Sensor updates: ' + updates + ' · ' + Math.round(est.agree * 100) + '% of guesses agree · ' +
         (sure ? 'best guess is ' + (err / 20).toFixed(2) + ' m from the true robot' : 'still unsure: several places look alike');
     }
@@ -301,7 +320,8 @@
       ui.run.textContent = running ? 'Pause' : 'Resume';
       ui.run.setAttribute('aria-pressed', String(!running));
     });
-    ui.kidnap.addEventListener('click', function () { var s = freeSpot(); pose.x = s.x; pose.y = s.y; pose.a = Math.random() * 6.28; target = null; });
+    var pfCursor = keyTarget(canvas, function (t) { target = t; }), wasSure = false;
+    ui.kidnap.addEventListener('click', function () { var s = freeSpot(); pose.x = s.x; pose.y = s.y; pose.a = Math.random() * 6.28; target = null; RA.announce('Robot kidnapped to a random spot.', true); });
     ui.reset.addEventListener('click', reset);
     ui.sigma.addEventListener('input', function () { document.getElementById('pf-sigma-out').textContent = ui.sigma.value; });
     reset();

@@ -97,7 +97,7 @@ function initCycleHero(stageController) {
         updateReadouts(activeIndex);
         if (!playing && playPauseBtn) playPauseBtn.textContent = 'Resume Loop';
         window.setInterval(() => {
-            if (playing) setStage(activeIndex + 1);
+            if (playing && !document.hidden) setStage(activeIndex + 1);
         }, 3000);
         return;
     }
@@ -416,23 +416,40 @@ function initSimulation(stageController) {
     const particles = Array.from({ length: 18 }, (_, index) => ({ offset: index / 18, stage: index % 6 }));
     let frame = 0;
 
-    function updateReadouts() {
-        el.sunValue.textContent = `${state.sun}`;
-        el.tempValue.textContent = `${state.temperature}`;
-        el.humidityValue.textContent = `${state.humidity}`;
-        const atmosphere = Math.max(4, Math.min(20, Math.round(state.humidity / 6 + state.temperature / 12)));
-        const underground = Math.max(12, Math.min(30, Math.round(24 - state.sun / 10 + (state.season === 'Spring' ? 4 : state.season === 'Winter' ? 6 : 0))));
-        const oceans = 100 - atmosphere - underground;
-        el.atmosphere.textContent = `${atmosphere}%`;
-        el.oceans.textContent = `${oceans}%`;
-        el.underground.textContent = `${underground}%`;
+    let saved = null;
+    function tendency() {
+        return Math.round((0.25 + state.sun / 133) * (state.temperature + 15) / 55 * (1 - state.humidity / 100) * 100);
     }
+    function updateReadouts() {
+        el.sunValue.textContent = state.sun;
+        el.tempValue.textContent = state.temperature;
+        el.humidityValue.textContent = state.humidity;
+        const index = tendency();
+        el.atmosphere.textContent = `${index < 20 ? 'Low' : index < 50 ? 'Moderate' : 'High'} · ${index}/100`;
+        el.oceans.textContent = state.humidity >= 90 ? 'Nearly saturated' : state.humidity >= 60 ? 'Humid air' : 'Drier air';
+        el.underground.textContent = state.humidity >= 90 ? 'Near saturation' : 'Cooling still needed';
+        document.getElementById('weather-explanation').textContent = 'Drier air allows more net evaporation under otherwise equal conditions. Clouds form when air reaches saturation, often by cooling. Humidity alone does not determine rainfall.';
+        if (saved) {
+            const change = index - saved.index;
+            document.getElementById('weather-comparison').textContent = `Saved: ${saved.sun}% sun, ${saved.temperature}°C, ${saved.humidity}% humidity → ${saved.index}/100. Current tendency is ${change === 0 ? 'unchanged' : `${Math.abs(change)} points ${change > 0 ? 'higher' : 'lower'}`}.`;
+        }
+    }
+    document.getElementById('weather-save').addEventListener('click', () => { saved = { ...state, index: tendency() }; updateReadouts(); });
+    document.querySelectorAll('[data-weather]').forEach(button => button.addEventListener('click', () => {
+        const presets = { dry: [80, 30, 25, 'Summer'], humid: [80, 30, 90, 'Summer'], cold: [25, -5, 70, 'Winter'] };
+        [state.sun, state.temperature, state.humidity, state.season] = presets[button.dataset.weather];
+        el.sun.value = state.sun; el.temp.value = state.temperature; el.humidity.value = state.humidity; el.season.value = state.season;
+        render();
+    }));
 
     function render() {
         canvas.innerHTML = '';
+        const defs = svg('defs');
+        defs.innerHTML = '<linearGradient id="wc-lake" x2="0" y2="1"><stop stop-color="#58c7da"/><stop offset="1" stop-color="#165674"/></linearGradient><pattern id="wc-soil" width="38" height="24" patternUnits="userSpaceOnUse"><rect width="38" height="24" fill="#c4b08b"/><path d="M0 8Q10 5 20 8T38 8M7 18h5M29 20h3" fill="none" stroke="#967d57" stroke-width="1" opacity=".5"/></pattern>';
+        canvas.appendChild(defs);
         canvas.appendChild(svg('rect', { x: 0, y: 0, width: 720, height: 420, fill: state.temperature > 28 ? '#ffe8c2' : '#dff4ff' }));
-        canvas.appendChild(svg('rect', { x: 0, y: 305, width: 720, height: 115, fill: '#c4b08b' }));
-        canvas.appendChild(svg('rect', { x: 0, y: 278, width: 220, height: 142, fill: '#1e90ff', opacity: 0.78 }));
+        canvas.appendChild(svg('rect', { x: 0, y: 305, width: 720, height: 115, fill: 'url(#wc-soil)' }));
+        canvas.appendChild(svg('rect', { x: 0, y: 278, width: 220, height: 142, fill: 'url(#wc-lake)', opacity: 0.78 }));
         canvas.appendChild(svg('circle', { cx: 610, cy: 70, r: 40, fill: seasonSunColor(state.season) }));
         canvas.appendChild(svg('ellipse', { cx: 255, cy: 95, rx: 68 + state.humidity / 5, ry: 34, fill: '#ffffff', opacity: 0.86 }));
         canvas.appendChild(svg('ellipse', { cx: 330, cy: 108, rx: 70, ry: 38, fill: '#ffffff', opacity: 0.9 }));
@@ -443,13 +460,9 @@ function initSimulation(stageController) {
         canvas.appendChild(svg('rect', { x: 380, y: 336, width: 200, height: 32, fill: '#6aaee6', opacity: 0.65 }));
 
         const stageIndex = stageController.getActiveIndex();
-        const precipitationStrength = Math.max(0, state.humidity + (state.season === 'Spring' ? 10 : state.season === 'Winter' ? 8 : 0) - state.sun / 2);
-        if (precipitationStrength > 25) {
-            for (let i = 0; i < Math.round(precipitationStrength / 8); i += 1) {
-                const x = 250 + i * 22;
-                canvas.appendChild(svg('line', { x1: x, y1: 145, x2: x - 6, y2: 210, stroke: state.temperature < 0 ? '#bfe6ff' : '#1e90ff', 'stroke-width': 3, opacity: 0.7 }));
-            }
-        }
+        canvas.appendChild(svg('path', { d: 'M512 195L540 135L584 196L555 183L540 164L526 187Z', fill: '#f3f8f8' }));
+        for (let y = 290; y < 410; y += 25) canvas.appendChild(svg('path', { d: `M12 ${y}q22 -5 44 0t44 0t44 0t44 0`, fill: 'none', stroke: '#b8e7ec', opacity: .4 }));
+        [['Ocean / lake', 25, 395], ['Groundwater storage', 388, 390], ['Runoff ↓', 440, 260], ['Atmosphere', 215, 45]].forEach(([text, x, y]) => canvas.appendChild(svg('text', { x, y, fill: '#173d50', 'font-size': 15, 'font-weight': 600, 'paint-order': 'stroke', stroke: '#f5faf8', 'stroke-width': 3 }, text)));
 
         particles.forEach((particle, index) => {
             const position = cycleSimulationPoint((frame / 180 + particle.offset) % 1);
@@ -462,18 +475,18 @@ function initSimulation(stageController) {
                 'stroke-width': 1.5
             }));
             if (index === 0 && stageIndex !== undefined) {
-                canvas.appendChild(svg('text', { x: position.x + 10, y: position.y - 8, 'font-size': 12, fill: '#12456f', 'font-weight': 700 }, stageController.getStageData(stageIndex).name));
+                canvas.appendChild(svg('text', { x: position.x + 10, y: position.y - 8, 'font-size': 12, fill: '#12456f', 'font-weight': 700 }, 'Example water route'));
             }
         });
 
         updateReadouts();
     }
 
-    function tick() {
-        if (state.playing) frame += 1 + state.sun / 100 + state.temperature / 80;
+    SimKit.loop((dt) => {
+        if (!state.playing) return;
+        frame += Math.min(dt * 60, 3) * (0.5 + tendency() / 65);
         render();
-        requestAnimationFrame(tick);
-    }
+    });
 
     [['input', el.sun, 'sun'], ['input', el.temp, 'temperature'], ['input', el.humidity, 'humidity'], ['change', el.season, 'season']].forEach(([type, node, key]) => {
         node?.addEventListener(type, (event) => {
@@ -484,8 +497,11 @@ function initSimulation(stageController) {
     el.toggle?.addEventListener('click', () => {
         state.playing = !state.playing;
         el.toggle.textContent = state.playing ? 'Pause Cycle' : 'Resume Cycle';
+        el.toggle.setAttribute('aria-pressed', String(state.playing));
     });
     el.reset?.addEventListener('click', () => {
+        saved = null; frame = 0;
+        document.getElementById('weather-comparison').textContent = 'Save a result, change one variable, and compare.';
         state.sun = 65;
         state.temperature = 24;
         state.humidity = 55;
@@ -496,32 +512,118 @@ function initSimulation(stageController) {
         el.humidity.value = '55';
         el.season.value = 'Summer';
         el.toggle.textContent = state.playing ? 'Pause Cycle' : 'Resume Cycle';
+        el.toggle.setAttribute('aria-pressed', String(state.playing));
         render();
     });
 
     if (!state.playing && el.toggle) el.toggle.textContent = 'Resume Cycle';
-    tick();
+    el.toggle.setAttribute('aria-pressed', String(state.playing));
+    render();
 }
 
 function initTranspirationExplorer() {
     const canvas = document.getElementById('transpiration-canvas');
     if (!canvas) return;
-    canvas.innerHTML = '';
-    canvas.appendChild(svg('rect', { x: 0, y: 0, width: 560, height: 280, fill: '#f7fcff' }));
-    canvas.appendChild(svg('rect', { x: 0, y: 180, width: 560, height: 100, fill: '#c4b08b' }));
-    canvas.appendChild(svg('ellipse', { cx: 240, cy: 110, rx: 78, ry: 94, fill: '#4caf50', opacity: 0.85 }));
-    canvas.appendChild(svg('rect', { x: 230, y: 112, width: 18, height: 94, fill: '#6b4f2b' }));
-    ['170,205 115,255', '240,205 205,260', '245,205 285,260', '310,205 360,252'].forEach((points) => {
-        canvas.appendChild(svg('line', { x1: points.split(' ')[0].split(',')[0], y1: points.split(' ')[0].split(',')[1], x2: points.split(' ')[1].split(',')[0], y2: points.split(' ')[1].split(',')[1], stroke: '#6b4f2b', 'stroke-width': 3 }));
+    const root = document.getElementById('transpiration-explorer');
+    const humidity = root.querySelector('#transpiration-humidity');
+    const soil = root.querySelector('#transpiration-soil');
+    const stomata = root.querySelector('#transpiration-stomata');
+    canvas.innerHTML = `<title id="transpiration-title">Inside a plant: the transpiration pathway</title>
+        <desc id="transpiration-desc">A rooted plant connects to a magnified xylem tube and a leaf cross-section. Liquid water enters roots, rises through xylem, evaporates inside the leaf, and diffuses out through a stomatal pore.</desc>
+        <defs>
+          <linearGradient id="tp-sky" x2="0" y2="1"><stop stop-color="#e0eff0"/><stop offset="1" stop-color="#f7faf4"/></linearGradient>
+          <linearGradient id="tp-leaf"><stop stop-color="#276e4d"/><stop offset=".5" stop-color="#65a86c"/><stop offset="1" stop-color="#3d8056"/></linearGradient>
+          <pattern id="tp-soil" width="44" height="28" patternUnits="userSpaceOnUse"><rect width="44" height="28" fill="#d6bf98"/><path d="M0 9q11 -4 22 0t22 0M6 22h5m20 -3h4" stroke="#aa8d62" fill="none" opacity=".5"/></pattern>
+          <marker id="tp-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#136e9b"/></marker>
+        </defs>
+        <rect width="900" height="520" rx="16" fill="url(#tp-sky)"/>
+        <g data-tp-region="0">
+          <path d="M0 347Q135 334 292 347V520H0Z" fill="url(#tp-soil)"/>
+          <path d="M155 348V139" stroke="#8d6945" stroke-width="22" stroke-linecap="round"/>
+          <g fill="url(#tp-leaf)" stroke="#276447" stroke-width="2">
+            <path d="M153 266Q53 249 47 160Q140 158 153 266Z"/><path d="M158 220Q174 111 267 119Q268 199 158 220Z"/><path d="M155 168Q98 113 135 57Q194 101 155 168Z"/>
+          </g>
+          <g stroke="#add1a0" fill="none" stroke-width="2"><path d="M151 258L66 179m32 25l-5 -27m29 48l-2 -28M162 215L249 135m-48 44l29 -3m-51 23l5 -32M155 156L138 78"/></g>
+          <path d="M155 346Q105 398 48 460M155 346Q192 401 267 469M155 354V492M106 400L83 484M201 417L219 491" stroke="#8d6945" stroke-width="7" fill="none" stroke-linecap="round"/>
+          <g stroke="#8d6945" stroke-width="1.5"><path d="M67 441l-19 -2m26 -8l-5 -14m41 41l15 11m117 -21l17 -3m-65 -31l-3 16m-30 36l-12 9m9 -29l12 6"/></g>
+          <g fill="#329dc5" opacity=".6"><circle cx="39" cy="421" r="4"/><circle cx="95" cy="480" r="4"/><circle cx="244" cy="439" r="4"/><circle cx="180" cy="475" r="4"/></g>
+          <text x="24" y="32" class="tp-title">01 · Roots absorb</text><text x="24" y="320" class="tp-small">Root hairs contact soil water</text>
+        </g>
+        <path d="M168 260L315 225M257 145L561 121" stroke="#81978d" stroke-dasharray="4 5" fill="none"/>
+        <g data-tp-region="1">
+          <rect x="311" y="51" width="206" height="437" rx="14" fill="#fff" stroke="#b4cdc4"/>
+          <text x="330" y="83" class="tp-title">02 · Xylem pulls</text>
+          <path d="M373 139V400M452 139V400" stroke="#b2956c" stroke-width="13"/>
+          <path d="M389 139V400H437V139Z" fill="#d9f1fa"/>
+          <g fill="#59b4d8" stroke="#16749b" stroke-width="1.5"><circle cx="413" cy="179" r="11"/><circle cx="413" cy="220" r="11"/><circle cx="413" cy="261" r="11"/><circle cx="413" cy="302" r="11"/><circle cx="413" cy="343" r="11"/></g>
+          <path id="transpiration-xylem" stroke-dasharray="8 10" d="M413 344V152" stroke="#136e9b" stroke-width="3" fill="none" marker-end="url(#tp-arrow)"/>
+          <text x="329" y="435" class="tp-small">Cohesion holds water</text><text x="329" y="457" class="tp-small">together under tension</text>
+        </g>
+        <g data-tp-region="2">
+          <rect x="546" y="51" width="336" height="437" rx="14" fill="#fff" stroke="#b4cdc4"/>
+          <text x="565" y="83" class="tp-title">03 · Leaf releases</text>
+          <text x="565" y="115" class="tp-small">Leaf cross-section · magnified</text>
+          <path d="M563 143H865V170H563ZM563 301H681V323H563ZM749 301H865V323H749Z" fill="#78ad70" stroke="#3c7950"/>
+          <g fill="#a6c78b" stroke="#5e965f" stroke-width="2"><ellipse cx="593" cy="204" rx="23" ry="25"/><ellipse cx="649" cy="205" rx="23" ry="25"/><ellipse cx="711" cy="204" rx="23" ry="25"/><ellipse cx="775" cy="206" rx="23" ry="25"/><ellipse cx="840" cy="203" rx="20" ry="25"/><ellipse cx="605" cy="260" rx="29" ry="20"/><ellipse cx="668" cy="258" rx="22" ry="21"/><ellipse cx="789" cy="258" rx="29" ry="20"/><ellipse cx="849" cy="260" rx="18" ry="20"/></g>
+          <path d="M675 230Q714 253 739 279" fill="none" stroke="#329dc5" stroke-width="4"/>
+          <text x="572" y="354" class="tp-small">Guard cells</text><path d="M650 348L690 315" stroke="#58766a" fill="none"/>
+          <ellipse cx="692" cy="309" rx="19" ry="13" fill="#3e8d59"/><ellipse cx="738" cy="309" rx="19" ry="13" fill="#3e8d59"/>
+          <ellipse id="transpiration-pore" cx="715" cy="309" rx="10" ry="10" fill="#173f35"/>
+          <path id="transpiration-vapor" d="M715 282V414M725 335L764 413M704 336L669 413" stroke="#136e9b" stroke-width="3" stroke-dasharray="3 9" fill="none" marker-end="url(#tp-arrow)"/>
+          <text x="567" y="452" class="tp-small">Evaporation inside → diffusion out</text>
+        </g>
+        <path id="transpiration-liquid" d="M48 460Q106 400 155 346V220Q210 173 250 138" fill="none" stroke="#136e9b" stroke-width="4" stroke-dasharray="8 10"/>
+        <text x="24" y="507" class="tp-small">LIQUID WATER</text><text x="594" y="507" class="tp-small">INVISIBLE VAPOR IN AIR</text>`;
+    const explanations = [
+        ['Roots · liquid water enters', 'Root hairs absorb water from soil. Connected roots deliver it to the plant’s water-carrying tissue.'],
+        ['Xylem · a continuous water pathway', 'Water travels through xylem in roots, stems, and leaf veins. Evaporation from leaves creates tension that pulls water upward; cohesion helps hold the water column together.'],
+        ['Leaves · liquid becomes gas', 'Water evaporates from moist cell surfaces inside the leaf. Vapor then diffuses through stomata into the surrounding air. Water vapor is invisible, unlike mist droplets.']
+    ];
+    root.querySelectorAll('[data-transpiration-step]').forEach(button => {
+        button.addEventListener('click', () => selectStep(Number(button.dataset.transpirationStep)));
     });
-    for (let i = 0; i < 8; i += 1) {
-        canvas.appendChild(svg('circle', { cx: 150 + i * 25, cy: 245 - (i % 2) * 12, r: 5, fill: '#1e90ff', opacity: 0.8 }));
-        canvas.appendChild(svg('circle', { cx: 215 + i * 18, cy: 80 - (i % 3) * 10, r: 5, fill: '#ffffff', opacity: 0.9 }));
+    function selectStep(index) {
+        root.querySelectorAll('[data-transpiration-step]').forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.transpirationStep) === index)));
+        canvas.querySelectorAll('[data-tp-region]').forEach(region => region.classList.toggle('tp-selected', Number(region.dataset.tpRegion) === index));
+        const panel = root.querySelector('#transpiration-explanation');
+        panel.replaceChildren();
+        const title = document.createElement('strong');
+        title.textContent = explanations[index][0];
+        const description = document.createElement('span');
+        description.textContent = explanations[index][1];
+        panel.append(title, description);
     }
-    canvas.appendChild(svg('path', { d: 'M 165 242 Q 215 180 240 130 Q 260 90 280 50', stroke: '#2f9df4', 'stroke-width': 4, fill: 'none', 'stroke-dasharray': '8 6' }));
-    canvas.appendChild(svg('text', { x: 55, y: 250, 'font-size': 13, fill: '#12456f', 'font-weight': 700 }, 'Roots absorb water'));
-    canvas.appendChild(svg('text', { x: 295, y: 130, 'font-size': 13, fill: '#12456f', 'font-weight': 700 }, 'Water travels upward'));
-    canvas.appendChild(svg('text', { x: 335, y: 45, 'font-size': 13, fill: '#12456f', 'font-weight': 700 }, 'Leaves release vapor'));
+    let savedFlow = null;
+    function render() {
+        const h = Number(humidity.value), water = Number(soil.value), opening = Number(stomata.value);
+        const rate = Math.round((1 - h / 100) * water * opening);
+        root.querySelector('#transpiration-humidity-value').textContent = `${h}%`;
+        root.querySelector('#transpiration-soil-value').textContent = `${water}%`;
+        root.querySelector('#transpiration-rate').textContent = `Relative flow: ${rate} / 100`;
+        root.querySelector('#transpiration-meter').value = rate;
+        if (savedFlow) root.querySelector('#transpiration-comparison').textContent = `Saved: ${savedFlow.h}% humidity, ${savedFlow.water}% soil water, ${savedFlow.label} pores → ${savedFlow.rate}/100. Now: ${rate}/100 (${rate - savedFlow.rate > 0 ? '+' : ''}${rate - savedFlow.rate} points).`;
+        root.querySelector('#transpiration-feedback').textContent = opening === 0 ? 'Stomatal flow stops in this model. The pore is closed.' : water === 0 ? 'No soil water is available to sustain the modeled flow.' : water <= 20 ? 'Water supply limits flow. Real plants often close stomata during drought.' : h >= 70 ? 'Humid air reduces the difference in water vapor concentration between leaf and air.' : 'Drier air favors vapor loss when soil water and open stomata support the flow.';
+        canvas.querySelector('#transpiration-pore').setAttribute('rx', String(10 * opening));
+        canvas.querySelector('#transpiration-vapor').style.opacity = String(rate === 0 ? 0 : 0.25 + rate / 100);
+        canvas.style.setProperty('--transpiration-duration', `${rate > 0 ? 120 / rate : 4}s`);
+        canvas.classList.toggle('transpiration-flowing', rate > 0);
+    }
+    root.querySelector('#transpiration-save').addEventListener('click', () => { savedFlow = { h: Number(humidity.value), water: Number(soil.value), label: stomata.selectedOptions[0].textContent.toLowerCase(), rate: Number(root.querySelector('#transpiration-meter').value) }; render(); });
+    [humidity, soil, stomata].forEach(control => control.addEventListener('input', render));
+    root.querySelectorAll('[data-transpiration-preset]').forEach(button => button.addEventListener('click', () => {
+        if (button.dataset.transpirationPreset === 'reset') { savedFlow = null; root.querySelector('#transpiration-comparison').textContent = 'Save a baseline, change one condition, then explain the difference.'; selectStep(0); }
+        humidity.value = button.dataset.transpirationPreset === 'humid' ? '90' : '40';
+        soil.value = button.dataset.transpirationPreset === 'drought' ? '10' : '80';
+        stomata.value = button.dataset.transpirationPreset === 'drought' ? '0.35' : '1';
+        render();
+    }));
+    root.querySelector('#transpiration-motion').addEventListener('click', event => {
+        const paused = canvas.classList.toggle('transpiration-paused');
+        event.currentTarget.setAttribute('aria-pressed', String(paused));
+        event.currentTarget.textContent = paused ? 'Resume flow animation' : 'Pause flow animation';
+    });
+    selectStep(0);
+    render();
 }
 
 function initUsgsDiagram() {

@@ -32,8 +32,9 @@
             <div>
               <p class="ra-kicker">Engineering · Robot Autonomy · Planning</p>
               <h1 id="ra-title">Beyond A*: <span>Motion Planning</span></h1>
-              <p class="ra-lede">A* finds the best route on a grid. But a robot arm has six joints, a drone flies in 3D, and a delivery robot shares the sidewalk with people who move. Real robots mix planners: one that finds <em>a</em> way through a huge space, one that reacts in milliseconds, and a model of what the wheels can physically do. Race four of them on the same obstacle course.</p>
-              <div class="ra-meta"><span>Grades 7–12</span><span>50–70 minutes</span><span>Four planners</span><span>Kinematics</span></div>
+              <p class="ra-lede" data-ra-for="explorer">Robots have to find their way around rocks, chairs, and people without bumping into anything. Watch four robot “brains” try to reach the flag, then drive a robot by spinning its two wheels.</p>
+              <p class="ra-lede" data-ra-for="builder engineer">A* finds the best route on a grid. But a robot arm has six joints, a drone flies in 3D, and a delivery robot shares the sidewalk with people who move. Real robots mix planners: one that finds <em>a</em> way through a huge space, one that reacts in milliseconds, and a model of what the wheels can physically do. Race four of them on the same obstacle course.</p>
+              <div class="ra-meta"><span>Ages 6–18 · 3 levels</span><span>50–70 minutes</span><span>Four planners</span><span>Kinematics</span></div>
               <a class="ra-back" href="../../../steam-lessons.html#module-engineering">← Back to Engineering</a>
             </div>
             <svg class="ra-hero-art" viewBox="0 0 320 220" role="img" aria-labelledby="hero-art-title">
@@ -46,7 +47,33 @@
             </svg>
           </section>
 
-          <section class="ra-card" style="--ra-accent:var(--ra-blue);">
+
+          <section class="ra-card ra-explorer" data-ra-for="explorer" data-ra-say style="--ra-accent:var(--ra-yellow);">
+            <span data-ra-mascot="wave"></span>
+            <div>
+              <p class="ra-label">Explorer · Story time</p><h2>How does a robot find its way?</h2>
+              <div data-ra-say-slot></div>
+              <div class="ra-bubble">
+                <p>Hi, I’m Bolt! I want to roll to my checkered flag, but rocks are in the way. I can find my way in two ways.</p>
+                <p><strong>1. Plan ahead.</strong> I look at a map and draw my whole trip first, like a GPS in a car.</p>
+                <p><strong>2. Look and turn.</strong> I only watch what is right in front of me and steer away from bumps, like you walking down a busy hallway.</p>
+                <p>The smartest robots do both!</p>
+              </div>
+              <ul class="ra-words" aria-label="Words to know">
+                <li><b>Path</b> · the way you go</li><li><b>Obstacle</b> · something in the way</li><li><b>Goal</b> · where you want to end up</li><li><b>Wheel</b> · spins to move the robot</li>
+              </ul>
+              <div class="ra-try">
+                <h3>Try it with your body</h3>
+                <ol>
+                  <li><strong>Robot, Robot.</strong> One person is the robot and walks slowly. A partner gives only robot commands: “forward 2 steps,” “turn left,” “stop.” Can you guide the robot to a goal around chairs?</li>
+                  <li><strong>Plan vs. look.</strong> First, draw the path on paper and follow it. Then try again while a friend moves a chair into the way. Which way worked better when something moved?</li>
+                  <li><strong>Two-wheel walk.</strong> Two friends stand side by side holding hands, like two wheels. Both walk the same speed: you go straight. One walks faster: you curve! One stands still: you spin around them.</li>
+                </ol>
+              </div>
+            </div>
+          </section>
+
+          <section class="ra-card" data-ra-for="builder engineer" style="--ra-accent:var(--ra-blue);">
             <p class="ra-label">Why A* isn't enough</p><h2>Global plans and local reactions</h2>
             <p><a class="ra-more" href="../../computer-science/algorithms-and-ai/pathfinding.html">A*</a> checks every cell it needs to, which is perfect for a 2D floor plan. A robot arm's "map" is every combination of its joint angles — a six-dimensional space. Split each joint into just 100 steps and you get 100<sup>6</sup> = a trillion cells. Nobody searches that cell by cell.</p>
             <div class="ra-cols">
@@ -58,12 +85,15 @@
 
           <section class="ra-card" style="--ra-accent:var(--ra-lime);">
             <p class="ra-label">Sim · Planner race</p><h2>Four planners, one course</h2>
-            <p>Pick a planner. <strong>Drag</strong> S or G to move the start or goal. <strong>Click</strong> empty space to drop an obstacle; click an obstacle to remove it. The faint ring around each obstacle is the robot's radius: the planner keeps the robot's <em>center</em> out of it.</p>
+            <p data-ra-for="explorer">Press a robot brain button. The <strong>S</strong> is where the robot starts, and the <strong>flag</strong> is its goal. Tap an empty spot to drop a rock. Tap a rock to take it away. <strong>RRT</strong> grows a tree of tries like roots looking for water. <strong>DWA</strong> drives a little robot that looks and turns.</p>
+            <p data-ra-for="builder engineer">Pick a planner. <strong>Drag</strong> S or G to move the start or goal. <strong>Click</strong> empty space to drop an obstacle; click an obstacle to remove it. The faint ring around each obstacle is the robot's radius: the planner keeps the robot's <em>center</em> out of it.</p>
             <div class="ra-sim">
               <div class="ra-sim-grid">
                 <div>
-                  <canvas id="mp-canvas" width="640" height="400" aria-label="Motion planning simulator. Drag start and goal markers; click to add or remove obstacles."></canvas>
+                  <canvas id="mp-canvas" width="640" height="400" role="application" aria-roledescription="planner map" aria-label="Motion planning map. Arrow keys move a crosshair, Enter adds or removes a rock, S and G move the start and goal. Status is read in the line below."></canvas>
                   <p class="ra-readout" id="mp-readout" aria-live="off"></p>
+                  <ul class="ra-legend" aria-label="Map key"><li><i style="background:#3fa6cc"></i>Start</li><li><i style="background:#b8d84b"></i>Goal flag</li><li><i style="background:#c65e2e"></i>Rock (dashed ring = too close)</li><li><i style="background:linear-gradient(90deg,#70c8e5,#a070e5)"></i>Tree branches</li><li><i style="background:#f2bf3f"></i>Chosen path</li></ul>
+                  <p class="ra-keys">Keyboard: click or Tab into the map, then <kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> move the crosshair (<kbd>Shift</kbd> for bigger steps), <kbd>Enter</kbd> adds or removes a rock, <kbd>S</kbd> / <kbd>G</kbd> move the start / goal there.</p>
                 </div>
                 <div class="ra-controls">
                   <fieldset><legend>Planner</legend>
@@ -95,14 +125,19 @@
                 </div>
               </div>
             </div>
-            <div class="ra-cols">
+            <div class="ra-cols" data-ra-for="explorer">
+              <article style="--ra-accent:var(--ra-blue);"><h3>Grow a tree</h3><p>Pick <strong>RRT</strong> and press Restart three times. Does the yellow path look the same each time? Why not?</p></article>
+              <article style="--ra-accent:var(--ra-copper);"><h3>Make a trap</h3><p>Pick <strong>U-trap</strong> and <strong>Potential field</strong>. The robot gets stuck inside the cup! Tap rocks away to help it escape.</p></article>
+              <article style="--ra-accent:var(--ra-lime);"><h3>Dodge!</h3><p>Pick <strong>DWA</strong> and turn on <strong>Obstacles move</strong>. Does the robot slow down when rocks come close? Why is that smart?</p></article>
+            </div>
+            <div class="ra-cols" data-ra-for="builder engineer">
               <article style="--ra-accent:var(--ra-blue);"><h3>RRT vs. RRT*</h3><p>Run RRT on the slalom three times. Is the path the same each time? Now run RRT* and let it go. How much shorter does the path get?</p></article>
               <article style="--ra-accent:var(--ra-copper);"><h3>Trap the field</h3><p>Load the U-trap and choose Potential field. Where does the robot stop, and why? Turn up the push. Does it help or hurt?</p></article>
               <article style="--ra-accent:var(--ra-lime);"><h3>Dodge</h3><p>Choose DWA with the random forest and turn on moving obstacles. The red arcs are rejected. Why does it slow down near obstacles? Then turn off the A* route on the slalom. What goes wrong without a global plan?</p></article>
             </div>
           </section>
 
-          <section class="ra-card" style="--ra-accent:var(--ra-copper);">
+          <section class="ra-card" data-ra-for="builder engineer" style="--ra-accent:var(--ra-copper);">
             <p class="ra-label">How each one thinks</p><h2>Under the hood</h2>
             <div class="ra-cols">
               <article><h3>RRT (1998)</h3><p>Steven LaValle's Rapidly-exploring Random Tree. Random samples land most often in big empty regions, so the tree is pulled outward into unexplored space.</p><p>It is <em>probabilistically complete</em>: if a path exists, the chance of finding it approaches 100% as it keeps sampling.</p></article>
@@ -112,15 +147,30 @@
             </div>
           </section>
 
+
+          <section class="ra-card ra-deep" data-ra-for="engineer" style="--ra-accent:var(--ra-blue);">
+            <p class="ra-label">Engineer deep dive</p><h2>The math under each planner<span class="ra-badge">Ages 15+</span></h2>
+            <div class="ra-cols">
+              <article><h3>Configuration space</h3><p>Planners don't search the room; they search <strong>C-space</strong>, the set of all robot configurations q. A disc robot's C-space is (x, y), and each obstacle grows by the robot's radius. That is the dashed ring in the sim. A 6-joint arm's C-space is 6-D, with obstacles that become strange curved blobs.</p></article>
+              <article><h3>RRT* radius</h3><p>RRT* is <em>asymptotically optimal</em> only if the rewiring radius shrinks slowly enough:</p><p class="ra-eq">r(n) = γ · (log n / n)<sup>1/d</sup></p><p>With n nodes in d dimensions, each new node checks about log n neighbors, so the work per node stays small. (This sim uses a fixed radius, which is a common shortcut.)</p></article>
+              <article><h3>Potential fields</h3><p class="ra-eq">U<sub>att</sub> = ½ k ‖q − q<sub>goal</sub>‖²<br>U<sub>rep</sub> = ½ η (1/ρ − 1/ρ<sub>0</sub>)² &nbsp;(ρ &lt; ρ<sub>0</sub>)<br>F = −∇(U<sub>att</sub> + U<sub>rep</sub>)</p><p>Gradient descent on U is fast, but nothing stops it settling in a local minimum where ∇U = 0. <em>Navigation functions</em> (Rimon & Koditschek) are fields built to have only one minimum.</p></article>
+              <article><h3>DWA objective</h3><p class="ra-eq">G(v, ω) = σ( α·heading + β·clearance + γ·velocity )</p><p>Search only (v, ω) inside the window [v ± a·Δt] × [ω ± α̇·Δt], drop pairs where v &gt; √(2 · clearance · a), the stopping-distance limit, and take the arg max.</p></article>
+              <article><h3>Nonholonomic constraint</h3><p class="ra-eq">ẋ = v cos θ, &nbsp;ẏ = v sin θ, &nbsp;θ̇ = ω<br>ẋ sin θ − ẏ cos θ = 0</p><p>The second line says “no sideways velocity.” It limits velocities, not positions: the robot can still reach any (x, y, θ), just not in a straight line. Parallel parking is the proof.</p></article>
+              <article><h3>Challenge</h3><p>For L = 40 px, v<sub>L</sub> = 60, v<sub>R</sub> = 80: compute v, ω, and the turn radius R = v / ω. Then check your answer against the sim's readout and the yellow turning-centre circle.</p></article>
+            </div>
+          </section>
+
           <section class="ra-card" style="--ra-accent:var(--ra-yellow);">
             <p class="ra-label">Sim · Kinematics</p><h2>Two wheels, one body</h2>
-            <p>A plan is useless if the robot can't physically drive it. Most classroom robots (and robot vacuums) use <strong><span data-glossary="differential drive">differential drive</span></strong>: two independently powered wheels, no steering. The <strong><span data-glossary="kinematics">kinematic model</span></strong> converts wheel speeds into how the whole robot moves:</p>
-            <p style="font-family:'IBM Plex Mono',monospace;font-size:1rem;">v = (v<sub>R</sub> + v<sub>L</sub>) / 2 &nbsp;&nbsp;·&nbsp;&nbsp; ω = (v<sub>R</sub> − v<sub>L</sub>) / L</p>
-            <p>v is forward speed, ω (omega) is turning speed, and L is the distance between the wheels. It can spin in place, but it can't slide sideways — that is why the DWA above only tries arcs.</p>
+            <p data-ra-for="explorer">Most small robots have two wheels and no steering wheel. To turn, one wheel spins faster than the other. Move the wheel sliders and watch the robot draw a path. The yellow dot shows the spot it circles around.</p>
+            <p data-ra-for="builder engineer">A plan is useless if the robot can't physically drive it. Most classroom robots (and robot vacuums) use <strong><span data-glossary="differential drive">differential drive</span></strong>: two independently powered wheels, no steering. The <strong><span data-glossary="kinematics">kinematic model</span></strong> converts wheel speeds into how the whole robot moves:</p>
+            <p class="ra-eq" data-ra-for="builder engineer">v = (v<sub>R</sub> + v<sub>L</sub>) / 2 &nbsp;&nbsp;·&nbsp;&nbsp; ω = (v<sub>R</sub> − v<sub>L</sub>) / L</p>
+            <p data-ra-for="builder engineer">v is forward speed, ω (omega) is turning speed, and L is the distance between the wheels. It can spin in place, but it can't slide sideways — that is why the DWA above only tries arcs.</p>
             <div class="ra-sim">
               <div class="ra-sim-grid">
-                <div><canvas id="kin-canvas" width="640" height="300" aria-label="Differential drive robot tracing a path from two wheel speeds"></canvas>
-                <p class="ra-readout" id="kin-readout" aria-live="off"></p></div>
+                <div><canvas id="kin-canvas" width="640" height="300" role="img" aria-label="Top view of a two-wheeled robot drawing its path. The sentence below the picture describes what it is doing."></canvas>
+                <p class="ra-readout" id="kin-plain"></p>
+                <p class="ra-readout" id="kin-readout" aria-live="off" data-ra-for="builder engineer"></p></div>
                 <div class="ra-controls">
                   <fieldset><legend>Wheels</legend>
                     <label>Left wheel v<sub>L</sub>: <output id="kin-left-out">60</output> px/s<input id="kin-left" type="range" min="-100" max="100" value="60"></label>
@@ -132,11 +182,18 @@
                     <button class="ra-btn" type="button" data-kin="-50,50">Spin</button>
                     <button class="ra-btn" type="button" data-kin="0,60">Pivot</button>
                     <button class="ra-btn" id="kin-reset" type="button">Reset</button>
+                    <button class="ra-btn" id="kin-run" type="button" aria-pressed="false">Pause</button>
                   </div>
+                  <label class="ra-check"><input id="kin-icc" type="checkbox" checked> Show the turning centre</label>
                 </div>
               </div>
             </div>
-            <div class="ra-cols">
+            <div class="ra-cols" data-ra-for="explorer">
+              <article><h3>Draw a circle</h3><p>Press <strong>Pivot</strong>. One wheel stops. What shape does the robot draw? Where is the middle of that shape?</p></article>
+              <article><h3>Make a big circle</h3><p>Set both wheels almost the same, like 70 and 80. Is the circle big or small? What if they are very different?</p></article>
+              <article><h3>Back up</h3><p>Drag both wheels below zero. Which way does the robot go now?</p></article>
+            </div>
+            <div class="ra-cols" data-ra-for="builder engineer">
               <article><h3>Predict first</h3><p>Before pressing Pivot (left wheel stopped), predict: what point does the robot circle around?</p></article>
               <article><h3>Dynamics</h3><p>Kinematics ignores mass. <strong>Dynamics</strong> adds it: motors can only change speed so fast. That acceleration limit is what makes DWA's "window" small.</p></article>
               <article><h3>Close the loop</h3><p>Commanding 60 px/s doesn't guarantee 60 px/s. A <a class="ra-more" href="../arduino-and-electronics/pid-control.html">PID controller</a> on each wheel reads the encoder and corrects the motor power.</p></article>
@@ -174,6 +231,7 @@
               <a href="sensor-fusion.html"><b>Sensor Fusion</b>Complementary &amp; Kalman filters</a>
               <a href="../../computer-science/algorithms-and-ai/pathfinding.html"><b>A* Pathfinding</b>Global route on a grid</a>
               <a href="motion-planning.html" aria-current="page"><b>Motion Planning</b>RRT, potential fields, DWA, kinematics</a>
+              <a href="robot-arms.html"><b>Robot Arms</b>Joints, reach, forward &amp; inverse kinematics</a>
               <a href="../arduino-and-electronics/pid-control.html"><b>PID Control</b>Hold a target with feedback</a>
               <a href="../../computer-science/algorithms-and-ai/state-machines.html"><b>State Machines</b>Organize robot behaviors</a>
               <a href="robot-reinforcement-learning.html"><b>Reinforcement Learning</b>Learn a policy from rewards</a>
@@ -184,10 +242,14 @@
           <section class="ra-card" style="--ra-accent:var(--ra-red);">
             <p class="ra-label">Quick check</p><h2>Lock it in</h2>
             <div class="ra-quiz">
-              <div class="ra-question" data-answer="c" data-explanation="Sampling avoids building the full grid, so RRT scales to high-dimensional spaces like robot arms."><p>1. Why use RRT instead of A* for a six-joint robot arm?</p><div class="ra-options"><button class="ra-option" data-choice="a">RRT always finds the shortest path</button><button class="ra-option" data-choice="b">A* can't handle obstacles</button><button class="ra-option" data-choice="c">A grid over six joints has far too many cells to search</button><button class="ra-option" data-choice="d">RRT doesn't need to know where obstacles are</button></div><p class="ra-feedback" aria-live="polite"></p></div>
-              <div class="ra-question" data-answer="a" data-explanation="Where the goal's pull and the obstacles' push cancel out, the net force is zero and the robot stops."><p>2. What is a local minimum in a potential field?</p><div class="ra-options"><button class="ra-option" data-choice="a">A spot where the forces cancel, so the robot stops short of the goal</button><button class="ra-option" data-choice="b">The goal itself</button><button class="ra-option" data-choice="c">The smallest obstacle</button><button class="ra-option" data-choice="d">The slowest safe speed</button></div><p class="ra-feedback" aria-live="polite"></p></div>
-              <div class="ra-question" data-answer="d" data-explanation="The window is limited by how fast the motors can accelerate in the next time step."><p>3. In the Dynamic Window Approach, what limits the "window" of speeds?</p><div class="ra-options"><button class="ra-option" data-choice="a">The size of the map</button><button class="ra-option" data-choice="b">The number of obstacles</button><button class="ra-option" data-choice="c">The goal's distance</button><button class="ra-option" data-choice="d">How much the motors can speed up or slow down right now</button></div><p class="ra-feedback" aria-live="polite"></p></div>
-              <div class="ra-question" data-answer="b" data-explanation="ω = (vR − vL)/L = (50 − (−50))/L, which is nonzero, while v = (50 + −50)/2 = 0. It spins in place."><p>4. The left wheel runs at −50 and the right at +50. What does the robot do?</p><div class="ra-options"><button class="ra-option" data-choice="a">Drives straight</button><button class="ra-option" data-choice="b">Spins in place</button><button class="ra-option" data-choice="c">Slides sideways</button><button class="ra-option" data-choice="d">Stays still</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="explorer" data-answer="b" data-explanation="When things move, a robot has to keep looking and turning, not just follow an old plan."><p>1. A dog runs in front of the robot. What should the robot do?</p><div class="ra-options"><button class="ra-option" data-choice="a">Keep following its old plan</button><button class="ra-option" data-choice="b">Look, slow down, and steer around</button><button class="ra-option" data-choice="c">Turn off forever</button><button class="ra-option" data-choice="d">Speed up</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="explorer" data-answer="c" data-explanation="If one wheel spins faster, the robot curves toward the slower side. If one wheel stops, it spins around that wheel."><p>2. A robot's right wheel spins faster than its left wheel. What happens?</p><div class="ra-options"><button class="ra-option" data-choice="a">It goes perfectly straight</button><button class="ra-option" data-choice="b">It slides sideways</button><button class="ra-option" data-choice="c">It curves to the left</button><button class="ra-option" data-choice="d">It jumps</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="explorer" data-answer="a" data-explanation="A map lets the robot plan the whole trip before it moves, like a GPS."><p>3. Why does a robot want a map?</p><div class="ra-options"><button class="ra-option" data-choice="a">To plan its whole trip before it starts</button><button class="ra-option" data-choice="b">To make its wheels faster</button><button class="ra-option" data-choice="c">To charge its battery</button><button class="ra-option" data-choice="d">Maps are just for decoration</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="builder engineer" data-answer="c" data-explanation="Sampling avoids building the full grid, so RRT scales to high-dimensional spaces like robot arms."><p>1. Why use RRT instead of A* for a six-joint robot arm?</p><div class="ra-options"><button class="ra-option" data-choice="a">RRT always finds the shortest path</button><button class="ra-option" data-choice="b">A* can't handle obstacles</button><button class="ra-option" data-choice="c">A grid over six joints has far too many cells to search</button><button class="ra-option" data-choice="d">RRT doesn't need to know where obstacles are</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="builder engineer" data-answer="a" data-explanation="Where the goal's pull and the obstacles' push cancel out, the net force is zero and the robot stops."><p>2. What is a local minimum in a potential field?</p><div class="ra-options"><button class="ra-option" data-choice="a">A spot where the forces cancel, so the robot stops short of the goal</button><button class="ra-option" data-choice="b">The goal itself</button><button class="ra-option" data-choice="c">The smallest obstacle</button><button class="ra-option" data-choice="d">The slowest safe speed</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="builder engineer" data-answer="d" data-explanation="The window is limited by how fast the motors can accelerate in the next time step."><p>3. In the Dynamic Window Approach, what limits the "window" of speeds?</p><div class="ra-options"><button class="ra-option" data-choice="a">The size of the map</button><button class="ra-option" data-choice="b">The number of obstacles</button><button class="ra-option" data-choice="c">The goal's distance</button><button class="ra-option" data-choice="d">How much the motors can speed up or slow down right now</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="builder engineer" data-answer="b" data-explanation="ω = (vR − vL)/L = (50 − (−50))/L, which is nonzero, while v = (50 + −50)/2 = 0. It spins in place."><p>4. The left wheel runs at −50 and the right at +50. What does the robot do?</p><div class="ra-options"><button class="ra-option" data-choice="a">Drives straight</button><button class="ra-option" data-choice="b">Spins in place</button><button class="ra-option" data-choice="c">Slides sideways</button><button class="ra-option" data-choice="d">Stays still</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="engineer" data-answer="c" data-explanation="v = 70, ω = 40/40 = 1 rad/s, so R = v/ω = 70 px. The turning centre sits 70 px to the robot's left."><p>5. With L = 40 px, v<sub>L</sub> = 50 and v<sub>R</sub> = 90, what is the turn radius?</p><div class="ra-options"><button class="ra-option" data-choice="a">40 px</button><button class="ra-option" data-choice="b">1 px</button><button class="ra-option" data-choice="c">70 px</button><button class="ra-option" data-choice="d">Infinite</button></div><p class="ra-feedback" aria-live="polite"></p></div>
             </div>
           </section>
         </main>
@@ -205,6 +267,8 @@
           </div>
           <div class="ll-pane" id="ra-teacher">
             <span class="ll-label">Teaching notes</span>
+            <div class="ll-info"><strong>Three levels</strong>The Explorer / Builder / Engineer switch at the top changes the words, activities, and quiz. Link straight to a level with <code>?level=explorer</code> or <code>?level=engineer</code>.</div>
+            <div class="ll-info"><strong>Explorer (K–4)</strong>Play “Robot, Robot” and the two-wheel walk before opening the sims. Use the Read to me button for early readers.</div>
             <div class="ll-info"><strong>Launch</strong>Hand a student a 6-knob "robot arm" (six rulers taped together). "Describe every pose it can make." Why grids fail in high dimensions.</div>
             <div class="ll-info"><strong>Demo order</strong>RRT on slalom (run it three times) → RRT* → U-trap with potential field → DWA with moving obstacles.</div>
             <div class="ll-info"><strong>Kinesthetic</strong>Two students link arms as wheels and walk the Pivot and Spin settings.</div>

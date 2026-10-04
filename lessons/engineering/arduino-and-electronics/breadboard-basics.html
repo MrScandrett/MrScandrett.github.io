@@ -89,6 +89,14 @@
     .bb-callout strong { display: block; margin-bottom: 0.25rem; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #6e6e73); }
 
     /* ── 3D anatomy model ───────────────────────────────── */
+    .bb-explode-controls { grid-column: 1 / -1; padding: 1rem; border: 1px solid var(--border, #cbd5e1); border-radius: 12px; }
+    .bb-explode-controls label { display: flex; justify-content: space-between; gap: .5rem; font-weight: 700; }
+    .bb-explode-controls output, .bb-explode-actions { font-size: .8rem; }
+    #bb-explode { width: 100%; min-height: 44px; accent-color: #2563eb; cursor: pointer; }
+    .bb-explode-actions { display: flex; align-items: center; justify-content: space-between; }
+    #bb-model-reset { padding: .6rem 1rem; border: 1px solid #94a3b8; border-radius: 8px; cursor: pointer; background: #fff; color: #0f172a; }
+    #bb-model-status { margin: .6rem 0 0; font-size: .8rem; }
+    .bb-hotspot[aria-pressed="true"] { background: #2563eb; outline: 2px solid white; }
     .bb-model-layout {
       display: grid;
       grid-template-columns: minmax(0, 1.55fr) minmax(230px, 0.7fr);
@@ -1090,7 +1098,7 @@
     <!-- ── Anatomy ──────────────────────────────────────── -->
     <section class="bb-card" id="bb-sec-3d" style="--bb-accent:#34c759;">
       <h2>See the Hidden Connections in 3D</h2>
-      <p>The plastic top is lifted in this cutaway so you can see the gold metal clips underneath. Drag to rotate, scroll or pinch to zoom, then use the view buttons to compare the top with the hidden underside.</p>
+      <p>Lift the plastic shell to reveal the metal contacts. Predict which holes share a connection, then select a rule to highlight the matching strips. Drag to rotate; scroll or pinch to zoom. This simplified model has 12 columns and continuous power rails.</p>
 
       <div class="bb-model-layout">
         <div class="bb-model-stage">
@@ -1101,6 +1109,7 @@
             class="bb-model-viewer"
             src="../../../assets/models/breadboard-cutaway.glb"
             alt="Exploded 3D model of a solderless breadboard with its plastic shell raised above the hidden gold metal connection strips"
+            animation-name="Explode"
             camera-controls
             touch-action="pan-y"
             interaction-prompt="auto"
@@ -1109,9 +1118,9 @@
             shadow-softness=".8"
             environment-image="neutral"
             exposure="1.05"
-            camera-orbit="35deg 58deg 16m"
-            min-camera-orbit="auto 15deg 10m"
-            max-camera-orbit="auto 165deg 23m"
+            camera-orbit="35deg 75deg 105%"
+            min-camera-orbit="auto 0deg 65%"
+            max-camera-orbit="auto 165deg 180%"
             camera-target="0m .65m 0m">
             <button class="bb-hotspot" slot="hotspot-rail" data-rule="rail" data-position="-4.5 1.82 3.35" data-normal="0 1 0" aria-label="Explore the long power rail">Long power rail</button>
             <button class="bb-hotspot" slot="hotspot-five" data-rule="five" data-position="2.5 .35 1.85" data-normal="0 1 0" aria-label="Explore a five-hole group">5-hole group</button>
@@ -1119,18 +1128,24 @@
             <div class="bb-model-fallback">Loading the interactive breadboard model…</div>
           </model-viewer>
           <div class="bb-model-controls" role="group" aria-label="Choose a breadboard model view">
-            <button class="bb-view-btn is-active" type="button" aria-pressed="true" data-view="cutaway" data-orbit="35deg 58deg 16m">Cutaway</button>
-            <button class="bb-view-btn" type="button" aria-pressed="false" data-view="top" data-orbit="0deg 2deg 17m">Top</button>
-            <button class="bb-view-btn" type="button" aria-pressed="false" data-view="underneath" data-orbit="25deg 138deg 17m">Underneath</button>
+            <button class="bb-view-btn is-active" type="button" aria-pressed="true" data-view="cutaway" data-orbit="35deg 75deg 105%">Cutaway</button>
+            <button class="bb-view-btn" type="button" aria-pressed="false" data-view="top" data-orbit="0deg 2deg 105%">Top</button>
+            <button class="bb-view-btn" type="button" aria-pressed="false" data-view="underneath" data-orbit="25deg 138deg 105%">Underneath</button>
           </div>
         </div>
 
         <div class="bb-model-guide" aria-label="Three breadboard connection rules">
-          <button class="bb-model-rule" type="button" data-rule="rail" style="--rule-color:#ef4444;"><span>1</span><strong>Power rails run lengthwise.</strong><br>Every hole along one red or blue line shares the same long metal strip.</button>
+          <button class="bb-model-rule" type="button" data-rule="rail" style="--rule-color:#ef4444;"><span>1</span><strong>Power rails run lengthwise.</strong><br>On this model, each rail is continuous. Real rails may be split: check with a continuity meter.</button>
           <button class="bb-model-rule" type="button" data-rule="five" style="--rule-color:#16a34a;"><span>2</span><strong>Main holes connect in groups of five.</strong><br>One short gold clip joins five holes in a column—not the whole row.</button>
           <button class="bb-model-rule" type="button" data-rule="gap" style="--rule-color:#f59e0b;"><span>3</span><strong>The center gap breaks the connection.</strong><br>The five holes above it and the five below it are separate groups.</button>
         </div>
 
+        <div class="bb-explode-controls">
+          <label for="bb-explode">Lift the shell <output id="bb-explode-value" for="bb-explode">100% · Exploded</output></label>
+          <input id="bb-explode" type="range" min="0" max="100" value="100" step="1" aria-label="Shell separation" aria-valuetext="100 percent, exploded" disabled>
+          <div class="bb-explode-actions"><span>Assembled</span><button id="bb-model-reset" type="button">Reset view</button><span>Exploded</span></div>
+          <p id="bb-model-status" role="status">Loading 3D model… Connection rules are available below.</p>
+        </div>
         <div class="bb-model-feedback" aria-live="polite">
           <div>
             <h3 id="bb-model-feedback-title">Start with the cutaway</h3>
@@ -2534,6 +2549,41 @@
     const modelFeedbackText = document.getElementById('bb-model-feedback-text');
     const modelProgress = document.getElementById('bb-model-progress');
     const exploredRules = new Set();
+    const explodeSlider = document.getElementById('bb-explode');
+    let selectedModelRule = null;
+    function updateShell() {
+      const amount = Number(explodeSlider.value);
+      document.getElementById('bb-explode-value').textContent = `${amount}% · ${amount === 0 ? 'Assembled' : amount === 100 ? 'Exploded' : 'Opening'}`;
+      explodeSlider.setAttribute('aria-valuetext', `${amount} percent, ${amount === 0 ? 'assembled' : 'shell lifted'}`);
+      if (breadboardModel.loaded) {
+        breadboardModel.pause();
+        breadboardModel.currentTime = amount / 100 * .999;
+        const lift = -1.3 * (1 - amount / 100);
+        breadboardModel.updateHotspot({name: 'hotspot-rail', position: `-4.5 ${1.82 + lift} 3.35`});
+        breadboardModel.updateHotspot({name: 'hotspot-gap', position: `0 ${1.82 + lift} 0`});
+      }
+    }
+    function highlightModelRule(name) {
+      selectedModelRule = name;
+      const colors = {rail: [1, .12, .04], five: [.02, .8, .12], gap: [1, .45, .02]};
+      if (breadboardModel.model) {
+        ['rail', 'five', 'gap'].forEach(key => {
+          const material = breadboardModel.model.materials.find(m => m.name === `breadboard-focus${key[0].toUpperCase() + key.slice(1)}`);
+          if (material) material.setEmissiveFactor(key === name ? colors[key] : [0, 0, 0]);
+        });
+      }
+      document.querySelectorAll('.bb-hotspot').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.rule === name)));
+    }
+    explodeSlider.addEventListener('input', updateShell);
+    breadboardModel.addEventListener('load', () => {
+      explodeSlider.disabled = false;
+      updateShell();
+      highlightModelRule(selectedModelRule);
+      document.getElementById('bb-model-status').textContent = 'Move the slider or use its arrow keys to assemble and open the board.';
+    });
+    breadboardModel.addEventListener('error', () => {
+      document.getElementById('bb-model-status').textContent = 'The 3D model could not load. Use the connection rules and the interactive board below.';
+    });
     const modelViews = {
       cutaway: {
         title: 'Cutaway view: match holes to clips',
@@ -2550,19 +2600,19 @@
     };
     const modelRules = {
       rail: {
-        orbit: '18deg 112deg 15m',
+        orbit: '18deg 112deg 105%',
         view: 'underneath',
         title: 'Power rail: one long connection',
-        text: 'Follow one gold strip from left to right. Every socket directly above that strip is electrically connected—even when the holes are far apart.'
+        text: 'Follow one gold strip from left to right. Every socket directly above that strip is electrically connected—even when the holes are far apart. Each rail is separate; colored lines do not supply power. Real boards may split a rail halfway.'
       },
       five: {
-        orbit: '325deg 66deg 14m',
+        orbit: '325deg 78deg 100%',
         view: 'cutaway',
         title: 'Tie points: one group of five',
         text: 'This short gold clip sits below five sockets in one column. A lead in any one of those five can connect to a lead in any of the other four.'
       },
       gap: {
-        orbit: '0deg 24deg 15m',
+        orbit: '0deg 24deg 105%',
         view: 'top',
         title: 'Center gap: a deliberate break',
         text: 'No metal crosses the trench. A chip straddles it so pins on opposite sides do not accidentally share the same connection.'
@@ -2581,6 +2631,9 @@
     function activateModelRule(ruleName) {
       const rule = modelRules[ruleName];
       if (!rule) return;
+      explodeSlider.value = ruleName === 'gap' ? 55 : 100;
+      updateShell();
+      highlightModelRule(ruleName);
       setModelCamera(rule.orbit, rule.view);
       exploredRules.add(ruleName);
       modelRuleButtons.forEach(function (button) {
@@ -2600,6 +2653,7 @@
 
     modelViewButtons.forEach(function (button) {
       button.addEventListener('click', function () {
+        highlightModelRule(null);
         setModelCamera(button.dataset.orbit, button.dataset.view);
         modelRuleButtons.forEach(function (ruleButton) {
           ruleButton.classList.remove('is-active');
@@ -2609,6 +2663,12 @@
         if (view && modelFeedbackTitle) modelFeedbackTitle.textContent = view.title;
         if (view && modelFeedbackText) modelFeedbackText.textContent = view.text;
       });
+    });
+    document.getElementById('bb-model-reset').addEventListener('click', () => {
+      explodeSlider.value = 100;
+      updateShell();
+      document.querySelector('.bb-view-btn[data-view="cutaway"]').click();
+      breadboardModel.setAttribute('camera-target', '0m .65m 0m');
     });
     modelRuleButtons.forEach(function (button) {
       button.setAttribute('aria-pressed', 'false');

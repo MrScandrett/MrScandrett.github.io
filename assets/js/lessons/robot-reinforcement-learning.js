@@ -28,7 +28,7 @@
   }
   function resetBrain() {
     Q = new Float32Array(COLS * ROWS * 4);
-    episode = 0; history = []; newEpisode();
+    episode = 0; history = []; firstWin = false; newEpisode();
   }
   function newEpisode() { robot = { x: start.x, y: start.y }; steps = 0; epReward = 0; }
 
@@ -60,11 +60,13 @@
     robot.x = nx; robot.y = ny; steps++; epReward += r;
     if (done || steps > 200) {
       if (!greedyRun) { episode++; history.push({ reward: epReward, steps: steps, goal: kind === GOAL }); if (history.length > 400) history.shift(); }
-      else { greedyRun = false; ui.greedy.textContent = 'Test the policy'; running = false; syncRun(); lastTest = kind === GOAL ? 'Test run: reached the charger in ' + steps + ' steps.' : 'Test run: ' + (kind === PIT ? 'fell down the stairs.' : 'wandered for 200 steps without finding the charger.'); }
+      else { greedyRun = false; ui.greedy.textContent = 'Test the policy'; running = false; syncRun(); lastTest = kind === GOAL ? 'Test run: reached the charger in ' + steps + ' steps.' : 'Test run: ' + (kind === PIT ? 'fell down the stairs.' : 'wandered for 200 steps without finding the charger.'); RA.announce(lastTest, true); }
+      if (!greedyRun && kind === GOAL && !firstWin) { firstWin = true; RA.announce('Episode ' + episode + ': the robot reached the charger for the first time.'); }
+      mood = kind === GOAL ? 'happy' : kind === PIT ? 'oops' : mood; moodT = 0.6;
       newEpisode();
     }
   }
-  var lastTest = '';
+  var lastTest = '', firstWin = false, mood = 'happy', moodT = 0, cursor = null;
 
   function valueColor(v) {
     if (v >= 0) return 'rgba(184,216,75,' + Math.min(0.85, v * 0.9) + ')';
@@ -75,15 +77,22 @@
     ctx.fillStyle = '#0f1d23'; ctx.fillRect(0, 0, canvas.width, canvas.height);
     for (var y = 0; y < ROWS; y++) for (var x = 0; x < COLS; x++) {
       var k = cell(x, y), px = x * CS, py = y * CS, s = y * COLS + x;
-      if (k === WALL) { ctx.fillStyle = '#4c6a72'; ctx.fillRect(px, py, CS, CS); continue; }
-      if (k === PIT) { ctx.fillStyle = '#5a1f1b'; ctx.fillRect(px, py, CS, CS); }
-      else if (k === GOAL) { ctx.fillStyle = '#3d5a12'; ctx.fillRect(px, py, CS, CS); }
-      else if (ui.showQ.checked) { ctx.fillStyle = valueColor(maxQ(s)); ctx.fillRect(px, py, CS, CS); }
-      ctx.strokeStyle = 'rgba(112,200,229,.12)'; ctx.strokeRect(px + .5, py + .5, CS - 1, CS - 1);
-      ctx.fillStyle = '#e8f6fb'; ctx.font = '700 ' + Math.round(CS * 0.42) + 'px IBM Plex Mono, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      if (k === PIT) ctx.fillText('▼', px + CS / 2, py + CS / 2);
-      else if (k === GOAL) ctx.fillText('⚡', px + CS / 2, py + CS / 2);
-      else if (ui.showQ.checked && Math.abs(maxQ(s)) > 0.01) {
+      if (k === WALL) { drawWall(px, py); continue; }
+      if (k === PIT) drawStairs(px, py);
+      else if (k === GOAL) drawCharger(px, py);
+      else if (ui.showQ.checked) {
+        var qv = maxQ(s);
+        ctx.fillStyle = valueColor(qv); ctx.fillRect(px, py, CS, CS);
+        // Diagonal hatching marks "bad" squares, so value isn't shown by colour alone.
+        if (qv < -0.05) {
+          ctx.save(); ctx.beginPath(); ctx.rect(px, py, CS, CS); ctx.clip();
+          ctx.strokeStyle = 'rgba(255,214,206,' + Math.min(0.6, -qv) + ')'; ctx.lineWidth = 1.5;
+          for (var hh = -CS; hh < CS; hh += 10) { ctx.beginPath(); ctx.moveTo(px + hh, py + CS); ctx.lineTo(px + hh + CS, py); ctx.stroke(); }
+          ctx.restore();
+        }
+      }
+      ctx.strokeStyle = 'rgba(112,200,229,.12)'; ctx.lineWidth = 1; ctx.strokeRect(px + .5, py + .5, CS - 1, CS - 1);
+      if (k === EMPTY && ui.showQ.checked && Math.abs(maxQ(s)) > 0.01) {
         var a = best(s), cx = px + CS / 2, cy = py + CS / 2, L = CS * 0.28;
         ctx.strokeStyle = 'rgba(232,246,251,.8)'; ctx.lineWidth = 2;
         var ex = cx + ACTIONS[a][0] * L, ey = cy + ACTIONS[a][1] * L;
@@ -93,9 +102,14 @@
         ctx.stroke(); ctx.lineWidth = 1;
       }
     }
-    ctx.strokeStyle = '#70c8e5'; ctx.lineWidth = 2; ctx.strokeRect(start.x * CS + 4, start.y * CS + 4, CS - 8, CS - 8); ctx.lineWidth = 1;
-    ctx.fillStyle = '#146b8c'; ctx.strokeStyle = '#e8f6fb'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(robot.x * CS + CS / 2, robot.y * CS + CS / 2, CS * 0.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.lineWidth = 1;
+    ctx.setLineDash([5, 4]); ctx.strokeStyle = '#70c8e5'; ctx.lineWidth = 2; ctx.strokeRect(start.x * CS + 4, start.y * CS + 4, CS - 8, CS - 8); ctx.setLineDash([]);
+    ctx.fillStyle = '#70c8e5'; ctx.font = '700 10px IBM Plex Mono, monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText('START', start.x * CS + 7, start.y * CS + 7);
+    ctx.lineWidth = 1;
+    RA.drawRobot(ctx, robot.x * CS + CS / 2, robot.y * CS + CS / 2, -Math.PI / 2 + 0.0001, CS * 0.3, { face: moodT > 0 ? mood : 'happy' });
+    if (cursor && cursor.focused && cursor.used) {
+      ctx.strokeStyle = '#0f1d23'; ctx.lineWidth = 6; ctx.strokeRect(cursor.cx * CS + 3, cursor.cy * CS + 3, CS - 6, CS - 6);
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.strokeRect(cursor.cx * CS + 3, cursor.cy * CS + 3, CS - 6, CS - 6); ctx.lineWidth = 1;
+    }
 
     // Learning curve: steps per episode (lower is better), successes in green.
     var cw = ui.chart.width, ch = ui.chart.height;
@@ -114,6 +128,48 @@
     ui.readout.textContent = 'Episode ' + episode + ' · last 20: reached charger ' + wins + '/' + recent.length + (recent.length ? ', avg ' + avg.toFixed(0) + ' steps' : '') + (lastTest ? ' · ' + lastTest : '');
   }
 
+  function drawWall(px, py) {
+    ctx.fillStyle = '#4c6a72'; ctx.fillRect(px, py, CS, CS);
+    ctx.strokeStyle = 'rgba(15,29,35,.55)'; ctx.lineWidth = 2;
+    var bh = CS / 4;
+    for (var r = 0; r < 4; r++) {
+      ctx.beginPath(); ctx.moveTo(px, py + r * bh); ctx.lineTo(px + CS, py + r * bh); ctx.stroke();
+      var off = r % 2 ? CS / 4 : 0;
+      for (var c = off; c < CS; c += CS / 2) { ctx.beginPath(); ctx.moveTo(px + c, py + r * bh); ctx.lineTo(px + c, py + (r + 1) * bh); ctx.stroke(); }
+    }
+    ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.fillRect(px, py, CS, 3);
+    ctx.lineWidth = 1;
+  }
+  function drawStairs(px, py) {
+    ctx.fillStyle = '#3a1512'; ctx.fillRect(px, py, CS, CS);
+    var n = 4, sw = CS / n;
+    for (var i = 0; i < n; i++) {
+      ctx.fillStyle = 'hsl(6,' + (45 + i * 5) + '%,' + (16 + i * 7) + '%)';
+      ctx.fillRect(px, py + i * sw, CS, sw - 2);
+    }
+    // hazard stripes on the top step
+    ctx.save(); ctx.beginPath(); ctx.rect(px, py, CS, 8); ctx.clip();
+    ctx.fillStyle = '#f2bf3f'; ctx.fillRect(px, py, CS, 8);
+    ctx.fillStyle = '#12202a';
+    for (var h = -8; h < CS; h += 12) { ctx.beginPath(); ctx.moveTo(px + h, py + 8); ctx.lineTo(px + h + 6, py + 8); ctx.lineTo(px + h + 14, py); ctx.lineTo(px + h + 8, py); ctx.closePath(); ctx.fill(); }
+    ctx.restore();
+    ctx.fillStyle = '#ffd6ce'; ctx.font = '700 10px IBM Plex Mono, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('STAIRS', px + CS / 2, py + CS - 3);
+  }
+  function drawCharger(px, py) {
+    ctx.fillStyle = '#2f4a0e'; ctx.fillRect(px, py, CS, CS);
+    var cx = px + CS / 2, cy = py + CS / 2;
+    var g = ctx.createRadialGradient(cx, cy, 2, cx, cy, CS * 0.5);
+    g.addColorStop(0, 'rgba(242,191,63,.55)'); g.addColorStop(1, 'rgba(242,191,63,0)');
+    ctx.fillStyle = g; ctx.fillRect(px, py, CS, CS);
+    // charging pad + bolt
+    RA.roundRect(ctx, px + CS * 0.18, py + CS * 0.2, CS * 0.64, CS * 0.6, 8);
+    ctx.fillStyle = '#12202a'; ctx.fill(); ctx.strokeStyle = '#b8d84b'; ctx.lineWidth = 2; ctx.stroke(); ctx.lineWidth = 1;
+    ctx.fillStyle = '#f2bf3f'; ctx.beginPath();
+    ctx.moveTo(cx + 3, cy - CS * 0.24); ctx.lineTo(cx - CS * 0.12, cy + 3); ctx.lineTo(cx - 1, cy + 3);
+    ctx.lineTo(cx - 4, cy + CS * 0.24); ctx.lineTo(cx + CS * 0.12, cy - 3); ctx.lineTo(cx + 1, cy - 3); ctx.closePath(); ctx.fill();
+  }
+
   function syncRun() {
     ui.run.textContent = running && !greedyRun ? 'Pause training' : 'Train';
     ui.run.setAttribute('aria-pressed', String(running && !greedyRun));
@@ -122,12 +178,37 @@
   canvas.addEventListener('pointerdown', function (e) {
     var p = RA.canvasPoint(canvas, e), x = Math.floor(p.x / CS), y = Math.floor(p.y / CS);
     if (x < 0 || y < 0 || x >= COLS || y >= ROWS) return;
+    applyTool(x, y);
+  });
+  function applyTool(x, y) {
     var i = y * COLS + x;
     if (tool === 'start') { if (grid[i] === EMPTY) { start = { x: x, y: y }; newEpisode(); } return; }
     if (x === start.x && y === start.y) return;
     var val = { wall: WALL, pit: PIT, goal: GOAL, erase: EMPTY }[tool];
     grid[i] = grid[i] === val ? EMPTY : val;
+  }
+  var NAMES = ['empty floor', 'wall', 'stairs', 'charger'], DIRS = ['up', 'right', 'down', 'left'];
+  function describeCell(x, y) {
+    var s = y * COLS + x, k = cell(x, y), out = 'Row ' + (y + 1) + ', column ' + (x + 1) + ': ' + NAMES[k];
+    if (x === start.x && y === start.y) out += ', start square';
+    if (x === robot.x && y === robot.y) out += ', robot is here';
+    if (k === EMPTY && Math.abs(maxQ(s)) > 0.01) out += '. Learned value ' + (maxQ(s) > 0 ? 'plus ' : 'minus ') + Math.abs(maxQ(s)).toFixed(2) + ', best move ' + DIRS[best(s)];
+    else if (k === EMPTY) out += '. Nothing learned here yet';
+    return out + '.';
+  }
+  cursor = RA.keyCursor(canvas, {
+    step: CS, x: CS / 2, y: canvas.height - CS / 2,
+    onMove: function (c) { c.cx = Math.floor(c.x / CS); c.cy = Math.floor(c.y / CS); },
+    describe: function (c) { return describeCell(c.cx, c.cy); },
+    onKey: function (k, c) {
+      if (k !== 'Enter') return false;
+      c.cx = Math.floor(c.x / CS); c.cy = Math.floor(c.y / CS);
+      applyTool(c.cx, c.cy);
+      RA.announce(describeCell(c.cx, c.cy), true);
+      return true;
+    }
   });
+  cursor.cx = 0; cursor.cy = ROWS - 1;
   ui.tool.forEach(function (b) {
     b.addEventListener('click', function () {
       tool = b.dataset.rlTool;
@@ -147,6 +228,7 @@
 
   layout(); resetBrain(); syncRun();
   RA.loop(function (dt) {
+    moodT = Math.max(0, moodT - dt);
     if (running) {
       // Steps per second: slow enough to watch at the low end, a blur at the top.
       var rate = greedyRun ? 8 : Math.pow(10, +ui.speed.value / 25);
