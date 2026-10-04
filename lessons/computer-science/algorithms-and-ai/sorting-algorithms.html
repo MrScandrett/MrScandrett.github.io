@@ -418,8 +418,8 @@
         <div class="ll-pane ll-active" id="sa-pane-sim">
           <span class="ll-label">Mode</span>
           <div class="cl-mode-toggle">
-            <button class="ll-preset" id="sa-mode-single" onclick="saSetMode('single')" style="background:#5856d6;color:#fff;">Single</button>
-            <button class="ll-preset" id="sa-mode-race" onclick="saSetMode('race')">Race all 3</button>
+            <button class="ll-preset ll-active" id="sa-mode-single" onclick="saSetMode('single')" aria-pressed="true">Single</button>
+            <button class="ll-preset" id="sa-mode-race" onclick="saSetMode('race')" aria-pressed="false">Race all 3</button>
           </div>
           <div id="sa-algo-picker">
             <span class="ll-label">Algorithm</span>
@@ -776,10 +776,11 @@
     saStop();
     mode = name;
 
-    document.getElementById('sa-mode-single').style.background = name === 'single' ? '#5856d6' : '';
-    document.getElementById('sa-mode-single').style.color = name === 'single' ? '#fff' : '';
-    document.getElementById('sa-mode-race').style.background = name === 'race' ? '#5856d6' : '';
-    document.getElementById('sa-mode-race').style.color = name === 'race' ? '#fff' : '';
+    ['single', 'race'].forEach((m) => {
+      const btn = document.getElementById('sa-mode-' + m);
+      btn.classList.toggle('ll-active', m === name);
+      btn.setAttribute('aria-pressed', String(m === name));
+    });
 
     document.getElementById('sa-single-view').hidden = name !== 'single';
     document.getElementById('sa-race-view').hidden = name !== 'race';

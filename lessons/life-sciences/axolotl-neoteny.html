@@ -1911,6 +1911,14 @@
         render();
       }
 
+      // Firebase's long-polling fallback (kept for networks that block
+      // WebSockets) injects an untitled hidden iframe; label it for screen readers.
+      new MutationObserver((records) => {
+        records.forEach((record) => record.addedNodes.forEach((node) => {
+          if (node.tagName === "IFRAME" && !node.title) node.title = "Class tank connection (hidden)";
+        }));
+      }).observe(document.body, { childList: true });
+
       function connectLiveTank() {
         try {
           if (!window.firebase) throw new Error("Firebase did not load");
