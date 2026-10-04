@@ -15,6 +15,7 @@
   var state = {
     terms: [],
     byKey: new Map(),
+    contexts: [],
     card: null,
     active: null,
     hoverTimer: 0,
@@ -27,6 +28,88 @@
 
   function escapeRegExp(value) {
     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function splitContexts(value) {
+    return String(value || '').split(/[\s,]+/).map(normalize).filter(Boolean);
+  }
+
+  // A page's context comes from <html data-glossary-context="…">, else from the
+  // longest matching path prefix in the glossary's `contexts` map. Terms tagged
+  // with `contexts` only auto-mark on pages that share one of those tags, and a
+  // word with several senses (node, graph, depth…) resolves to the matching one.
+  function pageContexts(map) {
+    var explicit = document.documentElement.dataset.glossaryContext;
+    if (explicit) return splitContexts(explicit);
+    var path = decodeURIComponent(window.location.pathname);
+    var best = '';
+    Object.keys(map || {}).forEach(function (prefix) {
+      if (prefix.length > best.length && path.indexOf(prefix) !== -1) best = prefix;
+    });
+    return best ? map[best].map(normalize) : [];
+  }
+
+  // How well a sense fits: untagged (general) senses score 0.5, tagged ones
+  // score by the page contexts they share (earlier = the lesson's main subject,
+  // so it weighs more), and senses sharing none score -1.
+  function contextScore(entry, contexts) {
+    if (!entry.contexts || !entry.contexts.length) return 0.5;
+    var score = 0;
+    entry.contexts.forEach(function (tag) {
+      var index = contexts.indexOf(normalize(tag));
+      if (index !== -1) score += contexts.length - index;
+    });
+    return score || -1;
+  }
+
+  function bestSense(list, contexts) {
+    var best = null;
+    var bestScore = -Infinity;
+    list.forEach(function (entry) {
+      var score = contextScore(entry, contexts);
+      if (score > bestScore) { best = entry; bestScore = score; }
+    });
+    return { entry: best, score: bestScore };
+  }
+
+  function addKey(key, entry) {
+    key = normalize(key);
+    var list = state.byKey.get(key);
+    if (!list) state.byKey.set(key, list = []);
+    if (list.indexOf(entry) === -1) list.push(entry);
+  }
+
+  // Pick the sense of a word for this element: its own data-glossary-context,
+  // then the nearest ancestor's, then the page's. Falls back to the first sense.
+  function lookup(key, element) {
+    var list = state.byKey.get(normalize(key));
+    if (!list) return null;
+    if (list.length === 1) return list[0];
+    var scoped = element && element.closest && element.closest('[data-glossary-context]');
+    return bestSense(list, scoped ? splitContexts(scoped.dataset.glossaryContext) : state.contexts).entry;
+  }
+
+  function isAcronym(alias) {
+    return alias.length <= 4 && /^[A-Z0-9]+$/.test(alias);
+  }
+
+  // Short all-caps acronyms (IMU, CRT, GR) only match in capitals, so "Gr." or
+  // "dof" in ordinary prose doesn't light up; everything else ignores case.
+  function compilePatterns(entry) {
+    var aliases = [entry.term].concat(entry.aliases || []).sort(function (a, b) { return b.length - a.length; });
+    var groups = [[aliases.filter(function (a) { return !isAcronym(a); }), 'i'], [aliases.filter(isAcronym), '']];
+    return groups.filter(function (group) { return group[0].length; }).map(function (group) {
+      return new RegExp('(?:^|\\b)(' + group[0].map(escapeRegExp).join('|') + ')(?=$|\\b)', group[1]);
+    });
+  }
+
+  function firstMatch(entry, text) {
+    var best = null;
+    entry.patterns.forEach(function (pattern) {
+      var match = pattern.exec(text);
+      if (match && (!best || match.index < best.index)) best = match;
+    });
+    return best;
   }
 
   function addStylesheet() {
@@ -44,6 +127,7 @@
     button.className = 'cos-glossary-term';
     button.textContent = text;
     button.dataset.glossary = entry.term;
+    if (entry.sense) button.dataset.glossarySense = entry.sense;
     button.setAttribute('aria-haspopup', 'dialog');
     button.setAttribute('aria-controls', 'classroomos-glossary-card');
     button.setAttribute('aria-expanded', 'false');
@@ -73,7 +157,7 @@
 
   function markExplicitTerms(root) {
     root.querySelectorAll('[data-glossary]:not(.cos-glossary-term)').forEach(function (element) {
-      var entry = state.byKey.get(normalize(element.dataset.glossary || element.textContent));
+      var entry = lookup(element.dataset.glossary || element.textContent, element);
       if (!entry) return;
       element.classList.add('cos-glossary-term');
       if (!/^(BUTTON|A)$/.test(element.tagName)) element.setAttribute('tabindex', '0');
@@ -83,6 +167,7 @@
       element.setAttribute('aria-expanded', 'false');
       element.setAttribute('aria-label', element.textContent.trim() + ': show definition');
       element.dataset.glossary = entry.term;
+      if (entry.sense) element.dataset.glossarySense = entry.sense;
     });
   }
 
@@ -95,17 +180,25 @@
     var nodes = [];
     while (walker.nextNode()) nodes.push(walker.currentNode);
 
+    // One sense per word: the best fit for this page, and only if it fits at all.
+    var senses = new Map();
+    state.terms.forEach(function (entry) {
+      var key = normalize(entry.term);
+      if (!senses.has(key)) senses.set(key, bestSense(state.byKey.get(key), state.contexts));
+    });
+    var candidates = state.terms.filter(function (entry) {
+      var sense = senses.get(normalize(entry.term));
+      return sense.entry === entry && sense.score > 0;
+    });
     var marked = new Set();
     for (var i = 0; i < nodes.length && marked.size < MAX_AUTOMATIC_TERMS; i += 1) {
       var node = nodes[i];
       if (!node.isConnected) continue;
-      for (var j = 0; j < state.terms.length; j += 1) {
-        var entry = state.terms[j];
+      for (var j = 0; j < candidates.length; j += 1) {
+        var entry = candidates[j];
         var key = normalize(entry.term);
         if (marked.has(key)) continue;
-        var aliases = [entry.term].concat(entry.aliases || []).sort(function (a, b) { return b.length - a.length; });
-        var pattern = new RegExp('(?:^|\\b)(' + aliases.map(escapeRegExp).join('|') + ')(?=$|\\b)', 'i');
-        var match = pattern.exec(node.nodeValue);
+        var match = firstMatch(entry, node.nodeValue);
         if (!match) continue;
         var exactMatch = { index: match.index + match[0].indexOf(match[1]), 0: match[1] };
         replaceTextMatch(node, exactMatch, entry);
@@ -126,7 +219,7 @@
     card.innerHTML =
       '<button class="cos-glossary-close" type="button" aria-label="Close definition">×</button>' +
       '<div class="cos-glossary-head">' +
-        '<div><strong class="cos-glossary-word" id="classroomos-glossary-word"></strong><p class="cos-glossary-pronunciation" id="classroomos-glossary-pronunciation"></p></div>' +
+        '<div><strong class="cos-glossary-word" id="classroomos-glossary-word"></strong><p class="cos-glossary-pronunciation" id="classroomos-glossary-pronunciation"></p><p class="cos-glossary-sense" hidden></p></div>' +
         '<button class="cos-glossary-speak" type="button" aria-label="Hear this word pronounced">' +
           '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4.03v8.05A4.5 4.5 0 0 0 16.5 12zm-2.5-8.7v2.06a7 7 0 0 1 0 13.28v2.06a9 9 0 0 0 0-17.4z"/></svg>' +
           '<span>Hear it</span>' +
@@ -161,7 +254,13 @@
   }
 
   function entryFor(trigger) {
-    return state.byKey.get(normalize(trigger.dataset.glossary || trigger.textContent));
+    var list = state.byKey.get(normalize(trigger.dataset.glossary || trigger.textContent));
+    if (!list) return null;
+    var sense = trigger.dataset.glossarySense;
+    for (var i = 0; sense && i < list.length; i += 1) {
+      if (list[i].sense === sense) return list[i];
+    }
+    return lookup(trigger.dataset.glossary || trigger.textContent, trigger);
   }
 
   function open(trigger) {
@@ -173,9 +272,13 @@
     trigger.setAttribute('aria-expanded', 'true');
     trigger.setAttribute('aria-describedby', 'classroomos-glossary-pronunciation classroomos-glossary-definition');
     state.card.querySelector('.cos-glossary-word').textContent = entry.term;
+    var sense = state.card.querySelector('.cos-glossary-sense');
+    sense.textContent = entry.sense || '';
+    sense.hidden = !entry.sense;
     state.card.querySelector('.cos-glossary-pronunciation').textContent = entry.pronunciation + '  ·  ' + entry.ipa;
     state.card.querySelector('.cos-glossary-definition').textContent = entry.definition;
-    state.card.querySelector('.cos-glossary-history').href = entry.etymology;
+    state.card.querySelector('.cos-glossary-history').hidden = !entry.etymology;
+    state.card.querySelector('.cos-glossary-history').href = entry.etymology || '#';
     state.card.querySelector('.cos-glossary-history').setAttribute('aria-label', 'Explore the word history of ' + entry.term + ' on Wiktionary (opens in a new tab)');
     state.card.hidden = false;
     positionCard(trigger);
@@ -262,10 +365,12 @@
   }
 
   function init(payload) {
+    state.contexts = pageContexts(payload.contexts);
     state.terms = (payload.terms || []).slice().sort(function (a, b) { return b.term.length - a.term.length; });
     state.terms.forEach(function (entry) {
-      state.byKey.set(normalize(entry.term), entry);
-      (entry.aliases || []).forEach(function (alias) { state.byKey.set(normalize(alias), entry); });
+      addKey(entry.term, entry);
+      (entry.aliases || []).forEach(function (alias) { addKey(alias, entry); });
+      entry.patterns = compilePatterns(entry);
     });
     addStylesheet();
     state.card = createCard();
@@ -273,7 +378,7 @@
     markExplicitTerms(root);
     if (!document.documentElement.hasAttribute('data-glossary-manual')) markAutomaticTerms(root);
     bindEvents();
-    document.dispatchEvent(new CustomEvent('classroomos:glossaryready', { detail: { count: state.terms.length } }));
+    document.dispatchEvent(new CustomEvent('classroomos:glossaryready', { detail: { count: state.terms.length, contexts: state.contexts.slice() } }));
   }
 
   window.ClassroomOSGlossary = {
