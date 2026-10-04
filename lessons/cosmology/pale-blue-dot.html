@@ -568,6 +568,8 @@
       background: rgba(60, 100, 255, 0.25); color: #bcd2ff;
     }
     .pbd-discuss .pbd-q-tag { display: block; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(140, 170, 235, 0.7); margin-bottom: 0.15rem; }
+    .pbd-honest li { padding-left: 1rem; }
+    .pbd-honest li::before { content: none; }
     .pbd-section-lede { font-size: 0.95rem !important; color: rgba(190, 210, 255, 0.8) !important; max-width: 720px; }
 
     @media (prefers-reduced-motion: reduce) {
@@ -742,6 +744,24 @@
     <button type="button" class="pbd-find-btn pbd-reveal-btn" id="pbd-scale-reveal">Reveal the distances</button>
   </div>
 
+  <div class="pbd-section" id="pbd-honest">
+    <p class="pbd-story-eyebrow">Check the model</p>
+    <h2>Is This Zoom to Scale?</h2>
+    <p class="pbd-section-lede">Mostly, yes. Every distance and width in the zoom is real, but a few things have to be drawn bigger or simpler than life so you can see them. Here is exactly what is real and what isn't.</p>
+    <ul class="pbd-discuss pbd-honest">
+      <li><span class="pbd-q-tag">Real</span>The view width, the scale bar and the light-travel time are real at every step. Each notch of the slider multiplies the width by the same amount, so the zoom covers 27 powers of ten, from a 1.5-metre desk to the observable universe.</li>
+      <li><span class="pbd-q-tag">Real</span>The planets, the Moon and Voyager 1 are drawn where they are today, at their true distances, seen from above the plane of Earth's orbit.</li>
+      <li><span class="pbd-q-tag">Enlarged</span>Anything smaller than a pixel is drawn as a small dot. At the Pale Blue Dot moment even Jupiter is only about a hundredth of a pixel wide, and Earth's dot is drawn thousands of times too big. (In Voyager's real photo, Earth covered 0.12 of a pixel.)</li>
+      <li><span class="pbd-q-tag">Recreated</span>The light streaks are a recreation of the lens flare in Voyager's camera. They were never in space.</li>
+      <li><span class="pbd-q-tag">Real</span>The nearby stars, from Proxima Centauri to Rigel, sit at their measured distances and directions. The Magellanic Clouds, Andromeda, Triangulum and the Virgo Cluster do too.</li>
+      <li><span class="pbd-q-tag">Predicted</span>The Oort Cloud has never been seen directly. Astronomers infer it from the paths of long-period comets.</li>
+      <li><span class="pbd-q-tag">Artist's map</span>No one has photographed the Milky Way from outside. Its size (about 100,000 light-years) and the Sun's place (26,000 light-years from the center) are measured, but the spiral picture is an illustration.</li>
+      <li><span class="pbd-q-tag">Typical pattern</span>The cosmic web shows realistic void sizes, roughly 30 to 300 million light-years, but it is not a map of real galaxies.</li>
+      <li><span class="pbd-q-tag">Horizon</span>The observable universe is a sphere centered on us. Its edge is the oldest light we can see, sent out 13.8 billion years ago. Space has stretched since then, so that edge is now about 46 billion light-years away in every direction. The whole universe is bigger, and may have no edge at all.</li>
+      <li><span class="pbd-q-tag">Flattened</span>Real space is three-dimensional. This zoom flattens everything onto one plane, like a map.</li>
+    </ul>
+  </div>
+
   <div class="pbd-section">
     <p class="pbd-story-eyebrow">Talk it over</p>
     <h2>Discussion Questions</h2>
@@ -813,7 +833,7 @@
           </div>
           <div class="ll-info">
             <strong>Observable Universe</strong>
-            ~93 billion light-years wide — the volume from which light has had time to reach us since the Big Bang.
+            About 93 billion light-years wide: the sphere from which light has had time to reach us in 13.8 billion years. It is wider than 2 × 13.8 billion light-years because space stretched while the light travelled. <a href="#pbd-honest" style="color:#9fc0ff;">What's to scale? ↓</a>
           </div>
         </div>
 
@@ -859,6 +879,11 @@
       earthKm: function (date) {
         var t = +(date || new Date());
         return fromEarth(sunKm0 + SPEED_KMS * (t - T0) / 1000, t);
+      },
+      // Heliocentric position projected onto Earth's orbital plane, in meters.
+      helioXY: function (date) {
+        var t = +(date || new Date()), r = (sunKm0 + SPEED_KMS * (t - T0) / 1000) * 1000;
+        return [dir[0] * r, dir[1] * r];
       }
     };
   })();
@@ -877,109 +902,211 @@
     const journeyBtn = document.getElementById('pbd-journey-btn');
     const viewportEl = document.getElementById('pbd-viewport');
 
-    // ── Scale map: slider 0→100 maps logarithmically to meters across viewport ──
-    // 0   = 10 m  (human scale)
-    // 100 = 9.3e26 m (observable universe ~93B ly)
-    const LOG_MIN = Math.log10(10);
-    const LOG_MAX = Math.log10(9.3e26);
+    // ── Scale map: slider 0→100 maps logarithmically to the width of the view ──
+    // 0   = 1.5 m    (a desk)
+    // 100 = 2.2e27 m (wide enough to show the whole observable universe,
+    //       8.8e26 m across, inside the canvas height)
+    // Everything else below (stages, labels, speech, journey) is keyed to the
+    // real width in meters, never to raw slider positions.
+    const LOG_MIN = Math.log10(1.5);
+    const LOG_MAX = Math.log10(2.2e27);
 
     function sliderToMeters(s) {
       return Math.pow(10, LOG_MIN + (s / 100) * (LOG_MAX - LOG_MIN));
     }
-
-    function formatDistance(m) {
-      const LY = 9.461e15;
-      const AU = 1.496e11;
-      const KM = 1e3;
-      if (m >= LY * 1e6)  return (m / (LY * 1e6)).toFixed(1)  + ' million light-years';
-      if (m >= LY * 1000) return (m / (LY * 1000)).toFixed(1)  + ' thousand light-years';
-      if (m >= LY)        return (m / LY).toFixed(2)            + ' light-years';
-      if (m >= AU)        return (m / AU).toFixed(2)            + ' AU';
-      if (m >= KM * 1e6)  return (m / (KM * 1e6)).toFixed(1)   + ' million km';
-      if (m >= KM)        return Math.round(m / KM).toLocaleString() + ' km';
-      return m.toFixed(1) + ' m';
+    function metersToSlider(m) {
+      return Math.max(0, Math.min(100, (Math.log10(m) - LOG_MIN) / (LOG_MAX - LOG_MIN) * 100));
     }
 
-    // Objects: { name, distFromEarth (m), radius (m), color, labelColor }
-    // distFromEarth = 0 means it IS Earth
-    const EARTH_R  = 6.371e6;
-    const SUN_R    = 6.957e8;
-    const MOON_R   = 1.737e6;
-    const VENUS_R  = 6.052e6;
-    const JUPITER_R = 6.9911e7;
-    const SATURN_R = 5.8232e7;
-    const URANUS_R = 2.5362e7;
-    const NEPTUNE_R = 2.4622e7;
-    const AU       = 1.496e11;
-    const LY       = 9.461e15;
+    const KM = 1e3;
+    const AU = 1.496e11;
+    const LY = 9.461e15;
+    const C_MS = 2.998e8;
+    const D2R = Math.PI / 180;
+    const NOW = new Date();
 
-    const MODEL_CONFIGS = {
-      Earth:   { path: '../../assets/models/earth.glb',        spin: 0.0048, minPx: 34, maxPx: 220, showAbovePx: 18, hideAbovePx: 250, fit: 1.8 },
-      Moon:    { path: '../../assets/models/the_moon.glb',     spin: 0.0026, minPx: 28, maxPx: 150, showAbovePx: 14, hideAbovePx: 170, fit: 1.75 },
-      Venus:   { path: '../../assets/models/venus.glb',        spin: 0.0038, minPx: 32, maxPx: 180, showAbovePx: 14, hideAbovePx: 220, fit: 1.8 },
-      Sun:     { path: '../../assets/models/sun.glb',          spin: 0.0022, minPx: 40, maxPx: 230, showAbovePx: 20, hideAbovePx: 260, fit: 1.85 },
-      Jupiter: { path: '../../assets/models/jupiter.glb',      spin: 0.0035, minPx: 38, maxPx: 210, showAbovePx: 16, hideAbovePx: 240, fit: 1.8 },
-      Saturn:  { path: '../../assets/models/saturno_v1.1.glb', spin: 0.0024, minPx: 60, maxPx: 280, showAbovePx: 20, hideAbovePx: 280, fit: 2.1, displayScale: 1.85, tiltX: 0.35, tiltZ: -0.18 },
-      Uranus:  { path: '../../assets/models/uranus.glb',       spin: 0.0031, minPx: 34, maxPx: 180, showAbovePx: 14, hideAbovePx: 220, fit: 1.8 },
-      Neptune: { path: '../../assets/models/neptune.glb',      spin: 0.0032, minPx: 34, maxPx: 180, showAbovePx: 14, hideAbovePx: 220, fit: 1.8 }
-    };
+    function sig(x) {
+      if (x >= 100) return Math.round(x).toLocaleString();
+      if (x >= 10) return x.toFixed(1);
+      return x.toFixed(2);
+    }
+    function formatDistance(m) {
+      if (m >= LY * 1e9)  return sig(m / (LY * 1e9)) + ' billion light-years';
+      if (m >= LY * 1e6)  return sig(m / (LY * 1e6)) + ' million light-years';
+      if (m >= LY * 1e3)  return sig(m / (LY * 1e3)) + ' thousand light-years';
+      if (m >= LY * 0.25) return sig(m / LY) + ' light-years';
+      if (m >= AU * 0.5)  return sig(m / AU) + ' AU';
+      if (m >= KM * 1e6)  return sig(m / (KM * 1e6)) + ' million km';
+      if (m >= KM)        return sig(m / KM) + ' km';
+      return sig(m) + ' m';
+    }
+    function formatLightTime(m) {
+      const s = m / C_MS;
+      if (s < 1e-3) return Math.max(1, Math.round(s * 1e9)).toLocaleString() + ' nanoseconds';
+      if (s < 1) return sig(s * 1e3) + ' milliseconds';
+      if (s < 120) return sig(s) + ' seconds';
+      if (s < 7200) return sig(s / 60) + ' minutes';
+      if (s < 2 * 86400) return sig(s / 3600) + ' hours';
+      if (s < 3.156e7 * 2) return sig(s / 86400) + ' days';
+      const y = s / 3.156e7;
+      if (y >= 1e9) return sig(y / 1e9) + ' billion years';
+      if (y >= 1e6) return sig(y / 1e6) + ' million years';
+      return sig(y) + ' years';
+    }
+    const SUP = { '-': '⁻', 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹' };
+    function powerOfTen(m) {
+      return '10' + String(Math.round(Math.log10(m))).split('').map(c => SUP[c]).join('') + ' m';
+    }
+    function fade(v, a, b) { // 0 at a, 1 at b, log-spaced; works with a > b to fade out
+      const t = (Math.log10(v) - Math.log10(a)) / (Math.log10(b) - Math.log10(a));
+      return Math.max(0, Math.min(1, t));
+    }
 
-    const OBJECTS = [
-      { name: 'Earth',            dist: 0,           r: EARTH_R,      color: '#3a7bd5', dot: true,  effects: { atmosphere: true, haloColor: 0x6fa8ff, haloOpacity: 0.28 } },
-      { name: 'Moon',             dist: 3.844e8,     r: MOON_R,       color: '#c0c0c0', effects: {} },
-      { name: 'Venus',            dist: 1.08e11,     r: VENUS_R,      color: '#e8b067', effects: { glow: true, haloColor: 0xffc980, haloOpacity: 0.16 } },
-      { name: 'Sun',              dist: AU,          r: SUN_R,        color: '#ffe566', effects: { glow: true, corona: true, haloColor: 0xffdd72, haloOpacity: 0.55, particleCount: 96, particleSize: 0.12 } },
-      { name: 'Mars',             dist: 2.28e11,     r: 3.39e6,       color: '#d45030', effects: { glow: true, haloColor: 0xff8f66, haloOpacity: 0.12 } },
-      { name: 'Jupiter',          dist: 7.79e11,     r: JUPITER_R,    color: '#c89060', effects: { glow: true, haloColor: 0xf6c48c, haloOpacity: 0.12 } },
-      { name: 'Saturn',           dist: 1.43e12,     r: SATURN_R,     color: '#e8d090', effects: { atmosphere: true, rings: true, haloColor: 0xf8e7b2, haloOpacity: 0.18 } },
-      { name: 'Uranus',           dist: 2.87e12,     r: URANUS_R,     color: '#8bcde6', effects: { atmosphere: true, haloColor: 0x8fdfff, haloOpacity: 0.15 } },
-      { name: 'Neptune',          dist: 4.50e12,     r: NEPTUNE_R,    color: '#5a78ff', effects: { atmosphere: true, haloColor: 0x6b8dff, haloOpacity: 0.16 } },
-      { name: 'Voyager 1',        dist: window.PbdVoyager.earthKm() * 1e3,      r: 0,            color: '#80a0ff', voyager: true, effects: { glow: true, haloColor: 0x8cb3ff, haloOpacity: 0.12 } },
-      { name: 'Proxima Centauri', dist: 4.01e16,     r: 1.07e8,       color: '#ff8060', effects: { glow: true, corona: true, haloColor: 0xff8d66, haloOpacity: 0.26, particleCount: 48, particleSize: 0.08 } },
-      { name: 'Milky Way center', dist: 2.5e20,      r: 5e19,         color: '#d0b080', galaxy: true, effects: { glow: true, haloColor: 0xe2c49d, haloOpacity: 0.1 } },
-      { name: 'Andromeda',        dist: 2.4e22,      r: 4.7e20,       color: '#a080ff', effects: { glow: true, haloColor: 0xb194ff, haloOpacity: 0.1 } },
+    // ── The solar system, in today's real positions ──
+    // Mean orbital elements (J2000 plus rates per century, Standish 1992),
+    // projected onto the plane of Earth's orbit. Good to a fraction of a degree.
+    const EARTH_R = 6.371e6;
+    const MOON_R  = 1.737e6;
+    const SUN_R   = 6.957e8;
+    const PLANETS = [
+      { name: 'Mercury', a: 0.38710,  e: 0.20563, L: 252.2503, dL: 149472.6741, w: 77.4578,  r: 2.4397e6, color: '#b5aca2' },
+      { name: 'Venus',   a: 0.72333,  e: 0.00678, L: 181.9791, dL: 58517.8154,  w: 131.6025, r: 6.0518e6, color: '#e8b067' },
+      { name: 'Earth',   a: 1.00000,  e: 0.01671, L: 100.4645, dL: 35999.3724,  w: 102.9377, r: EARTH_R,  color: '#3a7bd5' },
+      { name: 'Mars',    a: 1.52371,  e: 0.09339, L: -4.5534,  dL: 19140.3027,  w: -23.9436, r: 3.3895e6, color: '#d45030' },
+      { name: 'Jupiter', a: 5.20289,  e: 0.04839, L: 34.3964,  dL: 3034.7461,   w: 14.7285,  r: 6.9911e7, color: '#c89060' },
+      { name: 'Saturn',  a: 9.53668,  e: 0.05386, L: 49.9540,  dL: 1222.4936,   w: 92.5989,  r: 5.8232e7, color: '#e8d090' },
+      { name: 'Uranus',  a: 19.18916, e: 0.04726, L: 313.2381, dL: 428.4820,    w: 170.9543, r: 2.5362e7, color: '#8bcde6' },
+      { name: 'Neptune', a: 30.06992, e: 0.00859, L: -55.1203, dL: 218.4595,    w: 44.9648,  r: 2.4622e7, color: '#5a78ff' },
+    ];
+    function helioXY(p, date) {
+      const T = (date - Date.UTC(2000, 0, 1, 12)) / (36525 * 864e5);
+      const M = (p.L + p.dL * T - p.w) * D2R;
+      let E = M;
+      for (let i = 0; i < 6; i++) E -= (E - p.e * Math.sin(E) - M) / (1 - p.e * Math.cos(E));
+      const xv = p.a * (Math.cos(E) - p.e);
+      const yv = p.a * Math.sqrt(1 - p.e * p.e) * Math.sin(E);
+      const lon = Math.atan2(yv, xv) + p.w * D2R;
+      const rr = Math.hypot(xv, yv) * AU;
+      return [rr * Math.cos(lon), rr * Math.sin(lon)];
+    }
+    PLANETS.forEach(p => { p.pos = helioXY(p, NOW); });
+    const EARTH_POS = PLANETS.find(p => p.name === 'Earth').pos;
+    const MOON_POS = (() => {
+      const d = (NOW - Date.UTC(2000, 0, 1, 12)) / 864e5;
+      const lon = (218.316 + 13.176396 * d) * D2R;
+      return [EARTH_POS[0] + 3.844e8 * Math.cos(lon), EARTH_POS[1] + 3.844e8 * Math.sin(lon)];
+    })();
+    const VOYAGER_POS = window.PbdVoyager.helioXY(NOW);
+
+    // Sky direction + distance → position projected onto the same plane.
+    const EPS = 23.4393 * D2R;
+    function skyXY(raDeg, decDeg, distM) {
+      const ra = raDeg * D2R, dec = decDeg * D2R;
+      const x = Math.cos(dec) * Math.cos(ra), y = Math.cos(dec) * Math.sin(ra), z = Math.sin(dec);
+      return [x * distM, (y * Math.cos(EPS) + z * Math.sin(EPS)) * distM];
+    }
+
+    // Nearby stars: real directions and distances.
+    const STARS_NEAR = [
+      ['Proxima Centauri', 217.43, -62.68, 4.24, '#ff8a66', true],
+      ['Alpha Centauri',   219.90, -60.83, 4.37, '#fff1cf', true],
+      ["Barnard's Star",   269.45,   4.69, 5.96, '#ff9a78', true],
+      ['Wolf 359',         164.12,   7.01, 7.86, '#ff8a66'],
+      ['Lalande 21185',    165.83,  35.97, 8.31, '#ffab80'],
+      ['Sirius',           101.29, -16.72, 8.60, '#d4e2ff', true],
+      ['Luyten 726-8',      24.76, -17.95, 8.79, '#ff8a66'],
+      ['Ross 154',         282.46, -23.84, 9.70, '#ff8a66'],
+      ['Epsilon Eridani',   53.23,  -9.46, 10.5, '#ffd9a0'],
+      ['61 Cygni',         316.73,  38.75, 11.4, '#ffc68f'],
+      ['Procyon',          114.83,   5.22, 11.5, '#fff4e4', true],
+      ['Tau Ceti',          26.02, -15.94, 11.9, '#ffe9b8'],
+      ['Epsilon Indi',     330.84, -56.79, 11.9, '#ffc68f'],
+      ['Altair',           297.70,   8.87, 16.7, '#f2f5ff', true],
+      ['Vega',             279.23,  38.78, 25.0, '#dde8ff', true],
+      ['Arcturus',         213.92,  19.18, 36.7, '#ffd08a', true],
+      ['Pleiades',          56.75,  24.12, 444,  '#bcd4ff', true],
+      ['Betelgeuse',        88.79,   7.41, 550,  '#ff9a5c', true],
+      ['Rigel',             78.63,  -8.20, 860,  '#cfe0ff', true],
+    ].map(([name, ra, dec, ly, color, major]) => ({ name, color, major: !!major, ly, pos: skyXY(ra, dec, ly * LY) }));
+
+    // Galaxies and beyond. Sizes are diameters of the bright disk.
+    const GALACTIC_CENTER = skyXY(266.42, -29.01, 26000 * LY);
+    const MILKY_WAY_D = 100000 * LY;
+    const GALAXIES = [
+      { name: 'Large Magellanic Cloud', pos: skyXY(80.89, -69.76, 163000 * LY), d: 32000 * LY, ratio: 0.7, angle: 0.4, color: [200, 210, 255] },
+      { name: 'Small Magellanic Cloud', pos: skyXY(13.19, -72.83, 200000 * LY), d: 19000 * LY, ratio: 0.6, angle: 1.1, color: [200, 210, 255] },
+      { name: 'Andromeda',  pos: skyXY(10.68, 41.27, 2.5e6 * LY),  d: 150000 * LY, ratio: 0.32, angle: 0.66, color: [225, 210, 255], major: true },
+      { name: 'Triangulum', pos: skyXY(23.46, 30.66, 2.73e6 * LY), d: 60000 * LY,  ratio: 0.7,  angle: 0.4,  color: [190, 210, 255] },
+    ];
+    const VIRGO = { name: 'Virgo Cluster', pos: skyXY(187.7, 12.4, 54e6 * LY), d: 15e6 * LY };
+    const OBSERVABLE_R = 46.5e9 * LY;     // radius of the observable universe (comoving)
+    const WEB_TILE_M = 1.2e9 * LY;        // one tile of the cosmic-web texture
+
+    // Milestones keyed to the real view width in meters. Intro stages first.
+    const INTRO_STAGE_FILES = [
+      ['Your Desk',         'scene-desk.svg',         1.5],
+      ['Your Classroom',    'scene-classroom.svg',    10],
+      ['Your School',       'scene-school.svg',       200],
+      ['Your Neighborhood', 'scene-neighborhood.svg', 1500],
+      ['Your Town',         'scene-town.svg',         8e3],
+      ['Your City',         'scene-city.svg',         5e4],
+      ['Your State',        'scene-state.svg',        6e5],
+      ['Your Country',      'scene-country.svg',      4.5e6],
+      ['Your Continent',    'scene-continent.svg',    9e6],
+    ];
+    const INTRO_END_M = 2e7;              // Earth from space takes over here
+    const INTRO_END = metersToSlider(INTRO_END_M);
+    const INTRO_FACTS = [
+      'This is the exact spot the whole universe is about to zoom out from.',
+      'Thirty desks like yours, in one room.',
+      'Hundreds of desks like yours, under one roof.',
+      'Your school is one building among thousands of homes.',
+      'Everyone you\'ll meet this year lives somewhere inside this view.',
+      'Tens of thousands of desks like yours are out there right now.',
+      'Your entire city just shrank to a single point of light.',
+      'Your state is now just one shape among many.',
+      'Your whole country is now a sliver of coastline.',
+    ];
+    const MILESTONES = INTRO_STAGE_FILES.map(([label], i) => ({
+      from: INTRO_STAGE_FILES[i][2],
+      to: i + 1 < INTRO_STAGE_FILES.length ? INTRO_STAGE_FILES[i + 1][2] : INTRO_END_M,
+      label,
+      fact: INTRO_FACTS[i]
+    })).concat([
+      { from: 2e7, to: 2e9, label: 'Earth and the Moon',
+        fact: 'The Moon is about 30 Earths away. Every person who ever lived is on the bigger dot.' },
+      { from: 2e9, to: 1.2e12, label: 'The Inner Solar System',
+        fact: 'Sunlight takes 8 minutes and 20 seconds to reach Earth.' },
+      { from: 1.2e12, to: 9e12, label: 'The Outer Planets',
+        fact: 'Neptune orbits 30 times farther from the Sun than Earth does. Every planet is now smaller than a pixel.' },
+      { from: 9e12, to: 5e13, label: '📸 Voyager 1 — The Pale Blue Dot',
+        fact: 'Voyager 1 took the photo from about 40 AU. Today it is past 170 AU, still flying outward.' },
+      { from: 5e13, to: 5e16, label: 'Beyond the Planets',
+        fact: 'The Oort Cloud of icy bodies may reach more than a light-year out. Voyager won\'t enter it for about 300 years.' },
+      { from: 5e16, to: 3e18, label: 'The Nearest Stars',
+        fact: 'Proxima Centauri is 4.2 light-years away. At Voyager\'s speed, the trip would take about 75,000 years.' },
+      { from: 3e18, to: 1e22, label: 'The Milky Way',
+        fact: 'The Sun is one of 100 to 400 billion stars here, about 26,000 light-years from the center.' },
+      { from: 1e22, to: 8e23, label: 'The Local Group',
+        fact: 'Andromeda is 2.5 million light-years away. The light we see from it left before modern humans existed.' },
+      { from: 8e23, to: 3e24, label: 'Galaxy Clusters',
+        fact: 'The Virgo Cluster holds more than a thousand galaxies, 54 million light-years away. Our Local Group sits on its outskirts.' },
+      { from: 3e24, to: 3e26, label: 'The Cosmic Web',
+        fact: 'Galaxies gather along thin threads around huge, nearly empty voids. The Milky Way is far too small to see.' },
+      { from: 3e26, to: 1e28, label: 'The Observable Universe',
+        fact: 'The universe is 13.8 billion years old, yet this sphere is 93 billion light-years across: space kept stretching while the oldest light travelled to us.' },
+    ]);
+
+    // The Pale Blue Dot moment, in view widths (meters).
+    const PBD_ZONE = { flareIn: 3e12, flareFull: 9e12, flareHold: 6e13, flareOut: 2e14 };
+    const SPEECH_RANGES = [
+      { id: 'pbd-sl-1', from: 6e12,   to: 3e14 },
+      { id: 'pbd-sl-2', from: 9e12,   to: 3e14 },
+      { id: 'pbd-sl-3', from: 1.2e13, to: 3e14 },
+      { id: 'pbd-sl-4', from: 1.6e13, to: 3e14 },
     ];
 
-    // Milestones shown in readout, each with a relatable fact for the context line.
-    // 0–24 is the human-scale intro (desk → classroom → … → continent);
-    // 24+ hands off to the existing solar-system / universe sequence unchanged.
-    const INTRO_END = 24;
-    const MILESTONES = [
-      { from: 0,    to: 2.7,  label: 'Your Desk',
-        fact: 'This is the exact spot the whole universe is about to zoom out from.' },
-      { from: 2.7,  to: 5.3,  label: 'Your Classroom',
-        fact: 'Thirty desks like yours, in one room.' },
-      { from: 5.3,  to: 8.0,  label: 'Your School',
-        fact: 'Hundreds of desks like yours, under one roof.' },
-      { from: 8.0,  to: 10.7, label: 'Your Neighborhood',
-        fact: 'Your school is one building among thousands of homes.' },
-      { from: 10.7, to: 13.3, label: 'Your Town',
-        fact: 'Everyone you\'ll meet this year lives somewhere inside this view.' },
-      { from: 13.3, to: 16.0, label: 'Your City',
-        fact: 'Tens of thousands of desks like yours are out there right now.' },
-      { from: 16.0, to: 18.7, label: 'Your State',
-        fact: 'Your entire city just shrank to a single point of light.' },
-      { from: 18.7, to: 21.3, label: 'Your Country',
-        fact: 'Your state is now just one shape among fifty.' },
-      { from: 21.3, to: 24.0, label: 'Your Continent',
-        fact: 'Your whole country is now a sliver of coastline.' },
-      { from: 24,   to: 30,   label: 'Earth — Seen From Space',
-        fact: 'This is the entire world. Every desk, every classroom, everyone you know.' },
-      { from: 30,   to: 42,   label: 'Leaving the Solar System',
-        fact: 'Voyager 1 needed 12 years of travel to reach this far.' },
-      { from: 42,   to: 52,   label: '📸 Voyager 1 — The Pale Blue Dot',
-        fact: 'This is where Carl Sagan asked NASA to turn the camera around.' },
-      { from: 52,   to: 65,   label: 'Beyond our Solar System',
-        fact: 'Earth is already gone from view. Everyone you know just vanished.' },
-      { from: 65,   to: 78,   label: 'The Milky Way',
-        fact: 'Our Sun is one of roughly 200 billion stars in this galaxy alone.' },
-      { from: 78,   to: 90,   label: 'Local Group of Galaxies',
-        fact: 'Andromeda, our nearest large neighbor, is 2.5 million light-years away.' },
-      { from: 90,   to: 100,  label: 'The Observable Universe',
-        fact: 'This is the edge of what light has had time to reach us from — ever.' },
-    ];
-
-    // ── Star field (generated once) ──
+    // ── Decorative sky (only used while the real stars are far away) ──
     const STARS = [];
     for (let i = 0; i < 320; i++) {
       STARS.push({
@@ -992,13 +1119,80 @@
       });
     }
 
+    // Oort Cloud: predicted shell from about 2,000 to 100,000 AU.
+    const OORT = [];
+    for (let i = 0; i < 1400; i++) {
+      const r = Math.pow(10, Math.log10(2000) + Math.random() * (Math.log10(100000) - Math.log10(2000))) * AU;
+      const t = Math.random() * Math.PI * 2;
+      OORT.push([r * Math.cos(t), r * Math.sin(t), Math.random()]);
+    }
+
+    // Offscreen art for the galaxy and the cosmic web, built once on demand.
+    let galaxyArt = null, webArt = null;
+    function getGalaxyArt() {
+      if (galaxyArt) return galaxyArt;
+      const N = 768, c = document.createElement('canvas');
+      c.width = c.height = N;
+      const g = c.getContext('2d'), m = N / 2;
+      const core = g.createRadialGradient(m, m, 0, m, m, N * 0.2);
+      core.addColorStop(0, 'rgba(255,236,200,0.95)');
+      core.addColorStop(0.4, 'rgba(255,214,160,0.35)');
+      core.addColorStop(1, 'rgba(255,200,140,0)');
+      g.fillStyle = core;
+      g.fillRect(0, 0, N, N);
+      // Two major arms plus two minor ones: logarithmic spirals with scatter.
+      for (let i = 0; i < 26000; i++) {
+        const arm = i % 4, major = arm % 2 === 0;
+        const t = Math.random();
+        const theta = t * 3.4 * Math.PI + arm * Math.PI / 2;
+        const rr = (0.08 + 0.42 * t) * N;
+        const spread = (major ? 0.05 : 0.035) * N * (0.4 + t);
+        const x = m + rr * Math.cos(theta) + (Math.random() - 0.5) * spread;
+        const y = m + rr * Math.sin(theta) + (Math.random() - 0.5) * spread;
+        const blue = Math.random() < 0.25;
+        g.fillStyle = blue ? 'rgba(170,200,255,0.55)' : 'rgba(230,220,255,0.35)';
+        g.fillRect(x, y, 1.3, 1.3);
+      }
+      for (let i = 0; i < 4000; i++) {
+        const rr = Math.abs(Math.random() + Math.random() - 1) * N * 0.5, t = Math.random() * Math.PI * 2;
+        g.fillStyle = 'rgba(240,225,200,0.18)';
+        g.fillRect(m + rr * Math.cos(t), m + rr * Math.sin(t), 1, 1);
+      }
+      galaxyArt = c;
+      return c;
+    }
+    function getWebArt() {
+      if (webArt) return webArt;
+      // Built in 512-unit space, drawn at 4× resolution so it stays crisp when
+      // the tile is magnified at the near end of its zoom range.
+      const N = 512, K = 4, c = document.createElement('canvas');
+      c.width = c.height = N * K;
+      const g = c.getContext('2d');
+      const seeds = [];
+      for (let i = 0; i < 40; i++) seeds.push([Math.random() * N, Math.random() * N]);
+      const wrapD = (a, b) => { const d = Math.abs(a - b); return Math.min(d, N - d); };
+      for (let i = 0; i < 260000; i++) {
+        const x = Math.random() * N, y = Math.random() * N;
+        let d1 = Infinity, d2 = Infinity;
+        for (const s of seeds) {
+          const d = Math.hypot(wrapD(x, s[0]), wrapD(y, s[1]));
+          if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) d2 = d;
+        }
+        const edge = d2 - d1; // 0 on a wall between two voids
+        if (edge < 2.2 || (edge < 6 && Math.random() < 0.08)) {
+          g.fillStyle = edge < 1 ? 'rgba(220,210,255,0.9)' : 'rgba(170,170,255,0.5)';
+          g.fillRect(x * K, y * K, 2.2, 2.2);
+        }
+      }
+      webArt = c;
+      return c;
+    }
+
     // ══════════════════════════════════════════════════════════════
     // Intro sequence: desk → classroom → school → neighborhood → town
     // → city → state → country → continent → Earth from space.
-    // Covers slider 0–INTRO_END; everything after hands off to the
-    // existing solar-system / universe scene, untouched below.
     // Each stage is a hand-authored SVG illustration (assets/images/
-    // pale-blue-dot/), preloaded once and drawn onto the canvas.
+    // pale-blue-dot/), shown while the view width is in that stage's range.
     // ══════════════════════════════════════════════════════════════
     function withZoom(ctx, W, H, scale, fn) {
       ctx.save();
@@ -1009,29 +1203,19 @@
       ctx.restore();
     }
 
-    const INTRO_STAGE_FILES = [
-      ['Your Desk',         'scene-desk.svg'],
-      ['Your Classroom',    'scene-classroom.svg'],
-      ['Your School',       'scene-school.svg'],
-      ['Your Neighborhood', 'scene-neighborhood.svg'],
-      ['Your Town',         'scene-town.svg'],
-      ['Your City',         'scene-city.svg'],
-      ['Your State',        'scene-state.svg'],
-      ['Your Country',      'scene-country.svg'],
-      ['Your Continent',    'scene-continent.svg'],
-    ];
-    const INTRO_STAGES = INTRO_STAGE_FILES.map(([name, file]) => {
+    const INTRO_STAGES = INTRO_STAGE_FILES.map(([name, file, width]) => {
       const img = new Image();
       img.src = `../../assets/images/pale-blue-dot/${file}`;
-      return { name, img, bg: '#0a0e18' };
+      return { name, img, width, bg: '#0a0e18' };
     });
 
-    function drawIntroScene(ctx, W, H, s) {
+    function drawIntroScene(ctx, W, H, viewM) {
       const n = INTRO_STAGES.length;
-      const segLen = INTRO_END / n;
-      const idxRaw = s / segLen;
-      const idx = Math.max(0, Math.min(n - 1, Math.floor(idxRaw)));
-      const f = Math.max(0, Math.min(1, idxRaw - idx));
+      let idx = 0;
+      while (idx < n - 1 && viewM >= INTRO_STAGES[idx + 1].width) idx++;
+      const lo = INTRO_STAGES[idx].width;
+      const hi = idx + 1 < n ? INTRO_STAGES[idx + 1].width : INTRO_END_M;
+      const f = fade(viewM, lo, hi);
       const stage = INTRO_STAGES[idx];
 
       ctx.fillStyle = stage.bg;
@@ -1054,7 +1238,7 @@
 
       // "You are here" marker — shrinks continuously across the whole intro,
       // the same physical point the entire zoom-out pivots around.
-      const sNorm = Math.max(0, Math.min(1, s / INTRO_END));
+      const sNorm = fade(viewM, 1.5, INTRO_END_M);
       const r = 13 - sNorm * 10;
       const cx = W / 2, cy = H / 2;
       const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 2.4);
@@ -1065,6 +1249,30 @@
       ctx.fillStyle = 'rgba(255,224,150,0.95)';
       ctx.beginPath(); ctx.arc(cx, cy, Math.max(1.5, r), 0, Math.PI * 2); ctx.fill();
     }
+
+    // The 3D overlay only draws Earth, Moon and planets when they are really
+    // big enough on screen; effects config is looked up by name.
+    const OBJECTS = [
+      { name: 'Earth',   effects: { atmosphere: true, haloColor: 0x6fa8ff, haloOpacity: 0.28 } },
+      { name: 'Moon',    effects: {} },
+      { name: 'Venus',   effects: { glow: true, haloColor: 0xffc980, haloOpacity: 0.16 } },
+      { name: 'Sun',     effects: { glow: true, corona: true, haloColor: 0xffdd72, haloOpacity: 0.55, particleCount: 96, particleSize: 0.12 } },
+      { name: 'Jupiter', effects: { glow: true, haloColor: 0xf6c48c, haloOpacity: 0.12 } },
+      { name: 'Saturn',  effects: { atmosphere: true, rings: true, haloColor: 0xf8e7b2, haloOpacity: 0.18 } },
+      { name: 'Uranus',  effects: { atmosphere: true, haloColor: 0x8fdfff, haloOpacity: 0.15 } },
+      { name: 'Neptune', effects: { atmosphere: true, haloColor: 0x6b8dff, haloOpacity: 0.16 } },
+    ];
+
+    const MODEL_CONFIGS = {
+      Earth:   { path: '../../assets/models/earth.glb',        spin: 0.0048, minPx: 34, maxPx: 900, showAbovePx: 18, hideAbovePx: 900, fit: 1.8 },
+      Moon:    { path: '../../assets/models/the_moon.glb',     spin: 0.0026, minPx: 28, maxPx: 150, showAbovePx: 14, hideAbovePx: 170, fit: 1.75 },
+      Venus:   { path: '../../assets/models/venus.glb',        spin: 0.0038, minPx: 32, maxPx: 180, showAbovePx: 14, hideAbovePx: 220, fit: 1.8 },
+      Sun:     { path: '../../assets/models/sun.glb',          spin: 0.0022, minPx: 40, maxPx: 230, showAbovePx: 20, hideAbovePx: 260, fit: 1.85 },
+      Jupiter: { path: '../../assets/models/jupiter.glb',      spin: 0.0035, minPx: 38, maxPx: 210, showAbovePx: 16, hideAbovePx: 240, fit: 1.8 },
+      Saturn:  { path: '../../assets/models/saturno_v1.1.glb', spin: 0.0024, minPx: 60, maxPx: 280, showAbovePx: 20, hideAbovePx: 280, fit: 2.1, displayScale: 1.85, tiltX: 0.35, tiltZ: -0.18 },
+      Uranus:  { path: '../../assets/models/uranus.glb',       spin: 0.0031, minPx: 34, maxPx: 180, showAbovePx: 14, hideAbovePx: 220, fit: 1.8 },
+      Neptune: { path: '../../assets/models/neptune.glb',      spin: 0.0032, minPx: 34, maxPx: 180, showAbovePx: 14, hideAbovePx: 220, fit: 1.8 }
+    };
 
     let modelSystem = null;
 
@@ -1455,7 +1663,7 @@
             if (!viewer || viewer.failed) return;
             if (layout.visible && (layout.priority || interactionBoosted)) viewer.load();
             if (layout.effectVisible) viewer.ensureEffects();
-            if (!viewer.ready) return;
+            if (!viewer.ready || !layout.visible) return;
             activeLayouts.set(layout.name, layout);
           });
         },
@@ -1494,15 +1702,23 @@
     let W, H;
     let journeyFrame = null;
     let journeyActive = false;
-    const JOURNEY_START = 0;
-    const JOURNEY_END   = 62;   // carries through the full speech reveal
-    const JOURNEY_DURATION = 35000; // 35 seconds — cinematic pace
+    // Leg 1: desk → the Pale Blue Dot (view ~120 AU wide), slowing to a crawl.
+    // Leg 2 (the next press): onward to the edge of the observable universe.
+    const LEG1_END = metersToSlider(1.8e13);
+    const LEG1_DURATION = 35000;
+    const LEG2_DURATION = 30000;
+
+    function journeyLabel() {
+      return parseFloat(slider.value) >= LEG1_END - 0.5 && parseFloat(slider.value) < 99.5
+        ? 'Continue to the Edge of the Universe'
+        : 'Start Journey';
+    }
 
     function setJourneyState(active) {
       journeyActive = active;
       if (!journeyBtn) return;
       journeyBtn.classList.toggle('is-running', active);
-      journeyBtn.textContent = active ? 'Journey In Progress…' : 'Start Journey';
+      journeyBtn.textContent = active ? 'Journey In Progress…' : journeyLabel();
     }
 
     function stopJourney() {
@@ -1515,34 +1731,29 @@
 
     function startJourney() {
       stopJourney();
+      const leg2 = journeyLabel() !== 'Start Journey';
+      const from = leg2 ? parseFloat(slider.value) : 0;
+      const to = leg2 ? 100 : LEG1_END;
+      const duration = leg2 ? LEG2_DURATION : LEG1_DURATION;
       setJourneyState(true);
-      slider.value = JOURNEY_START;
+      slider.value = from;
       const start = performance.now();
 
-      // Multi-phase easing:
-      //   0 → 60% of time  : Earth through outer solar system (moderate pace)
-      //   60 → 82% of time : Approach to Voyager zone (slowing down)
-      //   82 → 100% of time: The Pale Blue Dot moment (slow crawl, let it land)
-      function journeyEase(t) {
-        if (t < 0.60) {
-          // Smooth cubic ease through solar system → ~72% of slider range
-          const s = t / 0.60;
-          return (s < 0.5 ? 2*s*s : -1+(4-2*s)*s) * 0.72;
-        } else if (t < 0.82) {
-          // Linear deceleration into Voyager zone → 72–88% of slider range
-          return 0.72 + ((t - 0.60) / 0.22) * 0.16;
-        } else {
-          // Very slow drift through the pale blue dot moment → 88–100%
-          const s = (t - 0.82) / 0.18;
-          return 0.88 + s * 0.12;
+      // Leg 1: steady through the human scales and planets, then a long slow
+      // drift into the Pale Blue Dot so the speech has time to land.
+      function ease1(t) {
+        if (t < 0.7) {
+          const s = t / 0.7;
+          return (s < 0.5 ? 2 * s * s : -1 + (4 - 2 * s) * s) * 0.86;
         }
+        return 0.86 + ((t - 0.7) / 0.3) * 0.14;
       }
+      function ease2(t) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
 
       function step(now) {
-        const elapsed  = now - start;
-        const progress = Math.min(1, elapsed / JOURNEY_DURATION);
-        const fraction = journeyEase(progress);
-        slider.value   = (JOURNEY_START + (JOURNEY_END - JOURNEY_START) * fraction).toFixed(1);
+        const progress = Math.min(1, (now - start) / duration);
+        const fraction = leg2 ? ease2(progress) : ease1(progress);
+        slider.value = (from + (to - from) * fraction).toFixed(2);
         draw();
         if (progress < 1) {
           journeyFrame = requestAnimationFrame(step);
@@ -1570,24 +1781,66 @@
       draw();
     }
 
+    // A nice round scale-bar length: 1, 2 or 5 of the unit being displayed.
+    function niceBar(target) {
+      const units = [LY * 1e9, LY * 1e6, LY * 1e3, LY, AU, KM * 1e6, KM, 1];
+      const unit = units.find(u => target >= u * 0.999) || 1;
+      const v = target / unit;
+      const p = Math.pow(10, Math.floor(Math.log10(v)));
+      const n = v / p >= 5 ? 5 : v / p >= 2 ? 2 : 1;
+      return n * p * unit;
+    }
+
     let frame = 0;
     function draw() {
+      if (!W || !H) return; // not laid out yet
       const ctx = canvas.getContext('2d');
       const s   = parseFloat(slider.value);
       const viewM = sliderToMeters(s); // meters across canvas width
 
       frame++;
 
-      // ── Scale helpers (needed by both the intro and the space scene) ──
       const scale = W / viewM; // px per meter
-      function xFor(distM) { return W / 2 + (distM * scale); }
-      function rFor(radiusM) { return Math.max(radiusM * scale, 1.5); }
+      const cx0 = W / 2, cy0 = H / 2;
+      // Heliocentric position (meters, in the plane of Earth's orbit) → canvas.
+      // The view is always centered on Earth.
+      const toX = p => cx0 + (p[0] - EARTH_POS[0]) * scale;
+      const toY = p => cy0 - (p[1] - EARTH_POS[1]) * scale;
+      const onCanvas = (x, y, pad) => x > -pad && x < W + pad && y > -pad && y < H + pad;
       const modelLayouts = [];
-      const priorityObjects = new Set(['Earth', 'Sun', 'Moon', 'Jupiter', 'Saturn']);
+      const notes = new Set();
+      let earthBoost = 0;
 
-      if (s < INTRO_END) {
-        // ── Human-scale intro: desk → classroom → … → continent ──
-        drawIntroScene(ctx, W, H, s);
+      // Label placement that skips anything that would overlap a placed label.
+      const placed = [];
+      function label(text, x, y, alpha, color) {
+        if (alpha <= 0.02) return;
+        ctx.font = '12px -apple-system, sans-serif';
+        const w = ctx.measureText(text).width;
+        const box = [x - w / 2 - 3, y - 12, x + w / 2 + 3, y + 3];
+        if (box[0] < 2 || box[2] > W - 2 || box[1] < 2 || box[3] > H - 40) return;
+        if (placed.some(b => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1])) return;
+        placed.push(box);
+        ctx.fillStyle = color || `rgba(185,210,255,${alpha})`;
+        ctx.globalAlpha = color ? alpha : 1;
+        ctx.textAlign = 'center';
+        ctx.fillText(text, x, y);
+        ctx.globalAlpha = 1;
+      }
+      // Bodies smaller than a pixel are drawn as a minimum-size dot; note it.
+      function dot(x, y, trueR, color, minR) {
+        const r = trueR * scale;
+        const drawR = Math.max(r, minR || 1.5);
+        if (drawR > r * 1.5) notes.add('dots');
+        ctx.beginPath();
+        ctx.arc(x, y, drawR, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        return r;
+      }
+
+      if (viewM < INTRO_END_M) {
+        drawIntroScene(ctx, W, H, viewM);
         if (modelSystem) modelSystem.sync([], s);
       } else {
       // ── Background ──
@@ -1597,35 +1850,164 @@
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, W, H);
 
-      // ── Stars ──
-      const zoomEffect = s * 0.01;
-      STARS.forEach(st => {
-        const offsetX = ((st.x - 0.5) * zoomEffect * st.z) * W * 0.085;
-        const offsetY = ((st.y - 0.5) * zoomEffect * st.z) * H * 0.085;
-        const sx = st.x * W + offsetX;
-        const sy = st.y * H + offsetY;
-        if (sx < -4 || sx > W + 4 || sy < -4 || sy > H + 4) return;
-        const twinkle = 0.55 + 0.45 * Math.sin(st.twinkle + frame * 0.018);
-        ctx.beginPath();
-        ctx.arc(sx, sy, st.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(200, 215, 255, ${st.a * twinkle})`;
-        ctx.fill();
-      });
+      // ── Background sky: the distant stars as seen from the solar system.
+      // Fades out once the real nearby stars come into the frame.
+      const skyAlpha = fade(viewM, 3e16, 3e15);
+      if (skyAlpha > 0) {
+        const zoomEffect = Math.min(1, fade(viewM, INTRO_END_M, 3e15)) * 0.6;
+        STARS.forEach(st => {
+          const sx = st.x * W + (st.x - 0.5) * zoomEffect * st.z * W * 0.085;
+          const sy = st.y * H + (st.y - 0.5) * zoomEffect * st.z * H * 0.085;
+          if (sx < -4 || sx > W + 4 || sy < -4 || sy > H + 4) return;
+          const twinkle = 0.55 + 0.45 * Math.sin(st.twinkle + frame * 0.018);
+          ctx.beginPath();
+          ctx.arc(sx, sy, st.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(200, 215, 255, ${st.a * twinkle * skyAlpha})`;
+          ctx.fill();
+        });
+      }
 
-      // ── Sunbeam with diffraction (Voyager-scale, slider ~38–60) ──
-      // The real Pale Blue Dot photo shows scattered light bands from Voyager's
-      // camera optics — not clean geometry. We simulate those diffraction artifacts.
-      const sunbeamAlpha = Math.max(0, Math.min(1,
-        s < 40 ? (s - 33) / 7 :
-        s > 58 ? (63 - s) / 5 : 1
-      ));
-      if (sunbeamAlpha > 0) {
-        const sunX = xFor(AU);
-        const sunY = H / 2;
+      // ── Cosmic web, clipped to the observable universe ──
+      const webAlpha = fade(viewM, 1.5e24, 8e24);
+      const obsPx = OBSERVABLE_R * scale;
+      if (webAlpha > 0) {
+        const art = getWebArt();
+        const pat = ctx.createPattern(art, 'repeat');
+        const tilePx = WEB_TILE_M * scale;
+        pat.setTransform(new DOMMatrix().translate(cx0, cy0).scale(tilePx / art.width));
         ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx0, cy0, obsPx, 0, Math.PI * 2);
+        ctx.clip();
+        // Below a few pixels per tile the pattern would alias; blend to a glow.
+        const fine = Math.max(0, Math.min(1, (tilePx - 6) / 30));
+        ctx.globalAlpha = webAlpha * (0.25 + 0.75 * fine);
+        ctx.fillStyle = pat;
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalAlpha = webAlpha * (1 - fine) * 0.35;
+        ctx.fillStyle = 'rgb(120,120,200)';
+        ctx.fillRect(0, 0, W, H);
+        ctx.restore();
+        notes.add('web');
+      }
 
-        // Light bands at camera-diffraction angles — each fans from the sun
-        // toward the canvas edge. Different widths/opacities mimic the real photo.
+      // ── The Milky Way, seen from above ──
+      const mwPx = MILKY_WAY_D * scale;
+      const mwAlpha = Math.min(fade(viewM, 3e19, 3e20), fade(viewM, 3e24, 3e23));
+      if (mwAlpha > 0) {
+        const gx = toX(GALACTIC_CENTER), gy = toY(GALACTIC_CENTER);
+        if (mwPx > 3) {
+          ctx.save();
+          ctx.globalAlpha = mwAlpha;
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.translate(gx, gy);
+          ctx.rotate(-0.5);
+          ctx.drawImage(getGalaxyArt(), -mwPx / 2, -mwPx / 2, mwPx, mwPx);
+          ctx.restore();
+        } else {
+          dot(gx, gy, 0, `rgba(240,225,200,${mwAlpha})`, 1.5);
+        }
+        label('Milky Way', gx, gy - Math.max(mwPx * 0.5, 4) - 6, mwAlpha * fade(viewM, 1e24, 1e23));
+        notes.add('galaxy');
+      }
+
+      // ── Local Group galaxies and the Virgo Cluster ──
+      const lgAlpha = Math.min(fade(viewM, 4e20, 4e21), fade(viewM, 3e25, 3e24));
+      if (lgAlpha > 0) {
+        GALAXIES.forEach(gal => {
+          const x = toX(gal.pos), y = toY(gal.pos);
+          if (!onCanvas(x, y, 200)) return;
+          const rx = Math.max(gal.d * scale / 2, 1.2), ry = Math.max(rx * gal.ratio, 1);
+          if (rx < 1.5) notes.add('dots');
+          const g = ctx.createRadialGradient(x, y, 0, x, y, rx);
+          g.addColorStop(0, `rgba(${gal.color},${0.9 * lgAlpha})`);
+          g.addColorStop(0.35, `rgba(${gal.color},${0.35 * lgAlpha})`);
+          g.addColorStop(1, `rgba(${gal.color},0)`);
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(gal.angle);
+          ctx.scale(1, ry / rx);
+          ctx.translate(-x, -y);
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(x, y, Math.max(rx, 2), 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+          const show = lgAlpha * (gal.major ? fade(viewM, 1e24, 3e23) : fade(viewM, 3e22, 3e21));
+          label(gal.name, x, y - Math.max(ry, 3) - 6, show);
+        });
+        const vx = toX(VIRGO.pos), vy = toY(VIRGO.pos);
+        if (onCanvas(vx, vy, 50)) {
+          const vr = VIRGO.d * scale / 2;
+          for (let i = 0; i < 70; i++) {
+            const a = i * 2.39996, rr = vr * Math.sqrt((i + 0.5) / 70) * (0.6 + 0.4 * Math.sin(i * 7.1));
+            ctx.fillStyle = `rgba(230,215,255,${0.7 * lgAlpha})`;
+            ctx.fillRect(vx + rr * Math.cos(a), vy + rr * Math.sin(a), 1.4, 1.4);
+          }
+          label('Virgo Cluster', vx, vy - Math.max(vr, 3) - 6, lgAlpha * fade(viewM, 3e24, 3e23));
+        }
+      }
+
+      // ── Nearby stars at their real positions ──
+      const starAlpha = Math.min(fade(viewM, 3e15, 3e16), fade(viewM, 3e20, 3e19));
+      if (starAlpha > 0) {
+        STARS_NEAR.forEach(st => {
+          const x = toX(st.pos), y = toY(st.pos);
+          if (!onCanvas(x, y, 4)) return;
+          const glow = ctx.createRadialGradient(x, y, 0, x, y, 5);
+          glow.addColorStop(0, st.color);
+          glow.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.globalAlpha = starAlpha;
+          ctx.fillStyle = glow;
+          ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fill();
+          ctx.globalAlpha = 1;
+          dot(x, y, 0, st.color, 1.4);
+          const distPx = Math.hypot(x - cx0, y - cy0);
+          if (distPx > 16 && (st.major || viewM < 6e17)) label(st.name, x, y - 9, starAlpha * 0.9);
+        });
+      }
+
+      // ── Oort Cloud (predicted; never directly observed) ──
+      const oortAlpha = Math.min(fade(viewM, 3e14, 3e15), fade(viewM, 1e18, 1e17));
+      if (oortAlpha > 0) {
+        const sx = toX([0, 0]), sy = toY([0, 0]);
+        OORT.forEach(([x, y, b]) => {
+          const px = sx + x * scale, py = sy - y * scale;
+          if (!onCanvas(px, py, 2)) return;
+          ctx.fillStyle = `rgba(170,205,255,${(0.35 + 0.5 * b) * oortAlpha})`;
+          ctx.fillRect(px, py, 1.6, 1.6);
+        });
+        const oy = sy - 30000 * AU * scale;
+        label('Oort Cloud (predicted)', sx, oy, oortAlpha * fade(viewM, 3e17, 3e16));
+      }
+
+      // ── Orbits of the planets ──
+      const orbitAlpha = fade(viewM, 3e14, 3e13);
+      if (orbitAlpha > 0) {
+        const sx = toX([0, 0]), sy = toY([0, 0]);
+        PLANETS.forEach(p => {
+          const aPx = p.a * AU * scale;
+          if (aPx < 4 || aPx > W * 4) return;
+          const bPx = aPx * Math.sqrt(1 - p.e * p.e);
+          const w = p.w * D2R;
+          // The ellipse's center sits a·e from the Sun, away from perihelion.
+          const ex = sx - Math.cos(w) * p.e * aPx, ey = sy + Math.sin(w) * p.e * aPx;
+          ctx.beginPath();
+          ctx.ellipse(ex, ey, aPx, bPx, -w, 0, Math.PI * 2);
+          ctx.strokeStyle = p.name === 'Earth'
+            ? `rgba(110,170,255,${0.45 * orbitAlpha})`
+            : `rgba(120,140,200,${0.22 * orbitAlpha})`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        });
+      }
+
+      // ── Lens flare, like the one in Voyager's camera (simulated) ──
+      const sunX = toX([0, 0]), sunY = toY([0, 0]);
+      const flareAlpha = Math.min(fade(viewM, PBD_ZONE.flareIn, PBD_ZONE.flareFull), fade(viewM, PBD_ZONE.flareOut, PBD_ZONE.flareHold));
+      if (flareAlpha > 0) {
+        notes.add('flare');
+        ctx.save();
         const bands = [
           { angle: -0.13, spreadFrac: 0.11, bright: 0.26, len: W * 1.5 },
           { angle:  0.07, spreadFrac: 0.07, bright: 0.32, len: W * 1.3 },
@@ -1633,204 +2015,189 @@
           { angle: -0.48, spreadFrac: 0.05, bright: 0.15, len: W * 0.85 },
           { angle:  0.62, spreadFrac: 0.04, bright: 0.11, len: W * 0.75 },
         ];
-
+        // Aim the brightest band from the Sun through Earth, as in the photo.
+        const toEarth = Math.atan2(cy0 - sunY, cx0 - sunX);
         bands.forEach(({ angle, spreadFrac, bright, len }) => {
-          const dx = Math.cos(angle), dy = Math.sin(angle);
-          const px = -dy,            py =  dx; // perpendicular
+          const a = toEarth + angle - 0.07;
+          const dx = Math.cos(a), dy = Math.sin(a);
+          const px = -dy, py = dx;
           const halfW = len * spreadFrac;
           const ex = sunX + dx * len, ey = sunY + dy * len;
-
           const grad = ctx.createLinearGradient(sunX, sunY, ex, ey);
-          grad.addColorStop(0,   `rgba(255,248,195,${bright * sunbeamAlpha})`);
-          grad.addColorStop(0.18,`rgba(255,235,155,${bright * 0.72 * sunbeamAlpha})`);
-          grad.addColorStop(0.55,`rgba(255,215,100,${bright * 0.32 * sunbeamAlpha})`);
-          grad.addColorStop(1,   `rgba(255,190,60,0)`);
-
-          // Forward fan
+          grad.addColorStop(0,    `rgba(255,248,195,${bright * flareAlpha})`);
+          grad.addColorStop(0.18, `rgba(255,235,155,${bright * 0.72 * flareAlpha})`);
+          grad.addColorStop(0.55, `rgba(255,215,100,${bright * 0.32 * flareAlpha})`);
+          grad.addColorStop(1,    'rgba(255,190,60,0)');
           ctx.beginPath();
-          ctx.moveTo(sunX + px * 1, sunY + py * 1);
-          ctx.lineTo(sunX - px * 1, sunY - py * 1);
-          ctx.lineTo(ex  - px * halfW, ey - py * halfW);
-          ctx.lineTo(ex  + px * halfW, ey + py * halfW);
+          ctx.moveTo(sunX + px, sunY + py);
+          ctx.lineTo(sunX - px, sunY - py);
+          ctx.lineTo(ex - px * halfW, ey - py * halfW);
+          ctx.lineTo(ex + px * halfW, ey + py * halfW);
           ctx.closePath();
           ctx.fillStyle = grad;
           ctx.fill();
-
-          // Shorter mirror fan (camera flare is symmetric)
-          const ex2 = sunX - dx * len * 0.45, ey2 = sunY - dy * len * 0.45;
-          const hw2 = len * 0.45 * spreadFrac;
-          const g2  = ctx.createLinearGradient(sunX, sunY, ex2, ey2);
-          g2.addColorStop(0, `rgba(255,248,195,${bright * 0.55 * sunbeamAlpha})`);
-          g2.addColorStop(1, `rgba(255,190,60,0)`);
-          ctx.beginPath();
-          ctx.moveTo(sunX + px * 0.8, sunY + py * 0.8);
-          ctx.lineTo(sunX - px * 0.8, sunY - py * 0.8);
-          ctx.lineTo(ex2  - px * hw2, ey2 - py * hw2);
-          ctx.lineTo(ex2  + px * hw2, ey2 + py * hw2);
-          ctx.closePath();
-          ctx.fillStyle = g2;
-          ctx.fill();
         });
-
-        // Diffuse sun glow at this scale (bright overexposed core)
-        const glowR = Math.min(70, W * 0.07);
+        const glowR = Math.min(60, W * 0.06);
         const sunGlow = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, glowR);
-        sunGlow.addColorStop(0,   `rgba(255,255,230,${0.65 * sunbeamAlpha})`);
-        sunGlow.addColorStop(0.28,`rgba(255,245,175,${0.38 * sunbeamAlpha})`);
-        sunGlow.addColorStop(1,   `rgba(255,200,60,0)`);
+        sunGlow.addColorStop(0,    `rgba(255,255,230,${0.65 * flareAlpha})`);
+        sunGlow.addColorStop(0.28, `rgba(255,245,175,${0.38 * flareAlpha})`);
+        sunGlow.addColorStop(1,    'rgba(255,200,60,0)');
         ctx.beginPath();
         ctx.arc(sunX, sunY, glowR, 0, Math.PI * 2);
         ctx.fillStyle = sunGlow;
         ctx.fill();
-
         ctx.restore();
       }
 
-      // ── Draw objects ──
-      OBJECTS.forEach(obj => {
-        const cx = xFor(obj.dist);
-        if (cx < -200 || cx > W + 200) return;
+      // ── The Sun ──
+      const solarAlpha = fade(viewM, 3e17, 3e16);
+      if (solarAlpha > 0 && onCanvas(sunX, sunY, 80)) {
+        const sunR = SUN_R * scale;
+        const haloR = Math.max(sunR * 2.2, 6);
+        const halo = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, haloR);
+        halo.addColorStop(0, `rgba(255,236,150,${0.7 * solarAlpha})`);
+        halo.addColorStop(1, 'rgba(255,200,80,0)');
+        ctx.fillStyle = halo;
+        ctx.beginPath(); ctx.arc(sunX, sunY, haloR, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = solarAlpha;
+        dot(sunX, sunY, SUN_R, '#ffe566', 2);
+        ctx.globalAlpha = 1;
+        if (Math.hypot(sunX - cx0, sunY - cy0) > 18 && viewM < 3e14) label('Sun', sunX, sunY - Math.max(sunR, 6) - 8, solarAlpha);
+      }
 
-        const cr = rFor(obj.r);
-        const modelCfg = MODEL_CONFIGS[obj.name];
-        const modelReady = !!(modelSystem && modelSystem.isReady && modelSystem.isReady(obj.name));
-        const modelDiameter = modelCfg
-          ? Math.min(modelCfg.maxPx, Math.max(modelCfg.minPx, cr * 2 * (modelCfg.displayScale || 1)))
-          : 0;
-        const effects = obj.effects || {};
-        const haloOpacity = effects.haloOpacity == null ? 0.18 : effects.haloOpacity;
-        const effectVisible = !!(
-          modelCfg &&
-          modelDiameter >= Math.max(modelCfg.minPx || 0, 34) &&
-          modelDiameter <= (modelCfg.hideAbovePx || Infinity) &&
-          cx >= modelDiameter / 2 &&
-          cx <= W - modelDiameter / 2 &&
-          Object.keys(effects).length
-        );
-        const showModel = !!(modelReady && modelCfg &&
-          cr * 2 >= modelCfg.showAbovePx &&
-          cr * 2 <= modelCfg.hideAbovePx &&
-          cx >= modelDiameter / 2 &&
-          cx <= W - modelDiameter / 2);
-
-        if (modelCfg && cx >= -modelDiameter && cx <= W + modelDiameter) {
+      // ── Planets, the Moon and Earth at true size (dots when sub-pixel) ──
+      const bodies = PLANETS.map(p => ({ name: p.name, pos: p.pos, r: p.r, color: p.color, a: p.a }))
+        .concat([{ name: 'Moon', pos: MOON_POS, r: MOON_R, color: '#c0c0c0', a: 0 }]);
+      const bodyAlpha = fade(viewM, 3e14, 3e13);
+      bodies.forEach(b => {
+        const x = toX(b.pos), y = toY(b.pos);
+        const isEarth = b.name === 'Earth';
+        if (!onCanvas(x, y, 300)) return;
+        if (!isEarth && bodyAlpha <= 0) return;
+        const trueD = b.r * 2 * scale;
+        const cfg = MODEL_CONFIGS[b.name];
+        const modelD = cfg ? trueD * (cfg.displayScale || 1) : 0;
+        const modelReady = !!(modelSystem && modelSystem.isReady && modelSystem.isReady(b.name));
+        const showModel = !!(cfg && modelReady && trueD >= cfg.showAbovePx && modelD <= cfg.hideAbovePx && onCanvas(x, y, 0));
+        if (cfg && onCanvas(x, y, modelD)) {
+          const fx = OBJECTS.find(o => o.name === b.name);
+          const effects = (fx && fx.effects) || {};
           modelLayouts.push({
-            name: obj.name,
-            x: cx,
-            y: H / 2,
-            size: Math.round(modelDiameter),
+            name: b.name, x, y,
+            size: Math.round(modelD),
             visible: showModel,
-            effectVisible: showModel && effectVisible,
-            haloOpacity: showModel ? haloOpacity : 0,
-            particleSize: Math.max(0.03, (effects.particleSize || 0.08) * (modelDiameter / Math.max(modelCfg.minPx || 1, 1))),
-            priority: priorityObjects.has(obj.name)
+            effectVisible: showModel && Object.keys(effects).length > 0,
+            haloOpacity: showModel ? (effects.haloOpacity == null ? 0.18 : effects.haloOpacity) : 0,
+            particleSize: Math.max(0.03, (effects.particleSize || 0.08)),
+            priority: b.name === 'Earth' || b.name === 'Moon'
           });
         }
 
-        // Glow
-        if (cr > 3) {
-          const glowR = Math.min(cr * 2.5, 80);
-          const glow = ctx.createRadialGradient(cx, H/2, cr * 0.3, cx, H/2, glowR);
-          glow.addColorStop(0, obj.color + '55');
-          glow.addColorStop(1, 'transparent');
-          ctx.beginPath();
-          ctx.arc(cx, H/2, glowR, 0, Math.PI * 2);
-          ctx.fillStyle = glow;
-          ctx.fill();
-        }
-
-        // Body
-        if (obj.r > 0 && !showModel) {
-          if (obj.name === 'Earth' && sunbeamAlpha > 0.25 && cr <= 2.4) {
-            // Earth as the Pale Blue Dot — tiny, blue-tinted, flickering within
-            // the scattered sunlight band. The blue comes from atmospheric
-            // Rayleigh scattering (same reason the daytime sky is blue).
-            const dotAlpha = Math.min(1, (sunbeamAlpha - 0.25) * 2.2);
-            const flicker  = 0.82 + 0.18 * Math.sin(frame * 0.11 + 0.7)
-                                         * Math.sin(frame * 0.074 + 1.3);
-
-            // Outer bloom (the camera-scattered light around Earth)
-            const bloomR = 5.5;
-            const bloom  = ctx.createRadialGradient(cx, H/2, 0, cx, H/2, bloomR);
-            bloom.addColorStop(0,   `rgba(100, 170, 255, ${0.30 * dotAlpha * flicker})`);
-            bloom.addColorStop(0.45,`rgba( 80, 145, 255, ${0.14 * dotAlpha})`);
-            bloom.addColorStop(1,   `rgba( 60, 110, 255, 0)`);
-            ctx.beginPath();
-            ctx.arc(cx, H/2, bloomR, 0, Math.PI * 2);
-            ctx.fillStyle = bloom;
-            ctx.fill();
-
-            // Mid blue — the atmospheric scattering halo
-            ctx.beginPath();
-            ctx.arc(cx, H/2, 2.2, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(130, 190, 255, ${0.72 * dotAlpha * flicker})`;
-            ctx.fill();
-
-            // Core — the actual 0.12-pixel Earth
-            ctx.beginPath();
-            ctx.arc(cx, H/2, 1.35, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(200, 228, 255, ${0.97 * dotAlpha * flicker})`;
-            ctx.fill();
-          } else {
-            ctx.beginPath();
-            ctx.arc(cx, H/2, Math.max(cr, 1.5), 0, Math.PI * 2);
-            ctx.fillStyle = obj.color;
-            ctx.fill();
-
-            // Earth: add continent-like patches + atmosphere
-            if (obj.name === 'Earth' && cr > 4) {
-              ctx.beginPath();
-              ctx.arc(cx, H/2, Math.max(cr * 1.08, 2), 0, Math.PI * 2);
-              const atm = ctx.createRadialGradient(cx, H/2, cr * 0.7, cx, H/2, cr * 1.1);
-              atm.addColorStop(0, 'rgba(80,160,255,0)');
-              atm.addColorStop(1, 'rgba(80,160,255,0.18)');
-              ctx.fillStyle = atm;
-              ctx.fill();
-            }
+        if (isEarth && flareAlpha > 0.25 && trueD < 2) {
+          // The Pale Blue Dot: a 2.7-pixel dot, thousands of times Earth's true
+          // size at this scale, so it can be seen at all.
+          notes.add('earth');
+          earthBoost = 2.7 / Math.max(trueD, 1e-9);
+          const dotAlpha = Math.min(1, (flareAlpha - 0.25) * 2.2);
+          const flicker = 0.82 + 0.18 * Math.sin(frame * 0.11 + 0.7) * Math.sin(frame * 0.074 + 1.3);
+          const bloom = ctx.createRadialGradient(x, y, 0, x, y, 5.5);
+          bloom.addColorStop(0,    `rgba(100,170,255,${0.30 * dotAlpha * flicker})`);
+          bloom.addColorStop(0.45, `rgba( 80,145,255,${0.14 * dotAlpha})`);
+          bloom.addColorStop(1,    'rgba( 60,110,255,0)');
+          ctx.fillStyle = bloom;
+          ctx.beginPath(); ctx.arc(x, y, 5.5, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = `rgba(130,190,255,${0.72 * dotAlpha * flicker})`;
+          ctx.beginPath(); ctx.arc(x, y, 2.2, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = `rgba(200,228,255,${0.97 * dotAlpha * flicker})`;
+          ctx.beginPath(); ctx.arc(x, y, 1.35, 0, Math.PI * 2); ctx.fill();
+        } else if (!showModel) {
+          ctx.globalAlpha = isEarth ? Math.max(bodyAlpha, fade(viewM, 3e17, 3e16)) : bodyAlpha;
+          const r = dot(x, y, b.r, b.color, 1.5);
+          if (isEarth && r > 4) {
+            const atm = ctx.createRadialGradient(x, y, r * 0.7, x, y, r * 1.1);
+            atm.addColorStop(0, 'rgba(80,160,255,0)');
+            atm.addColorStop(1, 'rgba(80,160,255,0.18)');
+            ctx.fillStyle = atm;
+            ctx.beginPath(); ctx.arc(x, y, r * 1.1, 0, Math.PI * 2); ctx.fill();
           }
+          ctx.globalAlpha = 1;
         }
 
-        // Voyager: cross marker
-        if (obj.voyager) {
-          const mx = Math.max(cx, 0), my = H/2;
-          ctx.strokeStyle = `rgba(120, 160, 255, ${Math.min(1, scale * 5e12)})`;
-          ctx.lineWidth = 1;
-          ctx.beginPath(); ctx.moveTo(mx-5, my); ctx.lineTo(mx+5, my); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(mx, my-5); ctx.lineTo(mx, my+5); ctx.stroke();
-        }
-
-        // Label — only when this object takes up a meaningful fraction of the view.
-        // Stricter threshold prevents a wall of overlapping names at mid-zoom.
-        const minViewFrac = obj.r / viewM;
-        const showLabel = minViewFrac > 0.008 || obj.voyager;
-        if (showLabel) {
-          const labelAlpha = Math.min(1, Math.max(0.35, minViewFrac * 120));
-          ctx.font = `${Math.max(11, Math.min(14, cr * 2 + 10))}px -apple-system, sans-serif`;
-          ctx.fillStyle = `rgba(180,210,255,${labelAlpha})`;
-          ctx.textAlign = 'center';
-          const labelY = H/2 - Math.max(cr + 8, 18);
-          ctx.fillText(obj.name, cx, labelY);
-        }
+        // Label a body when it is resolved, or when its orbit is big enough on
+        // screen to tell it apart from its neighbors.
+        const sep = b.name === 'Moon' ? 3.844e8 * scale : b.a * AU * scale;
+        const lab = isEarth ? (trueD > 6 || (viewM >= 2e9 && viewM < 3e14)) : (trueD > 6 || sep > 22);
+        if (lab && viewM < 3e14) label(b.name, x, y - Math.max(trueD / 2, 4) - 8, isEarth ? 1 : bodyAlpha);
       });
 
-      // One 3D model at a time — the largest visible planet wins.
-      // Everything else falls back to the 2D canvas circle so models
-      // never stack on top of each other at intermediate zoom levels.
+      // ── Voyager 1, at its real position today ──
+      const vgrAlpha = Math.min(fade(viewM, 2e11, 2e12), fade(viewM, 3e15, 3e14));
+      if (vgrAlpha > 0) {
+        const vx = toX(VOYAGER_POS), vy = toY(VOYAGER_POS);
+        if (onCanvas(vx, vy, 6)) {
+          ctx.strokeStyle = `rgba(140, 180, 255, ${vgrAlpha})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(vx - 5, vy); ctx.lineTo(vx + 5, vy); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(vx, vy - 5); ctx.lineTo(vx, vy + 5); ctx.stroke();
+          label('Voyager 1 (today)', vx, vy - 10, vgrAlpha);
+        }
+      }
+
+      // ── You are here (once Earth is lost inside bigger things) ──
+      const hereAlpha = fade(viewM, 3e15, 3e16);
+      if (hereAlpha > 0) {
+        ctx.strokeStyle = `rgba(255,214,120,${0.9 * hereAlpha})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(cx0, cy0, 7, 0, Math.PI * 2); ctx.stroke();
+        placed.push([cx0 - 40, cy0 + 9, cx0 + 40, cy0 + 24]);
+        ctx.font = '11px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = `rgba(255,224,160,${0.9 * hereAlpha})`;
+        ctx.fillText('You are here', cx0, cy0 + 21);
+      }
+
+      // ── Edge of the observable universe ──
+      if (obsPx > 25 && obsPx < W * 3) {
+        const edgeAlpha = fade(viewM, 1.5e26, 4e26);
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, 0, W, H);
+        ctx.arc(cx0, cy0, obsPx, 0, Math.PI * 2, true);
+        ctx.fillStyle = `rgba(0,0,0,${0.92 * edgeAlpha})`;
+        ctx.fill('evenodd');
+        const ring = ctx.createRadialGradient(cx0, cy0, obsPx * 0.94, cx0, cy0, obsPx * 1.01);
+        ring.addColorStop(0, 'rgba(255,140,80,0)');
+        ring.addColorStop(0.8, `rgba(255,150,90,${0.45 * edgeAlpha})`);
+        ring.addColorStop(1, 'rgba(255,150,90,0)');
+        ctx.fillStyle = ring;
+        ctx.beginPath(); ctx.arc(cx0, cy0, obsPx * 1.01, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        if (edgeAlpha > 0.3) {
+          const top = Math.max(cy0 - obsPx + 26, 24);
+          label('Orange edge: the oldest light we can see (cosmic microwave background)', cx0, top, edgeAlpha);
+          const bx = W - 150, by = 34;
+          if (Math.hypot(bx - cx0, by - cy0) > obsPx + 40) {
+            label('Out here: more universe,', bx, by, edgeAlpha * 0.85);
+            label('but its light hasn\'t reached us yet', bx, by + 16, edgeAlpha * 0.85);
+          }
+        }
+      }
+
+      // One 3D model at a time: the largest visible one wins.
       const visibleModels = modelLayouts.filter(l => l.visible);
       if (visibleModels.length > 1) {
         const dominant = visibleModels.reduce((a, b) => a.size > b.size ? a : b);
         modelLayouts.forEach(l => { if (l.visible && l.name !== dominant.name) l.visible = false; });
       }
-
       if (modelSystem) modelSystem.sync(modelLayouts, s);
-      } // end else (space scene)
+      } // end space scene
 
       // ── Scale bar ──
-      const barM   = viewM / 8;
-      const barPx  = barM * scale;
-      const barX   = 24;
-      const barY   = H - 28;
-      ctx.strokeStyle = 'rgba(60,100,200,0.7)';
+      const barM  = niceBar(viewM / 7);
+      const barPx = barM * scale;
+      const barX  = 24;
+      const barY  = H - 28;
+      ctx.strokeStyle = 'rgba(90,130,220,0.8)';
       ctx.lineWidth   = 2;
       ctx.beginPath();
       ctx.moveTo(barX, barY);
@@ -1839,40 +2206,49 @@
       ctx.moveTo(barX + barPx, barY - 4); ctx.lineTo(barX + barPx, barY + 4);
       ctx.stroke();
       ctx.font = '11px -apple-system, sans-serif';
-      ctx.fillStyle = 'rgba(80,130,220,0.85)';
+      ctx.fillStyle = 'rgba(110,155,235,0.9)';
       ctx.textAlign = 'left';
       ctx.fillText(formatDistance(barM), barX, barY - 8);
 
+      // ── What is and isn't to scale right now ──
+      const NOTE_TEXT = {
+        earth: 'Earth drawn ' + Math.round(earthBoost / 100) * 100 + '× too big so you can see it',
+        flare: 'Light streaks: a simulated camera lens flare',
+        dots: 'Dots mark positions; real sizes are smaller than a pixel',
+        galaxy: 'Milky Way: artist\'s map, seen from above',
+        web: 'Cosmic web: a typical pattern, not a real map'
+      };
+      const noteLines = ['earth', 'flare', 'dots', 'galaxy', 'web'].filter(k => notes.has(k)).slice(0, 2).map(k => NOTE_TEXT[k]);
+      ctx.textAlign = 'right';
+      ctx.font = '11px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(150,175,230,0.72)';
+      noteLines.forEach((t, i) => ctx.fillText(t, W - 16, H - 14 - (noteLines.length - 1 - i) * 15));
+
       // ── Update UI ──
-      scaleValueEl.textContent = formatDistance(viewM) + ' across';
-      const ms = MILESTONES.find(m => s >= m.from && s <= m.to);
+      const widthText = formatDistance(viewM) + ' across';
+      scaleValueEl.textContent = widthText + ' · light crosses it in ' + formatLightTime(viewM);
+      scaleValueEl.title = 'About ' + powerOfTen(viewM);
+      slider.setAttribute('aria-valuetext', widthText);
+      const ms = MILESTONES.find(m => viewM >= m.from && viewM < m.to);
       milestoneEl.textContent = ms ? ms.label : '';
       const panelScale = document.getElementById('pbd-scale-value-panel');
-      if (panelScale) panelScale.textContent = formatDistance(viewM) + ' across';
+      if (panelScale) panelScale.textContent = widthText + ' (' + powerOfTen(viewM) + ')';
       const panelMs = document.getElementById('pbd-milestone-panel');
       if (panelMs) panelMs.textContent = ms ? ms.label : '';
       const contextEl = document.getElementById('pbd-context');
       if (contextEl) contextEl.textContent = ms && ms.fact ? ms.fact : '';
+      if (journeyBtn && !journeyActive) journeyBtn.textContent = journeyLabel();
 
-      // Immersive mode: fade the interface chrome once Earth vanishes and the
-      // pale blue dot moment begins, so nothing competes with it on screen.
-      if (viewportEl) viewportEl.classList.toggle('pbd-immersive', s >= 46);
+      // Immersive mode: fade the interface chrome during the pale blue dot
+      // moment, so nothing competes with it on screen.
+      if (viewportEl) viewportEl.classList.toggle('pbd-immersive', viewM >= PBD_ZONE.flareIn && viewM <= 3e14);
 
-      // ── Speech reveals — only once we're past all planets.
-      // At slider 54+ every planet is a sub-pixel dot; the canvas is just
-      // stars, sunbeam, and the pale blue dot. Nothing left to compete with.
-      const speechRanges = [
-        { id: 'pbd-sl-1', from: 48,   to: 70 },
-        { id: 'pbd-sl-2', from: 51,   to: 70 },
-        { id: 'pbd-sl-3', from: 54,   to: 70 },
-        { id: 'pbd-sl-4', from: 57,   to: 70 },
-      ];
-      speechRanges.forEach(({ id, from, to }) => {
+      SPEECH_RANGES.forEach(({ id, from, to }) => {
         const el = document.getElementById(id);
-        if (el) el.classList.toggle('visible', s >= from && s <= to);
+        if (el) el.classList.toggle('visible', viewM >= from && viewM <= to);
       });
       const citeEl = document.getElementById('pbd-speech-cite');
-      if (citeEl) citeEl.classList.toggle('visible', s >= 57 && s <= 70);
+      if (citeEl) citeEl.classList.toggle('visible', viewM >= SPEECH_RANGES[3].from && viewM <= SPEECH_RANGES[3].to);
     }
 
     // ── Event listeners ──
