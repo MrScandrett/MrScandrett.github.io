@@ -750,14 +750,18 @@
     <p class="pbd-section-lede">Mostly, yes. Every distance and width in the zoom is real, but a few things have to be drawn bigger or simpler than life so you can see them. Here is exactly what is real and what isn't.</p>
     <ul class="pbd-discuss pbd-honest">
       <li><span class="pbd-q-tag">Real</span>The view width, the scale bar and the light-travel time are real at every step. Each notch of the slider multiplies the width by the same amount, so the zoom covers 27 powers of ten, from a 1.5-metre desk to the observable universe.</li>
-      <li><span class="pbd-q-tag">Real</span>The planets, the Moon and Voyager 1 are drawn where they are today, at their true distances, seen from above the plane of Earth's orbit.</li>
+      <li><span class="pbd-q-tag">Real</span>The planets, Pluto, the Moon, Voyager 1 and the James Webb Space Telescope are drawn where they are today, at their true distances, seen from above the plane of Earth's orbit.</li>
+      <li><span class="pbd-q-tag">Real places, sample dots</span>The asteroid belt (with Jupiter's Trojan asteroids 60° ahead of and behind Jupiter) and the <span data-glossary="Kuiper Belt">Kuiper Belt</span> are the right size and in the right place. Each dot stands in for many thousands of rocks or iceballs, and the dots themselves are placed at random.</li>
+      <li><span class="pbd-q-tag">Approximate</span>Voyager 1's dashed path runs through its real flybys of Jupiter and Saturn, with a marker where it took the Pale Blue Dot photo. Voyager 2, New Horizons and the two silent Pioneers are placed from their direction, distance and speed. The paths are drawn straight between flybys; the real ones curve.</li>
+      <li><span class="pbd-q-tag">Measured nose, modeled tail</span>Both Voyagers measured where the <span data-glossary="heliopause">heliopause</span> is on the front side of the Sun's bubble: about 120 AU. No spacecraft has visited the long tail, so its shape comes from computer models.</li>
       <li><span class="pbd-q-tag">Enlarged</span>Anything smaller than a pixel is drawn as a small dot. At the Pale Blue Dot moment even Jupiter is only about a hundredth of a pixel wide, and Earth's dot is drawn thousands of times too big. (In Voyager's real photo, Earth covered 0.12 of a pixel.)</li>
       <li><span class="pbd-q-tag">Recreated</span>The light streaks are a recreation of the lens flare in Voyager's camera. They were never in space.</li>
-      <li><span class="pbd-q-tag">Real</span>The nearby stars, from Proxima Centauri to Rigel, sit at their measured distances and directions. The Magellanic Clouds, Andromeda, Triangulum and the Virgo Cluster do too.</li>
+      <li><span class="pbd-q-tag">Real</span>The stars and nebulae, from Proxima Centauri out to Omega Centauri, sit at their measured distances and directions. So do the Local Group galaxies and the nearby galaxy groups and clusters, from the M81 Group to the Coma Cluster and the Shapley Supercluster. The dots inside each cluster are a sample, not individual galaxies.</li>
       <li><span class="pbd-q-tag">Predicted</span>The Oort Cloud has never been seen directly. Astronomers infer it from the paths of long-period comets.</li>
-      <li><span class="pbd-q-tag">Artist's map</span>No one has photographed the Milky Way from outside. Its size (about 100,000 light-years) and the Sun's place (26,000 light-years from the center) are measured, but the spiral picture is an illustration.</li>
+      <li><span class="pbd-q-tag">Artist's map</span>No one has photographed the Milky Way from outside. Its size (about 100,000 light-years), its central bar, its main arms and the Sun's place on the small Orion Spur (26,000 light-years from the center) come from measurements, but the picture itself is an illustration.</li>
+      <li><span class="pbd-q-tag">Simplified</span>Laniakea, our home <span data-glossary="supercluster">supercluster</span>, is drawn at its real size, about 520 million light-years across, but its outline is smoothed. Its real edge is defined by which way galaxies are flowing, not by a wall.</li>
       <li><span class="pbd-q-tag">Typical pattern</span>The cosmic web shows realistic void sizes, roughly 30 to 300 million light-years, but it is not a map of real galaxies.</li>
-      <li><span class="pbd-q-tag">Horizon</span>The observable universe is a sphere centered on us. Its edge is the oldest light we can see, sent out 13.8 billion years ago. Space has stretched since then, so that edge is now about 46 billion light-years away in every direction. The whole universe is bigger, and may have no edge at all.</li>
+      <li><span class="pbd-q-tag">Horizon</span>The observable universe is a sphere centered on us. Its edge is the oldest light we can see, the <span data-glossary="cosmic microwave background">cosmic microwave background</span>, sent out 13.8 billion years ago. Space has stretched since then, so that edge is now about 46 billion light-years away in every direction. The whole universe is bigger, and may have no edge at all. The tiny hot and cold patches drawn along the edge are an illustration.</li>
       <li><span class="pbd-q-tag">Flattened</span>Real space is three-dimensional. This zoom flattens everything onto one plane, like a map.</li>
     </ul>
   </div>
@@ -998,6 +1002,19 @@
     })();
     const VOYAGER_POS = window.PbdVoyager.helioXY(NOW);
 
+    // Pluto, by the same method (its 17° orbital tilt is flattened away).
+    const PLUTO = { name: 'Pluto', a: 39.482, e: 0.2488, L: 238.929, dL: 145.2078, w: 224.069, r: 1.1883e6, color: '#d8c3a8' };
+    PLUTO.pos = helioXY(PLUTO, NOW);
+    const JUPITER = PLANETS.find(p => p.name === 'Jupiter');
+    const planetOn = (name, y, m, d) => helioXY(PLANETS.find(p => p.name === name), Date.UTC(y, m - 1, d));
+
+    // James Webb Space Telescope: loops around the Sun–Earth L2 point,
+    // 1.5 million km straight out from Earth on the side away from the Sun.
+    const JWST_POS = (() => {
+      const d = Math.hypot(EARTH_POS[0], EARTH_POS[1]), k = 1 + 1.5e9 / d;
+      return [EARTH_POS[0] * k, EARTH_POS[1] * k];
+    })();
+
     // Sky direction + distance → position projected onto the same plane.
     const EPS = 23.4393 * D2R;
     function skyXY(raDeg, decDeg, distM) {
@@ -1022,12 +1039,66 @@
       ['Tau Ceti',          26.02, -15.94, 11.9, '#ffe9b8'],
       ['Epsilon Indi',     330.84, -56.79, 11.9, '#ffc68f'],
       ['Altair',           297.70,   8.87, 16.7, '#f2f5ff', true],
+      ['Fomalhaut',        344.41, -29.62, 25.1, '#e8eeff'],
       ['Vega',             279.23,  38.78, 25.0, '#dde8ff', true],
+      ['Pollux',           116.33,  28.03, 33.8, '#ffd08a'],
       ['Arcturus',         213.92,  19.18, 36.7, '#ffd08a', true],
+      ['Capella',           79.17,  45.99, 42.9, '#fff0c0', true],
+      ['Aldebaran',         68.98,  16.51, 65.3, '#ffad6b', true],
+      ['Regulus',          152.09,  11.97, 79.3, '#d8e4ff'],
+      ['Hyades',            66.75,  15.87, 153,  '#ffe0b0'],
+      ['Spica',            201.30, -11.16, 250,  '#c8d8ff'],
+      ['Canopus',           95.99, -52.70, 310,  '#f6f2ff', true],
+      ['Polaris',           37.95,  89.26, 433,  '#fff3d8', true],
       ['Pleiades',          56.75,  24.12, 444,  '#bcd4ff', true],
       ['Betelgeuse',        88.79,   7.41, 550,  '#ff9a5c', true],
+      ['Antares',          247.35, -26.43, 550,  '#ff7a50', true],
       ['Rigel',             78.63,  -8.20, 860,  '#cfe0ff', true],
+      ['Orion Nebula',      83.82,  -5.39, 1344, '#ff9ec8', true],
+      ['Deneb',            310.36,  45.28, 2600, '#e6eeff', true],
+      ['Lagoon Nebula',    270.90, -24.38, 4100, '#ff8fb8'],
+      ['Eagle Nebula',     274.70, -13.80, 5700, '#ff9ec0'],
+      ['Crab Nebula',       83.63,  22.01, 6500, '#a8e0ff', true],
+      ['Carina Nebula',    161.26, -59.87, 7500, '#ffa0c8'],
+      ['Omega Centauri',   201.70, -47.48, 17090, '#ffe6b0', true],
+      ['M13 star cluster', 250.42,  36.46, 22200, '#ffe6b0'],
     ].map(([name, ra, dec, ly, color, major]) => ({ name, color, major: !!major, ly, pos: skyXY(ra, dec, ly * LY) }));
+
+    // Spacecraft leaving the solar system. Voyager 1 comes from the live model
+    // above; the others from their sky direction, a recent distance and speed.
+    const YEARS_SINCE_2025 = (NOW - Date.UTC(2025, 0, 1)) / 3.156e10;
+    const probeAt = (ra, dec, au2025, auPerYr) => skyXY(ra, dec, (au2025 + auPerYr * YEARS_SINCE_2025) * AU);
+    const VOYAGER2_POS = probeAt(301.0, -57.5, 138.5, 3.22);
+    const PROBES = [
+      { name: 'Voyager 2',            pos: VOYAGER2_POS },
+      { name: 'New Horizons',         pos: probeAt(292.5, -20.2, 60.6, 2.89) },
+      { name: 'Pioneer 10 (silent)',  pos: probeAt(78.3, 26.0, 136.5, 2.54) },
+      { name: 'Pioneer 11 (silent)',  pos: probeAt(283.0, -8.5, 116.5, 2.36) },
+    ];
+    // Flight paths through the planet flybys, straightened between encounters.
+    const SATURN_V1 = planetOn('Saturn', 1980, 11, 12);
+    const V1_PHOTO_T = (Date.UTC(1990, 1, 14) - Date.UTC(1980, 10, 12)) / (NOW - Date.UTC(1980, 10, 12));
+    const V1_PHOTO_POS = [SATURN_V1[0] + (VOYAGER_POS[0] - SATURN_V1[0]) * V1_PHOTO_T,
+                          SATURN_V1[1] + (VOYAGER_POS[1] - SATURN_V1[1]) * V1_PHOTO_T];
+    const V1_PATH = [planetOn('Earth', 1977, 9, 5), planetOn('Jupiter', 1979, 3, 5), SATURN_V1, V1_PHOTO_POS, VOYAGER_POS];
+    const V2_PATH = [planetOn('Earth', 1977, 8, 20), planetOn('Jupiter', 1979, 7, 9), planetOn('Saturn', 1981, 8, 26),
+                     planetOn('Uranus', 1986, 1, 24), planetOn('Neptune', 1989, 8, 25), VOYAGER2_POS];
+
+    // The heliosphere: the bubble blown by the solar wind. Its nose points into
+    // the interstellar wind (ecliptic longitude ~255°); both Voyagers crossed
+    // the heliopause near the nose, at 121 and 119 AU. The tail is modeled.
+    const HELIO_NOSE = 255.4 * D2R;
+    function helioShape(noseAu, tailStretch) {
+      const pts = [];
+      for (let i = 0; i <= 96; i++) {
+        const t = i / 96 * Math.PI * 2, off = (1 - Math.cos(t)) / 2;
+        const r = noseAu * AU * (1 + tailStretch * Math.pow(off, 1.5));
+        pts.push([r * Math.cos(HELIO_NOSE + t), r * Math.sin(HELIO_NOSE + t)]);
+      }
+      return pts;
+    }
+    const HELIOPAUSE = helioShape(121, 1.6);
+    const TERMINATION_SHOCK = helioShape(94, 0.8);
 
     // Galaxies and beyond. Sizes are diameters of the bright disk.
     const GALACTIC_CENTER = skyXY(266.42, -29.01, 26000 * LY);
@@ -1035,10 +1106,47 @@
     const GALAXIES = [
       { name: 'Large Magellanic Cloud', pos: skyXY(80.89, -69.76, 163000 * LY), d: 32000 * LY, ratio: 0.7, angle: 0.4, color: [200, 210, 255] },
       { name: 'Small Magellanic Cloud', pos: skyXY(13.19, -72.83, 200000 * LY), d: 19000 * LY, ratio: 0.6, angle: 1.1, color: [200, 210, 255] },
+      { name: 'Sagittarius Dwarf', pos: skyXY(283.8, -30.5, 70000 * LY),  d: 10000 * LY, ratio: 0.4, angle: 1.2, color: [210, 205, 235], dwarf: true },
+      { name: 'Leo I',             pos: skyXY(152.1, 12.3, 820000 * LY),  d: 2000 * LY,  ratio: 0.8, angle: 0,   color: [210, 205, 235], dwarf: true },
+      { name: 'NGC 6822',          pos: skyXY(296.2, -14.8, 1.6e6 * LY),  d: 7000 * LY,  ratio: 0.7, angle: 0.3, color: [200, 210, 245], dwarf: true },
+      { name: 'IC 1613',           pos: skyXY(16.2, 2.1, 2.4e6 * LY),     d: 12000 * LY, ratio: 0.9, angle: 0,   color: [200, 210, 245], dwarf: true },
+      { name: 'WLM',               pos: skyXY(0.49, -15.46, 3.0e6 * LY),  d: 8000 * LY,  ratio: 0.4, angle: 1.4, color: [200, 210, 245], dwarf: true },
+      { name: 'M32',               pos: skyXY(10.67, 40.87, 2.49e6 * LY), d: 6500 * LY,  ratio: 0.8, angle: 0,   color: [240, 220, 200], dwarf: true },
+      { name: 'M110',              pos: skyXY(10.09, 41.69, 2.69e6 * LY), d: 17000 * LY, ratio: 0.5, angle: 0.9, color: [240, 220, 200], dwarf: true },
       { name: 'Andromeda',  pos: skyXY(10.68, 41.27, 2.5e6 * LY),  d: 150000 * LY, ratio: 0.32, angle: 0.66, color: [225, 210, 255], major: true },
       { name: 'Triangulum', pos: skyXY(23.46, 30.66, 2.73e6 * LY), d: 60000 * LY,  ratio: 0.7,  angle: 0.4,  color: [190, 210, 255] },
     ];
-    const VIRGO = { name: 'Virgo Cluster', pos: skyXY(187.7, 12.4, 54e6 * LY), d: 15e6 * LY };
+    const ANDROMEDA = GALAXIES.find(g => g.name === 'Andromeda');
+    // The Local Group spans about 10 million light-years, centered between
+    // the Milky Way and Andromeda (the two giants that hold it together).
+    const LOCAL_GROUP = { pos: [(GALACTIC_CENTER[0] + ANDROMEDA.pos[0]) / 2, (GALACTIC_CENTER[1] + ANDROMEDA.pos[1]) / 2], r: 5e6 * LY };
+
+    // Nearby galaxy groups and clusters: real directions and distances.
+    // n is how many member dots to draw, roughly following richness.
+    const CLUSTERS = [
+      ['M81 Group',            148.9,  69.07, 11.7, 2.5, 10],
+      ['Centaurus A Group',    201.4, -43.0,  12.0, 3,   12],
+      ['Sculptor Group',        11.9, -25.3,  11.4, 3,   10],
+      ['Virgo Cluster',        187.7,  12.4,  54,   15,  80, true],
+      ['Fornax Cluster',        54.6, -35.5,  62,   6,   40],
+      ['Hydra Cluster',        159.2, -27.5,  158,  10,  50],
+      ['Centaurus Cluster',    192.2, -41.3,  170,  10,  55],
+      ['Norma Cluster (Great Attractor)', 243.6, -60.9, 220, 12, 60, true],
+      ['Perseus Cluster',       49.95, 41.5,  240,  15,  70],
+      ['Coma Cluster',         194.95, 27.98, 321,  20,  100, true],
+      ['Shapley Supercluster', 202.0, -31.0,  650,  90,  160, true],
+    ].map(([name, ra, dec, mly, dMly, n, major]) => {
+      const members = [];
+      for (let i = 0; i < n; i++) {
+        // Concentrated toward the middle, like real clusters.
+        const rr = Math.pow(Math.random(), 1.6) * 0.5, a = Math.random() * Math.PI * 2;
+        members.push([rr * Math.cos(a), rr * Math.sin(a), 0.6 + Math.random() * 0.8]);
+      }
+      return { name, major: !!major, dist: mly * 1e6 * LY, d: dMly * 1e6 * LY, pos: skyXY(ra, dec, mly * 1e6 * LY), members };
+    });
+    // Laniakea, our home supercluster: ~520 million light-years across, its
+    // galaxies all flowing toward the Great Attractor. Outline simplified.
+    const LANIAKEA = { pos: skyXY(243.6, -60.9, 200e6 * LY), r: 260e6 * LY };
     const OBSERVABLE_R = 46.5e9 * LY;     // radius of the observable universe (comoving)
     const WEB_TILE_M = 1.2e9 * LY;        // one tile of the cosmic-web texture
 
@@ -1127,39 +1235,156 @@
       OORT.push([r * Math.cos(t), r * Math.sin(t), Math.random()]);
     }
 
+    const gauss = () => (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;
+    // Asteroid belt (2.1–3.3 AU) plus Jupiter's Trojans, which share its orbit
+    // 60° ahead and behind. Each dot stands for many thousands of rocks.
+    const ASTEROIDS = [];
+    for (let i = 0; i < 2600; i++) {
+      const a = 2.7 + gauss() * 0.45, r = a * (1 + gauss() * 0.08) * AU, t = Math.random() * Math.PI * 2;
+      ASTEROIDS.push([r * Math.cos(t), r * Math.sin(t), Math.random()]);
+    }
+    const jupLon = Math.atan2(JUPITER.pos[1], JUPITER.pos[0]);
+    for (let i = 0; i < 700; i++) {
+      const side = i % 2 ? 1 : -1;
+      const t = jupLon + side * Math.PI / 3 + gauss() * 0.32, r = (5.2 + gauss() * 0.3) * AU;
+      ASTEROIDS.push([r * Math.cos(t), r * Math.sin(t), Math.random()]);
+    }
+    // Kuiper Belt: the classical belt (42–48 AU), Pluto-like orbits (~39 AU
+    // average but stretched), and a thin scattered disk reaching ~100 AU.
+    const KUIPER = [];
+    for (let i = 0; i < 2200; i++) {
+      const kind = Math.random();
+      const au = kind < 0.6 ? 44 + gauss() * 3.2
+        : kind < 0.82 ? 39.4 * (1 + gauss() * 0.22)
+        : 32 + Math.pow(Math.random(), 2) * 70;
+      const t = Math.random() * Math.PI * 2;
+      KUIPER.push([au * AU * Math.cos(t), au * AU * Math.sin(t), Math.random()]);
+    }
+
+    // Hot and cold spots in the cosmic microwave background around the edge.
+    const CMB_SPOTS = [];
+    for (let i = 0; i < 900; i++) {
+      const hot = Math.random() < 0.5;
+      CMB_SPOTS.push({ a: Math.random() * Math.PI * 2, r: 0.962 + Math.random() * 0.034, s: 0.004 + Math.random() * 0.01,
+        c: hot ? (Math.random() < 0.5 ? '255,120,70' : '255,170,90') : '100,130,255', o: [0.08, 0.13, 0.18][Math.floor(Math.random() * 3)] });
+    }
+    // One fill per color and brightness.
+    const CMB_GROUPS = [];
+    CMB_SPOTS.forEach(sp => {
+      let g = CMB_GROUPS.find(q => q.c === sp.c && q.o === sp.o);
+      if (!g) CMB_GROUPS.push(g = { c: sp.c, o: sp.o, spots: [] });
+      g.spots.push(sp);
+    });
+
     // Offscreen art for the galaxy and the cosmic web, built once on demand.
     let galaxyArt = null, webArt = null;
+    // Artist's map of the Milky Way as seen from the north galactic pole,
+    // which (like this flattened view) shows it turning clockwise, so the
+    // arms trail. Built on measured features: a central bar tilted ~40° to the
+    // Sun–center line, two major arms (Perseus, Scutum–Centaurus) leaving the
+    // bar's ends, two minor ones, and the Sun on the small Orion Spur between
+    // the Sagittarius and Perseus arms, 26,000 ly out.
+    // Art space: MW_ART_N px = 100,000 ly, the Sun straight below the center.
+    const MW_ART_N = 2048;
+    const MW_K = 1 / Math.tan(13 * D2R);           // winding of a 13° log spiral
+    const MW_BAR = Math.PI / 2 + 0.7;               // bar axis, near end toward the Sun's side
+    const MW_ARMS = [
+      // rSun: thousand ly where the arm crosses the Sun–center line
+      { name: 'Perseus Arm',            rSun: 30,   major: true,  from: 11.5, to: 52, labelAt: 34 },
+      { name: 'Scutum–Centaurus Arm',   rSun: 13.5, major: true,  from: 11.5, to: 52, labelAt: 16 },
+      { name: 'Sagittarius–Carina Arm', rSun: 20,   major: false, from: 13,   to: 48, labelAt: 18.5 },
+      { name: 'Norma–Outer Arm',        rSun: 9.5,  major: false, from: 9,    to: 50, labelAt: 42 },
+      { name: 'Orion Spur',             rSun: 26,   spur: true,   from: 22.5, to: 29.5 },
+    ];
+    function mwArmXY(arm, rK, offK) { // thousand ly along the arm (+ radial offset) → art px
+      const theta = Math.PI / 2 - MW_K * Math.log(rK / arm.rSun);
+      const px = (rK + (offK || 0)) / 100 * MW_ART_N;
+      return [MW_ART_N / 2 + px * Math.cos(theta), MW_ART_N / 2 + px * Math.sin(theta)];
+    }
     function getGalaxyArt() {
       if (galaxyArt) return galaxyArt;
-      const N = 768, c = document.createElement('canvas');
+      const N = MW_ART_N, c = document.createElement('canvas');
       c.width = c.height = N;
-      const g = c.getContext('2d'), m = N / 2;
-      const core = g.createRadialGradient(m, m, 0, m, m, N * 0.2);
-      core.addColorStop(0, 'rgba(255,236,200,0.95)');
-      core.addColorStop(0.4, 'rgba(255,214,160,0.35)');
-      core.addColorStop(1, 'rgba(255,200,140,0)');
-      g.fillStyle = core;
+      const g = c.getContext('2d'), m = N / 2, kpx = N / 100; // px per thousand ly
+      function glowDot(x, y, r, rgb, a) {
+        const gr = g.createRadialGradient(x, y, 0, x, y, r);
+        gr.addColorStop(0, `rgba(${rgb},${a})`);
+        gr.addColorStop(1, `rgba(${rgb},0)`);
+        g.fillStyle = gr;
+        g.fillRect(x - r, y - r, r * 2, r * 2);
+      }
+      // Faint disk light: old stars between the arms.
+      const disk = g.createRadialGradient(m, m, 0, m, m, m);
+      disk.addColorStop(0,    'rgba(255,226,185,0.55)');
+      disk.addColorStop(0.12, 'rgba(245,218,190,0.24)');
+      disk.addColorStop(0.4,  'rgba(190,200,240,0.08)');
+      disk.addColorStop(1,    'rgba(160,180,240,0)');
+      g.fillStyle = disk;
       g.fillRect(0, 0, N, N);
-      // Two major arms plus two minor ones: logarithmic spirals with scatter.
-      for (let i = 0; i < 26000; i++) {
-        const arm = i % 4, major = arm % 2 === 0;
-        const t = Math.random();
-        const theta = t * 3.4 * Math.PI + arm * Math.PI / 2;
-        const rr = (0.08 + 0.42 * t) * N;
-        const spread = (major ? 0.05 : 0.035) * N * (0.4 + t);
-        const x = m + rr * Math.cos(theta) + (Math.random() - 0.5) * spread;
-        const y = m + rr * Math.sin(theta) + (Math.random() - 0.5) * spread;
-        const blue = Math.random() < 0.25;
-        g.fillStyle = blue ? 'rgba(170,200,255,0.55)' : 'rgba(230,220,255,0.35)';
-        g.fillRect(x, y, 1.3, 1.3);
+      g.fillStyle = 'rgba(255,235,210,0.2)';
+      for (let i = 0; i < 45000; i++) {
+        const rr = Math.min(-Math.log(Math.random()) * 11 * kpx, m * 0.98), t = Math.random() * Math.PI * 2;
+        g.fillRect(m + rr * Math.cos(t), m + rr * Math.sin(t), 1.5, 1.5);
       }
-      for (let i = 0; i < 4000; i++) {
-        const rr = Math.abs(Math.random() + Math.random() - 1) * N * 0.5, t = Math.random() * Math.PI * 2;
-        g.fillStyle = 'rgba(240,225,200,0.18)';
-        g.fillRect(m + rr * Math.cos(t), m + rr * Math.sin(t), 1, 1);
-      }
+      // The central bar and the bulge, full of old yellow stars.
+      g.save();
+      g.translate(m, m);
+      g.rotate(MW_BAR);
+      g.scale(1, 0.36);
+      const bar = g.createRadialGradient(0, 0, 0, 0, 0, 12.5 * kpx);
+      bar.addColorStop(0, 'rgba(255,232,170,0.95)');
+      bar.addColorStop(0.55, 'rgba(255,205,140,0.4)');
+      bar.addColorStop(1, 'rgba(255,190,130,0)');
+      g.fillStyle = bar;
+      g.fillRect(-13 * kpx, -13 * kpx, 26 * kpx, 26 * kpx);
+      g.restore();
+      glowDot(m, m, 4.5 * kpx, '255,240,205', 0.9);
+
+      // The arms: stars scattered around each log spiral, widening outward.
+      const BUCKETS = [['205,218,255', 0.42, 1.6, 0.6], ['245,238,255', 0.36, 1.6, 0.3], ['165,198,255', 0.85, 2.2, 0.1]];
+      MW_ARMS.forEach(arm => {
+        const n = arm.spur ? 6000 : arm.major ? 32000 : 20000;
+        const width = k => (arm.spur ? 0.55 : arm.major ? 1.1 : 0.85) + 0.03 * k;
+        // Radius along the arm, thinned out near both ends so arms taper off.
+        const pick = () => {
+          for (;;) {
+            const k = arm.from + (arm.to - arm.from) * Math.pow(Math.random(), arm.spur ? 1 : 1.25);
+            const taper = Math.min(1, (k - arm.from) / (arm.spur ? 2 : 3), (arm.to - k) / (arm.spur ? 2 : 9));
+            if (Math.random() < taper) return k;
+          }
+        };
+        BUCKETS.forEach(([rgb, a, size, frac]) => {
+          g.fillStyle = `rgba(${rgb},${arm.spur ? a * 0.7 : a})`;
+          for (let i = 0; i < n * frac; i++) {
+            const k = pick(), [x, y] = mwArmXY(arm, k, gauss() * width(k));
+            g.fillRect(x, y, size, size);
+          }
+        });
+        // Dust lanes along the inner edge of each arm.
+        g.globalCompositeOperation = 'destination-out';
+        g.fillStyle = 'rgba(0,0,0,0.13)';
+        for (let i = 0; i < (arm.spur ? 600 : 5500); i++) {
+          const k = pick(), [x, y] = mwArmXY(arm, k, -0.75 * width(k) + gauss() * 0.3);
+          const s = 2 + Math.random() * 4;
+          g.fillRect(x - s / 2, y - s / 2, s, s);
+        }
+        g.globalCompositeOperation = 'source-over';
+        // Pink star-forming nebulae and blue newborn clusters on the arm crest.
+        for (let i = 0; i < (arm.spur ? 25 : arm.major ? 170 : 110); i++) {
+          const k = pick(), [x, y] = mwArmXY(arm, k, gauss() * 0.4 * width(k));
+          if (Math.random() < 0.55) glowDot(x, y, 3 + Math.random() * 5, '255,110,170', 0.5);
+          else glowDot(x, y, 2 + Math.random() * 3, '190,215,255', 0.85);
+        }
+      });
+      // Sagittarius A*: the black hole at the very center.
+      glowDot(m, m, 6, '255,255,245', 1);
       galaxyArt = c;
       return c;
+    }
+    // Art-space point → canvas, for a galaxy drawn at (gx, gy), mwPx wide, turned by rot.
+    function mwToCanvas(pt, gx, gy, mwPx, rot) {
+      const k = mwPx / MW_ART_N, vx = (pt[0] - MW_ART_N / 2) * k, vy = (pt[1] - MW_ART_N / 2) * k;
+      return [gx + vx * Math.cos(rot) - vy * Math.sin(rot), gy + vx * Math.sin(rot) + vy * Math.cos(rot)];
     }
     function getWebArt() {
       if (webArt) return webArt;
@@ -1173,15 +1398,22 @@
       const wrapD = (a, b) => { const d = Math.abs(a - b); return Math.min(d, N - d); };
       for (let i = 0; i < 260000; i++) {
         const x = Math.random() * N, y = Math.random() * N;
-        let d1 = Infinity, d2 = Infinity;
+        let d1 = Infinity, d2 = Infinity, d3 = Infinity;
         for (const s of seeds) {
           const d = Math.hypot(wrapD(x, s[0]), wrapD(y, s[1]));
-          if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) d2 = d;
+          if (d < d1) { d3 = d2; d2 = d1; d1 = d; } else if (d < d2) { d3 = d2; d2 = d; } else if (d < d3) d3 = d;
         }
         const edge = d2 - d1; // 0 on a wall between two voids
-        if (edge < 2.2 || (edge < 6 && Math.random() < 0.08)) {
+        if (d3 - d1 < 4.5) {
+          // Where three voids meet, filaments cross: dense knots, the galaxy clusters.
+          g.fillStyle = d3 - d1 < 2 ? 'rgba(255,240,225,0.95)' : 'rgba(235,220,255,0.8)';
+          g.fillRect(x * K, y * K, 3, 3);
+        } else if (edge < 2.2 || (edge < 6 && Math.random() < 0.08)) {
           g.fillStyle = edge < 1 ? 'rgba(220,210,255,0.9)' : 'rgba(170,170,255,0.5)';
           g.fillRect(x * K, y * K, 2.2, 2.2);
+        } else if (Math.random() < 0.004) {
+          g.fillStyle = 'rgba(160,160,240,0.45)'; // a few lone galaxies inside the voids
+          g.fillRect(x * K, y * K, 2, 2);
         }
       }
       webArt = c;
@@ -1791,6 +2023,38 @@
       return n * p * unit;
     }
 
+    // Many tiny dots around the Sun (belts, Oort Cloud), batched into four
+    // brightness levels so each level is one fill.
+    function dotField(ctx, points, ox, oy, scale, alpha, rgb, size, lo, hi) {
+      if (alpha <= 0.01) return;
+      const W2 = ctx.canvas.width, H2 = ctx.canvas.height;
+      for (let lvl = 0; lvl < 4; lvl++) {
+        ctx.beginPath();
+        points.forEach(([x, y, b]) => {
+          if (Math.min(3, Math.floor(b * 4)) !== lvl) return;
+          const px = ox + x * scale, py = oy - y * scale;
+          if (px < -2 || px > W2 + 2 || py < -2 || py > H2 + 2) return;
+          ctx.rect(px - size / 2, py - size / 2, size, size);
+        });
+        ctx.fillStyle = `rgba(${rgb},${(lo + (hi - lo) * (lvl + 0.5) / 4) * alpha})`;
+        ctx.fill();
+      }
+    }
+    // Soft round glow per star color, drawn once and reused.
+    const glowSprites = new Map();
+    function glowSprite(color) {
+      if (glowSprites.has(color)) return glowSprites.get(color);
+      const c = document.createElement('canvas');
+      c.width = c.height = 20;
+      const g = c.getContext('2d'), gr = g.createRadialGradient(10, 10, 0, 10, 10, 10);
+      gr.addColorStop(0, color);
+      gr.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = gr;
+      g.fillRect(0, 0, 20, 20);
+      glowSprites.set(color, c);
+      return c;
+    }
+
     let frame = 0;
     function draw() {
       if (!W || !H) return; // not laid out yet
@@ -1896,22 +2160,45 @@
       const mwAlpha = Math.min(fade(viewM, 3e19, 3e20), fade(viewM, 3e24, 3e23));
       if (mwAlpha > 0) {
         const gx = toX(GALACTIC_CENTER), gy = toY(GALACTIC_CENTER);
+        // Turn the map so its Sun lands on the real Sun, at the canvas center.
+        const rot = Math.atan2(cy0 - gy, cx0 - gx) - Math.PI / 2;
         if (mwPx > 3) {
           ctx.save();
           ctx.globalAlpha = mwAlpha;
           ctx.globalCompositeOperation = 'lighter';
           ctx.translate(gx, gy);
-          ctx.rotate(-0.5);
+          ctx.rotate(rot);
           ctx.drawImage(getGalaxyArt(), -mwPx / 2, -mwPx / 2, mwPx, mwPx);
           ctx.restore();
         } else {
           dot(gx, gy, 0, `rgba(240,225,200,${mwAlpha})`, 1.5);
         }
+        const partsAlpha = mwAlpha * fade(viewM, 2.5e21, 9e20);
+        if (partsAlpha > 0) {
+          MW_ARMS.forEach(arm => {
+            if (!arm.labelAt) return;
+            const [ax, ay] = mwToCanvas(mwArmXY(arm, arm.labelAt), gx, gy, mwPx, rot);
+            label(arm.name, ax, ay, partsAlpha * 0.85, 'rgb(205,215,255)');
+          });
+          if (onCanvas(gx, gy, 0)) {
+            label('Sagittarius A*: black hole, 4 million Suns', gx, gy + 18, partsAlpha * 0.9, 'rgb(255,226,180)');
+          }
+        }
         label('Milky Way', gx, gy - Math.max(mwPx * 0.5, 4) - 6, mwAlpha * fade(viewM, 1e24, 1e23));
         notes.add('galaxy');
       }
 
-      // ── Local Group galaxies and the Virgo Cluster ──
+      // ── The Local Group: our galaxy, Andromeda and their companions ──
+      const lgRingAlpha = Math.min(fade(viewM, 3e22, 1.2e23), fade(viewM, 3e24, 8e23));
+      if (lgRingAlpha > 0) {
+        const lx = toX(LOCAL_GROUP.pos), ly = toY(LOCAL_GROUP.pos), lr = LOCAL_GROUP.r * scale;
+        ctx.save();
+        ctx.setLineDash([4, 5]);
+        ctx.strokeStyle = `rgba(150,175,255,${0.4 * lgRingAlpha})`;
+        ctx.beginPath(); ctx.arc(lx, ly, lr, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+        label('Local Group: 80+ galaxies', lx, ly - lr - 8, lgRingAlpha);
+      }
       const lgAlpha = Math.min(fade(viewM, 4e20, 4e21), fade(viewM, 3e25, 3e24));
       if (lgAlpha > 0) {
         GALAXIES.forEach(gal => {
@@ -1936,75 +2223,160 @@
           const show = lgAlpha * (gal.major ? fade(viewM, 1e24, 3e23) : fade(viewM, 3e22, 3e21));
           label(gal.name, x, y - Math.max(ry, 3) - 6, show);
         });
-        const vx = toX(VIRGO.pos), vy = toY(VIRGO.pos);
-        if (onCanvas(vx, vy, 50)) {
-          const vr = VIRGO.d * scale / 2;
-          for (let i = 0; i < 70; i++) {
-            const a = i * 2.39996, rr = vr * Math.sqrt((i + 0.5) / 70) * (0.6 + 0.4 * Math.sin(i * 7.1));
-            ctx.fillStyle = `rgba(230,215,255,${0.7 * lgAlpha})`;
-            ctx.fillRect(vx + rr * Math.cos(a), vy + rr * Math.sin(a), 1.4, 1.4);
-          }
-          label('Virgo Cluster', vx, vy - Math.max(vr, 3) - 6, lgAlpha * fade(viewM, 3e24, 3e23));
+      }
+
+      // ── Galaxy groups and clusters at their real places ──
+      CLUSTERS.forEach(cl => {
+        const a = Math.min(fade(viewM, cl.dist * 0.25, cl.dist), fade(viewM, cl.dist * 60, cl.dist * 15));
+        if (a <= 0) return;
+        const x = toX(cl.pos), y = toY(cl.pos);
+        const cr = cl.d * scale / 2;
+        if (!onCanvas(x, y, cr + 10)) return;
+        const haze = ctx.createRadialGradient(x, y, 0, x, y, Math.max(cr, 3));
+        haze.addColorStop(0, `rgba(200,190,255,${0.22 * a})`);
+        haze.addColorStop(1, 'rgba(200,190,255,0)');
+        ctx.fillStyle = haze;
+        ctx.beginPath(); ctx.arc(x, y, Math.max(cr, 3), 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = `rgba(235,222,255,${0.75 * a})`;
+        cl.members.forEach(([mx, my, s]) => ctx.fillRect(x + mx * cl.d * scale - s / 2, y + my * cl.d * scale - s / 2, s, s));
+        if (cr < 2) notes.add('dots');
+        const showLabel = viewM < cl.dist * (cl.major ? 14 : 5);
+        if (showLabel) label(cl.name, x, y - Math.max(cr, 3) - 6, a);
+      });
+
+      // ── Laniakea, our home supercluster ──
+      const lanAlpha = Math.min(fade(viewM, 1.2e24, 5e24), fade(viewM, 1.2e26, 3e25));
+      if (lanAlpha > 0) {
+        const lx = toX(LANIAKEA.pos), ly = toY(LANIAKEA.pos), lr = LANIAKEA.r * scale;
+        ctx.save();
+        ctx.beginPath();
+        for (let i = 0; i <= 120; i++) {
+          const t = i / 120 * Math.PI * 2;
+          const rr = lr * (1 + 0.14 * Math.sin(3 * t + 1) + 0.08 * Math.sin(5 * t + 2.3) + 0.05 * Math.sin(9 * t));
+          const px = lx + rr * Math.cos(t), py = ly + rr * Math.sin(t);
+          if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py);
         }
+        ctx.fillStyle = `rgba(120,150,255,${0.06 * lanAlpha})`;
+        ctx.fill();
+        ctx.setLineDash([6, 5]);
+        ctx.strokeStyle = `rgba(150,180,255,${0.55 * lanAlpha})`;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        ctx.restore();
+        label('Laniakea Supercluster: our home', lx, ly - lr * 1.15 - 8, lanAlpha, 'rgb(190,205,255)');
+        notes.add('laniakea');
       }
 
       // ── Nearby stars at their real positions ──
-      const starAlpha = Math.min(fade(viewM, 3e15, 3e16), fade(viewM, 3e20, 3e19));
-      if (starAlpha > 0) {
+      // Each one fades in as it comes into frame and out once it is lost in the crowd.
+      if (viewM > 3e15 && viewM < 3e22) {
         STARS_NEAR.forEach(st => {
+          const d = st.ly * LY;
+          const starAlpha = Math.min(fade(viewM, d * 0.12, d * 0.5), fade(viewM, d * 90, d * 25));
+          if (starAlpha <= 0) return;
           const x = toX(st.pos), y = toY(st.pos);
           if (!onCanvas(x, y, 4)) return;
-          const glow = ctx.createRadialGradient(x, y, 0, x, y, 5);
-          glow.addColorStop(0, st.color);
-          glow.addColorStop(1, 'rgba(0,0,0,0)');
           ctx.globalAlpha = starAlpha;
-          ctx.fillStyle = glow;
-          ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fill();
+          ctx.drawImage(glowSprite(st.color), x - 5, y - 5, 10, 10);
           ctx.globalAlpha = 1;
+          ctx.globalAlpha = starAlpha;
           dot(x, y, 0, st.color, 1.4);
+          ctx.globalAlpha = 1;
           const distPx = Math.hypot(x - cx0, y - cy0);
-          if (distPx > 16 && (st.major || viewM < 6e17)) label(st.name, x, y - 9, starAlpha * 0.9);
+          if (distPx > 16 && viewM < d * (st.major ? 30 : 10)) label(st.name, x, y - 9, starAlpha * 0.9);
         });
+      }
+
+      // ── The heliosphere: the bubble of the Sun's wind ──
+      const helioAlpha = Math.min(fade(viewM, 5e13, 2.5e14), fade(viewM, 1.5e16, 3e15));
+      if (helioAlpha > 0) {
+        const sx = toX([0, 0]), sy = toY([0, 0]);
+        const trace = pts => {
+          ctx.beginPath();
+          pts.forEach(([x, y], i) => { const px = sx + x * scale, py = sy - y * scale; if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py); });
+          ctx.closePath();
+        };
+        const hpR = 121 * AU * scale;
+        const hg = ctx.createRadialGradient(sx, sy, hpR * 0.4, sx, sy, hpR * 2.2);
+        hg.addColorStop(0, `rgba(90,150,255,${0.03 * helioAlpha})`);
+        hg.addColorStop(1, `rgba(90,150,255,${0.12 * helioAlpha})`);
+        trace(HELIOPAUSE);
+        ctx.fillStyle = hg;
+        ctx.fill();
+        ctx.strokeStyle = `rgba(120,185,255,${0.5 * helioAlpha})`;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        ctx.save();
+        ctx.setLineDash([3, 4]);
+        trace(TERMINATION_SHOCK);
+        ctx.strokeStyle = `rgba(150,200,255,${0.32 * helioAlpha})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+        notes.add('helio');
+        if (hpR > 55) {
+          const nx = sx + Math.cos(HELIO_NOSE) * hpR, ny = sy - Math.sin(HELIO_NOSE) * hpR;
+          label('Heliopause: the Sun\'s wind ends here', nx, ny + (ny > sy ? 22 : -10), helioAlpha, 'rgb(170,205,255)');
+          const tx = sx - Math.cos(HELIO_NOSE) * hpR * 2.6, ty = sy + Math.sin(HELIO_NOSE) * hpR * 2.6;
+          label('Heliotail', tx, ty, helioAlpha * 0.8, 'rgb(150,185,240)');
+          const tsR = 94 * AU * scale, tsx = sx + Math.cos(HELIO_NOSE + 0.5) * tsR, tsy = sy - Math.sin(HELIO_NOSE + 0.5) * tsR;
+          if (tsR > 110) label('Termination shock', tsx, tsy + (tsy > sy ? 16 : -6), helioAlpha * 0.75, 'rgb(160,195,245)');
+        }
       }
 
       // ── Oort Cloud (predicted; never directly observed) ──
       const oortAlpha = Math.min(fade(viewM, 3e14, 3e15), fade(viewM, 1e18, 1e17));
       if (oortAlpha > 0) {
         const sx = toX([0, 0]), sy = toY([0, 0]);
-        OORT.forEach(([x, y, b]) => {
-          const px = sx + x * scale, py = sy - y * scale;
-          if (!onCanvas(px, py, 2)) return;
-          ctx.fillStyle = `rgba(170,205,255,${(0.35 + 0.5 * b) * oortAlpha})`;
-          ctx.fillRect(px, py, 1.6, 1.6);
-        });
+        dotField(ctx, OORT, sx, sy, scale, oortAlpha, '170,205,255', 1.6, 0.35, 0.85);
         const oy = sy - 30000 * AU * scale;
         label('Oort Cloud (predicted)', sx, oy, oortAlpha * fade(viewM, 3e17, 3e16));
       }
 
-      // ── Orbits of the planets ──
+      const sunX = toX([0, 0]), sunY = toY([0, 0]);
+      const flareAlpha = Math.min(fade(viewM, PBD_ZONE.flareIn, PBD_ZONE.flareFull), fade(viewM, PBD_ZONE.flareOut, PBD_ZONE.flareHold));
+      const calm = 1 - 0.65 * flareAlpha; // keep the Pale Blue Dot moment uncluttered
+
+      // ── Orbits of the planets (and Pluto, dashed) ──
       const orbitAlpha = fade(viewM, 3e14, 3e13);
       if (orbitAlpha > 0) {
-        const sx = toX([0, 0]), sy = toY([0, 0]);
-        PLANETS.forEach(p => {
+        PLANETS.concat([PLUTO]).forEach(p => {
           const aPx = p.a * AU * scale;
           if (aPx < 4 || aPx > W * 4) return;
           const bPx = aPx * Math.sqrt(1 - p.e * p.e);
           const w = p.w * D2R;
           // The ellipse's center sits a·e from the Sun, away from perihelion.
-          const ex = sx - Math.cos(w) * p.e * aPx, ey = sy + Math.sin(w) * p.e * aPx;
+          const ex = sunX - Math.cos(w) * p.e * aPx, ey = sunY + Math.sin(w) * p.e * aPx;
+          ctx.save();
+          if (p === PLUTO) ctx.setLineDash([2, 4]);
           ctx.beginPath();
           ctx.ellipse(ex, ey, aPx, bPx, -w, 0, Math.PI * 2);
           ctx.strokeStyle = p.name === 'Earth'
             ? `rgba(110,170,255,${0.45 * orbitAlpha})`
-            : `rgba(120,140,200,${0.22 * orbitAlpha})`;
+            : `rgba(120,140,200,${(p === PLUTO ? 0.3 * calm : 0.22) * orbitAlpha})`;
           ctx.lineWidth = 1;
           ctx.stroke();
+          ctx.restore();
         });
       }
 
+      // ── Asteroid belt and Kuiper Belt (each dot stands for countless rocks) ──
+      const belt = (points, alpha, rgb) => dotField(ctx, points, sunX, sunY, scale, alpha, rgb, 1.3, 0.3, 0.85);
+      const beltCalm = 1 - 0.9 * flareAlpha;
+      const astAlpha = Math.min(fade(viewM, 1.5e11, 6e11), fade(viewM, 3e13, 7e12)) * beltCalm;
+      belt(ASTEROIDS, astAlpha * 0.85, '215,195,165');
+      if (astAlpha > 0.3 && viewM > 4e11 && viewM < 5e12 && flareAlpha < 0.3) {
+        label('Asteroid Belt', sunX, sunY - 2.7 * AU * scale - 4, astAlpha, 'rgb(220,200,170)');
+        const jl = jupLon + Math.PI / 3;
+        if (viewM > 1e12) label('Trojans', sunX + Math.cos(jl) * 5.2 * AU * scale, sunY - Math.sin(jl) * 5.2 * AU * scale - 8, astAlpha * 0.8, 'rgb(220,200,170)');
+      }
+      const kbAlpha = Math.min(fade(viewM, 1.5e12, 6e12), fade(viewM, 3e15, 6e14)) * beltCalm;
+      belt(KUIPER, kbAlpha * 0.7, '170,195,235');
+      if (kbAlpha > 0.25 && 46 * AU * scale > 45 && flareAlpha < 0.3) {
+        label('Kuiper Belt: icy worlds', sunX, sunY + 46 * AU * scale + 14, kbAlpha, 'rgb(175,200,240)');
+      }
+
       // ── Lens flare, like the one in Voyager's camera (simulated) ──
-      const sunX = toX([0, 0]), sunY = toY([0, 0]);
-      const flareAlpha = Math.min(fade(viewM, PBD_ZONE.flareIn, PBD_ZONE.flareFull), fade(viewM, PBD_ZONE.flareOut, PBD_ZONE.flareHold));
       if (flareAlpha > 0) {
         notes.add('flare');
         ctx.save();
@@ -2017,25 +2389,35 @@
         ];
         // Aim the brightest band from the Sun through Earth, as in the photo.
         const toEarth = Math.atan2(cy0 - sunY, cx0 - sunX);
+        // Thin ray streaks inside the broad bands, like the scattered light in
+        // the real frame.
+        for (let i = 0; i < 9; i++) {
+          bands.push({ angle: -0.42 + i * 0.1 + Math.sin(i * 12.9) * 0.03, spreadFrac: 0.006, bright: 0.1 + 0.06 * Math.abs(Math.sin(i * 4.1)), len: W * (0.8 + 0.5 * Math.abs(Math.sin(i * 7.3))) });
+        }
+        // Each band is layered wide-to-narrow so its edges fade softly.
+        const LAYERS = [[1.8, 0.28], [1.15, 0.36], [0.6, 0.46]];
         bands.forEach(({ angle, spreadFrac, bright, len }) => {
+          const layers = spreadFrac < 0.01 ? [[1, 1]] : LAYERS;
           const a = toEarth + angle - 0.07;
           const dx = Math.cos(a), dy = Math.sin(a);
           const px = -dy, py = dx;
-          const halfW = len * spreadFrac;
           const ex = sunX + dx * len, ey = sunY + dy * len;
-          const grad = ctx.createLinearGradient(sunX, sunY, ex, ey);
-          grad.addColorStop(0,    `rgba(255,248,195,${bright * flareAlpha})`);
-          grad.addColorStop(0.18, `rgba(255,235,155,${bright * 0.72 * flareAlpha})`);
-          grad.addColorStop(0.55, `rgba(255,215,100,${bright * 0.32 * flareAlpha})`);
-          grad.addColorStop(1,    'rgba(255,190,60,0)');
-          ctx.beginPath();
-          ctx.moveTo(sunX + px, sunY + py);
-          ctx.lineTo(sunX - px, sunY - py);
-          ctx.lineTo(ex - px * halfW, ey - py * halfW);
-          ctx.lineTo(ex + px * halfW, ey + py * halfW);
-          ctx.closePath();
-          ctx.fillStyle = grad;
-          ctx.fill();
+          layers.forEach(([wMul, aMul]) => {
+            const halfW = len * spreadFrac * wMul, b = bright * aMul * flareAlpha;
+            const grad = ctx.createLinearGradient(sunX, sunY, ex, ey);
+            grad.addColorStop(0,    `rgba(255,248,195,${b})`);
+            grad.addColorStop(0.18, `rgba(255,235,155,${b * 0.72})`);
+            grad.addColorStop(0.55, `rgba(255,215,100,${b * 0.32})`);
+            grad.addColorStop(1,    'rgba(255,190,60,0)');
+            ctx.beginPath();
+            ctx.moveTo(sunX + px, sunY + py);
+            ctx.lineTo(sunX - px, sunY - py);
+            ctx.lineTo(ex - px * halfW, ey - py * halfW);
+            ctx.lineTo(ex + px * halfW, ey + py * halfW);
+            ctx.closePath();
+            ctx.fillStyle = grad;
+            ctx.fill();
+          });
         });
         const glowR = Math.min(60, W * 0.06);
         const sunGlow = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, glowR);
@@ -2053,6 +2435,14 @@
       const solarAlpha = fade(viewM, 3e17, 3e16);
       if (solarAlpha > 0 && onCanvas(sunX, sunY, 80)) {
         const sunR = SUN_R * scale;
+        // Wide, faint glare (a camera or an eye sees the Sun bloom far past its edge).
+        const glareR = Math.max(10, Math.min(80, sunR * 9));
+        const glare = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, glareR);
+        glare.addColorStop(0, `rgba(255,230,160,${0.22 * solarAlpha * calm})`);
+        glare.addColorStop(0.35, `rgba(255,210,130,${0.08 * solarAlpha * calm})`);
+        glare.addColorStop(1, 'rgba(255,190,100,0)');
+        ctx.fillStyle = glare;
+        ctx.beginPath(); ctx.arc(sunX, sunY, glareR, 0, Math.PI * 2); ctx.fill();
         const haloR = Math.max(sunR * 2.2, 6);
         const halo = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, haloR);
         halo.addColorStop(0, `rgba(255,236,150,${0.7 * solarAlpha})`);
@@ -2065,9 +2455,57 @@
         if (Math.hypot(sunX - cx0, sunY - cy0) > 18 && viewM < 3e14) label('Sun', sunX, sunY - Math.max(sunR, 6) - 8, solarAlpha);
       }
 
+      // ── Spacecraft leaving the solar system, and the Voyagers' flight paths ──
+      const vgrAlpha = Math.min(fade(viewM, 2e11, 2e12), fade(viewM, 3e15, 3e14));
+      if (vgrAlpha > 0) {
+        const pathAlpha = vgrAlpha * fade(viewM, 1.5e12, 6e12);
+        const drawPath = (pts, rgb, a) => {
+          if (a <= 0.01) return;
+          ctx.save();
+          ctx.setLineDash([3, 4]);
+          ctx.strokeStyle = `rgba(${rgb},${a})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          pts.forEach((p, i) => { if (i) ctx.lineTo(toX(p), toY(p)); else ctx.moveTo(toX(p), toY(p)); });
+          ctx.stroke();
+          ctx.restore();
+        };
+        drawPath(V2_PATH, '150,170,220', 0.3 * pathAlpha * calm);
+        drawPath(V1_PATH, '140,185,255', 0.55 * pathAlpha);
+        const cross = (x, y, a, size) => {
+          ctx.strokeStyle = `rgba(140,180,255,${a})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(x - size, y); ctx.lineTo(x + size, y); ctx.moveTo(x, y - size); ctx.lineTo(x, y + size); ctx.stroke();
+        };
+        // Where Voyager 1 was when it took the Pale Blue Dot photo.
+        const px = toX(V1_PHOTO_POS), py = toY(V1_PHOTO_POS);
+        if (pathAlpha > 0 && onCanvas(px, py, 6) && Math.hypot(px - sunX, py - sunY) > 30) {
+          ctx.strokeStyle = `rgba(255,214,120,${0.9 * pathAlpha})`;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath(); ctx.arc(px, py, 4, 0, Math.PI * 2); ctx.stroke();
+          label('Photo taken here, Feb 14 1990', px, py - 9, pathAlpha, 'rgb(255,220,150)');
+        }
+        const vx = toX(VOYAGER_POS), vy = toY(VOYAGER_POS);
+        if (onCanvas(vx, vy, 6)) {
+          cross(vx, vy, vgrAlpha, 5);
+          if (Math.hypot(vx - sunX, vy - sunY) > 25) label('Voyager 1 (today)', vx, vy - 10, vgrAlpha);
+        }
+        const probeAlpha = vgrAlpha * fade(viewM, 4e12, 1.5e13) * calm;
+        if (probeAlpha > 0.01) {
+          notes.add('probes');
+          PROBES.forEach(pr => {
+            const x = toX(pr.pos), y = toY(pr.pos);
+            if (!onCanvas(x, y, 6)) return;
+            cross(x, y, probeAlpha * 0.8, 3.5);
+            if (viewM < 2e14) label(pr.name, x, y - 8, probeAlpha * 0.85);
+          });
+        }
+      }
+
       // ── Planets, the Moon and Earth at true size (dots when sub-pixel) ──
       const bodies = PLANETS.map(p => ({ name: p.name, pos: p.pos, r: p.r, color: p.color, a: p.a }))
-        .concat([{ name: 'Moon', pos: MOON_POS, r: MOON_R, color: '#c0c0c0', a: 0 }]);
+        .concat([{ name: 'Moon', pos: MOON_POS, r: MOON_R, color: '#c0c0c0', a: 0 },
+                 { name: 'Pluto', pos: PLUTO.pos, r: PLUTO.r, color: PLUTO.color, a: PLUTO.a }]);
       const bodyAlpha = fade(viewM, 3e14, 3e13);
       bodies.forEach(b => {
         const x = toX(b.pos), y = toY(b.pos);
@@ -2130,17 +2568,44 @@
         if (lab && viewM < 3e14) label(b.name, x, y - Math.max(trueD / 2, 4) - 8, isEarth ? 1 : bodyAlpha);
       });
 
-      // ── Voyager 1, at its real position today ──
-      const vgrAlpha = Math.min(fade(viewM, 2e11, 2e12), fade(viewM, 3e15, 3e14));
-      if (vgrAlpha > 0) {
-        const vx = toX(VOYAGER_POS), vy = toY(VOYAGER_POS);
-        if (onCanvas(vx, vy, 6)) {
-          ctx.strokeStyle = `rgba(140, 180, 255, ${vgrAlpha})`;
-          ctx.lineWidth = 1;
-          ctx.beginPath(); ctx.moveTo(vx - 5, vy); ctx.lineTo(vx + 5, vy); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(vx, vy - 5); ctx.lineTo(vx, vy + 5); ctx.stroke();
-          label('Voyager 1 (today)', vx, vy - 10, vgrAlpha);
+      // ── Near Earth: the Moon's orbit and the James Webb Space Telescope ──
+      const moonOrbitPx = 3.844e8 * scale;
+      const moonOrbitAlpha = Math.min(fade(viewM, 2.5e8, 9e8), fade(viewM, 1.5e11, 3e10));
+      if (moonOrbitAlpha > 0 && moonOrbitPx > 6) {
+        ctx.strokeStyle = `rgba(190,200,220,${0.28 * moonOrbitAlpha})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(cx0, cy0, moonOrbitPx, 0, Math.PI * 2); ctx.stroke();
+      }
+      const jwstAlpha = Math.min(fade(viewM, 1.2e9, 3e9), fade(viewM, 3e11, 8e10));
+      if (jwstAlpha > 0) {
+        const jx = toX(JWST_POS), jy = toY(JWST_POS);
+        if (onCanvas(jx, jy, 4)) {
+          ctx.fillStyle = `rgba(255,215,120,${jwstAlpha})`;
+          ctx.save();
+          ctx.translate(jx, jy); ctx.rotate(Math.PI / 4);
+          ctx.fillRect(-2, -2, 4, 4); // a tiny diamond, like its sunshield
+          ctx.restore();
+          label(viewM < 2e10 ? 'James Webb Space Telescope (at L2)' : 'Webb telescope', jx, jy + 16, jwstAlpha, 'rgb(255,220,150)');
         }
+      }
+
+      // ── Which way is the Sun? (while it is still off the edge) ──
+      const sunPtrAlpha = Math.min(fade(viewM, 2.5e7, 1e8), fade(viewM, 1e12, 4e11));
+      if (sunPtrAlpha > 0 && !onCanvas(sunX, sunY, 0)) {
+        const ang = Math.atan2(sunY - cy0, sunX - cx0), ux = Math.cos(ang), uy = Math.sin(ang);
+        const m = 22, t = Math.min((W / 2 - m) / Math.abs(ux || 1e-9), (H / 2 - m - 26) / Math.abs(uy || 1e-9));
+        const ax = cx0 + ux * t, ay = cy0 + uy * t;
+        ctx.fillStyle = `rgba(255,220,120,${0.9 * sunPtrAlpha})`;
+        ctx.beginPath();
+        ctx.moveTo(ax + ux * 9, ay + uy * 9);
+        ctx.lineTo(ax - ux * 4 - uy * 6, ay - uy * 4 + ux * 6);
+        ctx.lineTo(ax - ux * 4 + uy * 6, ay - uy * 4 - ux * 6);
+        ctx.closePath();
+        ctx.fill();
+        const dSun = Math.hypot(EARTH_POS[0], EARTH_POS[1]);
+        const tx = Math.max(130, Math.min(W - 130, ax - ux * 22)), ty = Math.max(20, Math.min(H - 66, ay - uy * 22));
+        label('Sun this way: ' + formatDistance(dSun), tx, ty + 4, sunPtrAlpha, 'rgb(255,224,150)');
+        label('its light takes ' + formatLightTime(dSun), tx, ty + 19, sunPtrAlpha * 0.8, 'rgb(255,224,150)');
       }
 
       // ── You are here (once Earth is lost inside bigger things) ──
@@ -2171,10 +2636,25 @@
         ring.addColorStop(1, 'rgba(255,150,90,0)');
         ctx.fillStyle = ring;
         ctx.beginPath(); ctx.arc(cx0, cy0, obsPx * 1.01, 0, Math.PI * 2); ctx.fill();
+        // The CMB is not smooth: tiny hot and cold patches, the seeds of all
+        // later structure. (Pattern illustrative; the real map is from Planck.)
+        ctx.globalCompositeOperation = 'lighter';
+        CMB_GROUPS.forEach(({ c, o, spots }) => {
+          ctx.beginPath();
+          spots.forEach(sp => {
+            const r = obsPx * sp.r, x = cx0 + r * Math.cos(sp.a), y = cy0 + r * Math.sin(sp.a);
+            if (!onCanvas(x, y, 20)) return;
+            const sr = Math.max(1, obsPx * sp.s);
+            ctx.moveTo(x + sr, y);
+            ctx.arc(x, y, sr, 0, Math.PI * 2);
+          });
+          ctx.fillStyle = `rgba(${c},${o * edgeAlpha})`;
+          ctx.fill();
+        });
         ctx.restore();
         if (edgeAlpha > 0.3) {
-          const top = Math.max(cy0 - obsPx + 26, 24);
-          label('Orange edge: the oldest light we can see (cosmic microwave background)', cx0, top, edgeAlpha);
+          const top = cy0 - obsPx - 10 > 20 ? cy0 - obsPx - 10 : Math.max(cy0 - obsPx + 30, 24);
+          label('Glowing edge: the oldest light we can see (cosmic microwave background)', cx0, top, edgeAlpha);
           const bx = W - 150, by = 34;
           if (Math.hypot(bx - cx0, by - cy0) > obsPx + 40) {
             label('Out here: more universe,', bx, by, edgeAlpha * 0.85);
@@ -2216,9 +2696,12 @@
         flare: 'Light streaks: a simulated camera lens flare',
         dots: 'Dots mark positions; real sizes are smaller than a pixel',
         galaxy: 'Milky Way: artist\'s map, seen from above',
-        web: 'Cosmic web: a typical pattern, not a real map'
+        web: 'Cosmic web: a typical pattern, not a real map',
+        helio: 'Heliosphere: nose distance measured, tail shape modeled',
+        probes: 'Spacecraft paths simplified between flybys',
+        laniakea: 'Laniakea outline simplified'
       };
-      const noteLines = ['earth', 'flare', 'dots', 'galaxy', 'web'].filter(k => notes.has(k)).slice(0, 2).map(k => NOTE_TEXT[k]);
+      const noteLines = ['earth', 'flare', 'helio', 'probes', 'dots', 'galaxy', 'web', 'laniakea'].filter(k => notes.has(k)).slice(0, 2).map(k => NOTE_TEXT[k]);
       ctx.textAlign = 'right';
       ctx.font = '11px -apple-system, sans-serif';
       ctx.fillStyle = 'rgba(150,175,230,0.72)';
@@ -2315,6 +2798,10 @@
     window.addEventListener('resize', resize);
     // Defer first resize until after layout is computed, then start animation loop
     requestAnimationFrame(() => { resize(); animate(); });
+    // Build the galaxy and cosmic-web art while idle, so the journey doesn't
+    // stall the first time it reaches them.
+    const idle = window.requestIdleCallback || (cb => setTimeout(cb, 1500));
+    idle(() => { getGalaxyArt(); idle(() => getWebArt()); });
   })();
   </script>
 
