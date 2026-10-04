@@ -1,8 +1,9 @@
 // Give every STEAM Lessons catalog tile a real thumbnail: screenshot the lesson's
 // opening view and register it in steam-lessons.html's LOCAL_LESSON_THUMBS map.
 // Usage: node scripts/capture-lesson-thumbs.mjs [baseUrl] [--dry-run] [lesson-url ...]
-// Only tiles with no thumbnail are captured: tiles already in the map, and tiles with
-// bespoke CSS art (an extra class beyond tile/tile-hero/tile-coming-soon), are left alone.
+// A tile counts as having a thumbnail if it's already in the map or its tile class
+// sets a url() background in the catalog CSS. Tiles in DRAWN_ART are left alone
+// because their CSS draws real art without an image.
 // Writes assets/thumbs/lessons/<name>.webp (640x400).
 import { chromium } from "playwright";
 import sharp from "sharp";
@@ -13,6 +14,7 @@ import os from "node:os";
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const CATALOG = path.join(ROOT, "steam-lessons.html");
+const CATALOG_CSS = path.join(ROOT, "assets/css/pages/steam-lessons.css");
 const OUT = path.join(ROOT, "assets/thumbs/lessons");
 const args = process.argv.slice(2);
 const DRY = args.includes("--dry-run");
@@ -21,24 +23,30 @@ const base = positional[0]?.startsWith("http") ? positional.shift() : "http://lo
 const only = positional;
 
 const UTILITY = new Set(["tile", "tile-hero", "tile-coming-soon"]);
+const DRAWN_ART = new Set(["go-tile", "fabrication-vr-tile", "fabrication-xr-tile", "ten-eighty-ten-tile"]);
 let html = await fs.readFile(CATALOG, "utf8");
 const mapMatch = html.match(/var LOCAL_LESSON_THUMBS = \{\n([\s\S]*?)\n(\s*)\};/);
 if (!mapMatch) throw new Error("LOCAL_LESSON_THUMBS not found in steam-lessons.html");
 const mapped = new Set([...mapMatch[1].matchAll(/'([^']+)':/g)].map((m) => m[1]));
 
+const css = (await fs.readFile(CATALOG_CSS, "utf8")) + (html.match(/<style[\s\S]*?<\/style>/g) || []).join("\n");
+const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => [m[1], m[2]]);
+const hasImage = (cls) => rules.some(([sel, body]) => new RegExp(`\\.${cls}(?![\\w-])`).test(sel) && /url\(/.test(body));
+
 const missing = [];
-for (const [, cls, href] of html.matchAll(/<a class="(tile[^"]*)"[^>]*href="([^"#]+)(?:#[^"]*)?"/g)) {
-  const classes = cls.split(/\s+/);
-  if (mapped.has(href) || missing.includes(href)) continue;
-  if (classes.some((c) => !UTILITY.has(c)) || classes.includes("tile-coming-soon")) continue;
-  if (!/^lessons\/.+\.html$/.test(href) || !fssync.existsSync(path.join(ROOT, href))) continue;
+for (const [, cls, attrs, href] of html.matchAll(/<a class="(tile[^"]*)"([^>]*)href="([^"]+)"/g)) {
+  const page = href.split("#")[0];
+  const custom = cls.split(/\s+/).filter((c) => !UTILITY.has(c));
+  if (mapped.has(href) || missing.includes(href) || cls.includes("tile-coming-soon")) continue;
+  if (/url\(/.test(attrs) || custom.some((c) => DRAWN_ART.has(c) || hasImage(c))) continue;
+  if (!/^lessons\/.+\.html$/.test(page) || !fssync.existsSync(path.join(ROOT, page))) continue;
   if (only.length && !only.includes(href)) continue;
   missing.push(href);
 }
 console.log(`${missing.length} catalog tiles without a thumbnail`);
-if (DRY) { missing.forEach((h) => console.log(" ", h)); process.exit(0); }
+if (DRY || !missing.length) { missing.forEach((h) => console.log(" ", h)); process.exit(0); }
 
-const nameFor = (href) => href.replace(/^lessons\//, "").replace(/\.html$/, "").replace(/\//g, "--");
+const nameFor = (href) => href.replace(/^lessons\//, "").replace(/\.html(#|$)/, "$1").replace(/[\/#]/g, "--");
 const cache = path.join(os.homedir(), ".cache/ms-playwright");
 const build = (await fs.readdir(cache)).find((d) => /^chromium-\d+$/.test(d));
 const browser = await chromium.launch({
