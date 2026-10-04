@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-glossary-manual>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Digital Signal Processing · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
-  <meta name="description" content="Applied Physics Lesson — visualize Fourier transforms, build audio filters, and explore how digital systems decompose complex signals into frequencies." />
+  <meta name="description" content="Applied Physics Lesson — build sounds from sine waves, play the Fourier transform yourself, see why sampling causes aliasing, and shape sound with an equalizer." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
@@ -42,7 +42,13 @@
       background: rgba(255, 255, 255, 0.93);
       box-shadow: 0 20px 50px rgba(10, 30, 40, 0.07);
       padding: 1.3rem;
+      min-width: 0;
     }
+
+    .dsp-card > p,
+    .dsp-card li { color: #34596a; line-height: 1.62; }
+    .dsp-card h2 { margin: 0 0 0.5rem; font-size: clamp(1.3rem, 2.4vw, 1.65rem); letter-spacing: -0.02em; color: #14202e; }
+    .dsp-card h3 { margin: 0.2rem 0 0.4rem; font-size: 1.05rem; color: #14202e; }
 
     .dsp-hero {
       display: grid;
@@ -57,7 +63,7 @@
       font-weight: 800;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: #0891b2;
+      color: #0e7490;
     }
 
     .dsp-hero h1 {
@@ -71,28 +77,97 @@
     .dsp-lede {
       margin: 0.85rem 0 0;
       font-size: 1.02rem;
-      color: #3b6474;
+      color: #34596a;
       line-height: 1.66;
     }
 
-    /* ── Waveform Canvases ── */
+    .dsp-bigq {
+      margin: 1rem 0 0;
+      padding: 0.8rem 1rem;
+      border-radius: 14px;
+      background: #ecfeff;
+      border-left: 4px solid #0891b2;
+      color: #14202e;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+
+    .dsp-goals { margin: 0; padding-left: 1.2rem; font-size: 0.95rem; }
+    .dsp-goals li + li { margin-top: 0.3rem; }
+
+    .dsp-roadmap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.9rem;
+    }
+    .dsp-roadmap a {
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.3rem 0.65rem;
+      border-radius: 999px;
+      background: #ecfeff;
+      color: #0e7490;
+      text-decoration: none;
+      border: 1px solid rgba(8, 145, 178, 0.25);
+    }
+    .dsp-roadmap a:hover, .dsp-roadmap a:focus-visible { background: #cffafe; }
+
+    /* ── Step headers ── */
+    .dsp-step-head {
+      display: flex;
+      gap: 0.8rem;
+      align-items: flex-start;
+      margin-bottom: 0.6rem;
+    }
+    .dsp-step-num {
+      flex: none;
+      width: 2.2rem;
+      height: 2.2rem;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #0e7490;
+      color: #fff;
+      font-weight: 800;
+      font-family: "JetBrains Mono", monospace;
+    }
+    .dsp-step-head p { margin: 0.15rem 0 0; color: #34596a; line-height: 1.55; }
+
+    /* ── Buttons ── */
+    .dsp-btn {
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      background: #e6f7f4;
+      color: #0e7490;
+      font: inherit;
+      font-weight: 700;
+      font-size: 0.85rem;
+      border: 1px solid #0891b2;
+      cursor: pointer;
+    }
+    .dsp-btn:hover { background: #cffafe; }
+    .dsp-btn[aria-pressed="true"], .dsp-btn.is-primary { background: #0e7490; color: #fff; border-color: #0e7490; }
+    .dsp-btn-row { display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center; }
+    .dsp-btn-row .dsp-btn-label { font-size: 0.78rem; font-weight: 700; color: #34596a; margin-right: 0.2rem; }
+
+    /* ── Canvases ── */
     .dsp-wave-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1.3fr 1fr;
       gap: 1rem;
+      margin: 0.9rem 0;
     }
+    .dsp-wave-grid.is-even { grid-template-columns: 1fr 1fr; }
 
     .dsp-wave-card {
       border-radius: 18px;
       overflow: hidden;
       background: #0c1e28;
+      min-width: 0;
     }
 
-    .dsp-wave-card canvas {
-      display: block;
-      width: 100%;
-      height: 180px;
-    }
+    .dsp-wave-card canvas { display: block; width: 100%; }
 
     .dsp-wave-label {
       padding: 0.5rem 0.8rem;
@@ -102,49 +177,131 @@
       letter-spacing: 0.06em;
       color: #67e8f9;
       background: #0c1e28;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.1rem 0.5rem;
     }
+    .dsp-wave-label span:last-child { color: #a5f3fc; text-transform: none; letter-spacing: 0; font-weight: 500; }
 
-    /* ── Frequency Sliders (Additive Synthesis) ── */
-    .dsp-freq-controls {
+    /* ── Harmonic sliders ── */
+    .dsp-harmonics {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 0.8rem;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 0.5rem;
     }
-
-    .dsp-freq-slider {
-      padding: 0.8rem;
-      border-radius: 14px;
-      border: 1px solid rgba(6, 182, 212, 0.15);
+    .dsp-harm {
+      padding: 0.55rem 0.35rem;
+      border-radius: 12px;
       background: #f0fdfa;
+      border: 1px solid rgba(6, 182, 212, 0.15);
+      border-top: 4px solid var(--hc, #0891b2);
       text-align: center;
+      min-width: 0;
     }
+    .dsp-harm label { display: block; font-size: 0.72rem; font-weight: 800; color: #14202e; }
+    .dsp-harm .hz { display: block; font-family: "JetBrains Mono", monospace; font-size: 0.78rem; color: #34596a; margin-bottom: 0.2rem; }
+    .dsp-harm input { width: 100%; accent-color: #0891b2; }
+    .dsp-harm .pct { font-family: "JetBrains Mono", monospace; font-size: 0.75rem; color: #14202e; }
 
-    .dsp-freq-slider label {
-      display: block;
-      font-size: 0.78rem;
+    .dsp-f0 {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 0.8rem;
+      align-items: center;
+      margin: 0.8rem 0;
       font-weight: 700;
-      color: #0891b2;
-      margin-bottom: 0.3rem;
+      color: #14202e;
+      font-size: 0.9rem;
     }
+    .dsp-f0 input { width: 100%; accent-color: #0891b2; }
+    .dsp-f0 output { font-family: "JetBrains Mono", monospace; min-width: 5.5ch; text-align: right; }
 
-    .dsp-freq-slider .freq-hz {
-      font-family: "JetBrains Mono", monospace;
-      font-size: 1.2rem;
+    /* ── Predict / reveal ── */
+    .dsp-predict {
+      margin-top: 0.8rem;
+      border-radius: 14px;
+      border: 1px dashed rgba(14, 116, 144, 0.45);
+      background: #fffbeb;
+      padding: 0.7rem 0.9rem;
+    }
+    .dsp-predict summary {
+      cursor: pointer;
+      font-weight: 700;
+      color: #14202e;
+      line-height: 1.5;
+    }
+    .dsp-predict summary::marker { color: #b45309; }
+    .dsp-predict .tag { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #92400e; margin-right: 0.35rem; }
+    .dsp-predict p { margin: 0.5rem 0 0; color: #34596a; line-height: 1.6; }
+
+    .dsp-note { font-size: 0.88rem; color: #34596a; line-height: 1.6; margin: 0.6rem 0 0; }
+
+    /* ── Split panel: canvas + controls ── */
+    .dsp-split {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 1rem;
+      align-items: start;
+      margin-top: 0.8rem;
+    }
+    .dsp-split-controls { display: grid; gap: 0.55rem; align-content: start; }
+    .dsp-mrow {
+      display: grid;
+      grid-template-columns: 6.5rem 1fr 7ch;
+      gap: 0.5rem;
+      align-items: center;
+      font-size: 0.85rem;
       font-weight: 700;
       color: #14202e;
     }
+    .dsp-mrow input { width: 100%; accent-color: #0891b2; }
+    .dsp-mrow output { font-family: "JetBrains Mono", monospace; font-size: 0.8rem; text-align: right; }
 
-    .dsp-freq-slider input[type="range"] {
-      accent-color: #0891b2;
+    /* ── Sampling ── */
+    .dsp-sample-grid {
+      display: grid;
+      grid-template-columns: 1fr 200px;
+      gap: 1rem;
+      margin: 0.9rem 0 0.6rem;
     }
+    .dsp-wheel-card { text-align: center; }
+    .dsp-sliders2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem 1.2rem;
+    }
+    .dsp-sliders2 label { display: grid; grid-template-columns: 1fr auto; gap: 0.2rem 0.5rem; font-size: 0.85rem; font-weight: 700; color: #14202e; }
+    .dsp-sliders2 label input { grid-column: 1 / -1; width: 100%; accent-color: #0891b2; }
+    .dsp-sliders2 output { font-family: "JetBrains Mono", monospace; }
+
+    .dsp-status {
+      margin-top: 0.8rem;
+      padding: 0.75rem 0.95rem;
+      border-radius: 14px;
+      font-weight: 600;
+      line-height: 1.5;
+      background: #ecfdf5;
+      border: 1px solid #6ee7b7;
+      color: #064e3b;
+    }
+    .dsp-status.is-warn { background: #fef2f2; border-color: #fca5a5; color: #7f1d1d; }
+    .dsp-status.is-edge { background: #fffbeb; border-color: #fcd34d; color: #78350f; }
 
     /* ── EQ Band Filters ── */
+    .dsp-eq-layout {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 1rem;
+      align-items: center;
+      margin-top: 0.8rem;
+    }
     .dsp-eq-wrap {
       display: flex;
       justify-content: center;
       align-items: flex-end;
       gap: 0.6rem;
-      padding: 1rem;
+      padding: 0.5rem;
     }
 
     .dsp-eq-band {
@@ -157,20 +314,68 @@
     .dsp-eq-band input[type="range"] {
       writing-mode: vertical-lr;
       direction: rtl;
-      height: 120px;
+      height: 130px;
       accent-color: #0891b2;
     }
 
     .dsp-eq-band .eq-label {
-      font-size: 0.7rem;
-      font-weight: 700;
-      color: #0891b2;
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: #0e7490;
     }
+    .dsp-eq-band .eq-db { font-family: "JetBrains Mono", monospace; font-size: 0.68rem; color: #34596a; }
+
+    /* ── Try-this list ── */
+    .dsp-try {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.6rem;
+      margin: 0.4rem 0 0;
+      padding: 0;
+      list-style: none;
+    }
+    .dsp-try li {
+      padding: 0.7rem 0.85rem;
+      border-radius: 14px;
+      background: #f0fdfa;
+      border: 1px solid rgba(6, 182, 212, 0.14);
+      font-size: 0.88rem;
+    }
+    .dsp-try li strong { color: #14202e; }
+
+    /* ── Quiz ── */
+    .dsp-quiz { display: grid; gap: 0.8rem; margin-top: 0.6rem; }
+    .dsp-q {
+      border: 1px solid rgba(6, 182, 212, 0.18);
+      border-radius: 16px;
+      padding: 0.85rem 1rem;
+      background: #f8fffe;
+      margin: 0;
+    }
+    .dsp-q legend { font-weight: 700; color: #14202e; line-height: 1.5; padding: 0 0.25rem; }
+    .dsp-q-opts { display: grid; gap: 0.35rem; margin-top: 0.4rem; }
+    .dsp-q-opts button {
+      text-align: left;
+      font: inherit;
+      font-size: 0.9rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 10px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      color: #14202e;
+      cursor: pointer;
+    }
+    .dsp-q-opts button:hover { border-color: #0891b2; }
+    .dsp-q-opts button.is-right { background: #ecfdf5; border-color: #10b981; }
+    .dsp-q-opts button.is-wrong { background: #fef2f2; border-color: #f87171; }
+    .dsp-q-fb { margin: 0.5rem 0 0; font-size: 0.88rem; line-height: 1.55; color: #34596a; }
+    .dsp-q-fb:empty { display: none; }
+    .dsp-score { font-weight: 800; color: #0e7490; }
 
     /* ── Theory Cards ── */
     .dsp-theory-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 1rem;
     }
 
@@ -190,13 +395,80 @@
     .dsp-theory-card p {
       margin: 0;
       font-size: 0.9rem;
-      color: #3b6474;
+      color: #34596a;
       line-height: 1.6;
     }
 
+    .dsp-prereq {
+      margin: 0.8rem 0 0;
+      font-size: 0.92rem;
+      line-height: 1.55;
+      color: #34596a;
+    }
+    .dsp-card a:not(.dsp-btn) { color: #0e7490; font-weight: 700; }
+
+    .dsp-readouts {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.6rem;
+    }
+    .dsp-readouts > div {
+      padding: 0.6rem 0.75rem;
+      border-radius: 12px;
+      background: #f0fdfa;
+      border: 1px solid rgba(6, 182, 212, 0.15);
+    }
+    .dsp-readouts span { display: block; font-size: 0.72rem; font-weight: 700; color: #34596a; }
+    .dsp-readouts strong { font-family: "JetBrains Mono", monospace; font-size: 1rem; color: #14202e; }
+
+    .dsp-filter-types {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.6rem;
+      margin: 0.4rem 0 0.9rem;
+    }
+    .dsp-filter-types > div {
+      padding: 0.65rem 0.85rem;
+      border-radius: 14px;
+      background: #f0fdfa;
+      border: 1px solid rgba(6, 182, 212, 0.14);
+    }
+    .dsp-filter-types strong { color: #0e7490; }
+    .dsp-filter-types p { margin: 0.2rem 0 0; font-size: 0.86rem; color: #34596a; line-height: 1.5; }
+
+    .dsp-check { display: flex; gap: 0.5rem; align-items: center; font-size: 0.88rem; font-weight: 700; color: #14202e; }
+    .dsp-check input { width: 1.1rem; height: 1.1rem; accent-color: #0891b2; }
+
+    .dsp-goal {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0 0.6rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 12px;
+      background: #fef2f2;
+      border: 1px solid #fca5a5;
+      color: #7f1d1d;
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+    .dsp-goal strong { font-family: "JetBrains Mono", monospace; text-align: right; }
+    .dsp-goal em { grid-column: 1 / -1; font-style: normal; font-weight: 500; font-size: 0.76rem; }
+    .dsp-goal.is-met { background: #ecfdf5; border-color: #6ee7b7; color: #064e3b; }
+    .dsp-goal.is-met span::before { content: "✓ "; }
+
+    .dsp-exit { margin: 0.4rem 0 0; padding-left: 1.2rem; }
+    .dsp-exit li + li { margin-top: 0.4rem; }
+
+    @media (max-width: 900px) {
+      .dsp-harmonics { grid-template-columns: repeat(4, 1fr); }
+      .dsp-split, .dsp-wave-grid, .dsp-wave-grid.is-even { grid-template-columns: 1fr; }
+    }
+
     @media (max-width: 740px) {
-      .dsp-hero { grid-template-columns: 1fr; }
-      .dsp-wave-grid { grid-template-columns: 1fr; }
+      .dsp-readouts { grid-template-columns: 1fr 1fr; }
+      .dsp-filter-types { grid-template-columns: 1fr; }
+      .dsp-hero, .dsp-sample-grid, .dsp-sliders2, .dsp-eq-layout { grid-template-columns: 1fr; }
+      .dsp-eq-wrap { gap: 0.3rem; }
     }
   </style>
 </head>
@@ -223,164 +495,419 @@
 
   <div class="ll-stage">
     <div class="ll-sim">
-      <main id="main-content">
+      <main id="main-content" data-glossary-root>
 
-<!-- ════════════════════════════════════════════════════════════
-     SECTION 1 — HERO
-     ════════════════════════════════════════════════════════════ -->
 <div class="dsp-shell">
 
+<!-- ════════════════════════════════════════════════════════════
+     HERO — big question + learning goals
+     ════════════════════════════════════════════════════════════ -->
   <div class="dsp-hero">
     <div class="dsp-card">
       <p class="dsp-eyebrow">Applied Physics · Signal Processing</p>
       <h1>Digital Signal Processing</h1>
       <p class="dsp-lede">
-        Every sound you hear is a sum of pure sine waves. The <strong>Fourier Transform</strong>
-        decomposes that mixture into its constituent frequencies — the same math
-        behind music EQs, MRI scanners, voice recognition, and Wi-Fi.
+        Digital signal processing (DSP) is what happens to a sound once it becomes numbers. Your phone measures
+        the microphone's wave tens of thousands of times a second, rounds each measurement and stores it.
+        Then arithmetic does the editing: removing hum, shaping the tone, shrinking the file. Wi-Fi, MRI scanners and
+        voice assistants run on the same ideas.
       </p>
+      <p class="dsp-bigq">Big question: how can a list of numbers hold a sound, and once a sound is numbers,
+        how do you clean up a bad recording?</p>
+      <p class="dsp-prereq"><strong>Start with the maths:</strong> the
+        <a href="../../mathematics/advanced-and-calculus/fourier-series.html">Fourier Series &amp; Transform</a> lesson
+        shows why every sound is a sum of sine waves and how the <span data-glossary="Fast Fourier Transform">FFT</span>
+        finds them. This lesson takes that idea and asks what engineers do with it.</p>
     </div>
 
     <div class="dsp-card">
-      <p class="dsp-eyebrow">Key Concepts</p>
-      <ul style="padding-left:1.1rem; color:#3b6474; line-height:1.7; font-size:0.95rem;">
-        <li><strong>Time Domain</strong> — amplitude vs. time (the waveform you see)</li>
-        <li><strong>Frequency Domain</strong> — amplitude vs. frequency (the spectrum)</li>
-        <li><strong>Fourier Transform</strong> — the bridge between the two domains</li>
-        <li><strong>Filters</strong> — boost or cut specific frequency bands</li>
-      </ul>
+      <p class="dsp-eyebrow">By the end you can…</p>
+      <ol class="dsp-goals">
+        <li>Read a <span data-glossary="spectrum">spectrum</span> to locate the parts of a sound: notes, hum and hiss.</li>
+        <li>Explain how the <span data-glossary="sampling rate">sample rate</span> limits which frequencies a recording can hold, and recognise <span data-glossary="aliasing">aliasing</span>.</li>
+        <li>Explain how <span data-glossary="bit depth">bit depth</span> sets the noise level of a recording.</li>
+        <li>Choose filters to repair a recording and predict what each one will do to the sound.</li>
+      </ol>
+      <nav class="dsp-roadmap" aria-label="Lesson steps">
+        <a href="#step-1">1 · Test sound</a>
+        <a href="#step-2">2 · Sample rate</a>
+        <a href="#step-3">3 · Bit depth</a>
+        <a href="#step-4">4 · Equalizer</a>
+        <a href="#step-5">5 · Rescue a recording</a>
+        <a href="#step-6">6 · Live lab</a>
+        <a href="#check">Check yourself</a>
+      </nav>
     </div>
   </div>
 
 <!-- ════════════════════════════════════════════════════════════
-     SECTION 2 — DUAL WAVEFORM VIEW (Time + Frequency)
+     STEP 1 — Recap + the test sound used everywhere below
      ════════════════════════════════════════════════════════════ -->
+  <section class="dsp-card" id="step-1" aria-labelledby="step-1-title">
+    <div class="dsp-step-head">
+      <span class="dsp-step-num" aria-hidden="true">1</span>
+      <div>
+        <h2 id="step-1-title">Quick recap: your test sound</h2>
+        <p>A quick reminder from the Fourier lesson. The waveform (<span data-glossary="time domain">time domain</span>) and the
+          spectrum (<span data-glossary="frequency domain">frequency domain</span>) are two views of the same sound. The waveform is
+          the smoothie, and the spectrum is its recipe of <span data-glossary="harmonic">harmonics</span>. Design a test sound
+          here. You'll digitise it, filter it and measure it in the steps below.</p>
+      </div>
+    </div>
 
-  <div class="dsp-card">
-    <p class="dsp-eyebrow">Live Visualizer</p>
-
-    <div style="text-align:center; margin-bottom:1rem;">
-      <button id="micBtn" style="padding:0.6rem 1.4rem; border-radius:10px; background:#0891b2; color:#fff; font-weight:700; border:none; cursor:pointer; margin-right:0.5rem;">
-        Use Microphone
-      </button>
-      <button id="toneBtn" style="padding:0.6rem 1.4rem; border-radius:10px; background:#0e7490; color:#fff; font-weight:700; border:none; cursor:pointer;">
-        Play Test Tone
-      </button>
+    <div class="dsp-btn-row">
+      <span class="dsp-btn-label">Recipes:</span>
+      <button type="button" class="dsp-btn" data-preset="sine">Pure sine</button>
+      <button type="button" class="dsp-btn" data-preset="square">Square</button>
+      <button type="button" class="dsp-btn" data-preset="saw">Sawtooth</button>
+      <button type="button" class="dsp-btn" data-preset="random">Random</button>
+      <span style="flex:1"></span>
+      <button type="button" class="dsp-btn is-play" aria-pressed="false">▶ Play test sound</button>
     </div>
 
     <div class="dsp-wave-grid">
       <div class="dsp-wave-card">
-        <div class="dsp-wave-label">Time Domain (Waveform)</div>
-        <canvas id="waveCanvas"></canvas>
+        <div class="dsp-wave-label"><span>Time domain · waveform</span><span>2 cycles</span></div>
+        <canvas id="synthWave" role="img" aria-label="The individual harmonic sine waves drawn faintly, with their sum drawn as a bright line."></canvas>
       </div>
       <div class="dsp-wave-card">
-        <div class="dsp-wave-label">Frequency Domain (Spectrum)</div>
-        <canvas id="spectrumCanvas"></canvas>
+        <div class="dsp-wave-label"><span>Frequency domain · spectrum</span><span>the recipe</span></div>
+        <canvas id="synthSpec" role="img" aria-label="Bar chart of the amplitude of each harmonic."></canvas>
       </div>
     </div>
-  </div>
+
+    <div class="dsp-f0">
+      <label for="f0Slider">Fundamental (pitch)</label>
+      <input type="range" id="f0Slider" min="80" max="660" value="220" step="1" />
+      <output id="f0Out" for="f0Slider">220 Hz</output>
+    </div>
+
+    <div class="dsp-harmonics" id="harmonics"></div>
+    <p class="dsp-note">Want to know why a square wave needs only odd harmonics, or how the FFT finds a recipe? Those are covered in the
+      <a href="../../mathematics/advanced-and-calculus/fourier-series.html">Fourier lesson</a>'s epicycle builder and frequency detector.</p>
+  </section>
 
 <!-- ════════════════════════════════════════════════════════════
-     SECTION 3 — ADDITIVE SYNTHESIS
+     STEP 2 — Sample rate & aliasing
      ════════════════════════════════════════════════════════════ -->
+  <section class="dsp-card" id="step-2" aria-labelledby="step-2-title">
+    <div class="dsp-step-head">
+      <span class="dsp-step-num" aria-hidden="true">2</span>
+      <div>
+        <h2 id="step-2-title">Going digital, part 1: how often? (sample rate)</h2>
+        <p>An <span data-glossary="analog-to-digital converter">analog-to-digital converter</span> can't store a smooth wave.
+          It measures the wave's height at regular instants, called <em>samples</em>, and keeps only those numbers. The dots are
+          the samples. The orange line is the slowest wave that passes through all of them, which is what the computer "thinks" it recorded.</p>
+      </div>
+    </div>
 
-  <div class="dsp-card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
-      <p class="dsp-eyebrow" style="margin: 0;">Additive Synthesis</p>
-      <button id="squarePresetBtn" style="padding:0.3rem 0.8rem; border-radius:8px; background:#0891b2; color:#fff; border:none; font-weight:700; cursor:pointer; font-size:0.75rem; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">Square Wave Approx</button>
+    <div class="dsp-btn-row">
+      <span class="dsp-btn-label">Try:</span>
+      <button type="button" class="dsp-btn" data-alias="3,20">Plenty of samples</button>
+      <button type="button" class="dsp-btn" data-alias="9,20">Close to the limit</button>
+      <button type="button" class="dsp-btn" data-alias="17,20">Too few samples</button>
+      <button type="button" class="dsp-btn" data-alias="19,20">Wagon-wheel effect</button>
     </div>
-    <div class="dsp-freq-controls">
-      <div class="dsp-freq-slider">
-        <label>Fundamental</label>
-        <div class="freq-hz" id="f0Hz">220</div>
-        <input type="range" id="f0Slider" min="80" max="880" value="220" style="width:100%;" />
-        <input type="range" id="f0Amp" min="0" max="100" value="80" style="width:100%;" />
-        <div style="font-size:0.7rem; color:#3b6474;">Amplitude</div>
+
+    <div class="dsp-sample-grid">
+      <div class="dsp-wave-card">
+        <div class="dsp-wave-label"><span>One second of signal</span><span>grey = real · dots = samples · orange = what the computer sees</span></div>
+        <canvas id="aliasCanvas" role="img" aria-label="A sine wave with sample points marked and the reconstructed wave the samples imply."></canvas>
       </div>
-      <div class="dsp-freq-slider">
-        <label>2nd Harmonic</label>
-        <div class="freq-hz" id="f1Hz">440</div>
-        <input type="range" id="f1Amp" min="0" max="100" value="40" style="width:100%;" />
-        <div style="font-size:0.7rem; color:#3b6474;">Amplitude</div>
-      </div>
-      <div class="dsp-freq-slider">
-        <label>3rd Harmonic</label>
-        <div class="freq-hz" id="f2Hz">660</div>
-        <input type="range" id="f2Amp" min="0" max="100" value="20" style="width:100%;" />
-        <div style="font-size:0.7rem; color:#3b6474;">Amplitude</div>
-      </div>
-      <div class="dsp-freq-slider">
-        <label>4th Harmonic</label>
-        <div class="freq-hz" id="f3Hz">880</div>
-        <input type="range" id="f3Amp" min="0" max="100" value="10" style="width:100%;" />
-        <div style="font-size:0.7rem; color:#3b6474;">Amplitude</div>
+      <div class="dsp-wave-card dsp-wheel-card">
+        <div class="dsp-wave-label"><span>Camera view</span><span>1 frame per sample</span></div>
+        <canvas id="wheelCanvas" role="img" aria-label="A wheel with one marked spoke, shown only at the sample instants, as a film camera would see it."></canvas>
       </div>
     </div>
-    <p style="margin:0.8rem 0 0; font-size:0.88rem; color:#3b6474; text-align:center;">
-      Drag amplitudes to zero to hear how each harmonic shapes the timbre.
-      A square wave ≈ odd harmonics only. A sawtooth ≈ all harmonics.
-    </p>
-  </div>
+
+    <div class="dsp-sliders2">
+      <label>Signal frequency (wheel turns per second)
+        <output id="sigOut">3 Hz</output>
+        <input type="range" id="sigSlider" min="1" max="40" value="3" step="1" />
+      </label>
+      <label>Sample rate (samples or frames per second)
+        <output id="fsOut">20 Hz</output>
+        <input type="range" id="fsSlider" min="2" max="40" value="20" step="1" />
+      </label>
+    </div>
+
+    <div class="dsp-status" id="aliasStatus" aria-live="polite"></div>
+
+    <details class="dsp-predict">
+      <summary><span class="tag">Predict first</span>Keep the sample rate at 20. At what signal frequency will the orange line first stop matching the grey wave?</summary>
+      <p>Just above <strong>10 Hz</strong>, which is half the sample rate. That cutoff is the <span data-glossary="Nyquist frequency">Nyquist frequency</span>.
+        You need more than two samples per cycle to capture a wave. Anything faster gets "folded" back and shows up as a
+        lower, fake frequency, called an <em>alias</em>. Film cameras take about 24 frames per second, which is why wagon wheels and
+        helicopter blades in movies can seem to spin backward.</p>
+    </details>
+    <details class="dsp-predict">
+      <summary><span class="tag">Explain</span>Once a sound has been aliased, why can't software fix it afterward?</summary>
+      <p>Set the signal to 17 Hz, then to 3 Hz. The dots land in <em>exactly</em> the same places, so the stored numbers are identical.
+        Nothing in the file says which wave they came from. That's why recorders filter out everything above the Nyquist frequency
+        <em>before</em> sampling, using an "anti-aliasing filter". It's much easier to prevent aliasing than to undo it.</p>
+    </details>
+    <p class="dsp-note"><strong>Why CDs use 44,100 samples per second:</strong> human hearing tops out near 20,000 Hz. Twice that is 40,000,
+      plus a little extra room for the anti-aliasing filter, which gives 44.1 kHz.</p>
+  </section>
 
 <!-- ════════════════════════════════════════════════════════════
-     SECTION 4 — EQ / FILTER
+     STEP 3 — Bit depth & quantization
      ════════════════════════════════════════════════════════════ -->
-
-  <div class="dsp-card">
-    <p class="dsp-eyebrow">Graphic Equalizer</p>
-    <div class="dsp-eq-wrap">
-      <div class="dsp-eq-band">
-        <input type="range" min="-12" max="12" value="0" class="eqBand" data-freq="60" />
-        <span class="eq-label">60</span>
-      </div>
-      <div class="dsp-eq-band">
-        <input type="range" min="-12" max="12" value="0" class="eqBand" data-freq="250" />
-        <span class="eq-label">250</span>
-      </div>
-      <div class="dsp-eq-band">
-        <input type="range" min="-12" max="12" value="0" class="eqBand" data-freq="1k" />
-        <span class="eq-label">1k</span>
-      </div>
-      <div class="dsp-eq-band">
-        <input type="range" min="-12" max="12" value="0" class="eqBand" data-freq="4k" />
-        <span class="eq-label">4k</span>
-      </div>
-      <div class="dsp-eq-band">
-        <input type="range" min="-12" max="12" value="0" class="eqBand" data-freq="8k" />
-        <span class="eq-label">8k</span>
-      </div>
-      <div class="dsp-eq-band">
-        <input type="range" min="-12" max="12" value="0" class="eqBand" data-freq="16k" />
-        <span class="eq-label">16k</span>
+  <section class="dsp-card" id="step-3" aria-labelledby="step-3-title">
+    <div class="dsp-step-head">
+      <span class="dsp-step-num" aria-hidden="true">3</span>
+      <div>
+        <h2 id="step-3-title">Going digital, part 2: how precisely? (bit depth)</h2>
+        <p>Each sample is stored as a whole number made of a fixed number of bits. With <em>b</em> bits there are
+          2<sup>b</sup> possible levels, so every measurement is rounded to the nearest level. This rounding is called
+          <span data-glossary="quantization">quantization</span>. The rounding errors (orange, bottom strip) add a rough,
+          jittery wobble to the signal. You hear it as hiss, called <em>quantization noise</em>.</p>
       </div>
     </div>
-    <p style="text-align:center; font-size:0.85rem; color:#3b6474;">
-      Boost or cut frequency bands (±12 dB). Watch the spectrum change in real time.
-    </p>
-  </div>
+
+    <div class="dsp-btn-row">
+      <span class="dsp-btn-label">Try:</span>
+      <button type="button" class="dsp-btn" data-bits="1">1-bit</button>
+      <button type="button" class="dsp-btn" data-bits="3">3-bit</button>
+      <button type="button" class="dsp-btn" data-bits="8">8-bit (retro games)</button>
+      <button type="button" class="dsp-btn" data-bits="16">16-bit (CD)</button>
+      <span style="flex:1"></span>
+      <button type="button" class="dsp-btn is-play" aria-pressed="false">▶ Play test sound</button>
+    </div>
+
+    <div class="dsp-wave-card" style="margin-top:0.9rem">
+      <div class="dsp-wave-label"><span>Test sound, 24 samples per cycle</span><span>grey = real · cyan = stored numbers · orange = rounding error (×4)</span></div>
+      <canvas id="quantCanvas" role="img" aria-label="The test waveform with each sample rounded to the nearest allowed level, and the rounding error drawn underneath."></canvas>
+    </div>
+
+    <div class="dsp-f0">
+      <label for="bitsSlider">Bit depth</label>
+      <input type="range" id="bitsSlider" min="1" max="16" value="16" step="1" />
+      <output id="bitsOut" for="bitsSlider">16 bits</output>
+    </div>
+
+    <div class="dsp-readouts" aria-live="polite">
+      <div><span>Levels</span><strong id="qLevels">65,536</strong></div>
+      <div><span>Smallest step</span><strong id="qStep">0.003% of range</strong></div>
+      <div><span>Signal-to-noise</span><strong id="qSnr">≈ 98 dB</strong></div>
+      <div><span>1 min of stereo at 44.1 kHz</span><strong id="qSize">10.6 MB</strong></div>
+    </div>
+
+    <details class="dsp-predict">
+      <summary><span class="tag">Predict first</span>Play the test sound and slide from 16 bits down to 3. Will the pitch change?</summary>
+      <p><strong>No.</strong> Pitch depends on <em>when</em> the samples happen, and the sample rate hasn't changed. Rounding only changes
+        <em>how precisely</em> each sample is stored. Fewer bits mean bigger rounding errors, and you hear them as hiss and a crunchy, buzzy
+        edge. The signal-to-noise readout shows how far that noise sits below the music, in <span data-glossary="decibel">dB</span>:
+        each bit you add pushes the noise about 6 dB quieter.</p>
+    </details>
+    <details class="dsp-predict">
+      <summary><span class="tag">Compare</span>Sample rate and bit depth are both "quality" settings. Which one fixes which problem?</summary>
+      <p>The sample rate sets the <em>highest frequency</em> you can record, so too low a rate causes aliasing and lost treble.
+        The bit depth sets the <em>noise floor</em>, so too few bits cause hiss and crunch. They're independent. An 8-bit game console
+        could play high notes perfectly well, but it always sounded gritty.</p>
+    </details>
+    <p class="dsp-note"><strong>Why 16 bits for CDs?</strong> 65,536 levels put the noise about 96 dB below the loudest sound, roughly the
+      gap between a silent room and a rock concert. Studios record at 24 bits so there's room to spare while they edit.</p>
+  </section>
 
 <!-- ════════════════════════════════════════════════════════════
-     SECTION 5 — THEORY CARDS
+     STEP 4 — Equalizer
      ════════════════════════════════════════════════════════════ -->
+  <section class="dsp-card" id="step-4" aria-labelledby="step-4-title">
+    <div class="dsp-step-head">
+      <span class="dsp-step-num" aria-hidden="true">4</span>
+      <div>
+        <h2 id="step-4-title">Filters, part 1: the equalizer</h2>
+        <p>Once a sound is numbers, a <em>digital filter</em> can turn individual frequencies up or down. It does this with
+          nothing more than multiplying and adding samples. An <span data-glossary="equalizer">equalizer</span> (EQ) is a row of
+          such filters, one per band, each set in <span data-glossary="decibel">decibels</span>. The curve shows the total effect:
+          above the line is louder, below is quieter. The small coloured ticks mark your test sound's harmonics.</p>
+      </div>
+    </div>
 
+    <div class="dsp-btn-row">
+      <span class="dsp-btn-label">Presets:</span>
+      <button type="button" class="dsp-btn" data-eq="0,0,0,0,0,0">Flat</button>
+      <button type="button" class="dsp-btn" data-eq="10,6,0,0,0,0">Bass boost</button>
+      <button type="button" class="dsp-btn" data-eq="-12,-8,6,3,-12,-12">Old telephone</button>
+      <button type="button" class="dsp-btn" data-eq="0,-3,0,6,4,0">Clear voice</button>
+      <span style="flex:1"></span>
+      <button type="button" class="dsp-btn is-play" aria-pressed="false">▶ Play test sound</button>
+    </div>
+
+    <div class="dsp-eq-layout">
+      <div class="dsp-eq-wrap" id="eqWrap"></div>
+      <div class="dsp-wave-card">
+        <div class="dsp-wave-label"><span>EQ frequency response</span><span>±12 dB · log frequency</span></div>
+        <canvas id="eqCanvas" role="img" aria-label="The equalizer's combined gain curve across frequency."></canvas>
+      </div>
+    </div>
+
+    <details class="dsp-predict">
+      <summary><span class="tag">Predict first</span>Set the test sound to 220 Hz and choose "Old telephone". Which harmonics get quieter, and why does the sound get thinner?</summary>
+      <p>The telephone curve cuts everything below about 300 Hz. Your 220 Hz fundamental lands in that dip, so it drops a lot,
+        while the harmonics near 1 kHz get boosted. You still hear the same pitch, because your brain works out the missing
+        fundamental from the spacing of the harmonics. But the sound loses its body. Real phone lines pass only about 300–3,400 Hz,
+        which is why voices sound "tinny".</p>
+    </details>
+  </section>
+
+<!-- ════════════════════════════════════════════════════════════
+     STEP 5 — Rescue a recording (filter challenge)
+     ════════════════════════════════════════════════════════════ -->
+  <section class="dsp-card" id="step-5" aria-labelledby="step-5-title">
+    <div class="dsp-step-head">
+      <span class="dsp-step-num" aria-hidden="true">5</span>
+      <div>
+        <h2 id="step-5-title">Filters, part 2: rescue a ruined recording</h2>
+        <p>Someone recorded a melody next to a buzzing power adapter in a room with a noisy fan. The spectrum shows three things
+          mixed together: the melody's harmonics (cyan), electrical hum at 60 Hz and its multiples (red), and hiss spread across
+          the high frequencies (orange). An EQ can't remove these cleanly, so this step uses three new filter types.</p>
+      </div>
+    </div>
+
+    <div class="dsp-filter-types">
+      <div><strong><span data-glossary="high-pass filter">High-pass</span></strong><p>Lets frequencies <em>above</em> the cutoff pass. Cuts everything below it.</p></div>
+      <div><strong><span data-glossary="low-pass filter">Low-pass</span></strong><p>Lets frequencies <em>below</em> the cutoff pass. Cuts everything above it.</p></div>
+      <div><strong><span data-glossary="notch filter">Notch</span></strong><p>Deletes one narrow frequency and leaves the rest almost untouched.</p></div>
+    </div>
+
+    <div class="dsp-split">
+      <div class="dsp-wave-card">
+        <div class="dsp-wave-label"><span>Spectrum of the recording</span><span>faint = before · bright = after · yellow = your filters</span></div>
+        <canvas id="rescueCanvas" role="img" aria-label="Spectrum of the noisy recording before and after filtering, with the filter response curve."></canvas>
+      </div>
+      <div class="dsp-split-controls">
+        <div class="dsp-mrow">
+          <label for="hpSlider">High-pass</label>
+          <input type="range" id="hpSlider" min="0" max="1000" value="0" step="1" />
+          <output id="hpOut" for="hpSlider">off</output>
+        </div>
+        <div class="dsp-mrow">
+          <label for="lpSlider">Low-pass</label>
+          <input type="range" id="lpSlider" min="0" max="1000" value="1000" step="1" />
+          <output id="lpOut" for="lpSlider">off</output>
+        </div>
+        <label class="dsp-check"><input type="checkbox" id="notchBox" /> Notch filter at 60 Hz</label>
+
+        <div class="dsp-goal" id="goalHum"><span>Hum removed</span><strong>0 dB</strong><em>goal ≥ 15 dB</em></div>
+        <div class="dsp-goal" id="goalHiss"><span>Hiss removed</span><strong>0 dB</strong><em>goal ≥ 9 dB</em></div>
+        <div class="dsp-goal" id="goalMelody"><span>Melody lost</span><strong>0 dB</strong><em>goal ≤ 1.5 dB</em></div>
+
+        <div class="dsp-btn-row">
+          <button type="button" class="dsp-btn" id="hearDry" aria-pressed="false">▶ Hear original</button>
+          <button type="button" class="dsp-btn" id="hearWet" aria-pressed="false">▶ Hear filtered</button>
+        </div>
+        <p class="dsp-note" id="rescueStatus" aria-live="polite"></p>
+      </div>
+    </div>
+    <p class="dsp-note">Laptop speakers can barely play 60 Hz, so the hum is easier to hear on headphones. You'll still hear its
+      120 Hz and 180 Hz buzz either way.</p>
+
+    <details class="dsp-predict">
+      <summary><span class="tag">Hint 1</span>I turned on the notch filter, but the hum score barely moved. Why?</summary>
+      <p>Look at the red spikes. Hum isn't a single frequency: it's 60 Hz <em>plus harmonics</em> at 120 and 180 Hz. The notch removes
+        only the first one. Which filter type can remove everything below a chosen frequency?</p>
+    </details>
+    <details class="dsp-predict">
+      <summary><span class="tag">Hint 2</span>Where exactly should the cutoffs go?</summary>
+      <p>Put each cutoff in a gap between what you want to keep and what you want to remove. The lowest melody spike is at 392 Hz and
+        the highest hum spike is at 180 Hz, so the high-pass belongs between them. The melody stops near 2 kHz and the hiss starts above it.
+        Filters don't cut like a cliff, they slope, so leave some space either side.</p>
+    </details>
+    <details class="dsp-predict">
+      <summary><span class="tag">Think</span>Why can't filtering ever remove the hiss <em>completely</em>?</summary>
+      <p>Real hiss is spread across <em>all</em> frequencies, including the ones the melody uses. A filter can't separate two things that
+        share a frequency. Removing that last bit takes smarter DSP, such as the noise reduction in phone calls, which estimates
+        the noise and subtracts it.</p>
+    </details>
+  </section>
+
+<!-- ════════════════════════════════════════════════════════════
+     STEP 6 — Live visualizer
+     ════════════════════════════════════════════════════════════ -->
+  <section class="dsp-card" id="step-6" aria-labelledby="step-6-title">
+    <div class="dsp-step-head">
+      <span class="dsp-step-num" aria-hidden="true">6</span>
+      <div>
+        <h2 id="step-6-title">Live lab: the whole chain on real sound</h2>
+        <p>This is a real FFT, running about 60 times a second. It uses your Step 3 bit depth and your Step 4 EQ settings,
+          applied to either the test sound or your microphone. While Step 5 is playing, it shows that recording instead. The
+          microphone isn't played back through the speakers, so it won't cause feedback.</p>
+      </div>
+    </div>
+
+    <div class="dsp-btn-row">
+      <button type="button" class="dsp-btn is-play" aria-pressed="false">▶ Play test sound</button>
+      <button type="button" class="dsp-btn" id="micBtn" aria-pressed="false">🎤 Use microphone</button>
+      <span class="dsp-note" id="liveStatus" style="margin:0">Not listening. The preview below is drawn from your test-sound recipe.</span>
+    </div>
+
+    <div class="dsp-wave-grid is-even">
+      <div class="dsp-wave-card">
+        <div class="dsp-wave-label"><span>Time domain (waveform)</span><span>≈ 25 ms · auto-zoom</span></div>
+        <canvas id="waveCanvas" role="img" aria-label="Live waveform of the current sound."></canvas>
+      </div>
+      <div class="dsp-wave-card">
+        <div class="dsp-wave-label"><span>Frequency domain (spectrum)</span><span>log scale</span></div>
+        <canvas id="spectrumCanvas" role="img" aria-label="Live spectrum of the current sound on a logarithmic frequency axis."></canvas>
+      </div>
+    </div>
+
+    <h3>Try this</h3>
+    <ul class="dsp-try">
+      <li><strong>Test sound at 3 bits.</strong> Watch new spikes and a raised floor appear across the spectrum. That's quantization noise.</li>
+      <li><strong>Step 5, "Hear original" then "Hear filtered".</strong> The red hum spikes and the orange hiss should drop while the melody's spikes stay put.</li>
+      <li><strong>Microphone, then the "Old telephone" EQ.</strong> Talk and watch the low and high ends disappear. Your voice should sound like a phone call.</li>
+      <li><strong>Microphone at 4 bits.</strong> Speak quietly, then loudly. Quiet sounds suffer most, because they use only a few of the levels.</li>
+    </ul>
+  </section>
+
+<!-- ════════════════════════════════════════════════════════════
+     CHECK FOR UNDERSTANDING
+     ════════════════════════════════════════════════════════════ -->
+  <section class="dsp-card" id="check" aria-labelledby="check-title">
+    <p class="dsp-eyebrow">Check for understanding</p>
+    <h2 id="check-title">Six quick questions</h2>
+    <p>Pick an answer to see why it's right or wrong. <span class="dsp-score" id="quizScore" aria-live="polite"></span></p>
+    <div class="dsp-quiz" id="quiz"></div>
+  </section>
+
+<!-- ════════════════════════════════════════════════════════════
+     BACKGROUND + EXIT TICKET
+     ════════════════════════════════════════════════════════════ -->
   <div class="dsp-theory-grid">
     <div class="dsp-theory-card">
-      <h3>Joseph Fourier (1807)</h3>
-      <p>Proved that any periodic function can be decomposed into a sum of sines and cosines — one of the most powerful ideas in all of mathematics.</p>
+      <h3>The converter in your pocket</h3>
+      <p>Every phone has an analog-to-digital converter (ADC) behind the microphone. It measures a voltage 48,000 times a second
+        and turns each measurement into a 16- or 24-bit number. A digital-to-analog converter (DAC) does the reverse for your headphones.</p>
     </div>
     <div class="dsp-theory-card">
-      <h3>FFT Algorithm</h3>
-      <p>The Fast Fourier Transform (Cooley–Tukey, 1965) computes the frequency decomposition in O(n log n) time — making real-time audio analysis possible.</p>
+      <h3>Nyquist (1928) and Shannon (1949)</h3>
+      <p>Harry Nyquist and Claude Shannon showed that sampling at more than twice a signal's highest frequency loses
+        <em>nothing</em>: the original wave can be rebuilt exactly. Every digital audio, video and radio system is designed around that limit.</p>
     </div>
     <div class="dsp-theory-card">
-      <h3>Nyquist–Shannon Theorem</h3>
-      <p>To capture a frequency, you must sample at least twice per cycle. CD audio samples at 44.1 kHz, capturing up to ~22 kHz — the limit of human hearing.</p>
+      <h3>A filter is a little recipe</h3>
+      <p>Each filter in this lesson is a "biquad". It works out every new output sample from the last two inputs and the last two
+        outputs, each multiplied by a fixed number. Changing those five numbers turns the same code into a high-pass, low-pass, notch or EQ band.</p>
     </div>
     <div class="dsp-theory-card">
-      <h3>Applications</h3>
-      <p>MP3 compression, noise cancellation, medical imaging (MRI/CT), radar, seismology, and speech recognition all rely on the same DSP fundamentals.</p>
+      <h3>Where DSP hides in your day</h3>
+      <p>MP3 and streaming audio discard sounds you can't hear. Noise-cancelling headphones produce an "anti-wave". Phones filter
+        out background noise on calls, Wi-Fi untangles radio echoes, and MRI scanners build pictures from frequencies.</p>
     </div>
   </div>
+
+  <section class="dsp-card" aria-labelledby="exit-title">
+    <p class="dsp-eyebrow">Exit ticket</p>
+    <h2 id="exit-title">Explain it in your own words</h2>
+    <ol class="dsp-exit">
+      <li>Two settings decide how faithful a digital recording is: the sample rate and the bit depth. For each one, explain what goes wrong if it is set too low.</li>
+      <li>A podcast voice sits between 100 and 5,000 Hz. The recording has hum at 60 Hz (plus 120 and 180 Hz) and fan hiss above 7,000 Hz. Design a filter chain: which filters, where would you put each cutoff, and what might you lose?</li>
+      <li>Music on retro 8-bit game consoles sounds crunchy. Would raising the sample rate fix that, or adding more bits? Explain why.</li>
+    </ol>
+  </section>
 
 </div><!-- /.dsp-shell -->
 
@@ -389,329 +916,974 @@
   </div>
 </div>
 
+<script src="../../../assets/js/sim-kit.js"></script>
 <script>
 (function () {
   'use strict';
 
-  const micBtn = document.getElementById('micBtn');
-  const toneBtn = document.getElementById('toneBtn');
-  const waveCanvas = document.getElementById('waveCanvas');
-  const specCanvas = document.getElementById('spectrumCanvas');
-  const waveCtx = waveCanvas.getContext('2d');
-  const specCtx = specCanvas.getContext('2d');
+  const HARM_COLORS = ['#67e8f9', '#a78bfa', '#f472b6', '#fbbf24', '#34d399', '#fb923c', '#60a5fa', '#f87171'];
+  const N_HARM = 8;
+  const BG = '#0c1e28';
+  const GRID = 'rgba(255, 255, 255, 0.12)';
+  const LABEL = 'rgba(255, 255, 255, 0.72)';
+  const MONO = '"JetBrains Mono", monospace';
 
-  let audioCtx, analyser, masterGain;
-  let eqNodes = [];
-  let oscillators = [];
-  let oscGains = [];
-  let micSource = null;
-  let micStream = null;
+  const PRESETS = {
+    sine:     [100, 0, 0, 0, 0, 0, 0, 0],
+    square:   [100, 0, 33, 0, 20, 0, 14, 0],
+    saw:      [100, 50, 33, 25, 20, 17, 14, 13]
+  };
 
-  let mode = 'none'; // 'mic', 'tone', 'none'
+  const state = { f0: 220, amps: [80, 40, 20, 10, 0, 0, 0, 0] };
+  // canvas2d() fires onResize before it returns, so the handles exist (undefined) before assignment.
+  let synthWave, synthSpec, aliasCanvas, eqCanvas, quantCanvas, rescueCanvas;
 
-  // Controls
-  const f0Slider = document.getElementById('f0Slider');
-  const amps = [
-    document.getElementById('f0Amp'),
-    document.getElementById('f1Amp'),
-    document.getElementById('f2Amp'),
-    document.getElementById('f3Amp')
-  ];
-  const hzLabels = [
-    document.getElementById('f0Hz'),
-    document.getElementById('f1Hz'),
-    document.getElementById('f2Hz'),
-    document.getElementById('f3Hz')
-  ];
-  const eqBands = document.querySelectorAll('.eqBand');
-  const squarePresetBtn = document.getElementById('squarePresetBtn');
+  function clear(ctx, w, h) {
+    ctx.fillStyle = BG;
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  function hzText(f) {
+    return f >= 1000 ? (f / 1000).toFixed(f % 1000 === 0 ? 0 : 1) + 'k' : Math.round(f) + '';
+  }
+
+  /* ════════════════ Audio engine (shared by every step) ════════════════
+     test tone / mic → inputBus → quantizer (bit depth) → trim → 6-band EQ ─┐
+     Step 5 recording → (dry | high-pass → low-pass → notch → wet) ─────────┴→ analyser → monitor → speakers */
+  const eqDefs = [60, 250, 1000, 4000, 8000, 16000];
+  const eqGains = [0, 0, 0, 0, 0, 0];
+  const EQ_Q = 1.4;
+
+  let audioCtx = null, analyser = null, monitor = null, eqNodes = [];
+  let inputBus = null, quantizer = null, trim = null;
+  let osc = null, oscGain = null, micSource = null, micStream = null, rescue = null;
+  let mode = 'none'; // 'none' | 'tone' | 'mic' | 'dry' | 'wet'
+  let bits = 16;
+
+  // Mid-rise quantizer: b bits → 2^b levels spread evenly across −1…+1.
+  function quantize(x, b) {
+    const step = 2 / Math.pow(2, b);
+    const q = (Math.floor(x / step) + 0.5) * step;
+    return Math.max(-1 + step / 2, Math.min(1 - step / 2, q));
+  }
+
+  function quantCurve(b) {
+    if (b >= 16) return null; // the WaveShaper's own resolution is ~16-bit, so pass straight through
+    const n = 65536, curve = new Float32Array(n);
+    for (let i = 0; i < n; i++) curve[i] = quantize((i / (n - 1)) * 2 - 1, b);
+    return curve;
+  }
 
   function initAudio() {
     if (audioCtx) return;
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    audioCtx = new AudioContext();
-
+    const AC = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AC();
     analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 2048;
-    analyser.smoothingTimeConstant = 0.8;
+    analyser.fftSize = 8192;
+    analyser.smoothingTimeConstant = 0.75;
+    analyser.minDecibels = -95;
+    analyser.maxDecibels = -5;
 
-    masterGain = audioCtx.createGain();
-    masterGain.gain.value = 0.2; // Headroom to prevent clipping when summing 4 oscs
+    inputBus = audioCtx.createGain();
+    quantizer = audioCtx.createWaveShaper();
+    quantizer.curve = quantCurve(bits);
+    trim = audioCtx.createGain();
+    trim.gain.value = 0.3;
+    inputBus.connect(quantizer);
+    quantizer.connect(trim);
 
-    // Build EQ chain
-    let prevNode = null;
-    eqBands.forEach((slider) => {
-      let eq = audioCtx.createBiquadFilter();
+    eqNodes = eqDefs.map((f, i) => {
+      const eq = audioCtx.createBiquadFilter();
       eq.type = 'peaking';
-      eq.frequency.value = parseFloat(slider.dataset.freq.replace('k', '000'));
-      eq.Q.value = 1.4;
-      eq.gain.value = parseFloat(slider.value);
-      eqNodes.push(eq);
-
-      if (prevNode) prevNode.connect(eq);
-      prevNode = eq;
+      eq.frequency.value = f;
+      eq.Q.value = EQ_Q;
+      eq.gain.value = eqGains[i];
+      return eq;
     });
+    trim.connect(eqNodes[0]);
+    for (let i = 0; i < eqNodes.length - 1; i++) eqNodes[i].connect(eqNodes[i + 1]);
+    eqNodes[eqNodes.length - 1].connect(analyser);
 
-    if (eqNodes.length > 0) {
-      eqNodes[eqNodes.length - 1].connect(masterGain);
-    }
-    masterGain.connect(analyser);
-    analyser.connect(audioCtx.destination);
+    // Monitor gain is muted for the microphone so the speakers never feed back into it.
+    monitor = audioCtx.createGain();
+    monitor.gain.value = 1;
+    analyser.connect(monitor);
+    monitor.connect(audioCtx.destination);
   }
 
-  function stopMic() {
-    if (micSource) {
-      micSource.disconnect();
-      micSource = null;
-    }
-    if (micStream) {
-      micStream.getTracks().forEach(t => t.stop());
-      micStream = null;
-    }
+  function resumeAudio() {
+    initAudio();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    monitor.gain.setTargetAtTime(1, audioCtx.currentTime, 0.02);
+  }
+
+  function buildWave() {
+    const real = new Float32Array(N_HARM + 1);
+    const imag = new Float32Array(N_HARM + 1);
+    state.amps.forEach((a, i) => { imag[i + 1] = a / 100; });
+    return audioCtx.createPeriodicWave(real, imag);
+  }
+
+  function syncTone() {
+    if (!osc) return;
+    const t = audioCtx.currentTime;
+    osc.frequency.setTargetAtTime(state.f0, t, 0.02);
+    const silent = state.amps.every(a => a === 0);
+    if (!silent) osc.setPeriodicWave(buildWave());
+    // Drive the quantizer near full scale, like a well-set recording level.
+    oscGain.gain.setTargetAtTime(silent ? 0 : 0.9, t, 0.02);
+  }
+
+  function fadeOut(nodes, gain) {
+    gain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.02);
+    setTimeout(() => nodes.forEach(n => { try { n.stop && n.stop(); } catch (e) {} n.disconnect(); }), 150);
   }
 
   function stopTone() {
-    oscillators.forEach(o => {
-      try { o.stop(); } catch (e) {}
-      o.disconnect();
-    });
-    oscillators = [];
-    oscGains.forEach(g => g.disconnect());
-    oscGains = [];
+    if (!osc) return;
+    fadeOut([osc, oscGain], oscGain);
+    osc = null; oscGain = null;
   }
 
-  function updateTone() {
-    if (mode !== 'tone' || !audioCtx) return;
-    const baseFreq = parseFloat(f0Slider.value);
-    for (let i = 0; i < 4; i++) {
-      const freq = baseFreq * (i + 1);
-      hzLabels[i].textContent = Math.round(freq);
-      if (oscillators[i]) {
-        oscillators[i].frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.03);
-        oscGains[i].gain.setTargetAtTime(parseFloat(amps[i].value) / 100, audioCtx.currentTime, 0.03);
-      }
-    }
+  function stopMic() {
+    if (micSource) { micSource.disconnect(); micSource = null; }
+    if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
   }
 
-  async function startMic() {
-    initAudio();
-    if (audioCtx.state === 'suspended') await audioCtx.resume();
+  function stopAll() {
     stopTone();
     stopMic();
-
-    try {
-      micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-      micSource = audioCtx.createMediaStreamSource(micStream);
-      micSource.connect(eqNodes[0]);
-      mode = 'mic';
-      updateButtons();
-    } catch (e) {
-      alert('Microphone access denied or not available.');
-      mode = 'none';
-      updateButtons();
-    }
+    stopRescue();
+    mode = 'none';
   }
 
   function startTone() {
-    initAudio();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    stopMic();
-    stopTone();
-
-    const baseFreq = parseFloat(f0Slider.value);
-    for (let i = 0; i < 4; i++) {
-      let osc = audioCtx.createOscillator();
-      let gain = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = baseFreq * (i + 1);
-      gain.gain.value = parseFloat(amps[i].value) / 100;
-      
-      osc.connect(gain);
-      gain.connect(eqNodes[0]);
-      
-      osc.start();
-      oscillators.push(osc);
-      oscGains.push(gain);
-    }
+    resumeAudio();
+    stopAll();
+    trim.gain.setTargetAtTime(0.3, audioCtx.currentTime, 0.02);
+    osc = audioCtx.createOscillator();
+    oscGain = audioCtx.createGain();
+    oscGain.gain.value = 0;
+    osc.connect(oscGain);
+    oscGain.connect(inputBus);
+    osc.start();
+    syncTone();
     mode = 'tone';
     updateButtons();
   }
 
+  async function startMic() {
+    resumeAudio();
+    stopAll();
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      micSource = audioCtx.createMediaStreamSource(micStream);
+      micSource.connect(inputBus);
+      trim.gain.setTargetAtTime(1, audioCtx.currentTime, 0.01);
+      monitor.gain.setTargetAtTime(0, audioCtx.currentTime, 0.01);
+      mode = 'mic';
+    } catch (e) {
+      mode = 'none';
+      liveStatus.textContent = 'Microphone access was blocked or no microphone was found.';
+    }
+    updateButtons();
+  }
+
+  const playBtns = document.querySelectorAll('.is-play');
+  const micBtn = document.getElementById('micBtn');
+  const liveStatus = document.getElementById('liveStatus');
+  const hearDry = document.getElementById('hearDry');
+  const hearWet = document.getElementById('hearWet');
+
   function updateButtons() {
-    micBtn.style.background = mode === 'mic' ? '#0891b2' : '#e6f7f4';
-    micBtn.style.color = mode === 'mic' ? '#fff' : '#0891b2';
-    micBtn.style.border = mode === 'mic' ? 'none' : '1px solid #0891b2';
-
-    toneBtn.style.background = mode === 'tone' ? '#0891b2' : '#e6f7f4';
-    toneBtn.style.color = mode === 'tone' ? '#fff' : '#0891b2';
-    toneBtn.style.border = mode === 'tone' ? 'none' : '1px solid #0891b2';
+    playBtns.forEach(b => {
+      b.setAttribute('aria-pressed', String(mode === 'tone'));
+      b.textContent = mode === 'tone' ? '■ Stop sound' : '▶ Play test sound';
+    });
+    micBtn.setAttribute('aria-pressed', String(mode === 'mic'));
+    micBtn.textContent = mode === 'mic' ? '■ Stop microphone' : '🎤 Use microphone';
+    hearDry.setAttribute('aria-pressed', String(mode === 'dry'));
+    hearDry.textContent = mode === 'dry' ? '■ Stop' : '▶ Hear original';
+    hearWet.setAttribute('aria-pressed', String(mode === 'wet'));
+    hearWet.textContent = mode === 'wet' ? '■ Stop' : '▶ Hear filtered';
+    if (mode === 'tone') liveStatus.textContent = 'Listening to your test sound through your bit depth and EQ.';
+    else if (mode === 'mic') liveStatus.textContent = 'Listening to the microphone through your bit depth and EQ.';
+    else if (mode === 'dry' || mode === 'wet') liveStatus.textContent = 'Showing the Step 5 recording (' + (mode === 'dry' ? 'original' : 'filtered') + ').';
+    else if (!/blocked/.test(liveStatus.textContent)) liveStatus.textContent = 'Not listening. The preview below is drawn from your test-sound recipe.';
   }
 
+  playBtns.forEach(b => b.addEventListener('click', () => {
+    if (mode === 'tone') { stopAll(); updateButtons(); } else startTone();
+  }));
   micBtn.addEventListener('click', () => {
-    if (mode === 'mic') { stopMic(); mode = 'none'; updateButtons(); }
-    else startMic();
+    if (mode === 'mic') { stopAll(); updateButtons(); } else startMic();
   });
 
-  toneBtn.addEventListener('click', () => {
-    if (mode === 'tone') { stopTone(); mode = 'none'; updateButtons(); }
-    else startTone();
-  });
+  /* ════════════════ Step 1 — test sound (additive synthesis) ════════════════ */
+  const harmWrap = document.getElementById('harmonics');
+  const f0Slider = document.getElementById('f0Slider');
+  const f0Out = document.getElementById('f0Out');
+  const harmInputs = [];
+  const harmHz = [];
+  const harmPct = [];
+  const ORD = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'];
 
-  f0Slider.addEventListener('input', () => {
-    const baseFreq = parseFloat(f0Slider.value);
-    for (let i = 0; i < 4; i++) hzLabels[i].textContent = Math.round(baseFreq * (i + 1));
-    updateTone();
-  });
-
-  amps.forEach(amp => amp.addEventListener('input', updateTone));
-
-  if (squarePresetBtn) {
-    squarePresetBtn.addEventListener('click', () => {
-      amps[0].value = 100; // Fundamental (1/1)
-      amps[1].value = 0;   // 2nd harmonic (even)
-      amps[2].value = 33;  // 3rd harmonic (1/3)
-      amps[3].value = 0;   // 4th harmonic (even)
-      updateTone();
+  for (let i = 0; i < N_HARM; i++) {
+    const box = document.createElement('div');
+    box.className = 'dsp-harm';
+    box.style.setProperty('--hc', HARM_COLORS[i]);
+    const id = 'harm' + i;
+    box.innerHTML =
+      '<label for="' + id + '">' + (i === 0 ? '1st · fund.' : ORD[i]) + '</label>' +
+      '<span class="hz"></span>' +
+      '<input type="range" id="' + id + '" min="0" max="100" step="1" />' +
+      '<span class="pct"></span>';
+    harmWrap.appendChild(box);
+    harmInputs.push(box.querySelector('input'));
+    harmHz.push(box.querySelector('.hz'));
+    harmPct.push(box.querySelector('.pct'));
+    harmInputs[i].addEventListener('input', () => {
+      state.amps[i] = +harmInputs[i].value;
+      onSynthChange();
     });
   }
 
-  eqBands.forEach((slider, i) => {
-    slider.addEventListener('input', (e) => {
-      if (eqNodes[i]) eqNodes[i].gain.setTargetAtTime(parseFloat(e.target.value), audioCtx.currentTime, 0.05);
+  function syncSynthControls() {
+    f0Slider.value = state.f0;
+    f0Out.textContent = state.f0 + ' Hz';
+    for (let i = 0; i < N_HARM; i++) {
+      harmInputs[i].value = state.amps[i];
+      harmHz[i].textContent = Math.round(state.f0 * (i + 1)) + ' Hz';
+      harmPct[i].textContent = state.amps[i] + '%';
+      harmInputs[i].setAttribute('aria-valuetext', state.amps[i] + ' percent at ' + Math.round(state.f0 * (i + 1)) + ' hertz');
+    }
+  }
+
+  function onSynthChange() {
+    syncSynthControls();
+    drawSynth();
+    drawEq();
+    drawQuant();
+    syncTone();
+  }
+
+  f0Slider.addEventListener('input', () => { state.f0 = +f0Slider.value; onSynthChange(); });
+
+  document.querySelectorAll('[data-preset]').forEach(btn => btn.addEventListener('click', () => {
+    const key = btn.dataset.preset;
+    state.amps = key === 'random'
+      ? Array.from({ length: N_HARM }, (_, i) => i === 0 ? 100 : (Math.random() < 0.45 ? 0 : Math.round(Math.random() * 80 / (1 + i * 0.3))))
+      : PRESETS[key].slice();
+    onSynthChange();
+  }));
+
+  synthWave = SimKit.canvas2d(document.getElementById('synthWave'), { height: 220, onResize: () => drawSynth() });
+  synthSpec = SimKit.canvas2d(document.getElementById('synthSpec'), { height: 220, onResize: () => drawSynth() });
+
+  function synthSample(amps, theta) {
+    let s = 0;
+    for (let n = 0; n < amps.length; n++) s += (amps[n] / 100) * Math.sin((n + 1) * theta);
+    return s;
+  }
+
+  function drawSynth() {
+    if (!synthWave || !synthSpec) return;
+    // Waveform: each harmonic faint, the sum bright, on a shared vertical scale.
+    let ctx = synthWave.ctx, W = synthWave.width, H = synthWave.height;
+    clear(ctx, W, H);
+    ctx.strokeStyle = GRID; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2); ctx.stroke();
+
+    const steps = Math.max(200, Math.floor(W));
+    let peak = 0;
+    for (let k = 0; k <= steps; k++) peak = Math.max(peak, Math.abs(synthSample(state.amps, (k / steps) * 4 * Math.PI)));
+    peak = Math.max(peak, ...state.amps.map(a => a / 100), 0.01);
+    const scale = (H * 0.42) / peak;
+
+    state.amps.forEach((a, n) => {
+      if (!a) return;
+      ctx.strokeStyle = HARM_COLORS[n]; ctx.globalAlpha = 0.55; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (let k = 0; k <= steps; k++) {
+        const x = (k / steps) * W;
+        const y = H / 2 - (a / 100) * Math.sin((n + 1) * (k / steps) * 4 * Math.PI) * scale;
+        k ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      }
+      ctx.stroke();
     });
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3;
+    ctx.beginPath();
+    for (let k = 0; k <= steps; k++) {
+      const x = (k / steps) * W;
+      const y = H / 2 - synthSample(state.amps, (k / steps) * 4 * Math.PI) * scale;
+      k ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.stroke();
+    ctx.fillStyle = LABEL; ctx.font = '11px ' + MONO; ctx.textAlign = 'left';
+    ctx.fillText('time →', 8, H - 8);
+
+    // Spectrum: one bar per harmonic. Harmonics are evenly spaced in Hz, so a linear axis is honest here.
+    ctx = synthSpec.ctx; W = synthSpec.width; H = synthSpec.height;
+    clear(ctx, W, H);
+    const base = H - 30, top = 14, slot = (W - 20) / N_HARM;
+    ctx.strokeStyle = GRID; ctx.beginPath(); ctx.moveTo(10, base); ctx.lineTo(W - 10, base); ctx.stroke();
+    ctx.textAlign = 'center';
+    state.amps.forEach((a, n) => {
+      const x = 10 + slot * (n + 0.5);
+      const h = (a / 100) * (base - top);
+      ctx.fillStyle = HARM_COLORS[n];
+      ctx.fillRect(x - slot * 0.3, base - h, slot * 0.6, Math.max(h, 1));
+      ctx.fillStyle = LABEL; ctx.font = '10px ' + MONO;
+      ctx.fillText(hzText(state.f0 * (n + 1)), x, base + 14);
+      if (a) ctx.fillText(a, x, base - h - 4);
+    });
+    ctx.textAlign = 'right';
+    ctx.fillText('frequency (Hz) →', W - 8, H - 3);
+  }
+
+  /* ════════════════ Step 2 — sampling & aliasing ════════════════ */
+  const sigSlider = document.getElementById('sigSlider');
+  const fsSlider = document.getElementById('fsSlider');
+  const sigOut = document.getElementById('sigOut');
+  const fsOut = document.getElementById('fsOut');
+  const aliasStatus = document.getElementById('aliasStatus');
+  aliasCanvas = SimKit.canvas2d(document.getElementById('aliasCanvas'), { height: 220, onResize: () => drawAlias() });
+  const wheelCanvas = SimKit.canvas2d(document.getElementById('wheelCanvas'), { height: 220 });
+  const PHASE = 0.5;
+
+  function aliasFreq(f, fs) { return f - fs * Math.round(f / fs); }
+
+  function drawAlias() {
+    if (!aliasCanvas) return;
+    const f = +sigSlider.value, fs = +fsSlider.value;
+    const fa = aliasFreq(f, fs);
+    sigOut.textContent = f + ' Hz';
+    fsOut.textContent = fs + ' Hz';
+
+    const ctx = aliasCanvas.ctx, W = aliasCanvas.width, H = aliasCanvas.height;
+    clear(ctx, W, H);
+    const pad = 12, amp = H * 0.38, mid = H / 2;
+    const X = t => pad + t * (W - 2 * pad);
+    ctx.strokeStyle = GRID; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad, mid); ctx.lineTo(W - pad, mid); ctx.stroke();
+
+    // Real signal
+    ctx.strokeStyle = 'rgba(203, 213, 225, 0.75)'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    const steps = Math.max(800, W * 2);
+    for (let k = 0; k <= steps; k++) {
+      const t = k / steps, y = mid - Math.sin(2 * Math.PI * f * t + PHASE) * amp;
+      k ? ctx.lineTo(X(t), y) : ctx.moveTo(X(t), y);
+    }
+    ctx.stroke();
+
+    // What the samples imply
+    ctx.strokeStyle = '#fb923c'; ctx.lineWidth = 3;
+    ctx.beginPath();
+    for (let k = 0; k <= steps; k++) {
+      const t = k / steps, y = mid - Math.sin(2 * Math.PI * fa * t + PHASE) * amp;
+      k ? ctx.lineTo(X(t), y) : ctx.moveTo(X(t), y);
+    }
+    ctx.stroke();
+
+    // Samples
+    for (let n = 0; n <= fs; n++) {
+      const t = n / fs, y = mid - Math.sin(2 * Math.PI * f * t + PHASE) * amp;
+      ctx.strokeStyle = 'rgba(103, 232, 249, 0.5)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(X(t), mid); ctx.lineTo(X(t), y); ctx.stroke();
+      ctx.fillStyle = '#67e8f9';
+      ctx.beginPath(); ctx.arc(X(t), y, 4.5, 0, Math.PI * 2); ctx.fill();
+    }
+
+    const nyq = fs / 2;
+    aliasStatus.classList.remove('is-warn', 'is-edge');
+    if (f < nyq) {
+      aliasStatus.textContent = 'Captured correctly. ' + f + ' Hz is below the Nyquist limit (' + fs + ' ÷ 2 = ' + nyq + ' Hz). There are ' +
+        (fs / f).toFixed(1) + ' samples per cycle, so the orange wave matches the real one.';
+    } else if (f === nyq) {
+      aliasStatus.classList.add('is-edge');
+      aliasStatus.textContent = 'Right on the limit: exactly 2 samples per cycle. The samples can show the frequency, but the height you get depends on where they happen to land, so it is unreliable.';
+    } else {
+      aliasStatus.classList.add('is-warn');
+      aliasStatus.textContent = 'Aliased! ' + f + ' Hz is above the Nyquist limit of ' + nyq + ' Hz. The samples look exactly like a ' +
+        Math.abs(fa) + ' Hz wave' + (fa < 0 ? ' running backward (watch the wheel)' : fa === 0 ? ' — that is, no motion at all (the wheel appears frozen)' : '') +
+        '. Once sampled, the computer has no way to tell the two apart.';
+    }
+  }
+
+  function drawWheel(nowSec) {
+    if (!wheelCanvas) return;
+    const f = +sigSlider.value, fs = +fsSlider.value;
+    const ctx = wheelCanvas.ctx, W = wheelCanvas.width, H = wheelCanvas.height;
+    clear(ctx, W, H);
+    // The camera only "sees" the wheel at sample instants, so hold each frame for 1/fs s.
+    const tSample = Math.floor(nowSec * fs) / fs;
+    const angle = 2 * Math.PI * f * tSample;
+    const cx = W / 2, cy = H / 2 - 6, r = Math.min(W, H) * 0.36;
+    ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+    for (let s = 0; s < 6; s++) {
+      const a = angle + s * Math.PI / 3;
+      ctx.strokeStyle = s === 0 ? '#fb923c' : 'rgba(148, 163, 184, 0.55)';
+      ctx.lineWidth = s === 0 ? 4 : 2;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a - Math.PI / 2) * r, cy + Math.sin(a - Math.PI / 2) * r); ctx.stroke();
+    }
+    ctx.fillStyle = '#fb923c';
+    ctx.beginPath(); ctx.arc(cx + Math.cos(angle - Math.PI / 2) * r, cy + Math.sin(angle - Math.PI / 2) * r, 7, 0, Math.PI * 2); ctx.fill();
+    const fa = aliasFreq(f, fs);
+    ctx.fillStyle = LABEL; ctx.font = '11px ' + MONO; ctx.textAlign = 'center';
+    ctx.fillText('real: ' + f + ' turns/s', cx, H - 22);
+    ctx.fillText('looks like: ' + (fa === 0 ? 'frozen' : Math.abs(fa) + (fa < 0 ? ' backward' : ' forward')), cx, H - 8);
+  }
+
+  [sigSlider, fsSlider].forEach(s => s.addEventListener('input', drawAlias));
+  document.querySelectorAll('[data-alias]').forEach(btn => btn.addEventListener('click', () => {
+    const [f, fs] = btn.dataset.alias.split(',').map(Number);
+    sigSlider.value = f; fsSlider.value = fs; drawAlias();
+  }));
+
+  /* ════════════════ Step 3 — bit depth & quantization ════════════════ */
+  const bitsSlider = document.getElementById('bitsSlider');
+  const bitsOut = document.getElementById('bitsOut');
+  const qLevels = document.getElementById('qLevels');
+  const qStep = document.getElementById('qStep');
+  const qSnr = document.getElementById('qSnr');
+  const qSize = document.getElementById('qSize');
+  const SAMPLES_PER_CYCLE = 24;
+  quantCanvas = SimKit.canvas2d(document.getElementById('quantCanvas'), { height: 290, onResize: () => drawQuant() });
+
+  function setBits(b) {
+    bits = b;
+    bitsSlider.value = b;
+    if (quantizer) quantizer.curve = quantCurve(b);
+    drawQuant();
+  }
+
+  function drawQuant() {
+    if (!quantCanvas) return;
+    const levels = Math.pow(2, bits);
+    bitsOut.textContent = bits + (bits === 1 ? ' bit' : ' bits');
+    qLevels.textContent = levels.toLocaleString();
+    const pct = 100 / levels;
+    qStep.textContent = (pct >= 1 ? pct.toFixed(0) : pct >= 0.01 ? pct.toFixed(2) : pct.toFixed(4)) + '% of range';
+    qSnr.textContent = '≈ ' + Math.round(6.02 * bits + 1.76) + ' dB';
+    qSize.textContent = (bits * 44100 * 2 * 60 / 8 / 1e6).toFixed(1) + ' MB';
+
+    const ctx = quantCanvas.ctx, W = quantCanvas.width, H = quantCanvas.height;
+    clear(ctx, W, H);
+    const mainH = H - 76, mid = mainH / 2 + 8, amp = mainH * 0.46;
+    const step = 2 / levels;
+
+    // Normalise the test sound to 90% of full scale, like a well-set recording level.
+    const steps = Math.max(200, Math.floor(W));
+    let peak = 0.01;
+    for (let k = 0; k <= steps; k++) peak = Math.max(peak, Math.abs(synthSample(state.amps, (k / steps) * 4 * Math.PI)));
+    const sig = t => (0.9 / peak) * synthSample(state.amps, t * 4 * Math.PI);
+
+    ctx.lineWidth = 1;
+    if (levels <= 64) {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      for (let k = 0; k < levels; k++) {
+        const y = mid - (-1 + step * (k + 0.5)) * amp;
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      }
+    }
+
+    ctx.strokeStyle = 'rgba(203, 213, 225, 0.6)'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let k = 0; k <= steps; k++) {
+      const y = mid - sig(k / steps) * amp;
+      k ? ctx.lineTo((k / steps) * W, y) : ctx.moveTo(0, y);
+    }
+    ctx.stroke();
+
+    const N = SAMPLES_PER_CYCLE * 2;
+    ctx.strokeStyle = '#67e8f9'; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    for (let n = 0; n < N; n++) {
+      const y = mid - quantize(sig(n / N), bits) * amp;
+      const x0 = (n / N) * W, x1 = ((n + 1) / N) * W;
+      n ? ctx.lineTo(x0, y) : ctx.moveTo(x0, y);
+      ctx.lineTo(x1, y);
+    }
+    ctx.stroke();
+
+    const eMid = H - 34;
+    ctx.strokeStyle = GRID; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, eMid); ctx.lineTo(W, eMid); ctx.stroke();
+    ctx.fillStyle = '#fb923c';
+    for (let n = 0; n < N; n++) {
+      const x = sig(n / N), e = quantize(x, bits) - x;
+      const h = Math.max(-30, Math.min(30, -e * amp * 4));
+      ctx.fillRect((n / N) * W + 1, eMid, Math.max(2, W / N - 3), h || 0.5);
+      ctx.fillStyle = '#67e8f9';
+      ctx.beginPath(); ctx.arc((n / N) * W, mid - quantize(x, bits) * amp, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fb923c';
+    }
+    ctx.fillStyle = LABEL; ctx.font = '10px ' + MONO; ctx.textAlign = 'left';
+    ctx.fillText('rounding error ×4', 6, H - 6);
+  }
+
+  bitsSlider.addEventListener('input', () => setBits(+bitsSlider.value));
+  document.querySelectorAll('[data-bits]').forEach(btn => btn.addEventListener('click', () => setBits(+btn.dataset.bits)));
+
+  /* ════════════════ Step 4 — equalizer ════════════════ */
+  const eqWrap = document.getElementById('eqWrap');
+  const eqInputs = [], eqDbs = [];
+  eqDefs.forEach((f, i) => {
+    const band = document.createElement('div');
+    band.className = 'dsp-eq-band';
+    band.innerHTML = '<span class="eq-db">0 dB</span><input type="range" min="-12" max="12" step="1" value="0" aria-label="' + hzText(f) + ' hertz band gain" /><span class="eq-label">' + hzText(f) + '</span>';
+    eqWrap.appendChild(band);
+    const inp = band.querySelector('input');
+    eqInputs.push(inp); eqDbs.push(band.querySelector('.eq-db'));
+    inp.addEventListener('input', () => setEq(i, +inp.value));
   });
 
-  function resizeCanvas() {
-    const dpr = window.devicePixelRatio || 1;
-    [waveCanvas, specCanvas].forEach(c => {
-      const rect = c.parentElement.getBoundingClientRect();
-      c.width = rect.width * dpr;
-      c.height = 180 * dpr;
+  function setEq(i, db) {
+    eqGains[i] = db;
+    eqInputs[i].value = db;
+    eqDbs[i].textContent = (db > 0 ? '+' : '') + db + ' dB';
+    eqInputs[i].setAttribute('aria-valuetext', (db > 0 ? 'plus ' : db < 0 ? 'minus ' : '') + Math.abs(db) + ' decibels');
+    if (eqNodes[i]) eqNodes[i].gain.setTargetAtTime(db, audioCtx.currentTime, 0.05);
+    drawEq();
+  }
+
+  document.querySelectorAll('[data-eq]').forEach(btn => btn.addEventListener('click', () => {
+    btn.dataset.eq.split(',').map(Number).forEach((db, i) => setEq(i, db));
+  }));
+
+  eqCanvas = SimKit.canvas2d(document.getElementById('eqCanvas'), { height: 200, onResize: () => drawEq() });
+  const F_MIN = 30, F_MAX = 20000;
+  const logX = (f, W) => W * Math.log(f / F_MIN) / Math.log(F_MAX / F_MIN);
+
+  // Magnitude (dB) of one RBJ-cookbook biquad, the same formulas Web Audio's BiquadFilterNode uses.
+  // Q here is the linear Q for every type.
+  function biquadDb(type, f, fc, Q, gainDb, fsr) {
+    const A = Math.pow(10, gainDb / 40);
+    const w0 = 2 * Math.PI * fc / fsr, alpha = Math.sin(w0) / (2 * Q), c = Math.cos(w0);
+    let b0, b1, b2, a0 = 1 + alpha, a1 = -2 * c, a2 = 1 - alpha;
+    if (type === 'peaking') {
+      b0 = 1 + alpha * A; b1 = -2 * c; b2 = 1 - alpha * A; a0 = 1 + alpha / A; a2 = 1 - alpha / A;
+    } else if (type === 'lowpass') {
+      b0 = (1 - c) / 2; b1 = 1 - c; b2 = (1 - c) / 2;
+    } else if (type === 'highpass') {
+      b0 = (1 + c) / 2; b1 = -(1 + c); b2 = (1 + c) / 2;
+    } else { // notch
+      b0 = 1; b1 = -2 * c; b2 = 1;
+    }
+    const w = 2 * Math.PI * f / fsr;
+    const cr = Math.cos(w), ci = -Math.sin(w), c2r = Math.cos(2 * w), c2i = -Math.sin(2 * w);
+    const nr = b0 + b1 * cr + b2 * c2r, ni = b1 * ci + b2 * c2i;
+    const dr = a0 + a1 * cr + a2 * c2r, di = a1 * ci + a2 * c2i;
+    return 10 * Math.log10((nr * nr + ni * ni) / (dr * dr + di * di));
+  }
+
+  function eqResponseDb(f) {
+    const fsr = audioCtx ? audioCtx.sampleRate : 48000;
+    let db = 0;
+    for (let i = 0; i < eqDefs.length; i++) if (eqGains[i]) db += biquadDb('peaking', f, eqDefs[i], EQ_Q, eqGains[i], fsr);
+    return db;
+  }
+
+  function drawEq() {
+    if (!eqCanvas) return;
+    const ctx = eqCanvas.ctx, W = eqCanvas.width, H = eqCanvas.height;
+    clear(ctx, W, H);
+    const top = 10, bot = H - 24, Y = db => top + (bot - top) * (1 - (Math.max(-15, Math.min(15, db)) + 15) / 30);
+    ctx.font = '10px ' + MONO; ctx.lineWidth = 1;
+    [-12, -6, 0, 6, 12].forEach(db => {
+      ctx.strokeStyle = db === 0 ? 'rgba(255,255,255,0.35)' : GRID;
+      ctx.beginPath(); ctx.moveTo(0, Y(db)); ctx.lineTo(W, Y(db)); ctx.stroke();
+      ctx.fillStyle = LABEL; ctx.textAlign = 'left';
+      ctx.fillText((db > 0 ? '+' : '') + db, 4, Y(db) - 3);
+    });
+    [100, 1000, 10000].forEach(f => {
+      ctx.strokeStyle = GRID; ctx.beginPath(); ctx.moveTo(logX(f, W), top); ctx.lineTo(logX(f, W), bot); ctx.stroke();
+    });
+    ctx.textAlign = 'center';
+    [50, 100, 250, 500, 1000, 2000, 4000, 8000, 16000].forEach(f => {
+      ctx.fillStyle = LABEL; ctx.fillText(hzText(f), logX(f, W), H - 8);
+    });
+
+    // Step 2 harmonics as ticks along the 0 dB line
+    state.amps.forEach((a, n) => {
+      const f = state.f0 * (n + 1);
+      if (!a || f > F_MAX) return;
+      ctx.fillStyle = HARM_COLORS[n];
+      ctx.fillRect(logX(f, W) - 1.5, Y(0) - 8, 3, 16);
+    });
+
+    ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 3;
+    ctx.beginPath();
+    for (let px = 0; px <= W; px += 2) {
+      const f = F_MIN * Math.pow(F_MAX / F_MIN, px / W);
+      const y = Y(eqResponseDb(f));
+      px ? ctx.lineTo(px, y) : ctx.moveTo(px, y);
+    }
+    ctx.stroke();
+    eqDefs.forEach((f, i) => {
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath(); ctx.arc(logX(f, W), Y(eqResponseDb(f)), 4, 0, Math.PI * 2); ctx.fill();
     });
   }
-  window.addEventListener('resize', resizeCanvas);
-  resizeCanvas();
 
-  let timeData = new Uint8Array(2048);
-  let freqData = new Uint8Array(1024);
+  /* ════════════════ Step 5 — rescue a recording ════════════════ */
+  const MELODY = [[392, 1], [784, 0.6], [1176, 0.4], [1568, 0.25], [1960, 0.15]];
+  const HUM = [[60, 0.9], [120, 0.36], [180, 0.18]];
+  const HISS_CORNER = 2500, HISS_AMP = 0.07;
+  const BUTTER = Math.SQRT1_2, NOTCH_Q = 8;
+  const hpSlider = document.getElementById('hpSlider');
+  const lpSlider = document.getElementById('lpSlider');
+  const notchBox = document.getElementById('notchBox');
+  const hpOut = document.getElementById('hpOut');
+  const lpOut = document.getElementById('lpOut');
+  const rescueStatus = document.getElementById('rescueStatus');
+  rescueCanvas = SimKit.canvas2d(document.getElementById('rescueCanvas'), { height: 300, onResize: () => drawRescue() });
 
-  function draw() {
-    requestAnimationFrame(draw);
-    const W1 = waveCanvas.width, H1 = waveCanvas.height;
-    const W2 = specCanvas.width, H2 = specCanvas.height;
+  // Slider 0…1000 → log-spaced cutoff. The end stops mean "filter off".
+  const hpHz = () => +hpSlider.value === 0 ? 0 : 20 * Math.pow(50, +hpSlider.value / 1000);
+  const lpHz = () => +lpSlider.value === 1000 ? 0 : 500 * Math.pow(40, +lpSlider.value / 1000);
 
-    waveCtx.fillStyle = '#0c1e28';
-    waveCtx.fillRect(0, 0, W1, H1);
+  // Hiss = broadband noise above ~2.5 kHz, modelled as many small components.
+  const HISS = [];
+  for (let i = 0; i < 140; i++) {
+    const f = 300 * Math.pow(20000 / 300, i / 139);
+    HISS.push([f, HISS_AMP * Math.pow(10, biquadDb('highpass', f, HISS_CORNER, BUTTER, 0, 48000) / 20)]);
+  }
 
-    specCtx.fillStyle = '#0c1e28';
-    specCtx.fillRect(0, 0, W2, H2);
+  function rescueResponseDb(f) {
+    const fsr = audioCtx ? audioCtx.sampleRate : 48000;
+    let db = 0;
+    if (hpHz()) db += biquadDb('highpass', f, hpHz(), BUTTER, 0, fsr);
+    if (lpHz()) db += biquadDb('lowpass', f, lpHz(), BUTTER, 0, fsr);
+    if (notchBox.checked) db += biquadDb('notch', f, 60, NOTCH_Q, 0, fsr);
+    return db;
+  }
+
+  function reductionDb(parts) {
+    let before = 0, after = 0;
+    parts.forEach(([f, a]) => { before += a * a; after += a * a * Math.pow(10, rescueResponseDb(f) / 10); });
+    return 10 * Math.log10(before / Math.max(after, 1e-12));
+  }
+
+  function setGoal(id, value, ok) {
+    const el = document.getElementById(id);
+    el.querySelector('strong').textContent = value.toFixed(1) + ' dB';
+    el.classList.toggle('is-met', ok);
+  }
+
+  function drawRescue() {
+    if (!rescueCanvas) return;
+    hpOut.textContent = hpHz() ? Math.round(hpHz()) + ' Hz' : 'off';
+    lpOut.textContent = lpHz() ? (lpHz() >= 1000 ? (lpHz() / 1000).toFixed(1) + 'k' : Math.round(lpHz())) + ' Hz' : 'off';
+
+    const hum = reductionDb(HUM), hiss = reductionDb(HISS), mel = reductionDb(MELODY);
+    const okHum = hum >= 15, okHiss = hiss >= 9, okMel = mel <= 1.5;
+    setGoal('goalHum', hum, okHum);
+    setGoal('goalHiss', hiss, okHiss);
+    setGoal('goalMelody', mel, okMel);
+    if (okHum && okHiss && okMel) rescueStatus.textContent = 'Recording rescued! The hum and most of the hiss are gone, and the melody is intact. Press "Hear filtered" to check by ear.';
+    else if (!okMel) rescueStatus.textContent = 'Careful: your filters are cutting into the melody (cyan). Move a cutoff further away from the cyan spikes.';
+    else if (!okHum) rescueStatus.textContent = 'The hum (red spikes) is still too loud.';
+    else rescueStatus.textContent = 'The hum is handled. Now deal with the hiss (orange).';
+
+    const ctx = rescueCanvas.ctx, W = rescueCanvas.width, H = rescueCanvas.height;
+    clear(ctx, W, H);
+    const top = 12, bot = H - 22, DB_MIN = -60, DB_MAX = 6;
+    const Y = db => top + (bot - top) * (DB_MAX - Math.max(DB_MIN, Math.min(DB_MAX, db))) / (DB_MAX - DB_MIN);
+    const X = f => logX(f, W);
+
+    ctx.font = '10px ' + MONO; ctx.lineWidth = 1;
+    [0, -20, -40].forEach(db => {
+      ctx.strokeStyle = db === 0 ? 'rgba(255,255,255,0.3)' : GRID;
+      ctx.beginPath(); ctx.moveTo(0, Y(db)); ctx.lineTo(W, Y(db)); ctx.stroke();
+      ctx.fillStyle = LABEL; ctx.textAlign = 'left'; ctx.fillText(db + ' dB', 4, Y(db) - 3);
+    });
+    ctx.textAlign = 'center';
+    [60, 120, 250, 500, 1000, 2000, 4000, 8000, 16000].forEach(f => { ctx.fillStyle = LABEL; ctx.fillText(hzText(f), X(f), H - 7); });
+
+    const amp2db = a => 20 * Math.log10(a);
+    function hissPath(withFilter) {
+      ctx.beginPath(); ctx.moveTo(X(HISS[0][0]), bot);
+      HISS.forEach(([f, a]) => ctx.lineTo(X(f), Y(amp2db(a) + (withFilter ? rescueResponseDb(f) : 0))));
+      ctx.lineTo(X(HISS[HISS.length - 1][0]), bot); ctx.closePath();
+    }
+    ctx.fillStyle = 'rgba(251, 146, 60, 0.16)'; hissPath(false); ctx.fill();
+    ctx.fillStyle = 'rgba(251, 146, 60, 0.7)'; hissPath(true); ctx.fill();
+
+    function spikes(parts, color) {
+      parts.forEach(([f, a]) => {
+        const x = X(f);
+        ctx.strokeStyle = color; ctx.globalAlpha = 0.25; ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.moveTo(x, bot); ctx.lineTo(x, Y(amp2db(a))); ctx.stroke();
+        ctx.globalAlpha = 1; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(x, bot); ctx.lineTo(x, Y(amp2db(a) + rescueResponseDb(f))); ctx.stroke();
+      });
+    }
+    spikes(HUM, '#f87171');
+    spikes(MELODY, '#67e8f9');
+
+    ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    for (let px = 0; px <= W; px += 2) {
+      const f = F_MIN * Math.pow(F_MAX / F_MIN, px / W);
+      const y = Y(rescueResponseDb(f));
+      px ? ctx.lineTo(px, y) : ctx.moveTo(px, y);
+    }
+    ctx.stroke();
+
+    syncRescueFilters();
+  }
+
+  function syncRescueFilters() {
+    if (!rescue) return;
+    const t = audioCtx.currentTime;
+    rescue.hp.type = hpHz() ? 'highpass' : 'allpass';
+    if (hpHz()) rescue.hp.frequency.setTargetAtTime(hpHz(), t, 0.02);
+    rescue.lp.type = lpHz() ? 'lowpass' : 'allpass';
+    if (lpHz()) rescue.lp.frequency.setTargetAtTime(lpHz(), t, 0.02);
+    rescue.notch.type = notchBox.checked ? 'notch' : 'allpass';
+  }
+
+  function harmonicOsc(parts, gainValue, out) {
+    const f0 = parts[0][0];
+    const n = Math.round(parts[parts.length - 1][0] / f0);
+    const real = new Float32Array(n + 1), imag = new Float32Array(n + 1);
+    parts.forEach(([f, a]) => { imag[Math.round(f / f0)] = a; });
+    const o = audioCtx.createOscillator();
+    o.setPeriodicWave(audioCtx.createPeriodicWave(real, imag));
+    o.frequency.value = f0;
+    const g = audioCtx.createGain();
+    g.gain.value = gainValue;
+    o.connect(g); g.connect(out);
+    return o;
+  }
+
+  function startRescue(wet) {
+    resumeAudio();
+    stopAll();
+    const t = audioCtx.currentTime;
+    const master = audioCtx.createGain();
+    master.gain.value = 0;
+    master.gain.setTargetAtTime(1, t, 0.03);
+    const mix = audioCtx.createGain();
+    const mel = harmonicOsc(MELODY, 0.22, mix);
+    const hum = harmonicOsc(HUM, 0.3, mix);
+
+    const len = audioCtx.sampleRate * 2, buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate), data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buf; noise.loop = true;
+    const hissHp = audioCtx.createBiquadFilter();
+    hissHp.type = 'highpass'; hissHp.frequency.value = HISS_CORNER; hissHp.Q.value = -3.0103; // Web Audio HP/LP Q is in dB; −3 dB = Butterworth
+    const hissGain = audioCtx.createGain(); hissGain.gain.value = 0.12;
+    noise.connect(hissHp); hissHp.connect(hissGain); hissGain.connect(mix);
+
+    const hp = audioCtx.createBiquadFilter(), lp = audioCtx.createBiquadFilter(), notch = audioCtx.createBiquadFilter();
+    hp.Q.value = -3.0103; lp.Q.value = -3.0103;
+    notch.frequency.value = 60; notch.Q.value = NOTCH_Q;
+    mix.connect(master);
+    if (wet) { master.connect(hp); hp.connect(lp); lp.connect(notch); notch.connect(analyser); }
+    else master.connect(analyser);
+
+    [mel, hum, noise].forEach(s => s.start());
+    rescue = { sources: [mel, hum, noise], nodes: [mix, master, hissHp, hissGain, hp, lp, notch], master, hp, lp, notch };
+    syncRescueFilters();
+    mode = wet ? 'wet' : 'dry';
+    updateButtons();
+  }
+
+  function stopRescue() {
+    if (!rescue) return;
+    fadeOut(rescue.sources.concat(rescue.nodes), rescue.master);
+    rescue = null;
+  }
+
+  [hpSlider, lpSlider].forEach(s => s.addEventListener('input', drawRescue));
+  notchBox.addEventListener('change', drawRescue);
+  hearDry.addEventListener('click', () => { if (mode === 'dry') { stopAll(); updateButtons(); } else startRescue(false); });
+  hearWet.addEventListener('click', () => { if (mode === 'wet') { stopAll(); updateButtons(); } else startRescue(true); });
+
+  /* ════════════════ Step 6 — live analyser ════════════════ */
+  const wave = SimKit.canvas2d(document.getElementById('waveCanvas'), { height: 200 });
+  const spec = SimKit.canvas2d(document.getElementById('spectrumCanvas'), { height: 200 });
+  let timeData = null, freqData = null, liveZoom = 0.3;
+  const S_MIN = 40, S_MAX = 16000;
+  const specX = (f, W) => W * Math.log(f / S_MIN) / Math.log(S_MAX / S_MIN);
+
+  function drawSpecGrid(ctx, W, H) {
+    ctx.font = '10px ' + MONO; ctx.textAlign = 'center'; ctx.lineWidth = 1;
+    [50, 100, 250, 500, 1000, 2000, 4000, 8000].forEach(f => {
+      const x = specX(f, W);
+      ctx.strokeStyle = GRID; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H - 16); ctx.stroke();
+      ctx.fillStyle = LABEL; ctx.fillText(hzText(f), x, H - 4);
+    });
+  }
+
+  function drawLive() {
+    const W1 = wave.width, H1 = wave.height, W2 = spec.width, H2 = spec.height;
+    const wctx = wave.ctx, sctx = spec.ctx;
+    clear(wctx, W1, H1); clear(sctx, W2, H2);
+    drawSpecGrid(sctx, W2, H2);
+    const grad = sctx.createLinearGradient(0, H2, 0, 0);
+    grad.addColorStop(0, '#06b6d4'); grad.addColorStop(0.55, '#a855f7'); grad.addColorStop(1, '#ec4899');
 
     if (!analyser || mode === 'none') {
-      // A representative, silent preview keeps the first frame meaningful on
-      // screen and gives printed handouts a useful simulation thumbnail.
-      const previewAmps = amps.map(input => parseFloat(input.value) / 100);
-      const previewTotal = Math.max(1, previewAmps.reduce((sum, value) => sum + value, 0));
-      waveCtx.beginPath();
+      // Silent preview drawn from the test-sound recipe, so the panel is meaningful before any audio starts.
+      const cycles = Math.max(1, state.f0 * 0.025);
+      wctx.strokeStyle = 'rgba(103, 232, 249, 0.6)'; wctx.lineWidth = 2;
+      let peak = 0.01;
+      for (let px = 0; px <= W1; px += 2) peak = Math.max(peak, Math.abs(synthSample(state.amps, (px / W1) * 2 * Math.PI * cycles)));
+      wctx.beginPath();
       for (let px = 0; px <= W1; px += 2) {
-        const phase = (px / W1) * Math.PI * 6;
-        let sample = 0;
-        previewAmps.forEach((amplitude, index) => {
-          sample += amplitude * Math.sin(phase * (index + 1));
-        });
-        const y = H1 / 2 - (sample / previewTotal) * H1 * 0.38;
-        if (px === 0) waveCtx.moveTo(px, y);
-        else waveCtx.lineTo(px, y);
+        const y = H1 / 2 - synthSample(state.amps, (px / W1) * 2 * Math.PI * cycles) / peak * H1 * 0.38;
+        px ? wctx.lineTo(px, y) : wctx.moveTo(px, y);
       }
-      waveCtx.strokeStyle = '#67e8f9';
-      waveCtx.lineWidth = 2;
-      waveCtx.stroke();
-
-      const previewGradient = specCtx.createLinearGradient(0, H2, 0, 0);
-      previewGradient.addColorStop(0, '#06b6d4');
-      previewGradient.addColorStop(0.55, '#a855f7');
-      previewGradient.addColorStop(1, '#ec4899');
-      specCtx.fillStyle = previewGradient;
-      specCtx.font = '10px "JetBrains Mono", monospace';
-      specCtx.textAlign = 'center';
-      previewAmps.forEach((amplitude, index) => {
-        const x = W2 * (0.16 + index * 0.22);
-        const height = Math.max(3, amplitude * H2 * 0.72);
-        specCtx.fillRect(x - 10, H2 - height - 18, 20, height);
-        specCtx.fillStyle = 'rgba(255, 255, 255, 0.68)';
-        specCtx.fillText(`${index + 1}f`, x, H2 - 5);
-        specCtx.fillStyle = previewGradient;
+      wctx.stroke();
+      sctx.fillStyle = grad;
+      state.amps.forEach((a, n) => {
+        if (!a) return;
+        const x = specX(state.f0 * (n + 1), W2), h = (a / 100) * (H2 - 30);
+        sctx.fillRect(x - 2, H2 - 16 - h, 4, h);
       });
+      wctx.fillStyle = LABEL; wctx.font = '11px ' + MONO; wctx.textAlign = 'left';
+      wctx.fillText('preview: press Play or Use microphone', 8, 16);
       return;
     }
 
-    // Draw Time Domain
-    analyser.getByteTimeDomainData(timeData);
-    waveCtx.lineWidth = 3;
-    waveCtx.strokeStyle = '#67e8f9';
-    waveCtx.beginPath();
-    let sliceWidth = W1 / timeData.length;
-    let x = 0;
-    for (let i = 0; i < timeData.length; i++) {
-      let v = timeData[i] / 128.0;
-      let y = v * (H1 / 2);
-      if (i === 0) waveCtx.moveTo(x, y);
-      else waveCtx.lineTo(x, y);
-      x += sliceWidth;
+    if (!timeData) {
+      timeData = new Float32Array(analyser.fftSize);
+      freqData = new Uint8Array(analyser.frequencyBinCount);
     }
-    waveCtx.lineTo(W1, H1 / 2);
-    waveCtx.stroke();
 
-    // Draw Frequency Domain
+    // Waveform with a rising-zero-crossing trigger so periodic sounds hold still on screen.
+    analyser.getFloatTimeDomainData(timeData);
+    const win = Math.round(audioCtx.sampleRate * 0.025);
+    let start = 0;
+    for (let i = 1; i < timeData.length - win; i++) {
+      if (timeData[i - 1] < 0 && timeData[i] >= 0) { start = i; break; }
+    }
+    // Auto-zoom so quiet microphones and EQ-boosted tones both fill the panel.
+    let pk = 0;
+    for (let i = 0; i < win; i++) pk = Math.max(pk, Math.abs(timeData[start + i]));
+    liveZoom += (Math.max(pk, 0.02) - liveZoom) * 0.15;
+    wctx.strokeStyle = GRID; wctx.lineWidth = 1;
+    wctx.beginPath(); wctx.moveTo(0, H1 / 2); wctx.lineTo(W1, H1 / 2); wctx.stroke();
+    wctx.strokeStyle = '#67e8f9'; wctx.lineWidth = 2.5;
+    wctx.beginPath();
+    for (let i = 0; i < win; i++) {
+      const x = (i / (win - 1)) * W1, y = H1 / 2 - (timeData[start + i] / liveZoom) * (H1 / 2 - 14);
+      i ? wctx.lineTo(x, y) : wctx.moveTo(x, y);
+    }
+    wctx.stroke();
+
+    // Spectrum on a log axis: each pixel column takes the loudest bin it covers.
     analyser.getByteFrequencyData(freqData);
-    // Display only up to ~11kHz to focus on the active ranges
-    let renderBars = Math.floor(freqData.length * 0.45); 
-    let barWidth = W2 / renderBars;
-    let barHeight;
-    x = 0;
-
-    let grad = specCtx.createLinearGradient(0, H2, 0, 0);
-    grad.addColorStop(0, '#06b6d4');
-    grad.addColorStop(0.5, '#a855f7');
-    grad.addColorStop(1, '#ec4899');
-
-    const sampleRate = audioCtx ? audioCtx.sampleRate : 44100;
-    const nyquist = sampleRate / 2;
-    const hzPerBin = nyquist / freqData.length;
-    const labelFreqs = [250, 1000, 4000, 8000];
-
-    specCtx.lineWidth = 1;
-    specCtx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-    specCtx.beginPath();
-    labelFreqs.forEach(freq => {
-      const bin = freq / hzPerBin;
-      if (bin < renderBars) {
-        specCtx.moveTo(bin * barWidth, 0);
-        specCtx.lineTo(bin * barWidth, H2);
-      }
-    });
-    specCtx.stroke();
-
-    specCtx.fillStyle = grad;
-    for (let i = 0; i < renderBars; i++) {
-      barHeight = (freqData[i] / 255.0) * H2;
-      specCtx.fillRect(x, H2 - barHeight, Math.max(1, barWidth - 1), barHeight);
-      x += barWidth;
+    const hzPerBin = audioCtx.sampleRate / analyser.fftSize;
+    const plotH = H2 - 20;
+    sctx.fillStyle = grad;
+    sctx.beginPath(); sctx.moveTo(0, H2 - 16);
+    for (let px = 0; px <= W2; px += 2) {
+      const fa = S_MIN * Math.pow(S_MAX / S_MIN, px / W2), fb = S_MIN * Math.pow(S_MAX / S_MIN, (px + 2) / W2);
+      const b0 = Math.floor(fa / hzPerBin), b1 = Math.max(b0, Math.floor(fb / hzPerBin));
+      let v = 0;
+      for (let b = b0; b <= b1 && b < freqData.length; b++) v = Math.max(v, freqData[b]);
+      sctx.lineTo(px, H2 - 16 - (v / 255) * plotH);
     }
+    sctx.lineTo(W2, H2 - 16); sctx.closePath(); sctx.fill();
 
-    specCtx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-    specCtx.font = '10px "JetBrains Mono", monospace';
-    specCtx.textAlign = 'center';
-    labelFreqs.forEach(freq => {
-      const bin = freq / hzPerBin;
-      if (bin < renderBars) {
-        const text = freq >= 1000 ? (freq / 1000) + 'kHz' : freq + 'Hz';
-        specCtx.fillText(text, bin * barWidth, H2 - 6);
-      }
-    });
+    if (mode === 'tone') {
+      sctx.font = '10px ' + MONO; sctx.textAlign = 'center';
+      state.amps.forEach((a, n) => {
+        if (!a) return;
+        const x = specX(state.f0 * (n + 1), W2);
+        sctx.fillStyle = HARM_COLORS[n];
+        sctx.fillText(n + 1 + '×', x, 12);
+      });
+    }
   }
 
-  draw();
+  /* ════════════════ Check for understanding ════════════════ */
+  const QUIZ = [
+    {
+      q: 'CDs store 44,100 samples per second. What is the highest frequency a CD can hold?',
+      opts: ['44,100 Hz', '88,200 Hz', 'About 22,050 Hz', 'About 4,400 Hz'],
+      a: 2,
+      why: 'The Nyquist frequency is half the sample rate: 44,100 ÷ 2 = 22,050 Hz. That is just above the ~20,000 Hz limit of human hearing, which is why that rate was chosen.'
+    },
+    {
+      q: 'A 17 Hz signal is sampled 20 times per second. What frequency do the stored samples show?',
+      opts: ['17 Hz, correctly', '3 Hz, an alias', '37 Hz', '10 Hz'],
+      a: 1,
+      why: '17 Hz is above the 10 Hz Nyquist limit, so it folds back to 20 − 17 = 3 Hz. Check it in Step 2: the dots are identical to a 3 Hz wave\'s, and the wheel even appears to turn backward.'
+    },
+    {
+      q: 'How many different levels can a 3-bit sample have?',
+      opts: ['3', '6', '8', '9'],
+      a: 2,
+      why: 'Each extra bit doubles the number of levels: 2 × 2 × 2 = 2³ = 8. CD audio uses 16 bits, which gives 65,536 levels.'
+    },
+    {
+      q: 'A song is converted from 16-bit to 8-bit. What do you hear?',
+      opts: ['The pitch drops an octave', 'More hiss and a gritty, crunchy edge, at the same pitch', 'The high notes disappear', 'It plays half as fast'],
+      a: 1,
+      why: 'Bit depth controls how precisely each sample is rounded. Fewer bits means bigger rounding errors, which you hear as quantization noise. The timing of the samples hasn\'t changed, so pitch and speed stay the same.'
+    },
+    {
+      q: 'You add a notch filter at 60 Hz, but the recording still buzzes. What is the most likely reason?',
+      opts: ['The notch filter is broken', 'Hum also has harmonics at 120 Hz, 180 Hz and higher, and the notch removes only 60 Hz', 'The sample rate is too high', 'Notch filters only work on hiss'],
+      a: 1,
+      why: 'Electrical hum is rarely a pure sine, so it has its own harmonics. A high-pass filter set below the lowest note you want to keep removes all of them at once. You saw this in Step 5.'
+    },
+    {
+      q: 'You add a low-pass filter at 3 kHz to a hissy voice recording. What else happens?',
+      opts: ['Nothing else; only the hiss changes', 'The voice gets louder', 'The voice sounds a bit muffled, because "s" and "t" sounds also live above 3 kHz', 'The bass disappears'],
+      a: 2,
+      why: 'A filter can\'t tell hiss from voice if they share frequencies. Cutting above 3 kHz removes hiss and also the bright consonants. Every filter choice is a trade-off.'
+    }
+  ];
+
+  const quizEl = document.getElementById('quiz');
+  const quizScore = document.getElementById('quizScore');
+  const answered = new Map();
+
+  QUIZ.forEach((item, qi) => {
+    const fs = document.createElement('fieldset');
+    fs.className = 'dsp-q';
+    fs.innerHTML = '<legend>' + (qi + 1) + '. ' + item.q + '</legend><div class="dsp-q-opts"></div><p class="dsp-q-fb" aria-live="polite"></p>';
+    const opts = fs.querySelector('.dsp-q-opts'), fb = fs.querySelector('.dsp-q-fb');
+    item.opts.forEach((text, oi) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = text;
+      b.addEventListener('click', () => {
+        opts.querySelectorAll('button').forEach(x => x.classList.remove('is-right', 'is-wrong'));
+        const right = oi === item.a;
+        b.classList.add(right ? 'is-right' : 'is-wrong');
+        fb.textContent = (right ? '✓ Correct. ' : '✗ Not quite. ') + item.why;
+        if (!answered.has(qi)) answered.set(qi, right);
+        const firstTry = [...answered.values()].filter(Boolean).length;
+        quizScore.textContent = 'First-try score: ' + firstTry + ' / ' + answered.size + (answered.size === QUIZ.length ? ' (all done)' : '');
+      });
+      opts.appendChild(b);
+    });
+    quizEl.appendChild(fs);
+  });
+
+  /* ════════════════ Boot ════════════════ */
+  syncSynthControls();
+  drawSynth();
+  drawQuant();
+  drawRescue();
+  drawAlias();
+  drawEq();
   updateButtons();
+  SimKit.loop(() => {
+    drawLive();
+    drawWheel(performance.now() / 1000);
+  });
 }());
 </script>
 <script src="../../../assets/js/theme-registry.js"></script>
