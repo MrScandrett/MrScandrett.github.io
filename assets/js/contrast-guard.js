@@ -238,7 +238,9 @@
     window.requestAnimationFrame(run);
   }
 
-  window.ClassroomOSContrastGuard = { run: schedule };
+  // runNow applies the pass synchronously; the a11y audit calls it so its
+  // result doesn't depend on when a background tab gets its next frame.
+  window.ClassroomOSContrastGuard = { run: schedule, runNow: run };
   ensureContrastOverrides();
   window.addEventListener("classroomos:lightingchange", schedule);
   window.addEventListener("load", schedule);

@@ -138,6 +138,22 @@ async function auditPage(browser, entry) {
     if (pa11yDefaults.wait > 0) {
       await new Promise((resolve) => setTimeout(resolve, pa11yDefaults.wait));
     }
+    // contrast-guard.js repaints low-contrast text on requestAnimationFrame,
+    // which headless Chrome throttles for background tabs. Settle it
+    // explicitly so the audit sees what a reader sees, not a timing race.
+    await page.evaluate(async () => {
+      const guard = window.ClassroomOSContrastGuard;
+      if (!guard || typeof guard.runNow !== "function") return;
+      const link = document.querySelector('link[data-classroomos-contrast-overrides="true"]');
+      if (link && !link.sheet) {
+        await new Promise((resolve) => {
+          link.addEventListener("load", resolve, { once: true });
+          link.addEventListener("error", resolve, { once: true });
+          setTimeout(resolve, 3000);
+        });
+      }
+      guard.runNow();
+    }).catch(() => {});
     const result = await pa11y(entry.url, {
       ...pa11yDefaults,
       ...entry,
