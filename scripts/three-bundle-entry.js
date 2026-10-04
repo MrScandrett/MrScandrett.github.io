@@ -14,3 +14,4 @@ export { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 export { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 export { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 export { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
+export { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";

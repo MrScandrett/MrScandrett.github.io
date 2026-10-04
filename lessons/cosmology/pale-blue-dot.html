@@ -1017,7 +1017,7 @@
       };
     }
 
-    function createPbdModelSystem(THREE, GLTFLoader) {
+    function createPbdModelSystem(THREE, GLTFLoader, MeshoptDecoder) {
       if (!modelLayer) return null;
 
       const probeCanvas = document.createElement('canvas');
@@ -1048,6 +1048,7 @@
       modelLayer.appendChild(renderer.domElement);
 
       const loader = new GLTFLoader();
+      if (MeshoptDecoder) loader.setMeshoptDecoder(MeshoptDecoder);
       const effectsSystem = createPbdEffectsSystem(THREE);
       const viewers = new Map();
       const activeLayouts = new Map();
@@ -1257,8 +1258,8 @@
       };
     }
 
-    window.__attachPbdModelSystem = function (THREE, GLTFLoader) {
-      modelSystem = createPbdModelSystem(THREE, GLTFLoader);
+    window.__attachPbdModelSystem = function (THREE, GLTFLoader, MeshoptDecoder) {
+      modelSystem = createPbdModelSystem(THREE, GLTFLoader, MeshoptDecoder);
       if (modelSystem) {
         modelSystem.resize(W || wrap.clientWidth, H || Math.max(Math.round(wrap.clientWidth * 0.52), 320));
         draw();
@@ -1688,12 +1689,12 @@
   </script>
 
   <script type="module">
-    import { THREE, GLTFLoader } from '../../assets/vendor/three-bundle.min.js';
+    import { THREE, GLTFLoader, MeshoptDecoder } from '../../assets/vendor/three-bundle.min.js';
 
     if (window.__attachPbdModelSystem) {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          window.__attachPbdModelSystem(THREE, GLTFLoader);
+          window.__attachPbdModelSystem(THREE, GLTFLoader, MeshoptDecoder);
         });
       });
     }
