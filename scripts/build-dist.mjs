@@ -166,7 +166,7 @@ async function minifyJsFiles() {
     const source = await readFile(file, "utf8");
     before += Buffer.byteLength(source);
     try {
-      const result = await esbuild.transform(source, { minify: true, target: "es2019", loader: "js" });
+      const result = await esbuild.transform(source, { minify: true, target: "es2022", loader: "js" });
       await writeFile(file, result.code, "utf8");
       after += Buffer.byteLength(result.code);
     } catch (error) {

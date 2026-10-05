@@ -267,7 +267,7 @@ function humanDuration(seconds) {
 
 for (const n of [3, 5, 8, 10, 20, 32, 64]) {
   const row = document.createElement("tr");
-  const moves = 2n ** BigInt(n) - 1n;
+  const moves = BigInt(2) ** BigInt(n) - BigInt(1);
   row.innerHTML = `<td>${n}</td><td>${moves.toLocaleString()}</td><td>${humanDuration(Number(moves))}</td>`;
   growthBody.appendChild(row);
 }

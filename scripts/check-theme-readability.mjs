@@ -5,6 +5,7 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import pa11y from "pa11y";
 import puppeteer from "puppeteer";
+import { findChromium } from "../lib/find-chromium.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const THEMES = [
@@ -196,7 +197,7 @@ if (!selectedThemes.length) throw new Error(`Unknown THEME_AUDIT_THEME=${themeFi
 
 const cases = pages.flatMap((pagePath) => selectedThemes.map((theme) => ({ pagePath, theme })));
 const { server, baseUrl } = await startStaticServer();
-const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || await puppeteer.executablePath();
+const executablePath = findChromium(["PUPPETEER_EXECUTABLE_PATH"]) || puppeteer.executablePath();
 const browser = await puppeteer.launch({
   args: ["--disable-dev-shm-usage", "--no-sandbox"],
   executablePath,

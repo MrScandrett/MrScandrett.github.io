@@ -371,10 +371,14 @@
   var isThemeIndependent = themeScope === "independent";
 
   var header = document.querySelector(".site-header") || document.querySelector(".topbar");
-  if (!header) return;
+  var nav = header && (header.querySelector(".site-nav") || header.querySelector("nav"));
 
-  var nav = header.querySelector(".site-nav") || header.querySelector("nav");
-  if (!nav) return;
+  /* Lessons with a slim custom topbar have no nav to hang controls on, but the
+     reader's chosen theme should still follow them onto the page. */
+  if (!nav) {
+    if (!isThemeIndependent) ensureLightingApi().sync();
+    return;
+  }
 
   if (!nav.id) nav.id = "primary-nav";
 
