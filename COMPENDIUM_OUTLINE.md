@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 341 public lessons and classifies 19 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 341 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -591,10 +591,3 @@ These pages remain attached to their parent lesson or module and do not become d
 - `lessons/computer-science/graphics-and-games/game-tutorials/quiz.html` — assessment-extension; module-appendix; parent: `lessons/computer-science/graphics-and-games/2d-game-engines.html`
 - `lessons/computer-science/graphics-and-games/game-tutorials/rhythm.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/graphics-and-games/2d-game-engines.html`
 - `lessons/computer-science/graphics-and-games/game-tutorials/shooter.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/graphics-and-games/2d-game-engines.html`
-- `lessons/technical-elements/guitar-chords.html` — redirect; parent-appendix; parent: `lessons/music/guitar-chords.html`
-- `lessons/technical-elements/piano-chords.html` — redirect; parent-appendix; parent: `lessons/music/piano-chords.html`
-- `lessons/technical-elements/sheet-music-trainer.html` — redirect; parent-appendix; parent: `lessons/music/sheet-music-trainer.html`
-- `lessons/technical-elements/music-modes-evolution.html` — redirect; parent-appendix; parent: `lessons/music/music-modes-evolution.html`
-- `lessons/technical-elements/violin-fingerboard.html` — redirect; parent-appendix; parent: `lessons/music/violin-fingerboard.html`
-- `lessons/technical-elements/drums.html` — redirect; parent-appendix; parent: `lessons/music/drums.html`
-- `lessons/technical-elements/beethoven.html` — redirect; parent-appendix; parent: `lessons/music/beethoven.html`
