@@ -9,8 +9,11 @@
   <link rel="stylesheet" href="assets/css/pages/reader.css" />
   <script>
     try {
+      var d = document.documentElement.dataset;
       var m = localStorage.getItem('reader:mode');
-      if (m) document.documentElement.dataset.readerMode = m;
+      if (m) d.readerMode = m;
+      d.readerLeading = localStorage.getItem('reader:leading') || 'normal';
+      d.readerWidth = localStorage.getItem('reader:width') || 'medium';
     } catch (e) {}
   </script>
 </head>
@@ -26,17 +29,26 @@
       <p id="rdAuthor"></p>
     </div>
     <div class="rd-tools">
-      <button type="button" class="rd-btn" id="rdTocBtn" aria-controls="rdToc" aria-expanded="false" disabled>
+      <button type="button" class="rd-btn" id="rdTocBtn" aria-controls="rdToc" aria-expanded="false" title="Contents and bookmarks" disabled>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" /></svg><span>Contents</span>
       </button>
-      <button type="button" class="rd-btn" id="rdSetBtn" aria-controls="rdSettings" aria-expanded="false">
+      <button type="button" class="rd-btn" id="rdSearchBtn" aria-controls="rdToc" aria-expanded="false" title="Search this book (/)" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6" /><path d="M20 20l-4.5-4.5" /></svg><span class="rd-sr">Search</span>
+      </button>
+      <button type="button" class="rd-btn" id="rdMarkBtn" aria-pressed="false" title="Bookmark this spot (B)" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-4-5 4z" /></svg><span class="rd-sr">Bookmark</span>
+      </button>
+      <button type="button" class="rd-btn" id="rdListenBtn" aria-controls="rdPlayer" aria-expanded="false" title="Read aloud" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10zM16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" /></svg><span>Listen</span>
+      </button>
+      <button type="button" class="rd-btn" id="rdSetBtn" aria-controls="rdSettings" aria-expanded="false" title="Display settings">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19l5-14h1l5 14M6.5 13h7M17 19l2.5-7 2.5 7M18 17h3" /></svg><span>Display</span>
       </button>
     </div>
     <div class="rd-progress" aria-hidden="true"><span id="rdProgressFill"></span></div>
   </header>
 
-  <div class="rd-settings" id="rdSettings" hidden>
+  <div class="rd-settings" id="rdSettings" role="region" aria-label="Display settings" hidden>
     <fieldset>
       <legend>Page</legend>
       <div class="rd-seg" role="group">
@@ -60,6 +72,22 @@
         <button type="button" data-face="sans" aria-pressed="false">Sans</button>
       </div>
     </fieldset>
+    <fieldset data-for="epub">
+      <legend>Line spacing</legend>
+      <div class="rd-seg" role="group">
+        <button type="button" data-leading="tight" aria-pressed="false">Tight</button>
+        <button type="button" data-leading="normal" aria-pressed="false">Normal</button>
+        <button type="button" data-leading="loose" aria-pressed="false">Loose</button>
+      </div>
+    </fieldset>
+    <fieldset data-for="epub">
+      <legend>Column width</legend>
+      <div class="rd-seg" role="group">
+        <button type="button" data-width="narrow" aria-pressed="false">Narrow</button>
+        <button type="button" data-width="medium" aria-pressed="false">Medium</button>
+        <button type="button" data-width="wide" aria-pressed="false">Wide</button>
+      </div>
+    </fieldset>
     <fieldset data-for="pdf">
       <legend>Zoom</legend>
       <div class="rd-seg" role="group">
@@ -68,16 +96,43 @@
         <button type="button" data-zoom="1" aria-label="Zoom in">+</button>
       </div>
     </fieldset>
+    <div class="rd-toggles">
+      <button type="button" class="rd-toggle" data-toggle="ruler" aria-pressed="false" data-for="epub">
+        <span>Reading ruler</span><small>Dims everything but the lines you’re on</small>
+      </button>
+      <button type="button" class="rd-toggle" data-toggle="fullscreen" aria-pressed="false" hidden>
+        <span>Full screen</span><small>For the projector · Esc to leave</small>
+      </button>
+    </div>
   </div>
 
-  <nav class="rd-toc" id="rdToc" aria-label="Table of contents" hidden>
+  <nav class="rd-toc" id="rdToc" aria-label="Book navigation" hidden>
     <div class="rd-toc-head">
-      <h2>Contents</h2>
-      <button type="button" class="rd-btn" id="rdTocClose" aria-label="Close contents">
+      <div class="rd-tabs" role="tablist" aria-label="Book navigation">
+        <button type="button" role="tab" id="rdTabContents" data-tab="contents" aria-controls="rdPaneContents" aria-selected="true">Contents</button>
+        <button type="button" role="tab" id="rdTabMarks" data-tab="marks" aria-controls="rdPaneMarks" aria-selected="false" tabindex="-1">Bookmarks</button>
+        <button type="button" role="tab" id="rdTabSearch" data-tab="search" aria-controls="rdPaneSearch" aria-selected="false" tabindex="-1">Search</button>
+      </div>
+      <button type="button" class="rd-btn" id="rdTocClose" aria-label="Close">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
       </button>
     </div>
-    <ol id="rdTocList"></ol>
+    <p class="rd-where" id="rdWhere"></p>
+    <div class="rd-pane" id="rdPaneContents" role="tabpanel" aria-labelledby="rdTabContents">
+      <ol id="rdTocList"></ol>
+    </div>
+    <div class="rd-pane" id="rdPaneMarks" role="tabpanel" aria-labelledby="rdTabMarks" hidden>
+      <p class="rd-empty" id="rdMarksEmpty">No bookmarks yet. Press the bookmark button (or <kbd>B</kbd>) to save your spot. Bookmarks stay on this device.</p>
+      <ol class="rd-marks" id="rdMarkList"></ol>
+    </div>
+    <div class="rd-pane" id="rdPaneSearch" role="tabpanel" aria-labelledby="rdTabSearch" hidden>
+      <form class="rd-search" id="rdSearchForm" role="search">
+        <label class="rd-sr" for="rdSearchInput">Search this book</label>
+        <input type="search" id="rdSearchInput" placeholder="Search this book" autocomplete="off" spellcheck="false" enterkeyhint="search" />
+      </form>
+      <p class="rd-empty" id="rdSearchStatus" role="status" aria-live="polite">Type a word or phrase to find it anywhere in the book.</p>
+      <ol class="rd-hits" id="rdSearchList"></ol>
+    </div>
   </nav>
   <div class="rd-scrim" id="rdScrim" hidden></div>
 
@@ -103,6 +158,46 @@
     </div>
     <footer class="rd-credit" id="rdCredit" hidden></footer>
   </main>
+
+  <div class="rd-note" id="rdNote" role="dialog" aria-labelledby="rdNoteHead" hidden>
+    <p class="rd-note-head" id="rdNoteHead">Note</p>
+    <div class="rd-note-body" id="rdNoteBody"></div>
+    <p class="rd-note-actions">
+      <button type="button" class="rd-btn" id="rdNoteGo">Go to the note</button>
+      <button type="button" class="rd-btn" id="rdNoteClose">Close</button>
+    </p>
+  </div>
+
+  <div class="rd-player" id="rdPlayer" role="region" aria-label="Read aloud" hidden>
+    <button type="button" class="rd-btn" id="rdSpeakPrev" aria-label="Previous sentence">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6l-8 6 8 6zM6 6v12" /></svg>
+    </button>
+    <button type="button" class="rd-btn rd-primary" id="rdSpeakPlay" aria-label="Pause">
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="rd-ico-pause"><path d="M8 5v14M16 5v14" /></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="rd-ico-play"><path d="M7 5l12 7-12 7z" /></svg>
+    </button>
+    <button type="button" class="rd-btn" id="rdSpeakNext" aria-label="Next sentence">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l8 6-8 6zM18 6v12" /></svg>
+    </button>
+    <label class="rd-player-field"><span>Speed</span>
+      <select id="rdSpeakRate">
+        <option value="0.7">0.7×</option>
+        <option value="0.85">0.85×</option>
+        <option value="1">1×</option>
+        <option value="1.2">1.2×</option>
+        <option value="1.4">1.4×</option>
+        <option value="1.7">1.7×</option>
+      </select>
+    </label>
+    <label class="rd-player-field rd-player-voice"><span>Voice</span><select id="rdSpeakVoice"></select></label>
+    <button type="button" class="rd-btn" id="rdSpeakClose" aria-label="Stop reading aloud">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+    </button>
+  </div>
+
+  <div class="rd-ruler" id="rdRuler" aria-hidden="true" hidden></div>
+  <div class="rd-status" id="rdStatus" aria-hidden="true"></div>
+  <div class="rd-toast" id="rdToast" role="status" aria-live="polite"></div>
 
   <script src="assets/vendor/jszip.min.js"></script>
   <script type="module" src="assets/js/reader.mjs"></script>

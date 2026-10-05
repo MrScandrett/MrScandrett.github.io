@@ -761,6 +761,32 @@
       pointer-events: none !important;
     }
 
+    /* Started in the ClassroomOS Reader: a ribbon bookmark, plus a progress bar along the spine's foot. */
+    .book.is-reading::before {
+      content: '';
+      position: absolute;
+      z-index: 3;
+      top: -4px;
+      right: 22%;
+      width: 8px;
+      height: 30px;
+      background: #e8b84a;
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      pointer-events: none;
+    }
+    .book.is-reading::after {
+      content: '';
+      position: absolute;
+      z-index: 3;
+      left: 0;
+      bottom: 0;
+      height: 4px;
+      width: calc(var(--read, 0) * 100%);
+      background: #e8b84a;
+      pointer-events: none;
+    }
+
     .book.is-search-hit .book-spine {
       box-shadow:
         0 0 0 1px rgba(255, 222, 148, 0.55),
@@ -4546,7 +4572,32 @@
           });
           if (ready) readerBooks[href] = true;
         });
+        markReaderProgress();
       }).catch(function () { /* reader unavailable: links keep opening the source site */ });
+
+      /* Books started in the reader (reader:pos:<href> in this browser) say how far along they are. */
+      function readerProgress(href) {
+        try {
+          var pos = JSON.parse(localStorage.getItem('reader:pos:' + href));
+          return pos && typeof pos.p === 'number' && pos.p > 0.005 ? pos.p : 0;
+        } catch (e) { return 0; }
+      }
+      function progressLabel(p) {
+        return p >= 0.99 ? 'Finished · read again' : 'Continue reading · ' + Math.max(1, Math.round(p * 100)) + '%';
+      }
+      function markReaderProgress() {
+        document.querySelectorAll('#section-classics .book-popup-cta[href], #section-nasa .book-popup-cta[href]').forEach(function (link) {
+          var href = link.getAttribute('href');
+          var p = readerBooks[href] && readerProgress(href);
+          var book = link.closest('.book');
+          if (!p || !book) return;
+          link.textContent = progressLabel(p) + ' →';
+          var title = book.querySelector('.book-popup-title');
+          if (link.hasAttribute('aria-label')) link.setAttribute('aria-label', progressLabel(p) + ': ' + (title ? title.textContent.trim() : 'this book'));
+          book.classList.add('is-reading');
+          book.style.setProperty('--read', Math.min(1, p).toFixed(3));
+        });
+      }
 
       function openReadingCheck(link) {
         if (!readingCheckBackdrop || !link) return;
@@ -4568,7 +4619,8 @@
         var readerUrl = readerUrlFor(link);
         pendingReadingUrl = readerUrl || link.href;
         pendingReadingInReader = !!readerUrl;
-        readingCheckContinue.textContent = readerUrl ? 'Open in the reader →' : 'Continue to reading ↗';
+        var progress = readerUrl ? readerProgress(link.getAttribute('href')) : 0;
+        readingCheckContinue.textContent = !readerUrl ? 'Continue to reading ↗' : progress ? progressLabel(progress) + ' →' : 'Open in the reader →';
         lastReadingTrigger = link;
         readingCheckTitle.textContent = title;
         readingCheckGrade.textContent = gradeText;
