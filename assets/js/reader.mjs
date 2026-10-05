@@ -8,6 +8,12 @@
 //   src     the library link — a Gutenberg catalog page, or a direct .epub/.pdf
 //   title   optional display title for books not in data/reader-library.json
 //   author  optional display author
+//   file    a book the reader imported from the user's own device (see below)
+//
+// With no src or file, the page is the "Read your own book" shelf. Imported
+// EPUB, PDF and plain-text files are kept in this browser's IndexedDB (never
+// uploaded); plain text is turned into a small EPUB in memory so it gets the
+// same chapters, search, bookmarks and read-aloud as any other book.
 //
 // EPUB chapters are re-built element by element from an allow-list (no scripts,
 // styles, forms, or event attributes survive), so the book takes on the
@@ -25,10 +31,12 @@ const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 const params = new URLSearchParams(location.search);
 const src = (params.get("src") || "").trim();
+const localId = (params.get("file") || "").trim();
 const PROXY = BOOK_PROXY.trim();
 const MAX_BYTES = 100 * 1024 * 1024;
-const POS_KEY = "reader:pos:" + src;
-const MARKS_KEY = "reader:marks:" + src;
+// Position and bookmarks are kept per book: the library link, or "local:<id>" for an imported file.
+let POS_KEY = "";
+let MARKS_KEY = "";
 const WPM = 200; // a student reading pace, for "minutes left"
 const TOP = 80; // px under the sticky bar that counts as "the top of the page"
 
@@ -41,7 +49,9 @@ const ui = {
   searchForm: $("rdSearchForm"), searchInput: $("rdSearchInput"), searchStatus: $("rdSearchStatus"), searchList: $("rdSearchList"),
   fill: $("rdProgressFill"), loading: $("rdLoading"), loadingText: $("rdLoadingText"), meter: $("rdMeterFill"),
   page: $("rdPage"), chapterNav: $("rdChapterNav"), prev: $("rdPrev"), next: $("rdNext"), chapterPos: $("rdChapterPos"),
-  error: $("rdError"), errorTitle: $("rdErrorTitle"), errorText: $("rdErrorText"), errorOut: $("rdErrorOut"),
+  error: $("rdError"), errorTitle: $("rdErrorTitle"), errorText: $("rdErrorText"), errorOut: $("rdErrorOut"), errorPick: $("rdErrorPick"),
+  openBtn: $("rdOpenBtn"), fileInput: $("rdFileInput"), dropCover: $("rdDropCover"),
+  shelf: $("rdShelf"), pick: $("rdPick"), drop: $("rdDrop"), mineList: $("rdMineList"), mineEmpty: $("rdMineEmpty"),
   credit: $("rdCredit"), sizeOut: $("rdSizeOut"), zoomOut: $("rdZoomOut"),
   note: $("rdNote"), noteHead: $("rdNoteHead"), noteBody: $("rdNoteBody"), noteGo: $("rdNoteGo"), noteClose: $("rdNoteClose"),
   player: $("rdPlayer"), speakPrev: $("rdSpeakPrev"), speakPlay: $("rdSpeakPlay"), speakNext: $("rdSpeakNext"),
@@ -290,6 +300,7 @@ document.addEventListener("keydown", (e) => {
     return;
   }
   if (e.target.closest("input, textarea, select, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === "o" || e.key === "O") return pickFile();
   if (!viewer) return;
   if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
     if (e.target.closest('[role="tablist"]')) return;
@@ -312,7 +323,13 @@ function minutesLeft(words) {
 
 /* ── Bookmarks ────────────────────────────────────────────────────── */
 
-let marks = (store.get(MARKS_KEY) || []).filter((m) => m && typeof m === "object");
+let marks = [];
+function setBookKey(key) {
+  POS_KEY = "reader:pos:" + key;
+  MARKS_KEY = "reader:marks:" + key;
+  marks = (store.get(MARKS_KEY) || []).filter((m) => m && typeof m === "object");
+}
+setBookKey(localId ? "local:" + localId : src);
 function saveMarks() { store.set(MARKS_KEY, marks); }
 function markHere() {
   const here = viewer?.here();
@@ -702,13 +719,25 @@ function showError(kind, detail, entry) {
       "This book couldn’t be downloaded",
       "The source site didn’t respond, or the connection dropped. Try again in a moment, or read it on the original site.",
     ],
-    parse: ["This file couldn’t be opened", "The download finished, but the reader couldn’t understand the file."],
+    parse: localId
+      ? ["This file couldn’t be opened", "The reader couldn’t make sense of this file. It may be damaged, or not really an EPUB, PDF or text file."]
+      : ["This file couldn’t be opened", "The download finished, but the reader couldn’t understand the file."],
+    drm: [
+      "This book is copy-protected",
+      "It has DRM (digital rights management), which locks it to the app or store it came from. Read it there, or open a DRM-free EPUB, PDF or text file.",
+    ],
+    locked: ["This PDF needs a password", "It was saved with a password, so the reader can’t open it. Remove the password in the app that made it, then try again."],
+    "local-missing": [
+      "This file isn’t on this device",
+      "Books you open from your own files are kept only in the browser you opened them in, and it may have been removed or cleared. Open the file again to keep reading.",
+    ],
   };
   const [title, text] = messages[kind] || messages.fetch;
   ui.errorTitle.textContent = title;
   ui.errorText.textContent = text;
   const out = entry?.home || (isHttp(src) ? src : "");
   ui.errorOut.hidden = !out;
+  ui.errorPick.hidden = !(localId || kind === "drm" || kind === "locked");
   if (out) ui.errorOut.href = out;
   if (detail) console.warn("[reader]", kind, detail);
 }
@@ -799,6 +828,14 @@ function* sourceText(node) {
   }
 }
 
+// encryption.xml also lists obfuscated fonts, which are fine; anything else is DRM.
+async function hasDrm(zip) {
+  const encryption = zip.file("META-INF/encryption.xml");
+  if (!encryption) return false;
+  const methods = [...parseXml(await encryption.async("string")).getElementsByTagName("*")].filter((el) => el.localName === "EncryptionMethod");
+  return methods.some((m) => !/idpf\.org\/2008\/embedding|ns\.adobe\.com\/pdf\/enc#RC/.test(m.getAttribute("Algorithm") || ""));
+}
+
 async function openEpub(bytes, source, entry) {
   setLoading("Opening the book…", 1);
   const zip = await window.JSZip.loadAsync(bytes);
@@ -809,6 +846,7 @@ async function openEpub(bytes, source, entry) {
   };
 
   const container = parseXml(await read("META-INF/container.xml"));
+  if (await hasDrm(zip)) throw Object.assign(new Error("encrypted EPUB"), { code: "drm" });
   const opfPath = container.getElementsByTagName("rootfile")[0]?.getAttribute("full-path");
   const opf = parseXml(await read(opfPath));
   const opfDir = dirOf(opfPath);
@@ -833,7 +871,7 @@ async function openEpub(bytes, source, entry) {
   const dcTitle = opf.getElementsByTagNameNS(DC, "title")[0]?.textContent.trim();
   const dcAuthor = opf.getElementsByTagNameNS(DC, "creator")[0]?.textContent.trim();
   const lang = opf.getElementsByTagNameNS(DC, "language")[0]?.textContent.trim();
-  if (!entry) setHeading(params.get("title") || dcTitle, params.get("author") || dcAuthor);
+  if (!entry) setHeading(params.get("title") || dcTitle || fallbackHeading.title, params.get("author") || dcAuthor || fallbackHeading.author);
   if (lang) ui.page.lang = lang;
 
   /* Table of contents: EPUB3 nav document, falling back to the EPUB2 NCX. */
@@ -1241,11 +1279,15 @@ async function openPdf(bytes, source, entry) {
     standardFontDataUrl: base + "standard_fonts/",
     wasmUrl: base + "wasm/",
     isEvalSupported: false,
-  }).promise;
+  }).promise.catch((err) => {
+    throw err?.name === "PasswordException" ? Object.assign(new Error("password-protected PDF"), { code: "locked" }) : err;
+  });
 
   if (!entry) {
     const info = (await pdf.getMetadata().catch(() => null))?.info || {};
-    setHeading(params.get("title") || info.Title || "PDF", params.get("author") || info.Author || "");
+    // Authoring tools often leave a placeholder or the source file's name as the title.
+    const title = /^\s*(about:blank|untitled|document\d*|microsoft \w+ - .*|.*\.(docx?|pptx?|pdf|indd|odt|pages))\s*$/i.test(info.Title || "") ? "" : info.Title;
+    setHeading(params.get("title") || title || fallbackHeading.title || "PDF", params.get("author") || info.Author || fallbackHeading.author || "");
   }
 
   root.dataset.readerKind = "pdf";
@@ -1479,12 +1521,363 @@ async function openPdf(bytes, source, entry) {
   });
 }
 
+/* ── Your own files ───────────────────────────────────────────────── */
+
+// Imported books live in IndexedDB: "meta" (small, listed on the shelf) and
+// "blobs" (the file itself, read only when the book is opened).
+const myFiles = (() => {
+  let opening = null;
+  const db = () => (opening ||= new Promise((resolve, reject) => {
+    const req = indexedDB.open("classroomos-reader", 1);
+    req.onupgradeneeded = () => {
+      req.result.createObjectStore("meta", { keyPath: "id" });
+      req.result.createObjectStore("blobs");
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+    req.onblocked = () => reject(new Error("database blocked"));
+  }));
+  async function run(stores, mode, fn) {
+    const t = (await db()).transaction(stores, mode);
+    const req = fn(t);
+    return new Promise((resolve, reject) => {
+      t.oncomplete = () => resolve(req?.result);
+      t.onerror = t.onabort = () => reject(t.error || new Error("transaction failed"));
+    });
+  }
+  return {
+    list: () => run("meta", "readonly", (t) => t.objectStore("meta").getAll()),
+    meta: (id) => run("meta", "readonly", (t) => t.objectStore("meta").get(id)),
+    blob: (id) => run("blobs", "readonly", (t) => t.objectStore("blobs").get(id)),
+    save: (meta, blob) => run(["meta", "blobs"], "readwrite", (t) => {
+      if (blob) t.objectStore("blobs").put(blob, meta.id);
+      return t.objectStore("meta").put(meta);
+    }),
+    touch: async (id, changes) => {
+      const meta = await myFiles.meta(id);
+      if (meta) await run("meta", "readwrite", (t) => t.objectStore("meta").put({ ...meta, ...changes }));
+    },
+    remove: (id) => run(["meta", "blobs"], "readwrite", (t) => {
+      t.objectStore("blobs").delete(id);
+      return t.objectStore("meta").delete(id);
+    }),
+  };
+})();
+
+const FORMAT_NAMES = { epub: "EPUB", pdf: "PDF", txt: "Text" };
+const MIME = { epub: "application/epub+zip", pdf: "application/pdf", txt: "text/plain" };
+let fallbackHeading = { title: "", author: "" };
+
+function pickFile() {
+  ui.fileInput.value = "";
+  ui.fileInput.click();
+}
+ui.openBtn.addEventListener("click", pickFile);
+ui.pick.addEventListener("click", pickFile);
+ui.errorPick.addEventListener("click", pickFile);
+ui.fileInput.addEventListener("change", () => importFile(ui.fileInput.files[0]));
+
+// Drop a file anywhere on the page to open it.
+let dragDepth = 0;
+const carriesFiles = (e) => [...(e.dataTransfer?.types || [])].includes("Files");
+document.addEventListener("dragenter", (e) => {
+  if (!carriesFiles(e)) return;
+  e.preventDefault();
+  if (dragDepth++ === 0) ui.dropCover.hidden = false;
+});
+document.addEventListener("dragover", (e) => {
+  if (!carriesFiles(e)) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "copy";
+});
+document.addEventListener("dragleave", (e) => {
+  if (!carriesFiles(e)) return;
+  if (--dragDepth <= 0) { dragDepth = 0; ui.dropCover.hidden = true; }
+});
+document.addEventListener("drop", (e) => {
+  if (!carriesFiles(e)) return;
+  e.preventDefault();
+  dragDepth = 0;
+  ui.dropCover.hidden = true;
+  importFile(e.dataTransfer.files[0]);
+});
+
+// The file's own bytes name it, so opening the same book again finds your place.
+async function fileId(bytes) {
+  try {
+    const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
+    return [...hash.slice(0, 12)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  } catch {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+  }
+}
+
+function looksLikeText(bytes) {
+  if ((bytes[0] === 0xff && bytes[1] === 0xfe) || (bytes[0] === 0xfe && bytes[1] === 0xff)) return true; // UTF-16
+  const head = bytes.subarray(0, 8192);
+  return !head.includes(0);
+}
+
+async function formatOf(file, bytes) {
+  const kind = sniff(bytes);
+  if (kind === "pdf") return "pdf";
+  if (kind === "epub") {
+    // Word files, ZIPs and EPUBs all start "PK"; only an EPUB has a container.xml.
+    try {
+      const zip = await window.JSZip.loadAsync(bytes);
+      if (!zip.file("META-INF/container.xml")) return null;
+      return (await hasDrm(zip)) ? "drm" : "epub";
+    } catch { return null; }
+  }
+  if ((/\.(txt|text|md)$/i.test(file.name) || /^text\/(plain|markdown)/.test(file.type)) && looksLikeText(bytes)) return "txt";
+  return null;
+}
+
+let importing = false;
+async function importFile(file) {
+  if (!file || importing) return;
+  if (file.size > MAX_BYTES) return toast("That file is over 100 MB, too big for the reader");
+  if (/\.(mobi|azw\d?|kfx|prc|ibooks|acsm)$/i.test(file.name)) {
+    return toast("That’s a store e-book format that can’t open here. Try an EPUB, PDF or .txt file");
+  }
+  importing = true;
+  try {
+    toast("Opening " + file.name + "…");
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const kind = await formatOf(file, bytes);
+    if (!kind) return toast("The reader opens EPUB, PDF and plain-text (.txt) files");
+    if (kind === "drm") return toast("That e-book is copy-protected (DRM), so it can only open in the app it came from");
+    const id = await fileId(bytes);
+    const now = Date.now();
+    try {
+      const old = await myFiles.meta(id);
+      await myFiles.save({
+        id, kind, name: file.name, size: file.size,
+        title: old?.title || file.name.replace(/\.[^.]+$/, "").replace(/[_]+/g, " ").trim() || "Untitled",
+        author: old?.author || "",
+        added: old?.added || now,
+        opened: now,
+      }, old ? null : new Blob([bytes], { type: MIME[kind] }));
+    } catch (err) {
+      // Private windows and locked-down browsers may refuse storage: read it for this visit only.
+      console.warn("[reader] couldn’t save the file", err);
+      if (viewer) return toast("This browser won’t let the reader save files. Open it from the reader’s home page to read it once");
+      ui.shelf.hidden = true;
+      ui.loading.hidden = false;
+      setBookKey("local:" + id);
+      fallbackHeading = { title: file.name.replace(/\.[^.]+$/, ""), author: "" };
+      setHeading(fallbackHeading.title, "");
+      wireLocalBack();
+      return openBookBytes(bytes, kind, { label: "Your file", name: file.name, local: true }, null)
+        .catch((err2) => failOpen(err2));
+    }
+    location.assign("reader.html?" + new URLSearchParams({ file: id }));
+  } catch (err) {
+    console.warn("[reader] import failed", err);
+    toast("That file couldn’t be read");
+  } finally {
+    importing = false;
+  }
+}
+
+function wireLocalBack() {
+  ui.back.href = "reader.html";
+  ui.back.setAttribute("aria-label", "Back to your files");
+  ui.back.querySelector("span").textContent = "My files";
+}
+
+const fmtSize = (n) => (n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB");
+
+async function showShelf() {
+  document.title = "Read your own book · ClassroomOS Reader";
+  ui.title.textContent = "ClassroomOS Reader";
+  ui.author.textContent = "Your files";
+  ui.loading.hidden = true;
+  ui.shelf.hidden = false;
+  let list;
+  try {
+    list = await myFiles.list();
+  } catch {
+    ui.mineEmpty.textContent = "This browser isn’t letting the reader save files (a private window, perhaps). You can still open a file to read it now.";
+    return;
+  }
+  list.sort((a, b) => (b.opened || 0) - (a.opened || 0));
+  ui.mineList.replaceChildren();
+  ui.mineEmpty.hidden = list.length > 0;
+  for (const f of list) {
+    const pos = store.get("reader:pos:local:" + f.id);
+    const p = pos && typeof pos.p === "number" ? pos.p : 0;
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.className = "rd-mine-go";
+    a.href = "reader.html?" + new URLSearchParams({ file: f.id });
+    const title = document.createElement("strong");
+    title.textContent = f.title || f.name;
+    const meta = document.createElement("span");
+    const progress = p >= 0.99 ? "Finished" : p > 0.005 ? `${Math.max(1, Math.round(p * 100))}% read` : "Not started";
+    meta.textContent = [f.author, FORMAT_NAMES[f.kind], fmtSize(f.size), progress].filter(Boolean).join(" · ");
+    const meter = document.createElement("span");
+    meter.className = "rd-mine-meter";
+    meter.setAttribute("aria-hidden", "true");
+    meter.style.setProperty("--read", Math.min(1, p).toFixed(3));
+    a.append(title, meta, meter);
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className = "rd-btn rd-mine-del";
+    del.setAttribute("aria-label", "Remove " + (f.title || f.name) + " from this device");
+    del.title = "Remove from this device";
+    del.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12" /></svg>';
+    del.addEventListener("click", async () => {
+      if (!confirm(`Remove “${f.title || f.name}” from this device? Your place and bookmarks in it go too.`)) return;
+      try {
+        await myFiles.remove(f.id);
+        try {
+          localStorage.removeItem("reader:pos:local:" + f.id);
+          localStorage.removeItem("reader:marks:local:" + f.id);
+        } catch { /* private mode */ }
+        toast("Removed from this device");
+      } catch {
+        toast("That file couldn’t be removed");
+      }
+      await showShelf();
+      (ui.mineList.querySelector("a") || ui.pick).focus();
+    });
+    li.append(a, del);
+    ui.mineList.append(li);
+  }
+}
+
+async function openLocal(id) {
+  wireLocalBack();
+  setLoading("Opening your file…", 0);
+  let meta = null;
+  let blob = null;
+  try {
+    [meta, blob] = await Promise.all([myFiles.meta(id), myFiles.blob(id)]);
+  } catch (err) {
+    console.warn("[reader] couldn’t read saved files", err);
+  }
+  if (!meta || !blob) return showError("local-missing");
+  fallbackHeading = { title: meta.title, author: meta.author };
+  setHeading(meta.title, meta.author);
+  try {
+    await openBookBytes(new Uint8Array(await blob.arrayBuffer()), meta.kind, { label: "Your file", name: meta.name, local: true }, null);
+  } catch (err) {
+    return failOpen(err);
+  }
+  myFiles.touch(id, { title: ui.title.textContent, author: ui.author.textContent, opened: Date.now() }).catch(() => {});
+}
+
+function failOpen(err) {
+  viewer = null;
+  ui.tocList.replaceChildren();
+  showError(err?.code || "parse", err);
+}
+
+/* Plain text → a small in-memory EPUB, split into chapters at its headings. */
+
+const NUMBER = "(?:\\d+|[ivxlcdm]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty(?:[- ]\\w+)?|thirty(?:[- ]\\w+)?|first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|last)";
+// "CHAPTER IV.", "Chapter 3 — The Storm", "Part Two", "# Heading", "Preface". A tail needs punctuation
+// before it, so a line of prose like "Part of the reason…" doesn't count.
+const HEADING = new RegExp(
+  `^(?:#{1,3}\\s+\\S.*|(?:chapter|book|part|act|scene|letter|canto|stave|volume|section)\\s+${NUMBER}\\b\\.?(?:\\s*[.:—–-]\\s*.{1,60})?|(?:prologue|epilogue|preface|introduction|foreword|afterword|appendix|contents)\\.?)$`,
+  "i",
+);
+const xml = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+function decodeText(bytes) {
+  if (bytes[0] === 0xff && bytes[1] === 0xfe) return new TextDecoder("utf-16le").decode(bytes.subarray(2));
+  if (bytes[0] === 0xfe && bytes[1] === 0xff) return new TextDecoder("utf-16be").decode(bytes.subarray(2));
+  let text = new TextDecoder("utf-8").decode(bytes);
+  if ((text.match(/�/g) || []).length > 8) text = new TextDecoder("windows-1252").decode(bytes);
+  return text.replace(/^﻿/, "");
+}
+
+async function textToEpub(raw) {
+  let text = raw.replace(/\r\n?/g, "\n");
+  const field = (name) => text.slice(0, 6000).match(new RegExp(`^${name}:\\s*(.+)$`, "im"))?.[1].trim() || "";
+  const title = field("Title");
+  const author = field("Author");
+  // Project Gutenberg texts: keep the book between the START and END markers.
+  const start = text.match(/^\*{3}\s*START OF (?:THE|THIS) PROJECT GUTENBERG.*$/im);
+  if (start) text = text.slice(start.index + start[0].length);
+  const end = text.match(/^\*{3}\s*END OF (?:THE|THIS) PROJECT GUTENBERG.*$/im);
+  if (end) text = text.slice(0, end.index);
+
+  const paras = text.split(/\n[ \t]*\n+/).map((p) => p.replace(/^\n+|\s+$/g, "")).filter((p) => /\S/.test(p));
+  const isHeading = (p) => {
+    const lines = p.split("\n");
+    return lines.length <= 2 && p.length <= 100 && HEADING.test(lines[0].trim());
+  };
+  const label = (p) => squash(p.split("\n").map((l) => l.trim().replace(/^#+\s*/, "").replace(/[.:]$/, "")).join(": "));
+
+  // One chapter per heading; a "chapter" with almost no text (a contents list) folds into the one before.
+  let chapters = [{ label: "", heading: null, body: [] }];
+  for (const p of paras) {
+    if (isHeading(p)) chapters.push({ label: label(p), heading: p, body: [] });
+    else chapters.at(-1).body.push(p);
+  }
+  const bodyLength = (c) => c.body.reduce((n, p) => n + (typeof p === "string" ? p.length : 0), 0);
+  const merged = [];
+  for (const c of chapters) {
+    const prev = merged.at(-1);
+    if (prev && bodyLength(c) < 300) prev.body.push(...(c.heading ? [{ heading: c.heading }] : []), ...c.body);
+    else if (c.heading || c.body.length) merged.push(c);
+  }
+  chapters = merged;
+  // A first "chapter" that is only a contents list keeps its heading as text and becomes the opening pages.
+  if (chapters.length > 1 && chapters[0].heading && bodyLength(chapters[0]) < 300) {
+    chapters[0].body.unshift({ heading: chapters[0].heading });
+    chapters[0].heading = null;
+  }
+  if (chapters[0] && !chapters[0].heading) chapters[0].label = chapters.length > 1 ? "Opening pages" : "";
+  // No headings to go on: cut long texts into parts so pages stay quick.
+  if (chapters.length < 2) {
+    const all = chapters[0]?.body || [];
+    chapters = [];
+    let part = null;
+    for (const p of all) {
+      if (!part || bodyLength(part) > 40000) chapters.push((part = { label: "", heading: null, body: [] }));
+      part.body.push(p);
+    }
+    chapters.forEach((c, i) => (c.label = chapters.length > 1 ? `Part ${i + 1}` : title || "Text"));
+  }
+  if (!chapters.length) throw new Error("empty text file");
+
+  const block = (p) => {
+    if (typeof p === "object") return `<h3>${xml(label(p.heading))}</h3>`;
+    const lines = p.split("\n").map((l) => l.trim());
+    // Short lines kept as written (verse, addresses, lists); otherwise the breaks are just wrapping.
+    const verse = lines.length >= 3 && lines.every((l) => l.length < 60);
+    return `<p>${verse ? lines.map(xml).join("<br/>") : xml(lines.join(" "))}</p>`;
+  };
+  const zip = new window.JSZip();
+  zip.file("mimetype", "application/epub+zip");
+  zip.file("META-INF/container.xml",
+    '<?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>');
+  chapters.forEach((c, i) => {
+    const head = c.heading ? `<h2>${xml(c.label)}</h2>` : "";
+    zip.file(`c${i + 1}.xhtml`,
+      `<?xml version="1.0" encoding="utf-8"?><html xmlns="http://www.w3.org/1999/xhtml"><head><title>${xml(c.label)}</title></head><body>${head}${c.body.map(block).join("\n")}</body></html>`);
+  });
+  zip.file("nav.xhtml",
+    `<?xml version="1.0" encoding="utf-8"?><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><head><title>Contents</title></head><body><nav epub:type="toc"><ol>${chapters.map((c, i) => `<li><a href="c${i + 1}.xhtml">${xml(c.label || `Part ${i + 1}`)}</a></li>`).join("")}</ol></nav></body></html>`);
+  zip.file("content.opf",
+    `<?xml version="1.0" encoding="utf-8"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="id"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="id">local-text</dc:identifier>${title ? `<dc:title>${xml(title)}</dc:title>` : ""}${author ? `<dc:creator>${xml(author)}</dc:creator>` : ""}</metadata><manifest><item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>${chapters.map((_, i) => `<item id="c${i + 1}" href="c${i + 1}.xhtml" media-type="application/xhtml+xml"/>`).join("")}</manifest><spine>${chapters.map((_, i) => `<itemref idref="c${i + 1}"/>`).join("")}</spine></package>`);
+  return zip.generateAsync({ type: "uint8array" });
+}
+
 /* ── Main ─────────────────────────────────────────────────────────── */
 
 let viewer = null;
 
 function showCredit(source, entry) {
   ui.credit.replaceChildren();
+  if (source.local) {
+    ui.credit.append(`Your file${source.name ? " · " + source.name : ""}. It stays in this browser and was never uploaded.`);
+    ui.credit.hidden = false;
+    return;
+  }
   const parts = [`From ${source.label}`];
   if (entry?.rights) parts.push(entry.rights.replace(/\.$/, ""));
   ui.credit.append(parts.join(" · ") + ". ");
@@ -1500,8 +1893,25 @@ function showCredit(source, entry) {
   ui.credit.hidden = false;
 }
 
+async function openBookBytes(bytes, kind, source, entry) {
+  if (kind === "txt") {
+    setLoading("Laying out the text…", 1);
+    bytes = await textToEpub(decodeText(bytes));
+    kind = "epub";
+  }
+  if (kind === "epub") await openEpub(bytes, source, entry);
+  else if (kind === "pdf") await openPdf(bytes, source, entry);
+  else throw new Error("not an EPUB or PDF");
+  showCredit(source, entry);
+  root.dataset.readerSource = source.label;
+  for (const b of [ui.tocBtn, ui.searchBtn, ui.markBtn]) b.disabled = false;
+  renderMarks();
+  syncMarkBtn();
+}
+
 async function main() {
-  if (!src) return showError("missing");
+  if (localId) return openLocal(localId);
+  if (!src) return showShelf();
   const catalog = await fetch("data/reader-library.json")
     .then((r) => (r.ok ? r.json() : { books: {} }))
     .catch(() => ({ books: {} }));
@@ -1527,20 +1937,12 @@ async function main() {
       continue;
     }
     try {
-      const kind = sniff(bytes);
-      if (kind === "epub") await openEpub(bytes, source, entry);
-      else if (kind === "pdf") await openPdf(bytes, source, entry);
-      else throw new Error("not an EPUB or PDF");
-      showCredit(source, entry);
-      root.dataset.readerSource = source.label;
-      for (const b of [ui.tocBtn, ui.searchBtn, ui.markBtn]) b.disabled = false;
-      renderMarks();
-      syncMarkBtn();
+      await openBookBytes(bytes, sniff(bytes), source, entry);
       return;
     } catch (err) {
       viewer = null;
       ui.tocList.replaceChildren();
-      failure = { kind: "parse", err };
+      failure = { kind: err?.code || "parse", err };
     }
   }
   showError(failure?.kind || "fetch", failure?.err, entry);
