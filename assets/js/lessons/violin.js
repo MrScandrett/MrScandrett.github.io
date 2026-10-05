@@ -198,7 +198,7 @@
 
   function FingerboardWidget(root) {
     this.root = root;
-    this.span = FULL_SPAN;
+    this.span = FIRST_SPAN;
     this.showNames = true;
     this.highlight = null; /* {rootPC, pattern} */
     this.played = {}; /* label -> semitone (integer) or undefined */
@@ -261,6 +261,7 @@
   FingerboardWidget.prototype.setHighlight = function (h) { this.highlight = h; this.render(); };
 
   FingerboardWidget.prototype.setPlayed = function (label, semitone) {
+    this.lastPlayed = label;
     this.played[label] = semitone;
     this.render();
     if (this.onChange) this.onChange();
@@ -332,6 +333,7 @@
         lbl.textContent = noteName(lower) + ' → ' + noteName(upper);
         lbl.classList.remove('is-locked');
       }
+      if (self.onPreview) self.onPreview(str.label, raw);
       return nearest;
     }
 
@@ -385,6 +387,7 @@
        that outer edge, so its note labels need extra clearance near the top or the taper
        clips them. Measured once per render since it depends on the rendered board width. */
     var taperMaxPx = self.root.getBoundingClientRect().width * NECK_TAPER;
+    self.root.dataset.span = self.span === FIRST_SPAN ? 'first' : 'full';
 
     STRINGS.forEach(function (str) {
       var entry = self.laneEls[str.label];
@@ -417,6 +420,7 @@
         });
       }
 
+      var lastLabelY = -Infinity;
       for (var i = 0; i <= self.span; i++) {
         var midi = str.openMidi + i;
         var posPct = (semitoneFrac(i) / semitoneFrac(self.span)) * 100;
@@ -440,18 +444,19 @@
           deg.textContent = self.highlight.pattern.labels[degreeIndex];
           tick.appendChild(deg);
 
-          if (self.span === FIRST_SPAN) {
-            var finger = fingerForOffset(i);
-            if (finger !== null) {
-              var fingerEl = document.createElement('span');
-              fingerEl.className = 'vln-finger';
-              fingerEl.textContent = String(finger);
-              tick.appendChild(fingerEl);
-            }
-          }
         }
 
-        if (self.showNames) {
+        if (self.span === FIRST_SPAN) {
+          var badge = document.createElement('span');
+          badge.className = 'vln-finger';
+          badge.textContent = fingerForOffset(i);
+          tick.appendChild(badge);
+        }
+
+        var labelY = posPct / 100 * track.clientHeight;
+        var labelFits = self.span === FIRST_SPAN || labelY - lastLabelY >= 15 || self.played[str.label] === i || (self.stepLabel === str.label && self.stepOffset === i);
+        if (self.showNames && labelFits) {
+          lastLabelY = labelY;
           var name = document.createElement('span');
           name.className = 'vln-tick-name';
           name.textContent = noteName(midi);
@@ -476,12 +481,14 @@
     this.stepLabel = label;
     this.stepOffset = i;
     this.render();
+    if (this.onPreview) this.onPreview(label, i);
   };
 
   FingerboardWidget.prototype.clearStep = function () {
     this.stepLabel = null;
     this.stepOffset = null;
     this.render();
+    if (this.onChange) this.onChange();
   };
 
   /* Build one coherent octave, then choose a practical displayed location for each pitch.
@@ -607,6 +614,93 @@ document.addEventListener('DOMContentLoaded', function () {
   if (!boardEl) return;
   var board = VF.create(boardEl);
 
+  var score = document.getElementById('vlnLiveStaff');
+  var scoreNote = document.getElementById('vlnScoreNote');
+  var scorePlacement = document.getElementById('vlnScorePlacement');
+  function drawLiveScore(label, raw) {
+    if (!score) return;
+    var MN = window.MusicNotation;
+    var str = VT.STRINGS.find(function (s) { return s.label === label; });
+    var selected = str && raw !== undefined;
+    var midi = selected ? str.openMidi + Math.round(raw) : 69;
+    var pitch = MN.fromMidi(midi);
+    // Use the selected pattern's spelling (including flats and double accidentals).
+    if (selected && board.highlight) {
+      var h = board.highlight;
+      var degree = h.pattern.intervals.indexOf(VT.mod12(midi - h.rootPC));
+      if (degree !== -1) {
+        var root = VT.ROOTS.find(function (r) { return r.pc === h.rootPC; });
+        var spelling = VT.spellPattern(root, h.pattern)[degree];
+        var accidental = {'':0,'♯':1,'♭':-1,'𝄪':2,'𝄫':-2}[spelling.slice(1)];
+        pitch = MN.parsePitch(spelling + MN.writtenOctave(midi, spelling.charAt(0), accidental));
+      }
+    }
+    var step = pitch.diatonic - MN.clefs.treble.bottom;
+    var space = 16, bottom = 256, x = 146, y = bottom - step * space / 2;
+    var noteText;
+    var letters = 'CDEFGAB';
+    noteText = letters[pitch.l] + ({'-2':'𝄫','-1':'♭','0':'','1':'♯','2':'𝄪'}[pitch.a]) + pitch.o;
+    var svg = '<svg viewBox="0 0 260 330" role="img" aria-label="' + (selected ? noteText + ' on treble clef' : 'Treble clef staff: place a note on the violin') + '">';
+    for (var i = 0; i < 5; i++) {
+      var ly = bottom - i * space;
+      svg += '<line x1="20" x2="222" y1="' + ly + '" y2="' + ly + '" stroke="currentColor" stroke-width="1.2"/>';
+      svg += '<text x="232" y="' + (ly + 4) + '" font-size="12">' + ['E','G','B','D','F'][i] + '</text>';
+    }
+    svg += MN.clef('treble', 29, bottom, space / 2);
+    if (selected) {
+      svg += '<path d="M90 ' + y + ' H207" stroke="#9b3535" stroke-dasharray="3 4" opacity=".5"/>';
+      MN.ledgerSteps(step).forEach(function (s) { var ly = bottom - s * space / 2; svg += '<line x1="129" x2="164" y1="' + ly + '" y2="' + ly + '" stroke="currentColor" stroke-width="1.5"/>'; });
+      svg += '<g style="color:' + ({G:'#6f470f',D:'#176354',A:'#65418d',E:'#8d2e46'}[label]) + '">' + MN.note(x, y, space, 1, false, step < 4, '', step % 2 === 0);
+      if (pitch.a) svg += MN.accidental(pitch.a, x - 33, y, space);
+      svg += '</g>';
+    }
+    score.innerHTML = svg + '</svg>';
+    // Fit the actual engraved symbols, including the clef's upper curl and tail.
+    // Note-only estimates crop the clef when a low note moves the viewport down.
+    var liveSvg = score.querySelector('svg');
+    var bounds = liveSvg.getBBox();
+    var top = Math.floor(bounds.y - 12);
+    var end = Math.ceil(bounds.y + bounds.height + 12);
+    liveSvg.setAttribute('viewBox', '0 ' + top + ' 260 ' + (end - top));
+    var cents = selected ? Math.round((raw - Math.round(raw)) * 100) : 0;
+    var heading = selected ? noteText + ' · ' + label + ' string' : 'Place a note to begin';
+    if (scoreNote.textContent !== heading) scoreNote.textContent = heading;
+    var placement = !selected ? 'The staff follows your finger, arrow keys, and pattern playback.' : (step < 0 ? 'Below the staff' : step > 8 ? 'Above the staff' : step % 2 === 0 ? 'Line ' + (step / 2 + 1) + ' from the bottom' : 'Space ' + ((step + 1) / 2) + ' from the bottom') + (cents ? ' · nearest note; ' + (cents > 0 ? '+' : '') + cents + ' cents' : ' · ' + VT.freqOfMidi(midi).toFixed(1) + ' Hz');
+    scorePlacement.textContent = placement;
+  }
+  board.onPreview = drawLiveScore;
+  if (window.ResizeObserver) {
+    var previousWidth = 0, previousHeight = 0;
+    new ResizeObserver(function (entries) {
+      var width = entries[0].contentRect.width;
+      var height = entries[0].contentRect.height;
+      if (Math.abs(width - previousWidth) < 1 && Math.abs(height - previousHeight) < 1) return;
+      previousWidth = width;
+      previousHeight = height;
+      board.render();
+    }).observe(boardEl);
+  }
+  // Related lessons remain available without consuming the phone's first screen.
+  setTimeout(function () {
+    var nav = document.querySelector('.music-family');
+    if (!nav) return;
+    var related = document.createElement('details');
+    related.className = 'vln-related';
+    var summary = document.createElement('summary');
+    summary.textContent = 'More music lessons';
+    nav.before(related);
+    related.append(summary, nav);
+    var compact = window.matchMedia('(max-width: 980px)');
+    function updateRelated() { related.open = !compact.matches; }
+    updateRelated();
+    compact.addEventListener('change', updateRelated);
+    var guide = document.querySelector('.vln-guide');
+    var phone = window.matchMedia('(max-width: 600px)');
+    function updateGuide() { guide.open = !phone.matches; }
+    updateGuide();
+    phone.addEventListener('change', updateGuide);
+  });
+
   var readout = document.getElementById('vlnReadout');
   board.onChange = function () {
     var parts = [];
@@ -617,8 +711,49 @@ document.addEventListener('DOMContentLoaded', function () {
       parts.push(str.label + ' string · ' + VT.noteName(str.openMidi + s) + placement);
     });
     if (readout) readout.textContent = parts.length ? parts.join('  ·  ') : 'Click, tap, or drag a string to place a note.';
+    drawLiveScore(board.lastPlayed, board.played[board.lastPlayed]);
+    checkPractice();
   };
   board.onChange();
+
+  /* Guided tasks assess the most recent placement, so old notes cannot earn a pass. */
+  var tasks = [
+    { title: 'Meet the open strings', prompt: 'Predict which string is lowest. Then play open G3 using its header or Home on the G string.', string: 'G', offset: 0, hint: 'G–D–A–E run from lowest to highest. Open means no finger down.', explain: 'G3 is the lowest open string. Adjacent open strings are a perfect fifth apart.' },
+    { title: 'Place the first finger', prompt: 'Find E4 on the D string. Predict: does your finger move toward the body or the scroll?', string: 'D', offset: 2, hint: 'From open D4, move up two semitones. Look for finger 1.', explain: 'D4 → E4 is a whole step (two semitones). Shortening the string raises pitch.' },
+    { title: 'Close the half-step gap', prompt: 'Find G4 on the D string. Compare its distance from F♯4 with the E4–F♯4 gap.', string: 'D', offset: 5, hint: 'Use finger 3, five semitones above open D. Finger 2 at F♯ is only one semitone away.', explain: 'F♯4 → G4 is a half step. Fingers 2 and 3 are closer than fingers 1 and 2 in this pattern.' },
+    { title: 'One pitch, two places', prompt: 'Hear open A4, then find the same pitch on the D string.', string: 'D', offset: 7, hint: 'Fourth finger on D is seven semitones above D4: the same pitch as open A4.', explain: 'Fourth-finger A4 on D and open A4 have the same frequency here. On a violin, their tone colors can differ.' }
+  ];
+  var taskIndex = 0, taskPassed = false;
+  var feedback = document.getElementById('vlnPracticeFeedback');
+  var nextTask = document.getElementById('vlnPracticeNext');
+  function showTask() {
+    taskPassed = false;
+    board.lastPlayed = null;
+    document.getElementById('vlnPracticeProgress').textContent = 'Try → listen → explain · ' + (taskIndex + 1) + ' / ' + tasks.length;
+    document.getElementById('vlnPracticeTitle').textContent = tasks[taskIndex].title;
+    document.getElementById('vlnPracticePrompt').textContent = tasks[taskIndex].prompt;
+    feedback.textContent = 'Place your answer on the fingerboard.';
+    nextTask.disabled = true;
+    nextTask.textContent = taskIndex === tasks.length - 1 ? 'Practice again ↺' : 'Next challenge →';
+  }
+  function checkPractice() {
+    if (!feedback || taskPassed || !board.lastPlayed || !tasks) return;
+    var task = tasks[taskIndex];
+    var label = board.lastPlayed;
+    var offset = board.played[label];
+    if (offset === undefined) return;
+    taskPassed = label === task.string && offset === task.offset;
+    feedback.textContent = taskPassed ? 'Found it! ' + task.explain : 'You placed ' + VT.noteName(VT.STRINGS.find(function (s) { return s.label === label; }).openMidi + offset) + ' on ' + label + '. Try ' + task.string + ' for this challenge.';
+    nextTask.disabled = !taskPassed;
+  }
+  document.getElementById('vlnHearTarget').addEventListener('click', function () {
+    var task = tasks[taskIndex];
+    var str = VT.STRINGS.find(function (s) { return s.label === task.string; });
+    VF.Audio.blip(VT.freqOfMidi(str.openMidi + task.offset), 650);
+  });
+  document.getElementById('vlnPracticeHint').addEventListener('click', function () { feedback.textContent = tasks[taskIndex].hint; });
+  nextTask.addEventListener('click', function () { taskIndex = (taskIndex + 1) % tasks.length; board.clear(); showTask(); });
+  showTask();
 
   /* Span toggle */
   var spanBtns = document.querySelectorAll('[data-vln-span]');
@@ -631,6 +766,8 @@ document.addEventListener('DOMContentLoaded', function () {
       board.setSpan(btn.getAttribute('data-vln-span') === 'first' ? VT.FIRST_SPAN : VT.FULL_SPAN);
     });
   });
+
+  document.addEventListener('visibilitychange', function () { if (document.hidden) { stopPlayback(); board.clear(); } });
 
   /* Show-names toggle */
   var namesToggle = document.getElementById('vlnShowNames');
@@ -689,6 +826,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function applyHighlight() {
     stopPlayback();
     board.setHighlight(highlightOn ? { rootPC: currentRoot.pc, pattern: currentPattern } : null);
+    drawLiveScore(board.lastPlayed, board.played[board.lastPlayed]);
     if (playBtn) {
       playBtn.disabled = !highlightOn;
       playBtn.textContent = playLabel();
@@ -764,6 +902,30 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   applyHighlight();
 
+  window.addEventListener('violin-triad-start', function () { stopPlayback(); });
+  window.addEventListener('violin-triad-stop', function () { board.clearStep(); });
+  window.addEventListener('violin-triad-note', function (event) {
+    var n = event.detail;
+    if (board.span !== n.span) {
+      board.setSpan(n.span);
+      spanBtns.forEach(function (b) { var active = (b.dataset.vlnSpan === 'first') === (n.span === VT.FIRST_SPAN); b.classList.toggle('is-active', active); b.setAttribute('aria-pressed', String(active)); });
+    }
+    var intervals = window.TriadAssistantTheory.qualities[n.quality];
+    var labels = {major:['R','3','5'],minor:['R','♭3','5'],diminished:['R','♭3','♭5'],augmented:['R','3','♯5']}[n.quality];
+    currentRoot = VT.ROOTS.find(function (r) { return r.pc === n.root; });
+    currentPattern = {name:n.quality+' triad',intervals:intervals,degrees:[0,2,4],labels:labels};
+    highlightOn = true;
+    Array.from(rootPicker.children).forEach(function (b) { var active = b.textContent === currentRoot.label; b.classList.toggle('is-active',active); b.setAttribute('aria-pressed',String(active)); });
+    Array.from(patternPicker.children).forEach(function (b) { b.classList.remove('is-active'); b.setAttribute('aria-pressed','false'); });
+    highlightOff.classList.remove('is-active');
+    applyHighlight();
+    board.setPlayed(n.label,n.offset);
+  });
+  boardEl.addEventListener('pointerdown', function () { window.dispatchEvent(new Event('violin-user-action')); });
+  boardEl.addEventListener('keydown', function () { window.dispatchEvent(new Event('violin-user-action')); });
+  spanBtns.forEach(function (b) { b.addEventListener('click', function () { window.dispatchEvent(new Event('violin-user-action')); }); });
+  clearBtn.addEventListener('click', function () { window.dispatchEvent(new Event('violin-user-action')); });
+
   /* Range staff */
   var staffEl = document.getElementById('vlnStaff');
   if (staffEl) VF.buildRangeStaff(staffEl);
@@ -783,6 +945,7 @@ document.addEventListener('DOMContentLoaded', function () {
       p.classList.toggle('is-active', active);
       p.hidden = !active;
     });
+    document.querySelector('.vln-panes').scrollTop = 0;
     if (moveFocus) btn.focus();
   }
 
