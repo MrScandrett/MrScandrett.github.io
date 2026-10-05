@@ -1,0 +1,319 @@
+/* ClassroomOS video player — assets/js/video-player.mjs
+   Self-contained: lessons use many themes, so the player carries its own dark
+   "screen" palette and only borrows --vp-accent from the video's catalog entry. */
+
+.vp {
+  --vp-bg: #0b0f17;
+  --vp-panel: #121826;
+  --vp-text: #eef2f8;
+  --vp-muted: #a7b2c6;
+  --vp-line: rgba(238, 242, 248, 0.14);
+  --vp-accent: #3d7ea6;
+  --vp-focus: #ffd166;
+  position: relative;
+  display: grid;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--vp-bg);
+  color: var(--vp-text);
+  font: 500 0.95rem/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 14px 40px rgba(0, 0, 0, 0.22);
+  isolation: isolate;
+  container: vp / inline-size;
+}
+.vp *, .vp *::before, .vp *::after { box-sizing: border-box; }
+.vp [hidden] { display: none !important; }
+.vp button { font: inherit; color: inherit; }
+.vp :focus-visible { outline: 3px solid var(--vp-focus); outline-offset: 2px; }
+
+/* ── Stage ── */
+.vp-stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #000;
+}
+.vp-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #000;
+  display: block;
+}
+video.vp-media { object-fit: contain; }
+.vp-media::cue { font-size: 1.15em; background: rgba(0, 0, 0, 0.78); }
+
+/* ── Poster (before anything loads) ── */
+.vp-poster-wrap { position: absolute; inset: 0; }
+.vp-poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  justify-items: center;
+  align-items: center;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  background: #05080e;
+  overflow: hidden;
+  text-align: left;
+}
+.vp:not([data-state="poster"]) .vp-poster,
+.vp:not([data-state="poster"]) .vp-poster-wrap { display: none; }
+.vp-poster-img, .vp-poster-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease, filter 0.4s ease;
+}
+.vp-poster-art {
+  background:
+    radial-gradient(120% 90% at 20% 15%, color-mix(in srgb, var(--vp-accent) 70%, #fff 10%) 0%, transparent 60%),
+    radial-gradient(90% 90% at 90% 100%, color-mix(in srgb, var(--vp-accent) 55%, #000) 0%, transparent 70%),
+    linear-gradient(135deg, color-mix(in srgb, var(--vp-accent) 40%, #05080e), #05080e);
+}
+.vp-poster-art::after {
+  content: attr(data-symbol);
+  position: absolute;
+  right: 6%;
+  top: 8%;
+  font: 800 clamp(2.5rem, 12vw, 7rem)/1 system-ui, sans-serif;
+  color: rgba(255, 255, 255, 0.16);
+  letter-spacing: -0.04em;
+}
+.vp-poster::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(3, 6, 12, 0.9) 0%, rgba(3, 6, 12, 0.25) 55%, rgba(3, 6, 12, 0.05) 100%);
+}
+.vp-poster:hover .vp-poster-img, .vp-poster:hover .vp-poster-art { transform: scale(1.03); filter: brightness(1.08); }
+.vp-big-play {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: clamp(3.4rem, 9vw, 5rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.94);
+  color: #0a0f1c;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  transition: transform 0.15s ease;
+}
+.vp-poster:hover .vp-big-play, .vp-poster:focus-visible .vp-big-play { transform: scale(1.08); }
+.vp-big-play svg { width: 44%; fill: currentColor; margin-left: 8%; }
+.vp-poster-meta {
+  position: relative;
+  z-index: 1;
+  justify-self: stretch;
+  display: grid;
+  gap: 0.15rem;
+  padding: clamp(0.7rem, 2.5vw, 1.3rem);
+  color: #fff;
+}
+.vp-poster-meta strong {
+  font-size: clamp(1rem, 2.4vw, 1.4rem);
+  font-weight: 750;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.vp-poster-meta small { color: rgba(225, 235, 250, 0.82); font-size: 0.82rem; }
+.vp-poster-meta .vp-from { font-size: 0.74rem; color: rgba(200, 215, 240, 0.7); }
+.vp-resume-wrap { position: absolute; z-index: 2; top: 0.8rem; right: 0.8rem; }
+.vp-resume {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+  background: rgba(10, 15, 28, 0.72);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  font-size: 0.82rem !important;
+  font-weight: 650 !important;
+}
+.vp-resume:hover { background: rgba(10, 15, 28, 0.9); }
+
+/* ── Cards that replace the media (end, error, pinned) ── */
+.vp-card {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1.2rem;
+  background:
+    radial-gradient(80% 80% at 50% 40%, color-mix(in srgb, var(--vp-accent) 30%, transparent), transparent 70%),
+    #070a12;
+  text-align: center;
+}
+.vp-card-box { display: grid; gap: 0.45rem; justify-items: center; max-width: 34rem; }
+.vp-card-kicker { margin: 0; font: 750 0.72rem/1 ui-monospace, Menlo, monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--vp-muted); }
+.vp-card-title { margin: 0; font-size: clamp(1.05rem, 2.6vw, 1.5rem); font-weight: 750; }
+.vp-card-text { margin: 0; color: var(--vp-muted); }
+.vp-card-btn, .vp-card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.55rem 1.1rem;
+  background: #fff;
+  color: #0a0f1c !important;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+}
+.vp-card-btn svg { width: 1.1em; fill: currentColor; }
+.vp-card-link { background: transparent; color: var(--vp-muted) !important; text-decoration: underline; padding: 0.2rem; }
+
+/* ── Control bar (below the picture, never on top of a provider's player) ── */
+.vp-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.55rem;
+  background: var(--vp-panel);
+  border-top: 1px solid var(--vp-line);
+}
+.vp-btn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  min-width: 2.25rem;
+  height: 2.25rem;
+  padding: 0 0.4rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+.vp-btn:hover { background: rgba(255, 255, 255, 0.08); }
+.vp-btn svg { width: 1.2rem; height: 1.2rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.vp-play svg { fill: currentColor; stroke: none; }
+.vp-btn[aria-pressed="false"] { opacity: 0.5; }
+.vp-speed { font-size: 0.8rem !important; font-weight: 700 !important; min-width: 2.7rem; font-variant-numeric: tabular-nums; }
+.vp-time { flex: none; font: 600 0.8rem/1 ui-monospace, Menlo, monospace; color: var(--vp-muted); font-variant-numeric: tabular-nums; padding: 0 0.25rem; }
+.vp-scrub { flex: 1; min-width: 4rem; padding: 0.7rem 0.3rem; cursor: pointer; touch-action: none; border-radius: 6px; }
+.vp-rail { position: relative; height: 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.16); }
+.vp-fill { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: color-mix(in srgb, var(--vp-accent) 55%, #fff); }
+.vp-fill::after {
+  content: "";
+  position: absolute;
+  right: -7px;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transform: translateY(-50%);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+.vp-ticks { position: absolute; inset: 0; pointer-events: none; }
+.vp-tick { position: absolute; top: -2px; width: 3px; height: 10px; margin-left: -1.5px; border-radius: 2px; background: rgba(255, 255, 255, 0.55); }
+.vp-tick-ask { top: -4px; width: 10px; height: 14px; margin-left: -5px; border-radius: 3px; background: var(--vp-focus); }
+
+/* Vimeo keeps its own controls inside the frame; our bar keeps only time + extras. */
+.vp.vp-native :is(.vp-play, .vp-back, .vp-fwd, .vp-scrub, .vp-speed, .vp-vol) { display: none; }
+.vp.vp-native .vp-bar { justify-content: flex-end; }
+
+/* Sized by the player's own width, not the viewport: lessons put players in narrow grid cells. */
+@container vp (max-width: 560px) {
+  .vp-bar { flex-wrap: wrap; }
+  .vp-scrub { order: -1; flex-basis: 100%; }
+  .vp-total { margin-right: auto; }
+}
+@container vp (max-width: 460px) {
+  .vp-poster-meta .vp-from { display: none; }
+  .vp-poster-meta strong { font-size: 0.98rem; }
+  .vp-big-play { width: 3rem; }
+}
+@container vp (max-width: 380px) {
+  .vp-back, .vp-fwd { display: none; }
+}
+
+/* ── Pause-and-discuss ── */
+.vp-ask {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.3rem 1rem;
+  padding: 0.9rem 1.1rem;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--vp-focus) 20%, var(--vp-panel)), var(--vp-panel));
+  border-top: 3px solid var(--vp-focus);
+}
+.vp-ask-kicker { grid-column: 1 / -1; margin: 0; font: 750 0.72rem/1 ui-monospace, Menlo, monospace; letter-spacing: 0.12em; text-transform: uppercase; color: var(--vp-focus); }
+.vp-ask-text { margin: 0; font-size: clamp(1.05rem, 2.2vw, 1.4rem); font-weight: 650; line-height: 1.35; }
+.vp-ask-go { border: 0; border-radius: 999px; padding: 0.55rem 1.1rem; background: var(--vp-focus); color: #1a1406 !important; font-weight: 750 !important; cursor: pointer; white-space: nowrap; }
+@container vp (max-width: 560px) { .vp-ask { grid-template-columns: 1fr; } }
+
+/* ── Chapters ── */
+.vp-chapters {
+  display: flex;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.55rem;
+  list-style: none;
+  overflow-x: auto;
+  background: var(--vp-panel);
+  border-top: 1px solid var(--vp-line);
+  scrollbar-width: thin;
+}
+.vp-chapter {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 8rem;
+  max-width: 14rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--vp-line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  text-align: left;
+  font-size: 0.82rem !important;
+  cursor: pointer;
+}
+.vp-chapter:hover { background: rgba(255, 255, 255, 0.08); }
+.vp-chapter[aria-current] { border-color: color-mix(in srgb, var(--vp-accent) 60%, #fff); background: color-mix(in srgb, var(--vp-accent) 22%, transparent); }
+.vp-chapter-t { font: 650 0.72rem/1 ui-monospace, Menlo, monospace; color: var(--vp-muted); }
+
+/* ── Full screen: picture fills, bar stays below ── */
+.vp:fullscreen { border-radius: 0; grid-template-rows: minmax(0, 1fr) auto; height: 100vh; }
+.vp:fullscreen .vp-stage { aspect-ratio: auto; height: 100%; }
+.vp:fullscreen .vp-ask-text { font-size: clamp(1.4rem, 3vw, 2.4rem); }
+
+/* ── Transcript (watch.html) ── */
+.vp-transcript { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.1rem; }
+.vp-cue {
+  display: grid;
+  grid-template-columns: 3.2rem 1fr;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.vp-cue:hover { background: rgba(127, 127, 127, 0.12); }
+.vp-cue[aria-current] { background: color-mix(in srgb, var(--vp-accent, #3d7ea6) 22%, transparent); }
+.vp-cue-t { font: 600 0.78rem/1.6 ui-monospace, Menlo, monospace; opacity: 0.7; }
+
+/* ── Lesson figures ── */
+figure.vp-figure, [data-video] { margin: 1.2rem 0; }
+[data-video] > [data-pause], [data-video] > [data-chapter] { display: none; }
+figure.vp-figure > figcaption { margin-top: 0.55rem; font-size: 0.92rem; line-height: 1.5; opacity: 0.85; }
+
+@media (prefers-reduced-motion: reduce) {
+  .vp *, .vp *::before, .vp *::after { transition: none !important; }
+}

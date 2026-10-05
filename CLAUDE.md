@@ -68,6 +68,30 @@ and discuss it. This applies to every new lesson and to any lesson you touch.
 - Always show credit and license for outside images. See `lessons/chemistry/periodic-table.html`
   (element gallery) for a worked example.
 
+## Lesson rule: every video plays in the ClassroomOS player
+
+No raw YouTube/Vimeo `<iframe>`s in lessons. Videos go through the in-house player
+(the video counterpart of the reader), which keeps students on the site:
+
+- Add `<script src="../assets/js/video-embed.js"></script>` (adjust the path to the lesson's depth).
+- Put `<figure data-video="slug-or-link">` where the video goes. `slug` is a key in
+  `data/video-library.json`; a link is any source `assets/js/video-sources.mjs` allows
+  (YouTube, Vimeo, Wikimedia Commons / NASA / Internet Archive files, `assets/videos/…`).
+  Optional: `data-title`, `data-start`/`data-end` (a clip), `data-captions` (local .vtt),
+  child `<p data-pause="1:30">question</p>` (stops the video and asks) and
+  `<p data-chapter="2:00">label</p>`, plus a `<figcaption>`.
+- Easiest path: open `watch.html?src=<link>` (or `?v=<slug>`), press **Put in a lesson**,
+  mark the clip/pauses/chapters while watching, and copy the snippet.
+- `npm run check:videos` validates the catalog and every embed (and flags raw iframes);
+  `-- --online` also confirms each video still exists and allows embedding.
+
+How it stays safe: nothing loads from a provider until Play; no provider JS runs in our
+origin (embeds are driven over postMessage); embeds are sandboxed without popups or
+top-navigation; the player is pinned to the chosen video and removes the frame at the
+end instead of showing the provider's end screen. Never draw over a provider's player —
+YouTube's embed terms forbid overlays; our controls sit below the frame. To allow a new
+host, add a narrow rule to `video-sources.mjs` and to `watch.html`'s CSP `media-src`.
+
 ## Shared sim helpers
 
 New lesson sims should reach for these instead of hand-rolling canvas/Three/Matter

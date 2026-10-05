@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src https://www.youtube-nocookie.com https://player.vimeo.com; media-src 'self' https://upload.wikimedia.org https://images-assets.nasa.gov https://svs.gsfc.nasa.gov https://archive.org https://*.us.archive.org; object-src 'none'; base-uri 'self'; form-action 'self'" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <title>Watch · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Watch classroom videos inside ClassroomOS, and build video embeds for lessons." />
+  <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" />
+  <link rel="stylesheet" href="assets/css/video-player.css" />
+  <link rel="stylesheet" href="assets/css/pages/watch.css" />
+</head>
+<body>
+  <a class="wt-skip" href="#wtMain">Skip to video</a>
+  <header class="wt-bar">
+    <a class="wt-btn wt-back" href="video-library.html" aria-label="Back to the video library">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg><span>Video Library</span>
+    </a>
+    <div class="wt-heading">
+      <h1 id="wtTitle">Watch</h1>
+      <p id="wtSub"></p>
+    </div>
+    <button type="button" class="wt-btn" id="wtBuildBtn" aria-controls="wtBuild" aria-expanded="false" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5" /></svg><span>Put in a lesson</span>
+    </button>
+  </header>
+
+  <main id="wtMain" class="wt-main">
+    <section class="wt-open" id="wtOpen" aria-labelledby="wtOpenTitle" hidden>
+      <h2 id="wtOpenTitle">Play a video inside ClassroomOS</h2>
+      <p class="wt-lede">Paste a YouTube, Vimeo, Wikimedia Commons, NASA or Internet Archive link. It plays here, in our own player, with captions on and no recommendations to wander off into.</p>
+      <form class="wt-paste" id="wtPaste">
+        <label class="wt-sr" for="wtPasteInput">Video link</label>
+        <input id="wtPasteInput" type="url" inputmode="url" placeholder="https://www.youtube.com/watch?v=…" autocomplete="off" spellcheck="false" required />
+        <button type="submit" class="wt-btn wt-primary">Play</button>
+      </form>
+      <p class="wt-refused" id="wtRefused" role="alert" hidden></p>
+      <h2 class="wt-shelf-title">From the video library</h2>
+      <ul class="wt-shelf" id="wtShelf"></ul>
+    </section>
+
+    <div class="wt-theater" id="wtTheater" hidden>
+      <div class="wt-player" id="wtPlayer"></div>
+
+      <section class="wt-build" id="wtBuild" aria-labelledby="wtBuildTitle" hidden>
+        <div class="wt-build-head">
+          <h2 id="wtBuildTitle">Put this video in a lesson</h2>
+          <p>Play to the moment you want, then mark it. Copy the snippet into the lesson and add <code>&lt;script src="…/assets/js/video-embed.js"&gt;&lt;/script&gt;</code> once per page.</p>
+        </div>
+        <div class="wt-build-grid">
+          <div class="wt-build-tools">
+            <div class="wt-row">
+              <button type="button" class="wt-btn" id="wtSetStart">Start clip here</button>
+              <button type="button" class="wt-btn" id="wtSetEnd">End clip here</button>
+              <button type="button" class="wt-btn wt-quiet" id="wtClearClip">Whole video</button>
+            </div>
+            <p class="wt-clip" id="wtClip">Whole video</p>
+            <form class="wt-row" id="wtAddPause">
+              <label class="wt-sr" for="wtPauseText">Pause question</label>
+              <input id="wtPauseText" placeholder="Question to stop and discuss…" autocomplete="off" required />
+              <button type="submit" class="wt-btn">Pause here</button>
+            </form>
+            <form class="wt-row" id="wtAddChapter">
+              <label class="wt-sr" for="wtChapterText">Chapter name</label>
+              <input id="wtChapterText" placeholder="Chapter name…" autocomplete="off" required />
+              <button type="submit" class="wt-btn">Chapter here</button>
+            </form>
+            <ol class="wt-marks" id="wtMarks"></ol>
+            <button type="button" class="wt-btn wt-primary" id="wtPreview">Preview with these marks</button>
+          </div>
+          <div class="wt-build-out">
+            <label for="wtSnippet">Lesson snippet</label>
+            <textarea id="wtSnippet" readonly rows="9" spellcheck="false"></textarea>
+            <div class="wt-row">
+              <button type="button" class="wt-btn wt-primary" id="wtCopy">Copy snippet</button>
+              <button type="button" class="wt-btn" id="wtCopyLink">Copy watch link</button>
+              <span class="wt-copied" id="wtCopied" role="status" aria-live="polite"></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="wt-info">
+        <section class="wt-about" aria-label="About this video">
+          <p class="wt-kicker" id="wtCategory"></p>
+          <p class="wt-desc" id="wtDesc"></p>
+          <div class="wt-insight" id="wtInsightBox" hidden>
+            <strong>Teacher insight</strong>
+            <p id="wtInsight"></p>
+          </div>
+          <p class="wt-credit" id="wtCredit"></p>
+        </section>
+        <section class="wt-transcript" id="wtTranscriptBox" aria-labelledby="wtTranscriptTitle" hidden>
+          <h2 id="wtTranscriptTitle">Transcript</h2>
+          <div class="wt-transcript-scroll" id="wtTranscript" tabindex="0"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="assets/js/pages/watch.mjs"></script>
+</body>
+</html>
