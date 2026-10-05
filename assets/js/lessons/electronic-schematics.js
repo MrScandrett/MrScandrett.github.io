@@ -314,6 +314,53 @@
     load();
   })();
 
+  /* Build chooser: the plan stays on this page; no student data is stored. */
+  (function buildChooser() {
+    var filter = $('es-build-filter');
+    if (!filter) return;
+    var projects = all('.es-project[data-build-level]');
+    var gradeFilter = $('es-grade-filter');
+    function applyFilters() {
+      var count = 0;
+      projects.forEach(function (project) {
+        project.hidden = (filter.value !== 'all' && project.dataset.buildLevel !== filter.value) ||
+          (gradeFilter.value !== 'all' && project.dataset.gradeBand !== gradeFilter.value);
+        if (!project.hidden) count++;
+      });
+      $('es-build-count').textContent = count + ' schematic' + (count === 1 ? '' : 's') + ' shown' + (count === 0 ? '. Try another filter.' : '');
+    }
+    filter.addEventListener('change', applyFilters);
+    gradeFilter.addEventListener('change', applyFilters);
+    projects.forEach(function (project) {
+      var entry = project.querySelector('.es-library-entry');
+      entry.addEventListener('toggle', function () {
+        if (entry.open) projects.forEach(function (other) {
+          if (other !== project) other.querySelector('.es-library-entry').open = false;
+        });
+      });
+    });
+    function openLinkedProject() {
+      var project = projects.find(function (item) { return '#' + item.id === location.hash; });
+      if (!project) return;
+      filter.value = gradeFilter.value = 'all';
+      applyFilters();
+      project.querySelector('.es-library-entry').open = true;
+      project.scrollIntoView({ block: 'start' });
+    }
+    window.addEventListener('hashchange', openLinkedProject);
+    openLinkedProject();
+    all('[data-select-build]').forEach(function (button) {
+      button.setAttribute('aria-pressed', 'false');
+      button.addEventListener('click', function () {
+        all('[data-select-build]').forEach(function (other) {
+          other.setAttribute('aria-pressed', String(other === button));
+        });
+        var title = button.closest('.es-project').querySelector('h3').textContent;
+        $('es-build-selection').textContent = 'Selected: ' + title + '. Start with the parts list and three predictions; follow the assignment rubric below. Selection lasts while this page is open.';
+      });
+    });
+  })();
+
   /* ── Quick check ── */
   (function quiz() {
     var qs = all('.sm-question'), out = $('es-quiz-score');
