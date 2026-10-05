@@ -2,14 +2,14 @@ const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
 const base = process.env.MUSIC_TEST_URL || 'http://127.0.0.1:8080/';
 const paths = [
-  'lessons/technical-elements/sheet-music-trainer.html',
-  'lessons/technical-elements/piano-chords.html',
-  'lessons/technical-elements/violin-fingerboard.html',
-  'lessons/technical-elements/drums.html',
+  'lessons/music/sheet-music-trainer.html',
+  'lessons/music/piano-chords.html',
+  'lessons/music/violin-fingerboard.html',
+  'lessons/music/drums.html',
   'music-lab.html',
-  'lessons/technical-elements/guitar-chords.html',
-  'lessons/technical-elements/music-modes-evolution.html',
-  'lessons/technical-elements/beethoven.html',
+  'lessons/music/guitar-chords.html',
+  'lessons/music/music-modes-evolution.html',
+  'lessons/music/beethoven.html',
   'lessons/technical-elements/cymatics.html',
   'lessons/physics/waves-and-sound/physics-of-music.html',
   'lessons/physics/waves-and-sound/do-atoms-make-music.html'

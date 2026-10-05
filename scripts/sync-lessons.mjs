@@ -287,6 +287,7 @@ if (FIX) {
     "Cosmology":                          "🔭",
     "Engineering":                        "⚙️",
     "Technical Elements":                 "🎚️",
+    "Music":                              "🎵",
     "Computer Science":                   "💻",
     "Visual Perception & Design":         "🎨",
     "Language & Literature":              "📚",

@@ -6,9 +6,14 @@ const ROOT = path.resolve(import.meta.dirname, "..");
 const filename = path.join(ROOT, "steam-lessons.html");
 const html = fs.readFileSync(filename, "utf8");
 const plan = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "compendium-plan.json"), "utf8"));
-const volumeNavPattern = /\n\s*<!-- COMPENDIUM VOLUME NAV:START -->[\s\S]*?<!-- COMPENDIUM VOLUME NAV:END -->\s*/;
+// --check reports drift without writing, so `npm run quality` catches a page that
+// has fallen out of step with the plan (stale volume counts, a missing module).
+const CHECK = process.argv.includes("--check");
+// The volume tabs live inside the module browser's heading; they are rewritten in
+// place between these markers rather than moved, so page layout stays hand-authored.
+const volumeNavPattern = /([ \t]*)<!-- COMPENDIUM VOLUME NAV:START -->[\s\S]*?<!-- COMPENDIUM VOLUME NAV:END -->/;
+if (!volumeNavPattern.test(html)) throw new Error("steam-lessons.html is missing the COMPENDIUM VOLUME NAV markers.");
 const source = html
-  .replace(volumeNavPattern, "\n")
   .replace(/\s*<section class="compendium-volume-divider"[\s\S]*?<\/section>/g, "\n");
 
 const sectionIds = MODULE_SECTION_IDS;
@@ -62,6 +67,10 @@ const modulePresentations = {
   "visual-design": {
     subtitle: "Color, perception, composition, and experience design as ways of shaping what people notice and understand",
     level: "K–12 Progression · Visual Art & Design",
+  },
+  music: {
+    subtitle: "Vibration, harmonics, real instruments, composers, and electronic sound design, gathered in one place for music students",
+    level: "K–12 Progression · Music",
   },
   "language-literature": {
     subtitle: "Sound, symbol, story, evidence, and interpretation as foundations for communicating and testing meaning",
@@ -140,11 +149,20 @@ const regionStart = Math.min(...spans.map((span) => span.start));
 const regionEnd = Math.max(...spans.map((span) => span.end));
 let updated = `${source.slice(0, regionStart)}${orderedRegion}${source.slice(regionEnd)}`;
 
-const nav = buildVolumeNav(plan);
-updated = updated.replace(
-  /\n(\s*<nav class="subject-nav" aria-label="Jump to subject"[^>]*>)/,
-  `\n${nav}\n$1`
-);
+updated = updated.replace(volumeNavPattern, (_match, indent) => buildVolumeNav(plan, indent));
+
+if (CHECK) {
+  if (updated !== html) {
+    const before = html.split("\n");
+    const after = updated.split("\n");
+    const changed = after.filter((line, index) => line !== before[index]).length;
+    console.error(`steam-lessons.html is out of sync with data/compendium-plan.json (~${changed} line(s) differ).`);
+    console.error("Run `npm run sync:steam-lessons-compendium` to update it.");
+    process.exit(1);
+  }
+  console.log(`steam-lessons.html matches the compendium plan: ${plan.volumes.length} volumes, ${expectedIds.length} modules.`);
+  process.exit(0);
+}
 
 fs.writeFileSync(filename, updated);
 console.log(`Organized steam-lessons.html into ${plan.volumes.length} volumes and ${expectedIds.length} modules without rewriting module contents.`);
@@ -176,15 +194,15 @@ function matchingSectionEnd(source, start) {
   throw new Error(`Unclosed module section at offset ${start}.`);
 }
 
-function buildVolumeNav(planData) {
+function buildVolumeNav(planData, indent) {
   const links = planData.volumes.map((volume) =>
-    `      <button type="button" class="compendium-volume-tab" data-volume-filter="${volume.number}" style="--volume-link:${volume.theme.accent}" role="tab" aria-selected="false"><span>${roman(volume.number)}</span>${escapeHtml(shortTitle(volume.title))}</button>`).join("\n");
-  return `    <!-- COMPENDIUM VOLUME NAV:START -->
-    <nav class="compendium-volume-tabs" aria-label="Filter by compendium volume" role="tablist">
-      <button type="button" class="compendium-volume-tab is-active" data-volume-filter="all" role="tab" aria-selected="true"><span>All</span>All lessons</button>
+    `${indent}  <button type="button" class="compendium-volume-tab" data-volume-filter="${volume.number}" style="--volume-link:${volume.theme.accent}" role="tab" aria-selected="false"><span>${roman(volume.number)}</span>${escapeHtml(shortTitle(volume.title))}</button>`).join("\n");
+  return `${indent}<!-- COMPENDIUM VOLUME NAV:START -->
+${indent}<nav class="compendium-volume-tabs" aria-label="Filter subjects by compendium volume" role="tablist">
+${indent}  <button type="button" class="compendium-volume-tab is-active" data-volume-filter="all" role="tab" aria-selected="true"><span>All</span>All subjects</button>
 ${links}
-    </nav>
-    <!-- COMPENDIUM VOLUME NAV:END -->`;
+${indent}</nav>
+${indent}<!-- COMPENDIUM VOLUME NAV:END -->`;
 }
 
 function shortTitle(title) {

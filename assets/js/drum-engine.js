@@ -1,6 +1,6 @@
 /* drum-engine.js — shared drum synthesis and generated PCM sample library.
  *
- * Used by lessons/technical-elements/drums.html and music-lab.html.
+ * Used by lessons/music/drums.html and music-lab.html.
  *
  *   var kit = DrumEngine.create(audioCtx, destinationNode);
  *   kit.hit('snare', audioCtx.currentTime + 0.1, 0.8);

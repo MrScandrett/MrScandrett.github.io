@@ -10,13 +10,13 @@
   var base = script ? script.src.replace(/assets\/js\/music-family\.js.*$/, '') : '';
 
   var THEORY = [
-    { file: 'lessons/technical-elements/sheet-music-trainer.html', label: 'Sheet Music' },
-    { file: 'lessons/technical-elements/piano-chords.html', label: 'Piano' },
-    { file: 'lessons/technical-elements/music-modes-evolution.html', label: 'Modes' },
-    { file: 'lessons/technical-elements/guitar-chords.html', label: 'Guitar' },
-    { file: 'lessons/technical-elements/violin-fingerboard.html', label: 'Violin' },
-    { file: 'lessons/technical-elements/drums.html', label: 'Drums' },
-    { file: 'lessons/technical-elements/beethoven.html', label: 'Beethoven' },
+    { file: 'lessons/music/sheet-music-trainer.html', label: 'Sheet Music' },
+    { file: 'lessons/music/piano-chords.html', label: 'Piano' },
+    { file: 'lessons/music/music-modes-evolution.html', label: 'Modes' },
+    { file: 'lessons/music/guitar-chords.html', label: 'Guitar' },
+    { file: 'lessons/music/violin-fingerboard.html', label: 'Violin' },
+    { file: 'lessons/music/drums.html', label: 'Drums' },
+    { file: 'lessons/music/beethoven.html', label: 'Beethoven' },
     { file: 'music-lab.html', label: 'Music Lab' }
   ];
   var SCIENCE = [

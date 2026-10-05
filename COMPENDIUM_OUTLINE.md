@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 341 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 341 public lessons and classifies 19 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -234,7 +234,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 82 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 75 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
@@ -359,16 +359,6 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 - **TEC-14** — Walt Disney — _also indexed in Visual Art & Design_
 - **TEC-15** — Jim Henson
 
-### Music Theory & Instruments
-
-- **TEC-16** — Guitar Triads & Arpeggio Routes — _also indexed in Music: Theory, Instruments & Sound_
-- **TEC-17** — Piano Triads & Arpeggio Routes — _also indexed in Music: Theory, Instruments & Sound_
-- **TEC-18** — Sheet Music Trainer — _also indexed in Music: Theory, Instruments & Sound_
-- **TEC-19** — Modes: From Greece to Today — _also indexed in Music: Theory, Instruments & Sound_
-- **TEC-20** — Violin Fingerboard Explorer — _also indexed in Music: Theory, Instruments & Sound_
-- **TEC-21** — Drum Lab: Kit, Notation, Rudiments & Fills — _also indexed in Music: Theory, Instruments & Sound_
-- **TEC-22** — Ludwig van Beethoven — _also indexed in Music: Theory, Instruments & Sound_
-
 # Volume V — Computer Science, AI & Interactive Media
 
 Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 73 lessons
@@ -485,7 +475,7 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 54 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 61 lessons
 
 ## Visual Art & Design (DES)
 
@@ -501,6 +491,21 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **DES-05** — Pablo Picasso
 - **DES-06** — Charles & Ray Eames
 - **DES-07** — Nam June Paik
+
+## Music: Theory, Instruments & Sound (MUS)
+
+### Instruments You Can Play
+
+- **MUS-01** — Sheet Music Trainer
+- **MUS-02** — Guitar Triads & Arpeggio Routes
+- **MUS-03** — Piano Triads & Arpeggio Routes
+- **MUS-04** — Violin Fingerboard Explorer
+- **MUS-05** — Drum Lab: Kit, Notation, Rudiments & Fills
+
+### Composers & Music History
+
+- **MUS-06** — Ludwig van Beethoven
+- **MUS-07** — Modes: From Greece to Today
 
 ## Language, Media & Critical Thinking (LAN)
 
@@ -586,3 +591,10 @@ These pages remain attached to their parent lesson or module and do not become d
 - `lessons/computer-science/graphics-and-games/game-tutorials/quiz.html` — assessment-extension; module-appendix; parent: `lessons/computer-science/graphics-and-games/2d-game-engines.html`
 - `lessons/computer-science/graphics-and-games/game-tutorials/rhythm.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/graphics-and-games/2d-game-engines.html`
 - `lessons/computer-science/graphics-and-games/game-tutorials/shooter.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/graphics-and-games/2d-game-engines.html`
+- `lessons/technical-elements/guitar-chords.html` — redirect; parent-appendix; parent: `lessons/music/guitar-chords.html`
+- `lessons/technical-elements/piano-chords.html` — redirect; parent-appendix; parent: `lessons/music/piano-chords.html`
+- `lessons/technical-elements/sheet-music-trainer.html` — redirect; parent-appendix; parent: `lessons/music/sheet-music-trainer.html`
+- `lessons/technical-elements/music-modes-evolution.html` — redirect; parent-appendix; parent: `lessons/music/music-modes-evolution.html`
+- `lessons/technical-elements/violin-fingerboard.html` — redirect; parent-appendix; parent: `lessons/music/violin-fingerboard.html`
+- `lessons/technical-elements/drums.html` — redirect; parent-appendix; parent: `lessons/music/drums.html`
+- `lessons/technical-elements/beethoven.html` — redirect; parent-appendix; parent: `lessons/music/beethoven.html`
