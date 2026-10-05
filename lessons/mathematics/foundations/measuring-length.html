@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../assets/css/circuit-playground.css" />
   <link rel="stylesheet" href="../../../assets/css/circuit-playground-snap.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/length-scale-quiz.css" />
   <style>
     /* The Chicago bitmap webfont ships U+00D7 as a zero-width glyph, so every
        "6.022 × 10²³" on this page rendered as a blank gap. Route just that one
@@ -1089,6 +1090,7 @@
             <a href="#sec-convert">Convert</a>
             <a href="#sec-odd">Odd Scales</a>
             <a href="#sec-mistakes">Failures</a>
+            <a href="#sec-scale-quiz">Visual Scale Quiz</a>
             <a href="#sec-practice">Practice</a>
           </nav>
 
@@ -1160,6 +1162,7 @@
                     <span class="ml-zoom-hud-chip" id="ml-zoom-hud-span">Frame width: 1 m</span>
                     <span class="ml-zoom-hud-chip" id="ml-zoom-hud-power">10⁰ m</span>
                   </div>
+                  <div class="ml-camera-ruler" aria-hidden="true"><span id="ml-camera-bar"></span><span id="ml-camera-bar-label"></span></div>
                   <div class="ml-zoom-hint" id="ml-zoom-hint">Scroll, drag, or use the zoom slider. Click an object for its numbers.</div>
                 </div>
               </div>
@@ -1208,6 +1211,9 @@
                     <div class="ml-scale-compare-line" id="ml-zoom-ratio"></div>
                     <div class="ml-scale-compare-line ml-zoom-credit" id="ml-zoom-credit" hidden></div>
                   </div>
+                  <p class="ml-camera-reading" id="ml-camera-light"></p>
+                  <p class="ml-camera-reading">Artwork sizes follow the listed lengths. Objects are spread along a size axis; their positions are not a map of space. Wavelengths, distances, and diameters are different kinds of length. Maps and panoramas illustrate a scale rather than outline an object's measured diameter.</p>
+                  <a class="ml-camera-reading" href="../../cosmology/pale-blue-dot.html">Continue the cosmic journey in Pale Blue Dot →</a>
                   <div class="ml-scale-subhead">In Frame Right Now</div>
                   <div class="ml-scale-comparisons" id="ml-zoom-visible"></div>
                 </div>
@@ -2021,6 +2027,12 @@
               <div class="mu-rule"><b>Carry units through the algebra.</b> If the units on both sides don't match, the equation is wrong — before you've even checked the numbers.</div>
               <div class="mu-rule"><b>State the system at the top.</b> Every handoff between teams is where a factor of 4.45 hides. Label the file, not just the number.</div>
             </div>
+          </section>
+
+          <section class="ml-card" id="sec-scale-quiz" style="--card-accent:#3b82f6;">
+            <h2>Picture the Power of Ten</h2>
+            <p>Estimate first, then reveal. Here a <strong>decade band</strong> runs from 10ⁿ metres up to (but not including) 10ⁿ⁺¹ metres: 1.7 m belongs in the 10⁰ band. Each step means ×10, not ten more metres. Pictures are clues, not drawings on a shared scale.</p>
+            <div id="ml-visual-quiz"></div>
           </section>
 
           <!-- ── PRACTICE PROBLEMS ──────────────────── -->
@@ -3126,7 +3138,8 @@
       if (obj.img) {
         el.classList.add('has-photo');
         art.src = obj.img;
-        art.alt = '';
+        art.alt = obj.n + '. ' + obj.note + ' Image credit: ' + obj.credit;
+        art.dataset.zoomable = '';
         art.decoding = 'async';
         art.addEventListener('error', () => {
           const div = document.createElement('div');
@@ -3233,6 +3246,20 @@
 
       // px = m / 10^z × unit × ZOOM_FIT, so the frame is this many metres wide.
       const across = (stageW * frameMeters) / (unit * ZOOM_FIT);
+      const targetBar = across / 4;
+      const decade = Math.pow(10, Math.floor(Math.log10(targetBar)));
+      const barM = [1, 2, 5].filter(n => n * decade <= targetBar).pop() * decade;
+      document.getElementById('ml-camera-bar').style.width = (barM / across * stageW) + 'px';
+      document.getElementById('ml-camera-bar-label').innerHTML = formatMeters(barM);
+      const seconds = across / 299792458;
+      const time = seconds < 1 ? seconds.toExponential(2) + ' seconds'
+        : seconds < 60 ? seconds.toPrecision(3) + ' seconds'
+        : seconds < 3600 ? (seconds / 60).toPrecision(3) + ' minutes'
+        : seconds < 86400 ? (seconds / 3600).toPrecision(3) + ' hours'
+        : seconds < 31557600 ? (seconds / 86400).toPrecision(3) + ' days'
+        : (seconds / 31557600).toExponential(2) + ' years';
+      document.getElementById('ml-camera-light').textContent = 'Light-crossing time for this frame: ' + time + '. Distance ÷ speed of light; cosmic expansion is not modeled.';
+      zoomSlider.setAttribute('aria-valuetext', 'Camera power ' + z.toFixed(2) + '; frame ' + across.toExponential(2) + ' metres across');
       hudSpan.innerHTML = `Frame spans ≈ ${formatMeters(across)}`;
       hudPower.innerHTML = `camera 10<sup>${z.toFixed(2)}</sup> m`;
       visibleEl.innerHTML = inFrame
@@ -3325,6 +3352,7 @@
       btn.addEventListener('click', () => {
         const on = btn.dataset.mode === 'zoom';
         stage.hidden = !on;
+        document.querySelector('.ml-scale-main').hidden = on;
         if (on) { measure(); draw(); }
       });
     });
@@ -4461,6 +4489,8 @@
   })();
   </script>
 
+  <script src="../../../assets/js/lessons/length-scale-quiz.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
   <script src="../../../assets/js/circuit-playground.js"></script>
   <script src="../../../assets/js/classroom-animations.js"></script>
   <script src="../../../assets/js/lesson-layout.js"></script>

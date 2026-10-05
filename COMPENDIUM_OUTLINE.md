@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 317 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 341 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -15,7 +15,7 @@ This metadata-only draft organizes 317 public lessons and classifies 12 supporti
 
 # Volume I — Mathematical Thinking, Measurement & Astronomy
 
-Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 46 lessons
+Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 50 lessons
 
 ## Mathematics & Quantitative Reasoning (MAT)
 
@@ -25,40 +25,43 @@ Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 46 lesson
 - **MAT-02** — Measuring Length & Every Unit
 - **MAT-03** — The Unit Factory
 - **MAT-04** — Clocks & Telling Time
-- **MAT-05** — PEMDAS & Order of Operations
-- **MAT-06** — Proportional Reasoning
-- **MAT-07** — Touch it. See it. Solve it.
+- **MAT-05** — Multiplication: See the Structure
+- **MAT-06** — Division: Think in Groups
+- **MAT-07** — PEMDAS & Order of Operations
+- **MAT-08** — Proportional Reasoning
+- **MAT-09** — Touch it. See it. Solve it.
 
 ### Geometry, Graphs & Spatial Reasoning
 
-- **MAT-08** — Where Lines Meet
-- **MAT-09** — Graphing Calculator
-- **MAT-10** — Pythagoras & Triangles
-- **MAT-11** — Pi & Circles
-- **MAT-12** — The Math of the Rubik's Cube
-- **MAT-13** — Exponent Explorer
-- **MAT-14** — Linear Equations & Slope
-- **MAT-15** — Area & Perimeter Playground
-- **MAT-16** — Slope of a Curve
-- **MAT-17** — Minecraft Calculus: Terrain & Water Flow
+- **MAT-10** — Where Lines Meet
+- **MAT-11** — Graphing Calculator
+- **MAT-12** — Pythagoras & Triangles
+- **MAT-13** — SOH-CAH-TOA
+- **MAT-14** — Pi & Circles
+- **MAT-15** — The Math of the Rubik's Cube
+- **MAT-16** — Exponent Explorer
+- **MAT-17** — Linear Equations & Slope
+- **MAT-18** — Area & Perimeter Playground
+- **MAT-19** — Slope of a Curve
+- **MAT-20** — Minecraft Calculus: Terrain & Water Flow
 
 ### Chance, Patterns & Sequences
 
-- **MAT-18** — How Spread Out?
-- **MAT-19** — Probability Simulator
-- **MAT-20** — Galton Board & Pachinko Lab
-- **MAT-21** — Fibonacci Sequence
-- **MAT-22** — Mean, Median & Mode
+- **MAT-21** — How Spread Out?
+- **MAT-22** — Probability Simulator
+- **MAT-23** — Galton Board & Pachinko Lab
+- **MAT-24** — Fibonacci Sequence
+- **MAT-25** — Mean, Median & Mode
 
 ### Advanced Patterns & Open Questions
 
-- **MAT-23** — The Unit Circle & Waves
-- **MAT-24** — Algebra Tiles: Factoring
-- **MAT-25** — Completing the Square
-- **MAT-26** — Fourier Series & Transform — _also indexed in Audio, Lighting & Production Technology_
-- **MAT-27** — How 𝑒 Was Discovered
-- **MAT-28** — Riemann Hypothesis
-- **MAT-29** — The Equations Iceberg
+- **MAT-26** — The Unit Circle & Waves
+- **MAT-27** — Algebra Tiles: Factoring
+- **MAT-28** — Completing the Square
+- **MAT-29** — Fourier Series & Transform — _also indexed in Audio, Lighting & Production Technology_
+- **MAT-30** — How 𝑒 Was Discovered
+- **MAT-31** — Riemann Hypothesis
+- **MAT-32** — The Equations Iceberg
 
 ## Astronomy & Space Science (COS)
 
@@ -83,14 +86,15 @@ Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 46 lesson
 - **COS-11** — Event Horizon Telescope
 - **COS-12** — In the Beginning: Origins of the Universe
 - **COS-13** — Universe Expansion
-- **COS-14** — Nancy Grace Roman Space Telescope
-- **COS-15** — Searching for Extraterrestrial Intelligence
-- **COS-16** — Arecibo Message
-- **COS-17** — Pale Blue Dot — Scale of the Universe
+- **COS-14** — Cosmic Voids
+- **COS-15** — Nancy Grace Roman Space Telescope
+- **COS-16** — Searching for Extraterrestrial Intelligence
+- **COS-17** — Arecibo Message
+- **COS-18** — Pale Blue Dot — Scale of the Universe
 
 # Volume II — Physics, Chemistry, Matter & Energy
 
-Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 47 lessons
+Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 48 lessons
 
 ## Physics & Physical Systems (PHY)
 
@@ -142,13 +146,14 @@ Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 47 l
 - **PHY-32** — Fundamental Forces
 - **PHY-33** — Electron Microscopes
 - **PHY-34** — Quantum Physics
+- **PHY-35** — The Standard Model of Particle Physics
 
 ### People Who Changed Physics
 
-- **PHY-35** — Nikola Tesla
-- **PHY-36** — Marie Curie — _also indexed in Chemistry & Chemical Systems_
-- **PHY-37** — Albert Einstein
-- **PHY-38** — Benjamin Franklin
+- **PHY-36** — Nikola Tesla
+- **PHY-37** — Marie Curie — _also indexed in Chemistry & Chemical Systems_
+- **PHY-38** — Albert Einstein
+- **PHY-39** — Benjamin Franklin
 
 ## Chemistry & Chemical Systems (CHE)
 
@@ -229,7 +234,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 79 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 82 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
@@ -240,45 +245,47 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 
 ### Electronics Workshop Foundations
 
-- **ENG-03** — Electronic Components
-- **ENG-04** — Resistor Color Code Guide
-- **ENG-05** — Ohm's Law
+- **ENG-03** — Ohm's Law
+- **ENG-04** — Electronic Components
+- **ENG-05** — Resistor Color Code Guide
 - **ENG-06** — Electronic Schematics
 - **ENG-07** — Breadboard Basics
-- **ENG-08** — Robotics Engineering Intro
-- **ENG-09** — Arduino: The Robot Brain
-- **ENG-10** — Arduino Board Anatomy Lab
-- **ENG-11** — Sensor to Webpage
-- **ENG-12** — Inputs: Beyond the Button
+- **ENG-08** — Multimeter Lab
+- **ENG-09** — Soldering
+- **ENG-10** — Robotics Engineering Intro
+- **ENG-11** — Arduino: The Robot Brain
+- **ENG-12** — Arduino Board Anatomy Lab
 - **ENG-13** — Arduino Programming: Variables, Functions & Libraries
-- **ENG-14** — Outputs: Beyond the LED
-- **ENG-15** — Soldering
+- **ENG-14** — Inputs: Beyond the Button
+- **ENG-15** — Outputs: Beyond the LED
 - **ENG-16** — Sensor Modules Kit
-- **ENG-17** — The Internet of Things
+- **ENG-17** — Sensor to Webpage
+- **ENG-18** — The Internet of Things
 
 ### Mechanisms, Feedback & Control
 
-- **ENG-18** — Mechanisms and Gear Systems
-- **ENG-19** — PID Control & Feedback Loops
-- **ENG-20** — Sensor Fusion: Gyro + Accelerometer
-- **ENG-21** — Where Am I? Robot Mapping & Localization
-- **ENG-22** — Beyond A*: Motion Planning Lab
-- **ENG-23** — Robot Reinforcement Learning: Q-Learning Lab
-- **ENG-24** — Maglev Train Engineering
-- **ENG-25** — Bug Bots: Genghis & the Insect Robots
-- **ENG-26** — Engineering Design Process Studio
+- **ENG-19** — Mechanisms and Gear Systems
+- **ENG-20** — PID Control & Feedback Loops
+- **ENG-21** — Sensor Fusion: Gyro + Accelerometer
+- **ENG-22** — Where Am I? Robot Mapping & Localization
+- **ENG-23** — Beyond A*: Motion Planning Lab
+- **ENG-24** — Reach, Grab, Place: Robot Arms
+- **ENG-25** — Robot Reinforcement Learning: Q-Learning Lab
+- **ENG-26** — Maglev Train Engineering
+- **ENG-27** — Bug Bots: Genghis & the Insect Robots
+- **ENG-28** — Engineering Design Process Studio
 
 ### Structural Design Projects
 
-- **ENG-27** — Bridge Over Troubled Water
-- **ENG-28** — Biomimicry: Engineering Nature's Genius
+- **ENG-29** — Bridge Over Troubled Water
+- **ENG-30** — Biomimicry: Engineering Nature's Genius
 
 ### People Who Changed Engineering
 
-- **ENG-29** — Emily Roebling
-- **ENG-30** — Henry Ford — _also indexed in Design, Materials & Fabrication_
-- **ENG-31** — Rube Goldberg Machine Lab
-- **ENG-32** — Hedy Lamarr
+- **ENG-31** — Emily Roebling
+- **ENG-32** — Henry Ford — _also indexed in Design, Materials & Fabrication_
+- **ENG-33** — Rube Goldberg Machine Lab
+- **ENG-34** — Hedy Lamarr
 
 ## Design, Materials & Fabrication (FAB)
 
@@ -356,14 +363,15 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 
 - **TEC-16** — Guitar Triads & Arpeggio Routes — _also indexed in Music: Theory, Instruments & Sound_
 - **TEC-17** — Piano Triads & Arpeggio Routes — _also indexed in Music: Theory, Instruments & Sound_
-- **TEC-18** — Modes: From Greece to Today — _also indexed in Music: Theory, Instruments & Sound_
-- **TEC-19** — Violin Fingerboard Explorer — _also indexed in Music: Theory, Instruments & Sound_
-- **TEC-20** — Drum Lab: Kit, Notation, Rudiments & Fills — _also indexed in Music: Theory, Instruments & Sound_
-- **TEC-21** — Ludwig van Beethoven — _also indexed in Music: Theory, Instruments & Sound_
+- **TEC-18** — Sheet Music Trainer — _also indexed in Music: Theory, Instruments & Sound_
+- **TEC-19** — Modes: From Greece to Today — _also indexed in Music: Theory, Instruments & Sound_
+- **TEC-20** — Violin Fingerboard Explorer — _also indexed in Music: Theory, Instruments & Sound_
+- **TEC-21** — Drum Lab: Kit, Notation, Rudiments & Fills — _also indexed in Music: Theory, Instruments & Sound_
+- **TEC-22** — Ludwig van Beethoven — _also indexed in Music: Theory, Instruments & Sound_
 
 # Volume V — Computer Science, AI & Interactive Media
 
-Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 62 lessons
+Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 73 lessons
 
 ## Computer Science & Artificial Intelligence (CSC)
 
@@ -439,31 +447,45 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 - **GAM-06** — Game Jam Week: From Idea to Demo
 
+### 2D Game Developer Pathway
+
+- **GAM-07** — 2D Game Developer Pathway
+- **GAM-08** — Pixel Art & Sprites
+- **GAM-09** — Sprite Sheets & Animation
+- **GAM-10** — Tilesets & Tilemaps
+- **GAM-11** — Game Loop & Rendering
+- **GAM-12** — Movement & Jump Feel
+- **GAM-13** — Collision & Response
+- **GAM-14** — Cameras, Layers & Parallax
+- **GAM-15** — Animation State Machines
+- **GAM-16** — Level Design & Game Feel
+- **GAM-17** — Menus, Saving & Shipping
+
 ### Godot Engine Pathway
 
-- **GAM-07** — Godot Game Developer Pathway
-- **GAM-08** — Godot Basics: Your First 3D Room
-- **GAM-09** — GDScript Fundamentals
-- **GAM-10** — Player Controller & Camera
-- **GAM-11** — Collectibles, Signals & UI
-- **GAM-12** — Enemies & Simple AI
-- **GAM-13** — Animation & Game Feel
-- **GAM-14** — Levels & Game State
-- **GAM-15** — Export, Test & Publish
+- **GAM-18** — Godot Game Developer Pathway
+- **GAM-19** — Godot Basics: Your First 3D Room
+- **GAM-20** — GDScript Fundamentals
+- **GAM-21** — Player Controller & Camera
+- **GAM-22** — Collectibles, Signals & UI
+- **GAM-23** — Enemies & Simple AI
+- **GAM-24** — Animation & Game Feel
+- **GAM-25** — Levels & Game State
+- **GAM-26** — Export, Test & Publish
 
 ### Game Asset Studio Pathway
 
-- **GAM-16** — Game Asset Studio
-- **GAM-17** — Texture Workshop
-- **GAM-18** — Furniture Prop Lab
-- **GAM-19** — Modular Room Builder
-- **GAM-20** — UV, Materials & Export
-- **GAM-21** — Character Rigging
-- **GAM-22** — Character Animation
+- **GAM-27** — Game Asset Studio
+- **GAM-28** — Texture Workshop
+- **GAM-29** — Furniture Prop Lab
+- **GAM-30** — Modular Room Builder
+- **GAM-31** — UV, Materials & Export
+- **GAM-32** — Character Rigging
+- **GAM-33** — Character Animation
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 49 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 54 lessons
 
 ## Visual Art & Design (DES)
 
@@ -517,9 +539,10 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 ### Modern Human Systems
 
 - **SYS-12** — Social Media Algorithms
-- **SYS-13** — The 10-80-10 Productivity Process
-- **SYS-14** — The Psychology of Polymaths
-- **SYS-15** — The Nobel Prize — Ideas That Changed the World
+- **SYS-13** — The Frankfurt School & the Culture Industry
+- **SYS-14** — The 10-80-10 Productivity Process
+- **SYS-15** — The Psychology of Polymaths
+- **SYS-16** — The Nobel Prize — Ideas That Changed the World
 
 ## Bible Story, Theology & Christian Formation (BIB)
 
@@ -534,14 +557,18 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **BIB-07** — Kingdoms, Prophets & Exile
 - **BIB-08** — The Feasts of Israel
 - **BIB-09** — Elijah: Prophet of the Living God
-- **BIB-10** — Daniel: Faithfulness in Exile
-- **BIB-11** — The World of Jesus
-- **BIB-12** — Jesus' Parables Lab
-- **BIB-13** — Holy Week: The Final Days of Jesus
-- **BIB-14** — Acts: Jerusalem to the Nations
-- **BIB-15** — Paul's Missionary Journeys
-- **BIB-16** — Proverbs: Wisdom Decision Lab
-- **BIB-17** — The Sermon on the Mount
+- **BIB-10** — Isaiah: Holiness, Justice & Hope
+- **BIB-11** — Jeremiah: Courage, Covenant & Exile
+- **BIB-12** — Ezekiel: God’s Presence & a People Renewed
+- **BIB-13** — Lamentations: Grief, Prayer & Persistent Hope
+- **BIB-14** — Daniel: Faithfulness in Exile
+- **BIB-15** — The World of Jesus
+- **BIB-16** — Jesus' Parables Lab
+- **BIB-17** — Holy Week: The Final Days of Jesus
+- **BIB-18** — Acts: Jerusalem to the Nations
+- **BIB-19** — Paul's Missionary Journeys
+- **BIB-20** — Proverbs: Wisdom Decision Lab
+- **BIB-21** — The Sermon on the Mount
 
 # Supporting Pages
 
