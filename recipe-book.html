@@ -21,6 +21,13 @@
       overflow-x: hidden;
     }
 
+    /* The wood (::before) always covers the page, so drop light-theme body art underneath it.
+       contrast-guard.js reads the body background; a hidden light gradient made it paint text black. */
+    html body.library-page {
+      background-color: #3e1408 !important;
+      background-image: none !important;
+    }
+
     /* Fixed mahogany wood-grain background (SVG feTurbulence → mahogany palette) */
     body.library-page::before {
       content: '';
@@ -523,6 +530,7 @@
       line-height: 1.55;
     }
     .family-reading-note strong { color: #ffd08a; }
+    .family-reading-note span { color: inherit; }
 
     .reading-check-backdrop {
       position: fixed;
@@ -2045,6 +2053,194 @@
       .entry-desc { font-size: 0.9rem; }
       .lib-search-bar .lib-search-stats { display: none; }
     }
+
+    /* ── Easy-access tools: view toggle, grade bands, continue reading ── */
+    .lib-tools {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.6rem 1rem;
+      margin: 0.75rem 0 1rem;
+    }
+    .lib-tools-label {
+      margin-right: 0.4rem;
+      color: rgba(255, 236, 205, 0.86);
+      font-size: 0.74rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .lib-seg {
+      display: inline-flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .lib-seg button {
+      min-height: 40px;
+      padding: 0.45rem 0.95rem;
+      border: 1px solid rgba(255, 207, 125, 0.32);
+      border-radius: 999px;
+      background: rgba(20, 10, 4, 0.72);
+      color: #fff1da;
+      font: inherit;
+      font-size: 0.82rem;
+      cursor: pointer;
+    }
+    .lib-seg button:hover { border-color: rgba(255, 207, 125, 0.7); }
+    .lib-seg button[aria-pressed="true"] {
+      border-color: #ffd08a;
+      background: #ffd08a;
+      color: #2a1204;
+      font-weight: 700;
+    }
+    .lib-seg button:focus-visible,
+    .lib-continue-item:focus-visible {
+      outline: 3px solid #ffd08a;
+      outline-offset: 2px;
+    }
+    .lib-grade-bar {
+      margin: 0 0 1.2rem;
+      padding: 0.75rem 1rem;
+      border: 1px solid rgba(255, 207, 125, 0.18);
+      border-radius: 14px;
+      background: rgba(14, 7, 3, 0.66);
+    }
+    .lib-grade-bar .lib-grade-status {
+      margin: 0.5rem 0 0;
+      color: rgba(255, 241, 218, 0.82);
+      font-size: 0.8rem;
+    }
+    .book.is-grade-hidden,
+    .shelf-row.is-grade-empty,
+    .shelf-row.is-grade-empty + .shelf-board,
+    .shelf-row.is-grade-empty + .shelf-board + .shelf-spacer { display: none !important; }
+
+    .lib-continue {
+      margin: 0 0 1.1rem;
+      padding: 0.9rem 1rem;
+      border: 1px solid rgba(255, 207, 125, 0.24);
+      border-radius: 14px;
+      background: rgba(14, 7, 3, 0.7);
+    }
+    .lib-continue h3 {
+      margin: 0 0 0.6rem;
+      color: #ffd08a;
+      font-size: 0.95rem;
+    }
+    .lib-continue-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 0.55rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .lib-continue-item {
+      display: grid;
+      gap: 0.35rem;
+      padding: 0.7rem 0.85rem;
+      border: 1px solid rgba(255, 207, 125, 0.22);
+      border-radius: 10px;
+      background: rgba(255, 207, 125, 0.07);
+      color: #fff1da;
+      text-decoration: none;
+    }
+    .lib-continue-item:hover { border-color: #ffd08a; }
+    .lib-continue-item strong { font-size: 0.9rem; }
+    .lib-continue-item span { color: rgba(255, 241, 218, 0.8); font-size: 0.78rem; }
+    .lib-continue-meter {
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      overflow: hidden;
+    }
+    .lib-continue-meter i {
+      display: block;
+      height: 100%;
+      width: calc(var(--read, 0) * 100%);
+      background: #ffd08a;
+    }
+
+    /* List view (and every search) shows each title as a readable card instead of a spine. */
+    body.lib-cards .bookcase,
+    body.lib-cards .bookcase-flex {
+      padding: 1rem;
+      border-radius: 16px;
+    }
+    body.lib-cards .bookcase::before,
+    body.lib-cards .bookcase::after,
+    body.lib-cards .bookcase-flex::before,
+    body.lib-cards .bookcase-flex::after,
+    body.lib-cards .bookcase-base,
+    body.lib-cards .shelf-hint { display: none; }
+    body.lib-cards .shelf-row,
+    body.lib-cards .bookcase-flex,
+    body.lib-cards .recipe-shelf-group .shelf-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      align-items: stretch;
+      gap: 0.75rem;
+      min-height: 0;
+      padding: 0;
+    }
+    body.lib-cards .recipe-shelf-group { display: grid; gap: 0.75rem; }
+    body.lib-cards .book {
+      display: flex;
+      flex-direction: column;
+      width: auto !important;
+      height: auto !important;
+      min-width: 0;
+      transform: none !important;
+      cursor: default;
+    }
+    body.lib-cards .book-spine {
+      height: auto !important;
+      min-height: 46px;
+      justify-content: flex-start;
+      border-radius: 10px 10px 0 0;
+    }
+    body.lib-cards .book-spine-label,
+    body.lib-cards .book-spine-label.book-spine-label--gold {
+      max-height: none;
+      padding: 0.75rem 1rem;
+      writing-mode: horizontal-tb;
+      transform: none;
+      font-size: 0.8rem;
+      white-space: normal;
+    }
+    body.lib-cards .book-popup,
+    body.lib-cards .book:hover .book-popup,
+    body.lib-cards .book.is-active .book-popup {
+      position: static;
+      flex: 1;
+      width: 100%;
+      padding: 0.95rem 1rem 1rem;
+      border-radius: 0 0 10px 10px;
+      opacity: 1;
+      transform: none;
+      pointer-events: auto;
+    }
+    body.lib-cards .book-popup::after { display: none; }
+    body.lib-cards .book.is-search-dim { display: none; }
+    body.lib-cards .shelf-board { margin: 0 0 0.75rem; border-radius: 7px; }
+    body.lib-cards .shelf-spacer { height: 0.9rem; }
+
+    /* As cards, each shelf's label reads as a heading above its books (JS sets --card-order). */
+    body.lib-cards .bookcase,
+    body.lib-cards .recipe-shelf-group { display: flex; flex-direction: column; }
+    body.lib-cards .bookcase > *,
+    body.lib-cards .recipe-shelf-group > * { order: var(--card-order, 0); }
+
+    @media (max-width: 700px) {
+      .bookcase,
+      .recipe-shelf-group { display: flex; flex-direction: column; }
+      .bookcase > *,
+      .recipe-shelf-group > * { order: var(--card-order, 0); }
+      .shelf-board { margin: 0 0 0.65rem; }
+      .lib-tools { flex-direction: column; align-items: stretch; }
+      .lib-view-toggle { display: none; }
+    }
   </style>
 </head>
 <body class="library-page">
@@ -2126,6 +2322,19 @@
       </label>
       <p class="lib-empty-state" id="libEmptyState">No titles matched that search.<br>Try a different keyword or clear to browse by room.</p>
 
+      <div class="lib-tools">
+        <div class="lib-seg lib-view-toggle" role="group" aria-label="How to show titles">
+          <span class="lib-tools-label">Show titles as</span>
+          <button type="button" data-view="shelf" aria-pressed="true">Bookshelf</button>
+          <button type="button" data-view="list" aria-pressed="false">Easy-read list</button>
+        </div>
+      </div>
+
+      <section class="lib-continue" id="libContinue" aria-labelledby="libContinueTitle" hidden>
+        <h3 id="libContinueTitle">Continue reading</h3>
+        <ul class="lib-continue-list" id="libContinueList"></ul>
+      </section>
+
       <div class="lib-entry-grid" id="libEntryGrid">
         <button class="lib-entry-card" type="button" data-room="classics" aria-controls="section-classics" aria-expanded="false">
           <span class="entry-topline"><span class="entry-icon" aria-hidden="true">✦</span><span class="entry-room">Collection 01</span></span>
@@ -2176,6 +2385,18 @@
       <div class="family-reading-note" role="note" aria-label="Family reading guide">
         <strong>Family reading guide</strong>
         <span>Every reading link now opens a preview checkpoint first. Upper-grade and sensitive texts require confirmation and identify concerns such as peril, violence, strong language, or outdated historical attitudes. Grade bands guide selection; a parent or educator should preview unfamiliar unabridged texts.</span>
+      </div>
+
+      <div class="lib-grade-bar">
+        <div class="lib-seg" role="group" aria-label="Show books for a grade band">
+          <span class="lib-tools-label">Grade band</span>
+          <button type="button" data-grade="all" aria-pressed="true">All grades</button>
+          <button type="button" data-grade="0-2" aria-pressed="false">K–2</button>
+          <button type="button" data-grade="3-5" aria-pressed="false">3–5</button>
+          <button type="button" data-grade="6-8" aria-pressed="false">6–8</button>
+          <button type="button" data-grade="9-12" aria-pressed="false">9–12</button>
+        </div>
+        <p class="lib-grade-status" id="libGradeStatus" aria-live="polite"></p>
       </div>
 
       <div class="bookcase classics-bookcase" aria-label="K–12 STEAM reading bookcase">
@@ -4277,8 +4498,14 @@
       var welcomeBackground = Array.from(document.querySelectorAll('.site-header, #main-content, .site-footer'));
       var welcomeReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
+      /* The quote greets a reader once; after that the library opens straight to the shelves. */
+      var WELCOMED_KEY = 'library:welcomed';
+      var alreadyWelcomed = false;
+      try { alreadyWelcomed = localStorage.getItem(WELCOMED_KEY) === '1'; } catch (e) { /* storage blocked */ }
+
       function closeWelcome() {
         if (!welcome || welcome.hidden) return;
+        try { localStorage.setItem(WELCOMED_KEY, '1'); } catch (e) { /* storage blocked */ }
         welcome.classList.add('is-leaving');
         document.body.style.removeProperty('overflow');
         welcomeBackground.forEach(function (element) { element.removeAttribute('inert'); });
@@ -4295,7 +4522,7 @@
       }
 
       var roomDeepLink = /^#section-[a-z]+$/.test(location.hash) && document.querySelector(location.hash);
-      if (welcome && roomDeepLink) {
+      if (welcome && (roomDeepLink || alreadyWelcomed)) {
         welcome.hidden = true;
       } else if (welcome && enterLibraryBtn) {
         document.body.style.overflow = 'hidden';
@@ -4586,17 +4813,57 @@
         return p >= 0.99 ? 'Finished · read again' : 'Continue reading · ' + Math.max(1, Math.round(p * 100)) + '%';
       }
       function markReaderProgress() {
+        var started = [];
         document.querySelectorAll('#section-classics .book-popup-cta[href], #section-nasa .book-popup-cta[href]').forEach(function (link) {
           var href = link.getAttribute('href');
           var p = readerBooks[href] && readerProgress(href);
           var book = link.closest('.book');
           if (!p || !book) return;
+          if (p < 0.99) started.push({ href: href, p: p, book: book });
           link.textContent = progressLabel(p) + ' →';
           var title = book.querySelector('.book-popup-title');
           if (link.hasAttribute('aria-label')) link.setAttribute('aria-label', progressLabel(p) + ': ' + (title ? title.textContent.trim() : 'this book'));
           book.classList.add('is-reading');
           book.style.setProperty('--read', Math.min(1, p).toFixed(3));
         });
+        renderContinueReading(started);
+      }
+
+      /* Books part-way through in the reader get a one-click shortcut at the top of the page. */
+      function renderContinueReading(started) {
+        var box = document.getElementById('libContinue');
+        var list = document.getElementById('libContinueList');
+        if (!box || !list) return;
+        list.innerHTML = '';
+        started.forEach(function (entry) {
+          var titleEl = entry.book.querySelector('.book-popup-title');
+          var authorEl = entry.book.querySelector('.book-popup-author');
+          var title = titleEl ? titleEl.textContent.trim() : 'Your book';
+          var pct = Math.max(1, Math.round(entry.p * 100));
+          var li = document.createElement('li');
+          var a = document.createElement('a');
+          a.className = 'lib-continue-item';
+          a.href = 'reader.html?' + new URLSearchParams({ src: entry.href });
+          a.setAttribute('aria-label', 'Continue reading ' + title + ', ' + pct + ' percent read');
+          var strong = document.createElement('strong');
+          strong.textContent = title;
+          var meta = document.createElement('span');
+          meta.textContent = (authorEl ? authorEl.textContent.split('—')[0].trim() + ' · ' : '') + pct + '% read';
+          var meter = document.createElement('span');
+          meter.className = 'lib-continue-meter';
+          meter.setAttribute('aria-hidden', 'true');
+          meter.style.setProperty('--read', entry.p.toFixed(3));
+          meter.appendChild(document.createElement('i'));
+          a.append(strong, meta, meter);
+          a.addEventListener('click', function (event) {
+            if (event.metaKey || event.ctrlKey || event.shiftKey) return;
+            event.preventDefault();
+            goToReader(a.href, entry.book.querySelector('.book-popup-cta[href]'));
+          });
+          li.appendChild(a);
+          list.appendChild(li);
+        });
+        box.hidden = !started.length;
       }
 
       function openReadingCheck(link) {
@@ -4879,6 +5146,14 @@
       var allBooks = Array.from(document.querySelectorAll('.book'));
       var mobileCatalogQuery = window.matchMedia('(max-width: 700px)');
       var popupActionSelector = '.book-popup a, .book-popup button';
+
+      /* Card mode: every title shows as a readable card (phones, the Easy-read list, and search results). */
+      var VIEW_KEY = 'library:view';
+      var listView = false;
+      try { listView = localStorage.getItem(VIEW_KEY) === 'list'; } catch (e) { /* storage blocked */ }
+      function cardMode() {
+        return mobileCatalogQuery.matches || listView || document.body.classList.contains('is-searching');
+      }
       var backBtn      = document.getElementById('libBackBtn');
       var statRow      = document.getElementById('libStatRow');
       var emptyState   = document.getElementById('libEmptyState');
@@ -4905,7 +5180,7 @@
 
       /* ── Hero stat line ── */
       if (statRow) {
-        var recipeCount = document.querySelectorAll('[data-rtags]').length;
+        var recipeCount = document.querySelectorAll('#section-recipes .book').length;
         statRow.textContent = LIBRARY_DATA.length + ' titles · 4 collections · ' + recipeCount + ' project recipes';
       }
 
@@ -4927,7 +5202,12 @@
         var terms = normalized.split(/\s+/).filter(Boolean);
         var visibleCount = 0;
         document.body.classList.toggle('is-searching', !!normalized);
+        syncCardMode();
         LIBRARY_DATA.forEach(function (bookData) {
+          if (bookData.element.classList.contains('is-grade-hidden')) {
+            bookData.element.classList.remove('is-search-hit');
+            return;
+          }
           var haystack = [
             bookData.title,
             bookData.author,
@@ -4943,7 +5223,7 @@
         });
         document.querySelectorAll('.shelf-row, .recipe-shelf-group').forEach(function (container) {
           var books = Array.from(container.querySelectorAll('.book'));
-          var hasMatch = books.some(function (book) { return !book.classList.contains('is-search-dim'); });
+          var hasMatch = books.some(function (book) { return !book.classList.contains('is-search-dim') && !book.classList.contains('is-grade-hidden'); });
           container.classList.toggle('is-search-empty', !!normalized && !hasMatch);
         });
         if (normalized && typeof libRooms !== 'undefined') {
@@ -4954,13 +5234,61 @@
         updateSearchStats(visibleCount, LIBRARY_DATA.length, normalized);
       }
 
+      /* ── Grade bands (reading room) ──────────────
+         A book shows in a band when its "Grades X–Y" range overlaps it. */
+      var GRADE_KEY = 'library:grade';
+      var gradeButtons = Array.from(document.querySelectorAll('[data-grade]'));
+      var gradeStatus = document.getElementById('libGradeStatus');
+      var readingBooks = Array.from(document.querySelectorAll('#section-classics .book'));
+      readingBooks.forEach(function (book) {
+        var tag = book.querySelector('.book-popup-tag');
+        var m = tag && tag.textContent.match(/Grades?\s+(K|\d+)(?:\s*[–-]\s*(K|\d+))?/i);
+        if (!m) return;
+        var lo = m[1].toUpperCase() === 'K' ? 0 : parseInt(m[1], 10);
+        var hi = m[2] ? (m[2].toUpperCase() === 'K' ? 0 : parseInt(m[2], 10)) : lo;
+        book.dataset.gradeLo = lo;
+        book.dataset.gradeHi = hi;
+      });
+
+      function applyGrade(band) {
+        var range = band === 'all' ? null : band.split('-').map(Number);
+        var shown = 0;
+        readingBooks.forEach(function (book) {
+          var fits = !range || !book.dataset.gradeLo ||
+            (+book.dataset.gradeLo <= range[1] && +book.dataset.gradeHi >= range[0]);
+          book.classList.toggle('is-grade-hidden', !fits);
+          if (!fits) syncPopupState(book, false);
+          if (fits) shown += 1;
+        });
+        document.querySelectorAll('#section-classics .shelf-row').forEach(function (row) {
+          row.classList.toggle('is-grade-empty', !row.querySelector('.book:not(.is-grade-hidden)'));
+        });
+        gradeButtons.forEach(function (btn) {
+          btn.setAttribute('aria-pressed', btn.dataset.grade === band ? 'true' : 'false');
+        });
+        if (gradeStatus) {
+          gradeStatus.textContent = range
+            ? 'Showing ' + shown + ' of ' + readingBooks.length + ' books that fit grades ' + (range[0] === 0 ? 'K' : range[0]) + '–' + range[1] + '.'
+            : 'Showing all ' + readingBooks.length + ' books.';
+        }
+        try { localStorage.setItem(GRADE_KEY, band); } catch (e) { /* storage blocked */ }
+        if (searchInput && searchInput.value.trim()) applyArchiveSearch(searchInput.value);
+      }
+
+      gradeButtons.forEach(function (btn) {
+        btn.addEventListener('click', function () { applyGrade(btn.dataset.grade); });
+      });
+      var savedGrade = 'all';
+      try { savedGrade = localStorage.getItem(GRADE_KEY) || 'all'; } catch (e) { /* storage blocked */ }
+      if (!gradeButtons.some(function (btn) { return btn.dataset.grade === savedGrade; })) savedGrade = 'all';
+
       function popupActions(book) {
         return Array.from(book.querySelectorAll(popupActionSelector));
       }
 
       function syncPopupState(book, expanded) {
         var popup = book.querySelector('.book-popup');
-        var mobileCard = mobileCatalogQuery.matches;
+        var mobileCard = cardMode();
         book.classList.toggle('is-active', expanded);
         book.setAttribute('aria-expanded', expanded ? 'true' : 'false');
         if (popup) popup.setAttribute('aria-hidden', mobileCard || expanded ? 'false' : 'true');
@@ -5002,7 +5330,7 @@
         }
 
         popupActions(book).forEach(function (action) {
-          action.tabIndex = mobileCatalogQuery.matches ? 0 : -1;
+          action.tabIndex = cardMode() ? 0 : -1;
         });
 
         /* Mouse hover */
@@ -5058,7 +5386,7 @@
 
       function syncCatalogViewport() {
         allBooks.forEach(function (book) {
-          var mobileCard = mobileCatalogQuery.matches;
+          var mobileCard = cardMode();
           var expanded = book.classList.contains('is-active');
           var popup = book.querySelector('.book-popup');
           book.tabIndex = mobileCard ? -1 : 0;
@@ -5070,7 +5398,36 @@
         });
       }
 
-      syncCatalogViewport();
+      /* Shelves are row → board → spacer; as cards the board (label) moves above its row. */
+      document.querySelectorAll('.bookcase, .recipe-shelf-group').forEach(function (parent) {
+        var shelf = -1;
+        Array.from(parent.children).forEach(function (child) {
+          if (child.classList.contains('shelf-row')) shelf += 1;
+          var slot = child.classList.contains('shelf-board') ? 0 : child.classList.contains('shelf-row') ? 1 : 2;
+          if (shelf >= 0) child.style.setProperty('--card-order', shelf * 3 + slot);
+        });
+      });
+
+      function syncCardMode() {
+        document.body.classList.toggle('lib-cards', listView || document.body.classList.contains('is-searching'));
+        if (cardMode()) closeAllBooks();
+        syncCatalogViewport();
+      }
+
+      var viewButtons = Array.from(document.querySelectorAll('[data-view]'));
+      function setView(view) {
+        listView = view === 'list';
+        try { localStorage.setItem(VIEW_KEY, view); } catch (e) { /* storage blocked */ }
+        viewButtons.forEach(function (btn) {
+          btn.setAttribute('aria-pressed', btn.dataset.view === view ? 'true' : 'false');
+        });
+        syncCardMode();
+      }
+      viewButtons.forEach(function (btn) {
+        btn.addEventListener('click', function () { setView(btn.dataset.view); });
+      });
+      setView(listView ? 'list' : 'shelf');
+
       if (mobileCatalogQuery.addEventListener) mobileCatalogQuery.addEventListener('change', syncCatalogViewport);
       else if (mobileCatalogQuery.addListener) mobileCatalogQuery.addListener(syncCatalogViewport);
 
@@ -5097,6 +5454,8 @@
           c.setAttribute('aria-expanded', selected ? 'true' : 'false');
         });
         if (backBtn) backBtn.classList.add('is-visible');
+        /* Keep the open room in the URL so it can be bookmarked or shared. */
+        try { history.replaceState(history.state, '', '#section-' + roomId); } catch (e) { /* ignore */ }
         var target = document.getElementById('section-' + roomId);
         if (target) setTimeout(function () { target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
       }
@@ -5111,6 +5470,7 @@
           c.setAttribute('aria-expanded', 'false');
         });
         if (backBtn) backBtn.classList.remove('is-visible');
+        try { history.replaceState(history.state, '', location.pathname + location.search); } catch (e) { /* ignore */ }
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
 
@@ -5144,6 +5504,7 @@
           applyArchiveSearch(q);
         });
       }
+      applyGrade(savedGrade);
       applyArchiveSearch('');
 
       /* ── Classics gold-leaf labels ───────────────── */
@@ -5202,7 +5563,7 @@
         quickReadBtn.type = 'button';
         quickReadBtn.className = 'book-popup-btn';
         quickReadBtn.textContent = 'Quick Read';
-        quickReadBtn.tabIndex = mobileCatalogQuery.matches ? 0 : -1;
+        quickReadBtn.tabIndex = cardMode() ? 0 : -1;
         quickReadBtn.addEventListener('click', function (e) {
           e.preventDefault();
           e.stopPropagation();
@@ -5321,7 +5682,7 @@
 
       /* ── Recipe filter ─────────────────────────── */
       var filterBtns   = Array.from(document.querySelectorAll('[data-rfilter]'));
-      var recipeBooks  = Array.from(document.querySelectorAll('[data-rtags]'));
+      var recipeBooks  = Array.from(document.querySelectorAll('#section-recipes [data-rtags]'));
       var statsEl      = document.getElementById('recipe-stats');
 
       function applyFilter(tag) {
