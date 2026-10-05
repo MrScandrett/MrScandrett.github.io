@@ -15,7 +15,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { matchSource, gutenbergIdFromUrl, gutenbergEpubUrl } from "../assets/js/book-sources.mjs";
+import { matchSource, viaFor, gutenbergIdFromUrl, gutenbergEpubUrl } from "../assets/js/book-sources.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const QUICK = process.argv.includes("--quick");
@@ -28,7 +28,9 @@ const decode = (s) =>
     .replace(/<[^>]+>/g, "")
     .replace(/&amp;/g, "&")
     .replace(/&nbsp;/g, " ")
-    .replace(/&#39;|&rsquo;|&#8217;/g, "’")
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d)))
+    .replace(/&rsquo;/g, "’")
     .replace(/&quot;/g, '"')
     .replace(/\s+/g, " ")
     .trim();
@@ -139,6 +141,7 @@ async function findStandardEbook(book) {
   const query = book.title.split(/[:;]/)[0].replace(/^(the|a|an)\s+/i, "");
   const search = await getText(`https://standardebooks.org/ebooks?query=${encodeURIComponent(query)}`);
   await sleep(500);
+  if (search.status !== 200) throw new Error(`Standard Ebooks search HTTP ${search.status}`);
   const hrefs = [...new Set([...search.text.matchAll(/href="(\/ebooks\/[a-z0-9-]+\/[a-z0-9-]+(?:\/[a-z0-9-]+)*)"/g)].map((m) => m[1]))];
   const want = surname(book.author);
   let best = null;
@@ -154,11 +157,8 @@ async function findStandardEbook(book) {
   await sleep(500);
   const file = (page.text.match(/href="([^"]+\/downloads\/[a-z0-9_-]+\.epub)"/) || [])[1];
   if (!file || /kepub|_advanced/.test(file)) return null;
-  const url = `https://standardebooks.org${file}?source=download`;
-  const res = await probe(url);
-  await sleep(500);
-  if (!res.ok || res.magic.slice(0, 2) !== "PK") return null;
-  return { url, page: `https://standardebooks.org${best.href}`, cors: res.cors, bytes: res.bytes };
+  // Don't download to verify: Standard Ebooks rate-limits downloads per IP.
+  return { url: `https://standardebooks.org${file}?source=download`, page: `https://standardebooks.org${best.href}` };
 }
 
 /* ── 5. Rights for non-Gutenberg entries ─────────────────────────── */
@@ -176,6 +176,10 @@ function rightsFor(book, url) {
 
 /* ── 6. Run ──────────────────────────────────────────────────────── */
 const shelves = await readShelves();
+const previous = await fs
+  .readFile(path.join(root, "data", "reader-library.json"), "utf8")
+  .then((t) => JSON.parse(t).books || {})
+  .catch(() => ({}));
 const rows = [];
 const catalog = {};
 
@@ -194,10 +198,20 @@ for (const book of shelves) {
     if (g.catalogStatus !== 200) row.notes.push(`catalog page HTTP ${g.catalogStatus}`);
     if (g.titleScore < 0.6) row.notes.push(`⚠ id ${gid} is “${g.catalogTitle}” — check the link`);
     if (!g.epubOk) row.notes.push("no EPUB3 file on Gutenberg");
-    const se = QUICK || !g.publicDomain ? null : await findStandardEbook(book);
+    let se = null;
+    if (!QUICK && g.publicDomain) {
+      try {
+        se = await findStandardEbook(book);
+      } catch (err) {
+        // Lookup failed (rate limit, outage): keep the edition we found last time.
+        const prev = previous[book.href]?.sources.find((s) => s.label === "Standard Ebooks");
+        if (prev) se = { url: prev.url, page: prev.info };
+        row.notes.push(`Standard Ebooks lookup failed (${err.message})`);
+      }
+    }
     const sources = [];
-    if (se) sources.push({ url: se.url, label: "Standard Ebooks", via: se.cors ? "direct" : "proxy", info: se.page });
-    if (g.epubOk) sources.push({ url: g.epubUrl, label: "Project Gutenberg", via: g.epubCors ? "direct" : "proxy" });
+    if (se) sources.push({ url: se.url, label: "Standard Ebooks", via: viaFor(matchSource(se.url)), info: se.page });
+    if (g.epubOk) sources.push({ url: g.epubUrl, label: "Project Gutenberg", via: "proxy" });
     row.reader = !g.publicDomain ? "not public domain" : sources.length ? sources.map((s) => `${s.label} (${s.via})`).join(" → ") : "no source";
     if (g.publicDomain && sources.length && g.titleScore >= 0.6) {
       catalog[book.href] = { title: book.title, author: book.author.split(" — ")[0], format: "epub", rights: g.rights, home: book.href, sources };

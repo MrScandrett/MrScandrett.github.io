@@ -12,7 +12,7 @@
 // EPUB chapters are re-built element by element from an allow-list (no scripts,
 // styles, forms, or event attributes survive), so the book takes on the
 // reader's own typography. PDFs render with the vendored PDF.js.
-import { BOOK_PROXY, matchSource, gutenbergIdFromUrl, gutenbergEpubUrl } from "./book-sources.mjs";
+import { BOOK_PROXY, matchSource, viaFor, gutenbergIdFromUrl, gutenbergEpubUrl } from "./book-sources.mjs";
 
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
@@ -212,10 +212,10 @@ function planSources(entry) {
     return entry.sources
       .map((s) => ({ ...s, rule: matchSource(s.url) }))
       .filter((s) => s.rule)
-      .map((s) => ({ url: s.url, label: s.label, via: s.rule.cors ? "direct" : "proxy", format: s.rule.format }));
+      .map((s) => ({ url: s.url, label: s.label, via: viaFor(s.rule), format: s.rule.format }));
   }
   const rule = matchSource(src);
-  if (rule) return [{ url: src, label: rule.label, via: rule.cors ? "direct" : "proxy", format: rule.format }];
+  if (rule) return [{ url: src, label: rule.label, via: viaFor(rule), format: rule.format }];
   const gid = gutenbergIdFromUrl(src);
   if (gid) return [{ url: gutenbergEpubUrl(gid), label: "Project Gutenberg", via: "proxy", format: "epub" }];
   return [];

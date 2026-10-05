@@ -5,7 +5,8 @@
 // matches book files, never a whole host.
 //
 // `cors: true` means the host already sends Access-Control-Allow-Origin, so the
-// reader fetches it directly. Everything else needs the proxy.
+// reader can fetch it directly. Everything else needs the proxy.
+
 
 // URL of the deployed workers/book-proxy Worker, e.g.
 // "https://classroomos-book-proxy.<account>.workers.dev/". Empty = proxy not
@@ -31,6 +32,8 @@ export const SOURCES = [
     query: /^(?:\?source=download)?$/,
     format: "epub",
     cors: true,
+    // Rate-limited per IP (429) and blocks Cloudflare Workers (403), so it is
+    // always fetched directly; the reader falls back to Gutenberg on failure.
   },
   {
     id: "nasa",
@@ -83,4 +86,9 @@ export function gutenbergIdFromUrl(input) {
 /** The EPUB3-with-images file Gutenberg serves for a catalog id. */
 export function gutenbergEpubUrl(id) {
   return `https://www.gutenberg.org/cache/epub/${id}/pg${id}-images-3.epub`;
+}
+
+/** "direct" when the host sends CORS headers, otherwise "proxy". */
+export function viaFor(rule) {
+  return rule.cors ? "direct" : "proxy";
 }
