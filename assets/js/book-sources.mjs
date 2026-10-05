@@ -11,7 +11,7 @@
 // "https://classroomos-book-proxy.<account>.workers.dev/". Empty = proxy not
 // deployed yet: only direct sources open in the reader, and the library keeps
 // linking out for the rest.
-export const BOOK_PROXY = "";
+export const BOOK_PROXY = "https://classroomos-book-proxy.book-proxy.workers.dev/";
 
 export const SOURCES = [
   {
