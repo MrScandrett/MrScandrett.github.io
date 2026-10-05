@@ -2240,6 +2240,283 @@
     body.lib-cards .bookcase > *,
     body.lib-cards .recipe-shelf-group > * { order: var(--card-order, 0); }
 
+    /* ── Cover view: every title as a cover in a grid; details on hover, tap or focus ── */
+    .book-cover, .book-caption, .book-popup-credit { display: none; }
+    body.lib-covers .bookcase,
+    body.lib-covers .bookcase-flex {
+      display: flex;
+      flex-direction: column;
+      padding: clamp(1rem, 3vw, 1.75rem);
+      border-radius: 16px;
+    }
+    body.lib-covers .recipe-shelf-group { display: flex; flex-direction: column; }
+    body.lib-covers .bookcase > *,
+    body.lib-covers .recipe-shelf-group > * { order: var(--card-order, 0); }
+    body.lib-covers .bookcase::before,
+    body.lib-covers .bookcase::after,
+    body.lib-covers .bookcase-flex::before,
+    body.lib-covers .bookcase-flex::after,
+    body.lib-covers .bookcase-base,
+    body.lib-covers .shelf-hint,
+    body.lib-covers .book-spine { display: none; }
+    body.lib-covers .shelf-board {
+      height: auto;
+      margin: 0 0 0.9rem;
+      padding: 0 0 0.55rem;
+      justify-content: flex-start;
+      background: none;
+      box-shadow: none;
+      border-bottom: 1px solid rgba(255, 215, 110, 0.18);
+    }
+    body.lib-covers .shelf-label { font-size: 0.7rem; white-space: normal; }
+    body.lib-covers .shelf-spacer { height: 1.6rem; }
+    body.lib-covers .shelf-row,
+    body.lib-covers .bookcase-flex,
+    body.lib-covers .recipe-shelf-group .shelf-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(clamp(96px, 26vw, 150px), 1fr));
+      align-items: start;
+      gap: 1.5rem clamp(0.7rem, 2vw, 1.25rem);
+      min-height: 0;
+      padding: 0;
+    }
+    body.lib-covers .book {
+      width: auto !important;
+      height: auto !important;
+      min-width: 0;
+      transform: none !important;
+    }
+    body.lib-covers .book.is-search-dim { display: none; }
+    body.lib-covers .book:focus-visible { outline-offset: 6px; }
+
+    body.lib-covers .book-cover {
+      display: block;
+      position: relative;
+      aspect-ratio: 2 / 3;
+      overflow: hidden;
+      border-radius: 3px 7px 7px 3px;
+      background: var(--sc, #3a2a1a);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.35), 0 12px 26px rgba(0,0,0,0.38);
+      container-type: inline-size;
+      transition: transform 0.22s cubic-bezier(0.34, 1.3, 0.64, 1), box-shadow 0.22s ease;
+    }
+    /* The hinge: a lit crease near the spine edge, like a bound book. */
+    body.lib-covers .book-cover::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background: linear-gradient(90deg,
+        rgba(0,0,0,0.38) 0, rgba(255,255,255,0.22) 2.5%, rgba(255,255,255,0.05) 5%,
+        rgba(0,0,0,0.18) 7%, transparent 11%, transparent 92%, rgba(0,0,0,0.12) 100%);
+      border-radius: inherit;
+    }
+    body.lib-covers .book:hover .book-cover,
+    body.lib-covers .book.is-active .book-cover,
+    body.lib-covers .book:focus-visible .book-cover {
+      transform: translateY(-5px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.35), 0 22px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255, 215, 110, 0.35);
+    }
+    .book-cover-art {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .book-cover-art.is-loaded { opacity: 1; }
+    .book-cover.has-art .book-cover-type { visibility: hidden; }
+    /* Covers that aren't book-shaped sit whole over a blurred copy of themselves. */
+    .book-cover.is-letterbox .book-cover-art { object-fit: contain; }
+    .book-cover.is-letterbox::before {
+      content: '';
+      position: absolute;
+      inset: -12%;
+      background: var(--cover-img) center / cover;
+      filter: blur(14px) brightness(0.55) saturate(1.2);
+    }
+
+    /* Typeset cover for books without cover art: cloth binding, gold-stamped title. */
+    .book-cover-type {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6cqi;
+      padding: 15cqi 11cqi 13cqi;
+      text-align: center;
+      color: #f3e2b8;
+      background:
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 3px),
+        repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0 1px, transparent 1px 3px),
+        radial-gradient(130% 70% at 30% 0%, rgba(255,255,255,0.16), transparent 62%),
+        linear-gradient(165deg, var(--sc, #3a2a1a) 0%, color-mix(in srgb, var(--sc, #3a2a1a) 62%, #000) 100%);
+    }
+    .book-cover-type::before {
+      content: '';
+      position: absolute;
+      inset: 6cqi;
+      border: 1px solid rgba(243, 226, 184, 0.42);
+      box-shadow: inset 0 0 0 3px transparent, inset 0 0 0 4px rgba(243, 226, 184, 0.2);
+      pointer-events: none;
+    }
+    .bct-kicker {
+      font: 700 6.2cqi/1.2 "Univers", "Helvetica Neue", Arial, sans-serif;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      opacity: 0.78;
+    }
+    .bct-title {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 6;
+      overflow: hidden;
+      font: 600 11.5cqi/1.12 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif !important; /* a printed cover, not the site's UI face */
+      text-wrap: balance;
+      text-shadow: 0 1px 1px rgba(0,0,0,0.45);
+    }
+    .bct-title.is-long { font-size: 9.5cqi; }
+    .bct-rule { width: 22cqi; height: 1px; flex: none; background: rgba(243, 226, 184, 0.55); }
+    .bct-author {
+      font: 500 7cqi/1.25 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif !important;
+      font-variant: small-caps;
+      letter-spacing: 0.04em;
+      opacity: 0.9;
+    }
+
+    /* Reading progress: a ribbon on the cover and a bar along its foot. */
+    body.lib-covers .book.is-reading::before { top: -3px; right: 14%; z-index: 4; }
+    body.lib-covers .book.is-reading::after { display: none; }
+    body.lib-covers .book.is-reading .book-cover { box-shadow: 0 2px 4px rgba(0,0,0,0.35), 0 12px 26px rgba(0,0,0,0.38), inset 0 -4px 0 rgba(0,0,0,0.35); }
+    body.lib-covers .book-cover .book-cover-meter {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      z-index: 3;
+      height: 4px;
+      width: calc(var(--read, 0) * 100%);
+      background: #e8b84a;
+    }
+    body.lib-covers .book[data-diff]::after { bottom: auto; top: 8px; left: auto; right: 8px; transform: none; width: 9px; height: 9px; }
+
+    body.lib-covers .book-caption {
+      display: grid;
+      gap: 0.1rem;
+      margin-top: 0.6rem;
+      text-align: left;
+    }
+    .book-caption strong {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+      color: rgba(255, 240, 220, 0.94);
+      font-size: 0.8rem;
+      font-weight: 650;
+      line-height: 1.25;
+    }
+    .book-caption span {
+      overflow: hidden;
+      color: rgba(255, 228, 190, 0.66);
+      font-size: 0.7rem;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    /* The details card opens beside the cover (JS picks the side with room). */
+    body.lib-covers .book-popup {
+      top: var(--pop-y, 0px);
+      bottom: auto;
+      left: calc(100% + 14px);
+      width: 270px;
+      transform: translateX(-6px);
+    }
+    body.lib-covers .book.pop-left .book-popup { left: auto; right: calc(100% + 14px); transform: translateX(6px); }
+    body.lib-covers .book:hover .book-popup,
+    body.lib-covers .book.is-active .book-popup { transform: none; }
+    body.lib-covers .book-popup::after { display: none; }
+    /* An invisible bridge across the gap, so the pointer can move from cover to card. */
+    body.lib-covers .book-popup::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: -16px;
+      width: 16px;
+    }
+    body.lib-covers .book.pop-left .book-popup::before { left: auto; right: -16px; }
+    body.lib-covers .book-popup-credit {
+      display: block;
+      margin: 0.7rem 0 0;
+      color: #8e8e93;
+      font-size: 0.66rem;
+    }
+
+    /* Phones: covers three across; tapping one slides its details up as a sheet. */
+    @media (max-width: 700px) {
+      body.lib-covers .shelf-row,
+      body.lib-covers .bookcase-flex,
+      body.lib-covers .recipe-shelf-group .shelf-row {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1.1rem 0.7rem;
+      }
+      body.lib-covers .bookcase,
+      body.lib-covers .bookcase-flex { padding: 0.9rem 0.75rem; }
+      body.lib-covers .book-popup,
+      body.lib-covers .book:hover .book-popup {
+        position: fixed;
+        top: auto;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: auto;
+        max-height: 78vh;
+        overflow: auto;
+        padding: 1.6rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
+        border-radius: 20px 20px 0 0;
+        opacity: 0;
+        transform: translateY(100%);
+        pointer-events: none;
+        z-index: 1200;
+        transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease;
+      }
+      body.lib-covers .book.is-active .book-popup {
+        opacity: 1;
+        transform: none;
+        pointer-events: auto;
+      }
+      body.lib-covers .book-popup::before {
+        top: 0.55rem;
+        bottom: auto;
+        left: 50%;
+        width: 40px;
+        height: 4px;
+        margin-left: -20px;
+        border-radius: 4px;
+        background: rgba(0,0,0,0.18);
+      }
+      /* <main> is its own stacking context, so the backdrop lives inside it, under the open book. */
+      body.lib-covers.has-book-sheet main::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 1100;
+        background: rgba(0,0,0,0.5);
+      }
+      body.lib-covers.has-book-sheet .book.is-active { z-index: 1200; }
+      body.lib-covers .book-popup-desc { font-size: 0.86rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .book-cover, .book-cover-art, body.lib-covers .book-popup { transition: none !important; }
+    }
+
     @media (max-width: 700px) {
       .bookcase,
       .recipe-shelf-group { display: flex; flex-direction: column; }
@@ -2333,7 +2610,8 @@
       <div class="lib-tools">
         <div class="lib-seg lib-view-toggle" role="group" aria-label="How to show titles">
           <span class="lib-tools-label">Show titles as</span>
-          <button type="button" data-view="shelf" aria-pressed="true">Bookshelf</button>
+          <button type="button" data-view="covers" aria-pressed="true">Covers</button>
+          <button type="button" data-view="shelf" aria-pressed="false">Bookshelf</button>
           <button type="button" data-view="list" aria-pressed="false">Easy-read list</button>
         </div>
         <a class="lib-own-file" href="reader.html">Read your own EPUB, PDF or text file <span aria-hidden="true">→</span></a>
@@ -3849,7 +4127,7 @@
           <span class="lib-room-count-tag">22 project recipes · Filter by pathway</span>
         </div>
         <h2>Project Recipes</h2>
-        <p>Hands-on builds across five pathways. Hover any spine for the full brief — what you make, how long it takes, and what you'll need.</p>
+        <p>Hands-on builds across five pathways. Hover or tap any book for the full brief — what you make, how long it takes, and what you'll need.</p>
       </div>
 
       <div class="book-filter-bar" role="toolbar" aria-label="Filter recipes">
@@ -5140,6 +5418,7 @@
       var EDGE    = 10;
 
       function fixPopupShift(book) {
+        if (coversView && !cardMode()) return placeCoverPopup(book);
         var rect = book.getBoundingClientRect();
         var vw   = window.innerWidth;
         var center = rect.left + rect.width / 2;
@@ -5156,12 +5435,40 @@
       var mobileCatalogQuery = window.matchMedia('(max-width: 700px)');
       var popupActionSelector = '.book-popup a, .book-popup button';
 
-      /* Card mode: every title shows as a readable card (phones, the Easy-read list, and search results). */
-      var VIEW_KEY = 'library:view';
-      var listView = false;
-      try { listView = localStorage.getItem(VIEW_KEY) === 'list'; } catch (e) { /* storage blocked */ }
+      /* Three views: Covers (the default), Bookshelf spines, and the Easy-read list.
+         Card mode: every title shows as a readable card (the Easy-read list; and phones
+         and search results, unless covers are showing). */
+      var VIEW_KEY = 'library:view2';
+      var currentView = 'covers';
+      try {
+        currentView = localStorage.getItem(VIEW_KEY) ||
+          (localStorage.getItem('library:view') === 'list' ? 'list' : 'covers'); /* the old key only ever chose list on purpose */
+      } catch (e) { /* storage blocked */ }
+      if (['covers', 'shelf', 'list'].indexOf(currentView) < 0) currentView = 'covers';
+      var listView = currentView === 'list';
+      var coversView = currentView === 'covers';
       function cardMode() {
-        return mobileCatalogQuery.matches || listView || document.body.classList.contains('is-searching');
+        if (listView) return true;
+        if (coversView) return false;
+        return mobileCatalogQuery.matches || document.body.classList.contains('is-searching');
+      }
+
+      /* Covers: the details card opens on whichever side of the cover has room,
+         nudged up or down to stay on screen. Phones show it as a bottom sheet instead. */
+      function placeCoverPopup(book) {
+        var popup = book.querySelector('.book-popup');
+        var cover = book.querySelector('.book-cover');
+        if (!popup || !cover || mobileCatalogQuery.matches) return;
+        var rect = cover.getBoundingClientRect();
+        var vw = document.documentElement.clientWidth;
+        var w = popup.offsetWidth || 270;
+        var left = rect.right + 14 + w > vw - EDGE && rect.left - 14 - w > EDGE;
+        book.classList.toggle('pop-left', left);
+        var h = popup.offsetHeight;
+        var top = 0;
+        if (rect.top + h > window.innerHeight - EDGE) top = window.innerHeight - EDGE - h - rect.top;
+        if (rect.top + top < 72) top = 72 - rect.top;
+        book.style.setProperty('--pop-y', Math.round(top) + 'px');
       }
       var backBtn      = document.getElementById('libBackBtn');
       var statRow      = document.getElementById('libStatRow');
@@ -5186,6 +5493,98 @@
           popup: popup
         };
       });
+
+      /* ── Covers ──────────────────────────────────
+         Every book gets a typeset cover (title stamped on its spine colour) and a
+         caption; real cover art from data/book-covers.json (scripts/fetch-book-covers.mjs)
+         goes on top once it loads. Hidden outside the cover view. */
+      allBooks.forEach(function (book) {
+        var titleEl = book.querySelector('.book-popup-title') || book.querySelector('.book-spine-label');
+        var authorEl = book.querySelector('.book-popup-author');
+        var tagEl = book.querySelector('.book-popup-tag');
+        var title = titleEl ? titleEl.textContent.trim() : '';
+        var author = authorEl ? authorEl.textContent.split('—')[0].trim() : '';
+        var parts = tagEl ? tagEl.textContent.split('·').map(function (t) { return t.trim(); }) : [];
+        var kicker = parts.length > 1 ? parts[1] : '';
+
+        var cover = document.createElement('span');
+        cover.className = 'book-cover';
+        cover.setAttribute('aria-hidden', 'true');
+        var type = document.createElement('span');
+        type.className = 'book-cover-type';
+        var k = document.createElement('span');
+        k.className = 'bct-kicker';
+        k.textContent = kicker;
+        var t = document.createElement('span');
+        t.className = 'bct-title' + (title.length > 38 ? ' is-long' : '');
+        t.textContent = title;
+        var rule = document.createElement('span');
+        rule.className = 'bct-rule';
+        var a = document.createElement('span');
+        a.className = 'bct-author';
+        a.textContent = author;
+        var middle = document.createElement('span');
+        middle.style.display = 'grid';
+        middle.style.justifyItems = 'center';
+        middle.style.gap = '6cqi';
+        middle.append(t, rule);
+        type.append(k, middle, a);
+        var meter = document.createElement('span');
+        meter.className = 'book-cover-meter';
+        cover.append(type, meter);
+
+        var caption = document.createElement('span');
+        caption.className = 'book-caption';
+        caption.setAttribute('aria-hidden', 'true');
+        var capTitle = document.createElement('strong');
+        capTitle.textContent = title;
+        caption.appendChild(capTitle);
+        if (author) {
+          var capAuthor = document.createElement('span');
+          capAuthor.textContent = author;
+          caption.appendChild(capAuthor);
+        }
+        book.insertBefore(caption, book.firstChild);
+        book.insertBefore(cover, caption);
+      });
+
+      fetch('data/book-covers.json')
+        .then(function (r) { return r.ok ? r.json() : { covers: {} }; })
+        .then(function (data) {
+          var covers = data.covers || {};
+          allBooks.forEach(function (book) {
+            var link = book.querySelector('.book-popup-cta[href]');
+            var info = link && covers[link.getAttribute('href')];
+            var cover = book.querySelector('.book-cover');
+            if (!info || !cover) return;
+            var img = document.createElement('img');
+            img.className = 'book-cover-art';
+            img.alt = '';
+            img.loading = 'lazy';
+            img.decoding = 'async';
+            img.width = info.width;
+            img.height = info.height;
+            img.addEventListener('load', function () {
+              img.classList.add('is-loaded');
+              cover.classList.add('has-art');
+            });
+            img.addEventListener('error', function () { img.remove(); });
+            img.src = info.src;
+            if (Math.abs(info.height / info.width - 1.5) > 0.15) {
+              cover.classList.add('is-letterbox');
+              cover.style.setProperty('--cover-img', 'url("' + info.src + '")');
+            }
+            cover.insertBefore(img, cover.querySelector('.book-cover-meter'));
+            var popup = book.querySelector('.book-popup');
+            if (popup && info.credit && !popup.querySelector('.book-popup-credit')) {
+              var credit = document.createElement('p');
+              credit.className = 'book-popup-credit';
+              credit.textContent = info.credit;
+              popup.appendChild(credit);
+            }
+          });
+        })
+        .catch(function () { /* typeset covers stay */ });
 
       /* ── Hero stat line ── */
       if (statRow) {
@@ -5307,6 +5706,8 @@
         if (!expanded) {
           book.style.removeProperty('--pop-shift');
         }
+        document.body.classList.toggle('has-book-sheet',
+          coversView && mobileCatalogQuery.matches && allBooks.some(function (b) { return b.classList.contains('is-active'); }));
       }
 
       function closeAllBooks(exceptBook) {
@@ -5350,7 +5751,11 @@
           }
         });
 
+        /* A tap focuses the book before its click arrives; let the click open it, or on a
+           phone the sheet's backdrop appears under the finger and swallows that click. */
+        book.addEventListener('pointerdown', function () { book.dataset.pointerFocus = String(Date.now()); });
         book.addEventListener('focusin', function () {
+          if (Date.now() - Number(book.dataset.pointerFocus || 0) < 800) return;
           if (book.dataset.suppressFocusOpen === 'true') {
             delete book.dataset.suppressFocusOpen;
             return;
@@ -5418,24 +5823,29 @@
       });
 
       function syncCardMode() {
-        document.body.classList.toggle('lib-cards', listView || document.body.classList.contains('is-searching'));
+        document.body.classList.toggle('lib-covers', coversView);
+        document.body.classList.toggle('lib-cards', listView || (!coversView && document.body.classList.contains('is-searching')));
         if (cardMode()) closeAllBooks();
         syncCatalogViewport();
       }
 
       var viewButtons = Array.from(document.querySelectorAll('[data-view]'));
-      function setView(view) {
+      function setView(view, remember) {
+        currentView = view;
         listView = view === 'list';
-        try { localStorage.setItem(VIEW_KEY, view); } catch (e) { /* storage blocked */ }
+        coversView = view === 'covers';
+        if (remember) {
+          try { localStorage.setItem(VIEW_KEY, view); } catch (e) { /* storage blocked */ }
+        }
         viewButtons.forEach(function (btn) {
           btn.setAttribute('aria-pressed', btn.dataset.view === view ? 'true' : 'false');
         });
         syncCardMode();
       }
       viewButtons.forEach(function (btn) {
-        btn.addEventListener('click', function () { setView(btn.dataset.view); });
+        btn.addEventListener('click', function () { setView(btn.dataset.view, true); });
       });
-      setView(listView ? 'list' : 'shelf');
+      setView(currentView);
 
       if (mobileCatalogQuery.addEventListener) mobileCatalogQuery.addEventListener('change', syncCatalogViewport);
       else if (mobileCatalogQuery.addListener) mobileCatalogQuery.addListener(syncCatalogViewport);
