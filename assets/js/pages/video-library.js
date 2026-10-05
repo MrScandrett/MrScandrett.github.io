@@ -8,7 +8,8 @@ const VIDEOS = Object.entries(CATALOG).map(([slug, raw]) => ({ ...raw, slug, ent
 const GROUPS = {
   science: ['vl-group-science', 'vl-grid-science', 'vl-count-science'],
   tech: ['vl-group-tech', 'vl-grid-tech', 'vl-count-tech'],
-  purpose: ['vl-group-purpose', 'vl-grid-purpose', 'vl-count-purpose']
+  purpose: ['vl-group-purpose', 'vl-grid-purpose', 'vl-count-purpose'],
+  film: ['vl-group-film', 'vl-grid-film', 'vl-count-film']
 };
 const WATCH_KEY = 'vl-watched-v2';
 const $ = (id) => document.getElementById(id);
@@ -58,7 +59,7 @@ function openVideo(index) {
   $('vl-modal-title').textContent = video.title;
   $('vl-modal-desc').textContent = video.desc;
   $('vl-modal-insight').textContent = video.insight;
-  source.textContent = `From ${video.entry.source?.label || 'the web'} · ${video.channel} · ${video.duration} · plays inside ClassroomOS`;
+  source.textContent = [`From ${video.entry.source?.label || 'the web'}`, video.channel, video.duration, video.rights, 'plays inside ClassroomOS'].filter(Boolean).join(' · ');
   theaterLink.href = `watch.html?${new URLSearchParams({ v: video.slug })}`;
   theaterLink.setAttribute('aria-label', `Open ${video.title} in the theater`);
 
@@ -94,7 +95,7 @@ function closeModal() {
 }
 function applyFilters() {
   const query = search.value.trim().toLowerCase();
-  const counts = { science: 0, tech: 0, purpose: 0 };
+  const counts = Object.fromEntries(Object.keys(GROUPS).map((key) => [key, 0]));
   cards.forEach(({ card, video }) => {
     const match = (activeFilter === 'all' || video.category === activeFilter) &&
       (!query || [video.title, video.category, video.channel, video.desc].join(' ').toLowerCase().includes(query));

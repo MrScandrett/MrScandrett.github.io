@@ -48,7 +48,7 @@ export const FILE_HOSTS = [
     id: "nasa-svs",
     label: "NASA Scientific Visualization Studio",
     host: "svs.gsfc.nasa.gov",
-    path: /^\/vis\/a0\d{5}\/a\d{6}\/[^/?#]+\.(?:mp4|webm)$/i,
+    path: /^\/vis\/a0\d{5}\/a\d{6}\/a\d{6}\/[^/?#]+\.(?:mp4|webm)$/i,
   },
   {
     id: "internet-archive",

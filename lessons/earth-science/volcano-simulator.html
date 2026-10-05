@@ -498,6 +498,7 @@
         <img id="event-photo" src="" alt="Event visualization" style="width: 100%; border-radius: 4px; object-fit: cover; max-height: 200px;">
         <figcaption id="event-photo-caption" style="display:none;"></figcaption>
       </figure>
+      <div id="event-video" style="margin-top: 1rem;"></div>
       </div>
     </aside>
 
@@ -631,7 +632,7 @@
         desc:'<strong>Tambora — 1815 · Indonesia</strong>Deadliest eruption in recorded history. 71,000+ killed. Ejected 160 km³ of material. Caused "Year Without Summer" in 1816, triggering crop failures and famine worldwide.' },
       { id:'krakatoa1883',flag:'🇮🇩', name:'Krakatoa',    year:'Aug 27, 1883 · 10:02 AM', timeOfDay: 10.0, duration: 12, vei:6, vtype:'caldera', intensity:95, column:36, viscosity:75, pyro:90, photoCaption: "A contemporary lithograph of the 1883 eruption of Krakatoa, which collapsed the island and generated massive tsunamis.",
         desc:'<strong>Krakatoa — 1883 · Indonesia</strong>Explosion heard 4,800 km away — the loudest sound in recorded history. Tsunamis up to 30 m killed 36,000. The island largely collapsed into its magma chamber.' },
-      { id:'sthelenr1980',flag:'🇺🇸', name:'Mt St Helens',year:'May 18, 1980 · 8:32 AM', timeOfDay: 8.5, duration: 9, vei:5, vtype:'strato',  intensity:78, column:24, viscosity:65, pyro:72, photoCaption: "The spectacular ash column from the May 18, 1980 eruption of Mount St. Helens, following its catastrophic lateral blast.",
+      { id:'sthelenr1980',flag:'🇺🇸', name:'Mt St Helens',year:'May 18, 1980 · 8:32 AM', timeOfDay: 8.5, duration: 9, vei:5, vtype:'strato',  intensity:78, column:24, viscosity:65, pyro:72, video: 'mount-st-helens-1980', videoCaption: 'U.S. Forest Service film of the May 18, 1980 eruption and its aftermath (clip 9:10–16:10). Public domain, National Archives (ARC 13364), via the Internet Archive.', photoCaption: "The spectacular ash column from the May 18, 1980 eruption of Mount St. Helens, following its catastrophic lateral blast.",
         desc:'<strong>Mt St Helens — 1980 · USA</strong>A lateral blast removed the north face in seconds. 57 deaths. Ash column reached 24 km. Lahars and pyroclastic flows devastated 600 km² of forest.' },
       { id:'pinatubo1991', flag:'🇵🇭', name:'Pinatubo',   year:'Jun 15, 1991 · 1:42 PM', timeOfDay: 13.7, duration: 9, vei:6, vtype:'strato',  intensity:92, column:35, viscosity:78, pyro:88, photoCaption: "The explosive 1991 eruption of Mount Pinatubo in the Philippines. It injected millions of tons of sulfur dioxide into the stratosphere.",
         desc:'<strong>Pinatubo — 1991 · Philippines</strong>Second-largest 20th-century eruption. Injected 20 Mt of SO₂ into the stratosphere, cooling the Earth by ~0.5 °C for 2 years. 800 deaths.' },
@@ -1605,6 +1606,19 @@
          photoContainer.style.display = 'none';
       }
 
+      // Real footage, when the eruption has a public-domain film in the video library
+      const videoBox = document.getElementById('event-video');
+      videoBox.querySelectorAll('video').forEach(v => v.pause());
+      videoBox.replaceChildren();
+      if (ev.video) {
+         const fig = document.createElement('figure');
+         fig.dataset.video = ev.video;
+         const cap = document.createElement('figcaption');
+         cap.textContent = ev.videoCaption || '';
+         fig.append(cap);
+         videoBox.append(fig);
+      }
+
       rebuildTerrain();
       updateReadouts();
       updateSky(state.intensity);
@@ -1942,5 +1956,6 @@
 <script src="../../assets/js/lesson-print-button.js"></script>
 <script src="../../assets/js/photo-lightbox.js"></script>
 
+<script src="../../assets/js/video-embed.js"></script>
 </body>
 </html>
