@@ -11,9 +11,9 @@
 
   var THEORY = [
     { file: 'lessons/music/sheet-music-trainer.html', label: 'Sheet Music' },
-    { file: 'lessons/music/piano-chords.html', label: 'Piano' },
+    { file: 'lessons/music/piano.html', label: 'Piano' },
     { file: 'lessons/music/music-modes-evolution.html', label: 'Modes' },
-    { file: 'lessons/music/guitar-chords.html', label: 'Guitar' },
+    { file: 'lessons/music/guitar.html', label: 'Guitar' },
     { file: 'lessons/music/violin-fingerboard.html', label: 'Violin' },
     { file: 'lessons/music/drums.html', label: 'Drums' },
     { file: 'lessons/music/beethoven.html', label: 'Beethoven' },

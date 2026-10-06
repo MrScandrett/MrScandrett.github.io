@@ -3,11 +3,11 @@ const { chromium } = require('playwright');
 const base = process.env.MUSIC_TEST_URL || 'http://127.0.0.1:8080/';
 const paths = [
   'lessons/music/sheet-music-trainer.html',
-  'lessons/music/piano-chords.html',
+  'lessons/music/piano.html',
   'lessons/music/violin-fingerboard.html',
   'lessons/music/drums.html',
   'music-lab.html',
-  'lessons/music/guitar-chords.html',
+  'lessons/music/guitar.html',
   'lessons/music/music-modes-evolution.html',
   'lessons/music/beethoven.html',
   'lessons/technical-elements/cymatics.html',
@@ -57,7 +57,7 @@ const paths = [
         assert.ok(await page.locator('.photo-lightbox, #photo-lightbox, [role="dialog"]').first().isVisible());
         await page.keyboard.press('Escape');
       }
-      if(path.includes('piano-chords')) {
+      if(path.includes('music/piano.html')) {
         const count = await page.evaluate(() => {
           const M=MusicNotation, P=PianoTheory; let count=0;
           const host=document.createElement('div');document.body.appendChild(host);

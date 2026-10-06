@@ -497,8 +497,8 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 ### Instruments You Can Play
 
 - **MUS-01** — Sheet Music Trainer
-- **MUS-02** — Guitar Triads & Arpeggio Routes
-- **MUS-03** — Piano Triads & Arpeggio Routes
+- **MUS-02** — The Guitar: History, Frets & Chords
+- **MUS-03** — The Piano: History, Keys & Chords
 - **MUS-04** — Violin Fingerboard Explorer
 - **MUS-05** — Drum Lab: Kit, Notation, Rudiments & Fills
 

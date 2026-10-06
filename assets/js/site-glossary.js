@@ -190,14 +190,19 @@
       var sense = senses.get(normalize(entry.term));
       return sense.entry === entry && sense.score > 0;
     });
+    // Words the page already marks by hand aren't marked a second time.
     var marked = new Set();
+    var handMarked = new Set();
+    root.querySelectorAll('[data-glossary]').forEach(function (element) {
+      handMarked.add(normalize(element.dataset.glossary));
+    });
     for (var i = 0; i < nodes.length && marked.size < MAX_AUTOMATIC_TERMS; i += 1) {
       var node = nodes[i];
       if (!node.isConnected) continue;
       for (var j = 0; j < candidates.length; j += 1) {
         var entry = candidates[j];
         var key = normalize(entry.term);
-        if (marked.has(key)) continue;
+        if (marked.has(key) || handMarked.has(key)) continue;
         var match = firstMatch(entry, node.nodeValue);
         if (!match) continue;
         var exactMatch = { index: match.index + match[0].indexOf(match[1]), 0: match[1] };
