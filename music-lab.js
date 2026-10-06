@@ -374,6 +374,13 @@ function ensureAudio() {
   setStatus();
 }
 
+// Track Studio (assets/js/music-daw.js) plays through this context, after the
+// limiter and room so its mix and exports sound the same.
+window.MusicLabAudio = {
+  context() { ensureAudio(); return audioCtx; },
+  output() { ensureAudio(); return analyser; },
+};
+
 async function enableAudio() {
   ensureAudio();
   if (audioCtx.state !== 'running') await audioCtx.resume();
@@ -872,7 +879,9 @@ function os_triggerNote(midi, velocity, options) {
 
   if (config.respectScale && !noteAllowed(midi)) return;
 
-  noteOnFromUi(midi, velocity, config.respectScale);
+  // While a Track Studio track is armed, it plays (and records) the note instead.
+  const routed = config.performance && window.MusicDaw?.noteOn(midi, velocity) === true;
+  if (!routed) noteOnFromUi(midi, velocity, config.respectScale);
   bridgeState.activeNotes.add(midi);
   if (config.highlightPiano) setKeyActive(midi, true);
   if (config.highlightTheory) highlightTheoryNotes(Array.from(bridgeState.activeNotes), config.scrollTheory);
@@ -939,10 +948,11 @@ function beginPerformanceNote(note, velocity, options) {
   pianoState.heldNotes.add(note);
   pianoState.sustainedNotes.delete(note);
   pianoState.keyByNote.get(note)?.classList.remove('is-sustained');
-  os_triggerNote(note, velocity, options);
+  os_triggerNote(note, velocity, { ...options, performance: true });
 }
 
 function releasePerformanceNote(note) {
+  window.MusicDaw?.noteOff(note);
   pianoState.heldNotes.delete(note);
   if (pianoState.sustain && activeVoices.has(note)) {
     pianoState.sustainedNotes.add(note);
@@ -1140,10 +1150,12 @@ function onMidiMessage(ev) {
     // note-on with vel=0 treated as note-off
     if (data2 === 0) {
       if (preset !== 'drums') { releasePerformanceNote(note); }
+      else window.MusicDaw?.noteOff(note);
       return;
     }
 
     if (preset === 'drums') {
+      if (window.MusicDaw?.noteOn(note, vel, true)) return;
       const map = { 36:'kick',38:'snare',42:'hat',44:'hat',46:'ohat',39:'clap',45:'tom1',47:'tomMid',41:'tom2',43:'tom2',49:'crash',57:'crash',51:'ride',59:'ride' };
       triggerDrum(map[note] || 'perc');
       return;
@@ -1156,6 +1168,7 @@ function onMidiMessage(ev) {
 
   if (cmd === 0x80) {
     if (preset !== 'drums') { releasePerformanceNote(data1); }
+    else window.MusicDaw?.noteOff(data1);
   }
 }
 
@@ -1173,6 +1186,7 @@ async function enableMidi() {
 
 // ───── Drum pads ─────
 function triggerPad(name) {
+  if (window.MusicDaw?.drumPad(name)) return;
   ensureAudio();
   if (audioCtx.state !== 'running') audioCtx.resume();
   triggerDrum(name);
@@ -2084,6 +2098,9 @@ els.seqGroove.addEventListener('change', (e) => {
 });
 
 els.seqVariation.addEventListener('click', makeGrooveVariation);
+document.getElementById('seqToStudio')?.addEventListener('click', () => {
+  window.MusicDaw?.addDrumPattern(SEQ_DRUMS, seqGrid.map((row, i) => (seqMuted[i] ? row.map(() => false) : row)), seqBpm);
+});
 
 for (const pad of document.querySelectorAll('[data-drum]')) {
   pad.addEventListener('mousedown', () => triggerPad(pad.dataset.drum));
