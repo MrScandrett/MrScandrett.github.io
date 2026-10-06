@@ -174,9 +174,7 @@ kbd { padding: .05rem .4rem; border: 1px solid #c9b994; border-bottom-width: 2px
 .fb-live-visualizer .fb-keys svg, .fb-live-visualizer .fb-fretboard svg { max-height: 125px; }
 
 /* ---------------------------------------------------------------- panels */
-.fb-panels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 1.2rem; }
 .fb-panel { padding: 1.1rem 1.25rem 1.25rem; border: 1px solid #e3d7bf; border-radius: 18px; background: #ffffff; box-shadow: 0 1px 3px rgba(31,26,20,.03); }
-.fb-panel-wide { grid-column: span 3; }
 .fb-panel h3 { display: flex; align-items: center; gap: .5rem; margin: 0 0 .75rem; font-family: "Fraunces", serif; font-size: 1.18rem; }
 .fb-panel h3 b { display: inline-grid; place-items: center; width: 1.65rem; height: 1.65rem; border-radius: 50%; background: #9a5b0f; color: #ffffff; font: 800 .85rem "JetBrains Mono", monospace; }
 .fb-field { display: grid; gap: .25rem; margin-bottom: .6rem; font-size: .82rem; font-weight: 700; color: #5d5345; }
@@ -285,13 +283,7 @@ kbd { padding: .05rem .4rem; border: 1px solid #c9b994; border-bottom-width: 2px
 .fb-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* ---------------------------------------------------------------- responsive */
-@media (max-width: 1080px) and (min-width: 721px) {
-  .fb-panels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .fb-panel-wide { grid-column: span 2; }
-}
 @media (max-width: 720px) {
-  .fb-panels { grid-template-columns: 1fr; }
-  .fb-panel-wide { grid-column: auto; }
   .fb-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .fb-mixer { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .fb-chordview { grid-template-columns: 1fr; }
@@ -311,7 +303,7 @@ kbd { padding: .05rem .4rem; border: 1px solid #c9b994; border-bottom-width: 2px
 @media print {
   @page { margin: 10mm 14mm; size: auto; }
   body { background: #ffffff !important; color: #000000 !important; font-size: 10pt; }
-  .ll-topbar, .fb-topbar, .fb-transport, .fb-panels, .fb-library, .fb-imports-wrap, .fb-import-card,
+  .ll-topbar, .fb-topbar, .fb-transport, .fb-dock, .fb-library, .fb-imports-wrap, .fb-import-card,
   .fb-sheet-hint, .ll-panel, .ll-open-btn, .fb-view-switch, .ll-lesson-steps, .fb-live-chords { display: none !important; }
   .fb-shell { width: 100% !important; max-width: none !important; padding: 0 !important; margin: 0 !important; }
   .fb-sheet-card { border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
@@ -336,7 +328,6 @@ kbd { padding: .05rem .4rem; border: 1px solid #c9b994; border-bottom-width: 2px
 .fb-library-wrap[open] { padding: 0 .75rem; }
 .fb-import-card { padding: 0 .75rem; margin: .65rem 0; }
 .fb-import-card[open] { padding-bottom: .75rem; }
-.fb-tools > .fb-panels { margin: 0; padding: .5rem; }
 .fb-transport { top: 0; border-radius: 10px; }
 .fb-transport .fb-stand-toggle { color: #fff; border-color: #d9cdb4; background: transparent; }
 .fb-field, .fb-sheet-head > *, .fb-panel { min-width: 0; }
@@ -346,7 +337,7 @@ kbd { padding: .05rem .4rem; border: 1px solid #c9b994; border-bottom-width: 2px
 .fb-standing .fb-hero, .fb-standing .ll-lesson-steps,
 .fb-standing .fb-section:not(#book), .fb-standing #book > .section-lede,
 .fb-standing .fb-library-wrap, .fb-standing .fb-imports-wrap,
-.fb-standing .fb-import-card, .fb-standing .fb-tools,
+.fb-standing .fb-import-card,
 .fb-standing .ll-panel, .fb-standing .ll-open-btn,
 .fb-standing .fb-about, .fb-standing .fb-source { display: none !important; }
 .fb-standing .fb-shell { width: calc(100% - 1rem); padding: .5rem 0; }
@@ -428,4 +419,76 @@ body.fb-standing .music-family { display: none; }
   body .fb-view-switch { max-width: 100%; }
   body .fb-view-tab { padding: .5rem .6rem; min-height: 44px; }
   body .fb-field select, body .fb-import-input { font-size: 16px; }
+}
+
+/* ---------------------------------------------------------------- settings dock
+   A tab rail that never scrolls away, plus a drawer that slides out beside the
+   music. Each tab shows its current setting so the whole setup reads at a glance,
+   and the sheet can keep following the beat while a drawer is open. */
+.ll-viewport { --fb-rail-w: 88px; --fb-drawer-w: 400px; }
+.fb-dock { position: fixed; top: var(--fb-dock-top, 46px); bottom: var(--fb-dock-bottom, 0px); left: 0; z-index: 25; display: flex; align-items: stretch; pointer-events: none; }
+.fb-dock-rail { pointer-events: auto; display: flex; flex-direction: column; gap: 3px; width: var(--fb-rail-w); padding: .45rem .3rem; overflow-y: auto; background: #1f1a14; border-right: 1px solid #3a3226; scrollbar-width: thin; }
+.fb-dock-tab { display: grid; justify-items: center; gap: .12rem; width: 100%; padding: .5rem .2rem .45rem; border: 0; border-radius: 10px; background: transparent; color: #f3d9a4; font: 700 .74rem "DM Sans", sans-serif; line-height: 1.15; text-align: center; cursor: pointer; transition: background .14s, color .14s; }
+.fb-dock-tab:hover { background: #2c251c; color: #ffffff; }
+.fb-dock-tab:focus-visible { outline: 3px solid #f3b54a; outline-offset: -3px; }
+.fb-dock-ico { font-size: 1.2rem; line-height: 1.1; }
+.fb-dock-val { display: block; max-width: 100%; overflow: hidden; color: #d9cdb4; font: 600 .68rem "JetBrains Mono", monospace; text-overflow: ellipsis; white-space: nowrap; }
+.fb-dock-val:empty { display: none; }
+.fb-dock-tab[data-fb-dock-tab="changes"] .fb-dock-val { color: #f3b54a; font-size: .8rem; font-weight: 700; }
+.fb-dock-tab[aria-selected="true"] { background: #fffdf7; color: #0f5d63; }
+.fb-dock-tab[aria-selected="true"] .fb-dock-val { color: #5d5345; }
+.fb-dock-tab[aria-selected="true"][data-fb-dock-tab="changes"] .fb-dock-val { color: #c2410c; }
+
+.fb-drawer { pointer-events: auto; position: relative; display: flex; flex-direction: column; width: min(var(--fb-drawer-w), calc(100vw - var(--fb-rail-w) - 1rem)); background: #fffdf7; border-right: 1px solid #e3d7bf; box-shadow: 12px 0 28px rgba(31,26,20,.16); animation: fbDrawerIn .18s ease-out; }
+.fb-drawer[hidden] { display: none; }
+@keyframes fbDrawerIn { from { transform: translateX(-24px); opacity: 0; } to { transform: none; opacity: 1; } }
+.fb-drawer-close { position: absolute; top: .55rem; right: .55rem; z-index: 2; width: 2rem; height: 2rem; display: inline-grid; place-items: center; padding: 0; border: 1px solid #d4c6a8; border-radius: 50%; background: #ffffff; color: #5d5345; font: 700 .85rem sans-serif; cursor: pointer; }
+.fb-drawer-close:hover, .fb-drawer-close:focus-visible { border-color: #0f5d63; color: #0f5d63; outline: none; box-shadow: 0 0 0 3px #f3b54a; }
+.fb-drawer-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: .8rem .9rem 1.2rem; }
+
+/* Panels become flat drawer pages. */
+.fb-drawer .fb-panel { padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.fb-drawer .fb-panel h3 { margin: .1rem 2.4rem .8rem 0; font-size: 1.2rem; }
+.fb-drawer .fb-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.fb-drawer .fb-chordview { grid-template-columns: 1fr; gap: .6rem; }
+.fb-drawer .fb-chordname { font-size: 2rem; }
+.fb-drawer .fb-chord-select-field select { min-width: 0; }
+.fb-drawer .fb-engine-subnav { display: grid; justify-content: stretch; }
+.fb-drawer .fb-keys svg, .fb-drawer .fb-fretboard svg { min-width: 0; }
+.fb-drawer .fb-mixer { grid-template-columns: 1fr; gap: .45rem; }
+.fb-drawer .fb-mixer label { grid-template-columns: 4.2rem 1fr; align-items: center; }
+.fb-drawer .fb-loop { margin-top: 0; }
+
+/* The changes: a bar-by-bar chord chart, four bars to a line. */
+.fb-changes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin: 0 0 .9rem; padding: 0; list-style: none; border-left: 2px solid #3d352b; }
+.fb-chg-bar { position: relative; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 0 .3rem; min-height: 3.1rem; padding: .95rem .35rem .35rem; border-right: 2px solid #3d352b; border-bottom: 1px solid #ece2cc; transition: background .1s; }
+.fb-chg-num { position: absolute; top: .15rem; left: .3rem; color: #8a7c66; font: 600 .62rem "JetBrains Mono", monospace; }
+.fb-chg-chord { padding: 0; border: 0; background: none; color: #7a4508; font: 800 1.02rem "DM Sans", sans-serif; cursor: pointer; }
+.fb-chg-chord:hover, .fb-chg-chord:focus-visible { color: #0f5d63; text-decoration: underline; outline: none; }
+.fb-chg-same { color: #b3a68f; font: 700 .95rem "JetBrains Mono", monospace; }
+.fb-chg-bar.in-loop { background: #e3f1f0; }
+.fb-chg-bar.is-now { background: #fde3c4; box-shadow: inset 0 0 0 2px #fb923c; }
+.fb-chg-bar.is-now .fb-chg-chord { color: #c2410c; }
+
+/* Make room for the rail; on wide screens an open drawer pushes the music over
+   instead of covering it. */
+.ll-sim:has(.fb-dock) { padding-left: var(--fb-rail-w); }
+@media (min-width: 1180px) {
+  body.fb-dock-open .ll-sim:has(.fb-dock) { padding-left: calc(var(--fb-rail-w) + var(--fb-drawer-w)); }
+}
+
+/* Phones: the rail becomes a bottom tab bar and the drawer a pull-up sheet. */
+@media (max-width: 720px) {
+  .ll-viewport { --fb-rail-w: 0px; }
+  .fb-dock { top: auto; right: 0; flex-direction: column-reverse; }
+  .fb-dock-rail { flex-direction: row; width: 100%; padding: .3rem; overflow-x: auto; overflow-y: hidden; border-right: 0; border-top: 1px solid #3a3226; }
+  .fb-dock-tab { flex: 1 0 64px; min-height: 44px; padding: .35rem .2rem; }
+  .fb-dock-ico { font-size: 1.05rem; }
+  .fb-drawer { width: 100%; max-height: 52dvh; border-right: 0; border-top: 1px solid #e3d7bf; border-radius: 16px 16px 0 0; box-shadow: 0 -12px 28px rgba(31,26,20,.18); animation-name: fbSheetIn; }
+  @keyframes fbSheetIn { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .ll-sim:has(.fb-dock) { padding-left: 0; padding-bottom: 76px; }
+  .fb-drawer .fb-grid { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fb-drawer { animation: none; }
 }

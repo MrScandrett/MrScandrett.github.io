@@ -1424,6 +1424,7 @@
     root.classList.toggle('is-playing', on);
   }
   function clearNow() {
+    paintChangesNow(0);
     nowEls.forEach(function (n) { n.classList.remove('is-now'); });
     nowEls = [];
     Object.keys(barEls).forEach(function (k) { barEls[k].classList.remove('is-now'); });
@@ -1439,17 +1440,17 @@
       Object.keys(barEls).forEach(function (k) { barEls[k].classList.remove('is-now'); });
       if (barEls[e.bar]) barEls[e.bar].classList.add('is-now');
       banner(e.yours ? (opts.mode === 'band' ? 'You play the melody' : 'Your four bars: answer or improvise') : '');
+      paintChangesNow(e.bar);
       if (barEls[e.bar] && sheetFollow()) {
-        var chordPanel = root.querySelector('.fb-panel-wide[aria-labelledby="fbChordHead"]');
+        // Settings live in a fixed drawer now, so the sheet can always follow;
+        // only hold still when the reader has scrolled past the sheet entirely.
         var sheetCard = root.querySelector('.fb-sheet-card');
         var sc = root.closest('.ll-sim') || document.scrollingElement;
         var vh = (sc.getBoundingClientRect ? sc.getBoundingClientRect() : { top: 0, bottom: innerHeight });
-        var cpRect = chordPanel ? chordPanel.getBoundingClientRect() : null;
-        var chordPanelInView = cpRect && (cpRect.top < vh.bottom && cpRect.bottom > vh.top);
         var scRect = sheetCard ? sheetCard.getBoundingClientRect() : null;
         var sheetCardAbove = scRect && (scRect.bottom < vh.top + 100);
 
-        if (!chordPanelInView && !sheetCardAbove) {
+        if (!sheetCardAbove) {
           var r = barEls[e.bar].getBoundingClientRect();
           if (r.bottom > vh.bottom - 20 || (e.bar === 1 && r.top < vh.top + 80)) {
             barEls[e.bar].scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -1464,6 +1465,51 @@
     else if (e.ui === 'end') stop();
   }
   function sheetFollow() { return opts.follow !== false; }
+
+  // ---- chord chart ("the changes"), one cell per bar
+  function renderChanges() {
+    var list = el('[data-fb-changes]');
+    if (!list || !view) return;
+    var written = !(opts.instr === 'concert' || opts.instr === 'bass');
+    var byBar = {};
+    view.concertChords.forEach(function (c, i) {
+      (byBar[c.bar] = byBar[c.bar] || []).push(i);
+    });
+    var first = Math.min(1, Math.min.apply(null, Object.keys(byBar).map(Number).concat([1])));
+    var html = [];
+    for (var b = first; b <= tune.bars; b++) {
+      var cis = byBar[b] || [];
+      var cells = cis.length ? cis.map(function (ci) {
+        var name = chordName(written ? view.writtenChords[ci] : view.concertChords[ci]);
+        return '<button type="button" class="fb-chg-chord" data-chg-ci="' + ci + '">' + MN.escape(name) + '</button>';
+      }).join('') : '<span class="fb-chg-same" title="Same chord as before">%</span>';
+      html.push('<li class="fb-chg-bar" data-chg-bar="' + b + '"><span class="fb-chg-num">' + (b < 1 ? 'pickup' : b) + '</span>' + cells + '</li>');
+    }
+    list.innerHTML = html.join('');
+    paintChangesLoop();
+  }
+  function paintChangesNow(bar) {
+    var list = el('[data-fb-changes]');
+    if (!list) return;
+    list.querySelectorAll('.is-now').forEach(function (n) { n.classList.remove('is-now'); });
+    var cell = bar && list.querySelector('[data-chg-bar="' + bar + '"]');
+    if (!cell) return;
+    cell.classList.add('is-now');
+    // Keep the playing bar visible inside the drawer without moving the page.
+    var box = list.closest('.fb-drawer-body');
+    if (!box || !list.offsetParent) return;
+    var br = box.getBoundingClientRect(), cr = cell.getBoundingClientRect();
+    if (cr.top < br.top || cr.bottom > br.bottom) box.scrollTop += cr.top - br.top - box.clientHeight / 3;
+  }
+  function paintChangesLoop() {
+    var list = el('[data-fb-changes]');
+    if (!list || !tune) return;
+    var r = loopRange(), full = r.from === 1 && r.to === tune.bars;
+    list.querySelectorAll('[data-chg-bar]').forEach(function (li) {
+      var b = Number(li.getAttribute('data-chg-bar'));
+      li.classList.toggle('in-loop', !full && b >= r.from && b <= r.to);
+    });
+  }
 
   // ---- library
   function renderLibrary() {
@@ -1686,6 +1732,7 @@
   function refresh() {
     computeView();
     renderSheet();
+    renderChanges();
     showChord(false);
     tips();
     el('[data-fb-keyline]').textContent = 'Written in ' + keyLabel(view.writtenKey) + ' · ' + tune.meter.join('/') +
@@ -2189,6 +2236,7 @@
       barEls[k].classList.toggle('in-loop', !full && b >= r.from && b <= r.to);
       barEls[k].classList.toggle('yours', opts.mode === 'trade' && b >= r.from && b <= r.to && yours(b, r.from));
     });
+    paintChangesLoop();
   }
 
   function bind() {
@@ -2286,6 +2334,8 @@
         el('[data-fb-tempo]').value = v; el('[data-fb-tempo-num]').value = v; save(); return;
       }
       if (t.closest('[data-fb-reset]')) { opts.melody = 'original'; opts.rhythm = 'written'; opts.key = tune.raw.key; opts.octave = 0; syncControls(); refresh(); respin(); return; }
+      var chg = t.closest('[data-chg-ci]');
+      if (chg) { chordSel = Number(chg.getAttribute('data-chg-ci')); showChord(true); return; }
       var ch = t.closest('.fb-chord');
       if (ch) { chordSel = Number(ch.getAttribute('data-ci')); showChord(true); return; }
       var bar = t.closest('.fb-bar');
