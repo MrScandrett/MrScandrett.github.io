@@ -462,7 +462,9 @@
     guitarForm: 'open',
     triadInv: 0,
     triadSet: '123',
-    scaleType: 'ionian'
+    scaleType: 'ionian',
+    showShapes: true,
+    follow: true
   };
   var opts = load();
   var defaultTunes = [], importedTunes = [];
@@ -873,11 +875,28 @@
         b.pieces.forEach(function (pc) { pc.x0 = b.x + padL + pc.cum * k2; pc.head = pc.x0 + (pc.acc ? 1.3 * S : 0); });
         var xAt = function (rel) {                       // x of the musical time rel, for chord symbols
           var ps = b.pieces;
+          if (!ps || !ps.length) {
+            return b.x + padL + (b.w - padL - padR) * (b.len > 0 ? Math.min(1, Math.max(0, rel / b.len)) : 0);
+          }
           for (var i = 0; i < ps.length; i++) {
             if (near(ps[i].rel, rel)) return ps[i].head;
-            if (ps[i].rel > rel) { var a = ps[i - 1]; return a ? a.head + (ps[i].head - a.head) * (rel - a.rel) / (ps[i].rel - a.rel) : ps[i].head; }
           }
-          return b.x + padL;
+          for (var i = 0; i < ps.length; i++) {
+            if (ps[i].rel > rel) {
+              if (i === 0) {
+                var frac0 = ps[0].rel > EPS ? Math.min(1, Math.max(0, rel / ps[0].rel)) : 0;
+                return (b.x + padL) + (ps[0].head - (b.x + padL)) * frac0;
+              }
+              var a = ps[i - 1];
+              var dRel = ps[i].rel - a.rel;
+              return dRel > EPS ? a.head + (ps[i].head - a.head) * (rel - a.rel) / dRel : a.head;
+            }
+          }
+          var last = ps[ps.length - 1];
+          var lastDur = (last.real || last.d || (b.len - last.rel));
+          var barEnd = b.x + b.w - padR;
+          var frac = lastDur > EPS ? Math.min(1, Math.max(0, (rel - last.rel) / lastDur)) : 0;
+          return last.head + (barEnd - last.head) * frac;
         };
         var secBoxW = 0;
         if (b.section) {
@@ -889,11 +908,17 @@
           out.push('<g class="fb-section-tag"><rect x="' + secX.toFixed(1) + '" y="' + secY.toFixed(1) + '" width="' + secBoxW.toFixed(1) + '" height="' + secBoxH.toFixed(1) + '" rx="' + (0.35 * S).toFixed(1) + '" class="fb-sec-bg"/><text x="' + (secX + secBoxW / 2).toFixed(1) + '" y="' + (secY + secBoxH * 0.72).toFixed(1) + '" class="fb-sec-txt" font-size="' + (1.1 * S).toFixed(1) + '" text-anchor="middle">' + MN.escape(secText) + '</text></g>');
         }
         // chord symbols
+        var lastChordRight = -Infinity;
         (chordsByBar[b.i] || []).forEach(function (o, oi) {
           var cx = xAt(o.c.start - b.start) - 0.4 * S;
           if (b.section && oi === 0 && cx < b.x + secBoxW + 0.3 * S) {
             cx = b.x + secBoxW + 0.3 * S;
           }
+          if (oi > 0 && cx < lastChordRight + 0.6 * S) {
+            cx = lastChordRight + 0.6 * S;
+          }
+          var textEstWidth = chordName(o.c).length * 1.05 * S;
+          lastChordRight = cx + textEstWidth;
           out.push('<text class="fb-chord' + (o.ci === chordSel ? ' is-sel' : '') + '" data-ci="' + o.ci + '" x="' + cx.toFixed(1) + '" y="' + chordBase.toFixed(1) + '" font-size="' + (1.75 * S) + '" tabindex="0" role="button" aria-label="Chord ' + MN.escape(chordName(o.c)) + ', bar ' + b.i + '">' + MN.escape(chordName(o.c)) + '</text>');
         });
         // accidental memory per bar
@@ -1330,6 +1355,11 @@
         if (on) add.push({ b: b0 + bt, kind: 'click', level: bt === 0 && opts.click !== 'backbeat' ? 2 : 1 });
       }
     }
+    view.concertChords.forEach(function (c, ci) {
+      if (c.start >= tuneOff - EPS && c.start < tuneOff + P.chorusLen - EPS) {
+        add.push({ b: g(c.start), kind: 'ui', ui: 'chord', ci: ci });
+      }
+    });
     if (opts.mode !== 'melody' && opts.mode !== 'click') {
       bandBars(opts.style, view.concertChords, view.voicings, M, r.from, r.to).forEach(function (e) { e.b = g(e.t); add.push(e); });
     }
@@ -1354,7 +1384,7 @@
       case 'pno': {
         var end = timeAt(e.b + e.dur);
         e.ms.forEach(function (m, i) { voicePiano(L.piano, t + (opts.style === 'ballad' ? i * 0.025 : 0), end - t, m, e.vel * 0.45); });
-        P.ui.push({ t: t, ui: 'chord', ci: e.ci }); break;
+        break;
       }
       case 'bass': voiceBass(L.bass, t, timeAt(e.b + e.dur) - t, e.m, e.vel * 0.7); break;
       case 'drum': if (P.kit) P.kit.hit(e.name, t, e.vel); break;
@@ -1410,9 +1440,21 @@
       if (barEls[e.bar]) barEls[e.bar].classList.add('is-now');
       banner(e.yours ? (opts.mode === 'band' ? 'You play the melody' : 'Your four bars: answer or improvise') : '');
       if (barEls[e.bar] && sheetFollow()) {
-        var r = barEls[e.bar].getBoundingClientRect(), sc = root.closest('.ll-sim') || document.scrollingElement;
+        var chordPanel = root.querySelector('.fb-panel-wide[aria-labelledby="fbChordHead"]');
+        var sheetCard = root.querySelector('.fb-sheet-card');
+        var sc = root.closest('.ll-sim') || document.scrollingElement;
         var vh = (sc.getBoundingClientRect ? sc.getBoundingClientRect() : { top: 0, bottom: innerHeight });
-        if (r.bottom > vh.bottom - 20 || r.top < vh.top + 140) barEls[e.bar].scrollIntoView({ block: 'center', behavior: 'smooth' });
+        var cpRect = chordPanel ? chordPanel.getBoundingClientRect() : null;
+        var chordPanelInView = cpRect && (cpRect.top < vh.bottom && cpRect.bottom > vh.top);
+        var scRect = sheetCard ? sheetCard.getBoundingClientRect() : null;
+        var sheetCardAbove = scRect && (scRect.bottom < vh.top + 100);
+
+        if (!chordPanelInView && !sheetCardAbove) {
+          var r = barEls[e.bar].getBoundingClientRect();
+          if (r.bottom > vh.bottom - 20 || (e.bar === 1 && r.top < vh.top + 80)) {
+            barEls[e.bar].scrollIntoView({ block: 'center', behavior: 'smooth' });
+          }
+        }
       }
     } else if (e.ui === 'note') {
       nowEls.forEach(function (n) { n.classList.remove('is-now'); });
@@ -1421,7 +1463,7 @@
     } else if (e.ui === 'chord') { if (e.ci !== chordSel) { chordSel = e.ci; showChord(false); } }
     else if (e.ui === 'end') stop();
   }
-  function sheetFollow() { return el('[data-fb-follow]').checked; }
+  function sheetFollow() { return opts.follow !== false; }
 
   // ---- library
   function renderLibrary() {
@@ -1611,7 +1653,22 @@
     var gFormEl = el('[data-fb-guitar-form-sel]');
     if (gFormEl && opts.guitarForm) gFormEl.value = opts.guitarForm;
 
+    root.querySelectorAll('[data-fb-follow], [data-fb-follow-sync]').forEach(function (cb) {
+      cb.checked = opts.follow !== false;
+    });
+    updateLiveShapesToggle();
+
     tips();
+  }
+  function updateLiveShapesToggle() {
+    var vis = opts.showShapes !== false;
+    var liveVis = el('[data-fb-live-visualizer]');
+    if (liveVis) liveVis.hidden = !vis;
+    var liveBtn = el('[data-fb-live-toggle]');
+    if (liveBtn) {
+      liveBtn.setAttribute('aria-pressed', String(vis));
+      liveBtn.textContent = vis ? 'Hide shapes' : 'Show shapes';
+    }
   }
   function tips() {
     if (tune.chordsOnly) {
@@ -1643,8 +1700,8 @@
   var currentGuitarFrets = [];
 
   function drawPianoVisualizer(notes, meta) {
-    var kb = el('[data-fb-keys]');
-    if (!kb) return;
+    var kbs = root.querySelectorAll('[data-fb-keys]');
+    if (!kbs.length) return;
     meta = meta || {};
     var lo = 48, hi = 84, whites = [], blacks = [], wW = 20, x = 0;
     for (var m = lo; m < hi; m++) {
@@ -1672,18 +1729,21 @@
         blacks.push(bHtml);
       }
     }
-    kb.innerHTML = '<svg viewBox="0 0 ' + x + ' 102" role="img" aria-label="Piano keyboard display">' + whites.join('') + blacks.join('') + '</svg>';
-    kb.querySelectorAll('[data-midi]').forEach(function (k) {
-      k.addEventListener('click', function () {
-        var mid = Number(k.getAttribute('data-midi'));
-        if (window.PianoAudio) window.PianoAudio.tone(PT ? PT.noteFreq(mid - 48) : 440 * Math.pow(2, (mid - 69) / 12));
+    var svgContent = '<svg viewBox="0 0 ' + x + ' 102" role="img" aria-label="Piano keyboard display">' + whites.join('') + blacks.join('') + '</svg>';
+    kbs.forEach(function (kb) {
+      kb.innerHTML = svgContent;
+      kb.querySelectorAll('[data-midi]').forEach(function (k) {
+        k.addEventListener('click', function () {
+          var mid = Number(k.getAttribute('data-midi'));
+          if (window.PianoAudio) window.PianoAudio.tone(PT ? PT.noteFreq(mid - 48) : 440 * Math.pow(2, (mid - 69) / 12));
+        });
       });
     });
   }
 
   function drawGuitarVisualizer(frets, fingers, degrees, rootPC, scaleMap) {
-    var gtr = el('[data-fb-fretboard]');
-    if (!gtr) return;
+    var gtrs = root.querySelectorAll('[data-fb-fretboard]');
+    if (!gtrs.length) return;
     frets = frets || [null, null, null, null, null, null];
     var nutX = 64, fretCount = 12, fretW = 54;
     var totalW = nutX + fretCount * fretW + 20;
@@ -1757,11 +1817,14 @@
       });
     }
 
-    gtr.innerHTML = '<svg viewBox="0 0 ' + totalW + ' ' + totalH + '" role="img" aria-label="Guitar fretboard display">' + out.join('') + '</svg>';
-    gtr.querySelectorAll('[data-s]').forEach(function (dot) {
-      dot.addEventListener('click', function () {
-        var s = Number(dot.getAttribute('data-s')), f = Number(dot.getAttribute('data-f'));
-        if (window.GuitarAudio && GT) window.GuitarAudio.pluck(GT.noteFreq(s, f));
+    var svgContent = '<svg viewBox="0 0 ' + totalW + ' ' + totalH + '" role="img" aria-label="Guitar fretboard display">' + out.join('') + '</svg>';
+    gtrs.forEach(function (gtr) {
+      gtr.innerHTML = svgContent;
+      gtr.querySelectorAll('[data-s]').forEach(function (dot) {
+        dot.addEventListener('click', function () {
+          var s = Number(dot.getAttribute('data-s')), f = Number(dot.getAttribute('data-f'));
+          if (window.GuitarAudio && GT) window.GuitarAudio.pluck(GT.noteFreq(s, f));
+        });
       });
     });
   }
@@ -1827,17 +1890,53 @@
 
     populateChordSelect();
 
-    el('[data-fb-chordname]').textContent = chordName(opts.instr === 'concert' || opts.instr === 'bass' ? c : w);
-    el('[data-fb-chordinfo]').textContent = (opts.instr === 'concert' || opts.instr === 'bass' ? '' : 'Sounds as ' + chordName(c) + ' (concert). ') +
+    var writtenChord = chordName(opts.instr === 'concert' || opts.instr === 'bass' ? c : w);
+    var mainNameEl = el('[data-fb-chordname]');
+    if (mainNameEl) mainNameEl.textContent = writtenChord;
+
+    var liveChordEl = el('[data-fb-live-chordname]');
+    if (liveChordEl) {
+      liveChordEl.textContent = writtenChord;
+      liveChordEl.classList.remove('is-changing');
+      void liveChordEl.offsetWidth;
+      liveChordEl.classList.add('is-changing');
+    }
+
+    var chordInfoText = (opts.instr === 'concert' || opts.instr === 'bass' ? '' : 'Sounds as ' + chordName(c) + ' (concert). ') +
       Q[c.q].name.charAt(0).toUpperCase() + Q[c.q].name.slice(1) + ' · bar ' + c.bar + ' · ' + d.bottom + ' on the bottom';
-    el('[data-fb-chordnotes]').textContent = (opts.engineInst === 'piano' ? 'Piano plays: ' : 'Guitar plays: ') + d.spelled.join('  ') + (opts.instr === 'concert' || opts.instr === 'bass' ? '' : ' (concert)');
+    var chordNotesText = (opts.engineInst === 'piano' ? 'Piano plays: ' : 'Guitar plays: ') + d.spelled.join('  ') + (opts.instr === 'concert' || opts.instr === 'bass' ? '' : ' (concert)');
+
+    var mainInfoEl = el('[data-fb-chordinfo]');
+    if (mainInfoEl) mainInfoEl.textContent = chordInfoText;
+    var mainNotesEl = el('[data-fb-chordnotes]');
+    if (mainNotesEl) mainNotesEl.textContent = chordNotesText;
+
+    var liveInfoEl = el('[data-fb-live-chordinfo]');
+    if (liveInfoEl) liveInfoEl.textContent = 'Bar ' + c.bar + ' · ' + d.bottom;
+    var liveNotesEl = el('[data-fb-live-chordnotes]');
+    if (liveNotesEl) liveNotesEl.textContent = d.spelled.join('  ');
+
+    var liveNextEl = el('[data-fb-live-chordnext]');
+    if (liveNextEl) {
+      var allC = view.concertChords || [];
+      var allW = view.writtenChords || [];
+      if (chordSel < allC.length - 1) {
+        var nc = allC[chordSel + 1];
+        var nw = allW[chordSel + 1];
+        liveNextEl.textContent = chordName(opts.instr === 'concert' || opts.instr === 'bass' ? nc : nw) + ' (bar ' + nc.bar + ')';
+      } else if (opts.loop && allC.length > 0) {
+        var nc0 = allC[0];
+        var nw0 = allW[0];
+        liveNextEl.textContent = chordName(opts.instr === 'concert' || opts.instr === 'bass' ? nc0 : nw0) + ' (loop to bar ' + nc0.bar + ')';
+      } else {
+        liveNextEl.textContent = 'End of chart';
+      }
+    }
     el('[data-fb-voicing-tip]').textContent = VOICING[opts.voicing] ? VOICING[opts.voicing].tip : '';
 
     var isPiano = (opts.engineInst || 'piano') === 'piano';
-    var kWrap = el('[data-fb-keys]');
-    var gWrap = el('[data-fb-fretboard]');
-    if (kWrap) kWrap.hidden = !isPiano;
-    if (gWrap) gWrap.hidden = isPiano;
+    root.querySelectorAll('[data-fb-keys]').forEach(function (kw) { kw.hidden = !isPiano; });
+    root.querySelectorAll('[data-fb-fretboard]').forEach(function (gw) { gw.hidden = isPiano; });
 
     root.querySelectorAll('[data-engine-inst]').forEach(function (b) {
       var act = b.getAttribute('data-engine-inst') === opts.engineInst;
@@ -2114,6 +2213,11 @@
       else if (t.matches('[data-fb-click]')) { opts.click = t.value; save(); respin(); }
       else if (t.matches('[data-fb-lead]')) { opts.lead = t.value; save(); }
       else if (t.matches('[data-fb-loop]')) { opts.loop = t.checked; save(); }
+      else if (t.matches('[data-fb-follow], [data-fb-follow-sync]')) {
+        opts.follow = t.checked;
+        root.querySelectorAll('[data-fb-follow], [data-fb-follow-sync]').forEach(function (cb) { cb.checked = opts.follow; });
+        save();
+      }
       else if (t.matches('[data-fb-from], [data-fb-to]')) {
         opts.from = Number(el('[data-fb-from]').value) || 1; opts.to = Number(el('[data-fb-to]').value) || tune.bars;
         if (opts.to < opts.from) opts.to = opts.from;
@@ -2152,6 +2256,13 @@
         opts.engineInst = instBtn.getAttribute('data-engine-inst');
         syncControls();
         showChord(false);
+        save();
+        return;
+      }
+      var liveTgl = t.closest('[data-fb-live-toggle]');
+      if (liveTgl) {
+        opts.showShapes = opts.showShapes === false ? true : false;
+        updateLiveShapesToggle();
         save();
         return;
       }
