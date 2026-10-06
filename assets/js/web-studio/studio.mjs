@@ -330,6 +330,34 @@ function renderAssets() {
   if (!paths.length) list.append(Object.assign(document.createElement('li'), { className: 'ws-muted', textContent: 'No images yet.' }));
   $('assets-size').textContent = `${(assetsBytes(project.assets) / 1e6).toFixed(1)} of 6 MB used.`;
 }
+// Bring an existing site (a starter pack, or files from VS Code) into the project.
+$('import-files').addEventListener('change', async () => {
+  const files = [...$('import-files').files];
+  $('import-files').value = '';
+  if (!files.length) return;
+  const pages = files.filter((file) => /\.html?$/i.test(file.name));
+  const page = pages.find((file) => file.name.toLowerCase() === 'index.html') || (pages.length === 1 ? pages[0] : null);
+  const pick = (pattern, preferred) => files.find((file) => file.name.toLowerCase() === preferred) || (files.filter((file) => pattern.test(file.name)).length === 1 ? files.find((file) => pattern.test(file.name)) : null);
+  const incoming = { 'index.html': page, 'style.css': pick(/\.css$/i, 'style.css'), 'script.js': pick(/\.js$/i, 'script.js') };
+  const replacing = Object.entries(incoming).filter(([, file]) => file).map(([name]) => name);
+  const notes = [];
+  if (pages.length > 1 && !page) notes.push('Several .html files and none is index.html, so no page was loaded. Choose index.html.');
+  if (pages.length > 1 && page) notes.push(`Only ${page.name} was loaded; Web Studio projects have one page.`);
+  if (replacing.length && !window.confirm(`Replace ${replacing.join(', ')} with your files? Save a project file first if you want to keep the current code.`)) return;
+  for (const [name, file] of Object.entries(incoming)) {
+    if (!file) continue;
+    if (file.size > LIMITS.file) { notes.push(`${file.name} is too large to open here.`); continue; }
+    project.files[name] = await file.text();
+  }
+  for (const file of files.filter((item) => IMAGE_TYPES[item.type])) {
+    try { await addAsset(file); } catch (error) { notes.push(error.message); }
+  }
+  showFile(currentFile);
+  updatePreview();
+  scheduleSave();
+  status(`Opened ${files.map((file) => file.name).join(', ')}.${notes.length ? ` ${notes.join(' ')}` : ''} Images are saved as images/<name>. Check the paths in your code still match.`);
+});
+
 $('upload').addEventListener('change', async () => {
   for (const file of $('upload').files) {
     try { const path = await addAsset(file); status(`Added ${path}. Use it as src="${path}".`); }
@@ -398,7 +426,7 @@ function fillShare() {
   $('share-url').textContent = `${SITE}/apps/${slug}/`;
   const list = $('share-checks');
   const results = siteChecks();
-  list.replaceChildren(...(results.length ? results : ['No problems found in index.html, the links to style.css and script.js, or your image paths.']).map((text) => Object.assign(document.createElement('li'), { textContent: text, className: results.length ? 'is-fix' : 'is-pass' })));
+  list.replaceChildren(...(results.length ? results : ['No problems found in index.html, the links to style.css and script.js, or your image paths.']).map((text) => Object.assign(document.createElement('li'), { textContent: text, className: results.length ? 'is-fail' : 'is-pass' })));
   if (!$('author').value && project.author) $('author').value = project.author;
   if (!$('description').value && project.description) $('description').value = project.description;
 }

@@ -48,6 +48,23 @@ changed.
 Project metadata (display name, student, tags, thumbnail) comes from
 `data/manifest-overrides.json`, keyed by slug — not from the app itself.
 
+### Web Studio submissions → student-projects → apps
+
+Students build in `lessons/web-design/web-studio.html` (Draw / Blocks / Code on one
+project, saved in their browser) and hand in a `<name>-<title>.webstudio.json` file.
+Import it as the teacher, never by hand-copying into `apps/`:
+
+- OSeditor (`ADMIN_PASS=… node serve-local.js`): **Import submission** previews it,
+  writes `student-projects/<Name>/<slug>/` + its `manifest-overrides.json` entry, and
+  opens it for review; **Publish to class site** runs `build-showcase.js --only=<slug>`.
+- Or `node scripts/import-studio-submission.mjs <file> [--dry-run] [--replace] [--build]`.
+
+Both use `lib/studio-submission.mjs`, which re-validates with the studio's own
+`validateProject()`. Read the student's `script.js` before publishing; it runs on
+the class site. Studio code lives in `assets/js/web-studio/` (`draw-model.mjs` is the
+pure grid model and code generator); tests: `node --test tests/web-studio.test.mjs`
+and `node tests/web-studio-browser.mjs` against a running `serve-local.js`.
+
 ## Checks
 
 - `npm run check:integrity` — local references and asset signatures

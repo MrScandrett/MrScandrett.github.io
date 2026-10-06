@@ -164,6 +164,19 @@ try {
   await page.waitForFunction(() => document.querySelector('[data-ws-title]').value === 'Robot Garden');
   assert.match(await page.locator('.ds-layers').textContent(), /\.title/);
 
+  // 13. Open my own files: an existing site (starter pack / VS Code folder) comes into Code.
+  await page.locator('[data-ws-tab="code"]').click();
+  await page.setInputFiles('[data-ws-import-files]', [
+    { name: 'index.html', mimeType: 'text/html', buffer: Buffer.from('<!doctype html><html><head><title>Pack</title><link rel="stylesheet" href="style.css"></head><body><h1>From a pack</h1><img src="images/dot.png" alt="A dot"></body></html>') },
+    { name: 'style.css', mimeType: 'text/css', buffer: Buffer.from('h1 { color: rgb(1, 2, 3); }') },
+    { name: 'dot.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64') },
+  ]);
+  await page.waitForTimeout(700);
+  const preview = page.frameLocator('[data-ws-preview]');
+  assert.equal(await preview.locator('h1').textContent(), 'From a pack');
+  assert.equal(await preview.locator('h1').evaluate((h) => getComputedStyle(h).color), 'rgb(1, 2, 3)');
+  assert.equal(await preview.locator('img').evaluate((img) => img.naturalWidth), 1, 'uploaded image resolves as images/dot.png');
+
   assert.deepEqual(errors, [], 'no page errors');
   console.log('web-studio-browser: all checks passed');
 } finally {
