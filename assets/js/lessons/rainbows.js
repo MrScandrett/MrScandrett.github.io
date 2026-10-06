@@ -842,6 +842,388 @@
     return copy[target];
   }
 
+  /* ── 5 · Rainbow designer: drop size and other liquids ──────────────
+     Ray tracing says where the bow is; wave optics says what it looks like.
+     Airy's theory treats the light leaving a drop near the rainbow ray as a
+     wavefront bent into a cubic, which gives an intensity Ai²(−z) with
+       z = Δθ · x^(2/3) · (2 / θ'')^(1/3),   x = π·d / λ
+     where Δθ is the angle from the geometric bow toward its lit side and
+     θ'' is how sharply the exit-angle curve turns (Part 2's graph). Small
+     drops smear each color across many degrees (fogbows); large ones are
+     vivid, with supernumerary stripes just inside. Each liquid gets a Cauchy
+     fit n(λ) = n_D + B·(1/λ² − 1/589²). */
+  var LIQUIDS = {
+    water:   { n: 1.3336, B: 3088,  label: 'Water rain', place: 'Earth' },
+    methane: { n: 1.29,   B: 2600,  label: 'Liquid methane rain', place: 'Titan' },
+    acid:    { n: 1.44,   B: 3800,  label: 'Sulfuric acid droplets', place: 'Venus' },
+    glass:   { n: 1.50,   B: 4200,  label: 'Glass beads', place: 'road paint' },
+    diamond: { n: 2.417,  B: 13000, label: 'Diamonds', place: 'what if?' }
+  };
+  var LIQUID_COPY = {
+    water: 'Ordinary rain. Try the drop sizes: fog makes a broad white bow, drizzle-sized drops make the clearest supernumerary stripes, and big drops make the brightest, most saturated colors.',
+    methane: 'Saturn’s moon Titan has rain made of liquid methane, which bends light less than water. Snell’s law moves the bow out to about 49°. The two-bounce bow lands <em>inside</em> it, near 39°, so instead of Alexander’s dark band there would be a strip lit by both bows.',
+    acid: 'Venus is wrapped in clouds of sulfuric acid droplets. In 1974, astronomers matched a rainbow-shaped feature in how sunlight reflects off those clouds to droplets with n ≈ 1.44, which is how we learned what the clouds are made of. The real droplets are only about 2 µm across, so a Venus bow would look like a fogbow.',
+    glass: 'Road-marking paint has tiny glass beads mixed in, so headlights bounce back to drivers. Sunlight does the same thing: on a field of beads you can see a small, bright “glass-bead bow” only about 22° from your shadow, much tighter than a rainbow.',
+    diamond: 'Scientists think it may “rain” diamonds deep inside Uranus and Neptune, where crushing pressure squeezes carbon (there’s no sunlight down there). Diamond bends light so strongly that a one-bounce ray can never turn around, so there is <strong>no primary bow at all</strong>. The two-bounce bow lands about 12° from the Sun, behind you.'
+  };
+  var DROP_PRESETS = [
+    { id: 'fog', d: 0.02, label: 'Fog' },
+    { id: 'drizzle', d: 0.25, label: 'Drizzle' },
+    { id: 'shower', d: 0.7, label: 'Shower' },
+    { id: 'downpour', d: 2, label: 'Downpour' }
+  ];
+
+  var ds = { n: 1.3336, liquid: 'water', d: 0.7, sunBlur: true, mixed: true, secondary: true, rings: true };
+  var dsCanvas = $('rb-ds-canvas');
+  var dsKit = null, dsLut = null, dsInfo = null, dsQueued = false;
+  var DS_VIEW = 64;         // degrees of sky from the antisolar point to the top edge
+  var DS_MAX = 95;          // the LUT reaches the canvas corners
+  var DS_STEP = 0.05;       // LUT resolution, degrees
+
+  function dispersionB(n) {
+    var pts = Object.keys(LIQUIDS).map(function (k) { return LIQUIDS[k]; }).sort(function (a, b) { return a.n - b.n; });
+    if (n <= pts[0].n) return pts[0].B;
+    for (var i = 1; i < pts.length; i++) {
+      if (n <= pts[i].n) {
+        var t = (n - pts[i - 1].n) / (pts[i].n - pts[i - 1].n);
+        return pts[i - 1].B + t * (pts[i].B - pts[i - 1].B);
+      }
+    }
+    return pts[pts.length - 1].B;
+  }
+  function dsIndex(lambda) { return ds.n + dispersionB(ds.n) * (1 / (lambda * lambda) - 1 / (589 * 589)); }
+
+  // Bow angle plus how sharply the exit-angle curve turns there (rad / b²).
+  function bowShape(k, n) {
+    var c2 = (n * n - 1) / (k * (k + 2));
+    if (c2 >= 1) return null;
+    var b = Math.sqrt(1 - c2), h = 1e-3;
+    var t0 = exitAngle(b, k, n), tp = exitAngle(Math.min(b + h, 0.999999), k, n), tm = exitAngle(b - h, k, n);
+    return { theta: t0, curv: Math.abs(tp - 2 * t0 + tm) * DEG / (h * h) };
+  }
+
+  // Airy function: power series near zero, asymptotic forms in the tails.
+  function airySeries(z) {
+    if (z < -9) {
+      var x = -z, zeta = 2 / 3 * Math.pow(x, 1.5) + Math.PI / 4;
+      return Math.pow(x, -0.25) / Math.sqrt(Math.PI) * (Math.sin(zeta) - 5 / (72 * (zeta - Math.PI / 4)) * Math.cos(zeta));
+    }
+    if (z > 7) return Math.exp(-2 / 3 * Math.pow(z, 1.5)) / (2 * Math.sqrt(Math.PI) * Math.pow(z, 0.25));
+    var f = 1, g = z, tf = 1, tg = z, z3 = z * z * z;
+    for (var k = 1; k < 80; k++) {
+      tf *= z3 / ((3 * k - 1) * (3 * k));
+      tg *= z3 / ((3 * k) * (3 * k + 1));
+      f += tf; g += tg;
+      if (Math.abs(tf) + Math.abs(tg) < 1e-16) break;
+    }
+    return 0.355028053887817 * f - 0.258819403792807 * g;
+  }
+  // Tabulate once and interpolate: the build calls this ~10⁶ times.
+  var AIRY_LO = -30, AIRY_HI = 7, AIRY_DZ = 0.004;
+  var AIRY_TAB = (function () {
+    var n = Math.round((AIRY_HI - AIRY_LO) / AIRY_DZ) + 1, t = new Float64Array(n);
+    for (var i = 0; i < n; i++) t[i] = airySeries(AIRY_LO + i * AIRY_DZ);
+    return t;
+  })();
+  function airyAi(z) {
+    if (z < AIRY_LO || z >= AIRY_HI) return airySeries(z);
+    var u = (z - AIRY_LO) / AIRY_DZ, i = u | 0, f = u - i;
+    return AIRY_TAB[i] + f * (AIRY_TAB[i + 1] - AIRY_TAB[i]);
+  }
+
+  // CIE 1931 colour-matching functions (Wyman, Sloan & Shirley 2013 fit).
+  function lobe(l, mu, s1, s2) { var t = (l - mu) / (l < mu ? s1 : s2); return Math.exp(-0.5 * t * t); }
+  function cmf(l) {
+    return [
+      1.056 * lobe(l, 599.8, 37.9, 31.0) + 0.362 * lobe(l, 442.0, 16.0, 26.7) - 0.065 * lobe(l, 501.1, 20.4, 26.2),
+      0.821 * lobe(l, 568.8, 46.9, 40.5) + 0.286 * lobe(l, 530.9, 16.3, 31.1),
+      1.217 * lobe(l, 437.0, 11.8, 36.0) + 0.681 * lobe(l, 459.0, 26.0, 13.8)
+    ];
+  }
+  function xyzToLin(X, Y, Z) {
+    return [3.2406 * X - 1.5372 * Y - 0.4986 * Z, -0.9689 * X + 1.8758 * Y + 0.0415 * Z, 0.0557 * X - 0.2040 * Y + 1.0570 * Z];
+  }
+  var DS_WLS = [];
+  for (var dl = 400; dl <= 700; dl += 10) DS_WLS.push(dl);
+  // Flat (white) sunlight should come out white: scale each channel by
+  // what a flat spectrum with luminance Y = 1 produces.
+  var DS_WHITE = (function () {
+    var s = [0, 0, 0];
+    DS_WLS.forEach(function (l) { var c = cmf(l); s[0] += c[0]; s[1] += c[1]; s[2] += c[2]; });
+    var lin = xyzToLin(s[0] / s[1], 1, s[2] / s[1]);
+    return lin;
+  })();
+
+  function buildDesignerLut() {
+    var N = Math.round(DS_MAX / DS_STEP) + 1;
+    var X = new Float32Array(N), Y = new Float32Array(N), Z = new Float32Array(N);
+    // Real rain is a mix of sizes; averaging over ±25% blurs the stripes.
+    var sizes = ds.mixed ? [0.75, 0.87, 1, 1.13, 1.25] : [1];
+    var zSmooth = ds.mixed || ds.sunBlur ? -30 : -40;
+    var orders = ds.secondary ? [1, 2] : [1];
+    var info = { primary: null, secondary: null, primaryVisible: false, secondaryVisible: false };
+    orders.forEach(function (k) {
+      var weight = k === 1 ? 1 : 0.43;   // the second bounce leaks light
+      var sideLit = k === 1 ? -1 : 1;      // lit side: inside the primary, outside the secondary
+      DS_WLS.forEach(function (l) {
+        var shape = bowShape(k, dsIndex(l));
+        if (!shape) return;
+        if (l === 550) info[k === 1 ? 'primary' : 'secondary'] = shape.theta;
+        var c = cmf(l);
+        sizes.forEach(function (f) {
+          var x = Math.PI * ds.d * f * 1e6 / l;
+          var scale = Math.pow(x, 2 / 3) * Math.pow(2 / shape.curv, 1 / 3) * DEG;   // per degree
+          // Only fill bins that can matter (Ai² is ~0 a few units onto the dark side).
+          var reach = 9 / scale;
+          var lo = Math.max(0, Math.floor((sideLit < 0 ? 0 : shape.theta - reach) / DS_STEP));
+          var hi = Math.min(N - 1, Math.ceil((sideLit < 0 ? shape.theta + reach : DS_MAX) / DS_STEP));
+          var wgt = weight / sizes.length;
+          for (var i = lo; i <= hi; i++) {
+            var dth = sideLit * (i * DS_STEP - shape.theta);       // positive on the lit side
+            var z = -dth * scale, I;
+            if (z < zSmooth) {
+              // Far onto the lit side the wiggles are finer than the blur
+              // (and than our 10 nm colour steps), so use their average.
+              I = wgt / (2 * Math.PI * Math.sqrt(-z));
+            } else {
+              var a = airyAi(z);
+              I = wgt * a * a;
+            }
+            X[i] += I * c[0]; Y[i] += I * c[1]; Z[i] += I * c[2];
+          }
+        });
+      });
+    });
+    // Smear by the Sun's 0.53° disk.
+    if (ds.sunBlur) {
+      var half = Math.round(0.265 / DS_STEP), ker = [], ks = 0;
+      for (var j = -half; j <= half; j++) { var u = j / (half + 0.5); var wgt = Math.sqrt(Math.max(0, 1 - u * u)); ker.push(wgt); ks += wgt; }
+      [X, Y, Z].forEach(function (arr) {
+        var src = Float32Array.from(arr);
+        for (var i = 0; i < N; i++) {
+          var s = 0;
+          for (var j = -half; j <= half; j++) { var q = Math.min(N - 1, Math.max(0, i + j)); s += src[q] * ker[j + half]; }
+          arr[i] = s / ks;
+        }
+      });
+    }
+    // Normalise so the brightest part of the bow sits at a fixed exposure.
+    var peakY = 0, peakAt = 0;
+    for (var p = 0; p < N; p++) if (Y[p] > peakY) { peakY = Y[p]; peakAt = p; }
+    var lut = new Uint8ClampedArray(N * 3);
+    var expo = peakY > 0 ? 0.85 / peakY : 0;
+    var sat = 0, satN = 0;
+    for (var m = 0; m < N; m++) {
+      var lin = xyzToLin(X[m] * expo, Y[m] * expo, Z[m] * expo);
+      var rgb = [lin[0] / DS_WHITE[0], lin[1] / DS_WHITE[1], lin[2] / DS_WHITE[2]];
+      if (Y[m] > peakY * 0.35) {
+        var mx = Math.max(rgb[0], rgb[1], rgb[2]), mn = Math.max(0, Math.min(rgb[0], rgb[1], rgb[2]));
+        if (mx > 0) { sat += (mx - mn) / mx; satN++; }
+      }
+      // Added straight onto the sky (no gamma lift), so the faint glow
+      // inside the bow stays faint next to the bow itself.
+      var over = Math.max(1, rgb[0], rgb[1], rgb[2]);
+      for (var ch = 0; ch < 3; ch++) lut[m * 3 + ch] = Math.round(235 * Math.max(0, rgb[ch]) / over);
+    }
+    info.peakAt = peakAt * DS_STEP;
+    // Where the primary actually looks brightest (small drops pull it inward).
+    if (info.primary != null) {
+      var pk = 0, pkY = -1, lim = Math.min(N - 1, Math.round((info.primary + 1.5) / DS_STEP));
+      for (var q2 = 0; q2 <= lim; q2++) if (Y[q2] > pkY) { pkY = Y[q2]; pk = q2; }
+      info.primarySeen = pk * DS_STEP;
+    }
+    info.saturation = satN ? sat / satN : 0;
+    // Width of the bright band around the main peak (luminance above half max).
+    var a0 = peakAt, a1 = peakAt;
+    while (a0 > 0 && Y[a0 - 1] > peakY * 0.5) a0--;
+    while (a1 < N - 1 && Y[a1 + 1] > peakY * 0.5) a1++;
+    info.width = (a1 - a0) * DS_STEP;
+    // Supernumeraries: distinct luminance bumps on the lit side of the primary.
+    var bumps = 0;
+    if (info.primary != null) {
+      var i0 = Math.round(info.primary / DS_STEP);
+      var lastMin = Infinity;
+      for (var s2 = Math.min(i0, N - 2); s2 > 1; s2--) {
+        lastMin = Math.min(lastMin, Y[s2]);
+        if (Y[s2] > Y[s2 - 1] && Y[s2] >= Y[s2 + 1] && s2 * DS_STEP < info.primarySeen - 0.2) {
+          if (Y[s2] - lastMin > peakY * 0.04 && Y[s2] > peakY * 0.12) bumps++;
+          lastMin = Y[s2];
+          if (bumps >= 4) break;
+        }
+      }
+    }
+    info.supernumeraries = bumps;
+    info.primaryVisible = info.primary != null && info.primary < DS_VIEW;
+    info.secondaryVisible = info.secondary != null && info.secondary < DS_VIEW;
+    dsLut = lut;
+    dsInfo = info;
+  }
+
+  function dsGeom(w, h) {
+    var ppd = h / (DS_VIEW * 0.97);
+    return { ppd: ppd, ax: w / 2, ay: h + ppd * 0.6 };
+  }
+
+  var dsImage = null;
+  function drawDesigner() {
+    if (!dsKit || !dsLut) return;
+    var ctx = dsKit.ctx, w = dsKit.width, h = dsKit.height;
+    if (w < 2 || h < 2) return;
+    var G = dsGeom(w, h);
+    // Paint the bow at CSS-pixel resolution, then let drawImage scale it.
+    var off = dsImage && dsImage.width === w && dsImage.height === h ? dsImage : null;
+    if (!off) { off = document.createElement('canvas'); off.width = w; off.height = h; dsImage = off; }
+    var octx = off.getContext('2d');
+    var img = octx.createImageData(w, h), px = img.data;
+    var N = dsLut.length / 3;
+    for (var y = 0; y < h; y++) {
+      // A grey rain-cloud sky that lightens toward the horizon.
+      var t = y / h;
+      var br = 46 + 30 * t, bgc = 56 + 32 * t, bb = 74 + 30 * t;
+      var dy2 = (y - G.ay) * (y - G.ay), toBin = 1 / (G.ppd * DS_STEP);
+      for (var x = 0, o = y * w * 4; x < w; x++, o += 4) {
+        var dx = x - G.ax;
+        var li = Math.min(N - 1, (Math.sqrt(dx * dx + dy2) * toBin + 0.5) | 0) * 3;
+        px[o] = br + dsLut[li]; px[o + 1] = bgc + dsLut[li + 1]; px[o + 2] = bb + dsLut[li + 2]; px[o + 3] = 255;
+      }
+    }
+    octx.putImageData(img, 0, 0);
+    ctx.save();
+    ctx.drawImage(off, 0, 0, w, h);
+
+    if (ds.rings) {
+      ctx.setLineDash([3, 6]);
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+      ctx.lineWidth = 1;
+      ctx.font = '700 11px system-ui, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      [10, 20, 30, 40, 50, 60].forEach(function (deg) {
+        ctx.beginPath(); ctx.arc(G.ax, G.ay, deg * G.ppd, Math.PI, Math.PI * 2); ctx.stroke();
+        var lx = G.ax + Math.cos(-Math.PI * 0.64) * deg * G.ppd, ly = G.ay + Math.sin(-Math.PI * 0.64) * deg * G.ppd;
+        if (ly > 44 && lx > 16) {
+          ctx.fillStyle = 'rgba(8, 14, 24, 0.7)';
+          roundRect(ctx, lx - 15, ly - 9, 30, 18, 9); ctx.fill();
+          ctx.fillStyle = '#fff';
+          ctx.fillText(deg + '°', lx, ly);
+        }
+      });
+      ctx.setLineDash([]);
+    }
+    // The viewer's shadow marks the centre.
+    ctx.fillStyle = 'rgba(8, 14, 24, 0.75)';
+    var cap = 'your shadow · antisolar point';
+    ctx.font = '600 11px system-ui, sans-serif';
+    var tw = ctx.measureText(cap).width;
+    roundRect(ctx, G.ax - tw / 2 - 8, h - 24, tw + 16, 18, 9); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(cap, G.ax, h - 15);
+    // Badge
+    var liq = LIQUIDS[ds.liquid];
+    var badge = (liq ? liq.label : 'Custom liquid') + ' · n = ' + ds.n.toFixed(3) + ' · drops ' + formatDrop(ds.d);
+    ctx.font = '600 12px system-ui, sans-serif';
+    var bw = ctx.measureText(badge).width;
+    ctx.fillStyle = 'rgba(8, 14, 24, 0.72)';
+    roundRect(ctx, 10, 10, bw + 18, 24, 12); ctx.fill();
+    ctx.fillStyle = '#ffd666';
+    ctx.textAlign = 'left';
+    ctx.fillText(badge, 19, 22);
+    if (!dsInfo.primaryVisible && !dsInfo.secondaryVisible) {
+      var none = 'No bow anywhere in this half of the sky';
+      ctx.font = '700 15px system-ui, sans-serif';
+      var nw = ctx.measureText(none).width;
+      ctx.fillStyle = 'rgba(8, 14, 24, 0.8)';
+      roundRect(ctx, w / 2 - nw / 2 - 14, h * 0.5 - 17, nw + 28, 34, 17); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.fillText(none, w / 2, h * 0.5);
+    }
+    ctx.restore();
+  }
+
+  function formatDrop(d) {
+    return d < 0.1 ? Math.round(d * 1000) + ' µm' : d.toFixed(d < 1 ? 2 : 1) + ' mm';
+  }
+
+  function updateDesignerText() {
+    var I = dsInfo;
+    $('rb-ds-n-out').textContent = ds.n.toFixed(3);
+    $('rb-ds-d-out').textContent = formatDrop(ds.d);
+    var cells = {
+      radius: I.primary != null ? I.primarySeen.toFixed(1) + '°' : 'none',
+      second: I.secondary != null ? (I.secondary > DS_VIEW ? Math.round(I.secondary) + '° · behind you' : I.secondary.toFixed(1) + '°') : 'none',
+      look: I.saturation > 0.55 ? 'vivid' : I.saturation > 0.3 ? 'pastel' : 'nearly white',
+      supers: I.supernumeraries ? I.supernumeraries + (I.supernumeraries >= 4 ? '+' : '') + ' visible' : 'washed out'
+    };
+    if (I.primary == null) { cells.look = '—'; cells.supers = '—'; }
+    if (ds.n >= 2 && I.primary == null) cells.radius = 'none (n ≥ 2)';
+    Object.keys(cells).forEach(function (k) { $('rb-ds-' + k).textContent = cells[k]; });
+
+    var note;
+    if (I.primary == null) {
+      note = 'With n = ' + ds.n.toFixed(2) + ', a one-bounce ray’s exit angle keeps changing all the way to the edge of the drop. It never turns around, so light never piles up and there is no bow. The turnaround disappears once n reaches 2.';
+    } else if (ds.d < 0.06) {
+      note = 'Fog-sized drops are only a few dozen wavelengths across. Each color spreads into a band several degrees wide, the bands overlap, and they add up to white. The bow also shrinks a few degrees inward.';
+    } else if (I.supernumeraries >= 2) {
+      note = 'Look just inside the main bow: those pastel stripes are supernumerary bows. Two rays that leave the drop in the same direction travel slightly different distances inside it, so their waves add up in some directions and cancel in others.';
+    } else if (ds.mixed || ds.sunBlur) {
+      note = 'Big drops make the narrowest, most saturated colors. The supernumerary stripes are still there, but they are packed tightly, so the mix of drop sizes in real rain' + (ds.sunBlur ? ' and the Sun’s half-degree disk' : '') + ' blur them away. Turn those off to see the stripes hiding there.';
+    } else {
+      note = 'Perfectly identical drops lit by a point of light: the stripes are packed tight inside the bow. Real rain never looks like this, which is why supernumeraries are a rare treat.';
+    }
+    $('rb-ds-note').textContent = note;
+    $('rb-ds-liquid-note').innerHTML = LIQUIDS[ds.liquid] ? LIQUID_COPY[ds.liquid] : 'A made-up liquid. As n grows, the bow shrinks toward your shadow. At n = 2 the primary bow vanishes completely.';
+  }
+
+  // Slider drags fire faster than a rebuild, so coalesce them into one per frame.
+  function designerChanged() {
+    if (dsQueued) return;
+    dsQueued = true;
+    requestAnimationFrame(function () {
+      dsQueued = false;
+      buildDesignerLut();
+      updateDesignerText();
+      drawDesigner();
+    });
+  }
+
+  function initDesigner() {
+    if (!dsCanvas) return;
+    dsKit = SimKit.canvas2d(dsCanvas, { onResize: function () { drawDesigner(); } });
+    var dSlider = $('rb-ds-d'), nSlider = $('rb-ds-n');
+    function setDrop(d) {
+      ds.d = d;
+      dSlider.value = Math.log10(d).toFixed(3);
+      document.querySelectorAll('[data-ds-drop]').forEach(function (b) {
+        b.setAttribute('aria-pressed', String(Math.abs(Number(b.getAttribute('data-ds-drop')) - d) < 1e-6));
+      });
+    }
+    function setLiquid(key) {
+      ds.liquid = key;
+      if (LIQUIDS[key]) { ds.n = LIQUIDS[key].n; nSlider.value = ds.n; }
+      setPressed('ds-liquid', key);
+    }
+    dSlider.addEventListener('input', function () { setDrop(Math.pow(10, Number(dSlider.value))); designerChanged(); });
+    nSlider.addEventListener('input', function () {
+      ds.n = Number(nSlider.value);
+      var match = Object.keys(LIQUIDS).filter(function (k) { return Math.abs(LIQUIDS[k].n - ds.n) < 0.003; })[0];
+      setLiquid(match || 'custom');
+      designerChanged();
+    });
+    document.querySelectorAll('[data-ds-drop]').forEach(function (b) {
+      b.addEventListener('click', function () { setDrop(Number(b.getAttribute('data-ds-drop'))); designerChanged(); });
+    });
+    document.querySelectorAll('[data-ds-liquid]').forEach(function (b) {
+      b.addEventListener('click', function () { setLiquid(b.getAttribute('data-ds-liquid')); designerChanged(); });
+    });
+    [['rb-ds-blur', 'sunBlur'], ['rb-ds-mixed', 'mixed'], ['rb-ds-secondary', 'secondary'], ['rb-ds-rings', 'rings']].forEach(function (pair) {
+      $(pair[0]).addEventListener('change', function (e) { ds[pair[1]] = e.target.checked; designerChanged(); });
+    });
+    setDrop(ds.d);
+    setLiquid(ds.liquid);
+    designerChanged();
+  }
+
   /* ── Quiz ───────────────────────────────────────────────────────── */
   var QUIZ = [
     { q: 'You see a rainbow late in the afternoon. Where is the Sun?', options: ['In front of you, behind the rain', 'Behind you, low in the sky', 'Directly overhead', 'It doesn’t matter'], a: 1,
@@ -857,7 +1239,11 @@
     { q: 'You walk 100 m toward a rainbow. What happens?', options: ['You get closer to the end', 'The rainbow moves with you, because a new set of drops sits at 42° from your new shadow', 'The rainbow disappears', 'The colors reverse'], a: 1,
       why: 'The bow is a direction from your eye, not an object. Move, and different drops do the job.' },
     { q: 'At noon in summer the Sun is 70° high. Why don’t you see a rainbow even in a sun shower?', options: ['The drops are too warm', 'The antisolar point is 70° below the horizon, so the 42° circle is entirely underground', 'Sunlight is too white at noon', 'Rainbows only happen in the morning'], a: 1,
-      why: 'Top of bow = 42° − Sun height. Above 42° of Sun height, the primary bow is fully below the horizon (though you could still see one from a plane or in a garden-hose spray aimed downward).' }
+      why: 'Top of bow = 42° − Sun height. Above 42° of Sun height, the primary bow is fully below the horizon (though you could still see one from a plane or in a garden-hose spray aimed downward).' },
+    { q: 'A bow in thick fog looks almost white. Why?', options: ['Fog absorbs all the colors', 'The droplets are so tiny that each color spreads over several degrees, and the overlapping colors blend into white', 'Fog only reflects light, it never refracts it', 'The Sun is always behind clouds in fog'], a: 1,
+      why: 'Light is a wave. In a drop only a few dozen wavelengths across, each color’s bow becomes a broad smear. Overlap enough smears and you get white: a fogbow.' },
+    { q: 'Liquid methane on Titan bends light less than water does. What happens to its rainbow?', options: ['There is no rainbow on Titan', 'It is smaller, closer to your shadow', 'It is bigger, about 49° from your shadow instead of 42°', 'Its colors are reversed'], a: 2,
+      why: 'Less bending means a ray has to turn around farther from the antisolar point. A lower index of refraction makes a wider bow, and a higher one (like glass beads) makes a tighter bow.' }
   ];
 
   function buildQuiz() {
@@ -1039,6 +1425,7 @@
     drawGraph();
     drawSky(0);
     buildQuiz();
+    initDesigner();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
