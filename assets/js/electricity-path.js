@@ -24,20 +24,22 @@
   var UNITS = [
     {
       title: 'What electricity is',
-      goal: 'Charge, voltage, current, resistance, and the two kinds of current.',
+      goal: 'Charge, voltage, current, resistance, the loop and junction rules, and the two kinds of current.',
       lessons: [
         [P + 'what-is-electricity.html', 'What is electricity?'],
         [P + 'coulombs-law.html', 'Charge & force'],
         [E + 'ohms-law.html', 'Ohm’s Law'],
+        [E + 'voltage-dividers-kirchhoff.html', 'Dividers & Kirchhoff'],
         [P + 'ac-vs-dc.html', 'AC vs. DC']
       ]
     },
     {
       title: 'Parts & drawings',
-      goal: 'Name every part in the kit, read its value, and read a circuit map.',
+      goal: 'Name every part in the kit, read its value, predict how it behaves over time, and read a circuit map.',
       lessons: [
         [E + 'electronic-components.html', 'Components'],
         [E + 'resistor-color-code.html', 'Resistor color code'],
+        [E + 'capacitors-rc-time.html', 'Capacitors & RC time'],
         [E + 'electronic-schematics.html', 'Schematics']
       ]
     },
@@ -52,8 +54,9 @@
     },
     {
       title: 'The microcontroller',
-      goal: 'Upload code, know the board’s pins and voltage limits, and write real sketches.',
+      goal: 'See how transistors become logic, then upload code, know the board’s pins and voltage limits, and write real sketches.',
       lessons: [
+        [E + 'transistor-to-logic-gate.html', 'Transistor to logic gate'],
         [E + 'arduino-robot-brain.html', 'Arduino: first sketch'],
         [E + 'arduino-choosing-your-board.html', 'Board anatomy'],
         [E + 'arduino-programming-foundations.html', 'Programming foundations']
@@ -75,6 +78,13 @@
       lessons: [
         [E + 'pid-control.html', 'PID feedback control'],
         [E + 'internet-of-things.html', 'Internet of Things']
+      ]
+    },
+    {
+      title: 'Capstone',
+      goal: 'Design, build, measure, and present a working device from a real brief.',
+      lessons: [
+        [E + 'electronics-capstone.html', 'Electronics capstone']
       ]
     }
   ];
@@ -184,7 +194,7 @@
 
   var intro = inExtension
     ? 'This lesson is an optional extension. It goes deepest after Unit 1. When you are ready to build, return to the core sequence below.'
-    : 'Six units take you from electric charge to machines that sense, decide, and act. Follow the numbers in order, or jump to the idea you need.';
+    : 'Seven units take you from electric charge to machines that sense, decide, and act, ending with a capstone you design yourself. Follow the numbers in order, or jump to the idea you need.';
 
   section.innerHTML =
     '<p class="electricity-path__eyebrow">Electronics curriculum</p>' +

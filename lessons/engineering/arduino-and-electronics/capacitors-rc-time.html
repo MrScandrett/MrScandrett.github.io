@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en" data-glossary-manual>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Capacitors &amp; RC Time · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta
+    name="description"
+    content="See how capacitors store charge, watch an RC circuit charge and discharge on a simulated oscilloscope, read capacitor markings, and use an RC filter to debounce a button."
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/electricity-path.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/ee-lab.css" />
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../../../index.html">Home</a></li>
+            <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+            <li><a href="../../../paths.html">Paths</a></li>
+            <li><a href="../../../showcase.html">Showcase</a></li>
+            <li><a href="../../../applications.html">Apps</a></li>
+            <li><a href="../../../recipe-book.html">Library</a></li>
+            <li><a href="../../../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="ee-page">
+
+          <section class="hero ee-hero">
+            <div class="ee-hero-layout">
+              <div>
+                <p class="eyebrow">Engineering · Components in Time</p>
+                <h1>Capacitors &amp; RC Time</h1>
+                <p class="ee-lede">A resistor reacts instantly. A <span data-glossary="capacitor">capacitor</span> takes time. It stores charge, and filling it through a resistor is never instant. That delay is how circuits keep time, smooth out shaky power, and ignore a bouncing button. To see it, you need a tool that draws voltage over time: an <span data-glossary="oscilloscope">oscilloscope</span>.</p>
+                <a class="ee-back-link" href="../../../steam-lessons.html#module-engineering">&larr; Back to Engineering</a>
+              </div>
+              <ul class="ee-rules" aria-label="Three capacitor rules">
+                <li><b>Q = CV</b><span><strong>Bigger capacitor, more charge</strong> stored at the same voltage.</span></li>
+                <li><b>τ = RC</b><span><strong>The <span data-glossary="time constant">time constant</span>.</strong> Ohms × farads = seconds.</span></li>
+                <li><b>63% · 5τ</b><span><strong>One τ gets you 63% of the way.</strong> Five τ is basically full.</span></li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="ee-card" id="big-idea" aria-labelledby="big-idea-heading">
+            <p class="ee-kicker">The big idea</p>
+            <h2 id="big-idea-heading">Two plates and a gap</h2>
+            <div class="ee-grid ee-grid--2">
+              <figure class="ee-figure">
+                <svg viewBox="0 0 320 220" role="img" aria-label="Two metal plates separated by an insulating gap, with plus charges on one plate and minus charges on the other">
+                  <path class="ee-wire" d="M20 110 H120 M200 110 H300" />
+                  <rect x="120" y="30" width="14" height="160" rx="2" fill="#94a3b8" stroke="var(--ee-ink)" stroke-width="2" />
+                  <rect x="186" y="30" width="14" height="160" rx="2" fill="#94a3b8" stroke="var(--ee-ink)" stroke-width="2" />
+                  <rect x="138" y="30" width="44" height="160" fill="var(--ee-accent-soft)" />
+                  <g font-family="Inter, system-ui, sans-serif" font-weight="900" font-size="16" text-anchor="middle">
+                    <text x="127" y="62" fill="var(--ee-red)">+</text><text x="127" y="100" fill="var(--ee-red)">+</text><text x="127" y="138" fill="var(--ee-red)">+</text><text x="127" y="176" fill="var(--ee-red)">+</text>
+                    <text x="193" y="62" fill="var(--ee-blue)">−</text><text x="193" y="100" fill="var(--ee-blue)">−</text><text x="193" y="138" fill="var(--ee-blue)">−</text><text x="193" y="176" fill="var(--ee-blue)">−</text>
+                  </g>
+                  <text class="ee-label" x="160" y="210" text-anchor="middle">insulator (dielectric)</text>
+                  <text class="ee-label" x="60" y="100" text-anchor="middle">plate</text>
+                  <text class="ee-label" x="260" y="100" text-anchor="middle">plate</text>
+                </svg>
+                <figcaption>No current crosses the gap. Charge piles up on one plate and leaves the other, so a voltage builds between them.</figcaption>
+              </figure>
+              <div class="ee-prose">
+                <p>Push current into a capacitor and electrons crowd onto one plate while the same number leave the other. The more charge piles up, the higher the voltage across the gap, and the harder it pushes back against the current filling it.</p>
+                <p>That's why charging slows down as it goes: at first the capacitor is empty and current rushes in. As it fills, the capacitor's voltage gets closer to the supply's, so there's less voltage left across the resistor, so less current flows. It approaches full but, in theory, never quite gets there.</p>
+                <p>Capacitance is measured in <span data-glossary="farad">farads</span> (F). One farad is huge. Real parts are usually microfarads (µF, millionths), nanofarads (nF), or picofarads (pF).</p>
+                <p class="ee-callout"><strong>Water picture:</strong> a capacitor is a stretchy balloon in a water pipe. Water can't pass through it, but it can stretch and fill. The resistor is a narrow pipe that decides how fast it fills.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="ee-card" id="rc-lab" aria-labelledby="rc-heading">
+            <p class="ee-kicker">Sim 1 · Oscilloscope bench</p>
+            <h2 id="rc-heading">Watch an RC circuit charge and discharge</h2>
+            <p>Flip the switch to <strong>Charge</strong> and the 5 V supply fills the capacitor through the resistor. Flip it to <strong>Discharge</strong> and the capacitor empties back through the same resistor. The scope shows the capacitor voltage (yellow) and the current, drawn as the voltage across the resistor (blue). The time base adjusts so the whole curve fits, so read the time per division under the screen.</p>
+            <div class="ee-sim" id="rc-sim">
+              <div>
+                <div class="ee-stage">
+                  <svg id="rc-svg" viewBox="0 0 560 190" role="img" aria-label="5 volt supply, a two-way switch, a resistor, and a capacitor whose fill level shows its voltage"></svg>
+                </div>
+                <div class="ee-scope" style="margin-top:.6rem">
+                  <canvas id="rc-scope" aria-label="Oscilloscope trace of capacitor voltage and current over time" role="img"></canvas>
+                  <div class="ee-scope-legend"><span><i style="background:#fbbf24"></i>V<sub>C</sub> · 1 V/div</span><span><i style="background:#38bdf8"></i>V<sub>R</sub> (current) · 2 V/div</span><span id="rc-tdiv"></span></div>
+                </div>
+              </div>
+              <div class="ee-panel">
+                <div class="ee-controls" role="group" aria-label="Switch position">
+                  <button type="button" class="ee-btn" data-rc="charge" aria-pressed="true">Charge</button>
+                  <button type="button" class="ee-btn" data-rc="discharge" aria-pressed="false">Discharge</button>
+                </div>
+                <label class="ee-slider"><span>Resistor R <output></output></span><input type="range" id="rc-r" min="0" max="48" step="1" value="22" /></label>
+                <label class="ee-slider"><span>Capacitor C <output></output></span><input type="range" id="rc-c" min="0" max="7" step="1" value="4" /></label>
+                <div class="ee-readouts" aria-live="polite">
+                  <div class="ee-readout"><small>τ = R × C</small><b id="rc-tau"></b></div>
+                  <div class="ee-readout"><small>Full (5τ)</small><b id="rc-full"></b></div>
+                  <div class="ee-readout"><small>V<sub>C</sub> now</small><b id="rc-vc"></b></div>
+                  <div class="ee-readout"><small>Current now</small><b id="rc-i"></b></div>
+                </div>
+                <div class="ee-coach" id="rc-coach"></div>
+              </div>
+            </div>
+            <div class="ee-missions" id="rc-missions">
+              <h3>Missions <span id="rc-score">0 of 4</span></h3>
+              <ol>
+                <li data-mission="one">Pick R and C so τ is 1 second (within 10%), then charge the capacitor from empty past the 1τ line. <small>Hint: 10 kΩ × 100 µF = 1 s.</small></li>
+                <li data-mission="drain">Charge to above 4.9 V, then discharge and watch it fall past 37% (1.85 V). <small>Discharging loses 63% per τ, the mirror image of charging.</small></li>
+                <li data-mission="fast">Make a capacitor that is full in under a millisecond, then charge it all the way. <small>Small R and small C.</small></li>
+                <li data-mission="slow">Make a timer that takes over a minute to fill (5τ &gt; 60 s), then start charging it.</li>
+              </ol>
+            </div>
+            <div class="ee-table-wrap">
+              <table class="ee-table">
+                <thead><tr><th scope="col">Time</th><th scope="col">1τ</th><th scope="col">2τ</th><th scope="col">3τ</th><th scope="col">4τ</th><th scope="col">5τ</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">Charging: % of supply</th><td>63%</td><td>86%</td><td>95%</td><td>98%</td><td>99.3%</td></tr>
+                  <tr><th scope="row">Discharging: % left</th><td>37%</td><td>14%</td><td>5%</td><td>2%</td><td>0.7%</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="ee-card" id="scope" aria-labelledby="scope-heading">
+            <p class="ee-kicker">Meet the tool</p>
+            <h2 id="scope-heading">Multimeter or oscilloscope?</h2>
+            <p>A multimeter shows one number, updated a few times a second. That's perfect for a battery or a steady sensor. But PWM, a charging capacitor, a bouncing button, or a sound wave change thousands of times a second, faster than a meter can show. A scope draws voltage on the up-down axis and time on the left-right axis, like a graph that keeps redrawing.</p>
+            <div class="ee-grid">
+              <div class="ee-tile"><h3>Volts per division</h3><p>The vertical scale. At 1 V/div, a trace four squares above the zero line is 4 V.</p></div>
+              <div class="ee-tile"><h3>Time per division</h3><p>The horizontal scale. At 2 ms/div, the full 10-square screen shows 20 ms.</p></div>
+              <div class="ee-tile"><h3>Trigger</h3><p>Tells the scope when to start drawing, such as “the moment the voltage rises past 2.5 V,” so a repeating signal holds still on the screen.</p></div>
+              <div class="ee-tile"><h3>Classroom options</h3><p>A small handheld scope costs about the same as a good meter. No scope? The Arduino Serial Plotter is a very slow scope you already own (see the code below).</p></div>
+            </div>
+          </section>
+
+          <section class="ee-card" id="read" aria-labelledby="read-heading">
+            <p class="ee-kicker">Identify them</p>
+            <h2 id="read-heading">Reading a capacitor</h2>
+            <div class="ee-grid">
+              <div class="ee-tile"><h3>Ceramic (disc or chip)</h3><p>Small, cheap, not polarized. Usually 10 pF to 1 µF. Marked with a three-digit code, read like a resistor: two digits, then the number of zeros, in picofarads.</p></div>
+              <div class="ee-tile"><h3><span data-glossary="electrolytic capacitor">Electrolytic</span></h3><p>A can shape, 1 µF and up. <strong>Polarized</strong>: the stripe marks the negative leg, and the longer leg is positive. The value and maximum voltage are printed on the side.</p></div>
+              <div class="ee-tile"><h3>Film</h3><p>Boxy, stable, not polarized. Common in audio and timing circuits where the value must stay put.</p></div>
+              <div class="ee-tile"><h3>Supercapacitor</h3><p>Whole farads in a coin-sized part. Low voltage (often 2.7 V) but it can run a small clock or keep memory alive for days.</p></div>
+            </div>
+            <div class="ee-sim" style="grid-template-columns:1fr">
+              <div class="ee-panel">
+                <label class="ee-slider"><span>Type a ceramic capacitor code <output id="code-out"></output></span><input type="text" id="code-in" value="104" maxlength="3" inputmode="numeric" pattern="[0-9]{3}" style="padding:.45rem .6rem;border:1.5px solid var(--ee-line);border-radius:10px;background:var(--ee-sheet);color:var(--ee-ink);font:700 1.1rem 'Courier New',monospace;width:8rem" /></label>
+                <p class="ee-coach" id="code-explain" aria-live="polite"></p>
+              </div>
+            </div>
+            <p class="ee-callout ee-callout--warn"><strong>Ratings matter:</strong> every capacitor has a maximum voltage. Choose one rated well above your circuit's voltage. For a 5 V project, 10 V or 16 V parts are typical. An electrolytic installed backward or over its rating can bulge, leak, or burst. Big capacitors can also hold a charge after the power is off, so discharge them through a resistor before handling, never with a screwdriver.</p>
+          </section>
+
+          <section class="ee-card" id="debounce" aria-labelledby="debounce-heading">
+            <p class="ee-kicker">Sim 2 · Filter a bouncing button</p>
+            <h2 id="debounce-heading">An RC filter that ignores bounces</h2>
+            <p>When you press a button, its metal contacts bounce for a few milliseconds before settling. An Arduino is fast enough to count each bounce as a separate press. In <a href="inputs-beyond-the-button.html">Inputs</a> you fixed that in code. Here's the hardware fix: an RC <span data-glossary="low-pass filter">low-pass filter</span>. The capacitor can't change voltage instantly, so short bounces get smoothed away. Your goal: exactly 1 press counted, with less than 10 ms of delay.</p>
+            <div class="ee-sim" id="db-sim">
+              <div class="ee-scope">
+                <canvas id="db-scope" aria-label="Scope showing the raw bouncing button signal and the filtered signal with input thresholds" role="img"></canvas>
+                <div class="ee-scope-legend"><span><i style="background:#38bdf8"></i>Raw button</span><span><i style="background:#fbbf24"></i>After RC filter</span><span><i style="background:#f87171"></i>Pin thresholds 3 V / 1.5 V</span><span>4 ms/div · 1 V/div</span></div>
+              </div>
+              <div class="ee-panel">
+                <label class="ee-slider"><span>Filter τ <output></output></span><input type="range" id="db-tau" min="0" max="40" step="1" value="0" /></label>
+                <div class="ee-readouts" aria-live="polite">
+                  <div class="ee-readout"><small>Presses counted</small><b id="db-count"></b></div>
+                  <div class="ee-readout"><small>Delay</small><b id="db-lag"></b></div>
+                </div>
+                <div class="ee-coach" id="db-coach"></div>
+              </div>
+            </div>
+            <p class="ee-callout">The pins on an Arduino UNO have a built-in <span data-glossary="Schmitt trigger"><strong>Schmitt trigger</strong></span>: the input switches to HIGH above about 3 V and only switches back to LOW below about 1.5 V. That gap between the two thresholds is what lets a slow, smooth RC curve register as one clean press.</p>
+          </section>
+
+          <section class="ee-card" id="uses" aria-labelledby="uses-heading">
+            <p class="ee-kicker">Spot them in the wild</p>
+            <h2 id="uses-heading">Five jobs capacitors do</h2>
+            <div class="ee-grid">
+              <div class="ee-tile"><h3><span data-glossary="decoupling capacitor">Decoupling</span></h3><p>A 100 nF ceramic right next to every chip's power pin. When the chip suddenly gulps current, the tiny capacitor supplies it instantly so the voltage doesn't dip. Look at any Arduino: they're everywhere.</p></div>
+              <div class="ee-tile"><h3>Smoothing</h3><p>Big electrolytics after a <span data-glossary="rectifier">rectifier</span> fill the gaps between the bumps of rectified AC, turning it into nearly steady DC. Motors on a robot need one too.</p></div>
+              <div class="ee-tile"><h3>Timing</h3><p>The famous 555 timer chip flashes an LED at a rate set by one R and one C. Blink rates, tone pitches, and delays all come from τ = RC.</p></div>
+              <div class="ee-tile"><h3>Filtering</h3><p>RC filters remove noise from sensors, debounce buttons, and in audio, act as bass and treble controls.</p></div>
+              <div class="ee-tile"><h3>Energy bursts</h3><p>A camera flash charges a capacitor slowly from a battery, then dumps it all into the bulb in a millisecond.</p></div>
+            </div>
+          </section>
+
+          <section class="ee-card" id="code" aria-labelledby="code-heading">
+            <p class="ee-kicker">Real-bench lab</p>
+            <h2 id="code-heading">Turn your Arduino into a slow scope</h2>
+            <p>Wire 5 V → 10 kΩ → A0, and A0 → a 100 µF capacitor → GND (stripe to GND). Run the sketch, open <strong>Tools → Serial Plotter</strong>, and press reset. You'll see the same curve as Sim 1, with τ = 1 s.</p>
+<pre class="ee-tile"><code>const int CAP_PIN = A0;
+unsigned long start;
+
+void setup() {
+  Serial.begin(115200);
+  start = millis();
+}
+
+void loop() {
+  float volts = analogRead(CAP_PIN) * (5.0 / 1023.0);
+  Serial.print("time_s:");
+  Serial.print((millis() - start) / 1000.0);
+  Serial.print(" volts:");
+  Serial.println(volts);
+  delay(20);
+}</code></pre>
+            <p class="ee-callout">Check your τ: find the time where the curve crosses 3.16 V (63% of 5 V). It won't be exactly 1.00 s. Electrolytics are often ±20%, so anywhere from 0.8 s to 1.2 s is a healthy part. To discharge it again, unplug the 5 V wire and connect it to GND.</p>
+          </section>
+
+          <section class="ee-card ee-quiz" id="quick-check" aria-labelledby="quiz-heading">
+            <p class="ee-kicker">Quick check</p>
+            <h2 id="quiz-heading">Can you predict RC timing?</h2>
+            <button type="button" class="ee-btn" id="ee-quiz-reset">Clear answers</button>
+
+            <div class="ee-question" data-answer="b" data-explanation="τ = R × C = 4,700 Ω × 0.000 470 F ≈ 2.2 s.">
+              <p>1. What is the time constant of a 4.7 kΩ resistor with a 470 µF capacitor?</p>
+              <div class="ee-options" role="group">
+                <button type="button" class="ee-option" data-choice="a">0.22 s</button>
+                <button type="button" class="ee-option" data-choice="b">2.2 s</button>
+                <button type="button" class="ee-option" data-choice="c">22 s</button>
+                <button type="button" class="ee-option" data-choice="d">2,200 s</button>
+              </div>
+              <p class="ee-q-feedback" aria-live="polite"></p>
+            </div>
+
+            <div class="ee-question" data-answer="c" data-explanation="After one τ the capacitor reaches 63% of the supply: 0.63 × 5 V ≈ 3.2 V.">
+              <p>2. An empty capacitor charges from 5 V through a resistor. What is its voltage after one time constant?</p>
+              <div class="ee-options" role="group">
+                <button type="button" class="ee-option" data-choice="a">5 V: it is full</button>
+                <button type="button" class="ee-option" data-choice="b">2.5 V: halfway</button>
+                <button type="button" class="ee-option" data-choice="c">About 3.2 V</button>
+                <button type="button" class="ee-option" data-choice="d">About 1.8 V</button>
+              </div>
+              <p class="ee-q-feedback" aria-live="polite"></p>
+            </div>
+
+            <div class="ee-question" data-answer="a" data-explanation="104 = 10 followed by 4 zeros = 100,000 pF = 100 nF = 0.1 µF. It is the classic decoupling capacitor.">
+              <p>3. A small ceramic capacitor is marked <code>104</code>. What is its value?</p>
+              <div class="ee-options" role="group">
+                <button type="button" class="ee-option" data-choice="a">100 nF (0.1 µF)</button>
+                <button type="button" class="ee-option" data-choice="b">104 pF</button>
+                <button type="button" class="ee-option" data-choice="c">10 µF</button>
+                <button type="button" class="ee-option" data-choice="d">104 F</button>
+              </div>
+              <p class="ee-q-feedback" aria-live="polite"></p>
+            </div>
+
+            <div class="ee-question" data-answer="d" data-explanation="As the capacitor fills, its voltage rises toward the supply, so less voltage is left across the resistor, so less current flows (Ohm's Law). The current shrinks toward zero.">
+              <p>4. Why does the charging current get smaller over time?</p>
+              <div class="ee-options" role="group">
+                <button type="button" class="ee-option" data-choice="a">The resistor heats up and its resistance rises</button>
+                <button type="button" class="ee-option" data-choice="b">The battery runs down</button>
+                <button type="button" class="ee-option" data-choice="c">Current leaks across the gap</button>
+                <button type="button" class="ee-option" data-choice="d">The capacitor's rising voltage leaves less voltage across the resistor</button>
+              </div>
+              <p class="ee-q-feedback" aria-live="polite"></p>
+            </div>
+
+            <div class="ee-question" data-answer="b" data-explanation="Electrolytics are polarized: the stripe marks the negative leg. It also needs a voltage rating comfortably above 9 V; 6.3 V is too low.">
+              <p>5. You need a 100 µF electrolytic on a 9 V robot. Which part and placement is right?</p>
+              <div class="ee-options" role="group">
+                <button type="button" class="ee-option" data-choice="a">A 6.3 V part, stripe toward +9 V</button>
+                <button type="button" class="ee-option" data-choice="b">A 16 V or 25 V part, stripe toward ground</button>
+                <button type="button" class="ee-option" data-choice="c">Any voltage rating; direction doesn't matter</button>
+                <button type="button" class="ee-option" data-choice="d">A 16 V part, stripe toward +9 V</button>
+              </div>
+              <p class="ee-q-feedback" aria-live="polite"></p>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs">
+            <button class="ll-tab" aria-selected="true" data-pane="rc-outline">Outline</button>
+            <button class="ll-tab" aria-selected="false" data-pane="rc-teacher">Teacher Notes</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="rc-outline">
+            <span class="ll-label">This Lesson Covers</span>
+            <div class="ll-info"><strong>How capacitors work</strong>Plates, dielectric, Q = CV, farads and prefixes.</div>
+            <div class="ll-info"><strong>Oscilloscope bench</strong>Charge and discharge curves, τ = RC, the 63% rule, four missions.</div>
+            <div class="ll-info"><strong>Meter vs. scope</strong>Volts/div, time/div, trigger.</div>
+            <div class="ll-info"><strong>Reading capacitors</strong>Types, three-digit codes, polarity, voltage ratings, safety.</div>
+            <div class="ll-info"><strong>Debounce filter</strong>RC low-pass plus Schmitt-trigger inputs.</div>
+            <div class="ll-info"><strong>Real bench</strong>Plot an RC curve with the Arduino Serial Plotter.</div>
+          </div>
+          <div class="ll-pane" id="rc-teacher">
+            <div class="ll-info"><strong>Where this fits</strong>After Components and the color code; before Schematics. Students need Ohm's Law and the voltage divider idea (the RC curve is a divider whose bottom half changes over time).</div>
+            <div class="ll-info"><strong>Time</strong>Two 45-minute periods: Sim 1, the meter-vs-scope discussion, and reading parts on day one; the debounce sim and the Serial Plotter lab on day two.</div>
+            <div class="ll-info"><strong>Per pair</strong>Arduino, 10 kΩ resistor, 100 µF and 470 µF electrolytics (16 V or higher), a few 104 ceramics, a pushbutton, jumpers.</div>
+            <div class="ll-info"><strong>Safety</strong>Check every electrolytic's stripe before power goes on. Keep to the classroom kit: no camera-flash or microwave capacitors, which can hold dangerous charge.</div>
+            <div class="ll-info"><strong>Extension</strong>Have students measure τ for both capacitors from the Serial Plotter data, compute C from τ ÷ R, and compare it with the printed value and tolerance.</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script src="../../../assets/js/lessons/ee-lab.js"></script>
+  <script src="../../../assets/js/lessons/capacitors-rc-time.js"></script>
+  <script src="../../../assets/js/classroom-animations.js"></script>
+  <script src="../../../assets/js/lesson-layout.js"></script>
+  <script src="../../../assets/js/electricity-path.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
+  <script src="../../../assets/js/site-glossary.js" data-glossary-src="../../../data/electronics-glossary.json"></script>
+</body>
+</html>

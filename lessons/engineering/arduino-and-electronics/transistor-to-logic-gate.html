@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en" data-glossary-manual>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>From Transistor to Logic Gate · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta
+    name="description"
+    content="Switch a MOSFET with a voltage, wire transistors into NOT, NAND, and NOR gates, build a half adder that does binary math, and store one bit in a latch: the path from a transistor to a microcontroller."
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/electricity-path.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/ee-lab.css" />
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../../../index.html">Home</a></li>
+            <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+            <li><a href="../../../paths.html">Paths</a></li>
+            <li><a href="../../../showcase.html">Showcase</a></li>
+            <li><a href="../../../applications.html">Apps</a></li>
+            <li><a href="../../../recipe-book.html">Library</a></li>
+            <li><a href="../../../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="ee-page">
+
+          <section class="hero ee-hero">
+            <div class="ee-hero-layout">
+              <div>
+                <p class="eyebrow">Engineering · Digital Electronics</p>
+                <h1>From Transistor to Logic Gate</h1>
+                <p class="ee-lede">Your Arduino looks like magic: code goes in, decisions come out. Inside, it is made of one part repeated many thousands of times: the <span data-glossary="transistor">transistor</span>, a switch flipped by a voltage. Wire a few switches together and you get a <span data-glossary="logic gate">logic gate</span>. Wire gates together and you can add numbers and remember them. That's a computer.</p>
+                <a class="ee-back-link" href="../../../steam-lessons.html#module-engineering">&larr; Back to Engineering</a>
+              </div>
+              <ul class="ee-rules" aria-label="The climb from transistor to computer">
+                <li><b>Switch</b><span><strong>A transistor is a switch</strong> with no moving parts, flipped by voltage.</span></li>
+                <li><b>Gate</b><span><strong>Switches in patterns</strong> make NOT, AND, OR, and the rest.</span></li>
+                <li><b>CPU</b><span><strong>Gates make adders and memory.</strong> Add a clock and you have a processor.</span></li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="ee-card" id="big-idea" aria-labelledby="big-idea-heading">
+            <p class="ee-kicker">The big idea</p>
+            <h2 id="big-idea-heading">Two voltages, two meanings</h2>
+            <p>Analog circuits care about every voltage in between: 2.71 V means something different from 2.73 V. Digital circuits agree to care about only two ranges. Near 5 V is HIGH, also written <strong>1</strong> or <code>true</code>. Near 0 V is LOW, written <strong>0</strong> or <code>false</code>. These are called <span data-glossary="logic level">logic levels</span>, and they're why a slightly noisy wire doesn't change the answer.</p>
+            <div class="ee-grid">
+              <div class="ee-tile"><h3>One wire = one bit</h3><p>A <span data-glossary="binary">binary</span> digit, or bit, is a single 0 or 1. Eight wires carry a byte: 256 possible patterns.</p></div>
+              <div class="ee-tile"><h3>Logic = rules about bits</h3><p><span data-glossary="Boolean logic">Boolean logic</span> combines bits with three basic words: NOT, AND, OR. You already use them in code as <code>!</code>, <code>&amp;&amp;</code>, and <code>||</code>.</p></div>
+              <div class="ee-tile"><h3>Gates do it in hardware</h3><p>A gate is a tiny circuit that turns input voltages into an output voltage following one of those rules, in a few billionths of a second.</p></div>
+            </div>
+          </section>
+
+          <section class="ee-card" id="switch-lab" aria-labelledby="switch-heading">
+            <p class="ee-kicker">Sim 1 · The transistor switch</p>
+            <h2 id="switch-heading">A MOSFET: voltage in, current flows</h2>
+            <p>An N-channel <span data-glossary="MOSFET">MOSFET</span> has three legs: <strong>gate</strong>, <strong>drain</strong>, and <strong>source</strong>. The gate is insulated, so almost no current flows into it. When the gate voltage climbs past the <span data-glossary="threshold voltage">threshold voltage</span>, a channel opens between drain and source, and current flows through the load. Slide the gate voltage, or disconnect the Arduino pin and see what a <span data-glossary="floating input">floating</span> gate does.</p>
+            <div class="ee-sim" id="fet-sim">
+              <div class="ee-stage">
+                <svg id="fet-svg" viewBox="0 0 560 300" role="img" aria-label="An Arduino pin drives the gate of a MOSFET that switches an LED strip on a 5 volt supply"></svg>
+              </div>
+              <div class="ee-panel">
+                <label class="ee-slider"><span>Gate voltage (from the pin) <output></output></span><input type="range" id="fet-vg" min="0" max="5" step="0.05" value="0" /></label>
+                <div class="ee-controls">
+                  <button type="button" class="ee-btn" id="fet-float" aria-pressed="false">Disconnect the pin</button>
+                  <button type="button" class="ee-btn" id="fet-pd" aria-pressed="false">Add 10 kΩ pull-down</button>
+                </div>
+                <div class="ee-readouts" aria-live="polite">
+                  <div class="ee-readout"><small>Gate</small><b id="fet-g"></b></div>
+                  <div class="ee-readout"><small>Load current</small><b id="fet-i"></b></div>
+                  <div class="ee-readout"><small>Current from pin</small><b id="fet-ig"></b></div>
+                  <div class="ee-readout"><small>State</small><b id="fet-state"></b></div>
+                </div>
+                <div class="ee-coach" id="fet-coach"></div>
+              </div>
+            </div>
+            <p class="ee-callout">This is the same circuit you used in <a href="outputs-beyond-the-led.html">Outputs</a> to let a 20 mA pin control an LED strip or motor that needs far more current. In logic chips, the “load” is just the input of the next gate.</p>
+          </section>
+
+          <section class="ee-card" id="gates" aria-labelledby="gates-heading">
+            <p class="ee-kicker">Sim 2 · Gate workshop</p>
+            <h2 id="gates-heading">Switches in series and in parallel</h2>
+            <p>Here is the trick. A resistor pulls the output up to HIGH. Transistors underneath can pull it down to LOW. With one transistor, the output is the opposite of the input: a NOT gate. Put two transistors in <strong>series</strong> and both must turn on to pull the output LOW: a NAND gate. Put them in <strong>parallel</strong> and either one can: a NOR gate. Flip the inputs and fill in the <span data-glossary="truth table">truth table</span>.</p>
+            <div class="ee-tabs" role="tablist" aria-label="Gate" id="gate-pick">
+              <button type="button" role="tab" data-value="NOT" aria-selected="true">NOT</button>
+              <button type="button" role="tab" data-value="NAND" aria-selected="false">NAND</button>
+              <button type="button" role="tab" data-value="NOR" aria-selected="false">NOR</button>
+              <button type="button" role="tab" data-value="AND" aria-selected="false">AND</button>
+              <button type="button" role="tab" data-value="OR" aria-selected="false">OR</button>
+              <button type="button" role="tab" data-value="XOR" aria-selected="false">XOR</button>
+            </div>
+            <div class="ee-sim" id="gate-sim">
+              <div class="ee-stage">
+                <svg id="gate-svg" viewBox="0 0 560 320" role="img" aria-label="Transistor-level drawing of the selected logic gate"></svg>
+              </div>
+              <div class="ee-panel">
+                <div class="ee-controls" role="group" aria-label="Inputs">
+                  <button type="button" class="ee-switch" data-in="A" aria-pressed="false"><i></i>Input A</button>
+                  <button type="button" class="ee-switch" data-in="B" aria-pressed="false"><i></i>Input B</button>
+                </div>
+                <table class="ee-truth" id="gate-truth" aria-label="Truth table"></table>
+                <div class="ee-coach" id="gate-coach" aria-live="polite"></div>
+              </div>
+            </div>
+            <p class="ee-callout"><strong>NAND is universal.</strong> Every other gate can be built from NAND gates alone: NOT is a NAND with its inputs tied together, AND is NAND followed by NOT, and so on. Early chip makers built entire computers out of a single kind of gate. You can do it too with one 74HC00 chip, which holds four NAND gates.</p>
+          </section>
+
+          <section class="ee-card" id="adder" aria-labelledby="adder-heading">
+            <p class="ee-kicker">Sim 3 · Make gates do math</p>
+            <h2 id="adder-heading">Build a half adder</h2>
+            <p>In binary, 0 + 0 = 0, 0 + 1 = 1, 1 + 0 = 1, and 1 + 1 = <strong>10</strong> (that's “two”: write 0, carry the 1). A <span data-glossary="half adder">half adder</span> needs two outputs: the <strong>sum</strong> bit and the <strong>carry</strong> bit. Pick the gate for each output so every row of the table comes out right.</p>
+            <div class="ee-sim" id="add-sim">
+              <div class="ee-stage">
+                <svg id="add-svg" viewBox="0 0 560 260" role="img" aria-label="Inputs A and B feed two gates; one makes the sum bit and one makes the carry bit"></svg>
+              </div>
+              <div class="ee-panel">
+                <div class="ee-gate-pick">
+                  <label>Sum gate <select id="add-sum"><option>AND</option><option selected>OR</option><option>XOR</option><option>NAND</option><option>NOR</option></select></label>
+                  <label>Carry gate <select id="add-carry"><option>AND</option><option>OR</option><option>XOR</option><option selected>NAND</option><option>NOR</option></select></label>
+                </div>
+                <div class="ee-controls" role="group" aria-label="Inputs">
+                  <button type="button" class="ee-switch" data-add="A" aria-pressed="false"><i></i>A</button>
+                  <button type="button" class="ee-switch" data-add="B" aria-pressed="false"><i></i>B</button>
+                </div>
+                <table class="ee-truth" id="add-truth" aria-label="Half adder check"></table>
+                <div class="ee-coach" id="add-coach" aria-live="polite"></div>
+              </div>
+            </div>
+            <p class="ee-callout">Chain a <em>full</em> adder (two half adders and an OR gate, so it can also add the carry from the column to its right) eight times, and you can add any two numbers from 0 to 255. Your Arduino's processor has an adder like this at its heart, and it's built from the same gates.</p>
+          </section>
+
+          <section class="ee-card" id="memory" aria-labelledby="memory-heading">
+            <p class="ee-kicker">Sim 4 · Gates that remember</p>
+            <h2 id="memory-heading">One bit of memory: the SR latch</h2>
+            <p>Everything so far forgets its answer the moment the inputs change. Now loop two NOR gates back into each other. Press <strong>Set</strong> and Q turns on. Let go, and it <em>stays</em> on: each gate's output holds the other one in place. Press <strong>Reset</strong> to turn it off. This is a <span data-glossary="latch">latch</span>, one bit of memory made from four transistors.</p>
+            <div class="ee-sim" id="latch-sim">
+              <div class="ee-stage">
+                <svg id="latch-svg" viewBox="0 0 560 260" role="img" aria-label="Two NOR gates cross-coupled into an SR latch"></svg>
+              </div>
+              <div class="ee-panel">
+                <div class="ee-controls">
+                  <button type="button" class="ee-btn" id="latch-s">Hold Set (S)</button>
+                  <button type="button" class="ee-btn" id="latch-r">Hold Reset (R)</button>
+                </div>
+                <div class="ee-readouts" aria-live="polite">
+                  <div class="ee-readout"><small>S</small><b id="latch-sv">0</b></div>
+                  <div class="ee-readout"><small>R</small><b id="latch-rv">0</b></div>
+                  <div class="ee-readout"><small>Q (stored bit)</small><b id="latch-q">0</b></div>
+                </div>
+                <div class="ee-coach" id="latch-coach"></div>
+              </div>
+            </div>
+            <div class="ee-grid">
+              <div class="ee-tile"><h3>Add a clock</h3><p>A <span data-glossary="clock signal">clock signal</span> is a square wave that ticks millions of times a second. Gate the latch with it and the bit can only change on a tick. That's a flip-flop, and it keeps billions of gates in step. Your UNO's clock ticks 16 million times a second.</p></div>
+              <div class="ee-tile"><h3>Rows of flip-flops</h3><p>Eight flip-flops side by side hold a byte. That's a register. Thousands of them make the memory where your sketch's variables live.</p></div>
+              <div class="ee-tile"><h3>The whole stack</h3><p>Transistor → gate → adder and latch → register and arithmetic unit → processor. Your <code>int count = count + 1;</code> really does run on this.</p></div>
+            </div>
+          </section>
+
+          <section class="ee-card" id="arduino" aria-labelledby="arduino-heading">
+            <p class="ee-kicker">Back to the Arduino</p>
+            <h2 id="arduino-heading">What this means for your sketches</h2>
+            <div class="ee-grid ee-grid--2">
+              <div class="ee-tile">
+                <h3>digitalRead() has thresholds</h3>
+                <p>On a 5 V UNO, a pin reads HIGH above about 3 V and LOW below about 1.5 V. In between is a gray zone where the answer isn't guaranteed. A <a href="voltage-dividers-kirchhoff.html">voltage divider</a> sitting at 2.5 V is a bad digital input.</p>
+              </div>
+              <div class="ee-tile">
+                <h3>Never leave an input floating</h3>
+                <p>An unconnected input is like the gate you disconnected in Sim 1: it drifts with static and reads random values. Always use a pull-up or pull-down resistor, or <code>pinMode(pin, INPUT_PULLUP)</code>.</p>
+              </div>
+              <div class="ee-tile">
+                <h3>Gates in code</h3>
+<pre><code>bool a = digitalRead(2);
+bool b = digitalRead(3);
+digitalWrite(8, !a);       // NOT
+digitalWrite(9, a &amp;&amp; b);   // AND
+digitalWrite(10, a || b);  // OR
+digitalWrite(11, a != b);  // XOR
+digitalWrite(12, !(a &amp;&amp; b)); // NAND</code></pre>
+              </div>
+              <div class="ee-tile">
+                <h3>Real chips use CMOS</h3>
+                <p>The gates in this lesson use a resistor to pull the output HIGH, which wastes current whenever the output is LOW. Real chips replace that resistor with a second, opposite kind of transistor (P-channel) that pulls up. That pairing is called <span data-glossary="CMOS">CMOS</span>, and it's why your Arduino's chip runs cool and why a phone chip with over 10 billion transistors can run on a battery.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="ee-card" id="bench" aria-labelledby="bench-heading">
+            <p class="ee-kicker">Real-bench lab</p>
+            <h2 id="bench-heading">Build gates on a breadboard</h2>
+            <ol class="ee-steps">
+              <li><div><strong>NOT gate.</strong><p>5 V → 1 kΩ pull-up → the MOSFET's drain (2N7000 or another logic-level N-channel). Source to ground. The drain is the gate's output: show it with an LED and a second 1 kΩ resistor from the drain to ground. Wire the MOSFET's gate to a button with a 10 kΩ pull-down. Not pressed: the LED is on. Press: the transistor pulls the output LOW and the LED goes out. Measure the drain in both states with your meter.</p></div></li>
+              <li><div><strong>NAND gate.</strong><p>Add a second MOSFET in series between the first one's source and ground, with its own button. The LED only goes out when <em>both</em> buttons are pressed. Fill in the truth table with real measurements.</p></div></li>
+              <li><div><strong>NOR gate.</strong><p>Move the second MOSFET so the two are side by side (in parallel). Either button now turns the LED off.</p></div></li>
+              <li><div><strong>Chip version.</strong><p>Swap the transistors for a 74HC00 (four NANDs) and check the pinout in its datasheet. Pin 14 is 5 V, pin 7 is ground. Build an AND gate from two of its NANDs.</p></div></li>
+            </ol>
+          </section>
+
+          <section class="ee-card ee-quiz" id="quick-check" aria-labelledby="quiz-heading">
+            <p class="ee-kicker">Quick check</p>
+            <h2 id="quiz-heading">Can you think in gates?</h2>
+            <button type="button" class="ee-btn" id="ee-quiz-reset">Clear answers</button>
+
+            <div class="ee-question" data-answer="c" data-explanation="Below the threshold the channel is closed. The gate is insulated, so it draws almost no current either way.">
+              <p>1. An N-channel MOSFET's gate is at 0.5 V and its threshold is about 2 V. What happens?</p>
+              <div class="ee-options" role="group">
+                <button type="button" class="ee-option" data-choice="a">It is fully on</button>
+                <button type="button" class="ee-option" data-choice="b">It is half on</button>
+                <button type="button" class="ee-option" data-choice="c">It is off: no current through the load</button>
+                <button type="button" class="ee-option" data-choice="d">A large current flows into the gate</button>
+              </div>
+              <p class="ee-q-feedback" aria-live="polite"></p>
+            </div>
+
+            <div class="ee-question" data-answer="a" data-explanation="NAND is only LOW when every input is HIGH. Two series transistors must both conduct to pull the output down.">
+              <p>2. A NAND gate has inputs A = 1, B = 1. What is the output?</p>
+              <div class="ee-options" role="group">
+                <button type="button" class="ee-option" data-choice="a">0</button>
+                <button type="button" class="ee-option" data-choice="b">1</button>
+                <button type="button" class="ee-option" data-choice="c">It depends on the previous output</button>
+                <button type="button" class="ee-option" data-choice="d">10</button>
+              </div>
+              <p class="ee-q-feedback" aria-live="polite"></p>
+            </div>
+
+            <div class="ee-question" data-answer="d" data-explanation="Sum = A XOR B (1 when exactly one input is 1). Carry = A AND B (1 only when both are 1).">
+              <p>3. Which gates make a half adder?</p>
+              <div class="ee-options" role="group">
+                <button type="button" class="ee-option" data-choice="a">Sum = OR, Carry = AND</button>
+                <button type="button" class="ee-option" data-choice="b">Sum = AND, Carry = XOR</button>
+                <button type="button" class="ee-option" data-choice="c">Sum = NAND, Carry = NOR</button>
+                <button type="button" class="ee-option" data-choice="d">Sum = XOR, Carry = AND</button>
+              </div>
+              <p class="ee-q-feedback" aria-live="polite"></p>
+            </div>
+
+            <div class="ee-question" data-answer="b" data-explanation="A floating input is an antenna with nothing holding it to a voltage. A pull-down resistor holds it at a firm LOW until something drives it HIGH.">
+              <p>4. A button input reads 1, 0, 1, 1, 0 even when nobody touches it. What's the most likely fix?</p>
+              <div class="ee-options" role="group">
+                <button type="button" class="ee-option" data-choice="a">Use a faster Arduino</button>
+                <button type="button" class="ee-option" data-choice="b">Add a pull-down resistor (or use INPUT_PULLUP)</button>
+                <button type="button" class="ee-option" data-choice="c">Add a delay() to the loop</button>
+                <button type="button" class="ee-option" data-choice="d">Use a bigger button</button>
+              </div>
+              <p class="ee-q-feedback" aria-live="polite"></p>
+            </div>
+
+            <div class="ee-question" data-answer="c" data-explanation="Feedback: each NOR gate's output feeds the other's input, so the pair holds its state after the inputs return to 0.">
+              <p>5. What lets an SR latch remember a bit after you let go of Set?</p>
+              <div class="ee-options" role="group">
+                <button type="button" class="ee-option" data-choice="a">A capacitor stores the charge</button>
+                <button type="button" class="ee-option" data-choice="b">The button stays pressed inside</button>
+                <button type="button" class="ee-option" data-choice="c">The gates' outputs loop back into each other's inputs</button>
+                <button type="button" class="ee-option" data-choice="d">The clock keeps re-setting it</button>
+              </div>
+              <p class="ee-q-feedback" aria-live="polite"></p>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs">
+            <button class="ll-tab" aria-selected="true" data-pane="tl-outline">Outline</button>
+            <button class="ll-tab" aria-selected="false" data-pane="tl-teacher">Teacher Notes</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="tl-outline">
+            <span class="ll-label">This Lesson Covers</span>
+            <div class="ll-info"><strong>Logic levels &amp; bits</strong>HIGH/LOW, 1/0, and Boolean logic.</div>
+            <div class="ll-info"><strong>MOSFET switch</strong>Threshold voltage, insulated gate, floating inputs, pull-downs.</div>
+            <div class="ll-info"><strong>Gate workshop</strong>NOT, NAND, NOR from transistors; AND, OR, XOR from those.</div>
+            <div class="ll-info"><strong>Half adder</strong>Binary addition with XOR and AND.</div>
+            <div class="ll-info"><strong>SR latch</strong>Feedback makes memory; clocks, flip-flops, registers.</div>
+            <div class="ll-info"><strong>Back to the Arduino</strong>Input thresholds, pull-ups, logic operators in code, CMOS.</div>
+          </div>
+          <div class="ll-pane" id="tl-teacher">
+            <div class="ll-info"><strong>Where this fits</strong>The bridge from Unit 3 (build &amp; measure) into the microcontroller unit. Students should know pull-down resistors from Breadboard Basics and what a transistor looks like from Components.</div>
+            <div class="ll-info"><strong>Time</strong>Two 45-minute periods: Sims 1–2 and the NOT/NAND breadboard build on day one; the half adder, latch, and 74HC00 lab on day two.</div>
+            <div class="ll-info"><strong>Per pair</strong>Two 2N7000 (or other logic-level N-channel) MOSFETs, a 74HC00, two pushbuttons, two 10 kΩ and two 1 kΩ resistors, an LED, a multimeter.</div>
+            <div class="ll-info"><strong>Static</strong>MOSFET gates can be damaged by static. Touch something grounded before handling them and keep them in their foam until use.</div>
+            <div class="ll-info"><strong>Extension</strong>Build a full adder on paper from two half adders and an OR gate, then wire a 2-bit adder with two 74HC86 (XOR) and 74HC08 (AND) chips.</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script src="../../../assets/js/lessons/ee-lab.js"></script>
+  <script src="../../../assets/js/lessons/transistor-to-logic-gate.js"></script>
+  <script src="../../../assets/js/classroom-animations.js"></script>
+  <script src="../../../assets/js/lesson-layout.js"></script>
+  <script src="../../../assets/js/electricity-path.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
+  <script src="../../../assets/js/site-glossary.js" data-glossary-src="../../../data/electronics-glossary.json"></script>
+</body>
+</html>

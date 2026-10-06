@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en" data-glossary-manual>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Voltage Dividers &amp; Kirchhoff's Laws · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta
+    name="description"
+    content="Walk a circuit loop with Kirchhoff's voltage law, balance a junction with Kirchhoff's current law, then build voltage dividers that turn a light sensor into a number an Arduino can read."
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/electricity-path.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/ee-lab.css" />
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../../../index.html">Home</a></li>
+            <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+            <li><a href="../../../paths.html">Paths</a></li>
+            <li><a href="../../../showcase.html">Showcase</a></li>
+            <li><a href="../../../applications.html">Apps</a></li>
+            <li><a href="../../../recipe-book.html">Library</a></li>
+            <li><a href="../../../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="ee-page">
+
+          <section class="hero ee-hero">
+            <div class="ee-hero-layout">
+              <div>
+                <p class="eyebrow">Engineering · Circuit Analysis</p>
+                <h1>Voltage Dividers &amp; Kirchhoff's Laws</h1>
+                <p class="ee-lede">Ohm's Law tells you about one part. Two more rules tell you about a whole circuit. They are called <span data-glossary="Kirchhoff's voltage law">Kirchhoff's voltage law</span> and <span data-glossary="Kirchhoff's current law">current law</span>. Put them together and you get the most useful little circuit in electronics: the <span data-glossary="voltage divider">voltage divider</span>. It is how almost every analog sensor talks to an Arduino.</p>
+                <a class="ee-back-link" href="../../../steam-lessons.html#module-engineering">&larr; Back to Engineering</a>
+              </div>
+              <ul class="ee-rules" aria-label="The three rules in this lesson">
+                <li><b>KVL</b><span><strong>Every loop adds up to zero.</strong> The rises equal the drops.</span></li>
+                <li><b>KCL</b><span><strong>What flows in flows out.</strong> Current is never lost at a junction.</span></li>
+                <li><b>V<sub>out</sub></b><span><strong>A divider shares the voltage</strong> in proportion to resistance.</span></li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="ee-card" id="big-idea" aria-labelledby="big-idea-heading">
+            <p class="ee-kicker">The big idea</p>
+            <h2 id="big-idea-heading">Voltage is height. Current is traffic.</h2>
+            <p>Think of <span data-glossary="voltage">voltage</span> as height on a hiking trail. The battery is a ski lift: it carries charge up the hill. Every resistor is a slope going back down. However you walk the trail, you end where you started, so every climb must be balanced by the same total of descents. That is Kirchhoff's voltage law.</p>
+            <p>Think of <span data-glossary="electric current">current</span> as cars on roads. At an intersection, the number of cars arriving each second equals the number leaving. Cars don't vanish, and they don't pile up inside the intersection. That is Kirchhoff's current law.</p>
+            <div class="ee-grid">
+              <div class="ee-tile"><h3>Kirchhoff's voltage law (KVL)</h3><p>Around any closed loop, the voltage rises equal the voltage drops.</p><p><span class="ee-formula">V<sub>battery</sub> = V<sub>1</sub> + V<sub>2</sub> + V<sub>3</sub></span></p></div>
+              <div class="ee-tile"><h3>Kirchhoff's current law (KCL)</h3><p>At any junction (a <span data-glossary="circuit node">node</span>), the currents in equal the currents out.</p><p><span class="ee-formula">I<sub>in</sub> = I<sub>a</sub> + I<sub>b</sub> + I<sub>c</sub></span></p></div>
+              <div class="ee-tile"><h3>Why it matters</h3><p>With these two rules and Ohm's Law you can work out the voltage and current anywhere in any circuit. Professional circuit simulators do exactly this, millions of times a second.</p></div>
+            </div>
+          </section>
+
+          <section class="ee-card" id="kvl-lab" aria-labelledby="kvl-heading">
+            <p class="ee-kicker">Sim 1 · Walk the loop</p>
+            <h2 id="kvl-heading">Kirchhoff's voltage law: the voltage hike</h2>
+            <p>Three resistors in a <span data-glossary="series circuit">series</span> loop share one battery. The graph below the circuit is the trail: how high (how many volts) each point sits above the battery's minus terminal. Change the resistors and watch how the battery's climb gets shared out.</p>
+            <div class="ee-sim" id="kvl-sim">
+              <div class="ee-stage">
+                <svg id="kvl-svg" viewBox="0 0 560 420" role="img" aria-label="Series loop with a battery and three resistors, and a graph of voltage at each point around the loop"></svg>
+              </div>
+              <div class="ee-panel">
+                <label class="ee-slider"><span>Battery <output></output></span><input type="range" id="kvl-v" min="1" max="12" step="0.5" value="9" /></label>
+                <label class="ee-slider"><span>R1 <output></output></span><input type="range" id="kvl-r1" min="0" max="48" step="1" value="12" /></label>
+                <label class="ee-slider"><span>R2 <output></output></span><input type="range" id="kvl-r2" min="0" max="48" step="1" value="18" /></label>
+                <label class="ee-slider"><span>R3 <output></output></span><input type="range" id="kvl-r3" min="0" max="48" step="1" value="12" /></label>
+                <div class="ee-readouts" aria-live="polite">
+                  <div class="ee-readout"><small>Current</small><b id="kvl-i"></b></div>
+                  <div class="ee-readout"><small>V<sub>1</sub></small><b id="kvl-v1"></b></div>
+                  <div class="ee-readout"><small>V<sub>2</sub></small><b id="kvl-v2"></b></div>
+                  <div class="ee-readout"><small>V<sub>3</sub></small><b id="kvl-v3"></b></div>
+                </div>
+                <div class="ee-coach" id="kvl-sum"></div>
+              </div>
+            </div>
+            <p class="ee-callout"><strong>Notice:</strong> the biggest resistor always takes the biggest share of the voltage. The same current flows through all three, so by Ohm's Law (V = I × R), more R means more V. Double one resistor and you double its share. The total never changes: it is always the battery.</p>
+          </section>
+
+          <section class="ee-card" id="kcl-lab" aria-labelledby="kcl-heading">
+            <p class="ee-kicker">Sim 2 · Balance the junction</p>
+            <h2 id="kcl-heading">Kirchhoff's current law: the junction count</h2>
+            <p>Now three LEDs-with-resistors hang in <span data-glossary="parallel circuit">parallel</span> from one 5 V supply. Each branch gets the full 5 V, so each one draws its own current. Switch branches on and off and watch the main wire's current change. The thickness of each wire shows how much current it carries.</p>
+            <div class="ee-sim" id="kcl-sim">
+              <div class="ee-stage">
+                <svg id="kcl-svg" viewBox="0 0 560 330" role="img" aria-label="Three parallel branches fed from one supply wire through a junction"></svg>
+              </div>
+              <div class="ee-panel">
+                <div class="ee-controls" role="group" aria-label="Branch switches">
+                  <button type="button" class="ee-switch" data-branch="0" aria-pressed="true"><i></i>Branch A</button>
+                  <button type="button" class="ee-switch" data-branch="1" aria-pressed="true"><i></i>Branch B</button>
+                  <button type="button" class="ee-switch" data-branch="2" aria-pressed="false"><i></i>Branch C</button>
+                </div>
+                <label class="ee-slider"><span>Branch A resistor <output></output></span><input type="range" id="kcl-ra" min="0" max="48" step="1" value="10" /></label>
+                <label class="ee-slider"><span>Branch B resistor <output></output></span><input type="range" id="kcl-rb" min="0" max="48" step="1" value="14" /></label>
+                <label class="ee-slider"><span>Branch C resistor <output></output></span><input type="range" id="kcl-rc" min="0" max="48" step="1" value="6" /></label>
+                <div class="ee-coach" id="kcl-sum" aria-live="polite"></div>
+              </div>
+            </div>
+            <p class="ee-callout"><strong>Why your Arduino resets:</strong> every LED, motor, and sensor you add in parallel adds its current to the main supply wire. A USB port can supply about 500 mA. Ask for more and the voltage sags, and the board restarts. In the capstone you'll add up a <span data-glossary="power budget">power budget</span> before you build, using exactly this rule.</p>
+          </section>
+
+          <section class="ee-card" id="divider" aria-labelledby="divider-heading">
+            <p class="ee-kicker">Put them together</p>
+            <h2 id="divider-heading">The voltage divider, in three lines</h2>
+            <p>Two resistors in series across a supply, with a wire tapped off the middle. The middle point sits somewhere between the supply voltage and 0 V. Where exactly? Kirchhoff and Ohm tell you.</p>
+            <div class="ee-grid ee-grid--2">
+              <figure class="ee-figure">
+                <svg viewBox="0 0 300 260" role="img" aria-label="Schematic of a voltage divider: Vin at top, R1, the Vout tap, R2, then ground">
+                  <path class="ee-wire" d="M110 30 V60 M110 120 V150 M110 210 V235 M110 135 H200" />
+                  <rect class="ee-part" x="96" y="60" width="28" height="60" rx="3" />
+                  <rect class="ee-part" x="96" y="150" width="28" height="60" rx="3" />
+                  <circle class="ee-node" cx="110" cy="135" r="5" />
+                  <circle class="ee-node" cx="200" cy="135" r="5" />
+                  <path class="ee-part-line" d="M90 235 H130 M97 243 H123 M104 251 H116" />
+                  <text class="ee-value" x="110" y="22" text-anchor="middle">V<tspan baseline-shift="sub" font-size="10">in</tspan></text>
+                  <text class="ee-label" x="134" y="95">R1 (top)</text>
+                  <text class="ee-label" x="134" y="185">R2 (bottom)</text>
+                  <text class="ee-value" x="210" y="140">V<tspan baseline-shift="sub" font-size="10">out</tspan></text>
+                  <text class="ee-label" x="134" y="250">ground (0 V)</text>
+                </svg>
+                <figcaption>Vout is measured from the middle tap to ground.</figcaption>
+              </figure>
+              <div>
+                <ol class="ee-steps">
+                  <li><div><strong>KCL: one current.</strong><p>With nothing connected to V<sub>out</sub>, the same current flows through R1 and R2: I = V<sub>in</sub> ÷ (R1 + R2).</p></div></li>
+                  <li><div><strong>Ohm: the bottom drop.</strong><p>The voltage across R2 is V<sub>out</sub> = I × R2.</p></div></li>
+                  <li><div><strong>Substitute.</strong><p><span class="ee-formula">V<sub>out</sub> = V<sub>in</sub> × R2 ÷ (R1 + R2)</span></p></div></li>
+                </ol>
+                <p class="ee-callout">Only the <em>ratio</em> matters. 1 kΩ + 1 kΩ and 100 kΩ + 100 kΩ both give exactly half the supply. What changes is how much current the divider wastes, and how easily a load can drag the output down.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="ee-card" id="divider-lab" aria-labelledby="divider-lab-heading">
+            <p class="ee-kicker">Sim 3 · Divider bench</p>
+            <h2 id="divider-lab-heading">Build a divider, feed an Arduino</h2>
+            <p>Pick what goes in the bottom spot: a fixed resistor, a <span data-glossary="photoresistor">photoresistor</span> (light sensor), or a <span data-glossary="potentiometer">potentiometer</span>. The Arduino's <span data-glossary="analog-to-digital converter">analog-to-digital converter</span> turns 0–5 V into a number from 0 to 1023, which is what <code>analogRead()</code> returns. Then try connecting a load and see what happens.</p>
+            <div class="ee-tabs" role="tablist" aria-label="Bottom part" id="div-mode">
+              <button type="button" role="tab" data-value="fixed" aria-selected="true">Fixed resistors</button>
+              <button type="button" role="tab" data-value="ldr" aria-selected="false">Light sensor</button>
+              <button type="button" role="tab" data-value="pot" aria-selected="false">Potentiometer</button>
+            </div>
+            <div class="ee-sim" id="div-sim">
+              <div class="ee-stage">
+                <svg id="div-svg" viewBox="0 0 560 360" role="img" aria-label="Voltage divider wired to an Arduino analog pin"></svg>
+              </div>
+              <div class="ee-panel">
+                <label class="ee-slider"><span><em>Supply V<sub>in</sub></em> <output></output></span><input type="range" id="div-vin" min="1" max="12" step="0.1" value="5" /></label>
+                <label class="ee-slider" data-show="fixed ldr"><span><em id="div-r1-label">R1 (top)</em> <output></output></span><input type="range" id="div-r1" min="0" max="48" step="1" value="24" /></label>
+                <label class="ee-slider" data-show="fixed"><span>R2 (bottom) <output></output></span><input type="range" id="div-r2" min="0" max="48" step="1" value="20" /></label>
+                <label class="ee-slider" data-show="ldr" hidden><span>Light on the sensor <output></output></span><input type="range" id="div-light" min="0" max="100" step="1" value="60" /></label>
+                <label class="ee-slider" data-show="pot" hidden><span>Knob position <output></output></span><input type="range" id="div-knob" min="0" max="100" step="1" value="50" /></label>
+                <div class="ee-controls" data-show="ldr" hidden>
+                  <button type="button" class="ee-btn" id="div-swap" aria-pressed="false">Swap: sensor on top</button>
+                </div>
+                <div class="ee-controls">
+                  <button type="button" class="ee-btn" id="div-load" aria-pressed="false">Connect a load</button>
+                </div>
+                <label class="ee-slider" id="div-rload-wrap" hidden><span>Load resistance <output></output></span><input type="range" id="div-rload" min="0" max="48" step="1" value="12" /></label>
+                <div class="ee-readouts" aria-live="polite">
+                  <div class="ee-readout"><small>V<sub>out</sub></small><b id="div-vout"></b></div>
+                  <div class="ee-readout"><small>analogRead()</small><b id="div-adc"></b></div>
+                  <div class="ee-readout"><small>Divider current</small><b id="div-i"></b></div>
+                  <div class="ee-readout"><small>Power wasted</small><b id="div-p"></b></div>
+                </div>
+                <div class="ee-coach" id="div-coach"></div>
+              </div>
+            </div>
+            <div class="ee-missions" id="div-missions">
+              <h3>Missions <span id="div-score">0 of 5</span></h3>
+              <ol>
+                <li data-mission="half">Fixed resistors, 5 V supply: make V<sub>out</sub> read between 2.45 and 2.55 V. <small>Hint: equal resistors split the supply in half.</small></li>
+                <li data-mission="logic">Make a 3.3 V signal from a 5 V supply (3.2 to 3.4 V). This is how you safely send a 5 V Arduino signal into a 3.3 V sensor. <small>Hint: you need R2 about twice R1.</small></li>
+                <li data-mission="bright">Light sensor: as wired, V<sub>out</sub> rises in the <em>dark</em>, because the sensor's resistance climbs. Rewire it so V<sub>out</sub> rises with <em>light</em> instead, then make it read above 3.5 V at 90% light or more. <small>Hint: swap the sensor to the top.</small></li>
+                <li data-mission="sag">Connect a load of 1 kΩ to a divider built from two 100 kΩ resistors. Watch V<sub>out</sub> collapse. <small>This is called the <span data-glossary="loading effect">loading effect</span>.</small></li>
+                <li data-mission="stiff">With the 1 kΩ load still connected, get V<sub>out</sub> back within 10% of the unloaded value. <small>Hint: make R1 and R2 much smaller than the load.</small></li>
+              </ol>
+            </div>
+          </section>
+
+          <section class="ee-card" id="where" aria-labelledby="where-heading">
+            <p class="ee-kicker">Spot them in the wild</p>
+            <h2 id="where-heading">Where dividers hide</h2>
+            <div class="ee-grid">
+              <div class="ee-tile"><h3>Every analog sensor</h3><p>Photoresistors, thermistors, flex sensors, and force pads all change resistance. A fixed resistor turns that change into a voltage change the Arduino can measure.</p></div>
+              <div class="ee-tile"><h3>Potentiometers</h3><p>A potentiometer <em>is</em> a divider. The wiper slides along one resistor, splitting it into an R1 and an R2 that always add up to the same total.</p></div>
+              <div class="ee-tile"><h3>Level shifting</h3><p>Many modern sensors and boards (ESP32, UNO Q, Raspberry Pi) run at 3.3 V. A 1 kΩ / 2 kΩ divider brings a 5 V signal down to a safe 3.3 V.</p></div>
+              <div class="ee-tile"><h3>Battery monitors</h3><p>A 9 V battery is too high for the Arduino's 5 V input. A divider scales it down so the board can warn you when the battery is low.</p></div>
+              <div class="ee-tile"><h3>Many buttons, one pin</h3><p>A chain of resistors with a button at each tap gives each button its own voltage. Some LCD keypad shields read five buttons on a single analog pin this way.</p></div>
+              <div class="ee-tile"><h3>Inside the meter</h3><p>Your multimeter's voltage ranges use a precision divider to scale big voltages down to what its chip can measure.</p></div>
+            </div>
+          </section>
+
+          <section class="ee-card" id="code" aria-labelledby="code-heading">
+            <p class="ee-kicker">On the Arduino</p>
+            <h2 id="code-heading">Read the divider, then convert back to volts</h2>
+            <p>Wire your divider's middle tap to pin A0. The board reports a number; one line of math turns it back into volts.</p>
+<pre class="ee-tile"><code>const int SENSOR_PIN = A0;
+
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  int raw = analogRead(SENSOR_PIN);       // 0 to 1023
+  float volts = raw * (5.0 / 1023.0);     // back to 0 to 5 V
+  Serial.print(raw);
+  Serial.print("  ");
+  Serial.println(volts);
+  delay(200);
+}</code></pre>
+            <p class="ee-callout">Choosing the fixed resistor: for the best range, pick a fixed resistor close to the sensor's resistance in the middle of the conditions you care about. A photoresistor that reads about 10 kΩ in normal room light pairs well with a 10 kΩ fixed resistor.</p>
+          </section>
+
+          <section class="ee-card" id="mistakes" aria-labelledby="mistakes-heading">
+            <p class="ee-kicker">Avoid these</p>
+            <h2 id="mistakes-heading">Four divider mistakes</h2>
+            <div class="ee-grid">
+              <div class="ee-tile"><h3>Using a divider as a power supply</h3><p>A divider can make a <em>signal</em>, not a supply. The moment a motor or LED draws current from the tap, the voltage sags. To power something at a lower voltage, use a <span data-glossary="voltage regulator">voltage regulator</span>.</p></div>
+              <div class="ee-tile"><h3>Forgetting the load</h3><p>The divider formula assumes nothing draws current from V<sub>out</sub>. Keep the load at least 10 times bigger than R2. The Arduino's analog input is about 100 MΩ, so it barely loads anything.</p></div>
+              <div class="ee-tile"><h3>Wasting current</h3><p>Two 100 Ω resistors on 5 V waste 25 mA all the time. On a battery project that's a dead battery by morning. Use kilohms for sensor dividers.</p></div>
+              <div class="ee-tile"><h3>Upside down</h3><p>Sensor on the bottom: V<sub>out</sub> rises when its resistance rises. Sensor on the top: V<sub>out</sub> falls. If your night-light turns on in daylight, swap the two parts (or flip the comparison in your code).</p></div>
+            </div>
+          </section>
+
+          <section class="ee-card ee-quiz" id="quick-check" aria-labelledby="quiz-heading">
+            <p class="ee-kicker">Quick check</p>
+            <h2 id="quiz-heading">Can you analyze a circuit?</h2>
+            <button type="button" class="ee-btn" id="ee-quiz-reset">Clear answers</button>
+
+            <div class="ee-question" data-answer="c" data-explanation="By KVL the drops add to the supply: 9 − 2 − 4 = 3 V.">
+              <p>1. A 9 V battery drives three resistors in series. The first drops 2 V and the second drops 4 V. What does the third drop?</p>
+              <div class="ee-options" role="group">
+                <button type="button" class="ee-option" data-choice="a">9 V</button>
+                <button type="button" class="ee-option" data-choice="b">6 V</button>
+                <button type="button" class="ee-option" data-choice="c">3 V</button>
+                <button type="button" class="ee-option" data-choice="d">You need to know the resistances</button>
+              </div>
+              <p class="ee-q-feedback" aria-live="polite"></p>
+            </div>
+
+            <div class="ee-question" data-answer="b" data-explanation="KCL: the current into a junction equals the current out. 120 mA − 40 − 50 = 30 mA.">
+              <p>2. 120 mA flows into a junction that splits three ways. Two branches carry 40 mA and 50 mA. What is the third branch's current?</p>
+              <div class="ee-options" role="group">
+                <button type="button" class="ee-option" data-choice="a">120 mA</button>
+                <button type="button" class="ee-option" data-choice="b">30 mA</button>
+                <button type="button" class="ee-option" data-choice="c">40 mA</button>
+                <button type="button" class="ee-option" data-choice="d">210 mA</button>
+              </div>
+              <p class="ee-q-feedback" aria-live="polite"></p>
+            </div>
+
+            <div class="ee-question" data-answer="a" data-explanation="Vout = 5 × 30k ÷ (10k + 30k) = 5 × 0.75 = 3.75 V.">
+              <p>3. A divider has R1 = 10 kΩ on top and R2 = 30 kΩ on the bottom, across 5 V. What is V<sub>out</sub>?</p>
+              <div class="ee-options" role="group">
+                <button type="button" class="ee-option" data-choice="a">3.75 V</button>
+                <button type="button" class="ee-option" data-choice="b">1.25 V</button>
+                <button type="button" class="ee-option" data-choice="c">2.5 V</button>
+                <button type="button" class="ee-option" data-choice="d">1.67 V</button>
+              </div>
+              <p class="ee-q-feedback" aria-live="polite"></p>
+            </div>
+
+            <div class="ee-question" data-answer="d" data-explanation="The load is in parallel with R2, which drops the bottom resistance far below 100 kΩ. A divider is not a supply; use a regulator, or make the divider resistors much smaller than the load.">
+              <p>4. A divider made from two 100 kΩ resistors reads 2.5 V. You connect a 1 kΩ load to the output and it drops to about 0.05 V. Why?</p>
+              <div class="ee-options" role="group">
+                <button type="button" class="ee-option" data-choice="a">The load blew a resistor</button>
+                <button type="button" class="ee-option" data-choice="b">The supply voltage fell</button>
+                <button type="button" class="ee-option" data-choice="c">KVL doesn't apply to loads</button>
+                <button type="button" class="ee-option" data-choice="d">The load sits in parallel with R2 and drags the bottom resistance way down</button>
+              </div>
+              <p class="ee-q-feedback" aria-live="polite"></p>
+            </div>
+
+            <div class="ee-question" data-answer="b" data-explanation="With the sensor on the bottom, Vout follows its resistance. A photoresistor's resistance goes up in the dark, so Vout goes up, and analogRead goes up.">
+              <p>5. A photoresistor is the <em>bottom</em> part of a divider. Its resistance goes up in the dark. What happens to <code>analogRead()</code> when you cover it?</p>
+              <div class="ee-options" role="group">
+                <button type="button" class="ee-option" data-choice="a">It goes down</button>
+                <button type="button" class="ee-option" data-choice="b">It goes up</button>
+                <button type="button" class="ee-option" data-choice="c">It stays the same; only current changes</button>
+                <button type="button" class="ee-option" data-choice="d">It reads 0 whenever it is dark</button>
+              </div>
+              <p class="ee-q-feedback" aria-live="polite"></p>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs">
+            <button class="ll-tab" aria-selected="true" data-pane="vd-outline">Outline</button>
+            <button class="ll-tab" aria-selected="false" data-pane="vd-teacher">Teacher Notes</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="vd-outline">
+            <span class="ll-label">This Lesson Covers</span>
+            <div class="ll-info"><strong>KVL</strong>Walk a series loop; the drops always add up to the supply.</div>
+            <div class="ll-info"><strong>KCL</strong>Switch parallel branches; the main current is the sum of the branches.</div>
+            <div class="ll-info"><strong>The divider formula</strong>Derived from KVL, KCL, and Ohm's Law in three steps.</div>
+            <div class="ll-info"><strong>Divider bench</strong>Fixed, light-sensor, and potentiometer dividers feeding analogRead(), plus the loading effect.</div>
+            <div class="ll-info"><strong>In the wild &amp; on the Arduino</strong>Sensors, level shifting, battery monitors, and the code to read them.</div>
+          </div>
+          <div class="ll-pane" id="vd-teacher">
+            <div class="ll-info"><strong>Where this fits</strong>Right after Ohm's Law. Students need V = I × R and the idea of series vs. parallel. The Multimeter Lab's light-sensor circuit and every analog sensor lesson after it rely on this.</div>
+            <div class="ll-info"><strong>Time</strong>Two 45-minute periods: KVL/KCL sims and the derivation on day one; the divider bench, missions, and a real breadboard divider on day two.</div>
+            <div class="ll-info"><strong>Per pair</strong>4×AA holder or Arduino 5 V, two 10 kΩ, a 1 kΩ, a 2.2 kΩ, two 100 kΩ resistors, a photoresistor, a 10 kΩ potentiometer, a multimeter.</div>
+            <div class="ll-info"><strong>Lab check</strong>Have students predict V<sub>out</sub> on paper, then measure it. Accept within the resistors' tolerance. Then hang a 1 kΩ resistor off the 100 kΩ divider and measure the sag for real.</div>
+            <div class="ll-info"><strong>Misconception to listen for</strong>“The first resistor uses up the voltage, so the second gets less.” Every resistor in a series loop carries the same current, and each one's drop depends only on its own resistance. In Sim 1, swap the values of R1 and R3: the drops swap with them, and the total stays the battery voltage.</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script src="../../../assets/js/lessons/ee-lab.js"></script>
+  <script src="../../../assets/js/lessons/voltage-dividers-kirchhoff.js"></script>
+  <script src="../../../assets/js/classroom-animations.js"></script>
+  <script src="../../../assets/js/lesson-layout.js"></script>
+  <script src="../../../assets/js/electricity-path.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
+  <script src="../../../assets/js/site-glossary.js" data-glossary-src="../../../data/electronics-glossary.json"></script>
+</body>
+</html>
