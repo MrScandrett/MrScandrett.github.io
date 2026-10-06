@@ -47,6 +47,7 @@ const mime = {
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
   ".webp": "image/webp",
+  ".wasm": "application/wasm",
 };
 
 http

@@ -12,6 +12,7 @@
 
 import { THREE, OrbitControls } from '../../vendor/three-bundle.min.js';
 import { createScene } from '../sim-kit-three.mjs';
+import { DEFAULT_PRINTER, bounds, edgeReport, prepareForPrint, printerFit, writeBinaryStl } from '../fab-io.mjs';
 
 const SimKit = window.SimKit;
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -272,11 +273,25 @@ function coneMath(p, stretch = 0) {
   return { height, lean, leanDeg: (lean * 180) / Math.PI, cos, pitch, slantPitch, band, bandVertical, airGap };
 }
 
-function buildSpiral(p, stretch) {
+/* The ribbon as triangle soup (Y-up, mm). It is the cone shell minus the
+   helical slot, trimmed by the bed: the sweep starts below Y = 0 and every
+   corner that would poke through the bed is slid up its slant edge to Y = 0.
+   That gives the first winding a flat foot, exactly as a Blender cone cut
+   flat at the bottom would, so the same numbers both draw and print. */
+function spiralPositions(p, stretch = 0) {
   const { height, band } = coneMath(p, stretch);
-  const segments = Math.min(900, Math.max(160, Math.round(p.turns * 46)));
   const half = p.thickness / 2;
   const halfBand = band / 2;
+  // outward cone normal: radial component H, axial component R (perpendicular to the slant)
+  const nLen = Math.hypot(p.height, p.radius - TIP_RADIUS);
+  const nR = p.height / nLen;
+  const nY = (p.radius - TIP_RADIUS) / nLen;
+  // up-slope direction, perpendicular to the normal
+  const sR = -(p.radius - TIP_RADIUS) / nLen;
+  const sY = p.height / nLen;
+  // start where the inner top corner rises out of the bed
+  const tStart = (half * nY - halfBand * sY) / height;
+  const segments = Math.min(1000, Math.max(180, Math.round(p.turns * (1 - tStart) * 46)));
   const positions = [];
   const push = (v) => positions.push(v[0], v[1], v[2]);
 
@@ -286,37 +301,42 @@ function buildSpiral(p, stretch) {
     const y = height * t;
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);
-    // outward cone normal: radial component H, axial component R (perpendicular to the slant)
-    const nLen = Math.hypot(p.height, p.radius - TIP_RADIUS);
-    const nR = p.height / nLen;
-    const nY = (p.radius - TIP_RADIUS) / nLen;
-    // up-slope direction, perpendicular to the normal
-    const sR = -(p.radius - TIP_RADIUS) / nLen;
-    const sY = p.height / nLen;
-    const corner = (dn, ds) => {
-      const rr = radius + dn * half * nR + ds * halfBand * sR;
-      const yy = y + dn * half * nY + ds * halfBand * sY;
-      return [rr * cos, yy, rr * sin];
+    const corner = (dn, ds) => [radius + dn * half * nR + ds * halfBand * sR, y + dn * half * nY + ds * halfBand * sY];
+    // the lower (ds = -1) corner of each face is trimmed to the bed along the slant edge
+    const side = (dn) => {
+      const upper = corner(dn, 1);
+      let lower = corner(dn, -1);
+      if (lower[1] < 0) {
+        const k = Math.max(upper[1], 0) / (upper[1] - lower[1]);
+        lower = [upper[0] + k * (lower[0] - upper[0]), 0];
+      }
+      return [upper, lower];
     };
-    return [corner(1, 1), corner(1, -1), corner(-1, -1), corner(-1, 1)];
+    const [outerUp, outerLow] = side(1);
+    const [innerUp, innerLow] = side(-1);
+    const place = ([rr, yy]) => [rr * cos, Math.max(yy, 0), rr * sin];
+    return [place(outerUp), place(outerLow), place(innerLow), place(innerUp)];
   };
 
   const quad = (a, b, c, d) => { push(a); push(b); push(c); push(a); push(c); push(d); };
 
-  let previous = ring(0);
-  quad(previous[3], previous[2], previous[1], previous[0]);        // start cap
+  let previous = ring(tStart);
+  quad(previous[0], previous[1], previous[2], previous[3]);        // start cap (wound to match the sides)
   for (let i = 1; i <= segments; i++) {
-    const current = ring(i / segments);
+    const current = ring(tStart + (1 - tStart) * (i / segments));
     for (let k = 0; k < 4; k++) {
       const next = (k + 1) % 4;
       quad(previous[k], current[k], current[next], previous[next]);
     }
     previous = current;
   }
-  quad(previous[0], previous[1], previous[2], previous[3]);        // end cap
+  quad(previous[3], previous[2], previous[1], previous[0]);        // end cap
+  return positions;
+}
 
+function buildSpiral(p, stretch) {
   const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(spiralPositions(p, stretch), 3));
   geometry.computeVertexNormals();
   return geometry;
 }
@@ -362,13 +382,28 @@ function spiralLab(root) {
   const verdictList = root.querySelector('[data-pf-verdicts]');
   const statList = root.querySelector('[data-pf-stats]');
   const pullButton = root.querySelector('[data-pf-pull]');
+  const downloadButton = root.querySelector('[data-pf-download]');
+  const downloadNote = root.querySelector('[data-pf-download-note]');
   let params = null;
+
+  const printSize = () => {
+    const { size } = bounds(spiralPositions(params));
+    return [size[0], size[2], size[1]];                    // Y-up → width, depth, height
+  };
+  const mm = (size) => size.map(v => Math.round(v)).join(' × ');
 
   const refreshReadout = () => {
     if (!params) return;
     const { stats, verdicts } = spiralVerdicts(params);
     renderStats(statList, stats);
     renderVerdicts(verdictList, verdicts);
+    if (downloadNote) {
+      const size = printSize();
+      const fit = printerFit(size);
+      const red = verdicts.filter(v => v.tone === 'bad').length;
+      downloadNote.textContent = `${mm(size)} mm · ${fit.fits ? 'fits' : 'too big for'} the ${DEFAULT_PRINTER.name}`
+        + (red ? ` · ${red} red verdict${red > 1 ? 's' : ''}: the file will print, and fail the way the verdict says.` : '.');
+    }
     canvas.setAttribute('aria-label', `Spiral cone ${params.radius * 2} millimetres across and ${params.height} tall with ${params.turns} turns. ${verdicts.map(v => `${v.tag}: ${v.text}`).join(' ')}`);
   };
 
@@ -448,6 +483,24 @@ function spiralLab(root) {
     pullButton.textContent = stretchTarget > 0.5 ? 'Let it spring back' : 'Pull the tip';
     pullButton.classList.toggle('is-active', stretchTarget > 0.5);
     dirty = true;
+  });
+
+  downloadButton?.addEventListener('click', () => {
+    if (!params) return;
+    const mesh = prepareForPrint(spiralPositions(params));
+    const check = edgeReport(mesh);
+    const name = `spiral-cone-r${params.radius}-h${params.height}-t${params.turns}-cut${params.gap}-wall${params.thickness}`;
+    const header = `${name} | layer ${params.layer} nozzle ${params.nozzle} | ClassroomOS`;
+    const blob = new Blob([writeBinaryStl(mesh, header)], { type: 'model/stl' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${name}.stl`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(link.href), 4000);
+    if (!check.watertight) console.warn('spiral STL is not watertight', check);
+    if (downloadNote) downloadNote.textContent = `Saved ${name}.stl (${mm(printSize())} mm). Open it in MakerBot Print or CloudPrint and slice at ${params.layer} mm layers.`;
   });
 
   const controlsApi = bindControls(root, values => {
