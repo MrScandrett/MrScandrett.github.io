@@ -30,6 +30,7 @@
   var CHANGE_EVENT = 'classroomos:memorychange';
   var SESSION_GAP = 30 * 60 * 1000; // a revisit within 30 min is the same visit
   var CAP = { lessons: 150, plays: 60, sheets: 40, fieldChars: 4000, fields: 300 };
+  var AVATAR_ID = /^[a-z0-9-]{1,60}$/; // also keeps the id safe to drop into a file path
 
   var script = document.currentScript;
   var ROOT = script && script.src ? new URL('../../', script.src) : new URL('/', location.href);
@@ -50,6 +51,8 @@
       if (!data[k] || typeof data[k] !== 'object' || Array.isArray(data[k])) data[k] = {};
     });
     data.paused = data.paused === true;
+    var av = data.avatar;
+    if (!av || typeof av !== 'object' || !AVATAR_ID.test(av.id || '')) delete data.avatar;
     return data;
   }
 
@@ -176,6 +179,7 @@
     var data = load();
     return {
       paused: data.paused,
+      avatar: data.avatar || null,
       lessons: byRecent(data.lessons, 'last'),
       favs: byRecent(data.favs, 'at'),
       sheets: byRecent(data.sheets, 'at'),
@@ -439,6 +443,46 @@
     return restored;
   }
 
+  /* ── Profile picture ─────────────────────────────────────────────── */
+
+  // Pictures come from data/avatars.json: lesson images, pre-cropped by
+  // scripts/build-avatars.mjs. Only the chosen id and its label are stored.
+  function avatarSrc(id) { return siteHref('assets/images/avatars/' + id + '.webp'); }
+
+  var catalogPromise = null;
+  function avatarCatalog() {
+    if (!catalogPromise) {
+      catalogPromise = fetch(siteHref('data/avatars.json'), { credentials: 'same-origin' })
+        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .catch(function (err) { catalogPromise = null; throw err; });
+    }
+    return catalogPromise;
+  }
+
+  function setAvatar(avatar) {
+    return update(function (data) {
+      if (!avatar) { if (!data.avatar) return false; delete data.avatar; return; }
+      if (!AVATAR_ID.test(avatar.id)) return false;
+      data.avatar = { id: avatar.id, label: clip(avatar.label, 80) };
+    });
+  }
+
+  function avatarFace(avatar, cls) {
+    var face = el('span', 'memory-avatar ' + (cls || ''));
+    face.setAttribute('aria-hidden', 'true');
+    if (avatar) {
+      var img = el('img');
+      img.src = avatarSrc(avatar.id);
+      img.alt = '';
+      img.decoding = 'async';
+      img.addEventListener('error', function () { img.remove(); face.classList.add('is-blank'); });
+      face.appendChild(img);
+    } else {
+      face.classList.add('is-blank');
+    }
+    return face;
+  }
+
   function forget(bucketName, id) {
     return update(function (data) {
       if (!data[bucketName] || !data[bucketName][id]) return false;
@@ -456,7 +500,7 @@
     return update(function (data) { data.paused = Boolean(on); });
   }
 
-  function clearAll() {
+  function clearAll() { // the profile picture goes too: it's part of "you" on this device
     try {
       localStorage.removeItem(KEY);
       books().forEach(function (b) { localStorage.removeItem(BOOK_PREFIX + b.id); });
@@ -743,6 +787,132 @@
 
   function join() { return Array.prototype.filter.call(arguments, Boolean).join(' · '); }
 
+  var picker = { open: false, group: '' };
+
+  function identityBlock(snap, rerender) {
+    var box = el('div', 'memory-identity');
+    var toggle = el('button', 'memory-identity__toggle');
+    toggle.type = 'button';
+    toggle.setAttribute('data-focus-key', 'avatar-toggle');
+    toggle.setAttribute('aria-expanded', picker.open ? 'true' : 'false');
+    toggle.appendChild(avatarFace(snap.avatar, 'memory-avatar--lg'));
+    var words = el('span', 'memory-identity__words');
+    words.append(
+      el('strong', '', snap.avatar ? snap.avatar.label : 'Pick a profile picture'),
+      el('span', '', picker.open ? 'Close picture choices' : snap.avatar ? 'Change picture' : 'Famous people, art, animals, inventions and space, all from our lessons')
+    );
+    toggle.appendChild(words);
+    toggle.addEventListener('click', function () {
+      picker.open = !picker.open;
+      rerender();
+    });
+    box.appendChild(toggle);
+    if (picker.open) box.appendChild(pickerBlock(snap, rerender));
+    return box;
+  }
+
+  function pickerBlock(snap, rerender) {
+    var wrap = el('div', 'memory-picker');
+    wrap.setAttribute('role', 'group');
+    wrap.setAttribute('aria-label', 'Choose a profile picture');
+    var status = el('p', 'memory-empty', 'Loading pictures…');
+    wrap.appendChild(status);
+
+    avatarCatalog().then(function (cat) {
+      if (!wrap.isConnected) return;
+      wrap.textContent = '';
+      var current = snap.avatar && cat.avatars.filter(function (a) { return a.id === snap.avatar.id; })[0];
+      if (!picker.group) picker.group = current ? current.group : cat.groups[0].id;
+
+      var groups = el('div', 'memory-picker__groups');
+      cat.groups.forEach(function (g) {
+        var b = el('button', 'memory-picker__group', g.label);
+        b.type = 'button';
+        b.setAttribute('aria-pressed', g.id === picker.group ? 'true' : 'false');
+        b.setAttribute('data-focus-key', 'group:' + g.id);
+        b.addEventListener('click', function () { picker.group = g.id; rerender(); });
+        groups.appendChild(b);
+      });
+      wrap.appendChild(groups);
+
+      var grid = el('div', 'memory-picker__grid');
+      cat.avatars.filter(function (a) { return a.group === picker.group && AVATAR_ID.test(a.id); }).forEach(function (a) {
+        var on = Boolean(snap.avatar && snap.avatar.id === a.id);
+        var b = el('button', 'memory-picker__tile');
+        b.type = 'button';
+        b.title = a.label;
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        b.setAttribute('aria-label', a.label);
+        b.setAttribute('data-focus-key', 'avatar:' + a.id);
+        var img = el('img');
+        img.src = avatarSrc(a.id);
+        img.alt = '';
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        b.appendChild(img);
+        b.addEventListener('click', function () {
+          setAvatar({ id: a.id, label: a.label });
+          announce('Profile picture: ' + a.label);
+        });
+        grid.appendChild(b);
+      });
+      wrap.appendChild(grid);
+
+      var actions = el('div', 'memory-picker__actions');
+      var surprise = el('button', 'memory-more', 'Surprise me');
+      surprise.type = 'button';
+      surprise.setAttribute('data-focus-key', 'avatar-surprise');
+      surprise.addEventListener('click', function () {
+        var pool = cat.avatars.filter(function (a) { return !snap.avatar || a.id !== snap.avatar.id; });
+        var pick = pool[Math.floor(Math.random() * pool.length)];
+        picker.group = pick.group;
+        setAvatar({ id: pick.id, label: pick.label });
+        announce('Profile picture: ' + pick.label);
+      });
+      actions.appendChild(surprise);
+      if (snap.avatar) {
+        var none = el('button', 'memory-more', 'Remove picture');
+        none.type = 'button';
+        none.setAttribute('data-focus-key', 'avatar-none');
+        none.addEventListener('click', function () { setAvatar(null); announce('Profile picture removed.'); });
+        actions.appendChild(none);
+      }
+      wrap.appendChild(actions);
+
+      // Every picture is a doorway back into the lesson it came from, with its credit.
+      if (current) {
+        var credit = el('p', 'memory-picker__credit');
+        var lesson = el('a', '', 'Open its lesson →');
+        lesson.href = siteHref(current.lesson);
+        // "See source" isn't a license; the link says where to find it instead.
+        var rights = current.license === 'See source' ? '' : ' · ' + current.license;
+        credit.append(el('strong', '', current.label), document.createTextNode(' · '), lesson, el('br'),
+          document.createTextNode(current.credit + rights));
+        if (current.source) {
+          credit.appendChild(document.createTextNode(' · '));
+          var src = el('a', '', rights ? 'Source' : 'Source and license');
+          src.href = current.source;
+          src.target = '_blank';
+          src.rel = 'noopener';
+          credit.appendChild(src);
+        }
+        wrap.appendChild(credit);
+      }
+      restoreFocus(wrap);
+    }).catch(function () {
+      status.textContent = 'Pictures couldn’t load right now. Try again in a moment.';
+    });
+    return wrap;
+  }
+
+  // The picker fills in after an async load, so focus is put back once it exists.
+  var pendingFocus = '';
+  function restoreFocus(scope) {
+    if (!pendingFocus) return;
+    var target = scope.querySelector('[data-focus-key="' + pendingFocus + '"]');
+    if (target) { target.focus(); pendingFocus = ''; }
+  }
+
   function renderProfile(root) {
     var snap = snapshot();
     var openState = {};
@@ -754,6 +924,18 @@
     var focusId = focusSection && focusSection.dataset.section;
 
     root.textContent = '';
+    pendingFocus = '';
+
+    root.appendChild(identityBlock(snap, function () { renderProfile(root); }));
+
+    // Re-rendering replaces every node; put keyboard focus back where it was. Picker
+    // controls load asynchronously, so those are handed to restoreFocus() instead.
+    function refocus() {
+      var keyed = focusKey && root.querySelector('[data-focus-key="' + focusKey + '"]');
+      if (keyed) { keyed.focus(); return true; }
+      if (focusKey && /^(avatar|group):|^avatar-/.test(focusKey)) { pendingFocus = focusKey; return true; }
+      return false;
+    }
 
     var reading = snap.books.filter(function (b) { return b.p < 0.99; });
     var finished = snap.books.length - reading.length;
@@ -781,6 +963,7 @@
         ? 'Remembering is paused, so nothing new is being added here.'
         : 'Nothing here yet. Open a lesson, start a book in the Library, or heart a project in the Showcase, and it shows up here so you can pick up where you left off.'));
       root.appendChild(privacyBlock(snap));
+      refocus();
       return;
     }
 
@@ -849,11 +1032,8 @@
 
     root.appendChild(privacyBlock(snap));
 
-    // Re-rendering replaces every node; put keyboard focus back where it was, or, when a
-    // removed row's button is gone, on the next row in the same section.
-    var keyed = focusKey && root.querySelector('[data-focus-key="' + focusKey + '"]');
-    if (keyed) keyed.focus();
-    else if (focusId) {
+    // A removed row's button is gone for good; land on the next row in the same section.
+    if (!refocus() && focusId) {
       var target = root.querySelector('[data-section="' + focusId + '"] .memory-item__remove') ||
         root.querySelector('[data-section="' + focusId + '"] summary');
       if (target) target.focus();
@@ -893,7 +1073,7 @@
       announce('Activity cleared from this device.');
     });
     box.appendChild(clear);
-    box.appendChild(el('p', 'memory-fineprint', 'Clearing removes history, favorites, likes, saved answers and reading places. Bookmarks and notes inside books, and game high scores, are kept.'));
+    box.appendChild(el('p', 'memory-fineprint', 'Clearing removes history, favorites, likes, saved answers, reading places and your picture. Bookmarks and notes inside books, and game high scores, are kept.'));
     return box;
   }
 
@@ -914,7 +1094,10 @@
     if (!picks.length) return;
     root.classList.add('memory-continue');
     root.setAttribute('aria-label', 'Pick up where you left off');
-    root.appendChild(el('p', 'memory-continue__eyebrow', 'Welcome back — pick up where you left off'));
+    var hello = el('p', 'memory-continue__eyebrow');
+    if (snap.avatar) hello.appendChild(avatarFace(snap.avatar, 'memory-avatar--sm'));
+    hello.appendChild(document.createTextNode('Welcome back — pick up where you left off'));
+    root.appendChild(hello);
     var list = el('ul', 'memory-continue__list');
     picks.forEach(function (p) {
       var li = el('li');

@@ -124,6 +124,10 @@ showcase cards, and a "welcome back" strip on the homepage.
   checkboxes inside `<main>`, then autosaves as the student types. Restoring is explicit,
   so opening a lesson never overwrites saved work. Put `data-memory-ignore` on any
   container whose inputs are sim controls rather than answers.
+- **Profile pictures** are curated lesson images listed in `data/avatars.json` (credit,
+  license, source, lesson). To add one, append an entry and run `npm run build:avatars`.
+  The entry's `src` must be an image its `lesson` actually uses; `npm run check:avatars`
+  (part of `npm run quality`) enforces that, so credits stay tied to real usage.
 
 ## Shared sim helpers
 
