@@ -283,8 +283,9 @@
     st.id = "classroomos-settings-tabs-style";
     st.textContent =
       '.nav-settings-panel { max-height: min(88vh, 720px); }' +
-      '.nav-settings-tabs { display: flex; gap: 0.3rem; margin: 0.6rem 0 0.8rem; padding: 0.22rem; border: 1px solid var(--line, rgba(125,136,154,.3)); border-radius: 999px; background: rgba(125,136,154,.1); }' +
-      '.nav-settings-tab { flex: 1 1 0; min-height: 2.25rem; padding: 0.3rem 0.5rem; border: 0; border-radius: 999px; background: transparent; color: inherit; font: inherit; font-size: 0.8rem; font-weight: 700; cursor: pointer; opacity: 0.78; }' +
+      '.nav-settings-tabs { display: flex; gap: 0.3rem; margin: 0.6rem 0 0.8rem; padding: 0.22rem; border: 1px solid var(--line, rgba(125,136,154,.3)); border-radius: 999px; background: rgba(125,136,154,.1); overflow-x: auto; scrollbar-width: none; }' +
+      '.nav-settings-tabs::-webkit-scrollbar { display: none; }' +
+      '.nav-settings-tab { flex: 1 0 auto; white-space: nowrap; min-height: 2.25rem; padding: 0.3rem 0.5rem; border: 0; border-radius: 999px; background: transparent; color: inherit; font: inherit; font-size: 0.8rem; font-weight: 700; cursor: pointer; opacity: 0.78; }' +
       '.nav-settings-tab:hover { opacity: 1; background: rgba(125,136,154,.16); }' +
       '.nav-settings-tab[aria-selected="true"] { opacity: 1; background: var(--theme-accent, #0071e3); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.25); }' +
       '.nav-settings-tab:focus-visible { outline: 2px solid var(--focus-ring, #0071e3); outline-offset: 2px; }' +
@@ -630,8 +631,8 @@
         '<span>Settings</span>' +
         '<span class="nav-settings-status" aria-hidden="true"></span>' +
       "</button>" +
-      '<div class="nav-settings-panel" id="' + panelId + '" role="dialog" aria-modal="true" aria-label="Theme Settings" hidden>' +
-        '<button type="button" class="nav-settings-close" aria-label="Close theme settings">&times;</button>' +
+      '<div class="nav-settings-panel" id="' + panelId + '" role="dialog" aria-modal="true" aria-label="Settings" hidden>' +
+        '<button type="button" class="nav-settings-close" aria-label="Close settings">&times;</button>' +
         '<div class="nav-settings-head">' +
           '<p class="nav-settings-eyebrow">Theme Controller</p>' +
           '<p class="nav-settings-current" aria-live="polite"></p>' +
@@ -640,6 +641,7 @@
           '<button type="button" role="tab" class="nav-settings-tab" id="' + panelId + '-tab-theme" data-tab="theme" aria-controls="' + panelId + '-pane-theme" aria-selected="true">Theme</button>' +
           '<button type="button" role="tab" class="nav-settings-tab" id="' + panelId + '-tab-background" data-tab="background" aria-controls="' + panelId + '-pane-background" aria-selected="false" tabindex="-1">Background</button>' +
           '<button type="button" role="tab" class="nav-settings-tab" id="' + panelId + '-tab-access" data-tab="access" aria-controls="' + panelId + '-pane-access" aria-selected="false" tabindex="-1">Access</button>' +
+          '<button type="button" role="tab" class="nav-settings-tab" id="' + panelId + '-tab-mine" data-tab="mine" aria-controls="' + panelId + '-pane-mine" aria-selected="false" tabindex="-1">My Stuff</button>' +
           (isLocalDev ? '<button type="button" role="tab" class="nav-settings-tab" id="' + panelId + '-tab-editor" data-tab="editor" aria-controls="' + panelId + '-pane-editor" aria-selected="false" tabindex="-1">Editor</button>' : '') +
         '</div>' +
         '<div class="nav-settings-pane" role="tabpanel" data-pane="theme" id="' + panelId + '-pane-theme" aria-labelledby="' + panelId + '-tab-theme">' +
@@ -685,6 +687,10 @@
             '</span>' +
           '</label>' +
         '</div>' +
+        '</div>' +
+        /* Filled by visitor-memory.js: history, favorites, books, saved answers, liked projects. */
+        '<div class="nav-settings-pane" role="tabpanel" data-pane="mine" id="' + panelId + '-pane-mine" aria-labelledby="' + panelId + '-tab-mine" hidden>' +
+          '<div class="memory-profile" data-memory-profile></div>' +
         '</div>' +
         (isLocalDev ? (
         '<div class="nav-settings-pane" role="tabpanel" data-pane="editor" id="' + panelId + '-pane-editor" aria-labelledby="' + panelId + '-tab-editor" hidden>' +
@@ -1094,12 +1100,15 @@
   }
 
   document.addEventListener("click", function (e) {
-    if (!header.contains(e.target)) {
+    // composedPath() is fixed at dispatch, so a click that re-renders its own button
+    // (the My Stuff remove buttons) still counts as inside the panel.
+    var path = e.composedPath();
+    if (path.indexOf(header) === -1) {
       closeNav();
       return;
     }
 
-    if (settingsContainer && !settingsContainer.contains(e.target)) closeSettings();
+    if (settingsContainer && path.indexOf(settingsContainer) === -1) closeSettings();
   });
 
   document.addEventListener("keydown", function (e) {
@@ -1463,4 +1472,15 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load, { once: true });
   else load();
+}());
+
+// On-device memory for returning visitors: the My Stuff tab, hearts, lesson history.
+(function () {
+  if (window.ClassroomOSMemory || document.querySelector('script[data-visitor-memory="true"]')) return;
+  var s = document.createElement('script');
+  var baseScript = document.currentScript && document.currentScript.src;
+  s.src = baseScript ? new URL('visitor-memory.js', baseScript).href : '/assets/js/visitor-memory.js';
+  s.defer = true;
+  s.dataset.visitorMemory = 'true';
+  document.head.appendChild(s);
 }());

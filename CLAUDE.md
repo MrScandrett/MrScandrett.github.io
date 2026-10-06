@@ -109,6 +109,22 @@ end instead of showing the provider's end screen. Never draw over a provider's p
 YouTube's embed terms forbid overlays; our controls sit below the frame. To allow a new
 host, add a narrow rule to `video-sources.mjs` and to `watch.html`'s CSP `media-src`.
 
+## Visitor memory (My Stuff)
+
+`assets/js/visitor-memory.js` gives returning visitors a profile with no account and
+no consent prompt, because nothing leaves the browser: one localStorage key
+(`classroomos:memory:v1`) plus the reader's existing `reader:pos:*` keys, which it reads
+but never rewrites. nav-mobile.js, lesson-print-button.js and ui.js load it; it shows up
+as the **My Stuff** settings tab, a heart | save | print pill on every lesson, hearts on
+showcase cards, and a "welcome back" strip on the homepage.
+
+- Hearts are declarative: `<button data-memory-like="project|lesson" data-memory-id …>`.
+  `<a data-memory-play …>` adds to "Recently played".
+- **Save answers** snapshots a lesson's textareas, text/number inputs, selects and
+  checkboxes inside `<main>`, then autosaves as the student types. Restoring is explicit,
+  so opening a lesson never overwrites saved work. Put `data-memory-ignore` on any
+  container whose inputs are sim controls rather than answers.
+
 ## Shared sim helpers
 
 New lesson sims should reach for these instead of hand-rolling canvas/Three/Matter
