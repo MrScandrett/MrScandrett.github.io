@@ -271,6 +271,9 @@ body.catalog-module-view .catalog-browser { position: sticky; top: 4.25rem; z-in
 body.catalog-module-view .catalog-browser-heading { align-items: center; padding-bottom: 0; border-bottom: 0; }
 body.catalog-module-view .catalog-browser-copy { display: none; }
 body.catalog-module-view .catalog-browser-status { margin-top: 0.45rem; }
+/* Inside a subject the volume tabs only lead back to the directory, which
+   "All subjects" already does; drop them so the open shelf gets the screen. */
+body.catalog-module-view .compendium-volume-tabs { display: none; }
 
 @media (max-width: 760px) {
   .catalog-browser-heading { display: grid; align-items: start; }
@@ -6763,4 +6766,252 @@ html:is([data-theme="mandelbrot"], [data-site-theme="mandelbrot"]) body.theme-st
 
 html:is([data-theme="mandelbrot"], [data-site-theme="mandelbrot"]) body.theme-steam .lesson-pathway .module-cluster-label small {
   color: #d9c7f5;
+}
+
+/* ── Lesson layout: Index (default) and Cards ───────────────────────────
+   steam-module-index.js sets body.lessons-view-index or .lessons-view-cards.
+   Index: every chapter is a compact numbered list and the chapters pack into
+   columns, so a whole module reads at the size of one screen with no sideways
+   scrolling. Cards: the photo tiles, wrapped into rows. */
+
+.lesson-view-toggle {
+  display: inline-flex;
+  margin-left: auto;
+  padding: 0.2rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: var(--glass-fill-soft);
+}
+
+.lesson-view-toggle button {
+  padding: 0.35rem 0.85rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-main);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lesson-view-toggle button[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-contrast, #fff);
+}
+
+.lesson-view-toggle button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Both layouts: the chapter list replaces the per-module jump rails. */
+body:is(.lessons-view-index, .lessons-view-cards) .module-tile-grid > nav[class$="-rail"],
+body:is(.lessons-view-index, .lessons-view-cards) .module-tile-grid > .space-orbit-map {
+  display: none;
+}
+
+/* Cards: wrap instead of a one-row carousel. */
+@media (min-width: 641px) {
+  body.lessons-view-cards .lesson-pathway-track {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    grid-auto-columns: unset;
+    overflow-x: visible;
+    scroll-snap-type: none;
+  }
+
+  body.lessons-view-cards .lesson-pathway-track::after {
+    content: none;
+  }
+}
+
+/* Index */
+body.lessons-view-index .module-tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  align-items: start;
+  gap: 0.75rem;
+  padding: 0.8rem !important;
+  counter-reset: lesson-chapter;
+}
+
+/* Repeats the banner's count and level line. */
+body.lessons-view-index .module-summary-row {
+  display: none;
+}
+
+body.lessons-view-index .lesson-pathway {
+  margin: 0;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--module-accent) 34%, transparent);
+  border-radius: 12px;
+  /* Plain colors, not color-mix(): contrast-guard.js only parses rgb() and
+     would otherwise judge the titles against the light page behind. */
+  background: var(--module-deep);
+  color: var(--module-copy);
+  counter-increment: lesson-chapter;
+  counter-reset: lesson-item;
+}
+
+body.lessons-view-index .lesson-pathway + .lesson-pathway {
+  border-top: 1px solid color-mix(in srgb, var(--module-accent) 34%, transparent);
+}
+
+body.lessons-view-index .lesson-pathway .module-cluster-label {
+  padding: 0.6rem 0.75rem 0.45rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--module-accent) 22%, transparent);
+}
+
+body.lessons-view-index .lesson-pathway .module-cluster-label strong {
+  color: #fff;
+  font-size: 0.9rem;
+  line-height: 1.3;
+}
+
+body.lessons-view-index .lesson-pathway .module-cluster-label strong::before {
+  content: "Ch " counter(lesson-chapter);
+  display: inline-block;
+  margin-right: 0.45rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--module-accent) 30%, transparent);
+  color: color-mix(in srgb, var(--module-accent) 40%, #fff);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  vertical-align: 0.1em;
+}
+
+body.lessons-view-index .lesson-pathway .module-cluster-label small {
+  color: rgba(238, 243, 255, 0.72);
+  font-size: 0.74rem;
+  -webkit-line-clamp: 2;
+}
+
+/* A long chapter takes two grid columns and splits its list in two, so one
+   big chapter doesn't stretch its whole row. Counts live links only;
+   roadmap slots are <div>s. */
+@media (min-width: 900px) {
+  body.lessons-view-index .lesson-pathway:has(.lesson-pathway-track > a.tile:nth-of-type(9)) {
+    grid-column: span 2;
+  }
+
+  body.lessons-view-index .lesson-pathway:has(.lesson-pathway-track > a.tile:nth-of-type(9)) .lesson-pathway-track {
+    columns: 2;
+    column-gap: 0.4rem;
+  }
+
+  body.lessons-view-index .lesson-pathway-track .tile {
+    break-inside: avoid;
+  }
+}
+
+body.lessons-view-index .pathway-steps a {
+  padding: 0.15rem 0.55rem;
+  border-color: rgba(255, 255, 255, 0.28);
+  color: var(--module-copy);
+  font-size: 0.75rem;
+}
+
+body.lessons-view-index .pathway-steps a:hover,
+body.lessons-view-index .pathway-steps a:focus-visible {
+  border-color: var(--module-accent);
+  color: #fff;
+}
+
+body.lessons-view-index .lesson-pathway-track {
+  display: block;
+  overflow: visible;
+  padding: 0.3rem;
+  scroll-snap-type: none;
+}
+
+body.lessons-view-index .lesson-pathway-track::after {
+  content: none;
+}
+
+body.lessons-view-index .module-section .lesson-pathway-track .tile {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0.32rem 0.45rem;
+  border: 0 !important;
+  border-radius: 7px;
+  background: none !important;
+  box-shadow: none;
+  color: var(--module-copy);
+  text-decoration: none;
+  transform: none;
+  counter-increment: lesson-item;
+}
+
+body.lessons-view-index .module-section .lesson-pathway-track .tile.lesson-hidden {
+  display: none;
+}
+
+/* Hide the card art: thumbs, stripes and overlays drawn with pseudo-elements,
+   the kicker and the description (still in the link text for screen readers
+   and in the hover title). */
+body.lessons-view-index .module-section .lesson-pathway-track .tile::before,
+body.lessons-view-index .module-section .lesson-pathway-track .tile::after {
+  display: none;
+}
+
+body.lessons-view-index .module-section .lesson-pathway-track .tile > :not(strong) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+body.lessons-view-index .module-section .lesson-pathway-track .tile strong {
+  position: relative;
+  display: block;
+  margin: 0;
+  padding-left: 1.85rem;
+  color: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.3;
+  text-shadow: none;
+}
+
+body.lessons-view-index .module-section .lesson-pathway-track .tile strong::before {
+  content: counter(lesson-item);
+  position: absolute;
+  left: 0;
+  width: 1.5rem;
+  color: color-mix(in srgb, var(--module-accent) 55%, #fff);
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.55;
+  text-align: right;
+}
+
+body.lessons-view-index .module-section .lesson-pathway-track a.tile:hover,
+body.lessons-view-index .module-section .lesson-pathway-track a.tile:focus-visible {
+  background: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: none;
+  color: #fff;
+}
+
+body.lessons-view-index .module-section .lesson-pathway-track a.tile:focus-visible {
+  outline: 2px solid var(--module-accent);
+  outline-offset: -2px;
+}
+
+body.lessons-view-index .module-section .lesson-pathway-track .tile-coming-soon {
+  opacity: 0.6;
+  font-style: italic;
+}
+
+body.lessons-view-index .module-section .lesson-pathway-track .tile-coming-soon strong::after {
+  content: " · planned";
+  font-size: 0.72rem;
+  font-weight: 400;
 }
