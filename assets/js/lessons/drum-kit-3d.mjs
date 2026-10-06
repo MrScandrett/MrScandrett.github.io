@@ -7,7 +7,7 @@
 import { THREE, OrbitControls } from '../../vendor/three-bundle.min.js';
 import { createScene } from '../sim-kit-three.mjs';
 
-(function () {
+function initDrumKit3d() {
   var canvas = document.getElementById('drKit3d');
   var fallback = document.getElementById('drKit3dFallback');
   var picker = document.getElementById('drKitPicker');
@@ -569,4 +569,21 @@ import { createScene } from '../sim-kit-three.mjs';
   animate();
 
   controls.addEventListener('start', function () { controls.autoRotate = false; });
+}
+
+// Building the kit (procedural textures, environment map, shadows) takes
+// seconds on slower machines. Module scripts run before DOMContentLoaded, so
+// doing it inline froze the whole lesson; wait until the canvas is near view.
+(function () {
+  var canvas = document.getElementById('drKit3d');
+  if (!canvas || !('IntersectionObserver' in window)) {
+    setTimeout(initDrumKit3d, 0);
+    return;
+  }
+  var io = new IntersectionObserver(function (entries) {
+    if (!entries.some(function (entry) { return entry.isIntersecting; })) return;
+    io.disconnect();
+    initDrumKit3d();
+  }, { rootMargin: '400px 0px' });
+  io.observe(canvas);
 })();

@@ -96,7 +96,9 @@
   }
 
   function applyTheme(theme) {
-    cosTransition();
+    // Cross-fade only on a real switch; fading in on first paint left text
+    // mid-transition (and below contrast) for the first quarter second.
+    if (currentTheme && currentTheme !== theme) cosTransition();
     isApplyingTheme = true;
     if (isThemeIndependent()) {
       document.documentElement.removeAttribute("data-theme");

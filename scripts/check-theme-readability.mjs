@@ -66,7 +66,9 @@ function collectThemePages(directory = ROOT) {
     const html = fs.readFileSync(absolutePath, "utf8");
     const hasThemeRuntime = /(?:theme-lighting|nav-mobile)\.js(?:[?"'])/.test(html);
     const isThemeIndependent = /data-theme-scope\s*=\s*["']independent["']/.test(html);
-    if (hasThemeRuntime && !isThemeIndependent) {
+    // Redirect stubs (login.html) navigate away mid-audit; their target is audited itself.
+    const isRedirectStub = /<meta\s+http-equiv\s*=\s*["']refresh["']/i.test(html);
+    if (hasThemeRuntime && !isThemeIndependent && !isRedirectStub) {
       pages.push(path.relative(ROOT, absolutePath).split(path.sep).join("/"));
     }
   }
@@ -133,6 +135,11 @@ async function auditCase(browser, browserContext, baseUrl, pagePath, theme) {
 
   try {
     await page.goto(url, { timeout: 30_000, waitUntil: "domcontentloaded" });
+    // Audit the settled colors: a hover/state transition caught mid-fade reads
+    // as a contrast failure that no student ever sees, and it moves between runs.
+    await page.addStyleTag({
+      content: "*, *::before, *::after { transition: none !important; animation: none !important; }",
+    });
     await new Promise((resolve) => setTimeout(resolve, 100));
     const result = await pa11y(url, {
       browser,
@@ -144,12 +151,20 @@ async function auditCase(browser, browserContext, baseUrl, pagePath, theme) {
       wait: 750,
     });
     const appliedTheme = await page.evaluate(() => document.documentElement.dataset.theme || document.body?.dataset.theme || "");
+    const contrastIssues = result.issues.filter(isContrastIssue);
+    // HTML_CodeSniffer reads CSS `color` and CSS backgrounds only. Inside SVG the
+    // painted color is `fill` and the backdrop is usually an SVG shape, so its
+    // verdicts there are noise; <desc>/<title> text never renders at all.
+    const unmeasurable = await page.evaluate((selectors) => selectors.map((selector) => {
+      const element = document.querySelector(selector);
+      return Boolean(element && element.closest("svg"));
+    }), contrastIssues.map(({ selector }) => selector));
 
     return {
       page: pagePath,
       theme,
       appliedTheme,
-      issues: result.issues.filter(isContrastIssue).map(({ code, message, selector, type }) => ({
+      issues: contrastIssues.filter((_, index) => !unmeasurable[index]).map(({ code, message, selector, type }) => ({
         code,
         message,
         selector,
