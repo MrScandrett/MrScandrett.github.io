@@ -601,7 +601,7 @@
 
 document.addEventListener('DOMContentLoaded', function () {
   var GT = window.GuitarTheory;
-  if (!GT) return;
+  if (!GT || !document.getElementById('gcBuilderBoard')) return;
 
   /* ---------- Shared fretboard rendering ---------- */
 

@@ -11,6 +11,9 @@
   'use strict';
 
   var MN = window.MusicNotation;
+  var PT = window.PianoTheory;
+  var GT = window.GuitarTheory;
+  var TA = window.TriadAssistantTheory;
   var root = document.getElementById('fakebook');
   if (!root || !MN) return;
   var DATA_URL = root.getAttribute('data-src') || '../../data/fake-book.json';
@@ -452,7 +455,14 @@
     melody: 'original', rhythm: 'written', voicing: 'smooth',
     style: null, feel: null, tempo: null, mode: 'all', click: 'all', loop: true,
     lead: 'reed', from: 1, to: 0,
-    vol: { melody: 80, piano: 55, bass: 75, drums: 65, click: 60 }
+    vol: { melody: 80, piano: 55, bass: 75, drums: 65, click: 60 },
+    sheetView: 'lead',
+    engineInst: 'piano',
+    engineMode: 'voicings',
+    guitarForm: 'open',
+    triadInv: 0,
+    triadSet: '123',
+    scaleType: 'ionian'
   };
   var opts = load();
   var defaultTunes = [], importedTunes = [];
@@ -591,8 +601,192 @@
   function txt(x, y, s, cls, extra) { return '<text x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" class="' + cls + '"' + (extra || '') + '>' + MN.escape(s) + '</text>'; }
   function line(x1, y1, x2, y2, w, cls) { return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" stroke="currentColor" stroke-width="' + w + '"' + (cls ? ' class="' + cls + '"' : '') + '/>'; }
 
+  function renderDrumBarNotes(out, bx, bw, staffTop, SP, drumSet, M, barNum) {
+    var pad = 14;
+    var usableW = bw - pad * 2;
+    var xAt = function (bt) { return bx + pad + (bt / M) * usableW; };
+    var hands = [];
+    var feet = [];
+
+    var dRows = DRUMS[drumSet] || DRUMS.swing || [];
+    dRows.forEach(function (row) {
+      var inst = row[0];
+      for (var i = 1; i < row.length; i++) {
+        var bt = row[i][0];
+        if (bt >= M - EPS) continue;
+        var x = xAt(bt);
+        if (inst === 'ride') hands.push({ x: x, y: staffTop - 3, head: 'x', bt: bt, inst: 'ride' });
+        else if (inst === 'snare') hands.push({ x: x, y: staffTop + 18, head: 'o', bt: bt, inst: 'snare' });
+        else if (inst === 'rim') hands.push({ x: x, y: staffTop + 18, head: 'x', bt: bt, inst: 'rim' });
+        else if (inst === 'hat') {
+          if (drumSet === 'rock' || drumSet === 'twobeat' || drumSet === 'bossa') {
+            hands.push({ x: x, y: staffTop, head: 'x', bt: bt, inst: 'hat' });
+          } else {
+            feet.push({ x: x, y: staffTop + 50, head: 'x', bt: bt, inst: 'hat' });
+          }
+        }
+        else if (inst === 'kick') feet.push({ x: x, y: staffTop + 38, head: 'o', bt: bt, inst: 'kick' });
+      }
+    });
+
+    if (opts.style === 'bossa') {
+      var rimHits = BOSSA_RIM[(barNum - 1) % 2] || [];
+      rimHits.forEach(function (bt) {
+        if (bt < M - EPS) hands.push({ x: xAt(bt), y: staffTop + 18, head: 'x', bt: bt, inst: 'rim' });
+      });
+    }
+
+    hands.sort(function (a, b) { return a.x - b.x || a.y - b.y; });
+    feet.sort(function (a, b) { return a.x - b.x || a.y - b.y; });
+
+    var handGroups = {};
+    hands.forEach(function (h) {
+      var k = Math.round(h.x);
+      handGroups[k] = handGroups[k] || [];
+      handGroups[k].push(h);
+    });
+
+    var handKeys = Object.keys(handGroups).map(Number).sort(function (a, b) { return a - b; });
+    var stemTopY = staffTop - 22;
+
+    handKeys.forEach(function (hx) {
+      var list = handGroups[hx];
+      var maxY = Math.max.apply(null, list.map(function (n) { return n.y; }));
+      list.forEach(function (n) {
+        if (n.head === 'x') {
+          out.push('<path d="M' + (hx - 3.5).toFixed(1) + ' ' + (n.y - 3.5).toFixed(1) + 'L' + (hx + 3.5).toFixed(1) + ' ' + (n.y + 3.5).toFixed(1) + 'M' + (hx - 3.5).toFixed(1) + ' ' + (n.y + 3.5).toFixed(1) + 'L' + (hx + 3.5).toFixed(1) + ' ' + (n.y - 3.5).toFixed(1) + '" stroke="#1b1410" stroke-width="1.8" stroke-linecap="round"/>');
+        } else {
+          out.push('<ellipse cx="' + hx.toFixed(1) + '" cy="' + n.y.toFixed(1) + '" rx="4.5" ry="3.3" transform="rotate(-20 ' + hx.toFixed(1) + ' ' + n.y.toFixed(1) + ')" fill="#1b1410"/>');
+        }
+      });
+      out.push('<line class="fb-drum-stem" x1="' + (hx + 4).toFixed(1) + '" y1="' + maxY.toFixed(1) + '" x2="' + (hx + 4).toFixed(1) + '" y2="' + stemTopY.toFixed(1) + '" stroke="#1b1410" stroke-width="1.4"/>');
+    });
+
+    for (var bi = 0; bi < handKeys.length - 1; bi++) {
+      var x1 = handKeys[bi], x2 = handKeys[bi + 1];
+      if (x2 - x1 < usableW / M * 0.75) {
+        out.push('<rect class="fb-drum-beam" x="' + (x1 + 3.5).toFixed(1) + '" y="' + stemTopY.toFixed(1) + '" width="' + (x2 - x1 + 1).toFixed(1) + '" height="3.2" fill="#1b1410"/>');
+        bi++;
+      }
+    }
+
+    var footGroups = {};
+    feet.forEach(function (f) {
+      var k = Math.round(f.x);
+      footGroups[k] = footGroups[k] || [];
+      footGroups[k].push(f);
+    });
+    var footKeys = Object.keys(footGroups).map(Number).sort(function (a, b) { return a - b; });
+    var stemBotY = staffTop + 44 + 20;
+
+    footKeys.forEach(function (fx) {
+      var list = footGroups[fx];
+      var minY = Math.min.apply(null, list.map(function (n) { return n.y; }));
+      list.forEach(function (n) {
+        if (n.head === 'x') {
+          out.push('<path d="M' + (fx - 3.5).toFixed(1) + ' ' + (n.y - 3.5).toFixed(1) + 'L' + (fx + 3.5).toFixed(1) + ' ' + (n.y + 3.5).toFixed(1) + 'M' + (fx - 3.5).toFixed(1) + ' ' + (n.y + 3.5).toFixed(1) + 'L' + (fx + 3.5).toFixed(1) + ' ' + (n.y - 3.5).toFixed(1) + '" stroke="#1b1410" stroke-width="1.8" stroke-linecap="round"/>');
+        } else {
+          out.push('<ellipse cx="' + fx.toFixed(1) + '" cy="' + n.y.toFixed(1) + '" rx="4.5" ry="3.3" transform="rotate(-20 ' + fx.toFixed(1) + ' ' + n.y.toFixed(1) + ')" fill="#1b1410"/>');
+        }
+      });
+      out.push('<line class="fb-drum-stem" x1="' + (fx - 4).toFixed(1) + '" y1="' + minY.toFixed(1) + '" x2="' + (fx - 4).toFixed(1) + '" y2="' + stemBotY.toFixed(1) + '" stroke="#1b1410" stroke-width="1.4"/>');
+    });
+  }
+
+  function renderDrumSheet() {
+    if (!view || !tune) return;
+    var legendEl = el('[data-fb-drum-legend]');
+    if (legendEl) legendEl.hidden = false;
+    var W = Math.max(320, Math.floor(sheetEl.clientWidth || 900));
+    var M = tune.M;
+    var styleKey = opts.style || tune.band || 'swing';
+    var drumSet = styleKey === 'ballad' ? (M === 3 ? 'ballad3' : 'ballad4') : styleKey;
+    var bpl = W >= 900 ? 4 : W >= 620 ? 3 : 2;
+    var totalBars = tune.bars;
+    var systems = [], cur = [];
+    for (var b = 1; b <= totalBars; b++) {
+      cur.push(b);
+      if (cur.length === bpl || b === totalBars) {
+        systems.push(cur);
+        cur = [];
+      }
+    }
+
+    var SP = 11;
+    var staffH = 4 * SP;
+    var rowH = 135;
+    var headerW = 75;
+    var out = [];
+    var yTop = 28;
+
+    systems.forEach(function (sys, si) {
+      var firstSys = si === 0;
+      var staffTop = yTop + si * rowH + 24;
+      var staffBot = staffTop + staffH;
+      var availW = W - headerW - 16;
+      var barW = Math.floor(availW / bpl);
+
+      for (var l = 0; l < 5; l++) {
+        var ly = staffTop + l * SP;
+        out.push('<line class="fb-drum-staffline" x1="10" y1="' + ly + '" x2="' + (headerW + sys.length * barW) + '" y2="' + ly + '" stroke="#3d352b" stroke-width="1.1"/>');
+      }
+
+      out.push(MN.clef('percussion', 16, staffBot, SP / 2));
+
+      if (firstSys) {
+        out.push('<text class="fb-drum-timesig" x="50" y="' + (staffTop + 18) + '" font-size="22" font-weight="700" font-family="Fraunces, serif" text-anchor="middle" fill="#1f1a14">' + M + '</text>');
+        out.push('<text class="fb-drum-timesig" x="50" y="' + (staffTop + 38) + '" font-size="22" font-weight="700" font-family="Fraunces, serif" text-anchor="middle" fill="#1f1a14">4</text>');
+        var grooveTitle = (STYLES[opts.style] ? STYLES[opts.style].label : 'Groove') + (opts.feel === 'swing' ? ' (Swing feel)' : ' (Straight)');
+        out.push('<text x="' + headerW + '" y="' + (staffTop - 11) + '" font-size="12" font-weight="700" font-family="DM Sans, sans-serif" fill="#7a4508">♩ = ' + opts.tempo + ' · ' + MN.escape(grooveTitle) + '</text>');
+      }
+
+      out.push('<line class="fb-drum-barline" x1="' + headerW + '" y1="' + staffTop + '" x2="' + headerW + '" y2="' + staffBot + '" stroke="#1b1410" stroke-width="1.4"/>');
+
+      sys.forEach(function (barNum, bi) {
+        var bx = headerW + bi * barW;
+        var ex = bx + barW;
+        var isLast = barNum === totalBars;
+
+        out.push('<rect class="fb-bar" data-bar="' + barNum + '" x="' + bx + '" y="' + (staffTop - 14) + '" width="' + barW + '" height="' + (staffH + 28) + '" rx="4"/>');
+        out.push('<text class="fb-drum-barnum" x="' + (bx + 6) + '" y="' + (staffTop - 5) + '">' + barNum + '</text>');
+
+        if (tune.sectionsByBar && tune.sectionsByBar[barNum]) {
+          var sec = tune.sectionsByBar[barNum];
+          out.push('<rect class="fb-sec-bg" x="' + (bx + 24) + '" y="' + (staffTop - 20) + '" width="18" height="15" rx="3"/>');
+          out.push('<text class="fb-sec-txt" x="' + (bx + 33) + '" y="' + (staffTop - 8) + '" font-size="10" font-weight="800" text-anchor="middle">' + MN.escape(sec) + '</text>');
+        }
+
+        renderDrumBarNotes(out, bx, barW, staffTop, SP, drumSet, M, barNum);
+
+        if (isLast) {
+          out.push('<line class="fb-drum-barline" x1="' + (ex - 8) + '" y1="' + staffTop + '" x2="' + (ex - 8) + '" y2="' + staffBot + '" stroke="#1b1410" stroke-width="1.3"/>');
+          out.push('<rect x="' + (ex - 4) + '" y="' + staffTop + '" width="4" height="' + staffH + '" fill="#1b1410"/>');
+          out.push('<circle cx="' + (ex - 14) + '" cy="' + (staffTop + 14) + '" r="2" fill="#1b1410"/>');
+          out.push('<circle cx="' + (ex - 14) + '" cy="' + (staffTop + 26) + '" r="2" fill="#1b1410"/>');
+        } else {
+          out.push('<line class="fb-drum-barline" x1="' + ex + '" y1="' + staffTop + '" x2="' + ex + '" y2="' + staffBot + '" stroke="#1b1410" stroke-width="1.3"/>');
+        }
+      });
+    });
+
+    var H = yTop + systems.length * rowH + 20;
+    sheetEl.innerHTML = '<svg class="fb-drum-svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' +
+      MN.escape(tune.raw.title + ' drum notation chart, ' + STYLES[opts.style].label + ' groove, ' + tune.meter.join('/') + ' time') + '">' + out.join('') + '</svg>';
+
+    nowEls = []; barEls = {};
+    sheetEl.querySelectorAll('.fb-bar').forEach(function (r) { barEls[r.getAttribute('data-bar')] = r; });
+    paintLoop();
+  }
+
   function renderSheet() {
     if (!view) return;
+    var legendEl = el('[data-fb-drum-legend]');
+    if (opts.sheetView === 'drums') {
+      if (legendEl) legendEl.hidden = false;
+      renderDrumSheet();
+      return;
+    }
+    if (legendEl) legendEl.hidden = true;
     var W = Math.max(300, Math.floor(sheetEl.clientWidth || 900));
     var S = W >= 900 ? 10 : W >= 620 ? 9 : 7;
     var t = tune, M = t.M, ins = INSTR[opts.instr], C = MN.clefs[ins.clef];
@@ -1389,6 +1583,34 @@
       i.disabled = !!tune.chordsOnly;
     });
     dotsEl.innerHTML = new Array(tune.M + 1).join('<i></i>');
+
+    // View switcher (Lead sheet vs Drum notation)
+    root.querySelectorAll('[data-fb-view]').forEach(function (b) {
+      var act = b.getAttribute('data-fb-view') === (opts.sheetView || 'lead');
+      b.classList.toggle('is-active', act);
+      b.setAttribute('aria-pressed', act ? 'true' : 'false');
+    });
+    var dLeg = el('[data-fb-drum-legend]');
+    if (dLeg) dLeg.hidden = (opts.sheetView || 'lead') !== 'drums';
+
+    // Theory engine controls
+    populateChordSelect();
+    root.querySelectorAll('[data-engine-inst]').forEach(function (b) {
+      var act = b.getAttribute('data-engine-inst') === (opts.engineInst || 'piano');
+      b.classList.toggle('is-active', act);
+      b.setAttribute('aria-selected', act ? 'true' : 'false');
+    });
+    root.querySelectorAll('input[name="fb-engine-mode"]').forEach(function (r) {
+      r.checked = r.value === (opts.engineMode || 'voicings');
+    });
+    root.querySelectorAll('input[name="fb-triad-inv"]').forEach(function (r) {
+      r.checked = Number(r.value) === (Number(opts.triadInv) || 0);
+    });
+    var tSetEl = el('[data-fb-guitar-triad-set]');
+    if (tSetEl) tSetEl.value = opts.triadSet || '123';
+    var gFormEl = el('[data-fb-guitar-form-sel]');
+    if (gFormEl && opts.guitarForm) gFormEl.value = opts.guitarForm;
+
     tips();
   }
   function tips() {
@@ -1416,30 +1638,440 @@
   }
   function respin() { if (P) { stop(); play(); } }
 
-  // ---- chord panel
-  var kbEl = el('[data-fb-keys]');
-  function drawKeyboard(notes) {
-    var lo = 48, hi = 84, whites = [], blacks = [], wW = 22, x = 0;
+  // ---- chord engine & visualizers (Piano & Guitar)
+  var currentVoicingNotes = [];
+  var currentGuitarFrets = [];
+
+  function drawPianoVisualizer(notes, meta) {
+    var kb = el('[data-fb-keys]');
+    if (!kb) return;
+    meta = meta || {};
+    var lo = 48, hi = 84, whites = [], blacks = [], wW = 20, x = 0;
     for (var m = lo; m < hi; m++) {
-      var isB = [1, 3, 6, 8, 10].indexOf(mod(m, 12)) >= 0, on = notes.indexOf(m) >= 0;
-      if (!isB) { whites.push('<rect x="' + x + '" y="0" width="' + wW + '" height="96" rx="3" class="fb-wk' + (on ? ' on' : '') + '"/>' + (mod(m, 12) === 0 ? '<text x="' + (x + wW / 2) + '" y="88" class="fb-kc">C' + (m / 12 - 1) + '</text>' : '')); x += wW; }
-      else blacks.push('<rect x="' + (x - 7) + '" y="0" width="14" height="60" rx="2" class="fb-bk' + (on ? ' on' : '') + '"/>');
+      var pc = mod(m, 12);
+      var isB = [1, 3, 6, 8, 10].indexOf(pc) >= 0;
+      var on = notes.indexOf(m) >= 0;
+      var info = meta[m] || (on ? { label: noteName(respell(m)), role: pc === meta.rootPC ? 'root' : 'other' } : null);
+      var roleCls = info ? (info.role === 'root' ? ' on-root' : info.role === 'third' ? ' on-third' : info.role === 'fifth' ? ' on-fifth' : info.role === 'seventh' ? ' on-seventh' : ' on') : '';
+
+      if (!isB) {
+        var keyHtml = '<rect x="' + x + '" y="0" width="' + wW + '" height="100" rx="3" class="fb-wk' + roleCls + '" data-midi="' + m + '"/>';
+        if (info) {
+          keyHtml += '<text x="' + (x + wW / 2) + '" y="76" class="fb-key-lbl" data-contrast-guard-skip>' + MN.escape(info.label) + '</text>';
+          if (info.finger) keyHtml += '<text x="' + (x + wW / 2) + '" y="92" class="fb-key-finger">' + info.finger + '</text>';
+        } else if (pc === 0) {
+          keyHtml += '<text x="' + (x + wW / 2) + '" y="92" class="fb-kc">C' + (m / 12 - 1) + '</text>';
+        }
+        whites.push(keyHtml);
+        x += wW;
+      } else {
+        var bHtml = '<rect x="' + (x - 6.5) + '" y="0" width="13" height="62" rx="2" class="fb-bk' + roleCls + '" data-midi="' + m + '"/>';
+        if (info) {
+          bHtml += '<text x="' + x + '" y="52" class="fb-key-lbl" data-contrast-guard-skip font-size="7.5">' + MN.escape(info.label) + '</text>';
+        }
+        blacks.push(bHtml);
+      }
     }
-    kbEl.innerHTML = '<svg viewBox="0 0 ' + x + ' 98" role="img" aria-label="Keyboard showing the notes ' + notes.map(function (n) { return noteName(respell(n)); }).join(', ') + '">' + whites.join('') + blacks.join('') + '</svg>';
+    kb.innerHTML = '<svg viewBox="0 0 ' + x + ' 102" role="img" aria-label="Piano keyboard display">' + whites.join('') + blacks.join('') + '</svg>';
+    kb.querySelectorAll('[data-midi]').forEach(function (k) {
+      k.addEventListener('click', function () {
+        var mid = Number(k.getAttribute('data-midi'));
+        if (window.PianoAudio) window.PianoAudio.tone(PT ? PT.noteFreq(mid - 48) : 440 * Math.pow(2, (mid - 69) / 12));
+      });
+    });
   }
+
+  function drawGuitarVisualizer(frets, fingers, degrees, rootPC, scaleMap) {
+    var gtr = el('[data-fb-fretboard]');
+    if (!gtr) return;
+    frets = frets || [null, null, null, null, null, null];
+    var nutX = 64, fretCount = 12, fretW = 54;
+    var totalW = nutX + fretCount * fretW + 20;
+    var totalH = 155;
+    var strYs = [130, 109, 88, 67, 46, 25]; // Low E (idx 0) to High e (idx 5)
+    var strLabels = ['E', 'A', 'D', 'G', 'B', 'e'];
+    var strThickness = [3.2, 2.7, 2.2, 1.8, 1.5, 1.2];
+    var out = [];
+
+    // Fretboard body
+    out.push('<rect class="fb-gtr-bg" x="' + (nutX - 4) + '" y="10" width="' + (fretCount * fretW + 12) + '" height="135" rx="8" fill="#2c1d11"/>');
+
+    // Inlay dots
+    [3, 5, 7, 9].forEach(function (f) {
+      var dx = nutX + (f - 0.5) * fretW;
+      out.push('<circle class="fb-gtr-dot-inlay" cx="' + dx.toFixed(1) + '" cy="77" r="4.5" fill="#f1e0c6" opacity="0.8"/>');
+    });
+    var d12 = nutX + (12 - 0.5) * fretW;
+    out.push('<circle class="fb-gtr-dot-inlay" cx="' + d12.toFixed(1) + '" cy="54" r="4" fill="#f1e0c6" opacity="0.8"/>');
+    out.push('<circle class="fb-gtr-dot-inlay" cx="' + d12.toFixed(1) + '" cy="100" r="4" fill="#f1e0c6" opacity="0.8"/>');
+
+    // Fret wires
+    for (var f = 1; f <= fretCount; f++) {
+      var fx = nutX + f * fretW;
+      out.push('<line class="fb-gtr-fretwire" x1="' + fx + '" y1="12" x2="' + fx + '" y2="142" stroke="#c0c6ce" stroke-width="2"/>');
+      out.push('<text x="' + (fx - fretW / 2).toFixed(1) + '" y="8" font-size="9" font-family="JetBrains Mono, monospace" fill="#8a7c66" text-anchor="middle">' + f + '</text>');
+    }
+
+    // Nut
+    out.push('<line class="fb-gtr-nut" x1="' + nutX + '" y1="10" x2="' + nutX + '" y2="144" stroke="#f4ead5" stroke-width="6"/>');
+
+    // Strings
+    strYs.forEach(function (sy, sIdx) {
+      out.push('<line class="fb-gtr-string" x1="' + nutX + '" y1="' + sy + '" x2="' + (nutX + fretCount * fretW + 4) + '" y2="' + sy + '" stroke="#d4a757" stroke-width="' + strThickness[sIdx] + '"/>');
+      out.push('<text class="fb-gtr-str-tag" x="18" y="' + sy + '">' + strLabels[sIdx] + '</text>');
+    });
+
+    if (scaleMap) {
+      scaleMap.forEach(function (sn) {
+        var sy = strYs[sn.string];
+        var sx = nutX + (sn.fret - 0.5) * fretW;
+        var isR = sn.isRoot;
+        var rCls = isR ? ' is-root' : (sn.degree === '3' || sn.degree === '♭3' ? ' is-third' : (sn.degree === '5' ? ' is-fifth' : (sn.degree === '7' || sn.degree === '♭7' ? ' is-seventh' : '')));
+        out.push('<circle class="fb-gtr-note-dot' + rCls + '" cx="' + sx.toFixed(1) + '" cy="' + sy + '" r="9.5" data-s="' + sn.string + '" data-f="' + sn.fret + '"/>');
+        out.push('<text class="fb-gtr-lbl" x="' + sx.toFixed(1) + '" y="' + sy + '">' + MN.escape(sn.degree) + '</text>');
+      });
+    } else {
+      frets.forEach(function (fVal, sIdx) {
+        var sy = strYs[sIdx];
+        var openX = 38;
+        if (fVal === 0) {
+          var deg = degrees && degrees[sIdx];
+          out.push('<circle class="fb-gtr-open-marker" cx="' + openX + '" cy="' + sy + '" r="8" data-s="' + sIdx + '" data-f="0"/>');
+          out.push('<text class="fb-gtr-lbl" x="' + openX + '" y="' + sy + '" fill="#0284c7" font-size="8.5">' + (deg ? deg.label : strLabels[sIdx]) + '</text>');
+        } else if (fVal === 'x' || fVal === null || fVal === undefined) {
+          out.push('<line class="fb-gtr-mute-marker" x1="' + (openX - 4.5) + '" y1="' + (sy - 4.5) + '" x2="' + (openX + 4.5) + '" y2="' + (sy + 4.5) + '"/>');
+          out.push('<line class="fb-gtr-mute-marker" x1="' + (openX - 4.5) + '" y1="' + (sy + 4.5) + '" x2="' + (openX + 4.5) + '" y2="' + (sy - 4.5) + '"/>');
+        } else if (typeof fVal === 'number' && fVal > 0 && fVal <= fretCount) {
+          var nx = nutX + (fVal - 0.5) * fretW;
+          var deg = degrees && degrees[sIdx];
+          var isR = deg && deg.isRoot;
+          var roleCls = isR ? ' is-root' : (deg && (deg.label === '3' || deg.label === '♭3') ? ' is-third' : (deg && deg.label === '5' ? ' is-fifth' : (deg && (deg.label === '7' || deg.label === '♭7') ? ' is-seventh' : '')));
+          var fNum = fingers && fingers[sIdx];
+
+          out.push('<circle class="fb-gtr-note-dot' + roleCls + '" cx="' + nx.toFixed(1) + '" cy="' + sy + '" r="10" data-s="' + sIdx + '" data-f="' + fVal + '"/>');
+          out.push('<text class="fb-gtr-lbl" x="' + nx.toFixed(1) + '" y="' + sy + '">' + (deg ? deg.label : fVal) + '</text>');
+          if (fNum && typeof fNum === 'number') {
+            out.push('<text class="fb-gtr-finger" x="' + (nx + 7).toFixed(1) + '" y="' + (sy - 7) + '">' + fNum + '</text>');
+          }
+        }
+      });
+    }
+
+    gtr.innerHTML = '<svg viewBox="0 0 ' + totalW + ' ' + totalH + '" role="img" aria-label="Guitar fretboard display">' + out.join('') + '</svg>';
+    gtr.querySelectorAll('[data-s]').forEach(function (dot) {
+      dot.addEventListener('click', function () {
+        var s = Number(dot.getAttribute('data-s')), f = Number(dot.getAttribute('data-f'));
+        if (window.GuitarAudio && GT) window.GuitarAudio.pluck(GT.noteFreq(s, f));
+      });
+    });
+  }
+
+  function getGuitarTriad(rootPC, quality, targetStrings, targetInv) {
+    if (!TA) return null;
+    var all = [];
+    [0, 2, 4, 6, 8, 10].forEach(function (f) {
+      var cands = TA.candidates({ root: rootPC, quality: quality }, 'guitar', { rootOnly: false, fret: f });
+      (cands || []).forEach(function (c) {
+        var sKey = c.notes.map(function (n) { return 6 - n.s; }).sort().join('');
+        all.push({ cand: c, sKey: sKey, inv: c.inversion });
+      });
+    });
+    var match = all.find(function (item) {
+      return (targetStrings ? item.sKey === targetStrings : true) && item.inv === targetInv;
+    });
+    if (!match && targetStrings) match = all.find(function (item) { return item.sKey === targetStrings; });
+    if (!match) match = all.find(function (item) { return item.inv === targetInv; });
+    if (!match) match = all[0];
+    return match ? match.cand : null;
+  }
+
+  function populateChordSelect() {
+    var sel = el('[data-fb-chord-select]');
+    if (!sel || !view) return;
+    var chords = view.concertChords || [];
+    var html = chords.map(function (c, i) {
+      var name = chordName(opts.instr === 'concert' || opts.instr === 'bass' ? c : view.writtenChords[i]);
+      return '<option value="' + i + '">Bar ' + c.bar + ': ' + name + '</option>';
+    });
+    sel.innerHTML = html.join('');
+    sel.value = String(chordSel);
+  }
+
+  function populateScaleChips(rootPC, chordQ) {
+    var cont = el('[data-fb-scales-list]');
+    if (!cont) return;
+    var scales = [
+      { key: 'ionian', label: 'Major (Ionian)' },
+      { key: 'dorian', label: 'Dorian' },
+      { key: 'mixolydian', label: 'Mixolydian' },
+      { key: 'aeolian', label: 'Minor (Aeolian)' },
+      { key: 'majorPent', label: 'Major Pentatonic' },
+      { key: 'minorPent', label: 'Minor Pentatonic' },
+      { key: 'blues', label: 'Blues' }
+    ];
+    cont.innerHTML = scales.map(function (s) {
+      var chk = s.key === (opts.scaleType || 'ionian') ? ' checked' : '';
+      return '<label class="fb-chip"><input type="radio" name="fb-scale-type" value="' + s.key + '"' + chk + ' /><span>' + MN.escape(s.label) + '</span></label>';
+    }).join('');
+  }
+
   function showChord(sound) {
     if (!view || !view.concertChords.length) return;
-    var c = view.concertChords[chordSel], w = view.writtenChords[chordSel], notes = view.voicings[chordSel];
+    chordSel = Math.max(0, Math.min(view.concertChords.length - 1, chordSel));
+    var c = view.concertChords[chordSel], w = view.writtenChords[chordSel];
+    var rootPC = mod(NAT[c.root.l] + c.root.a, 12);
+    var notes = view.voicings[chordSel] || rootPosition(c);
     var d = describeVoicing(c, notes);
+
+    currentVoicingNotes = notes;
+
+    populateChordSelect();
+
     el('[data-fb-chordname]').textContent = chordName(opts.instr === 'concert' || opts.instr === 'bass' ? c : w);
     el('[data-fb-chordinfo]').textContent = (opts.instr === 'concert' || opts.instr === 'bass' ? '' : 'Sounds as ' + chordName(c) + ' (concert). ') +
       Q[c.q].name.charAt(0).toUpperCase() + Q[c.q].name.slice(1) + ' · bar ' + c.bar + ' · ' + d.bottom + ' on the bottom';
-    el('[data-fb-chordnotes]').textContent = 'Piano plays: ' + d.spelled.join('  ') + (opts.instr === 'concert' || opts.instr === 'bass' ? '' : ' (concert)');
-    el('[data-fb-voicing-tip]').textContent = VOICING[opts.voicing].tip;
-    drawKeyboard(notes);
-    sheetEl.querySelectorAll('.fb-chord').forEach(function (t) { t.classList.toggle('is-sel', Number(t.getAttribute('data-ci')) === chordSel); });
-    if (sound && ensureAudio()) notes.forEach(function (m, i) { voicePiano(bus.piano, ctx.currentTime + 0.02 + i * 0.03, 1.4, m, 0.3); });
+    el('[data-fb-chordnotes]').textContent = (opts.engineInst === 'piano' ? 'Piano plays: ' : 'Guitar plays: ') + d.spelled.join('  ') + (opts.instr === 'concert' || opts.instr === 'bass' ? '' : ' (concert)');
+    el('[data-fb-voicing-tip]').textContent = VOICING[opts.voicing] ? VOICING[opts.voicing].tip : '';
+
+    var isPiano = (opts.engineInst || 'piano') === 'piano';
+    var kWrap = el('[data-fb-keys]');
+    var gWrap = el('[data-fb-fretboard]');
+    if (kWrap) kWrap.hidden = !isPiano;
+    if (gWrap) gWrap.hidden = isPiano;
+
+    root.querySelectorAll('[data-engine-inst]').forEach(function (b) {
+      var act = b.getAttribute('data-engine-inst') === opts.engineInst;
+      b.classList.toggle('is-active', act);
+      b.setAttribute('aria-selected', act ? 'true' : 'false');
+    });
+
+    var mode = opts.engineMode || 'voicings';
+    root.querySelectorAll('[data-engine-sub]').forEach(function (sc) {
+      sc.hidden = sc.getAttribute('data-engine-sub') !== mode;
+    });
+    root.querySelectorAll('input[name="fb-engine-mode"]').forEach(function (r) {
+      r.checked = r.value === mode;
+    });
+
+    var cType = (GT && GT.CHORD_TYPES.find(function (ct) { return ct.suffix === (c.q || ''); })) || { suffix: c.q || '', name: 'Chord', intervals: [0, 4, 7] };
+
+    if (mode === 'voicings') {
+      if (isPiano) {
+        var formsWrap = el('[data-fb-guitar-forms]');
+        if (formsWrap) formsWrap.hidden = true;
+        var vWrap = el('[data-fb-voicing]');
+        if (vWrap) vWrap.hidden = false;
+        var meta = { rootPC: rootPC };
+        notes.forEach(function (m) {
+          var iv = mod(m - rootPC, 12);
+          var lbl = PT ? PT.intervalLabel(iv, true) : (iv === 0 ? 'R' : String(iv));
+          var role = iv === 0 ? 'root' : (iv === 4 || iv === 3) ? 'third' : iv === 7 ? 'fifth' : (iv === 10 || iv === 11) ? 'seventh' : 'other';
+          meta[m] = { label: lbl, role: role, finger: (PT && PT.typicalFingering(rootPC, cType, 0, 'rh')[notes.indexOf(m)]) || '' };
+        });
+        drawPianoVisualizer(notes, meta);
+      } else {
+        var formsWrap = el('[data-fb-guitar-forms]');
+        var formSelEl = el('[data-fb-guitar-form-sel]');
+        if (formsWrap) formsWrap.hidden = false;
+        var vWrap = el('[data-fb-voicing]');
+        if (vWrap) vWrap.hidden = true;
+        var forms = GT ? GT.availableForms(rootPC, cType) : ['open'];
+        if (formSelEl) {
+          formSelEl.innerHTML = forms.map(function (fm) {
+            return '<option value="' + fm + '">' + fm.toUpperCase() + ' form</option>';
+          }).join('');
+          if (forms.indexOf(opts.guitarForm) >= 0) formSelEl.value = opts.guitarForm;
+          else { formSelEl.value = forms[0]; opts.guitarForm = forms[0]; }
+        }
+        var activeForm = formSelEl ? formSelEl.value : 'open';
+        var shape = GT ? GT.getChordShape(rootPC, cType, 0, activeForm) : { frets: ['x', 3, 2, 0, 1, 0] };
+        var frets = shape.frets;
+        currentGuitarFrets = frets;
+        var fingers = GT ? GT.computeFingering(frets) : null;
+        var degrees = GT ? GT.computeDegrees(rootPC, cType, frets) : null;
+        drawGuitarVisualizer(frets, fingers, degrees, rootPC);
+      }
+    } else if (mode === 'triads') {
+      var triadQ = (c.q === 'm' || c.q === 'm7' || c.q === 'm6') ? 'minor' : (c.q === 'dim' || c.q === 'dim7' || c.q === 'm7b5') ? 'diminished' : (c.q === 'aug') ? 'augmented' : 'major';
+      var inv = Number(opts.triadInv) || 0;
+      var triadDesc = el('[data-fb-triad-desc]');
+      if (triadDesc) {
+        triadDesc.textContent = LETTERS[c.root.l] + ACC[c.root.a] + ' ' + triadQ + ' triad · ' + (inv === 0 ? 'Root position (1-3-5)' : inv === 1 ? '1st inversion (3-5-1)' : '2nd inversion (5-1-3)');
+      }
+      var tSetsWrap = el('[data-fb-guitar-triad-sets]');
+      if (tSetsWrap) tSetsWrap.hidden = isPiano;
+
+      var triadIvs = triadQ === 'minor' ? [0, 3, 7] : triadQ === 'diminished' ? [0, 3, 6] : triadQ === 'augmented' ? [0, 4, 8] : [0, 4, 7];
+      if (isPiano) {
+        var triadMid = triadIvs.map(function (v) { return 60 + rootPC + v; });
+        var rotated = rotate(triadMid, inv);
+        currentVoicingNotes = rotated;
+        var tMeta = { rootPC: rootPC };
+        rotated.forEach(function (m) {
+          var iv = mod(m - rootPC, 12);
+          tMeta[m] = {
+            label: iv === 0 ? 'R' : (iv === 3 || iv === 4 ? '3' : '5'),
+            role: iv === 0 ? 'root' : (iv === 3 || iv === 4 ? 'third' : 'fifth'),
+            finger: inv === 0 ? '1' : inv === 1 ? '2' : '3'
+          };
+        });
+        drawPianoVisualizer(rotated, tMeta);
+      } else {
+        var tSet = opts.triadSet || '123';
+        var tMatch = getGuitarTriad(rootPC, triadQ, tSet, inv);
+        var gFrets = [null, null, null, null, null, null];
+        var gFingers = [null, null, null, null, null, null];
+        var gDegs = [null, null, null, null, null, null];
+        if (tMatch) {
+          tMatch.notes.forEach(function (n) {
+            gFrets[n.s] = n.f;
+            var iv = mod(n.midi - rootPC, 12);
+            gDegs[n.s] = { label: iv === 0 ? 'R' : (iv === 3 || iv === 4 ? '3' : '5'), isRoot: iv === 0 };
+          });
+        }
+        currentGuitarFrets = gFrets;
+        drawGuitarVisualizer(gFrets, gFingers, gDegs, rootPC);
+      }
+    } else if (mode === 'scales') {
+      populateScaleChips(rootPC, c.q);
+      var scaleKey = opts.scaleType || 'ionian';
+      var stDef = (GT && GT.SCALE_TYPES.find(function (x) { return x.key === scaleKey; })) || (PT && PT.SCALE_TYPES.find(function (x) { return x.key === scaleKey; })) || { intervals: [0, 2, 4, 5, 7, 9, 11], degrees: ['1', '2', '3', '4', '5', '6', '7'], desc: 'Major scale' };
+      var scaleSumm = el('[data-fb-scale-summary]');
+      if (scaleSumm) scaleSumm.textContent = (stDef.name || scaleKey) + ' on ' + LETTERS[c.root.l] + ACC[c.root.a] + ': ' + (stDef.desc || '');
+
+      if (isPiano) {
+        var scaleNotes = [];
+        var sMeta = { rootPC: rootPC };
+        for (var oct = 48; oct < 84; oct += 12) {
+          stDef.intervals.forEach(function (iv, idx) {
+            var m = oct + rootPC + iv;
+            if (m < 84) {
+              scaleNotes.push(m);
+              sMeta[m] = {
+                label: (stDef.degrees && stDef.degrees[idx]) || String(idx + 1),
+                role: iv === 0 ? 'root' : (iv === 4 || iv === 3) ? 'third' : iv === 7 ? 'fifth' : (iv === 10 || iv === 11) ? 'seventh' : 'other'
+              };
+            }
+          });
+        }
+        currentVoicingNotes = scaleNotes;
+        drawPianoVisualizer(scaleNotes, sMeta);
+      } else {
+        var scaleMap = [];
+        var gTuning = [40, 45, 50, 55, 59, 64];
+        gTuning.forEach(function (openMidi, sIdx) {
+          for (var f = 0; f <= 12; f++) {
+            var m = openMidi + f;
+            var iv = mod(m - rootPC, 12);
+            var matchIdx = stDef.intervals.indexOf(iv);
+            if (matchIdx >= 0) {
+              scaleMap.push({
+                string: sIdx,
+                fret: f,
+                isRoot: iv === 0,
+                degree: (stDef.degrees && stDef.degrees[matchIdx]) || String(matchIdx + 1)
+              });
+            }
+          }
+        });
+        drawGuitarVisualizer(null, null, null, rootPC, scaleMap);
+      }
+    }
+
+    sheetEl.querySelectorAll('.fb-chord').forEach(function (t) {
+      t.classList.toggle('is-sel', Number(t.getAttribute('data-ci')) === chordSel);
+    });
+
+    if (sound) playActiveChord();
   }
+
+  function playActiveChord() {
+    if (!view || !view.concertChords.length) return;
+    var c = view.concertChords[chordSel];
+    var rootPC = mod(NAT[c.root.l] + c.root.a, 12);
+    var cType = (GT && GT.CHORD_TYPES.find(function (ct) { return ct.suffix === (c.q || ''); })) || { suffix: c.q || '', name: 'Chord', intervals: [0, 4, 7] };
+    var notes = currentVoicingNotes.length ? currentVoicingNotes : (view.voicings[chordSel] || rootPosition(c));
+
+    if (opts.engineInst === 'guitar' && GT) {
+      if (opts.engineMode === 'triads') {
+        var triadQ = (c.q === 'm' || c.q === 'm7' || c.q === 'm6') ? 'minor' : (c.q === 'dim' || c.q === 'dim7' || c.q === 'm7b5') ? 'diminished' : (c.q === 'aug') ? 'augmented' : 'major';
+        var tMatch = getGuitarTriad(rootPC, triadQ, opts.triadSet || '123', Number(opts.triadInv) || 0);
+        if (tMatch && window.GuitarAudio) {
+          var freqs = tMatch.notes.map(function (n) { return GT.noteFreq(n.s, n.f); });
+          window.GuitarAudio.strum(freqs);
+          return;
+        }
+      }
+      var formSel = el('[data-fb-guitar-form-sel]') ? el('[data-fb-guitar-form-sel]').value : 'open';
+      var shape = GT.getChordShape(rootPC, cType, 0, formSel);
+      if (shape && window.GuitarAudio) {
+        var freqs = shape.frets.map(function (f, s) { return (typeof f === 'number') ? GT.noteFreq(s, f) : null; }).filter(Boolean);
+        window.GuitarAudio.strum(freqs);
+        return;
+      }
+    }
+
+    if (window.PianoAudio) {
+      var freqs = notes.slice(0, 5).map(function (m) { return 440 * Math.pow(2, (m - 69) / 12); });
+      window.PianoAudio.block(freqs);
+    } else if (ensureAudio()) {
+      notes.forEach(function (m, i) { voicePiano(bus.piano, ctx.currentTime + 0.02 + i * 0.03, 1.4, m, 0.3); });
+    }
+  }
+
+  function playActiveArpeggio() {
+    if (!view || !view.concertChords.length) return;
+    var c = view.concertChords[chordSel];
+    var rootPC = mod(NAT[c.root.l] + c.root.a, 12);
+    var cType = (GT && GT.CHORD_TYPES.find(function (ct) { return ct.suffix === (c.q || ''); })) || { suffix: c.q || '', name: 'Chord', intervals: [0, 4, 7] };
+    var notes = currentVoicingNotes.length ? currentVoicingNotes : (view.voicings[chordSel] || rootPosition(c));
+
+    if (opts.engineMode === 'scales') {
+      var stKey = opts.scaleType || 'ionian';
+      var st = (GT && GT.SCALE_TYPES.find(function (x) { return x.key === stKey; })) || (PT && PT.SCALE_TYPES.find(function (x) { return x.key === stKey; })) || { intervals: [0, 2, 4, 5, 7, 9, 11] };
+      var baseMidi = 60 + rootPC;
+      var scaleFreqs = st.intervals.map(function (iv) { return 440 * Math.pow(2, (baseMidi + iv - 69) / 12); });
+      scaleFreqs.push(440 * Math.pow(2, (baseMidi + 12 - 69) / 12));
+      var fullRun = scaleFreqs.concat(scaleFreqs.slice(0, -1).reverse());
+      if (opts.engineInst === 'guitar' && window.GuitarAudio) {
+        window.GuitarAudio.sequence(fullRun, { interval: 0.18 });
+      } else if (window.PianoAudio) {
+        window.PianoAudio.broken(fullRun, { interval: 0.18 });
+      }
+      return;
+    }
+
+    if (opts.engineInst === 'guitar' && GT) {
+      if (opts.engineMode === 'triads') {
+        var triadQ = (c.q === 'm' || c.q === 'm7' || c.q === 'm6') ? 'minor' : (c.q === 'dim' || c.q === 'dim7' || c.q === 'm7b5') ? 'diminished' : (c.q === 'aug') ? 'augmented' : 'major';
+        var tMatch = getGuitarTriad(rootPC, triadQ, opts.triadSet || '123', Number(opts.triadInv) || 0);
+        if (tMatch && window.GuitarAudio) {
+          var freqs = tMatch.notes.map(function (n) { return GT.noteFreq(n.s, n.f); });
+          window.GuitarAudio.sequence(freqs.concat(freqs.slice(0, -1).reverse()), { interval: 0.22 });
+          return;
+        }
+      }
+      var formSel = el('[data-fb-guitar-form-sel]') ? el('[data-fb-guitar-form-sel]').value : 'open';
+      var shape = GT.getChordShape(rootPC, cType, 0, formSel);
+      if (shape && window.GuitarAudio) {
+        var freqs = shape.frets.map(function (f, s) { return (typeof f === 'number') ? GT.noteFreq(s, f) : null; }).filter(Boolean);
+        window.GuitarAudio.sequence(freqs.concat(freqs.slice(0, -1).reverse()), { interval: 0.22 });
+        return;
+      }
+    }
+
+    var freqs = notes.map(function (m) { return 440 * Math.pow(2, (m - 69) / 12); });
+    var run = freqs.concat(freqs.slice(0, -1).reverse());
+    if (window.PianoAudio) {
+      window.PianoAudio.broken(run, { interval: 0.2 });
+    } else if (ensureAudio()) {
+      run.forEach(function (f, i) {
+        var m = Math.round(69 + 12 * Math.log2(f / 440));
+        voicePiano(bus.piano, ctx.currentTime + 0.05 + i * 0.2, 0.45, m, 0.3);
+      });
+    }
+  }
+
   function playProgression() {
     if (!ensureAudio()) return;
     stop();
@@ -1466,6 +2098,12 @@
       if (n === 'fb-melody') { opts.melody = t.value; refresh(); respin(); }
       else if (n === 'fb-rhythm') { opts.rhythm = t.value; refresh(); respin(); }
       else if (n === 'fb-voicing') { opts.voicing = t.value; view.voicings = voiceChords(view.concertChords, opts.voicing); showChord(true); save(); respin(); }
+      else if (n === 'fb-engine-mode') { opts.engineMode = t.value; showChord(false); save(); }
+      else if (n === 'fb-triad-inv') { opts.triadInv = Number(t.value); showChord(false); save(); }
+      else if (n === 'fb-scale-type') { opts.scaleType = t.value; showChord(false); save(); }
+      else if (t.matches('[data-fb-chord-select]')) { chordSel = Number(t.value); showChord(true); }
+      else if (t.matches('[data-fb-guitar-form-sel]')) { opts.guitarForm = t.value; showChord(false); save(); }
+      else if (t.matches('[data-fb-guitar-triad-set]')) { opts.triadSet = t.value; showChord(false); save(); }
       else if (t.matches('[data-fb-key]')) { opts.key = t.value; refresh(); respin(); }
       else if (t.matches('[data-fb-instr]')) { opts.instr = t.value; refresh(); respin(); }
       else if (t.matches('[data-fb-octave]')) { opts.octave = Number(t.value); refresh(); respin(); }
@@ -1501,6 +2139,22 @@
         removeImported(rem.getAttribute('data-remove-tune'));
         return;
       }
+      var vBtn = t.closest('[data-fb-view]');
+      if (vBtn) {
+        opts.sheetView = vBtn.getAttribute('data-fb-view');
+        syncControls();
+        renderSheet();
+        save();
+        return;
+      }
+      var instBtn = t.closest('[data-engine-inst]');
+      if (instBtn) {
+        opts.engineInst = instBtn.getAttribute('data-engine-inst');
+        syncControls();
+        showChord(false);
+        save();
+        return;
+      }
       var tn = t.closest('[data-tune]');
       if (tn && !t.closest('[data-remove-tune]')) {
         selectTune(tn.getAttribute('data-tune'), true);
@@ -1512,7 +2166,8 @@
         return;
       }
       if (t.closest('[data-fb-play]')) { if (P) stop(); else play(); return; }
-      if (t.closest('[data-fb-chordplay]')) { showChord(true); return; }
+      if (t.closest('[data-fb-chordplay]')) { playActiveChord(); return; }
+      if (t.closest('[data-fb-arpplay]')) { playActiveArpeggio(); return; }
       if (t.closest('[data-fb-progression]')) { playProgression(); return; }
       if (t.closest('[data-fb-tempo-step]')) {
         var v = Math.max(40, Math.min(240, opts.tempo + Number(t.closest('[data-fb-tempo-step]').getAttribute('data-fb-tempo-step'))));

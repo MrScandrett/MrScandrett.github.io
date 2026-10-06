@@ -166,6 +166,7 @@
     <div class="te-footer-nav"><a href="eq-problem-frequency.html">← Audio Equalizers</a><a href="stage-lighting-design-lab.html">Stage Lighting →</a></div>
   </main>
 
+  <script src="../../assets/js/audio-effects.js"></script>
   <script>
   (()=>{
     const $=id=>document.getElementById(id);
@@ -298,7 +299,7 @@
       const AC=window.AudioContext||window.webkitAudioContext;if(!AC){$('readout').textContent='This browser cannot play Web Audio. The graphs still work.';return;}
       ac=new AC();const src=sources[$('source').value],buf=ac.createBuffer(1,src.data.length,SR);buf.copyToChannel?buf.copyToChannel(src.data,0):buf.getChannelData(0).set(src.data);
       node=ac.createBufferSource();node.buffer=buf;node.loop=true;
-      comp=ac.createDynamicsCompressor();makeup=ac.createGain();wet=ac.createGain();dry=ac.createGain();const master=ac.createGain();master.gain.value=.6;
+      comp=AudioEffects.compressorNode(ac);makeup=ac.createGain();wet=ac.createGain();dry=ac.createGain();const master=ac.createGain();master.gain.value=.6;
       node.connect(comp);comp.connect(makeup);makeup.connect(wet);wet.connect(master);node.connect(dry);dry.connect(master);master.connect(ac.destination);
       audioSync(params());startT=ac.currentTime+.05;node.start(startT);
       $('play').textContent='■ Stop';tick();

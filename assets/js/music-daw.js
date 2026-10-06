@@ -31,7 +31,7 @@
     bass: 'Bass', strings: 'Strings', pad: 'Warm Pad', synth: 'Synth Lead', drums: 'Drum Kit',
   };
   const COLORS = ['#f2994a', '#56ccf2', '#6fcf97', '#bb6bd9', '#f2c94c', '#ff7a8a', '#2dd4bf', '#a3e635'];
-  const TRACK_H = 96;
+  const TRACK_H = window.matchMedia('(pointer: coarse)').matches ? 142 : 110;
   let HEAD_W = 200;
   const ROW_H = 14;
   const KEYS_W = 80;
@@ -74,7 +74,7 @@
     return {
       id: uid(), kind, name, instrument: kind === 'instrument' ? (instrument || 'piano') : null,
       color: COLORS[(colorIndex || 0) % COLORS.length], volume: 0.8, pan: 0,
-      mute: false, solo: false, armed: false, clips: [],
+      mute: false, solo: false, armed: false, clips: [], effects: [],
     };
   }
   function uid() { return Math.random().toString(36).slice(2, 10); }
@@ -153,9 +153,21 @@
       let s = strips.get(track.id);
       if (!s) {
         const gain = c.createGain(), pan = c.createStereoPanner();
+        const input = c.createGain();
         gain.connect(pan); pan.connect(master);
-        s = { gain, pan };
+        s = { input, gain, pan, effects: [], signature: null };
         strips.set(track.id, s);
+      }
+      const signature = JSON.stringify(track.effects || []);
+      if (signature !== s.signature) {
+        s.input.disconnect(); s.effects.forEach(e => e.dispose()); s.effects = [];
+        let tail = s.input;
+        (track.effects || []).forEach(effect => {
+          if (effect.bypass || !window.AudioEffects.registry[effect.type]) return;
+          const e = window.AudioEffects.registry[effect.type].create(c, window.AudioEffects.parameters(effect.type, effect.params));
+          tail.connect(e.input); tail = e.output; s.effects.push(e);
+        });
+        tail.connect(s.gain); s.signature = signature;
       }
       return s;
     }
@@ -432,7 +444,7 @@
       const c = audio.ctx;
       g = c.createGain();
       if (trackId === 'click') g.connect(audio.mix.master);
-      else g.connect(audio.mix.strip(findTrack(trackId) || { id: trackId }).gain);
+      else g.connect(audio.mix.strip(findTrack(trackId) || { id: trackId }).input);
       transport.gates.set(trackId, g);
     }
     return g;
@@ -715,10 +727,10 @@
     let key = pitch;
     if (track.instrument === 'drums') {
       key = (gmDrum || pitch < 48) && IO.DRUM_LABELS[pitch] ? pitch : DRUM_LAYOUT[pitch % 12];
-      drumHit(c, audio.mix.strip(track).gain, key, vel, c.currentTime);
+      drumHit(c, audio.mix.strip(track).input, key, vel, c.currentTime);
     } else {
       if (live.has(pitch)) live.get(pitch).release(c.currentTime);
-      live.set(pitch, startVoice(c, audio.mix.strip(track).gain, track.instrument, pitch, vel, c.currentTime));
+      live.set(pitch, startVoice(c, audio.mix.strip(track).input, track.instrument, pitch, vel, c.currentTime));
     }
     const take = transport.take;
     if (transport.recording && take && take.track === track.id) {
@@ -1100,7 +1112,7 @@
     const env = {
       c: oc, offline: true, segEnd: toBeat,
       timeOf: (beat) => (beat - fromBeat) * spb(),
-      destFor: (track) => mix.strip(track).gain,
+      destFor: (track) => mix.strip(track).input,
     };
     scheduleNotes(env, fromBeat, toBeat, tracks);
     scheduleAudio(env, fromBeat, toBeat, tracks);
@@ -1238,6 +1250,8 @@
         <label class="daw-field daw-master"><span>Master</span><input type="range" data-ref="master" min="0" max="1.2" step="0.01" aria-label="Master volume"><span class="daw-meter" aria-hidden="true"><i data-ref="meter"></i></span></label>
       </div>
     </div>
+    <details class="daw-file-tools" open>
+    <summary>Track &amp; project tools</summary>
     <div class="daw-bar daw-files" role="toolbar" aria-label="Tracks and files">
       <div class="daw-group">
         <div class="daw-menu-wrap">
@@ -1249,6 +1263,7 @@
             <button type="button" data-act="add-audio">🎙 Audio (mic or files)</button>
           </div>
         </div>
+        <button type="button" class="daw-btn" data-act="new-clip">Add note clip</button>
         <button type="button" class="daw-btn" data-act="import" title="Import audio files, MIDI files or a saved project — or drag them onto the tracks">⤓ Import</button>
         <div class="daw-menu-wrap">
           <button type="button" class="daw-btn" data-menu="export" aria-haspopup="true" aria-expanded="false">⤒ Export</button>
@@ -1279,14 +1294,22 @@
         <button type="button" class="daw-btn" data-act="zoom-in" aria-label="Zoom in">＋</button>
       </div>
     </div>
+    </details>
     <div class="daw-scroll" data-ref="scroll" tabindex="0" aria-label="Tracks timeline. Space plays, Delete removes the selected clip.">
       <div class="daw-tracks" data-ref="tracks"></div>
       <div class="daw-drop" aria-hidden="true">Drop audio, MIDI or a project file</div>
     </div>
+    <section class="daw-effects" data-ref="effects" aria-label="Channel effects"></section>
     <div class="daw-editor" data-ref="editor"></div>
     <p class="daw-status" data-ref="status" role="status" aria-live="polite"></p>
-    <input type="file" data-ref="file" multiple accept="audio/*,.wav,.mp3,.ogg,.m4a,.flac,.aif,.aiff,.mid,.midi,.zip" hidden>
+    <input type="file" aria-label="Import audio, MIDI or a saved project" data-ref="file" multiple accept="audio/*,.wav,.mp3,.ogg,.m4a,.flac,.aif,.aiff,.mid,.midi,.zip" hidden>
   `;
+
+  const compactTools = window.matchMedia('(max-width: 720px)');
+  const fileTools = root.querySelector('.daw-file-tools');
+  function fitFileTools() { fileTools.open = !compactTools.matches; }
+  fitFileTools();
+  compactTools.addEventListener('change', fitFileTools);
 
   const $ = (name) => root.querySelector(`[data-ref="${name}"]`);
   const R = {
@@ -1312,12 +1335,13 @@
     if (document.activeElement !== R.name) R.name.value = project.name;
     R.snap.value = String(ui.snap);
     renderTracks();
+    renderEffects();
     renderEditor();
     updateTransportUi();
   }
 
   function renderTracks() {
-    HEAD_W = R.scroll.clientWidth && R.scroll.clientWidth < 520 ? 148 : 200;
+    HEAD_W = R.scroll.clientWidth && R.scroll.clientWidth < 520 ? 176 : 210;
     const ppb = ui.pxPerBeat, beats = timelineBeats(), width = beats * ppb, bar = barBeats();
     R.tracks.style.setProperty('--daw-head', HEAD_W + 'px');
     R.tracks.style.setProperty('--daw-width', width + 'px');
@@ -1345,6 +1369,51 @@
     drawPlayhead();
   }
 
+  let effectsTrack = null;
+  function renderEffects() {
+    const host = $('effects'), registry = window.AudioEffects.registry;
+    const track = findTrack(effectsTrack) || findTrack(ui.selTrack) || project.tracks[0];
+    if (!track) { host.innerHTML = '<h3>Channel effects</h3><p>Add a track to begin.</p>'; return; }
+    effectsTrack = track.id;
+    host.innerHTML = `<h3>Channel effects</h3>
+      <p class="daw-note">Sound flows through inserts from top to bottom, then volume and pan. Try EQ before compression, swap the order, and compare with bypass. Inserts are included in WAV mixes and stems; MIDI stores notes only.</p>
+      <div class="daw-group"><label class="daw-field"><span>Channel</span><select data-fx-channel aria-label="Effects channel">${project.tracks.map(t => `<option value="${t.id}" ${t === track ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>
+      ${Object.entries(registry).map(([type, d]) => `<button type="button" class="daw-btn" data-fx-add="${type}" ${(track.effects || []).length >= 8 ? 'disabled' : ''}>Add ${esc(d.name)}</button>`).join('')}</div>
+      <ol class="daw-fx-list">${(track.effects || []).map((e, i, all) => {
+        const d = registry[e.type]; if (!d) return '';
+        const params = window.AudioEffects.parameters(e.type, e.params);
+        return `<li data-fx-index="${i}"><div class="daw-group"><strong>${esc(d.name)}</strong>
+          <button type="button" class="daw-btn" data-fx-action="bypass" aria-pressed="${!!e.bypass}">Bypass</button>
+          <button type="button" class="daw-btn" data-fx-action="up" aria-label="Move ${esc(d.name)} earlier" ${i === 0 ? 'disabled' : ''}>Earlier</button>
+          <button type="button" class="daw-btn" data-fx-action="down" aria-label="Move ${esc(d.name)} later" ${i === all.length - 1 ? 'disabled' : ''}>Later</button>
+          <button type="button" class="daw-btn" data-fx-action="remove" aria-label="Remove ${esc(d.name)}">Remove</button>
+          <a href="lessons/technical-elements/${d.lesson}">Learn ${esc(d.name)}</a></div>
+          <div class="daw-fx-controls">${d.controls.map(c => `<label class="daw-field"><span>${c.label} (${c.unit || 'value'})</span><input type="number" data-fx-param="${c.key}" min="${c.min}" max="${c.max}" step="${c.step}" value="${params[c.key]}" aria-label="Insert ${i + 1} ${c.label}"></label>`).join('')}</div></li>`;
+      }).join('')}</ol>${(track.effects || []).length ? '' : '<p class="daw-note">No inserts: this channel is unprocessed. Add an EQ or compressor above.</p>'}`;
+  }
+  $('effects').addEventListener('click', e => {
+    const b = e.target.closest('button'), track = findTrack(effectsTrack); if (!b || b.disabled || !track) return;
+    const focus = b.dataset.fxAdd ? '[data-fx-add="' + b.dataset.fxAdd + '"]' : '[data-fx-channel]';
+    track.effects ||= [];
+    if (b.dataset.fxAdd && track.effects.length < 8) track.effects.push({ type: b.dataset.fxAdd, params: window.AudioEffects.parameters(b.dataset.fxAdd), bypass: false });
+    else if (b.dataset.fxAction) {
+      const i = Number(b.closest('[data-fx-index]').dataset.fxIndex), action = b.dataset.fxAction;
+      if (action === 'remove') track.effects.splice(i, 1);
+      if (action === 'bypass') track.effects[i].bypass = !track.effects[i].bypass;
+      const j = action === 'up' ? i - 1 : action === 'down' ? i + 1 : i;
+      if (j >= 0 && j < track.effects.length) [track.effects[i], track.effects[j]] = [track.effects[j], track.effects[i]];
+    }
+    commit(); $('effects').querySelector(focus)?.focus();
+  });
+  $('effects').addEventListener('change', e => {
+    const el = e.target;
+    if (el.matches('[data-fx-channel]')) { effectsTrack = el.value; renderEffects(); $('effects').querySelector('[data-fx-channel]').focus(); return; }
+    if (!el.dataset.fxParam) return;
+    const track = findTrack(effectsTrack), i = Number(el.closest('[data-fx-index]').dataset.fxIndex), effect = track.effects[i];
+    effect.params = window.AudioEffects.parameters(effect.type, { ...effect.params, [el.dataset.fxParam]: el.value });
+    commit(); $('effects').querySelector(`[data-fx-index="${i}"] [data-fx-param="${el.dataset.fxParam}"]`)?.focus();
+  });
+
   function trackRowHtml(t, i) {
     const sel = t.id === ui.selTrack ? ' is-selected' : '';
     const instrument = t.kind === 'instrument'
@@ -1358,9 +1427,9 @@
           <button type="button" class="daw-mini daw-del" data-tr="delete" aria-label="Delete ${esc(t.name)}" title="Delete track">✕</button>
         </div>
         <div class="daw-th-row">
-          <button type="button" class="daw-mini" data-tr="mute" aria-pressed="${t.mute}" title="Mute">M</button>
-          <button type="button" class="daw-mini" data-tr="solo" aria-pressed="${t.solo}" title="Solo">S</button>
-          <button type="button" class="daw-mini daw-arm" data-tr="arm" aria-pressed="${t.armed}" title="${t.kind === 'audio' ? 'Arm for microphone recording' : 'Arm: play and record this instrument from the keyboard'}">●</button>
+          <button type="button" class="daw-mini" data-tr="mute" aria-label="Mute ${esc(t.name)}" aria-pressed="${t.mute}" title="Mute">M</button>
+          <button type="button" class="daw-mini" data-tr="solo" aria-label="Solo ${esc(t.name)}" aria-pressed="${t.solo}" title="Solo">S</button>
+          <button type="button" class="daw-mini daw-arm" data-tr="arm" aria-label="Arm ${esc(t.name)} for recording" aria-pressed="${t.armed}" title="${t.kind === 'audio' ? 'Arm for microphone recording' : 'Arm: play and record this instrument from the keyboard'}">●</button>
           ${instrument}
         </div>
         <div class="daw-th-row daw-th-mix">
@@ -1510,7 +1579,7 @@
         <strong>Getting started</strong>
         <ol>
           <li>Press <b>●</b> on a track to arm it, then <b>⏺</b> to record from the keyboard, your QWERTY keys, a MIDI keyboard or a microphone.</li>
-          <li>Or double-click an instrument lane to draw a clip, then click notes into the piano roll that opens here.</li>
+          <li>Press Add note clip or double-click an instrument lane to draw a clip, then click notes into the piano roll that opens here.</li>
           <li>Drag clips to move them, drag their edges to trim. Drag across the ruler to set a loop.</li>
           <li><b>Import</b> audio stems or a .mid file; <b>Export</b> a WAV mix, stems or MIDI when you’re done.</li>
         </ol></div>`;
@@ -1662,7 +1731,7 @@
 
   // ── Piano roll interaction ───────────────────────────────────────────────
   function previewNote(track, pitch, vel) {
-    const c = ctx(), out = audio.mix.strip(track).gain;
+    const c = ctx(), out = audio.mix.strip(track).input;
     if (track.instrument === 'drums') { drumHit(c, out, pitch, vel, c.currentTime); return; }
     startVoice(c, out, track.instrument, pitch, vel, c.currentTime).release(c.currentTime + 0.25);
   }
@@ -1932,6 +2001,7 @@
   // Selects a track by toggling classes, so a header input being clicked survives.
   function markTrack(id) {
     ui.selTrack = id;
+    renderEffects();
     R.tracks.querySelectorAll('.is-selected').forEach((el) => el.classList.remove('is-selected'));
     R.tracks.querySelectorAll(`[data-track="${id}"], [data-lane="${id}"]`).forEach((el) => el.classList.add('is-selected'));
     R.tracks.querySelectorAll(`[data-clip="${ui.selClip}"]`).forEach((el) => el.classList.add('is-selected'));
@@ -2004,6 +2074,14 @@
       case 'add-instrument': addTrack('instrument', btn.dataset.instrument); commit(); break;
       case 'quick-instrument': addTrack('instrument', 'piano'); commit(); break;
       case 'add-audio': addTrack('audio'); commit(); break;
+      case 'new-clip': {
+        const track = findTrack(ui.selTrack) || project.tracks.find(t => t.kind === 'instrument');
+        if (!track || track.kind !== 'instrument') { status('Select an instrument track to add a note clip.'); break; }
+        const clip = newMidiClip(track, floorTo(ui.playhead, barBeats()), barBeats());
+        select(track.id, clip.id); commit();
+        status('Note clip added. Tap the piano-roll grid to add notes.');
+        break;
+      }
       case 'import': R.file.value = ''; R.file.click(); break;
       case 'open': R.file.value = ''; R.file.click(); break;
       case 'export-mix': exportMix(false); break;
@@ -2117,7 +2195,7 @@
 
   R.scroll.addEventListener('scroll', drawRuler, { passive: true });
   window.addEventListener('resize', () => {
-    const head = R.scroll.clientWidth < 520 ? 148 : 200;
+    const head = R.scroll.clientWidth < 520 ? 176 : 210;
     if (head !== HEAD_W) renderTracks(); else drawRuler();
     drawRoll();
   });

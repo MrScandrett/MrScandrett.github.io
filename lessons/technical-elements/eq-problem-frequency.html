@@ -143,6 +143,7 @@
     <div class="te-footer-nav"><a href="room-acoustics.html">← Room Acoustics</a><a href="audio-compression.html">Audio Compression →</a></div>
   </main>
 
+  <script src="../../assets/js/audio-effects.js"></script>
   <script>
   (()=>{
     const $=id=>document.getElementById(id), bands=48, spectrum=$('spectrum'), bandEls=[];
@@ -259,14 +260,14 @@
     }
     async function connectMusicalAudio(audio){
       const AC=window.AudioContext||window.webkitAudioContext;
-      if(!audioCtx){audioCtx=new AC();analyser=audioCtx.createAnalyser();analyser.fftSize=2048;analyser.smoothingTimeConstant=.72;hpfFilter=audioCtx.createBiquadFilter();hpfFilter.type='highpass';peakFilter=audioCtx.createBiquadFilter();peakFilter.type='peaking';hpfFilter.connect(peakFilter);let tail=peakFilter;graphicFilters=graphicHz.map(hz=>{const filter=audioCtx.createBiquadFilter();filter.type='peaking';filter.frequency.value=hz;filter.Q.value=1.4;tail.connect(filter);tail=filter;return filter;});tail.connect(analyser);analyser.connect(audioCtx.destination);update();}
+      if(!audioCtx){audioCtx=new AC();analyser=audioCtx.createAnalyser();analyser.fftSize=2048;analyser.smoothingTimeConstant=.72;hpfFilter=AudioEffects.eqNode(audioCtx);hpfFilter.type='highpass';peakFilter=AudioEffects.eqNode(audioCtx);peakFilter.type='peaking';hpfFilter.connect(peakFilter);let tail=peakFilter;graphicFilters=graphicHz.map(hz=>{const filter=AudioEffects.eqNode(audioCtx);filter.type='peaking';filter.frequency.value=hz;filter.Q.value=1.4;tail.connect(filter);tail=filter;return filter;});tail.connect(analyser);analyser.connect(audioCtx.destination);update();}
       if(!connectedAudio.has(audio)){audioCtx.createMediaElementSource(audio).connect(hpfFilter);connectedAudio.add(audio);}
       await audioCtx.resume();activeAudio=audio;
     }
     function play(corrected){
       const AC=window.AudioContext||window.webkitAudioContext,ac=new AC(),now=ac.currentTime,master=ac.createGain(),bus=ac.createGain(),type=$('eq-type').value,f=sliderHz(Number($('frequency').value)),gain=Number($('gain').value),q=type==='semi'?1.2:Math.max(.3,Number($('q').value)/10);
       master.gain.setValueAtTime(.0001,now);master.gain.exponentialRampToValueAtTime(.055,now+.04);master.gain.exponentialRampToValueAtTime(.0001,now+1.25);master.connect(ac.destination);let tail=bus;
-      if(corrected&&!bypassed){const hp=ac.createBiquadFilter();hp.type='highpass';hp.frequency.value=Number($('hpf').value);tail.connect(hp);tail=hp;if(type==='graphic'){graphicInputs.forEach((input,i)=>{const eq=ac.createBiquadFilter();eq.type='peaking';eq.frequency.value=graphicHz[i];eq.Q.value=1.4;eq.gain.value=Number(input.value);tail.connect(eq);tail=eq;});}else{const eq=ac.createBiquadFilter();eq.type=type==='shelf'?$('shelf-direction').value:type==='passive'?'lowshelf':'peaking';eq.frequency.value=f;eq.Q.value=q;eq.gain.value=type==='passive'?gain*.7:gain;tail.connect(eq);tail=eq;}}tail.connect(master);
+      if(corrected&&!bypassed){const hp=AudioEffects.eqNode(ac);hp.type='highpass';hp.frequency.value=Number($('hpf').value);tail.connect(hp);tail=hp;if(type==='graphic'){graphicInputs.forEach((input,i)=>{const eq=AudioEffects.eqNode(ac);eq.type='peaking';eq.frequency.value=graphicHz[i];eq.Q.value=1.4;eq.gain.value=Number(input.value);tail.connect(eq);tail=eq;});}else{const eq=AudioEffects.eqNode(ac);eq.type=type==='shelf'?$('shelf-direction').value:type==='passive'?'lowshelf':'peaking';eq.frequency.value=f;eq.Q.value=q;eq.gain.value=type==='passive'?gain*.7:gain;tail.connect(eq);tail=eq;}}tail.connect(master);
       const target=defs[current];[110,220,440,880,target.f].forEach((hz,i)=>{const osc=ac.createOscillator(),g=ac.createGain();osc.type=i===4?'sine':'sawtooth';osc.frequency.value=hz;g.gain.value=i===4?.34:.11/(i+1);osc.connect(g);g.connect(bus);osc.start(now);osc.stop(now+1.3);});setTimeout(()=>ac.close(),1500);
     }
     const mixPlayer=$('mix-player'),trackSelect=$('example-track'),mixPanel=document.querySelector('.eq-mix-player');

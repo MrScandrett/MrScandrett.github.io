@@ -340,7 +340,7 @@
 
 document.addEventListener('DOMContentLoaded', function () {
   var PT = window.PianoTheory;
-  if (!PT) return;
+  if (!PT || !document.getElementById('pcDisplayBar')) return;
   var KEYS = PT.buildKeys();
 
   /* ---------- Shared keyboard rendering ---------- */

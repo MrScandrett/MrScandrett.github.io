@@ -32,8 +32,8 @@
         <main id="main-content" class="fb-shell" data-glossary-root>
           <section class="fb-hero">
             <p class="eyebrow">Fake book · Public-domain tunes · Play along with a band</p>
-            <h1>Take a tune and make it yours.</h1>
-            <p class="hero-lede">A <span data-glossary="fake book">fake book</span> gives you just the melody and the chords. The rest is up to you. Pick a tune, put it in your instrument’s key, then turn it upside down, play it backwards, change the rhythm, try new chord voicings, and play it all with a metronome or a full band.</p>
+            <h1>Fake book &amp; practice stand.</h1>
+            <p class="hero-lede">Choose a tune, set your instrument and key, then play. Build your repertoire, hear the changes, and keep time with the band.</p>
           </section>
 
           <nav class="ll-lesson-steps" aria-label="Lesson sections">
@@ -51,13 +51,14 @@
             <p class="section-lede">Every tune here is in the <span data-glossary="public domain">public domain</span> or was written for this site, so you can copy it, perform it and change it. Your settings are saved in this browser. Press <kbd>Space</kbd> to start and stop.</p>
 
             <div class="fb" id="fakebook" data-src="../../data/fake-book.json">
-              <div class="fb-library-wrap">
+              <details class="fb-library-wrap fb-disclosure">
+                <summary>Choose a tune</summary>
                 <div class="fb-library-head">
                   <h3 class="fb-library-heading">Built-in tunes</h3>
                   <p class="fb-library-sub">Public-domain lead sheets with full melody and band arrangements</p>
                 </div>
                 <div class="fb-library" data-fb-library role="group" aria-label="Built-in tunes in the fake book"></div>
-              </div>
+              </details>
 
               <div class="fb-imports-wrap" data-fb-imports-wrap hidden>
                 <div class="fb-library-head">
@@ -70,7 +71,8 @@
                 <div class="fb-library fb-imports-library" data-fb-imports-library role="group" aria-label="Imported tunes in this browser"></div>
               </div>
 
-              <div class="fb-import-card">
+              <details class="fb-import-card fb-disclosure">
+                <summary>Import your iReal Pro charts</summary>
                 <div class="fb-import-card-head">
                   <svg class="fb-ico-import" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
                   <div>
@@ -93,9 +95,9 @@
                   </div>
                   <p class="fb-import-feedback" data-fb-import-feedback role="status" hidden></p>
                 </div>
-              </div>
+              </details>
 
-              <div class="fb-transport" role="group" aria-label="Play-along controls">
+              <div class="fb-transport" id="fbTransport" role="group" aria-label="Play-along controls">
                 <button type="button" class="fb-play" data-fb-play aria-pressed="false">
                   <svg class="fb-ico-play" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 3.5v13l11-6.5z" fill="currentColor"/></svg>
                   <svg class="fb-ico-stop" viewBox="0 0 20 20" aria-hidden="true"><rect x="4.5" y="4.5" width="11" height="11" rx="1.5" fill="currentColor"/></svg>
@@ -120,6 +122,7 @@
                     <option value="click">Click only</option>
                   </select>
                 </label>
+                <button type="button" class="fb-btn fb-stand-toggle" data-fb-stand aria-pressed="false">Music stand view</button>
                 <p class="fb-banner" data-fb-banner role="status" hidden></p>
               </div>
 
@@ -129,14 +132,29 @@
                     <h3 id="fbTitle" data-fb-title>Loading…</h3>
                     <p class="fb-meta" data-fb-meta></p>
                   </div>
-                  <p class="fb-keyline" data-fb-keyline></p>
+                  <div class="fb-sheet-head-actions">
+                    <p class="fb-keyline" data-fb-keyline></p>
+                    <div class="fb-view-switch" role="group" aria-label="Sheet display mode">
+                      <button type="button" class="fb-view-tab is-active" data-fb-view="lead" aria-pressed="true">𝄞 Lead sheet</button>
+                      <button type="button" class="fb-view-tab" data-fb-view="drums" aria-pressed="false">🥁 Drum notation</button>
+                    </div>
+                  </div>
                 </header>
                 <div class="fb-sheet" data-fb-sheet></div>
+                <div class="fb-drum-legend" data-fb-drum-legend hidden>
+                  <span class="fb-drum-legend-title">🥁 Drum key:</span>
+                  <span>Top line / space (✕) = Hi-hat / Ride cymbal</span>
+                  <span>Middle space (●) = Snare (✕ = Rim click)</span>
+                  <span>Bottom space (●) = Bass drum (Kick)</span>
+                  <span>Below staff (✕) = Hi-hat foot pedal</span>
+                </div>
                 <p class="fb-sheet-hint">Click a chord symbol to see and hear it. Click a bar to loop from there; shift-click a bar to end the loop there.</p>
                 <p class="fb-about" data-fb-about></p>
                 <p class="fb-source"><strong>Source:</strong> <span data-fb-source></span></p>
               </article>
 
+              <details class="fb-tools fb-disclosure" open>
+                <summary>Practice tools · key, instrument, variations &amp; band</summary>
               <div class="fb-panels">
                 <section class="fb-panel" aria-labelledby="fbKeyHead">
                   <h3 id="fbKeyHead"><b>1</b> Key &amp; instrument</h3>
@@ -166,19 +184,84 @@
                 </section>
 
                 <section class="fb-panel fb-panel-wide" aria-labelledby="fbChordHead">
-                  <h3 id="fbChordHead"><b>4</b> Chords &amp; inversions</h3>
-                  <div class="fb-chips" data-fb-voicing role="radiogroup" aria-label="Piano voicing"></div>
+                  <div class="fb-chord-header-row">
+                    <h3 id="fbChordHead"><b>4</b> Chords, inversions &amp; scales</h3>
+                    <div class="fb-instr-tabs" role="tablist" aria-label="Chord engine instrument">
+                      <button type="button" class="fb-instr-tab is-active" data-engine-inst="piano" role="tab" aria-selected="true">🎹 Piano</button>
+                      <button type="button" class="fb-instr-tab" data-engine-inst="guitar" role="tab" aria-selected="false">🎸 Guitar</button>
+                    </div>
+                  </div>
+
+                  <div class="fb-engine-subnav">
+                    <div class="fb-chips fb-engine-modes" role="radiogroup" aria-label="Theory tool">
+                      <label class="fb-chip"><input type="radio" name="fb-engine-mode" value="voicings" checked /><span>Chords &amp; voicings</span></label>
+                      <label class="fb-chip"><input type="radio" name="fb-engine-mode" value="triads" /><span>Triads assistant</span></label>
+                      <label class="fb-chip"><input type="radio" name="fb-engine-mode" value="scales" /><span>Matching scales</span></label>
+                    </div>
+                    <label class="fb-field fb-field-inline fb-chord-select-field">
+                      <span>Explore chord</span>
+                      <select data-fb-chord-select aria-label="Select chord to analyze"></select>
+                    </label>
+                  </div>
+
                   <div class="fb-chordview">
                     <div class="fb-chordtext">
                       <p class="fb-chordname" data-fb-chordname></p>
                       <p class="fb-chordinfo" data-fb-chordinfo></p>
                       <p class="fb-chordnotes" data-fb-chordnotes></p>
                     </div>
-                    <div class="fb-keys" data-fb-keys></div>
+
+                    <div class="fb-instrument-visuals">
+                      <!-- Mode 1: Voicings & Inversions -->
+                      <div class="fb-engine-subcontrols" data-engine-sub="voicings">
+                        <div class="fb-chips" data-fb-voicing role="radiogroup" aria-label="Voicing style"></div>
+                        <div class="fb-guitar-form-wrap" data-fb-guitar-forms hidden>
+                          <label class="fb-field fb-field-inline">
+                            <span>Guitar form</span>
+                            <select data-fb-guitar-form-sel aria-label="Guitar chord grip form"></select>
+                          </label>
+                        </div>
+                      </div>
+
+                      <!-- Mode 2: Triads Assistant -->
+                      <div class="fb-engine-subcontrols" data-engine-sub="triads" hidden>
+                        <div class="fb-chips fb-triad-inv-chips" data-fb-triad-inv role="radiogroup" aria-label="Triad inversion">
+                          <label class="fb-chip"><input type="radio" name="fb-triad-inv" value="0" checked /><span>Root pos (1-3-5)</span></label>
+                          <label class="fb-chip"><input type="radio" name="fb-triad-inv" value="1" /><span>1st inversion (3-5-1)</span></label>
+                          <label class="fb-chip"><input type="radio" name="fb-triad-inv" value="2" /><span>2nd inversion (5-1-3)</span></label>
+                        </div>
+                        <div class="fb-guitar-triad-set-wrap" data-fb-guitar-triad-sets hidden>
+                          <label class="fb-field fb-field-inline">
+                            <span>Strings</span>
+                            <select data-fb-guitar-triad-set aria-label="Triad string set">
+                              <option value="123">Strings 1-2-3 (High E, B, G)</option>
+                              <option value="234">Strings 2-3-4 (B, G, D)</option>
+                              <option value="345">Strings 3-4-5 (G, D, A)</option>
+                              <option value="456">Strings 4-5-6 (D, A, Low E)</option>
+                            </select>
+                          </label>
+                        </div>
+                        <p class="fb-triad-summary" data-fb-triad-desc></p>
+                      </div>
+
+                      <!-- Mode 3: Matching Scales -->
+                      <div class="fb-engine-subcontrols" data-engine-sub="scales" hidden>
+                        <div class="fb-chips fb-scales-list" data-fb-scales-list role="radiogroup" aria-label="Scale types"></div>
+                        <p class="fb-scale-summary" data-fb-scale-summary></p>
+                      </div>
+
+                      <!-- Visualizer Surfaces -->
+                      <div class="fb-visualizer-container">
+                        <div class="fb-keys" data-fb-keys></div>
+                        <div class="fb-fretboard" data-fb-fretboard hidden></div>
+                      </div>
+                    </div>
                   </div>
+
                   <p class="fb-tip" data-fb-voicing-tip></p>
-                  <div class="fb-row">
-                    <button type="button" class="fb-btn" data-fb-chordplay>🔊 Play this chord</button>
+                  <div class="fb-row fb-chord-actions">
+                    <button type="button" class="fb-btn fb-btn-primary" data-fb-chordplay>🔊 Play this chord</button>
+                    <button type="button" class="fb-btn" data-fb-arpplay>▶ Arpeggio / Run</button>
                     <button type="button" class="fb-btn" data-fb-progression>Play the changes</button>
                   </div>
                 </section>
@@ -218,6 +301,7 @@
                   </div>
                 </section>
               </div>
+              </details>
               <p class="fb-sr" aria-live="polite" data-fb-live></p>
             </div>
           </section>
@@ -258,7 +342,7 @@
               <article><h3>Upside down</h3><p><span data-glossary="melodic inversion">Melodic inversion</span> mirrors every move: a step up becomes a step down. Bach’s fugues are full of upside-down themes. Folk tunes that move by step, like Frère Jacques, still sound natural flipped.</p></article>
               <article><h3>Backwards</h3><p><span data-glossary="retrograde">Retrograde</span> plays the pitches from last to first. Bach wrote a “crab canon” that works forwards and backwards at the same time. Here the rhythm stays put, so you hear only the new note order.</p></article>
               <article><h3>Passing tones &amp; skeleton</h3><p>These two work in opposite directions. Passing tones add notes that walk by step between the main ones, the way singers decorate a tune. The skeleton strips the tune down to its strong-beat notes, the bones the melody hangs on.</p></article>
-              <article><h3>Chord tones</h3><p>Every note moves to the nearest note of the chord above it. This is how jazz players learn to “make the changes”: a solo built from chord tones always fits.</p></article>
+              <article><h3>Chord tones</h3><p>Every note moves to the nearest note of the chord above it. This is how jazz players learn to “make the changes”: chord tones give a solo a clear harmonic foundation; phrasing, rhythm and resolution still matter.</p></article>
               <article><h3>Rhythm</h3><p>Long-short and short-long turn even notes into dotted pairs. Push the beat moves notes half a beat early. That is <span data-glossary="syncopation">syncopation</span>, the push behind ragtime, jazz and pop. <span data-glossary="swing feel">Swing</span> plays eighth notes long-short without changing how they are written.</p></article>
               <article><h3>Chord inversions</h3><p>A <span data-glossary="chord inversion">chord inversion</span> puts a different note on the bottom. Pianists choose their <span data-glossary="voicing">voicings</span> for smooth <span data-glossary="voice leading">voice leading</span>: each finger moves as little as possible to the next chord. A <span data-glossary="shell voicing">shell voicing</span> keeps only the root, 3rd and 7th.</p></article>
             </div>
@@ -267,6 +351,11 @@
           <section id="practice" class="fb-section" aria-labelledby="practiceHead">
             <p class="section-kicker">04 · Practice plan</p>
             <h2 id="practiceHead">Fifteen minutes with one tune</h2>
+            <div class="fb-cards">
+              <article><h3>Learn the changes</h3><p>Set Band only. Play roots for one chorus, then 3rds and 7ths. Connect each chord to the next with the smallest move. Add rhythm before adding more notes.</p></article>
+              <article><h3>Rehearse the gig</h3><p>Choose your performance key and tempo. Play the whole form without stopping; if you miss a note, rejoin at the next bar. Practise a clear opening and ending yourself: the backing track loops rather than cues a band ending.</p></article>
+              <article><h3>Raise the bar</h3><p>Loop two difficult bars. After three clean passes, raise the tempo by 4 BPM. If time or tone slips, slow down. Repeat in a second key, then try the click with two bars of silence.</p></article>
+            </div>
             <ol class="fb-steps">
               <li><strong>Listen (2 min).</strong> Melody + band at a slow tempo. Follow the moving highlight and sing along quietly.</li>
               <li><strong>Play the tune (3 min).</strong> Switch to <em>Band only</em> and play the melody yourself. Loop a hard bar by clicking it, and slow the tempo until it’s easy.</li>
@@ -341,7 +430,11 @@
 
   <script src="../../assets/js/drum-engine.js"></script>
   <script src="../../assets/js/ireal.js"></script>
+  <script src="../../assets/js/lessons/piano-chords.js"></script>
+  <script src="../../assets/js/lessons/guitar-chords.js"></script>
+  <script src="../../assets/js/lessons/triad-assistant.js"></script>
   <script src="../../assets/js/lessons/fake-book.js"></script>
+  <script src="../../assets/js/lessons/fake-book-layout.js"></script>
   <script src="../../assets/js/site-glossary.js"></script>
   <script src="../../assets/js/reveal.js"></script>
   <script src="../../assets/js/theme-registry.js"></script>
