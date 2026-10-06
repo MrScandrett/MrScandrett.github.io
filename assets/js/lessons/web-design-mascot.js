@@ -16,6 +16,14 @@
         ['JavaScript', 'the code that makes a page respond.']
       ]
     },
+    studio: {
+      title: 'Web Studio',
+      tip: "Not sure how to start? Open Web Studio and draw the boxes first. It writes the HTML and CSS for you, and the lessons explain what it wrote.",
+      terms: [
+        ['CSS Grid', 'rows and columns that boxes snap into. Web Studio uses 12 columns.'],
+        ['export', 'downloading your files so they can live on another site.']
+      ]
+    },
     'website-blocks': {
       title: 'Build with blocks',
       tip: 'Drag-and-drop blocks build the exact same site as typing code. Try this if typing feels like too much right now — you can always switch to code later.',

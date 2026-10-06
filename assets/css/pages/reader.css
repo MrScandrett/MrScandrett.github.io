@@ -19,6 +19,10 @@
   --rd-hit-text: #1f1d1a;
   --rd-speak: rgba(255, 196, 64, 0.42);
   --rd-ruler-dim: rgba(20, 18, 15, 0.42);
+  --rd-annotation-yellow: #d9aa00;
+  --rd-annotation-blue: #1679be;
+  --rd-annotation-green: #2d8b4b;
+  --rd-annotation-pink: #bd3e75;
   color-scheme: light;
 }
 :root[data-reader-mode="sepia"] {
@@ -204,7 +208,7 @@ svg { width: 1.15em; height: 1.15em; fill: none; stroke: currentColor; stroke-wi
   position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between;
   padding: 0.6rem 0.6rem 0.6rem 1.2rem; background: var(--rd-page); border-bottom: 1px solid var(--rd-line);
 }
-.rd-tabs { display: flex; gap: 0.15rem; min-width: 0; }
+.rd-tabs { display: flex; gap: 0.15rem; min-width: 0; overflow-x: auto; scrollbar-width: thin; }
 .rd-tabs [role="tab"] {
   min-height: 40px; padding: 0 0.7rem; border: 0; border-radius: 8px; background: transparent; color: var(--rd-muted);
   font: 600 0.86rem var(--rd-ui); cursor: pointer; white-space: nowrap;
@@ -230,6 +234,16 @@ svg { width: 1.15em; height: 1.15em; fill: none; stroke: currentColor; stroke-wi
 .rd-mark-go:focus-visible, .rd-hits button:focus-visible, .rd-mark-del:focus-visible { outline: 2px solid var(--rd-accent); outline-offset: -2px; }
 .rd-hits button[aria-current="true"] { border-left-color: var(--rd-accent); background: var(--rd-accent-soft); }
 .rd-hits mark { background: var(--rd-hit); color: var(--rd-hit-text); border-radius: 2px; padding: 0 1px; }
+.rd-annotation-actions { padding: 0.8rem 1.2rem 0; }
+.rd-annotations { list-style: none; margin: 0; padding: 0.4rem 0; }
+.rd-annotations li { border-bottom: 1px solid var(--rd-line); }
+.rd-annotation-go { width: 100%; display: grid; gap: 0.35rem; padding: 0.75rem 1.2rem; border: 0; border-left: 4px solid var(--rd-annotation, var(--rd-accent)); background: transparent; color: inherit; text-align: left; cursor: pointer; font: 0.88rem/1.45 var(--rd-ui); }
+.rd-annotation-go:hover { background: var(--rd-accent-soft); }
+.rd-annotation-go:focus-visible { outline: 2px solid var(--rd-accent); outline-offset: -2px; }
+.rd-annotation-go q { font-family: var(--rd-face); font-size: 1rem; }
+.rd-annotation-go small { color: var(--rd-muted); }
+.rd-annotation-item-actions { display: flex; gap: 0.35rem; padding: 0 1.2rem 0.75rem; }
+.rd-annotation-item-actions .rd-btn { min-height: 36px; padding: 0 0.55rem; font-size: 0.78rem; }
 .rd-mark-del { align-self: center; margin-right: 0.4rem; color: var(--rd-muted); }
 .rd-search { padding: 0.8rem 1.2rem 0; }
 .rd-search input {
@@ -349,6 +363,10 @@ svg { width: 1.15em; height: 1.15em; fill: none; stroke: currentColor; stroke-wi
 ::highlight(rd-hits) { background: var(--rd-accent-soft); }
 ::highlight(rd-hit) { background: var(--rd-hit); color: var(--rd-hit-text); }
 ::highlight(rd-speak) { background: var(--rd-speak); }
+::highlight(rd-annotation-yellow) { background: rgba(255, 220, 79, 0.62); }
+::highlight(rd-annotation-blue) { background: rgba(116, 200, 255, 0.48); }
+::highlight(rd-annotation-green) { background: rgba(122, 220, 151, 0.48); }
+::highlight(rd-annotation-pink) { background: rgba(255, 151, 192, 0.48); }
 .rd-page .rd-speaking { background: var(--rd-speak); border-radius: 3px; }
 .rd-page a[role="doc-noteref"] { text-decoration: none; padding: 0 0.15em; border-radius: 3px; }
 .rd-page a[role="doc-noteref"]:hover { background: var(--rd-accent-soft); }
@@ -418,6 +436,31 @@ svg { width: 1.15em; height: 1.15em; fill: none; stroke: currentColor; stroke-wi
 .rd-note-body ol, .rd-note-body ul { padding-left: 1.2em; }
 .rd-note-actions { display: flex; justify-content: flex-end; gap: 0.3rem; margin: 0.3rem 0 0; }
 .rd-note-actions .rd-btn { min-height: 38px; font-size: 0.82rem; }
+
+/* ── Student annotations ─────────────────────────────── */
+.rd-selection-action {
+  position: fixed; z-index: 48; min-height: 40px; padding: 0 0.75rem; border: 0; border-radius: 9px;
+  background: var(--rd-text); color: var(--rd-bg); box-shadow: var(--rd-shadow); font: 600 0.82rem var(--rd-ui); cursor: pointer;
+}
+.rd-selection-action:focus-visible { outline: 2px solid var(--rd-accent); outline-offset: 3px; }
+.rd-annotation-scrim { position: fixed; inset: 0; z-index: 49; background: rgba(0, 0, 0, 0.35); }
+.rd-annotation-editor {
+  position: fixed; z-index: 50; top: 50%; left: 50%; width: min(32rem, calc(100vw - 28px)); max-height: calc(100vh - 28px); overflow: auto;
+  transform: translate(-50%, -50%); padding: 1.25rem; border: 1px solid var(--rd-line); border-radius: 16px; background: var(--rd-page); box-shadow: var(--rd-shadow);
+}
+.rd-annotation-editor h2 { margin: 0 0 0.6rem; font: 650 1.25rem/1.2 var(--rd-face); }
+.rd-annotation-quote { max-height: 7.5rem; overflow: auto; margin: 0 0 1rem; padding: 0.7rem 0.8rem; border-left: 3px solid var(--rd-accent); background: var(--rd-bg); color: var(--rd-muted); font: 0.95rem/1.45 var(--rd-face); }
+.rd-annotation-editor fieldset { margin: 0 0 0.9rem; padding: 0; border: 0; }
+.rd-annotation-editor legend, .rd-annotation-editor > label { display: block; margin-bottom: 0.4rem; font: 600 0.78rem var(--rd-ui); color: var(--rd-muted); }
+.rd-annotation-editor > label span { font-weight: 400; }
+.rd-color-picks { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.rd-color-picks button { display: inline-flex; align-items: center; gap: 0.35rem; min-height: 38px; padding: 0 0.6rem; border: 1px solid var(--rd-line); border-radius: 8px; background: transparent; color: inherit; font: 500 0.82rem var(--rd-ui); cursor: pointer; }
+.rd-color-picks button span { width: 0.8rem; height: 0.8rem; border-radius: 50%; background: var(--pick); }
+.rd-color-picks button[data-annotation-color="yellow"] { --pick: #ffdc4f; }.rd-color-picks button[data-annotation-color="blue"] { --pick: #74c8ff; }.rd-color-picks button[data-annotation-color="green"] { --pick: #7adc97; }.rd-color-picks button[data-annotation-color="pink"] { --pick: #ff97c0; }
+.rd-color-picks button[aria-pressed="true"] { border-color: var(--rd-accent); box-shadow: 0 0 0 1px var(--rd-accent); }
+.rd-color-picks button:focus-visible, .rd-annotation-editor textarea:focus-visible { outline: 2px solid var(--rd-accent); outline-offset: 2px; }
+.rd-annotation-editor textarea { width: 100%; resize: vertical; padding: 0.7rem; border: 1px solid var(--rd-line); border-radius: 9px; background: var(--rd-bg); color: inherit; font: 0.95rem/1.4 var(--rd-ui); }
+.rd-annotation-editor-actions { display: flex; justify-content: flex-end; gap: 0.45rem; margin: 1rem 0 0; }
 
 /* ── Read-aloud player ───────────────────────────────── */
 .rd-player {

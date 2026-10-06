@@ -500,7 +500,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     designToolbar: document.getElementById("design-toolbar"),
     unsavedBadge: document.getElementById("unsaved-badge"),
     autosaveBanner: document.getElementById("autosave-banner"),
-    discardAutosave: document.getElementById("btn-discard-autosave")
+    discardAutosave: document.getElementById("btn-discard-autosave"),
+    importSubmission: document.getElementById("btn-import-submission"),
+    submissionInput: document.getElementById("submission-import"),
+    publishApp: document.getElementById("btn-publish-app"),
+    submissionDialog: document.getElementById("submission-dialog")
   });
 
   elements.save.disabled = true;
@@ -534,6 +538,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     editor.focus();
     setStatus(`Moved to line ${lineNumber} in ${currentFilePath}.`);
   });
+  elements.importSubmission.addEventListener("click", () => elements.submissionInput.click());
+  elements.submissionInput.addEventListener("change", importSubmission);
+  elements.publishApp.addEventListener("click", publishApp);
   elements.importButton.addEventListener("click", () => elements.importInput.click());
   elements.importInput.addEventListener("change", importWorkspace);
   elements.projectSelect.addEventListener("change", () => {
@@ -734,6 +741,7 @@ async function activateProject(entryPath) {
     renderFileList();
     await openFile(entryPath);
     renderGuide();
+    updatePublishButton();
     setStatus(`Workspace ready: ${projectScope.size} connected file${projectScope.size === 1 ? "" : "s"}.`);
   } catch (error) {
     console.error("Could not build project workspace", error);
@@ -1642,4 +1650,128 @@ async function downloadWorkspace() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   elements.download.disabled = false;
   setStatus(`Downloaded ${filePaths.length} file${filePaths.length === 1 ? "" : "s"} as a reopenable workspace ZIP.`);
+}
+
+// ---------- Web Studio submissions ----------
+// Students build in lessons/web-design/web-studio.html and hand in a .webstudio.json file.
+// Import writes it into student-projects/<Name>/<slug>/ (serve-local.js /api/import-submission,
+// lib/studio-submission.mjs); the teacher reviews it here, then Publish builds apps/<slug>/.
+let publishSlug = null;
+let appSources = null;
+// Imported this session but not built yet, so not in data/app-sources.json: entry path → slug.
+const importedApps = new Map();
+
+async function slugForEntry(entryPath) {
+  if (!entryPath || !entryPath.startsWith("/student-projects/")) return null;
+  if (importedApps.has(entryPath)) return importedApps.get(entryPath);
+  if (!appSources) {
+    try {
+      const response = await fetch("/data/app-sources.json", { cache: "no-store" });
+      appSources = response.ok ? await response.json() : {};
+    } catch {
+      appSources = {};
+    }
+  }
+  return Object.keys(appSources).find((slug) => `/${appSources[slug]}` === entryPath) || null;
+}
+
+async function updatePublishButton() {
+  publishSlug = await slugForEntry(projectEntryPath);
+  elements.publishApp.hidden = !publishSlug;
+  elements.publishApp.title = publishSlug ? `Build apps/${publishSlug}/ from these files` : "";
+}
+
+async function submissionRequest(endpoint, body) {
+  const response = await fetch(`${editorApi}/${endpoint}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  let data = {};
+  try { data = await response.json(); } catch { data = { error: `HTTP ${response.status}` }; }
+  if (!response.ok) throw Object.assign(new Error(data.error || `HTTP ${response.status}`), { status: response.status, log: data.log });
+  return data;
+}
+
+function showSubmissionDialog(preview) {
+  const summary = document.getElementById("submission-summary");
+  const rows = [
+    ["Project", preview.title],
+    ["Student", preview.student],
+    ["About", preview.description || "(no description)"],
+    ["Folder", `${preview.dir}/`],
+    ["Files", preview.files.join(", ")],
+    ["Class site", `/apps/${preview.slug}/`]
+  ];
+  summary.replaceChildren(...rows.flatMap(([term, value]) => {
+    const dt = document.createElement("dt");
+    dt.textContent = term;
+    const dd = document.createElement("dd");
+    dd.textContent = value;
+    return [dt, dd];
+  }));
+  document.getElementById("submission-exists").hidden = !preview.exists;
+  document.getElementById("submission-replace").checked = false;
+  const dialog = elements.submissionDialog;
+  dialog.returnValue = "";
+  dialog.showModal();
+  return new Promise((resolve) => dialog.addEventListener("close", () => resolve(dialog.returnValue === "import"), { once: true }));
+}
+
+async function importSubmission() {
+  const file = elements.submissionInput.files[0];
+  elements.submissionInput.value = "";
+  if (!file) return;
+  if (!serverSaveEnabled) {
+    setStatus("Importing writes into student-projects/, so it needs the teacher server: restart it with ADMIN_PASS set.");
+    return;
+  }
+  const password = window.prompt("Teacher access required. Enter the server password:");
+  if (!password) return;
+  try {
+    const submission = await file.text();
+    const preview = await submissionRequest("import-submission", { password, submission, dryRun: true });
+    if (!(await showSubmissionDialog(preview))) {
+      setStatus("Import canceled. Nothing was written.");
+      return;
+    }
+    const replace = document.getElementById("submission-replace").checked;
+    if (preview.exists && !replace) {
+      setStatus(`${preview.dir}/ already exists. Import again and tick Replace to overwrite it.`);
+      return;
+    }
+    const program = document.getElementById("submission-program").value;
+    const result = await submissionRequest("import-submission", { password, submission, replace, program });
+    importedApps.set(result.entry, result.slug);
+    await loadFiles();
+    populateProjectSelect();
+    await activateProject(result.entry);
+    await updatePublishButton();
+    setStatus(`Imported “${result.title}” by ${result.student} into ${result.dir}/. Review the code and preview, then choose Publish to class site.`);
+  } catch (error) {
+    console.error("Submission import failed", error);
+    setStatus(`Import failed: ${error.message}`);
+  }
+}
+
+async function publishApp() {
+  if (!publishSlug) return;
+  const unsaved = [...projectScope].filter((filePath) => isDirty(filePath));
+  if (unsaved.length && !window.confirm(`${unsaved.join(", ")} ${unsaved.length === 1 ? "has" : "have"} edits that are not written to source yet. The build only uses files on disk. Publish anyway?`)) return;
+  if (!window.confirm(`Build apps/${publishSlug}/ from the files in source?\n\nThis is what the class site serves once you commit and push.`)) return;
+  const password = window.prompt("Teacher access required. Enter the server password:");
+  if (!password) return;
+  elements.publishApp.disabled = true;
+  setStatus(`Building apps/${publishSlug}/…`);
+  try {
+    const result = await submissionRequest("build-app", { password, slug: publishSlug });
+    appSources = null;
+    setStatus(`Built ${result.url}. Opening it in a new tab. Commit student-projects/, apps/ and data/ to publish it.`);
+    window.open(result.url, "_blank", "noopener");
+  } catch (error) {
+    console.error("Build failed", error, error.log);
+    setStatus(`Build failed: ${error.message}${error.log ? ` ${error.log.trim().split("\n").slice(-2).join(" ")}` : ""}`);
+  } finally {
+    elements.publishApp.disabled = false;
+  }
 }

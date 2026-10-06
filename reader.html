@@ -114,6 +114,7 @@
       <div class="rd-tabs" role="tablist" aria-label="Book navigation">
         <button type="button" role="tab" id="rdTabContents" data-tab="contents" aria-controls="rdPaneContents" aria-selected="true">Contents</button>
         <button type="button" role="tab" id="rdTabMarks" data-tab="marks" aria-controls="rdPaneMarks" aria-selected="false" tabindex="-1">Bookmarks</button>
+        <button type="button" role="tab" id="rdTabAnnotations" data-tab="annotations" aria-controls="rdPaneAnnotations" aria-selected="false" tabindex="-1">Annotations</button>
         <button type="button" role="tab" id="rdTabSearch" data-tab="search" aria-controls="rdPaneSearch" aria-selected="false" tabindex="-1">Search</button>
       </div>
       <button type="button" class="rd-btn" id="rdTocClose" aria-label="Close">
@@ -127,6 +128,13 @@
     <div class="rd-pane" id="rdPaneMarks" role="tabpanel" aria-labelledby="rdTabMarks" hidden>
       <p class="rd-empty" id="rdMarksEmpty">No bookmarks yet. Press the bookmark button (or <kbd>B</kbd>) to save your spot. Bookmarks stay on this device.</p>
       <ol class="rd-marks" id="rdMarkList"></ol>
+    </div>
+    <div class="rd-pane" id="rdPaneAnnotations" role="tabpanel" aria-labelledby="rdTabAnnotations" hidden>
+      <div class="rd-annotation-actions">
+        <button type="button" class="rd-btn" id="rdExportAnnotations">Export Markdown</button>
+      </div>
+      <p class="rd-empty" id="rdAnnotationsEmpty">Select a passage in the book, then choose Highlight to save a color and optional note. Annotations stay on this device.</p>
+      <ol class="rd-annotations" id="rdAnnotationList"></ol>
     </div>
     <div class="rd-pane" id="rdPaneSearch" role="tabpanel" aria-labelledby="rdTabSearch" hidden>
       <form class="rd-search" id="rdSearchForm" role="search">
@@ -186,6 +194,25 @@
       <button type="button" class="rd-btn" id="rdNoteClose">Close</button>
     </p>
   </div>
+
+  <button type="button" class="rd-selection-action" id="rdSelectionAction" hidden>Highlight selection</button>
+  <section class="rd-annotation-editor" id="rdAnnotationEditor" role="dialog" aria-modal="true" aria-labelledby="rdAnnotationTitle" hidden>
+    <h2 id="rdAnnotationTitle">Add annotation</h2>
+    <p class="rd-annotation-quote" id="rdAnnotationQuote"></p>
+    <fieldset>
+      <legend>Highlight color</legend>
+      <div class="rd-color-picks" role="group" aria-label="Highlight color">
+        <button type="button" data-annotation-color="yellow" aria-pressed="true"><span aria-hidden="true"></span>Yellow</button>
+        <button type="button" data-annotation-color="blue" aria-pressed="false"><span aria-hidden="true"></span>Blue</button>
+        <button type="button" data-annotation-color="green" aria-pressed="false"><span aria-hidden="true"></span>Green</button>
+        <button type="button" data-annotation-color="pink" aria-pressed="false"><span aria-hidden="true"></span>Pink</button>
+      </div>
+    </fieldset>
+    <label for="rdAnnotationText">Note <span>(optional)</span></label>
+    <textarea id="rdAnnotationText" rows="4" maxlength="1200" placeholder="What does this make you notice, wonder, or want to use as evidence?"></textarea>
+    <p class="rd-annotation-editor-actions"><button type="button" class="rd-btn" id="rdAnnotationCancel">Cancel</button><button type="button" class="rd-btn rd-primary" id="rdAnnotationSave">Save annotation</button></p>
+  </section>
+  <div class="rd-annotation-scrim" id="rdAnnotationScrim" hidden></div>
 
   <div class="rd-player" id="rdPlayer" role="region" aria-label="Read aloud" hidden>
     <button type="button" class="rd-btn" id="rdSpeakPrev" aria-label="Previous sentence">

@@ -45,7 +45,8 @@ function el(tag, props = {}, children = []) {
   node.append(...children);
   return node;
 }
-export async function mount(section) {
+// options.onChange(project) is called after each edit (Web Studio keeps blocks in its own project).
+export async function mount(section, options = {}) {
   const B = await loadBlockly(); register(B);
   const slug = section.dataset.webBlocks;
   const storageKey = `classroomos-web-blocks-v1:${slug}`;
@@ -213,6 +214,7 @@ export async function mount(section) {
   });
   function update() {
     parts = generate(current().workspace, $('title').value); codeView(); save();
+    if (!loading) options.onChange?.(current());
     if ($('live').checked) preview();
     else $('render-status').textContent = 'Live updates paused. Restart preview to see your changes.';
     refreshOutline();
@@ -381,5 +383,27 @@ export async function mount(section) {
       return { title: scaffold.title || heading, workspace: workspaceState(stacks), arrange: true, task: `Lesson example: ${heading}. ${language === 'html' ? 'HTML becomes nested blocks; the browser normalizes its markup.' : language === 'css' ? 'CSS becomes selector and property blocks where supported. The browser normalizes valid styles; compare with the original example below when debugging invalid CSS.' : 'This exact snippet is in an editable source block; its full text appears in Block fields.'} Partial examples may need the other steps from this lesson. Use the starting project for a complete working demonstration.` };
     }, `Try the ${example.language.toUpperCase()} example from “${example.heading}”?`);
   }
-  return { resize, offerExample };
+  // Web Studio: read the generated code, or rebuild the workspace from code or a saved state.
+  function loadCode({ title, html = '', css = '', js = '' }, task) {
+    const stacks = [];
+    const htmlStack = htmlBlocks(html);
+    if (htmlStack.length) stacks.push(chain(htmlStack));
+    if (css.trim()) {
+      let converted = [];
+      try { converted = cssBlocks(css); } catch { converted = []; }
+      stacks.push(converted.length ? chain(converted) : block('wb_css', { CODE: css }));
+    }
+    if (js.trim()) stacks.push(block('wb_js', { CODE: js }));
+    protectedSave = false;
+    apply({ title: title || $('title').value, workspace: workspaceState(stacks), arrange: true }, task || 'Your code is now blocks. HTML became nested blocks and CSS became selector and property blocks; JavaScript sits in one editable source block.');
+  }
+  function loadState(project, task) {
+    protectedSave = false;
+    apply(validateProject(project), task || 'Blocks restored from this Web Studio project.');
+  }
+  function getCode() {
+    const result = generate(current().workspace, $('title').value);
+    return { title: $('title').value, html: result.html, css: result.css, js: result.js, warnings: result.warnings };
+  }
+  return { resize, offerExample, loadCode, loadState, getCode, getState: current };
 }

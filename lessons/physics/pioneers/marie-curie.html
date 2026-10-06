@@ -56,6 +56,7 @@
     .mc-callout.rose   { background: rgba(190,24,93,0.09);  border-left: 3px solid var(--mc-rose); }
     .mc-callout.blue   { background: rgba(3,105,161,0.10);  border-left: 3px solid var(--mc-blue); }
     .mc-callout.violet { background: rgba(124,58,237,0.09); border-left: 3px solid var(--mc-violet); }
+    .mc-callout strong { color: var(--text, #1d1d1f); }
 
     /* Timeline */
     .mc-timeline { list-style: none; padding: 0 0 0 36px; margin: 0.7rem 0; position: relative; }
@@ -78,6 +79,17 @@
     [data-theme="bark"] .mc-readout { background: rgba(255,255,255,0.06); }
     .mc-readout-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted, #64748b); display: block; margin-bottom: 0.2rem; }
     .mc-readout-val   { font-size: 1rem; font-weight: 700; color: var(--mc-rose); }
+
+    /* Prediction → test → explanation keeps the simulation from becoming decoration. */
+    .mc-predict { border: 1px solid rgba(124,58,237,0.3); border-radius: 14px; background: linear-gradient(135deg, rgba(124,58,237,0.08), rgba(3,105,161,0.05)); padding: 1rem; margin: 0.85rem 0; }
+    .mc-predict h3 { margin-top: 0; }
+    .mc-predict-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem; margin: 0.65rem 0; }
+    .mc-choice { display: block; cursor: pointer; border: 1px solid var(--line,#d2d2d7); border-radius: 9px; padding: 0.55rem; background: var(--white,#fff); font-size: 0.8rem; line-height: 1.4; }
+    .mc-choice:has(input:focus-visible), .mc-check-btn:focus-visible, .ll-preset:focus-visible { outline: 3px solid rgba(124,58,237,0.55); outline-offset: 2px; }
+    .mc-predict-feedback { min-height: 1.3em; margin: 0.45rem 0 0; font-size: 0.84rem; font-weight: 650; }
+    .mc-sim-note { font-size: 0.78rem !important; color: var(--text-muted, #64748b) !important; }
+    .mc-source-list { margin: 0.45rem 0 0; padding-left: 1.15rem; font-size: 0.8rem; line-height: 1.65; }
+    .mc-source-list a { overflow-wrap: anywhere; }
 
     /* Grids */
     .mc-grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.75rem; }
@@ -112,6 +124,8 @@
     @media (max-width: 560px) {
       .mc-grid-2 { grid-template-columns: 1fr; }
       .mc-readouts { grid-template-columns: repeat(3,1fr); }
+      .mc-predict-options { grid-template-columns: 1fr; }
+      .mc-hero figure { float: none !important; width: min(100%, 260px) !important; margin: 0.5rem auto 1rem !important; }
     }
   </style>
 </head>
@@ -151,6 +165,7 @@
             <span>Pioneering Women in Science</span>
           </div>
           <p class="mc-lede">Born Maria Skłodowska in Warsaw in 1867, Marie Curie became the first person — and still the only woman — to win the Nobel Prize twice, in two different sciences. Her discovery of polonium and radium, and her foundational work on radioactivity, transformed our understanding of the atom and launched nuclear physics and modern medicine.</p>
+          <div class="mc-callout blue"><strong>By the end:</strong> connect Curie’s evidence to the idea that nuclei can change, distinguish a half-life from a countdown, and use a model to explain why a large sample decays predictably even though individual nuclei do not.</div>
         </section>
 
         <!-- Biography -->
@@ -190,7 +205,7 @@
           <p>Radioactivity is the <strong>spontaneous emission of particles or energy from an unstable atomic nucleus</strong>. When a nucleus has too many protons, too many neutrons, or too much energy, it rearranges itself by releasing radiation — transforming into a more stable configuration, sometimes into a completely different element in a process called <strong>nuclear decay</strong>.</p>
 
           <h3>Three Types of Radiation</h3>
-          <p>Marie Curie and her contemporaries identified three fundamental types, named after the first three letters of the Greek alphabet:</p>
+          <p>Early researchers, including Curie’s contemporaries, distinguished three important kinds of radiation, conventionally named with the first three Greek letters:</p>
           <ul style="padding-left:1.2rem;margin:0.4rem 0 0.8rem;font-size:0.88rem;color: var(--text-secondary, #3f4f65);line-height:1.7;">
             <li><strong>Alpha (α) particles</strong> — helium nuclei (2 protons + 2 neutrons, charge +2). Low penetrating power: stopped by a sheet of paper or a few centimetres of air. Dangerous if inhaled or ingested.</li>
             <li><strong>Beta (β) particles</strong> — fast-moving electrons (β⁻) or positrons (β⁺). Medium penetration: stopped by a few millimetres of aluminium. Emitted when a neutron converts to a proton or vice versa.</li>
@@ -236,15 +251,27 @@
         <!-- Simulator -->
         <section class="mc-card" style="--card-accent:#7c3aed;">
           <h2>Radioactive Decay Chain Simulator</h2>
-          <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Watch atoms decay over time. Adjust the half-life and sample size to see exponential decay in action. Each dot represents a group of atoms — when it flashes and changes color, that group has decayed.</p>
+          <p>Use this deliberately simplified model to test an idea: nuclei do not take turns decaying, but a large collection still produces a smooth overall pattern. Each dot is one <strong>model group</strong>, not one literal atom; the times are scaled for observation.</p>
+          <div class="mc-predict" aria-labelledby="mc-predict-title">
+            <h3 id="mc-predict-title">Predict → test → explain</h3>
+            <p>Set the half-life to 8 s, start with 1,000 model groups, and let the simulation run for two half-lives. Before you watch, what should remain?</p>
+            <div class="mc-predict-options" role="radiogroup" aria-label="Prediction after two half-lives">
+              <label class="mc-choice"><input type="radio" name="mc-prediction" value="750"> About 750 groups — 250 decay each half-life.</label>
+              <label class="mc-choice"><input type="radio" name="mc-prediction" value="250"> About 250 groups — the sample halves, then halves again.</label>
+              <label class="mc-choice"><input type="radio" name="mc-prediction" value="0"> 0 groups — every nucleus must decay by then.</label>
+            </div>
+            <button class="mc-check-btn" type="button" id="mc-predict-check">Check prediction</button>
+            <p class="mc-predict-feedback" id="mc-predict-feedback" aria-live="polite"></p>
+          </div>
           <div class="mc-canvas-wrap">
-            <canvas id="mc-canvas" aria-label="Animated radioactive decay simulation showing atoms decaying over time with real-time decay curve graph"></canvas>
+            <canvas id="mc-canvas" role="img" aria-label="Animated model of radioactive decay. Cyan model groups become dim as they decay; a magenta graph shows groups remaining over scaled time."></canvas>
           </div>
           <div class="mc-readouts">
             <div class="mc-readout"><span class="mc-readout-label">Atoms Remaining</span><span class="mc-readout-val" id="mc-r-n">1000</span></div>
             <div class="mc-readout"><span class="mc-readout-label">% Decayed</span><span class="mc-readout-val" id="mc-r-pct">0.0%</span></div>
             <div class="mc-readout"><span class="mc-readout-label">Half-Lives Elapsed</span><span class="mc-readout-val" id="mc-r-hl">0.00</span></div>
           </div>
+          <p class="mc-sim-note">The flashes are visual symbols for alpha, beta, and gamma emissions—not to scale particle tracks or shielding. Change one variable, run the model, then compare the readout with N = N₀ / 2<sup>n</sup>.</p>
         </section>
 
         <!-- Key Discoveries -->
@@ -388,6 +415,17 @@
           </div>
         </section>
 
+        <section class="mc-card" style="--card-accent:#64748b;">
+          <h2>Trace the Evidence</h2>
+          <p>Historical narratives and scientific models make stronger claims when students can follow them back to reliable sources. These are useful starting points for a research extension or source check.</p>
+          <ul class="mc-source-list">
+            <li><a href="https://www.nobelprize.org/prizes/physics/1903/marie-curie/biographical/">Nobel Prize: Marie Curie biographical profile</a> — awards, education, discoveries, and the Curie family’s scientific work.</li>
+            <li><a href="https://www.iaea.org/newscenter/news/marie-curie-the-woman-who-changed-the-world">International Atomic Energy Agency: Marie Curie</a> — legacy, radiation science, and the wartime radiology units.</li>
+            <li><a href="https://www.nrc.gov/reading-rm/doc-collections/fact-sheets/radiation-basics.html">U.S. Nuclear Regulatory Commission: Radiation basics</a> — radiation types and their penetration in context.</li>
+          </ul>
+          <p class="mc-sim-note">Careful language matters: a half-life describes an expected fraction of a large random sample. It does not predict the exact moment that any one nucleus will decay.</p>
+        </section>
+
         <footer class="site-footer">
           <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../../index.html">Home</a> · <a href="../../../steam-lessons.html">Lessons</a></p>
         </footer>
@@ -405,24 +443,25 @@
       <div class="ll-panel-body">
 
         <div class="ll-pane ll-active" id="mc-pane-sim">
-          <span class="ll-label">Sample Size (N₀)</span>
+          <span class="ll-label">Model sample size (N₀)</span>
           <div style="margin-bottom:0.9rem;">
-            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Atoms <span id="mc-n0-val">1000</span></label>
-            <input type="range" class="nl-slider" id="mc-n0-slider" min="100" max="5000" value="1000" step="100" style="width:100%;" />
+            <label for="mc-n0-slider" style="font-size:0.8rem;display:flex;justify-content:space-between;">Groups <span id="mc-n0-val">1000</span></label>
+            <input type="range" class="nl-slider" id="mc-n0-slider" min="100" max="5000" value="1000" step="100" style="width:100%;" aria-describedby="mc-model-help" />
           </div>
           <span class="ll-label">Half-Life (scaled s)</span>
           <div style="margin-bottom:0.9rem;">
-            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Half-Life <span id="mc-hl-val">8 s</span></label>
+            <label for="mc-hl-slider" style="font-size:0.8rem;display:flex;justify-content:space-between;">Half-Life <span id="mc-hl-val">8 s</span></label>
             <input type="range" class="nl-slider" id="mc-hl-slider" min="1" max="30" value="8" style="width:100%;" />
           </div>
-          <span class="ll-label">Decay Type</span>
+          <span class="ll-label">Emission symbol</span>
           <div style="margin-bottom:0.9rem;">
-            <select id="mc-type-select" style="width:100%;padding:0.3rem 0.5rem;border:1px solid var(--line,#d2d2d7);border-radius:8px;font-size:0.84rem;background:var(--white,#fff);color:var(--text,#1d1d1f);">
+            <label for="mc-type-select" class="visually-hidden">Emission symbol shown when a model group decays</label><select id="mc-type-select" style="width:100%;padding:0.3rem 0.5rem;border:1px solid var(--line,#d2d2d7);border-radius:8px;font-size:0.84rem;background:var(--white,#fff);color:var(--text,#1d1d1f);">
               <option value="Alpha">Alpha (α)</option>
               <option value="Beta">Beta (β)</option>
               <option value="Gamma">Gamma (γ)</option>
             </select>
           </div>
+          <p id="mc-model-help" class="mc-sim-note">Controls use scaled time and model groups so the pattern is visible in class.</p>
           <hr class="ll-hr">
           <button class="ll-preset" onclick="mcPreset(1000,3)"  style="width:100%;margin-bottom:0.4rem;">Polonium-210 (fast)</button>
           <button class="ll-preset" onclick="mcPreset(500,25)"  style="width:100%;margin-bottom:0.4rem;">Radium-226 (slow)</button>
@@ -500,6 +539,23 @@
     }
   };
 
+  document.getElementById('mc-predict-check')?.addEventListener('click', () => {
+    const choice = document.querySelector('input[name="mc-prediction"]:checked');
+    const feedback = document.getElementById('mc-predict-feedback');
+    if (!choice) {
+      feedback.textContent = 'Make a prediction first, then use the model to test it.';
+      feedback.className = 'mc-predict-feedback err';
+      return;
+    }
+    if (choice.value === '250') {
+      feedback.textContent = 'Yes. After two half-lives, N = 1,000 / 2² = 250 model groups on average. The animated count will wiggle because decay is random.';
+      feedback.className = 'mc-predict-feedback ok';
+    } else {
+      feedback.textContent = 'Revisit what “half” applies to: after one half-life about 500 remain, then half of that remaining group decays. Test it with the Reset control and two half-lives.';
+      feedback.className = 'mc-predict-feedback err';
+    }
+  });
+
   // ── Decay Simulator ───────────────────────────────────────────────────────
   (function() {
     const canvas = document.getElementById('mc-canvas');
@@ -512,6 +568,7 @@
     let history  = [];    // [{t, n}] for the graph
     let flashes  = [];    // [{x,y,age,type}] for decay flash effects
     let paused   = false;
+    let canvasWidth = 0;
 
     function getN0()   { return parseInt(document.getElementById('mc-n0-slider').value); }
     function getHL()   { return parseInt(document.getElementById('mc-hl-slider').value); }
@@ -542,8 +599,13 @@
 
     function draw() {
       const W = canvas.offsetWidth || 600;
-      canvas.width  = W;
-      canvas.height = 340;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      if (W !== canvasWidth || canvas.height !== 340 * dpr) {
+        canvasWidth = W;
+        canvas.width = Math.round(W * dpr);
+        canvas.height = Math.round(340 * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const atomH = 240;
       const graphH = 80;
       const graphY = atomH + 10;

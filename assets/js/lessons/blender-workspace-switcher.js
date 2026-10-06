@@ -2,31 +2,36 @@
    every Blender lesson page so students can jump Layout <-> Sculpting <->
    UV Editing (etc.) without walking back through the pathway hub. */
 (function () {
+  // Paths are relative to lessons/; resolved against this script's own URL so the
+  // menu works from lessons/blender/ and lessons/game-asset-studio/ alike.
+  var SCRIPT_URL = (document.currentScript && document.currentScript.src) || location.href;
+  var LESSONS_ROOT = new URL("../../../lessons/", SCRIPT_URL);
   var TABS = [
-    { label: "Layout", color: "#e8792a", href: "blender-interface-basics.html" },
-    { label: "Modeling", color: "#b5793f", href: "blender-furniture-design.html" },
-    { label: "Sculpting", color: "#8a5fb0", href: "blender-sculpting.html" },
-    { label: "UV Editing", color: "#3f8f8f", href: "game-asset-uv-export.html" },
-    { label: "Texture Paint", color: "#b0567a", href: "blender-materials-render.html#paint" },
-    { label: "Shading", color: "#c98a2c", href: "blender-materials-render.html" },
-    { label: "Animation", color: "#a8586f", href: "game-asset-character-animation.html" },
-    { label: "Rendering", color: "#c98a2c", href: "blender-materials-render.html#render" },
-    { label: "Compositing", color: "#4f8fc0", href: "blender-compositing.html" },
-    { label: "Geometry Nodes", color: "#5c8f6b", href: "blender-geometry-nodes.html" },
+    { label: "Layout", color: "#e8792a", href: "blender/blender-interface-basics.html" },
+    { label: "Modeling", color: "#b5793f", href: "blender/blender-furniture-design.html" },
+    { label: "Sculpting", color: "#8a5fb0", href: "blender/blender-sculpting.html" },
+    { label: "UV Editing", color: "#3f8f8f", href: "game-asset-studio/game-asset-uv-export.html" },
+    { label: "Texture Paint", color: "#b0567a", href: "blender/blender-materials-render.html#paint" },
+    { label: "Shading", color: "#c98a2c", href: "blender/blender-materials-render.html" },
+    { label: "Animation", color: "#a8586f", href: "game-asset-studio/game-asset-character-animation.html" },
+    { label: "Rendering", color: "#c98a2c", href: "blender/blender-materials-render.html#render" },
+    { label: "Compositing", color: "#4f8fc0", href: "blender/blender-compositing.html" },
+    { label: "Geometry Nodes", color: "#5c8f6b", href: "blender/blender-geometry-nodes.html" },
     { label: "Scripting", color: "#8a8a8a", href: null }
   ];
 
-  function currentFile() {
-    return (location.pathname.split("/").pop() || "").toLowerCase();
+  function resolve(href) {
+    return new URL(href, LESSONS_ROOT);
   }
 
   function buildItem(tab, here) {
-    var isCurrent = tab.href && tab.href.split("#")[0].toLowerCase() === here;
+    var target = tab.href ? resolve(tab.href) : null;
+    var isCurrent = !!target && target.pathname.toLowerCase() === here;
     var tag = tab.href ? "a" : "span";
     var el = document.createElement(tag);
     el.className = "blwsq-item" + (isCurrent ? " is-current" : "") + (tab.href ? "" : " is-soon");
     el.style.setProperty("--blwsq-color", tab.color);
-    if (tab.href) el.setAttribute("href", tab.href);
+    if (target) el.setAttribute("href", target.href);
     var dot = document.createElement("span");
     dot.className = "blwsq-dot";
     el.appendChild(dot);
@@ -46,10 +51,10 @@
   }
 
   function ensureStyles() {
-    if (document.querySelector('link[data-blwsq-style]')) return;
+    if (document.querySelector('link[data-blwsq-style], link[href*="blender-workspace-switcher.css"]')) return;
     var link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "../assets/css/lessons/blender-workspace-switcher.css";
+    link.href = new URL("../../css/lessons/blender-workspace-switcher.css", SCRIPT_URL).href;
     link.setAttribute("data-blwsq-style", "");
     document.head.appendChild(link);
   }
@@ -57,7 +62,7 @@
   function init() {
     if (document.querySelector(".blwsq-fab")) return;
     ensureStyles();
-    var here = currentFile();
+    var here = location.pathname.toLowerCase();
 
     var fab = document.createElement("button");
     fab.type = "button";

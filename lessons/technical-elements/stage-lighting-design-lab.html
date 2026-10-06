@@ -53,6 +53,13 @@
       border-radius: 999px; padding: 5px 14px;
       font-size: 0.74rem; font-weight: 700; letter-spacing: 0.04em; color: #c9aaf5;
     }
+    .stage-readout {
+      position: absolute; right: 14px; bottom: 12px; z-index: 3; max-width: min(440px, calc(100% - 28px));
+      background: rgba(8, 6, 14, 0.82); backdrop-filter: blur(8px);
+      border: 1px solid rgba(168, 120, 240, 0.28); border-radius: 11px; padding: 7px 10px;
+      font-size: 0.72rem; line-height: 1.4; color: rgba(234,230,242,0.82); text-align: right;
+    }
+    .stage-readout strong { color: #fff; }
 
     /* ── Control cards ── */
     .lx-card {
@@ -155,6 +162,10 @@
     .cue-del:hover { color: #ff7860; background: rgba(255,90,60,0.12); }
     .cue-empty { font-size: 0.72rem; color: rgba(200,180,240,0.45); line-height: 1.5; }
     .cue-status { font-size: 0.68rem; color: rgba(200,180,240,0.55); margin-top: 0.55rem; }
+    .design-read { border-left: 3px solid #b48ef0; padding-left: 0.75rem; }
+    .design-read p { font-size: 0.76rem; color: rgba(234,230,242,0.73); line-height: 1.5; margin: 0; }
+    .design-read strong { color: #fff; }
+    button:focus-visible, input:focus-visible { outline: 3px solid #f2ce68; outline-offset: 3px; }
 
     /* Guide info cards */
     .info-row { display: grid; grid-template-columns: 1fr; gap: 0.7rem; }
@@ -172,6 +183,11 @@
       --ll-tab-active:    #b48ef0;
       --ll-toggle-bg:     rgba(10, 8, 16, 0.97);
     }
+    @media (max-width: 640px) {
+      .stage-readout { font-size: 0.64rem; padding: 5px 8px; }
+      .stage-badge { top: 8px; left: 8px; padding: 4px 9px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; } }
   </style>
 </head>
 <body>
@@ -197,8 +213,9 @@
       <div class="lx-wrap">
 
         <div class="stage-outer" id="lx-outer">
-          <canvas id="lx-canvas"></canvas>
+          <canvas id="lx-canvas" role="img" aria-label="Virtual stage showing one performer and the effect of four adjustable stage lights."></canvas>
           <span class="stage-badge" id="look-badge">🎭 Design your first look</span>
+          <div class="stage-readout" id="stage-readout" aria-live="polite"><strong>Start with a prediction:</strong> What will happen if you turn off front light and raise back light?</div>
         </div>
 
         <div class="board-grid">
@@ -236,12 +253,20 @@
             </div>
             <div class="lx-card">
               <h3>🎬 Cue Stack — save looks, then run the show</h3>
+              <div class="ctl-row">
+                <div class="ctl-label"><span>Fade time</span><output id="v-fade">2.0 s</output></div>
+                <input type="range" id="s-fade" min="0" max="8" step="0.5" value="2" aria-label="Cue fade time in seconds" />
+              </div>
               <div class="cue-actions">
                 <button class="cue-btn cue-btn-save" id="cue-save" type="button">＋ Save Look as Cue</button>
                 <button class="cue-btn cue-btn-go" id="cue-go" type="button" disabled>▶ GO</button>
               </div>
               <div class="cue-list" id="cue-list"><div class="cue-empty">No cues yet. Design a look above, then save it. Save two or more and the GO button will fade between them — exactly how a real show runs.</div></div>
               <div class="cue-status" id="cue-status"></div>
+            </div>
+            <div class="lx-card design-read" aria-live="polite">
+              <h3>Designer’s Read</h3>
+              <p id="design-read"><strong>Observe:</strong> Front light is doing the storytelling work now. Add a side fixture, then compare the performer’s shape.</p>
             </div>
           </div>
 
@@ -378,6 +403,15 @@
 
   const sR = document.getElementById('s-r'), sG = document.getElementById('s-g'), sB = document.getElementById('s-b'), sInt = document.getElementById('s-int');
   const onoffBtn = document.getElementById('onoff-btn');
+  const fadeSlider = document.getElementById('s-fade');
+  const fadeOutput = document.getElementById('v-fade');
+  let fadeMs = parseFloat(fadeSlider.value) * 1000;
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  fadeSlider.addEventListener('input', function () {
+    fadeMs = parseFloat(fadeSlider.value) * 1000;
+    fadeOutput.textContent = (fadeMs / 1000).toFixed(1) + ' s';
+  });
 
   function selectFixture(i) {
     selected = i;
@@ -416,6 +450,26 @@
       b.querySelector('.fx-swatch').style.background = ff.on ? 'rgb(' + ff.r + ',' + ff.g + ',' + ff.b + ')' : '#26222e';
       b.querySelector('.fx-onoff').textContent = ff.on ? ff.int + '%' : 'OFF';
     });
+    updateDesignRead();
+  }
+
+  function fixtureIsLive(i) { return FIXTURES[i].on && FIXTURES[i].int > 0; }
+
+  function updateDesignRead() {
+    const front = fixtureIsLive(0), left = fixtureIsLive(1), right = fixtureIsLive(2), back = fixtureIsLive(3);
+    const total = FIXTURES.reduce(function (sum, f) { return sum + (f.on ? f.int : 0); }, 0);
+    let effect;
+    if (!total) effect = '<strong>Blackout:</strong> the audience sees no performer. A blackout is a deliberate punctuation mark, not an absence of design.';
+    else if (back && !front && !left && !right) effect = '<strong>Silhouette:</strong> the back light separates the body from the scenery, but hides facial expression.';
+    else if (front && !left && !right && !back) effect = '<strong>Readable, but flat:</strong> front light makes the face visible. Add side or back light to give the body depth.';
+    else if ((left || right) && !front) effect = '<strong>Sculpted mystery:</strong> side light reveals shape and movement while keeping the face less readable.';
+    else if (back && front) effect = '<strong>Separation:</strong> front light keeps the face readable; back light lifts the performer away from the backdrop.';
+    else effect = '<strong>Layered stage picture:</strong> compare each fixture one at a time. Every added direction should have a storytelling reason.';
+    document.getElementById('design-read').innerHTML = effect;
+    const active = [];
+    if (front) active.push('front'); if (left) active.push('left side'); if (right) active.push('right side'); if (back) active.push('back');
+    document.getElementById('stage-readout').innerHTML = '<strong>Active directions:</strong> ' + (active.length ? active.join(', ') : 'none') + '. ' + (total > 200 ? 'High-energy look.' : total > 0 ? 'Low-level look.' : 'Blackout.');
+    canvas.setAttribute('aria-label', 'Virtual stage. Active lights: ' + (active.length ? active.join(', ') : 'none') + '. ' + document.getElementById('design-read').textContent);
   }
 
   function onSlider() {
@@ -523,7 +577,7 @@
   cueGo.addEventListener('click', function () {
     if (standbyCue < 0 || !cues[standbyCue]) return;
     const target = cues[standbyCue];
-    fadeTo(target.snap, 2000);
+    fadeTo(target.snap, reduceMotion ? 0 : fadeMs);
     document.getElementById('look-badge').textContent = '🎬 ' + target.name;
     liveCue = standbyCue;
     standbyCue = (standbyCue + 1) % cues.length;
@@ -546,6 +600,10 @@
       FIXTURES[i].int = s.int; FIXTURES[i].on = s.on;
     });
     selectFixture(selected);
+    if (ms <= 0) {
+      live.forEach(function (l, i) { l.r = to[i].r; l.g = to[i].g; l.b = to[i].b; l.amt = to[i].amt; });
+      return;
+    }
     function step(now) {
       const t = clamp((now - start) / ms, 0, 1);
       const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;

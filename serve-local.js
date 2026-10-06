@@ -176,6 +176,68 @@ http
       return;
     }
 
+    // Web Studio submissions: OSeditor imports a student's .webstudio.json into
+    // student-projects/<Name>/<slug>/ (dryRun previews it), then builds apps/<slug>/.
+    // Same rules as /api/save: ADMIN_PASS must be set, the password must match, and
+    // the request must come from this server's own pages.
+    if ((urlPath === "/api/import-submission" || urlPath === "/api/build-app") && req.method === "POST") {
+      const sendJson = (status, value) => {
+        res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+        res.end(JSON.stringify(value));
+      };
+      if (!editorPassword) return sendJson(503, { error: "Server writing is disabled. Restart with ADMIN_PASS set." });
+      if (req.headers.origin) {
+        let sameOrigin = false;
+        try { sameOrigin = new URL(req.headers.origin).host === req.headers.host; } catch { sameOrigin = false; }
+        if (!sameOrigin) return sendJson(403, { error: "Cross-origin requests are forbidden." });
+      }
+      const chunks = [];
+      let size = 0;
+      let tooLarge = false;
+      req.on("data", (chunk) => {
+        if (tooLarge) return;
+        size += chunk.length;
+        if (size > 16 * 1024 * 1024) {
+          tooLarge = true;
+          sendJson(413, { error: "The submission is too large (16 MB maximum)." });
+          req.destroy();
+          return;
+        }
+        chunks.push(chunk);
+      });
+      req.on("end", async () => {
+        if (tooLarge) return;
+        let data;
+        try { data = JSON.parse(Buffer.concat(chunks).toString("utf8")); } catch { return sendJson(400, { error: "Invalid request." }); }
+        if (typeof data.password !== "string" || data.password !== editorPassword) return sendJson(403, { error: "Incorrect password." });
+        if (urlPath === "/api/build-app") {
+          if (typeof data.slug !== "string" || !/^[a-z0-9][a-z0-9-]{0,79}$/.test(data.slug)) return sendJson(400, { error: "Invalid project slug." });
+          const { spawn } = require("child_process");
+          const child = spawn(process.execPath, ["build-showcase.js", `--only=${data.slug}`], { cwd: root });
+          let log = "";
+          child.stdout.on("data", (part) => { log = (log + part).slice(-6000); });
+          child.stderr.on("data", (part) => { log = (log + part).slice(-6000); });
+          child.on("close", (code) => sendJson(code === 0 ? 200 : 500, code === 0 ? { ok: true, url: `/apps/${data.slug}/`, log } : { error: `The build failed (exit ${code}).`, log }));
+          return;
+        }
+        try {
+          const { readSubmission, planImport, writeImport } = await import("./lib/studio-submission.mjs");
+          if (typeof data.submission !== "string") return sendJson(400, { error: "No submission file was sent." });
+          const plan = planImport(readSubmission(data.submission), root, { program: data.program });
+          const summary = { slug: plan.slug, student: plan.student, title: plan.title, description: plan.description, dir: plan.relDir, entry: plan.entry, files: plan.files.map(([rel]) => rel) };
+          if (data.dryRun) {
+            const exists = fs.existsSync(plan.dir);
+            return sendJson(200, { ...summary, exists });
+          }
+          const result = await writeImport(plan, root, { replace: data.replace === true });
+          return sendJson(200, { ...summary, ...result, ok: true });
+        } catch (error) {
+          return sendJson(error.code === "EEXIST" ? 409 : 400, { error: error.message });
+        }
+      });
+      return;
+    }
+
     if (urlPath.startsWith("/api/")) {
       res.writeHead(405, { "Content-Type": "text/plain; charset=utf-8", Allow: "GET, POST, OPTIONS" });
       res.end("Method not allowed");

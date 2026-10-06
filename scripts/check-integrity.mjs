@@ -214,9 +214,10 @@ async function checkJson(filePath, text) {
 // <img src="images/chart.png"> that names files the student will create in their
 // own project folder. Blank those regions out (preserving offsets) before scanning
 // so example code is never reported as a missing local reference. Measured across
-// the repo, every src/href inside <pre>/<code> is such an example.
+// the repo, every src/href inside <pre>/<code> is such an example. The same goes
+// for <textarea> starter code in live-editor labs, which is text, never loaded.
 function maskCodeSamples(text) {
-  return text.replace(/<pre\b[\s\S]*?<\/pre>|<code\b[\s\S]*?<\/code>/gi, (block) =>
+  return text.replace(/<pre\b[\s\S]*?<\/pre>|<code\b[\s\S]*?<\/code>|<textarea\b[\s\S]*?<\/textarea>/gi, (block) =>
     block.replace(/[^\n]/g, " ")
   );
 }

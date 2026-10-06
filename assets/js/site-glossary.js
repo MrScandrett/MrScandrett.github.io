@@ -151,7 +151,7 @@
     if (!node.nodeValue || !node.nodeValue.trim()) return false;
     var parent = node.parentElement;
     if (!parent || !root.contains(parent)) return false;
-    if (parent.closest('a, button, h1, h2, h3, h4, code, pre, kbd, samp, script, style, textarea, input, select, option, label, nav, header, footer, dialog, [contenteditable], [data-no-glossary], .cos-glossary-card, .cos-glossary-term')) return false;
+    if (parent.closest('a, button, h1, h2, h3, h4, code, pre, kbd, samp, script, noscript, style, textarea, input, select, option, label, nav, header, footer, dialog, [contenteditable], [data-no-glossary], .cos-glossary-card, .cos-glossary-term')) return false;
     return true;
   }
 

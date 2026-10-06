@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="../../assets/css/lessons/web-design-pathway.css">
 <script src="../../assets/js/theme-registry.js" defer></script>
 <script src="../../assets/js/lessons/web-design-pathway.js" defer></script>
+<script src="../../assets/js/lessons/web-foundations-labs.js" defer></script>
 <link rel="stylesheet" href="../../assets/css/lessons/web-blocks.css">
 <script src="../../assets/js/lessons/web-blocks.js" defer></script>
   <link rel="stylesheet" href="../../assets/css/lesson-print.css" media="print" />
@@ -43,6 +44,7 @@
 <section class="wb-section" data-web-blocks="web-publish" id="website-blocks" aria-labelledby="website-blocks-title">
 <h2 id="website-blocks-title">Build this website with blocks</h2>
 <p>Try another way to build: snap together HTML, CSS and behavior blocks, change their fields, and watch your website update. Start with this lesson’s project or try a code example below.</p>
+<p>Want to keep what you build? <a href="web-studio.html">Web Studio</a> holds a drawing, blocks and code in one project that you can share on the class site and publish as your own website.</p>
 <button type="button" data-wb-open>Open website blocks</button>
 <p data-wb-start-status role="status"></p>
 <noscript><p>Enable JavaScript to use the block editor. The written lesson and code examples remain available below.</p></noscript>
@@ -114,7 +116,7 @@ git push</code></pre>
 </tr>
 <tr>
 <th scope="row">Absolute paths</th>
-<td>Opening a file directly means <code>/style.css</code> and <code>C:\Users\You\Desktop\site\style.css</code> still resolve on your own machine. On a server, <code>/style.css</code> means the root of the whole domain — which is not your project folder — and a <code>C:\</code> path means nothing at all.</td>
+<td>A local server such as Live Server starts at your project folder, so <code>/style.css</code> finds your stylesheet, and a <code>C:\Users\You\Desktop\site\style.css</code> path points at a real folder on your own drive. On GitHub Pages, <code>/style.css</code> means the root of the whole domain — which is not your project folder — and a <code>C:\</code> path means nothing at all.</td>
 <td>The page arrives with no design and no behaviour, even though the files are in the repository.</td>
 <td>Use relative paths only: <code>style.css</code>, <code>images/logo.png</code>, <code>../index.html</code>. Search your HTML for <code>href="/</code>, <code>src="/</code>, <code>file://</code> and <code>C:\</code> and replace each one.</td>
 </tr>
@@ -134,6 +136,46 @@ git push</code></pre>
 </table>
 </div>
 <p>One tool finds all four faster than guessing: open your published site, press <kbd>F12</kbd>, and read the Console and Network panels. A red 404 line names the exact file the browser asked for. Compare that name — including its capital letters and its folder — against what is actually in your repository. The difference between those two strings is your bug.</p>
+</section>
+
+<section class="web-section">
+<h2>Lab — Will it survive the server?</h2>
+<p>This lab plays both readers at once. On the left is the HTML of a site that works perfectly on its maker's laptop. On the right is what is actually in the repository. Run it and see which requests a real host would answer with a 404 — then repair them. You may edit the HTML, rename files in the list, or both, exactly as you would in VS Code.</p>
+<div class="web-lab" id="host-lab">
+<h3>Laptop versus GitHub Pages</h3>
+<div class="web-lab-grid">
+<div>
+<p><label for="host-html">The home page's HTML</label></p>
+<textarea id="host-html" spellcheck="false" rows="9">&lt;link rel="stylesheet" href="/style.css"&gt;
+&lt;script src="Script.js" defer&gt;&lt;/script&gt;
+&lt;h1&gt;Ada's creation station&lt;/h1&gt;
+&lt;img src="images/Team Photo.JPG" alt="Our robotics team at the spring fair"&gt;
+&lt;img src="C:\Users\ada\Desktop\my-site\images\logo.png" alt="Ada's rocket logo"&gt;
+&lt;a href="pages/about.html"&gt;About me&lt;/a&gt;
+&lt;a href="https://developer.mozilla.org/"&gt;MDN, where I look things up&lt;/a&gt;</textarea>
+</div>
+<div>
+<p><label for="host-files">Files in the repository, one per line</label></p>
+<textarea id="host-files" spellcheck="false" rows="9">Home.html
+style.css
+script.js
+images/team photo.jpg
+images/logo.png
+pages/about.html</textarea>
+</div>
+</div>
+<div class="web-actions"><button type="button" id="host-run">Request every file</button><button type="button" id="host-reset">Reset the example</button></div>
+<p id="host-feedback" class="web-feedback" aria-live="polite"></p>
+<div class="web-table">
+<table class="web-path-table">
+<caption>Every file this page asks for: on a laptop running Live Server, and on GitHub Pages</caption>
+<thead><tr><th scope="col">Reference</th><th scope="col">Laptop</th><th scope="col">GitHub Pages</th><th scope="col">Why</th></tr></thead>
+<tbody id="host-rows"></tbody>
+</table>
+</div>
+</div>
+<p><strong>Check:</strong> the feedback line says <em>Ready to commit and push</em>, and every row in the GitHub Pages column says <em>Loads</em>. External links such as MDN are skipped — they are someone else's server.</p>
+<p><strong>Repair:</strong> notice that most rows say <em>Loads</em> on the laptop. That is the whole trap: nothing looked wrong until the server read the files. The quickest repairs are lowercase names with hyphens instead of spaces (<code>images/team-photo.jpg</code>), and paths that start from this page rather than from your drive or the top of the domain.</p>
 </section>
 
 <section class="web-section">

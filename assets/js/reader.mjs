@@ -37,6 +37,7 @@ const MAX_BYTES = 100 * 1024 * 1024;
 // Position and bookmarks are kept per book: the library link, or "local:<id>" for an imported file.
 let POS_KEY = "";
 let MARKS_KEY = "";
+let ANNOTATIONS_KEY = "";
 const WPM = 200; // a student reading pace, for "minutes left"
 const TOP = 80; // px under the sticky bar that counts as "the top of the page"
 
@@ -46,6 +47,7 @@ const ui = {
   setBtn: $("rdSetBtn"), settings: $("rdSettings"),
   toc: $("rdToc"), tocList: $("rdTocList"), tocClose: $("rdTocClose"), scrim: $("rdScrim"), where: $("rdWhere"),
   markList: $("rdMarkList"), marksEmpty: $("rdMarksEmpty"),
+  annotationList: $("rdAnnotationList"), annotationsEmpty: $("rdAnnotationsEmpty"), exportAnnotations: $("rdExportAnnotations"),
   searchForm: $("rdSearchForm"), searchInput: $("rdSearchInput"), searchStatus: $("rdSearchStatus"), searchList: $("rdSearchList"),
   fill: $("rdProgressFill"), loading: $("rdLoading"), loadingText: $("rdLoadingText"), meter: $("rdMeterFill"),
   page: $("rdPage"), chapterNav: $("rdChapterNav"), prev: $("rdPrev"), next: $("rdNext"), chapterPos: $("rdChapterPos"),
@@ -54,6 +56,7 @@ const ui = {
   shelf: $("rdShelf"), pick: $("rdPick"), drop: $("rdDrop"), mineList: $("rdMineList"), mineEmpty: $("rdMineEmpty"),
   credit: $("rdCredit"), sizeOut: $("rdSizeOut"), zoomOut: $("rdZoomOut"),
   note: $("rdNote"), noteHead: $("rdNoteHead"), noteBody: $("rdNoteBody"), noteGo: $("rdNoteGo"), noteClose: $("rdNoteClose"),
+  selectionAction: $("rdSelectionAction"), annotationEditor: $("rdAnnotationEditor"), annotationScrim: $("rdAnnotationScrim"), annotationQuote: $("rdAnnotationQuote"), annotationText: $("rdAnnotationText"), annotationSave: $("rdAnnotationSave"), annotationCancel: $("rdAnnotationCancel"),
   player: $("rdPlayer"), speakPrev: $("rdSpeakPrev"), speakPlay: $("rdSpeakPlay"), speakNext: $("rdSpeakNext"),
   speakRate: $("rdSpeakRate"), speakVoice: $("rdSpeakVoice"), speakClose: $("rdSpeakClose"),
   ruler: $("rdRuler"), status: $("rdStatus"), toast: $("rdToast"),
@@ -130,6 +133,8 @@ function openDrawer(tab, opener) {
     ui.searchInput.select();
   } else if (tab === "marks") {
     (ui.markList.querySelector("button") || $("rdTabMarks")).focus();
+  } else if (tab === "annotations") {
+    (ui.annotationList.querySelector("button") || $("rdExportAnnotations")).focus();
   } else {
     const cur = ui.tocList.querySelector('[aria-current="true"]');
     cur?.scrollIntoView({ block: "center" });
@@ -153,6 +158,7 @@ function selectTab(tab) {
     $(t.getAttribute("aria-controls")).hidden = !on;
   });
   if (tab === "marks") renderMarks();
+  if (tab === "annotations") renderAnnotations();
 }
 ui.toc.querySelector('[role="tablist"]').addEventListener("click", (e) => {
   const t = e.target.closest('[role="tab"]');
@@ -294,7 +300,8 @@ addEventListener("resize", () => {
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
-    if (!ui.note.hidden) closeNote();
+    if (!ui.annotationEditor.hidden) closeAnnotationEditor();
+    else if (!ui.note.hidden) closeNote();
     else if (!ui.toc.hidden) closeDrawer();
     else if (!ui.settings.hidden) toggleSettings(false);
     return;
@@ -324,13 +331,126 @@ function minutesLeft(words) {
 /* ── Bookmarks ────────────────────────────────────────────────────── */
 
 let marks = [];
+let annotations = [];
+let pendingAnnotation = null;
+let annotationColor = "yellow";
 function setBookKey(key) {
   POS_KEY = "reader:pos:" + key;
   MARKS_KEY = "reader:marks:" + key;
+  ANNOTATIONS_KEY = "reader:annotations:" + key;
   marks = (store.get(MARKS_KEY) || []).filter((m) => m && typeof m === "object");
+  annotations = (store.get(ANNOTATIONS_KEY) || []).filter((a) => a && typeof a === "object" && a.quote && a.scope);
 }
 setBookKey(localId ? "local:" + localId : src);
 function saveMarks() { store.set(MARKS_KEY, marks); }
+function saveAnnotations() { store.set(ANNOTATIONS_KEY, annotations); }
+
+const ANNOTATION_COLORS = ["yellow", "blue", "green", "pink"];
+function annotationRangeIn(scope, a) {
+  const text = scope?.textContent || "";
+  if (!text || !a?.quote) return null;
+  let at = text.indexOf(a.quote);
+  let best = -1;
+  let bestScore = -1;
+  while (at >= 0) {
+    const before = text.slice(Math.max(0, at - a.prefix.length), at);
+    const after = text.slice(at + a.quote.length, at + a.quote.length + a.suffix.length);
+    const score = (a.prefix && before.endsWith(a.prefix) ? 2 : 0) + (a.suffix && after.startsWith(a.suffix) ? 2 : 0);
+    if (score > bestScore) { best = at; bestScore = score; }
+    at = text.indexOf(a.quote, at + 1);
+  }
+  if (best < 0) return null;
+  const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT);
+  let node, offset = 0, start = null, end = null;
+  while ((node = walker.nextNode())) {
+    const next = offset + node.data.length;
+    if (!start && best >= offset && best <= next) start = [node, best - offset];
+    if (start && best + a.quote.length >= offset && best + a.quote.length <= next) { end = [node, best + a.quote.length - offset]; break; }
+    offset = next;
+  }
+  if (!start || !end) return null;
+  const range = document.createRange();
+  range.setStart(...start); range.setEnd(...end);
+  return range;
+}
+function paintAnnotations() {
+  for (const color of ANNOTATION_COLORS) paint("rd-annotation-" + color, null);
+  if (!viewer?.annotationScope) return;
+  const scope = viewer.annotationScope();
+  for (const color of ANNOTATION_COLORS) {
+    const ranges = annotations.filter((a) => a.color === color && viewer.annotationMatches?.(a))
+      .map((a) => annotationRangeIn(scope, a)).filter(Boolean);
+    paint("rd-annotation-" + color, ranges);
+  }
+}
+function renderAnnotations() {
+  ui.annotationList.replaceChildren();
+  ui.annotationsEmpty.hidden = annotations.length > 0;
+  $("rdTabAnnotations").textContent = annotations.length ? `Annotations (${annotations.length})` : "Annotations";
+  annotations.slice().sort((a, b) => b.at - a.at).forEach((a) => {
+    const li = document.createElement("li");
+    const go = document.createElement("button");
+    go.type = "button"; go.className = "rd-annotation-go";
+    go.style.setProperty("--rd-annotation", `var(--rd-annotation-${a.color}, var(--rd-accent))`);
+    const quote = document.createElement("q"); quote.textContent = a.quote;
+    const meta = document.createElement("small"); meta.textContent = [a.label, a.note].filter(Boolean).join(" · ");
+    go.append(quote, meta); go.addEventListener("click", () => { closeDrawer(); viewer?.goAnnotation?.(a); });
+    const actions = document.createElement("div"); actions.className = "rd-annotation-item-actions";
+    const del = document.createElement("button"); del.type = "button"; del.className = "rd-btn"; del.textContent = "Delete";
+    del.setAttribute("aria-label", "Delete annotation: " + a.quote.slice(0, 80));
+    del.addEventListener("click", () => { annotations = annotations.filter((x) => x !== a); saveAnnotations(); renderAnnotations(); paintAnnotations(); toast("Annotation deleted"); });
+    actions.append(del); li.append(go, actions); ui.annotationList.append(li);
+  });
+}
+function selectionAnchor(range) {
+  const scope = viewer?.annotationScope?.();
+  if (!scope || !scope.contains(range.commonAncestorContainer.nodeType === 1 ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement)) return null;
+  const quote = range.toString().trim();
+  if (!quote || quote.length > 4000) return null;
+  const before = document.createRange(); before.selectNodeContents(scope); before.setEnd(range.startContainer, range.startOffset);
+  const after = document.createRange(); after.selectNodeContents(scope); after.setStart(range.endContainer, range.endOffset);
+  return { quote, prefix: before.toString().slice(-80), suffix: after.toString().slice(0, 80) };
+}
+function hideSelectionAction() { ui.selectionAction.hidden = true; }
+function selectionChanged() {
+  if (ui.annotationEditor.hidden === false) return;
+  const range = getSelection()?.rangeCount ? getSelection().getRangeAt(0) : null;
+  const anchor = range && selectionAnchor(range);
+  if (!anchor || !viewer?.annotationData?.()) return hideSelectionAction();
+  pendingAnnotation = { ...anchor, ...viewer.annotationData() };
+  const box = range.getBoundingClientRect();
+  if (!box.width && !box.height) return hideSelectionAction();
+  ui.selectionAction.style.left = clamp(box.left + box.width / 2 - 72, 10, innerWidth - 154) + "px";
+  ui.selectionAction.style.top = clamp(box.bottom + 8, 8, innerHeight - 48) + "px";
+  ui.selectionAction.hidden = false;
+}
+document.addEventListener("selectionchange", () => requestAnimationFrame(selectionChanged));
+ui.selectionAction.addEventListener("click", () => {
+  if (!pendingAnnotation) return;
+  hideSelectionAction(); ui.annotationQuote.textContent = `“${pendingAnnotation.quote}”`; ui.annotationText.value = "";
+  ui.annotationEditor.hidden = false; ui.annotationScrim.hidden = false; ui.annotationText.focus();
+});
+function closeAnnotationEditor() { ui.annotationEditor.hidden = true; ui.annotationScrim.hidden = true; pendingAnnotation = null; getSelection()?.removeAllRanges(); }
+ui.annotationCancel.addEventListener("click", closeAnnotationEditor);
+ui.annotationScrim.addEventListener("click", closeAnnotationEditor);
+ui.annotationEditor.querySelector(".rd-color-picks").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-annotation-color]"); if (!b) return;
+  annotationColor = b.dataset.annotationColor;
+  ui.annotationEditor.querySelectorAll("[data-annotation-color]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+});
+ui.annotationSave.addEventListener("click", () => {
+  if (!pendingAnnotation) return closeAnnotationEditor();
+  annotations.push({ ...pendingAnnotation, color: annotationColor, note: ui.annotationText.value.trim(), at: Date.now() });
+  saveAnnotations(); closeAnnotationEditor(); renderAnnotations(); paintAnnotations(); toast("Annotation saved");
+});
+ui.exportAnnotations.addEventListener("click", () => {
+  if (!annotations.length) return toast("There are no annotations to export yet");
+  const title = ui.title.textContent || "Reader annotations";
+  const lines = [`# ${title} — annotations`, ""];
+  annotations.slice().sort((a, b) => a.at - b.at).forEach((a) => { lines.push(`## ${a.label || "Passage"}`, "", `> ${a.quote.replace(/\n/g, "\n> ")}`, "", a.note || "", ""); });
+  const url = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/markdown;charset=utf-8" }));
+  const a = document.createElement("a"); a.href = url; a.download = `${title.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "reader"}-annotations.md`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
 function markHere() {
   const here = viewer?.here();
   return here ? marks.findIndex((m) => viewer.samePlace(m, here)) : -1;
@@ -1080,6 +1200,7 @@ async function openEpub(bytes, source, entry) {
         tocLinks.find((a) => a.dataset.path === item.path)?.setAttribute("aria-current", "true");
       }
       paintHits();
+      paintAnnotations();
     }
     await nextFrame();
     if (token !== showToken) return;
@@ -1214,6 +1335,14 @@ async function openEpub(bytes, source, entry) {
     onScroll,
     here,
     paintHits,
+    annotationScope: () => ui.page,
+    annotationData: () => ({ scope: "epub", chapter: current, label: chapterLabels[current] }),
+    annotationMatches: (a) => a.scope === "epub" && a.chapter === current,
+    async goAnnotation(a) {
+      await show(a.chapter, { focus: true });
+      const range = annotationRangeIn(ui.page, a);
+      if (range) window.scrollTo(0, scrollY + range.getBoundingClientRect().top - innerHeight * 0.35);
+    },
     step(dir) { show(current + dir, { focus: true }); },
     go(pos, opts = {}) { return show(pos.i, { block: pos.b, fraction: pos.f || 0, ...opts }); },
     samePlace: (a, b) => a.i === b.i && a.b === b.b,
@@ -1368,7 +1497,7 @@ async function openPdf(bytes, source, entry) {
     p.box.appendChild(text);
     new pdfjs.TextLayer({ textContentSource: page.streamTextContent(), container: text, viewport: vp })
       .render()
-      .then(() => markPage(p))
+      .then(() => { markPage(p); paintAnnotations(); })
       .catch(() => {});
     live = live.filter((q) => q !== p).concat(p);
     if (live.length > 14) {
@@ -1411,6 +1540,7 @@ async function openPdf(bytes, source, entry) {
       syncMarkBtn();
     }, 300);
     tocLinks.forEach((a) => a.setAttribute("aria-current", String(Number(a.dataset.page) === activeTocPage(n))));
+    paintAnnotations();
   }
 
   function rerender() {
@@ -1487,6 +1617,24 @@ async function openPdf(bytes, source, entry) {
     samePlace: (a, b) => a.page === b.page,
     order: (m) => m.page,
     paintHits() { pages.forEach(markPage); },
+    annotationScope: () => {
+      const selected = getSelection()?.anchorNode?.parentElement?.closest?.(".rd-pdf-page");
+      const box = selected || pages[currentPage() - 1]?.box;
+      return box?.querySelector(".textLayer") || null;
+    },
+    annotationData: () => {
+      const selected = getSelection()?.anchorNode?.parentElement?.closest?.(".rd-pdf-page");
+      const n = Number(selected?.dataset.i) + 1 || currentPage();
+      return { scope: "pdf", page: n, label: `Page ${n}` };
+    },
+    annotationMatches: (a) => a.scope === "pdf" && a.page === currentPage(),
+    goAnnotation(a) {
+      goTo(a.page, true);
+      requestAnimationFrame(() => {
+        const range = annotationRangeIn(pages[a.page - 1]?.box?.querySelector(".textLayer"), a);
+        if (range) window.scrollTo(0, scrollY + range.getBoundingClientRect().top - innerHeight * 0.35);
+      });
+    },
     zoom(dir) {
       zoomIndex = clamp(zoomIndex + dir, 0, ZOOMS.length - 1);
       rerender();
@@ -1734,6 +1882,7 @@ async function showShelf() {
         try {
           localStorage.removeItem("reader:pos:local:" + f.id);
           localStorage.removeItem("reader:marks:local:" + f.id);
+          localStorage.removeItem("reader:annotations:local:" + f.id);
         } catch { /* private mode */ }
         toast("Removed from this device");
       } catch {

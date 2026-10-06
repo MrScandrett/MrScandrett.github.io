@@ -826,6 +826,22 @@
     else probe.innerHTML = '<strong>Test a drop:</strong> click or tap anywhere in the sky to see what that one raindrop sends to your eye.';
   }
 
+  function setProbeAt(theta) {
+    // A vertical sample keeps azimuth at zero. Its elevation is measured from
+    // the horizon, while the antisolar point sits `sun` degrees below it.
+    sk.probe = { az: 0, el: theta - sk.sun };
+  }
+
+  function sampleResult(target) {
+    var copy = {
+      inside: '<strong>Inside the primary:</strong> 35° is inside the 40.5–42.4° color band. Some off-peak rays still arrive, mixed together, so this sky is brighter but not a clean spectral color.',
+      primary: '<strong>On the primary:</strong> about 42° is where one-bounce rays crowd together. This is the bright, colored primary bow — red is at its outer edge and violet at its inner edge.',
+      dark: '<strong>In Alexander’s dark band:</strong> 46° lies between the one-bounce and two-bounce turnaround angles. Neither path sends much light toward you, so the sky is comparatively dark.',
+      secondary: '<strong>On the secondary:</strong> about 52° is the fainter two-bounce bow. It is wider and its color order is reversed; turn on “Secondary bow” if you have hidden it.'
+    };
+    return copy[target];
+  }
+
   /* ── Quiz ───────────────────────────────────────────────────────── */
   var QUIZ = [
     { q: 'You see a rainbow late in the afternoon. Where is the Sun?', options: ['In front of you, behind the rain', 'Behind you, low in the sky', 'Directly overhead', 'It doesn’t matter'], a: 1,
@@ -974,6 +990,23 @@
       else return;
       e.preventDefault();
       slider.dispatchEvent(new Event('input'));
+    });
+    document.querySelectorAll('[data-rb-target]').forEach(function (btn) {
+      btn.setAttribute('aria-pressed', 'false');
+      btn.addEventListener('click', function () {
+        var target = btn.getAttribute('data-rb-target');
+        var angles = { inside: 35, primary: 41.5, dark: 46, secondary: 52 };
+        if (sk.plane) {
+          $('rb-plane').checked = false;
+          $('rb-plane').dispatchEvent(new Event('change'));
+        }
+        setProbeAt(angles[target]);
+        document.querySelectorAll('[data-rb-target]').forEach(function (other) {
+          other.setAttribute('aria-pressed', String(other === btn));
+        });
+        $('rb-sample-result').innerHTML = sampleResult(target);
+        skyChanged();
+      });
     });
 
     if ('IntersectionObserver' in window) {

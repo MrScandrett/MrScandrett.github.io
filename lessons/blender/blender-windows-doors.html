@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-glossary-manual>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../assets/css/lessons/blender-pathway.css" />
+  <link rel="stylesheet" href="../../assets/css/lessons/blender-boolean-lab.css" />
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -25,7 +26,7 @@
       </div>
     </header>
 
-    <div class="ll-stage">
+    <div class="ll-stage" data-glossary-root>
       <div class="ll-sim">
         <main id="main-content" class="bl-shell">
           <section class="bl-hero">
@@ -41,7 +42,7 @@
             </div>
             <figure data-zoomable data-lightbox-group="blender-windows-doors" class="bl-figure">
               <img src="../../assets/images/lessons/blender-windows-doors/boolean-difference-examples.webp" alt="Official Blender example showing Intersect on the left, Union in the middle, and Difference on the right, using a sphere and cube." width="603" height="328" />
-              <figcaption><b>Look for the missing volume</b>The right-hand Difference result removes the cube's volume from the sphere. Your wall and cutter use the same operation. <a href="../../assets/images/lessons/blender-windows-doors/ATTRIBUTION.md">Blender Manual image · CC BY-SA 4.0</a>.</figcaption>
+              <figcaption><b>Look for the missing volume</b>The right-hand Difference result removes the cube's volume from the sphere. Your wall and <span data-glossary="cutter object">cutter</span> use the same operation. <a href="../../assets/images/lessons/blender-windows-doors/ATTRIBUTION.md">Blender Manual image · CC BY-SA 4.0</a>.</figcaption>
             </figure>
           </section>
 
@@ -105,11 +106,49 @@
               </figure>
               <article class="bl-build-step">
                 <h3>3. Add Difference to the wall</h3>
-                <p><strong>DO ·</strong> Select <code>WallPanel</code> in the Outliner. Open <span class="bl-path">Properties → Modifiers (wrench) → Add Modifier → Generate → Boolean</span>; if needed, search the Add Modifier menu for <strong>Boolean</strong>. Choose <strong>Difference</strong>, Operand Type <strong>Object</strong>, Object <strong>WindowCut</strong>, and Solver <strong>Exact</strong>. Leave the modifier in the stack.</p>
+                <p><strong>DO ·</strong> Select <code>WallPanel</code> in the Outliner. Open <span class="bl-path">Properties → Modifiers (wrench) → Add Modifier → Generate → Boolean</span>; if needed, search the Add <span data-glossary="modifier">Modifier</span> menu for <strong>Boolean</strong>. Choose <strong>Difference</strong>, Operand Type <strong>Object</strong>, Object <strong>WindowCut</strong>, and Solver <strong>Exact</strong>. Leave the modifier in the stack.</p>
                 <p>Select <code>WindowCut</code> and press <kbd>H</kbd> with the pointer over the viewport to hide it locally. In <span class="bl-path">Outliner → Filter (funnel) → Restriction Toggles</span>, enable the <strong>camera column</strong>. Turn off the camera toggle on the <code>WindowCut</code> row so the cutter is also hidden from final renders. Leave the <code>WindowModule</code> collection enabled. The eye/H toggle and camera toggle do different jobs.</p>
                 <p class="bl-checkpoint"><strong>CHECK ·</strong> Orbit the wall: see through the opening and see thickness on its four inside edges. The Boolean remains on <code>WallPanel</code>; <code>WindowCut</code> remains in the Outliner with its eye closed and rendering disabled.</p>
                 <p class="bl-repair"><strong>REPAIR ·</strong> If the wall is still solid, check the modifier is on <code>WallPanel</code>, its Object field is <code>WindowCut</code>, and its viewport display icon is enabled. If the whole wall vanished, check you chose Difference instead of Intersect and restore the cutter dimensions.</p>
               </article>
+              <div class="bbl" id="boolean-lab" data-bl-boolean aria-labelledby="bbl-title">
+                <div class="bbl-head">
+                  <div><h3 id="bbl-title">Boolean lab: cut, compare, repair</h3><p>Your WallPanel and WindowCut at the lesson’s exact sizes, with Blender’s Boolean modifier panel and Outliner toggles. Rehearse steps 2–3 here, then use the repair bench to practise the Fix list below.</p></div>
+                  <div class="bbl-head-actions"><button type="button" data-bbl-cmd="render" aria-pressed="false">Render preview <kbd>F12</kbd></button><button type="button" data-bbl-cmd="undo">Undo</button><button type="button" data-bbl-cmd="redo">Redo</button><button type="button" data-bbl-cmd="delete">Delete <kbd>X</kbd></button><button type="button" data-bbl-cmd="reset">Reset</button></div>
+                </div>
+                <div class="bbl-body">
+                  <div class="bbl-main">
+                    <div class="bbl-view" tabindex="0" role="application" aria-label="Boolean lab 3D view. Drag to orbit, scroll to zoom, click to select." aria-describedby="bbl-help">
+                      <canvas data-bbl-canvas width="800" height="440"></canvas>
+                      <p class="bbl-viewlabel" data-bbl-viewlabel aria-hidden="true">User Perspective · Solid</p>
+                      <p class="bbl-status" data-bbl-status role="status" aria-live="polite"></p>
+                    </div>
+                    <p class="bbl-result" data-bbl-result aria-live="polite"></p>
+                    <div class="bbl-props">
+                      <section aria-label="Object properties" data-bbl-item></section>
+                      <section aria-label="Modifier properties" data-bbl-mod></section>
+                    </div>
+                  </div>
+                  <div class="bbl-side">
+                    <section class="bbl-outliner" aria-labelledby="bbl-outliner-title"><h4 id="bbl-outliner-title">Outliner</h4><ul data-bbl-outliner></ul></section>
+                    <section class="bbl-drill" aria-labelledby="bbl-drill-title">
+                      <h4>Drill</h4>
+                      <p class="bbl-drill-count" data-bbl-drill-count>Step 1</p>
+                      <div class="bbl-drill-track" aria-hidden="true"><span data-bbl-drill-bar></span></div>
+                      <h5 id="bbl-drill-title" data-bbl-drill-title>Put a Boolean on the wall</h5>
+                      <p class="bbl-drill-body" data-bbl-drill-body></p>
+                      <div><button type="button" data-bbl-skip>Skip step</button></div>
+                    </section>
+                    <section class="bbl-bench" aria-labelledby="bbl-bench-title">
+                      <h4 id="bbl-bench-title">Repair bench</h4>
+                      <p class="bbl-bench-intro">Each button loads a broken copy of the finished module. Diagnose it, fix it, and the cause appears here.</p>
+                      <ol data-bbl-cases></ol>
+                    </section>
+                  </div>
+                </div>
+                <p class="bbl-help" id="bbl-help"><b>View:</b> drag to orbit, right-drag to pan, scroll to zoom, click an object to select it (Shift+click adds). <b>Keys in the view:</b> H hides the selection, Alt+H reveals all, X or Delete deletes, Ctrl+Z undoes, F12 toggles the render preview. Location and Dimensions accept typed values, like Blender’s Sidebar. The cut is computed exactly, so every size in the Result line is real.</p>
+                <p class="bbl-nowebgl" data-bbl-nowebgl hidden>This browser can’t show 3D graphics (WebGL is off), so the Boolean lab is unavailable. Do steps 2–3 in Blender instead.</p>
+              </div>
               <div class="callout"><b>Save point 1 · a working opening</b><p>Use <span class="bl-path">File → Save As</span> and save <code>02-window-module.blend</code>. A live modifier needs its cutter: <strong>do not delete WindowCut</strong>. To adjust it later, reopen its Outliner eye, select it, change a dimension or position, then hide it again. <a href="https://docs.blender.org/manual/en/4.5/modeling/modifiers/generate/booleans.html">Manual: Boolean modifier</a> · <a href="https://docs.blender.org/manual/en/4.2/editors/outliner/interface.html#restriction-columns">Manual: eye and camera toggles</a>.</p></div>
               <div class="teacher-check"><strong>Explain the operation</strong><span>Difference subtracts the cutter's volume; Union adds the volumes; Intersect keeps their overlap. Point at the two objects and explain why the cutter must extend past both wall faces.</span></div>
             </div>
@@ -162,7 +201,7 @@
               <article class="bl-build-step">
                 <h3>7. Add a small bevel to the seven frame and bar parts</h3>
                 <p><strong>LOOK ·</strong> A bevel creates a narrow surface that can catch a highlight along an edge.</p>
-                <p><strong>DO ·</strong> Select <code>FrameLeft</code>. Open <span class="bl-path">Properties → Modifiers → Add Modifier → Generate → Bevel</span>. Set Affect to <strong>Edges</strong>, Width Type to <strong>Offset</strong>, Amount to <strong>0.003m</strong>, Segments to <strong>2</strong>, and Limit Method to <strong>Angle</strong> (30°). Keep Clamp Overlap on. Repeat these settings on the other three frame rails and the three muntin bars. Leave the wall, cutter, and panes as they are.</p>
+                <p><strong>DO ·</strong> Select <code>FrameLeft</code>. Open <span class="bl-path">Properties → Modifiers → Add Modifier → Generate → Bevel</span>. Set Affect to <strong>Edges</strong>, Width Type to <strong>Offset</strong>, Amount to <strong>0.003m</strong>, Segments to <strong>2</strong>, and Limit Method to <strong>Angle</strong> (30°). Keep Clamp Overlap on. Repeat these settings on the other three frame rails and the three <span data-glossary="muntin">muntin</span> bars. Leave the wall, cutter, and panes as they are.</p>
                 <p class="bl-checkpoint"><strong>CHECK ·</strong> Zoom in and orbit: the frame edges have a small chamfer, and the four openings remain recognizable. Each of those seven parts has Scale 1, 1, 1 and one Bevel modifier.</p>
                 <p class="bl-repair"><strong>REPAIR ·</strong> If bevels look uneven, apply that object's Scale. If too much material disappears, confirm the amount is <strong>0.003m (3mm)</strong>, not 0.3m. Keep flat shading while inspecting these simple solids. <a href="https://docs.blender.org/manual/en/4.4/modeling/modifiers/generate/bevel.html">Manual: Bevel controls</a>.</p>
               </article>
@@ -175,11 +214,12 @@
             <div class="section-content">
               <p class="section-kicker">Recover before rebuilding</p>
               <h2>Check the object, the operation, then the surface.</h2>
+              <p>Every Boolean problem below has a broken file waiting in the <a href="#boolean-lab">Boolean lab’s repair bench</a>. Practise the diagnosis there before you need it on your own wall.</p>
               <div class="debug-grid">
                 <article><b>The opening disappears (Live Modifier issue)</b><p>The wall still depends on its cutter. Move the complete module, including <code>WindowCut</code>, or use the collection workflow in Lesson 04. If you duplicate a wall, inspect its Boolean Object field before editing: a wall-only copy can still refer to the original cutter.</p></article>
-                <article><b>A block fills the opening in the render</b><p>H and the eye toggle affect the viewport. Disable <code>WindowCut</code>'s <strong>camera</strong> toggle in the Outliner too. Do not turn off the Boolean modifier's render icon: that removes the cut from the rendered wall.</p></article>
+                <article><b>A block fills the opening in the render</b><p>H and the eye toggle affect the viewport. Disable <code>WindowCut</code>'s <strong>camera</strong> toggle in the Outliner too. Do not turn off the <span data-glossary="Boolean modifier">Boolean modifier</span>'s render icon: that removes the cut from the rendered wall.</p></article>
                 <article><b>The cut has a thin cap or odd fragments</b><p>Check that WindowCut is a closed cube, depth 0.45m, centered at Y = 0. Restore these values and use Exact. Applying Scale helps measurement-dependent modifiers; it cannot fix a cutter that misses the wall or a mesh with missing faces.</p></article>
-                <article><b>A surface looks wrong (Topology/Normals)</b><p>First check for duplicate objects or overlapping faces causing Z-fighting. If you suspect reversed normals or bad topology, select the affected closed mesh, enter Edit Mode, press A, then <kbd>Shift</kbd>+<kbd>N</kbd> to recalculate outside; return to Object Mode. Merging by distance (<kbd>M</kbd>) can also clean up bad topology.</p></article>
+                <article><b>A surface looks wrong (Topology/<span data-glossary="face normal">Normals</span>)</b><p>First check for duplicate objects or overlapping faces causing Z-fighting. If you suspect reversed normals or bad topology, select the affected closed mesh, enter Edit Mode, press A, then <kbd>Shift</kbd>+<kbd>N</kbd> to recalculate outside; return to Object Mode. Merging by distance (<kbd>M</kbd>) can also clean up bad topology.</p></article>
               </div>
               <details class="rescue"><summary>What does Apply mean, and when may I delete the cutter?</summary><p>Adding a modifier leaves it editable. <strong>Apply</strong> writes its result into the mesh and removes that modifier. For this lesson keep the live version. If a later export needs a permanent cut, first use <span class="bl-path">File → Save As</span> to make <code>02-window-baked-copy.blend</code>. In Object Mode select WallPanel, open the Boolean modifier header's dropdown, and choose <strong>Apply</strong>. Verify the opening remains, then delete WindowCut <strong>only in that copy</strong>. Keep the original module file for revisions. Applying object Scale and applying a modifier are different operations. <a href="https://docs.blender.org/manual/en/4.5/modeling/modifiers/introduction.html">Manual: modifier stack and Apply</a>.</p></details>
               <details class="rescue"><summary>Optional stretch · turn a copy into a doorway</summary><p>Save As <code>02-door-study.blend</code>. In this copy, delete the four rails, three bars, and four panes, leaving the wall and cutter. Reveal WindowCut; set Dimensions to <strong>(0.9, 0.45, 1.82)m</strong> and Location to <strong>(0, 0, 0.9)m</strong>, then Apply Scale. Its bottom now reaches Z = −0.01, just below the wall base, and its top reaches Z = 1.81. Hide the cutter again and keep its camera disabled. Check that the doorway is open at floor level, rather than leaving a thin threshold. Explain why an ordinary window cutter placed above the floor would fail this test. Keep <code>02-window-module.blend</code> unchanged for the room lesson.</p></details>
@@ -226,7 +266,7 @@
             <p class="ll-pane-title panel-gap">Save habit</p><p class="panel-copy">Save <code>02-window-module.blend</code> after the working cut and again after the finished frame. Keep the original Boolean live. Use Save As before a doorway experiment or permanently applying a modifier.</p>
           </div>
           <div class="ll-pane" id="pane-vocab">
-            <p class="ll-pane-title">Key vocabulary</p><dl class="vocab-list"><dt>Boolean modifier</dt><dd>Combines two meshes with Difference, Union, or Intersect.</dd><dt>Cutter object</dt><dd>The mesh used to remove volume from another mesh.</dd><dt>Manifold solid</dt><dd>A closed mesh with a consistent inside and outside; the cube cutter is a dependable starting shape.</dd><dt>Modifier</dt><dd>An editable operation evaluated on an object; applying it makes its result part of the mesh.</dd><dt>Clearance</dt><dd>A small intentional fitting gap between parts.</dd><dt>Muntin</dt><dd>The thin bars dividing a window into panes.</dd><dt>Normal</dt><dd>The direction a face points; flipped normals shade incorrectly.</dd></dl>
+            <p class="ll-pane-title">Key vocabulary</p><dl class="vocab-list"><dt><span data-glossary="Boolean modifier">Boolean modifier</span></dt><dd>Combines two meshes with Difference, Union, or Intersect.</dd><dt><span data-glossary="cutter object">Cutter object</span></dt><dd>The mesh used to remove volume from another mesh.</dd><dt><span data-glossary="manifold mesh">Manifold solid</span></dt><dd>A closed mesh with a consistent inside and outside; the cube cutter is a dependable starting shape.</dd><dt><span data-glossary="modifier">Modifier</span></dt><dd>An editable operation evaluated on an object; applying it makes its result part of the mesh.</dd><dt>Clearance</dt><dd>A small intentional fitting gap between parts.</dd><dt><span data-glossary="muntin">Muntin</span></dt><dd>The thin bars dividing a window into panes.</dd><dt><span data-glossary="face normal">Normal</span></dt><dd>The direction a face points; flipped normals shade incorrectly.</dd></dl>
           </div>
         </div>
       </aside>
@@ -235,11 +275,13 @@
   </div>
 
   <script src="../../assets/js/lessons/blender-pathway.js"></script>
+  <script type="module" src="../../assets/js/lessons/blender-boolean-lab.mjs"></script>
   <script src="../../assets/js/reveal.js"></script>
   <script src="../../assets/js/theme-registry.js"></script>
   <script src="../../assets/js/nav-mobile.js"></script>
   <script src="../../assets/js/lesson-print-button.js"></script>
   <link rel="stylesheet" href="../../assets/css/lessons/blender-workspace-switcher.css" />  <script src="../../assets/js/lessons/blender-workspace-switcher.js"></script>
+<script src="../../assets/js/site-glossary.js"></script>
 <script src="../../assets/js/photo-lightbox.js"></script>
 </body>
 </html>
