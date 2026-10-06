@@ -72,7 +72,7 @@ async function copySite() {
 const SITE_ORIGIN = "https://mrscandrett.github.io";
 const PUBLIC_ROOT_PAGES = [
   "", "about.html", "applications.html", "class-downloads.html", "music-lab.html",
-  "paths.html", "project.html", "quizzes.html", "recipe-book.html", "showcase.html",
+  "paths.html", "project.html", "quizzes.html", "library.html", "showcase.html",
   "steam-lessons.html", "video-library.html",
 ];
 

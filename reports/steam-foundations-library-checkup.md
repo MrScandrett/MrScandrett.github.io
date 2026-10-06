@@ -1,6 +1,6 @@
 # STEAM foundations library check-up — 2026-10-06
 
-Checked with the library checker’s Gutenberg title, rights, and EPUB probes, limited to the four new foundation entries in `recipe-book.html`. Existing catalog entries and editions were preserved.
+Checked with the library checker’s Gutenberg title, rights, and EPUB probes, limited to the four new foundation entries in `library.html`. Existing catalog entries and editions were preserved.
 
 - **4** shelf entries with links checked
 - **4** open in the ClassroomOS Reader — **0** load directly today, **4** need the book proxy

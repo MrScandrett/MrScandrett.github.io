@@ -2065,7 +2065,7 @@ async function main() {
     .then((r) => (r.ok ? r.json() : { books: {} }))
     .catch(() => ({ books: {} }));
   const entry = catalog.books?.[src] || null;
-  if (entry?.format === "pdf") ui.back.href = "recipe-book.html#section-nasa";
+  if (entry?.format === "pdf") ui.back.href = "library.html#section-nasa";
   setHeading(entry?.title || params.get("title") || "Opening book…", entry?.author || params.get("author") || "");
 
   const sources = planSources(entry);

@@ -27,7 +27,7 @@ export const learningTools = [
   resource("audacity", "Audacity", "music", "https://www.audacityteam.org/", "Record a podcast, narration, interview, or soundscape.", "Save an .aup3 project for editing and export WAV or MP3 for listening. Reopen the project in Audacity.", undefined, older, {access:"installed",browser:false,login:"Install with your teacher",openSource:true,utilities:["free","open-source","projects"]}),
   resource("classroom-math", "Math Foundations Lab", "math", "lessons/mathematics/foundations/math-foundations-lab.html", "Practice math with ClassroomOS activities.", "Write down the activity and your solution, or save a screenshot. Return through this launchpad.", "lessons/mathematics/foundations/math-foundations-lab.html", allGrades),
   resource("classroom-guitar", "The Guitar", "music", "lessons/music/guitar.html", "Explore chords with the classroom guitar lesson.", "Keep your chord sequence in project notes and reopen the lesson next time.", "lessons/music/guitar.html", allGrades),
-  resource("classroom-library", "Classroom Library", "storytelling", "recipe-book.html", "Find books and source material for a new story or investigation.", "Bookmark your book and write down the page or chapter. Check each book’s download options and reading guidance.", "recipe-book.html", allGrades)
+  resource("classroom-library", "Classroom Library", "storytelling", "library.html", "Find books and source material for a new story or investigation.", "Bookmark your book and write down the page or chapter. Check each book’s download options and reading guidance.", "library.html", allGrades)
 ];
 
 // Explicit allowlist: ambiguous or unreviewed legacy entries stay out of Start now.

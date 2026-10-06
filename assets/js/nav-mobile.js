@@ -1179,8 +1179,8 @@
     },
     "Library": {
       items: [
-        { label: "📖 Recipe Book",   href: "/recipe-book.html" },
-        { label: "📚 Classics",      href: "/recipe-book.html#section-classics" },
+        { label: "📖 Recipe Book",   href: "/library.html" },
+        { label: "📚 Classics",      href: "/library.html#section-classics" },
         { divider: true },
         { label: "🎬 Video Library", href: "/video-library.html" }
       ]

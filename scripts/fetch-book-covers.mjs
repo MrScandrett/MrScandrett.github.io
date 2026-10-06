@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Cover thumbnails for the library's cover view (recipe-book.html).
+// Cover thumbnails for the library's cover view (library.html).
 //
 // For each book in the reading room and the NASA room it saves a small WebP
 // cover to assets/images/covers/ and records it in data/book-covers.json,
@@ -30,7 +30,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUT_DIR = path.join(root, "assets/images/covers");
 const OUT_JSON = path.join(root, "data/book-covers.json");
 const REFRESH = process.argv.includes("--refresh");
-const UA = "MrScandrett-ClassroomOS-covers/1.0 (+https://mrscandrett.github.io/recipe-book.html)";
+const UA = "MrScandrett-ClassroomOS-covers/1.0 (+https://mrscandrett.github.io/library.html)";
 const WIDTH = 320;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const run = promisify(execFile);
@@ -93,7 +93,7 @@ async function isGeneratedCover(bytes) {
   return topWhite / topCount > 0.55 && vivid / lowCount > 0.45;
 }
 
-const html = await fs.readFile(path.join(root, "recipe-book.html"), "utf8");
+const html = await fs.readFile(path.join(root, "library.html"), "utf8");
 const doc = new JSDOM(html).window.document;
 const catalog = JSON.parse(await fs.readFile(path.join(root, "data/reader-library.json"), "utf8")).books;
 let previous = {};
