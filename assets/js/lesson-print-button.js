@@ -42,6 +42,17 @@
     document.head.appendChild(glossary);
   }
 
+  // Heart, Save answers and lesson history (see visitor-memory.js). Many lessons have
+  // no site nav, so nav-mobile.js can't be relied on to load it here.
+  function loadVisitorMemory() {
+    if (window.ClassroomOSMemory || document.querySelector('script[data-visitor-memory="true"]')) return;
+    var memory = document.createElement('script');
+    memory.src = script && script.src ? new URL('visitor-memory.js', script.src).href : '/assets/js/visitor-memory.js';
+    memory.defer = true;
+    memory.dataset.visitorMemory = 'true';
+    document.head.appendChild(memory);
+  }
+
   function cleanText(value) {
     return String(value || '').replace(/\s+/g, ' ').trim().slice(0, 220);
   }
@@ -133,6 +144,7 @@
   ensureContrastGuard();
   loadRelatedLinks();
   loadExhibitLinks();
+  loadVisitorMemory();
   // Wait for parsing to finish so a lesson's own site-glossary.js tag (often
   // placed after this script, with its own data-glossary-src) wins over the
   // shared default glossary.
@@ -161,7 +173,8 @@
         '<path d="M6 14h12v7H6z"></path>' +
       '</svg>' +
       '<span class="lesson-print-button__full-label">Print / Save PDF</span>' +
-      '<span class="lesson-print-button__short-label" aria-hidden="true">Print / PDF</span>';
+      '<span class="lesson-print-button__short-label" aria-hidden="true">Print / PDF</span>' +
+      '<span class="lesson-print-button__compact-label" aria-hidden="true">Print</span>';
 
     var menu = document.createElement('div');
     menu.className = 'lesson-print-menu';

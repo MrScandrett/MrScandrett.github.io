@@ -1,6 +1,7 @@
 import { getProjectById, loadProjects } from "../data.js";
 import {
   createEmptyState,
+  createLikeButton,
   createMetaPill,
   createProjectRow,
   setActiveNav,
@@ -175,6 +176,10 @@ async function init() {
     heroMeta.appendChild(createMetaPill(project.type));
     if (project.jam) heroMeta.appendChild(createMetaPill("Game Jam"));
 
+    const likeRow = document.createElement("div");
+    likeRow.className = "detail-like-row";
+    likeRow.appendChild(createLikeButton(project, { label: true }));
+
     const layout = document.createElement("section");
     layout.className = "detail-layout reveal";
     layout.style.setProperty("--i", "2");
@@ -215,7 +220,7 @@ async function init() {
 
     layout.append(main, side);
 
-    slot.append(hero, title, subtitle, heroMeta, layout);
+    slot.append(hero, title, subtitle, heroMeta, likeRow, layout);
     renderGallery(project, slot);
 
     const similar = relatedProjects(projects, project).slice(0, 12);

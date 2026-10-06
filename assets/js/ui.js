@@ -84,6 +84,36 @@ function projectAction(project) {
   return { label: "Open project", icon: "→" };
 }
 
+// Hearts and "recently played" are handled by visitor-memory.js (on-device only).
+// Showcase pages already load it via nav-mobile.js; this covers any page that doesn't.
+function ensureVisitorMemory() {
+  if (window.ClassroomOSMemory || document.querySelector('script[data-visitor-memory="true"]')) return;
+  const script = document.createElement("script");
+  script.src = new URL("./visitor-memory.js", import.meta.url).href;
+  script.defer = true;
+  script.dataset.visitorMemory = "true";
+  document.head.appendChild(script);
+}
+
+function memoryAttrs(node, project) {
+  node.dataset.memoryId = project.id;
+  node.dataset.memoryTitle = project.title || "";
+  node.dataset.memoryBy = project.student || "";
+  if (project.thumbnail) node.dataset.memoryThumb = new URL(project.thumbnail, document.baseURI).href;
+}
+
+export function createLikeButton(project, { label = false } = {}) {
+  ensureVisitorMemory();
+  const button = document.createElement("button");
+  button.type = "button";
+  button.dataset.memoryLike = "project";
+  memoryAttrs(button, project);
+  button.dataset.memoryUrl = new URL(project.appUrl || projectUrl(project.id), document.baseURI).href;
+  if (label) button.dataset.memoryLabel = "";
+  button.setAttribute("aria-label", `Like: ${project.title}`);
+  return button;
+}
+
 export function createProjectCard(project, options = {}) {
   const article = document.createElement("article");
   article.className = "project-card reveal";
@@ -107,6 +137,10 @@ export function createProjectCard(project, options = {}) {
   const launchesProject = options.directLaunch && Boolean(project.appUrl);
   const action = projectAction(project);
   link.href = launchesProject ? project.appUrl : projectUrl(project.id);
+  if (launchesProject) {
+    link.dataset.memoryPlay = "";
+    memoryAttrs(link, project);
+  }
   link.setAttribute("aria-label", `${launchesProject ? action.label : "View project"}: ${project.title} by ${project.student}`);
   link.addEventListener("click", (e) => {
     // Call the global modal function if it exists
@@ -195,6 +229,7 @@ export function createProjectCard(project, options = {}) {
   body.append(title, sub, badges, launchCue);
   link.append(thumb, body);
   article.appendChild(link);
+  article.appendChild(createLikeButton(project));
 
   if (options.showDetailsLink && launchesProject) {
     const details = document.createElement("a");

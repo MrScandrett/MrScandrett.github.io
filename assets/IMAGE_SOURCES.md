@@ -5,6 +5,15 @@ Maintained to demonstrate good-faith educational use and to credit creators.
 
 ---
 
+## Profile pictures (`assets/images/avatars/`)
+
+Square 192px crops of lesson images, used as My Stuff profile pictures. Each one's
+credit, license, source link and originating lesson are recorded in
+`data/avatars.json`; `npm run check:avatars` verifies every source image is really
+used by the lesson it names.
+
+---
+
 ## Public Domain — NASA / U.S. Federal Government
 *Works of the U.S. Federal Government. Public domain under 17 U.S.C. § 105.*
 
