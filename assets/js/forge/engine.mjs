@@ -124,8 +124,21 @@ export function overhangs(positions, limitDeg = OVERHANG_LIMIT) {
 }
 
 /* Lays bodies out left to right, centred on the bed, each resting on Z = 0.
-   Falls back to a second row when one row is wider than the bed. */
-export function layoutBodies(bodies, printer = DEFAULT_PRINTER) {
+   Falls back to a second row when one row is wider than the bed. A 'nested'
+   part (print-in-place pieces built inside each other) keeps its pieces where
+   the part put them and only centres the group on the bed. */
+export function layoutBodies(bodies, printer = DEFAULT_PRINTER, arrange = 'apart') {
+  if (arrange === 'nested') {
+    const { min, max } = bounds(concat(bodies.map((b) => b.positions)));
+    const d = [-(min[0] + max[0]) / 2, -(min[1] + max[1]) / 2, -min[2]];
+    const placed = bodies.map((b) => {
+      const p = new Float32Array(b.positions.length);
+      for (let k = 0; k < p.length; k += 3) { p[k] = b.positions[k] + d[0]; p[k + 1] = b.positions[k + 1] + d[1]; p[k + 2] = b.positions[k + 2] + d[2]; }
+      return { ...b, positions: p };
+    });
+    const size = [max[0] - min[0], max[1] - min[1], max[2] - min[2]];
+    return { bodies: placed, size, fit: printerFit(size, printer), nested: true };
+  }
   const boxes = bodies.map((b) => bounds(b.positions));
   const rowWidth = (list) => list.reduce((w, i) => w + boxes[i].size[0], 0) + LAYOUT_GAP * Math.max(0, list.length - 1);
   let rows = [bodies.map((_, i) => i)];
@@ -237,7 +250,7 @@ export async function createEngine(ManifoldModule, { font } = {}) {
 }
 
 function finish(part, params, settings, rawBodies, built) {
-  const layout = layoutBodies(rawBodies);
+  const layout = layoutBodies(rawBodies, DEFAULT_PRINTER, built.layout);
   const bodies = layout.bodies.map((b) => ({ ...b, overhang: overhangs(b.positions) }));
   const verdicts = [];
   const nozzle = settings.nozzle;

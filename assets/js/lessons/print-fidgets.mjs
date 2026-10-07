@@ -3,8 +3,9 @@
  *  1. Clearance Lab (2D)  — a cross-section of two neighbouring walls, drawn
  *     bead by bead, so students can see the moment a designed gap stops being
  *     air and starts being a weld.
- *  2. Spiral Cone Lab (3D) — the capstone fidget rebuilt live from its five
- *     real design numbers, with the same pass/fail rules a slicer applies.
+ *  2. Spiral Cone Lab (3D) — the capstone fidget (a twisted-star cone and the
+ *     sleeve it screws through) rebuilt live by Forge's own geometry kernel,
+ *     with the same pass/fail rules a slicer applies.
  *
  * Geometry is generated here rather than loaded: the whole point is that the
  * numbers on the sliders are the numbers you type into Blender.
@@ -12,7 +13,7 @@
 
 import { THREE, OrbitControls } from '../../vendor/three-bundle.min.js';
 import { createScene } from '../sim-kit-three.mjs';
-import { DEFAULT_PRINTER, bounds, edgeReport, prepareForPrint, printerFit, writeBinaryStl } from '../fab-io.mjs';
+import { edgeReport, writeBinaryStl } from '../fab-io.mjs';
 
 const SimKit = window.SimKit;
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -250,130 +251,50 @@ function clearanceLab(root) {
 }
 
 /* ══ 2. Spiral Cone Lab ═════════════════════════════════════════════════════
-   The ribbon is swept along a helix that lies on the cone's surface: at each
-   sample we build a local frame (surface normal + slant direction) and place a
-   rectangular cross-section, exactly like the profile the Blender build
-   revolves with the Screw modifier.
+   The real fidget is two prints: Inner, a cone carved into a twisted star, and
+   Outer, the cone it came from with a slightly fatter twisted star cut out of
+   it. The geometry is Forge's own spiral part on the manifold-3d kernel, so
+   the lab, Forge and the downloaded STLs are the same solid. "Push the tip"
+   moves Inner the only way the slot lets it: down and around together,
+   turning by the twist rate for every millimetre it drops.
 */
-const TIP_RADIUS = 3;
+const OUTER_COLOR = '#2f8f83';
 
-/* The helical slot is cut by a flat sheet, so `gap` is the cutter's thickness in
-   Z — the number typed into the cutter profile. Everything else follows from it:
-   the windings are separated vertically by that slot, and the real air distance
-   between two ribbon faces is that slot leaned over by the cone's angle. */
-function coneMath(p, stretch = 0) {
-  const height = p.height * (1 + 1.35 * stretch);
-  const lean = Math.atan2(p.radius - TIP_RADIUS, p.height);      // radians from vertical
-  const cos = Math.cos(lean);
-  const pitch = p.height / p.turns;                               // mm of rise per turn
-  const slantPitch = pitch / cos;                                 // ...measured along the slant
-  const bandVertical = Math.max(pitch - p.gap, 0.2);              // vertical height of one winding
-  const band = bandVertical / cos;                                // ribbon width along the slant
-  const airGap = p.gap * cos;                                     // true clearance between faces
-  return { height, lean, leanDeg: (lean * 180) / Math.PI, cos, pitch, slantPitch, band, bandVertical, airGap };
+let enginePromise = null;
+function spiralEngine() {
+  enginePromise ??= Promise.all([
+    import('../../vendor/manifold/manifold.js'),
+    import('../forge/engine.mjs'),
+    import('../forge/parts.mjs')
+  ]).then(async ([manifold, engineModule, parts]) => ({
+    engine: await engineModule.createEngine(manifold.default),
+    part: parts.partById('spiral'),
+    resolveParams: engineModule.resolveParams,
+    math: parts.spiralConeMath
+  }));
+  return enginePromise;
 }
 
-/* The ribbon as triangle soup (Y-up, mm). It is the cone shell minus the
-   helical slot, trimmed by the bed: the sweep starts below Y = 0 and every
-   corner that would poke through the bed is slid up its slant edge to Y = 0.
-   That gives the first winding a flat foot, exactly as a Blender cone cut
-   flat at the bottom would, so the same numbers both draw and print. */
-function spiralPositions(p, stretch = 0) {
-  const { height, band } = coneMath(p, stretch);
-  const half = p.thickness / 2;
-  const halfBand = band / 2;
-  // outward cone normal: radial component H, axial component R (perpendicular to the slant)
-  const nLen = Math.hypot(p.height, p.radius - TIP_RADIUS);
-  const nR = p.height / nLen;
-  const nY = (p.radius - TIP_RADIUS) / nLen;
-  // up-slope direction, perpendicular to the normal
-  const sR = -(p.radius - TIP_RADIUS) / nLen;
-  const sY = p.height / nLen;
-  // start where the inner top corner rises out of the bed
-  const tStart = (half * nY - halfBand * sY) / height;
-  const segments = Math.min(1000, Math.max(180, Math.round(p.turns * (1 - tStart) * 46)));
-  const positions = [];
-  const push = (v) => positions.push(v[0], v[1], v[2]);
-
-  const ring = (t) => {
-    const angle = Math.PI * 2 * p.turns * t;
-    const radius = p.radius - (p.radius - TIP_RADIUS) * t;
-    const y = height * t;
-    const cos = Math.cos(angle);
-    const sin = Math.sin(angle);
-    const corner = (dn, ds) => [radius + dn * half * nR + ds * halfBand * sR, y + dn * half * nY + ds * halfBand * sY];
-    // the lower (ds = -1) corner of each face is trimmed to the bed along the slant edge
-    const side = (dn) => {
-      const upper = corner(dn, 1);
-      let lower = corner(dn, -1);
-      if (lower[1] < 0) {
-        const k = Math.max(upper[1], 0) / (upper[1] - lower[1]);
-        lower = [upper[0] + k * (lower[0] - upper[0]), 0];
-      }
-      return [upper, lower];
-    };
-    const [outerUp, outerLow] = side(1);
-    const [innerUp, innerLow] = side(-1);
-    const place = ([rr, yy]) => [rr * cos, Math.max(yy, 0), rr * sin];
-    return [place(outerUp), place(outerLow), place(innerLow), place(innerUp)];
-  };
-
-  const quad = (a, b, c, d) => { push(a); push(b); push(c); push(a); push(c); push(d); };
-
-  let previous = ring(tStart);
-  quad(previous[0], previous[1], previous[2], previous[3]);        // start cap (wound to match the sides)
-  for (let i = 1; i <= segments; i++) {
-    const current = ring(tStart + (1 - tStart) * (i / segments));
-    for (let k = 0; k < 4; k++) {
-      const next = (k + 1) % 4;
-      quad(previous[k], current[k], current[next], previous[next]);
-    }
-    previous = current;
+/* Forge works Z-up; three.js is Y-up. */
+function toYUp(positions) {
+  const out = new Float32Array(positions.length);
+  for (let i = 0; i < positions.length; i += 3) {
+    out[i] = positions[i];
+    out[i + 1] = positions[i + 2];
+    out[i + 2] = -positions[i + 1];
   }
-  quad(previous[3], previous[2], previous[1], previous[0]);        // end cap
-  return positions;
+  return out;
 }
 
-function buildSpiral(p, stretch) {
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(spiralPositions(p, stretch), 3));
-  geometry.computeVertexNormals();
-  return geometry;
-}
-
-function spiralVerdicts(p) {
-  const { leanDeg, band, bandVertical, airGap, slantPitch } = coneMath(p);
-  const perimeters = p.thickness / p.nozzle;
-  const beads = Math.floor(perimeters + 1e-6);
-  const bandLayers = bandVertical / p.layer;
-  const verdicts = [];
-
-  if (airGap < p.layer) verdicts.push({ tone: 'bad', tag: 'WELDED', text: `The lean tips your ${p.gap} mm slot down to ${round(airGap, 2)} mm of real air — less than one ${p.layer} mm layer. This prints as a solid cone.` });
-  else if (airGap < 0.25) verdicts.push({ tone: 'warn', tag: 'TIGHT', text: `${round(airGap, 2)} mm between the ribbon faces. It may free up with a hard twist, but only on a well-tuned printer. Make the cutter thicker.` });
-  else if (airGap <= 0.6) verdicts.push({ tone: 'ok', tag: 'ARTICULATED', text: `${round(airGap, 2)} mm between the ribbon faces — enough to stay separate, tight enough that each layer still lands cleanly on the winding below.` });
-  else verdicts.push({ tone: 'warn', tag: 'LOOSE', text: `${round(airGap, 2)} mm of air is more than a layer can bridge neatly. The undersides will droop and the spiral will feel sloppy.` });
-
-  if (leanDeg > 45) verdicts.push({ tone: 'bad', tag: 'OVERHANG', text: `The wall leans ${round(leanDeg, 1)}° from vertical. Past 45° each layer hangs off the edge of the one below, and the only fix — supports — would fill the spiral and lock it solid.` });
-  else if (leanDeg > 38) verdicts.push({ tone: 'warn', tag: 'OVERHANG', text: `${round(leanDeg, 1)}° from vertical is close to the 45° limit. Slow the outer walls down and run the fan at 100%, or make the cone taller.` });
-  else verdicts.push({ tone: 'ok', tag: 'SELF-SUPPORTING', text: `The wall leans ${round(leanDeg, 1)}° from vertical, inside the 45° rule, so every layer lands on the one below. No supports needed.` });
-
-  if (beads < 2) verdicts.push({ tone: 'bad', tag: 'TOO THIN', text: `${round(p.thickness, 2)} mm is under two ${p.nozzle} mm beads. The slicer prints a single-bead ribbon that snaps the first time it is stretched.` });
-  else if (beads < 3) verdicts.push({ tone: 'warn', tag: 'THIN', text: `${beads} beads thick. It will flex nicely but is fragile near the tip — bump it to ${round(p.nozzle * 3, 1)} mm for a fidget that survives a backpack.` });
-  else verdicts.push({ tone: 'ok', tag: 'STRONG', text: `${beads} beads thick — solid perimeters all the way through, no infill required.` });
-
-  if (bandLayers < 5) verdicts.push({ tone: 'bad', tag: 'RIBBON', text: `Each winding is only ${round(bandLayers, 1)} layers tall. Too few layers to hold its shape — reduce the turns or make the cone taller.` });
-  else if (bandLayers < 10) verdicts.push({ tone: 'warn', tag: 'RIBBON', text: `${round(bandLayers, 1)} layers per winding. Springy, but delicate to pull.` });
-
-  const stats = [
-    { label: 'Rise per turn', value: `${round(p.height / p.turns, 2)} mm` },
-    { label: 'Ribbon width', value: `${round(band, 2)} mm` },
-    { label: 'Air between windings', value: `${round(airGap, 2)} mm` },
-    { label: 'Wall lean', value: `${round(leanDeg, 1)}°` },
-    { label: 'Beads per wall', value: `${beads}` },
-    { label: 'Layers per winding', value: `${round(bandLayers, 0)}` },
-    { label: 'Slant pitch', value: `${round(slantPitch, 2)} mm` }
-  ];
-  return { stats, verdicts };
+function saveStl(positions, name, header) {
+  const blob = new Blob([writeBinaryStl(positions, header)], { type: 'model/stl' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `${name}.stl`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(link.href), 4000);
 }
 
 function spiralLab(root) {
@@ -381,34 +302,19 @@ function spiralLab(root) {
   const fallback = root.querySelector('[data-pf-nogl]');
   const verdictList = root.querySelector('[data-pf-verdicts]');
   const statList = root.querySelector('[data-pf-stats]');
-  const pullButton = root.querySelector('[data-pf-pull]');
-  const downloadButton = root.querySelector('[data-pf-download]');
+  const pushButton = root.querySelector('[data-pf-pull]');
   const downloadNote = root.querySelector('[data-pf-download-note]');
+  const downloads = [...root.querySelectorAll('[data-pf-download]')];
   let params = null;
+  let result = null;
+  let design = null;                                       // params resolved against the part (adds core)
+  let kit = null;
 
-  const printSize = () => {
-    const { size } = bounds(spiralPositions(params));
-    return [size[0], size[2], size[1]];                    // Y-up → width, depth, height
-  };
+  const fileName = () => `spiral-cone-r${params.radius}-h${params.height}-f${params.fins}-tw${params.twist}-gap${params.gap}`;
   const mm = (size) => size.map(v => Math.round(v)).join(' × ');
 
-  const refreshReadout = () => {
-    if (!params) return;
-    const { stats, verdicts } = spiralVerdicts(params);
-    renderStats(statList, stats);
-    renderVerdicts(verdictList, verdicts);
-    if (downloadNote) {
-      const size = printSize();
-      const fit = printerFit(size);
-      const red = verdicts.filter(v => v.tone === 'bad').length;
-      downloadNote.textContent = `${mm(size)} mm · ${fit.fits ? 'fits' : 'too big for'} the ${DEFAULT_PRINTER.name}`
-        + (red ? ` · ${red} red verdict${red > 1 ? 's' : ''}: the file will print, and fail the way the verdict says.` : '.');
-    }
-    canvas.setAttribute('aria-label', `Spiral cone ${params.radius * 2} millimetres across and ${params.height} tall with ${params.turns} turns. ${verdicts.map(v => `${v.tag}: ${v.text}`).join(' ')}`);
-  };
-
   let webglOK = true;
-  let scene, camera, renderer, syncSize, controls, mesh, material;
+  let scene, camera, renderer, syncSize, controls, assembly, outerMesh, innerMesh;
   try {
     const built = createScene(canvas, { THREE, fov: 40, near: 1, far: 4000, clearColor: 0x241a12 });
     ({ scene, camera, renderer, syncSize } = built);
@@ -416,7 +322,7 @@ function spiralLab(root) {
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
     controls.minDistance = 60;
-    controls.maxDistance = 520;
+    controls.maxDistance = 700;
     controls.autoRotate = !reduceMotion;
     controls.autoRotateSpeed = 0.7;
     scene.add(new THREE.HemisphereLight(0xfff0e0, 0x2a1d12, 1.5));
@@ -427,88 +333,131 @@ function spiralLab(root) {
     grid.material.opacity = 0.45;
     grid.material.transparent = true;
     scene.add(grid);
-    material = new THREE.MeshStandardMaterial({ color: MOVING, roughness: 0.62, metalness: 0.04, flatShading: true, side: THREE.DoubleSide });
+    assembly = new THREE.Group();
+    scene.add(assembly);
+    const material = (color) => new THREE.MeshStandardMaterial({ color, roughness: 0.62, metalness: 0.04, flatShading: true });
+    outerMesh = new THREE.Mesh(new THREE.BufferGeometry(), material(OUTER_COLOR));
+    innerMesh = new THREE.Mesh(new THREE.BufferGeometry(), material(MOVING));
+    assembly.add(outerMesh, innerMesh);
   } catch (error) {
     webglOK = false;
     canvas.hidden = true;
     if (fallback) fallback.hidden = false;
   }
 
-  let stretch = 0;
-  let stretchTarget = 0;
-  let dirty = true;
+  /* push: 0 = as printed; 1 = lifted off the bed and the cone fallen right through */
+  let push = 0;
+  let pushTarget = 0;
+  let dirty = false;
 
-  /* Keeps the whole cone in frame as it grows — dollies along whatever
-     direction the viewer has orbited to rather than snapping the camera back. */
   let lastReach = null;
-  const fitCamera = (height) => {
-    const reach = Math.max(height, params.radius * 2);
+  const fitCamera = (height, radius) => {
+    const reach = Math.max(height, radius * 2);
     if (lastReach !== null && Math.abs(reach - lastReach) < 0.5) return;
     lastReach = reach;
-    const target = new THREE.Vector3(0, height * 0.4, 0);
+    const target = new THREE.Vector3(0, height * 0.45, 0);
     const direction = camera.position.clone().sub(controls.target);
-    if (direction.lengthSq() < 1) direction.set(1, 0.9, 1);
-    direction.normalize().multiplyScalar(reach * 1.85);
+    if (direction.lengthSq() < 1) direction.set(1, 0.7, 1);
+    direction.normalize().multiplyScalar(reach * 1.9);
     controls.target.copy(target);
     camera.position.copy(target).add(direction);
     controls.update();
   };
 
-  const rebuild = () => {
-    if (!webglOK || !params) return;
-    const geometry = buildSpiral(params, stretch);
-    if (mesh) { mesh.geometry.dispose(); mesh.geometry = geometry; }
-    else { mesh = new THREE.Mesh(geometry, material); scene.add(mesh); }
-    material.color.set(coneMath(params).airGap < params.layer ? WELD : MOVING);
-    fitCamera(coneMath(params, stretch).height);
+  const pose = () => {
+    if (!webglOK || !result || result.error || !kit) return;
+    const m = kit.math(design, params.nozzle);
+    const lift = m.tipHeight * Math.min(push / 0.3, 1);                    // pick the sleeve up off the bed
+    const drop = m.tipHeight * Math.max((push - 0.3) / 0.7, 0);            // then the cone screws down through it
+    outerMesh.position.y = lift;
+    innerMesh.position.y = lift - drop;
+    innerMesh.rotation.y = -m.rateRad * drop;                               // the twist forces the spin
+    fitCamera(m.tipHeight * (1 + Math.min(push / 0.3, 1)), params.radius);
   };
 
+  const show = () => {
+    if (!result) return;
+    renderStats(statList, result.stats);
+    renderVerdicts(verdictList, result.verdicts);
+    downloads.forEach(button => { button.disabled = Boolean(result.error); });
+    if (result.error) return;
+    if (webglOK) {
+      for (const [mesh, name] of [[outerMesh, 'Outer'], [innerMesh, 'Inner']]) {
+        const body = result.bodies.find(b => b.name === name);
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(toYUp(body.positions), 3));
+        geometry.computeVertexNormals();
+        mesh.geometry.dispose();
+        mesh.geometry = geometry;
+      }
+      pose();
+    }
+    if (downloadNote) {
+      const red = result.verdicts.filter(v => v.tone === 'bad').length;
+      downloadNote.textContent = `${mm(result.layout.size)} mm printed nested`
+        + (red ? ` · ${red} red verdict${red > 1 ? 's' : ''}: the files will print, and fail the way the verdict says.` : '.');
+    }
+    const m = kit.math(design, params.nozzle);
+    canvas.setAttribute('aria-label', `Spiral cone: a ${params.fins}-fin twisted star cone inside its sleeve, ${params.radius * 2} millimetres across, twisting ${params.twist} degrees through a ${params.height} millimetre sleeve, ${round(m.rate, 2)} degrees per millimetre. ${result.verdicts.map(v => `${v.tag}: ${v.text}`).join(' ')}`);
+  };
 
+  let timer = 0;
+  const rebuild = () => {
+    clearTimeout(timer);
+    timer = setTimeout(async () => {
+      kit ??= await spiralEngine();
+      design = kit.resolveParams(kit.part, { ...params, arrange: 'nested' });
+      result = kit.engine.run(kit.part, design, { nozzle: params.nozzle, layer: params.layer });
+      show();
+    }, kit ? 90 : 0);
+  };
+
+  const PUSH_SECONDS = 3.2;
   if (webglOK) {
-    SimKit.loop(() => {
-      if (Math.abs(stretch - stretchTarget) > 0.002) {
-        stretch += (stretchTarget - stretch) * (reduceMotion ? 1 : 0.08);
+    SimKit.loop((dt) => {
+      if (Math.abs(push - pushTarget) > 0.001) {
+        const step = reduceMotion ? 1 : Math.min(dt, 0.1) / PUSH_SECONDS;
+        push += Math.sign(pushTarget - push) * Math.min(step, Math.abs(pushTarget - push));
         dirty = true;
       }
-      if (dirty) { rebuild(); dirty = false; }
+      if (dirty) { pose(); dirty = false; }
       controls.update();
       syncSize();
       renderer.render(scene, camera);
     });
   }
 
-  pullButton?.addEventListener('click', () => {
-    stretchTarget = stretchTarget > 0.5 ? 0 : 1;
-    if (reduceMotion) stretch = stretchTarget;
-    pullButton.textContent = stretchTarget > 0.5 ? 'Let it spring back' : 'Pull the tip';
-    pullButton.classList.toggle('is-active', stretchTarget > 0.5);
+  pushButton?.addEventListener('click', () => {
+    pushTarget = pushTarget > 0.5 ? 0 : 1;
+    if (reduceMotion) push = pushTarget;
+    pushButton.textContent = pushTarget > 0.5 ? 'Put it back' : 'Push the tip through';
+    pushButton.classList.toggle('is-active', pushTarget > 0.5);
     dirty = true;
   });
 
-  downloadButton?.addEventListener('click', () => {
-    if (!params) return;
-    const mesh = prepareForPrint(spiralPositions(params));
-    const check = edgeReport(mesh);
-    const name = `spiral-cone-r${params.radius}-h${params.height}-t${params.turns}-cut${params.gap}-wall${params.thickness}`;
-    const header = `${name} | layer ${params.layer} nozzle ${params.nozzle} | ClassroomOS`;
-    const blob = new Blob([writeBinaryStl(mesh, header)], { type: 'model/stl' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${name}.stl`;
-    document.body.append(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(link.href), 4000);
+  downloads.forEach(button => button.addEventListener('click', () => {
+    if (!result || result.error) return;
+    const which = button.dataset.pfDownload;                    // 'both' | 'Inner' | 'Outer'
+    const bodies = which === 'both' ? result.bodies : result.bodies.filter(b => b.name === which);
+    // engine output is already closed, outward-facing, and centred on the bed;
+    // keeping the shared coordinates is what lets the two files load nested
+    const positions = new Float32Array(bodies.reduce((n, b) => n + b.positions.length, 0));
+    let o = 0;
+    for (const b of bodies) { positions.set(b.positions, o); o += b.positions.length; }
+    const name = which === 'both' ? fileName() : `${fileName()}-${which.toLowerCase()}`;
+    saveStl(positions, name, `${name} | layer ${params.layer} nozzle ${params.nozzle} | ClassroomOS`);
+    const check = edgeReport(positions);
     if (!check.watertight) console.warn('spiral STL is not watertight', check);
-    if (downloadNote) downloadNote.textContent = `Saved ${name}.stl (${mm(printSize())} mm). Open it in MakerBot Print or CloudPrint and slice at ${params.layer} mm layers.`;
-  });
+    if (downloadNote) downloadNote.textContent = which === 'both'
+      ? `Saved ${name}.stl — both pieces nested, ready to print as one job at ${params.layer} mm layers.`
+      : `Saved ${name}.stl. Load the other piece too: both files share one origin, so they land nested.`;
+  }));
 
   const controlsApi = bindControls(root, values => {
     const first = params === null;
     params = values;
-    dirty = true;
-    refreshReadout();
-    if (first && webglOK) { camera.position.set(1, 0.9, 1); rebuild(); }
+    if (first && webglOK) camera.position.set(1, 0.7, 1);
+    rebuild();
   });
   controlsApi.sync();
 }

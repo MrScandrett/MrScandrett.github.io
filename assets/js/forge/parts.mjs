@@ -189,79 +189,116 @@ const caseCase = {
   },
 };
 
-const TIP_RADIUS = 3;
+/* The spiral cone is two prints that screw through each other: a cone carved
+   into a twisted star (Inner) and the cone it was carved from with a slightly
+   fatter copy of that star cut out of it (Outer). Push the tip and the cone
+   spins down through the sleeve and drops out the bottom. Defaults are
+   measured from the classroom's reference pair of STLs. */
+const CONE_TIP = 4;          // radius where the inner cone is cut flat
+const SLEEVE_LIP = 1.2;      // plastic left around the core at the top of the sleeve
+
+/* Everything the build, the verdicts and the lesson's animation share. */
+export function spiralConeMath(p, nozzle = 0.4) {
+  const R = p.radius, H = p.height;
+  const lip = p.core + p.gap + SLEEVE_LIP;           // sleeve radius at its top
+  const slope = (R - lip) / H;                       // cone radius lost per mm of height
+  const tipHeight = (R - CONE_TIP) / slope;          // where the inner cone reaches CONE_TIP
+  const rate = p.twist / H;                          // degrees of twist per mm of height
+  const rateRad = (rate * Math.PI) / 180;
+  const reach = Math.min(p.reach, R - p.gap - 0.6);  // fin tips stay inside the base
+  const leanTip = Math.atan(reach * rateRad);        // fin-tip face lean from vertical
+  const air = p.gap * Math.cos(leanTip);             // true air across the leaning face
+  const collar = Math.max(0, (R - reach - p.gap) / slope);  // solid ring height of the sleeve
+  // sleeve finger width a couple of beads out from its inner edge
+  const fr = p.core + p.gap + 2 * nozzle;
+  const halfSlot = p.finWidth / 2 + p.gap;
+  const finger = halfSlot >= fr ? 0 : fr * ((2 * Math.PI) / p.fins - 2 * Math.asin(halfSlot / fr));
+  const lead = rate > 0 ? 360 / rate : Infinity;     // mm of drop per full turn
+  return { R, H, lip, slope, tipHeight, rate, rateRad, reach, leanTip, leanDeg: (leanTip * 180) / Math.PI, coneDeg: (Math.atan(slope) * 180) / Math.PI, air, collar, finger, lead };
+}
+
+/* The star: a round core with `fins` round-ended fins out to `reach`. */
+function starSection(CS, p, reach, grow = 0) {
+  const r = p.finWidth / 2 + grow;
+  const from = p.core * 0.5, to = Math.max(reach + grow - r, from + 0.1);
+  const fin = CS.hull([CS.circle(r, 16).translate([to, 0]), CS.square([0.01, 2 * r], true).translate([from, 0])]);
+  const parts = [CS.circle(p.core + grow, 54)];
+  for (let i = 0; i < p.fins; i++) parts.push(fin.rotate((360 * i) / p.fins));
+  return CS.union(parts);
+}
 
 const spiral = {
   id: 'spiral',
   name: 'Spiral cone fidget',
   group: 'Fidgets',
-  blurb: 'A cone sliced by one helical cut into a ribbon that stretches into a spring — printed in one piece.',
+  blurb: 'Two prints: a twisted-star cone and the sleeve it screws through. Push the tip and it spins down and drops out the bottom.',
   lesson: { href: 'lessons/applied-physics-materials/print-fidgets.html', label: 'Print-in-place fidgets' },
   params: [
-    { id: 'radius', label: 'Base radius', type: 'range', min: 10, max: 50, step: 1, default: 30, unit: 'mm' },
-    { id: 'height', label: 'Height', type: 'range', min: 20, max: 110, step: 2, default: 60, unit: 'mm' },
-    { id: 'turns', label: 'Turns', type: 'range', min: 3, max: 14, step: 1, default: 8 },
-    { id: 'gap', label: 'Cutter thickness', type: 'range', min: 0.1, max: 1.2, step: 0.05, default: 0.5, unit: 'mm' },
-    { id: 'thickness', label: 'Ribbon thickness', type: 'range', min: 0.4, max: 3, step: 0.1, default: 1.2, unit: 'mm', kind: 'wall' },
+    { id: 'radius', label: 'Base radius', type: 'range', min: 25, max: 50, step: 0.5, default: 41, unit: 'mm' },
+    { id: 'height', label: 'Sleeve height', type: 'range', min: 40, max: 100, step: 1, default: 82, unit: 'mm' },
+    { id: 'fins', label: 'Fins', type: 'range', min: 3, max: 12, step: 1, default: 9 },
+    { id: 'twist', label: 'Twist through the sleeve', type: 'range', min: 0, max: 200, step: 1, default: 117, unit: '°' },
+    { id: 'finWidth', label: 'Fin width', type: 'range', min: 2, max: 10, step: 0.5, default: 6, unit: 'mm', kind: 'wall' },
+    { id: 'reach', label: 'Fin reach', type: 'range', min: 15, max: 45, step: 0.5, default: 32.5, unit: 'mm', help: 'How far the fin tips reach from the axis. Below where the cone is wider than this, the sleeve stays a solid ring.' },
+    { id: 'core', label: 'Core radius', type: 'range', min: 6, max: 16, step: 0.5, default: 11.5, unit: 'mm' },
+    { id: 'gap', label: 'Clearance', type: 'range', min: 0.2, max: 1.4, step: 0.05, default: 0.75, unit: 'mm' },
+    { id: 'arrange', label: 'Print', type: 'select', default: 'nested', options: [
+      { value: 'nested', label: 'Nested — one print, already assembled' },
+      { value: 'apart', label: 'Side by side — screw together after' },
+    ] },
   ],
   build(ctx, p) {
     const { Manifold: M, CrossSection: CS } = ctx;
-    const { layer, nozzle } = ctx.settings;
-    const R = p.radius, H = p.height;
-    const slope = (R - TIP_RADIUS) / H;
-    const lean = Math.atan(slope);
-    const cos = Math.cos(lean);
-    const o = p.thickness / 2 / cos;                    // horizontal half-wall
-    const outer = M.cylinder(H, R + o, TIP_RADIUS + o, 128);
-    const e = 0.02;
-    const inner = M.cylinder(H + 2 * e, R - o + slope * e, TIP_RADIUS - o - slope * e, 128).translate([0, 0, -e]);
-    const shell = outer.subtract(inner);
+    const { nozzle, layer } = ctx.settings;
+    const m = spiralConeMath(p, nozzle);
+    if (m.slope <= 0.05) throw new Error(`The base radius has to be wider than the top of the sleeve (${round(m.lip, 1)} mm). Widen the base or shrink the core.`);
 
-    // The cutter: a flat strip `gap` thick, wound into a helix that follows the cone.
-    const pitch = H / p.turns;
-    const t0 = -2 * Math.PI, t1 = 2 * Math.PI * (p.turns + 1);
-    // Extruded along its length and then wound up, so every face stays local
-    // to the helix (a flat strip triangulates into long chords that would cut
-    // straight across the cone once warped). x = vertical, y = radial, z = along.
-    const steps = Math.ceil((p.turns + 2) * 96);
-    const span = 2 * o + 6;
-    const cutter = CS.square([p.gap, span], true).extrude(1, steps).warp((v) => {
-      const th = t0 + (t1 - t0) * v[2];
-      const zc = (pitch * th) / (2 * Math.PI) + pitch / 2;
-      const rc = Math.max(R - slope * zc, span / 2 + 0.3);
-      const r = rc + v[1];
-      const dz = v[0];
-      v[0] = r * Math.cos(th);
-      v[1] = r * Math.sin(th);
-      v[2] = zc + dz;
-    });
-    const fidget = shell.subtract(cutter);
+    // One twisted star for each piece, extruded over the same span with the
+    // same twist rate, so the fin and its slot line up at every height.
+    const span = m.tipHeight + 2;
+    const divisions = Math.ceil(span / 2);
+    const twisted = (section) => section.extrude(span, divisions, m.rate * span).translate([0, 0, -1]).rotate([0, 0, -m.rate]);
+    const star = twisted(starSection(CS, p, m.reach));
+    const slot = twisted(starSection(CS, p, m.reach, p.gap));
 
-    // the same rules as the Spiral Cone Lab in the lesson
-    const leanDeg = (lean * 180) / Math.PI;
-    const bandVertical = Math.max(pitch - p.gap, 0.2);
-    const airGap = p.gap * cos;
-    const beads = Math.floor(p.thickness / nozzle + 1e-6);
-    const bandLayers = bandVertical / layer;
+    // cones turned half a facet so their corners never line up with a fin edge
+    const inner = M.cylinder(m.tipHeight, m.R, CONE_TIP, 96).rotate([0, 0, 1.875]).intersect(star);
+    const outer = M.cylinder(m.H, m.R, m.lip, 96).rotate([0, 0, 1.875]).subtract(slot);
+
     const verdicts = [];
-    if (airGap < layer) verdicts.push({ tone: 'bad', tag: 'WELDED', text: `The lean tips your ${p.gap} mm cut down to ${round(airGap, 2)} mm of real air — less than one ${layer} mm layer. This prints as a solid cone.` });
-    else if (airGap < 0.25) verdicts.push({ tone: 'warn', tag: 'TIGHT', text: `${round(airGap, 2)} mm between windings. It may free up with a hard twist. Make the cutter thicker.` });
-    else if (airGap <= 0.6) verdicts.push({ tone: 'ok', tag: 'ARTICULATED', text: `${round(airGap, 2)} mm between windings — enough to stay separate, tight enough that each layer lands on the winding below.` });
-    else verdicts.push({ tone: 'warn', tag: 'LOOSE', text: `${round(airGap, 2)} mm of air is more than a layer bridges neatly. The spiral will feel sloppy.` });
-    if (leanDeg > 45) verdicts.push({ tone: 'bad', tag: 'TOO WIDE', text: `The wall leans ${round(leanDeg)}° from vertical. Past 45° each layer hangs off the one below, and supports would fill the spiral and lock it solid. Make it taller or narrower.` });
-    else if (leanDeg > 38) verdicts.push({ tone: 'warn', tag: 'LEAN', text: `${round(leanDeg)}° from vertical is close to the 45° limit. Make the cone taller.` });
-    if (beads >= 2 && bandLayers < 5) verdicts.push({ tone: 'bad', tag: 'RIBBON', text: `Each winding is only ${round(bandLayers)} layers tall. Use fewer turns or a taller cone.` });
+    if (m.air < nozzle * 0.75) verdicts.push({ tone: 'bad', tag: 'WELDED', text: `The twist leans the fin faces ${round(m.leanDeg)}°, so ${p.gap} mm of clearance is only ${round(m.air, 2)} mm of real air — too thin for the slicer to leave empty. The cone prints fused into its sleeve.` });
+    else if (m.air < nozzle) verdicts.push({ tone: 'warn', tag: 'TIGHT', text: `${round(m.air, 2)} mm of real air across the leaning fins — under one ${nozzle} mm bead. It may free up with a hard push, or the slicer may fill the slot.` });
+    else if (m.air <= nozzle * 1.75) verdicts.push({ tone: 'ok', tag: 'FREE', text: `${round(m.air, 2)} mm of real air across the leaning fins: one bead of nothing, so the cone comes off the bed already free to spin.` });
+    else verdicts.push({ tone: 'warn', tag: 'LOOSE', text: `${round(m.air, 2)} mm of air. It will fall straight through and rattle on the way.` });
 
+    if (m.leanDeg > 45) verdicts.push({ tone: 'bad', tag: 'OVERHANG', text: `At the fin tips the twist leans the faces ${round(m.leanDeg)}° from vertical. Past 45° each layer hangs off the one below, and supports would fill the slot. Twist less, or pull the fins in.` });
+    else if (m.leanDeg > 40) verdicts.push({ tone: 'warn', tag: 'LEAN', text: `${round(m.leanDeg)}° of lean at the fin tips is close to the 45° limit. Run the fan at 100%.` });
+
+    if (p.twist < 1) verdicts.push({ tone: 'warn', tag: 'NO SPIN', text: 'With no twist the fins are straight, so the cone slides through without turning. It works — it just is not a spiral.' });
+    else if (p.twist < 40) verdicts.push({ tone: 'warn', tag: 'LAZY', text: `Only ${p.twist}° through the whole sleeve. The cone barely turns as it drops.` });
+
+    if (m.collar < 2) verdicts.push({ tone: 'bad', tag: 'NO COLLAR', text: `The fins reach the outside of the base, so nothing holds the sleeve's fingers together — it prints as ${p.fins} loose strips. Pull the fin reach in.` });
+    else if (m.collar < 8) verdicts.push({ tone: 'warn', tag: 'COLLAR', text: `The sleeve's solid ring is only ${round(m.collar)} mm tall. The fingers will flex apart under a push.` });
+
+    if (m.finger < nozzle * 2) verdicts.push({ tone: 'bad', tag: 'FINGERS', text: `Between the slots the sleeve is only ${round(m.finger, 2)} mm wide near the core — less than two beads. Use fewer or narrower fins, or a bigger core.` });
+    else if (m.finger < nozzle * 3) verdicts.push({ tone: 'warn', tag: 'FINGERS', text: `The sleeve's fingers are ${round(m.finger, 2)} mm wide near the core. They print, but are fragile.` });
+
+    if (m.lip - p.core - p.gap < layer) verdicts.push({ tone: 'bad', tag: 'TIP', text: 'The top of the sleeve is thinner than a layer.' });
+
+    const bodies = [{ name: 'Outer', manifold: outer }, { name: 'Inner', manifold: inner }];
     return {
-      bodies: [{ name: 'Spiral', manifold: fidget }],
+      bodies,
+      layout: p.arrange === 'nested' ? 'nested' : 'apart',
       verdicts,
-      overhangNote: leanDeg <= 45
-        ? 'The red faces are the underside of each winding. They sit just above the winding below and every layer still overlaps the one beneath, so this prints with supports OFF — that is the print-in-place trick.'
+      overhangNote: m.leanDeg <= 45
+        ? 'No face leans past 45°: the fins twist, but every layer still sits on the one below, and the gap between the pieces is a slot, not a ceiling. Print with supports OFF — support material would fill the slot and lock the cone.'
         : null,
       stats: [
-        { label: 'Rise per turn', value: `${round(pitch, 2)} mm` },
-        { label: 'Air between windings', value: `${round(airGap, 2)} mm` },
-        { label: 'Wall lean', value: `${round(leanDeg)}°` },
+        { label: 'Twist rate', value: `${round(m.rate, 2)}°/mm` },
+        { label: 'Real air across the fins', value: `${round(m.air, 2)} mm` },
+        { label: 'Lean at fin tips', value: `${round(m.leanDeg)}°` },
+        { label: 'Cone height', value: `${round(m.tipHeight)} mm` },
+        { label: 'Sleeve collar', value: `${round(m.collar)} mm` },
       ],
     };
   },

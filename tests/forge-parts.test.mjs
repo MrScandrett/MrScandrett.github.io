@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import Module from '../assets/vendor/manifold/manifold.js';
 import { createEngine, resolveParams } from '../assets/js/forge/engine.mjs';
-import { PARTS } from '../assets/js/forge/parts.mjs';
+import { PARTS, spiralConeMath } from '../assets/js/forge/parts.mjs';
 import { centerDistance, spurGearOutline, textOutline } from '../assets/js/forge/outlines.mjs';
 import { concat } from '../assets/js/forge/engine.mjs';
 import { bounds, edgeReport, prepareForPrint, signedVolume } from '../assets/js/fab-io.mjs';
@@ -89,4 +89,25 @@ test('text outline is sized by cap height and keeps letter holes', () => {
   assert.equal(t.contours.length, 2, 'outer ring and the hole of the O');
   const ys = t.contours.flat().map(([, y]) => y);
   assert.ok(Math.max(...ys) > 9.5 && Math.max(...ys) < 10.8, `cap height ${Math.max(...ys)}`);
+});
+
+test('spiral cone: the pair prints nested without touching, and the cone screws through', () => {
+  const { Manifold, CrossSection } = engine.wasm;
+  const part = PARTS.find((p) => p.id === 'spiral');
+  const p = resolveParams(part, {});
+  const built = part.build({ Manifold, CrossSection, settings: { nozzle: 0.4, layer: 0.2, clearance: 0.3 } }, p);
+  const outer = built.bodies.find((b) => b.name === 'Outer').manifold;
+  const inner = built.bodies.find((b) => b.name === 'Inner').manifold;
+  const { rate, tipHeight } = spiralConeMath(p);
+  // every manifold made here is tracked by the engine and freed by its next run
+  const overlap = (m) => outer.intersect(m).volume();
+  assert.ok(overlap(inner) < 0.01, 'as printed, the two pieces must not overlap');
+  for (const d of [10, 40, tipHeight - 5]) {
+    assert.ok(overlap(inner.translate([0, 0, -d]).rotate([0, 0, -rate * d])) < 0.01, `dropping ${d} mm along the twist must be free`);
+  }
+  assert.ok(overlap(inner.translate([0, 0, -10])) > 100, 'a straight push must jam, so a push has to turn into spin');
+  const nested = engine.run(part, p);
+  const apart = engine.run(part, { ...p, arrange: 'apart' });
+  assert.ok(nested.layout.nested && nested.layout.size[0] < 85, 'nested pair shares one footprint');
+  assert.ok(apart.layout.size[0] > 140, 'apart layout puts the pieces side by side');
 });

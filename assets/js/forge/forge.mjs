@@ -9,7 +9,7 @@
 import ManifoldModule from '../../vendor/manifold/manifold.js';
 import { THREE, OrbitControls } from '../../vendor/three-bundle.min.js';
 import { createScene } from '../sim-kit-three.mjs';
-import { DEFAULT_PRINTER, placeOnBed, prepareForPrint, writeBinaryStl, writeGlb, writeObj } from '../fab-io.mjs';
+import { DEFAULT_PRINTER, bounds, placeOnBed, prepareForPrint, writeBinaryStl, writeGlb, writeObj } from '../fab-io.mjs';
 import { DEFAULT_SETTINGS, concat, createEngine, resolveParams } from './engine.mjs';
 import { PARTS, PART_GROUPS, partById } from './parts.mjs';
 
@@ -30,7 +30,7 @@ const el = {
   stats: $('forge-stats'), verdicts: $('forge-verdicts'), status: $('forge-status'), canvas: $('forge-canvas'),
   nogl: $('forge-nogl'), name: $('forge-project-name'), clearance: $('forge-clearance'), clearanceOut: $('forge-clearance-out'),
   layer: $('forge-layer'), colors: $('forge-colors'), showOverhangs: $('forge-show-overhangs'), resetView: $('forge-reset-view'),
-  stl: $('forge-dl-stl'), glb: $('forge-dl-glb'), obj: $('forge-dl-obj'), save: $('forge-save'), open: $('forge-open'),
+  stl: $('forge-dl-stl'), partStls: $('forge-dl-parts'), glb: $('forge-dl-glb'), obj: $('forge-dl-obj'), save: $('forge-save'), open: $('forge-open'),
   openFile: $('forge-open-file'), note: $('forge-export-note'),
 };
 
@@ -287,9 +287,11 @@ function showBodies() {
 
 function paint() {
   if (!view) return;
-  const base = new THREE.Color(state.color);
   const show = el.showOverhangs.checked;
-  for (const mesh of view.parts.children) {
+  view.parts.children.forEach((mesh, i) => {
+    // nested pieces sit inside each other, so shade each one differently to tell them apart
+    const base = new THREE.Color(state.color);
+    if (result?.layout?.nested && i > 0) base.offsetHSL(0, 0, -0.2 * i);
     const colors = mesh.geometry.getAttribute('color');
     const mask = mesh.userData.mask;
     for (let t = 0; t < mask.length; t++) {
@@ -297,7 +299,7 @@ function paint() {
       for (let k = 0; k < 3; k++) colors.setXYZ(t * 3 + k, c.r, c.g, c.b);
     }
     colors.needsUpdate = true;
-  }
+  });
 }
 
 function frame() {
@@ -336,7 +338,8 @@ function rebuild() {
   el.status.textContent = result.error ? 'This design could not be built.' : `Built in ${ms} ms`;
   el.status.hidden = !result.error;
   const disabled = Boolean(result.error) || !result.bodies.length;
-  [el.stl, el.glb, el.obj].forEach((b) => { b.disabled = disabled; });
+  [el.stl, el.glb, el.obj, el.partStls].forEach((b) => { b.disabled = disabled; });
+  el.partStls.hidden = result.bodies.length < 2;
   const summary = result.verdicts.map((v) => `${v.tag}: ${v.text}`).join(' ');
   el.canvas.setAttribute('aria-label', `${part.name} on the print bed. ${summary}`);
 }
@@ -386,6 +389,26 @@ function exportStl() {
   download(writeBinaryStl(plate, header), `${slug()}.stl`, 'model/stl');
   const red = result.verdicts.filter((v) => v.tone === 'bad').length;
   el.note.textContent = `Saved ${slug()}.stl — ${result.bodies.length} part${result.bodies.length > 1 ? 's' : ''} on one plate.` + (red ? ` ${red} red check${red > 1 ? 's' : ''} still showing: it will print, but expect that failure.` : ' Slice at ' + state.settings.layer + ' mm layers.');
+}
+
+/* Each body as its own STL, e.g. for two filament colours. Every body keeps
+   its place on the plate, so nested pieces load back inside each other. */
+function exportPartStls() {
+  if (!result?.bodies.length) return;
+  const { min, max } = bounds(concat(result.bodies.map((b) => b.positions)));
+  const shift = [-(min[0] + max[0]) / 2, -(min[1] + max[1]) / 2, -min[2]];
+  const names = [];
+  for (const body of result.bodies) {
+    const p = prepareForPrint(body.positions, { yUp: false });
+    const own = bounds(body.positions);
+    // prepareForPrint centres each body on its own; put it back where it sat on the plate
+    const back = [0, 1].map((k) => (own.min[k] + own.max[k]) / 2 + shift[k]).concat(own.min[2] + shift[2]);
+    for (let i = 0; i < p.length; i += 3) { p[i] += back[0]; p[i + 1] += back[1]; p[i + 2] += back[2]; }
+    const file = `${slug()}-${body.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.stl`;
+    download(writeBinaryStl(p, `${slug()} ${body.name} | ClassroomOS Forge`), file, 'model/stl');
+    names.push(file);
+  }
+  el.note.textContent = `Saved ${names.join(' and ')}. Load them together and they land exactly where they sat on the plate.`;
 }
 
 function gameBodies() {
@@ -454,12 +477,13 @@ async function start() {
   el.showOverhangs.addEventListener('change', paint);
   el.resetView.addEventListener('click', frame);
   el.stl.addEventListener('click', exportStl);
+  el.partStls.addEventListener('click', exportPartStls);
   el.glb.addEventListener('click', exportGlb);
   el.obj.addEventListener('click', exportObj);
   el.save.addEventListener('click', saveProject);
   el.open.addEventListener('click', () => el.openFile.click());
   el.openFile.addEventListener('change', () => { const f = el.openFile.files[0]; if (f) openProject(f); el.openFile.value = ''; });
-  [el.stl, el.glb, el.obj].forEach((b) => { b.disabled = true; });
+  [el.stl, el.glb, el.obj, el.partStls].forEach((b) => { b.disabled = true; });
   setupView();
   try {
     const font = await fetch(new URL('../../vendor/fonts/droid-sans-bold.typeface.json', import.meta.url)).then((r) => r.json());
