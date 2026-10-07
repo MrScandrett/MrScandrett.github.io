@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en" data-glossary-manual>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rosetta 2D: Our Own Game Engine · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Rosetta 2D is the class's own lightweight 2D game engine. It uses the same ideas as Godot, Unity, Unreal, GameMaker and Phaser, so what you learn transfers, and your levels leave as open JSON and Tiled files." />
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <style>
+    .r2-page { width: min(1180px, calc(100% - 2rem)); margin: 0 auto; padding: 1rem 0 3rem; }
+    .r2-hero, .r2-section { margin: 0 0 1.4rem; padding: 1.4rem clamp(1rem, 3vw, 2rem); border: 1px solid var(--line, #d2d2d7); border-radius: 20px; background: var(--surface-panel, #ffffff); }
+    .r2-hero { margin-top: 1rem; padding-top: 1.7rem; padding-bottom: 1.7rem; }
+    .r2-eyebrow { margin: 0; font-size: .78rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--accent, #0066cc); }
+    .r2-hero h1 { margin: .3rem 0 0; max-width: 22ch; font-size: clamp(1.9rem, 4.6vw, 3rem); line-height: 1.08; }
+    .r2-lede, .r2-section > p { max-width: 68ch; line-height: 1.65; }
+    .r2-lede { margin: .8rem 0 0; font-size: 1.04rem; }
+    .r2-section > h2 { margin: 0 0 .4rem; font-size: clamp(1.35rem, 3vw, 1.8rem); }
+    .r2-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: .8rem; margin-top: 1rem; }
+    .r2-cards article { padding: .9rem 1rem; border: 2px solid var(--line, #d2d2d7); border-radius: 12px; }
+    .r2-cards h3 { margin: 0 0 .3rem; font-size: 1.02rem; }
+    .r2-cards p { margin: 0; font-size: .92rem; line-height: 1.55; }
+    .r2-demo { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 1rem; align-items: start; margin-top: 1rem; }
+    .r2-stage canvas { display: block; width: 100%; border: 3px solid #1a1c2c; border-radius: 6px; background: #1a1c2c; }
+    .r2-stage canvas:focus-visible { outline: 3px solid var(--accent, #0066cc); outline-offset: 3px; }
+    .r2-controls { margin: .5rem 0 0; font-size: .86rem; }
+    .r2-tools { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .6rem; }
+    .r2-tools button { min-height: 38px; padding: .4rem .8rem; border: 2px solid var(--line, #d2d2d7); border-radius: 8px; background: transparent; color: inherit; font: inherit; font-size: .84rem; font-weight: 700; cursor: pointer; }
+    .r2-tools button[aria-pressed="true"] { border-color: currentColor; }
+    .r2-tools button:hover { border-color: currentColor; }
+    .r2-code { margin: 0; }
+    .r2-code summary { cursor: pointer; font-weight: 800; }
+    .r2-code pre, .r2-json { max-height: 420px; overflow: auto; margin: .5rem 0 0; padding: .8rem 1rem; border-radius: 10px; background: #1a1c2c; color: #f4f4f4; font: .78rem/1.5 "JetBrains Mono", ui-monospace, monospace; }
+    .r2-json { max-height: 300px; }
+    .r2-steps { max-width: 70ch; line-height: 1.65; }
+    .r2-starter { overflow: auto; padding: .8rem 1rem; border-radius: 10px; background: #1a1c2c; color: #f4f4f4; font: .8rem/1.5 "JetBrains Mono", ui-monospace, monospace; }
+    .r2-demo > * { min-width: 0; }
+    @media (max-width: 860px) { .r2-demo { grid-template-columns: minmax(0, 1fr); } }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="r2-page">
+
+        <section class="r2-hero">
+          <p class="r2-eyebrow">Game Design &amp; Development · Our engine</p>
+          <h1>Rosetta 2D: a game engine built to translate.</h1>
+          <p class="r2-lede">Rosetta 2D is our class's own 2D game engine. It is small enough to read in an afternoon, and it is shaped like the big engines on purpose: a <span data-glossary="scene tree">scene tree</span> of nodes, a <span data-glossary="fixed timestep">fixed timestep</span> for movement, named input actions and <span data-glossary="collision layer">collision layers</span>. Everything you learn here has a name in Godot, Unity, Unreal, GameMaker and Phaser, and the Tool Rosetta shows you which.</p>
+        </section>
+
+        <section class="r2-section" aria-labelledby="why-title">
+          <h2 id="why-title">Why build our own?</h2>
+          <div class="r2-cards">
+            <article>
+              <h3>Tiny and readable</h3>
+              <p>One file, no install, no account, about 10 KB to download. Open <a href="../../../assets/js/rosetta2d/rosetta2d.mjs">the source</a> and every feature is a few dozen lines you can follow.</p>
+            </article>
+            <article>
+              <h3>Same shape as the big engines</h3>
+              <p><code>ready</code>, <code>update</code>, <code>fixedUpdate</code>, bodies, areas, tilemaps, signals and cameras work the way they do in professional tools, so moving on later is a change of vocabulary, not a fresh start.</p>
+            </article>
+            <article>
+              <h3>Your work leaves with you</h3>
+              <p>Levels save as plain JSON (<span data-glossary="serialization">serialization</span>), tilemaps export to the free Tiled editor, and art is ordinary PNG. Nothing is locked inside our engine.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="r2-section" aria-labelledby="platformer-title">
+          <h2 id="platformer-title">Example 1: a platformer in about 150 lines</h2>
+          <p>No image files here: every picture is a coloured shape. The level is text, a <span data-glossary="tilemap">tilemap</span> where each letter is a tile.</p>
+          <div class="r2-demo">
+            <div class="r2-stage">
+              <canvas id="platformer" aria-label="Platformer game. Click to focus, then use arrow keys or A and D to move and Space to jump."></canvas>
+              <p class="r2-controls"><b>Click the game</b>, then ← → or A D to move, Space to jump. A gamepad works too.</p>
+              <div class="r2-tools">
+                <button type="button" data-debug="platformer" aria-pressed="false">Show hitboxes</button>
+                <button type="button" data-json="platformer" aria-expanded="false" aria-controls="platformer-json">Show this level as data</button>
+                <button type="button" data-tiled="platformer">Download the map for Tiled</button>
+              </div>
+              <pre class="r2-json" id="platformer-json" hidden></pre>
+            </div>
+            <details class="r2-code" open>
+              <summary>The whole game</summary>
+              <pre><code data-source="../../../assets/js/rosetta2d/examples/platformer.mjs">Loading…</code></pre>
+            </details>
+          </div>
+        </section>
+
+        <section class="r2-section" aria-labelledby="topdown-title">
+          <h2 id="topdown-title">Example 2: collect and dodge</h2>
+          <p>A top-down game: four-way movement, enemies that bounce off walls, a <code>Timer</code> that spawns gems, collision layers so enemies only bite the player, and a saved high score.</p>
+          <div class="r2-demo">
+            <div class="r2-stage">
+              <canvas id="topdown" aria-label="Top-down game. Click to focus, then use arrow keys or WASD to move."></canvas>
+              <p class="r2-controls"><b>Click the game</b>, then arrows or WASD. Collect gold, avoid red.</p>
+              <div class="r2-tools">
+                <button type="button" data-debug="topdown" aria-pressed="false">Show hitboxes</button>
+                <button type="button" data-json="topdown" aria-expanded="false" aria-controls="topdown-json">Show this scene as data</button>
+              </div>
+              <pre class="r2-json" id="topdown-json" hidden></pre>
+            </div>
+            <details class="r2-code">
+              <summary>The whole game</summary>
+              <pre><code data-source="../../../assets/js/rosetta2d/examples/topdown.mjs">Loading…</code></pre>
+            </details>
+          </div>
+        </section>
+
+        <section class="r2-section" aria-labelledby="map-title">
+          <h2 id="map-title">The engine in other engines' words</h2>
+          <p>Every building block of Rosetta 2D, translated. Turn on the engine you plan to use next.</p>
+          <div data-rosetta="core.scene core.behaviour core.prefab core.ready core.spawn core.destroy core.input core.events core.coords loop.fixed loop.frame move.body col.overlap col.solid tile.paint cam.follow ship.scenes ship.save" data-rosetta-title="Same idea, any engine"></div>
+        </section>
+
+        <section class="r2-section" aria-labelledby="start-title">
+          <h2 id="start-title">Start your own game</h2>
+          <ol class="r2-steps">
+            <li>Make a folder with an <code>index.html</code> file and paste this in.</li>
+            <li>Open it through a local server (in VS Code, the Live Server extension works), because browsers block modules opened straight from disk.</li>
+            <li>Change the Player class, add a <code>TileMap.fromRows</code> level, and build from there. Copy pieces from the examples above.</li>
+          </ol>
+          <pre class="r2-starter"><code>&lt;canvas id="game"&gt;&lt;/canvas&gt;
+&lt;script type="module"&gt;
+  import { Game, Scene, Body, Shape } from 'https://mrscandrett.github.io/assets/js/rosetta2d/rosetta2d.mjs';
+
+  class Player extends Body {
+    ready() { this.add(new Shape({ w: 16, h: 16, color: '#e4572e' })); }
+    fixedUpdate() {
+      const move = this.game.input.vector('left', 'right', 'up', 'down');
+      this.vx = move.x * 100;
+      this.vy = move.y * 100;
+    }
+  }
+
+  const game = new Game({ canvas: document.getElementById('game'), width: 320, height: 180 });
+  game.input
+    .bind('left', ['ArrowLeft', 'KeyA']).bind('right', ['ArrowRight', 'KeyD'])
+    .bind('up', ['ArrowUp', 'KeyW']).bind('down', ['ArrowDown', 'KeyS']);
+  game.start(new Scene({ children: [new Player({ x: 160, y: 90 })] }));
+&lt;/script&gt;</code></pre>
+        </section>
+
+      </main>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { TileMap } from '../../../assets/js/rosetta2d/rosetta2d.mjs';
+  import * as platformer from '../../../assets/js/rosetta2d/examples/platformer.mjs';
+  import * as topdown from '../../../assets/js/rosetta2d/examples/topdown.mjs';
+
+  const games = {
+    platformer: platformer.create(document.getElementById('platformer')),
+    topdown: topdown.create(document.getElementById('topdown'))
+  };
+
+  document.querySelectorAll('[data-debug]').forEach((btn) => btn.addEventListener('click', () => {
+    const game = games[btn.dataset.debug];
+    game.debug = !game.debug;
+    btn.setAttribute('aria-pressed', String(game.debug));
+  }));
+
+  document.querySelectorAll('[data-json]').forEach((btn) => btn.addEventListener('click', () => {
+    const out = document.getElementById(btn.getAttribute('aria-controls'));
+    const open = out.hidden;
+    if (open) out.textContent = JSON.stringify(games[btn.dataset.json].scene.toJSON(), null, 2);
+    out.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+  }));
+
+  document.querySelectorAll('[data-tiled]').forEach((btn) => btn.addEventListener('click', () => {
+    const map = games[btn.dataset.tiled].scene.find('Ground');
+    const blob = new Blob([JSON.stringify(TileMap.toTiled(map), null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'level-1.tiled.json';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }));
+
+  // show the exact file each game runs
+  document.querySelectorAll('[data-source]').forEach(async (code) => {
+    try {
+      const r = await fetch(code.dataset.source);
+      code.textContent = r.ok ? await r.text() : 'Could not load the source.';
+    } catch (e) {
+      code.textContent = 'Could not load the source.';
+    }
+  });
+</script>
+<script src="../../../assets/js/theme-registry.js"></script>
+<script src="../../../assets/js/nav-mobile.js"></script>
+<script src="../../../assets/js/tool-rosetta.js"></script>
+<script src="../../../assets/js/site-glossary.js" data-glossary-src="../../../data/game-dev-glossary.json"></script>
+<script src="../../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

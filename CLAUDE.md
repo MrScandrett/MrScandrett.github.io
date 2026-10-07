@@ -164,6 +164,30 @@ copy):
 Existing lessons on other Three.js versions or hand-rolled canvas loops don't need to
 be migrated proactively — migrate opportunistically when touching that lesson anyway.
 
+## Engine-neutral game lessons: Tool Rosetta + Rosetta 2D
+
+Game and 3D lessons teach ideas, not brands. Don't write engine-specific comparison
+tables or "do this in Godot/Blender" steps by hand:
+
+- **Tool Rosetta** (`assets/js/tool-rosetta.js`, data `data/tool-rosetta.json`): drop
+  `<div data-rosetta="loop.frame cam.follow"></div>` in a lesson to show one idea across
+  every engine (`game` family) or 3D app (`model` family). Students' column choice persists
+  site-wide. Add a new idea as a concept with a cell for *every* tool in its family;
+  `npm run test:rosetta` fails on empty cells or unknown ids in lessons. Reference page:
+  `lessons/computer-science/graphics-and-games/tool-rosetta.html`.
+- **Rosetta 2D** (`assets/js/rosetta2d/rosetta2d.mjs`): the in-house engine, one
+  dependency-free ES module (~10 KB gzipped). Node tree with `ready` / `update(dt)` /
+  `fixedUpdate(dt)` (fixed 60 Hz), `Body` (moves + collides), `Area` (enter/exit),
+  `TileMap` (`fromRows`, Tiled JSON in/out), `Sprite`, `Shape`, `Text`, `Timer`, camera,
+  named input actions, layers/masks. Conventions: pixels, y down, x/y = centre, dt in
+  seconds. Scenes serialise with `toJSON()`/`fromJSON()` (custom classes need
+  `static type` + `register()`); that JSON is what future engine exporters translate, so
+  keep new features serialisable. Its `r2d` Rosetta column must stay in sync with the
+  real API. Examples in `assets/js/rosetta2d/examples/`; page
+  `lessons/computer-science/graphics-and-games/rosetta-2d.html`; tests
+  `tests/rosetta2d.test.mjs` (headless: `new Game()` + `game.step(dt)`). Keyboard input
+  goes to `Game.active` (last clicked/focused/started) so several games can share a page.
+
 ## ELEGOO robot car (Robot Car Pilot lesson)
 
 `lessons/engineering/robotics/robot-car-pilot.html` drives the class ELEGOO Smart Robot Car

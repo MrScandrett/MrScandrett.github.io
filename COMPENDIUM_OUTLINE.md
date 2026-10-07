@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 341 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 355 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -94,7 +94,7 @@ Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 50 lesson
 
 # Volume II — Physics, Chemistry, Matter & Energy
 
-Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 48 lessons
+Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 49 lessons
 
 ## Physics & Physical Systems (PHY)
 
@@ -154,6 +154,7 @@ Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 48 l
 - **PHY-37** — Marie Curie — _also indexed in Chemistry & Chemical Systems_
 - **PHY-38** — Albert Einstein
 - **PHY-39** — Benjamin Franklin
+- **PHY-40** — The Wright Brothers: Learning to Fly
 
 ## Chemistry & Chemical Systems (CHE)
 
@@ -234,7 +235,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 75 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 80 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
@@ -246,46 +247,51 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 ### Electronics Workshop Foundations
 
 - **ENG-03** — Ohm's Law
-- **ENG-04** — Electronic Components
-- **ENG-05** — Resistor Color Code Guide
-- **ENG-06** — Electronic Schematics
-- **ENG-07** — Breadboard Basics
-- **ENG-08** — Multimeter Lab
-- **ENG-09** — Soldering
-- **ENG-10** — Robotics Engineering Intro
-- **ENG-11** — Arduino: The Robot Brain
-- **ENG-12** — Arduino Board Anatomy Lab
-- **ENG-13** — Arduino Programming: Variables, Functions & Libraries
-- **ENG-14** — Inputs: Beyond the Button
-- **ENG-15** — Outputs: Beyond the LED
-- **ENG-16** — Sensor Modules Kit
-- **ENG-17** — Sensor to Webpage
-- **ENG-18** — The Internet of Things
+- **ENG-04** — Voltage Dividers & Kirchhoff's Laws
+- **ENG-05** — Electronic Components
+- **ENG-06** — Resistor Color Code Guide
+- **ENG-07** — Capacitors & RC Time
+- **ENG-08** — Electronic Schematics
+- **ENG-09** — Breadboard Basics
+- **ENG-10** — Multimeter Lab
+- **ENG-11** — Soldering
+- **ENG-12** — From Transistor to Logic Gate
+- **ENG-13** — Robotics Engineering Intro
+- **ENG-14** — Arduino: The Robot Brain
+- **ENG-15** — Arduino Board Anatomy Lab
+- **ENG-16** — Arduino Programming: Variables, Functions & Libraries
+- **ENG-17** — Inputs: Beyond the Button
+- **ENG-18** — Outputs: Beyond the LED
+- **ENG-19** — Sensor Modules Kit
+- **ENG-20** — Sensor to Webpage
+- **ENG-21** — The Internet of Things
+- **ENG-22** — Electronics Capstone: Design, Build, Prove
 
 ### Mechanisms, Feedback & Control
 
-- **ENG-19** — Mechanisms and Gear Systems
-- **ENG-20** — PID Control & Feedback Loops
-- **ENG-21** — Sensor Fusion: Gyro + Accelerometer
-- **ENG-22** — Where Am I? Robot Mapping & Localization
-- **ENG-23** — Beyond A*: Motion Planning Lab
-- **ENG-24** — Reach, Grab, Place: Robot Arms
-- **ENG-25** — Robot Reinforcement Learning: Q-Learning Lab
-- **ENG-26** — Maglev Train Engineering
-- **ENG-27** — Bug Bots: Genghis & the Insect Robots
-- **ENG-28** — Engineering Design Process Studio
+- **ENG-23** — Mechanisms and Gear Systems
+- **ENG-24** — PID Control & Feedback Loops
+- **ENG-25** — Pilot the ELEGOO Robot Car
+- **ENG-26** — Sensor Fusion: Gyro + Accelerometer
+- **ENG-27** — Where Am I? Robot Mapping & Localization
+- **ENG-28** — Beyond A*: Motion Planning Lab
+- **ENG-29** — Reach, Grab, Place: Robot Arms
+- **ENG-30** — Robot Reinforcement Learning: Q-Learning Lab
+- **ENG-31** — Maglev Train Engineering
+- **ENG-32** — Bug Bots: Genghis & the Insect Robots
+- **ENG-33** — Engineering Design Process Studio
 
 ### Structural Design Projects
 
-- **ENG-29** — Bridge Over Troubled Water
-- **ENG-30** — Biomimicry: Engineering Nature's Genius
+- **ENG-34** — Bridge Over Troubled Water
+- **ENG-35** — Biomimicry: Engineering Nature's Genius
 
 ### People Who Changed Engineering
 
-- **ENG-31** — Emily Roebling
-- **ENG-32** — Henry Ford — _also indexed in Design, Materials & Fabrication_
-- **ENG-33** — Rube Goldberg Machine Lab
-- **ENG-34** — Hedy Lamarr
+- **ENG-36** — Emily Roebling
+- **ENG-37** — Henry Ford — _also indexed in Design, Materials & Fabrication_
+- **ENG-38** — Rube Goldberg Machine Lab
+- **ENG-39** — Hedy Lamarr
 
 ## Design, Materials & Fabrication (FAB)
 
@@ -361,7 +367,7 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 
 # Volume V — Computer Science, AI & Interactive Media
 
-Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 73 lessons
+Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 76 lessons
 
 ## Computer Science & Artificial Intelligence (CSC)
 
@@ -376,52 +382,54 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 - **CSC-07** — Blocks World Parser
 - **CSC-08** — N-gram Text Predictor
 - **CSC-09** — Python Foundations — _also indexed in Game Design & Development_
+- **CSC-10** — AI Hacking: When Agents Cross the Line
 
 ### Algorithms, Structures & Search
 
-- **CSC-10** — Sorting Algorithms
-- **CSC-11** — State Machines
-- **CSC-12** — A* Pathfinding Agent
-- **CSC-13** — Minimum Spanning Tree
-- **CSC-14** — Cryptography & The Enigma
+- **CSC-11** — Sorting Algorithms
+- **CSC-12** — State Machines
+- **CSC-13** — A* Pathfinding Agent
+- **CSC-14** — Minimum Spanning Tree
+- **CSC-15** — Cryptography & The Enigma
 
 ### Simulation & Generative Systems
 
-- **CSC-15** — Life Lab: The Game of Life
-- **CSC-16** — Perlin Noise
-- **CSC-17** — The Demoscene
-- **CSC-18** — CGI Water: From Physics to Pixels
+- **CSC-16** — Life Lab: The Game of Life
+- **CSC-17** — Perlin Noise
+- **CSC-18** — The Demoscene
+- **CSC-19** — CGI Water: From Physics to Pixels
 
 ### Artificial Intelligence & Machine Reasoning
 
-- **CSC-19** — Alan Turing and The Turing Test
-- **CSC-20** — AI Origins: ELIZA Chatbot
-- **CSC-21** — Rule Engine Expert System
-- **CSC-22** — Perceptron Lab
-- **CSC-23** — Chess: Origins and How to Play
-- **CSC-24** — 1v1 Game AI: Minimax
-- **CSC-25** — AI Chess Through History
-- **CSC-26** — Deep Blue to AlphaGo: The Go Challenge
+- **CSC-20** — Alan Turing and The Turing Test
+- **CSC-21** — AI Origins: ELIZA Chatbot
+- **CSC-22** — Rule Engine Expert System
+- **CSC-23** — Perceptron Lab
+- **CSC-24** — Chess: Origins and How to Play
+- **CSC-25** — 1v1 Game AI: Minimax
+- **CSC-26** — AI Chess Through History
+- **CSC-27** — Deep Blue to AlphaGo: The Go Challenge
 
 ### People Who Changed Computing
 
-- **CSC-27** — Grace Hopper
-- **CSC-28** — Margaret Hamilton: Software for the Moon
-- **CSC-29** — Steve Jobs
+- **CSC-28** — Grace Hopper
+- **CSC-29** — Margaret Hamilton: Software for the Moon
+- **CSC-30** — Steve Jobs
 
 ### Build Your Own Web Pathway
 
-- **CSC-30** — Build Your Own Web — Web Design Pathway
-- **CSC-31** — Set Up Your First Site
-- **CSC-32** — Give the Page Meaning with HTML
-- **CSC-33** — Design with CSS
-- **CSC-34** — Make It Respond with JavaScript
-- **CSC-35** — Test, Debug, and Include Everyone
-- **CSC-36** — Website Project Studios
-- **CSC-37** — The Flash Era: What Happened to Browser Games
-- **CSC-38** — Build a Home for Interactive Work
-- **CSC-39** — Publish and Maintain Your Website
-- **CSC-40** — Extend into WebXR
+- **CSC-31** — Build Your Own Web — Web Design Pathway
+- **CSC-32** — Set Up Your First Site
+- **CSC-33** — Give the Page Meaning with HTML
+- **CSC-34** — Design with CSS
+- **CSC-35** — Make It Respond with JavaScript
+- **CSC-36** — Test, Debug, and Include Everyone
+- **CSC-37** — Website Project Studios
+- **CSC-38** — Web Studio — Draw, Blocks and Code
+- **CSC-39** — The Flash Era: What Happened to Browser Games
+- **CSC-40** — Build a Home for Interactive Work
+- **CSC-41** — Publish and Maintain Your Website
+- **CSC-42** — Extend into WebXR
 
 ## Game Design & Development (GAM)
 
@@ -431,51 +439,52 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 - **GAM-02** — VS Code for Game Dev
 - **GAM-03** — From Scratch: Build a Browser Game
 - **GAM-04** — 2D Game Engines: Kaplay & Phaser
-- **GAM-05** — Python & Pygame: The Game Loop
+- **GAM-05** — Tool Rosetta: One Idea, Every Engine & 3D App
+- **GAM-06** — Python & Pygame: The Game Loop
 
 ### Game Jam Project
 
-- **GAM-06** — Game Jam Week: From Idea to Demo
+- **GAM-07** — Game Jam Week: From Idea to Demo
 
 ### 2D Game Developer Pathway
 
-- **GAM-07** — 2D Game Developer Pathway
-- **GAM-08** — Pixel Art & Sprites
-- **GAM-09** — Sprite Sheets & Animation
-- **GAM-10** — Tilesets & Tilemaps
-- **GAM-11** — Game Loop & Rendering
-- **GAM-12** — Movement & Jump Feel
-- **GAM-13** — Collision & Response
-- **GAM-14** — Cameras, Layers & Parallax
-- **GAM-15** — Animation State Machines
-- **GAM-16** — Level Design & Game Feel
-- **GAM-17** — Menus, Saving & Shipping
+- **GAM-08** — 2D Game Developer Pathway
+- **GAM-09** — Pixel Art & Sprites
+- **GAM-10** — Sprite Sheets & Animation
+- **GAM-11** — Tilesets & Tilemaps
+- **GAM-12** — Game Loop & Rendering
+- **GAM-13** — Movement & Jump Feel
+- **GAM-14** — Collision & Response
+- **GAM-15** — Cameras, Layers & Parallax
+- **GAM-16** — Animation State Machines
+- **GAM-17** — Level Design & Game Feel
+- **GAM-18** — Menus, Saving & Shipping
 
 ### Godot Engine Pathway
 
-- **GAM-18** — Godot Game Developer Pathway
-- **GAM-19** — Godot Basics: Your First 3D Room
-- **GAM-20** — GDScript Fundamentals
-- **GAM-21** — Player Controller & Camera
-- **GAM-22** — Collectibles, Signals & UI
-- **GAM-23** — Enemies & Simple AI
-- **GAM-24** — Animation & Game Feel
-- **GAM-25** — Levels & Game State
-- **GAM-26** — Export, Test & Publish
+- **GAM-19** — Godot Game Developer Pathway
+- **GAM-20** — Godot Basics: Your First 3D Room
+- **GAM-21** — GDScript Fundamentals
+- **GAM-22** — Player Controller & Camera
+- **GAM-23** — Collectibles, Signals & UI
+- **GAM-24** — Enemies & Simple AI
+- **GAM-25** — Animation & Game Feel
+- **GAM-26** — Levels & Game State
+- **GAM-27** — Export, Test & Publish
 
 ### Game Asset Studio Pathway
 
-- **GAM-27** — Game Asset Studio
-- **GAM-28** — Texture Workshop
-- **GAM-29** — Furniture Prop Lab
-- **GAM-30** — Modular Room Builder
-- **GAM-31** — UV, Materials & Export
-- **GAM-32** — Character Rigging
-- **GAM-33** — Character Animation
+- **GAM-28** — Game Asset Studio
+- **GAM-29** — Texture Workshop
+- **GAM-30** — Furniture Prop Lab
+- **GAM-31** — Modular Room Builder
+- **GAM-32** — UV, Materials & Export
+- **GAM-33** — Character Rigging
+- **GAM-34** — Character Animation
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 61 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 66 lessons
 
 ## Visual Art & Design (DES)
 
@@ -484,13 +493,14 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **DES-01** — Color Theory Lab
 - **DES-02** — Dadaism
 - **DES-03** — Virtual Reality Museum
+- **DES-04** — Origami: History, Mathematics & Library of Creations
 
 ### People Who Changed Visual Art
 
-- **DES-04** — Vincent van Gogh
-- **DES-05** — Pablo Picasso
-- **DES-06** — Charles & Ray Eames
-- **DES-07** — Nam June Paik
+- **DES-05** — Vincent van Gogh
+- **DES-06** — Pablo Picasso
+- **DES-07** — Charles & Ray Eames
+- **DES-08** — Nam June Paik
 
 ## Music: Theory, Instruments & Sound (MUS)
 
@@ -501,11 +511,12 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **MUS-03** — The Piano: History, Keys & Chords
 - **MUS-04** — Violin Fingerboard Explorer
 - **MUS-05** — Drum Lab: Kit, Notation, Rudiments & Fills
+- **MUS-06** — Fake Book: Lead Sheets, Variations & Play-Along
 
 ### Composers & Music History
 
-- **MUS-06** — Ludwig van Beethoven
-- **MUS-07** — Modes: From Greece to Today
+- **MUS-07** — Ludwig van Beethoven
+- **MUS-08** — Modes: From Greece to Today
 
 ## Language, Media & Critical Thinking (LAN)
 
@@ -533,21 +544,24 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **SYS-05** — From Rocket Clubs to STEAM
 - **SYS-06** — Leonardo da Vinci
 - **SYS-07** — The History of Medicine
-- **SYS-08** — The Panama Canal — Engineering Two Oceans
+- **SYS-08** — Lewis & Clark: Knowledge on the Trail
+- **SYS-09** — Magellan & Elcano: A World of Water
+- **SYS-10** — The Panama Canal — Engineering Two Oceans
+- **SYS-11** — Gold Rush: Fortune & Fool’s Gold
 
 ### Institutions, Markets & Shared Resources
 
-- **SYS-09** — The History of Copyright Law
-- **SYS-10** — Tragedy of the Commons
-- **SYS-11** — Stock Exchange Simulator
+- **SYS-12** — The History of Copyright Law
+- **SYS-13** — Tragedy of the Commons
+- **SYS-14** — Stock Exchange Simulator
 
 ### Modern Human Systems
 
-- **SYS-12** — Social Media Algorithms
-- **SYS-13** — The Frankfurt School & the Culture Industry
-- **SYS-14** — The 10-80-10 Productivity Process
-- **SYS-15** — The Psychology of Polymaths
-- **SYS-16** — The Nobel Prize — Ideas That Changed the World
+- **SYS-15** — Social Media Algorithms
+- **SYS-16** — The Frankfurt School & the Culture Industry
+- **SYS-17** — The 10-80-10 Productivity Process
+- **SYS-18** — The Psychology of Polymaths
+- **SYS-19** — The Nobel Prize — Ideas That Changed the World
 
 ## Bible Story, Theology & Christian Formation (BIB)
 

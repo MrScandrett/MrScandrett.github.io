@@ -23,7 +23,7 @@
 //   here()        current position {…, label}   go(pos)       jump to a position
 //   search(re)    async iterator of hits         goHit(hit)    jump to a hit
 //   onScroll()    progress/position bookkeeping  step(dir, e)  arrow-key paging
-// plus, for EPUB only, speakBlocks()/speakFrom()/nextChapter() for read-aloud.
+// Both viewers provide speakBlocks()/speakFrom()/nextChapter() for read-aloud.
 // Reading position, bookmarks and display settings live in localStorage only.
 import { BOOK_PROXY, matchSource, viaFor, gutenbergIdFromUrl, gutenbergEpubUrl } from "./book-sources.mjs";
 
@@ -1480,7 +1480,7 @@ async function openPdf(bytes, source, entry) {
   async function render(p) {
     if (p.pending) await p.pending;
     p.pending = renderPage(p);
-    try { await p.pending; } finally { p.pending = null; }
+    try { await p.pending; } catch (err) { p.renderedAt = 0; throw err; } finally { p.pending = null; }
   }
   async function renderPage(p) {
     const width = p.box.clientWidth;

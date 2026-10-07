@@ -12,6 +12,15 @@
      ══════════════════════════════════════════════════════════════════ */
 
   const MODELS = {
+    bookmark: {
+      id: 'bookmark', name: 'Corner Bookmark', tag: 'First Fold · 4 Steps', difficulty: 'Beginner', base: 'Triangle',
+      steps: [
+        {title:'Match opposite corners', desc:'Place a square colored side down. Bring the bottom corner to the top corner to form a triangle. The long folded edge should face you.', proTip:'Match the corners before pressing the crease.', math:'A diagonal splits a square into two congruent right triangles.', svg:'<polygon points="60,290 340,290 200,150" fill="#fef3c7" stroke="#92400e" stroke-width="3"/>'},
+        {title:'Mark the middle', desc:'Bring the right corner to the top point and crease. Unfold. Repeat with the left corner and unfold. Keep the triangle’s long edge facing you.', proTip:'Both tips meet the same top point.', math:'The creases divide the triangle into smaller matching regions.', svg:'<polygon points="60,290 340,290 200,150" fill="#fef3c7" stroke="#92400e" stroke-width="3"/><path d="M130 220L200 290L270 220" fill="none" stroke="#2563eb" stroke-width="3" stroke-dasharray="8 5"/>'},
+        {title:'Make a pocket', desc:'Take only the top layer at the top point. Fold it down to the midpoint of the long bottom edge. Leave the back layer standing up.', proTip:'Separate the two layers with a fingertip first.', math:'The midpoint divides an edge into two equal lengths.', svg:'<polygon points="60,290 340,290 200,150" fill="#fef3c7" stroke="#92400e" stroke-width="3"/><polygon points="130,220 270,220 200,290" fill="#fde68a" stroke="#92400e" stroke-width="2"/>'},
+        {title:'Tuck both corners inside', desc:'Bring the right corner back up to the top point. Fold its tip down inside the pocket. Repeat with the left corner. Slip the pocket over a page corner.', proTip:'If the tip catches, open the pocket gently rather than pushing harder.', math:'The tucked layers hold the shape through geometry and friction, without glue.', svg:'<polygon points="200,150 270,220 200,290 130,220" fill="#fde68a" stroke="#92400e" stroke-width="3"/><path d="M130 220H270" stroke="#92400e" stroke-width="2"/><text x="200" y="330" text-anchor="middle" fill="#92400e" font-size="16">Pocket for a page corner</text>'}
+      ]
+    },
     crane: {
       id: 'crane',
       name: 'Japanese Crane (Orizuru)',
@@ -51,7 +60,7 @@
           title: 'Turn Over & Horizontal/Vertical Mountain Folds',
           desc: 'Flip the paper over. Fold horizontally in half, crease, unfold; then vertically in half, crease, unfold.',
           proTip: 'By making these folds on the opposite side, the diagonals naturally pop up as mountains while the medians stay valleys.',
-          math: 'Alternating mountain and valley assignments at the center vertex sets up Maekawa’s condition: 4 creases (2M, 2V).',
+          math: 'Count crease rays rather than whole lines: a line through the center contributes two rays. The final collapsed base must satisfy the local flat-fold rules.',
           svg: `<rect x="60" y="30" width="280" height="280" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
                 <line x1="60" y1="170" x2="340" y2="170" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="10 3 2 3"/>
                 <line x1="200" y1="30" x2="200" y2="310" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="10 3 2 3"/>
@@ -519,7 +528,7 @@
           title: 'Diagonal and Median Creases',
           desc: 'Fold diagonals on one side and horizontal/vertical medians on the reverse side.',
           proTip: 'This sets up the 4-mountain / 4-valley star vertex at the center.',
-          math: 'Forms a symmetric 8-crease vertex satisfying Kawasaki and Maekawa.',
+          math: 'Eight equal sectors pass the angle test; a 4M/4V assignment fails Maekawa, so fold directions must be adjusted for a flat-folded vertex.',
           svg: `<rect x="60" y="30" width="280" height="280" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
                 <line x1="60" y1="30" x2="340" y2="310" stroke="#dc2626" stroke-width="2" stroke-dasharray="8 3"/>
                 <line x1="60" y1="310" x2="340" y2="30" stroke="#dc2626" stroke-width="2" stroke-dasharray="8 3"/>
@@ -634,7 +643,7 @@
   };
 
   /* Workbench State */
-  let currentModelKey = 'crane';
+  let currentModelKey = 'bookmark';
   let currentStepIndex = 0;
   let isCpView = false;
 
@@ -650,6 +659,7 @@
       btn.type = 'button';
       btn.className = `og-model-btn ${key === currentModelKey ? 'active' : ''}`;
       btn.setAttribute('data-model', key);
+      btn.setAttribute('aria-pressed', key === currentModelKey);
       btn.innerHTML = `<span class="og-model-name">${m.name}</span><span class="og-model-tag">${m.tag}</span>`;
       btn.addEventListener('click', () => {
         selectModel(key);
@@ -700,6 +710,7 @@
     isCpView = false;
     document.querySelectorAll('.og-model-btn').forEach((b) => {
       b.classList.toggle('active', b.getAttribute('data-model') === key);
+      b.setAttribute('aria-pressed', b.getAttribute('data-model') === key);
     });
     const toggleStep = document.getElementById('og-view-step');
     const toggleCp = document.getElementById('og-view-cp');
@@ -717,11 +728,43 @@
     }
   }
 
+  // Keep the instructional geometry intact while giving each paper face a material.
+  function applyPaperMaterial(svg) {
+    if (!svg) return;
+    const ns = 'http://www.w3.org/2000/svg';
+    const defs = document.createElementNS(ns, 'defs');
+    defs.innerHTML = `<linearGradient id="og-paper-front" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f4d8b0"/><stop offset=".48" stop-color="#e8b980"/><stop offset="1" stop-color="#ca9158"/></linearGradient>
+      <linearGradient id="og-paper-back" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#fffdf4"/><stop offset=".6" stop-color="#f3ead8"/><stop offset="1" stop-color="#d9ccb6"/></linearGradient>
+      <linearGradient id="og-paper-layer" x2="1" y2="1"><stop stop-color="#dbad76"/><stop offset="1" stop-color="#b9804b"/></linearGradient>
+      <filter id="og-paper-grain" x="-10%" y="-10%" width="120%" height="125%"><feTurbulence type="fractalNoise" baseFrequency=".65" numOctaves="3" seed="8" result="grain"/><feColorMatrix in="grain" type="matrix" values="0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0 0 0 .12 0"/><feComposite in2="SourceGraphic" operator="in"/><feBlend in="SourceGraphic" mode="soft-light"/><feDropShadow dx="1" dy="2" stdDeviation="1.4" flood-color="#513b28" flood-opacity=".22"/></filter>`;
+    svg.prepend(defs);
+    svg.querySelectorAll('polygon, rect, ellipse, path').forEach(shape => {
+      if (shape.closest('defs')) return;
+      const fill = shape.getAttribute('fill');
+      if (!fill || fill === 'none' || !/^#[0-9a-f]{6}$/i.test(fill)) return;
+      // White faces stay the uncolored reverse; saturated faces become lower layers.
+      const reverse = ['#f8fafc', '#ffffff', '#fefefe', '#fef2f2', '#eff6ff', '#f0fdf4', '#faf5ff', '#fffbeb'].includes(fill.toLowerCase());
+      const deep = ['#fca5a5', '#bfdbfe', '#86efac', '#fde68a', '#c4b5fd'].includes(fill.toLowerCase());
+      shape.setAttribute('fill', `url(#og-paper-${reverse ? 'back' : deep ? 'layer' : 'front'})`);
+      shape.setAttribute('stroke', '#80634a');
+      shape.setAttribute('stroke-width', '1.1');
+      shape.setAttribute('stroke-linejoin', 'round');
+      shape.setAttribute('filter', 'url(#og-paper-grain)');
+    });
+    svg.querySelectorAll('line, path[fill="none"]').forEach(line => {
+      if (line.closest('defs') || line.hasAttribute('marker-end')) return;
+      line.setAttribute('stroke-width', '1.25');
+      line.setAttribute('stroke-opacity', '.75');
+    });
+  }
+
   function renderWorkbench() {
     const model = MODELS[currentModelKey];
     const step = model.steps[currentStepIndex];
     const totalSteps = model.steps.length;
 
+    document.getElementById('og-view-step').setAttribute('aria-pressed', !isCpView);
+    document.getElementById('og-view-cp').setAttribute('aria-pressed', isCpView);
     // Counter & text
     const counterEl = document.getElementById('og-step-counter');
     const diffEl = document.getElementById('og-step-diff');
@@ -763,6 +806,7 @@
             </defs>
             ${step.svg}
           </svg>`;
+        applyPaperMaterial(viewport.querySelector("svg"));
       }
     }
   }
@@ -788,7 +832,7 @@
         <text x="112" y="300" font-family="sans-serif" font-size="11" fill="#dc2626" font-weight="700">Mountain</text>
         <line x1="200" y1="296" x2="230" y2="296" stroke="#2563eb" stroke-width="2.5" stroke-dasharray="6 3" />
         <text x="238" y="300" font-family="sans-serif" font-size="11" fill="#2563eb" font-weight="700">Valley</text>
-        <text x="200" y="15" font-family="sans-serif" font-size="12" font-weight="800" fill="#0f172a" text-anchor="middle">Full Flat Crease Pattern (CP)</text>
+        <text x="200" y="15" font-family="sans-serif" font-size="12" font-weight="800" fill="#0f172a" text-anchor="middle">Generic crease-symbol reference (not model blueprint)</text>
       </svg>`;
   }
 
@@ -981,7 +1025,7 @@
         <line x1="${ox}" y1="${oy}" x2="${x2}" y2="${y2}" stroke="#2563eb" stroke-width="2" stroke-dasharray="6 3"/>
         <circle cx="${ox}" cy="${oy}" r="5" fill="#dc2626"/>
         <text x="${ox + 80}" y="${oy - 12}" font-family="sans-serif" font-size="11" fill="#2563eb" font-weight="700">θ/3 = ${(angleDeg/3).toFixed(1)}°</text>
-        <text x="180" y="238" font-family="sans-serif" font-size="11.5" fill="#166534" font-weight="700" text-anchor="middle">★ Trisected using Origami Axiom 6</text>
+        <text x="180" y="238" font-family="sans-serif" font-size="11.5" fill="#166534" font-weight="700" text-anchor="middle">Three equal angle targets</text>
       </svg>`;
   }
 
@@ -1004,16 +1048,25 @@
     function handleSliders() {
       const t1 = parseFloat(s1.value);
       const t2 = parseFloat(s2.value);
-      const t3 = parseFloat(s3.value);
-      const t4 = Math.max(10, 360 - (t1 + t2 + t3));
+      s2.value = Math.min(Number(s2.value), 340 - t1);
+      const t2Adjusted = Number(s2.value);
+      s3.value = Math.min(Number(s3.value), 350 - t1 - t2Adjusted);
+      const t3 = Number(s3.value);
+      const t4 = 360 - t1 - t2Adjusted - t3;
 
-      vertexState.angles = [t1, t2, t3, t4];
+      vertexState.angles = [t1, t2Adjusted, t3, t4];
 
       document.getElementById('og-v-out1').textContent = `${t1}°`;
-      document.getElementById('og-v-out2').textContent = `${t2}°`;
+      document.getElementById('og-v-out2').textContent = `${t2Adjusted}°`;
       document.getElementById('og-v-out3').textContent = `${t3}°`;
       document.getElementById('og-v-out4').textContent = `${t4.toFixed(0)}°`;
 
+      vertexState.folds.forEach((fold, index) => {
+        const button = document.getElementById(`og-v-toggle${index + 1}`);
+        button.textContent = `Crease ${index + 1}: ${fold}`;
+        button.classList.toggle('primary', fold === 'M');
+        button.setAttribute('aria-pressed', fold === 'M');
+      });
       renderVertexAnalyzer();
     }
 
@@ -1027,7 +1080,8 @@
       if (toggle) {
         toggle.addEventListener('click', () => {
           vertexState.folds[idx] = vertexState.folds[idx] === 'M' ? 'V' : 'M';
-          toggle.textContent = vertexState.folds[idx] === 'M' ? 'Mountain (M)' : 'Valley (V)';
+          toggle.textContent = `Crease ${idx + 1}: ${vertexState.folds[idx]}`;
+          toggle.setAttribute('aria-pressed', vertexState.folds[idx] === 'M');
           toggle.classList.toggle('primary', vertexState.folds[idx] === 'M');
           renderVertexAnalyzer();
         });
@@ -1105,10 +1159,10 @@
     if (verdictEl) {
       if (bothPass) {
         verdictEl.className = 'og-badge-pass';
-        verdictEl.textContent = '✓ FOLDS FLAT (Valid Flat-Foldable Vertex)';
+        verdictEl.textContent = '✓ BOTH LOCAL TESTS PASS — assignment still needs checking';
       } else {
         verdictEl.className = 'og-badge-fail';
-        verdictEl.textContent = '✕ CANNOT FOLD FLAT (Crumples/Stretches Paper)';
+        verdictEl.textContent = '✕ A NECESSARY LOCAL CONDITION FAILS';
       }
     }
 
@@ -1175,15 +1229,15 @@
 
     function drawMiura() {
       const ext = parseFloat(slider.value) / 100; // 0 (stowed) to 1 (deployed)
-      const w = canvas.width;
-      const h = canvas.height;
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
 
       ctx.clearRect(0, 0, w, h);
 
       // Tessellation parameters
       const cols = 7;
       const rows = 5;
-      const a = 28; // length of facet
+      const a = Math.min(28, w / 26); // length of facet
       const alpha = 80 * (Math.PI / 180); // 80 deg
 
       // Lateral expansion factor
@@ -1213,11 +1267,20 @@
           ctx.closePath();
 
           // Facet fill
-          ctx.fillStyle = (r + c) % 2 === 0 ? 'rgba(37,99,235,0.2)' : 'rgba(2,132,199,0.12)';
+          const shade = ctx.createLinearGradient(x0, y0, x0 + cellW, y0 + cellH);
+          const dark = c % 2 === 0;
+          shade.addColorStop(0, dark ? '#d1a16d' : '#fff9ea');
+          shade.addColorStop(1, dark ? '#a97543' : '#dfcfaf');
+          ctx.fillStyle = shade;
+          ctx.shadowColor = 'rgba(65,44,25,.16)';
+          ctx.shadowBlur = 3;
+          ctx.shadowOffsetY = 2;
           ctx.fill();
 
-          ctx.strokeStyle = (r + c) % 2 === 0 ? '#2563eb' : '#dc2626';
-          ctx.lineWidth = 1.5;
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetY = 0;
+          ctx.strokeStyle = '#887155';
+          ctx.lineWidth = .8;
           ctx.stroke();
         }
       }
@@ -1231,22 +1294,12 @@
       if (wEl) wEl.textContent = `${(sx * 100).toFixed(0)}%`;
       if (hEl) hEl.textContent = `${(sy * 100).toFixed(0)}%`;
       if (aEl) aEl.textContent = `${(sx * sy * 100).toFixed(0)}%`;
-      if (nuEl) nuEl.textContent = '-0.92 (Auxetic!)';
+      if (nuEl) nuEl.textContent = 'Unchanged';
     }
 
     slider.addEventListener('input', drawMiura);
 
-    // Initial resize & draw
-    function resizeCanvas() {
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * (window.devicePixelRatio || 1);
-      canvas.height = rect.height * (window.devicePixelRatio || 1);
-      ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
-      drawMiura();
-    }
-
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
+    SimKit.canvas2d(canvas, { onResize: drawMiura });
   }
 
   /* ══════════════════════════════════════════════════════════════════
@@ -1260,8 +1313,9 @@
         const isCorrect = opt.getAttribute('data-correct') === 'true';
         const feedback = card.querySelector('.og-quiz-feedback');
 
+        feedback.setAttribute('role', 'status');
         card.querySelectorAll('.og-quiz-opt').forEach((b) => {
-          b.disabled = true;
+          b.classList.remove('wrong', 'correct');
           if (b.getAttribute('data-correct') === 'true') {
             b.classList.add('correct');
           }
@@ -1272,7 +1326,10 @@
         }
 
         if (feedback) {
+          feedback.classList.remove('correct', 'wrong');
           feedback.classList.add('visible', isCorrect ? 'correct' : 'wrong');
+          const heading = feedback.querySelector('strong');
+          if (heading) heading.textContent = isCorrect ? 'Correct! ' : 'Review the explanation, then try again. ';
         }
       });
     });
@@ -1288,11 +1345,15 @@
     if (!area) return;
 
     // Load saved
-    const saved = localStorage.getItem('origami_lesson_notes');
+    let saved;
+    try { saved = localStorage.getItem('origami_lesson_notes'); } catch (_) {}
     if (saved) area.value = saved;
 
     area.addEventListener('input', () => {
-      localStorage.setItem('origami_lesson_notes', area.value);
+      try {
+        localStorage.setItem('origami_lesson_notes', area.value);
+        document.getElementById('og-save-status').textContent = 'Notes saved on this device.';
+      } catch (_) { document.getElementById('og-save-status').textContent = 'Storage unavailable. Download your notes to keep them.'; }
     });
 
     if (dlBtn) {
@@ -1301,7 +1362,7 @@
           `--- STUDENT NOTES ---\n${area.value || 'No notes recorded.'}\n\n` +
           `--- ORIGAMI LAWS REFERENCE CHEATSHEET ---\n` +
           `1. Maekawa's Theorem: |M - V| = 2 at every flat-foldable interior vertex.\n` +
-          `2. Kawasaki's Theorem: Sum of alternating angles around vertex equals 180° (θ1 + θ3 = θ2 + θ4 = 180°).\n` +
+          `2. Local tests do not prove a whole model or a chosen fold assignment folds flat. Kawasaki: Sum of alternating angles around vertex equals 180° (θ1 + θ3 = θ2 + θ4 = 180°).\n` +
           `3. Two-Colorability: Faces of any flat-foldable crease pattern are 2-colorable (bipartite).\n` +
           `4. Huzita-Hatori Axioms: 7 folding axioms; Axiom 6 solves cubic equations and trisects angles.\n` +
           `5. Miura-ori: Herringbone tessellation with negative Poisson's ratio (auxetic) used for space solar arrays.\n`;
