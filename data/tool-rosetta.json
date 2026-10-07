@@ -1,0 +1,884 @@
+{
+  "version": 1,
+  "about": "Tool Rosetta: one idea, shown in every tool. Rendered by assets/js/tool-rosetta.js. Cells are short strings; `backticks` become code. Keep entries neutral and checkable against each tool's own docs.",
+  "updated": "2026-10",
+  "families": {
+    "game": {
+      "label": "Game engines",
+      "noun": "engine",
+      "tools": ["course", "godot", "unity", "unreal", "gamemaker", "phaser", "pygame"],
+      "defaults": ["course", "godot", "unity"]
+    },
+    "model": {
+      "label": "3D modeling apps",
+      "noun": "app",
+      "tools": ["blender", "maya", "max", "fusion", "onshape", "sketchup", "tinkercad", "gltf"],
+      "defaults": ["blender", "maya", "fusion", "gltf"]
+    }
+  },
+  "tools": {
+    "course": { "name": "This course", "lang": "JavaScript", "cost": "Free", "kind": "The plain JavaScript you write in our lessons (Pixel Courier, Tiny-Loop)" },
+    "godot": { "name": "Godot 4", "lang": "GDScript or C#", "cost": "Free, open source", "kind": "2D + 3D engine", "site": "https://godotengine.org/" },
+    "unity": { "name": "Unity 6", "lang": "C#", "cost": "Free Personal plan", "kind": "2D + 3D engine", "site": "https://unity.com/" },
+    "unreal": { "name": "Unreal Engine 5", "lang": "C++ or Blueprints", "cost": "Free to learn; royalties on big sales", "kind": "3D-first engine (2D via Paper2D)", "site": "https://www.unrealengine.com/" },
+    "gamemaker": { "name": "GameMaker", "lang": "GML (code or Visual)", "cost": "Free non-commercial", "kind": "2D engine", "site": "https://gamemaker.io/" },
+    "phaser": { "name": "Phaser 3", "lang": "JavaScript / TypeScript", "cost": "Free, open source", "kind": "2D browser framework", "site": "https://phaser.io/" },
+    "pygame": { "name": "Pygame", "lang": "Python", "cost": "Free, open source", "kind": "2D library (you write the engine)", "site": "https://www.pygame.org/" },
+
+    "blender": { "name": "Blender", "lang": "Python scripting", "cost": "Free, open source", "kind": "Polygon modeling, sculpting, animation", "site": "https://www.blender.org/" },
+    "maya": { "name": "Autodesk Maya", "lang": "Python / MEL", "cost": "Paid; free education license", "kind": "Polygon modeling, rigging, animation", "site": "https://www.autodesk.com/products/maya/overview" },
+    "max": { "name": "Autodesk 3ds Max", "lang": "MAXScript / Python", "cost": "Paid; free education license", "kind": "Polygon modeling, environments", "site": "https://www.autodesk.com/products/3ds-max/overview" },
+    "fusion": { "name": "Autodesk Fusion", "lang": "Python / C++ API", "cost": "Free personal and education licenses", "kind": "Parametric CAD (formerly Fusion 360)", "site": "https://www.autodesk.com/products/fusion-360/overview" },
+    "onshape": { "name": "Onshape", "lang": "FeatureScript", "cost": "Free education plan", "kind": "Parametric CAD in the browser", "site": "https://www.onshape.com/" },
+    "sketchup": { "name": "SketchUp", "lang": "Ruby", "cost": "Free web version; paid Pro", "kind": "Fast surface modeling", "site": "https://www.sketchup.com/" },
+    "tinkercad": { "name": "Tinkercad", "lang": "Codeblocks", "cost": "Free", "kind": "Beginner solids in the browser", "site": "https://www.tinkercad.com/" },
+    "gltf": { "name": ".glb file", "lang": "Open standard (Khronos)", "cost": "Free, open format", "kind": "What actually travels to the game engine" }
+  },
+  "concepts": [
+    {
+      "id": "core.language", "family": "game", "topic": "Foundations",
+      "idea": "Scripting language",
+      "what": "The language you write game logic in.",
+      "cells": {
+        "course": "JavaScript", "godot": "GDScript (Python-like), or C#", "unity": "C#",
+        "unreal": "C++, or Blueprints (visual nodes)", "gamemaker": "GML, or GML Visual blocks",
+        "phaser": "JavaScript or TypeScript", "pygame": "Python"
+      }
+    },
+    {
+      "id": "core.scene", "family": "game", "topic": "Foundations",
+      "idea": "Things in a level",
+      "what": "Where the objects of one level or screen live.",
+      "cells": {
+        "course": "arrays of plain objects inside a `world`",
+        "godot": "a Scene: a tree of Nodes, saved as `.tscn`",
+        "unity": "a Scene: GameObjects listed in the Hierarchy",
+        "unreal": "a Level: Actors listed in the Outliner",
+        "gamemaker": "a Room: instances placed on layers",
+        "phaser": "a `Phaser.Scene` holding Game Objects",
+        "pygame": "your own lists, or `pygame.sprite.Group`"
+      }
+    },
+    {
+      "id": "core.behaviour", "family": "game", "topic": "Foundations",
+      "idea": "Give an object behaviour",
+      "what": "How code gets attached to a thing in the world.",
+      "cells": {
+        "course": "functions that read and change the object",
+        "godot": "attach one script to a Node; add child Nodes for parts",
+        "unity": "add Components (your `MonoBehaviour` scripts) to a GameObject",
+        "unreal": "add Components to an Actor; logic in C++ or its Blueprint",
+        "gamemaker": "fill in Events (Create, Step, Draw…) on an Object",
+        "phaser": "methods on a class, or code in the Scene",
+        "pygame": "methods on your `Sprite` subclass"
+      }
+    },
+    {
+      "id": "core.prefab", "family": "game", "topic": "Foundations",
+      "idea": "Reusable object template",
+      "what": "Build an enemy once, place it many times.",
+      "cells": {
+        "course": "a factory function like `makeParcel(x, y)`",
+        "godot": "save a branch as its own scene, then instance it",
+        "unity": "a Prefab",
+        "unreal": "a Blueprint Class",
+        "gamemaker": "an Object asset (each copy is an instance)",
+        "phaser": "a class that `extends Phaser.GameObjects.Sprite`",
+        "pygame": "a class that `extends pygame.sprite.Sprite`"
+      }
+    },
+    {
+      "id": "core.ready", "family": "game", "topic": "Foundations",
+      "idea": "Run once at the start",
+      "what": "Setup code that runs when an object or level begins.",
+      "cells": {
+        "course": "an `init()` call before the loop starts",
+        "godot": "`func _ready():`",
+        "unity": "`void Start()` (or `Awake()`, which runs earlier)",
+        "unreal": "`BeginPlay()` / Event BeginPlay",
+        "gamemaker": "the Create event",
+        "phaser": "`create()` in the Scene (after `preload()`)",
+        "pygame": "code above `while running:`"
+      }
+    },
+    {
+      "id": "core.spawn", "family": "game", "topic": "Foundations",
+      "idea": "Spawn an object",
+      "what": "Create a new copy while the game runs.",
+      "cells": {
+        "course": "`world.push(makeParcel(x, y))`",
+        "godot": "`var p = parcel_scene.instantiate()` then `add_child(p)`",
+        "unity": "`Instantiate(parcelPrefab, pos, Quaternion.identity)`",
+        "unreal": "`SpawnActor` / Spawn Actor from Class node",
+        "gamemaker": "`instance_create_layer(x, y, \"Instances\", obj_parcel)`",
+        "phaser": "`this.parcels.create(x, y, \"parcel\")`",
+        "pygame": "`parcels.add(Parcel(x, y))`"
+      }
+    },
+    {
+      "id": "core.destroy", "family": "game", "topic": "Foundations",
+      "idea": "Remove an object",
+      "what": "Take something out of the game safely.",
+      "cells": {
+        "course": "mark `dead = true`, then filter the array",
+        "godot": "`queue_free()`",
+        "unity": "`Destroy(gameObject)`",
+        "unreal": "`Destroy()` / DestroyActor node",
+        "gamemaker": "`instance_destroy()`",
+        "phaser": "`sprite.destroy()`",
+        "pygame": "`sprite.kill()` (leaves every Group)"
+      },
+      "gotcha": "Most engines remove the object at the end of the frame, not instantly, so code later in the same frame can still see it."
+    },
+    {
+      "id": "core.input", "family": "game", "topic": "Foundations",
+      "idea": "Read the controls",
+      "what": "Ask whether a button is held right now.",
+      "cells": {
+        "course": "`keydown`/`keyup` listeners fill a `keys` object",
+        "godot": "Input Map action: `Input.is_action_pressed(\"jump\")`",
+        "unity": "Input System action: `jumpAction.IsPressed()`",
+        "unreal": "Enhanced Input: an Input Action in a Mapping Context",
+        "gamemaker": "`keyboard_check(vk_space)`",
+        "phaser": "`this.input.keyboard.addKey(\"SPACE\").isDown`",
+        "pygame": "`pygame.key.get_pressed()[pygame.K_SPACE]`"
+      },
+      "gotcha": "Name actions (\"jump\") instead of keys (Space). Then gamepads and remapping are free in Godot, Unity and Unreal."
+    },
+    {
+      "id": "core.events", "family": "game", "topic": "Foundations",
+      "idea": "Announce that something happened",
+      "what": "One object says “delivered!” and others react, without knowing each other.",
+      "cells": {
+        "course": "call a callback, e.g. `onDeliver()`",
+        "godot": "a signal: `signal delivered`, `delivered.emit()`, `delivered.connect(f)`",
+        "unity": "a C# `event` or a `UnityEvent`",
+        "unreal": "an Event Dispatcher (a delegate)",
+        "gamemaker": "call a method on the other instance, or `event_user(0)`",
+        "phaser": "`this.events.emit(\"delivered\")` / `.on(\"delivered\", f)`",
+        "pygame": "post a custom event with `pygame.event.post`"
+      }
+    },
+    {
+      "id": "core.coords", "family": "game", "topic": "Foundations",
+      "idea": "Axes and units",
+      "what": "Which way is up, and how big is “1”?",
+      "cells": {
+        "course": "2D: pixels, y grows downward",
+        "godot": "2D: pixels, y down. 3D: Y up, 1 unit = 1 m",
+        "unity": "Y up, 1 unit = 1 m, left-handed",
+        "unreal": "Z up, 1 unit = 1 cm, left-handed",
+        "gamemaker": "pixels, y grows downward",
+        "phaser": "pixels, y grows downward",
+        "pygame": "pixels, y grows downward"
+      },
+      "gotcha": "A model that is 100× too big or lying on its back almost always means units or up-axis were not converted on import."
+    },
+    {
+      "id": "core.import3d", "family": "game", "topic": "Foundations",
+      "idea": "Bring in a 3D model",
+      "what": "Get a model from your 3D app into the engine.",
+      "cells": {
+        "course": "`GLTFLoader` from our Three.js bundle loads a `.glb`",
+        "godot": "drop the `.glb` in the FileSystem dock; it imports as a scene",
+        "unity": "drag FBX into Assets; `.glb` needs the glTFast package",
+        "unreal": "Import FBX or glTF into the Content Browser",
+        "gamemaker": "2D-focused; 3D needs your own vertex buffers",
+        "phaser": "2D only; pair with Three.js for 3D",
+        "pygame": "2D only"
+      }
+    },
+
+    {
+      "id": "sprite.load", "family": "game", "topic": "Sprites & animation",
+      "idea": "Load a sprite",
+      "what": "Show a picture you drew.",
+      "cells": {
+        "course": "`PixelCourier.bake(frame, palette)`",
+        "godot": "Sprite2D with a PNG texture",
+        "unity": "import the PNG as Texture Type: Sprite (2D and UI); it gets a SpriteRenderer",
+        "unreal": "import the PNG, then Sprite Actions → Create Sprite (Paper2D)",
+        "gamemaker": "a Sprite asset → Import",
+        "phaser": "`this.load.image(\"courier\", \"courier.png\")`",
+        "pygame": "`pygame.image.load(\"courier.png\").convert_alpha()`"
+      }
+    },
+    {
+      "id": "sprite.sharp", "family": "game", "topic": "Sprites & animation",
+      "idea": "Keep pixels sharp",
+      "what": "Stop pixel art from going blurry when scaled.",
+      "cells": {
+        "course": "`imageSmoothingEnabled = false`",
+        "godot": "Project Settings → Rendering → Textures → Default Texture Filter: Nearest",
+        "unity": "texture Filter Mode: Point (no filter), Compression: None",
+        "unreal": "Sprite Actions → Apply Paper2D Texture Settings",
+        "gamemaker": "Game Options: untick “Interpolate colours between pixels”",
+        "phaser": "`pixelArt: true` in the game config",
+        "pygame": "scale with `pygame.transform.scale`, not `smoothscale`"
+      }
+    },
+    {
+      "id": "sprite.scale", "family": "game", "topic": "Sprites & animation",
+      "idea": "Whole-number scale",
+      "what": "Draw at a tiny resolution, then scale up by 2×, 3×, 4×.",
+      "cells": {
+        "course": "320 × 180 canvas scaled by CSS",
+        "godot": "Stretch mode viewport + integer scale mode",
+        "unity": "the Pixel Perfect Camera component",
+        "unreal": "orthographic camera sized to your pixel resolution",
+        "gamemaker": "viewport = camera size × 3 (Room → Viewports and Cameras)",
+        "phaser": "`scale: { zoom: 3 }`",
+        "pygame": "`pygame.display.set_mode((320, 180), pygame.SCALED)`"
+      }
+    },
+    {
+      "id": "anim.slice", "family": "game", "topic": "Sprites & animation",
+      "idea": "Slice a sprite sheet",
+      "what": "Cut one image into equal frames.",
+      "cells": {
+        "course": "frames stored as 16 × 16 strings",
+        "godot": "AnimatedSprite2D → SpriteFrames → “Add frames from sprite sheet”",
+        "unity": "Sprite Mode: Multiple → Sprite Editor → Slice → Grid By Cell Size",
+        "unreal": "Sprite Actions → Extract Sprites (grid mode)",
+        "gamemaker": "Sprite Editor → Image → Convert to Frames",
+        "phaser": "`this.load.spritesheet(\"courier\", \"sheet.png\", { frameWidth: 16, frameHeight: 16 })`",
+        "pygame": "`sheet.subsurface((i * 16, 0, 16, 16))`"
+      }
+    },
+    {
+      "id": "anim.define", "family": "game", "topic": "Sprites & animation",
+      "idea": "Define an animation",
+      "what": "Name a list of frames and a speed.",
+      "cells": {
+        "course": "`anims.run = { fps: 10, frames: [...] }`",
+        "godot": "SpriteFrames animation “run”, speed 10 FPS, loop on",
+        "unity": "an Animation Clip (drag the frames into the Scene), 10 samples per second",
+        "unreal": "a Flipbook asset, 10 frames per second",
+        "gamemaker": "the sprite's frames + playback speed 10 fps",
+        "phaser": "`this.anims.create({ key: \"run\", frames: …, frameRate: 10, repeat: -1 })`",
+        "pygame": "a list `run = [f0, f1, f2, f3]` plus an fps number"
+      }
+    },
+    {
+      "id": "anim.play", "family": "game", "topic": "Sprites & animation",
+      "idea": "Play an animation",
+      "what": "Switch the character to the “run” frames.",
+      "cells": {
+        "course": "the state machine picks it (lesson 08)",
+        "godot": "`$AnimatedSprite2D.play(\"run\")`",
+        "unity": "`animator.Play(\"run\")`",
+        "unreal": "`SetFlipbook(RunFlipbook)` on the flipbook component",
+        "gamemaker": "`sprite_index = spr_courier_run;`",
+        "phaser": "`player.play(\"run\", true)`",
+        "pygame": "`img = run[int(t * 10) % len(run)]`"
+      }
+    },
+    {
+      "id": "state.machine", "family": "game", "topic": "Sprites & animation",
+      "idea": "State machine",
+      "what": "Exactly one state (idle, run, jump…) at a time, with rules for switching.",
+      "cells": {
+        "course": "`chooseState()` in priority order",
+        "godot": "AnimationTree with a state machine, or a `match state:` block",
+        "unity": "an Animator Controller: states + transitions on parameters",
+        "unreal": "an enum + `switch` in Tick (Paper2D has no animation graph)",
+        "gamemaker": "`switch (state)` in the Step event",
+        "phaser": "your own `switch` in `update()`",
+        "pygame": "your own `if/elif`, or a dict of state functions"
+      }
+    },
+    {
+      "id": "state.play", "family": "game", "topic": "Sprites & animation",
+      "idea": "Play the state's animation",
+      "what": "Show the frames for the current state without restarting them every frame.",
+      "cells": {
+        "course": "frame from `animTime × fps`",
+        "godot": "`$AnimatedSprite2D.play(state)`",
+        "unity": "set an Animator parameter: `animator.SetBool(\"running\", true)`",
+        "unreal": "`SetFlipbook()` only when the state changes",
+        "gamemaker": "set `sprite_index` only when the state changes",
+        "phaser": "`player.play(state, true)` (true = ignore if already playing)",
+        "pygame": "reset the frame timer only when the state changes"
+      }
+    },
+    {
+      "id": "state.flip", "family": "game", "topic": "Sprites & animation",
+      "idea": "Face left",
+      "what": "Mirror the sprite instead of drawing it twice.",
+      "cells": {
+        "course": "`ctx.scale(-1, 1)`",
+        "godot": "`flip_h = true`",
+        "unity": "`spriteRenderer.flipX = true`",
+        "unreal": "set the sprite's X scale to −1",
+        "gamemaker": "`image_xscale = -1`",
+        "phaser": "`player.setFlipX(true)`",
+        "pygame": "`pygame.transform.flip(img, True, False)`"
+      }
+    },
+
+    {
+      "id": "tile.data", "family": "game", "topic": "Tiles & levels",
+      "idea": "Tile data",
+      "what": "What each tile looks like and whether it is solid.",
+      "cells": {
+        "course": "`tiles[\"G\"] = { solid: true, px }`",
+        "godot": "TileSet resource with a Physics Layer per tile",
+        "unity": "Tile assets in a Tile Palette; solidity from each tile's Collider Type",
+        "unreal": "a Paper2D Tile Set with per-tile collision",
+        "gamemaker": "a Tile Set (tiles don't collide; use a collision tile layer or objects)",
+        "phaser": "tileset image + `layer.setCollisionByProperty({ solid: true })`",
+        "pygame": "your own dict, e.g. `{\"G\": {\"solid\": True}}`"
+      }
+    },
+    {
+      "id": "tile.paint", "family": "game", "topic": "Tiles & levels",
+      "idea": "Paint a map",
+      "what": "Place tiles on the grid.",
+      "cells": {
+        "course": "the level editor in the lesson",
+        "godot": "`TileMapLayer` node, paint in the editor",
+        "unity": "Grid + Tilemap, paint with the Tile Palette window",
+        "unreal": "a Paper2D Tile Map asset",
+        "gamemaker": "a Tile Layer in the Room editor",
+        "phaser": "`this.make.tilemap({ data, tileWidth: 16, tileHeight: 16 })` or a Tiled JSON map",
+        "pygame": "loop over the grid and `blit`, or load a Tiled map with pytmx"
+      },
+      "gotcha": "The free Tiled editor saves maps that Godot, Unity, Phaser, GameMaker and Pygame can all load, so a level can move between engines."
+    },
+    {
+      "id": "tile.autotile", "family": "game", "topic": "Tiles & levels",
+      "idea": "Autotile",
+      "what": "Let each tile's neighbours choose its edge piece.",
+      "cells": {
+        "course": "auto-ground rule tile",
+        "godot": "TileSet Terrains (match corners and sides)",
+        "unity": "Rule Tile (2D Tilemap Extras package)",
+        "unreal": "no built-in autotile; paint by hand or author in Tiled",
+        "gamemaker": "Tile Set → Auto Tiling (16- or 47-tile sets)",
+        "phaser": "done in Tiled with Terrain sets",
+        "pygame": "the bitmask code from the lesson"
+      }
+    },
+
+    {
+      "id": "loop.fixed", "family": "game", "topic": "Game loop",
+      "idea": "Fixed physics step",
+      "what": "Run physics in equal time slices so a jump is the same height on every computer.",
+      "cells": {
+        "course": "`while (acc >= STEP) update(STEP)`",
+        "godot": "`_physics_process(delta)` runs at a fixed 60 Hz by default",
+        "unity": "`FixedUpdate()` (every 0.02 s by default)",
+        "unreal": "physics runs on its own; turn on Physics Substepping for steadier steps",
+        "gamemaker": "the Step event runs once per frame at the Game Speed (fixed by design)",
+        "phaser": "Arcade physics steps at `fps: 60` internally",
+        "pygame": "write the accumulator loop yourself"
+      }
+    },
+    {
+      "id": "loop.frame", "family": "game", "topic": "Game loop",
+      "idea": "Per-frame update",
+      "what": "Code that runs every frame, scaled by delta time.",
+      "cells": {
+        "course": "`draw()` every refresh",
+        "godot": "`_process(delta)`, delta in seconds",
+        "unity": "`Update()` with `Time.deltaTime` in seconds",
+        "unreal": "`Tick(float DeltaTime)` / Event Tick, in seconds",
+        "gamemaker": "Step event; `delta_time` is in microseconds",
+        "phaser": "`update(time, delta)`, delta in milliseconds",
+        "pygame": "`dt = clock.tick(60) / 1000` gives seconds"
+      },
+      "gotcha": "Delta time comes in seconds, milliseconds or microseconds depending on the engine. Check before you multiply."
+    },
+    {
+      "id": "loop.order", "family": "game", "topic": "Game loop",
+      "idea": "Draw order",
+      "what": "What is drawn on top of what.",
+      "cells": {
+        "course": "a `layerOrder` array",
+        "godot": "node order + `z_index`; CanvasLayer for the HUD",
+        "unity": "Sorting Layer + Order in Layer; a Canvas for the HUD",
+        "unreal": "Translucency Sort Priority for sprites; UMG widgets for the HUD",
+        "gamemaker": "layer depth in the Room editor; Draw GUI event for the HUD",
+        "phaser": "`setDepth(n)`",
+        "pygame": "the order you call `blit`; HUD last"
+      }
+    },
+
+    {
+      "id": "move.body", "family": "game", "topic": "Movement & collision",
+      "idea": "A moving body",
+      "what": "Something with velocity that knows when it is on the ground.",
+      "cells": {
+        "course": "`p.vx`, `p.vy`, `p.grounded`",
+        "godot": "CharacterBody2D: `velocity`, `move_and_slide()`, `is_on_floor()`",
+        "unity": "Rigidbody2D: `rb.linearVelocity`; ground check with a short raycast",
+        "unreal": "Character Movement: `AddMovementInput()`, `IsMovingOnGround()`",
+        "gamemaker": "`hsp`/`vsp` variables + `move_and_collide()`",
+        "phaser": "Arcade body: `setVelocityX()`, `body.blocked.down`",
+        "pygame": "a `Rect` plus `vx`, `vy` you update"
+      }
+    },
+    {
+      "id": "move.gravity", "family": "game", "topic": "Movement & collision",
+      "idea": "Gravity",
+      "what": "Speed up downward a little every frame.",
+      "cells": {
+        "course": "`vy += gravity * dt`",
+        "godot": "`velocity += get_gravity() * delta`",
+        "unity": "Rigidbody2D Gravity Scale (world value in Project Settings → Physics 2D)",
+        "unreal": "Character Movement → Gravity Scale",
+        "gamemaker": "`vsp += grav;` in the Step event",
+        "phaser": "`arcade: { gravity: { y: 900 } }`",
+        "pygame": "`vy += GRAVITY * dt`"
+      }
+    },
+    {
+      "id": "move.forgiveness", "family": "game", "topic": "Movement & collision",
+      "idea": "Coyote time + jump buffer",
+      "what": "Forgive jumps pressed a moment too late or too early.",
+      "cells": {
+        "course": "two countdown timers",
+        "godot": "two timers you write in `_physics_process`",
+        "unity": "two timers you write in `Update`",
+        "unreal": "two timers you write in Tick",
+        "gamemaker": "two timers you write in Step",
+        "phaser": "two timers you write in `update`",
+        "pygame": "two timers you write in the loop"
+      },
+      "gotcha": "No engine does this for you. Game feel is design work in every tool."
+    },
+    {
+      "id": "col.overlap", "family": "game", "topic": "Movement & collision",
+      "idea": "Overlap test",
+      "what": "Did these two things touch? (pick-ups, hazards)",
+      "cells": {
+        "course": "`overlaps(a, b)`",
+        "godot": "Area2D + `body_entered` signal",
+        "unity": "a Collider2D with Is Trigger + `OnTriggerEnter2D()`",
+        "unreal": "`OnComponentBeginOverlap` (Generate Overlap Events on)",
+        "gamemaker": "a Collision event, or `place_meeting()` / `instance_place()`",
+        "phaser": "`this.physics.add.overlap(player, parcels, collect)`",
+        "pygame": "`pygame.sprite.spritecollide(player, parcels, True)`"
+      }
+    },
+    {
+      "id": "col.solid", "family": "game", "topic": "Movement & collision",
+      "idea": "Solid response",
+      "what": "Stop at walls and floors instead of passing through.",
+      "cells": {
+        "course": "`moveX` / `moveY`",
+        "godot": "`move_and_slide()` does it for you",
+        "unity": "a Dynamic Rigidbody2D + Collider2D does it for you",
+        "unreal": "Character Movement sweeps and slides for you",
+        "gamemaker": "`move_and_collide(hsp, vsp, obj_wall)`",
+        "phaser": "`this.physics.add.collider(player, groundLayer)`",
+        "pygame": "move on x, fix overlaps, then move on y (as in the lesson)"
+      }
+    },
+    {
+      "id": "col.oneway", "family": "game", "topic": "Movement & collision",
+      "idea": "One-way platform",
+      "what": "Jump up through it, land on top of it.",
+      "cells": {
+        "course": "check falling + previous bottom",
+        "godot": "`one_way_collision = true` on CollisionShape2D",
+        "unity": "Platform Effector 2D with Use One Way",
+        "unreal": "your own rule: ignore the platform while moving up",
+        "gamemaker": "only collide when `vsp > 0` and you were above it",
+        "phaser": "tile `setCollision(false, false, true, false)` (top only)",
+        "pygame": "only collide when falling and you were above it"
+      }
+    },
+
+    {
+      "id": "cam.follow", "family": "game", "topic": "Cameras",
+      "idea": "Follow the player",
+      "what": "Keep the player on screen as they move.",
+      "cells": {
+        "course": "`cam.x` chases the player",
+        "godot": "Camera2D as a child of the player",
+        "unity": "a Cinemachine Camera with Tracking Target = player",
+        "unreal": "Camera + Spring Arm components on the character",
+        "gamemaker": "Room → Viewports and Cameras → Object Following",
+        "phaser": "`this.cameras.main.startFollow(player)`",
+        "pygame": "`cam_x = player.x - W / 2`, draw everything at `x - cam_x`"
+      }
+    },
+    {
+      "id": "cam.deadzone", "family": "game", "topic": "Cameras",
+      "idea": "Dead zone + smoothing",
+      "what": "Let the player move a bit before the camera follows, then ease after them.",
+      "cells": {
+        "course": "dead zone box + exponential lerp",
+        "godot": "Drag margins + Position Smoothing",
+        "unity": "Cinemachine Position Composer: Dead Zone + Damping",
+        "unreal": "Spring Arm → Enable Camera Lag",
+        "gamemaker": "Object Following borders; smoothing you lerp yourself",
+        "phaser": "`setDeadzone(56, 48)`, `startFollow(player, true, 0.1, 0.1)`",
+        "pygame": "dead zone and lerp you write"
+      }
+    },
+    {
+      "id": "cam.clamp", "family": "game", "topic": "Cameras",
+      "idea": "Clamp to the level",
+      "what": "Never show past the edge of the map.",
+      "cells": {
+        "course": "clamp to level size",
+        "godot": "`limit_left`, `limit_right`…",
+        "unity": "Cinemachine Confiner 2D",
+        "unreal": "clamp the camera position in code",
+        "gamemaker": "a following view stops at the room edges",
+        "phaser": "`this.cameras.main.setBounds(0, 0, w, h)`",
+        "pygame": "`cam_x = max(0, min(cam_x, level_w - W))`"
+      }
+    },
+    {
+      "id": "cam.parallax", "family": "game", "topic": "Cameras",
+      "idea": "Parallax",
+      "what": "Far layers scroll slower than near ones.",
+      "cells": {
+        "course": "layer offset × factor",
+        "godot": "Parallax2D node (scroll scale)",
+        "unity": "a small script: layer x = camera x × factor",
+        "unreal": "move each layer by camera x × factor in Tick",
+        "gamemaker": "`layer_x(layer, cam_x * 0.8)` on a background layer",
+        "phaser": "`image.setScrollFactor(0.2)`",
+        "pygame": "draw the layer at `x - cam_x * factor`"
+      }
+    },
+
+    {
+      "id": "ship.scenes", "family": "game", "topic": "Shipping",
+      "idea": "Menus + pause",
+      "what": "Move between title, play and win screens; freeze the game.",
+      "cells": {
+        "course": "a `mode` string",
+        "godot": "`get_tree().change_scene_to_file()`, `get_tree().paused`",
+        "unity": "`SceneManager.LoadScene(\"Win\")`, `Time.timeScale = 0`",
+        "unreal": "Open Level, Set Game Paused",
+        "gamemaker": "`room_goto(rm_win)`; pause with `instance_deactivate_all()`",
+        "phaser": "`this.scene.start(\"Win\")`, `this.scene.pause()`",
+        "pygame": "a `mode` string, like the course"
+      }
+    },
+    {
+      "id": "ship.save", "family": "game", "topic": "Shipping",
+      "idea": "Save data",
+      "what": "Keep progress after the game closes.",
+      "cells": {
+        "course": "`localStorage`",
+        "godot": "`FileAccess` to `user://save.json`",
+        "unity": "`PlayerPrefs`, or JSON in `Application.persistentDataPath`",
+        "unreal": "a SaveGame object + Save Game to Slot",
+        "gamemaker": "`json_stringify()` to a file, or `ini_write_real()`",
+        "phaser": "`localStorage`",
+        "pygame": "`json.dump(data, file)`"
+      }
+    },
+    {
+      "id": "ship.export", "family": "game", "topic": "Shipping",
+      "idea": "Export",
+      "what": "Turn the project into something other people can play.",
+      "cells": {
+        "course": "zip the folder",
+        "godot": "Export → Web (HTML5) with export templates",
+        "unity": "File → Build Profiles → Web, Windows or macOS",
+        "unreal": "Platforms → Package Project (no official web export)",
+        "gamemaker": "pick a target (Windows, macOS, GX.games, HTML5…) and build",
+        "phaser": "bundle and upload the folder",
+        "pygame": "pygbag for the web, PyInstaller for desktop"
+      }
+    },
+
+    {
+      "id": "model.kind", "family": "model", "topic": "Foundations",
+      "idea": "What it builds",
+      "what": "The kind of 3D data the app is made for.",
+      "cells": {
+        "blender": "polygon meshes (plus sculpting and curves)",
+        "maya": "polygon meshes and NURBS surfaces",
+        "max": "polygon meshes (Editable Poly)",
+        "fusion": "parametric solid bodies from sketches",
+        "onshape": "parametric solid parts from sketches",
+        "sketchup": "faces and edges (surface models)",
+        "tinkercad": "simple solids and holes combined together",
+        "gltf": "triangle meshes only"
+      },
+      "gotcha": "CAD apps (Fusion, Onshape) are built for manufacturing: exact sizes, no UVs or rigs. Use them for hard-surface props, then finish game assets in a mesh app."
+    },
+    {
+      "id": "model.navigate", "family": "model", "topic": "Foundations",
+      "idea": "Orbit · pan · zoom",
+      "what": "Move your view around the model (default mouse controls).",
+      "cells": {
+        "blender": "middle-drag orbit · Shift+middle pan · wheel zoom",
+        "maya": "Alt+left orbit · Alt+middle pan · Alt+right zoom",
+        "max": "Alt+middle orbit · middle pan · wheel zoom",
+        "fusion": "Shift+middle orbit · middle pan · wheel zoom",
+        "onshape": "right-drag orbit · middle pan · wheel zoom",
+        "sketchup": "middle-drag orbit · Shift+middle pan · wheel zoom",
+        "tinkercad": "right-drag orbit · middle pan · wheel zoom",
+        "gltf": "n/a: the file stores no view"
+      }
+    },
+    {
+      "id": "model.units", "family": "model", "topic": "Foundations",
+      "idea": "Units",
+      "what": "How big is “1”?",
+      "cells": {
+        "blender": "metres by default (Scene Properties → Units)",
+        "maya": "centimetres by default",
+        "max": "set in Customize → Units Setup",
+        "fusion": "chosen per design (often millimetres)",
+        "onshape": "chosen per document",
+        "sketchup": "chosen by the template",
+        "tinkercad": "millimetres",
+        "gltf": "always metres"
+      },
+      "gotcha": "Maya's centimetres are why a model can arrive 100× too big. Decide your scale first, and check the export's unit setting."
+    },
+    {
+      "id": "model.axis", "family": "model", "topic": "Foundations",
+      "idea": "Up axis",
+      "what": "Which axis points to the sky.",
+      "cells": {
+        "blender": "Z up",
+        "maya": "Y up",
+        "max": "Z up",
+        "fusion": "Y up by default (a preference)",
+        "onshape": "Z up",
+        "sketchup": "Z up (the blue axis)",
+        "tinkercad": "Z up",
+        "gltf": "Y up; exporters convert for you"
+      }
+    },
+    {
+      "id": "model.transform", "family": "model", "topic": "Building",
+      "idea": "Move · rotate · scale",
+      "what": "The three basic transforms.",
+      "cells": {
+        "blender": "G · R · S",
+        "maya": "W · E · R",
+        "max": "W · E · R",
+        "fusion": "Move/Copy tool (M)",
+        "onshape": "Transform feature, or drag the triad",
+        "sketchup": "Move (M) · Rotate (Q) · Scale (S)",
+        "tinkercad": "drag, arrow keys, and the rotate handles",
+        "gltf": "a node's translation, rotation and scale"
+      }
+    },
+    {
+      "id": "model.components", "family": "model", "topic": "Building",
+      "idea": "Edit points, edges, faces",
+      "what": "Work on the parts of a shape instead of the whole object.",
+      "cells": {
+        "blender": "Tab into Edit Mode; 1 · 2 · 3 = vertex · edge · face",
+        "maya": "F9 · F10 · F11 = vertex · edge · face",
+        "max": "convert to Editable Poly; 1 · 2 · 4 = vertex · edge · polygon",
+        "fusion": "pick faces and edges as inputs to features",
+        "onshape": "pick faces and edges as inputs to features",
+        "sketchup": "always on: click edges and faces directly",
+        "tinkercad": "none; you resize whole shapes",
+        "gltf": "vertices and triangles"
+      }
+    },
+    {
+      "id": "model.extrude", "family": "model", "topic": "Building",
+      "idea": "Extrude",
+      "what": "Pull a flat shape out into 3D.",
+      "cells": {
+        "blender": "E in Edit Mode",
+        "maya": "Edit Mesh → Extrude (Ctrl+E)",
+        "max": "Editable Poly → Extrude (Shift+E)",
+        "fusion": "Extrude (E) on a sketch profile",
+        "onshape": "Extrude feature (Shift+E) on a sketch region",
+        "sketchup": "Push/Pull (P)",
+        "tinkercad": "no extrude; drag a shape's height handle",
+        "gltf": "result only"
+      }
+    },
+    {
+      "id": "model.instance", "family": "model", "topic": "Building",
+      "idea": "Copy vs. linked copy",
+      "what": "A linked copy (instance) changes when the original changes.",
+      "cells": {
+        "blender": "Shift+D copy · Alt+D linked duplicate",
+        "maya": "Ctrl+D copy · Duplicate Special → Instance",
+        "max": "Shift+drag, then Copy or Instance",
+        "fusion": "Paste = linked component · Paste New = independent copy",
+        "onshape": "insert the same part many times in an Assembly",
+        "sketchup": "Make Component (G); its copies are linked",
+        "tinkercad": "Ctrl+D (copies only)",
+        "gltf": "two nodes can share one mesh"
+      }
+    },
+    {
+      "id": "model.pattern", "family": "model", "topic": "Building",
+      "idea": "Array / pattern",
+      "what": "Repeat a piece in a row or circle.",
+      "cells": {
+        "blender": "Array modifier",
+        "maya": "Duplicate Special with a transform, or MASH",
+        "max": "Tools → Array",
+        "fusion": "Create → Pattern → Rectangular or Circular",
+        "onshape": "Linear Pattern / Circular Pattern",
+        "sketchup": "Move with Ctrl to copy, then type `5x`",
+        "tinkercad": "Duplicate and repeat (Ctrl+D repeats the last move)",
+        "gltf": "baked into separate pieces"
+      }
+    },
+    {
+      "id": "model.mirror", "family": "model", "topic": "Building",
+      "idea": "Mirror",
+      "what": "Model one half, get the other half free.",
+      "cells": {
+        "blender": "Mirror modifier",
+        "maya": "Mesh → Mirror",
+        "max": "Symmetry modifier",
+        "fusion": "Mirror feature",
+        "onshape": "Mirror feature",
+        "sketchup": "Flip Along a component copy",
+        "tinkercad": "Mirror tool (M)",
+        "gltf": "baked into the mesh"
+      }
+    },
+    {
+      "id": "model.boolean", "family": "model", "topic": "Building",
+      "idea": "Boolean (add / cut / intersect)",
+      "what": "Combine two shapes, or cut one with another.",
+      "cells": {
+        "blender": "Boolean modifier",
+        "maya": "Mesh → Booleans → Union / Difference / Intersection",
+        "max": "Compound Objects → Boolean",
+        "fusion": "Modify → Combine (Join / Cut / Intersect)",
+        "onshape": "Boolean feature (Union / Subtract / Intersect)",
+        "sketchup": "Solid Tools (Pro) on solid groups",
+        "tinkercad": "make one shape a Hole, then Group",
+        "gltf": "result only"
+      },
+      "gotcha": "Mesh booleans can leave messy triangles. Check topology before you UV or rig."
+    },
+    {
+      "id": "model.history", "family": "model", "topic": "Building",
+      "idea": "Undo-able history",
+      "what": "Change an early step without rebuilding everything.",
+      "cells": {
+        "blender": "the modifier stack (live until you Apply)",
+        "maya": "construction history (INPUTS in the Channel Box)",
+        "max": "the modifier stack (Collapse to bake it)",
+        "fusion": "the timeline along the bottom",
+        "onshape": "the Feature list",
+        "sketchup": "none; Undo, and keep parts in groups",
+        "tinkercad": "Ungroup gets the original shapes back",
+        "gltf": "none: export bakes every step"
+      }
+    },
+    {
+      "id": "model.pivot", "family": "model", "topic": "Getting game-ready",
+      "idea": "Origin / pivot",
+      "what": "The point the object rotates around and snaps by.",
+      "cells": {
+        "blender": "Object → Set Origin",
+        "maya": "hold D (or Insert) to move the pivot",
+        "max": "Hierarchy panel → Affect Pivot Only",
+        "fusion": "the component's origin",
+        "onshape": "mate connectors",
+        "sketchup": "Change Axes on a component",
+        "tinkercad": "no pivot; use the Workplane tool",
+        "gltf": "the node's local origin, which the engine pivots around"
+      }
+    },
+    {
+      "id": "model.freeze", "family": "model", "topic": "Getting game-ready",
+      "idea": "Apply / freeze transforms",
+      "what": "Make the current size and rotation the new “zero”.",
+      "cells": {
+        "blender": "Ctrl+A → All Transforms",
+        "maya": "Modify → Freeze Transformations",
+        "max": "Utilities → Reset XForm",
+        "fusion": "n/a: geometry stores real sizes",
+        "onshape": "n/a: geometry stores real sizes",
+        "sketchup": "n/a for loose geometry",
+        "tinkercad": "n/a",
+        "gltf": "unapplied scale travels as the node's scale"
+      },
+      "gotcha": "Unapplied scale is the classic cause of wrong collision shapes and stretched physics in the engine."
+    },
+    {
+      "id": "model.normals", "family": "model", "topic": "Getting game-ready",
+      "idea": "Smooth vs. hard edges",
+      "what": "Whether a surface shades smoothly or shows its facets.",
+      "cells": {
+        "blender": "Shade Smooth / Shade Auto Smooth",
+        "maya": "Mesh Display → Soften Edge / Harden Edge",
+        "max": "Smoothing Groups",
+        "fusion": "mesh refinement when you export",
+        "onshape": "export resolution (coarse to fine)",
+        "sketchup": "Soften/Smooth Edges",
+        "tinkercad": "the Sides setting on round shapes",
+        "gltf": "a normal stored for every vertex"
+      }
+    },
+    {
+      "id": "model.uv", "family": "model", "topic": "Getting game-ready",
+      "idea": "UV unwrap",
+      "what": "Flatten the surface so a 2D texture can wrap it.",
+      "cells": {
+        "blender": "mark seams, then U → Unwrap (or Smart UV Project)",
+        "maya": "UV Editor → Automatic, then Cut and Unfold",
+        "max": "Unwrap UVW modifier (Peel)",
+        "fusion": "no UV editing; appearances only",
+        "onshape": "no UV editing",
+        "sketchup": "texture positioning only, no unwrap",
+        "tinkercad": "none",
+        "gltf": "a UV coordinate stored for every vertex"
+      }
+    },
+    {
+      "id": "model.rig", "family": "model", "topic": "Getting game-ready",
+      "idea": "Skeleton / rig",
+      "what": "Bones that bend a character's mesh.",
+      "cells": {
+        "blender": "Armature, then Ctrl+P → With Automatic Weights",
+        "maya": "Skeleton → Create Joints, then Skin → Bind Skin",
+        "max": "Bones, CAT or Biped + Skin modifier",
+        "fusion": "Joints (mechanical motion, not skinning)",
+        "onshape": "Mates (mechanical motion, not skinning)",
+        "sketchup": "none",
+        "tinkercad": "none",
+        "gltf": "a skin with joints"
+      }
+    },
+    {
+      "id": "model.keyframe", "family": "model", "topic": "Getting game-ready",
+      "idea": "Set a keyframe",
+      "what": "Record a pose at a moment in time.",
+      "cells": {
+        "blender": "I",
+        "maya": "S",
+        "max": "Auto Key (N), or Set Key (K)",
+        "fusion": "Animation workspace (presentations, not game clips)",
+        "onshape": "Animate a mate (presentations only)",
+        "sketchup": "Scenes (camera moves only)",
+        "tinkercad": "none",
+        "gltf": "animation channels for translation, rotation and scale"
+      }
+    },
+    {
+      "id": "model.export", "family": "model", "topic": "Getting game-ready",
+      "idea": "Export for a game engine",
+      "what": "Send the finished asset to Godot, Unity, Unreal or Three.js.",
+      "cells": {
+        "blender": "File → Export → glTF 2.0 (`.glb`); FBX also built in",
+        "maya": "FBX built in; glTF needs a plugin",
+        "max": "FBX built in; glTF built in since 3ds Max 2023",
+        "fusion": "Export as OBJ or FBX, then clean up in a mesh app",
+        "onshape": "Export as STL or OBJ, then clean up in a mesh app",
+        "sketchup": "Pro: Export → 3D Model (FBX, OBJ, DAE)",
+        "tinkercad": "Export → OBJ or glTF (`.glb`)",
+        "gltf": "one file with meshes, materials, rigs and animations"
+      },
+      "gotcha": "Pick `.glb` when you can: every engine on this site reads it, so your art isn't tied to one app or one engine."
+    }
+  ]
+}

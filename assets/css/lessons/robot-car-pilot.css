@@ -1,0 +1,134 @@
+/* Robot Car Pilot cockpit (lessons/engineering/robotics/robot-car-pilot.html).
+   Builds on robot-autonomy.css; everything here is rc-*. */
+
+.rc-connect { display: flex; flex-wrap: wrap; gap: .5rem; align-items: stretch; margin-bottom: .8rem; }
+.rc-link {
+  display: grid; gap: .1rem; min-width: 8.5rem; padding: .55rem .8rem; text-align: left;
+  border: 2px solid rgba(228,242,237,.3); border-radius: 10px; background: #243c46; color: #eef6f3;
+  font: 700 .95rem/1.15 "IBM Plex Sans", sans-serif;
+}
+.rc-link small { font: 500 .7rem/1.3 "IBM Plex Mono", monospace; color: #b9cbc7; }
+.rc-link:hover:not(:disabled) { border-color: #f2bf3f; }
+.rc-link[aria-pressed="true"] { border-color: #b8d84b; background: #2f5160; box-shadow: inset 0 0 0 2px #b8d84b; }
+.rc-link:disabled { opacity: .55; cursor: not-allowed; }
+.rc-status {
+  flex: 1 1 14rem; align-self: center; margin: 0; padding: .45rem .7rem; border-radius: 8px;
+  background: #13252c; font: 600 .82rem/1.4 "IBM Plex Mono", monospace; color: #d4e0df;
+}
+.rc-status[data-kind="on"] { color: #d6f08a; }
+.rc-status[data-kind="busy"] { color: #f2d27a; }
+.rc-status[data-kind="error"] { color: #ffb4a8; }
+.rc-bridge { margin: -.3rem 0 .8rem; font-size: .8rem; color: #d4e0df; }
+.rc-bridge summary { cursor: pointer; font-weight: 600; }
+.rc-bridge input { width: min(100%, 18rem); margin: .35rem .4rem 0 0; padding: .3rem .45rem; border-radius: 6px; border: 1px solid #5b7480; font: 500 .8rem "IBM Plex Mono", monospace; }
+.rc-bridge code { background: rgba(255,255,255,.1); color: #fff; }
+
+.rc-grid { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 1rem; align-items: start; }
+.rc-view { display: grid; gap: .5rem; }
+.rc-view canvas { aspect-ratio: 3 / 2; }
+.rc-camera { margin: 0; }
+.rc-camera img { display: block; width: 100%; min-height: 12rem; border-radius: 8px; background: #0f1d23; object-fit: contain; }
+.rc-camera figcaption { font-size: .78rem; color: #b9cbc7; margin-top: .3rem; }
+.rc-note { margin: 0; font-size: .78rem; line-height: 1.45; color: #b9cbc7; }
+.rc-command {
+  min-height: 2.2em; margin: 0; padding: .45rem .6rem; border-radius: 6px; background: #0f1d23;
+  font: 600 .8rem/1.4 "IBM Plex Mono", monospace; color: #b8d84b; overflow-wrap: anywhere;
+}
+
+.rc-drive { display: grid; grid-template-columns: 1fr; gap: .7rem; justify-items: center; }
+.rc-stick {
+  position: relative; width: 168px; height: 168px; border-radius: 50%; touch-action: none; cursor: grab;
+  background: radial-gradient(circle, #2f5160 0 30%, #243c46 31% 100%); border: 3px solid rgba(228,242,237,.35);
+}
+.rc-stick::before, .rc-stick::after { content: ""; position: absolute; background: rgba(228,242,237,.14); }
+.rc-stick::before { left: 50%; top: 10%; bottom: 10%; width: 2px; }
+.rc-stick::after { top: 50%; left: 10%; right: 10%; height: 2px; }
+.rc-knob {
+  position: absolute; left: 50%; top: 50%; z-index: 1; width: 64px; height: 64px; border-radius: 50%;
+  transform: translate(-50%, -50%); background: #f2bf3f; border: 3px solid #12202a; box-shadow: 0 4px 0 #9a7417;
+}
+.rc-dpad { display: grid; grid-template-columns: repeat(3, 3.2rem); grid-template-rows: repeat(2, 3.2rem); gap: .3rem; }
+.rc-dpad button {
+  border: 2px solid rgba(228,242,237,.3); border-radius: 10px; background: #243c46; color: #fff; font-size: 1.3rem;
+  user-select: none; -webkit-user-select: none; touch-action: none;
+}
+.rc-dpad button.is-held { background: #f2bf3f; color: #12202a; }
+.rc-dpad [data-rc-hold="up"] { grid-column: 2; }
+.rc-dpad [data-rc-hold="left"] { grid-column: 1; grid-row: 2; }
+.rc-dpad [data-rc-hold="down"] { grid-column: 2; grid-row: 2; }
+.rc-dpad [data-rc-hold="right"] { grid-column: 3; grid-row: 2; }
+.rc-stop {
+  width: 100%; min-height: 3.6rem; border: 3px solid #12202a; border-radius: 12px; background: #d94b41; color: #fff;
+  font: 800 1.5rem/1 "Barlow Condensed", sans-serif; letter-spacing: .06em; box-shadow: 0 5px 0 #8f2b24;
+}
+.rc-stop:active { transform: translateY(3px); box-shadow: 0 2px 0 #8f2b24; }
+.rc-row { display: flex; flex-wrap: wrap; gap: .4rem; }
+.rc-btn {
+  padding: .45rem .7rem; border: 2px solid rgba(228,242,237,.3); border-radius: 8px; background: #243c46; color: #eef6f3;
+  font: 600 .85rem/1.2 "IBM Plex Sans", sans-serif;
+}
+.rc-btn[aria-pressed="true"] { border-color: #b8d84b; box-shadow: inset 0 0 0 2px #b8d84b; }
+.rc-btn:disabled, .rc-link:disabled, .rc-mini:disabled { cursor: not-allowed; }
+.rc-btn:disabled { opacity: .5; }
+.rc-light { display: flex; align-items: center; gap: .5rem; }
+.rc-light input[type="color"] { width: 3rem; height: 2.2rem; border: 0; background: none; padding: 0; }
+
+.rc-sensors { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: .8rem; margin-top: 1rem; }
+.rc-panel { padding: .7rem .8rem; border: 1px solid rgba(228,242,237,.2); border-radius: 10px; background: #183039; }
+.rc-panel h3 { margin: 0 0 .5rem; font: 700 .72rem "IBM Plex Mono", monospace; letter-spacing: .08em; text-transform: uppercase; color: #d4e0df; }
+.rc-dist { font: 800 2rem/1 "Barlow Condensed", sans-serif; color: #fff; }
+.rc-bar { --rc-fill: 0%; height: .7rem; margin-top: .4rem; border-radius: 99px; background: #0f1d23; overflow: hidden; }
+.rc-bar::before { content: ""; display: block; height: 100%; width: var(--rc-fill); background: #70c8e5; transition: width .2s; }
+.rc-bar[data-near="true"]::before { background: #d94b41; }
+.rc-line { display: grid; grid-template-columns: repeat(3, 1fr); gap: .4rem; }
+.rc-line div { padding: .45rem .3rem; border-radius: 8px; background: #e9e4d8; color: #12202a; text-align: center; font: 600 .75rem/1.3 "IBM Plex Mono", monospace; }
+.rc-line div b { display: block; font-size: 1.05rem; }
+.rc-line div[data-on="true"] { background: #1b1f22; color: #fff; }
+.rc-line div[data-air="true"] { background: #6b5a8c; color: #fff; }
+.rc-log-wrap { margin-top: 1rem; }
+.rc-log {
+  height: 9.5rem; margin: .4rem 0 0; padding: .5rem .6rem; overflow: auto; border-radius: 8px; background: #0f1d23;
+  font: 500 .76rem/1.45 "IBM Plex Mono", monospace; color: #d4e0df; white-space: pre-wrap;
+}
+
+.rc-steps { display: grid; gap: .35rem; margin: .6rem 0; padding-left: 1.6rem; }
+.rc-steps li { padding: .3rem .4rem; border-radius: 8px; background: #183039; }
+.rc-steps li.is-running { background: #3e5a22; box-shadow: inset 0 0 0 2px #b8d84b; }
+.rc-steps li { display: list-item; }
+.rc-steps li > * { vertical-align: middle; }
+.rc-steps select { min-height: 2.1rem; border-radius: 6px; }
+.rc-secs { display: inline-flex !important; align-items: center; gap: .3rem; margin: 0 .3rem !important; }
+.rc-secs input { width: 4.2rem; padding: .25rem; border-radius: 6px; }
+.rc-mini { width: 2rem; height: 2rem; border: 1px solid rgba(228,242,237,.3); border-radius: 6px; background: #243c46; color: #fff; }
+
+.rc-protocol { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.rc-protocol th, .rc-protocol td { padding: .4rem .5rem; border-bottom: 1px solid var(--ra-line); text-align: left; vertical-align: top; }
+.rc-protocol code { white-space: nowrap; }
+.rc-table-wrap { overflow-x: auto; }
+.rc-path { display: block; width: 100%; height: auto; margin-top: .6rem; }
+.rc-setup ol { padding-left: 1.3rem; }
+.rc-setup li + li { margin-top: .35rem; }
+.rc-setup pre { margin: .4rem 0; padding: .55rem .7rem; overflow-x: auto; border-radius: 6px; background: #12202a; color: #e8f6fb; font: 500 .82rem/1.45 "IBM Plex Mono", monospace; }
+.rc-board { display: block; max-width: 340px; }
+.rc-board svg { display: block; width: 100%; height: auto; }
+
+@media (max-width: 860px) {
+  .rc-grid, .rc-sensors { grid-template-columns: 1fr; }
+  .rc-drive { grid-template-columns: 1fr 1fr; align-items: center; }
+  .rc-drive > .rc-stop, .rc-drive > .rc-controls-extra { grid-column: 1 / -1; }
+}
+@media (max-width: 480px) {
+  .rc-drive { grid-template-columns: 1fr; }
+  /* Keep the car and the joystick on one phone screen. */
+  .rc-stick { width: 136px; height: 136px; }
+  .rc-knob { width: 52px; height: 52px; }
+  #rc-pad-note { display: none; }
+  .rc-link { flex: 1 1 calc(50% - .5rem); min-width: 0; }
+}
+
+.rc-pose { margin: 0; padding: .6rem .7rem; border-left: 3px solid #70c8e5; background: #13252c; color: #eef6f3; font: 500 .8rem/1.6 "IBM Plex Mono", monospace; overflow-wrap: anywhere; }
+.rc-flight-plan article { border-top: 3px solid var(--ra-yellow); }
+#rc-cockpit button:focus-visible, #rc-cockpit input:focus-visible, #rc-cockpit select:focus-visible { outline: 3px solid #f2bf3f; outline-offset: 3px; }
+.rc-stop { background: #b52e27; }
+.rc-steps li { overflow-wrap: anywhere; }
+.rc-steps li > select { max-width: 100%; }

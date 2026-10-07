@@ -246,6 +246,8 @@ ui.settings.addEventListener("click", (e) => {
       sizeIndex = clamp(sizeIndex + Number(b.dataset.size), 0, SIZES.length - 1);
       store.raw("reader:size", String(sizeIndex));
     });
+  } else if (b.dataset.fit && viewer?.fit) {
+    return viewer.fit(b.dataset.fit);
   } else if (b.dataset.zoom && viewer?.zoom) {
     return viewer.zoom(Number(b.dataset.zoom));
   } else if (b.dataset.toggle === "ruler") {
@@ -763,7 +765,7 @@ const speech = (() => {
           toast("The end — that was the last page");
           return false;
         }
-        blocks = viewer.speakBlocks();
+        blocks = await viewer.speakBlocks();
         bi = -1; // the loop steps into block 0 (or on past an empty chapter)
         segs = [];
         si = 0;
@@ -774,8 +776,8 @@ const speech = (() => {
 
   async function start() {
     loadVoices();
-    blocks = viewer.speakBlocks();
-    if (!blocks.length) return toast("There’s no text to read on this page");
+    blocks = await viewer.speakBlocks();
+    if (!blocks.length) return toast("No readable text on this page. Scanned PDFs need OCR before read-aloud or search can work.");
     bi = viewer.speakFrom(blocks);
     segs = sentences(blocks[bi]);
     si = 0;
@@ -1013,7 +1015,8 @@ async function openEpub(bytes, source, entry) {
       }
     };
     if (tocNav) walk([...tocNav.children].find((c) => c.localName === "ol"), toc);
-  } else if (ncxItem) {
+  }
+  if (!toc.length && ncxItem) {
     const ncx = parseXml(await read(ncxItem.path));
     const walk = (parent, into) => {
       for (const np of parent.children) {
@@ -1192,6 +1195,8 @@ async function openEpub(bytes, source, entry) {
       current = index;
       blockCache = null;
       chapterWords = (ui.page.textContent.match(/\S+/g) || []).length;
+      $("rdLocation").value = index + 1;
+      $("rdChapterSelect").value = index;
       ui.prev.disabled = index === 0;
       ui.next.disabled = index === spine.length - 1;
       ui.chapterPos.textContent = spine.length > 1 ? `${chapterLabels[index]} · ${index + 1} of ${spine.length}` : "";
@@ -1332,6 +1337,7 @@ async function openEpub(bytes, source, entry) {
 
   viewer = {
     kind: "epub",
+    jump: (n) => show(n - 1, { focus: true }),
     onScroll,
     here,
     paintHits,
@@ -1382,6 +1388,7 @@ async function openEpub(bytes, source, entry) {
     },
   };
 
+  configureJump(spine.length, "Chapter", chapterLabels);
   root.dataset.readerKind = "epub";
   ui.settings.querySelectorAll('[data-for="pdf"]').forEach((f) => (f.hidden = true));
   ui.loading.hidden = true;
@@ -1431,6 +1438,7 @@ async function openPdf(bytes, source, entry) {
   const first = await pdf.getPage(1);
   const firstVp = first.getViewport({ scale: 1 });
   const pages = [];
+  let fitMode = "width";
   const fitWidth = () => Math.min(ui.page.clientWidth || innerWidth - 32, 920);
 
   for (let n = 1; n <= pdf.numPages; n++) {
@@ -1448,9 +1456,11 @@ async function openPdf(bytes, source, entry) {
   }
 
   function layout() {
-    const w = Math.round(fitWidth() * ZOOMS[zoomIndex]);
+    const baseWidth = fitMode === "page" ? Math.min(fitWidth(), Math.max(160, innerHeight - 180) * firstVp.width / firstVp.height) : fitWidth();
+    const w = Math.round(baseWidth * ZOOMS[zoomIndex]);
     pages.forEach((p) => (p.box.style.width = w + "px"));
-    ui.zoomOut.textContent = ZOOMS[zoomIndex] === 1 ? "Fit" : Math.round(ZOOMS[zoomIndex] * 100) + "%";
+    ui.settings.querySelectorAll("[data-fit]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.fit === fitMode)));
+    ui.zoomOut.textContent = ZOOMS[zoomIndex] === 1 ? (fitMode === "page" ? "Fit page" : "Fit width") : Math.round(ZOOMS[zoomIndex] * 100) + "%";
   }
 
   // Search hits on a rendered page: tint the (otherwise transparent) text-layer spans.
@@ -1468,6 +1478,11 @@ async function openPdf(bytes, source, entry) {
 
   let live = [];
   async function render(p) {
+    if (p.pending) await p.pending;
+    p.pending = renderPage(p);
+    try { await p.pending; } finally { p.pending = null; }
+  }
+  async function renderPage(p) {
     const width = p.box.clientWidth;
     if (!width || p.renderedAt === width) return;
     p.task?.cancel();
@@ -1495,7 +1510,7 @@ async function openPdf(bytes, source, entry) {
     p.box.querySelectorAll("canvas, .textLayer").forEach((el) => el.remove());
     p.box.prepend(canvas);
     p.box.appendChild(text);
-    new pdfjs.TextLayer({ textContentSource: page.streamTextContent(), container: text, viewport: vp })
+    await new pdfjs.TextLayer({ textContentSource: page.streamTextContent(), container: text, viewport: vp })
       .render()
       .then(() => { markPage(p); paintAnnotations(); })
       .catch(() => {});
@@ -1534,6 +1549,10 @@ async function openPdf(bytes, source, entry) {
     const overall = max > 0 ? scrollY / max : 1;
     setProgress(overall);
     ui.status.textContent = `Page ${n} of ${pdf.numPages}`;
+    if (document.activeElement !== $("rdLocation")) $("rdLocation").value = n;
+    ui.prev.disabled = n === 1;
+    ui.next.disabled = n === pdf.numPages;
+    ui.chapterPos.textContent = `Page ${n} of ${pdf.numPages}`;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
       store.set(POS_KEY, { page: n, p: Number(overall.toFixed(4)), title: ui.title.textContent, at: Date.now() });
@@ -1548,6 +1567,7 @@ async function openPdf(bytes, source, entry) {
     layout();
     pages.forEach((p) => { if (p.renderedAt) render(p).catch(console.warn); });
     goTo(n);
+    requestAnimationFrame(() => { goTo(n); onScroll(); });
   }
   let resizeTimer = 0;
   addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(rerender, 200); });
@@ -1601,13 +1621,30 @@ async function openPdf(bytes, source, entry) {
   async function pageText(p) {
     if (p.text == null) {
       const tc = await (await pdf.getPage(p.n)).getTextContent();
-      p.text = tc.items.map((it) => (it.str || "") + (it.hasEOL ? "\n" : "")).join("");
+      p.text = tc.items.map((it) => (it.str || "") + (it.hasEOL ? "\n" : " ")).join("");
     }
     return p.text;
   }
 
+  let speechPage = 1;
   viewer = {
     kind: "pdf",
+    jump(n) { speech?.stop(); goTo(n); onScroll(); },
+    fit(mode) { fitMode = mode; zoomIndex = 3; speech?.stop(); rerender(); },
+    async speakBlocks() {
+      speechPage = currentPage();
+      const p = pages[speechPage - 1];
+      await render(p);
+      return [p.box.querySelector(".textLayer")].filter((el) => el && /[\p{L}\p{N}]/u.test(el.textContent));
+    },
+    speakFrom: () => 0,
+    async nextChapter() {
+      const n = speechPage;
+      if (n >= pdf.numPages) return false;
+      goTo(n + 1);
+      await render(pages[n]);
+      return true;
+    },
     onScroll,
     here: () => {
       const n = currentPage();
@@ -1636,11 +1673,13 @@ async function openPdf(bytes, source, entry) {
       });
     },
     zoom(dir) {
+      speech?.stop();
       zoomIndex = clamp(zoomIndex + dir, 0, ZOOMS.length - 1);
       rerender();
     },
     step(dir, e) {
       e.preventDefault();
+      speech?.stop();
       goTo(currentPage() + dir, true);
     },
     async *search(query) {
@@ -1662,6 +1701,22 @@ async function openPdf(bytes, source, entry) {
     },
   };
 
+  configureJump(pdf.numPages, "Page");
+  ui.chapterNav.hidden = false;
+  ui.prev.addEventListener("click", () => viewer.jump(currentPage() - 1));
+  ui.next.addEventListener("click", () => viewer.jump(currentPage() + 1));
+  if (speech) ui.listenBtn.hidden = false;
+  const notice = $("rdFormatNotice");
+  const checkText = async () => {
+    const n = currentPage();
+    const readable = /[\p{L}\p{N}]/u.test(await pageText(pages[n - 1]));
+    if (n !== currentPage()) return;
+    notice.hidden = readable;
+    notice.textContent = "This page has no extractable text. You can view it, but search, highlighting and read-aloud need an OCR-processed PDF.";
+  };
+  addEventListener("scroll", () => { clearTimeout(textNoticeTimer); textNoticeTimer = setTimeout(() => checkText().catch(console.warn), 250); }, { passive: true });
+  let textNoticeTimer = 0;
+  checkText().catch(console.warn);
   const saved = store.get(POS_KEY);
   requestAnimationFrame(() => {
     if (saved?.page > 1) goTo(saved.page);
@@ -2019,6 +2074,20 @@ async function textToEpub(raw) {
 /* ── Main ─────────────────────────────────────────────────────────── */
 
 let viewer = null;
+function configureJump(total, label, chapters) {
+  $("rdJump").hidden = false;
+  $("rdLocationLabel").textContent = label;
+  $("rdLocation").max = total;
+  $("rdLocationTotal").textContent = `of ${total}`;
+  $("rdChapterSelect").hidden = !chapters;
+  if (chapters) $("rdChapterSelect").replaceChildren(...chapters.map((name, i) => new Option(`${i + 1}. ${name}`, i)));
+}
+$("rdJump").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const field = $("rdLocation");
+  if (field.checkValidity()) viewer?.jump(Number(field.value));
+});
+$("rdChapterSelect").addEventListener("change", (e) => viewer?.jump(Number(e.target.value) + 1));
 
 function showCredit(source, entry) {
   ui.credit.replaceChildren();

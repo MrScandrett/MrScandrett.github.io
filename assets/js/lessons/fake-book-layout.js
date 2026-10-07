@@ -79,6 +79,8 @@
   function summarize() {
     var now = text('[data-fb-live-chordname]');
     setVal('changes', now && now !== '--' ? now : 'chart');
+    var notesFor = root.querySelector('[data-fb-liner-empty]');
+    setVal('notes', notesFor && !notesFor.hidden ? 'none' : (text('[data-fb-title]').split(/[,(]/)[0].trim() || 'story'));
     var key = chosen('[data-fb-key]').replace(/\s*\(.*\)$/, '');
     var instr = root.querySelector('[data-fb-instr]');
     setVal('key', key + (instr && instr.value !== 'concert' ? ' · ' + chosen('[data-fb-instr]').split(/[,(]/)[0].trim() : ''));
@@ -127,7 +129,7 @@
     });
     ['change', 'input', 'click'].forEach(function (type) { root.addEventListener(type, soon); });
     var watch = new MutationObserver(soon);
-    ['[data-fb-live-chordname]', '[data-fb-keyline]', '[data-fb-key]'].forEach(function (sel) {
+    ['[data-fb-live-chordname]', '[data-fb-keyline]', '[data-fb-key]', '[data-fb-title]'].forEach(function (sel) {
       var n = root.querySelector(sel);
       if (n) watch.observe(n, { childList: true, characterData: true, subtree: true });
     });

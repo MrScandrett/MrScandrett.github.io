@@ -164,6 +164,15 @@ copy):
 Existing lessons on other Three.js versions or hand-rolled canvas loops don't need to
 be migrated proactively — migrate opportunistically when touching that lesson anyway.
 
+## ELEGOO robot car (Robot Car Pilot lesson)
+
+`lessons/engineering/robotics/robot-car-pilot.html` drives the class ELEGOO Smart Robot Car
+V4.0. `assets/js/elegoo-car.js` holds the JSON protocol (taken from ELEGOO's firmware), the
+Bluetooth/Wi-Fi/USB/simulator links, and `SimCar`, which obeys the same commands. Browsers
+can't open the car's raw TCP port, so Wi-Fi goes through `npm run robot-car`
+(`scripts/robot-car-bridge.mjs`, zero dependencies, `--mock` for no car). Tests:
+`npm run test:robot-car`.
+
 ## Verifying game/app changes
 
 Dev server: `node serve-local.js`. Playwright is a devDependency but only the full

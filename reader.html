@@ -92,7 +92,8 @@
       </div>
     </fieldset>
     <fieldset data-for="pdf">
-      <legend>Zoom</legend>
+      <legend>PDF view</legend>
+      <div class="rd-seg" role="group" aria-label="PDF fit"><button type="button" data-fit="width" aria-pressed="true">Fit width</button><button type="button" data-fit="page" aria-pressed="false">Fit page</button></div>
       <div class="rd-seg" role="group">
         <button type="button" data-zoom="-1" aria-label="Zoom out">−</button>
         <output id="rdZoomOut">Fit</output>
@@ -140,6 +141,7 @@
       <form class="rd-search" id="rdSearchForm" role="search">
         <label class="rd-sr" for="rdSearchInput">Search this book</label>
         <input type="search" id="rdSearchInput" placeholder="Search this book" autocomplete="off" spellcheck="false" enterkeyhint="search" />
+        <button type="submit" class="rd-btn">Search</button>
       </form>
       <p class="rd-empty" id="rdSearchStatus" role="status" aria-live="polite">Type a word or phrase to find it anywhere in the book.</p>
       <ol class="rd-hits" id="rdSearchList"></ol>
@@ -148,6 +150,15 @@
   <div class="rd-scrim" id="rdScrim" hidden></div>
 
   <main class="rd-stage" id="rdStage">
+    <form class="rd-jump" id="rdJump" hidden>
+      <label for="rdLocation" id="rdLocationLabel">Page</label>
+      <input id="rdLocation" type="number" min="1" value="1" inputmode="numeric" required />
+      <span id="rdLocationTotal"></span>
+      <button type="submit" class="rd-btn">Go</button>
+      <label for="rdChapterSelect" class="rd-sr">Choose chapter</label>
+      <select id="rdChapterSelect" hidden></select>
+    </form>
+    <p class="rd-format-notice" id="rdFormatNotice" role="status" hidden></p>
     <div class="rd-loading" id="rdLoading" role="status" aria-live="polite">
       <div class="rd-book-icon" aria-hidden="true"><span></span><span></span><span></span></div>
       <p id="rdLoadingText">Finding the book…</p>
@@ -155,12 +166,12 @@
     </div>
     <section class="rd-shelf" id="rdShelf" aria-labelledby="rdShelfTitle" hidden>
       <h2 id="rdShelfTitle">Read your own book</h2>
-      <p class="rd-shelf-lede">Open an EPUB, PDF or plain-text file from your device and read it here, with search, bookmarks, read-aloud and all the display settings.</p>
+      <p class="rd-shelf-lede">Open an EPUB, PDF, Markdown or plain-text file from your device and read it here, with search, bookmarks, read-aloud and all the display settings.</p>
       <div class="rd-drop" id="rdDrop">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5V18a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-7l-2-2.5H5A1 1 0 0 0 4 6.5zM12 11v5M9.5 13.5L12 11l2.5 2.5" /></svg>
         <p><strong>Drag a book file here</strong><span> or</span></p>
         <button type="button" class="rd-btn rd-primary" id="rdPick">Choose a file…</button>
-        <small>.epub · .pdf · .txt — up to 100 MB</small>
+        <small>.epub · .pdf · .txt · .md — up to 100 MB</small>
       </div>
       <p class="rd-privacy"><strong>Your file stays on this device.</strong> It is saved in this browser so you can come back to it, and it is never uploaded to the site.</p>
       <h3 id="rdMineTitle">On this device</h3>
@@ -241,7 +252,7 @@
     </button>
   </div>
 
-  <input type="file" id="rdFileInput" accept=".epub,.pdf,.txt,.text,.md,application/epub+zip,application/pdf,text/plain,text/markdown" hidden />
+  <input type="file" aria-label="Choose a book file" id="rdFileInput" accept=".epub,.pdf,.txt,.text,.md,application/epub+zip,application/pdf,text/plain,text/markdown" hidden />
   <div class="rd-dropcover" id="rdDropCover" aria-hidden="true" hidden><p>Drop the file to open it</p></div>
   <div class="rd-ruler" id="rdRuler" aria-hidden="true" hidden></div>
   <div class="rd-status" id="rdStatus" aria-hidden="true"></div>

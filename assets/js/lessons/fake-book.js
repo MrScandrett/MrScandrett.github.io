@@ -1466,6 +1466,20 @@
     } else if (e.ui === 'chord') { if (e.ci !== chordSel) { chordSel = e.ci; showChord(false); } }
     else if (e.ui === 'end') stop();
   }
+  // ---- liner notes: where the tune comes from and how it is traditionally played
+  function renderLiner(liner) {
+    var box = el('[data-fb-liner]');
+    if (!box) return;
+    // Imported charts have no notes: keep the drawer page but say so.
+    box.querySelectorAll('.fb-liner-cols, .fb-liner-foot').forEach(function (n) { n.hidden = !liner; });
+    el('[data-fb-liner-empty]').hidden = !!liner;
+    el('[data-fb-liner-tune]').textContent = tune ? tune.raw.title + (tune.raw.year ? ' · ' + tune.raw.year : '') : '';
+    if (!liner) return;
+    el('[data-fb-liner-origins]').textContent = liner.origins || '';
+    el('[data-fb-liner-tradition]').textContent = liner.tradition || '';
+    el('[data-fb-liner-listen]').innerHTML = (liner.listen || []).map(function (r) { return '<li>' + MN.escape(r) + '</li>'; }).join('');
+    el('[data-fb-liner-try]').textContent = liner.try || '';
+  }
   function sheetFollow() { return opts.follow !== false; }
 
   // ---- chord chart ("the changes"), one cell per bar
@@ -1625,6 +1639,7 @@
     el('[data-fb-title]').textContent = raw.title;
     el('[data-fb-meta]').textContent = raw.composer + (raw.year ? ' · ' + raw.year : '');
     el('[data-fb-about]').textContent = raw.about;
+    renderLiner(raw.liner);
     el('[data-fb-source]').textContent = raw.source;
     el('[data-fb-live]').textContent = raw.title + ' loaded.';
     if (history.replaceState && (!location.hash || /tune=/.test(location.hash))) history.replaceState(null, '', '#tune=' + raw.id);
