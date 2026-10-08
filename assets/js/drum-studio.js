@@ -15,10 +15,11 @@
     if (id === 'brush') { o.tone = 8000; o.level = .65; }
     return o;
   }
-  function mount(host, lanes, preview) {
+  function mount(host, lanes, preview, config) {
+    config = config || {};
     var state = { kit: 'studio', lanes: {} }, selected = lanes[0];
     try {
-      var saved = JSON.parse(localStorage.getItem(key));
+      var saved = config.state || (config.persist === false ? null : JSON.parse(localStorage.getItem(key)));
       if (saved && E.kits[saved.kit]) {
         state.kit = saved.kit;
         lanes.forEach(function (lane) {
@@ -35,7 +36,7 @@
       lane = E.aliases[lane] || lane;
       return state.lanes[lane] || (state.lanes[lane] = defaults(state.kit, lane));
     }
-    function save() { try { localStorage.setItem(key, JSON.stringify(state)); } catch (_) {} }
+    function save() { if (config.onChange) config.onChange(JSON.parse(JSON.stringify(state))); if (config.persist !== false) { try { localStorage.setItem(key, JSON.stringify(state)); } catch (_) {} } }
     function el(tag, text, parent) { var e = document.createElement(tag); if (text) e.textContent = text; (parent || host).appendChild(e); return e; }
     host.classList.add('drum-studio');
     el('h3', 'Drum sound studio');
@@ -72,7 +73,7 @@
     sound.addEventListener('change', function () { options(selected).sample = sound.value; save(); render(); preview(selected, options(selected)); });
     audition.addEventListener('click', function () { preview(selected, options(selected)); });
     reset.addEventListener('click', function () { state.lanes[E.aliases[selected] || selected] = defaults(state.kit, selected); save(); render(); });
-    render(); return { options: options };
+    lanes.forEach(options); render(); return { options: options, state: () => JSON.parse(JSON.stringify(state)) };
   }
   window.DrumStudio = { mount: mount };
 })();

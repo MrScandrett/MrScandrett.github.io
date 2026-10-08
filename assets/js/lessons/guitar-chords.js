@@ -530,6 +530,7 @@
      period at a time, is the classic minimal model of a plucked, decaying string —
      it's what makes this sound like a plucked string rather than a synth tone. */
   function pluckBuffer(audioCtx, freq, duration) {
+    if (window.LessonInstrumentEngines) return window.LessonInstrumentEngines.pluckBuffer(audioCtx, freq, duration);
     var sampleRate = audioCtx.sampleRate;
     var length = Math.max(2, Math.floor(sampleRate * duration));
     var buffer = audioCtx.createBuffer(1, length, sampleRate);

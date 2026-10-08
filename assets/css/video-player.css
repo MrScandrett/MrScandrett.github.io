@@ -317,3 +317,22 @@ figure.vp-figure > figcaption { margin-top: 0.55rem; font-size: 0.92rem; line-he
 @media (prefers-reduced-motion: reduce) {
   .vp *, .vp *::before, .vp *::after { transition: none !important; }
 }
+
+/* ── Paper ── Nothing plays on paper, and an unplayed player is a big dark (or
+   empty) 16:9 frame. Print a compact card instead: thumbnail if the catalog has
+   one, the title and channel, and the pause questions as discussion prompts. */
+@media print {
+  .vp { display: block; background: #fff; color: #111827; border: 0.75pt solid #9ca3af; border-radius: 8px; box-shadow: none; }
+  .vp-stage { aspect-ratio: auto; background: none; }
+  .vp-poster-wrap, .vp-poster { position: static; inset: auto; }
+  /* !important: some lesson print sheets hide every button, and the poster is one. */
+  .vp .vp-poster { display: flex !important; align-items: center; gap: 0.15in; padding: 0.08in 0.12in; background: none; }
+  .vp-poster::after, .vp-poster-art, .vp-big-play, .vp-bar, .vp-ask, .vp-card, .vp-resume-wrap, .vp-media { display: none !important; }
+  .vp-poster-img { position: static; flex: 0 0 auto; width: 1.5in; height: auto; aspect-ratio: 16 / 9; border-radius: 4px; }
+  .vp-poster-meta { padding: 0; color: #111827; }
+  .vp-poster-meta strong::before { content: "▶ Video: "; font-weight: 600; }
+  .vp-poster-meta small, .vp-poster-meta .vp-from { color: #374151; }
+  .vp-poster-meta .vp-from { display: none; }
+  [data-video] > [data-pause] { display: block; margin: 0.06in 0 0; font-size: 9.5pt; }
+  [data-video] > [data-pause]::before { content: "Pause at " attr(data-pause) " — "; font-weight: 700; }
+}

@@ -5,7 +5,10 @@ class DawRecorder extends AudioWorkletProcessor {
   constructor() {
     super();
     this.recording = false;
-    this.port.onmessage = (e) => { this.recording = e.data === 'start'; };
+    this.port.onmessage = (e) => {
+      this.recording = e.data === 'start';
+      if (e.data === 'stop') this.port.postMessage({ stopped: true });
+    };
   }
   process(inputs) {
     const input = inputs[0];

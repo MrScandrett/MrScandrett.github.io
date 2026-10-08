@@ -52,7 +52,7 @@
   const ui = {
     pxPerBeat: 28, snap: 1, playhead: 0, selTrack: null, selClip: null,
     selNotes: new Set(), rollGrid: 0.25, noteLen: 0.25, rollPx: 72, follow: true, menu: null,
-    tab: 'edit', rollTool: 'draw', playOct: 4, playTrack: null,
+    tab: 'tools', rollTool: 'draw', playOct: 4, playTrack: null,
   };
   const history = { undo: [], redo: [], last: '' };
   const audio = { ctx: null, mix: null, meter: null, meterData: null };
@@ -61,6 +61,7 @@
     gates: new Map(), voices: new Set(), sources: new Set(), startBeat: 0,
     recStart: 0, take: null,
   };
+  const monitorVoices = new Set();
   const live = new Map();             // pitch → live monitoring voice
   const mic = { stream: null, source: null, node: null, sink: null, analyser: null, chunks: [], capturing: false };
 
@@ -80,7 +81,7 @@
     return {
       id: uid(), kind, name, instrument: kind === 'instrument' ? (instrument || 'piano') : null,
       color: COLORS[(colorIndex || 0) % COLORS.length], volume: 0.8, pan: 0,
-      mute: false, solo: false, armed: false, clips: [], effects: [],
+      mute: false, solo: false, armed: false, clips: [], effects: [], tools: [], experienceState: {},
     };
   }
   function uid() { return Math.random().toString(36).slice(2, 10); }
@@ -223,16 +224,18 @@
   }
 
   // ── Instruments (assets/js/music-synth.js) ───────────────────────────────
-  function startVoice(c, out, instrument, pitch, vel, t) {
-    return window.MusicSynth.startVoice(c, out, instrument, pitch, vel, t, (v) => transport.voices.delete(v));
+  function startVoice(c, out, instrument, pitch, vel, t, track) {
+    const settings = track?.tools?.includes('synthlab') ? track.experienceState?.synthlab || {} : {};
+    return window.MusicSynth.startVoice(c, out, instrument, pitch, vel, t, (v) => { transport.voices.delete(v); monitorVoices.delete(v); }, settings);
   }
 
   const drumKits = new WeakMap();
-  function drumHit(c, out, key, vel, t) {
+  function drumHit(c, out, key, vel, t, track) {
     if (!window.DrumEngine) return;
     let kit = drumKits.get(out);
     if (!kit) { kit = window.DrumEngine.create(c, out); drumKits.set(out, kit); }
-    kit.hit(IO.drumVoiceForKey(key), t, 0.35 + 0.65 * vel);
+    const name = IO.drumVoiceForKey(key);
+    kit.hit(name, t, 0.35 + 0.65 * vel, track?.drumState?.lanes?.[name]);
   }
 
   function clickAt(c, out, t, accent) {
@@ -249,7 +252,7 @@
   // env: { c, timeOf(beat), destFor(track), segEnd, onVoice?(v), onSource?(s) }
   function scheduleNotes(env, a, b, tracks) {
     tracks.forEach((track) => {
-      if (track.kind !== 'instrument') return;
+      if (track.kind !== 'instrument' || !hasInstrumentExperience(track)) return;
       track.clips.forEach((clip) => {
         if (clip.start >= b || clip.start + clip.length <= a) return;
         clip.notes.forEach((n) => {
@@ -258,9 +261,9 @@
           if (nb < a || nb >= b) return;
           const out = env.destFor(track);
           const t0 = env.timeOf(nb);
-          if (track.instrument === 'drums') { drumHit(env.c, out, n.pitch, n.velocity, t0); return; }
+          if (track.instrument === 'drums') { drumHit(env.c, out, n.pitch, n.velocity, t0, track); return; }
           const end = Math.min(nb + n.duration, clip.start + clip.length, env.segEnd);
-          const v = startVoice(env.c, out, track.instrument, n.pitch, n.velocity, t0);
+          const v = startVoice(env.c, out, track.instrument, n.pitch, n.velocity, t0, track);
           v.release(env.timeOf(end));
           if (env.onVoice) env.onVoice(v);
         });
@@ -416,10 +419,12 @@
     if (!transport.playing) return;
     const c = audio.ctx;
     const pos = at !== undefined ? at : beatAt(c.currentTime);
+    stopExperiences();
     stopSounds();
     transport.playing = false;
     const wasRecording = transport.recording;
     if (wasRecording) finishRecording(pos);
+    silenceLive();
     transport.recording = false;
     ui.playhead = Math.max(0, pos);
     transport.segs = [];
@@ -428,6 +433,7 @@
   }
 
   function stop() {
+    if (recordPending && !transport.playing) { ++armRequest; releaseMic(); status('Recording preparation cancelled.'); return; }
     if (transport.playing) pause();
     else setPlayhead(project.loop.on ? project.loop.start : 0);
   }
@@ -453,7 +459,18 @@
   // ── Recording ────────────────────────────────────────────────────────────
   function armedTrack() { return project.tracks.find((t) => t.armed) || null; }
 
+  let armRequest = 0, recordPending = false, finishingTake = false;
+  function silenceLive() {
+    if (audio.ctx) monitorVoices.forEach(v => v.kill(audio.ctx.currentTime));
+    monitorVoices.clear(); live.clear();
+    fingers.forEach((_, id) => fingerOff(id));
+  }
   async function record() {
+    if (recordPending || finishingTake) { status('Wait for the microphone or previous take to finish.'); return; }
+    recordPending = true;
+    try { await beginRecording(); } finally { recordPending = false; updateTransportUi(); }
+  }
+  async function beginRecording() {
     if (transport.recording) { pause(); return; }
     let track = armedTrack();
     if (!track) {
@@ -464,6 +481,8 @@
     }
     if (track.kind === 'audio' && !mic.node) { status('Microphone is not ready.'); return; }
     if (transport.playing) pause();
+    stopExperiences();
+    silenceLive();
     transport.recording = true;
     transport.recStart = ui.playhead;
     transport.take = { track: track.id, notes: [], open: new Map() };
@@ -474,6 +493,7 @@
       mic.node.port.postMessage('start');
     }
     play(transport.recStart - pre);
+    if (project.loop.on) status('Loop playback is suspended during this linear take.');
     status(track.kind === 'audio'
       ? `Recording audio on “${track.name}”${pre ? ' after a one-bar count-in' : ''}… press Stop or Space to finish.`
       : `Recording on “${track.name}”${pre ? ' after a one-bar count-in' : ''}. Play the keyboard, QWERTY keys or a MIDI device.`);
@@ -486,7 +506,7 @@
     if (!track) return;
     if (track.kind === 'audio') { finishAudioTake(track, stopBeat); return; }
     take.open.forEach((on, pitch) => {
-      take.notes.push({ pitch, start: on.beat, duration: Math.max(0.05, stopBeat - on.beat), velocity: on.vel });
+      take.notes.push({ pitch: on.key, start: on.beat, duration: Math.max(0.05, stopBeat - on.beat), velocity: on.vel });
     });
     if (!take.notes.length) { status('Nothing was played, so no clip was made.'); return; }
     const first = Math.min(transport.recStart, ...take.notes.map((n) => n.start));
@@ -504,13 +524,18 @@
   }
 
   async function finishAudioTake(track, stopBeat) {
+    finishingTake = true;
+    updateTransportUi();
     const firstSeg = transport.segs[0];
     const recStart = transport.recStart;
-    mic.node.port.postMessage('stop');
-    await new Promise((r) => setTimeout(r, 150));
+    const recorder = mic.node;
+    await new Promise(resolve => { mic.stopped = resolve; recorder.port.postMessage('stop'); });
     mic.capturing = false;
     const chunks = mic.chunks;
     mic.chunks = [];
+    finishingTake = false;
+    if (!armedTrack() || armedTrack().kind !== 'audio') releaseMic();
+    updateTransportUi();
     if (!chunks.length) { status('No audio came in from the microphone.'); return; }
     const c = audio.ctx, sr = c.sampleRate;
     const nCh = chunks[0].channels.length || 1;
@@ -538,9 +563,14 @@
   }
 
   async function setArmed(track, on) {
+    if (transport.recording || finishingTake) { status('Finish the current take before changing the armed channel.'); return; }
+    if (on && track.kind === 'instrument' && !hasInstrumentExperience(track)) { status('Add an instrument experience to this channel before arming it.'); return; }
+    const request = ++armRequest;
+    silenceLive();
     project.tracks.forEach((t) => { if (t !== track) t.armed = false; });
     if (on && track.kind === 'audio') {
       const ok = await ensureMic();
+      if (request !== armRequest || !findTrack(track.id)) { if (!armedTrack() || armedTrack().kind !== 'audio') releaseMic(); return; }
       if (!ok) on = false;
     }
     track.armed = on;
@@ -555,7 +585,12 @@
     }
   }
 
-  async function ensureMic() {
+  let micPending = null;
+  function ensureMic() {
+    if (!micPending) micPending = openMic().finally(() => { micPending = null; });
+    return micPending;
+  }
+  async function openMic() {
     if (mic.node) return true;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.AudioWorkletNode) {
       status(window.isSecureContext === false
@@ -576,7 +611,10 @@
     }
     mic.source = c.createMediaStreamSource(mic.stream);
     mic.node = new AudioWorkletNode(c, 'daw-recorder', { numberOfOutputs: 1, outputChannelCount: [1] });
-    mic.node.port.onmessage = (e) => { if (mic.capturing) mic.chunks.push(e.data); };
+    mic.node.port.onmessage = (e) => {
+      if (e.data.stopped) { mic.stopped?.(); mic.stopped = null; }
+      else if (mic.capturing) mic.chunks.push(e.data);
+    };
     mic.sink = c.createGain();
     mic.sink.gain.value = 0;
     mic.analyser = c.createAnalyser();
@@ -599,16 +637,17 @@
   // playing the note (so Music Lab stays silent and the sounds don't double up).
   function noteOn(pitch, velocity, gmDrum) {
     const track = armedTrack();
-    if (!track || track.kind !== 'instrument') return false;
+    if (!track || track.kind !== 'instrument' || !hasInstrumentExperience(track)) return false;
     const c = ctx();
     const vel = velocity === undefined ? 0.8 : velocity;
     let key = pitch;
     if (track.instrument === 'drums') {
       key = (gmDrum || pitch < 48) && IO.DRUM_LABELS[pitch] ? pitch : DRUM_LAYOUT[pitch % 12];
-      drumHit(c, audio.mix.strip(track).input, key, vel, c.currentTime);
+      drumHit(c, audio.mix.strip(track).input, key, vel, c.currentTime, track);
     } else {
       if (live.has(pitch)) live.get(pitch).release(c.currentTime);
-      live.set(pitch, startVoice(c, audio.mix.strip(track).input, track.instrument, pitch, vel, c.currentTime));
+      const voice=startVoice(c, audio.mix.strip(track).input, track.instrument, pitch, vel, c.currentTime, track);
+      monitorVoices.add(voice);live.set(pitch,voice);
     }
     const take = transport.take;
     if (transport.recording && take && take.track === track.id) {
@@ -690,11 +729,13 @@
     restartIfPlaying();
   }
   function undo() {
+    if (transport.recording || finishingTake) { status('Finish the take before Undo.'); return; }
     if (!history.undo.length) return;
     history.redo.push(history.last);
     restore(history.undo.pop());
   }
   function redo() {
+    if (transport.recording || finishingTake) { status('Finish the take before Redo.'); return; }
     if (!history.redo.length) return;
     history.undo.push(history.last);
     restore(history.redo.pop());
@@ -790,6 +831,7 @@
   function deleteTrack(id) {
     const t = findTrack(id);
     if (!t) return;
+    if (transport.recording || finishingTake) { status('Finish the take before deleting a channel.'); return; }
     if (t.clips.length && !confirm(`Delete “${t.name}” and its ${t.clips.length} clip${t.clips.length === 1 ? '' : 's'}? (Undo can bring it back.)`)) return;
     project.tracks = project.tracks.filter((x) => x.id !== id);
     if (ui.selTrack === id) ui.selTrack = null;
@@ -862,6 +904,7 @@
   // ── Import ───────────────────────────────────────────────────────────────
   const AUDIO_EXT = /\.(wav|wave|mp3|ogg|oga|opus|m4a|aac|flac|webm|aif|aiff)$/i;
   async function importFiles(fileList, atBeat) {
+    if (transport.recording || finishingTake) { status('Finish the take before importing.'); return; }
     const files = Array.from(fileList || []);
     if (!files.length) return;
     const start = atBeat !== undefined ? atBeat : ui.playhead;
@@ -954,6 +997,8 @@
       }
       delete data.audio;
       data.tracks.forEach((t) => { t.armed = false; t.clips = t.clips.filter((cl) => cl.type !== 'audio' || buffers.has(cl.bufferId)); });
+      if (transport.recording || finishingTake) throw new Error('Finish the take before opening a project.');
+      ++armRequest; releaseMic();
       if (transport.playing) pause();
       project = Object.assign(defaultProject(), data);
       ui.selClip = null; ui.selTrack = null; ui.playhead = 0;
@@ -1125,6 +1170,8 @@
   }
 
   function newProject() {
+    if (transport.recording || finishingTake) { status('Finish the take before starting a new song.'); return; }
+    ++armRequest; releaseMic();
     if (project.tracks.some((t) => t.clips.length) && !confirm('Start a new song? The current one stays in Undo until you leave the page.')) return;
     if (transport.playing) pause();
     project = defaultProject();
@@ -1136,6 +1183,7 @@
   const snapOptions = [['bar', 'Bar'], [1, 'Beat'], [0.5, '1/8'], [0.25, '1/16'], [0, 'Off']];
   const gridOptions = [[1, '1/4'], [0.5, '1/8'], [0.25, '1/16'], [0.125, '1/32'], [1 / 3, '1/8 triplet'], [1 / 6, '1/16 triplet']];
   const DOCK_TABS = [
+    ['tools', 'Channel', 'Add learning tools to a channel'],
     ['edit', '✎ Edit', 'Piano roll or audio clip editor for the selected clip'],
     ['play', '🎹 Play', 'On-screen keyboard and drum pads for the armed track'],
     ['mix', '🎚 Mix', 'Volume, pan, mute, solo and level meters for every track'],
@@ -1148,6 +1196,7 @@
   const instrumentOptions = (sel) => Object.keys(INSTRUMENTS).map((k) => `<option value="${k}"${k === sel ? ' selected' : ''}>${INSTRUMENTS[k]}</option>`).join('');
 
   root.innerHTML = `
+    <div class="daw-workflow"><strong>Make a song in layers</strong><span>1. Choose a channel and sound → 2. Arm ● and record → 3. Add another layer → 4. Mix and export</span></div>
     <div class="daw-bar daw-transport" role="toolbar" aria-label="Transport">
       <div class="daw-group">
         <button type="button" class="daw-btn" data-act="home" aria-label="Back to start" title="Back to start (Home)">⏮</button>
@@ -1173,6 +1222,12 @@
         <label class="daw-field daw-master"><span>Master</span><input type="range" data-ref="master" min="0" max="1.2" step="0.01" aria-label="Master volume"><span class="daw-meter" aria-hidden="true"><i data-ref="meter"></i></span></label>
       </div>
     </div>
+    <details class="daw-region"><summary>Loop region + seek</summary><div class="daw-bar" aria-label="Loop and navigation">
+      <label class="daw-field">Position (beat)<input type="number" data-position min="1" step="0.25" value="1"></label>
+      <label class="daw-field">Loop from (beat)<input type="number" data-loop-bound="start" min="1" step="0.25" value="1"></label>
+      <label class="daw-field">Loop to (beat)<input type="number" data-loop-bound="end" min="1.25" step="0.25" value="17"></label>
+      <span class="daw-note">End beat is exclusive. Recording makes one continuous take.</span>
+    </div></details>
     <details class="daw-file-tools" open>
     <summary>Track &amp; project tools</summary>
     <div class="daw-bar daw-files" role="toolbar" aria-label="Tracks and files">
@@ -1226,6 +1281,7 @@
       <div class="daw-tabs" role="tablist" aria-label="Studio panels">
         ${DOCK_TABS.map(([id, label, title]) => `<button type="button" role="tab" class="daw-tab" id="daw-tab-${id}" data-tab="${id}" aria-controls="daw-panel-${id}" aria-selected="false" tabindex="-1" title="${title}">${label}</button>`).join('')}
       </div>
+      <section class="daw-panel daw-channel" role="tabpanel" id="daw-panel-tools" aria-labelledby="daw-tab-tools" data-ref="tools"></section>
       <div class="daw-panel daw-editor" role="tabpanel" id="daw-panel-edit" aria-labelledby="daw-tab-edit" data-ref="editor"></div>
       <div class="daw-panel daw-play" role="tabpanel" id="daw-panel-play" aria-labelledby="daw-tab-play" data-ref="play" hidden></div>
       <div class="daw-panel daw-mixer" role="tabpanel" id="daw-panel-mix" aria-labelledby="daw-tab-mix" data-ref="mixer" hidden></div>
@@ -1236,11 +1292,33 @@
     <input type="file" aria-label="Import audio, MIDI or a saved project" data-ref="file" multiple accept="audio/*,audio/midi,audio/x-midi,application/zip,.wav,.mp3,.ogg,.m4a,.flac,.aif,.aiff,.mid,.midi,.zip" hidden>
   `;
 
-  const compactTools = window.matchMedia('(max-width: 720px)');
-  const fileTools = root.querySelector('.daw-file-tools');
-  function fitFileTools() { fileTools.open = !compactTools.matches; }
-  fitFileTools();
-  compactTools.addEventListener('change', fitFileTools);
+  // Keep secondary controls out of the arrangement, without hiding essential transport.
+  const fileTools = root.querySelector(".daw-file-tools");
+  const commandStrip = document.createElement('div');
+  commandStrip.className = 'daw-command-strip';
+  const transportSettings = document.createElement('details');
+  transportSettings.className = 'daw-settings';
+  transportSettings.innerHTML = '<summary>Settings</summary><div class="daw-settings-body"></div>';
+  const transportGroups = [...root.querySelector('.daw-transport').children];
+  transportGroups.slice(2).forEach(node => transportSettings.lastElementChild.append(node));
+  // Attach the strip first: appending into a detached node would pull these out of root.
+  root.querySelector('.daw-transport').after(commandStrip);
+  commandStrip.append(transportSettings, root.querySelector('.daw-region'), fileTools);
+  fileTools.open = false;
+  const views = document.createElement('div'); views.className = 'daw-views';
+  views.setAttribute('role', 'group'); views.setAttribute('aria-label', 'Workspace view');
+  views.innerHTML = ['tracks','split','instrument'].map(view => `<button type="button" class="daw-btn" data-view="${view}" aria-pressed="${view==='split'}">${view==='tracks'?'Tracks':view==='split'?'Split':'Instrument'}</button>`).join('');
+  commandStrip.append(views);
+  root.dataset.view = 'split';
+  views.addEventListener('click', event => {
+    const button = event.target.closest('[data-view]'); if (!button) return;
+    silenceLive(); root.dataset.view = button.dataset.view;
+    views.querySelectorAll('button').forEach(node => node.setAttribute('aria-pressed', String(node===button)));
+    requestAnimationFrame(() => { renderTracks(); if(ui.tab==='edit') {sizeRoll();drawRoll();} });
+  });
+  commandStrip.querySelectorAll('details').forEach(details => details.addEventListener('toggle', () => {
+    if(details.open) commandStrip.querySelectorAll('details').forEach(other => {if(other!==details)other.open=false;});
+  }));
 
   const $ = (name) => root.querySelector(`[data-ref="${name}"]`);
   const R = {
@@ -1277,8 +1355,8 @@
   function measureLayout() {
     const w = R.scroll.clientWidth || root.clientWidth || 800;
     compactHeads = w < 560;
-    HEAD_W = compactHeads ? 118 : 210;
-    TRACK_H = compactHeads ? 86 : (COARSE ? 142 : 110);
+    HEAD_W = compactHeads ? (COARSE ? 150 : 118) : 210;
+    TRACK_H = compactHeads ? (COARSE ? 94 : 80) : (COARSE ? 122 : 96);
     KEYS_W = compactHeads ? 52 : 80;
   }
 
@@ -1335,6 +1413,7 @@
   function setTab(id, focus) {
     if (!DOCK_TABS.some(([t]) => t === id)) return;
     const changed = ui.tab !== id;
+    if (changed) silenceLive();
     ui.tab = id;
     renderDock();
     if (id === 'edit' && changed) drawRoll();
@@ -1347,6 +1426,9 @@
       b.setAttribute('aria-selected', String(on));
       b.tabIndex = on ? 0 : -1;
     });
+    $('tools').hidden = ui.tab !== 'tools';
+    if (ui.tab === 'tools') renderChannel();
+    else disposeExperiences();
     R.editor.hidden = ui.tab !== 'edit';
     R.play.hidden = ui.tab !== 'play';
     R.mixer.hidden = ui.tab !== 'mix';
@@ -1380,18 +1462,21 @@
   // ── Play tab: on-screen keyboard / drum pads ────────────────────────────
   function playTarget() {
     const armed = armedTrack();
-    if (armed && armed.kind === 'instrument') return armed;
+    if (armed && hasInstrumentExperience(armed)) return armed;
     const chosen = findTrack(ui.playTrack);
-    if (chosen && chosen.kind === 'instrument') return chosen;
+    if (chosen && hasInstrumentExperience(chosen)) return chosen;
     const sel = findTrack(ui.selTrack);
-    if (sel && sel.kind === 'instrument') return sel;
-    return project.tracks.find((t) => t.kind === 'instrument') || null;
+    if (sel && sel.kind === 'instrument') return hasInstrumentExperience(sel) ? sel : null;
+    return project.tracks.find(hasInstrumentExperience) || null;
   }
 
   // Arms the instrument track the keys play, without re-rendering the Play tab
   // under the fingers that are pressing it.
   function armForPlay(track) {
-    if (track.armed) return;
+    if (track.armed || !hasInstrumentExperience(track)) return;
+    if (transport.recording || finishingTake) return;
+    ++armRequest;
+    silenceLive();
     project.tracks.forEach((t) => { t.armed = t === track; });
     releaseMic();
     setAudioSession();
@@ -1403,13 +1488,14 @@
   function renderPlay() {
     keepFocus(R.play, () => {
       const track = playTarget();
-      const instruments = project.tracks.filter((t) => t.kind === 'instrument');
+      const instruments = project.tracks.filter(hasInstrumentExperience);
       if (!track) {
-        R.play.innerHTML = '<p class="daw-note">Add an instrument track to play it here. <button type="button" class="daw-btn" data-act="quick-instrument" data-focus="add">＋ Instrument track</button></p>';
+        R.play.innerHTML = '<p class="daw-note">Add an instrument experience to a channel to play it here. <button type="button" class="daw-btn" data-act="channel-tools" data-focus="add">Open channel rack</button></p>';
         return;
       }
       ui.playTrack = track.id;
       const drums = track.instrument === 'drums';
+      ui.playOct=Number(track.experienceState?.keyboard?.octave ?? track.experienceState?.controllerOctave ?? 4);
       const audioArmed = project.tracks.find((t) => t.armed && t.kind === 'audio');
       R.play.innerHTML = `
         <div class="daw-bar daw-ed-bar daw-play-bar"><div class="daw-group">
@@ -1462,6 +1548,7 @@
     const track = playTarget();
     if (!track) return;
     armForPlay(track);
+    if (!track.armed) return;
     const pitch = Number(el.dataset.pitch), drum = !!el.dataset.drum;
     noteOn(pitch, keyVelocity(el, clientY), drum);
     el.classList.add('is-down');
@@ -1502,6 +1589,9 @@
     fingerOn('key', el, el.getBoundingClientRect().bottom - 4);
   });
   R.play.addEventListener('keyup', (e) => { if (e.key === 'Enter' || e.key === ' ') fingerOff('key'); });
+  window.addEventListener('pointerup', e => fingerOff(e.pointerId));
+  window.addEventListener('pointercancel', e => fingerOff(e.pointerId));
+  R.play.addEventListener('focusout', e => { if (e.target.matches('[data-pitch]')) fingerOff('key'); });
   R.play.addEventListener('contextmenu', (e) => { if (e.target.closest('[data-pitch]')) e.preventDefault(); });
   R.play.addEventListener('change', (e) => {
     if (e.target.dataset.play !== 'track') return;
@@ -1515,6 +1605,7 @@
     const b = e.target.closest('[data-play="oct"]');
     if (!b) return;
     ui.playOct = clamp(ui.playOct + Number(b.dataset.by), 1, 6);
+    const track=playTarget();if(track){track.experienceState ||= {};if(track.tools.includes('keyboard')){track.experienceState.keyboard ||= {};track.experienceState.keyboard.octave=ui.playOct;}else track.experienceState.controllerOctave=ui.playOct;scheduleSave();}
     renderPlay();
   });
 
@@ -1529,7 +1620,7 @@
           <div class="daw-strip-head">
             <input class="daw-th-name" data-mx="name" data-focus="${t.id}-name" value="${esc(t.name)}" maxlength="40" aria-label="${esc(t.name)} name">
             ${t.kind === 'instrument'
-              ? `<select data-mx="instrument" data-focus="${t.id}-inst" aria-label="${esc(t.name)} instrument">${instrumentOptions(t.instrument)}</select>`
+              ? hasInstrumentExperience(t) ? `<select data-mx="instrument" data-focus="${t.id}-inst" aria-label="${esc(t.name)} instrument">${instrumentOptions(t.instrument)}</select>` : '<button type="button" class="daw-btn" data-mx="tools">Add instrument experience</button>'
               : '<span class="daw-tag">🎙 Audio</span>'}
           </div>
           <div class="daw-strip-btns">
@@ -1561,6 +1652,7 @@
     if (what === 'mute' || what === 'solo') { track[what] = !track[what]; commit(); }
     else if (what === 'arm') setArmed(track, !track.armed);
     else if (what === 'delete') deleteTrack(track.id);
+    else if (what === 'tools') {ui.selTrack=track.id;setTab('tools');}
     else if (what === 'fx') { effectsTrack = track.id; setTab('fx'); }
   });
   R.mixer.addEventListener('input', (e) => {
@@ -1584,8 +1676,168 @@
     const track = findTrack(el.closest('[data-strip]') && el.closest('[data-strip]').dataset.strip);
     if (!track) return;
     if (what === 'name') track.name = el.value.trim().slice(0, 40) || track.name;
-    if (what === 'instrument') track.instrument = el.value;
+    if (what === 'instrument') { if (transport.recording || finishingTake) { renderMixer(); return; } silenceLive(); track.instrument = el.value; syncInstrumentExperience(track); }
     commit();
+  });
+
+  // Learning modules attach to a channel; their notes use the same clips as the roll.
+  let mountedExperiences = [];
+  function stopExperiences() { mountedExperiences.forEach(module => module.stop()); }
+  function disposeExperiences() { mountedExperiences.forEach(module => module.dispose()); mountedExperiences = []; }
+  function hasInstrumentExperience(track) { return track?.kind === 'instrument' && (track.tools || []).some(id => window.MusicChannelExperiences.registry[id]?.role === 'instrument'); }
+  function syncInstrumentExperience(track) {
+    if (!hasInstrumentExperience(track)) return;
+    const id=track.instrument==='drums'?'drumkit':track.instrument==='pluck'?'guitar':track.instrument==='synth'?'synthlab':'keyboard';
+    track.tools=track.tools.filter(key=>window.MusicChannelExperiences.registry[key]?.role!=='instrument');track.tools.push(id);
+  }
+  const CHANNEL_TOOLS = {
+    ...window.MusicChannelExperiences.registry,
+    notation: { name: 'Sheet notation + note list', accepts: t => t.kind === 'instrument' && t.instrument !== 'drums', lesson: 'lessons/music/sheet-music-trainer.html' },
+    rhythm: { name: 'Drum step sequencer', accepts: t => t.instrument === 'drums', lesson: 'lessons/music/drums.html' },
+  };
+  function channelTarget() { return findTrack(ui.selTrack) || project.tracks[0]; }
+  function channelClip(track) { const sel = selected(); return sel?.track === track ? sel.clip : track.clips.find(c => c.type === 'midi'); }
+  function ensureChannelClip(track) {
+    let clip = channelClip(track);
+    if (!clip) clip = newMidiClip(track, floorTo(Math.max(0, ui.playhead), barBeats()), barBeats());
+    select(track.id, clip.id);
+    return clip;
+  }
+  function notationSvg(clip) {
+    const mn = window.MusicNotation;
+    if (!mn || !clip.notes.length) return '<p class="daw-note">Add notes below, draw in Edit, or record a performance.</p>';
+    const notes = [...clip.notes].sort((a,b) => a.start-b.start).slice(0, 64), width = Math.max(320, clip.length * 75 + 100);
+    let out = [0,1,2,3,4].map(i => `<line x1="12" x2="${width-12}" y1="${80+i*12}" y2="${80+i*12}" stroke="currentColor"/>`).join('') + mn.clef('treble', 18, 128, 6);
+    notes.forEach(n => {
+      const pitch = mn.fromMidi(n.pitch), step = pitch.diatonic - mn.clefs.treble.bottom, x = 85+n.start*75, y = 128-step*6;
+      mn.ledgerSteps(step).forEach(k => { out += `<line x1="${x-12}" x2="${x+12}" y1="${128-k*6}" y2="${128-k*6}" stroke="currentColor"/>`; });
+      if (pitch.a) out += mn.accidental(pitch.a, x-25, y, 12);
+      const dur = [4,2,1,.5,.25].reduce((a,b) => Math.abs(b-n.duration)<Math.abs(a-n.duration)?b:a);
+      out += mn.note(x,y,12,dur,false,step<4,'',step%2===0);
+    });
+    const ys=notes.map(n=>128-(mn.fromMidi(n.pitch).diatonic-mn.clefs.treble.bottom)*6), top=Math.min(50,...ys)-50, bottom=Math.max(145,...ys)+50;
+    return `<div class="daw-score"><svg viewBox="0 ${top} ${width} ${bottom-top}" width="${width}" height="240" role="img" aria-label="Treble staff preview. Exact pitches and timings are editable in the note list below.">${out}</svg></div><p class="daw-note">Staff preview uses sharp spellings and the nearest basic duration; chords share an onset. The note list preserves exact timing. First 64 notes shown.</p>`;
+  }
+  let lessonCatalog = [];
+  fetch('data/lessons.json').then(r => r.json()).then(data => {
+    lessonCatalog = (data.lessons || []).filter(l => l.url?.startsWith('lessons/music/') || (l.url?.startsWith('lessons/technical-elements/') && /audio|acoustic|microphone|eq-|cymatic/.test(l.url)));
+    if (ui.tab === 'tools') renderChannel();
+  }).catch(() => {});
+  function renderChannel() {
+    disposeExperiences();
+    const host = $('tools'), track = channelTarget();
+    if (!track) { host.innerHTML = '<p>Add a channel with ＋ Track to begin.</p>'; return; }
+    ui.selTrack = track.id;
+    const clip = channelClip(track);
+    const arrange = selected()?.track === track ? selected().clip : track.clips[0];
+    host.innerHTML = `<h3 class="daw-rack-title">${esc(track.name)} · channel rack</h3>
+      <div class="daw-group"><label class="daw-field">Channel<select data-channel aria-label="Channel rack">${project.tracks.map(t => `<option value="${t.id}" ${t===track?'selected':''}>${esc(t.name)}</option>`).join('')}</select></label>
+      <button type="button" class="daw-btn" data-channel-arm aria-pressed="${track.armed}">${track.armed?'Disarm':'Arm'} recording</button>
+      </div><details class="daw-channel-options"><summary>Channel options</summary><div class="daw-group"><button type="button" class="daw-btn" data-channel-open="mix">Mix channel</button><button type="button" class="daw-btn" data-channel-open="fx">Add audio effects</button><button type="button" class="daw-btn" data-channel-preset="save">Save channel preset</button><button type="button" class="daw-btn" data-channel-preset="load">Load channel preset</button></div>
+      <p class="daw-note">${track.kind==='audio'?'Microphone / imported audio → inserts → volume / pan → master.':'Instrument → notes → inserts → volume / pan → master.'} Add a tool to this channel to use it. Tools and effects travel in saved .mlab.zip projects.</p>
+      </details>${track.kind==='instrument'?`<p class="daw-note">${hasInstrumentExperience(track)?`Installed sound: ${INSTRUMENTS[track.instrument]}`:'No instrument experience installed. Choose one below.'}</p>${hasInstrumentExperience(track)?'<button type="button" class="daw-btn" data-channel-open="play">Expanded play controller</button>':''}`:''}
+      ${(track.tools||[]).filter(id => Object.hasOwn(CHANNEL_TOOLS,id) && CHANNEL_TOOLS[id].accepts(track)).map(id => `<section class="daw-module" data-installed-tool="${id}"><div class="daw-group"><h4>${CHANNEL_TOOLS[id].name}</h4><a href="${CHANNEL_TOOLS[id].lesson}">Lesson counterpart</a><button type="button" class="daw-btn" data-tool-remove="${id}">Remove experience</button></div>
+      ${window.MusicChannelExperiences.registry[id]?`<div data-experience="${id}"></div>`:`<label class="daw-field">Note clip<select data-channel-clip aria-label="Channel note clip"><option value="">Choose / create clip</option>${track.clips.filter(c => c.type==='midi').map(c => `<option value="${c.id}" ${c===clip?'selected':''}>${esc(c.name)} · beat ${c.start+1}</option>`).join('')}</select></label>
+      ${id==='rhythm'?rhythmHtml(clip):`${clip?notationSvg(clip):''}<button type="button" class="daw-btn" data-note-add>Add note</button>${noteListHtml(clip)}`}`}</section>`).join('')}
+      <details class="daw-module daw-arrange"><summary>Arrange clips precisely</summary><label class="daw-field">Clip<select data-arrange-clip aria-label="Clip to arrange"><option value="">Select a clip</option>${track.clips.map(c=>`<option value="${c.id}" ${c===arrange?'selected':''}>${esc(c.name)} · beat ${c.start+1}</option>`).join('')}</select></label>
+      ${arrange?`<label class="daw-field">Start (beat)<input type="number" data-arrange-start data-arrange-id="${arrange.id}" value="${arrange.start+1}" min="1" step="0.25" aria-label="Clip start beat"></label><button type="button" class="daw-btn" data-arrange-edit="${arrange.id}">Edit selected clip</button>`:'<p class="daw-note">Record a take, import a file, or add a note clip to arrange it here.</p>'}</details>
+      <details class="daw-experience-catalog" ${hasInstrumentExperience(track)?'':'open'}><summary>Add an experience to this channel</summary><div class="daw-tool-catalog">${Object.entries(CHANNEL_TOOLS).map(([id,d]) => `<button type="button" class="daw-btn" data-tool-add="${id}" ${!d.accepts(track)||(track.tools||[]).includes(id)?'disabled':''}>Add ${d.name}</button>`).join('')}</div>
+      <p class="daw-note">One instrument experience per channel. Adding another replaces its controller and sound while keeping your clips. Add more channels to layer instruments. Drum sequencing belongs on Drum Kit channels; pitched notation belongs on melodic channels. EQ and compression accept both instrument and audio channels.</p></details>
+      <details class="daw-lesson-browser"><summary>Music + audio engineering lesson library</summary><p class="daw-note">Learn a technique, then apply it to this channel. Historical and listening lessons are references; sound processors appear in FX.</p><div class="daw-lesson-links">${lessonCatalog.map(l => `<a href="${esc(l.url)}">${esc(l.title)}</a>`).join('')}</div></details>`;
+    host.querySelectorAll('[data-experience]').forEach(element => {
+      const id=element.dataset.experience;
+      const module=window.MusicChannelExperiences.mount(element,track,id,{
+        instruments:Object.entries(INSTRUMENTS),
+        begin(){ if(transport.recording && transport.take?.track!==track.id){status('Finish the take before playing another channel.');return false;} armForPlay(track);return track.armed; },
+        noteOn, noteOff, canConfigure(){return !transport.recording&&!finishingTake;},
+        sound(value){ if(transport.recording||finishingTake)return;silenceLive();track.instrument=value;syncInstrumentExperience(track);commit();restartIfPlaying(); },
+        drum(name,options){if(transport.recording&&transport.take?.track!==track.id)return;armForPlay(track);if(track.armed)drumPad(name);},
+        store:scheduleSave,
+        changed(){ if(transport.recording||finishingTake)return;const active=document.activeElement;const key=active?.dataset.experienceParam;const label=active?.getAttribute('aria-label');commit();restartIfPlaying();const next=key?$('tools').querySelector(`[data-experience="${id}"] [data-experience-param="${key}"]`):label?[...$('tools').querySelectorAll(`[data-experience="${id}"] [aria-label]`)].find(node=>node.getAttribute('aria-label')===label):null;next?.focus({preventScroll:true}); }
+      });
+      mountedExperiences.push(module);
+    });
+    host.querySelectorAll('[data-experience] input, [data-experience] select, [data-experience-config]').forEach(node=>{node.disabled=transport.recording||finishingTake;});
+  }
+  function rhythmHtml(clip) {
+    return `<p class="daw-note">One bar in the current meter, divided into sixteenths. Changes edit the selected clip directly; duplicate it in Edit to repeat.</p><div class="daw-step-scroll">${[[36,'Kick'],[38,'Snare'],[42,'Closed hat'],[46,'Open hat']].map(([pitch,name]) => `<div class="daw-step-row"><strong>${name}</strong>${Array.from({length: Math.round(barBeats()*4)}, (_,i) => { const on=clip?.notes.some(n => n.pitch===pitch&&Math.abs(n.start-i/4)<.01); return `<button type="button" class="daw-step" data-step="${i}" data-step-pitch="${pitch}" aria-label="${name}, beat ${i/4+1}" aria-pressed="${!!on}">${i+1}</button>`; }).join('')}</div>`).join('')}</div>`;
+  }
+  function noteListHtml(clip) {
+    if (!clip?.notes.length) return '';
+    return `<div class="daw-note-list">${clip.notes.map((n,i) => `<div class="daw-note-row" data-note-index="${i}"><strong>${noteLabel(n.pitch)}</strong>${[['pitch','MIDI pitch',21,108,1],['start','Onset (beat)',0,clip.length,.25],['duration','Length (beats)',.05,64,.25],['velocity','Velocity',.01,1,.05]].map(([k,label,min,max,step]) => `<label>${label}<input type="number" data-note-param="${k}" aria-label="Note ${i+1} ${label}" value="${n[k]}" min="${min}" max="${max}" step="${step}"></label>`).join('')}<button type="button" class="daw-btn" data-note-remove="${i}" aria-label="Remove note ${i+1}">Remove</button></div>`).join('')}</div>`;
+  }
+  $('tools').addEventListener('click', async e => {
+    const b=e.target.closest('button'), t=channelTarget(); if (!b||b.disabled||!t) return;
+    if (b.dataset.arrangeEdit) { select(t.id,b.dataset.arrangeEdit); renderEditor();setTab('edit');return; }
+    if (b.hasAttribute('data-channel-arm')) { await setArmed(t,!t.armed); return; }
+    if (b.dataset.channelOpen) { if(b.dataset.channelOpen==='play')armForPlay(t);ui.playTrack=t.id; effectsTrack=t.id; setTab(b.dataset.channelOpen); return; }
+    if (transport.recording || finishingTake) { status('Finish the take before editing channel tools.'); return; }
+    if (b.dataset.channelPreset === 'save') {
+      download(new Blob([JSON.stringify({format:'MusicLabChannel',version:1,kind:t.kind,instrument:t.instrument,tools:t.tools||[],effects:t.effects||[],experienceState:t.experienceState||{},drumState:t.drumState||null},null,2)],{type:'application/json'}), `${fileSafe(t.name)}.mlchannel.json`, 'application/json');
+      status('Saved channel sound, tools and inserts. Load this preset on a compatible channel in another song.'); return;
+    }
+    if (b.dataset.channelPreset === 'load') { presetTrack=t.id; presetInput.value='';presetInput.click();return; }
+    t.tools ||= [];
+    if (b.dataset.toolAdd) {
+      const definition=CHANNEL_TOOLS[b.dataset.toolAdd];
+      if(definition.role==='instrument') { silenceLive();t.tools=t.tools.filter(id=>CHANNEL_TOOLS[id]?.role!=='instrument');t.instrument=definition.instrument; }
+      t.tools.push(b.dataset.toolAdd);
+    }
+    else if (b.dataset.toolRemove) { if(CHANNEL_TOOLS[b.dataset.toolRemove]?.role==='instrument'){silenceLive();t.armed=false;}t.tools=t.tools.filter(id => id!==b.dataset.toolRemove); }
+    else if (b.hasAttribute('data-note-add')) { const c=ensureChannelClip(t); c.notes.push({pitch:60,start:0,duration:1,velocity:.8}); }
+    else if (b.hasAttribute('data-note-remove')) channelClip(t)?.notes.splice(Number(b.dataset.noteRemove),1);
+    else if (b.hasAttribute('data-step')) {
+      const c=ensureChannelClip(t), pitch=Number(b.dataset.stepPitch), start=Number(b.dataset.step)/4;
+      const i=c.notes.findIndex(n => n.pitch===pitch&&Math.abs(n.start-start)<.01);
+      if(i>=0)c.notes.splice(i,1);else c.notes.push({pitch,start,duration:.25,velocity:.8});
+    } else return;
+    const selector=b.hasAttribute('data-step')?`[data-step="${b.dataset.step}"][data-step-pitch="${b.dataset.stepPitch}"]`:b.dataset.toolAdd?`[data-tool-remove="${b.dataset.toolAdd}"]`:'[data-channel]';
+    commit(); restartIfPlaying(); $('tools').querySelector(selector)?.focus({preventScroll:!b.dataset.toolAdd});
+  });
+  $('tools').addEventListener('change', e => {
+    const el=e.target,t=channelTarget(); if(!t)return;
+    if(el.hasAttribute('data-channel')) { ui.selTrack=el.value; ui.selClip=null; renderDock(); $('tools').querySelector('[data-channel]').focus(); return; }
+    if(el.hasAttribute('data-arrange-clip')) { select(t.id,el.value||null);renderChannel();$('tools').querySelector('[data-arrange-clip]').focus();return; }
+    if(el.hasAttribute('data-channel-clip')) { select(t.id,el.value||null); renderChannel(); return; }
+    if(transport.recording||finishingTake){renderChannel();status('Finish the take before editing.');return;}
+    if(el.hasAttribute('data-arrange-start')) { const c=findClip(el.dataset.arrangeId)?.clip;if(c){c.start=Math.max(0,(Number(el.value)||1)-1);commit();restartIfPlaying();$('tools').querySelector('[data-arrange-start]')?.focus();}return; }
+    if(el.hasAttribute('data-channel-sound')) { silenceLive();t.instrument=el.value; syncInstrumentExperience(t); }
+    else if(el.dataset.noteParam) {
+      const i=Number(el.closest('[data-note-index]').dataset.noteIndex),c=channelClip(t),n=c?.notes[i];if(!n)return;
+      n[el.dataset.noteParam]=clamp(Number(el.value)||Number(el.min),Number(el.min),Number(el.max));
+      c.length=Math.max(c.length,n.start+n.duration);
+      const key=el.dataset.noteParam;commit();restartIfPlaying();$('tools').querySelector(`[data-note-index="${i}"] [data-note-param="${key}"]`)?.focus();return;
+    }else return;
+    commit();restartIfPlaying();
+  });
+  let presetTrack = null;
+  const presetInput = document.createElement('input');
+  presetInput.type='file';presetInput.accept='.json';presetInput.hidden=true;presetInput.setAttribute('aria-label','Load Music Lab channel preset');root.append(presetInput);
+  presetInput.addEventListener('change', async () => {
+    const t=findTrack(presetTrack),file=presetInput.files[0];if(!t||!file)return;
+    try {
+      const data=JSON.parse(await file.text());
+      if(transport.recording||finishingTake)throw new Error('Finish the take first.');
+      if(data.format!=='MusicLabChannel'||data.version!==1||data.kind!==t.kind)throw new Error('Choose a preset matching this channel type.');
+      if(t.kind==='instrument'&&!INSTRUMENTS[data.instrument])throw new Error('Unknown instrument.');
+      if(!Array.isArray(data.effects)||data.effects.length>8||data.effects.some(e=>!window.AudioEffects.registry[e.type]))throw new Error('Unsupported effects.');
+      silenceLive();
+      t.instrument=t.kind==='instrument'?data.instrument:null;
+      t.effects=data.effects.map(e=>({type:e.type,params:window.AudioEffects.parameters(e.type,e.params||{}),bypass:!!e.bypass}));
+      t.experienceState=data.experienceState&&typeof data.experienceState==='object'?data.experienceState:{};
+      t.drumState=data.drumState&&typeof data.drumState==='object'?data.drumState:null;
+      t.tools=Array.isArray(data.tools)?[...new Set(data.tools)].filter(id=>Object.hasOwn(CHANNEL_TOOLS,id)&&CHANNEL_TOOLS[id].accepts(t)):[];
+      let instrumentFound=false;t.tools=t.tools.filter(id=>{if(CHANNEL_TOOLS[id].role!=='instrument')return true;if(instrumentFound)return false;instrumentFound=true;return true;});syncInstrumentExperience(t);
+      commit();restartIfPlaying();status(`Loaded preset on “${t.name}”.`);
+    }catch(err){status(`Could not load preset: ${err.message}`);}
+  });
+  root.querySelector('.daw-region').addEventListener('change', e => {
+    const el=e.target, value=Number(el.value)-1;
+    if(!Number.isFinite(value)||value<0)return;
+    if(el.hasAttribute('data-position')) { if(transport.recording)status('Stop recording before seeking.');else setPlayhead(value);return; }
+    const key=el.dataset.loopBound;if(!key)return;
+    if((key==='end'&&value<=project.loop.start)||(key==='start'&&value>=project.loop.end)){status('Loop end must be later than loop start.');el.value=project.loop[key]+1;return;}
+    project.loop[key]=value;commit();restartIfPlaying();
   });
 
   let effectsTrack = null;
@@ -1636,7 +1888,7 @@
   function trackRowHtml(t, i) {
     const sel = t.id === ui.selTrack ? ' is-selected' : '';
     const instrument = t.kind === 'instrument'
-      ? `<select data-tr="instrument" aria-label="${esc(t.name)} instrument">${instrumentOptions(t.instrument)}</select>`
+      ? hasInstrumentExperience(t) ? `<select data-tr="instrument" aria-label="${esc(t.name)} instrument">${instrumentOptions(t.instrument)}</select>` : '<button type="button" class="daw-mini" data-tr="tools" aria-label="Add instrument experience">＋</button>'
       : '<span class="daw-tag">Audio</span>';
     const clips = t.clips.map((c) => clipHtml(t, c)).join('');
     const lane = `<div class="daw-lane${sel}${t.mute || !audible(t) ? ' is-silent' : ''}" data-lane="${t.id}" data-kind="${t.kind}" style="--tc:${t.color}">${clips}</div>`;
@@ -1644,7 +1896,7 @@
       return `
       <div class="daw-th is-compact${sel}${t.armed ? ' is-armed' : ''}" data-track="${t.id}" style="--tc:${t.color}">
         <span class="daw-th-label" title="${esc(t.name)}">${esc(t.name)}</span>
-        <span class="daw-th-sub">${t.kind === 'instrument' ? INSTRUMENTS[t.instrument] : '🎙 Audio'}</span>
+        <span class="daw-th-sub">${t.kind === 'instrument' ? hasInstrumentExperience(t) ? INSTRUMENTS[t.instrument] : 'No instrument' : '🎙 Audio'}</span>
         <div class="daw-th-row">
           <button type="button" class="daw-mini" data-tr="mute" aria-label="Mute ${esc(t.name)}" aria-pressed="${t.mute}">M</button>
           <button type="button" class="daw-mini" data-tr="solo" aria-label="Solo ${esc(t.name)}" aria-pressed="${t.solo}">S</button>
@@ -1782,13 +2034,17 @@
     play.textContent = transport.playing ? '⏸' : '▶';
     play.setAttribute('aria-label', transport.playing ? 'Pause' : 'Play');
     play.classList.toggle('is-on', transport.playing);
-    root.querySelectorAll('[data-act="record"]').forEach((b) => b.classList.toggle('is-on', transport.recording));
+    root.querySelectorAll('[data-act="record"]').forEach(b => { b.classList.toggle('is-on', transport.recording); b.setAttribute('aria-pressed', String(transport.recording)); b.disabled = finishingTake; });
+    root.querySelectorAll('[data-loop-bound]').forEach(el => { if (document.activeElement !== el) el.value = project.loop[el.dataset.loopBound] + 1; });
     const set = (act, on) => root.querySelector(`[data-act="${act}"]`).setAttribute('aria-pressed', String(on));
     set('loop', project.loop.on);
     set('metronome', project.metronome);
     set('countin', project.countIn);
     root.querySelector('[data-act="undo"]').disabled = !history.undo.length;
     root.querySelector('[data-act="redo"]').disabled = !history.redo.length;
+    $('tools').querySelectorAll('[data-experience] input, [data-experience] select, [data-experience-config]').forEach(node=>{node.disabled=transport.recording||finishingTake;});
+    R.bpm.disabled=transport.recording||finishingTake;R.sig.disabled=transport.recording||finishingTake;
+    const position=root.querySelector('[data-position]');if(document.activeElement!==position)position.value=Number((Math.max(0,ui.playhead)+1).toFixed(2));
     root.classList.toggle('is-recording', transport.recording);
     updateLcd();
   }
@@ -1988,9 +2244,10 @@
 
   // ── Piano roll interaction ───────────────────────────────────────────────
   function previewNote(track, pitch, vel) {
+    if(!hasInstrumentExperience(track)){status('Add an instrument experience to this channel to hear its notes.');return;}
     const c = ctx(), out = audio.mix.strip(track).input;
-    if (track.instrument === 'drums') { drumHit(c, out, pitch, vel, c.currentTime); return; }
-    startVoice(c, out, track.instrument, pitch, vel, c.currentTime).release(c.currentTime + 0.25);
+    if (track.instrument === 'drums') { drumHit(c, out, pitch, vel, c.currentTime, track); return; }
+    startVoice(c, out, track.instrument, pitch, vel, c.currentTime, track).release(c.currentTime + 0.25);
   }
 
   function rollHit(e) {
@@ -2051,7 +2308,7 @@
     }
 
     scroll.addEventListener('pointerdown', (e) => {
-      if (!roll || e.target !== roll.canvas) return;
+      if (transport.recording || finishingTake || !roll || e.target !== roll.canvas) return;
       lastType = e.pointerType;
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       try { scroll.setPointerCapture(e.pointerId); } catch (_e) { /* pointer already gone */ }
@@ -2230,6 +2487,7 @@
   // move the playhead, and a double-tap adds a clip there.
   let clipDrag = null, laneTap = null, lastLaneTap = null, lastTlType = 'mouse';
   R.tracks.addEventListener('pointerdown', (e) => {
+    if (transport.recording || finishingTake) return;
     const ruler = e.target.closest('[data-ruler]');
     if (ruler) { startRulerDrag(e); return; }
     if (pinchTl) return;
@@ -2423,6 +2681,8 @@
   ['gesturestart', 'gesturechange'].forEach((type) => R.scroll.addEventListener(type, (e) => e.preventDefault()));
 
   function startRulerDrag(e) {
+    if (transport.recording) { status('Finish the take before seeking or changing the loop.'); return; }
+    const priorLoop = { ...project.loop };
     const x0 = e.clientX, b0 = Math.max(0, beatFromClientX(e.clientX));
     let dragging = false;
     const grid = snapGrid() || 0.25;
@@ -2433,9 +2693,11 @@
       project.loop = { on: true, start: snapTo(Math.min(b0, b1), grid), end: snapTo(Math.max(b0, b1), grid) };
       drawRuler(); drawPlayhead(); updateTransportUi();
     };
-    const up = () => {
+    const up = (event) => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+      if (event?.type === 'pointercancel') { project.loop = priorLoop; renderTracks(); return; }
       if (dragging) {
         if (project.loop.end - project.loop.start < grid) project.loop.on = false;
         commit();
@@ -2446,6 +2708,7 @@
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
   }
 
   // Selects a track by toggling classes, so a header input being clicked survives.
@@ -2468,6 +2731,7 @@
     if (ui.selTrack !== track.id) markTrack(track.id);
     if (!btn || btn.tagName !== 'BUTTON') return;
     const what = btn.dataset.tr;
+    if (what === 'tools') {ui.selTrack=track.id;setTab('tools');return;}
     if (what === 'delete') { deleteTrack(track.id); return; }
     if (what === 'mute' || what === 'solo') { track[what] = !track[what]; commit(); return; }
     if (what === 'arm') { setArmed(track, !track.armed); }
@@ -2485,7 +2749,7 @@
     const track = findTrack(head.dataset.track);
     if (!track) return;
     if (el.dataset.tr === 'name') track.name = el.value.trim().slice(0, 40) || track.name;
-    if (el.dataset.tr === 'instrument') track.instrument = el.value;
+    if (el.dataset.tr === 'instrument') { if (transport.recording || finishingTake) { renderTracks(); return; } silenceLive(); track.instrument = el.value; syncInstrumentExperience(track); }
     commit();
   });
 
@@ -2511,8 +2775,10 @@
     if (!btn || btn.disabled) return;
     closeMenus();
     const act = btn.dataset.act;
+    if ((transport.recording || finishingTake) && !['play','stop','record','studio','metronome','zoom-in','zoom-out'].includes(act)) { status('Finish the take before editing the arrangement.'); return; }
     switch (act) {
-      case 'home': setPlayhead(0); break;
+      case 'channel-tools': setTab('tools'); break;
+      case 'home': if (!transport.recording) setPlayhead(0); break;
       case 'play': togglePlay(); break;
       case 'stop': stop(); break;
       case 'record': record(); break;
@@ -2615,6 +2881,7 @@
   }
 
   R.bpm.addEventListener('change', () => {
+    if (transport.recording || finishingTake) { R.bpm.value=project.bpm;status('Finish the take before changing tempo.');return; }
     const v = clamp(Math.round(Number(R.bpm.value) || project.bpm), 40, 240);
     if (v === project.bpm) { R.bpm.value = v; return; }
     const pos = transport.playing ? beatAt(audio.ctx.currentTime) : null;
@@ -2623,6 +2890,7 @@
     if (pos !== null && !transport.recording) play(Math.max(0, pos));
   });
   R.sig.addEventListener('change', () => {
+    if (transport.recording || finishingTake) { R.sig.value=project.sig.join('/');status('Finish the take before changing meter.');return; }
     project.sig = R.sig.value.split('/').map(Number);
     commit();
   });
@@ -2642,6 +2910,7 @@
     if (el.dataset.ed === 'velocity') commitKeepRoll();
   });
   R.editor.addEventListener('input', (e) => {
+    if (transport.recording || finishingTake) return;
     const sel = selected();
     if (!sel) return;
     const el = e.target;
@@ -2682,6 +2951,7 @@
   function studioOn() { return pillar.classList.contains('is-studio'); }
   function toggleStudio() {
     const on = !studioOn();
+    if (on) { root.querySelector('.daw-region').open=false;fileTools.open=false; }
     pillar.classList.toggle('is-studio', on);
     document.documentElement.classList.toggle('daw-studio-open', on);
     root.querySelector('[data-act="studio"]').setAttribute('aria-pressed', String(on));
@@ -2840,7 +3110,9 @@
   // ── Public API (used by music-lab.js) ────────────────────────────────────
   // Step sequencer → Track Studio: drops the current 16-step pattern on a drum track.
   function addDrumPattern(names, grid, bpm) {
-    let track = project.tracks.find((t) => t.instrument === 'drums');
+    if (transport.recording || finishingTake) { status('Finish the take before adding a drum pattern.'); return; }
+    let track = findTrack(ui.selTrack);
+    if (!track || track.instrument !== 'drums') track = project.tracks.find((t) => t.instrument === 'drums');
     if (!track) track = addTrack('instrument', 'drums');
     if (!project.tracks.some((t) => t.clips.length) && bpm) project.bpm = bpm;
     const start = floorTo(ui.playhead, barBeats());
@@ -2859,7 +3131,10 @@
     root.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  window.MusicDaw = { noteOn, noteOff, drumPad, addDrumPattern };
+  window.addEventListener('blur', () => { silenceLive(); if (transport.recording) pause(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { silenceLive(); if (transport.playing) pause(); } });
+
+  window.MusicDaw = { noteOn, noteOff, drumPad, addDrumPattern, allNotesOff(){stopExperiences();silenceLive();}, keyboardBase(){const t=armedTrack();return (Number(t?.experienceState?.keyboard?.octave??4)+1)*12;} };
 
   // iOS only lets audio start inside a touch, so wake (or create) the shared
   // context on the first touch in the studio, before any button handler runs.
@@ -2873,7 +3148,7 @@
     try { restored = await loadAutosave(); } catch (_e) { restored = false; }
     history.last = snapshot();
     render();
-    status(restored ? `Welcome back — “${project.name}” was restored from this browser.` : 'Track Studio: arm a track (●) and press ⏺ to record, or import audio and MIDI.');
+    status(restored ? `Welcome back — “${project.name}” was restored from this browser.` : 'Track Studio: choose a channel, add an instrument experience, arm ●, then record ⏺. Audio channels use microphone or imported files.');
     requestAnimationFrame(frame);
   })();
 })();

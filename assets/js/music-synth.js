@@ -43,6 +43,7 @@ const SYNTHS = {
   piano: {
     a: 0.003, d: 2.6, s: 0.03, r: 0.35, gain: 0.42,
     voice(c, f, v, t, out) {
+      if (root.LessonInstrumentEngines) { const shared=root.LessonInstrumentEngines.pianoSources(c,out,f,t); shared.sources.cleanup=shared.disconnect; return shared.sources; }
       const filt = lowpass(c, out, 3000, 0.6);
       filt.frequency.setValueAtTime(Math.min(9000, 2600 + v * 4200 + f * 2), t);
       filt.frequency.setTargetAtTime(Math.min(4200, 900 + f * 1.6), t + 0.02, 0.5);
@@ -89,6 +90,7 @@ const SYNTHS = {
   pluck: {
     a: 0.002, d: 0.9, s: 0, r: 0.2, gain: 0.45,
     voice(c, f, v, t, out) {
+      if (root.LessonInstrumentEngines) { const source=c.createBufferSource();source.buffer=root.LessonInstrumentEngines.pluckBuffer(c,f,5);const body=lowpass(c,out,Math.min(9000,f*9+1200),.7);source.connect(body);source.start(t);const sources=[source];sources.cleanup=()=>{source.disconnect();body.disconnect();};return sources; }
       const filt = lowpass(c, out, 400, 1.2);
       filt.frequency.setValueAtTime(1200 + v * 5200, t);
       filt.frequency.setTargetAtTime(Math.max(300, f * 1.5), t, 0.08);
@@ -128,11 +130,12 @@ const SYNTHS = {
   },
   synth: {
     a: 0.008, d: 0.3, s: 0.7, r: 0.16, gain: 0.24,
-    voice(c, f, v, t, out) {
+    voice(c, f, v, t, out, settings) {
       const filt = lowpass(c, out, 1800, 4);
       filt.frequency.setValueAtTime(600 + v * 5200, t);
       filt.frequency.setTargetAtTime(1500 + f, t + 0.01, 0.15);
-      const a = osc(c, 'sawtooth', f, t, filt), b = osc(c, 'square', f, t, filt, 0.5);
+      const wave=['sine','triangle','sawtooth','square'].includes(settings?.wave)?settings.wave:'sawtooth';
+      const a = osc(c, wave, f, t, filt), b = osc(c, settings?.wave?wave:'square', f, t, filt, 0.5);
       a.detune.value = -6; b.detune.value = 6;
       return [a, b];
     },
@@ -148,15 +151,19 @@ function envLevel(voice, time) {
 
 // Starts a pitched note at time t; call voice.release(time) to end it.
 // onEnded(voice) runs once the released note has fully faded and disconnected.
-function startVoice(c, out, instrument, pitch, vel, t, onEnded) {
-  const def = SYNTHS[instrument] || SYNTHS.piano;
+function startVoice(c, out, instrument, pitch, vel, t, onEnded, settings = {}) {
+  const base = SYNTHS[instrument] || SYNTHS.piano;
+  const value=(key,fallback,min,max)=>Number.isFinite(Number(settings[key]))?Math.max(min,Math.min(max,Number(settings[key]))):fallback;
+  const def={...base,a:value('attack',base.a,.002,3),d:value('decay',base.d,.02,4),s:value('sustain',base.s,0,1),r:value('release',base.r,.02,5)};
   const env = c.createGain();
   env.connect(out);
-  const peak = def.gain * (0.3 + 0.7 * vel);
+  const peak = def.gain * (0.3 + 0.7 * vel) * value('level',1,0,1) * (settings.oscToVca===false||settings.vcaToChannel===false?0:1);
   env.gain.setValueAtTime(0, t);
   env.gain.linearRampToValueAtTime(peak, t + def.a);
   env.gain.setTargetAtTime(peak * def.s, t + def.a, def.d / 3);
-  const sources = def.voice(c, midiHz(pitch), vel, t, env);
+  const sources = def.voice(c, midiHz(pitch), vel, t, env, settings);
+  let cleaned=false;
+  function cleanup() { if(cleaned)return;cleaned=true;voice.done=true;env.disconnect();sources.cleanup?.();if(onEnded)onEnded(voice); }
   const voice = {
     t, def, peak, env, sources, done: false,
     release(at) {
@@ -168,15 +175,17 @@ function startVoice(c, out, instrument, pitch, vel, t, onEnded) {
       env.gain.setTargetAtTime(0, at, def.r / 3);
       const end = at + def.r * 1.8 + 0.05;
       sources.forEach((s) => { try { s.stop(end); } catch (_e) { /* already stopped */ } });
-      sources[0].onended = () => { env.disconnect(); if (onEnded) onEnded(voice); };
+      sources[0].onended = cleanup;
     },
     kill(at) {
       voice.done = true;
       env.gain.cancelScheduledValues(at);
       env.gain.setTargetAtTime(0, at, 0.01);
+      sources[0].onended=cleanup;
       sources.forEach((s) => { try { s.stop(at + 0.06); } catch (_e) { /* already stopped */ } });
     },
   };
+  sources[0].onended=cleanup;
   return voice;
 }
 

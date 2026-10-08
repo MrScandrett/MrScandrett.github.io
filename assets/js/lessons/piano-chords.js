@@ -305,6 +305,14 @@
     master.connect(filter);
     filter.connect(audioCtx.destination);
 
+    if (window.LessonInstrumentEngines) {
+      master.disconnect(); filter.disconnect(); master.connect(audioCtx.destination);
+      var shared = window.LessonInstrumentEngines.pianoSources(audioCtx, master, freq, now);
+      shared.sources.forEach(function (osc) { activeOscillators.add(osc); osc.stop(now + duration + .05); });
+      shared.sources[0].onended = function () { shared.sources.forEach(function (osc) { activeOscillators.delete(osc); }); shared.disconnect(); master.disconnect(); filter.disconnect(); };
+      return;
+    }
+
     HARMONICS.forEach(function (h) {
       var osc = audioCtx.createOscillator();
       osc.type = 'sine';
