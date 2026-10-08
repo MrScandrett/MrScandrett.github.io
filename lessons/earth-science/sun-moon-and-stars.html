@@ -3,45 +3,1413 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="robots" content="noindex" />
-  <title>Sun, Moon &amp; Stars · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Explore Sun, Moon & Stars: Day and Night shadow mechanics, synchronized Moon phases orbital laboratory, solar and lunar eclipses, and circumpolar star trails." />
+  <title>Sun, Moon &amp; Stars: The Celestial Clock · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
-  <meta name="description" content="Earth Science Lesson — explore Sun, Moon & Stars." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
-<script src="../../assets/js/vr-mode.js" defer></script>
+  <style>
+    :root {
+      --sun-gold: #fbbf24;
+      --moon-silver: #e2e8f0;
+      --space-black: #030712;
+      --sky-day: #38bdf8;
+      --sky-dusk: #ea580c;
+      --star-glow: #ffffff;
+      --accent-star: #6366f1;
+    }
+
+    .sms-page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: clamp(1rem, 3vw, 2.5rem);
+      color: var(--text, #1e293b);
+    }
+
+    .sms-hero {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(2rem, 4vw, 3.5rem);
+      border-radius: 24px;
+      background: radial-gradient(circle at 80% 20%, #312e81 0%, #0f172a 60%, #030712 100%);
+      color: #fff;
+      margin-bottom: 2rem;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .sms-hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: 0.76rem;
+      font-weight: 800;
+      color: #fde047;
+      margin-bottom: 0.75rem;
+    }
+
+    .sms-hero h1 {
+      font: 700 clamp(2.2rem, 4.5vw, 3.8rem)/1.05 'Fraunces', Georgia, serif;
+      margin: 0 0 1rem;
+      color: #fff;
+    }
+
+    .sms-hero-lede {
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      line-height: 1.6;
+      max-width: 760px;
+      color: #cbd5e1;
+      margin: 0 0 1.5rem;
+    }
+
+    .sms-nav-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .sms-nav-pills a {
+      display: inline-block;
+      padding: 0.45rem 0.9rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.18s, transform 0.18s;
+    }
+
+    .sms-nav-pills a:hover {
+      background: rgba(255, 255, 255, 0.22);
+      transform: translateY(-2px);
+    }
+
+    .sms-section {
+      background: var(--surface-1, #ffffff);
+      border: 1px solid var(--border-subtle, #e2e8f0);
+      border-radius: 20px;
+      padding: clamp(1.2rem, 3vw, 2.2rem);
+      margin-bottom: 2rem;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .sms-section-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .sms-badge {
+      display: inline-block;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      background: #ede9fe;
+      color: #5b21b6;
+      margin-bottom: 0.5rem;
+    }
+
+    .sms-section-header h2 {
+      font: 700 clamp(1.5rem, 2.8vw, 2.1rem)/1.2 'Fraunces', Georgia, serif;
+      margin: 0 0 0.5rem;
+      color: var(--text-strong, #0f172a);
+    }
+
+    .sms-section-header p {
+      font-size: 1rem;
+      color: var(--text-muted, #64748b);
+      margin: 0;
+      max-width: 820px;
+      line-height: 1.55;
+    }
+
+    .sms-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    /* Interactive Lab Container */
+    .lab-box {
+      background: #090d16;
+      border: 1px solid #1e293b;
+      border-radius: 18px;
+      padding: 1.25rem;
+      color: #f8fafc;
+    }
+
+    .lab-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .lab-controls label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #94a3b8;
+    }
+
+    .lab-select, .lab-btn {
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: #f8fafc;
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.18s;
+    }
+
+    .lab-btn-active {
+      background: #4f46e5;
+      border-color: #6366f1;
+    }
+
+    .lab-btn:hover {
+      background: #334155;
+    }
+
+    /* Day & Night Dual Display */
+    .day-night-stage {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .view-panel {
+      position: relative;
+      background: #030712;
+      border-radius: 12px;
+      border: 1px solid #1e293b;
+      height: 280px;
+      overflow: hidden;
+    }
+
+    .view-label {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #e2e8f0;
+      z-index: 10;
+    }
+
+    /* Moon Phase Lab */
+    .moon-phase-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 1.25rem;
+      align-items: center;
+    }
+
+    .moon-phase-selector {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .phase-chip {
+      padding: 0.55rem 0.4rem;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: #e2e8f0;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+
+    .phase-chip.is-active {
+      background: #fbbf24;
+      color: #0f172a;
+      border-color: #f59e0b;
+    }
+
+    .moon-earth-view-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #030712;
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      padding: 1.5rem;
+      height: 100%;
+      text-align: center;
+    }
+
+    .moon-disc-wrapper {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: #0f172a;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+
+    #moonCanvasView {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Constellation Planetarium */
+    .planetarium-wrap {
+      position: relative;
+      background: #020617;
+      border-radius: 16px;
+      border: 1px solid #1e293b;
+      height: 380px;
+      overflow: hidden;
+      cursor: grab;
+    }
+
+    #starCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .telemetry-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .telemetry-card {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      text-align: center;
+    }
+
+    .telemetry-card span {
+      display: block;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      color: #94a3b8;
+    }
+
+    .telemetry-card b {
+      font-size: 1.05rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: #f8fafc;
+    }
+
+    /* Eclipse Toggle */
+    .eclipse-card {
+      background: var(--surface-2, #f8fafc);
+      border: 1px solid var(--border-subtle, #e2e8f0);
+      border-radius: 16px;
+      padding: 1.25rem;
+    }
+
+    /* Quiz styling */
+    .quiz-card {
+      background: #fff;
+      border: 1px solid var(--border-subtle, #e2e8f0);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    }
+
+    .quiz-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 0.75rem 1rem;
+      margin-bottom: 0.5rem;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle, #e2e8f0);
+      background: var(--surface-1, #fff);
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .quiz-btn:hover {
+      background: #f1f5f9;
+    }
+
+    .quiz-btn.correct {
+      background: #dcfce7 !important;
+      border-color: #22c55e !important;
+      color: #15803d !important;
+    }
+
+    .quiz-btn.incorrect {
+      background: #fee2e2 !important;
+      border-color: #ef4444 !important;
+      color: #b91c1c !important;
+    }
+
+    @media (max-width: 768px) {
+      .day-night-stage {
+        grid-template-columns: 1fr;
+      }
+      .moon-phase-grid {
+        grid-template-columns: 1fr;
+      }
+      .moon-phase-selector {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+  <script src="../../assets/js/vr-mode.js" defer></script>
 </head>
 <body>
   <div class="ll-viewport">
-    <div class="cl-page">
-      <div class="cl-hero">
-        <h1>Sun, Moon &amp; Stars</h1>
-        <p class="cl-lede">Foundational STEAM lesson for Sun, Moon &amp; Stars.</p>
+    
+    <!-- Top Navigation Bar -->
+    <nav class="ll-topbar" aria-label="Lesson navigation">
+      <div class="nav-wrap">
+        <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../../index.html">← Classroom Home</a></li>
+            <li><a href="../../steam-lessons.html">Earth Science</a></li>
+            <li><a href="seasons-and-the-heavens.html">Seasons &amp; Heavens</a></li>
+            <li><a href="earth-circumference.html">Earth Circumference</a></li>
+            <li><a href="weather-watch.html">Weather Watch</a></li>
+            <li><a href="land-water-sky.html">Land, Water &amp; Sky</a></li>
+          </ul>
+        </nav>
       </div>
+    </nav>
 
-      <div class="cl-card">
-        <h2>Overview</h2>
-        <p>The Sun is an active yellow dwarf star (spectral type G2V) at the center of our solar system, powering Earth's climate, weather, and life through nuclear fusion. Observations from space-based solar observatories allow us to study sunspots, magnetic flux, and solar flares safely.</p>
-        <figure data-zoomable>
-          <img src="../../assets/images/sun-sdo-hmi-nasa.jpg" width="938" height="938" alt="Full disk view of the Sun captured by NASA's Solar Dynamics Observatory showing active magnetic regions and sunspot groups." loading="lazy" decoding="async" />
-          <figcaption><strong>The Sun's visible surface photographed by NASA's Solar Dynamics Observatory (SDO).</strong> Darker sunspots mark cooler regions where intense bundles of magnetic field lines break through the photosphere, suppressing convective heat transport from the core. Credit: NASA / SDO / HMI Science Team.</figcaption>
-        </figure>
-      </div>
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main class="sms-page">
 
-      <div class="cl-card">
-        <h2>Watching the Sun Turn</h2>
-        <p>A NASA spacecraft watched one dark sunspot for two weeks. The spot drifts across the Sun because the Sun itself is spinning.</p>
-        <figure data-video="sdo-sunspot-two-weeks">
-          <figcaption>NASA Goddard / Solar Dynamics Observatory, <cite>Two Weeks in the Life of a Sunspot</cite> (July 5–17, 2017). Public domain (NASA, U.S. government work), from the NASA Image and Video Library.</figcaption>
-        </figure>
+          <!-- HERO HEADER -->
+          <header class="sms-hero">
+            <span class="sms-hero-eyebrow">
+              <span>☀️</span> Planetary Astronomy &amp; Celestial Mechanics
+            </span>
+            <h1>Sun, Moon &amp; Stars: The Celestial Clock</h1>
+            <p class="sms-hero-lede">
+              Earth is not standing still. Its 24-hour spin creates the illusion of a moving Sun and revolving night stars, while the Moon's 29.5-day dance around Earth sculpts the changing phases that have guided calendars for millennia.
+            </p>
+            <div class="sms-nav-pills" role="navigation" aria-label="Lesson sections">
+              <a href="#sun">1 · The Sun &amp; Solar Physics</a>
+              <a href="#daynight">2 · Day, Night &amp; Shadows</a>
+              <a href="#moonphases">3 · Moon Phase Orbital Lab</a>
+              <a href="#eclipses">4 · Eclipses &amp; Alignments</a>
+              <a href="#starfield">5 · Constellations &amp; Star Trails</a>
+              <a href="#challenge">6 · Sky Detective Challenge</a>
+            </div>
+          </header>
+
+          <!-- SECTION 1: THE SUN -->
+          <section id="sun" class="sms-section" aria-labelledby="sun-title">
+            <div class="sms-section-header">
+              <span class="sms-badge">Our Central Star</span>
+              <h2 id="sun-title">1 · The Sun: Powerhouse of the Earth System</h2>
+              <p>The Sun is a G-type main-sequence star (yellow dwarf) containing 99.86% of the solar system's entire mass. Every second, nuclear fusion in its core fuses 600 million tons of hydrogen into helium, powering Earth's climate, weather, photosynthesis, and winds.</p>
+            </div>
+
+            <div class="sms-grid-2">
+              <figure data-zoomable>
+                <img src="../../assets/images/sun-sdo-hmi-nasa.jpg" width="938" height="938" alt="Full disk view of the Sun captured by NASA's Solar Dynamics Observatory showing active magnetic regions and sunspot groups." loading="lazy" decoding="async" />
+                <figcaption>
+                  <strong>The Sun's photosphere captured by NASA's Solar Dynamics Observatory (SDO).</strong> Darker sunspots mark cooler regions (~3,800 K compared to the surrounding 5,800 K surface) where intense bundles of twisted magnetic field lines suppress convective heat bubbling from below. Credit: NASA / SDO / HMI Science Team.
+                </figcaption>
+              </figure>
+
+              <div>
+                <figure data-video="sdo-sunspot-two-weeks">
+                  <figcaption>
+                    NASA Goddard / Solar Dynamics Observatory, <cite>Two Weeks in the Life of a Sunspot</cite> (July 5–17, 2017). Public domain (NASA, U.S. government work). As the Sun rotates on its axis once every ~27 days, active magnetic regions drift steadily across its disc.
+                  </figcaption>
+                </figure>
+
+                <div style="background:var(--surface-2,#f8fafc); padding:1.2rem; border-radius:14px; border:1px solid var(--border-subtle,#e2e8f0); margin-top:1.2rem;">
+                  <h3 style="margin:0 0 0.5rem; font-size:1.15rem; color:var(--text-strong);">Why Does the Sun Appear to Move?</h3>
+                  <p style="font-size:0.9rem; line-height:1.55; color:var(--text-muted); margin:0;">
+                    To ancient stargazers, the Sun appeared to travel across the sky from East to West every day. In reality, the Sun is virtually fixed relative to our solar system's center: <b>Earth is rotating eastward on its axis</b> at roughly 1,670 km/h (1,037 mph) at the equator. This rotation makes the sky appear to spin around us in reverse!
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- SECTION 2: DAY, NIGHT & SHADOWS -->
+          <section id="daynight" class="sms-section" aria-labelledby="daynight-title">
+            <div class="sms-section-header">
+              <span class="sms-badge">Rotational Kinematics</span>
+              <h2 id="daynight-title">2 · Day, Night &amp; The Shadow Clock</h2>
+              <p>Because Earth is an opaque sphere in parallel sunlight, exactly 50% of the planet is in daylight while the other 50% is in shadow. Scrub the time slider to observe Earth spinning from space alongside the ground observer's changing shadow.</p>
+            </div>
+
+            <div class="lab-box">
+              <div class="lab-controls">
+                <label for="timeSlider">Local Solar Time:</label>
+                <input type="range" id="timeSlider" min="0" max="23.9" step="0.1" value="12" style="flex:1; min-width:180px; accent-color:#fbbf24;" />
+                <span id="timeDisplay" style="font-family:'JetBrains Mono',monospace; font-weight:700; color:#fbbf24; width:70px;">12:00</span>
+
+                <button type="button" id="playDayBtn" class="lab-btn lab-btn-active">▶ Play Spin</button>
+
+                <label for="latSelect" style="margin-left:auto;">Observer Latitude:</label>
+                <select id="latSelect" class="lab-select">
+                  <option value="40">Mid-Latitude (40° N · New York / Madrid)</option>
+                  <option value="0">Equator (0° · Equal 12h Days)</option>
+                  <option value="75">High Arctic (75° N · Midnight Sun / Polar Night)</option>
+                </select>
+              </div>
+
+              <div class="day-night-stage">
+                <!-- View A: Space Perspective -->
+                <div class="view-panel">
+                  <span class="view-label">Space View (North Pole Top-Down)</span>
+                  <canvas id="spaceDayCanvas"></canvas>
+                </div>
+
+                <!-- View B: Ground Observer Shadow Perspective -->
+                <div class="view-panel">
+                  <span class="view-label">Ground View (Gnomon &amp; Horizon)</span>
+                  <canvas id="groundDayCanvas"></canvas>
+                </div>
+              </div>
+
+              <div class="telemetry-row">
+                <div class="telemetry-card">
+                  <span>Sun Elevation Angle</span>
+                  <b id="sunAlt">65.0°</b>
+                </div>
+                <div class="telemetry-card">
+                  <span>Sun Direction (Azimuth)</span>
+                  <b id="sunAz">180° (South)</b>
+                </div>
+                <div class="telemetry-card">
+                  <span>Gnomon Shadow Length</span>
+                  <b id="shadowLen">0.47 m (Shortest)</b>
+                </div>
+                <div class="telemetry-card">
+                  <span>Shadow Direction</span>
+                  <b id="shadowDir">0° (True North)</b>
+                </div>
+              </div>
+            </div>
+
+            <div class="rs-grid-3" style="margin-top:1.5rem;">
+              <div style="background:var(--surface-2,#f8fafc); padding:1rem; border-radius:12px; border-left:4px solid #38bdf8;">
+                <h4 style="margin:0 0 0.35rem;">Sunrise (East)</h4>
+                <p style="font-size:0.88rem; margin:0; line-height:1.5;">At dawn (~06:00), the Sun rises above the eastern horizon at a low angle. Because the incoming light rays are nearly horizontal, the gnomon casts an extremely long shadow pointing directly <b>West</b>.</p>
+              </div>
+              <div style="background:var(--surface-2,#f8fafc); padding:1rem; border-radius:12px; border-left:4px solid #fbbf24;">
+                <h4 style="margin:0 0 0.35rem;">Solar Noon (Zenith Peak)</h4>
+                <p style="font-size:0.88rem; margin:0; line-height:1.5;">At solar noon (~12:00), the Sun reaches its highest point in the sky. In the Northern Hemisphere, it peaks in the southern sky, casting the <b>shortest shadow of the day, pointing True North</b>.</p>
+              </div>
+              <div style="background:var(--surface-2,#f8fafc); padding:1rem; border-radius:12px; border-left:4px solid #ea580c;">
+                <h4 style="margin:0 0 0.35rem;">Sunset (West)</h4>
+                <p style="font-size:0.88rem; margin:0; line-height:1.5;">As Earth continues its eastward rotation, the Sun dips toward the western horizon (~18:00). Shadows lengthen dramatically once more, pointing directly <b>East</b> before nightfall.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- SECTION 3: MOON PHASES ORBITAL LAB -->
+          <section id="moonphases" class="sms-section" aria-labelledby="moonphases-title">
+            <div class="sms-section-header">
+              <span class="sms-badge">Orbital Geometry</span>
+              <h2 id="moonphases-title">3 · Moon Phases Orbital Laboratory</h2>
+              <p>The most common misconception in astronomy is that Moon phases are caused by Earth's shadow. They are NOT! <b>Exactly half of the Moon is always illuminated by the Sun at all times.</b> The phase we see changes simply because we view that illuminated half from different orbital angles as the Moon circles Earth every 29.5 days.</p>
+            </div>
+
+            <div class="lab-box">
+              <div class="moon-phase-grid">
+                <!-- Left: Orbital Top-Down View -->
+                <div class="view-panel" style="height:340px;">
+                  <span class="view-label">Orbital View (Looking Down on Earth-Moon System)</span>
+                  <canvas id="moonOrbitCanvas"></canvas>
+                </div>
+
+                <!-- Right: Earth Observer Telescopic View -->
+                <div class="moon-earth-view-container">
+                  <span class="view-label" style="position:static; margin-bottom:0.75rem;">View From Earth's Night Sky</span>
+                  <div class="moon-disc-wrapper">
+                    <canvas id="moonCanvasView" width="140" height="140"></canvas>
+                  </div>
+                  <h3 id="phaseName" style="margin:0; font-size:1.3rem; color:#fde047;">First Quarter</h3>
+                  <div style="margin-top:0.4rem; font-size:0.85rem; color:#94a3b8;">
+                    Illumination: <b id="phaseIllum" style="color:#f8fafc;">50%</b> · Day <b id="phaseDay" style="color:#f8fafc;">7.4</b> of 29.5
+                  </div>
+                  <p id="phaseDesc" style="margin:0.75rem 0 0; font-size:0.85rem; line-height:1.45; color:#cbd5e1;">
+                    Rises at solar noon, peaks in the southern sky at sunset, and sets around midnight. Half of the visible lunar disc is illuminated.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Phase Selector Buttons -->
+              <div class="moon-phase-selector" role="group" aria-label="Select lunar phase">
+                <button type="button" class="phase-chip" data-angle="0">1 · New Moon</button>
+                <button type="button" class="phase-chip" data-angle="45">2 · Waxing Crescent</button>
+                <button type="button" class="phase-chip is-active" data-angle="90">3 · First Quarter</button>
+                <button type="button" class="phase-chip" data-angle="135">4 · Waxing Gibbous</button>
+                <button type="button" class="phase-chip" data-angle="180">5 · Full Moon</button>
+                <button type="button" class="phase-chip" data-angle="225">6 · Waning Gibbous</button>
+                <button type="button" class="phase-chip" data-angle="270">7 · Third Quarter</button>
+                <button type="button" class="phase-chip" data-angle="315">8 · Waning Crescent</button>
+              </div>
+
+              <!-- Scrub Slider -->
+              <div style="display:flex; align-items:center; gap:1rem; margin-top:1.25rem;">
+                <label for="orbitScrubber" style="font-size:0.85rem; font-weight:600; color:#94a3b8;">Scrub Orbit Angle:</label>
+                <input type="range" id="orbitScrubber" min="0" max="359" value="90" style="flex:1; accent-color:#fbbf24;" />
+                <span id="angleDisplay" style="font-family:'JetBrains Mono',monospace; font-weight:700; color:#fde047; width:55px;">90°</span>
+              </div>
+            </div>
+
+            <!-- Lightbox photo of the real Moon per repo standards -->
+            <div style="margin-top:2rem;">
+              <figure data-zoomable>
+                <img src="../../assets/images/moon-lro-nasa.jpg" width="938" height="938" alt="High resolution mosaic photograph of the Moon's near side captured by NASA's Lunar Reconnaissance Orbiter." loading="lazy" decoding="async" />
+                <figcaption>
+                  <strong>The Moon's near side photographed by NASA's Lunar Reconnaissance Orbiter (LRO).</strong> Dark smooth patches are ancient basaltic lava plains known as 'maria' (seas), while heavily cratered highlands reflect billions of years of meteorite impacts without weather erosion. Credit: NASA / GSFC / Arizona State University.
+                </figcaption>
+              </figure>
+            </div>
+          </section>
+
+          <!-- SECTION 4: SOLAR & LUNAR ECLIPSES -->
+          <section id="eclipses" class="sms-section" aria-labelledby="eclipses-title">
+            <div class="sms-section-header">
+              <span class="sms-badge">Cosmic Alignments</span>
+              <h2 id="eclipses-title">4 · Solar vs. Lunar Eclipses: When Shadows Meet</h2>
+              <p>Why don't we have eclipses every single month? Because the Moon's orbit is tilted <b>5.14 degrees</b> relative to Earth's orbital plane (the ecliptic). Eclipses can only occur when the Moon crosses the plane of Earth's orbit at points called <i>nodes</i>.</p>
+            </div>
+
+            <div class="sms-grid-2">
+              <div class="eclipse-card" style="border-left:4px solid #ea580c;">
+                <h3 style="margin:0 0 0.5rem; font-size:1.25rem; color:#c2410c;">Solar Eclipse (New Moon Alignment)</h3>
+                <p style="font-size:0.9rem; line-height:1.55; color:var(--text-muted); margin:0 0 1rem;">
+                  The Moon passes directly between the Sun and Earth ($Sun \rightarrow Moon \rightarrow Earth$). By a breathtaking cosmic coincidence, the Sun is 400 times wider than the Moon, but also 400 times farther away! They appear almost identical in angular size (0.5°).
+                </p>
+                <ul style="font-size:0.88rem; line-height:1.5; color:var(--text); margin:0; padding-left:1.2rem;">
+                  <li><b>Umbra:</b> The dark inner shadow cone where totality occurs, revealing the ghostly white solar corona.</li>
+                  <li><b>Penumbra:</b> The lighter outer shadow cone experiencing a partial solar eclipse.</li>
+                  <li><b>Path of Totality:</b> A narrow ribbon typically only 100–160 km wide sweeping across Earth's surface.</li>
+                </ul>
+              </div>
+
+              <div class="eclipse-card" style="border-left:4px solid #dc2626;">
+                <h3 style="margin:0 0 0.5rem; font-size:1.25rem; color:#b91c1c;">Lunar Eclipse (Full Moon Alignment)</h3>
+                <p style="font-size:0.9rem; line-height:1.55; color:var(--text-muted); margin:0 0 1rem;">
+                  Earth passes directly between the Sun and the Moon ($Sun \rightarrow Earth \rightarrow Moon$), casting Earth's massive shadow across the full lunar disc. Visible from the entire night hemisphere of Earth!
+                </p>
+                <ul style="font-size:0.88rem; line-height:1.5; color:var(--text); margin:0; padding-left:1.2rem;">
+                  <li><b>Blood Moon Color:</b> During totality, the Moon doesn't turn black—it glows deep copper-red.</li>
+                  <li><b>Atmospheric Rayleigh Scattering:</b> Earth's atmosphere filters out blue wavelengths and refracts all the sunrises and sunsets around the globe into the shadow cone, projecting reddish light onto the Moon!</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <!-- SECTION 5: CONSTELlATIONS & CIRCUMPOLAR STAR TRAILS -->
+          <section id="starfield" class="sms-section" aria-labelledby="starfield-title">
+            <div class="sms-section-header">
+              <span class="sms-badge">The Night Sphere</span>
+              <h2 id="starfield-title">5 · Navigating the Night Sky &amp; Star Trails</h2>
+              <p>Because Earth's rotational axis points almost directly toward the star <b>Polaris (the North Star)</b>, all stars in the Northern Hemisphere appear to rotate counterclockwise in concentric circles around Polaris. Drag the sky dome or enable star trails to watch centuries of navigators find True North.</p>
+            </div>
+
+            <div class="lab-box">
+              <div class="lab-controls">
+                <button type="button" id="playSkyBtn" class="lab-btn lab-btn-active">▶ Rotate Night Sky</button>
+                <button type="button" id="togglePointersBtn" class="lab-btn">📍 Show Big Dipper Pointers</button>
+                <button type="button" id="toggleTrailsBtn" class="lab-btn">💫 Star Trails: ON</button>
+                <button type="button" id="clearTrailsBtn" class="lab-btn" style="margin-left:auto;">Clear Trails</button>
+              </div>
+
+              <div class="planetarium-wrap">
+                <canvas id="starCanvas"></canvas>
+              </div>
+
+              <div style="margin-top:0.75rem; font-size:0.82rem; color:#94a3b8; text-align:center;">
+                Polaris remains virtually stationary at the center of the celestial hub. Use the outer bowl stars of the Big Dipper (Merak &amp; Dubhe) to trace a straight line directly to Polaris.
+              </div>
+            </div>
+          </section>
+
+          <!-- SECTION 6: CELESTIAL DETECTIVE CHALLENGE -->
+          <section id="challenge" class="sms-section" aria-labelledby="challenge-title">
+            <div class="sms-section-header">
+              <span class="sms-badge">Mastery Check</span>
+              <h2 id="challenge-title">6 · The Celestial Detective Quiz</h2>
+              <p>Apply your understanding of solar elevation, lunar geometry, and circumpolar star navigation to solve these four classroom challenges.</p>
+            </div>
+
+            <div class="sms-grid-2">
+              <div class="quiz-card">
+                <h3 id="quizTitle" style="margin:0 0 0.5rem; font-size:1.2rem; color:var(--text-strong);">Question 1 of 4</h3>
+                <p id="quizQuestion" style="font-size:0.95rem; line-height:1.55; color:var(--text-muted);">
+                  You walk outside at 8:00 AM in the morning and look down at your shadow. In which direction is your shadow pointing?
+                </p>
+
+                <div id="quizAnswers" style="margin-top:1rem;">
+                  <button type="button" class="quiz-btn" data-ans="0">Toward the East</button>
+                  <button type="button" class="quiz-btn" data-ans="1">Toward the West</button>
+                  <button type="button" class="quiz-btn" data-ans="2">Toward the South</button>
+                  <button type="button" class="quiz-btn" data-ans="3">Directly underneath your feet</button>
+                </div>
+
+                <div id="quizFeedback" style="margin-top:1rem; font-size:0.9rem; font-weight:700;" aria-live="polite"></div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1.2rem;">
+                  <button type="button" id="nextQuizBtn" class="lab-btn" style="display:none;">Next Question →</button>
+                  <span id="quizScoreText" style="font-size:0.85rem; font-weight:700; color:var(--text-muted);">Score: 0 / 4</span>
+                </div>
+              </div>
+
+              <div style="background:var(--surface-2,#f8fafc); padding:1.2rem; border-radius:14px; border:1px solid var(--border-subtle,#e2e8f0);">
+                <h3 style="margin:0 0 0.75rem; font-size:1.15rem;">Core Celestial Axioms to Remember</h3>
+                <ul style="font-size:0.88rem; line-height:1.6; color:var(--text-muted); margin:0; padding-left:1.2rem;">
+                  <li><b>Shadow Rule:</b> A shadow always points in the exact <i>opposite</i> direction of the light source. Sun in East $\rightarrow$ Shadow in West.</li>
+                  <li><b>Noon Rule:</b> At solar noon in the Northern mid-latitudes, the Sun is due South, so shadows point due North.</li>
+                  <li><b>Moon Illumination:</b> 50% of the Moon is always lit by the Sun. Moon phases represent how much of that lit half faces Earth.</li>
+                  <li><b>Polaris Navigation:</b> Polaris is the North Star because Earth's North Pole points at it. Its angle above your northern horizon equals your latitude!</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+        </main>
       </div>
     </div>
   </div>
+
+  <!-- LIGHTBOX & LAYOUT SCRIPTS -->
   <script src="../../assets/js/photo-lightbox.js"></script>
   <script src="../../assets/js/lesson-layout.js"></script>
   <script src="../../assets/js/video-embed.js"></script>
+
+  <!-- INTERACTIVE LOGIC SCRIPT -->
+  <script>
+  (()=>{
+    /* =========================================================================
+       1. DAY, NIGHT & SHADOWS SIMULATOR
+       ========================================================================= */
+    const timeSlider = document.getElementById('timeSlider');
+    const timeDisplay = document.getElementById('timeDisplay');
+    const playDayBtn = document.getElementById('playDayBtn');
+    const latSelect = document.getElementById('latSelect');
+
+    const spaceCanvas = document.getElementById('spaceDayCanvas');
+    const sCtx = spaceCanvas.getContext('2d');
+    const groundCanvas = document.getElementById('groundDayCanvas');
+    const gCtx = groundCanvas.getContext('2d');
+
+    let currentHour = 12.0;
+    let isDayPlaying = true;
+    let dayAnimId = null;
+
+    function formatTime(h) {
+      const hh = Math.floor(h);
+      const mm = Math.floor((h - hh) * 60);
+      return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+    }
+
+    function resizeDayCanvases() {
+      const sRect = spaceCanvas.getBoundingClientRect();
+      spaceCanvas.width = sRect.width * (window.devicePixelRatio || 1);
+      spaceCanvas.height = sRect.height * (window.devicePixelRatio || 1);
+      sCtx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+
+      const gRect = groundCanvas.getBoundingClientRect();
+      groundCanvas.width = gRect.width * (window.devicePixelRatio || 1);
+      groundCanvas.height = gRect.height * (window.devicePixelRatio || 1);
+      gCtx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+
+      drawDayNightScene();
+    }
+    window.addEventListener('resize', resizeDayCanvases);
+
+    function drawDayNightScene() {
+      const sw = spaceCanvas.width / (window.devicePixelRatio || 1);
+      const sh = spaceCanvas.height / (window.devicePixelRatio || 1);
+      const gw = groundCanvas.width / (window.devicePixelRatio || 1);
+      const gh = groundCanvas.height / (window.devicePixelRatio || 1);
+
+      // --- SPACE VIEW (Top-Down on North Pole) ---
+      sCtx.clearRect(0, 0, sw, sh);
+      sCtx.fillStyle = '#030712';
+      sCtx.fillRect(0, 0, sw, sh);
+
+      // Sun rays incoming from left
+      sCtx.strokeStyle = 'rgba(251, 191, 36, 0.25)';
+      sCtx.lineWidth = 1.5;
+      for (let y = 30; y < sh; y += 30) {
+        sCtx.beginPath();
+        sCtx.moveTo(0, y);
+        sCtx.lineTo(sw * 0.4, y);
+        sCtx.stroke();
+      }
+
+      // Sun label
+      sCtx.fillStyle = '#fbbf24';
+      sCtx.font = 'bold 11px Inter, sans-serif';
+      sCtx.fillText('☀️ Parallel Sunlight', 14, sh - 14);
+
+      // Earth circle
+      const ecx = sw * 0.55;
+      const ecy = sh * 0.5;
+      const er = 65;
+
+      // Daylight half (left)
+      sCtx.beginPath();
+      sCtx.arc(ecx, ecy, er, Math.PI * 0.5, Math.PI * 1.5);
+      sCtx.fillStyle = '#0284c7';
+      sCtx.fill();
+
+      // Night half (right)
+      sCtx.beginPath();
+      sCtx.arc(ecx, ecy, er, Math.PI * 1.5, Math.PI * 0.5);
+      sCtx.fillStyle = '#0f172a';
+      sCtx.fill();
+
+      // Terminator line
+      sCtx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+      sCtx.lineWidth = 2;
+      sCtx.beginPath();
+      sCtx.moveTo(ecx, ecy - er);
+      sCtx.lineTo(ecx, ecy + er);
+      sCtx.stroke();
+
+      // Observer dot on rotating Earth
+      // Local solar noon (12:00) points directly at Sun (Left, angle = PI)
+      // 06:00 (Dawn) points Up (angle = 3*PI/2)
+      // 18:00 (Dusk) points Down (angle = PI/2)
+      // 00:00 (Midnight) points Right (angle = 0)
+      const rotAngle = ((currentHour - 12) / 24) * Math.PI * 2 + Math.PI;
+      const ox = ecx + Math.cos(rotAngle) * er;
+      const oy = ecy + Math.sin(rotAngle) * er;
+
+      sCtx.beginPath();
+      sCtx.arc(ox, oy, 6, 0, Math.PI * 2);
+      sCtx.fillStyle = '#ef4444';
+      sCtx.fill();
+      sCtx.strokeStyle = '#ffffff';
+      sCtx.lineWidth = 2;
+      sCtx.stroke();
+
+      sCtx.fillStyle = '#f8fafc';
+      sCtx.font = 'bold 10px Inter, sans-serif';
+      sCtx.fillText('Observer', ox + 8, oy - 4);
+
+      // --- GROUND VIEW (Gnomon stick & shadow) ---
+      gCtx.clearRect(0, 0, gw, gh);
+
+      // Sky color based on solar elevation
+      const lat = parseFloat(latSelect.value);
+      // Approximate solar elevation:
+      // Noon max alt = 90 - lat + 23.5*sin(season), let's use equinox: 90 - lat
+      const maxAlt = 90 - lat;
+      const hourAngle = (currentHour - 12) * 15; // deg
+      const sinAlt = Math.cos(lat * Math.PI / 180) * Math.cos(hourAngle * Math.PI / 180);
+      const altDeg = Math.asin(Math.max(-1, Math.min(1, sinAlt))) * 180 / Math.PI;
+
+      let skyFill = '#030712';
+      if (altDeg > 10) skyFill = '#38bdf8'; // Full daylight
+      else if (altDeg > 0) skyFill = '#ea580c'; // Sunset/sunrise twilight
+      else if (altDeg > -6) skyFill = '#475569'; // Civil twilight
+      gCtx.fillStyle = skyFill;
+      gCtx.fillRect(0, 0, gw, gh * 0.7);
+
+      // Ground (green/brown meadow)
+      gCtx.fillStyle = '#334155';
+      gCtx.fillRect(0, gh * 0.7, gw, gh * 0.3);
+      gCtx.strokeStyle = '#475569';
+      gCtx.lineWidth = 2;
+      gCtx.beginPath();
+      gCtx.moveTo(0, gh * 0.7);
+      gCtx.lineTo(gw, gh * 0.7);
+      gCtx.stroke();
+
+      // Gnomon stick
+      const gcx = gw * 0.5;
+      const gcy = gh * 0.7;
+      const stickH = 50;
+
+      // Draw stick
+      gCtx.strokeStyle = '#f8fafc';
+      gCtx.lineWidth = 4;
+      gCtx.beginPath();
+      gCtx.moveTo(gcx, gcy);
+      gCtx.lineTo(gcx, gcy - stickH);
+      gCtx.stroke();
+
+      // Sun position in ground view
+      if (altDeg > 0) {
+        // Map hour (6 to 18) to x position (left/East to right/West)
+        const sunX = gcx - Math.sin(hourAngle * Math.PI / 180) * (gw * 0.38);
+        const sunY = gcy - Math.sin(altDeg * Math.PI / 180) * (gh * 0.55);
+
+        gCtx.beginPath();
+        gCtx.arc(sunX, sunY, 14, 0, Math.PI * 2);
+        gCtx.fillStyle = '#fbbf24';
+        gCtx.fill();
+        gCtx.strokeStyle = '#ffffff';
+        gCtx.lineWidth = 3;
+        gCtx.stroke();
+
+        // Shadow on ground
+        // Shadow length = stickH / tan(alt)
+        const shadowL = stickH / Math.tan(Math.max(5, altDeg) * Math.PI / 180);
+        // Shadow direction: points opposite of sun
+        const shadowDirX = Math.sin(hourAngle * Math.PI / 180);
+        const shadowEndX = gcx + shadowDirX * Math.min(160, shadowL);
+
+        gCtx.strokeStyle = 'rgba(0, 0, 0, 0.55)';
+        gCtx.lineWidth = 6;
+        gCtx.lineCap = 'round';
+        gCtx.beginPath();
+        gCtx.moveTo(gcx, gcy);
+        gCtx.lineTo(shadowEndX, gcy);
+        gCtx.stroke();
+
+        // Telemetry
+        document.getElementById('sunAlt').textContent = altDeg.toFixed(1) + '°';
+        document.getElementById('sunAz').textContent = hourAngle < 0 ? 'East' : hourAngle > 0 ? 'West' : 'South (Noon)';
+        document.getElementById('shadowLen').textContent = (shadowL / 50).toFixed(2) + ' m';
+        document.getElementById('shadowDir').textContent = shadowDirX < 0 ? 'West' : shadowDirX > 0 ? 'East' : 'True North';
+      } else {
+        // Night
+        document.getElementById('sunAlt').textContent = 'Below Horizon';
+        document.getElementById('sunAz').textContent = 'Night Sky';
+        document.getElementById('shadowLen').textContent = 'None (Darkness)';
+        document.getElementById('shadowDir').textContent = 'Stars Overhead';
+      }
+    }
+
+    function tickDayNight() {
+      if (isDayPlaying) {
+        currentHour = (currentHour + 0.05) % 24;
+        timeSlider.value = currentHour;
+        timeDisplay.textContent = formatTime(currentHour);
+        drawDayNightScene();
+      }
+      dayAnimId = requestAnimationFrame(tickDayNight);
+    }
+
+    timeSlider.addEventListener('input', e => {
+      currentHour = parseFloat(e.target.value);
+      timeDisplay.textContent = formatTime(currentHour);
+      drawDayNightScene();
+    });
+
+    playDayBtn.addEventListener('click', () => {
+      isDayPlaying = !isDayPlaying;
+      playDayBtn.textContent = isDayPlaying ? '⏸ Pause Spin' : '▶ Play Spin';
+      playDayBtn.classList.toggle('lab-btn-active', isDayPlaying);
+    });
+
+    latSelect.addEventListener('change', drawDayNightScene);
+
+    /* =========================================================================
+       2. MOON PHASES ORBITAL LAB
+       ========================================================================= */
+    const moonOrbitCanvas = document.getElementById('moonOrbitCanvas');
+    const moCtx = moonOrbitCanvas.getContext('2d');
+    const moonCanvasView = document.getElementById('moonCanvasView');
+    const mvCtx = moonCanvasView.getContext('2d');
+    const orbitScrubber = document.getElementById('orbitScrubber');
+    const angleDisplay = document.getElementById('angleDisplay');
+
+    let currentMoonAngle = 90; // Deg
+
+    const moonPhasesData = [
+      { name: "New Moon", angle: 0, illum: "0%", day: 0.0, desc: "The Moon is between Earth and Sun. Its illuminated face points away from Earth. Invisible in the solar glare." },
+      { name: "Waxing Crescent", angle: 45, illum: "25%", day: 3.7, desc: "A slender silver crescent visible in the western sky just after sunset. Waxing means growing larger each day." },
+      { name: "First Quarter", angle: 90, illum: "50%", day: 7.4, desc: "Rises at noon, peaks south at sunset, sets at midnight. Half of the visible lunar disc is brilliantly lit." },
+      { name: "Waxing Gibbous", angle: 135, illum: "75%", day: 11.1, desc: "Bulging past half towards full. Dominates the eastern evening sky for most of the night." },
+      { name: "Full Moon", angle: 180, illum: "100%", day: 14.8, desc: "Directly opposite the Sun. Rises at sunset and stays visible all night long, setting at sunrise." },
+      { name: "Waning Gibbous", angle: 225, illum: "75%", day: 18.5, desc: "Rises later in the evening and shrinks gradually. Waning means decreasing in illuminated size." },
+      { name: "Third / Last Quarter", angle: 270, illum: "50%", day: 22.1, desc: "Rises at midnight and remains visible in the morning sky until noon. Half illuminated on the left." },
+      { name: "Waning Crescent", angle: 315, illum: "25%", day: 25.8, desc: "A faint curved sliver visible in the eastern dawn sky just before sunrise, completing the cycle." }
+    ];
+
+    function resizeMoonOrbitCanvas() {
+      const rect = moonOrbitCanvas.getBoundingClientRect();
+      moonOrbitCanvas.width = rect.width * (window.devicePixelRatio || 1);
+      moonOrbitCanvas.height = rect.height * (window.devicePixelRatio || 1);
+      moCtx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+      drawMoonLab();
+    }
+    window.addEventListener('resize', resizeMoonOrbitCanvas);
+
+    function drawMoonLab() {
+      const w = moonOrbitCanvas.width / (window.devicePixelRatio || 1);
+      const h = moonOrbitCanvas.height / (window.devicePixelRatio || 1);
+
+      // --- ORBIT VIEW ---
+      moCtx.clearRect(0, 0, w, h);
+      moCtx.fillStyle = '#030712';
+      moCtx.fillRect(0, 0, w, h);
+
+      // Sunlight arrows from Right
+      moCtx.strokeStyle = 'rgba(251, 191, 36, 0.25)';
+      moCtx.lineWidth = 1.5;
+      for (let y = 30; y < h; y += 40) {
+        moCtx.beginPath();
+        moCtx.moveTo(w, y);
+        moCtx.lineTo(w * 0.65, y);
+        moCtx.stroke();
+      }
+      moCtx.fillStyle = '#fbbf24';
+      moCtx.font = 'bold 11px Inter, sans-serif';
+      moCtx.textAlign = 'right';
+      moCtx.fillText('Parallel Sunlight ☀️', w - 14, 25);
+
+      const ecx = w * 0.45;
+      const ecy = h * 0.5;
+      const orbitR = Math.min(w * 0.35, h * 0.38);
+
+      // Orbit circle
+      moCtx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      moCtx.lineWidth = 1.5;
+      moCtx.beginPath();
+      moCtx.arc(ecx, ecy, orbitR, 0, Math.PI * 2);
+      moCtx.stroke();
+
+      // Earth in Center
+      const er = 24;
+      moCtx.beginPath();
+      moCtx.arc(ecx, ecy, er, Math.PI * 0.5, Math.PI * 1.5);
+      moCtx.fillStyle = '#0f172a'; // Earth night
+      moCtx.fill();
+      moCtx.beginPath();
+      moCtx.arc(ecx, ecy, er, Math.PI * 1.5, Math.PI * 0.5);
+      moCtx.fillStyle = '#0284c7'; // Earth day facing right sun
+      moCtx.fill();
+      moCtx.strokeStyle = '#ffffff';
+      moCtx.lineWidth = 1;
+      moCtx.stroke();
+
+      // Moon position:
+      // angle 0 = New Moon (Between Earth and Sun -> right of Earth)
+      // angle 90 = First Quarter (Above Earth)
+      // angle 180 = Full Moon (Left of Earth)
+      // angle 270 = Third Quarter (Below Earth)
+      const rad = currentMoonAngle * Math.PI / 180;
+      const mx = ecx + Math.cos(rad) * orbitR;
+      const my = ecy - Math.sin(rad) * orbitR; // inverted Y in canvas
+
+      // Sight line from Earth to Moon
+      moCtx.setLineDash([4, 4]);
+      moCtx.strokeStyle = 'rgba(253, 224, 71, 0.4)';
+      moCtx.beginPath();
+      moCtx.moveTo(ecx, ecy);
+      moCtx.lineTo(mx, my);
+      moCtx.stroke();
+      moCtx.setLineDash([]);
+
+      // Draw Moon in orbit (Notice: Right half ALWAYS lit by Sun!)
+      const mr = 14;
+      moCtx.beginPath();
+      moCtx.arc(mx, my, mr, Math.PI * 0.5, Math.PI * 1.5);
+      moCtx.fillStyle = '#1e293b'; // Unlit left half
+      moCtx.fill();
+      moCtx.beginPath();
+      moCtx.arc(mx, my, mr, Math.PI * 1.5, Math.PI * 0.5);
+      moCtx.fillStyle = '#f8fafc'; // Lit right half
+      moCtx.fill();
+      moCtx.strokeStyle = '#fbbf24';
+      moCtx.lineWidth = 2;
+      moCtx.stroke();
+
+      // --- EARTH TELESCOPIC VIEW ---
+      const mw = moonCanvasView.width;
+      const mh = moonCanvasView.height;
+      mvCtx.clearRect(0, 0, mw, mh);
+
+      const cx = mw * 0.5;
+      const cy = mh * 0.5;
+      const r = 60;
+
+      // Base unlit moon disc
+      mvCtx.beginPath();
+      mvCtx.arc(cx, cy, r, 0, Math.PI * 2);
+      mvCtx.fillStyle = '#1e293b';
+      mvCtx.fill();
+
+      // Illuminated crescent/gibbous rendering:
+      // Angle: 0 (new) -> 180 (full) -> 360 (new)
+      const normAngle = ((currentMoonAngle % 360) + 360) % 360;
+      const phaseFrac = (1 - Math.cos(normAngle * Math.PI / 180)) / 2; // 0 to 1
+
+      mvCtx.save();
+      mvCtx.beginPath();
+      mvCtx.arc(cx, cy, r, 0, Math.PI * 2);
+      mvCtx.clip();
+
+      if (normAngle <= 180) {
+        // Waxing (Right side lit)
+        mvCtx.fillStyle = '#f8fafc';
+        mvCtx.beginPath();
+        mvCtx.arc(cx, cy, r, -Math.PI * 0.5, Math.PI * 0.5);
+        mvCtx.fill();
+
+        // Terminator ellipse
+        const xOffset = Math.cos(normAngle * Math.PI / 180) * r;
+        mvCtx.beginPath();
+        mvCtx.ellipse(cx, cy, Math.abs(xOffset), r, 0, 0, Math.PI * 2);
+        mvCtx.fillStyle = normAngle < 90 ? '#1e293b' : '#f8fafc';
+        mvCtx.fill();
+      } else {
+        // Waning (Left side lit)
+        mvCtx.fillStyle = '#f8fafc';
+        mvCtx.beginPath();
+        mvCtx.arc(cx, cy, r, Math.PI * 0.5, Math.PI * 1.5);
+        mvCtx.fill();
+
+        // Terminator ellipse
+        const xOffset = Math.cos(normAngle * Math.PI / 180) * r;
+        mvCtx.beginPath();
+        mvCtx.ellipse(cx, cy, Math.abs(xOffset), r, 0, 0, Math.PI * 2);
+        mvCtx.fillStyle = normAngle < 270 ? '#f8fafc' : '#1e293b';
+        mvCtx.fill();
+      }
+      mvCtx.restore();
+
+      // Crater textures for realism
+      mvCtx.fillStyle = 'rgba(100, 116, 139, 0.25)';
+      mvCtx.beginPath();
+      mvCtx.arc(cx - 15, cy - 10, 12, 0, Math.PI * 2);
+      mvCtx.arc(cx + 20, cy + 15, 18, 0, Math.PI * 2);
+      mvCtx.arc(cx - 25, cy + 25, 10, 0, Math.PI * 2);
+      mvCtx.fill();
+
+      // Find closest named phase
+      let closest = moonPhasesData[0];
+      let minDiff = 999;
+      moonPhasesData.forEach(p => {
+        const diff = Math.abs(p.angle - normAngle);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closest = p;
+        }
+      });
+
+      document.getElementById('phaseName').textContent = closest.name;
+      document.getElementById('phaseIllum').textContent = Math.round(phaseFrac * 100) + '%';
+      document.getElementById('phaseDay').textContent = ((normAngle / 360) * 29.5).toFixed(1);
+      document.getElementById('phaseDesc').textContent = closest.desc;
+      angleDisplay.textContent = Math.round(normAngle) + '°';
+    }
+
+    orbitScrubber.addEventListener('input', e => {
+      currentMoonAngle = parseFloat(e.target.value);
+      drawMoonLab();
+      updatePhaseButtons();
+    });
+
+    document.querySelectorAll('.phase-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentMoonAngle = parseFloat(btn.dataset.angle);
+        orbitScrubber.value = currentMoonAngle;
+        drawMoonLab();
+        updatePhaseButtons();
+      });
+    });
+
+    function updatePhaseButtons() {
+      const norm = ((currentMoonAngle % 360) + 360) % 360;
+      document.querySelectorAll('.phase-chip').forEach(btn => {
+        const ba = parseFloat(btn.dataset.angle);
+        btn.classList.toggle('is-active', Math.abs(ba - norm) < 22.5 || (ba === 0 && norm > 337.5));
+      });
+    }
+
+    /* =========================================================================
+       3. CIRCUMPOLAR STAR TRAILS PLANETARIUM
+       ========================================================================= */
+    const starCanvas = document.getElementById('starCanvas');
+    const stCtx = starCanvas.getContext('2d');
+    const playSkyBtn = document.getElementById('playSkyBtn');
+    const togglePointersBtn = document.getElementById('togglePointersBtn');
+    const toggleTrailsBtn = document.getElementById('toggleTrailsBtn');
+    const clearTrailsBtn = document.getElementById('clearTrailsBtn');
+
+    let isSkyPlaying = true;
+    let showPointers = false;
+    let showTrails = true;
+    let skyAngle = 0;
+    let starTrails = []; // Historical positions
+
+    // Base star catalog centered near Polaris (x:0, y:0)
+    const baseStars = [
+      { id: 'polaris', name: 'Polaris (North Star)', r: 6, theta: 0, mag: 2.0, color: '#fef08a' },
+      // Big Dipper (Ursa Major)
+      { id: 'dubhe', name: 'Dubhe', r: 120, theta: 0.85, mag: 1.8, color: '#ffffff' },
+      { id: 'merak', name: 'Merak', r: 135, theta: 0.98, mag: 2.3, color: '#ffffff' },
+      { id: 'phecda', name: 'Phecda', r: 155, theta: 1.15, mag: 2.4, color: '#ffffff' },
+      { id: 'megrez', name: 'Megrez', r: 140, theta: 1.30, mag: 3.3, color: '#cbd5e1' },
+      { id: 'alioth', name: 'Alioth', r: 165, theta: 1.48, mag: 1.7, color: '#ffffff' },
+      { id: 'mizar', name: 'Mizar', r: 185, theta: 1.62, mag: 2.2, color: '#ffffff' },
+      { id: 'alkaid', name: 'Alkaid', r: 215, theta: 1.78, mag: 1.8, color: '#bfdbfe' },
+      // Cassiopeia
+      { id: 'schedar', name: 'Schedar', r: 130, theta: 3.8, mag: 2.2, color: '#fed7aa' },
+      { id: 'caph', name: 'Caph', r: 145, theta: 3.6, mag: 2.3, color: '#ffffff' },
+      { id: 'gamma_cas', name: 'Navi', r: 135, theta: 4.05, mag: 2.1, color: '#bfdbfe' },
+      { id: 'ruchbah', name: 'Ruchbah', r: 150, theta: 4.25, mag: 2.7, color: '#ffffff' },
+      { id: 'segin', name: 'Segin', r: 170, theta: 4.45, mag: 3.3, color: '#cbd5e1' },
+      // Background field stars
+      ...Array.from({ length: 80 }, () => ({
+        id: 'bg',
+        r: 30 + Math.random() * 240,
+        theta: Math.random() * Math.PI * 2,
+        mag: 3 + Math.random() * 2.5,
+        color: Math.random() > 0.3 ? '#ffffff' : '#93c5fd'
+      }))
+    ];
+
+    function resizeStarCanvas() {
+      const rect = starCanvas.getBoundingClientRect();
+      starCanvas.width = rect.width * (window.devicePixelRatio || 1);
+      starCanvas.height = rect.height * (window.devicePixelRatio || 1);
+      stCtx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+      drawStarField();
+    }
+    window.addEventListener('resize', resizeStarCanvas);
+
+    function drawStarField() {
+      const w = starCanvas.width / (window.devicePixelRatio || 1);
+      const h = starCanvas.height / (window.devicePixelRatio || 1);
+
+      // Dim trails effect
+      if (!showTrails) {
+        stCtx.fillStyle = '#020617';
+        stCtx.fillRect(0, 0, w, h);
+      } else {
+        stCtx.fillStyle = 'rgba(2, 6, 23, 0.08)';
+        stCtx.fillRect(0, 0, w, h);
+      }
+
+      const cx = w * 0.5;
+      const cy = h * 0.5;
+
+      // Draw concentric guidance rings
+      stCtx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      stCtx.lineWidth = 1;
+      for (let r = 60; r <= 240; r += 60) {
+        stCtx.beginPath();
+        stCtx.arc(cx, cy, r, 0, Math.PI * 2);
+        stCtx.stroke();
+      }
+
+      // Draw all stars rotated by skyAngle
+      let dubhePos = null;
+      let merakPos = null;
+      let polarisPos = null;
+
+      baseStars.forEach(s => {
+        const angle = s.theta + skyAngle;
+        const sx = cx + Math.cos(angle) * s.r;
+        const sy = cy + Math.sin(angle) * s.r;
+
+        if (s.id === 'dubhe') dubhePos = { x: sx, y: sy };
+        if (s.id === 'merak') merakPos = { x: sx, y: sy };
+        if (s.id === 'polaris') polarisPos = { x: sx, y: sy };
+
+        const radius = Math.max(1, 4.5 - s.mag * 0.6);
+        stCtx.beginPath();
+        stCtx.arc(sx, sy, radius, 0, Math.PI * 2);
+        stCtx.fillStyle = s.color;
+        stCtx.fill();
+
+        if (s.name && !showTrails) {
+          stCtx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+          stCtx.font = '9px Inter, sans-serif';
+          stCtx.fillText(s.name, sx + 5, sy + 3);
+        }
+      });
+
+      // Pointer Line from Merak through Dubhe directly to Polaris!
+      if (showPointers && dubhePos && merakPos && polarisPos) {
+        stCtx.strokeStyle = '#ef4444';
+        stCtx.lineWidth = 2;
+        stCtx.setLineDash([5, 4]);
+        stCtx.beginPath();
+        stCtx.moveTo(merakPos.x, merakPos.y);
+        stCtx.lineTo(dubhePos.x, dubhePos.y);
+        // Extend 5x distance to Polaris
+        stCtx.lineTo(polarisPos.x, polarisPos.y);
+        stCtx.stroke();
+        stCtx.setLineDash([]);
+
+        stCtx.fillStyle = '#ef4444';
+        stCtx.font = 'bold 11px Inter, sans-serif';
+        stCtx.fillText('★ Pointer Line to Polaris (5x Merak-Dubhe)', polarisPos.x + 12, polarisPos.y - 8);
+      }
+    }
+
+    function tickStars() {
+      if (isSkyPlaying) {
+        skyAngle += 0.003;
+        drawStarField();
+      }
+      requestAnimationFrame(tickStars);
+    }
+
+    playSkyBtn.addEventListener('click', () => {
+      isSkyPlaying = !isSkyPlaying;
+      playSkyBtn.textContent = isSkyPlaying ? '⏸ Pause Sky' : '▶ Rotate Night Sky';
+      playSkyBtn.classList.toggle('lab-btn-active', isSkyPlaying);
+    });
+
+    togglePointersBtn.addEventListener('click', () => {
+      showPointers = !showPointers;
+      togglePointersBtn.classList.toggle('lab-btn-active', showPointers);
+    });
+
+    toggleTrailsBtn.addEventListener('click', () => {
+      showTrails = !showTrails;
+      toggleTrailsBtn.textContent = showTrails ? '💫 Star Trails: ON' : '💫 Star Trails: OFF';
+      toggleTrailsBtn.classList.toggle('lab-btn-active', showTrails);
+    });
+
+    clearTrailsBtn.addEventListener('click', () => {
+      const w = starCanvas.width / (window.devicePixelRatio || 1);
+      const h = starCanvas.height / (window.devicePixelRatio || 1);
+      stCtx.fillStyle = '#020617';
+      stCtx.fillRect(0, 0, w, h);
+    });
+
+    /* =========================================================================
+       4. CELESTIAL QUIZ
+       ========================================================================= */
+    const quizData = [
+      {
+        q: "You walk outside at 8:00 AM in the morning and look down at your shadow. In which direction is your shadow pointing?",
+        opts: ["Toward the East", "Toward the West", "Toward the South", "Directly underneath your feet"],
+        correct: 1,
+        expl: "Correct! The Sun rises in the East in the morning, which casts shadows in the exact opposite direction: toward the West."
+      },
+      {
+        q: "Why do we see Moon phases from Earth?",
+        opts: [
+          "Earth's shadow covers different portions of the Moon each night.",
+          "Clouds in Earth's atmosphere block the Moon.",
+          "We view the lit half of the Moon from different angles as it orbits Earth.",
+          "The Moon moves closer and farther from the Sun."
+        ],
+        correct: 2,
+        expl: "Spot on! Exactly 50% of the Moon is always lit by the Sun. As the Moon circles Earth, our perspective changes how much of that lit hemisphere we can see."
+      },
+      {
+        q: "What causes long-exposure night photographs to show circular star trails in the sky?",
+        opts: [
+          "Stars are literally flying in circles around the galaxy.",
+          "Earth is rotating eastward on its axis under a relatively stationary sphere of stars.",
+          "The Moon's gravity pulls the stars in circular orbits.",
+          "Atmospheric winds bend the starlight in swirls."
+        ],
+        correct: 1,
+        expl: "Brilliant! Earth's 24-hour spin makes the entire celestial dome appear to revolve counterclockwise around Polaris."
+      },
+      {
+        q: "During a Total Lunar Eclipse, why does the Moon turn a coppery reddish color ('Blood Moon') instead of disappearing completely?",
+        opts: [
+          "Heat from Earth's core radiates red infrared light.",
+          "Rayleigh scattering bends all the red sunrises and sunsets around Earth into our shadow cone.",
+          "The Moon's iron-rich surface rocks rust in space.",
+          "Solar flares bounce red light off the back of the Moon."
+        ],
+        correct: 1,
+        expl: "Exquisite! Earth's atmosphere scatters blue light away and refracts red wavelengths inward into Earth's umbral shadow, illuminating the Moon with all the planet's sunrises and sunsets."
+      }
+    ];
+
+    let currentQ = 0;
+    let quizScore = 0;
+
+    function renderQuiz() {
+      const q = quizData[currentQ];
+      document.getElementById('quizTitle').textContent = `Question ${currentQ + 1} of ${quizData.length}`;
+      document.getElementById('quizQuestion').textContent = q.q;
+      document.getElementById('quizFeedback').textContent = '';
+      document.getElementById('nextQuizBtn').style.display = 'none';
+
+      const container = document.getElementById('quizAnswers');
+      container.innerHTML = '';
+      q.opts.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'quiz-btn';
+        btn.textContent = opt;
+        btn.addEventListener('click', () => selectAnswer(idx));
+        container.appendChild(btn);
+      });
+    }
+
+    function selectAnswer(selectedIdx) {
+      const q = quizData[currentQ];
+      const btns = document.querySelectorAll('.quiz-btn');
+      btns.forEach(b => b.disabled = true);
+
+      if (selectedIdx === q.correct) {
+        btns[selectedIdx].classList.add('correct');
+        quizScore++;
+        document.getElementById('quizFeedback').innerHTML = `<span style="color:#15803d;">✓ ${q.expl}</span>`;
+      } else {
+        btns[selectedIdx].classList.add('incorrect');
+        btns[q.correct].classList.add('correct');
+        document.getElementById('quizFeedback').innerHTML = `<span style="color:#b91c1c;">✗ Incorrect. ${q.expl}</span>`;
+      }
+
+      document.getElementById('quizScoreText').textContent = `Score: ${quizScore} / ${quizData.length}`;
+
+      if (currentQ < quizData.length - 1) {
+        document.getElementById('nextQuizBtn').style.display = 'inline-block';
+      }
+    }
+
+    document.getElementById('nextQuizBtn').addEventListener('click', () => {
+      currentQ++;
+      renderQuiz();
+    });
+
+    // Initialize all
+    resizeDayCanvases();
+    resizeMoonOrbitCanvas();
+    resizeStarCanvas();
+    tickDayNight();
+    tickStars();
+    renderQuiz();
+
+  })();
+  </script>
 </body>
 </html>

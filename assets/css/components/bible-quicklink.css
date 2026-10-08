@@ -1,0 +1,223 @@
+/* Bible quick link (assets/js/bible-quicklink.js): header pill, reference links, passage peek.
+   The peek uses the Bible reader's paper palette (assets/css/pages/bible.css) in plain colors,
+   so it reads the same on every lesson theme and contrast-guard.js leaves it alone. */
+
+.bq-actions {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  z-index: 101;
+  margin-right: 0.4rem;
+}
+
+.bq-actions--floating {
+  position: fixed;
+  left: 1rem;
+  bottom: 1rem;
+  margin: 0;
+}
+
+.bq-pill {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  min-height: 2rem;
+  padding: 0.36rem 0.8rem;
+  border: 1px solid #c9a46a;
+  border-radius: 999px;
+  background: #fffdf8;
+  color: #5b2a1e;
+  box-shadow: 0 5px 16px rgba(15, 23, 42, 0.12);
+  font: 700 0.76rem/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.bq-pill:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18); }
+.bq-pill:focus-visible { outline: 3px solid #8a4b12; outline-offset: 2px; }
+.bq-pill[aria-expanded="true"] { background: #5b2a1e; border-color: #5b2a1e; color: #fffdf8; }
+
+@media (max-width: 560px) {
+  .bq-pill { padding-inline: 0.55rem; }
+  .bq-pill-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+
+.bq-menu {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  right: 0;
+  width: min(20rem, calc(100vw - 2rem));
+  padding: 0.75rem;
+  border: 1px solid #e3d6bf;
+  border-radius: 0.9rem;
+  background: #fffdf8;
+  color: #1f1d1a;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.22);
+  font: 400 0.85rem/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  text-align: left;
+}
+
+.bq-actions--floating .bq-menu { top: auto; bottom: calc(100% + 0.45rem); left: 0; right: auto; }
+.bq-menu[hidden] { display: none; }
+
+.bq-find label { display: block; margin-bottom: 0.35rem; font-weight: 700; font-size: 0.8rem; color: #1f1d1a; }
+.bq-find-row { display: flex; gap: 0.4rem; }
+.bq-find input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #c9bda8;
+  border-radius: 0.55rem;
+  background: #ffffff;
+  color: #1f1d1a;
+  font: inherit;
+}
+.bq-find input:focus-visible { outline: 3px solid #8a4b12; outline-offset: 1px; }
+.bq-msg { margin: 0.35rem 0 0; color: #8b2c22; font-size: 0.78rem; }
+.bq-msg:empty { display: none; }
+
+.bq-links { display: grid; gap: 0.15rem; margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px solid #ece3d3; }
+.bq-link {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: 0.55rem;
+  color: #1f1d1a;
+  text-decoration: none;
+}
+.bq-link:hover, .bq-link:focus-visible { background: #f5ecdc; outline: none; }
+.bq-link strong { font-size: 0.86rem; color: #5b2a1e; }
+.bq-link small { font-size: 0.74rem; color: #6d675d; }
+
+.bq-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid #c9bda8;
+  border-radius: 0.6rem;
+  background: #fffdf8;
+  color: #1f1d1a;
+  font: 600 0.85rem/1.1 system-ui, -apple-system, "Segoe UI", sans-serif;
+  text-decoration: none;
+  cursor: pointer;
+}
+.bq-btn:hover { background: #f5ecdc; }
+.bq-btn:focus-visible { outline: 3px solid #8a4b12; outline-offset: 2px; }
+.bq-btn:disabled { opacity: 0.45; cursor: default; }
+.bq-btn[hidden] { display: none; }
+.bq-btn--primary { border-color: #8a4b12; background: #8a4b12; color: #ffffff; }
+.bq-btn--primary:hover { background: #6e3a0c; }
+
+/* References linked in the lesson text */
+a.bq-ref {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+}
+a.bq-ref:hover { text-decoration-style: solid; }
+a.bq-ref:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 2px; }
+
+/* The passage peek: big, centred, readable from the back of the room */
+.bq-peek {
+  width: min(46rem, calc(100vw - 2rem));
+  max-height: min(88vh, 60rem);
+  padding: 0;
+  border: 1px solid #e3d6bf;
+  border-radius: 1.1rem;
+  background: #fffdf8;
+  color: #1f1d1a;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+.bq-peek[open] { display: flex; flex-direction: column; }
+.bq-peek::backdrop { background: rgba(20, 14, 10, 0.62); }
+
+.bq-peek-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1.1rem 1.25rem 0.8rem;
+  border-bottom: 1px solid #ece3d3;
+}
+.bq-peek-head > div { flex: 1 1 auto; min-width: 0; }
+.bq-peek-kicker {
+  margin: 0 0 0.2rem;
+  color: #8a4b12;
+  font: 700 0.72rem/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.bq-peek h2 {
+  margin: 0;
+  color: #1f1d1a;
+  font: 700 clamp(1.4rem, 3vw, 2rem)/1.15 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+.bq-tr {
+  flex: 0 1 auto;
+  max-width: 12rem;
+  margin-top: 0.2rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #c9bda8;
+  border-radius: 0.55rem;
+  background: #ffffff;
+  color: #1f1d1a;
+  font: 600 0.8rem/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.bq-peek-close {
+  appearance: none;
+  flex: 0 0 auto;
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 1px solid #c9bda8;
+  border-radius: 999px;
+  background: #fffdf8;
+  color: #1f1d1a;
+  font: 400 1.5rem/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+.bq-peek-close:hover { background: #f5ecdc; }
+.bq-peek-close:focus-visible, .bq-tr:focus-visible { outline: 3px solid #8a4b12; outline-offset: 2px; }
+
+.bq-peek-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 1rem 1.5rem 1.25rem;
+  font: 400 clamp(1.1rem, 2.1vw, 1.4rem)/1.7 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  color: #1f1d1a;
+}
+.bq-peek-body:focus-visible { outline: 3px solid #8a4b12; outline-offset: -3px; }
+.bq-v { margin: 0 0 0.45em; padding: 0.05em 0.35em; border-radius: 0.35em; }
+.bq-v.is-focus { background: #f6e7c8; }
+.bq-v sup { color: #8a4b12; font: 700 0.6em/1 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.bq-peek-status { color: #6d675d; font-style: italic; }
+
+.bq-peek-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.8rem 1.25rem 0.4rem;
+  border-top: 1px solid #ece3d3;
+}
+.bq-peek-foot .bq-btn--primary { margin-left: auto; }
+.bq-peek-credit { margin: 0; padding: 0 1.25rem 0.9rem; color: #6d675d; font: 400 0.72rem/1.35 system-ui, -apple-system, "Segoe UI", sans-serif; }
+
+@media (max-width: 560px) {
+  .bq-peek-head { flex-wrap: wrap; }
+  .bq-peek-head > div { flex-basis: calc(100% - 3.2rem); }
+  .bq-tr { order: 3; max-width: none; flex: 1 1 100%; }
+  .bq-peek-foot .bq-btn { flex: 1 1 auto; }
+  .bq-peek-foot .bq-btn--primary { margin-left: 0; flex-basis: 100%; }
+}
+
+@media print {
+  .bq-actions, .bq-peek { display: none !important; }
+  a.bq-ref { text-decoration: none; }
+}

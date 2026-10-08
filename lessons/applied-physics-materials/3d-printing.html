@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>3D Printing — Settings, Rules &amp; Perfect Prints · Mr. Scandrett's ClassroomOS</title>
+  <title>3D Printing — Predict, Slice &amp; Test · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
-  <meta name="description" content="Fabrication Lesson 03 — master layer height, infill, supports, bed adhesion, temperature, speed, and materials for perfect FDM prints every time." />
+  <meta name="description" content="Fabrication Lesson 03 — investigate layer height, walls, infill, and print tradeoffs through a controlled slicer experiment." />
   <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
   <style>
@@ -368,6 +368,10 @@
     }
     .p3d-rule-num::after { content: ''; flex: 1; height: 1px; background: rgba(255,107,53,0.15); }
     .p3d-rule-title { font-size: 0.9rem; font-weight: 800; color: #1c0a00; margin: 0; }
+    .p3d-rule-figure {margin:.6rem 0;}
+    .p3d-rule-figure img {display:block;width:100%;height:auto;max-height:260px;object-fit:contain;border:1px solid #d9c5b5;border-radius:10px;background:#fffdf8;}
+    .p3d-rule-figure figcaption {font-size:.78rem;line-height:1.5;margin-top:.5rem;color:#3a2a1a;}
+    .p3d-rule-credit {display:block;font-size:.68rem;color:#615044;margin-top:.25rem;}
     .p3d-rule-body  { font-size: 0.82rem; line-height: 1.55; color: #3a2a1a; margin: 0; }
 
     /* ══ Scenario tabs ══ */
@@ -476,6 +480,24 @@
       body { background: #fff !important; }
       .p3d-card { box-shadow: none !important; border: 1px solid #ddd !important; page-break-inside: avoid; }
     }
+    .p3d-topbar-inner {flex-wrap:wrap;padding:.5rem 0;}
+    .p3d-topbar-inner .lesson-print-actions {max-width:100%;flex-wrap:wrap;}
+    #p3d-webgl:focus-visible {outline-offset:-4px;}
+    .p3d-preview-wrap button {background:#40240e;color:#ffe3cb;border:1px solid #ad6e43;border-radius:6px;padding:.4rem .6rem;cursor:pointer;}
+    .p3d-shell > *, .p3d-sim-layout > * {min-width:0;}
+    .p3d-experiment {padding:1rem; border:1px solid #ad6e43; border-radius:12px; margin-bottom:1.4rem; color:#ffe3cb;}
+    .p3d-experiment textarea {display:block;width:100%;box-sizing:border-box;margin:.5rem 0;padding:.7rem;font:inherit;background:#fff8f4;color:#182631;border-radius:8px;}
+    .p3d-lab-actions {display:flex;gap:.6rem;flex-wrap:wrap;}
+    .p3d-lab-actions button {min-height:44px;padding:.6rem 1rem;border-radius:8px;border:1px solid #ffb88c;background:#ffb88c;color:#281100;font-weight:700;cursor:pointer;}
+    button,select,input[type=range],summary {min-height:44px;}
+    :focus-visible {outline:3px solid #1671ba;outline-offset:4px;}
+    .p3d-block-img-wrap {aspect-ratio:auto;}
+    .p3d-block-img-wrap figure {margin:0;}
+    .p3d-block-img-wrap img {height:auto;aspect-ratio:16/9;}
+    .p3d-block-img-wrap figcaption {padding:.5rem;font-size:.75rem;line-height:1.4;}
+    .p3d-warn-chip {border-radius:10px;}
+    @media(max-width:620px){.p3d-card,.p3d-sim,.p3d-hero{padding:1.2rem;} .p3d-grid,.p3d-scenario-grid{grid-template-columns:1fr;} .p3d-quality-bar{flex-wrap:wrap;} .p3d-mat-table{min-width:650px;} .p3d-card:has(.p3d-mat-table){overflow-x:auto;} .p3d-setting-table td:first-child{white-space:normal;}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important;}}
   </style>
 </head>
 <body>
@@ -489,13 +511,13 @@
     </div>
   </div>
 
-  <main id="main-content" class="p3d-shell">
+  <main id="main-content" tabindex="-1" class="p3d-shell">
 
     <!-- ══ HERO ══ -->
     <div class="p3d-hero">
       <div>
         <p class="p3d-hero-kicker">Fabrication · Lesson 03 · FDM &amp; Slicer Mastery</p>
-        <h1 class="p3d-hero-title">3D Printing<br>Settings, Rules &amp; Perfect Prints</h1>
+        <h1 class="p3d-hero-title">3D Printing<br>Predict, Slice &amp; Test</h1>
         <p class="p3d-hero-sub">Understand every slicer setting, why it matters, and how to choose the right combination for your scenario — from quick prototypes to strong functional parts to ultra-fine display models.</p>
       </div>
       <div class="p3d-hero-badges">
@@ -507,11 +529,20 @@
       </div>
     </div>
 
+<section class="p3d-card" aria-labelledby="mission-title">
+      <p class="p3d-label">Start here · 35–45 minute investigation</p>
+      <h2 id="mission-title">Make a decision you can defend</h2>
+      <p>Your team needs a lightweight prototype before the next class. Can you reduce printing time without losing the features you need? Predict a change, compare two settings, then explain the tradeoff.</p>
+      <ol class="p3d-rules"><li>Observe the walls, internal infill, and solid skins in the preview.</li><li>Save a baseline. Change just one setting and compare time and material.</li><li>Explain what this model cannot tell you, then plan a small physical test.</li></ol>
+      <div class="p3d-callout warn"><strong>Before a real print:</strong> ask the teacher to approve the printer profile and material. Keep hands clear of hot and moving parts; wait for cooling before removal. Use the room’s approved ventilation and emission controls, including for PLA. An enclosure alone does not establish safe air quality. Solvent smoothing and heat treatment are not student activities in this lesson.</div>
+      <nav aria-label="Lesson sections"><a href="#slicer-lab">Try the slicer lab</a> · <a href="#print-evidence">Sources and exit ticket</a></nav>
+    </section>
+
     <!-- ══ HOW FDM WORKS ══ -->
     <div class="p3d-card">
       <p class="p3d-label">01 — How FDM 3D Printing Works</p>
       <h2>Plastic, Heat &amp; Layers</h2>
-      <p>FDM (Fused Deposition Modelling) is the most common type of desktop 3D printing. A spool of plastic filament is fed through a heated nozzle called a <strong>hotend</strong>, which melts it and deposits it in precise paths on a build platform. The platform lowers by one layer height after each pass, and the process repeats until a full 3D object has been built up, one thin slice at a time.</p>
+      <p>FDM (Fused Deposition Modelling) is the most common type of desktop 3D printing. A spool of plastic filament is fed through a heated nozzle called a <strong>hotend</strong>, which melts it and deposits it in precise paths on a build platform. The nozzle and build platform move apart by one layer height after each layer, and the process repeats until a full 3D object has been built up, one thin slice at a time.</p>
       <p>A <strong>slicer</strong> is the software (Cura, PrusaSlicer, Bambu Studio, OrcaSlicer) that converts your 3D model file (STL/3MF) into the G-code instructions the printer follows. Every setting below lives inside the slicer — understanding them is what separates a print that works from one that fails.</p>
 
       <div class="p3d-grid p3d-flip-grid" id="p3d-vocab-grid">
@@ -597,16 +628,28 @@
     </div>
 
     <!-- ══ SLICER SIMULATOR ══ -->
-    <div class="p3d-sim">
+    <section class="p3d-sim" id="slicer-lab" aria-labelledby="lab-title">
       <p class="p3d-label" style="color:#ffb88c">02 — Interactive Slicer Simulator</p>
-      <h2>Adjust Settings — See the Effect Live</h2>
-      <p>Move the sliders to change key settings. The cross-section preview updates in real time to show layer count, infill pattern, wall count, and supports. The quality score and warnings update as you go.</p>
-      <p style="font-size:0.82rem; color:rgba(255,200,160,0.8); margin:-0.6rem 0 1rem; line-height:1.6;">Modeled on the classroom <strong style="color:#ffb88c">MakerBot SKETCH Large</strong> — the ranges below match its real limits: 220 × 200 × 250 mm enclosed build volume, fixed 0.4 mm nozzle, 100–400 micron layer resolution, 150 mm/s max feed rate, and a closed material system limited to PLA / Tough PLA.</p>
+      <h2 id="lab-title">Predict → Change One Setting → Compare</h2>
+      <p>These teaching models are 60 mm tall and use 0.4 mm extrusion width, four solid layers at each end, PLA density of 1.24 g/cm³, constant extrusion speed, and assumed travel overhead. It omits acceleration, heating, cooling delays, and actual toolpaths. Time and mass are comparisons, not printer forecasts; strength must be tested.</p>
+      <p>The classroom SKETCH Large has a 220 × 200 × 250 mm build volume and supports MakerBot PLA and Tough for SKETCH. Controls here explore generic FDM concepts, including support styles that may not exist in the classroom slicer. Use its approved profile for real printing.</p>
+      <div class="p3d-experiment">
+        <label for="lab-prediction">Predict: which setting will you change, and what should happen?</label>
+        <textarea id="lab-prediction" rows="2" placeholder="If I halve layer height, I expect…"></textarea>
+        <div class="p3d-lab-actions"><button type="button" id="save-baseline">Save baseline</button><button type="button" id="reset-lab">Reset lab</button></div>
+        <p id="lab-comparison" role="status">Save a baseline, then change one setting.</p>
+      </div>
 
       <div class="p3d-sim-layout">
         <!-- Controls -->
         <div class="p3d-controls">
 
+          <div class="p3d-control-row">
+            <label for="print-model">Teaching model</label>
+            <select id="print-model" aria-describedby="print-model-note"><option value="box">Straight box</option><option value="ledge">Cantilever ledge</option><option value="bridge">Bridge / doorway</option><option value="ramp">Gradual overhang</option></select>
+            <p id="print-model-note" style="color:#ffe3cb;font-size:.8rem;line-height:1.5"></p>
+            <button type="button" id="show-full-model">Show complete model</button>
+          </div>
           <!-- Core Material & Temp -->
           <div class="p3d-control-row">
             <label for="mat-select">Material</label>
@@ -617,7 +660,7 @@
               </select>
               <span aria-hidden="true" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: rgba(255,200,160,0.7); font-size: 0.7rem;">▼</span>
             </div>
-            <div style="font-size:0.66rem; color:rgba(255,200,160,0.5); margin-top:3px;">SKETCH Large's Smart Extruder+ only accepts these two — no open-material swaps.</div>
+            <div style="font-size:0.66rem; color:rgba(255,200,160,0.5); margin-top:3px;">Use the approved classroom material profile.</div>
           </div>
 
           <div class="p3d-control-row">
@@ -680,7 +723,7 @@
             <input type="range" id="spd-slider" min="10" max="150" step="10" value="50" />
             <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: rgba(255,200,160,0.5); margin-top: 2px;">
               <span>10</span>
-              <span>150 mm/s (SKETCH max)</span>
+              <span>150 mm/s (model)</span>
             </div>
           </div>
 
@@ -690,9 +733,11 @@
         <div>
           <div class="p3d-preview-wrap">
             <div style="position: absolute; top: 12px; right: 12px; z-index: 10;">
+              <button id="reset-print-view" type="button" class="p3d-btn secondary">Reset view</button>
               <button id="view-toggle" type="button" class="p3d-btn secondary" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:4px 8px; border-radius:6px; font-size:0.7rem; cursor:pointer;">3D View</button>
             </div>
-            <canvas id="p3d-canvas" width="500" height="320" aria-label="Cross-section preview of the 3D model with selected slicer settings"></canvas>
+            <canvas id="p3d-webgl" hidden tabindex="0" role="img" aria-label="3D print preview. Drag to orbit, scroll or pinch to zoom; arrow keys rotate." style="width:100%;height:360px;display:none"></canvas>
+            <canvas id="p3d-canvas" tabindex="0" width="500" height="320" aria-label="Schematic print preview. Use the 3D view button for orbit and zoom controls."></canvas>
             <div class="p3d-layer-slider-wrap">
               <label for="layer-slider">Layer View</label>
               <input type="range" id="layer-slider" min="1" max="300" value="150" />
@@ -706,9 +751,11 @@
             </div>
           </div>
 
+          <label style="display:flex;align-items:center;gap:.5rem;color:#ffe3cb;min-height:44px"><input id="print-cutaway" type="checkbox"> 3D cutaway: remove two walls to inspect the interior</label>
+          <p id="print-render-status" role="status" style="color:#ffe3cb;font-size:.8rem">2D preview ready; loading the 3D renderer.</p>
           <div class="p3d-stats">
             <div class="p3d-stat">
-              <div class="p3d-stat-label">Est. Print Time</div>
+              <div class="p3d-stat-label">Model Print Time</div>
               <div class="p3d-stat-val" id="stat-time">—<span class="p3d-stat-unit">min</span></div>
             </div>
             <div class="p3d-stat">
@@ -716,7 +763,7 @@
               <div class="p3d-stat-val" id="stat-layers">—</div>
             </div>
             <div class="p3d-stat">
-              <div class="p3d-stat-label">Filament Use</div>
+              <div class="p3d-stat-label">Model Filament Use</div>
               <div class="p3d-stat-val" id="stat-filament">—<span class="p3d-stat-unit">g</span></div>
             </div>
             <div class="p3d-stat">
@@ -726,12 +773,12 @@
           </div>
 
           <div class="p3d-quality-bar">
-            <span class="p3d-quality-label">Print Quality</span>
-            <div class="p3d-quality-track"><div id="p3d-quality-fill"></div></div>
+            <span class="p3d-quality-label">Surface detail tendency</span>
+            <div class="p3d-quality-track" aria-hidden="true"><div id="p3d-quality-fill"></div></div>
             <span id="p3d-quality-text"></span>
           </div>
 
-          <div id="p3d-warnings"></div>
+          <div id="p3d-warnings" role="status"></div>
 
           <div class="p3d-breakdown">
             <div class="p3d-breakdown-lbl">Est. Time Breakdown</div>
@@ -739,18 +786,19 @@
               <div class="p3d-breakdown-seg" id="seg-shell"  style="background:#ff6b35"></div>
               <div class="p3d-breakdown-seg" id="seg-infill" style="background:#ff9500"></div>
               <div class="p3d-breakdown-seg" id="seg-topbot" style="background:rgba(255,220,180,0.6)"></div>
+              <div class="p3d-breakdown-seg" id="seg-support" style="background:#64d5ef"></div>
               <div class="p3d-breakdown-seg" id="seg-travel" style="background:rgba(255,255,255,0.12)"></div>
             </div>
             <div class="p3d-breakdown-key">
               <span style="--c:#ff6b35">Shells</span>
               <span style="--c:#ff9500">Infill</span>
               <span style="--c:rgba(255,220,180,0.7)">Top/Bottom</span>
-              <span style="--c:rgba(255,255,255,0.2)">Travel</span>
+              <span style="--c:#64d5ef">Supports</span><span style="--c:rgba(255,255,255,0.2)">Travel</span>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
     <!-- ══ SETTINGS DEEP DIVE ══ -->
     <div class="p3d-card">
@@ -765,7 +813,7 @@
 </figure></div>
           <span class="p3d-icon">📏</span>
           <h3>Layer Height</h3>
-          <p>Controls how thick each slice is. <strong>Thinner layers</strong> (0.05–0.12 mm) = smoother surfaces, finer details, longer print time. <strong>Thicker layers</strong> (0.24–0.40 mm) = faster prints, stronger Z-adhesion, visible ridges. For most prints, <strong>0.2 mm</strong> is the best balance. A rule of thumb: layer height should be no more than 75% of the nozzle diameter.</p>
+          <p>Controls how thick each slice is. <strong>Thinner layers</strong> (0.05–0.12 mm) = smoother surfaces, finer details, longer print time. <strong>Thicker layers</strong> (0.24–0.40 mm) = faster prints, more visible ridges; bonding depends on the process. For most prints, <strong>0.2 mm</strong> is the best balance. A rule of thumb: layer height should be no more than 75% of the nozzle diameter.</p>
         </div>
         <div class="p3d-block">
           <div class="p3d-block-img-wrap"><figure data-zoomable>
@@ -774,7 +822,7 @@
 </figure></div>
           <span class="p3d-icon">🕸️</span>
           <h3>Infill Density &amp; Pattern</h3>
-          <p>Infill is the internal structure that fills the model. <strong>0%</strong> = hollow (vases, decorative). <strong>10–20%</strong> = light prints, enough for most decorative parts. <strong>40–60%</strong> = functional parts with moderate load. <strong>80–100%</strong> = maximum strength but wastes filament — walls often contribute more strength than infill beyond 60%. Common patterns: <em>Grid</em>, <em>Gyroid</em> (isotropic strength), <em>Lightning</em> (minimal but fast).</p>
+          <p>Infill is the internal structure that fills the model. <strong>0%</strong> = hollow (vases, decorative). <strong>10–20%</strong> = light prints, enough for most decorative parts. <strong>40–60%</strong> = functional parts with moderate load. <strong>80–100%</strong> = more material and time; useful when testing shows a need. Common patterns: <em>Grid</em>, <em>Gyroid</em> (connected 3D structure), <em>Lightning</em> (minimal but fast).</p>
         </div>
         <div class="p3d-block">
           <div class="p3d-block-img-wrap"><figure data-zoomable>
@@ -856,61 +904,109 @@
         <div class="p3d-rule-card">
           <span class="p3d-rule-num">Rule 01 · Bed &amp; First Layer</span>
           <p class="p3d-rule-title">First layer = everything</p>
-          <p class="p3d-rule-body">Level the bed, dial Z-offset so filament squishes slightly, and use a clean PEI or glass surface. A perfect first layer eliminates 80% of failure risk before a single wall is printed.</p>
+          <figure class="p3d-rule-figure" data-zoomable data-lightbox-group="printing-golden-rules">
+            <img src="../../assets/images/3d-printing/rules/01-rule-photo.jpg" alt="Printer nozzle above a red part on a transparent build plate" width="1600" height="1200" loading="lazy" decoding="async" />
+            <figcaption>A print underway on a transparent plate: the whole part depends on its contact with the bed. Inspect the first layer before allowing a long job to continue. <span class="p3d-rule-credit">Photo: Unknown authorUnknown author · <a href="https://commons.wikimedia.org/wiki/File:Machine-product-design-printer-3d-pressure-605267-pxhere.jpg" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0 public domain</a>.</span></figcaption>
+          </figure>
+          <p class="p3d-rule-body">Level the bed, dial Z-offset so filament squishes slightly, and use a clean PEI or glass surface. A sound first layer reduces detachment risk; it does not prevent every failure.</p>
         </div>
         <div class="p3d-rule-card">
           <span class="p3d-rule-num">Rule 02 · Material Prep</span>
           <p class="p3d-rule-title">Dry your filament</p>
-          <p class="p3d-rule-body">Wet filament pops, bubbles, and strings. Store in sealed containers with silica gel. PETG, Nylon, and TPU are highly hygroscopic — dry at 45–65 °C for 4–8 h before use.</p>
+          <figure class="p3d-rule-figure" data-zoomable data-lightbox-group="printing-golden-rules">
+            <img src="../../assets/images/3d-printing/rules/02-rule-photo.jpg" alt="Flashforge printer with pale printed objects after a filament change" width="1600" height="1025" loading="lazy" decoding="async" />
+            <figcaption>Material preparation starts before printing. This photograph shows a printer after a filament change; moisture cannot be diagnosed from its appearance. Store filament dry and follow its manufacturer’s drying instructions. <span class="p3d-rule-credit">Photo: Dennis Sylvester Hurd · <a href="https://commons.wikimedia.org/wiki/File:Changed_Filament.jpg" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0 public domain</a>.</span></figcaption>
+          </figure>
+          <p class="p3d-rule-body">Wet filament pops, bubbles, and strings. Store in sealed containers with silica gel. Moisture sensitivity varies by filament. Follow the filament manufacturer’s drying temperature and time, using approved equipment.</p>
         </div>
         <div class="p3d-rule-card">
           <span class="p3d-rule-num">Rule 03 · Orientation</span>
           <p class="p3d-rule-title">Orient for strength</p>
-          <p class="p3d-rule-body">FDM parts are weakest in the Z direction. Orient models so load runs along the XY layer plane. A rod printed lying flat is far stronger than one printed upright.</p>
+          <figure class="p3d-rule-figure" data-zoomable data-lightbox-group="printing-golden-rules">
+            <img src="../../assets/images/3d-printing/rules/03-rule-photo.jpg" alt="Dark printed parts with visible cracks between layers" width="1348" height="578" loading="lazy" decoding="async" />
+            <figcaption>These real prints show poor adhesion between layers. Orientation changes how a load reaches those bonds; test both orientation and bonding before trusting a functional part. <span class="p3d-rule-credit">Photo: A7N8X · <a href="https://commons.wikimedia.org/wiki/File:Stampa_3d,_difetto_adesione_tra_strati.jpg" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0 public domain</a>.</span></figcaption>
+          </figure>
+          <p class="p3d-rule-body">FDM parts are weakest in the Z direction. Orient models so load runs along the XY layer plane. A rod loaded in tension along its length often benefits from lying flat; test your intended load.</p>
         </div>
         <div class="p3d-rule-card">
           <span class="p3d-rule-num">Rule 04 · Support Strategy</span>
           <p class="p3d-rule-title">Rotate before adding supports</p>
+          <figure class="p3d-rule-figure" data-zoomable data-lightbox-group="printing-golden-rules">
+            <img src="../../assets/images/3d-printing/rules/04-rule-photo.jpg" alt="Separate white printed robotic gripper fingers and gears on a cutting mat" width="689" height="785" loading="lazy" decoding="async" />
+            <figcaption>A robotic gripper assembled from separate printed pieces. Before slicing each piece, look for a flat face that can rest on the bed and compare the overhangs in different orientations. <span class="p3d-rule-credit">Photo: Simiprof · <a href="https://commons.wikimedia.org/wiki/File:3D_printed_robotic_gripper.jpg" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0 public domain</a>.</span></figcaption>
+          </figure>
           <p class="p3d-rule-body">A 90° rotation can convert a complex overhang into a flat surface, eliminating supports entirely — which saves time and leaves a cleaner finish.</p>
         </div>
         <div class="p3d-rule-card">
           <span class="p3d-rule-num">Rule 05 · Calibration</span>
           <p class="p3d-rule-title">Calibrate before you create</p>
+          <figure class="p3d-rule-figure" data-zoomable data-lightbox-group="printing-golden-rules">
+            <img src="../../assets/images/3d-printing/rules/05-rule-photo.jpg" alt="Green and tan Benchy test boat held in a hand" width="1600" height="900" loading="lazy" decoding="async" />
+            <figcaption>A Benchy test boat combines small details, curved surfaces, and openings. Use a consistent test model to inspect print quality before committing to a larger job. <span class="p3d-rule-credit">Photo: CreativeTools: https://www.thingiverse.com/CreativeTools · <a href="https://commons.wikimedia.org/wiki/File:Dual-print_multi-part_color_3D_print_of_3DBenchy_v45.jpg" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0 public domain</a>.</span></figcaption>
+          </figure>
           <p class="p3d-rule-body">Run a temperature tower, retraction test, and flow calibration on every new spool. 20 minutes of calibration saves hours of wasted prints on long jobs.</p>
         </div>
         <div class="p3d-rule-card">
           <span class="p3d-rule-num">Rule 06 · Strength</span>
           <p class="p3d-rule-title">Walls beat infill for strength</p>
-          <p class="p3d-rule-body">Extra wall perimeters increase part strength more efficiently than raising infill density. 5 walls at 20% infill outperforms 3 walls at 80% infill for most load cases.</p>
+          <figure class="p3d-rule-figure" data-zoomable data-lightbox-group="printing-golden-rules">
+            <img src="../../assets/images/3d-printing/rules/06-rule-photo.jpg" alt="Open black printed part showing outer walls and sparse interior strands" width="1200" height="900" loading="lazy" decoding="async" />
+            <figcaption>This unfinished print exposes its walls and interior. Identify the continuous shell and the sparse interior, then compare physical samples under the load your design must carry. <span class="p3d-rule-credit">Photo: A7N8X · <a href="https://commons.wikimedia.org/wiki/File:Stampa_3d_riempimento_a_doppio_filo_e_stering_interno.jpg" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0 public domain</a>.</span></figcaption>
+          </figure>
+          <p class="p3d-rule-body">Extra wall perimeters increase part strength more efficiently than raising infill density. Compare walls and infill with a test piece loaded in the intended direction.</p>
         </div>
         <div class="p3d-rule-card">
           <span class="p3d-rule-num">Rule 07 · Bridging</span>
           <p class="p3d-rule-title">Test bridges before committing</p>
-          <p class="p3d-rule-body">FDM bridges cleanly up to ~60–80 mm with good cooling. Beyond that, use supports or redesign with a small arch. Print a bridge test before your final print.</p>
+          <figure class="p3d-rule-figure" data-zoomable data-lightbox-group="printing-golden-rules">
+            <img src="../../assets/images/3d-printing/rules/07-rule-photo.jpg" alt="Side view of a green and tan Benchy with open cabin windows" width="1600" height="900" loading="lazy" decoding="async" />
+            <figcaption>The Benchy cabin has openings beneath its roof. Spans need sound anchoring and suitable cooling; use a dedicated bridge test to establish your printer’s limits. <span class="p3d-rule-credit">Photo: CreativeTools: https://www.thingiverse.com/CreativeTools · <a href="https://commons.wikimedia.org/wiki/File:Dual-print_multi-part_color_3D_print_of_3DBenchy_v46.jpg" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0 public domain</a>.</span></figcaption>
+          </figure>
+          <p class="p3d-rule-body">Bridge capability varies with material, geometry, cooling, and speed. Use a short test before choosing supports or redesigning. Print a bridge test before your final print.</p>
         </div>
         <div class="p3d-rule-card">
           <span class="p3d-rule-num">Rule 08 · Troubleshooting</span>
           <p class="p3d-rule-title">Change one variable at a time</p>
+          <figure class="p3d-rule-figure" data-zoomable data-lightbox-group="printing-golden-rules">
+            <img src="../../assets/images/3d-printing/rules/08-rule-photo.jpg" alt="Black rectangular print with gaps and a rough under-extruded edge" width="1200" height="900" loading="lazy" decoding="async" />
+            <figcaption>A real example of under-extrusion. Several causes can produce similar symptoms: record the defect, change one setting or check one cause, and compare another test print. <span class="p3d-rule-credit">Photo: A7N8X · <a href="https://commons.wikimedia.org/wiki/File:Sottoestrusione.jpg" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0 public domain</a>.</span></figcaption>
+          </figure>
           <p class="p3d-rule-body">When debugging, only change one setting per test print. Changing temperature, speed, and retraction simultaneously makes it impossible to know what actually fixed it.</p>
         </div>
         <div class="p3d-rule-card">
           <span class="p3d-rule-num">Rule 09 · Monitoring</span>
           <p class="p3d-rule-title">Watch the first 3 layers live</p>
+          <figure class="p3d-rule-figure" data-zoomable data-lightbox-group="printing-golden-rules">
+            <img src="../../assets/images/3d-printing/rules/09-rule-photo.jpg" alt="3D printer with a blue printed character bust on its build plate" width="1205" height="1600" loading="lazy" decoding="async" />
+            <figcaption>Watch the actual printer as a job begins. Inspect bed contact and the first few layers; ask the teacher to stop a lifting or failing print before it wastes more material. <span class="p3d-rule-credit">Photo: MukhtaromST · <a href="https://commons.wikimedia.org/wiki/File:3D_Printing.jpg" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0 public domain</a>.</span></figcaption>
+          </figure>
           <p class="p3d-rule-body">Stay at the printer for the first 3 layers. If you see lifting, stringing, or the nozzle gouging the bed, stop immediately. Failures caught early cost minutes; left alone they cost hours.</p>
         </div>
         <div class="p3d-rule-card">
           <span class="p3d-rule-num">Rule 10 · Design</span>
           <p class="p3d-rule-title">Design for the process</p>
-          <p class="p3d-rule-body">Minimum wall: 1.2 mm. Holes &lt;2 mm need post-drilling. Add 0.2 mm tolerance to mating parts. Chamfer or fillet edges to reduce stress concentration at layer lines.</p>
+          <figure class="p3d-rule-figure" data-zoomable data-lightbox-group="printing-golden-rules">
+            <img src="../../assets/images/3d-printing/rules/10-rule-photo.jpg" alt="Caliper measuring the inside diameter of a copper tube" width="1600" height="1600" loading="lazy" decoding="async" />
+            <figcaption>The inside jaws of a caliper measure a bore—here, a copper tube. Apply the same measurement method to a printed fit coupon rather than assuming a CAD hole prints at its nominal size. <span class="p3d-rule-credit">Photo: Rhetos · <a href="https://commons.wikimedia.org/wiki/File:Messschieber_misst_Rohrinnendurchmesser.jpg" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0 public domain</a>.</span></figcaption>
+          </figure>
+          <p class="p3d-rule-body">Start with 1.2 mm walls for this 0.4 mm example. Small holes and mating parts need a fit coupon; try 0.2 mm clearance, then measure and adjust. Chamfer or fillet edges to reduce stress concentration at layer lines.</p>
         </div>
         <div class="p3d-rule-card">
           <span class="p3d-rule-num">Rule 11 · Post-Processing</span>
           <p class="p3d-rule-title">Post-process when it matters</p>
-          <p class="p3d-rule-body">Sand through 120→220→400 grit, prime, then paint. Anneal PLA at 65–70 °C for heat resistance. Acetone vapour smooths ABS to glossy. XTC-3D epoxy seals and strengthens.</p>
+          <figure class="p3d-rule-figure" data-zoomable data-lightbox-group="printing-golden-rules">
+            <img src="../../assets/images/3d-printing/rules/11-rule-photo.jpg" alt="Rotary sanding tool beside a dark 3D printed object and sanding dust" width="960" height="1280" loading="lazy" decoding="async" />
+            <figcaption>A printed object being sanded with a rotary tool. Finishing removes material and creates dust: use teacher-approved equipment and dust controls, then recheck important dimensions. <span class="p3d-rule-credit">Photo: Tanman21 · <a href="https://commons.wikimedia.org/wiki/File:3D_Print_Sanding.jpg" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0 public domain</a>.</span></figcaption>
+          </figure>
+          <p class="p3d-rule-body">Sand through 120→220→400 grit, prime, then paint. Heat treatment can distort parts. Solvents and coatings require separate trained-adult procedures; use teacher-approved finishing only.</p>
         </div>
         <div class="p3d-rule-card">
           <span class="p3d-rule-num">Rule 12 · Profiles</span>
           <p class="p3d-rule-title">Save every slicer profile</p>
+          <figure class="p3d-rule-figure" data-zoomable data-lightbox-group="printing-golden-rules">
+            <img src="../../assets/images/3d-printing/rules/12-rule-photo.jpg" alt="Ultimaker 2 printer and its yellow build plate at a workshop" width="960" height="766" loading="lazy" decoding="async" />
+            <figcaption>An Ultimaker 2 in a workshop. Save profiles for the exact printer, nozzle, and material you use; a successful profile for another machine is only a starting point. <span class="p3d-rule-credit">Photo: Linda Gottschalk · <a href="https://commons.wikimedia.org/wiki/File:Wikidata_Workshop_Ulm_2019_05.jpg" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0 public domain</a>.</span></figcaption>
+          </figure>
           <p class="p3d-rule-body">Label profiles clearly — e.g. "PLA Draft 0.3 mm Bambu P1S" or "PETG Functional 0.2 mm Fine". Slicer settings are too nuanced to recreate from memory.</p>
         </div>
       </div>
@@ -968,7 +1064,7 @@
             <tr><th>Setting</th><th>Value</th><th>Why</th></tr>
             <tr><td>Layer Height</td><td><span class="p3d-setting-val">0.20 mm</span></td><td>Good layer adhesion without excessive print time</td></tr>
             <tr><td>Infill</td><td><span class="p3d-setting-val">40–60%</span></td><td>Enough internal material to resist compression and impact</td></tr>
-            <tr><td>Walls</td><td><span class="p3d-setting-val">5–8</span></td><td>Walls carry most of the load — more walls = much stronger</td></tr>
+            <tr><td>Walls</td><td><span class="p3d-setting-val">5–8</span></td><td>Extra walls can help; test the intended load and orientation</td></tr>
             <tr><td>Infill Pattern</td><td><span class="p3d-setting-val">Gyroid or Cubic</span></td><td>Isotropic strength — resists load equally from all directions</td></tr>
             <tr><td>Print Speed</td><td><span class="p3d-setting-val">40–60 mm/s</span></td><td>Moderate speed maintains strong layer-to-layer bonding</td></tr>
             <tr><td>Top/Bottom Layers</td><td><span class="p3d-setting-val">5–6</span></td><td>Thick top/bottom caps prevent surface flexing under load</td></tr>
@@ -996,7 +1092,7 @@
           <h4>☀️ Outdoor / UV-Exposed Settings</h4>
           <table class="p3d-setting-table">
             <tr><th>Setting</th><th>Value</th><th>Why</th></tr>
-            <tr><td>Material</td><td><span class="p3d-setting-val">ASA or PETG</span></td><td>ASA = UV stable + weather resistant. PETG = moisture resistant. PLA degrades outdoors within months.</td></tr>
+            <tr><td>Material</td><td><span class="p3d-setting-val">ASA or PETG</span></td><td>ASA = UV stable + weather resistant. PETG = moisture resistant. Outdoor life depends on the specific formulation, heat, and exposure.</td></tr>
             <tr><td>Layer Height</td><td><span class="p3d-setting-val">0.20 mm</span></td><td>Standard balance; outdoor parts prioritise strength over fine detail</td></tr>
             <tr><td>Infill</td><td><span class="p3d-setting-val">30–50%</span></td><td>Outdoor parts may face wind, impact, or load-bearing use</td></tr>
             <tr><td>Walls</td><td><span class="p3d-setting-val">4–5</span></td><td>Thick walls reduce moisture ingress and improve UV resistance</td></tr>
@@ -1011,7 +1107,7 @@
           <h4>🏺 Vase / Hollow Container Settings</h4>
           <table class="p3d-setting-table">
             <tr><th>Setting</th><th>Value</th><th>Why</th></tr>
-            <tr><td>Mode</td><td><span class="p3d-setting-val">Spiralise / Vase Mode</span></td><td>One continuous spiral path — no seam, no stringing, perfectly smooth walls</td></tr>
+            <tr><td>Mode</td><td><span class="p3d-setting-val">Spiralise / Vase Mode</span></td><td>One continuous spiral path — reduces repeated layer seams; thin walls and watertightness need testing</td></tr>
             <tr><td>Layer Height</td><td><span class="p3d-setting-val">0.15–0.25 mm</span></td><td>Thinner layers = smoother; the spiral amplifies any layer-line texture</td></tr>
             <tr><td>Wall Width</td><td><span class="p3d-setting-val">0.6–1.2 mm</span></td><td>Wider than normal — single-wall prints need more width for strength</td></tr>
             <tr><td>Bottom Layers</td><td><span class="p3d-setting-val">3–5 solid layers</span></td><td>Solid base before the spiral begins so the vase can hold contents</td></tr>
@@ -1321,13 +1417,13 @@
       <h2>Quick Quiz</h2>
 
       <div class="p3d-quiz-block" id="pq1">
-        <p class="p3d-quiz-q">1. What is the maximum recommended layer height for a 0.4 mm nozzle?</p>
+        <p class="p3d-quiz-q">1. Using this lesson’s conservative 75% guideline, what layer height corresponds to a 0.4 mm nozzle?</p>
         <div class="p3d-quiz-options">
           <label class="p3d-quiz-opt"><input type="radio" name="pq1" value="a"> 0.10 mm</label>
           <label class="p3d-quiz-opt"><input type="radio" name="pq1" value="b"> 0.30 mm</label>
           <label class="p3d-quiz-opt"><input type="radio" name="pq1" value="c"> 0.60 mm</label>
         </div>
-        <p class="p3d-quiz-feedback"></p>
+        <p class="p3d-quiz-feedback" role="status"></p>
       </div>
 
       <div class="p3d-quiz-block" id="pq2">
@@ -1337,7 +1433,7 @@
           <label class="p3d-quiz-opt"><input type="radio" name="pq2" value="b"> Adding extra wall layers</label>
           <label class="p3d-quiz-opt"><input type="radio" name="pq2" value="c"> Slowing down the print speed</label>
         </div>
-        <p class="p3d-quiz-feedback"></p>
+        <p class="p3d-quiz-feedback" role="status"></p>
       </div>
 
       <div class="p3d-quiz-block" id="pq3">
@@ -1347,7 +1443,7 @@
           <label class="p3d-quiz-opt"><input type="radio" name="pq3" value="b"> TPU's flexibility causes it to buckle and jam in the feed path at high speed</label>
           <label class="p3d-quiz-opt"><input type="radio" name="pq3" value="c"> Fast speeds cause TPU to warp off the bed</label>
         </div>
-        <p class="p3d-quiz-feedback"></p>
+        <p class="p3d-quiz-feedback" role="status"></p>
       </div>
 
       <div class="p3d-quiz-block" id="pq4">
@@ -1357,7 +1453,7 @@
           <label class="p3d-quiz-opt"><input type="radio" name="pq4" value="b"> Molten plastic oozing from the nozzle during travel moves</label>
           <label class="p3d-quiz-opt"><input type="radio" name="pq4" value="c"> Print speed too slow</label>
         </div>
-        <p class="p3d-quiz-feedback"></p>
+        <p class="p3d-quiz-feedback" role="status"></p>
       </div>
 
       <div class="p3d-quiz-block" id="pq5">
@@ -1367,10 +1463,15 @@
           <label class="p3d-quiz-opt"><input type="radio" name="pq5" value="b"> TPU</label>
           <label class="p3d-quiz-opt"><input type="radio" name="pq5" value="c"> ASA</label>
         </div>
-        <p class="p3d-quiz-feedback"></p>
+        <p class="p3d-quiz-feedback" role="status"></p>
       </div>
     </div>
 
+    <section class="p3d-card" id="print-evidence" aria-labelledby="evidence-title">
+      <h2 id="evidence-title">Exit ticket: evidence before a full print</h2>
+      <p>Report your baseline, one changed setting, and the measured model difference. Which feature of your prototype could suffer? Describe a small test print, the load or fit you would test, and what result would convince you to keep the change.</p>
+      <details><summary>Sources and model limits</summary><p><a href="https://help.prusa3d.com/article/layers-and-perimeters_1748">Prusa: layers and perimeters</a> explains layer-height limits and the role of walls. Its roughly 80% ceiling differs from the conservative 75% guideline used here. Actual extrusion width can differ from nozzle diameter.</p><p><a href="https://www.makerbot.com/3d-printers/sketch-large/">MakerBot: SKETCH Large specifications</a> supports the build volume, nozzle, and classroom materials listed here. Generic scenario temperatures are starting examples, not SKETCH profiles.</p><p><a href="https://www.cdc.gov/niosh/docs/2024-103/default.html">NIOSH: safe 3D printing for schools and makerspaces</a> covers emission controls and operating practices.</p><p>The 3D preview samples at most 120 layer bands for clarity and uses schematic alternating infill paths. Supports are hypothetical examples beside the box, not generated toolpaths. The straight box and gradual-overhang examples have no generated external supports. The ledge and bridge examples place schematic support paths beneath their elevated surfaces; this is not an automatic support solver. Support estimates assume 20% volume for linear styles and 8% for tree styles. All support footprints reach the bed, so “everywhere” matches “normal” in these examples. Four top/bottom layers mean skin thickness changes with layer height. The surface indicator describes layer fineness only; it cannot predict strength, accuracy, or successful printing.</p></details>
+    </section>
     <!-- ══ FORGE CALLOUT ══ -->
     <div class="p3d-card" style="border-left: 5px solid #e8792a;">
       <p class="p3d-label">09 — Design &amp; Print in the Classroom</p>
@@ -1387,7 +1488,9 @@
   <!-- ══════════════════════════════════════════════════
        SLICER SIMULATOR
   ══════════════════════════════════════════════════ -->
-  <script>
+  <script src="../../assets/js/sim-kit.js"></script>
+  <script type="module">
+  import { modelFor, sections, isSkin, estimate } from "../../assets/js/lessons/3d-printing-models.mjs";
   (function () {
     var canvas  = document.getElementById('p3d-canvas');
     var ctx     = canvas.getContext('2d');
@@ -1421,6 +1524,7 @@
         tmp:   parseInt(tmpSlider.value),
         sup:   supSelect.value,
         mat:   matSelect.value,
+        model: document.getElementById('print-model').value,
       };
     }
 
@@ -1432,65 +1536,25 @@
       document.getElementById('tmp-val').textContent   = s.tmp + ' °C';
     }
 
-    /* ── Physics-derived model: 40×40×60 mm box equivalent ── */
-    function calcStats(s) {
-      var MODEL_H = 60, MODEL_SIDE = 40, NOZZLE = 0.4, TOP_BOT = 4;
-      var layers  = Math.round(MODEL_H / s.lh);
-      var perim   = 4 * MODEL_SIDE;                      // 160 mm
-      var area    = MODEL_SIDE * MODEL_SIDE;             // 1600 mm²
-
-      var solidLayers = Math.min(layers, TOP_BOT * 2);
-      var infillLayers = Math.max(0, layers - solidLayers);
-
-      // Extrusion lengths per layer
-      var shellExtLayer = perim * s.walls;
-      var innerArea = Math.max(0, area - perim * NOZZLE * s.walls);
-      var solidInnerExtLayer = innerArea / NOZZLE;
-      var infillExtLayer = solidInnerExtLayer * (s.inf / 100);
-
-      var shellTotal = shellExtLayer * layers;
-      var topBotTotal = solidInnerExtLayer * solidLayers;
-      var infillTotal = infillExtLayer * infillLayers;
-      var supportTotal = (s.sup !== 'none') ? (shellTotal + topBotTotal) * 0.15 : 0;
-
-      var extNoTravel = shellTotal + topBotTotal + infillTotal + supportTotal;
-      var extWithTrav = extNoTravel * 1.18;              // 18% travel overhead
-      if (s.sup !== 'none') extWithTrav *= 1.1;          // extra travel for supports
-
-      var timeMin   = Math.max(1, Math.round(extWithTrav / s.spd / 60));
-      // Filament mass: volume of extruded bead = ext × nozzle × lh; density PLA ~1.24 g/cm³
-      var filament  = Math.round(extNoTravel * NOZZLE * s.lh * 1.24 / 1000 * 10) / 10;
-      var wallMm    = (s.walls * NOZZLE).toFixed(1);
-
-      // Breakdown fractions for the bar
-      var tShell   = shellTotal / extWithTrav;
-      var tInfill  = infillTotal / extWithTrav;
-      var tTopBot  = topBotTotal / extWithTrav;
-      var tSupport = supportTotal / extWithTrav;
-      var tTravel  = 1 - tShell - tInfill - tTopBot - tSupport;
-
-      return { layers, wallMm, filament, timeMin, tShell, tInfill, tTopBot, tSupport, tTravel };
-    }
+    function calcStats(s) { return estimate(s); }
 
     function calcQuality(s) {
-      var q = 100;
-      q -= (s.lh - 0.10) / 0.30 * 38;           // coarser layers = lower quality
-      q -= Math.max(0, (s.spd - 60) / 90) * 22; // high speed = artefacts (scaled to 150 mm/s ceiling)
-      q += Math.min(s.walls - 2, 4) * 3;         // more walls = better
-      q += Math.min(s.inf / 100, 0.6) * 7;       // more infill = slightly better
-      return Math.max(0, Math.min(100, Math.round(q)));
+      return Math.round((0.40 - s.lh) / 0.30 * 100);
     }
 
     function calcWarnings(s) {
       var warns = [], m = MAT[s.mat];
-      if (s.tmp < m.tmp[0]) warns.push({ text:'⚠ Temp too low for ' + m.name + ' (min ' + m.tmp[0] + ' °C)', cls:'danger' });
-      if (s.tmp > m.tmp[1]) warns.push({ text:'⚠ Temp too high — may degrade or jam ' + m.name, cls:'danger' });
-      if (m.enclosure) warns.push({ text:'🏠 SKETCH Large\'s built-in enclosure keeps ' + m.name + ' from warping', cls:'ok' });
-      if (s.spd >= MAX_SPEED) warns.push({ text:'⚠ At the SKETCH Large\'s 150 mm/s ceiling — quality drops fast near max speed', cls:'' });
+      if (s.tmp < m.tmp[0]) warns.push({ text:'⚠ Below illustrative ' + m.name + ' range; check the approved profile', cls:'danger' });
+      if (s.tmp > m.tmp[1]) warns.push({ text:'⚠ Above illustrative ' + m.name + ' range; check the approved profile', cls:'danger' });
+
+      if (s.spd >= MAX_SPEED) warns.push({ text:'⚠ High model speed: check real printer flow and acceleration limits', cls:'' });
       if (s.lh > 0.30) warns.push({ text:'⚠ Layer height >0.30 mm — fine features may show gaps', cls:'' });
-      if (s.lh > 0.35) warns.push({ text:'⚠ Layer height >75% of nozzle — poor inter-layer adhesion risk', cls:'danger' });
-      if (s.inf === 0 && s.walls < 4) warns.push({ text:'⚠ 0% infill + <4 walls — top surface will sag through', cls:'danger' });
-      if (!warns.length) warns.push({ text:'✓ Settings look solid for ' + m.name, cls:'ok' });
+      if (s.lh > 0.30) warns.push({ text:'⚠ Layer height >75% of nozzle — poor inter-layer adhesion risk', cls:'danger' });
+      if (s.inf === 0) warns.push({ text:'⚠ No infill: the closed top must bridge the interior; extra walls do not guarantee success', cls:'danger' });
+      var model = modelFor(s.model);
+      if (model.risk && s.sup==='none') warns.push({text:model.risk==='bridge'?'⚠ Unsupported 24 mm bridge: test bridging before a full print':'⚠ Unsupported cantilever: the ledge begins with no material below',cls:model.risk==='bridge'?'':'danger'});
+      if (s.sup!=='none') warns.push({text:model.supports.length?'Supports placed beneath the elevated surface; inspect contact and removal in your slicer':'This model has no external support region; no supports generated',cls:'ok'});
+      if (!warns.length) warns.push({ text:'✓ No model flags; validate the real profile for ' + m.name, cls:'ok' });
       return warns;
     }
 
@@ -1528,9 +1592,9 @@
       var fill = document.getElementById('p3d-quality-fill');
       var text = document.getElementById('p3d-quality-text');
       var col  = q >= 75 ? '#34c759' : q >= 50 ? '#ff9500' : '#ff3b30';
-      var lbl  = q >= 80 ? 'Excellent' : q >= 65 ? 'Good' : q >= 45 ? 'Draft' : 'Rough';
+      var lbl = s.lh <= 0.15 ? 'Fine layers' : s.lh <= 0.25 ? 'Medium layers' : 'Coarse layers';
       fill.style.width = q + '%'; fill.style.background = col;
-      text.textContent = lbl + ' (' + q + '%)'; text.style.color = col;
+      text.textContent = lbl; text.style.color = col;
     }
 
     function updateWarnings(s) {
@@ -1540,299 +1604,40 @@
       }).join('');
     }
 
-  var is3DView = true;
-  var viewAngle = 0.5;
-  var elevAngle = 0.523; // 30°, matches the original fixed iso pitch
-  var isDragging = false;
-  var hasDragged = false;
-  var lastMouseX = 0, lastMouseY = 0;
-  var viewToggle = document.getElementById('view-toggle');
-  var canvasEl = document.getElementById('p3d-canvas');
-  if (viewToggle) viewToggle.textContent = '2D View';
-  if (canvasEl) canvasEl.style.cursor = 'grab';
-
-  if (viewToggle) {
-    viewToggle.addEventListener('click', function() {
-      is3DView = !is3DView;
-      viewToggle.textContent = is3DView ? '2D View' : '3D View';
-      if (canvasEl) canvasEl.style.cursor = is3DView ? 'grab' : 'default';
-      refresh();
-    });
-  }
-
-  if (canvasEl) {
-    canvasEl.addEventListener('mousedown', function(e) {
-      if (!is3DView) return;
-      isDragging = true; hasDragged = true;
-      lastMouseX = e.clientX; lastMouseY = e.clientY;
-      canvasEl.style.cursor = 'grabbing';
-    });
-    canvasEl.addEventListener('touchstart', function(e) {
-      if (!is3DView || !e.touches.length) return;
-      isDragging = true; hasDragged = true;
-      lastMouseX = e.touches[0].clientX; lastMouseY = e.touches[0].clientY;
-    }, { passive: true });
-    window.addEventListener('mousemove', function(e) {
-      if (!isDragging || !is3DView) return;
-      var dx = e.clientX - lastMouseX, dy = e.clientY - lastMouseY;
-      // Free 360° orbit — the renderer picks whichever two side faces are camera-facing each frame
-      viewAngle = viewAngle - dx * 0.012;
-      elevAngle = Math.max(0.12, Math.min(1.1, elevAngle - dy * 0.006));
-      lastMouseX = e.clientX; lastMouseY = e.clientY;
-      refresh();
-    });
-    window.addEventListener('touchmove', function(e) {
-      if (!isDragging || !is3DView || !e.touches.length) return;
-      var dx = e.touches[0].clientX - lastMouseX, dy = e.touches[0].clientY - lastMouseY;
-      viewAngle = viewAngle - dx * 0.012;
-      elevAngle = Math.max(0.12, Math.min(1.1, elevAngle - dy * 0.006));
-      lastMouseX = e.touches[0].clientX; lastMouseY = e.touches[0].clientY;
-      refresh();
-    }, { passive: true });
-    window.addEventListener('mouseup', function() {
-      if (isDragging && is3DView) canvasEl.style.cursor = 'grab';
-      isDragging = false;
-    });
-    window.addEventListener('touchend', function() { isDragging = false; });
-  }
-
-  function drawSim3D(s, layerIdx, totalLayers) {
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = '#0e0700';
-    ctx.fillRect(0, 0, W, H);
-
-    var cx = W / 2, cy = H * 0.72, scale = 3.5;
-    var cosE = Math.cos(elevAngle), sinE = Math.sin(elevAngle);
-    var isoX = function(x, y, z) {
-      var rx = x * Math.cos(viewAngle) - y * Math.sin(viewAngle);
-      var ry = x * Math.sin(viewAngle) + y * Math.cos(viewAngle);
-      return cx + (rx - ry) * cosE * scale;
-    };
-    var isoY = function(x, y, z) {
-      var rx = x * Math.cos(viewAngle) - y * Math.sin(viewAngle);
-      var ry = x * Math.sin(viewAngle) + y * Math.cos(viewAngle);
-      return cy + (rx + ry) * sinE * scale - z * scale;
-    };
-
-    function drawPoly(pts, fill, stroke) {
-      ctx.beginPath();
-      ctx.moveTo(isoX(pts[0][0], pts[0][1], pts[0][2]), isoY(pts[0][0], pts[0][1], pts[0][2]));
-      for (var j = 1; j < pts.length; j++) { ctx.lineTo(isoX(pts[j][0], pts[j][1], pts[j][2]), isoY(pts[j][0], pts[j][1], pts[j][2])); }
-      ctx.closePath();
-      if (fill) { ctx.fillStyle = fill; ctx.fill(); }
-      if (stroke) { ctx.lineWidth = 1; ctx.strokeStyle = stroke; ctx.stroke(); }
-    }
-
-    // which two of the four side faces are camera-facing at the current orbit angle —
-    // lets the box be rotated freely instead of clamped to one hardcoded pair of faces
-    function rotN(nx, ny) {
-      return { x: nx * Math.cos(viewAngle) - ny * Math.sin(viewAngle),
-               y: nx * Math.sin(viewAngle) + ny * Math.cos(viewAngle) };
-    }
-    var faceNS = rotN(0, -1).x + rotN(0, -1).y > 0 ? -1 : 1; // -1 = y=-bw face, 1 = y=+bw face
-    var faceEW = rotN(-1, 0).x + rotN(-1, 0).y > 0 ? -1 : 1; // -1 = x=-bw face, 1 = x=+bw face
-
-    drawPoly([[-40, -40, 0], [40, -40, 0], [40, 40, 0], [-40, 40, 0]], 'rgba(255,255,255,0.03)', 'rgba(255,255,255,0.15)');
-
-    var curH = layerIdx * s.lh;
-    if (curH > 0) {
-      var bw = 20;
-      var faceA = [[bw * faceEW, -bw, 0], [bw * faceEW, bw, 0], [bw * faceEW, bw, curH], [bw * faceEW, -bw, curH]];
-      var faceB = [[-bw, bw * faceNS, 0], [bw, bw * faceNS, 0], [bw, bw * faceNS, curH], [-bw, bw * faceNS, curH]];
-      drawPoly(faceA, 'rgba(200,80,40,0.92)', 'rgba(255,107,53,0.5)');
-      drawPoly(faceB, 'rgba(255,107,53,0.8)', 'rgba(255,107,53,0.5)');
-
-      // layer-line banding on both visible walls so it reads as printed layers, not a solid block
-      var bandStep = Math.max(s.lh, (curH / 90)); // thin out bands on tall/fine prints so lines don't smear
-      ctx.lineWidth = 1;
-      for (var lz = bandStep; lz < curH; lz += bandStep) {
-        ctx.strokeStyle = 'rgba(20,8,0,0.22)';
-        ctx.beginPath();
-        ctx.moveTo(isoX(bw * faceEW, -bw, lz), isoY(bw * faceEW, -bw, lz));
-        ctx.lineTo(isoX(bw * faceEW, bw, lz), isoY(bw * faceEW, bw, lz));
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(isoX(-bw, bw * faceNS, lz), isoY(-bw, bw * faceNS, lz));
-        ctx.lineTo(isoX(bw, bw * faceNS, lz), isoY(bw, bw * faceNS, lz));
-        ctx.stroke();
-      }
-
-      drawPoly([[-bw, -bw, curH], [bw, -bw, curH], [bw, bw, curH], [-bw, bw, curH]], 'rgba(255,107,53,1)', null);
-      var iw = bw - (s.walls * 0.4);
-      if (iw > 0) {
-        if ((layerIdx <= 4) || (layerIdx > totalLayers - 4)) {
-          drawPoly([[-iw, -iw, curH], [iw, -iw, curH], [iw, iw, curH], [-iw, iw, curH]], 'rgba(255,220,180,0.9)', null);
-        } else if (s.inf > 0) {
-          drawPoly([[-iw, -iw, curH], [iw, -iw, curH], [iw, iw, curH], [-iw, iw, curH]], 'rgba(20,10,0,0.8)', null);
-          ctx.strokeStyle = 'rgba(255,149,0,0.8)'; ctx.lineWidth = 1.5;
-          var spacing = Math.max(2, (100 / s.inf) * 2.5);
-          for (var lx = -iw; lx <= iw; lx += spacing) { ctx.beginPath(); ctx.moveTo(isoX(lx, -iw, curH), isoY(lx, -iw, curH)); ctx.lineTo(isoX(lx, iw, curH), isoY(lx, iw, curH)); ctx.stroke(); }
-          for (var ly = -iw; ly <= iw; ly += spacing) { ctx.beginPath(); ctx.moveTo(isoX(-iw, ly, curH), isoY(-iw, ly, curH)); ctx.lineTo(isoX(iw, ly, curH), isoY(iw, ly, curH)); ctx.stroke(); }
-        } else { drawPoly([[-iw, -iw, curH], [iw, -iw, curH], [iw, iw, curH], [-iw, iw, curH]], 'rgba(20,10,0,0.8)', null); }
-      }
-    }
-    if (s.sup !== 'none') {
-      var supH = Math.min(curH, totalLayers * s.lh * 0.7);
-      if (supH > 0) {
-         var sw = 8, sx = 28, sy = 0;
-         drawPoly([[sx-sw, sy-sw, 0], [sx-sw, sy+sw, 0], [sx-sw, sy+sw, supH], [sx-sw, sy-sw, supH]], 'rgba(0,200,255,0.2)', 'rgba(0,200,255,0.4)');
-         drawPoly([[sx-sw, sy+sw, 0], [sx+sw, sy+sw, 0], [sx+sw, sy+sw, supH], [sx-sw, sy+sw, supH]], 'rgba(0,200,255,0.15)', 'rgba(0,200,255,0.4)');
-         drawPoly([[sx-sw, sy-sw, supH], [sx+sw, sy-sw, supH], [sx+sw, sy+sw, supH], [sx-sw, sy+sw, supH]], 'rgba(0,200,255,0.3)', 'rgba(0,200,255,0.5)');
-      }
-    }
-
-    // drag hint, fades once the user has actually rotated the model
-    if (!hasDragged) {
-      ctx.fillStyle = 'rgba(255,200,160,0.55)';
-      ctx.font = '600 10.5px system-ui'; ctx.textAlign = 'center';
-      ctx.fillText('🖱 drag to orbit & tilt', W / 2, H - 10);
-    }
-  }
-
     /* ── Canvas cross-section renderer ── */
     function drawSim(s) {
-    var MODEL_H_MM = 60, TOP_BOT_LAYERS = 4;
-    var layers   = Math.round(MODEL_H_MM / s.lh);
-    
-    if (is3DView) {
-      drawSim3D(s, currentLayer, layers);
-      return;
-    }
-
-      ctx.clearRect(0, 0, W, H);
-      ctx.fillStyle = '#0e0700';
-      ctx.fillRect(0, 0, W, H);
-
-      var PAD = 34, ANNOT = 18;
-      var mX = PAD, mY = PAD + ANNOT;
-      var mW = Math.round(W * 0.56);
-      var mH = H - mY - PAD;
-
-      var layerPx  = mH / layers;
-      var NOZZLE_PX = 4; // px per nozzle-width wall
-
-      // Clamp: don't render more individual layers than 1px each
-      var renderLayers = Math.min(layers, mH);
-      var blockH       = mH / renderLayers;
-
-      for (var i = 0; i < renderLayers; i++) {
-        var layerIdx = Math.round((i / Math.max(1, renderLayers - 1)) * (layers - 1)) + 1; // 1-indexed actual layer
-        if (layerIdx > currentLayer) continue;
-
-        var y = mY + mH - (i + 1) * blockH;
-        var h = Math.max(blockH - 0.6, 0.4);
-        var isSolid = (layerIdx <= TOP_BOT_LAYERS) || (layerIdx > layers - TOP_BOT_LAYERS);
-
-        // — walls (left & right perimeters) —
-        for (var w = 0; w < s.walls; w++) {
-          var alpha = w === 0 ? 0.92 : 0.72 - w * 0.08;
-          ctx.fillStyle = 'rgba(255,' + Math.round(107 + w * 8) + ',53,' + alpha + ')';
-          ctx.fillRect(mX + w * NOZZLE_PX, y, NOZZLE_PX - 0.5, h);
-          ctx.fillRect(mX + mW - (w + 1) * NOZZLE_PX + 0.5, y, NOZZLE_PX - 0.5, h);
-        }
-
-        var infStart = mX + s.walls * NOZZLE_PX + 1;
-        var infEnd   = mX + mW - s.walls * NOZZLE_PX - 1;
-        var infW     = infEnd - infStart;
-        if (infW < 1) continue;
-
-        // — solid top / bottom layers —
-        if (isSolid) {
-          ctx.fillStyle = 'rgba(255,220,180,0.52)';
-          ctx.fillRect(infStart, y, infW, h);
-          continue;
-        }
-
-        // — infill —
-        if (s.inf >= 100) {
-          ctx.fillStyle = 'rgba(255,149,0,0.68)';
-          ctx.fillRect(infStart, y, infW, h);
-        } else if (s.inf > 0) {
-          var spacing = Math.max(2.5, Math.round((100 / s.inf) * 2.2));
-          if (layerIdx % 2 === 0) {
-            ctx.fillStyle = 'rgba(255,149,0,0.52)';
-            for (var xi = infStart; xi < infEnd; xi += spacing) {
-              ctx.fillRect(xi, y, 1.5, h);
-            }
-          } else {
-            ctx.fillStyle = 'rgba(255,196,0,0.32)';
-            ctx.fillRect(infStart, y, infW, Math.max(h * 0.45, 0.5));
-          }
-        }
+      ctx.clearRect(0,0,W,H);ctx.fillStyle='#0e0700';ctx.fillRect(0,0,W,H);
+      var scale=Math.min((W-64)/50,(H-64)/60),cx=W/2,base=H-30,wall=s.walls*0.4;
+      var step=Math.max(1,Math.ceil(60/s.lh/180));
+      for(var l=1;l<=currentLayer;l+=step){
+        var y=l*s.lh,ph=Math.min(step*s.lh,60-y+s.lh)*scale;
+        sections(s.model,y).forEach(function(r){
+          var left=cx+r[0]*scale,width=(r[1]-r[0])*scale,py=base-y*scale;
+          ctx.fillStyle='#e8792a';ctx.fillRect(left,py,width,Math.max(.5,ph));
+          var inner=Math.max(0,width-2*wall*scale);
+          ctx.fillStyle=isSkin(s.model,y,s.lh)?'#ffdbb5':'#21150a';ctx.fillRect(left+wall*scale,py,inner,Math.max(.5,ph-.3));
+          if(!isSkin(s.model,y,s.lh)&&s.inf>0){ctx.fillStyle='#ffb12b';var spacing=Math.max(2,0.4/(s.inf/100)*scale);for(var x=left+wall*scale;x<left+width-wall*scale;x+=spacing)ctx.fillRect(x,py,Math.min(1.5,spacing),Math.max(.5,ph-.3));}
+        });
       }
-
-      // — model outline —
-      ctx.strokeStyle = 'rgba(255,107,53,0.45)';
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(mX, mY, mW, mH);
-
-      // — supports panel —
-      if (s.sup !== 'none') {
-        var sX  = mX + mW + 18;
-        var sW  = W - sX - PAD + 4;
-        var sY  = mY + mH * 0.3;
-        var sH  = mH * 0.7;
-
-        ctx.fillStyle = 'rgba(0,200,255,0.06)';
-        ctx.fillRect(sX, sY, sW, sH);
-
-        ctx.strokeStyle = 'rgba(0,200,255,0.32)';
-        ctx.lineWidth = 1; ctx.setLineDash([]);
-        var sp = s.sup === 'tree' ? 9 : 5;
-        for (var sy = sY; sy < sY + sH; sy += sp) {
-          ctx.beginPath(); ctx.moveTo(sX, sy); ctx.lineTo(sX + sW, sy); ctx.stroke();
-        }
-        if (s.sup === 'tree') {
-          ctx.strokeStyle = 'rgba(0,200,255,0.6)'; ctx.lineWidth = 2;
-          var mid = sX + sW / 2, base = sY + sH;
-          ctx.beginPath();
-          ctx.moveTo(mid, base); ctx.lineTo(mid, sY + sH * 0.5);
-          ctx.lineTo(sX + sW * 0.18, sY);
-          ctx.moveTo(mid, sY + sH * 0.5); ctx.lineTo(sX + sW * 0.82, sY);
-          ctx.stroke();
-        }
-        ctx.fillStyle = 'rgba(0,200,255,0.55)';
-        ctx.font = '700 8px system-ui'; ctx.textAlign = 'center';
-        ctx.fillText(s.sup === 'tree' ? 'TREE' : 'SUP', sX + sW / 2, sY - 5);
-      }
-
-      // — dimension annotations —
-      ctx.fillStyle = 'rgba(255,200,160,0.65)';
-      ctx.font = '700 9.5px system-ui'; ctx.textAlign = 'left';
-      ctx.fillText('⬡ ' + s.lh.toFixed(2) + ' mm / layer', mX, mY - 6);
-      ctx.textAlign = 'right';
-      ctx.fillText(layers + ' layers  ·  ' + (s.walls * 0.4).toFixed(1) + ' mm walls', mX + mW, mY - 6);
-
-      // — layer-height callout bracket on right edge —
-      if (layerPx >= 3) {
-        var bY = mY + mH - Math.min(layerPx, 24);
-        ctx.strokeStyle = 'rgba(255,200,160,0.38)';
-        ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
-        ctx.beginPath();
-        ctx.moveTo(mX + mW + 4, bY);
-        ctx.lineTo(mX + mW + 12, bY);
-        ctx.moveTo(mX + mW + 4, mY + mH);
-        ctx.lineTo(mX + mW + 12, mY + mH);
-        ctx.moveTo(mX + mW + 8, bY);
-        ctx.lineTo(mX + mW + 8, mY + mH);
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
-
-      // — zone labels (right side of cross-section) —
-      ctx.fillStyle = 'rgba(255,107,53,0.55)';
-      ctx.font = '600 8px system-ui'; ctx.textAlign = 'left';
-      ctx.fillText('WALL', mX + 2, mY + mH * 0.5);
+      if(s.sup!=='none') modelFor(s.model).supports.forEach(function(r){
+        var h=Math.min(currentLayer*s.lh,r[4]);ctx.strokeStyle='#64d5ef';ctx.lineWidth=1.5;
+        if(s.sup==='tree'){var mid=cx+(r[0]+r[1])/2*scale;ctx.beginPath();ctx.moveTo(mid,base);ctx.lineTo(mid,base-h*.65*scale);ctx.lineTo(cx+(r[0]+2)*scale,base-h*scale);ctx.moveTo(mid,base-h*.65*scale);ctx.lineTo(cx+(r[1]-2)*scale,base-h*scale);ctx.stroke();}
+        else for(var x=r[0]+1;x<r[1];x+=2.5){ctx.beginPath();ctx.moveTo(cx+x*scale,base);ctx.lineTo(cx+x*scale,base-h*scale);ctx.stroke();}
+      });
+      ctx.fillStyle='#ffe3cb';ctx.font='600 12px system-ui';ctx.textAlign='left';ctx.fillText(modelFor(s.model).name+' · front section',12,20);
     }
 
     function refresh() {
       var s = getS();
       if (layerSlider) currentLayer = parseInt(layerSlider.value, 10);
+      document.getElementById("print-model-note").textContent=modelFor(s.model).note;
       updateLabels(s);
       updateStats(s);
       updateQuality(s);
       updateWarnings(s);
       drawSim(s);
+      compare(s);
+      document.dispatchEvent(new CustomEvent("print-preview-change", {detail:{...s,layer:currentLayer,layers:Math.round(60/s.lh)}}));
     }
 
     [lhSlider, infSlider, wallsSlider, spdSlider, tmpSlider, layerSlider].forEach(function(el) {
@@ -1842,6 +1647,21 @@
       el.addEventListener('change', refresh);
     });
 
+    document.getElementById('print-model').addEventListener('change',function(){layerSlider.value=Math.round(60/getS().lh);refresh();});
+    document.getElementById('show-full-model').addEventListener('click',function(){layerSlider.value=layerSlider.max;refresh();});
+    var baseline = null;
+    document.getElementById('save-baseline').addEventListener('click', function () { baseline = {settings:getS(), stats:calcStats(getS())}; refresh(); });
+    document.getElementById('reset-lab').addEventListener('click', function () {
+      [lhSlider, infSlider, wallsSlider, spdSlider, tmpSlider].forEach(function(el){el.value=el.defaultValue;});
+      supSelect.value='none'; matSelect.value='pla'; document.getElementById('print-model').value='box'; layerSlider.value=150; currentLayer=150;
+      baseline=null; document.dispatchEvent(new Event("print-preview-reset")); document.getElementById('lab-prediction').value=''; refresh();
+    });
+    function compare(s) {
+      if (!baseline) { document.getElementById('lab-comparison').textContent='Save a baseline, then change one setting.'; return; }
+      var st=calcStats(s), changes=Object.keys(s).filter(function(k){return s[k]!==baseline.settings[k];});
+      document.getElementById('lab-comparison').textContent=changes.length+' setting(s) changed. Time: '+baseline.stats.timeMin+' → '+st.timeMin+' min ('+(st.timeMin-baseline.stats.timeMin)+' min). Material: '+baseline.stats.filament+' → '+st.filament+' g ('+(st.filament-baseline.stats.filament).toFixed(1)+' g). '+(changes.length>1?'Change one variable to isolate its effect.':'Explain the tradeoff, then test a small real sample.');
+    }
+    SimKit.canvas2d(canvas,{height:320,onResize:function(c,w,h){W=w;H=h;refresh();}});
     refresh();
   })();
   </script>
@@ -1852,7 +1672,8 @@
   <script>
   (function () {
     document.querySelectorAll('.p3d-flip-card').forEach(function(card) {
-      function toggle() { card.classList.toggle('flipped'); }
+      card.setAttribute('aria-pressed','false');
+      function toggle() { card.classList.toggle('flipped'); card.setAttribute('aria-pressed',String(card.classList.contains('flipped'))); }
       card.addEventListener('click', toggle);
       card.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
@@ -1869,12 +1690,19 @@
     var tabs   = document.querySelectorAll('.p3d-tab');
     var panels = document.querySelectorAll('.p3d-tab-panel');
 
-    tabs.forEach(function (tab) {
+    tabs.forEach(function (tab,index) {
+      tab.id='scenario-'+tab.dataset.tab; tab.tabIndex=index===0?0:-1;
+      tab.setAttribute('aria-controls','panel-'+tab.dataset.tab);
+      var p=document.getElementById('panel-'+tab.dataset.tab); p.setAttribute('role','tabpanel'); p.setAttribute('aria-labelledby',tab.id);
+      tab.addEventListener('keydown',function(e){
+        var target=e.key==='Home'?0:e.key==='End'?tabs.length-1:e.key==='ArrowRight'?(index+1)%tabs.length:e.key==='ArrowLeft'?(index+tabs.length-1)%tabs.length:index;
+        if(['Home','End','ArrowRight','ArrowLeft','Enter',' '].includes(e.key)){e.preventDefault();tabs[target].click();tabs[target].focus();}
+      });
       tab.addEventListener('click', function () {
         var key = this.dataset.tab;
-        tabs.forEach(function (t) { t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
+        tabs.forEach(function (t) { t.classList.remove('active'); t.setAttribute('aria-selected','false'); t.tabIndex=-1; });
         panels.forEach(function (p) { p.classList.remove('active'); });
-        this.classList.add('active'); this.setAttribute('aria-selected','true');
+        this.classList.add('active'); this.setAttribute('aria-selected','true'); this.tabIndex=0;
         var panel = document.getElementById('panel-' + key);
         if (panel) panel.classList.add('active');
       });
@@ -1889,16 +1717,16 @@
   (function () {
     var ANS = { pq1:'b', pq2:'b', pq3:'b', pq4:'b', pq5:'c' };
     var EXP = {
-      pq1: { ok:'The 75% rule: max layer height = 0.75 × nozzle diameter. For a 0.4 mm nozzle that\'s 0.30 mm — beyond this, layers can\'t fuse reliably.',
+      pq1: { ok:'The 75% rule: max layer height = 0.75 × nozzle diameter. For a 0.4 mm nozzle that\'s 0.30 mm — this is a conservative guideline, not a universal machine limit.',
              bad:'Not quite — the rule is 75% of nozzle diameter. For 0.4 mm that\'s 0.30 mm, not 0.10 or 0.60 mm.' },
-      pq2: { ok:'Correct — wall perimeters carry the structural load in FDM. Going from 3 → 5 walls often doubles strength more effectively than tripling infill.',
-             bad:'Not quite — walls bear the load in FDM prints. Extra wall perimeters beat extra infill for strength in almost all real-world scenarios.' },
+      pq2: { ok:'Correct — wall perimeters carry the structural load in FDM. Extra walls can help; the result depends on geometry, orientation, and loading.',
+             bad:'Not quite — walls bear the load in FDM prints. Wall count is a useful starting point, but compare physical samples under the intended load.' },
       pq3: { ok:'Exactly — TPU\'s softness lets it buckle inside the Bowden tube or feeder path at high speed, jamming the extruder. Slow down to 20–35 mm/s.',
              bad:'Not quite — TPU needs slow speeds because its flexibility causes it to buckle and jam in the feed path, not because of temperature or warping.' },
       pq4: { ok:'Correct — stringing is ooze during travel moves. Increase retraction to pull plastic back before moving, reduce temperature, and enable combing.',
              bad:'Not quite — stringing is molten plastic oozing during travel moves. Fix: increase retraction distance/speed and reduce nozzle temperature.' },
-      pq5: { ok:'Correct — ASA is UV-stabilised and weatherproof. PLA becomes brittle in weeks outdoors; PETG absorbs moisture but doesn\'t handle UV as well as ASA.',
-             bad:'Not quite — ASA is the correct choice. PLA degrades in UV within months and warps in heat. TPU isn\'t UV-rated. ASA is engineered for outdoor use.' },
+      pq5: { ok:'Correct — ASA is UV-stabilised and weatherproof. Outdoor life depends on the formulation and exposure; verify the material datasheet.',
+             bad:'Not quite — ASA is the correct choice. Check UV and heat ratings for each specific filament. ASA is engineered for outdoor use.' },
     };
 
     document.querySelectorAll('.p3d-quiz-block').forEach(function (block) {
@@ -1907,8 +1735,8 @@
       var opts = block.querySelectorAll('.p3d-quiz-opt');
 
       opts.forEach(function (opt) {
-        opt.addEventListener('click', function () {
-          if (block.dataset.answered) return;
+        opt.querySelector('input').addEventListener('change', function () {
+          opts.forEach(function(o){o.classList.remove("correct","wrong");});
           block.dataset.answered = '1';
           block.classList.add('answered');
 
@@ -1943,17 +1771,17 @@
   <script>
   document.getElementById('cheat-sheet-btn').addEventListener('click', function () {
     var rules = [
-      'Rule 01 · First layer = everything — Level the bed, dial Z-offset, use a clean PEI or glass surface. A perfect first layer eliminates 80% of failure risk.',
-      'Rule 02 · Dry your filament — Store in sealed containers with silica gel. Dry PETG/Nylon/TPU at 45–65 °C for 4–8 h before printing.',
-      'Rule 03 · Orient for strength — Load should run along XY layer plane. A rod lying flat is far stronger than one printed upright.',
+      'Rule 01 · First layer = everything — Level the bed, dial Z-offset, use a clean PEI or glass surface. A sound first layer reduces detachment risk.',
+      'Rule 02 · Dry your filament — Store in sealed containers with silica gel. Follow the filament maker’s drying temperature and time; use approved drying equipment.',
+      'Rule 03 · Orient for strength — Load should run along XY layer plane. Test orientation under the intended load.',
       'Rule 04 · Rotate before adding supports — A 90° rotation can eliminate all supports, saving time and leaving a cleaner finish.',
       'Rule 05 · Calibrate before you create — Temperature tower + retraction test + flow cal on every new spool. 20 min calibration saves hours.',
-      'Rule 06 · Walls beat infill for strength — 5 walls at 20% infill outperforms 3 walls at 80% infill in most load cases.',
-      'Rule 07 · Test bridges before committing — FDM bridges cleanly up to ~60–80 mm. Beyond that, use supports or add an arch.',
+      'Rule 06 · Walls beat infill for strength — Compare walls and infill using a physical test in the intended load direction.',
+      'Rule 07 · Test bridges before committing — Bridge capability varies; test your printer before choosing supports or an arch.',
       'Rule 08 · Change one variable at a time — Never change temp, speed, AND retraction simultaneously. You won\'t know what fixed it.',
       'Rule 09 · Watch the first 3 layers live — Failures caught in layer 1–3 cost minutes. Left alone they cost hours of wasted filament.',
-      'Rule 10 · Design for the process — Min wall: 1.2 mm. Holes <2 mm: drill post-print. Tolerance on mating parts: +0.2 mm. Chamfer edges.',
-      'Rule 11 · Post-process when it matters — Sand 120→220→400 grit + filler primer. Anneal PLA at 65–70 °C. Acetone smooths ABS.',
+      'Rule 10 · Design for the process — Start with 1.2 mm walls; test small holes and mating-part clearance with a coupon. Chamfer edges.',
+      'Rule 11 · Post-process when it matters — Sand 120→220→400 grit + filler primer. Use teacher-approved finishing only; heat and solvents need separate adult procedures.',
       'Rule 12 · Save every slicer profile — Label clearly: "PLA Draft 0.3mm" or "PETG Functional 0.2mm Fine". Never rely on memory.',
     ];
 
@@ -1984,6 +1812,7 @@
   });
   </script>
 
+  <script type="module" src="../../assets/js/lessons/3d-printing-preview.mjs"></script>
   <script src="../../assets/js/classroom-animations.js"></script>
 <script src="../../assets/js/lesson-print-button.js"></script>
 <script src="../../assets/js/photo-lightbox.js"></script>

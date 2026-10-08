@@ -3,36 +3,1113 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="robots" content="noindex" />
-  <title>Land, Water &amp; Sky · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Explore Earth's Four Spheres: Geosphere, Hydrosphere, Atmosphere, and Biosphere. Layered planetary cross-section explorer, 16-item sphere sorter, and cascading Earth system feedback simulator." />
+  <title>Land, Water &amp; Sky: Earth's Four Spheres · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
-  <meta name="description" content="Earth Science Lesson — explore Land, Water & Sky." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
-<script src="../../assets/js/vr-mode.js" defer></script>
+  <style>
+    :root {
+      --geo-color: #92400e;
+      --hydro-color: #0284c7;
+      --atmo-color: #6366f1;
+      --bio-color: #16a34a;
+      --surface-glass: rgba(255, 255, 255, 0.9);
+    }
+
+    .lws-page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: clamp(1rem, 3vw, 2.5rem);
+      color: var(--text, #1e293b);
+    }
+
+    .lws-hero {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(2rem, 4vw, 3.5rem);
+      border-radius: 24px;
+      background: linear-gradient(135deg, #042f2e 0%, #064e3b 35%, #075985 70%, #1e1b4b 100%);
+      color: #fff;
+      margin-bottom: 2rem;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.25);
+    }
+
+    .lws-hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: 0.76rem;
+      font-weight: 800;
+      color: #6ee7b7;
+      margin-bottom: 0.75rem;
+    }
+
+    .lws-hero h1 {
+      font: 700 clamp(2.2rem, 4.5vw, 3.8rem)/1.05 'Fraunces', Georgia, serif;
+      margin: 0 0 1rem;
+      color: #fff;
+    }
+
+    .lws-hero-lede {
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      line-height: 1.6;
+      max-width: 780px;
+      color: #a7f3d0;
+      margin: 0 0 1.5rem;
+    }
+
+    .lws-nav-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .lws-nav-pills a {
+      display: inline-block;
+      padding: 0.45rem 0.9rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #fff;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.18s, transform 0.18s;
+    }
+
+    .lws-nav-pills a:hover {
+      background: rgba(255, 255, 255, 0.24);
+      transform: translateY(-2px);
+    }
+
+    .lws-section {
+      background: var(--surface-1, #ffffff);
+      border: 1px solid var(--border-subtle, #e2e8f0);
+      border-radius: 20px;
+      padding: clamp(1.2rem, 3vw, 2.2rem);
+      margin-bottom: 2rem;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .lws-section-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .lws-badge {
+      display: inline-block;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      background: #ccfbf1;
+      color: #0f766e;
+      margin-bottom: 0.5rem;
+    }
+
+    .lws-section-header h2 {
+      font: 700 clamp(1.5rem, 2.8vw, 2.1rem)/1.2 'Fraunces', Georgia, serif;
+      margin: 0 0 0.5rem;
+      color: var(--text-strong, #0f172a);
+    }
+
+    .lws-section-header p {
+      font-size: 1rem;
+      color: var(--text-muted, #64748b);
+      margin: 0;
+      max-width: 820px;
+      line-height: 1.55;
+    }
+
+    .lws-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .lws-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+
+    /* Sphere Overview Cards */
+    .sphere-card {
+      border-radius: 16px;
+      padding: 1.25rem;
+      border: 1px solid var(--border-subtle, #e2e8f0);
+      background: var(--surface-2, #f8fafc);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .sphere-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+    }
+
+    .sphere-icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    /* Sphere Explorer */
+    .explorer-box {
+      background: #090d16;
+      border: 1px solid #1e293b;
+      border-radius: 18px;
+      padding: 1.5rem;
+      color: #f8fafc;
+    }
+
+    .sphere-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .sphere-tab {
+      padding: 0.55rem 1rem;
+      border-radius: 999px;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: #cbd5e1;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .sphere-tab[aria-selected="true"] {
+      color: #fff;
+    }
+
+    .sphere-tab[data-s="geo"][aria-selected="true"] { background: var(--geo-color); border-color: var(--geo-color); }
+    .sphere-tab[data-s="hydro"][aria-selected="true"] { background: var(--hydro-color); border-color: var(--hydro-color); }
+    .sphere-tab[data-s="atmo"][aria-selected="true"] { background: var(--atmo-color); border-color: var(--atmo-color); }
+    .sphere-tab[data-s="bio"][aria-selected="true"] { background: var(--bio-color); border-color: var(--bio-color); }
+
+    .explorer-stage {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    #cutawayCanvas {
+      width: 100%;
+      height: 320px;
+      background: #030712;
+      border-radius: 14px;
+      border: 1px solid #1e293b;
+      display: block;
+    }
+
+    .explorer-meta {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 1.25rem;
+    }
+
+    .explorer-meta h3 {
+      margin: 0 0 0.5rem;
+      font-size: 1.35rem;
+    }
+
+    /* Sorter Lab */
+    .sorter-stage {
+      background: var(--surface-2, #f8fafc);
+      border: 1px solid var(--border-subtle, #e2e8f0);
+      border-radius: 16px;
+      padding: 1.5rem;
+    }
+
+    .sorter-targets {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .sorter-bucket {
+      background: #fff;
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 1rem 0.6rem;
+      text-align: center;
+      min-height: 140px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .sorter-bucket h4 {
+      margin: 0 0 0.35rem;
+      font-size: 0.92rem;
+    }
+
+    .bucket-geo { border-color: rgba(146, 64, 14, 0.4); }
+    .bucket-hydro { border-color: rgba(2, 132, 199, 0.4); }
+    .bucket-atmo { border-color: rgba(99, 102, 241, 0.4); }
+    .bucket-bio { border-color: rgba(22, 163, 74, 0.4); }
+
+    .sorter-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      min-height: 90px;
+      padding: 1rem;
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle, #e2e8f0);
+    }
+
+    .drag-chip {
+      padding: 0.5rem 0.85rem;
+      border-radius: 999px;
+      background: var(--surface-2, #f1f5f9);
+      border: 1px solid #cbd5e1;
+      font-size: 0.84rem;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.18s;
+    }
+
+    .drag-chip:hover {
+      background: #e2e8f0;
+      transform: translateY(-2px);
+    }
+
+    .drag-chip.is-selected {
+      background: #fef08a;
+      border-color: #ca8a04;
+      box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.3);
+    }
+
+    /* Feedback Chain Simulator */
+    .chain-box {
+      background: #0f172a;
+      border-radius: 16px;
+      border: 1px solid #334155;
+      padding: 1.5rem;
+      color: #f8fafc;
+    }
+
+    .chain-scenarios {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .chain-btn {
+      padding: 0.55rem 0.95rem;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: #cbd5e1;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+
+    .chain-btn.is-active {
+      background: #0284c7;
+      border-color: #38bdf8;
+      color: #fff;
+    }
+
+    .domino-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .domino-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 1rem;
+      position: relative;
+    }
+
+    .domino-sphere-badge {
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      display: inline-block;
+      margin-bottom: 0.5rem;
+    }
+
+    .domino-card h4 {
+      margin: 0 0 0.35rem;
+      font-size: 0.95rem;
+      color: #f8fafc;
+    }
+
+    .domino-card p {
+      margin: 0;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      color: #94a3b8;
+    }
+
+    /* Quiz card */
+    .quiz-card {
+      background: #fff;
+      border: 1px solid var(--border-subtle, #e2e8f0);
+      border-radius: 16px;
+      padding: 1.5rem;
+    }
+
+    .quiz-opt {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 0.75rem 1rem;
+      margin-bottom: 0.5rem;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle, #e2e8f0);
+      background: var(--surface-1, #fff);
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .quiz-opt:hover {
+      background: #f1f5f9;
+    }
+
+    .quiz-opt.correct {
+      background: #dcfce7 !important;
+      border-color: #22c55e !important;
+      color: #15803d !important;
+    }
+
+    .quiz-opt.incorrect {
+      background: #fee2e2 !important;
+      border-color: #ef4444 !important;
+      color: #b91c1c !important;
+    }
+
+    @media (max-width: 768px) {
+      .explorer-stage {
+        grid-template-columns: 1fr;
+      }
+      .sorter-targets {
+        grid-template-columns: 1fr 1fr;
+      }
+      .domino-steps {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+  <script src="../../assets/js/vr-mode.js" defer></script>
 </head>
 <body>
   <div class="ll-viewport">
-    <div class="cl-page">
-      <div class="cl-hero">
-        <h1>Land, Water &amp; Sky</h1>
-        <p class="cl-lede">Foundational STEAM lesson for Land, Water &amp; Sky.</p>
+    
+    <!-- Top Navigation Bar -->
+    <nav class="ll-topbar" aria-label="Lesson navigation">
+      <div class="nav-wrap">
+        <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../../index.html">← Classroom Home</a></li>
+            <li><a href="../../steam-lessons.html">Earth Science</a></li>
+            <li><a href="rocks-and-soil.html">Rocks &amp; Soil</a></li>
+            <li><a href="water-cycle.html">Water Cycle</a></li>
+            <li><a href="weather-watch.html">Weather Watch</a></li>
+            <li><a href="ocean-zones.html">Ocean Zones</a></li>
+          </ul>
+        </nav>
       </div>
+    </nav>
 
-      <div class="cl-card">
-        <h2>Overview</h2>
-        <p>Earth is a dynamic system composed of four interacting spheres: the <strong>geosphere</strong> (land and rocky crust), the <strong>hydrosphere</strong> (oceans, ice caps, and freshwater rivers), the <strong>atmosphere</strong> (the protective envelope of air), and the <strong>biosphere</strong> (all living organisms).</p>
-        <figure data-zoomable>
-          <img src="../../assets/images/earth-blue-marble-nasa.jpg" width="1000" height="1000" alt="NASA Blue Marble photograph showing Earth's integrated systems: continental landmasses, vibrant blue oceans, and swirling atmospheric cloud systems." loading="lazy" decoding="async" />
-          <figcaption><strong>Earth's interconnected systems: Land, Water, and Sky.</strong> Photographed from space by the Apollo 17 crew, this iconic Blue Marble view captures how the oceans, atmosphere, and continents continuously exchange water, heat, and nutrients to sustain a living world. Credit: NASA / Apollo 17.</figcaption>
-        </figure>
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main class="lws-page">
+
+          <!-- HERO HEADER -->
+          <header class="lws-hero">
+            <span class="lws-hero-eyebrow">
+              <span>🌍</span> Earth Systems Science · Integrated Spheres
+            </span>
+            <h1>Land, Water &amp; Sky: Earth's Four Spheres</h1>
+            <p class="lws-hero-lede">
+              Earth is not a collection of isolated parts. It is a single, self-regulating planetary heat engine where solid ground (Geosphere), liquid waters (Hydrosphere), the gaseous envelope (Atmosphere), and all living beings (Biosphere) continuously exchange matter, heat, and life.
+            </p>
+            <div class="lws-nav-pills" role="navigation" aria-label="Lesson sections">
+              <a href="#overview">1 · The Integrated Planet</a>
+              <a href="#cutaway">2 · Layered Sphere Explorer</a>
+              <a href="#sorter">3 · Interactive Sphere Sorter</a>
+              <a href="#dominos">4 · System Feedback Dominoes</a>
+              <a href="#systems-quiz">5 · Systems Thinking Challenge</a>
+            </div>
+          </header>
+
+          <!-- SECTION 1: THE INTEGRATED PLANET -->
+          <section id="overview" class="rs-section" aria-labelledby="overview-title">
+            <div class="rs-section-header">
+              <span class="lws-badge">Global Perspective</span>
+              <h2 id="overview-title">1 · The Living Blue Marble</h2>
+              <p>When Apollo 17 astronauts photographed Earth in 1972, humanity saw our world for the first time as a complete, unified system. The swirling white clouds (atmosphere) float over deep sapphire oceans (hydrosphere) and brown-green continents (geosphere and biosphere).</p>
+            </div>
+
+            <figure data-zoomable>
+              <img src="../../assets/images/earth-blue-marble-nasa.jpg" width="1000" height="1000" alt="NASA Apollo 17 Blue Marble photograph showing Earth's integrated systems: continental landmasses, vibrant blue oceans, and swirling atmospheric cloud systems." loading="lazy" decoding="async" />
+              <figcaption>
+                <strong>Earth's interconnected systems: Land, Water, and Sky.</strong> Photographed from space by the Apollo 17 crew on December 7, 1972, this iconic Blue Marble view reveals how the oceans, atmosphere, and continents continuously exchange water, heat, and nutrients to sustain a living world. Credit: NASA / Apollo 17.
+              </figcaption>
+            </figure>
+
+            <div class="lws-grid-4" style="margin-top: 1.5rem;">
+              <div class="sphere-card" style="border-top: 4px solid var(--geo-color);">
+                <div class="sphere-icon">⛰️</div>
+                <h3 style="margin:0 0 0.25rem; color:var(--geo-color); font-size:1.15rem;">Geosphere (Land)</h3>
+                <p style="font-size:0.85rem; line-height:1.5; color:var(--text-muted); margin:0;">
+                  The rocky crust, convective silicate mantle, and molten/solid metallic core. Extends 6,371 km from the surface to the center of Earth.
+                </p>
+              </div>
+
+              <div class="sphere-card" style="border-top: 4px solid var(--hydro-color);">
+                <div class="sphere-icon">🌊</div>
+                <h3 style="margin:0 0 0.25rem; color:var(--hydro-color); font-size:1.15rem;">Hydrosphere (Water)</h3>
+                <p style="font-size:0.85rem; line-height:1.5; color:var(--text-muted); margin:0;">
+                  Over 1.38 billion km³ of water. 97% fills ocean basins; 2% locked in glacial ice sheets (cryosphere); 1% in rivers, lakes, and subterranean aquifers.
+                </p>
+              </div>
+
+              <div class="sphere-card" style="border-top: 4px solid var(--atmo-color);">
+                <div class="sphere-icon">☁️</div>
+                <h3 style="margin:0 0 0.25rem; color:var(--atmo-color); font-size:1.15rem;">Atmosphere (Sky)</h3>
+                <p style="font-size:0.85rem; line-height:1.5; color:var(--text-muted); margin:0;">
+                  A protective gaseous blanket of 78% Nitrogen, 21% Oxygen, and trace greenhouse gases regulating surface temperature and shielding harmful radiation.
+                </p>
+              </div>
+
+              <div class="sphere-card" style="border-top: 4px solid var(--bio-color);">
+                <div class="sphere-icon">🌿</div>
+                <h3 style="margin:0 0 0.25rem; color:var(--bio-color); font-size:1.15rem;">Biosphere (Life)</h3>
+                <p style="font-size:0.85rem; line-height:1.5; color:var(--text-muted); margin:0;">
+                  All living organisms from oceanic hadal microbes 11 km deep to high-flying raptors. Life acts as a profound chemical shaper of all other spheres.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- SECTION 2: LAYERED SPHERE EXPLORER -->
+          <section id="cutaway" class="rs-section" aria-labelledby="cutaway-title">
+            <div class="rs-section-header">
+              <span class="lws-badge">Planetary Structure</span>
+              <h2 id="cutaway-title">2 · Planetary Spheres Cross-Section Explorer</h2>
+              <p>Explore the vertical dimensions of Earth's four spheres. Click any sphere tab to inspect its depth, mass, primary chemical elements, and thermal profile.</p>
+            </div>
+
+            <div class="explorer-box">
+              <div class="sphere-tabs" role="tablist" aria-label="Select sphere">
+                <button type="button" class="sphere-tab" role="tab" aria-selected="true" data-s="geo">Geosphere (Crust to Core)</button>
+                <button type="button" class="sphere-tab" role="tab" aria-selected="false" data-s="hydro">Hydrosphere &amp; Cryosphere</button>
+                <button type="button" class="sphere-tab" role="tab" aria-selected="false" data-s="atmo">Atmosphere (Thermal Layers)</button>
+                <button type="button" class="sphere-tab" role="tab" aria-selected="false" data-s="bio">Biosphere (Critical Zone)</button>
+              </div>
+
+              <div class="explorer-stage">
+                <canvas id="cutawayCanvas"></canvas>
+
+                <div class="explorer-meta" id="explorerMeta">
+                  <h3 id="metaTitle" style="color:#f59e0b;">Geosphere: The Solid Earth</h3>
+                  <p id="metaDesc" style="font-size:0.9rem; line-height:1.5; color:#cbd5e1;">
+                    The geosphere comprises the entire solid Earth, from surface soils and oceanic crust down to the incandescent iron-nickel core at 6,371 km depth. Plate tectonics in the upper mantle continuously recreates continents and ocean floors.
+                  </p>
+
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-top:1rem;">
+                    <div style="background:rgba(0,0,0,0.3); padding:0.6rem 0.8rem; border-radius:8px;">
+                      <span style="font-size:0.7rem; color:#94a3b8; text-transform:uppercase;">Estimated Mass</span>
+                      <b id="metaMass" style="display:block; font-size:1.05rem; font-family:'JetBrains Mono',monospace;">5.97 × 10²⁴ kg</b>
+                    </div>
+                    <div style="background:rgba(0,0,0,0.3); padding:0.6rem 0.8rem; border-radius:8px;">
+                      <span style="font-size:0.7rem; color:#94a3b8; text-transform:uppercase;">Dominant Elements</span>
+                      <b id="metaElem" style="display:block; font-size:1.05rem; font-family:'JetBrains Mono',monospace;">Iron, Oxygen, Silicon</b>
+                    </div>
+                    <div style="background:rgba(0,0,0,0.3); padding:0.6rem 0.8rem; border-radius:8px;">
+                      <span style="font-size:0.7rem; color:#94a3b8; text-transform:uppercase;">Vertical Extent</span>
+                      <b id="metaDepth" style="display:block; font-size:1.05rem; font-family:'JetBrains Mono',monospace;">0 to 6,371 km</b>
+                    </div>
+                    <div style="background:rgba(0,0,0,0.3); padding:0.6rem 0.8rem; border-radius:8px;">
+                      <span style="font-size:0.7rem; color:#94a3b8; text-transform:uppercase;">Dynamic Process</span>
+                      <b id="metaProcess" style="display:block; font-size:1.05rem; font-family:'JetBrains Mono',monospace;">Mantle Convection &amp; Drift</b>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- SECTION 3: INTERACTIVE SPHERE SORTER LAB -->
+          <section id="sorter" class="rs-section" aria-labelledby="sorter-title">
+            <div class="rs-section-header">
+              <span class="lws-badge">Hands-On Classification</span>
+              <h2 id="sorter-title">3 · The Earth Sphere Sorter Lab</h2>
+              <p>Test your systems classification skills! Select an Earth feature chip below, then click on the target sphere bucket where it primarily belongs. Discover how each feature cross-connects with other spheres.</p>
+            </div>
+
+            <div class="sorter-stage">
+              <div class="sorter-targets" role="group" aria-label="Sphere Target Buckets">
+                <div class="sorter-bucket bucket-geo" data-bucket="geo">
+                  <div style="font-size:1.5rem;">⛰️</div>
+                  <h4 style="color:var(--geo-color);">Geosphere</h4>
+                  <small style="color:var(--text-muted);">Rock · Minerals · Soils</small>
+                  <div class="bucket-count" id="countGeo" style="margin-top:auto; font-weight:700; font-size:0.8rem; color:var(--geo-color);">0 Items</div>
+                </div>
+
+                <div class="sorter-bucket bucket-hydro" data-bucket="hydro">
+                  <div style="font-size:1.5rem;">🌊</div>
+                  <h4 style="color:var(--hydro-color);">Hydrosphere</h4>
+                  <small style="color:var(--text-muted);">Oceans · Ice · Rivers</small>
+                  <div class="bucket-count" id="countHydro" style="margin-top:auto; font-weight:700; font-size:0.8rem; color:var(--hydro-color);">0 Items</div>
+                </div>
+
+                <div class="sorter-bucket bucket-atmo" data-bucket="atmo">
+                  <div style="font-size:1.5rem;">☁️</div>
+                  <h4 style="color:var(--atmo-color);">Atmosphere</h4>
+                  <small style="color:var(--text-muted);">Air · Clouds · Winds</small>
+                  <div class="bucket-count" id="countAtmo" style="margin-top:auto; font-weight:700; font-size:0.8rem; color:var(--atmo-color);">0 Items</div>
+                </div>
+
+                <div class="sorter-bucket bucket-bio" data-bucket="bio">
+                  <div style="font-size:1.5rem;">🌿</div>
+                  <h4 style="color:var(--bio-color);">Biosphere</h4>
+                  <small style="color:var(--text-muted);">Plants · Animals · Fungi</small>
+                  <div class="bucket-count" id="countBio" style="margin-top:auto; font-weight:700; font-size:0.8rem; color:var(--bio-color);">0 Items</div>
+                </div>
+              </div>
+
+              <div style="margin-bottom:0.75rem; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight:700; font-size:0.88rem;">Items Remaining to Sort:</span>
+                <span id="sorterProgress" style="font-weight:700; color:var(--accent-earth);">16 Remaining</span>
+              </div>
+
+              <div class="sorter-items" id="chipContainer" role="group" aria-label="Earth feature chips">
+                <!-- Dynamically populated chips -->
+              </div>
+
+              <div id="sorterFeedback" style="margin-top:1rem; padding:0.9rem 1.1rem; border-radius:10px; background:#fff; border:1px solid #e2e8f0; font-size:0.88rem; display:none;" aria-live="polite">
+                <!-- Feedback text populated on sort -->
+              </div>
+            </div>
+          </section>
+
+          <!-- SECTION 4: SYSTEM REACTION & DOMINO CASCADES -->
+          <section id="dominos" class="rs-section" aria-labelledby="dominos-title">
+            <div class="rs-section-header">
+              <span class="lws-badge">System Dynamics</span>
+              <h2 id="dominos-title">4 · Cascading System Feedback Dominoes</h2>
+              <p>Disruptions in one sphere ripple through all others like falling dominoes. Choose a planetary catalyst to trace the multi-sphere chain reaction step by step.</p>
+            </div>
+
+            <div class="chain-box">
+              <div class="chain-scenarios" role="group" aria-label="Select chain scenario">
+                <button type="button" class="chain-btn is-active" data-chain="volcano">🌋 Supervolcano Eruption</button>
+                <button type="button" class="chain-btn" data-chain="flood">🌧️ Mountain Flash Flood</button>
+                <button type="button" class="chain-btn" data-chain="coral">🪸 Marine Heatwave &amp; Reef Loss</button>
+                <button type="button" class="chain-btn" data-chain="deforest">🪓 Rainforest Deforestation</button>
+              </div>
+
+              <h3 id="chainTitle" style="margin:0 0 0.4rem; font-size:1.3rem; color:#38bdf8;">Supervolcano Eruption Chain Reaction</h3>
+              <p id="chainSummary" style="font-size:0.92rem; line-height:1.55; color:#cbd5e1; margin:0 0 1rem;">
+                A colossal volcanic explosion releases pressurized magma, sulfur dioxide gas, and millions of tons of pulverized silicate ash into the upper atmosphere.
+              </p>
+
+              <div class="domino-steps" id="dominoSteps">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+          </section>
+
+          <!-- SECTION 5: SYSTEMS THINKING QUIZ -->
+          <section id="systems-quiz" class="rs-section" aria-labelledby="quiz-title">
+            <div class="rs-section-header">
+              <span class="lws-badge">Mastery Check</span>
+              <h2 id="quiz-title">5 · Earth Systems Mastery Challenge</h2>
+              <p>Test your understanding of Earth's four interacting spheres and their dynamic feedbacks.</p>
+            </div>
+
+            <div class="lws-grid-2">
+              <div class="quiz-card">
+                <h3 id="lwsQuizTitle" style="margin:0 0 0.5rem; font-size:1.2rem; color:var(--text-strong);">Question 1 of 4</h3>
+                <p id="lwsQuizQuestion" style="font-size:0.95rem; line-height:1.55; color:var(--text-muted);">
+                  When waves crash against coastal cliffs and carve sea arches, which two spheres are directly interacting?
+                </p>
+
+                <div id="lwsQuizAnswers" style="margin-top:1rem;">
+                  <button type="button" class="quiz-opt" data-idx="0">Hydrosphere and Geosphere</button>
+                  <button type="button" class="quiz-opt" data-idx="1">Atmosphere and Biosphere</button>
+                  <button type="button" class="quiz-opt" data-idx="2">Geosphere and Atmosphere</button>
+                  <button type="button" class="quiz-opt" data-idx="3">Biosphere and Hydrosphere</button>
+                </div>
+
+                <div id="lwsQuizFeedback" style="margin-top:1rem; font-size:0.9rem; font-weight:700;" aria-live="polite"></div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1.2rem;">
+                  <button type="button" id="lwsNextQuizBtn" class="sim-btn" style="display:none;">Next Question →</button>
+                  <span id="lwsScoreText" style="font-size:0.85rem; font-weight:700; color:var(--text-muted);">Score: 0 / 4</span>
+                </div>
+              </div>
+
+              <div style="background:var(--surface-2,#f8fafc); padding:1.2rem; border-radius:14px; border:1px solid var(--border-subtle,#e2e8f0);">
+                <h3 style="margin:0 0 0.75rem; font-size:1.15rem;">Sphere System Principles</h3>
+                <ul style="font-size:0.88rem; line-height:1.6; color:var(--text-muted); margin:0; padding-left:1.2rem;">
+                  <li><b>Closed System for Matter:</b> Practically no rock, water, or air leaves Earth (except hydrogen escape). The same water molecules drunk by dinosaurs are in our oceans today.</li>
+                  <li><b>Open System for Energy:</b> Earth continuously receives high-grade solar radiation from the Sun and radiates low-grade infrared heat back out into space.</li>
+                  <li><b>The Critical Zone:</b> Life thrives in the thin interface where bedrock meets sunlight, air, and rain. Without the interaction of all four spheres, life as we know it cannot exist.</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+        </main>
       </div>
     </div>
   </div>
+
+  <!-- LIGHTBOX & LAYOUT SCRIPTS -->
   <script src="../../assets/js/photo-lightbox.js"></script>
   <script src="../../assets/js/lesson-layout.js"></script>
+
+  <!-- INTERACTIVE SYSTEM SCRIPT -->
+  <script>
+  (()=>{
+    /* =========================================================================
+       1. LAYERED SPHERE EXPLORER
+       ========================================================================= */
+    const cutawayCanvas = document.getElementById('cutawayCanvas');
+    const cCtx = cutawayCanvas.getContext('2d');
+
+    const sphereData = {
+      geo: {
+        title: "Geosphere: The Solid Earth",
+        desc: "The geosphere comprises the entire solid Earth, from surface soils and oceanic crust down to the incandescent iron-nickel core at 6,371 km depth. Plate tectonics in the upper mantle continuously recreates continents and ocean floors.",
+        mass: "5.97 × 10²⁴ kg (99.98% of Earth)",
+        elem: "Iron, Oxygen, Silicon, Magnesium",
+        depth: "0 to 6,371 km depth",
+        process: "Mantle Convection & Plate Tectonics",
+        color: "#d97706"
+      },
+      hydro: {
+        title: "Hydrosphere: All Water on Earth",
+        desc: "Includes all liquid, frozen (cryosphere), and vaporous water. The global ocean holds 97.2% of all water, regulating planetary heat. Freshwater glaciers and groundwater provide the lifelines for terrestrial ecosystems.",
+        mass: "1.4 × 10²¹ kg (0.023% of Earth)",
+        elem: "Hydrogen, Oxygen, Sodium, Chlorine",
+        depth: "Surface down to -11 km (Mariana Trench)",
+        process: "Hydrological Cycle & Ocean Thermohaline Flow",
+        color: "#0284c7"
+      },
+      atmo: {
+        title: "Atmosphere: The Protective Blanket",
+        desc: "The gaseous envelope stratified into the Troposphere (0–12 km, where weather occurs), Stratosphere (12–50 km, ozone UV shield), Mesosphere (50–85 km, meteor burnout), and Thermosphere (85–600 km, auroras).",
+        mass: "5.15 × 10¹⁸ kg (0.000086% of Earth)",
+        elem: "Nitrogen (78%), Oxygen (21%), Argon (0.9%)",
+        depth: "0 to 10,000 km altitude (Exosphere)",
+        process: "Atmospheric Circulation & Radiative Heat Transfer",
+        color: "#6366f1"
+      },
+      bio: {
+        title: "Biosphere: The Global Living Web",
+        desc: "All living organisms and decaying organic matter. Although its mass is minuscule compared to the rocky planet, biological life has profoundly altered Earth's atmosphere (generating free oxygen) and created vast rock formations like chalk and limestone.",
+        mass: "1.1 × 10¹⁵ kg (Carbon biomass)",
+        elem: "Carbon, Hydrogen, Oxygen, Nitrogen, Phosphorus",
+        depth: "-11 km oceans to +8.8 km Mount Everest",
+        process: "Photosynthesis, Respiration & Nutrient Cycling",
+        color: "#16a34a"
+      }
+    };
+
+    let activeSphere = 'geo';
+
+    function resizeCutaway() {
+      const rect = cutawayCanvas.getBoundingClientRect();
+      cutawayCanvas.width = rect.width * (window.devicePixelRatio || 1);
+      cutawayCanvas.height = rect.height * (window.devicePixelRatio || 1);
+      cCtx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+      drawCutaway();
+    }
+    window.addEventListener('resize', resizeCutaway);
+
+    function drawCutaway() {
+      const w = cutawayCanvas.width / (window.devicePixelRatio || 1);
+      const h = cutawayCanvas.height / (window.devicePixelRatio || 1);
+      cCtx.clearRect(0, 0, w, h);
+
+      const cx = w * 0.5;
+      const cy = h * 0.9;
+      const r = Math.min(w * 0.45, h * 0.75);
+
+      // Earth concentric arcs
+      // Inner Core (solid Fe-Ni)
+      cCtx.beginPath();
+      cCtx.arc(cx, cy, r * 0.22, Math.PI, 0);
+      cCtx.fillStyle = '#fef08a';
+      cCtx.fill();
+
+      // Outer Core (liquid Fe-Ni)
+      cCtx.beginPath();
+      cCtx.arc(cx, cy, r * 0.55, Math.PI, 0);
+      cCtx.arc(cx, cy, r * 0.22, 0, Math.PI, true);
+      cCtx.fillStyle = '#ea580c';
+      cCtx.fill();
+
+      // Mantle (Silicate Rock)
+      cCtx.beginPath();
+      cCtx.arc(cx, cy, r * 0.95, Math.PI, 0);
+      cCtx.arc(cx, cy, r * 0.55, 0, Math.PI, true);
+      cCtx.fillStyle = '#78350f';
+      cCtx.fill();
+
+      // Crust (Surface shell)
+      cCtx.beginPath();
+      cCtx.arc(cx, cy, r, Math.PI, 0);
+      cCtx.arc(cx, cy, r * 0.95, 0, Math.PI, true);
+      cCtx.fillStyle = '#22c55e';
+      cCtx.fill();
+
+      // Atmosphere ring
+      cCtx.beginPath();
+      cCtx.arc(cx, cy, r * 1.15, Math.PI, 0);
+      cCtx.arc(cx, cy, r, 0, Math.PI, true);
+      cCtx.fillStyle = 'rgba(56, 189, 248, 0.25)';
+      cCtx.fill();
+      cCtx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
+      cCtx.lineWidth = 1.5;
+      cCtx.stroke();
+
+      // Highlight active sphere
+      cCtx.save();
+      if (activeSphere === 'geo') {
+        cCtx.strokeStyle = '#f59e0b';
+        cCtx.lineWidth = 4;
+        cCtx.beginPath();
+        cCtx.arc(cx, cy, r * 0.95, Math.PI, 0);
+        cCtx.stroke();
+      } else if (activeSphere === 'hydro') {
+        cCtx.strokeStyle = '#0284c7';
+        cCtx.lineWidth = 6;
+        cCtx.beginPath();
+        cCtx.arc(cx, cy, r, Math.PI * 0.8, Math.PI * 0.4);
+        cCtx.stroke();
+      } else if (activeSphere === 'atmo') {
+        cCtx.strokeStyle = '#6366f1';
+        cCtx.lineWidth = 4;
+        cCtx.beginPath();
+        cCtx.arc(cx, cy, r * 1.15, Math.PI, 0);
+        cCtx.stroke();
+      } else if (activeSphere === 'bio') {
+        cCtx.strokeStyle = '#22c55e';
+        cCtx.lineWidth = 5;
+        cCtx.beginPath();
+        cCtx.arc(cx, cy, r, Math.PI, 0);
+        cCtx.stroke();
+      }
+      cCtx.restore();
+
+      // Labels
+      cCtx.fillStyle = '#f8fafc';
+      cCtx.font = 'bold 11px Inter, sans-serif';
+      cCtx.textAlign = 'center';
+      cCtx.fillText('Atmosphere (+100 km)', cx, cy - r * 1.18);
+      cCtx.fillText('Crust & Oceans', cx + r * 0.85, cy - r * 0.55);
+      cCtx.fillText('Mantle', cx, cy - r * 0.7);
+      cCtx.fillText('Core', cx, cy - r * 0.35);
+    }
+
+    document.querySelectorAll('.sphere-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.sphere-tab').forEach(t => t.setAttribute('aria-selected', 'false'));
+        tab.setAttribute('aria-selected', 'true');
+        activeSphere = tab.dataset.s;
+        const d = sphereData[activeSphere];
+        document.getElementById('metaTitle').textContent = d.title;
+        document.getElementById('metaTitle').style.color = d.color;
+        document.getElementById('metaDesc').textContent = d.desc;
+        document.getElementById('metaMass').textContent = d.mass;
+        document.getElementById('metaElem').textContent = d.elem;
+        document.getElementById('metaDepth').textContent = d.depth;
+        document.getElementById('metaProcess').textContent = d.process;
+        drawCutaway();
+      });
+    });
+
+    /* =========================================================================
+       2. INTERACTIVE SPHERE SORTER
+       ========================================================================= */
+    const sortItems = [
+      { name: "Basalt Lava Flow", sphere: "geo", cross: "Erupts from Geosphere, expels gases to Atmosphere, cools into solid rock." },
+      { name: "Granite Mountain Peak", sphere: "geo", cross: "Geosphere structure weathered by Hydrosphere glaciers and frost wedging." },
+      { name: "Sand Dune", sphere: "geo", cross: "Geosphere particles sculpted and transported by Atmospheric winds." },
+      { name: "Clay Soil Sediment", sphere: "geo", cross: "Pulverized rock enriched by Biosphere organic humus." },
+      
+      { name: "Antarctic Ice Sheet", sphere: "hydro", cross: "Hydrosphere reservoir reflecting 85% of incoming solar radiation." },
+      { name: "Pacific Gulf Stream", sphere: "hydro", cross: "Hydrosphere ocean current distributing equatorial heat to high latitudes." },
+      { name: "Underground Aquifer", sphere: "hydro", cross: "Groundwater flowing through porous Geosphere sandstone strata." },
+      { name: "Morning Dew Drops", sphere: "hydro", cross: "Atmospheric water vapor condensing onto Biosphere plant foliage." },
+
+      { name: "Stratospheric Ozone Layer", sphere: "atmo", cross: "Atmospheric filter absorbing lethal ultraviolet UV-B and UV-C rays." },
+      { name: "Cumulonimbus Cloud", sphere: "atmo", cross: "Atmosphere cell carrying tons of suspended Hydrosphere droplets." },
+      { name: "Jet Stream Winds", sphere: "atmo", cross: "High-speed atmospheric thermal wind river steering global storms." },
+      { name: "Carbon Dioxide Gas (CO₂)", sphere: "atmo", cross: "Atmosphere greenhouse gas cycled between Biosphere respiration and plants." },
+
+      { name: "Amazon Rainforest", sphere: "bio", cross: "Biosphere powerhouse generating 20% of terrestrial oxygen and regional rain." },
+      { name: "Coral Reef Colony", sphere: "bio", cross: "Biosphere organisms extracting calcium from Hydrosphere to build limestone rock." },
+      { name: "Fungal Soil Mycelium", sphere: "bio", cross: "Biosphere decomposer breaking down leaf litter into fertile soil nutrients." },
+      { name: "Migrating Canada Geese", sphere: "bio", cross: "Biosphere animals navigating along Atmospheric thermal air currents." }
+    ];
+
+    let selectedChip = null;
+    let counts = { geo: 0, hydro: 0, atmo: 0, bio: 0 };
+    let remaining = sortItems.length;
+
+    const chipContainer = document.getElementById('chipContainer');
+    const feedbackBox = document.getElementById('sorterFeedback');
+
+    function initSorter() {
+      chipContainer.innerHTML = '';
+      sortItems.forEach((item, idx) => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'drag-chip';
+        chip.textContent = item.name;
+        chip.dataset.idx = idx;
+        chip.addEventListener('click', () => {
+          document.querySelectorAll('.drag-chip').forEach(c => c.classList.remove('is-selected'));
+          chip.classList.add('is-selected');
+          selectedChip = item;
+          chip.targetEl = chip;
+        });
+        chipContainer.appendChild(chip);
+      });
+    }
+
+    document.querySelectorAll('.sorter-bucket').forEach(bucket => {
+      bucket.addEventListener('click', () => {
+        if (!selectedChip) {
+          feedbackBox.style.display = 'block';
+          feedbackBox.innerHTML = '<span style="color:#d97706;">⚠️ Select an item chip first, then click a sphere bucket!</span>';
+          return;
+        }
+
+        const targetSphere = bucket.dataset.bucket;
+        feedbackBox.style.display = 'block';
+
+        if (selectedChip.sphere === targetSphere) {
+          counts[targetSphere]++;
+          document.getElementById('count' + targetSphere.charAt(0).toUpperCase() + targetSphere.slice(1)).textContent = `${counts[targetSphere]} Items`;
+          
+          feedbackBox.innerHTML = `<span style="color:#15803d; font-weight:700;">✓ Correct! <b>${selectedChip.name}</b> belongs to the <b>${targetSphere.toUpperCase()}</b>.</span><br /><small style="color:#64748b;">System Cross-Link: ${selectedChip.cross}</small>`;
+          
+          // Remove sorted chip
+          const chipEl = document.querySelector(`.drag-chip.is-selected`);
+          if (chipEl) chipEl.remove();
+          selectedChip = null;
+          remaining--;
+          document.getElementById('sorterProgress').textContent = `${remaining} Remaining`;
+
+          if (remaining === 0) {
+            feedbackBox.innerHTML += '<br /><b style="color:#0284c7; display:block; margin-top:0.5rem;">🎉 Fantastic! All 16 Earth System components successfully classified!</b>';
+          }
+        } else {
+          feedbackBox.innerHTML = `<span style="color:#b91c1c; font-weight:700;">✗ Not quite. <b>${selectedChip.name}</b> does not belong primarily to the ${targetSphere.toUpperCase()}. Try another sphere!</span>`;
+        }
+      });
+    });
+
+    /* =========================================================================
+       3. SYSTEM FEEDBACK DOMINO CHAINS
+       ========================================================================= */
+    const dominoScenarios = {
+      volcano: {
+        title: "Supervolcano Eruption Chain Reaction",
+        summary: "A colossal volcanic eruption releases pressurized magma, sulfur dioxide gas, and millions of tons of pulverized silicate ash into the upper atmosphere.",
+        steps: [
+          { sphere: "Geosphere", badge: "GEO", color: "var(--geo-color)", title: "Magma & Ash Blast", text: "Crustal magma reservoir ruptures, blasting pulverized silicate rock and SO₂ gas 30 km into the stratosphere." },
+          { sphere: "Atmosphere", badge: "ATMO", color: "var(--atmo-color)", title: "Aerosol Sun Veil", text: "SO₂ gas reacts with moisture to form sulfate aerosol veils, reflecting sunlight and cooling Earth's surface by 2–5°C." },
+          { sphere: "Hydrosphere", badge: "HYDRO", color: "var(--hydro-color)", title: "Ocean Cooling & Sea Ice", text: "Diminished sunlight chills surface waters, driving expansion of polar sea ice sheets and disrupting monsoon rains." },
+          { sphere: "Biosphere", badge: "BIO", color: "var(--bio-color)", title: "Photosynthesis Drop", text: "Widespread crop failure, shortened growing seasons, and collapse of terrestrial food chains ('volcanic winter')." }
+        ]
+      },
+      flood: {
+        title: "Mountain Flash Flood Chain Reaction",
+        summary: "A stationary tropical moisture plume unleashes torrential rainfall on steep mountain peaks, triggering systemic erosion.",
+        steps: [
+          { sphere: "Atmosphere", badge: "ATMO", color: "var(--atmo-color)", title: "Orographic Cloudburst", text: "Moist air forced upward over mountain ridges cools and condenses into intense, persistent thunderstorm squalls." },
+          { sphere: "Hydrosphere", badge: "HYDRO", color: "var(--hydro-color)", title: "Torrential Runoff", text: "Soil reaches 100% saturation capacity; excess rainfall surges down gullies into raging white-water torrents." },
+          { sphere: "Geosphere", badge: "GEO", color: "var(--geo-color)", title: "Catastrophic Mudslides", text: "Unstable mountainside colluvium liquefies, tearing bedrock boulders loose and gouging canyons into the valley." },
+          { sphere: "Biosphere", badge: "BIO", color: "var(--bio-color)", title: "Ecosystem Siltation", text: "Fine clay sediment blankets riverbeds, suffocating salmon spawning gravels and uprooting riparian forests." }
+        ]
+      },
+      coral: {
+        title: "Marine Heatwave & Coral Bleaching Chain Reaction",
+        summary: "Accumulated atmospheric heat warms the ocean surface layer, triggering the collapse of living coral reef foundations.",
+        steps: [
+          { sphere: "Atmosphere", badge: "ATMO", color: "var(--atmo-color)", title: "Greenhouse Heat Trap", text: "Elevated atmospheric CO₂ traps outgoing thermal infrared radiation, warming the lower troposphere." },
+          { sphere: "Hydrosphere", badge: "HYDRO", color: "var(--hydro-color)", title: "Marine Heatwave", text: "The ocean absorbs over 90% of excess planetary heat, elevating surface water temperatures 2–3°C above normal." },
+          { sphere: "Biosphere", badge: "BIO", color: "var(--bio-color)", title: "Coral Bleaching", text: "Stressed coral polyps expel symbiotic photosynthetic zooxanthellae algae, turning ghost white and starving." },
+          { sphere: "Geosphere", badge: "GEO", color: "var(--geo-color)", title: "Coastal Wave Erosion", text: "Dead coral skeletons crumble, removing the natural barrier reef buffer and exposing shorelines to severe storm wave erosion." }
+        ]
+      },
+      deforest: {
+        title: "Rainforest Deforestation Chain Reaction",
+        summary: "Widespread clearcutting of tropical forest trees breaks the regional water recycling loop.",
+        steps: [
+          { sphere: "Biosphere", badge: "BIO", color: "var(--bio-color)", title: "Canopy Removal", text: "Clearcutting of deep-rooted forest trees destroys habitats and halts plant transpiration of water vapor." },
+          { sphere: "Atmosphere", badge: "ATMO", color: "var(--atmo-color)", title: "Drought & Clouds Drop", text: "Atmosphere receives 50% less evapotranspiration moisture, suppressing cloud formation and exacerbating droughts." },
+          { sphere: "Geosphere", badge: "GEO", color: "var(--geo-color)", title: "Topsoil Sheet Erosion", text: "Without sheltering leaves and binding roots, intense sun bakes the soil and rains wash topsoil into rivers." },
+          { sphere: "Hydrosphere", badge: "HYDRO", color: "var(--hydro-color)", title: "River Turbidity", text: "Rivers become choked with red mud, altering freshwater chemistry and causing downstream flooding." }
+        ]
+      }
+    };
+
+    function renderChain(key) {
+      const data = dominoScenarios[key];
+      document.getElementById('chainTitle').textContent = data.title;
+      document.getElementById('chainSummary').textContent = data.summary;
+
+      const container = document.getElementById('dominoSteps');
+      container.innerHTML = '';
+      data.steps.forEach((s, idx) => {
+        const card = document.createElement('div');
+        card.className = 'domino-card';
+        card.innerHTML = `
+          <div class="domino-sphere-badge" style="background:${s.color}; color:#fff;">Step ${idx + 1} · ${s.badge}</div>
+          <h4>${s.title}</h4>
+          <p>${s.text}</p>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    document.querySelectorAll('.chain-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.chain-btn').forEach(b => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
+        renderChain(btn.dataset.chain);
+      });
+    });
+
+    /* =========================================================================
+       4. SYSTEMS THINKING QUIZ
+       ========================================================================= */
+    const lwsQuestions = [
+      {
+        q: "When ocean waves crash against coastal cliffs and carve sea arches, which two spheres are directly interacting?",
+        opts: ["Hydrosphere and Geosphere", "Atmosphere and Biosphere", "Geosphere and Atmosphere", "Biosphere and Hydrosphere"],
+        correct: 0,
+        expl: "Correct! The moving liquid water of the hydrosphere physically weathers and erodes the solid mineral rock of the geosphere."
+      },
+      {
+        q: "Plants absorb carbon dioxide from the air and release water vapor through stomata (transpiration). Which spheres are interacting?",
+        opts: ["Geosphere and Hydrosphere", "Biosphere and Atmosphere", "Atmosphere and Cryosphere", "Geosphere and Biosphere"],
+        correct: 1,
+        expl: "Spot on! Living plants (biosphere) exchange gases and moisture directly with the gaseous blanket (atmosphere)."
+      },
+      {
+        q: "What is Earth's 'Critical Zone'?",
+        opts: [
+          "The molten boundary between the outer core and mantle.",
+          "The deep ocean abyssal trenches where volcanic vents erupt.",
+          "The thin surface layer where rocks, soil, water, air, and living organisms meet and interact.",
+          "The upper edge of the exosphere where satellites orbit."
+        ],
+        correct: 2,
+        expl: "Exactly! The Critical Zone is Earth's permeable skin extending from the top of the plant canopy down to groundwater bedrock, sustaining all terrestrial life."
+      },
+      {
+        q: "Why is Earth considered a 'closed system' for matter, but an 'open system' for energy?",
+        opts: [
+          "Matter can easily enter and leave Earth, but solar energy is blocked by the ozone layer.",
+          "Earth continuously receives solar light and radiates infrared heat, while virtually all mineral and water atoms remain on Earth.",
+          "Matter constantly evaporates into outer space.",
+          "Heat is permanently trapped and never radiates out of the atmosphere."
+        ],
+        correct: 1,
+        expl: "Masterful! Energy flows freely through Earth (in from the Sun, out to deep space), while Earth's gravity traps our finite matter, requiring it to be recycled forever."
+      }
+    ];
+
+    let currentLwsQ = 0;
+    let lwsScore = 0;
+
+    function renderLwsQuiz() {
+      const q = lwsQuestions[currentLwsQ];
+      document.getElementById('lwsQuizTitle').textContent = `Question ${currentLwsQ + 1} of ${lwsQuestions.length}`;
+      document.getElementById('lwsQuizQuestion').textContent = q.q;
+      document.getElementById('lwsQuizFeedback').textContent = '';
+      document.getElementById('lwsNextQuizBtn').style.display = 'none';
+
+      const container = document.getElementById('lwsQuizAnswers');
+      container.innerHTML = '';
+      q.opts.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'quiz-opt';
+        btn.textContent = opt;
+        btn.addEventListener('click', () => selectLwsAnswer(idx));
+        container.appendChild(btn);
+      });
+    }
+
+    function selectLwsAnswer(idx) {
+      const q = lwsQuestions[currentLwsQ];
+      const btns = document.querySelectorAll('#lwsQuizAnswers .quiz-opt');
+      btns.forEach(b => b.disabled = true);
+
+      if (idx === q.correct) {
+        btns[idx].classList.add('correct');
+        lwsScore++;
+        document.getElementById('lwsQuizFeedback').innerHTML = `<span style="color:#15803d;">✓ ${q.expl}</span>`;
+      } else {
+        btns[idx].classList.add('incorrect');
+        btns[q.correct].classList.add('correct');
+        document.getElementById('lwsQuizFeedback').innerHTML = `<span style="color:#b91c1c;">✗ Incorrect. ${q.expl}</span>`;
+      }
+
+      document.getElementById('lwsScoreText').textContent = `Score: ${lwsScore} / ${lwsQuestions.length}`;
+
+      if (currentLwsQ < lwsQuestions.length - 1) {
+        document.getElementById('lwsNextQuizBtn').style.display = 'inline-block';
+      }
+    }
+
+    document.getElementById('lwsNextQuizBtn').addEventListener('click', () => {
+      currentLwsQ++;
+      renderLwsQuiz();
+    });
+
+    // Initializations
+    resizeCutaway();
+    initSorter();
+    renderChain('volcano');
+    renderLwsQuiz();
+
+  })();
+  </script>
 </body>
 </html>

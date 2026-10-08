@@ -17,12 +17,19 @@ if (root) {
   };
 
   let style = 'natural';
-  let poses = styles.natural.targets.map(() => ({ ...defaults }));
+  const blank = { height: .5, stride: 0, arm: 0, lift: 0 };
+  let poses = Array.from({ length: 4 }, () => ({ ...blank }));
+  let keyed = [false, false, false, false];
+  let mode = 'student';
+  let previousMeasurement = null;
   let selected = 0;
   let playing = false;
   let time = 0;
   let speed = 1;
+  let silhouette = false;
+  const silhouetteMaterial = new THREE.MeshBasicMaterial({ color: 0x142632 });
   let showRig = true;
+  let exporting = false;
   let showArcs = true;
   let model;
   let mixer;
@@ -45,11 +52,22 @@ if (root) {
   controls = new OrbitControls(camera, canvas);
   controls.target.set(0, 1.35, 0);
   controls.enablePan = false;
-  controls.minDistance = 3.6;
-  controls.maxDistance = 7;
   controls.minPolarAngle = Math.PI * .25;
   controls.maxPolarAngle = Math.PI * .68;
-  controls.update();
+
+  // Fit a 3 x 3 unit box around the character in whichever direction is tighter,
+  // so a tall, narrow stage (phones, stacked layout) still shows the whole body.
+  function frameCamera(direction) {
+    const vertical = THREE.MathUtils.degToRad(camera.fov) / 2;
+    const horizontal = Math.atan(Math.tan(vertical) * camera.aspect);
+    const distance = 1.5 / Math.tan(Math.min(vertical, horizontal)) + 1.1;
+    const offset = direction ? new THREE.Vector3().fromArray(direction) : camera.position.clone().sub(controls.target);
+    controls.target.set(0, 1.35, 0);
+    camera.position.copy(controls.target).add(offset.normalize().multiplyScalar(distance));
+    controls.minDistance = distance * .6;
+    controls.maxDistance = distance * 1.6;
+    controls.update();
+  }
 
   scene.add(new THREE.HemisphereLight(0xffffff, 0x355060, 2.25));
   const keyLight = new THREE.DirectionalLight(0xffffff, 3.2);
@@ -86,6 +104,46 @@ if (root) {
     return line;
   });
 
+  // An articulated teaching mannequin: all transforms come from student poses.
+  // The same builder makes the two onion-skin ghosts (previous / next key pose).
+  const puppetMaterial = new THREE.MeshStandardMaterial({ color: 0xf3ba65, roughness: .7 });
+  function buildPuppet(name, material, shadows) {
+    const group = new THREE.Group();
+    group.name = name;
+    scene.add(group);
+    const nodes = {};
+    function block(parent, part, x, y, z, w, h, d, offsetY = 0) {
+      const pivot = new THREE.Group();
+      pivot.name = part;
+      pivot.position.set(x, y, z);
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+      mesh.position.y = offsetY;
+      mesh.castShadow = shadows;
+      pivot.add(mesh);
+      parent.add(pivot);
+      nodes[part] = pivot;
+      return pivot;
+    }
+    const pelvis = block(group, 'Hips', 0, 1.4, 0, .46, .22, .3);
+    block(pelvis, 'Chest', 0, .4, 0, .58, .65, .32);
+    block(pelvis, 'Head', 0, .98, 0, .38, .4, .38);
+    for (const [side, sign] of [['Left', -1], ['Right', 1]]) {
+      const thigh = block(pelvis, side + 'Thigh', sign * .18, -.1, 0, .2, .6, .22, -.3);
+      const shin = block(thigh, side + 'Shin', 0, -.6, 0, .17, .6, .18, -.3);
+      block(shin, side + 'Foot', 0, -.6, .1, .22, .12, .4);
+      const arm = block(pelvis, side + 'Arm', sign * .41, .63, 0, .15, .65, .18, -.325);
+      block(arm, side + 'Hand', 0, -.68, 0, .17, .17, .2);
+    }
+    return { group, nodes, material };
+  }
+  const ghostMaterial = color => new THREE.MeshBasicMaterial({ color, transparent: true, opacity: .2, depthWrite: false });
+  const mainPuppet = buildPuppet('StudentWalk', puppetMaterial, true);
+  const puppet = mainPuppet.group;
+  const puppetNodes = mainPuppet.nodes;
+  // Traditional onion-skin colours: the previous drawing tinted warm, the next one cool.
+  const ghosts = [buildPuppet('OnionPrevious', ghostMaterial(0xff5a4f), false), buildPuppet('OnionNext', ghostMaterial(0x2f8cff), false)];
+  ghosts.forEach(ghost => { ghost.group.renderOrder = 2; });
+
   const profile = () => styles[style];
   const targets = () => profile().targets;
   const currentPose = () => poses[selected];
@@ -115,7 +173,48 @@ if (root) {
     if (bone) bone.rotation[axis] += amount;
   }
 
+  function applyStudentAt(rawTime, rig = mainPuppet) {
+    const nodes = rig.nodes;
+    const fullPhase = ((rawTime % 4) + 4) % 4;
+    const halfPhase = fullPhase * 2;
+    const pose = poseAt(halfPhase);
+    const direction = halfPhase < 4 ? 1 : -1;
+    const sign = Math.cos(pose.phase / 4 * Math.PI);
+    nodes.Hips.position.y = 1.4 + (pose.height - .5) * .4;
+    for (const [side, opposite] of [['Left', 1], ['Right', -1]]) {
+      const swing = direction * opposite * sign;
+      nodes[side + 'Thigh'].rotation.x = swing * pose.stride * .65;
+      nodes[side + 'Shin'].rotation.x = (direction * opposite < 0 ? pose.lift : 0) * 1.1;
+      nodes[side + 'Arm'].rotation.x = -swing * pose.arm * .75;
+    }
+    rig.group.updateMatrixWorld(true);
+  }
+
+  // The previous and next of the eight key poses around a time (keys sit every 0.5).
+  function neighbourKeys(rawTime) {
+    const step = ((rawTime % 4) + 4) % 4 * 2;
+    const onKey = Math.abs(step - Math.round(step)) < 1e-3;
+    const previous = onKey ? Math.round(step) - 1 : Math.floor(step);
+    const next = onKey ? Math.round(step) + 1 : Math.ceil(step);
+    return [previous / 2, next / 2];
+  }
+
+  // One pass over the handmade cycle: hip height and the lowest point of each foot.
+  const footBox = new THREE.Box3();
+  const scratch = new THREE.Vector3();
+  function sampleStudentCycle(count) {
+    const samples = [];
+    for (let i = 0; i < count; i++) {
+      const t = i / count * 4;
+      applyStudentAt(t);
+      const feet = [puppetNodes.LeftFoot, puppetNodes.RightFoot].map(foot => footBox.setFromObject(foot).min.y);
+      samples.push({ t, hip: puppetNodes.Hips.getWorldPosition(scratch).y, left: feet[0], right: feet[1] });
+    }
+    return samples;
+  }
+
   function applyAt(rawTime) {
+    applyStudentAt(rawTime);
     if (!mixer || !walkClip) return;
     const phase = sampledPhase(rawTime);
     Object.entries(bones).forEach(([name, bone]) => {
@@ -127,8 +226,8 @@ if (root) {
     });
     mixer.setTime(phase / 4 * walkClip.duration);
     const pose = poseAt(phase);
-    const step = Math.cos(phase / 4 * Math.PI);
-    const travel = Math.sin(phase / 4 * Math.PI);
+    const step = Math.cos(phase / 4 * Math.PI * 2);
+    const travel = Math.sin(phase / 4 * Math.PI * 2);
     if (bones.Hips) bones.Hips.position.y += (pose.height - .5) * .32 / hipsWorldScale;
     const stride = (pose.stride - .5) * .72;
     setBoneRotation(bones.LeftUpLeg, 'x', stride * step);
@@ -136,9 +235,11 @@ if (root) {
     const arm = (pose.arm - .5) * .82;
     setBoneRotation(bones.LeftArm, 'x', -arm * step);
     setBoneRotation(bones.RightArm, 'x', arm * step);
-    const lift = Math.max(0, pose.lift - .15) * travel;
-    setBoneRotation(bones.RightLeg, 'x', lift * .62);
-    setBoneRotation(bones.RightUpLeg, 'x', -lift * .26);
+    const lift = Math.max(0, pose.lift - .15);
+    setBoneRotation(bones.RightLeg, 'x', lift * Math.max(0, travel) * .62);
+    setBoneRotation(bones.RightUpLeg, 'x', -lift * Math.max(0, travel) * .26);
+    setBoneRotation(bones.LeftLeg, 'x', lift * Math.max(0, -travel) * .62);
+    setBoneRotation(bones.LeftUpLeg, 'x', -lift * Math.max(0, -travel) * .26);
     if (style === 'cartoon') {
       setBoneRotation(bones.Spine2, 'z', Math.sin(phase * Math.PI / 2) * .07);
       setBoneRotation(bones.Head, 'z', -Math.sin(phase * Math.PI / 2) * .08);
@@ -165,7 +266,7 @@ if (root) {
   }
 
   function diagnostic() {
-    if (!model) return '<strong>Loading the humanoid rig:</strong> The viewport will activate when the CC0 GLB is ready.';
+    if (!model && mode === 'reference') return '<strong>Loading the humanoid rig:</strong> The viewport will activate when the CC0 GLB is ready.';
     const { checks, score } = grade();
     if (!checks[0]) return '<strong>Find the down:</strong> Lower the Down pose clearly below Contact so the landing has weight.';
     if (!checks[1]) return '<strong>Show the push:</strong> Raise Up above Passing to create a visible vertical rhythm.';
@@ -174,7 +275,7 @@ if (root) {
     if (!checks[4]) return '<strong>Clarify opposition:</strong> Increase arm swing on Contact so the silhouette reads from a distance.';
     if (!checks[6] || !checks[7]) return '<strong>Protect contact:</strong> Keep Foot lift low on Contact and Down so the planted foot does not skate.';
     if (!checks[5]) return '<strong>Clear the floor:</strong> Raise Foot lift on Passing to keep the toe from dragging.';
-    return score === 100 ? `<strong>${profile().label.toLowerCase()} cycle reads:</strong> The skinned character, skeleton, cadence, and pose contrast agree with this art direction.` : '<strong>Nearly there:</strong> Rotate the viewport and compare the rig, silhouette, and contact markers.';
+    return score === 100 ? `<strong>${profile().label.toLowerCase()} cycle reads:</strong> All eight slider relationships match the guide. Inspect foot sliding and the loop seam before deciding the motion works.` : '<strong>Nearly there:</strong> Rotate the viewport and compare the rig, silhouette, and contact markers.';
   }
 
   function updateMeter() {
@@ -187,7 +288,7 @@ if (root) {
   function syncReadout() {
     const frames = profile().frames;
     const frame = Math.min(frames, Math.floor(time / 4 * frames) + 1);
-    const poseIndex = Math.floor((time + .5) % 4);
+    const poseIndex = Math.floor((mode === 'student' ? time * 2 : time) % 4);
     q('[data-animation-readout]').textContent = `${profile().label} · FRAME ${String(frame).padStart(2, '0')} · ${names[poseIndex]}`;
     q('[data-animation-pose-name]').textContent = names[selected];
     q('[data-animation-time]').value = Math.round(time / 4 * 100);
@@ -195,8 +296,8 @@ if (root) {
   }
 
   function updateContacts() {
-    if (!model) return;
-    const feet = [bones.LeftFoot, bones.RightFoot];
+    if (!model && mode === 'reference') return;
+    const feet = mode === 'student' ? [puppetNodes.LeftFoot, puppetNodes.RightFoot] : [bones.LeftFoot, bones.RightFoot];
     feet.forEach((bone, index) => {
       if (!bone) return;
       bone.getWorldPosition(contacts[index].position);
@@ -207,8 +308,8 @@ if (root) {
   }
 
   function updateArcs() {
-    if (!model || !mixer) return;
-    const tracked = [bones.Head, bones.LeftHand, bones.RightFoot];
+    if (mode === 'reference' && !mixer) return;
+    const tracked = mode === 'student' ? [puppetNodes.Head, puppetNodes.LeftHand, puppetNodes.RightFoot] : [bones.Head, bones.LeftHand, bones.RightFoot];
     tracked.forEach((bone, index) => {
       const points = [];
       for (let sample = 0; sample < profile().frames; sample++) {
@@ -217,9 +318,10 @@ if (root) {
         bone?.getWorldPosition(point);
         points.push(point);
       }
+      if (points.length) points.push(points[0].clone());
       arcLines[index].geometry.dispose();
       arcLines[index].geometry = new THREE.BufferGeometry().setFromPoints(points);
-      arcLines[index].visible = showArcs;
+      arcLines[index].visible = showArcs && !silhouette;
     });
   }
 
@@ -233,7 +335,8 @@ if (root) {
     if (skeletonHelper) skeletonHelper.material.color.setHex(selectedStyle.accent);
     model?.traverse(child => {
       if (!child.isMesh) return;
-      const materials = Array.isArray(child.material) ? child.material : [child.material];
+      const original = child.userData.studyMaterial;
+      const materials = Array.isArray(original) ? original : [original];
       materials.forEach(material => {
         if (!material.userData.animationBaseColor) material.userData.animationBaseColor = material.color?.clone();
         if (material.color && material.userData.animationBaseColor) {
@@ -245,17 +348,117 @@ if (root) {
     });
   }
 
-  function render() {
-    state.syncSize();
-    if (model) {
-      applyAt(time);
-      updateContacts();
-      if (skeletonHelper) skeletonHelper.visible = showRig;
+  // Mini Graph Editor: hip height and both foot bottoms across the handmade cycle.
+  const curveCanvas = q('[data-animation-curves]');
+  const curves = window.SimKit.canvas2d(curveCanvas, { box: curveCanvas.parentElement, height: 200 });
+  let curveKey = '';
+  let curveSamples = [];
+  function drawCurves() {
+    const key = style + JSON.stringify(poses);
+    if (key !== curveKey) {
+      curveKey = key;
+      curveSamples = sampleStudentCycle(160);
+      applyStudentAt(time);
     }
+    const { ctx, width, height } = curves;
+    if (!width) return;
+    const pad = { left: 40, right: 10, top: 10, bottom: 24 };
+    const plotW = width - pad.left - pad.right;
+    const plotH = height - pad.top - pad.bottom;
+    const x = t => pad.left + t / 4 * plotW;
+    // Two lanes with fixed scales (so styles and revisions compare honestly):
+    // hips get a zoomed range because their rise and fall is small but important.
+    const laneGap = 10;
+    const hipLane = { top: pad.top, h: (plotH - laneGap) * .45, low: 1.2, high: 1.6 };
+    const footLane = { top: pad.top + hipLane.h + laneGap, h: (plotH - laneGap) * .55, low: -.2, high: .5 };
+    const y = (lane, value) => lane.top + (1 - (clamp(value, lane.low, lane.high) - lane.low) / (lane.high - lane.low)) * lane.h;
+    ctx.clearRect(0, 0, width, height);
+    ctx.font = '600 10px "JetBrains Mono", monospace';
+    ctx.textBaseline = 'middle';
+    // Key-pose columns: the second step mirrors the first.
+    for (let i = 0; i <= 8; i++) {
+      const px = x(i / 2);
+      ctx.strokeStyle = i % 4 === 0 ? 'rgba(234,248,251,.32)' : 'rgba(234,248,251,.12)';
+      ctx.beginPath(); ctx.moveTo(px, pad.top); ctx.lineTo(px, pad.top + plotH); ctx.stroke();
+      if (i < 8) {
+        ctx.fillStyle = keyed[i % 4] ? '#99e6b8' : '#9fc3cd';
+        ctx.textAlign = 'center';
+        ctx.fillText(names[i % 4].slice(0, 4), x(i / 2 + .25), height - 9);
+      }
+    }
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#8fb1bc';
+    ctx.fillText('HIPS', pad.left - 5, hipLane.top + hipLane.h / 2);
+    ctx.fillText('FEET', pad.left - 5, footLane.top + 8);
+    ctx.strokeStyle = 'rgba(143,177,188,.35)';
+    ctx.beginPath(); ctx.moveTo(pad.left, y(hipLane, 1.4)); ctx.lineTo(pad.left + plotW, y(hipLane, 1.4)); ctx.stroke();
+    // Anything under the floor line is a foot sinking into the ground.
+    ctx.fillStyle = 'rgba(238,110,115,.18)';
+    ctx.fillRect(pad.left, y(footLane, 0), plotW, footLane.top + footLane.h - y(footLane, 0));
+    ctx.strokeStyle = '#8fb1bc';
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(pad.left, y(footLane, 0)); ctx.lineTo(pad.left + plotW, y(footLane, 0)); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillText('floor', pad.left - 5, y(footLane, 0));
+    const plot = (lane, field, color) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      [...curveSamples, { ...curveSamples[0], t: 4 }].forEach((sample, i) => {
+        i ? ctx.lineTo(x(sample.t), y(lane, sample[field])) : ctx.moveTo(x(sample.t), y(lane, sample[field]));
+      });
+      ctx.stroke();
+      ctx.lineWidth = 1;
+    };
+    plot(hipLane, 'hip', '#ffd27a');
+    plot(footLane, 'left', '#7fd6ff');
+    plot(footLane, 'right', '#ff9ab0');
+    const head = x(time);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(head, pad.top - 4); ctx.lineTo(head, pad.top + plotH + 4); ctx.stroke();
+    ctx.lineWidth = 1;
+  }
+  function scrubFromCurves(event) {
+    const box = curveCanvas.getBoundingClientRect();
+    const t = (event.clientX - box.left - 40) / (box.width - 50) * 4;
+    setPlaying(false);
+    time = clamp(t, 0, 3.999);
+    render();
+  }
+  curveCanvas.addEventListener('pointerdown', event => {
+    curveCanvas.setPointerCapture(event.pointerId);
+    scrubFromCurves(event);
+  });
+  curveCanvas.addEventListener('pointermove', event => {
+    if (curveCanvas.hasPointerCapture(event.pointerId)) scrubFromCurves(event);
+  });
+  curveCanvas.addEventListener('keydown', event => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    setPlaying(false);
+    time = (time + (event.key === 'ArrowLeft' ? -.125 : .125) + 4) % 4;
+    render();
+  });
+
+  function render() {
+    if (state.syncSize()) frameCamera();
+    puppet.visible = mode === 'student';
+    puppet.traverse(child => { if (child.isMesh) child.material = silhouette ? silhouetteMaterial : puppetMaterial; });
+    const onion = mode === 'student' && showRig && !silhouette && !exporting;
+    neighbourKeys(time).forEach((keyTime, index) => {
+      ghosts[index].group.visible = onion;
+      if (onion) applyStudentAt(keyTime, ghosts[index]);
+    });
+    if (model) model.visible = mode === 'reference';
+    if (model) applyAt(time);
+    else applyStudentAt(time);
+    updateContacts();
+    if (skeletonHelper) skeletonHelper.visible = showRig && !silhouette && mode === 'reference';
     controls.update();
     renderer.render(scene, camera);
     syncReadout();
-    updateMeter();
+    drawCurves();
   }
 
   function setPlaying(value) {
@@ -266,7 +469,7 @@ if (root) {
   function selectPose(index) {
     selected = (index + 4) % 4;
     setPlaying(false);
-    time = selected;
+    time = mode === 'student' ? selected / 2 : selected;
     qa('[data-pose]').forEach((button, buttonIndex) => {
       const active = buttonIndex === selected;
       button.classList.toggle('is-active', active);
@@ -278,15 +481,131 @@ if (root) {
       q(`output[for="${input.id}"]`).textContent = input.value;
     });
     updateArcs();
+    updateMeter();
     render();
   }
 
+  function updateWork() {
+    const count = keyed.filter(Boolean).length;
+    q('[data-animation-work]').textContent = `${count} / 4 poses keyed · ${count === 4 ? 'Play both steps, test one change, then export.' : 'Edit a pose, then press Key this pose.'}`;
+    qa('[data-pose]').forEach((button, i) => button.dataset.keyed = String(keyed[i]));
+    q('[data-animation-strip]').disabled = count !== 4;
+  }
+  function setMode(value) {
+    mode = value;
+    // In the handmade walk this toggles onion skins; on the reference it shows the skeleton.
+    q('[data-animation-onion]').textContent = mode === 'student' ? 'Onion skin' : 'Show rig';
+    qa('[data-animation-mode]').forEach(button => {
+      button.classList.toggle('is-active', button.dataset.animationMode === mode);
+      button.setAttribute('aria-pressed', String(button.dataset.animationMode === mode));
+    });
+    selectPose(selected);
+  }
+  qa('[data-animation-mode]').forEach(button => button.addEventListener('click', () => setMode(button.dataset.animationMode)));
+  q('[data-animation-key]').addEventListener('click', () => { keyed[selected] = true; updateWork(); });
+  q('[data-animation-measure]').addEventListener('click', () => {
+    const samples = sampleStudentCycle(64);
+    const hips = samples.map(sample => sample.hip);
+    const minHip = Math.min(...hips), maxHip = Math.max(...hips);
+    const minFoot = Math.min(...samples.flatMap(sample => [sample.left, sample.right]));
+    const measurement = `Hip range ${(maxHip - minHip).toFixed(3)} units; minimum foot bottom ${minFoot.toFixed(3)} units (floor = 0).`;
+    q('[data-animation-measurement]').textContent = `${previousMeasurement ? 'Previous: ' + previousMeasurement + ' ' : ''}Current: ${measurement} Sampled at 64 times across your handmade cycle.`;
+    previousMeasurement = measurement;
+    render();
+  });
+  q('[data-animation-strip]').addEventListener('click', async () => {
+    if (!keyed.every(Boolean)) return;
+    setPlaying(false);
+    const oldMode = mode, oldTime = time;
+    mode = 'student';
+    exporting = true;
+    const sheet = document.createElement('canvas');
+    sheet.width = 1600; sheet.height = 900;
+    const ctx = sheet.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, sheet.width, sheet.height);
+    for (let i = 0; i < 8; i++) {
+      time = i / 2; render();
+      const x = i % 4 * 400, y = Math.floor(i / 4) * 450;
+      const aspect = canvas.width / canvas.height;
+      const h = Math.min(400, 390 / aspect), w = h * aspect;
+      ctx.drawImage(canvas, x + (400 - w) / 2, y, w, h);
+      ctx.fillStyle = '#142632'; ctx.font = 'bold 16px sans-serif';
+      ctx.fillText(`${i + 1}. ${names[i % 4]} · ${i < 4 ? 'first' : 'mirrored'} step`, x + 12, y + 425);
+    }
+    exporting = false;
+    mode = oldMode; time = oldTime; render();
+    sheet.toBlob(blob => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob), link = document.createElement('a');
+      link.href = url; link.download = 'my-eight-pose-walk.png'; link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      q('[data-animation-file-status]').textContent = 'Your handmade eight-pose strip is exported. Save the study file to retain editable poses and notes.';
+    }, 'image/png');
+  });
+  updateWork();
+  frameCamera([1, .12, .3]);
+
+  qa('[data-animation-view]').forEach(button => button.addEventListener('click', () => {
+    const directions = { front: [0, .07, 1], side: [1, .07, 0], perspective: [1, .4, 1] };
+    frameCamera(directions[button.dataset.animationView]);
+    render();
+  }));
+  q('[data-animation-silhouette]').addEventListener('click', event => {
+    silhouette = !silhouette;
+    event.currentTarget.setAttribute('aria-pressed', String(silhouette));
+    event.currentTarget.classList.toggle('is-active', silhouette);
+    model?.traverse(child => { if (child.isMesh) child.material = silhouette ? silhouetteMaterial : child.userData.studyMaterial; });
+    arcLines.forEach(line => { line.visible = showArcs && !silhouette; });
+    render();
+  });
+  q('[data-animation-save]').addEventListener('click', () => {
+    const project = { format: 'classroomos-motion-study', version: 2, style, poses, speed, keyed, prediction: q('[data-animation-prediction]').value, evidence: q('[data-animation-evidence]').value };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${style}-walk.motion.json`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    q('[data-animation-file-status]').textContent = 'Motion study saved. Reopen it here to continue editing.';
+  });
+  q('[data-animation-open]').addEventListener('click', () => q('[data-animation-file]').click());
+  q('[data-animation-file]').addEventListener('change', async event => {
+    const file = event.target.files[0];
+    if (!file) return;
+    try {
+      if (file.size > 100000) throw new Error('Study file is too large.');
+      const project = JSON.parse(await file.text());
+      if (project.format !== 'classroomos-motion-study' || ![1, 2].includes(project.version) || !Object.hasOwn(styles, project.style) ||
+          !Array.isArray(project.poses) || project.poses.length !== 4 ||
+          !project.poses.every(pose => pose && Object.keys(defaults).every(key => Number.isFinite(pose[key]) && pose[key] >= 0 && pose[key] <= 1)) ||
+          ![.5, .75, 1, 1.25, 1.5].includes(project.speed)) throw new Error('Choose a valid motion study saved by this lesson.');
+      q(`[data-animation-style="${project.style}"]`).click();
+      poses = project.poses.map(pose => Object.fromEntries(Object.keys(defaults).map(key => [key, pose[key]])));
+      keyed = project.version === 2 && Array.isArray(project.keyed) && project.keyed.length === 4 ? project.keyed.map(v => v === true) : [false, false, false, false];
+      q('[data-animation-prediction]').value = typeof project.prediction === 'string' ? project.prediction.slice(0, 600) : '';
+      q('[data-animation-evidence]').value = typeof project.evidence === 'string' ? project.evidence.slice(0, 1000) : '';
+      setMode('student');
+      updateWork();
+      speed = project.speed;
+      q('[data-animation-speed]').value = speed * 100;
+      q('output[for="animSpeed"]').textContent = `${speed}×`;
+      selectPose(0);
+      q('[data-animation-file-status]').textContent = 'Motion study opened. Your four poses are ready to edit.';
+    } catch (error) {
+      q('[data-animation-file-status]').textContent = `Could not open study: ${error.message}`;
+    } finally { event.target.value = ''; }
+  });
+
   qa('[data-pose]').forEach(button => button.addEventListener('click', () => selectPose(+button.dataset.pose)));
   qa('[data-control]').forEach(input => input.addEventListener('input', () => {
+    setPlaying(false);
+    keyed[selected] = false;
+    updateWork();
     currentPose()[input.dataset.control] = +input.value / 100;
     q(`output[for="${input.id}"]`).textContent = input.value;
-    time = selected;
+    time = mode === 'student' ? selected / 2 : selected;
     updateArcs();
+    updateMeter();
     render();
   }));
   q('[data-animation-time]').addEventListener('input', event => {
@@ -299,8 +618,8 @@ if (root) {
     q(`output[for="${event.target.id}"]`).textContent = `${speed}×`;
   });
   q('[data-animation-play]').addEventListener('click', () => { setPlaying(!playing); render(); });
-  q('[data-animation-guide]').addEventListener('click', () => { poses = targets().map(pose => ({ ...pose })); selectPose(selected); });
-  q('[data-animation-reset]').addEventListener('click', () => { poses = targets().map(() => ({ ...defaults })); selectPose(0); });
+  q('[data-animation-guide]').addEventListener('click', () => { poses = targets().map(pose => ({ ...pose })); keyed.fill(false); updateWork(); selectPose(selected); });
+  q('[data-animation-reset]').addEventListener('click', () => { poses = Array.from({length: 4}, () => ({ ...blank })); keyed.fill(false); updateWork(); setMode('student'); selectPose(0); });
   q('[data-animation-onion]').addEventListener('click', event => {
     showRig = !showRig;
     event.currentTarget.classList.toggle('is-active', showRig);
@@ -311,13 +630,13 @@ if (root) {
     showArcs = !showArcs;
     event.currentTarget.classList.toggle('is-active', showArcs);
     event.currentTarget.setAttribute('aria-pressed', String(showArcs));
-    arcLines.forEach(line => line.visible = showArcs);
+    arcLines.forEach(line => line.visible = showArcs && !silhouette);
     render();
   });
   qa('[data-animation-style]').forEach(button => button.addEventListener('click', () => {
     style = button.dataset.animationStyle;
     root.dataset.motionStyle = style;
-    poses = targets().map(pose => ({ ...pose }));
+    // Style changes preserve student-authored poses.
     qa('[data-animation-style]').forEach(styleButton => {
       const active = styleButton === button;
       styleButton.classList.toggle('is-active', active);
@@ -361,6 +680,8 @@ if (root) {
         child.castShadow = true;
         child.receiveShadow = true;
         child.material = Array.isArray(child.material) ? child.material.map(material => material.clone()) : child.material.clone();
+        child.userData.studyMaterial = child.material;
+        if (silhouette) child.material = silhouetteMaterial;
       }
     });
     const bounds = new THREE.Box3().setFromObject(model);
@@ -392,6 +713,7 @@ if (root) {
     q('[data-model-state]').textContent = `RIG READY · ${Object.keys(bones).length} BONES · ${gltf.animations.length} CLIPS`;
     q('[data-model-state]').classList.add('is-ready');
     updateArcs();
+    updateMeter();
     render();
   }, undefined, error => {
     q('[data-model-state]').textContent = 'RIG FAILED TO LOAD';
@@ -399,6 +721,8 @@ if (root) {
     q('.asset-sim-status').innerHTML = '<strong>Model unavailable:</strong> Check the local GLB path and reload the page.';
     console.error('Character animation model failed to load.', error);
   });
+
+  selectPose(0);
 
   window.SimKit.loop(delta => {
     if (playing) time = (time + delta * 1.6 * speed) % 4;

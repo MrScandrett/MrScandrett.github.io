@@ -2555,6 +2555,56 @@
       .shelf-label { max-width: 100%; white-space: normal; text-align: center; }
       .shelf-board:has(.shelf-label) { height: auto; min-height: 18px; padding-block: 0.2rem; }
     }
+    /* ── The Holy Bible feature (opens bible.html) ── */
+    .lib-bible-feature {
+      display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1.4rem; align-items: center;
+      margin-top: 1rem; padding: 1.25rem 1.5rem;
+      border: 1.5px solid rgba(242, 189, 105, 0.32); border-radius: 20px;
+      background: linear-gradient(120deg, #3a1a12 0%, #24130c 55%, #1a0f09 100%);
+      box-shadow: 0 16px 38px rgba(6, 3, 2, 0.22), inset 0 1px rgba(255,255,255,0.05);
+      color: #fff5e9;
+    }
+    .lib-entry-grid.is-compact ~ .lib-bible-feature { display: none; }
+    .lib-bible-cover {
+      display: grid; place-items: center; width: 92px; height: 122px; border-radius: 4px 10px 10px 4px;
+      background: linear-gradient(90deg, #3d170f 0 9px, #5b2a1e 9px 100%);
+      border: 1px solid #8f5a2a; box-shadow: 6px 8px 20px rgba(0,0,0,0.45), inset -3px 0 0 #c9a46a;
+      transform: rotate(-4deg);
+    }
+    .lib-bible-cover span {
+      padding: 0.4rem 0.3rem; border-top: 1px solid #e7c27d; border-bottom: 1px solid #e7c27d;
+      color: #f2d08e; font: 700 0.72rem/1.25 Georgia, "Times New Roman", serif; letter-spacing: 0.14em; text-align: center;
+    }
+    .lib-bible-kicker { margin: 0; color: #f2bd69; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+    .lib-bible-feature h3 { margin: 0.2rem 0 0.3rem; font: 700 clamp(1.4rem, 2.6vw, 1.9rem)/1.1 Georgia, "Times New Roman", serif; }
+    html body.library-page .lib-bible-feature h3 a { color: #fff5e9; text-decoration: none; }
+    .lib-bible-feature h3 a:hover { text-decoration: underline; text-underline-offset: 0.15em; }
+    .lib-bible-desc { margin: 0; max-width: 46rem; color: #ead9c4; font-size: 0.88rem; line-height: 1.5; }
+    .lib-bible-progress { margin: 0.45rem 0 0; color: #f2d08e; font-size: 0.8rem; font-weight: 600; }
+    .lib-bible-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin-top: 0.9rem; }
+    html body.library-page .lib-bible-feature .lib-bible-btn {
+      display: inline-flex; align-items: center; gap: 0.35rem; min-height: 2.5rem; padding: 0.5rem 1rem;
+      border: 1px solid #c9a46a; border-radius: 999px; background: #2a160e; color: #fff5e9;
+      font: 700 0.85rem/1 system-ui, -apple-system, "Segoe UI", sans-serif; text-decoration: none; cursor: pointer;
+    }
+    html body.library-page .lib-bible-feature .lib-bible-btn:hover { background: #3d2015; }
+    html body.library-page .lib-bible-feature .lib-bible-btn--primary { border-color: #f2bd69; background: #f2bd69; color: #2a140b; }
+    html body.library-page .lib-bible-feature .lib-bible-btn--primary:hover { background: #ffd28a; }
+    .lib-bible-go { display: flex; gap: 0.4rem; flex: 1 1 16rem; max-width: 24rem; }
+    .lib-bible-go input {
+      flex: 1 1 auto; min-width: 0; min-height: 2.5rem; padding: 0.45rem 0.9rem;
+      border: 1px solid #8f6a43; border-radius: 999px; background: #1a0f09; color: #fff5e9; font: inherit; font-size: 0.88rem;
+    }
+    .lib-bible-go input::placeholder { color: #c8b29a; }
+    html body.library-page .lib-bible-feature .lib-bible-link { color: #f2d08e; font-size: 0.85rem; font-weight: 700; text-decoration: none; }
+    .lib-bible-link:hover { text-decoration: underline; }
+    .lib-bible-feature a:focus-visible, .lib-bible-feature input:focus-visible, .lib-bible-feature button:focus-visible { outline: 3px solid #f2bd69; outline-offset: 2px; }
+    @media (max-width: 640px) {
+      .lib-bible-feature { grid-template-columns: 1fr; padding: 1.1rem; }
+      .lib-bible-cover { width: 64px; height: 86px; }
+      .lib-bible-cover span { font-size: 0.55rem; }
+      .lib-bible-go { max-width: none; flex-basis: 100%; }
+    }
   </style>
   <link rel="stylesheet" href="assets/css/pages/library-shelves.css" />
 </head>
@@ -2697,6 +2747,26 @@
           <span class="entry-count">18 official guides</span>
         </button>
       </div>
+
+      <!-- The Bible has its own reader (bible.html); this card keeps it one click from the library door. -->
+      <section class="lib-bible-feature" aria-labelledby="libBibleTitle">
+        <div class="lib-bible-art" aria-hidden="true"><span class="lib-bible-cover"><span>HOLY<br>BIBLE</span></span></div>
+        <div class="lib-bible-copy">
+          <p class="lib-bible-kicker">Scripture · Old &amp; New Testaments · All grades</p>
+          <h3 id="libBibleTitle"><a href="bible.html">The Holy Bible</a></h3>
+          <p class="lib-bible-desc">All 66 books in the class Bible reader: Berean Standard, King James &amp; American Standard. Listen aloud, switch translations mid-chapter, and mark chapters as you read.</p>
+          <p class="lib-bible-progress" id="libBibleProgress" hidden></p>
+          <div class="lib-bible-actions">
+            <a class="lib-bible-btn lib-bible-btn--primary" id="libBibleOpen" href="bible.html">Open the Bible <span aria-hidden="true">→</span></a>
+            <form class="lib-bible-go" id="libBibleGo" action="bible.html" role="search">
+              <label class="visually-hidden" for="libBibleRef">Go to a passage</label>
+              <input id="libBibleRef" type="search" placeholder="Go to a passage, e.g. Psalm 23" autocomplete="off" />
+              <button class="lib-bible-btn" type="submit">Go</button>
+            </form>
+            <a class="lib-bible-link" href="lessons/bible-studies/bible-foundations-pathway.html">Bible lessons <span aria-hidden="true">→</span></a>
+          </div>
+        </div>
+      </section>
     </section>
 
     <!-- ══ STEAM Time-Traveler Library ══════════ -->
@@ -5935,6 +6005,31 @@
       document.addEventListener('click', function () {
         closeAllBooks();
       });
+
+
+      /* ── The Holy Bible card: passage box + "continue" from the Bible reader's progress ── */
+      (function () {
+        var form = document.getElementById('libBibleGo');
+        var input = document.getElementById('libBibleRef');
+        if (form && input) form.addEventListener('submit', function (e) {
+          e.preventDefault();
+          var ref = input.value.trim();
+          location.href = 'bible.html' + (ref ? '#/go/' + encodeURIComponent(ref) : '');
+        });
+        try {
+          var saved = JSON.parse(localStorage.getItem('bible:progress:v1'));
+          var pos = JSON.parse(localStorage.getItem('reader:pos:bible.html'));
+          var out = document.getElementById('libBibleProgress');
+          var open = document.getElementById('libBibleOpen');
+          if (saved && saved.last && saved.last.slug && pos && pos.label) {
+            open.href = 'bible.html#/read/' + encodeURIComponent(saved.last.slug) + '/' + (Number(saved.last.ch) || 1);
+            open.firstChild.textContent = 'Continue · ' + pos.label + ' ';
+            var pct = typeof pos.p === 'number' ? Math.round(pos.p * 1000) / 10 : 0;
+            out.textContent = pct ? pct + '% of the Bible read on this device' : 'Pick up where you left off';
+            out.hidden = false;
+          }
+        } catch (e) { /* storage blocked: the card still opens the Bible */ }
+      }());
 
       /* ── Entry card progressive disclosure ──────── */
       var entryGrid     = document.getElementById('libEntryGrid');

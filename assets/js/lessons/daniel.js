@@ -46,7 +46,7 @@
     $('chapter-ref').textContent = 'Daniel ' + chapter[1];
     $('chapter-heading').textContent = (index + 1) + '. ' + chapter[0];
     $('chapter-summary').textContent = chapter[2]; $('chapter-notice').textContent = chapter[3]; $('chapter-question').textContent = chapter[4];
-    $('chapter-read').href = 'https://www.biblegateway.com/passage/?search=Daniel+' + (index + 1) + '&version=KJV';
+    $('chapter-read').href = '../../bible.html#/read/daniel/' + (index + 1);
     document.querySelectorAll('[data-chapter]').forEach(b => { b.setAttribute('aria-pressed', String(Number(b.dataset.chapter) === index)); b.classList.toggle('is-visited', visited.has(Number(b.dataset.chapter))); });
     $('chapter-progress').textContent = visited.size + ' of 12 chapters explored.';
     if (mark) save();

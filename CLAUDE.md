@@ -156,7 +156,15 @@ no smooth artificial motion. Keep a flat HTML version of the same content on the
 and ASV (all public domain), generated into `assets/data/bible/` by `npm run build:bible`
 from a pinned source; don't hand-edit those files. Progress is per-browser
 (`bible:progress:v1`) and mirrored to `reader:pos:bible.html` so library shelves and My
-Stuff list it. The homepage verse of the day links in via `bible.html#/go/<reference>`.
+Stuff list it. The homepage verse of the day links in via `bible.html#/go/<reference>`;
+the library has a "The Holy Bible" card under the collection cards.
+
+Every lesson in `lessons/bible-studies/` loads `assets/js/bible-quicklink.js` (add it to new
+Bible lessons, after lesson-print-button.js). It adds a 📖 Bible pill to the header (look up
+a passage, continue reading, open the lesson's book) and links scripture references in the
+lesson text ("Daniel 2:31–45", "1 Kings 18") to a passage peek with a link on to the reader.
+Link to a passage from lesson JS with `<a data-bible-ref href="../../bible.html#/go/John 3:16">`
+rather than to an outside Bible site. `data-bible-ref-skip` opts an element out.
 
 ## Shared sim helpers
 

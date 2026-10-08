@@ -28,7 +28,8 @@
     const r = d.route[i]; if (mark) visited.add(i);
     $('route-range').textContent = d.name + ' ' + r[0] + ' · Focus: ' + r[2];
     $('route-heading').textContent = r[1]; $('route-summary').textContent = r[3]; $('route-question').textContent = r[4];
-    $('route-read').href = 'https://www.biblegateway.com/passage/?search=' + encodeURIComponent(d.name + ' ' + r[2].split(';').map(s => s.trim()).join('; ' + d.name + ' ')) + '&version=KJV';
+    // First focus passage; a chapter range ("36–37") opens at its first chapter.
+    $('route-read').href = '../../bible.html#/go/' + encodeURIComponent(d.name + ' ' + r[2].split(';')[0].trim().replace(/^(\d+)[–-]\d+$/, '$1'));
     $('route-progress').textContent = visited.size + ' of ' + d.route.length + ' sections explored.';
     $('route-buttons').querySelectorAll('button').forEach((b, n) => b.setAttribute('aria-pressed', String(n === i)));
   }
