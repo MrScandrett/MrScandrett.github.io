@@ -403,7 +403,7 @@ export function exportPhaser(game, { sources = {}, images = {} } = {}) {
       create.push(`    ${name}.setData('layer', ${n.layer});`);
       if (n.collides) {
         create.push(`    ${name}.setCollisionByProperty({ solid: true });`);
-        if (Object.values(n.tiles).some((t) => t.oneWay && !t.solid)) create.push(`    ${name}.forEachTile((tile) => { if (tile.properties.oneWay) tile.setCollision(false, false, true, false); }); // one-way: solid from above only`);
+        if (Object.values(n.tiles).some((t) => t.oneWay && !t.solid)) create.push(`    ${name}.forEachTile((tile) => { if (tile.properties && tile.properties.oneWay) tile.setCollision(false, false, true, false); }); // one-way: solid from above only`);
         create.push(`    addSolid(${name});`);
       }
       vars.set(n, name);

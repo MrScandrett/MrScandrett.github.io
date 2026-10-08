@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Reader · Mr. Scandrett's ClassroomOS</title>
   <meta name="description" content="Read public-domain books, NASA e-books, or your own EPUB, PDF and text files inside ClassroomOS." />
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" />
@@ -52,6 +52,18 @@
   </header>
 
   <div class="rd-settings" id="rdSettings" role="region" aria-label="Display settings" hidden>
+    <div class="rd-settings-head">
+      <h2>Display</h2>
+      <button type="button" class="rd-btn" id="rdSettingsClose" aria-label="Close display settings">Close</button>
+    </div>
+    <fieldset data-for="epub">
+      <legend>Reading comfort</legend>
+      <div class="rd-seg" role="group" aria-label="Reading comfort presets">
+        <button type="button" data-preset="comfort">Comfort</button>
+        <button type="button" data-preset="compact">Compact</button>
+        <button type="button" data-preset="large">Large text</button>
+      </div>
+    </fieldset>
     <fieldset>
       <legend>Page</legend>
       <div class="rd-seg" role="group">
@@ -102,8 +114,12 @@
     </fieldset>
     <div class="rd-toggles">
       <button type="button" class="rd-toggle" data-toggle="ruler" aria-pressed="false" data-for="epub">
-        <span>Reading ruler</span><small>Dims everything but the lines you’re on</small>
+        <span>Reading ruler</span><small>Keep a clear band while you scroll</small>
       </button>
+      <label class="rd-ruler-position" data-for="epub" for="rdRulerPosition">Ruler position
+        <input id="rdRulerPosition" type="range" min="20" max="75" value="40" step="5" />
+        <small>On touchscreens, scroll anywhere. Adjust the band here.</small>
+      </label>
       <button type="button" class="rd-toggle" data-toggle="fullscreen" aria-pressed="false" hidden>
         <span>Full screen</span><small>For the projector · Esc to leave</small>
       </button>
@@ -124,6 +140,14 @@
     </div>
     <p class="rd-where" id="rdWhere"></p>
     <div class="rd-pane" id="rdPaneContents" role="tabpanel" aria-labelledby="rdTabContents">
+      <form class="rd-jump" id="rdJump" hidden>
+        <label for="rdLocation" id="rdLocationLabel">Page</label>
+        <input id="rdLocation" type="number" min="1" value="1" inputmode="numeric" required />
+        <span id="rdLocationTotal"></span>
+        <button type="submit" class="rd-btn">Go</button>
+        <label for="rdChapterSelect" class="rd-sr">Choose chapter</label>
+        <select id="rdChapterSelect" hidden></select>
+      </form>
       <ol id="rdTocList"></ol>
     </div>
     <div class="rd-pane" id="rdPaneMarks" role="tabpanel" aria-labelledby="rdTabMarks" hidden>
@@ -149,15 +173,9 @@
   </nav>
   <div class="rd-scrim" id="rdScrim" hidden></div>
 
+  <button type="button" class="rd-btn rd-return-controls" id="rdShowControls" hidden>Show controls</button>
+
   <main class="rd-stage" id="rdStage">
-    <form class="rd-jump" id="rdJump" hidden>
-      <label for="rdLocation" id="rdLocationLabel">Page</label>
-      <input id="rdLocation" type="number" min="1" value="1" inputmode="numeric" required />
-      <span id="rdLocationTotal"></span>
-      <button type="submit" class="rd-btn">Go</button>
-      <label for="rdChapterSelect" class="rd-sr">Choose chapter</label>
-      <select id="rdChapterSelect" hidden></select>
-    </form>
     <p class="rd-format-notice" id="rdFormatNotice" role="status" hidden></p>
     <div class="rd-loading" id="rdLoading" role="status" aria-live="polite">
       <div class="rd-book-icon" aria-hidden="true"><span></span><span></span><span></span></div>

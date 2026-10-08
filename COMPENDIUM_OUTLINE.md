@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 355 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 358 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -367,7 +367,7 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 
 # Volume V — Computer Science, AI & Interactive Media
 
-Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 76 lessons
+Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 77 lessons
 
 ## Computer Science & Artificial Intelligence (CSC)
 
@@ -440,51 +440,52 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 - **GAM-03** — From Scratch: Build a Browser Game
 - **GAM-04** — 2D Game Engines: Kaplay & Phaser
 - **GAM-05** — Tool Rosetta: One Idea, Every Engine & 3D App
-- **GAM-06** — Python & Pygame: The Game Loop
+- **GAM-06** — Rosetta 2D: Our Own Game Engine
+- **GAM-07** — Python & Pygame: The Game Loop
 
 ### Game Jam Project
 
-- **GAM-07** — Game Jam Week: From Idea to Demo
+- **GAM-08** — Game Jam Week: From Idea to Demo
 
 ### 2D Game Developer Pathway
 
-- **GAM-08** — 2D Game Developer Pathway
-- **GAM-09** — Pixel Art & Sprites
-- **GAM-10** — Sprite Sheets & Animation
-- **GAM-11** — Tilesets & Tilemaps
-- **GAM-12** — Game Loop & Rendering
-- **GAM-13** — Movement & Jump Feel
-- **GAM-14** — Collision & Response
-- **GAM-15** — Cameras, Layers & Parallax
-- **GAM-16** — Animation State Machines
-- **GAM-17** — Level Design & Game Feel
-- **GAM-18** — Menus, Saving & Shipping
+- **GAM-09** — 2D Game Developer Pathway
+- **GAM-10** — Pixel Art & Sprites
+- **GAM-11** — Sprite Sheets & Animation
+- **GAM-12** — Tilesets & Tilemaps
+- **GAM-13** — Game Loop & Rendering
+- **GAM-14** — Movement & Jump Feel
+- **GAM-15** — Collision & Response
+- **GAM-16** — Cameras, Layers & Parallax
+- **GAM-17** — Animation State Machines
+- **GAM-18** — Level Design & Game Feel
+- **GAM-19** — Menus, Saving & Shipping
 
 ### Godot Engine Pathway
 
-- **GAM-19** — Godot Game Developer Pathway
-- **GAM-20** — Godot Basics: Your First 3D Room
-- **GAM-21** — GDScript Fundamentals
-- **GAM-22** — Player Controller & Camera
-- **GAM-23** — Collectibles, Signals & UI
-- **GAM-24** — Enemies & Simple AI
-- **GAM-25** — Animation & Game Feel
-- **GAM-26** — Levels & Game State
-- **GAM-27** — Export, Test & Publish
+- **GAM-20** — Godot Game Developer Pathway
+- **GAM-21** — Godot Basics: Your First 3D Room
+- **GAM-22** — GDScript Fundamentals
+- **GAM-23** — Player Controller & Camera
+- **GAM-24** — Collectibles, Signals & UI
+- **GAM-25** — Enemies & Simple AI
+- **GAM-26** — Animation & Game Feel
+- **GAM-27** — Levels & Game State
+- **GAM-28** — Export, Test & Publish
 
 ### Game Asset Studio Pathway
 
-- **GAM-28** — Game Asset Studio
-- **GAM-29** — Texture Workshop
-- **GAM-30** — Furniture Prop Lab
-- **GAM-31** — Modular Room Builder
-- **GAM-32** — UV, Materials & Export
-- **GAM-33** — Character Rigging
-- **GAM-34** — Character Animation
+- **GAM-29** — Game Asset Studio
+- **GAM-30** — Texture Workshop
+- **GAM-31** — Furniture Prop Lab
+- **GAM-32** — Modular Room Builder
+- **GAM-33** — UV, Materials & Export
+- **GAM-34** — Character Rigging
+- **GAM-35** — Character Animation
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 66 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 68 lessons
 
 ## Visual Art & Design (DES)
 
@@ -494,13 +495,15 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **DES-02** — Dadaism
 - **DES-03** — Virtual Reality Museum
 - **DES-04** — Origami: History, Mathematics & Library of Creations
+- **DES-05** — Optical Illusions Lab
 
 ### People Who Changed Visual Art
 
-- **DES-05** — Vincent van Gogh
-- **DES-06** — Pablo Picasso
-- **DES-07** — Charles & Ray Eames
-- **DES-08** — Nam June Paik
+- **DES-06** — Vincent van Gogh
+- **DES-07** — Pablo Picasso
+- **DES-08** — Charles & Ray Eames
+- **DES-09** — Nam June Paik
+- **DES-10** — Katsushika Hokusai
 
 ## Music: Theory, Instruments & Sound (MUS)
 

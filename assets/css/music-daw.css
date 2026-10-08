@@ -390,3 +390,155 @@
   .daw-files .daw-menu-wrap:has([data-menu="project"]) .daw-menu { left: auto; right: 0; }
   .daw-scroll { max-height: 65svh; }
 }
+
+/* ── Touch: iPhone / iPad ─────────────────────────────────────────── */
+.daw { -webkit-tap-highlight-color: transparent; }
+.daw button, .daw select, .daw input[type="range"] { touch-action: manipulation; }
+.daw-tracks, .daw-roll, .daw-keys, .daw-pads { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+/* Pinch on the tracks zooms the timeline, not the page. */
+.daw-scroll { touch-action: pan-x pan-y; }
+.daw-ruler { touch-action: none; }
+@media (pointer: coarse) {
+  /* A swipe on an unselected clip scrolls; only the selected clip drags. */
+  .daw-clip { touch-action: pan-x pan-y; cursor: default; }
+  .daw-clip.is-selected { touch-action: none; }
+  .daw-clip-h { width: 18px; }
+  .daw-clip.is-selected .daw-clip-h::after {
+    content: ""; position: absolute; top: 50%; left: 50%; width: 4px; height: 26px; margin: -13px 0 0 -2px;
+    border-radius: 2px; background: rgba(255, 255, 255, 0.85); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  }
+  .daw input[type="range"] { min-height: 32px; }
+}
+
+/* Compact track headers (phones). */
+.daw-th.is-compact { padding: 0.3rem 0.35rem 0.3rem 0.55rem; gap: 0.15rem; align-content: center; }
+.daw-th-label { overflow: hidden; font-weight: 700; font-size: 0.85rem; white-space: nowrap; text-overflow: ellipsis; color: var(--daw-text); }
+.daw-th-sub { overflow: hidden; font-size: 0.7rem; color: var(--daw-muted); white-space: nowrap; text-overflow: ellipsis; }
+.daw-th.is-compact .daw-th-row { gap: 0.2rem; }
+.daw-th.is-compact .daw-mini { width: 32px; height: 32px; }
+.daw.is-compact .daw-th-add { gap: 0.2rem; padding: 0.25rem; }
+.daw.is-compact .daw-th-add .daw-btn { min-height: 36px; width: 100%; padding: 0.15rem 0.3rem; font-size: 0.75rem; }
+.daw.is-compact .daw-lane-add { font-size: 0.72rem; padding-left: 0.5rem; }
+
+/* ── Dock: Edit / Play / Mix / FX ─────────────────────────────────── */
+.daw-dock { display: grid; gap: 0.5rem; min-width: 0; }
+.daw-tabs { display: flex; gap: 0.3rem; padding: 0.3rem; background: var(--daw-panel); border: 1px solid var(--daw-line); border-radius: 12px; }
+.daw-tab {
+  flex: 1; min-height: 44px; padding: 0.3rem 0.5rem; font: inherit; font-weight: 700; color: var(--daw-muted);
+  background: none; border: 1px solid transparent; border-radius: 8px; cursor: pointer; touch-action: manipulation;
+}
+.daw-tab:hover { color: var(--daw-text); background: var(--daw-panel-2); }
+.daw-tab[aria-selected="true"] { color: #e0f2fe; background: #0c4a6e; border-color: var(--daw-accent); }
+.daw-tab:focus-visible { outline: 2px solid var(--daw-accent); outline-offset: 1px; }
+.daw-panel[hidden] { display: none; }
+.daw-play, .daw-mixer { display: grid; gap: 0.5rem; padding: 0.6rem; background: var(--daw-panel); border: 1px solid var(--daw-line); border-radius: 12px; min-width: 0; }
+.daw-seg { display: inline-flex; gap: 0.2rem; }
+.daw-oct { min-width: 2.2rem; text-align: center; font-family: "IBM Plex Mono", ui-monospace, monospace; color: #7dd3fc; font-weight: 700; }
+
+/* On-screen keyboard: white keys fill the width, black keys sit on top. */
+.daw-keys {
+  position: relative; display: grid; grid-template-columns: repeat(var(--whites), 1fr);
+  height: clamp(150px, 30vh, 240px); touch-action: none;
+}
+.daw-key {
+  position: relative; display: flex; align-items: flex-end; justify-content: center; padding: 0 0 0.45rem;
+  font: 600 0.7rem "IBM Plex Mono", ui-monospace, monospace; color: #334155;
+  background: linear-gradient(180deg, #f8fafc, #e2e8f0); border: 1px solid #94a3b8; border-radius: 0 0 8px 8px;
+  cursor: pointer; touch-action: none;
+}
+.daw-key.is-black {
+  position: absolute; top: 0; height: 60%; z-index: 1; padding: 0;
+  background: linear-gradient(180deg, #1e293b, #0b1020); border-color: #020617; border-radius: 0 0 6px 6px;
+}
+.daw-key.is-down { background: linear-gradient(180deg, #bae6fd, #38bdf8); }
+.daw-key.is-black.is-down { background: linear-gradient(180deg, #0369a1, #0c4a6e); }
+.daw-key:focus-visible { outline: 3px solid var(--daw-accent); outline-offset: -3px; }
+.daw-pads { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.45rem; touch-action: none; }
+.daw-pad {
+  min-height: clamp(64px, 11vh, 110px); font: inherit; font-weight: 700; font-size: 0.8rem; color: var(--daw-text);
+  background: radial-gradient(circle at 50% 30%, #334155, #1e293b); border: 1px solid var(--daw-line); border-radius: 12px;
+  cursor: pointer; touch-action: none;
+}
+.daw-pad.is-down { background: radial-gradient(circle at 50% 30%, #fb7185, #be123c); border-color: #fda4af; color: #fff; }
+.daw-pad:focus-visible { outline: 3px solid var(--daw-accent); outline-offset: 2px; }
+
+/* Mixer strips: one row per track, two columns on wide screens. */
+.daw-strips { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 0.5rem; }
+.daw-strip {
+  display: grid; gap: 0.35rem; padding: 0.5rem 0.55rem 0.55rem 0.75rem; min-width: 0;
+  background: var(--daw-panel-2); border: 1px solid var(--daw-line); border-radius: 10px; box-shadow: inset 4px 0 0 var(--tc, #64748b);
+}
+.daw-strip.is-selected { border-color: #64748b; }
+.daw-strip-master { box-shadow: inset 4px 0 0 #f43f5e; }
+.daw-strip-head, .daw-strip-btns { display: flex; align-items: center; gap: 0.35rem; min-width: 0; }
+.daw .daw-strip-head .daw-th-name, .daw .daw-strip-head select {
+  flex: 1; min-width: 0; min-height: 40px; font: inherit; font-size: 0.85rem; color: var(--daw-text);
+  background: var(--daw-bg); border: 1px solid var(--daw-line); border-radius: 7px; padding: 0.2rem 0.4rem;
+}
+.daw-strip-head .daw-tag { flex: 1; }
+.daw-strip-btns .daw-mini { width: 40px; height: 40px; }
+.daw-strip-btns .daw-fx-btn { min-height: 40px; padding: 0.2rem 0.6rem; }
+.daw-strip-btns .daw-del { margin-left: auto; }
+.daw-strip-fader { display: grid; grid-template-columns: 2.4rem minmax(0, 1fr) 4.2rem; align-items: center; gap: 0.4rem; color: var(--daw-muted); font-size: 0.78rem; font-weight: 600; }
+.daw-strip-fader input { width: 100%; min-width: 0; min-height: 36px; }
+.daw-strip-fader output { text-align: right; font-family: "IBM Plex Mono", ui-monospace, monospace; color: var(--daw-text); font-size: 0.75rem; }
+.daw-strip-meter { width: 100%; height: 0.45rem; }
+
+/* Export ready bar (touch devices share to Files / AirDrop / GarageBand). */
+.daw-ready {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; padding: 0.5rem 0.6rem;
+  background: #0c4a6e; border: 1px solid var(--daw-accent); border-radius: 12px; color: #e0f2fe;
+}
+.daw-ready[hidden] { display: none; }
+.daw-ready > span { flex: 1 1 12rem; }
+.daw-ready .daw-share { background: #0284c7; border-color: #7dd3fc; }
+.daw-ready-x { min-width: 44px; }
+
+/* ── Full-screen studio ───────────────────────────────────────────── */
+html.daw-studio-open, html.daw-studio-open body { overflow: hidden; overscroll-behavior: none; }
+.lab-pillar.pillar-daw.is-studio {
+  position: fixed; inset: 0; z-index: 2147483000; margin: 0; max-width: none; width: auto;
+  height: 100vh; height: 100dvh; border-radius: 0; border: 0;
+  display: flex; flex-direction: column; overflow: hidden;
+  padding: max(0.4rem, env(safe-area-inset-top)) max(0.4rem, env(safe-area-inset-right)) max(0.4rem, env(safe-area-inset-bottom)) max(0.4rem, env(safe-area-inset-left));
+}
+.pillar-daw.is-studio .pillar-head { display: none; }
+.pillar-daw.is-studio .daw { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+.pillar-daw.is-studio .daw-scroll { flex: 1 1 42%; min-height: 140px; max-height: none; }
+.pillar-daw.is-studio .daw-dock { flex: 1 1 58%; min-height: 0; grid-template-rows: auto minmax(0, 1fr); }
+.pillar-daw.is-studio .daw-panel { overflow: auto; overscroll-behavior: contain; min-height: 0; }
+.pillar-daw.is-studio .daw-status { flex: none; }
+.pillar-daw.is-studio .daw-roll { height: max(180px, calc(100% - 10rem)); }
+.pillar-daw.is-studio .daw-file-tools { flex: none; }
+/* iPad landscape / desktop: tracks on the left, panels on the right. */
+@media (min-width: 1000px) and (orientation: landscape) {
+  .pillar-daw.is-studio .daw {
+    display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(360px, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  }
+  .pillar-daw.is-studio .daw > :not(.daw-scroll):not(.daw-dock) { grid-column: 1 / -1; }
+  .pillar-daw.is-studio .daw-scroll { grid-row: 3; grid-column: 1; min-height: 0; }
+  .pillar-daw.is-studio .daw-dock { grid-row: 3; grid-column: 2; }
+  .pillar-daw.is-studio .daw-ready, .pillar-daw.is-studio .daw-status { grid-row: auto; }
+}
+
+@media screen and (max-width: 720px) {
+  /* The Mix tab has the master fader; keep the phone transport to two rows. */
+  .daw-transport .daw-master { display: none; }
+  .daw .daw-transport > .daw-group:first-child .daw-btn { min-width: 40px; }
+  .daw-tab { padding-inline: 0.2rem; font-size: 0.85rem; }
+  .daw-play, .daw-mixer { padding: 0.45rem; }
+  .daw-play-bar .daw-field { flex: 1 1 100%; }
+  .daw-play-bar .daw-field select { flex: 1; min-width: 0; }
+  .daw-ed-bar .daw-group { gap: 0.3rem; }
+  .pillar-daw.is-studio .daw-file-tools:not([open]) > summary { padding: 0.45rem 0.75rem; min-height: 40px; }
+}
+.daw .daw-transport .daw-studio-btn { flex: none; }
+@media screen and (max-width: 720px) {
+  /* Full-screen on a phone: one swipeable transport row leaves room for the tracks. */
+  .pillar-daw.is-studio .daw .daw-transport {
+    display: flex; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; padding: 0.35rem;
+  }
+  .pillar-daw.is-studio .daw-transport > .daw-group { flex: none; flex-wrap: nowrap; }
+  .pillar-daw.is-studio .daw-transport .daw-toggle { flex: none; }
+}

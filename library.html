@@ -2556,6 +2556,7 @@
       .shelf-board:has(.shelf-label) { height: auto; min-height: 18px; padding-block: 0.2rem; }
     }
   </style>
+  <link rel="stylesheet" href="assets/css/pages/library-shelves.css" />
 </head>
 <body class="library-page">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -2646,10 +2647,25 @@
         <a class="lib-own-file" href="reader.html">Read your own EPUB, PDF or text file <span aria-hidden="true">→</span></a>
       </div>
 
-      <section class="lib-continue" id="libContinue" aria-labelledby="libContinueTitle" hidden>
-        <h3 id="libContinueTitle">Continue reading</h3>
-        <ul class="lib-continue-list" id="libContinueList"></ul>
-      </section>
+      <div class="lib-personal" id="libPersonal" aria-label="Your reading shelves">
+        <p>Your reading shelves are saved on this device.</p>
+        <p id="libShelfStatus" role="status" aria-live="polite"></p>
+        <section aria-labelledby="libShelfTitle-reading">
+          <h3 id="libShelfTitle-reading">Jump Right Back In <span id="libShelfCount-reading">0</span></h3>
+          <p class="lib-shelf-empty" id="libShelfEmpty-reading">Open a book and your place will appear here. <a href="reader.html">Read your own book</a> or browse a collection below.</p>
+          <ul class="lib-personal-list" id="libShelf-reading"></ul>
+        </section>
+        <section aria-labelledby="libShelfTitle-want">
+          <h3 id="libShelfTitle-want">Want to Read <span id="libShelfCount-want">0</span></h3>
+          <p class="lib-shelf-empty" id="libShelfEmpty-want">Choose “Want to Read” in a book’s details to save it for later.</p>
+          <ul class="lib-personal-list" id="libShelf-want"></ul>
+        </section>
+        <section aria-labelledby="libShelfTitle-finished">
+          <h3 id="libShelfTitle-finished">Finished <span id="libShelfCount-finished">0</span></h3>
+          <p class="lib-shelf-empty" id="libShelfEmpty-finished">Completed books appear here. You can also mark a book finished yourself.</p>
+          <ul class="lib-personal-list" id="libShelf-finished"></ul>
+        </section>
+      </div>
 
       <div class="lib-entry-grid" id="libEntryGrid">
         <button class="lib-entry-card" type="button" data-room="classics" aria-controls="section-classics" aria-expanded="false">
@@ -5168,6 +5184,9 @@
           if (ready) readerBooks[href] = true;
         });
         markReaderProgress();
+        import('./assets/js/reading-shelves.mjs').then(function (shelves) {
+          shelves.initReadingShelves({ readerBooks: readerBooks, goToReader: goToReader });
+        });
       }).catch(function () { /* reader unavailable: links keep opening the source site */ });
 
       /* Books started in the reader (reader:pos:<href> in this browser) say how far along they are. */
@@ -5194,44 +5213,7 @@
           book.classList.add('is-reading');
           book.style.setProperty('--read', Math.min(1, p).toFixed(3));
         });
-        renderContinueReading(started);
-      }
 
-      /* Books part-way through in the reader get a one-click shortcut at the top of the page. */
-      function renderContinueReading(started) {
-        var box = document.getElementById('libContinue');
-        var list = document.getElementById('libContinueList');
-        if (!box || !list) return;
-        list.innerHTML = '';
-        started.forEach(function (entry) {
-          var titleEl = entry.book.querySelector('.book-popup-title');
-          var authorEl = entry.book.querySelector('.book-popup-author');
-          var title = titleEl ? titleEl.textContent.trim() : 'Your book';
-          var pct = Math.max(1, Math.round(entry.p * 100));
-          var li = document.createElement('li');
-          var a = document.createElement('a');
-          a.className = 'lib-continue-item';
-          a.href = 'reader.html?' + new URLSearchParams({ src: entry.href });
-          a.setAttribute('aria-label', 'Continue reading ' + title + ', ' + pct + ' percent read');
-          var strong = document.createElement('strong');
-          strong.textContent = title;
-          var meta = document.createElement('span');
-          meta.textContent = (authorEl ? authorEl.textContent.split('—')[0].trim() + ' · ' : '') + pct + '% read';
-          var meter = document.createElement('span');
-          meter.className = 'lib-continue-meter';
-          meter.setAttribute('aria-hidden', 'true');
-          meter.style.setProperty('--read', entry.p.toFixed(3));
-          meter.appendChild(document.createElement('i'));
-          a.append(strong, meta, meter);
-          a.addEventListener('click', function (event) {
-            if (event.metaKey || event.ctrlKey || event.shiftKey) return;
-            event.preventDefault();
-            goToReader(a.href, entry.book.querySelector('.book-popup-cta[href]'));
-          });
-          li.appendChild(a);
-          list.appendChild(li);
-        });
-        box.hidden = !started.length;
       }
 
       function openReadingCheck(link) {
@@ -5802,8 +5784,8 @@
 
       function openBook(book) {
         closeAllBooks(book);
-        fixPopupShift(book);
         syncPopupState(book, true);
+        fixPopupShift(book);
       }
 
       allBooks.forEach(function (book) {

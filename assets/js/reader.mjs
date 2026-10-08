@@ -27,8 +27,19 @@
 // Reading position, bookmarks and display settings live in localStorage only.
 import { BOOK_PROXY, matchSource, viaFor, gutenbergIdFromUrl, gutenbergEpubUrl } from "./book-sources.mjs";
 
+import { rememberReading } from "./reading-shelves.mjs";
+
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
+// Keep note editing within the visible area when a device keyboard is open.
+function syncVisibleViewport() {
+  root.style.setProperty("--rd-visible-height", (window.visualViewport?.height || innerHeight) + "px");
+  root.style.setProperty("--rd-visible-top", (window.visualViewport?.offsetTop || 0) + "px");
+}
+syncVisibleViewport();
+window.visualViewport?.addEventListener("resize", syncVisibleViewport, { passive: true });
+window.visualViewport?.addEventListener("scroll", syncVisibleViewport, { passive: true });
+addEventListener("resize", syncVisibleViewport, { passive: true });
 const params = new URLSearchParams(location.search);
 const src = (params.get("src") || "").trim();
 const localId = (params.get("file") || "").trim();
@@ -64,7 +75,14 @@ const ui = {
 
 const store = {
   get(key) { try { return JSON.parse(localStorage.getItem(key)); } catch { return null; } },
-  set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* private mode */ } },
+  set(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+      if (key.startsWith("reader:pos:")) rememberReading(key.slice(11), {
+        ...value, author: ui.author.textContent, label: viewer?.here?.().label || "",
+      });
+    } catch { /* private mode */ }
+  },
   raw(key, value) {
     try {
       if (value === undefined) return localStorage.getItem(key);
@@ -181,10 +199,12 @@ ui.scrim.addEventListener("click", closeDrawer);
 
 function toggleSettings(open) {
   const show = open ?? ui.settings.hidden;
+  if (show) { ui.bar.classList.remove("is-tucked"); $("rdShowControls").hidden = true; }
   ui.settings.hidden = !show;
   ui.setBtn.setAttribute("aria-expanded", String(show));
 }
 ui.setBtn.addEventListener("click", () => toggleSettings());
+$("rdSettingsClose").addEventListener("click", () => { toggleSettings(false); ui.setBtn.focus({ preventScroll: true }); });
 document.addEventListener("click", (e) => {
   if (!ui.settings.hidden && !ui.settings.contains(e.target) && !ui.setBtn.contains(e.target)) toggleSettings(false);
   if (!ui.note.hidden && !ui.note.contains(e.target) && !e.target.closest("a[data-path]")) closeNote();
@@ -206,6 +226,10 @@ function applyDisplay() {
   ui.settings.querySelector('[data-toggle="ruler"]').setAttribute("aria-pressed", String(!ui.ruler.hidden));
   ui.settings.querySelector('[data-toggle="fullscreen"]').setAttribute("aria-pressed", String(!!document.fullscreenElement));
   root.style.setProperty("--rd-size", SIZES[sizeIndex] + "rem");
+  ui.settings.querySelectorAll('[data-preset]').forEach(b => {
+    const values = { comfort: [2, "normal", "medium"], compact: [1, "tight", "medium"], large: [4, "loose", "wide"] }[b.dataset.preset];
+    b.setAttribute("aria-pressed", String(sizeIndex === values[0] && (root.dataset.readerLeading || "normal") === values[1] && (root.dataset.readerWidth || "medium") === values[2]));
+  });
   ui.sizeOut.textContent = Math.round((SIZES[sizeIndex] / SIZES[2]) * 100) + "%";
 }
 if (store.raw("reader:face")) root.dataset.readerFace = store.raw("reader:face");
@@ -232,7 +256,17 @@ function reflow(change) {
 ui.settings.addEventListener("click", (e) => {
   const b = e.target.closest("button");
   if (!b) return;
-  if (b.dataset.mode) {
+  if (b.dataset.preset) {
+    const preset = { comfort: [2, "normal", "medium"], compact: [1, "tight", "medium"], large: [4, "loose", "wide"] }[b.dataset.preset];
+    return reflow(() => {
+      sizeIndex = preset[0];
+      store.raw("reader:size", String(sizeIndex));
+      for (const [key, value] of [["leading", preset[1]], ["width", preset[2]]]) {
+        root.dataset["reader" + key[0].toUpperCase() + key.slice(1)] = value;
+        store.raw("reader:" + key, value);
+      }
+    });
+  } else if (b.dataset.mode) {
     root.dataset.readerMode = b.dataset.mode;
     store.raw("reader:mode", b.dataset.mode);
   } else if (b.dataset.face || b.dataset.leading || b.dataset.width) {
@@ -261,25 +295,39 @@ ui.settings.addEventListener("click", (e) => {
 });
 applyDisplay();
 
-/* Reading ruler: a clear band that follows the pointer (or the spoken sentence). */
-function moveRuler(y) { root.style.setProperty("--rd-ruler-y", Math.round(y) + "px"); }
-moveRuler(innerHeight * 0.4);
-addEventListener("pointermove", (e) => { if (!ui.ruler.hidden && e.pointerType === "mouse") moveRuler(e.clientY); }, { passive: true });
-addEventListener("pointerdown", (e) => { if (!ui.ruler.hidden && e.pointerType !== "mouse" && e.target.closest("#rdPage")) moveRuler(e.clientY); }, { passive: true });
+/* Touch scrolling never relocates the ruler. Mouse users can follow the text. */
+const rulerPosition = $("rdRulerPosition");
+rulerPosition.value = clamp(Number(store.raw("reader:ruler-position") || 40), 20, 75);
+function moveRuler(y) { root.style.setProperty("--rd-ruler-y", Math.round(clamp(y, 80, innerHeight - 60)) + "px"); }
+function resetRuler() { moveRuler(innerHeight * Number(rulerPosition.value) / 100); }
+resetRuler();
+rulerPosition.addEventListener("input", () => { resetRuler(); store.raw("reader:ruler-position", rulerPosition.value); });
+addEventListener("resize", resetRuler, { passive: true });
+addEventListener("pointermove", (e) => {
+  if (!ui.ruler.hidden && e.pointerType === "mouse" && e.target.closest("#rdPage") && matchMedia("(hover: hover) and (pointer: fine)").matches) moveRuler(e.clientY);
+}, { passive: true });
+addEventListener("pointerdown", (e) => { if (e.pointerType === "touch") resetRuler(); }, { passive: true });
+const showControls = $("rdShowControls");
+function tuckBar(tuck) { ui.bar.classList.toggle("is-tucked", tuck); showControls.hidden = !tuck; }
+showControls.addEventListener("click", () => { tuckBar(false); ui.setBtn.focus({ preventScroll: true }); });
 
 // Tuck the bar away while reading forward, bring it back on scroll up.
 let lastY = scrollY;
 let ticking = false;
 let statusTimer = 0;
+let stableReadingAnchor = null;
+let stableViewportWidth = innerWidth;
+let stableViewportHeight = innerHeight;
 addEventListener("scroll", () => {
   if (ticking) return;
   ticking = true;
   requestAnimationFrame(() => {
     const y = scrollY;
     const tuck = y > lastY && y > 120 && ui.settings.hidden && ui.toc.hidden;
-    ui.bar.classList.toggle("is-tucked", tuck);
+    tuckBar(tuck);
     lastY = y;
     viewer?.onScroll?.();
+    if (viewer?.kind === "epub" && !resizeAnchor && innerWidth === stableViewportWidth && innerHeight === stableViewportHeight) stableReadingAnchor = viewer.here();
     if (viewer) {
       ui.status.classList.add("is-on");
       clearTimeout(statusTimer);
@@ -289,15 +337,22 @@ addEventListener("scroll", () => {
   });
 }, { passive: true });
 
-ui.bar.addEventListener("focusin", () => ui.bar.classList.remove("is-tucked"));
+ui.bar.addEventListener("focusin", () => tuckBar(false));
 
 let resizeTimer = 0;
 let resizeAnchor = null;
 addEventListener("resize", () => {
   if (viewer?.kind !== "epub") return;
-  resizeAnchor ||= viewer.here();
+  resizeAnchor ||= stableReadingAnchor || store.get(POS_KEY) || viewer.here();
   clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => { viewer.go(resizeAnchor); resizeAnchor = null; }, 200);
+  resizeTimer = setTimeout(async () => {
+    await viewer.go(resizeAnchor);
+    stableViewportWidth = innerWidth;
+    stableViewportHeight = innerHeight;
+    stableReadingAnchor = viewer.here();
+    resizeAnchor = null;
+    resizeTimer = 0;
+  }, 200);
 });
 
 document.addEventListener("keydown", (e) => {
@@ -305,7 +360,7 @@ document.addEventListener("keydown", (e) => {
     if (!ui.annotationEditor.hidden) closeAnnotationEditor();
     else if (!ui.note.hidden) closeNote();
     else if (!ui.toc.hidden) closeDrawer();
-    else if (!ui.settings.hidden) toggleSettings(false);
+    else if (!ui.settings.hidden) { toggleSettings(false); ui.setBtn.focus({ preventScroll: true }); }
     return;
   }
   if (e.target.closest("input, textarea, select, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -2085,9 +2140,9 @@ function configureJump(total, label, chapters) {
 $("rdJump").addEventListener("submit", (e) => {
   e.preventDefault();
   const field = $("rdLocation");
-  if (field.checkValidity()) viewer?.jump(Number(field.value));
+  if (field.checkValidity()) { closeDrawer(); viewer?.jump(Number(field.value)); }
 });
-$("rdChapterSelect").addEventListener("change", (e) => viewer?.jump(Number(e.target.value) + 1));
+$("rdChapterSelect").addEventListener("change", (e) => { closeDrawer(); viewer?.jump(Number(e.target.value) + 1); });
 
 function showCredit(source, entry) {
   ui.credit.replaceChildren();

@@ -31,10 +31,15 @@
     bass: 'Bass', strings: 'Strings', pad: 'Warm Pad', synth: 'Synth Lead', drums: 'Drum Kit',
   };
   const COLORS = ['#f2994a', '#56ccf2', '#6fcf97', '#bb6bd9', '#f2c94c', '#ff7a8a', '#2dd4bf', '#a3e635'];
-  const TRACK_H = window.matchMedia('(pointer: coarse)').matches ? 142 : 110;
+  // Touch screens (iPhone, iPad) get bigger targets everywhere, and phones get a
+  // compact track header whose volume/pan/instrument controls live in the Mix tab.
+  const COARSE = window.matchMedia('(pointer: coarse)').matches;
+  let TRACK_H = COARSE ? 142 : 110;
   let HEAD_W = 200;
-  const ROW_H = 14;
-  const KEYS_W = 80;
+  let compactHeads = false;
+  const ROW_H = COARSE ? 22 : 14;
+  let KEYS_W = 80;
+  const DOUBLE_TAP_MS = 350;
   const LOOKAHEAD = 0.15;
   // Notes played on a drum track from a piano keyboard: one drum per pitch class,
   // drums on white keys, cymbals/aux on black keys. GM drum keys (from pads) pass through.
@@ -47,6 +52,7 @@
   const ui = {
     pxPerBeat: 28, snap: 1, playhead: 0, selTrack: null, selClip: null,
     selNotes: new Set(), rollGrid: 0.25, noteLen: 0.25, rollPx: 72, follow: true, menu: null,
+    tab: 'edit', rollTool: 'draw', playOct: 4, playTrack: null,
   };
   const history = { undo: [], redo: [], last: '' };
   const audio = { ctx: null, mix: null, meter: null, meterData: null };
@@ -134,10 +140,37 @@
       audio.meter.fftSize = 1024;
       audio.meterData = new Float32Array(audio.meter.fftSize);
       audio.mix.master.connect(audio.meter);
+      watchInterruptions(audio.ctx);
       applyMix();
     }
+    setAudioSession();
     if (audio.ctx.state !== 'running') audio.ctx.resume();
     return audio.ctx;
+  }
+
+  // Safari (iOS 16.4+): "playback" keeps the studio audible with the ring/silent
+  // switch on; "play-and-record" while the mic is open stops iPhone routing the
+  // song to the quiet earpiece speaker.
+  function setAudioSession() {
+    const session = navigator.audioSession;
+    if (!session) return;
+    const want = mic.stream ? 'play-and-record' : 'playback';
+    try { if (session.type !== want) session.type = want; } catch (_e) { /* read-only in some builds */ }
+  }
+
+  // A phone call, Siri or switching apps interrupts Web Audio on iOS. Stop the
+  // transport cleanly instead of leaving the playhead running over silence.
+  function watchInterruptions(c) {
+    let wasRunning = c.state === 'running';
+    c.addEventListener('statechange', () => {
+      if (c.state === 'running') { wasRunning = true; return; }
+      if (!wasRunning) return;
+      wasRunning = false;
+      if (transport.playing) {
+        pause();
+        status('Audio was interrupted (a call, Siri or another app). Press ▶ to carry on.');
+      }
+    });
   }
 
   function createMixer(c, dest) {
@@ -155,7 +188,12 @@
         const gain = c.createGain(), pan = c.createStereoPanner();
         const input = c.createGain();
         gain.connect(pan); pan.connect(master);
-        s = { input, gain, pan, effects: [], signature: null };
+        s = { input, gain, pan, effects: [], signature: null, meter: null };
+        if (!(c instanceof OfflineAudioContext)) {
+          s.meter = c.createAnalyser();
+          s.meter.fftSize = 512;
+          pan.connect(s.meter);
+        }
         strips.set(track.id, s);
       }
       const signature = JSON.stringify(track.effects || []);
@@ -583,7 +621,7 @@
     if (transport.recording) { pause(); return; }
     let track = armedTrack();
     if (!track) {
-      track = findTrack(ui.selTrack) || project.tracks.find((t) => t.kind === 'instrument');
+      track = (ui.tab === 'play' && playTarget()) || findTrack(ui.selTrack) || project.tracks.find((t) => t.kind === 'instrument');
       if (!track) { status('Add a track first, then press record.'); return; }
       await setArmed(track, true);
       if (!track.armed) return;
@@ -671,7 +709,9 @@
     }
     track.armed = on;
     if (!project.tracks.some((t) => t.armed && t.kind === 'audio')) releaseMic();
+    setAudioSession();
     renderTracks();
+    renderDock();
     if (on) {
       status(track.kind === 'audio'
         ? `“${track.name}” is armed. Press ⏺ to record from the microphone (headphones stop the speakers bleeding in).`
@@ -682,7 +722,9 @@
   async function ensureMic() {
     if (mic.node) return true;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.AudioWorkletNode) {
-      status('This browser cannot record audio. Try Chrome, Edge or Firefox.');
+      status(window.isSecureContext === false
+        ? 'Recording needs a secure (https) page. Open the class site address, not a local file.'
+        : 'This browser cannot record audio. Update iOS/iPadOS, or try Safari, Chrome, Edge or Firefox.');
       return false;
     }
     const c = ctx();
@@ -1087,8 +1129,21 @@
   }
 
   // ── Export ───────────────────────────────────────────────────────────────
+  // On iPhone/iPad a download lands silently in Files › Downloads, so touch
+  // devices that can share files get a ready-to-share bar instead: the share
+  // sheet saves to Files, AirDrops, or opens the WAV/MIDI in GarageBand.
+  // Sharing needs a fresh tap (the render took longer than the tap's grace period).
   function download(data, filename, type) {
     const blob = data instanceof Blob ? data : new Blob([data], { type });
+    let file = null;
+    try { file = new File([blob], filename, { type: blob.type || type || 'application/octet-stream' }); } catch (_e) { file = null; }
+    if (COARSE && file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      offerShare(file, blob, filename);
+      return;
+    }
+    saveBlob(blob, filename);
+  }
+  function saveBlob(blob, filename) {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = filename;
@@ -1096,6 +1151,27 @@
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  function offerShare(file, blob, filename) {
+    const bar = R.ready;
+    bar.hidden = false;
+    bar.innerHTML = `<span><b>${esc(filename)}</b> is ready.</span>
+      <button type="button" class="daw-btn daw-share" data-ready="share">Share or save…</button>
+      <button type="button" class="daw-btn" data-ready="download">Download</button>
+      <button type="button" class="daw-btn daw-ready-x" data-ready="close" aria-label="Dismiss">✕</button>`;
+    bar.onclick = async (e) => {
+      const b = e.target.closest('[data-ready]');
+      if (!b) return;
+      if (b.dataset.ready === 'share') {
+        try { await navigator.share({ files: [file], title: filename }); } catch (err) {
+          if (err && err.name === 'AbortError') return;
+          saveBlob(blob, filename);
+        }
+      } else if (b.dataset.ready === 'download') saveBlob(blob, filename);
+      bar.hidden = true;
+      bar.innerHTML = '';
+    };
+    bar.querySelector('[data-ready="share"]').focus({ preventScroll: true });
   }
   function fileSafe(s) { return (String(s || 'song').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-') || 'song').slice(0, 50); }
 
@@ -1223,6 +1299,16 @@
   // ── DOM: shell ───────────────────────────────────────────────────────────
   const snapOptions = [['bar', 'Bar'], [1, 'Beat'], [0.5, '1/8'], [0.25, '1/16'], [0, 'Off']];
   const gridOptions = [[1, '1/4'], [0.5, '1/8'], [0.25, '1/16'], [0.125, '1/32'], [1 / 3, '1/8 triplet'], [1 / 6, '1/16 triplet']];
+  const DOCK_TABS = [
+    ['edit', '✎ Edit', 'Piano roll or audio clip editor for the selected clip'],
+    ['play', '🎹 Play', 'On-screen keyboard and drum pads for the armed track'],
+    ['mix', '🎚 Mix', 'Volume, pan, mute, solo and level meters for every track'],
+    ['fx', 'FX', 'Channel effects (EQ, compressor) for one track'],
+  ];
+  // Drum pads in a 4×3 grid: hands on the bottom row like a pad controller.
+  const PADS = [[49, 'Crash'], [51, 'Ride'], [46, 'Open Hat'], [56, 'Cowbell'],
+    [48, 'High Tom'], [47, 'Mid Tom'], [41, 'Low Tom'], [42, 'Closed Hat'],
+    [36, 'Kick'], [38, 'Snare'], [39, 'Clap'], [37, 'Rim']];
   const instrumentOptions = (sel) => Object.keys(INSTRUMENTS).map((k) => `<option value="${k}"${k === sel ? ' selected' : ''}>${INSTRUMENTS[k]}</option>`).join('');
 
   root.innerHTML = `
@@ -1232,6 +1318,7 @@
         <button type="button" class="daw-btn daw-play" data-act="play" aria-label="Play" title="Play / pause (Space)">▶</button>
         <button type="button" class="daw-btn" data-act="stop" aria-label="Stop" title="Stop (press twice to go back to the start)">⏹</button>
         <button type="button" class="daw-btn daw-rec" data-act="record" aria-label="Record" title="Record on the armed track">⏺</button>
+        <button type="button" class="daw-btn daw-toggle daw-studio-btn" data-act="studio" aria-pressed="false" aria-label="Full-screen studio" title="Full-screen studio: fill the screen with the tracks and panels">⛶</button>
       </div>
       <div class="daw-lcd" aria-live="off">
         <span class="daw-lcd-pos" data-ref="pos">1.1.1</span>
@@ -1299,10 +1386,18 @@
       <div class="daw-tracks" data-ref="tracks"></div>
       <div class="daw-drop" aria-hidden="true">Drop audio, MIDI or a project file</div>
     </div>
-    <section class="daw-effects" data-ref="effects" aria-label="Channel effects"></section>
-    <div class="daw-editor" data-ref="editor"></div>
+    <div class="daw-dock">
+      <div class="daw-tabs" role="tablist" aria-label="Studio panels">
+        ${DOCK_TABS.map(([id, label, title]) => `<button type="button" role="tab" class="daw-tab" id="daw-tab-${id}" data-tab="${id}" aria-controls="daw-panel-${id}" aria-selected="false" tabindex="-1" title="${title}">${label}</button>`).join('')}
+      </div>
+      <div class="daw-panel daw-editor" role="tabpanel" id="daw-panel-edit" aria-labelledby="daw-tab-edit" data-ref="editor"></div>
+      <div class="daw-panel daw-play" role="tabpanel" id="daw-panel-play" aria-labelledby="daw-tab-play" data-ref="play" hidden></div>
+      <div class="daw-panel daw-mixer" role="tabpanel" id="daw-panel-mix" aria-labelledby="daw-tab-mix" data-ref="mixer" hidden></div>
+      <section class="daw-panel daw-effects" role="tabpanel" id="daw-panel-fx" aria-labelledby="daw-tab-fx" data-ref="effects" hidden></section>
+    </div>
+    <div class="daw-ready" data-ref="ready" role="region" aria-label="Exported file" hidden></div>
     <p class="daw-status" data-ref="status" role="status" aria-live="polite"></p>
-    <input type="file" aria-label="Import audio, MIDI or a saved project" data-ref="file" multiple accept="audio/*,.wav,.mp3,.ogg,.m4a,.flac,.aif,.aiff,.mid,.midi,.zip" hidden>
+    <input type="file" aria-label="Import audio, MIDI or a saved project" data-ref="file" multiple accept="audio/*,audio/midi,audio/x-midi,application/zip,.wav,.mp3,.ogg,.m4a,.flac,.aif,.aiff,.mid,.midi,.zip" hidden>
   `;
 
   const compactTools = window.matchMedia('(max-width: 720px)');
@@ -1315,7 +1410,8 @@
   const R = {
     pos: $('pos'), time: $('time'), bpm: $('bpm'), sig: $('sig'), master: $('master'), meter: $('meter'),
     name: $('name'), snap: $('snap'), scroll: $('scroll'), tracks: $('tracks'), editor: $('editor'),
-    status: $('status'), file: $('file'),
+    status: $('status'), file: $('file'), play: $('play'), mixer: $('mixer'), effects: $('effects'),
+    ready: $('ready'),
   };
 
   function status(msg) { R.status.textContent = msg || ''; }
@@ -1335,19 +1431,47 @@
     if (document.activeElement !== R.name) R.name.value = project.name;
     R.snap.value = String(ui.snap);
     renderTracks();
-    renderEffects();
     renderEditor();
+    renderDock();
     updateTransportUi();
   }
 
-  function renderTracks() {
-    HEAD_W = R.scroll.clientWidth && R.scroll.clientWidth < 520 ? 176 : 210;
-    const ppb = ui.pxPerBeat, beats = timelineBeats(), width = beats * ppb, bar = barBeats();
+  // Phones get narrow track headers (name, instrument, M S ●); everything else
+  // about a track is one tap away in the Mix tab.
+  function measureLayout() {
+    const w = R.scroll.clientWidth || root.clientWidth || 800;
+    compactHeads = w < 560;
+    HEAD_W = compactHeads ? 118 : 210;
+    TRACK_H = compactHeads ? 86 : (COARSE ? 142 : 110);
+    KEYS_W = compactHeads ? 52 : 80;
+  }
+
+  function setTimelineVars() {
+    const ppb = ui.pxPerBeat, bar = barBeats();
     R.tracks.style.setProperty('--daw-head', HEAD_W + 'px');
-    R.tracks.style.setProperty('--daw-width', width + 'px');
+    R.tracks.style.setProperty('--daw-width', timelineBeats() * ppb + 'px');
     R.tracks.style.setProperty('--daw-beat', ppb + 'px');
     R.tracks.style.setProperty('--daw-bar', ppb * bar + 'px');
     R.tracks.style.setProperty('--daw-track-h', TRACK_H + 'px');
+  }
+
+  // Zoom without rebuilding the DOM, so a pinch in progress keeps its touch targets.
+  function relayoutTimeline() {
+    setTimelineVars();
+    R.tracks.querySelectorAll('.daw-clip[data-clip]').forEach((el) => {
+      const f = findClip(el.dataset.clip);
+      if (!f) return;
+      el.style.left = f.clip.start * ui.pxPerBeat + 'px';
+      el.style.width = Math.max(6, clipBeats(f.clip) * ui.pxPerBeat) + 'px';
+    });
+    drawRuler();
+    drawPlayhead();
+  }
+
+  function renderTracks() {
+    measureLayout();
+    setTimelineVars();
+    root.classList.toggle('is-compact', compactHeads);
     const rows = project.tracks.map((t, i) => trackRowHtml(t, i)).join('');
     R.tracks.innerHTML = `
       <div class="daw-corner"><span>${project.tracks.length} track${project.tracks.length === 1 ? '' : 's'}</span></div>
@@ -1357,7 +1481,9 @@
         <button type="button" class="daw-btn" data-act="quick-instrument">＋ Instrument</button>
         <button type="button" class="daw-btn" data-act="add-audio">＋ Audio</button>
       </div>
-      <div class="daw-lane daw-lane-add" data-hint>${project.tracks.length ? 'Double-click an instrument lane to draw a clip · drag files here to import' : 'Add a track to begin, or drop audio/MIDI files here'}</div>
+      <div class="daw-lane daw-lane-add" data-hint>${!project.tracks.length ? 'Add a track to begin, or import audio/MIDI files'
+        : COARSE ? 'Double-tap an instrument lane to add a clip · pinch to zoom · tap a clip, then drag it'
+          : 'Double-click an instrument lane to draw a clip · drag files here to import'}</div>
       <div class="daw-loop" hidden></div>
       <div class="daw-playhead"></div>
     `;
@@ -1368,6 +1494,263 @@
     drawRuler();
     drawPlayhead();
   }
+
+  // ── DOM: dock (Edit / Play / Mix / FX tabs) ─────────────────────────────
+  function setTab(id, focus) {
+    if (!DOCK_TABS.some(([t]) => t === id)) return;
+    const changed = ui.tab !== id;
+    ui.tab = id;
+    renderDock();
+    if (id === 'edit' && changed) drawRoll();
+    if (focus) root.querySelector(`[data-tab="${id}"]`).focus();
+  }
+
+  function renderDock() {
+    root.querySelectorAll('[data-tab]').forEach((b) => {
+      const on = b.dataset.tab === ui.tab;
+      b.setAttribute('aria-selected', String(on));
+      b.tabIndex = on ? 0 : -1;
+    });
+    R.editor.hidden = ui.tab !== 'edit';
+    R.play.hidden = ui.tab !== 'play';
+    R.mixer.hidden = ui.tab !== 'mix';
+    R.effects.hidden = ui.tab !== 'fx';
+    if (ui.tab === 'play') renderPlay();
+    if (ui.tab === 'mix') renderMixer();
+    if (ui.tab === 'fx') renderEffects();
+  }
+
+  root.querySelector('.daw-tabs').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-tab]');
+    if (b) setTab(b.dataset.tab);
+  });
+  root.querySelector('.daw-tabs').addEventListener('keydown', (e) => {
+    const ids = DOCK_TABS.map(([t]) => t), i = ids.indexOf(ui.tab);
+    const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: ids.length - 1 }[e.key];
+    if (next === undefined) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setTab(ids[(next + ids.length) % ids.length], true);
+  });
+
+  // Re-rendering a panel rebuilds its controls; keep keyboard focus on the same one.
+  function keepFocus(host, fn) {
+    const a = document.activeElement;
+    const key = a && host.contains(a) ? a.dataset.focus : null;
+    fn();
+    if (key) { const el = host.querySelector(`[data-focus="${key}"]`); if (el) el.focus({ preventScroll: true }); }
+  }
+
+  // ── Play tab: on-screen keyboard / drum pads ────────────────────────────
+  function playTarget() {
+    const armed = armedTrack();
+    if (armed && armed.kind === 'instrument') return armed;
+    const chosen = findTrack(ui.playTrack);
+    if (chosen && chosen.kind === 'instrument') return chosen;
+    const sel = findTrack(ui.selTrack);
+    if (sel && sel.kind === 'instrument') return sel;
+    return project.tracks.find((t) => t.kind === 'instrument') || null;
+  }
+
+  // Arms the instrument track the keys play, without re-rendering the Play tab
+  // under the fingers that are pressing it.
+  function armForPlay(track) {
+    if (track.armed) return;
+    project.tracks.forEach((t) => { t.armed = t === track; });
+    releaseMic();
+    setAudioSession();
+    renderTracks();
+    const who = R.play.querySelector('[data-play-armed]');
+    if (who) who.textContent = 'armed';
+  }
+
+  function renderPlay() {
+    keepFocus(R.play, () => {
+      const track = playTarget();
+      const instruments = project.tracks.filter((t) => t.kind === 'instrument');
+      if (!track) {
+        R.play.innerHTML = '<p class="daw-note">Add an instrument track to play it here. <button type="button" class="daw-btn" data-act="quick-instrument" data-focus="add">＋ Instrument track</button></p>';
+        return;
+      }
+      ui.playTrack = track.id;
+      const drums = track.instrument === 'drums';
+      const audioArmed = project.tracks.find((t) => t.armed && t.kind === 'audio');
+      R.play.innerHTML = `
+        <div class="daw-bar daw-ed-bar daw-play-bar"><div class="daw-group">
+          <label class="daw-field"><span>Play</span><select data-play="track" data-focus="track" aria-label="Track the on-screen keys play">
+            ${instruments.map((t) => `<option value="${t.id}"${t === track ? ' selected' : ''}>${esc(t.name)} · ${INSTRUMENTS[t.instrument]}</option>`).join('')}
+          </select></label>
+          ${drums ? '' : `<button type="button" class="daw-btn" data-play="oct" data-by="-1" data-focus="oct-" aria-label="Octave down">− Oct</button>
+          <span class="daw-oct" aria-live="polite">C${ui.playOct}</span>
+          <button type="button" class="daw-btn" data-play="oct" data-by="1" data-focus="oct+" aria-label="Octave up">Oct +</button>`}
+          <button type="button" class="daw-btn daw-rec" data-act="record" data-focus="rec" title="Record what you play on this track">⏺ Record</button>
+        </div></div>
+        <p class="daw-note">${audioArmed ? `“${esc(audioArmed.name)}” is armed for the microphone; touching the keys switches recording to “${esc(track.name)}”. `
+          : track.armed ? `“${esc(track.name)}” is <span data-play-armed>armed</span>. ` : `Touching a key arms “${esc(track.name)}”. `}
+          ${drums ? 'Several fingers at once work. Tap nearer the bottom of a pad to hit harder.' : 'Slide across keys to glide · press lower on a key to play louder · several fingers make chords.'}</p>
+        ${drums ? padsHtml() : keysHtml()}`;
+    });
+  }
+
+  function padsHtml() {
+    return `<div class="daw-pads" data-keys role="group" aria-label="Drum pads">${PADS.map(([key, label]) =>
+      `<button type="button" class="daw-pad" data-pitch="${key}" data-drum="1" aria-label="${label}">${label}</button>`).join('')}</div>`;
+  }
+
+  function keysHtml() {
+    const width = R.play.clientWidth || root.clientWidth || 360;
+    const whites = clamp(Math.floor(width / (COARSE ? 46 : 40)), 7, 24);
+    const startPitch = 12 * (ui.playOct + 1);
+    const keys = [];
+    let p = startPitch, w = 0;
+    while (w < whites) {
+      const black = [1, 3, 6, 8, 10].includes(p % 12);
+      if (!black) w++;
+      keys.push({ p, black, left: w - 1 });   // for a black key: the white key to its left
+      p++;
+    }
+    const pct = 100 / whites;
+    return `<div class="daw-keys" data-keys role="group" aria-label="Keyboard, ${noteLabel(startPitch)} to ${noteLabel(keys[keys.length - 1].p)}" style="--whites:${whites}">
+      ${keys.filter((k) => !k.black).map((k) => `<button type="button" class="daw-key" data-pitch="${k.p}" aria-label="${noteLabel(k.p)}">${k.p % 12 === 0 ? noteLabel(k.p) : ''}</button>`).join('')}
+      ${keys.filter((k) => k.black).map((k) => `<button type="button" class="daw-key is-black" data-pitch="${k.p}" aria-label="${noteLabel(k.p)}" style="left:calc(${(k.left + 1) * pct}% - ${pct * 0.3}%);width:${pct * 0.6}%"></button>`).join('')}
+    </div>`;
+  }
+
+  // Multi-touch: every finger is its own note; sliding moves that finger's note.
+  const fingers = new Map();   // pointerId → { pitch, el, drum }
+  function keyVelocity(el, clientY) {
+    const r = el.getBoundingClientRect();
+    return clamp(0.35 + 0.65 * ((clientY - r.top) / Math.max(1, r.height)), 0.2, 1);
+  }
+  function fingerOn(id, el, clientY) {
+    const track = playTarget();
+    if (!track) return;
+    armForPlay(track);
+    const pitch = Number(el.dataset.pitch), drum = !!el.dataset.drum;
+    noteOn(pitch, keyVelocity(el, clientY), drum);
+    el.classList.add('is-down');
+    fingers.set(id, { pitch, el, drum });
+  }
+  function fingerOff(id) {
+    const f = fingers.get(id);
+    if (!f) return;
+    fingers.delete(id);
+    if (![...fingers.values()].some((o) => o.pitch === f.pitch)) { noteOff(f.pitch); f.el.classList.remove('is-down'); }
+  }
+  R.play.addEventListener('pointerdown', (e) => {
+    const el = e.target.closest('[data-pitch]');
+    if (!el || e.button > 0) return;
+    e.preventDefault();
+    try { el.releasePointerCapture(e.pointerId); } catch (_e) { /* not captured */ }
+    fingerOn(e.pointerId, el, e.clientY);
+  });
+  R.play.addEventListener('pointermove', (e) => {
+    const f = fingers.get(e.pointerId);
+    if (!f || f.drum) return;
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    const el = under && under.closest && under.closest('.daw-keys [data-pitch]');
+    if (!el || el === f.el) return;
+    fingerOff(e.pointerId);
+    fingerOn(e.pointerId, el, e.clientY);
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach((type) => R.play.addEventListener(type, (e) => {
+    if (type === 'pointerleave' && e.pointerType !== 'mouse') return;
+    fingerOff(e.pointerId);
+  }));
+  // Keyboard users: Enter/Space on a focused key plays it.
+  R.play.addEventListener('keydown', (e) => {
+    const el = e.target.closest('[data-pitch]');
+    if (!el || (e.key !== 'Enter' && e.key !== ' ') || e.repeat) return;
+    e.preventDefault();
+    e.stopPropagation();
+    fingerOn('key', el, el.getBoundingClientRect().bottom - 4);
+  });
+  R.play.addEventListener('keyup', (e) => { if (e.key === 'Enter' || e.key === ' ') fingerOff('key'); });
+  R.play.addEventListener('contextmenu', (e) => { if (e.target.closest('[data-pitch]')) e.preventDefault(); });
+  R.play.addEventListener('change', (e) => {
+    if (e.target.dataset.play !== 'track') return;
+    const t = findTrack(e.target.value);
+    if (!t) return;
+    ui.playTrack = t.id;
+    armForPlay(t);
+    renderPlay();
+  });
+  R.play.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-play="oct"]');
+    if (!b) return;
+    ui.playOct = clamp(ui.playOct + Number(b.dataset.by), 1, 6);
+    renderPlay();
+  });
+
+  // ── Mix tab: one channel strip per track + master ───────────────────────
+  const toDb = (g) => (g <= 0.0001 ? '−∞' : (20 * Math.log10(g)).toFixed(1));
+  const panLabel = (p) => (Math.abs(p) < 0.025 ? 'C' : (p < 0 ? 'L' : 'R') + Math.round(Math.abs(p) * 100));
+
+  function renderMixer() {
+    keepFocus(R.mixer, () => {
+      R.mixer.innerHTML = `<div class="daw-strips">${project.tracks.map((t) => `
+        <div class="daw-strip${t.id === ui.selTrack ? ' is-selected' : ''}" data-strip="${t.id}" style="--tc:${t.color}">
+          <div class="daw-strip-head">
+            <input class="daw-th-name" data-mx="name" data-focus="${t.id}-name" value="${esc(t.name)}" maxlength="40" aria-label="${esc(t.name)} name">
+            ${t.kind === 'instrument'
+              ? `<select data-mx="instrument" data-focus="${t.id}-inst" aria-label="${esc(t.name)} instrument">${instrumentOptions(t.instrument)}</select>`
+              : '<span class="daw-tag">🎙 Audio</span>'}
+          </div>
+          <div class="daw-strip-btns">
+            <button type="button" class="daw-mini" data-mx="mute" data-focus="${t.id}-m" aria-label="Mute ${esc(t.name)}" aria-pressed="${t.mute}">M</button>
+            <button type="button" class="daw-mini" data-mx="solo" data-focus="${t.id}-s" aria-label="Solo ${esc(t.name)}" aria-pressed="${t.solo}">S</button>
+            <button type="button" class="daw-mini daw-arm" data-mx="arm" data-focus="${t.id}-a" aria-label="Arm ${esc(t.name)} for recording" aria-pressed="${t.armed}">●</button>
+            <button type="button" class="daw-btn daw-fx-btn" data-mx="fx" data-focus="${t.id}-fx" aria-label="Effects on ${esc(t.name)}">FX${(t.effects || []).length ? ' ' + t.effects.length : ''}</button>
+            <button type="button" class="daw-mini daw-del" data-mx="delete" data-focus="${t.id}-del" aria-label="Delete ${esc(t.name)}">✕</button>
+          </div>
+          <label class="daw-strip-fader"><span>Vol</span><input type="range" data-mx="volume" data-focus="${t.id}-vol" min="0" max="1.2" step="0.01" value="${t.volume}" aria-label="${esc(t.name)} volume"><output>${toDb(t.volume)} dB</output></label>
+          <label class="daw-strip-fader"><span>Pan</span><input type="range" data-mx="pan" data-focus="${t.id}-pan" min="-1" max="1" step="0.05" value="${t.pan}" aria-label="${esc(t.name)} pan"><output>${panLabel(t.pan)}</output></label>
+          <span class="daw-meter daw-strip-meter" aria-hidden="true"><i data-strip-meter="${t.id}"></i></span>
+        </div>`).join('')}
+        <div class="daw-strip daw-strip-master">
+          <div class="daw-strip-head"><strong>Master</strong><span class="daw-tag">Everything you hear and export</span></div>
+          <label class="daw-strip-fader"><span>Vol</span><input type="range" data-mx="master" data-focus="master" min="0" max="1.2" step="0.01" value="${project.masterVolume}" aria-label="Master volume"><output>${toDb(project.masterVolume)} dB</output></label>
+          <span class="daw-meter daw-strip-meter" aria-hidden="true"><i data-strip-meter="master"></i></span>
+        </div>
+      </div>
+      <p class="daw-note">Solo (S) plays only the soloed tracks; mute (M) silences one. Meters turn red when a track is too loud — pull its fader down.</p>`;
+    });
+  }
+
+  R.mixer.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-mx]'), strip = e.target.closest('[data-strip]');
+    const track = strip && findTrack(strip.dataset.strip);
+    if (!b || !track) return;
+    const what = b.dataset.mx;
+    if (what === 'mute' || what === 'solo') { track[what] = !track[what]; commit(); }
+    else if (what === 'arm') setArmed(track, !track.armed);
+    else if (what === 'delete') deleteTrack(track.id);
+    else if (what === 'fx') { effectsTrack = track.id; setTab('fx'); }
+  });
+  R.mixer.addEventListener('input', (e) => {
+    const el = e.target, what = el.dataset.mx, out = el.parentElement.querySelector('output');
+    if (what === 'master') {
+      project.masterVolume = Number(el.value);
+      R.master.value = el.value;
+      if (out) out.textContent = toDb(project.masterVolume) + ' dB';
+      applyMix();
+      return;
+    }
+    const track = findTrack(el.closest('[data-strip]') && el.closest('[data-strip]').dataset.strip);
+    if (!track || (what !== 'volume' && what !== 'pan')) return;
+    track[what] = Number(el.value);
+    if (out) out.textContent = what === 'volume' ? toDb(track.volume) + ' dB' : panLabel(track.pan);
+    applyMix();
+  });
+  R.mixer.addEventListener('change', (e) => {
+    const el = e.target, what = el.dataset.mx;
+    if (what === 'master') { commit(); return; }
+    const track = findTrack(el.closest('[data-strip]') && el.closest('[data-strip]').dataset.strip);
+    if (!track) return;
+    if (what === 'name') track.name = el.value.trim().slice(0, 40) || track.name;
+    if (what === 'instrument') track.instrument = el.value;
+    commit();
+  });
 
   let effectsTrack = null;
   function renderEffects() {
@@ -1420,6 +1803,19 @@
       ? `<select data-tr="instrument" aria-label="${esc(t.name)} instrument">${instrumentOptions(t.instrument)}</select>`
       : '<span class="daw-tag">Audio</span>';
     const clips = t.clips.map((c) => clipHtml(t, c)).join('');
+    const lane = `<div class="daw-lane${sel}${t.mute || !audible(t) ? ' is-silent' : ''}" data-lane="${t.id}" data-kind="${t.kind}" style="--tc:${t.color}">${clips}</div>`;
+    if (compactHeads) {
+      return `
+      <div class="daw-th is-compact${sel}${t.armed ? ' is-armed' : ''}" data-track="${t.id}" style="--tc:${t.color}">
+        <span class="daw-th-label" title="${esc(t.name)}">${esc(t.name)}</span>
+        <span class="daw-th-sub">${t.kind === 'instrument' ? INSTRUMENTS[t.instrument] : '🎙 Audio'}</span>
+        <div class="daw-th-row">
+          <button type="button" class="daw-mini" data-tr="mute" aria-label="Mute ${esc(t.name)}" aria-pressed="${t.mute}">M</button>
+          <button type="button" class="daw-mini" data-tr="solo" aria-label="Solo ${esc(t.name)}" aria-pressed="${t.solo}">S</button>
+          <button type="button" class="daw-mini daw-arm" data-tr="arm" aria-label="Arm ${esc(t.name)} for recording" aria-pressed="${t.armed}">●</button>
+        </div>
+      </div>${lane}`;
+    }
     return `
       <div class="daw-th${sel}${t.armed ? ' is-armed' : ''}" data-track="${t.id}" style="--tc:${t.color}">
         <div class="daw-th-row">
@@ -1438,7 +1834,7 @@
           ${t.armed && t.kind === 'audio' ? '<span class="daw-meter daw-mic" aria-hidden="true"><i data-ref="mic"></i></span>' : ''}
         </div>
       </div>
-      <div class="daw-lane${sel}${t.mute || !audible(t) ? ' is-silent' : ''}" data-lane="${t.id}" data-kind="${t.kind}" style="--tc:${t.color}">${clips}</div>
+      ${lane}
     `;
   }
 
@@ -1550,7 +1946,7 @@
     play.textContent = transport.playing ? '⏸' : '▶';
     play.setAttribute('aria-label', transport.playing ? 'Pause' : 'Play');
     play.classList.toggle('is-on', transport.playing);
-    root.querySelector('[data-act="record"]').classList.toggle('is-on', transport.recording);
+    root.querySelectorAll('[data-act="record"]').forEach((b) => b.classList.toggle('is-on', transport.recording));
     const set = (act, on) => root.querySelector(`[data-act="${act}"]`).setAttribute('aria-pressed', String(on));
     set('loop', project.loop.on);
     set('metronome', project.metronome);
@@ -1575,10 +1971,17 @@
     const sel = selected();
     roll = null;
     if (!sel) {
-      R.editor.innerHTML = `<div class="daw-editor-empty">
+      R.editor.innerHTML = COARSE ? `<div class="daw-editor-empty">
         <strong>Getting started</strong>
         <ol>
-          <li>Press <b>●</b> on a track to arm it, then <b>⏺</b> to record from the keyboard, your QWERTY keys, a MIDI keyboard or a microphone.</li>
+          <li>Open <b>🎹 Play</b> and touch the keys or drum pads; press <b>⏺</b> to record what you play. Arm (<b>●</b>) an audio track to record your voice.</li>
+          <li>Double-tap an instrument lane (or <b>Add note clip</b> under Track &amp; project tools) and tap notes into the piano roll that opens here.</li>
+          <li>Tap a clip to select it, then drag it to move it or drag its edges to trim. Pinch the tracks to zoom; drag along the ruler to set a loop.</li>
+          <li><b>Export</b> a WAV mix, stems or MIDI, then share it to Files, AirDrop or GarageBand. <b>⛶</b> fills the screen.</li>
+        </ol></div>` : `<div class="daw-editor-empty">
+        <strong>Getting started</strong>
+        <ol>
+          <li>Press <b>●</b> on a track to arm it, then <b>⏺</b> to record from the keyboard, your QWERTY keys, a MIDI keyboard, the <b>🎹 Play</b> tab or a microphone.</li>
           <li>Press Add note clip or double-click an instrument lane to draw a clip, then click notes into the piano roll that opens here.</li>
           <li>Drag clips to move them, drag their edges to trim. Drag across the ruler to set a loop.</li>
           <li><b>Import</b> audio stems or a .mid file; <b>Export</b> a WAV mix, stems or MIDI when you’re done.</li>
@@ -1610,6 +2013,14 @@
     R.editor.innerHTML = `
       <div class="daw-bar daw-ed-bar"><div class="daw-group">${common}</div></div>
       <div class="daw-bar daw-ed-bar"><div class="daw-group">
+        <div class="daw-seg" role="group" aria-label="Piano roll tool">
+          ${[['draw', '✏️ Draw', 'Tap to add notes, drag to lengthen; drag a note to move it'], ['select', '⬚ Select', 'Tap notes to select them, or drag a box around several'], ['erase', '⌫ Erase', 'Tap or swipe over notes to delete them']]
+            .map(([id, label, title]) => `<button type="button" class="daw-btn daw-toggle" data-act="roll-tool" data-tool="${id}" aria-pressed="${ui.rollTool === id}" title="${title}">${label}</button>`).join('')}
+        </div>
+        <button type="button" class="daw-btn" data-act="select-all" title="Select every note (Ctrl/⌘+A)">All</button>
+        <button type="button" class="daw-btn" data-act="delete-notes" title="Delete the selected notes (Delete)">🗑 Notes</button>
+      </div></div>
+      <div class="daw-bar daw-ed-bar"><div class="daw-group">
         <label class="daw-field"><span>Grid</span><select data-ed="grid" aria-label="Piano roll grid">${gridSel}</select></label>
         <button type="button" class="daw-btn" data-act="quantize" title="Snap the selected notes (or all notes) to the grid">Quantize</button>
         <button type="button" class="daw-btn" data-act="transpose" data-by="-12" title="Down an octave">−8va</button>
@@ -1620,7 +2031,9 @@
         <button type="button" class="daw-btn" data-act="roll-zoom-out" aria-label="Zoom piano roll out">−</button>
         <button type="button" class="daw-btn" data-act="roll-zoom-in" aria-label="Zoom piano roll in">＋</button>
       </div></div>
-      <p class="daw-note">${track.instrument === 'drums' ? 'Each row is one drum. ' : ''}Click to add a note (drag to make it longer) · drag a note to move it, its right edge to resize · right-click or double-click to delete · Shift-click to select several · arrow keys nudge.</p>
+      <p class="daw-note">${track.instrument === 'drums' ? 'Each row is one drum. ' : ''}${COARSE
+        ? 'Draw: tap to add a note, drag to make it longer · drag a note to move it, its right end to resize · double-tap a note to delete it · two fingers scroll, pinch to zoom.'
+        : 'Click to add a note (drag to make it longer) · drag a note to move it, its right edge to resize · right-click or double-click to delete · Shift-click or the Select tool picks several · arrow keys nudge.'}</p>
       <div class="daw-roll" tabindex="0" aria-label="Piano roll for ${esc(clip.name || track.name)}: ${clip.notes.length} notes">
         <div class="daw-roll-spacer"><canvas></canvas></div>
       </div>`;
@@ -1693,6 +2106,14 @@
       g.fillStyle = 'rgba(0,0,0,0.5)';
       g.fillRect(x + nw - 3, y + 3, 2, ROW_H - 6);
     });
+    // Selection box (Select tool)
+    if (roll.marquee) {
+      const m = roll.marquee;
+      const x0 = KEYS_W + Math.min(m.b0, m.b1) * px - sx, x1 = KEYS_W + Math.max(m.b0, m.b1) * px - sx;
+      const y0 = Math.min(m.r0, m.r1) * ROW_H - sy, y1 = (Math.max(m.r0, m.r1) + 1) * ROW_H - sy;
+      g.fillStyle = 'rgba(56, 189, 248, 0.15)'; g.fillRect(x0, y0, x1 - x0, y1 - y0);
+      g.strokeStyle = '#38bdf8'; g.lineWidth = 1; g.strokeRect(x0 + 0.5, y0 + 0.5, x1 - x0 - 1, y1 - y0 - 1);
+    }
     // Playhead
     if (ui.playhead >= clip.start && ui.playhead <= clip.start + rollBeats(clip)) {
       const x = KEYS_W + (ui.playhead - clip.start) * px - sx;
@@ -1740,52 +2161,124 @@
     const rect = roll.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left, y = e.clientY - rect.top;
     const beat = (x - KEYS_W + roll.scroll.scrollLeft) / ui.rollPx;
-    const row = Math.floor((y + roll.scroll.scrollTop) / ROW_H);
-    const pitch = roll.rows[clamp(row, 0, roll.rows.length - 1)];
+    const row = clamp(Math.floor((y + roll.scroll.scrollTop) / ROW_H), 0, roll.rows.length - 1);
+    const pitch = roll.rows[row];
+    const finger = !!e.pointerType && e.pointerType !== 'mouse';
+    const edgePx = finger ? 14 : 7;
     let hit = -1, edge = false;
     roll.clip.notes.forEach((n, i) => {
-      if (n.pitch === pitch && beat >= n.start && beat <= n.start + n.duration) {
+      if (n.pitch === pitch && beat >= n.start && beat <= n.start + n.duration + (finger ? 6 / ui.rollPx : 0)) {
         hit = i;
-        edge = (n.start + n.duration - beat) * ui.rollPx < 7;
+        edge = (n.start + n.duration - beat) * ui.rollPx < edgePx;
       }
     });
-    return { x, beat, pitch, hit, edge, onKeys: x < KEYS_W };
+    return { x, beat, row, pitch, hit, edge, onKeys: x < KEYS_W };
   }
 
+  // One finger edits with the current tool (mouse: right-click/Alt erases,
+  // Shift selects); two fingers scroll the roll and pinch zooms it.
   function attachRollEvents(scroll) {
-    let drag = null;
+    let drag = null, pinch = null, lastTap = null, lastType = 'mouse';
+    const pts = new Map();
     scroll.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    function cancelDrag() {
+      if (!drag || !roll) { drag = null; return; }
+      roll.clip.notes = drag.orig;
+      roll.marquee = null;
+      ui.selNotes = new Set(drag.sel);
+      drag = null;
+    }
+    function startPinch() {
+      const [a, b] = [...pts.values()];
+      const rect = roll.canvas.getBoundingClientRect();
+      pinch = {
+        dist: Math.hypot(a.x - b.x, a.y - b.y) || 1, px: ui.rollPx, left: rect.left,
+        midY: (a.y + b.y) / 2, top: scroll.scrollTop,
+        beat: ((a.x + b.x) / 2 - rect.left - KEYS_W + scroll.scrollLeft) / ui.rollPx,
+      };
+    }
+    function movePinch() {
+      const [a, b] = [...pts.values()];
+      ui.rollPx = clamp(pinch.px * (Math.hypot(a.x - b.x, a.y - b.y) || 1) / pinch.dist, 16, 320);
+      sizeRoll();
+      scroll.scrollLeft = pinch.beat * ui.rollPx - ((a.x + b.x) / 2 - pinch.left - KEYS_W);
+      scroll.scrollTop = pinch.top - ((a.y + b.y) / 2 - pinch.midY);
+      drawRoll();
+    }
+    function eraseAt(h) {
+      if (h.hit < 0) return;
+      roll.clip.notes.splice(h.hit, 1);
+      ui.selNotes.clear();
+      drag.moved = true;
+      drawRoll();
+    }
+
     scroll.addEventListener('pointerdown', (e) => {
       if (!roll || e.target !== roll.canvas) return;
+      lastType = e.pointerType;
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      try { scroll.setPointerCapture(e.pointerId); } catch (_e) { /* pointer already gone */ }
+      if (pts.size === 2) { cancelDrag(); startPinch(); drawRoll(); return; }
+      if (pts.size > 2) return;
       const h = rollHit(e);
       const { clip, track } = roll;
+      const touch = e.pointerType !== 'mouse';
       scroll.focus({ preventScroll: true });
       if (h.onKeys) { previewNote(track, h.pitch, 0.8); return; }
-      if (e.button === 2 || e.altKey) {
-        if (h.hit >= 0) { clip.notes.splice(h.hit, 1); ui.selNotes.clear(); commit(); }
+      const base = { beat: h.beat, pitch: h.pitch, orig: clip.notes.map((x) => ({ ...x })), sel: [...ui.selNotes], moved: false, x0: e.clientX };
+      if (e.button === 2 || e.altKey || ui.rollTool === 'erase') {
+        drag = { ...base, mode: 'erase' };
+        eraseAt(h);
         return;
       }
       if (e.button !== 0) return;
-      scroll.setPointerCapture(e.pointerId);
       if (h.hit >= 0) {
-        if (e.shiftKey) { ui.selNotes.has(h.hit) ? ui.selNotes.delete(h.hit) : ui.selNotes.add(h.hit); drawRoll(); return; }
+        // Double-tap a note to delete it (iOS doesn't send dblclick reliably).
+        if (touch && lastTap && lastTap.note === h.hit && e.timeStamp - lastTap.t < DOUBLE_TAP_MS) {
+          lastTap = null;
+          clip.notes.splice(h.hit, 1);
+          ui.selNotes.clear();
+          commitKeepRoll();
+          return;
+        }
+        lastTap = touch ? { note: h.hit, t: e.timeStamp } : null;
+        if ((e.shiftKey || ui.rollTool === 'select') && !h.edge) {
+          // Select tool: a tap toggles the note; a drag moves the whole selection.
+          const was = ui.selNotes.has(h.hit);
+          ui.selNotes.add(h.hit);
+          drag = { ...base, mode: 'move', note: h.hit, toggleOff: was };
+          drawRoll();
+          return;
+        }
         if (!ui.selNotes.has(h.hit)) { ui.selNotes.clear(); ui.selNotes.add(h.hit); }
         const n = clip.notes[h.hit];
-        drag = { mode: h.edge ? 'resize' : 'move', beat: h.beat, pitch: h.pitch, orig: clip.notes.map((x) => ({ ...x })), moved: false, note: h.hit };
+        drag = { ...base, mode: h.edge ? 'resize' : 'move', note: h.hit };
         if (!h.edge) previewNote(track, n.pitch, n.velocity);
+      } else if (ui.rollTool === 'select' || e.shiftKey) {
+        drag = { ...base, mode: 'marquee', add: e.shiftKey };
+        roll.marquee = { b0: h.beat, b1: h.beat, r0: h.row, r1: h.row };
       } else {
+        lastTap = null;
         const start = floorTo(Math.max(0, h.beat), ui.rollGrid);
         clip.notes.push({ pitch: h.pitch, start, duration: ui.noteLen, velocity: 0.8 });
         ui.selNotes.clear();
         ui.selNotes.add(clip.notes.length - 1);
-        drag = { mode: 'draw', beat: start, pitch: h.pitch, note: clip.notes.length - 1, moved: true, x0: e.clientX };
+        drag = { ...base, mode: 'draw', beat: start, note: clip.notes.length - 1, moved: true };
         previewNote(track, h.pitch, 0.8);
       }
       drawRoll();
     });
+
     scroll.addEventListener('pointermove', (e) => {
-      if (!drag || !roll) return;
+      if (!roll) return;
+      const p = pts.get(e.pointerId);
+      if (p) { p.x = e.clientX; p.y = e.clientY; }
+      if (pinch) { if (pts.size >= 2) movePinch(); return; }
+      if (!drag) return;
       const h = rollHit(e), clip = roll.clip, grid = ui.rollGrid;
+      if (drag.mode === 'erase') { eraseAt(h); return; }
+      if (drag.mode === 'marquee') { roll.marquee.b1 = h.beat; roll.marquee.r1 = h.row; drawRoll(); return; }
       if (drag.mode === 'draw') {
         if (Math.abs(e.clientX - drag.x0) < 5) return;
         const n = clip.notes[drag.note];
@@ -1803,22 +2296,45 @@
         let pitchChanged = false;
         ui.selNotes.forEach((i) => {
           const o = drag.orig[i], r = clamp(roll.rows.indexOf(o.pitch) + dRow, 0, roll.rows.length - 1);
-          const p = roll.rows[r];
-          if (clip.notes[i].pitch !== p && i === drag.note) pitchChanged = true;
-          clip.notes[i].pitch = p;
+          const pitch = roll.rows[r];
+          if (clip.notes[i].pitch !== pitch && i === drag.note) pitchChanged = true;
+          clip.notes[i].pitch = pitch;
           clip.notes[i].start = Math.max(0, o.start + dBeat);
         });
         if (pitchChanged) previewNote(roll.track, clip.notes[drag.note].pitch, clip.notes[drag.note].velocity);
       }
       drawRoll();
     });
-    const end = () => {
+
+    const end = (e) => {
+      pts.delete(e.pointerId);
+      if (pinch) { if (!pts.size) pinch = null; return; }
       if (!drag || !roll) { drag = null; return; }
-      const clip = roll.clip, moved = drag.moved;
+      const clip = roll.clip, d = drag;
       drag = null;
-      if (!moved) return;
+      if (d.mode === 'marquee') {
+        const m = roll.marquee;
+        roll.marquee = null;
+        const b0 = Math.min(m.b0, m.b1), b1 = Math.max(m.b0, m.b1), r0 = Math.min(m.r0, m.r1), r1 = Math.max(m.r0, m.r1);
+        if (!d.add) ui.selNotes.clear();
+        if (b1 - b0 > 1e-6) {
+          clip.notes.forEach((n, i) => {
+            const r = roll.rows.indexOf(n.pitch);
+            if (r >= r0 && r <= r1 && n.start < b1 && n.start + n.duration > b0) ui.selNotes.add(i);
+          });
+        }
+        syncVelocity(clip);
+        drawRoll();
+        return;
+      }
+      if (!d.moved) {
+        if (d.toggleOff) ui.selNotes.delete(d.note);
+        syncVelocity(clip);
+        drawRoll();
+        return;
+      }
       // Drawing past the end of a clip makes the clip longer.
-      const last = Math.max(...clip.notes.map((n) => n.start + n.duration));
+      const last = clip.notes.length ? Math.max(...clip.notes.map((n) => n.start + n.duration)) : 0;
       if (last > clip.length) clip.length = Math.ceil(last / barBeats() - 1e-9) * barBeats();
       sortNotes(clip);
       commitKeepRoll();
@@ -1826,10 +2342,16 @@
     scroll.addEventListener('pointerup', end);
     scroll.addEventListener('pointercancel', end);
     scroll.addEventListener('dblclick', (e) => {
-      if (!roll) return;
+      if (!roll || lastType !== 'mouse') return;
       const h = rollHit(e);
       if (h.hit >= 0 && !h.onKeys) { roll.clip.notes.splice(h.hit, 1); ui.selNotes.clear(); commitKeepRoll(); }
     });
+  }
+
+  // The velocity slider shows the selected notes' average.
+  function syncVelocity(clip) {
+    const v = R.editor.querySelector('[data-ed="velocity"]');
+    if (v) v.value = selectedVelocity(clip);
   }
 
   // Keeps the selection pointing at the same notes after sorting.
@@ -1867,12 +2389,18 @@
     return (clientX - rect.left - HEAD_W) / ui.pxPerBeat;
   }
 
-  let clipDrag = null;
+  // Touch rules: a swipe always scrolls the tracks. Tap a clip to select it;
+  // only a selected clip drags (CSS gives it touch-action: none). Taps on a lane
+  // move the playhead, and a double-tap adds a clip there.
+  let clipDrag = null, laneTap = null, lastLaneTap = null, lastTlType = 'mouse';
   R.tracks.addEventListener('pointerdown', (e) => {
     const ruler = e.target.closest('[data-ruler]');
     if (ruler) { startRulerDrag(e); return; }
+    if (pinchTl) return;
     const clipEl = e.target.closest('.daw-clip');
     const lane = e.target.closest('.daw-lane[data-lane]');
+    const touch = e.pointerType !== 'mouse';
+    lastTlType = e.pointerType;
     if (clipEl) {
       if (e.button !== 0) return;
       const found = findClip(clipEl.dataset.clip);
@@ -1880,22 +2408,46 @@
       const changed = ui.selClip !== found.clip.id;
       select(found.track.id, found.clip.id);
       markTrack(found.track.id);
+      if (changed && ui.tab !== 'play') setTab('edit');
+      if (touch && changed) { renderEditor(); return; }
       clipEl.setPointerCapture(e.pointerId);
       clipDrag = {
-        el: clipEl, found, mode: e.target.dataset.handle || 'move', x: e.clientX, y: e.clientY,
+        el: clipEl, found, origTrack: found.track, mode: e.target.dataset.handle || 'move', x: e.clientX, y: e.clientY,
         orig: JSON.parse(JSON.stringify(found.clip)), moved: false, changed,
       };
       e.preventDefault();
       return;
     }
     if (lane && e.button === 0) {
-      ui.selClip = null;
-      ui.selNotes.clear();
-      setPlayhead(snapTo(Math.max(0, beatFromClientX(e.clientX)), snapGrid()));
-      markTrack(lane.dataset.lane);
-      renderEditor();
+      if (touch) { laneTap = { id: e.pointerId, x: e.clientX, y: e.clientY, t: e.timeStamp, lane: lane.dataset.lane }; return; }
+      laneClick(lane, e.clientX);
     }
   });
+
+  function laneClick(lane, clientX) {
+    ui.selClip = null;
+    ui.selNotes.clear();
+    setPlayhead(snapTo(Math.max(0, beatFromClientX(clientX)), snapGrid()));
+    markTrack(lane.dataset.lane);
+    renderEditor();
+  }
+
+  R.tracks.addEventListener('pointerup', (e) => {
+    const tap = laneTap;
+    laneTap = null;
+    if (!tap || tap.id !== e.pointerId || Math.hypot(e.clientX - tap.x, e.clientY - tap.y) > 12) return;
+    const lane = R.tracks.querySelector(`.daw-lane[data-lane="${tap.lane}"]`);
+    if (!lane) return;
+    const prev = lastLaneTap;
+    if (prev && prev.lane === tap.lane && e.timeStamp - prev.t < DOUBLE_TAP_MS && Math.abs(e.clientX - prev.x) < 30) {
+      lastLaneTap = null;
+      addClipAt(lane, e.clientX);
+      return;
+    }
+    lastLaneTap = { lane: tap.lane, t: e.timeStamp, x: e.clientX };
+    laneClick(lane, e.clientX);
+  });
+  R.tracks.addEventListener('pointercancel', (e) => { if (laneTap && laneTap.id === e.pointerId) laneTap = null; });
 
   R.tracks.addEventListener('pointermove', (e) => {
     if (!clipDrag) return;
@@ -1909,12 +2461,7 @@
       // Dragging up/down moves the clip to another track of the same kind.
       const under = document.elementsFromPoint(e.clientX, e.clientY).find((el) => el.matches && el.matches('.daw-lane[data-lane]'));
       if (under && under.dataset.kind === d.found.track.kind && under.dataset.lane !== d.found.track.id) {
-        const target = findTrack(under.dataset.lane);
-        d.found.track.clips = d.found.track.clips.filter((c) => c !== clip);
-        target.clips.push(clip);
-        d.found = { track: target, clip };
-        ui.selTrack = target.id;
-        under.appendChild(d.el);
+        moveClipToTrack(d, findTrack(under.dataset.lane), under);
       }
     } else if (d.mode === 'r') {
       if (clip.type === 'audio') {
@@ -1942,8 +2489,29 @@
     d.el.style.width = Math.max(6, clipBeats(clip) * ui.pxPerBeat) + 'px';
   });
 
-  function endClipDrag() {
+  function moveClipToTrack(d, target, laneEl) {
+    const clip = d.found.clip;
+    d.found.track.clips = d.found.track.clips.filter((c) => c !== clip);
+    target.clips.push(clip);
+    d.found = { track: target, clip };
+    ui.selTrack = target.id;
+    if (laneEl) laneEl.appendChild(d.el);
+  }
+
+  // A cancelled drag (a second finger landed, or the OS took the touch) puts the clip back.
+  function cancelClipDrag() {
+    const d = clipDrag;
+    clipDrag = null;
+    if (!d || !d.moved) return;
+    if (d.found.track !== d.origTrack) moveClipToTrack(d, d.origTrack, R.tracks.querySelector(`.daw-lane[data-lane="${d.origTrack.id}"]`));
+    Object.assign(d.found.clip, JSON.parse(JSON.stringify(d.orig)));
+    d.el.style.left = d.found.clip.start * ui.pxPerBeat + 'px';
+    d.el.style.width = Math.max(6, clipBeats(d.found.clip) * ui.pxPerBeat) + 'px';
+  }
+
+  function endClipDrag(e) {
     if (!clipDrag) return;
+    if (e && e.type === 'pointercancel') { cancelClipDrag(); return; }
     const d = clipDrag;
     clipDrag = null;
     if (d.mode === 'l' && d.found.clip.type === 'midi') {
@@ -1956,21 +2524,67 @@
   R.tracks.addEventListener('pointerup', endClipDrag);
   R.tracks.addEventListener('pointercancel', endClipDrag);
 
-  R.tracks.addEventListener('dblclick', (e) => {
-    const lane = e.target.closest('.daw-lane[data-lane]');
-    if (!lane || e.target.closest('.daw-clip')) {
-      if (e.target.closest('.daw-clip') && roll) roll.scroll.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      return;
-    }
+  function addClipAt(lane, clientX) {
     const track = findTrack(lane.dataset.lane);
     if (!track) return;
     if (track.kind === 'audio') { status('Audio tracks hold recordings: arm the track and press ⏺, or import an audio file.'); return; }
-    const start = floorTo(Math.max(0, beatFromClientX(e.clientX)), barBeats());
+    const start = floorTo(Math.max(0, beatFromClientX(clientX)), barBeats());
     const clip = newMidiClip(track, start, track.instrument === 'drums' ? barBeats() : barBeats() * 2);
     select(track.id, clip.id);
+    ui.tab = 'edit';
     commit();
+    status(COARSE ? 'Clip added. Tap the piano roll below to add notes.' : 'Clip added. Click the piano roll below to add notes.');
     if (roll) roll.scroll.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  R.tracks.addEventListener('dblclick', (e) => {
+    if (lastTlType !== 'mouse') return;   // touch/pen double-taps are handled on pointerup
+    const lane = e.target.closest('.daw-lane[data-lane]');
+    if (!lane || e.target.closest('.daw-clip')) {
+      if (e.target.closest('.daw-clip') && roll) { setTab('edit'); roll.scroll.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+      return;
+    }
+    addClipAt(lane, e.clientX);
   });
+
+  // Pinch the tracks to zoom (anchored between the fingers); two-finger drag scrolls.
+  let pinchTl = null, pinchFrame = 0;
+  R.scroll.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 2) return;
+    cancelClipDrag();
+    laneTap = null;
+    const [a, b] = e.touches, rect = R.scroll.getBoundingClientRect();
+    const midX = (a.clientX + b.clientX) / 2 - rect.left - HEAD_W;
+    pinchTl = {
+      dist: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1, ppb: ui.pxPerBeat,
+      beat: (R.scroll.scrollLeft + midX) / ui.pxPerBeat, top: R.scroll.scrollTop,
+      midY: (a.clientY + b.clientY) / 2, left: rect.left,
+    };
+  }, { passive: true });
+  R.scroll.addEventListener('touchmove', (e) => {
+    if (!pinchTl || e.touches.length !== 2) return;
+    e.preventDefault();
+    const [a, b] = e.touches;
+    const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1;
+    const midX = (a.clientX + b.clientX) / 2 - pinchTl.left - HEAD_W, midY = (a.clientY + b.clientY) / 2;
+    cancelAnimationFrame(pinchFrame);
+    pinchFrame = requestAnimationFrame(() => {
+      ui.pxPerBeat = clamp(pinchTl.ppb * dist / pinchTl.dist, 4, 200);
+      relayoutTimeline();
+      R.scroll.scrollLeft = pinchTl.beat * ui.pxPerBeat - midX;
+      R.scroll.scrollTop = pinchTl.top - (midY - pinchTl.midY);
+      drawRuler();
+    });
+  }, { passive: false });
+  const endPinch = (e) => {
+    if (!pinchTl || e.touches.length >= 2) return;
+    pinchTl = null;
+    renderTracks();   // redraw clip contents at the new zoom
+  };
+  R.scroll.addEventListener('touchend', endPinch);
+  R.scroll.addEventListener('touchcancel', endPinch);
+  // Safari's own pinch gesture would zoom the whole page instead.
+  ['gesturestart', 'gesturechange'].forEach((type) => R.scroll.addEventListener(type, (e) => e.preventDefault()));
 
   function startRulerDrag(e) {
     const x0 = e.clientX, b0 = Math.max(0, beatFromClientX(e.clientX));
@@ -2001,7 +2615,8 @@
   // Selects a track by toggling classes, so a header input being clicked survives.
   function markTrack(id) {
     ui.selTrack = id;
-    renderEffects();
+    effectsTrack = id;
+    renderDock();
     R.tracks.querySelectorAll('.is-selected').forEach((el) => el.classList.remove('is-selected'));
     R.tracks.querySelectorAll(`[data-track="${id}"], [data-lane="${id}"]`).forEach((el) => el.classList.add('is-selected'));
     R.tracks.querySelectorAll(`[data-clip="${ui.selClip}"]`).forEach((el) => el.classList.add('is-selected'));
@@ -2065,6 +2680,21 @@
       case 'play': togglePlay(); break;
       case 'stop': stop(); break;
       case 'record': record(); break;
+      case 'studio': toggleStudio(); break;
+      case 'roll-tool':
+        ui.rollTool = btn.dataset.tool;
+        root.querySelectorAll('[data-act="roll-tool"]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tool === ui.rollTool)));
+        break;
+      case 'select-all':
+        if (roll) { ui.selNotes = new Set(roll.clip.notes.map((_, i) => i)); syncVelocity(roll.clip); drawRoll(); }
+        break;
+      case 'delete-notes':
+        if (roll && ui.selNotes.size) {
+          roll.clip.notes = roll.clip.notes.filter((_, i) => !ui.selNotes.has(i));
+          ui.selNotes.clear();
+          commitKeepRoll();
+        } else status('Select notes first (Select tool, or All).');
+        break;
       case 'loop':
         if (project.loop.end <= project.loop.start) project.loop = { on: true, start: floorTo(ui.playhead, barBeats()), end: floorTo(ui.playhead, barBeats()) + barBeats() * 4 };
         else project.loop.on = !project.loop.on;
@@ -2078,7 +2708,7 @@
         const track = findTrack(ui.selTrack) || project.tracks.find(t => t.kind === 'instrument');
         if (!track || track.kind !== 'instrument') { status('Select an instrument track to add a note clip.'); break; }
         const clip = newMidiClip(track, floorTo(ui.playhead, barBeats()), barBeats());
-        select(track.id, clip.id); commit();
+        select(track.id, clip.id); ui.tab = 'edit'; commit();
         status('Note clip added. Tap the piano-roll grid to add notes.');
         break;
       }
@@ -2194,11 +2824,54 @@
   });
 
   R.scroll.addEventListener('scroll', drawRuler, { passive: true });
+  // Rotating an iPhone/iPad, or resizing a window, can switch the header layout.
+  let resizeFrame = 0;
   window.addEventListener('resize', () => {
-    const head = R.scroll.clientWidth < 520 ? 176 : 210;
-    if (head !== HEAD_W) renderTracks(); else drawRuler();
-    drawRoll();
+    cancelAnimationFrame(resizeFrame);
+    resizeFrame = requestAnimationFrame(() => {
+      const wasCompact = compactHeads;
+      measureLayout();
+      if (wasCompact !== compactHeads) renderTracks(); else drawRuler();
+      if (ui.tab === 'play') renderPlay();
+      drawRoll();
+    });
   });
+
+  // ── Full-screen studio ───────────────────────────────────────────────────
+  // CSS pins the studio over the page (works on iPhone, which has no element
+  // fullscreen); where the Fullscreen API exists (iPad, desktop) it also hides
+  // the browser's toolbars.
+  const pillar = root.closest('.pillar-daw') || root;
+  let realFullscreen = false;
+  function studioOn() { return pillar.classList.contains('is-studio'); }
+  function toggleStudio() {
+    const on = !studioOn();
+    pillar.classList.toggle('is-studio', on);
+    document.documentElement.classList.toggle('daw-studio-open', on);
+    root.querySelector('[data-act="studio"]').setAttribute('aria-pressed', String(on));
+    root.querySelector('[data-act="studio"]').setAttribute('aria-label', on ? 'Leave full-screen studio' : 'Full-screen studio');
+    const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+    if (on && !fsEl) {
+      const req = pillar.requestFullscreen || pillar.webkitRequestFullscreen;
+      if (req) {
+        try {
+          const p = req.call(pillar);
+          realFullscreen = true;
+          if (p && p.catch) p.catch(() => { realFullscreen = false; });
+        } catch (_e) { realFullscreen = false; }
+      }
+    } else if (!on && fsEl && realFullscreen) {
+      realFullscreen = false;
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if (exit) { try { const p = exit.call(document); if (p && p.catch) p.catch(() => {}); } catch (_e) { /* already out */ } }
+    }
+    if (!on) pillar.scrollIntoView({ block: 'start' });
+    requestAnimationFrame(() => { renderTracks(); renderDock(); drawRoll(); });
+  }
+  ['fullscreenchange', 'webkitfullscreenchange'].forEach((type) => document.addEventListener(type, () => {
+    const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+    if (!fsEl && realFullscreen) { realFullscreen = false; if (studioOn()) toggleStudio(); }
+  }));
 
   // Drag and drop files
   let dragDepth = 0;
@@ -2230,7 +2903,11 @@
     const t = e.target;
     const typing = t.matches('input[type="text"], input[type="number"], textarea, select');
     const mod = e.ctrlKey || e.metaKey;
-    if (e.key === 'Escape') { closeMenus(); return; }
+    if (e.key === 'Escape') {
+      if (root.querySelector('.daw-menu:not([hidden])')) closeMenus();
+      else if (studioOn()) toggleStudio();
+      return;
+    }
     if (typing) return;
     if (e.code === 'Space' && !t.matches('button, input')) {
       e.preventDefault(); e.stopPropagation(); togglePlay(); return;
@@ -2273,6 +2950,7 @@
   });
 
   // ── Animation: playhead, meters ──────────────────────────────────────────
+  const stripData = new Float32Array(512);
   function frame() {
     if (transport.playing && audio.ctx) {
       const beat = beatAt(audio.ctx.currentTime - (audio.ctx.outputLatency || 0));
@@ -2293,6 +2971,22 @@
       for (let i = 0; i < audio.meterData.length; i++) peak = Math.max(peak, Math.abs(audio.meterData[i]));
       R.meter.style.transform = `scaleX(${Math.min(1, peak)})`;
       R.meter.classList.toggle('is-hot', peak > 0.98);
+      if (ui.tab === 'mix') {
+        R.mixer.querySelectorAll('[data-strip-meter]').forEach((el) => {
+          const id = el.dataset.stripMeter;
+          let level = peak;
+          if (id !== 'master') {
+            const s = audio.mix.strips.get(id);
+            level = 0;
+            if (s && s.meter) {
+              s.meter.getFloatTimeDomainData(stripData);
+              for (let i = 0; i < stripData.length; i++) level = Math.max(level, Math.abs(stripData[i]));
+            }
+          }
+          el.style.transform = `scaleX(${Math.min(1, level)})`;
+          el.classList.toggle('is-hot', level > 0.98);
+        });
+      }
     }
     if (mic.analyser) {
       const el = root.querySelector('[data-ref="mic"]');
@@ -2330,6 +3024,12 @@
   }
 
   window.MusicDaw = { noteOn, noteOff, drumPad, addDrumPattern };
+
+  // iOS only lets audio start inside a touch, so wake (or create) the shared
+  // context on the first touch in the studio, before any button handler runs.
+  root.addEventListener('pointerdown', () => {
+    if (!audio.ctx || audio.ctx.state !== 'running') ctx();
+  }, { capture: true });
 
   // ── Boot ─────────────────────────────────────────────────────────────────
   (async () => {

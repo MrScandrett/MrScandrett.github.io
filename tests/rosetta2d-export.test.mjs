@@ -156,8 +156,23 @@ test('Phaser export: files parse as JavaScript modules and imports resolve', () 
     }
     for (const m of files['main.js'].matchAll(/this\.load\.\w+\([^,]+, "([^"]+)"/g)) assert.ok(files[m[1]], `main.js loads missing ${m[1]}`);
     assert.match(files['index.html'], /phaser@3\.80\.1/);
+    assert.ok(files['main.js'] && files['rosetta.js'] && files['README.md']);
+    assert.match(files['main.js'], /new Phaser\.Game\(/);
+    assert.match(files['main.js'], /physics:\s*\{\s*default:\s*'arcade'/);
+    assert.match(files['rosetta.js'], /export class Actions/);
+    assert.match(files['rosetta.js'], /export function giveBody/);
     fs.rmSync(dir, { recursive: true, force: true });
   }
+
+  const plat = exportOf('platformer', 'phaser').files;
+  assert.ok(plat['objects/Player.js'], 'missing objects/Player.js in platformer Phaser export');
+  assert.match(plat['objects/Player.js'], /export class Player extends Phaser\.GameObjects\.Container/);
+  assert.match(plat['objects/Player.js'], /giveBody\(this,/);
+  assert.match(plat['main.js'], /addSolid/);
+
+  const td = exportOf('topdown', 'phaser').files;
+  assert.ok(td['objects/Player.js'] && td['objects/Enemy.js'] && td['objects/Gem.js'], 'missing expected object files in topdown Phaser export');
+  assert.match(td['objects/Gem.js'], /"area":\s*true/);
 });
 
 test('exports carry images when the game used them', () => {
