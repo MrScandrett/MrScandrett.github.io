@@ -109,6 +109,27 @@ end instead of showing the provider's end screen. Never draw over a provider's p
 YouTube's embed terms forbid overlays; our controls sit below the frame. To allow a new
 host, add a narrow rule to `video-sources.mjs` and to `watch.html`'s CSP `media-src`.
 
+## Lesson rule: lessons print cleanly on letter paper
+
+Teachers print lessons as handouts (the Print / Save PDF pill). Shared pieces do most of
+the work: `lesson-print.css` (page setup, hides site chrome, forces a white page) and the
+`beforeprint` pass in `lesson-print-button.js`, which estimates each box's printed height
+and marks it (`data-print-keep` small cards stay whole, `data-print-split` page-sized
+boxes may flow, `data-print-with-next` eyebrows stay with their heading), repaints dark
+text boxes as light ones, darkens light text, reveals scroll fade-ins, unrolls sideways
+flex scrollers, and prints in the Day theme. When writing lesson CSS:
+
+- Nothing may be wider than the paper (~694px). A fixed `min-width`, a wide grid, or a
+  bare `1fr` track next to wide content makes Chrome shrink *every* page (down to 67%).
+  Use `minmax(0, 1fr)`, and give wide widgets a print rule (`zoom`, fewer columns).
+- Don't set `color-scheme: dark` without the print reset — it paints the page margins
+  black. `lesson-print.css` resets it on `:root, body, main, .ll-*`; wrappers elsewhere
+  need their own.
+- Don't put `break-inside: avoid` on whole sections; the planner decides by size.
+- Check with `npm run audit:print-layout -- --lesson=<path-fragment> --keep-pdf`
+  (PDFs + report in `tmp/print-layout-audit/`). It flags ink-heavy pages, blank and
+  half-empty pages, stranded headings, one-line paragraph splits, and shrunk printouts.
+
 ## Visitor memory (My Stuff)
 
 `assets/js/visitor-memory.js` gives returning visitors a profile with no account and

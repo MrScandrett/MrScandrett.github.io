@@ -143,7 +143,7 @@ async function auditLesson(page, url) {
       const all = [...document.body.querySelectorAll("*")];
       const over = all.filter((el) => {
         const rect = el.getBoundingClientRect();
-        return rect.width > 0 && rect.right > 696 && !(el.closest("svg") && el.tagName !== "svg");
+        return rect.width > 0 && rect.right > document.documentElement.clientWidth * 0.98 && !(el.closest("svg") && el.tagName !== "svg");
       });
       const headings = [...document.querySelectorAll("h1,h2,h3,h4")]
         .filter((h) => h.getClientRects().length && getComputedStyle(h).visibility !== "hidden")
@@ -161,7 +161,33 @@ async function auditLesson(page, url) {
           darkBoxes.push({ el: name(el), area: Math.round(rect.width * rect.height), bg: gradient ? style.backgroundImage.slice(0, 80) : style.backgroundColor });
         }
       }
+      // The paper's content width from the @page rules in force (lessons may print
+      // landscape or with their own margins); 694px is the shared default.
+      let paper = 694;
+      const inches = (value) => {
+        const m = /^([\d.]+)(in|px|cm|mm|pt)$/.exec(String(value).trim());
+        return m ? Number(m[1]) / { in: 1, px: 96, cm: 2.54, mm: 25.4, pt: 72 }[m[2]] : null;
+      };
+      const visit = (rules) => {
+        for (const rule of rules) {
+          if (rule instanceof CSSPageRule && !rule.selectorText) {
+            const size = rule.style.getPropertyValue("size");
+            const left = inches(rule.style.getPropertyValue("margin-left"));
+            const right = inches(rule.style.getPropertyValue("margin-right"));
+            if (size || left != null) {
+              const sheetWidth = /landscape/.test(size) ? 11 : 8.5;
+              paper = Math.round((sheetWidth - (left ?? 0.55) - (right ?? 0.72)) * 96);
+            }
+          } else if (rule.cssRules && (!rule.media || matchMedia(rule.media.mediaText).matches)) {
+            visit(rule.cssRules);
+          }
+        }
+      };
+      for (const sheet of document.styleSheets) {
+        try { if (!sheet.media.length || matchMedia(sheet.media.mediaText).matches) visit(sheet.cssRules); } catch {}
+      }
       window.__printLayout = {
+        paper,
         width: document.documentElement.clientWidth,
         roots: over.filter((el) => !over.includes(el.parentElement)).slice(0, 4).map(name),
         headings,
@@ -172,7 +198,7 @@ async function auditLesson(page, url) {
   const pdf = path.join(OUT, "pdf", `${slug}.pdf`);
   await page.pdf({ path: pdf, format: "Letter", printBackground: true, preferCSSPageSize: true, timeout: 60_000 });
   const layout = await page.evaluate(() => window.__printLayout) || { width: 694, roots: [], headings: [], darkBoxes: [] };
-  const wide = { scale: Math.min(1, 694 / layout.width), elements: layout.roots };
+  const wide = { scale: Math.min(1, (layout.paper || 694) / layout.width), elements: layout.roots };
   const { headings, darkBoxes } = layout;
 
   const tPdf = Date.now();

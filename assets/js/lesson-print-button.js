@@ -411,10 +411,12 @@
     // past a blank page. Stack the panels instead; on paper they read better
     // one under the other anyway.
     sizes.forEach(function (height, element) {
-      if (height <= PRINT_PAGE_H * 0.5 || !element.parentElement || element.matches(PRINT_ATOMIC)) return;
+      if (height <= PRINT_PAGE_H * 0.8 || !element.parentElement || element.matches(PRINT_ATOMIC)) return;
       var parent = element.parentElement;
       var display = getComputedStyle(parent).display;
-      if (parent !== root && /grid|flex/.test(display)) printMark(parent, 'data-print-stack');
+      // Only side-by-side panels; a card grid stays a grid.
+      if (parent !== root && /grid|flex/.test(display) && parent.children.length <= 3 &&
+        columnCount(parent, getComputedStyle(parent), PRINT_PAGE_W) > 1) printMark(parent, 'data-print-stack');
     });
 
     // The closing padding of the last boxes can spill onto a sheet of its own.
@@ -594,9 +596,13 @@
   // Sideways scrollers (chord ladders, card carousels, timelines) hide whatever
   // is off to the right on paper, and Chrome shrinks the whole printout to fit
   // their scroll width. Let flex rows wrap into a grid of cards instead.
+  var PRINT_FIT_W = 640; // paper width less room for the padding of enclosing cards
+  var printZoomRestore = [];
+
   function unrollScrollers() {
     Array.prototype.forEach.call(document.body.querySelectorAll('*'), function (element) {
-      if (element.scrollWidth <= element.clientWidth + 4) return;
+      // Wider than the paper, even if it fits the screen.
+      if (element.scrollWidth <= Math.min(element.clientWidth, PRINT_FIT_W) + 4) return;
       var style = getComputedStyle(element);
       if (!/auto|scroll/.test(style.overflowX) || style.display.indexOf('flex') === -1 ||
         style.flexDirection.indexOf('row') !== 0) return;
@@ -604,15 +610,42 @@
     });
   }
 
+  // Fixed-width pieces (a timeline with min-width: 848px, an 860px staff, a
+  // channel strip) can't reflow; scale them to the paper instead of letting
+  // Chrome scale every page of the lesson.
+  function fitWideContent() {
+    Array.prototype.forEach.call(document.body.querySelectorAll('*'), function (element) {
+      if (element.matches(PRINT_SKIP) || element.closest('[data-print-wrap] > *') ||
+        (element.parentElement && element.parentElement.closest('svg'))) return;
+      var style = getComputedStyle(element);
+      if (style.display === 'none' || style.position === 'fixed') return;
+      var parent = element.parentElement ? getComputedStyle(element.parentElement) : null;
+      var inScroller = parent && /auto|scroll/.test(parent.overflowX);
+      var width = Math.max(parseFloat(style.minWidth) || 0, inScroller ? element.scrollWidth : 0);
+      if (width <= PRINT_FIT_W) return;
+      if (element.parentElement && element.parentElement.closest('[data-print-zoom]')) return; // already scaled
+      element.style.setProperty('--print-zoom', String(Math.max(0.4, PRINT_FIT_W / width).toFixed(3)));
+      printZoomRestore.push(element);
+      printMark(element, 'data-print-zoom');
+    });
+  }
+
+  function restoreZoom() {
+    printZoomRestore.forEach(function (element) { element.style.removeProperty('--print-zoom'); });
+    printZoomRestore = [];
+  }
+
   function prepareForPrint() {
     restoreAfterPrint();
     revealFadedContent();
     unrollScrollers();
+    fitWideContent();
     saveInk();
     planPrintBreaks();
   }
 
   function restoreAfterPrint() {
+    restoreZoom();
     restoreInk();
     clearPrintBreaks();
   }
