@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 358 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 370 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -175,7 +175,7 @@ Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 49 l
 
 # Volume III — Living Systems, Earth & Environment
 
-Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 34 lessons
+Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 39 lessons
 
 ## Biology & Life Science (BIO)
 
@@ -217,21 +217,26 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 ### Earth Materials & Cycles
 
-- **EAR-01** — Water Cycle — _also indexed in Chemistry & Chemical Systems_
-- **EAR-02** — The Rock Cycle
-- **EAR-03** — Pangaea & Continental Drift
-- **EAR-04** — Volcano Simulator
-- **EAR-05** — Structural Geology: 3D Subsurface Modeler
-- **EAR-06** — Fossil Fuels: How Coal, Oil & Natural Gas Form
-- **EAR-07** — Pleistocene Field Lab
+- **EAR-01** — Land, Water & Sky: Earth's Four Spheres
+- **EAR-02** — Rocks & Soil: From Bedrock to Living Earth
+- **EAR-03** — Water Cycle — _also indexed in Chemistry & Chemical Systems_
+- **EAR-04** — The Rock Cycle
+- **EAR-05** — Pangaea & Continental Drift
+- **EAR-06** — Volcano Simulator
+- **EAR-07** — Structural Geology: 3D Subsurface Modeler
+- **EAR-08** — Fossil Fuels: How Coal, Oil & Natural Gas Form
+- **EAR-09** — Pleistocene Field Lab
 
 ### Planetary Systems & Observation
 
-- **EAR-08** — Ocean Zones & Deep-Sea Life
-- **EAR-09** — Climate Modeling Simulator — _also indexed in Chemistry & Chemical Systems_
-- **EAR-10** — Seasons and the Heavens
-- **EAR-11** — Measuring the Earth
-- **EAR-12** — Rainbows
+- **EAR-10** — Sun, Moon & Stars: The Celestial Clock
+- **EAR-11** — Weather Watch: The Living Atmosphere
+- **EAR-12** — Continents, Oceans & Map Projections
+- **EAR-13** — Ocean Zones & Deep-Sea Life
+- **EAR-14** — Climate Modeling Simulator — _also indexed in Chemistry & Chemical Systems_
+- **EAR-15** — Seasons and the Heavens
+- **EAR-16** — Measuring the Earth
+- **EAR-17** — Rainbows
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
@@ -485,7 +490,7 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 68 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 75 lessons
 
 ## Visual Art & Design (DES)
 
@@ -496,14 +501,15 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **DES-03** — Virtual Reality Museum
 - **DES-04** — Origami: History, Mathematics & Library of Creations
 - **DES-05** — Optical Illusions Lab
+- **DES-06** — Photo Editing Workshop
 
 ### People Who Changed Visual Art
 
-- **DES-06** — Vincent van Gogh
-- **DES-07** — Pablo Picasso
-- **DES-08** — Charles & Ray Eames
-- **DES-09** — Nam June Paik
-- **DES-10** — Katsushika Hokusai
+- **DES-07** — Vincent van Gogh
+- **DES-08** — Pablo Picasso
+- **DES-09** — Charles & Ray Eames
+- **DES-10** — Nam June Paik
+- **DES-11** — Katsushika Hokusai
 
 ## Music: Theory, Instruments & Sound (MUS)
 
@@ -518,8 +524,14 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 
 ### Composers & Music History
 
-- **MUS-07** — Ludwig van Beethoven
-- **MUS-08** — Modes: From Greece to Today
+- **MUS-07** — Antonio Vivaldi
+- **MUS-08** — Johann Sebastian Bach
+- **MUS-09** — Wolfgang Amadeus Mozart
+- **MUS-10** — Ludwig van Beethoven
+- **MUS-11** — Frédéric Chopin
+- **MUS-12** — Pyotr Ilyich Tchaikovsky
+- **MUS-13** — Scott Joplin
+- **MUS-14** — Modes: From Greece to Today
 
 ## Language, Media & Critical Thinking (LAN)
 

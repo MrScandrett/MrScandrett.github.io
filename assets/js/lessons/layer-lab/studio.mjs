@@ -4,7 +4,8 @@
  * The studio owns the window chrome (menus, toolbox, options bar, panels,
  * status bar), the view (zoom/pan), input, and every command. Tools live in
  * tools.mjs, pixels math in pixels.mjs, the layer model in doc.mjs, files in
- * io.mjs, panels in panels.mjs and dialogs in dialogs.mjs.
+ * io.mjs, panels in panels.mjs and dialogs in dialogs.mjs. adaptive.mjs fits it to the
+ * device: layout by the editor's own size, full screen, touch gestures, menu-bar keys.
  */
 import { LayerDoc, makeCanvas, cloneCanvas, getPixels, alphaOf, canvasFromAlpha, newLayer, applyMask, BLEND_MODES } from './doc.mjs';
 import { TOOLS, TOOLBOX } from './tools.mjs';
@@ -15,6 +16,7 @@ import { MissionTracker } from './missions.mjs';
 import { renderPanels, renderLayers, renderOptions, renderStatus, PANEL_TABS } from './panels.mjs';
 import * as dialogs from './dialogs.mjs';
 import { ICONS, icon } from './icons.mjs';
+import { watchLayout, setMaximized, showPanels, wireMenubarKeys, wireLongPress, wireGestures, wireTouchGuard } from './adaptive.mjs';
 
 const OPT_KEY = 'classroomos:layerlab:opts:v1';
 const DEFAULT_OPTS = {
@@ -26,6 +28,8 @@ const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigat
 export const mod = isMac ? '⌘' : 'Ctrl';
 
 export class Studio {
+  static count = 0;
+
   constructor(root, { assetBase = '' } = {}) {
     this.root = root;
     this.assetBase = assetBase;
@@ -45,6 +49,8 @@ export class Studio {
       this.emitOutside('missions');
     });
     this.selCache = new WeakMap();
+    this.uid = `lls${++Studio.count}`;
+    this.sheetView = 'layers';
     this.build();
     this.drive.onChange(() => { if (this.panelTab === 'files') this.refreshPanels(); });
     this.openDoc(buildPoster(), { label: 'Open starter poster' });
@@ -60,13 +66,15 @@ export class Studio {
     r.classList.add('lls');
     r.setAttribute('data-memory-ignore', '');
     r.innerHTML = `
-      <div class="lls-menubar" role="menubar" aria-label="Layer Lab menus">
+      <div class="lls-menubar" role="toolbar" aria-label="Layer Lab menus and actions">
         <span class="lls-logo" aria-hidden="true">${icon('logo')}<b>Layer Lab</b></span>
-        ${Object.keys(this.menus()).map((m) => `<button type="button" role="menuitem" aria-haspopup="true" data-menu="${m}">${m}</button>`).join('')}
+        <button type="button" aria-haspopup="menu" aria-expanded="false" class="lls-mb lls-mb-all" data-menu="*" aria-label="Menus">${icon('menu')}<span>Menu</span></button>
+        ${Object.keys(this.menus()).map((m) => `<button type="button" aria-haspopup="menu" aria-expanded="false" class="lls-mb" data-menu="${m}">${m}</button>`).join('')}
         <span class="lls-spacer"></span>
-        <button type="button" class="lls-undo-btn" data-cmd="undo" title="Undo (${mod}+Z)" aria-label="Undo">${icon('undo')}</button>
-        <button type="button" class="lls-undo-btn" data-cmd="redo" title="Redo (Shift+${mod}+Z)" aria-label="Redo">${icon('redo')}</button>
-        <button type="button" class="lls-max" data-cmd="maximize" aria-pressed="false">${icon('expand')}<span>Full screen</span></button>
+        <button type="button" class="lls-icon-btn" data-cmd="undo" title="Undo (${mod}+Z)" aria-label="Undo">${icon('undo')}</button>
+        <button type="button" class="lls-icon-btn" data-cmd="redo" title="Redo (Shift+${mod}+Z)" aria-label="Redo">${icon('redo')}</button>
+        <button type="button" class="lls-icon-btn lls-panels-btn" data-cmd="togglePanels" aria-controls="${this.uid}-panels" aria-expanded="true" title="Show or hide the panels" aria-label="Panels">${icon('panels')}</button>
+        <button type="button" class="lls-max" data-cmd="maximize" aria-pressed="false" title="Full screen (F)">${icon('expand')}<span>Full screen</span></button>
       </div>
       <div class="lls-options" role="toolbar" aria-label="Tool options"></div>
       <div class="lls-main">
@@ -79,19 +87,28 @@ export class Studio {
             <button type="button" class="lls-reset" title="Default black and white (D)" aria-label="Default colors">◩</button>
             <input type="color" class="lls-color-input" tabindex="-1" aria-hidden="true">
           </div>
+          <button type="button" class="lls-dock-layers" data-cmd="showLayers" aria-controls="${this.uid}-panels" aria-expanded="false">${icon('layers')}<span>Layers</span></button>
         </div>
         <div class="lls-center">
-          <div class="lls-tabs" role="tablist" aria-label="Open documents"></div>
+          <div class="lls-tabs" role="group" aria-label="Open documents"></div>
           <div class="lls-viewport" tabindex="0" aria-label="Canvas. Use the tools to edit; arrow keys nudge with the Move tool.">
             <canvas class="lls-view"></canvas>
             <canvas class="lls-overlay"></canvas>
             <div class="lls-welcome" hidden></div>
+            <div class="lls-veil" hidden><div class="lls-veil-card">
+              <b>Swipe to keep scrolling</b>
+              <div class="lls-veil-row"><button type="button" class="lls-btn">${icon('brush')}Tap to edit here</button><button type="button" class="lls-btn ghost" data-cmd="maximize">${icon('expand')}Full screen</button></div>
+              <small>Two fingers pinch to zoom and drag to pan.</small>
+            </div></div>
             <div class="lls-drop" hidden><span>Drop to open</span></div>
           </div>
         </div>
-        <aside class="lls-panels" aria-label="Panels">
+        <aside class="lls-panels" id="${this.uid}-panels" aria-label="Panels">
           <section class="lls-panel lls-top">
-            <div class="lls-ptabs" role="tablist">${PANEL_TABS.map(([id, label]) => `<button type="button" role="tab" data-ptab="${id}">${label}</button>`).join('')}</div>
+            <div class="lls-phead">
+              <div class="lls-ptabs" role="tablist" aria-label="Panels"><button type="button" role="tab" class="lls-ptab-layers" data-ptab="layers">Layers</button>${PANEL_TABS.map(([id, label]) => `<button type="button" role="tab" data-ptab="${id}">${label}</button>`).join('')}</div>
+              <button type="button" class="lls-sheet-x" data-cmd="togglePanels" aria-label="Close panels" title="Close panels (Esc)">×</button>
+            </div>
             <div class="lls-pbody" role="tabpanel"></div>
           </section>
           <section class="lls-panel lls-layers" aria-label="Layers"></section>
@@ -110,10 +127,16 @@ export class Studio {
       menuPop: $('.lls-menu-pop'), toast: $('.lls-toast'), file: $('.lls-file'), dialog: $('.lls-dialog'),
       fg: $('.lls-fg'), bg: $('.lls-bg'), colorInput: $('.lls-color-input'),
     };
+    this.el.panels = $('.lls-panels');
+    this.el.veil = $('.lls-veil');
     this.wireChrome();
     this.wireCanvas();
     this.wireKeys();
-    new ResizeObserver(() => this.redraw()).observe(this.el.viewport);
+    wireMenubarKeys(this);
+    wireLongPress(this);
+    wireTouchGuard(this);
+    watchLayout(this);
+    new ResizeObserver(() => { if (this.doc && this.isFitted()) this.fit(); else this.redraw(); }).observe(this.el.viewport);
     this.antsTimer = setInterval(() => { if (this.doc?.selection) { this.ants = (this.ants || 0) + 1; this.drawOverlay(); } }, 140);
     this.updateColors();
     this.setTool('move');
@@ -134,7 +157,11 @@ export class Studio {
         return;
       }
       const pt = e.target.closest('[data-ptab]');
-      if (pt) { this.panelTab = pt.dataset.ptab; this.refreshPanels(); }
+      if (pt) {
+        if (pt.dataset.ptab === 'layers') this.sheetView = 'layers';
+        else { this.sheetView = 'panels'; this.panelTab = pt.dataset.ptab; }
+        this.refreshPanels();
+      }
     });
     r.addEventListener('contextmenu', (e) => {
       const t = e.target.closest('.lls-tool');
@@ -142,6 +169,16 @@ export class Studio {
       e.preventDefault();
       const group = TOOLBOX.find((g) => g[0] === t.dataset.group);
       if (group.length > 1) this.popup(t, group.map((id) => ({ label: TOOLS[id].label, shortcut: TOOLS[id].key, action: () => this.setTool(id) })));
+    });
+    this.el.ptabs.addEventListener('keydown', (e) => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+      const tabs = [...this.el.ptabs.querySelectorAll('[role=tab]')].filter((b) => b.offsetParent);
+      const i = tabs.indexOf(document.activeElement);
+      const j = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : i + (e.key === 'ArrowRight' ? 1 : -1);
+      const next = tabs[(j + tabs.length) % tabs.length];
+      e.preventDefault();
+      next.click();
+      this.el.ptabs.querySelector(`[data-ptab="${next.dataset.ptab}"]`).focus();
     });
     this.el.fg.addEventListener('click', () => this.pickColor('fg'));
     this.el.bg.addEventListener('click', () => this.pickColor('bg'));
@@ -168,39 +205,42 @@ export class Studio {
   wireCanvas() {
     const vp = this.el.viewport, ov = this.el.overlay;
     let active = null;
-    ov.addEventListener('pointerdown', (e) => {
-      if (!this.doc) return;
-      vp.focus({ preventScroll: true });
-      this.closeMenu();
-      const temp = e.button === 1 || this.spaceDown ? TOOLS.hand : null;
-      const t = temp || this.tool;
-      if (e.button === 2) return;
-      ov.setPointerCapture(e.pointerId);
-      active = t;
-      e.preventDefault();
-      t.down?.(this, this.toDoc(e), e);
-      this.drawOverlay();
+    // wireGestures routes mouse and pen straight through, holds a touch back
+    // for a moment so a second finger can turn it into pinch-zoom / pan.
+    wireGestures(this, {
+      down: (e) => {
+        if (!this.doc) return false;
+        vp.focus({ preventScroll: true });
+        this.closeMenu();
+        if (e.button === 2) return false;
+        const t = (e.button === 1 || this.spaceDown ? TOOLS.hand : null) || this.tool;
+        active = t;
+        t.down?.(this, this.toDoc(e), e);
+        this.drawOverlay();
+        return true;
+      },
+      move: (e) => {
+        if (!this.doc) return;
+        const p = this.toDoc(e);
+        this.cursor = p;
+        this.hoverInfo(p);
+        if (active) active.move?.(this, p, e);
+        else if (this.tool.brush || this.tool.id === 'clone') this.drawOverlay();
+      },
+      up: (e) => {
+        if (!active) return;
+        const t = active; active = null;
+        t.up?.(this, this.toDoc(e), e);
+        this.drawOverlay();
+      },
     });
-    ov.addEventListener('pointermove', (e) => {
-      if (!this.doc) return;
-      const p = this.toDoc(e);
-      this.cursor = p;
-      this.hoverInfo(p);
-      if (active) active.move?.(this, p, e);
-      else if (this.tool.brush || this.tool.id === 'clone') this.drawOverlay();
-    });
-    const end = (e) => {
-      if (!active) return;
-      const t = active; active = null;
-      t.up?.(this, this.toDoc(e), e);
-      this.drawOverlay();
-    };
-    ov.addEventListener('pointerup', end);
-    ov.addEventListener('pointercancel', end);
     ov.addEventListener('pointerleave', () => { this.cursor = null; this.drawOverlay(); });
     ov.addEventListener('dblclick', () => { if (this.toolId === 'hand') this.fit(); });
     vp.addEventListener('wheel', (e) => {
       if (!this.doc) return;
+      // Until someone clicks into the editor, the wheel scrolls the lesson
+      // (pinch-zoom on a trackpad arrives as Ctrl+wheel and still zooms).
+      if (!this.engaged && !this.maximized && !e.ctrlKey && !e.metaKey) return;
       e.preventDefault();
       if (e.ctrlKey || e.metaKey) this.zoomAt(Math.exp(-e.deltaY * 0.0025), e.clientX, e.clientY);
       else { this.view.panX -= e.deltaX; this.view.panY -= e.deltaY; this.redraw(); }
@@ -233,7 +273,7 @@ export class Studio {
       if (k === 'D') return this.resetColors();
       if (k === 'F') return this.run('maximize');
       if (e.key === '[' || e.key === ']') { this.setOpt('size', Math.max(1, Math.min(400, Math.round(this.opts.size * (e.key === ']' ? 1.2 : 1 / 1.2))))); this.drawOverlay(); return; }
-      if (e.key === 'Escape') { if (this.maximized) this.run('maximize'); return; }
+      if (e.key === 'Escape') { if (this.panelsOverlay && this.panelsShown) this.run('togglePanels'); else if (this.maximized) this.run('maximize'); return; }
       const group = TOOLBOX.find((g) => g.some((id) => TOOLS[id].key === k));
       if (group) {
         e.preventDefault();
@@ -318,8 +358,8 @@ export class Studio {
   }
 
   renderTabs() {
-    this.el.tabs.innerHTML = this.docs.map((d) => `<div class="lls-tab${d === this.doc ? ' on' : ''}" role="tab" aria-selected="${d === this.doc}">
-      <button type="button" data-doc="${d.id}">${escapeHtml(d.name)}${d.dirty ? ' •' : ''}<small>${d.width}×${d.height}</small></button>
+    this.el.tabs.innerHTML = this.docs.map((d) => `<div class="lls-tab${d === this.doc ? ' on' : ''}">
+      <button type="button" data-doc="${d.id}"${d === this.doc ? ' aria-current="true"' : ''}>${escapeHtml(d.name)}${d.dirty ? ' •' : ''}<small>${d.width}×${d.height}</small></button>
       <button type="button" class="lls-tab-x" data-close="${d.id}" aria-label="Close ${escapeHtml(d.name)}">×</button></div>`).join('')
       + '<button type="button" class="lls-tab-new" data-cmd="new" title="New document" aria-label="New document">+</button>';
     for (const b of this.el.tabs.querySelectorAll('[data-doc]')) b.onclick = () => this.switchDoc(this.docs.find((d) => d.id === +b.dataset.doc));
@@ -343,8 +383,20 @@ export class Studio {
   fit() {
     if (!this.doc) return;
     const vp = this.el.viewport.getBoundingClientRect();
-    const z = Math.min((vp.width - 40) / this.doc.width, (vp.height - 40) / this.doc.height, 4);
+    const pad = Math.min(vp.width, vp.height) < 500 ? 16 : 40;
+    const z = Math.min((vp.width - pad) / this.doc.width, (vp.height - pad) / this.doc.height, 4);
     this.setZoom(z > 0 ? z : 1);
+    const v = this.view;
+    v.fitted = { zoom: v.zoom, panX: v.panX, panY: v.panY };
+  }
+
+  /** Show the panels ('layers' or 'panels' picks the page on a phone's sheet), or hide them with false. */
+  showPanels(view) { showPanels(this, view); }
+
+  /** True while the view is still exactly where fit() left it, so a resize or rotation can refit. */
+  isFitted() {
+    const v = this.view, f = v?.fitted;
+    return !!f && f.zoom === v.zoom && f.panX === v.panX && f.panY === v.panY;
   }
 
   setZoom(z, cx, cy) {
@@ -499,6 +551,7 @@ export class Studio {
   /* ── panels & feedback ──────────────────────────────────────────────── */
 
   refreshPanels() {
+    this.el.panels.dataset.view = this.sheetView;
     renderPanels(this);
     renderLayers(this);
     renderStatus(this);
@@ -771,38 +824,73 @@ export class Studio {
     return m;
   }
 
-  openMenu(name, anchor) {
-    if (this.openMenuName === name) return this.closeMenu();
-    const items = this.menus()[name].map((it) => (it === '-' ? '-' : { label: it[0], shortcut: it[2], action: () => this.run(it[1], it[3]) }));
-    this.popup(anchor, items);
-    this.openMenuName = name;
+  openMenu(name, anchor, { fromAll = false } = {}) {
+    if (this.openMenuName === name && !fromAll) return this.closeMenu();
+    const menus = this.menus();
+    // "*" is the single Menu button narrow layouts use: a list of menus, each opening in place.
+    const items = name === '*'
+      ? Object.keys(menus).map((m) => ({ label: m, shortcut: '›', keep: true, action: () => this.openMenu(m, anchor, { fromAll: true }) }))
+      : [...(fromAll ? [{ label: '‹ All menus', keep: true, action: () => this.openMenu('*', anchor, { fromAll: true }) }, '-'] : []),
+        ...menus[name].map((it) => (it === '-' ? '-' : { label: it[0], shortcut: it[2], action: () => this.run(it[1], it[3]) }))];
+    this.popup(anchor, items, name === '*' ? 'Menus' : name);
+    this.openMenuName = fromAll ? '*' : name;
+    anchor.setAttribute('aria-expanded', 'true');
   }
 
-  popup(anchor, items) {
+  popup(anchor, items, label = '') {
     const pop = this.el.menuPop;
+    if (this.menuAnchor && this.menuAnchor !== anchor) this.menuAnchor.setAttribute('aria-expanded', 'false');
+    this.menuAnchor = anchor;
     pop.innerHTML = '';
+    pop.setAttribute('aria-label', label);
     for (const it of items) {
       if (it === '-') { pop.append(Object.assign(document.createElement('hr'), {})); continue; }
       const b = document.createElement('button');
-      b.type = 'button'; b.setAttribute('role', 'menuitem');
+      b.type = 'button'; b.setAttribute('role', 'menuitem'); b.tabIndex = -1;
       b.innerHTML = `<span>${escapeHtml(it.label)}</span>${it.shortcut ? `<kbd>${escapeHtml(it.shortcut)}</kbd>` : ''}`;
-      b.onclick = () => { this.closeMenu(); it.action(); };
+      b.onclick = () => { if (!it.keep) { this.closeMenu(); anchor.focus({ preventScroll: true }); } it.action(); };
       pop.append(b);
     }
+    // Open below the anchor, or above it when the anchor sits low (the phone tool bar), and stay inside the editor.
     const rr = this.root.getBoundingClientRect(), ar = anchor.getBoundingClientRect();
     pop.hidden = false;
-    pop.style.left = `${Math.min(ar.left - rr.left, rr.width - pop.offsetWidth - 4)}px`;
-    pop.style.top = `${ar.bottom - rr.top}px`;
+    pop.style.maxHeight = '';
+    const below = rr.bottom - ar.bottom - 6, above = ar.top - rr.top - 6;
+    const up = below < Math.min(pop.offsetHeight, 320) && above > below;
+    pop.style.maxHeight = `${Math.max(160, up ? above : below)}px`;
+    pop.style.left = `${Math.max(4, Math.min(ar.left - rr.left, rr.width - pop.offsetWidth - 4))}px`;
+    pop.style.top = up ? `${Math.max(4, ar.top - rr.top - pop.offsetHeight)}px` : `${ar.bottom - rr.top}px`;
     pop.querySelector('button')?.focus();
     pop.onkeydown = (e) => {
       const bs = [...pop.querySelectorAll('button')], i = bs.indexOf(document.activeElement);
-      if (e.key === 'ArrowDown') { e.preventDefault(); bs[(i + 1) % bs.length].focus(); }
-      if (e.key === 'ArrowUp') { e.preventDefault(); bs[(i - 1 + bs.length) % bs.length].focus(); }
-      if (e.key === 'Escape') { this.closeMenu(); anchor.focus(); }
+      const go = (j) => { e.preventDefault(); bs[(j + bs.length) % bs.length].focus(); };
+      if (e.key === 'ArrowDown') go(i + 1);
+      else if (e.key === 'ArrowUp') go(i - 1);
+      else if (e.key === 'Home') go(0);
+      else if (e.key === 'End') go(bs.length - 1);
+      else if (e.key === 'Escape') { e.preventDefault(); this.closeMenu(); anchor.focus(); }
+      else if (e.key === 'Tab') this.closeMenu();
+      else if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && anchor.matches('.lls-mb:not(.lls-mb-all)')) {
+        // Left/right walks across the menu bar like a desktop app.
+        e.preventDefault();
+        const mbs = [...this.root.querySelectorAll('.lls-mb:not(.lls-mb-all)')], k = mbs.indexOf(anchor);
+        const next = mbs[(k + (e.key === 'ArrowRight' ? 1 : -1) + mbs.length) % mbs.length];
+        this.closeMenu();
+        this.openMenu(next.dataset.menu, next);
+      } else if (e.key.length === 1 && /\S/.test(e.key)) {
+        // Type-ahead: jump to the next item starting with that letter.
+        const k = e.key.toLowerCase(), order = [...bs.slice(i + 1), ...bs.slice(0, i + 1)];
+        order.find((b) => b.textContent.trim().replace(/^[✓‹]\s*/, '').toLowerCase().startsWith(k))?.focus();
+      }
     };
   }
 
-  closeMenu() { this.el.menuPop.hidden = true; this.openMenuName = null; }
+  closeMenu() {
+    this.el.menuPop.hidden = true;
+    this.openMenuName = null;
+    this.menuAnchor?.setAttribute('aria-expanded', 'false');
+    this.menuAnchor = null;
+  }
 
   needDoc() { if (!this.doc) { this.toast('Open or create a document first.'); return false; } return true; }
   needLayer(kinds) {
@@ -819,14 +907,17 @@ export class Studio {
   async run(cmd, arg) {
     if (cmd.includes(':')) [cmd, arg] = cmd.split(':');
     const d = this.doc;
-    const always = ['new', 'open', 'files', 'maximize', 'shortcuts', 'about', 'missions', 'sample', 'place'];
+    const always = ['new', 'open', 'files', 'maximize', 'shortcuts', 'about', 'missions', 'sample', 'place', 'togglePanels', 'showLayers', 'tip'];
     if (!always.includes(cmd) && !this.needDoc()) return;
     switch (cmd) {
       case 'new': return dialogs.newDoc(this);
       case 'open': this.fileMode = 'open'; return this.el.file.click();
       case 'place': this.fileMode = 'place'; return this.el.file.click();
-      case 'files': this.panelTab = 'files'; return this.refreshPanels();
-      case 'missions': this.panelTab = 'missions'; return this.refreshPanels();
+      case 'files': this.panelTab = 'files'; return this.showPanels('panels');
+      case 'missions': this.panelTab = 'missions'; return this.showPanels('panels');
+      case 'togglePanels': return this.showPanels(this.panelsShown ? false : this.sheetView);
+      case 'showLayers': return this.showPanels(this.panelsShown && this.sheetView === 'layers' && this.panelsOverlay ? false : 'layers');
+      case 'tip': return this.toast(`${this.tool.label}: ${this.tool.tip || ''}`);
       case 'sample': return this.openSample(arg);
       case 'save': { const { filename } = await this.exportAs('layerlab'); return this.toast(`Saved ${filename} to the Workshop Drive.`); }
       case 'export': return dialogs.exportDialog(this);
@@ -835,15 +926,7 @@ export class Studio {
       case 'undo': d.undo(); this.changed(); return this.refreshPanels();
       case 'redo': d.redo(); this.changed(); return this.refreshPanels();
       case 'history': d.restore(+arg); this.changed(); return this.refreshPanels();
-      case 'maximize': {
-        this.maximized = !this.maximized;
-        this.root.classList.toggle('lls-maximized', this.maximized);
-        document.documentElement.classList.toggle('lls-has-maximized', this.maximized);
-        this.root.querySelector('[data-cmd="maximize"]').setAttribute('aria-pressed', String(this.maximized));
-        this.root.querySelector('[data-cmd="maximize"] span').textContent = this.maximized ? 'Exit full screen' : 'Full screen';
-        requestAnimationFrame(() => this.fit());
-        return;
-      }
+      case 'maximize': return setMaximized(this, !this.maximized);
       case 'zoomIn': return this.setZoom(this.view.zoom * 1.25);
       case 'zoomOut': return this.setZoom(this.view.zoom / 1.25);
       case 'fit': return this.fit();

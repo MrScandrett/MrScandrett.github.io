@@ -87,8 +87,9 @@ export function renderStatus(s) {
       color = `<span class="lls-chip" style="background:${c[3] ? hex : 'transparent'}"></span>${c[3] ? `R ${c[0]} G ${c[1]} B ${c[2]} · ${hex}` : 'transparent'}`;
     }
   }
-  el.innerHTML = `<span><button type="button" data-cmd="zoomOut" aria-label="Zoom out">−</button><b>${Math.round(s.view.zoom * 100)}%</b><button type="button" data-cmd="zoomIn" aria-label="Zoom in">+</button><button type="button" data-cmd="fit">Fit</button></span>
-    <span>${d.width} × ${d.height} px</span><span>${pos}</span><span class="lls-status-color">${color}</span>
+  el.innerHTML = `<span class="lls-status-zoom"><button type="button" data-cmd="zoomOut" aria-label="Zoom out">−</button><b>${Math.round(s.view.zoom * 100)}%</b><button type="button" data-cmd="zoomIn" aria-label="Zoom in">+</button><button type="button" data-cmd="fit">Fit</button></span>
+    <button type="button" class="lls-status-tip" data-cmd="tip" title="Show the whole tip">${icon(s.tool.id)}<span>${esc(s.tool.tip || s.tool.label)}</span></button>
+    <span class="lls-status-size">${d.width} × ${d.height} px</span><span class="lls-status-pos">${pos}</span><span class="lls-status-color">${color}</span>
     <span class="lls-status-active">${d.active ? `Editing: <b>${esc(d.active.name)}</b>${d.active.editMask && d.active.mask ? ' (mask)' : ''}` : ''}</span>`;
 }
 
@@ -133,7 +134,7 @@ export function renderLayers(s) {
       <select id="${bid}" class="lls-blend" ${!A || A.kind === 'adjust' ? 'disabled' : ''} title="Blend mode: how this layer's colors mix with the layers below">${BLEND_MODES.map((m) => `<option value="${m}" ${A?.blend === m ? 'selected' : ''}>${BLEND_LABELS[m]}</option>`).join('')}</select>
       <label for="${oid}" class="lls-opac">Opacity <input id="${oid}" type="range" min="0" max="100" value="${Math.round((A?.opacity ?? 1) * 100)}" ${A ? '' : 'disabled'}><output>${Math.round((A?.opacity ?? 1) * 100)}%</output></label>
     </div>
-    <ul class="lls-llist" role="listbox" aria-label="Layers, top to bottom"></ul>
+    <ul class="lls-llist" aria-label="Layers, top to bottom. Arrow keys move between layers."></ul>
     <div class="lls-lfoot">
       <button type="button" data-cmd="newLayer" title="New layer" aria-label="New layer">${icon('plus')}</button>
       <button type="button" data-cmd="newAdjust" title="New adjustment layer" aria-label="New adjustment layer">${icon('adjust')}</button>
@@ -149,8 +150,6 @@ export function renderLayers(s) {
     const li = document.createElement('li');
     const on = L.id === d.activeId;
     li.className = `lls-lrow${on ? ' on' : ''}${L.visible ? '' : ' hidden'}`;
-    li.setAttribute('role', 'option');
-    li.setAttribute('aria-selected', String(on));
     li.draggable = true;
     li.dataset.id = L.id;
     const fx = L.fx && (L.fx.shadow.on || L.fx.stroke.on || L.fx.glow.on);
@@ -158,7 +157,7 @@ export function renderLayers(s) {
     li.innerHTML = `<button type="button" class="lls-eye" data-act="eye" aria-pressed="${L.visible}" aria-label="${L.visible ? 'Hide' : 'Show'} ${esc(L.name)}" title="Show/hide">${icon(L.visible ? 'eye' : 'eyeOff')}</button>
       <span class="lls-thumb${on && !(L.editMask && L.mask) ? ' target' : ''}" data-act="pixels" title="${L.kind === 'adjust' ? 'Adjustment layer' : 'Layer content: click to edit pixels'}"></span>
       ${L.mask ? `<span class="lls-thumb lls-mthumb${on && L.editMask ? ' target' : ''}" data-act="mask" title="Layer mask: click to paint on it (black hides, white shows). Shift-click turns it off."></span>` : ''}
-      <span class="lls-lname" data-act="select">${badge ? `<i class="lls-kind">${badge}</i>` : ''}<span>${esc(L.name)}</span>${fx ? '<i class="lls-fxb" title="Has layer effects">fx</i>' : ''}${L.blend !== 'normal' ? `<i class="lls-mode">${BLEND_LABELS[L.blend]}</i>` : ''}</span>
+      <span class="lls-lname" data-act="select" role="button" ${on ? 'aria-current="true"' : ''} aria-label="${esc(L.name)}${on ? ' (selected)' : ''}, ${L.kind} layer${L.visible ? '' : ', hidden'}${L.locked ? ', locked' : ''}. Double-click or F2 to rename.">${badge ? `<i class="lls-kind">${badge}</i>` : ''}<span>${esc(L.name)}</span>${fx ? '<i class="lls-fxb" title="Has layer effects">fx</i>' : ''}${L.blend !== 'normal' ? `<i class="lls-mode">${BLEND_LABELS[L.blend]}</i>` : ''}</span>
       <button type="button" class="lls-lock${L.locked ? ' on' : ''}" data-act="lock" aria-pressed="${L.locked}" aria-label="${L.locked ? 'Unlock' : 'Lock'} ${esc(L.name)}" title="Lock">${icon(L.locked ? 'lock' : 'unlock')}</button>`;
     const t = li.querySelector('[data-act="pixels"]');
     if (L.kind === 'adjust') t.innerHTML = `<span class="lls-adj-ico">${icon('adjust')}</span>`; else t.append(thumb(s, L));
@@ -224,8 +223,11 @@ export function renderLayers(s) {
 /* ── side panels ─────────────────────────────────────────────────────── */
 
 export function renderPanels(s) {
+  // On a phone's sheet, "Layers" is one more tab; elsewhere the Layers panel is always beside these.
+  const cur = s.sheetMode && s.sheetView === 'layers' ? 'layers' : s.panelTab;
   for (const b of s.el.ptabs.querySelectorAll('[data-ptab]')) {
-    const on = b.dataset.ptab === s.panelTab;
+    const on = b.dataset.ptab === cur;
+    b.tabIndex = on ? 0 : -1;
     b.classList.toggle('on', on);
     b.setAttribute('aria-selected', String(on));
     if (b.dataset.ptab === 'missions') b.innerHTML = `Missions <small>${s.missions.done.size}/${MISSIONS.length}</small>`;

@@ -17,8 +17,16 @@
     { file: 'lessons/music/violin-fingerboard.html', label: 'Violin' },
     { file: 'lessons/music/drums.html', label: 'Drums' },
     { file: 'lessons/music/fake-book.html', label: 'Fake Book' },
-    { file: 'lessons/music/beethoven.html', label: 'Beethoven' },
     { file: 'music-lab.html', label: 'Music Lab' }
+  ];
+  var COMPOSERS = [
+    { file: 'lessons/music/vivaldi.html', label: 'Vivaldi' },
+    { file: 'lessons/music/bach.html', label: 'Bach' },
+    { file: 'lessons/music/mozart.html', label: 'Mozart' },
+    { file: 'lessons/music/beethoven.html', label: 'Beethoven' },
+    { file: 'lessons/music/chopin.html', label: 'Chopin' },
+    { file: 'lessons/music/tchaikovsky.html', label: 'Tchaikovsky' },
+    { file: 'lessons/music/joplin.html', label: 'Joplin' }
   ];
   var SCIENCE = [
     { file: 'lessons/physics/waves-and-sound/physics-of-music.html', label: 'Physics of Music' },
@@ -48,12 +56,45 @@
     return g;
   }
 
+  // Composers fold into one dropdown chip so the strip stays short on phones.
+  function menu(title, items) {
+    var d = document.createElement('details');
+    d.className = 'mf-menu';
+    var sum = document.createElement('summary');
+    var current = items.filter(function (it) { return here(it.file); })[0];
+    sum.textContent = (current ? current.label : title) + ' ▾';
+    if (current) sum.setAttribute('aria-current', 'page');
+    sum.setAttribute('aria-label', title + (current ? ', now on ' + current.label : ''));
+    d.appendChild(sum);
+    var list = document.createElement('div');
+    list.className = 'mf-menu-list';
+    items.forEach(function (it) {
+      var a = document.createElement('a');
+      a.href = base + it.file;
+      a.textContent = it.label;
+      if (here(it.file)) { a.setAttribute('aria-current', 'page'); }
+      list.appendChild(a);
+    });
+    d.appendChild(list);
+    document.addEventListener('click', function (e) { if (d.open && !d.contains(e.target)) d.open = false; });
+    d.addEventListener('keydown', function (e) { if (e.key === 'Escape' && d.open) { d.open = false; sum.focus(); } });
+    var g = document.createElement('div');
+    g.className = 'mf-group';
+    var t = document.createElement('span');
+    t.className = 'mf-title';
+    t.textContent = title;
+    g.appendChild(t);
+    g.appendChild(d);
+    return g;
+  }
+
   function build() {
     if (document.querySelector('.music-family')) return;
     var nav = document.createElement('nav');
     nav.className = 'music-family';
     nav.setAttribute('aria-label', 'Music lessons');
     nav.appendChild(group('Music theory & instruments', THEORY));
+    nav.appendChild(menu('Composers', COMPOSERS));
     nav.appendChild(group('Science of sound', SCIENCE));
 
     var css = document.createElement('style');
@@ -64,7 +105,14 @@
       '.music-family a,body.theme-liquid-woodland .music-family a{padding:.3rem .6rem;border-radius:999px;color:#ffe9d6;text-decoration:none}' +
       '.music-family a:hover,.music-family a:focus-visible{background:rgba(255,255,255,.16);color:#fff;outline:none}' +
       '.music-family a:focus-visible{box-shadow:0 0 0 2px #ffd166}' +
-      '.music-family a[aria-current="page"],body.theme-liquid-woodland .music-family a[aria-current="page"]{background:#ffd9bd;color:#241a14}';
+      '.music-family a[aria-current="page"],body.theme-liquid-woodland .music-family a[aria-current="page"]{background:#ffd9bd;color:#241a14}' +
+      '.music-family .mf-menu{position:relative}' +
+      '.music-family .mf-menu summary{list-style:none;cursor:pointer;padding:.3rem .6rem;border-radius:999px;color:#ffe9d6;border:1px solid rgba(255,233,214,.35)}' +
+      '.music-family .mf-menu summary::-webkit-details-marker{display:none}' +
+      '.music-family .mf-menu summary:hover,.music-family .mf-menu summary:focus-visible{background:rgba(255,255,255,.16);color:#fff;outline:none;box-shadow:0 0 0 2px #ffd166}' +
+      '.music-family .mf-menu summary[aria-current="page"]{background:#ffd9bd;color:#241a14;border-color:#ffd9bd}' +
+      '.music-family .mf-menu-list{position:absolute;left:0;top:calc(100% + .3rem);z-index:40;display:grid;min-width:11rem;padding:.35rem;border-radius:12px;background:#241a14;border:1px solid rgba(255,255,255,.2);box-shadow:0 12px 30px rgba(0,0,0,.35)}' +
+      '.music-family .mf-menu-list a{display:block;border-radius:8px}';
     document.head.appendChild(css);
 
     var anchor = document.querySelector('.ll-topbar, .pno-topbar, .gtr-topbar, .vln-topbar, header.site-header, header');

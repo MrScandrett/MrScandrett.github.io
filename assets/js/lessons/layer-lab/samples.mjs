@@ -48,9 +48,16 @@ export function buildPoster() {
   h.lineTo(W, H); h.closePath(); h.fill();
   doc.addPixelLayer('Hills', hills);
 
+  // Impact is missing on Chromebooks, Android and Linux, and the fallback sans is much wider:
+  // shrink the title until it fits so the poster never opens with its headline cut off.
+  const titleFont = 'Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif';
+  const probe = makeCanvas(1, 1).getContext('2d');
+  probe.font = `400 160px ${titleFont}`;
+  const titleW = probe.measureText('STEAM NIGHT').width + 10 * 4;
+  const titleSize = titleW > W - 180 ? Math.floor((160 * (W - 180)) / titleW) : 160;
   doc.add(newLayer('text', {
-    name: 'Title', x: 90, y: 790,
-    text: { content: 'STEAM NIGHT', font: 'Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif', size: 160, color: '#ffffff', bold: false, italic: false, align: 'left', lineHeight: 1.1, tracking: 4 },
+    name: 'Title', x: 90, y: 790 + Math.round((160 - titleSize) * 0.55),
+    text: { content: 'STEAM NIGHT', font: titleFont, size: titleSize, color: '#ffffff', bold: false, italic: false, align: 'left', lineHeight: 1.1, tracking: 4 },
     fx: { shadow: { on: true, color: '#000000', opacity: 0.6, dx: 0, dy: 12, blur: 24 } },
   }));
   doc.add(newLayer('text', {
