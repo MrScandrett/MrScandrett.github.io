@@ -60,6 +60,14 @@
   }
 
   function init() {
+    // Game Asset Studio pages are tool-neutral: show Blender's workspace menu only to
+    // students who haven't deselected Blender in the Tool Rosetta app picker.
+    if (/\/game-asset-studio\//.test(location.pathname)) {
+      try {
+        var picks = (JSON.parse(localStorage.getItem("classroomos:rosetta:v1")) || {}).model;
+        if (picks && picks.length && picks.indexOf("blender") === -1) return;
+      } catch (e) { /* storage blocked: keep the default */ }
+    }
     if (document.querySelector(".blwsq-fab")) return;
     ensureStyles();
     var here = location.pathname.toLowerCase();

@@ -48,10 +48,10 @@
   var index = 0;
   var lastFocus = null;
 
-  function show(fig) {
-    var thumb = fig.tagName === 'IMG' ? fig : fig.querySelector('img');
+  function show(fig, clickedThumb) {
+    var thumb = clickedThumb || (fig.tagName === 'IMG' ? fig : fig.querySelector('img'));
     var cap = fig.tagName === 'IMG' ? null : fig.querySelector('figcaption');
-    img.src = fig.getAttribute('data-full') || (thumb && thumb.currentSrc) || (thumb && thumb.src) || '';
+    img.src = (clickedThumb && clickedThumb.getAttribute('data-full')) || fig.getAttribute('data-full') || (thumb && thumb.currentSrc) || (thumb && thumb.src) || '';
     img.alt = thumb ? thumb.alt : '';
     var kind = cap && cap.querySelector('[class*="kind"]');
     var credit = cap && cap.querySelector('[class*="credit"]');
@@ -75,12 +75,12 @@
     capEl.textContent = text;
   }
 
-  function open(fig) {
+  function open(fig, clickedThumb) {
     var g = fig.getAttribute('data-lightbox-group');
     group = g ? Array.prototype.slice.call(document.querySelectorAll('[data-zoomable][data-lightbox-group="' + g + '"]')) : [fig];
     index = Math.max(0, group.indexOf(fig));
     lastFocus = document.activeElement;
-    show(group[index]);
+    show(group[index], clickedThumb);
     prevBtn.hidden = nextBtn.hidden = group.length < 2;
     root.classList.add('plb-open');
     document.documentElement.style.overflow = 'hidden';
@@ -102,7 +102,11 @@
 
   document.addEventListener('click', function (e) {
     var fig = e.target.closest && e.target.closest('[data-zoomable]');
-    if (fig && (fig.tagName === 'IMG' || fig.querySelector('img')) && e.target.closest('img')) { e.preventDefault(); open(fig); return; }
+    if (fig && (fig.tagName === 'IMG' || fig.querySelector('img')) && e.target.closest('img')) {
+      e.preventDefault();
+      open(fig, e.target.closest('img'));
+      return;
+    }
     if (!root.classList.contains('plb-open')) return;
     if (e.target === root) close();
   });
@@ -115,7 +119,7 @@
     }
     if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[data-zoomable] img, img[data-zoomable]')) {
       e.preventDefault();
-      open(e.target.closest('[data-zoomable]') || e.target);
+      open(e.target.closest('[data-zoomable]') || e.target, e.target.matches('img') ? e.target : null);
     }
   });
   root.querySelector('.plb-close').addEventListener('click', close);

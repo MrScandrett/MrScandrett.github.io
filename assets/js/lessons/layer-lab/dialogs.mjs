@@ -105,7 +105,7 @@ export function exportDialog(s) {
           try {
             const { blob, notes } = await exportDoc(d, fmt, { quality: f.q.value / 100, scale: +f.scale.value, filename: f.fname.value });
             if (my !== token) return;
-            const raw = d.width * d.height * 4 * (F.layers ? d.layers.length : 1) * (F.layers ? 1 : +f.scale.value ** 2);
+            const raw = d.width * d.height * 4 * (F.layers ? d.layers.length : 1) * (F.layers ? 1 : (+f.scale.value) ** 2);
             f.querySelector('.lls-size').textContent = `${formatBytes(blob.size)}  (${Math.max(1, Math.round((blob.size / raw) * 100))}% of the raw pixels)`;
             f.querySelector('.lls-notes').innerHTML = notes.map((n) => `<li>${esc(n)}</li>`).join('');
             previewPixels(f.querySelector('.lls-qprev'), F.layers ? null : blob, d);

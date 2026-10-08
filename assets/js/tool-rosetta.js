@@ -246,7 +246,7 @@
       if (g) host.appendChild(g);
       if (!host.hasAttribute('data-rosetta-nolink')) {
         var a = el('a', 'rosetta-more', 'Every idea in every ' + fam.noun + ' →');
-        a.href = url(REFERENCE) + '#' + (family === 'model' ? 'modeling' : 'engines');
+        a.href = url(REFERENCE) + '#' + ({ model: 'modeling', image: 'images' }[family] || 'engines');
         host.appendChild(a);
       }
     }

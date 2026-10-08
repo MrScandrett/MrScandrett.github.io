@@ -170,13 +170,13 @@ export async function exportDoc(doc, format, { quality = 0.85, scale = 1, filena
   if (scale !== 1) notes.push(`Resampled to ${w} × ${h} pixels (${Math.round(scale * 100)}%).`);
   notes.push(`All ${doc.layers.length} layer${doc.layers.length === 1 ? ' was' : 's were'} flattened into one picture.`);
   let blob = await toBlob(out, f.mime, f.quality ? quality : undefined);
-  let filename = name;
+  let outName = name;
   if (blob.type !== f.mime) {
     notes.push(`This browser can't write ${f.label}, so a PNG was saved instead.`);
-    filename = `${base}.png`;
+    outName = `${base}.png`;
     blob = await toBlob(out, 'image/png');
   }
-  return { blob, filename, notes };
+  return { blob, filename: outName, notes };
 }
 
 export function download(blob, filename) {

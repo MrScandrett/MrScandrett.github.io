@@ -42,6 +42,25 @@
         "fusion",
         "gltf"
       ]
+    },
+    "image": {
+      "label": "Image & paint apps",
+      "noun": "app",
+      "tools": [
+        "photopea",
+        "gimp",
+        "krita",
+        "photoshop",
+        "procreate",
+        "aseprite",
+        "png"
+      ],
+      "defaults": [
+        "photopea",
+        "gimp",
+        "krita",
+        "photoshop"
+      ]
     }
   },
   "tools": {
@@ -151,6 +170,54 @@
     "gltf": {
       "name": ".glb file",
       "lang": "Open standard (Khronos)",
+      "cost": "Free, open format",
+      "kind": "What actually travels to the game engine"
+    },
+    "photopea": {
+      "name": "Photopea",
+      "lang": "Scripts (Photoshop-style JS)",
+      "cost": "Free in the browser (ads); paid ad-free",
+      "kind": "Photoshop-style editor in a browser tab",
+      "site": "https://www.photopea.com/"
+    },
+    "gimp": {
+      "name": "GIMP 3",
+      "lang": "Python / Script-Fu",
+      "cost": "Free, open source",
+      "kind": "Photo editing and texture work",
+      "site": "https://www.gimp.org/"
+    },
+    "krita": {
+      "name": "Krita",
+      "lang": "Python",
+      "cost": "Free, open source",
+      "kind": "Digital painting and texture painting",
+      "site": "https://krita.org/"
+    },
+    "photoshop": {
+      "name": "Adobe Photoshop",
+      "lang": "JavaScript / UXP",
+      "cost": "Paid subscription; education discounts",
+      "kind": "Industry-standard photo editing",
+      "site": "https://www.adobe.com/products/photoshop.html"
+    },
+    "procreate": {
+      "name": "Procreate",
+      "lang": "None",
+      "cost": "One-time purchase (iPad)",
+      "kind": "Touch painting on iPad",
+      "site": "https://procreate.com/"
+    },
+    "aseprite": {
+      "name": "Aseprite",
+      "lang": "Lua",
+      "cost": "Paid, or free to compile from source",
+      "kind": "Pixel art and sprite animation",
+      "site": "https://www.aseprite.org/"
+    },
+    "png": {
+      "name": ".png file",
+      "lang": "Open standard (W3C)",
       "cost": "Free, open format",
       "kind": "What actually travels to the game engine"
     }
@@ -345,6 +412,76 @@
         "phaser": "2D only; pair with Three.js for 3D",
         "pygame": "2D only"
       }
+    },
+    {
+      "id": "core.importtex",
+      "family": "game",
+      "topic": "Foundations",
+      "idea": "Bring in a texture",
+      "what": "Get a PNG into the engine and tell it what kind of data it holds.",
+      "cells": {
+        "course": "`new THREE.TextureLoader().load('T_Brick_BaseColor.png')`; set `colorSpace` to sRGB for colour maps only",
+        "r2d": "`new Sprite(image)` after loading the image",
+        "godot": "Drop the `.png` in the FileSystem dock; for a normal map set Import → Normal Map: Enable",
+        "unity": "Drag into Assets; for a normal map set Texture Type: Normal map",
+        "unreal": "Import into the Content Browser; normal maps need Compression: Normalmap (auto-set for `_N` names)",
+        "gamemaker": "Create a Sprite and load the PNG; tiling textures go in a Texture Group",
+        "phaser": "`this.load.image('brick', 'T_Brick_BaseColor.png')` in `preload()`",
+        "pygame": "`pygame.image.load('T_Brick_BaseColor.png').convert()`"
+      },
+      "gotcha": "Colour maps are sRGB; roughness and normal maps are linear (non-colour) data. Importing a normal map as colour makes lighting look wrong."
+    },
+    {
+      "family": "game",
+      "id": "core.anim3d",
+      "topic": "Foundations",
+      "idea": "Play a 3D animation clip",
+      "what": "Run a named clip (Idle, Walk) that came in with a rigged model.",
+      "cells": {
+        "course": "`mixer.clipAction(gltf.animations[0]).play()` with a `THREE.AnimationMixer`",
+        "r2d": "2D only; pair with our Three.js bundle for 3D",
+        "godot": "`$AnimationPlayer.play(\"Walk\")`; set loop mode in the import settings",
+        "unity": "Animator Controller state, or `animator.Play(\"Walk\")`",
+        "unreal": "Animation Blueprint, or `PlayAnimation(WalkAnim, true)` on the Skeletal Mesh",
+        "gamemaker": "2D-focused; 3D skeletal animation needs an extension",
+        "phaser": "2D only; pair with Three.js for 3D",
+        "pygame": "2D only"
+      }
+    },
+    {
+      "family": "game",
+      "id": "core.collide3d",
+      "topic": "Foundations",
+      "idea": "Give a 3D prop simple collision",
+      "what": "Let players bump into the prop using a few boxes, not every bevel.",
+      "cells": {
+        "course": "a `THREE.Box3` around the prop and an overlap test",
+        "r2d": "2D: a `Body` with a rectangle shape",
+        "godot": "Mesh → Create Collision Shape, or add `-col` to the object name before import",
+        "unity": "Add Component → Box Collider",
+        "unreal": "Static Mesh Editor → Collision → Add Box Simplified Collision, or `UCX_` meshes",
+        "gamemaker": "2D: the sprite's collision mask",
+        "phaser": "2D: an Arcade Physics body",
+        "pygame": "2D: a `pygame.Rect`"
+      }
+    },
+    {
+      "family": "game",
+      "id": "core.reimport",
+      "topic": "Foundations",
+      "idea": "Update an asset after you re-export",
+      "what": "Replace the file and keep the work you did inside the engine.",
+      "cells": {
+        "course": "reload the page; the loader reads the new file",
+        "r2d": "reload the page",
+        "godot": "overwrite the `.glb`; Godot reimports it. Keep engine edits in an inherited scene",
+        "unity": "overwrite the file; Unity reimports it. Keep edits on a prefab",
+        "unreal": "right-click the asset → Reimport",
+        "gamemaker": "open the sprite → Import again",
+        "phaser": "reload the page",
+        "pygame": "run the game again"
+      },
+      "gotcha": "Engine-side work (collision, scripts, materials) lives on a wrapper around the import, so a re-export never wipes it."
     },
     {
       "id": "sprite.load",
@@ -1102,6 +1239,24 @@
       }
     },
     {
+      "id": "model.material",
+      "family": "model",
+      "topic": "Getting game-ready",
+      "idea": "Build a PBR material",
+      "what": "Connect colour, roughness and normal images the way game engines expect.",
+      "cells": {
+        "blender": "Shader Editor → Principled BSDF; roughness and normal images set to Non-Color; normal goes through a Normal Map node",
+        "maya": "Hypershade → Standard Surface; roughness and normal files set to Raw",
+        "max": "Physical Material, or the glTF Material for exact export",
+        "fusion": "Appearances (for renders, not exported as game materials)",
+        "onshape": "Appearances only",
+        "sketchup": "Materials panel; PBR maps in recent versions",
+        "tinkercad": "colour only",
+        "gltf": "metallic-roughness: base colour, roughness/metal, normal, occlusion, emissive"
+      },
+      "gotcha": "Only image textures travel reliably. Procedural nodes must be baked to images before export."
+    },
+    {
       "id": "model.rig",
       "family": "model",
       "topic": "Getting game-ready",
@@ -1117,6 +1272,41 @@
         "tinkercad": "none",
         "gltf": "a skin with joints"
       }
+    },
+    {
+      "family": "model",
+      "id": "model.restpose",
+      "topic": "Rigging and animation",
+      "idea": "Edit the rest pose vs. test a pose",
+      "what": "Move joints in the rest pose; rotate them in a test pose. Fixing placement by posing hides the problem.",
+      "cells": {
+        "blender": "Edit Mode on the armature changes the rest pose; Pose Mode tests it",
+        "maya": "Move joints before binding; Skin → Go to Bind Pose to return to rest",
+        "max": "Edit bones with the Skin modifier off; Biped/CAT use Figure Mode",
+        "fusion": "none (no skinning)",
+        "onshape": "none (no skinning)",
+        "sketchup": "none",
+        "tinkercad": "none",
+        "gltf": "stores the rest pose as each joint's inverse bind matrix"
+      }
+    },
+    {
+      "family": "model",
+      "id": "model.weights",
+      "topic": "Rigging and animation",
+      "idea": "Paint skin weights",
+      "what": "Control how strongly each bone moves each vertex (0 = not at all, 1 = fully).",
+      "cells": {
+        "blender": "Weight Paint mode; Normalize All keeps totals at 1",
+        "maya": "Skin → Paint Skin Weights; Component Editor for exact values",
+        "max": "Skin modifier → Paint Weights or Weight Tool",
+        "fusion": "none",
+        "onshape": "none",
+        "sketchup": "none",
+        "tinkercad": "none",
+        "gltf": "up to 4 joint weights per vertex in each set, adding up to 1"
+      },
+      "gotcha": "Weights that don't add up to 1 make vertices stretch or lag. The Asset Bench finds and normalizes them."
     },
     {
       "id": "model.keyframe",
@@ -1136,6 +1326,41 @@
       }
     },
     {
+      "family": "model",
+      "id": "model.clips",
+      "topic": "Rigging and animation",
+      "idea": "Keep each animation as a named clip",
+      "what": "Store Idle, Walk and Run separately so the engine can play each one by name.",
+      "cells": {
+        "blender": "Dope Sheet → Action Editor: name the Action, click the shield (fake user); push to NLA",
+        "maya": "Time Editor clips, or Game Exporter → Animation Clips",
+        "max": "FBX export → Animation → Takes, or the Game Exporter",
+        "fusion": "none (presentations only)",
+        "onshape": "none",
+        "sketchup": "none",
+        "tinkercad": "none",
+        "gltf": "one named animation per clip"
+      },
+      "gotcha": "Default names (Action, Take 001, mixamo.com) become the names your code has to type. Rename before export."
+    },
+    {
+      "family": "model",
+      "id": "model.curves",
+      "topic": "Rigging and animation",
+      "idea": "Edit motion curves",
+      "what": "Shape the timing between keys: smooth ease, hard snap, or a held pose.",
+      "cells": {
+        "blender": "Graph Editor (interpolation: Bézier, Linear, Constant)",
+        "maya": "Windows → Animation Editors → Graph Editor",
+        "max": "Curve Editor (Track View)",
+        "fusion": "none",
+        "onshape": "none",
+        "sketchup": "none",
+        "tinkercad": "none",
+        "gltf": "each channel is LINEAR, STEP or CUBICSPLINE"
+      }
+    },
+    {
       "id": "model.export",
       "family": "model",
       "topic": "Getting game-ready",
@@ -1152,6 +1377,367 @@
         "gltf": "one file with meshes, materials, rigs and animations"
       },
       "gotcha": "Pick `.glb` when you can: every engine on this site reads it, so your art isn't tied to one app or one engine."
+    },
+    {
+      "id": "model.import",
+      "family": "model",
+      "topic": "Getting game-ready",
+      "idea": "Bring a fixed file back in",
+      "what": "Open the cleaned-up export (for example from the Asset Bench) back in your app.",
+      "cells": {
+        "blender": "File → Import → glTF 2.0 (`.glb`/`.gltf`); also FBX, OBJ, STL",
+        "maya": "File → Import for FBX and OBJ; `.glb` needs a glTF plugin",
+        "max": "File → Import for FBX and OBJ; glTF import is in recent versions",
+        "fusion": "Insert → Insert Mesh (`.obj` or `.stl`): a mesh body, not editable features",
+        "onshape": "Import `.obj` or `.stl` as a mesh reference to model around",
+        "sketchup": "File → Import (Pro); `.stl` needs the free STL extension",
+        "tinkercad": "Import (top right): `.obj` or `.stl`",
+        "gltf": "keeps names, materials, rigs and clips through the round trip"
+      },
+      "gotcha": "Importing a fixed export doesn't fix your source file. Make the same fix in the source too, or the next export brings the problem back."
+    },
+    {
+      "id": "img.native",
+      "family": "image",
+      "topic": "Files",
+      "idea": "Save the editable source",
+      "what": "The file that keeps every layer so you can change your mind later.",
+      "cells": {
+        "photopea": "Saves `.psd` (File → Save as PSD)",
+        "gimp": "`.xcf` (File → Save)",
+        "krita": "`.kra` (File → Save)",
+        "photoshop": "`.psd` (File → Save)",
+        "procreate": "`.procreate` (saved automatically in the Gallery)",
+        "aseprite": "`.aseprite` (File → Save)",
+        "png": "Not a source file: one flat picture"
+      },
+      "gotcha": "Keep the source and the export side by side. You fix mistakes in the source, then export again."
+    },
+    {
+      "id": "img.export",
+      "family": "image",
+      "topic": "Files",
+      "idea": "Export a PNG for the game",
+      "what": "Write the flat image that engines, websites and other apps read.",
+      "cells": {
+        "photopea": "File → Export as → PNG",
+        "gimp": "File → Export As… (Shift+Ctrl+E), name it `.png`",
+        "krita": "File → Export…, choose PNG",
+        "photoshop": "File → Export → Quick Export as PNG, or Export As…",
+        "procreate": "Actions (wrench) → Share → PNG",
+        "aseprite": "File → Export As… (Ctrl+Alt+Shift+S) → `.png`; Export Sprite Sheet for animation frames",
+        "png": "lossless, keeps transparency, opens in every engine"
+      },
+      "gotcha": "Export PNG, not JPG, for game textures: JPG blurs edges and can't store transparency."
+    },
+    {
+      "id": "img.layered",
+      "family": "image",
+      "topic": "Files",
+      "idea": "Share layers with another app",
+      "what": "Hand a layered file to someone who uses a different app.",
+      "cells": {
+        "photopea": "Native `.psd`, so layers travel to Photoshop, GIMP and Krita",
+        "gimp": "File → Export As → `.psd` (most layers survive; some effects flatten)",
+        "krita": "File → Save As → `.psd` (paint layers, masks and blend modes survive)",
+        "photoshop": "`.psd` is the shared format most apps read",
+        "procreate": "Share → PSD",
+        "aseprite": "Layers export as separate PNGs or a sprite sheet; no PSD",
+        "png": "Flattens every layer into one picture"
+      }
+    },
+    {
+      "id": "img.newlayer",
+      "family": "image",
+      "topic": "Layers",
+      "idea": "Add a new layer",
+      "what": "Paint on a fresh sheet without touching what's below.",
+      "cells": {
+        "photopea": "Layer → New → Layer, or the + button in the Layers panel",
+        "gimp": "Layer → New Layer (Shift+Ctrl+N)",
+        "krita": "Insert key, or + in the Layers docker",
+        "photoshop": "Layer → New → Layer (Shift+Ctrl+N)",
+        "procreate": "Layers panel → +",
+        "aseprite": "Layer → New Layer (Shift+N)",
+        "png": "Layers are merged on export"
+      }
+    },
+    {
+      "id": "img.layercopy",
+      "family": "image",
+      "topic": "Layers",
+      "idea": "Duplicate a layer",
+      "what": "Make a safe copy before a risky change.",
+      "cells": {
+        "photopea": "Ctrl+J, or Layer → Duplicate Layer",
+        "gimp": "Layer → Duplicate Layer (Shift+Ctrl+D)",
+        "krita": "Ctrl+J, or Layer → Duplicate Layer",
+        "photoshop": "Ctrl+J (Layer via Copy)",
+        "procreate": "Swipe left on the layer → Duplicate",
+        "aseprite": "Layer → Duplicate",
+        "png": "Layers are merged on export"
+      }
+    },
+    {
+      "id": "img.mask",
+      "family": "image",
+      "topic": "Layers",
+      "idea": "Hide part of a layer without erasing",
+      "what": "Paint black to hide and white to bring it back.",
+      "cells": {
+        "photopea": "Mask button at the bottom of the Layers panel",
+        "gimp": "Layer → Mask → Add Layer Mask",
+        "krita": "Right-click layer → Add → Transparency Mask",
+        "photoshop": "Add layer mask button in the Layers panel",
+        "procreate": "Tap the layer → Mask",
+        "aseprite": "No layer masks: use a selection and a separate layer",
+        "png": "Masks are applied (baked in) on export"
+      },
+      "gotcha": "Masks are undo you can come back to tomorrow. Erasing is permanent once you save."
+    },
+    {
+      "id": "img.blend",
+      "family": "image",
+      "topic": "Layers",
+      "idea": "Change a layer's blend mode",
+      "what": "Multiply for shadows and grime, Screen or Add for glows, Overlay for contrast.",
+      "cells": {
+        "photopea": "Blend-mode menu at the top of the Layers panel",
+        "gimp": "Mode menu in the Layers dock",
+        "krita": "Blending-mode menu in the Layers docker",
+        "photoshop": "Blend-mode menu in the Layers panel",
+        "procreate": "Tap the N on the layer",
+        "aseprite": "Double-click the layer → Mode",
+        "png": "The blended result is baked in"
+      }
+    },
+    {
+      "id": "img.adjust",
+      "family": "image",
+      "topic": "Layers",
+      "idea": "Adjust colour without destroying pixels",
+      "what": "Levels, Curves and Hue/Saturation that you can tweak later.",
+      "cells": {
+        "photopea": "Layer → New Adjustment Layer",
+        "gimp": "Colors menu (Levels, Curves, Hue-Saturation); GIMP 3 keeps filters editable",
+        "krita": "Layer → New → Filter Layer, or a Filter Mask",
+        "photoshop": "Layer → New Adjustment Layer",
+        "procreate": "Adjustments (magic-wand icon) → Hue, Saturation, Brightness / Curves",
+        "aseprite": "Edit → Adjustments → Hue/Saturation, Brightness/Contrast",
+        "png": "Adjustments are baked in"
+      }
+    },
+    {
+      "id": "img.style",
+      "family": "image",
+      "topic": "Layers",
+      "idea": "Add an outline, glow or drop shadow",
+      "what": "Effects that follow the layer's shape.",
+      "cells": {
+        "photopea": "Layer → Layer Style (fx button)",
+        "gimp": "Filters → Light and Shadow → Drop Shadow (editable in GIMP 3)",
+        "krita": "Layer → Layer Style",
+        "photoshop": "Layer → Layer Style (fx button)",
+        "procreate": "No layer styles: duplicate the layer, recolour and blur it",
+        "aseprite": "Edit → FX → Outline",
+        "png": "Effects are baked in"
+      }
+    },
+    {
+      "id": "img.wand",
+      "family": "image",
+      "topic": "Selecting",
+      "idea": "Select by colour",
+      "what": "Grab an area of similar colour in one click.",
+      "cells": {
+        "photopea": "Magic Wand (W)",
+        "gimp": "Fuzzy Select (U)",
+        "krita": "Contiguous / Similar Color Selection tools",
+        "photoshop": "Magic Wand (W), or Object Selection",
+        "procreate": "Selection → Automatic",
+        "aseprite": "Magic Wand (W)",
+        "png": "Selections aren't saved in a PNG; transparency is"
+      }
+    },
+    {
+      "id": "img.deselect",
+      "family": "image",
+      "topic": "Selecting",
+      "idea": "Select nothing",
+      "what": "Drop the selection so tools work everywhere again.",
+      "cells": {
+        "photopea": "Ctrl+D",
+        "gimp": "Select → None (Shift+Ctrl+A)",
+        "krita": "Ctrl+Shift+A",
+        "photoshop": "Ctrl+D",
+        "procreate": "Tap the Selection icon again",
+        "aseprite": "Ctrl+D",
+        "png": "— selections stay in the app"
+      }
+    },
+    {
+      "id": "img.invert",
+      "family": "image",
+      "topic": "Selecting",
+      "idea": "Invert the selection",
+      "what": "Swap selected and unselected areas.",
+      "cells": {
+        "photopea": "Select → Inverse (Shift+Ctrl+I)",
+        "gimp": "Select → Invert (Ctrl+I)",
+        "krita": "Select → Invert Selection (Ctrl+Shift+I)",
+        "photoshop": "Select → Inverse (Shift+Ctrl+I)",
+        "procreate": "Selection → Invert",
+        "aseprite": "Select → Inverse (Ctrl+Shift+I)",
+        "png": "— selections stay in the app"
+      },
+      "gotcha": "Ctrl+I means different things in different apps (invert colours vs. invert selection). Check the menu."
+    },
+    {
+      "id": "img.heal",
+      "family": "image",
+      "topic": "Repairing",
+      "idea": "Heal a blemish",
+      "what": "Remove a spot or seam by blending in nearby texture.",
+      "cells": {
+        "photopea": "Spot Healing Brush (J)",
+        "gimp": "Heal tool (H)",
+        "krita": "Smart Patch tool, or a Heal brush preset",
+        "photoshop": "Spot Healing Brush (J) or the Remove tool",
+        "procreate": "No healing brush: use Clone, or paint over",
+        "aseprite": "None: fix pixels by hand",
+        "png": "The repair is baked in"
+      }
+    },
+    {
+      "id": "img.clone",
+      "family": "image",
+      "topic": "Repairing",
+      "idea": "Clone from one area to another",
+      "what": "Copy texture from a clean spot onto a damaged one.",
+      "cells": {
+        "photopea": "Clone Stamp (S); Alt-click to pick the source",
+        "gimp": "Clone tool (C); Ctrl-click to pick the source",
+        "krita": "Clone brush preset; Ctrl-click to pick the source",
+        "photoshop": "Clone Stamp (S); Alt-click to pick the source",
+        "procreate": "Adjustments → Clone",
+        "aseprite": "None: copy and paste a selection",
+        "png": "The repair is baked in"
+      }
+    },
+    {
+      "id": "img.transform",
+      "family": "image",
+      "topic": "Shaping",
+      "idea": "Move, scale and rotate",
+      "what": "Resize or turn the contents of a layer.",
+      "cells": {
+        "photopea": "Edit → Free Transform (Alt+Ctrl+T)",
+        "gimp": "Unified Transform tool (Shift+T)",
+        "krita": "Transform tool (Ctrl+T)",
+        "photoshop": "Edit → Free Transform (Ctrl+T)",
+        "procreate": "Transform (arrow icon) → Uniform or Freeform",
+        "aseprite": "Select, then drag the handles; Edit → Rotate / Flip",
+        "png": "Transforms are baked in"
+      }
+    },
+    {
+      "id": "img.crop",
+      "family": "image",
+      "topic": "Shaping",
+      "idea": "Crop the canvas",
+      "what": "Cut the picture down to the part you need.",
+      "cells": {
+        "photopea": "Crop tool (C)",
+        "gimp": "Crop tool (Shift+C)",
+        "krita": "Crop tool (C)",
+        "photoshop": "Crop tool (C)",
+        "procreate": "Actions → Canvas → Crop & Resize",
+        "aseprite": "Sprite → Crop (uses the selection)",
+        "png": "Stores only the final size"
+      }
+    },
+    {
+      "id": "img.resize",
+      "family": "image",
+      "topic": "Shaping",
+      "idea": "Resize the image (power of two for games)",
+      "what": "Change the pixel size. Game textures should be 256, 512, 1024 or 2048 px.",
+      "cells": {
+        "photopea": "Image → Image Size (Alt+Ctrl+I)",
+        "gimp": "Image → Scale Image",
+        "krita": "Image → Scale Image to New Size (Ctrl+Alt+I)",
+        "photoshop": "Image → Image Size (Alt+Ctrl+I)",
+        "procreate": "Actions → Canvas → Crop & Resize (turn on Resample)",
+        "aseprite": "Sprite → Sprite Size (nearest-neighbour keeps pixels crisp)",
+        "png": "Any size, but engines compress and mipmap power-of-two sizes best"
+      },
+      "gotcha": "Shrinking is safe. Enlarging only adds blur, never detail. For pixel art, use nearest-neighbour."
+    },
+    {
+      "id": "img.type",
+      "family": "image",
+      "topic": "Shaping",
+      "idea": "Add text",
+      "what": "Type words onto the image.",
+      "cells": {
+        "photopea": "Type tool (T)",
+        "gimp": "Text tool (T)",
+        "krita": "Text tool (T)",
+        "photoshop": "Type tool (T)",
+        "procreate": "Actions → Add → Add Text",
+        "aseprite": "Edit → Insert Text",
+        "png": "Text becomes pixels; keep the source to edit it"
+      }
+    },
+    {
+      "id": "img.undo",
+      "family": "image",
+      "topic": "Files",
+      "idea": "Undo and history",
+      "what": "Step back through your changes.",
+      "cells": {
+        "photopea": "Ctrl+Z; History panel",
+        "gimp": "Ctrl+Z; Undo History dock",
+        "krita": "Ctrl+Z; Undo History docker",
+        "photoshop": "Ctrl+Z; History panel",
+        "procreate": "Two-finger tap",
+        "aseprite": "Ctrl+Z",
+        "png": "No history: export a new version instead of overwriting"
+      }
+    },
+    {
+      "id": "img.tile",
+      "family": "image",
+      "topic": "Game textures",
+      "idea": "Make a texture tile seamlessly",
+      "what": "Hide the seam so the texture can repeat across a floor or wall.",
+      "cells": {
+        "photopea": "Filter → Other → Offset by half the width and height (wrap around), then heal the seams",
+        "gimp": "Layer → Transform → Offset (Shift+Ctrl+O), by half; or Filters → Map → Tile Seamless",
+        "krita": "View → Wrap Around Mode (W): paint across the edges live",
+        "photoshop": "Filter → Other → Offset by half (Wrap Around), then heal the seams",
+        "procreate": "No wrap mode: move a copy by half with Snapping on, then paint over the seam",
+        "aseprite": "View → Tiled Mode → Tiled in both axes",
+        "png": "Tiling is a property of the pixels: if the edges match, it repeats"
+      },
+      "gotcha": "Test it 3×3 before calling it done. A seamless edge can still show a repeating blotch."
+    },
+    {
+      "id": "img.normalmap",
+      "family": "image",
+      "topic": "Game textures",
+      "idea": "Make a normal map",
+      "what": "Fake small bumps and dents from a grey height image.",
+      "cells": {
+        "photopea": "No built-in normal-map filter: use the Asset Bench or a dedicated texture tool",
+        "gimp": "Filters → Generic → Normal Map",
+        "krita": "Filter → Edge Detection → Height to Normal Map",
+        "photoshop": "No current filter (the old 3D menu was removed); use the Asset Bench or Substance",
+        "procreate": "No normal-map tool: export the colour PNG and use the Asset Bench",
+        "aseprite": "Usually hand-painted for pixel art, or generated by the Asset Bench",
+        "png": "Store as non-colour (linear) data; Unreal flips the green channel"
+      },
+      "gotcha": "Godot, Unity, Blender and glTF read OpenGL normals (green up). Unreal reads DirectX (green down). Mark the image as a normal map when you import it."
     }
   ]
 }
