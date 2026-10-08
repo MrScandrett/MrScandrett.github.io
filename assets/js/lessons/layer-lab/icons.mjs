@@ -1,0 +1,47 @@
+/* icons.mjs — line icons for Layer Lab (24×24, stroke = currentColor). */
+
+export const ICONS = {
+  logo: '<rect x="3" y="7" width="13" height="13" rx="2" fill="currentColor" opacity=".35" stroke="none"/><rect x="8" y="4" width="13" height="13" rx="2"/>',
+  move: '<path d="M12 2v20M2 12h20M12 2 9 5M12 2l3 3M12 22l-3-3M12 22l3-3M2 12l3-3M2 12l3 3M22 12l-3-3M22 12l-3 3"/>',
+  marquee: '<rect x="4" y="5" width="16" height="14" stroke-dasharray="3 2.4"/>',
+  ellipse: '<ellipse cx="12" cy="12" rx="8.5" ry="6.5" stroke-dasharray="3 2.4"/>',
+  lasso: '<path d="M6.5 15C4 13.6 3 11.8 3 10c0-3.9 4-6 9-6s9 2.1 9 5.6c0 3.6-4 6-9 6-1.4 0-2.7-.2-3.9-.5"/><path d="M8 15c-1.6.6-2 2.3-1 3.3s.9 2.4-.5 3.2"/>',
+  wand: '<path d="m4 20 11-11"/><path d="m13.5 7.5 3 3"/><path d="M18 3v3M19.5 4.5h-3M20 9.5h2M7.5 4.5 9 6M14 2.5v1.5"/>',
+  crop: '<path d="M6 2v16h16"/><path d="M2 6h16v16"/>',
+  eyedropper: '<path d="m14.5 4.5 5 5"/><path d="M17 2.5a2.1 2.1 0 0 1 3 3L18 7.5l-1.5 1.5L15 7.5l1.5-1.5z"/><path d="M15 9 6.5 17.5 4 20l-.5-1.5L6 16l8.5-8.5"/>',
+  heal: '<rect x="2.5" y="8.5" width="19" height="7" rx="3.5" transform="rotate(-45 12 12)"/><path d="M10.6 10.6h.01M13.4 13.4h.01M10.6 13.4h.01M13.4 10.6h.01" stroke-width="2.2"/>',
+  clone: '<path d="M9 3h6v5l3 3v3H6v-3l3-3z"/><path d="M5 17h14v3H5z"/>',
+  brush: '<path d="M19 3c1.1 1.1 1.4 2.4.6 3.2L12 13.8 10.2 12l7.6-7.6c.4-.4.8-.5 1.2-1.4z"/><path d="M9.6 12.6c-2.6-.6-5 1-5.2 3.6-.1 1.6-1 2.6-2.4 3 3.4 1.6 7.4.9 8.8-1.3 1-1.6.8-3.6-1.2-5.3z"/>',
+  eraser: '<path d="m15.5 3.5 5 5L10 19H5.5L3 16.5z"/><path d="m8.5 10.5 5 5M10 19h11"/>',
+  bucket: '<path d="m4.5 11.5 7-7 7.5 7.5-7 7z"/><path d="M4.5 11.5h14.6"/><path d="M20.5 15.5s1.8 2.3 1.8 3.6a1.8 1.8 0 0 1-3.6 0c0-1.3 1.8-3.6 1.8-3.6z"/>',
+  gradient: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M10.5 4v16M13.5 4v16" opacity=".7"/><path d="M16 4v16" opacity=".4"/>',
+  type: '<path d="M5 6V4h14v2M12 4v16M9 20h6"/>',
+  shape: '<rect x="3" y="3" width="11" height="11" rx="1"/><circle cx="15.5" cy="15.5" r="5.5"/>',
+  hand: '<path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V11"/><path d="M11 11V4a1.5 1.5 0 0 1 3 0v7"/><path d="M14 11V5.5a1.5 1.5 0 0 1 3 0V14c0 4.4-3 7.5-7 7.5-2.9 0-4.6-1.6-6-4l-1.6-2.9a1.5 1.5 0 0 1 2.6-1.5L8 15"/>',
+  zoom: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5.5 5.5M10.5 7.5v6M7.5 10.5h6"/>',
+  undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+  redo: '<path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>',
+  expand: '<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>',
+  eye: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeOff: '<path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7c1.7 0 3.2-.5 4.5-1.2"/>',
+  lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  unlock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+  mask: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="12" cy="12" r="4.5" fill="currentColor"/>',
+  adjust: '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/>',
+  fx: '<path d="M10 4H7.5A2.5 2.5 0 0 0 5 6.5V20M3 10h6"/><path d="m13 11 7 9M20 11l-7 9"/>',
+  dup: '<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>',
+  up: '<path d="m6 14 6-6 6 6"/>',
+  down: '<path d="m6 10 6 6 6-6"/>',
+  new: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 12v6M9 15h6"/>',
+  open: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  photo: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/>',
+  layers: '<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/>',
+  download: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
+  text: '<path d="M5 6V4h14v2M12 4v16M9 20h6"/>',
+};
+
+export function icon(name, cls = '') {
+  return `<svg class="lls-ico ${cls}" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${ICONS[name] || ''}</svg>`;
+}

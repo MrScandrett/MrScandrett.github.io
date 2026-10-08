@@ -6,8 +6,9 @@
  *
  *   classroomos:memory:v1   lesson history, favorite lessons, saved worksheet answers,
  *                           liked and played showcase projects, the "pause" switch
- *   reader:pos:<book>       written by reader.mjs; read here (never rewritten) to list
- *                           books in progress. "Remove from stats" deletes only that key.
+ *   reader:pos:<book>       written by reader.mjs (and bible-reader.mjs as reader:pos:bible.html);
+ *                           read here (never rewritten) to list books in progress.
+ *                           "Remove from stats" deletes only that key.
  *
  * Loaded by nav-mobile.js (every page with the site nav), lesson-print-button.js (every
  * lesson), and ui.js (showcase cards). It wires itself up declaratively:
@@ -159,7 +160,8 @@
         if (!pos || typeof pos !== 'object') continue;
         var id = k.slice(BOOK_PREFIX.length);
         var local = id.indexOf('local:') === 0;
-        var href = siteHref('reader.html') + (local
+        // Site readers with their own page (bible.html) key their position by that page.
+        var href = /^[a-z0-9-]+\.html$/.test(id) ? siteHref(id) : siteHref('reader.html') + (local
           ? '?file=' + encodeURIComponent(id.slice(6))
           : '?src=' + encodeURIComponent(id));
         list.push({

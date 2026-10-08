@@ -149,6 +149,15 @@ drag-to-look desktop preview) and drive them with `renderer.setAnimationLoop` â€
 pause `requestAnimationFrame` during a session. Comfort rule: teleport and snap turn only,
 no smooth artificial motion. Keep a flat HTML version of the same content on the page.
 
+## Bible reader
+
+`bible.html` + `assets/js/bible-reader.mjs` is the Bible's own reader (the library's
+"The Holy Bible" spine opens it; reader.html does not). Text is all 66 books in BSB, KJV
+and ASV (all public domain), generated into `assets/data/bible/` by `npm run build:bible`
+from a pinned source; don't hand-edit those files. Progress is per-browser
+(`bible:progress:v1`) and mirrored to `reader:pos:bible.html` so library shelves and My
+Stuff list it. The homepage verse of the day links in via `bible.html#/go/<reference>`.
+
 ## Shared sim helpers
 
 New lesson sims should reach for these instead of hand-rolling canvas/Three/Matter

@@ -167,7 +167,9 @@ function setLinks(reference, deeplink) {
   const yvBtn      = document.getElementById("votd-youversion");
   if (!chapterBtn || !aiBtn || !yvBtn) return;
   const chapterRef = chapterFromReference(reference);
-  chapterBtn.href = `https://www.bible.com/search/bible?q=${encodeURIComponent(chapterRef || reference)}`;
+  // Opens in the site's own Bible reader, at the verse, so students stay in ClassroomOS.
+  const verseRef = String(reference).replace(/\s*\(.*\).*$/, "").trim();
+  chapterBtn.href = `bible.html#/go/${encodeURIComponent(verseRef || chapterRef)}`;
   aiBtn.href      = `https://www.google.com/search?q=${encodeURIComponent(`Bible ${reference} meaning and commentary`)}`;
   yvBtn.href      = deeplink || DEFAULT_VERSE.deeplink;
 }
