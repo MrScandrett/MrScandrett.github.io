@@ -53,6 +53,16 @@
     document.head.appendChild(memory);
   }
 
+  // VR headset mode (vr-mode.js): lessons are where students use the sims from a headset.
+  function loadVrMode() {
+    if (window.ClassroomOSVR || document.querySelector('script[data-vr-mode-script="true"]')) return;
+    var vr = document.createElement('script');
+    vr.src = script && script.src ? new URL('vr-mode.js', script.src).href : '/assets/js/vr-mode.js';
+    vr.defer = true;
+    vr.dataset.vrModeScript = 'true';
+    document.head.appendChild(vr);
+  }
+
   function cleanText(value) {
     return String(value || '').replace(/\s+/g, ' ').trim().slice(0, 220);
   }
@@ -145,6 +155,7 @@
   loadRelatedLinks();
   loadExhibitLinks();
   loadVisitorMemory();
+  loadVrMode();
   // Wait for parsing to finish so a lesson's own site-glossary.js tag (often
   // placed after this script, with its own data-glossary-src) wins over the
   // shared default glossary.

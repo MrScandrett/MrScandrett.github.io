@@ -95,6 +95,16 @@ function ensureVisitorMemory() {
   document.head.appendChild(script);
 }
 
+// VR headset mode (vr-mode.js); nav-mobile.js loads it too, this covers pages without it.
+function ensureVrMode() {
+  if (window.ClassroomOSVR || document.querySelector('script[data-vr-mode-script="true"]')) return;
+  const script = document.createElement("script");
+  script.src = new URL("./vr-mode.js", import.meta.url).href;
+  script.defer = true;
+  script.dataset.vrModeScript = "true";
+  document.head.appendChild(script);
+}
+
 function memoryAttrs(node, project) {
   node.dataset.memoryId = project.id;
   node.dataset.memoryTitle = project.title || "";
@@ -104,6 +114,7 @@ function memoryAttrs(node, project) {
 
 export function createLikeButton(project, { label = false } = {}) {
   ensureVisitorMemory();
+  ensureVrMode();
   const button = document.createElement("button");
   button.type = "button";
   button.dataset.memoryLike = "project";

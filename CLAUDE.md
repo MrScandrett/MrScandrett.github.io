@@ -129,6 +129,26 @@ showcase cards, and a "welcome back" strip on the homepage.
   The entry's `src` must be an image its `lesson` actually uses; `npm run check:avatars`
   (part of `npm run quality`) enforces that, so credits stay tied to real usage.
 
+## VR headsets (VR mode + VR Lab)
+
+`assets/js/vr-mode.js` (+ `assets/css/vr-mode.css`) makes the flat site usable from a
+headset browser. It turns on automatically in Quest/Pico/Wolvic/Vision Pro browsers
+(preference `classroomos-vr-mode` = auto|on|off, Settings → Access, or `?vr=on`): ~48px
+targets, a hover ring for the laser, the animated background paused, and a 🥽 VR menu with
+Full view (fullscreens the biggest on-screen sim's `.ll-sim`/`figure`, or `[data-vr-stage]`),
+text size, and on-screen keys (arrows/Space/Enter, or `<body data-vr-keys="KeyW Space">`).
+It's injected by nav-mobile.js, lesson-print-button.js and ui.js like visitor-memory.js;
+pages without those load it with a plain `<script … vr-mode.js defer>`.
+`lib/touch-controls.js` also shows the student-game pads in headsets (rebuild the slugs
+in `data/touch-controls.json` after changing it).
+
+Immersive pages live in `vr/` and are listed in `vr.html` from `data/xr-experiences.json`.
+Build new ones on `assets/js/xr-kit.mjs` (Enter VR button with honest status, controller/
+hand lasers, teleport floors via `userData.teleport`, 30° snap turn, canvas text panels,
+drag-to-look desktop preview) and drive them with `renderer.setAnimationLoop` — headsets
+pause `requestAnimationFrame` during a session. Comfort rule: teleport and snap turn only,
+no smooth artificial motion. Keep a flat HTML version of the same content on the page.
+
 ## Shared sim helpers
 
 New lesson sims should reach for these instead of hand-rolling canvas/Three/Matter

@@ -365,6 +365,7 @@
   var STORAGE_MODE = "classroomos-lighting-mode";
   var STORAGE_PHASE = "classroomos-lighting-phase";
   var STORAGE_REDUCED_MOTION = "classroomos-reduced-motion";
+  var STORAGE_VR_MODE = "classroomos-vr-mode";
   var REDUCED_MOTION_EVENT = "classroomos:reducedmotionchange";
   var LIGHTING_EVENT = "classroomos:lightingchange";
   var themeScope = (document.documentElement && document.documentElement.dataset.themeScope) ||
@@ -615,6 +616,7 @@
   var canvasGrid = null;
   var autoNote = null;
   var motionCheckbox = null;
+  var vrSelect = null;
   var trapFocusHandler = null;
   var settingsViewportHandler = null;
 
@@ -687,6 +689,18 @@
             '</span>' +
           '</label>' +
         '</div>' +
+        /* VR headset mode lives in vr-mode.js; this is just its switch. */
+        '<div class="nav-settings-section">' +
+          '<p class="nav-settings-eyebrow">VR headset</p>' +
+          '<label class="nav-vr-control">' +
+            '<span><strong>VR mode</strong>' +
+            '<small>Bigger buttons, a hover ring for the laser pointer, full view for sims, and on-screen keys. Auto turns it on in a headset browser.</small></span>' +
+            '<select class="nav-vr-select">' +
+              '<option value="auto">Auto</option><option value="on">On</option><option value="off">Off</option>' +
+            '</select>' +
+          '</label>' +
+          '<a class="nav-vr-lab" href="/vr.html">VR Lab: immersive experiences →</a>' +
+        '</div>' +
         '</div>' +
         /* Filled by visitor-memory.js: history, favorites, books, saved answers, liked projects. */
         '<div class="nav-settings-pane" role="tabpanel" data-pane="mine" id="' + panelId + '-pane-mine" aria-labelledby="' + panelId + '-tab-mine" hidden>' +
@@ -717,6 +731,7 @@
     canvasGrid = settingsContainer.querySelector(".nav-canvas-grid");
     autoNote = settingsContainer.querySelector(".nav-auto-note");
     motionCheckbox = settingsContainer.querySelector(".nav-motion-checkbox");
+    vrSelect = settingsContainer.querySelector(".nav-vr-select");
 
     THEME_OPTIONS.forEach(function (option) {
       var optionBtn = document.createElement("button");
@@ -871,6 +886,18 @@
     if (savedTab && tabButtons.some(function (t) { return t.getAttribute("data-tab") === savedTab; })) selectSettingsTab(savedTab);
 
     syncCanvasUi();
+
+    if (vrSelect) {
+      var syncVr = function () {
+        vrSelect.value = window.ClassroomOSVR ? window.ClassroomOSVR.preference() : (readStorage(STORAGE_VR_MODE) || "auto");
+      };
+      syncVr();
+      window.addEventListener("classroomos:vrmodechange", syncVr);
+      vrSelect.addEventListener("change", function () {
+        if (window.ClassroomOSVR) window.ClassroomOSVR.set(vrSelect.value);
+        else writeStorage(STORAGE_VR_MODE, vrSelect.value);
+      });
+    }
 
     if (motionCheckbox) {
       motionCheckbox.checked = reducedMotionOverride();
@@ -1472,6 +1499,17 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load, { once: true });
   else load();
+}());
+
+// VR headset mode (vr-mode.js): bigger targets, laser hover rings, full view, on-screen keys.
+(function () {
+  if (window.ClassroomOSVR || document.querySelector('script[data-vr-mode-script="true"]')) return;
+  var s = document.createElement('script');
+  var baseScript = document.currentScript && document.currentScript.src;
+  s.src = baseScript ? new URL('vr-mode.js', baseScript).href : '/assets/js/vr-mode.js';
+  s.defer = true;
+  s.dataset.vrModeScript = 'true';
+  document.head.appendChild(s);
 }());
 
 // On-device memory for returning visitors: the My Stuff tab, hearts, lesson history.
