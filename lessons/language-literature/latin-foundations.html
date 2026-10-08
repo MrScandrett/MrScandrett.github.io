@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Latin Language Foundations · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Discover the architecture of Latin: the six grammatical cases, word order freedom, classical vs ecclesiastical pronunciation, and the roots of modern vocabulary." />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport {
+      --ll-accent: #7c3aed;
+      --ll-tab-active: #8b5cf6;
+      --ll-tab-active-bg: rgba(139, 92, 246, 0.10);
+    }
+    .ll-sim {
+      background:
+        radial-gradient(circle at 10% 8%, rgba(243, 232, 255, 0.45) 0, transparent 36rem),
+        var(--surface-0);
+    }
+    .lf-page { max-width: 1080px; margin: 0 auto; padding: 0 1rem 3.5rem; }
+    .lf-hero { padding: 0.85rem 0 1.25rem; }
+    .lf-hero h1 { font-size: clamp(1.65rem, 3.8vw, 2.45rem); margin: 0.25rem 0 0.5rem; }
+    .lf-meta {
+      display: flex; flex-wrap: wrap; gap: 0.35rem 0.65rem;
+      margin: 0.55rem 0 0; font-size: 0.8rem; color: var(--text-muted, #64748b);
+    }
+    .lf-meta .dot {
+      width: 3px; height: 3px; border-radius: 50%;
+      background: currentColor; opacity: 0.45;
+      display: inline-block; align-self: center;
+    }
+    .lf-lede { margin: 0.75rem 0 0; max-width: 70ch; color: var(--text-secondary, #3f4f65); font-size: 0.95rem; line-height: 1.65; }
+
+    .lf-card {
+      background: #fff;
+      border: 1px solid #dde3ea;
+      border-left: 4px solid var(--lf-accent, #7c3aed);
+      border-radius: 16px;
+      box-shadow: 0 8px 26px rgba(15, 23, 42, 0.06);
+      padding: 1.25rem 1.4rem;
+      margin-bottom: 1.1rem;
+      --text: #1d1d1f; --muted: #5f5f64; --text-primary: #1d1d1f; --text-secondary: #434349;
+    }
+    :where(html[data-lighting="night"]) .lf-card { color: #1d1d1f; }
+    @media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .lf-card { color: #1d1d1f; } }
+    .lf-card h2 { margin: 0 0 0.45rem; font-size: 1.22rem; }
+    .lf-card p { margin: 0 0 0.65rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .lf-card p:last-child { margin-bottom: 0; }
+
+    .lf-label {
+      display: inline-block; margin-bottom: 0.35rem;
+      font-weight: 900; color: var(--lf-accent, #7c3aed);
+      letter-spacing: 0.07em; text-transform: uppercase; font-size: 0.72rem;
+    }
+    .lf-card-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 0.75rem; margin-bottom: 0.5rem;
+    }
+
+    .lf-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .lf-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.85rem; }
+    .lf-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+
+    /* Case Matrix Table */
+    .case-table {
+      width: 100%; border-collapse: collapse; margin-top: 0.7rem; font-size: 0.85rem;
+    }
+    .case-table th, .case-table td {
+      padding: 0.55rem 0.75rem; text-align: left; border-bottom: 1px solid #e2e8f0;
+    }
+    .case-table th { background: #faf5ff; color: #581c87; font-weight: 800; font-size: 0.78rem; text-transform: uppercase; }
+    .case-badge {
+      display: inline-block; font-weight: 800; font-size: 0.75rem; padding: 2px 7px;
+      border-radius: 6px; background: #ede9fe; color: #6d28d9;
+    }
+
+    /* Sound Explorer */
+    .sound-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 0.6rem; margin-top: 0.6rem;
+    }
+    .sound-tile {
+      background: #faf5ff; border: 1.5px solid #ddd6fe; border-radius: 12px;
+      padding: 0.75rem 0.5rem; text-align: center; cursor: pointer;
+      transition: all 120ms;
+    }
+    .sound-tile:hover { border-color: #7c3aed; background: #f3e8ff; transform: translateY(-2px); }
+    .sound-tile.selected { border-color: #6d28d9; background: #ede9fe; box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2); }
+    .sound-sym { font-size: 1.4rem; font-weight: 800; color: #4c1d95; display: block; }
+    .sound-ipa { font-size: 0.75rem; font-weight: 700; color: #7c3aed; display: block; margin: 0.15rem 0; }
+    .sound-eg { font-size: 0.7rem; color: #64748b; }
+
+    .sound-inspect-box {
+      margin-top: 0.9rem; padding: 0.85rem 1rem; border-radius: 12px;
+      background: #f8fafc; border: 1px solid #cbd5e1;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .sound-inspect-left { display: flex; align-items: center; gap: 1rem; }
+    .sound-inspect-big { font-size: 2.2rem; font-weight: 900; color: #4c1d95; line-height: 1; }
+    .sound-inspect-info h4 { margin: 0 0 0.2rem; font-size: 1rem; color: #0f172a; }
+    .sound-inspect-info p { margin: 0; font-size: 0.8rem; color: #475569; }
+
+    .speak-btn {
+      border: 1.5px solid #7c3aed; border-radius: 9px; background: #fff;
+      color: #6d28d9; font: inherit; font-weight: 800; font-size: 0.82rem;
+      padding: 0.5rem 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;
+      transition: all 120ms;
+    }
+    .speak-btn:hover { background: #7c3aed; color: #fff; }
+
+    /* Interactive Word Order Transformer */
+    .transformer-box {
+      background: #faf5ff; border: 1px solid #ddd6fe; border-radius: 12px;
+      padding: 1rem; margin-top: 0.75rem;
+    }
+    .sentence-display {
+      display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; margin: 0.75rem 0;
+    }
+    .latin-token {
+      background: #fff; border: 2px solid #c4b5fd; border-radius: 10px;
+      padding: 0.5rem 0.85rem; font-weight: 800; font-size: 1.05rem; color: #4c1d95;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05); text-align: center;
+    }
+    .latin-token small { display: block; font-size: 0.68rem; font-weight: 700; color: #7c3aed; margin-top: 0.15rem; }
+
+    /* Quiz Card */
+    .quiz-card {
+      border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem;
+      background: #f8fafc; text-align: center;
+    }
+    .quiz-prompt { font-size: 1.4rem; font-weight: 800; color: #1e293b; margin-bottom: 0.4rem; }
+    .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.7rem; }
+    .quiz-opt {
+      border: 1.5px solid #cbd5e1; border-radius: 9px; background: #fff;
+      padding: 0.5rem; font-weight: 700; font-size: 0.85rem; color: #334155; cursor: pointer;
+      transition: all 120ms;
+    }
+    .quiz-opt:hover { border-color: #7c3aed; background: #faf5ff; }
+    .quiz-opt.correct { background: #d1fae5; border-color: #10b981; color: #065f46; }
+    .quiz-opt.incorrect { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+    .feedback-msg { font-size: 0.86rem; font-weight: 700; min-height: 1.6em; padding: 0.2rem 0; }
+    .feedback-msg.success { color: #059669; }
+    .feedback-msg.error { color: #dc2626; }
+
+    /* Lightbox Figure */
+    .lf-card-figure {
+      margin: 1.1rem 0 0.5rem; border-radius: 14px; overflow: hidden;
+      border: 1px solid #e2e8f0; background: #f8fafc;
+    }
+    .lf-card-figure img { width: 100%; max-height: 380px; object-fit: cover; display: block; cursor: zoom-in; }
+    .lf-card-figure figcaption {
+      padding: 0.75rem 1rem; font-size: 0.82rem; color: #475569; line-height: 1.55;
+      border-top: 1px solid #e2e8f0; background: #fff;
+    }
+    .lf-card-figure figcaption strong { display: block; font-size: 0.88rem; color: #1e293b; margin-bottom: 0.15rem; }
+
+    @media (max-width: 768px) {
+      .lf-grid-2, .lf-grid-3, .lf-grid-4 { grid-template-columns: 1fr; }
+      .sound-inspect-box { flex-direction: column; align-items: flex-start; }
+      .quiz-options { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../../index.html">Home</a></li>
+            <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+            <li><a href="../../paths.html">Paths</a></li>
+            <li><a href="../../showcase.html">Showcase</a></li>
+            <li><a href="../../applications.html">Apps</a></li>
+            <li><a href="../../library.html">Library</a></li>
+            <li><a href="../../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <main class="ll-sim" id="main-content">
+        <div class="lf-page">
+
+          <!-- ── Hero ───────────────────────────────── -->
+          <section class="lf-hero">
+            <p class="eyebrow">Language Foundations · World Languages · K–12</p>
+            <h1>Latin Language Foundations</h1>
+            <div class="lf-meta">
+              <span>Italic Family</span><span class="dot"></span>
+              <span>6 Grammatical Cases</span><span class="dot"></span>
+              <span>Inflected Morphology</span><span class="dot"></span>
+              <span>Flexible Word Order</span><span class="dot"></span>
+              <span>Mother of the Romance Languages</span>
+            </div>
+            <p class="lf-lede">
+              Latin was the administrative and intellectual lingua franca of the Mediterranean world for centuries, and remains the linguistic motherboard of law, science, medicine, and philosophy. Instead of relying on rigid word order, Latin embeds syntactic function directly into word endings through its elegant system of six cases.
+            </p>
+          </section>
+
+          <!-- ── Lightbox Artwork ──────────────────── -->
+          <figure class="lf-card-figure" data-zoomable data-lightbox-group="latin-art">
+            <img src="../../assets/thumbs/SchoolofAthens.jpg" alt="Raphael's fresco The School of Athens in the Apostolic Palace, Vatican" loading="lazy" />
+            <figcaption>
+              <strong>The Architecture of Classical Reason</strong>
+              Raphael's master fresco <em>The School of Athens</em> (1509–1511). Renaissance thinkers and scientists rediscovered classical antiquity through Latin translations and commentaries. Latin served as the universal programming language for international scientific inquiry from Cicero and Lucretius through Copernicus, Galileo, Newton (<em>Principia Mathematica</em>), and Linnaeus. Image: Public domain.
+            </figcaption>
+          </figure>
+
+          <!-- ── Core Linguistic Architecture ───────── -->
+          <section class="lf-card" style="--lf-accent:#7c3aed;">
+            <span class="lf-label">Architecture</span>
+            <h2>How Latin Works: The Four Pillars</h2>
+            <div class="lf-grid-4">
+              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#581c87; display:block; font-size:0.9rem; margin-bottom:0.25rem;">1. Inflection Over Order</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;">Word endings (cases), not word position, tell you who did what to whom. Order is used for rhythm and emphasis.</p>
+              </div>
+              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#581c87; display:block; font-size:0.9rem; margin-bottom:0.25rem;">2. Six Cases</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;">Nominative, Genitive, Dative, Accusative, Ablative, and Vocative precisely tag the grammatical role of every noun.</p>
+              </div>
+              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#581c87; display:block; font-size:0.9rem; margin-bottom:0.25rem;">3. Vowel Length</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;">Long vowels (marked by macrons: <em>ā, ē, ī, ō, ū</em>) take twice as long to speak and can completely change a word's meaning.</p>
+              </div>
+              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#581c87; display:block; font-size:0.9rem; margin-bottom:0.25rem;">4. English Root Engine</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;">Over 60% of English words and 90% of technical scientific terms trace directly to Latin roots (<em>scribo, specto, corpus</em>).</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── The Six Cases Matrix ──────────────── -->
+          <section class="lf-card" style="--lf-accent:#6d28d9;">
+            <span class="lf-label">Grammatical Core</span>
+            <h2>The Six Latin Cases: Decoding Word Roles</h2>
+            <p>Every Latin noun changes its ending depending on its functional role in the thought:</p>
+            <table class="case-table" aria-label="Latin Cases">
+              <thead>
+                <tr>
+                  <th>Case</th>
+                  <th>Core Function</th>
+                  <th>Example (1st Declension: Puella)</th>
+                  <th>English Translation</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="case-badge">Nominative</span></td>
+                  <td>Subject (the doer of the action)</td>
+                  <td><strong>Puella</strong> cantat.</td>
+                  <td>The girl sings.</td>
+                </tr>
+                <tr>
+                  <td><span class="case-badge">Genitive</span></td>
+                  <td>Possession / Origin ("of...")</td>
+                  <td>Liber <strong>puellae</strong>.</td>
+                  <td>The book of the girl (the girl's book).</td>
+                </tr>
+                <tr>
+                  <td><span class="case-badge">Dative</span></td>
+                  <td>Indirect Object ("to/for...")</td>
+                  <td>Donum <strong>puellae</strong> do.</td>
+                  <td>I give a gift to the girl.</td>
+                </tr>
+                <tr>
+                  <td><span class="case-badge">Accusative</span></td>
+                  <td>Direct Object (recipient of action)</td>
+                  <td>Agricola <strong>puellam</strong> videt.</td>
+                  <td>The farmer sees the girl.</td>
+                </tr>
+                <tr>
+                  <td><span class="case-badge">Ablative</span></td>
+                  <td>Adverbial ("by / with / from")</td>
+                  <td>Cum <strong>puellā</strong> ambulat.</td>
+                  <td>He walks with the girl.</td>
+                </tr>
+                <tr>
+                  <td><span class="case-badge">Vocative</span></td>
+                  <td>Direct address (speaking to someone)</td>
+                  <td>O <strong>puella</strong>, audi!</td>
+                  <td>O girl, listen!</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <!-- ── Interactive Word Order Transformer ── -->
+          <section class="lf-card" style="--lf-accent:#0284c7;">
+            <span class="lf-label">Interactive Engine</span>
+            <h2>The Latin Word Order Transformer</h2>
+            <p>
+              In English, "The farmer loves the girl" is completely different from "The girl loves the farmer." But in Latin, watch what happens when we scramble the words:
+            </p>
+
+            <div class="transformer-box">
+              <div style="font-size:0.84rem; color:#475569; margin-bottom:0.5rem;">
+                Current sentence arrangement:
+              </div>
+
+              <div class="sentence-display" id="latinSentenceDisplay">
+                <div class="latin-token">
+                  Agricola
+                  <small>Nominative (Subject: The farmer)</small>
+                </div>
+                <div class="latin-token">
+                  puellam
+                  <small>Accusative (Object: the girl)</small>
+                </div>
+                <div class="latin-token">
+                  amat.
+                  <small>Verb (loves)</small>
+                </div>
+              </div>
+
+              <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:1rem;">
+                <button class="speak-btn" id="scrambleLatinBtn" type="button">🔀 Rearrange Word Order</button>
+                <button class="speak-btn" id="speakLatinBtn" type="button">🔊 Speak Latin</button>
+              </div>
+
+              <div style="margin-top:0.85rem; padding:0.75rem; background:#fff; border-radius:8px; border:1px solid #cbd5e1; font-size:0.84rem;" id="latinTranslationExplanation">
+                <strong>English Meaning:</strong> "The farmer loves the girl."<br />
+                <span style="color:#64748b; font-size:0.78rem;">Notice: Even if <em>puellam</em> appears first, its "-am" accusative ending guarantees she is the one loved, never the lover!</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── Classical Pronunciation Lab ───────── -->
+          <section class="lf-card" style="--lf-accent:#b45309;">
+            <div class="lf-card-head">
+              <div>
+                <span class="lf-label">Interactive Lab</span>
+                <h2>Classical Latin Sound Lab</h2>
+                <p>Classical pronunciation (spoken in the Late Roman Republic by Cicero and Julius Caesar) differs from medieval Church Latin:</p>
+              </div>
+            </div>
+
+            <div class="sound-grid" id="latinSoundGrid" aria-label="Latin Sounds"></div>
+
+            <div class="sound-inspect-box" id="latinInspectBox" aria-live="polite">
+              <div class="sound-inspect-left">
+                <span class="sound-inspect-big" id="latinInspectGlyph">C</span>
+                <div class="sound-inspect-info">
+                  <h4 id="latinInspectTitle">Letter C in Classical Latin</h4>
+                  <p id="latinInspectDesc">Always hard /k/, never /s/ or /tʃ/. Cicero was pronounced "Kee-keh-ro", and Caesar was "Kye-sar"!</p>
+                </div>
+              </div>
+              <button class="speak-btn" id="latinInspectSpeakBtn" type="button">
+                <span>🔊</span> Listen
+              </button>
+            </div>
+          </section>
+
+          <!-- ── Survival Mottos & Quiz ────────────── -->
+          <section class="lf-card" style="--lf-accent:#059669;">
+            <span class="lf-label">Applied Practice</span>
+            <h2>Famous Latin Mottos &amp; Recognition Quiz</h2>
+            <div class="lf-grid-2">
+              <div class="quiz-card">
+                <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#059669; letter-spacing:0.06em;">Challenge 1 · Horace's Ode</span>
+                <div class="quiz-prompt">Carpe diem</div>
+                <p style="font-size:0.8rem; color:#64748b; margin:0;">[ˈkar.pɛ ˈdi.ɛm]</p>
+                <div class="quiz-options" id="laQ1Opts">
+                  <button class="quiz-opt" data-correct="true">Seize the day (pluck the fruit of today)</button>
+                  <button class="quiz-opt">Time flies</button>
+                  <button class="quiz-opt">Remember that you must die</button>
+                  <button class="quiz-opt">To the stars</button>
+                </div>
+                <p class="feedback-msg" id="laQ1Feedback" style="margin-top:0.5rem;"></p>
+              </div>
+
+              <div class="quiz-card">
+                <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#059669; letter-spacing:0.06em;">Challenge 2 · Caesar's Dispatch</span>
+                <div class="quiz-prompt">Veni, vidi, vici</div>
+                <p style="font-size:0.8rem; color:#64748b; margin:0;">[ˈweː.niː ˈwiː.diː ˈwiː.kiː]</p>
+                <div class="quiz-options" id="laQ2Opts">
+                  <button class="quiz-opt">Truth conquers all</button>
+                  <button class="quiz-opt" data-correct="true">I came, I saw, I conquered</button>
+                  <button class="quiz-opt">Fortune favors the bold</button>
+                  <button class="quiz-opt">In wine there is truth</button>
+                </div>
+                <p class="feedback-msg" id="laQ2Feedback" style="margin-top:0.5rem;"></p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── Future Learning Roadmap ───────────── -->
+          <section class="lf-card" style="--lf-accent:#7c3aed;">
+            <span class="lf-label">Progression Pathway</span>
+            <h2>Roadmap for Future Latin Lessons</h2>
+            <div class="lf-grid-3" style="margin-top:0.75rem;">
+              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+                <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#c084fc; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 1</span>
+                <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">The Five Noun Declensions</strong>
+                <p style="font-size:0.8rem; margin:0; color:#475569;">Navigating the declension families (-a, -us, consonant/i-stem, -us, -es) and mastering adjective agreement across genders.</p>
+              </div>
+              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+                <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#9333ea; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 2</span>
+                <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">The Four Verb Conjugations</strong>
+                <p style="font-size:0.8rem; margin:0; color:#475569;">Active and passive voices across all six tenses (Present, Imperfect, Future, Perfect, Pluperfect, Future Perfect) and the ablative absolute.</p>
+              </div>
+              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+                <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#6b21a8; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 3</span>
+                <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">Original Classical Literature</strong>
+                <p style="font-size:0.8rem; margin:0; color:#475569;">Reading Caesar's <em>De Bello Gallico</em>, Cicero's speeches, Virgil's <em>Aeneid</em>, and decoding modern scientific taxonomy.</p>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // ── Classical Latin Sound Data ──────────────────────────
+    const LATIN_SOUNDS = [
+      { sym: 'C', ipa: '/k/', title: 'Classical C', desc: 'Always hard /k/ as in cat, never /s/ or /tʃ/. Caesar was pronounced "Kye-sar".', speech: 'Caesar' },
+      { sym: 'V', ipa: '/w/', title: 'Classical V', desc: 'Pronounced as /w/ in classical times (no distinct "u" vs "v" letter originally). Veni = "Weh-nee".', speech: 'Veni' },
+      { sym: 'AE', ipa: '/ae̯/', title: 'Diphthong AE', desc: 'Pronounced like the English pronoun "eye". Example: puellae, bonae.', speech: 'puellae' },
+      { sym: 'G', ipa: '/ɡ/', title: 'Classical G', desc: 'Always hard /ɡ/ as in get, never soft /dʒ/. Example: gladius, gloria.', speech: 'gladius' },
+      { sym: 'OE', ipa: '/oe̯/', title: 'Diphthong OE', desc: 'Pronounced like "oy" in boy. Example: poena, foedus.', speech: 'poena' },
+      { sym: 'I (consonantal)', ipa: '/j/', title: 'Consonantal I', desc: 'Before a vowel at the start of a word, "I" sounds like English "y". Example: Iulius (Julius).', speech: 'Iulius' }
+    ];
+
+    let currentLaSound = LATIN_SOUNDS[0];
+
+    function speakLatin(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        // Use Italian voice or generic fallback for Latin phonemes
+        u.lang = 'it-IT';
+        u.rate = 0.85;
+        window.speechSynthesis.speak(u);
+      }
+    }
+
+    const laSoundGrid = document.getElementById('latinSoundGrid');
+    const laInspectGlyph = document.getElementById('latinInspectGlyph');
+    const laInspectTitle = document.getElementById('latinInspectTitle');
+    const laInspectDesc = document.getElementById('latinInspectDesc');
+    const laInspectSpeakBtn = document.getElementById('latinInspectSpeakBtn');
+
+    function renderLatinSounds() {
+      laSoundGrid.innerHTML = '';
+      LATIN_SOUNDS.forEach(item => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `sound-tile ${item.sym === currentLaSound.sym ? 'selected' : ''}`;
+        btn.innerHTML = `<span class="sound-sym">${item.sym}</span><span class="sound-ipa">${item.ipa}</span><span class="sound-eg">${item.speech}</span>`;
+        btn.addEventListener('click', () => {
+          currentLaSound = item;
+          updateLaInspect();
+          renderLatinSounds();
+          speakLatin(item.speech);
+        });
+        laSoundGrid.appendChild(btn);
+      });
+    }
+
+    function updateLaInspect() {
+      laInspectGlyph.textContent = currentLaSound.sym;
+      laInspectTitle.textContent = `${currentLaSound.title} (${currentLaSound.ipa})`;
+      laInspectDesc.textContent = currentLaSound.desc;
+    }
+
+    laInspectSpeakBtn.addEventListener('click', () => speakLatin(currentLaSound.speech));
+    renderLatinSounds();
+    updateLaInspect();
+
+    // ── Interactive Word Order Scrambler ────────────────────
+    const LATIN_TOKENS = [
+      { text: 'Agricola', role: 'Nominative (Subject)', gloss: 'The farmer' },
+      { text: 'puellam', role: 'Accusative (Object)', gloss: 'the girl' },
+      { text: 'amat.', role: 'Verb', gloss: 'loves' }
+    ];
+
+    let currentOrder = [...LATIN_TOKENS];
+    const displayEl = document.getElementById('latinSentenceDisplay');
+    const scrambleBtn = document.getElementById('scrambleLatinBtn');
+    const speakLatBtn = document.getElementById('speakLatinBtn');
+
+    function renderTransformer() {
+      displayEl.innerHTML = '';
+      currentOrder.forEach(token => {
+        const div = document.createElement('div');
+        div.className = 'latin-token';
+        div.innerHTML = `${token.text}<small>${token.role}: ${token.gloss}</small>`;
+        displayEl.appendChild(div);
+      });
+    }
+
+    scrambleBtn.addEventListener('click', () => {
+      // Scramble into a different permutation
+      const permutes = [
+        [0, 1, 2], // Agricola puellam amat (standard SOV)
+        [1, 0, 2], // Puellam agricola amat (focus on girl!)
+        [0, 2, 1], // Agricola amat puellam (SVO style)
+        [2, 0, 1], // Amat agricola puellam (dramatic verb-first)
+        [1, 2, 0]  // Puellam amat agricola (poetic)
+      ];
+      const curIdx = Math.floor(Math.random() * permutes.length);
+      const chosen = permutes[curIdx];
+      currentOrder = [LATIN_TOKENS[chosen[0]], LATIN_TOKENS[chosen[1]], LATIN_TOKENS[chosen[2]]];
+      renderTransformer();
+      speakLatin(currentOrder.map(t => t.text).join(' '));
+    });
+
+    speakLatBtn.addEventListener('click', () => {
+      speakLatin(currentOrder.map(t => t.text).join(' '));
+    });
+
+    renderTransformer();
+
+    // ── Quiz Logic ──────────────────────────────────────────
+    function setupQuizLa(optsId, feedbackId, answerSpeech) {
+      const opts = document.querySelectorAll(`#${optsId} .quiz-opt`);
+      const fb = document.getElementById(feedbackId);
+      opts.forEach(btn => {
+        btn.addEventListener('click', () => {
+          opts.forEach(b => b.disabled = true);
+          if (btn.dataset.correct === 'true') {
+            btn.classList.add('correct');
+            fb.className = 'feedback-msg success';
+            fb.textContent = 'Optime! Correct ✓';
+            speakLatin(answerSpeech);
+          } else {
+            btn.classList.add('incorrect');
+            fb.className = 'feedback-msg error';
+            fb.textContent = 'Erratum — try again!';
+            setTimeout(() => {
+              opts.forEach(b => b.disabled = false);
+              btn.classList.remove('incorrect');
+              fb.textContent = '';
+            }, 1400);
+          }
+        });
+      });
+    }
+
+    setupQuizLa('laQ1Opts', 'laQ1Feedback', 'Carpe diem');
+    setupQuizLa('laQ2Opts', 'laQ2Feedback', 'Veni, vidi, vici');
+  </script>
+  <script src="../../assets/js/photo-lightbox.js"></script>
+  <script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chinese Language Foundations · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Master foundational Mandarin Chinese: the four tones, Pinyin, Hanzi character composition, Kangxi radicals, analytic grammar, and measure words." />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport {
+      --ll-accent: #b91c1c;
+      --ll-tab-active: #d97706;
+      --ll-tab-active-bg: rgba(217, 119, 6, 0.10);
+    }
+    .ll-sim {
+      background:
+        radial-gradient(circle at 10% 8%, rgba(254, 226, 226, 0.4) 0, transparent 36rem),
+        var(--surface-0);
+    }
+    .lf-page { max-width: 1080px; margin: 0 auto; padding: 0 1rem 3.5rem; }
+    .lf-hero { padding: 0.85rem 0 1.25rem; }
+    .lf-hero h1 { font-size: clamp(1.65rem, 3.8vw, 2.45rem); margin: 0.25rem 0 0.5rem; }
+    .lf-meta {
+      display: flex; flex-wrap: wrap; gap: 0.35rem 0.65rem;
+      margin: 0.55rem 0 0; font-size: 0.8rem; color: var(--text-muted, #64748b);
+    }
+    .lf-meta .dot {
+      width: 3px; height: 3px; border-radius: 50%;
+      background: currentColor; opacity: 0.45;
+      display: inline-block; align-self: center;
+    }
+    .lf-lede { margin: 0.75rem 0 0; max-width: 70ch; color: var(--text-secondary, #3f4f65); font-size: 0.95rem; line-height: 1.65; }
+
+    .lf-card {
+      background: #fff;
+      border: 1px solid #dde3ea;
+      border-left: 4px solid var(--lf-accent, #b91c1c);
+      border-radius: 16px;
+      box-shadow: 0 8px 26px rgba(15, 23, 42, 0.06);
+      padding: 1.25rem 1.4rem;
+      margin-bottom: 1.1rem;
+      --text: #1d1d1f; --muted: #5f5f64; --text-primary: #1d1d1f; --text-secondary: #434349;
+    }
+    :where(html[data-lighting="night"]) .lf-card { color: #1d1d1f; }
+    @media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .lf-card { color: #1d1d1f; } }
+    .lf-card h2 { margin: 0 0 0.45rem; font-size: 1.22rem; }
+    .lf-card p { margin: 0 0 0.65rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .lf-card p:last-child { margin-bottom: 0; }
+
+    .lf-label {
+      display: inline-block; margin-bottom: 0.35rem;
+      font-weight: 900; color: var(--lf-accent, #b91c1c);
+      letter-spacing: 0.07em; text-transform: uppercase; font-size: 0.72rem;
+    }
+    .lf-card-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 0.75rem; margin-bottom: 0.5rem;
+    }
+
+    .lf-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .lf-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.85rem; }
+    .lf-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+
+    /* Tone Cards */
+    .tone-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.7rem; margin-top: 0.7rem;
+    }
+    .tone-card {
+      background: #fff8f8; border: 1.5px solid #fecaca; border-radius: 12px;
+      padding: 0.85rem 0.6rem; text-align: center; cursor: pointer;
+      transition: all 120ms;
+    }
+    .tone-card:hover { border-color: #b91c1c; transform: translateY(-2px); background: #fee2e2; }
+    .tone-card.selected { border-color: #991b1b; background: #fee2e2; box-shadow: 0 0 0 2px rgba(185, 28, 28, 0.2); }
+    .tone-num { font-size: 0.68rem; font-weight: 800; color: #dc2626; text-transform: uppercase; display: block; margin-bottom: 0.2rem; }
+    .tone-pinyin { font-size: 1.6rem; font-weight: 900; color: #991b1b; display: block; }
+    .tone-hanzi { font-size: 1.15rem; color: #1e293b; display: block; margin: 0.15rem 0; }
+    .tone-contour { font-size: 0.75rem; color: #64748b; font-weight: 600; }
+
+    .tone-inspect-box {
+      margin-top: 0.9rem; padding: 0.85rem 1rem; border-radius: 12px;
+      background: #f8fafc; border: 1px solid #cbd5e1;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .tone-inspect-left { display: flex; align-items: center; gap: 1rem; }
+    .tone-inspect-big { font-size: 2.5rem; font-weight: 900; color: #991b1b; line-height: 1; }
+    .tone-inspect-info h4 { margin: 0 0 0.2rem; font-size: 1rem; color: #0f172a; }
+    .tone-inspect-info p { margin: 0; font-size: 0.8rem; color: #475569; }
+
+    .speak-btn {
+      border: 1.5px solid #b91c1c; border-radius: 9px; background: #fff;
+      color: #991b1b; font: inherit; font-weight: 800; font-size: 0.82rem;
+      padding: 0.5rem 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;
+      transition: all 120ms;
+    }
+    .speak-btn:hover { background: #b91c1c; color: #fff; }
+
+    /* Character Compounder */
+    .compounder-dock {
+      background: #fafafa; border: 1px solid #e2e8f0; border-radius: 12px;
+      padding: 1rem; margin-top: 0.75rem;
+    }
+    .compound-row {
+      display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.6rem;
+    }
+    .char-part {
+      background: #fff; border: 2px solid #cbd5e1; border-radius: 10px;
+      padding: 0.5rem 0.8rem; font-size: 1.3rem; font-weight: 800; color: #1e293b; text-align: center;
+    }
+    .char-part small { display: block; font-size: 0.65rem; color: #64748b; font-weight: 700; }
+    .char-equal { font-size: 1.4rem; font-weight: 900; color: #b91c1c; }
+
+    /* Sentence Builder */
+    .sentence-dock {
+      min-height: 58px; border: 2px dashed #fca5a5; border-radius: 12px;
+      background: #fff8f8; padding: 0.6rem 0.8rem; display: flex; flex-wrap: wrap;
+      gap: 0.5rem; align-items: center; margin: 0.6rem 0;
+    }
+    .word-tile {
+      background: #fff; border: 1.5px solid #cbd5e1; border-radius: 10px;
+      padding: 0.45rem 0.75rem; font-weight: 700; font-size: 0.88rem; color: #1e293b;
+      cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      transition: transform 90ms, border-color 120ms;
+    }
+    .word-tile:hover { transform: translateY(-1px); border-color: #b91c1c; }
+    .word-tile.measure { background: #fef3c7; border-color: #f59e0b; color: #92400e; }
+    .word-tile.placed { cursor: default; }
+
+    .word-bank { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0.6rem 0; }
+    .feedback-msg { font-size: 0.86rem; font-weight: 700; min-height: 1.6em; padding: 0.2rem 0; }
+    .feedback-msg.success { color: #059669; }
+    .feedback-msg.error { color: #dc2626; }
+    .feedback-msg.info { color: #475569; }
+
+    /* Quiz Card */
+    .quiz-card {
+      border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem;
+      background: #f8fafc; text-align: center;
+    }
+    .quiz-prompt { font-size: 1.6rem; font-weight: 800; color: #1e293b; margin-bottom: 0.2rem; }
+    .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.7rem; }
+    .quiz-opt {
+      border: 1.5px solid #cbd5e1; border-radius: 9px; background: #fff;
+      padding: 0.5rem; font-weight: 700; font-size: 0.85rem; color: #334155; cursor: pointer;
+      transition: all 120ms;
+    }
+    .quiz-opt:hover { border-color: #b91c1c; background: #fff8f8; }
+    .quiz-opt.correct { background: #d1fae5; border-color: #10b981; color: #065f46; }
+    .quiz-opt.incorrect { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+
+    /* Lightbox Figure */
+    .lf-card-figure {
+      margin: 1.1rem 0 0.5rem; border-radius: 14px; overflow: hidden;
+      border: 1px solid #e2e8f0; background: #f8fafc;
+    }
+    .lf-card-figure img { width: 100%; max-height: 380px; object-fit: cover; display: block; cursor: zoom-in; }
+    .lf-card-figure figcaption {
+      padding: 0.75rem 1rem; font-size: 0.82rem; color: #475569; line-height: 1.55;
+      border-top: 1px solid #e2e8f0; background: #fff;
+    }
+    .lf-card-figure figcaption strong { display: block; font-size: 0.88rem; color: #1e293b; margin-bottom: 0.15rem; }
+
+    @media (max-width: 768px) {
+      .lf-grid-2, .lf-grid-3, .lf-grid-4, .tone-grid { grid-template-columns: 1fr; }
+      .tone-inspect-box { flex-direction: column; align-items: flex-start; }
+      .quiz-options { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../../index.html">Home</a></li>
+            <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+            <li><a href="../../paths.html">Paths</a></li>
+            <li><a href="../../showcase.html">Showcase</a></li>
+            <li><a href="../../applications.html">Apps</a></li>
+            <li><a href="../../library.html">Library</a></li>
+            <li><a href="../../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <main class="ll-sim" id="main-content">
+        <div class="lf-page">
+
+          <!-- ── Hero ───────────────────────────────── -->
+          <section class="lf-hero">
+            <p class="eyebrow">Language Foundations · World Languages · K–12</p>
+            <h1>Chinese Language Foundations</h1>
+            <div class="lf-meta">
+              <span>Sino-Tibetan Family</span><span class="dot"></span>
+              <span>Mandarin (Putonghua)</span><span class="dot"></span>
+              <span>Four Tones</span><span class="dot"></span>
+              <span>Hanzi Logographs</span><span class="dot"></span>
+              <span>Analytic / Isolating Grammar</span>
+            </div>
+            <p class="lf-lede">
+              Mandarin Chinese is the world's most widely spoken native tongue, connecting over 1.3 billion people. Grammatically, it is an analytic language: there are zero verb conjugations, no tense inflections, and no grammatical genders. Meaning is constructed through pitch melody (tones), compounding morphemes, and logical word order.
+            </p>
+          </section>
+
+          <!-- ── Lightbox Artwork ──────────────────── -->
+          <figure class="lf-card-figure" data-zoomable data-lightbox-group="chinese-art" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Oracle_bone_script_-_crop.jpg?width=1400">
+            <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Oracle_bone_script_-_crop.jpg?width=500" alt="Shang dynasty oracle bone fragment with ancient carved Chinese pictographs" loading="lazy" />
+            <figcaption>
+              <strong>The 3,200-Year Memory of Hanzi</strong>
+              An ancient Shang Dynasty oracle bone fragment (c. 1200 BCE). Chinese writing began as divinatory pictographs carved onto ox scapulae and turtle plastrons. Unlike alphabetical scripts that record shifting sounds, Hanzi characters preserve direct conceptual ancestry: the modern characters for sun (日), moon (月), and water (水) trace directly back to these ancient carved pictograms. Image: Public domain via Wikimedia Commons.
+            </figcaption>
+          </figure>
+
+          <!-- ── Core Linguistic Architecture ───────── -->
+          <section class="lf-card" style="--lf-accent:#b91c1c;">
+            <span class="lf-label">Architecture</span>
+            <h2>How Chinese Works: The Four Pillars</h2>
+            <div class="lf-grid-4">
+              <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#991b1b; display:block; font-size:0.9rem; margin-bottom:0.25rem;">1. Four Tones</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;">Pitch contour determines identity: <em>mā</em> (mother), <em>má</em> (hemp), <em>mǎ</em> (horse), and <em>mà</em> (scold) are completely different words!</p>
+              </div>
+              <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#991b1b; display:block; font-size:0.9rem; margin-bottom:0.25rem;">2. Morpheme Writing</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;">Hanzi characters represent meaning + sound units, not individual letters. Most combine a meaning radical with a sound hint.</p>
+              </div>
+              <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#991b1b; display:block; font-size:0.9rem; margin-bottom:0.25rem;">3. Zero Conjugation</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;">Verbs never change shape! Past, present, and future are signaled with simple time adverbs or aspect markers like <strong>了 (le)</strong>.</p>
+              </div>
+              <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#991b1b; display:block; font-size:0.9rem; margin-bottom:0.25rem;">4. Measure Words (量词)</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;">Nouns require a classifier before numbers: <em>yī <strong>bēi</strong> chá</em> (one cup of tea), <em>sān <strong>běn</strong> shū</em> (three volume-bound books).</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── Interactive Tone & Pitch Lab ──────── -->
+          <section class="lf-card" style="--lf-accent:#dc2626;">
+            <div class="lf-card-head">
+              <div>
+                <span class="lf-label">Interactive Lab</span>
+                <h2>The Mandarin Four Tones Explorer</h2>
+                <p>Click each tone to hear native audio and inspect how pitch direction changes word identity:</p>
+              </div>
+            </div>
+
+            <div class="tone-grid" id="toneGrid" aria-label="Mandarin Four Tones"></div>
+
+            <div class="tone-inspect-box" id="toneInspectBox" aria-live="polite">
+              <div class="tone-inspect-left">
+                <span class="tone-inspect-big" id="toneInspectGlyph">mā</span>
+                <div class="tone-inspect-info">
+                  <h4 id="toneInspectTitle">First Tone: High &amp; Level (55)</h4>
+                  <p id="toneInspectDesc">High, flat musical pitch. Example: 妈 (mā = mother). Keep your voice steady without dropping.</p>
+                </div>
+              </div>
+              <button class="speak-btn" id="toneInspectSpeakBtn" type="button">
+                <span>🔊</span> Listen (Web Speech)
+              </button>
+            </div>
+          </section>
+
+          <!-- ── Character Compounder & Radicals ───── -->
+          <section class="lf-card" style="--lf-accent:#d97706;">
+            <span class="lf-label">Symbol Architecture</span>
+            <h2>Character Compounder: How Hanzi Form Ideas</h2>
+            <p>Over 80% of Chinese characters are <em>phono-semantic compounds</em>: one radical provides the realm of meaning, while the other component provides the sound cue:</p>
+
+            <div class="compounder-dock">
+              <div class="compound-row">
+                <div class="char-part">氵<small>Water Radical</small></div>
+                <div style="font-weight:900; font-size:1.2rem; color:#64748b;">+</div>
+                <div class="char-part">每<small>Sound (měi)</small></div>
+                <div class="char-equal">=</div>
+                <div class="char-part" style="border-color:#b91c1c; background:#fee2e2;">海<small>hǎi (Ocean / Sea)</small></div>
+                <p style="font-size:0.82rem; color:#475569; margin:0 0 0 0.5rem;">Water radical indicates water; 每 provides phonetic cue.</p>
+              </div>
+
+              <div class="compound-row">
+                <div class="char-part">日<small>Sun Radical</small></div>
+                <div style="font-weight:900; font-size:1.2rem; color:#64748b;">+</div>
+                <div class="char-part">月<small>Moon Radical</small></div>
+                <div class="char-equal">=</div>
+                <div class="char-part" style="border-color:#b91c1c; background:#fee2e2;">明<small>míng (Bright / Clear)</small></div>
+                <p style="font-size:0.82rem; color:#475569; margin:0 0 0 0.5rem;">Compound ideograph: Sun + Moon side-by-side produce brightness!</p>
+              </div>
+
+              <div class="compound-row">
+                <div class="char-part">电<small>Electricity</small></div>
+                <div style="font-weight:900; font-size:1.2rem; color:#64748b;">+</div>
+                <div class="char-part">脑<small>Brain</small></div>
+                <div class="char-equal">=</div>
+                <div class="char-part" style="border-color:#b91c1c; background:#fee2e2;">电脑<small>diànnǎo (Computer)</small></div>
+                <p style="font-size:0.82rem; color:#475569; margin:0 0 0 0.5rem;">Modern vocabulary: "Electric Brain" = Computer!</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── Interactive Sentence Engine ───────── -->
+          <section class="lf-card" style="--lf-accent:#0284c7;">
+            <span class="lf-label">Syntax Builder</span>
+            <h2>Chinese Sentence Engine: SVO &amp; Measure Words</h2>
+            <p>
+              Construct the sentence below. Notice the measure word <strong>杯 (bēi)</strong> inserted between the number and tea:
+            </p>
+
+            <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px; padding:0.65rem 0.9rem; font-size:0.83rem; color:#0369a1; margin-bottom:0.75rem;">
+              <strong>Target Sentence:</strong> <span>"I drink a cup of tea." (我 喝 一 杯 茶)</span>
+            </div>
+
+            <div class="sentence-dock" id="chineseSentenceDock">
+              <span style="color:#94a3b8; font-size:0.8rem; font-style:italic;" id="dockPlaceholderChinese">Tap tiles below in correct Chinese SVO order →</span>
+            </div>
+
+            <div class="word-bank" id="chineseWordBank"></div>
+            <div class="feedback-msg info" id="chineseSentenceFeedback">Select tiles to build the sentence.</div>
+
+            <div style="margin-top:0.75rem; display:flex; gap:0.5rem;">
+              <button class="speak-btn" id="clearChineseSentenceBtn" style="border-color:#94a3b8; color:#475569;" type="button">Reset</button>
+              <button class="speak-btn" id="speakChineseSentenceBtn" style="display:none;" type="button">🔊 Speak Sentence</button>
+            </div>
+          </section>
+
+          <!-- ── Survival Vocabulary & Quiz ────────── -->
+          <section class="lf-card" style="--lf-accent:#059669;">
+            <span class="lf-label">Applied Practice</span>
+            <h2>Foundational Courtesies &amp; Quiz</h2>
+            <p>Mandarin greetings are polite, direct, and warm. Test your recognition of everyday expressions:</p>
+
+            <div class="lf-grid-2">
+              <div class="quiz-card">
+                <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#059669; letter-spacing:0.06em;">Challenge 1 · Universal Greeting</span>
+                <div class="quiz-prompt">你好</div>
+                <p style="font-size:0.85rem; color:#64748b; margin:0;">(Nǐ hǎo)</p>
+                <div class="quiz-options" id="zhQ1Opts">
+                  <button class="quiz-opt" data-correct="true">Hello (literally: You good)</button>
+                  <button class="quiz-opt">Goodbye</button>
+                  <button class="quiz-opt">Thank you</button>
+                  <button class="quiz-opt">Please</button>
+                </div>
+                <p class="feedback-msg" id="zhQ1Feedback" style="margin-top:0.5rem;"></p>
+              </div>
+
+              <div class="quiz-card">
+                <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#059669; letter-spacing:0.06em;">Challenge 2 · Gratitude</span>
+                <div class="quiz-prompt">谢谢</div>
+                <p style="font-size:0.85rem; color:#64748b; margin:0;">(Xièxie)</p>
+                <div class="quiz-options" id="zhQ2Opts">
+                  <button class="quiz-opt">Excuse me</button>
+                  <button class="quiz-opt">You're welcome</button>
+                  <button class="quiz-opt" data-correct="true">Thank you</button>
+                  <button class="quiz-opt">See you tomorrow</button>
+                </div>
+                <p class="feedback-msg" id="zhQ2Feedback" style="margin-top:0.5rem;"></p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── Future Learning Roadmap ───────────── -->
+          <section class="lf-card" style="--lf-accent:#7c3aed;">
+            <span class="lf-label">Progression Pathway</span>
+            <h2>Roadmap for Future Chinese Lessons</h2>
+            <div class="lf-grid-3" style="margin-top:0.75rem;">
+              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+                <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#c084fc; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 1</span>
+                <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">Pinyin &amp; Tone Sandhi</strong>
+                <p style="font-size:0.8rem; margin:0; color:#475569;">Flawless mastery of Pinyin initials/finals, tone pairs, and tone change rules (Tone Sandhi: 3rd tone + 3rd tone turns into 2nd tone + 3rd tone, as in <em>nǐ hǎo</em>!).</p>
+              </div>
+              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+                <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#9333ea; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 2</span>
+                <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">HSK 1–2 Core Vocabulary &amp; Measure Words</strong>
+                <p style="font-size:0.8rem; margin:0; color:#475569;">The 300 foundational characters, daily shopping, directions, time expressions, and the structural particles <strong>的 (de)</strong>, <strong>得 (de)</strong>, and <strong>地 (de)</strong>.</p>
+              </div>
+              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+                <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#6b21a8; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 3</span>
+                <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">Chengyu (Four-Character Idioms) &amp; Culture</strong>
+                <p style="font-size:0.8rem; margin:0; color:#475569;">Classical four-character stories (成语), Chinese calligraphy stroke order balance, newspaper reading, and conversational fluency.</p>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // ── Mandarin Tones Data ─────────────────────────────────
+    const TONES_DATA = [
+      { num: 'Tone 1', pinyin: 'mā', hanzi: '妈 (mother)', contour: 'High Flat (55)', desc: 'High, level, steady pitch without wavering.', speech: '妈' },
+      { num: 'Tone 2', pinyin: 'má', hanzi: '麻 (hemp)', contour: 'Rising (35)', desc: 'Starts at mid-pitch and rises sharply like asking a question ("What?!").', speech: '麻' },
+      { num: 'Tone 3', pinyin: 'mǎ', hanzi: '马 (horse)', contour: 'Dipping (214)', desc: 'Dips down low in the vocal register then gently recovers.', speech: '马' },
+      { num: 'Tone 4', pinyin: 'mà', hanzi: '骂 (scold)', contour: 'Falling (51)', desc: 'Sharp, decisive drop from top of register to bottom, like an exclamation!', speech: '骂' }
+    ];
+
+    let currentTone = TONES_DATA[0];
+
+    function speakChinese(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'zh-CN';
+        u.rate = 0.85;
+        window.speechSynthesis.speak(u);
+      }
+    }
+
+    const toneGrid = document.getElementById('toneGrid');
+    const toneInspectGlyph = document.getElementById('toneInspectGlyph');
+    const toneInspectTitle = document.getElementById('toneInspectTitle');
+    const toneInspectDesc = document.getElementById('toneInspectDesc');
+    const toneInspectSpeakBtn = document.getElementById('toneInspectSpeakBtn');
+
+    function renderTones() {
+      toneGrid.innerHTML = '';
+      TONES_DATA.forEach(t => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `tone-card ${t.num === currentTone.num ? 'selected' : ''}`;
+        btn.innerHTML = `<span class="tone-num">${t.num}</span><span class="tone-pinyin">${t.pinyin}</span><span class="tone-hanzi">${t.hanzi}</span><span class="tone-contour">${t.contour}</span>`;
+        btn.addEventListener('click', () => {
+          currentTone = t;
+          updateToneInspect();
+          renderTones();
+          speakChinese(t.speech);
+        });
+        toneGrid.appendChild(btn);
+      });
+    }
+
+    function updateToneInspect() {
+      toneInspectGlyph.textContent = currentTone.pinyin;
+      toneInspectTitle.textContent = `${currentTone.num}: ${currentTone.pinyin} / ${currentTone.hanzi} — ${currentTone.contour}`;
+      toneInspectDesc.textContent = currentTone.desc;
+    }
+
+    toneInspectSpeakBtn.addEventListener('click', () => speakChinese(currentTone.speech));
+    renderTones();
+    updateToneInspect();
+
+    // ── Chinese Sentence Builder ────────────────────────────
+    const CHINESE_PIECES = [
+      { text: '我', role: 'subject', gloss: 'I' },
+      { text: '喝', role: 'verb', gloss: 'drink' },
+      { text: '一', role: 'number', gloss: 'one' },
+      { text: '杯', role: 'measure', gloss: 'cup [measure word]' },
+      { text: '茶', role: 'object', gloss: 'tea' }
+    ];
+
+    let zhDock = document.getElementById('chineseSentenceDock');
+    let zhBank = document.getElementById('chineseWordBank');
+    let zhFeedback = document.getElementById('chineseSentenceFeedback');
+    let clearZhBtn = document.getElementById('clearChineseSentenceBtn');
+    let speakZhBtn = document.getElementById('speakChineseSentenceBtn');
+    let placedZh = [];
+
+    function initZhSentence() {
+      placedZh = [];
+      zhDock.innerHTML = '<span style="color:#94a3b8; font-size:0.8rem; font-style:italic;">Tap tiles below in correct Chinese SVO order →</span>';
+      zhFeedback.className = 'feedback-msg info';
+      zhFeedback.textContent = 'Target order: Subject (我) + Verb (喝) + Number (一) + Measure Word (杯) + Noun (茶)';
+      speakZhBtn.style.display = 'none';
+
+      const shuffled = [...CHINESE_PIECES].sort(() => Math.random() - 0.5);
+      zhBank.innerHTML = '';
+      shuffled.forEach(w => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = `word-tile ${w.role === 'measure' ? 'measure' : ''}`;
+        b.innerHTML = `${w.text} <small style="color:#64748b;">(${w.gloss})</small>`;
+        b.addEventListener('click', () => {
+          b.remove();
+          placedZh.push(w);
+          renderZhDock();
+        });
+        zhBank.appendChild(b);
+      });
+    }
+
+    function renderZhDock() {
+      zhDock.innerHTML = '';
+      placedZh.forEach(w => {
+        const span = document.createElement('span');
+        span.className = `word-tile placed ${w.role === 'measure' ? 'measure' : ''}`;
+        span.textContent = w.text;
+        zhDock.appendChild(span);
+      });
+
+      const assembled = placedZh.map(w => w.text).join('');
+      const targetStr = CHINESE_PIECES.map(w => w.text).join('');
+
+      if (placedZh.length === CHINESE_PIECES.length) {
+        if (assembled === targetStr) {
+          zhFeedback.className = 'feedback-msg success';
+          zhFeedback.textContent = '太好了！ "我喝一杯茶" (Wǒ hē yì bēi chá) demonstrates classic SVO order with the measure word 杯 (bēi).';
+          speakZhBtn.style.display = 'inline-flex';
+          speakChinese('我喝一杯茶');
+        } else {
+          zhFeedback.className = 'feedback-msg error';
+          zhFeedback.textContent = 'Word order is off. In Chinese: Subject + Verb + [Number + Classifier] + Object.';
+        }
+      }
+    }
+
+    clearZhBtn.addEventListener('click', initZhSentence);
+    speakZhBtn.addEventListener('click', () => speakChinese('我喝一杯茶'));
+    initZhSentence();
+
+    // ── Quiz Logic ──────────────────────────────────────────
+    function setupQuizZh(optsId, feedbackId, answerSpeech) {
+      const opts = document.querySelectorAll(`#${optsId} .quiz-opt`);
+      const fb = document.getElementById(feedbackId);
+      opts.forEach(btn => {
+        btn.addEventListener('click', () => {
+          opts.forEach(b => b.disabled = true);
+          if (btn.dataset.correct === 'true') {
+            btn.classList.add('correct');
+            fb.className = 'feedback-msg success';
+            fb.textContent = '答对了！ Correct ✓';
+            speakChinese(answerSpeech);
+          } else {
+            btn.classList.add('incorrect');
+            fb.className = 'feedback-msg error';
+            fb.textContent = '不对 — 再试一次 (Try again)!';
+            setTimeout(() => {
+              opts.forEach(b => b.disabled = false);
+              btn.classList.remove('incorrect');
+              fb.textContent = '';
+            }, 1400);
+          }
+        });
+      });
+    }
+
+    setupQuizZh('zhQ1Opts', 'zhQ1Feedback', '你好');
+    setupQuizZh('zhQ2Opts', 'zhQ2Feedback', '谢谢');
+  </script>
+  <script src="../../assets/js/photo-lightbox.js"></script>
+  <script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
+

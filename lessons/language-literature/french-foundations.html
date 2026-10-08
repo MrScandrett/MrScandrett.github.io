@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>French Language Foundations · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Discover the foundations of French: the five diacritics, nasal vowels, silent letters, liaison, SVO syntax, negation sandwiches, and Francophone culture." />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport {
+      --ll-accent: #1d4ed8;
+      --ll-tab-active: #2563eb;
+      --ll-tab-active-bg: rgba(37, 99, 235, 0.10);
+    }
+    .ll-sim {
+      background:
+        radial-gradient(circle at 10% 8%, rgba(219, 234, 254, 0.4) 0, transparent 36rem),
+        var(--surface-0);
+    }
+    .lf-page { max-width: 1080px; margin: 0 auto; padding: 0 1rem 3.5rem; }
+    .lf-hero { padding: 0.85rem 0 1.25rem; }
+    .lf-hero h1 { font-size: clamp(1.65rem, 3.8vw, 2.45rem); margin: 0.25rem 0 0.5rem; }
+    .lf-meta {
+      display: flex; flex-wrap: wrap; gap: 0.35rem 0.65rem;
+      margin: 0.55rem 0 0; font-size: 0.8rem; color: var(--text-muted, #64748b);
+    }
+    .lf-meta .dot {
+      width: 3px; height: 3px; border-radius: 50%;
+      background: currentColor; opacity: 0.45;
+      display: inline-block; align-self: center;
+    }
+    .lf-lede { margin: 0.75rem 0 0; max-width: 70ch; color: var(--text-secondary, #3f4f65); font-size: 0.95rem; line-height: 1.65; }
+
+    .lf-card {
+      background: #fff;
+      border: 1px solid #dde3ea;
+      border-left: 4px solid var(--lf-accent, #1d4ed8);
+      border-radius: 16px;
+      box-shadow: 0 8px 26px rgba(15, 23, 42, 0.06);
+      padding: 1.25rem 1.4rem;
+      margin-bottom: 1.1rem;
+      --text: #1d1d1f; --muted: #5f5f64; --text-primary: #1d1d1f; --text-secondary: #434349;
+    }
+    :where(html[data-lighting="night"]) .lf-card { color: #1d1d1f; }
+    @media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .lf-card { color: #1d1d1f; } }
+    .lf-card h2 { margin: 0 0 0.45rem; font-size: 1.22rem; }
+    .lf-card p { margin: 0 0 0.65rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .lf-card p:last-child { margin-bottom: 0; }
+
+    .lf-label {
+      display: inline-block; margin-bottom: 0.35rem;
+      font-weight: 900; color: var(--lf-accent, #1d4ed8);
+      letter-spacing: 0.07em; text-transform: uppercase; font-size: 0.72rem;
+    }
+    .lf-card-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 0.75rem; margin-bottom: 0.5rem;
+    }
+
+    .lf-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .lf-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.85rem; }
+    .lf-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+
+    /* Interactive Diacritic & Sound Lab */
+    .sound-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 0.6rem; margin-top: 0.6rem;
+    }
+    .sound-tile {
+      background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 12px;
+      padding: 0.75rem 0.5rem; text-align: center; cursor: pointer;
+      transition: all 120ms;
+    }
+    .sound-tile:hover { border-color: #2563eb; background: #eff6ff; transform: translateY(-2px); }
+    .sound-tile.selected { border-color: #1d4ed8; background: #dbeafe; box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.2); }
+    .sound-sym { font-size: 1.5rem; font-weight: 800; color: #1e3a8a; display: block; }
+    .sound-ipa { font-size: 0.75rem; font-weight: 700; color: #2563eb; display: block; margin: 0.15rem 0; }
+    .sound-eg { font-size: 0.7rem; color: #64748b; }
+
+    .sound-inspect-box {
+      margin-top: 0.9rem; padding: 0.85rem 1rem; border-radius: 12px;
+      background: #f1f5f9; border: 1px solid #cbd5e1;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .sound-inspect-left { display: flex; align-items: center; gap: 1rem; }
+    .sound-inspect-big { font-size: 2.5rem; font-weight: 900; color: #1e3a8a; line-height: 1; }
+    .sound-inspect-info h4 { margin: 0 0 0.2rem; font-size: 1rem; color: #0f172a; }
+    .sound-inspect-info p { margin: 0; font-size: 0.8rem; color: #475569; }
+
+    .speak-btn {
+      border: 1.5px solid #2563eb; border-radius: 9px; background: #fff;
+      color: #1d4ed8; font: inherit; font-weight: 800; font-size: 0.82rem;
+      padding: 0.5rem 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;
+      transition: all 120ms;
+    }
+    .speak-btn:hover { background: #2563eb; color: #fff; }
+
+    /* Sentence Builder */
+    .sentence-dock {
+      min-height: 58px; border: 2px dashed #93c5fd; border-radius: 12px;
+      background: #f8fafc; padding: 0.6rem 0.8rem; display: flex; flex-wrap: wrap;
+      gap: 0.5rem; align-items: center; margin: 0.6rem 0;
+    }
+    .word-tile {
+      background: #fff; border: 1.5px solid #cbd5e1; border-radius: 10px;
+      padding: 0.45rem 0.75rem; font-weight: 700; font-size: 0.88rem; color: #1e293b;
+      cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      transition: transform 90ms, border-color 120ms;
+    }
+    .word-tile:hover { transform: translateY(-1px); border-color: #2563eb; }
+    .word-tile.negation { background: #fee2e2; border-color: #f87171; color: #991b1b; }
+    .word-tile.placed { cursor: default; }
+
+    .word-bank { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0.6rem 0; }
+    .feedback-msg { font-size: 0.86rem; font-weight: 700; min-height: 1.6em; padding: 0.2rem 0; }
+    .feedback-msg.success { color: #059669; }
+    .feedback-msg.error { color: #dc2626; }
+    .feedback-msg.info { color: #475569; }
+
+    /* Quiz Card */
+    .quiz-card {
+      border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem;
+      background: #f8fafc; text-align: center;
+    }
+    .quiz-prompt { font-size: 1.5rem; font-weight: 800; color: #1e293b; margin-bottom: 0.4rem; }
+    .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.7rem; }
+    .quiz-opt {
+      border: 1.5px solid #cbd5e1; border-radius: 9px; background: #fff;
+      padding: 0.5rem; font-weight: 700; font-size: 0.85rem; color: #334155; cursor: pointer;
+      transition: all 120ms;
+    }
+    .quiz-opt:hover { border-color: #2563eb; background: #eff6ff; }
+    .quiz-opt.correct { background: #d1fae5; border-color: #10b981; color: #065f46; }
+    .quiz-opt.incorrect { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+
+    /* Lightbox Figure */
+    .lf-card-figure {
+      margin: 1.1rem 0 0.5rem; border-radius: 14px; overflow: hidden;
+      border: 1px solid #e2e8f0; background: #f8fafc;
+    }
+    .lf-card-figure img { width: 100%; max-height: 380px; object-fit: cover; display: block; cursor: zoom-in; }
+    .lf-card-figure figcaption {
+      padding: 0.75rem 1rem; font-size: 0.82rem; color: #475569; line-height: 1.55;
+      border-top: 1px solid #e2e8f0; background: #fff;
+    }
+    .lf-card-figure figcaption strong { display: block; font-size: 0.88rem; color: #1e293b; margin-bottom: 0.15rem; }
+
+    @media (max-width: 768px) {
+      .lf-grid-2, .lf-grid-3, .lf-grid-4 { grid-template-columns: 1fr; }
+      .sound-inspect-box { flex-direction: column; align-items: flex-start; }
+      .quiz-options { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../../index.html">Home</a></li>
+            <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+            <li><a href="../../paths.html">Paths</a></li>
+            <li><a href="../../showcase.html">Showcase</a></li>
+            <li><a href="../../applications.html">Apps</a></li>
+            <li><a href="../../library.html">Library</a></li>
+            <li><a href="../../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <main class="ll-sim" id="main-content">
+        <div class="lf-page">
+
+          <!-- ── Hero ───────────────────────────────── -->
+          <section class="lf-hero">
+            <p class="eyebrow">Language Foundations · World Languages · K–12</p>
+            <h1>French Language Foundations</h1>
+            <div class="lf-meta">
+              <span>Romance Family</span><span class="dot"></span>
+              <span>5 Diacritics</span><span class="dot"></span>
+              <span>Nasal Vowels</span><span class="dot"></span>
+              <span>Liaison &amp; Elision</span><span class="dot"></span>
+              <span>Negation Sandwich (ne...pas)</span>
+            </div>
+            <p class="lf-lede">
+              French is a descendant of Vulgar Latin reshaped across two millennia by Celtic and Germanic influences. It is famous for its melodious continuity—where words connect smoothly across word boundaries through <em>liaison</em> and <em>enchaînement</em>. Explore its accent marks, nasal phonemes, grammatical gender, and structural rules.
+            </p>
+          </section>
+
+          <!-- ── Lightbox Artwork ──────────────────── -->
+          <figure class="lf-card-figure" data-zoomable data-lightbox-group="french-art" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Tapisserie_de_Bayeux_scene57_detail.jpg?width=1400">
+            <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Tapisserie_de_Bayeux_scene57_detail.jpg?width=500" alt="Bayeux Tapestry scene showing Norman knights at the Battle of Hastings in 1066" loading="lazy" />
+            <figcaption>
+              <strong>The Norman Bridge to the English Language</strong>
+              A section of the 11th-century Bayeux Tapestry depicting the Norman Conquest of 1066. When William the Conqueror became King of England, Anglo-Norman French became the language of law, royalty, and scholarship for 300 years. Today, over 30% of English vocabulary derives directly from French (including <em>liberty, language, council, parliament, beef,</em> and <em>judge</em>). Public domain via Wikimedia Commons.
+            </figcaption>
+          </figure>
+
+          <!-- ── Core Linguistic Architecture ───────── -->
+          <section class="lf-card" style="--lf-accent:#1d4ed8;">
+            <span class="lf-label">Architecture</span>
+            <h2>How French Works: The Four Pillars</h2>
+            <div class="lf-grid-4">
+              <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#1e3a8a; display:block; font-size:0.9rem; margin-bottom:0.25rem;">1. Gender &amp; Agreement</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;">Every noun is masculine (<em>le/un</em>) or feminine (<em>la/une</em>). Adjectives and articles change shape to match.</p>
+              </div>
+              <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#1e3a8a; display:block; font-size:0.9rem; margin-bottom:0.25rem;">2. The 5 Accents</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;">Accents are not decorations: <strong>é</strong>, <strong>è</strong>, <strong>ê</strong>, <strong>ë</strong>, and <strong>ç</strong> fundamentally change vowel sounds and preserve history.</p>
+              </div>
+              <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#1e3a8a; display:block; font-size:0.9rem; margin-bottom:0.25rem;">3. Silent Consonants</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;">Final consonants (s, t, d, x, p, z) are usually silent, except when linked to a vowel in the next word (<em>liaison</em>).</p>
+              </div>
+              <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#1e3a8a; display:block; font-size:0.9rem; margin-bottom:0.25rem;">4. Negation Sandwich</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;">To say "not", the verb is hugged by two words: <strong>ne</strong> [verb] <strong>pas</strong> (e.g., <em>Je ne sais pas</em>).</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── Interactive Accent & Phonology Lab ─── -->
+          <section class="lf-card" style="--lf-accent:#2563eb;">
+            <div class="lf-card-head">
+              <div>
+                <span class="lf-label">Interactive Lab</span>
+                <h2>Accent Marks &amp; Sound Lab</h2>
+                <p>Click any French letter or phoneme to hear its exact pronunciation and understand its phonetic rule.</p>
+              </div>
+            </div>
+
+            <div class="sound-grid" id="frenchSoundGrid" aria-label="French Sounds"></div>
+
+            <div class="sound-inspect-box" id="frenchInspectBox" aria-live="polite">
+              <div class="sound-inspect-left">
+                <span class="sound-inspect-big" id="frenchInspectGlyph">é</span>
+                <div class="sound-inspect-info">
+                  <h4 id="frenchInspectTitle">Accent Aigu (é)</h4>
+                  <p id="frenchInspectDesc">Closed vowel /e/, like the 'ay' in say without the trailing 'y'. Found in café, répéter, été.</p>
+                </div>
+              </div>
+              <button class="speak-btn" id="frenchInspectSpeakBtn" type="button">
+                <span>🔊</span> Listen (Web Speech)
+              </button>
+            </div>
+          </section>
+
+          <!-- ── Interactive Sentence Engine ───────── -->
+          <section class="lf-card" style="--lf-accent:#0284c7;">
+            <span class="lf-label">Syntax Builder</span>
+            <h2>French Sentence Engine: SVO &amp; Negation</h2>
+            <p>
+              Build the sentence below. Notice how French negation wraps around the conjugated verb like a sandwich: <strong>ne</strong> before, <strong>pas</strong> after.
+            </p>
+
+            <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px; padding:0.65rem 0.9rem; font-size:0.83rem; color:#0369a1; margin-bottom:0.75rem;">
+              <strong>Target Sentence:</strong> <span id="targetPromptFrench">"I do not eat the apple." (Je ne mange pas la pomme)</span>
+            </div>
+
+            <div class="sentence-dock" id="frenchSentenceDock">
+              <span style="color:#94a3b8; font-size:0.8rem; font-style:italic;" id="dockPlaceholderFrench">Tap tiles below in correct French order →</span>
+            </div>
+
+            <div class="word-bank" id="frenchWordBank"></div>
+            <div class="feedback-msg info" id="frenchSentenceFeedback">Select tiles to build the sentence.</div>
+
+            <div style="margin-top:0.75rem; display:flex; gap:0.5rem;">
+              <button class="speak-btn" id="clearFrenchSentenceBtn" style="border-color:#94a3b8; color:#475569;" type="button">Reset</button>
+              <button class="speak-btn" id="speakFrenchSentenceBtn" style="display:none;" type="button">🔊 Speak Sentence</button>
+            </div>
+          </section>
+
+          <!-- ── Survival Vocabulary & Quiz ────────── -->
+          <section class="lf-card" style="--lf-accent:#059669;">
+            <span class="lf-label">Applied Practice</span>
+            <h2>Everyday Courtesies &amp; Recognition Quiz</h2>
+            <p>Politeness in France begins with the greeting. Test your knowledge of essential expressions:</p>
+
+            <div class="lf-grid-2">
+              <div class="quiz-card">
+                <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#059669; letter-spacing:0.06em;">Challenge 1 · Core Greeting</span>
+                <div class="quiz-prompt">Bonjour</div>
+                <p style="font-size:0.8rem; color:#64748b; margin:0;">[bɔ̃.ʒuʁ]</p>
+                <div class="quiz-options" id="frQ1Opts">
+                  <button class="quiz-opt" data-correct="true">Hello / Good Day</button>
+                  <button class="quiz-opt">Good Night</button>
+                  <button class="quiz-opt">Thank you</button>
+                  <button class="quiz-opt">Goodbye</button>
+                </div>
+                <p class="feedback-msg" id="frQ1Feedback" style="margin-top:0.5rem;"></p>
+              </div>
+
+              <div class="quiz-card">
+                <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#059669; letter-spacing:0.06em;">Challenge 2 · Courtesy</span>
+                <div class="quiz-prompt">S'il vous plaît</div>
+                <p style="font-size:0.8rem; color:#64748b; margin:0;">[sil vu plɛ]</p>
+                <div class="quiz-options" id="frQ2Opts">
+                  <button class="quiz-opt">You are welcome</button>
+                  <button class="quiz-opt">Excuse me</button>
+                  <button class="quiz-opt" data-correct="true">Please (formal / plural)</button>
+                  <button class="quiz-opt">See you soon</button>
+                </div>
+                <p class="feedback-msg" id="frQ2Feedback" style="margin-top:0.5rem;"></p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── Future Learning Roadmap ───────────── -->
+          <section class="lf-card" style="--lf-accent:#7c3aed;">
+            <span class="lf-label">Progression Pathway</span>
+            <h2>Roadmap for Future French Lessons</h2>
+            <div class="lf-grid-3" style="margin-top:0.75rem;">
+              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+                <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#c084fc; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 1</span>
+                <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">Present Tense &amp; Regular Verbs</strong>
+                <p style="font-size:0.8rem; margin:0; color:#475569;">Conjugating the three verb groups (-er, -ir, -re), plus irregular pillars: <em>être</em> (to be), <em>avoir</em> (to have), <em>faire</em> (to do/make), and <em>aller</em> (to go).</p>
+              </div>
+              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+                <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#9333ea; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 2</span>
+                <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">Passé Composé &amp; Imparfait</strong>
+                <p style="font-size:0.8rem; margin:0; color:#475569;">Narrating past events using auxiliary verbs with past participles, and contrasting completed events with habitual background descriptions.</p>
+              </div>
+              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+                <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#6b21a8; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 3</span>
+                <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">Subjunctive &amp; Authentic Literature</strong>
+                <p style="font-size:0.8rem; margin:0; color:#475569;">Expressing doubt, desire, necessity with the subjunctive mood; reading Victor Hugo, Albert Camus, and Francophone global literature.</p>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // ── French Sound & Accent Data ──────────────────────────
+    const FRENCH_SOUNDS = [
+      { sym: 'é', ipa: '/e/', title: 'Accent Aigu (é)', desc: 'Closed vowel /e/, like "ay" in say without the glide. Example: café, été.', speech: 'café' },
+      { sym: 'è', ipa: '/ɛ/', title: 'Accent Grave (è)', desc: 'Open vowel /ɛ/, like "e" in bed or pet. Example: mère, frère.', speech: 'mère' },
+      { sym: 'ê', ipa: '/ɛ/', title: 'Accent Circonflexe (ê)', desc: 'Historical marker showing where an "s" was deleted centuries ago! Example: fête (feast), hôpital (hospital).', speech: 'fête' },
+      { sym: 'ç', ipa: '/s/', title: 'Cédille (ç)', desc: 'Softens a "c" to sound like "s" before vowels a, o, u. Example: français, garçon.', speech: 'français' },
+      { sym: 'on', ipa: '/ɔ̃/', title: 'Nasal Vowel [ɔ̃]', desc: 'Air flows through mouth and nose simultaneously. Example: bon, monde, pont.', speech: 'bon' },
+      { sym: 'an / en', ipa: '/ɑ̃/', title: 'Nasal Vowel [ɑ̃]', desc: 'Deep nasal vowel formed with open throat. Example: France, enfant.', speech: 'France' },
+      { sym: 'in / ain', ipa: '/ɛ̃/', title: 'Nasal Vowel [ɛ̃]', desc: 'Nasalized open /ɛ/ vowel. Example: vin (wine), pain (bread).', speech: 'pain' },
+      { sym: 'u', ipa: '/y/', title: 'French "u" [y]', desc: 'Round lips as if to say "oo", but hold tongue forward as if saying "ee". Example: lune, musique.', speech: 'lune' },
+      { sym: 'r', ipa: '/ʁ/', title: 'Uvular "r" [ʁ]', desc: 'Fricative consonant pronounced by vibrating the back of the tongue near the uvula. Example: rouge, Paris.', speech: 'Paris' }
+    ];
+
+    let currentSound = FRENCH_SOUNDS[0];
+
+    function speakFrench(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'fr-FR';
+        u.rate = 0.85;
+        window.speechSynthesis.speak(u);
+      }
+    }
+
+    const soundGrid = document.getElementById('frenchSoundGrid');
+    const inspectGlyph = document.getElementById('frenchInspectGlyph');
+    const inspectTitle = document.getElementById('frenchInspectTitle');
+    const inspectDesc = document.getElementById('frenchInspectDesc');
+    const inspectSpeakBtn = document.getElementById('frenchInspectSpeakBtn');
+
+    function renderSounds() {
+      soundGrid.innerHTML = '';
+      FRENCH_SOUNDS.forEach(item => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `sound-tile ${item.sym === currentSound.sym ? 'selected' : ''}`;
+        btn.innerHTML = `<span class="sound-sym">${item.sym}</span><span class="sound-ipa">${item.ipa}</span><span class="sound-eg">${item.speech}</span>`;
+        btn.addEventListener('click', () => {
+          currentSound = item;
+          updateSoundInspect();
+          renderSounds();
+          speakFrench(item.speech);
+        });
+        soundGrid.appendChild(btn);
+      });
+    }
+
+    function updateSoundInspect() {
+      inspectGlyph.textContent = currentSound.sym;
+      inspectTitle.textContent = `${currentSound.title} (${currentSound.ipa})`;
+      inspectDesc.textContent = currentSound.desc;
+    }
+
+    inspectSpeakBtn.addEventListener('click', () => speakFrench(currentSound.speech));
+
+    renderSounds();
+    updateSoundInspect();
+
+    // ── French Sentence Builder ─────────────────────────────
+    const FRENCH_PIECES = [
+      { text: 'Je', role: 'subject', gloss: 'I' },
+      { text: 'ne', role: 'negation', gloss: 'not (part 1)' },
+      { text: 'mange', role: 'verb', gloss: 'eat' },
+      { text: 'pas', role: 'negation', gloss: 'not (part 2)' },
+      { text: 'la', role: 'article', gloss: 'the (fem)' },
+      { text: 'pomme', role: 'object', gloss: 'apple' }
+    ];
+
+    let frenchDock = document.getElementById('frenchSentenceDock');
+    let frenchBank = document.getElementById('frenchWordBank');
+    let frenchFeedback = document.getElementById('frenchSentenceFeedback');
+    let clearFrenchBtn = document.getElementById('clearFrenchSentenceBtn');
+    let speakFrenchBtn = document.getElementById('speakFrenchSentenceBtn');
+    let placedFrench = [];
+
+    function initFrenchSentence() {
+      placedFrench = [];
+      frenchDock.innerHTML = '<span style="color:#94a3b8; font-size:0.8rem; font-style:italic;">Tap tiles below in correct French order →</span>';
+      frenchFeedback.className = 'feedback-msg info';
+      frenchFeedback.textContent = 'Target order: Subject (Je) + Negation (ne) + Verb (mange) + Negation (pas) + Object (la pomme)';
+      speakFrenchBtn.style.display = 'none';
+
+      const shuffled = [...FRENCH_PIECES].sort(() => Math.random() - 0.5);
+      frenchBank.innerHTML = '';
+      shuffled.forEach(w => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = `word-tile ${w.role === 'negation' ? 'negation' : ''}`;
+        b.innerHTML = `${w.text} <small style="color:#64748b;">(${w.gloss})</small>`;
+        b.addEventListener('click', () => {
+          b.remove();
+          placedFrench.push(w);
+          renderFrenchDock();
+        });
+        frenchBank.appendChild(b);
+      });
+    }
+
+    function renderFrenchDock() {
+      frenchDock.innerHTML = '';
+      placedFrench.forEach(w => {
+        const span = document.createElement('span');
+        span.className = `word-tile placed ${w.role === 'negation' ? 'negation' : ''}`;
+        span.textContent = w.text;
+        frenchDock.appendChild(span);
+      });
+
+      const assembled = placedFrench.map(w => w.text).join(' ');
+      const targetStr = FRENCH_PIECES.map(w => w.text).join(' ');
+
+      if (placedFrench.length === FRENCH_PIECES.length) {
+        if (assembled === targetStr) {
+          frenchFeedback.className = 'feedback-msg success';
+          frenchFeedback.textContent = 'Excellent ! "Je ne mange pas la pomme" demonstrates the classic French negation sandwich wrapping the verb.';
+          speakFrenchBtn.style.display = 'inline-flex';
+          speakFrench(assembled);
+        } else {
+          frenchFeedback.className = 'feedback-msg error';
+          frenchFeedback.textContent = 'Word order is off. Remember: Subject + ne + verb + pas + article + object.';
+        }
+      }
+    }
+
+    clearFrenchBtn.addEventListener('click', initFrenchSentence);
+    speakFrenchBtn.addEventListener('click', () => speakFrench('Je ne mange pas la pomme'));
+    initFrenchSentence();
+
+    // ── Quiz Logic ──────────────────────────────────────────
+    function setupQuizFr(optsId, feedbackId, answerSpeech) {
+      const opts = document.querySelectorAll(`#${optsId} .quiz-opt`);
+      const fb = document.getElementById(feedbackId);
+      opts.forEach(btn => {
+        btn.addEventListener('click', () => {
+          opts.forEach(b => b.disabled = true);
+          if (btn.dataset.correct === 'true') {
+            btn.classList.add('correct');
+            fb.className = 'feedback-msg success';
+            fb.textContent = 'Correct ! Très bien ✓';
+            speakFrench(answerSpeech);
+          } else {
+            btn.classList.add('incorrect');
+            fb.className = 'feedback-msg error';
+            fb.textContent = 'Pas tout à fait — essayez encore !';
+            setTimeout(() => {
+              opts.forEach(b => b.disabled = false);
+              btn.classList.remove('incorrect');
+              fb.textContent = '';
+            }, 1400);
+          }
+        });
+      });
+    }
+
+    setupQuizFr('frQ1Opts', 'frQ1Feedback', 'Bonjour');
+    setupQuizFr('frQ2Opts', 'frQ2Feedback', "S'il vous plaît");
+  </script>
+  <script src="../../assets/js/photo-lightbox.js"></script>
+  <script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
+

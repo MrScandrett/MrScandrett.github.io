@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Russian Language Foundations · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Master foundational Russian: the 33-letter Cyrillic alphabet, false friends, palatalization, six cases, omitted present 'to be', and vocabulary decoding." />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport {
+      --ll-accent: #0284c7;
+      --ll-tab-active: #0369a1;
+      --ll-tab-active-bg: rgba(2, 132, 199, 0.10);
+    }
+    .ll-sim {
+      background:
+        radial-gradient(circle at 10% 8%, rgba(224, 242, 254, 0.45) 0, transparent 36rem),
+        var(--surface-0);
+    }
+    .lf-page { max-width: 1080px; margin: 0 auto; padding: 0 1rem 3.5rem; }
+    .lf-hero { padding: 0.85rem 0 1.25rem; }
+    .lf-hero h1 { font-size: clamp(1.65rem, 3.8vw, 2.45rem); margin: 0.25rem 0 0.5rem; }
+    .lf-meta {
+      display: flex; flex-wrap: wrap; gap: 0.35rem 0.65rem;
+      margin: 0.55rem 0 0; font-size: 0.8rem; color: var(--text-muted, #64748b);
+    }
+    .lf-meta .dot {
+      width: 3px; height: 3px; border-radius: 50%;
+      background: currentColor; opacity: 0.45;
+      display: inline-block; align-self: center;
+    }
+    .lf-lede { margin: 0.75rem 0 0; max-width: 70ch; color: var(--text-secondary, #3f4f65); font-size: 0.95rem; line-height: 1.65; }
+
+    .lf-card {
+      background: #fff;
+      border: 1px solid #dde3ea;
+      border-left: 4px solid var(--lf-accent, #0284c7);
+      border-radius: 16px;
+      box-shadow: 0 8px 26px rgba(15, 23, 42, 0.06);
+      padding: 1.25rem 1.4rem;
+      margin-bottom: 1.1rem;
+      --text: #1d1d1f; --muted: #5f5f64; --text-primary: #1d1d1f; --text-secondary: #434349;
+    }
+    :where(html[data-lighting="night"]) .lf-card { color: #1d1d1f; }
+    @media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .lf-card { color: #1d1d1f; } }
+    .lf-card h2 { margin: 0 0 0.45rem; font-size: 1.22rem; }
+    .lf-card p { margin: 0 0 0.65rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .lf-card p:last-child { margin-bottom: 0; }
+
+    .lf-label {
+      display: inline-block; margin-bottom: 0.35rem;
+      font-weight: 900; color: var(--lf-accent, #0284c7);
+      letter-spacing: 0.07em; text-transform: uppercase; font-size: 0.72rem;
+    }
+    .lf-card-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 0.75rem; margin-bottom: 0.5rem;
+    }
+
+    .lf-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .lf-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.85rem; }
+    .lf-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+
+    /* Cyrillic Letter Categories */
+    .cyrillic-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+      gap: 0.5rem; margin-top: 0.6rem;
+    }
+    .cyrillic-tile {
+      background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 12px;
+      padding: 0.6rem 0.3rem; text-align: center; cursor: pointer;
+      transition: all 120ms;
+    }
+    .cyrillic-tile:hover { border-color: #0284c7; background: #f0f9ff; transform: translateY(-2px); }
+    .cyrillic-tile.selected { border-color: #0369a1; background: #e0f2fe; box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2); }
+    .cyrillic-char { font-size: 1.6rem; font-weight: 900; color: #0f172a; line-height: 1.1; }
+    .cyrillic-sound { font-size: 0.75rem; font-weight: 700; color: #0284c7; margin-top: 0.15rem; }
+    .cyrillic-tag { font-size: 0.62rem; color: #64748b; font-weight: 600; }
+
+    .cyrillic-inspect-box {
+      margin-top: 0.9rem; padding: 0.85rem 1rem; border-radius: 12px;
+      background: #f1f5f9; border: 1px solid #cbd5e1;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .cyrillic-inspect-left { display: flex; align-items: center; gap: 1rem; }
+    .cyrillic-inspect-big { font-size: 2.5rem; font-weight: 900; color: #0369a1; line-height: 1; }
+    .cyrillic-inspect-info h4 { margin: 0 0 0.2rem; font-size: 1rem; color: #0f172a; }
+    .cyrillic-inspect-info p { margin: 0; font-size: 0.8rem; color: #475569; }
+
+    .speak-btn {
+      border: 1.5px solid #0284c7; border-radius: 9px; background: #fff;
+      color: #0369a1; font: inherit; font-weight: 800; font-size: 0.82rem;
+      padding: 0.5rem 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;
+      transition: all 120ms;
+    }
+    .speak-btn:hover { background: #0284c7; color: #fff; }
+
+    /* Decoder Challenge */
+    .decoder-card {
+      background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 1rem; margin-top: 0.75rem;
+    }
+    .decoder-words { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+    .decoder-word-btn {
+      border: 1.5px solid #cbd5e1; border-radius: 9px; background: #fff;
+      padding: 0.45rem 0.8rem; font-weight: 800; font-size: 1.1rem; color: #0f172a; cursor: pointer;
+      transition: all 120ms;
+    }
+    .decoder-word-btn:hover { border-color: #0284c7; background: #f0f9ff; }
+    .decoder-word-btn.active { border-color: #0369a1; background: #e0f2fe; }
+
+    /* Sentence Builder */
+    .sentence-dock {
+      min-height: 58px; border: 2px dashed #7dd3fc; border-radius: 12px;
+      background: #f0f9ff; padding: 0.6rem 0.8rem; display: flex; flex-wrap: wrap;
+      gap: 0.5rem; align-items: center; margin: 0.6rem 0;
+    }
+    .word-tile {
+      background: #fff; border: 1.5px solid #cbd5e1; border-radius: 10px;
+      padding: 0.45rem 0.75rem; font-weight: 700; font-size: 0.88rem; color: #1e293b;
+      cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      transition: transform 90ms, border-color 120ms;
+    }
+    .word-tile:hover { transform: translateY(-1px); border-color: #0284c7; }
+    .word-tile.placed { cursor: default; }
+
+    .word-bank { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0.6rem 0; }
+    .feedback-msg { font-size: 0.86rem; font-weight: 700; min-height: 1.6em; padding: 0.2rem 0; }
+    .feedback-msg.success { color: #059669; }
+    .feedback-msg.error { color: #dc2626; }
+    .feedback-msg.info { color: #475569; }
+
+    /* Quiz Card */
+    .quiz-card {
+      border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem;
+      background: #f8fafc; text-align: center;
+    }
+    .quiz-prompt { font-size: 1.4rem; font-weight: 800; color: #1e293b; margin-bottom: 0.2rem; }
+    .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.7rem; }
+    .quiz-opt {
+      border: 1.5px solid #cbd5e1; border-radius: 9px; background: #fff;
+      padding: 0.5rem; font-weight: 700; font-size: 0.85rem; color: #334155; cursor: pointer;
+      transition: all 120ms;
+    }
+    .quiz-opt:hover { border-color: #0284c7; background: #f0f9ff; }
+    .quiz-opt.correct { background: #d1fae5; border-color: #10b981; color: #065f46; }
+    .quiz-opt.incorrect { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+
+    /* Lightbox Figure */
+    .lf-card-figure {
+      margin: 1.1rem 0 0.5rem; border-radius: 14px; overflow: hidden;
+      border: 1px solid #e2e8f0; background: #f8fafc;
+    }
+    .lf-card-figure img { width: 100%; max-height: 380px; object-fit: cover; display: block; cursor: zoom-in; }
+    .lf-card-figure figcaption {
+      padding: 0.75rem 1rem; font-size: 0.82rem; color: #475569; line-height: 1.55;
+      border-top: 1px solid #e2e8f0; background: #fff;
+    }
+    .lf-card-figure figcaption strong { display: block; font-size: 0.88rem; color: #1e293b; margin-bottom: 0.15rem; }
+
+    @media (max-width: 768px) {
+      .lf-grid-2, .lf-grid-3, .lf-grid-4 { grid-template-columns: 1fr; }
+      .cyrillic-inspect-box { flex-direction: column; align-items: flex-start; }
+      .quiz-options { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../../index.html">Home</a></li>
+            <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+            <li><a href="../../paths.html">Paths</a></li>
+            <li><a href="../../showcase.html">Showcase</a></li>
+            <li><a href="../../applications.html">Apps</a></li>
+            <li><a href="../../library.html">Library</a></li>
+            <li><a href="../../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <main class="ll-sim" id="main-content">
+        <div class="lf-page">
+
+          <!-- ── Hero ───────────────────────────────── -->
+          <section class="lf-hero">
+            <p class="eyebrow">Language Foundations · World Languages · K–12</p>
+            <h1>Russian Language Foundations</h1>
+            <div class="lf-meta">
+              <span>Slavic Family</span><span class="dot"></span>
+              <span>33 Cyrillic Letters</span><span class="dot"></span>
+              <span>Hard &amp; Soft Consonants</span><span class="dot"></span>
+              <span>6 Grammatical Cases</span><span class="dot"></span>
+              <span>No Articles / Zero Copula</span>
+            </div>
+            <p class="lf-lede">
+              Russian is the largest native language in Europe and the primary member of the East Slavic branch. Written in the Cyrillic script adapted from Byzantine Greek in the 9th century, Russian operates with six expressive cases, paired hard and soft consonants, and an economy of expression that needs neither articles ("the", "a") nor the present-tense verb "to be."
+            </p>
+          </section>
+
+          <!-- ── Lightbox Artwork ──────────────────── -->
+          <figure class="lf-card-figure" data-zoomable data-lightbox-group="russian-art" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Ostromir_Gospel_f_1_recto.jpg?width=1400">
+            <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Ostromir_Gospel_f_1_recto.jpg?width=500" alt="Illuminated initial page of the Ostromir Gospel from 1056 in Old East Slavic Cyrillic script" loading="lazy" />
+            <figcaption>
+              <strong>The Oldest Dated East Slavic Manuscript</strong>
+              A page from the <em>Ostromir Gospel</em> (1056–1057), copied in Novgorod. This monument of Old East Slavic calligraphy shows early Cyrillic uncial script (устав ustav) alongside intricate Byzantine gold illumination. Cyril and Methodius's 9th-century invention allowed the rich phonetic sounds of Slavic speech to be recorded with precision. Image: Public domain via Wikimedia Commons.
+            </figcaption>
+          </figure>
+
+          <!-- ── Core Linguistic Architecture ───────── -->
+          <section class="lf-card" style="--lf-accent:#0284c7;">
+            <span class="lf-label">Architecture</span>
+            <h2>How Russian Works: The Four Pillars</h2>
+            <div class="lf-grid-4">
+              <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#0369a1; display:block; font-size:0.9rem; margin-bottom:0.25rem;">1. Cyrillic Alphabet</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;">33 letters: some look and sound like English (А, О, М), but beware of <strong>False Friends</strong> (В=[v], Н=[n], Р=[r], С=[s]).</p>
+              </div>
+              <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#0369a1; display:block; font-size:0.9rem; margin-bottom:0.25rem;">2. Hard vs Soft</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;">Nearly every consonant has a <em>hard</em> (plain) and <em>soft</em> (palatalized) counterpart, altering the word's acoustic feel and meaning.</p>
+              </div>
+              <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#0369a1; display:block; font-size:0.9rem; margin-bottom:0.25rem;">3. Six Cases</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;">Nominative, Accusative, Genitive, Dative, Instrumental, and Prepositional cases tag the exact syntactic role of each noun.</p>
+              </div>
+              <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#0369a1; display:block; font-size:0.9rem; margin-bottom:0.25rem;">4. Zero Copula &amp; No Articles</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;">There is no "the" or "a", and "to be" is skipped in the present: <em>Я студент</em> literally means "I student" = "I am a student"!</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── Interactive Cyrillic Decoder ──────── -->
+          <section class="lf-card" style="--lf-accent:#0369a1;">
+            <div class="lf-card-head">
+              <div>
+                <span class="lf-label">Interactive Lab</span>
+                <h2>The Cyrillic Decoder &amp; Sound Lab</h2>
+                <p>Click any letter to hear its sound. Pay special attention to the "False Friends" that deceive English eyes!</p>
+              </div>
+            </div>
+
+            <div class="cyrillic-grid" id="cyrillicGrid" aria-label="Cyrillic Letters"></div>
+
+            <div class="cyrillic-inspect-box" id="cyrillicInspectBox" aria-live="polite">
+              <div class="cyrillic-inspect-left">
+                <span class="cyrillic-inspect-big" id="cyrillicInspectChar">В</span>
+                <div class="cyrillic-inspect-info">
+                  <h4 id="cyrillicInspectTitle">Letter В (Ve) — False Friend!</h4>
+                  <p id="cyrillicInspectDesc">Looks like English 'B', but sounds like /v/ as in vine! (Russian Б is the letter for /b/).</p>
+                </div>
+              </div>
+              <button class="speak-btn" id="cyrillicSpeakBtn" type="button">
+                <span>🔊</span> Listen (Web Speech)
+              </button>
+            </div>
+
+            <!-- Instant Word Decoding -->
+            <div class="decoder-card">
+              <span style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:#0369a1;">Practice: Decode Common Signs</span>
+              <p style="font-size:0.82rem; color:#475569; margin:0.2rem 0 0.5rem;">Click a sign to decode its Cyrillic spelling into its international meaning:</p>
+              <div class="decoder-words" id="decoderWords">
+                <button class="decoder-word-btn" data-decode="METRO" data-audio="Метро">МЕТРО</button>
+                <button class="decoder-word-btn" data-decode="MOSCOW (Moskva)" data-audio="Москва">МОСКВА</button>
+                <button class="decoder-word-btn" data-decode="RESTAURANT (Restoran)" data-audio="Ресторан">РЕСТОРАН</button>
+                <button class="decoder-word-btn" data-decode="THEATER (Teatr)" data-audio="Театр">ТЕАТР</button>
+              </div>
+              <p id="decoderOutput" style="font-weight:700; color:#0f172a; font-size:0.9rem; margin-top:0.6rem; min-height:1.4em;"></p>
+            </div>
+          </section>
+
+          <!-- ── Interactive Sentence Engine ───────── -->
+          <section class="lf-card" style="--lf-accent:#b91c1c;">
+            <span class="lf-label">Syntax Builder</span>
+            <h2>Russian Sentence Engine: Cases &amp; Zero Copula</h2>
+            <p>
+              Construct the Russian sentence below. Notice that when Anna is <em>in</em> Moscow, the noun ending changes from <strong>Москва</strong> to <strong>в Москве</strong> (Prepositional case)!
+            </p>
+
+            <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px; padding:0.65rem 0.9rem; font-size:0.83rem; color:#0369a1; margin-bottom:0.75rem;">
+              <strong>Target Sentence:</strong> <span>"Anna lives in Moscow." (Анна живёт в Москве)</span>
+            </div>
+
+            <div class="sentence-dock" id="russianSentenceDock">
+              <span style="color:#94a3b8; font-size:0.8rem; font-style:italic;" id="dockPlaceholderRussian">Tap tiles below in correct order →</span>
+            </div>
+
+            <div class="word-bank" id="russianWordBank"></div>
+            <div class="feedback-msg info" id="russianSentenceFeedback">Select tiles to build the sentence.</div>
+
+            <div style="margin-top:0.75rem; display:flex; gap:0.5rem;">
+              <button class="speak-btn" id="clearRussianSentenceBtn" style="border-color:#94a3b8; color:#475569;" type="button">Reset</button>
+              <button class="speak-btn" id="speakRussianSentenceBtn" style="display:none;" type="button">🔊 Speak Sentence</button>
+            </div>
+          </section>
+
+          <!-- ── Survival Vocabulary & Quiz ────────── -->
+          <section class="lf-card" style="--lf-accent:#059669;">
+            <span class="lf-label">Applied Practice</span>
+            <h2>Everyday Courtesies &amp; Recognition Quiz</h2>
+            <p>Master these core Russian social expressions:</p>
+
+            <div class="lf-grid-2">
+              <div class="quiz-card">
+                <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#059669; letter-spacing:0.06em;">Challenge 1 · Formal Greeting</span>
+                <div class="quiz-prompt">Здравствуйте</div>
+                <p style="font-size:0.85rem; color:#64748b; margin:0;">(Zdravstvuyte)</p>
+                <div class="quiz-options" id="ruQ1Opts">
+                  <button class="quiz-opt" data-correct="true">Hello / Good Day (Formal)</button>
+                  <button class="quiz-opt">Goodbye</button>
+                  <button class="quiz-opt">Thank you</button>
+                  <button class="quiz-opt">Please</button>
+                </div>
+                <p class="feedback-msg" id="ruQ1Feedback" style="margin-top:0.5rem;"></p>
+              </div>
+
+              <div class="quiz-card">
+                <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#059669; letter-spacing:0.06em;">Challenge 2 · Gratitude</span>
+                <div class="quiz-prompt">Спасибо</div>
+                <p style="font-size:0.85rem; color:#64748b; margin:0;">(Spasibo)</p>
+                <div class="quiz-options" id="ruQ2Opts">
+                  <button class="quiz-opt">Excuse me</button>
+                  <button class="quiz-opt">You're welcome</button>
+                  <button class="quiz-opt" data-correct="true">Thank you (originally: God save you)</button>
+                  <button class="quiz-opt">Good night</button>
+                </div>
+                <p class="feedback-msg" id="ruQ2Feedback" style="margin-top:0.5rem;"></p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── Future Learning Roadmap ───────────── -->
+          <section class="lf-card" style="--lf-accent:#7c3aed;">
+            <span class="lf-label">Progression Pathway</span>
+            <h2>Roadmap for Future Russian Lessons</h2>
+            <div class="lf-grid-3" style="margin-top:0.75rem;">
+              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+                <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#c084fc; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 1</span>
+                <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">Cyrillic Cursive &amp; Vowel Reduction</strong>
+                <p style="font-size:0.8rem; margin:0; color:#475569;">Reading Russian handwriting, mastering unstressed vowel reduction (akan'ye: unstressed "o" softens to "a"), and noun genders (он, она, оно).</p>
+              </div>
+              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+                <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#9333ea; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 2</span>
+                <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">Case Endings &amp; Verbal Aspect</strong>
+                <p style="font-size:0.8rem; margin:0; color:#475569;">The six-case declension system for adjectives and nouns, plus perfective vs. imperfective verb pairs (process vs. completed result).</p>
+              </div>
+              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+                <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#6b21a8; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 3</span>
+                <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">Verbs of Motion &amp; Russian Classics</strong>
+                <p style="font-size:0.8rem; margin:0; color:#475569;">Multi-directional vs. unidirectional verbs of motion (идти/ходить); reading Pushkin, Tolstoy, Chekhov, and Dostoevsky in original Russian.</p>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // ── Cyrillic Letters Data ───────────────────────────────
+    const CYRILLIC_DATA = [
+      { char: 'А', sound: '/a/', tag: 'True Friend', desc: 'Sounds just like "a" in father.' },
+      { char: 'Б', sound: '/b/', tag: 'New Shape', desc: 'Sounds like "b" in boy. Notice the top bar!' },
+      { char: 'В', sound: '/v/', tag: 'False Friend!', desc: 'Looks like "B", but sounds like "v" in vine.' },
+      { char: 'Г', sound: '/ɡ/', tag: 'New Shape', desc: 'Greek gamma, sounds like "g" in go.' },
+      { char: 'Д', sound: '/d/', tag: 'New Shape', desc: 'Looks like a little house, sounds like "d" in door.' },
+      { char: 'Ж', sound: '/ʐ/ (zh)', tag: 'New Shape', desc: 'Looks like a beetle! Sounds like "s" in measure.' },
+      { char: 'И', sound: '/i/', tag: 'False Friend!', desc: 'Looks like backwards "N", sounds like "ee" in meet.' },
+      { char: 'Н', sound: '/n/', tag: 'False Friend!', desc: 'Looks like "H", sounds like "n" in no.' },
+      { char: 'П', sound: '/p/', tag: 'New Shape', desc: 'Greek Pi shape, sounds like "p" in pet.' },
+      { char: 'Р', sound: '/r/', tag: 'False Friend!', desc: 'Looks like "P", but it is a rolled "r"!' },
+      { char: 'С', sound: '/s/', tag: 'False Friend!', desc: 'Looks like "C", but sounds like "s" in sun.' },
+      { char: 'У', sound: '/u/', tag: 'False Friend!', desc: 'Looks like "Y", sounds like "oo" in boot.' },
+      { char: 'Ф', sound: '/f/', tag: 'New Shape', desc: 'Greek Phi, sounds like "f" in fine.' },
+      { char: 'Х', sound: '/x/ (kh)', tag: 'False Friend!', desc: 'Looks like "X", sounds like "ch" in Scottish loch.' },
+      { char: 'Ц', sound: '/ts/', tag: 'New Shape', desc: 'Sounds like "ts" in cats.' },
+      { char: 'Я', sound: '/ja/ (ya)', tag: 'New Shape', desc: 'Sounds like "ya" in yard. Also the Russian word for "I"!' }
+    ];
+
+    let currentCyrillic = CYRILLIC_DATA[2]; // Default to В
+
+    function speakRussian(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'ru-RU';
+        u.rate = 0.85;
+        window.speechSynthesis.speak(u);
+      }
+    }
+
+    const cyrillicGrid = document.getElementById('cyrillicGrid');
+    const cyrillicInspectChar = document.getElementById('cyrillicInspectChar');
+    const cyrillicInspectTitle = document.getElementById('cyrillicInspectTitle');
+    const cyrillicInspectDesc = document.getElementById('cyrillicInspectDesc');
+    const cyrillicSpeakBtn = document.getElementById('cyrillicSpeakBtn');
+
+    function renderCyrillic() {
+      cyrillicGrid.innerHTML = '';
+      CYRILLIC_DATA.forEach(item => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `cyrillic-tile ${item.char === currentCyrillic.char ? 'selected' : ''}`;
+        btn.innerHTML = `<span class="cyrillic-char">${item.char}</span><span class="cyrillic-sound">${item.sound}</span><span class="cyrillic-tag">${item.tag}</span>`;
+        btn.addEventListener('click', () => {
+          currentCyrillic = item;
+          updateCyrillicInspect();
+          renderCyrillic();
+          speakRussian(item.char);
+        });
+        cyrillicGrid.appendChild(btn);
+      });
+    }
+
+    function updateCyrillicInspect() {
+      cyrillicInspectChar.textContent = currentCyrillic.char;
+      cyrillicInspectTitle.textContent = `Letter ${currentCyrillic.char} (${currentCyrillic.sound}) — ${currentCyrillic.tag}`;
+      cyrillicInspectDesc.textContent = currentCyrillic.desc;
+    }
+
+    cyrillicSpeakBtn.addEventListener('click', () => speakRussian(currentCyrillic.char));
+    renderCyrillic();
+    updateCyrillicInspect();
+
+    // ── Instant Word Decoder ────────────────────────────────
+    const decoderButtons = document.querySelectorAll('.decoder-word-btn');
+    const decoderOutput = document.getElementById('decoderOutput');
+    decoderButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        decoderButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        decoderOutput.innerHTML = `Decoded: <strong style="color:#0369a1;">${btn.dataset.decode}</strong>`;
+        speakRussian(btn.dataset.audio);
+      });
+    });
+
+    // ── Sentence Builder ────────────────────────────────────
+    const RUSSIAN_PIECES = [
+      { text: 'Анна', role: 'subject', gloss: 'Anna (Nominative)' },
+      { text: 'живёт', role: 'verb', gloss: 'lives' },
+      { text: 'в', role: 'preposition', gloss: 'in' },
+      { text: 'Москве.', role: 'object', gloss: 'Moscow (Prepositional case)' }
+    ];
+
+    let ruDock = document.getElementById('russianSentenceDock');
+    let ruBank = document.getElementById('russianWordBank');
+    let ruFeedback = document.getElementById('russianSentenceFeedback');
+    let clearRuBtn = document.getElementById('clearRussianSentenceBtn');
+    let speakRuBtn = document.getElementById('speakRussianSentenceBtn');
+    let placedRu = [];
+
+    function initRuSentence() {
+      placedRu = [];
+      ruDock.innerHTML = '<span style="color:#94a3b8; font-size:0.8rem; font-style:italic;">Tap tiles below in correct order →</span>';
+      ruFeedback.className = 'feedback-msg info';
+      ruFeedback.textContent = 'Target order: Subject (Анна) + Verb (живёт) + Preposition (в) + Location in Prepositional case (Москве)';
+      speakRuBtn.style.display = 'none';
+
+      const shuffled = [...RUSSIAN_PIECES].sort(() => Math.random() - 0.5);
+      ruBank.innerHTML = '';
+      shuffled.forEach(w => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'word-tile';
+        b.innerHTML = `${w.text} <small style="color:#64748b;">(${w.gloss})</small>`;
+        b.addEventListener('click', () => {
+          b.remove();
+          placedRu.push(w);
+          renderRuDock();
+        });
+        ruBank.appendChild(b);
+      });
+    }
+
+    function renderRuDock() {
+      ruDock.innerHTML = '';
+      placedRu.forEach(w => {
+        const span = document.createElement('span');
+        span.className = 'word-tile placed';
+        span.textContent = w.text;
+        ruDock.appendChild(span);
+      });
+
+      const assembled = placedRu.map(w => w.text).join(' ');
+      const targetStr = RUSSIAN_PIECES.map(w => w.text).join(' ');
+
+      if (placedRu.length === RUSSIAN_PIECES.length) {
+        if (assembled === targetStr) {
+          ruFeedback.className = 'feedback-msg success';
+          ruFeedback.textContent = 'Отлично! "Анна живёт в Москве" demonstrates how Москва shifts into the Prepositional case ending -е after preposition "в".';
+          speakRuBtn.style.display = 'inline-flex';
+          speakRussian('Анна живёт в Москве');
+        } else {
+          ruFeedback.className = 'feedback-msg error';
+          ruFeedback.textContent = 'Word order is off. In Russian: Subject + Verb + Preposition + Location.';
+        }
+      }
+    }
+
+    clearRuBtn.addEventListener('click', initRuSentence);
+    speakRuBtn.addEventListener('click', () => speakRussian('Анна живёт в Москве'));
+    initRuSentence();
+
+    // ── Quiz Logic ──────────────────────────────────────────
+    function setupQuizRu(optsId, feedbackId, answerSpeech) {
+      const opts = document.querySelectorAll(`#${optsId} .quiz-opt`);
+      const fb = document.getElementById(feedbackId);
+      opts.forEach(btn => {
+        btn.addEventListener('click', () => {
+          opts.forEach(b => b.disabled = true);
+          if (btn.dataset.correct === 'true') {
+            btn.classList.add('correct');
+            fb.className = 'feedback-msg success';
+            fb.textContent = 'Правильно! Correct ✓';
+            speakRussian(answerSpeech);
+          } else {
+            btn.classList.add('incorrect');
+            fb.className = 'feedback-msg error';
+            fb.textContent = 'Неправильно — попробуйте снова (Try again)!';
+            setTimeout(() => {
+              opts.forEach(b => b.disabled = false);
+              btn.classList.remove('incorrect');
+              fb.textContent = '';
+            }, 1400);
+          }
+        });
+      });
+    }
+
+    setupQuizRu('ruQ1Opts', 'ruQ1Feedback', 'Здравствуйте');
+    setupQuizRu('ruQ2Opts', 'ruQ2Feedback', 'Спасибо');
+  </script>
+  <script src="../../assets/js/photo-lightbox.js"></script>
+  <script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
+

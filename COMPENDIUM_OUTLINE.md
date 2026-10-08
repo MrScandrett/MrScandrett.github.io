@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 370 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 379 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -490,7 +490,7 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 75 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 84 lessons
 
 ## Visual Art & Design (DES)
 
@@ -538,15 +538,24 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 ### Language, Meaning & Critical Reading
 
 - **LAN-01** — Language Foundations Lab
-- **LAN-02** — The Tower of Babel, the Library of Alexandria, and the Internet
-- **LAN-03** — The Baloney Detection Kit
-- **LAN-04** — Plato's Allegory of the Cave
-- **LAN-05** — William Blake: Songs of Innocence and of Experience
-- **LAN-06** — Dylan Thomas: An Annotated Reading Compendium
-- **LAN-07** — Dante’s Inferno: A Journey Through the Nine Circles
-- **LAN-08** — John Milton’s Paradise Lost
-- **LAN-09** — John Bunyan’s The Pilgrim’s Progress
-- **LAN-10** — Tolkien and the Art of Worldbuilding
+- **LAN-02** — Japanese Language Foundations
+- **LAN-03** — French Language Foundations
+- **LAN-04** — Spanish Language Foundations
+- **LAN-05** — Latin Language Foundations
+- **LAN-06** — Chinese Language Foundations
+- **LAN-07** — Russian Language Foundations
+- **LAN-08** — Italian Language Foundations
+- **LAN-09** — Portuguese Language Foundations
+- **LAN-10** — German Language Foundations
+- **LAN-11** — The Tower of Babel, the Library of Alexandria, and the Internet
+- **LAN-12** — The Baloney Detection Kit
+- **LAN-13** — Plato's Allegory of the Cave
+- **LAN-14** — William Blake: Songs of Innocence and of Experience
+- **LAN-15** — Dylan Thomas: An Annotated Reading Compendium
+- **LAN-16** — Dante’s Inferno: A Journey Through the Nine Circles
+- **LAN-17** — John Milton’s Paradise Lost
+- **LAN-18** — John Bunyan’s The Pilgrim’s Progress
+- **LAN-19** — Tolkien and the Art of Worldbuilding
 
 ## History, Economics & Social Systems (SYS)
 

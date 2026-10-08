@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Japanese Language Foundations · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Master foundational Japanese: Hiragana, Katakana, Kanji radicals, moraic rhythm, SOV sentence structure, essential particles, and survival conversation." />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport {
+      --ll-accent: #b91c1c;
+      --ll-tab-active: #dc2626;
+      --ll-tab-active-bg: rgba(220, 38, 38, 0.10);
+    }
+    .ll-sim {
+      background:
+        radial-gradient(circle at 12% 8%, rgba(254, 226, 226, 0.35) 0, transparent 36rem),
+        var(--surface-0);
+    }
+    .lf-page { max-width: 1080px; margin: 0 auto; padding: 0 1rem 3.5rem; }
+    .lf-hero { padding: 0.85rem 0 1.25rem; }
+    .lf-hero h1 { font-size: clamp(1.65rem, 3.8vw, 2.45rem); margin: 0.25rem 0 0.5rem; }
+    .lf-meta {
+      display: flex; flex-wrap: wrap; gap: 0.35rem 0.65rem;
+      margin: 0.55rem 0 0; font-size: 0.8rem; color: var(--text-muted, #64748b);
+    }
+    .lf-meta .dot {
+      width: 3px; height: 3px; border-radius: 50%;
+      background: currentColor; opacity: 0.45;
+      display: inline-block; align-self: center;
+    }
+    .lf-lede { margin: 0.75rem 0 0; max-width: 70ch; color: var(--text-secondary, #3f4f65); font-size: 0.95rem; line-height: 1.65; }
+
+    .lf-card {
+      background: #fff;
+      border: 1px solid #dde3ea;
+      border-left: 4px solid var(--lf-accent, #b91c1c);
+      border-radius: 16px;
+      box-shadow: 0 8px 26px rgba(15, 23, 42, 0.06);
+      padding: 1.25rem 1.4rem;
+      margin-bottom: 1.1rem;
+      --text: #1d1d1f; --muted: #5f5f64; --text-primary: #1d1d1f; --text-secondary: #434349;
+    }
+    :where(html[data-lighting="night"]) .lf-card { color: #1d1d1f; }
+    @media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .lf-card { color: #1d1d1f; } }
+    .lf-card h2 { margin: 0 0 0.45rem; font-size: 1.22rem; }
+    .lf-card p { margin: 0 0 0.65rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .lf-card p:last-child { margin-bottom: 0; }
+
+    .lf-label {
+      display: inline-block; margin-bottom: 0.35rem;
+      font-weight: 900; color: var(--lf-accent, #b91c1c);
+      letter-spacing: 0.07em; text-transform: uppercase; font-size: 0.72rem;
+    }
+    .lf-card-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 0.75rem; margin-bottom: 0.5rem;
+    }
+
+    .lf-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .lf-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.85rem; }
+    .lf-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+
+    /* Interactive Script Explorer */
+    .script-tabs { display: flex; gap: 0.4rem; margin-bottom: 0.85rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.4rem; }
+    .script-tab {
+      background: none; border: 1.5px solid transparent; border-radius: 8px;
+      padding: 0.4rem 0.85rem; font-weight: 700; font-size: 0.82rem; color: #64748b; cursor: pointer;
+      transition: all 120ms;
+    }
+    .script-tab.active { background: #fee2e2; border-color: #f87171; color: #991b1b; }
+
+    .char-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+      gap: 0.5rem; margin-top: 0.5rem;
+    }
+    .char-tile {
+      background: #fafafa; border: 1.5px solid #e2e8f0; border-radius: 12px;
+      padding: 0.6rem 0.3rem; text-align: center; cursor: pointer;
+      transition: transform 90ms, border-color 120ms, background 120ms;
+    }
+    .char-tile:hover { transform: translateY(-2px); border-color: #dc2626; background: #fff5f5; }
+    .char-tile.selected { border-color: #b91c1c; background: #fee2e2; box-shadow: 0 0 0 2px rgba(185, 28, 28, 0.2); }
+    .char-glyph { font-size: 1.6rem; font-weight: 800; line-height: 1.1; color: #1e293b; display: block; }
+    .char-romaji { font-size: 0.75rem; font-weight: 700; color: #dc2626; display: block; margin-top: 0.2rem; }
+    .char-sub { font-size: 0.65rem; color: #64748b; }
+
+    .char-inspect-box {
+      margin-top: 0.85rem; padding: 0.85rem 1rem; border-radius: 12px;
+      background: #f8fafc; border: 1px solid #cbd5e1;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .char-inspect-left { display: flex; align-items: center; gap: 1rem; }
+    .char-inspect-big { font-size: 2.6rem; font-weight: 900; color: #991b1b; line-height: 1; }
+    .char-inspect-info h4 { margin: 0 0 0.2rem; font-size: 1rem; color: #0f172a; }
+    .char-inspect-info p { margin: 0; font-size: 0.8rem; color: #475569; }
+
+    .speak-btn {
+      border: 1.5px solid #dc2626; border-radius: 9px; background: #fff;
+      color: #b91c1c; font: inherit; font-weight: 800; font-size: 0.82rem;
+      padding: 0.5rem 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;
+      transition: all 120ms;
+    }
+    .speak-btn:hover { background: #dc2626; color: #fff; }
+
+    /* Sentence Builder */
+    .sentence-dock {
+      min-height: 58px; border: 2px dashed #fca5a5; border-radius: 12px;
+      background: #fff8f8; padding: 0.6rem 0.8rem; display: flex; flex-wrap: wrap;
+      gap: 0.5rem; align-items: center; margin: 0.6rem 0;
+    }
+    .word-tile {
+      background: #fff; border: 1.5px solid #cbd5e1; border-radius: 10px;
+      padding: 0.45rem 0.75rem; font-weight: 700; font-size: 0.88rem; color: #1e293b;
+      cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      transition: transform 90ms, border-color 120ms;
+    }
+    .word-tile:hover { transform: translateY(-1px); border-color: #dc2626; }
+    .word-tile.particle { background: #fee2e2; border-color: #f87171; color: #991b1b; }
+    .word-tile.placed { cursor: default; }
+
+    .word-bank { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0.6rem 0; }
+    .feedback-msg { font-size: 0.86rem; font-weight: 700; min-height: 1.6em; padding: 0.2rem 0; }
+    .feedback-msg.success { color: #059669; }
+    .feedback-msg.error { color: #dc2626; }
+    .feedback-msg.info { color: #475569; }
+
+    /* Flashcard Quiz */
+    .quiz-card {
+      border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem;
+      background: #f8fafc; text-align: center;
+    }
+    .quiz-prompt { font-size: 1.5rem; font-weight: 800; color: #1e293b; margin-bottom: 0.4rem; }
+    .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.7rem; }
+    .quiz-opt {
+      border: 1.5px solid #cbd5e1; border-radius: 9px; background: #fff;
+      padding: 0.5rem; font-weight: 700; font-size: 0.85rem; color: #334155; cursor: pointer;
+      transition: all 120ms;
+    }
+    .quiz-opt:hover { border-color: #dc2626; background: #fff5f5; }
+    .quiz-opt.correct { background: #d1fae5; border-color: #10b981; color: #065f46; }
+    .quiz-opt.incorrect { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+
+    /* Lightbox Figure */
+    .lf-card-figure {
+      margin: 1.1rem 0 0.5rem; border-radius: 14px; overflow: hidden;
+      border: 1px solid #e2e8f0; background: #f8fafc;
+    }
+    .lf-card-figure img { width: 100%; max-height: 380px; object-fit: cover; display: block; cursor: zoom-in; }
+    .lf-card-figure figcaption {
+      padding: 0.75rem 1rem; font-size: 0.82rem; color: #475569; line-height: 1.55;
+      border-top: 1px solid #e2e8f0; background: #fff;
+    }
+    .lf-card-figure figcaption strong { display: block; font-size: 0.88rem; color: #1e293b; margin-bottom: 0.15rem; }
+
+    @media (max-width: 768px) {
+      .lf-grid-2, .lf-grid-3, .lf-grid-4 { grid-template-columns: 1fr; }
+      .char-inspect-box { flex-direction: column; align-items: flex-start; }
+      .quiz-options { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../../index.html">Home</a></li>
+            <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+            <li><a href="../../paths.html">Paths</a></li>
+            <li><a href="../../showcase.html">Showcase</a></li>
+            <li><a href="../../applications.html">Apps</a></li>
+            <li><a href="../../library.html">Library</a></li>
+            <li><a href="../../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <main class="ll-sim" id="main-content">
+        <div class="lf-page">
+
+          <!-- ── Hero ───────────────────────────────── -->
+          <section class="lf-hero">
+            <p class="eyebrow">Language Foundations · World Languages · K–12</p>
+            <h1>Japanese Language Foundations</h1>
+            <div class="lf-meta">
+              <span>Japonic Family</span><span class="dot"></span>
+              <span>Kana &amp; Kanji</span><span class="dot"></span>
+              <span>SOV Word Order</span><span class="dot"></span>
+              <span>Topic Particles (は/が)</span><span class="dot"></span>
+              <span>Moraic Rhythm</span>
+            </div>
+            <p class="lf-lede">
+              Japanese is an agglutinative language with an exceptionally logical structure: verbs always anchor the end of the clause, grammatical relations are tagged with precise particles, and sounds are metered not in syllables but in uniform time units called <em>mora</em>. Explore the tripartite writing system, phonology, and sentence architecture.
+            </p>
+          </section>
+
+          <!-- ── Lightbox Artwork ──────────────────── -->
+          <figure class="lf-card-figure" data-zoomable data-lightbox-group="japanese-art">
+            <img src="../../assets/images/lessons/hokusai/great-wave.webp" alt="The Great Wave off Kanagawa by Katsushika Hokusai, showing traditional Japanese calligraphy in the upper-left cartouche" loading="lazy" />
+            <figcaption>
+              <strong>Writing and Culture in Visual Harmony</strong>
+              Katsushika Hokusai's iconic woodblock print <em>The Great Wave off Kanagawa</em> (c. 1831). The top-left cartouche demonstrates Japanese written symbols: the series title in Kanji (冨嶽三十六景 - Thirty-six Views of Mount Fuji) paired with the signature <em>北斎改為一筆</em> (From the brush of Hokusai, changing his name to Iitsu). Notice how logographic Kanji convey compact meaning while phonetic kana establish grammatical flow. Image: Public domain.
+            </figcaption>
+          </figure>
+
+          <!-- ── Core Linguistic Architecture ───────── -->
+          <section class="lf-card" style="--lf-accent:#dc2626;">
+            <span class="lf-label">Architecture</span>
+            <h2>How Japanese Works: The Four Pillars</h2>
+            <p>Before memorizing vocabulary, understand the engine underneath the language:</p>
+            <div class="lf-grid-4">
+              <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#991b1b; display:block; font-size:0.9rem; margin-bottom:0.25rem;">1. SOV Order</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;">Verbs always finish the sentence: <em>Subject + Object + Verb</em>. Information flows from broad context to final action.</p>
+              </div>
+              <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#991b1b; display:block; font-size:0.9rem; margin-bottom:0.25rem;">2. Particles (助詞)</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;">Postpositions like <strong>は (wa)</strong>, <strong>を (o)</strong>, and <strong>に (ni)</strong> tag the syntactic role of whatever word precedes them.</p>
+              </div>
+              <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#991b1b; display:block; font-size:0.9rem; margin-bottom:0.25rem;">3. Three Scripts</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;"><strong>Hiragana</strong> for grammar &amp; native words; <strong>Katakana</strong> for loanwords; <strong>Kanji</strong> for conceptual roots.</p>
+              </div>
+              <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#991b1b; display:block; font-size:0.9rem; margin-bottom:0.25rem;">4. Mora Timing</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;">Every beat (mora) receives equal duration: <em>to-ky-o-u</em> is 4 beats, not 2 english syllables. Pure, predictable cadence.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── Interactive Writing & Sound Lab ───── -->
+          <section class="lf-card" style="--lf-accent:#b91c1c;">
+            <div class="lf-card-head">
+              <div>
+                <span class="lf-label">Interactive Lab</span>
+                <h2>Script Explorer &amp; Sound Lab</h2>
+                <p>Tap any character to hear native audio and inspect its phonetic identity and historical role.</p>
+              </div>
+            </div>
+
+            <div class="script-tabs" role="tablist">
+              <button class="script-tab active" id="tabHira" type="button" role="tab" aria-selected="true">Hiragana (平仮名)</button>
+              <button class="script-tab" id="tabKata" type="button" role="tab" aria-selected="false">Katakana (片仮名)</button>
+              <button class="script-tab" id="tabKanji" type="button" role="tab" aria-selected="false">Foundational Kanji (漢字)</button>
+            </div>
+
+            <div class="char-grid" id="charGrid" aria-label="Character Grid"></div>
+
+            <div class="char-inspect-box" id="inspectBox" aria-live="polite">
+              <div class="char-inspect-left">
+                <span class="char-inspect-big" id="inspectGlyph">あ</span>
+                <div class="char-inspect-info">
+                  <h4 id="inspectTitle">Hiragana "a"</h4>
+                  <p id="inspectDesc">Open vowel /a/, pronounced like 'ah' in father. The very first mora of the Japanese syllabary.</p>
+                </div>
+              </div>
+              <button class="speak-btn" id="inspectSpeakBtn" type="button">
+                <span>🔊</span> Listen (Web Speech)
+              </button>
+            </div>
+          </section>
+
+          <!-- ── Interactive Sentence Engine ───────── -->
+          <section class="lf-card" style="--lf-accent:#0284c7;">
+            <span class="lf-label">Syntax Builder</span>
+            <h2>Japanese Sentence Engine: SOV &amp; Particles</h2>
+            <p>
+              Assemble Japanese sentences in correct order. In Japanese, particles act like magnetic tags telling the brain whether a noun is the topic, the direct object, or the destination.
+            </p>
+
+            <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px; padding:0.65rem 0.9rem; font-size:0.83rem; color:#0369a1; margin-bottom:0.75rem;">
+              <strong>Target Sentence:</strong> <span id="targetPrompt">"I read a book." (私 は 本 を 読みます)</span>
+            </div>
+
+            <div class="sentence-dock" id="sentenceDock">
+              <span style="color:#94a3b8; font-size:0.8rem; font-style:italic;" id="dockPlaceholder">Tap tiles below in SOV order →</span>
+            </div>
+
+            <div class="word-bank" id="wordBank"></div>
+            <div class="feedback-msg info" id="sentenceFeedback">Select tiles to build the sentence.</div>
+
+            <div style="margin-top:0.75rem; display:flex; gap:0.5rem;">
+              <button class="speak-btn" id="clearSentenceBtn" style="border-color:#94a3b8; color:#475569;" type="button">Reset</button>
+              <button class="speak-btn" id="speakSentenceBtn" style="display:none;" type="button">🔊 Speak Sentence</button>
+            </div>
+          </section>
+
+          <!-- ── Survival Vocabulary & Culture ─────── -->
+          <section class="lf-card" style="--lf-accent:#059669;">
+            <span class="lf-label">Applied Practice</span>
+            <h2>Foundational Greetings &amp; Politeness Quiz</h2>
+            <p>Japanese social interaction balances hierarchy, gratitude, and respect (敬語 keigo). Test your recognition of core survival phrases:</p>
+
+            <div class="lf-grid-2">
+              <div class="quiz-card">
+                <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#059669; letter-spacing:0.06em;">Challenge 1 · Greeting</span>
+                <div class="quiz-prompt" id="q1Prompt">こんにちは</div>
+                <p style="font-size:0.8rem; color:#64748b; margin:0;" id="q1Romaji">(Konnichiwa)</p>
+                <div class="quiz-options" id="q1Opts">
+                  <button class="quiz-opt" data-correct="true">Hello / Good Afternoon</button>
+                  <button class="quiz-opt">Goodbye</button>
+                  <button class="quiz-opt">Thank you</button>
+                  <button class="quiz-opt">Excuse me</button>
+                </div>
+                <p class="feedback-msg" id="q1Feedback" style="margin-top:0.5rem;"></p>
+              </div>
+
+              <div class="quiz-card">
+                <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#059669; letter-spacing:0.06em;">Challenge 2 · Gratitude</span>
+                <div class="quiz-prompt" id="q2Prompt">ありがとう</div>
+                <p style="font-size:0.8rem; color:#64748b; margin:0;" id="q2Romaji">(Arigatou)</p>
+                <div class="quiz-options" id="q2Opts">
+                  <button class="quiz-opt">Good morning</button>
+                  <button class="quiz-opt" data-correct="true">Thank you</button>
+                  <button class="quiz-opt">Please</button>
+                  <button class="quiz-opt">Yes</button>
+                </div>
+                <p class="feedback-msg" id="q2Feedback" style="margin-top:0.5rem;"></p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── Future Learning Roadmap ───────────── -->
+          <section class="lf-card" style="--lf-accent:#7c3aed;">
+            <span class="lf-label">Progression Pathway</span>
+            <h2>Roadmap for Future Japanese Lessons</h2>
+            <div class="lf-grid-3" style="margin-top:0.75rem;">
+              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+                <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#c084fc; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 1</span>
+                <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">Kana Mastery &amp; Phonetics</strong>
+                <p style="font-size:0.8rem; margin:0; color:#475569;">Learn complete 46 Hiragana and 46 Katakana charts, dakuten voicing marks, geminate stops (っ), and pitch accent contours.</p>
+              </div>
+              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+                <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#9333ea; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 2</span>
+                <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">Verbs, Te-Form &amp; Conjugations</strong>
+                <p style="font-size:0.8rem; margin:0; color:#475569;">The regular geometry of Godan and Ichidan verbs, past tense, negative forms, and connecting actions using the ubiquitous て-form.</p>
+              </div>
+              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+                <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#6b21a8; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 3</span>
+                <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">Authentic Reading &amp; Kanji Roots</strong>
+                <p style="font-size:0.8rem; margin:0; color:#475569;">Building the Joyo Kanji foundation radical by radical, parsing authentic sentences, compound words (Jukugo), and conversational fluency.</p>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // ── Data Sets ──────────────────────────────────────────
+    const DATA_HIRA = [
+      { glyph: 'あ', romaji: 'a', desc: 'Hiragana "a" — open vowel like father.' },
+      { glyph: 'い', romaji: 'i', desc: 'Hiragana "i" — high front vowel like feet.' },
+      { glyph: 'う', romaji: 'u', desc: 'Hiragana "u" — unrounded vowel like flu.' },
+      { glyph: 'え', romaji: 'e', desc: 'Hiragana "e" — mid vowel like pet.' },
+      { glyph: 'お', romaji: 'o', desc: 'Hiragana "o" — round vowel like open.' },
+      { glyph: 'か', romaji: 'ka', desc: 'Hiragana "ka" — k + a consonant combination.' },
+      { glyph: 'さ', romaji: 'sa', desc: 'Hiragana "sa" — s + a consonant combination.' },
+      { glyph: 'た', romaji: 'ta', desc: 'Hiragana "ta" — t + a consonant combination.' },
+      { glyph: 'な', romaji: 'na', desc: 'Hiragana "na" — nasal n + a combination.' },
+      { glyph: 'は', romaji: 'ha/wa', desc: 'Hiragana "ha" — pronounced "wa" when serving as the topic particle!' },
+      { glyph: 'ま', romaji: 'ma', desc: 'Hiragana "ma" — bilabial nasal m + a.' },
+      { glyph: 'ら', romaji: 'ra', desc: 'Hiragana "ra" — alveolar tap between english r and l.' }
+    ];
+
+    const DATA_KATA = [
+      { glyph: 'ア', romaji: 'a', desc: 'Katakana "a" — used for loanwords like アメリカ (America).' },
+      { glyph: 'イ', romaji: 'i', desc: 'Katakana "i" — used in インターネット (Internet).' },
+      { glyph: 'ウ', romaji: 'u', desc: 'Katakana "u" — used in ウイルス (virus).' },
+      { glyph: 'エ', romaji: 'e', desc: 'Katakana "e" — used in エレベーター (elevator).' },
+      { glyph: 'オ', romaji: 'o', desc: 'Katakana "o" — used in オレンジ (orange).' },
+      { glyph: 'カ', romaji: 'ka', desc: 'Katakana "ka" — used in カメラ (camera).' },
+      { glyph: 'コ', romaji: 'ko', desc: 'Katakana "ko" — used in コンピューター (computer).' },
+      { glyph: 'ロ', romaji: 'ro', desc: 'Katakana "ro" — used in ロボット (robot).' }
+    ];
+
+    const DATA_KANJI = [
+      { glyph: '日', romaji: 'hi / nichi', desc: 'Kanji "sun / day" — origin of the name 日本 (Nihon / Japan).' },
+      { glyph: '本', romaji: 'hon / moto', desc: 'Kanji "book / origin" — pictograph of a tree with root marked.' },
+      { glyph: '人', romaji: 'hito / jin', desc: 'Kanji "person" — two strokes symbolizing a human walking.' },
+      { glyph: '月', romaji: 'tsuki / getsu', desc: 'Kanji "moon / month" — ancient pictograph of crescent moon.' },
+      { glyph: '木', romaji: 'ki / moku', desc: 'Kanji "tree / wood" — trunk, roots, and branches.' },
+      { glyph: '水', romaji: 'mizu / sui', desc: 'Kanji "water" — flowing river ripples.' },
+      { glyph: '火', romaji: 'hi / ka', desc: 'Kanji "fire" — flickering flames rising upward.' }
+    ];
+
+    let currentSet = DATA_HIRA;
+    let selectedChar = DATA_HIRA[0];
+
+    // Speech helper
+    function speak(text, lang = 'ja-JP') {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = lang;
+        u.rate = 0.85;
+        window.speechSynthesis.speak(u);
+      }
+    }
+
+    // Render Script Explorer
+    const charGrid = document.getElementById('charGrid');
+    const inspectGlyph = document.getElementById('inspectGlyph');
+    const inspectTitle = document.getElementById('inspectTitle');
+    const inspectDesc = document.getElementById('inspectDesc');
+    const inspectSpeakBtn = document.getElementById('inspectSpeakBtn');
+
+    function renderChars() {
+      charGrid.innerHTML = '';
+      currentSet.forEach(item => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `char-tile ${item.glyph === selectedChar.glyph ? 'selected' : ''}`;
+        btn.innerHTML = `<span class="char-glyph">${item.glyph}</span><span class="char-romaji">${item.romaji}</span>`;
+        btn.addEventListener('click', () => {
+          selectedChar = item;
+          updateInspect();
+          renderChars();
+          speak(item.glyph);
+        });
+        charGrid.appendChild(btn);
+      });
+    }
+
+    function updateInspect() {
+      inspectGlyph.textContent = selectedChar.glyph;
+      inspectTitle.textContent = `${selectedChar.glyph} (${selectedChar.romaji})`;
+      inspectDesc.textContent = selectedChar.desc;
+    }
+
+    inspectSpeakBtn.addEventListener('click', () => speak(selectedChar.glyph));
+
+    // Script Tabs
+    const tabs = [
+      { btn: document.getElementById('tabHira'), data: DATA_HIRA },
+      { btn: document.getElementById('tabKata'), data: DATA_KATA },
+      { btn: document.getElementById('tabKanji'), data: DATA_KANJI }
+    ];
+
+    tabs.forEach(({ btn, data }) => {
+      btn.addEventListener('click', () => {
+        tabs.forEach(t => {
+          t.btn.classList.remove('active');
+          t.btn.setAttribute('aria-selected', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+        currentSet = data;
+        selectedChar = data[0];
+        updateInspect();
+        renderChars();
+      });
+    });
+
+    renderChars();
+    updateInspect();
+
+    // ── Sentence Builder ───────────────────────────────────
+    const SENTENCE_PIECES = [
+      { text: '私', role: 'subject', gloss: 'I' },
+      { text: 'は', role: 'particle', gloss: '[topic]' },
+      { text: '本', role: 'object', gloss: 'book' },
+      { text: 'を', role: 'particle', gloss: '[object]' },
+      { text: '読みます', role: 'verb', gloss: 'read' }
+    ];
+
+    let sentenceDock = document.getElementById('sentenceDock');
+    let wordBank = document.getElementById('wordBank');
+    let sentenceFeedback = document.getElementById('sentenceFeedback');
+    let clearSentenceBtn = document.getElementById('clearSentenceBtn');
+    let speakSentenceBtn = document.getElementById('speakSentenceBtn');
+    let placedWords = [];
+
+    function initSentence() {
+      placedWords = [];
+      sentenceDock.innerHTML = '<span style="color:#94a3b8; font-size:0.8rem; font-style:italic;" id="dockPlaceholder">Tap tiles below in SOV order →</span>';
+      sentenceFeedback.className = 'feedback-msg info';
+      sentenceFeedback.textContent = 'Target order: Topic/Subject (私) + Topic particle (は) + Object (本) + Object particle (を) + Verb (読みます)';
+      speakSentenceBtn.style.display = 'none';
+
+      // Shuffle bank
+      const shuffled = [...SENTENCE_PIECES].sort(() => Math.random() - 0.5);
+      wordBank.innerHTML = '';
+      shuffled.forEach((w, idx) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = `word-tile ${w.role === 'particle' ? 'particle' : ''}`;
+        b.innerHTML = `${w.text} <small style="color:#64748b;">(${w.gloss})</small>`;
+        b.dataset.text = w.text;
+        b.addEventListener('click', () => {
+          b.remove();
+          placedWords.push(w);
+          renderDock();
+        });
+        wordBank.appendChild(b);
+      });
+    }
+
+    function renderDock() {
+      sentenceDock.innerHTML = '';
+      placedWords.forEach(w => {
+        const span = document.createElement('span');
+        span.className = `word-tile placed ${w.role === 'particle' ? 'particle' : ''}`;
+        span.textContent = w.text;
+        sentenceDock.appendChild(span);
+      });
+
+      const assembled = placedWords.map(w => w.text).join('');
+      const targetStr = SENTENCE_PIECES.map(w => w.text).join('');
+
+      if (placedWords.length === SENTENCE_PIECES.length) {
+        if (assembled === targetStr) {
+          sentenceFeedback.className = 'feedback-msg success';
+          sentenceFeedback.textContent = 'Correct! 素晴らしい! Watashi wa hon o yomimasu (I read a book). Verbs always seal the end in SOV order.';
+          speakSentenceBtn.style.display = 'inline-flex';
+          speak(assembled);
+        } else {
+          sentenceFeedback.className = 'feedback-msg error';
+          sentenceFeedback.textContent = 'Word order is off. Remember: [Topic/Subject] + [は] + [Object] + [を] + [Verb]. Reset and try again!';
+        }
+      }
+    }
+
+    clearSentenceBtn.addEventListener('click', initSentence);
+    speakSentenceBtn.addEventListener('click', () => speak('私は本を読みます'));
+    initSentence();
+
+    // ── Quiz Handlers ──────────────────────────────────────
+    function setupQuiz(optsId, feedbackId, answerSpeech) {
+      const opts = document.querySelectorAll(`#${optsId} .quiz-opt`);
+      const fb = document.getElementById(feedbackId);
+      opts.forEach(btn => {
+        btn.addEventListener('click', () => {
+          opts.forEach(b => b.disabled = true);
+          if (btn.dataset.correct === 'true') {
+            btn.classList.add('correct');
+            fb.className = 'feedback-msg success';
+            fb.textContent = 'Correct! ✓';
+            speak(answerSpeech);
+          } else {
+            btn.classList.add('incorrect');
+            fb.className = 'feedback-msg error';
+            fb.textContent = 'Not quite — try again!';
+            setTimeout(() => {
+              opts.forEach(b => b.disabled = false);
+              btn.classList.remove('incorrect');
+              fb.textContent = '';
+            }, 1400);
+          }
+        });
+      });
+    }
+
+    setupQuiz('q1Opts', 'q1Feedback', 'こんにちは');
+    setupQuiz('q2Opts', 'q2Feedback', 'ありがとう');
+  </script>
+  <script src="../../assets/js/photo-lightbox.js"></script>
+  <script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
+

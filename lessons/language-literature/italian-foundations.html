@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Italian Language Foundations · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Master foundational Italian: the 21-letter phonetic alphabet, double consonants, hard and soft C/G rules, musical vocalic cadence, and musical terms." />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport {
+      --ll-accent: #059669;
+      --ll-tab-active: #047857;
+      --ll-tab-active-bg: rgba(5, 150, 105, 0.10);
+    }
+    .ll-sim {
+      background:
+        radial-gradient(circle at 10% 8%, rgba(209, 250, 229, 0.45) 0, transparent 36rem),
+        var(--surface-0);
+    }
+    .lf-page { max-width: 1080px; margin: 0 auto; padding: 0 1rem 3.5rem; }
+    .lf-hero { padding: 0.85rem 0 1.25rem; }
+    .lf-hero h1 { font-size: clamp(1.65rem, 3.8vw, 2.45rem); margin: 0.25rem 0 0.5rem; }
+    .lf-meta {
+      display: flex; flex-wrap: wrap; gap: 0.35rem 0.65rem;
+      margin: 0.55rem 0 0; font-size: 0.8rem; color: var(--text-muted, #64748b);
+    }
+    .lf-meta .dot {
+      width: 3px; height: 3px; border-radius: 50%;
+      background: currentColor; opacity: 0.45;
+      display: inline-block; align-self: center;
+    }
+    .lf-lede { margin: 0.75rem 0 0; max-width: 70ch; color: var(--text-secondary, #3f4f65); font-size: 0.95rem; line-height: 1.65; }
+
+    .lf-card {
+      background: #fff;
+      border: 1px solid #dde3ea;
+      border-left: 4px solid var(--lf-accent, #059669);
+      border-radius: 16px;
+      box-shadow: 0 8px 26px rgba(15, 23, 42, 0.06);
+      padding: 1.25rem 1.4rem;
+      margin-bottom: 1.1rem;
+      --text: #1d1d1f; --muted: #5f5f64; --text-primary: #1d1d1f; --text-secondary: #434349;
+    }
+    :where(html[data-lighting="night"]) .lf-card { color: #1d1d1f; }
+    @media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .lf-card { color: #1d1d1f; } }
+    .lf-card h2 { margin: 0 0 0.45rem; font-size: 1.22rem; }
+    .lf-card p { margin: 0 0 0.65rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .lf-card p:last-child { margin-bottom: 0; }
+
+    .lf-label {
+      display: inline-block; margin-bottom: 0.35rem;
+      font-weight: 900; color: var(--lf-accent, #059669);
+      letter-spacing: 0.07em; text-transform: uppercase; font-size: 0.72rem;
+    }
+    .lf-card-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 0.75rem; margin-bottom: 0.5rem;
+    }
+
+    .lf-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .lf-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.85rem; }
+    .lf-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+
+    /* Sound Lab */
+    .sound-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 0.6rem; margin-top: 0.6rem;
+    }
+    .sound-tile {
+      background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 12px;
+      padding: 0.75rem 0.5rem; text-align: center; cursor: pointer;
+      transition: all 120ms;
+    }
+    .sound-tile:hover { border-color: #059669; background: #dcfce7; transform: translateY(-2px); }
+    .sound-tile.selected { border-color: #047857; background: #bbf7d0; box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.2); }
+    .sound-sym { font-size: 1.5rem; font-weight: 800; color: #065f46; display: block; }
+    .sound-ipa { font-size: 0.75rem; font-weight: 700; color: #059669; display: block; margin: 0.15rem 0; }
+    .sound-eg { font-size: 0.7rem; color: #64748b; }
+
+    .sound-inspect-box {
+      margin-top: 0.9rem; padding: 0.85rem 1rem; border-radius: 12px;
+      background: #f8fafc; border: 1px solid #cbd5e1;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .sound-inspect-left { display: flex; align-items: center; gap: 1rem; }
+    .sound-inspect-big { font-size: 2.5rem; font-weight: 900; color: #065f46; line-height: 1; }
+    .sound-inspect-info h4 { margin: 0 0 0.2rem; font-size: 1rem; color: #0f172a; }
+    .sound-inspect-info p { margin: 0; font-size: 0.8rem; color: #475569; }
+
+    .speak-btn {
+      border: 1.5px solid #059669; border-radius: 9px; background: #fff;
+      color: #065f46; font: inherit; font-weight: 800; font-size: 0.82rem;
+      padding: 0.5rem 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;
+      transition: all 120ms;
+    }
+    .speak-btn:hover { background: #059669; color: #fff; }
+
+    /* Geminate Pairs Table */
+    .geminate-box {
+      background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px;
+      padding: 1rem; margin-top: 0.75rem;
+    }
+    .geminate-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.4rem 0; border-bottom: 1px solid #dcfce7; font-size: 0.85rem;
+    }
+    .geminate-row:last-child { border-bottom: none; }
+    .gem-pair { font-weight: 800; font-size: 0.95rem; color: #065f46; }
+
+    /* Sentence Builder */
+    .sentence-dock {
+      min-height: 58px; border: 2px dashed #86efac; border-radius: 12px;
+      background: #f0fdf4; padding: 0.6rem 0.8rem; display: flex; flex-wrap: wrap;
+      gap: 0.5rem; align-items: center; margin: 0.6rem 0;
+    }
+    .word-tile {
+      background: #fff; border: 1.5px solid #cbd5e1; border-radius: 10px;
+      padding: 0.45rem 0.75rem; font-weight: 700; font-size: 0.88rem; color: #1e293b;
+      cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      transition: transform 90ms, border-color 120ms;
+    }
+    .word-tile:hover { transform: translateY(-1px); border-color: #059669; }
+    .word-tile.placed { cursor: default; }
+
+    .word-bank { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0.6rem 0; }
+    .feedback-msg { font-size: 0.86rem; font-weight: 700; min-height: 1.6em; padding: 0.2rem 0; }
+    .feedback-msg.success { color: #059669; }
+    .feedback-msg.error { color: #dc2626; }
+    .feedback-msg.info { color: #475569; }
+
+    /* Quiz Card */
+    .quiz-card {
+      border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem;
+      background: #f8fafc; text-align: center;
+    }
+    .quiz-prompt { font-size: 1.45rem; font-weight: 800; color: #1e293b; margin-bottom: 0.2rem; }
+    .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.7rem; }
+    .quiz-opt {
+      border: 1.5px solid #cbd5e1; border-radius: 9px; background: #fff;
+      padding: 0.5rem; font-weight: 700; font-size: 0.85rem; color: #334155; cursor: pointer;
+      transition: all 120ms;
+    }
+    .quiz-opt:hover { border-color: #059669; background: #f0fdf4; }
+    .quiz-opt.correct { background: #d1fae5; border-color: #10b981; color: #065f46; }
+    .quiz-opt.incorrect { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+
+    /* Lightbox Figure */
+    .lf-card-figure {
+      margin: 1.1rem 0 0.5rem; border-radius: 14px; overflow: hidden;
+      border: 1px solid #e2e8f0; background: #f8fafc;
+    }
+    .lf-card-figure img { width: 100%; max-height: 380px; object-fit: cover; display: block; cursor: zoom-in; }
+    .lf-card-figure figcaption {
+      padding: 0.75rem 1rem; font-size: 0.82rem; color: #475569; line-height: 1.55;
+      border-top: 1px solid #e2e8f0; background: #fff;
+    }
+    .lf-card-figure figcaption strong { display: block; font-size: 0.88rem; color: #1e293b; margin-bottom: 0.15rem; }
+
+    @media (max-width: 768px) {
+      .lf-grid-2, .lf-grid-3, .lf-grid-4 { grid-template-columns: 1fr; }
+      .sound-inspect-box { flex-direction: column; align-items: flex-start; }
+      .quiz-options { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../../index.html">Home</a></li>
+            <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+            <li><a href="../../paths.html">Paths</a></li>
+            <li><a href="../../showcase.html">Showcase</a></li>
+            <li><a href="../../applications.html">Apps</a></li>
+            <li><a href="../../library.html">Library</a></li>
+            <li><a href="../../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <main class="ll-sim" id="main-content">
+        <div class="lf-page">
+
+          <!-- ── Hero ───────────────────────────────── -->
+          <section class="lf-hero">
+            <p class="eyebrow">Language Foundations · World Languages · K–12</p>
+            <h1>Italian Language Foundations</h1>
+            <div class="lf-meta">
+              <span>Romance Family</span><span class="dot"></span>
+              <span>21-Letter Alphabet</span><span class="dot"></span>
+              <span>Double Consonants</span><span class="dot"></span>
+              <span>Hard &amp; Soft C/G</span><span class="dot"></span>
+              <span>Musical Cadence</span>
+            </div>
+            <p class="lf-lede">
+              Italian is the direct living daughter of spoken Latin, celebrated worldwide for its musicality, clarity, and phonetic perfection. With only 21 native letters, an almost strictly phonetic orthography, and vowel-terminated words that cascade seamlessly from one to the next, Italian is the universal language of classical music, opera, culinary craft, and Renaissance art.
+            </p>
+          </section>
+
+          <!-- ── Lightbox Artwork ──────────────────── -->
+          <figure class="lf-card-figure" data-zoomable data-lightbox-group="italian-art">
+            <img src="../../assets/thumbs/lessons/language-literature--dante-inferno.webp" alt="Dante Alighieri holding the Divine Comedy before the city of Florence" loading="lazy" />
+            <figcaption>
+              <strong>The Father of the Italian Language</strong>
+              Dante Alighieri (1265–1321) holding the <em>Divina Commedia</em> before the cathedral of Florence. In the 14th century, scholarly writing was done strictly in Latin. By choosing to compose his monumental epic in his native Tuscan vernacular (<em>il volgare fiorentino</em>), Dante proved that the spoken language possessed supreme poetic dignity, unifying Italy's regional dialects into modern standard Italian. Image: Mr. Scandrett's ClassroomOS archive.
+            </figcaption>
+          </figure>
+
+          <!-- ── Core Linguistic Architecture ───────── -->
+          <section class="lf-card" style="--lf-accent:#059669;">
+            <span class="lf-label">Architecture</span>
+            <h2>How Italian Works: The Four Pillars</h2>
+            <div class="lf-grid-4">
+              <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#065f46; display:block; font-size:0.9rem; margin-bottom:0.25rem;">1. 21 Native Letters</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;">Letters <strong>J, K, W, X, Y</strong> do not exist in native Italian words. Spelling is nearly 100% phonetic and transparent.</p>
+              </div>
+              <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#065f46; display:block; font-size:0.9rem; margin-bottom:0.25rem;">2. Double Consonants</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;">Doubled consonants (<em>consonanti doppie</em>) must be held twice as long: <em>fato</em> (fate) vs <em>fatto</em> (fact/done)!</p>
+              </div>
+              <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#065f46; display:block; font-size:0.9rem; margin-bottom:0.25rem;">3. C &amp; G Geometry</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;">Hard before a, o, u; soft before e, i. Inserting an <strong>"h"</strong> keeps them hard (<em>chi, che</em> = /ki, ke/).</p>
+              </div>
+              <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:0.85rem;">
+                <strong style="color:#065f46; display:block; font-size:0.9rem; margin-bottom:0.25rem;">4. Vocalic Cadence</strong>
+                <p style="font-size:0.8rem; margin:0; line-height:1.5;">Nearly every Italian word ends with a pure vowel, giving sentences a melodic, rhythmic forward momentum.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── Interactive Phonetics & C/G Lab ───── -->
+          <section class="lf-card" style="--lf-accent:#047857;">
+            <div class="lf-card-head">
+              <div>
+                <span class="lf-label">Interactive Lab</span>
+                <h2>Sound Lab &amp; Letter Combinations</h2>
+                <p>Click any tile to hear native pronunciation and master the rules for C, G, GL, GN, and SC:</p>
+              </div>
+            </div>
+
+            <div class="sound-grid" id="italianSoundGrid" aria-label="Italian Sounds"></div>
+
+            <div class="sound-inspect-box" id="italianInspectBox" aria-live="polite">
+              <div class="sound-inspect-left">
+                <span class="sound-inspect-big" id="italianInspectGlyph">ci / ce</span>
+                <div class="sound-inspect-info">
+                  <h4 id="italianInspectTitle">Soft C (/tʃ/)</h4>
+                  <p id="italianInspectDesc">Before 'i' or 'e', C sounds like 'ch' in chocolate! Example: ciao, gelato, cento.</p>
+                </div>
+              </div>
+              <button class="speak-btn" id="italianInspectSpeakBtn" type="button">
+                <span>🔊</span> Listen (Web Speech)
+              </button>
+            </div>
+
+            <!-- Double Consonant Timing Demonstration -->
+            <div class="geminate-box">
+              <span style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:#065f46;">The Power of Double Consonants (Consonanti Doppie)</span>
+              <p style="font-size:0.82rem; color:#475569; margin:0.25rem 0 0.6rem;">In English, doubling a letter changes the vowel sound. In Italian, it doubles the duration of the consonant pause!</p>
+
+              <div class="geminate-row">
+                <span class="gem-pair">pala (shovel)</span>
+                <span style="color:#64748b; font-size:0.8rem;">Single 'l' — quick tap</span>
+                <span class="gem-pair">palla (ball)</span>
+                <span style="color:#64748b; font-size:0.8rem;">Double 'll' — sustained dwell</span>
+              </div>
+              <div class="geminate-row">
+                <span class="gem-pair">note (musical notes)</span>
+                <span style="color:#64748b; font-size:0.8rem;">Single 't' — light beat</span>
+                <span class="gem-pair">notte (night)</span>
+                <span style="color:#64748b; font-size:0.8rem;">Double 'tt' — decisive stop</span>
+              </div>
+              <div class="geminate-row">
+                <span class="gem-pair">sete (thirst)</span>
+                <span style="color:#64748b; font-size:0.8rem;">Single 't'</span>
+                <span class="gem-pair">sette (seven)</span>
+                <span style="color:#64748b; font-size:0.8rem;">Double 'tt'</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── Interactive Sentence Engine ───────── -->
+          <section class="lf-card" style="--lf-accent:#0284c7;">
+            <span class="lf-label">Syntax Builder</span>
+            <h2>Italian Sentence Engine: Rhythmic SVO &amp; Agreement</h2>
+            <p>
+              Assemble the sentence below. Notice that adjectives agree in gender and number with the noun they describe!
+            </p>
+
+            <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px; padding:0.65rem 0.9rem; font-size:0.83rem; color:#0369a1; margin-bottom:0.75rem;">
+              <strong>Target Sentence:</strong> <span>"Marco drinks a hot coffee." (Marco beve un caffè caldo)</span>
+            </div>
+
+            <div class="sentence-dock" id="italianSentenceDock">
+              <span style="color:#94a3b8; font-size:0.8rem; font-style:italic;" id="dockPlaceholderItalian">Tap tiles below in correct Italian order →</span>
+            </div>
+
+            <div class="word-bank" id="italianWordBank"></div>
+            <div class="feedback-msg info" id="italianSentenceFeedback">Select tiles to build the sentence.</div>
+
+            <div style="margin-top:0.75rem; display:flex; gap:0.5rem;">
+              <button class="speak-btn" id="clearItalianSentenceBtn" style="border-color:#94a3b8; color:#475569;" type="button">Reset</button>
+              <button class="speak-btn" id="speakItalianSentenceBtn" style="display:none;" type="button">🔊 Speak Sentence</button>
+            </div>
+          </section>
+
+          <!-- ── Survival Vocabulary & Quiz ────────── -->
+          <section class="lf-card" style="--lf-accent:#059669;">
+            <span class="lf-label">Applied Practice</span>
+            <h2>Courtesies &amp; Recognition Quiz</h2>
+            <p>Test your knowledge of essential Italian daily phrases:</p>
+
+            <div class="lf-grid-2">
+              <div class="quiz-card">
+                <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#059669; letter-spacing:0.06em;">Challenge 1 · Core Greeting</span>
+                <div class="quiz-prompt">Buongiorno</div>
+                <p style="font-size:0.85rem; color:#64748b; margin:0;">[bwonˈdʒorno]</p>
+                <div class="quiz-options" id="itQ1Opts">
+                  <button class="quiz-opt" data-correct="true">Good morning / Good day</button>
+                  <button class="quiz-opt">Good night</button>
+                  <button class="quiz-opt">Thank you</button>
+                  <button class="quiz-opt">Goodbye</button>
+                </div>
+                <p class="feedback-msg" id="itQ1Feedback" style="margin-top:0.5rem;"></p>
+              </div>
+
+              <div class="quiz-card">
+                <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#059669; letter-spacing:0.06em;">Challenge 2 · Gratitude &amp; Politeness</span>
+                <div class="quiz-prompt">Grazie mille</div>
+                <p style="font-size:0.85rem; color:#64748b; margin:0;">[ˈɡrat.tsje ˈmil.le]</p>
+                <div class="quiz-options" id="itQ2Opts">
+                  <button class="quiz-opt">Please</button>
+                  <button class="quiz-opt">You're welcome</button>
+                  <button class="quiz-opt" data-correct="true">A thousand thanks (Thank you very much)</button>
+                  <button class="quiz-opt">Excuse me</button>
+                </div>
+                <p class="feedback-msg" id="itQ2Feedback" style="margin-top:0.5rem;"></p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── Future Learning Roadmap ───────────── -->
+          <section class="lf-card" style="--lf-accent:#7c3aed;">
+            <span class="lf-label">Progression Pathway</span>
+            <h2>Roadmap for Future Italian Lessons</h2>
+            <div class="lf-grid-3" style="margin-top:0.75rem;">
+              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+                <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#c084fc; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 1</span>
+                <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">Definite Articles &amp; Regular Verbs</strong>
+                <p style="font-size:0.8rem; margin:0; color:#475569;">The article system (<em>il, lo, l', la, i, gli, le</em>), three verb conjugations (-are, -ere, -ire), and agreement rules.</p>
+              </div>
+              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+                <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#9333ea; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 2</span>
+                <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">Passato Prossimo &amp; Imperfetto</strong>
+                <p style="font-size:0.8rem; margin:0; color:#475569;">Using <em>avere</em> vs <em>essere</em> as auxiliary verbs in the past, direct/indirect object clitic pronouns, and past narration.</p>
+              </div>
+              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+                <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#6b21a8; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 3</span>
+                <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">Congiuntivo &amp; Literary Italian</strong>
+                <p style="font-size:0.8rem; margin:0; color:#475569;">The expressive Italian subjunctive mood, reading Petrarca, Boccaccio, Calvino, and mastering idiomatic conversation.</p>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // ── Italian Sound Data ──────────────────────────────────
+    const ITALIAN_SOUNDS = [
+      { sym: 'ci / ce', ipa: '/tʃ/', title: 'Soft C', desc: 'Sounds like "ch" in chair. Example: ciao, cena (dinner).', speech: 'ciao' },
+      { sym: 'chi / che', ipa: '/k/', title: 'Hard C with H', desc: 'Adding "h" keeps C hard before i/e! Example: macchiato, che (what).', speech: 'macchiato' },
+      { sym: 'gi / ge', ipa: '/dʒ/', title: 'Soft G', desc: 'Sounds like "j" in judge. Example: gelato, giorno (day).', speech: 'gelato' },
+      { sym: 'ghi / ghe', ipa: '/ɡ/', title: 'Hard G with H', desc: 'Adding "h" keeps G hard before i/e! Example: spaghetti, ghiaccio (ice).', speech: 'spaghetti' },
+      { sym: 'gn', ipa: '/ɲ/', title: 'Palatal Nasal GN', desc: 'Sounds like "ny" in canyon. Example: gnocchi, bagno (bath).', speech: 'gnocchi' },
+      { sym: 'gli', ipa: '/ʎ/', title: 'Palatal Lateral GLI', desc: 'Sounds like "lli" in million. Example: famiglia (family), figlio (son).', speech: 'famiglia' },
+      { sym: 'sc + e/i', ipa: '/ʃ/', title: 'Soft SC', desc: 'Sounds like "sh" in shoe. Example: scena (scene), sciare (to ski).', speech: 'scena' },
+      { sym: 'z / zz', ipa: '/ts/ or /dz/', title: 'Zeta', desc: 'Crisp "ts" as in pizza, or voiced "dz" as in zero.', speech: 'pizza' }
+    ];
+
+    let currentItSound = ITALIAN_SOUNDS[0];
+
+    function speakItalian(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'it-IT';
+        u.rate = 0.85;
+        window.speechSynthesis.speak(u);
+      }
+    }
+
+    const itSoundGrid = document.getElementById('italianSoundGrid');
+    const itInspectGlyph = document.getElementById('italianInspectGlyph');
+    const itInspectTitle = document.getElementById('italianInspectTitle');
+    const itInspectDesc = document.getElementById('italianInspectDesc');
+    const itInspectSpeakBtn = document.getElementById('italianInspectSpeakBtn');
+
+    function renderItSounds() {
+      itSoundGrid.innerHTML = '';
+      ITALIAN_SOUNDS.forEach(item => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `sound-tile ${item.sym === currentItSound.sym ? 'selected' : ''}`;
+        btn.innerHTML = `<span class="sound-sym">${item.sym}</span><span class="sound-ipa">${item.ipa}</span><span class="sound-eg">${item.speech}</span>`;
+        btn.addEventListener('click', () => {
+          currentItSound = item;
+          updateItInspect();
+          renderItSounds();
+          speakItalian(item.speech);
+        });
+        itSoundGrid.appendChild(btn);
+      });
+    }
+
+    function updateItInspect() {
+      itInspectGlyph.textContent = currentItSound.sym;
+      itInspectTitle.textContent = `${currentItSound.title} (${currentItSound.ipa})`;
+      itInspectDesc.textContent = currentItSound.desc;
+    }
+
+    itInspectSpeakBtn.addEventListener('click', () => speakItalian(currentItSound.speech));
+    renderItSounds();
+    updateItInspect();
+
+    // ── Italian Sentence Builder ────────────────────────────
+    const ITALIAN_PIECES = [
+      { text: 'Marco', role: 'subject', gloss: 'Marco' },
+      { text: 'beve', role: 'verb', gloss: 'drinks' },
+      { text: 'un', role: 'article', gloss: 'a (masc)' },
+      { text: 'caffè', role: 'noun', gloss: 'coffee' },
+      { text: 'caldo.', role: 'adjective', gloss: 'hot' }
+    ];
+
+    let itDock = document.getElementById('italianSentenceDock');
+    let itBank = document.getElementById('italianWordBank');
+    let itFeedback = document.getElementById('italianSentenceFeedback');
+    let clearItBtn = document.getElementById('clearItalianSentenceBtn');
+    let speakItBtn = document.getElementById('speakItalianSentenceBtn');
+    let placedIt = [];
+
+    function initItSentence() {
+      placedIt = [];
+      itDock.innerHTML = '<span style="color:#94a3b8; font-size:0.8rem; font-style:italic;">Tap tiles below in correct Italian order →</span>';
+      itFeedback.className = 'feedback-msg info';
+      itFeedback.textContent = 'Target order: Subject (Marco) + Verb (beve) + Indefinite Article (un) + Noun (caffè) + Adjective (caldo)';
+      speakItBtn.style.display = 'none';
+
+      const shuffled = [...ITALIAN_PIECES].sort(() => Math.random() - 0.5);
+      itBank.innerHTML = '';
+      shuffled.forEach(w => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'word-tile';
+        b.innerHTML = `${w.text} <small style="color:#64748b;">(${w.gloss})</small>`;
+        b.addEventListener('click', () => {
+          b.remove();
+          placedIt.push(w);
+          renderItDock();
+        });
+        itBank.appendChild(b);
+      });
+    }
+
+    function renderItDock() {
+      itDock.innerHTML = '';
+      placedIt.forEach(w => {
+        const span = document.createElement('span');
+        span.className = 'word-tile placed';
+        span.textContent = w.text;
+        itDock.appendChild(span);
+      });
+
+      const assembled = placedIt.map(w => w.text).join(' ');
+      const targetStr = ITALIAN_PIECES.map(w => w.text).join(' ');
+
+      if (placedIt.length === ITALIAN_PIECES.length) {
+        if (assembled === targetStr) {
+          itFeedback.className = 'feedback-msg success';
+          itFeedback.textContent = 'Bravissimo! "Marco beve un caffè caldo" shows regular SVO word order, with the descriptive adjective "caldo" placed naturally after the noun.';
+          speakItBtn.style.display = 'inline-flex';
+          speakItalian('Marco beve un caffè caldo');
+        } else {
+          itFeedback.className = 'feedback-msg error';
+          itFeedback.textContent = 'Word order is off. In Italian: Subject + Verb + Article + Noun + Adjective.';
+        }
+      }
+    }
+
+    clearItBtn.addEventListener('click', initItSentence);
+    speakItBtn.addEventListener('click', () => speakItalian('Marco beve un caffè caldo'));
+    initItSentence();
+
+    // ── Quiz Logic ──────────────────────────────────────────
+    function setupQuizIt(optsId, feedbackId, answerSpeech) {
+      const opts = document.querySelectorAll(`#${optsId} .quiz-opt`);
+      const fb = document.getElementById(feedbackId);
+      opts.forEach(btn => {
+        btn.addEventListener('click', () => {
+          opts.forEach(b => b.disabled = true);
+          if (btn.dataset.correct === 'true') {
+            btn.classList.add('correct');
+            fb.className = 'feedback-msg success';
+            fb.textContent = 'Esatto! Correct ✓';
+            speakItalian(answerSpeech);
+          } else {
+            btn.classList.add('incorrect');
+            fb.className = 'feedback-msg error';
+            fb.textContent = 'Sbagliato — riprova (Try again)!';
+            setTimeout(() => {
+              opts.forEach(b => b.disabled = false);
+              btn.classList.remove('incorrect');
+              fb.textContent = '';
+            }, 1400);
+          }
+        });
+      });
+    }
+
+    setupQuizIt('itQ1Opts', 'itQ1Feedback', 'Buongiorno');
+    setupQuizIt('itQ2Opts', 'itQ2Feedback', 'Grazie mille');
+  </script>
+  <script src="../../assets/js/photo-lightbox.js"></script>
+  <script src="../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
+
