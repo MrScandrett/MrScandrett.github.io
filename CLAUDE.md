@@ -134,7 +134,8 @@ flex scrollers, and prints in the Day theme. When writing lesson CSS:
 
 `#home-calendar` on `index.html` is a month calendar driven by `assets/js/home-calendar.mjs`
 (styles in `assets/css/home-calendar.css`, classes `hcal-*`). Mon/Wed/Fri are the STEAM /
-Microschool / Study Hall class days (`CLASS_DAYS`), shown as quiet color tints. Everything
+Microschool / Study Hall class days (`CLASS_DAYS`), shown as quiet color tints. It opens in a roomy
+Week view (full text, no clipping) with a Month toggle (dots only; details sit below). Everything
 else is a marker with a category (holiday, birthday, history, science & sky):
 
 - **Computed, never hand-listed:** US holidays, Easter-based dates (Holy Week, Pentecost),

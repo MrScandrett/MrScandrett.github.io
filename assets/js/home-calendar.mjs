@@ -209,7 +209,7 @@ function el(tag, cls, text) {
 function mount(root, data) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const state = { view: new Date(today.getFullYear(), today.getMonth(), 1), sel: today, off: new Set() };
+  const state = { mode: 'week', view: new Date(today.getFullYear(), today.getMonth(), 1), sel: today, off: new Set() };
 
   const grid = root.querySelector('[data-hcal-grid]');
   const monthLabel = root.querySelector('[data-hcal-month]');
@@ -220,25 +220,37 @@ function mount(root, data) {
 
   function chip(item) {
     const c = el('span', `hcal-chip hcal-chip--${item.cat}`);
-    c.append(el('i', 'hcal-dot'), el('span', 'hcal-chip-text', item.short || item.title));
+    c.append(el('i', 'hcal-dot'), el('span', 'hcal-chip-text', item.title));
     if (item.milestone) c.classList.add('is-milestone');
     return c;
   }
 
   function renderGrid() {
+    const week = state.mode === 'week';
+    root.dataset.mode = state.mode;
     const y = state.view.getFullYear(), m0 = state.view.getMonth();
-    monthLabel.textContent = `${MONTHS[m0]} ${y}`;
+    let start, weeks;
+    if (week) {
+      start = new Date(state.sel.getFullYear(), state.sel.getMonth(), state.sel.getDate() - state.sel.getDay());
+      weeks = 1;
+      const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6);
+      const sameYear = start.getFullYear() === end.getFullYear();
+      const fmt = (d, withYear) => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', ...(withYear ? { year: 'numeric' } : {}) });
+      monthLabel.textContent = `${fmt(start, !sameYear)} – ${fmt(end, true)}`;
+    } else {
+      const lead = new Date(y, m0, 1).getDay();
+      start = new Date(y, m0, 1 - lead);
+      weeks = Math.ceil((lead + new Date(y, m0 + 1, 0).getDate()) / 7);
+      monthLabel.textContent = `${MONTHS[m0]} ${y}`;
+    }
     grid.textContent = '';
-    const lead = new Date(y, m0, 1).getDay();
-    const days = new Date(y, m0 + 1, 0).getDate();
-    const weeks = Math.ceil((lead + days) / 7);
-    const selInView = state.sel.getFullYear() === y && state.sel.getMonth() === m0;
+    const selInView = week || (state.sel.getFullYear() === y && state.sel.getMonth() === m0);
     for (let w = 0; w < weeks; w++) {
       const row = el('div', 'hcal-row');
       row.setAttribute('role', 'row');
       for (let c = 0; c < 7; c++) {
-        const date = new Date(y, m0, 1 - lead + w * 7 + c);
-        const inMonth = date.getMonth() === m0;
+        const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + w * 7 + c);
+        const inMonth = week || date.getMonth() === m0;
         const cls = CLASS_DAYS[date.getDay()];
         const closed = cls && noClassFor(date, data);
         const items = visible(itemsOn(date, data));
@@ -258,20 +270,24 @@ function mount(root, data) {
         cell.setAttribute('aria-selected', isSel ? 'true' : 'false');
         btn.tabIndex = isSel && selInView ? 0 : (!selInView && inMonth && date.getDate() === 1 ? 0 : -1);
 
-        const num = el('span', 'hcal-num', String(date.getDate()));
-        btn.append(num);
+        const top = el('span', 'hcal-top');
+        if (week) top.append(el('span', 'hcal-dow', WEEKDAYS[date.getDay()].slice(0, 3)));
+        top.append(el('span', 'hcal-num', String(date.getDate())));
+        btn.append(top);
         if (cls) {
-          const tag = el('span', 'hcal-class');
-          tag.append(el('span', 'hcal-class-long', closed ? 'No class' : cls.label), el('span', 'hcal-class-short', closed ? 'Off' : cls.short));
-          btn.append(tag);
+          const label = closed ? 'No class' : (week ? cls.label : cls.short);
+          btn.append(el('span', 'hcal-class', label));
         }
-        if (items.length) {
-          const chips = el('span', 'hcal-chips');
-          items.slice(0, 2).forEach((i) => chips.append(chip(i)));
-          if (items.length > 2) chips.append(el('span', 'hcal-more', `+${items.length - 2}`));
+        if (week) {
+          if (items.length) {
+            const chips = el('span', 'hcal-chips');
+            items.forEach((i) => chips.append(chip(i)));
+            btn.append(chips);
+          }
+        } else if (items.length) {
           const dots = el('span', 'hcal-dots');
           items.slice(0, 4).forEach((i) => dots.append(el('i', `hcal-dot hcal-dot--${i.cat}`)));
-          btn.append(chips, dots);
+          btn.append(dots);
         }
         const bits = [fullDate(date)];
         if (cls) bits.push(closed ? `${cls.label}, no class: ${closed.label}` : cls.label);
@@ -370,10 +386,22 @@ function mount(root, data) {
     renderAll(focus ? state.sel : null);
   }
 
-  function shiftMonth(delta) {
+  function shiftPeriod(delta) {
+    const sel = state.sel;
+    if (state.mode === 'week') {
+      select(new Date(sel.getFullYear(), sel.getMonth(), sel.getDate() + 7 * delta));
+      return;
+    }
     const v = new Date(state.view.getFullYear(), state.view.getMonth() + delta, 1);
     const last = new Date(v.getFullYear(), v.getMonth() + 1, 0).getDate();
-    select(new Date(v.getFullYear(), v.getMonth(), Math.min(state.sel.getDate(), last)));
+    select(new Date(v.getFullYear(), v.getMonth(), Math.min(sel.getDate(), last)));
+  }
+
+  function setMode(mode) {
+    state.mode = mode;
+    root.querySelectorAll('[data-hcal-mode]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.hcalMode === mode)));
+    grid.setAttribute('aria-label', `Class calendar, ${mode} view. Arrow keys move between days.`);
+    renderAll();
   }
 
   grid.addEventListener('click', (ev) => {
@@ -389,8 +417,12 @@ function mount(root, data) {
     let next = null;
     if (step) next = new Date(s.getFullYear(), s.getMonth(), s.getDate() + step);
     else if (ev.key === 'PageUp' || ev.key === 'PageDown') {
-      const v = new Date(s.getFullYear(), s.getMonth() + (ev.key === 'PageUp' ? -1 : 1), 1);
-      next = new Date(v.getFullYear(), v.getMonth(), Math.min(s.getDate(), new Date(v.getFullYear(), v.getMonth() + 1, 0).getDate()));
+      const dir = ev.key === 'PageUp' ? -1 : 1;
+      if (state.mode === 'week') next = new Date(s.getFullYear(), s.getMonth(), s.getDate() + 7 * dir);
+      else {
+        const v = new Date(s.getFullYear(), s.getMonth() + dir, 1);
+        next = new Date(v.getFullYear(), v.getMonth(), Math.min(s.getDate(), new Date(v.getFullYear(), v.getMonth() + 1, 0).getDate()));
+      }
     } else if (ev.key === 'Home') next = new Date(s.getFullYear(), s.getMonth(), s.getDate() - s.getDay());
     else if (ev.key === 'End') next = new Date(s.getFullYear(), s.getMonth(), s.getDate() + (6 - s.getDay()));
     if (!next) return;
@@ -398,9 +430,10 @@ function mount(root, data) {
     select(next, { focus: true });
   });
 
-  root.querySelector('[data-hcal-prev]').addEventListener('click', () => shiftMonth(-1));
-  root.querySelector('[data-hcal-next]').addEventListener('click', () => shiftMonth(1));
+  root.querySelector('[data-hcal-prev]').addEventListener('click', () => shiftPeriod(-1));
+  root.querySelector('[data-hcal-next]').addEventListener('click', () => shiftPeriod(1));
   root.querySelector('[data-hcal-today]').addEventListener('click', () => select(today));
+  root.querySelectorAll('[data-hcal-mode]').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.hcalMode)));
   root.querySelectorAll('[data-hcal-filter]').forEach((b) => {
     b.addEventListener('click', () => {
       const cat = b.dataset.hcalFilter;
