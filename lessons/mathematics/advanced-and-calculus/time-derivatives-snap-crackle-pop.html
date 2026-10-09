@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Snap, Crackle, Pop: Time Derivatives · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta name="description" content="Position, velocity, acceleration, jerk, snap, crackle, pop: climb the ladder of time derivatives, tune an elevator ride by limiting jerk, and watch every derivative of circular motion turn another 90 degrees." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 304px; --ll-accent: #2563eb; --ll-tab-active: #2563eb; --ll-tab-active-bg: rgba(37,99,235,0.12); }
+    .tc-page { padding-bottom: 3.5rem; --sin: #2563eb; --cos: #c84b0a; --tan: #16a34a; }
+:where(html[data-lighting="night"]) .tc-page { --cos: #f46c26; }
+@media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .tc-page { --cos: #ea580c; } }
+    .tc-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .tc-hero h1 { max-width: 28ch; margin: 0; font-size: clamp(1.55rem, 3.5vw, 2.35rem); }
+    .tc-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.55rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .tc-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45; }
+    .tc-lede { max-width: 70ch; margin: 0.7rem 0 0; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+
+    .tc-card { background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7); border-left: 3.5px solid var(--card-accent, #2563eb); border-radius: var(--radius, 18px); box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .tc-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .tc-card h3 { margin: 0.95rem 0 0.35rem; font-size: 1rem; }
+    .tc-card p, .tc-card li { color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .tc-card p { margin: 0 0 0.62rem; }
+    .tc-card p:last-child { margin-bottom: 0; }
+    .tc-sin { color: var(--sin); font-weight: 700; }
+    .tc-cos { color: var(--cos); font-weight: 700; }
+    .tc-tan { color: var(--tan); font-weight: 700; }
+    .tc-mono { font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; }
+
+    .tc-canvases { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.8rem; margin: 0.8rem 0; }
+    .tc-cv { position: relative; height: 320px; border: 1px solid var(--line, #d2d2d7); border-radius: 12px; overflow: hidden; }
+    .tc-cv.short { height: 280px; }
+    .tc-cv canvas { display: block; touch-action: none; }
+    .tc-cv.drag canvas { cursor: grab; }
+
+    .tc-controls { display: flex; flex-wrap: wrap; gap: 0.6rem 1.2rem; align-items: center; margin: 0.5rem 0; }
+    .tc-controls label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; font-weight: 600; color: var(--text-main, #1d1d1f); }
+    .tc-controls input[type=range] { width: min(240px, 60vw); accent-color: var(--card-accent, #2563eb); }
+    .tc-btns { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.5rem 0; }
+    .tc-btn { padding: 0.32rem 0.7rem; border: 1px solid var(--line, #d2d2d7); border-radius: 999px; background: transparent; color: var(--text-main, #1d1d1f); font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+    .tc-btn:hover, .tc-btn:focus-visible { border-color: var(--card-accent, #2563eb); }
+    .tc-btn.primary { background: var(--card-accent, #2563eb); border-color: var(--card-accent, #2563eb); color: #fff; }
+
+    .tc-read { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem; margin: 0.6rem 0; }
+    .tc-read div { padding: 0.5rem 0.65rem; border: 1px solid var(--line, #d2d2d7); border-radius: 10px; font-size: 0.72rem; color: var(--text-muted, #64748b); }
+    .tc-read strong { display: block; margin-top: 0.1rem; font-size: 1rem; color: var(--text-main, #1d1d1f); font-family: "IBM Plex Mono", ui-monospace, monospace; }
+    .tc-status { min-height: 1.4em; margin: 0.4rem 0 0; font-size: 0.85rem; font-weight: 700; }
+    .tc-status.ok { color: #15803d; }
+
+    .tc-table { width: 100%; border-collapse: collapse; margin: 0.6rem 0; font-size: 0.8rem; }
+    .tc-table th, .tc-table td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--line, #d2d2d7); text-align: center; color: var(--text-secondary, #3f4f65); }
+    .tc-table th { color: var(--text-main, #1d1d1f); }
+
+    .tc-practice-item { display: grid; grid-template-columns: 1fr auto auto; gap: 0.6rem; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--line, #d2d2d7); }
+    .tc-practice-item:last-child { border-bottom: 0; }
+    .tc-practice-item p { margin: 0; }
+    .tc-practice-item input { width: 5.5rem; padding: 0.3rem 0.45rem; border: 1px solid var(--line, #d2d2d7); border-radius: 8px; background: transparent; color: var(--text-main, #1d1d1f); font: inherit; }
+    .tc-practice-item .fb { grid-column: 1 / -1; font-size: 0.8rem; font-weight: 700; }
+    .tc-practice-item .fb.ok { color: #15803d; }
+    .tc-practice-item .fb.no { color: #b45309; }
+    @media (max-width: 520px) { .tc-practice-item { grid-template-columns: 1fr; } }
+
+    [data-lighting="night"] .tc-lede, [data-theme="vaporwave"] .tc-lede, [data-theme="bark"] .tc-lede,
+    [data-lighting="night"] .tc-card p, [data-theme="vaporwave"] .tc-card p, [data-theme="bark"] .tc-card p,
+    [data-lighting="night"] .tc-card li, [data-theme="vaporwave"] .tc-card li, [data-theme="bark"] .tc-card li { color: rgba(245,245,247,0.72); }
+    [data-lighting="night"] .tc-card, [data-theme="vaporwave"] .tc-card, [data-theme="bark"] .tc-card { background: var(--white, #2c2c2e); }
+    [data-lighting="night"] .tc-controls label, [data-theme="vaporwave"] .tc-controls label, [data-theme="bark"] .tc-controls label,
+    [data-lighting="night"] .tc-read strong, [data-theme="vaporwave"] .tc-read strong, [data-theme="bark"] .tc-read strong,
+    [data-lighting="night"] .tc-btn, [data-theme="vaporwave"] .tc-btn, [data-theme="bark"] .tc-btn,
+    [data-lighting="night"] .tc-table th, [data-theme="vaporwave"] .tc-table th, [data-theme="bark"] .tc-table th,
+    [data-lighting="night"] .tc-practice-item input, [data-theme="vaporwave"] .tc-practice-item input, [data-theme="bark"] .tc-practice-item input { color: rgba(245,245,247,0.92); }
+    [data-lighting="night"] .tc-btn.primary, [data-theme="vaporwave"] .tc-btn.primary, [data-theme="bark"] .tc-btn.primary { color: #fff; }
+    [data-lighting="night"] .tc-table td, [data-theme="vaporwave"] .tc-table td, [data-theme="bark"] .tc-table td { color: rgba(245,245,247,0.72); }
+
+    .ex-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; margin: 0.35rem 0; }
+    .ex-chip { display: inline-grid; place-items: center; min-width: 1.7rem; height: 1.7rem; padding: 0 0.3rem; border-radius: 8px; background: rgba(100,116,139,0.2); color: var(--text-main, #1d1d1f); font: 700 0.85rem "IBM Plex Mono", monospace; }
+    .ex-chip.b { background: rgba(37,99,235,0.22); }
+    .ex-chip.o { background: rgba(234,88,12,0.22); }
+    .ex-chip.x { text-decoration: line-through; opacity: 0.45; }
+    .ex-op, .ex-one { font: 700 0.9rem "IBM Plex Mono", monospace; color: var(--text-muted, #64748b); padding: 0 0.3rem; }
+    .ex-one { color: var(--text-main, #1d1d1f); }
+    .ex-group { display: inline-flex; gap: 0.2rem; padding: 0.2rem 0.35rem; border: 1.5px solid var(--line, #94a3b8); border-radius: 12px; }
+    .ex-frac { display: inline-block; margin: 0.35rem 0; }
+    .ex-bar { height: 2px; background: var(--text-muted, #64748b); margin: 0.15rem 0; }
+    [data-lighting="night"] .ex-chip, [data-theme="vaporwave"] .ex-chip, [data-theme="bark"] .ex-chip, [data-lighting="night"] .ex-one, [data-theme="vaporwave"] .ex-one, [data-theme="bark"] .ex-one { color: rgba(245,245,247,0.92); }
+
+    .tc-tan-g { color: #12843c; font-weight: 700; }
+:where(html[data-lighting="night"]) .tc-tan-g { color: #17ac4e; }
+@media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .tc-tan-g { color: #16a34a; } }
+    .tc-neg { color: #dc2626; font-weight: 700; }
+    [data-lighting="night"] .tc-page, [data-theme="vaporwave"] .tc-page, [data-theme="bark"] .tc-page { --sin: #7fb0ff; --cos: #ff9f5f; --tan: #4ade80; }
+    [data-lighting="night"] .tc-status.ok, [data-theme="vaporwave"] .tc-status.ok, [data-theme="bark"] .tc-status.ok,
+    [data-lighting="night"] .tc-practice-item .fb.ok, [data-theme="vaporwave"] .tc-practice-item .fb.ok, [data-theme="bark"] .tc-practice-item .fb.ok { color: #4ade80; }
+    [data-lighting="night"] .tc-practice-item .fb.no, [data-theme="vaporwave"] .tc-practice-item .fb.no, [data-theme="bark"] .tc-practice-item .fb.no { color: #fbbf24; }
+    [data-lighting="night"] .tc-tan-g, [data-theme="vaporwave"] .tc-tan-g, [data-theme="bark"] .tc-tan-g { color: #4ade80; }
+    [data-lighting="night"] .tc-neg, [data-theme="vaporwave"] .tc-neg, [data-theme="bark"] .tc-neg { color: #f87171; }
+
+    .td-ladder { width: 100%; border-collapse: collapse; margin: 0.6rem 0; font-size: 0.8rem; }
+    .td-ladder th, .td-ladder td { padding: 0.32rem 0.5rem; border-bottom: 1px solid var(--line, #d2d2d7); text-align: left; color: var(--text-secondary, #3f4f65); vertical-align: top; }
+    .td-ladder th { color: var(--text-main, #1d1d1f); }
+    .td-ladder td.num { text-align: right; font-family: "IBM Plex Mono", ui-monospace, monospace; color: var(--text-main, #1d1d1f); white-space: nowrap; }
+    .td-tag { display: inline-block; padding: 0.05rem 0.5rem; border-radius: 999px; font-size: 0.68rem; font-weight: 700; white-space: nowrap; }
+    .td-tag.std { background: rgba(22,163,74,0.16); color: #15803d; }
+    .td-tag.eng { background: rgba(37,99,235,0.16); color: #1d4ed8; }
+    .td-tag.fun { background: rgba(234,88,12,0.16); color: #c2410c; }
+    .td-tag.meme { background: rgba(124,58,237,0.16); color: #6d28d9; }
+    .td-note { margin: 0.6rem 0; padding: 0.65rem 0.85rem; border-radius: 12px; border: 1px dashed var(--line, #94a3b8); font-size: 0.84rem; }
+    .td-verdict { font-weight: 700; }
+    .td-wrap { overflow-x: auto; }
+    .td-key { display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem; margin: 0.4rem 0; font-size: 0.76rem; }
+    .td-key span::before { content: ""; display: inline-block; width: 0.7rem; height: 0.7rem; margin-right: 0.3rem; border-radius: 3px; background: var(--k); vertical-align: -1px; }
+    [data-lighting="night"] .td-ladder th, [data-theme="vaporwave"] .td-ladder th, [data-theme="bark"] .td-ladder th,
+    [data-lighting="night"] .td-ladder td.num, [data-theme="vaporwave"] .td-ladder td.num, [data-theme="bark"] .td-ladder td.num { color: rgba(245,245,247,0.92); }
+    [data-lighting="night"] .td-ladder td, [data-theme="vaporwave"] .td-ladder td, [data-theme="bark"] .td-ladder td { color: rgba(245,245,247,0.72); }
+    [data-lighting="night"] .td-tag.std, [data-theme="vaporwave"] .td-tag.std, [data-theme="bark"] .td-tag.std { color: #4ade80; }
+    [data-lighting="night"] .td-tag.eng, [data-theme="vaporwave"] .td-tag.eng, [data-theme="bark"] .td-tag.eng { color: #93c5fd; }
+    [data-lighting="night"] .td-tag.fun, [data-theme="vaporwave"] .td-tag.fun, [data-theme="bark"] .td-tag.fun { color: #fdba74; }
+    [data-lighting="night"] .td-tag.meme, [data-theme="vaporwave"] .td-tag.meme, [data-theme="bark"] .td-tag.meme { color: #c4b5fd; }
+    @media print { .td-wrap { overflow: visible; } .tc-cv { height: 260px !important; } }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="tc-page">
+        <section class="hero tc-hero">
+          <p class="eyebrow">Mathematics · Calculus · Physics</p>
+          <h1>Snap, Crackle, Pop: The Ladder of Time Derivatives</h1>
+          <div class="tc-meta">
+            <span>d/dt</span><span class="dot"></span>
+            <span>Velocity &amp; acceleration</span><span class="dot"></span>
+            <span>Jerk</span><span class="dot"></span>
+            <span>Snap, crackle, pop</span><span class="dot"></span>
+            <span>Where engineers use them</span>
+          </div>
+          <p class="tc-lede">A <strong>time derivative</strong> answers one question: how fast is this thing changing, per second? Take it once and position becomes velocity. Take it again and you get acceleration. Keep going and the names turn into a cereal commercial. Some of those names are real engineering vocabulary, some are a joke, and some are internet folklore. This lesson sorts out which is which, and shows why a few of those “extra” derivatives decide whether an elevator ride feels smooth.</p>
+        </section>
+
+        <section class="tc-card">
+          <h2>Learning Targets</h2>
+          <ul>
+            <li>Define a time derivative and write it in Leibniz (dⁿx/dtⁿ), Lagrange (f′, f″, f⁽ⁿ⁾) and Newton (ẋ, ẍ) notation.</li>
+            <li>Name the first six derivatives of position, give their units, and say which names are standard.</li>
+            <li>Compute higher derivatives of polynomials and see why each derivative lowers the power by one.</li>
+            <li>Explain why engineers limit <em>jerk</em> and <em>snap</em>, and what that costs in time.</li>
+            <li>Describe how every derivative of circular motion turns another 90°.</li>
+          </ul>
+          <p>Prerequisite: <a href="slope-of-a-curve.html">Slope of a Curve</a> (the power rule). Related: <a href="../../physics/mechanics/kinematics.html">Kinematics</a>.</p>
+        </section>
+
+        <section class="tc-card" id="notation" style="--card-accent:#2563eb;">
+          <h2>What Is a Time Derivative?</h2>
+          <p>Take any quantity that changes with time, call it <span class="tc-mono">x(t)</span>. Its time derivative is how quickly it changes at an instant: the slope of its graph against time, the limit of (x(t+h) − x(t)) ÷ h as h → 0. Time is almost always written <em>t</em>, and a derivative of a vector is taken one component at a time.</p>
+          <div class="td-wrap">
+          <table class="td-ladder" aria-label="Three notations for time derivatives">
+            <tr><th>Style</th><th>First</th><th>Second</th><th>nth</th><th>Used for</th></tr>
+            <tr><td>Leibniz</td><td class="num">dx/dt</td><td class="num">d²x/dt²</td><td class="num">dⁿx/dtⁿ</td><td>The standard form. Shows the units: metres per second per second.</td></tr>
+            <tr><td>Lagrange</td><td class="num">f′(t)</td><td class="num">f″(t)</td><td class="num">f⁽ⁿ⁾(t)</td><td>Compact, and the one on the whiteboard in the meme.</td></tr>
+            <tr><td>Newton</td><td class="num">ẋ</td><td class="num">ẍ</td><td class="num">(rarely past 2)</td><td>A dot means “derivative with respect to <em>time</em>” specifically. Common in physics.</td></tr>
+          </table>
+          </div>
+          <div class="td-note"><strong>Spot the sloppy part.</strong> The famous board writes f(x) = position and then f′(x), f″(x)… But these are <em>time</em> derivatives, so the input should be time: f(t). If x were distance along a road, f′(x) would be a slope in metres per metre, not a velocity. The names only make sense when the variable is time.</div>
+        </section>
+
+        <section class="tc-card" id="ladder" style="--card-accent:#c84b0a;">
+          <h2>Lab 1 · Climb the Ladder</h2>
+          <p>Pick a motion. The graph on top is position. Each strip below is the derivative of the strip above it, so you can see the slope of one graph become the height of the next. Drag the time slider (or press Play) and read all ten derivatives in the table at once.</p>
+          <div class="tc-btns" id="ld-fns" role="group" aria-label="Choose a motion"></div>
+          <div class="tc-cv" id="ld-box" style="height:520px;"><canvas id="ld-canvas" aria-label="Position and its first six time derivatives, stacked"></canvas></div>
+          <div class="tc-controls">
+            <label>Time t <input id="ld-t" type="range" min="0" max="6" step="0.01" value="2" style="--card-accent:#ea580c" /> <span id="ld-tv" class="tc-mono">2.00 s</span></label>
+            <button class="tc-btn primary" id="ld-play" type="button">▶ Play</button>
+          </div>
+          <p class="tc-mono" id="ld-eq" aria-live="polite"></p>
+          <div class="td-wrap">
+          <table class="td-ladder" aria-label="Value of each derivative at the chosen time">
+            <thead><tr><th>n</th><th>Name</th><th>Notation</th><th>Unit</th><th>Value now</th><th>Status</th></tr></thead>
+            <tbody id="ld-table"></tbody>
+          </table>
+          </div>
+          <p><strong>Notice:</strong> with a polynomial, every derivative drops the power by one. Try <em>Constant pop</em>: position is a 6th-power curve, so pop is a flat line, and the 7th derivative onward is exactly zero. The ladder never ends, but for smooth polynomial motion it runs out of things to say.</p>
+        </section>
+
+        <section class="tc-card" id="names" style="--card-accent:#7c3aed;">
+          <h2>Who Named These? Real vs. Joke vs. Folklore</h2>
+          <p>Not every rung of the ladder is equal. Check the status column in the table above against this sort:</p>
+          <ul>
+            <li><span class="td-tag std">Standard</span> <strong>Velocity, acceleration, jerk</strong> (derivatives 1, 2, 3). Jerk has SI units of m/s³ and is used seriously in engineering.</li>
+            <li><span class="td-tag eng">Used in engineering</span> <strong>Snap</strong>, also called <strong>jounce</strong> (derivative 4, m/s⁴). The term appears in published work on motion planning.</li>
+            <li><span class="td-tag fun">Playful</span> <strong>Crackle</strong> and <strong>pop</strong> (derivatives 5 and 6). They come from the Rice Krispies mascots Snap, Crackle and Pop. They are used “somewhat facetiously” and the naming is not standardized.</li>
+            <li><span class="td-tag meme">Folklore</span> <strong>Lock, drop, shot, put</strong> (derivatives 7 to 10). These are jokes that circulate online as a continuation of the cereal gag. They have no standard status, and the Wikipedia article on higher derivatives of position doesn't list them. If you see them on a whiteboard, you are looking at a punchline, not a unit system.</li>
+          </ul>
+          <p><strong>Discuss:</strong> The video asks “how many did you know?” A better question is “how many of those <em>can you source</em>?” Where would you look to check a claim like this?</p>
+        </section>
+
+        <section class="tc-card" id="elevator" style="--card-accent:#12843c;">
+          <h2>Lab 2 · Why Engineers Limit Jerk</h2>
+          <p>An elevator rises 40 m. It can cruise at 2.5 m/s and never pushes harder than 1.0 m/s² (a bit over a tenth of a g). The only thing you control is the <strong>jerk limit</strong>: how quickly the acceleration is allowed to build up. A low jerk limit gives a gentle S-curve start; a high one is almost a jolt.</p>
+          <div class="tc-cv" id="el-box" style="height:380px;"><canvas id="el-canvas" aria-label="Elevator velocity, acceleration and jerk over the trip"></canvas></div>
+          <div class="tc-controls">
+            <label>Jerk limit <input id="el-j" type="range" min="0.3" max="12" step="0.1" value="1.5" style="--card-accent:#16a34a" /> <span id="el-jv" class="tc-mono">1.5 m/s³</span></label>
+          </div>
+          <div class="tc-read">
+            <div>Trip time<strong id="el-time">0</strong></div>
+            <div>Peak acceleration<strong id="el-a">0</strong></div>
+            <div>You feel (at peak)<strong id="el-w">0</strong></div>
+            <div>Peak jerk<strong id="el-pj">0</strong></div>
+          </div>
+          <p class="td-verdict" id="el-verdict" aria-live="polite"></p>
+          <p>Comfort figures reported for elevator passengers: about <strong>2 m/s³</strong> of vertical jerk is generally acceptable and about <strong>6 m/s³</strong> is intolerable. Hospital lifts are recommended to stay under about <strong>0.7 m/s³</strong>, and high-speed rail designs use roughly <strong>0.2 to 0.6 m/s³</strong>. You can feel the tradeoff in the trip time: smoothness costs seconds.</p>
+          <p><strong>Same idea, different machines:</strong> roller coasters and railways use clothoid (Euler spiral) transitions so jerk, rather than acceleration, changes gently. Limiting jerk and snap keeps cam followers from jumping, reduces wear on cutting tools, and gives smoother surface finishes. Quadcopter planners use <em>minimum-snap trajectories</em> to reduce control effort.</p>
+        </section>
+
+        <section class="tc-card" id="circle" style="--card-accent:#db2777;">
+          <h2>Lab 3 · Every Derivative Turns 90°</h2>
+          <p>A particle circles at constant speed: <span class="tc-mono">r(t) = R(cos ωt, sin ωt)</span>. Differentiate a vector component by component and each derivative is the previous one rotated a quarter turn and multiplied by ω. The speed is constant, yet velocity is not zero, and acceleration points straight at the centre: <span class="tc-mono">a = −ω²r</span>.</p>
+          <div class="tc-cv" id="ci-box" style="height:380px;"><canvas id="ci-canvas" aria-label="Position and its first six derivatives drawn as rotating arrows"></canvas></div>
+          <div class="tc-controls">
+            <label>Spin rate ω <input id="ci-w" type="range" min="0.5" max="1.5" step="0.05" value="1" style="--card-accent:#db2777" /> <span id="ci-wv" class="tc-mono">1.00 rad/s</span></label>
+            <button class="tc-btn primary" id="ci-play" type="button">❚❚ Pause</button>
+          </div>
+          <div class="td-key" id="ci-key"></div>
+          <p class="tc-mono" id="ci-note" aria-live="polite"></p>
+          <p><strong>Notice:</strong> after four derivatives the arrow points the same way as position again, so <strong>snap</strong> is parallel to the position vector, with length ω⁴R. Jerk points along the path but <em>backwards</em>. Set ω = 1 and every arrow is the same length, only the direction changes; move ω and the higher derivatives grow or shrink fast, because each one multiplies by another ω.</p>
+        </section>
+
+        <section class="tc-card" style="--card-accent:#0ea5e9;">
+          <h2>Time Derivatives in the Wild</h2>
+          <ul>
+            <li><strong>Mechanics:</strong> position → velocity → acceleration → jerk. Force is the time derivative of momentum.</li>
+            <li><strong>Energy:</strong> power is the time derivative of energy.</li>
+            <li><strong>Electricity:</strong> current is the time derivative of charge.</li>
+            <li><strong>Economics:</strong> investment flow is the time derivative of capital stock, and a growth rate is a derivative divided by its own level.</li>
+            <li><strong>Geometry:</strong> when a vector's direction changes, its derivative picks up that change too, which is why circular motion accelerates at constant speed.</li>
+          </ul>
+        </section>
+
+        <section class="tc-card" id="practice" style="--card-accent:#0ea5e9;">
+          <h2>Practice</h2>
+          <p>Position x(t) is in metres and t in seconds. Answers within 0.05 count.</p>
+          <div id="tc-practice">
+            <div class="tc-practice-item" data-answer="12" data-hint="Velocity is the first derivative: 3t² at t = 2."><p>1. For x(t) = t³, what is the velocity at t = 2?</p><input type="number" step="any" aria-label="Answer 1" /><button class="tc-btn" type="button">Check</button><div class="fb" aria-live="polite"></div></div>
+            <div class="tc-practice-item" data-answer="10" data-hint="x = 5t² gives v = 10t, and a = 10."><p>2. For x(t) = 5t², what is the acceleration?</p><input type="number" step="any" aria-label="Answer 2" /><button class="tc-btn" type="button">Check</button><div class="fb" aria-live="polite"></div></div>
+            <div class="tc-practice-item" data-answer="12" data-hint="2t³ → 6t² → 12t → 12."><p>3. For x(t) = 2t³, what is the jerk?</p><input type="number" step="any" aria-label="Answer 3" /><button class="tc-btn" type="button">Check</button><div class="fb" aria-live="polite"></div></div>
+            <div class="tc-practice-item" data-answer="24" data-hint="t⁴ → 4t³ → 12t² → 24t → 24. The 4th derivative is snap."><p>4. For x(t) = t⁴, what is the snap?</p><input type="number" step="any" aria-label="Answer 4" /><button class="tc-btn" type="button">Check</button><div class="fb" aria-live="polite"></div></div>
+            <div class="tc-practice-item" data-answer="120" data-hint="The 5th derivative of t⁵ is 5! = 120."><p>5. For x(t) = t⁵, what is the crackle?</p><input type="number" step="any" aria-label="Answer 5" /><button class="tc-btn" type="button">Check</button><div class="fb" aria-live="polite"></div></div>
+            <div class="tc-practice-item" data-answer="720" data-hint="The 6th derivative of t⁶ is 6! = 720."><p>6. For x(t) = t⁶, what is the pop?</p><input type="number" step="any" aria-label="Answer 6" /><button class="tc-btn" type="button">Check</button><div class="fb" aria-live="polite"></div></div>
+            <div class="tc-practice-item" data-answer="4" data-hint="Each derivative adds one more /s. Position is m, velocity m/s, acceleration m/s², jerk m/s³…"><p>7. Snap has units of m/s to what power?</p><input type="number" step="any" aria-label="Answer 7" /><button class="tc-btn" type="button">Check</button><div class="fb" aria-live="polite"></div></div>
+            <div class="tc-practice-item" data-answer="6" data-hint="Change in acceleration = jerk × time = 3 × 2."><p>8. A rider feels a steady jerk of 3 m/s³ for 2 s. By how many m/s² does the acceleration change?</p><input type="number" step="any" aria-label="Answer 8" /><button class="tc-btn" type="button">Check</button><div class="fb" aria-live="polite"></div></div>
+          </div>
+        </section>
+
+        <section class="tc-card" style="--card-accent:#dc2626;">
+          <h2>Exit Ticket</h2>
+          <ul>
+            <li>A car drives at a perfectly constant 20 m/s. What are its acceleration, jerk and snap, and why?</li>
+            <li>Why can a rider feel jerk even when the acceleration is small?</li>
+            <li>Someone shows you a list that continues past “pop” with “lock, drop, shot, put.” How would you decide whether to trust it?</li>
+            <li>In circular motion, which derivative first points the same way as the position vector again?</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+
+    <aside class="ll-panel" aria-label="Lesson panel">
+      <div class="ll-panel-inner">
+        <div class="ll-tabs" role="tablist" aria-label="Time derivatives panel tabs">
+          <button class="ll-tab active" type="button" data-ll-tab="guide">Guide</button>
+          <button class="ll-tab" type="button" data-ll-tab="controls">Teacher</button>
+        </div>
+        <div class="ll-pane active" data-ll-panel="guide">
+          <span class="ll-label">The Ladder</span>
+          <div class="ll-info"><strong>0</strong> position · <strong>1</strong> velocity · <strong>2</strong> acceleration · <strong>3</strong> jerk</div>
+          <div class="ll-info"><strong>4</strong> snap (jounce) · <strong>5</strong> crackle · <strong>6</strong> pop</div>
+          <span class="ll-label">Units</span>
+          <div class="ll-info">nth derivative of position: m/sⁿ</div>
+          <span class="ll-label">Power Rule, Repeated</span>
+          <div class="ll-info">d/dt of tⁿ is n·tⁿ⁻¹, so tⁿ reaches the constant n! after n derivatives.</div>
+          <span class="ll-label">Source Check</span>
+          <div class="ll-info">Lock, drop, shot, put: folklore, not standard.</div>
+        </div>
+        <div class="ll-pane" data-ll-panel="controls">
+          <span class="ll-label">Lesson Flow</span>
+          <div class="ll-info"><strong>Hook</strong> Show the whiteboard meme. Ask: which of these would you bet are real? Hold the answer until the end.</div>
+          <div class="ll-info"><strong>Lab 1</strong> Ask students to predict the jerk graph before pressing a preset. Use <em>Constant jerk</em> then <em>Constant snap</em>.</div>
+          <div class="ll-info"><strong>Names</strong> Revisit the hook with the status tags. Whose claim can be sourced?</div>
+          <div class="ll-info"><strong>Lab 2</strong> Have students find the lowest jerk limit whose trip time is under 25 s while staying comfortable.</div>
+          <div class="ll-info"><strong>Lab 3</strong> Ask which arrow lines up with the position arrow (snap).</div>
+          <div class="ll-info"><strong>Close</strong> Exit ticket. Extension: <a href="../../physics/mechanics/kinematics.html">Kinematics</a>.</div>
+        </div>
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+  </div>
+</div>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../../index.html">Home</a> · <a href="../../../steam-lessons.html">Lessons</a></p>
+  </footer>
+
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/sim-kit.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var TAU = Math.PI * 2;
+    var COS = "#ea580c", GRN = "#16a34a", RED = "#dc2626", BLU = "#2563eb";
+    function $(id) { return document.getElementById(id); }
+    function col() { return SimKit.theme.colors(); }
+    function f2(x) { if (!isFinite(x)) return "∞"; var a = Math.abs(x); if (a < 0.0005) return "0"; var d = a >= 1000 ? 0 : a >= 100 ? 1 : 3; return x.toFixed(d).replace(/\.?0+$/, ""); }
+    function line(ctx, x1, y1, x2, y2, color, w, dash) {
+      ctx.beginPath(); ctx.setLineDash(dash || []); ctx.strokeStyle = color; ctx.lineWidth = w || 1;
+      ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
+    }
+    function dot(ctx, x, y, r, color) { ctx.beginPath(); ctx.fillStyle = color; ctx.arc(x, y, r, 0, TAU); ctx.fill(); }
+    function label(ctx, t, x, y, color, align, size) {
+      ctx.fillStyle = color; ctx.font = "600 " + (size || 11) + "px 'IBM Plex Mono', monospace";
+      ctx.textAlign = align || "left"; ctx.textBaseline = "middle"; ctx.fillText(t, x, y);
+    }
+    function mk(id, boxId, draw) { return SimKit.canvas2d($(id), { box: $(boxId), onResize: function () { draw(); } }); }
+
+    /* ── The ladder of names ───────────────────────────── */
+    var SUP = ["", "", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹", "¹⁰"];
+    var NAMES = [
+      { n: "Position", s: "std" }, { n: "Velocity", s: "std" }, { n: "Acceleration", s: "std" }, { n: "Jerk", s: "std" },
+      { n: "Snap (jounce)", s: "eng" }, { n: "Crackle", s: "fun" }, { n: "Pop", s: "fun" },
+      { n: "Lock", s: "meme" }, { n: "Drop", s: "meme" }, { n: "Shot", s: "meme" }, { n: "Put", s: "meme" }
+    ];
+    var STATUS = { std: "Standard", eng: "Used in engineering", fun: "Playful", meme: "Folklore" };
+    function unit(n) { return n === 0 ? "m" : n === 1 ? "m/s" : "m/s" + SUP[n]; }
+    function lagr(n) { return n === 0 ? "f(t)" : n === 1 ? "f′(t)" : n === 2 ? "f″(t)" : n === 3 ? "f‴(t)" : "f⁽" + n + "⁾(t)"; }
+    function leib(n) { return n === 0 ? "x" : n === 1 ? "dx/dt" : "d" + SUP[n] + "x/dt" + SUP[n]; }
+
+    /* ── Polynomial helpers: coefficient c[k] multiplies t^k ── */
+    function pdiff(c) { var o = []; for (var k = 1; k < c.length; k++) o.push(c[k] * k); return o.length ? o : [0]; }
+    function peval(c, t) { var v = 0; for (var k = c.length - 1; k >= 0; k--) v = v * t + c[k]; return v; }
+    function pstr(c) {
+      var parts = [];
+      for (var k = c.length - 1; k >= 0; k--) {
+        if (Math.abs(c[k]) < 1e-12) continue;
+        var coef = f2(Math.abs(c[k])), term = k === 0 ? coef : (coef === "1" ? "" : coef) + "t" + (k === 1 ? "" : SUP[k] || "^" + k);
+        parts.push((parts.length ? (c[k] < 0 ? " − " : " + ") : (c[k] < 0 ? "−" : "")) + term);
+      }
+      return parts.length ? parts.join("") : "0";
+    }
+    var T_END = 6;
+    var smooth = (function () { var s = 12 / Math.pow(6, 3), s4 = 12 / Math.pow(6, 4), s5 = 12 / Math.pow(6, 5); return [0, 0, 0, 10 * s, -15 * s4, 6 * s5]; })();
+    var MOTIONS = [
+      { name: "Cruise", c: [0, 3], eq: "3t", note: "Constant speed: nothing after velocity changes." },
+      { name: "Steady push", c: [0, 0, 1], eq: "t²", note: "Constant acceleration: jerk is zero." },
+      { name: "Constant jerk", c: [0, 0, 0, 1 / 3], eq: "t³ ÷ 3", note: "Jerk is a flat line; snap is zero." },
+      { name: "Constant snap", c: [0, 0, 0, 0, 1 / 12], eq: "t⁴ ÷ 12", note: "Snap is a flat line; crackle is zero." },
+      { name: "Constant pop", c: [0, 0, 0, 0, 0, 0, 1 / 360], eq: "t⁶ ÷ 360", note: "Pop is a flat line (2 m/s⁶); everything after it is zero." },
+      { name: "Smooth elevator", c: smooth, eq: "12 (10u³ − 15u⁴ + 6u⁵), u = t ÷ 6", note: "A 12 m lift in 6 s. Velocity and acceleration start and end at zero, yet jerk still jumps at the ends." }
+    ];
+
+    /* ── Lab 1: ladder ─────────────────────────────────── */
+    var ld = { m: MOTIONS[0], playing: false, loop: null };
+    var STRIP = ["Position  x (m)", "Velocity  v (m/s)", "Acceleration  a (m/s²)", "Jerk  j (m/s³)", "Snap  (m/s⁴)", "Crackle  (m/s⁵)", "Pop  (m/s⁶)"];
+    var STRIP_COL = [BLU, "#0891b2", GRN, COS, "#db2777", "#7c3aed", RED];
+    var ldKit, derivs = [];
+    function buildDerivs() { derivs = [ld.m.c]; for (var i = 1; i <= 10; i++) derivs.push(pdiff(derivs[i - 1])); }
+    buildDerivs();
+    function drawLadder() {
+      if (!ldKit) return;
+      var c = col(), ctx = ldKit.ctx, w = ldKit.width, h = ldKit.height, t0 = +$("ld-t").value;
+      var L = 8, R = 12, top = 6, bot = 18, rows = 7, rh = (h - top - bot) / rows;
+      function X(t) { return L + t / T_END * (w - L - R); }
+      ctx.clearRect(0, 0, w, h);
+      for (var r = 0; r < rows; r++) {
+        var cf = derivs[r], lo = Infinity, hi = -Infinity, i, N = 120;
+        for (i = 0; i <= N; i++) { var y = peval(cf, T_END * i / N); if (y < lo) lo = y; if (y > hi) hi = y; }
+        if (hi - lo < 1e-9) { lo -= 1; hi += 1; } else { var pad = (hi - lo) * 0.12; lo -= pad; hi += pad; }
+        if (lo > 0) lo = Math.min(lo, 0) ; if (hi < 0) hi = 0;
+        var y0 = top + r * rh, Y = (function (lo, hi, y0) { return function (v) { return y0 + 14 + (hi - v) / (hi - lo) * (rh - 20); }; })(lo, hi, y0);
+        line(ctx, L, y0 + rh - 3, w - R, y0 + rh - 3, c.textMuted, 0.4, [2, 4]);
+        if (lo < 0 && hi > 0) line(ctx, L, Y(0), w - R, Y(0), c.textMuted, 1, [3, 4]);
+        label(ctx, STRIP[r], L + 2, y0 + 7, STRIP_COL[r], "left", 10);
+        ctx.beginPath(); ctx.strokeStyle = STRIP_COL[r]; ctx.lineWidth = 2.5;
+        for (i = 0; i <= N; i++) { var tt = T_END * i / N, px = X(tt), py = Y(peval(cf, tt)); if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py); }
+        ctx.stroke();
+        var v = peval(cf, t0);
+        line(ctx, X(t0), y0 + 12, X(t0), y0 + rh - 4, c.accent, 1, [4, 3]);
+        dot(ctx, X(t0), Y(v), 4.5, STRIP_COL[r]);
+        label(ctx, f2(v), w - R - 2, y0 + 7, c.text, "right", 10);
+      }
+      for (var k = 0; k <= T_END; k++) label(ctx, k + "s", X(k), h - 6, c.textMuted, "center", 9);
+    }
+    function updateLadder() {
+      var t = +$("ld-t").value;
+      $("ld-tv").textContent = t.toFixed(2) + " s";
+      $("ld-eq").textContent = "x(t) = " + ld.m.eq + "   ·   " + ld.m.note;
+      var rows = "";
+      for (var n = 0; n <= 10; n++) {
+        rows += "<tr><td class=\"num\">" + n + "</td><td>" + NAMES[n].n + "</td><td class=\"num\">" + leib(n) + " = " + lagr(n) + "</td><td class=\"num\">" + unit(n) + "</td><td class=\"num\">" + f2(peval(derivs[n], t)) + "</td><td><span class=\"td-tag " + NAMES[n].s + "\">" + STATUS[NAMES[n].s] + "</span></td></tr>";
+      }
+      $("ld-table").innerHTML = rows;
+      drawLadder();
+    }
+    (function () {
+      var box = $("ld-fns");
+      MOTIONS.forEach(function (m, i) {
+        var b = document.createElement("button"); b.type = "button"; b.className = "tc-btn" + (i === 0 ? " primary" : ""); b.textContent = m.name;
+        b.addEventListener("click", function () {
+          ld.m = m; buildDerivs();
+          box.querySelectorAll("button").forEach(function (x) { x.classList.toggle("primary", x === b); });
+          updateLadder();
+        });
+        box.appendChild(b);
+      });
+    })();
+    ldKit = mk("ld-canvas", "ld-box", drawLadder);
+    $("ld-t").addEventListener("input", updateLadder);
+    function setPlay(on) {
+      ld.playing = on; $("ld-play").textContent = on ? "❚❚ Pause" : "▶ Play";
+      if (on && !ld.loop) {
+        ld.loop = SimKit.loop(function (dt) {
+          if (!ld.playing) return;
+          var s = $("ld-t"), t = +s.value + Math.min(dt, 0.1) * 0.8;
+          if (t > T_END) t = 0;
+          s.value = t; updateLadder();
+        });
+      }
+    }
+    $("ld-play").addEventListener("click", function () { setPlay(!ld.playing); });
+
+    /* ── Lab 2: elevator ───────────────────────────────── */
+    var D = 40, VM = 2.5, AM = 1.0;
+    function plan(J) {
+      var t1 = AM / J, t2;
+      if (VM >= AM * AM / J) { t2 = VM / AM - AM / J; } else { t1 = Math.sqrt(VM / J); t2 = 0; }
+      var xacc = VM * (2 * t1 + t2) / 2, tc = (D - 2 * xacc) / VM;
+      var segs = [[t1, J], [t2, 0], [t1, -J], [tc, 0], [t1, -J], [t2, 0], [t1, J]];
+      var total = 0; segs.forEach(function (s) { total += s[0]; });
+      return { segs: segs, total: total, peakA: J * t1, tInstant: D / VM + VM / AM };
+    }
+    function sample(p, t) {
+      var a = 0, v = 0, x = 0, rem = t, j = 0;
+      for (var i = 0; i < p.segs.length; i++) {
+        var d = Math.min(p.segs[i][0], rem), jj = p.segs[i][1];
+        x += v * d + a * d * d / 2 + jj * d * d * d / 6; v += a * d + jj * d * d / 2; a += jj * d; j = jj;
+        rem -= d; if (rem <= 1e-12) break;
+      }
+      return { x: x, v: v, a: t >= p.total ? 0 : a, j: t >= p.total ? 0 : j };
+    }
+    var elKit;
+    function drawEl() {
+      if (!elKit) return;
+      var c = col(), ctx = elKit.ctx, w = elKit.width, h = elKit.height, J = +$("el-j").value, p = plan(J);
+      var L = 8, R = 12, top = 4, bot = 18, rh = (h - top - bot) / 3, Tmax = 26;
+      function X(t) { return L + t / Tmax * (w - L - R); }
+      var rows = [
+        { name: "Velocity v (m/s)", key: "v", lo: 0, hi: 3, color: BLU },
+        { name: "Acceleration a (m/s²)", key: "a", lo: -1.3, hi: 1.3, color: GRN },
+        { name: "Jerk j (m/s³)", key: "j", lo: -Math.max(J * 1.3, 2), hi: Math.max(J * 1.3, 2), color: COS }
+      ];
+      ctx.clearRect(0, 0, w, h);
+      rows.forEach(function (r, i) {
+        var y0 = top + i * rh;
+        function Y(v) { return y0 + 14 + (r.hi - v) / (r.hi - r.lo) * (rh - 20); }
+        line(ctx, L, Y(0), w - R, Y(0), c.textMuted, 1, [3, 4]);
+        label(ctx, r.name, L + 2, y0 + 7, r.color, "left", 10);
+        ctx.beginPath(); ctx.strokeStyle = r.color; ctx.lineWidth = 2.5;
+        var N = 400, first = true;
+        for (var k = 0; k <= N; k++) {
+          var t = p.total * k / N, val = sample(p, Math.min(Math.max(t, 1e-6), p.total - 1e-6))[r.key];
+          if (first) { ctx.moveTo(X(t), Y(val)); first = false; } else ctx.lineTo(X(t), Y(val));
+        }
+        ctx.stroke();
+      });
+      for (var k = 0; k <= Tmax; k += 5) label(ctx, k + "s", X(k), h - 6, c.textMuted, "center", 9);
+      var tInst = p.tInstant;
+      line(ctx, X(tInst), top, X(tInst), h - bot, c.textMuted, 1, [5, 4]);
+      label(ctx, "instant-start ride ends", X(tInst) - 4, top + rh * 0.5, c.textMuted, "right", 9);
+      line(ctx, X(p.total), top, X(p.total), h - bot, c.accent, 1.5);
+    }
+    function updateEl() {
+      var J = +$("el-j").value, p = plan(J), g = 9.81;
+      $("el-jv").textContent = J.toFixed(1) + " m/s³";
+      $("el-time").textContent = p.total.toFixed(1) + " s (+" + (p.total - p.tInstant).toFixed(1) + " s)";
+      $("el-a").textContent = p.peakA.toFixed(2) + " m/s²";
+      $("el-w").textContent = Math.round((g + p.peakA) / g * 100) + "% weight";
+      $("el-pj").textContent = J.toFixed(1) + " m/s³";
+      var v = $("el-verdict");
+      v.textContent = J <= 0.7 ? "Hospital-grade smooth. Patients would not notice the start, but the trip is slow."
+        : J <= 2 ? "Comfortable: within what most elevator riders find acceptable."
+        : J <= 6 ? "Noticeable lurch. Riders will feel every start and stop, and it is nearing the intolerable range."
+        : "Past the roughly 6 m/s³ that riders report as intolerable. You gained seconds, you lost passengers.";
+      v.style.color = J <= 2 ? "#15803d" : J <= 6 ? "#b45309" : "#dc2626";
+      drawEl();
+    }
+    elKit = mk("el-canvas", "el-box", drawEl);
+    $("el-j").addEventListener("input", updateEl);
+
+    /* ── Lab 3: circle ─────────────────────────────────── */
+    var ci = { t: 0, playing: true }, ciKit;
+    var CI_COL = [BLU, "#0891b2", GRN, COS, "#db2777", "#7c3aed", RED];
+    var CI_NAME = ["position r", "velocity", "acceleration", "jerk", "snap", "crackle", "pop"];
+    (function () {
+      $("ci-key").innerHTML = CI_NAME.map(function (n, i) { return "<span style=\"--k:" + CI_COL[i] + "\">" + n + "</span>"; }).join("");
+    })();
+    function arrow(ctx, x0, y0, x1, y1, color, wd) {
+      line(ctx, x0, y0, x1, y1, color, wd);
+      var a = Math.atan2(y1 - y0, x1 - x0), s = 8;
+      ctx.beginPath(); ctx.fillStyle = color; ctx.moveTo(x1, y1);
+      ctx.lineTo(x1 - s * Math.cos(a - 0.4), y1 - s * Math.sin(a - 0.4));
+      ctx.lineTo(x1 - s * Math.cos(a + 0.4), y1 - s * Math.sin(a + 0.4)); ctx.closePath(); ctx.fill();
+    }
+    function drawCi() {
+      if (!ciKit) return;
+      var c = col(), ctx = ciKit.ctx, w = ciKit.width, h = ciKit.height, om = +$("ci-w").value;
+      var cx = w / 2, cy = h / 2, maxPx = Math.min(w, h) / 2 - 18, ph = om * ci.t;
+      if (maxPx < 10) return;
+      var mag = [], top = 0, n;
+      for (n = 0; n < 7; n++) { mag[n] = Math.pow(om, n); if (mag[n] > top) top = mag[n]; }
+      var unitPx = maxPx / top;
+      ctx.clearRect(0, 0, w, h);
+      ctx.beginPath(); ctx.strokeStyle = c.textMuted; ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
+      ctx.arc(cx, cy, maxPx / top * 1, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
+      dot(ctx, cx, cy, 3, c.textMuted);
+      for (n = 6; n >= 0; n--) {
+        var ang = ph + n * Math.PI / 2, len = mag[n] * unitPx;
+        var off = n >= 4 ? 6 : 0, ox = -off * Math.sin(ang), oy = -off * Math.cos(ang);
+        arrow(ctx, cx + ox, cy + oy, cx + ox + len * Math.cos(ang), cy + oy - len * Math.sin(ang), CI_COL[n], n === 0 ? 3 : 2);
+      }
+      dot(ctx, cx + unitPx * Math.cos(ph), cy - unitPx * Math.sin(ph), 5, BLU);
+    }
+    function updateCi() {
+      var om = +$("ci-w").value;
+      $("ci-wv").textContent = om.toFixed(2) + " rad/s";
+      var rel = [0, 1, 2, 3, 4].map(function (n) { return CI_NAME[n].split(" ")[0] + " " + f2(Math.pow(om, n)) + "R"; }).join(" · ");
+      $("ci-note").textContent = "lengths: " + rel + "  ·  a = −" + f2(om * om) + " r";
+      drawCi();
+    }
+    ciKit = mk("ci-canvas", "ci-box", drawCi);
+    $("ci-w").addEventListener("input", updateCi);
+    $("ci-play").addEventListener("click", function () { ci.playing = !ci.playing; $("ci-play").textContent = ci.playing ? "❚❚ Pause" : "▶ Play"; });
+    SimKit.loop(function (dt) { if (!ci.playing) return; ci.t += Math.min(dt, 0.1); drawCi(); });
+
+    SimKit.theme.onChange(function () { drawLadder(); drawEl(); drawCi(); });
+
+    /* ── Practice ───────────────────────────────────────── */
+    document.querySelectorAll(".tc-practice-item").forEach(function (item) {
+      var input = item.querySelector("input"), fb = item.querySelector(".fb");
+      function check() {
+        var v = parseFloat(input.value);
+        if (isNaN(v)) { fb.textContent = "Enter a number."; fb.className = "fb no"; return; }
+        var ok = Math.abs(v - parseFloat(item.dataset.answer)) <= 0.05;
+        fb.textContent = ok ? "✔ Correct." : "Not yet. Hint: " + item.dataset.hint;
+        fb.className = "fb " + (ok ? "ok" : "no");
+      }
+      item.querySelector("button").addEventListener("click", check);
+      input.addEventListener("keydown", function (e) { if (e.key === "Enter") check(); });
+    });
+
+    buildDerivs(); updateLadder(); updateEl(); updateCi();
+  })();
+  </script>
+  <script src="../../../assets/js/classroom-animations.js"></script>
+  <script src="../../../assets/js/lesson-layout.js"></script>
+  <script src="../../../assets/js/math-pathway-nav.js"></script>
+<script src="../../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
