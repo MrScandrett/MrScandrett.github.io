@@ -573,8 +573,8 @@
       gap: 3px; min-width: 790px; }
 
     /* ── Element cell ─────────────────────────────────── */
-    .el { border-radius: 6px; padding: 4px 3px; display: flex; flex-direction: column;
-      justify-content: space-between; cursor: pointer; user-select: none;
+    .el { border-radius: 6px; padding: 2px 3px; display: flex; flex-direction: column;
+      justify-content: space-between; min-width: 0; min-height: 0; overflow: hidden; cursor: pointer; user-select: none;
       border: 1.5px solid transparent; transition: transform 0.13s, box-shadow 0.13s, opacity 0.2s;
       font-family: inherit; text-align: left; }
     .el:hover { transform: scale(1.14) translateZ(0); z-index: 20;
@@ -591,15 +591,19 @@
         0 0 0 2px rgba(255, 204, 0, 0.48),
         0 8px 18px rgba(255, 204, 0, 0.18);
     }
-    .el-num  { font-size: 0.52rem; font-weight: 700; opacity: 0.75; line-height: 1; }
-    .el-sym  { font-size: 1rem;    font-weight: 800; line-height: 1.1; text-align: center; }
-    .el-name { font-size: 0.42rem; text-align: center; opacity: 0.8;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .el-mass { font-size: 0.42rem; text-align: center; opacity: 0.6; }
+    /* Cell text is a fixed-height stack (num + symbol + state + mass must fit a 44px row),
+       so every line sets its own line-height instead of inheriting the body's roomy one.
+       The element name lives in the tooltip and the inspector, not in the cell. */
+    .el > span { display: block; min-width: 0; white-space: nowrap; overflow: hidden;
+      text-overflow: clip; line-height: 1; }
+    .el-num  { font-size: 0.52rem; font-weight: 700; opacity: 0.75; }
+    .el-sym  { font-size: 1rem;    font-weight: 800; line-height: 1.05; text-align: center; }
+    .el > .el-name { display: none; }
+    .el-mass { font-size: 0.42rem; text-align: center; opacity: 0.6; letter-spacing: 0; }
     .el-phase {
       font-size: 0.34rem;
       font-weight: 800;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
       text-align: center;
       opacity: 0.7;
