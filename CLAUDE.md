@@ -130,6 +130,23 @@ flex scrollers, and prints in the Day theme. When writing lesson CSS:
   (PDFs + report in `tmp/print-layout-audit/`). It flags ink-heavy pages, blank and
   half-empty pages, stranded headings, one-line paragraph splits, and shrunk printouts.
 
+## Home-page class calendar
+
+`#home-calendar` on `index.html` is a month calendar driven by `assets/js/home-calendar.mjs`
+(styles in `assets/css/home-calendar.css`, classes `hcal-*`). Mon/Wed/Fri are the STEAM /
+Microschool / Study Hall class days (`CLASS_DAYS`), shown as quiet color tints. Everything
+else is a marker with a category (holiday, birthday, history, science & sky):
+
+- **Computed, never hand-listed:** US holidays, Easter-based dates (Holy Week, Pentecost),
+  Rosh Hashanah / Yom Kippur / Sukkot / Passover / Hanukkah (via the `Intl` Hebrew calendar),
+  and equinoxes/solstices (Meeus). Tests: `node --test tests/home-calendar.test.mjs`.
+- **Curated:** `data/calendar-events.json` (`md` = `MM-DD`, `y` = original year, which drives the
+  "Nth birthday / years ago / ★ milestone every 25 years" text). Each entry links to the lesson
+  that teaches it, and the test fails if that lesson file doesn't exist. When you add a lesson
+  about a person or dated event, add its entry here.
+- **Closures:** add `{ "from": "YYYY-MM-DD", "to": "YYYY-MM-DD", "label": "…" }` to `noClass`
+  and Mon/Wed/Fri inside the range render as "No class". It ships empty; nothing is invented.
+
 ## Visitor memory (My Stuff)
 
 `assets/js/visitor-memory.js` gives returning visitors a profile with no account and

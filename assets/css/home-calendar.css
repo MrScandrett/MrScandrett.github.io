@@ -1,0 +1,213 @@
+/* Home-page class calendar (#home-calendar). Surface, title and eyebrow colors come
+   from the existing .home-widget--schedule theme rules; everything here reads the
+   theme's text/glass variables so it works in light, dark and night lighting. */
+
+.home-cal {
+  --hcal-ink: var(--text-main, #17233a);
+  --hcal-muted: var(--text-muted, #5b6b85);
+  --hcal-line: var(--glass-stroke-soft, color-mix(in srgb, currentColor 16%, transparent));
+  --hcal-steam: #3b82f6;
+  --hcal-micro: #2fb67c;
+  --hcal-study: #8b7cf6;
+  --hcal-holiday: #e5484d;
+  --hcal-birthday: #f0a020;
+  --hcal-history: #b07a4a;
+  --hcal-science: #1ea7c5;
+  color: var(--hcal-ink);
+  min-width: 0;
+}
+
+.home-cal button { font: inherit; color: inherit; }
+
+/* ── header ─────────────────────────────────────────── */
+.hcal-head { gap: 0.75rem 1.25rem; flex-wrap: wrap; }
+.hcal-nav { display: flex; align-items: center; gap: 0.35rem; }
+.hcal-month {
+  min-width: 9.5ch;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--hcal-ink);
+}
+.hcal-btn {
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.55rem;
+  border: 1px solid var(--hcal-line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--hcal-ink) 5%, transparent);
+  cursor: pointer;
+  line-height: 1;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+.hcal-btn--text { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; margin-left: 0.3rem; }
+.hcal-btn:hover { background: color-mix(in srgb, var(--hcal-ink) 11%, transparent); }
+.home-cal :focus-visible { outline: 2px solid var(--hcal-ink); outline-offset: 2px; }
+
+/* ── legend / filters ───────────────────────────────── */
+.hcal-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.9rem; font-size: 0.74rem; color: var(--hcal-muted); }
+.hcal-key, .hcal-filter { display: inline-flex; align-items: center; gap: 0.4rem; }
+.hcal-key i, .hcal-filter i { width: 0.7rem; height: 0.7rem; border-radius: 3px; flex: none; }
+.hcal-key--steam i { background: color-mix(in srgb, var(--hcal-steam) 55%, transparent); border: 1px solid var(--hcal-steam); }
+.hcal-key--micro i { background: color-mix(in srgb, var(--hcal-micro) 55%, transparent); border: 1px solid var(--hcal-micro); }
+.hcal-key--study i { background: color-mix(in srgb, var(--hcal-study) 55%, transparent); border: 1px solid var(--hcal-study); }
+.hcal-legend-sep { width: 1px; height: 1rem; background: var(--hcal-line); }
+.hcal-filter {
+  padding: 0.18rem 0.6rem 0.18rem 0.45rem;
+  border: 1px solid var(--hcal-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--hcal-muted);
+  font-size: 0.74rem;
+  cursor: pointer;
+}
+.hcal-filter i { border-radius: 50%; width: 0.55rem; height: 0.55rem; }
+.hcal-filter--holiday i { background: var(--hcal-holiday); }
+.hcal-filter--birthday i { background: var(--hcal-birthday); }
+.hcal-filter--history i { background: var(--hcal-history); }
+.hcal-filter--science i { background: var(--hcal-science); }
+.hcal-filter[aria-pressed="true"] { color: var(--hcal-ink); background: color-mix(in srgb, var(--hcal-ink) 7%, transparent); }
+.hcal-filter[aria-pressed="false"] i { opacity: 0.3; }
+.hcal-filter[aria-pressed="false"] { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--hcal-muted) 60%, transparent); }
+
+/* ── layout ─────────────────────────────────────────── */
+.hcal-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+  gap: 1.1rem;
+  align-items: start;
+  margin-top: 0.4rem;
+}
+.hcal-main { min-width: 0; }
+.hcal-static { margin: 0; font-size: 0.85rem; color: var(--hcal-muted); }
+
+/* ── month grid ─────────────────────────────────────── */
+.hcal-weekdays, .hcal-row { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.hcal-weekdays { margin-bottom: 3px; }
+.hcal-weekdays span {
+  text-align: center;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--hcal-muted);
+}
+.hcal-grid { display: grid; gap: 3px; }
+.hcal-cell { min-width: 0; }
+
+.hcal-day {
+  --tone: transparent;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  width: 100%;
+  min-height: 5.1rem;
+  padding: 0.3rem 0.35rem 0.35rem;
+  border: 1px solid var(--hcal-line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--tone) 12%, transparent);
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+.hcal-day:hover { border-color: color-mix(in srgb, var(--hcal-ink) 38%, transparent); }
+.hcal-day.is-steam { --tone: var(--hcal-steam); }
+.hcal-day.is-micro { --tone: var(--hcal-micro); }
+.hcal-day.is-study { --tone: var(--hcal-study); }
+.hcal-day.is-class { border-top: 3px solid color-mix(in srgb, var(--tone) 70%, transparent); }
+.hcal-day.is-weekend:not(.is-class) { background: color-mix(in srgb, var(--hcal-ink) 3.5%, transparent); }
+.hcal-day.is-outside { opacity: 0.42; }
+.hcal-day.is-closed { background: transparent; border-top-width: 1px; border-style: dashed; }
+.hcal-day.is-closed .hcal-class { text-decoration: line-through; opacity: 0.7; }
+.hcal-day.is-selected { border-color: var(--hcal-ink); box-shadow: 0 0 0 1px var(--hcal-ink); }
+
+.hcal-class {
+  font-family: var(--font-sans, inherit);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--tone) 60%, var(--hcal-ink));
+}
+
+.hcal-chips { display: flex; flex-direction: column; gap: 2px; min-width: 0; margin-top: auto; }
+.hcal-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
+  min-width: 0;
+  font-size: 0.64rem;
+  line-height: 1.25;
+  color: var(--hcal-muted);
+}
+.hcal-chip-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hcal-chip.is-milestone .hcal-chip-text { color: var(--hcal-ink); font-weight: 700; }
+.hcal-chip.is-milestone .hcal-chip-text::after { content: " ★"; }
+.hcal-more { font-size: 0.6rem; color: var(--hcal-muted); padding-left: 0.7rem; }
+.hcal-class-short { display: none; }
+.hcal-dots { display: none; gap: 3px; margin-top: auto; }
+
+.hcal-dot { width: 0.42rem; height: 0.42rem; border-radius: 50%; flex: none; background: var(--hcal-muted); }
+.hcal-chip--holiday .hcal-dot, .hcal-dot--holiday, .hcal-item--holiday .hcal-dot { background: var(--hcal-holiday); }
+.hcal-chip--birthday .hcal-dot, .hcal-dot--birthday, .hcal-item--birthday .hcal-dot { background: var(--hcal-birthday); }
+.hcal-chip--history .hcal-dot, .hcal-dot--history, .hcal-item--history .hcal-dot { background: var(--hcal-history); }
+.hcal-chip--science .hcal-dot, .hcal-dot--science, .hcal-item--science .hcal-dot { background: var(--hcal-science); }
+
+/* ── side panel ─────────────────────────────────────── */
+.hcal-side { display: grid; gap: 1rem; min-width: 0; }
+.hcal-side > section { padding: 0.8rem 0.9rem; border: 1px solid var(--hcal-line); border-radius: 10px; background: color-mix(in srgb, var(--hcal-ink) 3.5%, transparent); }
+.hcal-side-title { margin: 0 0 0.55rem; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.01em; color: var(--hcal-ink); }
+.hcal-quiet { margin: 0; font-size: 0.8rem; color: var(--hcal-muted); }
+.hcal-class-note {
+  display: grid;
+  gap: 0.1rem;
+  margin-bottom: 0.6rem;
+  padding: 0.5rem 0.65rem;
+  border-left: 3px solid var(--tone);
+  border-radius: 4px 8px 8px 4px;
+  background: color-mix(in srgb, var(--tone) 12%, transparent);
+  font-size: 0.8rem;
+}
+.hcal-class-note.is-steam { --tone: var(--hcal-steam); }
+.hcal-class-note.is-micro { --tone: var(--hcal-micro); }
+.hcal-class-note.is-study { --tone: var(--hcal-study); }
+.hcal-class-note span { color: var(--hcal-muted); }
+
+.hcal-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+.hcal-item { display: grid; grid-template-columns: auto 1fr; gap: 0.5rem; align-items: start; }
+.hcal-item > .hcal-dot { margin-top: 0.38rem; }
+.hcal-item-title { font-size: 0.82rem; font-weight: 600; line-height: 1.35; }
+.home-cal .hcal-item-title a { color: inherit; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); text-underline-offset: 2px; }
+.home-cal .hcal-item-title a:hover { text-decoration-color: currentColor; }
+.hcal-item-when, .hcal-item-note { font-size: 0.73rem; line-height: 1.4; color: var(--hcal-muted); }
+.hcal-star { color: var(--hcal-birthday); font-weight: 700; }
+.hcal-stamp { display: inline-block; min-width: 3.4ch; margin-right: 0.45rem; font-size: 0.7rem; font-weight: 700; color: var(--hcal-muted); font-variant-numeric: tabular-nums; }
+.hcal-list--compact { gap: 0.45rem; }
+
+/* ── narrower screens ───────────────────────────────── */
+@media (max-width: 900px) {
+  .hcal-body { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .hcal-day { min-height: 3.6rem; padding: 0.22rem 0.2rem; }
+  .hcal-class { font-size: 0.5rem; letter-spacing: 0.02em; }
+  .hcal-class-long { display: none; }
+  .hcal-class-short { display: inline; }
+  .hcal-chips { display: none; }
+  .hcal-dots { display: flex; }
+  .hcal-num { font-size: 0.74rem; }
+  .hcal-legend-sep { display: none; }
+  .hcal-nav { width: 100%; justify-content: space-between; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hcal-day, .hcal-btn { transition: none; }
+}
