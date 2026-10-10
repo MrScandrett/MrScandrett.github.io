@@ -41,9 +41,6 @@
       p.hidden = p.getAttribute('data-fb-pane') !== openTab;
     });
     drawer.hidden = !openTab;
-    root.querySelectorAll('[data-fb-dock-open]').forEach(function (b) {
-      b.setAttribute('aria-expanded', String(b.getAttribute('data-fb-dock-open') === openTab));
-    });
     document.body.classList.toggle('fb-dock-open', !!openTab);
     if (openTab && focusPane) {
       var first = drawer.querySelector('[data-fb-pane="' + openTab + '"] input, [data-fb-pane="' + openTab + '"] select, [data-fb-pane="' + openTab + '"] button');
@@ -111,13 +108,6 @@
         var back = dock.querySelector('[data-fb-dock-tab="' + was + '"]');
         if (back) back.focus();
       }
-    });
-    // The settings strip in the transport opens the same drawer pages.
-    root.addEventListener('click', function (ev) {
-      var b = ev.target.closest('[data-fb-dock-open]');
-      if (!b) return;
-      var id = b.getAttribute('data-fb-dock-open');
-      setTab(openTab === id ? null : id, false);
     });
     dock.querySelector('[role="tablist"]').addEventListener('keydown', function (ev) {
       var i = tabs.indexOf(document.activeElement);

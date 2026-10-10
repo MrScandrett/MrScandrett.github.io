@@ -1314,6 +1314,7 @@
   function play() {
     if (!ensureAudio()) return;
     stop();
+    followPaused = false;
     var M = tune.M, r = loopRange(), withPickup = r.from === 1 && tune.pickup > 0;
     var lanes = {};
     Object.keys(bus).forEach(function (k) { lanes[k] = ctx.createGain(); lanes[k].connect(bus[k]); });
@@ -1419,11 +1420,27 @@
 
   /* ================================================================ UI */
   var el = function (sel) { return root.querySelector(sel); };
-  var playBtn = el('[data-fb-play]'), dotsEl = el('[data-fb-dots]'), bannerEl = el('[data-fb-banner]');
+  var playBtn = el('[data-fb-play]'), floatingStop = el('[data-fb-floating-stop]'), dotsEl = el('[data-fb-dots]'), bannerEl = el('[data-fb-banner]');
+  var followPaused = false;
+  var musicScroller = root.closest('.ll-sim') || document.scrollingElement;
+  function pauseFollow() {
+    if (P && opts.follow) followPaused = true;
+  }
+  musicScroller.addEventListener('wheel', pauseFollow, { passive: true });
+  musicScroller.addEventListener('touchmove', pauseFollow, { passive: true });
+  musicScroller.addEventListener('pointerdown', function (event) {
+    if (event.target === musicScroller) pauseFollow();
+  }, { passive: true });
+  document.addEventListener('keydown', function (event) {
+    if (!P || !['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End'].includes(event.key)) return;
+    if (event.target.closest('input, select, textarea, button, [contenteditable="true"]')) return;
+    pauseFollow();
+  });
   function setPlaying(on) {
     playBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
     playBtn.querySelector('span').textContent = on ? 'Stop' : 'Play';
     root.classList.toggle('is-playing', on);
+    floatingStop.hidden = !on;
   }
   function clearNow() {
     paintChangesNow(0);
@@ -1443,7 +1460,7 @@
       if (barEls[e.bar]) barEls[e.bar].classList.add('is-now');
       banner(e.yours ? (opts.mode === 'band' ? 'You play the melody' : 'Your four bars: answer or improvise') : '');
       paintChangesNow(e.bar);
-      if (barEls[e.bar] && sheetFollow()) {
+      if (barEls[e.bar] && sheetFollow() && !followPaused) {
         // Settings live in a fixed drawer now, so the sheet can always follow;
         // only hold still when the reader has scrolled past the sheet entirely.
         var sheetCard = root.querySelector('.fb-sheet-card');
@@ -2489,6 +2506,7 @@
         handleImportText(inp ? inp.value : '');
         return;
       }
+      if (t.closest('[data-fb-floating-stop]')) { stop(); return; }
       if (t.closest('[data-fb-play]')) { if (P) stop(); else play(); return; }
       if (t.closest('[data-fb-chordplay]')) { playActiveChord(); return; }
       if (t.closest('[data-fb-arpplay]')) { playActiveArpeggio(); return; }
