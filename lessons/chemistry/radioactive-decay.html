@@ -27,6 +27,7 @@
       --rd-radius: 8px;
     }
     html { scroll-behavior: smooth; }
+    *, *::before, *::after { box-sizing: border-box; }
     body {
       margin: 0; min-height: 100vh;
       font-family: var(--font-sans, 'Inter', sans-serif);
@@ -37,14 +38,16 @@
         linear-gradient(180deg, #070c14 0%, #0d1420 46%, #07090f 100%);
       background-size: 38px 38px, 38px 38px, auto;
     }
-    .rd-shell { width: min(1180px, calc(100% - 2rem)); margin: 0 auto; padding: 1rem 0 4rem; display: grid; gap: 1rem; }
+    .rd-shell { width: min(1180px, calc(100% - 2rem)); margin: 0 auto; padding: 1rem 0 4rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
     .rd-topbar { position: sticky; top: 0; z-index: 30; backdrop-filter: blur(18px); background: rgba(7,9,15,0.9); border-bottom: 1px solid var(--rd-line); }
     .rd-topbar-inner { width: min(1180px, calc(100% - 2rem)); min-height: 56px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
     .rd-topbar a { color: #b0d4ef; text-decoration: none; font-size: 0.83rem; font-weight: 700; }
     .rd-topbar a:hover { color: #fff; }
     .rd-brand { color: #eef6ff; font-size: 0.92rem; font-weight: 800; white-space: nowrap; }
-    .rd-nav { display: flex; gap: 0.2rem; overflow-x: auto; scrollbar-width: none; }
+    .rd-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.2rem; }
     .rd-nav a { padding: 0.35rem 0.6rem; border-radius: 6px; white-space: nowrap; }
+    @media (max-width: 900px) { .rd-topbar-inner { flex-wrap: wrap; padding: 0.5rem 0; } .rd-brand, .rd-pill { display: none; } .rd-nav { width: 100%; justify-content: flex-start; } .rd-nav a { font-size: 0.72rem; padding: 0.2rem 0.35rem; } .rd-shell { padding-top: 0.5rem; } .rd-card { scroll-margin-top: 120px; } }
+    @media (max-width: 460px) { .rd-nav a { font-size: 0.68rem; } .rd-ctrl { min-width: 0; width: 100%; } .rd-controls .rd-btn { flex: 1 1 auto; } .rd-table { display: block; overflow-x: auto; } }
     .rd-nav a:hover { background: rgba(255,255,255,0.07); }
     .rd-pill { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.72rem; font-weight: 800; border: 1px solid var(--rd-line); color: #b0d4ef; }
     .rd-hero { border: 1px solid var(--rd-line); border-radius: var(--rd-radius); padding: clamp(1.2rem, 4vw, 2.4rem); background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(255,122,148,0.07) 60%, rgba(246,195,91,0.06)); }
@@ -55,7 +58,7 @@
     h3 { font-size: 1.02rem; margin: 1rem 0 0.4rem; }
     p { line-height: 1.72; color: var(--rd-muted); margin: 0 0 0.9rem; max-width: 78ch; }
     .rd-lede { font-size: clamp(0.98rem, 1.6vw, 1.1rem); }
-    .rd-card { background: var(--rd-panel); border: 1px solid var(--rd-line); border-radius: var(--rd-radius); padding: clamp(1rem, 2.6vw, 1.6rem); scroll-margin-top: 72px; }
+    .rd-card { min-width: 0; background: var(--rd-panel); border: 1px solid var(--rd-line); border-radius: var(--rd-radius); padding: clamp(1rem, 2.6vw, 1.6rem); scroll-margin-top: 72px; }
     .rd-kicker { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 0.4rem; color: var(--rd-beta); }
     .rd-grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.8rem; margin: 0.9rem 0; }
     .rd-mode { border: 1px solid var(--rd-line); border-top: 4px solid var(--c); border-radius: var(--rd-radius); padding: 0.9rem 1rem; background: rgba(255,255,255,0.03); }
@@ -67,6 +70,9 @@
     .rd-callout a, .rd-p a, .rd-links a { color: #9cecff; font-weight: 700; }
     figure { margin: 1rem 0; }
     figure img { width: 100%; height: auto; border-radius: var(--rd-radius); border: 1px solid var(--rd-line); display: block; }
+    .rd-photo { max-width: 780px; margin: 1.2rem auto; }
+    .rd-photo img { max-height: 470px; object-fit: contain; background: #08101b; }
+    .rd-photo a { color: #9cecff; }
     figcaption { font-size: 0.82rem; color: var(--rd-muted); margin-top: 0.4rem; line-height: 1.5; }
     figcaption strong { color: var(--rd-text); }
     /* sims */
@@ -136,15 +142,19 @@
   <header class="rd-hero">
     <p class="rd-eyebrow">Chemistry · Nuclear Chemistry · Level 3–4</p>
     <h1>Radioactive <em>Decay</em></h1>
-    <p class="rd-lede">The periodic table says an element is defined by its protons. Radioactive decay is the exception that proves how deep that rule goes: when a nucleus changes its proton count, it becomes a <strong>different element</strong>. Alpha, beta and gamma are the three ways an unstable nucleus gets to a calmer arrangement — and each one moves the atom to a different spot on the table, or none at all.</p>
+    <p class="rd-lede">The periodic table says an element is defined by its protons. Radioactive decay is the exception that proves how deep that rule goes: when a nucleus changes its proton count, it becomes a <strong>different element</strong>. Alpha and beta decay can change the element; gamma emission changes the nucleus’s energy. Use the numbers of protons and nucleons to predict what each process produces.</p>
     <p class="rd-lede" style="margin:0;">Prerequisite: <a href="periodic-table.html" style="color:#9cecff;font-weight:700;">Periodic Table of Elements</a> (atomic number, isotopes) and <a href="feynman-atoms.html" style="color:#9cecff;font-weight:700;">Atoms: Structure, Motion &amp; Matter</a>. Historical story: <a href="../physics/pioneers/marie-curie.html" style="color:#9cecff;font-weight:700;">Marie Curie</a>.</p>
   </header>
 
   <section class="rd-card" id="why" aria-labelledby="why-h">
     <p class="rd-kicker">1 · The problem</p>
     <h2 id="why-h">Why would a nucleus fall apart?</h2>
-    <p>Inside a nucleus, protons repel each other with the electric force, while the <strong>strong nuclear force</strong> glues every proton and neutron to its close neighbors. Neutrons add glue without adding repulsion, so light elements are happiest with about as many neutrons as protons. Heavier nuclei need <em>more</em> neutrons than protons to stay together, because the repulsion reaches across the whole nucleus but the glue only reaches nearby.</p>
-    <p>Plot every nuclide with neutrons on one axis and protons on the other and the stable ones form a narrow band — the <strong>line of stability</strong>. Stray too far from it, or grow too big (beyond lead, Z = 82, nothing is fully stable), and the nucleus is unstable. It <em>will</em> change; when is a matter of chance, described by the half-life.</p>
+    <p>Inside a nucleus, protons repel each other with the electric force, while the <strong>strong nuclear force</strong> glues every proton and neutron to its close neighbors. Neutrons add glue without adding repulsion, so many light stable nuclides have similar numbers of neutrons and protons. Heavier nuclei need <em>more</em> neutrons than protons to stay together, because the repulsion reaches across the whole nucleus but the glue only reaches nearby.</p>
+    <p>Plot every nuclide with neutrons on one axis and protons on the other and the stable ones form a narrow band — the <strong>line of stability</strong>. A nuclide far from the stable region may be radioactive. Every nuclide with more than 82 protons is radioactive, though some lighter nuclides are radioactive too. A radioactive nuclide can change at an unpredictable moment; half-life describes the population pattern.</p>
+    <figure class="rd-photo" data-zoomable data-lightbox-group="decay-photos">
+      <img src="../../assets/images/lessons/curie-lab-1912.jpg" alt="Marie Curie working at a laboratory bench in Paris in 1912" loading="lazy" width="3556" height="2695" />
+      <figcaption><strong>From invisible change to measured evidence.</strong> Marie Curie in her Paris laboratory, 1912. Her work helped establish that radioactivity is a property of atoms, rather than a chemical reaction caused by mixing substances. Photograph: unattributed, <a href="https://commons.wikimedia.org/wiki/File:Marie_Curie_in_her_Paris_Laboratory,_1912.jpg">Wikimedia Commons source</a>; public domain (France and US).</figcaption>
+    </figure>
     <div class="rd-callout"><p><strong>Same element, different isotope.</strong> Carbon-12 and carbon-14 both have 6 protons (so both are carbon on the <a href="periodic-table.html">periodic table</a>) but C-14 has 8 neutrons, which puts it off the line of stability. That is why C-14 is radioactive and C-12 is not.</p></div>
   </section>
 
@@ -155,11 +165,11 @@
       <div class="rd-mode" style="--c:var(--rd-alpha)">
         <h3>Alpha (α)</h3>
         <p>The nucleus ejects a helium-4 nucleus: 2 protons and 2 neutrons. Common in heavy nuclei that are simply too big.</p>
-        <p><code>Z − 2, A − 4</code><br>Two boxes <strong>left</strong> on the table.</p>
+        <p><code>Z − 2, A − 4</code><br>Atomic number drops by 2.</p>
       </div>
       <div class="rd-mode" style="--c:var(--rd-beta)">
         <h3>Beta (β⁻ / β⁺)</h3>
-        <p>β⁻: a neutron turns into a proton and emits an electron (plus an antineutrino). Too many neutrons. β⁺: a proton turns into a neutron and emits a positron. Too many protons. This is the <strong>weak force</strong> at work.</p>
+        <p>β⁻: a neutron turns into a proton and emits an electron (plus an antineutrino). Too many neutrons. β⁺: a proton turns into a neutron and emits a positron (plus a neutrino). Too many protons. This is the <strong>weak force</strong> at work.</p>
         <p><code>β⁻: Z + 1, A same</code><br><code>β⁺: Z − 1, A same</code></p>
       </div>
       <div class="rd-mode" style="--c:var(--rd-gamma)">
@@ -169,8 +179,12 @@
       </div>
     </div>
     <figure data-zoomable data-lightbox-group="decay">
-      <img src="../../assets/images/lessons/decay-modes.svg" alt="Diagram of alpha, beta-minus and gamma decay with parent nucleus, emitted particle and daughter nucleus" loading="lazy" />
-      <figcaption><strong>Read the numbers, not the words.</strong> Alpha removes 4 mass units; beta keeps the mass number but changes the element; gamma changes nothing but the energy. Bottom and top numbers must balance on both sides of every arrow.</figcaption>
+      <img src="../../assets/images/lessons/decay-modes.svg" alt="Four-row diagram comparing alpha, beta-minus, beta-plus and gamma emissions with example equations and changes to Z and A" loading="lazy" />
+      <figcaption><strong>Read both numbers.</strong> Alpha changes Z and A; either beta mode changes Z but keeps A; gamma changes neither. The mass and atomic numbers balance across every equation. Diagram created for this lesson.</figcaption>
+    </figure>
+    <figure class="rd-photo" data-zoomable data-lightbox-group="decay-photos">
+      <img src="../../assets/images/lessons/beta-tracks-1915.png" alt="Historical dark photographic field crossed by bright, dotted beta-particle tracks" loading="lazy" width="1403" height="980" />
+      <figcaption><strong>Evidence leaves tracks.</strong> A 1915 published image of beta-particle paths shows that radiation can leave a visible record in a detector, even though an individual particle is too small to see directly. Look for the thin, dotted paths; this is a historical record, not a view inside a nucleus. Image: <em>Popular Science Monthly</em> (1915), author unknown, <a href="https://commons.wikimedia.org/wiki/File:PSM_V87_D126_Track_of_beta_particles.png">Wikimedia Commons source</a>; public domain in the United States (pre-1931 publication).</figcaption>
     </figure>
     <p>Two bookkeeping rules make every decay equation checkable: the <strong>mass numbers (A)</strong> on both sides add up, and the <strong>atomic numbers (Z)</strong> add up (an electron counts as −1, a positron as +1).</p>
   </section>
@@ -181,7 +195,7 @@
     <div class="rd-sim">
       <div class="rd-sim-head">
         <span class="rd-sim-title">Nuclide chart · Decay Lab</span>
-        <span class="rd-sim-sub">Pick a nuclide, choose a decay mode, and watch it move on the chart. Only the real mode is “observed” — try the others and see why they don't happen.</span>
+        <span class="rd-sim-sub">Pick a nuclide, choose a decay mode, and watch it move on the chart. Predict the daughter first. A wrong choice shows the bookkeeping for that hypothetical step; it does not mean that this nuclide actually follows that route.</span>
       </div>
       <div class="rd-sim-body">
         <div><svg id="lab-chart" class="rd-chart" viewBox="0 0 560 420" role="img" aria-label="Chart of nuclides showing the parent and daughter of the chosen decay"></svg></div>
@@ -204,11 +218,15 @@
   <section class="rd-card" id="halflife" aria-labelledby="hl-h">
     <p class="rd-kicker">4 · Simulation 2</p>
     <h2 id="hl-h">Half-life: chance in each atom, law in the crowd</h2>
-    <p>No one can say <em>when</em> one particular atom will decay — each has the same chance every moment. But with millions of atoms, exactly half are gone after one half-life, half of the rest after the next, and so on. The decay is <strong>exponential</strong>: N = N₀ · (½)<sup>t / t½</sup>, the same curve built on <a href="../mathematics/advanced-and-calculus/eulers-number.html">Euler's number <em>e</em></a>.</p>
+    <p>No one can say <em>when</em> one particular atom will decay — each has the same chance every moment. In a large sample, about half are expected to remain after one half-life, then about half of those after the next. A small sample varies from run to run. The decay is <strong>exponential</strong>: N = N₀ · (½)<sup>t / t½</sup>, the same curve built on <a href="../mathematics/advanced-and-calculus/eulers-number.html">Euler's number <em>e</em></a>.</p>
+    <figure data-zoomable data-lightbox-group="decay">
+      <img src="../../assets/images/lessons/half-life-fractions.svg" alt="Expected undecayed atoms halve from 400 to 200, 100, 50 and 25 across four half-lives" loading="lazy" />
+      <figcaption><strong>Predict before running the model.</strong> These bars show expected counts for 400 starting atoms. The simulation below will vary from this pattern because individual atoms decay at random. Diagram created for this lesson.</figcaption>
+    </figure>
     <div class="rd-sim">
       <div class="rd-sim-head">
         <span class="rd-sim-title">Half-life simulator · 400 atoms</span>
-        <span class="rd-sim-sub">Each dot is one atom. Blue = still radioactive, dark = decayed. The white line is the ideal curve; the colored line is this random run.</span>
+        <span class="rd-sim-sub">Each dot models one atom. Blue = undecayed, dark = decayed. The white line is the expected count; the pink line is one random run. Predict the count at one half-life, then run and reset to compare trials. Simulation seconds are compressed classroom time, not the selected nuclide’s real half-life.</span>
       </div>
       <div class="rd-sim-body">
         <div>
@@ -219,20 +237,20 @@
           <div class="rd-controls" style="margin-top:0.7rem;">
             <div class="rd-ctrl"><label for="hl-t">Half-life: <span id="hl-tv">5</span> s</label><input id="hl-t" type="range" min="1" max="10" value="5" /></div>
             <button class="rd-btn b" id="hl-run">▶ Start</button>
-            <button class="rd-btn" id="hl-reset">↺ Reset</button>
+            <button class="rd-btn" id="hl-reset">↺ New trial</button>
           </div>
           <div class="rd-stats">
             <div class="rd-stat"><span>Time</span><b id="hl-time">0.0 s</b></div>
             <div class="rd-stat"><span>Half-lives</span><b id="hl-n">0.00</b></div>
             <div class="rd-stat"><span>Remaining</span><b id="hl-left">400</b></div>
-            <div class="rd-stat"><span>Ideal</span><b id="hl-ideal">400</b></div>
+            <div class="rd-stat"><span>Expected</span><b id="hl-ideal">400</b></div>
           </div>
         </div>
       </div>
     </div>
 
     <h3>Use it: radiocarbon dating</h3>
-    <p>Living things keep swapping carbon with the air, so their carbon-14 fraction matches the atmosphere. At death the swapping stops and C-14 (half-life 5,730 years) decays by β⁻ into nitrogen-14. Measure how much is left and count the half-lives.</p>
+    <p>Living organisms exchange carbon with their environment. Radiocarbon dating estimates an initial C-14 level using calibration data; after death, that exchange largely stops and C-14 (half-life 5,730 years) decays by β⁻ into nitrogen-14. Compare the remaining fraction with the estimated starting level and count the half-lives. This slider is an idealized calculation; real ages need calibration and contamination checks.</p>
     <div class="rd-sim">
       <div class="rd-sim-body" style="grid-template-columns:1fr;">
         <div class="rd-controls">
@@ -247,11 +265,15 @@
   <section class="rd-card" id="chain" aria-labelledby="chain-h">
     <p class="rd-kicker">5 · Simulation 3</p>
     <h2 id="chain-h">A decay chain: uranium-238 walks down to lead</h2>
-    <p>The daughter of a decay is often radioactive too, so the atom keeps stepping until it lands on a stable nuclide. Uranium-238 takes 14 steps to become lead-206. Notice how alpha steps go down-left and beta steps go up-left on the chart.</p>
+    <p>The daughter of a decay is often radioactive too, so the atom keeps stepping until it lands on a stable nuclide. Uranium-238 takes 14 steps to become lead-206. On this chart, alpha moves down-left (two fewer protons and two fewer neutrons); beta-minus moves up-left (one more proton and one fewer neutron).</p>
+    <figure class="rd-photo" data-zoomable data-lightbox-group="decay-photos">
+      <img src="../../assets/images/lessons/uranium-ore-usgs.jpg" alt="Close view of uranium-bearing ore with dark and pale mineral areas" loading="lazy" width="1400" height="895" />
+      <figcaption><strong>Where a decay chain can begin.</strong> Uranium-bearing ore is a mixture of minerals; this photograph does not show radiation or identify individual isotopes. The uranium-238 series can yield radon gas as one of its daughters. Photograph: US Geological Survey, <a href="https://commons.wikimedia.org/wiki/File:Uraniumore.jpg">Wikimedia Commons source</a>; public domain in the United States as a USGS work.</figcaption>
+    </figure>
     <div class="rd-sim">
       <div class="rd-sim-head">
         <span class="rd-sim-title">U-238 decay series</span>
-        <span class="rd-sim-sub">Press Next decay to take one step. Each step shows the real half-life of the atom you're holding.</span>
+        <span class="rd-sim-sub">Press Next decay to take one step along the principal U-238 series. Some nuclides have minor branches. Each step lists an approximate half-life for the nuclide shown. The button advances the pathway, not elapsed time; individual atoms decay unpredictably.</span>
       </div>
       <div class="rd-sim-body">
         <div><svg id="chain-chart" class="rd-chart" viewBox="0 0 560 420" role="img" aria-label="Chart of nuclides showing the uranium-238 decay path to lead-206"></svg></div>
@@ -272,7 +294,11 @@
     <h2 id="shield-h">Penetrating power and shielding</h2>
     <figure data-zoomable data-lightbox-group="decay">
       <img src="../../assets/images/lessons/penetration.svg" alt="Alpha stopped by paper, beta stopped by aluminum, gamma weakened but not stopped by lead" loading="lazy" />
-      <figcaption><strong>Big, slow, charged = easily stopped.</strong> Alpha particles are heavy and doubly charged so they lose energy fast: paper stops them, but swallowed or inhaled they do the most damage in tissue. Gamma has no charge or mass, so it goes farthest — each layer of lead only cuts it by a fraction.</figcaption>
+      <figcaption><strong>Big, slow, charged = easily stopped.</strong> Alpha particles are heavy and doubly charged so they lose energy fast: paper stops them, but swallowed or inhaled they do the most damage in tissue. Gamma photons have no charge or rest mass, so they are generally more penetrating. Thick shielding reduces their intensity; the result depends on photon energy and shield thickness. Diagram created for this lesson.</figcaption>
+    </figure>
+    <figure class="rd-photo" data-zoomable data-lightbox-group="decay-photos">
+      <img src="../../assets/images/lessons/radium-worker-1929.jpg" alt="1929 photograph of a worker handling radium with a small lead shield between his face and work" loading="lazy" width="320" height="413" />
+      <figcaption><strong>Protection practices changed as evidence grew.</strong> This 1929 worker uses a lead barrier while handling a radium source. The photograph shows a historical practice, not a model for safe handling today; shielding is only one part of radiation protection. Photograph from E. E. Free, <em>Popular Science</em> (1929), <a href="https://commons.wikimedia.org/wiki/File:Radium_worker_using_lead_shield_1929.jpg">Wikimedia Commons source</a>; public domain in the United States (publication not renewed).</figcaption>
     </figure>
     <table class="rd-table">
       <thead><tr><th>Radiation</th><th>What it is</th><th>Stopped by</th><th>Main hazard</th></tr></thead>
@@ -282,7 +308,7 @@
         <tr><td style="color:var(--rd-gamma)"><b>γ</b></td><td>High-energy photon</td><td>Thick lead or concrete (reduces, never fully stops)</td><td>Whole-body exposure from outside</td></tr>
       </tbody>
     </table>
-    <p>The three protections: <strong>time</strong> (less exposure), <strong>distance</strong> (intensity falls with the square of distance), and <strong>shielding</strong>. Radiation is also useful — PET scans use β⁺ emitters, and the technetium-99m used in medical imaging is a pure gamma emitter with a 6-hour half-life, chosen because it disappears quickly.</p>
+    <p>The three protections: <strong>time</strong> (less exposure), <strong>distance</strong> (for a small source in open space, intensity roughly follows an inverse-square pattern), and <strong>shielding</strong>. Radiation is also useful — PET scans use β⁺ emitters, and technetium-99m used in medical imaging emits diagnostic gamma rays with a roughly 6-hour half-life, which helps limit the duration of exposure.</p>
   </section>
 
   <section class="rd-card rd-quiz" id="check" aria-labelledby="check-h">
@@ -292,6 +318,7 @@
     <details><summary>Carbon-14 does β⁻ decay. What element results, and why does the mass number stay 14?</summary><p>Nitrogen-14. A neutron turned into a proton (Z 6 → 7); the total number of nucleons is unchanged.</p></details>
     <details><summary>A sample has a half-life of 3 days. What fraction remains after 9 days?</summary><p>9 days = 3 half-lives, so (½)³ = 1/8.</p></details>
     <details><summary>Does gamma decay change which element an atom is?</summary><p>No. Z and A are unchanged, only the nucleus's energy drops.</p></details>
+    <details><summary>The simulator shows 187 of 400 atoms after one half-life. Is its decay law broken?</summary><p>No. 200 is the expected count, not a guarantee. Individual decays are random, so each 400-atom trial can vary.</p></details>
   </section>
 
   <section class="rd-card" id="connections" aria-labelledby="conn-h">
@@ -426,14 +453,14 @@
     html += 'Check: A ' + n.a + ' → ' + d[1] + (mode === 'alpha' ? ' + 4' : '') + '; Z ' + n.z + ' → ' + d[0] + (mode === 'alpha' ? ' + 2' : mode === 'beta-' ? ' + (−1)' : mode === 'beta+' ? ' + (+1)' : '') + '<br>';
     if (d[0] < 1 || !SYM[d[0]]) { html += '<span class="rd-no">No such element.</span><br>'; }
     else if (mode === 'gamma') html += 'Same element, lower energy.<br>';
-    else html += 'Daughter: <b>' + label(d[0], d[1]) + '</b> — the atom moved ' + (d[0] < n.z ? (n.z - d[0]) + (n.z - d[0] === 1 ? ' box' : ' boxes') + ' left' : '1 box right') + ' on the periodic table.<br>';
+    else html += 'Daughter: <b>' + label(d[0], d[1]) + '</b> — atomic number ' + (d[0] < n.z ? 'decreases by ' + (n.z - d[0]) : 'increases by ' + (d[0] - n.z)) + '.<br>';
     if (ok) html += '<span class="rd-ok">✓ This is how ' + label(n.z, n.a, n.tag || '') + ' really decays.</span>' + (n.note ? '<br>' + n.note : '');
-    else html += '<span class="rd-no">✗ Not observed.</span> ' + label(n.z, n.a, n.tag || '') + ' decays by <b>' + MODE_NAME[n.real] + '</b>. ' + why(n, mode);
+    else html += '<span class="rd-no">✗ Not the listed main route.</span> ' + label(n.z, n.a, n.tag || '') + ' decays by <b>' + MODE_NAME[n.real] + '</b>. ' + why(n, mode);
     labOut.innerHTML = html;
   }
   function why(n, mode) {
     var N = n.a - n.z;
-    if (mode === 'alpha') return n.z < 82 ? 'Alpha decay needs a heavy nucleus (usually Z > 82).' : 'It has the size for alpha, but this nuclide decays another way.';
+    if (mode === 'alpha') return n.z < 82 ? 'Alpha decay is most common among heavy nuclei.' : 'It has the size for alpha, but this nuclide decays another way.';
     if (mode === 'beta-') return N > n.z ? 'It has plenty of neutrons, but this isn’t its route.' : 'It has few neutrons, so turning one into a proton would move it the wrong way.';
     if (mode === 'beta+') return 'β⁺ helps a proton-rich nucleus; this one has enough neutrons already.';
     return 'Gamma only applies to an excited nucleus.';
@@ -445,7 +472,7 @@
   /* ---------- Simulation 2: half-life ---------- */
   var cvA = document.getElementById('hl-atoms'), cvG = document.getElementById('hl-graph');
   var cA = cvA.getContext('2d'), cG = cvG.getContext('2d');
-  var N0 = 400, atoms, elapsed, hist, timer = null, half = 5, DT = 0.1, TMAX = 40;
+  var N0 = 400, atoms, elapsed, hist, timer = null, half = 5, DT = 0.1;
   var el = function (id) { return document.getElementById(id); };
   function hlReset() {
     atoms = new Array(N0).fill(true); elapsed = 0; hist = [[0, N0]];
@@ -458,7 +485,7 @@
     for (i = 0; i < N0; i++) if (atoms[i]) left++;
     elapsed += DT; hist.push([elapsed, left]);
     hlDraw();
-    if (left === 0 || elapsed >= TMAX) { clearInterval(timer); timer = null; el('hl-run').textContent = '▶ Start'; }
+    if (left === 0 || elapsed >= half * 6) { clearInterval(timer); timer = null; el('hl-run').textContent = '▶ Start'; }
   }
   function hlDraw() {
     var left = hist[hist.length - 1][1], s = 20;
@@ -471,7 +498,7 @@
     var W = 420, H = 260, L = 40, B = 28, T = 10, R = 10;
     cG.fillStyle = '#08101b'; cG.fillRect(0, 0, W, H);
     cG.strokeStyle = 'rgba(160,210,240,0.15)'; cG.fillStyle = 'rgba(220,234,248,0.6)'; cG.font = '10px Inter,sans-serif'; cG.lineWidth = 1;
-    var tmax = Math.min(TMAX, half * 6);
+    var tmax = half * 6;
     for (var k = 0; k <= 4; k++) {
       var yy = T + (H - T - B) * (1 - k / 4);
       cG.beginPath(); cG.moveTo(L, yy); cG.lineTo(W - R, yy); cG.stroke();
@@ -497,7 +524,7 @@
   }
   el('hl-run').addEventListener('click', function () {
     if (timer) { clearInterval(timer); timer = null; this.textContent = '▶ Start'; return; }
-    if (hist[hist.length - 1][1] === 0 || elapsed >= TMAX) hlReset();
+    if (hist[hist.length - 1][1] === 0 || elapsed >= half * 6) hlReset();
     timer = setInterval(hlStep, 50); this.textContent = '⏸ Pause';
   });
   el('hl-reset').addEventListener('click', hlReset);
@@ -509,7 +536,7 @@
     var pct = +el('c14-pct').value, hlv = Math.log(100 / pct) / Math.log(2), age = hlv * 5730;
     el('c14-pv').textContent = pct;
     el('c14-out').innerHTML = '<div class="eq">t = 5,730 × log₂(100 / ' + pct + ') = ' + Math.round(age).toLocaleString() + ' years</div>' +
-      hlv.toFixed(2) + ' half-lives have passed. ' + (pct <= 2 ? '<span class="rd-no">Near the practical limit (~50,000 years) — measurement error dominates.</span>' : 'At death, this sample had 100%.');
+      hlv.toFixed(2) + ' half-lives have passed. ' + (pct <= 2 ? '<span class="rd-no">Low remaining fraction: contamination and measurement uncertainty matter greatly.</span>' : 'Relative to the estimated starting C-14 level.');
   }
   el('c14-pct').addEventListener('input', c14); c14();
 
