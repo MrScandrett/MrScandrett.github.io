@@ -888,6 +888,11 @@
     });
 
     draw();
+    var pieceGroup = fig.closest('details.composer-piece-group');
+    if (pieceGroup) pieceGroup.addEventListener('toggle', function () {
+      if (!pieceGroup.open) { player.stop(); status.textContent = ''; }
+      else { layout = null; requestAnimationFrame(draw); }
+    });
     if (root.ResizeObserver) new ResizeObserver(function () { requestAnimationFrame(draw); }).observe(svgWrap);
     else root.addEventListener('resize', draw);
     return player;

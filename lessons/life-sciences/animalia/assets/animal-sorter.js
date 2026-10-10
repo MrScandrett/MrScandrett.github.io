@@ -33,6 +33,7 @@ class AnimalSorter {
     };
     this.correctMappings = this.initializeCorrectMappings();
     this.currentDraggedCard = null;
+    this.selectedCard = null;
     this.placedAnimals = new Set();
 
     // Initialize the game
@@ -40,7 +41,7 @@ class AnimalSorter {
   }
 
   /**
-   * Initialize all 23 animal data with IDs, names, descriptions, and classifications
+   * Initialize animal data with IDs, names, descriptions, and classifications
    */
   initializeAnimals() {
     return [
@@ -111,6 +112,9 @@ class AnimalSorter {
       const card = document.createElement('div');
       card.className = 'animal-card';
       card.draggable = true;
+      card.tabIndex = 0;
+      card.setAttribute('role', 'button');
+      card.setAttribute('aria-pressed', 'false');
       card.dataset.animalId = animal.id;
       card.dataset.animalType = animal.type;
 
@@ -121,6 +125,13 @@ class AnimalSorter {
 
       card.addEventListener('dragstart', (e) => this.onDragStart(e));
       card.addEventListener('dragend', (e) => this.onDragEnd(e));
+      card.addEventListener('click', () => this.selectCard(card));
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          this.selectCard(card);
+        }
+      });
 
       pool.appendChild(card);
     });
@@ -177,12 +188,14 @@ class AnimalSorter {
     zone.innerHTML = `
       <div class="drop-zone-label">${label}</div>
       <div class="drop-zone-sublabel">${sublabel}</div>
+      <button type="button" class="place-animal-btn">Place selected animal in ${label}</button>
       <div class="drop-zone-content" data-zone="${zoneId}"></div>
     `;
 
     zone.addEventListener('dragover', (e) => this.onDragOver(e));
     zone.addEventListener('drop', (e) => this.onDrop(e));
     zone.addEventListener('dragleave', (e) => this.onDragLeave(e));
+    zone.querySelector('.place-animal-btn').addEventListener('click', () => this.placeSelected(zone));
 
     return zone;
   }
@@ -246,36 +259,46 @@ class AnimalSorter {
     const zone = event.target.closest('.drop-zone');
     if (!zone || !this.currentDraggedCard) return;
 
-    const zoneId = zone.dataset.zone;
-    const animalId = this.currentDraggedCard.dataset.animalId;
-    const animal = this.animals.find(a => a.id === animalId);
-
     zone.classList.remove('drag-over');
+    this.placeCard(this.currentDraggedCard, zone);
+  }
 
-    // Validate placement
-    const isCorrect = this.validatePlacement(animalId, zoneId);
+  selectCard(card) {
+    if (card.classList.contains('placed')) return;
+    this.container.querySelectorAll('.animal-card').forEach(item => {
+      item.classList.remove('selected');
+      item.setAttribute('aria-pressed', 'false');
+    });
+    this.selectedCard = card;
+    card.classList.add('selected');
+    card.setAttribute('aria-pressed', 'true');
+    this.showFeedback('info', `${this.animals.find(a => a.id === card.dataset.animalId).name} selected. Choose a group.`);
+  }
 
-    if (isCorrect) {
-      // Remove from other zones if it exists
-      this.removeAnimalFromAllZones(animalId);
+  placeSelected(zone) {
+    if (!this.selectedCard) return;
+    this.placeCard(this.selectedCard, zone);
+  }
 
-      // Add to this zone
-      this.zones[zoneId].push(animalId);
-      this.placedAnimals.add(animalId);
-
-      // Animate the card to the zone
-      this.animateCardToZone(this.currentDraggedCard, zone, animal.name);
-
-      // Show success feedback
-      this.showFeedback('correct', `✓ ${animal.name} is correct!`);
-
-      // Check if all animals are sorted
-      setTimeout(() => this.checkCompletion(), this.options.animateSnapDuration);
-    } else {
-      // Show error feedback and bounce card back
-      this.showFeedback('incorrect', `✗ ${animal.name} doesn't belong here. Try again!`);
-      this.animateCardBounceBack(this.currentDraggedCard);
+  placeCard(card, zone) {
+    const animalId = card.dataset.animalId;
+    const animal = this.animals.find(a => a.id === animalId);
+    if (!this.validatePlacement(animalId, zone.dataset.zone)) {
+      this.showFeedback('incorrect', `${animal.name} does not belong in ${zone.querySelector('.drop-zone-label').textContent}. Try the other group.`);
+      this.animateCardBounceBack(card);
+      return;
     }
+    this.removeAnimalFromAllZones(animalId);
+    this.zones[zone.dataset.zone].push(animalId);
+    this.placedAnimals.add(animalId);
+    this.animateCardToZone(card, zone, animal.name);
+    this.selectedCard = null;
+    card.classList.remove('selected');
+    card.setAttribute('aria-pressed', 'false');
+    card.tabIndex = -1;
+    this.showFeedback('correct', `${animal.name} sorted into ${zone.querySelector('.drop-zone-label').textContent}.`);
+    zone.querySelector('.place-animal-btn').focus();
+    setTimeout(() => this.checkCompletion(), this.options.animateSnapDuration);
   }
 
   /**
@@ -309,10 +332,12 @@ class AnimalSorter {
     const zoneContent = zoneElement.querySelector('.drop-zone-content');
 
     // Create a visual copy in the zone
-    const zonedCard = document.createElement('div');
+    const zonedCard = document.createElement('button');
+    zonedCard.type = 'button';
     zonedCard.className = 'zoned-animal-card';
     zonedCard.dataset.animalId = cardElement.dataset.animalId;
     zonedCard.textContent = animalName;
+    zonedCard.setAttribute('aria-label', `Return ${animalName} to the animal pool`);
 
     zonedCard.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -363,6 +388,7 @@ class AnimalSorter {
         poolCard.style.opacity = '1';
         poolCard.style.pointerEvents = 'auto';
         poolCard.classList.remove('placed');
+        poolCard.tabIndex = 0;
       }
 
       this.showFeedback('info', 'Card returned to the pool.');
@@ -377,7 +403,8 @@ class AnimalSorter {
     feedbackElement.textContent = message;
     feedbackElement.className = `sorter-feedback sorter-feedback-${type}`;
 
-    setTimeout(() => {
+    clearTimeout(this.feedbackTimer);
+    this.feedbackTimer = setTimeout(() => {
       feedbackElement.textContent = '';
       feedbackElement.className = 'sorter-feedback';
     }, this.options.feedbackDuration);
@@ -437,12 +464,16 @@ class AnimalSorter {
       this.zones[zone] = [];
     });
     this.placedAnimals.clear();
+    this.selectedCard = null;
 
     // Reset animal cards
     document.querySelectorAll('.animal-card').forEach(card => {
       card.style.opacity = '1';
       card.style.pointerEvents = 'auto';
       card.classList.remove('placed');
+      card.classList.remove('selected');
+      card.setAttribute('aria-pressed', 'false');
+      card.tabIndex = 0;
       card.draggable = true;
     });
 
