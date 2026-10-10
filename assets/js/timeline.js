@@ -354,6 +354,7 @@
     this.sel = -1;
     this.widths = null;
     this.filter = null;
+    this.match = null;
 
     var items = Array.prototype.filter.call(list.children, function (n) { return n.tagName === 'LI'; }).map(readItem);
     items.forEach(function (it) { it.search = it.li.textContent.replace(/\s+/g, ' ').toLowerCase(); });
@@ -648,6 +649,7 @@
 
   Timeline.prototype.visible = function (it) {
     if (this.query && !it.era && it.search.indexOf(this.query) === -1) return false;
+    if (this.match && !it.era && !this.match(it)) return false;
     return !this.filter || !it.group || this.filter.indexOf(it.group) !== -1;
   };
 
@@ -683,6 +685,12 @@
     } else this.updateCounter();
     this.widths = null;
     this.layout();
+  };
+
+  // A page-level filter on top of categories and search: fn(item) -> show it? (null clears).
+  Timeline.prototype.setMatch = function (fn) {
+    this.match = typeof fn === 'function' ? fn : null;
+    this.refresh();
   };
 
   Timeline.prototype.setScale = function (scale) {
