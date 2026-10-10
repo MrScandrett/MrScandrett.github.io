@@ -1,0 +1,7 @@
+# Genesis 10 public-domain textbook artwork & artifacts
+
+Retrieved 2026-10-10. JPEG originals are kept for the lightbox (`data-full`). WebP previews are resized without cropping.
+
+- `bruegel-tower-of-babel.jpg`: Pieter Bruegel the Elder, *The Tower of Babel*, 1563, oil on oak wood panel, 114 × 155 cm; Kunsthistorisches Museum, Vienna (GG 1026). Directly illustrates the literary and geographic movement from Genesis 10:8–10 (Nimrod founding Babel in Shinar) to Genesis 11:1–9 (the dispersion of nations and scattering of languages). Public domain. [KHM record](https://www.khm.at/objektdb/detail/323/). [Wikimedia Commons file](https://commons.wikimedia.org/wiki/File:Pieter_Bruegel_the_Elder_-_The_Tower_of_Babel_(Vienna)_-_Google_Art_Project_-_edited.jpg).
+- `babylonian-world-map.jpg`: *The Babylonian Map of the World (Imago Mundi)*, c. 6th century BCE, clay cuneiform tablet from Sippar, southern Iraq; British Museum, London (BM 92687). The oldest known world map in human history, depicting the known circular world centered on the Euphrates and Babylon surrounded by the Bitter River (*mar-ratu*) and triangular outer regions. Provides primary evidence of ancient Near Eastern geographic worldview to compare and contrast with the genealogical-territorial mapping of Genesis 10. Public domain. [British Museum record](https://www.britishmuseum.org/collection/object/W_1882-0714-509). [Wikimedia Commons file](https://commons.wikimedia.org/wiki/File:The_Babylonian_map_of_the_world,_from_Sippar,_Mesopotamia..JPG).
+

@@ -1,0 +1,9 @@
+# Lamentations public-domain textbook artwork & artifacts
+
+Retrieved 2026-10-10. JPEG originals are kept for the lightbox (`data-full`). WebP previews are resized without cropping.
+
+- `dore-jeremiah-ruins.jpg`: Gustave Doré, *The Prophet Jeremiah Mourning over the Ruins of Jerusalem*, 1866, wood engraving, Doré's English Bible, plate 123 (illustrating Lamentations 1:1, "How lonely sits the city that once was full of people!"). Public domain faithful reproduction (PD-Art / PD-old-100-expired). [Wikimedia Commons file](https://commons.wikimedia.org/wiki/File:123.The_Prophet_Jeremiah.jpg).
+- `michelangelo-jeremiah.jpg`: Michelangelo Buonarroti, *Prophet Jeremiah*, 1508–1512, Sistine Chapel ceiling fresco, Vatican. Portrays the tradition of the sorrowful prophet meditating upon grief and judgment. Public domain faithful reproduction (PD-Art). [Wikimedia Commons file](https://commons.wikimedia.org/wiki/File:Michelangelo,_profeti,_Jeremiah_01.jpg).
+- `city-of-david-area-g.jpg`: *City of David Excavations (Area G)*, Jerusalem. Shows the Iron Age II residential quarters, stepped stone structure, and the House of Ahiel / Burnt Room, where excavators discovered the thick destruction layer of collapsed charred wood, soot, and Babylonian arrowheads dating to the 586 BCE destruction of Jerusalem. Photograph via Wikimedia Commons (CC BY-SA 4.0 / public historical site). [Wikimedia Commons file](https://commons.wikimedia.org/wiki/File:JRSLM_210416_City_of_David_Area_G_01.jpg).
+- `western-wall-bonfils.jpg`: Félix Bonfils, *Jews Praying at the Western Wall*, c. 1870s, albumen photographic print, Harvard Fine Arts Library / Library of Congress. Captures communal prayer and mourning beside the monumental Herodian foundation stones of the destroyed Temple Mount, connecting biblical lamentation across historical generations. Public domain. [Wikimedia Commons file](https://commons.wikimedia.org/wiki/File:Jews_at_Western_Wall_by_Felix_Bonfils%2C_1870s.jpg).
+

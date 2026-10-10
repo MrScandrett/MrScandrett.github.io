@@ -130,6 +130,43 @@ flex scrollers, and prints in the Day theme. When writing lesson CSS:
   (PDFs + report in `tmp/print-layout-audit/`). It flags ink-heavy pages, blank and
   half-empty pages, stranded headings, one-line paragraph splits, and shrunk printouts.
 
+## Lesson rule: timelines go through the Timeline engine
+
+Don't hand-build another timeline (lessons accumulated ~40 one-off `*-timeline` styles).
+`assets/js/timeline.js` + `assets/css/components/timeline.css` is the shared engine:
+
+- Write a plain list and mark it: `<ol data-timeline data-timeline-title="…">` with
+  `<li data-when="1906">…</li>`. The date can also come from a `<time>` or a short leading
+  element (`<span class="fl-tl-year">1906</span>`), so existing lists upgrade by adding the
+  attribute. lesson-print-button.js loads the engine whenever a page has `[data-timeline]`.
+- Dates: `1906`, `500 BC`, `AD 70`, `c. 627 BC`, `1928–34`, `1770s–80s`, `5th century BC`,
+  `March 1876`, `1947-09-09`, `66 Ma`, `4.5 Ga`, `12 ka`, `present`. If any date won't parse
+  (or they're step numbers 1, 2, 3), events are spaced evenly in source order instead.
+- Per item: `data-label` (short track label), `data-group` (colour + filter chips),
+  `data-color`, `data-era` (a band, not an event). Per list: `data-timeline-scale="time|even|log"`,
+  `data-timeline-view`, `data-timeline-gaps` ("12 years later").
+- Students get List and Track views (to scale; drag, Ctrl+wheel or +/− to zoom, ←/→ to
+  step, a detail card with "N years ago"). Their view choice is remembered site-wide.
+  Print always uses the list.
+- From lesson JS: `ClassroomOSTimeline.create(host, { title, events: [{ when, label, text|html, group, era }] })`.
+- Only use it for real chronology. Numbered how-to steps styled as a timeline aren't one.
+- Tests: `node --test tests/timeline.test.mjs` (also fails if a lesson's `data-when` won't parse).
+- Big timelines: `data-timeline-search` (search box), `data-timeline-scales="log time"` (Deep time /
+  True scale switch), `data-timeline-lanes="7"`, and `data-major` on an item so its label
+  wins space when the view is crowded. Eras get "Zoom to" buttons automatically.
+
+**The Grand Timeline** (`#grand-timeline` in `lessons/humanities/the-ages.html`) is the
+site's one-line story of everything: milestones only (the iPhone, relativity, Origin of
+Species), not every event a lesson lists. It's generated: edit `data/ages-timeline.json`
+(eras + milestones, each with a `lesson` link and a `strand`), then `npm run build:ages-timeline`.
+It replaced the old hand-built Timeline Lab. The page script's `eras`, `artifacts` and
+`faithArtifacts` arrays stay the one source for era notes and 3D models: the build reads them,
+artifacts get a "View the 3D model" button, and the page listens for the engine's
+`timeline:era` / `timeline:select` events to fill the era chapter card and sync the Era Atlas
+(`ClassroomOSTimeline.get(list)` returns the instance). `npm test` fails if the page is stale,
+a date won't parse or a lesson link is missing. When a new lesson teaches a true turning point,
+add one milestone for it.
+
 ## Home-page class calendar
 
 `#home-calendar` on `index.html` is a month calendar driven by `assets/js/home-calendar.mjs`

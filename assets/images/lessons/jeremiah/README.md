@@ -1,0 +1,12 @@
+# Jeremiah public-domain textbook artwork & artifacts
+
+Retrieved 2026-10-10. JPEG originals are kept for the lightbox (`data-full`). WebP previews are resized without cropping.
+
+- `michelangelo-jeremiah.jpg`: Michelangelo Buonarroti, *Prophet Jeremiah*, 1508–1512, Sistine Chapel ceiling fresco, Vatican. Public domain faithful reproduction (PD-Art / PD-old-100-expired). Source: Wikimedia Commons. [File and license record](https://commons.wikimedia.org/wiki/File:Michelangelo,_profeti,_Jeremiah_01.jpg).
+- `rembrandt-jeremiah.jpg`: Rembrandt van Rijn, *Jeremiah Lamenting the Destruction of Jerusalem*, 1630, oil on panel, 58 × 46 cm; Rijksmuseum, Amsterdam (object SK-A-3276). Public domain / CC0 1.0. Source: Rijksmuseum / Google Art Project via Wikimedia Commons. [Museum record](https://www.rijksmuseum.nl/en/collection/SK-A-3276). [File and license record](https://commons.wikimedia.org/wiki/File:Rembrandt_Harmensz._van_Rijn_-_Jeremia_treurend_over_de_verwoesting_van_Jeruzalem_-_Google_Art_Project.jpg).
+- `dore-baruch-writing.jpg`: Gustave Doré, *Baruch Writing Jeremiah’s Prophecies*, 1866, wood engraving, Doré’s English Bible (illustrating Jeremiah 36:4). Public domain faithful reproduction (PD-Art / PD-old-100-expired). Source: Wikimedia Commons. [File and license record](https://commons.wikimedia.org/wiki/File:Baruch_Writing_Jeremiah%27s_Prophecies_(89467495).jpg).
+- `lachish-letter-4.jpg`: *Lachish Ostracon IV* (Tell ed-Duweir Letter 4), c. 588–586 BCE, ancient Paleo-Hebrew carbon-ink inscription on ceramic pottery sherd from the gatehouse at Tel Lachish. Discovered 1935 by the Wellcome-Marston Archaeological Expedition. Wellcome Collection (L0005980) / British Museum. Public domain / CC-BY 4.0. Directly correlates with Jeremiah 34:7. [Wellcome / Commons record](https://commons.wikimedia.org/wiki/File:Lachish,Tell_ed_Duweir,_Letter_4_Wellcome_L0005980.jpg).
+- `nebuchadnezzar-chronicle.jpg`: *The Babylonian Chronicle (Early Years of Nebuchadnezzar II / ABC 5 / BM 21946)*, c. 6th century BCE, Neo-Babylonian cuneiform clay tablet recording the 597 BCE siege and capture of Jerusalem ("city of Judah") and deportation of King Jehoiachin (Jeremiah 24:1, 29:1–2, 52:28). British Museum. Public domain reproduction. [File and record](https://commons.wikimedia.org/wiki/File:ABC_05_Early_Years_of_Nebuchadnezzar_chronicle.jpg).
+
+These figures combine classical art history with primary archaeological artifacts, distinguishing textual claims from both later artistic imaginations and extra-biblical historical records.
+

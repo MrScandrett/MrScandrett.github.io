@@ -8,6 +8,7 @@ const toggle = document.querySelector('.som-scene-toggle');
 const progress = document.querySelector('.som-rose-progress');
 const currentLabel = document.querySelector('.som-slide-current');
 const totalLabel = document.querySelector('.som-slide-total');
+const sceneStatus = document.querySelector('.som-scene-status');
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const slideNames = ['Welcome','The bigger picture','The Galilean setting','Question and goals','Read in context','Geographic context','People and sources','Four study lenses','Practice and respond'];
 const slides = Array.from(main.children).filter((child) => !child.classList.contains('bpl-back') && !child.classList.contains('bpl-nav'));
@@ -49,6 +50,7 @@ toggle.addEventListener('click',() => setSceneFocus(!sceneFocused));
 document.addEventListener('keydown',(event) => { if (event.key === 'Escape' && sceneFocused) setSceneFocus(false); });
 
 try {
+  const assetRoot = new URL('../../models/sermon-on-the-mount/', import.meta.url);
   const { renderer,scene,camera,syncSize } = createScene(canvas,{ THREE,fov:34,near:.01,far:50,clearColor:0x070b18,clearAlpha:1,maxDpr:1.75 });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -73,8 +75,8 @@ try {
   blueLight.position.set(3,0,2);
   scene.add(blueLight);
   const [texture,model] = await Promise.all([
-    new THREE.TextureLoader().loadAsync('../assets/models/sermon-on-the-mount/sermon-mount.webp'),
-    new OBJLoader().loadAsync('../assets/models/sermon-on-the-mount/sermon-mount.obj')
+    new THREE.TextureLoader().loadAsync(new URL('sermon-mount.webp', assetRoot).href),
+    new OBJLoader().loadAsync(new URL('sermon-mount.obj', assetRoot).href)
   ]);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = Math.min(8,renderer.capabilities.getMaxAnisotropy());
@@ -89,6 +91,7 @@ try {
   });
   scene.add(model);
   sceneLayer.classList.remove('is-loading');
+  if (sceneStatus) sceneStatus.textContent = '3D scene ready';
   let lastTime = performance.now();
   function render(time) {
     const dt = Math.min(.05,(time - lastTime) / 1000);
@@ -109,5 +112,6 @@ try {
   console.error('Sermon on the Mount scene failed to load:',error);
   sceneLayer.classList.remove('is-loading');
   sceneLayer.classList.add('is-error');
+  if (sceneStatus) sceneStatus.textContent = '3D scene unavailable; the lesson remains usable.';
   toggle.disabled = true;
 }

@@ -510,6 +510,126 @@
           }
         ]
       }
+    ],
+    'sermon-on-the-mount': [
+      {
+        title: 'The Galilean setting',
+        note: 'Jesus delivered the Sermon on the Mount on the hills overlooking the Sea of Galilee.',
+        items: [
+          {
+            title: 'Mount of Beatitudes', kind: 'Galilee · Traditional site of Matthew 5–7',
+            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3c/Mount_of_Beatitudes_View_Sea_of_Galilee_200704.JPG/1280px-Mount_of_Beatitudes_View_Sea_of_Galilee_200704.JPG',
+            page: 'https://commons.wikimedia.org/wiki/File:Mount_of_Beatitudes_View_Sea_of_Galilee_200704.JPG',
+            alt: 'View looking down from the Mount of Beatitudes toward the tranquil waters of the Sea of Galilee',
+            caption: 'Looking south from the traditional Mount of Beatitudes over the Sea of Galilee, where Jesus gathered crowds from Galilee, the Decapolis, Jerusalem, and Judea (Matthew 4:25–5:1).',
+            credit: 'Wikimedia Commons contributor', license: 'CC BY-SA 3.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/'
+          }
+        ]
+      },
+      {
+        title: 'The Sermon in historical art',
+        note: 'European painters visualized the crowds, the mountainside, and the radical teachings of the kingdom.',
+        items: [
+          {
+            title: 'The Sermon on the Mount', kind: 'Carl Bloch · 1877',
+            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/9/96/Bloch-SermonOnTheMount.jpg/1280px-Bloch-SermonOnTheMount.jpg',
+            page: 'https://commons.wikimedia.org/wiki/File:Bloch-SermonOnTheMount.jpg',
+            alt: 'Carl Bloch painting of Jesus standing with arm raised on a sunlit hillside teaching diverse men, women, and children',
+            caption: 'Danish master Carl Bloch portrays Jesus surrounded by listeners of all ages, capturing the intimate yet cosmic authority of the Beatitudes.',
+            credit: 'Carl Bloch, 1877, Frederiksborg Castle', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
+          },
+          {
+            title: 'Sermon on the Mount & Healing', kind: 'Cosimo Rosselli · Sistine Chapel (1481–1482)',
+            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3e/Cosimo_Rosselli_Sermone_della_Montagna.jpg/1280px-Cosimo_Rosselli_Sermone_della_Montagna.jpg',
+            page: 'https://commons.wikimedia.org/wiki/File:Cosimo_Rosselli_Sermone_della_Montagna.jpg',
+            alt: 'Renaissance fresco from the Sistine Chapel showing Jesus on a green hill preaching to gathered Renaissance figures',
+            caption: 'Painted opposite the Giving of the Law to Moses on the Sistine Chapel walls, Rosselli’s fresco pairs the proclamation of the new covenant with the healing of the leper (Matthew 8:1–4).',
+            credit: 'Cosimo Rosselli, 1481–1482, Sistine Chapel, Vatican', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
+          }
+        ]
+      },
+      {
+        title: 'Ancient manuscript witness',
+        note: 'Surviving Greek manuscripts from antiquity show how the text was preserved and read.',
+        items: [
+          {
+            title: 'Codex Sinaiticus · Matthew 6 (The Lord’s Prayer)', kind: 'Greek Uncial Manuscript · 4th century CE',
+            src: 'https://upload.wikimedia.org/wikipedia/commons/b/be/Codex_Sinaiticus_Matthew_6%2C4-32.JPG',
+            page: 'https://commons.wikimedia.org/wiki/File:Codex_Sinaiticus_Matthew_6,4-32.JPG',
+            alt: 'Folio page of ancient Greek uncial script on parchment from Codex Sinaiticus containing Matthew 6',
+            caption: 'This 4th-century parchment page from Codex Sinaiticus (British Library Add MS 43725) preserves Matthew 6:4–32 in four uncial columns, including Jesus’ teaching on prayer and the Lord’s Prayer.',
+            credit: 'The British Library / Codex Sinaiticus Project', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
+          }
+        ]
+      }
+    ],
+    'how-the-bible-reached-us': [
+      {
+        title: 'Ancient manuscript witnesses',
+        note: 'Before printing, every copy of Scripture was transcribed by hand onto leather, papyrus, or parchment.',
+        items: [
+          {
+            title: 'The Great Isaiah Scroll', kind: 'Dead Sea Scrolls · c. 125 BCE',
+            src: 'https://upload.wikimedia.org/wikipedia/commons/3/31/Great_Isaiah_Scroll.jpg',
+            page: 'https://commons.wikimedia.org/wiki/File:Great_Isaiah_Scroll.jpg',
+            alt: 'Parchment scroll opened to reveal columns of ancient Hebrew calligraphy',
+            caption: 'Preserved in the caves of Qumran, this 24-foot Hebrew scroll shows how Jewish scribes copied and guarded biblical books a thousand years before medieval codices.',
+            credit: 'Israel Museum, Jerusalem / Ardon Bar Hama', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
+          },
+          {
+            title: 'Codex Sinaiticus', kind: 'Greek Bible · 4th century CE',
+            src: 'https://upload.wikimedia.org/wikipedia/commons/b/be/Codex_Sinaiticus_Matthew_6%2C4-32.JPG',
+            page: 'https://commons.wikimedia.org/wiki/File:Codex_Sinaiticus_Matthew_6,4-32.JPG',
+            alt: 'Ancient four-column Greek uncial text handwritten on fine animal vellum',
+            caption: 'Written on fine parchment sheets bound as a codex (book) rather than a scroll, Sinaiticus is the oldest surviving complete manuscript of the Christian New Testament.',
+            credit: 'British Library / Codex Sinaiticus Project', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
+          }
+        ]
+      },
+      {
+        title: 'The invention of printing',
+        note: 'Movable type allowed copies to be reproduced with speed and consistency.',
+        items: [
+          {
+            title: 'The Gutenberg Bible', kind: 'Mainz, Germany · c. 1455',
+            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/c/ce/Gutenberg_Bible_-_Library_of_Congress.jpg/1280px-Gutenberg_Bible_-_Library_of_Congress.jpg',
+            page: 'https://commons.wikimedia.org/wiki/File:Gutenberg_Bible_-_Library_of_Congress.jpg',
+            alt: 'Johannes Gutenberg’s 42-line Latin Bible on display with hand-illuminated capitals in a glass exhibition case',
+            caption: 'Johannes Gutenberg’s 42-line Latin Vulgate marked the birth of mass printing in Europe, launching the widespread availability of Scripture across languages and borders.',
+            credit: 'Library of Congress, Washington, D.C.', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
+          }
+        ]
+      }
+    ],
+    'acts-jerusalem-to-nations': [
+      {
+        title: 'Preaching in the Greco-Roman forum',
+        note: 'In Acts, the Christian witness steps out of the synagogue into the imperial public square.',
+        items: [
+          {
+            title: 'The Areopagus (Mars Hill) in Athens', kind: 'Athens, Greece · Acts 17:16–34',
+            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/8/84/20101024_Acropolis_panoramic_view_from_Areopagus_hill_Athens_Greece.jpg/1280px-20101024_Acropolis_panoramic_view_from_Areopagus_hill_Athens_Greece.jpg',
+            page: 'https://commons.wikimedia.org/wiki/File:20101024_Acropolis_panoramic_view_from_Areopagus_hill_Athens_Greece.jpg',
+            alt: 'View looking up from the rocky Areopagus hill toward the monumental Parthenon and temples of the Athenian Acropolis',
+            caption: 'Standing on the limestone outcrop of the Areopagus below the monumental Parthenon, the Apostle Paul addressed the philosophers of the Epicurean and Stoic schools about the “Unknown God.”',
+            credit: 'Wikimedia Commons contributor', license: 'CC BY-SA 3.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/'
+          }
+        ]
+      },
+      {
+        title: 'Roman epigraphy and infrastructure',
+        note: 'Archaeological discoveries confirm specific civic officials and travel routes named across Acts.',
+        items: [
+          {
+            title: 'The Erastus Inscription at Corinth', kind: 'Corinth, Greece · Romans 16:23 / Acts 19:22',
+            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0d/Erastus_stone_at_Theater_of_Corinth_%28cropped%29.jpg/1280px-Erastus_stone_at_Theater_of_Corinth_%28cropped%29.jpg',
+            page: 'https://commons.wikimedia.org/wiki/File:Erastus_stone_at_Theater_of_Corinth_(cropped).jpg',
+            alt: 'Carved Latin inscription on a paved limestone plaza near the theater of ancient Corinth',
+            caption: 'Carved in limestone paving near the Corinthian theater, this Latin inscription reads: “ERASTVS PRO AEDILITATE SVA PECVNIA STRAVIT” (Erastus in return for his aedileship laid this pavement at his own expense), directly corroborating Erastus, “the city treasurer” greeted in Romans 16:23.',
+            credit: 'Wikimedia Commons contributor', license: 'CC BY-SA 3.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/'
+          }
+        ]
+      }
     ]
   };
 
@@ -608,6 +728,25 @@
     'pauls-missionary-journeys': 'Begin with one route in detail: Antioch to Cyprus, Asia Minor, and back. Use it as a scale model for reading later journeys—always checking Acts for the sequence and distinguishing mapped reconstruction from explicit text.',
     'proverbs-wisdom-decision-lab': 'Israel’s wisdom belongs to a wider ancient Near Eastern world of courts, trade, agriculture, households, and scribal learning. Geographic context invites comparison without assuming every neighboring tradition says the same thing.',
     'sermon-on-the-mount': 'Locate the lake, Capernaum, surrounding settlements, slopes, and roads. The map clarifies the Galilean setting, but Matthew does not identify the sermon’s exact hillside.'
+  };
+
+  // Each investigation asks for a prediction before showing the passage-based reasoning.
+  // The choices are reading strategies, not claims that every interpretive question is settled.
+  var lessonInvestigations = {
+    'world-of-the-bible': ['Genesis 12:1–9', 'Abram leaves Haran. What would a map help you test?', ['Whether Canaan lay on a route from Mesopotamia', 'Whether a modern border proves the promise was fulfilled'], 0, 'Trace the journey and locate Canaan. A modern political border cannot answer what the ancient passage promises.', 'Mark Haran and Canaan; then identify one question the map cannot answer.'],
+    'how-the-bible-reached-us': ['Luke 1:1–4', 'Luke mentions earlier accounts and investigation. Which question belongs to manuscript study?', ['How surviving copies differ in wording', 'Which modern translation has the best cover design'], 0, 'Manuscript witnesses help us compare transmitted wording. Luke’s introduction addresses how his account was prepared; it does not list the surviving copies.', 'Separate composition, copying, canon, and translation in four short notes.'],
+    'the-tabernacle': ['Exodus 25:8–9', 'What does the passage explicitly connect to the sanctuary?', ['God dwelling among the people and a shown pattern', 'A confirmed location for every stop in the wilderness'], 0, 'The text states the sanctuary’s purpose and pattern. It does not settle a modern reconstruction of the exodus route.', 'Find one detail in Exodus 25–27 that a model can show, and one uncertainty it cannot settle.'],
+    'temple-and-gods-presence': ['1 Kings 8:27–30', 'Solomon dedicates the temple. Which reading follows his prayer?', ['The building directs prayer toward God, who cannot be contained by it', 'God is physically confined to the building'], 0, 'Solomon asks whether God can dwell on earth and says even heaven cannot contain him. The temple is a place of prayer, not a container for God.', 'Compare Solomon’s prayer with one later passage about God’s presence.'],
+    'kingdoms-prophets-exile': ['2 Kings 17:5–6; 25:8–12', 'What must a timeline keep distinct?', ['Assyria’s conquest of Israel and Babylon’s later conquest of Judah', 'One single conquest of both kingdoms by Rome'], 0, 'The northern kingdom and Judah fell to different empires at different times. Place each passage and empire separately before drawing a larger conclusion.', 'Put the two passages on a timeline and name who was displaced.'],
+    'feasts-of-israel': ['Leviticus 23:39–43', 'The Feast of Booths recalls what experience?', ['Israel living in booths after the exodus', 'The dedication of Solomon’s temple'], 0, 'The passage explicitly connects the practice with Israel’s wilderness dwelling. Harvest timing is also part of the calendar context.', 'Explain how the feast joins a seasonal practice to remembered history.'],
+    'elijah': ['1 Kings 18:20–39; 19:1–18', 'What changes between Carmel and Horeb?', ['Elijah moves from a public contest to fear and renewed commission', 'Elijah immediately becomes king of Israel'], 0, 'The dramatic public event does not prevent Elijah’s fear. In chapter 19, he is fed, heard, and given further work.', 'Use one verse from each chapter to describe Elijah’s circumstances.'],
+    'world-of-jesus': ['John 4:3–10; Luke 9:51–56', 'Two Gospel journeys involve Samaria. What should you compare first?', ['Each journey’s route, encounter, and immediate context', 'A claim that every Samaritan reacts the same way'], 0, 'John narrates an encounter at a well; Luke narrates rejection in a village. Geography helps locate both, while the passages keep the people and situations distinct.', 'Trace Galilee, Samaria, and Judea on the map. Compare the people’s responses in the two passages.'],
+    'jesus-parables-lab': ['Luke 10:25–37', 'Before assigning meanings to every object, what should you identify?', ['The lawyer’s question and Jesus’ closing question', 'A hidden meaning for the oil, coins, and animal'], 0, 'The exchange begins with a question about neighbor and ends with Jesus asking who acted as one. That frame guides a responsible reading.', 'Write the opening question, the reversal, and Jesus’ final instruction.'],
+    'holy-week': ['Mark 15:40–16:8; John 20:1–18', 'How can you compare the resurrection accounts?', ['Name shared claims and each writer’s chosen scene', 'Force both accounts into the same sentence order'], 0, 'Both witness to the empty tomb, but they select and arrange details differently. Compare the witnesses and narrative emphasis before attempting a sequence.', 'Make two columns: details shared and details each Gospel emphasizes.'],
+    'acts-jerusalem-to-nations': ['Acts 1:8; 8:26–40', 'How does the Ethiopian official’s story relate to Acts 1:8?', ['It shows witness crossing a social and geographic boundary', 'It proves the whole book happens in Jerusalem'], 0, 'Acts moves outward through particular people and encounters. The official’s story is one example, not a complete map of the mission.', 'Locate the road named in Acts 8 and explain what the text says about the encounter.'],
+    'pauls-missionary-journeys': ['Acts 13:4–14', 'Which route is actually named in this passage?', ['From Syrian Antioch to Cyprus and onward to Perga', 'A direct flight from Rome to Jerusalem'], 0, 'The text names Seleucia, Cyprus, Paphos, and Perga. A route map is a reconstruction of travel between named places.', 'List the places in order, then label any connecting line as a reconstruction.'],
+    'proverbs-wisdom-decision-lab': ['Proverbs 26:4–5', 'Two neighboring sayings give opposite instructions. What should a reader do?', ['Consider which situation calls for each response', 'Discard one verse because it must be a copying error'], 0, 'The paired proverbs train discernment. Their tension warns against treating each short saying as a mechanical rule for every circumstance.', 'Describe two situations in which different responses might be wise.'],
+    'sermon-on-the-mount': ['Matthew 6:1–6', 'What contrast frames Jesus’ teaching about giving and prayer?', ['Performing for public praise versus seeking the Father', 'Galilee versus Jerusalem as the correct place to pray'], 0, 'Jesus repeats the contrast between being seen by people and the Father who sees in secret. The passage examines motive and audience.', 'Find repeated words or actions and explain how they develop the contrast.']
   };
 
   var lessonEntities = {
@@ -733,6 +872,7 @@
   lesson.entities = lessonEntities[lesson.id];
   lesson.passages = lessonPassages[lesson.id];
   lesson.story = lessonStoryContext[lesson.id];
+  lesson.investigation = lessonInvestigations[lesson.id];
   main.setAttribute('data-stage-theme', lesson.code.charAt(0));
 
   function esc(value) {
@@ -760,15 +900,61 @@
     '</section>';
   }
 
-  function visualJourneyMarkup(groups) {
-    if (!groups.length) return '';
-    return '<section class="bpl-card bpl-visual-journey"><div class="bpl-visual-head"><div><p class="bpl-label">Visual journey</p><h2>From garden to gathered Church</h2></div><p>Compare biblical places, Christian architecture, and artists’ interpretations of divine presence.</p></div>' +
-      '<aside class="bpl-visual-note"><strong>Read the image type:</strong> Photographs document present-day places and buildings. Eden and divine manifestations are artistic interpretations, while several mountain identifications come from Christian tradition rather than certainty.</aside>' +
+  var visualJourneyMeta = {
+    'temple-and-gods-presence': {
+      title: 'From garden to gathered Church',
+      subtitle: 'Compare biblical places, Christian architecture, and artists’ interpretations of divine presence.',
+      note: 'Photographs document present-day places and buildings. Eden and divine manifestations are artistic interpretations, while several mountain identifications come from Christian tradition rather than certainty.'
+    },
+    'sermon-on-the-mount': {
+      title: 'The Mountain, the Lake, and the Word',
+      subtitle: 'Explore the Galilean landscape, early Gospel manuscripts, and masterwork depictions of the Sermon.',
+      note: 'Photographs document the landscape around the Sea of Galilee and the 4th-century Codex Sinaiticus. Paintings depict the Sermon through Renaissance and 19th-century artistic traditions.'
+    },
+    'how-the-bible-reached-us': {
+      title: 'From Ancient Scrolls to the Printed Word',
+      subtitle: 'Trace the physical artifacts and manuscripts that carried the biblical writings across three millennia.',
+      note: 'Artifacts and manuscripts provide primary historical evidence for how Scripture was written, preserved by hand, and transmitted across eras.'
+    },
+    'acts-jerusalem-to-nations': {
+      title: 'The Greco-Roman World of the Apostles',
+      subtitle: 'Explore the cities, Roman roads, public forums, and inscriptions visited by Peter and Paul.',
+      note: 'Archaeological photographs document the actual civic spaces, roads, and inscriptions from the first-century Roman provinces named across Acts.'
+    }
+  };
+
+  function visualJourneyMarkup(groups, lesson) {
+    if (!groups || !groups.length) return '';
+    var meta = (lesson && visualJourneyMeta[lesson.id]) || {
+      title: 'Visual journey',
+      subtitle: 'Explore biblical places, historical artifacts, and classical art.',
+      note: 'Photographs document surviving archaeological artifacts, ancient manuscripts, and historical locations. Masterpieces represent later artistic interpretations.'
+    };
+    return '<section class="bpl-card bpl-visual-journey"><div class="bpl-visual-head"><div><p class="bpl-label">Visual journey</p><h2>' + esc(meta.title) + '</h2></div><p>' + esc(meta.subtitle) + '</p></div>' +
+      '<aside class="bpl-visual-note"><strong>Read the image type:</strong> ' + esc(meta.note) + '</aside>' +
       groups.map(function (group) {
         return '<section class="bpl-visual-group"><header><h3>' + esc(group.title) + '</h3><p>' + esc(group.note) + '</p></header><div class="bpl-visual-grid bpl-visual-grid--' + group.items.length + '">' + group.items.map(function (item) {
-          return '<figure class="bpl-visual-card"><a href="' + esc(item.page) + '" target="_blank" rel="noopener noreferrer"><img src="' + esc(item.src) + '" alt="' + esc(item.alt) + '" loading="lazy" referrerpolicy="no-referrer"></a><figcaption><span>' + esc(item.kind) + '</span><h4>' + esc(item.title) + '</h4><p>' + esc(item.caption) + '</p><small>Image: <a href="' + esc(item.page) + '" target="_blank" rel="noopener noreferrer">' + esc(item.credit) + '</a> · <a href="' + esc(item.licenseUrl) + '" target="_blank" rel="license noopener noreferrer">' + esc(item.license) + '</a> · Wikimedia Commons</small></figcaption></figure>';
+          return '<figure class="bpl-visual-card" data-zoomable data-lightbox-group="bible-visual-journey"><a href="' + esc(item.page) + '" target="_blank" rel="noopener noreferrer"><img src="' + esc(item.src) + '" alt="' + esc(item.alt) + '" loading="lazy" referrerpolicy="no-referrer"></a><figcaption><span>' + esc(item.kind) + '</span><h4>' + esc(item.title) + '</h4><p>' + esc(item.caption) + '</p><small>Image: <a href="' + esc(item.page) + '" target="_blank" rel="noopener noreferrer">' + esc(item.credit) + '</a> · <a href="' + esc(item.licenseUrl) + '" target="_blank" rel="license noopener noreferrer">' + esc(item.license) + '</a> · Wikimedia Commons</small></figcaption></figure>';
         }).join('') + '</div></section>';
       }).join('') + '</section>';
+  }
+
+  function investigationMarkup(investigation) {
+    var choiceOrder = index % 2 ? [1, 0] : [0, 1];
+    return '<section class="bpl-card bpl-investigation" aria-labelledby="bpl-investigation-title">' +
+      '<div class="bpl-investigation-head"><div><p class="bpl-label">Passage investigation</p><h2 id="bpl-investigation-title">Predict, read, explain</h2></div><p>Read ' + esc(investigation[0]) + ' in the Scripture reader or your Bible. Choose a reading, then compare it with the passage.</p></div>' +
+      '<p class="bpl-investigation-question">' + esc(investigation[1]) + '</p><div class="bpl-investigation-choices" role="group" aria-label="Choose a reading">' + choiceOrder.map(function (choiceIndex) {
+        return '<button type="button" class="bpl-investigation-choice" data-investigation-choice="' + choiceIndex + '" aria-pressed="false">' + esc(investigation[2][choiceIndex]) + '</button>';
+      }).join('') + '</div><p class="bpl-investigation-feedback" role="status">Choose a reading before revealing the passage reasoning.</p>' +
+      '<div class="bpl-investigation-reveal" hidden><p><strong>Compare with the passage:</strong> ' + esc(investigation[4]) + '</p><p><strong>Try it:</strong> ' + esc(investigation[5]) + '</p></div></section>';
+  }
+
+  function gospelRoutesMarkup() {
+    if (id !== 'world-of-jesus') return '';
+    return '<section class="bpl-card bpl-routes" aria-labelledby="bpl-routes-title"><p class="bpl-label">Gospel geography lab</p><h2 id="bpl-routes-title">Compare three journeys</h2>' +
+      '<p>Use the map above, then select a passage. The region sequence is a reading aid; the Gospels do not give a turn-by-turn itinerary.</p>' +
+      '<div class="bpl-route-buttons" role="group" aria-label="Gospel journey"><button type="button" data-route="0" aria-pressed="true">Matthew 4 · Galilee</button><button type="button" data-route="1" aria-pressed="false">John 4 · Through Samaria</button><button type="button" data-route="2" aria-pressed="false">Luke 9 · Toward Jerusalem</button></div>' +
+      '<div class="bpl-route-panel" aria-live="polite"><p class="bpl-route-regions"></p><p class="bpl-route-evidence"></p><p class="bpl-route-caution"></p></div></section>';
   }
 
   main.className = 'bpl-page';
@@ -780,10 +966,10 @@
       '<div class="bpl-meta"><span>' + esc(lesson.grades) + '</span><span>' + esc(lesson.time) + '</span><span>Guided exploration</span><span>Print-ready</span></div>' +
     '</section>' +
     storyThreadMarkup(lesson.story) +
-    '<figure class="bpl-figure"><a href="' + esc(lesson.image.page) + '" target="_blank" rel="noopener noreferrer"><img src="' + esc(lesson.image.src) + '" alt="' + esc(lesson.image.alt) + '" loading="eager" referrerpolicy="no-referrer"></a><figcaption><p>' + esc(lesson.image.caption) + '</p><small>Image: <a href="' + esc(lesson.image.page) + '" target="_blank" rel="noopener noreferrer">' + esc(lesson.image.credit) + '</a> · <a href="' + esc(lesson.image.licenseUrl) + '" target="_blank" rel="license noopener noreferrer">' + esc(lesson.image.license) + '</a> · Wikimedia Commons</small></figcaption></figure>' +
+    '<figure class="bpl-figure" data-zoomable><a href="' + esc(lesson.image.page) + '" target="_blank" rel="noopener noreferrer"><img src="' + esc(lesson.image.src) + '" alt="' + esc(lesson.image.alt) + '" loading="eager" referrerpolicy="no-referrer"></a><figcaption><p>' + esc(lesson.image.caption) + '</p><small>Image: <a href="' + esc(lesson.image.page) + '" target="_blank" rel="noopener noreferrer">' + esc(lesson.image.credit) + '</a> · <a href="' + esc(lesson.image.licenseUrl) + '" target="_blank" rel="license noopener noreferrer">' + esc(lesson.image.license) + '</a> · Wikimedia Commons</small></figcaption></figure>' +
     '<div class="bpl-grid"><section class="bpl-card"><p class="bpl-label">Essential question</p><p class="bpl-question">' + esc(lesson.question) + '</p><p class="bpl-scripture"><strong>Read:</strong> ' + esc(lesson.scripture) + '</p></section>' +
     '<section class="bpl-card"><p class="bpl-label">Learning goals</p><h2>By the end, you can…</h2><ul class="bpl-goals">' + lesson.goals.map(function (goal) { return '<li>' + esc(goal) + '</li>'; }).join('') + '</ul></section></div>' +
-    visualJourneyMarkup(lesson.visualJourney) +
+    visualJourneyMarkup(lesson.visualJourney, lesson) +
     '<section class="bpl-card bpl-reader"><div class="bpl-reader-head"><div><p class="bpl-label">Open Scripture reader</p><h2>Read in context</h2></div><p>Switch passages, translations, and languages while keeping the same verse reference in view.</p></div>' +
       '<div class="bpl-reader-controls"><label><span>Passage</span><select class="bpl-passage-select">' + lesson.passages.map(function (passage, passageIndex) { return '<option value="' + passageIndex + '">' + esc(passageLabel(passage)) + '</option>'; }).join('') + '</select></label>' +
       '<label><span>Language</span><select class="bpl-language-select">' + bibleLanguages.map(function (language) { return '<option value="' + esc(language.id) + '">' + esc(language.name) + '</option>'; }).join('') + '</select></label>' +
@@ -792,8 +978,10 @@
       '<article class="bpl-scripture-panel" aria-live="polite" aria-busy="true"><header><div><p class="bpl-reader-reference"></p><p class="bpl-reader-version"></p></div></header><div class="bpl-verses"></div></article>' +
       '<p class="bpl-reader-credit">Text is loaded from the open <a href="https://github.com/wldeh/bible-api" target="_blank" rel="noopener noreferrer">Bible API dataset</a>. Availability and licensing vary by edition; the reader labels each selected source. For publication or close textual study, verify wording in an authorized edition.</p>' +
     '</section>' +
-    '<section class="bpl-card bpl-map"><div class="bpl-map-head"><div><p class="bpl-label">Geographic context</p><h2>See the bigger picture</h2></div><p>Open the full map to inspect labels and terrain.</p></div><div class="bpl-map-grid"><a class="bpl-map-image" href="' + esc(lesson.map.page) + '" target="_blank" rel="noopener noreferrer"><img src="' + esc(lesson.map.src) + '" alt="' + esc(lesson.map.alt) + '" loading="lazy" referrerpolicy="no-referrer"></a><div class="bpl-map-copy"><p>' + esc(lesson.map.note) + '</p><small>Map: <a href="' + esc(lesson.map.page) + '" target="_blank" rel="noopener noreferrer">' + esc(lesson.map.credit) + '</a> · <a href="' + esc(lesson.map.licenseUrl) + '" target="_blank" rel="license noopener noreferrer">' + esc(lesson.map.license) + '</a> · Wikimedia Commons</small></div></div></section>' +
-    '<section class="bpl-card bpl-entities"><div class="bpl-entities-head"><div><p class="bpl-label">People, places &amp; primary sources</p><h2>Picture the names in context</h2></div><p>Reference summaries and lead images come from Wikipedia.</p></div><aside class="bpl-source-note"><strong>Image accuracy:</strong> No verified contemporary portrait survives for the ancient biblical figures shown here. Person images are later artistic depictions, not documentary likenesses. Places, artifacts, manuscripts, maps, and modern observances are identified separately.</aside><div class="bpl-entity-grid">' + lesson.entities.map(function (entity, entityIndex) { var fallback = entity.fallback || lesson.image.src; return '<article class="bpl-entity" data-entity-index="' + entityIndex + '"><a class="bpl-entity-image" href="https://en.wikipedia.org/wiki/' + encodeURIComponent(entity.title.replace(/ /g, '_')) + '" target="_blank" rel="noopener noreferrer"><img src="' + esc(fallback) + '" alt="Reference image for ' + esc(entity.label || entity.title) + '" loading="lazy" referrerpolicy="no-referrer"></a><div class="bpl-entity-copy"><span>' + esc(entity.kind) + '</span><h3>' + esc(entity.label || entity.title) + '</h3><p>Loading a sourced reference summary…</p><a class="bpl-entity-source" href="https://en.wikipedia.org/wiki/' + encodeURIComponent(entity.title.replace(/ /g, '_')) + '" target="_blank" rel="noopener noreferrer">Wikipedia reference ↗</a></div></article>'; }).join('') + '</div><p class="bpl-wikipedia-credit">Text excerpts and lead images: <a href="https://en.wikipedia.org/" target="_blank" rel="noopener noreferrer">Wikipedia contributors</a> · Text available under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="license noopener noreferrer">CC BY-SA 4.0</a>; image licenses may vary and are listed on each linked article/file page.</p></section>' +
+    '<section class="bpl-card bpl-map"><div class="bpl-map-head"><div><p class="bpl-label">Geographic context</p><h2>See the bigger picture</h2></div><p>Select the map to enlarge labels and terrain.</p></div><div class="bpl-map-grid"><figure class="bpl-map-figure" data-zoomable><a class="bpl-map-image" href="' + esc(lesson.map.page) + '" target="_blank" rel="noopener noreferrer"><img src="' + esc(lesson.map.src) + '" alt="' + esc(lesson.map.alt) + '" loading="lazy" referrerpolicy="no-referrer"></a><figcaption>' + esc(lesson.map.note) + '<small>Map: <a href="' + esc(lesson.map.page) + '" target="_blank" rel="noopener noreferrer">' + esc(lesson.map.credit) + '</a> · <a href="' + esc(lesson.map.licenseUrl) + '" target="_blank" rel="license noopener noreferrer">' + esc(lesson.map.license) + '</a> · Wikimedia Commons</small></figcaption></figure></div></section>' +
+    gospelRoutesMarkup() +
+    investigationMarkup(lesson.investigation) +
+    '<section class="bpl-card bpl-entities"><div class="bpl-entities-head"><div><p class="bpl-label">People, places &amp; primary sources</p><h2>Picture the names in context</h2></div><p>Reference summaries and lead images come from Wikipedia.</p></div><aside class="bpl-source-note"><strong>Image accuracy:</strong> No verified contemporary portrait survives for the ancient biblical figures shown here. Person images are later artistic depictions, not documentary likenesses. Places, artifacts, manuscripts, maps, and modern observances are identified separately.</aside><div class="bpl-entity-grid">' + lesson.entities.map(function (entity, entityIndex) { var fallback = entity.fallback || lesson.image.src; return '<article class="bpl-entity" data-entity-index="' + entityIndex + '"><a class="bpl-entity-image" href="https://en.wikipedia.org/wiki/' + encodeURIComponent(entity.title.replace(/ /g, '_')) + '" target="_blank" rel="noopener noreferrer"><figure class="bpl-entity-figure" data-zoomable><img src="' + esc(fallback) + '" alt="Reference image for ' + esc(entity.label || entity.title) + '" loading="lazy" referrerpolicy="no-referrer"><figcaption>Reference image for ' + esc(entity.label || entity.title) + '. Read the source article for its origin and image license.</figcaption></figure></a><div class="bpl-entity-copy"><span>' + esc(entity.kind) + '</span><h3>' + esc(entity.label || entity.title) + '</h3><p>Loading a sourced reference summary…</p><a class="bpl-entity-source" href="https://en.wikipedia.org/wiki/' + encodeURIComponent(entity.title.replace(/ /g, '_')) + '" target="_blank" rel="noopener noreferrer">Wikipedia reference ↗</a></div></article>'; }).join('') + '</div><p class="bpl-wikipedia-credit">Text excerpts and lead images: <a href="https://en.wikipedia.org/" target="_blank" rel="noopener noreferrer">Wikipedia contributors</a> · Text available under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="license noopener noreferrer">CC BY-SA 4.0</a>; image licenses may vary and are listed on each linked article/file page.</p></section>' +
     '<section class="bpl-card bpl-explore"><p class="bpl-label">Guided exploration</p><h2>Study through four lenses</h2><div class="bpl-lenses" role="group" aria-label="Exploration lenses">' +
       lesson.lenses.map(function (lens, i) { return '<button class="bpl-lens" type="button" data-lens="' + i + '" aria-pressed="' + (i === 0) + '"><span>Lens ' + (i + 1) + '</span><strong>' + esc(lens[0]) + ': ' + esc(lens[1]) + '</strong></button>'; }).join('') +
       '</div><article class="bpl-workspace" aria-live="polite"><h3></h3><p></p><p class="bpl-notice"></p></article></section>' +
@@ -812,6 +1000,42 @@
   }
   lensButtons.forEach(function (button) { button.addEventListener('click', function () { selectLens(Number(button.dataset.lens)); }); });
   selectLens(0);
+
+  if (id === 'world-of-jesus') {
+    var routeData = [
+      ['Galilee: Nazareth → Capernaum → towns around the lake', 'Matthew 4:12–25 places Jesus in Capernaum and describes teaching throughout Galilee.', 'The passage names places and a region; it does not supply every road or stop.'],
+      ['Judea → Samaria → Galilee', 'John 4:3–10 says Jesus left Judea for Galilee, passed through Samaria, and met a woman at Jacob’s well.', 'Read the encounter itself before generalizing about Samaritan responses.'],
+      ['Galilee → a Samaritan village → Jerusalem as the destination', 'Luke 9:51–56 says Jesus set his face toward Jerusalem and sent messengers into a Samaritan village.', 'The text gives the destination and one village encounter, not a complete mapped route.']
+    ];
+    var routeButtons = Array.prototype.slice.call(main.querySelectorAll('[data-route]'));
+    var routePanel = main.querySelector('.bpl-route-panel');
+    function selectRoute(routeIndex) {
+      routeButtons.forEach(function (button, buttonIndex) { button.setAttribute('aria-pressed', String(buttonIndex === routeIndex)); });
+      routePanel.querySelector('.bpl-route-regions').textContent = routeData[routeIndex][0];
+      routePanel.querySelector('.bpl-route-evidence').textContent = 'Passage evidence: ' + routeData[routeIndex][1];
+      routePanel.querySelector('.bpl-route-caution').textContent = 'Map limit: ' + routeData[routeIndex][2];
+    }
+    routeButtons.forEach(function (button) { button.addEventListener('click', function () { selectRoute(Number(button.getAttribute('data-route'))); }); });
+    selectRoute(0);
+  }
+
+  var investigationChoices = Array.prototype.slice.call(main.querySelectorAll('.bpl-investigation-choice'));
+  var investigationFeedback = main.querySelector('.bpl-investigation-feedback');
+  var investigationReveal = main.querySelector('.bpl-investigation-reveal');
+  investigationChoices.forEach(function (button) {
+    button.addEventListener('click', function () {
+      var selected = Number(button.getAttribute('data-investigation-choice'));
+      investigationChoices.forEach(function (candidate) {
+        var active = candidate === button;
+        candidate.setAttribute('aria-pressed', String(active));
+        candidate.classList.toggle('is-selected', active);
+      });
+      investigationFeedback.textContent = selected === lesson.investigation[3]
+        ? 'This reading fits the passage. Compare your reason with the explanation below.'
+        : 'Recheck the named passage and compare your reason with the explanation below.';
+      investigationReveal.hidden = false;
+    });
+  });
 
   var passageSelect = main.querySelector('.bpl-passage-select');
   var languageSelect = main.querySelector('.bpl-language-select');
