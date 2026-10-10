@@ -93,13 +93,40 @@
     var nav = document.createElement('nav');
     nav.className = 'music-family';
     nav.setAttribute('aria-label', 'Music lessons');
-    nav.appendChild(group('Music theory & instruments', THEORY));
-    nav.appendChild(menu('Composers', COMPOSERS));
-    nav.appendChild(group('Science of sound', SCIENCE));
+    // On phones the whole strip folds into one "♪ Music · <this page> ▾" row;
+    // on wider screens it stays open and the summary is hidden.
+    var fold = document.createElement('details');
+    fold.className = 'mf-fold';
+    var foldSum = document.createElement('summary');
+    var all = THEORY.concat(COMPOSERS, SCIENCE);
+    var now = all.filter(function (it) { return here(it.file); })[0];
+    foldSum.textContent = '♪ Music' + (now ? ' · ' + now.label : '') + ' ▾';
+    fold.appendChild(foldSum);
+    var body = document.createElement('div');
+    body.className = 'mf-body';
+    body.appendChild(group('Music theory & instruments', THEORY));
+    body.appendChild(menu('Composers', COMPOSERS));
+    body.appendChild(group('Science of sound', SCIENCE));
+    fold.appendChild(body);
+    nav.appendChild(fold);
+    var phone = window.matchMedia('(max-width: 720px)');
+    function syncFold() { fold.open = !phone.matches; }
+    syncFold();
+    if (phone.addEventListener) phone.addEventListener('change', syncFold);
+    else if (phone.addListener) phone.addListener(syncFold);
 
     var css = document.createElement('style');
     css.textContent =
-      '.music-family{display:flex;flex-wrap:wrap;gap:.3rem 1.6rem;align-items:center;justify-content:center;padding:.45rem clamp(1rem,4vw,2.5rem);background:#241a14;border-bottom:1px solid rgba(255,255,255,.12);font:600 .76rem "DM Sans",system-ui,sans-serif;position:relative;z-index:29;flex-shrink:0}' +
+      '.music-family{display:block;padding:.45rem clamp(1rem,4vw,2.5rem);background:#241a14;border-bottom:1px solid rgba(255,255,255,.12);font:600 .76rem "DM Sans",system-ui,sans-serif;position:relative;z-index:29;flex-shrink:0}' +
+      '.music-family .mf-body{display:flex;flex-wrap:wrap;gap:.3rem 1.6rem;align-items:center;justify-content:center}' +
+      '.music-family .mf-fold>summary{display:none;list-style:none;cursor:pointer;color:#ffe9d6;font-weight:700;padding:.1rem 0}' +
+      '.music-family .mf-fold>summary::-webkit-details-marker{display:none}' +
+      '.music-family .mf-fold>summary:focus-visible{outline:none;box-shadow:0 0 0 2px #ffd166;border-radius:6px}' +
+      '@media (max-width:720px){' +
+        '.music-family{padding:.3rem .85rem}' +
+        '.music-family .mf-fold>summary{display:block}' +
+        '.music-family .mf-body{justify-content:flex-start;padding:.4rem 0 .2rem;gap:.35rem .9rem}' +
+      '}' +
       '.music-family .mf-group{display:flex;flex-wrap:wrap;gap:.15rem .2rem;align-items:center}' +
       '.music-family .mf-title{margin-right:.4rem;color:#ffb98a;font-size:.66rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase}' +
       '.music-family a,body.theme-liquid-woodland .music-family a{padding:.3rem .6rem;border-radius:999px;color:#ffe9d6;text-decoration:none}' +
