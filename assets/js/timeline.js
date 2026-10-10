@@ -157,6 +157,26 @@
     }
   }
 
+  // Read the date portion of older lesson labels such as "1500s · Spain"
+  // and "1950s → today". The display remains the teacher-authored label; only
+  // the value used for positioning is normalized.
+  function timelineDateValue(text) {
+    var raw = String(text == null ? '' : text).trim();
+    var candidates = [raw, raw.replace(/→/g, '–').replace(/\s*[·|,].*$/, '')];
+    candidates.push(raw.replace(/\s+(?:onward|and onward|to today).*$/i, ''));
+    if (/^(?:ancient|prehistoric|early)\b/i.test(raw)) {
+      candidates.push(raw.split(/\s+[–-]\s+|\s+→\s+/).pop().trim());
+    }
+    // Some legacy date labels include a title or place name, for example
+    // "The Optical Illusion (1838)" or "~3500 BC — Ancient Egypt".
+    var matches = raw.match(/(?:\d[\d,]*(?:\.\d+)?\s*(?:s|BCE?|CE|AD|Ma|Mya|Ga|ka)?|present|today)/gi) || [];
+    matches.forEach(function (match) { candidates.push(match.trim()); });
+    for (var i = 0; i < candidates.length; i++) {
+      if (parseWhen(candidates[i])) return candidates[i];
+    }
+    return raw;
+  }
+
   function trimNumber(n) {
     return String(Math.round(n * 100) / 100);
   }
@@ -297,9 +317,23 @@
     if (when == null) {
       var time = li.querySelector('time');
       source = time && li.firstElementChild === time ? time : leadingDateElement(li);
+      if (source && !parseWhen(timelineDateValue(source.textContent.trim()))) source = null;
+      // Legacy lesson timelines often keep the date inside a card/figure layout
+      // instead of making it the first child of the <li>. Treat the first
+      // recognizably dated year/era element as the source so those lists can
+      // use the shared engine without rewriting their teaching content.
+      if (!source) {
+        var preferred = li.querySelector('.c-tstep-age, .aa-time-year, .tt-year, .pf-tl-year');
+        if (preferred && parseWhen(timelineDateValue(preferred.textContent.trim()))) source = preferred;
+      }
+      if (!source) {
+        source = Array.prototype.find.call(li.querySelectorAll(
+          '[class*="timeline-year"], [class*="-tl-year"], [class*="tl-year"], [class*="timeline-date"], [class*="-tl-date"], [class*="tl-date"], [class*="time-year"], [class*="time-age"], [class*="era-year"], [class*="-tl-era"], .tt-year, .pf-tl-year, .aa-time-year, .c-tstep-age, .fl-tl-year, .pt-era, .yr, small'
+        ), function (node) { return parseWhen(timelineDateValue(node.textContent.trim())); });
+      }
       if (source) {
         display = source.textContent.trim();
-        when = source.getAttribute('datetime') || display;
+        when = source.getAttribute('datetime') || timelineDateValue(display);
       } else if (time) {
         display = time.textContent.trim();
         when = time.getAttribute('datetime') || display;
@@ -526,7 +560,7 @@
       mark.type = 'button';
       mark.tabIndex = -1;
       if (it.tint) mark.style.setProperty('--tl-c', it.tint);
-      mark.appendChild(el('span', 'tl-mark-date', it.display || it.when));
+      if (it.display || it.when) mark.appendChild(el('span', 'tl-mark-date', it.display || it.when));
       mark.appendChild(el('span', 'tl-mark-label', it.label));
       if (it.parsed && it.parsed.end > it.parsed.start) mark.appendChild(el('span', 'tl-range'));
       mark.setAttribute('aria-label', (it.display ? it.display + ': ' : '') + it.label);
@@ -557,7 +591,7 @@
       li.classList.add(it.era ? 'tl-era-row' : 'tl-item');
       if (it.tint) li.style.setProperty('--tl-c', it.tint);
       if (it.source) it.source.classList.add('tl-src');
-      li.insertBefore(el('span', 'tl-date', it.display || it.when), li.firstChild);
+      if (it.display || it.when) li.insertBefore(el('span', 'tl-date', it.display || it.when), li.firstChild);
       if (!it.era) {
         li.addEventListener('click', function (e) {
           if (e.target.closest('a, button, input, summary, figure')) return;
@@ -995,7 +1029,7 @@
     detail.textContent = '';
     if (it.tint) detail.style.setProperty('--tl-c', it.tint); else detail.style.removeProperty('--tl-c');
     var head = el('div', 'tl-detail-head');
-    head.appendChild(el('span', 'tl-date', it.display || it.when));
+    if (it.display || it.when) head.appendChild(el('span', 'tl-date', it.display || it.when));
     var rel = relativeText(it.parsed);
     if (rel) head.appendChild(el('span', 'tl-ago', rel));
     if (it.group) head.appendChild(el('span', 'tl-detail-group', it.group));
@@ -1031,6 +1065,96 @@
   };
 
   // ---------------------------------------------------------------- setup
+
+  // Static lesson timelines authored before the shared engine. These are
+  // adapted at runtime so their authored cards remain the source content while
+  // the class gets the common list/track controls. Interactive simulator tracks
+  // are intentionally absent from this map.
+  var LEGACY_TIMELINES = [
+    ['.prism-timeline', '.prism-tl-item', 'Newton and the prism'],
+    ['.vr-mini-timeline', '.vr-mini-entry', 'A short history of virtual reality'],
+    ['.ez-timeline', 'article', 'Ezekiel in historical context'],
+    ['.pt-timeline', '.pt-timeline-item', 'How the periodic table emerged'],
+    ['.tt-timeline', '.tt-time', 'Milestones toward the Turing test'],
+    ['.pf-timeline', '.pf-tl-item', 'A brief history of Python'],
+    ['.cgi-timeline', '.cgi-era', 'Breakthrough moments in computer graphics'],
+    ['.timeline[aria-label="Panama Canal timeline"]', ':scope > *', 'Building the Panama Canal'],
+    ['.athens-timeline', '.athens-timeline-card', 'Ideas behind the School of Athens'],
+    ['.dv-timeline', '.dv-timeline-card', 'Leonardo across science and art'],
+    ['.aa-timeline', ':scope > *', 'Discoveries in amino acids and proteins'],
+    ['.c-timeline', '.c-tstep', 'The timeline of animal life'],
+    ['.timeline', '.discovery', 'Documented discoveries in cryptozoology'],
+    ['.timeline', '.timeline-item', 'Historical timeline'],
+    ['.four-timeline', '.four-tl-item', 'A history of Fourier series'],
+    ['.ct-timeline', '.ct-tl-item', 'How people measured time'],
+    ['.ml-timeline', ':scope > *', 'A history of measuring length'],
+    ['.lv-timeline', '.lv-tl-item', 'Levers across human history'],
+    ['.wa-timeline', '.wa-tl-item', 'The wheel and axle through history'],
+    ['.music-timeline', '.music-era', 'Ideas that shaped the physics of music'],
+    ['.ch-history-grid', '.ch-timeline-card', 'Chess history', true],
+    ['.history-timeline', '.tl-era', 'The history of video games', true],
+    ['.timeline-track', '.tl-node', 'The evolution of wood', true],
+    ['.we-timeline-nav', '.we-timeline-btn', 'The history of electricity', true]
+  ];
+
+  function legacyItems(container, selector) {
+    return Array.prototype.filter.call(container.querySelectorAll(selector), function (node) {
+      if (node === container) return false;
+      var parent = node.parentElement;
+      while (parent && parent !== container) parent = parent.parentElement;
+      return parent === container;
+    });
+  }
+
+  function adaptLegacyTimelines(scope) {
+    LEGACY_TIMELINES.forEach(function (spec) {
+      Array.prototype.forEach.call(scope.querySelectorAll(spec[0]), function (container) {
+        if (container.hasAttribute('data-timeline-legacy') || container.closest('.tl')) return;
+        var items = legacyItems(container, spec[1]);
+        if (items.length < 2) return;
+        var host = el('div');
+        host.setAttribute('data-timeline', '');
+        host.setAttribute('data-timeline-title', container.getAttribute('aria-label') || spec[2]);
+        var list = el('ol');
+        items.forEach(function (item) {
+          var li = el('li');
+          li.innerHTML = item.innerHTML;
+          list.appendChild(li);
+        });
+        host.appendChild(list);
+        container.parentNode.insertBefore(host, spec[3] ? container.nextSibling : container);
+        container.setAttribute('data-timeline-legacy', '');
+        if (!spec[3]) container.hidden = true;
+      });
+    });
+
+    // Pangaea's original timeline is a live geologic slider rather than a
+    // collection of cards. Add a shared historical companion without hiding
+    // or changing the map and slider controls.
+    Array.prototype.forEach.call(scope.querySelectorAll('.pd-timeline'), function (container) {
+      if (container.hasAttribute('data-timeline-legacy')) return;
+      var host = el('div');
+      host.setAttribute('data-timeline', '');
+      host.setAttribute('data-timeline-title', 'Pangaea to the present');
+      var list = el('ol');
+      [
+        ['240 Ma', 'Pangaea assembled', 'Most of Earth’s land is joined in one supercontinent.'],
+        ['180 Ma', 'The breakup begins', 'Rifting opens new ocean basins as the supercontinent starts to split.'],
+        ['120 Ma', 'Continents separate', 'The Atlantic widens and the southern continents move toward their modern arrangement.'],
+        ['66 Ma', 'A changed planet', 'The continents are recognizable, though their positions and coastlines continue to shift.'],
+        ['present', 'Today', 'Continental plates still move a few centimetres each year.']
+      ].forEach(function (event) {
+        var li = el('li');
+        li.setAttribute('data-when', event[0]);
+        li.setAttribute('data-label', event[1]);
+        li.textContent = event[2];
+        list.appendChild(li);
+      });
+      host.appendChild(list);
+      container.parentNode.insertBefore(host, container);
+      container.setAttribute('data-timeline-legacy', '');
+    });
+  }
 
   function enhance(node) {
     if (enhanced ? enhanced.has(node) : node.__timeline) return null;
@@ -1077,7 +1201,15 @@
 
   function scan(root) {
     var out = [];
-    Array.prototype.forEach.call((root || document).querySelectorAll('[data-timeline]'), function (node) {
+    var scope = root || document;
+    adaptLegacyTimelines(scope);
+    // Historical lesson pages predate the shared engine and use namespaced
+    // timeline classes. Upgrade only semantic ordered/unordered lists; app
+    // scrubbers, timeline divs, and other interactive widgets stay untouched.
+    Array.prototype.forEach.call(scope.querySelectorAll('ol[class*="timeline"], ul[class*="timeline"]'), function (node) {
+      node.setAttribute('data-timeline', '');
+    });
+    Array.prototype.forEach.call(scope.querySelectorAll('[data-timeline]'), function (node) {
       var t = enhance(node);
       if (t) out.push(t);
     });

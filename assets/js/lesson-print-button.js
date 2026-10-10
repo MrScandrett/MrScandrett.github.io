@@ -66,7 +66,7 @@
   // Shared timeline engine (timeline.js): any lesson list marked data-timeline.
   function loadTimeline() {
     if (window.ClassroomOSTimeline || document.querySelector('script[src$="/timeline.js"]') ||
-      !document.querySelector('[data-timeline]')) return;
+      !document.querySelector('[data-timeline], ol[class*="timeline"], ul[class*="timeline"], div[class*="timeline"]')) return;
     var timeline = document.createElement('script');
     timeline.src = script && script.src ? new URL('timeline.js', script.src).href : '/assets/js/timeline.js';
     timeline.defer = true;

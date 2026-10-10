@@ -115,6 +115,34 @@ test('lesson timelines: every data-when parses', () => {
   assert.deepEqual(bad, []);
 });
 
+test('legacy semantic timeline lists are discoverable by the shared engine', () => {
+  const bad = [];
+  const legacyDate = (value) => {
+    const raw = value.trim();
+    const candidates = [raw, raw.replace(/→/g, '–').replace(/\s*[·|,].*$/, '')];
+    if (/^(?:ancient|prehistoric|early)\b/i.test(raw)) candidates.push(raw.split(/\s+[–-]\s+|\s+→\s+/).pop().trim());
+    return candidates.some((candidate) => when(candidate));
+  };
+  const walk = (dir) => {
+    for (const name of readdirSync(dir)) {
+      const p = join(dir, name);
+      if (statSync(p).isDirectory()) walk(p);
+      else if (name.endsWith('.html')) {
+        const html = readFileSync(p, 'utf8');
+        for (const m of html.matchAll(/<(?:ol|ul)\b[^>]*class="[^"]*timeline[^"]*"[^>]*>([\s\S]*?)<\/(?:ol|ul)>/gi)) {
+          const dates = [...m[1].matchAll(/(?:timeline-year|tl-year|tl-date|pt-era)[^>]*>([^<]+)/gi)]
+            .map((x) => x[1].replace(/&ndash;/g, '–').trim())
+            .filter(Boolean);
+          const parsed = dates.filter(legacyDate);
+          if (dates.length >= 2 && parsed.length && parsed.length !== dates.length) bad.push(`${p}: ${dates.join(' | ')}`);
+        }
+      }
+    }
+  };
+  walk(new URL('../lessons', import.meta.url).pathname);
+  assert.deepEqual(bad, []);
+});
+
 test("The Ages' Grand Timeline is built from data/ages-timeline.json and every link and date checks out", () => {
   const out = execFileSync(process.execPath, [new URL('../scripts/build-ages-timeline.mjs', import.meta.url).pathname, '--check'], { encoding: 'utf8' });
   assert.match(out, /up to date/);
