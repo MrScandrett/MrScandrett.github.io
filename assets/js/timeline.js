@@ -33,8 +33,11 @@
  * data-timeline-tour (a ▶ Play button that flies from headline event to headline
  * event, data-major ones if there are a few, else all), data-timeline-cosmic (the
  * detail card places each event on Sagan's Cosmic Calendar: the universe as one year).
- * Every track has a full-screen button (F) for projecting; moves between distant
- * events fly (zoom out, pan, zoom in) unless the reader prefers reduced motion.
+ * Every track has a full-screen button (F) for projecting (on iPhone, which has no
+ * element fullscreen, it fills the window instead); moves between distant events
+ * fly (zoom out, pan, zoom in) unless the reader prefers reduced motion. On touch
+ * screens a pinch zooms the track, not the page, and the track's height follows
+ * the screen's so it fits in landscape too.
  *
  * From JS: ClassroomOSTimeline.create(hostEl, { title, scale, events: [{ when,
  * label, text | html, group, color, era }] }) — or put the same object in
@@ -528,11 +531,11 @@
     zoom.appendChild(this.button('−', 'Zoom out (−)', function () { self.setZoom(self.zoom / 1.8); }));
     zoom.appendChild(this.button('Fit', 'Show the whole timeline (0)', function () { self.fit(); }));
     zoom.appendChild(this.button('+', 'Zoom in (+)', function () { self.setZoom(self.zoom * 1.8); }));
-    if (canFullscreen) {
-      this.fullBtn = this.button('⛶', 'Full screen, for the projector (F)', function () { self.toggleFullscreen(); });
-      this.fullBtn.classList.add('tl-full');
-      zoom.appendChild(this.fullBtn);
-    }
+    // Real fullscreen where the browser has it; iPhone Safari doesn't, so there it fills the window.
+    this.fullBtn = this.button('⛶', 'Full screen, for the projector or a phone on its side (F)', function () { self.toggleFullscreen(); });
+    this.fullBtn.classList.add('tl-full');
+    this.fullBtn.setAttribute('aria-pressed', 'false');
+    zoom.appendChild(this.fullBtn);
     bar.appendChild(zoom);
 
     if (this.opts.scales.length > 1) {
@@ -608,10 +611,17 @@
     canvas.appendChild(this.bandLayer);
     canvas.appendChild(this.axis);
     canvas.appendChild(this.ticks);
+    // Stems and axis dots get their own layer under every label, so no line ever crosses a label.
+    this.stemLayer = el('div', 'tl-stems');
+    this.stemLayer.setAttribute('aria-hidden', 'true');
+    canvas.appendChild(this.stemLayer);
     canvas.appendChild(this.markLayer);
     viewport.appendChild(canvas);
     track.appendChild(viewport);
-    track.appendChild(el('p', 'tl-hint', 'Drag or scroll sideways to move · Ctrl + wheel or +/− to zoom · ← → step through events'));
+    var touch = global.matchMedia && global.matchMedia('(pointer: coarse)').matches;
+    track.appendChild(el('p', 'tl-hint', touch
+      ? 'Swipe sideways to move · pinch to zoom · tap an event to read it · ⛶ Full screen fills the screen (try it sideways)'
+      : 'Drag or scroll sideways to move · Ctrl + wheel or +/− to zoom · ← → step through events'));
     this.detail = el('div', 'tl-detail');
     this.detail.setAttribute('aria-live', 'polite');
     track.appendChild(this.detail);
@@ -630,9 +640,16 @@
       if (it.parsed && it.parsed.end > it.parsed.start) mark.appendChild(el('span', 'tl-range'));
       mark.setAttribute('aria-label', (it.display ? it.display + ': ' : '') + it.label);
       mark.title = (it.display ? it.display + ' · ' : '') + it.label;
-      mark.addEventListener('click', function () { if (!self.dragged) self.selectIndex(i, { focus: true }); });
+      mark.addEventListener('click', function () {
+        if (self.dragged) return;
+        self.selectIndex(i, { focus: true });
+        self.showDetail();
+      });
       it.mark = mark;
       self.markLayer.appendChild(mark);
+      it.stem = el('span', 'tl-stem');
+      if (it.tint) it.stem.style.setProperty('--tl-c', it.tint);
+      self.stemLayer.appendChild(it.stem);
     });
     this.eras.forEach(function (it, k) {
       var band = el('div', 'tl-band' + (k % 2 ? ' tl-band-alt' : ''));
@@ -706,15 +723,59 @@
     viewport.addEventListener('wheel', function () { self.stopFlight(); self.stopTour(); }, { passive: true });
     document.addEventListener('visibilitychange', function () { if (document.hidden) self.stopTour(); });
     var onFull = function () {
-      var full = (document.fullscreenElement || document.webkitFullscreenElement) === root;
-      root.classList.toggle('tl-is-full', full);
-      if (self.fullBtn) self.fullBtn.setAttribute('aria-pressed', String(full));
-      self.widths = null;
-      self.layout();
-      self.reveal(false);
+      if (self.pseudoFull) return;
+      self.markFull((document.fullscreenElement || document.webkitFullscreenElement) === root);
     };
     document.addEventListener('fullscreenchange', onFull);
     document.addEventListener('webkitfullscreenchange', onFull);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && self.pseudoFull) self.toggleFullscreen();
+    });
+
+    // The lanes follow the window's height (rotating a phone, resizing a laptop).
+    var resizeFrame = 0;
+    global.addEventListener('resize', function () {
+      if (resizeFrame) return;
+      resizeFrame = requestAnimationFrame(function () { resizeFrame = 0; self.layout(); });
+    });
+
+    // Pinch zooms the track, not the page. Safari has its own gesture events; elsewhere two
+    // touch pointers (the viewport's touch-action leaves one-finger panning to the browser).
+    var pinchAnchor = function (clientX) { return clientX - viewport.getBoundingClientRect().left; };
+    if ('ongesturestart' in global) {
+      var gestureZoom = 1;
+      viewport.addEventListener('gesturestart', function (e) {
+        e.preventDefault();
+        self.stopFlight(); self.stopTour();
+        gestureZoom = self.zoom;
+      });
+      viewport.addEventListener('gesturechange', function (e) {
+        e.preventDefault();
+        self.setZoom(gestureZoom * e.scale, pinchAnchor(e.clientX));
+      });
+      viewport.addEventListener('gestureend', function (e) { e.preventDefault(); });
+    } else {
+      var touches = new Map(), pinch = null;
+      var spread = function () {
+        var pts = Array.from(touches.values());
+        return { d: Math.max(Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y), 1), x: (pts[0].x + pts[1].x) / 2 };
+      };
+      viewport.addEventListener('pointerdown', function (e) {
+        if (e.pointerType !== 'touch') return;
+        touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (touches.size === 2) { var s0 = spread(); pinch = { d: s0.d, z: self.zoom }; }
+      });
+      viewport.addEventListener('pointermove', function (e) {
+        if (!touches.has(e.pointerId)) return;
+        touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (!pinch || touches.size !== 2) return;
+        var s1 = spread();
+        self.setZoom(pinch.z * s1.d / pinch.d, pinchAnchor(s1.x));
+      });
+      var lift = function (e) { touches.delete(e.pointerId); if (touches.size < 2) pinch = null; };
+      viewport.addEventListener('pointerup', lift);
+      viewport.addEventListener('pointercancel', lift);
+    }
 
     var drag = null;
     viewport.addEventListener('pointerdown', function (e) {
@@ -1067,17 +1128,78 @@
   };
 
   Timeline.prototype.toggleFullscreen = function () {
+    var self = this;
     var root = this.root;
     var current = document.fullscreenElement || document.webkitFullscreenElement;
     if (current === root) {
       (document.exitFullscreen || document.webkitExitFullscreen).call(document);
       return;
     }
-    if (this.root.dataset.tlView !== 'track') this.setView('track');
-    var req = root.requestFullscreen || root.webkitRequestFullscreen;
-    if (req) {
-      var out = req.call(root);
-      if (out && out.catch) out.catch(function () { /* blocked; stay inline */ });
+    if (this.pseudoFull) { this.setPseudoFull(false); return; }
+    if (root.dataset.tlView !== 'track') this.setView('track');
+    var req = canFullscreen && (root.requestFullscreen || root.webkitRequestFullscreen);
+    var out = req ? req.call(root) : null;
+    if (!req) this.setPseudoFull(true);
+    else if (out && out.catch) out.catch(function () { self.setPseudoFull(true); });
+  };
+
+  // Fill the window instead (iPhone). The timeline moves to <body> while it does, so no
+  // transformed or clipped ancestor can trap a position: fixed box; a placeholder holds its spot.
+  Timeline.prototype.setPseudoFull = function (on) {
+    var root = this.root;
+    if (on === !!this.pseudoFull) return;
+    if (on) {
+      var cs = getComputedStyle(root);
+      var keep = { accent: cs.getPropertyValue('--tl-accent').trim(), paper: paperBehind(root), color: cs.color, font: cs.fontFamily };
+      this.homeStyle = root.getAttribute('style') || '';
+      if (keep.accent) root.style.setProperty('--tl-accent', keep.accent);
+      // Over the whole window the paper must be solid (the lesson's card may be 95% opaque).
+      root.style.setProperty('--tl-paper', keep.paper.replace(/^rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)$/, 'rgb($1,$2,$3)'));
+      // Outside the lesson, site-wide rules restyle text through these variables; keep the lesson's look.
+      ['--font-sans', '--font-display', '--font-body', '--font-ui'].forEach(function (k) {
+        var v = cs.getPropertyValue(k).trim();
+        if (v) root.style.setProperty(k, v);
+      });
+      root.style.setProperty('color', keep.color, 'important');
+      root.style.setProperty('font-family', keep.font, 'important');
+      this.placeholder = document.createComment('timeline');
+      root.parentNode.insertBefore(this.placeholder, root);
+      document.body.appendChild(root);
+      document.documentElement.classList.add('tl-scroll-lock');
+      root.classList.add('tl-pseudo-full');
+      this.pseudoFull = true;
+    } else {
+      this.pseudoFull = false;
+      root.classList.remove('tl-pseudo-full');
+      document.documentElement.classList.remove('tl-scroll-lock');
+      if (this.placeholder && this.placeholder.parentNode) {
+        this.placeholder.parentNode.insertBefore(root, this.placeholder);
+        this.placeholder.remove();
+      }
+      this.placeholder = null;
+      root.setAttribute('style', this.homeStyle || '');
+    }
+    this.markFull(on);
+    if (!on) root.scrollIntoView({ block: 'nearest' });
+  };
+
+  Timeline.prototype.markFull = function (full) {
+    this.root.classList.toggle('tl-is-full', full);
+    this.fullBtn.setAttribute('aria-pressed', String(full));
+    this.fullBtn.textContent = full ? '✕' : '⛶';
+    this.fullBtn.title = full ? 'Leave full screen (F or Esc)' : 'Full screen, for the projector or a phone on its side (F)';
+    this.fullBtn.setAttribute('aria-label', this.fullBtn.title);
+    this.widths = null;
+    this.layout();
+    this.reveal(false);
+  };
+
+  // After a tap on the track, make sure the card it opened is on screen (phones scroll it away).
+  Timeline.prototype.showDetail = function () {
+    if (this.root.classList.contains('tl-is-full') || !this.detail.getBoundingClientRect) return;
+    var r = this.detail.getBoundingClientRect();
+    if (r.top > global.innerHeight - 90) {
+      this.detail.scrollIntoView({ block: 'nearest', behavior: reducedMotion.matches ? 'auto' : 'smooth' });
     }
   };
 
@@ -1171,6 +1293,7 @@
     if (!this.widths) {
       this.events.forEach(function (it) { it.mark.classList.remove('tl-compact'); it.mark.style.minWidth = ''; });
       this.widths = new Map(events.map(function (it) { return [it, it.mark.offsetWidth]; }));
+      this.tickFont = null;
     }
 
     // Era bands: up to three label rows at the top; a label with no room hides (the band stays).
@@ -1203,10 +1326,15 @@
       return a >= 2 && b <= W - 2 && lane.every(function (iv) { return b + 8 <= iv[0] || a >= iv[1] + 8; });
     }
     var maxLanes = this.opts.lanes;
-    // Full screen has the height for more labels; use it.
     if (this.root.classList.contains('tl-is-full')) {
-      var spare = global.innerHeight - this.track.offsetTop - (this.detail.offsetHeight || 160) - bandsH - 120;
-      maxLanes = Math.min(Math.max(maxLanes, Math.floor(spare / LANE_H)), 14);
+      // Full screen: as many lanes as the space left by the toolbar (and the card, when it sits below).
+      var bar = this.root.querySelector('.tl-bar');
+      var below = this.detail.offsetTop > this.viewport.offsetTop + 10 ? this.detail.offsetHeight + 8 : 0;
+      var room = this.root.clientHeight - (bar ? bar.offsetTop + bar.offsetHeight : 0) - below - 24;
+      maxLanes = Math.min(Math.max(Math.floor((room - bandsH - 54) / LANE_H), 1), 14);
+    } else if (global.innerHeight) {
+      // Inline: keep the track to about two-thirds of the screen so the card fits under it.
+      maxLanes = Math.min(maxLanes, Math.max(3, Math.floor((global.innerHeight * 0.68 - bandsH - 60) / LANE_H)));
     }
     // Headline events (data-major) claim label room first; the rest fill in around them.
     var order = events.filter(function (it) { return it.major; }).concat(events.filter(function (it) { return !it.major; }));
@@ -1230,11 +1358,12 @@
     this.canvas.style.setProperty('--axis-y', axisY + 'px');
     this.canvas.style.setProperty('--bands-h', bandsH + 'px');
 
-    this.events.forEach(function (it) { it.mark.hidden = !pos.has(it); });
+    this.events.forEach(function (it) { it.mark.hidden = it.stem.hidden = !pos.has(it); });
     placed.forEach(function (p) {
       var m = p.it.mark;
       m.classList.toggle('tl-flip', p.flip);
       m.classList.toggle('tl-compact', p.lane === -1);
+      p.it.stem.hidden = p.lane === -1;
       if (p.lane === -1) {
         m.style.left = p.px + 'px';
         m.style.top = axisY + 'px';
@@ -1244,7 +1373,10 @@
       m.style.left = (p.flip ? p.px - p.width : p.px) + 'px';
       m.style.top = top + 'px';
       m.style.minWidth = p.width + 'px';
-      m.style.setProperty('--stem', (axisY - top - (LANE_H - 8)) + 'px');
+      var stemTop = top + LANE_H - 9;
+      p.it.stem.style.left = p.px + 'px';
+      p.it.stem.style.top = stemTop + 'px';
+      p.it.stem.style.height = (axisY - stemTop) + 'px';
       var bar = m.querySelector('.tl-range');
       if (bar) bar.style.width = Math.max(p.range, 4) + 'px';
     });
@@ -1262,6 +1394,14 @@
       // Even spacing: no time axis, just a dot under each event.
       return;
     }
+    if (!this.tickFont) {
+      var probe = el('span', 'tl-tick', '0');
+      ticks.appendChild(probe);
+      var pcs = getComputedStyle(probe);
+      this.tickFont = pcs.fontWeight + ' ' + pcs.fontSize + ' ' + pcs.fontFamily;
+      probe.remove();
+    }
+    var font = this.tickFont;
     var view0 = this.viewport.scrollLeft - 160, view1 = this.viewport.scrollLeft + this.viewport.clientWidth + 160;
     var p = this.p;
     var toX = function (t) { return PAD + p.norm(t) * inner; };
@@ -1276,7 +1416,7 @@
           var ago = mult * Math.pow(10, k);
           if (ago > agoHi || ago < agoLo) return;
           var t = NOW - ago, px = toX(t);
-          var w = tickWidth(formatTick(t, self.ctx));
+          var w = tickWidth(formatTick(t, self.ctx), font);
           if (px - lastX < (lastW + w) / 2 + 14) return;
           lastX = px;
           lastW = w;
@@ -1292,6 +1432,7 @@
       list = linearTicks(t0, t1, Math.max((t1 - t0) / per, 1), this.ctx);
     }
     var vis0 = this.viewport.scrollLeft, vis1 = vis0 + this.viewport.clientWidth;
+    var lastRight = -Infinity;
     list.forEach(function (t) {
       var px = toX(t);
       // Only ticks inside the view: the axis re-renders on every scroll frame anyway.
@@ -1300,9 +1441,12 @@
       var tick = el('span', 'tl-tick' + (t >= NOW - 0.5 ? ' tl-now' : ''), text);
       tick.style.left = px + 'px';
       // Keep labels at the edges of the view readable instead of half cut off.
-      var half = tickWidth(text) / 2;
-      if (px - half < vis0 + 2) tick.classList.add('tl-tick-start');
-      else if (px + half > vis1 - 2) tick.classList.add('tl-tick-end');
+      var w = tickWidth(text, font), a = px - w / 2;
+      if (a < vis0 + 2) { tick.classList.add('tl-tick-start'); a = px - 4; }
+      else if (px + w / 2 > vis1 - 2) { tick.classList.add('tl-tick-end'); a = px + 4 - w; }
+      // Labels pinned to an edge are wider on one side than spacing assumed: never let two touch.
+      if (a < lastRight + 10) return;
+      lastRight = a + w;
       ticks.appendChild(tick);
     });
     if (!this.ctx.deep && p.norm(NOW) <= 1 && p.norm(NOW) >= 0) {
@@ -1312,7 +1456,14 @@
     }
   };
 
-  function tickWidth(text) { return String(text).length * 6.3 + 6; }
+  // Tick label widths, measured in the axis's real font (fonts vary a lot across themes and phones).
+  var measureCtx = null;
+  function tickWidth(text, font) {
+    if (!measureCtx && typeof document !== 'undefined') measureCtx = document.createElement('canvas').getContext('2d');
+    if (!measureCtx || !font) return String(text).length * 7 + 6;
+    measureCtx.font = font;
+    return measureCtx.measureText(String(text)).width + 6;
+  }
 
   Timeline.prototype.setZoom = function (z, anchor) {
     var vw = this.viewport.clientWidth;
@@ -1358,6 +1509,7 @@
       ev.mark.tabIndex = on ? 0 : -1;
       if (on) { ev.mark.setAttribute('aria-current', 'true'); ev.li.setAttribute('data-tl-current', ''); }
       else { ev.mark.removeAttribute('aria-current'); ev.li.removeAttribute('data-tl-current'); }
+      ev.stem.classList.toggle('is-current', on);
     });
     this.updateCounter();
 
@@ -1569,6 +1721,7 @@
   // Print always uses the list. Capture so this runs before the print planner measures.
   var printViews = null;
   global.addEventListener('beforeprint', function () {
+    all.forEach(function (t) { if (t.pseudoFull) t.setPseudoFull(false); });
     printViews = all.map(function (t) { return t.root.dataset.tlView; });
     all.forEach(function (t) { t.root.dataset.tlView = 'list'; });
   }, true);

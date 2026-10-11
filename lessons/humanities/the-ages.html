@@ -4329,16 +4329,46 @@
         });
       });
 
-      panelCloseBtn.addEventListener("click", function () {
-        panel.setAttribute("aria-hidden", "true");
-        panelOpenBtn.setAttribute("aria-expanded", "false");
-        panelOpenBtn.focus({ preventScroll: true });
+      // On phones (<= 680px, lesson-layout.css) the panel is a bottom drawer: collapsed it's just
+      // its handle (data-ll-collapsed), so it starts that way and the ✕ / handle toggle it.
+      // Wider screens slide it in and out with aria-hidden.
+      function isPhoneLayout() { return window.innerWidth <= 680; }
+      function setPanel(open) {
+        var phone = isPhoneLayout();
+        panel.dataset.llCollapsed = open ? "false" : "true";
+        panel.setAttribute("aria-hidden", phone ? "false" : String(!open));
+        panelOpenBtn.setAttribute("aria-expanded", String(open));
+        panelCloseBtn.setAttribute("aria-expanded", String(open));
+        panelCloseBtn.setAttribute("aria-label", phone ? (open ? "Collapse panel" : "Open panel") : "Close panel");
+      }
+      setPanel(false);
+      var panelWasPhone = isPhoneLayout();
+      window.addEventListener("resize", function () {
+        if (isPhoneLayout() === panelWasPhone) return;
+        panelWasPhone = isPhoneLayout();
+        setPanel(panel.dataset.llCollapsed === "false");
+      });
+
+      panelCloseBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var opening = isPhoneLayout() && panel.dataset.llCollapsed === "true";
+        setPanel(opening);
+        if (!opening && !isPhoneLayout()) panelOpenBtn.focus({ preventScroll: true });
       });
 
       panelOpenBtn.addEventListener("click", function () {
-        panel.setAttribute("aria-hidden", "false");
-        panelOpenBtn.setAttribute("aria-expanded", "true");
+        setPanel(true);
         panel.querySelector(".ll-tab").focus();
+      });
+
+      // Phone drawer: tapping the handle or a tab opens it; choosing an age folds it away again.
+      panel.querySelector(".ll-panel-head").addEventListener("click", function (e) {
+        if (!isPhoneLayout() || e.target.closest(".ll-panel-close")) return;
+        if (e.target.closest(".ll-tab")) { setPanel(true); return; }
+        setPanel(panel.dataset.llCollapsed === "true");
+      });
+      panelButtons.addEventListener("click", function (e) {
+        if (isPhoneLayout() && e.target.closest("button")) setPanel(false);
       });
 
       // The lens grid is pre-rendered for the first lens; switching lenses re-renders it from data.
