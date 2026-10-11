@@ -96,11 +96,8 @@
   }
 
   function applyTheme(theme) {
-    // Cross-fade only on a real switch; fading in on first paint left text
-    // mid-transition (and below contrast) for the first quarter second.
-    if (currentTheme && currentTheme !== theme) cosTransition();
-    isApplyingTheme = true;
     if (isThemeIndependent()) {
+      isApplyingTheme = true;
       document.documentElement.removeAttribute("data-theme");
       document.documentElement.removeAttribute("data-theme-mode");
       document.documentElement.removeAttribute("data-lighting");
@@ -124,25 +121,49 @@
       return theme;
     }
 
-    var lighting = getLightingForTheme(theme);
-    var mode = getMode();
+    var doDomUpdate = function () {
+      isApplyingTheme = true;
+      var lighting = getLightingForTheme(theme);
+      var mode = getMode();
 
-    document.documentElement.dataset.theme = theme;
-    document.documentElement.dataset.themeMode = mode;
-    document.documentElement.dataset.lighting = lighting;
-    document.documentElement.dataset.lightingMode = mode;
-    document.documentElement.setAttribute("data-site-theme", theme);
-    document.documentElement.setAttribute("data-site-theme-mode", mode);
-    document.documentElement.style.colorScheme = lighting === "night" ? "dark" : "light";
+      document.documentElement.dataset.theme = theme;
+      document.documentElement.dataset.themeMode = mode;
+      document.documentElement.dataset.lighting = lighting;
+      document.documentElement.dataset.lightingMode = mode;
+      document.documentElement.setAttribute("data-site-theme", theme);
+      document.documentElement.setAttribute("data-site-theme-mode", mode);
+      document.documentElement.style.colorScheme = lighting === "night" ? "dark" : "light";
 
-    document.body.dataset.theme = theme;
-    document.body.dataset.themeMode = mode;
-    document.body.dataset.lighting = lighting;
-    document.body.dataset.lightingMode = mode;
+      document.body.dataset.theme = theme;
+      document.body.dataset.themeMode = mode;
+      document.body.dataset.lighting = lighting;
+      document.body.dataset.lightingMode = mode;
 
-    currentTheme = theme;
-    emitChange(theme);
-    isApplyingTheme = false;
+      currentTheme = theme;
+      emitChange(theme);
+      isApplyingTheme = false;
+    };
+
+    var shouldTransition = Boolean(currentTheme && currentTheme !== theme);
+    var prefersReduced = (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) || reducedMotionOverride();
+
+    if (shouldTransition && !prefersReduced) {
+      if (typeof document.startViewTransition === "function") {
+        try {
+          var transition = document.startViewTransition(doDomUpdate);
+          if (transition) {
+            if (transition.ready && typeof transition.ready.catch === "function") transition.ready.catch(function () {});
+            if (transition.finished && typeof transition.finished.catch === "function") transition.finished.catch(function () {});
+          }
+          return theme;
+        } catch (e) {
+          /* Fall through to cosTransition */
+        }
+      }
+      cosTransition();
+    }
+
+    doDomUpdate();
     return theme;
   }
 

@@ -10,10 +10,225 @@
   <link rel="stylesheet" href="assets/css/classroom-home.css" />
   <link rel="stylesheet" href="assets/css/pages/steam-lessons.css" />
   <link rel="stylesheet" href="assets/css/liquid-woodland.css" />
+  <style>
+    /* Phone-first page frame: the lesson library should feel like one calm
+       surface on iOS, with horizontal movement reserved for intentional
+       controls rather than the page itself. */
+    html,
+    body.theme-steam {
+      overflow-x: clip;
+    }
+
+    #main-content,
+    #main-content > * {
+      min-width: 0;
+    }
+
+    .lessons-library-head,
+    .catalog-browser {
+      min-width: 0;
+    }
+
+    @media (max-width: 760px) {
+      body.theme-steam main#main-content {
+        width: min(var(--max), calc(100% - 1.25rem));
+        padding-top: 1rem;
+        padding-bottom: max(2rem, env(safe-area-inset-bottom));
+      }
+
+      .lessons-library-head {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.85rem;
+        margin-bottom: 0.7rem;
+        padding-bottom: 0.8rem;
+      }
+
+      .lessons-library-title-row {
+        display: grid;
+        gap: 0.35rem;
+        align-items: start;
+      }
+
+      body.theme-liquid-woodland .lessons-library-head h1 {
+        white-space: normal;
+        font-size: clamp(1.7rem, 8vw, 2.35rem);
+        line-height: 1.04;
+      }
+
+      .lessons-library-count {
+        padding-bottom: 0;
+      }
+
+      .lessons-library-head .search-status {
+        grid-column: auto;
+        margin-top: -0.25rem;
+      }
+
+      .search-input {
+        min-height: 48px;
+        padding-block: 0.8rem;
+        border-radius: 13px;
+        font-size: 1rem;
+      }
+
+      .lesson-filter-panel {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.7rem;
+        padding: 0.75rem;
+        border-radius: 16px;
+      }
+
+      .lesson-filter-panel .lesson-availability {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.45rem;
+      }
+
+      .lesson-availability-btn,
+      .lesson-filter-reset {
+        width: 100%;
+        min-height: 46px;
+      }
+
+      .lesson-filter-status {
+        grid-column: 1;
+        line-height: 1.4;
+      }
+
+      .catalog-browser {
+        margin-bottom: 1rem;
+        padding: 0.9rem;
+        border-radius: 16px;
+      }
+
+      .catalog-browser-heading {
+        gap: 0.75rem;
+        padding-bottom: 0.75rem;
+      }
+
+      .catalog-browser-heading h2 {
+        font-size: 1.25rem;
+      }
+
+      .catalog-browser-heading p {
+        font-size: 0.88rem;
+        line-height: 1.45;
+      }
+
+      .catalog-browser-actions {
+        width: 100%;
+      }
+
+      .catalog-browser-actions > button {
+        min-width: 0;
+      }
+
+      .compendium-volume-tabs {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.45rem;
+        overflow: visible;
+        padding-bottom: 0;
+      }
+
+      .catalog-browser > .compendium-volume-tabs {
+        margin-top: 0.75rem;
+      }
+
+      .compendium-volume-tab {
+        min-width: 0;
+        min-height: 46px;
+        padding: 0.5rem 0.55rem;
+        justify-content: flex-start;
+        text-align: left;
+      }
+
+      .compendium-volume-tab:first-child {
+        grid-column: 1 / -1;
+      }
+
+      .catalog-volume-modules {
+        grid-template-columns: minmax(0, 1fr);
+        grid-auto-flow: row;
+        grid-auto-columns: auto;
+        overflow: visible;
+        padding-bottom: 0;
+      }
+
+      .catalog-module-button {
+        min-height: 3.9rem;
+        padding: 0.6rem 0.65rem;
+      }
+
+      body.catalog-module-view .catalog-browser {
+        top: 3.7rem;
+        margin-inline: -0.15rem;
+        padding: 0.55rem 0.65rem;
+      }
+
+      body.catalog-module-view .catalog-browser-status {
+        font-size: 0.7rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      body.lessons-view-index .module-tile-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.6rem;
+      }
+
+      body.lessons-view-index .lesson-pathway .module-cluster-label strong {
+        font-size: 0.84rem;
+      }
+
+      body.lessons-view-index .module-section .lesson-pathway-track .tile strong {
+        font-size: 0.88rem;
+      }
+    }
+
+    @media (max-width: 420px) {
+      body.theme-steam main#main-content {
+        width: min(var(--max), calc(100% - 0.9rem));
+      }
+
+      .lesson-filter-panel .lesson-availability {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .compendium-volume-tab {
+        font-size: 0.66rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .compendium-volume-tab,
+      .catalog-module-button,
+      .search-results-dropdown {
+        animation: none;
+        transition: none;
+      }
+    }
+  </style>
   <script src="assets/js/theme-registry.js"></script>
   <script src="assets/js/theme-lighting.js"></script>
 </head>
-<body class="theme-liquid-woodland theme-steam">
+<body class="theme-liquid-woodland theme-steam catalog-directory-view lessons-view-index">
+  <script>
+    // Establish the same layout state the enhancement scripts will use before
+    // the first paint. This prevents the full shelf/card layout flashing on
+    // slow iPhone connections while JavaScript initializes.
+    (function () {
+      try {
+        if (localStorage.getItem('steam-lessons-view') === 'cards') {
+          document.body.classList.remove('lessons-view-index');
+          document.body.classList.add('lessons-view-cards');
+        }
+      } catch (error) {
+        // Private browsing may deny storage; the compact index remains safe.
+      }
+    })();
+  </script>
   <a class="skip-link" href="#main-content">Skip to content</a>
 
   <header class="site-header">
@@ -48,7 +263,7 @@
           </h1>
           <div class="stl-tip" id="stl-tip" role="status" aria-live="polite"></div>
         </div>
-        <p class="lessons-library-count" id="lessons-library-count">380 available lessons &amp; resources</p>
+        <p class="lessons-library-count" id="lessons-library-count">392 available lessons &amp; resources</p>
       </div>
       <div class="search-container">
         <label class="search-label" for="lesson-search">Find a lesson</label>
@@ -1520,7 +1735,7 @@
       <div class="compendium-volume-copy">
         <span class="compendium-volume-eyebrow">Volume I · Foundations</span>
         <h2 id="volume-1-title">Mathematical Thinking, Measurement &amp; Astronomy</h2>
-        <p>50 lessons · 2 modules · organized from foundations toward application</p>
+        <p>51 lessons · 2 modules · organized from foundations toward application</p>
         <nav aria-label="Modules in Volume I">
           <a href="#module-math">Mathematics &amp; Quantitative Reasoning</a>
           <a href="#module-space">Astronomy &amp; Space Science</a>
@@ -2052,7 +2267,7 @@
       <div class="compendium-volume-copy">
         <span class="compendium-volume-eyebrow">Volume II · Physical Science</span>
         <h2 id="volume-2-title">Physics, Chemistry, Matter &amp; Energy</h2>
-        <p>49 lessons · 2 modules · organized from foundations toward application</p>
+        <p>52 lessons · 2 modules · organized from foundations toward application</p>
         <nav aria-label="Modules in Volume II">
           <a href="#module-physics">Physics &amp; Physical Systems</a>
           <a href="#module-chemistry">Chemistry &amp; Chemical Systems</a>
@@ -2366,7 +2581,7 @@
           <p class="module-banner-sub">Atoms, elements, bonds, reactions, and the transformations that connect microscopic structure to visible matter</p>
           <span class="module-banner-level">K–12 Progression · Chemistry Foundations</span>
         </div>
-        <span class="module-banner-count">16 live · 6 chapters</span>
+        <span class="module-banner-count">19 live · 6 chapters</span>
         <span class="module-chevron" aria-hidden="true">▾</span>
       </div>
       <div class="module-drawer">
@@ -2421,6 +2636,11 @@
             <span>Atom Snapper</span>
           </div>
         </a>
+        <a class="tile" href="lessons/chemistry/states-of-matter.html" style="border-left:3.5px solid #22d3a7;">
+          <span class="tile-kicker">Foundation · Particle Model · Phase Change</span>
+          <strong>States of Matter: Motion Makes the Difference</strong>
+          <small>Predict how particles move in solids, liquids, and gases, then test how temperature changes arrangement and energy.</small>
+        </a>
         <div class="tile tile-coming-soon">
           <span class="tile-kicker">Future Slot · Reactions · Balancing · Conservation</span>
           <strong>Reaction Simulator</strong>
@@ -2442,6 +2662,11 @@
           <strong>Catalysts &amp; Activation Energy</strong>
           <small>See how catalysts lower energy barriers to dramatically speed up reactions. Learn why these chemical shortcuts are crucial to both industry and biology.</small>
         </a>
+        <a class="tile" href="lessons/chemistry/stoichiometry.html" style="border-left:3.5px solid #f59e0b;">
+          <span class="tile-kicker">Skill · Moles · Ratios · Limiting Reactants</span>
+          <strong>Stoichiometry: Counting by the Equation</strong>
+          <small>Use balanced equations as particle recipes, identify the limiting reactant, and connect moles to predicted yield.</small>
+        </a>
 
         <div class="module-cluster-label">
           <strong>Level 5 · Advanced Systems &amp; Modern Chemistry (11–12)</strong>
@@ -2462,6 +2687,11 @@
           <strong>Plastics: Polymer Chemistry &amp; Materials</strong>
           <small>Link monomers into polymer chains, compare thermoplastics and thermosets, sort the seven resin identification codes, and explore the environmental chemistry of recycling and microplastics.</small>
         </a>
+        <a class="tile" href="lessons/chemistry/electrochemistry.html" style="border-left:3.5px solid #6366f1;">
+          <span class="tile-kicker">Applied · Oxidation–Reduction · Batteries · Voltage</span>
+          <strong>Electrochemistry: When Reactions Push Electrons</strong>
+          <small>Follow electrons through a galvanic cell and test how electrode choices change ideal cell voltage.</small>
+        </a>
 
         <div class="module-cluster-label">
           <strong>Capstone Layer · Meta-Chemistry</strong>
@@ -2476,7 +2706,7 @@
       <div class="compendium-volume-copy">
         <span class="compendium-volume-eyebrow">Volume III · Life &amp; Earth Science</span>
         <h2 id="volume-3-title">Living Systems, Earth &amp; Environment</h2>
-        <p>39 lessons · 2 modules · one connected system from cells to climate</p>
+        <p>40 lessons · 2 modules · one connected system from cells to climate</p>
         <nav aria-label="Modules in Volume III">
           <a href="#module-lifesci">Biology &amp; Life Science</a>
           <a href="#module-earth">Earth &amp; Environmental Science</a>
@@ -2507,7 +2737,7 @@
           <p class="module-banner-sub">Cells, heredity, organisms, adaptation, evolution, and the information systems shared by living things</p>
           <span class="module-banner-level">K–12 Progression · Life Science</span>
         </div>
-        <span class="module-banner-count">21 live · 6 chapters</span>
+        <span class="module-banner-count">22 live · 6 chapters</span>
         <span class="module-chevron" aria-hidden="true">▾</span>
       </div>
       <div class="module-drawer">
@@ -2536,6 +2766,7 @@
           <a class="life-strand-node" href="#tile-axolotl"><span class="life-strand-dot" style="background:#2dd4bf;"></span><span class="life-strand-label">Axolotls</span></a>
           <a class="life-strand-node" href="#tile-slime-mold"><span class="life-strand-dot" style="background:#2dd4bf;"></span><span class="life-strand-label">Slime<br>Molds</span></a>
           <a class="life-strand-node" href="#tile-homeostasis"><span class="life-strand-dot" style="background:#2dd4bf;"></span><span class="life-strand-label">Homeostasis</span></a>
+          <a class="life-strand-node" href="#tile-nutrition"><span class="life-strand-dot" style="background:#f2c14e;"></span><span class="life-strand-label">Nutrition</span></a>
           <div class="life-strand-divider" aria-hidden="true"></div>
           <a class="life-strand-node" href="#tile-crispr"><span class="life-strand-dot" style="background:#fb7185;"></span><span class="life-strand-label">CRISPR</span></a>
           <a class="life-strand-node" href="#tile-connectomics"><span class="life-strand-dot" style="background:#fb7185;"></span><span class="life-strand-label">Connectomics</span></a>
@@ -2647,6 +2878,11 @@
           <span class="tile-kicker">Skill · Homeostasis · Body Systems · Feedback Loops</span>
           <strong>Homeostasis &amp; Body Systems</strong>
           <small>See how the circulatory, respiratory, and nervous systems work together through feedback loops to keep the body's internal conditions stable.</small>
+        </a>
+        <a class="tile" id="tile-nutrition" href="lessons/life-sciences/nutrition.html" style="border-left:3.5px solid #d99a32;">
+          <span class="tile-kicker">Skill · Nutrients · Food Systems · Evidence</span>
+          <strong>Nutrition: A Body Systems Investigation</strong>
+          <small>Connect nutrient jobs to body systems, build a flexible food-group plate model, and practice reading a Nutrition Facts label without turning a classroom model into personal medical advice.</small>
         </a>
 
         <div class="module-cluster-label">
@@ -3924,13 +4160,13 @@
         </a>
 
         <div class="module-cluster-label">
-          <strong>Level 4.5 · Blender Fundamentals (7–12)</strong>
-          <small>Direct, step-by-step Blender tutorials with a choose-your-goal route map. Learn the foundation, then take the shortest route into architecture, props, characters, rendering, or game assets.</small>
+          <strong>Level 4.5 · 3D Design Studio (7–12)</strong>
+          <small>A field guide to CAD, polygon, sculpting, procedural, BIM, browser, and real-time 3D tools, with a direct Blender studio for hands-on practice.</small>
         </div>
         <a class="tile tile-hero" href="lessons/blender/blender-pathway.html" style="border-left:3.5px solid #e8792a;" data-added="2026-08-16">
-          <span class="tile-kicker">Pathway · 7 Lessons · Blender 4.5 LTS + 5.x · Direct Tutorials</span>
-          <strong>Blender Fundamentals Pathway</strong>
-          <small>Start with the real Blender interface, then choose a focused route into architecture, furniture, props, characters, rendering, or the Blender-to-Godot Game Asset Studio.</small>
+          <span class="tile-kicker">Pathway · 7 Studio Builds · Many 3D Tool Families · Blender Implementation</span>
+          <strong>3D Design Studio Pathway</strong>
+          <small>Learn the ideas shared by CAD, polygon modeling, sculpting, procedural, BIM, browser, and game tools, then prove them in a guided Blender project.</small>
         </a>
         <a class="tile" href="lessons/blender/blender-interface-basics.html" style="border-left:3.5px solid #e8792a;" data-added="2026-08-16">
           <span class="tile-kicker">Blender 01 · Navigation · Objects · Transforms</span>
@@ -3969,13 +4205,13 @@
         </a>
 
         <div class="module-cluster-label">
-          <strong>Level 4.6 · Blender Workspaces (6–12)</strong>
-          <small>A tab-by-tab map of Blender's workspaces, with direct lessons for the tabs the Fundamentals pathway doesn't cover on its own.</small>
+          <strong>Level 4.6 · 3D Workflow Workspaces (6–12)</strong>
+          <small>A map of the shared stages of 3D work, taught through Blender's workspace tabs and direct lessons for sculpting, procedural design, and compositing.</small>
         </div>
         <a class="tile tile-hero" href="lessons/blender/blender-workspaces-pathway.html" style="border-left:3.5px solid #4f8fc0;" data-added="2026-09-01">
           <span class="tile-kicker">Pathway · 3 New Lessons · Blender 5.x · Tab-to-Lesson Map</span>
-          <strong>Blender Workspaces Pathway</strong>
-          <small>Map all eleven Blender workspace tabs to a direct lesson, with new tutorials for Sculpting, Geometry Nodes, and Compositing.</small>
+          <strong>3D Workflow Workspaces</strong>
+          <small>Map the shared stages of 3D work to Blender's workspace tabs, with tutorials for Sculpting, Geometry Nodes, and Compositing.</small>
         </a>
         <a class="tile" href="lessons/blender/blender-sculpting.html" style="border-left:3.5px solid #8a5fb0;" data-added="2026-09-01">
           <span class="tile-kicker">Workspace · Brushes · Dyntopo · Voxel Remesh</span>
@@ -4052,7 +4288,7 @@
       <div class="compendium-volume-copy">
         <span class="compendium-volume-eyebrow">Volume VI · Arts, Communication &amp; Society</span>
         <h2 id="volume-6-title">Visual Design, Communication &amp; Human Systems</h2>
-        <p>84 lessons · 5 modules · organized from foundations toward application</p>
+        <p>92 lessons · 5 modules · organized from foundations toward application</p>
         <nav aria-label="Modules in Volume VI">
           <a href="#module-art">Visual Art &amp; Design</a>
           <a href="#module-music">Music: Theory, Instruments &amp; Sound</a>
@@ -4692,7 +4928,7 @@
           <p class="module-banner-sub">Scripture, history, geography, theology, and Christian formation explored as one connected story</p>
           <span class="module-banner-level">K–12 Progression · Bible Studies</span>
         </div>
-        <span class="module-banner-count">21 live · 6 stages</span>
+      <span class="module-banner-count">29 live · 6 stages</span>
         <span class="module-chevron" aria-hidden="true">▾</span>
       </div>
       <div class="module-drawer">
@@ -4757,6 +4993,11 @@
           <strong>Genesis 10: The Table of Nations</strong>
           <small>Explore an interactive family tree of Noah's sons Shem, Ham, and Japheth, plus a schematic map of where their descendants settled and the link to Babel and Abraham.</small>
         </a>
+        <a class="tile" id="tile-genesis" href="lessons/bible-studies/genesis.html">
+          <span class="tile-kicker">Foundation · Grades 4–10 · Creation · Promise · Family</span>
+          <strong>Genesis: Creation, Promise &amp; Family</strong>
+          <small>Read Genesis as one connected story of creation, fall, flood, promise, and a family carried toward Egypt.</small>
+        </a>
 
         <div class="module-cluster-label">
           <strong>Stage 2 · God Dwells With His People</strong>
@@ -4772,6 +5013,11 @@
           <strong>The Temple and the Story of God's Presence</strong>
           <small>Compare Eden, the Tabernacle, Solomon's Temple, the Second Temple, Christ, the Church, and the New Jerusalem.</small>
         </a>
+        <a class="tile" id="tile-exodus" href="lessons/bible-studies/exodus.html">
+          <span class="tile-kicker">Foundation · Grades 5–10 · Moses · Passover · Sinai</span>
+          <strong>Exodus: Rescue, Covenant &amp; Presence</strong>
+          <small>Follow Israel from slavery in Egypt through Passover, the sea, and Sinai into a covenant people.</small>
+        </a>
 
         <div class="module-cluster-label">
           <strong>Stage 3 · Israel, Covenant &amp; Prophets</strong>
@@ -4781,6 +5027,11 @@
           <span class="tile-kicker">Foundation · Grades 6–12 · Kings · Prophets · Empires</span>
           <strong>The Kingdoms, Prophets and Exile</strong>
           <small>Synchronize kings, prophets, biblical books, neighboring empires, exile, and return on an interactive timeline and map.</small>
+        </a>
+        <a class="tile" id="tile-joshua-to-david" href="lessons/bible-studies/joshua-to-david.html">
+          <span class="tile-kicker">Foundation · Grades 5–10 · Judges · Samuel · Monarchy</span>
+          <strong>Joshua to David: Land, Judges &amp; Kings</strong>
+          <small>Bridge the story from Joshua’s settlement through Judges, Samuel, Saul, David, and the covenant hope of a king.</small>
         </a>
         <a class="tile" id="tile-feasts" href="lessons/bible-studies/feasts-of-israel.html">
           <span class="tile-kicker">Foundation · Grades 5–10 · Calendar · Worship · Remembrance</span>
@@ -4808,6 +5059,11 @@
           <strong>The World of Jesus</strong>
           <small>Explore Galilee, Judea, Samaria, Jerusalem, roads, terrain, social groups, and major Gospel events through a living map.</small>
         </a>
+        <a class="tile" id="tile-jesus-ministry" href="lessons/bible-studies/jesus-ministry.html">
+          <span class="tile-kicker">Foundation · Grades 4–10 · Gospels · Kingdom · Disciples</span>
+          <strong>Jesus’ Ministry: The Kingdom Arrives</strong>
+          <small>Trace Jesus’ baptism, calling, signs, conflicts, and announcement of God’s kingdom before Holy Week.</small>
+        </a>
         <a class="tile" id="tile-parables" href="lessons/bible-studies/jesus-parables-lab.html">
           <span class="tile-kicker">Foundation · Grades 4–10 · Parables · Interpretation · Kingdom</span>
           <strong>Jesus' Parables Lab</strong>
@@ -4833,6 +5089,11 @@
           <strong>Paul's Missionary Journeys</strong>
           <small>Trace each journey across the Roman world while connecting cities, events, travel conditions, companions, and New Testament letters.</small>
         </a>
+        <a class="tile" id="tile-epistles" href="lessons/bible-studies/epistles.html">
+          <span class="tile-kicker">Foundation · Grades 6–12 · Letters · Church · Practice</span>
+          <strong>The Epistles: Gospel Communities in Practice</strong>
+          <small>Read New Testament letters as situated teaching for real congregations facing identity, unity, worship, justice, and hope.</small>
+        </a>
 
         <div class="module-cluster-label">
           <strong>Stage 6 · Wisdom, Discipleship &amp; Christian Life</strong>
@@ -4842,6 +5103,21 @@
           <span class="tile-kicker">Foundation · Grades 4–10 · Wisdom · Speech · Friendship · Work</span>
           <strong>Proverbs: A Wisdom Decision Lab</strong>
           <small>Examine realistic choices, compare relevant proverbs, and practice wise judgment about speech, anger, friendship, honesty, work, and money.</small>
+        </a>
+        <a class="tile" id="tile-job" href="lessons/bible-studies/job.html">
+          <span class="tile-kicker">Foundation · Grades 6–12 · Wisdom · Lament · Suffering</span>
+          <strong>Job: Suffering, Wisdom &amp; Faithful Speech</strong>
+          <small>Read Job’s speeches and God’s response, testing easy explanations while making room for lament, honest questions, and human limits.</small>
+        </a>
+        <a class="tile" id="tile-psalms" href="lessons/bible-studies/psalms.html">
+          <span class="tile-kicker">Foundation · Grades 4–12 · Prayer · Lament · Praise</span>
+          <strong>Psalms: Learning to Pray the Whole Life</strong>
+          <small>Read praise, lament, thanksgiving, wisdom, and protest as truthful speech before God.</small>
+        </a>
+        <a class="tile" id="tile-revelation" href="lessons/bible-studies/revelation.html">
+          <span class="tile-kicker">Foundation · Grades 7–12 · Symbols · Worship · New Creation</span>
+          <strong>Revelation: Witness, Worship &amp; New Creation</strong>
+          <small>Learn to read Revelation’s symbols, letters, heavenly worship, judgment, and new creation with patience and humility.</small>
         </a>
         <a class="tile" id="tile-sermon" href="lessons/bible-studies/sermon-on-the-mount.html">
           <span class="tile-kicker">Foundation · Grades 6–12 · Discipleship · Motive · Practice</span>

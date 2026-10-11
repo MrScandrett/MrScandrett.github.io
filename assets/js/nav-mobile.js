@@ -212,7 +212,7 @@
         '.nav-theme-grid, .nav-canvas-grid { grid-template-columns: 1fr 1fr; } /* Two columns on wider screens */' +
       '}' +
       '.nav-theme-chip.is-active .nav-theme-swatch::after {' +
-        'content: "\\2713"; color: #fff; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 0.85em;' +
+        'content: "\\2713"; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.8), 0 0 1px rgba(0,0,0,0.9); font-weight: 800; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 0.85em; position: relative; z-index: 2;' +
         'animation: cosThemePop 0.25s cubic-bezier(0.34, 1.2, 0.64, 1) forwards;' +
       '}' +
       '@keyframes cosThemePop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }' +
@@ -463,6 +463,7 @@
 
   function cosTransition() {
     if (!document.documentElement) return;
+    if (typeof document.startViewTransition === "function") return; // Handled smoothly by View Transitions in theme-lighting
     if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     if (reducedMotionOverride()) return;
     var html = document.documentElement;
@@ -667,6 +668,11 @@
         '</div>' +
         '<div class="nav-settings-section">' +
           '<p class="nav-settings-eyebrow">Palette</p>' +
+          '<div class="nav-theme-filter-bar" role="group" aria-label="Filter themes by tone">' +
+            '<button type="button" class="nav-theme-filter-pill is-active" data-tone-filter="all" aria-pressed="true">All</button>' +
+            '<button type="button" class="nav-theme-filter-pill" data-tone-filter="light" aria-pressed="false">&#9728; Light</button>' +
+            '<button type="button" class="nav-theme-filter-pill" data-tone-filter="dark" aria-pressed="false">&#9789; Dark</button>' +
+          '</div>' +
           '<div class="nav-theme-grid" role="list"></div>' +
         '</div>' +
         '</div>' +
@@ -744,8 +750,11 @@
       optionBtn.setAttribute("aria-pressed", "false");
       optionBtn.setAttribute("data-hint", option.label + " \u2014 " + option.detail);
       var toneSymbol = option.tone === "dark" ? "\u25d0" : "\u25cb"; // \u25d0 dark, \u25cb light
+      var accentRGB = option.accentRGB || [0, 113, 227];
       optionBtn.innerHTML =
-        '<span class="nav-theme-swatch" aria-hidden="true"></span>' +
+        '<span class="nav-theme-swatch" aria-hidden="true">' +
+          '<span class="nav-theme-accent-pip" style="background-color: rgb(' + accentRGB.join(",") + ');" title="Accent color"></span>' +
+        '</span>' +
         '<span class="nav-theme-label">' +
           "<strong>" + option.label + "</strong>" +
           "<small>" + option.detail + "</small>" +
@@ -760,11 +769,30 @@
       themeGrid.appendChild(optionBtn);
     });
 
+    var filterPills = settingsContainer.querySelectorAll(".nav-theme-filter-pill");
+    filterPills.forEach(function (pill) {
+      pill.addEventListener("click", function () {
+        var targetTone = pill.getAttribute("data-tone-filter") || "all";
+        filterPills.forEach(function (p) {
+          var active = p === pill;
+          p.classList.toggle("is-active", active);
+          p.setAttribute("aria-pressed", active ? "true" : "false");
+        });
+        var chips = themeGrid.querySelectorAll(".nav-theme-chip");
+        chips.forEach(function (chip) {
+          var chipTone = chip.getAttribute("data-tone") || "light";
+          chip.style.display = (targetTone === "all" || chipTone === targetTone) ? "" : "none";
+        });
+      });
+    });
+
     // Arrow key navigation across theme chips (WCAG roving focus pattern for radio-group-like grids).
     if (themeGrid) {
       themeGrid.addEventListener("keydown", function (e) {
         if (e.key !== "ArrowRight" && e.key !== "ArrowLeft" && e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
-        var chips = Array.prototype.slice.call(themeGrid.querySelectorAll(".nav-theme-chip:not([disabled])"));
+        var chips = Array.prototype.slice.call(themeGrid.querySelectorAll(".nav-theme-chip:not([disabled])")).filter(function (el) {
+          return el.offsetParent !== null;
+        });
         var idx = chips.indexOf(document.activeElement);
         if (idx === -1) return;
         e.preventDefault();

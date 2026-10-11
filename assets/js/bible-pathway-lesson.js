@@ -133,7 +133,17 @@
       reflect: 'Describe a realistic decision involving speech or friendship. Compare two proverbs and justify the response that best fits.'
     },
     {
-      id: 'sermon-on-the-mount', code: '6B', stage: 'Stage 6 · Wisdom & Christian Life', grades: 'Grades 6–12', time: '55–75 minutes',
+      id: 'job', code: '6B', stage: 'Stage 6 · Wisdom & Christian Life', grades: 'Grades 6–12', time: '50–70 minutes',
+      title: 'Job: Suffering, Wisdom & Faithful Speech', lede: 'Read Job as wisdom literature: lament honestly, test easy explanations, and listen for the book’s answer to suffering and human limits.',
+      question: 'How can faithful speech make room for suffering without pretending to know more than we do?',
+      scripture: 'Job 1–3 · 38–42',
+      goals: ['Trace the movement from Job’s loss and lament through the friends’ explanations to God’s speeches and Job’s response.', 'Distinguish lament, accusation, explanation, and divine wisdom instead of treating every speech as equally authoritative.', 'Practice accompanying suffering with humility, truthful presence, and hope rather than assigning blame.'],
+      lenses: [['Loss','What happens?','The opening scenes establish Job’s losses and preserve his refusal to curse God, but they do not give the reader a simple formula for explaining suffering.','Name what the text says and what it leaves unexplained.'],['Lament','Faithful protest','Job curses the day of his birth, asks hard questions, and directs his speech toward God. Lament is not the same as indifference or silence.','Listen for grief, desire for justice, and continued relationship in the same speech.'],['Friends','Testing explanations','Eliphaz, Bildad, and Zophar repeatedly connect suffering with wrongdoing. Their confidence sounds orderly, but Job 42:7 makes the book’s judgment on their speech part of the lesson.','A plausible principle can become harmful when applied without evidence or compassion.'],['Encounter','Wonder and limits','God answers from the whirlwind with questions about creation, creatures, justice, and human knowledge. Job receives no secret transcript of the heavenly council; he receives an encounter that reorders his confidence.','Do not turn God’s questions into a claim that every sufferer caused their own pain.']],
+      check: ['What does Job most clearly challenge?',['The idea that every person can explain another person’s suffering by pointing to hidden sin','The practice of speaking honestly to God','The value of compassion from friends'],'The idea that every person can explain another person’s suffering by pointing to hidden sin','Job’s friends are rebuked for speaking wrongly about God. The book makes room for honest lament while refusing a mechanical explanation of suffering.'],
+      reflect: 'Write a response to a suffering person that includes presence, one honest question, and one limit on what you claim to know.'
+    },
+    {
+      id: 'sermon-on-the-mount', code: '6C', stage: 'Stage 6 · Wisdom & Christian Life', grades: 'Grades 6–12', time: '55–75 minutes',
       title: 'The Sermon on the Mount', lede: 'Explore Jesus’ teaching about kingdom character, motives, relationships, trust, prayer, and obedience.',
       question: 'What does faithful life under Jesus’ kingdom look like in public action and hidden motive?',
       scripture: 'Matthew 5–7',
@@ -141,6 +151,76 @@
       lenses: [['Kingdom character','Blessing and witness','The Beatitudes name surprising recipients of kingdom blessing; salt and light describe a visible vocation shaped by the Father.','Read the opening as the frame for what follows, not as isolated virtues.'],['Deep righteousness','Heart and relationship','Jesus addresses anger, desire, truthfulness, retaliation, and enemy love by reaching beyond minimum compliance to reconciled faithfulness.','Observe the repeated pattern: “You have heard … but I say.”'],['Hidden devotion','Father-centered practice','Giving, prayer, fasting, possessions, and anxiety expose the audience for whom we perform and the treasure we trust.','Compare visible action and hidden motive without assuming motives you cannot know.'],['Obedient wisdom','The narrow and solid way','Jesus closes with choices: ask, discern fruit, enter the narrow gate, and build by hearing and doing His words.','The sermon ends with practiced obedience, not admiration alone.']],
       check: ['What contrast repeatedly matters in Matthew 6?',['Public appearance and the Father who sees in secret','Old cities and new cities','Learning and imagination'],'Public appearance and the Father who sees in secret','Jesus examines both faithful practices and the audience or reward that motivates them.'],
       reflect: 'Choose one teaching from Matthew 5–7. Describe the visible action, possible hidden motive, kingdom value, and one faithful practice.'
+    },
+    {
+      id: 'genesis', code: '1C', stage: 'Stage 1 · The Biblical World', grades: 'Grades 4–10', time: '50–70 minutes',
+      title: 'Genesis: Creation, Promise & Family', lede: 'Read Genesis as one connected story of creation, fall, flood, promise, and a family carried toward Egypt.',
+      question: 'How do creation, fall, judgment, and promise set the pattern for the rest of Scripture?',
+      scripture: 'Genesis 1–3 · 6–9 · 12:1–3 · 37–50',
+      goals: ['Trace Genesis through its repeated generations and turning points.', 'Distinguish what the text states from later interpretations or reconstructions.', 'Explain how God’s promise to Abraham carries the story beyond one family.'],
+      lenses: [['Creation','A good world','Genesis begins with ordered life, blessing, image-bearing, and rest.','Observe the repeated pattern before asking what it means.'],['Fall','Broken fellowship','Genesis 3 introduces distrust, shame, exile, violence, and the need for promise.','Name consequences without treating every later detail as a direct replay.'],['Promise','A family for blessing','God calls Abram and promises land, descendants, and blessing for the families of the earth.','Follow the promise through failures, delays, and surprising births.'],['Providence','Toward Egypt','Joseph’s descent and rise bring the family to Egypt, where the next book begins.','Trace the story’s movement rather than reducing it to isolated heroes.']],
+      check: ['Which thread best connects Genesis 12 to the rest of Scripture?',['A promise to bless the families of the earth through Abraham’s line','A command to build the Jerusalem Temple immediately','A prediction that every event will be easy'],'A promise to bless the families of the earth through Abraham’s line','Genesis gives the family story a wider horizon: blessing is meant to reach beyond Abraham’s household.'],
+      reflect: 'Draw a six-stop timeline from creation to Joseph. At each stop, name one fracture and one promise.'
+    },
+    {
+      id: 'exodus', code: '2C', stage: 'Stage 2 · God Dwells With His People', grades: 'Grades 5–10', time: '50–70 minutes',
+      title: 'Exodus: Rescue, Covenant & Presence', lede: 'Follow Israel from slavery in Egypt through Passover, the sea, and Sinai into a covenant people.',
+      question: 'How do rescue and covenant form a people who did not previously exist as a nation?',
+      scripture: 'Exodus 1–3 · 12–14 · 19–20',
+      goals: ['Sequence oppression, calling, plagues, Passover, sea crossing, wilderness, and Sinai.', 'Explain how deliverance leads to covenant identity rather than merely escape.', 'Connect Exodus 19–20 with the Tabernacle and later biblical memory.'],
+      lenses: [['Oppression','A people under power','Exodus names forced labor, fear, resistance, and the cries of an enslaved people.','Keep the human cost visible before moving to the spectacular scenes.'],['Name','A reluctant calling','At the bush, Moses encounters the God who sees, hears, remembers, and sends.','Compare Moses’ questions with God’s revealed name and promise.'],['Passover','Rescue remembered','The meal, blood, haste, and memorial make deliverance communal and repeatable.','Notice how ritual turns history into shared memory.'],['Sinai','A covenant people','Israel is rescued before receiving the law; covenant gives shape to worship, justice, and neighbor-love.','Read commands as the vocation of a redeemed people, not a ladder to earn rescue.']],
+      check: ['What is the order in Exodus?',['Sinai covenant → slavery → Passover → creation','Slavery → calling → Passover and sea → Sinai covenant','Temple building → exile → slavery → Sinai'],'Slavery → calling → Passover and sea → Sinai covenant','Exodus moves from oppression through God’s rescue to covenant identity at Sinai.'],
+      reflect: 'Create a route-and-covenant map. Mark one place, one rescue event, and one way Sinai changes Israel’s shared life.'
+    },
+    {
+      id: 'jesus-ministry', code: '4C', stage: 'Stage 4 · Jesus & the Kingdom', grades: 'Grades 4–10', time: '50–70 minutes',
+      title: 'Jesus’ Ministry: The Kingdom Arrives', lede: 'Trace Jesus’ baptism, temptation, calling, signs, conflicts, and announcement of God’s kingdom before Holy Week.',
+      question: 'What does Jesus announce and embody when He says that God’s kingdom has drawn near?',
+      scripture: 'Mark 1:1–45 · Luke 4:14–44 · Matthew 16:13–20',
+      goals: ['Sequence the opening movement of Jesus’ public ministry.', 'Compare teaching, healing, exorcism, meals, and calls to discipleship as signs of the kingdom.', 'Read Gospel scenes in context without collapsing their distinct emphases.'],
+      lenses: [['Baptism','The beloved Son','Jesus enters the story publicly through baptism, the Spirit, and the Father’s declaration.','Ask what identity comes before public achievement.'],['Announcement','Good news for the poor','Jesus reads Isaiah and announces release, sight, freedom, and the Lord’s favor.','Compare the synagogue claim with the response it provokes.'],['Signs','Restoration and authority','Healings and exorcisms restore people while raising questions about Jesus’ authority.','Do not treat miracles as detachable tricks; read who is restored and what is revealed.'],['Discipleship','A new community','Jesus calls people, eats across boundaries, teaches crowds, and asks who His disciples say He is.','Track both welcome and the cost of following.']],
+      check: ['What belongs together in Jesus’ ministry?',['Announcement of the kingdom, restoration, teaching, and a call to follow','Only private moral advice with no public setting','A sequence that begins after the resurrection'],'Announcement of the kingdom, restoration, teaching, and a call to follow','The Gospels present Jesus’ words and works together as the kingdom’s arrival and an invitation to discipleship.'],
+      reflect: 'Choose one scene before Holy Week. Identify the need, Jesus’ action or word, the response, and what it reveals about the kingdom.'
+    },
+    {
+      id: 'psalms', code: '6D', stage: 'Stage 6 · Wisdom & Christian Life', grades: 'Grades 4–12', time: '45–65 minutes',
+      title: 'Psalms: Learning to Pray the Whole Life', lede: 'Read praise, lament, thanksgiving, wisdom, and protest as truthful speech before God.',
+      question: 'How do the Psalms teach people to speak honestly to God across the whole range of life?',
+      scripture: 'Psalms 1 · 13 · 23 · 51 · 73 · 103 · 150',
+      goals: ['Identify common movements and genres in biblical prayer-poetry.', 'Notice parallelism, image, repetition, and changes in voice.', 'Write a responsible response that makes room for both grief and praise.'],
+      lenses: [['Lament','Where are you?','Psalm 13 moves from complaint through request toward renewed trust without pretending the pain is small.','Treat unanswered questions as part of faithful speech.'],['Praise','Who is God?','Psalms praise God as creator, king, shepherd, redeemer, and merciful covenant Lord.','Let the psalm’s images carry their emotional and theological weight.'],['Wisdom','Which way?','Psalm 1 sets two ways before the reader and uses tree, water, wind, and harvest as moral images.','Compare poetry’s picture with the prose claim it communicates.'],['Practice','What does prayer do?','The Psalms give a community words to remember, confess, protest, celebrate, and hope together.','Writing a psalm is a literary exercise, not a promise that every feeling resolves quickly.']],
+      check: ['What makes a lament a form of faith rather than indifference?',['It turns pain toward God while continuing to ask, remember, or trust','It avoids naming grief so worship stays cheerful','It proves the writer already understands the cause'],'It turns pain toward God while continuing to ask, remember, or trust','Biblical lament speaks honestly to God and often holds complaint, request, memory, and hope together.'],
+      reflect: 'Annotate Psalm 13 with four colors: complaint, request, memory, and trust. Which movement is strongest, and which is hardest to write.'
+    },
+    {
+      id: 'joshua-to-david', code: '3D', stage: 'Stage 3 · Israel, Covenant & Prophets', grades: 'Grades 5–10', time: '55–75 minutes',
+      title: 'Joshua to David: Land, Judges & Kings', lede: 'Bridge the story from Joshua’s settlement through Judges, Samuel, Saul, David, and the covenant hope of a king.',
+      question: 'Why does Israel’s movement from land to monarchy create both hope and danger?',
+      scripture: 'Joshua 1 · Judges 2 · 1 Samuel 8 · 2 Samuel 7',
+      goals: ['Place settlement, tribal instability, judges, Saul, and David in sequence.', 'Distinguish the Bible’s theological pattern from a simplistic “good times/bad times” cycle.', 'Explain both the promise and the risk in Israel’s request for a king.'],
+      lenses: [['Joshua','A land received','Joshua frames courage, inheritance, memory, and covenant faithfulness after Moses.','Read conquest and settlement with attention to the text’s own claims and limits.'],['Judges','A fractured cycle','Judges repeats crisis, crying out, deliverance, and relapse while showing local variation and moral deterioration.','Do not treat “everyone did what was right” as a compliment.'],['Samuel','A king requested','Israel asks for a king like the nations; the request addresses real insecurity but also reveals misplaced trust.','Hold together God’s warning and God’s continued purpose.'],['David','Promise and failure','David receives a covenant promise, yet his household and kingdom remain morally complicated.','Distinguish promise from approval of every royal action.']],
+      check: ['What tension does 1 Samuel 8 create?',['A king can provide order, yet imitation of the nations can distort trust and justice','Israel has no need for leadership at all','David is already king before Saul'],'A king can provide order, yet imitation of the nations can distort trust and justice','The narrative neither romanticizes leaderlessness nor treats monarchy as an uncomplicated solution.'],
+      reflect: 'Make a four-column comparison of Joshua, a judge, Saul, and David: calling, leadership strength, failure, and consequence.'
+    },
+    {
+      id: 'epistles', code: '5C', stage: 'Stage 5 · The Church Goes to the Nations', grades: 'Grades 6–12', time: '55–75 minutes',
+      title: 'The Epistles: Gospel Communities in Practice', lede: 'Read the New Testament letters as situated teaching for real congregations facing conflict, identity, worship, justice, and hope.',
+      question: 'How do the epistles move from the gospel’s announcement to the daily life of diverse communities?',
+      scripture: 'Romans 1:16–17 · 1 Corinthians 12–13 · Galatians 3:26–29 · Ephesians 2:11–22',
+      goals: ['Identify sender, audience, occasion, argument, and practical response in a letter.', 'Compare how several epistles address unity, gifts, freedom, holiness, and hope.', 'Apply a letter’s reasoning without lifting a sentence out of its situation.'],
+      lenses: [['Situation','Why was this written?','Letters answer concrete questions in named communities; the occasion shapes the argument.','Look for conflict, confusion, suffering, or a practical decision.'],['Gospel','What has changed?','Romans, Galatians, and Ephesians connect grace and faith with a new people formed in Christ.','Keep justification, reconciliation, freedom, and identity in each letter’s own frame.'],['Community','How do people belong?','First Corinthians uses the body metaphor to challenge status competition and place love at the center of gifted life.','Difference is not the same as superiority.'],['Practice','What now follows?','Epistles move from theological claims toward speech, money, sexuality, power, worship, work, forgiveness, and hope.','Name the reasoning that connects belief to practice.']],
+      check: ['What is a responsible first step when reading an epistle?',['Identify its audience, occasion, and argument before applying a sentence','Treat every sentence as a free-floating slogan','Assume all churches faced exactly the same problem'],'Identify its audience, occasion, and argument before applying a sentence','Context reveals what the writer is addressing and how the local instruction fits the letter’s larger gospel reasoning.'],
+      reflect: 'Choose one passage. Write its situation, main claim, supporting reason, community practice, and one modern application that respects the context.'
+    },
+    {
+      id: 'revelation', code: '6E', stage: 'Stage 6 · Wisdom & Christian Life', grades: 'Grades 7–12', time: '55–75 minutes',
+      title: 'Revelation: Witness, Worship & New Creation', lede: 'Learn to read Revelation’s symbols, letters, heavenly worship, judgment, and new creation with patience and humility.',
+      question: 'How does Revelation encourage faithful witness when empire, suffering, and uncertainty seem to dominate?',
+      scripture: 'Revelation 1–3 · 4–5 · 12–14 · 21–22',
+      goals: ['Identify genre signals and recurring images without treating every symbol as a modern code.', 'Compare the seven churches’ local situations with the book’s worship-centered vision.', 'Explain how Revelation ends the Bible’s story with judgment, presence, healing, and new creation.'],
+      lenses: [['Letters','Seven churches','The opening visions address real congregations with distinct strengths, compromises, suffering, and promises.','Start with the named audience before moving to cosmic imagery.'],['Worship','Who is worthy?','Heavenly worship frames the Lamb’s worthiness and challenges rival claims to ultimate power.','Notice how song, throne, scroll, and witness interpret the crisis.'],['Symbols','Read the images','Dragon, beasts, numbers, lampstands, seals, and cities work through biblical echoes and symbolic patterns.','Offer interpretations as argued readings, not certainty where the text leaves room.'],['New creation','God dwells with humanity','The final vision answers Eden’s loss with dwelling, river, tree, healing, light, justice, and the end of death.','Connect Revelation 21–22 to Genesis without erasing the newness of the promise.']],
+      check: ['What is a careful way to read Revelation’s symbols?',['Trace their literary and biblical context, then distinguish evidence from interpretation','Assume each number names one modern headline','Ignore the letters to the actual churches'],'Trace their literary and biblical context, then distinguish evidence from interpretation','Revelation invites bold hope and careful reading; symbols should be interpreted with the book’s context and biblical echoes in view.'],
+      reflect: 'Compare one image in Revelation with its earlier biblical echo. State what the connection supports and what remains interpretive.'
     }
   ];
 
@@ -248,6 +328,13 @@
       now: 'Proverbs offers concise observations that require listening, comparison, context, and discernment—not mechanical use.',
       next: 'Jesus embodies and teaches God’s wisdom, forming disciples whose inner character and outward practice belong together.'
     },
+    'job': {
+      focus: ['fall', 'covenant', 'kingdom', 'jesus'],
+      bigIdea: 'Job gives faithful speech room for grief, protest, silence, and wonder while refusing easy explanations for another person’s suffering.',
+      before: 'Wisdom literature asks how to live well before God, while the Bible’s story also contains a world marked by death, injustice, and human limits.',
+      now: 'Job loses what he loves, rejects simplistic explanations from his friends, speaks honestly to God, and encounters God without receiving a tidy cause for every wound.',
+      next: 'Jesus does not make suffering easy, but the Gospels show God entering human grief; the Church learns to lament, accompany the suffering, and hope for resurrection.'
+    },
     'sermon-on-the-mount': {
       focus: ['kingdom', 'jesus', 'church'],
       bigIdea: 'Jesus describes kingdom life that reaches beneath visible behavior to motives, trust, relationships, and practiced obedience.',
@@ -271,7 +358,15 @@
     'acts-jerusalem-to-nations': [['Acts',1,6,11],['Acts',2,1,12],['Acts',8,26,40],['Acts',10,34,48],['Acts',13,1,3]],
     'pauls-missionary-journeys': [['Acts',13,1,12],['Acts',16,6,15],['Acts',17,16,34],['Acts',20,17,24],['Romans',1,1,7]],
     'proverbs-wisdom-decision-lab': [['Proverbs',1,1,7],['Proverbs',10,1,12],['Proverbs',15,1,4],['Proverbs',26,4,5],['Proverbs',27,5,10]],
+    'job': [['Job',1,1,22],['Job',2,1,13],['Job',3,1,26],['Job',38,1,18],['Job',42,1,17]],
     'sermon-on-the-mount': [['Matthew',5,1,12],['Matthew',5,13,20],['Matthew',6,5,15],['Matthew',6,25,34],['Matthew',7,24,29]]
+    ,'genesis': [['Genesis',1,1,5],['Genesis',3,1,15],['Genesis',12,1,9],['Genesis',37,1,11],['Genesis',50,15,21]]
+    ,'exodus': [['Exodus',1,8,14],['Exodus',3,1,15],['Exodus',12,1,14],['Exodus',14,21,31],['Exodus',19,1,8]]
+    ,'jesus-ministry': [['Mark',1,9,15],['Luke',4,16,30],['Mark',2,1,12],['Mark',4,35,41],['Matthew',16,13,20]]
+    ,'psalms': [['Psalms',1,1,6],['Psalms',13,1,6],['Psalms',23,1,6],['Psalms',51,1,12],['Psalms',150,1,6]]
+    ,'joshua-to-david': [['Joshua',1,1,9],['Judges',2,6,23],['1 Samuel',8,4,22],['1 Samuel',16,1,13],['2 Samuel',7,8,17]]
+    ,'epistles': [['Romans',1,1,17],['1 Corinthians',12,12,27],['1 Corinthians',13,1,13],['Galatians',3,26,29],['Ephesians',2,11,22]]
+    ,'revelation': [['Revelation',1,9,20],['Revelation',2,1,7],['Revelation',5,1,14],['Revelation',12,1,12],['Revelation',21,1,8]]
   };
 
   var bibleLanguages = [
@@ -394,6 +489,13 @@
       alt: 'Open scroll containing the Book of Proverbs in Hebrew',
       caption: 'A modern Hebrew scroll of Proverbs reminds readers that biblical wisdom is a collected, literary tradition meant to be read in context.',
       credit: 'Pete Unseth', license: 'CC0', licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/'
+    },
+    'job': {
+      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/William_Blake_-_Job_and_his_Daughters_-_Google_Art_Project.jpg/1280px-William_Blake_-_Job_and_his_Daughters_-_Google_Art_Project.jpg',
+      page: 'https://commons.wikimedia.org/wiki/File:William_Blake_-_Job_and_his_Daughters_-_Google_Art_Project.jpg',
+      alt: 'William Blake watercolor showing Job and his daughters beneath a radiant heavenly vision',
+      caption: 'William Blake visualizes Job’s restoration with a radiant, symbolic composition. It is a later artistic interpretation—not an illustration made in Job’s ancient setting—so compare its choices with the book’s own words.',
+      credit: 'William Blake, Job and His Daughters, 1805 / 1816', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
     },
     'sermon-on-the-mount': {
       src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/VIEW_FROM_THE_MOUNT_OF_BEATITUDES_%287723721162%29.jpg/1280px-VIEW_FROM_THE_MOUNT_OF_BEATITUDES_%287723721162%29.jpg',
@@ -710,6 +812,7 @@
     'acts-jerusalem-to-nations': 'romanEmpire',
     'pauls-missionary-journeys': 'paulFirstJourney',
     'proverbs-wisdom-decision-lab': 'nearEast',
+    'job': 'nearEast',
     'sermon-on-the-mount': 'galilee'
   };
 
@@ -727,6 +830,7 @@
     'acts-jerusalem-to-nations': 'This map shows the empire in 117 CE, later than Acts, so its borders should not be treated as an exact Acts-era snapshot. It still reveals the continental scale, seas, and provincial network through which early Christian witness traveled.',
     'pauls-missionary-journeys': 'Begin with one route in detail: Antioch to Cyprus, Asia Minor, and back. Use it as a scale model for reading later journeys—always checking Acts for the sequence and distinguishing mapped reconstruction from explicit text.',
     'proverbs-wisdom-decision-lab': 'Israel’s wisdom belongs to a wider ancient Near Eastern world of courts, trade, agriculture, households, and scribal learning. Geographic context invites comparison without assuming every neighboring tradition says the same thing.',
+    'job': 'Job is set in the land of Uz, whose location is not certain. Use the wider ancient Near Eastern map to see the cultural world of wisdom literature, but do not turn a schematic map into a precise identification of Uz.',
     'sermon-on-the-mount': 'Locate the lake, Capernaum, surrounding settlements, slopes, and roads. The map clarifies the Galilean setting, but Matthew does not identify the sermon’s exact hillside.'
   };
 
@@ -746,6 +850,7 @@
     'acts-jerusalem-to-nations': ['Acts 1:8; 8:26–40', 'How does the Ethiopian official’s story relate to Acts 1:8?', ['It shows witness crossing a social and geographic boundary', 'It proves the whole book happens in Jerusalem'], 0, 'Acts moves outward through particular people and encounters. The official’s story is one example, not a complete map of the mission.', 'Locate the road named in Acts 8 and explain what the text says about the encounter.'],
     'pauls-missionary-journeys': ['Acts 13:4–14', 'Which route is actually named in this passage?', ['From Syrian Antioch to Cyprus and onward to Perga', 'A direct flight from Rome to Jerusalem'], 0, 'The text names Seleucia, Cyprus, Paphos, and Perga. A route map is a reconstruction of travel between named places.', 'List the places in order, then label any connecting line as a reconstruction.'],
     'proverbs-wisdom-decision-lab': ['Proverbs 26:4–5', 'Two neighboring sayings give opposite instructions. What should a reader do?', ['Consider which situation calls for each response', 'Discard one verse because it must be a copying error'], 0, 'The paired proverbs train discernment. Their tension warns against treating each short saying as a mechanical rule for every circumstance.', 'Describe two situations in which different responses might be wise.'],
+    'job': ['Job 2:11–13; 4:7–8; 42:7', 'Job’s friends begin by sitting with him, then offer explanations. What should a careful reader test?', ['Whether their confident explanation is actually supported by the book', 'Whether suffering always proves a person committed a hidden sin'], 0, 'The friends speak at length, but God later says they have not spoken what is right about Him as Job has. Their opening silence models presence; their later certainty becomes part of the book’s critique.', 'Compare one speech from a friend with Job 42:7. Name one claim, its evidence, and the judgment the book gives it.'],
     'sermon-on-the-mount': ['Matthew 6:1–6', 'What contrast frames Jesus’ teaching about giving and prayer?', ['Performing for public praise versus seeking the Father', 'Galilee versus Jerusalem as the correct place to pray'], 0, 'Jesus repeats the contrast between being seen by people and the Father who sees in secret. The passage examines motive and audience.', 'Find repeated words or actions and explain how they develop the contrast.']
   };
 
@@ -849,6 +954,14 @@
       { title: 'Hebrew Bible', kind: 'Scriptural collection' },
       { title: 'Ancient Israel and Judah', kind: 'Historical setting' }
     ],
+    'job': [
+      { title: 'Job', kind: 'Wisdom-literature figure' },
+      { title: 'Eliphaz the Temanite', label: 'Eliphaz', kind: 'Job’s friend' },
+      { title: 'Bildad the Shuhite', label: 'Bildad', kind: 'Job’s friend' },
+      { title: 'Zophar the Naamathite', label: 'Zophar', kind: 'Job’s friend' },
+      { title: 'Elihu', kind: 'Speaker in Job 32–37' },
+      { title: 'Book of Job', kind: 'Wisdom literature' }
+    ],
     'sermon-on-the-mount': [
       { title: 'Jesus', kind: 'Historical and biblical figure' },
       { title: 'Sermon on the Mount', kind: 'Gospel discourse' },
@@ -865,14 +978,20 @@
   var index = lessons.findIndex(function (lesson) { return lesson.id === id; });
   var lesson = lessons[index];
   if (!lesson) { main.innerHTML = '<p>Lesson data could not be loaded.</p>'; return; }
-  lesson.image = lessonImages[lesson.id];
+  lesson.image = lessonImages[lesson.id] || lessonImages['world-of-the-bible'];
   lesson.visualJourney = lessonVisualJourneys[lesson.id] || [];
-  lesson.map = geographyMaps[lessonMapKeys[lesson.id]];
-  lesson.map.note = lessonMapNotes[lesson.id];
-  lesson.entities = lessonEntities[lesson.id];
-  lesson.passages = lessonPassages[lesson.id];
-  lesson.story = lessonStoryContext[lesson.id];
-  lesson.investigation = lessonInvestigations[lesson.id];
+  lesson.map = geographyMaps[lessonMapKeys[lesson.id]] || geographyMaps.nearEast;
+  lesson.map.note = lessonMapNotes[lesson.id] || 'Use this reference map for broad orientation. It clarifies relative place and scale, but it is not a complete reconstruction of every biblical setting.';
+  lesson.entities = lessonEntities[lesson.id] || [{ title: 'Bible', kind: 'Scriptural library' }];
+  lesson.passages = lessonPassages[lesson.id] || [['Genesis',1,1,3]];
+  lesson.story = lessonStoryContext[lesson.id] || {
+    focus: ['creation', 'covenant', 'jesus', 'church', 'new-creation'],
+    bigIdea: 'This lesson places a particular biblical text inside the Bible’s unfolding story without flattening its own context.',
+    before: 'Earlier Scripture establishes the world, promises, crises, and questions that shape this lesson.',
+    now: lesson.title + ' gives students a focused way to read its text, setting, and theological movement.',
+    next: 'Carry the lesson’s question forward into the next stage of the pathway and return to the text for evidence.'
+  };
+  lesson.investigation = lessonInvestigations[lesson.id] || [lesson.scripture, 'What should a careful reader do first?', ['Observe the passage and its context', 'Skip directly to a conclusion'], 0, 'Begin with the passage, its setting, and its repeated details before making a claim.', 'Record two observations and one question before explaining the text.'];
   main.setAttribute('data-stage-theme', lesson.code.charAt(0));
 
   function esc(value) {

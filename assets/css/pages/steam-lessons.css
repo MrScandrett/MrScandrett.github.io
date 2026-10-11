@@ -6827,13 +6827,22 @@ body:is(.lessons-view-index, .lessons-view-cards) .module-tile-grid > .space-orb
 }
 
 /* Index */
+/* Chapters differ a lot in length, so a row grid left holes under the short
+   ones. Newspaper columns pack them tight: each chapter stays whole and
+   the columns balance their height. */
 body.lessons-view-index .module-tile-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
-  align-items: start;
-  gap: 0.75rem;
+  display: block;
+  column-width: 16rem;
+  column-gap: 0.75rem;
+  column-fill: balance;
   padding: 0.8rem !important;
   counter-reset: lesson-chapter;
+}
+
+/* Intro cards and other non-chapter blocks span the full width. */
+body.lessons-view-index .module-tile-grid > :not(.lesson-pathway) {
+  column-span: all;
+  margin-bottom: 0.75rem;
 }
 
 /* Repeats the banner's count and level line. */
@@ -6849,6 +6858,8 @@ body.lessons-view-index .lesson-pathway {
   /* Plain colors, not color-mix(): contrast-guard.js only parses rgb() and
      would otherwise judge the titles against the light page behind. */
   background: var(--module-deep);
+  break-inside: avoid;
+  margin-bottom: 0.75rem;
   color: var(--module-copy);
   counter-increment: lesson-chapter;
   counter-reset: lesson-item;
@@ -6888,22 +6899,20 @@ body.lessons-view-index .lesson-pathway .module-cluster-label small {
   -webkit-line-clamp: 2;
 }
 
-/* A long chapter takes two grid columns and splits its list in two, so one
-   big chapter doesn't stretch its whole row. Counts live links only;
-   roadmap slots are <div>s. */
-@media (min-width: 900px) {
-  body.lessons-view-index .lesson-pathway:has(.lesson-pathway-track > a.tile:nth-of-type(9)) {
-    grid-column: span 2;
-  }
+/* The Bible module's parchment label colors (dark ink, set above for the
+   Cards view) would land on these dark Index cards; keep the light ink. */
+body.lessons-view-index.theme-liquid-woodland.theme-steam #module-bible .lesson-pathway .module-cluster-label {
+  border-bottom-color: rgba(238, 243, 255, 0.2);
+}
+body.lessons-view-index.theme-liquid-woodland.theme-steam #module-bible .lesson-pathway .module-cluster-label strong {
+  color: #fff;
+}
+body.lessons-view-index.theme-liquid-woodland.theme-steam #module-bible .lesson-pathway .module-cluster-label small {
+  color: rgba(238, 243, 255, 0.78);
+}
 
-  body.lessons-view-index .lesson-pathway:has(.lesson-pathway-track > a.tile:nth-of-type(9)) .lesson-pathway-track {
-    columns: 2;
-    column-gap: 0.4rem;
-  }
-
-  body.lessons-view-index .lesson-pathway-track .tile {
-    break-inside: avoid;
-  }
+body.lessons-view-index .lesson-pathway-track .tile {
+  break-inside: avoid;
 }
 
 body.lessons-view-index .pathway-steps a {

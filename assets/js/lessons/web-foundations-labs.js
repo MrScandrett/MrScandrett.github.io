@@ -165,6 +165,39 @@
     ['css-columns', 'css-gap', 'css-width'].forEach((id) => $(id).addEventListener('input', update));
     update();
   }
+  if ($('selector-lab')) {
+    const choice = $('selector-choice');
+    const cards = [...document.querySelectorAll('.wb-selector-card')];
+    const feedback = $('selector-feedback');
+    const updateSelector = () => {
+      const selector = choice.value;
+      cards.forEach((card) => {
+        card.classList.toggle('is-match', card.matches(selector));
+        card.querySelectorAll('h3, p').forEach((el) => el.classList.toggle('is-match', el.matches(selector)));
+      });
+      const matched = cards.filter((card) => card.matches(selector)).length;
+      const nested = cards.reduce((sum, card) => sum + card.querySelectorAll(selector).length, 0);
+      feedback.textContent = matched ? `${selector} matches ${matched} card${matched === 1 ? '' : 's'}. The browser checks every element against the selector.` : `${selector} reaches ${nested} nested element${nested === 1 ? '' : 's'} inside the cards.`;
+    };
+    choice.addEventListener('change', updateSelector);
+    updateSelector();
+  }
+  if ($('box-model-lab')) {
+    const ids = ['padding', 'border', 'margin'];
+    const updateBox = () => {
+      const values = Object.fromEntries(ids.map((name) => [name, Number($(`box-${name}`).value)]));
+      const preview = $('box-model-preview');
+      preview.style.setProperty('--wb-padding', `${values.padding}px`);
+      preview.style.setProperty('--wb-border', `${values.border}px`);
+      preview.style.setProperty('--wb-margin', `${values.margin}px`);
+      ids.forEach((name) => { $(`box-${name}-value`).value = `${values[name]}px`; $(`box-${name}-value`).textContent = `${values[name]}px`; });
+      const width = 136 + values.padding * 2 + values.border * 2;
+      const height = 74 + values.padding * 2 + values.border * 2;
+      $('box-model-feedback').textContent = `Content + padding + border = ${width}px wide × ${height}px high. Margin adds ${values.margin}px of outside breathing room, but not to the coloured box.`;
+    };
+    ids.forEach((name) => $(`box-${name}`).addEventListener('input', updateBox));
+    updateBox();
+  }
   if ($('js-search')) {
     const cards = [...document.querySelectorAll('[data-lab-project]')];
     const update = () => {

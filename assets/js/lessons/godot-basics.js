@@ -1,4 +1,27 @@
 (() => {
+  const engineNotes = {
+    world: ['THE SHARED IDEA', 'A scene graph is the world’s family tree.', 'Objects live in a hierarchy. Parents carry children with them, so moving a player can move its mesh, camera, and collision shape together.', 'Node3D → Scene → Instance'],
+    transform: ['THE SHARED IDEA', 'Every object has a transform.', 'Position says where it is, rotation says which way it faces, and scale says how large it is. In 3D, the gizmo is a visual way to edit those three values.', 'Transform3D: position · rotation · scale'],
+    systems: ['THE SHARED IDEA', 'Behavior is assembled from systems.', 'Rendering, physics, input, animation, particles, audio, and scripts each solve a different job. A visible object is not automatically solid, interactive, or intelligent.', 'MeshInstance3D + CollisionShape3D + Script'],
+    assets: ['THE SHARED IDEA', 'A scene uses resources; it does not contain everything.', 'Meshes, materials, textures, sounds, scripts, and animations are saved assets. Reusing a resource keeps many objects consistent and makes iteration faster.', '.tscn + .gd + Mesh + Material'],
+    loop: ['THE SHARED IDEA', 'A game is a loop, not a screenshot.', 'Each frame gathers input, updates game state, resolves physics, renders a view, and presents audio and UI. Play, observe, change one thing, and test again.', '_process() · _physics_process() · Play']
+  };
+  document.querySelectorAll('.engine-question').forEach(button => {
+    button.addEventListener('click', () => {
+      document.querySelectorAll('.engine-question').forEach(item => {
+        item.classList.remove('is-active');
+        item.setAttribute('aria-selected', 'false');
+      });
+      button.classList.add('is-active');
+      button.setAttribute('aria-selected', 'true');
+      const [kicker, title, text, godot] = engineNotes[button.dataset.engineTab];
+      document.getElementById('engineAnswerKicker').textContent = kicker;
+      document.getElementById('engineAnswerTitle').textContent = title;
+      document.getElementById('engineAnswerText').textContent = text;
+      document.getElementById('engineAnswerGodot').textContent = godot;
+    });
+  });
+
   const nodeNotes = {
     player: ['Player', 'A CharacterBody3D is designed for a character moved by your code.'],
     mesh: ['Mesh', 'The visible geometry. A mesh looks solid, but it does not create physics by itself.'],
