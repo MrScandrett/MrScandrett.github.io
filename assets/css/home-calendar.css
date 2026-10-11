@@ -218,19 +218,81 @@
 
 /* ── narrower screens ───────────────────────────────── */
 @media (max-width: 760px) {
-  .hcal-nav { width: 100%; flex-wrap: wrap; row-gap: 0.5rem; }
-  .hcal-month { order: 10; flex: 1 0 100%; text-align: left; }
+  /* the card hugs the screen instead of wasting a third of it on padding */
+  #home-calendar.home-widget { padding: 0.9rem 0.75rem; }
+  .hcal-head { gap: 0.5rem; }
+  /* range label sits above the controls; Today shares their row */
+  .hcal-nav { width: 100%; flex-wrap: wrap; gap: 0.3rem; row-gap: 0.4rem; }
+  .hcal-month { order: -1; flex: 1 0 100%; text-align: left; font-size: 0.9rem; margin-bottom: 0.1rem; }
   .hcal-btn--text { margin-left: auto; }
   .hcal-seg { margin-right: 0; }
+  .hcal-seg-btn { padding: 0.3rem 0.7rem; }
   .hcal-legend-sep { display: none; }
-  /* week becomes a stacked agenda: one card per day */
-  [data-mode="week"] .hcal-row { grid-template-columns: minmax(0, 1fr); }
-  [data-mode="week"] .hcal-day { min-height: 0; }
-  [data-mode="week"] .hcal-top { gap: 0.6rem; }
+  /* legend: one swipeable row instead of four wrapped lines */
+  .hcal-legend {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 0.4rem 0.7rem;
+    margin-inline: -0.75rem;
+    padding: 0.1rem 0.75rem 0.25rem;
+    font-size: 0.7rem;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .hcal-legend::-webkit-scrollbar { display: none; }
+  .hcal-key, .hcal-filter { flex: none; white-space: nowrap; }
+  .hcal-body { gap: 0.75rem; margin-top: 0.4rem; }
   /* month stays a 7-column overview */
   [data-mode="month"] .hcal-day { min-height: 3.3rem; padding: 0.22rem 0.2rem; }
   [data-mode="month"] .hcal-class { font-size: 0.5rem; letter-spacing: 0.02em; }
   [data-mode="month"] .hcal-num { font-size: 0.74rem; }
+}
+
+/* Portrait phones: week becomes a compact agenda, one slim row per day
+   (date block on the left, class + events on the right). */
+@media (max-width: 760px) and (min-height: 501px) {
+  [data-mode="week"] .hcal-row { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  [data-mode="week"] .hcal-day {
+    display: grid;
+    grid-template-columns: 2.9rem minmax(0, 1fr);
+    column-gap: 0.65rem;
+    row-gap: 2px;
+    align-content: center;
+    min-height: 3.1rem;
+    padding: 0.4rem 0.6rem;
+  }
+  [data-mode="week"] .hcal-top { grid-row: 1 / span 3; flex-direction: column; align-items: center; justify-content: center; gap: 0; line-height: 1.15; }
+  [data-mode="week"] .hcal-num { font-size: 1.15rem; font-weight: 700; }
+  [data-mode="week"] .hcal-class, [data-mode="week"] .hcal-chips { grid-column: 2; margin-top: 0; }
+  [data-mode="week"] .hcal-class { font-size: 0.66rem; }
+  [data-mode="week"] .hcal-chips { gap: 3px; }
+  [data-mode="week"] .hcal-chip { font-size: 0.78rem; }
+  [data-mode="week"] .hcal-day.is-weekend:not(.is-class) { min-height: 2.6rem; }
+}
+
+/* Phones held sideways: very little height, so keep all seven days on screen,
+   shorter cards, and the controls on one line. */
+@media (orientation: landscape) and (max-height: 500px) {
+  #home-calendar.home-widget { padding: 0.6rem max(0.75rem, env(safe-area-inset-right)) 0.6rem max(0.75rem, env(safe-area-inset-left)); }
+  .hcal-nav { width: auto; flex-wrap: nowrap; }
+  .hcal-month { order: 0; flex: 0 1 auto; margin: 0 0.4rem; text-align: left; }
+  .hcal-btn--text { margin-left: 0.1rem; }
+  .hcal-legend {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    font-size: 0.7rem;
+    scrollbar-width: none;
+  }
+  .hcal-legend::-webkit-scrollbar { display: none; }
+  .hcal-key, .hcal-filter { flex: none; white-space: nowrap; }
+  .hcal-body { gap: 0.6rem; margin-top: 0.35rem; }
+  [data-mode="week"] .hcal-row { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+  [data-mode="week"] .hcal-day { min-height: 5.4rem; gap: 3px; padding: 0.35rem 0.4rem; }
+  [data-mode="week"] .hcal-class { font-size: 0.58rem; letter-spacing: 0.04em; }
+  [data-mode="week"] .hcal-chip { font-size: 0.66rem; line-height: 1.2; }
+  [data-mode="month"] .hcal-day { min-height: 2.6rem; padding: 0.2rem 0.3rem; }
+  [data-mode="month"] .hcal-class { font-size: 0.52rem; }
+  .hcal-side { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 0.6rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
