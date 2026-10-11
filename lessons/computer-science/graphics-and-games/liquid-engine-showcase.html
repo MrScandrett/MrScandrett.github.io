@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Liquid Engine Benchmark · ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <style>
+    :root { color-scheme: dark; --ink:#e8f7ff; --muted:#9bb5c8; --panel:#071827; --line:rgba(148,213,241,.2); --accent:#5de2ff; }
+    body { margin:0; background:#020913; color:var(--ink); }
+    .le-page { width:min(1180px,calc(100% - 2rem)); margin:auto; padding:2rem 0 4rem; }
+    .le-hero { max-width:780px; margin-bottom:1.5rem; }
+    .le-hero h1 { font-size:clamp(2rem,5vw,3.5rem); line-height:1.05; margin:.4rem 0 .8rem; }
+    .le-hero p { color:var(--muted); line-height:1.65; max-width:72ch; }
+    .le-badge { color:var(--accent); font:700 .72rem ui-monospace,monospace; letter-spacing:.12em; text-transform:uppercase; }
+    .le-grid { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(280px,.65fr); gap:1rem; }
+    .le-stage,.le-panel { background:linear-gradient(145deg,#071c2d,#030b14); border:1px solid var(--line); border-radius:16px; box-shadow:0 18px 55px rgba(0,0,0,.3); }
+    .le-stage { overflow:hidden; }
+    #le-canvas, #le-2d-canvas { display:block; width:100%; height:480px; }
+    #le-canvas { cursor:grab; }
+    #le-canvas:active { cursor:grabbing; }
+    #le-2d-canvas { background:#b7e6f3; }
+    .le-panel { padding:1rem; }
+    .le-panel h2 { margin:.1rem 0 .9rem; font-size:1rem; }
+    .le-control { display:grid; gap:.35rem; margin:1rem 0; }
+    .le-control label { display:flex; justify-content:space-between; gap:.5rem; color:var(--muted); font-size:.8rem; }
+    .le-control output { color:var(--accent); font-weight:700; }
+    input[type=range] { width:100%; accent-color:var(--accent); }
+    .le-buttons { display:flex; flex-wrap:wrap; gap:.45rem; }
+    button { border:1px solid var(--line); border-radius:8px; padding:.55rem .7rem; background:#0b2c42; color:var(--ink); cursor:pointer; font-weight:700; }
+    button:hover,button.active,button:focus-visible { border-color:var(--accent); background:#125371; }
+    .le-readout { display:grid; grid-template-columns:1fr 1fr; gap:.55rem; margin-top:1rem; }
+    .le-readout div { padding:.6rem; background:rgba(255,255,255,.04); border-radius:8px; }
+    .le-readout small { display:block; color:var(--muted); font-size:.68rem; }
+    .le-readout strong { display:block; margin-top:.18rem; color:#fff; }
+    .le-note { color:var(--muted); font-size:.78rem; line-height:1.55; }
+    @media(max-width:800px) { .le-grid { grid-template-columns:1fr; } #le-canvas { height:360px; } }
+    @media(prefers-reduced-motion:reduce) { #le-canvas { cursor:default; } }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="le-page">
+    <header class="le-hero">
+      <span class="le-badge">LiquidEngine · CGI water benchmark</span>
+      <h1>One liquid model, several visual truths</h1>
+      <p>Change the material, wave scale, detail, and camera. The engine shares lightweight motion and material vocabulary across water, lava, honey, and oil while the renderer adds geometry displacement, analytical normals, depth color, highlights, and caustic hints.</p>
+    </header>
+    <div class="le-grid">
+      <section class="le-stage" aria-label="Interactive liquid engine benchmark">
+        <canvas id="le-canvas" aria-label="Interactive 3D liquid surface. Drag to orbit and scroll to zoom."></canvas>
+        <canvas id="le-2d-canvas" hidden aria-label="Interactive 2D side view of a liquid surface with depth, reflected light, caustics, and foam."></canvas>
+      </section>
+      <aside class="le-panel" aria-label="Liquid engine controls">
+        <h2>Material</h2>
+        <div class="le-buttons" id="le-materials">
+          <button type="button" data-material="water" class="active">Water</button>
+          <button type="button" data-material="lava">Lava</button>
+          <button type="button" data-material="honey">Honey</button>
+          <button type="button" data-material="oil">Oil</button>
+        </div>
+        <div class="le-control"><label for="le-wave">Geometry displacement <output id="le-wave-value">0.34</output></label><input id="le-wave" type="range" min="0" max="0.8" step="0.01" value="0.34" /></div>
+        <div class="le-control"><label for="le-detail">Fine detail <output id="le-detail-value">1.0</output></label><input id="le-detail" type="range" min="0" max="2" step="0.1" value="1" /></div>
+        <div class="le-control"><label for="le-flow">Flow speed <output id="le-flow-value">1.0</output></label><input id="le-flow" type="range" min="0" max="2" step="0.05" value="1" /></div>
+        <div class="le-buttons"><button type="button" id="le-view">Underwater view</button><button type="button" id="le-renderer" aria-pressed="false">2D side view</button><button type="button" id="le-motion" aria-pressed="true">Pause motion</button></div>
+        <div class="le-readout"><div><small>Renderer</small><strong>WebGL / shader</strong></div><div><small>Quality</small><strong id="le-quality">Balanced</strong></div><div><small>Wave layers</small><strong>4 analytical</strong></div><div><small>Model</small><strong>Approximation</strong></div></div>
+        <p class="le-note">The moving surface is an educational real-time approximation. It is designed to make displacement, normals, lighting, depth, and motion visible without pretending to solve every molecule.</p>
+      </aside>
+    </div>
+  </main>
+  <script src="../../../assets/js/liquid-engine.js"></script>
+  <script type="module">
+    import { THREE, OrbitControls } from '../../../assets/vendor/three-bundle.min.js';
+    import { createScene } from '../../../assets/js/sim-kit-three.mjs';
+    import { createLiquidSurface, createUnderwaterLighting } from '../../../assets/js/liquid-engine-three.mjs';
+    const LiquidEngine = window.LiquidEngine;
+
+    const canvas = document.getElementById('le-canvas');
+    const sideCanvas = document.getElementById('le-2d-canvas');
+    const sideCtx = sideCanvas.getContext('2d');
+    const { renderer, scene, camera, syncSize } = createScene(canvas, { THREE, fov: 45, near: .1, far: 100, clearColor: 0x020913, maxDpr: 1.75 });
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping = true; controls.target.set(0, 0, 0); controls.minDistance = 5; controls.maxDistance = 28; controls.maxPolarAngle = Math.PI * .92;
+    camera.position.set(8, 5.8, 9);
+    scene.add(new THREE.AmbientLight(0x7bc9e8, .32));
+    const key = new THREE.DirectionalLight(0xffffff, 2.5); key.position.set(-4, 8, 5); scene.add(key);
+    const underwater = createUnderwaterLighting(THREE, { intensity: 1.05 }); scene.add(underwater.light);
+    const surface = createLiquidSurface(THREE, { material:'water', width:20, depth:20, segments:112 }); scene.add(surface.mesh);
+    const sideSurface = LiquidEngine.createSurface({ material:'water', width:1, restY:220, columns:96, maxColumns:128 });
+    let sidePhase = 0; let nextSideImpulse = 0.4;
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(20,20), new THREE.MeshBasicMaterial({ color:0x03121d, transparent:true, opacity:.5 }));
+    floor.rotation.x = -Math.PI / 2; floor.position.y = -1.2; scene.add(floor);
+    let running = true; let submerged = false;
+    const wave = document.getElementById('le-wave'), detail = document.getElementById('le-detail'), flow = document.getElementById('le-flow');
+    const updateLabels = () => { document.getElementById('le-wave-value').textContent = (+wave.value).toFixed(2); document.getElementById('le-detail-value').textContent = (+detail.value).toFixed(1); document.getElementById('le-flow-value').textContent = (+flow.value).toFixed(2); };
+    [wave,detail,flow].forEach(input => input.addEventListener('input', () => { surface.uniforms.uWaveHeight.value=+wave.value; surface.uniforms.uDetail.value=+detail.value; surface.uniforms.uFlow.value=+flow.value; updateLabels(); }));
+    document.querySelectorAll('[data-material]').forEach(button => button.addEventListener('click', () => { document.querySelectorAll('[data-material]').forEach(b => b.classList.remove('active')); button.classList.add('active'); surface.setMaterial(button.dataset.material); sideSurface.setMaterial(button.dataset.material); document.getElementById('le-wave').value = button.dataset.material === 'lava' ? .18 : button.dataset.material === 'honey' ? .12 : .34; updateLabels(); }));
+    document.getElementById('le-motion').addEventListener('click', event => { running = !running; event.currentTarget.textContent = running ? 'Pause motion' : 'Resume motion'; event.currentTarget.setAttribute('aria-pressed', String(running)); });
+    document.getElementById('le-view').addEventListener('click', event => { submerged = !submerged; event.currentTarget.textContent = submerged ? 'Horizon view' : 'Underwater view'; camera.position.set(8, submerged ? -2.2 : 5.8, 9); controls.target.set(0, submerged ? -.2 : 0, 0); });
+    let sideMode = false;
+    document.getElementById('le-renderer').addEventListener('click', event => { sideMode = !sideMode; canvas.hidden = sideMode; sideCanvas.hidden = !sideMode; event.currentTarget.textContent = sideMode ? '3D surface' : '2D side view'; event.currentTarget.setAttribute('aria-pressed', String(sideMode)); if (sideMode) { sideSurface.configure(sideCanvas.clientWidth || 800, (sideCanvas.clientHeight || 480) * .42, 96); sideSurface.impulse((sideCanvas.clientWidth || 800) * .34, -(12 + Number(wave.value) * 22), 42); nextSideImpulse = sidePhase + .8; } });
+    function drawSideView() {
+      const rect = sideCanvas.getBoundingClientRect();
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const width = Math.max(1, Math.round(rect.width * dpr));
+      const height = Math.max(1, Math.round(rect.height * dpr));
+      if (sideCanvas.width !== width || sideCanvas.height !== height) { sideCanvas.width = width; sideCanvas.height = height; }
+      sideSurface.configure(width, height * .42, 96);
+      const sky = sideCtx.createLinearGradient(0, 0, 0, height * .48);
+      sky.addColorStop(0, '#86c9e3'); sky.addColorStop(1, '#d9f5f5');
+      sideCtx.fillStyle = sky; sideCtx.fillRect(0, 0, width, height);
+      sideCtx.fillStyle = 'rgba(255,244,191,.9)'; sideCtx.beginPath(); sideCtx.arc(width * .82, height * .18, height * .08, 0, Math.PI * 2); sideCtx.fill();
+      sideCtx.fillStyle = '#38566a'; sideCtx.beginPath(); sideCtx.moveTo(0, height * .41); sideCtx.lineTo(width * .22, height * .32); sideCtx.lineTo(width * .4, height * .4); sideCtx.lineTo(width * .58, height * .3); sideCtx.lineTo(width, height * .39); sideCtx.lineTo(width, height * .47); sideCtx.lineTo(0, height * .47); sideCtx.fill();
+      sideCtx.fillStyle = '#9a7954'; sideCtx.fillRect(0, height * .78, width, height * .22);
+      sideCtx.globalAlpha = .22; sideCtx.fillStyle = '#e5c38f'; for (let x = -40; x < width; x += 70) sideCtx.fillRect(x, height * .8, 34, height * .012); sideCtx.globalAlpha = 1;
+      LiquidEngine.drawSurface(sideCtx, sideSurface, { width, bottom: height, phase: sidePhase, caustics: true, reflection: true, reflectionAbove: true, foam: true });
+      sideCtx.fillStyle = 'rgba(12,43,57,.65)'; sideCtx.font = `${Math.max(12, height * .025)}px system-ui`; sideCtx.fillText('2D shallow-water view', 18, 28);
+    }
+    updateLabels();
+    let last = performance.now();
+    function animate(now) { requestAnimationFrame(animate); syncSize(); const dt = Math.min(.05, (now-last)/1000); last=now; if(running && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) { surface.update(dt); sideSurface.update(dt); sidePhase += dt; if (sideMode && sidePhase > nextSideImpulse) { const width = sideCanvas.clientWidth || 800; sideSurface.impulse(width * (.18 + ((sidePhase * .13) % .62)), -(5 + Number(wave.value) * 18), 34); nextSideImpulse = sidePhase + 1.1 + ((sidePhase * 7) % 1.3); } } controls.update(); if (sideMode) drawSideView(); else renderer.render(scene,camera); }
+    requestAnimationFrame(animate);
+  </script>
+<script src="../../../assets/js/theme-registry.js"></script>
+<script src="../../../assets/js/nav-mobile.js"></script>
+</body>
+</html>

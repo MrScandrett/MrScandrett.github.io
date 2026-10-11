@@ -224,12 +224,35 @@
     element.setAttribute("data-contrast-guard", replacement === "#000000" ? "dark" : "light");
   }
 
+  // Each pass strips its inline colors and re-applies them. On an element with
+  // `transition: color` (the hamburger, nav links, buttons) that animated
+  // brown -> black -> brown on every pass, i.e. a visible flicker. Transitions
+  // are switched off while the pass runs and the final style is flushed before
+  // they come back, so the element never sees the intermediate color.
+  var PASS_ATTR = "data-contrast-pass";
+
+  function ensurePassStyle() {
+    if (document.getElementById("classroomos-contrast-pass-style")) return;
+    var style = document.createElement("style");
+    style.id = "classroomos-contrast-pass-style";
+    style.textContent = "html[" + PASS_ATTR + "] *, html[" + PASS_ATTR + "] *::before, html[" + PASS_ATTR + "] *::after { transition: none !important; }";
+    document.head.appendChild(style);
+  }
+
   function run() {
     scheduled = false;
-    restore();
-    Array.prototype.forEach.call(document.body ? document.body.querySelectorAll("*") : [], function (element) {
-      if (containsReadableText(element)) inspect(element);
-    });
+    var root = document.documentElement;
+    ensurePassStyle();
+    root.setAttribute(PASS_ATTR, "");
+    try {
+      restore();
+      Array.prototype.forEach.call(document.body ? document.body.querySelectorAll("*") : [], function (element) {
+        if (containsReadableText(element)) inspect(element);
+      });
+      void root.offsetWidth; // flush the final colors while transitions are still off
+    } finally {
+      root.removeAttribute(PASS_ATTR);
+    }
   }
 
   function schedule() {

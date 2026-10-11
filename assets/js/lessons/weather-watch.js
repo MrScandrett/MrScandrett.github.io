@@ -8,6 +8,16 @@
   let currentWeather = null;
   let activeLocation = window.WeatherEngine.DEFAULT_LOCATION;
   let drivingSpeed = 55;
+  const RADAR_MAX_ZOOM = 7; // RainViewer public tiles currently support zoom 7 maximum.
+  let radarZoom = 6;
+  let radarRequestId = 0;
+  let radarFrames = [];
+  let radarFrameIndex = 0;
+  let radarAnimationTimer = null;
+  let lightningSocket = null;
+  let lightningLocation = null;
+  let lightningStrikes = [];
+  let cloudSim = null;
 
   // ── DOM ELEMENTS ────────────────────────────────────────────────────────────
   const els = {
@@ -40,6 +50,10 @@
     statUVSub: document.getElementById('ww-stat-uv-sub'),
     statHumidity: document.getElementById('ww-stat-humidity'),
     statVisibility: document.getElementById('ww-stat-visibility'),
+    statPollen: document.getElementById('ww-stat-pollen'),
+    statPollenSub: document.getElementById('ww-stat-pollen-sub'),
+    statAqi: document.getElementById('ww-stat-aqi'),
+    statAqiSub: document.getElementById('ww-stat-aqi-sub'),
 
     // Hourly & Daily
     hourlyStrip: document.getElementById('ww-hourly-strip'),
@@ -98,6 +112,25 @@
     lclHeightFt: document.getElementById('ww-lcl-height-ft'),
     lclHeightM: document.getElementById('ww-lcl-height-m'),
 
+    // Live Storm Watch
+    radarMap: document.getElementById('ww-radar-map'),
+    mapLoading: document.getElementById('ww-map-loading'),
+    mapLocation: document.getElementById('ww-map-location'),
+    radarUpdated: document.getElementById('ww-radar-updated'),
+    alertList: document.getElementById('ww-alert-list'),
+    alertCount: document.getElementById('ww-alert-count'),
+    stormRefresh: document.getElementById('ww-storm-refresh'),
+    zoomIn: document.getElementById('ww-map-zoom-in'),
+    zoomOut: document.getElementById('ww-map-zoom-out'),
+    alertPolygons: document.getElementById('ww-alert-polygons'),
+    radarPlay: document.getElementById('ww-radar-play'),
+    radarSlider: document.getElementById('ww-radar-slider'),
+    radarFrameLabel: document.getElementById('ww-radar-frame-label'),
+    lightningDistance: document.getElementById('ww-lightning-distance'),
+    lightningDetail: document.getElementById('ww-lightning-detail'),
+    lightningSafety: document.getElementById('ww-lightning-safety'),
+    lightningSafetyText: document.getElementById('ww-lightning-safety-text'),
+
     // Sidebar
     sideLoc: document.getElementById('ww-side-loc'),
     sideTemp: document.getElementById('ww-side-temp'),
@@ -116,10 +149,305 @@
       renderDriving(data);
       renderWardrobe(data);
       renderSidebar(data);
+      loadStormWatch(location);
+      loadAirQuality(location);
     } catch (err) {
       console.error('Weather load error:', err);
       if (els.dialCondition) els.dialCondition.textContent = 'Weather feed temporarily unavailable';
     }
+  }
+
+  // ── LIVE STORM WATCH ───────────────────────────────────────────────────────
+  // RainViewer supplies recent precipitation-radar tiles without an API key.
+  // NWS alerts are intentionally a separate layer: radar return is not a warning.
+  function lonToTileX(lon, zoom) { return ((lon + 180) / 360) * (2 ** zoom); }
+  function latToTileY(lat, zoom) {
+    const safeLat = Math.max(-85.0511, Math.min(85.0511, lat));
+    const rad = safeLat * Math.PI / 180;
+    return ((1 - Math.asinh(Math.tan(rad)) / Math.PI) / 2) * (2 ** zoom);
+  }
+
+  function formatRadarTime(unixSeconds) {
+    return new Date(unixSeconds * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
+
+  function stopRadarAnimation() {
+    if (radarAnimationTimer) window.clearInterval(radarAnimationTimer);
+    radarAnimationTimer = null;
+    if (els.radarPlay) { els.radarPlay.textContent = '▶ Play'; els.radarPlay.setAttribute('aria-pressed', 'false'); }
+  }
+
+  function escapeHtml(value) {
+    return String(value || '').replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch]));
+  }
+
+  function renderRadarTiles(location, frame) {
+    if (!els.radarMap) return;
+    els.radarMap.querySelectorAll('.ww-radar-tile, .ww-base-tile').forEach(tile => tile.remove());
+    const mapRect = els.radarMap.getBoundingClientRect();
+    const centerX = lonToTileX(location.longitude, radarZoom) * 256;
+    const centerY = latToTileY(location.latitude, radarZoom) * 256;
+    const tileX = Math.floor(centerX / 256);
+    const tileY = Math.floor(centerY / 256);
+    const tileCount = 2 ** radarZoom;
+    const halfX = Math.ceil(mapRect.width / 512) + 1;
+    const halfY = Math.ceil(mapRect.height / 512) + 1;
+    const fragment = document.createDocumentFragment();
+
+    for (let dx = -halfX; dx <= halfX; dx += 1) {
+      for (let dy = -halfY; dy <= halfY; dy += 1) {
+        const x = ((tileX + dx) % tileCount + tileCount) % tileCount;
+        const y = tileY + dy;
+        if (y < 0 || y >= tileCount) continue;
+        const left = `${(tileX + dx) * 256 - centerX + mapRect.width / 2}px`;
+        const top = `${y * 256 - centerY + mapRect.height / 2}px`;
+        const base = document.createElement('img');
+        base.className = 'ww-base-tile';
+        base.alt = '';
+        base.draggable = false;
+        base.src = `https://tile.openstreetmap.org/${radarZoom}/${x}/${y}.png`;
+        base.style.left = left;
+        base.style.top = top;
+        fragment.appendChild(base);
+        const radar = document.createElement('img');
+        radar.className = 'ww-radar-tile';
+        radar.alt = '';
+        radar.draggable = false;
+        radar.src = `${frame.host}${frame.path}/256/${radarZoom}/${x}/${y}/2/1_1.png`;
+        radar.style.left = left;
+        radar.style.top = top;
+        fragment.appendChild(radar);
+      }
+    }
+    els.radarMap.insertBefore(fragment, els.radarMap.firstChild);
+    els.mapLocation.title = `${location.label || 'Selected location'} · radar center`;
+  }
+
+  function renderAlertPolygons(features, location) {
+    if (!els.alertPolygons || !els.radarMap) return;
+    const rect = els.radarMap.getBoundingClientRect();
+    const centerX = lonToTileX(location.longitude, radarZoom) * 256;
+    const centerY = latToTileY(location.latitude, radarZoom) * 256;
+    const toPoint = ([lon, lat]) => `${lonToTileX(lon, radarZoom) * 256 - centerX + rect.width / 2},${latToTileY(lat, radarZoom) * 256 - centerY + rect.height / 2}`;
+    els.alertPolygons.setAttribute('viewBox', `0 0 ${rect.width} ${rect.height}`);
+    els.alertPolygons.innerHTML = '';
+    features.forEach(feature => {
+      const geometry = feature.geometry;
+      const properties = feature.properties || {};
+      if (!geometry || !geometry.coordinates) return;
+      const rings = geometry.type === 'Polygon' ? geometry.coordinates : geometry.type === 'MultiPolygon' ? geometry.coordinates.flat() : [];
+      rings.forEach(ring => {
+        const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        polygon.setAttribute('points', ring.map(toPoint).join(' '));
+        polygon.setAttribute('class', `ww-alert-polygon ${(properties.severity || 'unknown').toLowerCase()}`);
+        els.alertPolygons.appendChild(polygon);
+      });
+    });
+  }
+
+  async function loadRadar(location) {
+    const requestId = ++radarRequestId;
+    if (!els.radarMap) return;
+    if (els.mapLoading) { els.mapLoading.textContent = 'Loading radar…'; els.mapLoading.hidden = false; }
+    try {
+      const response = await fetch('https://api.rainviewer.com/public/weather-maps.json', { cache: 'no-store' });
+      if (!response.ok) throw new Error(`Radar manifest ${response.status}`);
+      const manifest = await response.json();
+      const frames = manifest.radar && manifest.radar.past;
+      if (!Array.isArray(frames) || !frames.length || requestId !== radarRequestId) throw new Error('No current radar frame');
+      stopRadarAnimation();
+      radarFrames = frames.map(frame => ({ ...frame, host: manifest.host }));
+      radarFrameIndex = radarFrames.length - 1;
+      if (els.radarSlider) { els.radarSlider.max = String(Math.max(0, radarFrames.length - 1)); els.radarSlider.value = String(radarFrameIndex); }
+      renderRadarTiles(location, radarFrames[radarFrameIndex]);
+      updateRadarFrameLabel();
+      if (els.mapLoading) els.mapLoading.hidden = true;
+    } catch (err) {
+      console.warn('Radar load error:', err);
+      if (els.mapLoading) { els.mapLoading.hidden = false; els.mapLoading.textContent = 'Radar temporarily unavailable'; }
+      if (els.radarUpdated) els.radarUpdated.textContent = 'Radar unavailable';
+    }
+  }
+
+  function updateRadarFrameLabel() {
+    const frame = radarFrames[radarFrameIndex];
+    if (!frame) return;
+    const latest = radarFrames[radarFrames.length - 1];
+    if (els.radarFrameLabel) els.radarFrameLabel.textContent = `${radarFrameIndex === radarFrames.length - 1 ? 'Latest' : formatRadarTime(frame.time)} · ${radarFrames.length} frames`;
+    if (els.radarUpdated) els.radarUpdated.textContent = `Radar frame: ${formatRadarTime(frame.time)} · latest ${formatRadarTime(latest.time)}`;
+  }
+
+  function setRadarFrame(index) {
+    if (!radarFrames.length || !activeLocation) return;
+    radarFrameIndex = Math.max(0, Math.min(radarFrames.length - 1, Number(index)));
+    renderRadarTiles(activeLocation, radarFrames[radarFrameIndex]);
+    updateRadarFrameLabel();
+  }
+
+  function toggleRadarAnimation() {
+    if (radarAnimationTimer) { stopRadarAnimation(); return; }
+    if (radarFrames.length < 2) return;
+    if (radarFrameIndex >= radarFrames.length - 1) setRadarFrame(0);
+    if (els.radarPlay) { els.radarPlay.textContent = '❚❚ Pause'; els.radarPlay.setAttribute('aria-pressed', 'true'); }
+    radarAnimationTimer = window.setInterval(() => {
+      const next = radarFrameIndex + 1 >= radarFrames.length ? 0 : radarFrameIndex + 1;
+      if (els.radarSlider) els.radarSlider.value = String(next);
+      setRadarFrame(next);
+    }, 850);
+  }
+
+  async function loadAlerts(location) {
+    if (!els.alertList || !els.alertCount) return;
+    const lat = Number(location.latitude);
+    const lon = Number(location.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < 17.5 || lat > 72 || lon < -180 || lon > -60) {
+      els.alertCount.textContent = 'NWS / US';
+      els.alertList.innerHTML = '<p class="ww-alert-empty">Official NWS alerts are available for locations in the United States. Radar remains available worldwide where RainViewer has coverage.</p>';
+      if (els.alertPolygons) els.alertPolygons.innerHTML = '';
+      return;
+    }
+    try {
+      const response = await fetch(`https://api.weather.gov/alerts/active?point=${lat.toFixed(4)},${lon.toFixed(4)}`, {
+        headers: { Accept: 'application/geo+json, application/json' },
+        cache: 'no-store'
+      });
+      if (!response.ok) throw new Error(`NWS alerts ${response.status}`);
+      const data = await response.json();
+      const features = Array.isArray(data.features) ? data.features : [];
+      els.alertCount.textContent = `${features.length} active`;
+      renderAlertPolygons(features, location);
+      els.alertList.innerHTML = features.length ? features.slice(0, 5).map(feature => {
+        const p = feature.properties || {};
+        const severity = (p.severity || 'Unknown').toLowerCase();
+        return `<article class="ww-alert-item ${escapeHtml(severity)}"><strong>${escapeHtml(p.event || 'Weather alert')}</strong><span>${escapeHtml(p.headline || p.areaDesc || 'Active for this point')}</span></article>`;
+      }).join('') : '<p class="ww-alert-empty">No active NWS alerts at this point.</p>';
+    } catch (err) {
+      console.warn('Alert load error:', err);
+      els.alertCount.textContent = 'Unavailable';
+      els.alertList.innerHTML = '<p class="ww-alert-empty">The official alert feed could not be reached. Try refresh.</p>';
+      if (els.alertPolygons) els.alertPolygons.innerHTML = '';
+    }
+  }
+
+  function haversineMiles(aLat, aLon, bLat, bLon) {
+    const r = 3958.8;
+    const rad = Math.PI / 180;
+    const dLat = (bLat - aLat) * rad;
+    const dLon = (bLon - aLon) * rad;
+    const x = Math.sin(dLat / 2) ** 2 + Math.cos(aLat * rad) * Math.cos(bLat * rad) * Math.sin(dLon / 2) ** 2;
+    return r * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+  }
+
+  function renderLightning() {
+    if (!els.lightningDistance || !lightningLocation) return;
+    const now = Date.now();
+    lightningStrikes = lightningStrikes.filter(strike => now - strike.time < 10 * 60 * 1000);
+    const nearby = lightningStrikes.map(strike => ({ ...strike, miles: haversineMiles(lightningLocation.latitude, lightningLocation.longitude, strike.lat, strike.lon) })).sort((a, b) => a.miles - b.miles);
+    const closest = nearby[0];
+    if (!closest) {
+      els.lightningDistance.textContent = 'No nearby strikes';
+      els.lightningDetail.textContent = 'Live feed connected · past 10 minutes';
+      els.lightningSafetyText.textContent = 'No strike detected nearby';
+      els.lightningSafety.classList.remove('is-danger');
+      return;
+    }
+    els.lightningDistance.textContent = `${closest.miles < 10 ? closest.miles.toFixed(1) : Math.round(closest.miles)} mi`;
+    els.lightningDetail.textContent = `Closest detected strike · ${Math.max(0, Math.round((now - closest.time) / 1000))}s ago`;
+    const danger = closest.miles <= 6;
+    els.lightningSafetyText.textContent = danger ? 'Shelter now — lightning within 6 miles' : 'Keep monitoring; thunder means shelter';
+    els.lightningSafety.classList.toggle('is-danger', danger);
+  }
+
+  function connectLightning(location) {
+    lightningLocation = location;
+    lightningStrikes = [];
+    if (lightningSocket) { lightningSocket.close(); lightningSocket = null; }
+    if (!els.lightningDistance || !location) return;
+    els.lightningDistance.textContent = 'Connecting…';
+    try {
+      const socket = new WebSocket('wss://live2.lightningmaps.org/');
+      lightningSocket = socket;
+      const lat = Number(location.latitude);
+      const lon = Number(location.longitude);
+      const span = 4;
+      socket.addEventListener('open', () => socket.send(JSON.stringify({ v: 24, p: [lat + span, lon + span, lat - span, lon - span], z: radarZoom, a: 4, t: 1, l: 1, r: 'A' })));
+      socket.addEventListener('message', event => {
+        try {
+          const payload = JSON.parse(event.data);
+          (payload.strokes || []).forEach(stroke => {
+            if (Number.isFinite(stroke.lat) && Number.isFinite(stroke.lon)) lightningStrikes.push({ lat: stroke.lat, lon: stroke.lon, time: Number(stroke.time) || Date.now() });
+          });
+          renderLightning();
+        } catch (err) { /* Ignore non-JSON keepalive frames. */ }
+      });
+      socket.addEventListener('close', () => {
+        if (lightningSocket === socket && els.lightningDistance) {
+          els.lightningDistance.textContent = 'Live feed unavailable';
+          els.lightningDetail.textContent = 'No stable public lightning API is available';
+        }
+      });
+      socket.addEventListener('error', () => socket.close());
+    } catch (err) {
+      els.lightningDistance.textContent = 'Live feed unavailable';
+      els.lightningDetail.textContent = 'No stable public lightning API is available';
+    }
+  }
+
+  async function loadAirQuality(location) {
+    if (!els.statAqi || !els.statPollen || !location) return;
+    const url = new URL('https://air-quality-api.open-meteo.com/v1/air-quality');
+    url.searchParams.set('latitude', location.latitude);
+    url.searchParams.set('longitude', location.longitude);
+    url.searchParams.set('current', 'us_aqi,pm2_5,pm10,ozone');
+    url.searchParams.set('hourly', 'alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,olive_pollen,ragweed_pollen');
+    url.searchParams.set('forecast_days', '2');
+    url.searchParams.set('timezone', 'auto');
+    try {
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`Air quality ${response.status}`);
+      const data = await response.json();
+      const current = data.current || {};
+      const aqi = Number(current.us_aqi);
+      els.statAqi.textContent = Number.isFinite(aqi) ? `${Math.round(aqi)} · ${aqiLabel(aqi)}` : 'Unavailable';
+      els.statAqiSub.textContent = Number.isFinite(Number(current.pm2_5)) ? `PM2.5 ${Number(current.pm2_5).toFixed(1)} μg/m³ · O₃ ${Math.round(Number(current.ozone) || 0)} μg/m³` : 'No current pollutant reading';
+      const pollen = pollenSummary(data.hourly);
+      els.statPollen.textContent = pollen.value;
+      els.statPollenSub.textContent = pollen.sub;
+    } catch (err) {
+      console.warn('Air quality load error:', err);
+      els.statAqi.textContent = 'Unavailable';
+      els.statAqiSub.textContent = 'Air-quality feed unavailable';
+      els.statPollen.textContent = 'Unavailable';
+      els.statPollenSub.textContent = 'No regional pollen forecast';
+    }
+  }
+
+  function aqiLabel(aqi) {
+    if (aqi <= 50) return 'Good';
+    if (aqi <= 100) return 'Moderate';
+    if (aqi <= 150) return 'Sensitive groups';
+    if (aqi <= 200) return 'Unhealthy';
+    if (aqi <= 300) return 'Very unhealthy';
+    return 'Hazardous';
+  }
+
+  function pollenSummary(hourly) {
+    if (!hourly || !hourly.time) return { value: 'Unavailable', sub: 'No regional pollen forecast' };
+    const keys = ['alder_pollen', 'birch_pollen', 'grass_pollen', 'mugwort_pollen', 'olive_pollen', 'ragweed_pollen'];
+    const peaks = keys.flatMap(key => (hourly[key] || []).filter(value => Number.isFinite(value)));
+    if (!peaks.length || Math.max(...peaks) === 0) return { value: 'Unavailable', sub: 'Pollen model has no local coverage' };
+    const peak = Math.max(...peaks);
+    const category = peak < 10 ? 'Low' : peak < 100 ? 'Moderate' : peak < 1000 ? 'High' : 'Very high';
+    return { value: category, sub: `Peak forecast ${Math.round(peak)} grains/m³` };
+  }
+
+  function loadStormWatch(location) {
+    if (!location || !els.radarMap) return;
+    stopRadarAnimation();
+    els.radarMap.setAttribute('aria-label', `Live precipitation radar map centered on ${location.label || 'the selected location'}`);
+    loadRadar(location);
+    loadAlerts(location);
+    connectLightning(location);
   }
 
   // ── RENDER COCKPIT ──────────────────────────────────────────────────────────
@@ -340,6 +668,10 @@
     const lcl = window.WeatherEngine.calculateCloudBase(currentT, currentD);
     els.lclHeightFt.textContent = `${lcl.feet.toLocaleString()} FT`;
     els.lclHeightM.textContent = `~${lcl.meters.toLocaleString()} M`;
+
+    if (cloudSim) {
+      cloudSim.setThermodynamics({ tempF: currentT, dewPointF: currentD });
+    }
   }
 
   // ── RENDER SIDEBAR ──────────────────────────────────────────────────────────
@@ -446,25 +778,26 @@
         ctx.lineTo(w, h - 25);
         ctx.fill();
 
-        // Towering Cumulonimbus
-        ctx.fillStyle = 'rgba(203, 213, 225, 0.85)';
-        ctx.beginPath();
-        ctx.arc(w * 0.45, h - 160 + Math.sin(t) * 3, 45, 0, Math.PI * 2);
-        ctx.arc(w * 0.48, h - 210 + Math.cos(t) * 4, 55, 0, Math.PI * 2);
-        ctx.arc(w * 0.53, h - 170, 48, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Anvil top
-        ctx.fillStyle = 'rgba(226, 232, 240, 0.75)';
-        ctx.beginPath();
-        ctx.ellipse(w * 0.52, h - 240, 90, 24, 0, 0, Math.PI * 2);
-        ctx.fill();
+        // Towering Volumetric 3D Cumulonimbus
+        if (window.CloudEngine && window.CloudEngine.renderCloudCluster) {
+          // Convective storm body
+          window.CloudEngine.renderCloudCluster(ctx, w * 0.47, h - 160, 160, 140, { storm: true, darkBase: true, time: t });
+          // Glaciated anvil top blown downwind
+          window.CloudEngine.renderCloudCluster(ctx, w * 0.53, h - 225, 220, 70, { storm: false, darkBase: false, time: t * 0.7 });
+        } else {
+          ctx.fillStyle = 'rgba(203, 213, 225, 0.85)';
+          ctx.beginPath();
+          ctx.arc(w * 0.45, h - 160 + Math.sin(t) * 3, 45, 0, Math.PI * 2);
+          ctx.arc(w * 0.48, h - 210 + Math.cos(t) * 4, 55, 0, Math.PI * 2);
+          ctx.arc(w * 0.53, h - 170, 48, 0, Math.PI * 2);
+          ctx.fill();
+        }
 
         // Rain shafts
         ctx.strokeStyle = 'rgba(96, 165, 250, 0.6)';
         ctx.lineWidth = 1.5;
         for (let i = 0; i < 20; i++) {
-          const rx = w * 0.42 + (i * 7);
+          const rx = w * 0.40 + (i * 7);
           const ry = (h - 110) + ((t * 200 + i * 15) % 85);
           ctx.beginPath();
           ctx.moveTo(rx, ry);
@@ -499,24 +832,31 @@
         ctx.fillStyle = 'rgba(245, 158, 11, 0.2)';
         ctx.fill();
 
-        // Cloud progression: Cirrus high right, Nimbostratus left
-        // Cirrus
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        // Realistic Volumetric Cloud Progression: Cirrus -> Altostratus -> Nimbostratus
+        if (window.CloudEngine && window.CloudEngine.renderCloudCluster) {
+          // Cirrus (high ice crystals)
+          window.CloudEngine.renderCloudCluster(ctx, w * 0.80, 52, 130, 34, { storm: false, darkBase: false, time: t * 0.5 });
+          // Altostratus (middle layer)
+          window.CloudEngine.renderCloudCluster(ctx, w * 0.48, h - 175, 175, 48, { storm: false, darkBase: true, time: t * 0.4 });
+          // Nimbostratus (low steady rain layer)
+          window.CloudEngine.renderCloudCluster(ctx, w * 0.18, h - 125, 190, 65, { storm: true, darkBase: true, time: t * 0.3 });
+        } else {
+          // Altostratus fallback
+          ctx.fillStyle = 'rgba(203, 213, 225, 0.6)';
+          ctx.fillRect(w * 0.4, h - 190, 160, 20);
+          // Nimbostratus fallback
+          ctx.fillStyle = 'rgba(148, 163, 184, 0.8)';
+          ctx.fillRect(w * 0.1, h - 130, 180, 40);
+        }
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
         ctx.font = 'italic 11px sans-serif';
-        ctx.fillText('Cirrus (Ice crystals)', w - 140, 45);
-
-        // Altostratus
-        ctx.fillStyle = 'rgba(203, 213, 225, 0.6)';
-        ctx.fillRect(w * 0.4, h - 190, 160, 20);
-
-        // Nimbostratus & steady rain
-        ctx.fillStyle = 'rgba(148, 163, 184, 0.8)';
-        ctx.fillRect(w * 0.1, h - 130, 180, 40);
+        ctx.fillText('Cirrus (Ice crystals)', w - 145, 36);
 
         ctx.strokeStyle = 'rgba(96, 165, 250, 0.5)';
         ctx.lineWidth = 1;
         for (let i = 0; i < 35; i++) {
-          const rx = w * 0.12 + (i * 5);
+          const rx = w * 0.10 + (i * 5);
           const ry = (h - 90) + ((t * 120 + i * 10) % 65);
           ctx.beginPath();
           ctx.moveTo(rx, ry);
@@ -535,6 +875,102 @@
     }
 
     draw();
+  }
+
+  // ── ATMOSPHERIC CLOUD, SMOKE & GAS LABORATORY ──────────────────────────────
+  function initCloudLab() {
+    const canvas = document.getElementById('ww-cloud-canvas');
+    if (!canvas || !window.CloudEngine) return;
+
+    const initialTemp = els.lclTemp ? parseInt(els.lclTemp.value, 10) : 75;
+    const initialDew = els.lclDew ? parseInt(els.lclDew.value, 10) : 55;
+
+    cloudSim = window.CloudEngine.attach(canvas, {
+      preset: 'cumulus',
+      tempF: initialTemp,
+      dewPointF: initialDew,
+      interactive: true,
+      showLCL: true,
+      showAltitudeGuide: true,
+      onLCLChange: (feet) => {
+        const noteLcl = document.getElementById('ww-cloud-note-lcl');
+        if (noteLcl) noteLcl.textContent = `${feet.toLocaleString()} FT`;
+      }
+    });
+
+    const chips = document.querySelectorAll('.ww-cloud-chip');
+    const noteEl = document.getElementById('ww-cloud-lab-note');
+    const descriptions = {
+      cumulus: '<strong>Cumulus Convection Dynamics:</strong> Sun-warmed ground heats parcels of surface air. Because warm air is buoyant, parcels accelerate upward. As they ascend into lower atmospheric pressure, they expand adiabatically and cool at 5.4°F per 1,000 ft until reaching the <em>Lifting Condensation Level</em> (<span id="ww-cloud-note-lcl">' + (cloudSim ? cloudSim.lclFeet.toLocaleString() : '4,545') + ' FT</span>). There, water vapor condenses into visible droplets, releasing latent heat and building towering cauliflower billows!',
+      cumulonimbus: '<strong>Cumulonimbus Violent Updrafts &amp; Rain:</strong> Intense solar heating or steep frontal uplift forces air up at 40–100 mph. The cloud pushes straight through the troposphere to the tropopause (40,000+ ft), where jet winds shear the top into a giant anvil. Massive precipitation shafts plunge to ground.',
+      stratus_fog: '<strong>Stratus &amp; Fog Layering:</strong> Formed when a widespread, moist air mass is cooled gently from below (radiation cooling on clear calm nights, or warm air blowing over a cold body of water). Very weak vertical motion keeps the cloud blanketed horizontally near ground.',
+      cirrus: '<strong>Cirrus Ice Physics:</strong> Pure hexagonal ice crystals cruising above 20,000 ft in temperatures colder than -30°F. Strong upper-troposphere jet winds stretch the falling ice plumes into long, curved fibrous streamers known as "mare\'s tails".',
+      chimney_smoke: '<strong>Chimney &amp; Industrial Plume Mechanics:</strong> High-temperature exhaust gases are significantly less dense than ambient air, shooting upward in a buoyant jet. As the plume climbs, viscous friction entrains surrounding cold air, creating swirling vortex billows that bend with atmospheric wind shear.',
+      volcano_ash: '<strong>Volcanic Pyroclastic Eruption:</strong> Sub-surface gas expansion blasts pulverised rock, glass shards, and sulfur dioxide miles into the sky. Hot thermal convection carries ash clouds into an umbrella plume while dense glowing embers arc back to earth under gravity.',
+      steam_vent: '<strong>Geothermal &amp; Pressure Steam Jet:</strong> Superheated water vapor escapes under pressure. It expands explosively, cooling rapidly in surrounding ambient air to condense into a brief brilliant white cloud of micro-droplets before evaporating into dry air.',
+      heavy_gas: '<strong>Dense Creeping Gas Dynamics:</strong> Heavy gases (such as cold carbon dioxide, sulfur hexafluoride, or chlorine vapor) are denser than atmospheric air (ρ > 1.2 kg/m³). They exhibit negative buoyancy, hugging the ground and cascading down hillsides into depressions.'
+    };
+
+    chips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        chips.forEach(c => c.classList.remove('is-active'));
+        chip.classList.add('is-active');
+        const presetId = chip.dataset.preset;
+        if (cloudSim) cloudSim.setPreset(presetId);
+        if (noteEl && descriptions[presetId]) {
+          noteEl.innerHTML = descriptions[presetId];
+        }
+      });
+    });
+
+    const windSlider = document.getElementById('ww-cloud-wind');
+    const windVal = document.getElementById('ww-cloud-wind-val');
+    if (windSlider) {
+      windSlider.addEventListener('input', () => {
+        const val = parseFloat(windSlider.value);
+        if (windVal) windVal.textContent = `${val.toFixed(1)} MPH`;
+        if (cloudSim) cloudSim.setWind(val);
+      });
+    }
+
+    const turbSlider = document.getElementById('ww-cloud-turb');
+    const turbVal = document.getElementById('ww-cloud-turb-val');
+    if (turbSlider) {
+      turbSlider.addEventListener('input', () => {
+        const val = parseFloat(turbSlider.value);
+        if (turbVal) turbVal.textContent = `${val.toFixed(1)}x`;
+        if (cloudSim) cloudSim.setTurbulence(val);
+      });
+    }
+
+    const syncBtn = document.getElementById('ww-cloud-sync-btn');
+    if (syncBtn) {
+      syncBtn.addEventListener('click', () => {
+        if (currentWeather && cloudSim) {
+          cloudSim.syncWithWeatherEngine(currentWeather);
+          if (els.lclTemp) els.lclTemp.value = currentWeather.temperature;
+          if (els.lclDew) els.lclDew.value = currentWeather.dewPoint;
+          updateLclCalc();
+          if (windSlider) {
+            windSlider.value = currentWeather.wind;
+            if (windVal) windVal.textContent = `${currentWeather.wind} MPH`;
+          }
+          chips.forEach(c => {
+            c.classList.toggle('is-active', c.dataset.preset === cloudSim.preset.id);
+          });
+          if (noteEl && descriptions[cloudSim.preset.id]) {
+            noteEl.innerHTML = descriptions[cloudSim.preset.id];
+          }
+        }
+      });
+    }
+
+    const lightningBtn = document.getElementById('ww-cloud-lightning-btn');
+    if (lightningBtn) {
+      lightningBtn.addEventListener('click', () => {
+        if (cloudSim) cloudSim.triggerLightning();
+      });
+    }
   }
 
   // ── INTERACTIVE QUIZ CONTROLLER ─────────────────────────────────────────────
@@ -663,12 +1099,19 @@
     // LCL Cloud Base sliders
     if (els.lclTemp) els.lclTemp.addEventListener('input', updateLclCalc);
     if (els.lclDew) els.lclDew.addEventListener('input', updateLclCalc);
+
+    if (els.stormRefresh) els.stormRefresh.addEventListener('click', () => loadStormWatch(activeLocation));
+    if (els.zoomIn) els.zoomIn.addEventListener('click', () => { radarZoom = Math.min(RADAR_MAX_ZOOM, radarZoom + 1); loadStormWatch(activeLocation); });
+    if (els.zoomOut) els.zoomOut.addEventListener('click', () => { radarZoom = Math.max(4, radarZoom - 1); loadStormWatch(activeLocation); });
+    if (els.radarPlay) els.radarPlay.addEventListener('click', toggleRadarAnimation);
+    if (els.radarSlider) els.radarSlider.addEventListener('input', event => { stopRadarAnimation(); setRadarFrame(event.target.value); });
   }
 
   // ── INIT ────────────────────────────────────────────────────────────────────
   function init() {
     setupEventListeners();
     initFrontSimulator();
+    initCloudLab();
     initQuiz();
     updateWardrobeSandbox();
     updateLclCalc();

@@ -12,6 +12,7 @@
     if (!scroller) return;
     scroller.tabIndex = 0;
     scroller.addEventListener("keydown", (keyboardEvent) => {
+      if (scroller.querySelector('.tl') || document.activeElement?.closest?.('.tl')) return;
       if (!['ArrowLeft', 'ArrowRight'].includes(keyboardEvent.key)) return;
       keyboardEvent.preventDefault();
       const direction = keyboardEvent.key === 'ArrowRight' ? 1 : -1;

@@ -452,6 +452,23 @@
 <body>
 <a class="skip-link" href="#main-content">Skip to content</a>
 <div class="ll-viewport ll-dark">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../library.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
 
   <nav class="vs-topbar ll-topbar">
     <div class="vs-topbar-inner">
@@ -559,9 +576,13 @@
 </div><!-- .ll-viewport -->
 
   <script src="../../assets/js/sim-kit.js"></script>
+  <script src="../../assets/js/liquid-engine.js"></script>
+  <script src="../../assets/js/cloud-engine.js"></script>
   <script type="module">
   import { THREE } from '../../assets/vendor/three-bundle.min.js';
   (function () {
+
+    const lavaMaterial = window.LiquidEngine?.material('lava') || { viscosity: 0.72, flow: 0.08 };
 
     /* ══════════════════════════════════════════
        REAL HEIGHTMAPS
@@ -945,7 +966,7 @@
       // Lava channels: radial slots flowing downhill
       const ang = Math.atan2(z, x);
       const channel = Math.abs(Math.sin(ang * 4) * 0.5 + Math.sin(ang * 9) * 0.25);
-      const flow = Math.max(0.05, lavaIntensity);
+      const flow = Math.max(0.05, lavaIntensity * (1.12 - lavaMaterial.viscosity * 0.18));
       const isLava = channel < flow * 0.32 && r < R * 0.85 && hFrac > 0.04;
       const heatFrac = isLava ? clamp(1.0 - r / (R * 0.7), 0, 1) * lavaIntensity : 0;
 
@@ -1322,7 +1343,23 @@
       return tex;
     }
 
-    const smokeTex = makeSpriteTexture('rgba(255,255,255,0.85)', 'rgba(255,255,255,0)', true);
+    const hasCloudEngine = typeof window !== 'undefined' && window.CloudEngine && typeof window.CloudEngine.createThreeTexture === 'function';
+    const smokeTex = hasCloudEngine
+      ? window.CloudEngine.createThreeTexture(THREE, 'mono', 128)
+      : makeSpriteTexture('rgba(255,255,255,0.85)', 'rgba(255,255,255,0)', true);
+
+    const ashTex = hasCloudEngine
+      ? window.CloudEngine.createThreeTexture(THREE, 'ash', 128)
+      : smokeTex;
+
+    const pyroTex = hasCloudEngine
+      ? window.CloudEngine.createThreeTexture(THREE, 'pyroclastic', 128)
+      : smokeTex;
+
+    const steamTex = hasCloudEngine
+      ? window.CloudEngine.createThreeTexture(THREE, 'steam_3d', 128)
+      : smokeTex;
+
     const emberTex = makeSpriteTexture('rgba(255,210,140,0.95)', 'rgba(255,80,20,0)', false);
 
     class ParticlePool {
@@ -1379,14 +1416,14 @@
 
     // ── ASH COLUMN ──
     const ashPool = new ParticlePool(scene, 3200, new THREE.PointsMaterial({
-      size: 0.6,
+      size: 0.72,
       vertexColors: true,
       transparent: true,
-      opacity: 0.75,
+      opacity: 0.88,
       depthWrite: false,
       sizeAttenuation: true,
-      map: smokeTex,
-      alphaTest: 0.05
+      map: ashTex,
+      alphaTest: 0.04
     }));
 
     // ── LAVA BOMBS ──
@@ -1404,26 +1441,26 @@
 
     // ── PYROCLASTIC FLOW ──
     const pyroPool = new ParticlePool(scene, 800, new THREE.PointsMaterial({
-      size: 0.75,
+      size: 0.82,
       vertexColors: true,
       transparent: true,
-      opacity: 0.8,
+      opacity: 0.85,
       depthWrite: false,
       sizeAttenuation: true,
-      map: smokeTex,
+      map: pyroTex,
       alphaTest: 0.04
     }));
 
     // ── STEAM / GAS ──
     const steamPool = new ParticlePool(scene, 800, new THREE.PointsMaterial({
-      size: 0.7,
+      size: 0.75,
       vertexColors: true,
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.6,
       depthWrite: false,
       sizeAttenuation: true,
-      map: smokeTex,
-      alphaTest: 0.04
+      map: steamTex,
+      alphaTest: 0.03
     }));
 
     function spawnAsh(intensity, column) {
@@ -1957,5 +1994,7 @@
 <script src="../../assets/js/photo-lightbox.js"></script>
 
 <script src="../../assets/js/video-embed.js"></script>
+<script src="../../assets/js/theme-registry.js"></script>
+<script src="../../assets/js/nav-mobile.js"></script>
 </body>
 </html>

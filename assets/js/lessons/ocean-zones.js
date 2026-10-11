@@ -228,6 +228,10 @@ outer.tabIndex = 0;
 
   const snowflakes = Array.from({ length: 90 }, () => new Snow());
   const glows = Array.from({ length: 140 }, () => new Glow());
+  const liquidSurface = window.LiquidEngine?.createSurface({
+    material: 'water', width: 1, restY: 1, columns: 84, maxColumns: 128
+  });
+  let nextSurfaceImpulse = 0;
 
   const PLATE_SOURCES = {
     sunlight: '../../assets/images/ocean-zones/sunlight.webp',
@@ -274,6 +278,56 @@ outer.tabIndex = 0;
     ctx.strokeStyle='rgba(130,155,160,.12)';ctx.lineWidth=1;ctx.stroke();
   }
 
+  // Optical cues are deliberately additive. The photographic/depth plates are
+  // the scene; this layer must never paint a second opaque horizon over them.
+  // The shared surface model supplies phase and crest motion for soft light
+  // modulation, while the water column gets restrained scattering bands.
+  function drawLiquidOptics(depth, now, dt) {
+    if (!liquidSurface) return;
+    const light = lightPct(depth) / 100;
+    liquidSurface.configure(W, H * 0.13, 84);
+    liquidSurface.update(dt);
+    if (depth < 260) {
+      if (now > nextSurfaceImpulse) {
+        liquidSurface.impulse(W * (0.18 + ((now * 0.00003) % 0.64)), -(2 + light * 5), W * 0.08);
+        nextSurfaceImpulse = now + 1050 + ((now * 0.0017) % 900);
+      }
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.globalAlpha = 0.025 + light * 0.035;
+      for (let i = 0; i < 5; i += 1) {
+        const x = W * (0.08 + i * 0.21) + Math.sin(now * 0.0003 + i) * W * 0.035;
+        const y = H * (0.2 + i * 0.1) + liquidSurface.sample(i * 16) * 0.18;
+        ctx.save(); ctx.translate(x, y); ctx.scale(2.8, 0.38);
+        const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, W * 0.08);
+        glow.addColorStop(0, 'rgba(215,249,255,.9)'); glow.addColorStop(1, 'rgba(215,249,255,0)');
+        ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(0, 0, W * 0.08, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      }
+      ctx.restore();
+      return;
+    }
+
+    // Once the viewer is inside the water column, sunlight scatters along
+    // density gradients. The moving bands are low-contrast and disappear as
+    // Beer–Lambert attenuation removes useful light.
+    const scatter = clamp(light * 0.055, 0.004, 0.025);
+    ctx.save();
+    ctx.globalAlpha = scatter;
+    ctx.globalCompositeOperation = 'screen';
+    ctx.strokeStyle = 'rgba(126,220,242,.8)';
+    ctx.lineWidth = 1;
+    const bandSpacing = Math.max(34, H / 9);
+    for (let y = bandSpacing * 0.7; y < H; y += bandSpacing) {
+      ctx.beginPath();
+      for (let x = -30; x <= W + 30; x += 24) {
+        const yy = y + Math.sin(x * 0.012 + now * 0.00055 + y * 0.02) * (2 + light * 8);
+        x === -30 ? ctx.moveTo(x, yy) : ctx.lineTo(x, yy);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   /* ══════════════════════════════════════════
      DRAW
   ══════════════════════════════════════════ */
@@ -302,6 +356,8 @@ outer.tabIndex = 0;
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
     drawDepthPlate(depth);
+
+    drawLiquidOptics(depth, now, dt);
 
     // Depth tint keeps transitions faithful to the physical light model.
     ctx.save();ctx.globalCompositeOperation='multiply';ctx.globalAlpha=.12+.2*clamp(depth/6000,0,1);

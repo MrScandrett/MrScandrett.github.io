@@ -531,6 +531,40 @@
     ctx.fillStyle = sg;
     ctx.fillRect(0, 0, w, h);
 
+    // Realistic Volumetric Cloud Deck or Rain Clouds via CloudEngine
+    if (typeof window !== 'undefined' && window.CloudEngine && typeof window.CloudEngine.renderCloudCluster === 'function') {
+      if (sk.plane) {
+        // Looking down from aircraft onto a stratocumulus cloud deck
+        const deckCols = 4;
+        const deckRows = 3;
+        const colW = w / (deckCols - 0.5);
+        const rowH = h / (deckRows - 0.5);
+        for (let r = 0; r < deckRows; r++) {
+          for (let c = 0; c < deckCols; c++) {
+            const cx = c * colW + ((r % 2) * colW * 0.4) - 20;
+            const cy = r * rowH + 20;
+            window.CloudEngine.renderCloudCluster(ctx, cx, cy, colW * 1.35, rowH * 1.25, {
+              time: time * 0.0006 + c * 1.7 + r * 2.3,
+              opacity: 0.76,
+              darkBase: true
+            });
+          }
+        }
+      } else if (rain > 0.1) {
+        // Distant stormy cumulus/nimbostratus clouds across the rain horizon
+        const cloudCount = 3;
+        for (let i = 0; i < cloudCount; i++) {
+          const cx = (w * (0.2 + i * 0.32) + Math.sin(time * 0.0002 + i) * 15);
+          const cy = G.horizon * 0.38 + (i % 2) * 18;
+          window.CloudEngine.renderCloudCluster(ctx, cx, cy, w * 0.44, G.horizon * 0.52, {
+            time: time * 0.0004 + i * 1.5,
+            opacity: 0.55 * rain,
+            storm: true
+          });
+        }
+      }
+    }
+
     // Sky brightness pattern from the drops: brighter inside the bow,
     // darker between the bows.
     if (!sk.plane) {

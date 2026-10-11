@@ -83,13 +83,13 @@
     .readout-val { font-size: 1rem; font-weight: 700; color: #007aff; }
     @media (max-width: 540px) { .readouts { grid-template-columns: 1fr; } }
 
-    .timeline { display: grid; gap: 0.7rem; margin: 0.8rem 0; }
-    .timeline-item { display: grid; grid-template-columns: 5.5rem 1fr; gap: 0.8rem; border-top: 1px solid var(--line,#d2d2d7); padding-top: 0.7rem; }
-    .timeline-item:first-child { border-top: 0; padding-top: 0; }
-    .timeline-year { color: #ff9500; font-weight: 800; font-size: 0.85rem; }
-    .timeline-copy { color: var(--text-secondary, #3f4f65); font-size: 0.84rem; line-height: 1.6; }
-    body.steam-night .timeline-copy { color: rgba(245,245,247,0.72); }
-    @media (max-width: 540px) { .timeline-item { grid-template-columns: 1fr; gap: 0.2rem; } }
+    .steam-impacts { display: grid; gap: 0.7rem; margin: 0.8rem 0; }
+    .steam-impact-item { display: grid; grid-template-columns: 5.5rem 1fr; gap: 0.8rem; border-top: 1px solid var(--line,#d2d2d7); padding-top: 0.7rem; }
+    .steam-impact-item:first-child { border-top: 0; padding-top: 0; }
+    .steam-impact-topic { color: #ff9500; font-weight: 800; font-size: 0.85rem; }
+    .steam-impact-copy { color: var(--text-secondary, #3f4f65); font-size: 0.84rem; line-height: 1.6; }
+    body.steam-night .steam-impact-copy { color: rgba(245,245,247,0.72); }
+    @media (max-width: 540px) { .steam-impact-item { grid-template-columns: 1fr; gap: 0.2rem; } }
 
     .practice .problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
     .practice .problem p { margin-bottom: 0.5rem; font-size: 0.88rem; color: var(--text-secondary, #3f4f65); line-height: 1.6; }
@@ -380,26 +380,26 @@
         <section class="cl-card" style="--card-accent:#ff2d55;">
           <h2>Impact on Society</h2>
           <p>Understanding steam chemistry helped people build engines that could do work at a scale muscles, wind, and water wheels could not. That changed where people lived, how goods moved, and how labor was organized.</p>
-          <div class="timeline">
-            <div class="timeline-item">
-              <div class="timeline-year">Factories</div>
-              <div class="timeline-copy">Steam engines made production less dependent on rivers. Mills and factories could cluster near workers, fuel, ports, and rail lines.</div>
+          <div class="steam-impacts">
+            <div class="steam-impact-item">
+              <div class="steam-impact-topic">Factories</div>
+              <div class="steam-impact-copy">Steam engines made production less dependent on rivers. Mills and factories could cluster near workers, fuel, ports, and rail lines.</div>
             </div>
-            <div class="timeline-item">
-              <div class="timeline-year">Railroads</div>
-              <div class="timeline-copy">Steam locomotives compressed distance. Food, raw materials, mail, and people moved faster, linking regional economies into national markets.</div>
+            <div class="steam-impact-item">
+              <div class="steam-impact-topic">Railroads</div>
+              <div class="steam-impact-copy">Steam locomotives compressed distance. Food, raw materials, mail, and people moved faster, linking regional economies into national markets.</div>
             </div>
-            <div class="timeline-item">
-              <div class="timeline-year">Mining</div>
-              <div class="timeline-copy">Steam pumps removed water from mines, allowing deeper coal extraction. That created a feedback loop: more coal powered more engines.</div>
+            <div class="steam-impact-item">
+              <div class="steam-impact-topic">Mining</div>
+              <div class="steam-impact-copy">Steam pumps removed water from mines, allowing deeper coal extraction. That created a feedback loop: more coal powered more engines.</div>
             </div>
-            <div class="timeline-item">
-              <div class="timeline-year">Cities</div>
-              <div class="timeline-copy">Industrial jobs pulled populations into cities. This produced new opportunities, but also overcrowding, pollution, and harsh working conditions.</div>
+            <div class="steam-impact-item">
+              <div class="steam-impact-topic">Cities</div>
+              <div class="steam-impact-copy">Industrial jobs pulled populations into cities. This produced new opportunities, but also overcrowding, pollution, and harsh working conditions.</div>
             </div>
-            <div class="timeline-item">
-              <div class="timeline-year">Environment</div>
-              <div class="timeline-copy">Combustion powered industrial growth while releasing soot, sulfur compounds, carbon dioxide, and other pollutants. The benefits and costs arrived together.</div>
+            <div class="steam-impact-item">
+              <div class="steam-impact-topic">Environment</div>
+              <div class="steam-impact-copy">Combustion powered industrial growth while releasing soot, sulfur compounds, carbon dioxide, and other pollutants. The benefits and costs arrived together.</div>
             </div>
           </div>
         </section>
@@ -533,6 +533,8 @@
 <script src="../../assets/js/theme-registry.js"></script>
 <script src="../../assets/js/nav-mobile.js"></script>
 <script src="../../assets/js/lesson-layout.js"></script>
+<script src="../../assets/js/cloud-engine.js"></script>
+<script src="../../assets/js/liquid-engine.js"></script>
 <script>
 (() => {
   const canvas = document.getElementById('steam-canvas');
@@ -543,6 +545,9 @@
   const pressureOut = document.getElementById('st-pressure');
   const statusOut = document.getElementById('st-status');
   let t = 0;
+  let lastFrame = performance.now();
+  let nextWaterImpulse = 0;
+  const liquidWater = window.LiquidEngine.createSurface({ material: 'water', width: 1, restY: 1, columns: 72, maxColumns: 96 });
 
   function resize() {
     const dpr = window.devicePixelRatio || 1;
@@ -564,6 +569,9 @@
   }
 
   function draw() {
+    const now = performance.now();
+    const dt = Math.min(0.05, Math.max(0, (now - lastFrame) / 1000));
+    lastFrame = now;
     t += 0.018;
     const W = canvas.clientWidth;
     const H = canvas.clientHeight;
@@ -599,11 +607,35 @@
     ctx.stroke();
 
     const waterH = boilerH * water;
+    const waterTop = boilerY + boilerH - waterH;
+    const innerLeft = boilerX + 8;
+    const innerWidth = boilerW - 16;
+    const innerBottom = boilerY + boilerH - 8;
+    liquidWater.configure(innerWidth, waterTop, 72);
+    liquidWater.update(dt);
+    if (now > nextWaterImpulse) {
+      liquidWater.impulse(innerWidth * (0.18 + ((now * 0.0002) % 0.64)), -(2 + burn * 8 + (boiling ? 3 : 0)), Math.max(12, innerWidth * 0.08));
+      nextWaterImpulse = now + 850 + ((now * 0.0013) % 700);
+    }
     ctx.save();
     roundedRect(boilerX + 8, boilerY + 8, boilerW - 16, boilerH - 16, 20);
     ctx.clip();
-    ctx.fillStyle = 'rgba(0,122,255,0.75)';
-    ctx.fillRect(boilerX + 8, boilerY + boilerH - waterH, boilerW - 16, waterH - 8);
+    ctx.save();
+    ctx.translate(innerLeft, 0);
+    window.LiquidEngine.drawSurface(ctx, liquidWater, {
+      width: innerWidth,
+      bottom: innerBottom,
+      phase: t,
+      color: night ? 'rgba(33,154,218,.82)' : 'rgba(28,137,204,.78)',
+      deepColor: night ? 'rgba(3,38,91,.96)' : 'rgba(6,70,132,.9)',
+      highlight: 'rgba(194,244,255,.72)',
+      foamColor: 'rgba(229,252,255,.92)',
+      reflectionColor: 'rgba(224,250,255,.82)',
+      causticsOpacity: boiling ? 0.16 : 0.08,
+      reflectionOpacity: 0.24,
+      foamOpacity: boiling ? 0.62 : 0.3
+    });
+    ctx.restore();
     ctx.fillStyle = 'rgba(255,255,255,0.46)';
     for (let i = 0; i < 24; i++) {
       const bx = boilerX + 22 + ((i * 29 + t * 42) % (boilerW - 44));
@@ -614,13 +646,26 @@
       ctx.fill();
     }
     if (boiling) {
-      ctx.fillStyle = 'rgba(255,255,255,0.7)';
-      for (let i = 0; i < 18; i++) {
-        const sx = boilerX + 26 + ((i * 23 + t * 58) % (boilerW - 52));
-        const sy = boilerY + 20 + ((i * 11 + t * 18) % Math.max(22, boilerH - waterH - 18));
-        ctx.beginPath();
-        ctx.arc(sx, sy, 2 + steamFactor * 3, 0, Math.PI * 2);
-        ctx.fill();
+      const steamSpr = (typeof window !== 'undefined' && window.CloudEngine && window.CloudEngine.getSprite) ? window.CloudEngine.getSprite('steam') : null;
+      if (steamSpr) {
+        const steamCount = Math.round(10 + steamFactor * 14);
+        for (let i = 0; i < steamCount; i++) {
+          const sx = boilerX + 20 + ((i * 27 + t * 45) % (boilerW - 40));
+          const sy = boilerY + 14 + ((i * 13 + t * 24) % Math.max(22, boilerH - waterH - 16));
+          const sz = 24 + steamFactor * 28 + (i % 4) * 6;
+          ctx.globalAlpha = 0.42 * steamFactor;
+          ctx.drawImage(steamSpr, sx - sz / 2, sy - sz / 2, sz, sz);
+        }
+        ctx.globalAlpha = 1.0;
+      } else {
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        for (let i = 0; i < 18; i++) {
+          const sx = boilerX + 26 + ((i * 23 + t * 58) % (boilerW - 52));
+          const sy = boilerY + 20 + ((i * 11 + t * 18) % Math.max(22, boilerH - waterH - 18));
+          ctx.beginPath();
+          ctx.arc(sx, sy, 2 + steamFactor * 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
     }
     ctx.restore();
@@ -660,6 +705,34 @@
     const cylY = H * 0.30;
     const cylW = W * 0.24;
     const cylH = H * 0.25;
+
+    // Cylinder exhaust stack
+    const exhX = cylX + cylW * 0.72;
+    const exhY = cylY - 8;
+    ctx.fillStyle = '#475569';
+    ctx.fillRect(exhX - 5, exhY - 14, 10, 14);
+    ctx.fillStyle = '#334155';
+    ctx.fillRect(exhX - 7, exhY - 17, 14, 4);
+
+    // Billowing volumetric exhaust steam puffs during engine power cycle
+    if (work > 0.05 && typeof window !== 'undefined' && window.CloudEngine && window.CloudEngine.getSprite) {
+      const steamSpr = window.CloudEngine.getSprite('steam');
+      if (steamSpr) {
+        const puffCycle = (t * (1.2 + work * 2.8)) % (Math.PI * 2);
+        const puffPhase = Math.max(0, Math.sin(puffCycle));
+        const numPuffs = 6;
+        for (let i = 0; i < numPuffs; i++) {
+          const age = ((t * 2.4 + i * 0.8) % 3.0) / 3.0; // 0 to 1
+          const px = exhX + age * 65 + Math.sin(age * 4 + i) * 6;
+          const py = exhY - 18 - age * 70 - Math.pow(age, 1.5) * 20;
+          const sz = 16 + age * 48;
+          ctx.globalAlpha = Math.max(0, (1 - age) * 0.55 * (0.35 + puffPhase * 0.65) * Math.min(1, work * 1.5));
+          ctx.drawImage(steamSpr, px - sz / 2, py - sz / 2, sz, sz);
+        }
+        ctx.globalAlpha = 1.0;
+      }
+    }
+
     ctx.fillStyle = '#7b8794';
     roundedRect(cylX, cylY, cylW, cylH, 14);
     ctx.fill();

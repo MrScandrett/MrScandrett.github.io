@@ -603,8 +603,7 @@ function drawScene() {
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, W, WATER_Y);
 
-  // big flat golden-yellow clouds
-  ctx.fillStyle = "#ffe14d";
+  // 3D volumetric golden-sunset clouds
   drawCloud(150, 70, 1.5);
   drawCloud(560, 95, 1.1);
 
@@ -635,13 +634,52 @@ function drawCloud(x, y, scale) {
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(scale, scale);
-  ctx.beginPath();
-  ctx.arc(0, 0, 22, 0, Math.PI * 2);
-  ctx.arc(26, -8, 18, 0, Math.PI * 2);
-  ctx.arc(-26, -5, 15, 0, Math.PI * 2);
-  ctx.arc(13, 8, 20, 0, Math.PI * 2);
-  ctx.arc(-13, 6, 17, 0, Math.PI * 2);
-  ctx.fill();
+
+  const puffs = [
+    { cx: 0, cy: 0, r: 24 },
+    { cx: 26, cy: -8, r: 20 },
+    { cx: -26, cy: -5, r: 17 },
+    { cx: 13, cy: 8, r: 22 },
+    { cx: -13, cy: 6, r: 19 }
+  ];
+
+  // Pass 1: Extinction Base Shadow (deep warm amber/russet underside)
+  for (const p of puffs) {
+    const baseGrad = ctx.createRadialGradient(p.cx, p.cy + p.r * 0.45, p.r * 0.1, p.cx, p.cy + p.r * 0.2, p.r * 1.1);
+    baseGrad.addColorStop(0, '#c8681e');
+    baseGrad.addColorStop(0.7, '#d97d26');
+    baseGrad.addColorStop(1, 'rgba(217,125,38,0)');
+    ctx.fillStyle = baseGrad;
+    ctx.beginPath();
+    ctx.arc(p.cx, p.cy + 3, p.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Pass 2: Volumetric Golden Mid-Body (3D spherical normal gradient with warm sunlight)
+  for (const p of puffs) {
+    const bodyGrad = ctx.createRadialGradient(p.cx - p.r * 0.35, p.cy - p.r * 0.4, p.r * 0.08, p.cx, p.cy, p.r);
+    bodyGrad.addColorStop(0, '#fff08a');
+    bodyGrad.addColorStop(0.35, '#ffd23f');
+    bodyGrad.addColorStop(0.75, '#f59e0b');
+    bodyGrad.addColorStop(1, '#d97706');
+    ctx.fillStyle = bodyGrad;
+    ctx.beginPath();
+    ctx.arc(p.cx, p.cy, p.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Pass 3: Sunlit Cauliflower Crests & Mie Rim Highlights (brilliant ivory rim)
+  for (const p of puffs) {
+    const rimGrad = ctx.createRadialGradient(p.cx - p.r * 0.45, p.cy - p.r * 0.55, 0, p.cx - p.r * 0.35, p.cy - p.r * 0.45, p.r * 0.65);
+    rimGrad.addColorStop(0, 'rgba(255, 255, 240, 0.95)');
+    rimGrad.addColorStop(0.5, 'rgba(255, 243, 176, 0.5)');
+    rimGrad.addColorStop(1, 'rgba(255, 243, 176, 0)');
+    ctx.fillStyle = rimGrad;
+    ctx.beginPath();
+    ctx.arc(p.cx - p.r * 0.2, p.cy - p.r * 0.25, p.r * 0.6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   ctx.restore();
 }
 

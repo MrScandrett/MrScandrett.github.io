@@ -66,6 +66,14 @@ test('decades, centuries, months and ISO dates', () => {
   assert.deepEqual([when('1590s').start, when('1590s').end], [1590, 1599]);
   assert.deepEqual([when('1900s').start, when('1900s').end], [1900, 1999]);
   assert.deepEqual([when('5th century BC').start, when('5th century BC').end], [-500, -401]);
+  assert.deepEqual([when('6th c. BCE').start, when('6th c. BCE').end], [-600, -501]);
+  assert.deepEqual([when('13th c.').start, when('13th c.').end], [1201, 1300]);
+  assert.deepEqual([when('3rd-2nd c. BCE').start, when('3rd-2nd c. BCE').end], [-300, -101]);
+  assert.deepEqual([when('Middle Ages').start, when('Middle Ages').end], [500, 1500]);
+  assert.deepEqual([when('1572 and 1604').start, when('1572 and 1604').end], [1572, 1604]);
+  assert.deepEqual([when('587/586 BCE').start, when('587/586 BCE').end], [-587, -586]);
+  assert.equal(when('1265:').start, 1265);
+  assert.deepEqual([when('c. 10th–12th Century').start, when('c. 10th–12th Century').end], [901, 1200]);
   assert.deepEqual([when('19th century').start, when('19th century').end], [1801, 1900]);
   near(when('March 1876').start, 1876 + 2 / 12);
   near(when('Mar 14, 1879').start, 1879 + 2 / 12 + 13 / 365);

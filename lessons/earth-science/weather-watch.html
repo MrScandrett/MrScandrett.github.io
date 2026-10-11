@@ -17,6 +17,23 @@
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
   <div class="ll-viewport ll-dark">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../library.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
 
     <!-- Top Navigation Bar -->
     <nav class="ll-topbar" aria-label="Lesson navigation">
@@ -172,8 +189,15 @@
                 <!-- Pollen Outlook Card -->
                 <div class="ww-telemetry-stat" id="pollen">
                   <span class="ww-stat-label">Seasonal Pollen</span>
-                  <span class="ww-stat-value" id="ww-stat-pollen">Moderate</span>
-                  <span class="ww-stat-sub">Tree &amp; grass allergens</span>
+                  <span class="ww-stat-value" id="ww-stat-pollen">Loading…</span>
+                  <span class="ww-stat-sub" id="ww-stat-pollen-sub">Live regional forecast</span>
+                </div>
+
+                <!-- Air Quality Card -->
+                <div class="ww-telemetry-stat" id="air-quality">
+                  <span class="ww-stat-label">Air Quality (US AQI)</span>
+                  <span class="ww-stat-value" id="ww-stat-aqi">Loading…</span>
+                  <span class="ww-stat-sub" id="ww-stat-aqi-sub">PM2.5 / ozone forecast</span>
                 </div>
               </div>
             </div>
@@ -491,6 +515,68 @@
               </div>
             </div>
 
+            <!-- INTERACTIVE CLOUD & GAS SIMULATION LABORATORY -->
+            <div class="ww-cloud-lab" aria-label="Interactive atmospheric cloud and gas simulator">
+              <div class="ww-cloud-lab-header">
+                <div>
+                  <span class="ww-badge"><span class="ww-pulse" aria-hidden="true"></span> Fluid &amp; Particle Game Engine</span>
+                  <h3 style="margin:0.4rem 0 0.2rem; font-size:1.25rem; color:#fff;">Atmospheric Cloud, Smoke &amp; Gas Laboratory</h3>
+                  <p style="margin:0; font-size:0.85rem; color:var(--ww-text-muted);">
+                    Watch water vapor condense at the Lifting Condensation Level (LCL), or simulate smoke plumes, volcanic eruptions, and creeping gases with live fluid turbulence.
+                  </p>
+                </div>
+                <div class="ww-cloud-lab-actions">
+                  <button type="button" class="ww-btn-sim-tool" id="ww-cloud-sync-btn" title="Sync simulator with current live cockpit telemetry">
+                    📍 Sync With Cockpit
+                  </button>
+                  <button type="button" class="ww-btn-sim-tool" id="ww-cloud-lightning-btn" title="Discharge an intra-cloud lightning strike">
+                    ⚡ Lightning Flash
+                  </button>
+                </div>
+              </div>
+
+              <!-- Preset Selectors -->
+              <div class="ww-cloud-preset-bar" role="group" aria-label="Select cloud or gas simulation preset">
+                <button type="button" class="ww-cloud-chip is-active" data-preset="cumulus">☁️ Cumulus (Puffy)</button>
+                <button type="button" class="ww-cloud-chip" data-preset="cumulonimbus">⛈️ Cumulonimbus (Storm &amp; Rain)</button>
+                <button type="button" class="ww-cloud-chip" data-preset="stratus_fog">🌫️ Stratus / Fog</button>
+                <button type="button" class="ww-cloud-chip" data-preset="cirrus">❄️ Cirrus (Ice Wisps)</button>
+                <button type="button" class="ww-cloud-chip" data-preset="chimney_smoke">🏭 Chimney Smoke</button>
+                <button type="button" class="ww-cloud-chip" data-preset="volcano_ash">🌋 Volcanic Eruption</button>
+                <button type="button" class="ww-cloud-chip" data-preset="steam_vent">♨️ Steam Jet</button>
+                <button type="button" class="ww-cloud-chip" data-preset="heavy_gas">🧪 Creeping Gas</button>
+              </div>
+
+              <!-- Canvas Stage -->
+              <div class="ww-cloud-canvas-wrap">
+                <canvas id="ww-cloud-canvas" class="ww-cloud-canvas" aria-label="Atmospheric cloud, smoke, and gas particle simulation"></canvas>
+                <div class="ww-cloud-canvas-hint" aria-hidden="true">👆 Click or drag across the sky to generate convective updrafts and wind currents</div>
+              </div>
+
+              <!-- Atmospheric Parameter Controls -->
+              <div class="ww-cloud-controls-grid">
+                <div>
+                  <label for="ww-cloud-wind" class="ww-cloud-slider-label">
+                    <span>Horizontal Wind Speed:</span>
+                    <span id="ww-cloud-wind-val" style="color:var(--ww-cyan);">4.5 MPH</span>
+                  </label>
+                  <input type="range" id="ww-cloud-wind" class="ww-slider" min="0" max="30" step="0.5" value="4.5" />
+                </div>
+                <div>
+                  <label for="ww-cloud-turb" class="ww-cloud-slider-label">
+                    <span>Vortex Turbulence (Eddies):</span>
+                    <span id="ww-cloud-turb-val" style="color:var(--ww-cyan);">1.2x</span>
+                  </label>
+                  <input type="range" id="ww-cloud-turb" class="ww-slider" min="0" max="3.5" step="0.1" value="1.2" />
+                </div>
+              </div>
+
+              <!-- Interactive Physics Insight -->
+              <div class="ww-cloud-lab-note" id="ww-cloud-lab-note">
+                <strong>Cumulus Convection Dynamics:</strong> Sun-warmed ground heats parcels of surface air. Because warm air is buoyant, parcels accelerate upward. As they ascend into lower atmospheric pressure, they expand adiabatically and cool at 5.4°F per 1,000 ft until reaching the <em>Lifting Condensation Level</em> (<span id="ww-cloud-note-lcl">4,545 FT</span>). There, water vapor condenses into visible droplets, releasing latent heat and building towering cauliflower billows!
+              </div>
+            </div>
+
             <!-- Cloud Atlas Grid -->
             <div class="ww-cloud-grid">
               <div class="ww-cloud-card">
@@ -562,6 +648,64 @@
             <p style="font-size:0.95rem; line-height:1.6; color:#cbd5e1;">
               Geostationary satellites (such as NOAA's GOES-East and GOES-West) orbit Earth at the exact same rotational rate as the planet, remaining parked over one hemisphere to capture visible, infrared, and water-vapor imagery every 30 seconds.
             </p>
+
+            <!-- LIVE RADAR / ALERT MAP -->
+            <div class="ww-storm-watch" aria-labelledby="ww-storm-watch-title">
+              <div class="ww-storm-watch-head">
+                <div>
+                  <span class="ww-map-kicker">Free live data · updates every 10 minutes</span>
+                  <h3 id="ww-storm-watch-title">Storm Watch: What is overhead?</h3>
+                </div>
+                <button type="button" class="ww-map-refresh" id="ww-storm-refresh">↻ Refresh radar</button>
+              </div>
+              <p class="ww-storm-watch-intro">
+                This map combines recent weather-radar precipitation with official active alerts. A colored radar return means precipitation is detected there; it does not by itself prove lightning, hail, a tornado, or dangerous wind.
+              </p>
+              <div class="ww-map-layout">
+                <div class="ww-radar-map" id="ww-radar-map" role="img" aria-label="Live precipitation radar map centered on the selected location">
+                  <div class="ww-map-loading" id="ww-map-loading">Loading radar…</div>
+                  <svg class="ww-alert-polygons" id="ww-alert-polygons" aria-hidden="true" focusable="false"></svg>
+                  <div class="ww-map-crosshair" aria-hidden="true"></div>
+                  <div class="ww-map-location" id="ww-map-location" aria-hidden="true"></div>
+                  <div class="ww-map-zoom" aria-label="Radar map controls">
+                    <button type="button" id="ww-map-zoom-in" aria-label="Zoom in">+</button>
+                    <button type="button" id="ww-map-zoom-out" aria-label="Zoom out">−</button>
+                  </div>
+                  <div class="ww-map-credit">Radar: RainViewer · basemap: OpenStreetMap</div>
+                </div>
+                <aside class="ww-alert-panel" aria-live="polite">
+                  <div class="ww-alert-panel-head">
+                    <span class="ww-map-kicker">Official alerts</span>
+                    <span class="ww-alert-count" id="ww-alert-count">—</span>
+                  </div>
+                  <div id="ww-alert-list" class="ww-alert-list">
+                    <p class="ww-alert-empty">Checking active alerts for this location…</p>
+                  </div>
+                </aside>
+              </div>
+              <div class="ww-radar-timeline" aria-label="Radar timeline controls">
+                <button type="button" class="ww-timeline-play" id="ww-radar-play" aria-pressed="false">▶ Play</button>
+                <input type="range" id="ww-radar-slider" min="0" max="0" value="0" step="1" aria-label="Choose radar time" />
+                <span id="ww-radar-frame-label">Latest frame</span>
+              </div>
+              <div class="ww-radar-legend" aria-label="Radar precipitation intensity legend">
+                <span>Radar return</span><i class="ww-legend-swatch ww-legend-light"></i><small>light</small><i class="ww-legend-swatch ww-legend-heavy"></i><small>heavy</small>
+                <span class="ww-radar-updated" id="ww-radar-updated">Not loaded</span>
+              </div>
+              <p class="ww-map-source-note">Radar: <a href="https://www.rainviewer.com/api/weather-maps-api.html" target="_blank" rel="noopener">RainViewer</a>. Alerts: <a href="https://www.weather.gov/documentation/services-web-alerts" target="_blank" rel="noopener">NOAA/NWS</a> (United States only). AQI and pollen: <a href="https://open-meteo.com/en/docs/air-quality-api" target="_blank" rel="noopener">Open-Meteo / CAMS</a>. Lightning uses an experimental community feed and may be unavailable. Radar can lag or miss very small/weak precipitation.</p>
+              <div class="ww-live-storm-readouts">
+                <div class="ww-storm-readout">
+                  <span class="ww-map-kicker">Lightning distance</span>
+                  <strong id="ww-lightning-distance">Connecting…</strong>
+                  <small id="ww-lightning-detail">Live strike feed · last 10 minutes</small>
+                </div>
+                <div class="ww-storm-readout ww-storm-safety" id="ww-lightning-safety">
+                  <span class="ww-map-kicker">Lightning safety</span>
+                  <strong id="ww-lightning-safety-text">Waiting for strike data</strong>
+                  <small>Any thunder means shelter now; wait 30 minutes after the last thunder.</small>
+                </div>
+              </div>
+            </div>
 
             <!-- NOAA GOES-16 Video Embed -->
             <figure data-video="hurricane-harvey-goes16">
@@ -712,11 +856,15 @@
   </div><!-- .ll-viewport -->
 
   <!-- Scripts -->
+  <script src="../../assets/js/sim-kit.js"></script>
   <script src="../../assets/js/weather-engine.js"></script>
+  <script src="../../assets/js/cloud-engine.js"></script>
   <script src="../../assets/js/lessons/weather-watch.js"></script>
   <script src="../../assets/js/lesson-layout.js"></script>
   <script src="../../assets/js/photo-lightbox.js"></script>
   <script src="../../assets/js/video-embed.js"></script>
   <script src="../../assets/js/lesson-print-button.js"></script>
+<script src="../../assets/js/theme-registry.js"></script>
+<script src="../../assets/js/nav-mobile.js"></script>
 </body>
 </html>

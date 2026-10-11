@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { MarchingCubes } from 'three/addons/objects/MarchingCubes.js';
 import { PLAYER } from '../../app/config.js';
 
 export function createLavaParkourWorld(scene) {
@@ -85,16 +86,45 @@ export function createLavaParkourWorld(scene) {
     const finishPlatform = addPlatform(0, 52, -24, 10, 10, 'finish');
 
     const lavaMaterial = new THREE.MeshStandardMaterial({
-        color: 0xff4d21,
-        emissive: 0xff2a00,
-        emissiveIntensity: 1.2,
-        roughness: 0.55,
+        color: 0xd93837,
+        emissive: 0xff3e12,
+        emissiveIntensity: 1.05,
+        roughness: 0.34,
         metalness: 0.0,
         transparent: true,
-        opacity: 0.95
+        opacity: 0.96
     });
     const lava = new THREE.Mesh(new THREE.BoxGeometry(worldHalf * 2 - 2, 1.3, worldHalf * 2 - 2), lavaMaterial);
     group.add(lava);
+
+    // Use one implicit surface for all of the globs. Marching cubes turns
+    // overlapping fields into a single continuous skin, so a close pair gets
+    // a rounded shoulder instead of the flat, intersecting-sphere look.
+    const globMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0xff795d,
+        emissive: 0xff3516,
+        emissiveIntensity: 1.08,
+        roughness: 0.18,
+        metalness: 0.02,
+        clearcoat: 0.94,
+        clearcoatRoughness: 0.1,
+        sheen: 0.34
+    });
+    const blobField = new MarchingCubes(28, globMaterial, false, false, 18000);
+    blobField.scale.set(worldHalf - 1, 6.5, worldHalf - 1);
+    blobField.frustumCulled = false;
+    blobField.castShadow = true;
+    blobField.receiveShadow = true;
+    group.add(blobField);
+    const globSpecs = [
+        [-19, -16, 0.9, 0.2],
+        [-10, 5, 0.82, 1.6],
+        [-1, -8, 1.08, 2.7],
+        [9, 14, 0.92, 0.9],
+        [18, -2, 1.04, 2.1],
+        [21, 18, 0.78, 3.5],
+        [1, 20, 0.72, 4.2]
+    ];
 
     const lavaStartY = -7.5;
     const lavaRiseSpeed = 1.55;
@@ -127,6 +157,9 @@ export function createLavaParkourWorld(scene) {
         lavaElapsed = 0;
         lava.position.y = lavaStartY;
         lavaLight.position.y = lava.position.y + 3;
+        blobField.position.y = lavaStartY + 0.55;
+        blobField.reset();
+        blobField.update();
         activeCheckpointIndex = -1;
         finishReached = false;
     }
@@ -136,6 +169,27 @@ export function createLavaParkourWorld(scene) {
         lava.position.y = lavaStartY + lavaElapsed * lavaRiseSpeed;
         lavaLight.position.y = lava.position.y + 3;
         lavaLight.intensity = 1.6 + Math.sin(timeSeconds * 4.2) * 0.35;
+        blobField.position.y = lava.position.y + 0.55;
+        blobField.reset();
+        for (const [x, z, size, phase] of globSpecs) {
+            const bob = Math.sin(timeSeconds * (1.05 + size * 0.1) + phase) * 0.18;
+            const sway = Math.sin(timeSeconds * 0.72 + phase * 1.7) * 0.045;
+            const localX = x / (worldHalf - 1);
+            const localZ = z / (worldHalf - 1);
+            const localY = 0.06 + bob / 6.5;
+            const strength = 0.34 * size;
+            blobField.addBall(localX, localY, localZ, strength, 11);
+            // A smaller, offset field gives each mass a soft tail and makes
+            // the union between close masses read like poured wax.
+            blobField.addBall(
+                localX + sway,
+                localY - 0.11,
+                localZ + Math.cos(phase) * 0.035,
+                strength * 0.58,
+                11
+            );
+        }
+        blobField.update();
 
         for (let i = 0; i < movingPlatforms.length; i++) {
             const p = movingPlatforms[i];

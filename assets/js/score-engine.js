@@ -441,6 +441,17 @@
 
   function headName(ev) { return ev.base >= 4 ? 'whole' : ev.base >= 2 ? 'half' : 'quarter'; }
   function headW(ev, S) { return (ev.base >= 4 ? 426 : 295) / 250 * S; }
+  function durationLabel(ev) {
+    if (ev.whole || ev.base >= 4) return 'whole note';
+    var name = ev.base >= 2 ? 'half' : ev.base >= 1 ? 'quarter' : ev.base >= 0.5 ? 'eighth' : ev.base >= 0.25 ? 'sixteenth' : 'thirty-second';
+    return name + (ev.dots ? ' dotted' : '') + ' note';
+  }
+  function eventLabel(ev, model) {
+    var bar = model.pickup && ev.bar === 0 ? 'pickup' : 'bar ' + (ev.bar + (model.pickup ? 0 : 1));
+    var at = ev.start === 0 ? 'beat 1' : 'beat ' + (ev.start + 1);
+    var pitches = ev.kind === 'rest' ? 'rest' : ev.pitches.map(function (p) { return root.MusicNotation.pitchName(p); }).join(' plus ');
+    return pitches + ', ' + durationLabel(ev) + ', ' + bar + ', ' + at;
+  }
 
   // Stem tip y for an unbeamed note.
   function stemTip(ev, b, S, h) {
@@ -558,7 +569,11 @@
         out += M.accidental(ps[a].showAcc, accLeft - aw * S - col * 1.15 * S, b - steps[a] * h, S);
       }
       ps.forEach(function (p, k) {
-        out += M.glyph(name, ev.x + (shifted[k] || 0) * (w - lw), b - steps[k] * h, S, 'se-head');
+        var px = ev.x + (shifted[k] || 0) * (w - lw), py = b - steps[k] * h;
+        var pitchClass = M.pitchClass(p);
+        var pitchCls = M.preferences.noteColors ? ' se-pitch-' + pitchClass : '';
+        out += M.glyph(name, px, py, S, 'se-head' + pitchCls);
+        if (M.preferences.pitchNames) out += '<text class="se-pitch-label se-pitch-' + pitchClass + '" x="' + px + '" y="' + py + '" text-anchor="middle" dominant-baseline="middle">' + M.escape(M.pitchName(p)) + '</text>';
       });
       // Dots.
       if (ev.dots) {
@@ -801,6 +816,46 @@
     var player = new Player(fig, model);
     players.push(player);
     var layout = null, lit = [], cursorEl = null;
+    var noteList = el('ol', { class: 'se-note-list', hidden: '' });
+    var noteListToggle = el('button', { type: 'button', class: 'se-note-list-toggle', 'aria-expanded': 'false', 'aria-controls': 'score-notes-' + (score.id || 'score') }, 'Show note list');
+    noteList.id = 'score-notes-' + (score.id || 'score');
+    var pitchToggle = el('button', { type: 'button', class: 'se-toggle', 'aria-pressed': root.MusicNotation.preferences.pitchNames ? 'true' : 'false' }, 'Pitch names');
+    var colorToggle = el('button', { type: 'button', class: 'se-toggle', 'aria-pressed': root.MusicNotation.preferences.noteColors ? 'true' : 'false' }, 'Note colors');
+
+    function updatePreferenceButtons() {
+      var prefs = root.MusicNotation.preferences;
+      pitchToggle.setAttribute('aria-pressed', prefs.pitchNames ? 'true' : 'false');
+      colorToggle.setAttribute('aria-pressed', prefs.noteColors ? 'true' : 'false');
+      pitchToggle.classList.toggle('is-on', prefs.pitchNames);
+      colorToggle.classList.toggle('is-on', prefs.noteColors);
+      pitchToggle.textContent = prefs.pitchNames ? '✓ Pitch names' : 'Pitch names';
+      colorToggle.textContent = prefs.noteColors ? '✓ Note colors' : 'Note colors';
+    }
+    function noteButtons() { return Array.prototype.slice.call(noteList.querySelectorAll('button[data-note-index]')); }
+    function updateNoteList(active) {
+      noteButtons().forEach(function (button) {
+        var selected = active && button.getAttribute('data-note-index') === String(active.i);
+        if (selected) button.setAttribute('aria-current', 'true'); else button.removeAttribute('aria-current');
+      });
+    }
+    function renderNoteList() {
+      if (!layout) return;
+      noteList.innerHTML = '';
+      layout.events.slice().sort(function (a, b) { return a.abs - b.abs || a.staff - b.staff || a.i - b.i; }).forEach(function (ev, index) {
+        var li = document.createElement('li');
+        var button = el('button', { type: 'button', 'data-note-index': ev.i, 'aria-label': eventLabel(ev, model) });
+        button.textContent = (index + 1) + '. ' + eventLabel(ev, model);
+        button.addEventListener('click', function () { selectEvent(ev); });
+        button.addEventListener('keydown', function (e) {
+          var buttons = noteButtons(), at = buttons.indexOf(button), next;
+          if (e.key === 'ArrowDown' || e.key === 'ArrowRight') next = buttons[Math.min(buttons.length - 1, at + 1)];
+          if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') next = buttons[Math.max(0, at - 1)];
+          if (next) { e.preventDefault(); next.focus(); }
+        });
+        li.appendChild(button); noteList.appendChild(li);
+      });
+      updateNoteList(layout.events.find(function (ev) { return lit.indexOf(ev.i) >= 0; }));
+    }
 
     function draw() {
       var w = Math.max(280, Math.round(svgWrap.clientWidth || paper.clientWidth || 640));
@@ -812,6 +867,7 @@
       cursorEl = svgWrap.querySelector('.se-cursor');
       lit = [];
       if (!player.playing) player.ui.cursor(player.pos);
+      renderNoteList();
     }
 
     player.ui = {
@@ -829,9 +885,9 @@
         lit.forEach(function (i) { if (ids.indexOf(i) < 0) { var g = svgWrap.querySelector('.se-ev[data-i="' + i + '"]'); if (g) g.classList.remove('is-on'); } });
         ids.forEach(function (i) { if (lit.indexOf(i) < 0) { var g = svgWrap.querySelector('.se-ev[data-i="' + i + '"]'); if (g) g.classList.add('is-on'); } });
         lit = ids;
+        updateNoteList(on[0]);
         if (on.length) {
-          var b = on[0].bar + (model.pickup ? 0 : 1);
-          var msg = model.pickup && on[0].bar === 0 ? 'Pickup' : 'Bar ' + b;
+          var msg = eventLabel(on[0], model);
           if (status.textContent !== msg) status.textContent = msg;
         }
       },
@@ -883,11 +939,35 @@
         root.MusicSynth.startVoice(c, audio.out, player.instOverride ? player.instrument : (st.instrument || player.instrument), p.midi, 0.75, c.currentTime).release(c.currentTime + 0.6);
       });
       player.seek(ev.abs);
-      var names = ev.pitches.map(function (p) { return 'CDEFGAB'.charAt(p.l) + ({ '-2': '𝄫', '-1': '♭', '0': '', '1': '♯', '2': '𝄪' })[p.a] + p.o; });
-      status.textContent = names.join(' + ') + ' — press Play to start here';
+      status.textContent = eventLabel(ev, model) + ' — press Play to start here';
+      updateNoteList(ev);
     });
 
+    function selectEvent(ev) {
+      if (!ev) return;
+      var c = context(), st = model.staves[ev.staff];
+      if (ev.kind === 'note') ev.pitches.forEach(function (p) {
+        root.MusicSynth.startVoice(c, audio.out, player.instOverride ? player.instrument : (st.instrument || player.instrument), p.midi, 0.75, c.currentTime).release(c.currentTime + 0.6);
+      });
+      player.seek(ev.abs);
+      status.textContent = eventLabel(ev, model) + ' — press Play to start here';
+      updateNoteList(ev);
+    }
+
+    pitchToggle.addEventListener('click', function () { root.MusicNotation.setPreferences({ pitchNames: !root.MusicNotation.preferences.pitchNames }); });
+    colorToggle.addEventListener('click', function () { root.MusicNotation.setPreferences({ noteColors: !root.MusicNotation.preferences.noteColors }); });
+    noteListToggle.addEventListener('click', function () {
+      var open = noteList.hasAttribute('hidden');
+      if (open) noteList.removeAttribute('hidden'); else noteList.setAttribute('hidden', '');
+      noteListToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      noteListToggle.textContent = open ? 'Hide note list' : 'Show note list';
+    });
+    root.MusicNotation.onPreferencesChange(function () { layout = null; updatePreferenceButtons(); requestAnimationFrame(draw); });
+    updatePreferenceButtons();
+
     draw();
+    bar.appendChild(pitchToggle); bar.appendChild(colorToggle); bar.appendChild(noteListToggle);
+    fig.insertBefore(noteList, cap);
     var pieceGroup = fig.closest('details.composer-piece-group');
     if (pieceGroup) pieceGroup.addEventListener('toggle', function () {
       if (!pieceGroup.open) { player.stop(); status.textContent = ''; }

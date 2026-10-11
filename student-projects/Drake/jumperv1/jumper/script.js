@@ -459,8 +459,7 @@ function drawSky(){
 }
 
 function drawCloudShape(x, y, w, h, lobes, seed, alpha){
-  ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-  ctx.beginPath();
+  const lobeData = [];
   for(let i=0;i<lobes;i++){
     const f = lobes === 1 ? 0.5 : i/(lobes-1);
     const cx = x + w*(0.16 + f*0.68);
@@ -468,10 +467,39 @@ function drawCloudShape(x, y, w, h, lobes, seed, alpha){
     const cy = y + h*(0.5 + wobble*0.5);
     const rx = w*(0.20 + Math.abs(Math.cos(seed + i)) * 0.12);
     const ry = h*(0.42 + Math.abs(Math.sin(seed*1.3 + i)) * 0.3);
-    ctx.moveTo(cx + rx, cy);
-    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI*2);
+    lobeData.push({cx, cy, rx, ry});
   }
-  ctx.fill();
+
+  // Pass 1: Extinction Base Shadow (cool slate/blue-gray underside)
+  for(const l of lobeData){
+    const g = ctx.createRadialGradient(l.cx, l.cy + l.ry*0.35, 0, l.cx, l.cy, l.rx);
+    g.addColorStop(0, `rgba(160,185,215,${alpha * 0.65})`);
+    g.addColorStop(0.7, `rgba(185,205,230,${alpha * 0.3})`);
+    g.addColorStop(1, 'rgba(185,205,230,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(l.cx, l.cy + l.ry*0.2, l.rx, l.ry*0.9, 0, 0, Math.PI*2); ctx.fill();
+  }
+
+  // Pass 2: Volumetric 3D Body (offset towards sun upper-left)
+  for(const l of lobeData){
+    const g = ctx.createRadialGradient(l.cx - l.rx*0.25, l.cy - l.ry*0.3, l.rx*0.08, l.cx, l.cy, l.rx);
+    g.addColorStop(0, `rgba(255,255,255,${alpha})`);
+    g.addColorStop(0.55, `rgba(240,246,255,${alpha * 0.95})`);
+    g.addColorStop(0.9, `rgba(215,230,248,${alpha * 0.6})`);
+    g.addColorStop(1, `rgba(200,220,242,0)`);
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(l.cx, l.cy, l.rx, l.ry, 0, 0, Math.PI*2); ctx.fill();
+  }
+
+  // Pass 3: Sunlit Cauliflower Crown (rim highlight)
+  for(const l of lobeData){
+    const g = ctx.createRadialGradient(l.cx - l.rx*0.35, l.cy - l.ry*0.45, 0, l.cx - l.rx*0.2, l.cy - l.ry*0.3, l.rx*0.55);
+    g.addColorStop(0, `rgba(255,255,255,${alpha * 0.95})`);
+    g.addColorStop(0.7, `rgba(255,255,255,${alpha * 0.35})`);
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(l.cx - l.rx*0.2, l.cy - l.ry*0.25, l.rx*0.55, l.ry*0.55, 0, 0, Math.PI*2); ctx.fill();
+  }
 }
 
 function drawNebula(){
@@ -585,20 +613,37 @@ function draw(){
       const cx = p.x + p.w/2;
       const cy = p.y + p.h/2 + bob;
       // soft drop shadow beneath the pad
-      ctx.fillStyle = 'rgba(40,80,120,0.14)';
+      ctx.fillStyle = 'rgba(40,80,120,0.18)';
       ctx.beginPath(); ctx.ellipse(cx, p.y + p.h + 5, p.w*0.34, 4, 0, 0, Math.PI*2); ctx.fill();
       if(p.glow > 0){
         ctx.fillStyle = `rgba(255,255,255,${0.5*p.glow})`;
         ctx.beginPath(); ctx.ellipse(cx, cy, p.w*0.46, p.h*1.6, 0, 0, Math.PI*2); ctx.fill();
       }
-      ctx.fillStyle = 'rgba(255,255,255,0.98)';
+
+      // Base extinction shadow for pad underside
+      const padShadow = ctx.createLinearGradient(cx, cy - p.h, cx, cy + p.h * 1.2);
+      padShadow.addColorStop(0, 'rgba(255,255,255,0.98)');
+      padShadow.addColorStop(0.65, 'rgba(235,244,255,0.95)');
+      padShadow.addColorStop(1, 'rgba(180,205,235,0.85)');
+      ctx.fillStyle = padShadow;
       ctx.beginPath();
       ctx.ellipse(cx, cy, p.w*0.36, p.h*1.1, 0, 0, Math.PI*2);
       ctx.ellipse(p.x + p.w*0.22, cy + 2, p.w*0.22, p.h*0.9, 0, 0, Math.PI*2);
       ctx.ellipse(p.x + p.w*0.78, cy + 1, p.w*0.22, p.h*0.85, 0, 0, Math.PI*2);
       ctx.fill();
+
+      // Sunlit upper crown highlights on pad lobes
+      const lobeHighlight = ctx.createRadialGradient(cx - p.w*0.08, cy - p.h*0.5, 1, cx, cy, p.w*0.35);
+      lobeHighlight.addColorStop(0, 'rgba(255,255,255,0.95)');
+      lobeHighlight.addColorStop(0.5, 'rgba(255,255,255,0.3)');
+      lobeHighlight.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = lobeHighlight;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy - 2, p.w*0.32, p.h*0.7, 0, 0, Math.PI*2);
+      ctx.fill();
+
       // top highlight keeps the landing surface readable
-      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.fillStyle = 'rgba(255,255,255,0.95)';
       ctx.fillRect(p.x + 8, p.y - 1 + bob, p.w - 16, 2);
       // subtle shadow under cloud
       ctx.fillStyle = 'rgba(0,0,0,0.08)';

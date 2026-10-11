@@ -325,7 +325,25 @@
     '<circle cx="8" cy="8" r="2.05" stroke="currentColor" stroke-width="1.15"/>' +
     '</svg>';
 
-  var themeRegistry = window.ClassroomOSThemeRegistry;
+  var themeRegistry = window.ClassroomOSThemeRegistry || {
+    THEMES: [
+      { id: "day",         label: "Day",         detail: "Clean and bright — the default ClassroomOS look.",      tone: "light", swatch: ["#dff1ff", "#6eb6ff"],                     accentRGB: [0, 113, 227] },
+      { id: "sakura",      label: "Sakura",      detail: "Cherry blossom pink with a soft spring glow.",           tone: "light", swatch: ["#fff7fb", "#ff85b2"],                     accentRGB: [220, 80, 150] },
+      { id: "diamond",     label: "Diamond",     detail: "Icy teal blue — crisp, cool, and focused.",              tone: "light", swatch: ["#091224", "#00c6ff"],                     accentRGB: [80, 190, 255] },
+      { id: "emerald",     label: "Emerald",     detail: "Fresh leaf green — calm and easy on the eyes.",          tone: "light", swatch: ["#f4fff7", "#50db82"],                     accentRGB: [50, 180, 100] },
+      { id: "topaz",       label: "Honey",       detail: "Warm amber — like afternoon sunlight through a window.", tone: "light", swatch: ["#fff9e3", "#ffb900"],                     accentRGB: [255, 185, 0] },
+      { id: "goldfish",    label: "Goldfish",    detail: "Saturated goldfish orange with a scale-textured glow.",  tone: "light", swatch: ["#fff3e6", "#ff6a1a"],                     accentRGB: [255, 106, 26] },
+      { id: "cobblestone", label: "Cobblestone", detail: "Light grey stone tones — quiet and understated.",        tone: "light", swatch: ["#f3f2f1", "#8a8d91"],                     accentRGB: [138, 141, 145] },
+      { id: "bark",        label: "Bark",        detail: "Warm dark wood tones with a rough bark texture.",        tone: "dark",  swatch: ["#241a12", "#d99a54"],                     accentRGB: [217, 154, 84] },
+      { id: "night",       label: "Night",       detail: "Easy on the eyes after dark — full dark mode.",          tone: "dark",  swatch: ["#445c93", "#111827"],                     accentRGB: [105, 168, 255] },
+      { id: "vaporwave",   label: "Vaporwave",   detail: "Neon magenta and cyan — retro synthwave vibes.",         tone: "dark",  swatch: ["#050505", "#ff00ff", "#00ffff"],          accentRGB: [255, 0, 255] },
+      { id: "mandelbrot",  label: "Mandelbrot",  detail: "A slowly revolving fractal spiral in violet and molten gold.", tone: "dark", swatch: ["#05010f", "#6a0dad", "#ff8c00"],   accentRGB: [255, 140, 0] },
+      { id: "lavalamp",    label: "Lava Lamp",   detail: "Hypnotic molten red wax drifting with glowing neon depth.", tone: "dark", swatch: ["#0a0103", "#ff1a40", "#ff6b81"],      accentRGB: [255, 42, 77] }
+    ],
+    normalize: function (theme) { return theme === "night" ? "night" : (theme || "day"); },
+    isDark: function (theme) { return theme === "night" || theme === "vaporwave" || theme === "bark" || theme === "mandelbrot" || theme === "lavalamp"; },
+    getLabel: function (theme) { return theme || "Day"; }
+  };
   var THEME_OPTIONS = themeRegistry.THEMES;
 
   var CANVAS_OPTIONS = [
@@ -363,6 +381,21 @@
     return readCanvasPrefs()[theme] || CANVAS_THEME_DEFAULT[theme] || "particles";
   }
 
+  function getRootPrefix() {
+    var navScript = Array.prototype.slice.call(document.scripts).find(function (script) {
+      return /(^|\/)nav-mobile\.js(?:[?#].*)?$/.test(script.getAttribute("src") || script.src || "");
+    });
+    if (navScript) {
+      var src = navScript.getAttribute("src") || navScript.src || "";
+      var idx = src.indexOf("assets/js/nav-mobile.js");
+      if (idx !== -1) return src.slice(0, idx);
+    }
+    var rel = window.location.pathname.replace(/^\/|\/$/g, "");
+    if (!rel || rel.indexOf("/") === -1) return "";
+    var depth = rel.split("/").length - 1;
+    return "../".repeat(depth);
+  }
+
   var STORAGE_MODE = "classroomos-lighting-mode";
   var STORAGE_PHASE = "classroomos-lighting-phase";
   var STORAGE_REDUCED_MOTION = "classroomos-reduced-motion";
@@ -373,11 +406,82 @@
     (document.body && document.body.dataset.themeScope) || "";
   var isThemeIndependent = themeScope === "independent";
 
-  var header = document.querySelector(".site-header") || document.querySelector(".topbar");
-  var nav = header && (header.querySelector(".site-nav") || header.querySelector("nav"));
+  var rootPrefix = getRootPrefix();
 
-  /* Lessons with a slim custom topbar have no nav to hang controls on, but the
-     reader's chosen theme should still follow them onto the page. */
+  // Ensure classroom-home.css is loaded if missing
+  if (!document.querySelector('link[href*="classroom-home.css"]')) {
+    var cssLink = document.createElement("link");
+    cssLink.rel = "stylesheet";
+    cssLink.href = rootPrefix + "assets/css/classroom-home.css";
+    document.head.appendChild(cssLink);
+  }
+
+  var header = document.querySelector(".site-header");
+  if (!header) {
+    var customTopbar = document.querySelector(".topbar");
+    if (customTopbar && customTopbar.querySelector(".site-nav, nav")) {
+      header = customTopbar;
+    } else {
+      header = document.createElement("header");
+      header.className = "site-header";
+      header.innerHTML =
+        '<div class="nav-wrap">' +
+          '<a class="brand" href="' + rootPrefix + 'index.html">Mr. Scandrett\'s ClassroomOS</a>' +
+          '<nav class="site-nav" aria-label="Primary" id="primary-nav">' +
+            '<ul>' +
+              '<li><a href="' + rootPrefix + 'index.html">Home</a></li>' +
+              '<li><a href="' + rootPrefix + 'steam-lessons.html">Lessons</a></li>' +
+              '<li><a href="' + rootPrefix + 'paths.html">Paths</a></li>' +
+              '<li><a href="' + rootPrefix + 'showcase.html">Showcase</a></li>' +
+              '<li><a href="' + rootPrefix + 'applications.html">Apps</a></li>' +
+              '<li><a href="' + rootPrefix + 'library.html">Library</a></li>' +
+              '<li><a href="' + rootPrefix + 'about.html">About</a></li>' +
+            '</ul>' +
+          '</nav>' +
+        '</div>';
+
+      var viewport = document.querySelector(".ll-viewport");
+      if (viewport) {
+        viewport.insertBefore(header, viewport.firstChild);
+      } else {
+        var skipLink = document.querySelector(".skip-link, .bb-skip, .rd-skip, .wt-skip");
+        if (skipLink && skipLink.nextSibling) {
+          skipLink.parentNode.insertBefore(header, skipLink.nextSibling);
+        } else if (document.body) {
+          document.body.insertBefore(header, document.body.firstChild);
+        }
+      }
+    }
+  }
+
+  var navWrap = header.querySelector(".nav-wrap");
+  var nav = header.querySelector(".site-nav") || header.querySelector("nav");
+
+  if (!nav && navWrap) {
+    nav = document.createElement("nav");
+    nav.className = "site-nav";
+    nav.setAttribute("aria-label", "Primary");
+    nav.id = "primary-nav";
+    nav.innerHTML =
+      '<ul>' +
+        '<li><a href="' + rootPrefix + 'index.html">Home</a></li>' +
+        '<li><a href="' + rootPrefix + 'steam-lessons.html">Lessons</a></li>' +
+        '<li><a href="' + rootPrefix + 'paths.html">Paths</a></li>' +
+        '<li><a href="' + rootPrefix + 'showcase.html">Showcase</a></li>' +
+        '<li><a href="' + rootPrefix + 'applications.html">Apps</a></li>' +
+        '<li><a href="' + rootPrefix + 'library.html">Library</a></li>' +
+        '<li><a href="' + rootPrefix + 'about.html">About</a></li>' +
+      '</ul>';
+    navWrap.appendChild(nav);
+  } else if (nav && !navWrap) {
+    navWrap = document.createElement("div");
+    navWrap.className = "nav-wrap";
+    while (header.firstChild) {
+      navWrap.appendChild(header.firstChild);
+    }
+    header.appendChild(navWrap);
+  }
+
   if (!nav) {
     if (!isThemeIndependent) ensureLightingApi().sync();
     return;
@@ -396,18 +500,46 @@
   function syncCurrentNavLink() {
     var currentPath = normalizePath(window.location.pathname);
     var links = nav.querySelectorAll('a[href]');
+    var matched = false;
 
     links.forEach(function (link) {
       var href = link.getAttribute("href");
       if (!href || href.indexOf("://") !== -1 || href.charAt(0) === "#") return;
 
-      link.removeAttribute("aria-current");
-
       var resolvedPath = normalizePath(new URL(href, window.location.href).pathname);
       if (resolvedPath === currentPath) {
         link.setAttribute("aria-current", "page");
+        matched = true;
+      } else {
+        link.removeAttribute("aria-current");
       }
     });
+
+    if (!matched) {
+      var targetFile = "";
+      if (currentPath.indexOf("lessons/") === 0) {
+        targetFile = "steam-lessons.html";
+      } else if (currentPath.indexOf("showcase") !== -1 || currentPath.indexOf("project") !== -1) {
+        targetFile = "showcase.html";
+      } else if (currentPath.indexOf("library") !== -1 || currentPath.indexOf("reader") !== -1 || currentPath.indexOf("bible") !== -1 || currentPath.indexOf("watch") !== -1) {
+        targetFile = "library.html";
+      } else if (currentPath.indexOf("applications") !== -1 || currentPath.indexOf("forge") !== -1 || currentPath.indexOf("music-lab") !== -1) {
+        targetFile = "applications.html";
+      } else if (currentPath.indexOf("paths") !== -1) {
+        targetFile = "paths.html";
+      } else if (currentPath === "index.html" || currentPath === "") {
+        targetFile = "index.html";
+      }
+
+      if (targetFile) {
+        links.forEach(function (link) {
+          var href = link.getAttribute("href") || "";
+          if (href.indexOf(targetFile) !== -1) {
+            link.setAttribute("aria-current", "page");
+          }
+        });
+      }
+    }
   }
 
   syncCurrentNavLink();

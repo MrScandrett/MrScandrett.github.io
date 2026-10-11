@@ -102,7 +102,7 @@
     }
   }
 
-  function showModule(id, shouldScroll) {
+  function showModule(id, shouldScroll, fromPrevNext) {
     var section = document.getElementById(id);
     if (!section || !section.classList.contains("module-section")) return;
     // A subject is a complete shelf. Clear the older volume filter before
@@ -138,7 +138,14 @@
     nextButton.dataset.moduleTarget = next.id;
     previousButton.setAttribute("aria-label", "Previous subject: " + text(previous, ".module-banner-title"));
     nextButton.setAttribute("aria-label", "Next subject: " + text(next, ".module-banner-title"));
-    if (history.replaceState) history.replaceState(null, "", "#" + id);
+    // Opening a shelf from the directory is a real history step, so Back
+    // returns to the directory instead of leaving the page. Prev/next and
+    // reloads just update the current entry.
+    if (history.pushState && shouldScroll && !fromPrevNext && !(history.state && history.state.catalogModule)) {
+      history.pushState({ catalogModule: id }, "", "#" + id);
+    } else if (history.replaceState) {
+      history.replaceState({ catalogModule: id }, "", "#" + id);
+    }
     if (shouldScroll) {
       browser.scrollIntoView({ behavior: "smooth", block: "start" });
       window.setTimeout(function () {
@@ -186,9 +193,14 @@
     }
   }
 
-  backButton.addEventListener("click", function () { showDirectory(true); });
-  previousButton.addEventListener("click", function () { showModule(previousButton.dataset.moduleTarget, true); });
-  nextButton.addEventListener("click", function () { showModule(nextButton.dataset.moduleTarget, true); });
+  backButton.addEventListener("click", function () {
+    // If we pushed the shelf entry, step back through history so the
+    // directory entry (and its scroll spot) is reused.
+    if (history.state && history.state.catalogModule && history.length > 1) history.back();
+    else showDirectory(true);
+  });
+  previousButton.addEventListener("click", function () { showModule(previousButton.dataset.moduleTarget, true, true); });
+  nextButton.addEventListener("click", function () { showModule(nextButton.dataset.moduleTarget, true, true); });
   window.addEventListener("hashchange", function () {
     var hashId = location.hash.indexOf("#module-") === 0 ? location.hash.slice(1) : "";
     if (hashId && document.getElementById(hashId)) showModule(hashId, false);
@@ -208,4 +220,26 @@
   if (initialId && document.getElementById(initialId)) showModule(initialId, false);
   else showDirectory(false);
   refreshView();
+
+  // Remember where the reader was on this page so Back from a lesson lands
+  // on the same spot (the shelf is rebuilt on load, so the browser's own
+  // scroll restore often lands in the wrong place).
+  var scrollKey = "steam-lessons:scroll";
+  function saveScroll() {
+    try {
+      sessionStorage.setItem(scrollKey, JSON.stringify({ hash: location.hash, y: window.scrollY }));
+    } catch (e) { /* storage blocked: fall back to browser behaviour */ }
+  }
+  window.addEventListener("pagehide", saveScroll);
+  document.addEventListener("click", function (event) {
+    if (event.target.closest && event.target.closest("a[href]")) saveScroll();
+  }, true);
+  try {
+    var nav = performance.getEntriesByType("navigation")[0];
+    var saved = JSON.parse(sessionStorage.getItem(scrollKey) || "null");
+    if (nav && nav.type === "back_forward" && saved && saved.hash === location.hash) {
+      if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+      window.requestAnimationFrame(function () { window.scrollTo(0, saved.y); });
+    }
+  } catch (e) { /* ignore */ }
 })();

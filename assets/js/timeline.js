@@ -79,6 +79,7 @@
     if (!s) return null;
     var m;
     if (/^(?:today|now|present|the present)$/.test(s)) return span(NOW, NOW, 'ad');
+    if (/^(?:middle ages|medieval(?: period| era)?)$/i.test(s)) return span(500, 1500, 'ad');
 
     // ISO: 1947-09-09, 1947-09
     if ((m = s.match(/^(\d{3,4})-(\d{1,2})(?:-(\d{1,2}))?$/)) && +m[2] >= 1 && +m[2] <= 12) {
@@ -89,11 +90,15 @@
       var base = +m[1];
       return span(base, base + (/00$/.test(m[1]) && !decades ? 99 : 9), 'ad');
     }
-    // 5th century BC, 10th–13th centuries
-    if ((m = s.match(/^(\d{1,2})(?:st|nd|rd|th)\s*-\s*(\d{1,2})(?:st|nd|rd|th)\s+centuries(?:\s+(ad|ce))?$/))) {
-      return span((+m[1] - 1) * 100 + 1, +m[2] * 100, 'ad');
+    // 5th century BC, 10th–13th centuries, 3rd-2nd c. BCE, 6th c. BCE, 13th c.
+    if ((m = s.match(/^(\d{1,2})(?:st|nd|rd|th)\s*-\s*(\d{1,2})(?:st|nd|rd|th)\s*(?:c\.?|cent\.?|centuries|century)(?:\s+(ad|ce|bce?|b\.c\.(?:e\.)?))?$/))) {
+      var c1 = +m[1], c2 = +m[2];
+      var isBc = m[3] && /^(?:bce?|b\.c\.(?:e\.)?)$/.test(m[3]);
+      var lo = Math.min(c1, c2), hi = Math.max(c1, c2);
+      if (isBc) return span(-hi * 100, -(lo - 1) * 100 - 1, 'bc');
+      return span((lo - 1) * 100 + 1, hi * 100, 'ad');
     }
-    if ((m = s.match(/^(\d{1,2})(?:st|nd|rd|th)\s+century(?:\s+(.+))?$/))) {
+    if ((m = s.match(/^(\d{1,2})(?:st|nd|rd|th)\s*(?:c\.?|cent\.?|centuries|century)(?:\s+(.+))?$/))) {
       var c = +m[1];
       if (m[2] && /^(?:bce?|b\.c\.(?:e\.)?)$/.test(m[2])) return span(-c * 100, -(c - 1) * 100 - 1, 'bc');
       if (m[2] && !/^(?:ce|ad|a\.d\.)$/.test(m[2])) return null;
@@ -129,6 +134,7 @@
     var text = String(input == null ? '' : input).trim();
     if (!text) return null;
     var s = text.toLowerCase().replace(/[‐-―−]/g, '-').replace(/\s+/g, ' ');
+    s = s.replace(/[:;,]+$/, '').trim();
     var approx = false;
     var lead = s.match(/^(?:c\.|ca\.|circa|about|around|approx\.?|~)\s*/);
     if (lead) { approx = true; s = s.slice(lead[0].length); }
@@ -137,7 +143,7 @@
     var single = parseOne(s);
     if (single) return finish(single, single.end);
 
-    var sep = /\s*-\s*|\s+(?:to|until|through)\s+/g;
+    var sep = /\s*-\s*|\s*\/\s*|\s+(?:to|until|through|and|&)\s+/g;
     var m;
     while ((m = sep.exec(s))) {
       var leftText = s.slice(0, m.index).trim();
@@ -171,9 +177,16 @@
   // and "1950s → today". The display remains the teacher-authored label; only
   // the value used for positioning is normalized.
   function timelineDateValue(text) {
-    var raw = String(text == null ? '' : text).trim();
+    var raw = String(text == null ? '' : text).replace(/&amp;/g, '&').trim();
     var candidates = [raw, raw.replace(/→/g, '–').replace(/\s*[·|,].*$/, '')];
-    candidates.push(raw.replace(/\s+(?:onward|and onward|to today).*$/i, ''));
+    candidates.push(raw.replace(/\s+(?:onward|and onward|to today|throughout|& throughout|and throughout).*$/i, ''));
+    raw.split(/\s+[—–-]\s+/).forEach(function (part) {
+      part = part.trim();
+      if (part) {
+        candidates.push(part);
+        candidates.push(part.replace(/\s+(?:throughout|& throughout|and throughout).*$/i, '').trim());
+      }
+    });
     if (/^(?:ancient|prehistoric|early)\b/i.test(raw)) {
       candidates.push(raw.split(/\s+[–-]\s+|\s+→\s+/).pop().trim());
     }
@@ -182,7 +195,8 @@
     var matches = raw.match(/(?:\d[\d,]*(?:\.\d+)?\s*(?:s|BCE?|CE|AD|Ma|Mya|Ga|ka)?|present|today)/gi) || [];
     matches.forEach(function (match) { candidates.push(match.trim()); });
     for (var i = 0; i < candidates.length; i++) {
-      if (parseWhen(candidates[i])) return candidates[i];
+      var candidate = candidates[i].replace(/[:;,]+$/, '').trim();
+      if (parseWhen(candidate)) return candidate;
     }
     return raw;
   }
@@ -297,7 +311,12 @@
 
   // ---------------------------------------------------------------- DOM
 
-  var ROOT = new URL('../../', script && script.src ? script.src : global.location.href);
+  var ROOT;
+  try {
+    ROOT = new URL('../../', script && script.src ? script.src : (global.location && global.location.protocol !== 'about:' ? global.location.href : 'file:///'));
+  } catch (e) {
+    ROOT = new URL('file:///');
+  }
   var SCALE_NAMES = { time: 'True scale', log: 'Deep time', even: 'Even steps' };
   var SCALE_TIPS = {
     time: 'Every year gets the same width: see how short recorded history really is',
@@ -354,8 +373,8 @@
     for (var n = li.firstChild; n && n !== first; n = n.nextSibling) before += n.textContent || '';
     if (before.trim()) return null;
     var text = first.textContent.trim();
-    if (!text || text.length > 40 || first.children.length) return null;
-    if (parseWhen(text) || /year|date|time|when|era|age/i.test(first.className)) return first;
+    if (!text || text.length > 50 || first.children.length) return null;
+    if (first.getAttribute('data-when') || parseWhen(timelineDateValue(text)) || /year|date|time|when|era|age/i.test(first.className)) return first;
     return null;
   }
 
@@ -366,29 +385,37 @@
     if (when == null) {
       var time = li.querySelector('time');
       source = time && li.firstElementChild === time ? time : leadingDateElement(li);
-      if (source && !parseWhen(timelineDateValue(source.textContent.trim()))) source = null;
+      if (source && !parseWhen(source.getAttribute('data-when') || timelineDateValue(source.textContent.trim()))) source = null;
       // Legacy lesson timelines often keep the date inside a card/figure layout
       // instead of making it the first child of the <li>. Treat the first
       // recognizably dated year/era element as the source so those lists can
       // use the shared engine without rewriting their teaching content.
       if (!source) {
         var preferred = li.querySelector('.c-tstep-age, .aa-time-year, .tt-year, .pf-tl-year');
-        if (preferred && parseWhen(timelineDateValue(preferred.textContent.trim()))) source = preferred;
+        if (preferred && parseWhen(preferred.getAttribute('data-when') || timelineDateValue(preferred.textContent.trim()))) source = preferred;
       }
       if (!source) {
         source = Array.prototype.find.call(li.querySelectorAll(
           '[class*="timeline-year"], [class*="-tl-year"], [class*="tl-year"], [class*="timeline-date"], [class*="-tl-date"], [class*="tl-date"], [class*="time-year"], [class*="time-age"], [class*="era-year"], [class*="-tl-era"], .tt-year, .pf-tl-year, .aa-time-year, .c-tstep-age, .fl-tl-year, .pt-era, .yr, small'
-        ), function (node) { return parseWhen(timelineDateValue(node.textContent.trim())); });
+        ), function (node) { return parseWhen(node.getAttribute('data-when') || timelineDateValue(node.textContent.trim())); });
       }
       if (source) {
-        display = source.textContent.trim();
-        when = source.getAttribute('datetime') || timelineDateValue(display);
+        var rawSource = source.textContent.trim();
+        display = source.getAttribute('data-when') || timelineDateValue(rawSource);
+        when = source.getAttribute('data-when') || source.getAttribute('datetime') || display;
       } else if (time) {
-        display = time.textContent.trim();
-        when = time.getAttribute('datetime') || display;
+        display = time.getAttribute('data-when') || time.textContent.trim();
+        when = time.getAttribute('data-when') || time.getAttribute('datetime') || display;
       }
     }
     var titleEl = Array.prototype.find.call(li.querySelectorAll('strong, b, h3, h4'), function (node) { return node !== source; });
+    var subLabel = '';
+    if (source && !titleEl) {
+      var sText = source.textContent.trim();
+      if (display && sText.indexOf(display) !== -1) {
+        subLabel = sText.slice(sText.indexOf(display) + display.length).replace(/^[\s·:–-]+/, '').trim();
+      }
+    }
     var rest = li.textContent;
     if (source) rest = rest.replace(source.textContent, '');
     return {
@@ -398,7 +425,7 @@
       when: when || '',
       display: (display || '').trim(),
       parsed: parseWhen(when),
-      label: li.getAttribute('data-label') || shortText(titleEl ? titleEl.textContent : rest, 34),
+      label: li.getAttribute('data-label') || subLabel || shortText(titleEl ? titleEl.textContent : rest, 34),
       group: li.getAttribute('data-group') || '',
       color: li.getAttribute('data-color') || '',
       era: li.hasAttribute('data-era'),
@@ -1589,7 +1616,7 @@
     ['.timeline', '.timeline-item', 'Historical timeline'],
     ['.four-timeline', '.four-tl-item', 'A history of Fourier series'],
     ['.ct-timeline', '.ct-tl-item', 'How people measured time'],
-    ['.ml-timeline', ':scope > *', 'A history of measuring length'],
+    ['.ml-timeline', '.ml-tl-item', 'A history of measuring length'],
     ['.lv-timeline', '.lv-tl-item', 'Levers across human history'],
     ['.wa-timeline', '.wa-tl-item', 'The wheel and axle through history'],
     ['.music-timeline', '.music-era', 'Ideas that shaped the physics of music'],
@@ -1614,12 +1641,19 @@
         if (container.hasAttribute('data-timeline-legacy') || container.closest('.tl')) return;
         var items = legacyItems(container, spec[1]);
         if (items.length < 2) return;
+        var hasDates = items.some(function (item) {
+          return parseWhen(timelineDateValue(item.textContent));
+        });
+        if (!hasDates) return;
         var host = el('div');
         host.setAttribute('data-timeline', '');
         host.setAttribute('data-timeline-title', container.getAttribute('aria-label') || spec[2]);
         var list = el('ol');
         items.forEach(function (item) {
           var li = el('li');
+          Array.prototype.forEach.call(item.attributes, function (attr) {
+            if (/^data-/.test(attr.name)) li.setAttribute(attr.name, attr.value);
+          });
           li.innerHTML = item.innerHTML;
           list.appendChild(li);
         });

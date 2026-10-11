@@ -1,12 +1,14 @@
 # Shared music notation
 
-Load `assets/css/music-notation.css` and `assets/js/music-notation.js` before a lesson's engine. The synchronous, dependency-free `window.MusicNotation` API supplies Bravura SVG outlines, pitch spelling, clef reference positions, ledger positions, and note durations.
+Load `assets/css/music-notation.css` and `assets/js/music-notation.js` before a lesson's engine. The synchronous, dependency-free `window.MusicNotation` API supplies Bravura SVG outlines, pitch spelling, clef reference positions, ledger positions, note durations, and shared notation preferences.
 
 - Staff steps count **letters**, not semitones; bottom line is step 0, middle line step 4, top line step 8.
 - `clef(name, x, bottomY, halfSpace)` anchors treble to G4, bass to F3, and alto to C4. Soprano uses a C clef on the bottom line.
 - `accidental(value, x, pitchY, staffSpace)` accepts -2 through 2 or the corresponding glyph. Zero draws a natural; omit the call for an unmarked natural.
 - `parsePitch('B♯3')` retains written spelling and computes MIDI 60. `writtenOctave` handles enharmonic octave boundaries.
 - `spellPattern(root, semitones, letterOffsets)` requires a diatonic formula, preserving E♯/C♭ and double accidentals rather than respelling every black key as a sharp.
+- `pitchName(pitch)` returns the written letter and accidental without the octave (`F♯`); `pitchNameWithOctave(pitch)` is available when a diagnostic needs the register. `solfegeName(pitch)` and `solfegeColor(pitch)` use the shared rainbow convention: C/Do red, D/Re orange, E/Mi yellow, F/Fa green, G/Sol blue-green, A/La blue, B/Ti violet.
+- `MusicNotation.preferences` exposes `{ pitchNames, noteColors }`. Call `MusicNotation.setPreferences({ pitchNames: true, noteColors: true })` to persist the student’s choice; subscribe with `MusicNotation.onPreferencesChange(fn)`. Score players expose the same choices as controls, so future notation tools should consume this API rather than inventing their own colors.
 - `note(x, y, staffSpace, quarterBeats, dotted, stemUp)` draws whole, half, quarter, eighth, or sixteenth notes. Dotted durations include the dot in the beat count: 1.5 means a dotted quarter. Stems point down on the middle line for isolated notes.
 - The trainer tests pitch without a meter: sequential notes are quarters; simultaneous stacks are whole-note pitch diagrams. Piano practice sequences explicitly show accidentals and cancellations without implying complete measures. Drum notation retains its percussion heads, voice directions, beat grouping, and beams.
 

@@ -60,6 +60,60 @@ function initStageSelector() {
     };
 }
 
+function append3DCloud(targetSvg, cx, cy, scale = 1, humidityBonus = 0) {
+    let defs = targetSvg.querySelector('defs');
+    if (!defs) {
+        defs = svg('defs');
+        targetSvg.prepend(defs);
+    }
+    if (!targetSvg.querySelector('#wc-3d-cloud-defs')) {
+        const cloudDefs = svg('g', { id: 'wc-3d-cloud-defs' });
+        cloudDefs.innerHTML = `
+            <linearGradient id="wc-cloud-base-grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#cbd5e1" stop-opacity="0.9"/>
+                <stop offset="100%" stop-color="#475569" stop-opacity="0.95"/>
+            </linearGradient>
+            <linearGradient id="wc-cloud-body-grad" x1="0.3" y1="0" x2="0.7" y2="1">
+                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.98"/>
+                <stop offset="65%" stop-color="#e2e8f0" stop-opacity="0.95"/>
+                <stop offset="100%" stop-color="#94a3b8" stop-opacity="0.92"/>
+            </linearGradient>
+            <radialGradient id="wc-cloud-crown-grad" cx="35%" cy="30%" r="65%">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="45%" stop-color="#f8fafc"/>
+                <stop offset="85%" stop-color="#e2e8f0"/>
+                <stop offset="100%" stop-color="#cbd5e1"/>
+            </radialGradient>
+            <filter id="wc-cloud-glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0f172a" flood-opacity="0.18"/>
+            </filter>
+        `;
+        defs.appendChild(cloudDefs);
+    }
+
+    const g = svg('g', { filter: 'url(#wc-cloud-glow)', 'class': 'wc-volumetric-cloud' });
+    const s = scale;
+    const hB = humidityBonus;
+
+    // Pass 1: Dark Extinction Base (LCL condensation floor)
+    g.appendChild(svg('ellipse', { cx: cx, cy: cy + 18 * s, rx: (70 + hB) * s, ry: 20 * s, fill: 'url(#wc-cloud-base-grad)' }));
+    g.appendChild(svg('ellipse', { cx: cx + 45 * s, cy: cy + 16 * s, rx: 55 * s, ry: 18 * s, fill: 'url(#wc-cloud-base-grad)' }));
+    g.appendChild(svg('ellipse', { cx: cx - 45 * s, cy: cy + 16 * s, rx: 50 * s, ry: 18 * s, fill: 'url(#wc-cloud-base-grad)' }));
+
+    // Pass 2: Main Convective Mid-Body Lobes
+    g.appendChild(svg('ellipse', { cx: cx - 35 * s, cy: cy + 2 * s, rx: 48 * s, ry: 32 * s, fill: 'url(#wc-cloud-body-grad)' }));
+    g.appendChild(svg('ellipse', { cx: cx + 38 * s, cy: cy + 4 * s, rx: 52 * s, ry: 34 * s, fill: 'url(#wc-cloud-body-grad)' }));
+    g.appendChild(svg('ellipse', { cx: cx, cy: cy - 6 * s, rx: (56 + hB * 0.5) * s, ry: 36 * s, fill: 'url(#wc-cloud-body-grad)' }));
+
+    // Pass 3: Sunlit Cauliflower Tops & Highlights
+    g.appendChild(svg('circle', { cx: cx - 18 * s, cy: cy - 22 * s, r: 36 * s, fill: 'url(#wc-cloud-crown-grad)' }));
+    g.appendChild(svg('circle', { cx: cx + 24 * s, cy: cy - 18 * s, r: 32 * s, fill: 'url(#wc-cloud-crown-grad)' }));
+    g.appendChild(svg('circle', { cx: cx - 52 * s, cy: cy - 6 * s, r: 24 * s, fill: 'url(#wc-cloud-crown-grad)' }));
+    g.appendChild(svg('circle', { cx: cx + 58 * s, cy: cy - 4 * s, r: 26 * s, fill: 'url(#wc-cloud-crown-grad)' }));
+
+    targetSvg.appendChild(g);
+}
+
 function initCycleHero(stageController) {
     const canvas = document.getElementById('cycle-hero-canvas');
     const referenceDiagram = document.getElementById('cycle-reference-diagram');
@@ -125,9 +179,7 @@ function initCycleHero(stageController) {
         canvas.appendChild(svg('circle', { cx: 650, cy: 75, r: 42, fill: '#ffd54f' }));
         canvas.appendChild(svg('polygon', { points: '500,320 590,145 700,320', fill: '#9d846f' }));
         canvas.appendChild(svg('path', { d: 'M 590 148 Q 515 220 430 310', stroke: '#2f9df4', 'stroke-width': 8, fill: 'none', opacity: 0.75 }));
-        canvas.appendChild(svg('ellipse', { cx: 260, cy: 90, rx: 60, ry: 32, fill: '#fff', opacity: 0.95 }));
-        canvas.appendChild(svg('ellipse', { cx: 305, cy: 102, rx: 68, ry: 36, fill: '#fff', opacity: 0.9 }));
-        canvas.appendChild(svg('ellipse', { cx: 225, cy: 106, rx: 50, ry: 28, fill: '#fff', opacity: 0.92 }));
+        append3DCloud(canvas, 280, 96, 0.92);
         canvas.appendChild(svg('ellipse', { cx: 290, cy: 255, rx: 58, ry: 78, fill: '#4caf50', opacity: 0.85 }));
         canvas.appendChild(svg('rect', { x: 283, y: 250, width: 14, height: 90, fill: '#6b4f2b' }));
 
@@ -414,6 +466,13 @@ function initSimulation(stageController) {
     };
 
     const particles = Array.from({ length: 18 }, (_, index) => ({ offset: index / 18, stage: index % 6 }));
+    const liquidLake = window.LiquidEngine?.createSurface({ material: 'water', width: 220, restY: 0, columns: 48, maxColumns: 64 });
+    const rainField = window.LiquidEngine?.createParticles({
+        material: 'water',
+        max: 42,
+        gravity: 1,
+        bounds: { left: 338, right: 575, top: 150, bottom: 302 }
+    });
     let frame = 0;
 
     let saved = null;
@@ -450,9 +509,20 @@ function initSimulation(stageController) {
         canvas.appendChild(svg('rect', { x: 0, y: 0, width: 720, height: 420, fill: state.temperature > 28 ? '#ffe8c2' : '#dff4ff' }));
         canvas.appendChild(svg('rect', { x: 0, y: 305, width: 720, height: 115, fill: 'url(#wc-soil)' }));
         canvas.appendChild(svg('rect', { x: 0, y: 278, width: 220, height: 142, fill: 'url(#wc-lake)', opacity: 0.78 }));
+        if (liquidLake) {
+            const points = liquidLake.columns.map((column, index) => {
+                const x = (index / (liquidLake.columns.length - 1)) * 220;
+                return `${x.toFixed(1)},${(278 + column.y).toFixed(1)}`;
+            }).join(' ');
+            canvas.appendChild(svg('path', {
+                d: `M 0 420 L 0 278 L ${points} L 220 420 Z`,
+                fill: 'rgba(24,120,201,.28)',
+                stroke: 'rgba(210,245,255,.7)',
+                'stroke-width': 2
+            }));
+        }
         canvas.appendChild(svg('circle', { cx: 610, cy: 70, r: 40, fill: seasonSunColor(state.season) }));
-        canvas.appendChild(svg('ellipse', { cx: 255, cy: 95, rx: 68 + state.humidity / 5, ry: 34, fill: '#ffffff', opacity: 0.86 }));
-        canvas.appendChild(svg('ellipse', { cx: 330, cy: 108, rx: 70, ry: 38, fill: '#ffffff', opacity: 0.9 }));
+        append3DCloud(canvas, 290, 100, 1.0, state.humidity / 5);
         canvas.appendChild(svg('polygon', { points: '460,305 540,135 665,305', fill: '#9d846f' }));
         canvas.appendChild(svg('path', { d: 'M 540 142 Q 455 220 355 292', stroke: '#2f9df4', 'stroke-width': 8, fill: 'none' }));
         canvas.appendChild(svg('ellipse', { cx: 280, cy: 240, rx: 60, ry: 80, fill: '#4caf50', opacity: 0.85 }));
@@ -479,12 +549,31 @@ function initSimulation(stageController) {
             }
         });
 
+        rainField?.particles.forEach((particle) => {
+            canvas.appendChild(svg('path', {
+                d: `M ${particle.x.toFixed(1)} ${(particle.y - 7).toFixed(1)} L ${(particle.x + particle.vx * .01).toFixed(1)} ${(particle.y + 7).toFixed(1)}`,
+                stroke: 'rgba(255,255,255,.78)',
+                'stroke-width': 2,
+                'stroke-linecap': 'round'
+            }));
+        });
+
         updateReadouts();
+        if (typeof syncCloudSim === 'function') syncCloudSim();
     }
 
     SimKit.loop((dt) => {
         if (!state.playing) return;
-        frame += Math.min(dt * 60, 3) * (0.5 + tendency() / 65);
+        const safeDt = Math.min(dt, 0.05);
+        frame += Math.min(safeDt * 60, 3) * (0.5 + tendency() / 65);
+        liquidLake?.update(safeDt);
+        if (liquidLake && frame % 180 < 3) liquidLake.impulse(100, -12, 28);
+        if (rainField) {
+            if (state.humidity >= 70 && Math.random() < safeDt * (state.humidity / 18)) {
+                rainField.emitRain({ x: 360, x2: 555, y: 180, vy: 95, life: 1.2, radius: 1.1 });
+            }
+            rainField.update(safeDt);
+        }
         render();
     });
 
@@ -518,6 +607,47 @@ function initSimulation(stageController) {
 
     if (!state.playing && el.toggle) el.toggle.textContent = 'Resume Cycle';
     el.toggle.setAttribute('aria-pressed', String(state.playing));
+
+    // Realistic Cloud & Vapor Engine integration
+    let wcCloudSim = null;
+    const btnDiagram = document.getElementById('wc-mode-diagram');
+    const btnParticle = document.getElementById('wc-mode-particle');
+    const particleStage = document.getElementById('wc-particle-stage');
+
+    function syncCloudSim() {
+        if (!wcCloudSim) return;
+        const tempF = Math.round(state.temperature * 1.8 + 32);
+        const dewF = Math.round(tempF - ((100 - Math.max(5, state.humidity)) / 5) * 1.8);
+        wcCloudSim.setThermodynamics({ tempF, dewPointF: dewF });
+        const sunFactor = state.sun / 65;
+        wcCloudSim.setTurbulence(0.8 * sunFactor);
+    }
+
+    if (btnDiagram && btnParticle && particleStage) {
+        btnDiagram.addEventListener('click', () => {
+            btnDiagram.classList.add('is-active');
+            btnParticle.classList.remove('is-active');
+            canvas.style.display = 'block';
+            particleStage.style.display = 'none';
+        });
+
+        btnParticle.addEventListener('click', () => {
+            btnParticle.classList.add('is-active');
+            btnDiagram.classList.remove('is-active');
+            canvas.style.display = 'none';
+            particleStage.style.display = 'block';
+
+            if (!wcCloudSim && window.CloudEngine) {
+                wcCloudSim = window.CloudEngine.attach('wc-particle-canvas', {
+                    preset: 'water_cycle_evaporation',
+                    showLCL: true,
+                    showAltitudeGuide: true,
+                    interactive: true
+                });
+            }
+            syncCloudSim();
+        });
+    }
     render();
 }
 
