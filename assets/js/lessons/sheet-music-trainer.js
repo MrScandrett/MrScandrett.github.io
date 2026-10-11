@@ -1019,10 +1019,24 @@
     if (ex.input === 'staff') return 'Staff for building. Use the up and down arrow keys to move the note, Enter to place it, Backspace to remove the last note.';
     return 'Music notation for the current question. Use the Hear it button to listen.';
   }
+  var STAFF_GUIDES = {
+    treble: { lines: 'E · G · B · D · F', spaces: 'F · A · C · E' },
+    bass: { lines: 'G · B · D · F · A', spaces: 'A · C · E · G' },
+    alto: { lines: 'F · A · C · E · G', spaces: 'G · B · D · F' }
+  };
+  function staffGuideHTML(clef) {
+    var guide = STAFF_GUIDES[clef];
+    if (!guide) return '';
+    return '<div class="stb-reading-guide" role="note" aria-label="' + clef + ' clef reading guide">' +
+      '<span class="stb-reading-guide-label">Bottom → top</span>' +
+      '<span><b>Lines</b> ' + guide.lines + '</span>' +
+      '<span><b>Spaces</b> ' + guide.spaces + '</span>' +
+      '</div>';
+  }
   function drawStage() {
     var ex = state.ex, d = currentDisplay();
     state.disp = d;
-    el.stage.innerHTML = staffSVG(d);
+    el.stage.innerHTML = staffSVG(d) + staffGuideHTML(ex.clef);
     var svg = el.stage.querySelector('svg');
     svg.querySelector('.stb-ghost').id = 'stbGhost';
     svg.setAttribute('role', ex.input === 'staff' ? 'application' : 'img');
@@ -1213,7 +1227,11 @@
       var slotBase = ex.mode === 'append' ? (ex.startSlot || 0) : 0;
       sol.forEach(function (n, i) { items.push({ n: n, color: colorOf(n), cls: 'is-good', slot: ex.mode === 'append' ? slotBase + i : (ex.layout === 'stack' ? 0 : (ex.startSlot || 0)) }); });
     }
-    el.answerStaff.innerHTML = '<p class="stb-answer-label">Here is the answer:</p>' + staffSVG({ clef: ex.clef, key: ex.key || null, items: items, layout: ex.layout, slots: ex.slots });
+    var names = sol.map(function (n) { return noteLabel(n); }).join(' · ');
+    var pitches = sol.map(function (n) { return nmOct(n); }).join(', ');
+    el.answerStaff.innerHTML = '<p class="stb-answer-label">Here is the answer:</p>' +
+      '<p class="stb-answer-reading"><strong>Read it as:</strong> ' + esc(names) + '<span>' + esc(pitches) + '</span></p>' +
+      staffSVG({ clef: ex.clef, key: ex.key || null, items: items, layout: ex.layout, slots: ex.slots });
   }
   function say(msg, cls) {
     el.feedback.className = 'stb-feedback is-' + cls;

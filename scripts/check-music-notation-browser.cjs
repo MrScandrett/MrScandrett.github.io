@@ -54,7 +54,9 @@ const paths = [
         await page.keyboard.press('Enter');
         assert.ok(await page.locator('#stbStage .is-placed, #stbStage .is-good, #stbStage .is-bad').count());
         await page.locator('.stb-clef-map img').click();
-        assert.ok(await page.locator('.photo-lightbox, #photo-lightbox, [role="dialog"]').first().isVisible());
+        const lightbox = page.locator('.plb.plb-open[role="dialog"], [role="dialog"][aria-label="Enlarged photo"]:visible');
+        assert.equal(await lightbox.count(), 1, 'Clef-map lightbox did not open');
+        assert.ok(await lightbox.isVisible(), 'Clef-map lightbox is not visible');
         await page.keyboard.press('Escape');
       }
       if(path.includes('music/piano.html')) {

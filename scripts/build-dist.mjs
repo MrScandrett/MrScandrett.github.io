@@ -127,8 +127,35 @@ function resolveCleanCssBin() {
   return path.join(ROOT, "node_modules", ".bin", binName);
 }
 
+// A stylesheet that @imports another one can't start downloading the import until
+// the parent has arrived, so every page paid an extra round trip before first paint.
+// Inline the small, shared ones into their parent in dist/ (sources keep the @import).
+const INLINE_IMPORTS = ["./classroom-fonts.css", "./components/lesson-shell.css"];
+
+async function inlineSharedImports(cssFiles) {
+  const cssDir = path.join(DIST, "assets", "css");
+  for (const file of cssFiles) {
+    if (path.dirname(file) !== cssDir) continue; // relative url()s below assume assets/css/
+    let source = await readFile(file, "utf8");
+    let changed = false;
+    for (const target of INLINE_IMPORTS) {
+      const statement = `@import url("${target}");`;
+      if (!source.includes(statement)) continue;
+      const body = await readFile(path.join(cssDir, target), "utf8");
+      if (/url\(\s*["']?\.\.?\/(?!fonts\/)/.test(body)) {
+        console.warn(`  not inlining ${target}: relative url() would break`);
+        continue;
+      }
+      source = source.replace(statement, () => body);
+      changed = true;
+    }
+    if (changed) await writeFile(file, source, "utf8");
+  }
+}
+
 async function minifyCssFiles() {
   const cssFiles = await walk(DIST, ".css");
+  await inlineSharedImports(cssFiles);
   const cleancss = resolveCleanCssBin();
   let before = 0;
   let after = 0;
@@ -159,7 +186,8 @@ async function minifyCssFiles() {
 }
 
 async function minifyJsFiles() {
-  const jsFiles = await walk(DIST, ".js");
+  // .mjs (home calendar, timeline helpers, ES-module page scripts) shipped unminified before.
+  const jsFiles = [...(await walk(DIST, ".js")), ...(await walk(DIST, ".mjs"))];
   let before = 0;
   let after = 0;
   for (const file of jsFiles) {

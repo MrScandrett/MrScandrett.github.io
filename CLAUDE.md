@@ -65,6 +65,18 @@ the class site. Studio code lives in `assets/js/web-studio/` (`draw-model.mjs` i
 pure grid model and code generator); tests: `node --test tests/web-studio.test.mjs`
 and `node tests/web-studio-browser.mjs` against a running `serve-local.js`.
 
+## Performance notes
+
+- Only `dist/` (from `npm run build:dist`, what Pages deploys) is optimized. It minifies CSS/JS/MJS/HTML
+  and inlines the `@import`s of `classroom-fonts.css` and `components/lesson-shell.css` into the CSS that
+  imports them. Source CSS keeps the `@import`s, so `serve-local.js` still shows the extra round trip;
+  judge load speed against a served `dist/`, not the dev server.
+- Fonts are self-hosted (`assets/fonts/`). Don't add Google Fonts / CDN font `@import`s to shared CSS.
+- Homepage JS lives in `assets/js/pages/index-*.js` (deferred), not inline. The featured video is picked
+  from `data/video-library.json` and plays in `watch.html`; don't point it at `assets/videos/*.mp4` files
+  that aren't committed.
+- Big model files: give `<model-viewer>` `loading="lazy"`.
+
 ## Checks
 
 - `npm run check:integrity` — local references and asset signatures

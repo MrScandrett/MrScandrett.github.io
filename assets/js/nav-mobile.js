@@ -1623,13 +1623,24 @@
   }
 }());
 
+// Optional helpers (command palette, glossary, VR mode, My Stuff) aren't needed for first
+// paint or first input, so fetch them once the page has loaded and the browser is idle.
+function classroomOSWhenIdle(fn) {
+  function schedule() {
+    if (window.requestIdleCallback) window.requestIdleCallback(fn, { timeout: 2500 });
+    else setTimeout(fn, 300);
+  }
+  if (document.readyState === 'complete') schedule();
+  else window.addEventListener('load', schedule, { once: true });
+}
+
 // ── Command Palette (Cmd+K / Ctrl+K global search) ──────────────────
 (function () {
   var s = document.createElement('script');
   var baseScript = document.currentScript && document.currentScript.src;
   s.src = baseScript ? new URL('command-palette.js', baseScript).href : '/assets/js/command-palette.js';
   s.defer = true;
-  document.head.appendChild(s);
+  classroomOSWhenIdle(function () { document.head.appendChild(s); });
 }());
 
 // Keep legacy lesson colors readable when the global theme changes.
@@ -1658,8 +1669,8 @@
     s.dataset.classroomosGlossary = 'true';
     document.head.appendChild(s);
   }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load, { once: true });
-  else load();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { classroomOSWhenIdle(load); }, { once: true });
+  else classroomOSWhenIdle(load);
 }());
 
 // VR headset mode (vr-mode.js): bigger targets, laser hover rings, full view, on-screen keys.
@@ -1670,7 +1681,10 @@
   s.src = baseScript ? new URL('vr-mode.js', baseScript).href : '/assets/js/vr-mode.js';
   s.defer = true;
   s.dataset.vrModeScript = 'true';
-  document.head.appendChild(s);
+  classroomOSWhenIdle(function () {
+    if (window.ClassroomOSVR || document.querySelector('script[data-vr-mode-script="true"]')) return;
+    document.head.appendChild(s);
+  });
 }());
 
 // On-device memory for returning visitors: the My Stuff tab, hearts, lesson history.
@@ -1681,5 +1695,8 @@
   s.src = baseScript ? new URL('visitor-memory.js', baseScript).href : '/assets/js/visitor-memory.js';
   s.defer = true;
   s.dataset.visitorMemory = 'true';
-  document.head.appendChild(s);
+  classroomOSWhenIdle(function () {
+    if (window.ClassroomOSMemory || document.querySelector('script[data-visitor-memory="true"]')) return;
+    document.head.appendChild(s);
+  });
 }());
