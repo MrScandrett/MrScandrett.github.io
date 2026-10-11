@@ -5941,6 +5941,271 @@ html[data-lighting="night"] .cos-home .home-widget--weather .weather-solar {
   }
 }
 
+/* Outdoor Readiness — legibility pass.
+   Small readings used a pixel display face at 9–10px with wide tracking, every
+   card carried a full-size filled "Learn" pill, and the header truncated. This
+   block: (1) sets small text in the system UI face at >=12px with real contrast,
+   (2) makes the big temperature a solid color (a gradient-clipped number turns
+   into a solid box when background-clip is lost), (3) demotes "Learn" to a quiet
+   outlined chip that keeps a 44px tap target, and (4) stacks the header instead
+   of ellipsizing it. The site forces its display face with !important, so the
+   small-text face needs it too. */
+.cos-home .home-widget--weather {
+  --weather-ui: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --weather-label: color-mix(in srgb, var(--weather-ink) 74%, transparent);
+}
+
+.cos-home .home-widget--weather :is(
+  .weather-header, .home-weather-station, .home-weather-city, .weather-learning-invite,
+  .home-weather-feels, .home-weather-condition, .home-weather-status, .home-weather-range,
+  .stat-label, .stat-value, .forecast-day, .forecast-temp, .solar-time, .moon-name,
+  .moon-illum, .clothing-main, .clothing-tips, .precip-title, .precip-pct, .precip-day,
+  .weather-lessons-label, .weather-lesson-link, .weather-learn-cue, .weather-retry,
+  .weather-learning-drawer
+) {
+  font-family: var(--weather-ui) !important;
+}
+
+/* Header: place first, station second, nothing truncated */
+.cos-home .home-widget--weather .weather-header {
+  flex-direction: column-reverse;
+  align-items: flex-start;
+  gap: 0.15rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+}
+
+.cos-home .home-widget--weather :is(.home-weather-station-wrap, .home-weather-city) {
+  max-width: 100%;
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+}
+
+.cos-home .home-widget--weather .home-weather-city {
+  font-size: 1.05rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+}
+
+.cos-home .home-widget--weather .home-weather-station-wrap {
+  color: var(--weather-label);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.cos-home .home-widget--weather .weather-learning-invite {
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--weather-label);
+}
+
+/* Hero reading */
+.cos-home .home-widget--weather .home-weather-temp {
+  background: none !important;
+  -webkit-background-clip: border-box !important;
+  background-clip: border-box !important;
+  -webkit-text-fill-color: currentColor !important;
+  color: var(--weather-ink) !important;
+  filter: none !important;
+  font-size: clamp(3.4rem, 20cqw, 4.75rem);
+  letter-spacing: -0.03em;
+}
+
+.cos-home .home-widget--weather .home-weather-feels {
+  margin-top: 0.3rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.cos-home .home-widget--weather .home-weather-condition {
+  margin-top: 0.55rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+.cos-home .home-widget--weather .home-weather-status {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.cos-home .home-widget--weather .home-weather-range {
+  margin-top: 0.6rem;
+  font-size: 0.95rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--weather-ink);
+}
+
+/* Telemetry: value first and big, label small above */
+.cos-home .home-widget--weather .telemetry-stat {
+  gap: 0.15rem;
+  min-height: 76px;
+  padding: 0.65rem 0.8rem;
+}
+
+.cos-home .home-widget--weather .stat-label {
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  color: var(--weather-label);
+  white-space: normal;
+}
+
+.cos-home .home-widget--weather .stat-value {
+  font-size: 1.3rem;
+  font-weight: 750;
+  line-height: 1.15;
+  white-space: normal;
+  overflow: visible;
+}
+
+/* Forecast */
+.cos-home .home-widget--weather .forecast-slot {
+  min-height: 92px;
+  gap: 0.25rem;
+}
+
+.cos-home .home-widget--weather .forecast-day {
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  color: var(--weather-label);
+}
+
+.cos-home .home-widget--weather .forecast-icon {
+  font-size: 1.5rem;
+}
+
+.cos-home .home-widget--weather .forecast-temp {
+  font-size: 1.05rem;
+  font-weight: 750;
+}
+
+/* Daylight, readiness, rain */
+.cos-home .home-widget--weather :is(.solar-time, .moon-name) {
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.cos-home .home-widget--weather .moon-name {
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.cos-home .home-widget--weather .moon-illum {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.cos-home .home-widget--weather .clothing-main {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.cos-home .home-widget--weather .clothing-tips {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.cos-home .home-widget--weather :is(.precip-title, .precip-day) {
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+}
+
+.cos-home .home-widget--weather .precip-pct {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--weather-ink);
+}
+
+/* "Learn": quiet outlined chip, not a call-to-action button. The whole card is
+   already tappable; the chip is the keyboard/AT target and keeps a 44px hit area. */
+.cos-home .home-widget--weather .weather-learn-cue {
+  position: relative;
+  min-height: 2rem;
+  margin-top: 0.5rem;
+  padding: 0.3rem 0.7rem 0.3rem 0.4rem;
+  gap: 0.4rem;
+  border: 1px solid color-mix(in srgb, var(--weather-accent) 45%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--weather-accent-strong);
+  font-size: 0.8rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.cos-home .home-widget--weather .weather-learn-cue::after {
+  content: "";
+  position: absolute;
+  inset: -0.35rem -0.25rem;
+}
+
+.cos-home .home-widget--weather .weather-learn-cue > span {
+  width: 1.2rem;
+  height: 1.2rem;
+  border: 0;
+  background: color-mix(in srgb, var(--weather-accent) 16%, transparent);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.cos-home .home-widget--weather .weather-learn-cue:hover,
+.cos-home .home-widget--weather .weather-learn-cue:focus-visible,
+.cos-home .home-widget--weather .weather-learning-panel.is-open .weather-learn-cue {
+  background: color-mix(in srgb, var(--weather-accent) 14%, transparent);
+  border-color: var(--weather-accent);
+}
+
+html[data-lighting="night"] .cos-home .home-widget--weather {
+  --weather-label: rgba(214, 224, 242, 0.86);
+}
+
+html[data-lighting="night"] .cos-home .home-widget--weather .weather-learn-cue {
+  color: #a9ccff;
+  border-color: rgba(143, 190, 255, 0.5);
+}
+
+/* Lesson links + drawer text */
+.cos-home .home-widget--weather :is(.weather-lessons-label, .weather-lesson-link) {
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.cos-home .home-widget--weather .weather-lesson-link {
+  min-height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+.cos-home .home-widget--weather .weather-learning-drawer :is(h3, .weather-learning-note, .weather-learn-deep-link) {
+  font-family: var(--weather-ui) !important;
+}
+
+.cos-home .home-widget--weather .weather-learning-note {
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+@container (max-width: 420px) {
+  .cos-home .home-widget--weather .forecast-slot { padding-inline: 0.1rem; }
+  .cos-home .home-widget--weather .forecast-temp { font-size: 0.98rem; }
+}
+
 /* Mini analog clock accent — remixed from a Uiverse.io snippet by chase2k25 */
 .timer-clock-head { display: flex; align-items: center; gap: 0.45rem; }
 .mini-clock {
