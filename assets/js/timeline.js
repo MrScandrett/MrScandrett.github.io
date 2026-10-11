@@ -29,11 +29,18 @@
  * chips), data-color, data-era (draw as a band, not an event).
  * Per timeline: data-timeline-title, data-timeline-scale="time|even|log",
  * data-timeline-view="list|track" (first visit only; the student's last choice
- * is remembered site-wide), data-timeline-gaps (show "12 years later" in the list).
+ * is remembered site-wide), data-timeline-gaps (show "12 years later" in the list),
+ * data-timeline-tour (a ▶ Play button that flies from headline event to headline
+ * event, data-major ones if there are a few, else all), data-timeline-cosmic (the
+ * detail card places each event on Sagan's Cosmic Calendar: the universe as one year).
+ * Every track has a full-screen button (F) for projecting; moves between distant
+ * events fly (zoom out, pan, zoom in) unless the reader prefers reduced motion.
  *
  * From JS: ClassroomOSTimeline.create(hostEl, { title, scale, events: [{ when,
  * label, text | html, group, color, era }] }) — or put the same object in
- * <script type="application/json" data-timeline>…</script>.
+ * <script type="application/json" data-timeline>…</script>. An instance can
+ * zoomToRange(startYear, endYear), zoomToEra(item), selectIndex(i), setScale(k),
+ * setMatch(fn), play() / stopTour().
  */
 (function (global) {
   'use strict';
@@ -184,7 +191,8 @@
   function formatAgo(yearsAgo) {
     if (yearsAgo >= 1e9) return trimNumber(yearsAgo / 1e9) + ' billion yrs ago';
     if (yearsAgo >= 1e6) return trimNumber(yearsAgo / 1e6) + ' million yrs ago';
-    return Math.round(yearsAgo).toLocaleString('en-US') + ' yrs ago';
+    var n = Math.round(yearsAgo);
+    return n.toLocaleString('en-US') + (n === 1 ? ' yr ago' : ' yrs ago');
   }
 
   // Tick label for year t. ctx: { deep, bc }
@@ -235,8 +243,43 @@
     return g.toLocaleString('en-US') + ' year' + (g === 1 ? '' : 's') + ' later';
   }
 
+  // Carl Sagan's Cosmic Calendar: the universe's whole history squeezed into one year,
+  // Big Bang at midnight on Jan 1, today at midnight on Dec 31.
+  var UNIVERSE = 13.8e9;
+  var YEAR_S = 365 * 86400;
+  var MONTH_DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  var MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  function sigFig(n) {
+    return n >= 10 ? Math.round(n).toLocaleString('en-US') : n >= 1 ? String(Math.round(n * 10) / 10) : String(Number(n.toPrecision(1)));
+  }
+
+  // Returns { fraction (0 = Jan 1, 1 = today), secondsBefore, text } or null.
+  function cosmicCalendar(t) {
+    var ago = NOW - t;
+    if (!(ago >= -0.5) || ago > UNIVERSE * 1.0001) return null;
+    ago = Math.max(ago, 0);
+    var before = ago / UNIVERSE * YEAR_S;
+    var text;
+    if (ago < 1) text = 'Dec 31, the stroke of midnight: right now';
+    else if (before < 60) text = 'Dec 31, ' + sigFig(before) + ' second' + (sigFig(before) === '1' ? '' : 's') + ' before midnight';
+    else {
+      var at = Math.max(YEAR_S - before, 0);
+      var day = Math.floor(at / 86400), month = 0;
+      while (month < 11 && day >= MONTH_DAYS[month]) day -= MONTH_DAYS[month++];
+      text = MONTH_NAMES[month] + ' ' + (day + 1);
+      if (before < 7 * 86400) {
+        var secs = Math.floor(at % 86400), h = Math.floor(secs / 3600), m = Math.floor(secs / 60) % 60;
+        text += ', ' + ((h + 11) % 12 + 1) + ':' + (m < 10 ? '0' : '') + m + (h < 12 ? ' am' : ' pm');
+        if (before < 3600) text = 'Dec 31, ' + Math.round(before / 60) + ' minutes before midnight';
+      } else if (ago > UNIVERSE * 0.9999) text = 'Jan 1, the first instant';
+    }
+    return { fraction: 1 - ago / UNIVERSE, secondsBefore: before, text: text };
+  }
+
   var api = {
     NOW: NOW,
+    cosmicCalendar: cosmicCalendar,
     parseWhen: parseWhen,
     formatTick: formatTick,
     linearTicks: linearTicks,
@@ -262,6 +305,9 @@
   var LANE_H = 52;
   var MAX_LANES = 6;
   var PAD = 28;
+  var MAX_CANVAS = 8e6; // px; browsers stop laying out far wider elements
+  var reducedMotion = global.matchMedia ? global.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+  var canFullscreen = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
   var enhanced = typeof WeakSet === 'function' ? new WeakSet() : null;
   var all = [];
 
@@ -381,6 +427,8 @@
       gaps: host.hasAttribute('data-timeline-gaps'),
       scales: (host.getAttribute('data-timeline-scales') || '').split(/[\s,]+/).filter(function (k) { return SCALE_NAMES[k]; }),
       search: host.hasAttribute('data-timeline-search'),
+      tour: host.hasAttribute('data-timeline-tour'),
+      cosmic: host.hasAttribute('data-timeline-cosmic'),
       lanes: Math.min(Math.max(parseInt(host.getAttribute('data-timeline-lanes'), 10) || MAX_LANES, 1), 12)
     };
     this.query = '';
@@ -389,6 +437,8 @@
     this.widths = null;
     this.filter = null;
     this.match = null;
+    this.flight = 0;
+    this.tour = null;
 
     var items = Array.prototype.filter.call(list.children, function (n) { return n.tagName === 'LI'; }).map(readItem);
     items.forEach(function (it) { it.search = it.li.textContent.replace(/\s+/g, ' ').toLowerCase(); });
@@ -464,10 +514,25 @@
     step.appendChild(this.nextBtn);
     bar.appendChild(step);
 
+    if (this.opts.tour) {
+      this.playBtn = el('button', 'tl-btn tl-play');
+      this.playBtn.type = 'button';
+      this.playBtn.title = 'Fly from headline to headline on your own (Space pauses)';
+      this.playBtn.setAttribute('aria-pressed', 'false');
+      this.playBtn.addEventListener('click', function () { if (self.tour) self.stopTour(); else self.play(); });
+      bar.insertBefore(this.playBtn, views);
+      this.setPlayLabel(false);
+    }
+
     var zoom = el('div', 'tl-zoom tl-track-only');
     zoom.appendChild(this.button('−', 'Zoom out (−)', function () { self.setZoom(self.zoom / 1.8); }));
-    zoom.appendChild(this.button('Fit', 'Show the whole timeline (0)', function () { self.setZoom(1); self.viewport.scrollLeft = 0; }));
+    zoom.appendChild(this.button('Fit', 'Show the whole timeline (0)', function () { self.fit(); }));
     zoom.appendChild(this.button('+', 'Zoom in (+)', function () { self.setZoom(self.zoom * 1.8); }));
+    if (canFullscreen) {
+      this.fullBtn = this.button('⛶', 'Full screen, for the projector (F)', function () { self.toggleFullscreen(); });
+      this.fullBtn.classList.add('tl-full');
+      zoom.appendChild(this.fullBtn);
+    }
     bar.appendChild(zoom);
 
     if (this.opts.scales.length > 1) {
@@ -569,8 +634,8 @@
       it.mark = mark;
       self.markLayer.appendChild(mark);
     });
-    this.eras.forEach(function (it) {
-      var band = el('div', 'tl-band');
+    this.eras.forEach(function (it, k) {
+      var band = el('div', 'tl-band' + (k % 2 ? ' tl-band-alt' : ''));
       if (it.tint) band.style.setProperty('--tl-c', it.tint);
       var bandLabel = el('button', 'tl-band-label', it.label);
       bandLabel.type = 'button';
@@ -606,14 +671,21 @@
     root.addEventListener('keydown', function (e) {
       if (root.dataset.tlView !== 'track' || e.altKey || e.metaKey || e.ctrlKey) return;
       if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+      if (e.key === ' ' && self.playBtn && !/^(BUTTON|A|SUMMARY)$/.test(e.target.tagName)) {
+        e.preventDefault();
+        if (self.tour) self.stopTour(); else self.play();
+        return;
+      }
+      if ((e.key === 'f' || e.key === 'F') && self.fullBtn) { e.preventDefault(); self.toggleFullscreen(); return; }
       var handled = true;
+      if (/^(ArrowRight|ArrowLeft|Home|End|\+|=|-|_|0)$/.test(e.key)) { self.stopTour(); self.stopFlight(); }
       if (e.key === 'ArrowRight') self.step(1, true);
       else if (e.key === 'ArrowLeft') self.step(-1, true);
       else if (e.key === 'Home') self.selectIndex(self.firstVisible(1), { focus: true });
       else if (e.key === 'End') self.selectIndex(self.firstVisible(-1), { focus: true });
       else if (e.key === '+' || e.key === '=') self.setZoom(self.zoom * 1.8);
       else if (e.key === '-' || e.key === '_') self.setZoom(self.zoom / 1.8);
-      else if (e.key === '0') { self.setZoom(1); viewport.scrollLeft = 0; }
+      else if (e.key === '0') self.fit();
       else handled = false;
       if (handled) e.preventDefault();
     });
@@ -623,6 +695,26 @@
       var r = viewport.getBoundingClientRect();
       self.setZoom(self.zoom * Math.exp(-e.deltaY * 0.01), e.clientX - r.left);
     }, { passive: false });
+
+    // The reader taking hold of the timeline ends any flight or tour.
+    root.addEventListener('pointerdown', function (e) {
+      if ((self.playBtn && self.playBtn.contains(e.target)) || (self.fullBtn && self.fullBtn.contains(e.target))) return;
+      if (e.target.closest('.tl-detail')) return;
+      self.stopTour();
+      self.stopFlight();
+    }, true);
+    viewport.addEventListener('wheel', function () { self.stopFlight(); self.stopTour(); }, { passive: true });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) self.stopTour(); });
+    var onFull = function () {
+      var full = (document.fullscreenElement || document.webkitFullscreenElement) === root;
+      root.classList.toggle('tl-is-full', full);
+      if (self.fullBtn) self.fullBtn.setAttribute('aria-pressed', String(full));
+      self.widths = null;
+      self.layout();
+      self.reveal(false);
+    };
+    document.addEventListener('fullscreenchange', onFull);
+    document.addEventListener('webkitfullscreenchange', onFull);
 
     var drag = null;
     viewport.addEventListener('pointerdown', function (e) {
@@ -749,18 +841,243 @@
     var pos = this.positions();
     var r = pos.get(era);
     if (!r) return;
-    var vw = this.viewport.clientWidth;
     var width = Math.max(r[1] - r[0], 1e-6);
-    this.zoom = Math.min(Math.max(0.9 / width, 1), this.maxZoom * 4);
-    this.zoomFloor = this.zoom;
-    this.layout();
-    var inner = this.canvas.offsetWidth - PAD * 2;
-    this.viewport.scrollLeft = PAD + r[0] * inner - vw * 0.05;
-    this.renderTicks();
+    var z = Math.min(Math.max(0.9 / width, 1), this.maxZoom * 4);
+    this.zoomFloor = z;
+    this.flyTo(z, (r[0] + r[1]) / 2);
     // Select the first event inside the era.
     for (var i = 0; i < this.events.length; i++) {
       var p = pos.get(this.events[i]);
       if (p != null && p >= r[0] - 1e-9 && this.visible(this.events[i])) { this.selectIndex(i, { quiet: true }); break; }
+    }
+  };
+
+  // Fill the track with the years start..end (decimal years, as parseWhen returns).
+  // Returns { fits, zoom }: zoom is what filling the track would take, and fits is false when
+  // that's beyond what a browser can lay out (a few years out of 13.8 billion at true scale).
+  Timeline.prototype.zoomToRange = function (start, end) {
+    if (this.root.dataset.tlView !== 'track') this.setView('track');
+    this.positions();
+    if (!this.p) return { fits: false, zoom: 1 };
+    var a = this.p.norm(Math.min(start, end)), b = this.p.norm(Math.max(start, end));
+    var want = 0.92 / Math.max(b - a, 1e-12);
+    var cap = MAX_CANVAS / Math.max(this.viewport.clientWidth, 320);
+    var z = Math.min(Math.max(want, 1), cap);
+    this.zoomFloor = z;
+    this.flyTo(z, (a + b) / 2);
+    return { fits: want <= cap, zoom: Math.max(want, 1) };
+  };
+
+  // How wide the whole track is at a zoom, in CSS pixels (for "this view would be 400 km wide").
+  Timeline.prototype.widthAt = function (zoom) {
+    return Math.max(this.viewport.clientWidth, 320) * zoom;
+  };
+
+  Timeline.prototype.fit = function () {
+    this.zoomFloor = 0;
+    this.flyTo(1, 0.5);
+  };
+
+  // The view as { z: zoom, c: the 0..1 point on the line at the middle of the viewport }.
+  Timeline.prototype.viewState = function () {
+    var vw = this.viewport.clientWidth;
+    var inner = (this.canvas.offsetWidth || vw) - PAD * 2;
+    return { z: this.zoom, c: inner > 0 ? (this.viewport.scrollLeft + vw / 2 - PAD) / inner : 0.5 };
+  };
+
+  Timeline.prototype.applyView = function (z, c) {
+    this.zoom = z;
+    this.layout();
+    var inner = this.canvas.offsetWidth - PAD * 2;
+    this.viewport.scrollLeft = PAD + c * inner - this.viewport.clientWidth / 2;
+    this.renderTicks();
+  };
+
+  Timeline.prototype.stopFlight = function () {
+    if (!this.flight) return;
+    cancelAnimationFrame(this.flight);
+    this.flight = 0;
+    this.root.classList.remove('tl-flying');
+    if (this.flightDone) { var done = this.flightDone; this.flightDone = null; done(false); }
+  };
+
+  // Fly to zoom z1 centred on c1: zoom out, pan, zoom back in, the way a map flies,
+  // so a jump from the Big Bang to the iPhone reads as one journey.
+  // Path from van Wijk & Nuij, "Smooth and efficient zooming and panning" (as in d3-interpolate, ISC).
+  Timeline.prototype.flyTo = function (z1, c1, done) {
+    var self = this;
+    this.stopFlight();
+    if (this.root.dataset.tlView !== 'track' || !this.viewport.clientWidth) { if (done) done(true); return; }
+    var from = this.viewState();
+    var w0 = 1 / from.z, w1 = 1 / Math.max(z1, 1e-9), u0 = from.c, d = c1 - u0;
+    var rho = Math.SQRT2, path, S;
+    if (Math.abs(d) < 1e-12 || Math.abs(d) / Math.max(w0, w1) < 0.02) {
+      S = Math.log(w1 / w0) / rho;
+      path = function (t) { return [u0 + t * d, w0 * Math.exp(rho * t * S)]; };
+    } else {
+      var ad = Math.abs(d);
+      var b0 = (w1 * w1 - w0 * w0 + 4 * ad * ad) / (2 * w0 * 2 * ad);
+      var b1 = (w1 * w1 - w0 * w0 - 4 * ad * ad) / (2 * w1 * 2 * ad);
+      var r0 = Math.log(Math.sqrt(b0 * b0 + 1) - b0);
+      var r1 = Math.log(Math.sqrt(b1 * b1 + 1) - b1);
+      S = (r1 - r0) / rho;
+      path = function (t) {
+        var s = t * S;
+        var u = w0 / (2 * ad) * (Math.cosh(r0) * Math.tanh(rho * s + r0) - Math.sinh(r0));
+        return [u0 + u * d, w0 * Math.cosh(r0) / Math.cosh(rho * s + r0)];
+      };
+    }
+    var dist = Math.abs(S);
+    if (reducedMotion.matches || !isFinite(dist) || dist < 0.05) {
+      this.applyView(z1, c1);
+      if (done) done(true);
+      return;
+    }
+    var duration = Math.min(Math.max(dist * 420, 420), 2600);
+    var start = 0;
+    this.flightDone = done || null;
+    this.root.classList.add('tl-flying');
+    var frame = function (now) {
+      if (!start) start = now;
+      var k = Math.min((now - start) / duration, 1);
+      var e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+      var at = k >= 1 ? [c1, w1] : path(e);
+      self.applyView(1 / at[1], at[0]);
+      if (k < 1) { self.flight = requestAnimationFrame(frame); return; }
+      self.flight = 0;
+      self.root.classList.remove('tl-flying');
+      var cb = self.flightDone;
+      self.flightDone = null;
+      if (cb) cb(true);
+    };
+    this.flight = requestAnimationFrame(frame);
+  };
+
+  // Where to look for event i: the zoom at which it gets its label, centred on it.
+  // Tried synchronously and undone before the browser paints.
+  Timeline.prototype.targetFor = function (i) {
+    var self = this;
+    var it = this.events[i];
+    var before = this.viewState();
+    var floor = this.zoomFloor;
+    var vw = this.viewport.clientWidth;
+    var m = it.mark;
+    var onScreen = function () {
+      if (m.hidden) return false;
+      var x = m.classList.contains('tl-flip') ? m.offsetLeft + m.offsetWidth : m.offsetLeft;
+      return x > self.viewport.scrollLeft + 40 && x < self.viewport.scrollLeft + vw - 60;
+    };
+    this.layout();
+    var z = this.zoom;
+    for (var guard = 0; guard < 10 && m.classList.contains('tl-compact') && z < this.maxZoom; guard++) {
+      z = Math.min(z * 1.6, this.maxZoom);
+      this.zoom = z;
+      this.layout();
+    }
+    var pos = this.positions().get(it);
+    var stay = z === before.z && (this.applyView(before.z, before.c), onScreen());
+    this.zoomFloor = floor;
+    this.applyView(before.z, before.c);
+    return { z: z, c: pos == null ? before.c : pos, stay: stay };
+  };
+
+  // Tour: fly from headline to headline, pausing on each long enough to read it.
+  Timeline.prototype.tourStops = function () {
+    var self = this;
+    var shown = this.events.filter(function (it) { return self.visible(it); });
+    var major = shown.filter(function (it) { return it.major; });
+    var stops = major.length >= 3 ? major : shown;
+    return stops.map(function (it) { return self.events.indexOf(it); }).sort(function (a, b) {
+      var A = self.events[a].parsed, B = self.events[b].parsed;
+      return (A && B && A.start !== B.start) ? A.start - B.start : a - b;
+    });
+  };
+
+  Timeline.prototype.setPlayLabel = function (on) {
+    if (!this.playBtn) return;
+    this.playBtn.textContent = on ? '❚❚ Pause' : '▶ Play the story';
+    this.playBtn.setAttribute('aria-pressed', String(on));
+  };
+
+  Timeline.prototype.play = function () {
+    var self = this;
+    var stops = this.tourStops();
+    if (!stops.length) return;
+    if (this.root.dataset.tlView !== 'track') this.setView('track');
+    // Carry on from the selected event; start over from the end.
+    var cur = this.sel !== -1 && this.events[this.sel].parsed ? this.events[this.sel].parsed.start : -Infinity;
+    var at = stops.findIndex(function (i) { var p = self.events[i].parsed; return i === self.sel || (p && p.start > cur); });
+    if (at === -1 || (stops[at] === this.sel && at === stops.length - 1)) at = 0;
+    this.tour = { stops: stops, at: at, timer: 0 };
+    this.setPlayLabel(true);
+    this.root.classList.add('tl-touring');
+    this.tourVisit();
+  };
+
+  Timeline.prototype.tourVisit = function () {
+    var self = this, tour = this.tour;
+    if (!tour) return;
+    var i = tour.stops[tour.at];
+    this.selectIndex(i, { quiet: true });
+    var target = this.targetFor(i);
+    // Frame each stop in its own neighbourhood: the gaps to the stops either side fill the view,
+    // so every hop is a flight (out, across, in) rather than a highlight on a fixed picture.
+    var pos = this.positions();
+    var here = pos.get(this.events[i]);
+    var gaps = [tour.stops[tour.at - 1], tour.stops[tour.at + 1]].map(function (k) {
+      return k == null || !pos.has(self.events[k]) ? null : Math.abs(pos.get(self.events[k]) - here);
+    }).filter(function (g) { return g > 1e-6; });
+    if (gaps.length) {
+      var span = 2.4 * (gaps.length === 2 ? Math.sqrt(gaps[0] * gaps[1]) : gaps[0]);
+      target.z = Math.min(Math.max(target.z, 1 / Math.min(span, 0.6)), this.maxZoom);
+    }
+    this.flyTo(target.z, target.c, function (finished) {
+      if (!finished || self.tour !== tour) return;
+      var words = self.events[i].li.textContent.split(/\s+/).length;
+      var dwell = Math.min(Math.max(2600 + words * 190, 4200), 11000);
+      self.tourProgress(dwell);
+      tour.timer = setTimeout(function () {
+        if (self.tour !== tour) return;
+        if (tour.at >= tour.stops.length - 1) { self.stopTour(); return; }
+        tour.at++;
+        self.tourVisit();
+      }, dwell);
+    });
+  };
+
+  Timeline.prototype.tourProgress = function (ms) {
+    var tour = this.tour;
+    var head = this.detail.querySelector('.tl-detail-head');
+    if (!tour || !head) return;
+    var badge = el('span', 'tl-tour-badge', 'Stop ' + (tour.at + 1) + ' of ' + tour.stops.length);
+    head.insertBefore(badge, head.firstChild);
+    var bar = el('span', 'tl-tour-progress');
+    bar.style.animationDuration = ms + 'ms';
+    this.detail.appendChild(bar);
+  };
+
+  Timeline.prototype.stopTour = function () {
+    if (!this.tour) return;
+    clearTimeout(this.tour.timer);
+    this.tour = null;
+    this.setPlayLabel(false);
+    this.root.classList.remove('tl-touring');
+    var bar = this.detail.querySelector('.tl-tour-progress');
+    if (bar) bar.remove();
+  };
+
+  Timeline.prototype.toggleFullscreen = function () {
+    var root = this.root;
+    var current = document.fullscreenElement || document.webkitFullscreenElement;
+    if (current === root) {
+      (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      return;
+    }
+    if (this.root.dataset.tlView !== 'track') this.setView('track');
+    var req = root.requestFullscreen || root.webkitRequestFullscreen;
+    if (req) {
+      var out = req.call(root);
+      if (out && out.catch) out.catch(function () { /* blocked; stay inline */ });
     }
   };
 
@@ -818,10 +1135,11 @@
       hi = Math.max(hi, f(it.parsed.end));
     });
     if (!(hi > lo)) { lo -= 1; hi += 1; }
+    var first = lo;
     var pad = (hi - lo) * 0.02;
     lo -= pad; hi += pad;
     var norm = function (t) { return (f(t) - lo) / (hi - lo); };
-    this.p = { f: f, lo: lo, hi: hi, norm: norm };
+    this.p = { f: f, lo: lo, hi: hi, first: first, norm: norm };
     events.forEach(function (it) { map.set(it, norm(it.parsed.start)); });
     this.eras.forEach(function (era) { if (era.parsed) map.set(era, [norm(era.parsed.start), norm(era.parsed.end)]); });
 
@@ -841,7 +1159,7 @@
     this.root.style.setProperty('--tl-paper', paperBehind(this.root));
     var pos = this.positions();
     if (this.scale === 'even') this.maxZoom = Math.max(4, this.events.length * 170 / vw);
-    this.maxZoom = Math.max(this.maxZoom, this.zoomFloor || 0);
+    this.maxZoom = Math.min(Math.max(this.maxZoom, this.zoomFloor || 0), MAX_CANVAS / Math.max(vw, 320));
     this.zoom = Math.min(Math.max(this.zoom, 1), this.maxZoom);
     var W = Math.max(vw, 320) * this.zoom;
     var inner = W - PAD * 2;
@@ -885,6 +1203,11 @@
       return a >= 2 && b <= W - 2 && lane.every(function (iv) { return b + 8 <= iv[0] || a >= iv[1] + 8; });
     }
     var maxLanes = this.opts.lanes;
+    // Full screen has the height for more labels; use it.
+    if (this.root.classList.contains('tl-is-full')) {
+      var spare = global.innerHeight - this.track.offsetTop - (this.detail.offsetHeight || 160) - bandsH - 120;
+      maxLanes = Math.min(Math.max(maxLanes, Math.floor(spare / LANE_H)), 14);
+    }
     // Headline events (data-major) claim label room first; the rest fill in around them.
     var order = events.filter(function (it) { return it.major; }).concat(events.filter(function (it) { return !it.major; }));
     order.forEach(function (it) {
@@ -945,29 +1268,41 @@
     var list = [];
     if (this.scale === 'log') {
       // Round "years ago" values: 1, 2, 5, 10, 20, 50 …
-      var agoHi = Math.pow(10, -p.lo), agoLo = Math.max(Math.pow(10, -p.hi), 1);
-      var lastX = -Infinity;
+      // No ticks out in the padding before the first event (nothing is 20 billion years old).
+      var agoHi = Math.pow(10, -p.first), agoLo = Math.max(Math.pow(10, -p.hi), 1);
+      var lastX = -Infinity, lastW = 0;
       for (var k = Math.floor(Math.log10(agoHi)); k >= 0; k--) {
         [5, 2, 1].forEach(function (mult) {
           var ago = mult * Math.pow(10, k);
           if (ago > agoHi || ago < agoLo) return;
           var t = NOW - ago, px = toX(t);
-          if (px - lastX < 90) return;
+          var w = tickWidth(formatTick(t, self.ctx));
+          if (px - lastX < (lastW + w) / 2 + 14) return;
           lastX = px;
+          lastW = w;
           list.push(t);
         });
       }
+      // "today" closes the deep-time axis when there's room for it.
+      if (toX(NOW) - lastX > (lastW + 40) / 2 + 14) list.push(NOW);
     } else {
       var tAt = function (px) { return p.lo + (px - PAD) / inner * (p.hi - p.lo); };
       var t0 = tAt(Math.max(view0, PAD)), t1 = tAt(Math.min(view1, W - PAD));
       var per = (p.hi - p.lo) / inner * 130; // ~130px between ticks
       list = linearTicks(t0, t1, Math.max((t1 - t0) / per, 1), this.ctx);
     }
+    var vis0 = this.viewport.scrollLeft, vis1 = vis0 + this.viewport.clientWidth;
     list.forEach(function (t) {
       var px = toX(t);
-      if (px < view0 || px > view1 || px < PAD - 1 || px > W - PAD + 1) return;
-      var tick = el('span', 'tl-tick', formatTick(t, self.ctx));
+      // Only ticks inside the view: the axis re-renders on every scroll frame anyway.
+      if (px < vis0 || px > vis1 || px < PAD - 1 || px > W - PAD + 1) return;
+      var text = formatTick(t, self.ctx);
+      var tick = el('span', 'tl-tick' + (t >= NOW - 0.5 ? ' tl-now' : ''), text);
       tick.style.left = px + 'px';
+      // Keep labels at the edges of the view readable instead of half cut off.
+      var half = tickWidth(text) / 2;
+      if (px - half < vis0 + 2) tick.classList.add('tl-tick-start');
+      else if (px + half > vis1 - 2) tick.classList.add('tl-tick-end');
       ticks.appendChild(tick);
     });
     if (!this.ctx.deep && p.norm(NOW) <= 1 && p.norm(NOW) >= 0) {
@@ -976,6 +1311,8 @@
       ticks.appendChild(now);
     }
   };
+
+  function tickWidth(text) { return String(text).length * 6.3 + 6; }
 
   Timeline.prototype.setZoom = function (z, anchor) {
     var vw = this.viewport.clientWidth;
@@ -1034,6 +1371,21 @@
     if (rel) head.appendChild(el('span', 'tl-ago', rel));
     if (it.group) head.appendChild(el('span', 'tl-detail-group', it.group));
     detail.appendChild(head);
+    var cosmic = this.opts.cosmic && it.parsed ? cosmicCalendar(it.parsed.start) : null;
+    if (cosmic) {
+      var cal = el('div', 'tl-cosmic');
+      cal.title = 'Squeeze all 13.8 billion years of the universe into one calendar year (Carl Sagan\u2019s Cosmic Calendar): the Big Bang is midnight on January 1 and today is midnight on December 31.';
+      cal.appendChild(el('span', 'tl-cosmic-label', 'If the universe were one year'));
+      var year = el('span', 'tl-cosmic-year');
+      year.setAttribute('aria-hidden', 'true');
+      MONTH_NAMES.forEach(function (name) { year.appendChild(el('span', 'tl-cosmic-month', name.charAt(0))); });
+      var pin = el('span', 'tl-cosmic-pin');
+      pin.style.left = (cosmic.fraction * 100).toFixed(3) + '%';
+      year.appendChild(pin);
+      cal.appendChild(year);
+      cal.appendChild(el('strong', 'tl-cosmic-when', cosmic.text));
+      detail.appendChild(cal);
+    }
     var body = el('div', 'tl-detail-body');
     var clone = it.li.cloneNode(true);
     Array.prototype.forEach.call(clone.querySelectorAll('.tl-date, .tl-gap, .tl-src'), function (n) { n.remove(); });
@@ -1041,15 +1393,13 @@
     while (clone.firstChild) body.appendChild(clone.firstChild);
     detail.appendChild(body);
 
-    // A crowded event shows as a bare dot; zoom in until it gets its label.
-    if (!opts.quiet && this.root.dataset.tlView === 'track') {
-      for (var guard = 0; guard < 8 && it.mark.classList.contains('tl-compact') && this.zoom < this.maxZoom; guard++) {
-        this.setZoom(this.zoom * 1.6);
-      }
-    }
     if (opts.focus && this.root.dataset.tlView === 'track') it.mark.focus({ preventScroll: true });
     this.emit('timeline:select', { li: it.li, label: it.label });
-    if (!opts.quiet) this.reveal(true);
+    // A crowded event shows as a bare dot: fly in until it gets its label, or over to it if it's off screen.
+    if (!opts.quiet && this.root.dataset.tlView === 'track') {
+      var target = this.targetFor(i);
+      if (!target.stay) this.flyTo(target.z, target.c);
+    }
   };
 
   // Scroll the selected event into view (horizontally only; never jumps the page).

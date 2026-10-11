@@ -38,6 +38,10 @@
 .tl-jump { flex-basis: 100%; align-items: center; }
 .tl-jump-label { font-size: .74rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; opacity: .75; margin-right: .15rem; }
 .tl-jump-btn { border-left-width: 2px; border-radius: 999px; min-height: 30px; font-size: .74rem; }
+.tl-play { padding-inline: .85rem; border-color: var(--tl-accent); }
+.tl-play[aria-pressed="false"] { background: var(--tl-accent); color: #fff; }
+.tl-play[aria-pressed="true"] { background: var(--tl-tint); }
+.tl-full { font-size: 1rem; }
 .tl-count { min-width: 3.4em; text-align: center; font-size: .8rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .tl-band-label:hover { background: var(--tl-tint); }
 .tl-search {
@@ -138,25 +142,47 @@
 }
 .tl-tick::before { content: ''; position: absolute; left: 50%; top: 0; width: 1px; height: 6px; background: currentColor; }
 .tl-tick.tl-now { opacity: 1; font-weight: 800; color: var(--tl-accent); }
+.tl-tick.tl-now::after { /* the present, still moving */
+  content: '';
+  position: absolute;
+  left: calc(50% - 4px);
+  top: -5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tl-accent);
+  animation: tl-now-pulse 2.4s ease-out infinite;
+}
+@keyframes tl-now-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--tl-accent) 60%, transparent); }
+  70%, 100% { box-shadow: 0 0 0 10px transparent; }
+}
+.tl-tick.tl-tick-start { transform: translateX(-4px); }
+.tl-tick.tl-tick-start::before { left: 4px; }
+.tl-tick.tl-tick-end { transform: translateX(calc(-100% + 4px)); }
+.tl-tick.tl-tick-end::before { left: auto; right: 4px; }
+.tl-tick.tl-now.tl-tick-end::after { left: auto; right: 0; }
 
 .tl-bands { position: absolute; inset: 0; pointer-events: none; }
 .tl-band {
   position: absolute;
   top: calc(var(--row, 0) * 24px + 4px);
   bottom: 30px;
-  border-left: 2px solid var(--tl-c, var(--tl-accent));
+  border-left: 1px solid color-mix(in srgb, var(--tl-c, var(--tl-accent)) 60%, transparent);
   background: linear-gradient(to bottom, var(--tl-tint), transparent);
 }
-.tl-band::after { content: ''; position: absolute; inset: 0; background: var(--tl-c, transparent); opacity: .07; }
+.tl-band::after { content: ''; position: absolute; inset: 0; background: var(--tl-c, var(--tl-accent)); opacity: .04; }
+.tl-band-alt::after { opacity: .1; } /* neighbouring ages read as strata */
 .tl-band-label {
   position: absolute;
   left: 6px;
   top: 2px;
   z-index: 2;
-  padding: 0 .3rem;
+  padding: 0 .35rem;
   border: 0;
-  border-radius: 4px;
-  background: transparent;
+  border-left: 3px solid var(--tl-c, var(--tl-accent));
+  border-radius: 0 4px 4px 0;
+  background: var(--tl-paper); /* other bands' edges pass behind, not through, the name */
   color: inherit;
   font-family: inherit;
   line-height: 1.5;
@@ -221,6 +247,7 @@
 .tl-mark-date { font-size: .7rem; font-weight: 800; opacity: .8; font-variant-numeric: tabular-nums; }
 .tl-mark-label { font-size: .8rem; font-weight: 600; }
 .tl-range { position: absolute; left: -3px; bottom: -6px; height: 4px; border-radius: 2px; background: var(--tl-c, var(--tl-accent)); opacity: .6; }
+.tl-mark { transition: top .28s ease, opacity .2s ease; } /* labels glide between lanes as you zoom */
 .tl-mark:hover { border-color: currentColor; border-left-color: var(--tl-c, var(--tl-accent)); z-index: 3; }
 .tl-mark[aria-current="true"] {
   z-index: 4;
@@ -253,6 +280,53 @@
   border-radius: 10px;
   line-height: 1.6;
 }
+.tl-detail { position: relative; overflow: hidden; }
+.tl-tour-badge { padding: .05rem .5rem; border-radius: 999px; background: var(--tl-accent); color: #fff; font-size: .72rem; font-weight: 800; letter-spacing: .03em; }
+.tl-tour-progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 100%;
+  background: var(--tl-c, var(--tl-accent));
+  transform-origin: left;
+  animation: tl-tour-progress linear forwards;
+}
+@keyframes tl-tour-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* data-timeline-cosmic: the event on Sagan's Cosmic Calendar */
+.tl-cosmic {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .3rem .7rem;
+  margin: .6rem 0 .1rem;
+  padding-top: .55rem;
+  border-top: 1px dashed var(--tl-line);
+  font-size: .78rem;
+}
+.tl-cosmic-label { font-weight: 800; letter-spacing: .04em; text-transform: uppercase; font-size: .68rem; opacity: .75; }
+.tl-cosmic-year { position: relative; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); height: 18px; border-radius: 4px; overflow: visible; }
+.tl-cosmic-month { display: grid; place-items: center; border-left: 1px solid var(--tl-line); background: var(--tl-tint); font-size: .6rem; font-weight: 700; opacity: .8; }
+.tl-cosmic-month:first-child { border-left: 0; border-radius: 4px 0 0 4px; }
+.tl-cosmic-month:last-child { border-radius: 0 4px 4px 0; }
+.tl-cosmic-pin {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 3px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: var(--tl-c, var(--tl-accent));
+  box-shadow: 0 0 0 2px var(--tl-paper), 0 0 10px var(--tl-c, var(--tl-accent));
+  transition: left .6s cubic-bezier(.2, .8, .2, 1);
+}
+.tl-cosmic-when { font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (max-width: 560px) {
+  .tl-cosmic { grid-template-columns: minmax(0, 1fr); }
+  .tl-cosmic-when { white-space: normal; }
+}
+
 .tl-detail-head { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .6rem; margin-bottom: .35rem; }
 .tl-detail-head .tl-date { font-size: .86rem; }
 .tl-ago { font-size: .8rem; font-weight: 700; opacity: .8; }
@@ -266,13 +340,29 @@
   .tl-mark { max-width: 150px; }
 }
 
+/* Full screen, for the projector */
+.tl.tl-is-full {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: clamp(.8rem, 2vw, 1.6rem);
+  overflow: auto;
+  background: var(--tl-paper);
+}
+.tl.tl-is-full .tl-title { font-size: 1.5rem; }
+.tl.tl-is-full .tl-detail { font-size: 1.15rem; }
+.tl.tl-is-full .tl-list { display: none; }
+.tl::backdrop { background: #000; }
+
 @media (prefers-reduced-motion: reduce) {
   .tl-viewport { scroll-behavior: auto; }
+  .tl-mark, .tl-cosmic-pin { transition: none; }
+  .tl-tick.tl-now::after { animation: none; }
 }
 
 /* ---------- print: always the list */
 @media print {
-  .tl-bar, .tl-track { display: none !important; }
+  .tl-bar, .tl-track, .tl-cosmic { display: none !important; }
   .tl .tl-list { display: block !important; }
   .tl .tl-list > li.tl-off { display: list-item !important; }
   .tl .tl-list > li { break-inside: avoid; }

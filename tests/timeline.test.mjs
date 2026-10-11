@@ -25,6 +25,26 @@ test('plain years, BC/AD and approximate dates', () => {
   assert.equal(when('1452?').approx, true);
 });
 
+test('Cosmic Calendar: the universe as one year', () => {
+  const cal = (s) => T.cosmicCalendar(when(s).start);
+  assert.equal(cal('13.8 Ga').text, 'Jan 1, the first instant');
+  near(cal('13.8 Ga').fraction, 0, 1e-6);
+  assert.equal(cal('4.54 Ga').text, 'Sep 2');
+  assert.equal(cal('538 Ma').text, 'Dec 17');
+  assert.match(cal('66 Ma').text, /^Dec 30, \d{1,2}:\d\d am$/);
+  assert.equal(cal('10,000 BC').text, 'Dec 31, 27 seconds before midnight');
+  assert.equal(cal('AD 30').text, 'Dec 31, 4.6 seconds before midnight');
+  assert.match(cal('Jan 9, 2007').text, /^Dec 31, 0\.0\d seconds before midnight$/);
+  assert.equal(cal('present').text, 'Dec 31, the stroke of midnight: right now');
+  assert.equal(T.cosmicCalendar(T.NOW - 20e9), null);
+  assert.equal(T.cosmicCalendar(T.NOW + 50), null);
+});
+
+test('one year ago is singular on the deep-time axis', () => {
+  assert.equal(T.formatTick(T.NOW - 1, { deep: true }), '1 yr ago');
+  assert.equal(T.formatTick(T.NOW - 2, { deep: true }), '2 yrs ago');
+});
+
 test('ranges, shorthand ranges and a unit written once', () => {
   assert.deepEqual([when('1928–1934').start, when('1928–1934').end], [1928, 1934]);
   assert.deepEqual([when('1928-34').start, when('1928-34').end], [1928, 1934]);

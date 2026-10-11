@@ -180,7 +180,7 @@ regions['hero-stats'] = [
 ].join('\n');
 
 regions['grand-timeline'] = [
-  '<ol class="ages-gt-list" data-timeline data-timeline-title="The story so far, on one line" data-timeline-scales="log time" data-timeline-search data-timeline-lanes="7" data-timeline-view="track">',
+  '<ol class="ages-gt-list" data-timeline data-timeline-title="The story so far, on one line" data-timeline-scales="log time" data-timeline-search data-timeline-tour data-timeline-cosmic data-timeline-lanes="7" data-timeline-view="track">',
   ...items.map((ev) => '  ' + li(ev)),
   '</ol>',
   `<p class="ages-gt-count">${events.length} milestones linked to ${lessonCount} lessons. ${lessonCards} of them open into this lesson's own chapters, breakthroughs and evidence.</p>`
