@@ -18,13 +18,14 @@
     { id: "bark",        label: "Bark",        detail: "Warm dark wood tones with a rough bark texture.",        tone: "dark",  swatch: ["#241a12", "#d99a54"],                     accentRGB: [217, 154, 84] },
     { id: "night",       label: "Night",       detail: "Easy on the eyes after dark — full dark mode.",          tone: "dark",  swatch: ["#445c93", "#111827"],                     accentRGB: [105, 168, 255] },
     { id: "vaporwave",   label: "Vaporwave",   detail: "Neon magenta and cyan — retro synthwave vibes.",         tone: "dark",  swatch: ["#050505", "#ff00ff", "#00ffff"],          accentRGB: [255, 0, 255] },
-    { id: "mandelbrot",  label: "Mandelbrot",  detail: "A slowly revolving fractal spiral in violet and molten gold.", tone: "dark",  swatch: ["#05010f", "#6a0dad", "#ff8c00"],  accentRGB: [255, 140, 0] }
+    { id: "mandelbrot",  label: "Mandelbrot",  detail: "A slowly revolving fractal spiral in violet and molten gold.", tone: "dark",  swatch: ["#05010f", "#6a0dad", "#ff8c00"],  accentRGB: [255, 140, 0] },
+    { id: "lavalamp",    label: "Lava Lamp",   detail: "Hypnotic molten red wax drifting with glowing neon depth.", tone: "dark",  swatch: ["#0a0103", "#ff1a40", "#ff6b81"],  accentRGB: [255, 42, 77] }
   ];
 
   /* Retired/renamed ids that may still be sitting in a visitor's localStorage
    * or an old bookmark — route them to their replacement instead of falling
    * back to Day. */
-  var ALIASES = { morning: "day", dusk: "day", kiwi: "emerald", mango: "topaz" };
+  var ALIASES = { morning: "day", dusk: "day", kiwi: "emerald", mango: "topaz", "lava-lamp": "lavalamp", "lava_lamp": "lavalamp" };
 
   var byId = {};
   var ids = [];

@@ -14,6 +14,7 @@ const themes = [
   { name: "cobblestone", selector: 'html[data-theme="cobblestone"]' },
   { name: "bark", selector: 'html[data-theme="bark"]' },
   { name: "mandelbrot", selector: 'html[data-theme="mandelbrot"]' },
+  { name: "lavalamp", selector: 'html[data-theme="lavalamp"]' },
 ];
 
 const pairs = [

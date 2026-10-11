@@ -744,21 +744,119 @@ const speech = (() => {
     return range;
   }
 
+  // Natural narrators: Kokoro-82M running in the browser (English only). Loaded on first use.
+  const NATURAL = [
+    ["af_heart", "Heart (US, warm)"], ["af_bella", "Bella (US)"], ["af_nicole", "Nicole (US, calm)"],
+    ["af_sarah", "Sarah (US)"], ["am_michael", "Michael (US)"], ["am_fenrir", "Fenrir (US, deep)"],
+    ["bf_emma", "Emma (UK)"], ["bf_isabella", "Isabella (UK)"], ["bm_george", "George (UK)"], ["bm_fable", "Fable (UK, storyteller)"],
+  ];
+  const natural = () => ui.speakVoice.value.startsWith("kokoro:");
+  const kokoroVoice = () => ui.speakVoice.value.slice(7);
+
   function loadVoices() {
     voices = synth.getVoices();
     const lang = (ui.page.lang || document.documentElement.lang || "en").slice(0, 2).toLowerCase();
     const fit = voices.filter((v) => v.lang.toLowerCase().startsWith(lang));
     const list = fit.length ? fit : voices;
     const saved = store.raw("reader:voice");
-    ui.speakVoice.replaceChildren(...list.map((v) => new Option(`${v.name}${v.localService ? "" : " (online)"}`, v.voiceURI)));
+    const groups = [];
+    if (lang === "en" && !kokoroFailed) {
+      const g = document.createElement("optgroup");
+      g.label = "Natural (downloads once)";
+      g.append(...NATURAL.map(([id, name]) => new Option(name, "kokoro:" + id)));
+      groups.push(g);
+    }
+    const basic = document.createElement("optgroup");
+    basic.label = "Basic (this device)";
+    basic.append(...list.map((v) => new Option(`${v.name}${v.localService ? "" : " (online)"}`, v.voiceURI)));
+    groups.push(basic);
+    ui.speakVoice.replaceChildren(...groups);
     const pick = list.find((v) => v.voiceURI === saved) || list.find((v) => v.default && v.localService) || list.find((v) => v.localService) || list[0];
-    if (pick) ui.speakVoice.value = pick.voiceURI;
-    ui.speakVoice.closest("label").hidden = list.length < 2;
+    const wanted = saved && [...ui.speakVoice.options].some((o) => o.value === saved) ? saved
+      : groups.length > 1 ? "kokoro:af_heart" : pick?.voiceURI;
+    if (wanted) ui.speakVoice.value = wanted;
+    ui.speakVoice.closest("label").hidden = ui.speakVoice.options.length < 2;
   }
   synth.addEventListener?.("voiceschanged", loadVoices);
   ui.speakRate.value = store.raw("reader:rate") || "1";
   ui.speakRate.addEventListener("change", () => { store.raw("reader:rate", ui.speakRate.value); if (playing) restart(); });
   ui.speakVoice.addEventListener("change", () => { store.raw("reader:voice", ui.speakVoice.value); if (playing) restart(); });
+
+  let kokoroFailed = false;
+  let kokoro = null; // Promise<KokoroTTS>
+  let genQueue = Promise.resolve();
+  const clips = new Map(); // "voice|rate|text" -> Promise<{data, rate}>
+  let actx = null;
+  let source = null;
+
+  function loadKokoro() {
+    kokoro ||= (async () => {
+      toast("Loading the natural narrator (one-time download)…");
+      const { KokoroTTS } = await import("../vendor/kokoro-bundle.min.js");
+      let last = -10;
+      const progress_callback = (p) => {
+        if (p.status === "progress" && p.progress - last >= 10) { last = p.progress; toast(`Loading the natural narrator… ${Math.round(p.progress)}%`); }
+      };
+      const id = "onnx-community/Kokoro-82M-v1.0-ONNX";
+      // Probe first: a failed WebGPU session init poisons the WASM fallback inside onnxruntime.
+      const gpu = await navigator.gpu?.requestAdapter().catch(() => null);
+      if (gpu) return KokoroTTS.from_pretrained(id, { dtype: "fp32", device: "webgpu", progress_callback });
+      return KokoroTTS.from_pretrained(id, { dtype: "q8", device: "wasm", progress_callback });
+    })();
+    return kokoro;
+  }
+  // One clip at a time (the ONNX session isn't re-entrant); the next sentence is generated while this one plays.
+  function clipFor(text) {
+    const voice = kokoroVoice();
+    const speed = Math.min(1.7, Number(ui.speakRate.value) || 1);
+    const key = `${voice}|${speed}|${text}`;
+    if (!clips.has(key)) {
+      if (clips.size > 6) clips.delete(clips.keys().next().value);
+      const job = genQueue.then(async () => {
+        const tts = await loadKokoro();
+        const a = await tts.generate(text, { voice, speed });
+        return { data: a.audio, rate: a.sampling_rate };
+      });
+      genQueue = job.catch(() => {});
+      clips.set(key, job);
+    }
+    return clips.get(key);
+  }
+  function stopClip() {
+    if (!source) return;
+    source.onended = null;
+    try { source.stop(); } catch { /* already stopped */ }
+    source = null;
+  }
+  async function speakNatural(my) {
+    const text = segs[si].text;
+    const next = segs[si + 1]?.text;
+    try {
+      const clip = await clipFor(text);
+      if (my !== token) return;
+      if (next) clipFor(next).catch(() => {});
+      actx ||= new AudioContext();
+      await actx.resume();
+      if (my !== token) return;
+      const buf = actx.createBuffer(1, clip.data.length, clip.rate);
+      buf.copyToChannel(clip.data, 0);
+      source = actx.createBufferSource();
+      source.buffer = buf;
+      source.connect(actx.destination);
+      source.onended = () => { source = null; if (my === token && playing) advance(1).then((ok) => ok && speak()); };
+      source.start();
+    } catch (err) {
+      if (my !== token) return;
+      kokoroFailed = true;
+      kokoro = null;
+      clips.clear();
+      console.warn("Natural narrator unavailable", err);
+      toast("The natural narrator couldn’t load here — using a basic voice");
+      loadVoices();
+      store.raw("reader:voice", ui.speakVoice.value);
+      speak();
+    }
+  }
 
   function setPlaying(on) {
     playing = on;
@@ -783,8 +881,10 @@ const speech = (() => {
   function speak() {
     const my = ++token;
     synth.cancel();
+    stopClip();
     if (!segs[si]) return;
     showCurrent();
+    if (natural()) return void speakNatural(my);
     // Chrome drops an utterance queued in the same task as cancel().
     setTimeout(() => {
       if (my !== token) return;
@@ -848,6 +948,7 @@ const speech = (() => {
   function stop() {
     token++;
     synth.cancel();
+    stopClip();
     setPlaying(false);
     paint("rd-speak", null);
     blocks.forEach((b) => b.classList.remove("rd-speaking"));
@@ -856,14 +957,14 @@ const speech = (() => {
     root.classList.remove("is-speaking");
   }
   ui.speakPlay.addEventListener("click", () => {
-    if (playing) { token++; synth.cancel(); setPlaying(false); }
+    if (playing) { token++; synth.cancel(); stopClip(); setPlaying(false); }
     else { setPlaying(true); speak(); }
   });
-  ui.speakPrev.addEventListener("click", async () => { token++; synth.cancel(); await advance(-1); playing ? speak() : showCurrent(); });
-  ui.speakNext.addEventListener("click", async () => { token++; synth.cancel(); if (await advance(1)) playing ? speak() : showCurrent(); });
+  ui.speakPrev.addEventListener("click", async () => { token++; synth.cancel(); stopClip(); await advance(-1); playing ? speak() : showCurrent(); });
+  ui.speakNext.addEventListener("click", async () => { token++; synth.cancel(); stopClip(); if (await advance(1)) playing ? speak() : showCurrent(); });
   ui.speakClose.addEventListener("click", () => { stop(); ui.listenBtn.focus(); });
   ui.listenBtn.addEventListener("click", () => (ui.player.hidden ? start() : stop()));
-  addEventListener("pagehide", () => synth.cancel());
+  addEventListener("pagehide", () => { synth.cancel(); stopClip(); });
   synth.cancel(); // a previous page's speech can outlive navigation
 
   return { stop, get active() { return !ui.player.hidden; } };
