@@ -432,9 +432,9 @@
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid rgba(255,100,30,0.15) !important;
-      position: fixed;
-      top: 0; left: 0; width: 100%;
-      z-index: 100;
+      position: relative;
+      flex-shrink: 0;
+      z-index: 40;
     }
     .ll-stage {
       display: block !important; /* Break grid */
@@ -583,6 +583,190 @@
     .ev-card[hidden] { display:none; }
     button:disabled, input:disabled { opacity:0.55; }
     #phase-label { font-weight:700; color:#ffd1a1; }
+
+    /* ── Subsurface Cutaway & View Toggle Styles ── */
+    .view-mode-toggle {
+      display: inline-flex;
+      background: rgba(20, 8, 4, 0.85);
+      border: 1px solid rgba(255, 120, 40, 0.35);
+      border-radius: 999px;
+      padding: 3px;
+      gap: 3px;
+      margin: 0 1rem;
+    }
+    .view-btn {
+      background: transparent;
+      border: none;
+      color: rgba(230, 190, 150, 0.7);
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      white-space: nowrap;
+    }
+    .view-btn:hover {
+      color: #fff;
+      background: rgba(255, 120, 40, 0.18);
+    }
+    .view-btn.active {
+      background: linear-gradient(135deg, #ff6020, #e04010);
+      color: #fff;
+      box-shadow: 0 0 10px rgba(255, 100, 20, 0.4);
+    }
+
+    /* Conduit Cutaway Outer Container */
+    .conduit-outer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background: #0d0604;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #conduit-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
+
+    /* Conduit Painting Toolbar (Exploration Mode) */
+    .conduit-toolbar {
+      position: absolute;
+      top: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(12, 5, 2, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 120, 40, 0.35);
+      border-radius: 12px;
+      padding: 6px 14px;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      z-index: 20;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      max-width: 90vw;
+      overflow-x: auto;
+    }
+    .tool-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .tool-group-label {
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: #f0a060;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-right: 4px;
+    }
+    .c-tool-btn, .c-brush-btn, .c-action-btn {
+      background: rgba(30, 12, 6, 0.7);
+      border: 1px solid rgba(255, 120, 40, 0.25);
+      color: #e8c8a8;
+      border-radius: 6px;
+      padding: 5px 9px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .c-tool-btn:hover, .c-brush-btn:hover, .c-action-btn:hover {
+      background: rgba(255, 100, 30, 0.2);
+      color: #fff;
+    }
+    .c-tool-btn.active, .c-brush-btn.active {
+      background: #e05010;
+      border-color: #ff8030;
+      color: #fff;
+      box-shadow: 0 0 8px rgba(255, 100, 20, 0.5);
+    }
+
+    /* Conduit HUD Diagnostics */
+    .conduit-hud {
+      position: absolute;
+      bottom: 5.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 15;
+      pointer-events: none;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .hud-pill {
+      background: rgba(10, 4, 2, 0.88);
+      border: 1px solid rgba(255, 120, 40, 0.35);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 0.68rem;
+      font-family: monospace;
+      color: #ffd8a8;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    /* Split View Layout */
+    .ll-stage.view-split .volcano-outer {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 50% !important;
+      height: 100% !important;
+      z-index: 1;
+    }
+    .ll-stage.view-split .conduit-outer {
+      display: flex !important;
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      left: 50% !important;
+      width: 50% !important;
+      height: 100% !important;
+      border-left: 2px solid rgba(255, 120, 40, 0.35);
+      z-index: 1;
+    }
+    .ll-stage.view-split .panel-left {
+      left: 0.5rem;
+      width: 290px;
+    }
+    .ll-stage.view-split .panel-right {
+      right: 0.5rem;
+      width: 290px;
+    }
+    .ll-stage.view-split .timeline-overlay {
+      width: clamp(340px, 45vw, 650px);
+    }
+    .ll-stage.view-split .conduit-toolbar {
+      left: 0.75rem;
+      transform: none;
+      max-width: calc(100% - 305px);
+      padding: 4px 8px;
+      gap: 6px;
+    }
+    .ll-stage.view-split .conduit-hud {
+      left: 0.75rem;
+      transform: none;
+      bottom: 5.5rem;
+      max-width: calc(100% - 305px);
+      justify-content: flex-start;
+    }
   </style>
 </head>
 <body>
@@ -610,6 +794,11 @@
     <div class="vs-topbar-inner">
       <a href="../../steam-lessons.html">← Earth Science</a>
       <span class="vs-topbar-title">🌋 Volcano Simulator</span>
+      <div class="view-mode-toggle" id="view-mode-toggle" role="group" aria-label="Simulation View">
+        <button type="button" class="view-btn active" data-view="surface">🌋 3D Surface</button>
+        <button type="button" class="view-btn" data-view="cross-section">🔬 Magma Cutaway</button>
+        <button type="button" class="view-btn" data-view="split">◫ Split View</button>
+      </div>
       <a href="../../index.html">ClassroomOS</a>
     </div>
   </nav>
@@ -625,6 +814,39 @@
       </div>
       
       <div class="drag-hint" style="bottom: 5rem;">Drag to orbit · Scroll to zoom</div>
+    </div>
+
+    <!-- Subsurface Magma Conduit Cross-Section Outer -->
+    <div class="conduit-outer" id="conduit-outer" style="display: none;">
+      <canvas id="conduit-canvas"></canvas>
+      
+      <!-- Painting Toolbar for Exploration Mode -->
+      <div class="conduit-toolbar" id="conduit-toolbar" style="display: none;">
+        <div class="tool-group">
+          <span class="tool-group-label">Plumbing Tools:</span>
+          <button type="button" class="c-tool-btn active" data-tool="chamber" title="Paint Magma Chamber">🔴 Chamber</button>
+          <button type="button" class="c-tool-btn" data-tool="conduit" title="Draw Feeder Conduit">⚡ Conduit</button>
+          <button type="button" class="c-tool-btn" data-tool="sill" title="Draw Horizontal Sill Intrusion">🟡 Sill</button>
+          <button type="button" class="c-tool-btn" data-tool="aquifer" title="Add Hydrothermal Aquifer">💧 Aquifer</button>
+          <button type="button" class="c-tool-btn" data-tool="bedrock" title="Eraser / Rock">🪨 Rock</button>
+        </div>
+        <div class="tool-group">
+          <span class="tool-group-label">Brush:</span>
+          <button type="button" class="c-brush-btn" data-size="0.3">Small</button>
+          <button type="button" class="c-brush-btn active" data-size="0.6">Medium</button>
+          <button type="button" class="c-brush-btn" data-size="1.2">Large</button>
+          <button type="button" class="c-action-btn" id="btn-conduit-undo" title="Undo Last Stroke">↶ Undo</button>
+          <button type="button" class="c-action-btn" id="btn-conduit-reset" title="Reset to Baseline">↺ Reset</button>
+        </div>
+      </div>
+
+      <!-- Live Geological Diagnostics Overlay -->
+      <div class="conduit-hud" id="conduit-hud">
+        <span class="hud-pill" id="hud-chamber-depth">Depth: 7.5 km</span>
+        <span class="hud-pill" id="hud-magma-vol">Volume: 3.5 km³</span>
+        <span class="hud-pill" id="hud-overpressure">Overpressure: +12.4 MPa</span>
+        <span class="hud-pill" id="hud-vents">Vents: 1 active</span>
+      </div>
     </div>
 
     <!-- Timeline Overlay (Bottom Center) -->
@@ -699,6 +921,17 @@
         </div>
       </div>
       <div class="vs-card">
+        <h3>Subsurface Magma Plumbing</h3>
+        <p id="conduit-card-desc">Geological cutaway reveals the depth of the magma chamber, conduit ascent dynamics, and lithostatic pressure balance.</p>
+        <div class="stat-grid" style="margin-bottom: 0.75rem;">
+          <div class="stat-card"><div class="stat-lbl">Chamber Depth</div><div class="stat-val lava" id="card-ch-depth">7.5 km</div></div>
+          <div class="stat-card"><div class="stat-lbl">Overpressure</div><div class="stat-val high" id="card-ch-pressure">+12.4 MPa</div></div>
+          <div class="stat-card"><div class="stat-lbl">Magma Vol.</div><div class="stat-val medium" id="card-ch-vol">3.5 km³</div></div>
+          <div class="stat-card"><div class="stat-lbl">Host Crust</div><div class="stat-val low" id="card-ch-host">Carbonate</div></div>
+        </div>
+        <button type="button" class="btn-toggle-cutaway" id="btn-toggle-cutaway" style="width: 100%; padding: 0.6rem; background: linear-gradient(135deg, #e05010, #ff8030); color: #fff; border: 1px solid rgba(255,160,80,0.5); border-radius: 8px; font-weight: 700; font-size: 0.76rem; cursor: pointer; transition: transform 0.1s, box-shadow 0.15s;">🔬 View Subsurface Magma Cutaway</button>
+      </div>
+      <div class="vs-card">
         <h3>Evidence and model outputs</h3>
         <p>Historical estimates describe the whole event, not the current animation frame. Unavailable means this lesson has no supported value.</p>
         <div class="stat-grid">
@@ -736,6 +969,7 @@
   <script src="../../assets/js/liquid-engine.js"></script>
   <script src="../../assets/js/cloud-engine.js"></script>
   <script src="../../assets/js/volcano-history.js"></script>
+  <script src="../../assets/js/volcano-conduit.js"></script>
   <script type="module">
   import { THREE } from '../../assets/vendor/three-bundle.min.js';
   (function () {
@@ -905,10 +1139,27 @@
     }, { passive: true });
 
     /* ── Resize ── */
+    function resizeConduitCanvas() {
+      const conduitOuter = document.getElementById('conduit-outer');
+      const conduitCanvas = document.getElementById('conduit-canvas');
+      if (!conduitOuter || !conduitCanvas) return;
+      const cw = conduitOuter.clientWidth;
+      const ch = conduitOuter.clientHeight;
+      if (cw > 0 && ch > 0) {
+        if (conduitCanvas.width !== cw || conduitCanvas.height !== ch) {
+          conduitCanvas.width = cw;
+          conduitCanvas.height = ch;
+        }
+      }
+    }
+
     function onResize() {
       const W = outer.clientWidth, H = outer.clientHeight;
-      renderer.setSize(W, H, false);
-      camera.aspect = W / H; camera.updateProjectionMatrix();
+      if (W > 0 && H > 0) {
+        renderer.setSize(W, H, false);
+        camera.aspect = W / H; camera.updateProjectionMatrix();
+      }
+      resizeConduitCanvas();
     }
     window.addEventListener('resize', onResize);
     onResize();
@@ -1974,6 +2225,30 @@
       }
     }
 
+    function spawnSecondaryVentPuff(vent, intensity) {
+      if (Math.random() > intensity * 0.45 + 0.1) return;
+      const vx = vent.normalizedX * 8.5;
+      const vz = Math.sin(vent.normalizedX * 9.7) * 1.5;
+      const vy = terrainHeightAt(vx, vz) + 0.15;
+      const spd = 2.5 + intensity * 3.5;
+      
+      ashPool.emit(
+        vx + (Math.random() - 0.5) * 0.3, vy, vz + (Math.random() - 0.5) * 0.3,
+        (Math.random() - 0.5) * 0.6, spd, (Math.random() - 0.5) * 0.6,
+        2.8 + Math.random() * 2.0,
+        0.28, 0.22, 0.18, 0.5
+      );
+
+      if (Math.random() < 0.35) {
+        steamPool.emit(
+          vx, vy, vz,
+          (Math.random() - 0.5) * 0.4, 3.5 + Math.random() * 2.0, (Math.random() - 0.5) * 0.4,
+          3.2 + Math.random() * 2.2,
+          0.9, 0.92, 0.95, 0.75
+        );
+      }
+    }
+
     function spawnLava(intensity) {
       if (!lavaFlow || intensity < 0.025) return;
       const fluidity = 1 - state.viscosity / 100;
@@ -2008,6 +2283,9 @@
     let simTime = 0;
     const wind = { x: 0, z: 0 };
     let lavaBase = 0;
+    let conduitEngine = null;
+    let customVents = [];
+    let currentView = 'surface';
 
     const lavaFlow = window.LiquidEngine?.createFlowParticles({
       material: 'lava', max: lavaRenderMax, gravity: 4.5,
@@ -2084,6 +2362,11 @@
       document.querySelectorAll('#s-intensity, #s-column, #s-viscosity, #s-pyro, .type-tab').forEach(el => el.disabled = historical);
       document.querySelector('[data-id="yellowstone"]').hidden = historical;
       syncAllSliderProgress();
+      conduitEngine?.setMode(state.mode);
+      const conduitToolbar = document.getElementById('conduit-toolbar');
+      if (conduitToolbar) {
+        conduitToolbar.style.display = state.mode === 'exploration' ? 'flex' : 'none';
+      }
     }
 
     function applyPhase() {
@@ -2094,6 +2377,7 @@
       const a = frames[n], b = frames[Math.min(n + 1, frames.length - 1)];
       document.getElementById('phase-label').textContent = (state.mode === 'historical' ? 'Historical phase: ' : 'Reference phase only: ') + a.label;
       document.getElementById('s-timeline').setAttribute('aria-valuetext', a.label);
+      conduitEngine?.setTimeline(state.timeline, state.intensity);
       if (state.mode !== 'historical') return;
       // Hold each phase's level so the scene matches its label; ease into the
       // next phase only over the last quarter of the span.
@@ -2196,6 +2480,20 @@
       record.timeline.forEach(f => { const item = document.createElement('li'); item.textContent = f.label; phases.append(item); });
       const source = document.createElement('a'); source.href = record.source; source.textContent = 'Read the evidence and its context';
       evidence.append(phases, source);
+      conduitEngine?.loadBaseline(id);
+      conduitEngine?.setTimeline(0, 0);
+      const hostMap = {
+        vesuvius79: 'Carbonate',
+        tambora1815: 'Arc Diorite',
+        krakatoa1883: 'Marine Graben',
+        sthelenr1980: 'Granodiorite',
+        pinatubo1991: 'Ophiolite',
+        eyja2010: 'Basalt / Ice',
+        maunaloa2022: 'Ocean Basalt',
+        yellowstone: 'Granitic'
+      };
+      const cardHost = document.getElementById('card-ch-host');
+      if (cardHost) cardHost.textContent = hostMap[id] || 'Continental';
       syncMode();
       applyPhase();
 
@@ -2280,6 +2578,9 @@
             const lavaI = (1 - state.viscosity / 100) * (state.intensity / 100);
             updateTerrain(state.vtype, lavaI, state.timeline);
           }, 50);
+        }
+        if (key === 'intensity') {
+          conduitEngine?.setTimeline(state.timeline, state.intensity);
         }
         updateReadouts();
         updateSky(state.intensity);
@@ -2525,7 +2826,9 @@
     function animate(dt, ts) {
       dt = Math.min(dt, 0.05);
 
-      if (!isDrag) { camTheta += dt * 0.04; updateCam(); }
+      if (currentView !== 'cross-section') {
+        if (!isDrag) { camTheta += dt * 0.04; updateCam(); }
+      }
 
       simTime += dt;
       const i = state.intensity / 100;
@@ -2545,6 +2848,14 @@
           spawnBomb(i);
           spawnSteam(i);
           if (pi > 0.1) spawnPyroclastic(pi, i);
+
+          if (state.mode === 'exploration' && customVents.length > 0) {
+            for (const vent of customVents) {
+              if (Math.abs(vent.normalizedX) > 0.15) {
+                spawnSecondaryVentPuff(vent, i);
+              }
+            }
+          }
         }
       }
 
@@ -2571,7 +2882,125 @@
       const nightBoost = 1.0 + (1.0 - sunBrightness) * 4.0; // Glows 5x as bright relative to dark scene at night
       lavaLight.intensity = lavaBase * pulse * nightBoost;
 
-      renderer.render(scene, camera);
+      if (currentView !== 'cross-section') {
+        renderer.render(scene, camera);
+      }
+
+      if (currentView !== 'surface' && conduitEngine) {
+        conduitEngine.render(dt);
+      }
+    }
+
+    function updateConduitHUD(diag) {
+      if (!diag) return;
+      const depthEl = document.getElementById('hud-chamber-depth');
+      const volEl = document.getElementById('hud-magma-vol');
+      const pressEl = document.getElementById('hud-overpressure');
+      const ventsEl = document.getElementById('hud-vents');
+      
+      if (depthEl) depthEl.textContent = `Depth: ${diag.primaryDepthKm} km`;
+      if (volEl) volEl.textContent = `Volume: ${diag.totalVolumeKm3} km³`;
+      if (pressEl) pressEl.textContent = `Overpressure: +${diag.overpressureMPa} MPa`;
+      if (ventsEl) ventsEl.textContent = `Vents: ${diag.ventCount} active`;
+
+      const cardDepth = document.getElementById('card-ch-depth');
+      const cardPress = document.getElementById('card-ch-pressure');
+      const cardVol = document.getElementById('card-ch-vol');
+      if (cardDepth) cardDepth.textContent = `${diag.primaryDepthKm} km`;
+      if (cardPress) cardPress.textContent = `+${diag.overpressureMPa} MPa`;
+      if (cardVol) cardVol.textContent = `${diag.totalVolumeKm3} km³`;
+    }
+
+    function setSimulationView(view) {
+      currentView = view;
+      const stage = document.querySelector('.ll-stage');
+      const volOuter = document.getElementById('vol-outer');
+      const conduitOuter = document.getElementById('conduit-outer');
+      const btnToggleCutaway = document.getElementById('btn-toggle-cutaway');
+
+      document.querySelectorAll('.view-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.view === view);
+      });
+
+      if (view === 'surface') {
+        stage?.classList.remove('view-split');
+        if (volOuter) volOuter.style.display = 'block';
+        if (conduitOuter) conduitOuter.style.display = 'none';
+        if (btnToggleCutaway) btnToggleCutaway.textContent = '🔬 View Subsurface Magma Cutaway';
+      } else if (view === 'cross-section') {
+        stage?.classList.remove('view-split');
+        if (volOuter) volOuter.style.display = 'none';
+        if (conduitOuter) conduitOuter.style.display = 'flex';
+        if (btnToggleCutaway) btnToggleCutaway.textContent = '🌋 Return to 3D Surface View';
+      } else if (view === 'split') {
+        stage?.classList.add('view-split');
+        if (volOuter) volOuter.style.display = 'block';
+        if (conduitOuter) conduitOuter.style.display = 'flex';
+        if (btnToggleCutaway) btnToggleCutaway.textContent = '🔬 View Magma Cutaway Only';
+      }
+
+      requestAnimationFrame(() => {
+        onResize();
+        conduitEngine?.render(0);
+      });
+    }
+
+    // View toggle listeners
+    document.querySelectorAll('.view-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        setSimulationView(btn.dataset.view);
+      });
+    });
+
+    const btnToggleCutaway = document.getElementById('btn-toggle-cutaway');
+    if (btnToggleCutaway) {
+      btnToggleCutaway.addEventListener('click', () => {
+        if (currentView === 'surface') {
+          setSimulationView('cross-section');
+        } else {
+          setSimulationView('surface');
+        }
+      });
+    }
+
+    // Conduit painting tools
+    document.querySelectorAll('.c-tool-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.c-tool-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        conduitEngine?.setTool(btn.dataset.tool);
+      });
+    });
+
+    document.querySelectorAll('.c-brush-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.c-brush-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        conduitEngine?.setBrushSize(parseFloat(btn.dataset.size));
+      });
+    });
+
+    document.getElementById('btn-conduit-undo')?.addEventListener('click', () => {
+      conduitEngine?.undo();
+    });
+
+    document.getElementById('btn-conduit-reset')?.addEventListener('click', () => {
+      conduitEngine?.resetCustom();
+    });
+
+    // Initialize Conduit Engine
+    const conduitCanvas = document.getElementById('conduit-canvas');
+    if (conduitCanvas && window.VolcanoConduitEngine) {
+      conduitEngine = new window.VolcanoConduitEngine(conduitCanvas, {
+        mode: state.mode,
+        eruptionId: activeEruption,
+        onVentChange: (vents) => {
+          customVents = vents;
+        },
+        onDiagnosticsChange: (diag) => {
+          updateConduitHUD(diag);
+        }
+      });
     }
 
     /* ══════════════════════════════════════════
