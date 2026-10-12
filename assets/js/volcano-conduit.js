@@ -11,220 +11,7 @@
   const GRAVITY = 9.81;   // m/s^2
 
   // Historical conduit profiles for the 8 presets
-  const HISTORICAL_CONDUITS = {
-    vesuvius79: {
-      name: 'Mt Vesuvius — 79 AD',
-      peakHeightKm: 1.3,
-      maxDepthKm: 12.0,
-      widthKm: 16.0,
-      layers: [
-        { topKm: 0, bottomKm: 2.0, name: 'Quaternary Volcanic Tuffs & Sediments', color: '#3d2a22', pattern: 'dots' },
-        { topKm: 2.0, bottomKm: 8.0, name: 'Mesozoic Carbonate Platform (Limestone/Dolomite)', color: '#4a4440', pattern: 'blocks' },
-        { topKm: 8.0, bottomKm: 12.0, name: 'Hercynian Metamorphic Crystalline Basement', color: '#2b232c', pattern: 'slanted' }
-      ],
-      chamber: { x: 0, depthKm: 7.5, rxKm: 2.3, ryKm: 1.2, comp: 'Phonolite-Tephrite', temp: '900 °C' },
-      conduits: [
-        { type: 'pipe', x1: 0, y1: 6.3, x2: 0, y2: 0, widthM: 55 }
-      ],
-      sills: [],
-      aquifers: [
-        { x: 0, depthKm: 1.8, rxKm: 3.0, ryKm: 0.4 }
-      ],
-      exsolutionDepthKm: 2.5,
-      annotations: [
-        { x: 0, depthKm: 7.5, title: 'Phonolitic Magma Chamber', text: '7–8 km depth in Mesozoic carbonate rocks. Magma assimilated limestone, enriching volatiles.' },
-        { x: 0, depthKm: 2.5, title: 'Exsolution & Fragmentation Zone', text: 'Dissolved H₂O & CO₂ boil out of solution into supersonic pumice froth.' }
-      ]
-    },
-
-    tambora1815: {
-      name: 'Mount Tambora — 1815',
-      peakHeightKm: 4.3,
-      maxDepthKm: 12.0,
-      widthKm: 20.0,
-      layers: [
-        { topKm: 0, bottomKm: 3.0, name: 'Sunda Arc Volcanic Strata & Clastics', color: '#3c2b24', pattern: 'dots' },
-        { topKm: 3.0, bottomKm: 12.0, name: 'Diorite-Granodiorite Arc Basement', color: '#332f38', pattern: 'blocks' }
-      ],
-      chamber: { x: 0, depthKm: 5.2, rxKm: 4.0, ryKm: 1.8, comp: 'Trachydacite', temp: '980 °C' },
-      conduits: [
-        { type: 'pipe', x1: 0, y1: 3.4, x2: 0, y2: 0, widthM: 110 }
-      ],
-      sills: [],
-      ringFaults: [
-        { x: -3.0, y1: 0, y2: 3.5 },
-        { x: 3.0, y1: 0, y2: 3.5 }
-      ],
-      aquifers: [],
-      exsolutionDepthKm: 2.8,
-      calderaCollapse: true,
-      annotations: [
-        { x: 0, depthKm: 5.2, title: 'High-Level Trachydacite Reservoir', text: 'Massive 4–6 km chamber with >40 km³ magma evacuated during the climax.' },
-        { x: -3.0, depthKm: 2.0, title: 'Caldera Ring Faults', text: 'Piston collapse of the roof block dropped the summit by 1,400 m, forming a 6 km caldera.' }
-      ]
-    },
-
-    krakatoa1883: {
-      name: 'Krakatoa — 1883',
-      peakHeightKm: 0.8,
-      maxDepthKm: 12.0,
-      widthKm: 16.0,
-      waterLevelKm: 0.05,
-      layers: [
-        { topKm: 0, bottomKm: 2.5, name: 'Sunda Strait Graben Marine Sediments', color: '#2a353c', pattern: 'dots' },
-        { topKm: 2.5, bottomKm: 12.0, name: 'Tectonized Basement Crust', color: '#352e35', pattern: 'blocks' }
-      ],
-      chamber: { x: 0, depthKm: 4.2, rxKm: 3.2, ryKm: 1.5, comp: 'Dacite', temp: '900 °C' },
-      conduits: [
-        { type: 'pipe', x1: 0, y1: 2.7, x2: 0, y2: 0, widthM: 70 },
-        { type: 'pipe', x1: 0, y1: 2.7, x2: -1.2, y2: 0, widthM: 45 },
-        { type: 'pipe', x1: 0, y1: 2.7, x2: 1.0, y2: 0, widthM: 40 }
-      ],
-      sills: [],
-      marineIngress: { x: -0.6, depthKm: 1.3 },
-      aquifers: [
-        { x: 0, depthKm: 0.5, rxKm: 5.0, ryKm: 0.5 }
-      ],
-      exsolutionDepthKm: 2.2,
-      calderaCollapse: true,
-      annotations: [
-        { x: 0, depthKm: 4.2, title: 'Shallow Dacite Chamber', text: '3–5 km deep chamber under marine Sunda Strait.' },
-        { x: -0.6, depthKm: 1.3, title: 'Seawater Ingress Zone', text: 'Seawater penetrated fractured conduits, triggering supersonic steam cataclysms.' }
-      ]
-    },
-
-    sthelenr1980: {
-      name: 'Mount St. Helens — 1980',
-      peakHeightKm: 2.95,
-      maxDepthKm: 12.0,
-      widthKm: 16.0,
-      layers: [
-        { topKm: 0, bottomKm: 3.0, name: 'Tertiary Volcanic & Volcaniclastic Strata', color: '#382f28', pattern: 'dots' },
-        { topKm: 3.0, bottomKm: 12.0, name: 'Spirit Lake Granodiorite Pluton', color: '#3b3542', pattern: 'blocks' }
-      ],
-      chamber: { x: 0, depthKm: 8.0, rxKm: 2.2, ryKm: 1.4, comp: 'Dacite', temp: '880 °C' },
-      conduits: [
-        { type: 'pipe', x1: 0, y1: 6.6, x2: 0, y2: 2.4, widthM: 50 },
-        { type: 'pipe', x1: 0, y1: 2.4, x2: -1.6, y2: 1.2, widthM: 65 }
-      ],
-      cryptodome: { x: -1.6, depthKm: 1.2, rxKm: 1.1, ryKm: 0.7 },
-      sills: [],
-      aquifers: [],
-      exsolutionDepthKm: 2.0,
-      annotations: [
-        { x: 0, depthKm: 8.0, title: 'Deep Dacite Reservoir', text: 'Primary magma chamber at 7–9 km depth feeding shallow ascent.' },
-        { x: -1.6, depthKm: 1.2, title: 'North-Flank Cryptodome', text: 'Pressurized shallow intrusion unroofed by landslide to produce the lateral blast.' }
-      ]
-    },
-
-    pinatubo1991: {
-      name: 'Mount Pinatubo — 1991',
-      peakHeightKm: 1.74,
-      maxDepthKm: 14.0,
-      widthKm: 16.0,
-      layers: [
-        { topKm: 0, bottomKm: 3.5, name: 'Andesite-Dacite Pyroclastic Apron', color: '#362f27', pattern: 'dots' },
-        { topKm: 3.5, bottomKm: 14.0, name: 'Zambales Ophiolite (Gabbro/Basalt/Serpentinite)', color: '#2c3632', pattern: 'blocks' }
-      ],
-      chamber: { x: 0, depthKm: 6.5, rxKm: 2.8, ryKm: 1.5, comp: 'Dacite', temp: '790 °C' },
-      deepBasaltChamber: { x: 0, depthKm: 12.0, rxKm: 3.2, ryKm: 1.2, comp: 'Basaltic Recharge', temp: '1150 °C' },
-      conduits: [
-        { type: 'pipe', x1: 0, y1: 5.0, x2: 0, y2: 0, widthM: 80 },
-        { type: 'pipe', x1: 0, y1: 10.8, x2: 0, y2: 8.0, widthM: 60 }
-      ],
-      sills: [],
-      aquifers: [],
-      exsolutionDepthKm: 3.0,
-      annotations: [
-        { x: 0, depthKm: 6.5, title: 'Upper Dacite Chamber', text: 'Volatile-saturated dacite at 6–8 km depth.' },
-        { x: 0, depthKm: 12.0, title: 'Deep Basaltic Recharge', text: 'Hot basalt from >12 km injected into dacite, triggering explosive convective mixing.' }
-      ]
-    },
-
-    eyja2010: {
-      name: 'Eyjafjallajökull — 2010',
-      peakHeightKm: 1.66,
-      maxDepthKm: 12.0,
-      widthKm: 16.0,
-      glacierThicknessKm: 0.2,
-      layers: [
-        { topKm: 0, bottomKm: 0.2, name: 'Glacial Ice Cap (200 m)', color: '#4ba7c2', pattern: 'ice' },
-        { topKm: 0.2, bottomKm: 5.0, name: 'Upper Basalt Lavas & Hyaloclastites', color: '#333339', pattern: 'dots' },
-        { topKm: 5.0, bottomKm: 12.0, name: 'Lower Oceanic Crust (Sheeted Dikes/Gabbro)', color: '#272c2f', pattern: 'blocks' }
-      ],
-      chamber: { x: 0, depthKm: 4.8, rxKm: 3.0, ryKm: 0.8, comp: 'Basaltic-Benmoreite Sill Complex', temp: '1020 °C' },
-      conduits: [
-        { type: 'pipe', x1: 0.6, y1: 4.0, x2: 0, y2: 0.2, widthM: 45 }
-      ],
-      sills: [
-        { x: -1.2, depthKm: 5.2, rxKm: 2.2, ryKm: 0.3 },
-        { x: 1.5, depthKm: 4.2, rxKm: 2.0, ryKm: 0.3 }
-      ],
-      aquifers: [
-        { x: 0, depthKm: 0.2, rxKm: 1.5, ryKm: 0.2 }
-      ],
-      exsolutionDepthKm: 1.5,
-      annotations: [
-        { x: 0, depthKm: 0.1, title: '200 m Glacial Ice Cap', text: 'Meltwater flooded into the vent, shattering magma into ultrafine glass particles.' },
-        { x: 0, depthKm: 4.8, title: 'Mid-Crustal Sill Complex', text: 'Layered horizontal sills at 4–6 km depth fed by deep mantle conduit.' }
-      ]
-    },
-
-    maunaloa2022: {
-      name: 'Mauna Loa — 2022',
-      peakHeightKm: 4.17,
-      maxDepthKm: 14.0,
-      widthKm: 28.0,
-      layers: [
-        { topKm: 0, bottomKm: 5.0, name: 'Subaerial Basaltic Shield Lavas', color: '#382e27', pattern: 'dots' },
-        { topKm: 5.0, bottomKm: 10.0, name: 'Oceanic Crust & Volcanic Edifice Base', color: '#2e2d36', pattern: 'blocks' },
-        { topKm: 10.0, bottomKm: 14.0, name: 'Mantle Lithosphere Overlying Hotspot Plume', color: '#3f1a14', pattern: 'slanted' }
-      ],
-      chamber: { x: 0, depthKm: 3.5, rxKm: 2.5, ryKm: 1.2, comp: 'Tholeiitic Basalt', temp: '1160 °C' },
-      conduits: [
-        { type: 'pipe', x1: 0, y1: 14.0, x2: 0, y2: 3.5, widthM: 80 },
-        { type: 'pipe', x1: 0, y1: 2.3, x2: 0, y2: 0, widthM: 40 },
-        // Northeast Rift Zone lateral blade dike
-        { type: 'pipe', x1: 0, y1: 2.5, x2: 6.5, y2: 1.5, widthM: 50 },
-        { type: 'pipe', x1: 6.5, y1: 1.5, x2: 6.8, y2: 0, widthM: 45 }
-      ],
-      sills: [],
-      aquifers: [],
-      exsolutionDepthKm: 1.0,
-      annotations: [
-        { x: 0, depthKm: 3.5, title: 'Summit Caldera Reservoir', text: 'Shallow 3–4 km reservoir beneath Mokuʻāweoweo fed by the Hawaiian hotspot plume.' },
-        { x: 6.5, depthKm: 1.2, title: 'Northeast Rift Zone Lateral Dike', text: 'Blade dike propagated 15+ km laterally to feed Fissure 3 fountains.' }
-      ]
-    },
-
-    yellowstone: {
-      name: 'Yellowstone Supervolcano',
-      peakHeightKm: 2.8,
-      maxDepthKm: 16.0,
-      widthKm: 36.0,
-      layers: [
-        { topKm: 0, bottomKm: 4.0, name: 'Rhyolite Caldera-Fill & Geothermal Aquifers', color: '#3d332c', pattern: 'dots' },
-        { topKm: 4.0, bottomKm: 16.0, name: 'Continental Granitic Crust', color: '#3b3442', pattern: 'blocks' }
-      ],
-      chamber: { x: 0, depthKm: 8.5, rxKm: 14.0, ryKm: 3.8, comp: 'Rhyolite Partial Melt', temp: '820 °C' },
-      deepBasaltChamber: { x: 0, depthKm: 18.0, rxKm: 16.0, ryKm: 4.0, comp: 'Lower Basaltic Mush', temp: '1100 °C' },
-      conduits: [
-        { type: 'pipe', x1: -6.0, y1: 4.7, x2: -6.0, y2: 0, widthM: 70 },
-        { type: 'pipe', x1: 6.0, y1: 4.7, x2: 6.0, y2: 0, widthM: 70 },
-        { type: 'pipe', x1: 0, y1: 4.7, x2: 0, y2: 0, widthM: 50 }
-      ],
-      sills: [],
-      aquifers: [
-        { x: -5.0, depthKm: 1.5, rxKm: 3.0, ryKm: 0.8 },
-        { x: 5.0, depthKm: 1.5, rxKm: 3.0, ryKm: 0.8 }
-      ],
-      exsolutionDepthKm: 3.5,
-      annotations: [
-        { x: 0, depthKm: 8.5, title: 'Giant Upper Rhyolite Reservoir', text: 'Immense 5–14 km deep partial-melt reservoir holding ~10,000 km³ of silicic magma.' },
-        { x: -6.0, depthKm: 2.2, title: 'Caldera Ring Fractures', text: 'Channel hydrothermal fluid to surface geysers and perimeter resurgent domes.' }
-      ]
-    }
-  };
+  const HISTORICAL_CONDUITS = Object.fromEntries(Object.entries(window.VolcanoHistory).map(([id, record]) => [id, record.conduit]));
 
   /**
    * VolcanoConduitEngine
@@ -233,7 +20,12 @@
   class VolcanoConduitEngine {
     constructor(canvas, options = {}) {
       this.canvas = canvas;
-      this.ctx = canvas.getContext('2d');
+      this.surface = window.SimKit.canvas2d(canvas);
+      this.ctx = this.surface.ctx;
+      this.trueScale = false;
+      this.clock = 0;
+      this.keyboardPos = {x:0,depth:5};
+      this.textureCache = new Map();
       this.mode = options.mode || 'historical';
       this.eruptionId = options.eruptionId || 'vesuvius79';
       this.timeline = 0;
@@ -253,36 +45,26 @@
       this.customAquifers = [];
       this.undoStack = [];
 
-      // Particles for animated magma ascent & gas exsolution bubbles
-      this.bubbles = [];
-      this.magmaPulses = [];
-      this.initParticles();
-
+      canvas.addEventListener('click', e => {
+        if (this.mode !== 'historical') return;
+        const rect=canvas.getBoundingClientRect();
+        const i=this.profile.annotations.findIndex(n=>{const p=this.worldToScreen(n.x,n.depthKm);return Math.hypot(p.x-e.clientX+rect.left,p.y-e.clientY+rect.top)<18;});
+        const note=document.querySelectorAll('#cutaway-notes details')[i];
+        if(note){note.open=true;note.querySelector('summary').focus();}
+      });
+      canvas.addEventListener('keydown', e=>{
+        if(this.mode!=='exploration') return;
+        const moves={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};
+        if(moves[e.key]) {
+          e.preventDefault();this.lastPaintPos={...this.keyboardPos};
+          this.keyboardPos.x=Math.max(-this.profile.widthKm/2,Math.min(this.profile.widthKm/2,this.keyboardPos.x+moves[e.key][0]*this.brushSizeKm));
+          this.keyboardPos.depth=Math.max(0,Math.min(this.profile.maxDepthKm,this.keyboardPos.depth+moves[e.key][1]*this.brushSizeKm));
+        } else if(e.code==='Space') {e.preventDefault();this.pushUndo();this.paintAt(this.keyboardPos);this.recalculateDiagnostics();}
+        else return;
+        this.render(0);
+      });
       this.initEvents();
       this.loadBaseline(this.eruptionId);
-    }
-
-    initParticles() {
-      this.bubbles = [];
-      for (let i = 0; i < 40; i++) {
-        this.bubbles.push({
-          x: (Math.random() - 0.5) * 0.4,
-          depthKm: 1.0 + Math.random() * 4.0,
-          speed: 0.4 + Math.random() * 0.8,
-          radius: 1.5 + Math.random() * 3.0,
-          opacity: 0.3 + Math.random() * 0.5
-        });
-      }
-
-      this.magmaPulses = [];
-      for (let i = 0; i < 25; i++) {
-        this.magmaPulses.push({
-          conduitIndex: 0,
-          t: Math.random(),
-          speed: 0.15 + Math.random() * 0.25,
-          size: 3 + Math.random() * 4
-        });
-      }
     }
 
     loadBaseline(id) {
@@ -292,15 +74,13 @@
 
       if (this.mode === 'exploration') {
         // Clone historical as starting point for user painting
-        this.customChambers = [JSON.parse(JSON.stringify(this.profile.chamber))];
-        if (this.profile.deepBasaltChamber) {
-          this.customChambers.push(JSON.parse(JSON.stringify(this.profile.deepBasaltChamber)));
-        }
-        this.customConduits = JSON.parse(JSON.stringify(this.profile.conduits || []));
+        this.customChambers = structuredClone(this.profile.reservoirs);
+        this.customConduits = structuredClone([...this.profile.dikes, ...this.profile.sills.map(s=>({x1:s.x-s.rxKm,y1:s.depthKm,x2:s.x+s.rxKm,y2:s.depthKm,widthM:50,sill:true}))]);
         this.customAquifers = JSON.parse(JSON.stringify(this.profile.aquifers || []));
         this.undoStack = [];
       }
 
+      this.updateDescription();
       this.recalculateDiagnostics();
     }
 
@@ -309,11 +89,8 @@
       this.mode = mode;
       if (mode === 'exploration') {
         // Transition to exploration: retain current geometry as editable custom layers
-        this.customChambers = [JSON.parse(JSON.stringify(this.profile.chamber))];
-        if (this.profile.deepBasaltChamber) {
-          this.customChambers.push(JSON.parse(JSON.stringify(this.profile.deepBasaltChamber)));
-        }
-        this.customConduits = JSON.parse(JSON.stringify(this.profile.conduits || []));
+        this.customChambers = structuredClone(this.profile.reservoirs);
+        this.customConduits = structuredClone([...this.profile.dikes, ...this.profile.sills.map(s=>({x1:s.x-s.rxKm,y1:s.depthKm,x2:s.x+s.rxKm,y2:s.depthKm,widthM:50,sill:true}))]);
         this.customAquifers = JSON.parse(JSON.stringify(this.profile.aquifers || []));
       }
       this.recalculateDiagnostics();
@@ -322,6 +99,7 @@
     setTimeline(tl, intensity = null) {
       this.timeline = Math.max(0, Math.min(1, tl));
       if (intensity !== null) this.intensity = intensity;
+      this.recalculateDiagnostics();
     }
 
     setTool(tool) {
@@ -353,11 +131,8 @@
     resetCustom() {
       this.pushUndo();
       const base = HISTORICAL_CONDUITS[this.eruptionId] || HISTORICAL_CONDUITS.vesuvius79;
-      this.customChambers = [JSON.parse(JSON.stringify(base.chamber))];
-      if (base.deepBasaltChamber) {
-        this.customChambers.push(JSON.parse(JSON.stringify(base.deepBasaltChamber)));
-      }
-      this.customConduits = JSON.parse(JSON.stringify(base.conduits || []));
+      this.customChambers = structuredClone(base.reservoirs);
+      this.customConduits = structuredClone([...base.dikes, ...base.sills.map(s=>({x1:s.x-s.rxKm,y1:s.depthKm,x2:s.x+s.rxKm,y2:s.depthKm,widthM:50,sill:true}))]);
       this.customAquifers = JSON.parse(JSON.stringify(base.aquifers || []));
       this.recalculateDiagnostics();
     }
@@ -368,40 +143,73 @@
      * x: -widthKm/2 to +widthKm/2 (km)
      * depth: 0 km (surface) down to maxDepthKm (e.g. 12 or 14 km)
      */
-    worldToScreen(xKm, depthKm) {
-      const w = this.canvas.width;
-      const h = this.canvas.height;
-      const marginL = 60;
-      const marginR = 30;
-      const marginT = 45;
-      const marginB = 30;
-      const plotW = w - marginL - marginR;
-      const plotH = h - marginT - marginB;
-
-      const profileW = this.profile.widthKm;
-      const profileD = this.profile.maxDepthKm;
-
-      const sx = marginL + ((xKm + profileW / 2) / profileW) * plotW;
-      const sy = marginT + (depthKm / profileD) * plotH;
-      return { x: sx, y: sy };
+    layout() {
+      if (this.drawingLayout) return this.drawingLayout;
+      const w = this.surface.width, h = this.surface.height;
+      const rect = this.canvas.getBoundingClientRect();
+      let left = 0, right = w;
+      for (const selector of ['.panel-left', '.panel-right']) {
+        const panel = document.querySelector(selector);
+        if (!panel) continue;
+        const r = panel.getBoundingClientRect();
+        if (r.bottom <= rect.top || r.top >= rect.bottom) continue;
+        if (r.left <= rect.left + w / 2 && r.right > rect.left) left = Math.max(left, r.right - rect.left + 12);
+        if (r.left > rect.left + w / 2 && r.left < rect.right) right = Math.min(right, r.left - rect.left - 12);
+      }
+      if (right-left < 180) { left = 0; right = w; }
+      const top = window.innerWidth<960 ? 25 : this.mode === 'exploration' ? 90 : 35;
+      const peak = this.profile.edifice.summitHeightKm + 0.8;
+      const sx = Math.max(1,right-left-72)/this.profile.widthKm;
+      const sy = Math.max(1,h-top-55-(window.innerWidth<960?30:235))/(this.profile.maxDepthKm+peak);
+      const scaleX = this.trueScale ? Math.min(sx,sy) : sx;
+      const scaleY = this.trueScale ? Math.min(sx,sy) : sy;
+      return { left:left+55, right:right-17, top, sx:scaleX, sy:scaleY, cx:(left+right+38)/2, ground:top+55+peak*scaleY, ve:scaleY/scaleX };
     }
 
-    screenToWorld(sx, sy) {
-      const w = this.canvas.width;
-      const h = this.canvas.height;
-      const marginL = 60;
-      const marginR = 30;
-      const marginT = 45;
-      const marginB = 30;
-      const plotW = w - marginL - marginR;
-      const plotH = h - marginT - marginB;
-
-      const profileW = this.profile.widthKm;
-      const profileD = this.profile.maxDepthKm;
-
-      const xKm = ((sx - marginL) / plotW) * profileW - profileW / 2;
-      const depthKm = ((sy - marginT) / plotH) * profileD;
-      return { x: xKm, depth: depthKm };
+    worldToScreen(x, depth) {
+      const l = this.layout();
+      return { x:l.cx+x*l.sx, y:l.ground+depth*l.sy };
+    }
+    screenToWorld(x, y) {
+      const l = this.layout();
+      return { x:(x-l.cx)/l.sx, depth:(y-l.ground)/l.sy };
+    }
+    stage() {
+      const rows = this.profile.stages;
+      const i = Math.max(0,rows.findLastIndex(s => this.timeline >= s.at));
+      const a = rows[i], b = rows[Math.min(i+1, rows.length-1)];
+      const t = a === b ? 0 : (this.timeline-a.at)/(b.at-a.at);
+      return { ...a, collapse:a.collapse+(b.collapse-a.collapse)*t, withdrawal:a.withdrawal+(b.withdrawal-a.withdrawal)*t };
+    }
+    reservoirs() { return this.mode === 'exploration' ? this.customChambers : this.profile.reservoirs; }
+    sheets() { return this.mode === 'exploration' ? this.customConduits : [...this.profile.dikes, ...this.profile.sills.map(s => ({x1:s.x-s.rxKm,y1:s.depthKm,x2:s.x+s.rxKm,y2:s.depthKm,widthM:50,sill:true}))]; }
+    active() { return this.intensity > 0 && this.timeline > 0 && this.timeline < 1 && (this.mode === 'exploration' || this.stage().activity > 0) && this.eruptionId !== 'yellowstone'; }
+    updateDescription() {
+      if (!this.profile) return;
+      const description = document.getElementById('cutaway-description');
+      if (description) description.textContent = `${this.profile.name}. ${this.stage().label}. Depth below ${this.profile.section.reference}. Rock layers: ${this.profile.layers.map(l=>l.name).join('; ')}. Reservoirs: ${this.reservoirs().map(r=>`${r.comp}, centre ${r.depthKm} km, ${Math.round((r.meltFraction || 0.35)*100)}% melt (see evidence below)`).join('; ')}. ${this.active() ? 'Illustrative ascent active.' : 'No animated magma ascent.'} Sheet thickness and geometry are illustrative.`;
+      const notes = document.getElementById('cutaway-notes');
+      if (notes && notes.dataset.preset !== this.eruptionId) {
+        notes.dataset.preset = this.eruptionId; notes.replaceChildren();
+        const add = (title, body, src, confidence) => {
+          const details = document.createElement('details'), summary = document.createElement('summary'), text = document.createElement('p');
+          summary.textContent = `${title} · ${confidence}`; text.textContent = body;
+          details.append(summary,text);
+          const source = this.profile.sources[src];
+          if (source?.url) { const link=document.createElement('a'); link.href=source.url; link.textContent=source.title; details.append(link); }
+          notes.append(details);
+        };
+        this.profile.annotations.forEach((n,i)=>add(`${i+1}. ${n.title}`,n.text,n.src,n.confidence));
+        const titles={composition:'Composition',temperatureC:'Temperature (°C)',depthRangeKm:'Source storage depth (km)',meltFraction:'Melt fraction (%)',reservoirVolumeKm3:'Reservoir volume (km³)'};
+        this.profile.reservoirs.forEach(r=>Object.entries(r.evidence).forEach(([key,e])=>{
+          const values=Array.isArray(e.value)?Array.from(e.value):[e.value];
+          const display=values.map(v=>key==='meltFraction'?Math.round(v*100):v);
+          add(`${r.comp}: ${titles[key] || key}`,`${[...new Set(display)].join('–')}`,e.src,e.confidence);
+        }));
+        add('Rock layers',this.profile.layers.map(l=>l.name).join('; '),'model','illustrative');
+        add('Erupted DRE', this.profile.eruptedDRE.value ? this.profile.eruptedDRE.value.join('–')+' km³ (independent deposit estimate)' : 'Unavailable; no supported DRE entered.',this.profile.eruptedDRE.src,this.profile.eruptedDRE.confidence);
+        add('Geometry, textures, zones and stage interpolation','Coordinates, edifice relief and sheet widths are teaching choices. Depths in source studies can use different reference levels; the drawing does not perform a datum correction. CO₂ can exsolve many kilometres deep; water exsolution and fragmentation vary with composition, gas and ascent. Colours compare approximate temperatures, not a calibrated thermometer. Reservoir withdrawal is schematic; this section cannot constrain 3D volume.','mush','illustrative');
+      }
     }
 
     initEvents() {
@@ -412,8 +220,8 @@
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         const dpr = window.devicePixelRatio || 1;
         return {
-          sx: (clientX - rect.left) * (canvas.width / rect.width),
-          sy: (clientY - rect.top) * (canvas.height / rect.height)
+          sx: (clientX - rect.left),
+          sy: (clientY - rect.top)
         };
       };
 
@@ -467,8 +275,9 @@
           const dy = ch.depthKm - depth;
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < ch.rxKm + radius) {
-            ch.rxKm = Math.min(25.0, ch.rxKm + radius * 0.15);
-            ch.ryKm = Math.min(10.0, ch.ryKm + radius * 0.12);
+            delete ch.reservoirVolumeKm3;
+            ch.rxKm = Math.min(this.profile.widthKm / 2, ch.rxKm + radius * 0.15);
+            ch.ryKm = Math.min(this.profile.maxDepthKm / 2, ch.ryKm + radius * 0.12);
             ch.x = (ch.x * 7 + x) / 8;
             ch.depthKm = (ch.depthKm * 7 + depth) / 8;
             merged = true;
@@ -521,6 +330,7 @@
           const ch = this.customChambers[i];
           const dist = Math.hypot(ch.x - x, ch.depthKm - depth);
           if (dist < ch.rxKm + radius) {
+            delete ch.reservoirVolumeKm3;
             ch.rxKm -= radius * 0.3;
             ch.ryKm -= radius * 0.2;
             if (ch.rxKm < 0.3 || ch.ryKm < 0.2) this.customChambers.splice(i, 1);
@@ -544,18 +354,22 @@
     }
 
     recalculateDiagnostics() {
-      const chambers = this.mode === 'exploration' ? this.customChambers : [this.profile.chamber];
-      const conduits = this.mode === 'exploration' ? this.customConduits : (this.profile.conduits || []);
+      const chambers = this.reservoirs();
+      const conduits = this.mode === 'exploration' ? this.customConduits : (this.profile.dikes || []);
       const aquifers = this.mode === 'exploration' ? this.customAquifers : (this.profile.aquifers || []);
 
       let totalVolumeKm3 = 0;
+      let meltVolumeKm3 = 0;
+      const erupted = this.profile.eruptedDRE.value;
+      const withdrawn = erupted ? (erupted[0] + erupted[1]) / 2 * this.stage().withdrawal : 0;
       let primaryDepthKm = 7.0;
       let maxRadiusKm = 0;
 
       for (const ch of chambers) {
         if (!ch) continue;
         // Oblate spheroid volume V = 4/3 * pi * a^2 * b
-        const vol = (4 / 3) * Math.PI * ch.rxKm * ch.rxKm * ch.ryKm;
+        const vol = ch.reservoirVolumeKm3 || (4 / 3) * Math.PI * ch.rxKm * ch.rxKm * ch.ryKm;
+        meltVolumeKm3 += Math.max(0, vol * (ch.meltFraction ?? 0.35) - (ch === chambers[0] ? withdrawn : 0));
         totalVolumeKm3 += vol;
         if (ch.rxKm > maxRadiusKm) {
           maxRadiusKm = ch.rxKm;
@@ -563,10 +377,11 @@
         }
       }
 
-      // Lithostatic overpressure ΔP = (ρ_crust - ρ_magma) * g * depth
+      // Column buoyancy is distinct from reservoir overpressure.
       const deltaRho = RHO_CRUST - RHO_MAGMA; // ~250 kg/m^3 buoyant density contrast
       const depthMeters = primaryDepthKm * 1000;
-      const overpressureMPa = ((deltaRho * GRAVITY * depthMeters) / 1e6) + (totalVolumeKm3 > 20 ? 8 : 4);
+      const buoyancyMPa = deltaRho * GRAVITY * depthMeters / 1e6;
+      const rockPressureMPa = RHO_CRUST * GRAVITY * depthMeters / 1e6;
 
       // Detect active surface vents (conduits reaching surface y <= 0.2 km)
       const surfaceVents = [];
@@ -594,12 +409,17 @@
       const diagnostics = {
         primaryDepthKm: Number(primaryDepthKm.toFixed(1)),
         totalVolumeKm3: Number(totalVolumeKm3.toFixed(1)),
-        overpressureMPa: Number(overpressureMPa.toFixed(1)),
+        rockPressureMPa: Number(rockPressureMPa.toFixed(1)),
+        buoyancyMPa: Number(buoyancyMPa.toFixed(1)),
+        meltVolumeKm3: Number(meltVolumeKm3.toFixed(1)),
+        eruptedDRE: this.profile.eruptedDRE.value,
+        mode: this.mode,
         ventCount: surfaceVents.length,
         surfaceVents: surfaceVents,
         hasSteamInteraction: hasSteamInteraction
       };
 
+      this.updateDescription();
       if (this.onDiagnosticsChange) this.onDiagnosticsChange(diagnostics);
       if (this.onVentChange && surfaceVents.length > 0) this.onVentChange(surfaceVents);
 
@@ -607,428 +427,132 @@
     }
 
     render(dt = 0.016) {
-      const ctx = this.ctx;
-      const w = this.canvas.width;
-      const h = this.canvas.height;
+      const ctx=this.ctx, w=this.surface.width, h=this.surface.height;
       if (!w || !h) return;
-
-      ctx.clearRect(0, 0, w, h);
-
-      // 1. Draw Geological Crust Layers
-      this.drawCrustLayers(ctx);
-
-      // 2. Draw Marine Water / Glacial Ice Cap if applicable
-      this.drawSurfaceOverburden(ctx);
-
-      // 3. Draw Aquifers & Hydrothermal Zones
-      this.drawAquifers(ctx);
-
-      // 4. Draw Conduits & Sills
-      this.drawConduits(ctx, dt);
-
-      // 5. Draw Magma Reservoirs & Chambers
-      this.drawChambers(ctx, dt);
-
-      // 6. Draw Gas Exsolution Bubble Physics
-      this.drawExsolutionBubbles(ctx, dt);
-
-      // 7. Draw Special Historical Features (Cryptodome, Ring Faults)
+      const moving = this.active() && !document.hidden && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (moving) this.clock += Math.min(dt,0.05);
+      ctx.clearRect(0,0,w,h);
+      ctx.fillStyle='#111a24'; ctx.fillRect(0,0,w,h);
+      this.drawingLayout=null;
+      const l=this.layout();
+      this.drawingLayout=l;
+      ctx.save(); ctx.beginPath(); ctx.rect(l.left,l.top,Math.max(1,l.right-l.left),Math.max(1,h-l.top-(window.innerWidth<960?15:85))); ctx.clip();
+      this.drawCrustLayers(ctx); this.drawEdifice(ctx); this.drawAquifers(ctx);
+      this.drawChambers(ctx); this.drawConduits(ctx); this.drawZones(ctx);
       this.drawSpecialFeatures(ctx);
-
-      // 8. Draw Depth Axis & Lithostatic Pressure Ruler
-      this.drawDepthAxes(ctx);
-
-      // 9. Draw Educational Annotations (Historical mode)
-      if (this.mode === 'historical') {
-        this.drawAnnotations(ctx);
-      }
+      ctx.restore(); this.drawDepthAxes(ctx); this.drawAnnotations(ctx);
+      if(this.mode==='exploration'){const p=this.worldToScreen(this.keyboardPos.x,this.keyboardPos.depth);ctx.strokeStyle='#f4d4ad';ctx.beginPath();ctx.moveTo(p.x-6,p.y);ctx.lineTo(p.x+6,p.y);ctx.moveTo(p.x,p.y-6);ctx.lineTo(p.x,p.y+6);ctx.stroke();}
+      this.drawingLayout=null;
     }
-
+    temperatureColor(temp) {
+      const t=Math.max(0,Math.min(1,((parseFloat(temp)||950)-780)/380));
+      return `rgb(${Math.round(150+100*t)},${Math.round(38+139*t)},${Math.round(22+23*t)})`;
+    }
     drawCrustLayers(ctx) {
-      const layers = this.profile.layers || [];
-      const profileW = this.profile.widthKm;
-
-      for (const lyr of layers) {
-        const p1 = this.worldToScreen(-profileW / 2, lyr.topKm);
-        const p2 = this.worldToScreen(profileW / 2, lyr.bottomKm);
-        const layerH = p2.y - p1.y;
-
-        ctx.fillStyle = lyr.color;
-        ctx.fillRect(p1.x, p1.y, p2.x - p1.x, layerH);
-
-        // Subtle geological texture
-        ctx.save();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
-        ctx.lineWidth = 1;
-        if (lyr.pattern === 'dots') {
-          for (let y = p1.y + 6; y < p2.y; y += 14) {
-            ctx.beginPath();
-            ctx.moveTo(p1.x, y);
-            ctx.lineTo(p2.x, y);
-            ctx.stroke();
+      const l=this.layout();
+      for (const layer of this.profile.layers) {
+        const a=this.worldToScreen(-this.profile.widthKm/2,layer.topKm), b=this.worldToScreen(this.profile.widthKm/2,layer.bottomKm);
+        ctx.fillStyle=layer.color; ctx.fillRect(a.x,a.y,b.x-a.x,b.y-a.y);
+        const key=`${layer.pattern}:${Math.round(l.sx)}:${Math.round(l.sy)}`;
+        if (!this.textureCache.has(key)) {
+          const tile=document.createElement('canvas'); tile.width=64; tile.height=64; const c=tile.getContext('2d');
+          c.strokeStyle='rgba(230,220,205,.16)'; c.fillStyle='rgba(230,220,205,.16)'; c.lineWidth=1;
+          for(let i=0;i<64;i+=16) {
+            c.beginPath();
+            if(layer.pattern==='slanted') {c.moveTo(i-64,64);c.lineTo(i+64,0);}
+            else if(layer.pattern==='ice') {c.moveTo(i,0);c.lineTo(i+8,32);c.lineTo(i,64);}
+            else if(layer.pattern==='blocks') {c.moveTo(0,i);c.lineTo(64,i);c.moveTo(i, i);c.lineTo(i,i+16);}
+            else {c.arc((i*7)%64,i,1.5,0,Math.PI*2);c.fill();}
+            c.stroke();
           }
-        } else if (lyr.pattern === 'blocks') {
-          for (let y = p1.y + 10; y < p2.y; y += 18) {
-            ctx.beginPath();
-            ctx.moveTo(p1.x, y);
-            ctx.lineTo(p2.x, y);
-            ctx.stroke();
-          }
+          for(let i=0;i<90;i++) {c.fillStyle=`rgba(255,255,255,${(i%5)/150})`;c.fillRect((i*23)%64,(i*37)%64,1,1);}
+          this.textureCache.set(key,ctx.createPattern(tile,'repeat'));
+          if(this.textureCache.size>32) this.textureCache.delete(this.textureCache.keys().next().value);
         }
-        ctx.restore();
-
-        // Layer Name Label on right
-        ctx.fillStyle = 'rgba(235, 205, 175, 0.45)';
-        ctx.font = '10px "Space Grotesk", system-ui, sans-serif';
-        ctx.textAlign = 'right';
-        ctx.fillText(lyr.name, p2.x - 8, p1.y + 15);
+        ctx.fillStyle=this.textureCache.get(key);ctx.fillRect(a.x,a.y,b.x-a.x,b.y-a.y);
       }
     }
-
-    drawSurfaceOverburden(ctx) {
-      const profileW = this.profile.widthKm;
-
-      // Seawater (Krakatoa)
-      if (this.profile.waterLevelKm) {
-        const pTop = this.worldToScreen(-profileW / 2, 0);
-        const pBot = this.worldToScreen(profileW / 2, this.profile.waterLevelKm * 10);
-        const grad = ctx.createLinearGradient(0, pTop.y, 0, pBot.y);
-        grad.addColorStop(0, 'rgba(15, 60, 110, 0.7)');
-        grad.addColorStop(1, 'rgba(10, 35, 70, 0.85)');
-        ctx.fillStyle = grad;
-        ctx.fillRect(pTop.x, pTop.y, pBot.x - pTop.x, pBot.y - pTop.y);
-
-        ctx.fillStyle = '#60b8ff';
-        ctx.font = 'bold 11px system-ui, sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText('🌊 Sunda Strait Seawater (~50 m depth)', pTop.x + 10, pTop.y + 16);
-      }
-
-      // Glacial Ice Cap (Eyjafjallajökull)
-      if (this.profile.glacierThicknessKm) {
-        const pTop = this.worldToScreen(-profileW / 2, 0);
-        const pBot = this.worldToScreen(profileW / 2, this.profile.glacierThicknessKm);
-        ctx.fillStyle = 'rgba(85, 185, 215, 0.65)';
-        ctx.fillRect(pTop.x, pTop.y, pBot.x - pTop.x, pBot.y - pTop.y);
-
-        ctx.fillStyle = '#d8f4ff';
-        ctx.font = 'bold 11px system-ui, sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText('❄️ Glacial Ice Cap (Gígjökull · 200 m ice thickness)', pTop.x + 10, pTop.y + 14);
-      }
+    surfaceDepth(x) {
+      const e=this.profile.edifice, stage=this.stage();
+      const slope=Math.max(0,1-Math.abs(x)/e.halfWidthKm);
+      const raw=-e.summitHeightKm*(e.shape==='plateau'?Math.min(1,slope*5):Math.pow(slope,e.shape==='shield'?0.65:1));
+      let depth=raw;
+      if(stage.collapse>0 && Math.abs(x)<e.postEruption.craterHalfWidthKm) depth=raw+(Math.max(raw,-e.postEruption.summitHeightKm+0.8)-raw)*stage.collapse;
+      if(this.eruptionId==='sthelenr1980' && x<0) depth=raw+Math.min(1,Math.max(0,(this.timeline-.15)/.04))*Math.max(0,1-Math.abs(x)/e.halfWidthKm)*1.6;
+      return depth;
     }
-
+    drawEdifice(ctx) {
+      const p=this.profile, e=p.edifice;
+      const a=this.worldToScreen(-p.widthKm/2,0),b=this.worldToScreen(p.widthKm/2,0);
+      ctx.beginPath();ctx.moveTo(a.x,a.y);
+      for(let x=-p.widthKm/2;x<=p.widthKm/2;x+=p.widthKm/160){const v=this.worldToScreen(x,this.surfaceDepth(x));ctx.lineTo(v.x,v.y);}
+      ctx.lineTo(b.x,b.y);ctx.closePath();ctx.fillStyle='#55483d';ctx.fill();
+      ctx.save();ctx.clip();ctx.strokeStyle='#82705c';ctx.lineWidth=1;
+      for(let d=-e.summitHeightKm;d<0;d+=.25){const v=this.worldToScreen(0,d);ctx.beginPath();ctx.moveTo(a.x,v.y);ctx.lineTo(b.x,v.y);ctx.stroke();}ctx.restore();
+      if(p.waterLevelKm){ctx.fillStyle='rgba(55,140,195,.7)';ctx.fillRect(a.x,a.y,b.x-a.x,p.waterLevelKm*this.layout().sy);}
+      if(p.glacierThicknessKm){ctx.strokeStyle='#b4e3ec';ctx.lineWidth=Math.max(1,p.glacierThicknessKm*this.layout().sy);ctx.beginPath();for(let x=-1.2;x<1.2;x+=.05){const v=this.worldToScreen(x,this.surfaceDepth(x));if(x===-1.2)ctx.moveTo(v.x,v.y);else ctx.lineTo(v.x,v.y);}ctx.stroke();}
+      if(e.rim){ctx.strokeStyle='#cbbda0';ctx.lineWidth=2;ctx.beginPath();for(const x of [-1.6,-1,0,1,1.6]){const v=this.worldToScreen(x,this.surfaceDepth(x)+(Math.abs(x)<1?.25:0));ctx.lineTo(v.x,v.y);}ctx.stroke();}
+    }
     drawAquifers(ctx) {
-      const aquifers = this.mode === 'exploration' ? this.customAquifers : (this.profile.aquifers || []);
-      for (const aq of aquifers) {
-        const center = this.worldToScreen(aq.x, aq.depthKm);
-        const pRadius = this.worldToScreen(aq.x + aq.rxKm, aq.depthKm + aq.ryKm);
-        const rx = Math.abs(pRadius.x - center.x);
-        const ry = Math.abs(pRadius.y - center.y);
-
-        const grad = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, rx);
-        grad.addColorStop(0, 'rgba(50, 160, 220, 0.55)');
-        grad.addColorStop(0.8, 'rgba(30, 120, 180, 0.35)');
-        grad.addColorStop(1, 'rgba(20, 80, 140, 0.0)');
-
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.ellipse(center.x, center.y, rx, ry, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.strokeStyle = 'rgba(100, 210, 255, 0.5)';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4, 4]);
-        ctx.stroke();
-        ctx.setLineDash([]);
+      for(const aq of this.mode==='exploration'?this.customAquifers:this.profile.aquifers){const a=this.worldToScreen(aq.x,aq.depthKm),l=this.layout();ctx.fillStyle='rgba(60,170,205,.23)';ctx.beginPath();ctx.ellipse(a.x,a.y,aq.rxKm*l.sx,aq.ryKm*l.sy,0,0,Math.PI*2);ctx.fill();}
+    }
+    drawChambers(ctx) {
+      const l=this.layout();
+      for(const r of this.reservoirs()) {
+        const a=this.worldToScreen(r.x,r.depthKm),rx=r.rxKm*l.sx,ry=r.ryKm*l.sy;
+        ctx.fillStyle='#766153';ctx.beginPath();ctx.ellipse(a.x,a.y,rx+4,ry+4,0,0,Math.PI*2);ctx.fill();
+        ctx.save();ctx.beginPath();ctx.ellipse(a.x,a.y,rx,ry,0,0,Math.PI*2);ctx.clip();ctx.fillStyle='#593c37';ctx.fillRect(a.x-rx,a.y-ry,rx*2,ry*2);
+        // Distributed melt lenses occupy a fraction of the section, not an empty tank.
+        const volume=r.reservoirVolumeKm3 || 4/3*Math.PI*r.rxKm*r.rxKm*r.ryKm;
+        const initialMelt=volume*(r.meltFraction??.35);
+        const dre=this.profile.eruptedDRE.value;
+        const withdrawn=dre && r===this.reservoirs()[0] ? (dre[0]+dre[1])/2*this.stage().withdrawal : 0;
+        const fraction=Math.max(0,initialMelt-withdrawn)/volume;
+        for(let i=0;i<12;i++) {const x=a.x+Math.sin(i*2.4)*rx*.68,y=a.y+Math.cos(i*1.7)*ry*.62;ctx.fillStyle=this.temperatureColor(r.compositionLayers?.length>1 && y>a.y ? 950 : r.temperatureC||r.temp);ctx.beginPath();ctx.ellipse(x,y,rx*Math.sqrt(fraction)/4,ry*Math.sqrt(fraction)/2.5,0,0,Math.PI*2);ctx.fill();}
+        for(let i=0;i<65;i++){const x=a.x-rx+((i*37)%100)/50*rx,y=a.y-ry+((i*61)%100)/50*ry;ctx.fillStyle=i%2?'#b3a397':'#7f746c';ctx.beginPath();ctx.moveTo(x,y-3);ctx.lineTo(x+4,y+1);ctx.lineTo(x,y+4);ctx.lineTo(x-3,y);ctx.closePath();ctx.fill();}
+        if(r.compositionLayers?.length>1){ctx.strokeStyle='#dbb69e';ctx.beginPath();ctx.moveTo(a.x-rx,a.y);ctx.lineTo(a.x+rx,a.y);ctx.stroke();}
+        ctx.restore();ctx.strokeStyle='#b7957e';ctx.beginPath();ctx.ellipse(a.x,a.y,rx,ry,0,0,Math.PI*2);ctx.stroke();
       }
     }
-
-    drawConduits(ctx, dt) {
-      const conduits = this.mode === 'exploration' ? this.customConduits : (this.profile.conduits || []);
-
-      for (const c of conduits) {
-        const p1 = this.worldToScreen(c.x1, c.y1);
-        const p2 = this.worldToScreen(c.x2, c.y2);
-        const widthPx = Math.max(4, (c.widthM || 60) * 0.12);
-
-        // Outer heated rock halo
-        ctx.strokeStyle = 'rgba(255, 80, 20, 0.35)';
-        ctx.lineWidth = widthPx + 8;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.stroke();
-
-        // Molten magma core
-        const grad = ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y);
-        grad.addColorStop(0, '#ff3b10');
-        grad.addColorStop(0.5, '#ff8020');
-        grad.addColorStop(1, '#ffc040');
-
-        ctx.strokeStyle = grad;
-        ctx.lineWidth = widthPx;
-        ctx.stroke();
-
-        // Animated ascending magma pulses
-        const pulseCount = 3;
-        const now = performance.now() * 0.001;
-        for (let i = 0; i < pulseCount; i++) {
-          const t = ((now * 0.6) + (i / pulseCount)) % 1.0;
-          const px = p1.x + (p2.x - p1.x) * (1 - t);
-          const py = p1.y + (p2.y - p1.y) * (1 - t);
-
-          ctx.fillStyle = '#ffffff';
-          ctx.beginPath();
-          ctx.arc(px, py, widthPx * 0.45, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
+    drawConduits(ctx) {
+      const l=this.layout(), active=this.active();
+      this.sheets().forEach((c,index)=>{
+        if(c.flank && (this.timeline<.08 || this.timeline>=.14)) return;
+        if(this.eruptionId==='eyja2010' && !c.flank && !c.sill && this.timeline<.14) return;
+        const a=this.worldToScreen(c.x1,c.y1),b=this.worldToScreen(c.x2,c.surface?this.surfaceDepth(c.x2):c.y2);
+        ctx.strokeStyle=active?this.temperatureColor(this.reservoirs()[0]?.temperatureC):'#79645a';ctx.lineWidth=this.trueScale?Math.max(.4,(c.widthM||50)/1000*l.sx):3;ctx.lineCap='butt';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+        if(!active || c.sill || (this.eruptionId==='pinatubo1991' && c.y1>8 && this.timeline>=.18)) return;
+        for(let i=0;i<5;i++){const t=(this.clock*.2+i/5+index*.1)%1,x=a.x+(b.x-a.x)*t,y=a.y+(b.y-a.y)*t;ctx.fillStyle=c.y1+(c.y2-c.y1)*t<(this.profile.fragmentationDepthKm??-99)?'#c8bca9':'#e8bc7a';ctx.beginPath();ctx.arc(x,y,1.4+t*1.5,0,Math.PI*2);ctx.fill();}
+      });
+      if(!active){const v=this.worldToScreen(0,this.surfaceDepth(0));ctx.fillStyle='#b6a18b';ctx.fillRect(v.x-5,v.y,10,6);}
     }
-
-    drawChambers(ctx, dt) {
-      const chambers = this.mode === 'exploration' ? this.customChambers : [this.profile.chamber];
-      if (this.profile.deepBasaltChamber && this.mode !== 'exploration') {
-        chambers.push(this.profile.deepBasaltChamber);
-      }
-
-      const now = performance.now() * 0.002;
-
-      for (const ch of chambers) {
-        if (!ch) continue;
-        const center = this.worldToScreen(ch.x, ch.depthKm);
-        const edge = this.worldToScreen(ch.x + ch.rxKm, ch.depthKm + ch.ryKm);
-        const rx = Math.abs(edge.x - center.x);
-        const ry = Math.abs(edge.y - center.y);
-
-        // Breathing/pulsing magma reservoir
-        const pulse = 1.0 + Math.sin(now * 1.5 + ch.depthKm) * 0.02;
-        const prx = rx * pulse;
-        const pry = ry * pulse;
-
-        // Thermal contact aureole (metamorphosed baked wall rock)
-        const aureoleGrad = ctx.createRadialGradient(center.x, center.y, prx * 0.6, center.x, center.y, prx * 1.3);
-        aureoleGrad.addColorStop(0, 'rgba(255, 60, 10, 0.45)');
-        aureoleGrad.addColorStop(0.7, 'rgba(180, 40, 10, 0.2)');
-        aureoleGrad.addColorStop(1, 'rgba(100, 20, 5, 0)');
-
-        ctx.fillStyle = aureoleGrad;
-        ctx.beginPath();
-        ctx.ellipse(center.x, center.y, prx * 1.3, pry * 1.3, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Molten Magma Reservoir Core
-        const magmaGrad = ctx.createRadialGradient(center.x, center.y * 0.96, 0, center.x, center.y, prx);
-        magmaGrad.addColorStop(0, '#fff4d0');
-        magmaGrad.addColorStop(0.3, '#ffaa30');
-        magmaGrad.addColorStop(0.75, '#e03a10');
-        magmaGrad.addColorStop(1, '#8c1a05');
-
-        ctx.fillStyle = magmaGrad;
-        ctx.beginPath();
-        ctx.ellipse(center.x, center.y, prx, pry, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.strokeStyle = '#ffd880';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-
-        // Convective circulation streaks
-        ctx.save();
-        ctx.strokeStyle = 'rgba(255, 240, 200, 0.25)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.ellipse(center.x - prx * 0.35, center.y, prx * 0.2, pry * 0.45, 0.2, 0, Math.PI);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.ellipse(center.x + prx * 0.35, center.y, prx * 0.2, pry * 0.45, -0.2, 0, Math.PI);
-        ctx.stroke();
-        ctx.restore();
-
-        // Chamber Label
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 11px "Space Grotesk", system-ui, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(ch.comp || 'Magma Chamber', center.x, center.y - 2);
-
-        ctx.fillStyle = 'rgba(255, 230, 200, 0.85)';
-        ctx.font = '10px monospace';
-        ctx.fillText(`${ch.depthKm} km depth · ${ch.temp || '950 °C'}`, center.x, center.y + 12);
-      }
+    drawZones(ctx) {
+      if(!this.active()) return;
+      const zones=[[this.profile.gasOnsetDepthKm,'CO₂ exsolution (illustrative)','#cbaa81'],[this.profile.exsolutionDepthKm,'Bubble growth (illustrative)','#dca756'],[this.profile.fragmentationDepthKm,'Fragmentation / ash + gas (illustrative)','#bebbb3']];
+      for(const [depth,label,color] of zones){if(depth===null)continue;const a=this.worldToScreen(-this.profile.widthKm/2,depth),b=this.worldToScreen(this.profile.widthKm/2,depth);ctx.strokeStyle=color;ctx.setLineDash([4,5]);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=color;ctx.font='10px system-ui';ctx.fillText(label,a.x+5,a.y-4);}
     }
-
-    drawExsolutionBubbles(ctx, dt) {
-      const exDepth = this.profile.exsolutionDepthKm || 2.5;
-      const exPos = this.worldToScreen(0, exDepth);
-      const profileW = this.profile.widthKm;
-
-      // Exsolution dashed boundary line across the crust
-      ctx.save();
-      ctx.strokeStyle = 'rgba(255, 200, 80, 0.35)';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([5, 5]);
-      ctx.beginPath();
-      const pL = this.worldToScreen(-profileW / 2, exDepth);
-      const pR = this.worldToScreen(profileW / 2, exDepth);
-      ctx.moveTo(pL.x, exPos.y);
-      ctx.lineTo(pR.x, exPos.y);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      ctx.fillStyle = 'rgba(255, 215, 100, 0.7)';
-      ctx.font = '10px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText(`— Gas Exsolution / Fragmentation Level (~${exDepth} km)`, pL.x + 8, exPos.y - 4);
-      ctx.restore();
-
-      // Animate bubbles rising above exsolution depth
-      for (const b of this.bubbles) {
-        b.depthKm -= b.speed * dt;
-        if (b.depthKm < 0.1) {
-          b.depthKm = exDepth + Math.random() * 0.5;
-          b.x = (Math.random() - 0.5) * 0.35;
-        }
-
-        const bPos = this.worldToScreen(b.x, b.depthKm);
-        const expansion = Math.max(1, (exDepth - b.depthKm) * 1.4);
-
-        ctx.fillStyle = `rgba(255, 245, 220, ${b.opacity})`;
-        ctx.beginPath();
-        ctx.arc(bPos.x, bPos.y, b.radius * expansion, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
     drawSpecialFeatures(ctx) {
-      // 1. Mount St. Helens Cryptodome
-      if (this.profile.cryptodome) {
-        const cd = this.profile.cryptodome;
-        const center = this.worldToScreen(cd.x, cd.depthKm);
-        const edge = this.worldToScreen(cd.x + cd.rxKm, cd.depthKm + cd.ryKm);
-        const rx = Math.abs(edge.x - center.x);
-        const ry = Math.abs(edge.y - center.y);
-
-        ctx.fillStyle = 'rgba(255, 120, 20, 0.9)';
-        ctx.beginPath();
-        ctx.ellipse(center.x, center.y, rx, ry, -0.2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#ffd880';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 10px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('North-Flank Cryptodome', center.x, center.y);
-      }
-
-      // 2. Tambora Ring Faults & Roof Collapse
-      if (this.profile.ringFaults && this.timeline >= 0.55) {
-        ctx.save();
-        ctx.strokeStyle = '#ff3020';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([6, 3]);
-
-        for (const rf of this.profile.ringFaults) {
-          const p1 = this.worldToScreen(rf.x, rf.y1);
-          const p2 = this.worldToScreen(rf.x, rf.y2);
-          ctx.beginPath();
-          ctx.moveTo(p1.x, p1.y);
-          ctx.lineTo(p2.x, p2.y);
-          ctx.stroke();
-        }
-        ctx.setLineDash([]);
-
-        // Downward slip arrows
-        const pMid = this.worldToScreen(0, 1.8);
-        ctx.fillStyle = '#ff6040';
-        ctx.font = 'bold 12px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('⬇ Piston Roof Block Subsidence ⬇', pMid.x, pMid.y);
-        ctx.restore();
-      }
+      const p=this.profile;
+      if(this.eruptionId==='pinatubo1991' && this.timeline<.18){const a=this.worldToScreen(0,8.5);ctx.fillStyle='#e2aa71';ctx.font='10px system-ui';ctx.fillText('Basalt recharge: heat + gas (inferred)',a.x+8,a.y);}
+      if(p.marineIngress && this.active()){const a=this.worldToScreen(p.marineIngress.x,p.marineIngress.depthKm);ctx.strokeStyle='#6fbdde';ctx.setLineDash([2,4]);ctx.beginPath();ctx.moveTo(a.x-25,a.y-20);ctx.lineTo(a.x,a.y);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#a5d1e3';ctx.font='10px system-ui';ctx.fillText('Water–magma interaction: debated',a.x+8,a.y-10);}
+      if(p.cryptodome && this.timeline<.19){const c=p.cryptodome,a=this.worldToScreen(c.x,c.depthKm),l=this.layout();ctx.fillStyle='#b95434';ctx.beginPath();ctx.ellipse(a.x,a.y,c.rxKm*l.sx,c.ryKm*l.sy,0,0,Math.PI*2);ctx.fill();}
+      if(this.eruptionId==='sthelenr1980' && this.timeline>=.19 && this.timeline<.34){const a=this.worldToScreen(-1.6,-1.3);ctx.fillStyle='#cbb8a0';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(a.x-55,a.y-15);ctx.lineTo(a.x-55,a.y+15);ctx.closePath();ctx.fill();}
+      if(p.ringFaults && this.stage().collapse>0){ctx.strokeStyle='#b99576';ctx.setLineDash([5,3]);for(const f of p.ringFaults){const a=this.worldToScreen(f.x,f.y1),b=this.worldToScreen(f.x,f.y2);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}ctx.setLineDash([]);}
+      if(this.timeline===0){ctx.fillStyle='#e2b978';for(let i=0;i<12;i++){const a=this.worldToScreen(Math.sin(i*4)*2,2+(i%5));ctx.fillRect(a.x,a.y,2,2);}}
     }
-
     drawDepthAxes(ctx) {
-      const marginL = 60;
-      const maxD = this.profile.maxDepthKm;
-
-      ctx.save();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-      ctx.lineWidth = 1;
-
-      // Vertical depth line
-      const topP = this.worldToScreen(-this.profile.widthKm / 2, 0);
-      const botP = this.worldToScreen(-this.profile.widthKm / 2, maxD);
-      ctx.beginPath();
-      ctx.moveTo(marginL, topP.y);
-      ctx.lineTo(marginL, botP.y);
-      ctx.stroke();
-
-      // Tick marks every 2 km with Lithostatic Pressure (P = ρ g z)
-      ctx.fillStyle = '#f0c080';
-      ctx.font = '10px monospace';
-      ctx.textAlign = 'right';
-
-      for (let d = 0; d <= maxD; d += 2) {
-        const p = this.worldToScreen(-this.profile.widthKm / 2, d);
-        ctx.beginPath();
-        ctx.moveTo(marginL - 6, p.y);
-        ctx.lineTo(marginL, p.y);
-        ctx.stroke();
-
-        const lithoP = Math.round((RHO_CRUST * GRAVITY * (d * 1000)) / 1e6); // MPa
-        ctx.fillText(`${d} km`, marginL - 10, p.y + 3);
-
-        ctx.fillStyle = 'rgba(200, 160, 120, 0.45)';
-        ctx.fillText(`${lithoP} MPa`, marginL - 10, p.y + 13);
-        ctx.fillStyle = '#f0c080';
-      }
-
-      ctx.restore();
+      const l=this.layout();ctx.font='10px system-ui';ctx.fillStyle='#eee0cf';ctx.textAlign='right';
+      const step=this.profile.maxDepthKm>20?10:2;
+      for(let d=0;d<=this.profile.maxDepthKm;d+=step){const a=this.worldToScreen(-this.profile.widthKm/2,d);ctx.fillText(`${d} km`,l.left-8,a.y+3);}
+      ctx.textAlign='left';ctx.fillText(`Depth below ${this.profile.section.reference}`,l.left,l.top-12);
+      const y=l.top+10, length=this.profile.widthKm/5;ctx.strokeStyle='#eee0cf';ctx.beginPath();ctx.moveTo(l.left,y);ctx.lineTo(l.left+length*l.sx,y);ctx.stroke();
+      ctx.fillText(`${length} km · V.E. ${l.ve.toFixed(2)}× · sheets ${this.trueScale?'at scale':'enlarged'}`,l.left,y+15);
+      ctx.fillText(this.profile.section.orientation,l.left,y+30);
     }
-
     drawAnnotations(ctx) {
-      const annotations = this.profile.annotations || [];
-      for (const note of annotations) {
-        const p = this.worldToScreen(note.x, note.depthKm);
-
-        // Pin icon
-        ctx.fillStyle = '#ff8020';
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-
-        // Tooltip badge
-        const badgeW = 210;
-        const badgeX = p.x > this.canvas.width / 2 ? p.x - badgeW - 12 : p.x + 12;
-        const badgeY = p.y - 18;
-
-        ctx.fillStyle = 'rgba(10, 4, 2, 0.82)';
-        ctx.strokeStyle = 'rgba(255, 120, 40, 0.4)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.roundRect(badgeX, badgeY, badgeW, 44, 6);
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.fillStyle = '#ffb060';
-        ctx.font = 'bold 10px "Space Grotesk", sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText(note.title, badgeX + 8, badgeY + 14);
-
-        ctx.fillStyle = 'rgba(240, 220, 195, 0.8)';
-        ctx.font = '9px system-ui, sans-serif';
-        ctx.fillText(note.text.slice(0, 42) + '...', badgeX + 8, badgeY + 28);
-      }
+      this.profile.annotations.forEach((note,i)=>{const a=this.worldToScreen(note.x,note.depthKm);ctx.fillStyle='#ffd4a2';ctx.beginPath();ctx.arc(a.x,a.y,7,0,Math.PI*2);ctx.fill();ctx.fillStyle='#271b17';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText(String(i+1),a.x,a.y+3);});ctx.textAlign='left';
     }
   }
-
-  // Export to window
   window.VolcanoConduitEngine = VolcanoConduitEngine;
   window.HISTORICAL_CONDUITS = HISTORICAL_CONDUITS;
 })();
