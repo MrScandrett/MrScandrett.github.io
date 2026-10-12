@@ -22,6 +22,10 @@
   var MAJOR_KEYS = { '-7': 'Cb', '-6': 'Gb', '-5': 'Db', '-4': 'Ab', '-3': 'Eb', '-2': 'Bb', '-1': 'F', '0': 'C', '1': 'G', '2': 'D', '3': 'A', '4': 'E', '5': 'B', '6': 'F#', '7': 'C#' };
   var MINOR_KEYS = { '-7': 'Ab', '-6': 'Eb', '-5': 'Bb', '-4': 'F', '-3': 'C', '-2': 'G', '-1': 'D', '0': 'A', '1': 'E', '2': 'B', '3': 'F#', '4': 'C#', '5': 'G#', '6': 'D#', '7': 'A#' };
   var MAX_BARS = 400;
+  function harmonyEngine() {
+    if (typeof module !== 'undefined' && module.exports) { try { return require('./fake-book-harmony.js'); } catch (e) { return null; } }
+    return root.FakeBookHarmony || null;
+  }
   var U = 12;                       // timeline units per quarter note (sixteenths and triplet eighths both land on it)
   function mod(n, m) { return ((n % m) + m) % m; }
 
@@ -243,7 +247,7 @@
           }
           kids(c, 'clef').forEach(function (cl) {
             var si = staffInfo(cl.attrs.number || '1');
-            if (!si.clef) si.clef = (txt(cl, 'sign') || 'G').toUpperCase();
+            if (!si.clef) { si.clef = (txt(cl, 'sign') || 'G').toUpperCase(); si.octave = num(cl, 'clef-octave-change', 0); }
           });
           kids(c, 'staff-details').forEach(function (sd) {
             var si = staffInfo(sd.attrs.number || '1');
@@ -634,29 +638,65 @@
       var chordBars = buildChords(harms, pickupU, barU, nBars, carryIn);
       var hasChords = chordBars.some(Boolean);
 
-      // Extra staves the score carries: a bass-clef staff (piano left hand, bass, cello…) and tablature.
-      var extra = {}, bestBass = 0, bestTab = 0;
+      // Extra staves the score carries.
+      // Tab: a 6+ string TAB staff. Bass, best source first: a bass part (by name, or 4–5 string tab),
+      // then a bass-clef staff (piano left hand, cello…), then the lower voice inside the melody's
+      // own staff (fingerstyle guitar, a one-staff piano part), then the bottom notes of its chords.
+      var extra = {}, bestTab = 0, bassPick = null;
+      var offerBass = function (rank, count, make) { if (!bassPick || rank > bassPick.rank || (rank === bassPick.rank && count > bassPick.count)) bassPick = { rank: rank, count: count, make: make }; };
       all.forEach(function (Rp, pi) {
-        var noteCount = {}, fretCount = {};
+        var noteCount = {}, fretCount = {}, pitchSum = {};
         Rp.measures.forEach(function (m) { m.notes.forEach(function (n) {
           if (!n.pitched) return;
           noteCount[n.staff] = (noteCount[n.staff] || 0) + 1;
+          pitchSum[n.staff] = (pitchSum[n.staff] || 0) + n.midi;
           if (n.string) fretCount[n.staff] = (fretCount[n.staff] || 0) + 1;
         }); });
+        var name = partNames[parts[pi].attrs.id] || '';
+        var bassName = /\bbass\b|\bbajo\b|\bbasse\b|\bbasso\b|contrabass|kontrabass/i.test(name) && !/clarinet|bassoon|drum/i.test(name);
         Object.keys(noteCount).forEach(function (st) {
           var info = Rp.staves[st] || {}, melodyStaff = Rp === R && st === minStaff;
-          var name = partNames[parts[pi].attrs.id] || '';
-          if ((info.clef === 'TAB' || (fretCount[st] || 0) > noteCount[st] / 2) && fretCount[st] > bestTab) {
+          var tabby = info.clef === 'TAB' || (fretCount[st] || 0) > noteCount[st] / 2;
+          var lines = info.lines && info.lines !== 5 ? info.lines : (tabby ? 6 : 5);
+          var avg = pitchSum[st] / noteCount[st];
+          if (tabby && lines >= 6 && !bassName && fretCount[st] > bestTab) {
             bestTab = fretCount[st];
-            extra.tab = { label: name, lines: info.lines && info.lines !== 5 ? info.lines : 6, tuning: tabTuning(info), capo: info.capo || 0,
+            extra.tab = { label: name, lines: lines, tuning: tabTuning(info), capo: info.capo || 0,
               events: staffEvents(Rp, st, order, starts, pickupU, true) };
-          } else if (info.clef === 'F' && !melodyStaff && noteCount[st] > bestBass) {
-            bestBass = noteCount[st];
-            extra.bass = { label: name, events: staffEvents(Rp, st, order, starts, pickupU, false) };
+          } else if (!melodyStaff && (bassName || (tabby && lines <= 5) || (avg < 48 && Rp !== R))) {
+            offerBass(3, noteCount[st] - (tabby ? 1 : 0), function () { return { label: name, events: staffEvents(Rp, st, order, starts, pickupU, false) }; });
+          } else if (!melodyStaff && info.clef === 'F') {
+            offerBass(2, noteCount[st], function () { return { label: name, events: staffEvents(Rp, st, order, starts, pickupU, false) }; });
           }
         });
       });
-      ['bass', 'tab'].forEach(function (k) { if (extra[k] && !extra[k].events.length) delete extra[k]; });
+      if (!bassPick) {
+        // The melody's own staff: a lower voice, or the bottom notes of its chords.
+        var vStats = {};
+        R.measures.forEach(function (m) { m.notes.forEach(function (n) {
+          if (n.staff !== minStaff || !n.pitched) return;
+          var v = vStats[n.voice] || (vStats[n.voice] = { n: 0, sum: 0 });
+          v.n++; v.sum += n.midi;
+        }); });
+        var melAvg = vStats[voice] ? vStats[voice].sum / vStats[voice].n : 72;
+        var lower = Object.keys(vStats).filter(function (v) { return v !== voice && vStats[v].n >= 4 && vStats[v].sum / vStats[v].n <= melAvg - 5; })
+          .sort(function (a, b) { return vStats[a].sum / vStats[a].n - vStats[b].sum / vStats[b].n; })[0];
+        var pname = partNames[part.attrs.id] || '';
+        if (lower) offerBass(1, vStats[lower].n, function () { return { label: (pname ? pname + ', ' : '') + 'lower voice', events: staffEvents(R, minStaff, order, starts, pickupU, false, { voice: lower }) }; });
+        else offerBass(0, 0, function () { return { label: (pname ? pname + ', ' : '') + 'bass notes', events: staffEvents(R, minStaff, order, starts, pickupU, false, { lowest: true, voice: voice }) }; });
+      }
+      if (bassPick) {
+        extra.bass = bassPick.make();
+        if (extra.bass.events.length < Math.max(2, nBars / 8)) delete extra.bass;   // a few stray low notes aren't a bass line
+      }
+      // A guitar part without tab: keep all its notes so the fake book can work the tab out.
+      var mInfo = R.staves[minStaff] || {};
+      var guitarish = /guitar|gtr|gitarr|guitare|chitarra|guitarra|ukulele|banjo/i.test(partNames[part.attrs.id] || '') || (mInfo.clef === 'G' && mInfo.octave === -1);
+      if (guitarish && !extra.tab) {
+        var octUp = mInfo.octave === -1 || (R.transpose && R.transpose.octave === -1);
+        extra.gtr = { written: octUp ? 12 : 0, events: staffEvents(R, minStaff, order, starts, pickupU, false, { allVoices: true }) };
+      }
+      ['bass', 'tab', 'gtr'].forEach(function (k) { if (extra[k] && !extra[k].events.length) delete extra[k]; });
 
       // Key: the one in force where this song starts, at concert pitch; the mode if MusicXML says so,
       // else a guess from how the tune ends.
@@ -676,12 +716,43 @@
       var key = (minor ? MINOR_KEYS : MAJOR_KEYS)[fifths];
       key = { Cb: 'B', 'A#': 'Bb', 'D#': 'Eb' }[key] || key;   // seven sharps/flats: read the simpler enharmonic key
 
+      // No chord symbols (most classical scores): work the chords and key changes out from every note.
+      var H = harmonyEngine(), keyChanges = [];
+      if (!hasChords && H) {
+        var allNotes = [];
+        all.forEach(function (Rp) {
+          order.forEach(function (mi, k) {
+            var m = Rp.measures[mi];
+            if (!m) return;
+            m.notes.forEach(function (n) {
+              if (!n.pitched || (Rp.staves[n.staff] && Rp.staves[n.staff].clef === 'TAB')) return;
+              allNotes.push({ s: starts[k] + n.t - pickupU / U, d: n.dur, midi: n.midi });
+            });
+          });
+        });
+        var sixEight = outMeter[0] === 6 && outMeter[1] === 8;
+        var tonicPc = mod(NAT[LETTERS.indexOf(key[0])] + (key[1] === '#' ? 1 : key[1] === 'b' ? -1 : 0), 12);
+        var res = H.analyze(allNotes, {
+          M: outM, bars: nBars, unit: sixEight ? 1.5 : 1, startKey: { tonic: tonicPc, minor: minor },
+          strong: sixEight ? function (pos) { return pos < 1e-6 ? 0 : 1; } : undefined
+        });
+        chordBars = res.chordBars;
+        // The signature can't tell F major from D minor; the notes can.
+        var k1 = res.keys[0];
+        if (k1 && (modeTxt === '' || modeTxt === 'none') && mod(k1.tonic + (k1.minor ? 3 : 0), 12) === mod(tonicPc + (minor ? 3 : 0), 12)) {
+          minor = k1.minor; key = k1.name;
+        }
+        keyChanges = res.keys.slice(1).map(function (k) { return { bar: k.bar, key: k.name, minor: k.minor }; });
+        warnings.push('The file has no chord symbols, so the chords' + (keyChanges.length ? ' and key changes' : '') +
+          ' were worked out from the notes (every part, with the bass line counting most). Check them against the score.');
+      }
+
       // Empty bars before the first chord get the tonic, and a chordless score gets it throughout.
       var tonic = key + (minor ? 'm' : '');
       var firstChord = chordBars.filter(Boolean)[0] || tonic;
       var filled = [], seen = false;
       chordBars.forEach(function (c) { if (c) seen = true; filled.push(c || (seen ? filled[filled.length - 1] : firstChord)); });
-      if (!hasChords) warnings.push('The file has no chord symbols, so every bar shows the home chord as a placeholder.');
+      if (!hasChords && !H) warnings.push('The file has no chord symbols, so every bar shows the home chord as a placeholder.');
       var lastTok = (chordBars.filter(Boolean).pop() || '').split(' ').pop().split(':')[0] || carryIn;
 
       return {
@@ -694,6 +765,8 @@
         tempo: R.tempo ? Math.round(R.tempo) : null,
         style: R.styleWords,
         hasChords: hasChords,
+        chordsWorkedOut: !hasChords && !!H,
+        keyChanges: keyChanges,
         unrolled: order.length !== R.measures.length,
         staves: extra,
         fromBar: R.measures[order[0]].number, toBar: R.measures[order[order.length - 1]].number,
@@ -716,16 +789,19 @@
   }
   function spellTok(n) { return n.step + ACC_TOKEN[n.alter] + n.octave; }
   // One staff's notes in playing order, as [{s, d, n: 'C3 E3', f: [[string, fret]…]}] in beats from bar 1.
-  function staffEvents(Rp, staff, order, starts, pickupU, frets) {
+  // pick: { voice } one voice, { allVoices } every voice merged by onset, { lowest } only the bottom note
+  // of each chord (a bass line inside a guitar or piano staff). Default: the busiest voice.
+  function staffEvents(Rp, staff, order, starts, pickupU, frets, pick) {
+    pick = pick || {};
     var count = {};
     Rp.measures.forEach(function (m) { m.notes.forEach(function (n) { if (n.staff === staff && n.pitched) count[n.voice] = (count[n.voice] || 0) + 1; }); });
-    var voice = Object.keys(count).sort(function (a, b) { return count[b] - count[a] || (+a) - (+b); })[0];
+    var voice = pick.voice || Object.keys(count).sort(function (a, b) { return count[b] - count[a] || (+a) - (+b); })[0];
     var out = [];
     order.forEach(function (mi, k) {
       var m = Rp.measures[mi], byOnset = {};
       if (!m) return;
       m.notes.forEach(function (n) {
-        if (n.staff !== staff || n.voice !== voice || !n.pitched) return;
+        if (n.staff !== staff || (!pick.allVoices && n.voice !== voice) || !n.pitched) return;
         var s = snap(starts[k] + n.t), e = snap(starts[k] + n.t + n.dur);
         if (e <= s) return;
         var o = byOnset[s];
@@ -746,6 +822,16 @@
       if (prev && prev.tie && prev.e === o.s && key(prev) === key(o)) { prev.e = o.e; prev.tie = o.tie; return; }
       merged.push(o);
     });
+    if (pick.lowest) {
+      // Only chords whose bottom note sits well below the top (a fifth or more) carry a bass note.
+      merged = merged.filter(function (o) {
+        if (o.notes.length < 2) return false;
+        o.notes.sort(function (a, b) { return a.midi - b.midi; });
+        if (o.notes[o.notes.length - 1].midi - o.notes[0].midi < 7) return false;
+        o.notes = [o.notes[0]];
+        return true;
+      });
+    }
     return merged.filter(function (o) { return o.e > o.s; }).map(function (o) {
       o.notes.sort(function (a, b) { return a.midi - b.midi; });
       var ev = { s: +((o.s - pickupU) / U).toFixed(4), d: +((o.e - o.s) / U).toFixed(4), n: o.notes.map(spellTok).join(' ') };

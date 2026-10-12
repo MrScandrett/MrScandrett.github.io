@@ -255,6 +255,13 @@
         events: st.tab.events.map(function (e) { return { start: e.s, dur: e.d, f: (e.f || []).filter(function (sf) { return sf[0] >= 1 && sf[0] <= (st.tab.lines || 6); }) }; })
       };
     }
+    // Every note of a guitar part that came without tab (the fake book works the tab out).
+    if (st.gtr && st.gtr.events && st.gtr.events.length) {
+      t.staves.gtr = { written: st.gtr.written || 0, events: st.gtr.events.map(function (e) { return { start: e.s, dur: e.d, ps: notesOf(e.n) }; }) };
+    }
+    // Key changes worked out from the notes; labelled on the sheet in whatever key it's shown in.
+    t.baseSections = raw.sectionsByBar || {};
+    t.keyChanges = (raw.keyChanges || []).map(function (k) { return { bar: k.bar, key: parseKey(k.key, k.minor) }; });
     return t;
   }
 
@@ -479,7 +486,7 @@
     lead: 'reed', from: 1, to: 0,
     vol: { melody: 80, piano: 55, bass: 75, drums: 65, click: 60 },
     sheetView: 'lead',
-    showBass: true, showTab: true,
+    showBass: true, showTab: null, tabPos: 'auto', bassLine: 'score',
     engineInst: 'piano',
     engineMode: 'voicings',
     guitarForm: 'open',
@@ -575,7 +582,63 @@
       bl.forEach(function (e) { if (bk) e.ps = e.ps.map(function (p) { return pitch(p.dia + 7 * bk, p.a); }); e.p = e.ps[0]; });
       view.bass = bl;
     }
-    if (t.staves.tab) view.tab = moveTab(t.staves.tab, cs.semis);
+    // Key-change tags, spelled in the key the sheet is written in.
+    if (t.keyChanges.length) {
+      var secs = Object.assign({}, t.baseSections);
+      t.keyChanges.forEach(function (kc) {
+        var wk = shiftKey(kc.key, ws.letters, ws.semis);
+        secs[kc.bar] = 'Key: ' + LETTERS[wk.l] + ACC[wk.a] + (wk.minor ? ' minor' : ' major');
+      });
+      t.sectionsByBar = secs;
+      t.hasSections = true;
+    }
+    view.tabInfo = null;
+    view.tabLines = 6;
+    if (t.staves.tab) { view.tab = moveTab(t.staves.tab, cs.semis); view.tabLines = t.staves.tab.lines; }
+    else if (tabOn() && window.FakeBookTab) generateTab(t, cs, cFlat);
+  }
+  // Tab is on by default for imported songs (where it was asked for) and off for the built-in lead sheets.
+  function tabOn() { return opts.showTab === null || opts.showTab === undefined ? !!(tune && tune.raw.imported) : !!opts.showTab; }
+
+  // Tab for a song that came without any: the guitar part's own notes, or else the melody over the
+  // bass line, fingered by FakeBookTab (fewest hand shifts, or near the chosen position).
+  function generateTab(t, cs, cFlat) {
+    var onsets = [], byStart = {}, source;
+    var at = function (start) {
+      var k = start.toFixed(3);
+      if (!byStart[k]) { byStart[k] = { start: start, ms: [], mel: null, low: [] }; onsets.push(byStart[k]); }
+      return byStart[k];
+    };
+    if (t.staves.gtr) {
+      source = 'guitar';
+      t.staves.gtr.events.forEach(function (e) {
+        var o = at(e.start);
+        e.ps.forEach(function (p) { o.ms.push(shiftPitch(p, cs.letters, cs.semis, cFlat).midi + t.staves.gtr.written); });
+      });
+      onsets.forEach(function (o) { o.ms.sort(function (a, b) { return b - a; }); });
+    } else {
+      source = 'arrangement';
+      var mel = view.concert.filter(function (e) { return e.p; });
+      var bass = (view.bass || []).map(function (e) { return { start: e.start, m: e.ps[0].midi + 12 }; });
+      bass.forEach(function (b) { while (b.m < 52) b.m += 12; });             // below the low E: up an octave, as arrangers do
+      var bassTop = bass.length ? Math.max.apply(null, bass.map(function (b) { return b.m; })) : 0;
+      // The melody's octave: on the neck, above the bass, around the middle of the fretboard.
+      var best = null;
+      for (var k = -3; k <= 3; k++) {
+        var out = 0, sum = 0;
+        mel.forEach(function (e) { var m = e.p.midi + 12 * k; if (m < 52 || m > 88) out++; if (m <= bassTop - 3) out += 0.5; sum += m; });
+        var score = out * 10 + Math.abs(sum / Math.max(1, mel.length) - 69) * 0.1;
+        if (!best || score < best.score) best = { k: k, score: score };
+      }
+      mel.forEach(function (e) { at(e.start).mel = e.p.midi + 12 * best.k; });
+      bass.forEach(function (b) { at(b.start).low.push(b.m); });
+      onsets.forEach(function (o) { o.ms = (o.mel !== null ? [o.mel] : []).concat(o.low.filter(function (m) { return o.mel === null || m < o.mel; })); });
+      onsets = onsets.filter(function (o) { return o.ms.length; });
+    }
+    onsets.sort(function (a, b) { return a.start - b.start; });
+    var res = window.FakeBookTab.plan(onsets, { position: opts.tabPos || 'auto' });
+    view.tab = res.events;
+    view.tabInfo = { generated: true, source: source, dropped: res.dropped, total: res.total };
   }
   // Tab in another key: each note keeps its string if the new fret fits, else moves to the nearest string that has it.
   function moveTab(T, semis) {
@@ -840,6 +903,21 @@
     paintLoop();
   }
 
+  // Under the sheet: whether the worked-out tab could fit everything on a guitar.
+  function renderTabNote() {
+    var n = el('[data-fb-tab-note]');
+    if (!n) return;
+    var info = view.tabInfo, on = tabOn() && opts.sheetView !== 'drums';
+    if (!on || !info || !info.dropped) { n.hidden = true; n.textContent = ''; return; }
+    var share = info.dropped / Math.max(1, info.total);
+    n.hidden = false;
+    n.classList.toggle('is-warn', share >= 0.05);
+    n.textContent = share >= 0.05 ?
+      'This ' + (info.source === 'guitar' ? 'guitar part' : 'song') + ' isn’t playable on guitar as written: ' + info.dropped + ' of ' + info.total +
+        ' notes don’t fit under one hand or on the fretboard, so the tab leaves them out. Try a simpler version of this song.' :
+      'The tab leaves out ' + info.dropped + ' note' + (info.dropped === 1 ? '' : 's') + ' that don’t fit on a guitar (too low, too high, or too far apart).';
+  }
+
   function renderSheet() {
     if (!view) return;
     hideBarPop();
@@ -883,8 +961,9 @@
     var chordsByBar = {};
     view.writtenChords.forEach(function (c, ci) { (chordsByBar[c.bar] = chordsByBar[c.bar] || []).push({ c: c, ci: ci }); });
     // Extra staves from an imported score, drawn under the melody and lined up with it in time.
-    var showBass = !!(view.bass && opts.showBass !== false), showTab = !!(view.tab && opts.showTab !== false);
-    var CB = MN.clefs.bass, sigB = keySig(view.concertKey), tabGap = 1.3 * S, tabLines = view.tab ? tune.staves.tab.lines : 6;
+    var showBass = !!(view.bass && opts.showBass !== false), showTab = !!(view.tab && tabOn());
+    var CB = MN.clefs.bass, sigB = keySig(view.concertKey), tabGap = 1.3 * S, tabLines = view.tabLines || 6;
+    renderTabNote();
     if (showBass) layoutBars(view.bass, t).forEach(function (bb, i) { bars[i].bassBar = bb; });
     var ksw = Math.max(Math.abs(sig), showBass ? Math.abs(sigB) : 0);
     var bassPlaced = {};
@@ -1416,7 +1495,8 @@
       melody: song.melody,
       chords: song.chords,
       bars: song.bars,
-      staves: song.staves && (song.staves.bass || song.staves.tab) ? song.staves : undefined,
+      staves: song.staves && (song.staves.bass || song.staves.tab || song.staves.gtr) ? song.staves : undefined,
+      keyChanges: song.keyChanges && song.keyChanges.length ? song.keyChanges : undefined,
       imported: true,
       about: song.bars + ' bars from a MusicXML score' + (song.unrolled ? ', with its repeats played out in order' : '') + '. ' + song.warnings.join(' '),
       source: 'Imported MusicXML score (kept in this browser only).'
@@ -1574,7 +1654,22 @@
       }
     });
     if (opts.mode !== 'melody' && opts.mode !== 'click') {
-      bandBars(opts.style, view.concertChords, view.voicings, M, r.from, r.to).forEach(function (e) { e.b = g(e.t); add.push(e); });
+      // With a bass line in the score, the band's bass player can play it instead of making one up.
+      var scoreBass = opts.bassLine !== 'band' && view.bass;
+      bandBars(opts.style, view.concertChords, view.voicings, M, r.from, r.to).forEach(function (e) {
+        if (scoreBass && e.kind === 'bass') return;
+        e.b = g(e.t); add.push(e);
+      });
+      if (scoreBass) {
+        var lo = (r.from - 1) * M, hi = r.to * M;
+        view.bass.forEach(function (e) {
+          if (e.start < lo - EPS || e.start >= hi - EPS) return;
+          var m = e.ps[0].midi;
+          while (m < 28) m += 12;
+          while (m > 55) m -= 12;
+          add.push({ b: g(e.start), kind: 'bass', m: m, dur: Math.max(0.1, Math.min(e.dur, hi - e.start) - 0.05), vel: 0.75 });
+        });
+      }
     }
     if (!opts.loop) add.push({ b: off + P.chorusLen, kind: 'end' });
     var rest = P.queue.slice(P.qi).concat(add);
@@ -1949,14 +2044,19 @@
     el('[data-fb-octave]').value = String(opts.octave);
     el('[data-fb-names]').checked = !!opts.names;
     // Bass clef / tab switches: only for a song whose score came with those staves.
-    var stv = el('[data-fb-staff-toggles]'), hasB = !!tune.staves.bass, hasT = !!tune.staves.tab;
+    // Bass clef: only when the score had a bass line. Tab: always (worked out when the file had none).
+    var stv = el('[data-fb-staff-toggles]'), hasB = !!tune.staves.bass;
     if (stv) {
-      stv.hidden = !(hasB || hasT) || opts.sheetView === 'drums';
+      stv.hidden = opts.sheetView === 'drums';
       stv.querySelector('[data-fb-has="bass"]').hidden = !hasB;
-      stv.querySelector('[data-fb-has="tab"]').hidden = !hasT;
       el('[data-fb-show-bass]').checked = opts.showBass !== false;
-      el('[data-fb-show-tab]').checked = opts.showTab !== false;
+      el('[data-fb-show-tab]').checked = tabOn();
+      var tp = el('[data-fb-tab-pos]');
+      tp.value = opts.tabPos || 'auto';
+      tp.closest('label').hidden = !tabOn() || !!tune.staves.tab;
     }
+    var blw = el('[data-fb-bassline]');
+    if (blw) { blw.value = opts.bassLine || 'score'; blw.closest('label').hidden = !hasB; }
     el('[data-fb-tempo]').value = opts.tempo; el('[data-fb-tempo-num]').value = opts.tempo;
     el('[data-fb-feel]').value = opts.feel;
     el('[data-fb-mode]').value = opts.mode;
@@ -2720,7 +2820,9 @@
       else if (t.matches('[data-fb-octave]')) { opts.octave = Number(t.value); refresh(); respin(); }
       else if (t.matches('[data-fb-names]')) { opts.names = t.checked; renderSheet(); save(); }
       else if (t.matches('[data-fb-show-bass]')) { opts.showBass = t.checked; renderSheet(); save(); }
-      else if (t.matches('[data-fb-show-tab]')) { opts.showTab = t.checked; renderSheet(); save(); }
+      else if (t.matches('[data-fb-show-tab]')) { opts.showTab = t.checked; syncControls(); refresh(); save(); }
+      else if (t.matches('[data-fb-tab-pos]')) { opts.tabPos = t.value; refresh(); save(); }
+      else if (t.matches('[data-fb-bassline]')) { opts.bassLine = t.value; save(); respin(); }
       else if (t.matches('[data-fb-style]')) { opts.style = t.value; opts.feel = STYLES[opts.style].feel; el('[data-fb-feel]').value = opts.feel; tips(); save(); respin(); }
       else if (t.matches('[data-fb-feel]')) { reanchor(function () { opts.feel = t.value; }); save(); }
       else if (t.matches('[data-fb-mode]')) { opts.mode = t.value; paintLoop(); save(); respin(); }

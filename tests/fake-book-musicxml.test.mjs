@@ -205,11 +205,12 @@ test('unsupported scores fail with a reason a student can act on', () => {
   assert.throws(() => MX.parse('<score-timewise version="4.0"></score-timewise>'), /timewise/);
 });
 
-test('a score without chord symbols gets the home chord as a placeholder', () => {
+test('a score without chord symbols gets chords worked out from its notes', () => {
   const s = MX.parse(score([{ body: note('C4', 4 * Q) }, { body: note('G4', 4 * Q) }], { fifths: -1 }));
-  assert.equal(s.chords, 'F | F');
+  checkTune(s);
   assert.equal(s.hasChords, false);
-  assert.ok(s.warnings.some((w) => /placeholder/.test(w)));
+  assert.equal(s.chordsWorkedOut, true);
+  assert.ok(s.warnings.some((w) => /worked out from the notes/.test(w)));
 });
 
 test('the melody comes from the part with chord symbols, not a piano part above it', () => {
