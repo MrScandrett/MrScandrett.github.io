@@ -203,8 +203,6 @@ test('unsupported scores fail with a reason a student can act on', () => {
   assert.throws(() => MX.parse('<html></html>'), /doesn’t look like a MusicXML/);
   assert.throws(() => MX.parse(score([{ body: note('C4', 30) }], { beats: 5 })), /5\/4/);
   assert.throws(() => MX.parse('<score-timewise version="4.0"></score-timewise>'), /timewise/);
-  const change = score([{ body: note('C4', 4 * Q) }, { body: '<attributes><time><beats>3</beats><beat-type>4</beat-type></time></attributes>' + note('C4', 3 * Q) }]);
-  assert.throws(() => MX.parse(change), /changes to 3\/4 in bar 2/);
 });
 
 test('a score without chord symbols gets the home chord as a placeholder', () => {
@@ -233,9 +231,9 @@ test('compressed .mxl files open (zip + container.xml)', async () => {
   const container = '<?xml version="1.0"?><container><rootfiles><rootfile full-path="score.musicxml"/></rootfiles></container>';
   const zip = makeZip([['META-INF/container.xml', container], ['score.musicxml', xml]]);
   assert.ok(MX.isZip(zip));
-  const s = await MX.parseFile(zip);
+  const [s] = await MX.parseFile(zip);
   assert.equal(s.melody, 'C4w');
-  const plain = await MX.parseFile(new TextEncoder().encode(xml).buffer);
+  const [plain] = await MX.parseFile(new TextEncoder().encode(xml).buffer);
   assert.equal(plain.melody, 'C4w');
 });
 
@@ -258,3 +256,134 @@ function makeZip(files) {
   end.writeUInt32LE(cd.length, 12); end.writeUInt32LE(offset, 16);
   return new Uint8Array(Buffer.concat([...locals, cd, end]));
 }
+
+test('UTF-16 files (Finale, Sibelius) and other encodings decode', async () => {
+  const xml = score([{ body: harmony('C', 'major') + note('C4', 4 * Q) }]).replace('encoding="UTF-8"', 'encoding="UTF-16"');
+  const le = Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(xml, 'utf16le')]);
+  assert.equal((await MX.parseFile(new Uint8Array(le)))[0].melody, 'C4w');
+  assert.equal((await MX.parseFile(new Uint8Array(Buffer.from(xml, 'utf16le'))))[0].melody, 'C4w');
+  const be = Buffer.from(xml, 'utf16le').swap16();
+  assert.equal((await MX.parseFile(new Uint8Array(Buffer.concat([Buffer.from([0xfe, 0xff]), be]))))[0].melody, 'C4w');
+  const latin = score([{ body: note('C4', 4 * Q) }], { title: 'Für Elise' }).replace('encoding="UTF-8"', 'encoding="ISO-8859-1"');
+  assert.equal((await MX.parseFile(new Uint8Array(Buffer.from(latin, 'latin1'))))[0].title, 'Für Elise');
+});
+
+test('a MuseScore file or another XML file gets a clear message, and iReal text is recognised', () => {
+  assert.throws(() => MX.parse('<?xml version="1.0"?><museScore version="4.40"><Score/></museScore>'), /File → Export/);
+  assert.throws(() => MX.parse('<?xml version="1.0"?><!-- hi --><svg xmlns="x"></svg>'), /starts with <svg>/);
+  assert.ok(MX.looksLikeIReal('<a href="irealb://Song%3DTune">x</a>'));
+  assert.ok(!MX.looksLikeIReal(score([{ body: note('C4', 4 * Q) }])));
+});
+
+// Guitar (notation + TAB staff, as MuseScore and Guitar Pro write it) and a piano whose left hand is in bass clef.
+function bandScore() {
+  const gNote = (step, oct, dur, str, fret, staff, extra = '') =>
+    `<note><pitch><step>${step}</step><octave>${oct}</octave></pitch><duration>${dur}</duration><voice>${staff === 1 ? 1 : 5}</voice><staff>${staff}</staff>${extra}` +
+    (staff === 2 ? `<notations><technical><string>${str}</string><fret>${fret}</fret></technical></notations>` : '') + '</note>';
+  const guitarBar = (notes) => notes.map((n) => gNote(...n, 1)).join('') + `<backup><duration>${4 * Q}</duration></backup>` + notes.map((n) => gNote(...n, 2)).join('');
+  const pNote = (p, dur, staff, chord = false) => {
+    const m = /^([A-G])(#|b)?(\d)$/.exec(p);
+    return `<note>${chord ? '<chord/>' : ''}<pitch><step>${m[1]}</step>${m[2] ? `<alter>${m[2] === '#' ? 1 : -1}</alter>` : ''}<octave>${m[3]}</octave></pitch><duration>${dur}</duration><voice>${staff === 1 ? 1 : 5}</voice><staff>${staff}</staff></note>`;
+  };
+  const pianoBar = (rh, lh) => rh + `<backup><duration>${4 * Q}</duration></backup>` + lh;
+  return `<?xml version="1.0" encoding="UTF-8"?><score-partwise version="4.0"><work><work-title>Band</work-title></work>
+<part-list><score-part id="P1"><part-name>Guitar</part-name></score-part><score-part id="P2"><part-name>Piano</part-name></score-part></part-list>
+<part id="P1">
+<measure number="1"><attributes><divisions>6</divisions><key><fifths>1</fifths></key><time><beats>4</beats><beat-type>4</beat-type></time><staves>2</staves>
+<clef number="1"><sign>G</sign><line>2</line><clef-octave-change>-1</clef-octave-change></clef><clef number="2"><sign>TAB</sign><line>5</line></clef>
+<staff-details number="2"><staff-lines>6</staff-lines><staff-tuning line="1"><tuning-step>E</tuning-step><tuning-octave>2</tuning-octave></staff-tuning><staff-tuning line="2"><tuning-step>A</tuning-step><tuning-octave>2</tuning-octave></staff-tuning><staff-tuning line="3"><tuning-step>D</tuning-step><tuning-octave>3</tuning-octave></staff-tuning><staff-tuning line="4"><tuning-step>G</tuning-step><tuning-octave>3</tuning-octave></staff-tuning><staff-tuning line="5"><tuning-step>B</tuning-step><tuning-octave>3</tuning-octave></staff-tuning><staff-tuning line="6"><tuning-step>E</tuning-step><tuning-octave>4</tuning-octave></staff-tuning></staff-details></attributes>
+${harmony('G', 'major')}${guitarBar([['G', 3, 2 * Q, 3, 0], ['B', 3, 2 * Q, 2, 0]])}</measure>
+<measure number="2">${harmony('D', 'dominant')}${guitarBar([['A', 3, 2 * Q, 3, 2], ['D', 4, Q, 2, 3], ['C', 4, Q, 2, 1]])}</measure>
+</part>
+<part id="P2">
+<measure number="1"><attributes><divisions>6</divisions><key><fifths>1</fifths></key><time><beats>4</beats><beat-type>4</beat-type></time><staves>2</staves><clef number="1"><sign>G</sign><line>2</line></clef><clef number="2"><sign>F</sign><line>4</line></clef></attributes>
+${pianoBar(pNote('B4', 4 * Q, 1) + pNote('D5', 4 * Q, 1, true), pNote('G2', 2 * Q, 2) + pNote('D3', 2 * Q, 2, true) + pNote('B2', 2 * Q, 2))}</measure>
+<measure number="2">${pianoBar(pNote('C5', 4 * Q, 1), pNote('D2', 4 * Q, 2))}</measure>
+</part></score-partwise>`;
+}
+
+test('a bass-clef staff and a TAB staff come along when the score has them', () => {
+  const s = MX.parse(bandScore());
+  checkTune(s);
+  assert.equal(s.melody, 'G3h B3h | A3h D4q C4q', 'melody from the guitar notation staff, not its tab staff');
+  assert.equal(s.chords, 'G | D7');
+  assert.equal(s.staves.bass.label, 'Piano');
+  assert.deepEqual(s.staves.bass.events, [{ s: 0, d: 2, n: 'G2 D3' }, { s: 2, d: 2, n: 'B2' }, { s: 4, d: 4, n: 'D2' }]);
+  assert.equal(s.staves.tab.label, 'Guitar');
+  assert.equal(s.staves.tab.lines, 6);
+  assert.deepEqual(s.staves.tab.tuning, [64, 59, 55, 50, 45, 40], 'string 1 is the high E');
+  assert.deepEqual(s.staves.tab.events.map((e) => [e.s, e.f]), [[0, [[3, 0]]], [2, [[2, 0]]], [4, [[3, 2]]], [6, [[2, 3]]], [7, [[2, 1]]]]);
+});
+
+test('a plain lead sheet has no extra staves', () => {
+  const s = MX.parse(score([{ body: note('C4', 4 * Q) }]));
+  assert.deepEqual(s.staves, {});
+});
+
+const timeSig = (b, t) => `<attributes><time><beats>${b}</beats><beat-type>${t}</beat-type></time></attributes>`;
+
+test('a meter change splits the score into one song per part, chords carrying across', () => {
+  const bars = [];
+  for (let i = 0; i < 6; i++) bars.push({ body: (i === 0 ? harmony('F', 'major') : '') + note('F4', 3 * Q) });
+  for (let i = 0; i < 6; i++) bars.push({ body: (i === 0 ? timeSig(4, 4) : '') + (i === 2 ? harmony('C', 'dominant') : '') + note('G4', 4 * Q) });
+  const songs = MX.parseAll(score(bars, { beats: 3, fifths: -1 }));
+  assert.equal(songs.length, 2);
+  songs.forEach(checkTune);
+  assert.deepEqual(songs.map((s) => s.title), ['Test Tune · Part 1', 'Test Tune · Part 2']);
+  assert.deepEqual(songs.map((s) => s.meter.join('/')), ['3/4', '4/4']);
+  assert.deepEqual(songs.map((s) => [s.fromBar, s.toBar]), [['1', '6'], ['7', '12']]);
+  assert.equal(songs[0].melody, Array(6).fill('F4h.').join(' | '));
+  assert.equal(songs[1].chords, 'F | F | C7 | C7 | C7 | C7', 'part 2 starts on the chord part 1 ended with');
+  assert.ok(songs[1].warnings[0].startsWith('Part 2 of 2'));
+  assert.equal(MX.parse(score(bars, { beats: 3 })).title, 'Test Tune · Part 1', 'parse() still returns the first song');
+});
+
+test('one odd bar in another meter stays in the song, padded to a full bar', () => {
+  const bars = [];
+  for (let i = 0; i < 4; i++) bars.push({ body: note('C4', 4 * Q) });
+  bars.push({ body: timeSig(2, 4) + note('D4', 2 * Q) });
+  bars.push({ body: timeSig(4, 4) + note('E4', 4 * Q) });
+  for (let i = 0; i < 4; i++) bars.push({ body: note('F4', 4 * Q) });
+  const songs = MX.parseAll(score(bars));
+  assert.equal(songs.length, 1);
+  checkTune(songs[0]);
+  assert.equal(songs[0].melody, 'C4w | C4w | C4w | C4w | D4h rh | E4w | F4w | F4w | F4w | F4w');
+  assert.ok(songs[0].warnings.some((w) => /5 \(2\/4\).*kept in this song/.test(w)), songs[0].warnings.join(' / '));
+});
+
+test('a one-bar intro in its own meter leads into the song after it', () => {
+  const bars = [{ body: note('G4', 2 * Q) }];
+  for (let i = 0; i < 5; i++) bars.push({ body: (i === 0 ? timeSig(4, 4) : '') + note('C5', 4 * Q) });
+  const songs = MX.parseAll(score(bars, { beats: 2 }));
+  assert.equal(songs.length, 1);
+  checkTune(songs[0]);
+  assert.deepEqual(songs[0].meter, [4, 4]);
+});
+
+test('12/8 is written as 6/8 and 6/4 as 3/4', () => {
+  const s = MX.parse(score([{ body: note('C4', 9) + note('E4', 9) + note('G4', 18) }], { beats: 12, beatType: 8 }));
+  checkTune(s);
+  assert.deepEqual(s.meter, [6, 8]);
+  assert.equal(s.melody, 'C4q. E4q. | G4h.');
+  assert.ok(s.warnings.some((w) => /12\/8/.test(w)));
+  const s64 = MX.parse(score([{ body: note('C4', 6 * Q) }], { beats: 6, beatType: 4 }));
+  assert.deepEqual(s64.meter, [3, 4]);
+  assert.equal(s64.melody, 'C4h.~ | C4h.');
+});
+
+test('a very long score comes in as even parts of at most 200 bars', () => {
+  const bars = [];
+  for (let i = 0; i < 450; i++) bars.push({ body: (i % 8 === 0 ? harmony('C', 'major') : '') + note('C4', 4 * Q) });
+  const songs = MX.parseAll(score(bars));
+  assert.deepEqual(songs.map((s) => s.bars), [150, 150, 150], 'split evenly');
+  songs.forEach(checkTune);
+});
+
+test('a key change starts the next part in its own key', () => {
+  const bars = [];
+  for (let i = 0; i < 4; i++) bars.push({ body: note('C4', 3 * Q) });
+  bars.push({ body: '<attributes><key><fifths>2</fifths><mode>major</mode></key><time><beats>4</beats><beat-type>4</beat-type></time></attributes>' + note('D4', 4 * Q) });
+  for (let i = 0; i < 4; i++) bars.push({ body: note('D4', 4 * Q) });
+  const songs = MX.parseAll(score(bars, { beats: 3 }));
+  assert.deepEqual(songs.map((s) => s.key), ['C', 'D']);
+});

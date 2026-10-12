@@ -169,6 +169,14 @@
     originals.clear();
   }
 
+  // Elements the guard has ever recolored. Only these need transitions paused during a pass,
+  // so the pause rule doesn't restyle the whole page (a long score is thousands of SVG nodes).
+  var TOUCHED_ATTR = "data-contrast-touched";
+  function remember(element, original) {
+    originals.set(element, original);
+    if (!element.hasAttribute(TOUCHED_ATTR)) element.setAttribute(TOUCHED_ATTR, "");
+  }
+
   function inspect(element) {
     if (element.closest("[data-contrast-guard-skip]")) return;
     if (element.matches("#step-1 svg text, #curved svg text, #double svg text, .bb-anatomy-svg > text, #eg-gauge-value, .ml-waveform-btn:first-child")) return;
@@ -180,7 +188,7 @@
     if (!foreground || foreground[3] === 0) return;
 
     if (isSvgText) {
-      originals.set(element, {
+      remember(element, {
         colorValue: element.style.getPropertyValue("color"),
         colorPriority: element.style.getPropertyPriority("color"),
         fillValue: element.style.getPropertyValue("fill"),
@@ -198,7 +206,7 @@
       // it through `fill`. Keep both channels synchronized for diagrams.
       if (!isSvgText || contrast(parseColor(style.color) || foreground, background) >= MIN_NORMAL) return;
       var paintedColor = "rgb(" + foreground.slice(0, 3).map(Math.round).join(", ") + ")";
-      if (!originals.has(element)) originals.set(element, {
+      if (!originals.has(element)) remember(element, {
         colorValue: element.style.getPropertyValue("color"), colorPriority: element.style.getPropertyPriority("color"),
         fillValue: element.style.getPropertyValue("fill"), fillPriority: element.style.getPropertyPriority("fill")
       });
@@ -213,7 +221,7 @@
     var replacement = darkContrast >= lightContrast ? "#000000" : "#ffffff";
     if (Math.max(darkContrast, lightContrast) < MIN_NORMAL) return;
 
-    if (!originals.has(element)) originals.set(element, {
+    if (!originals.has(element)) remember(element, {
       colorValue: element.style.getPropertyValue("color"),
       colorPriority: element.style.getPropertyPriority("color"),
       fillValue: element.style.getPropertyValue("fill"),
@@ -227,38 +235,52 @@
   // Each pass strips its inline colors and re-applies them. On an element with
   // `transition: color` (the hamburger, nav links, buttons) that animated
   // brown -> black -> brown on every pass, i.e. a visible flicker. Transitions
-  // are switched off while the pass runs and the final style is flushed before
+  // are switched off on those elements while the pass runs and the final style is flushed before
   // they come back, so the element never sees the intermediate color.
   var PASS_ATTR = "data-contrast-pass";
+  var SKIP_ATTR = "data-contrast-guard-skip";
 
   function ensurePassStyle() {
     if (document.getElementById("classroomos-contrast-pass-style")) return;
     var style = document.createElement("style");
     style.id = "classroomos-contrast-pass-style";
-    style.textContent = "html[" + PASS_ATTR + "] *, html[" + PASS_ATTR + "] *::before, html[" + PASS_ATTR + "] *::after { transition: none !important; }";
+    var sel = "html[" + PASS_ATTR + "] [" + TOUCHED_ATTR + "]";
+    style.textContent = sel + ", " + sel + "::before, " + sel + "::after { transition: none !important; }";
     document.head.appendChild(style);
   }
 
+  var lastCost = 0, lastRun = 0;
   function run() {
     scheduled = false;
+    var started = window.performance ? performance.now() : 0;
     var root = document.documentElement;
     ensurePassStyle();
     root.setAttribute(PASS_ATTR, "");
     try {
       restore();
-      Array.prototype.forEach.call(document.body ? document.body.querySelectorAll("*") : [], function (element) {
-        if (containsReadableText(element)) inspect(element);
-      });
+      // Skipped regions are never entered, so a big drawing (a long score) costs nothing per pass.
+      if (document.body) {
+        var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT, {
+          acceptNode: function (node) { return node.hasAttribute(SKIP_ATTR) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
+        });
+        for (var element = walker.nextNode(); element; element = walker.nextNode()) {
+          if (containsReadableText(element)) inspect(element);
+        }
+      }
       void root.offsetWidth; // flush the final colors while transitions are still off
     } finally {
       root.removeAttribute(PASS_ATTR);
+      if (window.performance) { lastRun = performance.now(); lastCost = lastRun - started; }
     }
   }
 
   function schedule() {
     if (scheduled) return;
     scheduled = true;
-    window.requestAnimationFrame(run);
+    // On a heavy page a pass is expensive: space passes out (up to 1s) so they can't take every frame.
+    var wait = lastCost > 24 ? Math.min(1000, lastCost * 4) - (performance.now() - lastRun) : 0;
+    if (wait > 0) setTimeout(function () { window.requestAnimationFrame(run); }, wait);
+    else window.requestAnimationFrame(run);
   }
 
   // runNow applies the pass synchronously; the a11y audit calls it so its
@@ -270,7 +292,14 @@
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(schedule);
 
   if (typeof MutationObserver === "function") {
-    new MutationObserver(schedule).observe(document.documentElement, {
+    // Changes inside a skipped region (a playback cursor stepping through a score) don't need a pass.
+    new MutationObserver(function (records) {
+      for (var index = 0; index < records.length; index += 1) {
+        var target = records[index].target;
+        var element = target.nodeType === 1 ? target : target.parentElement;
+        if (!element || !element.closest("[" + SKIP_ATTR + "]")) { schedule(); return; }
+      }
+    }).observe(document.documentElement, {
       attributes: true,
       attributeFilter: ["class", "hidden", "aria-hidden", "disabled", "value"],
       characterData: true,

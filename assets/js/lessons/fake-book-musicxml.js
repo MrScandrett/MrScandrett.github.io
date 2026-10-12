@@ -137,6 +137,18 @@
     return tok;
   }
 
+  /* ================================================================ bytes → text */
+  // Finale and Sibelius can write UTF-16; others write UTF-8, sometimes with a BOM or another declared encoding.
+  function decodeText(bytes) {
+    if (bytes[0] === 0xFF && bytes[1] === 0xFE) return new TextDecoder('utf-16le').decode(bytes.subarray(2));
+    if (bytes[0] === 0xFE && bytes[1] === 0xFF) return new TextDecoder('utf-16be').decode(bytes.subarray(2));
+    if (bytes[0] === 0x3C && bytes[1] === 0) return new TextDecoder('utf-16le').decode(bytes);
+    if (bytes[0] === 0 && bytes[1] === 0x3C) return new TextDecoder('utf-16be').decode(bytes);
+    var head = String.fromCharCode.apply(null, bytes.subarray(0, 200));
+    var enc = /^\s*(?:\xEF\xBB\xBF)?<\?xml[^>]*encoding=["']([\w.:-]+)["']/i.exec(head);
+    try { return new TextDecoder(enc && !/^utf-?16/i.test(enc[1]) ? enc[1] : 'utf-8').decode(bytes); } catch (e) { return new TextDecoder().decode(bytes); }
+  }
+
   /* ================================================================ zip (.mxl) */
   function u16(b, o) { return b[o] | (b[o + 1] << 8); }
   function u32(b, o) { return (b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24)) >>> 0; }
@@ -166,7 +178,7 @@
   function readMxl(bytes) {
     var entries = zipEntries(bytes), byName = {};
     entries.forEach(function (e) { byName[e.name] = e; });
-    var pick = function (name) { return inflate(byName[name]).then(function (b) { return new TextDecoder().decode(b); }); };
+    var pick = function (name) { return inflate(byName[name]).then(decodeText); };
     var fallback = entries.filter(function (e) { return /\.(musicxml|xml)$/i.test(e.name) && !/^META-INF\//i.test(e.name); })[0];
     if (byName['META-INF/container.xml']) {
       return pick('META-INF/container.xml').then(function (c) {
@@ -183,6 +195,8 @@
 
   /* ================================================================ score → measures */
   function looksLikeMusicXML(text) { return /<score-(partwise|timewise)[\s>]/.test(text || ''); }
+  // Text an iReal Pro link or HTML export always carries.
+  function looksLikeIReal(text) { return /irealb(?:ook)?:\/\//i.test(text || ''); }
 
   function chooseMelodyPart(parts) {
     var stats = parts.map(function (p) {
@@ -196,8 +210,10 @@
 
   // Read one part into measures: note events per voice, chord symbols, length and road-map signs.
   function readMeasures(part) {
-    var divisions = 1, transpose = null, firstKey = null, meter = null, meterChange = null, tempo = null, styleWords = null;
+    var divisions = 1, transpose = null, firstKey = null, curKey = null, meter = null, curMeter = null, tempo = null, styleWords = null;
     var measures = [], endingOpen = null;
+    var staves = {};                 // staff number → { clef: 'G'|'F'|'TAB'|…, lines, tuning: [{line, midi}], capo }
+    var staffInfo = function (n) { return staves[n] || (staves[n] = { clef: null, lines: 5, tuning: [], capo: 0 }); };
     kids(part, 'measure').forEach(function (m, mi) {
       var cur = 0, maxT = 0, lastOnset = 0, notes = [], harms = [];
       var info = { number: m.attrs.number || String(mi + 1), implicit: m.attrs.implicit === 'yes', notes: notes, harms: harms,
@@ -217,13 +233,28 @@
         if (c.name === 'attributes') {
           if (kid(c, 'divisions')) divisions = num(c, 'divisions', divisions) || divisions;
           var k = kid(c, 'key');
-          if (k && !firstKey && kid(k, 'fifths')) firstKey = { fifths: num(k, 'fifths', 0), mode: txt(k, 'mode') };
+          if (k && kid(k, 'fifths')) { curKey = { fifths: num(k, 'fifths', 0), mode: txt(k, 'mode') }; if (!firstKey) firstKey = curKey; }
           var t = kid(c, 'time');
           if (t && kid(t, 'beats')) {
-            var mt = [parseInt(txt(t, 'beats'), 10), parseInt(txt(t, 'beat-type'), 10)];
-            if (!meter) meter = mt;
-            else if (mt[0] * 4 / mt[1] !== meter[0] * 4 / meter[1] && !meterChange) meterChange = { at: info.number, meter: mt };
+            // "3+2" style beats add up; a missing beat-type reads as quarters.
+            var beats = txt(t, 'beats').split('+').reduce(function (a, x) { return a + (parseInt(x, 10) || 0); }, 0);
+            curMeter = [beats || 4, parseInt(txt(t, 'beat-type'), 10) || 4];
+            if (!meter) meter = curMeter;
           }
+          kids(c, 'clef').forEach(function (cl) {
+            var si = staffInfo(cl.attrs.number || '1');
+            if (!si.clef) si.clef = (txt(cl, 'sign') || 'G').toUpperCase();
+          });
+          kids(c, 'staff-details').forEach(function (sd) {
+            var si = staffInfo(sd.attrs.number || '1');
+            if (kid(sd, 'staff-lines')) si.lines = num(sd, 'staff-lines', 5);
+            if (kid(sd, 'capo')) si.capo = num(sd, 'capo', 0);
+            var tun = kids(sd, 'staff-tuning');
+            if (tun.length) si.tuning = tun.map(function (st) {
+              var oct = num(st, 'tuning-octave', 3), stp = txt(st, 'tuning-step') || 'E';
+              return { line: parseInt(st.attrs.line, 10) || 1, midi: 12 * (oct + 1) + NAT[LETTERS.indexOf(stp)] + num(st, 'tuning-alter', 0) };
+            });
+          });
           var tr = kid(c, 'transpose');
           if (tr) transpose = { diatonic: num(tr, 'diatonic', 0), chromatic: num(tr, 'chromatic', 0), octave: num(tr, 'octave-change', 0) };
         } else if (c.name === 'backup') {
@@ -283,13 +314,17 @@
             ev.step = sp.step; ev.alter = Math.round(sp.alter); ev.octave = sp.octave; ev.midi = sp.midi;
           }
           if (kid(c, 'unpitched')) ev.pitched = false;
+          var tech = kid(kid(c, 'notations'), 'technical');
+          if (tech && kid(tech, 'fret') && kid(tech, 'string')) { ev.string = num(tech, 'string', 0); ev.fret = num(tech, 'fret', 0); }
           notes.push(ev);
         }
       });
       info.len = maxT;
+      info.meter = curMeter || [4, 4];
+      info.key = curKey;
       measures.push(info);
     });
-    return { measures: measures, firstKey: firstKey, meter: meter || [4, 4], meterChange: meterChange, tempo: tempo, transpose: transpose, styleWords: styleWords };
+    return { staves: staves, measures: measures, firstKey: firstKey, meter: meter || [4, 4], tempo: tempo, transpose: transpose, styleWords: styleWords };
   }
 
   /* ================================================================ road map: repeats, endings, D.C./D.S. */
@@ -402,9 +437,9 @@
     return bars;
   }
 
-  function buildChords(harms, pickupU, barU, nBars) {
+  function buildChords(harms, pickupU, barU, nBars, carryIn) {
     // harms: [{u, tok}] absolute units. One entry per full bar, carrying the last chord across empty bars.
-    var bars = [], carry = null, hi = 0;
+    var bars = [], carry = carryIn || null, hi = 0;
     harms = harms.filter(function (h) { return h.tok; }).sort(function (a, b) { return a.u - b.u; });
     while (hi < harms.length && harms[hi].u < pickupU) { if (harms[hi].tok !== 'NC') carry = harms[hi].tok; hi++; }
     for (var b = 0; b < nBars; b++) {
@@ -433,91 +468,42 @@
   }
 
   /* ================================================================ main */
-  function parse(text) {
+  // The meters the play-along band knows, and how other meters are written in one of them.
+  // Re-barring keeps every note where it is in time; only the barlines move.
+  function outMeterFor(mt) {
+    var key = mt.join('/');
+    if (key === '4/4' || key === '3/4' || key === '2/2' || key === '6/8') return { meter: mt, note: '' };
+    var REBAR = {
+      '2/4': [[4, 4], '2/4 is written as 4/4 (two of the original bars per bar).'],
+      '12/8': [[6, 8], '12/8 is written as 6/8 (each original bar is two bars here).'],
+      '6/4': [[3, 4], '6/4 is written as 3/4 (each original bar is two bars here).'],
+      '3/8': [[6, 8], '3/8 is written as 6/8 (two of the original bars per bar).'],
+      '4/2': [[2, 2], '4/2 is written as 2/2 (each original bar is two bars here).'],
+      '1/4': [[4, 4], '1/4 is written as 4/4.']
+    }[key];
+    return REBAR ? { meter: REBAR[0], note: REBAR[1] } : null;
+  }
+  var PART_BARS = 200;               // a longer stretch becomes several songs, so the page stays quick
+  var SHORT_RUN = 4;                 // a change of meter for fewer bars than this stays inside the song around it
+
+  function parse(text) { return parseAll(text)[0]; }
+
+  // A score becomes one song, or several when its meter changes (or it is very long).
+  function parseAll(text) {
     if (/<score-timewise[\s>]/.test(text)) throw new Error('This is “timewise” MusicXML. Export it again as standard (partwise) MusicXML.');
-    if (!/<score-partwise[\s>]/.test(text)) throw new Error('That doesn’t look like a MusicXML score.');
+    if (!/<score-partwise[\s>]/.test(text)) {
+      if (/<museScore[\s>]/.test(text)) throw new Error('That’s MuseScore’s own file format. In MuseScore choose File → Export…, pick MusicXML, and import that file.');
+      var tag = /<([A-Za-z][\w:.-]*)[\s>\/]/.exec(text.replace(/<\?[\s\S]*?\?>|<!--[\s\S]*?-->|<![^>]*>/g, ''));
+      throw new Error('That doesn’t look like a MusicXML score' + (tag ? ' (it starts with <' + tag[1] + '>)' : '') + '. Export the song as MusicXML from your notation app.');
+    }
     var doc = parseXML(text), score = null;
     walk(doc, function (e) { if (!score && e.name === 'score-partwise') score = e; });
     var parts = kids(score, 'part');
     if (!parts.length) throw new Error('That score has no parts.');
     var part = chooseMelodyPart(parts);
-    var R = readMeasures(part);
-    var warnings = [];
-
-    var meter = R.meter, M = meter[0] * 4 / meter[1], rebar = false;
-    if (meter[0] === 2 && meter[1] === 4) { rebar = true; warnings.push('2/4 is written here as 4/4 (two of the original bars per bar).'); }
-    else if (!((meter[0] === 4 && meter[1] === 4) || (meter[0] === 3 && meter[1] === 4) || (meter[0] === 2 && meter[1] === 2) || (meter[0] === 6 && meter[1] === 8))) {
-      throw new Error('The fake book can play 4/4, 3/4, 2/2, 2/4 and 6/8; this score is in ' + meter.join('/') + '.');
-    }
-    if (R.meterChange) throw new Error('The time signature changes to ' + R.meterChange.meter.join('/') + ' in bar ' + R.meterChange.at + '. The fake book needs one meter for the whole song.');
-    var outMeter = rebar ? [4, 4] : meter, outM = rebar ? 4 : M;
-
-    // Which voice is the tune: the top staff, its busiest voice.
-    var count = {}, minStaff = null;
-    R.measures.forEach(function (m) { m.notes.forEach(function (n) { if (minStaff === null || +n.staff < +minStaff) minStaff = n.staff; }); });
-    R.measures.forEach(function (m) { m.notes.forEach(function (n) { if (n.staff === minStaff && n.pitched) count[n.voice] = (count[n.voice] || 0) + 1; }); });
-    var voice = Object.keys(count).sort(function (a, b) { return count[b] - count[a] || (+a) - (+b); })[0] || '1';
-
-    var order = unroll(R.measures);
-    var events = [], harms = [], t0 = 0, moved = false;
-    order.forEach(function (mi, k) {
-      var m = R.measures[mi];
-      var len = m.len > 0 ? m.len : M;
-      var snapped = function (b) { var u = snap(t0 + b); if (Math.abs(u - (t0 + b) * U) > 0.05) moved = true; return u; };
-      var byOnset = {};
-      m.notes.forEach(function (n) {
-        if (n.staff !== minStaff || n.voice !== voice) return;
-        var s = snapped(n.t), e = snapped(n.t + n.dur);
-        var key = String(s);
-        if (byOnset[key]) {                          // chord or second note at once: keep the top note
-          var o = byOnset[key];
-          if (n.pitched && (!o.midi || n.midi > o.midi)) { o.midi = n.midi; o.step = n.step; o.alter = n.alter; o.octave = n.octave; o.rest = false; o.tie = n.tieStart; }
-          o.e = Math.max(o.e, e);
-          return;
-        }
-        var ev = n.pitched ? { s: s, e: e, midi: n.midi, step: n.step, alter: n.alter, octave: n.octave, tie: n.tieStart } : { s: s, e: e, rest: true };
-        byOnset[key] = ev; events.push(ev);
-      });
-      m.harms.forEach(function (h) { harms.push({ u: snapped(h.t), tok: h.tok }); });
-      t0 += len;
-    });
-    events.sort(function (a, b) { return a.s - b.s; });
-    if (moved) warnings.push('Some rhythms finer than the fake book writes (32nd notes, quintuplets…) were rounded to the nearest sixteenth or triplet.');
-    if (!events.some(function (e) { return !e.rest; })) throw new Error('No melody notes found in that score.');
-
-    // Pickup: a first bar shorter than the meter.
-    var first = R.measures[order[0]], firstLen = first.len > 0 ? first.len : M;
-    var pickupU = firstLen < M - 1e-6 ? snap(firstLen) : 0;
-    if (pickupU === 1) pickupU = 0;
-    var barU = outM * U;
-    var melodyBars = buildMelody(events, pickupU, barU);
-    var nBars = melodyBars.length - (pickupU ? 1 : 0);
-    if (nBars > MAX_BARS) throw new Error('That song plays out to ' + nBars + ' bars; the fake book holds up to ' + MAX_BARS + '.');
-    var chordBars = buildChords(harms, pickupU, barU, nBars);
-    var hasChords = chordBars.some(Boolean);
-
-    // Key: concert pitch, and the mode if MusicXML says so (else a guess from how the tune ends).
-    var fifths = R.firstKey ? R.firstKey.fifths : 0;
-    if (R.transpose) fifths = mod(fifths + 7 * R.transpose.chromatic + 6, 12) - 6;
-    fifths = Math.max(-7, Math.min(7, fifths));
-    var modeTxt = R.firstKey ? (R.firstKey.mode || '').toLowerCase() : '';
-    var minor = modeTxt === 'minor' || modeTxt === 'aeolian';
-    if (!modeTxt || modeTxt === 'none') {
-      var lastNote = events.filter(function (e) { return !e.rest; }).pop();
-      var relMinorPc = mod(NAT[LETTERS.indexOf(MINOR_KEYS[fifths][0])] + (MINOR_KEYS[fifths][1] === '#' ? 1 : MINOR_KEYS[fifths][1] === 'b' ? -1 : 0), 12);
-      var lastChord = chordBars.filter(Boolean).pop() || '';
-      var endChord = lastChord.split(' ').pop().split(':')[0];
-      minor = mod(lastNote.midi, 12) === relMinorPc && (!endChord || /^[A-G][#b]?m(?!aj)/.test(endChord));
-    }
-    var key = (minor ? MINOR_KEYS : MAJOR_KEYS)[fifths];
-    key = { Cb: 'B', 'A#': 'Bb', 'D#': 'Eb' }[key] || key;   // seven sharps/flats: read the simpler enharmonic key
-
-    // Empty bars before the first chord get the tonic, and a chordless score gets it throughout.
-    var tonic = key + (minor ? 'm' : '');
-    var firstChord = chordBars.filter(Boolean)[0] || tonic;
-    var filled = [], seen = false;
-    chordBars.forEach(function (c) { if (c) seen = true; filled.push(c || (seen ? filled[filled.length - 1] : firstChord)); });
-    if (!hasChords) warnings.push('The file has no chord symbols, so every bar shows the home chord (' + tonic + ') as a placeholder.');
+    var all = parts.map(readMeasures), R = all[parts.indexOf(part)];
+    var partNames = {};
+    walk(score, function (e) { if (e.name === 'score-part') partNames[e.attrs.id] = txt(e, 'part-name').replace(/\s+/g, ' '); });
 
     var title = '', composer = '';
     walk(score, function (e) {
@@ -525,30 +511,256 @@
       if (!composer && e.name === 'creator' && (e.attrs.type || 'composer') === 'composer' && e.text.trim()) composer = e.text.trim();
     });
     if (!title) walk(score, function (e) { if (!title && e.name === 'credit') { var ct = kid(e, 'credit-type'), w = kid(e, 'credit-words'); if (w && (!ct || txt(ct) === 'title') && w.text.trim()) title = w.text.trim(); } });
+    title = title.replace(/\s+/g, ' ').slice(0, 120);
+    composer = composer.replace(/\s+/g, ' ').slice(0, 120);
 
-    return {
-      title: title.replace(/\s+/g, ' ').slice(0, 120),
-      composer: composer.replace(/\s+/g, ' ').slice(0, 120),
-      key: key, minor: minor, meter: outMeter,
-      pickup: pickupU / U,
-      melody: melodyBars.join(' | '),
-      chords: filled.join(' | '),
-      bars: nBars,
-      tempo: R.tempo ? Math.round(R.tempo) : null,
-      style: R.styleWords,
-      hasChords: hasChords,
-      unrolled: order.length !== R.measures.length,
-      warnings: warnings
-    };
+    // Which voice is the tune: the top staff that isn't tablature, its busiest voice.
+    var count = {}, minStaff = null;
+    var isTab = function (Rp, st) { return Rp.staves[st] && Rp.staves[st].clef === 'TAB'; };
+    R.measures.forEach(function (m) { m.notes.forEach(function (n) { if (!isTab(R, n.staff) && (minStaff === null || +n.staff < +minStaff)) minStaff = n.staff; }); });
+    if (minStaff === null) R.measures.forEach(function (m) { m.notes.forEach(function (n) { if (minStaff === null || +n.staff < +minStaff) minStaff = n.staff; }); });
+    R.measures.forEach(function (m) { m.notes.forEach(function (n) { if (n.staff === minStaff && n.pitched) count[n.voice] = (count[n.voice] || 0) + 1; }); });
+    var voice = Object.keys(count).sort(function (a, b) { return count[b] - count[a] || (+a) - (+b); })[0] || '1';
+
+    // Play the road map, then cut it into runs of one meter.
+    var order = unroll(R.measures), runs = [];
+    order.forEach(function (mi) {
+      var mt = R.measures[mi].meter, last = runs[runs.length - 1];
+      if (last && last.mt.join('/') === mt.join('/')) last.order.push(mi);
+      else runs.push({ mt: mt, order: [mi] });
+    });
+    // Runs become songs. A short run (or one in a meter that can't be written) joins the song before it,
+    // padded with rests to the end of a bar so what follows still starts on a barline.
+    var sections = [], skipped = [], notes = {};
+    runs.forEach(function (run) {
+      var out = outMeterFor(run.mt), prev = sections[sections.length - 1];
+      if (prev && run.order.length < SHORT_RUN) {
+        prev.items.push({ order: run.order, pad: true });
+        prev.joined.push(R.measures[run.order[0]].number + (run.order.length > 1 ? '–' + R.measures[run.order[run.order.length - 1]].number : '') + ' (' + run.mt.join('/') + ')');
+        return;
+      }
+      if (!out) { skipped.push('bars ' + R.measures[run.order[0]].number + '–' + R.measures[run.order[run.order.length - 1]].number + ' (' + run.mt.join('/') + ')'); return; }
+      if (out.note) notes[out.note] = true;
+      if (prev && prev.out.meter.join('/') === out.meter.join('/') && prev.size + run.order.length <= PART_BARS) {
+        prev.items.push({ order: run.order, pad: true }); prev.size += run.order.length; return;
+      }
+      var size = Math.ceil(run.order.length / Math.ceil(run.order.length / PART_BARS));   // even parts: 113 + 113, not 200 + 26
+      for (var i = 0; i < run.order.length; i += size) {
+        var chunk = run.order.slice(i, i + size);
+        sections.push({ out: out, origM: run.mt[0] * 4 / run.mt[1], items: [{ order: chunk, pad: false }], size: chunk.length, joined: [] });
+      }
+    });
+    // A short opening in its own meter (a one-bar intro) leads into the song after it instead.
+    if (sections.length > 1 && sections[0].size < SHORT_RUN) {
+      var intro = sections.shift(), firstM = R.measures[intro.items[0].order[0]];
+      sections[0].items[0].pad = true;
+      sections[0].items = intro.items.concat(sections[0].items);
+      sections[0].joined = [firstM.number + ' (' + firstM.meter.join('/') + ')'].concat(intro.joined, sections[0].joined);
+    }
+    if (!sections.length) {
+      throw new Error('The fake book can play 4/4, 3/4, 2/2 and 6/8 (and 2/4, 3/8, 6/4, 12/8 re-barred); this score is in ' + runs.map(function (r) { return r.mt.join('/'); }).filter(function (x, i, a) { return a.indexOf(x) === i; }).join(', ') + '.');
+    }
+
+    var carry = null, songs = [];
+    sections.forEach(function (sec, si) {
+      var song = buildSection(sec, carry);
+      if (!song) return;
+      carry = song.lastChord;
+      delete song.lastChord;
+      songs.push(song);
+    });
+    if (!songs.length) throw new Error('No melody notes found in that score.');
+    songs.forEach(function (song, i) {
+      if (songs.length > 1) {
+        song.part = i + 1; song.parts = songs.length;
+        song.title = title ? title + ' · Part ' + (i + 1) : '';
+        song.warnings.unshift('Part ' + (i + 1) + ' of ' + songs.length + ' (bars ' + song.fromBar + '–' + song.toBar + ' of the score).');
+      }
+      Object.keys(notes).forEach(function (n) { if (song.warnings.indexOf(n) < 0 && song.meterNote === n) song.warnings.push(n); });
+      if (skipped.length) song.warnings.push('Left out ' + skipped.join(', ') + ': the fake book can’t play that meter.');
+      delete song.meterNote;
+    });
+    return songs;
+
+    function buildSection(sec, carryIn) {
+      var warnings = [];
+      var outMeter = sec.out.meter, outM = outMeter[0] * 4 / outMeter[1];
+      var order = [], starts = [], events = [], harms = [], t0 = 0, moved = false, pickup = null;
+      sec.items.forEach(function (item, ii) {
+        if (item.pad && pickup !== null) {
+          // Pad to the next barline of this song's meter before a stretch in another meter (and after it).
+          var into = mod(t0 - pickup, outM);
+          if (into > 1e-6) t0 += outM - into;
+        }
+        item.order.forEach(function (mi, k) {
+          var m = R.measures[mi], mM = m.meter[0] * 4 / m.meter[1];
+          var len = m.len > 0 ? m.len : mM;
+          if (pickup === null) pickup = len < mM - 1e-6 ? mod(len, outM) : 0;
+          order.push(mi); starts.push(t0);
+          var snapped = function (b) { var u = snap(t0 + b); if (Math.abs(u - (t0 + b) * U) > 0.05) moved = true; return u; };
+          var byOnset = {};
+          m.notes.forEach(function (n) {
+            if (n.staff !== minStaff || n.voice !== voice) return;
+            var s = snapped(n.t), e = snapped(n.t + n.dur);
+            var key = String(s);
+            if (byOnset[key]) {                          // chord or second note at once: keep the top note
+              var o = byOnset[key];
+              if (n.pitched && (!o.midi || n.midi > o.midi)) { o.midi = n.midi; o.step = n.step; o.alter = n.alter; o.octave = n.octave; o.rest = false; o.tie = n.tieStart; }
+              o.e = Math.max(o.e, e);
+              return;
+            }
+            var ev = n.pitched ? { s: s, e: e, midi: n.midi, step: n.step, alter: n.alter, octave: n.octave, tie: n.tieStart } : { s: s, e: e, rest: true };
+            byOnset[key] = ev; events.push(ev);
+          });
+          m.harms.forEach(function (h) { harms.push({ u: snapped(h.t), tok: h.tok }); });
+          t0 += len;
+        });
+        if (item.pad && ii > 0) {
+          var into2 = mod(t0 - pickup, outM);
+          if (into2 > 1e-6) t0 += outM - into2;
+        }
+      });
+      events.sort(function (a, b) { return a.s - b.s; });
+      if (!events.some(function (e) { return !e.rest; })) return null;
+      if (moved) warnings.push('Some rhythms finer than the fake book writes (32nd notes, quintuplets…) were rounded to the nearest sixteenth or triplet.');
+      if (sec.joined.length) warnings.push('Bar' + (sec.joined.length > 1 ? 's ' : ' ') + sec.joined.join(', ') + ' in another meter ' + (sec.joined.length > 1 ? 'are' : 'is') + ' kept in this song, with rests added to finish the bar.');
+
+      var pickupU = snap(pickup || 0);
+      if (pickupU === 1) pickupU = 0;
+      var barU = outM * U;
+      var melodyBars = buildMelody(events, pickupU, barU);
+      var nBars = melodyBars.length - (pickupU ? 1 : 0);
+      if (nBars > MAX_BARS) throw new Error('That song plays out to ' + nBars + ' bars; the fake book holds up to ' + MAX_BARS + '.');
+      var chordBars = buildChords(harms, pickupU, barU, nBars, carryIn);
+      var hasChords = chordBars.some(Boolean);
+
+      // Extra staves the score carries: a bass-clef staff (piano left hand, bass, cello…) and tablature.
+      var extra = {}, bestBass = 0, bestTab = 0;
+      all.forEach(function (Rp, pi) {
+        var noteCount = {}, fretCount = {};
+        Rp.measures.forEach(function (m) { m.notes.forEach(function (n) {
+          if (!n.pitched) return;
+          noteCount[n.staff] = (noteCount[n.staff] || 0) + 1;
+          if (n.string) fretCount[n.staff] = (fretCount[n.staff] || 0) + 1;
+        }); });
+        Object.keys(noteCount).forEach(function (st) {
+          var info = Rp.staves[st] || {}, melodyStaff = Rp === R && st === minStaff;
+          var name = partNames[parts[pi].attrs.id] || '';
+          if ((info.clef === 'TAB' || (fretCount[st] || 0) > noteCount[st] / 2) && fretCount[st] > bestTab) {
+            bestTab = fretCount[st];
+            extra.tab = { label: name, lines: info.lines && info.lines !== 5 ? info.lines : 6, tuning: tabTuning(info), capo: info.capo || 0,
+              events: staffEvents(Rp, st, order, starts, pickupU, true) };
+          } else if (info.clef === 'F' && !melodyStaff && noteCount[st] > bestBass) {
+            bestBass = noteCount[st];
+            extra.bass = { label: name, events: staffEvents(Rp, st, order, starts, pickupU, false) };
+          }
+        });
+      });
+      ['bass', 'tab'].forEach(function (k) { if (extra[k] && !extra[k].events.length) delete extra[k]; });
+
+      // Key: the one in force where this song starts, at concert pitch; the mode if MusicXML says so,
+      // else a guess from how the tune ends.
+      var k0 = R.measures[order[0]].key || R.firstKey;
+      var fifths = k0 ? k0.fifths : 0;
+      if (R.transpose) fifths = mod(fifths + 7 * R.transpose.chromatic + 6, 12) - 6;
+      fifths = Math.max(-7, Math.min(7, fifths));
+      var modeTxt = k0 ? (k0.mode || '').toLowerCase() : '';
+      var minor = modeTxt === 'minor' || modeTxt === 'aeolian';
+      if (!modeTxt || modeTxt === 'none') {
+        var lastNote = events.filter(function (e) { return !e.rest; }).pop();
+        var relMinorPc = mod(NAT[LETTERS.indexOf(MINOR_KEYS[fifths][0])] + (MINOR_KEYS[fifths][1] === '#' ? 1 : MINOR_KEYS[fifths][1] === 'b' ? -1 : 0), 12);
+        var lastChord = chordBars.filter(Boolean).pop() || '';
+        var endChord = lastChord.split(' ').pop().split(':')[0];
+        minor = mod(lastNote.midi, 12) === relMinorPc && (!endChord || /^[A-G][#b]?m(?!aj)/.test(endChord));
+      }
+      var key = (minor ? MINOR_KEYS : MAJOR_KEYS)[fifths];
+      key = { Cb: 'B', 'A#': 'Bb', 'D#': 'Eb' }[key] || key;   // seven sharps/flats: read the simpler enharmonic key
+
+      // Empty bars before the first chord get the tonic, and a chordless score gets it throughout.
+      var tonic = key + (minor ? 'm' : '');
+      var firstChord = chordBars.filter(Boolean)[0] || tonic;
+      var filled = [], seen = false;
+      chordBars.forEach(function (c) { if (c) seen = true; filled.push(c || (seen ? filled[filled.length - 1] : firstChord)); });
+      if (!hasChords) warnings.push('The file has no chord symbols, so every bar shows the home chord as a placeholder.');
+      var lastTok = (chordBars.filter(Boolean).pop() || '').split(' ').pop().split(':')[0] || carryIn;
+
+      return {
+        title: title, composer: composer,
+        key: key, minor: minor, meter: outMeter,
+        pickup: pickupU / U,
+        melody: melodyBars.join(' | '),
+        chords: filled.join(' | '),
+        bars: nBars,
+        tempo: R.tempo ? Math.round(R.tempo) : null,
+        style: R.styleWords,
+        hasChords: hasChords,
+        unrolled: order.length !== R.measures.length,
+        staves: extra,
+        fromBar: R.measures[order[0]].number, toBar: R.measures[order[order.length - 1]].number,
+        meterNote: outMeterFor(R.measures[order[0]].meter) && outMeterFor(R.measures[order[0]].meter).note,
+        lastChord: lastTok,
+        warnings: warnings
+      };
+    }
+  }
+
+  // Standard tunings, highest string first (MusicXML numbers strings from the top).
+  var TUNINGS = { 4: [43, 38, 33, 28], 5: [43, 38, 33, 28, 23], 6: [64, 59, 55, 50, 45, 40], 7: [64, 59, 55, 50, 45, 40, 35] };
+  function tabTuning(info) {
+    var lines = info.lines && info.lines !== 5 ? info.lines : 6;
+    if (!info.tuning || !info.tuning.length) return (TUNINGS[lines] || TUNINGS[6]).slice();
+    var out = [];                     // staff-tuning line 1 is the bottom line = the lowest string
+    info.tuning.forEach(function (t) { out[lines - t.line] = t.midi; });
+    for (var i = 0; i < lines; i++) if (out[i] === undefined) out[i] = (TUNINGS[lines] || TUNINGS[6])[i];
+    return out;
+  }
+  function spellTok(n) { return n.step + ACC_TOKEN[n.alter] + n.octave; }
+  // One staff's notes in playing order, as [{s, d, n: 'C3 E3', f: [[string, fret]…]}] in beats from bar 1.
+  function staffEvents(Rp, staff, order, starts, pickupU, frets) {
+    var count = {};
+    Rp.measures.forEach(function (m) { m.notes.forEach(function (n) { if (n.staff === staff && n.pitched) count[n.voice] = (count[n.voice] || 0) + 1; }); });
+    var voice = Object.keys(count).sort(function (a, b) { return count[b] - count[a] || (+a) - (+b); })[0];
+    var out = [];
+    order.forEach(function (mi, k) {
+      var m = Rp.measures[mi], byOnset = {};
+      if (!m) return;
+      m.notes.forEach(function (n) {
+        if (n.staff !== staff || n.voice !== voice || !n.pitched) return;
+        var s = snap(starts[k] + n.t), e = snap(starts[k] + n.t + n.dur);
+        if (e <= s) return;
+        var o = byOnset[s];
+        if (!o) { o = byOnset[s] = { s: s, e: e, notes: [], tie: true }; out.push(o); }
+        o.e = Math.max(o.e, e);
+        if (o.notes.some(function (x) { return x.midi === n.midi; })) return;
+        o.notes.push(n);
+        if (!n.tieStart) o.tie = false;
+      });
+    });
+    out.sort(function (a, b) { return a.s - b.s; });
+    var merged = [];
+    out.forEach(function (o, i) {
+      var nx = out[i + 1];
+      if (nx && o.e > nx.s) o.e = nx.s;
+      var prev = merged[merged.length - 1];
+      var key = function (x) { return x.notes.map(function (n) { return n.midi; }).sort().join(); };
+      if (prev && prev.tie && prev.e === o.s && key(prev) === key(o)) { prev.e = o.e; prev.tie = o.tie; return; }
+      merged.push(o);
+    });
+    return merged.filter(function (o) { return o.e > o.s; }).map(function (o) {
+      o.notes.sort(function (a, b) { return a.midi - b.midi; });
+      var ev = { s: +((o.s - pickupU) / U).toFixed(4), d: +((o.e - o.s) / U).toFixed(4), n: o.notes.map(spellTok).join(' ') };
+      if (frets) ev.f = o.notes.filter(function (n) { return n.string; }).map(function (n) { return [n.string, n.fret]; });
+      return ev;
+    });
   }
 
   function parseFile(bytes) {
     if (bytes instanceof ArrayBuffer) bytes = new Uint8Array(bytes);
-    if (isZip(bytes)) return readMxl(bytes).then(parse);
-    try { return Promise.resolve(parse(new TextDecoder().decode(bytes))); } catch (e) { return Promise.reject(e); }
+    if (isZip(bytes)) return readMxl(bytes).then(parseAll);
+    try { return Promise.resolve(parseAll(decodeText(bytes))); } catch (e) { return Promise.reject(e); }
   }
 
-  var exported = { parse: parse, parseFile: parseFile, parseXML: parseXML, unroll: unroll, isZip: isZip, looksLikeMusicXML: looksLikeMusicXML, split: split };
+  var exported = { parse: parse, parseAll: parseAll, parseFile: parseFile, parseXML: parseXML, unroll: unroll, isZip: isZip, looksLikeMusicXML: looksLikeMusicXML, looksLikeIReal: looksLikeIReal, decodeText: decodeText, split: split };
   if (typeof module !== 'undefined' && module.exports) module.exports = exported;
   else root.FakeBookMusicXML = exported;
 })(typeof window !== 'undefined' ? window : globalThis);
