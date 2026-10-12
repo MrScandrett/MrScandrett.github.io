@@ -138,11 +138,12 @@
     if (/^\+|^aug/i.test(q)) return 'aug';
     if (/sus/i.test(q)) return 'sus4';
     if (/^-(?:6|69)|^m6/i.test(q)) return 'm6';
+    // Before the minor test: "maj7" also starts with an m. Capital M7 is major, m7 is minor.
+    if (/^\^|^maj/i.test(q) || /^M(?:7|9|13)/.test(q)) return 'maj7';
     if (/^-|^m/i.test(q)) return (q === '-' || q === 'm' || q === 'min') ? 'm' : 'm7';
-    if (/^\^|^maj7|^M7|^maj9/i.test(q)) return 'maj7';
     if (/^6/i.test(q)) return '6';
     if (/^9/i.test(q)) return '9';
-    if (/^7|^13|^alt/i.test(q)) return '7';
+    if (/^7|^11|^13|^alt/i.test(q)) return '7';
     return '';
   }
 
@@ -1205,11 +1206,41 @@
       pickup: 0,
       melody: melody,
       chords: chords,
+      bars: song.bars.length,
       sectionsByBar: sectionsByBar,
       chordsOnly: true,
       imported: true,
       about: (song.sections ? 'Form: ' + song.sections + '. ' : '') + song.bars.length + ' bars unrolled from iReal Pro chart.',
       source: 'Imported iReal Pro chord chart (kept in this browser only).'
+    };
+  }
+
+  // A MusicXML score (fake-book-musicxml.js has already turned it into fake-book notation).
+  function musicxmlToTune(song, fileName) {
+    var M = song.meter[0] * 4 / song.meter[1], meterFor = M === 3 ? [3, 4] : [4, 4];
+    var band = song.style ? mapBandStyle(song.style, meterFor) : (M === 3 ? 'waltz' : 'rock');
+    var tempo = song.tempo > 0 ? Math.max(40, Math.min(240, song.tempo)) : defaultTempo(band, meterFor);
+    var title = song.title || (fileName || '').replace(/\.(musicxml|mxl|xml)$/i, '').replace(/[_-]+/g, ' ').trim() || 'Untitled';
+    return {
+      id: 'import-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+      title: title,
+      composer: song.composer || 'Unknown composer',
+      year: 'Imported MusicXML score',
+      style: song.style || STYLES[band].label,
+      level: 'Imported',
+      key: song.key,
+      mode: song.minor ? 'minor' : 'major',
+      meter: song.meter,
+      tempo: tempo,
+      band: band,
+      feel: STYLES[band].feel,
+      pickup: song.pickup,
+      melody: song.melody,
+      chords: song.chords,
+      bars: song.bars,
+      imported: true,
+      about: song.bars + ' bars from a MusicXML score' + (song.unrolled ? ', with its repeats played out in order' : '') + '. ' + song.warnings.join(' '),
+      source: 'Imported MusicXML score (kept in this browser only).'
     };
   }
 
@@ -1570,7 +1601,7 @@
             '<button type="button" class="fb-tune fb-tune-imported" data-tune="' + raw.id + '" aria-pressed="' + (raw.id === (tune ? tune.id : opts.tune) ? 'true' : 'false') + '">' +
             '<strong>' + MN.escape(raw.title) + '</strong>' +
             '<small>' + MN.escape(raw.composer) + '</small>' +
-            '<span class="fb-tune-tags"><em class="fb-tag-imported">Imported</em><em>' + MN.escape(raw.key.replace('b', '♭').replace('#', '♯') + (raw.mode === 'minor' ? ' minor' : '')) + '</em><em>' + raw.meter.join('/') + '</em><em>' + raw.bars + ' bars</em></span></button>' +
+            '<span class="fb-tune-tags"><em class="fb-tag-imported">' + (raw.chordsOnly ? 'Chords only' : 'Melody + chords') + '</em><em>' + MN.escape(raw.key.replace('b', '♭').replace('#', '♯') + (raw.mode === 'minor' ? ' minor' : '')) + '</em><em>' + raw.meter.join('/') + '</em><em>' + raw.bars + ' bars</em></span></button>' +
             '<button type="button" class="fb-tune-remove" data-remove-tune="' + raw.id + '" aria-label="Remove ' + MN.escape(raw.title) + ' from your imports" title="Remove from this browser">✕</button>' +
             '</div>';
         }).join('');
@@ -1602,10 +1633,49 @@
     fb.className = 'fb-import-feedback' + (isError ? ' is-error' : (msg ? ' is-success' : ''));
   }
 
+  function addImports(newTunes, msg) {
+    importedTunes = importedTunes.concat(newTunes);
+    saveImports();
+    tunes = defaultTunes.concat(importedTunes);
+    renderLibrary();
+    selectTune(newTunes[0].id, true);
+    importFeedback(msg, false);
+    var inputEl = el('[data-fb-import-input]');
+    if (inputEl) inputEl.value = '';
+  }
+
+  var MX = window.FakeBookMusicXML;
+  function importMusicXML(promise, fileName) {
+    if (!MX) { importFeedback('The MusicXML reader is not available. Please refresh the page.', true); return; }
+    importFeedback('Reading the score…', false);
+    promise.then(function (song) {
+      var raw = musicxmlToTune(song, fileName);
+      parseTune(raw);                       // throws if anything didn't convert cleanly
+      addImports([raw], 'Imported "' + raw.title + '" with its melody (' + raw.bars + ' bars).' +
+        (song.warnings.length ? ' ' + song.warnings.join(' ') : ''));
+    }).catch(function (err) {
+      console.error('[fake-book] MusicXML import error:', err);
+      importFeedback('Could not import that score: ' + err.message, true);
+    });
+  }
+  function importFile(file) {
+    file.arrayBuffer().then(function (buf) {
+      var bytes = new Uint8Array(buf);
+      if (MX && (MX.isZip(bytes) || /\.(musicxml|mxl)$/i.test(file.name))) { importMusicXML(MX.parseFile(bytes), file.name); return; }
+      var text = new TextDecoder().decode(bytes);
+      if (MX && MX.looksLikeMusicXML(text)) importMusicXML(MX.parseFile(bytes), file.name);
+      else handleImportText(text);
+    }).catch(function () { importFeedback('Could not read the selected file.', true); });
+  }
+
   function handleImportText(text) {
     text = (text || '').trim();
     if (!text) {
-      importFeedback('Please paste an iReal Pro link (irealb:// or irealbook://) or select an HTML file.', true);
+      importFeedback('Paste an iReal Pro link (irealb:// or irealbook://), or choose a MusicXML or iReal HTML file.', true);
+      return;
+    }
+    if (MX && MX.looksLikeMusicXML(text)) {
+      importMusicXML(new Promise(function (ok) { ok(MX.parse(text)); }), '');
       return;
     }
     if (!window.IReal || typeof window.IReal.parse !== 'function') {
@@ -1619,17 +1689,9 @@
         return;
       }
       var newTunes = res.songs.map(songToTune);
-      importedTunes = importedTunes.concat(newTunes);
-      saveImports();
-      tunes = defaultTunes.concat(importedTunes);
-      renderLibrary();
-      selectTune(newTunes[0].id, true);
-      var msg = newTunes.length === 1 ?
-        'Imported "' + newTunes[0].title + '" (' + newTunes[0].bars + ' bars).' :
-        'Imported ' + newTunes.length + ' songs' + (res.playlist ? ' from playlist "' + res.playlist + '"' : '') + '.';
-      importFeedback(msg, false);
-      var inputEl = el('[data-fb-import-input]');
-      if (inputEl) inputEl.value = '';
+      addImports(newTunes, newTunes.length === 1 ?
+        'Imported "' + newTunes[0].title + '" (' + newTunes[0].bars + ' bars, chords only).' :
+        'Imported ' + newTunes.length + ' songs' + (res.playlist ? ' from playlist "' + res.playlist + '"' : '') + '.');
     } catch (err) {
       console.error('[fake-book] import error:', err);
       importFeedback('Failed to import: ' + err.message, true);
@@ -2572,16 +2634,8 @@
       fileInp.addEventListener('change', function () {
         var file = fileInp.files && fileInp.files[0];
         if (!file) return;
-        var reader = new FileReader();
-        reader.onload = function (e) {
-          handleImportText(e.target.result);
-          fileInp.value = '';
-        };
-        reader.onerror = function () {
-          importFeedback('Could not read the selected file.', true);
-          fileInp.value = '';
-        };
-        reader.readAsText(file);
+        importFile(file);
+        fileInp.value = '';
       });
     }
     document.addEventListener('keydown', function (ev) {
@@ -2647,7 +2701,7 @@
   window.FakeBook = {
     parseTune: parseTune, melody: MELODY, rhythm: RHYTHM, voiceChords: voiceChords, chordTones: chordTones,
     shiftBetween: shiftBetween, shiftKey: shiftKey, keySig: keySig, parseKey: parseKey, decompose: decompose, layoutBars: layoutBars,
-    songToTune: songToTune, importText: handleImportText, removeImport: removeImported,
+    songToTune: songToTune, musicxmlToTune: musicxmlToTune, importText: handleImportText, importFile: importFile, removeImport: removeImported,
     state: function () { return { opts: opts, tune: tune, view: view, playing: !!P }; }
   };
 })();
