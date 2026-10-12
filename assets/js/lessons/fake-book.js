@@ -1480,6 +1480,7 @@
       nowEls.forEach(function (n) { n.classList.remove('is-now'); });
       nowEls = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-n[data-idx="' + e.idx + '"]'));
       nowEls.forEach(function (n) { n.classList.add('is-now'); });
+      if (melodyView) melodyView.setCursor(e.idx);
     } else if (e.ui === 'chord') { if (e.ci !== chordSel) { chordSel = e.ci; showChord(false); } }
     else if (e.ui === 'end') stop();
   }
@@ -1768,6 +1769,7 @@
   }
   function refresh() {
     computeView();
+    feedMelodyView();
     renderSheet();
     renderChanges();
     showChord(false);
@@ -1778,6 +1780,18 @@
     save();
   }
   function respin() { if (P) { stop(); play(); } }
+
+  // ---- melody viewer (fake-book-melody.js): where to play the tune on piano or guitar
+  var melodyView = window.FakeBookMelody ? window.FakeBookMelody.create(el('[data-fb-melody-view]')) : null;
+  function feedMelodyView() {
+    if (!melodyView) return;
+    var M = tune.M;
+    melodyView.setMelody(tune.chordsOnly ? [] : view.concert.map(function (e) {
+      var bar = e.start < 0 ? 0 : Math.floor(e.start / M + EPS) + 1;
+      return e.p ? { start: e.start, dur: e.dur, bar: bar, midi: e.p.midi, dia: e.p.dia, name: noteName(e.p) }
+        : { start: e.start, dur: e.dur, bar: bar, rest: true };
+    }));
+  }
 
   // ---- chord engine & visualizers (Piano & Guitar)
   var currentVoicingNotes = [];
@@ -2114,6 +2128,8 @@
     var d = describeVoicing(c, notes);
 
     currentVoicingNotes = notes;
+    // Stopped: choosing a chord or bar moves the melody viewer there too.
+    if (!P && melodyView) melodyView.cursorAtBeat(c.start);
 
     populateChordSelect();
 
