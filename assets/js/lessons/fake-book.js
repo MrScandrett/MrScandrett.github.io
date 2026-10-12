@@ -200,12 +200,13 @@
         else if (!tie) tieOpen = null;
         time += d;
       });
-      var want = gi === 0 && t.pickup ? t.pickup : t.M;
+      var want = raw.score ? raw.score.bars[gi].len : (gi === 0 && t.pickup ? t.pickup : t.M);
       if (!near(time - barStart, want)) console.warn('[fake-book] ' + raw.id + ' bar ' + (t.pickup ? gi : gi + 1) + ' has ' + (time - barStart) + ' beats');
     });
     t.events = events;
-    t.bars = Math.round(time / t.M);
-    t.len = t.bars * t.M;
+    t.scoreBars = raw.score && raw.score.bars;
+    t.bars = t.scoreBars ? raw.bars : Math.round(time / t.M);
+    t.len = t.scoreBars ? time : t.bars * t.M;
 
     var chords = [];
     raw.chords.split('|').map(function (s) { return s.trim(); }).forEach(function (bar, bi) {
@@ -226,7 +227,8 @@
           beats: beats
         });
       });
-      var pos = bi * t.M, share = free ? (t.M - fixed) / free : 0;
+      var sb = t.scoreBars && t.scoreBars.filter(function (b) { return b.bar === bi + 1; })[0];
+      var pos = sb ? sb.start : bi * t.M, share = free ? ((sb ? sb.len : t.M) - fixed) / free : 0;
       parsed.forEach(function (c) {
         var d = c.beats || share;
         chords.push({ start: pos, dur: d, root: c.root, q: c.q, display: c.display, bass: c.bass, bar: bi + 1 });
@@ -527,7 +529,7 @@
 
   function computeView() {
     var t = tune;
-    var ev = RHYTHM[opts.rhythm].fn(MELODY[opts.melody].fn(clone(t.events), t), t);
+    var ev = opts.mode === 'score' ? clone(t.events) : RHYTHM[opts.rhythm].fn(MELODY[opts.melody].fn(clone(t.events), t), t);
     var concertKey = parseKey(opts.key, t.key.minor);
     var ins = INSTR[opts.instr];
     var writtenKey = shiftKey(concertKey, ins.letters, ins.semis);
@@ -537,7 +539,7 @@
       var out = list.map(function (e) { return { start: e.start, dur: e.dur, src: e.src, p: e.p ? shiftPitch(e.p, sh.letters, sh.semis, flat) : null }; });
       var notes = out.filter(function (e) { return e.p; }), w = 0, sum = 0;
       notes.forEach(function (e) { sum += e.p.midi * e.dur; w += e.dur; });
-      var k = w ? Math.round((center - sum / w) / 12) + opts.octave : opts.octave;
+      var k = opts.mode === 'score' ? 0 : (w ? Math.round((center - sum / w) / 12) + opts.octave : opts.octave);
       if (k) out.forEach(function (e) { if (e.p) e.p = pitch(e.p.dia + 7 * k, e.p.a); });
       return out;
     }
@@ -689,7 +691,7 @@
   function layoutBars(ev, t) {
     var bars = [];
     if (t.pickup) bars.push({ i: 0, start: -t.pickup, len: t.pickup, off: t.M - t.pickup, section: null });
-    for (var i = 1; i <= t.bars; i++) bars.push({ i: i, start: (i - 1) * t.M, len: t.M, off: 0, section: (t.sectionsByBar && t.sectionsByBar[i]) || null });
+    for (var i = 1; i <= t.bars; i++) bars.push({ i: i, start: t.scoreBars ? t.scoreBars.filter(function (b) { return b.bar === i; })[0].start : (i - 1) * t.M, len: t.scoreBars ? t.scoreBars.filter(function (b) { return b.bar === i; })[0].len : t.M, off: 0, section: (t.sectionsByBar && t.sectionsByBar[i]) || null });
     bars.forEach(function (b) {
       var items = [];
       ev.forEach(function (e, idx) {
@@ -711,7 +713,7 @@
           b.pieces.push({ rest: !it.p, rel: it.rel, beat: it.rel + b.off, d: Math.round(it.len * 6) / 4, real: it.len, trip: true, idx: it.idx, p: it.p, tie: !!it.p && it.cont, tieFrom: !!it.p && it.from });
           return;
         }
-        var parts = decompose(it.rel + b.off, it.len, !it.p, t.M);
+        var parts = decompose(it.rel + b.off, it.len, !it.p, b.len);
         parts.forEach(function (pt, k) {
           b.pieces.push({ rest: !it.p, rel: pt.rel - b.off, beat: pt.rel, d: pt.d, idx: it.idx, p: it.p,
             tie: !!it.p && (k < parts.length - 1 || it.cont), tieFrom: !!it.p && (k > 0 || it.from) });
@@ -1014,6 +1016,9 @@
       sys.forEach(function (b, k) {
         var bw = weights[k] * unit;
         b.x = bx; b.w = bw; bx += bw;
+        if (t.scoreBars) { var sb = t.scoreBars.filter(function (sb) { return sb.bar === b.i; })[0];
+          if (sb) out.push(txt(b.x + S, chordBase - 2 * S, sb.meter.join('/'), 'fb-meter-label', ' font-size="' + S + '"'));
+        }
         out.push('<rect class="fb-bar" data-bar="' + b.i + '" x="' + b.x.toFixed(1) + '" y="' + (chordBase - 1.6 * S).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + (rowsBottom - chordBase + 1.6 * S).toFixed(1) + '" rx="' + (0.6 * S) + '"><title>Bar ' + (b.i || 'pickup') + '</title></rect>');
       });
       for (var li = 0; li < 5; li++) out.push(line(hx, staffTop + li * S, bx, staffTop + li * S, Math.max(1, S * 0.11), 'fb-staffline'));
@@ -1228,7 +1233,7 @@
           var ps = view.bass[pc.idx].ps, hw = base[0] === 4 ? wholeW : headW, nx = hx0 + headW / 2;
           var steps = ps.map(function (p) { return p.dia - CB.bottom; });
           var lo = Math.min.apply(null, steps), hi = Math.max.apply(null, steps), up = (lo + hi) / 2 < 4;
-          var g = ['<g class="fb-bn">'], ys = [], prev = null, shifted = false, accN = 0;
+          var g = ['<g class="fb-bn" data-idx="' + pc.idx + '">'], ys = [], prev = null, shifted = false, accN = 0;
           ps.forEach(function (p, i) {
             var st = steps[i], ny = bassBot - st * half;
             MN.ledgerSteps(st).forEach(function (ls) { var ly = bassBot - ls * half; g.push(line(nx - hw / 2 - 0.45 * S, ly, nx + hw / 2 + 0.45 * S, ly, Math.max(1, S * 0.12))); });
@@ -1255,14 +1260,16 @@
       }
       // One bar of tablature: the fret on each string at the moment each note starts.
       function drawTabBar(b, xAt) {
-        view.tab.forEach(function (e) {
+        view.tab.forEach(function (e, idx) {
           if (e.start < b.start - EPS || e.start >= b.start + b.len - EPS) return;
           var x = xAt(e.start - b.start) + headW / 2;
+          out.push('<g class="fb-tn" data-idx="' + idx + '">');
           e.f.forEach(function (sf) {
             var ty = tabTop + (sf[0] - 1) * tabGap, label = String(sf[1]), w = label.length * 0.72 * S + 0.3 * S;
             out.push('<rect class="fb-tab-bg" x="' + (x - w / 2).toFixed(1) + '" y="' + (ty - 0.62 * S).toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + (1.24 * S).toFixed(1) + '"/>');
             out.push(txt(x, ty + 0.45 * S, label, 'fb-tab-fret', ' font-size="' + (1.25 * S) + '" text-anchor="middle"'));
           });
+          out.push('</g>');
         });
       }
     });
@@ -1497,6 +1504,7 @@
       bars: song.bars,
       staves: song.staves && (song.staves.bass || song.staves.tab || song.staves.gtr) ? song.staves : undefined,
       keyChanges: song.keyChanges && song.keyChanges.length ? song.keyChanges : undefined,
+      score: song.score,
       imported: true,
       about: song.bars + ' bars from a MusicXML score' + (song.unrolled ? ', with its repeats played out in order' : '') + '. ' + song.warnings.join(' '),
       source: 'Imported MusicXML score (kept in this browser only).'
@@ -1579,7 +1587,7 @@
   /* ================================================================ transport */
   var P = null;
   var SWING = 2 / 3;
-  function swingOn() { return opts.feel === 'swing'; }
+  function swingOn() { return opts.mode !== 'score' && opts.feel === 'swing'; }
   function sw(b) { if (!swingOn()) return b; var i = Math.floor(b), f = b - i; return i + (f < 0.5 ? f * 2 * SWING : SWING + (f - 0.5) * 2 * (1 - SWING)); }
   function swInv(x) { if (!swingOn()) return x; var i = Math.floor(x), f = x - i; return i + (f < SWING ? f / (2 * SWING) : 0.5 + (f - SWING) / (2 * (1 - SWING))); }
   function timeAt(b) { return P.anchorTime + (sw(b) - sw(P.anchorBeat)) * P.spb; }
@@ -1611,9 +1619,14 @@
     P = {
       lanes: lanes, kit: window.DrumEngine ? window.DrumEngine.create(ctx, lanes.drums) : null,
       spb: 60 / opts.tempo, anchorBeat: 0, anchorTime: ctx.currentTime + 0.12,
-      queue: [], qi: 0, ui: [], range: r, chorusLen: (r.to - r.from + 1) * M, k: 0,
+      queue: [], qi: 0, ui: [], range: r, chorusLen: opts.mode === 'score' ? scoreRange(r).len : (r.to - r.from + 1) * M, k: 0,
       bodyStart: (withPickup ? 2 : 1) * M, withPickup: withPickup, timer: 0, raf: 0
     };
+    P.scoreLanes = {};
+    if (opts.mode === 'score') tune.raw.score.parts.forEach(function (part) {
+      var gain = ctx.createGain(); gain.connect(lanes.piano); P.scoreLanes[part.id] = gain;
+    });
+    updateScoreGains();
     // count-in bar, then (for tunes with a pickup) a bar of clicks that ends with the pickup notes
     for (var b = 0; b < P.bodyStart; b++) {
       P.queue.push({ b: b, kind: 'click', level: b % M === 0 ? 2 : 1 });
@@ -1625,7 +1638,51 @@
     P.raf = requestAnimationFrame(uiLoop);
     setPlaying(true);
   }
+  var scorePractice = {};
+  function scoreRange(r) {
+    var bars = tune.raw.score.bars, first = bars.filter(function (b) { return b.bar === r.from; })[0], last = bars.filter(function (b) { return b.bar === r.to; })[0];
+    return { start: first.start, len: last.start + last.len - first.start };
+  }
+  function updateScoreGains() {
+    if (!P || !P.scoreLanes) return;
+    var solo = Object.keys(scorePractice).some(function (id) { return scorePractice[id].solo; });
+    Object.keys(P.scoreLanes).forEach(function (id) {
+      var state = scorePractice[id] || {};
+      P.scoreLanes[id].gain.setTargetAtTime(state.mute || (solo && !state.solo) ? 0 : 1, ctx.currentTime, 0.01);
+    });
+  }
+  function renderScoreParts() {
+    var wrap = el('[data-fb-score-parts]'), score = tune.raw.score;
+    wrap.hidden = !score || opts.mode !== 'score';
+    wrap.innerHTML = score ? '<p>All written voices sound on piano. The sheet shows the melody, a bass reduction and tab. Use the Piano volume in Band settings to adjust score volume. Play the written voices. Tempo changes speed without changing pitch. Mute a voice to play it yourself, or solo voices to listen closely.</p>' + score.parts.map(function (p, i) {
+      var state = scorePractice[p.id] || {};
+      return '<fieldset><legend>' + MN.escape(p.label) + '</legend><label><input type="checkbox" data-score-mute="' + i + '"' + (state.mute ? ' checked' : '') + '> Mute</label> <label><input type="checkbox" data-score-solo="' + i + '"' + (state.solo ? ' checked' : '') + '> Solo</label></fieldset>';
+    }).join('') : '';
+  }
+  function appendScore(k) {
+    var score = tune.raw.score, r = P.range, span = scoreRange(r), off = P.bodyStart + k * P.chorusLen;
+    var lo = P.withPickup ? -tune.pickup : span.start, hi = span.start + span.len, add = [];
+    score.notes.forEach(function (n) {
+      if (n.start + n.dur <= lo + EPS || n.start >= hi - EPS) return;
+      var start = Math.max(n.start, lo);
+      add.push({ b: off + start - span.start, kind: 'score', part: n.part, m: n.midi, dur: Math.min(n.start + n.dur, hi) - start });
+    });
+    score.bars.forEach(function (b) {
+      if (b.bar < r.from || b.bar > r.to) return;
+      add.push({ b: off + b.start - span.start, kind: 'ui', ui: 'bar', bar: b.bar, meter: b.meter });
+      for (var bt = 0; bt < b.len - EPS; bt += 4 / b.meter[1]) {
+        add.push({ b: off + b.start + bt - span.start, kind: 'ui', ui: 'beat', n: Math.round(bt * b.meter[1] / 4) });
+        if (opts.click === 'all' || (opts.click === 'one' && bt === 0)) add.push({ b: off + b.start + bt - span.start, kind: 'click', level: bt === 0 ? 2 : 1 });
+      }
+    });
+    var times = {};
+    [view.concert, view.bass || [], view.tab || []].forEach(function (events) { events.forEach(function (e) { if (e.start >= lo - EPS && e.start < hi - EPS) times[e.start] = true; if (e.dur && e.start + e.dur >= lo && e.start + e.dur < hi) times[e.start + e.dur] = true; }); });
+    Object.keys(times).forEach(function (t) { add.push({ b: off + Number(t) - span.start, kind: 'ui', ui: 'score-note', start: Number(t) }); });
+    if (!opts.loop) add.push({ b: off + P.chorusLen, kind: 'end' });
+    P.queue = P.queue.slice(P.qi).concat(add).sort(function (a, b) { return a.b - b.b; }); P.qi = 0;
+  }
   function appendChorus(k) {
+    if (opts.mode === 'score' && tune.raw.score) { appendScore(k); return; }
     var M = tune.M, r = P.range, off = P.bodyStart + k * P.chorusLen, tuneOff = (r.from - 1) * M;
     var g = function (tt) { return off + tt - tuneOff; };
     var add = [];
@@ -1686,6 +1743,10 @@
   function fire(e) {
     var t = Math.max(ctx.currentTime, timeAt(e.b)), L = P.lanes;
     switch (e.kind) {
+      case 'score': {
+        var shift = shiftBetween(tune.key, view.concertKey).semis;
+        voicePiano(P.scoreLanes[e.part], t, timeAt(e.b + e.dur) - t, e.m + shift, 0.32); break;
+      }
       case 'mel':
         if (opts.mode === 'band' || opts.mode === 'click' || yours(e.bar, P.range.from)) return;
         voiceLead(L.melody, t, timeAt(e.b + e.dur) - t, e.m, 0.5); break;
@@ -1704,8 +1765,8 @@
   function uiLoop() {
     if (!P) return;
     var now = ctx.currentTime;
-    while (P.ui.length && P.ui[0].t <= now) applyUi(P.ui.shift());
-    P.raf = requestAnimationFrame(uiLoop);
+    while (P && P.ui.length && P.ui[0].t <= now) applyUi(P.ui.shift());
+    if (P) P.raf = requestAnimationFrame(uiLoop);
   }
   function stop() {
     if (!P) return;
@@ -1764,6 +1825,7 @@
       Object.keys(barEls).forEach(function (k) { barEls[k].classList.remove('is-now'); });
       if (barEls[e.bar]) barEls[e.bar].classList.add('is-now');
       banner(e.yours ? (opts.mode === 'band' ? 'You play the melody' : 'Your four bars: answer or improvise') : '');
+      if (e.meter) { dotsEl.innerHTML = new Array(e.meter[0] + 1).join('<i></i>'); banner('Bar ' + e.bar + ' · ' + e.meter.join('/')); }
       paintChangesNow(e.bar);
       if (barEls[e.bar] && sheetFollow() && !followPaused) {
         // Settings live in a fixed drawer now, so the sheet can always follow;
@@ -1781,6 +1843,15 @@
           }
         }
       }
+    } else if (e.ui === 'score-note') {
+      nowEls.forEach(function (n) { n.classList.remove('is-now'); }); nowEls = [];
+      [['.fb-n', view.concert], ['.fb-bn', view.bass || []], ['.fb-tn', view.tab || []]].forEach(function (lane) {
+        lane[1].forEach(function (n, i) { if (n.start <= e.start + EPS && (n.dur ? n.start + n.dur : (lane[1][i + 1] ? lane[1][i + 1].start : tune.len)) > e.start + EPS) {
+          nowEls = nowEls.concat(Array.prototype.slice.call(sheetEl.querySelectorAll(lane[0] + '[data-idx="' + i + '"]')));
+          if (lane[0] === '.fb-n' && melodyView) melodyView.setCursor(i);
+        } });
+      });
+      nowEls.forEach(function (n) { n.classList.add('is-now'); });
     } else if (e.ui === 'note') {
       nowEls.forEach(function (n) { n.classList.remove('is-now'); });
       nowEls = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-n[data-idx="' + e.idx + '"]'));
@@ -1875,7 +1946,7 @@
             '<button type="button" class="fb-tune fb-tune-imported" data-tune="' + raw.id + '" aria-pressed="' + (raw.id === (tune ? tune.id : opts.tune) ? 'true' : 'false') + '">' +
             '<strong>' + MN.escape(raw.title) + '</strong>' +
             '<small>' + MN.escape(raw.composer) + '</small>' +
-            '<span class="fb-tune-tags"><em class="fb-tag-imported">' + (raw.chordsOnly ? 'Chords only' : 'Melody + chords') + '</em><em>' + MN.escape(raw.key.replace('b', '♭').replace('#', '♯') + (raw.mode === 'minor' ? ' minor' : '')) + '</em><em>' + raw.meter.join('/') + '</em><em>' + raw.bars + ' bars</em></span></button>' +
+            '<span class="fb-tune-tags"><em class="fb-tag-imported">' + (raw.score ? 'Full score playback' : raw.chordsOnly ? 'Chords only' : 'Melody + chords') + '</em><em>' + MN.escape(raw.key.replace('b', '♭').replace('#', '♯') + (raw.mode === 'minor' ? ' minor' : '')) + '</em><em>' + raw.meter.join('/') + '</em><em>' + raw.bars + ' bars</em></span></button>' +
             '<button type="button" class="fb-tune-remove" data-remove-tune="' + raw.id + '" aria-label="Remove ' + MN.escape(raw.title) + ' from your imports" title="Remove from this browser">✕</button>' +
             '</div>';
         }).join('');
@@ -1931,7 +2002,7 @@
       });
       var raw = raws[0], song = songs[0];
       var extras = [raw.staves && raw.staves.bass ? 'bass clef' : '', raw.staves && raw.staves.tab ? 'tab' : ''].filter(Boolean);
-      var what = ' with its melody' + (extras.length ? (extras.length > 1 ? ', ' : ' and ') + extras.join(' and ') : '');
+      var what = (raw.score ? ' with full score playback and its melody' : ' with its melody') + (extras.length ? (extras.length > 1 ? ', ' : ' and ') + extras.join(' and ') : '');
       if (raws.length === 1) {
         addImports(raws, 'Imported "' + raw.title + '"' + what + ' (' + raw.bars + ' bars).' + (song.warnings.length ? ' ' + song.warnings.join(' ') : ''));
         return;
@@ -1954,7 +2025,7 @@
       var text = MX.isZip(bytes) ? '' : MX.decodeText(bytes);
       // iReal links and exports always contain irealb://; anything else that is XML or zipped goes to the score reader.
       if (text && MX.looksLikeIReal(text)) handleImportText(text);
-      else if (!text || /\.(musicxml|mxl|xml|mscx|mscz)$/i.test(file.name) || /^\s*(\ufeff)?<\?xml|<score-|<museScore/i.test(text)) importMusicXML(MX.parseFile(bytes), file.name);
+      else if (!text || /\.(musicxml|mxl|xml|mscx|mscz)$/i.test(file.name) || /^\s*(\ufeff)?<\?xml|<score-|<museScore/i.test(text)) importMusicXML(MX.parseFile(bytes, { score: true }), file.name);
       else handleImportText(text);
     }).catch(function () { importFeedback('Could not read the selected file.', true); });
   }
@@ -1966,7 +2037,7 @@
       return;
     }
     if (MX && !MX.looksLikeIReal(text) && (MX.looksLikeMusicXML(text) || /^\ufeff?<\?xml/.test(text))) {
-      importMusicXML(new Promise(function (ok) { ok(MX.parse(text)); }), '');
+      importMusicXML(new Promise(function (ok) { ok(MX.parseScore(text)); }), '');
       return;
     }
     if (!window.IReal || typeof window.IReal.parse !== 'function') {
@@ -1995,6 +2066,9 @@
     var was = !!P;
     stop();
     tune = parseTune(raw);
+    scorePractice = {};
+    if (reset) opts.mode = raw.score ? 'score' : 'all';
+    if (!raw.score && opts.mode === 'score') opts.mode = 'all';
     opts.tune = raw.id;
     if (reset || !opts.key) {
       opts.key = raw.key; opts.from = 1; opts.to = tune.bars; opts.tempo = raw.tempo;
@@ -2062,6 +2136,11 @@
     el('[data-fb-mode]').value = opts.mode;
     el('[data-fb-click]').value = opts.click;
     el('[data-fb-lead]').value = opts.lead;
+    el('[data-fb-mode] option[value="score"]').disabled = !tune.raw.score;
+    var mixedMeter = tune.scoreBars && (STYLES[opts.style].meters.indexOf(tune.M) < 0 || tune.scoreBars.some(function (b) { return b.meter.join('/') !== tune.meter.join('/') || (b.bar > 0 && !near(b.len, tune.M)); }));
+    el('[data-fb-mode]').querySelectorAll('option').forEach(function (o) { if (o.value !== 'score') o.disabled = !!mixedMeter; });
+    if (mixedMeter) { opts.mode = 'score'; el('[data-fb-mode]').value = 'score'; }
+    renderScoreParts();
     el('[data-fb-loop]').checked = !!opts.loop;
     var r = loopRange();
     ['from', 'to'].forEach(function (k) { var i = el('[data-fb-' + k + ']'); i.max = tune.bars; i.value = r[k]; });
@@ -2070,9 +2149,9 @@
     root.querySelectorAll('input[name="fb-rhythm"]').forEach(function (i) { i.checked = i.value === opts.rhythm; });
     root.querySelectorAll('input[name="fb-voicing"]').forEach(function (i) { i.checked = i.value === opts.voicing; });
     root.querySelectorAll('input[name="fb-melody"], input[name="fb-rhythm"]').forEach(function (i) {
-      i.disabled = !!tune.chordsOnly;
+      i.disabled = !!tune.chordsOnly || opts.mode === 'score';
     });
-    dotsEl.innerHTML = new Array(tune.M + 1).join('<i></i>');
+    dotsEl.innerHTML = new Array(tune.meter[0] + 1).join('<i></i>');
 
     // View switcher (Lead sheet vs Drum notation)
     root.querySelectorAll('[data-fb-view]').forEach(function (b) {
@@ -2805,7 +2884,12 @@
   function bind() {
     root.addEventListener('change', function (ev) {
       var t = ev.target, n = t.name;
-      if (n === 'fb-melody') { opts.melody = t.value; refresh(); respin(); }
+      if (t.matches('[data-score-mute], [data-score-solo]')) {
+        var soloControl = t.hasAttribute('data-score-solo'), idx = Number(t.getAttribute(soloControl ? 'data-score-solo' : 'data-score-mute'));
+        var id = tune.raw.score.parts[idx].id;
+        scorePractice[id] = scorePractice[id] || {}; scorePractice[id][soloControl ? 'solo' : 'mute'] = t.checked; updateScoreGains();
+      }
+      else if (n === 'fb-melody') { opts.melody = t.value; refresh(); respin(); }
       else if (n === 'fb-rhythm') { opts.rhythm = t.value; refresh(); respin(); }
       else if (n === 'fb-voicing') { opts.voicing = t.value; view.voicings = voiceChords(view.concertChords, opts.voicing); showChord(true); save(); respin(); }
       else if (n === 'fb-barclick') { opts.barClick = t.value; if (t.value === 'loop') hideBarPop(); save(); }
@@ -2825,10 +2909,10 @@
       else if (t.matches('[data-fb-bassline]')) { opts.bassLine = t.value; save(); respin(); }
       else if (t.matches('[data-fb-style]')) { opts.style = t.value; opts.feel = STYLES[opts.style].feel; el('[data-fb-feel]').value = opts.feel; tips(); save(); respin(); }
       else if (t.matches('[data-fb-feel]')) { reanchor(function () { opts.feel = t.value; }); save(); }
-      else if (t.matches('[data-fb-mode]')) { opts.mode = t.value; paintLoop(); save(); respin(); }
+      else if (t.matches('[data-fb-mode]')) { opts.mode = t.value; syncControls(); refresh(); paintLoop(); save(); respin(); }
       else if (t.matches('[data-fb-click]')) { opts.click = t.value; save(); respin(); }
       else if (t.matches('[data-fb-lead]')) { opts.lead = t.value; save(); }
-      else if (t.matches('[data-fb-loop]')) { opts.loop = t.checked; save(); }
+      else if (t.matches('[data-fb-loop]')) { opts.loop = t.checked; save(); if (opts.mode === 'score') respin(); }
       else if (t.matches('[data-fb-follow], [data-fb-follow-sync]')) {
         opts.follow = t.checked;
         root.querySelectorAll('[data-fb-follow], [data-fb-follow-sync]').forEach(function (cb) { cb.checked = opts.follow; });

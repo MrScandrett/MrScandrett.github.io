@@ -310,6 +310,7 @@
           var p = kid(c, 'pitch'), ties = kids(c, 'tie').concat(kids(kid(c, 'notations'), 'tied'));
           var ev = {
             t: onset, dur: dur, voice: txt(c, 'voice') || '1', staff: txt(c, 'staff') || '1', chord: isChord,
+            tieStop: ties.some(function (x) { return x.attrs.type === 'stop' || x.attrs.type === 'continue'; }),
             tieStart: ties.some(function (x) { return x.attrs.type === 'start' || x.attrs.type === 'continue'; }),
             pitched: !!p
           };
@@ -492,8 +493,9 @@
 
   function parse(text) { return parseAll(text)[0]; }
 
-  // A score becomes one song, or several when its meter changes (or it is very long).
-  function parseAll(text) {
+  // Legacy band conversion may split meters. Score mode preserves one timeline.
+  function parseAll(text, options) {
+    var scoreMode = options && options.score;
     if (/<score-timewise[\s>]/.test(text)) throw new Error('This is “timewise” MusicXML. Export it again as standard (partwise) MusicXML.');
     if (!/<score-partwise[\s>]/.test(text)) {
       if (/<museScore[\s>]/.test(text)) throw new Error('That’s MuseScore’s own file format. In MuseScore choose File → Export…, pick MusicXML, and import that file.');
@@ -561,10 +563,11 @@
       sections[0].items = intro.items.concat(sections[0].items);
       sections[0].joined = [firstM.number + ' (' + firstM.meter.join('/') + ')'].concat(intro.joined, sections[0].joined);
     }
-    if (!sections.length) {
+    if (!sections.length && !scoreMode) {
       throw new Error('The fake book can play 4/4, 3/4, 2/2 and 6/8 (and 2/4, 3/8, 6/4, 12/8 re-barred); this score is in ' + runs.map(function (r) { return r.mt.join('/'); }).filter(function (x, i, a) { return a.indexOf(x) === i; }).join(', ') + '.');
     }
 
+    if (scoreMode) sections = [{ out: { meter: R.meter }, origM: R.meter[0] * 4 / R.meter[1], items: [{ order: order, pad: false }], joined: [] }];
     var carry = null, songs = [];
     sections.forEach(function (sec, si) {
       var song = buildSection(sec, carry);
@@ -580,8 +583,8 @@
         song.title = title ? title + ' · Part ' + (i + 1) : '';
         song.warnings.unshift('Part ' + (i + 1) + ' of ' + songs.length + ' (bars ' + song.fromBar + '–' + song.toBar + ' of the score).');
       }
-      Object.keys(notes).forEach(function (n) { if (song.warnings.indexOf(n) < 0 && song.meterNote === n) song.warnings.push(n); });
-      if (skipped.length) song.warnings.push('Left out ' + skipped.join(', ') + ': the fake book can’t play that meter.');
+      Object.keys(scoreMode ? {} : notes).forEach(function (n) { if (song.warnings.indexOf(n) < 0 && song.meterNote === n) song.warnings.push(n); });
+      if (skipped.length && !scoreMode) song.warnings.push('Left out ' + skipped.join(', ') + ': the fake book can’t play that meter.');
       delete song.meterNote;
     });
     return songs;
@@ -626,7 +629,7 @@
       });
       events.sort(function (a, b) { return a.s - b.s; });
       if (!events.some(function (e) { return !e.rest; })) return null;
-      if (moved) warnings.push('Some rhythms finer than the fake book writes (32nd notes, quintuplets…) were rounded to the nearest sixteenth or triplet.');
+      if (moved) warnings.push((scoreMode ? 'Playback keeps the original timing. Displayed rhythms' : 'Some rhythms') + ' finer than the fake book writes (32nd notes, quintuplets…) were rounded to the nearest sixteenth or triplet.');
       if (sec.joined.length) warnings.push('Bar' + (sec.joined.length > 1 ? 's ' : ' ') + sec.joined.join(', ') + ' in another meter ' + (sec.joined.length > 1 ? 'are' : 'is') + ' kept in this song, with rests added to finish the bar.');
 
       var pickupU = snap(pickup || 0);
@@ -634,8 +637,38 @@
       var barU = outM * U;
       var melodyBars = buildMelody(events, pickupU, barU);
       var nBars = melodyBars.length - (pickupU ? 1 : 0);
-      if (nBars > MAX_BARS) throw new Error('That song plays out to ' + nBars + ' bars; the fake book holds up to ' + MAX_BARS + '.');
-      var chordBars = buildChords(harms, pickupU, barU, nBars, carryIn);
+      if (!scoreMode && nBars > MAX_BARS) throw new Error('That song plays out to ' + nBars + ' bars; the fake book holds up to ' + MAX_BARS + '.');
+      var scoreBars = [], scoreParts = [], scoreNotes = [], scoreTime = -(pickup || 0);
+      if (scoreMode) {
+        melodyBars = []; var scoreChords = [];
+        order.forEach(function (mi, k) {
+          var m = R.measures[mi], len = (k + 1 < starts.length ? starts[k + 1] : t0) - starts[k];
+          var startU = snap(starts[k]), lenU = snap(len);
+          var es = events.filter(function (e) { return e.s >= startU && e.s < startU + lenU; }).map(function (e) { return Object.assign({}, e, { s: e.s - startU, e: Math.min(e.e - startU, lenU) }); });
+          melodyBars.push(buildMelody(es, 0, lenU)[0] || split(lenU).map(function (d) { return 'r' + d; }).join(' '));
+          if (!(k === 0 && pickupU)) scoreChords.push(buildChords(harms.filter(function (h) { return h.u >= startU && h.u < startU + lenU; }).map(function (h) { return { u: h.u - startU, tok: h.tok }; }), 0, lenU, 1, carryIn)[0]);
+          scoreBars.push({ number: m.number, start: scoreTime, len: len, meter: m.meter, bar: k + 1 - (pickupU ? 1 : 0) });
+          scoreTime += len;
+        });
+        nBars = order.length - (pickupU ? 1 : 0);
+        if (nBars > MAX_BARS) throw new Error('That score exceeds the ' + MAX_BARS + '-bar import limit.');
+        all.forEach(function (Rp, pi) {
+          var lanes = {}, pending = {};
+          order.forEach(function (mi, k) {
+            var m = Rp.measures[mi]; if (!m) return;
+            m.notes.forEach(function (n) {
+              if (!n.pitched || (isTab(Rp, n.staff) && Object.keys(Rp.staves).some(function (st) { return !isTab(Rp, st); }))) return;
+              var id = parts[pi].attrs.id + ':' + n.staff + ':' + n.voice;
+              if (!lanes[id]) { lanes[id] = true; scoreParts.push({ id: id, label: (partNames[parts[pi].attrs.id] || 'Part ' + (pi + 1)) + ' · staff ' + n.staff + ', voice ' + n.voice }); }
+              var start = starts[k] + n.t - (pickup || 0), key = id + ':' + n.midi, prev = pending[key];
+              if (n.tieStop && prev && Math.abs(prev.start + prev.dur - start) < 1e-6) { prev.dur += n.dur; if (!n.tieStart) delete pending[key]; return; }
+              var ev = { part: id, start: start, dur: n.dur, midi: n.midi };
+              scoreNotes.push(ev); if (n.tieStart) pending[key] = ev; else delete pending[key];
+            });
+          });
+        });
+      }
+      var chordBars = scoreMode ? scoreChords : buildChords(harms, pickupU, barU, nBars, carryIn);
       var hasChords = chordBars.some(Boolean);
 
       // Extra staves the score carries.
@@ -718,7 +751,7 @@
 
       // No chord symbols (most classical scores): work the chords and key changes out from every note.
       var H = harmonyEngine(), keyChanges = [];
-      if (!hasChords && H) {
+      if (!hasChords && H && (!scoreMode || scoreBars.every(function (b) { return b.bar === 0 || b.len === outM; }))) {
         var allNotes = [];
         all.forEach(function (Rp) {
           order.forEach(function (mi, k) {
@@ -752,13 +785,15 @@
       var firstChord = chordBars.filter(Boolean)[0] || tonic;
       var filled = [], seen = false;
       chordBars.forEach(function (c) { if (c) seen = true; filled.push(c || (seen ? filled[filled.length - 1] : firstChord)); });
-      if (!hasChords && !H) warnings.push('The file has no chord symbols, so every bar shows the home chord as a placeholder.');
+      if (!hasChords && (!H || (scoreMode && !scoreBars.every(function (b) { return b.bar === 0 || b.len === outM; })))) warnings.push('The file has no chord symbols, so every bar shows the home chord as a placeholder.');
       var lastTok = (chordBars.filter(Boolean).pop() || '').split(' ').pop().split(':')[0] || carryIn;
 
+      if (scoreMode) warnings.push('Written pitched voices play on synthesized piano. Grace notes, unpitched percussion, dynamics, ornaments and tempo changes are not performed.');
       return {
+        score: scoreMode ? { parts: scoreParts, notes: scoreNotes, bars: scoreBars } : undefined,
         title: title, composer: composer,
         key: key, minor: minor, meter: outMeter,
-        pickup: pickupU / U,
+        pickup: scoreMode ? (pickup || 0) : pickupU / U,
         melody: melodyBars.join(' | '),
         chords: filled.join(' | '),
         bars: nBars,
@@ -840,13 +875,13 @@
     });
   }
 
-  function parseFile(bytes) {
+  function parseFile(bytes, options) {
     if (bytes instanceof ArrayBuffer) bytes = new Uint8Array(bytes);
-    if (isZip(bytes)) return readMxl(bytes).then(parseAll);
-    try { return Promise.resolve(parseAll(decodeText(bytes))); } catch (e) { return Promise.reject(e); }
+    if (isZip(bytes)) return readMxl(bytes).then(function (text) { return parseAll(text, options); });
+    try { return Promise.resolve(parseAll(decodeText(bytes), options)); } catch (e) { return Promise.reject(e); }
   }
 
-  var exported = { parse: parse, parseAll: parseAll, parseFile: parseFile, parseXML: parseXML, unroll: unroll, isZip: isZip, looksLikeMusicXML: looksLikeMusicXML, looksLikeIReal: looksLikeIReal, decodeText: decodeText, split: split };
+  var exported = { parseScore: function (text) { return parseAll(text, { score: true })[0]; }, parse: parse, parseAll: parseAll, parseFile: parseFile, parseXML: parseXML, unroll: unroll, isZip: isZip, looksLikeMusicXML: looksLikeMusicXML, looksLikeIReal: looksLikeIReal, decodeText: decodeText, split: split };
   if (typeof module !== 'undefined' && module.exports) module.exports = exported;
   else root.FakeBookMusicXML = exported;
 })(typeof window !== 'undefined' ? window : globalThis);

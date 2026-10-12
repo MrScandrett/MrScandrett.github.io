@@ -1,5 +1,13 @@
 /* nav-mobile.js — shared nav controls + universal lighting settings */
 (function () {
+  // Restore before shared chrome is constructed; OS preferences remain authoritative.
+  var GLASS_PREF = "classroomos-reduce-transparency";
+  try {
+    if (localStorage.getItem(GLASS_PREF) === "true") {
+      document.documentElement.dataset.reduceTransparency = "true";
+    }
+  } catch (_) {}
+
   function ensureClassroomRangeSkin() {
     if (window.ClassroomOSRangeSkin) {
       window.ClassroomOSRangeSkin();
@@ -228,7 +236,7 @@
       '.nav-settings-panel[hidden] { display: none !important; }' +
       '.nav-settings-panel { max-height: min(82vh, 680px); overflow-y: auto; overscroll-behavior: contain; }' +
       '.nav-settings-close {' +
-        'display: inline-flex; align-items: center; justify-content: center; position: absolute; top: 0.75rem; right: 0.75rem;' +
+        'display: inline-flex; align-items: center; justify-content: center; position: absolute; z-index: 2; top: 0.75rem; right: 0.75rem;' +
         'width: 2.5rem; height: 2.5rem; padding: 0; border: 1px solid var(--line, rgba(125,136,154,.3));' +
         'border-radius: 999px; background: var(--surface-2, rgba(255,255,255,.72)); color: var(--text, #1d1d1f);' +
         'font: inherit; font-size: 1.35rem; line-height: 1; cursor: pointer;' +
@@ -354,7 +362,7 @@
     { id: "petals",    label: "Petals",    detail: "Falling blossoms drifting on the wind.", icon: "❀" },
     { id: "hive",      label: "Bee Hive",  detail: "Bees crawling the hive walls.", icon: "🐝" },
     { id: "mandelbrot", label: "Mandelbrot", detail: "A live fractal, slowly revolving.", icon: "◈" },
-    { id: "lavalamp",  label: "Lava Lamp",  detail: "Buoyant molten wax with glowing neon depth.", icon: "♨" }
+    { id: "lavalamp",  label: "Lava Lamp",  detail: "Molten wax that follows your theme palette.", icon: "♨" }
   ];
 
   var CANVAS_THEME_DEFAULT = { sakura: "petals", topaz: "hive", mandelbrot: "mandelbrot", lavalamp: "lavalamp" };
@@ -820,6 +828,12 @@
         '<div class="nav-settings-section">' +
           '<p class="nav-settings-eyebrow">Accessibility</p>' +
           '<label class="nav-motion-toggle">' +
+            '<input type="checkbox" class="nav-transparency-checkbox" />' +
+            '<span class="nav-motion-track" aria-hidden="true"><span class="nav-motion-thumb"></span></span>' +
+            '<span class="nav-motion-copy"><strong>Reduce transparency</strong>' +
+              '<small>Use solid navigation and settings surfaces. Your system accessibility preference is also respected.</small></span>' +
+          '</label>' +
+          '<label class="nav-motion-toggle">' +
             '<input type="checkbox" class="nav-motion-checkbox" />' +
             '<span class="nav-motion-track" aria-hidden="true"><span class="nav-motion-thumb"></span></span>' +
             '<span class="nav-motion-copy">' +
@@ -998,6 +1012,21 @@
         syncCanvasUi();
       });
       canvasGrid.appendChild(btn);
+    });
+
+    var transparencyControl = settingsContainer.querySelector(".nav-transparency-checkbox");
+    transparencyControl.checked = document.documentElement.dataset.reduceTransparency === "true";
+    transparencyControl.addEventListener("change", function () {
+      document.documentElement.toggleAttribute("data-reduce-transparency", transparencyControl.checked);
+      if (transparencyControl.checked) document.documentElement.dataset.reduceTransparency = "true";
+      try { localStorage.setItem(GLASS_PREF, String(transparencyControl.checked)); } catch (_) {}
+    });
+    window.addEventListener("storage", function (event) {
+      if (event.key !== GLASS_PREF && event.key !== null) return;
+      var reduced = event.key !== null && event.newValue === "true";
+      transparencyControl.checked = reduced;
+      if (reduced) document.documentElement.dataset.reduceTransparency = "true";
+      else document.documentElement.removeAttribute("data-reduce-transparency");
     });
 
     // Settings tabs (Theme / Background / Access): one section visible at a time, no long scroll.

@@ -1,0 +1,153 @@
+/* Shared navigation material. Filter order is part of the contrast contract.
+   Solid is the baseline; transparency is progressive enhancement.
+   Keep text palettes local to glass so theme accents cannot weaken legibility. */
+:root {
+  --glass-tint: 255, 255, 255;
+  --glass-regular: rgba(var(--glass-tint), 0.18);
+  --glass-clear: rgba(var(--glass-tint), 0.10);
+  --glass-solid: #f6f8fc;
+  --glass-ink: #17233a;
+  --glass-muted: #344054;
+  --glass-contrast: 0.2;
+  --glass-brightness: 1.65;
+  --glass-rim: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(52, 64, 84, 0.3);
+  --glass-filter: blur(16px) contrast(var(--glass-contrast)) brightness(var(--glass-brightness));
+  --glass-chrome-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+  --glass-float-shadow: 0 18px 48px rgba(0, 0, 0, 0.24);
+}
+html:is([data-theme="night"], [data-theme="bark"], [data-theme="vaporwave"], [data-theme="mandelbrot"], [data-theme="lavalamp"]),
+html:not([data-theme])[data-lighting="night"] {
+  --glass-tint: 12, 18, 30;
+  --glass-solid: #101827;
+  --glass-ink: #f1f5f9;
+  --glass-muted: #cbd5e1;
+  --glass-contrast: 0.3;
+  --glass-brightness: 0.4;
+  --glass-rim: rgba(255, 255, 255, 0.3);
+  --glass-border: rgba(255, 255, 255, 0.3);
+}
+html[data-theme="sakura"] { --glass-tint: 255, 240, 248; }
+html[data-theme="diamond"] { --glass-tint: 230, 250, 255; }
+html[data-theme="emerald"] { --glass-tint: 235, 255, 240; }
+html[data-theme="topaz"] { --glass-tint: 255, 249, 230; }
+html[data-theme="goldfish"] { --glass-tint: 255, 243, 230; }
+html[data-theme="cobblestone"] { --glass-tint: 243, 242, 241; }
+html[data-theme="bark"] { --glass-tint: 36, 26, 18; }
+
+/* Scoped !important wins legacy theme material declarations, not layout. */
+html body :is(.site-header, .nav-settings-panel) {
+  background: var(--glass-solid) !important;
+  color: var(--glass-ink) !important;
+  border-color: var(--glass-border) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  box-shadow: var(--glass-chrome-shadow), inset 0 1px 0 var(--glass-rim) !important;
+}
+html body .nav-settings-panel {
+  box-shadow: var(--glass-float-shadow), inset 0 1px 0 var(--glass-rim), inset 0 0 0 1px var(--glass-border) !important;
+}
+html body :is(.site-header .brand, .site-nav a, .nav-toggle, .nav-settings-toggle, .nav-settings-current, .nav-settings-close) {
+  color: var(--glass-ink) !important;
+}
+html body :is(.nav-settings-eyebrow, .nav-settings-note, .nav-motion-copy small, .nav-vr-control small) {
+  color: var(--glass-muted) !important;
+  opacity: 1;
+}
+html body .nav-settings-panel :is(.nav-settings-section, .nav-settings-tabs, .nav-theme-chip, .nav-mode-pill, .nav-tone-pill) {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+/* Clear controls sit on the regular header material, never directly on content. */
+html body .nav-settings-toggle {
+  background: var(--glass-clear) !important;
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 0 var(--glass-rim) !important;
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  html body .nav-settings-panel {
+    background: var(--glass-regular) !important;
+    -webkit-backdrop-filter: var(--glass-filter) !important;
+    backdrop-filter: var(--glass-filter) !important;
+  }
+  /* Filter a sibling layer, so the floating settings panel can sample page
+     content instead of being trapped inside the header's backdrop root. */
+  html body .site-header {
+    background: transparent !important;
+  }
+  html body .site-header::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    background: var(--glass-regular);
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
+  }
+  html body .site-header::after {
+    content: "";
+    position: absolute;
+    inset: 100% 0 auto;
+    height: 28px;
+    pointer-events: none;
+    background: var(--glass-regular);
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
+    -webkit-mask-image: linear-gradient(#000, transparent);
+    mask-image: linear-gradient(#000, transparent);
+    z-index: -1;
+  }
+}
+html[data-reduce-transparency="true"] body :is(.site-header, .nav-settings-panel) {
+  background: var(--glass-solid) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+html[data-reduce-transparency="true"] body .site-header::before, html[data-reduce-transparency="true"] body .site-header::after { display: none; }
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more), (forced-colors: active) {
+  html body :is(.site-header, .nav-settings-panel) {
+    background: var(--glass-solid) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    border: 2px solid var(--glass-ink) !important;
+  }
+  html body .site-header::before, html body .site-header::after { display: none; }
+}
+@media (forced-colors: active) {
+  html body :is(.site-header, .nav-settings-panel, .nav-settings-toggle) {
+    background: Canvas !important;
+    color: CanvasText !important;
+    border-color: CanvasText !important;
+  }
+  html body :is(.site-header .brand, .site-nav a, .nav-toggle, .nav-settings-toggle, .nav-settings-current, .nav-settings-close, .nav-settings-eyebrow, .nav-settings-note, .nav-motion-copy small, .nav-vr-control small) {
+    color: CanvasText !important;
+  }
+}
+@media print {
+  html body .site-header::before, html body .site-header::after { display: none; }
+}
+
+/* Access controls are shared by both stylesheet entry points. Native checkboxes
+   retain their keyboard, forced-color, and touch behavior. */
+html body .nav-settings-panel .nav-motion-toggle {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  margin-block: 0.75rem;
+  cursor: pointer;
+}
+html body .nav-settings-panel :is(.nav-motion-checkbox, .nav-transparency-checkbox) {
+  position: static;
+  opacity: 1;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0.2rem 0 0;
+  accent-color: var(--focus-ring);
+}
+html body .nav-settings-panel .nav-motion-track { display: none; }
+html body .nav-settings-panel .nav-motion-copy :is(strong, small) { display: block; }
+html body .nav-settings-panel .nav-motion-copy small { margin-top: 0.25rem; line-height: 1.5; }
+html body .nav-settings-panel .nav-vr-control { display: grid; gap: 0.75rem; }
+html body .nav-settings-panel .nav-vr-control :is(strong, small) { display: block; }

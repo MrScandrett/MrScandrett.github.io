@@ -19,6 +19,26 @@
   var STYLE_ID = 'classroomos-canvas-bg-style';
 
   var canvas, ctx, raf;
+  var lavaRenderer = null, lavaLoading = false, lavaLast = null, lavaAccumulator = 0;
+  function loadLavaRenderer() {
+    if (lavaLoading) return;
+    lavaLoading = true;
+    function loadSurface() {
+      var script = document.createElement("script");
+      script.src = scriptBase + "assets/js/canvas-bg-lava.js";
+      script.onload = function () { if (window.ClassroomOSLava) lavaRenderer = window.ClassroomOSLava.create(); };
+      document.head.appendChild(script);
+    }
+    if (window.ClassroomOSThemeRegistry) loadSurface();
+    else {
+      // Some lesson templates inject the background without the shared registry.
+      var registryScript = document.createElement("script");
+      registryScript.src = scriptBase + "assets/js/theme-registry.js";
+      registryScript.onload = loadSurface;
+      registryScript.onerror = loadSurface;
+      document.head.appendChild(registryScript);
+    }
+  }
   var w = 0, h = 0, t = 0;
   var currentBg = 'none';
   var blobs = null, pts = null, petals = null, bees = null, mandel = null, lavaBlobs = null, lavaBubbles = null;
@@ -535,6 +555,7 @@
       y: yPos,
       vx: (Math.random() - 0.5) * 0.35,
       vy: (initialTemp > 0.48 ? -1 : 1) * (0.3 + Math.random() * 0.4),
+      _width: w, _height: h,
       baseR: baseR,
       rx: baseR,
       ry: baseR,
@@ -876,28 +897,47 @@
     ctx.fill();
 
     ctx.restore();
+    // Keep the classic 2D fallback within the active theme's existing colors too.
+    var registry = window.ClassroomOSThemeRegistry;
+    var theme = registry && registry.get(currentTheme());
+    var waxPalette = theme ? (theme.swatch.length > 2 ? theme.swatch.slice(1) : theme.swatch) : ['#0071e3', '#6eb6ff'];
+    var tint = ctx.createLinearGradient(0, h, 0, 0);
+    waxPalette.forEach(function (color, index) { tint.addColorStop(index / Math.max(1, waxPalette.length - 1), color); });
+    ctx.save(); ctx.globalCompositeOperation = 'source-in'; ctx.fillStyle = tint; ctx.fillRect(0, 0, w, h); ctx.restore();
   }
 
   /* ── Animation loop ──────────────────────────────────────────── */
-  function tick() {
-    t++;
+  function tick(now) {
+    if (currentBg !== 'lavalamp') t++;
     if      (currentBg === 'mesh')      drawMesh();
     else if (currentBg === 'particles') drawParticles();
     else if (currentBg === 'aurora')    drawAurora();
     else if (currentBg === 'petals')    drawPetals();
     else if (currentBg === 'hive')      drawHive();
     else if (currentBg === 'mandelbrot') drawMandelbrot();
-    else if (currentBg === 'lavalamp')  drawLavaLamp();
+    else if (currentBg === 'lavalamp') {
+      if (!lavaRenderer || !lavaRenderer.draw(ctx, w, h, now, lavaMouse)) {
+        if (lavaLast === null) lavaLast = now;
+        lavaAccumulator += Math.min(100, now - lavaLast); lavaLast = now;
+        while (lavaAccumulator >= 1000 / 60) { t++; drawLavaLamp(); lavaAccumulator -= 1000 / 60; }
+      }
+    }
     raf = requestAnimationFrame(tick);
   }
 
   function stop() {
+    lavaLast = null; lavaAccumulator = 0;
+    if (lavaRenderer) lavaRenderer.pause();
     if (raf) { cancelAnimationFrame(raf); raf = null; }
   }
 
   function start(bg) {
     stop();
     currentBg = bg;
+    if (reducedMotionOverride() || document.hidden || window.matchMedia('(prefers-reduced-motion: reduce)').matches || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2)) {
+      if (canvas) ctx.clearRect(0, 0, w, h);
+      return;
+    }
 
     if (bg === 'none') {
       if (canvas) { ctx.clearRect(0, 0, w, h); canvas.style.display = 'none'; }
@@ -913,7 +953,7 @@
     if (bg === 'petals')    { petals = null; makePetals();    }
     if (bg === 'hive')      { bees   = null; makeHive();      }
     if (bg === 'mandelbrot') { mandel = null; makeMandelbrot(); }
-    if (bg === 'lavalamp')  { lavaBlobs = null; lavaBubbles = null; makeLavaLamp(); }
+    if (bg === 'lavalamp')  { loadLavaRenderer(); lavaBlobs = null; lavaBubbles = null; makeLavaLamp(); }
 
     raf = requestAnimationFrame(tick);
   }
@@ -923,12 +963,14 @@
     set:  function (bg) { start(bg); },
     get:  function ()   { return currentBg; },
     stop: stop,
+    lavaStats: function () { return lavaRenderer ? lavaRenderer.stats() : { fallback: true }; },
     __ready: true
   };
 
   /* ── Init ────────────────────────────────────────────────────── */
   function init() {
     bindTextureScrollSync();
+    window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', function () { start(bgForTheme(currentTheme())); });
 
     // Skip if user prefers reduced motion
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -969,13 +1011,15 @@
       if (currentBg === 'petals')    { petals = null; makePetals();    }
       if (currentBg === 'hive')      { bees   = null; makeHive();      }
       if (currentBg === 'mandelbrot') { mandel = null; makeMandelbrot(); }
-      if (currentBg === 'lavalamp')  { lavaBlobs = null; lavaBubbles = null; makeLavaLamp(); }
+      if (currentBg === 'lavalamp' && lavaBlobs) {
+        lavaBlobs.forEach(function (b) { b.x *= w / (b._width || w); b.y *= h / (b._height || h); b._width = w; b._height = h; });
+      }
     });
 
     // Pause when tab is backgrounded (battery / CPU)
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) stop();
-      else if (currentBg !== 'none') { t = t; raf = requestAnimationFrame(tick); }
+      else if (currentBg !== 'none' && !reducedMotionOverride() && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) { stop(); raf = requestAnimationFrame(tick); }
     });
 
     // Theme changed (live, no reload): switch to that theme's pick/default

@@ -145,6 +145,39 @@ for (const theme of themes) {
   }
 }
 
+// Test the actual shared material numbers, including each palette's tint.
+// Contrast and brightness operate on sRGB channels in the declared filter order.
+const glassCss = fs.readFileSync("assets/css/components/glass.css", "utf8");
+const glassRoot = declarations(glassCss.match(/:root\s*\{([\s\S]*?)\}/)[1]);
+const glassDark = declarations(glassCss.match(/html:not\(\[data-theme\]\)\[data-lighting="night"\]\s*\{([\s\S]*?)\}/)[1]);
+const darkThemes = new Set(["night", "bark", "vaporwave", "mandelbrot", "lavalamp"]);
+let glassChecks = 0;
+for (const theme of themes) {
+  const escaped = theme.name.replace(/[.*+?^$\{\}()|[\]\\]/g, "\\$&");
+  const tintBlock = glassCss.match(new RegExp('html\\[data-theme="' + escaped + '"\\]\\s*\\{([^}]+)\\}'));
+  const tokens = { ...glassRoot, ...(darkThemes.has(theme.name) ? glassDark : {}), ...declarations(tintBlock?.[1] || "") };
+  const tint = tokens["--glass-tint"].split(",").map(Number);
+  const amount = Number(tokens["--glass-contrast"]);
+  const brightness = Number(tokens["--glass-brightness"]);
+  // Check the RGB cube corners too, rather than assuming only grey backdrops.
+  for (const material of ["regular", "clear", "solid"]) {
+    const alpha = material === "solid" ? 1 : Number(tokens["--glass-" + material].match(/,\s*([.0-9]+)\)/)[1]);
+    for (let corner = 0; corner < 8; corner++) {
+      const channels = [0, 1, 2].map((i) => {
+        const source = (corner >> i) & 1;
+        const filtered = Math.max(0, Math.min(1, ((source - 0.5) * amount + 0.5) * brightness)) * 255;
+        return tint[i] * alpha + filtered * (1 - alpha);
+      });
+      const background = material === "solid" ? parseColor(tokens["--glass-solid"], tokens) : { r: channels[0], g: channels[1], b: channels[2], a: 1 };
+      for (const ink of ["--glass-ink", "--glass-muted"]) {
+        const ratio = contrast(parseColor(tokens[ink], tokens), background);
+        glassChecks++;
+        if (ratio < 4.5) failures.push({ theme: theme.name, pair: ink + " on glass-" + material + " corner " + corner, ratio: ratio.toFixed(2), threshold: 4.5 });
+      }
+    }
+  }
+}
+
 if (failures.length) {
   console.error("Theme contrast check failed:");
   console.table(failures);
@@ -152,3 +185,5 @@ if (failures.length) {
 }
 
 console.log(`Theme contrast check passed for ${themes.length} themes and ${pairs.length} token pairs.`);
+
+console.log("Glass contrast check passed for " + glassChecks + " material/background/text combinations.");
