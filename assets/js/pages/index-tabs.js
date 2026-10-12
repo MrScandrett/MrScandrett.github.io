@@ -103,12 +103,3 @@
       });
     }
 
-    const missionDate = document.getElementById('mission-date');
-    if (missionDate) {
-      missionDate.textContent = new Date().toLocaleDateString(undefined, {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric'
-      });
-    }
-  

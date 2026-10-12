@@ -362,3 +362,13 @@ and `npm run a11y` work without pinning a build number; override with
 scripts should launch with `executablePath: findChromium()` the same way.
 Driving the real page is the only reliable check for canvas games; a blank canvas
 and a game with no render loop look identical to static inspection.
+
+## Recent Updates
+
+When shipping a meaningful lesson update, add an entry to `data/updates.json`
+with `date` (YYYY-MM-DD), `lesson` (live catalog ID), `title`, and a short,
+student-friendly `what`. Run `npm run build:updates` and commit the generated
+homepage, `updates.html`, and `data/updates-first-added.json` cache. New lessons
+use the first-added git date; student projects use manifest `date_added`.
+Generate locally with full git history after committing new lesson files.
+Routine maintenance and site-wide edits do not need curated entries.
