@@ -189,6 +189,71 @@
     clear() { this.particles.length = 0; return this; }
   }
 
+  // A compact 3-D, ground-hugging particle flow for materials such as lava,
+  // mud, or snow. The caller supplies the terrain height and downhill vector;
+  // the engine supplies viscosity, gravity, cooling, and stable bounded motion.
+  class FlowParticles {
+    constructor(options = {}) {
+      this.max = clamp(Math.floor(options.max || 600), 1, 2000);
+      this.material = material(options.material || 'lava');
+      this.particles = [];
+      this.gravity = Number(options.gravity ?? 4.5) || 0;
+      this.groundAt = typeof options.groundAt === 'function' ? options.groundAt : (() => 0);
+      this.slopeAt = typeof options.slopeAt === 'function' ? options.slopeAt : (() => ({ x: 0, z: 0 }));
+      this.bounds = options.bounds || null;
+    }
+
+    emit(options = {}) {
+      if (this.particles.length >= this.max) this.particles.shift();
+      const life = Math.max(0.1, Number(options.life) || 6);
+      this.particles.push({
+        x: Number(options.x) || 0, y: Number(options.y) || 0, z: Number(options.z) || 0,
+        vx: Number(options.vx) || 0, vy: Number(options.vy) || 0, vz: Number(options.vz) || 0,
+        life, maxLife: life, age: 0,
+        size: Math.max(0.03, Number(options.size) || 0.18),
+        temperature: clamp(Number(options.temperature ?? 1), 0, 1)
+      });
+      return this;
+    }
+
+    update(deltaSeconds = 1 / 60) {
+      const dt = clamp(Number(deltaSeconds) || 0, 0, 0.05);
+      const viscosity = clamp(this.material.viscosity, 0.01, 1.5);
+      const flowPower = 0.7 + this.material.flow * 4;
+      const drag = Math.exp(-viscosity * 2.6 * dt);
+      for (const particle of this.particles) {
+        particle.age += dt;
+        particle.life -= dt;
+        if (particle.life <= 0) continue;
+
+        particle.vy -= this.gravity * dt;
+        const ground = this.groundAt(particle.x, particle.z) + 0.045;
+        if (particle.y <= ground) {
+          particle.y = ground;
+          if (particle.vy < 0) particle.vy *= -0.16;
+          const slope = this.slopeAt(particle.x, particle.z) || { x: 0, z: 0 };
+          particle.vx += slope.x * flowPower * (1 + particle.temperature) * dt;
+          particle.vz += slope.z * flowPower * (1 + particle.temperature) * dt;
+          particle.vy *= 0.55;
+        }
+        particle.vx *= drag; particle.vz *= drag; particle.vy *= Math.exp(-viscosity * 1.2 * dt);
+        particle.x += particle.vx * dt;
+        particle.y += particle.vy * dt;
+        particle.z += particle.vz * dt;
+        particle.temperature = clamp(particle.temperature - dt / particle.maxLife * 0.55, 0, 1);
+
+        if (this.bounds) {
+          particle.x = clamp(particle.x, this.bounds.left, this.bounds.right);
+          particle.z = clamp(particle.z, this.bounds.front, this.bounds.back);
+        }
+      }
+      this.particles = this.particles.filter(particle => particle.life > 0);
+      return this;
+    }
+
+    clear() { this.particles.length = 0; return this; }
+  }
+
   function drawSurface(ctx, surface, options = {}) {
     if (!ctx || !surface?.columns.length) return;
     const width = options.width ?? surface.width;
@@ -323,8 +388,10 @@
     material,
     Surface,
     Particles,
+    FlowParticles,
     createSurface: options => new Surface(options),
     createParticles: options => new Particles(options),
+    createFlowParticles: options => new FlowParticles(options),
     drawSurface,
     drawParticles
   };

@@ -447,7 +447,16 @@
       #vol-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
       .drag-hint { bottom: 1rem !important; }
     }
-</style>
+    #eruption-mode { width:100%; padding:0.6rem; color:#fff; background:#292321; }
+    .vs-card p, .vs-card details { font-size:0.78rem; line-height:1.55; }
+    .vs-card a { color:#ffd1a1; }
+    .vs-card ol { padding-left:1.3rem; }
+    .stat-val { font-size:0.9rem; overflow-wrap:anywhere; }
+    .ev-card { color:inherit; text-align:left; font:inherit; width:100%; }
+    .ev-card[hidden] { display:none; }
+    button:disabled, input:disabled { opacity:0.55; }
+    #phase-label { font-weight:700; color:#ffd1a1; }
+  </style>
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to content</a>
@@ -494,26 +503,32 @@
     <!-- Timeline Overlay (Bottom Center) -->
     <div class="timeline-overlay" id="timeline-overlay">
       <div class="tl-labels">
-        <span>Pre-eruption</span>
-        <span>During Eruption</span>
+        <span>Event sequence</span>
+        <span>Unequal time intervals</span>
         <span>Aftermath</span>
       </div>
-      <input type="range" id="s-timeline" min="0" max="1" step="0.01" value="0.5" />
+      <input type="range" id="s-timeline" aria-label="Event sequence position" min="0" max="1" step="0.01" value="0.5" />
     </div>
 
     <!-- Blender Left Panel -->
     <aside class="blender-panel panel-left">
       <div class="vs-card">
-        <h3>Famous Eruptions</h3>
+        <h3>Playback mode</h3>
+        <label for="eruption-mode">Choose an investigation</label>
+        <select id="eruption-mode"><option value="historical">Historical playback</option><option value="exploration">Exploration — hypothetical</option></select>
+        <p id="mode-note"></p>
+        <h3>Event presets</h3>
         <div class="eruption-scroll" id="eruption-scroll"></div>
       </div>
       <div class="vs-card" style="margin-top: auto; padding-top: 1rem; border-top: 1px solid rgba(255,120,40,0.2);">
         <!-- Event description -->
+      <p id="phase-label" role="status"></p>
+      <details open><summary>What really happened</summary><div id="historical-evidence"></div></details>
       <div class="event-desc" id="event-desc">
       </div>
       <figure id="event-photo-container" data-zoomable style="margin-top: 1rem; margin-bottom: 0; display: none;">
         <img id="event-photo" src="" alt="Event visualization" style="width: 100%; border-radius: 4px; object-fit: cover; max-height: 200px;">
-        <figcaption id="event-photo-caption" style="display:none;"></figcaption>
+        <figcaption id="event-photo-caption" ></figcaption>
       </figure>
       <div id="event-video" style="margin-top: 1rem;"></div>
       </div>
@@ -532,29 +547,33 @@
       </div>
       <div class="vs-card">
         <h3>Eruption Controls</h3>
+        <p style="font-size:0.75rem;line-height:1.5;color:#dfc4aa">Lava advances while you watch. Lower viscosity lets it spread faster; hollows collect pools. Stop the supply to watch it cool. Moving the timeline backward clears the deposits.</p>
+        <p id="lava-flow-status" style="font-size:0.72rem;color:#f0c080">No lava deposited yet.</p>
+        <p style="font-size:0.68rem;line-height:1.5;color:#dfc4aa">Illustrative terrain-and-cooling model, with accelerated time. Flow routes and cell counts are not historical measurements or hazard predictions.</p>
         <div class="param-row">
           <div class="param-label">Eruption Intensity <strong id="v-intensity">72%</strong></div>
-          <input type="range" id="s-intensity" min="0" max="100" value="72" />
+          <input type="range" id="s-intensity" aria-label="Illustrative eruption intensity" min="0" max="100" value="72" />
           <div class="range-ends"><span>Dormant</span><span>Maximum</span></div>
         </div>
         <div class="param-row">
           <div class="param-label">Column Height <strong id="v-column">18 km</strong></div>
-          <input type="range" id="s-column" min="1" max="45" value="18" />
+          <input type="range" id="s-column" aria-label="Illustrative plume height" min="1" max="45" value="18" />
           <div class="range-ends"><span>1 km</span><span>45 km</span></div>
         </div>
         <div class="param-row">
           <div class="param-label">Lava Viscosity <strong id="v-viscosity">Andesite</strong></div>
-          <input type="range" id="s-viscosity" min="0" max="100" value="50" step="1" />
+          <input type="range" id="s-viscosity" aria-label="Illustrative viscosity" min="0" max="100" value="50" step="1" />
           <div class="range-ends"><span>Basalt (fluid)</span><span>Rhyolite (thick)</span></div>
         </div>
         <div class="param-row">
           <div class="param-label">Pyroclastic Flow <strong id="v-pyro">40%</strong></div>
-          <input type="range" id="s-pyro" min="0" max="100" value="40" />
+          <input type="range" id="s-pyro" aria-label="Illustrative pyroclastic activity" min="0" max="100" value="40" />
           <div class="range-ends"><span>None</span><span>Full surge</span></div>
         </div>
       </div>
       <div class="vs-card">
-        <h3>Eruption Data</h3>
+        <h3>Evidence and model outputs</h3>
+        <p>Historical estimates describe the whole event, not the current animation frame. Unavailable means this lesson has no supported value.</p>
         <div class="stat-grid">
           <div class="stat-card"><div class="stat-lbl">Ejecta Vol.</div><div class="stat-val high" id="out-ejecta">1.2 km³</div></div>
           <div class="stat-card"><div class="stat-lbl">Temp (°C)</div><div class="stat-val lava" id="out-temp">1 050°C</div></div>
@@ -563,6 +582,16 @@
           <div class="stat-card"><div class="stat-lbl">Ash Radius</div><div class="stat-val medium" id="out-ash">320 km</div></div>
           <div class="stat-card"><div class="stat-lbl">VEI</div><div class="stat-val extreme" id="out-vei">5</div></div>
         </div>
+        <p id="readout-note"></p>
+        <details open><summary>Lava conservation evidence</summary>
+          <p id="lava-diagnostics"></p>
+          <p>Model units only. Stored volume includes cold crust. Boundaries retain lava; no outflow or erosion is modeled. Balance error = supplied − stored. Scrubbing backward or changing mode/event resets deposits; scrubbing forward does not reconstruct earlier deposits.</p>
+          <p>Predict: will a thinner flow cool sooner? Test in exploration mode, stop the supply, then compare hot cells with covered cells.</p>
+        </details>
+        <details><summary>Safety and model limits</summary>
+          <p>This is a classroom model, not an eruption forecast. Real volcanic behavior depends on changing measurements, terrain, groundwater, atmospheric conditions, and monitoring data that are simplified here.</p>
+          <p>Phase order follows the linked sources. Keyframe spacing, intensity, viscosity, lighting, terrain changes, and particle paths are illustrative, not measured reconstructions. Lateral blasts, debris avalanches, caldera collapse, ice melt, tsunamis, lava tubes, atmospheric circulation and chemical conversion are not physically modeled. Smoke and ground particles are not hazard boundaries.</p>
+        </details>
         <!-- VEI bar -->
         <div class="vei-bar-wrap">
           <div class="vei-bar-row" id="vei-bar"></div>
@@ -578,6 +607,7 @@
   <script src="../../assets/js/sim-kit.js"></script>
   <script src="../../assets/js/liquid-engine.js"></script>
   <script src="../../assets/js/cloud-engine.js"></script>
+  <script src="../../assets/js/volcano-history.js"></script>
   <script type="module">
   import { THREE } from '../../assets/vendor/three-bundle.min.js';
   (function () {
@@ -647,22 +677,22 @@
        FAMOUS ERUPTION PRESETS
     ══════════════════════════════════════════ */
     const ERUPTIONS = [
-      { id:'vesuvius79',  flag:'🇮🇹', name:'Mt Vesuvius', year:'Aug 24, 79 AD · 1:00 PM', timeOfDay: 13.0, duration: 18, vei:5, vtype:'strato',  intensity:82, column:27, viscosity:70, pyro:80, photoCaption: "A dramatic painting of the eruption of Mount Vesuvius in 79 AD. The massive Plinian column and pyroclastic surges devastated Pompeii.",
-        desc:'<strong>Mt Vesuvius — 79 AD · Italy</strong>Pyroclastic surges at 300 °C buried Pompeii and Herculaneum under 4–6 m of ash. 16,000–20,000 killed. Eruption lasted 18 hours, ejecting 3 km³ of material.' },
+      { id:'vesuvius79',  flag:'🇮🇹', name:'Mt Vesuvius', year:'79 AD · calendar date debated', timeOfDay: 13.0, duration: 18, vei:5, vtype:'strato',  intensity:82, column:27, viscosity:70, pyro:80, photoCaption: "A dramatic painting of the eruption of Mount Vesuvius in 79 AD. The massive Plinian column and pyroclastic surges devastated Pompeii.",
+        },
       { id:'tambora1815', flag:'🇮🇩', name:'Tambora',     year:'Apr 10, 1815 · 7:00 PM', timeOfDay: 19.0, duration: 48, vei:7, vtype:'caldera', intensity:100, column:43, viscosity:80, pyro:95, photoCaption: "Mount Tambora's 1815 eruption remains the largest in recorded human history. It caused a global volcanic winter.",
-        desc:'<strong>Tambora — 1815 · Indonesia</strong>Deadliest eruption in recorded history. 71,000+ killed. Ejected 160 km³ of material. Caused "Year Without Summer" in 1816, triggering crop failures and famine worldwide.' },
+        },
       { id:'krakatoa1883',flag:'🇮🇩', name:'Krakatoa',    year:'Aug 27, 1883 · 10:02 AM', timeOfDay: 10.0, duration: 12, vei:6, vtype:'caldera', intensity:95, column:36, viscosity:75, pyro:90, photoCaption: "A contemporary lithograph of the 1883 eruption of Krakatoa, which collapsed the island and generated massive tsunamis.",
-        desc:'<strong>Krakatoa — 1883 · Indonesia</strong>Explosion heard 4,800 km away — the loudest sound in recorded history. Tsunamis up to 30 m killed 36,000. The island largely collapsed into its magma chamber.' },
+        },
       { id:'sthelenr1980',flag:'🇺🇸', name:'Mt St Helens',year:'May 18, 1980 · 8:32 AM', timeOfDay: 8.5, duration: 9, vei:5, vtype:'strato',  intensity:78, column:24, viscosity:65, pyro:72, video: 'mount-st-helens-1980', videoCaption: 'U.S. Forest Service film of the May 18, 1980 eruption and its aftermath (clip 9:10–16:10). Public domain, National Archives (ARC 13364), via the Internet Archive.', photoCaption: "The spectacular ash column from the May 18, 1980 eruption of Mount St. Helens, following its catastrophic lateral blast.",
-        desc:'<strong>Mt St Helens — 1980 · USA</strong>A lateral blast removed the north face in seconds. 57 deaths. Ash column reached 24 km. Lahars and pyroclastic flows devastated 600 km² of forest.' },
+        },
       { id:'pinatubo1991', flag:'🇵🇭', name:'Pinatubo',   year:'Jun 15, 1991 · 1:42 PM', timeOfDay: 13.7, duration: 9, vei:6, vtype:'strato',  intensity:92, column:35, viscosity:78, pyro:88, photoCaption: "The explosive 1991 eruption of Mount Pinatubo in the Philippines. It injected millions of tons of sulfur dioxide into the stratosphere.",
-        desc:'<strong>Pinatubo — 1991 · Philippines</strong>Second-largest 20th-century eruption. Injected 20 Mt of SO₂ into the stratosphere, cooling the Earth by ~0.5 °C for 2 years. 800 deaths.' },
-      { id:'eyja2010',     flag:'🇮🇸', name:'Eyjafjallajökull',year:'Apr 14, 2010 · 11:00 AM', timeOfDay: 11.0, duration: 144, vei:4, vtype:'strato',  intensity:48, column:10, viscosity:40, pyro:18, photoCaption: "Eyjafjallajökull's 2010 subglacial eruption mixed glacial meltwater with magma, creating a fine ash that grounded European aviation.",
-        desc:'<strong>Eyjafjallajökull — 2010 · Iceland</strong>Subglacial eruption melted the ice cap, sending meltwater floods. Fine ash cloud grounded 100,000 flights across Europe for 6 days.' },
+        },
+      { id:'eyja2010',     flag:'🇮🇸', name:'Eyjafjallajökull',year:'Apr 14, 2010 · summit eruption', timeOfDay: 11.0, duration: 144, vei:4, vtype:'strato',  intensity:48, column:10, viscosity:40, pyro:18, photoCaption: "Eyjafjallajökull's 2010 subglacial eruption mixed glacial meltwater with magma, creating a fine ash that grounded European aviation.",
+        },
       { id:'maunaloa2022', flag:'🇺🇸', name:'Mauna Loa',  year:'Nov 27, 2022 · 11:30 PM', timeOfDay: 23.5, duration: 300, vei:1, vtype:'shield',  intensity:38, column:4,  viscosity:10, pyro:5, photoCaption: "Mauna Loa's 2022 eruption featured incredible lava fountains and flows of highly fluid basalt down its massive shield slopes.",
-        desc:'<strong>Mauna Loa — 2022 · Hawaii, USA</strong>Earth\'s largest active volcano erupted for the first time since 1984. Spectacular lava fountains and low-viscosity basaltic flows moved toward populated areas.' },
+        },
       { id:'yellowstone',  flag:'🇺🇸', name:'Yellowstone',year:'Hypothetical · Golden Hour', timeOfDay: 17.5, duration: 720, vei:8, vtype:'super', intensity:100, column:45, viscosity:95, pyro:100, photoCaption: "The Grand Prismatic Spring at Yellowstone National Park. The park sits atop a massive caldera capable of supereruptions.",
-        desc:'<strong>Yellowstone — Hypothetical Supereruption</strong>A full VEI 8 eruption would bury North America in metres of ash and inject enough SO₂ to trigger a decade-long volcanic winter. Last occurred 640,000 years ago.' },
+        },
     ];
 
     /* ══════════════════════════════════════════
@@ -963,25 +993,6 @@
       const R = TERRAIN_SIZE * 0.38;
       const hFrac = clamp(y / maxH, 0, 1);
 
-      // Lava channels: radial slots flowing downhill
-      const ang = Math.atan2(z, x);
-      const channel = Math.abs(Math.sin(ang * 4) * 0.5 + Math.sin(ang * 9) * 0.25);
-      const flow = Math.max(0.05, lavaIntensity * (1.12 - lavaMaterial.viscosity * 0.18));
-      const isLava = channel < flow * 0.32 && r < R * 0.85 && hFrac > 0.04;
-      const heatFrac = isLava ? clamp(1.0 - r / (R * 0.7), 0, 1) * lavaIntensity : 0;
-
-      const craterHot = r < R * 0.07 && lavaIntensity > 0.15;
-      if (craterHot) {
-        return [1.0, 0.55, 0.12];
-      }
-      if (isLava && lavaIntensity > 0.1) {
-        // Hot lava — white-yellow → orange → dark red
-        if (heatFrac > 0.7) return [1.0, 0.95, 0.6];
-        if (heatFrac > 0.4) return [1.0, 0.55, 0.1];
-        if (heatFrac > 0.1) return [0.7, 0.15, 0.02];
-        return [0.25, 0.04, 0.01];
-      }
-
       // Break up perfect horizontal banding with noise
       const nH = hFrac + (fbm(x*0.4, z*0.4, 3) - 0.5) * 0.15;
       const nH2 = clamp(nH, 0, 1);
@@ -1068,6 +1079,213 @@
     let terrainMesh = null;
     let currentMaxH = 10;
     let craterPos = new THREE.Vector3(0, 10, 0);
+    const lavaStreamGroup = new THREE.Group();
+    scene.add(lavaStreamGroup);
+
+    // Terrain-draped, rounded flow lobes. This is an illustrative surface,
+    // not a hazard forecast or a numerical lava-inundation model.
+    const lavaSurfaceMaterial = new THREE.ShaderMaterial({
+      side: THREE.DoubleSide,
+      uniforms: { time: { value: 0 }, fluidity: { value: 0.5 } },
+      vertexShader: `
+        varying vec2 flowUV;
+        varying vec2 lavaState;
+        attribute vec2 deposit;
+        void main() {
+          flowUV = uv;
+          lavaState = deposit;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }`,
+      fragmentShader: `
+        uniform float time;
+        uniform float fluidity;
+        varying vec2 flowUV;
+        varying vec2 lavaState;
+        float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        float noise(vec2 p) {
+          vec2 i = floor(p), f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+          return mix(mix(hash(i), hash(i + vec2(1,0)), f.x),
+                     mix(hash(i + vec2(0,1)), hash(i + vec2(1,1)), f.x), f.y);
+        }
+        void main() {
+          if (lavaState.x < 0.018) discard;
+          float heatLevel = clamp(lavaState.y, 0.0, 1.0);
+          // Cold deposits stop moving; fresh material opens irregular hot cracks.
+          vec2 p = flowUV * 1.8;
+          p.y -= time * 0.16 * heatLevel * fluidity;
+          float n = noise(p + noise(p * 0.45) * 2.5);
+          float cracks = 1.0 - smoothstep(0.025, 0.12, abs(n - 0.5));
+          float heat = heatLevel * (0.25 + cracks * 0.75);
+          vec3 crust = mix(vec3(0.012, 0.014, 0.016), vec3(0.045, 0.038, 0.035), n);
+          vec3 molten = mix(vec3(0.9, 0.065, 0.005), vec3(1.8, 0.65, 0.06), heat);
+          gl_FragColor = vec4(mix(crust, molten, smoothstep(0.15, 0.8, heat)), 1.0);
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
+        }`
+    });
+
+    // A bounded shallow-layer teaching model: material moves to lower
+    // terrain + deposit surfaces, splits between outlets, and fills hollows.
+    // Cooling immobilizes crust. Units and time are illustrative, not a forecast.
+    const LAVA_N = 101, LAVA_STEP = 0.4, LAVA_HALF = 20;
+    const lavaCells = LAVA_N * LAVA_N;
+    const lavaDepth = new Float32Array(lavaCells);
+    const lavaEnergy = new Float32Array(lavaCells);
+    const lavaGround = new Float32Array(lavaCells);
+    const lavaDelta = new Float32Array(lavaCells);
+    const lavaHeatDelta = new Float32Array(lavaCells);
+    const LAVA_RENDER_N = 201, lavaRenderCells = LAVA_RENDER_N * LAVA_RENDER_N;
+    const lavaRenderGround = new Float32Array(lavaRenderCells);
+    const lavaPositions = new Float32Array(lavaRenderCells * 3);
+    const lavaDeposits = new Float32Array(lavaRenderCells * 2);
+    const lavaUV = new Float32Array(lavaRenderCells * 2);
+    const lavaIndices = [];
+    for (let z = 0; z < LAVA_RENDER_N; z++) for (let x = 0; x < LAVA_RENDER_N; x++) {
+      const i = z * LAVA_RENDER_N + x;
+      lavaPositions[i * 3] = x * LAVA_STEP / 2 - LAVA_HALF;
+      lavaPositions[i * 3 + 2] = z * LAVA_STEP / 2 - LAVA_HALF;
+      lavaUV[i * 2] = x * LAVA_STEP / 2;
+      lavaUV[i * 2 + 1] = z * LAVA_STEP / 2;
+      if (x < LAVA_RENDER_N - 1 && z < LAVA_RENDER_N - 1)
+        lavaIndices.push(i, i + LAVA_RENDER_N, i + 1, i + 1, i + LAVA_RENDER_N, i + LAVA_RENDER_N + 1);
+    }
+    const lavaFieldGeometry = new THREE.BufferGeometry();
+    lavaFieldGeometry.setAttribute('position', new THREE.BufferAttribute(lavaPositions, 3).setUsage(THREE.DynamicDrawUsage));
+    lavaFieldGeometry.setAttribute('uv', new THREE.BufferAttribute(lavaUV, 2));
+    lavaFieldGeometry.setAttribute('deposit', new THREE.BufferAttribute(lavaDeposits, 2).setUsage(THREE.DynamicDrawUsage));
+    const lavaDrawIndices = new Uint32Array(lavaIndices.length);
+    lavaFieldGeometry.setIndex(new THREE.BufferAttribute(lavaDrawIndices, 1).setUsage(THREE.DynamicDrawUsage));
+    lavaFieldGeometry.setDrawRange(0, 0);
+    const lavaFieldMesh = new THREE.Mesh(lavaFieldGeometry, lavaSurfaceMaterial);
+    lavaFieldMesh.frustumCulled = false;
+    lavaStreamGroup.add(lavaFieldMesh);
+    let lavaSources = [], lavaAccumulator = 0, lavaSupplied = 0;
+
+    function resetLavaField() {
+      lavaDepth.fill(0); lavaEnergy.fill(0); lavaAccumulator = 0; lavaSupplied = 0;
+      lavaFlow?.clear();
+      syncLavaField();
+    }
+
+    function rebuildLavaStreams() {
+      for (let i = 0; i < lavaCells; i++)
+        lavaGround[i] = terrainHeightAt((i % LAVA_N) * LAVA_STEP - LAVA_HALF, Math.floor(i / LAVA_N) * LAVA_STEP - LAVA_HALF);
+      for (let i = 0; i < lavaRenderCells; i++)
+        lavaRenderGround[i] = terrainHeightAt(lavaPositions[i * 3], lavaPositions[i * 3 + 2]);
+      // Find local high points on the crater rim; fountains supply the rim,
+      // then gravity and the evolving deposit determine every downstream path.
+      lavaSources = [];
+      const rimRadius = state.vtype === 'super' ? 9 : state.vtype === 'caldera' ? 2.7 : 1.5;
+      for (let sector = 0; sector < 5; sector++) {
+        let best = -1, high = -Infinity;
+        for (let j = 0; j < 14; j++) {
+          const angle = (sector + j / 14) * Math.PI * 2 / 5;
+          for (let r = rimRadius * 0.75; r <= rimRadius * 1.25; r += LAVA_STEP) {
+            const x = Math.round((Math.cos(angle) * r + LAVA_HALF) / LAVA_STEP);
+            const z = Math.round((Math.sin(angle) * r + LAVA_HALF) / LAVA_STEP);
+            const i = z * LAVA_N + x;
+            if (lavaGround[i] > high) { high = lavaGround[i]; best = i; }
+          }
+        }
+        if (best >= 0) lavaSources.push(best);
+      }
+      syncLavaField();
+    }
+
+    function stepLavaField(dt) {
+      const fluidity = 1 - state.viscosity / 100;
+      lavaSurfaceMaterial.uniforms.fluidity.value = fluidity;
+      const supply = state.intensity / 100;
+      for (const i of lavaSources) {
+        const added = supply * 1.2 * dt;
+        lavaDepth[i] += added; lavaEnergy[i] += added; lavaSupplied += added * LAVA_STEP * LAVA_STEP;
+      }
+      lavaDelta.fill(0); lavaHeatDelta.fill(0);
+      const offsets = [-1, 1, -LAVA_N, LAVA_N, -LAVA_N-1, -LAVA_N+1, LAVA_N-1, LAVA_N+1];
+      const drops = new Float32Array(8);
+      for (let z = 1; z < LAVA_N - 1; z++) for (let x = 1; x < LAVA_N - 1; x++) {
+        const i = z * LAVA_N + x, depth = lavaDepth[i];
+        if (depth < 0.001) continue;
+        const heat = lavaEnergy[i] / depth;
+        if (heat < 0.16) continue;
+        const surface = lavaGround[i] + depth;
+        let total = 0;
+        for (let k = 0; k < 8; k++) {
+          const j = i + offsets[k];
+          // Yield threshold makes viscous lava pile up before it can escape.
+          drops[k] = Math.max(0, surface - lavaGround[j] - lavaDepth[j] - (1-fluidity) * 0.09)
+            / (k < 4 ? 1 : Math.SQRT2);
+          drops[k] *= drops[k];
+          total += drops[k];
+        }
+        if (!total) continue;
+        const moved = Math.min(depth * 0.42, total * dt * (0.12 + fluidity * 1.5) * heat * heat);
+        for (let k = 0; k < 8; k++) if (drops[k] > 0) {
+          const amount = moved * drops[k] / total, j = i + offsets[k];
+          lavaDelta[j] += amount; lavaHeatDelta[j] += amount * heat;
+        }
+        lavaDelta[i] -= moved; lavaHeatDelta[i] -= moved * heat;
+      }
+      for (let i = 0; i < lavaCells; i++) {
+        lavaDepth[i] = Math.max(0, lavaDepth[i] + lavaDelta[i]);
+        // Thin toes cool faster than deep insulated pools; crust remains.
+        const cooling = Math.exp(-dt * (0.003 + 0.006 / (0.08 + lavaDepth[i])));
+        lavaEnergy[i] = Math.max(0, lavaEnergy[i] + lavaHeatDelta[i]) * cooling;
+      }
+    }
+
+    function syncLavaField() {
+      let covered = 0, hot = 0, maxDepth = 0;
+      for (let i = 0; i < lavaCells; i++) {
+        const depth = lavaDepth[i];
+        const heat = depth > 0.001 ? lavaEnergy[i] / depth : 0;
+
+        if (depth > 0.018) { covered++; if (heat > 0.45) hot++; }
+        maxDepth = Math.max(maxDepth, depth);
+      }
+      lavaFieldMesh.visible = covered > 0;
+      // Match terrain tessellation so the deposit cannot cut through ridges.
+      for (let z = 0; z < LAVA_RENDER_N; z++) for (let x = 0; x < LAVA_RENDER_N; x++) {
+        const gx = Math.min(LAVA_N - 2, Math.floor(x / 2));
+        const gz = Math.min(LAVA_N - 2, Math.floor(z / 2));
+        const fx = x / 2 - gx, fz = z / 2 - gz;
+        const i = gz * LAVA_N + gx, r = z * LAVA_RENDER_N + x;
+        const sample = field => lerp(lerp(field[i], field[i+1], fx), lerp(field[i+LAVA_N], field[i+LAVA_N+1], fx), fz);
+        const depth = sample(lavaDepth), energy = sample(lavaEnergy);
+        lavaPositions[r * 3 + 1] = lavaRenderGround[r] + 0.035 + depth;
+        lavaDeposits[r * 2] = depth;
+        lavaDeposits[r * 2 + 1] = depth > 0.001 ? energy / depth : 0;
+      }
+      // Submit only occupied triangles instead of shading the entire landscape.
+      let drawCount = 0;
+      for (let z = 0; z < LAVA_RENDER_N - 1; z++) for (let x = 0; x < LAVA_RENDER_N - 1; x++) {
+        const i = z * LAVA_RENDER_N + x, j = i + LAVA_RENDER_N;
+        if (Math.max(lavaDeposits[i*2], lavaDeposits[(i+1)*2], lavaDeposits[j*2], lavaDeposits[(j+1)*2]) < 0.018) continue;
+        lavaDrawIndices[drawCount++] = i; lavaDrawIndices[drawCount++] = j; lavaDrawIndices[drawCount++] = i+1;
+        lavaDrawIndices[drawCount++] = i+1; lavaDrawIndices[drawCount++] = j; lavaDrawIndices[drawCount++] = j+1;
+      }
+      lavaFieldGeometry.setDrawRange(0, drawCount);
+      lavaFieldGeometry.index.needsUpdate = true;
+      lavaFieldGeometry.attributes.position.needsUpdate = true;
+      lavaFieldGeometry.attributes.deposit.needsUpdate = true;
+      const status = document.getElementById('lava-flow-status');
+      if (status) status.textContent = covered === 0 ? 'No lava deposited yet.'
+        : `${covered} model cells covered · ${hot} still hot · crust remains as lava cools.`;
+      const stored = lavaDepth.reduce((sum, depth) => sum + depth, 0) * LAVA_STEP * LAVA_STEP;
+      document.getElementById('lava-diagnostics').textContent = `${covered} covered cells · ${hot} hot cells · max depth ${maxDepth.toFixed(2)} model units · supplied ${lavaSupplied.toFixed(3)} · stored ${stored.toFixed(3)} model volume units · balance error ${(lavaSupplied - stored).toExponential(2)}`;
+      // Read-only diagnostics make conservation and reset behavior inspectable.
+      lavaFieldMesh.userData.diagnostics = { covered, hot, maxDepth,
+        volume: lavaDepth.reduce((sum, depth) => sum + depth, 0) };
+    }
+
+    function updateLavaField(dt) {
+      if (state.intensity === 0 && !lavaFieldMesh.visible) return;
+      lavaAccumulator += dt;
+      if (lavaAccumulator < 0.1) return;
+      while (lavaAccumulator >= 0.1) { stepLavaField(0.1); lavaAccumulator -= 0.1; }
+      syncLavaField();
+    }
 
     function buildTerrain(vtype, lavaIntensity) {
       if (terrainMesh) { scene.remove(terrainMesh); terrainMesh.geometry.dispose(); }
@@ -1139,6 +1357,7 @@
 
       craterPos.set(0, maxH, 0);
       lavaLight.position.copy(craterPos).addScaledVector(new THREE.Vector3(0, 1, 0), 1.5);
+      rebuildLavaStreams(lavaIntensity);
     }
 
     function terrainHeightAt(x, z) {
@@ -1463,6 +1682,26 @@
       alphaTest: 0.03
     }));
 
+    // A separate hot-material field makes the lava itself continuous and
+    // readable: ash and bombs can fly through the air, while these particles
+    // follow the terrain and cool as they spread downslope.
+    const lavaRenderMax = 720;
+    const lavaRenderPos = new Float32Array(lavaRenderMax * 3);
+    const lavaRenderCol = new Float32Array(lavaRenderMax * 3);
+    const lavaRenderSize = new Float32Array(lavaRenderMax);
+    const lavaRenderGeo = new THREE.BufferGeometry();
+    lavaRenderGeo.setAttribute('position', new THREE.BufferAttribute(lavaRenderPos, 3));
+    lavaRenderGeo.setAttribute('color', new THREE.BufferAttribute(lavaRenderCol, 3));
+    lavaRenderGeo.setAttribute('size', new THREE.BufferAttribute(lavaRenderSize, 1));
+    const lavaRenderMat = new THREE.PointsMaterial({
+      size: 0.18, vertexColors: true, transparent: true, opacity: 0.8,
+      depthWrite: false, sizeAttenuation: true, blending: THREE.AdditiveBlending,
+      map: emberTex, alphaTest: 0.03
+    });
+    const lavaRenderPoints = new THREE.Points(lavaRenderGeo, lavaRenderMat);
+    lavaRenderPoints.frustumCulled = false;
+    scene.add(lavaRenderPoints);
+
     function spawnAsh(intensity, column) {
       const n = Math.round(65 * intensity);
       for (let i = 0; i < n; i++) {
@@ -1527,45 +1766,115 @@
       );
     }
 
+    function spawnLava(intensity) {
+      if (!lavaFlow || intensity < 0.025) return;
+      const fluidity = 1 - state.viscosity / 100;
+      const count = Math.max(1, Math.round(2 + intensity * (4 + fluidity * 6)));
+      for (let n = 0; n < count; n++) {
+        const ang = Math.random() * Math.PI * 2;
+        const radius = 0.08 + Math.random() * 0.42;
+        const x = Math.cos(ang) * radius;
+        const z = Math.sin(ang) * radius;
+        const slope = slopeDir(x, z);
+        const radial = 0.35 + Math.random() * 0.9;
+        const speed = (0.45 + fluidity * 1.8) * (0.7 + Math.random() * 0.6);
+        const fountain = intensity * (0.7 + Math.random() * 2.4) * (0.45 + fluidity * 0.7);
+        lavaFlow.emit({
+          x, z, y: terrainHeightAt(x, z) + 0.14,
+          vx: slope.x * speed + Math.cos(ang) * radial * intensity,
+          vy: fountain,
+          vz: slope.z * speed + Math.sin(ang) * radial * intensity,
+          life: 3.5 + fluidity * 4.5 + Math.random() * 2.5,
+          size: 0.11 + Math.random() * (0.07 + fluidity * 0.1),
+          temperature: 0.82 + Math.random() * 0.18
+        });
+      }
+    }
+
     /* ══════════════════════════════════════════
        STATE
     ══════════════════════════════════════════ */
-    const state = { intensity:72, column:18, viscosity:50, pyro:40, vtype:'strato', timeline:0.0 };
+    const state = { mode:'historical', intensity:72, column:18, viscosity:50, pyro:40, vtype:'strato', timeline:0.0 };
     let rebuildTimer = 0;
     let activeEruption = 'vesuvius79';
     let simTime = 0;
     const wind = { x: 0, z: 0 };
     let lavaBase = 0;
 
-    function computeStats() {
-      const i = state.intensity / 100;
-      const vei = clamp(Math.round(i * 6 + state.column / 15), 0, 8);
-      const ejecta = Math.pow(10, vei - 4) * 0.1;
-      const temp = 700 + i * 450 + (100 - state.viscosity) * 1.5;
-      const so2 = ejecta * (0.5 + state.viscosity / 100 * 1.5);
-      const ashR = state.column * 18 * i;
-      return { vei, ejecta, temp, so2, ashR };
+    const lavaFlow = window.LiquidEngine?.createFlowParticles({
+      material: 'lava', max: lavaRenderMax, gravity: 4.5,
+      groundAt: (x, z) => terrainHeightAt(x, z),
+      slopeAt: (x, z) => slopeDir(x, z),
+      bounds: { left: -19, right: 19, front: -19, back: 19 }
+    });
+
+    function syncLavaParticles() {
+      for (let i = 0; i < lavaRenderMax; i++) {
+        const particle = lavaFlow?.particles[i];
+        const p3 = i * 3;
+        if (!particle) {
+          lavaRenderPos[p3 + 1] = -9999;
+          lavaRenderSize[i] = 0;
+          continue;
+        }
+        lavaRenderPos[p3] = particle.x;
+        lavaRenderPos[p3 + 1] = particle.y;
+        lavaRenderPos[p3 + 2] = particle.z;
+        const heat = particle.temperature;
+        lavaRenderCol[p3] = 1;
+        lavaRenderCol[p3 + 1] = 0.16 + heat * 0.72;
+        lavaRenderCol[p3 + 2] = 0.02 + heat * 0.12;
+        lavaRenderSize[i] = particle.size * (0.8 + heat * 1.8);
+      }
+      lavaRenderGeo.attributes.position.needsUpdate = true;
+      lavaRenderGeo.attributes.color.needsUpdate = true;
+      lavaRenderGeo.attributes.size.needsUpdate = true;
     }
 
     function updateReadouts() {
-      const s = computeStats();
-      const i = state.intensity;
-      const lvl = i < 25 ? 'low' : i < 55 ? 'medium' : i < 80 ? 'high' : 'extreme';
-      document.getElementById('out-ejecta').textContent = s.ejecta < 0.01 ? '<0.01 km³' : s.ejecta.toFixed(2) + ' km³';
-      document.getElementById('out-ejecta').className = 'stat-val ' + lvl;
-      document.getElementById('out-temp').textContent = Math.round(s.temp).toLocaleString() + ' °C';
-      document.getElementById('out-col').textContent = state.column + ' km';
-      document.getElementById('out-col').className = 'stat-val ' + lvl;
-      document.getElementById('out-so2').textContent = s.so2.toFixed(1) + ' Mt';
-      document.getElementById('out-ash').textContent = Math.round(s.ashR) + ' km';
-      const veiEl = document.getElementById('out-vei');
-      veiEl.textContent = s.vei;
-      veiEl.className = 'stat-val ' + (s.vei < 3 ? 'low' : s.vei < 5 ? 'medium' : s.vei < 7 ? 'high' : 'extreme');
-      // VEI bar
-      document.querySelectorAll('.vei-seg').forEach((seg, idx) => {
-        seg.classList.toggle('active', idx <= s.vei);
-      });
-      document.getElementById('vei-badge').textContent = 'VEI ' + s.vei + ' · ' + vtypeName(state.vtype);
+      const ev = ERUPTIONS.find(e => e.id === activeEruption);
+      const historical = state.mode === 'historical';
+      const record = window.VolcanoHistory[activeEruption];
+      const values = { ejecta:'Unavailable', temp:'Not modeled', col:state.column + ' km · model input',
+        so2: historical && record.so2 ? record.so2 : 'Unavailable', ash:'Not modeled',
+        vei:historical ? ev.vei + ' · historical classification' : 'Not inferred' };
+      for (const [key, value] of Object.entries(values)) document.getElementById('out-' + key).textContent = value;
+      document.querySelectorAll('.vei-seg').forEach((seg, idx) => seg.classList.toggle('active', historical && idx <= ev.vei));
+      document.getElementById('vei-badge').textContent = historical ? 'Historical sequence · VEI ' + ev.vei : 'Hypothetical model';
+      document.getElementById('readout-note').textContent = 'No calibrated ejecta, temperature, SO₂ or ash-dispersal solver is available. No statistical uncertainty range is inferred from slider settings. Plume height is an illustrative scene input, not an observed plume measurement.';
+    }
+
+    function syncMode() {
+      const historical = state.mode === 'historical';
+      document.getElementById('eruption-mode').value = state.mode;
+      document.getElementById('mode-note').textContent = historical
+        ? 'Documented event sequence; locked illustrative animation. Use exploration to change parameters.'
+        : 'Hypothetical model — settings and flow paths do not reconstruct the selected event.';
+      document.querySelectorAll('#s-intensity, #s-column, #s-viscosity, #s-pyro, .type-tab').forEach(el => el.disabled = historical);
+      document.querySelector('[data-id="yellowstone"]').hidden = historical;
+    }
+
+    function applyPhase() {
+      const record = window.VolcanoHistory[activeEruption];
+      const frames = record.timeline;
+      let n = frames.findLastIndex(f => state.timeline >= f.at);
+      n = Math.max(0, n);
+      const a = frames[n], b = frames[Math.min(n + 1, frames.length - 1)];
+      document.getElementById('phase-label').textContent = (state.mode === 'historical' ? 'Historical phase: ' : 'Reference phase only: ') + a.label;
+      document.getElementById('s-timeline').setAttribute('aria-valuetext', a.label);
+      if (state.mode !== 'historical') return;
+      // Hold each phase's level so the scene matches its label; ease into the
+      // next phase only over the last quarter of the span.
+      const span = a === b ? 0 : (state.timeline - a.at) / (b.at - a.at);
+      const ramp = clamp((span - 0.75) / 0.25, 0, 1);
+      const t = ramp * ramp * (3 - 2 * ramp);
+      const ev = ERUPTIONS.find(e => e.id === activeEruption);
+      state.intensity = ev.intensity * lerp(a.intensity, b.intensity, t);
+      state.pyro = ev.pyro * lerp(a.pyro, b.pyro, t);
+      document.getElementById('s-intensity').value = state.intensity;
+      document.getElementById('v-intensity').textContent = Math.round(state.intensity) + '%';
+      document.getElementById('s-pyro').value = state.pyro;
+      document.getElementById('v-pyro').textContent = Math.round(state.pyro) + '%';
     }
 
     function vtypeName(t) {
@@ -1588,10 +1897,11 @@
     // Build eruption cards
     const scroll = document.getElementById('eruption-scroll');
     ERUPTIONS.forEach(ev => {
-      const card = document.createElement('div');
+      const card = document.createElement('button');
+      card.type = 'button';
       card.className = 'ev-card' + (ev.id === activeEruption ? ' active' : '');
       card.dataset.id = ev.id;
-      card.innerHTML = `<div class="ev-flag">${ev.flag}</div><div class="ev-name">${ev.name}</div><div class="ev-year">${ev.year}</div><span class="ev-vei">VEI ${ev.vei}</span>`;
+      card.innerHTML = `<div class="ev-flag">${ev.flag}</div><div class="ev-name">${ev.name}</div><div class="ev-year">${ev.year}</div><span class="ev-vei">${ev.id === 'yellowstone' ? 'Hypothetical' : 'Historical VEI ' + ev.vei}</span>`;
       card.addEventListener('click', () => loadEruption(ev.id));
       scroll.appendChild(card);
     });
@@ -1599,10 +1909,15 @@
     function loadEruption(id) {
       const ev = ERUPTIONS.find(e => e.id === id);
       if (!ev) return;
+      if (id === 'yellowstone') state.mode = 'exploration';
       activeEruption = id;
+      resetLavaField();
 
       // Update active card
       document.querySelectorAll('.ev-card').forEach(c => c.classList.toggle('active', c.dataset.id === id));
+      // Keep the active card visible (scrolling only the strip, never the page).
+      const activeCard = scroll.querySelector(`[data-id="${id}"]`);
+      if (activeCard) scroll.scrollLeft = activeCard.offsetLeft - scroll.offsetLeft - 4;
 
       // Set sliders
       state.timeline  = 0.0;
@@ -1629,15 +1944,24 @@
 
       // Badges and description
       document.getElementById('vol-name-badge').textContent = ev.flag + ' ' + ev.name + ' — ' + ev.year;
-      document.getElementById('event-desc').innerHTML = ev.desc;
+      const record = window.VolcanoHistory[id];
+      document.getElementById('event-desc').textContent = record.note;
+      const evidence = document.getElementById('historical-evidence');
+      evidence.replaceChildren();
+      const phases = document.createElement('ol');
+      record.timeline.forEach(f => { const item = document.createElement('li'); item.textContent = f.label; phases.append(item); });
+      const source = document.createElement('a'); source.href = record.source; source.textContent = 'Read the evidence and its context';
+      evidence.append(phases, source);
+      syncMode();
+      applyPhase();
 
       const photoContainer = document.getElementById('event-photo-container');
       const photoImg = document.getElementById('event-photo');
       const photoCaption = document.getElementById('event-photo-caption');
       
-      if (ev.photoCaption) {
+      if (ev.photoCaption && ev.photoCredit) {
          photoImg.src = `../../assets/images/lessons/volcano-simulator/${id}-photo.jpg`;
-         photoCaption.innerHTML = ev.photoCaption;
+         photoCaption.textContent = ev.photoCaption + ' ' + ev.photoCredit;
          photoContainer.style.display = 'block';
       } else {
          photoContainer.style.display = 'none';
@@ -1670,11 +1994,15 @@
       return 'Rhyolite (thick)';
     }
 
+    let terrainRequest = 0;
     function rebuildTerrain() {
+      const request = ++terrainRequest;
+      const eruption = activeEruption;
       Promise.all([
-        fetchHeightmap(activeEruption),
-        fetchColormap(activeEruption)
+        fetchHeightmap(eruption),
+        fetchColormap(eruption)
       ]).then(() => {
+        if (request !== terrainRequest || eruption !== activeEruption) return;
         const lavaI = (1 - state.viscosity / 100) * (state.intensity / 100);
         buildTerrain(state.vtype, lavaI);
       });
@@ -1685,6 +2013,7 @@
       const el = document.getElementById('s-' + id);
       if (!el) return;
       el.addEventListener('input', function () {
+        if (state.mode !== 'exploration') return;
         state[key] = parseFloat(this.value);
         const vel = document.getElementById('v-' + id);
         if (vel) vel.textContent = fmtFn(state[key]);
@@ -1706,27 +2035,12 @@
     bindSlider('pyro',      'pyro',      v => v + '%');
 
     document.getElementById('s-timeline').addEventListener('input', function() {
+       const previousStage = state.timeline;
        state.timeline = parseFloat(this.value);
+       if (state.timeline < previousStage || state.timeline === 0) resetLavaField();
        
-       // Timeline drives intensity during historical playback
-       const ev = ERUPTIONS.find(e => e.id === activeEruption);
-       if (ev) {
-          // Pre-eruption (0 - 0.2): Intensity builds 0 -> max
-          // Eruption (0.2 - 0.6): Intensity max
-          // Post-eruption (0.6 - 1.0): Intensity max -> 0
-          let simI = 0;
-          if (state.timeline > 0 && state.timeline <= 0.2) simI = ev.intensity * (state.timeline / 0.2);
-          else if (state.timeline > 0.2 && state.timeline <= 0.6) simI = ev.intensity;
-          else if (state.timeline > 0.6) simI = ev.intensity * (1 - (state.timeline - 0.6)/0.4);
-          
-          state.intensity = simI;
-          updateSky(state.intensity);
-
-          const intensitySlider = document.getElementById('s-intensity');
-          const intensityLabel = document.getElementById('v-intensity');
-          if (intensitySlider) intensitySlider.value = simI;
-          if (intensityLabel) intensityLabel.textContent = Math.round(simI) + '%';
-       }
+       applyPhase();
+       updateSky(state.intensity);
 
        const lavaI = (1 - state.viscosity / 100) * (state.intensity / 100);
        updateTerrain(state.vtype, lavaI, state.timeline);
@@ -1735,13 +2049,19 @@
        updateReadouts();
     });
 
+    document.getElementById('eruption-mode').addEventListener('change', function() {
+      state.mode = this.value;
+      loadEruption(state.mode === 'historical' && activeEruption === 'yellowstone' ? 'vesuvius79' : activeEruption);
+    });
+
     // Type tab clicks
     document.getElementById('type-tabs').addEventListener('click', e => {
       const btn = e.target.closest('.type-tab');
-      if (!btn) return;
+      if (!btn || state.mode !== 'exploration') return;
       document.querySelectorAll('.type-tab').forEach(t => t.classList.remove('active'));
       btn.classList.add('active');
       state.vtype = btn.dataset.vtype;
+      resetLavaField();
       rebuildTerrain();
       updateReadouts();
     });
@@ -1951,6 +2271,7 @@
         const pi = state.pyro / 100;
 
         if (i > 0.02) {
+          spawnLava(i);
           spawnAsh(i, state.column);
           spawnBomb(i);
           spawnSteam(i);
@@ -1962,6 +2283,10 @@
       bombPool.update(dt, tickBomb);
       pyroPool.update(dt, tickPyro);
       steamPool.update(dt, tickSteam);
+      lavaFlow?.update(dt);
+      syncLavaParticles();
+      updateLavaField(dt);
+      lavaSurfaceMaterial.uniforms.time.value = simTime;
 
       // Organic multi-frequency lava pulse
       const pulse = 0.76 + Math.sin(ts * 0.0031) * 0.13 + Math.sin(ts * 0.0079 + 1.4) * 0.07 + Math.sin(ts * 0.0017 + 2.9) * 0.04;
