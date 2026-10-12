@@ -159,15 +159,79 @@
       z-index: 10;
     }
     .tl-labels { display: flex; justify-content: space-between; font-size: 0.65rem; color: #f0a060; font-weight: 800; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+    /* Range Sliders — Shared Base */
+    .param-row input[type="range"],
     #s-timeline {
-      width: 100%; height: 6px; border-radius: 999px;
+      display: block;
+      width: 100%;
+      height: 24px;
+      padding: 0;
+      margin: 0;
+      border: 0;
+      background: transparent;
+      outline: none;
+      cursor: pointer;
+      touch-action: pan-y;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .param-row input[type="range"]:focus-visible,
+    #s-timeline:focus-visible {
+      outline: 2px solid rgba(255, 140, 40, 0.7);
+      outline-offset: 3px;
+    }
+
+    /* Timeline Scrubber Track & Thumb */
+    #s-timeline::-webkit-slider-runnable-track {
+      height: 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 140, 50, 0.4);
       background: linear-gradient(90deg, #508030 0%, #ff8030 50%, #403020 100%);
-      outline: none; cursor: pointer; -webkit-appearance: none; appearance: none;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.7);
+    }
+    #s-timeline::-moz-range-track {
+      height: 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 140, 50, 0.4);
+      background: linear-gradient(90deg, #508030 0%, #ff8030 50%, #403020 100%);
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.7);
+    }
+    #s-timeline::-moz-range-progress {
+      background: transparent;
     }
     #s-timeline::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 16px; height: 16px;
-      border-radius: 50%; background: #fff;
-      border: 2px solid #333; box-shadow: 0 0 10px rgba(0,0,0,0.8);
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      margin-top: -5px;
+      border-radius: 50%;
+      background: #fffdf8;
+      border: 2px solid #ff7a20;
+      box-shadow: 0 0 10px rgba(255, 120, 30, 0.8), 0 2px 5px rgba(0,0,0,0.8);
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+    #s-timeline::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fffdf8;
+      border: 2px solid #ff7a20;
+      box-shadow: 0 0 10px rgba(255, 120, 30, 0.8), 0 2px 5px rgba(0,0,0,0.8);
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+    #s-timeline:hover::-webkit-slider-thumb,
+    #s-timeline:focus-visible::-webkit-slider-thumb,
+    #s-timeline:hover::-moz-range-thumb,
+    #s-timeline:focus-visible::-moz-range-thumb {
+      transform: scale(1.2);
+      box-shadow: 0 0 14px rgba(255, 140, 40, 0.95), 0 2px 6px rgba(0,0,0,0.9);
+    }
+    #s-timeline:active::-webkit-slider-thumb,
+    #s-timeline:active::-moz-range-thumb {
+      transform: scale(0.95);
     }
     
     /* ── Control Panel ── */
@@ -230,24 +294,87 @@
     .param-row:last-child { margin-bottom: 0; }
     .param-label { display: flex; justify-content: space-between; font-size: 0.77rem; color: rgba(220,190,150,0.75); margin-bottom: 5px; }
     .param-label strong { color: #f0c080; font-variant-numeric: tabular-nums; }
-    input[type=range] {
-      width: 100%; height: 8px; border-radius: 999px; /* Thicker track */
-      background: rgba(180,70,15,0.35); outline: none; cursor: pointer;
-      -webkit-appearance: none; appearance: none;
+    /* Parameter Controls Track */
+    .param-row input[type="range"]::-webkit-slider-runnable-track {
+      height: 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 120, 40, 0.3);
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+      background: linear-gradient(90deg, #ff5e1a 0%, #ff8c2b var(--range-pct, 0%), rgba(45, 18, 10, 0.85) var(--range-pct, 0%), rgba(45, 18, 10, 0.85) 100%);
     }
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 22px; height: 22px; /* Bigger thumb */
-      border-radius: 50%; background: #e06820;
-      border: 3px solid #f0a060; box-shadow: 0 0 10px rgba(230,100,30,0.6);
-      transition: transform 0.1s;
+    .param-row input[type="range"]::-moz-range-track {
+      height: 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 120, 40, 0.3);
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+      background: rgba(45, 18, 10, 0.85);
     }
-    input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
-    input[type=range]::-moz-range-thumb {
-      width: 22px; height: 22px; border-radius: 50%;
-      background: #e06820; border: 3px solid #f0a060;
-      transition: transform 0.1s;
+    .param-row input[type="range"]::-moz-range-progress {
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #ff5e1a 0%, #ff8c2b 100%);
     }
-    input[type=range]::-moz-range-thumb:hover { transform: scale(1.15); }
+
+    /* Parameter Controls Thumb */
+    .param-row input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      margin-top: -6px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #ffb060, #d9480f);
+      border: 2px solid #ffe0b0;
+      box-shadow: 0 0 10px rgba(255, 100, 20, 0.65), 0 2px 5px rgba(0,0,0,0.6);
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+    .param-row input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #ffb060, #d9480f);
+      border: 2px solid #ffe0b0;
+      box-shadow: 0 0 10px rgba(255, 100, 20, 0.65), 0 2px 5px rgba(0,0,0,0.6);
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+    .param-row input[type="range"]:hover::-webkit-slider-thumb,
+    .param-row input[type="range"]:focus-visible::-webkit-slider-thumb,
+    .param-row input[type="range"]:hover::-moz-range-thumb,
+    .param-row input[type="range"]:focus-visible::-moz-range-thumb {
+      transform: scale(1.15);
+      box-shadow: 0 0 14px rgba(255, 130, 30, 0.9), 0 2px 6px rgba(0,0,0,0.8);
+    }
+    .param-row input[type="range"]:active::-webkit-slider-thumb,
+    .param-row input[type="range"]:active::-moz-range-thumb {
+      transform: scale(0.96);
+    }
+
+    /* Parameter Controls Disabled (Historical Playback Mode) */
+    .param-row input[type="range"]:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    .param-row input[type="range"]:disabled::-webkit-slider-runnable-track {
+      border-color: rgba(180, 80, 40, 0.18);
+      background: linear-gradient(90deg, #883815 0%, #99481a var(--range-pct, 0%), rgba(28, 12, 8, 0.8) var(--range-pct, 0%), rgba(28, 12, 8, 0.8) 100%);
+    }
+    .param-row input[type="range"]:disabled::-moz-range-track {
+      border-color: rgba(180, 80, 40, 0.18);
+      background: rgba(28, 12, 8, 0.8);
+    }
+    .param-row input[type="range"]:disabled::-moz-range-progress {
+      background: linear-gradient(90deg, #883815 0%, #99481a 100%);
+    }
+    .param-row input[type="range"]:disabled::-webkit-slider-thumb,
+    .param-row input[type="range"]:disabled::-moz-range-thumb {
+      cursor: not-allowed;
+      background: #553528;
+      border-color: #7d4d38;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.6);
+      transform: none;
+    }
     .range-ends { display: flex; justify-content: space-between; font-size: 0.61rem; color: rgba(180,130,80,0.4); margin-top: 3px; }
 
     /* Readouts */
@@ -507,7 +634,7 @@
         <span>Unequal time intervals</span>
         <span>Aftermath</span>
       </div>
-      <input type="range" id="s-timeline" aria-label="Event sequence position" min="0" max="1" step="0.01" value="0.5" />
+      <input type="range" id="s-timeline" data-range-skin="native" aria-label="Event sequence position" min="0" max="1" step="0.01" value="0" />
     </div>
 
     <!-- Blender Left Panel -->
@@ -551,23 +678,23 @@
         <p id="lava-flow-status" style="font-size:0.72rem;color:#f0c080">No lava deposited yet.</p>
         <p style="font-size:0.68rem;line-height:1.5;color:#dfc4aa">Illustrative terrain-and-cooling model, with accelerated time. Flow routes and cell counts are not historical measurements or hazard predictions.</p>
         <div class="param-row">
-          <div class="param-label">Eruption Intensity <strong id="v-intensity">72%</strong></div>
-          <input type="range" id="s-intensity" aria-label="Illustrative eruption intensity" min="0" max="100" value="72" />
+          <div class="param-label">Eruption Intensity <strong id="v-intensity">0%</strong></div>
+          <input type="range" id="s-intensity" data-range-skin="native" aria-label="Illustrative eruption intensity" min="0" max="100" value="0" />
           <div class="range-ends"><span>Dormant</span><span>Maximum</span></div>
         </div>
         <div class="param-row">
-          <div class="param-label">Column Height <strong id="v-column">18 km</strong></div>
-          <input type="range" id="s-column" aria-label="Illustrative plume height" min="1" max="45" value="18" />
+          <div class="param-label">Column Height <strong id="v-column">27 km</strong></div>
+          <input type="range" id="s-column" data-range-skin="native" aria-label="Illustrative plume height" min="1" max="45" value="27" />
           <div class="range-ends"><span>1 km</span><span>45 km</span></div>
         </div>
         <div class="param-row">
-          <div class="param-label">Lava Viscosity <strong id="v-viscosity">Andesite</strong></div>
-          <input type="range" id="s-viscosity" aria-label="Illustrative viscosity" min="0" max="100" value="50" step="1" />
+          <div class="param-label">Lava Viscosity <strong id="v-viscosity">Dacite</strong></div>
+          <input type="range" id="s-viscosity" data-range-skin="native" aria-label="Illustrative viscosity" min="0" max="100" value="70" step="1" />
           <div class="range-ends"><span>Basalt (fluid)</span><span>Rhyolite (thick)</span></div>
         </div>
         <div class="param-row">
-          <div class="param-label">Pyroclastic Flow <strong id="v-pyro">40%</strong></div>
-          <input type="range" id="s-pyro" aria-label="Illustrative pyroclastic activity" min="0" max="100" value="40" />
+          <div class="param-label">Pyroclastic Flow <strong id="v-pyro">0%</strong></div>
+          <input type="range" id="s-pyro" data-range-skin="native" aria-label="Illustrative pyroclastic activity" min="0" max="100" value="0" />
           <div class="range-ends"><span>None</span><span>Full surge</span></div>
         </div>
       </div>
@@ -589,8 +716,9 @@
           <p>Predict: will a thinner flow cool sooner? Test in exploration mode, stop the supply, then compare hot cells with covered cells.</p>
         </details>
         <details><summary>Safety and model limits</summary>
-          <p>This is a classroom model, not an eruption forecast. Real volcanic behavior depends on changing measurements, terrain, groundwater, atmospheric conditions, and monitoring data that are simplified here.</p>
-          <p>Phase order follows the linked sources. Keyframe spacing, intensity, viscosity, lighting, terrain changes, and particle paths are illustrative, not measured reconstructions. Lateral blasts, debris avalanches, caldera collapse, ice melt, tsunamis, lava tubes, atmospheric circulation and chemical conversion are not physically modeled. Smoke and ground particles are not hazard boundaries.</p>
+          <p>This is a classroom model, not an eruption forecast. Real volcanic behavior depends on changing seismic activity, local topography, magma chemistry, groundwater interaction, and meteorological conditions that are simplified here.</p>
+          <p>Phase order follows published geological sources. Radial valley incisions steer ground-hugging pyroclastic flows down ravines; Mount St. Helens illustrates the catastrophic directed lateral blast; Tambora and Krakatoa illustrate summit caldera subsidence; Eyjafjallajökull includes ice cap retreat with phreatomagmatic steam generation; and atmospheric wind advection drives ash drift.</p>
+          <p>Fine-scale blast dynamics, true debris avalanche mass-wasting, tsunami propagation, lava tube systems, and atmospheric chemical conversion are not numerically simulated. Smoke, ash, and ground particles are educational visualizations, not certified hazard zone boundaries.</p>
         </details>
         <!-- VEI bar -->
         <div class="vei-bar-wrap">
@@ -677,22 +805,38 @@
        FAMOUS ERUPTION PRESETS
     ══════════════════════════════════════════ */
     const ERUPTIONS = [
-      { id:'vesuvius79',  flag:'🇮🇹', name:'Mt Vesuvius', year:'79 AD · calendar date debated', timeOfDay: 13.0, duration: 18, vei:5, vtype:'strato',  intensity:82, column:27, viscosity:70, pyro:80, photoCaption: "A dramatic painting of the eruption of Mount Vesuvius in 79 AD. The massive Plinian column and pyroclastic surges devastated Pompeii.",
-        },
-      { id:'tambora1815', flag:'🇮🇩', name:'Tambora',     year:'Apr 10, 1815 · 7:00 PM', timeOfDay: 19.0, duration: 48, vei:7, vtype:'caldera', intensity:100, column:43, viscosity:80, pyro:95, photoCaption: "Mount Tambora's 1815 eruption remains the largest in recorded human history. It caused a global volcanic winter.",
-        },
-      { id:'krakatoa1883',flag:'🇮🇩', name:'Krakatoa',    year:'Aug 27, 1883 · 10:02 AM', timeOfDay: 10.0, duration: 12, vei:6, vtype:'caldera', intensity:95, column:36, viscosity:75, pyro:90, photoCaption: "A contemporary lithograph of the 1883 eruption of Krakatoa, which collapsed the island and generated massive tsunamis.",
-        },
-      { id:'sthelenr1980',flag:'🇺🇸', name:'Mt St Helens',year:'May 18, 1980 · 8:32 AM', timeOfDay: 8.5, duration: 9, vei:5, vtype:'strato',  intensity:78, column:24, viscosity:65, pyro:72, video: 'mount-st-helens-1980', videoCaption: 'U.S. Forest Service film of the May 18, 1980 eruption and its aftermath (clip 9:10–16:10). Public domain, National Archives (ARC 13364), via the Internet Archive.', photoCaption: "The spectacular ash column from the May 18, 1980 eruption of Mount St. Helens, following its catastrophic lateral blast.",
-        },
-      { id:'pinatubo1991', flag:'🇵🇭', name:'Pinatubo',   year:'Jun 15, 1991 · 1:42 PM', timeOfDay: 13.7, duration: 9, vei:6, vtype:'strato',  intensity:92, column:35, viscosity:78, pyro:88, photoCaption: "The explosive 1991 eruption of Mount Pinatubo in the Philippines. It injected millions of tons of sulfur dioxide into the stratosphere.",
-        },
-      { id:'eyja2010',     flag:'🇮🇸', name:'Eyjafjallajökull',year:'Apr 14, 2010 · summit eruption', timeOfDay: 11.0, duration: 144, vei:4, vtype:'strato',  intensity:48, column:10, viscosity:40, pyro:18, photoCaption: "Eyjafjallajökull's 2010 subglacial eruption mixed glacial meltwater with magma, creating a fine ash that grounded European aviation.",
-        },
-      { id:'maunaloa2022', flag:'🇺🇸', name:'Mauna Loa',  year:'Nov 27, 2022 · 11:30 PM', timeOfDay: 23.5, duration: 300, vei:1, vtype:'shield',  intensity:38, column:4,  viscosity:10, pyro:5, photoCaption: "Mauna Loa's 2022 eruption featured incredible lava fountains and flows of highly fluid basalt down its massive shield slopes.",
-        },
-      { id:'yellowstone',  flag:'🇺🇸', name:'Yellowstone',year:'Hypothetical · Golden Hour', timeOfDay: 17.5, duration: 720, vei:8, vtype:'super', intensity:100, column:45, viscosity:95, pyro:100, photoCaption: "The Grand Prismatic Spring at Yellowstone National Park. The park sits atop a massive caldera capable of supereruptions.",
-        },
+      { id:'vesuvius79',  flag:'🇮🇹', name:'Mt Vesuvius', year:'79 AD · calendar date debated', timeOfDay: 13.0, duration: 18, vei:5, vtype:'strato',  intensity:82, column:27, viscosity:70, pyro:80,
+        photoCaption: "Johan Christian Dahl's 1826 painting 'Vesuvius in Eruption', illustrating the incandescent lava stream and towering Plinian ash column over the Bay of Naples.",
+        photoCredit: "Johan Christian Dahl (1826) · Städel Museum · Public Domain"
+      },
+      { id:'tambora1815', flag:'🇮🇩', name:'Tambora',     year:'Apr 10, 1815 · 7:00 PM', timeOfDay: 19.0, duration: 48, vei:7, vtype:'caldera', intensity:100, column:43, viscosity:80, pyro:95,
+        photoCaption: "Mount Tambora's massive summit caldera (6 km wide and 1,100 m deep) photographed from the International Space Station, formed during the catastrophic 1815 collapse.",
+        photoCredit: "NASA Earth Observatory · ISS Expedition 20 (2009) · Public Domain"
+      },
+      { id:'krakatoa1883',flag:'🇮🇩', name:'Krakatoa',    year:'Aug 27, 1883 · 10:02 AM', timeOfDay: 10.0, duration: 12, vei:6, vtype:'caldera', intensity:95, column:36, viscosity:75, pyro:90,
+        photoCaption: "An 1888 Royal Society lithograph illustrating the ash column and electrical discharges during the climactic destruction of Krakatoa.",
+        photoCredit: "Parker & Coward (1888) · The Royal Society of London · Public Domain"
+      },
+      { id:'sthelenr1980',flag:'🇺🇸', name:'Mt St Helens',year:'May 18, 1980 · 8:32 AM', timeOfDay: 8.5, duration: 9, vei:5, vtype:'strato',  intensity:78, column:24, viscosity:65, pyro:72, video: 'mount-st-helens-1980', videoCaption: 'U.S. Forest Service film of the May 18, 1980 eruption and its aftermath (clip 9:10–16:10). Public domain, National Archives (ARC 13364), via the Internet Archive.',
+        photoCaption: "Mount St. Helens' vertical Plinian column climbing past 24 km into the stratosphere on May 18, 1980, following the north-flank debris avalanche and lateral blast.",
+        photoCredit: "Austin Post · U.S. Geological Survey (USGS) · Public Domain"
+      },
+      { id:'pinatubo1991', flag:'🇵🇭', name:'Pinatubo',   year:'Jun 15, 1991 · 1:42 PM', timeOfDay: 13.7, duration: 9, vei:6, vtype:'strato',  intensity:92, column:35, viscosity:78, pyro:88,
+        photoCaption: "Field measurement of airfall ash and pumice deposits from the June 1991 eruption near Clark Air Base.",
+        photoCredit: "Pinatubo Volcano Observatory · U.S. Geological Survey (USGS) · Public Domain"
+      },
+      { id:'eyja2010',     flag:'🇮🇸', name:'Eyjafjallajökull',year:'Apr 14, 2010 · summit eruption', timeOfDay: 11.0, duration: 144, vei:4, vtype:'strato',  intensity:48, column:10, viscosity:40, pyro:18,
+        photoCaption: "Volcanic ash advisory dispersion forecast chart from April 15, 2010, mapping the ash cloud that grounded European aviation.",
+        photoCredit: "London VAAC / UK Met Office · Open Government Licence · Educational Use"
+      },
+      { id:'maunaloa2022', flag:'🇺🇸', name:'Mauna Loa',  year:'Nov 27, 2022 · 11:30 PM', timeOfDay: 23.5, duration: 300, vei:1, vtype:'shield',  intensity:38, column:4,  viscosity:10, pyro:5,
+        photoCaption: "Fissure 3 erupting 20–25 m high basalt lava fountains feeding an active channelized flow on Mauna Loa's Northeast Rift Zone.",
+        photoCredit: "K. Mulliken · USGS Hawaiian Volcano Observatory (HVO), Nov 30, 2022 · Public Domain"
+      },
+      { id:'yellowstone',  flag:'🇺🇸', name:'Yellowstone',year:'Hypothetical · Golden Hour', timeOfDay: 17.5, duration: 720, vei:8, vtype:'super', intensity:100, column:45, viscosity:95, pyro:100,
+        photoCaption: "Thermophilic microbial mats creating vibrant orange and gold mineral runoff terraces along the edge of Grand Prismatic Spring.",
+        photoCredit: "Jim Peaco · National Park Service (NPS) · Public Domain"
+      },
     ];
 
     /* ══════════════════════════════════════════
@@ -900,14 +1044,27 @@
           let h = val * 12.0; 
           
           // Allow the procedural St Helens collapse to still subtract from it
-          if (activeEruption === 'sthelenr1980' && stage > 0) {
+          if (activeEruption === 'sthelenr1980' && stage >= 0.15) {
              const r = Math.sqrt(x * x + z * z);
              const R = TERRAIN_SIZE * 0.38;
              if (z < 0) {
-                const collapse = Math.min(1, Math.max(0, (stage - 0.2) * 2));
+                const collapse = Math.min(1, Math.max(0, (stage - 0.15) / 0.15));
                 if (collapse > 0) {
                    const blastR = r / R;
-                   h -= collapse * 4.5 * Math.max(0, 1 - blastR) * Math.abs(z)/r;
+                   h -= collapse * 4.8 * Math.max(0, 1 - blastR * 0.9) * Math.abs(z)/r;
+                }
+             }
+          }
+          if ((activeEruption === 'tambora1815' || activeEruption === 'krakatoa1883') && stage > 0) {
+             const collapseStart = activeEruption === 'tambora1815' ? 0.55 : 0.65;
+             const collapseStage = Math.min(1, Math.max(0, (stage - collapseStart) / 0.22));
+             if (collapseStage > 0) {
+                const r = Math.sqrt(x * x + z * z);
+                const R = TERRAIN_SIZE * 0.38;
+                const collR = R * (activeEruption === 'tambora1815' ? 0.55 : 0.60);
+                if (r < collR) {
+                   const sink = (activeEruption === 'tambora1815' ? 8.5 : 10.5) * Math.pow(1 - r/collR, 1.8) * collapseStage;
+                   h -= sink;
                 }
              }
           }
@@ -933,17 +1090,21 @@
         }
         case 'strato': {
           const k = Math.max(0, 1 - r / R);
-          h = 10 * Math.pow(k, 2.1) + noise * 0.38 + micro * 0.15;
+          // Radial drainage valleys carved down the cone flanks
+          const theta = Math.atan2(z, x);
+          const valleyRibs = Math.sin(theta * 6 + Math.sin(theta * 2) * 0.4);
+          const valleys = valleyRibs * 0.65 * Math.pow(k, 1.3) * (1 - Math.exp(-r / (R * 0.12)));
+          h = 10 * Math.pow(k, 2.1) + noise * 0.38 + micro * 0.15 + valleys;
           const craterR = R * 0.08;
           const crater = r < craterR ? -2.2 * Math.pow(1 - r / craterR, 2.2) : 0;
           const rim = Math.exp(-Math.pow((r - craterR) / (R * 0.035), 2)) * 0.9;
           
-          if (activeEruption === 'sthelenr1980' && stage > 0) {
+          if (activeEruption === 'sthelenr1980' && stage >= 0.15) {
              if (z < 0) {
-                const collapse = Math.min(1, Math.max(0, (stage - 0.2) * 2));
+                const collapse = Math.min(1, Math.max(0, (stage - 0.15) / 0.15));
                 if (collapse > 0) {
                    const blastR = r / R;
-                   h -= collapse * 4.5 * Math.max(0, 1 - blastR) * Math.abs(z)/r;
+                   h -= collapse * 4.8 * Math.max(0, 1 - blastR * 0.9) * Math.abs(z)/r;
                 }
              }
           }
@@ -960,11 +1121,12 @@
           h = cone + depression + rim + micro * 0.12;
           
           if ((activeEruption === 'tambora1815' || activeEruption === 'krakatoa1883') && stage > 0) {
-             const collapseStage = Math.min(1, Math.max(0, (stage - 0.3) * 2));
+             const collapseStart = activeEruption === 'tambora1815' ? 0.55 : 0.65;
+             const collapseStage = Math.min(1, Math.max(0, (stage - collapseStart) / 0.22));
              if (collapseStage > 0) {
-                 const collR = R * 0.55;
+                 const collR = R * (activeEruption === 'tambora1815' ? 0.55 : 0.60);
                  if (r < collR) {
-                    const sink = 10 * Math.pow(1 - r/collR, 2) * collapseStage;
+                    const sink = (activeEruption === 'tambora1815' ? 8.5 : 10.5) * Math.pow(1 - r/collR, 1.8) * collapseStage;
                     h -= sink;
                  }
              }
@@ -988,7 +1150,7 @@
     }
 
     // Color per vertex
-    function terrainColor(x, z, y, maxH, vtype, lavaIntensity) {
+    function terrainColor(x, z, y, maxH, vtype, lavaIntensity, stage = 0) {
       const r = Math.sqrt(x * x + z * z);
       const R = TERRAIN_SIZE * 0.38;
       const hFrac = clamp(y / maxH, 0, 1);
@@ -999,7 +1161,20 @@
       
       let rC, gC, bC;
       
-      if (vtype === 'shield') {
+      if (activeEruption === 'eyja2010') {
+         // Subglacial ice cap retreat as stage advances through initial melting (0 to 0.35)
+         const melt = clamp(stage / 0.35, 0, 1);
+         const snowLine = 0.50 + melt * 0.42;
+         if (nH2 > snowLine) {
+            rC = 0.92; gC = 0.94; bC = 0.98; // pristine summit glacier
+         } else if (nH2 > snowLine - 0.18 && melt > 0.04) {
+            rC = 0.16; gC = 0.15; bC = 0.15; // flooded muddy lahar / wet tephra runout
+         } else if (nH2 < 0.22) {
+            rC = 0.24; gC = 0.32; bC = 0.20; // mossy tundra
+         } else {
+            rC = 0.38; gC = 0.36; bC = 0.34; // volcanic rock
+         }
+      } else if (vtype === 'shield') {
          // Hawaiian basalt: dark grey/black with slight reddish oxidation and green at sea level
          if (nH2 < 0.1)      { rC=0.25; gC=0.35; bC=0.20; } // tropical base
          else if (nH2 < 0.2) { rC=0.25; gC=0.20; bC=0.18; } // dark brown
@@ -1337,7 +1512,7 @@
 
       for (let i = 0; i < pos.count; i++) {
         const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
-        let [r, g, b] = terrainColor(x, z, y, maxH, vtype, lavaIntensity);
+        let [r, g, b] = terrainColor(x, z, y, maxH, vtype, lavaIntensity, stage);
         
         // Post-eruption ash blanket
         if (stage > 0.4) {
@@ -1356,6 +1531,13 @@
       geo.computeVertexNormals();
 
       craterPos.set(0, maxH, 0);
+      if (activeEruption === 'sthelenr1980' && stage >= 0.15) {
+        const breachF = Math.min(1, (stage - 0.15) / 0.15);
+        craterPos.z = -1.4 * breachF;
+        craterPos.y = terrainHeightAt(0, craterPos.z) + 0.15;
+      } else if ((activeEruption === 'tambora1815' || activeEruption === 'krakatoa1883') && stage > 0.5) {
+        craterPos.y = terrainHeightAt(0, 0) + 0.15;
+      }
       lavaLight.position.copy(craterPos).addScaledVector(new THREE.Vector3(0, 1, 0), 1.5);
       rebuildLavaStreams(lavaIntensity);
     }
@@ -1739,6 +1921,26 @@
     }
 
     function spawnPyroclastic(pyro, intensity) {
+      const isStHelensBlast = activeEruption === 'sthelenr1980' && state.timeline >= 0.15 && state.timeline <= 0.32;
+      
+      if (isStHelensBlast) {
+        // High-velocity directed lateral blast roaring northward out of the collapsed breach
+        const count = Math.round(3 + intensity * 5);
+        for (let k = 0; k < count; k++) {
+          const spread = (-Math.PI / 2) + (Math.random() - 0.5) * (Math.PI * 0.55);
+          const spd = 14 + intensity * 16 + Math.random() * 8;
+          const blastY = craterPos.y - 0.2 + Math.random() * 1.2;
+          pyroPool.emit(
+            (Math.random() - 0.5) * 1.5, blastY, -0.6 - Math.random() * 0.8,
+            Math.cos(spread) * spd, 0.8 + Math.random() * 2.2, Math.sin(spread) * spd,
+            4.2 + Math.random() * 2.8,
+            0.32 + Math.random() * 0.1, 0.22, 0.15,
+            0.85 + Math.random() * 0.65
+          );
+        }
+        return;
+      }
+
       if (pyro < 0.12 || Math.random() > pyro * 0.8) return;
       const ang = Math.random() * Math.PI * 2;
       // High initial velocity for column collapse
@@ -1755,15 +1957,21 @@
     }
 
     function spawnSteam(intensity) {
-      if (Math.random() > intensity * 0.45 + 0.12) return;
-      const ang = Math.random() * Math.PI * 2;
-      steamPool.emit(
-        (Math.random() - 0.5) * 1.5, craterPos.y - 0.5, (Math.random() - 0.5) * 1.5,
-        Math.cos(ang) * 0.4, 2.0 + Math.random() * 1.5, Math.sin(ang) * 0.4,
-        4.5 + Math.random() * 2.5,
-        0.85, 0.88, 0.9,
-        0.65 + Math.random() * 0.35
-      );
+      const isEyjaIceMelt = activeEruption === 'eyja2010' && state.timeline <= 0.35;
+      const chance = isEyjaIceMelt ? 0.92 : (intensity * 0.45 + 0.12);
+      if (Math.random() > chance) return;
+      const count = isEyjaIceMelt ? 3 : 1;
+      for (let k = 0; k < count; k++) {
+        const ang = Math.random() * Math.PI * 2;
+        const rad = isEyjaIceMelt ? (0.4 + Math.random() * 1.6) : 0.75;
+        steamPool.emit(
+          Math.cos(ang) * rad, craterPos.y - 0.3, Math.sin(ang) * rad,
+          Math.cos(ang) * 0.5, 2.5 + Math.random() * 2.5, Math.sin(ang) * 0.5,
+          4.5 + Math.random() * 2.5,
+          0.86, 0.88, 0.92,
+          isEyjaIceMelt ? (0.8 + Math.random() * 0.5) : (0.65 + Math.random() * 0.35)
+        );
+      }
     }
 
     function spawnLava(intensity) {
@@ -1834,14 +2042,37 @@
     function updateReadouts() {
       const ev = ERUPTIONS.find(e => e.id === activeEruption);
       const historical = state.mode === 'historical';
-      const record = window.VolcanoHistory[activeEruption];
-      const values = { ejecta:'Unavailable', temp:'Not modeled', col:state.column + ' km · model input',
-        so2: historical && record.so2 ? record.so2 : 'Unavailable', ash:'Not modeled',
-        vei:historical ? ev.vei + ' · historical classification' : 'Not inferred' };
+      const record = window.VolcanoHistory[activeEruption] || {};
+      const values = {
+        ejecta: historical && record.ejecta ? record.ejecta : 'Unavailable',
+        temp: historical && record.temp ? record.temp : 'Not modeled',
+        col: historical && record.column ? record.column : (state.column + ' km · model input'),
+        so2: historical && record.so2 ? record.so2 : 'Unavailable',
+        ash: historical && record.ash ? record.ash : 'Not modeled',
+        vei: historical ? ev.vei + ' · historical classification' : 'Not inferred'
+      };
       for (const [key, value] of Object.entries(values)) document.getElementById('out-' + key).textContent = value;
       document.querySelectorAll('.vei-seg').forEach((seg, idx) => seg.classList.toggle('active', historical && idx <= ev.vei));
       document.getElementById('vei-badge').textContent = historical ? 'Historical sequence · VEI ' + ev.vei : 'Hypothetical model';
-      document.getElementById('readout-note').textContent = 'No calibrated ejecta, temperature, SO₂ or ash-dispersal solver is available. No statistical uncertainty range is inferred from slider settings. Plume height is an illustrative scene input, not an observed plume measurement.';
+      document.getElementById('readout-note').textContent = historical
+        ? 'Historical readouts cite published geological literature and satellite observations. Unmodeled metrics are marked unavailable.'
+        : 'Hypothetical exploration model. No calibrated ejecta, temperature, SO₂ or ash-dispersal solver is available for user-adjusted parameters. Plume height is a scene input, not an observed measurement.';
+    }
+
+    function syncSliderProgress(slider) {
+      if (!slider) return;
+      const min = parseFloat(slider.min);
+      const max = parseFloat(slider.max);
+      const val = parseFloat(slider.value);
+      const minVal = isFinite(min) ? min : 0;
+      const maxVal = isFinite(max) ? max : 100;
+      const currVal = isFinite(val) ? val : minVal;
+      const pct = maxVal === minVal ? 0 : Math.max(0, Math.min(100, ((currVal - minVal) / (maxVal - minVal)) * 100));
+      slider.style.setProperty('--range-pct', pct.toFixed(2) + '%');
+    }
+
+    function syncAllSliderProgress() {
+      document.querySelectorAll('.param-row input[type="range"]').forEach(syncSliderProgress);
     }
 
     function syncMode() {
@@ -1852,6 +2083,7 @@
         : 'Hypothetical model — settings and flow paths do not reconstruct the selected event.';
       document.querySelectorAll('#s-intensity, #s-column, #s-viscosity, #s-pyro, .type-tab').forEach(el => el.disabled = historical);
       document.querySelector('[data-id="yellowstone"]').hidden = historical;
+      syncAllSliderProgress();
     }
 
     function applyPhase() {
@@ -1871,9 +2103,13 @@
       const ev = ERUPTIONS.find(e => e.id === activeEruption);
       state.intensity = ev.intensity * lerp(a.intensity, b.intensity, t);
       state.pyro = ev.pyro * lerp(a.pyro, b.pyro, t);
-      document.getElementById('s-intensity').value = state.intensity;
+      const sIntensity = document.getElementById('s-intensity');
+      const sPyro = document.getElementById('s-pyro');
+      sIntensity.value = state.intensity;
+      syncSliderProgress(sIntensity);
       document.getElementById('v-intensity').textContent = Math.round(state.intensity) + '%';
-      document.getElementById('s-pyro').value = state.pyro;
+      sPyro.value = state.pyro;
+      syncSliderProgress(sPyro);
       document.getElementById('v-pyro').textContent = Math.round(state.pyro) + '%';
     }
 
@@ -1934,6 +2170,7 @@
       document.getElementById('s-column').value    = ev.column;
       document.getElementById('s-viscosity').value = ev.viscosity;
       document.getElementById('s-pyro').value      = ev.pyro;
+      syncAllSliderProgress();
       document.getElementById('v-intensity').textContent = '0%';
       document.getElementById('v-column').textContent    = ev.column + ' km';
       document.getElementById('v-viscosity').textContent = viscosityLabel(ev.viscosity);
@@ -1945,6 +2182,13 @@
       // Badges and description
       document.getElementById('vol-name-badge').textContent = ev.flag + ' ' + ev.name + ' — ' + ev.year;
       const record = window.VolcanoHistory[id];
+      if (record && record.wind) {
+        wind.x = record.wind.x;
+        wind.z = record.wind.z;
+      } else {
+        wind.x = 0;
+        wind.z = 0;
+      }
       document.getElementById('event-desc').textContent = record.note;
       const evidence = document.getElementById('historical-evidence');
       evidence.replaceChildren();
@@ -1961,7 +2205,19 @@
       
       if (ev.photoCaption && ev.photoCredit) {
          photoImg.src = `../../assets/images/lessons/volcano-simulator/${id}-photo.jpg`;
-         photoCaption.textContent = ev.photoCaption + ' ' + ev.photoCredit;
+         photoImg.alt = ev.photoCaption;
+         photoCaption.replaceChildren();
+         const capText = document.createElement('span');
+         capText.className = 'plb-caption';
+         capText.textContent = ev.photoCaption;
+         const creditText = document.createElement('span');
+         creditText.className = 'plb-credit';
+         creditText.style.display = 'block';
+         creditText.style.fontSize = '0.68rem';
+         creditText.style.color = 'var(--text-muted, #9fb4d6)';
+         creditText.style.marginTop = '0.25rem';
+         creditText.textContent = ev.photoCredit;
+         photoCaption.append(capText, creditText);
          photoContainer.style.display = 'block';
       } else {
          photoContainer.style.display = 'none';
@@ -2015,6 +2271,7 @@
       el.addEventListener('input', function () {
         if (state.mode !== 'exploration') return;
         state[key] = parseFloat(this.value);
+        syncSliderProgress(this);
         const vel = document.getElementById('v-' + id);
         if (vel) vel.textContent = fmtFn(state[key]);
         if (key === 'viscosity' || key === 'intensity') {
@@ -2050,8 +2307,18 @@
     });
 
     document.getElementById('eruption-mode').addEventListener('change', function() {
-      state.mode = this.value;
-      loadEruption(state.mode === 'historical' && activeEruption === 'yellowstone' ? 'vesuvius79' : activeEruption);
+      const targetMode = this.value;
+      if (targetMode === 'historical' && activeEruption === 'yellowstone') {
+        loadEruption('vesuvius79');
+        return;
+      }
+      state.mode = targetMode;
+      syncMode();
+      if (state.mode === 'historical') {
+        applyPhase();
+      }
+      syncAllSliderProgress();
+      updateReadouts();
     });
 
     // Type tab clicks
@@ -2143,8 +2410,10 @@
       pool.vel[i*3+1] *= drag;
       pool.vel[i*3+2] *= drag;
 
-      pool.vel[i*3]   += wind.x * 2.0 * dt;
-      pool.vel[i*3+2] += wind.z * 2.0 * dt;
+      // Wind advection increases with altitude (stratospheric shear)
+      const windFactor = Math.min(1.5, Math.max(0.1, (py - 3.5) / 6.0));
+      pool.vel[i*3]   += wind.x * windFactor * 2.2 * dt;
+      pool.vel[i*3+2] += wind.z * windFactor * 2.2 * dt;
       
       pool.pos[i*3]   += pool.vel[i*3] * dt;
       pool.pos[i*3+1] += pool.vel[i*3+1] * dt;
@@ -2188,31 +2457,31 @@
 
     function tickPyro(i, t, pool, dt) {
       // Density current dynamics (heavier than surrounding air, hugs ground)
-      pool.vel[i*3+1] -= GRAVITY * 0.8 * dt; 
+      pool.vel[i*3+1] -= GRAVITY * 0.9 * dt; 
       
-      // Internal turbulence keeping particles suspended
-      pool.vel[i*3]   += (Math.random() - 0.5) * 4.0 * dt;
-      pool.vel[i*3+2] += (Math.random() - 0.5) * 4.0 * dt;
-      
-      // Ground interaction and slope acceleration
+      // Ground interaction and valley-following slope acceleration
       const gx = pool.pos[i*3];
       const gz = pool.pos[i*3+2];
-      const ground = terrainHeightAt(gx, gz) + 0.1;
+      const ground = terrainHeightAt(gx, gz) + 0.12;
       
-      if (pool.pos[i*3+1] < ground) {
+      if (pool.pos[i*3+1] <= ground) {
         pool.pos[i*3+1] = ground;
         // Loses vertical momentum to friction/suspension
-        pool.vel[i*3+1] = Math.abs(pool.vel[i*3+1]) * 0.2; 
+        pool.vel[i*3+1] = Math.abs(pool.vel[i*3+1]) * 0.15; 
         
         const slope = slopeDir(gx, gz);
-        // Accelerates strongly down slopes due to high density
-        pool.vel[i*3]   += slope.x * GRAVITY * 2.5 * dt;
-        pool.vel[i*3+2] += slope.z * GRAVITY * 2.5 * dt;
+        // Accelerates strongly down slopes into valley troughs
+        pool.vel[i*3]   += slope.x * GRAVITY * 3.2 * dt;
+        pool.vel[i*3+2] += slope.z * GRAVITY * 3.2 * dt;
+      } else {
+        // Internal turbulence keeping airborne particles billowy
+        pool.vel[i*3]   += (Math.random() - 0.5) * 3.0 * dt;
+        pool.vel[i*3+2] += (Math.random() - 0.5) * 3.0 * dt;
       }
 
       // Drag against ground and air
-      pool.vel[i*3]   *= (1.0 - 0.4 * dt);
-      pool.vel[i*3+2] *= (1.0 - 0.4 * dt);
+      pool.vel[i*3]   *= Math.exp(-0.45 * dt);
+      pool.vel[i*3+2] *= Math.exp(-0.45 * dt);
 
       pool.pos[i*3]   += pool.vel[i*3] * dt;
       pool.pos[i*3+1] += pool.vel[i*3+1] * dt;
@@ -2223,7 +2492,7 @@
       pool.col[i*3+2] = lerp(0.06, 0.03, t);
       
       // Expands as it entrains air
-      pool.sz[i] = 0.6 + t * 2.0; 
+      pool.sz[i] = 0.6 + t * 2.2; 
     }
 
     function tickSteam(i, t, pool, dt) {
