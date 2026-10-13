@@ -42,6 +42,17 @@
     if (window.ClassroomOSThemeRegistry) loadEngine();
     else loadScript("assets/js/theme-registry.js", loadEngine);
   }
+  // The live fractal is a WebGL renderer, loaded on first use; the small
+  // CPU version below stands in until it arrives or if WebGL is missing.
+  var mandelRenderer = null, mandelLoading = false;
+  function loadMandelRenderer() {
+    if (mandelLoading) return;
+    mandelLoading = true;
+    var script = document.createElement('script');
+    script.src = scriptBase + 'assets/js/canvas-bg-mandelbrot.js';
+    script.onload = function () { if (window.ClassroomOSMandelbrot) mandelRenderer = window.ClassroomOSMandelbrot.create(); };
+    document.head.appendChild(script);
+  }
   var w = 0, h = 0, t = 0;
   var currentBg = 'none';
   var blobs = null, pts = null, petals = null, bees = null, mandel = null, lavaBlobs = null, lavaBubbles = null;
@@ -445,7 +456,9 @@
   }
 
   /* ── Mandelbrot (live escape-time fractal, lava-lamp drift) ────
-   * Rendered into a small offscreen buffer (real per-pixel escape-time
+   * Normally drawn by canvas-bg-mandelbrot.js (WebGL, full resolution,
+   * a zoom tour of the set's landmarks). This CPU version is its fallback:
+   * rendered into a small offscreen buffer (real per-pixel escape-time
    * math, not a decorative gradient) and scaled up onto the visible
    * canvas with a soft blur — full-resolution per frame would be too
    * slow, and the blur turns the low-res pixelation into smooth liquid
@@ -467,7 +480,8 @@
     mandel = { cw: cw, ch: ch, octx: off.getContext('2d'), canvas: off };
   }
 
-  function drawMandelbrot() {
+  function drawMandelbrot(now) {
+    if (mandelRenderer && mandelRenderer.draw(ctx, w, h, now)) return;
     if (!mandel) makeMandelbrot();
     var cw = mandel.cw, ch = mandel.ch, octx = mandel.octx;
     var img = octx.createImageData(cw, ch);
@@ -917,7 +931,7 @@
     else if (currentBg === 'aurora')    drawAurora();
     else if (currentBg === 'petals')    drawPetals();
     else if (currentBg === 'hive')      drawHive();
-    else if (currentBg === 'mandelbrot') drawMandelbrot();
+    else if (currentBg === 'mandelbrot') drawMandelbrot(now);
     else if (currentBg === 'lavalamp') {
       if (!lavaRenderer || !lavaRenderer.draw(ctx, w, h, now, lavaMouse)) {
         if (lavaLast === null) lavaLast = now;
@@ -931,6 +945,7 @@
   function stop() {
     lavaLast = null; lavaAccumulator = 0;
     if (lavaRenderer) lavaRenderer.pause();
+    if (mandelRenderer) mandelRenderer.pause();
     if (raf) { cancelAnimationFrame(raf); raf = null; }
   }
 
@@ -955,7 +970,7 @@
     if (bg === 'particles') { pts    = null; makeParticles(); }
     if (bg === 'petals')    { petals = null; makePetals();    }
     if (bg === 'hive')      { bees   = null; makeHive();      }
-    if (bg === 'mandelbrot') { mandel = null; makeMandelbrot(); }
+    if (bg === 'mandelbrot') { loadMandelRenderer(); mandel = null; makeMandelbrot(); }
     if (bg === 'lavalamp')  { loadLavaRenderer(); lavaBlobs = null; lavaBubbles = null; makeLavaLamp(); }
 
     raf = requestAnimationFrame(tick);
@@ -967,6 +982,7 @@
     get:  function ()   { return currentBg; },
     stop: stop,
     lavaStats: function () { return lavaRenderer ? lavaRenderer.stats() : { fallback: true }; },
+    mandelStats: function () { return mandelRenderer ? mandelRenderer.stats() : { fallback: true }; },
     __ready: true
   };
 
