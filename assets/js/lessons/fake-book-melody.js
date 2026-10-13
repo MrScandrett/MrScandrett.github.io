@@ -113,6 +113,76 @@
     return route;
   }
 
+  /* ================================================================ violin */
+  // Sounds as written. Fretless: a finger has a *placement* (low / normal / high), not a fret.
+  var V_OPEN = [55, 62, 69, 76];                           // G D A E
+  var V_NAMES = ['G', 'D', 'A', 'E'];
+  var V_MAX_POS = 7, V_MAX_OFF = 19;
+  // Semitones above the open string where the 1st finger sits (its "normal" spot) in position p.
+  var V_BASE = [0, 2, 4, 5, 7, 9, 11, 12];
+  var V_ORD = ['', 'First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh'];
+  // d = offset - base: which finger, and whether it's placed low or high.
+  var V_D = { '-1': [1, 'low'], 0: [1, ''], 1: [2, 'low'], 2: [2, ''], 3: [3, ''], 4: [3, 'high'], 5: [4, ''] };
+  function violinPositionLabel(p) { return V_ORD[p] + ' position'; }
+  function violinInPosition(midi, p) {
+    var best = null;
+    for (var s = 0; s < 4; s++) {
+      var off = midi - V_OPEN[s];
+      if (off < 0 || off > V_MAX_OFF) continue;
+      var finger, place = '', cost = 0;
+      if (off === 0) { finger = 0; cost = p === 1 ? -0.1 : 0.4; }          // open string: free in 1st, a tone change higher up
+      else {
+        var hit = V_D[off - V_BASE[p]];
+        if (!hit) continue;
+        finger = hit[0]; place = hit[1]; cost = (place ? 0.15 : 0) + (finger === 4 ? 0.05 : 0);
+      }
+      cost += s * 0.01;                                                 // tie-break: the lower string
+      if (!best || cost < best.cost) best = { s: s, off: off, finger: finger, place: place, pos: p, cost: cost };
+    }
+    return best;
+  }
+  function violinPositions(midis) {
+    var out = [];
+    for (var p = 1; p <= V_MAX_POS; p++) {
+      if (midis.every(function (m) { return violinInPosition(m, p); })) out.push({ pos: p, label: violinPositionLabel(p) });
+    }
+    return out;
+  }
+  function violinRoute(midis, p) {
+    if (!midis.length) return [];
+    if (p !== 'auto') {
+      var fixed = midis.map(function (m) { return violinInPosition(m, p); });
+      if (fixed.every(Boolean)) return mark(fixed);
+    }
+    var N = V_MAX_POS + 1, INF = 1e9, cost = [], back = [];
+    midis.forEach(function (m, i) {
+      cost[i] = []; back[i] = [];
+      for (var q = 1; q < N; q++) {
+        var spot = violinInPosition(m, q);
+        var here = spot ? spot.cost + q * 0.03 : INF;
+        if (i === 0) { cost[i][q] = here; back[i][q] = -1; continue; }
+        var bestC = INF, bestR = -1;
+        for (var r = 1; r < N; r++) {
+          if (cost[i - 1][r] >= INF) continue;
+          var c = cost[i - 1][r] + (r === q ? 0 : 2.5 + 0.3 * Math.abs(r - q));
+          if (c < bestC) { bestC = c; bestR = r; }
+        }
+        cost[i][q] = here >= INF ? INF : bestC + here; back[i][q] = bestR;
+      }
+    });
+    var last = midis.length - 1, q0 = 1;
+    for (var q = 2; q < N; q++) if (cost[last][q] < cost[last][q0]) q0 = q;
+    if (cost[last][q0] >= INF) {
+      return mark(midis.map(function (m) {
+        for (var pp = 1; pp <= V_MAX_POS; pp++) { var s0 = violinInPosition(m, pp); if (s0) return s0; }
+        return null;
+      }));
+    }
+    var path = [];
+    for (var j = last, k = q0; j >= 0; j--) { path[j] = k; k = back[j][k]; }
+    return mark(midis.map(function (m, i) { return violinInPosition(m, path[i]); }));
+  }
+
   /* ================================================================ piano */
   // Where each finger rests above the thumb, in semitones (index = finger number).
   var OFF = [0, 0, 2, 4, 5, 7];
@@ -222,7 +292,7 @@
 
   /* ================================================================ viewer */
   var STORE = 'fakebook:melody-view:v1';
-  var DEFAULTS = { inst: 'guitar', gpos: 'auto', pmode: 'smooth', hand: 'right', octave: 0, hidden: false };
+  var DEFAULTS = { inst: 'guitar', gpos: 'auto', pmode: 'smooth', hand: 'right', octave: 0, hidden: false, vpos: 'auto' };
   function loadPrefs() {
     var o = Object.assign({}, DEFAULTS);
     try { Object.assign(o, JSON.parse(localStorage.getItem(STORE) || '{}')); } catch (e) { /* storage unavailable */ }
@@ -246,6 +316,7 @@
           '<div class="fb-instr-tabs" role="tablist" aria-label="Show the melody on">' +
             '<button type="button" class="fb-instr-tab" role="tab" data-mv-inst="piano">🎹 Piano</button>' +
             '<button type="button" class="fb-instr-tab" role="tab" data-mv-inst="guitar">🎸 Guitar</button>' +
+            '<button type="button" class="fb-instr-tab" role="tab" data-mv-inst="violin">🎻 Violin</button>' +
           '</div>' +
           '<label class="fb-field fb-field-inline fb-mv-field"><span>Position</span><select data-mv-pos aria-label="Hand position"></select></label>' +
           '<label class="fb-field fb-field-inline fb-mv-field" data-mv-hand-wrap><span>Hand</span><select data-mv-hand aria-label="Which hand plays the melody">' +
@@ -279,6 +350,14 @@
         positions = guitarPositions(midis);
         if (prefs.gpos !== 'auto' && !positions.some(function (p) { return p.pos === Number(prefs.gpos); })) prefs.gpos = 'auto';
         plan = guitarRoute(midis, prefs.gpos === 'auto' ? 'auto' : Number(prefs.gpos));
+      } else if (prefs.inst === 'violin') {
+        shift = bestShift(raw, 55, 76 + V_MAX_OFF, 72);
+        var vx = Number(prefs.octave) || 0;
+        if (raw.length && Math.min.apply(null, raw) + shift + vx >= 55 && Math.max.apply(null, raw) + shift + vx <= 76 + V_MAX_OFF) shift += vx;
+        var vm = midisOf();
+        positions = violinPositions(vm);
+        if (prefs.vpos !== 'auto' && !positions.some(function (p) { return p.pos === Number(prefs.vpos); })) prefs.vpos = 'auto';
+        plan = violinRoute(vm, prefs.vpos === 'auto' ? 'auto' : Number(prefs.vpos));
       } else {
         shift = bestShift(raw, 21, 108, prefs.hand === 'left' ? 55 : 69) + (Number(prefs.octave) || 0);
         var notes = noteIdx.map(function (i) { return { midi: events[i].midi + shift, dia: events[i].dia + 7 * Math.round(shift / 12), name: events[i].name }; });
@@ -298,6 +377,11 @@
           return '<option value="' + p.pos + '">' + esc(p.label) + (p.stretches ? ' (' + p.stretches + ' stretch' + (p.stretches > 1 ? 'es' : '') + ')' : '') + '</option>';
         }).join('');
         sel.value = String(prefs.gpos);
+      } else if (prefs.inst === 'violin') {
+        sel.innerHTML = '<option value="auto">Auto: fewest shifts</option>' + positions.map(function (p) {
+          return '<option value="' + p.pos + '">' + esc(p.label) + '</option>';
+        }).join('');
+        sel.value = String(prefs.vpos);
       } else {
         sel.innerHTML = '<option value="smooth">Smooth fingering</option><option value="five">Five-finger positions</option>';
         sel.value = prefs.pmode;
@@ -323,6 +407,11 @@
         return where + ' · ' + (n.f === 0 ? 'no finger' : 'finger ' + n.finger) + (n.stretch ? ' (stretch)' : '') +
           ' · ' + (n.pos === 0 ? 'open position' : 'position ' + ROMAN[n.pos]) + (n.shift ? ' · shift here' : '');
       }
+      if (prefs.inst === 'violin') {
+        var vstr = V_NAMES[n.s] + ' string';
+        var vf = n.off === 0 ? 'open, no finger' : 'finger ' + n.finger + (n.place ? ' (' + n.place + ')' : '');
+        return vstr + ' · ' + vf + ' · ' + violinPositionLabel(n.pos).toLowerCase() + (n.shift ? ' · shift here' : '');
+      }
       var hand = prefs.hand === 'left' ? 'Left hand' : 'Right hand';
       var how = hand + ' · finger ' + n.finger;
       if (prefs.pmode === 'five') how += ' · thumb on ' + n.thumbName + (n.shift ? ' · move the hand here' : '');
@@ -338,7 +427,7 @@
         q('[data-mv-how]').textContent = 'This chart has chords only, no melody.';
         q('[data-mv-surface]').innerHTML = '';
         q('[data-mv-strip]').innerHTML = '';
-        msg.textContent = 'Pick a built-in tune to see its melody on piano or guitar.';
+        msg.textContent = 'Pick a built-in tune to see its melody on piano, guitar or violin.';
         return;
       }
       var idx = cursor < 0 || cursor >= events.length ? noteIdx[0] : cursor;
@@ -359,17 +448,20 @@
       var focusK = curK >= 0 ? curK : nextK;
       var surf = q('[data-mv-surface]');
       surf.classList.toggle('is-guitar', prefs.inst === 'guitar');
-      surf.innerHTML = prefs.inst === 'guitar' ? drawGuitar(focusK, curK, nextK, barKs) : drawPiano(focusK, curK, nextK, barKs);
+      surf.classList.toggle('is-violin', prefs.inst === 'violin');
+      surf.innerHTML = prefs.inst === 'guitar' ? drawGuitar(focusK, curK, nextK, barKs)
+        : prefs.inst === 'violin' ? drawViolin(focusK, curK, nextK, barKs) : drawPiano(focusK, curK, nextK, barKs);
 
       q('[data-mv-strip]').innerHTML = barKs.map(function (k) {
         var n = plan[k], ei = noteIdx[k];
         var sub = !n ? 'out of range' : prefs.inst === 'guitar'
           ? (STRING_TAGS[n.s] + ' string · ' + (n.f === 0 ? 'open' : 'fret ' + n.f))
+          : prefs.inst === 'violin' ? (V_NAMES[n.s] + ' string · ' + (n.off === 0 ? 'open' : 'finger ' + n.finger + (n.place ? ' ' + n.place : '')))
           : 'finger ' + n.finger;
         var fin = n && prefs.inst === 'guitar' && n.f > 0 ? '<small>finger ' + n.finger + '</small>' : '';
         return '<li><button type="button" class="fb-mv-chip' + (k === curK ? ' is-now' : '') + (n && n.shift ? ' is-shift' : '') +
           '" data-mv-idx="' + ei + '"' + (k === curK ? ' aria-current="true"' : '') + '>' +
-          (n && n.shift ? '<em>' + (prefs.inst === 'guitar' ? 'shift' : 'move') + '</em>' : '') +
+          (n && n.shift ? '<em>' + (prefs.inst === 'piano' ? 'move' : 'shift') + '</em>' : '') +
           '<b>' + esc(noteLabel(k)) + '</b><small>' + esc(sub) + '</small>' + fin + '</button></li>';
       }).join('');
 
@@ -386,6 +478,10 @@
         var p = prefs.gpos === 'auto' ? 'The route stays in one position as long as it can and shifts only when it has to.' :
           'Every note stays inside this position. Try the same bar in another position: same notes, new fingers.';
         return where + '. ' + p + ' Guitar sounds an octave lower than written.';
+      }
+      if (prefs.inst === 'violin') {
+        return where + '. ' + (prefs.vpos === 'auto' ? 'The route stays in one position as long as it can and shifts only when it has to.' :
+          'Every note stays inside this position.') + ' The violin has no frets: a “low” or “high” finger sits a semitone off its usual spot, and your ear decides where.';
       }
       return where + '. ' + (prefs.pmode === 'five'
         ? 'One finger per letter name. The hand moves only where a new position starts.'
@@ -483,10 +579,56 @@
       return '<svg viewBox="0 0 ' + totalW + ' ' + totalH + '" role="img" aria-label="Guitar fretboard: melody notes with string, fret and finger">' + out.join('') + '</svg>';
     }
 
+    function drawViolin(focusK, curK, nextK, barKs) {
+      var used = plan.filter(Boolean).map(function (n) { return n.off; });
+      var maxOff = Math.max(12, Math.max.apply(null, used.concat([0])) + 2);
+      var nutX = 44, L = 700, totalW = nutX + L * (1 - Math.pow(2, -maxOff / 12)) + 22, totalH = 150;
+      var strY = [124, 94, 64, 34];                           // G (index 0) at the bottom, E on top, like a player sees it
+      var xOf = function (off) { return off === 0 ? nutX - 16 : nutX + L * (1 - Math.pow(2, -(off - 0.5) / 12)); };
+      var xLine = function (off) { return nutX + L * (1 - Math.pow(2, -off / 12)); };
+      var out = [];
+      out.push('<rect class="fb-vln-board" x="' + (nutX - 4) + '" y="18" width="' + (totalW - nutX - 8) + '" height="124" rx="8"/>');
+      var fp = focusK >= 0 ? plan[focusK] : null;
+      if (fp) {
+        var b = V_BASE[fp.pos], x0 = fp.pos === 1 ? nutX - 30 : xLine(b - 1), x1 = xLine(b + 6);
+        out.push('<rect class="fb-mv-pos" x="' + x0 + '" y="18" width="' + (x1 - x0) + '" height="124" rx="6"/>');
+        out.push('<text class="fb-mv-pos-lbl" x="' + ((x0 + x1) / 2) + '" y="12">' + violinPositionLabel(fp.pos).toLowerCase() + '</text>');
+      }
+      out.push('<line class="fb-gtr-nut" x1="' + nutX + '" y1="18" x2="' + nutX + '" y2="142"/>');
+      strY.forEach(function (sy, i) {
+        out.push('<line class="fb-gtr-string" x1="' + nutX + '" y1="' + sy + '" x2="' + (totalW - 12) + '" y2="' + sy + '" stroke-width="' + (1 + (3 - i) * 0.45).toFixed(1) + '"/>');
+        out.push('<text class="fb-gtr-str-tag" x="10" y="' + sy + '">' + V_NAMES[i] + '</text>');
+      });
+      for (var o = 1; o <= maxOff; o += 1) {                  // a faint tick per semitone, closer together toward the bridge
+        out.push('<text class="fb-mv-fretnum" x="' + xOf(o) + '" y="141">' + (o % 12 === 0 ? '8va' : '') + '</text>');
+      }
+      var drawn = {};
+      function dot(k, cls) {
+        var n = plan[k]; if (!n) return;
+        var id = n.s + ':' + n.off;
+        if (drawn[id] && cls === 'bar') return;
+        drawn[id] = true;
+        var cx = xOf(n.off), cy = strY[n.s], e = events[noteIdx[k]];
+        out.push('<g class="fb-mv-spot is-' + cls + '" data-mv-s="' + n.s + '" data-mv-off="' + n.off + '">' +
+          '<circle cx="' + cx + '" cy="' + cy + '" r="' + (cls === 'cur' ? 11 : 9.5) + '"/>' +
+          '<text x="' + cx + '" y="' + cy + '">' + esc(e.name) + '</text>' +
+          (n.off > 0 && cls !== 'bar' ? '<text class="fb-mv-spot-fing" x="' + (cx + 14) + '" y="' + (cy - 12) + '">' + n.finger + (n.place === 'low' ? '↓' : n.place === 'high' ? '↑' : '') + '</text>' : '') +
+          '</g>');
+      }
+      barKs.forEach(function (k) { if (k !== curK && k !== nextK) dot(k, 'bar'); });
+      if (nextK >= 0 && nextK !== curK) dot(nextK, 'next');
+      if (curK >= 0) dot(curK, 'cur');
+      return '<svg viewBox="0 0 ' + totalW + ' ' + totalH + '" role="img" aria-label="Violin fingerboard: melody notes with string, finger and position">' + out.join('') + '</svg>';
+    }
+
     /* ---- sound for clicks and steps (never during playback) */
+    function violinTone(midi) {
+      if (root.AudioKit && root.MusicSynth) root.AudioKit.note({ instrument: 'violin', midi: midi, velocity: 0.7, duration: 0.8 });
+    }
     function sound(idx) {
       var k = planAt(idx); if (k < 0 || !plan[k]) return;
-      if (prefs.inst === 'guitar' && root.GuitarAudio && root.GuitarTheory) {
+      if (prefs.inst === 'violin') violinTone(V_OPEN[plan[k].s] + plan[k].off);
+      else if (prefs.inst === 'guitar' && root.GuitarAudio && root.GuitarTheory) {
         root.GuitarAudio.pluck(root.GuitarTheory.noteFreq(plan[k].s, plan[k].f));
       } else if (root.PianoAudio) {
         root.PianoAudio.tone(440 * Math.pow(2, (events[idx].midi + shift - 69) / 12));
@@ -504,12 +646,14 @@
       if (t.closest('[data-mv-toggle]')) { prefs.hidden = !prefs.hidden; save(); syncControls(); return; }
       var key = t.closest('[data-mv-midi]');
       if (key && root.PianoAudio) { root.PianoAudio.tone(440 * Math.pow(2, (Number(key.getAttribute('data-mv-midi')) - 69) / 12)); return; }
+      var vspot = t.closest('[data-mv-off]');
+      if (vspot) { violinTone(V_OPEN[Number(vspot.getAttribute('data-mv-s'))] + Number(vspot.getAttribute('data-mv-off'))); return; }
       var spot = t.closest('[data-mv-s]');
       if (spot && root.GuitarAudio && root.GuitarTheory) root.GuitarAudio.pluck(root.GuitarTheory.noteFreq(Number(spot.getAttribute('data-mv-s')), Number(spot.getAttribute('data-mv-f'))));
     });
     host.addEventListener('change', function (ev) {
       var t = ev.target;
-      if (t.matches('[data-mv-pos]')) { if (prefs.inst === 'guitar') prefs.gpos = t.value === 'auto' ? 'auto' : Number(t.value); else prefs.pmode = t.value; }
+      if (t.matches('[data-mv-pos]')) { if (prefs.inst === 'guitar') prefs.gpos = t.value === 'auto' ? 'auto' : Number(t.value); else if (prefs.inst === 'violin') prefs.vpos = t.value === 'auto' ? 'auto' : Number(t.value); else prefs.pmode = t.value; }
       else if (t.matches('[data-mv-hand]')) prefs.hand = t.value;
       else if (t.matches('[data-mv-octave]')) prefs.octave = Number(t.value);
       else return;
@@ -567,7 +711,8 @@
 
   var exported = {
     create: create, inPosition: inPosition, guitarPositions: guitarPositions, guitarRoute: guitarRoute,
-    pianoSmooth: pianoSmooth, pianoFive: pianoFive, bestShift: bestShift, OPEN: OPEN
+    violinInPosition: violinInPosition, violinPositions: violinPositions, violinRoute: violinRoute,
+    pianoSmooth: pianoSmooth, pianoFive: pianoFive, bestShift: bestShift, OPEN: OPEN, V_OPEN: V_OPEN
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = exported;
   else root.FakeBookMelody = exported;

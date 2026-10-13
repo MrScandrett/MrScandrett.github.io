@@ -68,3 +68,52 @@ test('every built-in tune can be routed on guitar', () => {
     MV.guitarRoute(shifted, 'auto').forEach((n, i) => assert.equal(at(n), shifted[i], `${t.id} note ${i}`));
   }
 });
+
+const vAt = (n) => MV.V_OPEN[n.s] + n.off;
+
+test('every violin route plays the right pitches', () => {
+  const tune = [67, 69, 71, 72, 74, 76, 79, 83, 88, 81, 74, 62, 55];
+  for (const pos of ['auto', 1, 3]) {
+    MV.violinRoute(tune, pos).forEach((n, i) => assert.equal(vAt(n), tune[i], `pos ${pos} note ${i}`));
+  }
+});
+
+test('first position fingers a G major scale the standard way', () => {
+  // G A B C D E F# G on the open G..E strings: open, 1, 2, 3, open, 1, 2, 3
+  const route = MV.violinRoute([55, 57, 59, 60, 62, 64, 66, 67], 1);
+  assert.deepEqual(route.map((n) => n.finger), [0, 1, 2, 3, 0, 1, 2, 3]);
+  assert.deepEqual(route.map((n) => n.place), ['', '', '', '', '', '', '', '']);
+});
+
+test('fretless placement: low 1 and high 3 are named', () => {
+  const [lowOne, highThree] = [MV.violinInPosition(56, 1), MV.violinInPosition(68, 1)];  // G#3 on G string, G#4 on D string
+  assert.equal(lowOne.finger, 1); assert.equal(lowOne.place, 'low');
+  assert.equal(highThree.finger, 3); assert.equal(highThree.place, 'high');
+});
+
+test('a fixed violin position keeps every finger inside the hand frame', () => {
+  const tune = [76, 78, 80, 81, 83, 85, 86, 88];
+  for (const p of MV.violinPositions(tune).map((x) => x.pos)) {
+    MV.violinRoute(tune, p).forEach((n) => { assert.equal(n.pos, p); assert.ok(n.finger >= 0 && n.finger <= 4); });
+  }
+});
+
+test('auto violin route only shifts when it must', () => {
+  const inFirst = [67, 69, 71, 72, 74, 72, 71, 69, 67];
+  assert.equal(MV.violinRoute(inFirst, 'auto').filter((n) => n.shift).length, 0);
+  const high = [76, 79, 83, 88, 91, 88, 83, 79, 76];
+  const route = MV.violinRoute(high, 'auto');
+  route.forEach((n, i) => assert.equal(vAt(n), high[i]));
+});
+
+test('every built-in tune can be routed on violin', () => {
+  const data = JSON.parse(readFileSync(new URL('../data/fake-book.json', import.meta.url), 'utf8'));
+  const NAT = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+  for (const t of data.tunes) {
+    const midis = [...t.melody.matchAll(/\b([A-G])(##|bb|#|b)?(\d)[whqes]/g)].map(([, l, acc = '', o]) =>
+      12 * (Number(o) + 1) + NAT[l] + ({ '#': 1, '##': 2, b: -1, bb: -2 }[acc] || 0));
+    if (!midis.length) continue;
+    const shifted = midis.map((m) => m + MV.bestShift(midis, 55, 95, 72));
+    MV.violinRoute(shifted, 'auto').forEach((n, i) => assert.ok(n && vAt(n) === shifted[i], `${t.id} note ${i}`));
+  }
+});
