@@ -48,7 +48,7 @@
     return Math.abs(q.a) > Math.max(1, Math.abs(p.a)) ? respell(q.midi, preferFlat) : q;
   }
   // One colour per letter name (the classroom boomwhacker set), light enough for dark text.
-  var NAME_COLORS = ['#ff6b6b', '#ffa94d', '#ffd43b', '#69db7c', '#4dabf7', '#9775fa', '#f06595'];
+  var NAME_COLORS = ['#e0244f', '#f5951c', '#f2b81c', '#7fbf2e', '#14a396', '#4b45a8', '#8e3fa8'];
   function noteName(p) { return LETTERS[p.l] + ACC[p.a]; }
 
   /* ================================================================ keys */
@@ -950,15 +950,19 @@
     // Note names: 'under' prints each letter beneath its staff; 'notes' (default) puts it in a coloured badge on the head, MuseScore-style.
     var namesUnder = !!opts.names && opts.nameStyle === 'under', namesOn = !!opts.names && !namesUnder;
     // A coloured notehead with its letter inside: a tilted oval like an engraved head (hollow for half and whole notes).
-    var nameHead = function (p, cx, cy, base) {
-      var whole = base >= 4, hollow = base >= 2, acc = ACC[p.a] || '';
-      var rx = (whole ? 0.82 : 0.7) * S, ry = 0.54 * S, fs = 0.98 * S, col = NAME_COLORS[p.l];
-      var oval = '<ellipse cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" rx="' + rx.toFixed(2) + '" ry="' + ry.toFixed(2) + '"' +
-        (whole ? '' : ' transform="rotate(-22 ' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ')"') +
-        ' fill="' + (hollow ? '#fffdf7' : col) + '" stroke="' + (hollow ? col : '#2b2118') + '" stroke-width="' + ((hollow ? 0.2 : 0.07) * S).toFixed(2) + '"/>';
-      return '<g class="fb-nhead" data-contrast-guard-skip>' + oval +
-        '<text class="fb-nhead-t" x="' + cx.toFixed(1) + '" y="' + (cy + fs * 0.35).toFixed(1) + '" font-size="' + fs.toFixed(1) + '" text-anchor="middle">' + LETTERS[p.l] +
-        (acc ? '<tspan font-size="' + (fs * 0.62).toFixed(1) + '" dy="' + (-fs * 0.28).toFixed(1) + '">' + acc + '</tspan>' : '') + '</text></g>';
+    var headWidth = function (base) { return namesOn ? (base >= 4 ? 1.6 : 1.34) * S : base === 4 ? wholeW : headW; };
+    // ks = the key signature's accidental for this letter on this staff, so a natural that cancels it still shows a sign.
+    var nameHead = function (p, cx, cy, base, ks) {
+      var whole = base >= 4, hollow = base >= 2, acc = p.a ? ACC[p.a] : ks ? '♮' : '';
+      var wide = acc ? 1.14 : 1, rx = (whole ? 0.9 : 0.78) * S * wide, ry = 0.6 * S, fs = 1.12 * S, col = NAME_COLORS[p.l];
+      var rot = whole ? '' : ' transform="rotate(-24 ' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ')"';
+      var oval = '<ellipse cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" rx="' + rx.toFixed(2) + '" ry="' + ry.toFixed(2) + '"' + rot +
+        ' fill="' + (hollow ? '#fffdf7' : col) + '" stroke="' + col + '" stroke-width="' + ((hollow ? 0.17 : 0.06) * S).toFixed(2) + '"/>';
+      var ax = acc ? fs * 0.3 : 0;                        // the letter shifts left to make room for its sign
+      var ink = hollow ? col : '#fff';
+      return '<g class="fb-nhead' + (hollow ? ' is-hollow' : '') + '" data-contrast-guard-skip>' + oval +
+        '<text class="fb-nhead-t" x="' + (cx - ax).toFixed(1) + '" y="' + (cy + fs * 0.36).toFixed(1) + '" font-size="' + fs.toFixed(1) + '" text-anchor="middle"' + (hollow ? ' style="fill:' + col + '"' : '') + '>' + LETTERS[p.l] + '</text>' +
+        (acc ? '<g class="fb-nhead-acc" style="color:' + ink + '">' + MN.accidental(p.a || 0, cx + 0.02 * S, cy, 0.4 * S) + '</g>' : '') + '</g>';
     };
     var out = [], ties = [], placed = {}, y = S * 0.6, padL = 1.9 * S, padR = 1.1 * S;
     var stepOf = function (p) { return p.dia - C.bottom; };
@@ -1182,14 +1186,14 @@
             return;
           }
           var stp = stepOf(pc.p), ny = staffBot - stp * half, nx = pc.head + headW / 2;
-          var hw = base[0] === 4 ? wholeW : headW;
+          var hw = headWidth(base[0]);
           var g = ['<g class="fb-n" data-idx="' + pc.idx + '">'];
           MN.ledgerSteps(stp).forEach(function (ls) {
             var ly = staffBot - ls * half;
             g.push(line(nx - hw / 2 - 0.45 * S, ly, nx + hw / 2 + 0.45 * S, ly, Math.max(1, S * 0.12)));
           });
           if (pc.acc) g.push(MN.accidental(pc.p.a, nx - hw / 2 - 1.3 * S, ny, S));
-          g.push(namesOn ? nameHead(pc.p, nx, ny, base[0]) : MN.glyph(base[0] >= 4 ? 'whole' : base[0] >= 2 ? 'half' : 'quarter', nx - hw / 2, ny, S, 'fb-head'));
+          g.push(namesOn ? nameHead(pc.p, nx, ny, base[0], keyAcc(sig, pc.p.l)) : MN.glyph(base[0] >= 4 ? 'whole' : base[0] >= 2 ? 'half' : 'quarter', nx - hw / 2, ny, S, 'fb-head'));
           if (base[1]) g.push('<circle cx="' + (nx + hw / 2 + 0.5 * S).toFixed(1) + '" cy="' + (ny - (mod(stp, 2) === 0 ? half : 0)).toFixed(1) + '" r="' + (0.17 * S).toFixed(2) + '" fill="currentColor"/>');
           var info = { pc: pc, x: nx, y: ny, step: stp, hw: hw, base: base[0], sys: si, g: g, bar: b };
           placedBar.push(info);
@@ -1283,7 +1287,7 @@
             else out.push(MN.glyph(base[0] === 1 ? 'restQuarter' : base[0] === 0.5 ? 'rest8' : 'rest16', hx0 + 0.2 * S, mid, S, 'fb-restg'));
             return;
           }
-          var ps = view.bass[pc.idx].ps, hw = base[0] === 4 ? wholeW : headW, nx = hx0 + headW / 2;
+          var ps = view.bass[pc.idx].ps, hw = headWidth(base[0]), nx = hx0 + headW / 2;
           var steps = ps.map(function (p) { return p.dia - CB.bottom; });
           var lo = Math.min.apply(null, steps), hi = Math.max.apply(null, steps), up = (lo + hi) / 2 < 4;
           var g = ['<g class="fb-bn" data-idx="' + pc.idx + '">'], ys = [], prev = null, shifted = false, accN = 0;
@@ -1295,7 +1299,7 @@
             mem[mk] = p.a;
             var off = prev !== null && st - prev === 1 && !shifted ? (up ? hw - 0.1 * S : -(hw - 0.1 * S)) : 0;   // seconds sit side by side
             shifted = off !== 0; prev = st;
-            g.push(namesOn ? nameHead(p, nx + off, ny, base[0]) : MN.glyph(base[0] >= 4 ? 'whole' : base[0] >= 2 ? 'half' : 'quarter', nx - hw / 2 + off, ny, S, 'fb-head'));
+            g.push(namesOn ? nameHead(p, nx + off, ny, base[0], keyAcc(sigB, p.l)) : MN.glyph(base[0] >= 4 ? 'whole' : base[0] >= 2 ? 'half' : 'quarter', nx - hw / 2 + off, ny, S, 'fb-head'));
             if (base[1]) g.push('<circle cx="' + (nx + hw / 2 + 0.5 * S + Math.max(0, off)).toFixed(1) + '" cy="' + (ny - (mod(st, 2) === 0 ? half : 0)).toFixed(1) + '" r="' + (0.17 * S).toFixed(2) + '" fill="currentColor"/>');
             ys.push(ny);
           });
