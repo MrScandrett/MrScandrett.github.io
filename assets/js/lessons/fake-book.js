@@ -1430,7 +1430,7 @@
   function systemBands(svg) {
     var groups = svg.querySelectorAll('g.fb-system'), bands = [];
     if (groups.length) {
-      Array.prototype.forEach.call(groups, function (g) { var b = g.getBBox(); bands.push({ top: b.y, bottom: b.y + b.height }); });
+      Array.prototype.forEach.call(groups, function (g) { var b = g.getBBox(); bands.push({ top: b.y - 4, bottom: b.y + b.height + 4 }); });
       return bands;
     }
     // Drum chart: no groups, so find the rows by their staff lines.
@@ -1476,14 +1476,28 @@
     if (P) stop();
     endPrint();
     var prevZoom = opts.zoom, prevStyle = sheetEl.getAttribute('style'), svg, pages, W, clones = [];
-    opts.zoom = 1;
-    sheetEl.style.width = PRINT_W + 'px';
-    sheetEl.style.maxWidth = 'none';
-    try {
+    // Biggest engraving that doesn't add a page: a short tune is blown up to fill the sheet, a long
+    // score keeps the size that needs the fewest pages. [engraving width, zoom] from largest to smallest.
+    var tries = opts.sheetView === 'drums' ? [[620, 1], [700, 1], [900, 1], [1000, 1]] : [[1000, 2], [1000, 1.5], [700, 1], [900, 1], [1000, 1]];
+    var engrave = function (cfg) {
+      opts.zoom = cfg[1];
+      sheetEl.style.width = cfg[0] + 'px';
+      sheetEl.style.maxWidth = 'none';
       renderSheet();
       svg = sheetEl.querySelector('svg');
+      // Bar click targets reach well past the staves and would make every system look taller than it is.
+      if (svg) Array.prototype.forEach.call(svg.querySelectorAll('.fb-bar'), function (node) { node.remove(); });
+      pages = svg ? printPages(svg) : null;
+    };
+    try {
+      engrave(tries[tries.length - 1]);
       if (!svg) return;
-      pages = printPages(svg);
+      var fewest = pages.length;
+      for (var k = 0; k < tries.length - 1; k++) {
+        engrave(tries[k]);
+        if (pages && pages.length <= fewest) break;
+        if (k === tries.length - 2) engrave(tries[tries.length - 1]);
+      }
       W = svg.viewBox.baseVal.width;
       pages.forEach(function (r) {
         var c = svg.cloneNode(true);
@@ -3088,7 +3102,7 @@
   /* ================================================================ song map + zoom */
   // The shared ScoreNavigation (score-navigation.js) runs the song map, bar jump, steps, zoom, follow
   // playback and keys; this lesson supplies its bars, sections, loop, start bar and zoom (re-engraving).
-  var ZOOM_MIN = 0.25, ZOOM_MAX = 1.5, ZOOM_STEPS = [0.25, 0.33, 0.4, 0.5, 0.6, 0.75, 0.9, 1, 1.2, 1.5];
+  var ZOOM_MIN = 0.25, ZOOM_MAX = 2, ZOOM_STEPS = [0.25, 0.33, 0.4, 0.5, 0.6, 0.75, 0.9, 1, 1.2, 1.5];
   function barOf(m) { return Number(m.getAttribute('data-bar')) || 0; }
   function showLoopInputs() { var r = loopRange(); el('[data-fb-from]').value = r.from; el('[data-fb-to]').value = r.to; }
   var scoreNav = window.ScoreNavigation({
