@@ -2316,6 +2316,14 @@
       (tune.chordsOnly ? ' · chords only' : (opts.melody !== 'original' || opts.rhythm !== 'written' ? ' · variation: ' + [opts.melody !== 'original' ? MELODY[opts.melody].label : '', opts.rhythm !== 'written' ? RHYTHM[opts.rhythm].label : ''].filter(Boolean).join(' + ') : ''));
     save();
   }
+  // Print / Save as PDF: whatever chart is on screen (lead sheet or drum notation), on its own pages.
+  var printBtn = root.querySelector('[data-fb-print]');
+  if (printBtn) printBtn.addEventListener('click', function () {
+    var svg = sheetEl.querySelector('svg.fb-svg, svg.fb-drum-svg');
+    if (!svg || !tune || !window.ScorePrint) return;
+    window.ScorePrint.print(svg, { title: tune.raw.title, subtitle: el('[data-fb-keyline]').textContent,
+      credit: tune.raw.composer ? 'Music: ' + tune.raw.composer : '' });
+  });
   function respin() { if (P) { stop(); play(); } }
 
   // ---- melody viewer (fake-book-melody.js): where to play the tune on piano or guitar

@@ -842,6 +842,10 @@
       });
     }
     var full = el('button', { type: 'button', class: 'se-full', 'aria-label': 'Show the score full screen' }, '⤢');
+    if (root.ScorePrint) root.ScorePrint.button(bar, function () {
+      return { svg: svgWrap.querySelector('svg.se-score'), title: score.title, subtitle: score.subtitle,
+        credit: score.source ? 'Notes: ' + (score.source.label || 'source') + (score.source.license ? ' · ' + score.source.license : '') : '' };
+    }, 'se-print');
     bar.appendChild(full);
     var status = el('p', { class: 'se-status', 'aria-live': 'polite' });
 
