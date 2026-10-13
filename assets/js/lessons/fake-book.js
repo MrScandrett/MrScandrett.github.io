@@ -250,13 +250,16 @@
       });
     };
     var st = raw.staves || {};
+    // Saved staves keep times to 4 decimals (0.3333), which no longer reads as a triplet: snap to the 1/24-beat grid
+    // (sixteenths, thirty-seconds and every triplet value) when the stored time is within rounding error of it.
+    var snap = function (x) { var r = Math.round(x * 24) / 24; return Math.abs(r - x) < 0.0006 ? r : x; };
     if (st.bass && st.bass.events && st.bass.events.length) {
-      t.staves.bass = { label: st.bass.label || '', events: st.bass.events.map(function (e) { return { start: e.s, dur: e.d, ps: notesOf(e.n) }; }) };
+      t.staves.bass = { label: st.bass.label || '', events: st.bass.events.map(function (e) { return { start: snap(e.s), dur: snap(e.d), ps: notesOf(e.n) }; }) };
     }
     if (st.tab && st.tab.events && st.tab.events.length) {
       t.staves.tab = {
         label: st.tab.label || '', lines: st.tab.lines || 6, tuning: st.tab.tuning, capo: st.tab.capo || 0,
-        events: st.tab.events.map(function (e) { return { start: e.s, dur: e.d, f: (e.f || []).filter(function (sf) { return sf[0] >= 1 && sf[0] <= (st.tab.lines || 6); }) }; })
+        events: st.tab.events.map(function (e) { return { start: snap(e.s), dur: snap(e.d), f: (e.f || []).filter(function (sf) { return sf[0] >= 1 && sf[0] <= (st.tab.lines || 6); }) }; })
       };
     }
     // Every note of a guitar part that came without tab (the fake book works the tab out).
@@ -979,6 +982,31 @@
     if (showBass) layoutBars(view.bass, t).forEach(function (bb, i) { bars[i].bassBar = bb; });
     var ksw = Math.max(Math.abs(sig), showBass ? Math.abs(sigB) : 0);
     var bassPlaced = {};
+    // With a bass staff, space each bar by the notes of BOTH staves, so a busy left hand gets the room it needs
+    // even where the melody is a single rest (heads of one beat line up in one column).
+    if (showBass) bars.forEach(function (b) {
+      var slots = [], bm = {};
+      var add = function (rel, nw, acc) {
+        for (var i = 0; i < slots.length; i++) if (near(slots[i].rel, rel)) { slots[i].nw = Math.max(slots[i].nw, nw); slots[i].acc = slots[i].acc || acc; return; }
+        slots.push({ rel: rel, nw: nw, acc: acc });
+      };
+      b.pieces.forEach(function (pc) { add(pc.rel, pc.nw, pc.acc); });
+      if (b.bassBar) b.bassBar.pieces.forEach(function (pc) {
+        if (pc.rest) { if (!pc.whole) add(pc.rel, S * (1.5 + 2.1 * Math.sqrt(pc.d)), false); return; }
+        var acc = false;
+        view.bass[pc.idx].ps.forEach(function (p) {
+          var mk = p.l + ':' + p.o, cur = bm[mk] !== undefined ? bm[mk] : keyAcc(sigB, p.l);
+          if (!pc.tieFrom && cur !== p.a) acc = true;
+          bm[mk] = p.a;
+        });
+        add(pc.rel, S * (1.5 + 2.1 * Math.sqrt(pc.whole ? 1 : pc.d)) + (acc ? 1.3 * S : 0), acc);
+      });
+      slots.sort(function (a, c) { return a.rel - c.rel; });
+      var total = 0;
+      slots.forEach(function (sl, i) { sl.cum = total; total += sl.nw; sl.len = (i + 1 < slots.length ? slots[i + 1].rel : b.len) - sl.rel; });
+      b.slots = slots; b.slotTotal = total;
+      b.natural = Math.max(b.i === 0 ? 4 * S : 9 * S, padL + total + padR);
+    });
 
     systems.forEach(function (sys, si) {
       var first = si === 0;
@@ -1073,11 +1101,17 @@
       if (firstBar && firstBar.i > 1) out.push(txt(hx, chordBase - 1.5 * S + S, String(firstBar.i), 'fb-barnum', ' font-size="' + (1.1 * S) + '"'));
 
       sys.forEach(function (b, k) {
-        var used = b.pieces.reduce(function (a, pc) { return a + pc.nw; }, 0) || 1;
+        var used = (b.slots ? b.slotTotal : b.pieces.reduce(function (a, pc) { return a + pc.nw; }, 0)) || 1;
         var k2 = (b.w - padL - padR) / used;
-        b.pieces.forEach(function (pc) { pc.x0 = b.x + padL + pc.cum * k2; pc.head = pc.x0 + (pc.acc ? 1.3 * S : 0); });
+        if (b.slots) {
+          b.slots.forEach(function (sl) { sl.x0 = b.x + padL + sl.cum * k2; sl.head = sl.x0 + (sl.acc ? 1.3 * S : 0); });
+          b.pieces.forEach(function (pc) {
+            var sl = b.slots.filter(function (x) { return near(x.rel, pc.rel); })[0];
+            pc.x0 = sl.x0; pc.head = sl.head;
+          });
+        } else b.pieces.forEach(function (pc) { pc.x0 = b.x + padL + pc.cum * k2; pc.head = pc.x0 + (pc.acc ? 1.3 * S : 0); });
         var xAt = function (rel) {                       // x of the musical time rel, for chord symbols
-          var ps = b.pieces;
+          var ps = b.slots || b.pieces;
           if (!ps || !ps.length) {
             return b.x + padL + (b.w - padL - padR) * (b.len > 0 ? Math.min(1, Math.max(0, rel / b.len)) : 0);
           }
@@ -1096,7 +1130,7 @@
             }
           }
           var last = ps[ps.length - 1];
-          var lastDur = (last.real || last.d || (b.len - last.rel));
+          var lastDur = (last.len || last.real || last.d || (b.len - last.rel));
           var barEnd = b.x + b.w - padR;
           var frac = lastDur > EPS ? Math.min(1, Math.max(0, (rel - last.rel) / lastDur)) : 0;
           return last.head + (barEnd - last.head) * frac;
@@ -1235,8 +1269,8 @@
 
       // One bar of the bass-clef staff: notes and chords at the melody's x for the same beat.
       function drawBassBar(b, xAt) {
-        var mem = {};
-        b.bassBar.pieces.forEach(function (pc) {
+        var mem = {}, infos = [], bp = b.bassBar.pieces;
+        bp.forEach(function (pc) {
           var base = BASE[pc.d] || [pc.d, 0], hx0 = xAt(pc.rel);
           if (pc.rest) {
             var mid = bassTop + 2 * S, rx;
@@ -1259,8 +1293,8 @@
             shifted = off !== 0; prev = st;
             g.push(MN.glyph(base[0] >= 4 ? 'whole' : base[0] >= 2 ? 'half' : 'quarter', nx - hw / 2 + off, ny, S, 'fb-head'));
             if (base[1]) g.push('<circle cx="' + (nx + hw / 2 + 0.5 * S + Math.max(0, off)).toFixed(1) + '" cy="' + (ny - (mod(st, 2) === 0 ? half : 0)).toFixed(1) + '" r="' + (0.17 * S).toFixed(2) + '" fill="currentColor"/>');
-            ys.push(ny);
             if (namesOn) g.push(nameBadge(p, nx + off, ny, hw / 2));
+            ys.push(ny);
           });
           if (namesUnder) {
             var nameY = bassBot - bbot * half + 1.9 * S;
@@ -1268,17 +1302,52 @@
               g.push(txt(nx, nameY + i * 1.25 * S, noteName(p), 'fb-name', ' font-size="' + (1.15 * S) + '" text-anchor="middle"'));
             });
           }
-          if (base[0] < 4) {
-            var sx = up ? nx + hw / 2 - 0.06 * S : nx - hw / 2 + 0.06 * S;
-            var y0 = up ? Math.max.apply(null, ys) : Math.min.apply(null, ys), tip = up ? Math.min.apply(null, ys) - 3.5 * S : Math.max.apply(null, ys) + 3.5 * S;
-            g.push(line(sx, y0, sx, tip, (0.12 * S).toFixed(2), 'fb-stem'));
-            if (base[0] <= 0.5) g.push(MN.glyph('flag' + (base[0] === 0.25 ? '16' : '8') + (up ? 'Up' : 'Down'), sx, tip, S));
-            if (pc.trip) g.push(txt(nx, up ? tip - 0.5 * S : tip + 1.4 * S, '3', 'fb-tuplet', ' font-size="' + (1.1 * S) + '" text-anchor="middle"'));
-          }
-          g.push('</g>');
-          out.push(g.join(''));
-          (bassPlaced[pc.idx] = bassPlaced[pc.idx] || []).push({ pc: pc, x: nx, ys: ys, hw: hw, sys: si, up: up });
+          var info = { pc: pc, g: g, x: nx, ys: ys, hw: hw, base: base[0], up: up, cen: (lo + hi) / 2, sys: si };
+          infos.push(info);
+          (bassPlaced[pc.idx] = bassPlaced[pc.idx] || []).push(info);
         });
+        // stems, flags and beams: eighths and sixteenths inside one beat are beamed together, as on the melody staff
+        var groups = [], grp = [];
+        infos.forEach(function (n, i) {
+          var prevN = i ? infos[i - 1] : null;
+          var adjacent = prevN && bp.indexOf(n.pc) === bp.indexOf(prevN.pc) + 1;
+          if (n.base <= 0.5 && grp.length && adjacent && Math.floor(n.pc.beat + EPS) === Math.floor(grp[0].pc.beat + EPS)) grp.push(n);
+          else { if (grp.length) groups.push(grp); grp = n.base <= 0.5 ? [n] : []; if (n.base > 0.5) groups.push([n]); }
+        });
+        if (grp.length) groups.push(grp);
+        var sw = (0.12 * S).toFixed(2);
+        groups.forEach(function (gr) {
+          if (gr[0].base >= 4) return;
+          if (gr.length === 1) {
+            var n = gr[0], up = n.up, sx = up ? n.x + n.hw / 2 - 0.06 * S : n.x - n.hw / 2 + 0.06 * S;
+            var y0 = up ? Math.max.apply(null, n.ys) : Math.min.apply(null, n.ys), tip = up ? Math.min.apply(null, n.ys) - 3.5 * S : Math.max.apply(null, n.ys) + 3.5 * S;
+            n.g.push(line(sx, y0, sx, tip, sw, 'fb-stem'));
+            if (n.base <= 0.5) n.g.push(MN.glyph('flag' + (n.base === 0.25 ? '16' : '8') + (up ? 'Up' : 'Down'), sx, tip, S));
+            if (n.pc.trip) n.g.push(txt(n.x, up ? tip - 0.5 * S : tip + 1.4 * S, '3', 'fb-tuplet', ' font-size="' + (1.1 * S) + '" text-anchor="middle"'));
+            return;
+          }
+          var gUp = gr.reduce(function (a, n) { return a + n.cen; }, 0) / gr.length < 4;
+          var allY = [].concat.apply([], gr.map(function (n) { return n.ys; }));
+          var beamY = gUp ? Math.min.apply(null, allY) - 3.3 * S : Math.max.apply(null, allY) + 3.3 * S, th = 0.48 * S, dir = gUp ? 1 : -1;
+          var gsx = function (n) { return gUp ? n.x + n.hw / 2 - 0.06 * S : n.x - n.hw / 2 + 0.06 * S; };
+          gr.forEach(function (n) {
+            n.up = gUp;
+            n.g.push(line(gsx(n), gUp ? Math.max.apply(null, n.ys) : Math.min.apply(null, n.ys), gsx(n), beamY, sw, 'fb-stem'));
+          });
+          var x1 = gsx(gr[0]), x2 = gsx(gr[gr.length - 1]);
+          out.push('<rect class="fb-beam" x="' + x1.toFixed(1) + '" y="' + (gUp ? beamY : beamY - th).toFixed(1) + '" width="' + (x2 - x1 + 0.12 * S).toFixed(1) + '" height="' + th.toFixed(1) + '"/>');
+          gr.forEach(function (n, i) {
+            if (n.base !== 0.25) return;
+            var y2 = beamY + dir * 0.8 * S, a, c, nb = gr[i + 1], pb = gr[i - 1];
+            if (nb && nb.base === 0.25) { a = gsx(n); c = gsx(nb); }
+            else if (pb && pb.base === 0.25) return;
+            else if (pb) { a = gsx(n) - 1.1 * S; c = gsx(n); }
+            else { a = gsx(n); c = gsx(n) + 1.1 * S; }
+            out.push('<rect class="fb-beam" x="' + a.toFixed(1) + '" y="' + (gUp ? y2 : y2 - th).toFixed(1) + '" width="' + (c - a + 0.12 * S).toFixed(1) + '" height="' + th.toFixed(1) + '"/>');
+          });
+          if (gr.some(function (n) { return n.pc.trip; })) out.push(txt((x1 + x2) / 2, gUp ? beamY - 0.6 * S : beamY + 1.7 * S, '3', 'fb-tuplet', ' font-size="' + (1.1 * S) + '" text-anchor="middle"'));
+        });
+        infos.forEach(function (n) { n.g.push('</g>'); out.push(n.g.join('')); });
       }
       // One bar of tablature: the fret on each string at the moment each note starts.
       function drawTabBar(b, xAt) {
@@ -1635,14 +1704,17 @@
     if (!ensureAudio()) return;
     stop();
     followPaused = false;
-    var M = tune.M, r = loopRange(), withPickup = r.from === 1 && tune.pickup > 0;
+    var M = tune.M, r = loopRange();
+    // Playing from a clicked bar: the first pass starts there, later passes wrap back to the loop start.
+    var sb = startBar >= r.from && startBar <= r.to ? startBar : r.from, first = { from: sb, to: r.to };
+    var withPickup = first.from === 1 && tune.pickup > 0, noClick = opts.click === 'none';
     var lanes = {};
     Object.keys(bus).forEach(function (k) { lanes[k] = ctx.createGain(); lanes[k].connect(bus[k]); });
     P = {
       lanes: lanes, kit: window.DrumEngine ? window.DrumEngine.create(ctx, lanes.drums) : null,
       spb: 60 / opts.tempo, anchorBeat: 0, anchorTime: ctx.currentTime + 0.12,
-      queue: [], qi: 0, ui: [], range: r, chorusLen: opts.mode === 'score' ? scoreRange(r).len : (r.to - r.from + 1) * M, k: 0,
-      bodyStart: (withPickup ? 2 : 1) * M, withPickup: withPickup, timer: 0, raf: 0
+      queue: [], qi: 0, ui: [], range: r, first: first, chorusLen: passLen(r), firstLen: passLen(first), k: 0,
+      bodyStart: noClick ? (withPickup ? tune.pickup : 0) : (withPickup ? 2 : 1) * M, withPickup: withPickup, timer: 0, raf: 0
     };
     P.scoreLanes = {};
     if (opts.mode === 'score') tune.raw.score.parts.forEach(function (part) {
@@ -1650,7 +1722,7 @@
     });
     updateScoreGains();
     // count-in bar, then (for tunes with a pickup) a bar of clicks that ends with the pickup notes
-    for (var b = 0; b < P.bodyStart; b++) {
+    for (var b = noClick ? P.bodyStart : 0; b < P.bodyStart; b++) {
       P.queue.push({ b: b, kind: 'click', level: b % M === 0 ? 2 : 1 });
       P.queue.push({ b: b, kind: 'ui', ui: 'beat', n: b % M, count: true, label: b < M ? 'Count in: ' + (b % M + 1) : 'Pickup: the tune starts before bar 1' });
     }
@@ -1659,6 +1731,13 @@
     tick();
     P.raf = requestAnimationFrame(uiLoop);
     setPlaying(true);
+  }
+  var startBar = 0;
+  function passLen(rg) { return opts.mode === 'score' ? scoreRange(rg).len : (rg.to - rg.from + 1) * tune.M; }
+  // Where pass k begins on the beat clock, its range and its length (pass 0 may start mid-tune).
+  function passInfo(k) {
+    var rg = k === 0 ? P.first : P.range;
+    return { rg: rg, len: k === 0 ? P.firstLen : P.chorusLen, off: k === 0 ? P.bodyStart : P.bodyStart + P.firstLen + (k - 1) * P.chorusLen, pickup: rg.from === 1 && tune.pickup > 0 };
   }
   var scorePractice = {};
   function scoreRange(r) {
@@ -1682,8 +1761,8 @@
     }).join('') : '';
   }
   function appendScore(k) {
-    var score = tune.raw.score, r = P.range, span = scoreRange(r), off = P.bodyStart + k * P.chorusLen;
-    var lo = P.withPickup ? -tune.pickup : span.start, hi = span.start + span.len, add = [];
+    var score = tune.raw.score, pi = passInfo(k), r = pi.rg, span = scoreRange(r), off = pi.off;
+    var lo = pi.pickup ? -tune.pickup : span.start, hi = span.start + span.len, add = [];
     score.notes.forEach(function (n) {
       if (n.start + n.dur <= lo + EPS || n.start >= hi - EPS) return;
       var start = Math.max(n.start, lo);
@@ -1700,25 +1779,25 @@
     var times = {};
     [view.concert, view.bass || [], view.tab || []].forEach(function (events) { events.forEach(function (e) { if (e.start >= lo - EPS && e.start < hi - EPS) times[e.start] = true; if (e.dur && e.start + e.dur >= lo && e.start + e.dur < hi) times[e.start + e.dur] = true; }); });
     Object.keys(times).forEach(function (t) { add.push({ b: off + Number(t) - span.start, kind: 'ui', ui: 'score-note', start: Number(t) }); });
-    if (!opts.loop) add.push({ b: off + P.chorusLen, kind: 'end' });
+    if (!opts.loop) add.push({ b: off + pi.len, kind: 'end' });
     P.queue = P.queue.slice(P.qi).concat(add).sort(function (a, b) { return a.b - b.b; }); P.qi = 0;
   }
   function appendChorus(k) {
     if (opts.mode === 'score' && tune.raw.score) { appendScore(k); return; }
-    var M = tune.M, r = P.range, off = P.bodyStart + k * P.chorusLen, tuneOff = (r.from - 1) * M;
+    var M = tune.M, pi = passInfo(k), r = pi.rg, off = pi.off, tuneOff = (r.from - 1) * M;
     var g = function (tt) { return off + tt - tuneOff; };
     var add = [];
     var mel = view.concert;
     mel.forEach(function (e, idx) {
       var inPickup = e.start < 0;
-      if (inPickup ? !P.withPickup : (e.start < tuneOff - EPS || e.start >= tuneOff + P.chorusLen - EPS)) return;
+      if (inPickup ? !pi.pickup : (e.start < tuneOff - EPS || e.start >= tuneOff + pi.len - EPS)) return;
       var bar = inPickup ? 0 : Math.floor(e.start / M + EPS) + 1;
       add.push({ b: g(e.start), kind: 'ui', ui: 'note', idx: idx });
       if (e.p) add.push({ b: g(e.start), kind: 'mel', m: e.p.midi, dur: e.dur, bar: bar });
     });
     for (var bar = r.from; bar <= r.to; bar++) {
       var b0 = g((bar - 1) * M);
-      add.push({ b: b0, kind: 'ui', ui: 'bar', bar: bar, yours: yours(bar, r.from) });
+      add.push({ b: b0, kind: 'ui', ui: 'bar', bar: bar, yours: yours(bar, P.range.from) });
       for (var bt = 0; bt < M; bt++) {
         add.push({ b: b0 + bt, kind: 'ui', ui: 'beat', n: bt });
         var on = opts.click === 'all' || (opts.click === 'one' && bt === 0) ||
@@ -1728,7 +1807,7 @@
       }
     }
     view.concertChords.forEach(function (c, ci) {
-      if (c.start >= tuneOff - EPS && c.start < tuneOff + P.chorusLen - EPS) {
+      if (c.start >= tuneOff - EPS && c.start < tuneOff + pi.len - EPS) {
         add.push({ b: g(c.start), kind: 'ui', ui: 'chord', ci: ci });
       }
     });
@@ -1750,7 +1829,7 @@
         });
       }
     }
-    if (!opts.loop) add.push({ b: off + P.chorusLen, kind: 'end' });
+    if (!opts.loop) add.push({ b: off + pi.len, kind: 'end' });
     var rest = P.queue.slice(P.qi).concat(add);
     rest.sort(function (a, b) { return a.b - b.b; });
     P.queue = rest; P.qi = 0;
@@ -1758,8 +1837,8 @@
   function tick() {
     if (!P) return;
     var now = ctx.currentTime, horizon = beatAt(now + 0.18);
-    var chorusEnd = P.bodyStart + (P.k + 1) * P.chorusLen;
-    if (opts.loop && horizon > chorusEnd - tune.M - (P.withPickup ? tune.pickup : 0)) appendChorus(++P.k);
+    var cur = passInfo(P.k), chorusEnd = cur.off + cur.len;
+    if (opts.loop && horizon > chorusEnd - tune.M - (tune.pickup > 0 && P.range.from === 1 ? tune.pickup : 0)) appendChorus(++P.k);
     while (P.qi < P.queue.length && P.queue[P.qi].b < horizon) fire(P.queue[P.qi++]);
   }
   function fire(e) {
@@ -2087,7 +2166,7 @@
     if (!raw) return;
     var was = !!P;
     stop();
-    tune = parseTune(raw);
+    tune = parseTune(raw); startBar = 0;
     scorePractice = {};
     if (reset) opts.mode = raw.score ? 'score' : 'all';
     if (!raw.score && opts.mode === 'score') opts.mode = 'all';
@@ -2158,6 +2237,7 @@
     el('[data-fb-feel]').value = opts.feel;
     el('[data-fb-mode]').value = opts.mode;
     el('[data-fb-click]').value = opts.click;
+    var ct = el('[data-fb-click-toggle]'); if (ct) { ct.setAttribute('aria-pressed', String(opts.click !== 'none')); ct.classList.toggle('is-off', opts.click === 'none'); }
     el('[data-fb-lead]').value = opts.lead;
     el('[data-fb-mode] option[value="score"]').disabled = !tune.raw.score;
     var mixedMeter = tune.scoreBars && (STYLES[opts.style].meters.indexOf(tune.M) < 0 || tune.scoreBars.some(function (b) { return b.meter.join('/') !== tune.meter.join('/') || (b.bar > 0 && !near(b.len, tune.M)); }));
@@ -2899,6 +2979,7 @@
     Object.keys(barEls).forEach(function (k) {
       var b = Number(k);
       barEls[k].classList.toggle('in-loop', !full && b >= r.from && b <= r.to);
+      barEls[k].classList.toggle('is-start', startBar > 0 && b === startBar);
       barEls[k].classList.toggle('yours', opts.mode === 'trade' && b >= r.from && b <= r.to && yours(b, r.from));
     });
     paintChangesLoop();
@@ -2934,7 +3015,7 @@
       else if (t.matches('[data-fb-style]')) { opts.style = t.value; opts.feel = STYLES[opts.style].feel; el('[data-fb-feel]').value = opts.feel; tips(); save(); respin(); }
       else if (t.matches('[data-fb-feel]')) { reanchor(function () { opts.feel = t.value; }); save(); }
       else if (t.matches('[data-fb-mode]')) { opts.mode = t.value; syncControls(); refresh(); paintLoop(); save(); respin(); }
-      else if (t.matches('[data-fb-click]')) { opts.click = t.value; save(); respin(); }
+      else if (t.matches('[data-fb-click]')) { opts.click = t.value; syncControls(); save(); respin(); }
       else if (t.matches('[data-fb-lead]')) { opts.lead = t.value; save(); }
       else if (t.matches('[data-fb-loop]')) { opts.loop = t.checked; save(); if (opts.mode === 'score') respin(); }
       else if (t.matches('[data-fb-follow], [data-fb-follow-sync]')) {
@@ -3002,6 +3083,11 @@
         return;
       }
       if (t.closest('[data-fb-floating-stop]')) { stop(); return; }
+      if (t.closest('[data-fb-click-toggle]')) {
+        if (opts.click === 'none') opts.click = opts.clickPrev && opts.clickPrev !== 'none' ? opts.clickPrev : 'all';
+        else { opts.clickPrev = opts.click; opts.click = 'none'; }
+        syncControls(); save(); respin(); return;
+      }
       if (t.closest('[data-fb-play]')) { if (P) stop(); else play(); return; }
       if (t.closest('[data-fb-chordplay]')) { playActiveChord(); return; }
       if (t.closest('[data-fb-arpplay]')) { playActiveArpeggio(); return; }
@@ -3022,6 +3108,10 @@
       if (ch) { chordSel = Number(ch.getAttribute('data-ci')); showChord(true); return; }
       if (t.closest('[data-fb-barpop-close]')) { hideBarPop(); return; }
       var bar = t.closest('.fb-bar');
+      if (bar && !ev.shiftKey) {
+        var sbar = Number(bar.getAttribute('data-bar')) || 1;
+        startBar = sbar; paintLoop(); if (P) respin();
+      }
       if (bar && !ev.shiftKey && opts.barClick !== 'loop') {
         var pb = Number(bar.getAttribute('data-bar'));
         if (barPopBar === pb && !el('[data-fb-barpop]').hidden) hideBarPop();
@@ -3087,7 +3177,7 @@
       if (Math.abs(w - lastW) < 8) return;
       lastW = w; clearTimeout(rt); rt = setTimeout(renderSheet, 120);
     }).observe(sheetEl);
-    el('[data-fb-reset-loop]').addEventListener('click', function () { opts.from = 1; opts.to = tune.bars; syncControls(); paintLoop(); save(); respin(); });
+    el('[data-fb-reset-loop]').addEventListener('click', function () { startBar = 0; opts.from = 1; opts.to = tune.bars; syncControls(); paintLoop(); save(); respin(); });
   }
 
   /* ================================================================ boot */
