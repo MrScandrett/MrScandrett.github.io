@@ -49,6 +49,9 @@
   }
   // One colour per letter name (the classroom boomwhacker set), light enough for dark text.
   var NAME_COLORS = ['#e0244f', '#f5951c', '#f2b81c', '#7fbf2e', '#14a396', '#4b45a8', '#8e3fa8'];
+  // Letter ink per head: whichever of white/near-black reads best on the fill (WCAG >= 4.5 where possible), and a darker
+  // shade of the colour for the hollow half/whole heads that sit on cream paper.
+  var NAME_INK = ['#ffffff', '#1b140d', '#1b140d', '#1b140d', '#1b140d', '#ffffff', '#ffffff'], NAME_INK_HOLLOW = ['#d2214a', '#9c5f11', '#89680f', '#50781c', '#0f7b72', '#4b45a8', '#8e3fa8'];
   function noteName(p) { return LETTERS[p.l] + ACC[p.a]; }
 
   /* ================================================================ keys */
@@ -954,15 +957,15 @@
     // ks = the key signature's accidental for this letter on this staff, so a natural that cancels it still shows a sign.
     var nameHead = function (p, cx, cy, base, ks) {
       var whole = base >= 4, hollow = base >= 2, acc = p.a ? ACC[p.a] : ks ? '♮' : '';
-      var wide = acc ? 1.14 : 1, rx = (whole ? 0.9 : 0.78) * S * wide, ry = 0.6 * S, fs = 1.12 * S, col = NAME_COLORS[p.l];
+      var wide = acc ? 1.14 : 1, rx = (whole ? 0.9 : 0.78) * S * wide, ry = 0.5 * S, fs = 1.08 * S, col = NAME_COLORS[p.l];
       var rot = whole ? '' : ' transform="rotate(-24 ' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ')"';
       var oval = '<ellipse cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" rx="' + rx.toFixed(2) + '" ry="' + ry.toFixed(2) + '"' + rot +
         ' fill="' + (hollow ? '#fffdf7' : col) + '" stroke="' + col + '" stroke-width="' + ((hollow ? 0.17 : 0.06) * S).toFixed(2) + '"/>';
-      var ax = acc ? fs * 0.3 : 0;                        // the letter shifts left to make room for its sign
-      var ink = hollow ? col : '#fff';
-      return '<g class="fb-nhead' + (hollow ? ' is-hollow' : '') + '" data-contrast-guard-skip>' + oval +
-        '<text class="fb-nhead-t" x="' + (cx - ax).toFixed(1) + '" y="' + (cy + fs * 0.36).toFixed(1) + '" font-size="' + fs.toFixed(1) + '" text-anchor="middle"' + (hollow ? ' style="fill:' + col + '"' : '') + '>' + LETTERS[p.l] + '</text>' +
-        (acc ? '<g class="fb-nhead-acc" style="color:' + ink + '">' + MN.accidental(p.a || 0, cx + 0.02 * S, cy, 0.4 * S) + '</g>' : '') + '</g>';
+      var ax = acc ? fs * 0.33 : 0;                        // the letter shifts left to make room for its sign
+      var ink = hollow ? NAME_INK_HOLLOW[p.l] : NAME_INK[p.l], dk = !hollow && ink !== '#ffffff';
+      return '<g class="fb-nhead' + (hollow ? ' is-hollow' : '') + (dk ? ' ink-dark' : '') + '" data-contrast-guard-skip>' + oval +
+        '<text class="fb-nhead-t" x="' + (cx - ax).toFixed(1) + '" y="' + (cy + fs * 0.36).toFixed(1) + '" font-size="' + fs.toFixed(1) + '" text-anchor="middle"' + ' style="fill:' + ink + '">' + LETTERS[p.l] + '</text>' +
+        (acc ? '<g class="fb-nhead-acc" style="color:' + ink + '">' + MN.accidental(p.a || 0, cx + 0.04 * S, cy, 0.44 * S) + '</g>' : '') + '</g>';
     };
     var out = [], ties = [], placed = {}, y = S * 0.6, padL = 1.9 * S, padR = 1.1 * S;
     var stepOf = function (p) { return p.dia - C.bottom; };
@@ -1193,9 +1196,10 @@
             g.push(line(nx - hw / 2 - 0.45 * S, ly, nx + hw / 2 + 0.45 * S, ly, Math.max(1, S * 0.12)));
           });
           if (pc.acc) g.push(MN.accidental(pc.p.a, nx - hw / 2 - 1.3 * S, ny, S));
-          g.push(namesOn ? nameHead(pc.p, nx, ny, base[0], keyAcc(sig, pc.p.l)) : MN.glyph(base[0] >= 4 ? 'whole' : base[0] >= 2 ? 'half' : 'quarter', nx - hw / 2, ny, S, 'fb-head'));
+          var headSvg = namesOn ? nameHead(pc.p, nx, ny, base[0], keyAcc(sig, pc.p.l)) : null;   // named heads are drawn last, over the stem
+          if (!headSvg) g.push(MN.glyph(base[0] >= 4 ? 'whole' : base[0] >= 2 ? 'half' : 'quarter', nx - hw / 2, ny, S, 'fb-head'));
           if (base[1]) g.push('<circle cx="' + (nx + hw / 2 + 0.5 * S).toFixed(1) + '" cy="' + (ny - (mod(stp, 2) === 0 ? half : 0)).toFixed(1) + '" r="' + (0.17 * S).toFixed(2) + '" fill="currentColor"/>');
-          var info = { pc: pc, x: nx, y: ny, step: stp, hw: hw, base: base[0], sys: si, g: g, bar: b };
+          var info = { pc: pc, x: nx, y: ny, step: stp, hw: hw, base: base[0], sys: si, g: g, bar: b, headSvg: headSvg };
           placedBar.push(info);
           (placed[pc.idx] = placed[pc.idx] || []).push(info);
           if (namesUnder) g.push(txt(nx, staffBot + noteBot + 2.3 * S, noteName(pc.p), 'fb-name', ' font-size="' + (1.15 * S) + '" text-anchor="middle"'));
@@ -1238,7 +1242,7 @@
             out.push('<rect class="fb-beam" x="' + a.toFixed(1) + '" y="' + (up ? y2 : y2 - th).toFixed(1) + '" width="' + (c - a + 0.12 * S).toFixed(1) + '" height="' + th.toFixed(1) + '"/>');
           });
         });
-        placedBar.forEach(function (n) { n.g.push('</g>'); out.push(n.g.join('')); });
+        placedBar.forEach(function (n) { if (n.headSvg) n.g.push(n.headSvg); n.g.push('</g>'); out.push(n.g.join('')); });
         // triplets: a 3 over each beat's worth (bracketed when the notes aren't beamed together)
         var trip = [], tripLen = 0;
         b.pieces.forEach(function (pc) {
@@ -1290,7 +1294,7 @@
           var ps = view.bass[pc.idx].ps, hw = headWidth(base[0]), nx = hx0 + headW / 2;
           var steps = ps.map(function (p) { return p.dia - CB.bottom; });
           var lo = Math.min.apply(null, steps), hi = Math.max.apply(null, steps), up = (lo + hi) / 2 < 4;
-          var g = ['<g class="fb-bn" data-idx="' + pc.idx + '">'], ys = [], prev = null, shifted = false, accN = 0;
+          var g = ['<g class="fb-bn" data-idx="' + pc.idx + '">'], heads = [], ys = [], prev = null, shifted = false, accN = 0;
           ps.forEach(function (p, i) {
             var st = steps[i], ny = bassBot - st * half;
             MN.ledgerSteps(st).forEach(function (ls) { var ly = bassBot - ls * half; g.push(line(nx - hw / 2 - 0.45 * S, ly, nx + hw / 2 + 0.45 * S, ly, Math.max(1, S * 0.12))); });
@@ -1299,7 +1303,8 @@
             mem[mk] = p.a;
             var off = prev !== null && st - prev === 1 && !shifted ? (up ? hw - 0.1 * S : -(hw - 0.1 * S)) : 0;   // seconds sit side by side
             shifted = off !== 0; prev = st;
-            g.push(namesOn ? nameHead(p, nx + off, ny, base[0], keyAcc(sigB, p.l)) : MN.glyph(base[0] >= 4 ? 'whole' : base[0] >= 2 ? 'half' : 'quarter', nx - hw / 2 + off, ny, S, 'fb-head'));
+            if (namesOn) heads.push(nameHead(p, nx + off, ny, base[0], keyAcc(sigB, p.l)));
+            else g.push(MN.glyph(base[0] >= 4 ? 'whole' : base[0] >= 2 ? 'half' : 'quarter', nx - hw / 2 + off, ny, S, 'fb-head'));
             if (base[1]) g.push('<circle cx="' + (nx + hw / 2 + 0.5 * S + Math.max(0, off)).toFixed(1) + '" cy="' + (ny - (mod(st, 2) === 0 ? half : 0)).toFixed(1) + '" r="' + (0.17 * S).toFixed(2) + '" fill="currentColor"/>');
             ys.push(ny);
           });
@@ -1309,7 +1314,7 @@
               g.push(txt(nx, nameY + i * 1.25 * S, noteName(p), 'fb-name', ' font-size="' + (1.15 * S) + '" text-anchor="middle"'));
             });
           }
-          var info = { pc: pc, g: g, x: nx, ys: ys, hw: hw, base: base[0], up: up, cen: (lo + hi) / 2, sys: si };
+          var info = { pc: pc, g: g, heads: heads, x: nx, ys: ys, hw: hw, base: base[0], up: up, cen: (lo + hi) / 2, sys: si };
           infos.push(info);
           (bassPlaced[pc.idx] = bassPlaced[pc.idx] || []).push(info);
         });
@@ -1354,7 +1359,7 @@
           });
           if (gr.some(function (n) { return n.pc.trip; })) out.push(txt((x1 + x2) / 2, gUp ? beamY - 0.6 * S : beamY + 1.7 * S, '3', 'fb-tuplet', ' font-size="' + (1.1 * S) + '" text-anchor="middle"'));
         });
-        infos.forEach(function (n) { n.g.push('</g>'); out.push(n.g.join('')); });
+        infos.forEach(function (n) { n.g.push(n.heads.join('')); n.g.push('</g>'); out.push(n.g.join('')); });
       }
       // One bar of tablature: the fret on each string at the moment each note starts.
       function drawTabBar(b, xAt) {
