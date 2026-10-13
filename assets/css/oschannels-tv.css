@@ -1,0 +1,765 @@
+/* ==========================================================================
+   OSchannels — Early 2000s Classroom CRT TV & VHS AV Cart Mode
+   Maximized Screen + Collapsible Channel Guide Sidebar
+   ========================================================================== */
+
+/* ── Modal Backdrop & Theater Container ── */
+.os-tv-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30000;
+  background: radial-gradient(circle at 50% 30%, #0d121c 0%, #05070c 90%);
+  backdrop-filter: blur(24px) saturate(140%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: clamp(0.4rem, 1.5vh, 1rem);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.os-tv-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.os-tv-stage {
+  width: min(97vw, 1720px);
+  height: 100%;
+  max-height: min(96vh, 980px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin: auto;
+}
+
+/* ── AV Cart Layout: CRT Monitor + Collapsible Remote Sidebar ── */
+.os-tv-cart {
+  display: flex;
+  align-items: stretch;
+  gap: 1.15rem;
+  width: 100%;
+  height: 100%;
+  max-height: min(96vh, 960px);
+  position: relative;
+  transition: gap 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.os-tv-cart.guide-collapsed {
+  gap: 0;
+}
+
+/* ── CRT TV Chassis (Early-2000s Heavy Dark Monitor) ── */
+.os-tv-chassis {
+  flex: 1 1 0;
+  min-width: 0;
+  width: 100%;
+  background: linear-gradient(178deg, #2b303c 0%, #1c2028 35%, #12141a 100%);
+  border-radius: 24px;
+  padding: 0.65rem 0.95rem 0.8rem;
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.85),
+    0 10px 30px rgba(0, 0, 0, 0.6),
+    inset 0 2px 3px rgba(255, 255, 255, 0.16),
+    inset 0 -4px 10px rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  transition: all 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Chassis Header Bar */
+.os-tv-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.45rem;
+  padding-inline: 0.4rem;
+  flex-shrink: 0;
+}
+.os-tv-brand {
+  font: 800 0.74rem/1 ui-monospace, "Courier New", monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7b889b;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.9), 0 0 1px rgba(255, 255, 255, 0.2);
+}
+.os-tv-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+.os-tv-guide-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #1e2634;
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.32);
+  border-radius: 6px;
+  padding: 0.3rem 0.65rem;
+  font: 750 0.7rem ui-monospace, monospace;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 140ms ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+.os-tv-guide-toggle-btn:hover {
+  background: #2b374a;
+  border-color: #38bdf8;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+}
+.os-tv-toggle-arrow {
+  display: inline-block;
+  font-size: 0.65rem;
+  transition: transform 220ms ease;
+}
+.os-tv-cart.guide-collapsed .os-tv-toggle-arrow {
+  transform: rotate(180deg);
+}
+
+.os-tv-power-status {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+.os-tv-power-led {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 10px #22c55e, 0 0 2px #fff;
+  display: inline-block;
+  animation: os-tv-led-pulse 3s infinite ease-in-out;
+}
+@keyframes os-tv-led-pulse {
+  0%, 100% { opacity: 0.9; }
+  50% { opacity: 1; filter: brightness(1.2); }
+}
+.os-tv-power-btn {
+  background: #222630;
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  font: 700 0.66rem ui-monospace, monospace;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 150ms ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.os-tv-power-btn:hover {
+  background: #dc2626;
+  color: #fff;
+  border-color: #ef4444;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
+}
+
+/* ── CRT Screen Bezel & Curved Glass (Maximized & Fitted) ── */
+.os-tv-screen-bezel {
+  background: #0f1218;
+  border: 8px solid #141720;
+  border-radius: 20px;
+  padding: 0;
+  box-shadow:
+    inset 0 12px 28px rgba(0, 0, 0, 0.95),
+    inset 0 0 4px rgba(0, 0, 0, 0.9),
+    0 2px 6px rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.os-tv-screen-glass {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: calc(88vh - 110px);
+  margin: auto;
+  background: #000;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+/* Video Mount in CRT Viewport */
+.os-tv-player-wrap {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+.os-tv-player-wrap .vp {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  border: none;
+  background: #000;
+}
+.os-tv-player-wrap .vp-stage {
+  height: 100%;
+  aspect-ratio: auto;
+}
+.os-tv-player-wrap .vp-media {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.os-tv-player-wrap .vp-bar {
+  opacity: 0.15;
+  transition: opacity 180ms ease;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+}
+.os-tv-player-wrap:hover .vp-bar {
+  opacity: 0.95;
+}
+
+/* ── CRT Analog Television Filters ── */
+.os-tv-scanlines {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.32) 0px,
+    rgba(0, 0, 0, 0.32) 1.5px,
+    transparent 1.5px,
+    transparent 3px
+  );
+  opacity: 0.85;
+}
+.os-tv-scanlines.fx-clean {
+  opacity: 0.2;
+}
+
+.os-tv-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 75px rgba(0, 0, 0, 0.85),
+    inset 0 0 20px rgba(0, 0, 0, 0.95);
+  border-radius: 12px;
+}
+
+.os-tv-curvature {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 25%, transparent 55%);
+}
+
+.os-tv-tracking-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 14px;
+  bottom: 24px;
+  z-index: 8;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.25), transparent);
+  filter: blur(1.5px);
+  opacity: 0.6;
+  animation: os-tv-tracking-jitter 6s infinite ease-in-out;
+}
+@keyframes os-tv-tracking-jitter {
+  0%, 100% { transform: translateY(0); opacity: 0.4; }
+  45% { transform: translateY(-4px); opacity: 0.7; }
+  50% { transform: translateY(-16px); opacity: 0.3; }
+  55% { transform: translateY(2px); opacity: 0.8; }
+}
+
+/* ── TV Static Canvas ── */
+.os-tv-static-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 80ms linear;
+  image-rendering: pixelated;
+}
+
+/* ── Early-2000s Green Phosphor VHS OSD (On-Screen Display) ── */
+.os-tv-osd {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.35rem;
+  right: 1.35rem;
+  z-index: 9;
+  pointer-events: none;
+  font-family: ui-monospace, "Courier New", Courier, monospace;
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: #10ff68;
+  text-shadow:
+    0 0 10px rgba(16, 255, 104, 0.8),
+    0 0 2px #000,
+    2px 2px 0px #000,
+    -1px -1px 0 #000;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  transition: opacity 500ms ease;
+  user-select: none;
+}
+.os-tv-osd.dimmed {
+  opacity: 0.3;
+}
+.os-tv-osd.hidden {
+  opacity: 0;
+}
+.os-tv-osd-line1 {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+.os-tv-osd-ch {
+  background: rgba(0, 0, 0, 0.45);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+.os-tv-osd-line2 {
+  display: flex;
+  gap: 1.2rem;
+  font-size: 0.88rem;
+  color: #4dfa8b;
+}
+.os-tv-osd-title {
+  font-size: 0.85rem;
+  color: #fff;
+  text-shadow: 0 0 6px rgba(0,0,0,0.9), 1px 1px 0 #000;
+  max-width: 90%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 0.2rem;
+}
+
+/* ── TV Bezel Buttons & Speakers ── */
+.os-tv-bezel-bar {
+  background: #141720;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0.85rem;
+  border-top: 2px solid rgba(0, 0, 0, 0.7);
+  flex-shrink: 0;
+}
+.os-tv-speakers {
+  display: flex;
+  gap: 4px;
+}
+.os-tv-speakers span {
+  display: inline-block;
+  width: 4px;
+  height: 18px;
+  background: #090b0f;
+  border-radius: 2px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.os-tv-bezel-buttons {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.os-tv-btn {
+  background: linear-gradient(180deg, #2b313d 0%, #1e222b 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  font: 750 0.68rem ui-monospace, monospace;
+  letter-spacing: 0.06em;
+  padding: 0.32rem 0.65rem;
+  border-radius: 5px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: transform 80ms ease, background 120ms ease;
+}
+.os-tv-btn:hover {
+  background: #374151;
+  color: #fff;
+}
+.os-tv-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.8), inset 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+.os-tv-btn--guide {
+  background: #1b2636;
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+}
+.os-tv-btn--guide:hover {
+  background: #27384e;
+  color: #fff;
+  border-color: #38bdf8;
+}
+
+/* ── Lower Shelf: Classroom VCR Deck ── */
+.os-tv-vcr {
+  margin-top: 0.45rem;
+  background: linear-gradient(180deg, #181b22 0%, #101217 100%);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.35rem 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  height: 38px;
+  flex-shrink: 0;
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.8),
+    0 4px 12px rgba(0, 0, 0, 0.4);
+}
+.os-tv-vcr-door {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+}
+.os-tv-tape-sticker {
+  font: 700 0.64rem ui-monospace, monospace;
+  color: #e2e8f0;
+  background: #232732;
+  border-left: 3px solid #3b82f6;
+  padding: 0.15rem 0.45rem;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.os-tv-tape-slot {
+  height: 8px;
+  background: #090a0e;
+  border-radius: 3px;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.95);
+  width: min(180px, 100%);
+}
+.os-tv-vcr-vfd {
+  background: #06090e;
+  border: 1px solid #1a2230;
+  border-radius: 5px;
+  padding: 0.25rem 0.65rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  font: 750 0.76rem ui-monospace, "Courier New", monospace;
+  color: #00f0ff;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.85);
+  letter-spacing: 0.08em;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.9);
+}
+.os-tv-vcr-track {
+  font-size: 0.62rem;
+  color: #38bdf8;
+  opacity: 0.85;
+}
+
+/* ── Collapsible Channel Guide & Remote Console ── */
+.os-tv-remote {
+  width: 320px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #1c212b 0%, #13161c 100%);
+  border-radius: 22px;
+  padding: 1.15rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.7),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  transition:
+    width 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 220ms ease,
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    padding 260ms ease,
+    margin 260ms ease;
+}
+
+/* Collapsed state */
+.os-tv-cart.guide-collapsed .os-tv-remote {
+  display: none;
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+  border-width: 0;
+}
+
+.os-tv-remote-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.55rem;
+  flex-shrink: 0;
+}
+.os-tv-remote-title {
+  margin: 0;
+  font: 800 1.05rem var(--font-sans, system-ui);
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+.os-tv-remote-top-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.os-tv-remote-badge {
+  font: 750 0.62rem ui-monospace, monospace;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  letter-spacing: 0.08em;
+}
+.os-tv-remote-close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+.os-tv-remote-close-btn:hover {
+  background: #dc2626;
+  border-color: #ef4444;
+  color: #fff;
+}
+
+.os-tv-remote-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+/* Channel Buttons Grid inside Sidebar */
+.os-tv-channel-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-right: 0.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+.os-tv-ch-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all 140ms ease;
+  color: inherit;
+  width: 100%;
+}
+.os-tv-ch-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateX(3px);
+}
+.os-tv-ch-card.active {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: #10b981;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.25);
+}
+.os-tv-ch-badge {
+  font: 800 0.78rem ui-monospace, monospace;
+  background: #0f172a;
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 0.2rem 0.45rem;
+  border-radius: 5px;
+  letter-spacing: 0.04em;
+}
+.os-tv-ch-card.active .os-tv-ch-badge {
+  background: #10b981;
+  color: #064e3b;
+  border-color: #10b981;
+  font-weight: 850;
+}
+.os-tv-ch-info strong {
+  display: block;
+  font-size: 0.82rem;
+  color: #fff;
+  margin-bottom: 0.1rem;
+}
+.os-tv-ch-info small {
+  display: block;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  line-height: 1.25;
+}
+.os-tv-ch-tag {
+  font: 700 0.62rem ui-monospace, monospace;
+  color: #64748b;
+  text-transform: uppercase;
+}
+.os-tv-ch-card.active .os-tv-ch-tag {
+  color: #34d399;
+}
+
+/* Remote Actions & Surf Next */
+.os-tv-remote-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+.os-tv-remote-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  font: 750 0.82rem var(--font-sans, system-ui);
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease, background 150ms ease;
+  border: none;
+}
+.os-tv-remote-btn--accent {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #022c22;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
+}
+.os-tv-remote-btn--accent:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(16, 185, 129, 0.5);
+  filter: brightness(1.1);
+}
+.os-tv-remote-help {
+  font-size: 0.72rem;
+  color: #64748b;
+  text-align: center;
+  line-height: 1.35;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 0.5rem;
+  flex-shrink: 0;
+}
+.os-tv-remote-help kbd {
+  background: #272d3b;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  padding: 0.08rem 0.3rem;
+  font: 700 0.66rem ui-monospace, monospace;
+  color: #cbd5e1;
+}
+
+/* ── Mobile & Tablet Adjustments ── */
+@media (max-width: 960px) {
+  .os-tv-remote {
+    position: fixed;
+    top: 0.75rem;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    z-index: 100;
+    width: min(340px, calc(100vw - 1.5rem));
+    height: auto;
+    box-shadow: -15px 0 40px rgba(0, 0, 0, 0.85);
+  }
+  .os-tv-cart.guide-collapsed .os-tv-remote {
+    transform: translateX(115%);
+  }
+}
+
+/* ── Video Library Page Launcher Buttons ── */
+.vl-btn-tv {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.8rem;
+  padding: 0.65rem 1.35rem;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.2) 0%, rgba(30, 41, 59, 0.6) 100%);
+  color: #f0f9ff;
+  font: 700 0.88rem var(--font-sans, system-ui);
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  transition: transform 150ms ease, background 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+}
+.vl-btn-tv:hover {
+  transform: scale(1.04);
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.35) 0%, rgba(30, 41, 59, 0.8) 100%);
+  border-color: #38bdf8;
+  box-shadow: 0 6px 26px rgba(14, 165, 233, 0.4);
+}
+.vl-tv-icon {
+  font-size: 1.15rem;
+  display: inline-block;
+  line-height: 1;
+}
+.vl-tv-tag {
+  font: 800 0.64rem ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: rgba(56, 189, 248, 0.25);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #bae6fd;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  margin-left: 0.2rem;
+}
+
+.vl-tv-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.42rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  background: rgba(14, 165, 233, 0.12);
+  color: #e0f2fe;
+  font: 650 0.78rem var(--font-sans, system-ui);
+  cursor: pointer;
+  transition: all 140ms ease;
+  white-space: nowrap;
+}
+.vl-tv-pill-btn:hover {
+  background: rgba(14, 165, 233, 0.25);
+  border-color: #38bdf8;
+  transform: translateY(-1px);
+}

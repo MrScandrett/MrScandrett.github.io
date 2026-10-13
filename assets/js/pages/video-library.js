@@ -190,3 +190,477 @@ $('vl-clear-watched').addEventListener('click', () => {
 });
 applyFilters();
 syncWatched();
+
+/* ── OSchannels Early-2000s VHS Classroom TV Mode ────────────────── */
+
+let audioCtx = null;
+function getAudioContext() {
+  if (!audioCtx) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) audioCtx = new AudioContextClass();
+  }
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  return audioCtx;
+}
+
+function playStaticNoise(durationMs = 380) {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const sampleRate = ctx.sampleRate;
+    const bufferSize = Math.floor(sampleRate * (durationMs / 1000));
+    const noiseBuffer = ctx.createBuffer(1, bufferSize, sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    let b0 = 0, b1 = 0, b2 = 0;
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      b0 = 0.99886 * b0 + white * 0.0555179;
+      b1 = 0.99332 * b1 + white * 0.0750759;
+      b2 = 0.96900 * b2 + white * 0.1538520;
+      output[i] = (b0 + b1 + b2 + white * 0.5362) * 0.09;
+    }
+
+    const whiteNoise = ctx.createBufferSource();
+    whiteNoise.buffer = noiseBuffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(2200, ctx.currentTime);
+    filter.Q.setValueAtTime(0.85, ctx.currentTime);
+
+    const hum = ctx.createOscillator();
+    hum.frequency.setValueAtTime(60, ctx.currentTime);
+    const humGain = ctx.createGain();
+    humGain.gain.setValueAtTime(0.02, ctx.currentTime);
+    hum.connect(humGain);
+
+    const gainNode = ctx.createGain();
+    gainNode.gain.setValueAtTime(0.001, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.02);
+    gainNode.gain.setValueAtTime(0.25, ctx.currentTime + (durationMs / 1000) * 0.7);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (durationMs / 1000));
+
+    whiteNoise.connect(filter);
+    filter.connect(gainNode);
+    humGain.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    whiteNoise.start();
+    hum.start();
+    whiteNoise.stop(ctx.currentTime + durationMs / 1000);
+    hum.stop(ctx.currentTime + durationMs / 1000);
+  } catch {
+    // Audio optional / blocked
+  }
+}
+
+let staticRaf = null;
+let staticActive = false;
+function triggerStatic(durationMs = 380, onComplete = null) {
+  const canvas = $('os-tv-static-canvas');
+  if (!canvas) {
+    if (onComplete) onComplete();
+    return;
+  }
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  const imgData = ctx.createImageData(w, h);
+  const data = imgData.data;
+
+  playStaticNoise(durationMs);
+  canvas.style.opacity = '1';
+  staticActive = true;
+  cancelAnimationFrame(staticRaf);
+
+  const startTime = performance.now();
+  let syncBar = 0;
+
+  function renderStatic(now) {
+    if (!staticActive) return;
+    const elapsed = now - startTime;
+    syncBar = (syncBar + 14) % h;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const y = Math.floor((i / 4) / w);
+      const inSyncBar = Math.abs(y - syncBar) < 22;
+      const noise = (Math.random() * 255) | 0;
+      const val = inSyncBar ? Math.min(255, noise + 75) : noise;
+      data[i] = val;
+      data[i + 1] = val;
+      data[i + 2] = val;
+      data[i + 3] = 255;
+    }
+    ctx.putImageData(imgData, 0, 0);
+
+    if (elapsed < durationMs) {
+      staticRaf = requestAnimationFrame(renderStatic);
+    } else {
+      staticActive = false;
+      canvas.style.opacity = '0';
+      if (onComplete) onComplete();
+    }
+  }
+  staticRaf = requestAnimationFrame(renderStatic);
+}
+
+function shuffleArray(arr) {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+const CHANNELS = [
+  {
+    num: "01",
+    name: "ALL-ACCESS SHUFFLE",
+    label: "CH 01 · All-Access Mega-Shuffle",
+    tag: "All Catalog",
+    sub: "Continuous random shuffle across all curated films",
+    filter: () => true,
+    playlist: [],
+    index: 0
+  },
+  {
+    num: "02",
+    name: "SCIENCE & COSMOS",
+    label: "CH 02 · Science & Wonder",
+    tag: "Cosmos & Scale",
+    sub: "Cosmos, scale, natural patterns, and planetary science",
+    filter: (v) => v.group === 'science' || /science|space|cosmos|math/i.test(v.category),
+    playlist: [],
+    index: 0
+  },
+  {
+    num: "03",
+    name: "TECH & SYSTEMS",
+    label: "CH 03 · Technology & Engineering",
+    tag: "Code & Systems",
+    sub: "How computers work, mythbusters, and technological frontiers",
+    filter: (v) => v.group === 'tech' || /tech|computer|code|system/i.test(v.category),
+    playlist: [],
+    index: 0
+  },
+  {
+    num: "04",
+    name: "PURPOSE & VOICE",
+    label: "CH 04 · Purpose & Mindset",
+    tag: "Voice & Craft",
+    sub: "Resilience, craft, philosophy, and independent thinking",
+    filter: (v) => v.group === 'purpose' || /purpose|philosophy|mindset|art/i.test(v.category),
+    playlist: [],
+    index: 0
+  },
+  {
+    num: "05",
+    name: "FILM & MOTION",
+    label: "CH 05 · Film & Animation History",
+    tag: "Moving Pictures",
+    sub: "Silent classics, Muybridge motion studies, and animation craft",
+    filter: (v) => v.group === 'film' || /film|animation|motion|cinema/i.test(v.category),
+    playlist: [],
+    index: 0
+  },
+  {
+    num: "06",
+    name: "PUBLIC ARCHIVE",
+    label: "CH 06 · Public Archive & Historical",
+    tag: "Vintage Vault",
+    sub: "NASA film scans, historical events, and public domain archives",
+    filter: (v) => /public domain|nasa|archive/i.test(v.rights || '') || /nasa|archive/i.test(v.channel || ''),
+    playlist: [],
+    index: 0
+  }
+];
+
+let activeChannelIndex = 0;
+let tvPlayer = null;
+let tvLastFocused = null;
+let osdTimeout = null;
+let timecodeInterval = null;
+let crtFilterMode = 0;
+
+function initChannels() {
+  CHANNELS.forEach((ch) => {
+    const list = VIDEOS.filter(ch.filter);
+    ch.playlist = shuffleArray(list.length ? list : VIDEOS);
+    ch.index = 0;
+  });
+}
+
+function renderChannelGrid() {
+  const grid = $('os-tv-channel-grid');
+  if (!grid) return;
+  grid.replaceChildren();
+  CHANNELS.forEach((ch, idx) => {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = `os-tv-ch-card${idx === activeChannelIndex ? ' active' : ''}`;
+    card.setAttribute('aria-label', `Switch to ${ch.label}`);
+
+    const badge = document.createElement('span');
+    badge.className = 'os-tv-ch-badge';
+    badge.textContent = ch.num;
+
+    const info = document.createElement('div');
+    info.className = 'os-tv-ch-info';
+    const strong = document.createElement('strong');
+    strong.textContent = ch.label;
+    const small = document.createElement('small');
+    small.textContent = ch.sub;
+    info.append(strong, small);
+
+    const tag = document.createElement('span');
+    tag.className = 'os-tv-ch-tag';
+    tag.textContent = ch.tag;
+
+    card.append(badge, info, tag);
+    card.addEventListener('click', () => setChannel(idx));
+    grid.append(card);
+  });
+}
+
+function updateActiveChannelCard() {
+  const cards = document.querySelectorAll('.os-tv-ch-card');
+  cards.forEach((card, idx) => {
+    card.classList.toggle('active', idx === activeChannelIndex);
+  });
+}
+
+function showOsd(ch, video) {
+  const osd = $('os-tv-osd');
+  if (!osd) return;
+  $('os-tv-osd-ch').textContent = `CH ${ch.num}`;
+  $('os-tv-osd-name').textContent = ch.name;
+  $('os-tv-osd-status').textContent = 'PLAY ▶';
+  $('os-tv-osd-title').textContent = video.title;
+
+  osd.classList.remove('dimmed', 'hidden');
+  clearTimeout(osdTimeout);
+  osdTimeout = setTimeout(() => {
+    osd.classList.add('dimmed');
+  }, 4500);
+}
+
+function playCurrentChannelVideo(withStatic = true) {
+  const ch = CHANNELS[activeChannelIndex];
+  if (!ch.playlist.length) {
+    const list = VIDEOS.filter(ch.filter);
+    ch.playlist = shuffleArray(list.length ? list : VIDEOS);
+  }
+  if (ch.index >= ch.playlist.length) {
+    ch.playlist = shuffleArray(ch.playlist);
+    ch.index = 0;
+  }
+  const video = ch.playlist[ch.index];
+  if (!video) return;
+
+  const doMount = () => {
+    tvPlayer?.destroy();
+    const host = $('os-tv-player-wrap');
+    if (!host) return;
+    host.replaceChildren();
+
+    markWatched(video.slug);
+    showOsd(ch, video);
+
+    tvPlayer = mountPlayer(host, video.entry, { captions: true, chapters: false, resume: false });
+    tvPlayer.start({ resumeAt: null });
+
+    tvPlayer.addEventListener('ended', () => {
+      ch.index = (ch.index + 1) % ch.playlist.length;
+      playCurrentChannelVideo(true);
+    });
+
+    tvPlayer.addEventListener('error', () => {
+      const osd = $('os-tv-osd');
+      if (osd) {
+        $('os-tv-osd-name').textContent = 'TRACKING ERROR';
+        $('os-tv-osd-title').textContent = 'SEARCHING FOR SIGNAL...';
+        osd.classList.remove('dimmed', 'hidden');
+      }
+      setTimeout(() => {
+        ch.index = (ch.index + 1) % ch.playlist.length;
+        playCurrentChannelVideo(true);
+      }, 2500);
+    });
+
+    updateActiveChannelCard();
+  };
+
+  if (withStatic) {
+    triggerStatic(380, doMount);
+  } else {
+    doMount();
+  }
+}
+
+function nextChannel() {
+  activeChannelIndex = (activeChannelIndex + 1) % CHANNELS.length;
+  playCurrentChannelVideo(true);
+}
+function prevChannel() {
+  activeChannelIndex = (activeChannelIndex - 1 + CHANNELS.length) % CHANNELS.length;
+  playCurrentChannelVideo(true);
+}
+function nextVideoInChannel() {
+  const ch = CHANNELS[activeChannelIndex];
+  ch.index = (ch.index + 1) % ch.playlist.length;
+  playCurrentChannelVideo(true);
+}
+function setChannel(index) {
+  if (activeChannelIndex === index) {
+    nextVideoInChannel();
+    return;
+  }
+  activeChannelIndex = index;
+  playCurrentChannelVideo(true);
+}
+function randomChannelAndFilm() {
+  activeChannelIndex = Math.floor(Math.random() * CHANNELS.length);
+  const ch = CHANNELS[activeChannelIndex];
+  ch.index = Math.floor(Math.random() * ch.playlist.length);
+  playCurrentChannelVideo(true);
+}
+
+let isGuideOpen = true;
+
+function setGuideOpen(open) {
+  isGuideOpen = open;
+  const cart = document.querySelector('.os-tv-cart');
+  if (cart) {
+    cart.classList.toggle('guide-collapsed', !open);
+  }
+  const toggleBtn = $('os-tv-guide-toggle');
+  if (toggleBtn) {
+    toggleBtn.setAttribute('aria-expanded', String(open));
+  }
+  const guideBtn = $('os-tv-btn-guide');
+  if (guideBtn) {
+    guideBtn.classList.toggle('active', open);
+  }
+}
+
+function openTvMode(channelIndex = 0) {
+  closeModal();
+  tvLastFocused = document.activeElement;
+  initChannels();
+  activeChannelIndex = channelIndex;
+
+  const tvBackdrop = $('os-tv-backdrop');
+  if (!tvBackdrop) return;
+  tvBackdrop.hidden = false;
+  tvBackdrop.classList.add('open');
+  renderChannelGrid();
+  setGuideOpen(true);
+
+  clearInterval(timecodeInterval);
+  timecodeInterval = setInterval(() => {
+    if (!tvPlayer?.adapter) return;
+    const sec = Math.floor(tvPlayer.adapter.now() || 0);
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    const h = Math.floor(m / 60);
+    const tc = `${String(h).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    const clock = $('os-tv-vcr-time');
+    if (clock) clock.textContent = tc;
+  }, 500);
+
+  playCurrentChannelVideo(true);
+  setTimeout(() => $('os-tv-close')?.focus(), 50);
+}
+
+function closeTvMode() {
+  const tvBackdrop = $('os-tv-backdrop');
+  if (!tvBackdrop) return;
+  tvBackdrop.classList.remove('open');
+  setTimeout(() => { tvBackdrop.hidden = true; }, 300);
+
+  clearInterval(timecodeInterval);
+  clearTimeout(osdTimeout);
+  cancelAnimationFrame(staticRaf);
+  staticActive = false;
+
+  tvPlayer?.destroy();
+  tvPlayer = null;
+
+  if (tvLastFocused && document.contains(tvLastFocused)) {
+    tvLastFocused.focus();
+  }
+}
+
+// Bind OSchannels Launchers & Controls
+$('vl-tv-open')?.addEventListener('click', () => openTvMode(0));
+$('vl-tv-pill-open')?.addEventListener('click', () => openTvMode(0));
+$('os-tv-close')?.addEventListener('click', closeTvMode);
+$('os-tv-backdrop')?.addEventListener('click', (e) => {
+  if (e.target === $('os-tv-backdrop')) closeTvMode();
+});
+$('os-tv-guide-toggle')?.addEventListener('click', () => setGuideOpen(!isGuideOpen));
+$('os-tv-btn-guide')?.addEventListener('click', () => setGuideOpen(!isGuideOpen));
+$('os-tv-remote-close')?.addEventListener('click', () => setGuideOpen(false));
+$('os-tv-btn-chup')?.addEventListener('click', nextChannel);
+$('os-tv-btn-chdown')?.addEventListener('click', prevChannel);
+$('os-tv-btn-next')?.addEventListener('click', nextVideoInChannel);
+$('os-tv-btn-static')?.addEventListener('click', () => triggerStatic(450));
+$('os-tv-remote-shuffle')?.addEventListener('click', randomChannelAndFilm);
+$('os-tv-btn-filter')?.addEventListener('click', () => {
+  crtFilterMode = (crtFilterMode + 1) % 3;
+  const scan = $('os-tv-scanlines');
+  if (scan) {
+    scan.classList.toggle('fx-clean', crtFilterMode === 1);
+    scan.style.opacity = crtFilterMode === 2 ? '1' : crtFilterMode === 1 ? '0.2' : '0.85';
+  }
+});
+
+document.addEventListener('keydown', (event) => {
+  const tvBackdrop = $('os-tv-backdrop');
+  if (!tvBackdrop || !tvBackdrop.classList.contains('open')) return;
+
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeTvMode();
+    return;
+  }
+  if (event.key === 'ArrowUp') {
+    event.preventDefault();
+    nextChannel();
+    return;
+  }
+  if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    prevChannel();
+    return;
+  }
+  if (event.key === 'ArrowRight') {
+    event.preventDefault();
+    nextVideoInChannel();
+    return;
+  }
+  if (event.key === ' ' || event.key === 'k') {
+    if (document.activeElement?.tagName === 'BUTTON') return;
+    event.preventDefault();
+    tvPlayer?.toggle();
+    return;
+  }
+  if (event.key.toLowerCase() === 's') {
+    event.preventDefault();
+    randomChannelAndFilm();
+    return;
+  }
+  if (event.key.toLowerCase() === 'g') {
+    event.preventDefault();
+    setGuideOpen(!isGuideOpen);
+    return;
+  }
+  if (event.key.toLowerCase() === 'm') {
+    event.preventDefault();
+    tvPlayer?.setMuted(!tvPlayer.info.muted);
+    return;
+  }
+});

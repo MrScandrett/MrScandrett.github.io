@@ -368,16 +368,64 @@ export class Player extends EventTarget {
     ask.setAttribute("role", "status");
     const askKicker = el("p", "vp-ask-kicker");
     const askText = el("p", "vp-ask-text");
+    const askActions = el("div", "vp-ask-actions");
+
+    const askTimer = el("div", "vp-ask-timer");
+    askTimer.setAttribute("role", "timer");
+    askTimer.setAttribute("aria-label", "Resumes automatically in 5 seconds");
+    askTimer.title = "Resumes in 5 seconds (click to hold)";
+
+    const timerSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    timerSvg.setAttribute("viewBox", "0 0 36 36");
+    timerSvg.setAttribute("class", "vp-ask-timer-svg");
+    timerSvg.setAttribute("aria-hidden", "true");
+
+    const timerBg = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    timerBg.setAttribute("class", "vp-ask-timer-bg");
+    timerBg.setAttribute("cx", "18");
+    timerBg.setAttribute("cy", "18");
+    timerBg.setAttribute("r", "14");
+
+    const timerRing = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    timerRing.setAttribute("class", "vp-ask-timer-ring");
+    timerRing.setAttribute("cx", "18");
+    timerRing.setAttribute("cy", "18");
+    timerRing.setAttribute("r", "14");
+
+    timerSvg.append(timerBg, timerRing);
+    const askTimerCount = el("span", "vp-ask-timer-count", "5s");
+    askTimer.append(timerSvg, askTimerCount);
+
     const askGo = el("button", "vp-ask-go", "Keep watching");
     askGo.type = "button";
-    askGo.addEventListener("click", () => { ask.hidden = true; this.play(); });
-    ask.append(askKicker, askText, askGo);
+    askGo.addEventListener("click", () => {
+      this.clearAskTimer();
+      ask.hidden = true;
+      this.play();
+    });
+
+    let timerHeld = false;
+    askTimer.addEventListener("click", () => {
+      timerHeld = !timerHeld;
+      if (timerHeld) {
+        this.clearAskTimer();
+        askTimer.classList.add("paused");
+        askTimerCount.textContent = "Hold";
+        askTimer.title = "Timer paused. Click to restart 5s countdown.";
+      } else {
+        askTimer.classList.remove("paused");
+        this.startAskTimer(5);
+      }
+    });
+
+    askActions.append(askTimer, askGo);
+    ask.append(askKicker, askText, askActions);
 
     root.append(stage, bar, ask);
     if (this.opts.chapters && entry.chapters?.length) root.append(this.buildChapters());
     root.addEventListener("keydown", (e) => this.onKey(e));
 
-    this.ui = { root, stage, card, bar, playBtn, time, total, scrub, speed, cc, mute, full, ask, askKicker, askText, askGo };
+    this.ui = { root, stage, card, bar, playBtn, time, total, scrub, speed, cc, mute, full, ask, askKicker, askText, askGo, askTimer, askTimerRing: timerRing, askTimerCount };
     this.host.replaceChildren(root);
     if (entry.error) this.showCard("error", entry.error);
   }
@@ -596,11 +644,48 @@ export class Player extends EventTarget {
     }
   }
 
+  clearAskTimer() {
+    if (this.askTimerInterval) {
+      clearInterval(this.askTimerInterval);
+      this.askTimerInterval = null;
+    }
+  }
+
+  startAskTimer(seconds = 5) {
+    this.clearAskTimer();
+    const { ask, askTimerRing, askTimerCount, askTimer } = this.ui;
+    if (!askTimerRing || !askTimerCount) return;
+
+    askTimer?.classList.remove("paused");
+    const circumference = 2 * Math.PI * 14; // ~87.964
+    askTimerRing.style.strokeDasharray = `${circumference}`;
+    askTimerRing.style.strokeDashoffset = "0";
+    askTimerCount.textContent = `${seconds}s`;
+
+    const startTime = performance.now();
+    const durationMs = seconds * 1000;
+
+    this.askTimerInterval = setInterval(() => {
+      const elapsed = performance.now() - startTime;
+      const remainingSec = Math.max(0, (durationMs - elapsed) / 1000);
+      askTimerCount.textContent = `${Math.ceil(remainingSec)}s`;
+      const progress = Math.min(1, elapsed / durationMs);
+      askTimerRing.style.strokeDashoffset = `${circumference * progress}`;
+
+      if (remainingSec <= 0) {
+        this.clearAskTimer();
+        ask.hidden = true;
+        this.play();
+      }
+    }, 40);
+  }
+
   ask(p) {
     const { ask, askKicker, askText, askGo } = this.ui;
     askKicker.textContent = `Pause and discuss · ${formatTime(p.t - this.clipStart)}`;
     askText.textContent = p.ask;
     ask.hidden = false;
+    this.startAskTimer(5);
     askGo.focus({ preventScroll: true });
     this.dispatchEvent(new CustomEvent("pausepoint", { detail: p }));
   }
@@ -652,6 +737,7 @@ export class Player extends EventTarget {
   }
 
   teardown() {
+    this.clearAskTimer();
     cancelAnimationFrame(this.raf);
     if (this.adapter) { this.adapter.destroy(); this.adapter = null; }
     this.info.state = "idle";
@@ -686,6 +772,7 @@ export class Player extends EventTarget {
   /* ── controls ── */
 
   play() {
+    this.clearAskTimer();
     if (!this.adapter) return this.start();
     this.ui.ask.hidden = true;
     this.adapter.play();

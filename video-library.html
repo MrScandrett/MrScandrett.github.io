@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="assets/css/main.css" />
   <link rel="stylesheet" href="assets/css/classroom-home.css" />
   <link rel="stylesheet" href="assets/css/video-player.css" />
+  <link rel="stylesheet" href="assets/css/oschannels-tv.css" />
   <style>
     /* ── Layout wrapper ── */
     .vl-inner {
@@ -436,7 +437,7 @@
         radial-gradient(circle at top, rgba(60, 100, 180, 0.16), transparent 44%),
         rgba(4, 9, 20, 0.9);
       backdrop-filter: blur(18px);
-      z-index: 200;
+      z-index: 30000;
       align-items: center;
       justify-content: center;
       padding: 1.25rem;
@@ -629,6 +630,11 @@
             <svg viewBox="0 0 14 14" aria-hidden="true"><polygon points="3,1 13,7 3,13"/></svg>
             Watch Featured Film
           </button>
+          <button class="vl-btn-tv" id="vl-tv-open" type="button" aria-haspopup="dialog">
+            <span class="vl-tv-icon" aria-hidden="true">📺</span>
+            <span>Surf OSchannels</span>
+            <span class="vl-tv-tag">VHS TV</span>
+          </button>
           <span class="vl-cinema-stats" id="vl-stat-row" aria-live="polite"></span>
         </div>
       </div>
@@ -645,6 +651,7 @@
           <input class="vl-search" type="search" id="vl-search" placeholder="Search videos…" autocomplete="off" aria-label="Search videos" />
         </div>
         <div class="vl-filter-row" id="vl-filter-row" role="group" aria-label="Filter by category"></div>
+        <button class="vl-tv-pill-btn" id="vl-tv-pill-open" type="button" title="Surf the OSchannels (Early 2000s VHS TV)">📺 Surf OSchannels</button>
         <div class="vl-watched-controls" id="vl-watched-controls">
           <span class="vl-watched-count" id="vl-watched-count"></span>
           <button class="vl-clear-watched" id="vl-clear-watched" type="button">Clear watched</button>
@@ -725,6 +732,110 @@
             <div class="vl-chapters" id="vl-modal-chapters"></div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OSchannels 2000s VHS Classroom TV Modal -->
+  <div class="os-tv-backdrop" id="os-tv-backdrop" role="dialog" aria-modal="true" aria-label="OSchannels Classroom TV" hidden>
+    <div class="os-tv-stage">
+      <div class="os-tv-cart">
+        <!-- CRT Monitor Chassis -->
+        <div class="os-tv-chassis">
+          <div class="os-tv-header">
+            <span class="os-tv-brand">ClassroomOS 2002-AV · Auto-Shuffle TV</span>
+            <div class="os-tv-header-actions">
+              <button class="os-tv-guide-toggle-btn" id="os-tv-guide-toggle" type="button" aria-expanded="true" title="Toggle Channel Guide Sidebar (G)">
+                <span class="os-tv-toggle-icon" aria-hidden="true">📺</span>
+                <span class="os-tv-toggle-text">Channels</span>
+                <span class="os-tv-toggle-arrow" aria-hidden="true">◀</span>
+              </button>
+              <div class="os-tv-power-status">
+                <span class="os-tv-power-led" title="Power: ON"></span>
+                <button class="os-tv-power-btn" id="os-tv-close" type="button" aria-label="Turn off TV and return to library">✕ POWER / EXIT</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Screen Frame & Glass -->
+          <div class="os-tv-screen-bezel">
+            <div class="os-tv-screen-glass" id="os-tv-screen-glass">
+              <div class="os-tv-player-wrap" id="os-tv-player-wrap"></div>
+
+              <!-- CRT Overlays -->
+              <div class="os-tv-scanlines" id="os-tv-scanlines" aria-hidden="true"></div>
+              <div class="os-tv-vignette" aria-hidden="true"></div>
+              <div class="os-tv-curvature" aria-hidden="true"></div>
+              <div class="os-tv-tracking-bar" id="os-tv-tracking" aria-hidden="true"></div>
+
+              <!-- Static Canvas for Channel Transitions -->
+              <canvas class="os-tv-static-canvas" id="os-tv-static-canvas" width="360" height="270" aria-hidden="true"></canvas>
+
+              <!-- Green Phosphor VHS OSD -->
+              <div class="os-tv-osd" id="os-tv-osd" aria-live="polite">
+                <div class="os-tv-osd-line1">
+                  <span class="os-tv-osd-ch" id="os-tv-osd-ch">CH 01</span>
+                  <span class="os-tv-osd-name" id="os-tv-osd-name">ALL-ACCESS</span>
+                </div>
+                <div class="os-tv-osd-line2">
+                  <span class="os-tv-osd-status" id="os-tv-osd-status">PLAY ▶</span>
+                  <span class="os-tv-osd-tape">SP STEREO</span>
+                </div>
+                <div class="os-tv-osd-title" id="os-tv-osd-title"></div>
+              </div>
+            </div>
+
+            <!-- Front Bezel Tactile Controls -->
+            <div class="os-tv-bezel-bar">
+              <div class="os-tv-speakers" aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span>
+              </div>
+              <div class="os-tv-bezel-buttons">
+                <button class="os-tv-btn os-tv-btn--guide" id="os-tv-btn-guide" type="button" title="Toggle Channel Guide Sidebar (G)">GUIDE</button>
+                <button class="os-tv-btn" id="os-tv-btn-chdown" type="button" title="Channel Down (CH -)">CH ▼</button>
+                <button class="os-tv-btn" id="os-tv-btn-chup" type="button" title="Channel Up (CH +)">CH ▲</button>
+                <button class="os-tv-btn" id="os-tv-btn-next" type="button" title="Next Video on this Channel">SURF ▶▶</button>
+                <button class="os-tv-btn" id="os-tv-btn-static" type="button" title="TV Signal Static Burst">STATIC</button>
+                <button class="os-tv-btn" id="os-tv-btn-filter" type="button" title="Toggle Scanline Filter">CRT FX</button>
+              </div>
+              <div class="os-tv-speakers" aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lower Shelf VCR Deck -->
+          <div class="os-tv-vcr">
+            <div class="os-tv-vcr-door">
+              <span class="os-tv-tape-sticker">📼 ClassroomOS Video Library — Master VHS</span>
+              <div class="os-tv-tape-slot"></div>
+            </div>
+            <div class="os-tv-vcr-vfd">
+              <span class="os-tv-vcr-ind">▶ PLAY</span>
+              <span class="os-tv-vcr-time" id="os-tv-vcr-time">00:00:00</span>
+              <span class="os-tv-vcr-track">HI-FI STEREO</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Side: Channel Guide & Surfing Console (Collapsible Sidebar) -->
+        <aside class="os-tv-remote" id="os-tv-remote" aria-label="Channel Guide">
+          <div class="os-tv-remote-top">
+            <h3 class="os-tv-remote-title">OSchannels TV Guide</h3>
+            <div class="os-tv-remote-top-right">
+              <span class="os-tv-remote-badge">AV CART 2002</span>
+              <button class="os-tv-remote-close-btn" id="os-tv-remote-close" type="button" aria-label="Collapse channel guide" title="Collapse sidebar (G)">✕</button>
+            </div>
+          </div>
+          <p class="os-tv-remote-desc">Surf programmed streaming channels on continuous shuffle with analog TV transitions and static.</p>
+          <div class="os-tv-channel-grid" id="os-tv-channel-grid" role="group" aria-label="Streaming Channels"></div>
+          <div class="os-tv-remote-actions">
+            <button class="os-tv-remote-btn os-tv-remote-btn--accent" id="os-tv-remote-shuffle" type="button">🎲 Surf Random Channel &amp; Film</button>
+          </div>
+          <div class="os-tv-remote-help">
+            <span><strong>Shortcuts:</strong> <kbd>↑</kbd> <kbd>↓</kbd> Channels · <kbd>→</kbd> Surf Next Film · <kbd>Space</kbd> Pause · <kbd>G</kbd> Guide · <kbd>Esc</kbd> Exit</span>
+          </div>
+        </aside>
       </div>
     </div>
   </div>
