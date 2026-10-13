@@ -3,6 +3,16 @@
   // 1. Rotation toggle
   const spinBtn = document.getElementById('earth-spin');
   const model = document.getElementById('earth-model');
+  const fallback = model && model.querySelector('.earth-model-fallback');
+  if (model && fallback) {
+    const loaded = () => { fallback.hidden = true; };
+    model.addEventListener('load', loaded);
+    if (model.loaded) loaded();
+    model.addEventListener('error', () => {
+      fallback.hidden = false;
+      fallback.textContent = '3D Earth could not load. The NASA image and Earth-system guide below remain available.';
+    });
+  }
   if (spinBtn && model) {
     spinBtn.addEventListener('click', () => {
       const active = model.hasAttribute('auto-rotate');

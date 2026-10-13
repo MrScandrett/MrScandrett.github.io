@@ -130,6 +130,17 @@
 
   /* ─── Pixel-shaded globe ─────────────────────────────────────────── */
   var globeCache = {};
+  // One shared equirectangular surface; sampled in a basis perpendicular to
+  // the current polar axis, so changing the tilt never detaches the geography.
+  var surfaceCanvas = EarthEngine.landCanvas(1024, 512);
+  var surfaceContext = surfaceCanvas.getContext('2d', { willReadFrequently: true });
+  var surfacePixels = surfaceContext.getImageData(0, 0, 1024, 512).data;
+  var surfaceImage = new Image();
+  surfaceImage.onload = function () {
+    surfaceContext.drawImage(surfaceImage, 0, 0, 1024, 512);
+    surfacePixels = surfaceContext.getImageData(0, 0, 1024, 512).data;
+  };
+  surfaceImage.src = EarthEngine.textures.day;
   function drawGlobe(ctx, key, cx, cy, R, cam, sun, axis, hiLat, dpr) {
     var N = Math.max(4, Math.ceil(2 * R * dpr));
     var entry = globeCache[key];
@@ -143,7 +154,11 @@
     var hi = hiLat == null ? null : hiLat * D2R;
     var band = Math.max(1.3 * D2R, 1.6 / (R * dpr));
     var eqBand = Math.max(0.5 * D2R, 0.7 / (R * dpr));
-    var iceSin = Math.sin(72 * D2R);
+    var reference = Math.abs(axis.x) < .9 ? v3(1, 0, 0) : v3(0, 1, 0);
+    var dotAxis = reference.x * axis.x + reference.y * axis.y + reference.z * axis.z;
+    var ex = reference.x - dotAxis * axis.x, ey = reference.y - dotAxis * axis.y, ez = reference.z - dotAxis * axis.z;
+    var length = Math.hypot(ex, ey, ez); ex /= length; ey /= length; ez /= length;
+    var fx = axis.y * ez - axis.z * ey, fy = axis.z * ex - axis.x * ez, fz = axis.x * ey - axis.y * ex;
     var rt = cam.right, up = cam.up, vv = cam.v;
     for (var j = 0; j < N; j++) {
       var sy = 1 - 2 * (j + 0.5) / N;
@@ -159,9 +174,11 @@
         var light = nx * sun.x + ny * sun.y + nz * sun.z;
         var sl = nx * axis.x + ny * axis.y + nz * axis.z;
         var r, g, b;
-        if (Math.abs(sl) > iceSin) { r = 226; g = 236; b = 246; }
-        else { r = 38; g = 112; b = 196; }
         var plat = Math.asin(Math.max(-1, Math.min(1, sl)));
+        var lon = Math.atan2(nx * fx + ny * fy + nz * fz, nx * ex + ny * ey + nz * ez) / D2R;
+        var uv = EarthEngine.lonLatToUV(lon, plat / D2R);
+        var pixel = (Math.min(511, Math.floor(uv.v * 512)) * 1024 + Math.min(1023, Math.floor(uv.u * 1024))) * 4;
+        r = surfacePixels[pixel]; g = surfacePixels[pixel + 1]; b = surfacePixels[pixel + 2];
         if (Math.abs(plat) < eqBand) { r = 150; g = 200; b = 240; }
         var onBand = hi !== null && Math.abs(plat - hi) < band;
         var t = Math.max(0, Math.min(1, (light + 0.05) / 0.1));

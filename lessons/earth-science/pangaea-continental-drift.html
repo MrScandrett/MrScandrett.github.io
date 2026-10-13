@@ -551,7 +551,7 @@
       <div class="ll-sim">
         <header class="pd-hero">
     <h1>Pangaea and Continental Drift</h1>
-    <p>Scrub through 240 million years of plate motion using local GPlates-derived reconstruction frames. Between scientific snapshots, the lesson blends nearby frames so the breakup of Pangaea feels smooth while keeping the big tectonic story clear.</p>
+    <p>Explore 240 million years with 25 local GPlates model snapshots, spaced 10 million years apart. The map and its age readout use the nearest available snapshot; we do not invent or cross-fade intermediate geography.</p>
   </header>
 
   <main id="main-content" class="pd-wrap">
@@ -586,7 +586,7 @@
           <div class="pd-load-spinner"></div>
           <span>Loading local GPlates reconstruction frames…</span>
         </div>
-        <span class="pd-attribution" aria-hidden="true">EarthByte · MULLER2019 · CC-BY</span>
+        <span class="pd-attribution" aria-hidden="true">EarthByte · MULLER2019 · 10 Ma snapshots</span>
 
         <div class="pd-map-hint">Use the slider or play button to follow the breakup of Pangaea from 240 million years ago to today.</div>
       </div>
@@ -636,7 +636,7 @@
           <li>North America and Eurasia are part of the same broad northern mass.</li>
           <li>India, Australia, and Antarctica remain grouped in the south.</li>
         </ul>
-        <p class="pd-mini-note" id="guideNote">This is a simplified classroom reconstruction. The displayed coastlines come from scientific GPlates snapshots; the smooth motion between them is an educational visual blend, not a fully physical plate model.</p>
+        <p class="pd-mini-note" id="guideNote">Model: MULLER2019 · 10 Ma snapshots. These are reconstructed modern outlines for recognizing continents, not exact ancient shorelines. Sea level, erosion, and deformation changed the actual shorelines.</p>
       </section>
 
       <section class="pd-panel-card">
@@ -650,7 +650,8 @@
         </ul>
       </section>
     </aside>
-  </main>
+  <p class="pd-mini-note">Geography: <a href="https://gwsdoc.gplates.org/reconstruction/reconstruct-coastlines/">GPlates Web Service</a>, MULLER2019 model, anchor plate 0; EarthByte / University of Sydney, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Retrieved October 12, 2026. Modern outlines have been reconstructed and simplified within 0.025° in longitude/latitude. They are not independently reconstructed paleo-shorelines. Compare the <a href="https://www.earthbyte.org/gplates-2-3-software-and-data-sets/">EarthByte model and paleogeography datasets</a>.</p>
+</main>
 
   <section class="pd-info">
     <div class="pd-info-grid">
@@ -698,26 +699,14 @@
     </div>
   </div>
 
-  <script src="https://d3js.org/d3.v7.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
+  <script src="../../assets/vendor/d3-geo-runtime.min.js"></script>
+  <script src="../../assets/js/earth-engine.js"></script>
   <script src="../../assets/js/classroom-animations.js"></script>
   <script src="../../assets/js/lesson-layout.js"></script>
-  <script src="../../assets/geodata/pangaea/pangaea-simple-data.js"></script>
   <script>
-    // ─── GPlates Snapshot Continental Drift ──────────────────────────────────
-    // Coastline polygons: EarthByte Group, University of Sydney
-    // Model: MULLER2019 (0-250 Ma), CC-BY 4.0
-    // The lesson ships local simplified keyframes for reliability and speed.
-    // Intermediate times cross-fade adjacent scientific snapshots as a classroom
-    // interpolation. That avoids hundreds of network calls while preserving the
-    // correct large-scale sequence: assembled, rifting, ocean opening, collision.
-    // ─────────────────────────────────────────────────────────────────────────
-
-    const LOCAL_GEODATA_URL = t =>
-      `../../assets/geodata/pangaea/coastlines_${t}ma_simple.json`;
-
-    const KEYFRAME_TIMES = [240, 200, 160, 120, 80, 40, 0];
+    // Shared Earth engine: model-generated snapshots, no cross-fade.
+    const KEYFRAME_TIMES = EarthEngine.reconstruction.agesMa.slice().reverse();
     const geoCache = Object.create(null);      // time (Ma) → GeoJSON FeatureCollection
-    const geoRequests = Object.create(null);   // time (Ma) → in-flight Promise
 
     // ─── Narrative frames ─────────────────────────────────────────────────────
     const frames = [
@@ -725,7 +714,7 @@
         summary: 'Most major landmasses are locked together in a single supercontinent. The Atlantic Ocean has not opened yet, and the southern continents still travel as a connected group.',
         ocean: 'No Atlantic Ocean yet', motion: 'Supercontinent still joined',
         guide: ['Africa and South America are still locked together.', 'North America and Eurasia are part of the same broad northern mass.', 'India, Australia, and Antarctica remain grouped in the south.'],
-        note: 'Shapes here are scientific coastline reconstruction snapshots from the MULLER2019 model (EarthByte, CC-BY). The smooth in-between motion is a classroom blend between nearby snapshots.' },
+        note: 'MULLER2019 model snapshots (EarthByte, CC BY 4.0), shown at their actual ages. Reconstructed modern outlines identify landmasses; ancient shorelines and exact positions remain uncertain.' },
       { time: 200, title: 'Rifting begins',
         summary: 'Heat and stretching start cracking the supercontinent. North America edges away from Africa and Eurasia, but the pieces still sit much closer together than they do today.',
         ocean: 'Atlantic rift beginning', motion: 'First major splits',
@@ -763,148 +752,24 @@
     const ctx          = canvas.getContext('2d');
     const mapLoadingEl = document.getElementById('mapLoading');
 
-    const HAS_D3 = typeof d3 !== 'undefined';
-    const projection = HAS_D3 ? d3.geoNaturalEarth1().scale(155).translate([500, 302]) : null;
-    const pathGen    = HAS_D3 ? d3.geoPath().projection(projection).context(ctx) : drawGeoJSONPath;
-    const SPHERE     = { type: 'Sphere' };
-    const graticule  = HAS_D3 ? d3.geoGraticule().step([30, 30])() : null;
-
-    function projectLonLat(coord) {
-      const lon = coord[0];
-      const lat = coord[1];
-      return [
-        ((lon + 180) / 360) * 1000,
-        ((90 - lat) / 180) * 600
-      ];
-    }
-
-    function traceRing(ring) {
-      let started = false;
-      let previous = null;
-      ring.forEach(coord => {
-        const point = projectLonLat(coord);
-        if (!started || (previous && Math.abs(point[0] - previous[0]) > 500)) {
-          ctx.moveTo(point[0], point[1]);
-          started = true;
-        } else {
-          ctx.lineTo(point[0], point[1]);
-        }
-        previous = point;
-      });
-    }
-
-    function drawGeoJSONPath(geojson) {
-      if (!geojson) return;
-      const features = geojson.type === 'FeatureCollection' ? geojson.features : [geojson];
-      features.forEach(feature => {
-        const geometry = feature.type === 'Feature' ? feature.geometry : feature;
-        if (!geometry || !geometry.coordinates) return;
-        if (geometry.type === 'Polygon') {
-          geometry.coordinates.forEach(traceRing);
-        } else if (geometry.type === 'MultiPolygon') {
-          geometry.coordinates.forEach(poly => poly.forEach(traceRing));
-        } else if (geometry.type === 'LineString') {
-          traceRing(geometry.coordinates);
-        } else if (geometry.type === 'MultiLineString') {
-          geometry.coordinates.forEach(traceRing);
-        }
-      });
-    }
-
-    const drawableGeoCache = new WeakMap();
-
-    function planarRingArea(ring) {
-      let area = 0;
-      for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
-        area += (ring[j][0] * ring[i][1]) - (ring[i][0] * ring[j][1]);
-      }
-      return Math.abs(area / 2);
-    }
-
-    function featureLooksPlanetSized(feature) {
-      if (!feature || !feature.geometry) return true;
-
-      if (HAS_D3 && d3.geoArea(feature) > Math.PI * 2) {
-        return true;
-      }
-
-      const geometry = feature.geometry;
-      const rings = [];
-      if (geometry.type === 'Polygon') {
-        rings.push(...geometry.coordinates);
-      } else if (geometry.type === 'MultiPolygon') {
-        geometry.coordinates.forEach(poly => rings.push(...poly));
-      }
-
-      return rings.some(ring => planarRingArea(ring) > 54000);
-    }
-
-    function drawableGeoJSON(geojson) {
-      if (!geojson || geojson.type !== 'FeatureCollection') return geojson;
-      if (drawableGeoCache.has(geojson)) return drawableGeoCache.get(geojson);
-      const filtered = {
-        type: 'FeatureCollection',
-        features: geojson.features.filter(feature => !featureLooksPlanetSized(feature))
-      };
-      drawableGeoCache.set(geojson, filtered);
-      return filtered;
-    }
-
+    const projection = EarthEngine.projection('natural-earth', { extent: [[15, 35], [985, 570]] });
+    const pathGen = d3.geoPath(projection).context(ctx);
+    const SPHERE = { type: 'Sphere' };
+    const graticule = d3.geoGraticule().step([30, 30])();
+    // Ring winding was normalized during the geography build. Keep all islands
+    // and polygons, including Antarctica; never discard land on an area guess.
+    function drawableGeoJSON(geojson) { return geojson; }
     // ─── Local GPlates keyframe loading ───────────────────────────────────────
     function normalizeReconstructionTime(time) {
       return Math.max(0, Math.min(240, Math.round(time)));
     }
 
-    function nearestKeyframeTime(time) {
-      const target = normalizeReconstructionTime(time);
-      return KEYFRAME_TIMES.reduce((best, t) =>
-        Math.abs(t - target) < Math.abs(best - target) ? t : best, KEYFRAME_TIMES[0]);
-    }
-
-    function getBoundingKeyframes(time) {
-      const target = normalizeReconstructionTime(time);
-      const sorted = KEYFRAME_TIMES.slice().sort((a, b) => b - a);
-      let older = sorted[0];
-      let newer = sorted[sorted.length - 1];
-
-      for (let i = 0; i < sorted.length - 1; i += 1) {
-        if (target <= sorted[i] && target >= sorted[i + 1]) {
-          older = sorted[i];
-          newer = sorted[i + 1];
-          break;
-        }
-      }
-
-      if (target >= sorted[0]) return { older: sorted[0], newer: sorted[0], mix: 0 };
-      if (target <= sorted[sorted.length - 1]) return { older: sorted[sorted.length - 1], newer: sorted[sorted.length - 1], mix: 0 };
-
-      const span = older - newer || 1;
-      return { older, newer, mix: clamp((older - target) / span, 0, 1) };
-    }
-
     async function fetchLocalKeyframe(time) {
-      const keyframeTime = nearestKeyframeTime(time);
-      if (geoCache[keyframeTime]) return geoCache[keyframeTime];
-      if (window.PANGAEA_COASTLINES && window.PANGAEA_COASTLINES[keyframeTime]) {
-        geoCache[keyframeTime] = window.PANGAEA_COASTLINES[keyframeTime];
-        return geoCache[keyframeTime];
-      }
-      if (geoRequests[keyframeTime]) return geoRequests[keyframeTime];
-
-      geoRequests[keyframeTime] = (async () => {
-      const res = await fetch(LOCAL_GEODATA_URL(keyframeTime));
-      if (!res.ok) throw new Error(`Local reconstruction HTTP ${res.status} for ${keyframeTime} Ma`);
-      geoCache[keyframeTime] = await res.json();
-      return geoCache[keyframeTime];
-      })();
-
-      try {
-        return await geoRequests[keyframeTime];
-      } finally {
-        delete geoRequests[keyframeTime];
-      }
+      const age = EarthEngine.reconstruction.nearestAge(time);
+      const geo = await EarthEngine.reconstruction.load(age);
+      geoCache[age] = geo;
+      return geo;
     }
-
     async function fetchCoastlines(time) {
       return fetchLocalKeyframe(time);
     }
@@ -912,7 +777,9 @@
     async function preloadFrames() {
       mapLoadingEl.style.display = 'flex';
       try {
-        await Promise.all(KEYFRAME_TIMES.map(fetchLocalKeyframe));
+        await fetchLocalKeyframe(state.time);
+        // Warm the next frame without blocking the first display.
+        fetchLocalKeyframe(230).catch(() => {});
         mapLoadingEl.style.display = 'none';
         renderMap(state.time);
       } catch (err) {
@@ -925,11 +792,7 @@
     // ─── Drawing helpers ──────────────────────────────────────────────────────
     function drawBackground() {
       ctx.beginPath();
-      if (HAS_D3) {
-        pathGen(SPHERE);
-      } else {
-        ctx.rect(0, 0, 1000, 600);
-      }
+      pathGen(SPHERE);
       const bg = ctx.createRadialGradient(500, 260, 20, 500, 260, 340);
       bg.addColorStop(0, '#0d2e45');
       bg.addColorStop(1, '#071b2b');
@@ -942,22 +805,7 @@
 
     function drawGraticule() {
       ctx.beginPath();
-      if (HAS_D3) {
-        pathGen(graticule);
-      } else {
-        for (let lon = -150; lon <= 180; lon += 30) {
-          const top = projectLonLat([lon, 85]);
-          const bottom = projectLonLat([lon, -85]);
-          ctx.moveTo(top[0], top[1]);
-          ctx.lineTo(bottom[0], bottom[1]);
-        }
-        for (let lat = -60; lat <= 60; lat += 30) {
-          const left = projectLonLat([-180, lat]);
-          const right = projectLonLat([180, lat]);
-          ctx.moveTo(left[0], left[1]);
-          ctx.lineTo(right[0], right[1]);
-        }
-      }
+      pathGen(graticule);
       ctx.strokeStyle = 'rgba(255,255,255,0.052)';
       ctx.lineWidth = 0.55;
       ctx.stroke();
@@ -980,105 +828,46 @@
       ctx.shadowColor = 'rgba(5, 12, 18, 0.26)';
       ctx.shadowBlur = 10;
       ctx.shadowOffsetY = 2;
-      ctx.fill('evenodd');
+      // Same winding gives a union-like nonzero fill across overlapping
+      // reconstructed features, while preserving polygon holes.
+      ctx.fill();
 
-      ctx.shadowColor = 'transparent';
-      ctx.beginPath();
-      pathGen(drawable);
-      ctx.strokeStyle = `rgba(233, 244, 228, ${lineAlpha})`;
-      ctx.lineWidth = 0.85;
-      ctx.stroke();
+      // Feature partitions are model bookkeeping, not national borders or
+      // paleo-shorelines. Do not draw their internal edges as political lines.
       ctx.restore();
     }
 
-    // ─── Map render ───────────────────────────────────────────────────────────
-    let renderedMapTime = null;
-    let renderedKeyframePair = '';
+    // ─── Map render: one scientifically reconstructed age at a time ───────
     let activeMapRequest = 0;
-    let mapRenderQueued = false;
-
-    function queueMapRender(time) {
-      state.pendingMapTime = normalizeReconstructionTime(time);
-      if (mapRenderQueued) return;
-      mapRenderQueued = true;
-      requestAnimationFrame(() => {
-        mapRenderQueued = false;
-        renderMapNow(state.pendingMapTime);
-      });
-    }
-
+    let lastMapAge = null;
     function renderMap(time) {
-      queueMapRender(time);
-    }
-
-    function renderMapNow(time) {
-      ctx.clearRect(0, 0, 1000, 600);
-      drawBackground();
-      drawGraticule();
-
-      const exactTime = normalizeReconstructionTime(time);
-      const pair = getBoundingKeyframes(exactTime);
-      const pairKey = `${pair.older}-${pair.newer}`;
-
-      if (renderedMapTime === exactTime && renderedKeyframePair === pairKey) {
-        drawBlendedCoastlines(pair);
-        return;
-      }
-
-      if (geoCache[pair.older] && geoCache[pair.newer]) {
-        renderedMapTime = exactTime;
-        renderedKeyframePair = pairKey;
-        mapLoadingEl.style.display = 'none';
-        drawBlendedCoastlines(pair);
-        return;
-      }
-
-      const nearest = geoCache[nearestKeyframeTime(exactTime)];
-      if (nearest) {
-        drawCoastlines(nearest, 0.96, 0.35);
-      } else {
-        mapLoadingEl.style.display = 'flex';
-      }
-
+      const age = EarthEngine.reconstruction.nearestAge(time);
+      if (lastMapAge === age && geoCache[age]) return;
       const requestId = ++activeMapRequest;
-      Promise.all([fetchCoastlines(pair.older), fetchCoastlines(pair.newer)])
-        .then(() => {
-          if (requestId !== activeMapRequest) return;
-          if (normalizeReconstructionTime(state.time) !== exactTime) {
-            renderMap(state.time);
-            return;
-          }
-          renderedMapTime = exactTime;
-          renderedKeyframePair = pairKey;
-          mapLoadingEl.style.display = 'none';
-          renderMapNow(state.time);
-        })
-        .catch(err => {
-          if (requestId !== activeMapRequest) return;
-          mapLoadingEl.innerHTML =
-            '<span class="pd-load-error">Could not load local reconstruction frames. Check the geodata files and reload the page.</span>';
-          mapLoadingEl.style.display = 'flex';
-          console.error('Local reconstruction load error:', err);
-        });
-    }
-
-    function drawBlendedCoastlines(pair) {
-      const olderGeo = geoCache[pair.older];
-      const newerGeo = geoCache[pair.newer];
-      if (!olderGeo || !newerGeo) return;
-
-      if (pair.older === pair.newer || pair.mix <= 0.02) {
-        drawCoastlines(olderGeo);
+      ctx.clearRect(0, 0, 1000, 600);
+      drawBackground(); drawGraticule();
+      if (geoCache[age]) {
+        drawCoastlines(geoCache[age]);
+        lastMapAge = age;
+        mapLoadingEl.style.display = 'none';
         return;
       }
-
-      if (pair.mix >= 0.98) {
-        drawCoastlines(newerGeo);
-        return;
-      }
-
-      drawCoastlines(olderGeo, 1 - pair.mix * 0.72, 0.28);
-      drawCoastlines(newerGeo, 0.35 + pair.mix * 0.65, 0.36);
+      lastMapAge = null;
+      mapLoadingEl.style.display = 'flex';
+      fetchLocalKeyframe(age).then(geo => {
+        if (requestId !== activeMapRequest) return;
+        if (EarthEngine.reconstruction.nearestAge(state.time) !== age) return;
+        drawCoastlines(geo); lastMapAge = age;
+        mapLoadingEl.style.display = 'none';
+      }).catch(err => {
+        if (requestId !== activeMapRequest) return;
+        mapLoadingEl.replaceChildren();
+        const message = document.createElement('span');
+        message.className = 'pd-load-error';
+        message.textContent = 'This reconstruction could not load. Select another age or reload.';
+        mapLoadingEl.appendChild(message);
+        console.error(err);
+      });
     }
 
     // ─── Narrative render ─────────────────────────────────────────────────────
@@ -1107,8 +896,8 @@
     let lastNarrativeFrameTime = null;
 
     function renderNarrative(time) {
-      const frame    = getNarrativeFrame(time);
-      const rounded  = Math.round(time);
+      const rounded = EarthEngine.reconstruction.nearestAge(time);
+      const frame = getNarrativeFrame(rounded);
       const timeText = rounded === 0 ? 'Today' : `${rounded} million years ago`;
 
       if (lastNarrativeRounded !== rounded) {
@@ -1125,7 +914,7 @@
         readoutOcean.textContent    = frame.ocean;
         readoutMotion.textContent   = frame.motion;
         guideTitle.textContent      = frame.title;
-        guideNote.textContent       = frame.note;
+        guideNote.textContent = frame.note + ' Map age: ' + rounded + ' Ma. Reconstructed modern outlines; not exact ancient shorelines.';
         guideList.replaceChildren(...frame.guide.map(item => {
           const li = document.createElement('li');
           li.textContent = item;

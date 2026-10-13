@@ -374,7 +374,8 @@
             <figcaption>NASA Scientific Visualization Studio / NASA GISS, <cite>Global Temperature Anomalies from 1880 to 2025</cite> (GISTEMP v4). No sound. Public domain (NASA, U.S. government work).</figcaption>
           </figure>
         </section>
-      </main>
+      <p class="cs-note">Surface imagery: NASA Blue Marble / Black Marble historical composites (public domain), not live observations. Offline land fallback: Natural Earth v5.1.2, 50m (public domain). Animated clouds and ice changes are classroom model overlays; they are not observed geography or a forecast shoreline.</p>
+</main>
     </div><!-- .ll-sim -->
 
     <aside class="ll-panel" aria-hidden="false">
@@ -526,6 +527,9 @@
 
   <!-- Three.js (shared vendored bundle — see assets/vendor/three-bundle.min.js) -->
   <script src="../../assets/js/sim-kit.js"></script>
+  <script src="../../assets/vendor/d3-geo-runtime.min.js"></script>
+  <script src="../../assets/geodata/world/world-data.js"></script>
+  <script src="../../assets/js/earth-engine.js"></script>
   <script type="module">
   import { THREE, OrbitControls } from '../../assets/vendor/three-bundle.min.js';
   import { createScene } from '../../assets/js/sim-kit-three.mjs';
@@ -565,43 +569,16 @@
 
     function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
-    // Tiny procedural day texture — shown instantly while NASA image loads
+    // Accurate Natural Earth land is available immediately, even offline.
     function makeFallbackDayTex() {
-      const W = 128, H = 64;
-      const cnv = document.createElement('canvas');
-      cnv.width = W; cnv.height = H;
-      const ctx = cnv.getContext('2d');
-      const img = ctx.createImageData(W, H);
-      const d = img.data;
-      for (let i = 0; i < W * H; i++) {
-        const nx = (i % W) / W, ny = Math.floor(i / W) / H;
-        const v = fbm(nx * 3.2 + 10, ny * 1.8 + 20, 4);
-        const isLand = v > 0.525;
-        const idx = i * 4;
-        d[idx]   = isLand ? 55  : 12;
-        d[idx+1] = isLand ? 105 : 55;
-        d[idx+2] = isLand ? 40  : 130;
-        d[idx+3] = 255;
-      }
-      ctx.putImageData(img, 0, 0);
-      return new THREE.CanvasTexture(cnv);
+      return EarthEngine.createThreeTexture(THREE, { satellite: false });
     }
-
-    // Tiny dark night texture — shown until Black Marble loads
+    // No invented lights when the historical NASA night composite is absent.
     function makeFallbackNightTex() {
-      const W = 64, H = 32;
-      const cnv = document.createElement('canvas');
-      cnv.width = W; cnv.height = H;
-      const ctx = cnv.getContext('2d');
-      ctx.fillStyle = '#020408';
-      ctx.fillRect(0, 0, W, H);
-      // Approximate city clusters
-      [[0.78,0.34],[0.14,0.38],[0.53,0.35],[0.47,0.35],[0.59,0.35],
-       [0.87,0.27],[0.87,0.33],[0.39,0.40],[0.72,0.40],[0.30,0.45]].forEach(([nx, ny]) => {
-        ctx.fillStyle = 'rgba(255,220,120,0.9)';
-        ctx.fillRect(Math.round(nx * W), Math.round(ny * H), 1, 1);
-      });
-      return new THREE.CanvasTexture(cnv);
+      const c = document.createElement('canvas'); c.width = 64; c.height = 32;
+      c.getContext('2d').fillStyle = '#020408';
+      c.getContext('2d').fillRect(0, 0, 64, 32);
+      return new THREE.CanvasTexture(c);
     }
 
     function buildCloudTexture() {
@@ -780,12 +757,10 @@
     const cloudMat = new THREE.MeshPhongMaterial({ transparent: true, opacity: 0.55, depthWrite: false });
     cloudMesh = new THREE.Mesh(cloudGeo, cloudMat);
     scene.add(cloudMesh);
-    // Procedural cloud texture immediately; swap for NASA version if available
+    // Illustrative cloud overlay, not an observed or live cloud map
     cloudMat.alphaMap = new THREE.CanvasTexture(buildCloudTexture());
     cloudMat.needsUpdate = true;
-    texLoader.load('../../assets/textures/earth/clouds.jpg',
-      tex => { tex.anisotropy = maxAniso; cloudMat.alphaMap = tex; cloudMat.needsUpdate = true; }, undefined, () => {}
-    );
+
 
     // Atmosphere — true Fresnel limb-glow via ShaderMaterial (realistic atmospheric scattering)
     const atmGeo = new THREE.SphereGeometry(2.16, 48, 24);
@@ -1043,14 +1018,10 @@
 
     // Project lat/lon on rotating globe to SVG screen coords
     function geoToSVG(lat, lon) {
-      const phi = (90 - lat) * Math.PI / 180;
-      const theta = (lon * Math.PI / 180) + earthMesh.rotation.y;
-
-      const x3 = -2 * Math.sin(phi) * Math.cos(theta);
-      const y3 =  2 * Math.cos(phi);
-      const z3 =  2 * Math.sin(phi) * Math.sin(theta);
-
-      const vec = new THREE.Vector3(x3, y3, z3);
+      const position = EarthEngine.lonLatToVector(lon, lat, 2);
+      const vec = new THREE.Vector3(position.x, position.y, position.z);
+      earthMesh.updateMatrixWorld();
+      vec.applyMatrix4(earthMesh.matrixWorld);
 
       // Visibility: dot product of position and camera direction
       const camDir = camera.position.clone().normalize();

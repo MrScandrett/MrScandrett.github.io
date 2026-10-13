@@ -83,6 +83,59 @@ const FRAGMENT_SHADER = `
   }
 `;
 
+// Open-water shading filters metre-scale ripples at distance instead of
+// applying tank caustics to kilometres of sea. Geometry remains in metres.
+const OCEAN_FRAGMENT_SHADER = `
+  uniform float uTime;
+  uniform vec3 uSurfaceColor;
+  uniform vec3 uDeepColor;
+  varying vec3 vWorldPosition;
+  varying vec3 vNormalWorld;
+
+  float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453);
+  }
+  float noise(vec2 p) {
+    vec2 cell=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);
+    return mix(mix(hash(cell),hash(cell+vec2(1.0,0.0)),f.x),
+      mix(hash(cell+vec2(0.0,1.0)),hash(cell+vec2(1.0,1.0)),f.x),f.y);
+  }
+  float rippleHeight(vec2 p, float footprint) {
+    float t=uTime;
+    return noise(p*.19+vec2(t*.16,-t*.08)) * .28 * (1.0-smoothstep(3.0,12.0,footprint))
+      + noise(p*.63+vec2(-t*.22,t*.09)) * .075 * (1.0-smoothstep(1.0,4.0,footprint))
+      + noise(p*1.9+vec2(t*.3,t*.2)) * .015 * (1.0-smoothstep(.3,1.5,footprint));
+  }
+  vec2 slope(vec2 p, vec2 direction, float frequency, float speed, float weight) {
+    float phase = dot(p, direction) * frequency + uTime * speed;
+    float footprint = max(length(dFdx(p)), length(dFdy(p)));
+    float filterWeight = 1.0 - smoothstep(0.5, 2.5, footprint * frequency);
+    return direction * cos(phase) * weight * filterWeight;
+  }
+  void main() {
+    vec2 p = vWorldPosition.xz;
+    vec2 gradient = slope(p, normalize(vec2(1.0, 0.35)), .42, 1.1, .024);
+    gradient += slope(p, normalize(vec2(-.6, 1.0)), .31, -.72, .019);
+    gradient += slope(p, normalize(vec2(.7, .7)), .77, 1.65, .015);
+    gradient += slope(p, normalize(vec2(1.7, -1.15)), 2.05, 2.2, .008);
+    float footprint=max(length(dFdx(p)),length(dFdy(p)));
+    const float eps=.15;
+    gradient += vec2(rippleHeight(p+vec2(eps,0.0),footprint)-rippleHeight(p-vec2(eps,0.0),footprint),
+      rippleHeight(p+vec2(0.0,eps),footprint)-rippleHeight(p-vec2(0.0,eps),footprint)) / (2.0*eps);
+    vec3 n = normalize(vec3(-gradient.x, 1.0, -gradient.y));
+    vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+    float fresnel = .02 + .98 * pow(1.0 - max(dot(n, viewDir), 0.0), 5.0);
+    vec3 reflected = reflect(-viewDir, n);
+    vec3 sky = mix(vec3(.73,.85,.89), vec3(.30,.55,.73), clamp(reflected.y * 4.0, 0.0, 1.0));
+    vec3 body = mix(uDeepColor, uSurfaceColor, .35);
+    vec3 color = mix(body, sky, fresnel * .85);
+    vec3 sunDir = normalize(vec3(-.35, .16, -.7));
+    float specular = pow(max(dot(reflect(-sunDir, n), viewDir), 0.0), 180.0);
+    color += vec3(1.0,.91,.72) * specular * .7;
+    gl_FragColor = vec4(color, 1.0);
+  }
+`;
+
 function preset(name, override = {}) {
   return { ...(MATERIALS[name] || MATERIALS.water), ...override };
 }
@@ -111,7 +164,7 @@ export function createLiquidSurface(THREE, options = {}) {
   const shader = new THREE.ShaderMaterial({
     uniforms,
     vertexShader: VERTEX_SHADER,
-    fragmentShader: FRAGMENT_SHADER,
+    fragmentShader: options.openWater ? OCEAN_FRAGMENT_SHADER : FRAGMENT_SHADER,
     transparent: presetData.opacity < 1,
     side: THREE.DoubleSide,
     depthWrite: presetData.opacity >= 1,

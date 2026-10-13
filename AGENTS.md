@@ -70,6 +70,14 @@ and discuss it. This applies to every new lesson and to any lesson you touch.
 
 ## Shared sim helpers
 
+Earth geography should use `assets/js/earth-engine.js` and the shared datasets,
+not hand-drawn continent polygons or procedural land masks. See
+`docs/earth-engine.md` for local script loading, projections, globe coordinates,
+NASA textures, disputed-boundary treatment, and dated Pangaea reconstructions.
+Rebuild static map assets with `scripts/build-geography.mjs`; keep source dates,
+credits, scale limits, and model ages visible. Historical map reproductions are
+primary-source artifacts and should retain their original geography.
+
 New lesson sims should reach for these instead of hand-rolling canvas/Three/Matter
 boilerplate (and instead of pulling Three.js from yet another CDN version — lessons
 have accumulated r128, r134, and three different 0.16x pins alongside the vendored

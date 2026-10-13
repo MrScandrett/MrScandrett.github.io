@@ -3,8 +3,10 @@
  *
  * Hand-authored inline SVG artwork for lessons, in one consistent style:
  * flat silhouettes, a soft accent glow, and a restrained highlight pass.
- * Everything is drawn locally — no external images, models, or fonts — so
- * figures work offline, survive `check:integrity`, and carry no licensing.
+ * Everything is served locally; Earth and Britain use generated Natural Earth
+ * v5.1.2 geographic reference assets (public domain), so
+ * figures work offline and survive `check:integrity`. Geographic diagrams retain
+ * dataset credits and limits in their SVG metadata.
  *
  * Usage:
  *   LessonFigures.render(el, 'blue-whale', { accent: '#06b6d4' });
@@ -24,6 +26,9 @@ const LessonFigures = (() => {
   'use strict';
 
   let seq = 0;
+  const geographyRoot = new URL('../../images/', document.currentScript.src);
+  const earthImage = new URL('earth-reference-globe.svg', geographyRoot).href;
+  const britainImage = new URL('britain-reference.svg', geographyRoot).href;
 
   /* ── helpers ──────────────────────────────────────────────────────── */
 
@@ -415,46 +420,7 @@ const LessonFigures = (() => {
 
     earth: {
       viewBox: '0 0 200 200',
-      draw(a, id) {
-        return `<defs>
-            <radialGradient id="${id}oc" cx="35%" cy="30%" r="80%">
-              <stop offset="0%" stop-color="#7dd3fc"/>
-              <stop offset="55%" stop-color="#2563eb"/>
-              <stop offset="100%" stop-color="#0b2559"/>
-            </radialGradient>
-            <radialGradient id="${id}atm" cx="50%" cy="50%" r="50%">
-              <stop offset="82%" stop-color="#7dd3fc" stop-opacity="0"/>
-              <stop offset="100%" stop-color="#7dd3fc" stop-opacity="0.55"/>
-            </radialGradient>
-            <clipPath id="${id}clip"><circle cx="100" cy="100" r="78"/></clipPath>
-          </defs>
-          <circle cx="100" cy="100" r="88" fill="url(#${id}atm)"/>
-          <circle cx="100" cy="100" r="78" fill="url(#${id}oc)"/>
-          <g clip-path="url(#${id}clip)" fill="#22c55e" opacity="0.88">
-            <!-- africa + europe -->
-            <path d="M96 44 q22 -6 30 10 q6 16 -4 26 q4 18 -8 30 q-6 22 -20 30 q-14 -12 -12 -34
-                     q-12 -14 -6 -32 q4 -18 20 -30 z"/>
-            <!-- americas, on the limb -->
-            <path d="M46 62 q16 4 18 20 q-4 14 -14 18 q6 16 0 30 q-8 16 -18 18 q-8 -22 -2 -40
-                     q-10 -20 4 -34 z" opacity="0.9"/>
-            <!-- asia -->
-            <path d="M136 52 q26 2 34 20 q-8 14 -26 16 q-14 2 -20 -12 q-2 -16 12 -24 z"/>
-            <!-- australia -->
-            <path d="M150 128 q20 -4 26 10 q-6 14 -22 12 q-12 -4 -4 -22 z"/>
-          </g>
-          <g clip-path="url(#${id}clip)">
-            <!-- polar ice and cloud bands -->
-            <ellipse cx="100" cy="26" rx="52" ry="16" fill="#fff" opacity="0.7"/>
-            <ellipse cx="100" cy="176" rx="58" ry="18" fill="#fff" opacity="0.75"/>
-            <path d="M22 84 q40 -12 76 2 q36 14 82 0" fill="none" stroke="#fff"
-                  stroke-width="7" opacity="0.2"/>
-            <path d="M18 126 q44 14 88 -2 q34 -12 76 4" fill="none" stroke="#fff"
-                  stroke-width="6" opacity="0.16"/>
-            <!-- night side -->
-            <circle cx="150" cy="118" r="88" fill="#020617" opacity="0.42"/>
-          </g>
-          <circle cx="100" cy="100" r="78" fill="none" stroke="#7dd3fc" stroke-width="1.2" opacity="0.5"/>`;
-      },
+      draw() { return `<image href="${earthImage}" x="0" y="0" width="200" height="200"/>`; },
     },
 
     'earth-moon': {
@@ -471,10 +437,7 @@ const LessonFigures = (() => {
           </defs>
           ${starfield(31, 30, 280, 120, 0.9)}
           <circle cx="34" cy="60" r="30" fill="url(#${id}e)"/>
-          <g opacity="0.85" fill="#22c55e">
-            <path d="M24 40 q14 -2 16 10 q-2 12 -12 16 q-10 -4 -10 -14 q0 -10 6 -12 z"/>
-            <path d="M44 66 q10 0 12 8 q-4 8 -14 6 q-6 -6 2 -14 z"/>
-          </g>
+          <image href="${earthImage}" x="4" y="30" width="60" height="60"/>
           <circle cx="34" cy="60" r="30" fill="none" stroke="#7dd3fc" stroke-width="1" opacity="0.5"/>
           <circle cx="250" cy="60" r="12" fill="url(#${id}m)"/>
           <g fill="#475569" opacity="0.55">
@@ -506,7 +469,7 @@ const LessonFigures = (() => {
           </defs>
           ${starfield(53, 26, 280, 120, 0.8)}
           <g filter="url(#${id}g)"><circle cx="30" cy="60" r="34" fill="url(#${id}s)"/></g>
-          <circle cx="256" cy="60" r="10" fill="url(#${id}e)"/>
+          <image href="${earthImage}" x="246" y="50" width="20" height="20"/>
           <line x1="70" y1="60" x2="242" y2="60" stroke="${a}" stroke-width="1.4"
                 stroke-dasharray="6 5" opacity="0.8"/>
           <path d="M70 60 l10 -4 l0 8 z" fill="${a}"/>
@@ -1495,33 +1458,7 @@ const LessonFigures = (() => {
 
     'island-britain': {
       viewBox: '0 0 160 240',
-      draw(a, id) {
-        // A recognisable coastline: Scotland's ragged north, the Wash, the
-        // south-west peninsula, and Wales' bulge.
-        return `${glow(id + 'g', 3)}
-          <g filter="url(#${id}g)">
-            <path d="M74 10 L86 6 L92 20 L104 16 L100 34 L110 40 L100 52 L108 66
-                     L98 76 L106 92 L96 104 L104 118 L120 122 L132 138 L126 152
-                     L136 160 L128 172 L106 176 L92 190 L74 200 L52 214 L34 224
-                     L26 216 L44 202 L58 186 L46 180 L38 166 L48 156 L40 142
-                     L52 132 L44 118 L56 108 L48 92 L58 80 L52 62 L62 50 L56 32
-                     L66 24 Z" fill="${a}"/>
-          </g>
-          <path d="M74 10 L86 6 L92 20 L104 16 L100 34 L110 40 L100 52 L108 66
-                   L98 76 L106 92 L96 104 L104 118 L120 122 L132 138 L126 152
-                   L136 160 L128 172 L106 176 L92 190 L74 200 L52 214 L34 224
-                   L26 216 L44 202 L58 186 L46 180 L38 166 L48 156 L40 142
-                   L52 132 L44 118 L56 108 L48 92 L58 80 L52 62 L62 50 L56 32
-                   L66 24 Z" fill="none" stroke="${shade(a, 0.5)}" stroke-width="1.6" opacity="0.8"/>
-          <!-- Ireland, off to the west -->
-          <path d="M14 150 L28 140 L34 152 L30 172 L16 180 L6 168 Z"
-                fill="${shade(a, -0.3)}" opacity="0.75"/>
-          <!-- highland shading and a couple of city dots -->
-          <path d="M62 26 L84 20 L92 42 L70 54 Z" fill="${shade(a, -0.35)}" opacity="0.45"/>
-          <circle cx="102" cy="166" r="3.4" fill="#fff" opacity="0.7"/>
-          <circle cx="76" cy="132" r="2.6" fill="#fff" opacity="0.5"/>
-          <circle cx="70" cy="34" r="2.4" fill="#fff" opacity="0.45"/>`;
-      },
+      draw() { return `<image href="${britainImage}" x="0" y="0" width="160" height="240"/>`; },
     },
 
     'coral-reef': {

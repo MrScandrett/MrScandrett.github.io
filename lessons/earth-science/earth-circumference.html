@@ -339,16 +339,14 @@
     .lab-control label { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: .5rem; color: #3f5a70; font: 800 .69rem/1.2 "Courier New", monospace; text-transform: uppercase; letter-spacing: .04em; }
     .lab-control output { color: var(--lab-coral); }
     .lab-control input[type="range"] { width: 100%; accent-color: var(--lab-cyan); }
-    .horizon-stage { position: relative; height: 154px; overflow: hidden; border-radius: 12px; background: linear-gradient(#9eddec 0 64%, #147f98 64%); border: 1px solid rgba(16,39,60,.16); }
-    .horizon-stage::after { content: ""; position: absolute; left: -12%; right: -12%; bottom: -76px; height: 126px; border-radius: 50% 50% 0 0; background: #0d6680; border-top: 3px solid rgba(255,255,255,.68); }
-    .boat { position: absolute; z-index: 2; left: 50%; bottom: 51px; width: 82px; transform: translateX(-50%); transition: clip-path .25s ease, transform .25s ease; }
-    .boat-sail { width: 0; height: 0; margin-left: 37px; border-left: 0 solid transparent; border-right: 30px solid transparent; border-bottom: 58px solid #fff4d6; filter: drop-shadow(1px 1px 0 rgba(16,39,60,.22)); }
-    .boat-mast { position: absolute; left: 35px; top: 4px; width: 3px; height: 65px; background: #543b2c; }
-    .boat-hull { height: 19px; margin-top: -1px; border-radius: 2px 2px 35px 35px; background: #e35d4f; border: 2px solid #8b352d; }
-    .lab-readout { display: grid; grid-template-columns: repeat(2,1fr); gap: .55rem; margin-top: .7rem; }
-    .lab-readout div { padding: .6rem .7rem; background: #edf5f7; border-radius: 9px; }
-    .lab-readout span { display: block; color: #597082; font: 700 .62rem/1.2 "Courier New", monospace; text-transform: uppercase; }
-    .lab-readout strong { display: block; margin-top: .15rem; font-size: 1rem; }
+    .horizon-stage { position:relative; height:340px; overflow:hidden; border-radius:12px; border:1px solid rgba(16,39,60,.16); background:#b8d7e9; }
+    #boat-ocean { display:block; width:100%; height:100%; }
+    .ocean-overlay { position:absolute; top:12px; left:12px; max-width:calc(100% - 24px); padding:7px 10px; border-radius:8px; background:rgba(255,255,255,.92); color:#10273c; font-size:.78rem; pointer-events:none; }
+    .ocean-tools { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0; }
+    .ocean-tools label { display:block; font-size:.82rem; font-weight:700; }
+    .ocean-tools input { width:100%; accent-color:#097c8f; }
+    .ocean-actions { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
+    @media(max-width:680px) { .horizon-stage { height:300px; } .ocean-tools { grid-template-columns:1fr; } }
     .shadow-board { position: relative; height: 170px; overflow: hidden; border-radius: 12px; background: linear-gradient(160deg,#cdeffa 0 54%,#e3c891 54%); border: 1px solid rgba(16,39,60,.16); }
     .shadow-sun { position: absolute; left: 18px; top: 18px; width: 42px; height: 42px; border-radius: 50%; background: #ffd252; box-shadow: 0 0 0 8px rgba(255,210,82,.22); }
     .shadow-stick { position: absolute; left: 50%; bottom: 31px; width: 5px; height: 74px; background: #5a3a26; transform: translateX(-50%); }
@@ -390,11 +388,35 @@
       .boat, .earth-shadow, .evidence-meter span { transition: none; }
       .lab-verdict.show { animation: none; }
     }
+    .ec-paths { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .ec-paths details { border:1px solid var(--line); padding:12px; border-radius:12px; }
+    .ec-page summary { cursor:pointer; font-weight:700; padding:8px 0; }
+    .ec-page details p { margin-top:12px; }
+    .ec-gallery { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+    .ec-gallery figure { margin:0; min-width:0; }
+    .ec-gallery img { display:block; width:100%; height:230px; object-fit:contain; background:#fff; border-radius:12px; }
+    .ec-gallery figcaption { font-size:.82rem; line-height:1.6; margin-top:10px; }
+    .ec-diagram-box { width:100%; }
+    #ec-canvas { max-height:none; }
+    .ec-page :focus-visible { outline:3px solid var(--accent,#0071e3); outline-offset:4px; }
+    @media(max-width:680px) { .ec-paths,.ec-gallery { grid-template-columns:1fr; } }
   </style>
   <style>
     /* Night: lighten inline accent colours that were darkened for day-mode contrast. */
     html[data-lighting="night"] [style*="color:#a86200"] { color: #db8000 !important; }
     @media (prefers-color-scheme: dark) { html:not([data-lighting]) [style*="color:#a86200"] { color: #db8000 !important; } }
+    .ec-paths { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .ec-paths details { border:1px solid var(--line); padding:12px; border-radius:12px; }
+    .ec-page summary { cursor:pointer; font-weight:700; padding:8px 0; }
+    .ec-page details p { margin-top:12px; }
+    .ec-gallery { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+    .ec-gallery figure { margin:0; min-width:0; }
+    .ec-gallery img { display:block; width:100%; height:230px; object-fit:contain; background:#fff; border-radius:12px; }
+    .ec-gallery figcaption { font-size:.82rem; line-height:1.6; margin-top:10px; }
+    .ec-diagram-box { width:100%; }
+    #ec-canvas { max-height:none; }
+    .ec-page :focus-visible { outline:3px solid var(--accent,#0071e3); outline-offset:4px; }
+    @media(max-width:680px) { .ec-paths,.ec-gallery { grid-template-columns:1fr; } }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -437,9 +459,20 @@
         <span class="dot"></span>
         <span>K–12</span>
       </div>
-      <p class="ec-lede">Over 2,200 years ago, a librarian in Egypt measured the size of the entire Earth using nothing but a stick, a shadow, and brilliant geometry — and got within 2% of the correct answer. Here's how he did it, and how scientists refined the measurement ever since.</p>
+      <p class="ec-lede">Over 2,200 years ago, a librarian in Egypt measured the size of the entire Earth using nothing but a stick, a shadow, and brilliant geometry — and produced a remarkably close estimate. We can repeat the idea with a simple classroom model. Here's how he did it, and how scientists refined the measurement ever since.</p>
     </section>
 
+
+    <section class="ec-card" aria-labelledby="ec-path-title">
+      <h2 id="ec-path-title">One big idea, four ways to explore</h2>
+      <p><strong>Circumference</strong> means the distance all the way around. A shadow can help us measure it! Choose a challenge with your teacher; everyone can start by looking and predicting.</p>
+      <div class="ec-paths">
+        <details open><summary>K–2 · Notice and tell</summary><p>Point to the Sun, stick, and shadow. Predict: will a more tilted ray make a longer shadow? Try the slider with an adult. Draw or tell what changed. Use a ball and two craft sticks under one distant lamp; never look directly at the Sun.</p></details>
+        <details><summary>3–5 · Measure and multiply</summary><p>A full turn is 360°. The 7.2° example is one of 50 equal pieces. If one piece is 800 km long, how far is 50 pieces? Explain with a drawing or repeated addition.</p></details>
+        <details><summary>6–8 · Predict, test, explain</summary><p>Keep distance at 800 km. Predict what doubling the angle will do to the estimate. Test 7.2° and 14.4°. Explain why a larger fraction of the circle gives a smaller whole circumference.</p></details>
+        <details><summary>9–12 · Geometry and uncertainty</summary><p>Derive C = 360d/θ from arc proportions. For a 1 m stick, θ = arctan(shadow length / stick height). Compare 7.1°, 7.2°, and 7.3° at 800 km. Which measurement needs greater care? Explain why real cities require meridian distance, local solar noon, and two zenith angles.</p></details>
+      </div>
+    </section>
     <!-- ── The Big Question ── -->
     <section class="ec-card" style="--card-accent:#34c759;">
       <h2>The Big Question: How Big is Earth?</h2>
@@ -462,7 +495,7 @@
 
       <h3>The Clue in a Well</h3>
       <p>Eratosthenes read a curious report from the city of <strong>Syene</strong> (modern-day Aswan, Egypt): on the summer solstice at noon, the Sun shone straight down into a deep well — no shadow on the walls, because the Sun was directly overhead. He also noticed that on the same day, at the same time in <strong>Alexandria</strong> (about 800 km to the north), a vertical stick cast a shadow.</p>
-      <p>This bothered him. If the Earth were flat, the Sun would be directly overhead both places at noon — yet Alexandria had a shadow and Syene did not. The only explanation: the Earth is <strong>curved</strong>, and the two cities sit at different angles relative to the Sun.</p>
+      <p>With a distant Sun and nearly parallel rays, different local vertical directions are explained by a <strong>curved Earth</strong>. Two shadows alone do not rule out every imagined nearby-Sun model; many independent observations help test the explanation.</p>
 
       <h3>The Four Steps of His Experiment</h3>
       <div class="ec-steps">
@@ -480,7 +513,7 @@
         </div>
         <div class="ec-step">
           <div class="ec-step-num">4</div>
-          <div class="ec-step-body"><strong>Multiply by 50.</strong> If the 800 km between the two cities equals 1/50th of the circumference, then the full circumference is 50 × 800 km = <strong>40,000 km</strong>. The modern accepted value is 40,075 km. Eratosthenes was off by less than <strong>2%</strong>.</div>
+          <div class="ec-step-body"><strong>Multiply by 50.</strong> If the 800 km between the two cities equals 1/50th of the circumference, then the full circumference is 50 × 800 km = <strong>40,000 km</strong>. This is a rounded classroom example. Earth measures about 40,008 km around a pole-to-pole meridian and 40,075 km around the equator. His historical result was recorded in stadia; its conversion to kilometres is uncertain.</div>
         </div>
       </div>
 
@@ -496,12 +529,25 @@
       </div>
     </section>
 
+
+    <section class="ec-card" aria-labelledby="ec-images-title">
+      <h2 id="ec-images-title">Look closely: photographs and a textbook model</h2>
+      <p>Tap any image to enlarge it. What can you observe in a photograph? What does a diagram help explain?</p>
+      <div class="ec-gallery">
+        <figure data-zoomable data-lightbox-group="earth-evidence"><img src="../../assets/images/lessons/earth-circumference/blue-marble.webp" width="1280" height="1280" loading="lazy" alt="Apollo 17 photograph showing Africa, clouds, and Antarctica on Earth's round disk"><figcaption><strong>A planet seen from space.</strong> Apollo 17 photographed Earth in 1972. Find Africa and the bright Antarctic ice. A photograph records an observation; it does not provide the two-city distance needed for our calculation. Credit: NASA / Johnson Space Center, AS17-148-22727. Public domain, U.S. government work. <a href="https://science.nasa.gov/resource/the-blue-marble/">Source</a> · <a href="https://www.nasa.gov/nasa-brand-center/images-and-media/">NASA usage guidance</a>.</figcaption></figure>
+        <figure data-zoomable data-lightbox-group="earth-evidence"><img src="../../assets/images/lessons/earth-circumference/earthrise.webp" width="1280" height="985" loading="lazy" alt="Partly illuminated Earth above the gray lunar surface in Bill Anders' Apollo 8 photograph"><figcaption><strong>Earth has a day side and a night side.</strong> Bill Anders took Earthrise from Apollo 8 in 1968. The edge between light and dark is different from the outer edge of Earth. Trace both and discuss which one sunlight creates. Credit: NASA / Bill Anders, AS08-14-2383. Public domain, U.S. government work. <a href="https://science.nasa.gov/resource/apollo-8s-iconic-earthrise/">Source</a>.</figcaption></figure>
+        <figure data-zoomable data-lightbox-group="earth-evidence"><img src="../../assets/images/lessons/earth-circumference/geodesy-diagram.webp" loading="lazy" alt="Government textbook diagram connecting parallel sunlight, two local verticals, and the angle at Earth's center"><figcaption><strong>The same angle in two places.</strong> Follow the parallel sunlight and the lines toward Earth's center. The angle at Alexandria matches the central angle, which tells us what fraction of Earth's circle lies between the cities. This is an explanatory diagram, with distances and sticks drawn for clarity. Credit: Defense Mapping Agency, <em>Geodesy for the Layman</em>, 1984, figure 1; vector redrawing by Gregors, via Wikimedia Commons. Public domain, U.S. government work. <a href="https://www.ngs.noaa.gov/PUBS_LIB/Geodesy4Layman/TR80003A.HTM">Textbook and rights statement</a> · <a href="https://commons.wikimedia.org/wiki/File:Eratosthenes%27_method_for_determining_the_size_of_the_Earth.svg">Vector source and public-domain statement</a>.</figcaption></figure>
+      </div>
+    </section>
     <!-- ── Interactive Simulator ── -->
     <section class="ec-sim">
       <h2>Replicate Eratosthenes' Experiment</h2>
-      <p class="ec-sim-sub">Adjust the shadow angle and distance in the Controls panel to see how the circumference calculation changes.</p>
+      <p class="ec-sim-sub"><strong>Predict:</strong> keep distance fixed and double the angle. Will the estimated planet become larger or smaller? Open Controls, test your prediction, then explain it using the yellow arc.</p>
 
-      <canvas id="ec-canvas" height="260" aria-label="Eratosthenes experiment diagram"></canvas>
+      <div class="ec-diagram-box"><canvas id="ec-canvas" height="540" role="img" aria-label="Earth cross-section and enlarged stick-shadow geometry" aria-describedby="ec-diagram-description"></canvas></div>
+      <p id="ec-diagram-description">Parallel sunlight reaches two sticks pointing away from Earth's center. One has no shadow; the other makes the same angle with sunlight as the angle between the cities at the center. The lower view magnifies a 1 m stick and its shadow.</p>
+      <p id="ec-geometry-summary" role="status"></p>
+      <details><summary>Model assumptions and a real-world test</summary><p>We assume a spherical Earth, parallel rays, cities on one meridian, and the Sun overhead at the southern city. Sticks are enlarged; the globe shows angle, not a map. Changing distance or angle independently represents a new hypothetical planet estimate. Real Earth is slightly flattened. For a class measurement, record a vertical stick's height and shadow on level ground at local solar noon; partner with another school and compare zenith angles and meridian distance. Do not look at the Sun.</p></details>
 
       <div class="ec-readout" style="margin-top:0.8rem;">
         <div class="ec-readout-cell">
@@ -543,19 +589,26 @@
               <div class="prediction round"><strong>Globe predicts</strong>The curved surface blocks the hull first; more of the boat hides as distance increases.</div>
               <div class="prediction flat"><strong>Flat plane predicts</strong>The whole boat only looks smaller. Zoom should restore every part of it.</div>
             </div>
-            <div class="horizon-stage" role="img" aria-label="Sailboat moving beyond a curved horizon">
-              <div class="boat" id="lab-boat" aria-hidden="true"><div class="boat-sail"></div><div class="boat-mast"></div><div class="boat-hull"></div></div>
+            <div class="horizon-stage">
+              <canvas id="boat-ocean" role="img" aria-label="Life-scale sailboat on a curved ocean rendered with CGI water" aria-describedby="boat-model-note boat-scene-summary"></canvas>
+              <div class="ocean-overlay" id="boat-render-status">Loading ocean…</div>
             </div>
+            <div class="ocean-tools">
+              <div><label for="boat-eye">Eye height <output id="boat-eye-out">2 m</output></label><input id="boat-eye" type="range" min="1" max="30" step="1" value="2"></div>
+              <div><label for="boat-zoom">Telescope zoom <output id="boat-zoom-out">12×</output></label><input id="boat-zoom" type="range" min="1" max="30" step="1" value="12"></div>
+            </div>
+            <div class="ocean-actions"><button class="lab-btn" type="button" id="boat-pause" aria-pressed="false">Pause water</button><button class="lab-btn" type="button" id="boat-reset">Reset view</button></div>
+            <p id="boat-scene-summary" role="status"></p>
             <div class="lab-control">
               <label for="boat-distance">Distance from observer <output id="boat-distance-out">5 km</output></label>
               <input id="boat-distance" type="range" min="2" max="40" value="5" step="1" />
               <button class="lab-btn" id="boat-test" type="button">Record trial</button>
             </div>
             <div class="lab-readout">
-              <div><span>Curvature drop</span><strong id="curve-drop">2.0 m</strong></div>
+              <div><span>Hidden height (model)</span><strong id="curve-drop">2.0 m</strong></div>
               <div><span>What disappears?</span><strong id="boat-hidden">Hull visible</strong></div>
             </div>
-            <div class="lab-verdict" id="boat-verdict" role="status"><strong>Evidence:</strong> Distant objects are hidden bottom-first, and zoom cannot recover the part below the horizon. That matches a curved surface.</div>
+            <p id="boat-model-note">Scale: 1 scene unit = 1 metre; Earth radius 6,371,000 m; sailboat 16 m long with a 20 m mast. The camera sits at your chosen eye height and looks toward the geometric horizon. Zoom changes the field of view, never the boat’s size. Shared LiquidEngine CGI water adds small animated waves; readouts use still sea level. This idealized model omits refraction, tides, and weather, and is not a filmed observation.</p><div class="lab-verdict" id="boat-verdict" role="status"><strong>Model prediction:</strong> Distant objects are hidden bottom-first, and zoom cannot recover the part below the horizon. That matches a curved surface.</div>
           </div>
         </article>
 
@@ -570,17 +623,17 @@
               <div class="prediction round"><strong>Distant Sun + globe predicts</strong>Parallel sunlight makes different angles because each stick points away from Earth's center.</div>
               <div class="prediction flat"><strong>Flat plane predicts</strong>A nearby Sun could make different angles—but every city pair must point to one consistent Sun height.</div>
             </div>
-            <div class="shadow-board" role="img" aria-label="Vertical stick casting a measurable shadow"><div class="shadow-sun"></div><div class="shadow-stick"></div><div class="shadow-cast" id="shadow-cast"></div><div class="shadow-angle" id="shadow-angle-label">7.2°</div></div>
+            <p>The stick is 74 drawing units tall; shadow length = 74 × tan(angle). The Sun icon marks illumination, not a scaled Sun position.</p><div class="shadow-board" role="img" aria-label="Vertical stick casting a measurable shadow"><div class="shadow-sun"></div><div class="shadow-stick"></div><div class="shadow-cast" id="shadow-cast"></div><div class="shadow-angle" id="shadow-angle-label">7.2°</div></div>
             <div class="lab-control">
               <label for="lab-shadow-angle">Angle difference <output id="lab-shadow-out">7.2°</output></label>
               <input id="lab-shadow-angle" type="range" min="2" max="15" value="7.2" step=".1" />
-              <button class="lab-btn" id="shadow-test" type="button">Calculate Earth</button>
+              <button class="lab-btn" id="shadow-test" type="button">Record calculation</button>
             </div>
             <div class="lab-readout">
               <div><span>City distance</span><strong>800 km</strong></div>
               <div><span>Calculated circumference</span><strong id="lab-circ">40,000 km</strong></div>
             </div>
-            <div class="lab-verdict" id="shadow-verdict" role="status"><strong>Evidence:</strong> Repeating this experiment with many north–south city pairs produces roughly the same 40,000 km globe. A nearby-Sun flat model gives conflicting Sun heights.</div>
+            <div class="lab-verdict" id="shadow-verdict" role="status"><strong>Compare with real measurements:</strong> Repeating this experiment with many north–south city pairs produces roughly the same 40,000 km globe. A nearby-Sun flat model gives conflicting Sun heights.</div>
           </div>
         </article>
 
@@ -600,7 +653,7 @@
               <span></span>
               <button class="lab-btn" id="eclipse-test" type="button">Run eclipse</button>
             </div>
-            <div class="lab-verdict" id="eclipse-verdict" role="status"><strong>Evidence:</strong> Earth's shadow on the Moon is always round. A sphere is the only simple shape that produces a circular silhouette from every direction.</div>
+            <p>Schematic animation: sizes, orbital distances, timing, and the fuzzy penumbra are omitted. It illustrates a prediction; compare it with photographs of real lunar eclipses.</p><div class="lab-verdict" id="eclipse-verdict" role="status"><strong>Model prediction:</strong> Earth's shadow on the Moon is always round. A sphere is the only simple shape that produces a circular silhouette from every direction.</div>
           </div>
         </article>
       </div>
@@ -633,7 +686,7 @@
           <div class="ec-tl-dot" style="background:#ff9500;"></div>
           <div class="ec-tl-body">
             <p class="ec-tl-name">Eratosthenes of Cyrene</p>
-            <span class="ec-tl-result" style="background:rgba(52,199,89,0.12);color:#1a7a2e;">~40,000 km · 0.2% off</span>
+            <span class="ec-tl-result" style="background:rgba(52,199,89,0.12);color:#1a7a2e;">~40,000 km · rounded example</span>
             <p class="ec-tl-text">Using shadow angles in Alexandria and Syene. He measured the arc at 7.2° and the distance at 5,000 <em>stadia</em>. Depending on the exact length of a stadion used, his result falls between 39,375 km and 46,250 km — with the most likely value of ~40,000 km being remarkably accurate.</p>
           </div>
         </li>
@@ -707,8 +760,8 @@
         </thead>
         <tbody>
           <tr>
-            <td>Eratosthenes</td><td>240 BC</td><td>~40,000</td><td>0.2%</td>
-            <td><div class="ec-acc-bar-wrap"><div class="ec-acc-bar" style="width:99.8%;"></div></div> <span class="ec-acc-pct">99.8%</span></td>
+            <td>Eratosthenes</td><td>240 BC</td><td>~40,000</td><td>Unit conversion uncertain</td>
+            <td>Not precisely known</td>
           </tr>
           <tr>
             <td>Poseidonius</td><td>100 BC</td><td>~38,600</td><td>3.7%</td>
@@ -855,17 +908,17 @@
     </div>
     <div class="ll-panel-body">
       <div class="ll-pane ll-active" id="ec-params">
-        <span class="ll-label">Historical Presets</span>
+        <span class="ll-label">Experiment Presets</span>
         <div class="ll-presets" id="ec-presets">
-          <button class="ll-preset ll-active ec-preset-btn" data-angle="7.2" data-dist="800">Eratosthenes 240 BC</button>
-          <button class="ll-preset ec-preset-btn" data-angle="7.5" data-dist="800">Poseidonius 100 BC</button>
-          <button class="ll-preset ec-preset-btn" data-angle="0.52" data-dist="111">Al-Biruni 1030 AD</button>
-          <button class="ll-preset ec-preset-btn" data-angle="1.0" data-dist="110.6">Picard 1669</button>
+          <button class="ll-preset ll-active ec-preset-btn" data-angle="7.2" data-dist="800">Classic example</button>
+          <button class="ll-preset ec-preset-btn" data-angle="14.4" data-dist="800">Double angle</button>
+          <button class="ll-preset ec-preset-btn" data-angle="3.6" data-dist="800">Half angle</button>
+          <button class="ll-preset ec-preset-btn" data-angle="7.2" data-dist="1600">Double distance</button>
         </div>
         <hr class="ll-hr">
         <div class="ll-param">
           <div class="ll-param-label">
-            <span>Shadow angle</span>
+            <label for="ec-angle-slider">Shadow angle</label>
             <span class="ll-val" id="ec-angle-val">7.2°</span>
           </div>
           <input type="range" class="ec-slider" id="ec-angle-slider" min="0.3" max="20" step="0.1" value="7.2" style="width:100%;accent-color:#34c759;" />
@@ -873,7 +926,7 @@
         </div>
         <div class="ll-param">
           <div class="ll-param-label">
-            <span>City distance</span>
+            <label for="ec-dist-slider">City distance</label>
             <span class="ll-val" id="ec-dist-val">800 km</span>
           </div>
           <input type="range" class="ec-slider" id="ec-dist-slider" min="50" max="3000" step="10" value="800" style="width:100%;accent-color:#34c759;" />
@@ -887,7 +940,7 @@
             <span class="ll-readout-val" id="ec-r-circ">40,000</span>
           </div>
           <div class="ll-readout">
-            <span class="ll-readout-lbl">Fraction</span>
+            <span class="ll-readout-lbl">Full turn</span>
             <span class="ll-readout-val" id="ec-r-frac">1/50</span>
           </div>
         </div>
@@ -899,7 +952,7 @@
         </div>
         <div class="ll-info">
           <strong>Modern value</strong>
-          40,075 km (equatorial). Eratosthenes was within 0.2%.
+          40,075 km around the equator; about 40,008 km around a meridian. Ancient-unit conversion is uncertain.
         </div>
         <div class="ll-info">
           <strong>The metre's origin</strong>
@@ -931,12 +984,15 @@
 
   <script src="../../assets/js/theme-registry.js"></script>
   <script src="../../assets/js/nav-mobile.js"></script>
+  <script src="../../assets/js/sim-kit.js"></script>
+  <script src="../../assets/js/photo-lightbox.js"></script>
   <script>
   (function () {
 
     /* ── Simulator ─────────────────────────────────────── */
     const canvas      = document.getElementById('ec-canvas');
     const ctx         = canvas.getContext('2d');
+    let diagramSurface;
     const angleSlider = document.getElementById('ec-angle-slider');
     const distSlider  = document.getElementById('ec-dist-slider');
     const angleValEl  = document.getElementById('ec-angle-val');
@@ -949,17 +1005,10 @@
     function getAngle() { return parseFloat(angleSlider.value); }
     function getDist()  { return parseInt(distSlider.value); }
 
-    function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
-    function simplifyFraction(num, den) {
-      const g = gcd(Math.round(num), Math.round(den));
-      return [Math.round(num / g), Math.round(den / g)];
-    }
-
     function updateReadout() {
       const angle = getAngle();
       const dist  = getDist();
       const circ  = (360 / angle) * dist;
-      const frac  = 360 / angle; // denominator of 1/frac
 
       angleValEl.textContent = angle.toFixed(1) + '°';
       distValEl.textContent  = dist.toLocaleString() + ' km';
@@ -967,254 +1016,65 @@
       rDist.textContent      = dist.toLocaleString();
       rCirc.textContent      = Math.round(circ).toLocaleString();
 
-      // Fraction display: 1/50 style
-      const [n, d] = simplifyFraction(1, Math.round(frac));
-      rFrac.textContent = n + '/' + d;
+      rFrac.textContent = (angle / 360 * 100).toFixed(2) + '%';
     }
 
     function drawDiagram() {
-      const W = canvas.offsetWidth || 600;
-      canvas.width  = W;
-      const H       = canvas.height;
-      const angle   = getAngle();
-      const dist    = getDist();
-      const circ    = (360 / angle) * dist;
-
+      if (!diagramSurface) return;
+      const W = diagramSurface.width, H = diagramSurface.height;
+      const theta = getAngle() * Math.PI / 180;
+      const colors = SimKit.theme.colors();
       ctx.clearRect(0, 0, W, H);
-
-      // Sky gradient
-      const sky = ctx.createLinearGradient(0, 0, 0, H * 0.55);
-      sky.addColorStop(0, '#87CEEB');
-      sky.addColorStop(1, '#e0f4ff');
-      ctx.fillStyle = sky;
-      ctx.fillRect(0, 0, W, H * 0.55);
-
-      // Earth arc
-      const EARTH_R  = Math.min(W, H) * 1.6;
-      const earthCX  = W / 2;
-      const earthCY  = H + EARTH_R - H * 0.48;
-
-      // Earth fill (visible arc)
-      const earthGrad = ctx.createRadialGradient(earthCX, earthCY, EARTH_R * 0.8, earthCX, earthCY, EARTH_R);
-      earthGrad.addColorStop(0, '#2d8a4e');
-      earthGrad.addColorStop(0.4, '#3aab5e');
-      earthGrad.addColorStop(1, '#1a5c30');
-      ctx.fillStyle = earthGrad;
-      ctx.beginPath();
-      ctx.arc(earthCX, earthCY, EARTH_R, Math.PI, 2 * Math.PI);
-      ctx.closePath();
-      ctx.fill();
-
-      // Ocean highlight strip
-      ctx.fillStyle = 'rgba(90,200,250,0.25)';
-      ctx.beginPath();
-      ctx.arc(earthCX, earthCY, EARTH_R, Math.PI, 2 * Math.PI);
-      ctx.closePath();
-      ctx.fill();
-
-      // Surface line
-      ctx.strokeStyle = 'rgba(0,60,20,0.35)';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.arc(earthCX, earthCY, EARTH_R, Math.PI * 1.1, Math.PI * 1.9);
-      ctx.stroke();
-
-      // City positions
-      // Syene: directly south (bottom centre of arc), Sun directly overhead
-      // Alexandria: to the north, offset by the angle
-      const syeneAngle = Math.PI + Math.PI / 2;    // straight up from Earth centre
-      const alexAngle  = syeneAngle - (angle * Math.PI / 180); // offset north by shadow angle
-
-      function cityPos(a) {
-        return {
-          x: earthCX + EARTH_R * Math.cos(a),
-          y: earthCY + EARTH_R * Math.sin(a),
-        };
+      ctx.fillStyle = colors.bg; ctx.fillRect(0, 0, W, H);
+      const ink = colors.text, ray = '#a66500', arc = '#007f8d';
+      function line(x1,y1,x2,y2,color,width=2,dash=[]) {
+        ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=width; ctx.setLineDash(dash);
+        ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); ctx.setLineDash([]);
       }
-      function cityNormal(a) {
-        // outward unit vector
-        return { nx: Math.cos(a), ny: Math.sin(a) };
+      function text(value,x,y,color=ink,align='left') {
+        ctx.font='600 13px Inter, sans-serif'; ctx.fillStyle=color; ctx.textAlign=align; ctx.fillText(value,x,y);
       }
-
-      const syene = cityPos(syeneAngle);
-      const alex  = cityPos(alexAngle);
-      const syeneN = cityNormal(syeneAngle);
-      const alexN  = cityNormal(alexAngle);
-
-      const GNOMON = 38; // stick height in px
-
-      // Draw arc between cities (shows the measured distance)
-      ctx.strokeStyle = '#ff9500';
-      ctx.lineWidth = 3;
-      ctx.setLineDash([6, 4]);
-      ctx.beginPath();
-      ctx.arc(earthCX, earthCY, EARTH_R, Math.min(syeneAngle, alexAngle), Math.max(syeneAngle, alexAngle));
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // Distance label on arc
-      const midArc = (syeneAngle + alexAngle) / 2;
-      const midArcPt = cityPos(midArc);
-      const labelR = EARTH_R - 22;
-      const labelX = earthCX + labelR * Math.cos(midArc);
-      const labelY = earthCY + labelR * Math.sin(midArc);
-      ctx.fillStyle = '#b35900';
-      ctx.font = 'bold 10px Inter,sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(dist.toLocaleString() + ' km', labelX, labelY);
-
-      // Sun rays — parallel, coming from top-right
-      const sunRayDX = 0;   // straight down
-      const sunRayDY = 1;
-      ctx.strokeStyle = 'rgba(255,204,0,0.55)';
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([5, 5]);
-      [-30, 0, 30, 60, 90, 120].forEach(ox => {
-        const rx = syene.x + ox;
-        ctx.beginPath();
-        ctx.moveTo(rx, 0);
-        ctx.lineTo(rx, syene.y - GNOMON - 2);
-        ctx.stroke();
-      });
-      ctx.setLineDash([]);
-
-      // ── Syene gnomon ── (no shadow — sun directly overhead)
-      const sGx = syene.x;
-      const sGy = syene.y;
-      // Stick along normal
-      ctx.strokeStyle = '#5c3317';
-      ctx.lineWidth = 3;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(sGx, sGy);
-      ctx.lineTo(sGx + syeneN.nx * GNOMON, sGy + syeneN.ny * GNOMON);
-      ctx.stroke();
-      ctx.lineCap = 'butt';
-
-      // Sun ray hits tip of Syene stick — no angle
-      ctx.strokeStyle = '#ffcc00';
-      ctx.lineWidth = 2;
-      const sTipX = sGx + syeneN.nx * GNOMON;
-      const sTipY = sGy + syeneN.ny * GNOMON;
-      ctx.beginPath();
-      ctx.moveTo(sTipX, 10);
-      ctx.lineTo(sTipX, sTipY);
-      ctx.stroke();
-
-      // Syene label
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 10px Inter,sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('Syene', sGx, sGy + 14);
-      ctx.fillStyle = 'rgba(255,255,255,0.7)';
-      ctx.font = '9px Inter,sans-serif';
-      ctx.fillText('No shadow', sGx, sGy + 25);
-
-      // ── Alexandria gnomon ── (shadow = angle)
-      const aGx = alex.x;
-      const aGy = alex.y;
-      // Stick along normal (perpendicular to Earth's surface at Alex)
-      const aTipX = aGx + alexN.nx * GNOMON;
-      const aTipY = aGy + alexN.ny * GNOMON;
-
-      ctx.strokeStyle = '#5c3317';
-      ctx.lineWidth = 3;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(aGx, aGy);
-      ctx.lineTo(aTipX, aTipY);
-      ctx.stroke();
-      ctx.lineCap = 'butt';
-
-      // Sun ray hits tip of Alex stick — continues straight down
-      ctx.strokeStyle = '#ffcc00';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(aTipX, 10);
-      ctx.lineTo(aTipX, aTipY);
-      ctx.stroke();
-
-      // Shadow line (projected ray continuing past stick to ground)
-      // The ray is vertical; the stick is angled — so shadow appears offset
-      // Shadow point on surface: project vertical ray from tip down to surface circle
-      // Since ray is vertical, shadow is directly below the tip
-      // Find where vertical line from aTipX intersects the Earth circle
-      const dx2 = aTipX - earthCX;
-      const a2coeff = 1;
-      const b2coeff = 2 * (earthCY - earthCY); // simplifies
-      const disc = EARTH_R * EARTH_R - dx2 * dx2;
-      if (disc >= 0) {
-        const shadowY = earthCY - Math.sqrt(disc); // upper intersection (surface)
-        ctx.strokeStyle = 'rgba(80,40,0,0.5)';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([3, 3]);
-        ctx.beginPath();
-        ctx.moveTo(aTipX, aTipY);
-        ctx.lineTo(aTipX, shadowY);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Angle arc at tip of stick
-        const angleRad = angle * Math.PI / 180;
-        const arcR = 16;
-        // The stick direction angle from vertical: the stick normal is alexN, vertical is (0,-1)
-        // Angle between them is exactly `angle` degrees
-        const stickAngleFromUp = Math.atan2(alexN.nx, -alexN.ny); // angle of stick from straight up
-        ctx.strokeStyle = '#ff3b30';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.arc(aTipX, aTipY, arcR,
-          -Math.PI / 2,
-          -Math.PI / 2 + stickAngleFromUp, false);
-        ctx.stroke();
-
-        // Angle label
-        ctx.fillStyle = '#ff3b30';
-        ctx.font = 'bold 10px Inter,sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText(angle.toFixed(1) + '°', aTipX + arcR + 3, aTipY - 2);
+      function arrow(x1,y1,x2,y2) {
+        line(x1,y1,x2,y2,ray); const a=Math.atan2(y2-y1,x2-x1);
+        line(x2,y2,x2-8*Math.cos(a-.4),y2-8*Math.sin(a-.4),ray);
+        line(x2,y2,x2-8*Math.cos(a+.4),y2-8*Math.sin(a+.4),ray);
       }
-
-      // Alexandria label
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 10px Inter,sans-serif';
-      ctx.textAlign = 'center';
-      // Label position — offset based on direction of normal
-      const lOff = 14;
-      ctx.fillText('Alexandria', aGx + alexN.nx * lOff * 1.5, aGy + 14);
-
-      // ── Centre angle indicator ──────────────────────── */
-      const centerR = 40;
-      ctx.strokeStyle = 'rgba(255,149,0,0.6)';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.arc(earthCX, earthCY, centerR,
-        Math.min(syeneAngle, alexAngle), Math.max(syeneAngle, alexAngle));
-      ctx.stroke();
-      ctx.fillStyle = '#ff9500';
-      ctx.font = 'bold 9px Inter,sans-serif';
-      ctx.textAlign = 'center';
-      const cLabelA = (syeneAngle + alexAngle) / 2;
-      ctx.fillText(angle.toFixed(1) + '°', earthCX + (centerR + 14) * Math.cos(cLabelA),
-        earthCY + (centerR + 14) * Math.sin(cLabelA));
-
-      // Sun icon
-      ctx.fillStyle = '#ffcc00';
-      ctx.font = '22px serif';
-      ctx.textAlign = 'left';
-      ctx.fillText('☀', W - 36, 28);
-
-      // Legend
-      ctx.font = '9px Inter,sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillStyle = '#ff9500';
-      ctx.fillText('▬ arc distance = ' + dist.toLocaleString() + ' km', 10, H - 32);
-      ctx.fillStyle = '#ff3b30';
-      ctx.fillText('↺ shadow angle = ' + angle.toFixed(1) + '° = 1/' + Math.round(360 / angle) + ' of 360°', 10, H - 18);
-      ctx.fillStyle = '#34c759';
-      ctx.textAlign = 'right';
-      ctx.fillText('Circumference ≈ ' + Math.round(circ).toLocaleString() + ' km', W - 10, H - 18);
+      text('1 · Whole Earth: two local verticals',16,24);
+      const R=Math.min(105,W*.27), cx=W*.5, cy=190;
+      ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.fillStyle='#174b70'; ctx.fill();
+      ctx.strokeStyle='#56bdc8'; ctx.lineWidth=2; ctx.stroke();
+      const sx=cx, sy=cy-R, ax=cx-R*Math.sin(theta), ay=cy-R*Math.cos(theta);
+      for(let x=cx-R*.8;x<=cx+R*.8;x+=R*.4) arrow(x,43,x,cy-Math.sqrt(R*R-(x-cx)**2)-4);
+      line(cx,cy,sx,sy,'#d6edf7',1,[4,4]); line(cx,cy,ax,ay,'#d6edf7',1,[4,4]);
+      line(sx,sy,sx,sy-24,'#aa643b',4); line(ax,ay,ax-24*Math.sin(theta),ay-24*Math.cos(theta),'#aa643b',4);
+      ctx.beginPath(); ctx.arc(cx,cy,45,-Math.PI/2-theta,-Math.PI/2); ctx.strokeStyle='#ffcc66'; ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx,cy,R,-Math.PI/2-theta,-Math.PI/2); ctx.strokeStyle='#ffcc66'; ctx.lineWidth=5; ctx.stroke();
+      text('Center',cx,cy+25,'#ffffff','center'); text(getAngle().toFixed(1)+'°',cx-24,cy-53,'#ffffff','center');
+      const leftLabel = Math.max(12,cx-R-105), rightLabel = Math.min(W-12,cx+R+105);
+      line(ax,ay,leftLabel+55,88,arc,1);
+      text('Alexandria',leftLabel,65); text('Shadow',leftLabel,82);
+      line(sx,sy,rightLabel-55,88,arc,1);
+      text('Syene',rightLabel,65,ink,'right'); text('No shadow',rightLabel,82,ink,'right');
+      text('Yellow arc = '+getDist().toLocaleString()+' km',W/2,cy+R+25,ink,'center');
+      text('2 · Magnified measurement at Alexandria',16,345);
+      const baseX=W*.36, baseY=470, stickH=95, shadow=stickH*Math.tan(theta);
+      line(25,baseY,W-25,baseY,arc,3);
+      line(baseX,baseY,baseX,baseY-stickH,'#aa643b',5);
+      arrow(baseX-30*Math.sin(theta),baseY-stickH-30*Math.cos(theta),baseX+shadow,baseY);
+      line(baseX,baseY,baseX+shadow,baseY,ink,6);
+      line(baseX,baseY-stickH,baseX,baseY-stickH+42,arc,1,[3,3]);
+      ctx.beginPath(); ctx.arc(baseX,baseY-stickH,35,Math.PI/2-theta,Math.PI/2); ctx.strokeStyle=arc; ctx.lineWidth=2;ctx.stroke();
+      text(getAngle().toFixed(1)+'°',baseX+38,baseY-stickH+35);
+      text('1 m stick',baseX-12,baseY-45,ink,'right');
+      text('Shadow: '+(100*Math.tan(theta)).toFixed(1)+' cm',W/2,500,ink,'center');
+      text('Stick height and shadow share one scale.',W/2,525,ink,'center');
+      const fraction = getAngle()/360*100;
+      document.getElementById('ec-geometry-summary').textContent =
+        'Angle '+getAngle().toFixed(1)+'° spans '+fraction.toFixed(2)+'% of a full turn. '+
+        'A 1 m stick casts a '+(100*Math.tan(theta)).toFixed(1)+' cm shadow. Estimated circumference: '+Math.round(360/getAngle()*getDist()).toLocaleString()+' km.';
     }
+    diagramSurface = SimKit.canvas2d(canvas, {box:canvas.parentElement,height:540,onResize:()=>{if(diagramSurface) drawDiagram();}});
+    SimKit.theme.onChange(()=>drawDiagram());
 
     function update() {
       updateReadout();
@@ -1257,27 +1117,7 @@
       scoreOut.textContent = score + ' / 3';
     }
 
-    const boatDistance = document.getElementById('boat-distance');
-    const boatDistanceOut = document.getElementById('boat-distance-out');
-    const curveDrop = document.getElementById('curve-drop');
-    const boatHidden = document.getElementById('boat-hidden');
-    const boat = document.getElementById('lab-boat');
-
-    function updateBoatTrial() {
-      const distanceKm = Number(boatDistance.value);
-      const dropMetres = (distanceKm * distanceKm) / 12.742;
-      const hiddenPercent = Math.min(92, Math.max(0, (dropMetres - 2) * 2.1));
-      boatDistanceOut.textContent = distanceKm + ' km';
-      curveDrop.textContent = dropMetres.toFixed(1) + ' m';
-      boat.style.clipPath = 'inset(0 0 ' + hiddenPercent + '% 0)';
-      boat.style.transform = 'translateX(-50%) scale(' + Math.max(.7, 1 - distanceKm / 180) + ')';
-      boatHidden.textContent = hiddenPercent < 8 ? 'Hull visible' : hiddenPercent < 48 ? 'Hull first' : hiddenPercent < 82 ? 'Most is hidden' : 'Nearly all hidden';
-    }
-    boatDistance.addEventListener('input', updateBoatTrial);
-    updateBoatTrial();
     document.getElementById('boat-test').addEventListener('click', () => {
-      boatDistance.value = 28;
-      updateBoatTrial();
       document.getElementById('boat-verdict').classList.add('show');
       completeStation(1);
     });
@@ -1294,12 +1134,11 @@
       labShadowOut.textContent = degrees.toFixed(1) + '°';
       shadowAngleLabel.textContent = degrees.toFixed(1) + '°';
       labCirc.textContent = Math.round(calculatedCirc).toLocaleString() + ' km';
-      shadowCast.style.width = (48 + degrees * 6) + 'px';
+      shadowCast.style.width = (74 * Math.tan(degrees * Math.PI / 180)) + 'px';
     }
     labShadowAngle.addEventListener('input', updateShadowTrial);
     updateShadowTrial();
     document.getElementById('shadow-test').addEventListener('click', () => {
-      labShadowAngle.value = 7.2;
       updateShadowTrial();
       document.getElementById('shadow-verdict').classList.add('show');
       completeStation(2);
@@ -1351,6 +1190,7 @@
   </script>
   <script src="../../assets/js/classroom-animations.js"></script>
   <script src="../../assets/js/lesson-layout.js"></script>
+  <script type="module" src="../../assets/js/lessons/earth-circumference-ocean.mjs"></script>
 <script src="../../assets/js/lesson-print-button.js"></script>
 </body>
 </html>

@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 379 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 396 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -15,7 +15,7 @@ This metadata-only draft organizes 379 public lessons and classifies 12 supporti
 
 # Volume I — Mathematical Thinking, Measurement & Astronomy
 
-Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 50 lessons
+Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 51 lessons
 
 ## Mathematics & Quantitative Reasoning (MAT)
 
@@ -43,25 +43,26 @@ Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 50 lesson
 - **MAT-17** — Linear Equations & Slope
 - **MAT-18** — Area & Perimeter Playground
 - **MAT-19** — Slope of a Curve
-- **MAT-20** — Minecraft Calculus: Terrain & Water Flow
+- **MAT-20** — Snap, Crackle, Pop: The Ladder of Time Derivatives
+- **MAT-21** — Minecraft Calculus: Terrain & Water Flow
 
 ### Chance, Patterns & Sequences
 
-- **MAT-21** — How Spread Out?
-- **MAT-22** — Probability Simulator
-- **MAT-23** — Galton Board & Pachinko Lab
-- **MAT-24** — Fibonacci Sequence
-- **MAT-25** — Mean, Median & Mode
+- **MAT-22** — How Spread Out?
+- **MAT-23** — Probability Simulator
+- **MAT-24** — Galton Board & Pachinko Lab
+- **MAT-25** — Fibonacci Sequence
+- **MAT-26** — Mean, Median & Mode
 
 ### Advanced Patterns & Open Questions
 
-- **MAT-26** — The Unit Circle & Waves
-- **MAT-27** — Algebra Tiles: Factoring
-- **MAT-28** — Completing the Square
-- **MAT-29** — Fourier Series & Transform — _also indexed in Audio, Lighting & Production Technology_
-- **MAT-30** — How 𝑒 Was Discovered
-- **MAT-31** — Riemann Hypothesis
-- **MAT-32** — The Equations Iceberg
+- **MAT-27** — The Unit Circle & Waves
+- **MAT-28** — Algebra Tiles: Factoring
+- **MAT-29** — Completing the Square
+- **MAT-30** — Fourier Series & Transform — _also indexed in Audio, Lighting & Production Technology_
+- **MAT-31** — How 𝑒 Was Discovered
+- **MAT-32** — Riemann Hypothesis
+- **MAT-33** — The Equations Iceberg
 
 ## Astronomy & Space Science (COS)
 
@@ -94,7 +95,7 @@ Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 50 lesson
 
 # Volume II — Physics, Chemistry, Matter & Energy
 
-Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 49 lessons
+Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 55 lessons
 
 ## Physics & Physical Systems (PHY)
 
@@ -161,21 +162,27 @@ Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 49 l
 ### Atoms, Elements & Bonds
 
 - **CHE-01** — Atoms: Structure, Motion & Matter
-- **CHE-02** — Periodic Table of Elements
-- **CHE-03** — Radioactive Decay: Alpha, Beta & Gamma
-- **CHE-04** — Water: The Architecture of H₂O
-- **CHE-05** — Molecular Bonding & Compounds Lab
+- **CHE-02** — Dalton and the Atomic Theory
+- **CHE-03** — Periodic Table of Elements
+- **CHE-04** — Mendeleev and the Periodic Law
+- **CHE-05** — Radioactive Decay: Alpha, Beta & Gamma
+- **CHE-06** — Water: The Architecture of H₂O
+- **CHE-07** — Molecular Bonding & Compounds Lab
+- **CHE-08** — States of Matter: Motion Makes the Difference
 
 ### Reactions, Catalysts & Chemical Systems
 
-- **CHE-06** — Titration
-- **CHE-07** — Catalysts & Activation Energy
-- **CHE-08** — Chemistry of Steam Machines
-- **CHE-09** — Plastics: Polymer Chemistry & Materials
+- **CHE-09** — Titration
+- **CHE-10** — Catalysts & Activation Energy
+- **CHE-11** — Chemistry of Steam Machines
+- **CHE-12** — Plastics: Polymer Chemistry & Materials
+- **CHE-13** — Stoichiometry: Counting by the Equation
+- **CHE-14** — Electrochemistry: When Reactions Push Electrons
+- **CHE-15** — Lavoisier and the Conservation of Mass
 
 # Volume III — Living Systems, Earth & Environment
 
-Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 39 lessons
+Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 40 lessons
 
 ## Biology & Life Science (BIO)
 
@@ -192,26 +199,27 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 - **BIO-07** — Anatomy of the Human Ear — _also indexed in Music: Theory, Instruments & Sound_
 - **BIO-08** — Homeostasis & Body Systems
-- **BIO-09** — Immunology & the Immune System
+- **BIO-09** — Nutrition: A Body Systems Investigation
+- **BIO-10** — Immunology & the Immune System
 
 ### Diversity, Classification & Adaptation
 
-- **BIO-10** — Living Things Explorer
-- **BIO-11** — Ecosystems & Food Webs
-- **BIO-12** — Alexander von Humboldt: The Father of Ecology
-- **BIO-13** — Classifying Life: Taxonomy of Every Kingdom — _also indexed in Chemistry & Chemical Systems_
-- **BIO-14** — Entomology: The Science of Insects
-- **BIO-15** — Axolotls & Neoteny
-- **BIO-16** — Slime Molds & Swarm Intelligence
-- **BIO-17** — Cryptozoology: From Footprints to Facts
+- **BIO-11** — Living Things Explorer
+- **BIO-12** — Ecosystems & Food Webs
+- **BIO-13** — Alexander von Humboldt: The Father of Ecology
+- **BIO-14** — Classifying Life: Taxonomy of Every Kingdom — _also indexed in Chemistry & Chemical Systems_
+- **BIO-15** — Entomology: The Science of Insects
+- **BIO-16** — Axolotls & Neoteny
+- **BIO-17** — Slime Molds & Swarm Intelligence
+- **BIO-18** — Cryptozoology: From Footprints to Facts
 
 ### Evolution & Deep Time
 
-- **BIO-18** — Natural Selection Lab
-- **BIO-19** — LUCA: Last Universal Common Ancestor
-- **BIO-20** — Life Invented the Animal — _also indexed in Chemistry & Chemical Systems_
-- **BIO-21** — The K-Pg Extinction
-- **BIO-22** — The Evolution of Wood
+- **BIO-19** — Natural Selection Lab
+- **BIO-20** — LUCA: Last Universal Common Ancestor
+- **BIO-21** — Life Invented the Animal — _also indexed in Chemistry & Chemical Systems_
+- **BIO-22** — The K-Pg Extinction
+- **BIO-23** — The Evolution of Wood
 
 ## Earth & Environmental Science (EAR)
 
@@ -329,9 +337,9 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 - **FAB-13** — Steam & VR Launch Protocol — _also indexed in Computer Science & Artificial Intelligence_
 - **FAB-14** — Materials Selection Lab
 
-### 3D Modeling with Blender
+### 3D Design Studio · Modeling with Blender
 
-- **FAB-15** — Blender Fundamentals Pathway — _also indexed in Game Design & Development_
+- **FAB-15** — 3D Design Studio Pathway — _also indexed in Game Design & Development_
 - **FAB-16** — Blender Interface & Navigation — _also indexed in Game Design & Development_
 - **FAB-17** — Windows & Doors — _also indexed in Game Design & Development_
 - **FAB-18** — Furniture Design — _also indexed in Game Design & Development_
@@ -340,9 +348,9 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 - **FAB-21** — Props & Hand Tools — _also indexed in Game Design & Development_
 - **FAB-22** — Materials, Lighting & Render — _also indexed in Game Design & Development_
 
-### Blender Workspaces
+### 3D Workflow Workspaces
 
-- **FAB-23** — Blender Workspaces Pathway — _also indexed in Game Design & Development_
+- **FAB-23** — 3D Workflow Workspaces — _also indexed in Game Design & Development_
 - **FAB-24** — Sculpting — _also indexed in Game Design & Development_
 - **FAB-25** — Geometry Nodes — _also indexed in Game Design & Development_
 - **FAB-26** — Compositing — _also indexed in Game Design & Development_
@@ -490,7 +498,7 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 84 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 93 lessons
 
 ## Visual Art & Design (DES)
 
@@ -520,18 +528,19 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **MUS-03** — The Piano: History, Keys & Chords
 - **MUS-04** — Violin Fingerboard Explorer
 - **MUS-05** — Drum Lab: Kit, Notation, Rudiments & Fills
-- **MUS-06** — Fake Book: Lead Sheets, Variations & Play-Along
+- **MUS-06** — The Saxophone: Reed, Breath & Melody
+- **MUS-07** — Fake Book: Lead Sheets, Variations & Play-Along
 
 ### Composers & Music History
 
-- **MUS-07** — Antonio Vivaldi
-- **MUS-08** — Johann Sebastian Bach
-- **MUS-09** — Wolfgang Amadeus Mozart
-- **MUS-10** — Ludwig van Beethoven
-- **MUS-11** — Frédéric Chopin
-- **MUS-12** — Pyotr Ilyich Tchaikovsky
-- **MUS-13** — Scott Joplin
-- **MUS-14** — Modes: From Greece to Today
+- **MUS-08** — Antonio Vivaldi
+- **MUS-09** — Johann Sebastian Bach
+- **MUS-10** — Wolfgang Amadeus Mozart
+- **MUS-11** — Ludwig van Beethoven
+- **MUS-12** — Frédéric Chopin
+- **MUS-13** — Pyotr Ilyich Tchaikovsky
+- **MUS-14** — Scott Joplin
+- **MUS-15** — Modes: From Greece to Today
 
 ## Language, Media & Critical Thinking (LAN)
 
@@ -594,24 +603,32 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **BIB-01** — Bible Foundations & Pathway
 - **BIB-02** — The World of the Bible
 - **BIB-03** — How the Bible Reached Us
-- **BIB-04** — Genesis 10: The Table of Nations
-- **BIB-05** — The Tabernacle
-- **BIB-06** — The Temple & God's Presence
-- **BIB-07** — Kingdoms, Prophets & Exile
-- **BIB-08** — The Feasts of Israel
-- **BIB-09** — Elijah: Prophet of the Living God
-- **BIB-10** — Isaiah: Holiness, Justice & Hope
-- **BIB-11** — Jeremiah: Courage, Covenant & Exile
-- **BIB-12** — Ezekiel: God’s Presence & a People Renewed
-- **BIB-13** — Lamentations: Grief, Prayer & Persistent Hope
-- **BIB-14** — Daniel: Faithfulness in Exile
-- **BIB-15** — The World of Jesus
-- **BIB-16** — Jesus' Parables Lab
-- **BIB-17** — Holy Week: The Final Days of Jesus
-- **BIB-18** — Acts: Jerusalem to the Nations
-- **BIB-19** — Paul's Missionary Journeys
-- **BIB-20** — Proverbs: Wisdom Decision Lab
-- **BIB-21** — The Sermon on the Mount
+- **BIB-04** — Genesis: Creation, Promise & Family
+- **BIB-05** — Genesis 10: The Table of Nations
+- **BIB-06** — Exodus: Rescue, Covenant & Presence
+- **BIB-07** — The Tabernacle
+- **BIB-08** — The Temple & God's Presence
+- **BIB-09** — Kingdoms, Prophets & Exile
+- **BIB-10** — Joshua to David: Land, Judges & Kings
+- **BIB-11** — The Feasts of Israel
+- **BIB-12** — Elijah: Prophet of the Living God
+- **BIB-13** — Isaiah: Holiness, Justice & Hope
+- **BIB-14** — Jeremiah: Courage, Covenant & Exile
+- **BIB-15** — Ezekiel: God’s Presence & a People Renewed
+- **BIB-16** — Lamentations: Grief, Prayer & Persistent Hope
+- **BIB-17** — Daniel: Faithfulness in Exile
+- **BIB-18** — The World of Jesus
+- **BIB-19** — Jesus’ Ministry: The Kingdom Arrives
+- **BIB-20** — Jesus' Parables Lab
+- **BIB-21** — Holy Week: The Final Days of Jesus
+- **BIB-22** — Acts: Jerusalem to the Nations
+- **BIB-23** — Paul's Missionary Journeys
+- **BIB-24** — The Epistles: Gospel Communities in Practice
+- **BIB-25** — Job: Suffering, Wisdom & Faithful Speech
+- **BIB-26** — Proverbs: Wisdom Decision Lab
+- **BIB-27** — Psalms: Learning to Pray the Whole Life
+- **BIB-28** — Revelation: Witness, Worship & New Creation
+- **BIB-29** — The Sermon on the Mount
 
 # Supporting Pages
 

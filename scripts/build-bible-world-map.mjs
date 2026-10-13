@@ -1,11 +1,12 @@
-// Generates assets/js/bible-world-map.js: projected coastline paths + ancient-realm polygons + wiki text.
-// Coastlines: Natural Earth 50m via world-atlas (public domain). Realm outlines are hand-drawn approximations.
+// Generates assets/js/bible-world-map-data.js: coastline paths + interpretive regions + wiki text.
+// Coastlines: shared Natural Earth 50m land (public domain). Realm outlines
+// are interpretive teaching regions, not dated or surveyed territorial borders.
 import fs from 'node:fs';
 import pc from 'polygon-clipping';
-const src = process.argv[2];
+const src = process.argv[2] || 'assets/geodata/world/land-50m.json';
 const topo = JSON.parse(fs.readFileSync(src, 'utf8'));
-const [sx, sy] = topo.transform.scale, [tx, ty] = topo.transform.translate;
-const arcs = topo.arcs.map(a => { let x = 0, y = 0; return a.map(([dx, dy]) => { x += dx; y += dy; return [x * sx + tx, y * sy + ty]; }); });
+const [sx, sy] = topo.transform?.scale || [1, 1], [tx, ty] = topo.transform?.translate || [0, 0];
+const arcs = (topo.arcs || []).map(a => { let x = 0, y = 0; return a.map(([dx, dy]) => { x += dx; y += dy; return [x * sx + tx, y * sy + ty]; }); });
 const ring = idx => idx.flatMap((i, k) => { const a = i < 0 ? arcs[~i].slice().reverse() : arcs[i]; return k ? a.slice(1) : a; });
 const B = { w: 4, e: 62, s: 9, n: 47 }, K = Math.cos(28 * Math.PI / 180), S = 17;
 const W = Math.round((B.e - B.w) * K * S), H = Math.round((B.n - B.s) * S);
@@ -14,9 +15,11 @@ const path = pts => 'M' + pts.map(p => P(p).map(v => v.toFixed(1)).join(' ')).jo
 const inBox = r => r.some(([x, y]) => x > B.w - 3 && x < B.e + 3 && y > B.s - 3 && y < B.n + 3);
 let base = '';
 const landPolys = [];
-for (const g of topo.objects.countries.geometries) {
-  const polys = g.type === 'Polygon' ? [g.arcs] : g.type === 'MultiPolygon' ? g.arcs : [];
-  for (const p of polys) { const r = ring(p[0]); if (inBox(r) && r.length > 6) { base += path(r); landPolys.push(p.map(h => ring(h).map(([x, y]) => [x, y]))); } }
+const geometries = topo.type === 'FeatureCollection' ? topo.features.map(f => f.geometry) : topo.objects.countries.geometries;
+for (const g of geometries) {
+  const raw = g.coordinates || g.arcs;
+  const polys = g.type === 'Polygon' ? [raw] : g.type === 'MultiPolygon' ? raw : [];
+  for (const p of polys) { const rings = g.coordinates ? p : p.map(ring); const r = rings[0]; if (inBox(r) && r.length > 3) { base += rings.map(path).join(''); landPolys.push(rings); } }
 }
 const realms = JSON.parse(fs.readFileSync(new URL('./bible-world-realms.json', import.meta.url)));
 // Smooth hand-drawn outlines (Chaikin corner cutting), then clip to real land so coasts follow true shorelines.
@@ -25,5 +28,5 @@ const closed = r => (r[0][0] === r.at(-1)[0] && r[0][1] === r.at(-1)[1]) ? r : [
 const land = pc.union(...landPolys.map(p => p.map(closed)).map(p => [p]).map(p => p[0]).map(x => [x]).map(x => x[0]).map(x => [x]));
 realms.forEach(r => { const sm = closed(chaikin(r.poly, 4)); const clipped = pc.intersection([sm], land);
   const P2 = ([lo, la]) => P([lo, la]); r.d = clipped.map(poly => poly.map(rg => 'M' + rg.map(q => P2(q).map(v => v.toFixed(1)).join(' ')).join('L') + 'Z').join('')).join(''); const c = r.poly.map(P); r.label = [c.reduce((a, p) => a + p[0], 0) / c.length, c.reduce((a, p) => a + p[1], 0) / c.length].map(v => +v.toFixed(0)); delete r.poly; });
-fs.writeFileSync('assets/js/bible-world-map-data.js', 'window.BIBLE_WORLD_MAP=' + JSON.stringify({ w: W, h: H, base, realms }) + ';\n');
+fs.writeFileSync('assets/js/bible-world-map-data.js', '/* Generated from shared Natural Earth 50m land; realms are interpretive regions, not exact historical borders. */\nwindow.BIBLE_WORLD_MAP=' + JSON.stringify({ w: W, h: H, base, realms, geography: { dataset: 'Natural Earth v5.1.2 50m', license: 'Public domain', projection: 'Regional equirectangular; standard latitude 28N', limits: 'Modern coastline reference. Shaded ancient regions are undated approximations, not measured territorial boundaries.' } }) + ';\n');
 console.log(W, H, base.length, realms.length);

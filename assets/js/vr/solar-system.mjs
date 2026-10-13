@@ -45,19 +45,8 @@ function bandTexture(colors, earth) {
   c.height = 128;
   const g = c.getContext('2d');
   const rand = (() => { let s = colors.length * 97; return () => ((s = (s * 16807) % 2147483647) / 2147483647); })();
-  if (earth) {
-    g.fillStyle = colors[0];
-    g.fillRect(0, 0, 256, 128);
-    g.fillStyle = colors[1];
-    for (let i = 0; i < 22; i++) {
-      g.beginPath();
-      g.ellipse(rand() * 256, 24 + rand() * 80, 8 + rand() * 26, 6 + rand() * 16, rand() * 3, 0, Math.PI * 2);
-      g.fill();
-    }
-    g.fillStyle = colors[3];
-    g.fillRect(0, 0, 256, 9);
-    g.fillRect(0, 119, 256, 9);
-  } else {
+  if (earth) return window.EarthEngine.createThreeTexture(THREE);
+  {
     let y = 0;
     while (y < 128) {
       const h = 4 + rand() * 14;

@@ -16,6 +16,7 @@
     { file: 'lessons/music/guitar.html', label: 'Guitar' },
     { file: 'lessons/music/violin-fingerboard.html', label: 'Violin' },
     { file: 'lessons/music/drums.html', label: 'Drums' },
+    { file: 'lessons/music/saxophone.html', label: 'Saxophone' },
     { file: 'lessons/music/fake-book.html', label: 'Fake Book' },
     { file: 'music-lab.html', label: 'Music Lab' }
   ];

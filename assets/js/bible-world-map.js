@@ -11,7 +11,7 @@
 
   var small = { canaan: 1, phoenicia: 1, transjordan: 1 }; // too small to label; use the chips below
   var svg = '<svg viewBox="0 0 ' + data.w + ' ' + data.h + '" role="group" aria-label="Map of the biblical world. Select a region to read about it.">' +
-    '<rect class="bwm-sea" width="' + data.w + '" height="' + data.h + '"/><path class="bwm-land" d="' + data.base + '"/>' +
+    '<rect class="bwm-sea" width="' + data.w + '" height="' + data.h + '"/><path class="bwm-land" fill-rule="evenodd" d="' + data.base + '"/>' +
     data.realms.map(function (r) {
       return '<path class="bwm-realm" data-id="' + r.id + '" d="' + r.d + '" tabindex="0" role="button" aria-pressed="false" aria-label="' + esc(r.name) + '"><title>' + esc(r.name) + '</title></path>';
     }).join('') +
@@ -20,13 +20,13 @@
   var chips = '<div class="bwm-chips">' + data.realms.map(function (r) { return '<button type="button" class="bwm-chip" data-id="' + r.id + '">' + esc(r.name) + '</button>'; }).join('') + '</div>';
 
   grid.classList.add('bwm-grid');
-  grid.innerHTML = '<div class="bwm-map">' + svg + chips + '</div><div class="bwm-panel" aria-live="polite"></div>';
+  grid.innerHTML = '<div class="bwm-map">' + svg + chips + '<p class="bwm-geography-note">Shading identifies undated teaching regions, not measured territorial borders. Modern coastlines: <a href="https://www.naturalearthdata.com/">Natural Earth</a> v5.1.2, 50m, public domain. Actual ancient shorelines and political boundaries changed over time.</p></div><div class="bwm-panel" aria-live="polite"></div>';
   var panel = grid.querySelector('.bwm-panel');
   var realms = Array.prototype.slice.call(grid.querySelectorAll('.bwm-realm'));
   var svgEl = grid.querySelector('svg');
 
   function intro() {
-    panel.innerHTML = '<h3>Choose a land</h3><p>Click any shaded region to outline its border and read about its people, religion, leaders, and place in the Bible. Outlines are approximate, drawn over today’s coastlines.</p>';
+    panel.innerHTML = '<h3>Choose a land</h3><p>Select a teaching region to read about its people, religion, leaders, and place in the Bible. Shading shows approximate areas of association, not dated territorial borders. Modern coastlines: Natural Earth v5.1.2, 50m, public domain; regional equirectangular projection at 28° north.</p>';
   }
   function list(items) { return '<ul>' + items.map(function (i) { return '<li>' + esc(i) + '</li>'; }).join('') + '</ul>'; }
   function select(id) {
@@ -40,7 +40,7 @@
     });
     svgEl.querySelectorAll('.bwm-label').forEach(function (t) { svgEl.appendChild(t); });
     panel.innerHTML = '<h3>' + esc(r.name) + '</h3>' +
-      '<dl><dt>Modern-day country</dt><dd>' + esc(r.modern) + '</dd>' +
+      '<dl><dt>Modern geographic reference</dt><dd>' + esc(r.modern) + '</dd>' +
       (r.era ? '<dt>In Bible times</dt><dd>' + esc(r.era) + '</dd>' : '') +
       '<dt>Religion</dt><dd>' + esc(r.religion) + '</dd>' +
       '<dt>Leaders</dt><dd>' + list(r.leaders) + '</dd>' +
