@@ -230,26 +230,38 @@ On Ages the 2–5 band labels still cut at fit zoom are the ones with no free ro
 hold nine overlapping eras. Their names appear as you zoom in. Performance: a zoom step is about
 the same as Phase 1 (≈120ms median on a busy machine; Phase 1 measured ≈117ms in the same run).
 
-## Phase 3: density and navigation
+## Phase 3: density and navigation (done)
 
-**3a. Clusters instead of smears** (#3)
-- When compact dots would overlap (centres < 12px apart), merge them into one cluster pill. It shows
-  the count (`+14`) and is split into the colours of the groups inside it, like a small stacked bar.
-- Clicking a cluster flies to the zoom where its events get labels (reusing the `targetFor` logic).
-  Arrow-key stepping still visits each event.
-- Clusters are built in `layout()` after lane placement, so their cost stays proportional to the
-  number of visible events.
-- Target: `dotHits` 0 in every case (Ages now 74–123).
+**3a. Clusters instead of smears**
+- Compact dots closer than 26px fold into a pill showing their count. A 3px strip along its base
+  is split into the colours of the groups inside, in order.
+- A dense run splits every ~90px into pills that meet edge to edge. The crowd still shows where
+  it's thickest, and you never get one pill as long as the screen.
+- Pressing a pill zooms until its span fills about two-thirds of the view, and selects its first
+  event. On Ages, pressing the 61-event pill at Fit zoomed 7.6× and gave 28 of the 61 a label.
+- The selected event's dot always stays on top of its cluster. Arrow keys still step through every
+  event.
+- A bug caught by the audit before shipping: marks folded into a cluster measured 0px wide
+  (`display: none`), so labels overlapped. Measuring now clears the cluster class first.
+- The audit's `dotHits` now counts overlapping things actually drawn on the axis (dots and pills).
+- Target met: `dotHits` is 0 in every case. Ages was 74–123 and now shows 3–4 pills. Labels
+  never overlap.
 
-**3b. Overview strip (minimap)** (#4)
-- Add a 28px strip under the axis showing the whole timeline at Fit zoom: era bands as colour blocks,
-  every event as a 1px tick in its group colour, and a window rectangle for the current view.
-- Dragging the window pans. Dragging its edges zooms. Clicking elsewhere flies there with `flyTo`.
-- The window animates live during flights and tours, so a jump from the Big Bang to the iPhone shows
-  where you left and where you landed.
-- Turn it on automatically when the timeline has ≥ 25 events or uses log scale, or whenever the zoom
-  is above 3. Opt out with `data-timeline-overview="off"`.
-- It is `aria-hidden`. The keyboard path stays the arrow keys and +/−.
+**3b. Overview strip**
+- A 28px strip under the track shows the whole timeline: era blocks in their strata colours, a
+  tick per event in its group colour (taller for `data-major`), a line at the selected event,
+  and a window on the view.
+- Drag the window to move, drag its edges to zoom (wider grips on touch), or click elsewhere to
+  go there. The window follows every scroll, zoom, flight and tour stop.
+- Checked with a real mouse: dragging the window 60px moved it 59px; dragging the right edge zoomed
+  43.6× → 15.7× with the left edge fixed; clicking moved the view there at the same zoom. The
+  audit's `ovErr`, the gap between the window and the true view, is 0.6–2.4px.
+- In full screen the track sits right on top of the strip. On a phone held sideways, the track
+  and strip share the left column and the card sits beside them.
+- **Changed from the plan:** the strip doesn't appear at zoom > 3. Switching it on and off mid-zoom
+  made the page below jump. It shows on long timelines (25+ events, or Deep time available):
+  Ages and the Bible timeline among the audit cases. `data-timeline-overview="on|off"` overrides
+  that either way.
 
 ## Phase 4: polish
 

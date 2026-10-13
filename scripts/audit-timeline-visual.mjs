@@ -6,7 +6,7 @@
 //   compact   — events too crowded to label (a bare dot on the axis)
 //   cut       — labelled events whose label is cut off ("…" or CSS ellipsis)
 //   lanes     — label rows stacked above the axis
-//   dotHits   — neighbouring compact dots closer than 10px (they smear together)
+//   dotHits   — things on the axis (compact dots, cluster pills) that overlap a neighbour
 //   overlaps  — labels that overlap another label (should always be 0)
 //   ticks     — date labels visible on the axis
 //   trackPct  — track height as a share of the window
@@ -22,6 +22,8 @@
 //   cursor    — the date shown where the selected event's reading line meets the axis
 //   tickHits  — axis labels (ticks, the cursor's date) that overlap each other
 //   zero      — the BC|AD line is drawn (True scale across year 0)
+//   clusters  — cluster pills on the axis (crowded events merged, with a count)
+//   overview  — the overview strip is shown; ovErr = px between its window and the real view
 //
 // Usage: node scripts/audit-timeline-visual.mjs [--case=hopper,ages] [--size=desktop,phone]
 //        [--theme=day,night] [--out=tmp/dir] [--save-baseline]
@@ -62,7 +64,7 @@ const SIZES = pick("size", [
 ]);
 const THEMES = pick("theme", ["day", "night"]);
 const METRICS = ["events", "compact", "cut", "lanes", "dotHits", "overlaps", "ticks", "trackPct", "datePx", "labelPx", "bandCut", "unusedPct", "searchBg",
-  "minor", "grid", "stripes", "spans", "bars", "hues", "bandLost", "cursor", "tickHits", "zero"];
+  "minor", "grid", "stripes", "spans", "bars", "hues", "bandLost", "cursor", "tickHits", "zero", "clusters", "overview", "ovErr"];
 
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(OUT, { recursive: true });
@@ -181,9 +183,11 @@ function measure() {
   const cut = labelled.filter((m) => clipped(m.querySelector(".tl-mark-label")) || clipped(m.querySelector(".tl-mark-date"))).length;
   const lanes = new Set(labelled.map((m) => m.style.top)).size;
 
-  const xs = compact.map((m) => m.getBoundingClientRect()).map((r) => r.left + r.width / 2).sort((a, b) => a - b);
+  // Dots folded into a cluster are not drawn; what is drawn on the axis must not overlap.
+  const axisItems = [...compact, ...root.querySelectorAll(".tl-cluster")]
+    .map((m) => m.getBoundingClientRect()).filter((r) => r.width > 0).sort((a, b) => a.left - b.left);
   let dotHits = 0;
-  for (let i = 1; i < xs.length; i++) if (xs[i] - xs[i - 1] < 10) dotHits++;
+  for (let i = 1; i < axisItems.length; i++) if (axisItems[i].left < axisItems[i - 1].right - 1) dotHits++;
 
   const rects = labelled.map((m) => m.getBoundingClientRect());
   let overlaps = 0;
@@ -280,7 +284,22 @@ function measure() {
       cursor,
       tickHits,
       zero: count(".tl-gridline.tl-zero") > 0,
+      clusters: count(".tl-cluster"),
+      ...overview(),
     };
+  }
+
+  // The strip's window should cover the same share of the timeline as the viewport does.
+  function overview() {
+    const strip = root.querySelector(".tl-overview");
+    if (!strip || strip.hidden || !strip.getBoundingClientRect().width) return { overview: false, ovErr: null };
+    const win = strip.querySelector(".tl-ov-window").getBoundingClientRect();
+    const sr = strip.getBoundingClientRect();
+    // Strip and canvas both keep a 28px margin at each end; between them the scale is linear.
+    const inner = t.canvas.offsetWidth - 56;
+    const toStrip = (x) => sr.left + 28 + (x - 28) / inner * (sr.width - 56);
+    const a = toStrip(t.viewport.scrollLeft), b = toStrip(t.viewport.scrollLeft + t.viewport.clientWidth);
+    return { overview: true, ovErr: Math.round(Math.max(Math.abs(win.left - a), Math.abs(win.right - b)) * 10) / 10 };
   }
 }
 

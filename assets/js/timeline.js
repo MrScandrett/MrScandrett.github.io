@@ -32,7 +32,9 @@
  * is remembered site-wide), data-timeline-gaps (show "12 years later" in the list),
  * data-timeline-tour (a ▶ Play button that flies from headline event to headline
  * event, data-major ones if there are a few, else all), data-timeline-cosmic (the
- * detail card places each event on Sagan's Cosmic Calendar: the universe as one year).
+ * detail card places each event on Sagan's Cosmic Calendar: the universe as one year),
+ * data-timeline-overview="on|off" (the overview strip under the track; on by default for 25+
+ * events or Deep time). Crowded dots fold into count pills; press one to zoom in.
  * Every track has a full-screen button (F) for projecting (on iPhone, which has no
  * element fullscreen, it fills the window instead); moves between distant events
  * fly (zoom out, pan, zoom in) unless the reader prefers reduced motion. On touch
@@ -484,7 +486,8 @@
       search: host.hasAttribute('data-timeline-search'),
       tour: host.hasAttribute('data-timeline-tour'),
       cosmic: host.hasAttribute('data-timeline-cosmic'),
-      lanes: Math.min(Math.max(parseInt(host.getAttribute('data-timeline-lanes'), 10) || MAX_LANES, 1), 12)
+      lanes: Math.min(Math.max(parseInt(host.getAttribute('data-timeline-lanes'), 10) || MAX_LANES, 1), 12),
+      overview: host.getAttribute('data-timeline-overview') || ''
     };
     this.query = '';
     this.zoom = 1;
@@ -688,6 +691,15 @@
     canvas.appendChild(this.markLayer);
     viewport.appendChild(canvas);
     track.appendChild(viewport);
+    // The overview strip: the whole timeline small, with a window on the part in view.
+    this.overview = track.appendChild(el('div', 'tl-overview'));
+    this.overview.setAttribute('aria-hidden', 'true');
+    this.overview.title = 'The whole timeline: drag the window to move, its edges to zoom, or click to go there';
+    this.ovItems = this.overview.appendChild(el('div', 'tl-ov-items'));
+    this.ovSel = this.overview.appendChild(el('span', 'tl-ov-sel'));
+    this.ovWindow = this.overview.appendChild(el('span', 'tl-ov-window'));
+    this.overview.hidden = true;
+    this.bindOverview();
     var touch = global.matchMedia && global.matchMedia('(pointer: coarse)').matches;
     var hint = track.appendChild(el('p', 'tl-hint', touch
       ? 'Swipe sideways to move · pinch to zoom · tap an event to read it · ⛶ Full screen fills the screen (try it sideways)'
@@ -1387,6 +1399,8 @@
     if (!this.widths) {
       this.measured = {};
       this.tickFont = null;
+      this.overview.hidden = !this.wantsOverview(events.length);
+      this.buildOverview(pos);
       var type = 1;
       if (full) {
         // The projector: the largest type that fits the screen without hiding more labels than 1×.
@@ -1439,6 +1453,7 @@
       p.it.stem.style.top = stemTop + 'px';
       p.it.stem.style.height = (axisY - stemTop) + 'px';
     });
+    this.layoutClusters(res.placed, axisY, inner);
     // Ranges: a span just above the axis from start to end, labelled or not. Overlapping spans
     // stack three deep; past that the top one turns hatched ("more here, zoom in").
     var rowEnd = [];
@@ -1461,6 +1476,172 @@
     this.renderTicks();
   };
 
+  // Crowded dots on the axis fold into one pill with a count, its colours split by what's inside;
+  // pressing it zooms in until they get labels. A dense run splits every ~90px into pills that
+  // meet edge to edge, so the pills still show where the crowd is thickest.
+  Timeline.prototype.layoutClusters = function (placed, axisY, inner) {
+    var self = this;
+    var GAP = 26, RUN = 90;
+    var dots = placed.filter(function (p) { return p.lane === -1; }).sort(function (a, b) { return a.px - b.px; });
+    var groups = [], g = null;
+    dots.forEach(function (p) {
+      if (g && p.px - g.last < GAP && p.px - g.first < RUN) { g.items.push(p); g.last = p.px; return; }
+      if (g) g.joined = p.px - g.last < GAP; // split mid-run: the next pill picks up where this ends
+      g = { items: [p], first: p.px, last: p.px };
+      groups.push(g);
+    });
+    this.events.forEach(function (it) { it.clustered = false; });
+    var pool = this.clusters || (this.clusters = []);
+    var n = 0;
+    groups.forEach(function (g, i) {
+      if (g.items.length < 2) return;
+      var count = g.items.length;
+      var minW = (String(count).length + 2) * 7 + 4;
+      var w = Math.max(g.last - g.first + 14, minW);
+      var a = (g.first + g.last) / 2 - w / 2, b = a + w;
+      var prev = groups[i - 1], next = groups[i + 1];
+      if (prev && prev.joined) a = (prev.last + g.first) / 2 + 1;
+      if (g.joined && next) b = (g.last + next.first) / 2 - 1;
+      var pill = pool[n] || (pool[n] = self.makeCluster());
+      n++;
+      pill.hidden = false;
+      pill.style.left = a + 'px';
+      pill.style.width = Math.max(b - a, 6) + 'px';
+      pill.style.top = axisY + 'px';
+      pill.textContent = count;
+      // Stacked colours, in the order the groups appear inside.
+      var tints = [], counts = {};
+      g.items.forEach(function (p) {
+        var c = p.it.tint || 'var(--tl-accent)';
+        if (!(c in counts)) { counts[c] = 0; tints.push(c); }
+        counts[c]++;
+      });
+      var at = 0;
+      pill.style.setProperty('--tl-mix', 'linear-gradient(to right, ' + tints.map(function (c) {
+        var from = at;
+        at += counts[c] / count * 100;
+        return c + ' ' + from.toFixed(1) + '% ' + at.toFixed(1) + '%';
+      }).join(', ') + ')');
+      var its = g.items.map(function (p) { return p.it; });
+      var when = function (it) { return it.display || it.when; };
+      var range = when(its[0]) + ' to ' + when(its[its.length - 1]);
+      pill.title = count + ' events, ' + range + ': press to zoom in';
+      pill.setAttribute('aria-label', pill.title);
+      pill.members = its;
+      pill.span = [(g.first - PAD) / inner, (g.last - PAD) / inner];
+      its.forEach(function (it) {
+        it.clustered = true;
+        it.mark.classList.toggle('tl-in-cluster', self.events[self.sel] !== it);
+      });
+    });
+    for (var k = n; k < pool.length; k++) pool[k].hidden = true;
+    this.events.forEach(function (it) { if (!it.clustered) it.mark.classList.remove('tl-in-cluster'); });
+  };
+
+  Timeline.prototype.makeCluster = function () {
+    var self = this;
+    var pill = el('button', 'tl-cluster');
+    pill.type = 'button';
+    pill.tabIndex = -1;
+    pill.addEventListener('click', function () {
+      if (self.dragged || !pill.members) return;
+      // Zoom so the crowd fills about two-thirds of the view, and read its first event.
+      var a = pill.span[0], b = pill.span[1];
+      var z = Math.min(Math.max(self.zoom * 2.5, 0.66 / Math.max(b - a, 1e-9)), self.maxZoom);
+      self.selectIndex(self.events.indexOf(pill.members[0]), { quiet: true });
+      self.flyTo(z, (a + b) / 2);
+    });
+    this.markLayer.appendChild(pill);
+    return pill;
+  };
+
+  // The strip shows on long timelines (25+ events, or Deep time), unless the page says otherwise.
+  Timeline.prototype.wantsOverview = function (count) {
+    if (this.opts.overview === 'on') return true;
+    if (this.opts.overview === 'off') return false;
+    return count >= 25 || this.scale === 'log' || this.opts.scales.indexOf('log') !== -1;
+  };
+
+  // Strip positions match the canvas at Fit: a PAD margin at each end, linear between.
+  function stripAt(p) { return 'calc(' + PAD + 'px + ' + p + ' * (100% - ' + 2 * PAD + 'px))'; }
+  function stripLength(f) { return 'calc(' + Math.max(f, 0) + ' * (100% - ' + 2 * PAD + 'px))'; }
+
+  // Era blocks and an event tick each, in their colours; rebuilt when sizes, scale or filters change.
+  Timeline.prototype.buildOverview = function (pos) {
+    var items = this.ovItems;
+    items.textContent = '';
+    if (this.overview.hidden) return;
+    this.eras.forEach(function (era) {
+      var r = pos.get(era);
+      if (!r) return;
+      var block = items.appendChild(el('span', 'tl-ov-era'));
+      block.style.left = stripAt(r[0]);
+      block.style.width = stripLength(r[1] - r[0]);
+      if (era.tint) block.style.setProperty('--tl-c', era.tint);
+    });
+    this.events.forEach(function (it) {
+      var p = pos.get(it);
+      if (p == null) return;
+      var tick = items.appendChild(el('span', 'tl-ov-tick' + (it.major ? ' tl-major' : '')));
+      tick.style.left = stripAt(p);
+      if (it.tint) tick.style.setProperty('--tl-c', it.tint);
+    });
+  };
+
+  // The window on the strip follows the view every frame (scrolls, zooms, flights, tours).
+  Timeline.prototype.renderOverview = function (vis0, inner) {
+    if (this.overview.hidden || !(inner > 0)) return;
+    var vw = this.viewport.clientWidth;
+    var p0 = (vis0 - PAD) / inner, p1 = (vis0 + vw - PAD) / inner;
+    this.ovWindow.style.left = stripAt(p0);
+    this.ovWindow.style.width = stripLength(p1 - p0);
+    var it = this.sel !== -1 ? this.events[this.sel] : null;
+    this.ovSel.hidden = !(it && it.px != null);
+    if (!this.ovSel.hidden) {
+      this.ovSel.style.left = stripAt((it.px - PAD) / inner);
+      if (it.tint) this.ovSel.style.setProperty('--tl-c', it.tint); else this.ovSel.style.removeProperty('--tl-c');
+    }
+  };
+
+  // Drag the window to move along the line, drag its edges to zoom, click elsewhere to fly there.
+  Timeline.prototype.bindOverview = function () {
+    var self = this, strip = this.overview, drag = null;
+    var toP = function (clientX) {
+      var r = strip.getBoundingClientRect();
+      return (clientX - r.left - PAD) / Math.max(r.width - 2 * PAD, 1);
+    };
+    strip.addEventListener('pointerdown', function (e) {
+      if (e.button) return;
+      var vw = self.viewport.clientWidth, inner = self.canvas.offsetWidth - PAD * 2;
+      var view = self.viewState(), half = vw / inner / 2;
+      var win = self.ovWindow.getBoundingClientRect();
+      var grip = e.pointerType === 'mouse' ? 6 : 14;
+      var part = Math.abs(e.clientX - win.left) <= grip ? 'left'
+        : Math.abs(e.clientX - win.right) <= grip ? 'right'
+        : e.clientX > win.left && e.clientX < win.right ? 'move' : '';
+      e.preventDefault();
+      if (!part) { self.flyTo(view.z, toP(e.clientX)); return; }
+      strip.setPointerCapture(e.pointerId);
+      strip.classList.add('is-dragging');
+      drag = { part: part, from: toP(e.clientX), c: view.c, a: view.c - half, b: view.c + half };
+    });
+    strip.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      var d = toP(e.clientX) - drag.from;
+      if (drag.part === 'move') { self.applyView(self.zoom, drag.c + d); return; }
+      var a = drag.a, b = drag.b;
+      if (drag.part === 'left') a = Math.min(a + d, b - 0.001);
+      else b = Math.max(b + d, a + 0.001);
+      // The view shows (b - a) of the line when vw = (b - a) × (zoom × vw − 2 PAD).
+      var vw = self.viewport.clientWidth;
+      self.zoomFloor = 0;
+      self.applyView(Math.min(Math.max((vw / (b - a) + 2 * PAD) / vw, 1), self.maxZoom), (a + b) / 2);
+    });
+    var end = function () { drag = null; strip.classList.remove('is-dragging'); };
+    strip.addEventListener('pointerup', end);
+    strip.addEventListener('pointercancel', end);
+  };
+
   // Full screen: the height left for the track between the toolbar and the card (when the card
   // sits below it; on a phone held sideways it sits beside).
   Timeline.prototype.fullRoom = function () {
@@ -1469,6 +1650,7 @@
     var bar = this.root.querySelector('.tl-bar');
     var top = bar ? bar.offsetTop + bar.offsetHeight + gap : parseFloat(cs.paddingTop) || 0;
     var below = this.detail.offsetTop > this.viewport.offsetTop + 10 ? this.detail.offsetHeight + gap : 0;
+    if (!this.overview.hidden) below += this.overview.offsetHeight + gap;
     return this.root.clientHeight - (parseFloat(cs.paddingBottom) || 0) - top - below - 4; // 4: the track's border
   };
 
@@ -1481,7 +1663,7 @@
     if (this.measured && this.measured[type]) { this.widths = this.measured[type]; return; }
     var marks = this.events.map(function (it) { return it.mark; });
     marks.forEach(function (m) {
-      m.classList.remove('tl-compact', 'tl-two', 'tl-flip');
+      m.classList.remove('tl-compact', 'tl-two', 'tl-flip', 'tl-in-cluster');
       m.classList.add('tl-measure');
     });
     // Exact widths, rounded up: offsetWidth rounds down, and text 0.4px wider than its box gets "…".
@@ -1642,6 +1824,7 @@
     var inner = W - PAD * 2;
     var vis0 = this.viewport.scrollLeft, vis1 = vis0 + this.viewport.clientWidth;
     this.stickBandLabels(vis0, vis1);
+    this.renderOverview(vis0, inner);
     // Axis labels never touch: the selected event's date claims its place first, then "today"
     // and BC|AD, then the round numbers in order.
     var taken = [];
@@ -1859,6 +2042,7 @@
       ev.mark.tabIndex = on ? 0 : -1;
       if (on) { ev.mark.setAttribute('aria-current', 'true'); ev.li.setAttribute('data-tl-current', ''); }
       else { ev.mark.removeAttribute('aria-current'); ev.li.removeAttribute('data-tl-current'); }
+      ev.mark.classList.toggle('tl-in-cluster', !!ev.clustered && !on); // the selected dot stays visible
       ev.stem.classList.toggle('is-current', on);
     });
     this.updateCounter();

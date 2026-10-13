@@ -163,6 +163,9 @@ Don't hand-build another timeline (lessons accumulated ~40 one-off `*-timeline` 
   a dotted BC|AD line, ranges as spans on the axis, and a reading line with the selected date on
   the axis. Eras without `data-color` get an ordered colour each (oldest to newest), and an era's
   name stays on screen while you scroll through it.
+- Crowded dots fold into count pills (press to zoom in). Long timelines (25+ events or Deep time)
+  get an overview strip under the track (drag the window to move, its edges to zoom);
+  `data-timeline-overview="on|off"` forces it either way.
   `npm run audit:timeline` screenshots and measures reference timelines against
   `docs/timeline-audit-baseline.json` (`--save-baseline` after a deliberate change).
 - Per item: `data-label` (short track label), `data-group` (colour + filter chips),

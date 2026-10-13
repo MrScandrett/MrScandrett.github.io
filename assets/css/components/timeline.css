@@ -21,7 +21,7 @@
    transitions unless a rule below asks. Without this, a page's reduced-motion reset
    (* { transition-duration: .01ms !important }) turns every size change into a transition and
    the engine reads the old size: "Zoom to" landed on an empty stretch of track. */
-.tl-canvas, .tl-canvas * { transition-property: none; }
+.tl-canvas, .tl-canvas *, .tl-overview, .tl-overview * { transition-property: none; }
 
 /* ---------- toolbar */
 .tl-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .7rem; margin-bottom: .6rem; }
@@ -343,6 +343,37 @@
   border-color: var(--tl-c, var(--tl-accent));
   box-shadow: 0 0 0 2px var(--tl-c, var(--tl-accent)), 0 6px 16px rgba(0, 0, 0, .18);
 }
+/* Crowded dots fold into a pill with a count; its base is split into the colours inside.
+   Press it to zoom in. The selected event's own dot stays on top. */
+.tl .tl-mark.tl-in-cluster { display: none; }
+.tl .tl-cluster {
+  position: absolute;
+  z-index: 2;
+  height: calc(18 * var(--tl-u));
+  min-width: 0;
+  min-height: 0;
+  margin: 1px 0 0;
+  padding: 0 2px 3px;
+  box-sizing: border-box;
+  overflow: hidden;
+  transform: translateY(-50%);
+  border: 1.5px solid color-mix(in srgb, currentColor 40%, transparent);
+  border-radius: 999px;
+  background: var(--tl-paper);
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  font-size: calc(.62rem * var(--tl-type));
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-align: center;
+  cursor: zoom-in;
+}
+.tl .tl-cluster::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--tl-mix, var(--tl-accent)); }
+.tl .tl-cluster:hover { border-color: currentColor; }
+.tl .tl-cluster:focus-visible { outline: 3px solid var(--tl-accent); outline-offset: 2px; }
+
 /* Too crowded to label at this zoom: a dot on the axis. Zoom in to read it. */
 .tl .tl-mark.tl-compact {
   width: 14px;
@@ -357,6 +388,41 @@
   margin-top: 1px;
 }
 .tl .tl-mark.tl-compact > *, .tl .tl-mark.tl-compact::before, .tl-mark.tl-compact::after { display: none; }
+
+/* The overview strip: the whole timeline at Fit, a window on the view. */
+.tl-overview {
+  position: relative;
+  height: calc(28 * var(--tl-u));
+  margin-top: 6px;
+  overflow: hidden;
+  border: 2px solid var(--tl-line);
+  border-radius: 8px;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.tl-ov-items { position: absolute; inset: 0; pointer-events: none; }
+.tl-ov-era { position: absolute; top: 0; bottom: 0; min-width: 1px; background: var(--tl-c, var(--tl-accent)); opacity: .2; }
+.tl-ov-tick { position: absolute; top: 32%; bottom: 18%; width: 1px; background: var(--tl-c, var(--tl-accent)); opacity: .85; }
+.tl-ov-tick.tl-major { top: 14%; width: 2px; margin-left: -.5px; }
+.tl-ov-sel { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--tl-c, var(--tl-accent)); pointer-events: none; }
+.tl-ov-window {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  min-width: 8px;
+  box-sizing: border-box;
+  border: 2px solid var(--tl-accent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--tl-accent) 12%, transparent);
+  cursor: grab;
+}
+/* grips on the window's edges: drag one to zoom */
+.tl-ov-window::before, .tl-ov-window::after { content: ''; position: absolute; top: 25%; bottom: 25%; width: 3px; border-radius: 2px; background: var(--tl-accent); cursor: ew-resize; }
+.tl-ov-window::before { left: 1px; }
+.tl-ov-window::after { right: 1px; }
+.tl-overview.is-dragging, .tl-overview.is-dragging .tl-ov-window { cursor: grabbing; }
 
 .tl-hint { margin: .3rem 0 0; font-size: .72rem; opacity: .7; }
 .tl-legend { font-weight: 700; }
@@ -453,6 +519,8 @@ html.tl-scroll-lock, html.tl-scroll-lock body { overflow: hidden; }
 .tl.tl-is-full .tl-bar { margin: 0; }
 .tl.tl-is-full .tl-track { display: contents; }
 .tl.tl-is-full .tl-viewport { align-self: center; }
+.tl.tl-is-full .tl-overview { margin: 0; }
+.tl.tl-is-full:has(> .tl-track > .tl-overview:not([hidden])) .tl-viewport { align-self: end; } /* the strip stays under the track */
 .tl.tl-is-full .tl-hint, .tl.tl-is-full .tl-list { display: none; }
 .tl.tl-is-full .tl-title { font-size: 1.5rem; }
 .tl.tl-is-full .tl-detail { margin: 0; max-height: 32vh; overflow-y: auto; overscroll-behavior: contain; font-size: max(1.1rem, calc(.8rem * var(--tl-type))); }
@@ -474,7 +542,9 @@ html.tl-scroll-lock, html.tl-scroll-lock body { overflow: hidden; }
 @media (orientation: landscape) and (max-height: 560px) {
   .tl.tl-is-full { grid-template-columns: minmax(0, 1fr) minmax(220px, 36%); grid-template-rows: auto minmax(0, 1fr); }
   .tl.tl-is-full .tl-bar { grid-column: 1 / -1; }
-  .tl.tl-is-full .tl-detail { align-self: stretch; max-height: none; font-size: .95rem; }
+  .tl.tl-is-full .tl-viewport, .tl.tl-is-full .tl-overview { grid-column: 1; }
+  .tl.tl-is-full .tl-overview { grid-row: 3; }
+  .tl.tl-is-full .tl-detail { grid-column: 2; grid-row: 2 / span 2; align-self: stretch; max-height: none; font-size: .95rem; }
 }
 
 /* Phones: filter chips and "Zoom to" scroll sideways on one line instead of stacking. */
