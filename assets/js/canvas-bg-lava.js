@@ -18,7 +18,7 @@
   function create() {
     var surface = document.createElement('canvas');
     var gl = surface.getContext('webgl', { alpha: false, antialias: false, depth: false });
-    if (!gl) return null;
+    if (!gl || !window.LiquidEngine || !window.LiquidEngine.ThermalBlobs) return null;
     var vertex = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
     var fragment = `precision mediump float;
     uniform vec2 size; uniform float time; uniform int look; uniform int count;
@@ -52,32 +52,20 @@
     var buffer = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buffer); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]), gl.STATIC_DRAW);
     var attr = gl.getAttribLocation(program, 'p'); gl.enableVertexAttribArray(attr); gl.vertexAttribPointer(attr,2,gl.FLOAT,false,0,0);
     var locations = {}; ['size','time','look','count','balls','colors','accent','secondary','base'].forEach(function (n) { locations[n] = gl.getUniformLocation(program,n); });
-    var width=0,height=0, bodies=[], elapsed=0, last=null, accumulator=0, lastDraw=0, slow=0, frames=0, steps=0, costs=[], renderScale=.5;
+    // Wax physics (heating, buoyancy, merging, splitting) is LiquidEngine.ThermalBlobs; this file only renders it.
+    var blobs=new window.LiquidEngine.ThermalBlobs({count:8}), width=0,height=0, last=null, lastDraw=0, slow=0, frames=0, costs=[], renderScale=.5;
 
     function resize(w,h) {
-      if(width && height) bodies.forEach(function(b){b.x*=w/width;b.y*=h/height;});
+      blobs.resize(w,h);
       width=w;height=h;surface.width=Math.max(1,Math.round(w*renderScale));surface.height=Math.max(1,Math.round(h*renderScale));gl.viewport(0,0,surface.width,surface.height);
-      if(!bodies.length) for(var i=0;i<8;i++) bodies.push({x:(i+.5)*w/8,y:h*(.15+Math.random()*.8),r:Math.min(w/12,32+Math.random()*28),vx:0,vy:0,temp:Math.random(),color:[i%2 ? 0 : 1, i%2 ? 1 : 0],age:0});
-    }
-    function step(mouse){
-      elapsed+=1/60;steps++;
-      bodies.forEach(function(b){b.age+=1/60;var y=b.y/height;
-        var target=y>.8?1:y<.2?0:.48;b.temp+=(target-b.temp)*(y>.8||y<.2?.008:.0003);
-        b.vy=(b.vy-(b.temp-.48)*2.8)*.985;b.vx=(b.vx+Math.sin(elapsed*.35+b.y*.004)*.7)*.96;
-        if(mouse.active){var dx=b.x-mouse.x,dy=b.y-mouse.y,d=Math.hypot(dx,dy);if(d>1&&d<180){b.vx+=dx/d*(1-d/180)*4+mouse.vx*.2;b.vy+=dy/d*(1-d/180)*4+mouse.vy*.2;}}
-        b.x+=b.vx/60;b.y+=b.vy/60;b.x=Math.max(b.r,Math.min(width-b.r,b.x));
-        if(b.y>height-15){b.y=height-15;b.vy=Math.min(0,b.vy);}if(b.y<b.r*.5){b.y=b.r*.5;b.vy=Math.max(0,b.vy);}
-      });
-      for(var i=0;i<bodies.length;i++)for(var j=i+1;j<bodies.length;j++){var a=bodies[i],b=bodies[j];if(a.temp<.45&&b.temp<.45&&Math.hypot(a.x-b.x,a.y-b.y)<(a.r+b.r)*.55){var aa=a.r*a.r,bb=b.r*b.r,total=aa+bb;a.x=(a.x*aa+b.x*bb)/total;a.y=(a.y*aa+b.y*bb)/total;a.vx=(a.vx*aa+b.vx*bb)/total;a.vy=(a.vy*aa+b.vy*bb)/total;a.temp=(a.temp*aa+b.temp*bb)/total;a.color=a.color.map(function(c,k){return(c*aa+b.color[k]*bb)/total;});a.r=Math.sqrt(total);a.age=0;bodies.splice(j--,1);}}
-      if(bodies.length<8) bodies.some(function(b){if(b.temp>.65&&b.r>40&&b.age>8&&Math.abs(b.vy)>20){var r=b.r/Math.sqrt(2);b.r=r;b.age=0;bodies.push({x:b.x+r*.5,y:b.y+r,vx:-b.vx,vy:b.vy*.8,r:r,temp:b.temp,color:b.color.slice(),age:0});b.y-=r;return true;}return false;});
     }
     surface.addEventListener('webglcontextlost',function(e){e.preventDefault(); api.failed=true;});
-    var api={failed:false,resize:resize,pause:function(){last=null;accumulator=0;},stats:function(){return {frames:frames,steps:steps,seconds:elapsed,bodies:bodies.length,area:bodies.reduce(function(a,b){return a+b.r*b.r;},0),fpsCap:slow>12?30:60,resolutionScale:renderScale,renderMsP95:costs.length?costs.slice().sort(function(a,b){return a-b;})[Math.floor((costs.length-1)*.95)]:0};},draw:function(ctx,w,h,now,mouse){
+    var api={failed:false,resize:resize,pause:function(){last=null;blobs.pause();},stats:function(){return {frames:frames,steps:blobs.steps,seconds:blobs.seconds,bodies:blobs.bodies.length,area:blobs.area(),fpsCap:slow>12?30:60,resolutionScale:renderScale,renderMsP95:costs.length?costs.slice().sort(function(a,b){return a-b;})[Math.floor((costs.length-1)*.95)]:0};},draw:function(ctx,w,h,now,mouse){
       if(api.failed)return false;if(w!==width||h!==height)resize(w,h);
-      if(last===null)last=now;accumulator+=Math.min(.1,(now-last)/1000);last=now;while(accumulator>=1/60){step(mouse);accumulator-=1/60;}
+      if(last===null)last=now;blobs.update((now-last)/1000,mouse);last=now;var elapsed=blobs.seconds;
       if(now-lastDraw<(slow>12?1000/30:1000/60)-1){ctx.drawImage(surface,0,0,w,h);return true;}lastDraw=now;
       var begin=performance.now(), data=new Float32Array(96),colors=new Float32Array(72),n=0, appearance=themeAppearance();
-      bodies.forEach(function(b){var tail=Math.min(b.r*.85,Math.abs(b.vy)*.7);for(var k=0;k<2;k++){data.set([b.x*renderScale,(b.y+(k?tail*(b.vy<0?1:-1):0))*renderScale,b.r*(k?.55:.88)*renderScale,b.r*(k?.55:.88)*renderScale],n*4);colors.set(appearance.wax[0].map(function(c,i){return c*b.color[0]+appearance.wax[1%appearance.wax.length][i]*b.color[1];}),n*3);n++;}});
+      blobs.bodies.forEach(function(b){var tail=Math.min(b.r*.85,Math.abs(b.vy)*.7);for(var k=0;k<2;k++){data.set([b.x*renderScale,(b.y+(k?tail*(b.vy<0?1:-1):0))*renderScale,b.r*(k?.55:.88)*renderScale,b.r*(k?.55:.88)*renderScale],n*4);colors.set(appearance.wax[0].map(function(c,i){return c*b.mix[0]+appearance.wax[1%appearance.wax.length][i]*b.mix[1];}),n*3);n++;}});
       // Pool belongs to the same field, so rising bodies form necks before release.
       for(var i=0;i<8;i++){data.set([(i+.5)*w/8*renderScale,(h+12+Math.sin(elapsed+i)*5)*renderScale,Math.max(w/8,50)*renderScale,48*renderScale],n*4);colors.set(appearance.accent,n*3);n++;}
       gl.uniform2f(locations.size,surface.width,surface.height);gl.uniform1f(locations.time,elapsed);gl.uniform1i(locations.look,appearance.look);gl.uniform3fv(locations.accent,appearance.accent);gl.uniform3fv(locations.secondary,appearance.secondary);gl.uniform3fv(locations.base,appearance.base);gl.uniform1i(locations.count,n);gl.uniform4fv(locations.balls,data);gl.uniform3fv(locations.colors,colors);gl.drawArrays(gl.TRIANGLES,0,6);ctx.drawImage(surface,0,0,w,h);frames++;var cost=performance.now()-begin;costs.push(cost);if(costs.length>120)costs.shift();slow=cost>25?slow+1:Math.max(0,slow-1);if(cost>40 && slow>3 && renderScale>.125){renderScale=Math.max(.125,renderScale*.5);resize(w,h);costs=[];}return true;

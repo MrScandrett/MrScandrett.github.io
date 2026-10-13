@@ -2,20 +2,11 @@
  * QWERTY and MIDI feed the DAW's armed channel, never a separate global synth. */
 (function () {
   'use strict';
-  let context = null, output = null, midi = null;
+  let midi = null;
   const held = new Map();
   const keys = ['a', 'w', 's', 'e', 'd', 'f', 't', 'g', 'y', 'h', 'u', 'j', 'k'];
-  function audioContext() {
-    if (!context) {
-      context = new (window.AudioContext || window.webkitAudioContext)();
-      output = context.createDynamicsCompressor();
-      output.threshold.value = -3; output.ratio.value = 12;
-      output.connect(context.destination);
-    }
-    if (context.state !== 'running') context.resume();
-    return context;
-  }
-  window.MusicLabAudio = { context: audioContext, output() { audioContext(); return output; } };
+  // The context, iPhone unlock and safety limiter live in assets/js/audio-kit.js.
+  window.MusicLabAudio = { context: () => window.AudioKit.context(), output: () => window.AudioKit.output() };
   document.addEventListener('keydown', event => {
     if (event.repeat || event.ctrlKey || event.metaKey || event.altKey || !event.target.closest('#trackStudio') || event.target.closest('input, select, textarea, [contenteditable]')) return;
     const index = keys.indexOf(event.key.toLowerCase());

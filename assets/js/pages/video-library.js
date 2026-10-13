@@ -116,6 +116,15 @@ const featured = VIDEOS[0];
 if (featured) {
   $('vl-hero-title').textContent = featured.title;
   $('vl-hero-desc').textContent = featured.desc;
+  const heroBg = $('vl-cinema-bg');
+  if (heroBg && featured.entry.poster) {
+    const heroImg = document.createElement('img');
+    heroImg.src = featured.entry.poster;
+    heroImg.alt = '';
+    heroImg.loading = 'eager';
+    heroImg.decoding = 'async';
+    heroBg.replaceChildren(heroImg);
+  }
 }
 $('vl-stat-row').textContent = `${VIDEOS.length} curated films · played inside ClassroomOS`;
 $('vl-hero-play').addEventListener('click', () => openVideo(0));
@@ -145,6 +154,21 @@ VIDEOS.forEach((video, index) => {
   art.className = 'vl-thumb-art';
   art.dataset.symbol = video.symbol;
   art.style.setProperty('--vl-card-accent', video.accent);
+  thumb.append(art);
+
+  if (video.entry.poster) {
+    const img = document.createElement('img');
+    img.className = 'vl-thumb-img';
+    img.src = video.entry.poster;
+    img.alt = '';
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    img.width = 640;
+    img.height = 360;
+    img.onerror = () => { img.style.display = 'none'; };
+    thumb.append(img);
+  }
+
   const play = document.createElement('span');
   play.className = 'vl-play-icon';
   play.innerHTML = '<svg viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="28" fill="white" fill-opacity=".93"/><polygon points="22,16 44,28 22,40" fill="#0a0f1c"/></svg>';
@@ -157,7 +181,7 @@ VIDEOS.forEach((video, index) => {
   const badge = document.createElement('span');
   badge.className = 'vl-watched-badge';
   badge.textContent = '✓ Watched';
-  thumb.append(art, play, duration, provider, badge);
+  thumb.append(play, duration, provider, badge);
   const body = document.createElement('div');
   body.className = 'vl-card-body';
   for (const [cls, text] of [['vl-kicker', video.category], ['vl-title', video.title], ['vl-sub', video.channel]]) {

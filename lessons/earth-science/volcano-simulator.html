@@ -989,6 +989,7 @@
   <script src="../../assets/js/volcano-conduit.js"></script>
   <script type="module">
   import { THREE } from '../../assets/vendor/three-bundle.min.js';
+  import { createDepthFieldMesh } from '../../assets/js/liquid-engine-three.mjs';
   (function () {
 
     const lavaMaterial = window.LiquidEngine?.material('lava') || { viscosity: 0.72, flow: 0.08 };
@@ -1030,26 +1031,9 @@
     }
 
 
-    /* ══════════════════════════════════════════
-       NOISE
-    ══════════════════════════════════════════ */
-    function hashN(n) { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }
-    function hash2(x, y) { return hashN(x + y * 57); }
-    function sst(t) { return t * t * (3 - 2 * t); }
+    const { fbm } = SimKit.noise;
     function lerp(a, b, t) { return a + (b - a) * t; }
     function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-
-    function vn(x, y) {
-      const ix = Math.floor(x), iy = Math.floor(y);
-      const fx = x - ix, fy = y - iy;
-      return lerp(lerp(hash2(ix, iy), hash2(ix + 1, iy), sst(fx)),
-                  lerp(hash2(ix, iy + 1), hash2(ix + 1, iy + 1), sst(fx)), sst(fy));
-    }
-    function fbm(x, y, o) {
-      let v = 0, a = 0.5, f = 1;
-      for (let i = 0; i < o; i++) { v += a * vn(x * f, y * f); a *= 0.5; f *= 2; }
-      return v;
-    }
 
     /* ══════════════════════════════════════════
        FAMOUS ERUPTION PRESETS
@@ -1485,209 +1469,61 @@
     const lavaStreamGroup = new THREE.Group();
     scene.add(lavaStreamGroup);
 
-    // Terrain-draped, rounded flow lobes. This is an illustrative surface,
-    // not a hazard forecast or a numerical lava-inundation model.
-    const lavaSurfaceMaterial = new THREE.ShaderMaterial({
-      side: THREE.DoubleSide,
-      uniforms: { time: { value: 0 }, fluidity: { value: 0.5 } },
-      vertexShader: `
-        varying vec2 flowUV;
-        varying vec2 lavaState;
-        attribute vec2 deposit;
-        void main() {
-          flowUV = uv;
-          lavaState = deposit;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }`,
-      fragmentShader: `
-        uniform float time;
-        uniform float fluidity;
-        varying vec2 flowUV;
-        varying vec2 lavaState;
-        float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-        float noise(vec2 p) {
-          vec2 i = floor(p), f = fract(p);
-          f = f * f * (3.0 - 2.0 * f);
-          return mix(mix(hash(i), hash(i + vec2(1,0)), f.x),
-                     mix(hash(i + vec2(0,1)), hash(i + vec2(1,1)), f.x), f.y);
-        }
-        void main() {
-          if (lavaState.x < 0.018) discard;
-          float heatLevel = clamp(lavaState.y, 0.0, 1.0);
-          // Cold deposits stop moving; fresh material opens irregular hot cracks.
-          vec2 p = flowUV * 1.8;
-          p.y -= time * 0.16 * heatLevel * fluidity;
-          float n = noise(p + noise(p * 0.45) * 2.5);
-          float cracks = 1.0 - smoothstep(0.025, 0.12, abs(n - 0.5));
-          float heat = heatLevel * (0.25 + cracks * 0.75);
-          vec3 crust = mix(vec3(0.012, 0.014, 0.016), vec3(0.045, 0.038, 0.035), n);
-          vec3 molten = mix(vec3(0.9, 0.065, 0.005), vec3(1.8, 0.65, 0.06), heat);
-          gl_FragColor = vec4(mix(crust, molten, smoothstep(0.15, 0.8, heat)), 1.0);
-          #include <tonemapping_fragment>
-          #include <colorspace_fragment>
-        }`
-    });
-
-    // A bounded shallow-layer teaching model: material moves to lower
-    // terrain + deposit surfaces, splits between outlets, and fills hollows.
-    // Cooling immobilizes crust. Units and time are illustrative, not a forecast.
-    const LAVA_N = 101, LAVA_STEP = 0.4, LAVA_HALF = 20;
-    const lavaCells = LAVA_N * LAVA_N;
-    const lavaDepth = new Float32Array(lavaCells);
-    const lavaEnergy = new Float32Array(lavaCells);
-    const lavaGround = new Float32Array(lavaCells);
-    const lavaDelta = new Float32Array(lavaCells);
-    const lavaHeatDelta = new Float32Array(lavaCells);
-    const LAVA_RENDER_N = 201, lavaRenderCells = LAVA_RENDER_N * LAVA_RENDER_N;
-    const lavaRenderGround = new Float32Array(lavaRenderCells);
-    const lavaPositions = new Float32Array(lavaRenderCells * 3);
-    const lavaDeposits = new Float32Array(lavaRenderCells * 2);
-    const lavaUV = new Float32Array(lavaRenderCells * 2);
-    const lavaIndices = [];
-    for (let z = 0; z < LAVA_RENDER_N; z++) for (let x = 0; x < LAVA_RENDER_N; x++) {
-      const i = z * LAVA_RENDER_N + x;
-      lavaPositions[i * 3] = x * LAVA_STEP / 2 - LAVA_HALF;
-      lavaPositions[i * 3 + 2] = z * LAVA_STEP / 2 - LAVA_HALF;
-      lavaUV[i * 2] = x * LAVA_STEP / 2;
-      lavaUV[i * 2 + 1] = z * LAVA_STEP / 2;
-      if (x < LAVA_RENDER_N - 1 && z < LAVA_RENDER_N - 1)
-        lavaIndices.push(i, i + LAVA_RENDER_N, i + 1, i + 1, i + LAVA_RENDER_N, i + LAVA_RENDER_N + 1);
-    }
-    const lavaFieldGeometry = new THREE.BufferGeometry();
-    lavaFieldGeometry.setAttribute('position', new THREE.BufferAttribute(lavaPositions, 3).setUsage(THREE.DynamicDrawUsage));
-    lavaFieldGeometry.setAttribute('uv', new THREE.BufferAttribute(lavaUV, 2));
-    lavaFieldGeometry.setAttribute('deposit', new THREE.BufferAttribute(lavaDeposits, 2).setUsage(THREE.DynamicDrawUsage));
-    const lavaDrawIndices = new Uint32Array(lavaIndices.length);
-    lavaFieldGeometry.setIndex(new THREE.BufferAttribute(lavaDrawIndices, 1).setUsage(THREE.DynamicDrawUsage));
-    lavaFieldGeometry.setDrawRange(0, 0);
-    const lavaFieldMesh = new THREE.Mesh(lavaFieldGeometry, lavaSurfaceMaterial);
-    lavaFieldMesh.frustumCulled = false;
-    lavaStreamGroup.add(lavaFieldMesh);
-    let lavaSources = [], lavaAccumulator = 0, lavaSupplied = 0;
+    // A bounded shallow-layer teaching model (LiquidEngine.DepthField):
+    // material moves to lower terrain + deposit surfaces, splits between
+    // outlets, and fills hollows. Cooling immobilizes crust. The draped mesh is
+    // an illustrative surface, not a hazard forecast or a numerical
+    // lava-inundation model. Units and time are illustrative.
+    const LAVA_N = 101, LAVA_STEP = 0.4;
+    const lavaField = new LiquidEngine.DepthField({ material: 'lava', cols: LAVA_N, cellSize: LAVA_STEP });
+    // Twice the simulation resolution, matching the terrain tessellation so the deposit cannot cut through ridges.
+    const lavaDeposit = createDepthFieldMesh(THREE, lavaField, { subdivisions: 2 });
+    lavaStreamGroup.add(lavaDeposit.mesh);
 
     function resetLavaField() {
-      lavaDepth.fill(0); lavaEnergy.fill(0); lavaAccumulator = 0; lavaSupplied = 0;
+      lavaField.reset();
       lavaFlow?.clear();
       syncLavaField();
     }
 
     function rebuildLavaStreams() {
-      for (let i = 0; i < lavaCells; i++)
-        lavaGround[i] = terrainHeightAt((i % LAVA_N) * LAVA_STEP - LAVA_HALF, Math.floor(i / LAVA_N) * LAVA_STEP - LAVA_HALF);
-      for (let i = 0; i < lavaRenderCells; i++)
-        lavaRenderGround[i] = terrainHeightAt(lavaPositions[i * 3], lavaPositions[i * 3 + 2]);
+      lavaField.setGround(terrainHeightAt);
+      lavaDeposit.setGround(terrainHeightAt);
       // Find local high points on the crater rim; fountains supply the rim,
       // then gravity and the evolving deposit determine every downstream path.
-      lavaSources = [];
+      lavaField.clearSources();
       const rimRadius = state.vtype === 'super' ? 9 : state.vtype === 'caldera' ? 2.7 : 1.5;
       for (let sector = 0; sector < 5; sector++) {
-        let best = -1, high = -Infinity;
+        let best = null, high = -Infinity;
         for (let j = 0; j < 14; j++) {
           const angle = (sector + j / 14) * Math.PI * 2 / 5;
           for (let r = rimRadius * 0.75; r <= rimRadius * 1.25; r += LAVA_STEP) {
-            const x = Math.round((Math.cos(angle) * r + LAVA_HALF) / LAVA_STEP);
-            const z = Math.round((Math.sin(angle) * r + LAVA_HALF) / LAVA_STEP);
-            const i = z * LAVA_N + x;
-            if (lavaGround[i] > high) { high = lavaGround[i]; best = i; }
+            const x = Math.cos(angle) * r, z = Math.sin(angle) * r;
+            const ground = lavaField.ground[lavaField.cellAt(x, z)];
+            if (ground > high) { high = ground; best = [x, z]; }
           }
         }
-        if (best >= 0) lavaSources.push(best);
+        if (best) lavaField.addSource(best[0], best[1], 1.2);
       }
       syncLavaField();
-    }
-
-    function stepLavaField(dt) {
-      const fluidity = 1 - state.viscosity / 100;
-      lavaSurfaceMaterial.uniforms.fluidity.value = fluidity;
-      const supply = state.intensity / 100;
-      for (const i of lavaSources) {
-        const added = supply * 1.2 * dt;
-        lavaDepth[i] += added; lavaEnergy[i] += added; lavaSupplied += added * LAVA_STEP * LAVA_STEP;
-      }
-      lavaDelta.fill(0); lavaHeatDelta.fill(0);
-      const offsets = [-1, 1, -LAVA_N, LAVA_N, -LAVA_N-1, -LAVA_N+1, LAVA_N-1, LAVA_N+1];
-      const drops = new Float32Array(8);
-      for (let z = 1; z < LAVA_N - 1; z++) for (let x = 1; x < LAVA_N - 1; x++) {
-        const i = z * LAVA_N + x, depth = lavaDepth[i];
-        if (depth < 0.001) continue;
-        const heat = lavaEnergy[i] / depth;
-        if (heat < 0.16) continue;
-        const surface = lavaGround[i] + depth;
-        let total = 0;
-        for (let k = 0; k < 8; k++) {
-          const j = i + offsets[k];
-          // Yield threshold makes viscous lava pile up before it can escape.
-          drops[k] = Math.max(0, surface - lavaGround[j] - lavaDepth[j] - (1-fluidity) * 0.09)
-            / (k < 4 ? 1 : Math.SQRT2);
-          drops[k] *= drops[k];
-          total += drops[k];
-        }
-        if (!total) continue;
-        const moved = Math.min(depth * 0.42, total * dt * (0.12 + fluidity * 1.5) * heat * heat);
-        for (let k = 0; k < 8; k++) if (drops[k] > 0) {
-          const amount = moved * drops[k] / total, j = i + offsets[k];
-          lavaDelta[j] += amount; lavaHeatDelta[j] += amount * heat;
-        }
-        lavaDelta[i] -= moved; lavaHeatDelta[i] -= moved * heat;
-      }
-      for (let i = 0; i < lavaCells; i++) {
-        lavaDepth[i] = Math.max(0, lavaDepth[i] + lavaDelta[i]);
-        // Thin toes cool faster than deep insulated pools; crust remains.
-        const cooling = Math.exp(-dt * (0.003 + 0.006 / (0.08 + lavaDepth[i])));
-        lavaEnergy[i] = Math.max(0, lavaEnergy[i] + lavaHeatDelta[i]) * cooling;
-      }
     }
 
     function syncLavaField() {
-      let covered = 0, hot = 0, maxDepth = 0;
-      for (let i = 0; i < lavaCells; i++) {
-        const depth = lavaDepth[i];
-        const heat = depth > 0.001 ? lavaEnergy[i] / depth : 0;
-
-        if (depth > 0.018) { covered++; if (heat > 0.45) hot++; }
-        maxDepth = Math.max(maxDepth, depth);
-      }
-      lavaFieldMesh.visible = covered > 0;
-      // Match terrain tessellation so the deposit cannot cut through ridges.
-      for (let z = 0; z < LAVA_RENDER_N; z++) for (let x = 0; x < LAVA_RENDER_N; x++) {
-        const gx = Math.min(LAVA_N - 2, Math.floor(x / 2));
-        const gz = Math.min(LAVA_N - 2, Math.floor(z / 2));
-        const fx = x / 2 - gx, fz = z / 2 - gz;
-        const i = gz * LAVA_N + gx, r = z * LAVA_RENDER_N + x;
-        const sample = field => lerp(lerp(field[i], field[i+1], fx), lerp(field[i+LAVA_N], field[i+LAVA_N+1], fx), fz);
-        const depth = sample(lavaDepth), energy = sample(lavaEnergy);
-        lavaPositions[r * 3 + 1] = lavaRenderGround[r] + 0.035 + depth;
-        lavaDeposits[r * 2] = depth;
-        lavaDeposits[r * 2 + 1] = depth > 0.001 ? energy / depth : 0;
-      }
-      // Submit only occupied triangles instead of shading the entire landscape.
-      let drawCount = 0;
-      for (let z = 0; z < LAVA_RENDER_N - 1; z++) for (let x = 0; x < LAVA_RENDER_N - 1; x++) {
-        const i = z * LAVA_RENDER_N + x, j = i + LAVA_RENDER_N;
-        if (Math.max(lavaDeposits[i*2], lavaDeposits[(i+1)*2], lavaDeposits[j*2], lavaDeposits[(j+1)*2]) < 0.018) continue;
-        lavaDrawIndices[drawCount++] = i; lavaDrawIndices[drawCount++] = j; lavaDrawIndices[drawCount++] = i+1;
-        lavaDrawIndices[drawCount++] = i+1; lavaDrawIndices[drawCount++] = j; lavaDrawIndices[drawCount++] = j+1;
-      }
-      lavaFieldGeometry.setDrawRange(0, drawCount);
-      lavaFieldGeometry.index.needsUpdate = true;
-      lavaFieldGeometry.attributes.position.needsUpdate = true;
-      lavaFieldGeometry.attributes.deposit.needsUpdate = true;
+      lavaDeposit.sync();
+      const { covered, hot, maxDepth, volume, supplied, balanceError } = lavaField.stats();
       const status = document.getElementById('lava-flow-status');
       if (status) status.textContent = covered === 0 ? 'No lava deposited yet.'
         : `${covered} model cells covered · ${hot} still hot · crust remains as lava cools.`;
-      const stored = lavaDepth.reduce((sum, depth) => sum + depth, 0) * LAVA_STEP * LAVA_STEP;
-      document.getElementById('lava-diagnostics').textContent = `${covered} covered cells · ${hot} hot cells · max depth ${maxDepth.toFixed(2)} model units · supplied ${lavaSupplied.toFixed(3)} · stored ${stored.toFixed(3)} model volume units · balance error ${(lavaSupplied - stored).toExponential(2)}`;
+      document.getElementById('lava-diagnostics').textContent = `${covered} covered cells · ${hot} hot cells · max depth ${maxDepth.toFixed(2)} model units · supplied ${supplied.toFixed(3)} · stored ${volume.toFixed(3)} model volume units · balance error ${balanceError.toExponential(2)}`;
       // Read-only diagnostics make conservation and reset behavior inspectable.
-      lavaFieldMesh.userData.diagnostics = { covered, hot, maxDepth,
-        volume: lavaDepth.reduce((sum, depth) => sum + depth, 0) };
+      lavaDeposit.mesh.userData.diagnostics = { covered, hot, maxDepth, volume };
     }
 
     function updateLavaField(dt) {
-      if (state.intensity === 0 && !lavaFieldMesh.visible) return;
-      lavaAccumulator += dt;
-      if (lavaAccumulator < 0.1) return;
-      while (lavaAccumulator >= 0.1) { stepLavaField(0.1); lavaAccumulator -= 0.1; }
-      syncLavaField();
+      if (state.intensity === 0 && !lavaDeposit.mesh.visible) return;
+      lavaField.fluidity = 1 - state.viscosity / 100;
+      lavaField.supply = state.intensity / 100;
+      if (lavaField.update(dt)) syncLavaField();
     }
 
     function buildTerrain(vtype, lavaIntensity) {
@@ -2836,7 +2672,7 @@
       lavaFlow?.update(dt);
       syncLavaParticles();
       updateLavaField(dt);
-      lavaSurfaceMaterial.uniforms.time.value = simTime;
+      lavaDeposit.uniforms.time.value = simTime;
 
       // Organic multi-frequency lava pulse
       const pulse = 0.76 + Math.sin(ts * 0.0031) * 0.13 + Math.sin(ts * 0.0079 + 1.4) * 0.07 + Math.sin(ts * 0.0017 + 2.9) * 0.04;

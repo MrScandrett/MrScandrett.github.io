@@ -23,21 +23,24 @@
   function loadLavaRenderer() {
     if (lavaLoading) return;
     lavaLoading = true;
-    function loadSurface() {
+    function loadScript(path, next) {
       var script = document.createElement("script");
-      script.src = scriptBase + "assets/js/canvas-bg-lava.js";
-      script.onload = function () { if (window.ClassroomOSLava) lavaRenderer = window.ClassroomOSLava.create(); };
+      script.src = scriptBase + path;
+      script.onload = next;
+      script.onerror = next;
       document.head.appendChild(script);
     }
-    if (window.ClassroomOSThemeRegistry) loadSurface();
-    else {
-      // Some lesson templates inject the background without the shared registry.
-      var registryScript = document.createElement("script");
-      registryScript.src = scriptBase + "assets/js/theme-registry.js";
-      registryScript.onload = loadSurface;
-      registryScript.onerror = loadSurface;
-      document.head.appendChild(registryScript);
+    function loadSurface() {
+      loadScript("assets/js/canvas-bg-lava.js", function () { if (window.ClassroomOSLava) lavaRenderer = window.ClassroomOSLava.create(); });
     }
+    // The lamp's wax physics come from the shared LiquidEngine.
+    function loadEngine() {
+      if (window.LiquidEngine && window.LiquidEngine.ThermalBlobs) loadSurface();
+      else loadScript("assets/js/liquid-engine.js", loadSurface);
+    }
+    // Some lesson templates inject the background without the shared registry.
+    if (window.ClassroomOSThemeRegistry) loadEngine();
+    else loadScript("assets/js/theme-registry.js", loadEngine);
   }
   var w = 0, h = 0, t = 0;
   var currentBg = 'none';

@@ -3,9 +3,12 @@
  *
  * This is deliberately a lightweight depiction/interaction engine, not a
  * general-purpose Navier–Stokes solver. It combines a 1-D shallow-water
- * surface model with bounded particles so lakes, rain, lava, honey, and
+ * surface model, bounded particles, a 2-D depth-averaged grid flow over
+ * terrain (DepthField: lava fields, floods, mudflows) and buoyant thermal
+ * blobs (ThermalBlobs: lava lamps), so lakes, rain, lava, honey, and
  * underwater accents can share stable motion and material vocabulary without
- * bringing in a physics dependency.
+ * bringing in a physics dependency. Three.js rendering for these lives in
+ * liquid-engine-three.mjs.
  *
  * Browser: window.LiquidEngine
  * Node:    require('./liquid-engine.js')
@@ -254,6 +257,248 @@
     clear() { this.particles.length = 0; return this; }
   }
 
+  // A depth-averaged (shallow-layer) liquid on a 2-D grid over terrain. Each
+  // cell holds a column of liquid (depth) and the heat it carries (energy =
+  // depth × heat), so volume is conserved exactly: material only moves between
+  // cells, toward lower ground + liquid surfaces, and pools in hollows. A yield
+  // threshold lets viscous liquid pile up before it escapes; cooling (lava)
+  // immobilises thin toes first and leaves the crust in place. Edge cells take
+  // inflow but never drain, so the boundary retains liquid. World units are the
+  // caller's (x/z on the grid, y = height); dt in seconds.
+  const NEIGHBOURS = 8;
+  class DepthField {
+    constructor(options = {}) {
+      this.cols = clamp(Math.floor(options.cols || options.size || 64), 3, 512);
+      this.rows = clamp(Math.floor(options.rows || options.size || this.cols), 3, 512);
+      this.cellSize = Number(options.cellSize) || 1;
+      this.originX = Number(options.originX ?? -(this.cols - 1) * this.cellSize / 2);
+      this.originZ = Number(options.originZ ?? -(this.rows - 1) * this.cellSize / 2);
+      this.material = material(options.material || 'lava');
+      // 0 = stiff (rhyolite-like), 1 = runny (basalt-like). Callers may change it per step.
+      this.fluidity = clamp(Number(options.fluidity ?? 1 - this.material.viscosity), 0, 1);
+      this.supply = Number(options.supply ?? 1);
+      this.yieldDrop = Number(options.yieldDrop ?? 0.09);
+      this.solidus = Number(options.solidus ?? 0.16);
+      this.cooling = Number(options.cooling ?? (this.material.kind === 'lava' ? 1 : 0));
+      this.fixedStep = Number(options.fixedStep) || 0.1;
+      const cells = this.cols * this.rows;
+      this.ground = new Float32Array(cells);
+      this.depth = new Float32Array(cells);
+      this.energy = new Float32Array(cells);
+      this._delta = new Float32Array(cells);
+      this._heatDelta = new Float32Array(cells);
+      this._drops = new Float32Array(NEIGHBOURS);
+      const c = this.cols;
+      this._offsets = [-1, 1, -c, c, -c - 1, -c + 1, c - 1, c + 1];
+      this.sources = [];
+      this.supplied = 0;
+      this._accumulator = 0;
+      if (options.groundAt) this.setGround(options.groundAt);
+    }
+
+    get cellArea() { return this.cellSize * this.cellSize; }
+    index(gx, gz) { return gz * this.cols + gx; }
+    positionOf(i) {
+      return { x: this.originX + (i % this.cols) * this.cellSize, z: this.originZ + Math.floor(i / this.cols) * this.cellSize };
+    }
+    // Nearest cell to a world point, or -1 outside the grid.
+    cellAt(x, z) {
+      const gx = Math.round((x - this.originX) / this.cellSize);
+      const gz = Math.round((z - this.originZ) / this.cellSize);
+      return gx < 0 || gz < 0 || gx >= this.cols || gz >= this.rows ? -1 : this.index(gx, gz);
+    }
+
+    setGround(groundAt) {
+      for (let i = 0; i < this.ground.length; i += 1) {
+        const p = this.positionOf(i);
+        this.ground[i] = groundAt(p.x, p.z);
+      }
+      return this;
+    }
+
+    // Sources pour `rate × supply` depth units per second into their cell.
+    addSource(x, z, rate = 1) {
+      const index = this.cellAt(x, z);
+      if (index >= 0) this.sources.push({ index, rate });
+      return index;
+    }
+    clearSources() { this.sources.length = 0; return this; }
+
+    pour(index, amount, heat = 1) {
+      if (index < 0 || index >= this.depth.length || !(amount > 0)) return this;
+      this.depth[index] += amount;
+      this.energy[index] += amount * heat;
+      this.supplied += amount * this.cellArea;
+      return this;
+    }
+
+    heatAt(index) { const d = this.depth[index]; return d > 0.001 ? this.energy[index] / d : 0; }
+
+    step(dt = this.fixedStep) {
+      const { cols, rows, depth, energy, ground, _delta: delta, _heatDelta: heatDelta, _drops: drops, _offsets: offsets } = this;
+      const fluidity = clamp(this.fluidity, 0, 1);
+      for (const source of this.sources) this.pour(source.index, this.supply * source.rate * dt);
+      delta.fill(0); heatDelta.fill(0);
+      const yieldDrop = (1 - fluidity) * this.yieldDrop;
+      const mobility = 0.12 + fluidity * 1.5;
+      for (let z = 1; z < rows - 1; z += 1) for (let x = 1; x < cols - 1; x += 1) {
+        const i = z * cols + x, d = depth[i];
+        if (d < 0.001) continue;
+        const heat = this.cooling ? energy[i] / d : 1;
+        if (heat < this.solidus) continue;
+        const surface = ground[i] + d;
+        let total = 0;
+        for (let k = 0; k < NEIGHBOURS; k += 1) {
+          const j = i + offsets[k];
+          drops[k] = Math.max(0, surface - ground[j] - depth[j] - yieldDrop) / (k < 4 ? 1 : Math.SQRT2);
+          drops[k] *= drops[k];
+          total += drops[k];
+        }
+        if (!total) continue;
+        // Never move more than 42% of a column per step, so the scheme stays stable.
+        const moved = Math.min(d * 0.42, total * dt * mobility * heat * heat);
+        for (let k = 0; k < NEIGHBOURS; k += 1) if (drops[k] > 0) {
+          const amount = moved * drops[k] / total, j = i + offsets[k];
+          delta[j] += amount; heatDelta[j] += amount * heat;
+        }
+        delta[i] -= moved; heatDelta[i] -= moved * heat;
+      }
+      for (let i = 0; i < depth.length; i += 1) {
+        depth[i] = Math.max(0, depth[i] + delta[i]);
+        // Thin toes cool faster than deep insulated pools; the crust stays.
+        const cooling = this.cooling ? Math.exp(-dt * this.cooling * (0.003 + 0.006 / (0.08 + depth[i]))) : 1;
+        energy[i] = Math.max(0, energy[i] + heatDelta[i]) * cooling;
+      }
+      return this;
+    }
+
+    // Fixed-step update; returns how many steps ran (0 = nothing changed).
+    update(deltaSeconds) {
+      this._accumulator += clamp(Number(deltaSeconds) || 0, 0, 1);
+      let steps = 0;
+      while (this._accumulator >= this.fixedStep) { this.step(this.fixedStep); this._accumulator -= this.fixedStep; steps += 1; }
+      return steps;
+    }
+
+    // Bilinear sample of a per-cell array at fractional grid coordinates.
+    sample(field, gx, gz) {
+      const x0 = clamp(Math.floor(gx), 0, this.cols - 2), z0 = clamp(Math.floor(gz), 0, this.rows - 2);
+      const fx = gx - x0, fz = gz - z0, i = z0 * this.cols + x0, c = this.cols;
+      return lerp(lerp(field[i], field[i + 1], fx), lerp(field[i + c], field[i + c + 1], fx), fz);
+    }
+
+    stats(options = {}) {
+      const coverDepth = options.coverDepth ?? 0.018, hotHeat = options.hotHeat ?? 0.45;
+      let covered = 0, hot = 0, maxDepth = 0, sum = 0;
+      for (let i = 0; i < this.depth.length; i += 1) {
+        const d = this.depth[i];
+        sum += d;
+        if (d > maxDepth) maxDepth = d;
+        if (d > coverDepth) { covered += 1; if (this.heatAt(i) > hotHeat) hot += 1; }
+      }
+      const volume = sum * this.cellArea;
+      return { covered, hot, maxDepth, volume, supplied: this.supplied, balanceError: this.supplied - volume };
+    }
+
+    reset() {
+      this.depth.fill(0); this.energy.fill(0);
+      this.supplied = 0; this._accumulator = 0;
+      return this;
+    }
+  }
+
+  // Buoyant blobs of a heated liquid in a cooler one (a lava lamp). Wax heats
+  // near the bottom, rises, cools near the top and sinks; cool blobs that touch
+  // merge (area-weighted), and a big hot blob moving fast splits in two. Units
+  // are pixels with y down, stepped at a fixed 60 Hz so behaviour does not
+  // depend on the display's refresh rate. `mix` is a pair of paint weights the
+  // renderer blends between, carried through merges.
+  class ThermalBlobs {
+    constructor(options = {}) {
+      this.count = clamp(Math.floor(options.count || 8), 1, 24);
+      this.random = typeof options.random === 'function' ? options.random : Math.random;
+      this.bodies = [];
+      this.width = 0;
+      this.height = 0;
+      this.seconds = 0;
+      this.steps = 0;
+      this._accumulator = 0;
+      if (options.width && options.height) this.resize(options.width, options.height);
+    }
+
+    resize(width, height) {
+      if (this.width && this.height) this.bodies.forEach(b => { b.x *= width / this.width; b.y *= height / this.height; });
+      this.width = width; this.height = height;
+      if (!this.bodies.length) for (let i = 0; i < this.count; i += 1) {
+        this.bodies.push({
+          x: (i + 0.5) * width / this.count, y: height * (0.15 + this.random() * 0.8),
+          r: Math.min(width / 12, 32 + this.random() * 28), vx: 0, vy: 0,
+          temp: this.random(), mix: [i % 2 ? 0 : 1, i % 2 ? 1 : 0], age: 0
+        });
+      }
+      return this;
+    }
+
+    step(pointer) {
+      const dt = 1 / 60, { width, height, bodies } = this;
+      this.seconds += dt; this.steps += 1;
+      for (const b of bodies) {
+        b.age += dt;
+        const y = b.y / height;
+        // Heater below 80%, cooling above 20%, slow drift toward neutral between.
+        const target = y > 0.8 ? 1 : y < 0.2 ? 0 : 0.48;
+        b.temp += (target - b.temp) * (y > 0.8 || y < 0.2 ? 0.008 : 0.0003);
+        b.vy = (b.vy - (b.temp - 0.48) * 2.8) * 0.985;
+        b.vx = (b.vx + Math.sin(this.seconds * 0.35 + b.y * 0.004) * 0.7) * 0.96;
+        if (pointer && pointer.active) {
+          const dx = b.x - pointer.x, dy = b.y - pointer.y, d = Math.hypot(dx, dy);
+          if (d > 1 && d < 180) {
+            b.vx += dx / d * (1 - d / 180) * 4 + pointer.vx * 0.2;
+            b.vy += dy / d * (1 - d / 180) * 4 + pointer.vy * 0.2;
+          }
+        }
+        b.x += b.vx * dt; b.y += b.vy * dt;
+        b.x = Math.max(b.r, Math.min(width - b.r, b.x));
+        if (b.y > height - 15) { b.y = height - 15; b.vy = Math.min(0, b.vy); }
+        if (b.y < b.r * 0.5) { b.y = b.r * 0.5; b.vy = Math.max(0, b.vy); }
+      }
+      for (let i = 0; i < bodies.length; i += 1) for (let j = i + 1; j < bodies.length; j += 1) {
+        const a = bodies[i], b = bodies[j];
+        if (a.temp < 0.45 && b.temp < 0.45 && Math.hypot(a.x - b.x, a.y - b.y) < (a.r + b.r) * 0.55) {
+          const aa = a.r * a.r, bb = b.r * b.r, total = aa + bb;
+          a.x = (a.x * aa + b.x * bb) / total; a.y = (a.y * aa + b.y * bb) / total;
+          a.vx = (a.vx * aa + b.vx * bb) / total; a.vy = (a.vy * aa + b.vy * bb) / total;
+          a.temp = (a.temp * aa + b.temp * bb) / total;
+          a.mix = a.mix.map((c, k) => (c * aa + b.mix[k] * bb) / total);
+          a.r = Math.sqrt(total); a.age = 0;
+          bodies.splice(j--, 1);
+        }
+      }
+      if (bodies.length < this.count) bodies.some(b => {
+        if (b.temp > 0.65 && b.r > 40 && b.age > 8 && Math.abs(b.vy) > 20) {
+          const r = b.r / Math.SQRT2;
+          b.r = r; b.age = 0;
+          bodies.push({ x: b.x + r * 0.5, y: b.y + r, vx: -b.vx, vy: b.vy * 0.8, r, temp: b.temp, mix: b.mix.slice(), age: 0 });
+          b.y -= r;
+          return true;
+        }
+        return false;
+      });
+      return this;
+    }
+
+    // Fixed-step update; returns how many steps ran.
+    update(deltaSeconds, pointer) {
+      this._accumulator += Math.min(0.1, Math.max(0, Number(deltaSeconds) || 0));
+      let steps = 0;
+      while (this._accumulator >= 1 / 60) { this.step(pointer); this._accumulator -= 1 / 60; steps += 1; }
+      return steps;
+    }
+
+    pause() { this._accumulator = 0; return this; }
+    area() { return this.bodies.reduce((sum, b) => sum + b.r * b.r, 0); }
+  }
+
   function drawSurface(ctx, surface, options = {}) {
     if (!ctx || !surface?.columns.length) return;
     const width = options.width ?? surface.width;
@@ -383,15 +628,19 @@
   }
 
   return {
-    version: '1.0.0',
+    version: '1.1.0',
     materials: Object.freeze(Object.keys(MATERIALS)),
     material,
     Surface,
     Particles,
     FlowParticles,
+    DepthField,
+    ThermalBlobs,
     createSurface: options => new Surface(options),
     createParticles: options => new Particles(options),
     createFlowParticles: options => new FlowParticles(options),
+    createDepthField: options => new DepthField(options),
+    createThermalBlobs: options => new ThermalBlobs(options),
     drawSurface,
     drawParticles
   };

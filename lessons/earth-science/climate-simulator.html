@@ -536,31 +536,8 @@
   (function () {
     'use strict';
 
-    /* ══════════════════════════════════════════
-       NOISE  (value fBm — no external deps)
-    ══════════════════════════════════════════ */
-    function hashN(n) {
-      const s = Math.sin(n * 127.1 + 311.7) * 43758.5453123;
-      return s - Math.floor(s);
-    }
-    function hash2(x, y) { return hashN(x + y * 57.0); }
-    function smoothstep(t) { return t * t * (3 - 2 * t); }
+    const { fbm } = SimKit.noise;
     function lerp(a, b, t) { return a + (b - a) * t; }
-
-    function valueNoise(x, y) {
-      const ix = Math.floor(x), iy = Math.floor(y);
-      const fx = x - ix, fy = y - iy;
-      const ux = smoothstep(fx), uy = smoothstep(fy);
-      const a = hash2(ix, iy), b = hash2(ix + 1, iy);
-      const c = hash2(ix, iy + 1), d = hash2(ix + 1, iy + 1);
-      return lerp(lerp(a, b, ux), lerp(c, d, ux), uy);
-    }
-
-    function fbm(x, y, oct) {
-      let v = 0, a = 0.5, f = 1;
-      for (let i = 0; i < oct; i++) { v += a * valueNoise(x * f, y * f); a *= 0.5; f *= 2; }
-      return v;
-    }
 
     /* ══════════════════════════════════════════
        EARTH TEXTURES & SHADER

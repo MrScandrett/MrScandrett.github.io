@@ -252,22 +252,18 @@
   };
 })();
 
-/* piano-chords.js — additive-synthesis piano tone (Web Audio, no samples).
-   A plucked string (guitar) decays the instant it's struck; a piano hammer
-   hits a string too, but the struck tone is much brighter and richer in
-   harmonics at the attack, so this uses a handful of sine partials — rather
-   than guitar's Karplus-Strong noise-ring model — summed under one decay
-   envelope. */
+/* piano-chords.js — piano tone for the lesson widgets. The partials come from the
+   site's shared piano voice (MusicSynth.pianoSources in music-synth.js): a
+   fundamental plus a handful of decreasingly-loud sine harmonics, the struck
+   string's bright attack, rather than guitar's Karplus-Strong noise-ring model.
+   This file only adds the envelope, so callers can choose a note's length, and
+   sends it through AudioKit's shared context and limiter (audio-kit.js). */
 (function () {
   'use strict';
 
-  var ctx = null, volume = 0.75, activeOscillators = new Set();
+  var volume = 0.75, activeOscillators = new Set();
   function getContext() {
-    var AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return null;
-    if (!ctx) ctx = new AC();
-    if (ctx.state === 'suspended') ctx.resume();
-    return ctx;
+    return window.AudioKit && window.MusicSynth ? window.AudioKit.context() : null;
   }
 
   function setVolume(v) { volume = v; }
@@ -275,16 +271,11 @@
     activeOscillators.forEach(function (o) { try { o.stop(); } catch (e) { /* already stopped */ } });
     activeOscillators.clear();
   }
+  if (window.AudioKit) window.AudioKit.onStop(stop);
 
-  /* Fundamental plus a handful of decreasingly-loud harmonics, all under one
-     shared envelope — a struck piano string rings continuously from the
-     moment of the hammer strike (no separate sustain plateau like an organ),
-     so a single fast-attack, slow-decay envelope covers the whole note. */
-  var HARMONICS = [
-    { mult: 1, amp: 1 }, { mult: 2, amp: 0.5 }, { mult: 3, amp: 0.22 },
-    { mult: 4, amp: 0.12 }, { mult: 6, amp: 0.05 }
-  ];
-
+  /* A struck piano string rings continuously from the moment of the hammer
+     strike (no separate sustain plateau like an organ), so a single
+     fast-attack, slow-decay envelope covers the whole note. */
   function tone(freq, opts) {
     opts = opts || {};
     var audioCtx = getContext();
@@ -297,35 +288,14 @@
     master.gain.setValueAtTime(0.0001, now);
     master.gain.linearRampToValueAtTime(peak, now + 0.008);
     master.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    master.connect(window.AudioKit.output());
 
-    var filter = audioCtx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.value = Math.min(10000, freq * 6 + 1800);
-
-    master.connect(filter);
-    filter.connect(audioCtx.destination);
-
-    if (window.LessonInstrumentEngines) {
-      master.disconnect(); filter.disconnect(); master.connect(audioCtx.destination);
-      var shared = window.LessonInstrumentEngines.pianoSources(audioCtx, master, freq, now);
-      shared.sources.forEach(function (osc) { activeOscillators.add(osc); osc.stop(now + duration + .05); });
-      shared.sources[0].onended = function () { shared.sources.forEach(function (osc) { activeOscillators.delete(osc); }); shared.disconnect(); master.disconnect(); filter.disconnect(); };
-      return;
-    }
-
-    HARMONICS.forEach(function (h) {
-      var osc = audioCtx.createOscillator();
-      osc.type = 'sine';
-      osc.frequency.value = freq * h.mult;
-      var g = audioCtx.createGain();
-      g.gain.value = h.amp;
-      osc.connect(g);
-      g.connect(master);
-      osc.start(now);
-      osc.stop(now + duration + 0.05);
-      activeOscillators.add(osc);
-      osc.onended = function () { activeOscillators.delete(osc); };
-    });
+    var shared = window.MusicSynth.pianoSources(audioCtx, master, freq, now);
+    shared.sources.forEach(function (osc) { activeOscillators.add(osc); osc.stop(now + duration + 0.05); });
+    shared.sources[0].onended = function () {
+      shared.sources.forEach(function (osc) { activeOscillators.delete(osc); });
+      shared.disconnect(); master.disconnect();
+    };
   }
 
   /* All notes struck together — a "block" chord. */

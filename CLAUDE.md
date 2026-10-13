@@ -294,7 +294,10 @@ copy):
   for DPR-aware canvas sizing/resize, `SimKit.loop(fn)` for a rAF loop that pauses
   when the tab is hidden, `SimKit.theme.colors()` / `SimKit.theme.onChange(cb)` for
   reading the site's `--bg`/`--text`/`--accent` CSS custom properties instead of
-  branching on `dataset.theme` by hand.
+  branching on `dataset.theme` by hand. `SimKit.noise.fbm(x, y, octaves)` (plus
+  `.value`, `.hash`) is the deterministic value noise for procedural terrain/clouds/
+  turbulence; don't paste another `hashN`/`fbm` stack into a lesson
+  (`tests/sim-kit-noise.test.mjs` pins its output).
 - `assets/vendor/three-bundle.min.js` (rebuild with `npm run build:three`, source in
   `scripts/three-bundle-entry.js`) — the single pinned Three.js build (matches the
   `three` devDependency used by `scripts/build-breadboard-model.mjs`), plus
@@ -307,6 +310,14 @@ copy):
   `Bodies`, `Body`, `Composite`, `World`) for sims that need real 2D rigid-body
   collision instead of independently-moving points. See `lessons/cymatics.html`'s
   sand-grain physics for a worked example.
+- `<script src="../assets/js/liquid-engine.js"></script>` — `LiquidEngine` for liquids:
+  `Surface` (1-D waves), `Particles`/`FlowParticles`, `DepthField` (2-D depth-averaged grid
+  flow over terrain for lava fields, floods and mudflows; conserves volume, has a yield threshold
+  and cooling, `stats().balanceError`) and `ThermalBlobs` (buoyant lava-lamp wax that merges and
+  splits). `liquid-engine-three.mjs` renders them (`createLiquidSurface`, `createDepthFieldMesh`
+  drapes a DepthField over terrain). Don't hand-roll another lava/flood grid; see
+  `lessons/earth-science/volcano-simulator.html` and `assets/js/canvas-bg-lava.js`. Tests:
+  `node --test tests/liquid-engine.test.mjs`.
 
 - `<script src="../assets/js/arduino-art.js"></script>` — the one illustration engine for
   every Arduino drawn on the site (UNO R3, UNO R4 WiFi, UNO Q, Nano Every). Drop in

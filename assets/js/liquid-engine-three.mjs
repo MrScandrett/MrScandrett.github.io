@@ -2,7 +2,8 @@
 // Uses the repo-pinned Three.js bundle and keeps simulation/material state in
 // LiquidEngine-compatible terms. This is a real-time approximation: layered
 // waves, analytical normals, Fresnel response, depth color, foam, and caustic
-// hints—not a full photon or Navier–Stokes solver.
+// hints—not a full photon or Navier–Stokes solver. createDepthFieldMesh()
+// renders a LiquidEngine.DepthField (lava fields) draped over terrain.
 
 const MATERIALS = {
   water: { surface: 0x3cb9d2, deep: 0x062e58, foam: 0xd8fbff, roughness: 0.08, opacity: 0.82, glow: 0x1b8fb5 },
@@ -196,6 +197,125 @@ export function createLiquidSurface(THREE, options = {}) {
   }
   function dispose() { geometry.dispose(); shader.dispose(); }
   const api = { mesh, geometry, material: shader, uniforms, update, setMaterial, setQuality, dispose };
+  return api;
+}
+
+// Lava deposit shading for a DepthField mesh: fresh, hot material opens
+// irregular glowing cracks that crawl downhill; cold deposits stop moving and
+// read as dark crust. `deposit` = (depth, heat) per vertex.
+const DEPOSIT_VERTEX_SHADER = `
+  varying vec2 flowUV;
+  varying vec2 lavaState;
+  attribute vec2 deposit;
+  void main() {
+    flowUV = uv;
+    lavaState = deposit;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }`;
+
+const LAVA_DEPOSIT_FRAGMENT_SHADER = `
+  uniform float time;
+  uniform float fluidity;
+  uniform float threshold;
+  varying vec2 flowUV;
+  varying vec2 lavaState;
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float noise(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1,0)), f.x),
+               mix(hash(i + vec2(0,1)), hash(i + vec2(1,1)), f.x), f.y);
+  }
+  void main() {
+    if (lavaState.x < threshold) discard;
+    float heatLevel = clamp(lavaState.y, 0.0, 1.0);
+    vec2 p = flowUV * 1.8;
+    p.y -= time * 0.16 * heatLevel * fluidity;
+    float n = noise(p + noise(p * 0.45) * 2.5);
+    float cracks = 1.0 - smoothstep(0.025, 0.12, abs(n - 0.5));
+    float heat = heatLevel * (0.25 + cracks * 0.75);
+    vec3 crust = mix(vec3(0.012, 0.014, 0.016), vec3(0.045, 0.038, 0.035), n);
+    vec3 molten = mix(vec3(0.9, 0.065, 0.005), vec3(1.8, 0.65, 0.06), heat);
+    gl_FragColor = vec4(mix(crust, molten, smoothstep(0.15, 0.8, heat)), 1.0);
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
+  }`;
+
+// Drapes a LiquidEngine.DepthField over terrain. The mesh is `subdivisions`×
+// finer than the simulation grid so it can follow the terrain's own
+// tessellation (pass the same `groundAt` the terrain uses) instead of cutting
+// through ridges, and only covered triangles are submitted. Call sync() after
+// the field steps; update(dt) advances the shader clock.
+export function createDepthFieldMesh(THREE, field, options = {}) {
+  const sub = Math.max(1, Math.floor(options.subdivisions ?? 2));
+  const lift = options.lift ?? 0.035;
+  const threshold = options.threshold ?? 0.018;
+  const cols = (field.cols - 1) * sub + 1, rows = (field.rows - 1) * sub + 1, count = cols * rows;
+  const spacing = field.cellSize / sub;
+  const ground = new Float32Array(count);
+  const positions = new Float32Array(count * 3);
+  const deposits = new Float32Array(count * 2);
+  const uvs = new Float32Array(count * 2);
+  for (let z = 0; z < rows; z++) for (let x = 0; x < cols; x++) {
+    const i = z * cols + x;
+    positions[i * 3] = field.originX + x * spacing;
+    positions[i * 3 + 2] = field.originZ + z * spacing;
+    uvs[i * 2] = x * spacing;
+    uvs[i * 2 + 1] = z * spacing;
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage));
+  geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+  geometry.setAttribute('deposit', new THREE.BufferAttribute(deposits, 2).setUsage(THREE.DynamicDrawUsage));
+  const indices = new Uint32Array((cols - 1) * (rows - 1) * 6);
+  geometry.setIndex(new THREE.BufferAttribute(indices, 1).setUsage(THREE.DynamicDrawUsage));
+  geometry.setDrawRange(0, 0);
+  const uniforms = {
+    time: { value: 0 },
+    fluidity: { value: field.fluidity },
+    threshold: { value: threshold }
+  };
+  const material = options.material || new THREE.ShaderMaterial({
+    side: THREE.DoubleSide,
+    uniforms,
+    vertexShader: DEPOSIT_VERTEX_SHADER,
+    fragmentShader: LAVA_DEPOSIT_FRAGMENT_SHADER
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.frustumCulled = false;
+  mesh.visible = false;
+
+  function setGround(groundAt) {
+    for (let i = 0; i < count; i++) ground[i] = groundAt(positions[i * 3], positions[i * 3 + 2]);
+    return api;
+  }
+  function sync() {
+    for (let z = 0; z < rows; z++) for (let x = 0; x < cols; x++) {
+      const r = z * cols + x, gx = x / sub, gz = z / sub;
+      const depth = field.sample(field.depth, gx, gz), energy = field.sample(field.energy, gx, gz);
+      positions[r * 3 + 1] = ground[r] + lift + depth;
+      deposits[r * 2] = depth;
+      deposits[r * 2 + 1] = depth > 0.001 ? energy / depth : 0;
+    }
+    let drawCount = 0;
+    for (let z = 0; z < rows - 1; z++) for (let x = 0; x < cols - 1; x++) {
+      const i = z * cols + x, j = i + cols;
+      if (Math.max(deposits[i * 2], deposits[(i + 1) * 2], deposits[j * 2], deposits[(j + 1) * 2]) < threshold) continue;
+      indices[drawCount++] = i; indices[drawCount++] = j; indices[drawCount++] = i + 1;
+      indices[drawCount++] = i + 1; indices[drawCount++] = j; indices[drawCount++] = j + 1;
+    }
+    geometry.setDrawRange(0, drawCount);
+    geometry.index.needsUpdate = true;
+    geometry.attributes.position.needsUpdate = true;
+    geometry.attributes.deposit.needsUpdate = true;
+    mesh.visible = drawCount > 0;
+    uniforms.fluidity.value = field.fluidity;
+    return api;
+  }
+  function update(deltaSeconds = 1 / 60) { uniforms.time.value += Math.max(0, deltaSeconds); return api; }
+  function dispose() { geometry.dispose(); if (!options.material) material.dispose(); }
+  const api = { mesh, geometry, material, uniforms, setGround, sync, update, dispose };
+  if (options.groundAt) setGround(options.groundAt);
   return api;
 }
 

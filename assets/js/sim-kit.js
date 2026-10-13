@@ -167,9 +167,40 @@
     };
   }
 
+  /* ── Value noise ──────────────────────────────────────────────────
+     Deterministic 2D value noise and fBm (fractional Brownian motion)
+     for procedural terrain, cloud cover and turbulence — the sin-hash
+     stack the climate and volcano sims used to paste inline. Same
+     inputs give the same outputs on every load; results are in [0, 1).
+  */
+  function noiseHash(x, y) {
+    var s = Math.sin((x + y * 57) * 127.1 + 311.7) * 43758.5453;
+    return s - Math.floor(s);
+  }
+
+  function fade(t) { return t * t * (3 - 2 * t); }
+
+  function valueNoise(x, y) {
+    var ix = Math.floor(x), iy = Math.floor(y);
+    var ux = fade(x - ix), uy = fade(y - iy);
+    var a = noiseHash(ix, iy), b = noiseHash(ix + 1, iy);
+    var c = noiseHash(ix, iy + 1), d = noiseHash(ix + 1, iy + 1);
+    var top = a + (b - a) * ux;
+    var bottom = c + (d - c) * ux;
+    return top + (bottom - top) * uy;
+  }
+
+  // Octaves double in frequency and halve in amplitude (0.5, 0.25, …).
+  function fbm(x, y, octaves) {
+    var v = 0, a = 0.5, f = 1;
+    for (var i = 0; i < octaves; i++) { v += a * valueNoise(x * f, y * f); a *= 0.5; f *= 2; }
+    return v;
+  }
+
   global.SimKit = {
     theme: { colors: themeColors, onChange: onThemeChange },
     canvas2d: canvas2d,
-    loop: loop
+    loop: loop,
+    noise: { hash: noiseHash, value: valueNoise, fbm: fbm }
   };
 }(window));

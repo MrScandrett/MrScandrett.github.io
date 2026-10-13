@@ -28,7 +28,8 @@
   // ── Constants ────────────────────────────────────────────────────────────
   const INSTRUMENTS = {
     piano: 'Grand Piano', ePiano: 'Electric Piano', organ: 'Organ', pluck: 'Guitar Pluck',
-    bass: 'Bass', strings: 'Strings', pad: 'Warm Pad', synth: 'Synth Lead', drums: 'Drum Kit',
+    bass: 'Bass', strings: 'Strings', pad: 'Warm Pad', synth: 'Synth Lead',
+    violin: 'Violin', sax: 'Saxophone', flute: 'Flute', drums: 'Drum Kit',
   };
   const COLORS = ['#f2994a', '#56ccf2', '#6fcf97', '#bb6bd9', '#f2c94c', '#ff7a8a', '#2dd4bf', '#a3e635'];
   // Touch screens (iPhone, iPad) get bigger targets everywhere, and phones get a

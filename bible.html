@@ -16,6 +16,8 @@
       var s = Number(localStorage.getItem('bible:size'));
       if (s) d.style.setProperty('--bb-scale', s / 100);
       d.dataset.bibleLayout = localStorage.getItem('bible:layout') || 'auto';
+      var h = localStorage.getItem('bible:highlight');
+      if (h) d.dataset.highlight = h;
     } catch (e) {}
   </script>
 </head>
@@ -80,16 +82,59 @@
         <button type="button" data-layout="lines" aria-pressed="false">Verse by verse</button>
       </div>
     </fieldset>
+    <fieldset>
+      <legend>Highlight</legend>
+      <div class="bb-seg bb-seg-colors" role="radiogroup" aria-label="Highlight color">
+        <button type="button" data-hl="gold" aria-pressed="false" title="Gold highlight">Gold</button>
+        <button type="button" data-hl="sage" aria-pressed="false" title="Sage highlight">Sage</button>
+        <button type="button" data-hl="blue" aria-pressed="false" title="Blue highlight">Blue</button>
+        <button type="button" data-hl="rose" aria-pressed="false" title="Rose highlight">Rose</button>
+        <button type="button" data-hl="purple" aria-pressed="false" title="Purple highlight">Purple</button>
+      </div>
+    </fieldset>
   </div>
 
   <main class="bb-main" id="bbMain" tabindex="-1">
     <p class="bb-loading">Opening the Bible…</p>
   </main>
 
-  <div class="bb-selbar" id="bbSelbar" hidden>
-    <span id="bbSelRef"></span>
-    <button type="button" class="bb-btn" id="bbSelCopy">Copy</button>
-    <button type="button" class="bb-btn" id="bbSelClear" aria-label="Clear verse selection">✕</button>
+  <div class="bb-selbar" id="bbSelbar" role="region" aria-label="Selected passage" hidden>
+    <div class="bb-sel-header">
+      <div class="bb-sel-info">
+        <span class="bb-sel-ref" id="bbSelRef"></span>
+        <span class="bb-sel-count" id="bbSelCount"></span>
+      </div>
+      <button type="button" class="bb-sel-btn bb-sel-clear" id="bbSelClear" aria-label="Clear verse selection" title="Clear selection (Esc)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+      </button>
+    </div>
+    <div class="bb-sel-actions">
+      <div class="bb-sel-colors" id="bbSelColors" role="radiogroup" aria-label="Highlight color">
+        <button type="button" class="bb-color-dot" data-color="gold" aria-label="Gold highlight" aria-checked="true" role="radio" title="Gold highlight"></button>
+        <button type="button" class="bb-color-dot" data-color="sage" aria-label="Sage highlight" aria-checked="false" role="radio" title="Sage highlight"></button>
+        <button type="button" class="bb-color-dot" data-color="blue" aria-label="Blue highlight" aria-checked="false" role="radio" title="Blue highlight"></button>
+        <button type="button" class="bb-color-dot" data-color="rose" aria-label="Rose highlight" aria-checked="false" role="radio" title="Rose highlight"></button>
+        <button type="button" class="bb-color-dot" data-color="purple" aria-label="Purple highlight" aria-checked="false" role="radio" title="Purple highlight"></button>
+      </div>
+      <div class="bb-sel-tools">
+        <button type="button" class="bb-sel-btn" id="bbSelCopy" title="Copy passage text with reference">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+          <span class="bb-sel-btn-label">Copy</span>
+        </button>
+        <button type="button" class="bb-sel-btn" id="bbSelLink" title="Copy shareable link to this passage">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+          <span class="bb-sel-btn-label">Link</span>
+        </button>
+        <button type="button" class="bb-sel-btn" id="bbSelListen" title="Listen to selected verses">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+          <span class="bb-sel-btn-label">Listen</span>
+        </button>
+        <button type="button" class="bb-sel-btn" id="bbSelShare" title="Share selected passage" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" /></svg>
+          <span class="bb-sel-btn-label">Share</span>
+        </button>
+      </div>
+    </div>
   </div>
 
   <p class="bb-sr" id="bbStatus" role="status" aria-live="polite"></p>

@@ -1,16 +1,69 @@
 /* music-synth.js — the site's pitched instrument voices on plain Web Audio.
  *
- * Shared by Track Studio (music-daw.js) and the score player (score-engine.js), so a
- * note sounds the same wherever it is played. Instruments: piano, ePiano, organ,
- * pluck, bass, strings, pad, synth.
+ * The one voice library for the whole site: Track Studio (music-daw.js), the score
+ * player (score-engine.js), Music Lab channel experiences and every instrument lesson
+ * (through AudioKit.note in audio-kit.js), so a note sounds the same wherever it is
+ * played. Instruments: piano, ePiano, organ, pluck, bass, strings, pad, synth,
+ * violin, sax, flute.
  *
  *   const v = MusicSynth.startVoice(ctx, destination, 'piano', 60, 0.8, ctx.currentTime);
  *   v.release(ctx.currentTime + 0.5);   // or v.kill(time) to cut it off
+ *   v.glide(62, ctx.currentTime);       // slide a held note (violin fingerboard, bends)
+ *
+ * Voices never pick their own AudioContext or connect to speakers, so the same code
+ * renders live, into an OfflineAudioContext for WAV export, or into a lesson's mix bus.
  */
 (function (root) {
 'use strict';
 
 const midiHz = (n) => 440 * Math.pow(2, (n - 69) / 12);
+
+// Piano: a fundamental plus a handful of decreasingly loud sine harmonics under a
+// fixed lowpass. A struck string rings from the hammer strike with no sustain
+// plateau, so the voice envelope (fast attack, long decay) carries the note.
+const PIANO_HARMONICS = [[1, 1], [2, .5], [3, .22], [4, .12], [6, .05]];
+function pianoSources(context, output, frequency, time) {
+  const filter = context.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = Math.min(10000, frequency * 6 + 1800);
+  filter.connect(output);
+  const nodes = [filter];
+  const sources = PIANO_HARMONICS.map(([multiple, level]) => {
+    const oscillator = context.createOscillator(), gain = context.createGain();
+    oscillator.type = 'sine';
+    oscillator.frequency.value = frequency * multiple;
+    gain.gain.value = level;
+    oscillator.connect(gain); gain.connect(filter); oscillator.start(time);
+    nodes.push(oscillator, gain);
+    return oscillator;
+  });
+  return { sources, disconnect() { nodes.forEach(node => node.disconnect()); } };
+}
+
+// Pluck: Karplus-Strong. A ring buffer of noise, averaged and damped one period at
+// a time, is the classic minimal model of a plucked, decaying string. Buffers are
+// cached per context and pitch so strums and fast sequences don't recompute them.
+const pluckCache = new WeakMap();
+function pluckBuffer(context, frequency, duration) {
+  const key = frequency.toFixed(2) + ':' + duration;
+  let bank = pluckCache.get(context);
+  if (!bank) { bank = new Map(); pluckCache.set(context, bank); }
+  const hit = bank.get(key);
+  if (hit) return hit;
+  const length = Math.max(2, Math.floor(context.sampleRate * duration));
+  const buffer = context.createBuffer(1, length, context.sampleRate), data = buffer.getChannelData(0);
+  const period = Math.max(2, Math.round(context.sampleRate / frequency)), ring = new Float32Array(period);
+  for (let i = 0; i < period; i++) ring[i] = Math.random() * 2 - 1;
+  let index = 0, previous = 0;
+  for (let n = 0; n < length; n++) {
+    const current = ring[index]; data[n] = current;
+    ring[index] = .994 * .5 * (current + previous);
+    previous = current; index = (index + 1) % period;
+  }
+  if (bank.size > 24) bank.delete(bank.keys().next().value);
+  bank.set(key, buffer);
+  return buffer;
+}
 
 const noiseBuffers = new WeakMap();
 function noise(c) {
@@ -22,6 +75,20 @@ function noise(c) {
     noiseBuffers.set(c, b);
   }
   return b;
+}
+// Delayed pitch vibrato in cents on the given oscillators. The LFO is tagged `fixed`
+// so voice.glide() retunes the notes without retuning the vibrato rate.
+function vibrato(c, t, oscs, cents, delay, rate) {
+  if (!cents) return [];
+  const lfo = c.createOscillator(), depth = c.createGain();
+  lfo.fixed = true;
+  lfo.frequency.value = rate || 5.2;
+  depth.gain.setValueAtTime(0, t);
+  depth.gain.linearRampToValueAtTime(cents, t + (delay || 0.35));
+  lfo.connect(depth);
+  oscs.forEach((o) => depth.connect(o.detune));
+  lfo.start(t);
+  return [lfo];
 }
 function osc(c, type, freq, t, out, level) {
   const o = c.createOscillator();
@@ -43,25 +110,9 @@ const SYNTHS = {
   piano: {
     a: 0.003, d: 2.6, s: 0.03, r: 0.35, gain: 0.42,
     voice(c, f, v, t, out) {
-      if (root.LessonInstrumentEngines) { const shared=root.LessonInstrumentEngines.pianoSources(c,out,f,t); shared.sources.cleanup=shared.disconnect; return shared.sources; }
-      const filt = lowpass(c, out, 3000, 0.6);
-      filt.frequency.setValueAtTime(Math.min(9000, 2600 + v * 4200 + f * 2), t);
-      filt.frequency.setTargetAtTime(Math.min(4200, 900 + f * 1.6), t + 0.02, 0.5);
-      const srcs = [[1, 1, 'triangle', 0], [2, 0.3, 'sine', 1.1], [3, 0.12, 'sine', 0.6], [4, 0.05, 'sine', 0.3]].map(([r, l, type, dec], i) => {
-        const o = c.createOscillator(), g = c.createGain();
-        o.type = type; o.frequency.value = f * r; o.detune.value = i ? (i % 2 ? 1.2 : -1.1) : 0;
-        g.gain.setValueAtTime(l, t);
-        if (dec) g.gain.setTargetAtTime(0, t, dec / 3);
-        o.connect(g); g.connect(filt); o.start(t);
-        return o;
-      });
-      const hammer = c.createBufferSource(), hf = c.createBiquadFilter(), hg = c.createGain();
-      hammer.buffer = noise(c);
-      hf.type = 'bandpass'; hf.frequency.value = Math.min(5200, 1800 + f); hf.Q.value = 0.8;
-      hg.gain.setValueAtTime(0.06 * v, t); hg.gain.exponentialRampToValueAtTime(0.0001, t + 0.035);
-      hammer.connect(hf); hf.connect(hg); hg.connect(filt);
-      hammer.start(t, Math.random() * 0.5); hammer.stop(t + 0.05);
-      return srcs;
+      const shared = pianoSources(c, out, f, t);
+      shared.sources.cleanup = shared.disconnect;
+      return shared.sources;
     },
   },
   ePiano: {
@@ -90,11 +141,13 @@ const SYNTHS = {
   pluck: {
     a: 0.002, d: 0.9, s: 0, r: 0.2, gain: 0.45,
     voice(c, f, v, t, out) {
-      if (root.LessonInstrumentEngines) { const source=c.createBufferSource();source.buffer=root.LessonInstrumentEngines.pluckBuffer(c,f,5);const body=lowpass(c,out,Math.min(9000,f*9+1200),.7);source.connect(body);source.start(t);const sources=[source];sources.cleanup=()=>{source.disconnect();body.disconnect();};return sources; }
-      const filt = lowpass(c, out, 400, 1.2);
-      filt.frequency.setValueAtTime(1200 + v * 5200, t);
-      filt.frequency.setTargetAtTime(Math.max(300, f * 1.5), t, 0.08);
-      return [osc(c, 'sawtooth', f, t, filt, 0.6), osc(c, 'triangle', f, t, filt, 0.8)];
+      const source = c.createBufferSource();
+      source.buffer = pluckBuffer(c, f, 5);
+      const body = lowpass(c, out, Math.min(9000, f * 9 + 1200), 0.7);
+      source.connect(body); source.start(t);
+      const sources = [source];
+      sources.cleanup = () => { source.disconnect(); body.disconnect(); };
+      return sources;
     },
   },
   bass: {
@@ -111,6 +164,7 @@ const SYNTHS = {
     voice(c, f, v, t, out) {
       const filt = lowpass(c, out, 2400 + v * 1600, 0.7);
       const vib = c.createOscillator(), depth = c.createGain();
+      vib.fixed = true;
       vib.frequency.value = 5.2;
       depth.gain.setValueAtTime(0, t); depth.gain.linearRampToValueAtTime(7, t + 0.45);
       vib.connect(depth); vib.start(t);
@@ -140,6 +194,54 @@ const SYNTHS = {
       return [a, b];
     },
   },
+  // Solo bowed string: a bright sawtooth through a bow-brightness lowpass. Vibrato is
+  // a setting (cents, default 8) so intonation lessons can turn it off with vibrato: 0.
+  violin: {
+    a: 0.06, d: 0.4, s: 0.88, r: 0.12, gain: 0.24,
+    voice(c, f, v, t, out, settings) {
+      const filt = lowpass(c, out, Math.min(8000, 2600 + f * 2 + v * 1800), 0.8);
+      const a = osc(c, 'sawtooth', f, t, filt), b = osc(c, 'sawtooth', f, t, filt, 0.3);
+      b.detune.value = 4;
+      const cents = Number.isFinite(Number(settings?.vibrato)) ? Number(settings.vibrato) : 8;
+      return [a, b].concat(vibrato(c, t, [a, b], cents, 0.3, 5.6));
+    },
+  },
+  // Reed lead (the fake-book "sax"): saw + square with a bright attack that settles.
+  sax: {
+    a: 0.025, d: 0.75, s: 0.7, r: 0.15, gain: 0.3,
+    voice(c, f, v, t, out, settings) {
+      const filt = lowpass(c, out, 900, 2);
+      filt.frequency.setValueAtTime(900, t);
+      filt.frequency.linearRampToValueAtTime(2400 + v * 600, t + 0.06);
+      filt.frequency.setTargetAtTime(1500, t + 0.06, 0.2);
+      const a = osc(c, 'sawtooth', f, t, filt, 0.35), b = osc(c, 'square', f, t, filt, 0.35);
+      b.detune.value = -6;
+      const cents = Number.isFinite(Number(settings?.vibrato)) ? Number(settings.vibrato) : 10;
+      return [a, b].concat(vibrato(c, t, [a, b], cents));
+    },
+  },
+  flute: {
+    a: 0.04, d: 0.75, s: 0.75, r: 0.15, gain: 0.34,
+    voice(c, f, v, t, out, settings) {
+      const filt = lowpass(c, out, 2600, 0.7);
+      const a = osc(c, 'sine', f, t, filt, 0.7), b = osc(c, 'triangle', f, t, filt, 0.7);
+      b.detune.value = 4;
+      const breath = c.createBufferSource(), bf = c.createBiquadFilter(), bg = c.createGain();
+      breath.buffer = noise(c); breath.loop = true;
+      bf.type = 'bandpass'; bf.frequency.value = Math.min(9000, f * 2); bf.Q.value = 1.4;
+      bg.gain.value = 0.025 + 0.03 * v;
+      breath.connect(bf); bf.connect(bg); bg.connect(filt); breath.start(t);
+      const cents = Number.isFinite(Number(settings?.vibrato)) ? Number(settings.vibrato) : 10;
+      const sources = [a, b, breath].concat(vibrato(c, t, [a, b], cents));
+      sources.cleanup = () => { breath.disconnect(); bf.disconnect(); bg.disconnect(); };
+      return sources;
+    },
+  },
+};
+
+const LABELS = {
+  piano: 'Piano', ePiano: 'Electric piano', organ: 'Organ', pluck: 'Guitar pluck', bass: 'Bass',
+  strings: 'Strings', pad: 'Warm pad', synth: 'Synth lead', violin: 'Violin', sax: 'Saxophone', flute: 'Flute',
 };
 
 function envLevel(voice, time) {
@@ -161,11 +263,14 @@ function startVoice(c, out, instrument, pitch, vel, t, onEnded, settings = {}) {
   env.gain.setValueAtTime(0, t);
   env.gain.linearRampToValueAtTime(peak, t + def.a);
   env.gain.setTargetAtTime(peak * def.s, t + def.a, def.d / 3);
-  const sources = def.voice(c, midiHz(pitch), vel, t, env, settings);
+  const f0 = midiHz(pitch);
+  const sources = def.voice(c, f0, vel, t, env, settings);
+  // Pitched oscillators keep their ratio to the fundamental so glide() can retune them.
+  const tuned = sources.filter((s) => s.frequency && !s.fixed).map((s) => [s, s.frequency.value / f0]);
   let cleaned=false;
   function cleanup() { if(cleaned)return;cleaned=true;voice.done=true;env.disconnect();sources.cleanup?.();if(onEnded)onEnded(voice); }
   const voice = {
-    t, def, peak, env, sources, done: false,
+    t, def, peak, env, sources, pitch, done: false,
     release(at) {
       if (voice.done) return;
       voice.done = true;
@@ -184,10 +289,16 @@ function startVoice(c, out, instrument, pitch, vel, t, onEnded, settings = {}) {
       sources[0].onended=cleanup;
       sources.forEach((s) => { try { s.stop(at + 0.06); } catch (_e) { /* already stopped */ } });
     },
+    // Slides a sounding note to a new (fractional) MIDI pitch; tau is the glide time constant.
+    glide(toPitch, at, tau = 0.015) {
+      const hz = midiHz(toPitch);
+      voice.pitch = toPitch;
+      tuned.forEach(([s, ratio]) => s.frequency.setTargetAtTime(hz * ratio, Math.max(at, c.currentTime), tau));
+    },
   };
   sources[0].onended=cleanup;
   return voice;
 }
 
-root.MusicSynth = { instruments: Object.keys(SYNTHS), startVoice, midiHz };
+root.MusicSynth = { instruments: Object.keys(SYNTHS), labels: LABELS, startVoice, midiHz, pianoSources, pluckBuffer };
 })(typeof window !== 'undefined' ? window : globalThis);

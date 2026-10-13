@@ -512,41 +512,19 @@
   };
 })();
 
-/* guitar-chords.js — plucked-string synth (Karplus-Strong), no audio assets */
+/* guitar-chords.js — plucked-string tone (Karplus-Strong), no audio assets. The
+   string model is the site's shared one (MusicSynth.pluckBuffer in music-synth.js:
+   a ring buffer of noise, averaged and damped one period at a time, which is what
+   makes this sound like a plucked string rather than a synth tone). Notes play
+   through AudioKit's shared context and limiter (audio-kit.js). */
 (function () {
   'use strict';
 
-  var ctx = null, sources = new Set(), volume = 0.45;
+  var sources = new Set(), volume = 0.45;
   function stop() { sources.forEach(function(src) { try { src.stop(); } catch(e) {} }); sources.clear(); }
+  if (window.AudioKit) window.AudioKit.onStop(stop);
   function getContext() {
-    var AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return null;
-    if (!ctx) ctx = new AC();
-    if (ctx.state === 'suspended') ctx.resume();
-    return ctx;
-  }
-
-  /* Karplus-Strong: a ring buffer of noise, repeatedly averaged-and-damped one
-     period at a time, is the classic minimal model of a plucked, decaying string —
-     it's what makes this sound like a plucked string rather than a synth tone. */
-  function pluckBuffer(audioCtx, freq, duration) {
-    if (window.LessonInstrumentEngines) return window.LessonInstrumentEngines.pluckBuffer(audioCtx, freq, duration);
-    var sampleRate = audioCtx.sampleRate;
-    var length = Math.max(2, Math.floor(sampleRate * duration));
-    var buffer = audioCtx.createBuffer(1, length, sampleRate);
-    var data = buffer.getChannelData(0);
-    var period = Math.max(2, Math.round(sampleRate / freq));
-    var ring = new Float32Array(period);
-    for (var i = 0; i < period; i++) ring[i] = Math.random() * 2 - 1;
-    var idx = 0, prev = 0, damping = 0.994;
-    for (var n = 0; n < length; n++) {
-      var cur = ring[idx];
-      data[n] = cur;
-      ring[idx] = damping * 0.5 * (cur + prev);
-      prev = cur;
-      idx = (idx + 1) % period;
-    }
-    return buffer;
+    return window.AudioKit && window.MusicSynth ? window.AudioKit.context() : null;
   }
 
   /* Pluck one note. `opts.delay` offsets the start time (seconds from now) so
@@ -558,7 +536,7 @@
     var now = audioCtx.currentTime + (opts.delay || 0);
     var duration = opts.duration || 1.7;
     var src = audioCtx.createBufferSource();
-    src.buffer = pluckBuffer(audioCtx, freq, duration);
+    src.buffer = window.MusicSynth.pluckBuffer(audioCtx, freq, duration);
 
     var body = audioCtx.createBiquadFilter();
     body.type = 'lowpass';
@@ -572,7 +550,7 @@
 
     src.connect(body);
     body.connect(gain);
-    gain.connect(audioCtx.destination);
+    gain.connect(window.AudioKit.output());
     sources.add(src);
     src.onended = function() { sources.delete(src); src.disconnect(); body.disconnect(); gain.disconnect(); };
     src.start(now);

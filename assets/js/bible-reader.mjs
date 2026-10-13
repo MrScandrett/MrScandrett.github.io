@@ -175,7 +175,20 @@ function stopSpeaking() {
   window.speechSynthesis?.cancel();
   document.querySelectorAll(".bb-v.is-speaking").forEach((v) => v.classList.remove("is-speaking"));
   const btn = document.getElementById("bbListen");
-  if (btn) { btn.setAttribute("aria-pressed", "false"); btn.lastChild.textContent = "Listen"; }
+  if (btn) {
+    btn.setAttribute("aria-pressed", "false");
+    btn.classList.remove("is-active");
+    if (btn.lastChild) btn.lastChild.textContent = "Listen";
+  }
+  const selListen = document.getElementById("bbSelListen");
+  if (selListen) {
+    selListen.setAttribute("aria-pressed", "false");
+    selListen.classList.remove("is-active");
+    const label = selListen.querySelector(".bb-sel-btn-label");
+    if (label) label.textContent = "Listen";
+    const svg = selListen.querySelector("svg");
+    if (svg) svg.innerHTML = '<polygon points="5 3 19 12 5 21 5 3" />';
+  }
 }
 
 function speakVerses(nodes, btn) {
@@ -183,7 +196,15 @@ function speakVerses(nodes, btn) {
   const token = {};
   speaking = token;
   btn.setAttribute("aria-pressed", "true");
-  btn.lastChild.textContent = "Stop";
+  btn.classList.add("is-active");
+  const selLabel = btn.querySelector?.(".bb-sel-btn-label");
+  if (selLabel) {
+    selLabel.textContent = "Stop";
+    const svg = btn.querySelector("svg");
+    if (svg) svg.innerHTML = '<rect x="6" y="6" width="12" height="12" rx="1.5" />';
+  } else if (btn.lastChild) {
+    btn.lastChild.textContent = "Stop";
+  }
   let i = 0;
   const next = () => {
     if (speaking !== token) return;
@@ -491,60 +512,185 @@ function syncMark(btn, on) {
   btn.textContent = on ? "✓ Read · tap to undo" : "Mark chapter as read";
 }
 
-/* ── Verse selection: tap verses, then copy them with the reference. ─ */
+/* ── Verse selection: tap verses, then copy, link, listen, or share. ─ */
 const selbar = document.getElementById("bbSelbar");
+const selRef = document.getElementById("bbSelRef");
+const selCount = document.getElementById("bbSelCount");
+const selColors = document.getElementById("bbSelColors");
+const selCopy = document.getElementById("bbSelCopy");
+const selLink = document.getElementById("bbSelLink");
+const selListen = document.getElementById("bbSelListen");
+const selShare = document.getElementById("bbSelShare");
+const selClear = document.getElementById("bbSelClear");
+
 let selection = null; // { book, ch, verses: Set }
+let lastClickedVerse = null;
+let highlightColor = store.get("bible:highlight") || "gold";
+root.dataset.highlight = highlightColor;
+
+function setHighlightColor(color) {
+  highlightColor = color;
+  root.dataset.highlight = color;
+  store.set("bible:highlight", color);
+  syncColorDots();
+}
+
+function syncColorDots() {
+  document.querySelectorAll("#bbSelColors .bb-color-dot").forEach((dot) => {
+    const active = dot.dataset.color === highlightColor;
+    dot.setAttribute("aria-checked", String(active));
+  });
+  document.querySelectorAll("#bbDisplay [data-hl]").forEach((btn) => {
+    btn.setAttribute("aria-pressed", String(btn.dataset.hl === highlightColor));
+  });
+}
 
 function selectVerses(b, ch, list) {
   selection = { book: b, ch, verses: new Set(list) };
   paintSelection();
 }
 
-function paintSelection() {
-  document.querySelectorAll(".bb-v.is-selected").forEach((v) => v.classList.remove("is-selected"));
-  if (!selection || !selection.verses.size) { selbar.hidden = true; selection = null; return; }
-  selection.verses.forEach((n) => document.getElementById(`v${n}`)?.classList.add("is-selected"));
-  document.getElementById("bbSelRef").textContent = selectionRef();
-  selbar.hidden = false;
-}
-
-function selectionRef() {
+function selectionRef(useEnDash = true) {
+  if (!selection) return "";
   const nums = [...selection.verses].sort((a, b) => a - b);
+  const dash = useEnDash ? "–" : "-";
   const parts = [];
   for (let i = 0; i < nums.length; i++) {
     let j = i;
     while (j + 1 < nums.length && nums[j + 1] === nums[j] + 1) j++;
-    parts.push(i === j ? `${nums[i]}` : `${nums[i]}-${nums[j]}`);
+    parts.push(i === j ? `${nums[i]}` : `${nums[i]}${dash}${nums[j]}`);
     i = j;
   }
   return `${selection.book.name} ${selection.ch}:${parts.join(",")} (${translation().label})`;
 }
 
+function selectionUrl() {
+  if (!selection || !selection.verses.size) return "";
+  const nums = [...selection.verses].sort((a, b) => a - b);
+  const minV = nums[0];
+  const maxV = nums[nums.length - 1];
+  const hash = readHref(selection.book.slug, selection.ch, minV, maxV > minV ? maxV : 0);
+  return new URL(hash, location.href).href;
+}
+
+function paintSelection() {
+  document.querySelectorAll(".bb-v.is-selected").forEach((v) => v.classList.remove("is-selected"));
+  if (!selection || !selection.verses.size) {
+    if (selbar) selbar.hidden = true;
+    selection = null;
+    lastClickedVerse = null;
+    return;
+  }
+  selection.verses.forEach((n) => document.getElementById(`v${n}`)?.classList.add("is-selected"));
+  if (selRef) selRef.textContent = selectionRef(true);
+  if (selCount) selCount.textContent = plural(selection.verses.size, "verse");
+  syncColorDots();
+  if (navigator.share && selShare) {
+    selShare.hidden = false;
+  }
+  if (!window.speechSynthesis && selListen) {
+    selListen.hidden = true;
+  }
+  if (selbar) selbar.hidden = false;
+}
+
 function clearSelection() {
   selection = null;
+  lastClickedVerse = null;
   paintSelection();
 }
 
 main.addEventListener("click", (e) => {
+  // If user has actively dragged native text selection, don't trigger verse selection
+  if (window.getSelection && window.getSelection().toString().trim().length > 0) return;
   const v = e.target.closest(".bb-v");
   if (!v || !currentRead || e.target.closest("button, a")) return;
-  if (!selection || selection.book !== currentRead.book || selection.ch !== currentRead.ch) selection = { book: currentRead.book, ch: currentRead.ch, verses: new Set() };
+  if (!selection || selection.book !== currentRead.book || selection.ch !== currentRead.ch) {
+    selection = { book: currentRead.book, ch: currentRead.ch, verses: new Set() };
+  }
   const n = Number(v.dataset.v);
-  selection.verses.has(n) ? selection.verses.delete(n) : selection.verses.add(n);
+  if (e.shiftKey && lastClickedVerse != null) {
+    const start = Math.min(lastClickedVerse, n);
+    const end = Math.max(lastClickedVerse, n);
+    for (let i = start; i <= end; i++) {
+      selection.verses.add(i);
+    }
+  } else {
+    selection.verses.has(n) ? selection.verses.delete(n) : selection.verses.add(n);
+  }
+  lastClickedVerse = n;
   paintSelection();
 });
 
-document.getElementById("bbSelClear").addEventListener("click", clearSelection);
-document.getElementById("bbSelCopy").addEventListener("click", async () => {
+selClear?.addEventListener("click", clearSelection);
+
+selColors?.addEventListener("click", (e) => {
+  const dot = e.target.closest(".bb-color-dot");
+  if (!dot) return;
+  setHighlightColor(dot.dataset.color);
+});
+
+function flashButton(btn, text) {
+  const label = btn?.querySelector(".bb-sel-btn-label");
+  if (!label) return;
+  const original = label.textContent;
+  btn.classList.add("is-success");
+  label.textContent = text;
+  setTimeout(() => {
+    btn.classList.remove("is-success");
+    label.textContent = original;
+  }, 2000);
+}
+
+selCopy?.addEventListener("click", async () => {
   if (!selection) return;
   const text = [...selection.verses].sort((a, b) => a - b)
     .map((n) => document.querySelector(`#v${n} .bb-vt`)?.textContent.trim()).filter(Boolean).join(" ");
+  const quote = `"${text}" — ${selectionRef(true)}`;
   try {
-    await navigator.clipboard.writeText(`"${text}" (${selectionRef()})`);
+    await navigator.clipboard.writeText(quote);
+    flashButton(selCopy, "Copied!");
     announce("Copied the verses and their reference.");
   } catch {
     announce("Copy isn't available here. Select the text to copy it instead.");
   }
+});
+
+selLink?.addEventListener("click", async () => {
+  if (!selection) return;
+  const url = selectionUrl();
+  try {
+    await navigator.clipboard.writeText(url);
+    flashButton(selLink, "Link copied!");
+    announce("Copied passage link.");
+  } catch {
+    announce("Link copy not supported.");
+  }
+});
+
+selListen?.addEventListener("click", () => {
+  if (!selection) return;
+  if (speaking) {
+    stopSpeaking();
+    return;
+  }
+  const nodes = [...selection.verses].sort((a, b) => a - b)
+    .map((n) => document.getElementById(`v${n}`)).filter(Boolean);
+  if (nodes.length) speakVerses(nodes, selListen);
+});
+
+selShare?.addEventListener("click", async () => {
+  if (!selection || !navigator.share) return;
+  const text = [...selection.verses].sort((a, b) => a - b)
+    .map((n) => document.querySelector(`#v${n} .bb-vt`)?.textContent.trim()).filter(Boolean).join(" ");
+  const ref = selectionRef(true);
+  try {
+    await navigator.share({
+      title: ref,
+      text: `"${text}" — ${ref}`,
+      url: selectionUrl(),
+    });
+  } catch {}
 });
 
 /* ── Router ──────────────────────────────────────────────────────── */
@@ -622,6 +768,7 @@ function initDisplay() {
     const mode = root.dataset.readerMode || "";
     panel.querySelectorAll("[data-mode]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
     panel.querySelectorAll("[data-layout]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.layout === root.dataset.bibleLayout)));
+    panel.querySelectorAll("[data-hl]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.hl === highlightColor)));
     sizeOut.textContent = size + "%";
   };
   btn.addEventListener("click", () => {
@@ -645,6 +792,8 @@ function initDisplay() {
       root.dataset.bibleLayout = b.dataset.layout;
       store.set("bible:layout", b.dataset.layout);
       if (currentRead) { const keep = topVisibleVerse(); renderChapter(currentRead.book, currentRead.ch, keep > 1 ? keep : 0, 0, true); }
+    } else if (b.dataset.hl) {
+      setHighlightColor(b.dataset.hl);
     }
     paint();
   });

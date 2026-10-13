@@ -95,8 +95,8 @@ try {
   const page = await browser.newPage(); const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(`http://localhost:8080/lessons/music/${instrument}.html`, { waitUntil: 'domcontentloaded' });
   const sharedCalls = await page.evaluate(name => {
-    let calls=0; const key=name==='piano'?'pianoSources':'pluckBuffer',original=window.LessonInstrumentEngines[key];
-    window.LessonInstrumentEngines[key]=(...args)=>{calls++;return original(...args);};
+    let calls=0; const key=name==='piano'?'pianoSources':'pluckBuffer',original=window.MusicSynth[key];
+    window.MusicSynth[key]=(...args)=>{calls++;return original(...args);};
     if(name==='piano'){window.PianoAudio.tone(440,{duration:.1});window.PianoAudio.stop();}
     else{window.GuitarAudio.pluck(440,{duration:.1});window.GuitarAudio.stop();}
     return calls;

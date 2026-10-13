@@ -638,16 +638,19 @@
   // ── Playback ──────────────────────────────────────────────────────────────
   var audio = { ctx: null, out: null };
   function context() {
+    var kit = root.AudioKit;
     if (!audio.ctx) {
-      var AC = root.AudioContext || root.webkitAudioContext;
-      audio.ctx = new AC();
+      if (kit) audio.ctx = kit.context();
+      else { var AC = root.AudioContext || root.webkitAudioContext; audio.ctx = new AC(); }
       var comp = audio.ctx.createDynamicsCompressor();
       comp.threshold.value = -14; comp.ratio.value = 3;
       audio.out = audio.ctx.createGain();
       audio.out.gain.value = 0.9;
-      audio.out.connect(comp); comp.connect(audio.ctx.destination);
+      audio.out.connect(comp); comp.connect(kit ? kit.output() : audio.ctx.destination);
+      if (kit) kit.onStop(function () { players.forEach(function (p) { if (p.playing) p.pause(); }); });
     }
-    if (audio.ctx.state === 'suspended') audio.ctx.resume();
+    if (kit) kit.resume();
+    else if (audio.ctx.state === 'suspended') audio.ctx.resume();
     return audio.ctx;
   }
 
@@ -778,7 +781,7 @@
     var inst = el('select', { 'aria-label': 'Instrument sound' });
     var auto = el('option', { value: '' }, 'As written');
     inst.appendChild(auto);
-    root.MusicSynth.instruments.forEach(function (k) { inst.appendChild(el('option', { value: k }, LABELS[k] || k)); });
+    root.MusicSynth.instruments.forEach(function (k) { inst.appendChild(el('option', { value: k }, LABELS[k] || (root.MusicSynth.labels && root.MusicSynth.labels[k]) || k)); });
     instLbl.appendChild(inst);
     var loopLbl = el('label', { class: 'se-check' });
     var loop = el('input', { type: 'checkbox' });

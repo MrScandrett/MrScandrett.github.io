@@ -110,85 +110,61 @@
   };
   window.ViolinTheory = ViolinTheory;
 
-  /* ---------------- Audio: a plain oscillator per string, gain-enveloped ---------------- */
+  /* ---------------- Audio: one MusicSynth violin voice per string ----------------
+     The site's bowed-string voice (music-synth.js) through AudioKit's shared context
+     and limiter (audio-kit.js). Dragging a finger along a string glides the held
+     voice rather than restarting it, so a slide sounds like a slide. */
 
   var Audio = (function () {
-    var ctx = null, master = null, muted = false;
-    var voices = {}; /* stringLabel -> {osc, gain} */
+    var master = null, muted = false, LEVEL = 0.8;
+    var voices = {}; /* stringLabel -> MusicSynth voice */
 
-    function ensureCtx() {
-      if (ctx) return ctx;
-      var AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return null;
-      ctx = new AC();
-      master = ctx.createGain();
-      master.gain.value = muted ? 0 : 0.16;
-      master.connect(ctx.destination);
-      return ctx;
+    function bus() {
+      var K = window.AudioKit;
+      if (master) return master;
+      if (!K || !window.MusicSynth || !K.context()) return null;
+      master = K.context().createGain();
+      master.gain.value = muted ? 0 : LEVEL;
+      master.connect(K.output());
+      return master;
     }
 
     function setMuted(v) {
       muted = v;
-      if (master) master.gain.setTargetAtTime(muted ? 0 : 0.16, ctx.currentTime, 0.02);
+      if (master) master.gain.setTargetAtTime(muted ? 0 : LEVEL, window.AudioKit.now(), 0.02);
+    }
+
+    function play(freq, duration) {
+      var dest = bus();
+      if (!dest) return null;
+      return window.AudioKit.note({ instrument: 'violin', hz: freq, velocity: 0.7, duration: duration, destination: dest });
     }
 
     function start(label, freq) {
       try {
-        var c = ensureCtx();
-        if (!c) return;
-        if (c.state === 'suspended') c.resume();
         stop(label, true);
-        var osc = c.createOscillator();
-        osc.type = 'sawtooth';
-        osc.frequency.value = freq;
-        var g = c.createGain();
-        g.gain.value = 0;
-        osc.connect(g);
-        g.connect(master);
-        osc.start();
-        g.gain.linearRampToValueAtTime(1, c.currentTime + 0.02);
-        voices[label] = { osc: osc, gain: g };
+        var v = play(freq, null);
+        if (v) voices[label] = v;
       } catch (e) { /* audio is a bonus feature; ignore failures */ }
     }
 
     function update(label, freq) {
       var v = voices[label];
-      if (!v || !ctx) return;
-      v.osc.frequency.setTargetAtTime(freq, ctx.currentTime, 0.015);
+      if (v) v.glide(window.AudioKit.hzToMidi(freq), window.AudioKit.now());
     }
 
     function stop(label, immediate) {
       var v = voices[label];
-      if (!v || !ctx) return;
+      if (!v) return;
       delete voices[label];
       try {
-        var now = ctx.currentTime;
-        v.gain.gain.cancelScheduledValues(now);
-        v.gain.gain.setValueAtTime(v.gain.gain.value, now);
-        v.gain.gain.linearRampToValueAtTime(0, now + (immediate ? 0.01 : 0.09));
-        v.osc.stop(now + (immediate ? 0.02 : 0.11));
+        var now = window.AudioKit.now();
+        if (immediate) v.kill(now); else v.release(now);
       } catch (e) { /* ignore */ }
     }
 
     function blip(freq, ms) {
-      try {
-        var c = ensureCtx();
-        if (!c) return;
-        if (c.state === 'suspended') c.resume();
-        var osc = c.createOscillator();
-        osc.type = 'sawtooth';
-        osc.frequency.value = freq;
-        var g = c.createGain();
-        g.gain.value = 0;
-        osc.connect(g);
-        g.connect(master);
-        var now = c.currentTime;
-        osc.start(now);
-        g.gain.linearRampToValueAtTime(1, now + 0.015);
-        g.gain.setValueAtTime(1, now + (ms / 1000) - 0.08);
-        g.gain.linearRampToValueAtTime(0, now + (ms / 1000));
-        osc.stop(now + (ms / 1000) + 0.02);
-      } catch (e) { /* ignore */ }
+      try { play(freq, Math.max(0.05, ms / 1000 - 0.08)); } catch (e) { /* ignore */ }
     }
 
     return { start: start, update: update, stop: stop, blip: blip, setMuted: setMuted };
